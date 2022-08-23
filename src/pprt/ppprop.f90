@@ -91,6 +91,12 @@ interface
     implicit none
   end subroutine cs_gas_mix_add_property_fields
 
+  subroutine cs_atmo_add_property_fields()  &
+    bind(C, name='cs_atmo_add_property_fields')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_atmo_add_property_fields
+
 end interface
 
 !===============================================================================
@@ -144,6 +150,9 @@ if (ippmod(iatmos).ge.0) then
   endif
 
   call atprop
+
+  ! C version
+  call cs_atmo_add_property_fields
 endif
 
 ! ---> Cooling towers model

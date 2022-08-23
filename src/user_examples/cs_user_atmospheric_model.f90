@@ -227,139 +227,6 @@ endif
 return
 end subroutine usatdv
 
-
-!===============================================================================
-
-!> \brief Data entry for the atmospheric ground model.
-!> Define the different values which can be taken by iappel.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]     iappel        Computation of the cells number where we impose
-!>                              a ground Model if iappel=1. users may defined
-!>                              the ground face composition if iappel=2.
-!>                              Warning : be coherent with the dimension of the
-!>                              array \c pourcent_sol
-!>                              Warning: tt's also possible to modify the
-!>                              \c tab_sol array of the ground
-!>                              type constants
-!______________________________________________________________________________!
-
-subroutine usatsoil &
-     ( iappel )
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use numvar
-use optcal
-use cstphy
-use cstnum
-use entsor
-use parall
-use period
-use ppppar
-use ppthch
-use ppincl
-use atincl
-use atsoil
-use mesh
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-integer          iappel
-
-! Local variables
-
-integer          ifac , ifbt1d , ilelt , nlelt , isol
-
-integer, allocatable, dimension(:) :: lstelt
-
-!===============================================================================
-
-!< [usatsoil]
-
-ifbt1d = 0
-allocate(lstelt(nfabor))
-
-!===============================================================================
-! APPEL 1.  INITIALIZATIONS
-!===============================================================================
-
-if (iappel.eq.1) then
-  ! On precise la couleur du sol
-  call getfbr('Sol',nlelt,lstelt)
-  do ilelt = 1, nlelt
-    ifbt1d = ifbt1d + 1
-  enddo
-  nfmodsol = ifbt1d
-
-  allocate(indsol(nfmodsol))
-
-  do ilelt = 1, nlelt
-    ifac = lstelt(ilelt)
-    indsol(ilelt) = ifac
-  enddo
-  ! On precise le nombre sol utilise pour le modele
-  ! 5 dans le cas bati, 7 dans le cas bati dense/mixte/diffus
-  nbrsol = 5
-  ! On renseigne la teneur en eau des deux reservoirs
-  ! (necessaire pour l'initialisation)
-  w1ini = 0.d0
-  w2ini = 0.0d0
-endif
-
-
-if (iappel.eq.2) then
-  ! Modification pour cas Wangara, dans ce cas la on a Csol(mineral=4) = 1.7e-5
-  ! ainsi que zoth = 1.2e-3
-  tab_sol(4)%csol = 1.7e-5
-  tab_sol(4)%rugthe = 0.0012
-
-  ! Initialization of the pourcent_sol array
-  !  For 7 soil types:
-  !    water  = 1
-  !    forest = 2
-  !    divers = 3
-  !    rocks  = 4
-  !    diffus = 5
-  !    mixt   = 6
-  !    dense  = 7
-
-  ! For 5 soil types
-  !    water  = 1
-  !    forest = 2
-  !    divers = 3
-  !    minral = 4
-  !    bati   = 5
-
-  do ilelt = 1, nfmodsol
-    ifac = indsol(ilelt)
-    do isol = 1, nbrsol
-      pourcent_sol(ilelt,isol) = 0
-    enddo
-    pourcent_sol(ilelt,4) = 100
-  enddo
-endif
-
-!===============================================================================
-
-deallocate(lstelt)  ! temporary array for boundary faces selection
-
-!< [usatsoil]
-
-return
-end subroutine usatsoil
-
 !===============================================================================
 
 !> \brief Fill in vertical profiles of atmospheric properties prior to solve
@@ -476,7 +343,7 @@ end subroutine cs_user_atmo_1d_rad_prf
 
 !===============================================================================
 
-!> \brief Compute ground level variables.
+!> \brief Overwrite soil variables.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -528,20 +395,31 @@ integer ifac, isol
 
 double precision tetas, qvs
 
+integer, dimension(:), pointer :: elt_ids
+
+double precision, pointer, dimension(:)   :: bvar_temp_sol
+double precision, pointer, dimension(:)   :: bvar_tempp
+double precision, pointer, dimension(:)   :: bvar_total_water
+
 !===============================================================================
 
 !< [atmo_soil_temperature]
+call field_get_val_s_by_name("soil_temperature", bvar_temp_sol)
+call field_get_val_s_by_name("soil_pot_temperature", bvar_tempp)
+call field_get_val_s_by_name("soil_total_water", bvar_total_water)
+
+call atmo_get_soil_zone(nfmodsol, nbrsol, elt_ids)
 
 do isol = 1, nfmodsol
-  ifac = indsol(isol)
+  ifac = elt_ids(isol) + 1 ! C > Fortran
 
   ! read external data to set potential temperature and specific humidity
   tetas = 16.504682364d0
   qvs = 0.00583966915d0
 
-  solution_sol(isol)%temp_sol = tetas - tkelvi
-  solution_sol(isol)%tempp = tetas
-  solution_sol(isol)%total_water = qvs
+  bvar_temp_sol   (isol) = tetas - tkelvi
+  bvar_tempp      (isol) = tetas
+  bvar_total_water(isol) = qvs
 enddo
 
 !< [atmo_soil_temperature]

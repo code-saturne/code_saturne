@@ -1011,8 +1011,6 @@ if (muzero.gt.epzero) then
   ! solar heating of the ground surface by the downward global flux
   fos=dfs(k1)*(1.d0-albe)
 
-
-
   soil_direct_flux=drfs(k1)
   soil_global_flux=dfs(k1)
   soil_direct_flux_h2o=ddfsh2o(k1)
@@ -1049,6 +1047,7 @@ else
     ckdown_r(k) = 0.d0
     ckdown_f(k) = 0.d0
   enddo
+  fos = 0.d0
   soil_direct_flux = 0.d0
   soil_global_flux = 0.d0
   soil_direct_flux_h2o=0.0

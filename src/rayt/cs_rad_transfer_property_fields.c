@@ -373,15 +373,18 @@ cs_rad_transfer_prp(void)
 
   /* Albedo Fields for atmospheric diFfuse Solar (FS) model */
   if (rt_params->atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR) {
-    f = cs_field_create("boundary_albedo",
-                        field_type,
-                        location_id,
-                        1,
-                        false);
-    cs_field_set_key_str(f, keylbl, "Albedo");
+    f = cs_field_by_name_try("boundary_temperature");
+    if (f == NULL) {
+      f = cs_field_create("boundary_albedo",
+                          field_type,
+                          location_id,
+                          1,
+                          false);
+      cs_field_set_key_str(f, keylbl, "Albedo");
 
-    cs_field_set_key_int(f, keyvis, 1);
-    cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_int(f, keyvis, 1);
+      cs_field_set_key_int(f, keylog, 1);
+    }
   }
 
   {

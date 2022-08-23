@@ -45,6 +45,7 @@ use ppthch
 use ppincl
 use atincl
 use atsoil
+use field
 use ctincl, only: cp_a, cp_v
 use mesh
 
@@ -54,10 +55,16 @@ implicit none
 
 ! Local variables
 
-integer          ifac,iphysi
+integer          isol,iphysi
 double precision rscp
 double precision esaini,qsaini,huini,psini
 double precision cpvcpa
+
+double precision, pointer, dimension(:)   :: bvar_temp_sol
+double precision, pointer, dimension(:)   :: bvar_tempp
+double precision, pointer, dimension(:)   :: bvar_total_water
+double precision, pointer, dimension(:)   :: bvar_w1
+double precision, pointer, dimension(:)   :: bvar_w2
 
 !===============================================================================
 
@@ -66,9 +73,15 @@ double precision cpvcpa
 
 cpvcpa = cp_v / cp_a
 
+call field_get_val_s_by_name("soil_temperature", bvar_temp_sol)
+call field_get_val_s_by_name("soil_pot_temperature", bvar_tempp)
+call field_get_val_s_by_name("soil_total_water", bvar_total_water)
+call field_get_val_s_by_name("soil_w1", bvar_w1)
+call field_get_val_s_by_name("soil_w2", bvar_w2)
+
 !  initialisation de t et qv en z0
 
-if(qvsini.gt.1.d0) then
+if (qvsini.gt.1.d0) then
 !  si qvsini>1 qvsini represente l'humidite relative en %
      esaini = 610.78d0*exp(17.2694d0*tsini/                           &
                       (tsini + tkelvi - 35.86d0))
@@ -78,48 +91,45 @@ endif
 
 !==============================================================
 
-if ( ippmod(iatmos).eq.1 ) iphysi = 0
-if ( ippmod(iatmos).eq.2 ) iphysi = 3
+if (ippmod(iatmos).eq.1) iphysi = 0
+if (ippmod(iatmos).eq.2) iphysi = 3
 
-do ifac = 1, nfmodsol
+do isol = 1, nfmodsol
 
   psini = p0
-  if(iphysi.gt.0)then
+  if (iphysi.gt.0) then
     rscp = (rair/cp0)*(1.d0 + (rvsra - cpvcpa)*qvsini)
   else
     rscp = (rair/cp0)
   endif
 
-  solution_sol(ifac)%temp_sol = tsini
+  bvar_temp_sol(isol) = tsini
 
-  solution_sol(ifac)%tempp = (tsini+tkelvi)*((ps/psini)**rscp)
+  bvar_tempp(isol) = (tsini+tkelvi)*((ps/psini)**rscp)
 
-  solution_sol(ifac)%total_water = 0.d0
-  if(iphysi.gt.0) solution_sol(ifac)%total_water = qvsini
-  solution_sol(ifac)%w1 = 0.d0
-  solution_sol(ifac)%w2 = 0.d0
+  bvar_total_water(isol) = 0.d0
+  if (iphysi.gt.0) bvar_total_water(isol) = qvsini
+  bvar_w1(isol) = 0.d0
+  bvar_w2(isol) = 0.d0
 
-  if(iphysi.eq.3) then
+  if (iphysi.eq.3) then
 
-   if(w1ini.lt.1.d-20) then
-     !  si w1ini = 0 on fait un calcul approximatif de w1ini
-     esaini = 610.78d0*exp(17.2694d0*tsini/                           &
-                      (tsini + tkelvi - 35.86d0))
-     qsaini = esaini/(rvsra*psini + esaini*(1.d0 - rvsra))
-     huini  = qvsini/qsaini
-     huini  = min(huini,1.d0)
-     solution_sol(ifac)%w1 = acos(1.d0-2.d0*huini)/acos(-1.d0)
-   else
-     solution_sol(ifac)%w1  = w1ini
-   endif
+    ! If not initialized, we compute an approximation of the initial
+    ! water content of the top reservoir
+    if (bvar_w1(isol).lt.1.d-20) then
+      esaini = 610.78d0*exp(17.2694d0*tsini/                           &
+        (tsini + tkelvi - 35.86d0))
+      qsaini = esaini/(rvsra*psini + esaini*(1.d0 - rvsra))
+      huini  = qvsini/qsaini
+      huini  = min(huini,1.d0)
+      bvar_w1(isol) = acos(1.d0-2.d0*huini)/acos(-1.d0)
+    endif
 
-   if(w2ini.lt.1.d-20) then
-!  si w2ini=0 on fixe le rapport w1ini/w2ini a 1
-!  (equilibre entre les couches)
-     solution_sol(ifac)%w2 = solution_sol(ifac)%w1
-   else
-     solution_sol(ifac)%w2 = w2ini
-   endif
+    ! If the deep reservoir is uninitialized,
+    ! we set the ratio w1/w2 to 1 (layer equilibrium)
+    if (bvar_w2(isol).lt.1.d-20) then
+      bvar_w2(isol) = bvar_w1(isol)
+    endif
 
   endif
 

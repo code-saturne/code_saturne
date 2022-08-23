@@ -85,64 +85,6 @@ integer           imode
 return
 end subroutine usatdv
 
-
-!===============================================================================
-
-!> \brief Data entry for the atmospheric ground model.
-!> Define the different values which can be taken by iappel.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]     iappel        Computation of the cells number where we impose
-!>                              a ground Model if iappel=1. users may defined
-!>                              the ground face composition if iappel=2.
-!>                              Warning : be coherent with the dimension of the
-!>                              array \c pourcent_sol
-!>                              Warning: tt's also possible to modify the
-!>                              \c tab_sol array of the ground
-!>                              type constants
-!______________________________________________________________________________!
-
-subroutine usatsoil &
-     ( iappel )
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use numvar
-use optcal
-use cstphy
-use cstnum
-use entsor
-use parall
-use period
-use ppppar
-use ppthch
-use ppincl
-use atincl
-use atsoil
-use mesh
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-integer          iappel
-
-! Local variables
-
-!===============================================================================
-
-return
-end subroutine usatsoil
-
 !===============================================================================
 
 !> \brief Fill in vertical profiles of atmospheric properties prior to solve

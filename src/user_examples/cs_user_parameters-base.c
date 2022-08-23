@@ -273,8 +273,23 @@ cs_user_model(void)
     */
    cs_glob_atmo_chemistry->frozen_gas_chem = false;
 
-  /*! [atmo_module] */
+   /* Soil Atmosphere model
+    * ---------------------*/
 
+  /*! [atmo_soil_set] */
+   cs_glob_atmo_option->soil_model = 1; /* Switch on soil model */
+   /* Set the number of predefined categories (+1 which is the default one)
+    * among:
+    *  - CS_ATMO_SOIL_5_CAT
+    *  - CS_ATMO_SOIL_7_CAT
+    * */
+   cs_glob_atmo_option->soil_cat= CS_ATMO_SOIL_5_CAT; /* Switch on soil model */
+
+   /* Specify the boundary zone which is modeled */
+   cs_glob_atmo_option->soil_zone_id = cs_boundary_zone_by_name("Sol")->id;
+  /*! [atmo_soil_set] */
+
+  /*! [atmo_module] */
 
   /*! [atmo_user_model_1] */
 

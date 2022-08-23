@@ -510,7 +510,7 @@ _add_b_faces(cs_mesh_t        *mesh,
 }
 
 /*----------------------------------------------------------------------------
- * Refresh global numering for new added boundary faces
+ * Refresh global numbering for new added boundary faces
  *
  * parameters:
  *   i_face_cells  <-- interior faces -> cells connectivity

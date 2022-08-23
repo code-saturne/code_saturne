@@ -1,6 +1,10 @@
 Master (not on release branches yet)
 ------------------------------------
 
+User changes:
+
+- Simplify the use of soil-atmosphere model of the atmospheric module.
+
 Physical modeling:
 
 - Add some atmospheric universal functions for large scale idealized wind

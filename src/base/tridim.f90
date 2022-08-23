@@ -908,7 +908,7 @@ do while (iterns.le.nterup)
 !     Appel de l'interface sol-atmosphere
 !     ==============================================
 
-  if (ippmod(iatmos).eq.2.and.iatsoil.eq.1.and.nfmodsol.gt.0) then
+  if (ippmod(iatmos).eq.2.and.iatsoil.eq.1.and.nfmodsol.gt.0) then !FIXME why only iatmos =2 ?
     call field_get_val_s(icrom, crom)
     call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
     call field_get_val_s(ivarfl(isca(iymw)), cvar_totwt)

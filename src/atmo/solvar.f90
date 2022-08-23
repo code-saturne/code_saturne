@@ -104,10 +104,57 @@ double precision cpvcpa
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cpro_met_p
 
+integer, dimension(:), pointer :: elt_ids
+
+double precision, pointer, dimension(:)   :: bpro_rugdyn ! all boundary faces
+double precision, pointer, dimension(:)   :: bpro_rugthe ! all boundary faces
+double precision, pointer, dimension(:)   :: bpro_albedo ! all boundary faces
+double precision, pointer, dimension(:)   :: bpro_emissi ! all boundary faces
+double precision, pointer, dimension(:)   :: bpro_vegeta ! only zone faces
+double precision, pointer, dimension(:)   :: bpro_c1w    ! only zone faces
+double precision, pointer, dimension(:)   :: bpro_c2w    ! only zone faces
+double precision, pointer, dimension(:)   :: bpro_csol   ! only zone faces
+double precision, pointer, dimension(:)   :: bpro_r1     ! only zone faces
+double precision, pointer, dimension(:)   :: bpro_r2     ! only zone faces
+double precision, pointer, dimension(:)   :: bpro_tprof  ! only zone faces
+double precision, pointer, dimension(:,:) :: bpro_pourcent_sol ! only zone faces
+
+double precision, pointer, dimension(:)   :: bvar_temp_sol
+double precision, pointer, dimension(:)   :: bvar_tempp
+double precision, pointer, dimension(:)   :: bvara_tempp
+double precision, pointer, dimension(:)   :: bvar_total_water
+double precision, pointer, dimension(:)   :: bvara_total_water
+double precision, pointer, dimension(:)   :: bvar_w1
+double precision, pointer, dimension(:)   :: bvar_w2
+
 !===============================================================================
 
 ! Map field arrays
 call field_get_val_v(ivarfl(iu), vel)
+
+call field_get_val_s_by_name("boundary_roughness", bpro_rugdyn)
+call field_get_val_s_by_name("boundary_thermal_roughness", bpro_rugthe)
+call field_get_val_s_by_name("boundary_albedo", bpro_albedo)
+call field_get_val_s_by_name("boundary_emissivity", bpro_emissi)
+call field_get_val_s_by_name("boundary_vegetation", bpro_vegeta)
+call field_get_val_s_by_name("soil_water_capacity", bpro_c1w   )
+call field_get_val_s_by_name("soil_water_ratio", bpro_c2w   )
+call field_get_val_s_by_name("soil_thermal_capacity", bpro_csol  )
+call field_get_val_s_by_name("soil_r1", bpro_r1    )
+call field_get_val_s_by_name("soil_r2", bpro_r2    )
+call field_get_val_s_by_name("soil_temperature_deep", bpro_tprof )
+
+call field_get_val_v_by_name("atmo_soil_percentages", bpro_pourcent_sol )
+
+call field_get_val_s_by_name("soil_temperature", bvar_temp_sol)
+call field_get_val_s_by_name("soil_pot_temperature", bvar_tempp)
+call field_get_val_prev_s_by_name("soil_pot_temperature", bvara_tempp)
+call field_get_val_s_by_name("soil_total_water", bvar_total_water)
+call field_get_val_prev_s_by_name("soil_total_water", bvara_total_water)
+call field_get_val_s_by_name("soil_w1", bvar_w1)
+call field_get_val_s_by_name("soil_w2", bvar_w2)
+
+call atmo_get_soil_zone(nfmodsol, nbrsol, elt_ids)
 
 if (imeteo.eq.2) then
   call field_get_val_s_by_name('meteo_pressure', cpro_met_p)
@@ -138,24 +185,26 @@ tseuil = 16.d0 + tkelvi
 
 do isol = 1, nfmodsol
 
-  tssol = solution_sol(isol)%temp_sol + tkelvi
-  qvsol = solution_sol(isol)%total_water
-  w1    = solution_sol(isol)%w1
-  w2    = solution_sol(isol)%w2
+  tssol = bvar_temp_sol   (isol) + tkelvi
+  qvsol = bvar_total_water(isol)
+  w1    = bvar_w1         (isol)
+  w2    = bvar_w2         (isol)
 
-  z0t    = solution_sol(isol)%constantes%rugthe
-  emis   = solution_sol(isol)%constantes%emissi
-  albedo = solution_sol(isol)%constantes%albedo
-  csol   = solution_sol(isol)%constantes%csol
-  veg    = solution_sol(isol)%constantes%vegeta
-  c1w    = solution_sol(isol)%constantes%c1w
-  c2w    = solution_sol(isol)%constantes%c2w
-  r1     = solution_sol(isol)%constantes%r1
-  r2     = solution_sol(isol)%constantes%r2
-  tprof  = solution_sol(isol)%constantes%tprof
+  ifac = elt_ids(isol) + 1 ! C > Fortran
+  z0t    = bpro_rugthe(ifac)
+  emis   = bpro_emissi(ifac)
+  albedo = bpro_albedo(ifac)
+
+  csol   = bpro_csol  (isol)
+  veg    = bpro_vegeta(isol)
+  c1w    = bpro_c1w   (isol)
+  c2w    = bpro_c2w   (isol)
+  r1     = bpro_r1    (isol)
+  r2     = bpro_r2    (isol)
+  tprof  = bpro_tprof (isol)
 
   if (iatra1.eq.1) then
-    foir = soilvert(1)%foir
+    foir = soilvert(1)%foir !FIXME not correct for many verticals
     fos  = soilvert(1)%fos
   else
     foir = 0.d0
@@ -166,9 +215,9 @@ do isol = 1, nfmodsol
   !     2) calcul du vecteur vitesse tangent (identique a celui fait ds fr
   !     ==================================================================
 
-  ifac = indsol(isol)
-  ! ---> NORMALE UNITAIRE
+  ifac = elt_ids(isol) + 1 ! C > Fortran
 
+  ! Unite normal
   rnx = surfbo(1,ifac)/surfbn(ifac)
   rny = surfbo(2,ifac)/surfbn(ifac)
   rnz = surfbo(3,ifac)/surfbn(ifac)
@@ -203,7 +252,7 @@ do isol = 1, nfmodsol
   iel = ifabor(ifac)
   zreel = xyzcen(3,iel)
 
-  if (pourcent_sol(isol,1) > 50) then
+  if (bpro_pourcent_sol(1+1, isol) .gt. 50.d0) then
 
     !     ====================================
     !     3) cas particulier des points de mer
@@ -248,7 +297,7 @@ do isol = 1, nfmodsol
       pres1 = cpro_met_p(iel)
     endif
 
-    tpot1 = solution_sol(isol)%tempp
+    tpot1 = bvar_tempp(isol)
     tpot2 = temp(iel)
 
     tpotv1 = tpot1*(1.d0 + (rvsra - 1.d0)*qvsol)
@@ -293,8 +342,8 @@ do isol = 1, nfmodsol
     w2plus = w2num/w2den
     w2plus = max(w2plus,w2min)
     w2plus = min(w2plus,w2max)
-    solution_sol(isol)%w1 = w1plus
-    solution_sol(isol)%w2 = w2plus
+    bvar_w1(isol) = w1plus
+    bvar_w2(isol) = w2plus
     hu = 0.5d0*(1.d0-cos(pi*w1plus))
 
     !     ==================================================================
@@ -332,7 +381,7 @@ do isol = 1, nfmodsol
     !     9) calcul du second membre de l'equation d'evolution de tssol
     !     ==========================================================
 
-    !  !! fos contient deja le facteur (1-albedo) !
+    ! Warning: fos already contains (1-albedo) factor!
     ray2 = fos + emis*foir + 3.d0*emis*stephn*(tssol**4)
     chas2 = cht*tpot2*((pres1/ps)**rscp1)
     chal2 = chq*(qv(iel)*(1.d0 - veg*(1.d0 - hu)) - hu*(qsat - tssol*dqsat))
@@ -364,10 +413,14 @@ do isol = 1, nfmodsol
   !     11) mise a jour du tableau solva
   !     ================================
 
-  solution_sol(isol)%temp_sol = tsplus - tkelvi
-  solution_sol(isol)%tempp = tsplus*((ps/pres1)**((rair/cp0)*           &
-       (1.d0+(rvsra-cpvcpa)*qvsplu)))
-  solution_sol(isol)%total_water = qvsplu
+  ! Current to previous
+  bvara_tempp(isol) = bvar_tempp(isol)
+  bvara_total_water(isol) = bvar_total_water(isol)
+
+  bvar_temp_sol   (isol) = tsplus - tkelvi
+  bvar_tempp      (isol) = tsplus*((ps/pres1)**((rair/cp0) * &
+                           (1.d0+(rvsra-cpvcpa)*qvsplu)))
+  bvar_total_water(isol) = qvsplu
 
 enddo
 

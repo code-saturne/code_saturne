@@ -83,7 +83,7 @@ typedef enum {
 } cs_atmo_aerosol_type_t;
 
 /*----------------------------------------------------------------------------
- * Atmospheric universal funcitons
+ * Atmospheric universal functions
  *----------------------------------------------------------------------------*/
 
 typedef enum {
@@ -95,6 +95,22 @@ typedef enum {
 
 } cs_atmo_universal_functions_t;
 
+/*----------------------------------------------------------------------------
+ * Atmospheric soil model
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  /*! 5 categories: water, forest, diverse, mineral, building */
+  CS_ATMO_SOIL_5_CAT = 0,
+  /*! 7 categories: water, forest, diverse, mineral, diffuse buildings,
+     mixtie buildings, dense buildings  */
+  CS_ATMO_SOIL_7_CAT = 1,
+  /*! Roughness length classification of Corine land cover classes
+      Julieta Silva et al. doi=10.1.1.608.2707 */
+  CS_ATMO_SOIL_23_CAT = 2,
+
+} cs_atmo_soil_cat_t;
 
 /*============================================================================
  * Type definitions
@@ -135,6 +151,9 @@ typedef struct {
   /*! numbers of time steps for the meteo profiles */
   /*! Number of vertical levels */
   int nbmetm;
+
+  /*! 1-D radiative model (0 off, 1 on) */
+  int radiative_model_1d;
   int nbmaxt;
   /*! Domain orientation (angle in degree between y direction and north),
    * 0 by default */
@@ -231,25 +250,34 @@ typedef struct {
   /*! Universal function Phi_h for unstable condition */
   int meteo_phih_u;
 
-  /* meteo u profiles */
+  /*! meteo u profiles */
   cs_real_t *u_met;
-  /* meteo v profiles */
+  /*! meteo v profiles */
   cs_real_t *v_met;
-  /* meteo turbulent kinetic energy profile */
+  /*! meteo turbulent kinetic energy profile */
   cs_real_t *ek_met;
-  /* meteo turbulent dissipation profile */
+  /*! meteo turbulent dissipation profile */
   cs_real_t *ep_met;
 
-  /* Altitudes of the dynamic profiles */
+  /*! Altitudes of the dynamic profiles */
   cs_real_t *z_dyn_met;
-  /* Altitudes of the temperature profile */
+  /*! Altitudes of the temperature profile */
   cs_real_t *z_temp_met;
-  /* Time (in seconds) of the meteo profile */
+  /*! Time (in seconds) of the meteo profile */
   cs_real_t *time_met;
-  /* Hydrostatic pressure from Laplace integration */
+  /*! Hydrostatic pressure from Laplace integration */
   cs_real_t *hyd_p_met;
-  /* potential temperature profile */
+  /*! potential temperature profile */
   cs_real_t *pot_t_met;
+  /*! Soil model (1: on, 0: off) */
+  int soil_model;
+  /*! Soil categories:
+   * - CS_ATMO_SOIL_5_CAT
+   * - CS_ATMO_SOIL_7_CAT
+   * - CS_ATMO_SOIL_23_CAT */
+  cs_atmo_soil_cat_t soil_cat;
+  /*! Soil zone id (or -1 if inactive) */
+  int soil_zone_id;
 
 } cs_atmo_option_t;
 
@@ -332,6 +360,13 @@ extern cs_atmo_chemistry_t *cs_glob_atmo_chemistry;
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+ /*! add properties fields */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_add_property_fields(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

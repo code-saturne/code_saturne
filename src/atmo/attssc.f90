@@ -123,7 +123,7 @@ if (ippmod(iatmos).ge.1.and.iatra1.ge.1.and.iirayo.eq.0) then
     allocate(ray3Dst(ncel))
 
     ! Call the 1D radiative model
-    ! Compute the divergence of the ir and solar radiative fluxes:
+    ! Compute the divergence of the IR and solar radiative fluxes:
     call atr1vf
 
     ! Cressman interpolation of the 1D radiative fluxes on the 3D mesh:
@@ -160,7 +160,7 @@ if (ippmod(iatmos).ge.1.and.iatra1.ge.1.and.iirayo.eq.0) then
 endif
 
 !===============================================================================
-! 3. Take into source terms fort thetal, qw and nc due to sedimentation of drops
+! 3. Take into source terms for thetal, qw and nc due to sedimentation of drops
 !===============================================================================
 ! FIXME gravity is assumed to follow z-axis direction
 

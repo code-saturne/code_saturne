@@ -50,6 +50,8 @@ subroutine iniusi
 ! Module files
 !===============================================================================
 
+use atincl
+use atsoil, only:nbrsol, tab_sol
 use paramx
 use cstnum
 use dimens
@@ -84,7 +86,9 @@ implicit none
 integer          nmodpp
 integer          nscmax
 integer          l_size, f_id
+integer          error, n_elts
 double precision relaxp, l_cp(1), l_xmasm(1), l_cv(1)
+integer, dimension(:), pointer :: elt_ids
 
 type(var_cal_opt) :: vcopt
 
@@ -255,18 +259,55 @@ call csivis
 
 nscmax = nscamx
 
-! ---> Physique particuliere : darcy
+!===============================================================================
+! Scepcific physics modules
+!===============================================================================
+! Note: part of what is inside ppini1 could be moved here
+! so that usipsu / cs_user_parameters can be used by the user to modify default
+! settings
+
+! Ground water flow (Darcy)
+
 
 if (ippmod(idarcy).ge.0) then
   call daini1
 endif
 
+! Compressible
 call field_get_id_try('velocity', f_id)
 if (f_id .ge. 0) then
   if (ippmod(icompf).ge.0) then
     call cs_runaway_check_define_field_max(f_id, 1.0d5)
   else
     call cs_runaway_check_define_field_max(f_id, 1.0d4)
+  endif
+endif
+
+! Atmospheric module
+if (ippmod(iatmos).ge.0) then
+  ! Some advanced init/allocation for the soil model
+  if (iatsoil.ge.0) then
+
+    ! Get the number of sol only (warning, number of element of the zone not yet
+    ! computed)
+    call atmo_get_soil_zone(n_elts, nbrsol, elt_ids)
+
+    ! Allocation of table of values
+    allocate(tab_sol(nbrsol),stat = error)
+
+    if (error /= 0) then
+      write(nfecra,*) "Allocation error of atmodsol::tab_sol"
+      call csexit(1)
+    endif
+
+    ! First pass, default soil categories parameters function of the number
+    ! of soil. Can be modified by the user
+    call solcat(1)
+
+    if (error /= 0) then
+      write(nfecra,*) "Allocation error of atmodsol::tab_sol"
+      call csexit(1)
+    endif
   endif
 endif
 

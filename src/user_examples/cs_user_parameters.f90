@@ -653,6 +653,16 @@ irdu = 1
 
 !< [usati1]
 
+!< [usatsoil]
+! Example to modify the soil parameters if activated
+if (iatsoil.eq.1) then
+  ! Example to modify some Soil constants for minerals (from Wangara test case)
+  tab_sol(4)%csol = 1.7e-5
+  tab_sol(4)%rugthe = 0.0012
+  tab_sol(4)%rugdyn = 0.0012
+endif
+!< [usatsoil]
+
 !----
 ! Formats
 !----

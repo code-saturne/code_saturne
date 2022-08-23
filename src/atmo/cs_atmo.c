@@ -69,6 +69,7 @@
 #include "cs_equation_iterative_solve.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
+#include "cs_post.h"
 #include "cs_prototypes.h"
 #include "cs_thermal_model.h"
 #include "cs_turbulence_model.h"
@@ -123,6 +124,7 @@ static cs_atmo_option_t  _atmo_option = {
   .nbmetd = 0,
   .nbmett = 0,
   .nbmetm = 0,
+  .radiative_model_1d = 0,
   .nbmaxt = 0,
   .domain_orientation = 0.,
   .compute_z_ground = false,
@@ -157,15 +159,18 @@ static cs_atmo_option_t  _atmo_option = {
   .meteo_phih_s = 0, /* Cheng 2005 by default */
   .meteo_phim_u = 1, /* Hogstrom 1988 by default */
   .meteo_phih_u = 1, /* Hogstrom 1988 by default */
-  .z_dyn_met  = NULL,
-  .z_temp_met = NULL,
   .u_met      = NULL,
   .v_met      = NULL,
+  .ek_met     = NULL,
+  .ep_met     = NULL,
+  .z_dyn_met  = NULL,
+  .z_temp_met = NULL,
   .time_met   = NULL,
   .hyd_p_met  = NULL,
   .pot_t_met  = NULL,
-  .ek_met     = NULL,
-  .ep_met     = NULL
+  .soil_model = 0, /* off */
+  .soil_cat = 0, /* CS_ATMO_SOIL_5_CAT */
+  .soil_zone_id = -1
 };
 
 static const char *_univ_fn_name[] = {N_("Cheng 2005"),
@@ -237,7 +242,6 @@ void
 cs_f_atmo_get_aero_conc_file_name(int           name_max,
                                   const char  **name,
                                   int          *name_len);
-
 void
 cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **syear,
@@ -270,8 +274,10 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **nbmetd,
                        int                    **nbmett,
                        int                    **nbmetm,
+                       int                    **radiative_model_1d,
                        int                    **nbmaxt,
-                       cs_real_t              **meteo_zi);
+                       cs_real_t              **meteo_zi,
+                       int                    **soil_model);
 
 void
 cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
@@ -288,6 +294,11 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
                               int         dim_pot_t_met[2],
                               int         dim_ek_met[2],
                               int         dim_ep_met[2]);
+
+void
+cs_f_atmo_get_soil_zone(cs_lnum_t  *n_elts,
+                        int        *n_soil_cat,
+                        cs_lnum_t  **elt_ids);
 
 void
 cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
@@ -1279,8 +1290,10 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **nbmetd,
                        int                    **nbmett,
                        int                    **nbmetm,
+                       int                    **radiative_model_1d,
                        int                    **nbmaxt,
-                       cs_real_t              **meteo_zi)
+                       cs_real_t              **meteo_zi,
+                       int                    **soil_model)
 {
   *ps        = &(_atmo_constants.ps);
   *syear     = &(_atmo_option.syear);
@@ -1303,8 +1316,10 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *nbmetd     = &(_atmo_option.nbmetd);
   *nbmett     = &(_atmo_option.nbmett);
   *nbmetm     = &(_atmo_option.nbmetm);
+  *radiative_model_1d = &(_atmo_option.radiative_model_1d);
   *nbmaxt     = &(_atmo_option.nbmaxt);
   *meteo_zi   = &(_atmo_option.meteo_zi);
+  *soil_model = &(_atmo_option.soil_model);
   *model = &(_atmo_chem.model);
   *n_species = &(_atmo_chem.n_species);
   *n_reactions = &(_atmo_chem.n_reactions);
@@ -1315,6 +1330,40 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *init_aero_with_lib = &(_atmo_chem.init_aero_with_lib);
   *n_layer = &(_atmo_chem.n_layer);
   *n_size = &(_atmo_chem.n_size);
+}
+
+void
+cs_f_atmo_get_soil_zone(cs_lnum_t  *n_elts,
+                        int        *n_soil_cat,
+                        cs_lnum_t  **elt_ids)
+{
+  *n_elts = 0;
+  *elt_ids = NULL;
+
+  /* Not defined */
+  if (cs_glob_atmo_option->soil_zone_id < 0) {
+    *n_soil_cat = 0;
+    return;
+  }
+
+  cs_zone_t *z = cs_boundary_zone_by_id(cs_glob_atmo_option->soil_zone_id);
+  *elt_ids = z->elt_ids;
+  *n_elts = z->n_elts;
+  switch (cs_glob_atmo_option->soil_cat) {
+    case CS_ATMO_SOIL_5_CAT:
+      *n_soil_cat = 5;
+      break;
+    case CS_ATMO_SOIL_7_CAT:
+      *n_soil_cat = 7;
+      break;
+    case CS_ATMO_SOIL_23_CAT:
+      *n_soil_cat = 23;
+      break;
+    default:
+      *n_soil_cat = 0;
+      break;
+  }
+
 }
 
 void
@@ -1432,6 +1481,201 @@ cs_f_atmo_chem_finalize(void)
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * add properties fields
+ *----------------------------------------------------------------------------*/
+
+void
+cs_atmo_add_property_fields(void)
+{
+  cs_field_t *f;
+  int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
+  bool has_previous = false;
+  const int klbl   = cs_field_key_id("label");
+  const int keyvis = cs_field_key_id("post_vis");
+  const int keylog = cs_field_key_id("log");
+  const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+
+  int z_id = cs_glob_atmo_option->soil_zone_id;
+
+  if (z_id > -1) {
+    const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
+    int soil_num = 5;
+    switch (cs_glob_atmo_option->soil_cat) {
+      case CS_ATMO_SOIL_5_CAT:
+        soil_num = 5;
+        break;
+      case CS_ATMO_SOIL_7_CAT:
+        soil_num = 7;
+        break;
+      case CS_ATMO_SOIL_23_CAT:
+        soil_num = 23;
+        break;
+    }
+
+    f = cs_field_create("atmo_soil_percentages",
+                        field_type,
+                        z->location_id,
+                        soil_num + 1, /* dim */
+                        false); /* has_previous */
+    //FIXME not handled yet cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keyvis, 0);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Soil percentages");
+
+    /* Boundary variable fields for the soil */
+    /*---------------------------------------*/
+
+    /* Soil surface temperature in Celcius */
+    f = cs_field_create("soil_temperature",
+                        field_type,
+                        z->location_id,
+                        1, /* dim */
+                        false); /* has_previous */
+    cs_field_set_key_int(f, keyvis, 0);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Soil T");
+
+    /* Soil surface potential temperature (K) */
+    f = cs_field_create("soil_pot_temperature",
+                        field_type,
+                        z->location_id,
+                        1, /* dim */
+                        true); /* has_previous */
+    cs_field_set_key_int(f, keyvis, 0);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Soil theta");
+
+    /* Soil total water content */
+    f = cs_field_create("soil_total_water",
+                        field_type,
+                        z->location_id,
+                        1, /* dim */
+                        true); /* has_previous */
+    cs_field_set_key_int(f, keyvis, 0);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Soil qw");
+
+    /* ratio of the shallow reservoir water content to its maximum capacity */
+    f = cs_field_create("soil_w1",
+                        field_type,
+                        z->location_id,
+                        1, /* dim */
+                        false); /* has_previous */
+    cs_field_set_key_int(f, keyvis, 0);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Soil w1");
+
+    /* ratio of the deep reservoir water content to its maximum capacity */
+    f = cs_field_create("soil_w2",
+                        field_type,
+                        z->location_id,
+                        1, /* dim */
+                        false); /* has_previous */
+    cs_field_set_key_int(f, keyvis, 0);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Soil w2");
+
+    /* Boundary parameters fields characterizing soil */
+    /*------------------------------------------------*/
+
+    f = cs_field_create("boundary_albedo",
+                        field_type,
+                        /* Note: as for boundary_roughness,
+                         * location can be reduced in the future */
+                        CS_MESH_LOCATION_BOUNDARY_FACES,
+                        1, /* dim */
+                        false); /* has_previous */
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Albedo");
+
+    f = cs_field_create("boundary_emissivity",
+                        field_type,
+                        /* Note: as for boundary_roughness,
+                         * location can be reduced in the future */
+                        CS_MESH_LOCATION_BOUNDARY_FACES,
+                        1, /* dim */
+                        false); /* has_previous */
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Emissivity");
+
+    f = cs_field_create("boundary_vegetation",
+                        field_type,
+                        z->location_id,
+                        1, /* dim */
+                        false); /* has_previous */
+    cs_field_set_key_int(f, keyvis, 0);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Vegetation");
+
+    /* maximum water capacity of shallow reservoir */
+    f = cs_field_create("soil_water_capacity",
+                        field_type,
+                        z->location_id,
+                        1, /* dim */
+                        false); /* has_previous */
+    cs_field_set_key_int(f, keyvis, 0);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Soil c1w");
+
+    /* ratio of the maximum water capacity of the shallow reservoir to the deep
+     * reservoir [0,1] */
+    f = cs_field_create("soil_water_ratio",
+                        field_type,
+                        z->location_id,
+                        1, /* dim */
+                        false); /* has_previous */
+    cs_field_set_key_int(f, keyvis, 0);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Soil c2w");
+
+    /* Thermal inertia of the soil */
+    f = cs_field_create("soil_thermal_capacity",
+                        field_type,
+                        z->location_id,
+                        1, /* dim */
+                        false); /* has_previous */
+    cs_field_set_key_int(f, keyvis, 0);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Soil Cp");
+
+    f = cs_field_create("soil_r1",
+                        field_type,
+                        z->location_id,
+                        1, /* dim */
+                        false); /* has_previous */
+    cs_field_set_key_int(f, keyvis, 0);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Soil r1");
+
+    f = cs_field_create("soil_r2",
+                        field_type,
+                        z->location_id,
+                        1, /* dim */
+                        false); /* has_previous */
+    cs_field_set_key_int(f, keyvis, 0);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Soil r2");
+
+    /* Deep soil temperature (in Celsius)
+     * FIXME potential value? */
+    f = cs_field_create("soil_temperature_deep",
+                        field_type,
+                        z->location_id,
+                        1, /* dim */
+                        false); /* has_previous */
+    cs_field_set_key_int(f, keyvis, 0);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Soil deep T");
+
+
+
+  }
+
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

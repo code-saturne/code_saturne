@@ -212,7 +212,7 @@ real(c_double), pointer, save:: yl93
 
 ! 2.3 Data specific to the meteo profile above the domain
 !--------------------------------------------------------
-!> Number of vertical levels (cf. 1D radiative scheme
+!> Number of vertical levels (cf. 1-D radiative scheme)
 integer(c_int), pointer, save:: nbmaxt
 
 !> flag to compute the hydrostastic pressure by Laplace integration
@@ -249,7 +249,7 @@ real(c_double), pointer, save :: meteo_zi
 !> flag for the use of the 1d atmo radiative model
 !> - 0 no use (default)
 !> - 1 use
-integer, save:: iatra1
+integer(c_int), pointer, save :: iatra1
 
 !> 1d radiative model pass frequency
 integer, save:: nfatr1
@@ -320,16 +320,10 @@ double precision, allocatable, dimension(:,:) :: rayi, rayst
 !> Upward and downward radiative fluxes (infrared, solar) along each vertical
 double precision, allocatable, dimension(:,:) :: iru, ird, solu, sold
 
-! 3.0 Data specific to the ground model
+! 3.0 Data specific to the soil model
 !-------------------------------------------------------------------------------
-!> Flag to use the ground model (0 off, 1 on)
-integer, save:: iatsoil = 0
-
-!> Water content of the first ground reservoir
-double precision, save:: w1ini
-
-!> Water content of the second ground reservoir
-double precision, save:: w2ini
+!> Flag to use the soil model (0 off, 1 on)
+integer(c_int), pointer, save:: iatsoil
 
 !> Do we compute z ground every where?
 logical(c_bool), pointer, save :: compute_z_ground
@@ -437,8 +431,8 @@ double precision, save:: zaero
         ichemistry, nespg, nrg, chem_with_photo,                        &
         iaerosol, frozen_gas_chem, init_gas_with_lib,                   &
         init_aero_with_lib, n_aero, n_sizebin, imeteo,                  &
-        nbmetd, nbmett, nbmetm, nbmaxt,                                 &
-        meteo_zi)                                                       &
+        nbmetd, nbmett, nbmetm, iatra1, nbmaxt,                         &
+        meteo_zi, iatsoil)                                              &
       bind(C, name='cs_f_atmo_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -455,8 +449,9 @@ double precision, save:: zaero
       type(c_ptr), intent(out) :: init_gas_with_lib, init_aero_with_lib
       type(c_ptr), intent(out) :: n_aero, n_sizebin, chem_with_photo
       type(c_ptr), intent(out) :: imeteo
-      type(c_ptr), intent(out) :: nbmetd, nbmett, nbmetm, nbmaxt
+      type(c_ptr), intent(out) :: nbmetd, nbmett, nbmetm, iatra1, nbmaxt
       type(c_ptr), intent(out) :: meteo_zi
+      type(c_ptr), intent(out) :: iatsoil
     end subroutine cs_f_atmo_get_pointers
 
     !---------------------------------------------------------------------------
@@ -593,7 +588,7 @@ double precision, save:: zaero
     !> \brief Calculation of the density of humid air.
 
     !> \param[in]  ywm           air water mass fraction
-    !> \param[in]  t_liq         pressure
+    !> \param[in]  t_liq         liquid temperature
     !> \param[in]  p             pressure
     !> \param[out] yw_liq        liquid water mass fraction
     !> \param[out] t_h           temperature of humid air in Celsius
@@ -657,9 +652,37 @@ double precision, save:: zaero
 
     end function cs_mo_psih
 
+    subroutine cs_f_atmo_get_soil_zone(n_faces, n_soil_cat, face_ids)  &
+        bind(C, name='cs_f_atmo_get_soil_zone')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(out) :: n_faces
+      integer(c_int), intent(out) :: n_soil_cat
+      type(c_ptr), intent(out) :: face_ids
+    end subroutine cs_f_atmo_get_soil_zone
+
   end interface
 
 contains
+
+  !=============================================================================
+
+  subroutine atmo_get_soil_zone(n_faces, n_soil_cat, face_ids_p)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+    integer(c_int), intent(out) :: n_faces
+    integer(c_int), intent(out) :: n_soil_cat
+    integer, dimension(:), pointer, intent(out) ::face_ids_p
+
+    ! Local variables
+    type(c_ptr) :: c_p
+
+    call cs_f_atmo_get_soil_zone(n_faces, n_soil_cat, c_p)
+    call c_f_pointer(c_p, face_ids_p, [n_faces])
+
+  end subroutine atmo_get_soil_zone
 
     !=============================================================================
 
@@ -738,8 +761,9 @@ contains
     type(c_ptr) :: c_modelaero, c_frozen_gas_chem, c_nlayer, c_nsize
     type(c_ptr) :: c_init_gas_with_lib, c_init_aero_with_lib, c_chem_with_photo
     type(c_ptr) :: c_imeteo
-    type(c_ptr) :: c_nbmetd, c_nbmett, c_nbmetm, c_nbmaxt
+    type(c_ptr) :: c_nbmetd, c_nbmett, c_nbmetm, c_iatra1, c_nbmaxt
     type(c_ptr) :: c_meteo_zi
+    type(c_ptr) :: c_iatsoil
 
     call cs_f_atmo_get_pointers(c_ps,             &
       c_syear, c_squant, c_shour, c_smin, c_ssec, &
@@ -754,8 +778,8 @@ contains
       c_init_gas_with_lib,                        &
       c_init_aero_with_lib, c_nlayer,             &
       c_nsize, c_imeteo,                          &
-      c_nbmetd, c_nbmett, c_nbmetm, c_nbmaxt,     &
-      c_meteo_zi)
+      c_nbmetd, c_nbmett, c_nbmetm, c_iatra1, c_nbmaxt, &
+      c_meteo_zi, c_iatsoil)
 
     call c_f_pointer(c_ps, ps)
     call c_f_pointer(c_syear, syear)
@@ -792,8 +816,10 @@ contains
     call c_f_pointer(c_nbmetd, nbmetd)
     call c_f_pointer(c_nbmett, nbmett)
     call c_f_pointer(c_nbmetm, nbmetm)
+    call c_f_pointer(c_iatra1, iatra1)
     call c_f_pointer(c_nbmaxt, nbmaxt)
     call c_f_pointer(c_meteo_zi, meteo_zi)
+    call c_f_pointer(c_iatsoil, iatsoil)
 
     return
 
@@ -847,7 +873,7 @@ call c_f_pointer(c_ep_met, epmet, [dim_ep_met])
 
 if (imeteo.gt.0) then
 
-  ! NB : only ztmet,ttmet,qvmet,ncmet are extended to 11000m if iatr1=1
+  ! NB : only ztmet,ttmet,qvmet,ncmet are extended to 11000m if iatra1=1
   !           rmet,tpmet,phmet
   n_level = max(1, nbmetd)
   n_times = max(1, nbmetm)

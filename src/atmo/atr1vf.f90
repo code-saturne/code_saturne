@@ -56,15 +56,19 @@ implicit none
 ! Local variables
 integer k, ii, jj
 integer k1
+integer ifac, isol
 integer ico2,imer1
 integer ideb, icompt
 integer kmray, ktamp
 
 double precision heuray, albedo, emis, foir, fos
 double precision xvert, yvert
+double precision surf_zone
 double precision zrac,fpond,rap,tmoy,rhum,dum
 
-integer , allocatable :: cressm(:), interp(:)
+integer, allocatable :: cressm(:), interp(:)
+integer, dimension(:), pointer :: elt_ids
+
 double precision, allocatable, dimension(:) :: temray, qvray, qlray, ncray
 double precision, allocatable, dimension(:) :: fneray, romray, preray
 double precision, allocatable, dimension(:) :: zproj, ttvert, qvvert, romvert
@@ -74,6 +78,10 @@ double precision, allocatable, dimension(:,:,:) :: coords(:,:,:)
 double precision, dimension(:), pointer :: crom, cpro_pcliq
 double precision, dimension(:), pointer :: cvara_totwt, cpro_tempc, cvara_ntdrp
 double precision, dimension(:), pointer :: nebdia
+double precision, pointer, dimension(:)   :: bvar_tempp
+double precision, pointer, dimension(:)   :: bvar_total_water
+double precision, pointer, dimension(:)   :: bpro_albedo ! all boundary faces
+double precision, pointer, dimension(:)   :: bpro_emissi ! all boundary faces
 
 save ideb
 data ideb/0/
@@ -142,12 +150,12 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
   ! 2.  Computing long-wave and short-wave radiative fluxes
   !=============================================================================
 
-  do ii = 1, nvert
+  do ii = 1, nvert ! (ixj) index
 
     xvert = xyvert(ii,1)
     yvert = xyvert(ii,2)
 
-    do jj = 1, kmx
+    do jj = 1, kmx ! k index
       coords(1,jj,ii) = xvert
       coords(2,jj,ii) = yvert
       coords(3,jj,ii) = zvert(jj)
@@ -158,6 +166,13 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     call grimap(igrid, nvert*kmx, coords)
   endif
 
+  ! TODO grid interpolation must be refurbished to get a P0 interpolation
+  ! and not a point-point interpolation
+  ! (i.e. we need to compute the mean of all code_saturne cells for a layer)
+  ! A way could be to tag all nodes of the mesh is they belong to a ijk cell
+  ! and then consider that a cell (or a face) belongs to a ijk if one node is
+  ! in it (i.e. there is a non-zero intersection between the two).
+  ! Then we can renormalise by the ratio "Volume(ijk)/SUM(cell_f_vol)"
   call gripol(igrid, cpro_tempc, ttvert)
   call gripol(igrid, crom, romvert)
 
@@ -179,16 +194,84 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     call gripol(igrid, nebdia, fnvert)
   endif
 
+  ! Interpolate soil (P0 interpolation), same for all verticals for the moment
+
+  if (iatsoil.ge.1) then
+
+    call atmo_get_soil_zone(nfmodsol, nbrsol, elt_ids)
+
+    ! Note: we use previous values of the soil to be coherent with
+    ! previsous datasetting and what have seen the fluid.
+    call field_get_val_prev_s_by_name("soil_pot_temperature", bvar_tempp)
+    call field_get_val_prev_s_by_name("soil_total_water", bvar_total_water)
+
+    call field_get_val_s_by_name("boundary_albedo", bpro_albedo)
+    call field_get_val_s_by_name("boundary_emissivity", bpro_emissi)
+
+    soil_mean%albedo = 0.d0
+    soil_mean%emissi = 0.d0
+
+    soil_mean%density = 0.d0
+    soil_mean%ttsoil  = 0.d0
+    soil_mean%totwat  = 0.d0
+    surf_zone = 0.d0
+
+    do isol = 1, nfmodsol
+
+      ifac = elt_ids(isol) + 1 ! C > Fortran
+
+      ! Density: property of the boundary face:
+      soil_mean%density = soil_mean%density + surfbn(ifac) * crom(ifabor(ifac))
+
+      ! Potential temperature for consitency with the code before, TODO is it correct?
+      soil_mean%ttsoil  = soil_mean%ttsoil  + surfbn(ifac) * (bvar_tempp(isol) - tkelvi)
+      soil_mean%totwat  = soil_mean%totwat  + surfbn(ifac) * bvar_total_water(isol)
+
+      soil_mean%albedo = soil_mean%albedo + surfbn(ifac) * bpro_albedo(ifac)
+      soil_mean%emissi = soil_mean%emissi + surfbn(ifac) * bpro_emissi(ifac)
+
+      ! Surface of the zone, could use it directly in C
+      surf_zone = surf_zone + surfbn(ifac)
+    enddo
+
+    if (irangp.ge.0) then
+      call parsom(soil_mean%density)
+      call parsom(soil_mean%ttsoil )
+      call parsom(soil_mean%totwat )
+      call parsom(soil_mean%albedo )
+      call parsom(soil_mean%emissi )
+      call parsom(surf_zone)
+    endif
+
+    soil_mean%density = soil_mean%density / surf_zone
+    soil_mean%ttsoil  = soil_mean%ttsoil  / surf_zone
+    soil_mean%totwat  = soil_mean%totwat  / surf_zone
+    soil_mean%albedo  = soil_mean%albedo  / surf_zone
+    soil_mean%emissi  = soil_mean%emissi  / surf_zone
+    ! For now, all verticals have the same value
+    ! TODO: automatic treatment for pressure?
+    do ii = 1, nvert
+      soilvert(ii)%albedo = soil_mean%albedo
+      soilvert(ii)%emissi = soil_mean%emissi
+      soilvert(ii)%ttsoil = soil_mean%ttsoil
+      soilvert(ii)%totwat = soil_mean%totwat
+      soilvert(ii)%density = soil_mean%density
+    enddo
+  endif
+
   ! --- Loop on the vertical array:
 
   do ii = 1, nvert
+
+    ! FIXME the x, y position plays no role...
+    ! interpolation must be reviewed
     xvert = xyvert(ii,1)
     yvert = xyvert(ii,2)
 
     ! Soil constants
     albedo = soilvert(ii)%albedo
     emis = soilvert(ii)%emissi
-    fos = soilvert(ii)%fos
+
     imer1 = 0
 
     ! 2.1 Profiles used for the computation of the radiative fluxes

@@ -38,15 +38,15 @@ integer, save :: nbrsol
 !> kind of soil (water, forest, urban ...) and associated constantes
 type categorie_sol
 !> Dynamic roughness length
-  double precision  :: rugdyn
+  double precision  :: rugdyn ! => field
 !> Thermal roughness length
-  double precision  :: rugthe
+  double precision  :: rugthe! => field
 !> Albedo
-  double precision  :: albedo
+  double precision  :: albedo! => field
 !> emissivity
-  double precision  :: emissi
+  double precision  :: emissi ! => field
 !> Vegetation index
-  double precision  :: vegeta
+  double precision  :: vegeta !> field
 !> maximum water capacity of shallow reservoir
   double precision  :: c1w
 !> ratio of the maximum water capacity of the shallow reservoir to the deep
@@ -64,21 +64,6 @@ type categorie_sol
   character(len=10) :: nomcat
 end type categorie_sol
 
-!> Class definition of soil_variables
-type variables_sol
-  type(categorie_sol) :: constantes
-!> Soil temperature (in Celsius)
-  double precision :: temp_sol
-!> Soil potential temperature
-  double precision :: tempp
-!> total water content
-  double precision :: total_water
-!> ratio of the shallow reservoir water content to its maximum capacity
-  double precision :: w1
-!> ratio of the deep reservoir water content to its maximum capacity
-  double precision :: w2
-end type variables_sol
-
 ! Initialisation values for soil variables
 ! (filled in usispu/cs_user_parameters)
 
@@ -92,13 +77,7 @@ double precision :: qvsini = 0.d0
 double precision :: tmer = 20.d0
 
 !> array of the different features of each soil category
-type(categorie_sol) , dimension(:) , allocatable :: tab_sol
-!> index of boundary faces with soil features
-integer , dimension(:) , allocatable, save       :: indsol
-!> percentage of soil's category in each boundary face
-integer , dimension(:,:) , allocatable           :: pourcent_sol
-!> Class soil variable dimension
-type(variables_sol) , dimension(:) , allocatable, save :: solution_sol
+type(categorie_sol), dimension(:) , allocatable :: tab_sol
 
 !> Defines the soil constants and variables of the vertical arrays
 !> used for the 1D radiative model
@@ -114,17 +93,19 @@ type soil_tab
   !> total water content
   double precision :: totwat
   !> surface pressure
-    double precision :: pressure
+  double precision :: pressure
   !> density
   double precision :: density
-  !> ir downcoming flux
+  !> IR downcoming flux
   double precision :: foir
   !> solar radation absorbed by the soil
   double precision :: fos
-  end type soil_tab
+end type soil_tab
 
 !> Class soilvert dimension
 type(soil_tab), dimension(:), allocatable, save :: soilvert
+type(soil_tab), save :: soil_mean
+
 !> \}
 !=============================================================================
 

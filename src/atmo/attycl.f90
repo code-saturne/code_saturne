@@ -100,8 +100,8 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-integer          ifac, iel, izone
-integer          ii
+integer          ifac, iel, izone, ilelt
+integer          ii, nbrsol, nelts
 integer          jsp, isc, ivar
 integer          fid_axz
 double precision d2s3, zent, vs, xuent, xvent, xwent
@@ -110,6 +110,9 @@ double precision xkent, xeent, tpent, qvent,ncent
 double precision xcent
 double precision viscla, uref2, rhomoy, dhy, xiturb
 double precision rscp, pp, dum
+
+integer, dimension(:), pointer :: elt_ids
+
 double precision, dimension(:), pointer :: brom, coefap, viscl
 double precision, dimension(:,:), pointer :: cpro_met_vel
 double precision, dimension(:), pointer :: cpro_met_potemp
@@ -118,6 +121,9 @@ double precision, dimension(:), pointer :: cpro_met_k, cpro_met_eps
 double precision, dimension(:), pointer :: cpro_met_p
 double precision, dimension(:), pointer :: cpro_met_rho
 double precision, dimension(:), pointer :: cpro_met_axz
+double precision, pointer, dimension(:)   :: bvar_temp_sol
+double precision, pointer, dimension(:)   :: bvar_tempp
+double precision, pointer, dimension(:)   :: bvar_total_water
 
 ! arrays for cressman interpolation
 double precision , dimension(:),allocatable :: u_bord
@@ -162,6 +168,42 @@ endif
 call field_get_id_try('meteo_shear_anisotropy', fid_axz)
 if (fid_axz.ne.-1) then
   call field_get_val_s(fid_axz, cpro_met_axz)
+endif
+
+! Soil atmosphere boundary conditions
+!------------------------------------
+if (iatsoil.eq.1) then
+  call field_get_val_s_by_name("soil_temperature", bvar_temp_sol)
+  call field_get_val_s_by_name("soil_pot_temperature", bvar_tempp)
+  call field_get_val_s_by_name("soil_total_water", bvar_total_water)
+  call atmo_get_soil_zone(nelts, nbrsol, elt_ids)
+
+  do ilelt = 1, nelts
+
+    ifac = elt_ids(ilelt) + 1 ! C > Fortran
+
+    ! Rough wall if no specified
+    ! Note: roughness and thermal roughness are computed in solmoy
+    if (itypfb(ifac).eq.0) itypfb(ifac) = iparug
+
+    if (iscalt.ne.-1) then
+      ! If not yet specified
+      if (rcodcl(ifac,isca(iscalt),1).gt.rinfin*0.5d0)  then
+        ! Dirichlet with wall function Expressed directly in term of
+        ! potential temperature
+        icodcl(ifac,isca(iscalt))   = -6
+        rcodcl(ifac,isca(iscalt),1) = bvar_tempp(ilelt)
+      endif
+    endif
+    if (ippmod(iatmos).eq.2) then
+      ! If not yet specified
+      if (rcodcl(ifac,isca(iymw),1).gt.rinfin*0.5d0)  then
+        icodcl(ifac, isca(iymw)) = 6
+        rcodcl(ifac, isca(iymw),1) = bvar_total_water(ilelt)
+      endif
+    endif
+
+  enddo
 endif
 
 !===============================================================================
@@ -606,10 +648,6 @@ if (iaerosol.ne.CS_ATMO_AEROSOL_OFF) then
 
 endif
 
-!----
-! FORMATS
-!----
-
 ! ---------------------------------
 ! clean up the 'imbrication'
 ! ---------------------------------
@@ -637,8 +675,13 @@ if (imbrication_flag)then
   endif
 endif
 
+!--------
+! Formats
+!--------
+
+
 !----
-! FIN
+! End
 !----
 
 return

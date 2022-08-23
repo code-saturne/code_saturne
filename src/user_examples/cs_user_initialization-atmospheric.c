@@ -90,6 +90,46 @@ cs_user_initialization(cs_domain_t     *domain)
   const cs_real_3_t *cell_cen
     = (cs_real_3_t *)domain->mesh_quantities->cell_cen;
 
+  /* Example to initialize percentage of type of soil for the soil module */
+
+  /* Initialization of the atmo_soil_percentages field
+   * It is of dimension "soil_number +1"
+   * default = 0
+   *  For 7 soil categories:
+   *   water  = 1
+   *   forest = 2
+   *   divers = 3
+   *   rocks  = 4
+   *   diffuse building = 5
+   *   mix building     = 6
+   *   dense building   = 7
+   *  For 5 soil categories
+   *   water  = 1
+   *   forest = 2
+   *   divers = 3
+   *   mineral = 4
+   *   building = 5
+   */
+
+  /*! [atmo_soil_init] */
+  if (cs_glob_atmo_option->soil_model == 1) {
+    cs_zone_t *z = cs_boundary_zone_by_id(cs_glob_atmo_option->soil_zone_id);
+
+    cs_field_t *f = cs_field_by_name("atmo_soil_percentages");
+
+    for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
+      for (cs_lnum_t soil_id = 0; soil_id < f->dim; soil_id++)
+        f->val[soil_id + f->dim * elt_id] = 0.;
+
+      /* 100% of mineral */
+      f->val[4 + f->dim * elt_id] = 100.;
+    }
+
+  }
+  /*! [atmo_soil_init] */
+
+  /* Example to initialize variables using 1-D meteo data */
+
   cs_real_t *cvar_k = NULL;
   cs_real_t *cvar_ep = NULL;
   cs_real_t *cvar_fb = NULL;

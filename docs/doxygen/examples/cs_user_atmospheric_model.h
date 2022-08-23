@@ -45,8 +45,19 @@
 
   \snippet cs_user_atmospheric_model.f90 imode_1
 
-  \section cs_user_atmospheric_model_usatsoil Data Entry for the atmospheric ground model
+  \section cs_user_atmospheric_model_usatsoil Data Entry for the atmospheric soil model
 
-  \snippet cs_user_atmospheric_model.f90 usatsoil
+  To activate the model, the user has to set the and to specify the zone id
+  on which the soil model is applied in \ref cs_user_parameters.c,
+  routine \ref cs_user_model:
+  \snippet cs_user_parameters-base.c atmo_soil_set
+
+  Then the user may change default coefficient values for soil categories
+  in \ref cs_user_parameters.f90, routine \ref usipsu
+  \snippet cs_user_parameters.f90 usatsoil
+
+  The user has to specify the percentage of each categories for all faces of
+  the soil zone in \ref cs_user_initialization.c:
+  \snippet cs_user_initialization-atmospheric.c atmo_soil_init
 
 */

@@ -123,7 +123,6 @@ if (ippmod(iatmos).ge.0) then
 
 endif
 
-
 !--------
 ! Formats
 !--------

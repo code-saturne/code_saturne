@@ -516,14 +516,6 @@ if (iporos.ge.1) then
 
 endif
 
-!===============================================================================
-! Initialization for the atmospheric soil model (1st pass)
-!===============================================================================
-
-if (ippmod(iatmos).ge.2.and.iatsoil.eq.1) then
-  call atmsol(1)
-endif
-
 !==============================================================================
 ! On appelle cs_user_wall_condensation lorqu'il y a sur un processeur
 ! au moins des cellules avec terme source de condensation.
@@ -638,11 +630,11 @@ iterns = -1
 call phyvar(nvar, nscal, iterns, dt)
 
 !===============================================================================
-! Initialization for the atmospheric soil model (2nd pass)
+! Initialization for the atmospheric soil model
 !===============================================================================
 
-if (ippmod(iatmos).ge.2.and.iatsoil.eq.1) then
-  call atmsol(2)
+if (ippmod(iatmos).ge.2) then
+  call atmsol()
 endif
 
 !===============================================================================

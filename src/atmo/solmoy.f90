@@ -23,26 +23,22 @@
 !> \brief Atmospheric soil module - Initialize ground level parameters from land use
 !
 !> \brief
-!>   calcul des coefficients du modele d'interface sol-atmosphere
-!>   on connait :
-!>-    - la surface occupee par chaque categorie de sol (pourcentage)
-!>       dans chaque maille (tableau indsol)
-!>-     - les valeurs des coefficients du modele d'interface sol-atm.
-!>       pour chaque categorie de sol (tableaux rugdyn,...,csol)
+!>   Compute soil-atmosphere coefficients
+!>   we knowx :
+!>    - the percentage of each category per face (boundary zone field)
+!>    - coefficients values for each category
 !>
-!>    on calcule pour chaque maille :
-!>       la moyenne des coefficients des categories de sol
-!>                  ponderee par la surface de chaque categorie
-!>    ainsi par exemple si on a 3 types de sol (eau, foret, bati)
-!>-     albedo(i,j) = albedo(eau  ) * %_surface_eau  (i,j)
-!>                 + albedo(foret) * %_surface_foret(i,j)
-!>                 + albedo(bati ) * %_surface_bati (i,j)
+!>   So we compute the average value for all faces of the zone
+!>    e.g. for 3 categories of soil (water, forest, building)
+!>     albedo(face) = albedo(water)    * % surface_water   (face)
+!>                  + albedo(forest)   * % surface_forest  (face)
+!>                  + albedo(building) * % surface_building(face)
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
 !  mode           name          role
 !______________________________________________________________________________!
-!> \param[out]   ierreu   code error
+!> \param[out]   ierreu         code error
 !-------------------------------------------------------------------------------
 
 subroutine solmoy ( ierreu )
@@ -64,6 +60,7 @@ use ppthch
 use ppincl
 use atincl
 use atsoil
+use field
 use mesh
 
 implicit none
@@ -76,30 +73,65 @@ integer          ierreu
 
 integer iirugdy,iirugth,iialbed,iiemiss,iicsol,iiveget
 integer iic1w,iic2w,iir1,iir2
-integer isol,n
+integer isol, n, ifac
 double precision codinv
 double precision rugdij,rugtij,albeij,emisij
 double precision vegeij,c1wij,c2wij,csolij
 double precision r1ij,r2ij
+double precision surf_zone
 double precision solmax(10),solmea(10),solmin(10)
-character(len=12) ::    solnom(10)
+character(len=12) :: solnom(10)
+
+integer, dimension(:), pointer :: elt_ids
+
+double precision, pointer, dimension(:)   :: bpro_rugdyn ! all boundary faces
+double precision, pointer, dimension(:)   :: bpro_rugthe ! all boundary faces
+double precision, pointer, dimension(:)   :: bpro_albedo ! all boundary faces
+double precision, pointer, dimension(:)   :: bpro_emissi ! all boundary faces
+double precision, pointer, dimension(:)   :: bpro_vegeta ! only zone faces
+double precision, pointer, dimension(:)   :: bpro_c1w    ! only zone faces
+double precision, pointer, dimension(:)   :: bpro_c2w    ! only zone faces
+double precision, pointer, dimension(:)   :: bpro_csol   ! only zone faces
+double precision, pointer, dimension(:)   :: bpro_r1     ! only zone faces
+double precision, pointer, dimension(:)   :: bpro_r2     ! only zone faces
+double precision, pointer, dimension(:)   :: bpro_tprof  ! only zone faces
+double precision, pointer, dimension(:,:) :: bpro_pourcent_sol ! only zone faces
 
 !  ================================================================
 !     1) initialisations
 !  ================================================================
 
+call field_get_val_s_by_name("boundary_roughness", bpro_rugdyn)
+call field_get_val_s_by_name("boundary_thermal_roughness", bpro_rugthe)
+call field_get_val_s_by_name("boundary_albedo", bpro_albedo)
+call field_get_val_s_by_name("boundary_emissivity", bpro_emissi)
+call field_get_val_s_by_name("boundary_vegetation", bpro_vegeta)
+call field_get_val_s_by_name("soil_water_capacity", bpro_c1w   )
+call field_get_val_s_by_name("soil_water_ratio", bpro_c2w   )
+call field_get_val_s_by_name("soil_thermal_capacity", bpro_csol  )
+call field_get_val_s_by_name("soil_r1", bpro_r1    )
+call field_get_val_s_by_name("soil_r2", bpro_r2    )
+call field_get_val_s_by_name("soil_temperature_deep", bpro_tprof )
+
+call field_get_val_v_by_name("atmo_soil_percentages", bpro_pourcent_sol )
+
+call atmo_get_soil_zone(nfmodsol, nbrsol, elt_ids)
+
 codinv = -999.d0
 do isol = 1, nfmodsol
-  solution_sol(isol)%constantes%rugdyn = codinv
-  solution_sol(isol)%constantes%rugthe = codinv
-  solution_sol(isol)%constantes%albedo = codinv
-  solution_sol(isol)%constantes%emissi = codinv
-  solution_sol(isol)%constantes%vegeta = codinv
-  solution_sol(isol)%constantes%c1w    = codinv
-  solution_sol(isol)%constantes%c2w    = codinv
-  solution_sol(isol)%constantes%csol   = codinv
-  solution_sol(isol)%constantes%r1     = codinv
-  solution_sol(isol)%constantes%r2     = codinv
+
+  ifac = elt_ids(isol) + 1 ! C > Fortran
+  bpro_rugdyn(ifac) = codinv
+  bpro_rugthe(ifac) = codinv
+  bpro_albedo(ifac) = codinv
+  bpro_emissi(ifac) = codinv
+
+  bpro_vegeta(isol) = codinv
+  bpro_c1w   (isol) = codinv
+  bpro_c2w   (isol) = codinv
+  bpro_csol  (isol) = codinv
+  bpro_r1    (isol) = codinv
+  bpro_r2    (isol) = codinv
 enddo
 
 iirugdy = 1
@@ -128,8 +160,6 @@ solnom(iir2   )='r2          '
 !     2) calcul des coefficients pour chaque maille
 !  ================================================================
 
-
-
 do isol = 1, nfmodsol
   rugdij = 0.d0
   rugtij = 0.d0
@@ -142,59 +172,68 @@ do isol = 1, nfmodsol
   r1ij   = 0.d0
   r2ij   = 0.d0
 
-  !          zrrel = z(2)*(z(km)-CDGFBO(3,IFAC))/z(km)
+  ! zrrel = z(2)*(z(km)-CDGFBO(3,IFAC))/z(km)
 
   do n = 1, nbrsol
-    rugdij = rugdij + tab_sol(n)%rugdyn*float(pourcent_sol(isol,n))/100.d0
-    rugtij = rugtij + tab_sol(n)%rugthe*float(pourcent_sol(isol,n))/100.d0
-    albeij = albeij + tab_sol(n)%albedo*float(pourcent_sol(isol,n))/100.d0
-    emisij = emisij + tab_sol(n)%emissi*float(pourcent_sol(isol,n))/100.d0
-    csolij = csolij + tab_sol(n)%csol  *float(pourcent_sol(isol,n))/100.d0
-    vegeij = vegeij + tab_sol(n)%vegeta*float(pourcent_sol(isol,n))/100.d0
-    c1wij  = c1wij  + tab_sol(n)%c1w   *float(pourcent_sol(isol,n))/100.d0
-    c2wij  = c2wij  + tab_sol(n)%c2w   *float(pourcent_sol(isol,n))/100.d0
-    r1ij   = r1ij   + tab_sol(n)%r1    *float(pourcent_sol(isol,n))/100.d0
-    r2ij   = r2ij   + tab_sol(n)%r2    *float(pourcent_sol(isol,n))/100.d0
+    ! shifting of 1 for the percentage because starting by default value
+    rugdij = rugdij + tab_sol(n)%rugdyn*bpro_pourcent_sol(n+1,isol)/100.d0
+    rugtij = rugtij + tab_sol(n)%rugthe*bpro_pourcent_sol(n+1,isol)/100.d0
+    albeij = albeij + tab_sol(n)%albedo*bpro_pourcent_sol(n+1,isol)/100.d0
+    emisij = emisij + tab_sol(n)%emissi*bpro_pourcent_sol(n+1,isol)/100.d0
+    csolij = csolij + tab_sol(n)%csol  *bpro_pourcent_sol(n+1,isol)/100.d0
+    vegeij = vegeij + tab_sol(n)%vegeta*bpro_pourcent_sol(n+1,isol)/100.d0
+    c1wij  = c1wij  + tab_sol(n)%c1w   *bpro_pourcent_sol(n+1,isol)/100.d0
+    c2wij  = c2wij  + tab_sol(n)%c2w   *bpro_pourcent_sol(n+1,isol)/100.d0
+    r1ij   = r1ij   + tab_sol(n)%r1    *bpro_pourcent_sol(n+1,isol)/100.d0
+    r2ij   = r2ij   + tab_sol(n)%r2    *bpro_pourcent_sol(n+1,isol)/100.d0
   enddo
 
-  solution_sol(isol)%constantes%rugdyn = rugdij
-  solution_sol(isol)%constantes%rugthe = rugtij
-  solution_sol(isol)%constantes%albedo = albeij
-  solution_sol(isol)%constantes%emissi = emisij
-  solution_sol(isol)%constantes%csol   = csolij
-  solution_sol(isol)%constantes%vegeta = vegeij
-  solution_sol(isol)%constantes%c1w    = c1wij
-  solution_sol(isol)%constantes%c2w    = c2wij
-  solution_sol(isol)%constantes%r1     = r1ij
-  solution_sol(isol)%constantes%r2     = r2ij
+  ifac = elt_ids(isol) + 1 ! C > Fortran
+  bpro_rugdyn(ifac) = rugdij
+  bpro_rugthe(ifac) = rugtij
+  bpro_albedo(ifac) = albeij
+  bpro_emissi(ifac) = emisij
+
+  bpro_csol  (isol) = csolij
+  bpro_vegeta(isol) = vegeij
+  bpro_c1w   (isol) = c1wij
+  bpro_c2w   (isol) = c2wij
+  bpro_r1    (isol) = r1ij
+  bpro_r2    (isol) = r2ij
 
   ! Pour temperatures profondes dans un premier temps on initialise a tprini
-  solution_sol(isol)%constantes%tprof = tprini
+  bpro_tprof(isol) = tprini
 enddo
 
 !  ================================================================
-!     3) controle
+! 3) controle
 !  ================================================================
 
 ierreu = 0
 do isol = 1, nfmodsol
-  if(solution_sol(isol)%constantes%rugdyn .eq. codinv) ierreu = ierreu + 1
-  if(solution_sol(isol)%constantes%rugthe .eq. codinv) ierreu = ierreu + 1
-  if(solution_sol(isol)%constantes%albedo .eq. codinv) ierreu = ierreu + 1
-  if(solution_sol(isol)%constantes%emissi .eq. codinv) ierreu = ierreu + 1
-  if(solution_sol(isol)%constantes%csol   .eq. codinv) ierreu = ierreu + 1
-  if(solution_sol(isol)%constantes%vegeta .eq. codinv) ierreu = ierreu + 1
-  if(solution_sol(isol)%constantes%c1w    .eq. codinv) ierreu = ierreu + 1
-  if(solution_sol(isol)%constantes%c2w    .eq. codinv) ierreu = ierreu + 1
-  if(solution_sol(isol)%constantes%r1     .eq. codinv) ierreu = ierreu + 1
-  if(solution_sol(isol)%constantes%r2     .eq. codinv) ierreu = ierreu + 1
+  ifac = elt_ids(isol) + 1 ! C > Fortran
+  if(bpro_rugdyn(ifac) .eq. codinv) ierreu = ierreu + 1
+  if(bpro_rugthe(ifac) .eq. codinv) ierreu = ierreu + 1
+  if(bpro_albedo(ifac) .eq. codinv) ierreu = ierreu + 1
+  if(bpro_emissi(ifac) .eq. codinv) ierreu = ierreu + 1
+
+  if(bpro_csol  (isol) .eq. codinv) ierreu = ierreu + 1
+  if(bpro_vegeta(isol) .eq. codinv) ierreu = ierreu + 1
+  if(bpro_c1w   (isol) .eq. codinv) ierreu = ierreu + 1
+  if(bpro_c2w   (isol) .eq. codinv) ierreu = ierreu + 1
+  if(bpro_r1    (isol) .eq. codinv) ierreu = ierreu + 1
+  if(bpro_r2    (isol) .eq. codinv) ierreu = ierreu + 1
 enddo
+
+if (irangp.ge.0) then
+  call parcpt(ierreu)
+endif
 
 ! impression eventuelle d'un message d'erreur
 
-if(ierreu.ne.0) then
+if (ierreu.ne.0) then
   write(nfecra,9999)
-  write(nfecra,9991)ierreu
+  write(nfecra,9991) ierreu
 
   ! ou impression de controle
 
@@ -204,61 +243,87 @@ else
     solmea(n) = 0.d0
     solmax(n) = -999999.d0
   enddo
-  do isol = 1, nfmodsol, 1
-    if (solution_sol(isol)%constantes%rugdyn .gt. solmax(1)) solmax(1) &
-         = solution_sol(isol)%constantes%rugdyn
-    if (solution_sol(isol)%constantes%rugthe .gt. solmax(2)) solmax(2) &
-         = solution_sol(isol)%constantes%rugthe
-    if (solution_sol(isol)%constantes%albedo .gt. solmax(3)) solmax(3) &
-         = solution_sol(isol)%constantes%albedo
-    if (solution_sol(isol)%constantes%emissi .gt. solmax(4)) solmax(4) &
-         = solution_sol(isol)%constantes%emissi
-    if (solution_sol(isol)%constantes%csol   .gt. solmax(5)) solmax(5) &
-         = solution_sol(isol)%constantes%csol
-    if (solution_sol(isol)%constantes%vegeta .gt. solmax(6)) solmax(6) &
-         = solution_sol(isol)%constantes%vegeta
-    if (solution_sol(isol)%constantes%c1w    .gt. solmax(7)) solmax(7) &
-         = solution_sol(isol)%constantes%c1w
-    if (solution_sol(isol)%constantes%c2w    .gt. solmax(8)) solmax(8) &
-         = solution_sol(isol)%constantes%c2w
-    if (solution_sol(isol)%constantes%r1     .gt. solmax(9)) solmax(9) &
-         = solution_sol(isol)%constantes%r1
-    if (solution_sol(isol)%constantes%r2     .gt. solmax(10))solmax(10)&
-         = solution_sol(isol)%constantes%r2
-    if (solution_sol(isol)%constantes%rugdyn .lt. solmin(1)) solmin(1) &
-         = solution_sol(isol)%constantes%rugdyn
-    if (solution_sol(isol)%constantes%rugthe .lt. solmin(2)) solmin(2) &
-         = solution_sol(isol)%constantes%rugthe
-    if (solution_sol(isol)%constantes%albedo .lt. solmin(3)) solmin(3) &
-         = solution_sol(isol)%constantes%albedo
-    if (solution_sol(isol)%constantes%emissi .lt. solmin(4)) solmin(4) &
-         = solution_sol(isol)%constantes%emissi
-    if (solution_sol(isol)%constantes%csol   .lt. solmin(5)) solmin(5) &
-         = solution_sol(isol)%constantes%csol
-    if (solution_sol(isol)%constantes%vegeta .lt. solmin(6)) solmin(6) &
-         = solution_sol(isol)%constantes%vegeta
-    if (solution_sol(isol)%constantes%c1w    .lt. solmin(7)) solmin(7) &
-         = solution_sol(isol)%constantes%c1w
-    if (solution_sol(isol)%constantes%c2w    .lt. solmin(8)) solmin(8) &
-         = solution_sol(isol)%constantes%c2w
-    if (solution_sol(isol)%constantes%r1     .lt. solmin(9)) solmin(9) &
-         = solution_sol(isol)%constantes%r1
-    if (solution_sol(isol)%constantes%r2     .lt. solmin(10))solmin(10)&
-         = solution_sol(isol)%constantes%r2
-    solmea(1) = solmea(1) + solution_sol(isol)%constantes%rugdyn
-    solmea(2) = solmea(2) + solution_sol(isol)%constantes%rugthe
-    solmea(3) = solmea(3) + solution_sol(isol)%constantes%albedo
-    solmea(4) = solmea(4) + solution_sol(isol)%constantes%emissi
-    solmea(5) = solmea(5) + solution_sol(isol)%constantes%csol
-    solmea(6) = solmea(6) + solution_sol(isol)%constantes%vegeta
-    solmea(7) = solmea(7) + solution_sol(isol)%constantes%c1w
-    solmea(8) = solmea(8) + solution_sol(isol)%constantes%c2w
-    solmea(9) = solmea(9) + solution_sol(isol)%constantes%r1
-    solmea(10)= solmea(10)+ solution_sol(isol)%constantes%r2
+  surf_zone = 0.d0
+
+  do isol = 1, nfmodsol
+
+    ifac = elt_ids(isol) + 1 ! C > Fortran
+    if (bpro_rugdyn(ifac) .gt. solmax(1)) solmax(1) &
+         = bpro_rugdyn(ifac)
+    if (bpro_rugthe(ifac) .gt. solmax(2)) solmax(2) &
+         = bpro_rugthe(ifac)
+    if (bpro_albedo(ifac) .gt. solmax(3)) solmax(3) &
+         = bpro_albedo(ifac)
+    if (bpro_emissi(ifac) .gt. solmax(4)) solmax(4) &
+         = bpro_emissi(ifac)
+
+    if (bpro_csol(isol)   .gt. solmax(5)) solmax(5) &
+         = bpro_csol(isol)
+    if (bpro_vegeta(isol) .gt. solmax(6)) solmax(6) &
+         = bpro_vegeta(isol)
+    if (bpro_c1w(isol)    .gt. solmax(7)) solmax(7) &
+         = bpro_c1w(isol)
+    if (bpro_c2w(isol)    .gt. solmax(8)) solmax(8) &
+         = bpro_c2w(isol)
+    if (bpro_r1(isol)     .gt. solmax(9)) solmax(9) &
+         = bpro_r1(isol)
+    if (bpro_r2(isol)     .gt. solmax(10))solmax(10)&
+         = bpro_r2(isol)
+
+    ifac = elt_ids(isol) + 1 ! C > Fortran
+    if (bpro_rugdyn(ifac) .lt. solmin(1)) solmin(1) &
+         = bpro_rugdyn(ifac)
+    if (bpro_rugthe(ifac) .lt. solmin(2)) solmin(2) &
+         = bpro_rugthe(ifac)
+    if (bpro_albedo(ifac) .lt. solmin(3)) solmin(3) &
+         = bpro_albedo(ifac)
+    if (bpro_emissi(ifac) .lt. solmin(4)) solmin(4) &
+         = bpro_emissi(ifac)
+
+    if (bpro_csol(isol)   .lt. solmin(5)) solmin(5) &
+         = bpro_csol(isol)
+    if (bpro_vegeta(isol) .lt. solmin(6)) solmin(6) &
+         = bpro_vegeta(isol)
+    if (bpro_c1w(isol)    .lt. solmin(7)) solmin(7) &
+         = bpro_c1w(isol)
+    if (bpro_c2w(isol)    .lt. solmin(8)) solmin(8) &
+         = bpro_c2w(isol)
+    if (bpro_r1(isol)     .lt. solmin(9)) solmin(9) &
+         = bpro_r1(isol)
+    if (bpro_r2(isol)     .lt. solmin(10))solmin(10)&
+         = bpro_r2(isol)
+
+    ifac = elt_ids(isol) + 1 ! C > Fortran
+
+    solmea(1) = solmea(1) + surfbn(ifac) * bpro_rugdyn(ifac)
+    solmea(2) = solmea(2) + surfbn(ifac) * bpro_rugthe(ifac)
+    solmea(3) = solmea(3) + surfbn(ifac) * bpro_albedo(ifac)
+    solmea(4) = solmea(4) + surfbn(ifac) * bpro_emissi(ifac)
+
+    solmea(5) = solmea(5) + surfbn(ifac) * bpro_csol  (isol)
+    solmea(6) = solmea(6) + surfbn(ifac) * bpro_vegeta(isol)
+    solmea(7) = solmea(7) + surfbn(ifac) * bpro_c1w   (isol)
+    solmea(8) = solmea(8) + surfbn(ifac) * bpro_c2w   (isol)
+    solmea(9) = solmea(9) + surfbn(ifac) * bpro_r1    (isol)
+    solmea(10)= solmea(10)+ surfbn(ifac) * bpro_r2    (isol)
+
+    ! Surface of the zone, could use it directly in C
+    surf_zone = surf_zone + surfbn(ifac)
   enddo
+
+  if (irangp.ge.0) then
+    do n = 1, 10
+      call parsom(solmea(n))
+      call parmin(solmin(n))
+      call parmax(solmax(n))
+    enddo
+    call parsom(surf_zone)
+  endif
+
   do n = 1, 10
-    solmea(n)= solmea(n)/float(nfmodsol)
+    solmea(n)= solmea(n) / surf_zone
   enddo
+
   write(nfecra,3001)
   write(nfecra,3002)
   n = iirugdy

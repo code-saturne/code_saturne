@@ -20,8 +20,6 @@
 
 !-------------------------------------------------------------------------------
 !> \file atmsol.f90
-!> \brief    build constants and variables to describe the ground model
-!
 !> \brief    build constants and variables to describe ground model
 !>-     NB : soil model structures defined in module atsoil.f90
 
@@ -30,11 +28,9 @@
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[in]     iappel        Calling number: 1 allocation, 2 fillign arrays
 !______________________________________________________________________________
 
-subroutine atmsol &
-     ( iappel )
+subroutine atmsol( )
 
 !===============================================================================
 ! Module files
@@ -61,70 +57,43 @@ implicit none
 
 ! Arguments
 
-integer          iappel
-
 ! Local variables
 
-integer          error
+integer          error, n_g_soil_elts
+integer, dimension(:), pointer :: elt_ids
 
 !===============================================================================
 
-if (iatsoil.ge.0) then
-  ! First call, define nfmodsol
-  if (iappel.eq.1) then
+! Get the number of element in the soil zone
+call atmo_get_soil_zone(nfmodsol, nbrsol, elt_ids)
 
-    call usatsoil(iappel)
+! Global number for all ranks
+n_g_soil_elts = nfmodsol
 
-    ! Allocation of table of values, TODO move to zone
-    allocate(tab_sol(nbrsol),stat = error)
-    call solcat( error )
+if (irangp.ge.0) then
+  call parcpt(n_g_soil_elts)
+endif
 
-    if (error /= 0) then
-      write(nfecra,*) "Allocation error of atmodsol::tab_sol"
-      call csexit(1)
-    endif
+! There are some soil faces on some ranks
+! Note: we can use soil categories without soil model
+! (which solve Temperature and humidity)
+if (n_g_soil_elts.gt.0) then
+  ! Second pass, print and check soil categories parameters
+  call solcat(2)
 
-    ! We continue only if nfmodsol > 0
+  call solmoy(error)
+  if (error /= 0) then
+    write(nfecra,*) "Allocation error of atmodsol::solmoy"
+    call csexit(1)
+  endif
 
-    if (nfmodsol.gt.0) then
-
-      ! We allocate the percentage of soil for all faces, its definition is done th the second
-      ! call of usatsoil
-      allocate(pourcent_sol(nfmodsol,nbrsol),stat = error)
-
-      if (error /= 0) then
-        write(nfecra,*) "Allocation error of atmodsol::pourcent_sol"
-        call csexit(1)
-      endif
-
-      ! We allocate the structure use for the solving with soil constants for
-      ! each soil face and the 3 variables
-      allocate(solution_sol(nfmodsol),stat = error)
-
-      if (error /= 0) then
-        write(nfecra,*) "Allocation error of atmodsol::solution_sol"
-        call csexit(1)
-      endif
-
-    endif ! nfmodsol > 0
-
-  endif ! End of the first call
-
-  if (iappel.eq.2.and.nfmodsol.gt.0) then
-    call usatsoil(iappel)
-
-    call solmoy(error)
-    if (error /= 0) then
-      write(nfecra,*) "Allocation error of atmodsol::solmoy"
-      call csexit(1)
-    endif
-
-    !Initialisation des variables Temps , Tempp , Total Water W1 et W2
+  ! Initialization of soil variables
+  ! Only if soil is activated
+  if (iatsoil.eq.1) then
     call soliva()
+  endif
 
-  endif ! End of second call
-
-endif ! iatsoil > 0
+endif ! End of second call
 
 !----
 ! End
