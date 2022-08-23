@@ -2898,21 +2898,32 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
         cs_real_2_t poro = {i_poro_duq_0[is_porous*f_id],
                             i_poro_duq_1[is_porous*f_id]};
 
-        cs_real_t pfac, dc[3];
+        cs_real_t dvarij, pfac, dc[3];
 
         for (cs_lnum_t ll = 0; ll < 3; ll++)
           dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
 
-        pfac =   (  rhsv[jj][3] - rhsv[ii][3]
-                  + (cell_cen[ii][0] - i_face_cog[f_id][0]) * f_ext[ii][0]
-                  + (cell_cen[ii][1] - i_face_cog[f_id][1]) * f_ext[ii][1]
-                  + (cell_cen[ii][2] - i_face_cog[f_id][2]) * f_ext[ii][2]
-                  + poro[0]
-                  - (cell_cen[jj][0] - i_face_cog[f_id][0]) * f_ext[jj][0]
-                  - (cell_cen[jj][1] - i_face_cog[f_id][1]) * f_ext[jj][1]
-                  - (cell_cen[jj][2] - i_face_cog[f_id][2]) * f_ext[jj][2]
-                  - poro[1])
-                / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+        if (e2n == CS_E2N_SUM_STORE_THEN_GATHER) {
+          /* In this case, we do not use other terms of rhsv in this loop,
+             so caching will be better directly using pvar. */
+          dvarij = pvar[jj] - pvar[ii];
+        }
+        else {
+          /* In this case, use rhsv, as access patterns lead to better
+             caching behavior (or did when last tested) */
+          dvarij = rhsv[jj][3] - rhsv[ii][3];
+        }
+
+        pfac =  (  dvarij
+                 + cs_math_3_distance_dot_product(i_face_cog[f_id],
+                                                  cell_cen[ii],
+                                                  f_ext[ii])
+                 + poro[0]
+                 - cs_math_3_distance_dot_product(i_face_cog[f_id],
+                                                  cell_cen[jj],
+                                                  f_ext[jj])
+                 - poro[1])
+               / cs_math_3_square_norm(dc);
 
         cs_real_t pond = weight[f_id];
 
@@ -2963,21 +2974,32 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
         cs_real_2_t poro = {i_poro_duq_0[is_porous*f_id],
                             i_poro_duq_1[is_porous*f_id]};
 
-        cs_real_t pfac, dc[3];
+        cs_real_t dvarij, pfac, dc[3];
 
         for (cs_lnum_t ll = 0; ll < 3; ll++)
           dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
 
-        pfac =   (  rhsv[jj][3] - rhsv[ii][3]
-                  + (cell_cen[ii][0] - i_face_cog[f_id][0]) * f_ext[ii][0]
-                  + (cell_cen[ii][1] - i_face_cog[f_id][1]) * f_ext[ii][1]
-                  + (cell_cen[ii][2] - i_face_cog[f_id][2]) * f_ext[ii][2]
-                  + poro[0]
-                  - (cell_cen[jj][0] - i_face_cog[f_id][0]) * f_ext[jj][0]
-                  - (cell_cen[jj][1] - i_face_cog[f_id][1]) * f_ext[jj][1]
-                  - (cell_cen[jj][2] - i_face_cog[f_id][2]) * f_ext[jj][2]
-                  - poro[1])
-                / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+        if (e2n == CS_E2N_SUM_STORE_THEN_GATHER) {
+          /* In this case, we do not use other terms of rhsv in this loop,
+             so caching will be better directly using pvar. */
+          dvarij = pvar[jj] - pvar[ii];
+        }
+        else {
+          /* In this case, use rhsv, as access patterns lead to better
+             caching behavior (or did when last tested) */
+          dvarij = rhsv[jj][3] - rhsv[ii][3];
+        }
+
+        pfac =  (  dvarij
+                 + cs_math_3_distance_dot_product(i_face_cog[f_id],
+                                                  cell_cen[ii],
+                                                  f_ext[ii])
+                 + poro[0]
+                 - cs_math_3_distance_dot_product(i_face_cog[f_id],
+                                                  cell_cen[jj],
+                                                  f_ext[jj])
+                 - poro[1])
+               / cs_math_3_square_norm(dc);
 
         if (e2n == CS_E2N_SUM_SCATTER) {
           cs_real_t fctb[3];
@@ -3071,8 +3093,105 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
   } /* Test on e2n (template argument for algorithm type) */
 
   else if (e2n == CS_E2N_SUM_GATHER) {
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: no implementation with ie2n == SUM_GATHER.", __func__);
+
+    const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+    const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+    const cs_lnum_t *c2c = ma->cell_cells;
+    const cs_lnum_t *c2f = ma->cell_i_faces;
+    if (c2f == NULL) {
+      cs_mesh_adjacencies_update_cell_i_faces();
+      c2f = ma->cell_i_faces;
+    }
+
+    if (c_weight_s != NULL) {  /* With cell weighting */
+
+#     pragma omp parallel for
+      for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
+
+        const cs_lnum_t s_id = c2c_idx[ii];
+        const cs_lnum_t e_id = c2c_idx[ii+1];
+
+        const cs_real_t w_ii = c_weight_s[ii];
+
+        for (cs_lnum_t i = s_id; i < e_id; i++) {
+          const cs_lnum_t jj = c2c[i];
+          const cs_lnum_t f_id = c2f[i];
+          const cs_real_t w_jj = c_weight_s[jj];
+
+          cs_real_2_t poro = {i_poro_duq_0[is_porous*f_id],
+                              i_poro_duq_1[is_porous*f_id]};
+
+          cs_real_t dc[3];
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
+
+          cs_real_t pfac =   (  rhsv[jj][3] - rhsv[ii][3]
+                              + cs_math_3_distance_dot_product(i_face_cog[f_id],
+                                                               cell_cen[ii],
+                                                               f_ext[ii])
+                              + poro[0]
+                              - cs_math_3_distance_dot_product(i_face_cog[f_id],
+                                                               cell_cen[jj],
+                                                               f_ext[jj])
+                              - poro[1])
+                           / cs_math_3_square_norm(dc);
+
+          cs_real_t pond = weight[f_id];
+
+          pfac /= (  pond       *w_ii
+                   + (1. - pond)*w_jj);
+
+          cs_real_t fctb[3];
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            fctb[ll] = dc[ll] * pfac;
+
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            rhsv[ii][ll] += w_jj * fctb[ll];
+        }
+
+      }
+
+    }
+    else {
+
+#     pragma omp parallel for
+      for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
+
+        const cs_lnum_t s_id = c2c_idx[ii];
+        const cs_lnum_t e_id = c2c_idx[ii+1];
+
+        for (cs_lnum_t i = s_id; i < e_id; i++) {
+          const cs_lnum_t jj = c2c[i];
+          const cs_lnum_t f_id = c2f[i];
+
+          cs_real_2_t poro = {i_poro_duq_0[is_porous*f_id],
+                              i_poro_duq_1[is_porous*f_id]};
+
+          cs_real_t dc[3];
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
+
+          cs_real_t pfac =   (  rhsv[jj][3] - rhsv[ii][3]
+                              + cs_math_3_distance_dot_product(i_face_cog[f_id],
+                                                               cell_cen[ii],
+                                                               f_ext[ii])
+                              + poro[0]
+                              - cs_math_3_distance_dot_product(i_face_cog[f_id],
+                                                               cell_cen[jj],
+                                                               f_ext[jj])
+                              - poro[1])
+                           / cs_math_3_square_norm(dc);
+
+          cs_real_t fctb[3];
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            fctb[ll] = dc[ll] * pfac;
+
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            rhsv[ii][ll] += fctb[ll];
+        }
+
+      }
+    }
   }
 
   /* Contribution from extended neighborhood;
@@ -3105,13 +3224,9 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
           dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
 
         pfac =   (  rhsv[jj][3] - rhsv[ii][3]
-                  - 0.5 * dc[0] * f_ext[ii][0]
-                  - 0.5 * dc[1] * f_ext[ii][1]
-                  - 0.5 * dc[2] * f_ext[ii][2]
-                  - 0.5 * dc[0] * f_ext[jj][0]
-                  - 0.5 * dc[1] * f_ext[jj][1]
-                  - 0.5 * dc[2] * f_ext[jj][2])
-                / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+                  - 0.5 * cs_math_3_dot_product(dc, f_ext[ii])
+                  - 0.5 * cs_math_3_dot_product(dc, f_ext[jj]))
+                / cs_math_3_square_norm(dc);
 
         for (cs_lnum_t ll = 0; ll < 3; ll++)
           fctb[ll] = dc[ll] * pfac;
@@ -3150,9 +3265,9 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
         =   (coefap[f_id]*inc
             + (  (coefbp[f_id] -1.)
                * (  rhsv[ii][3]
-                  + (b_face_cog[f_id][0] - cell_cen[ii][0]) * f_ext[ii][0]
-                  + (b_face_cog[f_id][1] - cell_cen[ii][1]) * f_ext[ii][1]
-                  + (b_face_cog[f_id][2] - cell_cen[ii][2]) * f_ext[ii][2]
+                  + cs_math_3_distance_dot_product(b_face_cog[f_id],
+                                                   cell_cen[ii],
+                                                   f_ext[ii])
                   + poro)))
             * unddij;
 
@@ -6593,71 +6708,14 @@ _gradient_scalar(const char                    *var_name,
     break;
 
   case CS_GRADIENT_LSQ:
-
-    if (w_stride == 6 && c_weight != NULL)
-      _lsq_scalar_gradient_ani(mesh,
-                               fvq,
-                               cpl,
-                               inc,
-                               bc_coeff_a,
-                               bc_coeff_b,
-                               var,
-                               (const cs_real_6_t *)c_weight,
-                               grad);
-    else if (hyd_p_flag) {
-      if (cs_glob_n_threads == 1)
-        _lsq_scalar_gradient_hyd_p<CS_E2N_SUM_SCATTER>
-          (mesh,
-           fvq,
-           halo_type,
-           recompute_cocg,
-           inc,
-           (const cs_real_3_t *)f_ext,
-           bc_coeff_a,
-           bc_coeff_b,
-           var,
-           c_weight,
-           grad);
-      else
-        _lsq_scalar_gradient_hyd_p<_e2n_sum_type>
-          (mesh,
-           fvq,
-           halo_type,
-           recompute_cocg,
-           inc,
-           (const cs_real_3_t *)f_ext,
-           bc_coeff_a,
-           bc_coeff_b,
-           var,
-           c_weight,
-           grad);
-    }
-
-    else
-      _lsq_scalar_gradient(mesh,
-                           fvq,
-                           cpl,
-                           halo_type,
-                           recompute_cocg,
-                           inc,
-                           bc_coeff_a,
-                           bc_coeff_b,
-                           var,
-                           c_weight,
-                           grad);
-
-    _scalar_gradient_clipping(halo_type,
-                              clip_mode,
-                              verbosity,
-                              clip_coeff,
-                              var_name,
-                              var, grad);
-    break;
-
+    [[fallthrough]];
   case CS_GRADIENT_GREEN_LSQ:
     {
       cs_real_3_t  *restrict r_grad;
-      BFT_MALLOC(r_grad, n_cells_ext, cs_real_3_t);
+      if (gradient_type == CS_GRADIENT_GREEN_LSQ)
+        BFT_MALLOC(r_grad, n_cells_ext, cs_real_3_t);
+      else
+        r_grad = grad;
 
       if (w_stride == 6 && c_weight != NULL)
         _lsq_scalar_gradient_ani(mesh,
@@ -6669,9 +6727,36 @@ _gradient_scalar(const char                    *var_name,
                                  var,
                                  (const cs_real_6_t *)c_weight,
                                  r_grad);
+
       else if (hyd_p_flag) {
-        if (cs_glob_n_threads == 1)
+        if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER)
           _lsq_scalar_gradient_hyd_p<CS_E2N_SUM_SCATTER>
+            (mesh,
+             fvq,
+             halo_type,
+             recompute_cocg,
+             inc,
+             f_ext,
+             bc_coeff_a,
+             bc_coeff_b,
+             var,
+             c_weight,
+             r_grad);
+        else if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER_ATOMIC)
+          _lsq_scalar_gradient_hyd_p<CS_E2N_SUM_SCATTER_ATOMIC>
+            (mesh,
+             fvq,
+             halo_type,
+             recompute_cocg,
+             inc,
+             f_ext,
+             bc_coeff_a,
+             bc_coeff_b,
+             var,
+             c_weight,
+             r_grad);
+        else if (cs_glob_e2n_sum_type == CS_E2N_SUM_GATHER)
+          _lsq_scalar_gradient_hyd_p<CS_E2N_SUM_GATHER>
             (mesh,
              fvq,
              halo_type,
@@ -6718,21 +6803,23 @@ _gradient_scalar(const char                    *var_name,
                                 var_name,
                                 var, r_grad);
 
-      _reconstruct_scalar_gradient(mesh,
-                                   fvq,
-                                   cpl,
-                                   w_stride,
-                                   hyd_p_flag,
-                                   inc,
-                                   (const cs_real_3_t *)f_ext,
-                                   bc_coeff_a,
-                                   bc_coeff_b,
-                                   c_weight,
-                                   var,
-                                   r_grad,
-                                   grad);
+      if (gradient_type == CS_GRADIENT_GREEN_LSQ) {
+        _reconstruct_scalar_gradient(mesh,
+                                     fvq,
+                                     cpl,
+                                     w_stride,
+                                     hyd_p_flag,
+                                     inc,
+                                     (const cs_real_3_t *)f_ext,
+                                     bc_coeff_a,
+                                     bc_coeff_b,
+                                     c_weight,
+                                     var,
+                                     r_grad,
+                                     grad);
 
-      BFT_FREE(r_grad);
+        BFT_FREE(r_grad);
+      }
     }
     break;
 

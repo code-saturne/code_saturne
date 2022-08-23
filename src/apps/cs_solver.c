@@ -93,6 +93,7 @@
 #include "cs_mesh_smoother.h"
 #include "cs_notebook.h"
 #include "cs_opts.h"
+#include "cs_parall.h"
 #include "cs_param_cdo.h"
 #include "cs_paramedmem_coupling.h"
 #include "cs_parameters.h"
@@ -684,6 +685,9 @@ main(int    argc,
         cs_glob_n_threads = omp_get_max_threads();
     }
   }
+
+  if (cs_glob_n_threads > 1)
+    cs_glob_e2n_sum_type = CS_E2N_SUM_STORE_THEN_GATHER;
 #endif
 
   /* Default initialization */

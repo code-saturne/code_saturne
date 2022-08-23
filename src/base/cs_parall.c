@@ -155,6 +155,14 @@ static size_t _cs_parall_min_coll_buf_size = 1024*1024;
 #endif
 
 /*============================================================================
+ * Global variables
+ *============================================================================*/
+
+/*! Preferred indexed sum option, adapted to shared-memory parallelism */
+
+cs_e2n_sum_t cs_glob_e2n_sum_type = CS_E2N_SUM_SCATTER;
+
+/*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
  *============================================================================*/
