@@ -715,7 +715,7 @@ cs_medcoupling_mesh_destroy(cs_medcoupling_mesh_t  *mesh)
   BFT_FREE(mesh->bbox);
 
 #if defined(HAVE_MEDCOUPLING)
-  BFT_FREE(mesh->med_mesh);
+  mesh->med_mesh->decrRef();
 #endif
 
   BFT_FREE(mesh);
