@@ -6642,19 +6642,16 @@ _gradient_scalar(const char                    *var_name,
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
 
   static int last_fvm_count = 0;
-  static const char *var_name_prev = NULL;
+  static char var_name_prev[96] = "";
 
   bool recompute_cocg = true;
 
   if (check_recompute_cocg) {
     /* We may reuse the boundary COCG values
        if we last computed a gradient for this same field or array,
-       and if we are solving in increment (expected to be always
-       preceded by a call with inc == 1). */
+       and if we are solving in increment. */
 
-    assert(inc == 1 || var_name_prev == var_name);
-
-    if (var_name_prev == var_name && inc == 0)
+    if (strncmp(var_name_prev, var_name, 95) == 0 && inc == 0)
       recompute_cocg = false;
 
     int prev_fvq_count = last_fvm_count;
@@ -6662,7 +6659,7 @@ _gradient_scalar(const char                    *var_name,
     if (last_fvm_count != prev_fvq_count)
       recompute_cocg = true;
   }
-  var_name_prev = var_name;
+  strncpy(var_name_prev, var_name, 95);
 
   /* Use Neumann BC's as default if not provided */
 
