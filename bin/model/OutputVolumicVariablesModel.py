@@ -176,9 +176,10 @@ class OutputVolumicVariablesModel(Variables, Model):
 
         dicoLabel2Name = {}
 
-        for node in self.getVolumeFieldsNodeList(constant, time_averages):
+        _ncfd_scalars = self.getNcfdScalars()
 
-            name = self.__nodeName__(node)
+        for node in self.getVolumeFieldsNodeList(constant, time_averages):
+            name = self.__nodeName__(node, ncfd_scalar_names=_ncfd_scalars)
             label = node['label']
             if not label:
                 label = name
@@ -220,7 +221,7 @@ class OutputVolumicVariablesModel(Variables, Model):
 
                 is_scalar = not( (dim != None) and (int(dim)>1) )
                 if is_scalar:
-                    dicoLabel2Name[label] = (name, None) 
+                    dicoLabel2Name[label] = (name, None)
 
         return dicoLabel2Name
 
@@ -240,7 +241,7 @@ class OutputVolumicVariablesModel(Variables, Model):
     def setVariablesAtNode(self, node, variables, time_averages=False, get_components=False):
         node.xmlRemoveChild('var_prop')
         dicoLabel2Name = self.getVolumeFieldsLabel2Name(time_averages=time_averages,
-                                      get_components=get_components)
+                                                        get_components=get_components)
         authorized_variables = dicoLabel2Name.keys()
         for var in variables:
             self.isInList(var, authorized_variables)
@@ -392,7 +393,7 @@ class OutputVolumicVariablesModel(Variables, Model):
         return None
 
 
-    def __nodeName__(self, node):
+    def __nodeName__(self, node, ncfd_scalar_names=[]):
         """
         Return a node matching a given name
         """
@@ -401,7 +402,8 @@ class OutputVolumicVariablesModel(Variables, Model):
         if not n_name:
             n_name = node['label']
         else:
-            if node['field_id']:
+            # ncfd scalars should not be suffixed
+            if node['field_id'] and n_name not in ncfd_scalar_names:
                 if node['field_id'] != 'none':
                     n_name += '_' + str(node['field_id'])
 
@@ -602,6 +604,22 @@ class OutputVolumicVariablesModel(Variables, Model):
             return node.xmlGetNodeList('variable', type='user')
         else:
             return []
+
+
+    @Variables.noUndo
+    def getNcfdScalars(self):
+        """
+        Return list of nodes of NCFD scalars
+        """
+        lst = []
+        node = self.case.xmlGetNode('additional_scalars')
+        if node:
+            n = node.xmlGetChildNode('scalars')
+            if n:
+                for var in n.xmlGetChildNodeList('variable'):
+                    lst.append(var['name'])
+
+        return lst
 
 
     @Variables.noUndo

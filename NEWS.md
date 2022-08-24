@@ -3,6 +3,8 @@ Release 7.1.2 (not released yet)
 
 Bug fixes:
 
+- GUI: Fix naming of NCFD scalars when creating time averages
+
 - Fix desrtoy function related do medcoupling mesh export to avoid data corruption.
 
 - Restart from different mesh: fix values shift in variable exchange when
