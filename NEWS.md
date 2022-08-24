@@ -3,6 +3,8 @@ Release 7.2.1 (not released yet)
 
 Bug fixes:
 
+- GUI: Fix naming of NCFD scalars when creating time averages
+
 - GUI: standard turbulence BC's should not overwrite user definitions
   with the `cs_equation_add_bc_by_` series functions or mapped
   inlet-based values. Fixes issue #405.
