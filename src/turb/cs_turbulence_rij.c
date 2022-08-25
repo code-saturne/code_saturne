@@ -228,7 +228,7 @@ _rij_min_max(cs_lnum_t        n_cells,
     #pragma omp critical
     {
       for (int ii = 0; ii < 7; ii++) {
-        vmin[ii] = cs_math_fmin(vmax[ii], t_vmin[ii]);
+        vmin[ii] = cs_math_fmin(vmin[ii], t_vmin[ii]);
         vmax[ii] = cs_math_fmax(vmax[ii], t_vmax[ii]);
       }
     }
