@@ -796,6 +796,51 @@ cs_math_3_triple_product(const cs_real_t  u[3],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Build an orthonormal basis based on a first vector "vect".
+ *        axes[0] is vect normalized, while (axes[0], axes[1], axes[23])
+ *        is an orthonormal base.
+ *
+ * \param[in]  vect Vector used to build the orthonormal basis
+ * \param[out] axes axes basis (cs_real_t[3][3])
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_3_orthonormal_basis(const cs_real_t vect[3],
+                            cs_real_t       axes[3][3])
+{
+  if (cs_math_3_norm(vect) < cs_math_zero_threshold)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: provided vector has zero norm.\n"));
+
+  for (int i = 0; i < 3; i++)
+    memset(axes[i], 0, 3*sizeof(cs_real_t));
+
+  // Compute first axis
+  cs_math_3_normalize(vect, axes[0]);
+
+  // Compute second axis
+  // First test projection of Ox
+  cs_real_t Ox[3] = {1., 0., 0.};
+  cs_real_t w[3] = {0.};
+
+  cs_math_3_orthogonal_projection(axes[0], Ox, w);
+
+  // If Ox projection is null, project Oy
+  if (cs_math_3_norm(w) < cs_math_zero_threshold) {
+    cs_real_t Oy[3] = {0., 1., 0.};
+    cs_math_3_orthogonal_projection(axes[0], Oy, w);
+  }
+
+  cs_math_3_normalize(w, axes[1]);
+
+  // Compute third axis using cross product
+  cs_math_3_cross_product(axes[0], axes[1], axes[2]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Inverse a 3x3 matrix
  *
  * \param[in]  in    matrix to inverse
