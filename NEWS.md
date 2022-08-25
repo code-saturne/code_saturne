@@ -1,5 +1,5 @@
-Release 7.0.5 (not released yet)
---------------------------------
+Release 7.0.5 (August 25 2022)
+------------------------------
 
 Bug fixes:
 
@@ -11,16 +11,16 @@ Bug fixes:
 - Restart from different mesh: fix values shift in variable exchange when
   some points are not located (updated PLE library).
 
-- Do not hide the notebook page when the user chooses preprocessing mode,
+- GUI: do not hide the notebook page when the user chooses preprocessing mode,
   since notebook parameters can be used in the "cs_user_mesh" functions.
 
-- Fix spurious apparition of the "Atmospheric flows" page when using neptune_cfd
+- GUI: fix spurious appearance of "Atmospheric flows" page with neptune_cfd.
 
-- Force refresh tabs in the physical properties page of neptune_cfd when
-  modifying the fluids equation of state
+- GUI: force refresh tabs in the physical properties page of neptune_cfd when
+  modifying the fluid equations of state.
 
-- Disable all turbomachinery models except for "full transient" when using
-  neptune_cfd
+- GUI disable all turbomachinery models except for "full transient" with
+  neptune_cfd.
 
 - boundary layer insertion: fixed nodes were ignored, leading to a modification
   of the outer geometry (issue #400).
