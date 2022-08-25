@@ -56,7 +56,7 @@ use cavitation
 use darcy_module
 use radiat
 use turbomachinery
-use cs_nz_condensation, only: nfbpcd, nzones, init_sizes_pcond
+use cs_nz_condensation, only: nzones, init_sizes_pcond
 use ctincl
 use cfpoin
 use vof
