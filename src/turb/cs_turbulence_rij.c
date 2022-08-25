@@ -396,6 +396,66 @@ cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
   cs_real_t *w1;
   BFT_MALLOC(w1, n_cells_ext, cs_real_t);
 
+  /* User source terms
+   * ================= */
+
+  cs_user_source_terms(cs_glob_domain,
+                       CS_F_(eps)->id,
+                       smbr,
+                       rovsdt);
+
+  /* If we extrapolate the source terms */
+  if (st_prv_id > -1) {
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      /* Save for exchange */
+      const cs_real_t tuexpe = c_st_prv[c_id];
+      /* For the continuation and the next time step */
+      c_st_prv[c_id] = smbr[c_id];
+      /* RHS of previous time step
+       *   We assume -rovsdt > 0: we implicit
+       *   the user source term (the rest)  */
+      smbr[c_id] = rovsdt[c_id]*cvara_ep[c_id] - thets*tuexpe;
+      /* Diagonal */
+      rovsdt[c_id] = -thetv*rovsdt[c_id];
+    }
+  }
+  else {
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      smbr[c_id]   += rovsdt[c_id]*cvara_ep[c_id];
+      rovsdt[c_id]  = cs_math_fmax(-rovsdt[c_id], cs_math_zero_threshold);
+    }
+  }
+
+  /* Lagrangian source terms
+   * ======================= */
+
+  /* Second order is not taken into account  */
+
+  if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
+      && (cs_glob_lagr_source_terms->ltsdyn == 1)) {
+
+    const cs_real_6_t *lagr_st_rij
+      = (const cs_real_6_t *)cs_field_by_name("rij_st_lagr")->val;
+
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      /* Source terms with epsilon */
+      const cs_real_t st_eps = -0.50 * cs_math_6_trace(lagr_st_rij[c_id]);
+
+      /* k */
+      const cs_real_t k = 0.50 * cs_math_6_trace(cvara_rij[c_id]);
+
+      /* equiv:       cs_turb_ce4 * st_eps * eps / (k / eps) */
+      smbr[c_id]   += cs_turb_ce4 * st_eps / k;
+
+      /* equiv:                    -cs_turb_ce4 * st_eps * / (k/eps) */
+      rovsdt[c_id] += cs_math_fmax(-cs_turb_ce4 * st_eps / k * cvara_ep[c_id],
+                                   cs_math_zero_threshold);
+   }
+  }
+
   /* Mass source term
    * ================ */
 
@@ -447,7 +507,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
 
   /* Production (rho * Ce1 * epsilon / k * P)
    *    Dissipation (rho*Ce2.epsilon/k*epsilon)
-   *================================================ */
+   * ========================================== */
 
   cs_real_t thetap = (st_prv_id > -1) ? thetv : 1.;
 
