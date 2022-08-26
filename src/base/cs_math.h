@@ -810,7 +810,7 @@ static inline void
 cs_math_3_orthonormal_basis(const cs_real_t vect[3],
                             cs_real_t       axes[3][3])
 {
-  assert(cs_math_3_norm(vect) > cs_math_zero_threshold)
+  assert(cs_math_3_norm(vect) > cs_math_zero_threshold);
 
   // Compute first axis
   cs_math_3_normalize(vect, axes[0]);
