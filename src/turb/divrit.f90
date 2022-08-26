@@ -328,7 +328,6 @@ if (turb_flux_model_type.ne.3) then
     end if
 
     ! Compute thermal flux u'T'
-    call field_get_key_double(ivarfl(isca(iscal)), kctheta, ctheta)
     do ii = 1, 3
       temp(ii) = 0.d0
 
