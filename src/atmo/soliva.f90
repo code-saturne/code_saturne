@@ -82,11 +82,11 @@ call field_get_val_s_by_name("soil_w2", bvar_w2)
 !  initialisation de t et qv en z0
 
 if (qvsini.gt.1.d0) then
-!  si qvsini>1 qvsini represente l'humidite relative en %
-     esaini = 610.78d0*exp(17.2694d0*tsini/                           &
-                      (tsini + tkelvi - 35.86d0))
-     qsaini = esaini/(rvsra*p0 + esaini*(1.d0 - rvsra))
-     qvsini = qvsini*qsaini/100.d0
+  !  si qvsini>1 qvsini represente l'humidite relative en %
+  esaini = 610.78d0*exp(17.2694d0*tsini/                           &
+    (tsini + tkelvi - 35.86d0))
+  qsaini = esaini/(rvsra*p0 + esaini*(1.d0 - rvsra))
+  qvsini = qvsini*qsaini/100.d0
 endif
 
 !==============================================================
@@ -107,13 +107,15 @@ do isol = 1, nfmodsol
 
   bvar_tempp(isol) = (tsini+tkelvi)*((ps/psini)**rscp)
 
-  bvar_total_water(isol) = 0.d0
-  if (iphysi.gt.0) bvar_total_water(isol) = qvsini
-  bvar_w1(isol) = 0.d0
-  bvar_w2(isol) = 0.d0
+  if (iphysi.eq.0) then
+    bvar_total_water(isol) = 0.d0
+    bvar_w1(isol) = 0.d0
+    bvar_w2(isol) = 0.d0
+  else
+    bvar_total_water(isol) = qvsini
 
-  if (iphysi.eq.3) then
-
+    bvar_w1(isol) = w1ini
+    bvar_w2(isol) = w2ini
     ! If not initialized, we compute an approximation of the initial
     ! water content of the top reservoir
     if (bvar_w1(isol).lt.1.d-20) then

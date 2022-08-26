@@ -73,6 +73,10 @@ double precision :: tsini = 20.d0
 double precision :: tprini = 20.d0
 !> initial soil specific humidity
 double precision :: qvsini = 0.d0
+!> initial water content of the first reservoir
+double precision :: w1ini = 0.d0
+!> initial water content of the second reservoir
+double precision :: w2ini = 0.d0
 !> Sea surface temperature
 double precision :: tmer = 20.d0
 
