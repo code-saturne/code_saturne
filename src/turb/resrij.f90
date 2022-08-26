@@ -425,7 +425,7 @@ if (irijec.eq.1) then !todo
     enddo
   enddo
 
-  call rijech2(produc, w2)
+  call cs_turbulence_rij_echo(produc, w2)
 
   ! If we extrapolate the source terms: c_st_prv
   if (st_prv_id.ge.0) then

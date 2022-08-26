@@ -53,6 +53,7 @@
 #include "cs_face_viscosity.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
+#include "cs_field_operator.h"
 #include "cs_field_pointer.h"
 #include "cs_lagr.h"
 #include "cs_log_iteration.h"
@@ -311,7 +312,7 @@ _gravity_st_epsilon(const cs_real_t  gradro[][3],
  *                            source terms or mass rate
  * \param[in]     viscf       visc*surface/dist at internal faces
  * \param[in]     viscb       visc*surface/dist at edge faces
- * \param[in]     smbr        working array
+ * \param[in]     rhs         working array
  * \param[in]     rovsdt      working array
  !*/
 /*-------------------------------------------------------------------------------*/
@@ -326,7 +327,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
                             cs_real_t            smacel[],
                             cs_real_t            viscf[],
                             cs_real_t            viscb[],
-                            cs_real_t            smbr[],
+                            cs_real_t            rhs[],
                             cs_real_t            rovsdt[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
@@ -389,7 +390,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
   const cs_real_t thets = time_scheme->thetst;
   const cs_real_t thetv = eqp->thetav;
 
-  cs_array_set_value_real(n_cells, 1, 0, smbr);
+  cs_array_set_value_real(n_cells, 1, 0, rhs);
   cs_array_set_value_real(n_cells, 1, 0, rovsdt);
 
   /* Work arrays */
@@ -401,7 +402,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
 
   cs_user_source_terms(cs_glob_domain,
                        CS_F_(eps)->id,
-                       smbr,
+                       rhs,
                        rovsdt);
 
   /* If we extrapolate the source terms */
@@ -411,11 +412,11 @@ cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
       /* Save for exchange */
       const cs_real_t tuexpe = c_st_prv[c_id];
       /* For the continuation and the next time step */
-      c_st_prv[c_id] = smbr[c_id];
+      c_st_prv[c_id] = rhs[c_id];
       /* RHS of previous time step
        *   We assume -rovsdt > 0: we implicit
        *   the user source term (the rest)  */
-      smbr[c_id] = rovsdt[c_id]*cvara_ep[c_id] - thets*tuexpe;
+      rhs[c_id] = rovsdt[c_id]*cvara_ep[c_id] - thets*tuexpe;
       /* Diagonal */
       rovsdt[c_id] = -thetv*rovsdt[c_id];
     }
@@ -423,7 +424,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
   else {
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      smbr[c_id]   += rovsdt[c_id]*cvara_ep[c_id];
+      rhs[c_id]   += rovsdt[c_id]*cvara_ep[c_id];
       rovsdt[c_id]  = cs_math_fmax(-rovsdt[c_id], cs_math_zero_threshold);
     }
   }
@@ -448,7 +449,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
       const cs_real_t k = 0.50 * cs_math_6_trace(cvara_rij[c_id]);
 
       /* equiv:       cs_turb_ce4 * st_eps * eps / (k / eps) */
-      smbr[c_id]   += cs_turb_ce4 * st_eps / k;
+      rhs[c_id]   += cs_turb_ce4 * st_eps / k;
 
       /* equiv:                    -cs_turb_ce4 * st_eps * / (k/eps) */
       rovsdt[c_id] += cs_math_fmax(-cs_turb_ce4 * st_eps / k * cvara_ep[c_id],
@@ -465,7 +466,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
     const int ivar_eps = cs_field_get_key_int(CS_F_(eps), var_key_id)-1;
     const int ivar_pr = cs_field_get_key_int(CS_F_(p), var_key_id)-1;
 
-    /* We increment smbr with -Gamma.var_prev. and rovsdt with Gamma */
+    /* We increment rhs with -Gamma.var_prev. and rovsdt with Gamma */
 
     cs_mass_source_terms(1, /* iterns*/
                          1, /* dim */
@@ -476,7 +477,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
                          cvara_ep,
                          smacel + ncesmp*ivar_eps,
                          smacel + ncesmp*ivar_pr,
-                         smbr,
+                         rhs,
                          rovsdt,
                          w1);
 
@@ -487,11 +488,11 @@ cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
         c_st_prv[c_id] += w1[c_id];
     }
 
-    /* Otherwise we put it directly in smbr */
+    /* Otherwise we put it directly in rhs */
     else {
 #     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        smbr[c_id] += w1[c_id];
+        rhs[c_id] += w1[c_id];
     }
   }
 
@@ -572,7 +573,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
 
       /* Dissipation (implicit) */
       const cs_real_t crom_vol = crom[c_id] * cell_f_vol[c_id];
-      smbr[c_id] -= crom_vol * ceps2 * cvara_ep[c_id] / xttdrb;
+      rhs[c_id] -= crom_vol * ceps2 * cvara_ep[c_id] / xttdrb;
       rovsdt[c_id] += ceps2 * crom_vol * thetap / xttdrb;
     }
 
@@ -597,7 +598,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
 
       /* Dissipation (implicit) */
       const cs_real_t crom_vol = crom[c_id] * cell_f_vol[c_id];
-      smbr[c_id]   -= crom_vol * ceps2 * cs_math_pow2(cvara_ep[c_id]) / trrij;
+      rhs[c_id]   -= crom_vol * ceps2 * cs_math_pow2(cvara_ep[c_id]) / trrij;
       rovsdt[c_id] += ceps2 * crom_vol / xttke * thetap;
     }
 
@@ -612,7 +613,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
   else {
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      smbr[c_id] += w1[c_id];
+      rhs[c_id] += w1[c_id];
   }
 
   /* Buoyancy term
@@ -626,7 +627,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
       _gravity_st_epsilon(gradro, cell_f_vol, c_st_prv);
 
     else
-      _gravity_st_epsilon(gradro, cell_f_vol, smbr);
+      _gravity_st_epsilon(gradro, cell_f_vol, rhs);
 
   }
 
@@ -691,7 +692,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
     const cs_real_t thetp1 = 1.+thets;
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      smbr[c_id] += thetp1*c_st_prv[c_id];
+      rhs[c_id] += thetp1*c_st_prv[c_id];
   }
 
   /* Translate coefa into cofaf and coefb into cofbf */
@@ -739,7 +740,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
                                      0,  /* boundary convective upwind flux */
                                      NULL,
                                      rovsdt,
-                                     smbr,
+                                     rhs,
                                      cvar_ep,
                                      dpvar,
                                      NULL,
@@ -815,19 +816,19 @@ cs_turbulence_rij_solve_alpha(int        f_id,
                   cs_field_get_label(cs_field_by_id(f_id)));
   }
 
-  cs_real_t *rovsdt, *smbr;
+  cs_real_t *rovsdt, *rhs;
 
   /* Allocate temporary arrays */
-  BFT_MALLOC(smbr, n_cells_ext, cs_real_t);
+  BFT_MALLOC(rhs, n_cells_ext, cs_real_t);
   BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
 
-  cs_array_set_value_real(n_cells, 1, 0, smbr);
+  cs_array_set_value_real(n_cells, 1, 0, rhs);
   cs_array_set_value_real(n_cells, 1, 0, rovsdt);
 
   /* Source term of alpha
-   *  \f$ smbr = \dfrac{1}{L^2 (\alpha)} - \dfrac{1}{L^2}\f$
+   *  \f$ rhs = \dfrac{1}{L^2 (\alpha)} - \dfrac{1}{L^2}\f$
    * In fact there is a mark "-" because the solved equation is
-   *   \f$-\div{\grad {alpha}} = smbr \f$
+   *   \f$-\div{\grad {alpha}} = rhs \f$
    *================================================================*/
 
   /* Matrix */
@@ -850,7 +851,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
 #   pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       /* Explicit term */
-      smbr[c_id] = cell_f_vol[c_id]*(1.0-cvara_al[c_id]) / l2;
+      rhs[c_id] = cell_f_vol[c_id]*(1.0-cvara_al[c_id]) / l2;
 
       /* Implicit term */
       rovsdt[c_id] = (rovsdt[c_id]+cell_f_vol[c_id]*thetap) / l2;
@@ -878,7 +879,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
       const cs_real_t l2 = cs_math_pow2(xlldrb);
 
       /* Explicit term */
-      smbr[c_id] = cell_f_vol[c_id]*(1.0-cvara_al[c_id]) / l2;
+      rhs[c_id] = cell_f_vol[c_id]*(1.0-cvara_al[c_id]) / l2;
 
       /* Implicit term */
       rovsdt[c_id] = (rovsdt[c_id]+cell_f_vol[c_id]*thetap) / l2;
@@ -949,14 +950,14 @@ cs_turbulence_rij_solve_alpha(int        f_id,
                                      0, /* boundary convective upwind flux */
                                      NULL,
                                      rovsdt,
-                                     smbr,
+                                     rhs,
                                      cvar_al,
                                      dpvar,
                                      NULL,
                                      NULL);
 
   BFT_FREE(dpvar);
-  BFT_FREE(smbr);
+  BFT_FREE(rhs);
 
   /* Clipping
      ======== */
@@ -1052,6 +1053,185 @@ cs_turbulence_rij_grav_st(const cs_real_t  gradro[][3],
      buoyancy[c_id][5] = gij[0][2] * o_m_crij3;
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Terms of wall echo for \f$ R_{ij} \f$
+ *        \f$var  = R_{11} \: R_{22} \: R_{33} \: R_{12} \: R_{13} \: R_{23}\f$
+ *        \f$comp =  1 \:  2 \:  3 \:  4 \:  5 \:  6\f$
+ *
+ * \param[in]     produc  production
+ * \param[in,out] rhs     work array for right-hand-side
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_echo(const cs_real_t  produc[][6],
+                       cs_real_t        rhs[][6])
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+
+  const cs_real_t *cvara_ep = (const cs_real_t *)CS_F_(eps)->val_pre;
+  const cs_real_6_t *cvara_rij = (const cs_real_6_t *)CS_F_(rij)->val_pre;
+
+  cs_real_t *cromo = NULL;
+  int key_t_ext_id = cs_field_key_id("time_extrapolated");
+  int iroext = cs_field_get_key_int(CS_F_(rho), key_t_ext_id);
+  if ((cs_glob_time_scheme->isto2t > 0) && (iroext > 0))
+    cromo = CS_F_(rho)->val_pre;
+  else
+    cromo = CS_F_(rho)->val;
+
+  const cs_real_t d2s3 = 2./3;
+  const cs_real_t cmu075 = pow(cs_turb_cmu, 0.75);
+
+  /* Calculation in the orthogonal straight cells in corresponding walls
+   * ------------------------------------------------------------------- */
+
+  const cs_real_t *w_dist = cs_field_by_name("wall_distance")->val;
+
+  cs_real_3_t *grad;
+  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+
+  cs_real_t *produk, *epsk;
+  BFT_MALLOC(epsk, n_cells_ext, cs_real_t);
+  BFT_MALLOC(produk, n_cells_ext, cs_real_t);
+
+  cs_real_6_t *w6;
+  BFT_MALLOC(w6, n_cells_ext, cs_real_6_t);
+
+  /* Current gradient */
+  cs_field_gradient_scalar(cs_field_by_name("wall_distance"),
+                           false,  /* use_previous_t */
+                           1,      /* inc */
+                           grad);
+
+# pragma omp parallel for if(n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    const cs_real_t norm2 = cs_math_3_square_norm(grad[c_id]);
+    const cs_real_t xnorm = cs_math_fmax(sqrt(norm2), cs_math_epzero);
+
+    /* Normalization (warning, the gradient may be sometimes equal to 0) */
+    for (int i = 0; i < 3; i++)
+      grad[c_id][i] = -grad[c_id][i] / xnorm;
+
+    /* Production and k */
+    produk[c_id] = 0.5 * cs_math_6_trace(produc[c_id]);
+
+    const cs_real_t xk = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
+    epsk[c_id] = cvara_ep[c_id] / xk;
+  }
+
+  /* Tensor indexing */
+
+  const cs_lnum_t m_33_to_6[3][3] = {{0, 3, 5},
+                                     {3, 1, 4},
+                                     {5, 4, 2}};
+
+  const cs_lnum_t i_6_to_33[6] = {0, 1, 2, 0, 0, 1};
+  const cs_lnum_t j_6_to_33[6] = {0, 1, 2, 1, 2, 2};
+
+  const cs_real_t kr_33[3][3] = {{1., 0., 0.},
+                                 {0., 1., 0.},
+                                 {0., 0., 1.}};
+
+  const cs_real_t crijp1 = cs_turb_crijp1;
+  const cs_real_t crijp2 = cs_turb_crijp2;
+  const cs_real_t crij2 = cs_turb_crij2;
+
+  /* Calculation of work variables
+   *============================== */
+
+  cs_array_set_value_real(n_cells, 6, 0, (cs_real_t *)w6);
+
+# pragma omp parallel for if(n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    for (cs_lnum_t kk = 0; kk < 3; kk++) {
+
+      for (cs_lnum_t mm = 0; mm < 3; mm++) {
+
+        const cs_real_t vnk = grad[c_id][kk];
+        const cs_real_t vnm = grad[c_id][mm];
+
+        const cs_lnum_t i_km = m_33_to_6[kk][mm];
+        const cs_real_t deltkm = kr_33[kk][mm];
+
+        /* Terms with R km and Phi km;
+
+           vnk * vnm * deltij[jj] in original expression,
+           with deltij Kronecker delta so 1 for terms 0-2, 0 for terms 3-6.
+           (we only have diagonal contributions) */
+
+        const cs_real_t c_tr
+          = vnk * vnm
+            * (crijp1 * cvara_rij[c_id][i_km] * epsk[c_id]
+               - (  crijp2 * crij2
+                  * (produc[c_id][i_km] -d2s3 *produk[c_id] * deltkm)));
+
+        w6[c_id][0] += c_tr;
+        w6[c_id][1] += c_tr;
+        w6[c_id][2] += c_tr;
+
+      } /* End of loop on mm */
+
+      for (cs_lnum_t isub = 0; isub < 6; isub++) {
+
+        cs_lnum_t ii = i_6_to_33[isub];
+        cs_lnum_t jj = j_6_to_33[isub];
+
+        const cs_lnum_t i_ki = m_33_to_6[kk][ii];
+        const cs_lnum_t i_kj = m_33_to_6[kk][jj];
+
+        const cs_real_t deltki = kr_33[kk][ii];
+        const cs_real_t deltkj = kr_33[kk][jj];
+
+        const cs_real_t vnk = grad[c_id][kk];
+        const cs_real_t vni = grad[c_id][ii];
+        const cs_real_t vnj = grad[c_id][jj];
+
+        w6[c_id][isub] +=   1.5 * vnk
+                          * (- (  crijp1
+                                 * (  cvara_rij[c_id][i_ki]*vnj
+                                    + cvara_rij[c_id][i_kj]*vni)
+                                 * epsk[c_id])
+                             + (  crijp2 * crij2
+                                * (  ( produc[c_id][i_ki]
+                                      -d2s3 * produk[c_id] * deltki)*vnj
+                                   + ( produc[c_id][i_kj]
+                                      -d2s3 * produk[c_id] * deltkj)*vni)));
+
+      } /* End of loop on isub */
+
+    } /* End of loop on kk */
+
+  } /* End of loop on cells */
+
+  /* Distance to the wall and amortization function: W3
+   *   For each calculation mode: same code, test
+   *   Apart from the loop */
+
+# pragma omp parallel for if(n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    const cs_real_t distxn = cs_math_fmax(w_dist[c_id], cs_math_epzero); //FIXME
+    const cs_real_t trrij = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
+    cs_real_t bb =   cmu075 * pow(trrij, 1.5)
+                   / (cs_turb_xkappa * cvara_ep[c_id] * distxn);
+    bb = cs_math_fmin(bb, 1.0);
+
+    for (cs_lnum_t isub = 0; isub < 6; isub++)
+      rhs[c_id][isub] += cromo[c_id] * cell_f_vol[c_id] * w6[c_id][isub] * bb;
+  }
+
+  BFT_FREE(w6);
+  BFT_FREE(grad);
+  BFT_FREE(epsk);
+  BFT_FREE(produk);
 }
 
 /*----------------------------------------------------------------------------*/

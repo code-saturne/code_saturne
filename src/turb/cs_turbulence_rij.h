@@ -58,7 +58,7 @@ BEGIN_C_DECLS
  *                            source terms or mass rate
  * \param[in]     viscf       visc*surface/dist at internal faces
  * \param[in]     viscb       visc*surface/dist at edge faces
- * \param[in]     smbr        working array
+ * \param[in]     rhs         working array
  * \param[in]     rovsdt      working array
  !*/
 /*-------------------------------------------------------------------------------*/
@@ -73,7 +73,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
                             cs_real_t            smacel[],
                             cs_real_t            viscf[],
                             cs_real_t            viscb[],
-                            cs_real_t            smbr[],
+                            cs_real_t            rhs[],
                             cs_real_t            rovsdt[]);
 
 /*----------------------------------------------------------------------------*/
@@ -103,6 +103,21 @@ cs_turbulence_rij_solve_alpha(int        f_id,
 void
 cs_turbulence_rij_grav_st(const cs_real_t  gradro[][3],
                           cs_real_t        buoyancy[][6]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Terms of wall echo for \f$ R_{ij} \f$
+ *        \f$var  = R_{11} \: R_{22} \: R_{33} \: R_{12} \: R_{13} \: R_{23}\f$
+ *        \f$comp =  1 \:  2 \:  3 \:  4 \:  5 \:  6\f$
+ *
+ * \param[in]     produc  production
+ * \param[in,out] rhs     work array for right-hand-side
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_echo(const cs_real_t  produc[][6],
+                       cs_real_t        rhs[][6]);
 
 /*----------------------------------------------------------------------------*/
 /*!
