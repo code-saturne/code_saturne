@@ -814,9 +814,6 @@ cs_math_3_orthonormal_basis(const cs_real_t vect[3],
     bft_error(__FILE__, __LINE__, 0,
               _("Error: provided vector has zero norm.\n"));
 
-  for (int i = 0; i < 3; i++)
-    memset(axes[i], 0, 3*sizeof(cs_real_t));
-
   // Compute first axis
   cs_math_3_normalize(vect, axes[0]);
 
