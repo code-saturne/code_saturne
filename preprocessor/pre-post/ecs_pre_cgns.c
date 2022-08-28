@@ -2868,6 +2868,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
         /* On libère la mémoire */
 
+        ECS_FREE(ptr_section->offsets);
         ECS_FREE(ptr_section->elems);
 
         cpt_section += 1;
