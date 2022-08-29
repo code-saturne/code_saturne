@@ -1562,7 +1562,7 @@ cs_log_iteration_add_array(const char                     *name,
   }
 
   const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(loc_id);
-  const cs_lnum_t *elt_list = cs_mesh_location_get_elt_list(loc_id);
+  const cs_lnum_t *elt_list = cs_mesh_location_get_elt_ids_try(loc_id);
 
   if (have_weight)
     cs_array_reduce_simple_stats_l_w(n_elts[0],

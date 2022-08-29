@@ -4622,7 +4622,7 @@ cs_cdovb_scaleq_flux_across_plane(const cs_real_t             normal[],
 
   const cs_timer_t  t0 = cs_timer_time();
   const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
-  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
+  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_ids_try(ml_id);
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_adjacency_t  *f2c = connect->f2c;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;

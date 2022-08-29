@@ -3010,7 +3010,7 @@ cs_cdovcb_scaleq_flux_across_plane(const cs_real_t             normal[],
 
   const cs_timer_t  t0 = cs_timer_time();
   const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
-  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
+  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_ids_try(ml_id);
 
   if (n_elts[0] > 0 && elt_ids == NULL)
     bft_error(__FILE__, __LINE__, 0,

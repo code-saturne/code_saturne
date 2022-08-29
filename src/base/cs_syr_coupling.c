@@ -593,7 +593,7 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
   for (int l_i = 0; l_i < n_locations; l_i++) {
     int loc_id = location_ids[l_i];
     const cs_lnum_t n = cs_mesh_location_get_n_elts(loc_id)[0];
-    const cs_lnum_t *ids = cs_mesh_location_get_elt_list(loc_id);
+    const cs_lnum_t *ids = cs_mesh_location_get_elt_ids_try(loc_id);
     if (ids != NULL) {
       for (cs_lnum_t i = 0; i < n; i++)
         elt_list[n_elts++] = ids[i] + 1;

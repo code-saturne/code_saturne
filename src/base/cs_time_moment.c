@@ -1306,7 +1306,7 @@ _compute_current_weight(cs_time_moment_wa_t  *mwa,
     const cs_mesh_location_type_t loc_type
       = cs_mesh_location_get_type(mwa->location_id);
     const cs_lnum_t *elt_list
-      = cs_mesh_location_get_elt_list(mwa->location_id);
+      = cs_mesh_location_get_elt_ids_try(mwa->location_id);
     const cs_mesh_t *mesh = cs_glob_mesh;
 
     assert(n_w_elts == cs_mesh_location_get_n_elts(mwa->location_id)[0]);

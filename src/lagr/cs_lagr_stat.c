@@ -2479,7 +2479,7 @@ _vv_mesh_location_cells(int              location_id_y,
   const cs_mesh_location_type_t loc_type
     = cs_mesh_location_get_type(location_id_y);
   const cs_lnum_t *elt_list
-    = cs_mesh_location_get_elt_list(location_id_y);
+    = cs_mesh_location_get_elt_ids_try(location_id_y);
   const cs_mesh_t *mesh = cs_glob_mesh;
 
   cs_lnum_t n_y_elts = cs_mesh_location_get_n_elts(location_id_y)[0];
