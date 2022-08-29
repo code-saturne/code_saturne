@@ -381,7 +381,7 @@ module cstphy
 
   !> constant \f$C_3\f$ for the buoyant production term \f$R_{ij}-\varepsilon\f$
   !>  models.
-  double precision, save :: crij3
+  real(c_double), pointer, save :: crij3
 
   !> constant \f$C_1^\prime\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model,
   !> corresponding to the wall echo terms.
@@ -430,7 +430,6 @@ module cstphy
   !> (\f$R_{ij}-\varepsilon\f$ SSG)
   double precision, save :: cssgr4
 
-
   !> constant \f$C_{r1}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
   !> Useful if and only if \ref iturb=31
   !> (\f$R_{ij}-\varepsilon\f$ SSG)
@@ -445,7 +444,7 @@ module cstphy
   double precision, save :: cebmr1, cebmr2, cebmr3, cebmr4, cebmr5
 
   !> constant \f$C_s\f$ for the \f$R_{ij}-\varepsilon\f$ models.
-  double precision, save :: csrij
+  real(c_double), pointer, save :: csrij
 
   !> constant of the Rij-epsilon EBRSM
   double precision, save :: cebme2
@@ -518,15 +517,15 @@ module cstphy
 
   !> constant \f$ C_{DDES}\f$ for the hybrid \f$k-\omega\f$ SST model.
   !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST) and hybrid_turb=1
-  double precision, save :: cddes
+  real(c_double), pointer, save :: cddes
 
   !> constant \f$ C_{SAS}\f$ for the hybrid \f$k-\omega\f$ SST model.
   !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST) and hybrid_turb=3
-  double precision, save :: csas
+  real(c_double), pointer, save :: csas
 
   !> constant \f$ C_{DDES}\f$ for the hybrid \f$k-\omega\f$ SST model.
   !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST) and hybrid_turb=3
-  double precision, save :: csas_eta2
+  real(c_double), pointer, save :: csas_eta2
 
   !> \f$\frac{\beta_1}{C_\mu}-\frac{\kappa^2}{\sqrt{C_\mu}\sigma_{\omega 1}}\f$
   !> constant \f$\gamma_1\f$ for the \f$k-\omega\f$ SST model.
@@ -841,15 +840,16 @@ module cstphy
     ! turbulence model
 
     subroutine cs_f_turb_model_constants_get_pointers(cmu, cmu025, crij1, crij2, &
-        csmago, xlesfd, smagmx, smagmn, cwale, xlesfl, ales, bles, cdries, &
-        ce1, ce2, c1trit, c2trit, c3trit, c4trit) &
+        crij3, csmago, smagmx, smagmn, cwale, xlesfd, xlesfl, ales, bles, cdries, &
+        ce1, ce2, csrij, c1trit, c2trit, c3trit, c4trit, cddes, csas, csas_eta2) &
       bind(C, name='cs_f_turb_model_constants_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: cmu  , cmu025 , crij1 , crij2
-      type(c_ptr), intent(out) :: csmago, xlesfd, smagmx, smagmn
-      type(c_ptr), intent(out) :: cwale, xlesfl, ales, bles, cdries
-      type(c_ptr), intent(out) :: ce1, ce2, c1trit, c2trit, c3trit, c4trit
+      type(c_ptr), intent(out) :: cmu  , cmu025 , crij1 , crij2, crij3
+      type(c_ptr), intent(out) :: csmago, smagmx, smagmn
+      type(c_ptr), intent(out) :: cwale, xlesfd, xlesfl, ales, bles, cdries
+      type(c_ptr), intent(out) :: ce1, ce2, csrij, c1trit, c2trit, c3trit, c4trit
+      type(c_ptr), intent(out) :: cddes, csas, csas_eta2
     end subroutine cs_f_turb_model_constants_get_pointers
 
     !---------------------------------------------------------------------------
@@ -976,42 +976,48 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_cmu, c_cmu025, c_crij1, c_crij2
-    type(c_ptr) :: c_csmago, c_xlesfd, c_smagmx, c_smagmn, c_cwale
-    type(c_ptr) :: c_xlesfl, c_ales, c_bles, c_cdries
-    type(c_ptr) :: c_ce1, c_ce2, c_c1trit, c_c2trit, c_c3trit, c_c4trit
+    type(c_ptr) :: c_cmu, c_cmu025, c_crij1, c_crij2, c_crij3
+    type(c_ptr) :: c_csmago, c_smagmx, c_smagmn, c_cwale
+    type(c_ptr) :: c_xlesfd, c_xlesfl, c_ales, c_bles, c_cdries
+    type(c_ptr) :: c_ce1, c_ce2, c_csrij
+    type(c_ptr) :: c_c1trit, c_c2trit, c_c3trit, c_c4trit
+    type(c_ptr) :: c_cddes, c_csas, c_csas_eta2
 
-    call cs_f_turb_model_constants_get_pointers(c_cmu, c_cmu025, c_crij1,    &
-                                                c_crij2, c_csmago, c_xlesfd, &
-                                                c_smagmx, c_smagmn, c_cwale, &
-                                                c_xlesfl, c_ales, c_bles,    &
-                                                c_cdries,                    &
-                                                c_ce1   , &
-                                                c_ce2   , &
-                                                c_c1trit, &
-                                                c_c2trit, &
-                                                c_c3trit, &
-                                                c_c4trit)
+    call cs_f_turb_model_constants_get_pointers(c_cmu, c_cmu025,               &
+                                                c_crij1, c_crij2, c_crij3,     &
+                                                c_csmago, c_smagmx, c_smagmn,  &
+                                                c_cwale, c_xlesfd, c_xlesfl,   &
+                                                c_ales, c_bles,                &
+                                                c_cdries,                      &
+                                                c_ce1, c_ce2, c_csrij,         &
+                                                c_c1trit, c_c2trit,            &
+                                                c_c3trit, c_c4trit,            &
+                                                c_cddes, c_csas, c_csas_eta2)
 
     call c_f_pointer(c_cmu    , cmu   )
     call c_f_pointer(c_cmu025 , cmu025)
     call c_f_pointer(c_crij1 , crij1)
     call c_f_pointer(c_crij2 , crij2)
+    call c_f_pointer(c_crij3 , crij3)
     call c_f_pointer(c_csmago, csmago)
-    call c_f_pointer(c_xlesfd, xlesfd)
     call c_f_pointer(c_smagmx, smagmx)
     call c_f_pointer(c_smagmn, smagmn)
     call c_f_pointer(c_cwale, cwale)
+    call c_f_pointer(c_xlesfd, xlesfd)
     call c_f_pointer(c_xlesfl, xlesfl)
     call c_f_pointer(c_ales  , ales  )
     call c_f_pointer(c_bles  , bles  )
     call c_f_pointer(c_cdries, cdries)
     call c_f_pointer(c_ce1   , ce1   )
     call c_f_pointer(c_ce2   , ce2   )
+    call c_f_pointer(c_csrij , csrij )
     call c_f_pointer(c_c1trit, c1trit)
     call c_f_pointer(c_c2trit, c2trit)
     call c_f_pointer(c_c3trit, c3trit)
     call c_f_pointer(c_c4trit, c4trit)
+    call c_f_pointer(c_cddes,  cddes)
+    call c_f_pointer(c_csas,   csas)
+    call c_f_pointer(c_csas_eta2, csas_eta2)
 
   end subroutine turb_model_constants_init
 

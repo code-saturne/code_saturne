@@ -1008,21 +1008,26 @@ cs_f_turb_model_constants_get_pointers(double  **cmu,
                                        double  **cmu025,
                                        double  **crij1,
                                        double  **crij2,
+                                       double  **crij3,
                                        double  **csmago,
-                                       double  **xlesfd,
                                        double  **smagmx,
                                        double  **smagmn,
                                        double  **cwale,
+                                       double  **xlesfd,
                                        double  **xlesfl,
                                        double  **ales,
                                        double  **bles,
                                        double  **cdries,
-                                       double  **ce1   ,
-                                       double  **ce2   ,
+                                       double  **ce1,
+                                       double  **ce2,
+                                       double  **csrij,
                                        double  **c1trit,
                                        double  **c2trit,
                                        double  **c3trit,
-                                       double  **c4trit);
+                                       double  **c4trit,
+                                       double  **cddes,
+                                       double  **csas,
+                                       double  **csas_eta2);
 
 /*============================================================================
  * Private function definitions
@@ -1164,11 +1169,12 @@ cs_f_turb_reference_values(double  **almax,
  *   cmu025 --> pointer to cs_turb_cmu025
  *   crij1  --> pointer to cs_turb_crij1
  *   crij2  --> pointer to cs_turb_crij2
+ *   crij3  --> pointer to cs_turb_crij3
  *   csmago --> pointer to cs_turb_csmago
- *   xlesfd --> pointer to cs_turb_xlesfd
  *   smagmx --> pointer to cs_turb_smago_max
  *   smagmn --> pointer to cs_turb_smago_min
  *   cwale  --> pointer to cs_turb_cwale
+ *   xlesfd --> pointer to cs_turb_xlesfd
  *   xlesfl --> pointer to cs_turb_xlesfl
  *   ales   --> pointer to cs_turb_ales
  *   bles   --> pointer to cs_turb_bles
@@ -1181,42 +1187,52 @@ cs_f_turb_model_constants_get_pointers(double  **cmu,
                                        double  **cmu025,
                                        double  **crij1,
                                        double  **crij2,
+                                       double  **crij3,
                                        double  **csmago,
-                                       double  **xlesfd,
                                        double  **smagmx,
                                        double  **smagmn,
                                        double  **cwale,
+                                       double  **xlesfd,
                                        double  **xlesfl,
                                        double  **ales,
                                        double  **bles,
                                        double  **cdries,
-                                       double  **ce1   ,
-                                       double  **ce2   ,
+                                       double  **ce1,
+                                       double  **ce2,
+                                       double  **csrij,
                                        double  **c1trit,
                                        double  **c2trit,
                                        double  **c3trit,
-                                       double  **c4trit)
+                                       double  **c4trit,
+                                       double  **cddes,
+                                       double  **csas,
+                                       double  **csas_eta2)
 {
   *cmu    = &cs_turb_cmu;
   *cmu025 = &cs_turb_cmu025;
   *crij1 = &cs_turb_crij1;
   *crij2 = &cs_turb_crij2;
+  *crij3 = &cs_turb_crij3;
   *csmago= &cs_turb_csmago;
-  *xlesfd= &cs_turb_xlesfd;
   *csmago= &cs_turb_csmago;
   *smagmx= &cs_turb_csmago_max;
   *smagmn= &cs_turb_csmago_min;
   *cwale = &cs_turb_cwale;
+  *xlesfd= &cs_turb_xlesfd;
   *xlesfl= &cs_turb_xlesfl;
   *ales  = &cs_turb_ales;
   *bles  = &cs_turb_bles;
   *cdries= &cs_turb_cdries;
   *ce1   = &cs_turb_ce1;
   *ce2   = &cs_turb_ce2;
+  *csrij = &cs_turb_csrij;
   *c1trit= &cs_turb_c1trit;
   *c2trit= &cs_turb_c2trit;
   *c3trit= &cs_turb_c3trit;
   *c4trit= &cs_turb_c4trit;
+  *cddes = &cs_turb_cddes;
+  *csas  = &cs_turb_csas;
+  *csas_eta2 = &cs_turb_csas_eta2;
 }
 
 /*============================================================================
