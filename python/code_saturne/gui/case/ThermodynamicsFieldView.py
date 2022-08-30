@@ -384,12 +384,12 @@ class StandardItemModelProperty(QStandardItemModel):
         try:
             material = self.dicoM2V[self.mdl.getMaterials(fieldId)]
         except KeyError:
-            material = self.dicoM2V[self.mdl.mainFieldsModel.defaultValues(fieldId)["material"]]
+            material = self.dicoM2V[self.mdl.defaultValues(fieldId)["material"]]
             self.mdl.setMaterials(fieldId, material)
         try:
             method = self.dicoM2V[self.mdl.getMethod(fieldId)]
         except KeyError:
-            method = self.dicoM2V[self.mdl.mainFieldsModel.defaultValues(fieldId)["method"]]
+            method = self.dicoM2V[self.mdl.defaultValues(fieldId)["method"]]
             self.mdl.setMethod(fieldId, method)
         reference = self.mdl.updateReference(fieldId)
 
@@ -765,7 +765,7 @@ temperature = enthalpy / 1000;
 
             # Deactivate Thermal variable if no energy resolution
             mfm = MainFieldsModel(self.case)
-            if mfm.getEnergyResolution(fieldId) == 'off':
+            if mfm.getEnergyModel(fieldId) == 'off':
                 self.comboBoxSpecificHeat.setEnabled(False)
                 self.lineEditSpecificHeat.setReadOnly(True)
                 self.lineEditSpecificHeat.setEnabled(False)
@@ -836,7 +836,7 @@ temperature = enthalpy / 1000;
 
             # Temperature / enthalpy law
             self.groupBoxTemperature.hide()
-            if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
+            if MainFieldsModel(self.case).getEnergyModel(fieldId) != "off":
                 self.groupBoxTemperature.show()
 
                 fieldId = self.currentFluid

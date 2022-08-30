@@ -1388,7 +1388,7 @@ class meg_to_c_interpreter:
                 #     self.init_block('vol', 'all_cells', name,
                 #                     exp, req, sym, sca)
 
-                for fieldId in tm.getFieldIdList():
+                for fieldId in mfm.getFieldIdList():
                     if tm.getMaterials(fieldId) == 'user_material':
                         for fk in authorized_fields:
                             if tm.getPropertyMode(fieldId, fk) == 'user_law':
@@ -1413,7 +1413,7 @@ class meg_to_c_interpreter:
                                                         exp, req, sym, sca)
 
                         # Temperature as a function of enthalpy
-                        if mfm.getEnergyResolution(fieldId) == 'on':
+                        if mfm.getEnergyModel(fieldId) != 'off':
                             name = 'temperature_' + str(fieldId)
                             for zone in vol_zones:
                                 zname = zone.getLabel()
@@ -1979,7 +1979,7 @@ class meg_to_c_interpreter:
                                         exp, req, sym, [])
 
                         # Enthalpy (only if energy resolution is activated)
-                        if mfm.getEnergyResolution(fId) == 'on':
+                        if mfm.getEnergyModel(fId) != 'off':
                             if mfi.getEnergyModel(z_id, fId) != 'hsat_P':
                                 exp, req, sym = mfi.getFormulaComponents(z_id,
                                                                          fId,

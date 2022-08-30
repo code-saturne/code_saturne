@@ -85,7 +85,7 @@ class TurbulenceDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
         self.modelCombo = ComboModel(editor, 1, 1)
-        fieldId = index.row() + 1
+        fieldId = self.mdl.mainFieldsModel.list_of_fields[index.row()].f_id
 
         if self.mdl.mainFieldsModel.getCriterion(fieldId) == "continuous":
             turbulence_models = TurbulenceModelsDescription.continuousTurbulenceModels
@@ -108,7 +108,6 @@ class TurbulenceDelegate(QItemDelegate):
 
 
     def setEditorData(self, comboBox, index):
-        row = index.row()
         col = index.column()
         string = index.model().getData(index)[col]
         self.modelCombo.setItem(str_view=string)
@@ -144,7 +143,7 @@ class CouplingDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
         self.modelCombo = ComboModel(editor, 1, 1)
-        fieldId = index.row() + 1
+        fieldId = self.mdl.mainFieldsModel.list_of_fields[index.row()].f_id
 
         if self.mdl.mainFieldsModel.getCriterion(fieldId) == "continuous" :
                self.modelCombo.addItem(self.tr(self.dicoM2V["none"]), "none")
@@ -169,7 +168,6 @@ class CouplingDelegate(QItemDelegate):
 
 
     def setEditorData(self, comboBox, index):
-        row = index.row()
         col = index.column()
         string = index.model().getData(index)[col]
         self.modelCombo.setItem(str_view=string)
@@ -205,9 +203,9 @@ class TurbFluxDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
         self.modelCombo = ComboModel(editor, 1, 1)
-        fieldId = index.row() + 1
+        fieldId = self.mdl.mainFieldsModel.list_of_fields[index.row()].f_id
 
-        if self.mdl.mainFieldsModel.getEnergyResolution(fieldId) == 'on':
+        if self.mdl.mainFieldsModel.getEnergyModel(fieldId) != 'off':
             if self.mdl.useAdvancedThermalFluxes(fieldId) == True:
                 for turbFlux in TurbulenceModelsDescription.ThermalTurbFluxModels:
                     self.modelCombo.addItem(self.tr(self.dicoM2V[turbFlux]), turbFlux)
@@ -225,7 +223,6 @@ class TurbFluxDelegate(QItemDelegate):
         return editor
 
     def setEditorData(self, comboBox, index):
-        row = index.row()
         col = index.column()
         string = index.model().getData(index)[col]
         self.modelCombo.setItem(str_view=string)
@@ -293,18 +290,19 @@ class StandardItemModelTurbulence(QStandardItemModel):
 
         # NoItemsFlags is used to have a grayed out option
 
+        fieldId = self.mdl.mainFieldsModel.list_of_fields[index.row()].f_id
         if not index.isValid():
             return Qt.ItemIsEnabled
         if index.column() == 2 :
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
         if index.column() == 3 :
-            if self.mdl.useAdvancedThermalFluxes(index.row()+1) == True \
-                and self.mdl.mainFieldsModel.getEnergyResolution(index.row()+1) == 'on':
+            if self.mdl.useAdvancedThermalFluxes(fieldId) == True \
+                and self.mdl.mainFieldsModel.getEnergyModel(fieldId) != 'off':
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
             else:
                 return Qt.NoItemFlags
         elif index.column() == 1 or index.column() == 4 :
-            if self.mdl.mainFieldsModel.getCriterion(index.row()+1) == "continuous" :
+            if self.mdl.mainFieldsModel.getCriterion(fieldId) == "continuous" :
                 return Qt.NoItemFlags
             else :
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
@@ -324,7 +322,7 @@ class StandardItemModelTurbulence(QStandardItemModel):
 
         row = index.row()
         col = index.column()
-        FieldId = row + 1
+        FieldId = self.mdl.mainFieldsModel.list_of_fields[row].f_id
 
         # turbulence model
         if col == 2:
@@ -552,7 +550,7 @@ class TurbulenceView(QWidget, Ui_Turbulence):
         """
         show groupBoxMixingLength if necessary
         """
-        fieldId = row + 1
+        fieldId = self.mdl.mainFieldsModel.list_of_fields[row].f_id
         if fieldId != 0:
             turbModel = self.mdl.getTurbulenceModel(fieldId)
             if turbModel == "mixing_length" :
@@ -572,7 +570,8 @@ class TurbulenceView(QWidget, Ui_Turbulence):
         """
         Update the mixing length
         """
-        fieldId = self.tableViewTurbulence.currentIndex().row() + 1
+        table_id = self.tableViewTurbulence.currentIndex().row()
+        fieldId = self.mdl.mainFieldsModel.list_of_fields[table_id].f_id
         if self.lineEditMixingLength.validator().state == QValidator.Acceptable:
             mix = from_qvariant(text, float)
             self.mdl.setMixingLength(fieldId, mix)

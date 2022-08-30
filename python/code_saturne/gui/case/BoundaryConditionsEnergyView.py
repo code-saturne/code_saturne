@@ -125,7 +125,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
             self.__modelEnergy.addItem(self.tr("SYRTHES coupling"), "syrthes_coupling")
 
         if self.__boundary.getNature() == "inlet" or  self.__boundary.getNature() == "outlet":
-            if MainFieldsModel(self.case).getEnergyResolution(self.__currentField) == 'on' :
+            if MainFieldsModel(self.case).getEnergyModel(self.__currentField) != 'off' :
                 energychoice = self.__boundary.getEnthalpyChoice(self.__currentField)
                 self.__modelEnergy.setItem(str_model=energychoice)
                 if energychoice == "hsat_P" :

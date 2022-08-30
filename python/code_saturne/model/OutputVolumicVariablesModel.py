@@ -292,7 +292,7 @@ class OutputVolumicVariablesModel(Variables, Model):
         self.list_name = []
 
         fields_node = None
-        fields_list = []
+        fields_list = {} 
 
         # Main/known categories
 
@@ -367,9 +367,9 @@ class OutputVolumicVariablesModel(Variables, Model):
                     if fields_node is None:
                         fields_node = self.node_models.xmlGetNode('fields')
                         for nf in fields_node.xmlGetNodeList('field'):
-                            fields_list.append(nf['label'])
+                            fields_list[nf['field_id']] = nf['label']
 
-                    category = fields_list[int(node['field_id'])-1]
+                    category = fields_list[node['field_id']]
 
 
 

@@ -31,7 +31,7 @@ from code_saturne.model.InterfacialForcesModel import InterfacialForcesModel
 
 
 # TODO : try to include this model in "InterfaceForcesModel" directly ?
-class InterfacialAreaModel(Model):
+class InterfacialAreaModel(Variables, Model):
 
     """
     This class manages the turbulence objects in the XML file
@@ -44,7 +44,6 @@ class InterfacialAreaModel(Model):
         #
         # XML file parameters
         self.mainFieldsModel = MainFieldsModel(case)
-        self.variables       = Variables(case)
         self.case              = case
         self.XMLclosure        = self.case.xmlGetNode('closure_modeling')
         self.XMLAreaDiam       = self.XMLclosure.xmlInitNode('interfacial_area_diameter')
@@ -144,11 +143,12 @@ class InterfacialAreaModel(Model):
 
         if oldmodel != model :
             if model == "constant" :
-                self.variables.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "Xd")
-                self.variables.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "X2")
+                self.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "Xd")
+                self.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "X2")
             else:
-                field_name = self.mainFieldsModel.getFieldLabelsList()[int(fieldId)-1]
-                self.variables.setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "Xd", "Xd_"+field_name)
+                field = self.mainFieldsModel.getFieldFromId(fieldId)
+                field_name = field.label
+                self.setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "Xd", "Xd_"+field_name)
 
 
     @Variables.noUndo
@@ -188,12 +188,13 @@ class InterfacialAreaModel(Model):
         childNode = node.xmlInitChildNode('source_term')
         childNode.xmlSetAttribute(model = model)
 
-        field_name = self.mainFieldsModel.getFieldLabelsList()[int(fieldId)-1]
+        field = self.mainFieldsModel.getFieldFromId(fieldId)
+        field_name = field.label
         if oldmodel != model :
             if model == 'kamp_colin' :
-                self.variables.setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "X2", "X2_"+field_name)
+                self.setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "X2", "X2_"+field_name)
             else:
-                self.variables.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "X2")
+                self.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "X2")
 
 
     @Variables.noUndo
@@ -290,8 +291,8 @@ class InterfacialAreaModel(Model):
     def remove(self):
         self.XMLAreaDiam.xmlRemoveChildren()
         for fieldId in self.mainFieldsModel.getFieldIdList():
-            self.variables.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "Xd")
-            self.variables.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "X2")
+            self.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "Xd")
+            self.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "X2")
 
 
 # -------------------------------------------------------------------------------

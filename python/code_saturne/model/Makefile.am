@@ -27,6 +27,7 @@ SUBDIRS = .
 modeldir = $(pkgpythondir)/model
 
 dist_model_PYTHON = \
+  NeptuneFieldModel.py \
   AtmosphericFlowsModel.py \
   BalanceModelNeptune.py \
   BalanceModel.py \

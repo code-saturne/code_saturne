@@ -81,18 +81,18 @@ class InterfacialEnthalpyModel(Variables, Model):
 
         for fieldaId in self.mainFieldsModel.getContinuousFieldList() :
             nature_a = self.mainFieldsModel.getFieldNature(fieldaId)
-            if self.mainFieldsModel.getEnergyResolution(fieldaId) == 'on' :
+            if self.mainFieldsModel.getEnergyModel(fieldaId) != 'off' :
                 for fieldbId in self.mainFieldsModel.getContinuousFieldList():
                     nature_b = self.mainFieldsModel.getFieldNature(fieldbId)
                     if nature_a == nature_b:
                         continue
-                    if self.mainFieldsModel.getEnergyResolution(fieldbId) == 'on' and fieldbId > fieldaId:
+                    if self.mainFieldsModel.getEnergyModel(fieldbId) != 'off' and fieldbId > fieldaId:
                         self.__liquidVaporCouples.append((fieldaId, fieldbId))
                 for fieldbId in self.mainFieldsModel.getDispersedFieldList():
                     nature_b = self.mainFieldsModel.getFieldNature(fieldbId)
                     if nature_a == nature_b:
                         continue
-                    if self.mainFieldsModel.getEnergyResolution(fieldbId) == 'on' and self.mainFieldsModel.getFieldNature(fieldbId) != "solid":
+                    if self.mainFieldsModel.getEnergyModel(fieldbId) != 'off' and self.mainFieldsModel.getFieldNature(fieldbId) != "solid":
                         self.__liquidVaporCouples.append((fieldaId, fieldbId))
 
     def getLiquidVaporCouples(self):

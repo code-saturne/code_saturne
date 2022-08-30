@@ -76,7 +76,8 @@ class MainFieldsSourceTermsModel(Variables, Model):
         self.isInList(zone, LocalizationModel('VolumicZone', self.case).getCodeNumbersList())
 
     def getKnownFields(self, fieldId):
-        field_name = self.mfm.getFieldLabelsList()[int(fieldId)-1]
+        field = self.mfm.getFieldFromId(fieldId)
+        field_name = field.label 
 
         known_fields = [('enthalpy_'+field_name, 'enthalpy_'+str(fieldId)),
                         ('density_'+field_name, 'density_'+str(fieldId))]

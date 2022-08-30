@@ -23,7 +23,7 @@
 # -------------------------------------------------------------------------------
 
 import unittest
-from code_saturne.model.XMLvariables import Model
+from code_saturne.model.XMLvariables import Variables, Model
 from code_saturne.model.XMLengine import *
 from code_saturne.model.XMLmodel import *
 from code_saturne.model.MainFieldsModel import MainFieldsModel
@@ -32,7 +32,7 @@ from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
 from code_saturne.model.NotebookModel import NotebookModel
 
 
-class InterfacialForcesModel(Model):
+class InterfacialForcesModel(Variables, Model):
     """
     This class manages the turbulence objects in the XML file
     """
@@ -44,7 +44,6 @@ class InterfacialForcesModel(Model):
         #
         # XML file parameters
         self.mainFieldsModel = MainFieldsModel(case)
-        self.variables       = Variables(case)
         self.turb_m   = TurbulenceModel(case)
         self.notebook = NotebookModel(case)
 
@@ -240,10 +239,10 @@ class InterfacialForcesModel(Model):
         ChildNode = node.xmlInitChildNode('drag_model')
         ChildNode['model'] = model
         if model != "none":
-            self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldbId,
+            self.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldbId,
                                                         "drag_coefficient", "drag_coef" + str(fieldbId))
         else:
-            self.variables.removeVariableProperty("property", self.XMLNodeproperty, fieldbId, "drag_coefficient")
+            self.removeVariableProperty("property", self.XMLNodeproperty, fieldbId, "drag_coefficient")
 
 
     @Variables.noUndo
@@ -442,23 +441,24 @@ class InterfacialForcesModel(Model):
                 if node:
                     node.xmlRemoveNode()
 
-                self.variables.removeVariableProperty("property",
+                self.removeVariableProperty("property",
                                                             self.XMLNodeproperty,
                                                             fieldId,
                                                             "diameter")
-                self.variables.removeVariableProperty("property",
+                self.removeVariableProperty("property",
                                                             self.XMLNodeproperty,
                                                             fieldId,
                                                             "drift_component")
 
             elif status == "on":
-                field_name = MainFieldsModel(self.case).getFieldLabelsList()[int(fieldId)-1]
-                self.variables.setNewVariableProperty('property', '',
+                field = self.mainFieldsModel.getFieldFromId(fieldId)
+                field_name = field.label
+                self.setNewVariableProperty('property', '',
                                                             self.XMLNodeproperty,
                                                             fieldId,
                                                             'diameter',
                                                             'diam_'+field_name)
-                self.variables.setNewVariableProperty('property', '',
+                self.setNewVariableProperty('property', '',
                                                             self.XMLNodeproperty,
                                                             fieldId,
                                                             'drift_component',

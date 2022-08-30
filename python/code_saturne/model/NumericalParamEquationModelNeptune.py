@@ -97,7 +97,7 @@ class NumericalParamEquatModel(Variables, Model):
                 # control to add enthalpy only if solved!!!
                 if self._isEnthalpy(node) == 1 :
                     field = node['field_id']
-                    if MainFieldsModel(self.case).getEnergyResolution(field) == "on":
+                    if MainFieldsModel(self.case).getEnergyModel(field) != "off":
                         list.append(node['label'])
                 else:
                     list.append(node['label'])

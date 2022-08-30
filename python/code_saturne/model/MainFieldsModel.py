@@ -28,6 +28,7 @@ from code_saturne.model.XMLvariables import Variables, Model
 from code_saturne.model.XMLengine import *
 from code_saturne.model.XMLmodel import *
 from code_saturne.model.Common import LABEL_LENGTH_MAX
+from code_saturne.model.NeptuneFieldModel import NeptuneField
 from code_saturne.model.ProfilesModel import ProfilesModel
 from code_saturne.model.TimeAveragesModel import TimeAveragesModel
 from code_saturne.model.GlobalNumericalParametersModel import GlobalNumericalParametersModel
@@ -63,23 +64,11 @@ class PredefinedFlowsModel:
     fieldsCoupleProperties[fieldsCouple[5]] = (("continuous", "continuous"),
                                                ("liquid", "gas"))
 
-
-#-------------------------------------------------------------------------------
-# Description of fields attribute
-#-------------------------------------------------------------------------------
-
-class FieldAttributesDescription:
-    """
-    """
-    typeChoiceValues = ['continuous', 'dispersed', 'auto']
-    phaseValues = ['liquid', 'gas', 'particle']
-
-
 #-------------------------------------------------------------------------------
 # Model for main fields
 #-------------------------------------------------------------------------------
 
-class MainFieldsModel(Model):
+class MainFieldsModel(Variables, Model):
     """
     This class manages the Field objects in the XML file
     """
@@ -90,7 +79,6 @@ class MainFieldsModel(Model):
         """
         # XML file parameters
         self.case = case
-        self.variables = Variables(case)
 
         self.XMLNodethermo   = self.case.xmlGetNode('thermophysical_models')
         self.__XMLNodefields = self.XMLNodethermo.xmlInitNode('fields')
@@ -111,7 +99,7 @@ class MainFieldsModel(Model):
             pressure_node = self.XMLNodethermo.xmlGetNode('variable',
                                                           name='Pressure')
         if pressure_node is None:
-            self.variables.setNewVariableProperty("variable",
+            self.setNewVariableProperty("variable",
                                                         "",
                                                         self.XMLNodeVariable,
                                                         "none",
@@ -121,7 +109,7 @@ class MainFieldsModel(Model):
         porosity_node = self.XMLNodethermo.xmlGetNode('property',
                                                       name='porosity')
         if porosity_node is None:
-            self.variables.setNewVariableProperty("property",
+            self.setNewVariableProperty("property",
                                                         "",
                                                         self.XMLNodeproperty,
                                                         "none",
@@ -131,6 +119,17 @@ class MainFieldsModel(Model):
         #EOS
         self.eos = eosWrapper()
 
+        # Test of NeptuneField
+        self.list_of_fields = self.load_fields_from_xml()
+
+    def load_fields_from_xml(self):
+        fields = []
+        for field_id in self.getFieldIdList():
+            field = NeptuneField(self.case, field_id)
+            field.load_from_xml()
+            fields.append(field)
+
+        return fields
 
     def defaultValues(self):
         default = {}
@@ -142,8 +141,8 @@ class MainFieldsModel(Model):
         else:
             default['enthalpyResolutionStatus']   = "off"
             default['enthalpyResolutionModel']    = "off"
-        default['typeChoice']                 = FieldAttributesDescription.typeChoiceValues[0]
-        default['phase']                      = FieldAttributesDescription.phaseValues[0]
+        default['typeChoice']                 = "continuous"
+        default['phase']                      = "liquid"
         default['carrierField']               = "off"
         default['compressibleStatus']         = "off"
         default['defaultPredefinedFlow'] = "None"
@@ -156,16 +155,22 @@ class MainFieldsModel(Model):
         """
         Return the id field list
         """
-        list = []
+        lst = []
 
         if include_none:
-            list.append('none')
+            lst.append('none')
 
+# TODO : see if we can move this XML manipulation to NeptuneField Object
         for node in self.__XMLNodefields.xmlGetNodeList('field'):
-            list.append(node['field_id'])
+            lst.append(node['field_id'])
 
-        return list
+        return lst
 
+    def getFieldFromId(self, fieldId):
+        for field in self.list_of_fields:
+            if str(field.f_id) == str(fieldId):
+                return field
+        return None
 
     @Variables.undoGlobal
     def addField(self,fieldId=None):
@@ -192,15 +197,20 @@ class MainFieldsModel(Model):
             phase        = self.defaultValues()['phase']
             hmodel       = self.defaultValues()['enthalpyResolutionModel']
             compressible = self.defaultValues()['compressibleStatus']
-            carrierfield = self.defaultValues()['carrierField']
+            carrierFieldId = self.defaultValues()['carrierField']
 
-            self.addDefinedField(fieldId,
-                                 label,
-                                 type,
-                                 phase,
-                                 carrierfield,
-                                 hmodel,
-                                 compressible)
+            new_field = NeptuneField(self.case, fieldId)
+            new_field.label = label
+            new_field.flow_type = type
+            new_field.phase = phase
+            new_field.carrier_id = carrierFieldId
+            new_field.enthalpy_model = hmodel
+            new_field.compressible = compressible
+
+            new_field.createVariableProperties()
+            self.list_of_fields.append(new_field)
+            # Update default carrier field id
+            NeptuneField.default_carrier_id = self.getFirstContinuousField()
 
         return fieldId
 
@@ -216,152 +226,111 @@ class MainFieldsModel(Model):
         self.isInList(typeChoice, ['dispersed', 'continuous'])
 
         # Check that the field does not already exist
-        nf = self.__XMLNodefields.xmlGetNode('field', field_id=fieldId)
-        if nf is None:
-            self.__XMLNodefields.xmlInitChildNode('field', field_id=fieldId, label=label)
+        field = self.getFieldFromId(fieldId)
+        if field != None:
+            field.label = label
         else:
-            # TODO : addField method should not modify existing fields. At least add a warning...
-            nf['label'] = label
-
+            fieldId = self.addField()
         self.setDefinedField(fieldId, typeChoice, phase, carrierField, hmodel, compressible)
 
-    def setDefinedField(self, fieldId, typeChoice, phase, carrierField, energyModel, compressible):
+    def setDefinedField(self, fieldId, typeChoice, phase, carrierFieldId, energyModel, compressible):
         """
         Set properties of an already defined field
         """
 
-        self.setCriterion(fieldId, typeChoice)
-        self.setFieldNature(fieldId, phase)
-        self.setEnergyModel(fieldId, energyModel)
-        self.setCompressibleStatus(fieldId, compressible)
-        self.setCarrierField(fieldId, carrierField)
-        self.iniVariableProperties(fieldId)
-
-    @Variables.undoLocal
-    def iniVariableProperties(self, fieldNumber):
-        """
-        add XML variable and properties
-        """
-
-        field_name = self.getFieldLabelsList()[int(fieldNumber) - 1]
-
-        self.variables.setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber,
-                                                    "volume_fraction", "vol_f_" + field_name, post=True)
-        self.variables.setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "velocity",
-                                                    "U_" + field_name, dim='3', post=True)
-        if self.getEnergyResolution(fieldNumber) == "on":
-            self.variables.setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "enthalpy",
-                                                        "enthalpy_" + field_name, post=True)
-
-        # Physical properties are set by default to "constant" to avoid uninitialized states with the GUI
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "density", "density_"+field_name)
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "molecular_viscosity", "molecular_viscosity_"+field_name)
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "specific_heat", "specific_heat_"+field_name)
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "thermal_conductivity", "thermal_conductivity_"+field_name)
-
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "mass_trans", "mass_trans_"+field_name)
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "wall_distance", "y_plus_"+field_name, support = "boundary")
-        if self.getCompressibleStatus(fieldNumber) == "on":
-           self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "drodp", "drodp_"+field_name)
-           self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "drodh", "drodh_"+field_name)
-        if self.getEnergyResolution(fieldNumber) == "on":
-           self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "temperature", "temp_"+field_name, post = True)
-        if self.getCriterion(fieldNumber) == "dispersed" or self.getPredefinedFlow() == "multiregime":
-           self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "diameter", "diam_"+field_name)
-           self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "drift_component", "drift_component_"+field_name, dim='3')
+        field = NeptuneField(self.case, fieldId)
+        field.flow_type = typeChoice
+        field.phase = phase
+        field.carrier_id = carrierFieldId
+        field.enthalpy_model = energyModel
+        field.compressible = compressible
+        is_multiregime = (self.getPredefinedFlow() == "multiregime")
+        field.createVariableProperties(is_multiregime)
+        NeptuneField.default_carrier_id = self.getFirstContinuousField()
 
 
     def getFieldLabelsList(self, include_none=False):
         """
         return list of label for field
         """
-        list = []
+        lst = []
 
         if include_none:
-            list.append('none')
+            lst.append('none')
 
-        for node in self.__XMLNodefields.xmlGetNodeList('field'):
-            list.append(node['label'])
-        return list
+        for field in self.list_of_fields:
+            lst.append(field.label)
+        return lst
 
 
     def getContinuousFieldList(self):
         """
         return list of id for field
         """
-        list = []
-        for node in self.__XMLNodefields.xmlGetNodeList('field'):
-            childNode = node.xmlInitChildNode('type')
-            if childNode['choice'] == "continuous" :
-               list.append(node['field_id'])
-        return list
+        lst = []
+        for field in self.list_of_fields:
+            if field.flow_type == "continuous":
+               lst.append(field.f_id)
+        return lst
 
 
     def getDispersedFieldList(self):
         """
         return list of id for field
         """
-        list = []
-        for node in self.__XMLNodefields.xmlGetNodeList('field'):
-            childNode = node.xmlInitChildNode('type')
-            if childNode['choice'] == "dispersed":
-                list.append(node['field_id'])
-        return list
+        lst = []
+        for field in self.list_of_fields:
+            if field.flow_type == "dispersed":
+                lst.append(field.f_id)
+        return lst
 
     def getLiquidPhaseList(self):
-        list = []
-        for node in self.__XMLNodefields.xmlGetNodeList('field'):
-            childNode = node.xmlInitChildNode('phase')
-            if childNode['choice'] == "liquid":
-                list.append(node['field_id'])
-        return list
+        lst = []
+        for field in self.list_of_fields:
+            if field.phase == "liquid":
+                lst.append(field.f_id)
+        return lst
 
     def getGasPhaseList(self):
         """
         return list of id for field
         """
-        list = []
-        for node in self.__XMLNodefields.xmlGetNodeList('field'):
-            childNode = node.xmlInitChildNode('phase')
-            if childNode['choice'] == "gas":
-                list.append(node['field_id'])
-        return list
-
+        lst = []
+        for field in self.list_of_fields:
+            if field.phase == "gas":
+                lst.append(field.f_id)
+        return lst
 
     def getSolidFieldIdList(self):
         """
         return list of id for solid field
         """
-        list = []
-        for node in self.__XMLNodefields.xmlGetNodeList('field'):
-            childNode = node.xmlInitChildNode('phase')
-            if childNode['choice'] == "solid":
-                list.append(node['field_id'])
-        return list
+        lst = []
+        for field in self.list_of_fields:
+            if field.phase == "solid":
+                lst.append(field.f_id)
+        return lst
 
     def getFilteredFieldIdList(self,
                                phase_state=None,
                                interfacial_criterion=None,
                                carrier_state=None):
-        list = []
+        lst = []
         phase_filter = True
         type_filter = True
         carrier_filter = True
-        for node in self.__XMLNodefields.xmlGetNodeList('field'):
+        for field in self.list_of_fields:
             if phase_state != None:
-                child_node = node.xmlInitChildNode('phase')
-                phase_filter = (child_node['choice'] == phase_state)
+                phase_filter = (field.phase == phase_state)
             if interfacial_criterion != None:
-                child_node = node.xmlInitChildNode('type')
-                type_filter = (child_node['choice'] == interfacial_criterion)
+                type_filter = (field.flow_type == interfacial_criterion)
             if type_filter and interfacial_criterion == "dispersed" and carrier_state != None:
                 # TODO check if self.getCarrierField can replace following lines
-                child_node = node.xmlInitChildNode("carrier_field")
-                carrier_id = child_node["field_id"]
-                carrier_filter = (self.getFieldNature(carrier_id) == carrier_state)
+                carrier_field = self.getFieldFromId(field.carrier_id)
+                carrier_filter = (carrier_field.phase == carrier_state)
             if phase_filter and type_filter and carrier_filter:
-                list.append(node['field_id'])
-        return list
+                lst.append(field.f_id)
+        return lst
 
     def getFirstContinuousField(self):
         """
@@ -388,12 +357,11 @@ class MainFieldsModel(Model):
         """
         return list of id for field with enthalpy resolution
         """
-        list = []
-        for node in self.__XMLNodefields.xmlGetNodeList('field'):
-            childNode = node.xmlInitChildNode('hresolution')
-            if childNode['status'] == "on" :
-               list.append(node['field_id'])
-        return list
+        lst = []
+        for field in self.list_of_fields:
+            if field.enthalpy_model != "off" :
+               lst.append(field.f_id)
+        return lst
 
 
     @Variables.undoLocal
@@ -406,17 +374,8 @@ class MainFieldsModel(Model):
         old_label = label
         label_new = label[:LABEL_LENGTH_MAX]
         if label_new not in self.getFieldLabelsList():
-            node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
-            if node :
-               old_label = node['label']
-               node['label'] = label
-
-        # Renaming of variables and properties after field label change
-        for node in self.case.xmlGetNodeList('variable') \
-                + self.case.xmlGetNodeList('property'):
-            if node['field_id'] == str(fieldId):
-                li = node['label'].rsplit(old_label, 1)
-                node['label'] = label.join(li)
+            field = self.getFieldFromId(fieldId)
+            field.label = label
 
 
     @Variables.noUndo
@@ -426,43 +385,40 @@ class MainFieldsModel(Model):
         """
         self.isInList(str(fieldId),self.getFieldIdList(include_none=include_none))
 
-        label = ""
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
-        if node:
-            label = node['label']
-        elif fieldId == "none" and include_none:
-            label = "none"
-
-        return label
+        if fieldId == "none" and include_none:
+            return "none"
+        else:
+            field = self.getFieldFromId(fieldId)
+            return field.label
 
 
     @Variables.undoLocal
-    def setCriterion(self, fieldId, type):
+    def setCriterion(self, fieldId, ftype):
         """
         Put type of field
-        TODO this method is too complex and should be refactored, but it might imply a complete change of architecture
-             for MainFieldsModel, InterfacialForcesModel, InterfacialEnthalpyModel, possibly TurbulenceNeptuneModel.
         """
+        #TODO this method is too complex and should be refactored, but it might imply a complete change of architecture
+        #     for MainFieldsModel, InterfacialForcesModel, InterfacialEnthalpyModel, possibly TurbulenceNeptuneModel.
+        #TODO move to NeptuneFieldModel if possible (it might be difficult to update
+        # the carrier field properly without the knowledge of other fields)
         self.isInList(str(fieldId), self.getFieldIdList())
 
-        field_name = self.getFieldLabelsList()[int(fieldId)-1]
+        field = self.getFieldFromId(fieldId)
+        oldtype = field.flow_type
+        field.flow_type = ftype
+        field_name = field.label
 
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
-        childNode = node.xmlInitChildNode('type')
-        oldtype = childNode['choice']
-        childNode.xmlSetAttribute(choice=type)
         # update carrier field
-        if type == "continuous":
-            self.setCarrierField(fieldId, self.defaultValues()['carrierField'])
-        else:
-            self.setCarrierField(fieldId, self.getFirstContinuousField())
-            if oldtype != type:
-                for id in self.getDispersedFieldList():
-                    if self.getCarrierField(id) == str(fieldId):
-                        self.setCarrierField(id, self.getFirstContinuousField())
+        if ftype != "continuous":
+            field.carrier_id = self.getFirstContinuousField()
+            # Modify carrier field
+            if oldtype != ftype:
+                for fid in self.getDispersedFieldList():
+                    if self.getCarrierField(fid) == str(fieldId):
+                        self.setCarrierField(fid, self.getFirstContinuousField())
 
-        # if type is changed from continuous to dispersed and vice versa, delete old coupling information
-        if oldtype != type and oldtype == "continuous":
+        # if ftype is changed from continuous to dispersed and vice versa, delete old coupling information
+        if oldtype != ftype and oldtype == "continuous":
             node = self.XMLturbulence.xmlGetNode("field", field_id=fieldId)
             if node:
                 node.xmlRemoveNode()
@@ -471,7 +427,7 @@ class MainFieldsModel(Model):
             for node in node_list:
                 if node:
                     node.xmlRemoveNode()
-        if oldtype != type and oldtype == "dispersed":
+        if oldtype != ftype and oldtype == "dispersed":
             node = self.XMLturbulence.xmlGetNode("field", field_id=fieldId)
             if node:
                 node.xmlRemoveNode()
@@ -491,7 +447,7 @@ class MainFieldsModel(Model):
                 node.xmlRemoveNode()
 
         # remove closure law linked to field for coherence of XML
-        if oldtype != type :
+        if oldtype != ftype :
            for node in self.__nodesWithFieldIDAttribute():
                try :
                    if (node['field_id_a'] == str(fieldId) or node['field_id_b'] == str(fieldId)):
@@ -501,12 +457,12 @@ class MainFieldsModel(Model):
 
         # TODO mettre en coherence pour les aires interf., tout ce qui est closure law a faire aussi pour la nature.
         # Activated if dispersed or second continuous phase of GLIM
-        if self.getCriterion(fieldId) == "dispersed" or self.getPredefinedFlow() == "multiregime":
-           self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "diameter", "diam_"+field_name)
-           self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "drift_component", "drift_component_"+field_name, dim='3')
+        if field.flow_type == "dispersed" or self.getPredefinedFlow() == "multiregime":
+           self.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "diameter", "diam_"+field_name)
+           self.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "drift_component", "drift_component_"+field_name, dim='3')
         else :
-           self.variables.removeVariableProperty("property", self.XMLNodeproperty, fieldId, "diameter")
-           self.variables.removeVariableProperty("property", self.XMLNodeproperty, fieldId, "drift_component")
+           self.removeVariableProperty("property", self.XMLNodeproperty, fieldId, "diameter")
+           self.removeVariableProperty("property", self.XMLNodeproperty, fieldId, "drift_component")
 
         self.updateXML()
 
@@ -517,14 +473,8 @@ class MainFieldsModel(Model):
         get type of field
         """
         self.isInList(str(fieldId),self.getFieldIdList())
-
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
-        nodet = node.xmlGetNode('type')
-        if nodet is None :
-            type = self.defaultValues()['typeChoice']
-            self.setCriterion(fieldId,type)
-        type = node.xmlGetNode('type')['choice']
-        return type
+        field = self.getFieldFromId(fieldId)
+        return field.flow_type
 
 
     @Variables.undoLocal
@@ -533,19 +483,8 @@ class MainFieldsModel(Model):
         put nature of field
         """
         self.isInList(str(fieldId),self.getFieldIdList())
-        self.isInList(phase,('liquid','solid','gas'))
-
-        field_name = self.getFieldLabelsList()[int(fieldId)-1]
-
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
-        childNode = node.xmlInitChildNode('phase')
-        if childNode != None:
-            oldstatus = childNode['choice']
-            if phase != oldstatus:
-               if phase == "solid":
-                  self.setCriterion(fieldId, "dispersed")
-
-        childNode.xmlSetAttribute(choice = phase)
+        field = self.getFieldFromId(fieldId) 
+        field.phase = phase
         self.updateXML()
 
 
@@ -554,16 +493,9 @@ class MainFieldsModel(Model):
         """
         get nature of field
         """
-        #~ self.isInList(str(fieldId),self.getFieldIdList())
-
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
-        nodep = node.xmlGetNode('phase')
-        if nodep is None :
-            phase = self.defaultValues()['phase']
-            self.setFieldNature(fieldId,phase)
-        phase = node.xmlGetNode('phase')['choice']
-        return phase
-
+        self.isInList(str(fieldId),self.getFieldIdList())
+        field = self.getFieldFromId(fieldId) 
+        return field.phase
 
     @Variables.undoLocal
     def setEnergyResolution(self, fieldId, status):
@@ -571,22 +503,8 @@ class MainFieldsModel(Model):
         set status for energy resolution
         """
         self.isInList(str(fieldId),self.getFieldIdList())
-        self.isOnOff(status)
-
-        field_name = self.getFieldLabelsList()[int(fieldId)-1]
-
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
-        childNode = node.xmlInitChildNode('hresolution')
-        if childNode != None:
-            oldstatus = childNode['status']
-            if status != oldstatus:
-               if status == "on":
-                  self.variables.setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "enthalpy", "enthalpy_"+field_name, post = True)
-                  self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "temperature", "temp_"+field_name, post = True)
-               else :
-                  self.variables.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "enthalpy")
-                  self.variables.removeVariableProperty("property", self.XMLNodeproperty, fieldId, "temperature")
-        childNode.xmlSetAttribute(status = status)
+        field = self.getFieldFromId(fieldId) 
+        field.enthalpy_model = status
 
 
     @Variables.noUndo
@@ -595,14 +513,8 @@ class MainFieldsModel(Model):
         get status for energy resolution
         """
         self.isInList(str(fieldId),self.getFieldIdList())
-
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
-        nodeh= node.xmlGetNode('hresolution')
-        if nodeh is None :
-            hres = self.defaultValues()['enthalpyResolutionStatus']
-            self.setEnergyResolution(fieldId,hres)
-        hres= node.xmlGetNode('hresolution')['status']
-        return hres
+        field = self.getFieldFromId(fieldId) 
+        return field.enthalpy_model
 
 
     @Variables.undoLocal
@@ -611,16 +523,8 @@ class MainFieldsModel(Model):
         set model for energy resolution
         """
         self.isInList(str(fieldId),self.getFieldIdList())
-        self.isInList(mdl, ('off', 'total_enthalpy', 'specific_enthalpy'))
-
-        if mdl != 'off':
-            self.setEnergyResolution(fieldId, 'on')
-        else:
-            self.setEnergyResolution(fieldId, 'off')
-
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
-        childNode = node.xmlInitChildNode('hresolution')
-        childNode.xmlSetAttribute(model = mdl)
+        field = self.getFieldFromId(fieldId) 
+        field.enthalpy_model = mdl
 
 
     @Variables.noUndo
@@ -629,15 +533,8 @@ class MainFieldsModel(Model):
         get model for energy resolution
         """
         self.isInList(str(fieldId),self.getFieldIdList())
-
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
-        nodeh= node.xmlGetNode('hresolution')
-        if nodeh is None :
-            self.getEnergyResolution(fieldId)
-            hmdl = self.defaultValues()['enthalpyResolutionModel']
-            self.setEnergyModel(fieldId,hmdl)
-        hres= node.xmlGetNode('hresolution')['model']
-        return hres
+        field = self.getFieldFromId(fieldId) 
+        return field.enthalpy_model
 
 
     @Variables.undoLocal
@@ -646,22 +543,8 @@ class MainFieldsModel(Model):
         set status for compressible resolution
         """
         self.isInList(str(fieldId),self.getFieldIdList())
-        self.isOnOff(status)
-
-        field_name = self.getFieldLabelsList()[int(fieldId)-1]
-
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
-        childNode = node.xmlInitChildNode('compressible')
-        if childNode != None:
-            oldstatus = childNode['status']
-            if status != oldstatus:
-               if status == "on":
-                  self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "d_rho_d_P", "drho_dP_"+field_name)
-                  self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "d_rho_d_h", "drho_dh_"+field_name)
-               else :
-                  self.variables.removeVariableProperty("property", self.XMLNodeproperty, fieldId, "d_rho_d_P")
-                  self.variables.removeVariableProperty("property", self.XMLNodeproperty, fieldId, "d_rho_d_h")
-        childNode.xmlSetAttribute(status = status)
+        field = self.getFieldFromId(fieldId) 
+        field.compressible = status
 
 
     @Variables.noUndo
@@ -670,36 +553,24 @@ class MainFieldsModel(Model):
         get status for compressible resolution
         """
         self.isInList(str(fieldId),self.getFieldIdList())
-
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
-        nodec = node.xmlGetNode('compressible')
-        if nodec is None :
-            compress = self.defaultValues()['compressibleStatus']
-            self.setCompressibleStatus(fieldId,compress)
-        compress = node.xmlGetNode('compressible')['status']
-        return compress
+        field = self.getFieldFromId(fieldId) 
+        return field.compressible
 
 
     @Variables.undoLocal
     def setCarrierField(self, fieldId, carrierfield):
         self.isInList(str(fieldId),self.getFieldIdList())
-
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
-        childNode = node.xmlInitChildNode('carrier_field')
-        childNode.xmlSetAttribute(field_id = str(carrierfield))
+        field = self.getFieldFromId(fieldId) 
+        if carrierfield != "off":
+            self.isInList(str(carrierfield),self.getFieldIdList())
+        field.carrier_id = carrierfield
 
 
     @Variables.noUndo
     def getCarrierField(self, fieldId):
         self.isInList(str(fieldId),self.getFieldIdList())
-
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
-        nodec =  node.xmlGetNode('carrier_field')
-        if nodec is None :
-            carrier = self.defaultValues()['carrierField']
-            self.setCarrierField(fieldId,carrier)
-        carrier =  node.xmlGetNode('carrier_field')['field_id']
-        return carrier
+        field = self.getFieldFromId(fieldId) 
+        return field.carrier_id
 
 
     @Variables.undoGlobal
@@ -708,27 +579,19 @@ class MainFieldsModel(Model):
         delete a field in XML and update
         """
         self.isInList(str(fieldId), self.getFieldIdList())
+        field_to_delete = self.getFieldFromId(fieldId) 
 
-        # suppress profile
-        for node in reversed(self.node_profile.xmlGetNodeList('profile')):
-            suppress = 0
-            for child in node.xmlGetNodeList('var_prop'):
-                if (child['field_id'] == str(fieldId)):
-                    suppress = 1
-            if suppress == 1 :
-                label = node['label']
-                ProfilesModel(self.case).deleteProfile(label)
+        # Suppress variables related to current field from profiles
+        pm = ProfilesModel(self.case)
+        for label in  pm.getProfilesLabelsList():
+            updated_variables = [var for var in pm.getVariable(label) if not field_to_delete.label in var]
+            pm.setVariable(label, updated_variables)
 
-        #suppress average
-        for node in reversed(self.node_average.xmlGetNodeList('time_average')) :
-            suppress = 0
-            for child in node.xmlGetNodeList('var_prop') :
-                if (child['field_id'] == str(fieldId)) :
-                    suppress = 1
-                    break
-            if suppress == 1 :
-                label = node['label']
-                TimeAveragesModel(self.case).deleteTimeAverage(label)
+        # Suppress variables related to current field from time averages
+        tam = TimeAveragesModel(self.case)
+        for label in  tam.getTimeAverageNames():
+            updated_variables = [var for var in tam.getVariable(label) if not field_to_delete.label in var]
+            tam.setVariable(label, updated_variables)
 
         for node in self.__nodesWithFieldIDAttribute():
             try :
@@ -740,18 +603,18 @@ class MainFieldsModel(Model):
                pass
 
         # Update 'field_id' attributes for other fields in XML file
-        for node in self.__nodesWithFieldIDAttribute():
-            try :
-                if node['field_id'] != "none" and node['field_id'] != "off":
-                    if int(node['field_id']) > fieldId :
-                        node['field_id'] = str(int(node['field_id']) - 1)
-                    else:
-                       if node['field_id_a'] > str(fieldId):
-                          node['field_id_a'] = str(int(node['field_id_a']) - 1)
-                       if node['field_id_b'] > str(fieldId):
-                          node['field_id_b'] = str(int(node['field_id_b']) - 1)
-            except:
-                pass
+#        for node in self.__nodesWithFieldIDAttribute():
+#            try :
+#                if node['field_id'] != "none" and node['field_id'] != "off":
+#                    if int(node['field_id']) > fieldId :
+#                        node['field_id'] = str(int(node['field_id']) - 1)
+#                    else:
+#                       if node['field_id_a'] > str(fieldId):
+#                          node['field_id_a'] = str(int(node['field_id_a']) - 1)
+#                       if node['field_id_b'] > str(fieldId):
+#                          node['field_id_b'] = str(int(node['field_id_b']) - 1)
+#            except:
+#                pass
 
         # Update for field Id
         for node in self.__XMLNodefields.xmlGetNodeList('field'):
@@ -767,7 +630,10 @@ class MainFieldsModel(Model):
                        self.setCriterion(currentId, "continuous")
                        self.setCarrierField(currentId, self.defaultValues()['carrierField'])
 
+        self.list_of_fields = [fld for fld in self.list_of_fields if fld.f_id != str(fieldId)]
         self.updateXML()
+
+        NeptuneField.default_carrier_id = self.getFirstContinuousField()
 
 
     def updateXML(self):
@@ -826,7 +692,7 @@ class MainFieldsModel(Model):
         self.XMLMassTrans = self.XMLNodeclosure.xmlInitNode('mass_transfer_model')
 
         # Variables : neptune_cfd.core.XMLvariables.Variables
-        self.variables.setNewVariableProperty("property", "constant", self.XMLNodeproperty, "none",
+        self.setNewVariableProperty("property", "constant", self.XMLNodeproperty, "none",
                                                     "surface_tension", "Surf_tens")
         energyModel = "total_enthalpy"
         if self.getPhaseChangeTransferStatus() == "off":
@@ -936,89 +802,89 @@ class MainFieldsModel(Model):
             ThermodynamicsModel(self.case).setMethod(fieldId, fls[0])
 
     def _deleteFieldsProperties(self):
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "SaturationTemperature")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none",
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none", "SaturationTemperature")
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none",
                                                     "SaturationEnthalpyLiquid")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "SaturationEnthalpyGas")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Hsat_d_P_Liquid")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Hsat_d_P_Gas")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Tsat_d_P")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "LatentHeat")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_total_flux")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_liquid_total_flux")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_evaporation_flux")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_quenching_flux")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none",
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none", "SaturationEnthalpyGas")
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Hsat_d_P_Liquid")
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Hsat_d_P_Gas")
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Tsat_d_P")
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none", "LatentHeat")
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_total_flux")
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_liquid_total_flux")
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_evaporation_flux")
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_quenching_flux")
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none",
                                                     "wall_liquid_convective_flux")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none",
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none",
                                                     "wall_steam_convective_flux")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "boundary_temperature")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_liquid_temperature")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_oversaturation")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "unal_diameter")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none",
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none", "boundary_temperature")
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_liquid_temperature")
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_oversaturation")
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none", "unal_diameter")
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none",
                                                     "wall_diameter_mesh_independancy")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_roughness")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none",
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_roughness")
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none",
                                                     "wall_dispersed_phase_mass_source_term")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "boiling_criteria")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "exchange_coefficient")
-        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "uninfluenced_part")
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none", "boiling_criteria")
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none", "exchange_coefficient")
+        self.removeVariableProperty("property", self.XMLNodeproperty, "none", "uninfluenced_part")
 
     def _createSaturationProperties(self):
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "SaturationTemperature", "TsatK", post=True)
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "SaturationEnthalpyLiquid", "Hsat_Liquid")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "SaturationEnthalpyGas", "Hsat_Gas")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "d_Hsat_d_P_Liquid",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "d_Hsat_d_P_Liquid",
                                                     "dHsat_dp_Liquid")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "d_Hsat_d_P_Gas",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "d_Hsat_d_P_Gas",
                                                     "dHsat_dp_Gas")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "d_Tsat_d_P",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "d_Tsat_d_P",
                                                     "dTsat_dp")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "LatentHeat", "Hlat")
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "LatentHeat", "Hlat")
 
     def _createWallFieldsProperties(self):
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_total_flux",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_total_flux",
                                                     "wall_total_flux", support="boundary")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "wall_liquid_total_flux", "wall_liquid_total_flux",
                                                     support="boundary")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "wall_evaporation_flux", "wall_evaporation_flux",
                                                     support="boundary")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_quenching_flux",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_quenching_flux",
                                                     "wall_quenching_flux", support="boundary")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "wall_liquid_convective_flux", "wall_liquid_convective_flux",
                                                     support="boundary")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "wall_steam_convective_flux", "wall_steam_convective_flux",
                                                     support="boundary")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "boundary_temperature", "wall_temperature", support="boundary")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "wall_liquid_temperature", "wall_liquid_temperature",
                                                     support="boundary")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_oversaturation",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_oversaturation",
                                                     "wall_oversaturation", support="boundary")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "unal_diameter",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "unal_diameter",
                                                     "unal_diameter", support="boundary")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "wall_diameter_mesh_independancy",
                                                     "wall_diameter_mesh_independancy", support="boundary")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_roughness",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_roughness",
                                                     "wall_roughness", support="boundary")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "wall_dispersed_phase_mass_source_term",
                                                     "wall_dispersed_phase_mass_source_term", support="boundary")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "boiling_criteria",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "boiling_criteria",
                                                     "boiling_criteria", support="boundary")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "exchange_coefficient", "exchange_coefficient", support="boundary")
-        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "uninfluenced_part",
+        self.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "uninfluenced_part",
                                                     "uninfluenced_part", support="boundary")
 
     @Variables.noUndo
@@ -1082,10 +948,9 @@ class MainFieldsModel(Model):
         return field id  for a label
         """
         self.isInList(label, self.getFieldLabelsList(include_none=include_none))
-
-        for node in self.__XMLNodefields.xmlGetNodeList('field'):
-            if node['label'] == label :
-               return node['field_id']
+        # TODO : refactor if function is to be kept
+        field = [fld for fld in self.list_of_fields if fld.label == label][0]
+        return field.f_id
 
 
     def getXMLNodefields(self):
@@ -1269,26 +1134,6 @@ class MainFieldsTestCase(ModelTest):
             'Could not set FieldNature'
         assert mdl.getFieldNature('1') == 'gas',\
             'Could not get FieldNature'
-
-
-    def checkGetandSetEnergyResolution(self):
-        """Check whether the MainFieldsModel class could set and get EnergyResolution"""
-        mdl = MainFieldsModel(self.case)
-        mdl.addField()
-        mdl.setEnergyResolution('1','off')
-        doc = '''<fields>
-                         <field field_id="1" label="Field1">
-                                 <type choice="continuous"/>
-                                 <carrier_field field_id="off"/>
-                                 <phase choice="liquid"/>
-                                 <hresolution status="off"/>
-                                 <compressible status="off"/>
-                         </field>
-                 </fields>'''
-        assert mdl.getXMLNodefields() == self.xmlNodeFromString(doc),\
-            'Could not set EnergyResolution'
-        assert mdl.getEnergyResolution('1') == 'off',\
-            'Could not get EnergyResolution'
 
 
     def checkGetandSetCompressibleStatus(self):

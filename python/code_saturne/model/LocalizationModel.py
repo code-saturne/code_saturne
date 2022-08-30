@@ -282,7 +282,7 @@ class VolumicZone(Zone):
             # Thermal source term for enthalpy
             from code_saturne.model.MainFieldsModel import MainFieldsModel
             if len(MainFieldsModel(self.case).getFieldIdList()) > 0:
-                if MainFieldsModel(self.case).getEnergyResolution(1) != "off":
+                if MainFieldsModel(self.case).getEnergyModel(1) != "off":
                     self._natureList.append('thermal_source_term')
                     self._natureDict['thermal_source_term'] = self.tr("Thermal source term")
             del MainFieldsModel

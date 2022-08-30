@@ -148,7 +148,6 @@ class TypeDelegate(QItemDelegate):
 
 
     def setEditorData(self, comboBox, index):
-        row = index.row()
         col = index.column()
         string = index.model().getData(index)[col]
         self.modelCombo.setItem(str_model=string)
@@ -193,7 +192,6 @@ class FieldDelegate(QItemDelegate):
 
 
     def setEditorData(self, comboBox, index):
-        row = index.row()
         col = index.column()
         string = index.model().getData(index)[col]
         self.modelCombo.setItem(str_model=string)
@@ -295,7 +293,6 @@ class StandardItemModelNonCondensable(QStandardItemModel):
     def flags(self, index):
         if not index.isValid():
             return Qt.ItemIsEnabled
-        row = index.row()
         if index.column() > 2 :
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
         else :

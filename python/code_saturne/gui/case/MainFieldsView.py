@@ -287,7 +287,7 @@ class CarrierDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
         self.modelCombo = ComboModel(editor, 1, 1)
-        fieldId = index.row()+1
+        fieldId = self.mdl.list_of_fields[index.row()].f_id
         if self.mdl.getCriterion(fieldId) == "continuous" :
             self.modelCombo.addItem(self.tr("off"), 'off')
         else :
@@ -387,9 +387,10 @@ class StandardItemModelMainFields(QStandardItemModel):
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
         elif index.column() == 1 or index.column() == 2:
 
+            field = self.mdl.list_of_fields[index.row()]
             if self.mdl.getPredefinedFlow() != "None" and (index.row()==0 or index.row()==1):
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-            elif self.mdl.getFieldNature(index.row()+1) == "solid" and index.column() == 2:
+            elif field.phase == "solid" and index.column() == 2:
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable
             else:
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
@@ -411,7 +412,7 @@ class StandardItemModelMainFields(QStandardItemModel):
         # Update the row in the table
         row = index.row()
         col = index.column()
-        FieldId = row + 1
+        FieldId = self.mdl.list_of_fields[row].f_id
 
         # Label
         if col == 0:
@@ -519,13 +520,13 @@ class StandardItemModelMainFields(QStandardItemModel):
 
     def updateItem(self):
         # update carrier field and criterion
-        for id in self.mdl.getFieldIdList() :
+        for i, id in enumerate(self.mdl.getFieldIdList()) :
             carrier = self.mdl.getCarrierField(id)
             if carrier != "off" :
-               self._data[int(id)-1][3] = self.mdl.getLabel(carrier)
+               self._data[i][3] = self.mdl.getLabel(carrier)
             else :
-               self._data[int(id)-1][3] = carrier
-            self._data[int(id)-1][2] = self.mdl.getCriterion(id)
+               self._data[i][3] = carrier
+            self._data[i][2] = self.mdl.getCriterion(id)
 
 
     def deleteItem(self, row):

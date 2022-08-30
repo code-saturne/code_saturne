@@ -171,7 +171,8 @@ class NonCondensableModel(Model):
         Add a non condensable
         """
         fieldId = self.mainFieldsModel.getFirstGasField()
-        field_name = self.mainFieldsModel.getFieldLabelsList()[int(fieldId)-1]
+        field = self.mainFieldsModel.getFieldFromId(fieldId)
+        field_name = field.label
         type = self.defaultValues()['typeNonCond']
         label   = type + "_1" + "_" + field_name
         if label in self.getNonCondensableLabelList() :

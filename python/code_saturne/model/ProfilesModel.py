@@ -101,7 +101,6 @@ class ProfilesModel(Model):
         self.dicoLabel2Name_compat = mdl.getVolumeFieldsLabel2Name(time_averages=True,
                                                                    get_components=True)
 
-
         return list(self.dicoLabel2Name.keys())
 
 

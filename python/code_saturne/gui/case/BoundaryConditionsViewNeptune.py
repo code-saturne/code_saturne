@@ -231,10 +231,12 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         Select a Field in the QTable
         """
 
-        self.__currentField = self.tableViewFields.currentIndex().row() + 1
+#        self.__currentField = self.tableViewFields.currentIndex().row() + 1
+        rowId = self.tableViewFields.currentIndex().row()
         # Set currentField to 'none' if we are dealing with the non-convected variables
-        if self.__currentField > len(self.mdl.mainFieldsModel.getFieldIdList()):
-            self.__currentField = "none"
+        self.__currentField = "none"
+        if rowId < len(self.mdl.mainFieldsModel.list_of_fields):
+            self.__currentField = self.mdl.mainFieldsModel.list_of_fields[rowId].f_id
         log.debug("slotSelectField current field %s" %str(self.__currentField))
 
         self.__hideAllWidgets()

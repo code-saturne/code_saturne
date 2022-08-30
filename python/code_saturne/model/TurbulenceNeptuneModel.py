@@ -131,7 +131,7 @@ class TurbulenceModel(Variables, Model):
         """
         self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
 
-        field_name = self.mainFieldsModel.getFieldLabelsList()[int(fieldId)-1]
+        field_name = self.mainFieldsModel.getFieldFromId(fieldId).label
 
         criterion = self.mainFieldsModel.getCriterion(fieldId)
         if criterion == "continuous":
@@ -260,13 +260,13 @@ class TurbulenceModel(Variables, Model):
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
         if node is None:
-            if self.mainFieldsModel.getEnergyResolution(fieldId) == 'on':
+            if self.mainFieldsModel.getEnergyModel(fieldId) != 'off':
                 self.setThermalTurbulentFlux(fieldId,
                                              self.defaultValues()['turb_flux'])
             else:
                 self.setThermalTurbulentFlux(fieldId, 'none')
         else:
-            if self.mainFieldsModel.getEnergyResolution(fieldId) != 'on':
+            if self.mainFieldsModel.getEnergyModel(fieldId) == 'off':
                 node['turb_flux'] = 'none'
             elif node['turb_flux'] == 'none':
                node['turb_flux'] = 'sgdh'
