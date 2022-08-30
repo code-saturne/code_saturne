@@ -16,11 +16,13 @@ Bug fixes:
   some points are not located (updated PLE library).
 - Fix performance issues with K-cycle and pairwise aggregation and MSR
   matrices in case of penalized diagonal entries or isolated diagonal
-  values
+  values.
 - Fix the stopping criterion for Uzawa-CG algorithm (used by CDO
-  schemes for Stokes problems)
+  schemes for Stokes problems).
 
 Architectural changes:
+
+- Completed migration of turbulence models source code from Fortran to C.
 
 - Remove libtool dependency for compiled code.
   Libtool is still used for Python libraries.
@@ -38,7 +40,7 @@ Studymanager:
 
 Numerics:
 
-- Add MUMPS as a preconditioner of a Krylov method
+- Add MUMPS as a preconditioner of a Krylov method.
 - Add SPD matrices as a new type of input matrices for MUMPS. This
   distinction corresponds to the key SYM in MUMPS. Now, "mumps" refers
   to SYM=0 (not symmetric), "mumps_sym" refers to SYM=2 (general
