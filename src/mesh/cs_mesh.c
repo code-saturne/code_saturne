@@ -4136,19 +4136,25 @@ int
 cs_mesh_b_faces_thread_block_count(const cs_mesh_t  *m,
                                    int               block_size)
 {
+#if defined(HAVE_OPENMP)
+
   cs_lnum_t retval = omp_get_num_threads();
 
   if (m->n_b_faces < CS_THR_MIN)
     retval = 1;
 
-#if defined(HAVE_OPENMP)
   if (block_size > 1) {
     const cs_lnum_t n = m->n_b_faces;
     retval = (n%block_size) ? (n/block_size)+1 : n/block_size;
   }
-#endif
 
   return retval;
+
+#else
+
+  return 1;
+
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
