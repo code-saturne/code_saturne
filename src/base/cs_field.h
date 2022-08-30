@@ -428,6 +428,24 @@ cs_field_by_name(const char *name);
 cs_field_t  *
 cs_field_by_name_try(const char *name);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a pointer to a field based on a composite name if present.
+ *
+ * The name is expected to be of the form <name_prefix>_<name_suffix>.
+ * If no field of the given name is defined, NULL is returned.
+ *
+ * \param[in]  name_prefix  first part of field name
+ * \param[in]  name_suffix  second part of field name
+ *
+ * \return  pointer to the field structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t  *
+cs_field_by_composite_name_try(const char  *name_prefix,
+                               const char  *name_suffix);
+
 /*----------------------------------------------------------------------------
  * Return the id of a defined field based on its name.
  *

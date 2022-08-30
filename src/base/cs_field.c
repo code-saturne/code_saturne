@@ -2357,6 +2357,50 @@ cs_field_by_name_try(const char  *name)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return a pointer to a field based on a composite name if present.
+ *
+ * The name is expected to be of the form <name_prefix>_<name_suffix>.
+ * If no field of the given name is defined, NULL is returned.
+ *
+ * \param[in]  name_prefix  first part of field name
+ * \param[in]  name_suffix  second part of field name
+ *
+ * \return  pointer to the field structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t  *
+cs_field_by_composite_name_try(const char  *name_prefix,
+                               const char  *name_suffix)
+{
+  size_t lp = strlen(name_prefix);
+  size_t ls = strlen(name_suffix);
+  size_t lt = lp + ls + 1;
+
+  char _buffer[196];
+  char *buffer = _buffer;
+
+  if (lt + 1> 196)
+    BFT_MALLOC(buffer, lt+1, char);
+
+  memcpy(buffer, name_prefix, lp);
+  buffer[lp] = '_';
+  memcpy(buffer + lp + 1, name_suffix, ls);
+  buffer[lt] = '\0';
+
+  int id = cs_map_name_to_id_try(_field_map, buffer);
+
+  if (buffer != _buffer)
+    BFT_FREE(buffer);
+
+  if (id > -1)
+    return _fields[id];
+  else
+    return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return the id of a defined field based on its name.
  *
  * If no field with the given name exists, -1 is returned.
