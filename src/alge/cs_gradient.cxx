@@ -2323,12 +2323,12 @@ _get_cell_cocg_lsq(const cs_mesh_t               *m,
     cs_alloc_mode_t alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
 
     if (extended) {
-      cs_set_alloc_mode(&(gq->cocg_lsq_ext), alloc_mode);
-      cs_set_alloc_mode(&(gq->cocgb_s_lsq_ext), alloc_mode);
+      cs_set_alloc_mode_r(gq->cocg_lsq_ext, alloc_mode);
+      cs_set_alloc_mode_r(gq->cocgb_s_lsq_ext, alloc_mode);
     }
     else {
-      cs_set_alloc_mode(&(gq->cocg_lsq), alloc_mode);
-      cs_set_alloc_mode(&(gq->cocgb_s_lsq), alloc_mode);
+      cs_set_alloc_mode_r(gq->cocg_lsq, alloc_mode);
+      cs_set_alloc_mode_r(gq->cocgb_s_lsq, alloc_mode);
     }
 
   }

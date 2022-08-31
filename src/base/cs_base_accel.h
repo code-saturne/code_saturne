@@ -167,7 +167,7 @@ extern cs_alloc_mode_t  cs_alloc_mode;
 #endif
 
 /*=============================================================================
- * Public function prototypes
+ * Public C function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -861,5 +861,46 @@ cs_omp_target_select_default_device(void);
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+/*=============================================================================
+ * Public C++ function prototypes and definitions.
+ *============================================================================*/
+
+#ifdef __cplusplus
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set allocation mode for an already allocated pointer using
+ *        pass by reference sema,tics for the pointer (C++ only).
+ *
+ * In C++, this function is preferred to direct use of cs_set_alloc_mode,
+ * as it allows a more concise syntax and does not require additional casting.
+ *
+ * \param [in, out]  host_ptr   reference to host pointer to modify
+ * \param [in]       mode       desired allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+template<typename T>
+static inline void
+cs_set_alloc_mode_r(T*                &host_ptr,
+                    cs_alloc_mode_t    mode)
+{
+  void *p = host_ptr;
+  cs_set_alloc_mode(&p, mode);
+  host_ptr = (T *)p;
+}
+
+#else
+
+#define cs_set_alloc_mode_r(_host_ptr, mode);
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+
+#endif /* defined(__cplusplus) */
 
 #endif /* __CS_BASE_ACCEL_H__ */
