@@ -296,9 +296,9 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
                               int         dim_ep_met[2]);
 
 void
-cs_f_atmo_get_soil_zone(cs_lnum_t  *n_elts,
-                        int        *n_soil_cat,
-                        cs_lnum_t  **elt_ids);
+cs_f_atmo_get_soil_zone(cs_lnum_t         *n_elts,
+                        int               *n_soil_cat,
+                        const cs_lnum_t  **elt_ids);
 
 void
 cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
@@ -673,17 +673,23 @@ _convert_from_wgs84_to_l93(void)
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
+static cs_real_t
 _mo_phim_n(cs_real_t              z,
            cs_real_t              dlmo)
 {
+  CS_UNUSED(z);
+  CS_UNUSED(dlmo);
+
   return 1.0;
 }
 
-cs_real_t
+static cs_real_t
 _mo_phih_n(cs_real_t              z,
            cs_real_t              dlmo)
 {
+  CS_UNUSED(z);
+  CS_UNUSED(dlmo);
+
   return 1.;
 }
 
@@ -697,19 +703,23 @@ _mo_phih_n(cs_real_t              z,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
+static cs_real_t
 _mo_psim_n(cs_real_t              z,
            cs_real_t              z0,
            cs_real_t              dlmo)
 {
+  CS_UNUSED(dlmo);
+
   return log(z/z0);
 }
 
-cs_real_t
+static cs_real_t
 _mo_psih_n(cs_real_t              z,
            cs_real_t              z0,
            cs_real_t              dlmo)
 {
+ CS_UNUSED(dlmo);
+
   return log(z/z0);
 }
 
@@ -723,97 +733,124 @@ _mo_psih_n(cs_real_t              z,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
+static cs_real_t
 _mo_phim_s(cs_real_t              z,
            cs_real_t              dlmo)
 {
   cs_real_t x = z * dlmo;
-  if (cs_glob_atmo_option->meteo_phim_s == CS_ATMO_UNIV_FN_CHENG) {
-    cs_real_t a = 6.1;
-    cs_real_t b = 2.5;
 
-    return 1. + a*(x+(pow(x,b))*( pow(1.+pow(x,b),(1.-b)/b) ))
-           / (x+ pow(1.+ pow(x,b),1./b));
+  switch(cs_glob_atmo_option->meteo_phim_s) {
+
+  case CS_ATMO_UNIV_FN_CHENG:
+    {
+      cs_real_t a = 6.1;
+      cs_real_t b = 2.5;
+
+      return 1. + a*(x+(pow(x,b))*( pow(1.+pow(x,b),(1.-b)/b) ))
+             / (x+ pow(1.+ pow(x,b),1./b));
+    }
+
+  case CS_ATMO_UNIV_FN_HOGSTROM:
+    {
+      if (x < 0.5) {
+        cs_real_t b = 4.8;
+
+        return 1. + b*x;
+      }
+      else if (x < 10.) {
+        cs_real_t a = 7.9;
+
+        return a - 4.25/x + 1./pow(x,2.);
+      }
+      else {
+        cs_real_t a = 0.7485;
+
+        return a*x;
+      }
+    }
+
+  case CS_ATMO_UNIV_FN_BUSINGER:
+    {
+      if (x < 0.5) {
+        cs_real_t b = 4.7;
+
+        return 1. + b*x;
+      }
+      else if (x < 10.) {
+        cs_real_t a = 7.85;
+
+        return a - 4.25/x + 1./pow(x,2.);
+      }
+      else {
+        cs_real_t a = 0.7435;
+
+        return a*x;
+      }
+    }
+
+  case CS_ATMO_UNIV_FN_HARTOGENSIS:
+    {
+      cs_real_t a = 1.;
+      cs_real_t b = 2./3.;
+      cs_real_t c = 5.;
+      cs_real_t d = 0.35;
+
+      return 1. + x*(a + b*exp(-d*x) - b*d*(x - c/d)*exp(-d*x));
+    }
+
+  default:
+    assert(0);
+    return -1;
   }
-  else if (cs_glob_atmo_option->meteo_phim_s == CS_ATMO_UNIV_FN_HOGSTROM) {
-
-    if (x < 0.5) {
-      cs_real_t b = 4.8;
-
-      return 1. + b*x;
-    }
-    else if (x < 10.) {
-      cs_real_t a = 7.9;
-
-      return a - 4.25/x + 1./pow(x,2.);
-    }
-    else {
-      cs_real_t a = 0.7485;
-
-      return a*x;
-    }
-  }
-  else if (cs_glob_atmo_option->meteo_phim_s == CS_ATMO_UNIV_FN_BUSINGER) {
-
-    if (x < 0.5) {
-      cs_real_t b = 4.7;
-
-      return 1. + b*x;
-    }
-    else if (x < 10.) {
-      cs_real_t a = 7.85;
-
-      return a - 4.25/x + 1./pow(x,2.);
-    }
-    else {
-      cs_real_t a = 0.7435;
-
-      return a*x;
-    }
-  }
-  else if (cs_glob_atmo_option->meteo_phim_s == CS_ATMO_UNIV_FN_HARTOGENSIS) {
-    cs_real_t a = 1.;
-    cs_real_t b = 2./3.;
-    cs_real_t c = 5.;
-    cs_real_t d = 0.35;
-
-    return 1. + x*(a + b*exp(-d*x) - b*d*(x - c/d)*exp(-d*x));
-  }
-
 }
 
-cs_real_t
+static cs_real_t
 _mo_phih_s(cs_real_t              z,
            cs_real_t              dlmo)
 {
   cs_real_t x = z * dlmo;
-  if (cs_glob_atmo_option->meteo_phih_s == CS_ATMO_UNIV_FN_CHENG) {
-    cs_real_t a = 5.3;
-    cs_real_t b = 1.1;
 
-    return 1.+a*(x+(pow(x,b))*(pow((1.+pow(x,b)), ((1.-b)/b))))
-           / (x + pow((1.+pow(x,b)),1./b));
-  }
-  else if (cs_glob_atmo_option->meteo_phih_s == CS_ATMO_UNIV_FN_HOGSTROM) {
-    cs_real_t a = 0.95;
-    cs_real_t b = 7.8;
+  switch(cs_glob_atmo_option->meteo_phih_s) {
 
-    return a + b*x;
-  }
-  else if (cs_glob_atmo_option->meteo_phih_s == CS_ATMO_UNIV_FN_BUSINGER) {
-    cs_real_t a = 0.74;
-    cs_real_t b = 4.7;
+    case CS_ATMO_UNIV_FN_CHENG:
+      {
+        cs_real_t a = 5.3;
+        cs_real_t b = 1.1;
 
-    return a + b*x;
-  }
-  else if (cs_glob_atmo_option->meteo_phih_s == CS_ATMO_UNIV_FN_HARTOGENSIS) {
-    cs_real_t a = 1.;
-    cs_real_t b = 2./3.;
-    cs_real_t c = 5.;
-    cs_real_t d = 0.35;
+        return 1.+a*(x+(pow(x,b))*(pow((1.+pow(x,b)), ((1.-b)/b))))
+          / (x + pow((1.+pow(x,b)),1./b));
+      }
 
-    return 1. + x*(a*pow((1. + 2./3. * a * x),0.5)
-        + b*exp(-d*x) - b*d*(x - c/d)*exp(-d*x));
+  case CS_ATMO_UNIV_FN_HOGSTROM:
+    {
+      cs_real_t a = 0.95;
+      cs_real_t b = 7.8;
+
+      return a + b*x;
+    }
+
+  case CS_ATMO_UNIV_FN_BUSINGER:
+    {
+      cs_real_t a = 0.74;
+      cs_real_t b = 4.7;
+
+      return a + b*x;
+    }
+
+  case CS_ATMO_UNIV_FN_HARTOGENSIS:
+    {
+      cs_real_t a = 1.;
+      cs_real_t b = 2./3.;
+      cs_real_t c = 5.;
+      cs_real_t d = 0.35;
+
+      return 1. + x*(a*pow((1. + 2./3. * a * x),0.5)
+             + b*exp(-d*x) - b*d*(x - c/d)*exp(-d*x));
+    }
+
+  default:
+    assert(0);
+    return -1;
   }
 }
 
@@ -826,49 +863,68 @@ _mo_phih_s(cs_real_t              z,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
+static cs_real_t
 _mo_phim_u(cs_real_t              z,
            cs_real_t              dlmo)
 {
   cs_real_t x = z * dlmo;
 
-  if (cs_glob_atmo_option->meteo_phim_u == CS_ATMO_UNIV_FN_HOGSTROM) {
-    cs_real_t a = 1.;
-    cs_real_t b = 19.3;
-    cs_real_t e = -0.25;
+  switch (cs_glob_atmo_option->meteo_phim_u) {
 
-    return a*pow((1.-b*x),e);
+  case  CS_ATMO_UNIV_FN_HOGSTROM:
+    {
+      cs_real_t a = 1.;
+      cs_real_t b = 19.3;
+      cs_real_t e = -0.25;
+
+      return a*pow((1.-b*x),e);
+    }
+
+  case CS_ATMO_UNIV_FN_BUSINGER:
+    {
+      cs_real_t a = 1.;
+      cs_real_t b = 15.;
+      cs_real_t e = -0.25;
+
+      return a*pow((1.-b*x),e);
+    }
+
+  default:
+    assert(0);
+    return -1;
   }
-  else if (cs_glob_atmo_option->meteo_phim_u == CS_ATMO_UNIV_FN_BUSINGER) {
-    cs_real_t a = 1.;
-    cs_real_t b = 15.;
-    cs_real_t e = -0.25;
-
-    return a*pow((1.-b*x),e);
-  }
-
 }
 
-cs_real_t
+static cs_real_t
 _mo_phih_u(cs_real_t              z,
            cs_real_t              dlmo)
 {
   cs_real_t x = z * dlmo;
-  if (cs_glob_atmo_option->meteo_phih_u == CS_ATMO_UNIV_FN_HOGSTROM) {
-    cs_real_t a = 0.95;
-    cs_real_t b = 11.6;
-    cs_real_t e = -0.5;
 
-    return a*pow(1.-b*x, e);
+  switch(cs_glob_atmo_option->meteo_phih_u) {
+
+  case CS_ATMO_UNIV_FN_HOGSTROM:
+    {
+      cs_real_t a = 0.95;
+      cs_real_t b = 11.6;
+      cs_real_t e = -0.5;
+
+      return a*pow(1.-b*x, e);
+    }
+
+  case CS_ATMO_UNIV_FN_BUSINGER:
+    {
+      cs_real_t a = 0.74;
+      cs_real_t b = 9.;
+      cs_real_t e = -0.5;
+
+      return a*pow(1.-b*x, e);
+    }
+
+  default:
+    assert(0);
+    return -1;
   }
-  else if (cs_glob_atmo_option->meteo_phih_u == CS_ATMO_UNIV_FN_BUSINGER) {
-  cs_real_t a = 0.74;
-  cs_real_t b = 9.;
-  cs_real_t e = -0.5;
-
-  return a*pow(1.-b*x, e);
-  }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -878,115 +934,141 @@ _mo_phih_u(cs_real_t              z,
  * \param[in]  z             altitude
  * \param[in]  z0            altitude of the starting point integration
  * \param[in]  dlmo          inverse Monin Obukhov length
- *
- *
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
+static cs_real_t
 _mo_psim_s(cs_real_t              z,
            cs_real_t              z0,
            cs_real_t              dlmo)
 {
   cs_real_t x = z * dlmo;
   cs_real_t x0 = z0 * dlmo;
-  if (cs_glob_atmo_option->meteo_phim_s == CS_ATMO_UNIV_FN_CHENG) {
-    cs_real_t a = 6.1;
-    cs_real_t b = 2.5;
 
-    return log(z/z0) + a*log(x + pow((1. + pow(x,b)),1./b))
-      - a*log(x0 + pow((1. + pow(x0,b)),1./b));
+  switch(cs_glob_atmo_option->meteo_phim_s) {
+
+  case CS_ATMO_UNIV_FN_CHENG:
+    {
+      cs_real_t a = 6.1;
+      cs_real_t b = 2.5;
+
+      return log(z/z0) + a*log(x + pow((1. + pow(x,b)),1./b))
+         - a*log(x0 + pow((1. + pow(x0,b)),1./b));
+    }
+
+    case CS_ATMO_UNIV_FN_HOGSTROM:
+      {
+        if (x < 0.5) {
+          cs_real_t b = 4.8;
+
+          return log(z/z0) + b*(x - x0);
+        }
+        else if (x < 10.) {
+          cs_real_t a = 7.9;
+          cs_real_t b = 4.8;
+          cs_real_t c = 4.1;
+
+          return a*log(2.*x) + 4.25/x - 0.5/pow(x,2.) - log(2.*x0) - b*x0 - c;
+        }
+        else {
+          cs_real_t a = 0.7485;
+          cs_real_t b = 7.9;
+          cs_real_t c = 4.8;
+
+          return a*x + b*log(20.) - 11.165 - log(2.*x0) - c*x0;
+        }
+      }
+
+  case CS_ATMO_UNIV_FN_BUSINGER:
+    {
+      if (x < 0.5) {
+        cs_real_t b = 4.7;
+
+        return log(z/z0) + b*(x - x0);
+      }
+      else if (x < 10.) {
+        cs_real_t a = 7.85;
+        cs_real_t b = 4.7;
+        cs_real_t c = 4.15;
+
+        return a*log(2.*x) + 4.25/x - 0.5/pow(x,2.) - log(2.*x0) - b*x0 - c;
+      }
+      else {
+        cs_real_t a = 0.7435;
+        cs_real_t b = 7.85;
+        cs_real_t c = 4.7;
+
+        return a*x + b*log(20.) - 11.165 - log(2.*x0) - c*x0;
+      }
+    }
+
+  case CS_ATMO_UNIV_FN_HARTOGENSIS:
+    {
+      cs_real_t a = 1.;
+      cs_real_t b = 2./3.;
+      cs_real_t c = 5.;
+      cs_real_t d = 0.35;
+
+      return log(z/z0) + a*(x - x0)
+             + b*(x - c/d)*exp(-d*x) - b*(x0 - c/d)*exp(-d*x0);
+    }
+
+  default:
+    assert(0);
+    return -1;
   }
-  else if (cs_glob_atmo_option->meteo_phim_s == CS_ATMO_UNIV_FN_HOGSTROM) {
-
-    if (x < 0.5) {
-      cs_real_t b = 4.8;
-
-      return log(z/z0) + b*(x - x0);
-    }
-    else if (x < 10.) {
-      cs_real_t a = 7.9;
-      cs_real_t b = 4.8;
-      cs_real_t c = 4.1;
-
-      return a*log(2.*x) + 4.25/x - 0.5/pow(x,2.) - log(2.*x0) - b*x0 - c;
-    }
-    else {
-      cs_real_t a = 0.7485;
-      cs_real_t b = 7.9;
-      cs_real_t c = 4.8;
-
-      return a*x + b*log(20.) - 11.165 - log(2.*x0) - c*x0;
-    }
-  }
-  else if (cs_glob_atmo_option->meteo_phim_s == CS_ATMO_UNIV_FN_BUSINGER) {
-
-    if (x < 0.5) {
-      cs_real_t b = 4.7;
-
-      return log(z/z0) + b*(x - x0);
-    }
-    else if (x < 10.) {
-      cs_real_t a = 7.85;
-      cs_real_t b = 4.7;
-      cs_real_t c = 4.15;
-
-      return a*log(2.*x) + 4.25/x - 0.5/pow(x,2.) - log(2.*x0) - b*x0 - c;
-    }
-    else {
-      cs_real_t a = 0.7435;
-      cs_real_t b = 7.85;
-      cs_real_t c = 4.7;
-
-      return a*x + b*log(20.) - 11.165 - log(2.*x0) - c*x0;
-    }
-  }
-   else if (cs_glob_atmo_option->meteo_phim_s == CS_ATMO_UNIV_FN_HARTOGENSIS) {
-     cs_real_t a = 1.;
-     cs_real_t b = 2./3.;
-     cs_real_t c = 5.;
-     cs_real_t d = 0.35;
-
-     return log(z/z0) + a*(x - x0)
-       + b*(x - c/d)*exp(-d*x) - b*(x0 - c/d)*exp(-d*x0);
-   }
 }
 
-cs_real_t
+static cs_real_t
 _mo_psih_s(cs_real_t              z,
            cs_real_t              z0,
            cs_real_t              dlmo)
 {
   cs_real_t x = z * dlmo;
   cs_real_t x0 = z0 * dlmo;
-  if (cs_glob_atmo_option->meteo_phih_s == CS_ATMO_UNIV_FN_CHENG) {
-    cs_real_t a = 5.3;
-    cs_real_t b = 1.1;
 
-    return log(z/z0) + a*log(x + pow((1. + pow(x,b)),1./b))
-      - a*log(x0 + pow((1. + pow(x0,b)),1./b));
-  }
-  else if (cs_glob_atmo_option->meteo_phih_s == CS_ATMO_UNIV_FN_HOGSTROM) {
-    cs_real_t a = 0.95;
-    cs_real_t b = 7.8;
+  switch(cs_glob_atmo_option->meteo_phih_s) {
 
-    return a*log(z/z0) + b*(x - x0);
-  }
-  else if (cs_glob_atmo_option->meteo_phih_s == CS_ATMO_UNIV_FN_BUSINGER) {
-    cs_real_t a = 0.74;
-    cs_real_t b = 4.7;
+  case CS_ATMO_UNIV_FN_CHENG:
+    {
+      cs_real_t a = 5.3;
+      cs_real_t b = 1.1;
 
-    return a*log(z/z0) + b*(x - x0);
-  }
-  else if (cs_glob_atmo_option->meteo_phih_s == CS_ATMO_UNIV_FN_HARTOGENSIS) {
-    cs_real_t a = 1.;
-    cs_real_t b = 2./3.;
-    cs_real_t c = 5.;
-    cs_real_t d = 0.35;
+      return log(z/z0) + a*log(x + pow((1. + pow(x,b)),1./b))
+        - a*log(x0 + pow((1. + pow(x0,b)),1./b));
+    }
 
-    return log(z/z0) + pow((1. + 2./3. * a * x),3./2.)
-      + b*(x - c/d)*exp(-d*x) - pow((1. + 2./3. * a * x0),3./2.)
-      - b*(x0 - c/d)*exp(-d*x0);
+  case CS_ATMO_UNIV_FN_HOGSTROM:
+    {
+      cs_real_t a = 0.95;
+      cs_real_t b = 7.8;
+
+      return a*log(z/z0) + b*(x - x0);
+    }
+
+  case CS_ATMO_UNIV_FN_BUSINGER:
+    {
+      cs_real_t a = 0.74;
+      cs_real_t b = 4.7;
+
+      return a*log(z/z0) + b*(x - x0);
+    }
+
+  case CS_ATMO_UNIV_FN_HARTOGENSIS:
+    {
+      cs_real_t a = 1.;
+      cs_real_t b = 2./3.;
+      cs_real_t c = 5.;
+      cs_real_t d = 0.35;
+
+      return log(z/z0) + pow((1. + 2./3. * a * x),3./2.)
+        + b*(x - c/d)*exp(-d*x) - pow((1. + 2./3. * a * x0),3./2.)
+        - b*(x0 - c/d)*exp(-d*x0);
+    }
+
+  default:
+    assert(0);
+    return -1;
   }
 }
 
@@ -1001,53 +1083,73 @@ _mo_psih_s(cs_real_t              z,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
+static cs_real_t
 _mo_psim_u(cs_real_t              z,
            cs_real_t              z0,
            cs_real_t              dlmo)
 {
-   if (cs_glob_atmo_option->meteo_phim_u == CS_ATMO_UNIV_FN_HOGSTROM) {
-     cs_real_t b = 19.3;
-     cs_real_t e = 0.25;
-     cs_real_t x = pow((1. - b*z*dlmo), e);
-     cs_real_t x0 = pow((1. - b*z0*dlmo), e);
+  switch (cs_glob_atmo_option->meteo_phim_u) {
 
-     return log(z/z0) - 2.*log((1. + x)/(1. + x0))
-       - log((1. + pow(x,2.))/(1. + pow(x0,2.))) + 2.*atan(x) - 2.*atan(x0);
-   }
-   else if (cs_glob_atmo_option->meteo_phim_u == CS_ATMO_UNIV_FN_BUSINGER) {
-     cs_real_t b = 15.;
-     cs_real_t e = 0.25;
-     cs_real_t x = pow((1. - b*z*dlmo), e);
-     cs_real_t x0 = pow((1. - b*z0*dlmo), e);
+    case CS_ATMO_UNIV_FN_HOGSTROM:
+      {
+        cs_real_t b = 19.3;
+        cs_real_t e = 0.25;
+        cs_real_t x = pow((1. - b*z*dlmo), e);
+        cs_real_t x0 = pow((1. - b*z0*dlmo), e);
 
-     return log(z/z0) - 2.*log((1. + x)/(1. + x0))
-       - log((1. + pow(x,2.))/(1. + pow(x0,2.))) + 2.*atan(x) - 2.*atan(x0);
-   }
+        return log(z/z0) - 2.*log((1. + x)/(1. + x0))
+          - log((1. + pow(x,2.))/(1. + pow(x0,2.))) + 2.*atan(x) - 2.*atan(x0);
+      }
+
+  case CS_ATMO_UNIV_FN_BUSINGER:
+    {
+      cs_real_t b = 15.;
+      cs_real_t e = 0.25;
+      cs_real_t x = pow((1. - b*z*dlmo), e);
+      cs_real_t x0 = pow((1. - b*z0*dlmo), e);
+
+      return log(z/z0) - 2.*log((1. + x)/(1. + x0))
+        - log((1. + pow(x,2.))/(1. + pow(x0,2.))) + 2.*atan(x) - 2.*atan(x0);
+    }
+
+  default:
+    assert(0);
+    return -1;
+  }
 }
 
-cs_real_t
+static cs_real_t
 _mo_psih_u(cs_real_t              z,
            cs_real_t              z0,
            cs_real_t              dlmo)
 {
-   if (cs_glob_atmo_option->meteo_phih_u == CS_ATMO_UNIV_FN_HOGSTROM) {
-     cs_real_t a = 0.95;
-     cs_real_t b = 11.6;
-     cs_real_t e = 0.5;
-     cs_real_t x = pow((1. - b*z*dlmo), e);
-     cs_real_t x0 = pow((1. - b*z0*dlmo), e);
+   switch (cs_glob_atmo_option->meteo_phih_u) {
 
-     return a*(log(z/z0) - 2.*log((1. + x)/(1. + x0)));
-   }
-   else if (cs_glob_atmo_option->meteo_phih_u == CS_ATMO_UNIV_FN_BUSINGER) {
-     cs_real_t a = 0.74;
-     cs_real_t b = 9.;
-     cs_real_t e = 0.5;
-     cs_real_t x = pow((1. - b*z*dlmo), e);
-     cs_real_t x0 = pow((1. - b*z0*dlmo), e);
+     case CS_ATMO_UNIV_FN_HOGSTROM:
+       {
+         cs_real_t a = 0.95;
+         cs_real_t b = 11.6;
+         cs_real_t e = 0.5;
+         cs_real_t x = pow((1. - b*z*dlmo), e);
+         cs_real_t x0 = pow((1. - b*z0*dlmo), e);
 
-     return a*(log(z/z0) - 2.*log((1. + x)/(1. + x0)));
+         return a*(log(z/z0) - 2.*log((1. + x)/(1. + x0)));
+       }
+
+   case  CS_ATMO_UNIV_FN_BUSINGER:
+     {
+       cs_real_t a = 0.74;
+       cs_real_t b = 9.;
+       cs_real_t e = 0.5;
+       cs_real_t x = pow((1. - b*z*dlmo), e);
+       cs_real_t x0 = pow((1. - b*z0*dlmo), e);
+
+       return a*(log(z/z0) - 2.*log((1. + x)/(1. + x0)));
+     }
+
+   default:
+     assert(0);
+     return -1;
    }
 }
 
@@ -1333,9 +1435,9 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
 }
 
 void
-cs_f_atmo_get_soil_zone(cs_lnum_t  *n_elts,
-                        int        *n_soil_cat,
-                        cs_lnum_t  **elt_ids)
+cs_f_atmo_get_soil_zone(cs_lnum_t         *n_elts,
+                        int               *n_soil_cat,
+                        const cs_lnum_t  **elt_ids)
 {
   *n_elts = 0;
   *elt_ids = NULL;
@@ -1346,7 +1448,7 @@ cs_f_atmo_get_soil_zone(cs_lnum_t  *n_elts,
     return;
   }
 
-  cs_zone_t *z = cs_boundary_zone_by_id(cs_glob_atmo_option->soil_zone_id);
+  const cs_zone_t *z = cs_boundary_zone_by_id(cs_glob_atmo_option->soil_zone_id);
   *elt_ids = z->elt_ids;
   *n_elts = z->n_elts;
   switch (cs_glob_atmo_option->soil_cat) {
@@ -1491,7 +1593,6 @@ cs_atmo_add_property_fields(void)
 {
   cs_field_t *f;
   int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
-  bool has_previous = false;
   const int klbl   = cs_field_key_id("label");
   const int keyvis = cs_field_key_id("post_vis");
   const int keylog = cs_field_key_id("log");

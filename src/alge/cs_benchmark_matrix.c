@@ -1188,6 +1188,11 @@ _matrix_time_test(double                       t_measure,
 
   } /* end of loop on variants */
 
+  if (isnan(test_sum))
+      bft_error(__FILE__, __LINE__, 0,
+                "Test sum for matrix-vector products is a NaN,\n"
+                "so at least one product was incorrect.");
+
   if (m != NULL)
     cs_matrix_destroy(&m);
   if (ms != NULL)

@@ -687,36 +687,36 @@ _omp_version_info(bool  log)
   cs_log_t logs[] = {CS_LOG_DEFAULT, CS_LOG_PERFORMANCE};
 
 #if defined(_OPENMP)
-  char omp_version[8];
+  char omp_version[32];
   switch(_OPENMP) {
   case 200505:
-    strncpy(omp_version, "2.5", 8);
+    strncpy(omp_version, "2.5", 31);
     break;
   case 200805:
-    strncpy(omp_version, "3.0", 8);
+    strncpy(omp_version, "3.0", 31);
     break;
   case 201107:
-    strncpy(omp_version, "3.1", 8);
+    strncpy(omp_version, "3.1", 31);
     break;
   case 201307:
-    strncpy(omp_version, "4.0", 8);
+    strncpy(omp_version, "4.0", 31);
     break;
   case 201511:
-    strncpy(omp_version, "4.5", 8);
+    strncpy(omp_version, "4.5", 31);
     break;
   case 201611:
-    strncpy(omp_version, "5.0 preview 1", 8);
+    strncpy(omp_version, "5.0 preview 1", 31);
     break;
   case 201811:
-    strncpy(omp_version, "5.0", 8);
+    strncpy(omp_version, "5.0", 31);
     break;
   case 202011:
-    strncpy(omp_version, "5.1", 8);
+    strncpy(omp_version, "5.1", 31);
     break;
   default:
-    snprintf(omp_version, 8, "%d", _OPENMP);
+    snprintf(omp_version, 31, "%d", _OPENMP);
   }
-  omp_version[7] = '\0';
+  omp_version[31] = '\0';
 
   for (int log_id = 0; log_id < n_logs; log_id++) {
     cs_log_printf(logs[log_id],

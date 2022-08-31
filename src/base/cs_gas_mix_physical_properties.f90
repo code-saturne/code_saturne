@@ -91,7 +91,6 @@ type(gas_mix_species_prop), target :: s_d
 type(gas_mix_species_prop), dimension(:), allocatable, target :: s_k
 
 double precision, allocatable, dimension(:), target :: lam_loc
-double precision, allocatable, dimension(:), target :: tk_loc
 
 double precision, dimension(:), pointer :: cpro_rho
 double precision, dimension(:), pointer :: cpro_viscl, cpro_cp

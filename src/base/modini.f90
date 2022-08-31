@@ -71,7 +71,7 @@ integer          iviext
 integer          kturt, turb_flux_model, turb_flux_model_type
 
 double precision relxsp, clvfmn, clvfmx, visls_0, visls_cmp
-double precision scminp, ctheta
+double precision scminp
 
 character(len=80) :: name
 

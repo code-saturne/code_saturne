@@ -140,7 +140,6 @@ double precision, dimension(:), pointer :: bmasfl
 
 double precision, pointer, dimension(:,:) :: frcxt
 double precision, dimension(:,:), pointer :: cpro_met_vel
-double precision, allocatable, dimension (:,:), target :: wvel_target
 double precision, dimension(:), pointer :: cvara_pr
 double precision, dimension(:), pointer :: cpro_prtot
 double precision, dimension(1,1), target :: rvoid2
