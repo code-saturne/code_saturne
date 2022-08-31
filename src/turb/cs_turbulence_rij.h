@@ -81,6 +81,22 @@ cs_turbulence_rij_solve_alpha(int        f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Initialize Rij-epsilon variables based on reference quantities.
+ *
+ * If uref is not provided (0 or negative), values are set at a large
+ * negative value (-cs_math_big_r) to allow for later checks.
+ *
+ * \param[in]  uref    characteristic flow velocity
+ * \param[in]  almax   characteristic macroscopic length of the domain
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_init_by_ref_quantities(cs_real_t  uref,
+                                         cs_real_t  almax);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Clip the turbulent Reynods stress tensor and the turbulent
  *        dissipation (coupled components version).
  *

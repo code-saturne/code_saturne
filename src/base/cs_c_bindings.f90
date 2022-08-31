@@ -3460,32 +3460,15 @@ module cs_c_bindings
     end subroutine cs_turbulence_rij_solve_alpha
 
     !---------------------------------------------------------------------------
-    !> \brief Clipping of the turbulent Reynods stress tensor and the turbulent
-    !> dissipation.
-    !>
-    !> \param[in]     ncel          number of cells
+    ! Interface to C function initializing Rij-epsilon variables based
+    ! on reference quantities.
 
-    subroutine cs_turbulence_rij_clip(ncel) &
-      bind(C, name='cs_turbulence_rij_clip')
+    subroutine cs_turbulence_rij_init_by_ref_quantities(uref, almax) &
+      bind(C, name='cs_turbulence_rij_init_by_ref_quantities')
      use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), intent(in), value :: ncel
-    end subroutine cs_turbulence_rij_clip
-
-    !---------------------------------------------------------------------------
-    !> \brief Clipping of the turbulent Reynods stress tensor and the turbulent
-    !> dissipation (segregated version).
-    !>
-    !> \param[in]     ncel          number of cells
-    !> \param[in]     iclip         indicator = 0 if viscl0 is used
-    !>                              otherwise viscl is used.
-
-    subroutine cs_turbulence_rij_clip_sg(ncel, iclip) &
-      bind(C, name='cs_turbulence_rij_clip_sg')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), intent(in), value :: ncel, iclip
-    end subroutine cs_turbulence_rij_clip_sg
+      real(c_double), intent(in), value :: uref, almax
+    end subroutine cs_turbulence_rij_init_by_ref_quantities
 
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 

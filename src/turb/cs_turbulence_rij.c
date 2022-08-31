@@ -3402,6 +3402,70 @@ cs_turbulence_rij_solve_alpha(int        f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Initialize Rij-epsilon variables based on reference quantities.
+ *
+ * If uref is not provided (0 or negative), values are set at a large
+ * negative value (-cs_math_big_r) to allow for later checks.
+ *
+ * \param[in]  uref    characteristic flow velocity
+ * \param[in]  almax   characteristic macroscopic length of the domain
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_init_by_ref_quantities(cs_real_t  uref,
+                                         cs_real_t  almax)
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+  cs_real_t *cvar_ep = CS_F_(eps)->val;
+  cs_real_6_t *cvar_rij = (cs_real_6_t *)CS_F_(rij)->val;
+
+  /* With reference velocity */
+
+  if (uref > 0) {
+    const cs_real_t tr_ii = cs_math_pow2(0.02 * uref);
+    const cs_real_t k = 0.5 * (3. * tr_ii);  /* trace of tensor with
+                                                tr_ii diagonal) */
+    const cs_real_t ep = pow(k, 1.5) * cs_turb_cmu / almax;
+
+#   pragma omp parallel if(n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      cvar_rij[c_id][0] = tr_ii;
+      cvar_rij[c_id][1] = tr_ii;
+      cvar_rij[c_id][2] = tr_ii;
+      cvar_rij[c_id][3] = 0;
+      cvar_rij[c_id][4] = 0;
+      cvar_rij[c_id][5] = 0;
+      cvar_ep[c_id] = ep;
+    }
+
+    if (cs_glob_turb_rans_model->irijco == 1)
+      cs_turbulence_rij_clip(n_cells);
+    else
+      cs_turbulence_rij_clip_sg(n_cells, 1);
+  }
+
+  /* Without reference velocity */
+  else {
+#   pragma omp parallel if(n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t i = 0; i < 6; i++)
+        cvar_rij[c_id][i] = -cs_math_big_r;
+      cvar_ep[c_id] =  -cs_math_big_r;
+    }
+  }
+
+  /* For EBRSM, initialize alpha */
+
+  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+    cs_real_t *cvar_al = CS_F_(alp_bl)->val;
+    cs_array_set_value_real(n_cells, 1, 1., cvar_al);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Clip the turbulent Reynods stress tensor and the turbulent
  *        dissipation (coupled components version).
  *

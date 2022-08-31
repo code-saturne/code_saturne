@@ -99,7 +99,6 @@ double precision, dimension(:), pointer :: cpro_diff_lim
 double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_al
 double precision, dimension(:), pointer :: cvar_phi, cvar_fb, cvar_omg, cvar_nusa
-double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cpro_prtot
 double precision, dimension(:), pointer :: cpro_viscls, cproa_viscls, cvar_tempk
 double precision, dimension(:), pointer :: cpro_visma_s
@@ -325,7 +324,6 @@ endif
 !===============================================================================
 
 !     On met la pression P* a PRED0
-!$omp parallel do
 do iel = 1, ncelet
   cvar_pr(iel) = pred0
 enddo
@@ -352,7 +350,7 @@ endif
 !    -10*GRAND. On testera ensuite si l'utilisateur les a modifiees dans
 !    usiniv ou en lisant un fichier suite.
 
-if(itytur.eq.2 .or. itytur.eq.5) then
+if (itytur.eq.2 .or. itytur.eq.5) then
 
   call field_get_val_s(ivarfl(ik), cvar_k)
   call field_get_val_s(ivarfl(iep), cvar_ep)
@@ -391,48 +389,7 @@ if(itytur.eq.2 .or. itytur.eq.5) then
 
 elseif (itytur.eq.3) then
 
-  call field_get_val_s(ivarfl(iep), cvar_ep)
-
-  call field_get_val_v(ivarfl(irij), cvar_rij)
-
-  if (uref.ge.0.d0) then
-
-     trii   = (0.02d0*uref)**2
-
-     do iel = 1, ncelet
-        cvar_rij(1,iel) = trii
-        cvar_rij(2,iel) = trii
-        cvar_rij(3,iel) = trii
-        cvar_rij(4,iel) = 0.d0
-        cvar_rij(5,iel) = 0.d0
-        cvar_rij(6,iel) = 0.d0
-        xxk = 0.5d0*(cvar_rij(1,iel)+                             &
-             cvar_rij(2,iel)+cvar_rij(3,iel))
-        cvar_ep(iel) = xxk**1.5d0*cmu/almax
-     enddo
-     iclip = 1
-     if (irijco.eq.1) then
-       call cs_turbulence_rij_clip(ncel)
-     else
-       call cs_turbulence_rij_clip_sg(ncel, iclip)
-     end if
-
-  else
-
-    do iel = 1, ncelet
-       do isou =1,6
-         cvar_rij(isou,iel) = -grand
-       end do
-      cvar_ep(iel)  = -grand
-    enddo
-  endif
-
-  if (iturb.eq.32)then
-    call field_get_val_s(ivarfl(ial), cvar_al)
-    do iel = 1, ncelet
-      cvar_al(iel) = 1.d0
-    enddo
-  endif
+  call cs_turbulence_rij_init_by_ref_quantities(uref, almax)
 
 elseif(iturb.eq.60) then
 
