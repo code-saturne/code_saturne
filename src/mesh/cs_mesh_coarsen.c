@@ -1840,9 +1840,11 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
   BFT_MALLOC(c_flag_n, n_c_new, int);
 
   for (cs_lnum_t i = 0; i < n_c_new; i++)
-    c_flag_n[i] = -1;
-  for (cs_lnum_t i = 0; i < n_c_ini; i++)
-    c_flag_n[c_o2n[i]] += 1;
+    c_flag_n[i] = 0;
+  for (cs_lnum_t i = 0; i < n_c_ini; i++) {
+    if (cell_flag[i] > 0)
+      c_flag_n[c_o2n[i]] += cell_flag[i];
+  }
 
   /* Now merge interior faces */
 
