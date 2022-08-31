@@ -773,10 +773,8 @@ fi
 
 if test x$user_CS_LD != "x" ; then
   CS_LD=$user_CS_LD
-elif test $cs_have_link_cxx = yes ; then
-  CS_LD=$CXX
 else
-  CS_LD=$CC
+  CS_LD=$CXX
 fi
 AC_SUBST(CS_LD)
 AM_CONDITIONAL(HAVE_PP_LINK_CXX, test x$cs_pp_have_link_cxx = xyes)
