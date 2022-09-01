@@ -523,7 +523,7 @@ rather than in a field over all mesh cells.
 
   \section cs_var_dico_conv Local naming convention for fields (Fortran and C)
 
-  Rules have been stablished for local names denoting fields, depending on their nature. The convention, applying both in Fortran and in C, is as follows:
+  Rules have been established for local names denoting fields, depending on their nature. The convention, applying both in Fortran and in C, is as follows:
 
   - The first letter of the name indicates the location at which the field values are defined:
     - \b c for values at the cell centers.
