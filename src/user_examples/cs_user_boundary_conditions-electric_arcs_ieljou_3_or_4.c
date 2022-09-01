@@ -56,47 +56,29 @@ BEGIN_C_DECLS
 /*!
  * \brief User definition of boundary conditions
  *
- * \param[in]     nvar          total number of variable BC's
- * \param[in]     bc_type       boundary face types
- * \param[in]     icodcl        boundary face code
- *                                - 1  -> Dirichlet
- *                                - 2  -> convective outlet
- *                                - 3  -> flux density
- *                                - 4  -> sliding wall and u.n=0 (velocity)
- *                                - 5  -> friction and u.n=0 (velocity)
- *                                - 6  -> roughness and u.n=0 (velocity)
- *                                - 9  -> free inlet/outlet (velocity)
- *                                inflowing possibly blocked
- * \param[in]     rcodcl        boundary condition values
- *                                rcodcl(3) = flux density value
- *                                (negative for gain) in W/m2
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ * \param[in, out]  bc_type  boundary face types
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_boundary_conditions(int         nvar,
-                            int         bc_type[],
-                            int         icodcl[],
-                            cs_real_t   rcodcl[])
+cs_user_boundary_conditions(cs_domain_t  *domain,
+                            int           bc_type[])
 {
   /*! [loc_var_dec] */
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
-  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+  const cs_lnum_t *b_face_cells = domain->mesh->b_face_cells;
+  const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
   const cs_real_3_t *b_face_normal
-    = (const cs_real_3_t *) cs_glob_mesh_quantities->b_face_normal;
-
-  const int keyvar = cs_field_key_id("variable_id");
+    = (const cs_real_3_t *)domain->mesh_quantities->b_face_normal;
   /*! [loc_var_dec] */
 
-  /* ===============================================================================
-   * Assign boundary conditions to boundary faces here
+  /* Assign boundary conditions to boundary faces here
    *
    * For each subset:
-   * - use selection criteria to filter boundary faces of a given subset
-   * - loop on faces from a subset
+   * - find the matchig zone to filter boundary faces of a given subset
+   * - loop on faces from a zone
    *   - set the boundary condition for each face
-   * =============================================================================== */
+   *---------------------------------------------------------------------------*/
 
   /*! [init] */
   int nbelec = cs_glob_transformer->nbelec;
@@ -150,22 +132,18 @@ cs_user_boundary_conditions(int         nvar,
 
   for (int i = 0; i < nbelec; i++) {
 
-    cs_lnum_t nelts;
-    cs_lnum_t *lstelt = NULL;
-
-    BFT_MALLOC(lstelt, m->n_b_faces, cs_lnum_t);
-
     sprintf(name, "%07d", transfo->ielecc[i]);
-    cs_selector_get_b_face_list(name, &nelts, lstelt);
+
+    const cs_zone_t *z = cs_boundary_zone_by_name(name);
 
     cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
     cs_real_3_t *cpro_curim = NULL;
-      if (ieljou == 4)
-        cpro_curim = (cs_real_3_t *)(CS_F_(curim)->val);
+    if (ieljou == 4)
+      cpro_curim = (cs_real_3_t *)(CS_F_(curim)->val);
 
-    for (cs_lnum_t ilelt = 0; ilelt < nelts; ilelt++) {
+    for (cs_lnum_t ilelt = 0; ilelt < z->n_elts; ilelt++) {
 
-      cs_lnum_t face_id = lstelt[ilelt];
+      cs_lnum_t face_id = z->elt_ids[ilelt];
       cs_lnum_t cell_id = b_face_cells[face_id];
 
       for (cs_lnum_t id = 0; id < 3; id++)
@@ -176,7 +154,6 @@ cs_user_boundary_conditions(int         nvar,
           sii[i] += cpro_curim[cell_id][id] * b_face_normal[id][face_id];
     }
 
-    BFT_FREE(lstelt);
   }
   /*! [step_1] */
 
@@ -281,11 +258,12 @@ cs_user_boundary_conditions(int         nvar,
   }
 
   /* Print of UROFF (real part of offset potential) */
-  bft_printf(" ** INFORMATIONS ON TRANSFOMERS\n");
-  bft_printf("    ---------------------------------------\n");
-  bft_printf("      ---------------------------------\n");
-  bft_printf("      Number of Transfo        UROFF\n");
-  bft_printf("      ---------------------------------\n");
+  bft_printf(" ** INFORMATION ON TRANSFORMERS\n"
+             "    ---------------------------------------\n"
+             "\n"
+             "      ---------------------------------\n"
+             "      Number of Transformers   UROFF\n"
+             "      ---------------------------------\n");
   for (int ntf = 0; ntf < nbtrf; ntf++)
     bft_printf("          %6i            %12.5E\n", ntf, transfo->uroff[ntf]);
   bft_printf("    ---------------------------------------\n");
@@ -294,82 +272,80 @@ cs_user_boundary_conditions(int         nvar,
   /* 2.5 Take in account of Boundary Conditions */
 
   /*! [step_2_5] */
+
+  int       *potr_icodcl  = CS_F_(potr)->bc_coeffs->icodcl;
+  cs_real_t *potr_rcodcl1 = CS_F_(potr)->bc_coeffs->rcodcl1;
+  cs_real_t *potr_rcodcl3 = CS_F_(potr)->bc_coeffs->rcodcl3;
+
+  int       *poti_icodcl  = NULL;
+  cs_real_t *poti_rcodcl1 = NULL;
+  cs_real_t *poti_rcodcl3 = NULL;
+
+  if (ieljou == 4) {
+    poti_icodcl  = CS_F_(potr)->bc_coeffs->icodcl;
+    poti_rcodcl1 = CS_F_(potr)->bc_coeffs->rcodcl1;
+    poti_rcodcl3 = CS_F_(potr)->bc_coeffs->rcodcl3;
+  }
+
   for (int i = 0; i < nbelec; i++) {
 
-    cs_lnum_t nelts;
-    cs_lnum_t *lstelt = NULL;
-
-    BFT_MALLOC(lstelt, m->n_b_faces, cs_lnum_t);
-
     sprintf(name, "%07d", transfo->ielecc[i]);
-    cs_selector_get_b_face_list(name, &nelts, lstelt);
 
-    for (cs_lnum_t ilelt = 0; ilelt < nelts; ilelt++) {
-      cs_lnum_t face_id = lstelt[ilelt];
+    const cs_zone_t *z = cs_boundary_zone_by_name(name);
+
+    for (cs_lnum_t ilelt = 0; ilelt < z->n_elts; ilelt++) {
+      cs_lnum_t face_id = z->elt_ids[ilelt];
 
       bc_type[face_id] = CS_SMOOTHWALL;
 
       if (transfo->ielect[i] != 0) {
-        const cs_field_t *f = CS_F_(potr);
-        int ivar = cs_field_get_key_int(f, keyvar) - 1;
-        icodcl[ivar * n_b_faces + face_id] = 1;
-        rcodcl[ivar * n_b_faces + face_id] = ur[transfo->ielect[i]][transfo->ielecb[i]];
+        potr_icodcl[face_id] = 1;
+        potr_rcodcl1[face_id] = ur[transfo->ielect[i]][transfo->ielecb[i]];
 
         if (ieljou == 4) {
-          f = CS_F_(poti);
-          ivar = cs_field_get_key_int(f, keyvar) - 1;
-          icodcl[ivar * n_b_faces + face_id] = 1;
-          rcodcl[ivar * n_b_faces + face_id] = ur[transfo->ielect[i]][transfo->ielecb[i]];
+          poti_icodcl[face_id] = 1;
+          poti_rcodcl1[face_id] = ur[transfo->ielect[i]][transfo->ielecb[i]];
         }
       }
       else {
-        const cs_field_t *f = CS_F_(potr);
-        int ivar = cs_field_get_key_int(f, keyvar) - 1;
-        icodcl[ivar * n_b_faces + face_id] = 3;
-        rcodcl[2 * n_b_faces * nvar + ivar * n_b_faces + face_id] = 0.;
+        potr_icodcl[face_id] = 3;
+        potr_rcodcl3[face_id] = 0.;
 
         if (ieljou == 4) {
-          f = CS_F_(poti);
-          ivar = cs_field_get_key_int(f, keyvar) - 1;
-          icodcl[ivar * n_b_faces + face_id] = 3;
-          rcodcl[2 * n_b_faces * nvar + ivar * n_b_faces + face_id] = 0.;
+          poti_icodcl[face_id] = 3;
+          poti_rcodcl3[face_id] = 0.;
         }
       }
     }
 
-    BFT_FREE(lstelt);
   }
 
   /* Test, if not any reference transformer
    *       a piece of wall may be at ground. */
   if (transfo->ntfref == 0) {
-    bool found = false;
+    int found = 0;
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (bc_type[face_id] == CS_SMOOTHWALL) {
-        const cs_field_t *f = CS_F_(potr);
-        int ivar = cs_field_get_key_int(f, keyvar) - 1;
-        if (icodcl[ivar * n_b_faces + face_id] == 1) {
+        if (potr_icodcl[face_id] == 1) {
           if (ieljou == 3) {
-            if (fabs(rcodcl[ivar * n_b_faces + face_id]) < 1.e-20)
-              found = true;
+            if (fabs(potr_rcodcl1[face_id]) < 1.e-20)
+              found = 1;
           }
           else if (ieljou == 4) {
-            double val = fabs(rcodcl[ivar * n_b_faces + face_id]);
-            f = CS_F_(poti);
-            ivar = cs_field_get_key_int(f, keyvar) - 1;
-            if (fabs(rcodcl[ivar * n_b_faces + face_id]) < 1.e-20 &&
-                val < 1.e-20)
-              found = true;
+            double val = fabs(potr_rcodcl1[face_id]);
+            if (fabs(poti_rcodcl1[face_id]) < 1.e-20 && val < 1.e-20)
+              found = 1;
           }
         }
       }
     }
+    cs_parall_max(1, CS_INT_TYPE, &found);
     if (!found)
       bft_error(__FILE__, __LINE__, 0,
               _("ERROR in JOULE : \n"
-                "Lack of reference : choose a transformer for wich\n"
+                "Lack of reference: choose a transformer for which\n"
                 "offset is assumed zero or a face at ground on the\n"
-                "boundary\n"));
+                "boundary."));
   }
   /*! [step_2_5] */
 

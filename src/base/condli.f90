@@ -389,7 +389,7 @@ call cs_boundary_conditions_complete(nvar, itypfb, icodcl, rcodcl)
 call cs_f_user_boundary_conditions &
   (nvar, nscal, icodcl, itrifb, itypfb, izfppp, dt, rcodcl )
 
-call user_boundary_conditions(nvar, itypfb, icodcl, rcodcl)
+call user_boundary_conditions(itypfb)
 
 ! Check consistency with GUI definitions
 
@@ -4960,7 +4960,7 @@ call cs_f_user_boundary_conditions &
     dt     ,                                                       &
     rcodcl )
 
-call user_boundary_conditions(nvar, itypfb, icodcl, rcodcl)
+call user_boundary_conditions(itypfb)
 
 ! -- Methode ALE (CL de vitesse de maillage et deplacement aux noeuds)
 

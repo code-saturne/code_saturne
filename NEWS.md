@@ -3,6 +3,11 @@ Master (not on release branches yet)
 
 User changes:
 
+- Change cs_user_boundary_conditions function arguments for cleaner
+  icodcl/rcodcl access: pointers to the array sections associated to
+  each field are now available in that field's bc_coeffs sub-structure,
+  simplifying the index arithmetic.
+
 - Simplify the use of soil-atmosphere model of the atmospheric module.
 
 Physical modeling:

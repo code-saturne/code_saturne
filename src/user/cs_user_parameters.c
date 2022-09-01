@@ -106,7 +106,7 @@ cs_user_model(void)
 void
 cs_user_parameters(cs_domain_t   *domain)
 {
-  CS_UNUSED(domain);
+  CS_NO_WARN_IF_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/

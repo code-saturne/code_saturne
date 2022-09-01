@@ -345,10 +345,8 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain);
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_boundary_conditions(int         nvar,
-                            int         icodcl[],
-                            int         bc_type[],
-                            cs_real_t   rcodcl[]);
+cs_user_boundary_conditions(cs_domain_t  *domain,
+                            int           bc_type[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -2000,14 +2000,11 @@ module cs_c_bindings
 
     ! Interface to C user function for boundary conditions
 
-    subroutine user_boundary_conditions(nvar, bc_type, icodcl, rcodcl)  &
-      bind(C, name='cs_user_boundary_conditions')
+    subroutine user_boundary_conditions(bc_type)  &
+      bind(C, name='cs_user_boundary_conditions_wrapper')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: nvar
       integer(kind=c_int), dimension(*), intent(inout) :: bc_type
-      integer(kind=c_int), dimension(*), intent(inout) :: icodcl
-      real(kind=c_double), dimension(*), intent(inout) :: rcodcl
     end subroutine user_boundary_conditions
 
     !---------------------------------------------------------------------------

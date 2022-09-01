@@ -107,9 +107,9 @@ double precision, pointer, dimension(:)   :: porosi => null()
 double precision, pointer, dimension(:,:) :: disale => null()
 double precision, dimension(:,:), pointer :: xyzno0 => null()
 
-integer, allocatable, dimension(:,:) :: icodcl
 integer, allocatable, dimension(:) :: isostd
-double precision, allocatable, dimension(:,:,:) :: rcodcl
+integer, pointer, dimension(:,:) :: icodcl
+double precision, pointer, dimension(:,:,:) :: rcodcl
 
 !===============================================================================
 ! Interfaces
@@ -679,8 +679,7 @@ endif
 ! Deprecated, only for compatibility reason
 nvarcl = nvar
 
-allocate(icodcl(nfabor,nvar))
-allocate(rcodcl(nfabor,nvar,3))
+call field_build_bc_codes_all(icodcl, rcodcl)
 allocate(isostd(nfabor+1))
 
 ! First pass for initialization BC types
@@ -689,9 +688,8 @@ allocate(isostd(nfabor+1))
 call cscini(nvar)
 call condli_ini(nvar, nscal, itrale, icodcl, isostd, dt, rcodcl)
 
-deallocate(icodcl)
-deallocate(rcodcl)
 deallocate(isostd)
+call field_free_bc_codes_all(icodcl, rcodcl)
 
 !===============================================================================
 ! Arrays for time block, to discard afterwards

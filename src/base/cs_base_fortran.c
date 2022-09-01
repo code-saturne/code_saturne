@@ -52,6 +52,7 @@
 #include <bft_printf.h>
 
 #include "cs_base.h"
+#include "cs_field.h"
 #include "cs_file.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
@@ -603,6 +604,36 @@ void
 cs_user_boundary_conditions_setup_wrapper(void)
 {
   cs_user_boundary_conditions_setup(cs_glob_domain);
+}
+
+void
+cs_user_boundary_conditions_wrapper(int  *itypcl)
+{
+  cs_user_boundary_conditions(cs_glob_domain, itypcl);
+
+  /* Ensure icodcl values are uniform for multidimensional fields */
+
+  const cs_lnum_t n_b_faces = cs_glob_domain->mesh->n_b_faces;
+  const int n_fields = cs_field_n_fields();
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+
+    const cs_field_t  *f = cs_field_by_id(f_id);
+    if (f->dim > 1 && f->type & CS_FIELD_VARIABLE) {
+
+      assert(f->bc_coeffs != NULL);
+      assert(f->bc_coeffs->icodcl != NULL || n_b_faces == 0);
+
+      int *icodcl = f->bc_coeffs->icodcl;
+
+      for (cs_lnum_t i = 1; i < f->dim; i++) {
+        for (cs_lnum_t j = 0; j < n_b_faces; j++)
+          icodcl[n_b_faces*i + j] = icodcl[j];
+      }
+
+    }
+
+  }
 }
 
 void

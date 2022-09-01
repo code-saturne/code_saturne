@@ -57,33 +57,21 @@ BEGIN_C_DECLS
 /*!
  * \brief User definition of boundary conditions
  *
- * \param[in]     nvar          total number of variable BC's
- * \param[in]     bc_type       boundary face types
- * \param[in]     icodcl        boundary face code
- *                                - 1  -> Dirichlet
- *                                - 2  -> convective outlet
- *                                - 3  -> flux density
- *                                - 4  -> sliding wall and u.n=0 (velocity)
- *                                - 5  -> friction and u.n=0 (velocity)
- *                                - 6  -> roughness and u.n=0 (velocity)
- *                                - 9  -> free inlet/outlet (velocity)
- *                                inflowing possibly blocked
- * \param[in]     rcodcl        boundary condition values
- *                                rcodcl(3) = flux density value
- *                                (negative for gain) in W/m2
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ * \param[in, out]  bc_type  boundary face types
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_boundary_conditions(int         nvar,
-                            int         bc_type[],
-                            int         icodcl[],
-                            cs_real_t   rcodcl[])
+cs_user_boundary_conditions(cs_domain_t  *domain,
+                            int           bc_type[])
 {
+  CS_NO_WARN_IF_UNUSED(domain);
+  CS_NO_WARN_IF_UNUSED(bc_type);
+
   /*! [loc_var_def] */
 
   /* Variables needed for boundary condition sub-selection */
-  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
   /* MEDCoupling Remapper structure:
    * ------------------------------- */
@@ -189,25 +177,18 @@ cs_user_boundary_conditions(int         nvar,
   /*! [copy_values] */
 
   /*! [dirichlet_condition] */
-  const int keyvar = cs_field_key_id("variable_id");
+  const cs_zone_t *z = cs_boundary_zone_by_name("inlet");
+
   cs_field_t *scalar = cs_field_by_name_try("scalar1");
-  int iscal = cs_field_get_key_int(scalar, keyvar) - 1;
+  int       *icodcl  = scalar->bc_coeffs->icodcl;
+  cs_real_t *rcodcl1 = scalar->bc_coeffs->rcodcl1;
 
-  cs_lnum_t  nelts = 0;
-  cs_lnum_t *lstelt = NULL;
+  for (cs_lnum_t ielt = 0; ielt < z->n_elts; ielt++) {
+    cs_lnum_t f_id = z->elt_ids[ielt];
 
-  BFT_MALLOC(lstelt, n_b_faces, cs_lnum_t);
-
-  cs_selector_get_b_face_list("inlet", &nelts, lstelt);
-
-  for (cs_lnum_t ielt = 0; ielt < nelts; ielt++) {
-    cs_lnum_t f_id = lstelt[ielt];
-
-    icodcl[iscal*n_b_faces + f_id] = 1;
-    rcodcl[iscal*n_b_faces + f_id] = bc_scalar[ielt];
+    icodcl[f_id] = 1;
+    rcodcl1[f_id] = bc_scalar[ielt];
   }
-
-  BFT_FREE(lstelt);
   /*! [dirichlet_condition] */
 }
 
