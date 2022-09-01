@@ -851,8 +851,7 @@ endif
 
 ! Allocate temporary arrays for boundary conditions
 if (italim .eq. 1) then
-  allocate(icodcl(nfabor,nvar))
-  allocate(rcodcl(nfabor,nvar,3))
+  call field_build_bc_codes_all(icodcl, rcodcl)
 endif
 if (isvhb.gt.0) then
   allocate(hbord(nfabor))
@@ -1060,7 +1059,7 @@ do while (iterns.le.nterup)
       deallocate(trava)
     endif
 
-    deallocate(icodcl, rcodcl)
+    call field_free_bc_codes_all(icodcl, rcodcl)
 
     deallocate(isostd)
 
@@ -1445,7 +1444,7 @@ if (nscal.ge.1) then
 endif
 
 ! Free memory
-deallocate(icodcl, rcodcl)
+call field_free_bc_codes_all(icodcl, rcodcl)
 
 deallocate(isostd)
 

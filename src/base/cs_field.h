@@ -98,12 +98,17 @@ typedef enum {
 
 } cs_field_error_type_t;
 
-/* Field boundary condition descriptor (for variables) */
-/*-----------------------------------------------------*/
+/*! Field boundary condition descriptor (for variables) */
+/*------------------------------------------------------*/
 
 typedef struct {
 
   int                location_id;  /* Id of matching location */
+
+  int               *icodcl;       /* low-level BC type code */
+  cs_real_t         *rcodcl1;      /* 1st component of low-level BC */
+  cs_real_t         *rcodcl2;      /* 2nd component of low-level BC */
+  cs_real_t         *rcodcl3;      /* 3rd component of low-level BC */
 
   cs_real_t         *a;            /* Explicit coefficient */
   cs_real_t         *b;            /* Implicit coefficient */

@@ -136,6 +136,26 @@ const cs_equation_param_t *
 cs_field_get_equation_param_const(const cs_field_t  *f);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and map boundary condition coefficients for all
+ *        variable fields.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_build_bc_codes_all(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Deallocate and unmap boundary condition coefficients for all
+ *        variable fields.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_free_bc_codes_all(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

@@ -76,6 +76,15 @@ BEGIN_C_DECLS
   \var cs_field_bc_coeffs_t::location_id
        Id of matching location
 
+  \var cs_field_bc_coeffs_t::icodcl
+       Low-level BC type code
+  \var cs_field_bc_coeffs_t::rcodcl1
+       1st part of low-level BC values definition
+  \var cs_field_bc_coeffs_t::rcodcl2
+       2nd part of low-level BC values definition
+  \var cs_field_bc_coeffs_t::rcodcl3
+       3rd part of low-level BC values definition
+
   \var cs_field_bc_coeffs_t::a
        Explicit coefficient
   \var cs_field_bc_coeffs_t::b
@@ -1813,6 +1822,11 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
 
       f->bc_coeffs->location_id = location_id;
 
+      f->bc_coeffs->icodcl = NULL;
+      f->bc_coeffs->rcodcl1 = NULL;
+      f->bc_coeffs->rcodcl2 = NULL;
+      f->bc_coeffs->rcodcl3 = NULL;
+
       BFT_MALLOC(f->bc_coeffs->a, n_elts[0]*a_mult, cs_real_t);
       BFT_MALLOC(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t);
 
@@ -2209,9 +2223,7 @@ cs_field_current_to_previous(cs_field_t  *f)
 void
 cs_field_destroy_all(void)
 {
-  int i;
-
-  for (i = 0; i < _n_fields; i++) {
+  for (int i = 0; i < _n_fields; i++) {
     cs_field_t  *f = _fields[i];
     if (f->is_owner && f->vals != NULL) {
       int ii;
@@ -2234,7 +2246,7 @@ cs_field_destroy_all(void)
     }
   }
 
-  for (i = 0; i < _n_fields; i++) {
+  for (int i = 0; i < _n_fields; i++) {
     if (i % _CS_FIELD_S_ALLOC_SIZE == 0)
       BFT_FREE(_fields[i]);
   }
@@ -2271,7 +2283,7 @@ cs_field_allocate_or_map_all(void)
   for (i = 0; i < _n_fields; i++) {
     cs_field_t  *f = _fields[i];
     if (f->is_owner)
-        cs_field_allocate_values(f);
+      cs_field_allocate_values(f);
     else {
       if (f->val == NULL)
         bft_error(__FILE__, __LINE__, 0,

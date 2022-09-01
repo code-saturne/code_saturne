@@ -85,6 +85,14 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
+/* Dimensions and pointers (mappable to legacy Fortran array,
+   which is why this is not simply allocated locally for each field) */
+
+static cs_lnum_t    _n_vars_bc = 0;
+static cs_lnum_t    _n_b_faces = 0;
+static int         *_icodcl = NULL;
+static cs_real_t   *_rcodcl = NULL;
+
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -94,6 +102,12 @@ BEGIN_C_DECLS
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
+void
+cs_f_field_update_bcs_ptr(int          dim_icodcl[2],
+                          int          dim_rcodcl[3],
+                          int        **p_icodcl,
+                          cs_real_t  **p_rcodcl);
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -101,6 +115,37 @@ BEGIN_C_DECLS
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Update field icodcl/rcodcl map and pointers to matching base arrays.
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   dim_icodcl --> dimensions of icodcl array
+ *   dim_rcodcl --> dimensions of rcodcl array
+ *   p_icodcl   --> pointer to icodcl base array
+ *   p_rcodcl   --> pointer to rcodcl base array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_field_update_bcs_ptr(int          dim_icodcl[2],
+                          int          dim_rcodcl[3],
+                          int        **p_icodcl,
+                          cs_real_t  **p_rcodcl)
+{
+  cs_field_build_bc_codes_all();
+
+  dim_icodcl[0] = _n_b_faces;
+  dim_icodcl[1] = _n_vars_bc;
+
+  dim_rcodcl[0] = _n_b_faces;
+  dim_rcodcl[1] = _n_vars_bc;
+  dim_rcodcl[2] = 3;
+
+  *p_icodcl = _icodcl;
+  *p_rcodcl = _rcodcl;
+}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -276,6 +321,115 @@ cs_field_get_equation_param_const(const cs_field_t  *f)
     eqp = cs_field_get_key_struct_const_ptr(f, k_id);
 
   return eqp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and map boundary condition coefficients for all
+ *        variable fields.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_build_bc_codes_all(void)
+{
+  const cs_lnum_t n_b_faces
+    = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES)[0];
+
+  /* Determine number of solved variables */
+
+  cs_lnum_t n_vars = 0;
+
+  const int kv = cs_field_key_id("variable_id");
+  const int n_fields = cs_field_n_fields();
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+
+    const cs_field_t  *f = cs_field_by_id(f_id);
+
+    int var_id_p1 = (f->type & CS_FIELD_VARIABLE) ?
+      cs_field_get_key_int(f, kv) : 0;
+
+    if (var_id_p1 > n_vars)
+      n_vars = var_id_p1;
+
+  }
+
+  /* Allocate or remap only if needed */
+
+  if (n_vars == _n_vars_bc && n_b_faces == _n_b_faces) {
+    if (   (_icodcl != NULL && n_b_faces > 0)
+        || (_icodcl == NULL && n_b_faces == 0))
+      return;
+  }
+
+  /* Update and map otherwise */
+
+  _n_vars_bc = n_vars;
+  _n_b_faces = n_b_faces;
+
+  BFT_REALLOC(_icodcl, n_vars*n_b_faces, int);
+  BFT_REALLOC(_rcodcl, 3*n_vars*n_b_faces, cs_real_t);
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+
+    const cs_field_t  *f = cs_field_by_id(f_id);
+
+    int var_id = (f->type & CS_FIELD_VARIABLE) ?
+      cs_field_get_key_int(f, kv) -1 : -1;
+
+    if (var_id > -1 && f->bc_coeffs != NULL) {
+
+      f->bc_coeffs->icodcl  = _icodcl + n_b_faces*var_id;
+      f->bc_coeffs->rcodcl1 = _rcodcl + n_b_faces*var_id;
+      f->bc_coeffs->rcodcl2 = _rcodcl + n_b_faces*(n_vars+var_id);
+      f->bc_coeffs->rcodcl3 = _rcodcl + n_b_faces*(2*n_vars+var_id);
+
+      /* For multi-dimensional arrays, access using
+
+         f->bcs->icodcl[coo_id*n_b_faces + face_id]
+
+         and equivalent for icodcl, rcodc1, rcodcl2, rcodcl3. */
+
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Deallocate and unmap boundary condition coefficients for all
+ *        variable fields.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_free_bc_codes_all(void)
+{
+  _n_vars_bc = 0;
+  _n_b_faces = 0;
+
+  const int kv = cs_field_key_id("variable_id");
+  const int n_fields = cs_field_n_fields();
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+
+    const cs_field_t  *f = cs_field_by_id(f_id);
+
+    int var_id = (f->type & CS_FIELD_VARIABLE) ?
+      cs_field_get_key_int(f, kv) : -1;
+
+    if (var_id > -1 && f->bc_coeffs != NULL) {
+      f->bc_coeffs->icodcl = NULL;
+      f->bc_coeffs->rcodcl1 = NULL;
+      f->bc_coeffs->rcodcl2 = NULL;
+      f->bc_coeffs->rcodcl3 = NULL;
+    }
+
+  }
+
+  BFT_FREE(_icodcl);
+  BFT_FREE(_rcodcl);
 }
 
 /*----------------------------------------------------------------------------*/
