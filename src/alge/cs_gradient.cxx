@@ -2055,6 +2055,91 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 }
 
 /*----------------------------------------------------------------------------
+ * Add compute 3x3 cocg for least squares algorithm contribution from hidden
+ * faces (as pure homogeneous Neumann BC's) to a single cell
+ *
+ * parameters:
+ *   c_id               <-- cell id
+ *   cell_hb_faces_idx  <-- cells -> hidden boundary faces index
+ *   cell_hb_faces      <-- cells -> hidden boundary faces adjacency
+ *   b_face_surf        <-- boundary faces surfaces
+ *   b_face_normal      <-- boundary faces normals
+ *   cocg               <-> cocg covariance matrix for given cell
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_add_hb_faces_cocg_lsq_cell(cs_lnum_t        c_id,
+                            const cs_lnum_t  cell_hb_faces_idx[],
+                            const cs_lnum_t  cell_hb_faces[],
+                            const cs_real_t  b_face_surf[],
+                            const cs_real_t  b_face_normal[][3],
+                            cs_cocg_t        cocg[6])
+
+{
+  cs_lnum_t s_id = cell_hb_faces_idx[c_id];
+  cs_lnum_t e_id = cell_hb_faces_idx[c_id+1];
+
+  for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+    cs_lnum_t f_id = cell_hb_faces[i];
+
+    cs_real_t udbfs = 1. / b_face_surf[f_id];
+
+    cs_real_t dddij[3];
+    for (cs_lnum_t ll = 0; ll < 3; ll++)
+      dddij[ll] = udbfs * b_face_normal[f_id][ll];
+
+    cocg[0] += dddij[0]*dddij[0];
+    cocg[1] += dddij[1]*dddij[1];
+    cocg[2] += dddij[2]*dddij[2];
+    cocg[3] += dddij[0]*dddij[1];
+    cocg[4] += dddij[1]*dddij[2];
+    cocg[5] += dddij[0]*dddij[2];
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Add compute 3x3 cocg for least squares algorithm contribution from hidden
+ * faces (as pure homogeneous Neumann BC's)
+ *
+ * parameters:
+ *   m    <-- mesh
+ *   fvq  <-- mesh quantities
+ *   ma   <-- mesh adjacencies
+ *   cocg <-> cocg covariance matrix
+ *----------------------------------------------------------------------------*/
+
+static void
+_add_hb_faces_cell_cocg_lsq(const cs_mesh_t              *m,
+                            const cs_mesh_quantities_t   *fvq,
+                            const cs_mesh_adjacencies_t  *ma,
+                            cs_cocg_6_t                  *cocg)
+{
+  const int n_cells = m->n_cells;
+
+  const cs_real_t *restrict b_face_surf
+    = (const cs_real_t *restrict)fvq->b_face_surf;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+
+  const cs_lnum_t  *restrict cell_hb_faces_idx
+    = (const cs_lnum_t  *restrict)(ma->cell_hb_faces_idx);
+  const cs_lnum_t  *restrict cell_hb_faces
+    = (const cs_lnum_t  *restrict)(ma->cell_hb_faces);
+
+# pragma omp parallel for
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    _add_hb_faces_cocg_lsq_cell(c_id,
+                                cell_hb_faces_idx,
+                                cell_hb_faces,
+                                b_face_surf,
+                                b_face_normal,
+                                cocg[c_id]);
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Compute 3x3 matrix cocg for the scalar gradient least squares algorithm
  *
  * parameters:
@@ -2216,6 +2301,11 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 
   } /* End for extended neighborhood */
 
+  /* Contribution from hidden boundary faces, if present */
+
+  if (m->n_b_faces_all > m->n_b_faces)
+    _add_hb_faces_cell_cocg_lsq(m, fvq, cs_glob_mesh_adjacencies, cocg);
+
   /* Save partial cocg at interior faces of boundary cells */
 
 # pragma omp parallel for
@@ -2255,6 +2345,11 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
     } /* loop on faces */
 
   } /* loop on threads */
+
+  /* Contribution from hidden boundary faces, if present */
+
+  if (m->n_b_faces_all > m->n_b_faces)
+    _add_hb_faces_cell_cocg_lsq(m, fvq, cs_glob_mesh_adjacencies, cocg);
 
   /* Invert for all cells. */
   /*-----------------------*/
@@ -2370,7 +2465,6 @@ _get_cell_cocg_lsq(const cs_mesh_t               *m,
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   cpl            <-- structure associated with internal coupling, or NULL
- *   hyd_p_flag     <-- flag for hydrostatic pressure
  *   coefbp         <-- B.C. coefficients for boundary face normals
  *   cocgb          <-- saved B.C. coefficients for boundary cells
  *   cocgb          <-> B.C. coefficients, updated at boundary cells
@@ -8819,6 +8913,16 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
   cs_lnum_t s_id = cell_b_faces_idx[c_id];
   cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
 
+  /* Contribution from hidden boundary faces */
+
+  if (ma->cell_hb_faces_idx != NULL)
+    _add_hb_faces_cocg_lsq_cell(c_id,
+                                ma->cell_hb_faces_idx,
+                                ma->cell_hb_faces,
+                                fvq->b_face_surf,
+                                (const cs_real_3_t *)fvq->b_face_normal,
+                                cocg);
+
   /* Contribution from boundary faces */
 
   for (cs_lnum_t i = s_id; i < e_id; i++) {
@@ -9074,6 +9178,31 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
     }
 
   } /* end of contribution from interior and extended cells */
+
+  /* Contribution from hidden boundary faces, if present */
+
+  if (ma->cell_hb_faces_idx != NULL) {
+    cs_lnum_t s_id = ma->cell_hb_faces_idx[c_id];
+    cs_lnum_t e_id = ma->cell_hb_faces_idx[c_id+1];
+
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+      cs_lnum_t f_id = ma->cell_hb_faces[i];
+
+      cs_real_t udbfs = 1. / fvq->b_face_surf[f_id];
+
+      cs_real_t dddij[3];
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        dddij[ll] = udbfs * fvq->b_face_normal[f_id*3 + ll];
+
+      for (cs_lnum_t kk = 0; kk < 3; kk++) {
+        for (cs_lnum_t ll = 0; ll < 3; ll++) {
+          cocg[kk][ll] += dddij[kk] * dddij[ll];
+        }
+      }
+
+    }
+  }
 
   /* Contribution from boundary conditions */
 
@@ -9374,6 +9503,31 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
     }
 
   } /* end of contribution from interior and extended cells */
+
+  /* Contribution from hidden boundary faces, if present */
+
+  if (ma->cell_hb_faces_idx != NULL) {
+    cs_lnum_t s_id = ma->cell_hb_faces_idx[c_id];
+    cs_lnum_t e_id = ma->cell_hb_faces_idx[c_id+1];
+
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+      cs_lnum_t f_id = ma->cell_hb_faces[i];
+
+      cs_real_t udbfs = 1. / fvq->b_face_surf[f_id];
+
+      cs_real_t dddij[3];
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        dddij[ll] = udbfs * fvq->b_face_normal[f_id*3 + ll];
+
+      for (cs_lnum_t kk = 0; kk < 3; kk++) {
+        for (cs_lnum_t ll = 0; ll < 3; ll++) {
+          cocg[kk][ll] += dddij[kk] * dddij[ll];
+        }
+      }
+
+    }
+  }
 
   /* Contribution from boundary conditions */
 

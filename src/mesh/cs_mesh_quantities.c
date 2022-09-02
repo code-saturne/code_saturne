@@ -136,10 +136,10 @@ _compute_corr_grad_lin(const cs_mesh_t       *m,
 {
   /* Local variables */
 
-  const int n_cells = m->n_cells;
-  const int n_cells_with_ghosts = m->n_cells_with_ghosts;
-  const int n_i_faces = m->n_i_faces;
-  const int n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_with_ghosts = m->n_cells_with_ghosts;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = CS_MAX(m->n_b_faces, m->n_b_faces_all);
 
   const cs_lnum_t  *b_face_cells = m->b_face_cells;
   const cs_lnum_2_t *restrict i_face_cells

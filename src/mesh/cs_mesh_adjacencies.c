@@ -340,6 +340,65 @@ _update_cell_b_faces(cs_mesh_adjacencies_t  *ma)
   cs_sort_indexed(n_cells, c2b_idx, c2b);
 }
 
+/*----------------------------------------------------------------------------
+ * Update cells -> hidden boundary faces connectivity
+ *
+ * parameters:
+ *   ma <-> mesh adjacecies structure to update
+ *----------------------------------------------------------------------------*/
+
+static void
+_update_cell_hb_faces(cs_mesh_adjacencies_t  *ma)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_b_faces_all = m->n_b_faces_all;
+
+  /* (re)build cell -> boundary faces index */
+
+  cs_alloc_mode_t alloc_mode = cs_check_device_ptr(ma->cell_hb_faces_idx);
+
+  CS_FREE(ma->cell_hb_faces_idx);
+  CS_MALLOC_HD(ma->cell_hb_faces_idx, n_cells + 1, cs_lnum_t, alloc_mode);
+  cs_lnum_t *c2b_idx = ma->cell_hb_faces_idx;
+
+  cs_lnum_t *c2b_count;
+  BFT_MALLOC(c2b_count, n_cells, cs_lnum_t);
+
+  for (cs_lnum_t i = 0; i < n_cells; i++)
+    c2b_count[i] = 0;
+
+  for (cs_lnum_t i = n_b_faces; i < n_b_faces_all; i++)
+    c2b_count[b_face_cells[i]] += 1;
+
+  c2b_idx[0] = 0;
+  for (cs_lnum_t i = 0; i < n_cells; i++) {
+    c2b_idx[i+1] = c2b_idx[i] + c2b_count[i];
+    c2b_count[i] = 0;
+  }
+
+  /* Rebuild values */
+
+  CS_FREE(ma->cell_hb_faces);
+  CS_MALLOC_HD(ma->cell_hb_faces, c2b_idx[n_cells], cs_lnum_t, alloc_mode);
+  cs_lnum_t *c2b = ma->cell_hb_faces;
+
+  for (cs_lnum_t i = n_b_faces; i < n_b_faces_all; i++) {
+    cs_lnum_t c_id = b_face_cells[i];
+    c2b[c2b_idx[c_id] + c2b_count[c_id]] = i;
+    c2b_count[c_id] += 1;
+  }
+
+  BFT_FREE(c2b_count);
+
+  /* Sort array */
+
+  cs_sort_indexed(n_cells, c2b_idx, c2b);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Update the v2v index with the data from the given face connectivity.
@@ -611,6 +670,9 @@ cs_mesh_adjacencies_initialize(void)
   ma->cell_b_faces_idx = NULL;
   ma->cell_b_faces = NULL;
 
+  ma->cell_hb_faces_idx = NULL;
+  ma->cell_hb_faces = NULL;
+
   ma->c2f = NULL;
   ma->_c2f = NULL;
 
@@ -640,6 +702,9 @@ cs_mesh_adjacencies_finalize(void)
   BFT_FREE(ma->cell_b_faces_idx);
   BFT_FREE(ma->cell_b_faces);
 
+  BFT_FREE(ma->cell_hb_faces_idx);
+  BFT_FREE(ma->cell_hb_faces);
+
   cs_adjacency_destroy(&(ma->_c2f));
 
   cs_adjacency_destroy(&(ma->_c2v));
@@ -656,6 +721,8 @@ cs_mesh_adjacencies_finalize(void)
 void
 cs_mesh_adjacencies_update_mesh(void)
 {
+  const cs_mesh_t *m = cs_glob_mesh;
+
   cs_mesh_adjacencies_t *ma = &_cs_glob_mesh_adjacencies;
 
   /* (re)build cell -> cell connectivities */
@@ -670,15 +737,18 @@ cs_mesh_adjacencies_update_mesh(void)
 
   _update_cell_b_faces(ma);
 
+  if (m->n_b_faces_all > m->n_b_faces)
+    _update_cell_hb_faces(ma);
+
   /* (re)build or map cell -> face connectivities */
 
   if (ma->c2f != NULL)
-    _update_cell_faces(ma, cs_glob_mesh);
+    _update_cell_faces(ma, m);
 
   /* (re)build or map cell -> vertex connectivities */
 
   if (ma->c2v != NULL)
-    _update_cell_vertices(ma, cs_glob_mesh);
+    _update_cell_vertices(ma, m);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -756,6 +826,12 @@ cs_mesh_adjacencies_update_device(cs_alloc_mode_t  alloc_mode)
   {
     CS_REALLOC_HD(ma->cell_b_faces_idx, n_cells+1, cs_lnum_t, alloc_mode);
     CS_REALLOC_HD(ma->cell_b_faces, ma->cell_b_faces_idx[n_cells], cs_lnum_t,
+                  alloc_mode);
+  }
+
+  if (ma->cell_hb_faces_idx != NULL) {
+    CS_REALLOC_HD(ma->cell_hb_faces_idx, n_cells+1, cs_lnum_t, alloc_mode);
+    CS_REALLOC_HD(ma->cell_hb_faces, ma->cell_b_faces_idx[n_cells], cs_lnum_t,
                   alloc_mode);
   }
 }

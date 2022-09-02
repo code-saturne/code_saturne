@@ -107,6 +107,15 @@ typedef struct {
   cs_lnum_t        *cell_b_faces_idx;  /*!< cells to boundary faces index */
   cs_lnum_t        *cell_b_faces;      /*!< cells to boundary faces adjacency */
 
+  /* cells -> hidden boundary faces connectivity, if present;
+     "hidden" boundary faces are those whose ids are in the meshe's
+     ] n_b_faces, n_b_faces_all ] range */
+
+  cs_lnum_t        *cell_hb_faces_idx;  /*!< cells to hidden boundary faces
+                                          index, if present */
+  cs_lnum_t        *cell_hb_faces;      /*!< cells to hidden boundary faces
+                                          adjacency, if present */
+
   /* cells -> faces connectivity */
 
   const cs_adjacency_t  *c2f;          /*!< cells to faces adjacency */

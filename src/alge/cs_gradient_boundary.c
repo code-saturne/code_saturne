@@ -54,6 +54,7 @@
 #include "cs_field.h"
 #include "cs_halo.h"
 #include "cs_internal_coupling.h"
+#include "cs_gradient_priv.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_adjacencies.h"
@@ -96,6 +97,51 @@ BEGIN_C_DECLS
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Add compute 3x3 cocg for least squares algorithm contribution from hidden
+ * faces (as pure homogeneous Neumann BC's) to a single cell
+ *
+ * parameters:
+ *   c_id               <-- cell id
+ *   cell_hb_faces_idx  <-- cells -> hidden boundary faces index
+ *   cell_hb_faces      <-- cells -> hidden boundary faces adjacency
+ *   b_face_surf        <-- boundary faces surfaces
+ *   b_face_normal      <-- boundary faces normals
+ *   cocg               <-> cocg covariance matrix for given cell
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_add_hb_faces_cocg_lsq_cell(cs_lnum_t        c_id,
+                            const cs_lnum_t  cell_hb_faces_idx[],
+                            const cs_lnum_t  cell_hb_faces[],
+                            const cs_real_t  b_face_surf[],
+                            const cs_real_t  b_face_normal[][3],
+                            cs_cocg_t        cocg[6])
+
+{
+  cs_lnum_t s_id = cell_hb_faces_idx[c_id];
+  cs_lnum_t e_id = cell_hb_faces_idx[c_id+1];
+
+  for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+    cs_lnum_t f_id = cell_hb_faces[i];
+
+    cs_real_t udbfs = 1. / b_face_surf[f_id];
+
+    cs_real_t dddij[3];
+    for (cs_lnum_t ll = 0; ll < 3; ll++)
+      dddij[ll] = udbfs * b_face_normal[f_id][ll];
+
+    cocg[0] += dddij[0]*dddij[0];
+    cocg[1] += dddij[1]*dddij[1];
+    cocg[2] += dddij[2]*dddij[2];
+    cocg[3] += dddij[0]*dddij[1];
+    cocg[4] += dddij[1]*dddij[2];
+    cocg[5] += dddij[0]*dddij[2];
+
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -318,8 +364,15 @@ _gradient_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
 
     } /* End of contribution from interior and extended cells */
 
-    cs_lnum_t s_id = cell_b_faces_idx[c_id];
-    cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
+    /* Contribution from hidden boundary faces */
+
+    if (ma->cell_hb_faces_idx != NULL)
+      _add_hb_faces_cocg_lsq_cell(c_id,
+                                  ma->cell_hb_faces_idx,
+                                  ma->cell_hb_faces,
+                                  fvq->b_face_surf,
+                                  (const cs_real_3_t *)fvq->b_face_normal,
+                                  cocg);
 
     /* Contribution from boundary faces. */
 
@@ -331,6 +384,9 @@ _gradient_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
 
     cs_lnum_t n_coeff_b_contrib = 0;
     bool coeff_b_contrib_f[n_coeff_b_contrib_buf_max];
+
+    cs_lnum_t s_id = cell_b_faces_idx[c_id];
+    cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
 
     for (cs_lnum_t i = s_id; i < e_id; i++) {
 
@@ -854,10 +910,20 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
 
     } /* End of contribution from interior and extended cells */
 
-    cs_lnum_t s_id = cell_b_faces_idx[c_id];
-    cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
+    /* Contribution from hidden boundary faces */
+
+    if (ma->cell_hb_faces_idx != NULL)
+      _add_hb_faces_cocg_lsq_cell(c_id,
+                                  ma->cell_hb_faces_idx,
+                                  ma->cell_hb_faces,
+                                  fvq->b_face_surf,
+                                  (const cs_real_3_t *)fvq->b_face_normal,
+                                  cocg);
 
     /* Contribution from boundary faces. */
+
+    cs_lnum_t s_id = cell_b_faces_idx[c_id];
+    cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
 
     for (cs_lnum_t i = s_id; i < e_id; i++) {
 
