@@ -3,6 +3,10 @@ Release 7.2.1 (not released yet)
 
 Bug fixes:
 
+- Fix handling of `group_name` option for `cs_mesh_remove_cells` function
+  at cells adjacent to boundary. If provided, the name now has priority over
+  propagation from the cell's previous boundary face groups. Fixes issue #410.
+
 - GUI: Fix naming of NCFD scalars when creating time averages
 
 - GUI: standard turbulence BC's should not overwrite user definitions
