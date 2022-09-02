@@ -98,7 +98,7 @@ BEGIN_C_DECLS
 /*!
  * \brief Remove flagged cells.
  *
- * \param[in, out]  m            mesh
+ * \param[in, out]  m           mesh
  * \param[in]       flag        cell flag (!= 0 to remove)
  * \param[in]       group_name  name of group to assign to new boundary faces,
  *                              or NULL
@@ -171,10 +171,12 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
   for (cs_lnum_t i = 0; i < n_cells_ext; i++)
     b_gc_id[i] = default_family_id;
 
-  for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-    cs_lnum_t k = b_face_cells[i];
-    if (flag[k])
-      b_gc_id[k] = m->b_face_family[i];
+  if (group_name == NULL) {
+    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+      cs_lnum_t k = b_face_cells[i];
+      if (flag[k])
+        b_gc_id[k] = m->b_face_family[i];
+    }
   }
 
   /* Transform interior to boundary faces */
@@ -223,7 +225,7 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
         sel_faces[k++] = j;
     }
 
-    cs_mesh_group_b_faces_set(m,
+    cs_mesh_group_b_faces_add(m,
                               group_name,
                               k,
                               sel_faces);
