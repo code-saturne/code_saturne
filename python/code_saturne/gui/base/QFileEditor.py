@@ -189,13 +189,16 @@ class CodeEditor(QPlainTextEdit):
         bottom = top + self.blockBoundingRect(block).height()
 
         # Just to make sure I use the right font
-        height = self.fontMetrics().height()
+        x = int(0)
+        h = int(self.fontMetrics().height())
+        flags = int(QtCore.Qt.AlignRight)
         while block.isValid() and (top <= event.rect().bottom()):
             if block.isVisible() and (bottom >= event.rect().top()):
                 number = str(blockNumber + 1)
                 mypainter.setPen(QtCore.Qt.black)
-                mypainter.drawText(0, top, self.lineNumberArea.width(), height,
-                 QtCore.Qt.AlignRight, number)
+                y = int(top)
+                w = int(self.lineNumberArea.width())
+                mypainter.drawText(x, y, w, h, flags, number)
 
             block = block.next()
             top = bottom
