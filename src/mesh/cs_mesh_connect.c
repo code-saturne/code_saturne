@@ -361,7 +361,7 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t         *mesh,
   /* Remark: test if cell_id < mesh->n_cells on internal faces so
      as to ignore ghost cells */
 
-  for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
+  for (face_id = 0; face_id < mesh->n_b_faces_all; face_id++) {
     cell_id = mesh->b_face_cells[face_id];
     if (extr_cell_id != NULL)
       cell_id = extr_cell_id[cell_id];
@@ -402,7 +402,7 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t         *mesh,
   for (cell_id = 0; cell_id < n_loc_cells; cell_id++)
     cell_face_count[cell_id] = 0;
 
-  for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
+  for (face_id = 0; face_id < mesh->n_b_faces_all; face_id++) {
     cell_id = mesh->b_face_cells[face_id];
     if (extr_cell_id != NULL)
       cell_id = extr_cell_id[cell_id];
@@ -428,12 +428,12 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t         *mesh,
     }
     if (c_id1 > -1 && c_id1 < mesh->n_cells) {
       cell_faces_val[cell_faces_idx[c_id1] + cell_face_count[c_id1] - 1]
-        =   face_id + mesh->n_b_faces + 1;
+        =   face_id + mesh->n_b_faces_all + 1;
       cell_face_count[c_id1] += 1;
     }
     if (c_id2 > -1 && c_id2 < mesh->n_cells) {
       cell_faces_val[cell_faces_idx[c_id2] + cell_face_count[c_id2] - 1]
-        = -(face_id + mesh->n_b_faces + 1);
+        = -(face_id + mesh->n_b_faces_all + 1);
       cell_face_count[c_id2] += 1;
     }
   }
@@ -629,7 +629,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
   /* Build nodal connectivity */
 
   face_num_shift[0] = 0;
-  face_num_shift[1] = mesh->n_b_faces + face_num_shift[0];
+  face_num_shift[1] = mesh->n_b_faces_all + face_num_shift[0];
   face_num_shift[2] = mesh->n_i_faces + face_num_shift[1];
 
   face_vertices_idx[0] = mesh->b_face_vtx_idx;
@@ -831,7 +831,7 @@ cs_mesh_connect_vertices_to_cells(cs_mesh_t    *mesh,
     }
   }
 
-  for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++) {
+  for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces_all; f_id++) {
     cs_lnum_t s_id = mesh->b_face_vtx_idx[f_id];
     cs_lnum_t e_id = mesh->b_face_vtx_idx[f_id+1];
     for (cs_lnum_t i = s_id; i < e_id; i++) {
@@ -877,7 +877,7 @@ cs_mesh_connect_vertices_to_cells(cs_mesh_t    *mesh,
     }
   }
 
-  for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++) {
+  for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces_all; f_id++) {
     cs_lnum_t s_id = mesh->b_face_vtx_idx[f_id];
     cs_lnum_t e_id = mesh->b_face_vtx_idx[f_id+1];
     for (cs_lnum_t i = s_id; i < e_id; i++) {
