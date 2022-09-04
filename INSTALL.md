@@ -609,7 +609,7 @@ The list of third-party software usable with code_saturne is provided here:
   PT-Scotch is used. Versions 6.0 and above are supported.
 
 * [METIS](https://github.com/KarypisLab/METIS) or
-  [ParMETIS](http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview)
+  [ParMETIS](https://github.com/KarypisLab/ParMETIS)
   are alternative mesh partitioning libraries. These libraries have a
   separate source tree, but some of their functions have identical names,
   so only one of the 2 may be used. If both are available, ParMETIS will
@@ -621,6 +621,9 @@ The list of third-party software usable with code_saturne is provided here:
   and Scotch libraries). METIS uses the Apache 2 licence since March 2013,
   but it seems that the ParMETIS licence has not been updated so far.
   METIS 5.0 or above and ParMETIS 4.0 or above are supported.
+
+  Also, the original ParMETIS website is not operational anymore,
+  and the source tree (now hosted on GitHub) only includes Development branches, with no stable branches or releases yet.
 
 * [ParaView Catalyst](https://www.paraview.org/in-situ) or full ParaView
   may be used for co-visualization or in-situ visualization.
@@ -1239,10 +1242,9 @@ ${SRC_PATH}/configure \
 --with-hdf5=${CS_OPT}/hdf5-1.10/arch/gaia \
 --with-med=${CS_OPT}/med-4.1/arch/gaia \
 --with-cgns=${CS_OPT}/cgns-3.4/arch/gaia \
---with-ccm=${CS_OPT}/libccmio-2.06.23/arch/gaia \
 --with-scotch=${CS_OPT}/scotch-6.0/arch/gaia_ompi \
 --with-metis=${CS_OPT}/parmetis-4.0/arch/gaia_ompi \
---with-eos/${CS_OPT}/eos-1.2.0/arch/gaia_ompi \
+--with-eos/${CS_OPT}/eos-1.9.0/arch/gaia_ompi \
 CC=mpicc FC=ifort CXX=mpicxx
 ```
 
