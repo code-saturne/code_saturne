@@ -1485,7 +1485,7 @@ _lagich(const cs_real_t   tempct[],
       }
 
       /* If gamhet is too large, spread over several layers */
-      for (cs_lnum_t l_id = l_id_het; l_id < 0; l_id--) {
+      for (cs_lnum_t l_id = l_id_het-1; l_id >= 0; l_id--) {
 
         if (part_coke_mass[l_id] < 0) {
 
