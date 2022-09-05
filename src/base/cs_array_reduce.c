@@ -161,6 +161,65 @@ _cs_real_sum_1d(cs_lnum_t        n,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute sum of a subset of a 1-dimensional array.
+ *
+ * The algorithm here is similar to that used for blas.
+ *
+ * parameters:
+ *   n        <-- local number of elements
+ *   vl       <-- pointer to elements list
+ *   v        <-- pointer to values (size: n)
+ *
+ * returns:
+ *   resulting sum
+ *----------------------------------------------------------------------------*/
+
+static double
+_cs_real_sum_1d_iv(cs_lnum_t        n,
+                   const cs_lnum_t  vl[],
+                   const cs_real_t  v[])
+{
+  double v_sum = 0.;
+
+# pragma omp parallel reduction(+:v_sum) if (n > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
+
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_lnum_t *_vl = vl + s_id;
+
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double s = 0.;
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+        if (end_id > _n)
+          end_id = _n;
+        double c = 0.;
+        for (cs_lnum_t li = start_id; li < end_id; li++) {
+          c += v[_vl[li]];
+        }
+        s += c;
+      }
+
+      v_sum += s;
+
+    }
+
+  }
+
+  return v_sum;
+}
+
+/*----------------------------------------------------------------------------
  * Compute the min./max. of a 1-dimensional array.
  *
  * The algorithm here is similar to that used for blas.
@@ -2812,8 +2871,7 @@ cs_array_reduce_sum_l(cs_lnum_t         n_elts,
 
   else {
     if (dim == 1)
-      bft_error(__FILE__, __LINE__, 0,
-                _("_cs_real_sum_1d_iv not implemented yet\n"));
+      vsum[0] = _cs_real_sum_1d_iv(n_elts, v_elt_list, v);
     else if (dim == 3)
       bft_error(__FILE__, __LINE__, 0,
                 _("_cs_real_sum_3d_iv not implemented yet\n"));

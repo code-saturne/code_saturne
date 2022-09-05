@@ -519,22 +519,18 @@ _log_fields(void)
 
   int log_count_max = 0;
   int fpe_flag = 0;
-  int     *log_id = NULL, *moment_id = NULL;
+  int *log_id = NULL, *moment_id = NULL, *f_location_id = NULL;
+  bool *location_log = NULL;
   double  *vmin = NULL, *vmax = NULL, *vsum = NULL, *wsum = NULL;
 
   char tmp_s[5][64] =  {"", "", "", "", ""};
 
   const char _underline[] = "---------------------------------";
+  const int n_locations = cs_mesh_location_n_locations();
   const int n_fields = cs_field_n_fields();
   const int n_moments = cs_time_moment_n_moments();
   const int log_key_id = cs_field_key_id("log");
   const int label_key_id = cs_field_key_id("label");
-
-  const cs_mesh_location_type_t m_l[] = {CS_MESH_LOCATION_CELLS,
-                                         CS_MESH_LOCATION_INTERIOR_FACES,
-                                         CS_MESH_LOCATION_BOUNDARY_FACES,
-                                         CS_MESH_LOCATION_VERTICES
-                                         };
 
   cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -549,39 +545,65 @@ _log_fields(void)
   BFT_MALLOC(vsum, log_count_max, double);
   BFT_MALLOC(wsum, log_count_max, double);
 
+  BFT_MALLOC(location_log, n_locations, bool);
+  for (int i = 0; i < n_locations; i++)
+    location_log[i] = false;
+
+  BFT_MALLOC(f_location_id, n_fields, int);
+  for (f_id = 0; f_id < n_fields; f_id++) {
+    const cs_field_t  *f = cs_field_by_id(f_id);
+    if (cs_field_get_key_int(f, log_key_id)) {
+      f_location_id[f_id] = f->location_id;
+      location_log[f->location_id] = true;
+    }
+    else
+      f_location_id[f_id] = -1;
+  }
+
   if (n_moments > 0) {
     BFT_MALLOC(moment_id, n_fields, int);
     for (f_id = 0; f_id < n_fields; f_id++)
       moment_id[f_id] = -1;
     for (int m_id = 0; m_id < n_moments; m_id++) {
       const cs_field_t *f = cs_time_moment_get_field(m_id);
-      if (f != NULL)
+      if (f != NULL) {
         moment_id[f->id] = m_id;
+
+        /* Only log active moments */
+        if (!cs_time_moment_is_active(m_id))
+          f_location_id[f->id] = -1;
+      }
     }
   }
 
   /* Loop on locations */
 
-  for (li = 0; li < 4; li++) {
+  for (int loc_id = 0; loc_id < n_locations; loc_id++) {
+
+    if (location_log[loc_id] == false)
+      continue;
 
     size_t max_name_width = cs_log_strlen(_("field"));
-    int loc_id = m_l[li];
     cs_lnum_t have_weight = 0;
     double total_weight = -1;
     cs_gnum_t n_g_elts = 0;
     cs_real_t *gather_array = NULL; /* only if CS_MESH_LOCATION_VERTICES */
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(loc_id);
     const cs_lnum_t _n_elts = n_elts[0];
+    const cs_lnum_t *elt_ids = NULL;
     const cs_real_t *weight = NULL;
 
     if (mq != NULL) {
+
       switch(loc_id) {
+
       case CS_MESH_LOCATION_CELLS:
         n_g_elts = m->n_g_cells;
         weight = mq->cell_vol;
         have_weight = 1;
         total_weight = mq->tot_vol;
         break;
+
       case CS_MESH_LOCATION_INTERIOR_FACES:
         n_g_elts = m->n_g_i_faces;
         weight = mq->i_face_surf;
@@ -589,6 +611,7 @@ _log_fields(void)
         cs_parall_sum(1, CS_DOUBLE, &total_weight);
         have_weight = 1;
         break;
+
       case CS_MESH_LOCATION_BOUNDARY_FACES:
         n_g_elts = m->n_g_b_faces;
         weight = mq->b_face_surf;
@@ -596,14 +619,47 @@ _log_fields(void)
         cs_parall_sum(1, CS_DOUBLE, &total_weight);
         have_weight = 1;
         break;
+
       case CS_MESH_LOCATION_VERTICES:
         n_g_elts = m->n_g_vertices;
         have_weight = 0;
         BFT_MALLOC(gather_array, m->n_vertices, cs_real_t);
         break;
+
       default:
-        n_g_elts = _n_elts;
-        cs_parall_counter(&n_g_elts, 1);
+        {
+          cs_mesh_location_type_t
+            loc_type = cs_mesh_location_get_type(loc_id);
+
+          elt_ids = cs_mesh_location_get_elt_ids_try(loc_id);
+
+          /* FIXME: using sum is correct for cells and boundary faces,
+           *        would need range set for interior faces and vertices. */
+          n_g_elts = _n_elts;
+          cs_parall_counter(&n_g_elts, 1);
+
+          switch(loc_type) {
+          case CS_MESH_LOCATION_CELLS:
+            weight = mq->cell_vol;
+            have_weight = 1;
+            break;
+          case CS_MESH_LOCATION_INTERIOR_FACES:
+            weight = mq->i_face_surf;
+            have_weight = 1;
+            break;
+          case CS_MESH_LOCATION_BOUNDARY_FACES:
+            weight = mq->b_face_surf;
+            have_weight = 1;
+            break;
+          default:
+            break;
+          }
+
+          if (have_weight) {
+            cs_array_reduce_sum_l(_n_elts, 1, elt_ids, weight, &total_weight);
+            cs_parall_sum(1, CS_DOUBLE, &total_weight);
+          }
+        }
         break;
       }
     }
@@ -621,20 +677,9 @@ _log_fields(void)
 
       const cs_field_t  *f = cs_field_by_id(f_id);
 
-      if (f->location_id != loc_id || ! (cs_field_get_key_int(f, log_key_id))) {
+      if (f_location_id[f_id] != loc_id) {
         log_id[f_id] = -1;
         continue;
-      }
-
-      /* Only log active moments */
-
-      if (moment_id != NULL) {
-        if (moment_id[f_id] > -1) {
-          if (!cs_time_moment_is_active(moment_id[f_id])) {
-            log_id[f_id] = -1;
-            continue;
-          }
-        }
       }
 
       /* Position in log */
@@ -655,7 +700,7 @@ _log_fields(void)
         cs_array_reduce_simple_stats_l_w(_n_elts,
                                          f->dim,
                                          NULL,
-                                         NULL,
+                                         elt_ids,
                                          f->val,
                                          weight,
                                          vmin + log_count,
@@ -668,9 +713,9 @@ _log_fields(void)
 
         cs_real_t  *field_val = f->val;
         cs_lnum_t  _n_cur_elts = _n_elts;
-        if (gather_array != NULL) { /* Eliminate shared values whose local
-                                       rank is not owner and compact */
 
+        /* Eliminate shared values whose local rank is not owner and compact */
+        if (loc_id == CS_MESH_LOCATION_VERTICES) {
           if (m->vtx_range_set == NULL)
             m->vtx_range_set = cs_range_set_create(m->vtx_interfaces,
                                                    NULL,
@@ -690,6 +735,7 @@ _log_fields(void)
           field_val = gather_array;
           _n_cur_elts = m->vtx_range_set->n_elts[0];
         }
+
         cs_array_reduce_simple_stats_l(_n_cur_elts,
                                        f->dim,
                                        NULL,
@@ -848,6 +894,8 @@ _log_fields(void)
   BFT_FREE(vmax);
   BFT_FREE(vmin);
   BFT_FREE(log_id);
+  BFT_FREE(f_location_id);
+  BFT_FREE(location_log);
 
   cs_log_printf(CS_LOG_DEFAULT, "\n");
 }
