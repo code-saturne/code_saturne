@@ -41,7 +41,7 @@ from collections import OrderedDict
 #-------------------------------------------------------------------------------
 
 from code_saturne.base.cs_compile import files_to_compile, compile_and_link
-from code_saturne.base import cs_create, cs_batch
+from code_saturne.base import cs_create, cs_batch, cs_xml_reader
 from code_saturne.base.cs_create import set_executable, create_local_launcher
 from code_saturne.base import cs_exec_environment, cs_run_conf
 
@@ -263,6 +263,12 @@ class Case(object):
             else:   # Should not occur in standard use
                 self.n_procs = 1
 
+        # Check for dependency
+        # Dependancy given in smgr xml file overwrites parametric arguments
+        # or dependency defined in setup.xml
+        if not self.depends:
+            self.depends = self.__query_dependence__()
+
     #---------------------------------------------------------------------------
 
     def __query_n_procs__(self, run_conf, resource_config):
@@ -305,6 +311,59 @@ class Case(object):
         n_procs = int(n_procs)
 
         return n_procs
+
+    #---------------------------------------------------------------------------
+
+    def __query_dependence__(self):
+        """
+        Check for dependancy in DATA/setup.xml overwriten by dependancy in
+        parametric arguments
+        """
+
+        depends = None
+
+        # Check dependency in DATA/setup.xml
+        data_file = None
+        data_folder = os.path.join(self.__repo, self.label, "DATA")
+        if os.path.isdir(data_folder):
+            dir_list = os.listdir(data_folder)
+            if "setup.xml" in dir_list:
+                data_file = os.path.join(self.__repo, self.label, "DATA",
+                                         "setup.xml")
+        # Read setup.xml
+        # Format <restart path="../CASE/RESU/run_id/checkpoint"/>
+        path = None
+        if os.path.isfile(data_file):
+            data = cs_xml_reader.Parser(fileName = data_file)
+            calc_node = cs_xml_reader.getChildNode(data.root,
+                                                   'calculation_management')
+            if calc_node != None:
+                sr_node = cs_xml_reader.getChildNode(calc_node, 'start_restart')
+                if sr_node != None:
+                   node = cs_xml_reader.getChildNode(sr_node, 'restart')
+                   if node != None:
+                       path = str(node.getAttribute('path'))
+
+        # Convert path in smgr dependancy (STUDY/CASE/run_id)
+        if path:
+            list_path = path.split(os.sep)
+            run_id_depends = list_path[-2]
+            case_depends = list_path[-4]
+            depends = self.study + "/" + case_depends + "/" \
+                            + run_id_depends
+
+        # check dependency in parametric parameters
+        # it overwrite data from setup.xml
+        if self.parametric:
+            list_param = self.parametric.split()
+            for tag in ["-r", "--restart"]:
+                if tag in list_param:
+                    index = list_param.index(tag)
+                    run_id_depends = list_param[index+1]
+                    depends = self.study + "/" + self.label + "/" \
+                            + run_id_depends
+
+        return depends
 
     #---------------------------------------------------------------------------
 
@@ -1457,9 +1516,10 @@ class Studies(object):
         filter_level   = self.__filter_level
         filter_n_procs = self.__filter_n_procs
 
-        self.reporting("  o Dump dependency graph with option :")
-        self.reporting("     - level=" + str(filter_level))
-        self.reporting("     - n_procs=" + str(filter_n_procs))
+        if filter_level or filter_n_procs:
+            self.reporting("  o Dump dependency graph with option :")
+            self.reporting("     - level=" + str(filter_level))
+            self.reporting("     - n_procs=" + str(filter_n_procs))
 
         # create the global graph with all cases of all studies without filtering
         global_graph = dependency_graph()

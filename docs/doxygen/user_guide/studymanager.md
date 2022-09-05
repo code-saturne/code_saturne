@@ -326,6 +326,37 @@ of submissions (3 hours by default).
 Warning: for EDF users, the `wckey` argument should be defined in the user
 environnement with the following command: `export SBATCH_WCKEY=<key>`.
 
+### Definition of dependencies
+
+Three methods are available to define a dependency between cases:
+- Set a restart in the data settings of a case using the graphical user
+  interface of code_saturne;
+- Add a restart in parametric options of a SMGR parameter file using
+  `-r` or `--restart` argument
+```{.xml}
+  <study label='STUDY' status='on'>
+      <case label='CASE1' status='on' compute="on" post="on">
+          <parametric args="-r run_id"/>
+      </case>
+  </study>
+```
+- Add a `<depends>` node to a case in SMGR parameter file :
+```{.xml}
+  <study label='STUDY' status='on'>
+      <case label='CASE1' status='on' compute="on" post="on">
+          <depends args="STUDY/CASE/run_id"/>
+      </case>
+  </study>
+```
+
+Dependencies defined using a `<depends>` node has priority over those deduced
+from parametric arguments. They both have priority over restarts in code_saturne
+data settings.
+
+In the rare cases where dependencies are not related to restarts, the `<depends>`
+approach allow fine-grained control. In other cases, dependencies are deduced from
+restart definitions, so no additional user settings are needed.
+
 Compare checkpoint files
 ------------------------
 
