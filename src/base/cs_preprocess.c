@@ -390,9 +390,6 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   cs_mesh_print_info(m, _("Mesh"));
 
-  /* Second pass to define internal coupling locators */
-  cs_internal_coupling_map(m);
-
   /* Compute geometric quantities related to the mesh */
 
   bft_printf_flush();
@@ -412,9 +409,17 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   bft_printf(_("\n Computing geometric quantities (%.3g s)\n"), t2-t1);
 
-  /* Initialize selectors and locations for the mesh */
+  /* Initialize selectors */
 
   cs_mesh_init_selectors();
+
+  /* Partial modification, allowing some local operations such as renumbering,
+     no repartitioning */
+
+  cs_user_mesh_modify_partial(m, mq);
+
+  /* Initialize locations for the mesh */
+
   cs_mesh_location_build(m, -1);
   cs_volume_zone_build_all(true);
   cs_volume_zone_print_info();
@@ -423,7 +428,10 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   cs_ext_neighborhood_reduce(m, mq);
 
-  /* If fluid_solid mode is activateed, disable solid cells for the dynamics */
+  /* Second pass to define internal coupling locators */
+  cs_internal_coupling_map(m);
+
+  /* If fluid_solid mode is activated, disable solid cells for the dynamics */
   cs_porous_model_init_disable_flag();
   if (vp_model->fluid_solid) {
     assert(mq->has_disable_flag == 1);
@@ -503,11 +511,6 @@ cs_preprocess_mesh_selected_b_faces_ignore(cs_mesh_t             *m,
   /* Initialize selectors and locations for the mesh */
 
   cs_mesh_update_selectors(cs_glob_mesh);
-  cs_mesh_location_build(cs_glob_mesh, -1);
-  cs_volume_zone_build_all(true);
-  cs_volume_zone_print_info();
-  cs_boundary_zone_build_all(true);
-  cs_boundary_zone_print_info();
 
   /* For debugging purposes */
 

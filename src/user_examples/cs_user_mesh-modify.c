@@ -450,7 +450,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Apply partial modifications to the mesh after the preprocessing
- *        and initial postprocessing mesh building stage.
+ *        stage, but before initial postprocessing mesh building.
  *
  * \param[in,out] mesh  pointer to a cs_mesh_t structure
  * \param[in,out] mesh_quantities pointer to a cs_mesh_quantities_t structure

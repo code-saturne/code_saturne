@@ -375,9 +375,6 @@ _run(void)
 
   check_mask = ((opts.preprocess | opts.verif) == true) ? 2 + 1 : 0;
 
-  cs_user_mesh_modify_partial(cs_glob_mesh,
-                              cs_glob_mesh_quantities);
-
   cs_post_init_meshes(check_mask);
 
   /* Compute iterations or quality criteria depending on verification options */
