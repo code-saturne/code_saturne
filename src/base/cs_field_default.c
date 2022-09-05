@@ -350,6 +350,9 @@ cs_field_build_bc_codes_all(void)
     int var_id_p1 = (f->type & CS_FIELD_VARIABLE) ?
       cs_field_get_key_int(f, kv) : 0;
 
+    if (var_id_p1 > 0)
+      var_id_p1 += f->dim - 1;
+
     if (var_id_p1 > n_vars)
       n_vars = var_id_p1;
 

@@ -117,25 +117,19 @@ double precision, pointer, dimension(:,:,:) :: rcodcl
 
 interface
 
-  subroutine condli_ini &
-  ( nvar   , nscal  ,                                              &
-    itrale ,                                                       &
-    icodcl , isostd ,                                              &
-    dt     , rcodcl )
+  subroutine condli_ini(nvar, nscal, itrale, icodcl, isostd, dt, rcodcl)
 
     use mesh, only: nfac, nfabor
 
     implicit none
 
-    integer          nvar, nscal
-    integer          itrale
+    integer          nvar, nscal, itrale
 
-    integer, dimension(nfabor,nvar) :: icodcl
+    double precision, pointer, dimension(:) :: xprale
+    integer, pointer, dimension(:,:) :: icodcl
     integer, dimension(nfabor+1) :: isostd
-
-    double precision, dimension(nfabor,nvar,3) :: rcodcl
-
-    double precision, pointer, dimension(:)   :: dt
+    double precision, pointer, dimension(:) :: dt
+    double precision, pointer, dimension(:,:,:) :: rcodcl
 
   end subroutine condli_ini
 

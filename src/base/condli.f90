@@ -4914,14 +4914,13 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          itrale
+integer          nvar   , nscal,  itrale
 
-integer          icodcl(nfabor,nvar)
-integer          isostd(nfabor+1)
+integer, pointer, dimension(:,:) :: icodcl
+integer, dimension(nfabor+1) :: isostd
 
 double precision, pointer, dimension(:) :: dt
-double precision rcodcl(nfabor,nvar,3)
+double precision, pointer, dimension(:,:,:) :: rcodcl
 
 ! Local variables
 
