@@ -30,6 +30,8 @@ documentation. It is also recommended to check the
 [TOC]
 
 - \subpage advanced_specific_physics
+- \subpage advance_pulveri_gas_combution
+
 
 <!-- ----------------------------------------------------------------------- -->
 
@@ -134,3 +136,69 @@ This file replaces `dp_C3P`.
 | 20    | # K      J/kg ...            |              | Free comment                     |
 | 21    | # ...                        |              | Free comment                     |
 | 22    | # 300.    14000.  ...        | h \n roel \n cpel \n sigel \n visel \n xlabel \n xkabel | In line tabulation of the physical properties as a function of the temperature in Kelvin \n for each of the ngazg species \n Enthalpy in J/kg \n Density in kg/m3 \n Specific heat in J/(kg K) \n Electric conductivity in Ohm/m \n Dynamic viscosity in kg/(m s) \n Thermal conductivity in W/(m K) \n Absorption coefficient (radiation) |
+
+<!-- ----------------------------------------------------------------------- -->
+
+\page advance_pulveri_gas_combution Pulverised coal and gas combustion module
+
+Initialisation of the variables
+===============================
+
+For **Reactive flows (combustion)**, it is possible to initialize the specific variables in the **Graphical User Interface (GUI)** or in the function \ref cs_user_initialization. \n
+In the GUI, when a **Reactive flows (combustion)** is selected in the item **“Calculation features”**, an additional item appears: __“Gas combustion”__ the user can change it by __“Pulverized coal”__. In this item the user can define coal types, their composition, the oxidant and reactions parameters, see the following figure.
+
+\anchor gui_coal_classes
+\image html gui_coal_classes.png "Thermophysical models - Pulverized coal, coal classes"
+
+\anchor gui_coal_composition
+\image html gui_coal_composition.png "Pulverized coal combustion, coal composition"
+
+\anchor gui_coal_reaction
+\image html gui_coal_reaction.png "Pulverized coal combustion, reaction parameters"
+
+\anchor gui_coal_oxydant
+\image html gui_coal_oxydant.png "Pulverized coal combustion, oxydant"
+
+If the user activates **gas combustion**  and does not want to use the GUI, she or he can directly use
+the function **cs_user_initialization** (for some examples see [Initialization examples](@ref user_initialization_base_s_init)). \n
+
+Boundary conditions
+===================
+
+**For pulverised coal**, it is possible to manage the boundary conditions in
+the Graphical User Interface (GUI). When the **boundary zones** is actived,
+the user specific boundary conditions are activated for inlets
+
+\anchor gui_coal_bc
+\image html gui_coal_bc.png "Boundary conditions for the pulverised of coal"
+
+
+**For gas combustion** it is also possible to manage the boundary conditions for the inlet in the Graphical User Interface (GUI). The user can choose between the **burned gas** or the **Unburned gas**,
+impose the the mass flow and velocity
+
+\anchor gui_gas_bc
+\image html gui_gas_bc.png "Boundary conditions for gas combustion"
+
+
+Initialisation of the options of the variables
+==============================================
+
+In the case of **gas combustion** or **pulverised coal**, time averages, chronological records and logss follow-ups can be set in the Graphical User Interface (GUI) or in the function \ref cs_user_parameters. In the GUI, under the heading **Calculation control**, additional variables appear in the list in the items **Time averages** and **Profiles**, as well as in the item **Volume solution control**
+
+\anchor gui_coal_time_average
+\image html gui_coal_time_average.png "Calculation control - Time averages"
+
+\anchor gui_coal_solution_control
+\image html gui_coal_solution_control.png "Calculation control - Volume solution control"
+
+For **gas combustion** if the GUI is not used for **coal combustion**, the
+function \ref cs_user_parameter can be used in \ref cs_user_parameters.c for
+the considered **gas combustion** or **pulverised coal**. This functions is called at the
+calculation start. They allow to:
+
+- set the relaxation coefficient of the density \ref srrom.
+
+- set the dynamic viscosity \ref diftl0.
+
+- set the value of the constant \ref cebu of the Eddy Break Up model (only in
+\ref cs_user_combustion).

@@ -88,18 +88,34 @@ void
 cs_user_initialization(cs_domain_t     *domain)
 {
   /*! [init] */
-  const cs_mesh_t *m = domain->mesh;
+
+  const cs_lnum_t *n_cells = domain->mesh->n_cells;
 
   /* If this is restarted computation, do not reinitialize values */
   if (domain->time_step->nt_prev > 0)
     return;
 
   /* Initialize "scalar1" field to 25 only if it exists  */
-  cs_field_t *f = cs_field_by_name_try("scalar1");
+  cs_field_t *fld = cs_field_by_name_try("scalar1");
 
-  if (f != NULL) {
-    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
-      f->val[cell_id] = 25.;
+  if (fld != NULL) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+      fld->val[cell_id] = 25;
+  }
+
+  /* In the case of the EBU pre-mixed flame module the user can initialise (by example 25):
+   * the mixing rate
+   * the fresh gas mass fraction
+   * the mixture enthalpy */
+
+  cs_real_t *cvar_fm = CS_F_(fm)->val;
+  cs_real_t *cvar_ygfm = CS_F_(ygfm)->val;
+  cs_real_t *cvar_scalt = cs_thermal_model_field()->val;
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    cvar_fm[c_id] = 25;
+    cvar_ygfm[c_id] = 25;
+    cvar_scalt[c_id] = 25;
   }
   /*! [init] */
 }
