@@ -731,10 +731,10 @@ _solve_rit(const cs_field_t     *f,
     bft_printf(" Solving variable %s\n", f_ut->name);
 
   int kstprv = cs_field_key_id("source_term_prev_id");
-  int st_prv_id = cs_field_get_key_int(f, kstprv);
-  cs_real_t *c_st_prv = NULL;
-  if (st_prv_id >= 0)
-    c_st_prv = cs_field_by_id(st_prv_id)->val;
+  int st_prv_id = cs_field_get_key_int(f_ut, kstprv);
+  cs_real_3_t *c_st_prv;
+  if (st_prv_id > -1)
+    c_st_prv = (cs_real_3_t *)cs_field_by_id(st_prv_id)->val;
 
   cs_lnum_t l_viscls = 0; /* stride for uniform/local viscosity access */
   cs_real_t _visls_0 = -1;
@@ -787,17 +787,13 @@ _solve_rit(const cs_field_t     *f,
 
   /* User source terms
      ----------------- */
-
   cs_user_source_terms(cs_glob_domain,
-                       f->id,
+                       f_ut->id,
                        (cs_real_t *)rhs_ut,
                        (cs_real_t *)fimp);
 
-  /* Mass source terms FIXME
-   * ----------------------- */
-
   const cs_real_t thetv = eqp->thetav;
-  if (st_prv_id > 1) {
+  if (st_prv_id > -1) {
 #   pragma omp parallel if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       for (cs_lnum_t i = 0; i < 3; i++) {
@@ -820,6 +816,10 @@ _solve_rit(const cs_field_t     *f,
       }
     }
   }
+
+  /* Mass source terms FIXME
+   * ----------------------- */
+
 
   /* Unsteady term
    * ------------- */
@@ -909,7 +909,7 @@ _solve_rit(const cs_field_t     *f,
 #   pragma omp parallel if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       for (cs_lnum_t i = 0; i < 3; i++)
-        rhs_ut[c_id][i] += thetp1*c_st_prv[c_id]; //FIXME
+        rhs_ut[c_id][i] += thetp1*c_st_prv[c_id][i];
     }
   }
 
