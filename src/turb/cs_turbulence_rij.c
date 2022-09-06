@@ -654,7 +654,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
     }
 
     /* Sij */
-    xstrai[0][0] = gradv[c_id][0][9];
+    xstrai[0][0] = gradv[c_id][0][0];
     xstrai[0][1] = d1s2 * (gradv[c_id][0][1] + gradv[c_id][1][0]);
     xstrai[0][2] = d1s2 * (gradv[c_id][0][2] + gradv[c_id][2][0]);
     xstrai[1][0] = xstrai[0][1];
