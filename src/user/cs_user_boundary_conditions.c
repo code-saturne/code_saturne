@@ -95,24 +95,24 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
  * may be used as follows:
  *
  * - Boundary condition type code given at:
- *   f->bc_coefficients->icodcl[face_id]
+ *   f->bc_coeffs->icodcl[face_id]
  *
  * - Dirichlet value defined at:
- *   f->bc_coefficients->rcodcl1[face_id]
+ *   f->bc_coeffs->rcodcl1[face_id]
  *
  * - Interior exchange coefficient (infinite if no exchange) at:
- *   f->bc_coefficients->rcodcl2[face_id]
+ *   f->bc_coeffs->rcodcl2[face_id]
  *
  * - Flux density defined at:
- *   f->bc_coefficients->rcodcl3[face_id]
+ *   f->bc_coeffs->rcodcl3[face_id]
  *
  * For vector or tensor fields, these arrays are not interleaved,
  * so for a given face "face_id" and field component "comp_id", acess
  * is as follows (where n_b_faces is domain->mesh->n_b_faces):
  *
- *   f->bc_coefficients->rcodcl1[n_b_faces*comp_id + face_id]
- *   f->bc_coefficients->rcodcl2[n_b_faces*comp_id + face_id]
- *   f->bc_coefficients->rcodcl3[n_b_faces*comp_id + face_id]
+ *   f->bc_coeffs->rcodcl1[n_b_faces*comp_id + face_id]
+ *   f->bc_coeffs->rcodcl2[n_b_faces*comp_id + face_id]
+ *   f->bc_coeffs->rcodcl3[n_b_faces*comp_id + face_id]
  *
  * Only the icodcl code values from the first component are used in the case
  * of vector or tensor fields, so the icodcl values can be defined as for
