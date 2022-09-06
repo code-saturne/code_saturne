@@ -106,7 +106,7 @@ class Parser:
     #---------------------------------------------------------------------------
 
     def __init__(self,
-                 filename = 'setup.xml',
+                 fileName = 'setup.xml',
                  doc = None,
                  version_str = '2.0'):
 
