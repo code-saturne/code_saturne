@@ -270,17 +270,17 @@ cs_math_sym_33_eigen(const cs_real_t  m[6],
   cs_real_t  p1 = cs_math_3_square_norm((const cs_real_t *)(m+3));
   cs_real_t  d2 = cs_math_3_square_norm((const cs_real_t *)m);
 
-  if (p1 > cs_math_epzero*d2) { /* m is not diagonal */
+  cs_real_t  tr = (m[0] + m[1] + m[2]);
+  cs_real_t  tr_third = cs_math_1ov3 * tr;
+
+  e1 = m[0] - tr_third, e2 = m[1] - tr_third, e3 = m[2] - tr_third;
+  cs_real_t  p2 = e1*e1 + e2*e2 + e3*e3 + 2.*p1;
+
+  cs_real_t  p = sqrt(p2*cs_math_1ov6);
+
+  if (p1 > cs_math_epzero*d2 && p > 0.) { /* m is not diagonal */
 
     cs_real_6_t  n;
-    cs_real_t  tr = (m[0] + m[1] + m[2]);
-    cs_real_t  tr_third = cs_math_1ov3 * tr;
-
-    e1 = m[0] - tr_third, e2 = m[1] - tr_third, e3 = m[2] - tr_third;
-    cs_real_t  p2 = e1*e1 + e2*e2 + e3*e3 + 2.*p1;
-
-    cs_real_t  p = sqrt(p2*cs_math_1ov6);
-    assert(p > 0.);
     cs_real_t  ovp = 1./p;
 
     for (int  i = 0; i < 3; i++) {
