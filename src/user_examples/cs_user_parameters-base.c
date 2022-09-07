@@ -182,6 +182,21 @@ cs_user_model(void)
    * in code_saturne (2) */
   cs_glob_atmo_option->meteo_profile = 2;
 
+  /* Advanced choice of universal functions among for stable
+   *  - CS_ATMO_UNIV_FN_CHENG (default)
+   *  - CS_ATMO_UNIV_FN_HOGSTROM
+   *  - CS_ATMO_UNIV_FN_BUSINGER
+   *  - CS_ATMO_UNIV_FN_HARTOGENSIS
+   *  for unstable
+   *  - CS_ATMO_UNIV_FN_HOGSTROM (default)
+   *  - CS_ATMO_UNIV_FN_BUSINGER
+   *
+   * */
+
+  /* Hartogensis for stable */
+  cs_glob_atmo_option->meteo_phim_s = CS_ATMO_UNIV_FN_HARTOGENSIS;
+  cs_glob_atmo_option->meteo_phih_s = CS_ATMO_UNIV_FN_HARTOGENSIS;
+
   /* Inverse LMO length (m^-1) */
   cs_glob_atmo_option->meteo_dlmo = 0.;
   /* Large scale roughness (m) */
