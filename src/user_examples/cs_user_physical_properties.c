@@ -81,6 +81,8 @@ cs_user_physical_properties(cs_domain_t   *domain)
 {
   CS_NO_WARN_IF_UNUSED(domain);
 
+  /*! [example] */
+
   /* Check fields exists */
   if (CS_F_(lambda) == NULL)
     bft_error(__FILE__, __LINE__, 0,_("error lambda not variable\n"));
@@ -105,6 +107,7 @@ cs_user_physical_properties(cs_domain_t   *domain)
       cpro_cp[cell_id] = 444.;
     }
   }
+  /*! [example] */
 }
 
 /*----------------------------------------------------------------------------*/

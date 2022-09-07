@@ -597,34 +597,6 @@ which enables to bypass, for all the missing \texttt{ityp}, the loops such as \\
 %==================================
 
 %==================================
-\subsection{Heavy fuel oil combustion module}
-%==================================
-%==================================
-\subsubsection{Initialisation of transported variables}
-%==================================
-To initialise or modify (in case of a continuation) values of transported
-variables and of the time step, the standard function \texttt{cs\_user\_initialization} is used.
-
-Physical properties are stored using the \texttt{cs\_field} API (cell center). For instance, to obtain \texttt{roh[c\_id]},
-the mean density (in $kg.m^{-3}$), one must declare a array \texttt{cpro\_croh = CS\_F\_(rho)->val}.\\
-Physical properties (\texttt{roh, viscl, cp, ...}) are computed in \texttt{cs\_user\_physical\_properties} and are not to be modified here.
-
-%The \texttt{cs\_user\_initialization-fuel.c} example illustrates how the user
-%may initialise quantities related to gaseous species and droplets compositions
-%in addition to the chosen turbulent model.
-
-%==================================
-\subsubsection{Boundary conditions}
-%==================================
-Boundary conditions are defined as usual on a per-face basis in
-\texttt{cs\_user\_boundary\_conditions}. They may be assigned in two ways:
-\begin{list}{.}{}
-\item for ``standard'' boundary conditions (inlet, free outlet, wall, symmetry): a code is defined in the array \texttt{bc\_type} (of dimensions equal to the number of boundary faces). This code will then be used by a non-user function to assign the conditions.
-%\item for ``non-standard'' conditions: see details given in
-%  \texttt{cs\_user\_boundary\_conditions-fuel.f90} example.
-\end{list}
-
-%==================================
 \subsection{Radiative thermal transfers in semi-transparent gray media}
 %==================================
 %==================================

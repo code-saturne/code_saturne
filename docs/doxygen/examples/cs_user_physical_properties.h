@@ -75,6 +75,12 @@
     (i.e. remove all unused example code)
 
 
+  \section example_physical_properties Physical properties
+
+  Physical properties (roh, viscl, cp, ...) are computed in \ref cs_user_physical_properties and are not to be modified here.
+
+  \snippet cs_user_physical_properties.c example
+
   \section example1_comp Molecular viscosity varying with temperature
 
   The values of the molecular viscosity are provided as a function of

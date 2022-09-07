@@ -30,8 +30,8 @@ documentation. It is also recommended to check the
 [TOC]
 
 - \subpage advanced_specific_physics
-- \subpage advance_pulveri_gas_combution
-
+- \subpage advanced_pulveri_gas_combution
+- \subpage advanced_fuel_oil_combustion
 
 <!-- ----------------------------------------------------------------------- -->
 
@@ -139,7 +139,7 @@ This file replaces `dp_C3P`.
 
 <!-- ----------------------------------------------------------------------- -->
 
-\page advance_pulveri_gas_combution Pulverised coal and gas combustion module
+\page advanced_pulveri_gas_combution Pulverised coal and gas combustion module
 
 Initialisation of the variables
 ===============================
@@ -202,3 +202,22 @@ calculation start. They allow to:
 
 - set the value of the constant \ref cebu of the Eddy Break Up model (only in
 \ref cs_user_combustion).
+
+<!-- ----------------------------------------------------------------------- -->
+
+\page advanced_fuel_oil_combustion Heavy fuel oil combustion module
+
+Initialisation of transported variables
+=======================================
+
+To initialise or modify (in case of a continuation) values of transported
+variables and of the time step, the standard function \ref cs_user_initialization is used.
+
+Physical properties are stored using the **cs_field** API (cell center). For instance, to obtain
+the mean density (in \f$kg.m^{-3})\f$, one must declare a array cpro_crho = CS_F_(rho)->val (see [Physical properties](@ref example_physical_properties)).
+
+Boundary conditions
+===================
+Boundary conditions are defined as usual on a per-face basis in \ref cs_user_boundary_conditions or with the **GUI**.
+
+\page advanced_Radiative_thermal
