@@ -287,6 +287,14 @@ clean-local:
 	  else :; fi; \
 	done
 
+# Remark:
+# When installing shared libraries, remove library then copy it, rather than
+# simply overwriting it, so that if a running instance is using that library,
+# it will still access the old copy (not really removed until closed based
+# on POSIX file semantics), instead of a mofified copy that can lead to
+# SIGBUS errors due to an incomplete (in progress) copy or possibly other
+# address changes.
+
 install-exec-local: ${local_libraries_add}
 	@list=; for p in ${local_libraries_add}; do \
 	  if test -f $$p; then \
@@ -296,7 +304,12 @@ install-exec-local: ${local_libraries_add}
 	test -z "$$list" -a -n "$(pkglibdir)" || { \
 	  echo " $(MKDIR_P) '$(DESTDIR)$(pkglibdir)'"; \
 	  $(MKDIR_P) "$(DESTDIR)$(pkglibdir)" || exit 1; \
-	  echo " cp -fp $$list '$(DESTDIR)$(pkglibdir)'"; \
+	  for p in $$list; do \
+	    echo " rm -f '$(DESTDIR)$(pkglibdir)/$$p'"; \
+	    rm -f "$(DESTDIR)$(pkglibdir)/$$p"; \
+	    echo " cp -fp $$p '$(DESTDIR)$(pkglibdir)'"; \
+	    cp -fpP $$p "$(DESTDIR)$(pkglibdir)"; \
+	  done; \
 	  cp -fpP $$list "$(DESTDIR)$(pkglibdir)"; \
 	}
 
