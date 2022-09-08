@@ -33,6 +33,7 @@ documentation. It is also recommended to check the
 - \subpage advanced_pulveri_gas_combution
 - \subpage advanced_fuel_oil_combustion
 - \subpage advanced_Radiative_thermal
+- \subpage advanced_Conjugate_heat_transfer
 
 <!-- ----------------------------------------------------------------------- -->
 
@@ -283,3 +284,70 @@ and dp_FCP for pulverised coal combustion).
 
 \anchor gui_rad_transf_wall_params
 \image html gui_rad_transf_wall_params.png "Boundary conditions - example of wall thermal radiative transfer"
+
+<!-- ----------------------------------------------------------------------- -->
+
+\page advanced_Conjugate_heat_transfer Conjugate heat transfer
+
+Thermal module in a 1D wall
+===========================
+
+The function \ref cs_user_1d_wall_thermal takes into account the wall-affected thermal inertia.
+Some boundary faces are treated as a solid wall with a given thickness, on which the code resolves
+a one-dimensional equation for the heat conduction. The coupling between the 1D module and the fluid
+works in a similar way to the coupling with the **SYRTHES**. By construction, the user is not able to account
+for the heat transfer between different parts of the wall. A physical analysis of each problem, case by case
+is required in order to evaluate the relevance of its usage by way of a report of the simple conditions
+(temperature, zero-flux ) or a coupling with **SYRTHES**.
+
+The use of this code requires that the thermal scalar is
+defined as (\ref cs_thermal_model_field() \f$ \ne \f$  NULL).
+
+\warning: The 1D thermal module is developed assuming the thermal scalar
+as a temperature. If the thermal scalar is an enthalpy, the code calls the
+enthalpy to temperature conversion as defined by the model defaults,
+or by the user in \texttt{cs\_user\_physical\_properties} for each
+transfer of data between the fluid and the wall in order to convert the
+enthalpy to temperature and vice-versa. If the thermal
+variable is the total (compressible) energy, the thermal module will not work.
+
+Internal Fluid-Thermal coupling
+===============================
+
+When at least one volume zone is defined as being solid
+(see [Figure 1](@ref gui_internal_coupling_vol_zone)), scalar variables (especially
+thermal scalar variables) may be solved in a fully coupled manner across the fluid
+and solid domains.
+
+For this purpose, the **Internal coupling** should be activated for the desired variables
+in the matching tab of the **Coupling parameters** page, as shown in figure
+[figure 2](@ref gui_internal_coupling)). This section should appear when
+at least one volume zone is defined as solid.
+
+\anchor gui_internal_coupling_vol_zone
+\image html gui_internal_coupling_vol_zone.png "Solid volume zone definition"
+
+\anchor gui_internal_coupling
+\image html gui_internal_coupling.png "Conjugate heat transfer: internal coupling"
+
+Fluid-Thermal coupling with SYRTHES
+===================================
+
+Coupling **code_saturne** with **syrthes** for **conjugate heat transfer** can be defined through
+the GUI or the \ref cs_user_syrthes_coupling user function see [syrthes coupling examples](@ref cs_user_coupling_h_cs_user_syrthes_coupling).
+
+To set such a coupling in the GUI, a thermal scalar must be
+selected first in the item **Thermal scalar** under the heading **Thermophysical models**.
+At least one wall boundary condition must be set to **SYRTHES coupling** type, and
+the name of the associated **syrthes** instance (i.e. base directory name of the associated
+solid case definition) be set, as shown in, [Figure 3](@ref gui_syrthes_coupling_bc).
+The **Syrthes coupling** tab will then be available in the **Coupling parameters**
+section (see [Figure 4](@ref gui_syrthes_coupling)), fo further advanced or global settings.
+The zones where the coupling occurs must be defined and a projection axis can be
+specified in case of 2D coupling.
+
+\anchor gui_syrthes_coupling_bc
+\image html gui_syrthes_coupling_bc.png "Boundary conditions - coupling with syrthes"
+
+\anchor gui_syrthes_coupling
+\image html gui_syrthes_coupling.png "Coupling parameters - coupling with syrthes"
