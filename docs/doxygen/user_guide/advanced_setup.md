@@ -32,6 +32,7 @@ documentation. It is also recommended to check the
 - \subpage advanced_specific_physics
 - \subpage advanced_pulveri_gas_combution
 - \subpage advanced_fuel_oil_combustion
+- \subpage advanced_Radiative_thermal
 
 <!-- ----------------------------------------------------------------------- -->
 
@@ -218,6 +219,67 @@ the mean density (in \f$kg.m^{-3})\f$, one must declare a array cpro_crho = CS_F
 
 Boundary conditions
 ===================
+
 Boundary conditions are defined as usual on a per-face basis in \ref cs_user_boundary_conditions or with the **GUI**.
 
-\page advanced_Radiative_thermal
+<!-- ----------------------------------------------------------------------- -->
+
+\page advanced_Radiative_thermal Radiative thermal transfers in semi-transparent gray media
+
+Initialisation of the radiation main parameters
+===============================================
+
+The main radiation parameters can be initialize in the Graphical User Interface (GUI) or in the user
+function \ref cs_user_radiative_transfer_parameters (see [Initialization examples](@ref cs_user_radiative_transfer_h_cs_user_radiative_transfer_parameters)).
+In the GUI, under the heading **Thermal models**, when one of the two thermal radiative transfers models is selected, see [Figure 1](@ref gui_rad_transf_do_params)
+additional items appear. The user is asked to choose the number of directions for angular discretisation, to define the absorption coefficient and select if the radiative calculation are restarted or not,
+see [Figure 1](@ref gui_rad_transf_do_params) and [Figure 3](@ref gui_rad_transf_p1_params).  When **Advanced options** is selected for both models [Figure 2](@ref gui_rad_transf_do_advanced) and [Figure 4](@ref gui_rad_transf_p1_advanced)  appear, the user must fill the resolution frequency and verbosity levels. In addition, the activation of the radiative transfer leads to the creation of an item **Surface solution control** under the heading **Calculation control**, see [Figure 5](@ref gui_rad_transf_post_output), where radiative transfer variables can be selected to appear in the output log.
+
+\warning: when a calculation is ran using a specific physics module,
+this first heading must not be completed. The radiation module is then
+activated or not, according to the parameter file related to the considered
+specific physics.
+
+Radiative transfers boundary conditions
+=======================================
+
+These informations can be filled by the user through the Graphical User Interface
+(GUI) or by using the function \ref cs_user_radiative_transfer_bcs see [boundary examples](@ref cs_user_radiative_transfer_h_boundary_conditions).
+If the interface is used, when one of the **Radiative transfers** options is selected in [Figure 1](@ref gui_rad_transf_do_params) and **Boundary zones** is defined in **Mesh**,
+it activates specific boundary conditions each time a **Wall** is defined, see [Figure 6](@ref gui_rad_transf_wall_model). The user can then choose
+between 3 cases. The parameters the user must specify are displayed for one of them in [Figure 7](@ref gui_rad_transf_wall_params).
+
+Absorption coefficient of the medium, boundary conditions for the luminance and calculation of the net radiative flux
+=====================================================================================================================
+
+When the absorption coefficient is not constant, the function \ref cs_user_rad_transfer_absorption is called instead at each time
+step. It is composed of three parts. In the first one, the user must provide the absorption coefficient of the medium in the array CK,
+for each cell of the fluid mesh. By default, the absorption coefficient of the medium is 0, which corresponds to a transparent medium.
+For more detail see [Absorption](@ref abso_flux)
+
+\warning: when a specific physics is activated, it is forbidden to
+give a value to the absorption coefficient in this function. In this
+case, the coefficient is either calculated automatically, or provided by the user via a
+thermo-chemical parameter file (dp_C3P or dp_C3PSJ for gas combustion,
+and dp_FCP for pulverised coal combustion).
+
+\anchor gui_rad_transf_do_params
+\image html gui_rad_transf_do_params.png "Radiative transfers - parameters of the DO method"
+
+\anchor gui_rad_transf_do_advanced
+\image html gui_rad_transf_do_advanced.png "Radiative transfers - advanced parameters of the DO method"
+
+\anchor gui_rad_transf_p1_params
+\image html gui_rad_transf_p1_params.png "Radiative transfers - parameters of the P-1 model"
+
+\anchor gui_rad_transf_p1_advanced
+\image html gui_rad_transf_p1_advanced.png "Radiative transfers - advanced parameters of the P-1 model"
+
+\anchor gui_rad_transf_post_output
+\image html gui_rad_transf_post_output.png "Calculation control - Radiative transfers post-processing output"
+
+\anchor gui_rad_transf_wall_model
+\image html gui_rad_transf_wall_model.png "Boundary conditions - choice of wall thermal radiative transfers"
+
+\anchor gui_rad_transf_wall_params
+\image html gui_rad_transf_wall_params.png "Boundary conditions - example of wall thermal radiative transfer"
