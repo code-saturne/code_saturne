@@ -104,27 +104,9 @@ integer          ifac, ivar
 
 !===============================================================================
 
-!===============================================================================
-! INITIALISATION DES CONDITIONS LIMITES ET TYPE DE FACES DE BORD
-!===============================================================================
-
-!      ICODCL = 0 INDIQUE QUE LA CL N'A PAS ETE RENSEIGNEE
-!      RINFIN : VALEUR INFINIE
-
 ! itypfb has already been initialized with default value, do not modify it here.
 
-! Pour toutes les variables, on initialise RCODCL(1)a RINFIN
-! Cette valeur sera reinitialisee a zero dans typecl.F
-! (Take also turbulent fluxes into account)
-
-do ivar = 1, nvar
-  do ifac = 1, nfabor
-    icodcl(ifac,ivar)   = 0
-    rcodcl(ifac,ivar,1) = rinfin
-    rcodcl(ifac,ivar,2) = rinfin
-    rcodcl(ifac,ivar,3) = 0.d0
-  enddo
-enddo
+! icodcl and rcodcl have also been intialized.
 
 ! En ALE, on initialise aussi le tableau IALTYB
 if (iale.ge.1) then

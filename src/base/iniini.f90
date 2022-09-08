@@ -289,7 +289,7 @@ enddo
 
 idtten = -1
 
-! --- Variables de calcul resolues (RTP, RTPA)
+! Solved varible ids (for Fortran boundary conditions access)
 
 ipr    = 0
 iu     = 0
@@ -308,6 +308,10 @@ iphi   = 0
 ifb    = 0
 ial    = 0
 inusa  = 0
+
+iuma = 0
+ivma = 0
+iwma = 0
 
 do iscal = 1, nscamx
   isca  (iscal) = 0

@@ -381,18 +381,45 @@ cs_field_build_bc_codes_all(void)
     int var_id = (f->type & CS_FIELD_VARIABLE) ?
       cs_field_get_key_int(f, kv) -1 : -1;
 
-    if (var_id > -1 && f->bc_coeffs != NULL) {
+    if (var_id > -1) {
 
-      f->bc_coeffs->icodcl  = _icodcl + n_b_faces*var_id;
-      f->bc_coeffs->rcodcl1 = _rcodcl + n_b_faces*var_id;
-      f->bc_coeffs->rcodcl2 = _rcodcl + n_b_faces*(n_vars+var_id);
-      f->bc_coeffs->rcodcl3 = _rcodcl + n_b_faces*(2*n_vars+var_id);
+      int * icodcl  = _icodcl + n_b_faces*var_id;
+      cs_real_t *rcodcl1 = _rcodcl + n_b_faces*var_id;
+      cs_real_t *rcodcl2 = _rcodcl + n_b_faces*(n_vars+var_id);
+      cs_real_t *rcodcl3 = _rcodcl + n_b_faces*(2*n_vars+var_id);
 
-      /* For multi-dimensional arrays, access using
+      if (f->bc_coeffs != NULL) {
 
-         f->bcs->icodcl[coo_id*n_b_faces + face_id]
+        f->bc_coeffs->icodcl  = icodcl;
+        f->bc_coeffs->rcodcl1 = rcodcl1;
+        f->bc_coeffs->rcodcl2 = rcodcl2;
+        f->bc_coeffs->rcodcl3 = rcodcl3;
 
-         and equivalent for icodcl, rcodc1, rcodcl2, rcodcl3. */
+        /* For multi-dimensional arrays, access using
+
+           f->bcs->icodcl[coo_id*n_b_faces + face_id]
+
+           and equivalent for icodcl, rcodc1, rcodcl2, rcodcl3. */
+
+      }
+
+      /* Initialize icodcl and rcodcl values to defaults
+         (even if they are not mapped to C, to avoid
+         issues in some Fortran initilaization loops
+         which do not do the appropriate checks for
+         variable type. */
+
+      for (cs_lnum_t coo_id = 0; coo_id < f->dim; coo_id++) {
+        cs_lnum_t s_id = n_b_faces * coo_id;
+        cs_lnum_t e_id = n_b_faces * (coo_id+1);
+
+        for (cs_lnum_t i = s_id; i < e_id; i++) {
+          icodcl[i] = 0;
+          rcodcl1[i] = cs_math_infinite_r;
+          rcodcl2[i] = cs_math_infinite_r;
+          rcodcl3[i] = 0;
+        }
+      }
 
     }
 

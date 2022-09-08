@@ -619,18 +619,16 @@ cs_user_boundary_conditions_wrapper(int  *itypcl)
   for (int f_id = 0; f_id < n_fields; f_id++) {
 
     const cs_field_t  *f = cs_field_by_id(f_id);
-    if (f->dim > 1 && f->type & CS_FIELD_VARIABLE) {
-
-      assert(f->bc_coeffs != NULL);
-      assert(f->bc_coeffs->icodcl != NULL || n_b_faces == 0);
+    if (f->dim > 1 && f->type & CS_FIELD_VARIABLE && f->bc_coeffs != NULL) {
 
       int *icodcl = f->bc_coeffs->icodcl;
 
-      for (cs_lnum_t i = 1; i < f->dim; i++) {
-        for (cs_lnum_t j = 0; j < n_b_faces; j++)
-          icodcl[n_b_faces*i + j] = icodcl[j];
+      if (icodcl != NULL) {
+        for (cs_lnum_t i = 1; i < f->dim; i++) {
+          for (cs_lnum_t j = 0; j < n_b_faces; j++)
+            icodcl[n_b_faces*i + j] = icodcl[j];
+        }
       }
-
     }
 
   }
