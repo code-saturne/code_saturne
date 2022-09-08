@@ -1620,8 +1620,7 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         soil_num + 1, /* dim */
                         false); /* has_previous */
-    //FIXME not handled yet cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keyvis, 0);
+    cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Soil percentages");
 
@@ -1771,9 +1770,6 @@ cs_atmo_add_property_fields(void)
     cs_field_set_key_int(f, keyvis, 0);
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Soil deep T");
-
-
-
   }
 
 }

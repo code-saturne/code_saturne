@@ -438,6 +438,31 @@ cs_post_define_surface_mesh_by_func(int                    mesh_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define a volume or surface post-processing mesh by associated
+ *        mesh location id.
+ *
+ * \param[in]  mesh_id         id of mesh to define
+ *                             (< 0 reserved, > 0 for user)
+ * \param[in]  mesh_name       associated mesh name
+ * \param[in]  location_id     associated mesh location id
+ * \param[in]  add_groups      if true, add group information if present
+ * \param[in]  auto_variables  if true, automatic output of main variables
+ * \param[in]  n_writers       number of associated writers
+ * \param[in]  writer_ids      ids of associated writers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_define_mesh_by_location(int          mesh_id,
+                                const char  *mesh_name,
+                                int          location_id,
+                                bool         add_groups,
+                                bool         auto_variables,
+                                int          n_writers,
+                                const int    writer_ids[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define a particles post-processing mesh.
  *
  * Such a mesh is always time-varying, and will only be output by writers

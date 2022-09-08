@@ -289,6 +289,8 @@ typedef struct {
                                             monitoring probes, 2 for profile)
                                             on one processor at least */
 
+  int                     location_id;   /* Associated location id if defined
+                                            by location id, or -1 */
   int                     cat_id;        /* Optional category id as regards
                                             variables output (CS_POST_MESH_...,
                                             0 by default) */
@@ -1168,6 +1170,7 @@ _predefine_mesh(int        mesh_id,
   post_mesh->id = mesh_id;
   post_mesh->name = NULL;
   post_mesh->cat_id = mesh_id;
+  post_mesh->location_id = -1;
   post_mesh->edges_ref = -1;
   post_mesh->locate_ref = -1;
 
@@ -1581,13 +1584,52 @@ _define_regular_mesh(cs_post_mesh_t  *post_mesh)
 
   assert(post_mesh->exp_mesh == NULL);
 
-  cs_lnum_t i;
   cs_lnum_t n_cells = 0, n_i_faces = 0, n_b_faces = 0;
   cs_lnum_t *cell_list = NULL, *i_face_list = NULL, *b_face_list = NULL;
 
-  /* Define element lists based on selection criteria */
+  /* Define element lists based on mesh location, selection criteria,
+     or selection function. */
 
-  if (post_mesh->criteria[0] != NULL) {
+  if (post_mesh->location_id > -1) {
+    cs_mesh_location_type_t loc_type
+      = cs_mesh_location_get_type(post_mesh->location_id);
+
+    const cs_lnum_t n_elts
+      = cs_mesh_location_get_n_elts(post_mesh->location_id)[0];
+    const cs_lnum_t *elt_ids
+      = cs_mesh_location_get_elt_ids_try(post_mesh->location_id);
+
+    cs_lnum_t *elt_list = NULL;
+    if (elt_ids != NULL) {
+      BFT_MALLOC(elt_list, n_elts, cs_lnum_t);
+      for (cs_lnum_t i = 0; i < n_elts; i++)
+        elt_list[i] = elt_ids[i] + 1;
+    }
+
+    switch(loc_type) {
+    case CS_MESH_LOCATION_CELLS:
+      n_cells = n_elts;
+      cell_list = elt_list;
+      elt_list = NULL;
+      break;
+    case CS_MESH_LOCATION_INTERIOR_FACES:
+      n_i_faces = n_elts;
+      i_face_list = elt_list;
+      elt_list = NULL;
+      break;
+    case CS_MESH_LOCATION_BOUNDARY_FACES:
+      n_b_faces = n_elts;
+      b_face_list = elt_list;
+      elt_list = NULL;
+      break;
+    default:
+      BFT_FREE(elt_list);
+      assert(0);
+      break;
+    }
+  }
+
+  else if (post_mesh->criteria[0] != NULL) {
     const char *criteria = post_mesh->criteria[0];
     if (!strcmp(criteria, "all[]"))
       n_cells = mesh->n_cells;
@@ -1599,7 +1641,7 @@ _define_regular_mesh(cs_post_mesh_t  *post_mesh)
   else if (post_mesh->sel_func[0] != NULL) {
     cs_post_elt_select_t *sel_func = post_mesh->sel_func[0];
     sel_func(post_mesh->sel_input[0], &n_cells, &cell_list);
-    for (i = 0; i < n_cells; i++)
+    for (cs_lnum_t i = 0; i < n_cells; i++)
       cell_list[i] += 1;
   }
 
@@ -1615,7 +1657,7 @@ _define_regular_mesh(cs_post_mesh_t  *post_mesh)
   else if (post_mesh->sel_func[1] != NULL) {
     cs_post_elt_select_t *sel_func = post_mesh->sel_func[1];
     sel_func(post_mesh->sel_input[1], &n_i_faces, &i_face_list);
-    for (i = 0; i < n_i_faces; i++)
+    for (cs_lnum_t i = 0; i < n_i_faces; i++)
       i_face_list[i] += 1;
   }
 
@@ -1631,7 +1673,7 @@ _define_regular_mesh(cs_post_mesh_t  *post_mesh)
   else if (post_mesh->sel_func[2] != NULL) {
     cs_post_elt_select_t *sel_func = post_mesh->sel_func[2];
     sel_func(post_mesh->sel_input[2], &n_b_faces, &b_face_list);
-    for (i = 0; i < n_b_faces; i++)
+    for (cs_lnum_t i = 0; i < n_b_faces; i++)
       b_face_list[i] += 1;
   }
 
@@ -3050,13 +3092,13 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
 
       const cs_field_t  *f = cs_field_by_id(f_id);
 
+      if (! (cs_field_get_key_int(f, vis_key_id) & CS_POST_ON_LOCATION))
+        continue;
+
       const cs_mesh_location_type_t field_loc_type
          = cs_mesh_location_get_type(f->location_id);
 
       if (_cs_post_match_post_write_var(post_mesh, field_loc_type) == false)
-        continue;
-
-      if (! (cs_field_get_key_int(f, vis_key_id) & CS_POST_ON_LOCATION))
         continue;
 
       const char *name = cs_field_get_key_str(f, label_key_id);
@@ -3089,12 +3131,74 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
                || field_loc_type == CS_MESH_LOCATION_BOUNDARY_FACES
                || field_loc_type == CS_MESH_LOCATION_INTERIOR_FACES) {
 
-        const cs_real_t *cell_val = NULL, *b_face_val = NULL;
+        const cs_real_t *f_val = f->val;
+        const cs_real_t *cell_val = NULL, *b_face_val = NULL, *i_face_val = NULL;
+        cs_real_t *tmp_val = NULL;
+
+        if (f->location_id != (int)field_loc_type) {
+
+          /* Only output fields defined on mesh sub-locations
+             for meshes with matching location id;
+
+             If the following test is removed, such fields will also
+             be output on parent or sibling locations, with a value
+             of 0 outside the actual field location. This is currently
+             not activated to avoid redundant outputs, but could be used
+             with a finer control of writer/mesh/field output combination
+             than the post_vis field keyword and "auto" postprocessing mesh
+             options currently allow. */
+
+          if (f->location_id != post_mesh->location_id)
+            continue;
+
+          cs_lnum_t n_elts = cs_mesh_location_get_n_elts(f->location_id)[0];
+          cs_lnum_t f_dim = f->dim;
+          cs_lnum_t n_vals = n_elts * f_dim;
+          const cs_lnum_t *elt_ids
+            = cs_mesh_location_get_elt_ids_try(f->location_id);
+
+          BFT_MALLOC(tmp_val, n_vals, cs_real_t);
+
+          /* Remark: in case we decide to output values on the parent mesh,
+             we need to initialize values to a default for elements not in
+             the field location subset.
+
+             Outputting values on a smaller subset of the mesh location
+             could seem more natural, but we would have to determine
+             correctly that we are indeed on a smaller subset, which
+             is not trivial as all sub-locations are defined relative to
+             a root location type, not in a recursive manner.
+
+             We assign a default of 0, but an associated field keyword
+             to define another value could be useful here. */
+
+          if (f->location_id != post_mesh->location_id) {
+            cs_lnum_t n_elts_p = cs_mesh_location_get_n_elts(field_loc_type)[0];
+            cs_lnum_t n_vals_p = n_elts_p * f_dim;
+            for (cs_lnum_t i = 0; i < n_vals_p; i++)
+              tmp_val[i] = 0.;
+          }
+
+          /* Now scatter values from subset to parent location. */
+
+          if (elt_ids != NULL) {
+            for (cs_lnum_t i = 0; i < n_elts; i++) {
+              for (cs_lnum_t j = 0; j < f_dim; j++)
+                tmp_val[elt_ids[i]*f_dim + j] = f->val[i*f_dim + j];
+            }
+            f_val = tmp_val;
+          }
+          else
+            memcpy(tmp_val, f->val, sizeof(cs_real_t)*n_vals);
+
+        } /* End of case for field on sub-location */
 
         if (field_loc_type == CS_MESH_LOCATION_CELLS)
-          cell_val = f->val;
-        else /* if (field_loc_type == CS_MESH_LOCATION_BOUNDARY_FACES) */
-          b_face_val = f->val;
+          cell_val = f_val;
+        else if (field_loc_type == CS_MESH_LOCATION_BOUNDARY_FACES)
+          b_face_val = f_val;
+        else if (field_loc_type == CS_MESH_LOCATION_INTERIOR_FACES)
+          i_face_val = f_val;
 
         cs_post_write_var(post_mesh->id,
                           CS_POST_WRITER_ALL_ASSOCIATED,
@@ -3104,9 +3208,11 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
                           use_parent,
                           CS_POST_TYPE_cs_real_t,
                           cell_val,
-                          NULL,
+                          i_face_val,
                           b_face_val,
                           ts);
+
+        BFT_FREE(tmp_val);
       }
 
       else if (field_loc_type == CS_MESH_LOCATION_VERTICES)
@@ -3520,13 +3626,30 @@ _cs_post_define_probe_mesh(int                    mesh_id,
 
   int  ent_flag_id = (on_boundary) ? 2 : 0;
   int  match_partial[2] = {-1, -1};
+  bool all_elts = (strcmp(sel_criteria, _select_all) == 0) ? true : false;
 
   for (int i = 0; i < _cs_post_n_meshes; i++) {
 
     cs_post_mesh_t *post_mesh_cmp = _cs_post_meshes + i;
+
+    if (   all_elts
+        && (time_varying == false || post_mesh_cmp->time_varying == true)) {
+      if (on_boundary) {
+        if (post_mesh->location_id == CS_MESH_LOCATION_BOUNDARY_FACES) {
+          post_mesh->locate_ref = i;
+          break;
+        }
+      }
+      else
+        if (post_mesh->location_id == CS_MESH_LOCATION_CELLS) {
+          post_mesh->locate_ref = i;
+          break;
+        }
+    }
+
     if (post_mesh_cmp->criteria[ent_flag_id] != NULL) {
       if (strcmp(sel_criteria, post_mesh_cmp->criteria[ent_flag_id]) == 0) {
-        if (   time_varying == false || post_mesh_cmp->time_varying == true)
+        if (time_varying == false || post_mesh_cmp->time_varying == true)
           post_mesh->locate_ref = i;
         break;
       }
@@ -3542,6 +3665,7 @@ _cs_post_define_probe_mesh(int                    mesh_id,
         }
       }
     }
+
   }
 
   if (post_mesh->locate_ref < 0) {
@@ -4163,6 +4287,74 @@ cs_post_define_surface_mesh_by_func(int                    mesh_id,
 
   if (post_mesh->cat_id == CS_POST_MESH_BOUNDARY)
     post_mesh->post_domain = true;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a volume or surface post-processing mesh by associated
+ *        mesh location id.
+ *
+ * \param[in]  mesh_id         id of mesh to define
+ *                             (< 0 reserved, > 0 for user)
+ * \param[in]  mesh_name       associated mesh name
+ * \param[in]  location_id     associated mesh location id
+ * \param[in]  add_groups      if true, add group information if present
+ * \param[in]  auto_variables  if true, automatic output of main variables
+ * \param[in]  n_writers       number of associated writers
+ * \param[in]  writer_ids      ids of associated writers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_define_mesh_by_location(int          mesh_id,
+                                const char  *mesh_name,
+                                int          location_id,
+                                bool         add_groups,
+                                bool         auto_variables,
+                                int          n_writers,
+                                const int    writer_ids[])
+{
+  /* Call common initialization */
+
+  cs_post_mesh_t *post_mesh = NULL;
+
+  post_mesh = _predefine_mesh(mesh_id, true, 0, n_writers, writer_ids);
+
+  /* Define mesh based on current arguments */
+
+  post_mesh->location_id = location_id;
+
+  cs_mesh_location_type_t loc_type = cs_mesh_location_get_type(location_id);
+
+  BFT_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
+  strcpy(post_mesh->name, mesh_name);
+
+  switch(loc_type) {
+  case CS_MESH_LOCATION_CELLS:
+    post_mesh->ent_flag[0] = 1;
+    if (auto_variables) {
+      post_mesh->cat_id = CS_POST_MESH_VOLUME;
+      post_mesh->post_domain = true;
+    }
+   break;
+  case CS_MESH_LOCATION_INTERIOR_FACES:
+    post_mesh->ent_flag[1] = 1;
+    break;
+  case CS_MESH_LOCATION_BOUNDARY_FACES:
+    post_mesh->ent_flag[2] = 1;
+    if (auto_variables) {
+      post_mesh->cat_id = CS_POST_MESH_BOUNDARY;
+      post_mesh->post_domain = true;
+    }
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: mesh locations of type %s not handled."),
+              __func__, cs_mesh_location_type_name[loc_type]);
+    break;
+  }
+
+  post_mesh->add_groups = (add_groups) ? true : false;
 }
 
 /*----------------------------------------------------------------------------*/

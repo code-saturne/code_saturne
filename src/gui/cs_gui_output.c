@@ -835,18 +835,15 @@ cs_gui_postprocess_meshes(void)
     }
     else if(cs_gui_strcmp(type, "VolumicZone")) {
       const cs_zone_t *z = cs_volume_zone_by_name(location);
-      const char *criteria =
-        cs_mesh_location_get_selection_string(z->location_id);
-      cs_post_define_volume_mesh(id, label, criteria, add_groups, auto_vars,
-                                 n_writers, writer_ids);
+      cs_post_define_mesh_by_location(id, label, z->location_id,
+                                      add_groups, auto_vars,
+                                      n_writers, writer_ids);
     }
     else if(cs_gui_strcmp(type, "BoundaryZone")) {
       const cs_zone_t *z = cs_boundary_zone_by_name(location);
-      const char *criteria =
-        cs_mesh_location_get_selection_string(z->location_id);
-      cs_post_define_surface_mesh(id, label, NULL, criteria,
-                                  add_groups, auto_vars,
-                                  n_writers, writer_ids);
+      cs_post_define_mesh_by_location(id, label, z->location_id,
+                                      add_groups, auto_vars,
+                                      n_writers, writer_ids);
     }
     else if (cs_gui_strcmp(type, "BoundaryZone_cells")) {
       const cs_zone_t *z = cs_boundary_zone_by_name(location);
