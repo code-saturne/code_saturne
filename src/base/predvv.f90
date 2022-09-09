@@ -445,6 +445,11 @@ call ustsnv &
 ! C version
 call user_source_terms(ivarfl(iu), tsexp, tsimp)
 
+! Boundary contributions for all immersed boundaries
+if (iporos.eq.3) then
+  call cs_immersed_boundary_wall_functions(ivarfl(iu), tsexp, tsimp)
+endif
+
 n_fans = cs_fan_n_fans()
 if (n_fans .gt. 0) then
   if (ntcabs.eq.ntpabs+1) then

@@ -60,6 +60,10 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_turbulence_model.h"
+#include "cs_domain.h"
+#include "cs_field.h"
+#include "cs_field_operator.h"
+#include "cs_field_pointer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -584,6 +588,140 @@ cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
                                       yplim);
     break;
   }
+}
+
+/*----------------------------------------------------------------------------*/
+
+/*!
+ *  \brief Compute boundary contributions for all immersed boundaries.
+ *
+ * \param[in]       f_id     field id of the variable
+ * \param[out]      st_exp   explicit source term
+ * \param[out]      st_imp   implicit part of the source term
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_immersed_boundary_wall_functions(int f_id,
+                                    cs_real_t *st_exp,
+                                    cs_real_t *st_imp)
+{
+  cs_domain_t *domain = cs_glob_domain;
+
+  const cs_field_t  *f = cs_field_by_id(f_id);
+
+  /* mesh quantities */
+  cs_mesh_t *m = domain->mesh;
+  cs_mesh_quantities_t *mq = domain->mesh_quantities;
+  const cs_lnum_t  n_cells = m->n_cells;
+  const cs_real_t  *cell_f_vol = mq->cell_f_vol;
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)mq->cell_cen;
+
+  /*  Wall normal*/
+  //TODO switch to mesh_quantities
+  cs_real_t *c_w_face_surf = cs_field_by_name("c_w_face_surf")->val;
+  cs_real_t *c_w_dist_inv = cs_field_by_name("c_w_dist_inv")->val;
+  cs_real_3_t *c_w_face_cog = (cs_real_3_t *)cs_field_by_name("c_w_face_cog")->val;
+  const cs_real_3_t *restrict c_w_face_normal
+    = (const cs_real_3_t *restrict)mq->c_w_face_normal;
+
+  /* Dynamic viscosity */
+  const cs_real_t  *cpro_mu = CS_F_(mu)->val;
+
+  /* Density */
+  cs_real_t *rho = (cs_real_t *)CS_F_(rho)->val;
+
+  /* Velocity */
+  const cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
+
+  /* Velocity */
+  const cs_real_t *p = (cs_real_t *)CS_F_(p)->val;
+/*  const cs_field_t *fpr = CS_F_(p);*/
+
+  /* Skin-Friction and pressure coefficients */
+  //TODO create an optional field for boundary forces
+  cs_real_3_t *pf;
+  cs_field_t *fpf = cs_field_by_name_try("immersed_pressure_force");
+  if (fpf != NULL)
+    pf = (cs_real_3_t *)(fpf->val);
+
+  cs_real_3_t *grdp;
+  BFT_MALLOC(grdp, n_cells, cs_real_3_t);
+
+  cs_wall_functions_t *wall_functions = cs_get_glob_wall_functions();
+
+  if (f == CS_F_(vel)) { /* velocity */
+
+    /* cast to 3D vectors for readability */
+    cs_real_3_t    *_st_exp = (cs_real_3_t *)st_exp;
+    cs_real_33_t   *_st_imp = (cs_real_33_t *)st_imp;
+
+    switch (wall_functions->iwallf) {
+    case CS_WALL_F_DISABLED:
+
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+        cs_real_t surf = c_w_face_surf[c_id];
+
+        if (surf > cs_math_epzero*pow(cell_f_vol[c_id],2./3.)) {
+          for (cs_lnum_t i = 0; i < 3; i++) {
+            _st_exp[c_id][i] = 0.;
+            for (cs_lnum_t j = 0; j < 3; j++) {
+              if (i == j) {
+                _st_imp[c_id][i][j] = - cpro_mu[c_id] * surf * c_w_dist_inv[c_id];
+              }
+            }
+          }
+
+          /* Post-processing */
+          if (fpf != NULL) {
+            cs_real_3_t ipbx;
+            for (int i = 0; i < 3; i++)
+              ipbx[i] = c_w_face_cog[c_id][i] - cell_cen[c_id][i];
+
+            cs_field_gradient_scalar(CS_F_(p),
+                                     false, /* use_previous_t */
+                                     1,
+                                     (cs_real_3_t *)grdp);
+
+            for (int i = 0; i < 3; i++) {
+              pf[c_id][i] = (p[c_id]+cs_math_3_dot_product(ipbx,grdp[c_id]))
+                  * c_w_face_normal[c_id][i];
+            }
+          } /* End post-processing */
+        }
+      }
+      break;
+      // TODO
+    case CS_WALL_F_1SCALE_POWER:
+      cs_exit(EXIT_FAILURE);
+      break;
+    case CS_WALL_F_1SCALE_LOG:
+      cs_exit(EXIT_FAILURE);
+      break;
+    case CS_WALL_F_2SCALES_LOG:
+      cs_exit(EXIT_FAILURE);
+      break;
+    case CS_WALL_F_SCALABLE_2SCALES_LOG:
+      cs_exit(EXIT_FAILURE);
+      break;
+    case CS_WALL_F_2SCALES_VDRIEST:
+      cs_exit(EXIT_FAILURE);
+      break;
+    case CS_WALL_F_2SCALES_SMOOTH_ROUGH:
+      cs_exit(EXIT_FAILURE);
+      break;
+    case CS_WALL_F_2SCALES_CONTINUOUS:
+      cs_exit(EXIT_FAILURE);
+      break;
+      // TODO
+    default:
+      cs_exit(EXIT_FAILURE);
+      break;
+    }
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

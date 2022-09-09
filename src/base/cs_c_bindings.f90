@@ -995,6 +995,18 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Compute boundary contributions for all immersed boundaries.
+
+    subroutine cs_immersed_boundary_wall_functions(f_id, st_exp, st_imp)  &
+      bind(C, name='cs_immersed_boundary_wall_functions')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+      real(kind=c_double), dimension(*), intent(inout) :: st_exp, st_imp
+    end subroutine cs_immersed_boundary_wall_functions
+
+    !---------------------------------------------------------------------------
+
     !> \brief Compute molar and mass fractions of elementary species Ye, Xe
     !>  (fuel, O2, CO2, H2O, N2) from global species Yg (fuel, oxidant, products)
 
