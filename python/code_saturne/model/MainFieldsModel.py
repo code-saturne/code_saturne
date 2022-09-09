@@ -408,7 +408,7 @@ class MainFieldsModel(Variables, Model):
         field.flow_type = ftype
         field_name = field.label
 
-        # update carrier field
+        # update carrier field  if current field is not continous anymore
         if ftype != "continuous":
             field.carrier_id = self.getFirstContinuousField()
             # Modify carrier field
@@ -483,7 +483,7 @@ class MainFieldsModel(Variables, Model):
         put nature of field
         """
         self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId) 
+        field = self.getFieldFromId(fieldId)
         field.phase = phase
         self.updateXML()
 
@@ -494,7 +494,7 @@ class MainFieldsModel(Variables, Model):
         get nature of field
         """
         self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId) 
+        field = self.getFieldFromId(fieldId)
         return field.phase
 
     @Variables.undoLocal
@@ -503,7 +503,7 @@ class MainFieldsModel(Variables, Model):
         set status for energy resolution
         """
         self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId) 
+        field = self.getFieldFromId(fieldId)
         field.enthalpy_model = status
 
 
@@ -513,7 +513,7 @@ class MainFieldsModel(Variables, Model):
         get status for energy resolution
         """
         self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId) 
+        field = self.getFieldFromId(fieldId)
         return field.enthalpy_model
 
 
@@ -523,7 +523,7 @@ class MainFieldsModel(Variables, Model):
         set model for energy resolution
         """
         self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId) 
+        field = self.getFieldFromId(fieldId)
         field.enthalpy_model = mdl
 
 
@@ -533,7 +533,7 @@ class MainFieldsModel(Variables, Model):
         get model for energy resolution
         """
         self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId) 
+        field = self.getFieldFromId(fieldId)
         return field.enthalpy_model
 
 
@@ -543,7 +543,7 @@ class MainFieldsModel(Variables, Model):
         set status for compressible resolution
         """
         self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId) 
+        field = self.getFieldFromId(fieldId)
         field.compressible = status
 
 
@@ -553,14 +553,14 @@ class MainFieldsModel(Variables, Model):
         get status for compressible resolution
         """
         self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId) 
+        field = self.getFieldFromId(fieldId)
         return field.compressible
 
 
     @Variables.undoLocal
     def setCarrierField(self, fieldId, carrierfield):
         self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId) 
+        field = self.getFieldFromId(fieldId)
         if carrierfield != "off":
             self.isInList(str(carrierfield),self.getFieldIdList())
         field.carrier_id = carrierfield
@@ -569,7 +569,7 @@ class MainFieldsModel(Variables, Model):
     @Variables.noUndo
     def getCarrierField(self, fieldId):
         self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId) 
+        field = self.getFieldFromId(fieldId)
         return field.carrier_id
 
 
@@ -579,7 +579,7 @@ class MainFieldsModel(Variables, Model):
         delete a field in XML and update
         """
         self.isInList(str(fieldId), self.getFieldIdList())
-        field_to_delete = self.getFieldFromId(fieldId) 
+        field_to_delete = self.getFieldFromId(fieldId)
 
         # Suppress variables related to current field from profiles
         pm = ProfilesModel(self.case)
@@ -601,20 +601,6 @@ class MainFieldsModel(Variables, Model):
                     node.xmlRemoveNode()
             except :
                pass
-
-        # Update 'field_id' attributes for other fields in XML file
-#        for node in self.__nodesWithFieldIDAttribute():
-#            try :
-#                if node['field_id'] != "none" and node['field_id'] != "off":
-#                    if int(node['field_id']) > fieldId :
-#                        node['field_id'] = str(int(node['field_id']) - 1)
-#                    else:
-#                       if node['field_id_a'] > str(fieldId):
-#                          node['field_id_a'] = str(int(node['field_id_a']) - 1)
-#                       if node['field_id_b'] > str(fieldId):
-#                          node['field_id_b'] = str(int(node['field_id_b']) - 1)
-#            except:
-#                pass
 
         # Update for field Id
         for node in self.__XMLNodefields.xmlGetNodeList('field'):
