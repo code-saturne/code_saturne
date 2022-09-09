@@ -89,6 +89,7 @@ BEGIN_C_DECLS
 typedef struct {
 
   cs_real_t     *cell_cen;       /* Cell center coordinates  */
+  cs_real_t     *cell_f_cen;     /* Cell fluid center coordinates  */
   cs_real_t     *cell_vol;       /* Cell volume */
   cs_real_t     *cell_f_vol;     /* Cell fluid volume */
 
@@ -100,14 +101,18 @@ typedef struct {
                                     (L2 norm equals area of the face) */
   cs_real_t     *b_f_face_normal;/* Fluid surface normal of border faces.
                                     (L2 norm equals area of the face) */
+  cs_real_t     *c_w_face_normal;/* Solid surface normal in the cell.
+                                    (L2 norm equals area of the face) */
   cs_real_t     *i_face_cog;     /* Center of gravity of interior faces */
   cs_real_t     *b_face_cog;     /* Center of gravity of border faces */
+  cs_real_t     *c_w_face_cog;   /* Center of gravity of solid face in cells */
 
   cs_real_t     *i_face_surf;    /* Surface of interior faces. */
   cs_real_t     *b_face_surf;    /* Surface of boundary faces. */
 
   cs_real_t     *i_f_face_surf;  /* Fluid surface of interior faces. */
   cs_real_t     *b_f_face_surf;  /* Fluid surface of boundary faces. */
+  cs_real_t     *c_w_face_surf;  /* Solid surface of cells. */
 
   cs_real_2_t   *i_f_face_factor;/* Fluid surface factor of interior faces. */
   cs_real_t     *b_f_face_factor;/* Fluid surface factor of boundary faces. */
@@ -122,6 +127,8 @@ typedef struct {
                                     cells sharing an interior face */
   cs_real_t     *b_dist;         /* Distance between the cell center and
                                     the center of gravity of border faces */
+  cs_real_t     *c_w_dist_inv;       /* Distance between the centers of the cell
+                                    and the solid face */
 
   cs_real_t     *weight;         /* Interior faces weighting factor */
 
@@ -290,6 +297,18 @@ cs_mesh_quantities_fluid_vol_reductions(const cs_mesh_t       *mesh,
 void
 cs_mesh_init_fluid_sections(const cs_mesh_t       *mesh,
                             cs_mesh_quantities_t  *mesh_quantities);
+
+/*----------------------------------------------------------------------------
+ * Compute solid mesh quantities at the initial step
+ *
+ * parameters:
+ *   mesh            <-- pointer to a cs_mesh_t structure
+ *   mesh_quantities <-> pointer to a cs_mesh_quantities_t structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_solid_compute(const cs_mesh_t       *mesh,
+                                 cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------
  * Compute mesh quantities
@@ -495,6 +514,133 @@ cs_mesh_quantities_log_setup(void);
 void
 cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
                         const cs_mesh_quantities_t  *mesh_quantities);
+
+/*----------------------------------------------------------------------------
+ * Compute some distances relative to faces and associated weighting.
+ *
+ * parameters:
+ *   n_i_faces      <--  number of interior faces
+ *   n_b_faces      <--  number of border  faces
+ *   i_face_cells   <--  interior "faces -> cells" connectivity
+ *   b_face_cells   <--  border "faces -> cells" connectivity
+ *   i_face_norm    <--  surface normal of interior faces
+ *   b_face_norm    <--  surface normal of border faces
+ *   i_face_cog     <--  center of gravity of interior faces
+ *   b_face_cog     <--  center of gravity of border faces
+ *   cell_cen       <--  cell center
+ *   cell_vol       <--  cell volume
+ *   i_dist         -->  distance IJ.Nij for interior faces
+ *   b_dist         -->  likewise for border faces
+ *   weight         -->  weighting factor (Aij=pond Ai+(1-pond)Aj)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_compute_face_distances(cs_lnum_t          n_i_faces,
+                          cs_lnum_t          n_b_faces,
+                          const cs_lnum_2_t  i_face_cells[],
+                          const cs_lnum_t    b_face_cells[],
+                          const cs_real_t    i_face_normal[][3],
+                          const cs_real_t    b_face_normal[][3],
+                          const cs_real_t    i_face_cog[][3],
+                          const cs_real_t    b_face_cog[][3],
+                          const cs_real_t    cell_cen[][3],
+                          const cs_real_t    cell_vol[],
+                          cs_real_t          i_dist[],
+                          cs_real_t          b_dist[],
+                          cs_real_t          weight[]);
+
+/*-----------------------------------------------------------------------------
+ * Compute some vectors to handle non-orthogonalities.
+ *
+ * Let a face and I, J the centers of neighboring cells
+ *   (only I is defined for a border face)
+ *
+ * The face is oriented from I to J, with Nij its normal.
+ *   (border faces are oriented towards the exterior)
+ * The norm of Nij is 1.
+ * The face surface is Sij.
+ *
+ * I' and J' are defined as the orthogonal projection of I and J on the line
+ * orthogonal to the face passing through the center of gravity F of the face.
+ *   (only I' is defined for a border face)
+ *
+ * We compute here the vector I'J' for interior faces (dijpf)
+ *                 the vector II'  for border faces   (diipb)
+ *                 the vector OF   for interior faces (dofij)
+ *
+ * We also have the following formulae
+ *   II' = IG - (IG.Nij)Nij
+ *   JJ' = JG - (JG.Nij)Nij
+ *
+ * parameters:
+ *   dim            <--  dimension
+ *   n_i_faces      <--  number of interior faces
+ *   n_b_faces      <--  number of border  faces
+ *   i_face_cells   <--  interior "faces -> cells" connectivity
+ *   b_face_cells   <--  border "faces -> cells" connectivity
+ *   i_face_norm    <--  surface normal of interior faces
+ *   b_face_norm    <--  surface normal of border faces
+ *   i_face_cog     <--  center of gravity of interior faces
+ *   b_face_cog     <--  center of gravity of border faces
+ *   i_face_surf    <--  interior faces surface
+ *   cell_cen       <--  cell center
+ *   weight         <--  weighting factor (Aij=pond Ai+(1-pond)Aj)
+ *   dijpf          -->  vector i'j' for interior faces
+ *   diipb          -->  vector ii'  for border faces
+ *   dofij          -->  vector OF   for interior faces
+ *----------------------------------------------------------------------------*/
+void
+cs_compute_face_vectors(int                dim,
+                        const cs_lnum_t    n_i_faces,
+                        const cs_lnum_t    n_b_faces,
+                        const cs_lnum_2_t  i_face_cells[],
+                        const cs_lnum_t    b_face_cells[],
+                        const cs_real_t    i_face_normal[],
+                        const cs_real_t    b_face_normal[],
+                        const cs_real_t    i_face_cog[],
+                        const cs_real_t    b_face_cog[],
+                        const cs_real_t    i_face_surf[],
+                        const cs_real_t    cell_cen[],
+                        const cs_real_t    weight[],
+                        const cs_real_t    b_dist[],
+                        cs_real_t          dijpf[],
+                        cs_real_t          diipb[],
+                        cs_real_t          dofij[]);
+
+/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Compute quantities associated to faces (border or internal)
+ *
+ * parameters:
+ *   n_faces         <--  number of faces
+ *   vtx_coord       <--  vertex coordinates
+ *   face_vtx_idx    <--  "face -> vertices" connectivity index
+ *   face_vtx        <--  "face -> vertices" connectivity
+ *   face_cog        -->  coordinates of the center of gravity of the faces
+ *   face_normal     -->  face surface normals
+ *
+ *                          Pi+1
+ *              *---------*                   B  : barycenter of the polygon
+ *             / .       . \
+ *            /   .     .   \                 Pi : vertices of the polygon
+ *           /     .   .     \
+ *          /       . .  Ti   \               Ti : triangle
+ *         *.........B.........* Pi
+ *     Pn-1 \       . .       /
+ *           \     .   .     /
+ *            \   .     .   /
+ *             \ .   T0  . /
+ *              *---------*
+ *            P0
+ *----------------------------------------------------------------------------*/
+
+void
+cs_compute_face_quantities(const cs_lnum_t    n_faces,
+                           const cs_real_3_t  vtx_coord[],
+                           const cs_lnum_t    face_vtx_idx[],
+                           const cs_lnum_t    face_vtx[],
+                           cs_real_3_t        face_cog[],
+                           cs_real_3_t        face_normal[]);
 
 /*----------------------------------------------------------------------------*/
 

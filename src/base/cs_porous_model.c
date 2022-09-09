@@ -47,6 +47,7 @@
 
 #include "cs_base.h"
 #include "cs_field.h"
+#include "cs_field_operator.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
@@ -236,6 +237,11 @@ cs_porous_model_set_has_disable_flag(int  flag)
         mq->b_f_face_surf   = mq->b_face_surf;
         mq->i_f_face_factor = NULL;
         mq->b_f_face_factor = NULL;
+        mq->cell_f_cen = mq->cell_cen;
+        mq->c_w_face_normal = NULL;
+        mq->c_w_face_surf = NULL;
+        mq->c_w_face_cog = NULL;
+        mq->c_w_dist_inv = NULL;
       }
       mq->cell_f_vol = mq->cell_vol;
     }
@@ -249,6 +255,11 @@ cs_porous_model_set_has_disable_flag(int  flag)
         mq->i_f_face_factor
           = (cs_real_2_t *)cs_field_by_name("i_f_face_factor")->val;
         mq->b_f_face_factor = cs_field_by_name("b_f_face_factor")->val;
+        mq->cell_f_cen      = cs_field_by_name("cell_f_cen")->val;
+        mq->c_w_face_normal = cs_field_by_name("c_w_face_normal")->val;
+        mq->c_w_face_surf   = cs_field_by_name("c_w_face_surf")->val;
+        mq->c_w_face_cog    = cs_field_by_name("c_w_face_cog")->val;
+        mq->c_w_dist_inv    = cs_field_by_name("c_w_dist_inv")->val;
       }
       mq->cell_f_vol        = cs_field_by_name("cell_f_vol")->val;
     }
@@ -326,7 +337,7 @@ cs_porous_model_auto_face_porosity(void)
         }
         else {
           mq->i_f_face_factor[face_id][0] = 1.;
-          mq->i_f_face_factor[face_id][1] = 1;
+          mq->i_f_face_factor[face_id][1] = 1.;
         }
       }
 

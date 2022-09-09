@@ -448,19 +448,20 @@ if (iporos.ge.1) then
 
   ! Make fluid surfaces of mesh quantity point to the created fields
   call cs_porous_model_set_has_disable_flag(1)
-  call cs_porous_model_init_fluid_quantities()
 
   ! Compute porosity from scan
   if (compute_porosity_from_scan) then
     call cs_compute_porosity_from_scan()
   endif
 
+  call cs_porous_model_init_fluid_quantities()
+
   call uiporo
   call usporo
 
   ! C version
   call user_porosity
-
+  !TODO add routine of porosity if iporos = 3
   call field_get_val_s(ipori, porosi)
 
   if (irangp.ge.0.or.iperio.eq.1) then

@@ -504,6 +504,46 @@ if (iporos.ge.1) then
                       .false.,&
                       f_id)
 
+    f_name = 'c_w_face_normal'
+    call field_create(f_name,&
+                      itycat,&
+                      1,& ! location: boundary faces
+                      3,& ! dimension
+                      .false.,&
+                      f_id)
+
+    f_name = 'c_w_face_cog'
+    call field_create(f_name,&
+                      itycat,&
+                      1,& ! location: boundary faces
+                      3,& ! dimension
+                      .false.,&
+                      f_id)
+
+    f_name = 'c_w_face_surf'
+    call field_create(f_name,&
+                      itycat,&
+                      1,& ! location: boundary faces
+                      1,& ! dimension
+                      .false.,&
+                      f_id)
+
+    f_name = 'c_w_dist_inv'
+    call field_create(f_name,&
+                      itycat,&
+                      1,& ! location: boundary faces
+                      1,& ! dimension
+                      .false.,&
+                      f_id)
+
+    f_name = 'cell_f_cen'
+    call field_create(f_name,&
+                      itycat,&
+                      1,& ! location: boundary faces
+                      3,& ! dimension
+                      .false.,&
+                      f_id)
+
   endif
 
 endif

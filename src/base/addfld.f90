@@ -729,6 +729,14 @@ if (compute_porosity_from_scan) then
 
   call field_set_key_int(iflid, keyvis, POST_ON_LOCATION)
   call field_set_key_int(iflid, keylog, 1)
+
+  f_name  = 'points_cen'
+  call field_create(f_name,&
+                    itycat,&
+                    1,& ! location: cell
+                    3,& ! dimension
+                    .false.,&
+                    f_id)
 endif
 
 !===============================================================================

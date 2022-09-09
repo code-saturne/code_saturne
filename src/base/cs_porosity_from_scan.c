@@ -63,6 +63,7 @@
 #include "cs_domain.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_field_default.h"
 #include "cs_geom.h"
 #include "cs_halo.h"
 #include "cs_io.h"
@@ -420,7 +421,9 @@ _count_from_file(const cs_mesh_t             *m,
 
     for (int i = 0; i < n_points_loc; i++) {
       if (elt_ids[i] >= 0) { /* Found */
-        /* Could be improved with a prallel reading */
+        /* Could be improved with a parallel reading */
+        //TODO Compute the center of gravity of all the points
+        // inside each cell
         f_nb_scan->val[elt_ids[i]] += 1./cs_glob_n_ranks;
       }
     }
