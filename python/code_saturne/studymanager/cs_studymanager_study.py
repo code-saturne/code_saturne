@@ -323,7 +323,7 @@ class Case(object):
         depends = None
 
         # Check dependency in DATA/setup.xml
-        data_file = None
+        data_file = ""
         data_folder = os.path.join(self.__repo, self.label, "DATA")
         if os.path.isdir(data_folder):
             dir_list = os.listdir(data_folder)
@@ -347,10 +347,11 @@ class Case(object):
         # Convert path in smgr dependancy (STUDY/CASE/run_id)
         if path:
             list_path = path.split(os.sep)
-            run_id_depends = list_path[-2]
-            case_depends = list_path[-4]
-            depends = self.study + "/" + case_depends + "/" \
-                            + run_id_depends
+            if len(list_path) > 4:
+                run_id_depends = list_path[-2]
+                case_depends = list_path[-4]
+                depends = self.study + "/" + case_depends + "/" \
+                        + run_id_depends
 
         # check dependency in parametric parameters
         # it overwrite data from setup.xml
