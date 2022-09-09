@@ -487,18 +487,18 @@ class StandardItemModelMainFields(QStandardItemModel):
         """
         row = self.rowCount()
 
-        fieldId      = self.mdl.addField(existing_fieldId)
-        label        = self.mdl.getLabel(fieldId)
-        nature       = self.mdl.getFieldNature(fieldId)
-        criterion    = self.mdl.getCriterion(fieldId)
-        carrier      = self.mdl.getCarrierField(fieldId)
+        field = self.mdl.addField(existing_fieldId)
+        label = field.label
+        nature = field.phase
+        criterion = field.flow_type
+        carrier = field.carrier_id
         carrierLabel = ""
         if carrier != "off" :
             carrierLabel = self.mdl.getLabel(carrier)
         else :
             carrierLabel = carrier
-        compressible = self.mdl.getCompressibleStatus(fieldId)
-        energy       = self.mdl.getEnergyModel(fieldId)
+        compressible = field.compressible
+        energy       = field.enthalpy_model
 
         field = [label, nature, criterion, carrierLabel, compressible, energy]
 
@@ -534,7 +534,8 @@ class StandardItemModelMainFields(QStandardItemModel):
         Delete the row in the model.
         """
         del self._data[row]
-        self.mdl.deleteField(row + 1)
+        field_to_delete = self.mdl.list_of_fields[row]
+        self.mdl.deleteField(field_to_delete.f_id)
         row = self.rowCount()
         self.setRowCount(row-1)
         self.updateItem()
