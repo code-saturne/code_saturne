@@ -28,15 +28,10 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_printf.h"
 #include "cs_base.h"
 #include "cs_math.h"
 #include "cs_turbulence_model.h"
@@ -1380,7 +1375,6 @@ cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
                          cs_real_t          *yplim);
 
 /*----------------------------------------------------------------------------*/
-
 /*!
  *  \brief Compute boundary contributions for all immersed boundaries.
  *
@@ -1391,9 +1385,9 @@ cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_immersed_boundary_wall_functions(int f_id,
-                                    cs_real_t *st_exp,
-                                    cs_real_t *st_imp);
+cs_immersed_boundary_wall_functions(int         f_id,
+                                    cs_real_t  *st_exp,
+                                    cs_real_t  *st_imp);
 
 /*----------------------------------------------------------------------------*/
 

@@ -24,7 +24,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_config.h"
 #include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
@@ -45,17 +44,12 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_error.h>
-#include <bft_mem.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_error.h"
+#include "bft_mem.h"
+#include "bft_printf.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -591,7 +585,6 @@ cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
 }
 
 /*----------------------------------------------------------------------------*/
-
 /*!
  *  \brief Compute boundary contributions for all immersed boundaries.
  *
@@ -602,11 +595,11 @@ cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_immersed_boundary_wall_functions(int f_id,
-                                    cs_real_t *st_exp,
-                                    cs_real_t *st_imp)
+cs_immersed_boundary_wall_functions(int         f_id,
+                                    cs_real_t  *st_exp,
+                                    cs_real_t  *st_imp)
 {
-  cs_domain_t *domain = cs_glob_domain;
+  const cs_domain_t *domain = cs_glob_domain;
 
   const cs_field_t  *f = cs_field_by_id(f_id);
 
@@ -622,7 +615,8 @@ cs_immersed_boundary_wall_functions(int f_id,
   //TODO switch to mesh_quantities
   cs_real_t *c_w_face_surf = cs_field_by_name("c_w_face_surf")->val;
   cs_real_t *c_w_dist_inv = cs_field_by_name("c_w_dist_inv")->val;
-  cs_real_3_t *c_w_face_cog = (cs_real_3_t *)cs_field_by_name("c_w_face_cog")->val;
+  cs_real_3_t *c_w_face_cog
+    = (cs_real_3_t *)cs_field_by_name("c_w_face_cog")->val;
   const cs_real_3_t *restrict c_w_face_normal
     = (const cs_real_3_t *restrict)mq->c_w_face_normal;
 
@@ -637,7 +631,7 @@ cs_immersed_boundary_wall_functions(int f_id,
 
   /* Velocity */
   const cs_real_t *p = (cs_real_t *)CS_F_(p)->val;
-/*  const cs_field_t *fpr = CS_F_(p);*/
+  /*  const cs_field_t *fpr = CS_F_(p);*/
 
   /* Skin-Friction and pressure coefficients */
   //TODO create an optional field for boundary forces
@@ -654,8 +648,8 @@ cs_immersed_boundary_wall_functions(int f_id,
   if (f == CS_F_(vel)) { /* velocity */
 
     /* cast to 3D vectors for readability */
-    cs_real_3_t    *_st_exp = (cs_real_3_t *)st_exp;
-    cs_real_33_t   *_st_imp = (cs_real_33_t *)st_imp;
+    cs_real_3_t   *_st_exp = (cs_real_3_t *)st_exp;
+    cs_real_33_t  *_st_imp = (cs_real_33_t *)st_imp;
 
     switch (wall_functions->iwallf) {
     case CS_WALL_F_DISABLED:
@@ -667,17 +661,13 @@ cs_immersed_boundary_wall_functions(int f_id,
         if (surf > cs_math_epzero*pow(cell_f_vol[c_id],2./3.)) {
           for (cs_lnum_t i = 0; i < 3; i++) {
             _st_exp[c_id][i] = 0.;
-            for (cs_lnum_t j = 0; j < 3; j++) {
-              if (i == j) {
-                _st_imp[c_id][i][j] = - cpro_mu[c_id] * surf * c_w_dist_inv[c_id];
-              }
-            }
+            _st_imp[c_id][i][i] = -cpro_mu[c_id] * surf * c_w_dist_inv[c_id];
           }
 
           /* Post-processing */
           if (fpf != NULL) {
             cs_real_3_t ipbx;
-            for (int i = 0; i < 3; i++)
+            for (cs_lnum_t i = 0; i < 3; i++)
               ipbx[i] = c_w_face_cog[c_id][i] - cell_cen[c_id][i];
 
             cs_field_gradient_scalar(CS_F_(p),
@@ -685,9 +675,9 @@ cs_immersed_boundary_wall_functions(int f_id,
                                      1,
                                      (cs_real_3_t *)grdp);
 
-            for (int i = 0; i < 3; i++) {
-              pf[c_id][i] = (p[c_id]+cs_math_3_dot_product(ipbx,grdp[c_id]))
-                  * c_w_face_normal[c_id][i];
+            for (cs_lnum_t i = 0; i < 3; i++) {
+              pf[c_id][i] =   (p[c_id]+cs_math_3_dot_product(ipbx,grdp[c_id]))
+                            * c_w_face_normal[c_id][i];
             }
           } /* End post-processing */
         }
@@ -721,7 +711,6 @@ cs_immersed_boundary_wall_functions(int f_id,
       break;
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

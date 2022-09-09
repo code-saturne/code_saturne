@@ -122,6 +122,8 @@ cs_f_mesh_quantities_fluid_vol_reductions(void);
  * Private function definitions
  *============================================================================*/
 
+#if 0  /* Not used yet */
+
 /*----------------------------------------------------------------------------
  * Project solid vertices to a plane
  *
@@ -134,11 +136,11 @@ cs_f_mesh_quantities_fluid_vol_reductions(void);
  *----------------------------------------------------------------------------*/
 
 static void
-_proj_solid_vtx_to_plane(const cs_real_3_t  v0,
-                         const cs_real_3_t  v1,
-                         const cs_real_3_t  nw,
-                         const cs_real_3_t  pw,
-                         cs_real_3_t      vout)
+_proj_solid_vtx_to_plane(const cs_real_t  v0[3],
+                         const cs_real_t  v1[3],
+                         const cs_real_t  nw[3],
+                         const cs_real_t  pw[3],
+                         cs_real_t        vout[3])
 {
   cs_real_3_t v01;
 
@@ -146,15 +148,15 @@ _proj_solid_vtx_to_plane(const cs_real_3_t  v0,
     v01[i] = v1[i] - v0[i];
 
   cs_math_3_normalize(v01, v01);
-  cs_real_t proj_factor = (CS_MAX(cs_math_3_dot_product(v01, nw), 0.)
+  cs_real_t proj_factor = (  cs_math_fmax(cs_math_3_dot_product(v01, nw), 0.)
                            > cs_math_epzero) ?
-                           cs_math_3_dot_product(v1, nw)/cs_math_3_dot_product(v01, nw)
-                           : 0.;
+    cs_math_3_dot_product(v1, nw)/cs_math_3_dot_product(v01, nw) : 0.;
 
   for (cs_lnum_t i = 0; i < 3; i++)
     vout[i] = (v1[i] + pw[i]) - proj_factor * v01[i];
-
 }
+
+#endif
 
 /*----------------------------------------------------------------------------
  * Build the geometrical matrix linear gradient correction
@@ -313,115 +315,6 @@ _compute_corr_grad_lin(const cs_mesh_t       *m,
  *   n_faces         <--  number of faces
  *   vtx_coord       <--  vertex coordinates
  *   face_vtx_idx    <--  "face -> vertices" connectivity index
- *   face_vtx_lst    <--  "face -> vertices" connectivity list
- *   face_normal     -->  surface normal of the face
- *
- *
- *                          Pi+1
- *              *---------*                   B  : barycenter of the polygon
- *             / .       . \
- *            /   .     .   \                 Pi : vertices of the polygon
- *           /     .   .     \
- *          /       . .  Ti   \               Ti : triangle
- *         *.........B.........* Pi
- *     Pn-1 \       . .       /
- *           \     .   .     /
- *            \   .     .   /
- *             \ .   T0  . /
- *              *---------*
- *            P0
- *----------------------------------------------------------------------------*/
-
-static void
-_compute_face_normal(cs_lnum_t         n_faces,
-                     const cs_real_t   vtx_coord[][3],
-                     const cs_lnum_t   face_vtx_idx[],
-                     const cs_lnum_t   face_vtx[],
-                     cs_real_t         face_normal[][3])
-{
-  /* Checking */
-
-  assert(face_normal != NULL || n_faces == 0);
-
-  /* Loop on faces */
-
-# pragma omp parallel for  if (n_faces > CS_THR_MIN)
-  for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++) {
-
-    /* Define the polygon (P) according to the vertices (Pi) of the face */
-
-    cs_lnum_t s_id = face_vtx_idx[f_id];
-    cs_lnum_t e_id = face_vtx_idx[f_id + 1];
-
-    cs_lnum_t n_face_vertices = e_id - s_id;
-
-    if (n_face_vertices == 3) {
-      const cs_lnum_t v0 = face_vtx[s_id];
-      const cs_lnum_t v1 = face_vtx[s_id+1];
-      const cs_lnum_t v2 = face_vtx[s_id+2];
-      cs_real_t v01[3], v02[3], vn[3];
-      for (cs_lnum_t i = 0; i < 3; i++)
-        v01[i] = vtx_coord[v1][i] - vtx_coord[v0][i];
-      for (cs_lnum_t i = 0; i < 3; i++)
-        v02[i] = vtx_coord[v2][i] - vtx_coord[v0][i];
-      cs_math_3_cross_product(v01, v02, vn);
-      for (cs_lnum_t i = 0; i < 3; i++)
-        face_normal[f_id][i] = 0.5*vn[i];
-    }
-
-    else {
-
-      /* Compute approximate face center coordinates for the polygon */
-
-      cs_real_t a_center[3] = {0, 0, 0};
-      cs_real_t f_norm[3] = {0, 0, 0};
-
-      for (cs_lnum_t j = s_id; j < e_id; j++) {
-        const cs_lnum_t v0 = face_vtx[j];
-        for (cs_lnum_t i = 0; i < 3; i++)
-          a_center[i] += vtx_coord[v0][i];
-      }
-
-      for (cs_lnum_t i = 0; i < 3; i++)
-        a_center[i] /= n_face_vertices;
-
-      /* loop on edges, with implied subdivision into triangles
-         defined by edge and cell center */
-
-      cs_real_t vc0[3], vc1[3], vn[3];
-
-      for (cs_lnum_t tri_id = 0; tri_id < n_face_vertices; tri_id++) {
-
-        const cs_lnum_t v0 = face_vtx[s_id + tri_id];
-        const cs_lnum_t v1 = face_vtx[s_id + (tri_id+1)%n_face_vertices];
-
-        for (cs_lnum_t i = 0; i < 3; i++) {
-          vc0[i] = vtx_coord[v0][i] - a_center[i];
-          vc1[i] = vtx_coord[v1][i] - a_center[i];
-        }
-
-        cs_math_3_cross_product(vc0, vc1, vn);
-
-        for (cs_lnum_t i = 0; i < 3; i++)
-          f_norm[i] += vn[i];
-
-      }
-
-      for (cs_lnum_t i = 0; i < 3; i++)
-        face_normal[f_id][i] = 0.5*f_norm[i];
-
-    } /* end of test on triangle */
-
-  } /* end of loop on faces */
-}
-
-/*----------------------------------------------------------------------------
- * Compute quantities associated to faces (border or internal)
- *
- * parameters:
- *   n_faces         <--  number of faces
- *   vtx_coord       <--  vertex coordinates
- *   face_vtx_idx    <--  "face -> vertices" connectivity index
  *   face_vtx        <--  "face -> vertices" connectivity
  *   face_cog        -->  coordinates of the center of gravity of the faces
  *   face_normal     -->  face surface normals
@@ -441,13 +334,13 @@ _compute_face_normal(cs_lnum_t         n_faces,
  *            P0
  *----------------------------------------------------------------------------*/
 
-void
-cs_compute_face_quantities(const cs_lnum_t    n_faces,
-                         const cs_real_3_t  vtx_coord[],
-                         const cs_lnum_t    face_vtx_idx[],
-                         const cs_lnum_t    face_vtx[],
-                         cs_real_3_t        face_cog[],
-                         cs_real_3_t        face_normal[])
+static void
+_compute_face_quantities(cs_lnum_t        n_faces,
+                         const cs_real_t  vtx_coord[][3],
+                         const cs_lnum_t  face_vtx_idx[],
+                         const cs_lnum_t  face_vtx[],
+                         cs_real_t        face_cog[][3],
+                         cs_real_t        face_normal[][3])
 {
   /* Checking */
 
@@ -620,6 +513,115 @@ cs_compute_face_quantities(const cs_lnum_t    n_faces,
         for (cs_lnum_t i = 0; i < 3; i++)
           face_cog[f_id][i] = a_center[i];
       }
+
+    } /* end of test on triangle */
+
+  } /* end of loop on faces */
+}
+
+/*----------------------------------------------------------------------------
+ * Compute quantities associated to faces (border or internal)
+ *
+ * parameters:
+ *   n_faces         <--  number of faces
+ *   vtx_coord       <--  vertex coordinates
+ *   face_vtx_idx    <--  "face -> vertices" connectivity index
+ *   face_vtx_lst    <--  "face -> vertices" connectivity list
+ *   face_normal     -->  surface normal of the face
+ *
+ *
+ *                          Pi+1
+ *              *---------*                   B  : barycenter of the polygon
+ *             / .       . \
+ *            /   .     .   \                 Pi : vertices of the polygon
+ *           /     .   .     \
+ *          /       . .  Ti   \               Ti : triangle
+ *         *.........B.........* Pi
+ *     Pn-1 \       . .       /
+ *           \     .   .     /
+ *            \   .     .   /
+ *             \ .   T0  . /
+ *              *---------*
+ *            P0
+ *----------------------------------------------------------------------------*/
+
+static void
+_compute_face_normal(cs_lnum_t         n_faces,
+                     const cs_real_t   vtx_coord[][3],
+                     const cs_lnum_t   face_vtx_idx[],
+                     const cs_lnum_t   face_vtx[],
+                     cs_real_t         face_normal[][3])
+{
+  /* Checking */
+
+  assert(face_normal != NULL || n_faces == 0);
+
+  /* Loop on faces */
+
+# pragma omp parallel for  if (n_faces > CS_THR_MIN)
+  for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++) {
+
+    /* Define the polygon (P) according to the vertices (Pi) of the face */
+
+    cs_lnum_t s_id = face_vtx_idx[f_id];
+    cs_lnum_t e_id = face_vtx_idx[f_id + 1];
+
+    cs_lnum_t n_face_vertices = e_id - s_id;
+
+    if (n_face_vertices == 3) {
+      const cs_lnum_t v0 = face_vtx[s_id];
+      const cs_lnum_t v1 = face_vtx[s_id+1];
+      const cs_lnum_t v2 = face_vtx[s_id+2];
+      cs_real_t v01[3], v02[3], vn[3];
+      for (cs_lnum_t i = 0; i < 3; i++)
+        v01[i] = vtx_coord[v1][i] - vtx_coord[v0][i];
+      for (cs_lnum_t i = 0; i < 3; i++)
+        v02[i] = vtx_coord[v2][i] - vtx_coord[v0][i];
+      cs_math_3_cross_product(v01, v02, vn);
+      for (cs_lnum_t i = 0; i < 3; i++)
+        face_normal[f_id][i] = 0.5*vn[i];
+    }
+
+    else {
+
+      /* Compute approximate face center coordinates for the polygon */
+
+      cs_real_t a_center[3] = {0, 0, 0};
+      cs_real_t f_norm[3] = {0, 0, 0};
+
+      for (cs_lnum_t j = s_id; j < e_id; j++) {
+        const cs_lnum_t v0 = face_vtx[j];
+        for (cs_lnum_t i = 0; i < 3; i++)
+          a_center[i] += vtx_coord[v0][i];
+      }
+
+      for (cs_lnum_t i = 0; i < 3; i++)
+        a_center[i] /= n_face_vertices;
+
+      /* loop on edges, with implied subdivision into triangles
+         defined by edge and cell center */
+
+      cs_real_t vc0[3], vc1[3], vn[3];
+
+      for (cs_lnum_t tri_id = 0; tri_id < n_face_vertices; tri_id++) {
+
+        const cs_lnum_t v0 = face_vtx[s_id + tri_id];
+        const cs_lnum_t v1 = face_vtx[s_id + (tri_id+1)%n_face_vertices];
+
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          vc0[i] = vtx_coord[v0][i] - a_center[i];
+          vc1[i] = vtx_coord[v1][i] - a_center[i];
+        }
+
+        cs_math_3_cross_product(vc0, vc1, vn);
+
+        for (cs_lnum_t i = 0; i < 3; i++)
+          f_norm[i] += vn[i];
+
+      }
+
+      for (cs_lnum_t i = 0; i < 3; i++)
+        face_normal[f_id][i] = 0.5*f_norm[i];
 
     } /* end of test on triangle */
 
@@ -1700,22 +1702,22 @@ _cell_volume_reductions(const cs_mesh_t  *mesh,
  *   weight         -->  weighting factor (Aij=pond Ai+(1-pond)Aj)
  *----------------------------------------------------------------------------*/
 
-void
-cs_compute_face_distances(cs_lnum_t          n_i_faces,
-                          cs_lnum_t          n_b_faces,
-                          const cs_lnum_2_t  i_face_cells[],
-                          const cs_lnum_t    b_face_cells[],
-                          const cs_real_t    i_face_normal[][3],
-                          const cs_real_t    b_face_normal[][3],
-                          const cs_real_t    i_face_cog[][3],
-                          const cs_real_t    b_face_cog[][3],
-                          const cs_real_t    cell_cen[][3],
-                          const cs_real_t    cell_vol[],
-                          cs_real_t          i_dist[],
-                          cs_real_t          b_dist[],
-                          cs_real_t          weight[])
+static void
+_compute_face_distances(cs_lnum_t        n_i_faces,
+                        cs_lnum_t        n_b_faces,
+                        const cs_lnum_t  i_face_cells[][2],
+                        const cs_lnum_t  b_face_cells[],
+                        const cs_real_t  i_face_normal[][3],
+                        const cs_real_t  b_face_normal[][3],
+                        const cs_real_t  i_face_cog[][3],
+                        const cs_real_t  b_face_cog[][3],
+                        const cs_real_t  cell_cen[][3],
+                        const cs_real_t  cell_vol[],
+                        cs_real_t        i_dist[],
+                        cs_real_t        b_dist[],
+                        cs_real_t        weight[])
 {
-  cs_gnum_t w_count = 0;
+  cs_gnum_t w_count[2] = {0};
 
   /* Interior faces */
 
@@ -1762,7 +1764,7 @@ cs_compute_face_distances(cs_lnum_t          n_i_faces,
       /* 0.01 seems better and safer for the moment */
       double critmin = 0.01;
       if (i_dist[face_id] < critmin * distmax) {
-        w_count++;
+        w_count[0] += 1;
         i_dist[face_id] = cs_math_fmax(i_dist[face_id], critmin * distmax);
       }
 
@@ -1772,17 +1774,7 @@ cs_compute_face_distances(cs_lnum_t          n_i_faces,
     }
   }
 
-  cs_parall_counter(&w_count, 1);
-
-  if (w_count > 0)
-    bft_printf(_("\n"
-                 "%llu faces have a too small distance between centers.\n"
-                 "For these faces, the weight may be clipped.\n"),
-               (unsigned long long)w_count);
-
   /* Boundary faces */
-
-  w_count = 0;
 
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
@@ -1808,20 +1800,27 @@ cs_compute_face_distances(cs_lnum_t          n_i_faces,
 
       double critmin = 0.01;
       if (b_dist[face_id] < critmin * distmax) {
-        w_count++;
+        w_count[1] += 1;
         b_dist[face_id] = fmax(b_dist[face_id], critmin * distmax);
       }
 
     }
   }
 
-  cs_parall_counter(&w_count, 1);
+  cs_parall_counter(w_count, 2);
 
-  if (w_count > 0)
+  if (w_count[0] > 0)
+    bft_printf(_("\n"
+                 "%llu faces have a too small distance between centers.\n"
+                 "For these faces, the weight may be clipped.\n"),
+               (unsigned long long)w_count[0]);
+
+
+  if (w_count[1] > 0)
     bft_printf(_("\n"
                  "%llu boundary faces have a too small distance between\n"
                  "cell centre and face centre.\n"),
-               (unsigned long long)w_count);
+               (unsigned long long)w_count[1]);
 }
 
 /*----------------------------------------------------------------------------
@@ -1865,42 +1864,40 @@ cs_compute_face_distances(cs_lnum_t          n_i_faces,
  *   dofij          -->  vector OF   for interior faces
  *----------------------------------------------------------------------------*/
 
-void
-cs_compute_face_vectors(int                dim,
-                      const cs_lnum_t    n_i_faces,
-                      const cs_lnum_t    n_b_faces,
-                      const cs_lnum_2_t  i_face_cells[],
-                      const cs_lnum_t    b_face_cells[],
-                      const cs_real_t    i_face_normal[],
-                      const cs_real_t    b_face_normal[],
-                      const cs_real_t    i_face_cog[],
-                      const cs_real_t    b_face_cog[],
-                      const cs_real_t    i_face_surf[],
-                      const cs_real_t    cell_cen[],
-                      const cs_real_t    weight[],
-                      const cs_real_t    b_dist[],
-                      cs_real_t          dijpf[],
-                      cs_real_t          diipb[],
-                      cs_real_t          dofij[])
+static void
+_compute_face_vectors(int              dim,
+                      cs_lnum_t        n_i_faces,
+                      cs_lnum_t        n_b_faces,
+                      const cs_lnum_t  i_face_cells[][2],
+                      const cs_lnum_t  b_face_cells[],
+                      const cs_real_t  i_face_normal[],
+                      const cs_real_t  b_face_normal[],
+                      const cs_real_t  i_face_cog[],
+                      const cs_real_t  b_face_cog[],
+                      const cs_real_t  i_face_surf[],
+                      const cs_real_t  cell_cen[],
+                      const cs_real_t  weight[],
+                      const cs_real_t  b_dist[],
+                      cs_real_t        dijpf[],
+                      cs_real_t        diipb[],
+                      cs_real_t        dofij[])
 {
-  cs_lnum_t face_id;
-  cs_lnum_t cell_id;
-
-  cs_real_t dipjp, pond;
-  cs_real_t surfnx, surfny, surfnz;
-  cs_real_t vecijx, vecijy, vecijz;
-
   /* Interior faces */
 
-  for (face_id = 0; face_id < n_i_faces; face_id++) {
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
     cs_lnum_t cell_id1 = i_face_cells[face_id][0];
     cs_lnum_t cell_id2 = i_face_cells[face_id][1];
 
+    cs_real_t dipjp, pond;
+    cs_real_t vecijx, vecijy, vecijz;
+
+    cs_real_t surfn[3];
+
     /* Normalized normal */
-    surfnx = i_face_normal[face_id*dim]     / i_face_surf[face_id];
-    surfny = i_face_normal[face_id*dim + 1] / i_face_surf[face_id];
-    surfnz = i_face_normal[face_id*dim + 2] / i_face_surf[face_id];
+    surfn[0] = i_face_normal[face_id*dim]     / i_face_surf[face_id];
+    surfn[1] = i_face_normal[face_id*dim + 1] / i_face_surf[face_id];
+    surfn[2] = i_face_normal[face_id*dim + 2] / i_face_surf[face_id];
 
     /* ---> IJ */
     vecijx = cell_cen[cell_id2*dim]     - cell_cen[cell_id1*dim];
@@ -1908,12 +1905,12 @@ cs_compute_face_vectors(int                dim,
     vecijz = cell_cen[cell_id2*dim + 2] - cell_cen[cell_id1*dim + 2];
 
     /* ---> DIJPP = IJ.NIJ */
-    dipjp = vecijx*surfnx + vecijy*surfny + vecijz*surfnz;
+    dipjp = vecijx*surfn[0] + vecijy*surfn[1] + vecijz*surfn[2];
 
     /* ---> DIJPF = (IJ.NIJ).NIJ */
-    dijpf[face_id*dim]     = dipjp*surfnx;
-    dijpf[face_id*dim + 1] = dipjp*surfny;
-    dijpf[face_id*dim + 2] = dipjp*surfnz;
+    dijpf[face_id*dim]     = dipjp*surfn[0];
+    dijpf[face_id*dim + 1] = dipjp*surfn[1];
+    dijpf[face_id*dim + 2] = dipjp*surfn[2];
 
     pond = weight[face_id];
 
@@ -1934,9 +1931,9 @@ cs_compute_face_vectors(int                dim,
   /* Boundary faces */
   cs_gnum_t w_count = 0;
 
-  for (face_id = 0; face_id < n_b_faces; face_id++) {
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
-    cell_id = b_face_cells[face_id];
+    cs_lnum_t cell_id = b_face_cells[face_id];
 
     cs_real_3_t normal;
     /* Normal is vector 0 if the b_face_normal norm is too small */
@@ -1979,7 +1976,6 @@ cs_compute_face_vectors(int                dim,
                  "%llu boundary faces have a too large reconstruction distance.\n"
                  "For these faces, reconstruction are limited.\n"),
                (unsigned long long)w_count);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -2019,8 +2015,8 @@ cs_compute_face_vectors(int                dim,
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_face_sup_vectors(const cs_lnum_t    n_cells,
-                          const cs_lnum_t    n_i_faces,
+_compute_face_sup_vectors(cs_lnum_t          n_cells,
+                          cs_lnum_t          n_i_faces,
                           const cs_lnum_2_t  i_face_cells[],
                           const cs_real_t    i_face_normal[][3],
                           const cs_real_t    i_face_cog[][3],
@@ -2125,12 +2121,12 @@ _compute_face_sup_vectors(const cs_lnum_t    n_cells,
   cs_parall_counter(&w_count, 1);
 
   if (w_count > 0)
-    bft_printf(_("\n"
-                 "%llu internal faces have a too large reconstruction distance.\n"
-                 "For these faces, reconstruction are limited.\n"
-                 "\n"),
-               (unsigned long long)w_count);
-
+    bft_printf
+      (_("\n"
+         "%llu internal faces have a too large reconstruction distance.\n"
+         "For these faces, reconstruction are limited.\n"
+         "\n"),
+       (unsigned long long)w_count);
 }
 
 /*----------------------------------------------------------------------------
@@ -2409,7 +2405,7 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
 
   /* Compute face centers of gravity, normals, and surfaces */
 
-  cs_compute_face_quantities(n_i_faces,
+  _compute_face_quantities(n_i_faces,
                            (const cs_real_3_t *)m->vtx_coord,
                            m->i_face_vtx_idx,
                            m->i_face_vtx_lst,
@@ -2420,7 +2416,7 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
                         mq->i_face_normal,
                         mq->i_face_surf);
 
-  cs_compute_face_quantities(n_b_faces,
+  _compute_face_quantities(n_b_faces,
                            (const cs_real_3_t *)m->vtx_coord,
                            m->b_face_vtx_idx,
                            m->b_face_vtx_lst,
@@ -2679,38 +2675,38 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
 
   /* Compute some distances relative to faces and associated weighting */
 
-  cs_compute_face_distances(m->n_i_faces,
-                            m->n_b_faces,
-                            (const cs_lnum_2_t *)(m->i_face_cells),
-                            m->b_face_cells,
-                            (const cs_real_3_t *)(mq->i_face_normal),
-                            (const cs_real_3_t *)(mq->b_face_normal),
-                            (const cs_real_3_t *)(mq->i_face_cog),
-                            (const cs_real_3_t *)(mq->b_face_cog),
-                            (const cs_real_3_t *)(mq->cell_cen),
-                            (const cs_real_t *)(mq->cell_vol),
-                            mq->i_dist,
-                            mq->b_dist,
-                            mq->weight);
+  _compute_face_distances(m->n_i_faces,
+                          m->n_b_faces,
+                          (const cs_lnum_2_t *)(m->i_face_cells),
+                          m->b_face_cells,
+                          (const cs_real_3_t *)(mq->i_face_normal),
+                          (const cs_real_3_t *)(mq->b_face_normal),
+                          (const cs_real_3_t *)(mq->i_face_cog),
+                          (const cs_real_3_t *)(mq->b_face_cog),
+                          (const cs_real_3_t *)(mq->cell_cen),
+                          (const cs_real_t *)(mq->cell_vol),
+                          mq->i_dist,
+                          mq->b_dist,
+                          mq->weight);
 
   /* Compute some vectors relative to faces to handle non-orthogonalities */
 
-  cs_compute_face_vectors(dim,
-                       m->n_i_faces,
-                       m->n_b_faces,
-                       (const cs_lnum_2_t *)(m->i_face_cells),
-                       m->b_face_cells,
-                       mq->i_face_normal,
-                       mq->b_face_normal,
-                       mq->i_face_cog,
-                       mq->b_face_cog,
-                       mq->i_face_surf,
-                       mq->cell_cen,
-                       mq->weight,
-                       mq->b_dist,
-                       mq->dijpf,
-                       mq->diipb,
-                       mq->dofij);
+  _compute_face_vectors(dim,
+                        m->n_i_faces,
+                        m->n_b_faces,
+                        (const cs_lnum_2_t *)(m->i_face_cells),
+                        m->b_face_cells,
+                        mq->i_face_normal,
+                          mq->b_face_normal,
+                        mq->i_face_cog,
+                        mq->b_face_cog,
+                        mq->i_face_surf,
+                        mq->cell_cen,
+                        mq->weight,
+                        mq->b_dist,
+                        mq->dijpf,
+                        mq->diipb,
+                        mq->dofij);
 
   /* Compute additional vectors relative to faces to handle non-orthogonalities */
 
@@ -2955,7 +2951,7 @@ cs_mesh_quantities_i_faces(const cs_mesh_t   *mesh,
   BFT_MALLOC(i_face_cog, mesh->n_i_faces * mesh->dim, cs_real_t);
   BFT_MALLOC(i_face_normal, mesh->n_i_faces * mesh->dim, cs_real_t);
 
-  cs_compute_face_quantities(mesh->n_i_faces,
+  _compute_face_quantities(mesh->n_i_faces,
                            (const cs_real_3_t *)mesh->vtx_coord,
                            mesh->i_face_vtx_idx,
                            mesh->i_face_vtx_lst,
@@ -2988,7 +2984,7 @@ cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
   BFT_MALLOC(b_face_cog, mesh->n_b_faces * mesh->dim, cs_real_t);
   BFT_MALLOC(b_face_normal, mesh->n_b_faces * mesh->dim, cs_real_t);
 
-  cs_compute_face_quantities(mesh->n_b_faces,
+  _compute_face_quantities(mesh->n_b_faces,
                            (const cs_real_3_t *)mesh->vtx_coord,
                            mesh->b_face_vtx_idx,
                            mesh->b_face_vtx_lst,

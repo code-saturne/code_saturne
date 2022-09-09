@@ -47,7 +47,6 @@
 
 #include "cs_base.h"
 #include "cs_field.h"
-#include "cs_field_operator.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
