@@ -376,12 +376,12 @@ void
 cs_cuda_prefetch_h2d(void    *dst,
                      size_t   size)
 {
-  CS_CUDA_CHECK(cudaMemPrefetchAsync(dst, size, cudaCpuDeviceId, 0));
+  CS_CUDA_CHECK(cudaMemPrefetchAsync(dst, size, cs_glob_cuda_device_id, 0));
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Copy data from host to device.
+ * \brief Copy data from device to host.
  *
  * This is simply a wrapper over cudaMemcpy.
  *
@@ -399,7 +399,7 @@ void
 cs_cuda_prefetch_d2h(void    *dst,
                      size_t   size)
 {
-  CS_CUDA_CHECK(cudaMemPrefetchAsync(dst, size, cs_glob_cuda_device_id, 0));
+  CS_CUDA_CHECK(cudaMemPrefetchAsync(dst, size, cudaCpuDeviceId, 0));
 }
 
 /*----------------------------------------------------------------------------*/
