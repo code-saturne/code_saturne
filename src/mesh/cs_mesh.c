@@ -2781,12 +2781,11 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
 
   /* Build halo */
 
-#if 0
-  /* TODO: activating this option needs a better upstream setting
-           of extended neighborhood type */
-  if (cs_ext_neighborhood_get_type() > CS_EXT_NEIGHBORHOOD_NONE)
+  /* TODO: with a a better upstream setting of extended neighborhood type,
+     the halo_type argument to this function should not be needed. */
+  if (   cs_ext_neighborhood_get_type() > CS_EXT_NEIGHBORHOOD_NONE
+      || cs_ext_neighborhood_get_boundary_complete())
     halo_type = CS_HALO_EXTENDED;
-#endif
 
   mesh->halo_type = halo_type;
 
@@ -3599,6 +3598,96 @@ cs_mesh_get_face_perio_num(const cs_mesh_t  *mesh,
     }
 
     BFT_FREE(halo_perio_num);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Mark cells adjacent to boundary, through faces or vertices.
+ *
+ * Note that cells adjacent through a boundary face can be accessed
+ * directly through the mesh->b_cells member, but the set of cells flagged
+ * by this function is more complete.
+ *
+ * \param[in]   mesh         pointer to a mesh structure
+ * \param[out]  cell_b_flag  1 for cells adjacent to boundary, 0 for others
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_tag_boundary_cells(cs_mesh_t  *mesh,
+                           int         cell_b_flag[])
+{
+  const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
+  const cs_lnum_t n_b_cells = mesh->n_b_cells;
+
+  /* Flag all cells adjacent to boundary. */
+
+# pragma omp parallel for  if(n_b_cells > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_cells_ext; i++)
+    cell_b_flag[i] = 0;
+
+  /* Direct (face) adjacency */
+
+  for (cs_lnum_t i = 0; i < n_b_cells; i++) {
+    cs_lnum_t c_id = mesh->b_cells[i];
+    cell_b_flag[c_id] = 1;
+  }
+
+  /* Adjacency through vertices */
+
+  {
+    const cs_lnum_t n_i_faces = mesh->n_i_faces;
+    const cs_lnum_t n_b_faces = mesh->n_b_faces;
+    const cs_lnum_t n_vtx = mesh->n_vertices;
+
+    int *vtx_flag;
+    BFT_MALLOC(vtx_flag, n_vtx, int);
+
+#   pragma omp parallel for  if(n_vtx > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_vtx; i++)
+      vtx_flag[i] = 0;
+
+    const cs_lnum_t  *face_vtx_idx = mesh->b_face_vtx_idx;
+    const cs_lnum_t  *face_vtx_lst = mesh->b_face_vtx_lst;
+
+    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+      cs_lnum_t s_id = face_vtx_idx[f_id];
+      cs_lnum_t e_id = face_vtx_idx[f_id+1];
+      for (cs_lnum_t i = s_id; i < e_id; i++)
+        vtx_flag[face_vtx_lst[i]] = 1;
+    }
+
+    if (mesh->vtx_interfaces != NULL)
+      cs_interface_set_sum(mesh->vtx_interfaces,
+                           mesh->n_vertices,
+                           1,
+                           true,
+                           CS_INT_TYPE,
+                           vtx_flag);
+
+    face_vtx_idx = mesh->i_face_vtx_idx;
+    face_vtx_lst = mesh->i_face_vtx_lst;
+
+    for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+      cs_lnum_t s_id = face_vtx_idx[f_id];
+      cs_lnum_t e_id = face_vtx_idx[f_id+1];
+      bool is_boundary = false;
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+        if (vtx_flag[face_vtx_lst[i]]) {
+          is_boundary = true;
+          break;
+        }
+      }
+      if (is_boundary) {
+        cs_lnum_t c_id_0 = mesh->i_face_cells[f_id][0];
+        cs_lnum_t c_id_1 = mesh->i_face_cells[f_id][1];
+        cell_b_flag[c_id_0] = 1;
+        cell_b_flag[c_id_1] = 1;
+      }
+    }
+
+    BFT_FREE(vtx_flag);
   }
 }
 

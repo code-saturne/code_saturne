@@ -3,6 +3,10 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add new optimized extended neighborhood reduction method;
+  An additional option to keep a complete extended neighborhood on the
+  boundary was improved and made available in the GUI.
+
 - Change cs_user_boundary_conditions function arguments for cleaner
   icodcl/rcodcl access: pointers to the array sections associated to
   each field are now available in that field's bc_coeffs sub-structure,

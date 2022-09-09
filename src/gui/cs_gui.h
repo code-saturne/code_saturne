@@ -63,7 +63,6 @@ typedef struct {
  *
  * SUBROUTINE CSCPVA
  * *****************
- *
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (cscpva, CSCPVA) (void);
@@ -384,6 +383,13 @@ cs_gui_initial_conditions(void);
 
 void
 cs_gui_linear_solvers(void);
+
+/*-----------------------------------------------------------------------------
+ * Define global numerical options.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_numerical_options(void);
 
 /*-----------------------------------------------------------------------------
  * Define parallel IO settings.

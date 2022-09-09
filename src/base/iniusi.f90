@@ -108,6 +108,12 @@ interface
     implicit none
   end subroutine cs_gui_define_fans
 
+  subroutine cs_gui_numerical_options()  &
+       bind(C, name='cs_gui_numerical_options')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_numerical_options
+
   subroutine cs_gui_porous_model()  &
        bind(C, name='cs_gui_porous_model')
     use, intrinsic :: iso_c_binding
@@ -364,16 +370,7 @@ call uinum1(cdtvar)
 
 ! If CDO mode only, no pressure is defined at this stage
 if (icdo.lt.2) then
-
-  call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
-
-  ! Global numeric options
-  relaxp = -1.d0
-  call csnum2 (relaxp, imrgra)
-  if (idtvar.ge.0) vcopt%relaxv = relaxp
-
-  call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
-
+  call cs_gui_numerical_options
 endif
 
 ! Gravity, physical properties

@@ -666,6 +666,23 @@ void
 cs_mesh_get_face_perio_num(const cs_mesh_t  *mesh,
                            int               perio_num[]);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Mark cells adjacent to boundary, through faces or vertices.
+ *
+ * Note that cells adjacent through a boundary face can be accessed
+ * directly through the mesh->b_cells member, but the set of cells flagged
+ * by this function is more complete.
+ *
+ * \param[in]   mesh         pointer to a mesh structure
+ * \param[out]  cell_b_flag  1 for cells adjacent to boundary, 0 for others
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_tag_boundary_cells(cs_mesh_t  *mesh,
+                           int         cell_b_flag[]);
+
 /*----------------------------------------------------------------------------
  * Print information on a mesh structure.
  *

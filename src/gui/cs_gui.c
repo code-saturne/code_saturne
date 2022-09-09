@@ -58,6 +58,7 @@
 #include "cs_equation_param.h"
 #include "cs_ext_neighborhood.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_file.h"
 #include "cs_log.h"
@@ -1532,10 +1533,8 @@ _read_diffusivity(void)
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSCPVA (ICP)
+ * SUBROUTINE CSCPVA
  * *****************
- *
- * INTEGER          ICP     -->   specific heat variable or constant indicator
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (cscpva, CSCPVA) (void)
@@ -1918,100 +1917,6 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
       bft_printf("--nswrsm = %i\n", var_cal_opt.nswrsm);
     }
   }
-#endif
-}
-
-/*----------------------------------------------------------------------------
- * Global numerical parameters.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSNUM2 (RELAXP, IMRGRA)
- * *****************
- * DOUBLE PRECISION RELAXP  -->   pressure relaxation
- * INTEGER          IMRGRA  -->   gradient reconstruction
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csnum2, CSNUM2)(double  *relaxp,
-                               int     *imrgra)
-{
-  cs_velocity_pressure_param_t *vp_param = cs_get_glob_velocity_pressure_param();
-  cs_velocity_pressure_model_t *vp_model = cs_get_glob_velocity_pressure_model();
-
-  const char *choice = NULL;
-
-  cs_tree_node_t *tn_n = cs_tree_get_node(cs_glob_tree, "numerical_parameters");
-
-  int _imrgra = -1;
-
-  cs_ext_neighborhood_type_t enh_type = cs_ext_neighborhood_get_type();
-
-  choice = cs_tree_node_get_tag(cs_tree_get_node(tn_n,
-                                                 "gradient_reconstruction"),
-                                "choice");
-  if (cs_gui_strcmp(choice, "green_iter"))
-    _imrgra = 0;
-  else if (cs_gui_strcmp(choice, "lsq"))
-    _imrgra = 1;
-  else if (cs_gui_strcmp(choice, "green_lsq"))
-    _imrgra = 4;
-
-  if (_imrgra != 0) {
-    choice = cs_tree_node_get_tag(cs_tree_get_node(tn_n,
-                                                   "extended_neighborhood"),
-                                  "choice");
-    if (cs_gui_strcmp(choice, "none")) {
-      enh_type = CS_EXT_NEIGHBORHOOD_NONE;
-    }
-    else if (cs_gui_strcmp(choice, "complete")) {
-      enh_type = CS_EXT_NEIGHBORHOOD_COMPLETE;
-      _imrgra += 1;
-    }
-    else if (cs_gui_strcmp(choice, "cell_center_opposite")) {
-      enh_type = CS_EXT_NEIGHBORHOOD_CELL_CENTER_OPPOSITE;
-      _imrgra += 2;
-    }
-    else if (cs_gui_strcmp(choice, "non_ortho_max")) {
-      enh_type = CS_EXT_NEIGHBORHOOD_NON_ORTHO_MAX;
-      _imrgra += 2;
-    }
-  }
-
-  cs_ext_neighborhood_set_type(enh_type);
-
-  if (_imrgra > -1)
-    *imrgra = _imrgra;
-
-  int _idilat = -1;
-
-  choice = cs_tree_node_get_tag(cs_tree_get_node(tn_n, "algo_density_variation"),
-                                "choice");
-  if (cs_gui_strcmp(choice, "boussi"))
-    _idilat = 0;
-  else if (cs_gui_strcmp(choice, "dilat_std"))
-    _idilat = 1;
-  else if (cs_gui_strcmp(choice, "dilat_unstd"))
-    _idilat = 2;
-  else if (cs_gui_strcmp(choice, "low_mach"))
-    _idilat = 3;
-  else if (cs_gui_strcmp(choice, "algo_fire"))
-    _idilat = 4;
-
-  if (_idilat > -1)
-    vp_model->idilat = _idilat;
-
-  _numerical_int_parameters("gradient_transposed", &(vp_model->ivisse));
-  _numerical_int_parameters("velocity_pressure_coupling", &(vp_param->ipucou));
-  _numerical_int_parameters("piso_sweep_number", &(vp_param->nterup));
-  _numerical_double_parameters("pressure_relaxation", relaxp);
-
-#if _XML_DEBUG_
-  bft_printf("==> %s\n", __func__);
-  bft_printf("--ivisse = %i\n", vp_model->ivisse);
-  bft_printf("--ipucou = %i\n", vp_model->ipucou);
-  bft_printf("--imrgra = %i\n", *imrgra);
-  bft_printf("--nterup = %i\n", vp_param->nterup);
-  bft_printf("--relaxp = %f\n", *relaxp);
 #endif
 }
 
@@ -3627,6 +3532,128 @@ cs_gui_linear_solvers(void)
       }
     }
   }
+}
+
+/*-----------------------------------------------------------------------------
+ * Define global numerical options.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_numerical_options(void)
+{
+  cs_velocity_pressure_param_t *vp_param = cs_get_glob_velocity_pressure_param();
+  cs_velocity_pressure_model_t *vp_model = cs_get_glob_velocity_pressure_model();
+  cs_space_disc_t *space_disc = cs_get_glob_space_disc();
+
+  const char *choice = NULL;
+
+  cs_tree_node_t *tn_n = cs_tree_get_node(cs_glob_tree, "numerical_parameters");
+
+  int _imrgra = -1;
+
+  cs_ext_neighborhood_type_t enh_type = cs_ext_neighborhood_get_type();
+  bool enh_boundary = cs_ext_neighborhood_get_boundary_complete();
+
+  choice = cs_tree_node_get_tag(cs_tree_get_node(tn_n,
+                                                 "gradient_reconstruction"),
+                                "choice");
+  if (cs_gui_strcmp(choice, "green_iter"))
+    _imrgra = 0;
+  else if (cs_gui_strcmp(choice, "lsq"))
+    _imrgra = 1;
+  else if (cs_gui_strcmp(choice, "green_lsq"))
+    _imrgra = 4;
+
+  if (_imrgra != 0) {
+    int _imrgra_add = 0;
+    choice = cs_tree_node_get_tag(cs_tree_get_node(tn_n,
+                                                   "extended_neighborhood"),
+                                  "choice");
+    if (cs_gui_strcmp(choice, "none")) {
+      enh_type = CS_EXT_NEIGHBORHOOD_NONE;
+    }
+    else if (cs_gui_strcmp(choice, "boundary")) {
+      enh_type = CS_EXT_NEIGHBORHOOD_NONE;
+      enh_boundary = true;
+    }
+    else if (cs_gui_strcmp(choice, "complete")) {
+      enh_type = CS_EXT_NEIGHBORHOOD_COMPLETE;
+      _imrgra_add = 1;
+    }
+    else if (cs_gui_strcmp(choice, "optimized")) {
+      enh_type = CS_EXT_NEIGHBORHOOD_OPTIMIZED;
+      _imrgra_add = 2;
+    }
+    else if (cs_gui_strcmp(choice, "optimized_with_boundary")) {
+      enh_type = CS_EXT_NEIGHBORHOOD_OPTIMIZED;
+      _imrgra_add = 2;
+      enh_boundary = true;
+    }
+    else if (cs_gui_strcmp(choice, "cell_center_opposite")) {
+      enh_type = CS_EXT_NEIGHBORHOOD_CELL_CENTER_OPPOSITE;
+      _imrgra_add = 2;
+    }
+    else if (cs_gui_strcmp(choice, "cell_center_opposite_with_boundary")) {
+      enh_type = CS_EXT_NEIGHBORHOOD_CELL_CENTER_OPPOSITE;
+      _imrgra_add = 2;
+      enh_boundary = true;
+    }
+    else if (cs_gui_strcmp(choice, "non_ortho_max")) {
+      enh_type = CS_EXT_NEIGHBORHOOD_NON_ORTHO_MAX;
+      _imrgra_add = 2;
+    }
+
+    if (_imrgra_add > 0) {
+      if (_imrgra < 0)
+        _imrgra = space_disc->imrgra;
+      _imrgra += _imrgra_add;
+    }
+  }
+
+  cs_ext_neighborhood_set_type(enh_type);
+  cs_ext_neighborhood_set_boundary_complete(enh_boundary);
+
+  if (_imrgra > -1)
+    space_disc->imrgra = _imrgra;
+
+  int _idilat = -1;
+
+  choice = cs_tree_node_get_tag(cs_tree_get_node(tn_n, "algo_density_variation"),
+                                "choice");
+  if (cs_gui_strcmp(choice, "boussi"))
+    _idilat = 0;
+  else if (cs_gui_strcmp(choice, "dilat_std"))
+    _idilat = 1;
+  else if (cs_gui_strcmp(choice, "dilat_unstd"))
+    _idilat = 2;
+  else if (cs_gui_strcmp(choice, "low_mach"))
+    _idilat = 3;
+  else if (cs_gui_strcmp(choice, "algo_fire"))
+    _idilat = 4;
+
+  if (_idilat > -1)
+    vp_model->idilat = _idilat;
+
+  _numerical_int_parameters("gradient_transposed", &(vp_model->ivisse));
+  _numerical_int_parameters("velocity_pressure_coupling", &(vp_param->ipucou));
+  _numerical_int_parameters("piso_sweep_number", &(vp_param->nterup));
+
+  double _relaxp = -1.;
+  _numerical_double_parameters("pressure_relaxation", &_relaxp);
+  if (_relaxp > -1.0 && CS_F_(p) != NULL) {
+    cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(p));
+    eqp->relaxv = _relaxp;
+  }
+
+
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+  bft_printf("--ivisse = %i\n", vp_model->ivisse);
+  bft_printf("--ipucou = %i\n", vp_model->ipucou);
+  bft_printf("--imrgra = %i\n", *imrgra);
+  bft_printf("--nterup = %i\n", vp_param->nterup);
+  bft_printf("--relaxp = %f\n", *relaxp);
+#endif
 }
 
 /*-----------------------------------------------------------------------------

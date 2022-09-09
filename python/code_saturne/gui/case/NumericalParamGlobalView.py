@@ -93,14 +93,22 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.modelGradientType.addItem(self.tr("Green-Gauss with least squares gradient face values"),
                                        'green_lsq')
 
-        self.modelExtNeighbors = ComboModel(self.comboBoxExtNeighbors, 5, 1)
+        self.modelExtNeighbors = ComboModel(self.comboBoxExtNeighbors, 8, 1)
         self.modelExtNeighbors.addItem(self.tr("Automatic"), 'default')
         self.modelExtNeighbors.addItem(self.tr("None (face adjacent only)"), 'none')
-        self.modelExtNeighbors.addItem(self.tr("Full (all vertex adjacent)"), 'complete')
+        self.modelExtNeighbors.addItem(self.tr("Boundary only"), 'boundary')
+        self.modelExtNeighbors.addItem(self.tr("Optimized (heuristics)"), 'optimized')
+        self.modelExtNeighbors.addItem(self.tr("Optimized (heuristics), complete on boundary"),
+                                       'optimized_with_boundary')
         self.modelExtNeighbors.addItem(self.tr("Opposite adjacent cell centers"),
                                        'cell_center_opposite')
-        self.modelExtNeighbors.addItem(self.tr("Non-orthogonal faces threshold (legacy)"),
-                                       'non_ortho_max')
+        self.modelExtNeighbors.addItem(self.tr("Opposite adjacent cell centers, complete on boundary"),
+                                       'cell_center_opposite_with_boundary')
+        self.modelExtNeighbors.addItem(self.tr("Full (all vertex adjacent)"), 'complete')
+
+        if str(self.model.getExtendedNeighborType()) == 'non_ortho_max':
+            self.modelExtNeighbors.addItem(self.tr("Non-orthogonal faces threshold (legacy)"),
+                                           'non_ortho_max')
 
         self.modelDensityVar = ComboModel(self.comboBoxDensityVar, 6, 1)
         self.modelDensityVar.addItem(self.tr("Automatic"), 'default')

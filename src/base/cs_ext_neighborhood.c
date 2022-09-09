@@ -59,6 +59,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_sort.h"
+#include "fvm_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -99,6 +100,12 @@ BEGIN_C_DECLS
        from all neighbors, but is quite costly. On average, a hexahedral mesh
        has about 21 vertex neighbors per cell, a tetrahedral mesh
        around 150 vertex neighbors.
+
+  \var CS_EXT_NEIGHBORHOOD_OPTIMIZED
+       Optimized extended neighborhood based on heuristics.
+
+       This option is similar to \ref CS_EXT_NEIGHBORHOOD_CELL_CENTER_OPPOSITE,
+       keeping additional neighbors based on geometric tests and cell type.
 
   \var CS_EXT_NEIGHBORHOOD_CELL_CENTER_OPPOSITE
        Cells with centers best aligned opposite to face-adjacent cell centers
@@ -153,6 +160,7 @@ BEGIN_C_DECLS
 const char *cs_ext_neighborhood_type_name[]
 = {N_("none"),
    N_("complete"),
+   N_("optimized"),
    N_("opposite cell centers"),
    N_("non-orthogonality threshold")};
 
@@ -164,6 +172,40 @@ static bool                       _full_nb_boundary = false;
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute array index bounds for a local thread.
+ *
+ * When called inside an OpenMP parallel section, this will return the
+ * start an past-the-end indexes for the array range assigned to that thread.
+ * In other cases, the start index is 1, and the past-the-end index is n;
+ *
+ * \param[in]   n     size of array
+ * \param[out]  s_id  start index for the current thread
+ * \param[out]  e_id  past-the-end index for the current thread
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_thread_range(cs_lnum_t   n,
+              cs_lnum_t  *s_id,
+              cs_lnum_t  *e_id)
+{
+#if defined(HAVE_OPENMP)
+  int t_id = omp_get_thread_num();
+  int n_t = omp_get_num_threads();
+  cs_lnum_t t_n = (n + n_t - 1) / n_t;
+  *s_id =  t_id    * t_n;
+  *e_id = (t_id+1) * t_n;
+  *s_id = cs_align(*s_id, CS_CL);
+  *e_id = cs_align(*e_id, CS_CL);
+  if (*e_id > n) *e_id = n;
+#else
+  *s_id = 0;
+  *e_id = n;
+#endif
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1239,6 +1281,418 @@ _neighborhood_reduce_anomax(cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Guess cell type based on connectivity.
+ *
+ * This is not always exact (i.e. a cell with 3 quadrangle and 2 triangle
+ * faces might not always be a prism), but is simple and precice enough
+ * for heuristics.
+ *
+ * \param[in]  c_id       cell id
+ * \param[in]  i_f2v_idx  interior face->vertices index
+ * \param[in]  i_f2v_idx  boundary face->vertices index
+ * \param[in]  cell_i_faces_idx  cell->interior faces index
+ * \param[in]  cell_i_faces_lst  cell->interior faces adjacency list
+ * \param[in]  cell_b_faces_idx  cell->interior faces index
+ * \param[in]  cell_b_faces_lst  cell->interior faces adjacency list
+ *
+ * \return  cell type
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline fvm_element_t
+_guess_cell_type(cs_lnum_t             c_id,
+                 const cs_lnum_t       i_f2v_idx[],
+                 const cs_lnum_t       b_f2v_idx[],
+                 const cs_lnum_t       cell_i_faces_idx[],
+                 const cs_lnum_t       cell_i_faces_lst[],
+                 const cs_lnum_t       cell_b_faces_idx[],
+                 const cs_lnum_t       cell_b_faces_lst[])
+{
+  fvm_element_t cell_type = FVM_CELL_POLY;
+
+  cs_lnum_t i_f_s_id = cell_i_faces_idx[c_id];
+  cs_lnum_t i_f_e_id = cell_i_faces_idx[c_id+1];
+  cs_lnum_t b_f_s_id = cell_b_faces_idx[c_id];
+  cs_lnum_t b_f_e_id = cell_b_faces_idx[c_id+1];
+
+  cs_lnum_t n_tria = 0;
+  cs_lnum_t n_quad = 0;
+
+  for (cs_lnum_t i = i_f_s_id; i < i_f_e_id; i++) {
+    cs_lnum_t f_id = cell_i_faces_lst[i];
+    cs_lnum_t n_vtx_f = i_f2v_idx[f_id+1] - i_f2v_idx[f_id];
+    if (n_vtx_f == 3)
+      n_tria++;
+    else if (n_vtx_f == 4)
+      n_quad++;
+  }
+  for (cs_lnum_t i = b_f_s_id; i < b_f_e_id; i++) {
+    cs_lnum_t f_id = cell_b_faces_lst[i];
+    cs_lnum_t n_vtx_f = b_f2v_idx[f_id+1] - b_f2v_idx[f_id];
+    if (n_vtx_f == 3)
+      n_tria++;
+    else if (n_vtx_f == 4)
+      n_quad++;
+  }
+
+  if (n_tria == 0 && n_quad == 6)
+    cell_type = FVM_CELL_HEXA;
+  else if (n_tria == 4 && n_quad == 0)
+    cell_type = FVM_CELL_TETRA;
+  else if (n_tria == 2 && n_quad == 3)
+    cell_type = FVM_CELL_PRISM;
+  else if (n_tria == 4 && n_quad == 1)
+    cell_type = FVM_CELL_PYRAM;
+
+  return cell_type;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reduce extended neighborhood based on heuristics.
+ *
+ * \param[in, out]  mesh            pointer to a mesh structure
+ * \param[in]       mq              associated mesh quantities
+ * \param[in, out]  cell_cells_tag  tag adjacencies to retain
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_neighborhood_reduce_optimized(cs_mesh_t             *mesh,
+                               cs_mesh_quantities_t  *mq,
+                               char                   cell_cells_tag[])
+{
+  cs_lnum_t  *cell_i_faces_idx = NULL, *cell_i_faces_lst = NULL;
+  cs_lnum_t  *cell_b_faces_idx = NULL, *cell_b_faces_lst = NULL;
+
+  const cs_lnum_t  *cell_cells_lst = mesh->cell_cells_lst;
+  const cs_lnum_t  *cell_cells_idx = mesh->cell_cells_idx;
+
+  const cs_lnum_t n_cells = mesh->n_cells;
+
+  const cs_lnum_2_t  *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
+  const cs_real_3_t  *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+  const cs_real_3_t  *b_face_cog = (const cs_real_3_t *)mq->b_face_cog;
+  const cs_real_3_t  *b_face_normal = (const cs_real_3_t *)mq->b_face_normal;
+  const cs_real_3_t  *i_face_cog = (const cs_real_3_t *)mq->i_face_cog;
+  const cs_real_t    *cell_vol = (const cs_real_t *)mq->cell_vol;
+  const cs_lnum_t  *i_f2v_idx = mesh->i_face_vtx_idx;
+  const cs_lnum_t  *b_f2v_idx = mesh->b_face_vtx_idx;
+
+  const cs_real_t one_over_3 = 1./3.;
+
+  /* Min number of cells retained in the ext neighborhood. Setting to 1
+     would have same spirit as prev opposite adjacent cell center.*/
+  const cs_lnum_t n_c_min = 10;
+
+  /* Get "cell -> faces" connectivity for the local mesh */
+
+  _get_cell_i_faces_connectivity(mesh,
+                                 &cell_i_faces_idx,
+                                 &cell_i_faces_lst);
+
+  _get_cell_b_faces_connectivity(mesh,
+                                 &cell_b_faces_idx,
+                                 &cell_b_faces_lst);
+
+# pragma omp parallel if (n_cells > CS_THR_MIN)
+  {
+    cs_lnum_t t_s_id, t_e_id;
+    _thread_range(n_cells, &t_s_id, &t_e_id);
+
+    cs_real_3_t *n_c_s = NULL;
+    cs_lnum_t   *i_c_selected = NULL;
+    bool        *is_selected  = NULL;
+
+    cs_lnum_t n_max_c = 0;
+
+    /* Debugging trace */
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+    FILE  *dbg_trace = NULL;
+    {
+      char  filename[128];
+
+#if defined(HAVE_OPENMP)
+      int t_id = omp_get_thread_num();
+      snprintf(filename, 127, "neighborhood_reduce_r%04d_t%02d.txt",
+               CS_MAX(cs_glob_rank_id, 0), t_id);
+#else
+      snprintf(filename, 127, "neighborhood_reduce_r%04d.txt",
+               CS_MAX(cs_glob_rank_id, 0));
+#endif
+      filename[127] = '\0';
+      dbg_trace = fopen(filename, "w");
+    }
+#endif
+
+    /* Loop on cells */
+
+    for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++) {
+
+      /* Build cache for extended neighbors */
+
+      cs_lnum_t c_s_id = cell_cells_idx[c_id];
+      cs_lnum_t c_e_id = cell_cells_idx[c_id+1];
+
+      cs_lnum_t n_c = c_e_id - c_s_id; /* n. cells in ext. neighborhood only */
+
+      cs_lnum_t n_c_selected_in_ext = 0;
+
+      if (n_c > n_max_c) {
+        n_max_c = n_c*2;
+        BFT_REALLOC(n_c_s, n_max_c, cs_real_3_t);
+        BFT_REALLOC(is_selected, n_max_c, bool);
+        BFT_REALLOC(i_c_selected, n_max_c, cs_lnum_t);
+      }
+
+      for (cs_lnum_t i = 0; i < n_c; i++) {
+        cs_lnum_t c_id_n = cell_cells_lst[c_s_id + i];
+        is_selected[i] = false;
+        for (cs_lnum_t j = 0; j < 3; j++)
+          /* list of vectors IJ after restricted neighborhood */
+          n_c_s[i][j] = cell_cen[c_id_n][j] - cell_cen[c_id][j];
+      }
+
+      /* Initialize IC on restricted neighborhood (C = neighborhood CoG) */
+
+      cs_real_t ic[3] = {0., 0., 0.};
+      cs_lnum_t n_c_restricted = 0.; /* n. cells in restricted neighborhood */
+
+      /* Identify/guess cell type */
+
+      cs_lnum_t i_f_s_id = cell_i_faces_idx[c_id];
+      cs_lnum_t i_f_e_id = cell_i_faces_idx[c_id+1];
+      cs_lnum_t b_f_s_id = cell_b_faces_idx[c_id];
+      cs_lnum_t b_f_e_id = cell_b_faces_idx[c_id+1];
+
+      fvm_element_t cell_type
+        = _guess_cell_type(c_id,
+                           i_f2v_idx, b_f2v_idx,
+                           cell_i_faces_idx, cell_i_faces_lst,
+                           cell_b_faces_idx, cell_b_faces_lst);
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+      if (dbg_trace != NULL) {
+        fprintf(dbg_trace, "\nc_id %d (%lf,%lf,%lf) - ",
+                c_id, cell_cen[c_id][0], cell_cen[c_id][1], cell_cen[c_id][2]);
+
+        fprintf(dbg_trace, "%s - ", fvm_element_type_name[cell_type]);
+        if (b_f_e_id - b_f_s_id == 1)
+          fprintf(dbg_trace, "simple b cell\n");
+        else if (b_f_e_id - b_f_s_id > 1)
+          fprintf(dbg_trace, "multiple b cell\n");
+        else
+          fprintf(dbg_trace, "interior cell\n");
+      }
+#endif
+
+      /* Get regularity of the grid; only hexahedra and prisms are assumed to
+         be regular (if regular, the neighborhood will be restricted) */
+
+      bool is_regular = true;
+      if (cell_type != FVM_CELL_HEXA && cell_type != FVM_CELL_PRISM)
+        is_regular = false;
+
+      cs_real_t avg_dj = 0.;
+
+      /* Loop on cell's boundary faces */
+
+      for (cs_lnum_t i = b_f_s_id; i < b_f_e_id; i++) {
+
+        cs_lnum_t f_id_0 = cell_b_faces_lst[i];
+        n_c_restricted += 1;
+
+        cs_real_t dj[3];
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          /* 2 factor is not mandatory below */
+          dj[j] = 2*(b_face_cog[f_id_0][j] - cell_cen[c_id][j]);
+          ic[j] =   ic[j] * (n_c_restricted-1.)/n_c_restricted
+                  + dj[j] * 1./n_c_restricted;
+        }
+
+        avg_dj =   avg_dj * (n_c_restricted-1.)/n_c_restricted
+                 + cs_math_3_norm(dj) * 1./n_c_restricted;
+
+        if (is_regular) {
+          /* For prisms, only the triangle faces are considered */
+          cs_lnum_t n_f_vtx = b_f2v_idx[f_id_0+1] - b_f2v_idx[f_id_0];
+          if (cell_type == FVM_CELL_PRISM && n_f_vtx != 3)
+            continue;
+
+          cs_real_t dot_p
+            = cs_math_3_distance_dot_product(cell_cen[c_id],
+                                             b_face_cog[f_id_0],
+                                             b_face_normal[f_id_0]); /* IF.nF */
+          cs_real_t norm_if_2
+            = cs_math_3_square_distance(cell_cen[c_id],
+                                        b_face_cog[f_id_0]);
+          cs_real_t norm_nf_2
+            = cs_math_3_square_norm(b_face_normal[f_id_0]);
+
+          /* if dot_p < 0.95 * sqrt(norm_if_2) * sqrt(norm_nf_2) */
+          if (cs_math_pow2(dot_p) < cs_math_pow2(0.95) * norm_if_2 * norm_nf_2) {
+            is_regular = false;
+            break;
+          }
+        }
+
+      } /* End of loop on boundary faces */
+
+      /* Loop on cell's interior faces */
+
+      for (cs_lnum_t i = i_f_s_id; i < i_f_e_id; i++) {
+
+        cs_lnum_t f_id_0 = cell_i_faces_lst[i];
+        cs_lnum_t c_id_1 = i_face_cells[f_id_0][1];
+        if (c_id_1 == c_id)
+          c_id_1 = i_face_cells[f_id_0][0];
+
+        n_c_restricted += 1;
+
+        cs_real_t dj[3];
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          dj[j] = cell_cen[c_id_1][j] - cell_cen[c_id][j];
+          ic[j] =   ic[j] * (n_c_restricted-1.)/n_c_restricted
+                  + dj[j] * 1./n_c_restricted;
+        }
+
+        avg_dj =   avg_dj * (n_c_restricted-1.)/n_c_restricted
+                 + cs_math_3_norm(dj) * 1./n_c_restricted;
+
+        if (b_f_e_id - b_f_s_id > 0)
+          continue; /* Needed for case with only one
+                       layer of cells in BL. */
+
+        if (is_regular) {
+          /* For prisms, only the triangle faces are considered */
+          cs_lnum_t n_f_vtx = i_f2v_idx[f_id_0+1] - i_f2v_idx[f_id_0];
+          if (cell_type == FVM_CELL_PRISM && n_f_vtx != 3)
+            continue;
+
+          cs_real_t v_if[3], v_jf[3];
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            v_if[j] = i_face_cog[f_id_0][j] - cell_cen[c_id][j];
+            v_jf[j] = i_face_cog[f_id_0][j] - cell_cen[c_id_1][j];
+          }
+
+          /* IF.FJ (== - IF.JF) */
+          cs_real_t dot_p = - cs_math_3_dot_product(v_if, v_jf);
+
+          cs_real_t norm_if_2 = cs_math_3_square_norm(v_if);
+          cs_real_t norm_fj_2 = cs_math_3_square_norm(v_jf);
+
+          /* if dot_p < 0.95 * sqrt(norm_if_2) * sqrt(norm_fj_2) */
+          if (cs_math_pow2(dot_p) < cs_math_pow2(0.95) * norm_if_2 * norm_fj_2) {
+            is_regular = false;
+            break;
+          }
+        }
+
+      } /* End of loop on interior faces */
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+      if (dbg_trace != NULL) {
+        if (is_regular)
+          fprintf(dbg_trace, "regular\n");
+        else
+          fprintf(dbg_trace, "not regular\n");
+      }
+#endif
+
+      /* Limit to a restricted neighborhood if the grid is regular */
+
+      if (! is_regular) {
+        cs_lnum_t n_c_selected = n_c_restricted;
+
+        cs_lnum_t n_c_min_true = CS_MIN(n_c, n_c_min);
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+        if (dbg_trace != NULL)
+          fprintf(dbg_trace, "n_c_min %d\n", n_c_min_true);
+#endif
+
+        cs_real_t l1 = pow(cell_vol[c_id], one_over_3);
+        cs_real_t min_crit = HUGE_VAL;
+        cs_real_t min_norm_ic = HUGE_VAL;
+
+        for (cs_lnum_t k = 0; k < n_c; k++)
+          i_c_selected[k] = -1;
+
+        for (cs_lnum_t k = 0; k < n_c; k++) {
+
+          cs_real_t min_loc_crit = HUGE_VAL;
+          for (cs_lnum_t i = 0; i < n_c; i++) {
+            if (is_selected[i] == false) {
+              cs_real_t loc_crit = 0.;
+              for (cs_lnum_t j = 0; j < 3; j++)
+                loc_crit+= cs_math_pow2(   n_c_selected*ic[j]
+                                        + (n_c_selected+2) * n_c_s[i][j]);
+              if (loc_crit < min_loc_crit) {
+                i_c_selected[k] = i;
+                min_loc_crit = loc_crit;
+              }
+            }
+          }
+          is_selected[i_c_selected[k]] = true;
+          n_c_selected += 1;
+
+          for (cs_lnum_t j = 0; j < 3; j++)
+            ic[j] =   ic[j] * (n_c_selected-1.)/n_c_selected
+                    + n_c_s[i_c_selected[k]][j] * 1./n_c_selected;
+
+          cs_real_t norm_ic = cs_math_3_norm(ic);
+
+          avg_dj =   avg_dj * (n_c_selected-1.)/n_c_selected
+                   + cs_math_3_norm(n_c_s[i_c_selected[k]]) * 1./n_c_selected;
+
+          cs_real_t crit = (norm_ic + 0.1*l1) * avg_dj;
+          /* Optimize offset and, to a small extent, the average distance of the
+             selected elements. */
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+          if (dbg_trace != NULL)
+            fprintf(dbg_trace, "crit %d %lf (norm_ic %lf - avg_dj %lf)\n",
+                    k, crit, norm_ic, avg_dj);
+#endif
+
+          if (crit < min_crit && k >= n_c_min_true-1) {
+            min_crit = crit;
+            min_norm_ic = norm_ic;
+            n_c_selected_in_ext = k+1;
+            if (norm_ic < 0.01*l1)
+              break;
+          }
+
+        } /* End of crit loop (definition of the neighborhood) */
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+        if (dbg_trace != NULL)
+          fprintf(dbg_trace,
+                  "n_c_selected_in_ext %d - neighborhood offset %lf %%\n",
+                  n_c_selected_in_ext, 100.*min_norm_ic/l1);
+#endif
+
+        for (cs_lnum_t k = 0; k < n_c_selected_in_ext; k++)
+          cell_cells_tag[c_s_id + i_c_selected[k]] = 1; /* keep this cell */
+
+      } /* End if not regular */
+
+    } /* End of loop on cells */
+
+    BFT_FREE(n_c_s);
+    BFT_FREE(is_selected);
+
+  } /* End of OpenMP block */
+
+  BFT_FREE(cell_i_faces_idx);
+  BFT_FREE(cell_i_faces_lst);
+  BFT_FREE(cell_b_faces_idx);
+  BFT_FREE(cell_b_faces_lst);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Reduce extended neighborhood based on cell center opposite.
  *
  * \param[in, out]  mesh            pointer to a mesh structure
@@ -1481,7 +1935,7 @@ _neighborhood_reduce_cell_center_opposite(cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Reduce extended neighborhood based on proximity to boundary
+ * \brief Mark cells adjacent to boundary for extended neighborhood selection.
  *
  * \param[in, out]  mesh            pointer to a mesh structure
  * \param[in, out]  cell_cells_tag  tag adjacencies to retain
@@ -1493,8 +1947,15 @@ _neighborhood_reduce_full_boundary(cs_mesh_t             *mesh,
                                    char                   cell_cells_tag[])
 {
   const cs_lnum_t  *cell_cells_idx = mesh->cell_cells_idx;
+  const cs_lnum_t  *cell_cells_lst = mesh->cell_cells_lst;
 
+  const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   const cs_lnum_t n_b_cells = mesh->n_b_cells;
+
+  int *cell_b_flag;
+  BFT_MALLOC(cell_b_flag, n_cells_ext, int);
+
+  cs_mesh_tag_boundary_cells(mesh, cell_b_flag);
 
 # pragma omp parallel if (n_b_cells > CS_THR_MIN)
   {
@@ -1512,12 +1973,16 @@ _neighborhood_reduce_full_boundary(cs_mesh_t             *mesh,
       cs_lnum_t c_s_id = cell_cells_idx[c_id];
       cs_lnum_t c_e_id = cell_cells_idx[c_id+1];
 
-      for (cs_lnum_t i = c_s_id; i < c_e_id; i++)
-        cell_cells_tag[i] = 1;
+      for (cs_lnum_t i = c_s_id; i < c_e_id; i++) {
+        if (cell_b_flag[cell_cells_lst[i]])
+          cell_cells_tag[i] = 1;
+      }
 
     } /* End of loop on boundary cells */
 
   } /* End of Open MP block */
+
+  BFT_FREE(cell_b_flag);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1556,6 +2021,35 @@ cs_ext_neighborhood_set_type(cs_ext_neighborhood_type_t  enh_type)
     enh_type = CS_EXT_NEIGHBORHOOD_NONE;
 
   _ext_nbh_type = enh_type;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query whether full extended neighborhood should be kept at boundaries.
+ *
+ * \return  extended neighborhood type
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_ext_neighborhood_get_boundary_complete(void)
+{
+  return _full_nb_boundary;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the extended neighborhood type.
+ *
+ * \param[in]  keep  true if full extended neighborhood should be maintained
+ *             at boundary
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ext_neighborhood_set_boundary_complete(bool  keep)
+{
+  _full_nb_boundary = keep;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1612,22 +2106,30 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
       || _ext_nbh_type == CS_EXT_NEIGHBORHOOD_COMPLETE)
     return;
 
-  cs_lnum_t  i, cell_id;
-  cs_gnum_t  init_cell_cells_connect_size;
-
-  cs_gnum_t  n_deleted_cells = 0;
-  cs_lnum_t  previous_idx = 0, new_idx = -1;
-
   cs_lnum_t  *cell_cells_idx = mesh->cell_cells_idx;
   cs_lnum_t  *cell_cells_lst = mesh->cell_cells_lst;
 
   const cs_lnum_t  n_cells = mesh->n_cells;
 
+  if (mesh->verbosity > 0) {
+    char full_b_str[64] = "";
+    if (_full_nb_boundary) {
+      strncpy(full_b_str, _(", complete on boundary"), 63);
+      full_b_str[63] = '\0';
+    }
+    bft_printf
+      (_("\n"
+         " Extended neighborhood reduction: %s%s\n"
+         " --------------------------------\n\n"),
+       _(cs_ext_neighborhood_type_name[_ext_nbh_type]),
+       full_b_str);
+  }
+
   /* Tag cells to eliminate (0 to eliminate, 1 to keep) */
 
   char *cell_cells_tag;
   BFT_MALLOC(cell_cells_tag, mesh->cell_cells_idx[n_cells], char);
-  for (i = 0; i < mesh->cell_cells_idx[n_cells]; i++)
+  for (cs_lnum_t i = 0; i < mesh->cell_cells_idx[n_cells]; i++)
     cell_cells_tag[i] = 0;
 
   switch(_ext_nbh_type) {
@@ -1635,6 +2137,11 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
     _neighborhood_reduce_anomax(mesh,
                                 mesh_quantities,
                                 cell_cells_tag);
+    break;
+  case CS_EXT_NEIGHBORHOOD_OPTIMIZED:
+    _neighborhood_reduce_optimized(mesh,
+                                   mesh_quantities,
+                                   cell_cells_tag);
     break;
   case CS_EXT_NEIGHBORHOOD_CELL_CENTER_OPPOSITE:
     _neighborhood_reduce_cell_center_opposite(mesh,
@@ -1650,25 +2157,41 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
 
   /* Delete cells with tag == 0 */
 
-  init_cell_cells_connect_size = cell_cells_idx[n_cells];
+  cs_gnum_t n_n_sum[2] = {mesh->cell_cells_idx[n_cells], 0};
+  cs_lnum_t n_n_min[2] = {mesh->cell_cells_idx[n_cells],
+                          mesh->cell_cells_idx[n_cells]};
+  cs_lnum_t n_n_max[2] = {0, 0};
 
-  for (cell_id = 0; cell_id < n_cells; cell_id++) {
+  cs_lnum_t s_id = 0, j = 0;
 
-    for (i = previous_idx; i < cell_cells_idx[cell_id+1]; i++) {
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+
+    cs_lnum_t e_id = cell_cells_idx[cell_id+1];
+
+    cs_lnum_t n_c_ini = e_id - s_id;
+    cs_lnum_t n_c_red = 0;
+    n_n_min[0] = CS_MIN(n_n_min[0], n_c_ini);
+    n_n_max[0] = CS_MAX(n_n_max[0], n_c_ini);
+
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
 
       if (cell_cells_tag[i] != 0) {
-        new_idx++;
-        cell_cells_lst[new_idx] = cell_cells_lst[i];
+        cell_cells_lst[j] = cell_cells_lst[i];
+        j++;
+        n_c_red++;
       }
-      else
-        n_deleted_cells++;
 
     } /* End of loop on cells in the extended neighborhood of cell_id+1 */
 
-    previous_idx = cell_cells_idx[cell_id+1];
-    cell_cells_idx[cell_id+1] -= n_deleted_cells;
+    s_id = e_id;
+    cell_cells_idx[cell_id+1] = j;
+
+    n_n_min[1] = CS_MIN(n_n_min[1], n_c_red);
+    n_n_max[1] = CS_MAX(n_n_max[1], n_c_red);
 
   } /* End of loop on cells */
+
+  n_n_sum[1] = mesh->cell_cells_idx[n_cells];
 
   BFT_FREE(cell_cells_tag);
 
@@ -1680,49 +2203,35 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
 
   if (mesh->verbosity > 0) {
 
-#if defined(HAVE_MPI)
+    cs_parall_sum(2, CS_GNUM_TYPE, n_n_sum);
+    cs_parall_min(2, CS_LNUM_TYPE, n_n_min);
+    cs_parall_max(2, CS_LNUM_TYPE, n_n_max);
 
-    if (cs_glob_n_ranks > 1) {
-
-      cs_gnum_t count_g[2], count_l[2];
-
-      count_l[0] = init_cell_cells_connect_size;
-      count_l[1] = n_deleted_cells;
-
-      MPI_Allreduce(count_l, count_g, 2, CS_MPI_GNUM,
-                    MPI_SUM, cs_glob_mpi_comm);
-
-      init_cell_cells_connect_size = count_g[0];
-      n_deleted_cells = count_g[1];
-    }
-
-#endif
-
-    double ratio = 100;
-    if (init_cell_cells_connect_size)
-      ratio *=  (init_cell_cells_connect_size - n_deleted_cells)
-               / init_cell_cells_connect_size;
+    double n_n_mean[2];
+    for (int i = 0; i < 2; i++)
+      n_n_mean[i] = (double)(n_n_sum[i]) / (double)(mesh->n_g_cells);
 
     bft_printf
-      (_("\n"
-         " Extended neighborhood reduction: %s\n"
-         " --------------------------------\n"
+      (_(" Complete extended cell-cell connectivity size: %llu\n"
+         "   Mean neighbors: %3.2f\n"
+         "   Min. neighbors: %d\n"
+         "   Max. neighbors: %d\n"
          "\n"
-         " Size of complete cell-cell connectivity: %12llu\n"
-         " Size of filtered cell-cell connectivity: %12llu\n"
-         " (%2.2g %% of extended connectivity retained)\n"),
-       _(cs_ext_neighborhood_type_name[_ext_nbh_type]),
-       (unsigned long long)init_cell_cells_connect_size,
-       (unsigned long long)(init_cell_cells_connect_size - n_deleted_cells),
-       ratio);
+         " Reduced extended cell-cell connectivity size: %llu\n"
+         "   Mean neighbors: %3.2f\n"
+         "   Min. neighbors: %d\n"
+         "   Max. neighbors: %d\n"),
+       (unsigned long long)n_n_sum[0], n_n_mean[0],
+       (int)n_n_min[0], (int)n_n_max[0],
+       (unsigned long long)n_n_sum[1], n_n_mean[1],
+       (int)n_n_min[1], (int)n_n_max[1]);
 
   }
 
 #if 0 /* For debugging purposes */
-  for (i = 0; i < mesh->n_cells; i++) {
-    cs_lnum_t  j;
+  for (cs_lnum_t i = 0; i < mesh->n_cells; i++) {
     bft_printf(" cell %d :: ", i+1);
-    for (j = mesh->cell_cells_idx[i];
+    for (cs_lnum_t j = mesh->cell_cells_idx[i];
          j < mesh->cell_cells_idx[i+1];
          j++)
       bft_printf(" %d ", mesh->cell_cells_lst[j]);

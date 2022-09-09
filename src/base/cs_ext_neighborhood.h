@@ -56,6 +56,8 @@ typedef enum {
 
   CS_EXT_NEIGHBORHOOD_NONE,                  /* No extended neighborhood */
   CS_EXT_NEIGHBORHOOD_COMPLETE,              /* Full extended neighborhood */
+  CS_EXT_NEIGHBORHOOD_OPTIMIZED,             /* Extended neighborhood
+                                                optimized through heuristics */
   CS_EXT_NEIGHBORHOOD_CELL_CENTER_OPPOSITE,  /* Cell centers best aligned
                                                 opposite to adjacent
                                                 cell centers */
@@ -98,6 +100,29 @@ cs_ext_neighborhood_get_type(void);
 
 void
 cs_ext_neighborhood_set_type(cs_ext_neighborhood_type_t  enh_type);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query whether full extended neighborhood should be kept at boundaries.
+ *
+ * \return  extended neighborhood type
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_ext_neighborhood_get_boundary_complete(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the extended neighborhood type.
+ *
+ * \param[in]  keep  true if full extended neighborhood should be maintained
+ *             at boundary
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ext_neighborhood_set_boundary_complete(bool  keep);
 
 /*----------------------------------------------------------------------------*/
 /*!
