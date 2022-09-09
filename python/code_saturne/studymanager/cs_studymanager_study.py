@@ -350,8 +350,8 @@ class Case(object):
             if len(list_path) > 4:
                 run_id_depends = list_path[-2]
                 case_depends = list_path[-4]
-                depends = self.study + "/" + case_depends + "/" \
-                        + run_id_depends
+                depends = os.path.join(self.study, case_depends,
+                                       list_path[-3], run_id_depends)
 
         # check dependency in parametric parameters
         # it overwrite data from setup.xml
@@ -361,10 +361,13 @@ class Case(object):
                 if tag in list_param:
                     index = list_param.index(tag)
                     run_id_depends = list_param[index+1]
-                    depends = self.study + "/" + self.label + "/" \
-                            + run_id_depends
+                    depends = os.path.join(self.study, self.label,
+                                           self.resu, run_id_depends)
 
-        return depends
+        if depends:
+            return os.path.normpath(depends)
+        else:
+            return depends
 
     #---------------------------------------------------------------------------
 
@@ -2358,8 +2361,8 @@ class dependency_graph(object):
 
             if case.depends:
                 for neighbor in self.graph_dict:
-                    neighbor_name = neighbor.study + '/' + neighbor.label + '/' \
-                                  + neighbor.run_id
+                    neighbor_name = neighbor.study + '/' + neighbor.label \
+                                    + '/' + neighbor.resu + '/' + neighbor.run_id
                     if neighbor_name == case.depends:
                         # cases with dependency are level > 0 and connected to the dependency
                         self.add_dependency((case, neighbor))
