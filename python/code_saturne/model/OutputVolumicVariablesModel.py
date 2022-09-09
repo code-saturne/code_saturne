@@ -292,7 +292,7 @@ class OutputVolumicVariablesModel(Variables, Model):
         self.list_name = []
 
         fields_node = None
-        fields_list = {} 
+        fields_list = {}
 
         # Main/known categories
 

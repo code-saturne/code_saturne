@@ -77,7 +77,7 @@ class MainFieldsSourceTermsModel(Variables, Model):
 
     def getKnownFields(self, fieldId):
         field = self.mfm.getFieldFromId(fieldId)
-        field_name = field.label 
+        field_name = field.label
 
         known_fields = [('enthalpy_'+field_name, 'enthalpy_'+str(fieldId)),
                         ('density_'+field_name, 'density_'+str(fieldId))]
