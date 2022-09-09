@@ -212,7 +212,7 @@ class MainFieldsModel(Variables, Model):
             # Update default carrier field id
             NeptuneField.default_carrier_id = self.getFirstContinuousField()
 
-        return fieldId
+        return new_field
 
 
     @Variables.undoGlobal
@@ -230,7 +230,7 @@ class MainFieldsModel(Variables, Model):
         if field != None:
             field.label = label
         else:
-            fieldId = self.addField()
+            fieldId = (self.addField()).f_id
         self.setDefinedField(fieldId, typeChoice, phase, carrierField, hmodel, compressible)
 
     def setDefinedField(self, fieldId, typeChoice, phase, carrierFieldId, energyModel, compressible):
