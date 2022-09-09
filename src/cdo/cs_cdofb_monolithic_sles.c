@@ -241,6 +241,38 @@ static cs_cdofb_monolithic_petsc_context_t   *_petsc_hook_context = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define the relative tolerance used to compute the transformation of
+ *        the linear system in algorithm like ALU or GKB.
+ *
+ * \param[in]  init_slesp_rtol   relative tol. of the inner linear solver
+ * \param[in]  algo_rtol         relative tol. of the main algorithm
+ * \param[in]  algo_atol         absolute tol. of the main algorithm
+ *
+ * \return the computed relative tolerance
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline double
+_set_transfo_tol(double   init_slesp_rtol,
+                 double   algo_rtol,
+                 double   algo_atol)
+{
+  double  min_tol = 1e-12;
+
+  double  tol = fmin(0.1*init_slesp_rtol,
+                     0.1*algo_rtol);
+
+  tol = fmin(tol, 10*algo_atol);
+
+  /* Avoid a too small tolerance if algo_atol is very small */
+
+  tol = fmax(tol, min_tol);
+
+  return tol;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute a norm for a scalar-valued cell-based array "a"
  *        The parallel synchronization is performed inside this function
  *
@@ -3555,7 +3587,9 @@ _transform_gkb_system(const cs_matrix_t              *matrix,
   sprintf(system_name, "%s:gkb_transfo", eqp->name);
 
   slesp->name = system_name;
-  slesp->eps = nslesp->il_algo_param.rtol;
+  slesp->eps = _set_transfo_tol(init_eps,
+                                nslesp->il_algo_param.rtol,
+                                nslesp->il_algo_param.atol);
 
   /* Compute M^-1.(b_f + gamma. Bt.N^-1.b_c) */
 
@@ -5457,7 +5491,9 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   sprintf(system_name, "%s:alu0", eqp->name);
 
   slesp->name = system_name;
-  slesp->eps = nsp->sles_param->il_algo_param.rtol;
+  slesp->eps = _set_transfo_tol(init_eps,
+                                nsp->sles_param->il_algo_param.rtol,
+                                nsp->sles_param->il_algo_param.atol);
 
   cs_real_t  normalization = cs_cdo_blas_square_norm_pfvp(uza->rhs);
 
