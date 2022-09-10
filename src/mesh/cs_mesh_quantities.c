@@ -2379,9 +2379,6 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
   if (mq->cell_cen == NULL)
     CS_MALLOC_HD(mq->cell_cen, n_cells_with_ghosts*3, cs_real_t, cs_alloc_mode);
 
-  if (mq->cell_f_cen == NULL)
-    CS_MALLOC_HD(mq->cell_f_cen, n_cells_with_ghosts*3, cs_real_t, cs_alloc_mode);
-
   if (mq->cell_vol == NULL)
     BFT_MALLOC(mq->cell_vol, n_cells_with_ghosts, cs_real_t);
 
