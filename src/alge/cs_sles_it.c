@@ -2537,6 +2537,11 @@ _solve_diag_sup_halo(cs_real_t  *restrict a,
  *   convergence state
  *----------------------------------------------------------------------------*/
 
+#if defined(__INTEL_COMPILER)
+#pragma optimization_level 2 /* Bug with O3 or above at least with icc 19
+                                on Xeon(R) Platinum 8260 */
+#endif
+
 static cs_sles_convergence_state_t
 _gcr(cs_sles_it_t              *c,
      const cs_matrix_t         *a,
