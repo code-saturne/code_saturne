@@ -628,7 +628,6 @@ _cad_intersect(const cs_mesh_t        *m,
   /* Loop on identified cells */
 
   std::map<cs_lnum_t, gp_Pnt> c_vtx;
-  std::map<cs_lnum_t, gp_Pnt>::iterator c_vtx_it;
   std::vector<TopoDS_Shape> surfaces;
 
   cs_lnum_t    n_max_triangles = 0;
