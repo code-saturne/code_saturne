@@ -344,7 +344,7 @@ Three methods are available to define a dependency between cases:
 ```{.xml}
   <study label='STUDY' status='on'>
       <case label='CASE1' status='on' compute="on" post="on">
-          <depends args="STUDY/CASE/run_id"/>
+          <depends args="STUDY/CASE/RESU/run_id"/>
       </case>
   </study>
 ```
