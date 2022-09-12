@@ -632,7 +632,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Increment, decrement and colorize the input argument entry
         """
         if self.lineEditJobAccount.validator().state == QValidator.Acceptable:
-            self.job_account = str(v)
+            self.jmdl.batch.params['job_account'] = str(v)
 
 
     @pyqtSlot(str)
@@ -641,7 +641,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Increment, decrement and colorize the input argument entry
         """
         if self.lineEditJobWCKey.validator().state == QValidator.Acceptable:
-            self.job_wckey = str(v)
+            self.jmdl.batch.params['job_wckey'] = str(v)
 
 
     @pyqtSlot(int)
