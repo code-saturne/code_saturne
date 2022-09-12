@@ -89,6 +89,10 @@ typedef struct
  *  Global variables
  *============================================================================*/
 
+#if !defined(__INTEL_LLVM_COMPILER)
+#pragma omp requires unified_shared_memory
+#endif
+
 static std::map<const void *, _cs_base_accel_mem_map> _hd_alloc_map;
 
 static bool _initialized = false;
@@ -185,8 +189,8 @@ _omp_target_mem_malloc_device(size_t        n,
   if (ptr == NULL)
     bft_error(file_name, line_num, 0,
               "[OpenMP offload error]: unable to allocate %llu bytes on device\n"
-              "  running: %s",
-              (unsigned long long)n, __func__);
+              "  running %s for variable %s.",
+              (unsigned long long)n, __func__, var_name);
 
   return ptr;
 }
@@ -230,8 +234,8 @@ _omp_target_mem_malloc_host(size_t        n,
   if (ptr == NULL)
     bft_error(file_name, line_num, 0,
               "[OpenMP offload error]: unable to allocate %llu bytes on host\n"
-              "  running: %s",
-              (unsigned long long)n, __func__);
+              "  running %s for variable %s.",
+              (unsigned long long)n, __func__, var_name);
 
   return ptr;
 }
@@ -269,7 +273,7 @@ _omp_target_mem_malloc_managed(size_t        n,
 
 #else
 
-#pragma omp requires unified_shared_memory
+  // requires unified_shared_memory (see global pragma above)
   void *ptr = omp_target_alloc(n, cs_glob_omp_target_device_id);
 
 #endif
@@ -277,8 +281,8 @@ _omp_target_mem_malloc_managed(size_t        n,
   if (ptr == NULL)
     bft_error(file_name, line_num, 0,
               "[OpenMP offload error]: unable to allocate %llu bytes\n"
-              "  running: %s",
-              (unsigned long long)n, __func__);
+              "  running %s for variable %s.",
+              (unsigned long long)n, __func__, var_name);
 
   return ptr;
 }

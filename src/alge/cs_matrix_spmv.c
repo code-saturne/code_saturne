@@ -2983,14 +2983,18 @@ const char *default_name = s_cuda;
 
 #endif /* defined(HAVE_CUSPARSE) */
 
-#else
+const char *default_name_native = s_cuda;
 
-const char default_name[] = "not_implemented";
+#else  /* defined(HAVE_CUDA) */
 
-#endif /* defined(HAVE_CUDA) */
+const char s_not_impl[] = "not_implemented";
+const char *default_name = s_not_impl;
+const char *default_name_native = s_not_impl;
+
+#endif /* not defined(HAVE_CUDA) */
 
  if (m_type == CS_MATRIX_NATIVE)
-   default_name = s_cuda;
+   default_name = default_name_native;
 
  if (_func_name == NULL)
    _func_name = default_name;
