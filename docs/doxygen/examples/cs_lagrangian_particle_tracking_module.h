@@ -288,7 +288,7 @@
 
   \snippet cs_user_lagr_particle.c lagr_example
 
-  \page cs_user_lagr_sde SDE within the Lagrangian model
+  \page cs_user_lagr_sde_page SDE within the Lagrangian model
 
   \section cs_user_lagr_sde_intro Introduction
 

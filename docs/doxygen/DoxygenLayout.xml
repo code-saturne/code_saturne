@@ -21,6 +21,8 @@
       <tab type="user" visible="yes" url="@ref advanced_coal_and_gas_combution" title="Pulverized coal and gas combustion module"/>
       <tab type="user" visible="yes" url="@ref advanced_fuel_oil_combustion" title="Heavy fuel oil combustion module"/>
       <tab type="user" visible="yes" url="@ref advanced_radiative_thermal" title="Radiative thermal transfers in semi-transparent gray media"/>
+      <tab type="user" visible="yes" url="@ref advanced_conjugate_heat_transfer" title="Conjugate heat transfer"/>
+      <tab type="user" visible="yes" url="@ref advanced_particle_tracking" title="Particle-tracking (Lagrangian) module"/>
     </tab>
     </tab>
     <tab type="user" visible="yes" url="@ref cs_ug_studymanager" title="The STUDYMANAGER tool"/>

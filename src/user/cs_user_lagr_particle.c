@@ -199,42 +199,28 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
  * This function is called in a loop on the particles, so be careful
  * to avoid too costly operations.
  *
- *                m   Cp
- *                 p    p
- *       Tau = ---------------
- *          c          2
- *                PI d    h
- *                    p    e
+ *      \f$\tau_c = \frac{m_p{C_p}_p}{PId_p^2h_e}\f$
  *
- *      Tau  : Thermal relaxation time (value to be computed)
- *         c
+ *      \f$\tau_c\f$  : Thermal relaxation time (value to be computed)
  *
- *      m    : Particle mass
- *       p
+ *      \f$m_p\f$     : Particle mass
  *
- *      Cp   : Particle specific heat
- *        p
+ *      \f${C_p}_p\f$ : Particle specific heat
  *
- *      d    : Particle diameter
- *       p
+ *      \f$d_p\f$     : Particle diameter
  *
- *      h    : Coefficient of thermal exchange
- *       e
+ *      \f$h_e\f$     : Coefficient of thermal exchange
  *
- *  he coefficient of thermal exchange is calculated from a Nusselt number,
+ *  The coefficient of thermal exchange is calculated from a Nusselt number,
  *  itself evaluated by a correlation (Ranz-Marshall by default)
  *
- *             h  d
- *              e  p
- *      Nu = --------  = 2 + 0.55 Re **(0.5) Prt**(0.33)
- *            Lambda                p
+ *      \f$\nu = \frac{h_ed_p}{\lambda} = 2 + 0.55{\Re_e}_p^{0.5}P_{rt}^{0.33}\f$
  *
- *      Lambda : Thermal conductivity of the carrier field
+ *      \f$\lambda\f$ : Thermal conductivity of the carrier field
  *
- *      Re     : Particle Reynolds number
- *        p
+ *      \f${\Re_e}_p\f$     : Particle Reynolds number
  *
- *      Prt    : Prandtl number
+ *     \f$ P_{rt}\f$    : Prandtl number
  *
  * \param[in]   id_p   particle id
  * \param[in]   re_p   particle Reynolds number
