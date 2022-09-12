@@ -47,6 +47,7 @@
 #include "cs_lagr_options.h"
 #include "cs_lagr_particle.h"
 #include "cs_lagr_poisson.h"
+#include "cs_lagr_porosity.h"
 #include "cs_lagr_post.h"
 #include "cs_lagr_precipitation_model.h"
 #include "cs_lagr_print.h"

@@ -1,6 +1,6 @@
 
 /*============================================================================
- * Methods for head losses due to particle deposit
+ * Methods for head losses due to particle deposition.
  *============================================================================*/
 
 /*

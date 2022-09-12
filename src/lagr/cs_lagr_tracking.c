@@ -80,6 +80,7 @@
 #include "cs_lagr_deposition_model.h"
 #include "cs_lagr_event.h"
 #include "cs_lagr_particle.h"
+#include "cs_lagr_porosity.h"
 #include "cs_lagr_prototypes.h"
 #include "cs_lagr_post.h"
 #include "cs_lagr_clogging.h"
@@ -3138,7 +3139,6 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
 
   const cs_field_t *u = cs_glob_lagr_extra_module->vel;
 
-  const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
   const cs_lagr_internal_condition_t *internal_conditions
     = cs_glob_lagr_internal_conditions;
 
@@ -3273,116 +3273,55 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
     }
   }
 
-  /* Internal deposition: additional loop */
-  if (cs_glob_porous_model == 3) {
-    const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-    const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
-    cs_real_t *covered_surface = NULL;
-    BFT_MALLOC(covered_surface, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
+  /* Internal deposition: additional loop
+     TODO: check if this is really required: the adjacent boundary
+     face id may/should have been already set in the particle
+     displacement stage. */
 
-    /* Initialization */
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
-      covered_surface[cell_id] = 0.;
+  if (   cs_glob_porous_model == 3
+      && lagr_model->deposition == 1
+      && internal_conditions != NULL) {
 
-    if (internal_conditions != NULL) {
-      for (cs_lnum_t face_id = 0; face_id < n_i_faces ; face_id++) {
-        /* Internal face flagged as internal deposition */
-        if (internal_conditions->i_face_zone_id[face_id] >= 0) {
-          for (cs_lnum_t j = 0; j < 3; j++)
-            fvq->i_f_face_normal[3*face_id+j] = fvq->i_face_normal[3*face_id+j];
-        }
-      }
-    }
+    for (cs_lnum_t ip = 0; ip < particles->n_particles; ip++) {
 
-    if (lagr_model->deposition == 1) {
+      if (cs_lagr_particles_get_flag(particles, ip,
+                                     CS_LAGR_PART_IMPOSED_MOTION)) {
 
-      for (cs_lnum_t ip = 0; ip < particles->n_particles; ip++) {
+        cs_lnum_t cell_id
+          = cs_lagr_particles_get_lnum(particles, ip, CS_LAGR_CELL_ID);
 
-        if (cs_lagr_particles_get_flag(particles, ip,
-                                       CS_LAGR_PART_IMPOSED_MOTION)) {
+        /* Loop over internal faces of the current particle faces
+         * NB: useful for resuspension, the last face_id is stored.
+         * face_id is unique in many cases. */
 
-          cs_lnum_t cell_id
-            = cs_lagr_particles_get_lnum(particles, ip, CS_LAGR_CELL_ID);
+        for (cs_lnum_t i = _particle_track_builder->cell_face_idx[cell_id];
+             i < _particle_track_builder->cell_face_idx[cell_id+1] ;
+             i++ ) {
 
-          cs_real_t diam = cs_lagr_particles_get_real(particles, ip,
-                                                      CS_LAGR_DIAMETER);
+          cs_lnum_t face_num = _particle_track_builder->cell_face_lst[i];
 
-          covered_surface[cell_id] += cs_math_pi * 0.25
-            * diam*diam
-            * cs_lagr_particles_get_real(particles, ip, CS_LAGR_FOULING_INDEX)
-            * cs_lagr_particles_get_real(particles, ip, CS_LAGR_STAT_WEIGHT);
+          if (face_num > 0) {
 
-          /* Loop over internal faces of the current particle faces
-           * NB: useful for resuspension, the last face_id is stored.
-           * face_id is unique in many cases. */
+            cs_lnum_t face_id = face_num - 1;
 
-          if (internal_conditions != NULL) {
+            /* Internal face flagged as internal deposition */
+            if (internal_conditions->i_face_zone_id[face_id] >= 0)
+              cs_lagr_particles_set_lnum(particles, ip,
+                                         CS_LAGR_NEIGHBOR_FACE_ID, face_id);
 
-            for (cs_lnum_t i = _particle_track_builder->cell_face_idx[cell_id];
-                 i < _particle_track_builder->cell_face_idx[cell_id+1] ;
-                 i++ ) {
-
-              cs_lnum_t face_num = _particle_track_builder->cell_face_lst[i];
-
-              if (face_num > 0) {
-
-                cs_lnum_t face_id = face_num - 1;
-
-                /* Internal face flagged as internal deposition */
-                if (internal_conditions->i_face_zone_id[face_id] >= 0)
-                  cs_lagr_particles_set_lnum(particles, ip,
-                                             CS_LAGR_NEIGHBOR_FACE_ID, face_id);
-
-              }
-            }
-
-          } /* if internal conditions are used */
-
-        }
-      }
-    }
-
-    /* Synchronization */
-    if (mesh->halo != NULL)
-      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, covered_surface);
-
-    /* Update fluid section in case of internal conditions */
-    if (internal_conditions != NULL) {
-
-      /* Compute fluid section and clip it to 0 if negative */
-      for (cs_lnum_t face_id = 0; face_id < mesh->n_i_faces; face_id++) {
-
-        /* Internal face flagged as internal deposition */
-        if (internal_conditions->i_face_zone_id[face_id] >= 0) {
-          cs_lnum_t cell_id1 = mesh->i_face_cells[face_id][0];;
-          cs_lnum_t cell_id2 = mesh->i_face_cells[face_id][1];
-          /* Remove from the particle area from fluid section */
-          for (cs_lnum_t id = 0; id < 3; id++)
-            fvq->i_f_face_normal[3*face_id + id] -=
-                (covered_surface[cell_id1] + covered_surface[cell_id2])
-              * fvq->i_face_normal[3*face_id + id]
-              / fvq->i_face_surf[face_id];
-
-          /* If S_fluid . S is negative, that means we removed too much surface
-           * from fluid surface */
-          cs_real_t temp
-            = cs_math_3_dot_product(fvq->i_f_face_normal + 3*face_id,
-                                    fvq->i_face_normal + 3*face_id);
-          if (temp <= 0.) {
-            for (cs_lnum_t j = 0; j < 3; j++)
-              fvq->i_f_face_normal[3*face_id+j] = 0.;
           }
-          fvq->i_f_face_surf[face_id]
-            = cs_math_3_norm(fvq->i_f_face_normal + 3*face_id);
         }
-      }
+
+      } /* if internal conditions are used */
 
     }
-    /* Free memory */
-    BFT_FREE(covered_surface);
   }
 
   _finalize_displacement(particles);
+
+  if (   cs_glob_porous_model == 3
+      && lagr_model->deposition == 1)
+  cs_lagr_porosity();
 
   cs_timer_stats_switch(t_top_id);
 }

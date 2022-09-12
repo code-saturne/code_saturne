@@ -66,7 +66,7 @@ enum {
 /*----------------------------------------------------------------------------
  * Deposition submodel:
  *   1/ Parameter initialization
- *   2/ Call of the different subroutines with respect to the marko indicator
+ *   2/ Call of the different functions with respect to the marko indicator
  *
  * parameters:
  *   marko     <->    state of the jump process

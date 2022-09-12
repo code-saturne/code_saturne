@@ -55,38 +55,39 @@ AM_LDFLAGS =
 
 pkginclude_HEADERS = \
 cs_lagr.h \
-cs_lagr_clogging.h \
+cs_lagr_adh.h \
 cs_lagr_agglo.h \
-cs_lagr_fragmentation.h \
-cs_lagr_head_losses.h \
-cs_lagr_roughness.h \
+cs_lagr_aux_mean_fluid_quantities.h \
+cs_lagr_car.h \
+cs_lagr_clogging.h \
+cs_lagr_coupling.h \
+cs_lagr_deposition_model.h \
 cs_lagr_dlvo.h \
 cs_lagr_event.h \
 cs_lagr_extract.h \
-cs_lagr_injection.h \
+cs_lagr_fragmentation.h \
 cs_lagr_geom.h \
-cs_lagr_post.h \
-cs_lagr_restart.h \
-cs_lagr_query.h \
-cs_lagr_tracking.h \
-cs_lagr_stat.h \
-cs_lagr_new.h \
-cs_lagr_precipitation_model.h \
-cs_lagr_deposition_model.h \
-cs_lagr_car.h \
-cs_lagr_coupling.h \
-cs_lagr_adh.h \
-cs_lagr_resuspension.h \
-cs_lagr_poisson.h \
-cs_lagr_options.h \
-cs_lagr_orientation.h \
-cs_lagr_aux_mean_fluid_quantities.h \
-cs_lagr_particle.h \
-cs_lagr_print.h \
-cs_lagr_sde.h \
-cs_lagr_sde_model.h \
+cs_lagr_head_losses.h \
+cs_lagr_injection.h \
 cs_lagr_lec.h \
 cs_lagr_log.h \
+cs_lagr_new.h \
+cs_lagr_options.h \
+cs_lagr_orientation.h \
+cs_lagr_particle.h \
+cs_lagr_poisson.h \
+cs_lagr_porosity.h \
+cs_lagr_post.h \
+cs_lagr_precipitation_model.h \
+cs_lagr_print.h \
+cs_lagr_query.h \
+cs_lagr_restart.h \
+cs_lagr_resuspension.h \
+cs_lagr_roughness.h \
+cs_lagr_sde.h \
+cs_lagr_sde_model.h \
+cs_lagr_stat.h \
+cs_lagr_tracking.h \
 cs_lagr_prototypes.h \
 cs_lagr_headers.h
 
@@ -94,39 +95,37 @@ cs_lagr_headers.h
 
 noinst_LIBRARIES = libcslagr.a
 libcslagr_a_SOURCES = \
-cs_lagr_clogging.c \
-cs_lagr_agglo.c \
-cs_lagr_fragmentation.c \
-cs_lagr_roughness.c \
 cs_lagr.c \
+cs_lagr_adh.c \
+cs_lagr_agglo.c \
+cs_lagr_aux_mean_fluid_quantities.c \
+cs_lagr_car.c \
+cs_lagr_clogging.c \
+cs_lagr_coupling.c \
+cs_lagr_deposition_model.c \
 cs_lagr_dlvo.c \
 cs_lagr_event.c \
 cs_lagr_extract.c \
-cs_lagr_injection.c \
-cs_lagr_post.c \
-cs_lagr_restart.c \
-cs_lagr_query.c \
-cs_lagr_tracking.c \
-cs_lagr_stat.c \
-cs_lagr_adh.c \
-cs_lagr_print.c \
-cs_lagr_car.c \
-cs_lagr_coupling.c \
-cs_lagr_deposition_model.c \
+cs_lagr_fragmentation.c \
 cs_lagr_geom.c \
-cs_lagr_poisson.c \
-cs_lagr_aux_mean_fluid_quantities.c \
 cs_lagr_head_losses.c \
+cs_lagr_injection.c \
+cs_lagr_lec.c \
+cs_lagr_log.c \
 cs_lagr_new.c \
 cs_lagr_options.c \
 cs_lagr_orientation.c \
 cs_lagr_particle.c \
-cs_lagr_resuspension.c \
+cs_lagr_poisson.c \
+cs_lagr_porosity.c \
+cs_lagr_post.c \
 cs_lagr_precipitation_model.c \
+cs_lagr_print.c \
+cs_lagr_query.c \
+cs_lagr_restart.c \
+cs_lagr_resuspension.c \
+cs_lagr_roughness.c \
 cs_lagr_sde.c \
 cs_lagr_sde_model.c \
-cs_lagr_lec.c \
-cs_lagr_log.c
-
-clean-local:
-	-rm -f *__genmod.f90 *.mod
+cs_lagr_stat.c \
+cs_lagr_tracking.c
