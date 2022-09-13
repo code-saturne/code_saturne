@@ -140,7 +140,8 @@ typedef struct {
   cs_real_t  start_coords[3];       /* starting coordinates for
                                        next displacement */
 
-  cs_lnum_t  last_face_num;         /* last face number encountered */
+  cs_lnum_t  last_face_id;          /* last face id encountered
+                                       (interior first, boundary next) */
 
   cs_lagr_tracking_state_t  state;  /* current state */
 
@@ -198,11 +199,6 @@ typedef struct {
 */
 
 typedef struct {
-
-  /* Cell -> Face connectivity */
-
-  cs_lnum_t  *cell_face_idx;
-  cs_lnum_t  *cell_face_lst;
 
   cs_lagr_halo_t      *halo;   /* Lagrangian halo structure */
 
@@ -364,12 +360,12 @@ _define_particle_datatype(const cs_lagr_attribute_map_t  *p_am)
   for (i = attr_start; i < attr_end; i++)
     cs_type[i] = CS_REAL_TYPE;
 
-  attr_start = offsetof(cs_lagr_tracking_info_t, last_face_num);
+  attr_start = offsetof(cs_lagr_tracking_info_t, last_face_id);
   attr_end = attr_start + sizeof(cs_lnum_t);
   for (i = attr_start; i < attr_end; i++)
     cs_type[i] = CS_LNUM_TYPE;
 
-  attr_start = offsetof(cs_lagr_tracking_info_t, last_face_num);
+  attr_start = offsetof(cs_lagr_tracking_info_t, last_face_id);
   attr_end = attr_start + sizeof(int);
   for (i = attr_start; i < attr_end; i++)
     cs_type[i] = CS_INT_TYPE;
@@ -659,86 +655,6 @@ _resize_lagr_halo(cs_lagr_halo_t  *lag_halo,
 }
 
 /*----------------------------------------------------------------------------
- * Define a cell -> face connectivity. Index begins with 0.
- *
- * parameters:
- *   builder   <--  pointer to a cs_lagr_track_builder_t structure
- *----------------------------------------------------------------------------*/
-
-static void
-_define_cell_face_connect(cs_lagr_track_builder_t   *builder)
-{
-  cs_lnum_t  i, j;
-
-  cs_lnum_t  *counter = NULL;
-  cs_mesh_t  *mesh = cs_glob_mesh;
-
-  BFT_MALLOC(counter, mesh->n_cells, cs_lnum_t);
-  BFT_MALLOC(builder->cell_face_idx, mesh->n_cells + 1, cs_lnum_t);
-
-  /* Initialize */
-
-  builder->cell_face_idx[0] = 0;
-  for (i = 0; i < mesh->n_cells; i++) {
-    builder->cell_face_idx[i+1] = 0;
-    counter[i] = 0;
-  }
-
-  /* Count of the number of faces per cell: loop on interior faces */
-
-  for (i = 0; i < mesh->n_i_faces; i++)
-    for (j = 0; j < 2; j++) {
-      cs_lnum_t iel = mesh->i_face_cells[i][j] + 1;
-      if (iel <= mesh->n_cells)
-        builder->cell_face_idx[iel] += 1;
-    }
-
-  /* Count of the number of faces per cell: loop on border faces */
-
-  for (i = 0; i < mesh->n_b_faces; i++)
-    builder->cell_face_idx[mesh->b_face_cells[i] + 1] += 1;
-
-  /* Build index */
-
-  for (i = 0; i < mesh->n_cells; i++)
-    builder->cell_face_idx[i+1] += builder->cell_face_idx[i];
-
-  BFT_MALLOC(builder->cell_face_lst,
-             builder->cell_face_idx[mesh->n_cells], cs_lnum_t);
-
-  /* Build list: border faces are < 0 and interior faces > 0 */
-
-  for (i = 0; i < mesh->n_i_faces; i++) {
-    for (j = 0; j < 2; j++) {
-
-      cs_lnum_t cell_id = mesh->i_face_cells[i][j];
-
-      if (cell_id < mesh->n_cells) {
-
-        cs_lnum_t  shift = builder->cell_face_idx[cell_id] + counter[cell_id];
-
-        builder->cell_face_lst[shift] = i+1;
-        counter[cell_id] += 1;
-      }
-    }
-  }
-
-  for (i = 0; i < mesh->n_b_faces; i++) {
-
-    cs_lnum_t  cell_id = mesh->b_face_cells[i];
-    cs_lnum_t  shift = builder->cell_face_idx[cell_id] + counter[cell_id];
-
-    builder->cell_face_lst[shift] = -(i+1);
-    counter[cell_id] += 1;
-
-  }
-
-  /* Free memory */
-
-  BFT_FREE(counter);
-}
-
-/*----------------------------------------------------------------------------
  * Initialize a cs_lagr_track_builder_t structure.
  *
  * parameters:
@@ -755,16 +671,17 @@ _init_track_builder(cs_lnum_t  n_particles_max,
 {
   cs_mesh_t  *mesh = cs_glob_mesh;
 
-  cs_lagr_track_builder_t  *builder = NULL;
-
   if (n_particles_max == 0)
     return NULL;
 
+  cs_lagr_track_builder_t  *builder = NULL;
   BFT_MALLOC(builder, 1, cs_lagr_track_builder_t);
 
-  /* Define a cell->face connectivity */
+  /* Ensure a cell->face connectivity is defined */
 
-  _define_cell_face_connect(builder);
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  if (ma->cell_i_faces == NULL)
+    cs_mesh_adjacencies_update_cell_i_faces();
 
   /* Define a cs_lagr_halo_t structure to deal with parallelism and
      periodicity */
@@ -775,7 +692,7 @@ _init_track_builder(cs_lnum_t  n_particles_max,
     builder->halo = NULL;
 
   /* Define an interface set on interior faces for keeping up-to-date
-     the last_face_num value across ranks. Not used in serial mode */
+     the last_face_id value across ranks. Not used in serial mode */
 
   builder->face_ifs = NULL;
 
@@ -812,9 +729,6 @@ _destroy_track_builder(cs_lagr_track_builder_t  *builder)
 {
   if (builder == NULL)
     return builder;
-
-  BFT_FREE(builder->cell_face_idx);
-  BFT_FREE(builder->cell_face_lst);
 
   /* Destroy the cs_lagr_halo_t structure */
 
@@ -992,7 +906,6 @@ _internal_treatment(cs_lagr_particle_set_t  *particles,
       for (int k = 0; k < 3; k++) {
         particle_velocity[k] = 0.0;
       }
-
       /* Force the particle on the intersection but in the original cell */
       for (int k = 0; k < 3; k++) {
         particle_coord[k] = intersect_pt[k] + bc_epsilon * vect_cen[k];
@@ -1004,6 +917,7 @@ _internal_treatment(cs_lagr_particle_set_t  *particles,
                                  CS_LAGR_PART_IMPOSED_MOTION);
 
       /* Specific treatment in case of particle resuspension modeling */
+
       particle_state = CS_LAGR_PART_TREATED;
 
       particles->n_part_dep += 1;
@@ -1917,13 +1831,13 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
                    const cs_real_t                 visc_length[],
                    const cs_field_t               *u)
 {
-  cs_lnum_t  i;
   cs_real_t  disp[3];
 
   cs_lagr_tracking_state_t  particle_state = CS_LAGR_PART_TO_SYNC;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
 
   const cs_real_3_t *restrict b_face_normal
     = (const cs_real_3_t *restrict)fvq->b_face_normal;
@@ -1934,10 +1848,6 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
 
   const cs_lagr_model_t *lagr_model = cs_glob_lagr_model;
-  cs_lagr_track_builder_t  *builder = _particle_track_builder;
-
-  cs_lnum_t  *cell_face_idx = builder->cell_face_idx;
-  cs_lnum_t  *cell_face_lst = builder->cell_face_lst;
 
   const cs_lagr_attribute_map_t  *p_am = particles->p_am;
   unsigned char *particle = particles->p_buffer + p_am->extents * p_id;
@@ -2055,13 +1965,12 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
 
     reloop_cen:;
 
-    cs_lnum_t exit_face = 0; /* > 0 for interior faces,
-                                < 0 for boundary faces */
+    cs_lnum_t exit_face = -1; /* id in [interior faces + boundary faces] */
 
     double adist_min = 2.;
 
     double t_intersect = -1;
-    cs_real_3_t face_norm;
+    cs_real_t face_norm[3];
 
     int n_in = 0;
     int n_out = 0;
@@ -2070,8 +1979,21 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
       = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_COORDS);
 
     /* Loop on faces to see if the particle trajectory crosses it*/
-    for (i = cell_face_idx[cell_id];
-         i < cell_face_idx[cell_id+1] && particle_state == CS_LAGR_PART_TO_SYNC;
+
+    const cs_lnum_t n_cell_i_faces =   ma->cell_cells_idx[cell_id+1]
+                                     - ma->cell_cells_idx[cell_id];
+    const cs_lnum_t n_cell_b_faces =   ma->cell_b_faces_idx[cell_id+1]
+                                     - ma->cell_b_faces_idx[cell_id];
+
+    cs_lnum_t n_cell_faces = n_cell_i_faces + n_cell_b_faces;
+
+    if (ma->cell_hb_faces_idx != NULL) {
+      n_cell_faces +=   ma->cell_hb_faces_idx[cell_id+1]
+                      - ma->cell_hb_faces_idx[cell_id];
+    }
+
+    for (cs_lnum_t i = 0;
+         i < n_cell_faces && particle_state == CS_LAGR_PART_TO_SYNC;
          i++) {
 
       cs_lnum_t face_id, vtx_start, vtx_end, n_vertices;
@@ -2082,13 +2004,10 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
        * connectivity for internal faces */
       int reorient_face = 1;
 
-      cs_lnum_t face_num = cell_face_lst[i];
+      if (i < n_cell_i_faces) { /* Interior face */
 
-      if (face_num > 0) {
+        face_id = ma->cell_i_faces[ma->cell_cells_idx[cell_id] + i];
 
-        /* Interior face */
-
-        face_id = face_num - 1;
         if (cell_id == mesh->i_face_cells[face_id][1])
           reorient_face = -1;
         vtx_start = mesh->i_face_vtx_idx[face_id];
@@ -2099,13 +2018,18 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
         face_cog = i_face_cog[face_id];
 
       }
-      else {
+      else { /* Boundary faces */
 
-        assert(face_num < 0);
+        cs_lnum_t j = i - n_cell_i_faces;
+        if (j < n_cell_b_faces)
+          face_id = ma->cell_b_faces[ma->cell_b_faces_idx[cell_id] + j];
 
-        /* Boundary faces */
+        else {
+          assert(ma->cell_hb_faces_idx != NULL);
+          j -= n_cell_b_faces;
+          face_id = ma->cell_hb_faces[ma->cell_hb_faces_idx[cell_id] + j];
+        }
 
-        face_id = -face_num - 1;
         vtx_start = mesh->b_face_vtx_idx[face_id];
         vtx_end = mesh->b_face_vtx_idx[face_id+1];
         n_vertices = vtx_end - vtx_start;
@@ -2137,7 +2061,9 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
 
       /* Store the nearest intesection from the O point...*/
       if (t < adist_min && t >= 0) {
-        exit_face = face_num;
+        exit_face = face_id;
+        if (i >= n_cell_i_faces)
+          exit_face += mesh->n_i_faces;
         t_intersect = t;
         adist_min = t_intersect;
       }
@@ -2179,7 +2105,7 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
 
     /* Update boundary events when particle changes */
 
-    if (lagr_model->deposition && exit_face != 0) {
+    if (lagr_model->deposition && exit_face >= 0) {
       cs_lnum_t b_face_id = cs_lagr_particle_get_lnum(particle, p_am,
                                                       CS_LAGR_NEIGHBOR_FACE_ID);
       if (b_face_id > -1) {
@@ -2188,18 +2114,18 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
       }
     }
 
-    if (exit_face == 0)
+    if (exit_face < 0)
       particle_state = CS_LAGR_PART_TREATED;
 
-    else if (exit_face > 0) { /* Particle moves to the neighbor cell
-                                 through the current face "face_num" */
+    else if (exit_face < mesh->n_i_faces) { /* Particle moves to the
+                                               neighbor cell */
 
-      cs_lnum_t face_id = exit_face - 1;
+      cs_lnum_t face_id = exit_face;
 
       cs_lnum_t  c_id1 = mesh->i_face_cells[face_id][0];
       cs_lnum_t  c_id2 = mesh->i_face_cells[face_id][1];
 
-      p_info->last_face_num = exit_face;
+      p_info->last_face_id = exit_face;
 
       /* Neighbor face id needs update */
 
@@ -2268,7 +2194,8 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
             cs_math_3_normalize(b_face_normal[*neighbor_face_id], normal);
 
             /* (V . n) * n  */
-            cs_real_t v_dot_n = cs_math_3_dot_product(particle_velocity_seen, normal);
+            cs_real_t v_dot_n = cs_math_3_dot_product(particle_velocity_seen,
+                                                      normal);
 
             /* tangential projection to the wall:
              * (Id -n (x) n) U */
@@ -2286,10 +2213,8 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
       }
 
     }
-    else if (exit_face < 0) { /* Particle moves to the boundary
-                                 through the current face "face_num" */
-
-      cs_lnum_t face_num = -exit_face;
+    else { /* Particle moves to the boundary
+              through the current face "face_id" */
 
       /* particle / boundary condition interaction
          1 - modify particle cell_num : 0 or boundary_cell_num
@@ -2304,21 +2229,23 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
          K
       */
 
+      cs_lnum_t face_id = exit_face - mesh->n_i_faces;
+
       particle_state
         = _boundary_treatment(particles,
                               events,
                               p_id,
-                              face_num - 1,
+                              face_id,
                               face_norm,
                               t_intersect,
-                              b_face_zone_id[face_num-1]);
+                              b_face_zone_id[face_id]);
 
       if (cs_glob_lagr_time_scheme->t_order == 2)
         cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_REBOUND_ID, 0);
 
-      p_info->last_face_num = -face_num;
+      p_info->last_face_id = face_id;
 
-    } /* end if exit_face < 0 */
+    } /* end for test on exit_face */
 
   } /* End of while : local displacement */
 
@@ -2698,7 +2625,7 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
 
       if (tr_id >= 0) { /* Same initialization as in previous algorithm */
 
-        _tracking_info(particles, i)->last_face_num = 0;
+        _tracking_info(particles, i)->last_face_id = -1;
 
       }
 
@@ -2709,8 +2636,6 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
           assert(face_ifs != NULL);
 
           int  distant_rank;
-          cs_lnum_t n_entities, id;
-          const cs_lnum_t *local_num, *dist_num;
 
           const int search_rank = halo->c_domain_rank[rank];
           const cs_interface_t  *interface = NULL;
@@ -2734,21 +2659,21 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
           }
           else {
 
-            n_entities = cs_interface_size(interface);
-            local_num = cs_interface_get_elt_ids(interface);
+            cs_lnum_t n_entities = cs_interface_size(interface);
+            const cs_lnum_t *local_num = cs_interface_get_elt_ids(interface);
 
-            id = cs_search_binary
-                   (n_entities,
-                    _get_tracking_info(particles, i)->last_face_num  - 1,
-                    local_num);
+            cs_lnum_t id = cs_search_binary
+                             (n_entities,
+                              _get_tracking_info(particles, i)->last_face_id,
+                              local_num);
 
             if (id == -1)
               bft_error(__FILE__, __LINE__, 0,
-                        _(" Cannot find the relative distant face num.\n"));
+                        _(" Cannot find the relative distant face id.\n"));
 
-            dist_num = cs_interface_get_match_ids(interface);
+            const cs_lnum_t *dist_ids = cs_interface_get_match_ids(interface);
 
-            _tracking_info(particles, i)->last_face_num = dist_num[id] + 1;
+            _tracking_info(particles, i)->last_face_id = dist_ids[id];
 
           }
 
@@ -2949,7 +2874,7 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles)
       }
     }
 
-    _tracking_info(particles, i)->last_face_num = 0;
+    _tracking_info(particles, i)->last_face_id = -1;
 
     /* Coordinates of the particle */
 
@@ -3137,9 +3062,6 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
                                          detected */
 
   const cs_field_t *u = cs_glob_lagr_extra_module->vel;
-
-  const cs_lagr_internal_condition_t *internal_conditions
-    = cs_glob_lagr_internal_conditions;
 
   int t_stat_id = cs_timer_stats_id_by_name("particle_displacement_stage");
 
@@ -3399,44 +3321,6 @@ cs_lagr_test_wall_cell(const void                     *particle,
 
   }
 
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get pointers to cell face connectivity used in particle tracking.
- *
- * \param[out]  cell_face_idx  cell face index
- * \param[out]  cell_face_lst  cell face connectivity (signed 1-to-n based,
- *                             negative for boundary faces, positive for
- *                             interior faces)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_get_cell_face_connectivity(cs_lnum_t  **cell_face_idx,
-                                   cs_lnum_t  **cell_face_lst)
-{
-  cs_lagr_track_builder_t  *builder = _particle_track_builder;
-
-  if (builder != NULL) {
-    *cell_face_idx = builder->cell_face_idx;
-    *cell_face_lst = builder->cell_face_lst;
-  }
-  else {
-    cs_lagr_particle_set_t  *particles = cs_glob_lagr_particle_set;
-    if (particles != NULL) {
-      _particle_track_builder
-        =_init_track_builder(particles->n_particles_max,
-                             particles->p_am->extents);
-      builder = _particle_track_builder;
-      *cell_face_idx = builder->cell_face_idx;
-      *cell_face_lst = builder->cell_face_lst;
-    }
-    else {
-      *cell_face_idx = NULL;
-      *cell_face_lst = NULL;
-    }
-  }
 }
 
 /*----------------------------------------------------------------------------*/

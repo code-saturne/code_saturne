@@ -403,10 +403,9 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq  = cs_glob_mesh_quantities;
 
-  cs_lnum_t *cell_face_idx = NULL, *cell_face_lst = NULL;
-
-  cs_lagr_get_cell_face_connectivity(&cell_face_idx,
-                                     &cell_face_lst);
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  if (ma->cell_i_faces == NULL)
+    cs_mesh_adjacencies_update_cell_i_faces();
 
   cs_lnum_t  *cell_subface_index = NULL;
   cs_real_t  *acc_vol_r = NULL;
@@ -425,9 +424,21 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
     cs_lnum_t p_s_id = particles->n_particles +  cell_particle_idx[li];
 
     const cs_lnum_t cell_id = (cell_ids != NULL) ? cell_ids[li] : li;
-    const cs_lnum_t n_cell_faces = cell_face_idx[cell_id+1] - cell_face_idx[cell_id];
 
     const cs_real_t *cell_cen = fvq->cell_cen + cell_id*3;
+
+
+    const cs_lnum_t n_cell_i_faces =   ma->cell_cells_idx[cell_id+1]
+                                     - ma->cell_cells_idx[cell_id];
+    const cs_lnum_t n_cell_b_faces =   ma->cell_b_faces_idx[cell_id+1]
+                                     - ma->cell_b_faces_idx[cell_id];
+
+    cs_lnum_t n_cell_faces = n_cell_i_faces + n_cell_b_faces;
+
+    if (ma->cell_hb_faces_idx != NULL) {
+      n_cell_faces +=   ma->cell_hb_faces_idx[cell_id+1]
+                      - ma->cell_hb_faces_idx[cell_id];
+    }
 
     if (n_cell_faces > n_faces_max) {
       n_faces_max = n_cell_faces*2;
@@ -453,11 +464,9 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
 
       cs_real_t v_mult = 1;
 
-      const cs_lnum_t face_num = cell_face_lst[cell_face_idx[cell_id] + i];
+      if (i < n_cell_i_faces) { /* Interior face */
 
-      if (face_num > 0) { /* Interior face */
-
-        face_id = face_num - 1;
+        face_id = ma->cell_i_faces[ma->cell_cells_idx[cell_id] + i];
 
         if (cell_id == mesh->i_face_cells[face_id][1])
           v_mult = -1;
@@ -470,9 +479,15 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
       }
       else { /* Boundary faces */
 
-        assert(face_num < 0);
+        cs_lnum_t j = i - n_cell_i_faces;
+        if (j < n_cell_b_faces)
+          face_id = ma->cell_b_faces[ma->cell_b_faces_idx[cell_id] + j];
 
-        face_id = -face_num - 1;
+        else {
+          assert(ma->cell_hb_faces_idx != NULL);
+          j -= n_cell_b_faces;
+          face_id = ma->cell_hb_faces[ma->cell_hb_faces_idx[cell_id] + j];
+        }
 
         cs_lnum_t vtx_s = mesh->b_face_vtx_idx[face_id];
         n_vertices = mesh->b_face_vtx_idx[face_id+1] - vtx_s;
@@ -537,9 +552,9 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
 
     /* distribute new particles */
 
-    for (cs_lnum_t i = 0; i < n_c_p; i++) {
+    for (cs_lnum_t c_i = 0; c_i < n_c_p; c_i++) {
 
-      cs_lnum_t p_id = p_s_id + i;
+      cs_lnum_t p_id = p_s_id + c_i;
 
       cs_lagr_particles_set_lnum(particles, p_id, CS_LAGR_CELL_ID, cell_id);
 
@@ -551,19 +566,17 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
       cs_real_t r[2];
       cs_random_uniform(2, r);
 
-      cs_lnum_t c_id = 0;
-      while (c_id < n_cell_faces && r[0] > acc_vol_r[c_id])
-        c_id++;
+      cs_lnum_t i = 0;
+      while (i < n_cell_faces && r[0] > acc_vol_r[i])
+        i++;
 
       cs_lnum_t face_id, n_vertices;
       const cs_lnum_t *vertex_ids;
       const cs_real_t *face_cog;
 
-      const cs_lnum_t face_num = cell_face_lst[cell_face_idx[cell_id] + c_id];
+      if (i < n_cell_i_faces) { /* Interior face */
 
-      if (face_num > 0) { /* Interior face */
-
-        face_id = face_num - 1;
+        face_id = ma->cell_i_faces[ma->cell_cells_idx[cell_id] + i];
 
         cs_lnum_t vtx_s = mesh->i_face_vtx_idx[face_id];
         n_vertices = mesh->i_face_vtx_idx[face_id+1] - vtx_s;
@@ -573,9 +586,15 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
       }
       else { /* Boundary faces */
 
-        assert(face_num < 0);
+        cs_lnum_t j = i - n_cell_i_faces;
+        if (j < n_cell_b_faces)
+          face_id = ma->cell_b_faces[ma->cell_b_faces_idx[cell_id] + j];
 
-        face_id = -face_num - 1;
+        else {
+          assert(ma->cell_hb_faces_idx != NULL);
+          j -= n_cell_b_faces;
+          face_id = ma->cell_hb_faces[ma->cell_hb_faces_idx[cell_id] + j];
+        }
 
         cs_lnum_t vtx_s = mesh->b_face_vtx_idx[face_id];
         n_vertices = mesh->b_face_vtx_idx[face_id+1] - vtx_s;
@@ -588,7 +607,7 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
                             vertex_ids,
                             (const cs_real_3_t *)mesh->vtx_coord,
                             face_cog,
-                            acc_surf_r + cell_subface_index[c_id],
+                            acc_surf_r + cell_subface_index[i],
                             part_coord);
 
       /* In regular case, place point on segment joining cell center and

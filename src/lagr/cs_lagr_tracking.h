@@ -121,21 +121,6 @@ cs_lagr_test_wall_cell(const void                     *particle,
                        cs_lnum_t                      *face_id);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Get pointers to cell face connectivity used in particle tracking.
- *
- * \param[out]  cell_face_idx  cell face index
- * \param[out]  cell_face_lst  cell face connectivity (signed 1-to-n based,
- *                             negative for boundary faces, positive for
- *                             interior faces)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_get_cell_face_connectivity(cs_lnum_t  **cell_face_idx,
-                                   cs_lnum_t  **cell_face_lst);
-
-/*----------------------------------------------------------------------------*/
 
 
 END_C_DECLS
