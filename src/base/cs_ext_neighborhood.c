@@ -1531,10 +1531,8 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
             = cs_math_3_square_norm(b_face_normal[f_id_0]);
 
           /* if dot_p < 0.95 * sqrt(norm_if_2) * sqrt(norm_nf_2) */
-          if (cs_math_pow2(dot_p) < cs_math_pow2(0.95) * norm_if_2 * norm_nf_2) {
+          if (cs_math_pow2(dot_p) < cs_math_pow2(0.95) * norm_if_2 * norm_nf_2)
             is_regular = false;
-            break;
-          }
         }
 
       } /* End of loop on boundary faces */
@@ -1583,10 +1581,8 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
           cs_real_t norm_fj_2 = cs_math_3_square_norm(v_jf);
 
           /* if dot_p < 0.95 * sqrt(norm_if_2) * sqrt(norm_fj_2) */
-          if (cs_math_pow2(dot_p) < cs_math_pow2(0.95) * norm_if_2 * norm_fj_2) {
+          if (cs_math_pow2(dot_p) < cs_math_pow2(0.95) * norm_if_2 * norm_fj_2)
             is_regular = false;
-            break;
-          }
         }
 
       } /* End of loop on interior faces */
