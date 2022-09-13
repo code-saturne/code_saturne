@@ -581,28 +581,8 @@ class MainFieldsModel(Variables, Model):
         self.isInList(str(fieldId), self.getFieldIdList())
         field_to_delete = self.getFieldFromId(fieldId)
 
-        # Suppress variables related to current field from profiles
-        pm = ProfilesModel(self.case)
-        for label in  pm.getProfilesLabelsList():
-            updated_variables = [var for var in pm.getVariable(label) if not field_to_delete.label in var]
-            pm.setVariable(label, updated_variables)
-
-        # Suppress variables related to current field from time averages
-        tam = TimeAveragesModel(self.case)
-        for label in  tam.getTimeAverageNames():
-            updated_variables = [var for var in tam.getVariable(label) if not field_to_delete.label in var]
-            tam.setVariable(label, updated_variables)
-
-        for node in self.__nodesWithFieldIDAttribute():
-            try :
-               if (node['field_id'] == str(fieldId) or ( fieldId == 1 and node['field_id'] == "none")):
-                    node.xmlRemoveNode()
-               elif (node['field_id_a'] == str(fieldId) or node['field_id_b'] == str(fieldId)):
-                    node.xmlRemoveNode()
-            except :
-               pass
-
         # Update for field Id
+        # Note : this works only because the first field is always continuous !!!
         for node in self.__XMLNodefields.xmlGetNodeList('field'):
             nodec = node.xmlGetNode('carrier_field')
             if nodec != None :
@@ -616,7 +596,22 @@ class MainFieldsModel(Variables, Model):
                        self.setCriterion(currentId, "continuous")
                        self.setCarrierField(currentId, self.defaultValues()['carrierField'])
 
+        # Remove all previous occurences of fieldId
+        # Warning : this needs to be done after carrier fields have been updated
+        nodes_to_remove = self.case.xmlGetNodeWithAttrList("field_id", field_id=fieldId)
+        nodes_to_remove += self.case.xmlGetNodeWithAttrList("field_id_a", field_id_a=fieldId)
+        nodes_to_remove += self.case.xmlGetNodeWithAttrList("field_id_b", field_id_b=fieldId)
+        if str(fieldId) == "1":
+            nodes_to_remove += self.case.xmlGetNodeWithAttrList("field_id", field_id="none")
+        for node in nodes_to_remove:
+            node.xmlRemoveNode()
+
         self.list_of_fields = [fld for fld in self.list_of_fields if fld.f_id != str(fieldId)]
+        # Renumber fields after deleted field (this is necessary because the solver works
+        # with a consecutive numbering of the fields)
+        for field in self.list_of_fields[int(fieldId)-1:]:
+            field.f_id = int(field.f_id) - 1
+
         self.updateXML()
 
         NeptuneField.default_carrier_id = self.getFirstContinuousField()

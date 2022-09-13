@@ -39,9 +39,7 @@ class NeptuneField(Variables, Model):
     def __init__(self, case, f_id):
 
         self.case = case # Could be a global variable (is actually a singleton)
-        self._f_id = f_id
-        if (f_id == "off"):
-            traceback.print_stack()
+        self._f_id = str(f_id)
 
         thermo_node = self.case.xmlGetNode('thermophysical_models')
         fields_node = thermo_node.xmlInitNode('fields')
@@ -79,6 +77,17 @@ class NeptuneField(Variables, Model):
     @property
     def f_id(self):
         return str(self._f_id)
+
+    @f_id.setter
+    def f_id(self, value):
+        try:
+            self.isPositiveInt(value)
+        except ValueError:
+            assert(type(value) == str)
+            assert(value.isdigit())
+        for node in self.case.xmlGetNodeWithAttrList("field_id", field_id=self._f_id):
+            node["field_id"] = str(value)
+        self._f_id = str(value)
 
     @property
     def label(self):
