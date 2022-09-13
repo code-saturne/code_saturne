@@ -389,15 +389,15 @@ examples subsection.
 
 \warning Caution must be exercised when using smoothing utilities
 because the geometry may be modified. In order to preserve geometry,
-the function \ref cs_mesh_smoother_fix_by_feature allows to
-lock some boundary vertices by a feature angle criterion.
+the \ref cs_mesh_smoother_fix_by_feature function allows to
+pin some boundary vertices in place by a feature angle criterion.
 Fixing all boundary vertices ensures the geometry is preserved, but reduces
 the smoothing algorithm's effectiveness.
 
 #### Warped faces smoother
 <!-- -->
 
-The \ref cs_mesh_smoother_unwarp allows reducing face warping
+The \ref cs_mesh_smoother_unwarp function allows reducing face un-warping
 in the calculation mesh.
 
 Be aware that, in some cases, this algorithm may degrade other mesh quality

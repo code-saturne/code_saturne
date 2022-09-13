@@ -323,7 +323,8 @@ This is activated by defining `N > 0` using the following command-line option:
 `--slurm-batch-wtime=M` can also be used to specify the wall time limit in hours
 of submissions (3 hours by default).
 
-Warning: for EDF users, the `wckey` argument should be defined in the user
+\warning
+For EDF users, the `wckey` argument should be defined in the user
 environnement with the following command: `export SBATCH_WCKEY=<key>`.
 
 ### Definition of dependencies

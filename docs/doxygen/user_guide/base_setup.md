@@ -436,7 +436,8 @@ calculation of the physical parameters of the flow and of the
 "conventional" value of <em>μ<sub>t</sub></em> corresponding to the chosen
 turbulence model.
 
-\warning: The calculation of the turbulent viscosity being a
+\warning
+The calculation of the turbulent viscosity being a
 particularly sensitive aspect, bad choices here may
 seriously distort the results.
 
@@ -533,7 +534,7 @@ variable \f$\varphi\f$ in the following way:
 The example is valid for a velocity component, for a turbulent variable
 (\f$k\f$, \f$\varepsilon$, $R_{ij}\f$, \f$\omega\f$, \f$\varphi\f$ or \f$\overline{f}\f$)
 and for a scalar (or for the average of the square of the fluctuations
-of a scalar), because the syntax of the function \ref cs_user_source_terms
+of a scalar), because the syntax of the \ref cs_user_source_terms function
 in the cs_user_source_terms.c file is similar.
 
 # For user scalars
@@ -541,7 +542,7 @@ in the cs_user_source_terms.c file is similar.
 The source terms in the transport equations related to the user scalars
 (passive or not, average of the square of the fluctuations of a scalar,
 \...) can be filled in thanks to the GUI or the `cs_user_source_terms`
-user file. Without the GUI, the function `cs_user_source_terms` is used
+user file. Without the GUI, the `cs_user_source_terms`  function is used
 to add source terms to the transport equations related to the user
 scalars, this function is called every time step, once for each user
 scalar. The user must provide the arrays `st_imp` and `st_exp` related

@@ -16,8 +16,12 @@
       <tab type="user" visible="yes" url="@ref cs_ug_troubleshooting" title="What if a calculation fails ?"/>
     </tab>
     <tab type="user" visible="yes" url="@ref cs_ug_base_setup" title="Basic modeling setup">
+    <tab type="usergroup" visible="yes" url="@ref cs_ug_advanced_setup" title="Advanced modeling setup">
+      <tab type="user" visible="yes" url="@ref advanced_specific_physics" title="Specific physical models"/>
+      <tab type="user" visible="yes" url="@ref advanced_coal_and_gas_combution" title="Pulverized coal and gas combustion module"/>
+      <tab type="user" visible="yes" url="@ref advanced_fuel_oil_combustion" title="Heavy fuel oil combustion module"/>
+      <tab type="user" visible="yes" url="@ref advanced_radiative_thermal" title="Radiative thermal transfers in semi-transparent gray media"/>
     </tab>
-    <tab type="user" visible="yes" url="@ref cs_ug_advanced_setup" title="Advanced modeling setup">
     </tab>
     <tab type="user" visible="yes" url="@ref cs_ug_studymanager" title="The STUDYMANAGER tool"/>
     <tab type="usergroup" visible="yes" url="@ref cs_dg_developer_guide" title="Developer guide">

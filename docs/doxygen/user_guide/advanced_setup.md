@@ -30,10 +30,10 @@ documentation. It is also recommended to check the
 [TOC]
 
 - \subpage advanced_specific_physics
-- \subpage advanced_pulveri_gas_combution
+- \subpage advanced_coal_and_gas_combution
 - \subpage advanced_fuel_oil_combustion
-- \subpage advanced_Radiative_thermal
-- \subpage advanced_Conjugate_heat_transfer
+- \subpage advanced_radiative_thermal
+- \subpage advanced_conjugate_heat_transfer
 
 <!-- ----------------------------------------------------------------------- -->
 
@@ -45,7 +45,7 @@ Use of a specific physical model
 Specific physical models such as dispersed phase, atmospheric flows,
 gas combustion, pulverized fuel combustion, electric arcs models, and
 compressible flows can be activated using the GUI (select the Calculation
-features), or by using the function \ref cs_user_model of the
+features), or by using the \ref cs_user_model function of the
 cs_user_parameters.c file (called only during the calculation initialization).
 
 Without the GUI, the user can activate the different modules by setting the
@@ -141,12 +141,13 @@ This file replaces `dp_C3P`.
 
 <!-- ----------------------------------------------------------------------- -->
 
-\page advanced_pulveri_gas_combution Pulverised coal and gas combustion module
+\page advanced_coal_and_gas_combution Pulverized coal and gas combustion module
 
-Initialisation of the variables
+Initialization of the variables
 ===============================
 
-For **Reactive flows (combustion)**, it is possible to initialize the specific variables in the **Graphical User Interface (GUI)** or in the function \ref cs_user_initialization. \n
+For **Reactive flows (combustion)**, it is possible to initialize the specific variables in the **Graphical User Interface (GUI)** or in the \ref cs_user_initialization function.
+
 In the GUI, when a **Reactive flows (combustion)** is selected in the item **“Calculation features”**, an additional item appears: __“Gas combustion”__ the user can change it by __“Pulverized coal”__. In this item the user can define coal types, their composition, the oxidant and reactions parameters, see the following figure.
 
 \anchor gui_coal_classes
@@ -162,17 +163,17 @@ In the GUI, when a **Reactive flows (combustion)** is selected in the item **“
 \image html gui_coal_oxydant.png "Pulverized coal combustion, oxydant"
 
 If the user activates **gas combustion**  and does not want to use the GUI, she or he can directly use
-the function **cs_user_initialization** (for some examples see [Initialization examples](@ref user_initialization_base_s_init)). \n
+the \ref cs_user_initialization  function (for some examples see [Initialization examples](@ref user_initialization_base_s_init)). \n
 
 Boundary conditions
 ===================
 
-**For pulverised coal**, it is possible to manage the boundary conditions in
+**For pulverized coal**, it is possible to manage the boundary conditions in
 the Graphical User Interface (GUI). When the **boundary zones** is actived,
 the user specific boundary conditions are activated for inlets
 
 \anchor gui_coal_bc
-\image html gui_coal_bc.png "Boundary conditions for the pulverised of coal"
+\image html gui_coal_bc.png "Boundary conditions for the pulverized coal module"
 
 
 **For gas combustion** it is also possible to manage the boundary conditions for the inlet in the Graphical User Interface (GUI). The user can choose between the **burned gas** or the **Unburned gas**,
@@ -182,10 +183,10 @@ impose the the mass flow and velocity
 \image html gui_gas_bc.png "Boundary conditions for gas combustion"
 
 
-Initialisation of the options of the variables
+Initialization of the options of the variables
 ==============================================
 
-In the case of **gas combustion** or **pulverised coal**, time averages, chronological records and logss follow-ups can be set in the Graphical User Interface (GUI) or in the function \ref cs_user_parameters. In the GUI, under the heading **Calculation control**, additional variables appear in the list in the items **Time averages** and **Profiles**, as well as in the item **Volume solution control**
+In the case of **gas combustion** or **pulverized coal combustion**, time averages, chronological records and log follow-ups can be set in GUI or in the \ref cs_user_parameters function. In the GUI, under the heading **Calculation control**, additional variables appear in the list in the items **Time averages** and **Profiles**, as well as in the item **Volume solution control**
 
 \anchor gui_coal_time_average
 \image html gui_coal_time_average.png "Calculation control - Time averages"
@@ -193,10 +194,9 @@ In the case of **gas combustion** or **pulverised coal**, time averages, chronol
 \anchor gui_coal_solution_control
 \image html gui_coal_solution_control.png "Calculation control - Volume solution control"
 
-For **gas combustion** if the GUI is not used for **coal combustion**, the
-function \ref cs_user_parameter can be used in \ref cs_user_parameters.c for
-the considered **gas combustion** or **pulverised coal**. This functions is called at the
-calculation start. They allow to:
+For **gas combustion**, if the GUI is not used for **coal combustion**, the
+\ref cs_user_parameters and \ref cs_user_combustion functions, called at calculation
+start, can be used to:
 
 - set the relaxation coefficient of the density \ref srrom.
 
@@ -209,14 +209,11 @@ calculation start. They allow to:
 
 \page advanced_fuel_oil_combustion Heavy fuel oil combustion module
 
-Initialisation of transported variables
+Initialization of transported variables
 =======================================
 
-To initialise or modify (in case of a continuation) values of transported
-variables and of the time step, the standard function \ref cs_user_initialization is used.
-
-Physical properties are stored using the **cs_field** API (cell center). For instance, to obtain
-the mean density (in \f$kg.m^{-3})\f$, one must declare a array cpro_crho = CS_F_(rho)->val (see [Physical properties](@ref example_physical_properties)).
+To initialize or modify (in case of a restart) values of transported
+variables and of the time step, the standard \ref cs_user_initialization function is used.
 
 Boundary conditions
 ===================
@@ -225,44 +222,41 @@ Boundary conditions are defined as usual on a per-face basis in \ref cs_user_bou
 
 <!-- ----------------------------------------------------------------------- -->
 
-\page advanced_Radiative_thermal Radiative thermal transfers in semi-transparent gray media
+\page advanced_radiative_thermal Radiative thermal transfers in semi-transparent gray media
 
-Initialisation of the radiation main parameters
+Initialization of the radiation main parameters
 ===============================================
 
-The main radiation parameters can be initialize in the Graphical User Interface (GUI) or in the user
-function \ref cs_user_radiative_transfer_parameters (see [Initialization examples](@ref cs_user_radiative_transfer_h_cs_user_radiative_transfer_parameters)).
+The main radiation parameters can be initialized in the GUI or in the \ref cs_user_radiative_transfer_parameters user function (see [Initialization examples](@ref cs_user_radiative_transfer_h_cs_user_radiative_transfer_parameters)).
 In the GUI, under the heading **Thermal models**, when one of the two thermal radiative transfers models is selected, see [Figure 1](@ref gui_rad_transf_do_params)
-additional items appear. The user is asked to choose the number of directions for angular discretisation, to define the absorption coefficient and select if the radiative calculation are restarted or not,
-see [Figure 1](@ref gui_rad_transf_do_params) and [Figure 3](@ref gui_rad_transf_p1_params).  When **Advanced options** is selected for both models [Figure 2](@ref gui_rad_transf_do_advanced) and [Figure 4](@ref gui_rad_transf_p1_advanced)  appear, the user must fill the resolution frequency and verbosity levels. In addition, the activation of the radiative transfer leads to the creation of an item **Surface solution control** under the heading **Calculation control**, see [Figure 5](@ref gui_rad_transf_post_output), where radiative transfer variables can be selected to appear in the output log.
+additional items appear. The user is asked to choose the number of directions for angular discretization, to define the absorption coefficient and specify if the radiative calculation is restarted from a checkpoint or not;
+see [Figure 1](@ref gui_rad_transf_do_params) and [Figure 3](@ref gui_rad_transf_p1_params).  When **Advanced options** is selected for both models [Figure 2](@ref gui_rad_transf_do_advanced) and [Figure 4](@ref gui_rad_transf_p1_advanced)  appear, the user must fill the resolution frequency and verbosity levels. In addition, the activation of the radiative transfer leads to the creation of a **Surface solution control** item under the heading **Calculation control**, see [Figure 5](@ref gui_rad_transf_post_output), where radiative transfer variables can be selected to appear in the output log.
 
-\warning: when a calculation is ran using a specific physics module,
+\warning when a calculation is run using a specific physics module,
 this first heading must not be completed. The radiation module is then
 activated or not, according to the parameter file related to the considered
 specific physics.
 
-Radiative transfers boundary conditions
-=======================================
+Radiative transfer boundary conditions
+======================================
 
-These informations can be filled by the user through the Graphical User Interface
-(GUI) or by using the function \ref cs_user_radiative_transfer_bcs see [boundary examples](@ref cs_user_radiative_transfer_h_boundary_conditions).
-If the interface is used, when one of the **Radiative transfers** options is selected in [Figure 1](@ref gui_rad_transf_do_params) and **Boundary zones** is defined in **Mesh**,
-it activates specific boundary conditions each time a **Wall** is defined, see [Figure 6](@ref gui_rad_transf_wall_model). The user can then choose
-between 3 cases. The parameters the user must specify are displayed for one of them in [Figure 7](@ref gui_rad_transf_wall_params).
+These conditions can be defined with the GUI or by programming the \ref cs_user_radiative_transfer_bcs  function; see [boundary examples](@ref cs_user_radiative_transfer_h_boundary_conditions).
+In the GUI, when one of the **Radiative transfers** options is selected in [Figure 1](@ref gui_rad_transf_do_params) and **Boundary zones** is defined in **Mesh**,
+it activates specific boundary conditions each time a **Wall** is defined, see [Figure 6](@ref gui_rad_transf_wall_model). The user can then choose between 3 cases. The parameters that must be specified are displayed for one of them in [Figure 7](@ref gui_rad_transf_wall_params).
 
-Absorption coefficient of the medium, boundary conditions for the luminance and calculation of the net radiative flux
-=====================================================================================================================
+Absorption coefficient of the medium, boundary conditions for the luminance, and calculation of the net radiative flux
+======================================================================================================================
 
-When the absorption coefficient is not constant, the function \ref cs_user_rad_transfer_absorption is called instead at each time
+When the absorption coefficient is not constant, the \ref cs_user_rad_transfer_absorption functionis called at each time
 step. It is composed of three parts. In the first one, the user must provide the absorption coefficient of the medium in the array CK,
 for each cell of the fluid mesh. By default, the absorption coefficient of the medium is 0, which corresponds to a transparent medium.
 For more detail see [Absorption](@ref abso_flux)
 
-\warning: when a specific physics is activated, it is forbidden to
-give a value to the absorption coefficient in this function. In this
-case, the coefficient is either calculated automatically, or provided by the user via a
-thermo-chemical parameter file (dp_C3P or dp_C3PSJ for gas combustion,
-and dp_FCP for pulverised coal combustion).
+\warning
+When a specific physical model is activated, it is forbidden to
+set the absorption coefficient in this function. In this
+case, the coefficient is either calculated automatically, or provided by the user via a thermo-chemical parameter file (dp_C3P or dp_C3PSJ for gas combustion,
+and dp_FCP for pulverized coal combustion).
 
 \anchor gui_rad_transf_do_params
 \image html gui_rad_transf_do_params.png "Radiative transfers - parameters of the DO method"
@@ -287,12 +281,12 @@ and dp_FCP for pulverised coal combustion).
 
 <!-- ----------------------------------------------------------------------- -->
 
-\page advanced_Conjugate_heat_transfer Conjugate heat transfer
+\page advanced_conjugate_heat_transfer Conjugate heat transfer
 
 Thermal module in a 1D wall
 ===========================
 
-The function \ref cs_user_1d_wall_thermal takes into account the wall-affected thermal inertia.
+The \ref cs_user_1d_wall_thermal function takes into account the wall-affected thermal inertia.
 Some boundary faces are treated as a solid wall with a given thickness, on which the code resolves
 a one-dimensional equation for the heat conduction. The coupling between the 1D module and the fluid
 works in a similar way to the coupling with the **SYRTHES**. By construction, the user is not able to account
@@ -303,7 +297,8 @@ is required in order to evaluate the relevance of its usage by way of a report o
 The use of this code requires that the thermal scalar is
 defined as (\ref cs_thermal_model_field() \f$ \ne \f$  NULL).
 
-\warning: The 1D thermal module is developed assuming the thermal scalar
+\warning
+The 1D thermal module is developed assuming the thermal scalar
 as a temperature. If the thermal scalar is an enthalpy, the code calls the
 enthalpy to temperature conversion as defined by the model defaults,
 or by the user in \texttt{cs\_user\_physical\_properties} for each
