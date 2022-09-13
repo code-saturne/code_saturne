@@ -992,19 +992,18 @@ _internal_treatment(cs_lagr_particle_set_t  *particles,
       for (int k = 0; k < 3; k++) {
         particle_velocity[k] = 0.0;
       }
+
       /* Force the particle on the intersection but in the original cell */
       for (int k = 0; k < 3; k++) {
         particle_coord[k] = intersect_pt[k] + bc_epsilon * vect_cen[k];
         particle_velocity_seen[k] = 0.0;
       }
-      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID,
-                                face_id);
-      // The particle is not treated yet: the motion is now imposed
+
+      /* The particle is not treated yet: the motion is now imposed */
       cs_lagr_particles_set_flag(particles, p_id,
                                  CS_LAGR_PART_IMPOSED_MOTION);
 
       /* Specific treatment in case of particle resuspension modeling */
-
       particle_state = CS_LAGR_PART_TREATED;
 
       particles->n_part_dep += 1;
@@ -1969,7 +1968,7 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
     particle_state = CS_LAGR_PART_TREATED;
   }
 
-  /* Neighbor face id (allow tes even without attribute */
+  /* Neighbor face id (allow test even without attribute */
   cs_lnum_t  null_face_id = -1;
   cs_lnum_t  *neighbor_face_id = &null_face_id;
   if (p_am->size[CS_LAGR_NEIGHBOR_FACE_ID] > 0)
@@ -3269,50 +3268,6 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
         }
 
       }
-
-    }
-  }
-
-  /* Internal deposition: additional loop
-     TODO: check if this is really required: the adjacent boundary
-     face id may/should have been already set in the particle
-     displacement stage. */
-
-  if (   cs_glob_porous_model == 3
-      && lagr_model->deposition == 1
-      && internal_conditions != NULL) {
-
-    for (cs_lnum_t ip = 0; ip < particles->n_particles; ip++) {
-
-      if (cs_lagr_particles_get_flag(particles, ip,
-                                     CS_LAGR_PART_IMPOSED_MOTION)) {
-
-        cs_lnum_t cell_id
-          = cs_lagr_particles_get_lnum(particles, ip, CS_LAGR_CELL_ID);
-
-        /* Loop over internal faces of the current particle faces
-         * NB: useful for resuspension, the last face_id is stored.
-         * face_id is unique in many cases. */
-
-        for (cs_lnum_t i = _particle_track_builder->cell_face_idx[cell_id];
-             i < _particle_track_builder->cell_face_idx[cell_id+1] ;
-             i++ ) {
-
-          cs_lnum_t face_num = _particle_track_builder->cell_face_lst[i];
-
-          if (face_num > 0) {
-
-            cs_lnum_t face_id = face_num - 1;
-
-            /* Internal face flagged as internal deposition */
-            if (internal_conditions->i_face_zone_id[face_id] >= 0)
-              cs_lagr_particles_set_lnum(particles, ip,
-                                         CS_LAGR_NEIGHBOR_FACE_ID, face_id);
-
-          }
-        }
-
-      } /* if internal conditions are used */
 
     }
   }
