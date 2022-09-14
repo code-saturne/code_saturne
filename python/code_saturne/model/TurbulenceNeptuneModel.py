@@ -281,7 +281,8 @@ class TurbulenceModel(Variables, Model):
         """
         put two way coupling model for fieldId dispersed field
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getDispersedFieldList())
+        field = self.mainFieldsModel.getFieldFromId(fieldId)
+        assert(field.flow_type == "dispersed")
         self.isInList(model, TurbulenceModelsDescription.dispersedCouplingModels)
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)

@@ -79,21 +79,18 @@ class InterfacialEnthalpyModel(Variables, Model):
         # Init freeCouples for enthalpy : criterion checking !
         self.__liquidVaporCouples = []
 
-        for fieldaId in self.mainFieldsModel.getContinuousFieldList() :
-            nature_a = self.mainFieldsModel.getFieldNature(fieldaId)
-            if self.mainFieldsModel.getEnergyModel(fieldaId) != 'off' :
-                for fieldbId in self.mainFieldsModel.getContinuousFieldList():
-                    nature_b = self.mainFieldsModel.getFieldNature(fieldbId)
-                    if nature_a == nature_b:
+        for field_a in self.mainFieldsModel.getContinuousFieldList() :
+            if field_a.enthalpy_model != 'off' :
+                for field_b in self.mainFieldsModel.getContinuousFieldList():
+                    if field_a.phase == field_b.phase:
                         continue
-                    if self.mainFieldsModel.getEnergyModel(fieldbId) != 'off' and fieldbId > fieldaId:
-                        self.__liquidVaporCouples.append((fieldaId, fieldbId))
-                for fieldbId in self.mainFieldsModel.getDispersedFieldList():
-                    nature_b = self.mainFieldsModel.getFieldNature(fieldbId)
-                    if nature_a == nature_b:
+                    if field_b.enthalpy_model != 'off' and field_b.f_id > field_a.f_id:
+                        self.__liquidVaporCouples.append((field_a.f_id, field_b.f_id))
+                for field_b in self.mainFieldsModel.getDispersedFieldList():
+                    if field_a.phase == field_b.phase:
                         continue
-                    if self.mainFieldsModel.getEnergyModel(fieldbId) != 'off' and self.mainFieldsModel.getFieldNature(fieldbId) != "solid":
-                        self.__liquidVaporCouples.append((fieldaId, fieldbId))
+                    if field_b.enthalpy_model != 'off' and field_b.phase != "solid":
+                        self.__liquidVaporCouples.append((field_a.f_id, field_b.f_id))
 
     def getLiquidVaporCouples(self):
         """

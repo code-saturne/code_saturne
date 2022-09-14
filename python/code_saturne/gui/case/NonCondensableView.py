@@ -182,9 +182,9 @@ class FieldDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
         self.modelCombo = ComboModel(editor, 1, 1)
-        for fieldId in self.mdl.mainFieldsModel.getGasPhaseList() :
-            if self.thermo.getMaterials(fieldId) == "Water" :
-                label     = self.mdl.mainFieldsModel.getLabel(fieldId)
+        for field in self.mdl.mainFieldsModel.getGasPhaseList() :
+            if self.thermo.getMaterials(field.f_id) == "Water" :
+                label     = field.label
                 self.modelCombo.addItem(self.tr(label), label)
 
         editor.installEventFilter(self)

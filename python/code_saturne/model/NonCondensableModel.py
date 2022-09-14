@@ -126,10 +126,8 @@ class NonCondensableModel(Model):
         Check if the requirements for non condensable gas addition are met
         - Energy equation must be activated for all gases
         """
-        if self.mainFieldsModel.getGasPhaseList() in [[], None]:
-            return False
-        for field_id in self.mainFieldsModel.getGasPhaseList():
-            if self.mainFieldsModel.getEnergyModel(field_id) != "off":
+        for field in self.mainFieldsModel.getGasPhaseList():
+            if field.enthalpy_model != "off":
                 return True
         return False
 
@@ -223,15 +221,17 @@ class NonCondensableModel(Model):
                return node['label']
 
     @Variables.undoLocal
-    def setNonCondFieldId(self, name, field):
+    def setNonCondFieldId(self, name, field_name):
         """
         set field Id for non condensable
         """
         fieldId = -1
-        for id in self.mainFieldsModel.getGasPhaseList() :
-            if field == self.mainFieldsModel.getLabel(id) :
-               fieldId = id
-        self.isInList(fieldId, self.mainFieldsModel.getGasPhaseList())
+        for field in self.mainFieldsModel.getGasPhaseList() :
+            if field_name == field.label:
+               fieldId = int(field.f_id)
+        if fieldId == -1:
+            gas_labels = [f.label for f in self.mainFieldsModel.getGasPhaseList()]
+            raise ValueError("Field '{0}' is not in the list of gas fields: {1}".format(field_name, gas_labels))
         for node in self.XMLNodeNonCondensable.xmlGetNodeList('variable'):
             if node['name'] == name :
                node['field_id'] = fieldId

@@ -114,7 +114,7 @@ class InterfacialAreaModel(Variables, Model):
         """
         list = []
         for field in self.mainFieldsModel.getDispersedFieldList() :
-            if self.getAreaModel(field) != "constant" :
+            if self.getAreaModel(field.f_id) != "constant" :
                 list.append(field)
         return list
 
@@ -157,7 +157,7 @@ class InterfacialAreaModel(Variables, Model):
         """
         self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
 
-        cte_field_1 = self.mainFieldsModel.getContinuousFieldList()[0]
+        cte_field_1 = self.mainFieldsModel.getContinuousFieldList()[0].f_id
 
         node = self.XMLAreaDiam.xmlGetNode('field', field_id = fieldId)
         if node is None :

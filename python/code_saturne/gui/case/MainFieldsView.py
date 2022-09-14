@@ -291,9 +291,8 @@ class CarrierDelegate(QItemDelegate):
         if self.mdl.getCriterion(fieldId) == "continuous" :
             self.modelCombo.addItem(self.tr("off"), 'off')
         else :
-            for id in self.mdl.getContinuousFieldList() :
-                label = self.mdl.getLabel(id)
-                self.modelCombo.addItem(self.tr(label), label)
+            for field in self.mdl.getContinuousFieldList() :
+                self.modelCombo.addItem(self.tr(field.label), field.label)
 
         editor.installEventFilter(self)
         return editor

@@ -128,7 +128,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
 
         self.groupBoxLiquidVaporModel.hide()
         self.groupBoxSolidEnergyTransfer.hide()
-        if (len(self.mdl.mainFieldsModel.getSolidFieldIdList()) > 0):
+        if (len(self.mdl.mainFieldsModel.getSolidPhaseList()) > 0):
             model = self.mdl.getSolidEnergyTransfer()
             self.modelSolidEnergyTransfer.setItem(str_model=model)
             self.groupBoxSolidEnergyTransfer.show()

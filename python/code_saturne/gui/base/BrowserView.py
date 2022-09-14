@@ -935,7 +935,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
             predefined_flow = MainFieldsModel(case).getPredefinedFlow()
             phase_change_transfer = MainFieldsModel(case).getPhaseChangeTransferStatus()
 
-            if (len(MainFieldsModel(case).getSolidFieldIdList()) > 0):
+            if (len(MainFieldsModel(case).getSolidPhaseList()) > 0):
                 m_ncfd['particles_interactions'] = True
 
             m_ncfd['itf_area'] = True

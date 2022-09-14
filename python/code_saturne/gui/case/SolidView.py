@@ -83,7 +83,7 @@ class SolidView(QWidget, Ui_Solid):
         self.case.undoStopGlobal()
         self.mdl = SolidModel(self.case)
 
-        if self.mdl.mainFieldsModel.getSolidFieldIdList() == []:
+        if self.mdl.mainFieldsModel.getSolidPhaseList() == []:
             self.groupBoxField.hide()
             self.groupBoxInteractions.hide()
             self.groupBoxGeneral.hide()
@@ -93,15 +93,15 @@ class SolidView(QWidget, Ui_Solid):
         # Combo box models
 
         self.modelField = ComboModel(self.comboBoxField, 1, 1)
-        for fieldId in self.mdl.mainFieldsModel.getSolidFieldIdList():
-            label = self.mdl.mainFieldsModel.getLabel(fieldId)
-            name = str(fieldId)
+        for field in self.mdl.mainFieldsModel.getSolidPhaseList():
+            label = field.label
+            name = field.f_id
             self.modelField.addItem(self.tr(label), name)
 
         self.currentid = -1
 
-        if len(self.mdl.mainFieldsModel.getSolidFieldIdList()) > 0 :
-            self.currentid = self.mdl.mainFieldsModel.getSolidFieldIdList()[0]
+        if len(self.mdl.mainFieldsModel.getSolidPhaseList()) > 0 :
+            self.currentid = self.mdl.mainFieldsModel.getSolidPhaseList()[0].f_id
             self.modelField.setItem(str_model = self.currentid)
 
         self.modelFriction = ComboModel(self.comboBoxFriction, 3, 1)

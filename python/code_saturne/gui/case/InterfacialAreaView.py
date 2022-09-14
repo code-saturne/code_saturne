@@ -101,13 +101,13 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
         # For consistency with the previous pages, the second phase of the
         # Large Interface Model is set before the dispersed fields
 
-        for fieldId in dispersed_fields:
-            label = self.mdl.mainFieldsModel.getLabel(fieldId)
-            name = str(fieldId)
+        for field in dispersed_fields:
+            label = field.label
+            name = field.f_id
             self.modelField.addItem(self.tr(label), name)
 
         if len(dispersed_fields) > 0 and id_to_set == -1:
-            id_to_set = dispersed_fields[0]
+            id_to_set = dispersed_fields[0].f_id
             self.modelField.setItem(str_model=id_to_set)
 
         # case no field

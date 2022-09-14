@@ -67,6 +67,16 @@ class SpeciesModel(Variables, Model):
         return default
 
 
+    def forceConsecutiveScalarIds(self):
+        """
+        Force all scalars to be named "scalar_i"
+        with i in [1; N_scalars; step=1]
+        """
+        for i, node in enumerate(self.XMLScalar.xmlGetNodeList('variable')):
+            node['name'] = 'scalar_'+str(i+1)
+        return
+
+
     def getScalarLabelList(self):
         """
         return list of label for scalar

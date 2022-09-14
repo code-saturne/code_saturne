@@ -29,8 +29,6 @@ from code_saturne.model.XMLengine import *
 from code_saturne.model.XMLmodel import *
 from code_saturne.model.Common import LABEL_LENGTH_MAX
 from code_saturne.model.NeptuneFieldModel import NeptuneField
-from code_saturne.model.ProfilesModel import ProfilesModel
-from code_saturne.model.TimeAveragesModel import TimeAveragesModel
 from code_saturne.model.GlobalNumericalParametersModel import GlobalNumericalParametersModel
 
 #-------------------------------------------------------------------------------
@@ -219,7 +217,7 @@ class MainFieldsModel(Variables, Model):
     def addDefinedField(self, fieldId, label, typeChoice, phase, carrierField="off",
                         hmodel="off", compressible="off"):
         """
-        add field for predefined flow
+        add field with initiaization attributes (for test purposes mostly)
         """
 
         self.isInList(phase, ['solid', 'liquid', 'gas'])
@@ -264,104 +262,45 @@ class MainFieldsModel(Variables, Model):
 
 
     def getContinuousFieldList(self):
-        """
-        return list of id for field
-        """
-        lst = []
-        for field in self.list_of_fields:
-            if field.flow_type == "continuous":
-               lst.append(field.f_id)
-        return lst
-
+        """ return list of continuous fields """
+        return [f for f in self.list_of_fields if f.flow_type == "continuous"]
 
     def getDispersedFieldList(self):
-        """
-        return list of id for field
-        """
-        lst = []
-        for field in self.list_of_fields:
-            if field.flow_type == "dispersed":
-                lst.append(field.f_id)
-        return lst
-
-    def getLiquidPhaseList(self):
-        lst = []
-        for field in self.list_of_fields:
-            if field.phase == "liquid":
-                lst.append(field.f_id)
-        return lst
+        """ return list of dispersed fields """
+        return [f for f in self.list_of_fields if f.flow_type == "dispersed"]
 
     def getGasPhaseList(self):
-        """
-        return list of id for field
-        """
-        lst = []
-        for field in self.list_of_fields:
-            if field.phase == "gas":
-                lst.append(field.f_id)
-        return lst
+        """ return list of gas fields """
+        return [f for f in self.list_of_fields if f.phase == "gas"]
 
-    def getSolidFieldIdList(self):
-        """
-        return list of id for solid field
-        """
-        lst = []
-        for field in self.list_of_fields:
-            if field.phase == "solid":
-                lst.append(field.f_id)
-        return lst
-
-    def getFilteredFieldIdList(self,
-                               phase_state=None,
-                               interfacial_criterion=None,
-                               carrier_state=None):
-        lst = []
-        phase_filter = True
-        type_filter = True
-        carrier_filter = True
-        for field in self.list_of_fields:
-            if phase_state != None:
-                phase_filter = (field.phase == phase_state)
-            if interfacial_criterion != None:
-                type_filter = (field.flow_type == interfacial_criterion)
-            if type_filter and interfacial_criterion == "dispersed" and carrier_state != None:
-                # TODO check if self.getCarrierField can replace following lines
-                carrier_field = self.getFieldFromId(field.carrier_id)
-                carrier_filter = (carrier_field.phase == carrier_state)
-            if phase_filter and type_filter and carrier_filter:
-                lst.append(field.f_id)
-        return lst
+    def getSolidPhaseList(self):
+        """ return list of solid fields """
+        return [f for f in self.list_of_fields if f.phase == "solid"]
 
     def getFirstContinuousField(self):
         """
         return id of first continuous field
         """
-        id = 0
+        f_id = 0
         if len(self.getContinuousFieldList()) > 0:
-            id = self.getContinuousFieldList()[0]
-        return id
+            f_id = self.getContinuousFieldList()[0].f_id
+        return f_id
 
 
     def getFirstGasField(self) :
         """
         return id of first continuous field
         """
-        id = 0
+        fid = 0
         if len(self.getGasPhaseList()) > 0:
-            id = self.getGasPhaseList()[0]
-        return id
+            fid = int(self.getGasPhaseList()[0].f_id)
+        return fid
 
 
     @Variables.noUndo
-    def getEnthalpyResolvedField(self) :
-        """
-        return list of id for field with enthalpy resolution
-        """
-        lst = []
-        for field in self.list_of_fields:
-            if field.enthalpy_model != "off" :
-               lst.append(field.f_id)
-        return lst
+    def hasEnthalpyResolvedField(self) :
+        """ return list of fields with enthalpy resolution """
+        return ([f for f in self.list_of_fields if f.enthalpy_model != "off"] != [])
 
 
     @Variables.undoLocal
@@ -413,9 +352,9 @@ class MainFieldsModel(Variables, Model):
             field.carrier_id = self.getFirstContinuousField()
             # Modify carrier field
             if oldtype != ftype:
-                for fid in self.getDispersedFieldList():
-                    if self.getCarrierField(fid) == str(fieldId):
-                        self.setCarrierField(fid, self.getFirstContinuousField())
+                for disp_field in self.getDispersedFieldList():
+                    if disp_field.carrier_id == str(fieldId):
+                        disp_field.carrier_id = self.getFirstContinuousField()
 
         # if ftype is changed from continuous to dispersed and vice versa, delete old coupling information
         if oldtype != ftype and oldtype == "continuous":
@@ -613,8 +552,9 @@ class MainFieldsModel(Variables, Model):
             field.f_id = int(field.f_id) - 1
 
         self.updateXML()
-
         NeptuneField.default_carrier_id = self.getFirstContinuousField()
+        from code_saturne.model.SpeciesModel import SpeciesModel # WARNING : potential circular dependency here
+        SpeciesModel(self.case).forceConsecutiveScalarIds()
 
 
     def updateXML(self):
@@ -622,7 +562,7 @@ class MainFieldsModel(Variables, Model):
         method for update in case of suppress or change attribute
         """
         # suppress solid information
-        if (len(self.getSolidFieldIdList()) < 1) :
+        if (len(self.getSolidPhaseList()) < 1) :
             node = self.XMLNodethermo.xmlGetNode('solid_compaction')
             if node:
                 node.xmlRemoveNode()
@@ -1008,7 +948,7 @@ class MainFieldsTestCase(ModelTest):
         mdl = MainFieldsModel(self.case)
         mdl.addField()
         mdl.addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off')
-        assert mdl.getContinuousFieldList() == ['1'],\
+        assert mdl.getContinuousFieldList().f_id == ['1'],\
             'Could not get continuous field list'
 
 
@@ -1017,7 +957,7 @@ class MainFieldsTestCase(ModelTest):
         mdl = MainFieldsModel(self.case)
         mdl.addField()
         mdl.addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off')
-        assert mdl.getDispersedFieldList() == ['2'],\
+        assert mdl.getDispersedFieldList().f_id == ['2'],\
             'Could not get dispersed field list'
 
 
@@ -1026,17 +966,17 @@ class MainFieldsTestCase(ModelTest):
         mdl = MainFieldsModel(self.case)
         mdl.addField()
         mdl.addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off')
-        assert mdl.getGasPhaseList() == ['2'],\
+        assert mdl.getGasPhaseList()[0].f_id == '2',\
             'Could not get GasPhaseList'
 
 
-    def checkGetSolidFieldIdList(self):
-        """Check whether the MainFieldsModel class could set and get SolidFieldIdList"""
+    def checkGetSolidPhaseList(self):
+        """Check whether the MainFieldsModel class could set and get SolidPhaseList"""
         mdl = MainFieldsModel(self.case)
         mdl.addField()
         mdl.addDefinedField('2', 'field2', 'dispersed', 'solid', 'on', 'on', 'off')
-        assert mdl.getSolidFieldIdList() == ['2'],\
-            'Could not get SolidFieldIdList'
+        assert mdl.getSolidPhaseList()[0].f_id == '2',\
+            'Could not get SolidPhaseList'
 
 
     def checkGetFirstContinuousField(self):

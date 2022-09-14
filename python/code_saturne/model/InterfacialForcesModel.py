@@ -64,12 +64,12 @@ class InterfacialForcesModel(Variables, Model):
 
         # Init freeCouples for forces : criterion checking !
         self.__allCouples = []
-        for i, fieldaId in enumerate(self.mainFieldsModel.getContinuousFieldList()):
-            for fieldbId in self.mainFieldsModel.getContinuousFieldList()[i + 1:]:
-                self.__allCouples.append([self.mainFieldsModel.getLabel(fieldaId), self.mainFieldsModel.getLabel(fieldbId), "continuous"])
-        for fieldbId in self.mainFieldsModel.getDispersedFieldList():
-            fieldaId = self.mainFieldsModel.getCarrierField(fieldbId)
-            self.__allCouples.append([self.mainFieldsModel.getLabel(fieldaId), self.mainFieldsModel.getLabel(fieldbId), "dispersed"])
+        for i, field_a in enumerate(self.mainFieldsModel.getContinuousFieldList()):
+            for field_b in self.mainFieldsModel.getContinuousFieldList()[i + 1:]:
+                self.__allCouples.append([field_a.label, field_b.label, "continuous"])
+        for field_b in self.mainFieldsModel.getDispersedFieldList():
+            field_a = self.mainFieldsModel.getFieldFromId(field_b.carrier_id)
+            self.__allCouples.append([field_a.label, field_b.label, "dispersed"])
 
     def getAllCouples(self):
         return self.__allCouples
@@ -77,10 +77,10 @@ class InterfacialForcesModel(Variables, Model):
     # TODO : to remove once the "auto" type of interaction is enabled ?
     def getGLIMfields(self):
         fields = []
-        for i, fieldaId in enumerate(self.mainFieldsModel.getContinuousFieldList()):
-            for fieldbId in self.mainFieldsModel.getContinuousFieldList()[i + 1:]:
-                if self.getContinuousCouplingModel(fieldaId, fieldbId) == "G_Large_Interface_Model":
-                    fields += [fieldaId, fieldbId]
+        for i, field_a in enumerate(self.mainFieldsModel.getContinuousFieldList()):
+            for field_b in self.mainFieldsModel.getContinuousFieldList()[i + 1:]:
+                if self.getContinuousCouplingModel(field_a.f_id, field_b.f_id) == "G_Large_Interface_Model":
+                    fields += [field_a, field_b]
         return fields
 
     def getAvailableContinuousDragModelList(self):
@@ -96,7 +96,9 @@ class InterfacialForcesModel(Variables, Model):
         # Only if : fieldaId is continuous and k-eps or Rij-eps
         #           fieldbId is dispersed without turbulence
         lst = []
-        if (fieldaId in self.mainFieldsModel.getContinuousFieldList() and fieldbId in self.mainFieldsModel.getDispersedFieldList()) :
+        field_a = self.mainFieldsModel.getFieldFromId(fieldaId)
+        field_b = self.mainFieldsModel.getFieldFromId(fieldbId)
+        if (field_a.flow_type == "continuous" and field_b.flow_type == "dispersed") :
             if (self.turb_m.isSecondOrderTurbulenceModel(fieldaId) and self.turb_m.getTurbulenceModel(fieldbId) == "none") :
                 lst = self.__availableturbulentedispersionModelsList
             else :
@@ -113,7 +115,9 @@ class InterfacialForcesModel(Variables, Model):
         """
         # only for bubbles in water
         lst = []
-        if ((fieldbId in self.mainFieldsModel.getDispersedFieldList()) and self.mainFieldsModel.getFieldNature(fieldbId) == "gas") :
+        field_a = self.mainFieldsModel.getFieldFromId(fieldaId)
+        field_b = self.mainFieldsModel.getFieldFromId(fieldbId)
+        if (field_b.flow_type == "dispersed" and field_b.phase == "gas") :
             lst = self.__availablewallforcesModelList
         else :
             lst = ["none"]
@@ -125,8 +129,10 @@ class InterfacialForcesModel(Variables, Model):
         return Model list according to fields criterion
         """
         # field A is continuous and field B is dispersed
-        self.isInList(fieldaId,self.mainFieldsModel.getContinuousFieldList())
-        self.isInList(fieldbId,self.mainFieldsModel.getDispersedFieldList())
+        field_a = self.mainFieldsModel.getFieldFromId(fieldaId)
+        field_b = self.mainFieldsModel.getFieldFromId(fieldbId)
+        assert(field_a.flow_type == "continuous")
+        assert(field_b.flow_type == "dispersed")
         predefined_flow = self.mainFieldsModel.getPredefinedFlow()
         if predefined_flow == "boiling_flow":
             return ["ishii"]
@@ -434,7 +440,7 @@ class InterfacialForcesModel(Variables, Model):
 
         mfm = MainFieldsModel(self.case)
         if mfm.getPredefinedFlow() == 'free_surface':
-            fieldId = self.mainFieldsModel.getContinuousFieldList()[1]
+            field = self.mainFieldsModel.getContinuousFieldList()[1]
 
             if status == "off" and old_status:
                 node = self.XMLClosure.xmlGetChildNode('interfacial_area_diameter')
@@ -443,26 +449,24 @@ class InterfacialForcesModel(Variables, Model):
 
                 self.removeVariableProperty("property",
                                                             self.XMLNodeproperty,
-                                                            fieldId,
+                                                            field.f_id,
                                                             "diameter")
                 self.removeVariableProperty("property",
                                                             self.XMLNodeproperty,
-                                                            fieldId,
+                                                            field.f_id,
                                                             "drift_component")
 
             elif status == "on":
-                field = self.mainFieldsModel.getFieldFromId(fieldId)
-                field_name = field.label
                 self.setNewVariableProperty('property', '',
                                                             self.XMLNodeproperty,
-                                                            fieldId,
+                                                            field.f_id,
                                                             'diameter',
                                                             'diam_'+field_name)
                 self.setNewVariableProperty('property', '',
                                                             self.XMLNodeproperty,
-                                                            fieldId,
+                                                            field.f_id,
                                                             'drift_component',
-                                                            'drift_component_'+field_name)
+                                                            'drift_component_'+field.label)
 
     @Variables.noUndo
     def getBubblesForLIMStatus(self, field_id_a, field_id_b):

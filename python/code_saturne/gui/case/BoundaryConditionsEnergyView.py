@@ -152,7 +152,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
             else :
                 self.hideWidget()
         elif self.__boundary.getNature() == "wall" :
-            if len(MainFieldsModel(self.case).getEnthalpyResolvedField()) != 0 :
+            if MainFieldsModel(self.case).hasEnthalpyResolvedField() :
                 energychoice = self.__boundary.getEnthalpyChoice("none")
                 self.__modelEnergy.setItem(str_model=energychoice)
                 val = self.__boundary.getEnthalpy("none")

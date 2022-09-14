@@ -236,7 +236,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         # Set currentField to 'none' if we are dealing with the non-convected variables
         self.__currentField = "none"
         if rowId < len(self.mdl.mainFieldsModel.list_of_fields):
-            self.__currentField = self.mdl.mainFieldsModel.list_of_fields[rowId].f_id
+            self.__currentField = int(self.mdl.mainFieldsModel.list_of_fields[rowId].f_id)
         log.debug("slotSelectField current field %s" %str(self.__currentField))
 
         self.__hideAllWidgets()
@@ -245,7 +245,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         if self.__nature == 'wall':
             self.__selectWallBoundary(boundary)
             self.tableViewFields.hide()
-            if len(MainFieldsModel(self.case).getSolidFieldIdList()) > 0:
+            if len(MainFieldsModel(self.case).getSolidPhaseList()) > 0:
                 self.tableViewFields.show()
         elif self.__nature == 'inlet':
             self.__selectInletBoundary(boundary)
@@ -276,7 +276,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
             boundary = Boundary(self.__nature, self.__label, self.case, self.__currentField)
 
             self.tableViewFields.hide()
-            if len(MainFieldsModel(self.case).getSolidFieldIdList()) > 0:
+            if len(MainFieldsModel(self.case).getSolidPhaseList()) > 0:
                 self.tableViewFields.show()
             self.__selectWallBoundary(boundary)
 

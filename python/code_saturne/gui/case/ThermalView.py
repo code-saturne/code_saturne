@@ -228,7 +228,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
 
         if self.case.module_name() != 'code_saturne':
             self.comboBoxThermal.setEnabled(False)
-            if (MainFieldsModel(self.case).getSolidFieldIdList() != []) :
+            if (MainFieldsModel(self.case).getSolidPhaseList() != []) :
                 self.groupBoxParticlesRadiation.show()
             else:
                 self.groupBoxParticlesRadiation.hide()
