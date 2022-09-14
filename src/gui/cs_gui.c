@@ -2439,19 +2439,11 @@ void CS_PROCF (uiexop, UIEXOP)(void)
  * *****************
  * integer         permeability    <--  permeability type
  * integer         diffusion       <--  diffusion type
- * integer         gravity         <--  check if gravity is taken into account
- * double          gravity_x       <--  gravity direction
- * double          gravity_y       <--  gravity direction
- * double          gravity_z       <--  gravity direction
  * integer         unsaturated     <--  unsaturated zone taken into account
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
                                 const int       *diffusion,
-                                const int       *gravity,
-                                const cs_real_t *gravity_x,
-                                const cs_real_t *gravity_y,
-                                const cs_real_t *gravity_z,
                                 const int       *unsaturated)
 {
   const cs_real_3_t *restrict cell_cen
@@ -2483,7 +2475,7 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
   cs_tree_node_t *tn_gw
     = cs_tree_get_node(cs_glob_tree, "thermophysical_models/groundwater");
 
-  /* number of volumic zone */
+  /* number of volumic zones */
 
   int n_zones = cs_volume_zone_n_zones();
 
@@ -2551,14 +2543,20 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
 
         /* unsaturated zone considered */
         if (*unsaturated) {
+
+          const cs_physical_constants_t *phys_cst = cs_glob_physical_constants;
+          cs_real_t g_norm = cs_math_3_norm(phys_cst->gravity);
+          bool gravity = (g_norm > cs_math_epzero) ? true : false;
+          const cs_real_t g_n[3] = {phys_cst->gravity[0]/g_norm,
+                                    phys_cst->gravity[1]/g_norm,
+                                    phys_cst->gravity[2]/g_norm};
+
           for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
             cs_lnum_t iel = cell_ids[icel];
             cs_real_t head = h_head_field[iel];
 
-            if (*gravity == 1)
-              head -= (  cell_cen[iel][0] * *gravity_x
-                       + cell_cen[iel][1] * *gravity_y
-                       + cell_cen[iel][2] * *gravity_z);
+            if (gravity)
+              head -= cs_math_3_dot_product(cell_cen[iel], g_n);
 
             if (head >= 0) {
               capacity_field[iel] = 0.;
@@ -3845,18 +3843,12 @@ cs_gui_mpi_algorithms(void)
 }
 
 /*----------------------------------------------------------------------------
- * Treatment of gravity and fluid physical properties
- * Initialize reference pressure and temperature if present
+ * Treatment of physical constants (gravity and Coriolis).
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_physical_properties(void)
+cs_gui_physical_constants(void)
 {
-  int choice;
-  const char *material = NULL;
-
-  const int itherm = cs_glob_thermal_model->itherm;
-
   cs_physical_constants_t *phys_cst = cs_get_glob_physical_constants();
 
   _gravity_value("gravity_x", &(phys_cst->gravity[0]));
@@ -3878,6 +3870,28 @@ cs_gui_physical_properties(void)
   }
   else
     phys_cst->icorio = 0;
+
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+  bft_printf("--gx = %f \n", phys_cst->gravity[0]);
+  bft_printf("--gy = %f \n", phys_cst->gravity[1]);
+  bft_printf("--gz = %f \n", phys_cst->gravity[2]);
+  bft_printf("--icorio = %i \n", phy_cst->icorio);
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Treatment of fluid physical properties
+ * Initialize reference pressure and temperature if present
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_physical_properties(void)
+{
+  int choice;
+  const char *material = NULL;
+
+  const int itherm = cs_glob_thermal_model->itherm;
 
   cs_fluid_properties_t *phys_pp = cs_get_glob_fluid_properties();
   cs_gui_fluid_properties_value("reference_pressure", &(phys_pp->p0));
@@ -3998,9 +4012,6 @@ cs_gui_physical_properties(void)
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
-  bft_printf("--gx = %f \n", phys_cst->gravity[0]);
-  bft_printf("--gy = %f \n", phys_cst->gravity[1]);
-  bft_printf("--gz = %f \n", phys_cst->gravity[2]);
   bft_printf("--icorio = %i \n", cs_glob_physical_constants->icorio);
   bft_printf("--rho = %g , variable %i\n",
              cs_glob_fluid_properties->ro0,

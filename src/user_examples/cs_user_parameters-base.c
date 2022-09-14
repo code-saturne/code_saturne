@@ -82,8 +82,6 @@ BEGIN_C_DECLS
 void
 cs_user_model(void)
 {
-  /*--------------------------------------------------------------------------*/
-
   /*! [activate_user_model] */
 
   /* Activate Atmospheric flow model
@@ -307,8 +305,6 @@ cs_user_model(void)
   /*! [atmo_module] */
 
   /*! [atmo_user_model_1] */
-
-  /*--------------------------------------------------------------------------*/
 
   /*--------------------------------------------------------------------------*/
 
@@ -546,6 +542,33 @@ cs_user_model(void)
 
   /*! [user_property_addition] */
 
+  /*--------------------------------------------------------------------------*/
+
+  /* Physical constants / body forces */
+
+  /*! [user_model_gravity] */
+  {
+    cs_physical_constants_t *pc = cs_get_glob_physical_constants();
+
+    pc->gravity[0] = 0.;
+    pc->gravity[1] = 0.;
+    pc->gravity[2] = -9.81; /* gravity  (m/s2) in the z direction */
+  }
+  /*! [user_model_gravity] */
+
+  /*! [user_model_coriolis] */
+  {
+    cs_physical_constants_t *pc = cs_get_glob_physical_constants();
+
+    cs_real_t omega_r[3] = {0., 0., 1.};    /* rotation vector, in rad/s */
+    cs_real_t invariant[3] = {0., 0., 0.};  /* invariant point */
+
+    cs_rotation_define(omega_r[0], omega_r[1], omega_r[2],
+                       invariant[0], invariant[1], invariant[2]);
+
+    pc->icorio = 1;  /* take Coriolis source terms into account */
+  }
+  /*! [user_model_coriolis] */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -764,20 +787,6 @@ cs_user_parameters(cs_domain_t *domain)
     fp->icp = -1;
   }
   /*! [param_fluid_properties] */
-
-  /* Example: Change physical constants
-   *------------------------------------*/
-
-  /*! [param_physical_constants] */
-  {
-    cs_physical_constants_t *pc = cs_get_glob_physical_constants();
-
-    pc->gravity[0] = 0.;
-    pc->gravity[1] = 0.;
-    pc->gravity[2] = -9.81; /* gravity  (m/s2) in the z direction */
-  }
-
-  /*! [param_physical_constants] */
 
   /* Example: Change options relative to the inner iterations
    * over prediction-correction.

@@ -87,14 +87,18 @@ integer          nmodpp
 integer          nscmax
 integer          l_size, f_id
 integer          error, n_elts
-double precision relaxp, l_cp(1), l_xmasm(1), l_cv(1)
+double precision l_cp(1), l_xmasm(1), l_cv(1)
 integer, dimension(:), pointer :: elt_ids
-
-type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
 interface
+
+  subroutine cs_gui_physical_constants()  &
+       bind(C, name='cs_gui_physical_constants')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_physical_constants
 
   subroutine cs_gui_physical_properties()  &
        bind(C, name='cs_gui_physical_properties')
@@ -204,6 +208,13 @@ call cscpva
 ! Other models selection through user Fortran subroutine
 
 call usipph(1, iturb, itherm, iale)
+
+! Gravity and Coriolis
+! Presence or not of gravity may be needed to determine whether some fields
+! are created, so this is called before cs_user_model (to provide a
+! user call site allowing to modify GUI-defined value programatically
+! before property fields are created).
+call cs_gui_physical_constants
 
 ! Flow and other models selection through user C function
 call cs_user_model
@@ -373,7 +384,7 @@ if (icdo.lt.2) then
   call cs_gui_numerical_options
 endif
 
-! Gravity, physical properties
+! Physical properties
 call cs_gui_physical_properties
 
 ! Turbulence reference values (uref, almax)

@@ -969,7 +969,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.setRowShow(self.tr('Deformable mesh'), m_ale)
         self.setRowShow(self.tr('Turbulence models'))
         self.setRowShow(self.tr('Thermal model'), (m_thermal > -1))
-        self.setRowShow(self.tr('Body forces'), (not m_gwf))
+        self.setRowShow(self.tr('Body forces'), True)
         self.setRowShow(self.tr('Gas combustion'), m_gas_comb)
         self.setRowShow(self.tr('Pulverized fuel combustion'), m_sf_comb)
         self.setRowShow(self.tr('Electrical models'), m_elec)

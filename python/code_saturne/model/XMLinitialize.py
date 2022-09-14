@@ -2004,6 +2004,28 @@ class XMLinit(BaseXmlInit):
                 print("-- Reverting to default gradient algorithm.")
                 node.xmlRemoveNode()
 
+        # Groundwater: replace specific gravity with global gravity
+
+        XMLThermoPhysicalModelNode = self.case.xmlInitNode('thermophysical_models')
+        node = XMLThermoPhysicalModelNode.xmlGetNode('groundwater_model')
+        if node:
+            n = node.xmlGetNode('gravity')
+            print(n)
+            if n:
+                XMLPhysicalPropNode = self.case.xmlInitNode('physical_properties')
+                gravity = XMLPhysicalPropNode.xmlGetNode('gravity')
+                if n['status'] == 'off':
+                    if gravity:
+                        gravity.xmlRemoveNode()
+                elif n['status'] == 'on':
+                    if not gravity:
+                        gravity = XMLPhysicalPropNode.xmlInitNode('gravity')
+                    gravity.xmlSetData('gravity_x', 0)
+                    gravity.xmlSetData('gravity_y', 0)
+                    gravity.xmlSetData('gravity_z', -9.81)
+
+                n.xmlRemoveNode()
+
     def _backwardCompatibilityCurrentVersion(self):
         """
         Change XML in order to ensure backward compatibility.

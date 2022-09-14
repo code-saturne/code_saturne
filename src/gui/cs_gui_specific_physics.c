@@ -1571,14 +1571,12 @@ cs_gui_get_thermophysical_model(const char  *model_thermo)
  * parameters:
  *   permeability    <--   permeability type
  *   unsteady        <--   steady flow
- *   gravity         <--   check if gravity is taken into account
  *   unsaturated     <--   take into account unsaturated zone
  *----------------------------------------------------------------------------*/
 
 void
 cs_gui_gwf_model(int  *permeability,
                  int  *unsteady,
-                 int  *gravity,
                  int  *unsaturated)
 {
   cs_tree_node_t *tn0
@@ -1603,10 +1601,6 @@ cs_gui_gwf_model(int  *permeability,
     *permeability = 1;
   else
     *permeability = 0;
-
-  /* Get gravity */
-  cs_gui_node_get_status_int(cs_tree_node_get_child(tn0, "gravity"),
-                             gravity);
 
   /* Get the possible presence of unsaturated zone */
   mdl = cs_tree_node_get_tag(cs_tree_node_get_child(tn0, "unsaturatedZone"),
@@ -1663,7 +1657,6 @@ cs_gui_gwf_model(int  *permeability,
   bft_printf("==> %s\n", __func__);
   bft_printf("--groundwater_anisotropic_permeability  = %d\n", *permeability);
   bft_printf("--groundwater_unsteady                  = %d\n", *unsteady);
-  bft_printf("--groundwater_gravity                   = %d\n", *gravity);
   bft_printf("--groundwater_unsaturated               = %d\n", *unsaturated);
 #endif
 }

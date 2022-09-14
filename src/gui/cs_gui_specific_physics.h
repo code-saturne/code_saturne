@@ -193,14 +193,12 @@ cs_gui_get_thermophysical_model(const char  *model_thermo);
  * parameters:
  *   permeability    <--   permeability type
  *   unsteady        <--   steady flow
- *   gravity         <--   check if gravity is taken into account
  *   unsaturated     <--   take into account unsaturated zone
  *----------------------------------------------------------------------------*/
 
 void
 cs_gui_gwf_model(int  *permeability,
                  int  *unsteady,
-                 int  *gravity,
                  int  *unsaturated);
 
 /*----------------------------------------------------------------------------*/

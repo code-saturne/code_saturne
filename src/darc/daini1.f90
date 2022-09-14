@@ -88,11 +88,11 @@ interface
 
   ! Interface to C function defining Ground water flow model
 
-  subroutine cs_gui_gwf_model(permeability, unsteady, gravity, unsaturated)  &
+  subroutine cs_gui_gwf_model(permeability, unsteady, unsaturated)  &
     bind(C, name='cs_gui_gwf_model')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer :: permeability, unsteady, gravity, unsaturated
+    integer :: permeability, unsteady, unsaturated
   end subroutine cs_gui_gwf_model
 
   !---------------------------------------------------------------------------
@@ -137,14 +137,6 @@ darcy_unsteady = 0
 ! Convergence criteron of the Newton scheme over pressure
 darcy_convergence_criterion = 0
 
-! By default, gravity is not needed
-darcy_gravity = 0
-
-! Default gravity direction is z
-darcy_gravity_x = 0.d0
-darcy_gravity_y = 0.d0
-darcy_gravity_z = 1.d0
-
 ! Unsaturated zone is taken into account by default
 darcy_unsaturated = 1
 
@@ -153,7 +145,6 @@ call cs_gwf_parameters_define_field_keys
 
 call cs_gui_gwf_model(darcy_anisotropic_permeability,     &
                       darcy_unsteady,                     &
-                      darcy_gravity,                      &
                       darcy_unsaturated)
 
 !===============================================================================

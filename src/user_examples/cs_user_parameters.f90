@@ -454,21 +454,6 @@ iccvfg = 1
 
 irccor = 1
 
-! --- rotation of the reference frame (omega in rad/s)
-
-!       If the rotation is not nul, then
-!          icorio = 0: rotation is taken into account by rotating the mesh
-!                      (simulation in the absolute frame)
-!                 = 1: rotation is taken into account by Coriolis source terms
-!                      (simulation in the relative frame)
-
-
-icorio = 0
-
-call rotation_define(0.d0, 0.d0, 0.d0,  &    ! rotation vector
-                     0.d0, 0.d0, 0.d0)       ! invariant point
-
-
 ! --- Variable diffusivity field id (ifcvsl>=0) or constant
 !     diffusivity (ifcvsl=-1) for the thermal scalar and USER scalars.
 
@@ -1191,8 +1176,6 @@ darcy_unsteady = 0 ! 0 steady flow, 1 unsteady flow
 
 darcy_convergence_criterion = 0 ! convergence criterion of Newton scheme:
                                 ! 0, over pressure, 1, over velocity
-
-darcy_gravity = 0 ! gravity is taken into account : 0 no, 1 yes
 
 !< [user_darcy_ini1]
 

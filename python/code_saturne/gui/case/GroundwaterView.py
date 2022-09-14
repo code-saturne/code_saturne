@@ -122,7 +122,6 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         self.comboBoxPermeability.activated[str].connect(self.slotPermeabilityType)
         self.comboBoxFlowType.activated[str].connect(self.slotFlowType)
         self.comboBoxUnsaturated.activated[str].connect(self.slotUnsaturated)
-        self.checkBoxGravity.clicked.connect(self.slotGravity)
         self.comboBoxChemistryModel.activated[str].connect(self.slotChemistryModel)
         self.comboBoxSpeciesName.activated[str].connect(self.slotSpeciesName)
         self.lineEditDecayRate.textChanged[str].connect(self.slotDecayRate)
@@ -144,11 +143,6 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
 
         value = self.mdl.getUnsaturatedZone()
         self.modelUnsaturated.setItem(str_model=value)
-
-        if self.mdl.getGravity() == 'on':
-            self.checkBoxGravity.setChecked(True)
-        else:
-            self.checkBoxGravity.setChecked(False)
 
         if scalar_list != []:
             value = self.mdl.getDecayRate(self.scalar)
@@ -184,21 +178,10 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         self.mdl.setUnsaturatedZone(mdl)
 
 
-    @pyqtSlot()
-    def slotGravity(self):
-        """
-        Input if gravity is taken into account or not
-        """
-        if self.checkBoxGravity.isChecked():
-            self.mdl.setGravity('on')
-        else:
-            self.mdl.setGravity('off')
-
-
     @pyqtSlot(str)
     def slotSpeciesName(self, text):
         """
-        Method to choose the scalar which properties shall be changed
+        Method to choose the scalar whose properties shall be changed
         """
         mdl = self.modelSpeciesName.dicoV2M[str(text)]
         self.scalar = str(text)

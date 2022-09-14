@@ -140,16 +140,6 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="0">
-          <widget class="QCheckBox" name="checkBoxGravity">
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Set gravity (used to compute hydraulic head from pressure head).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="text">
-            <string>Gravity is taken into account</string>
-           </property>
-          </widget>
-         </item>
          <item row="2" column="1" rowspan="2">
           <widget class="QComboBox" name="comboBoxPermeability">
            <property name="enabled">

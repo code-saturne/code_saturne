@@ -75,6 +75,8 @@ integer           :: type_flag, post_flag, location_id
 integer           :: keypid
 logical           :: has_previous
 
+double precision :: gravn2
+
 type(gwf_soilwater_partition) :: sorption_scal
 type(var_cal_opt) :: vcopt_u
 
@@ -196,8 +198,11 @@ if (ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0) then
   ! Save total pressure in auxiliary restart file
   call field_get_key_id("restart_file", k_restart_id)
   call field_set_key_int(iprtot, k_restart_id, RESTART_AUXILIARY)
-else if (ippmod(idarcy).ge.0.and.darcy_gravity.ge.1) then
-  call add_property_field_1d('total_pressure', 'Pressure head', iprtot)
+else if (ippmod(idarcy).ge.0) then
+  gravn2 = gx**2+gy**2+gz**2
+  if (gravn2.gt.epzero**2) then
+    call add_property_field_1d('total_pressure', 'Pressure head', iprtot)
+  endif
 endif
 
 ! Cs^2 si on est en LES dynamique

@@ -3,6 +3,11 @@ Master (not on release branches yet)
 
 User changes:
 
+- Ground water flows: for the legacy module, now use global gravity
+  definition rather than module-specific (`darcy_gravity`) variables;
+  This may require updating case setups: using the GUI is recommended,
+  but otherwise, the gravity may be defined in `cs_user_physical_model`.
+
 - Add new optimized extended neighborhood reduction method;
   An additional option to keep a complete extended neighborhood on the
   boundary was improved and made available in the GUI.

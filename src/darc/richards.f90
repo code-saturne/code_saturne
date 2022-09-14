@@ -122,7 +122,7 @@ integer iflmas, iflmab, iesize, idiffp, iconvp, ibsize, imvisp
 integer fid
 integer iflid , iflwgr, f_dim, f_id0, iwgrp, iprev, iitsm
 
-double precision epsrgp, climgp, extrap
+double precision epsrgp, climgp, extrap, gravn
 double precision thetap, xdu, xdv, xdw, xnrmul
 double precision relaxp, residu, ressol, epsilp, rnormp
 
@@ -131,7 +131,7 @@ character(len=80) :: chaine
 type(solving_info) sinfo
 type(var_cal_opt) :: vcopt_p
 
-double precision rvoid(1)
+double precision rvoid(1), gn(3)
 
 double precision, dimension(:,:), allocatable :: gradp
 double precision, allocatable, dimension(:,:) :: xam, weighf, uvwk
@@ -153,6 +153,8 @@ double precision, dimension(:), pointer :: cpro_wgrec_s
 !===============================================================================
 ! 0. Initialization
 !===============================================================================
+
+gravn = sqrt(gx**2+gy**2+gz**2)
 
 if (darcy_convergence_criterion.eq.0) then
   allocate(uvwk(1,ncelet))
@@ -683,13 +685,16 @@ endif
 
 ! update pressure head (h = H - z) for post-processing
 ! Only used when gravity is taken into account
-if (darcy_gravity.ge.1) then
+if (gravn.gt.epzero) then
+  gn(1) = gx/gravn
+  gn(2) = gx/gravn
+  gn(3) = gx/gravn
   call field_get_val_s(iprtot, cpro_prtot)
   !$omp parallel do
   do iel = 1, ncel
-    cpro_prtot(iel) = cvar_pr(iel) - xyzcen(1,iel)*darcy_gravity_x             &
-                                   - xyzcen(2,iel)*darcy_gravity_y             &
-                                   - xyzcen(3,iel)*darcy_gravity_z
+    cpro_prtot(iel) = cvar_pr(iel) - xyzcen(1,iel)*gn(1)             &
+                                   - xyzcen(2,iel)*gn(2)             &
+                                   - xyzcen(3,iel)*gn(3)
   enddo
 
 endif

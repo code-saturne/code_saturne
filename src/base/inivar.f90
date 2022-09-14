@@ -89,7 +89,7 @@ integer          ivoid, uprtot
 
 double precision valmax, valmin, vfmin , vfmax
 double precision xekmin, xepmin, xomgmn, xphmin, xphmax
-double precision xnumin
+double precision xnumin, gravn, gnx, gny, gnz
 double precision x11min, x22min, x33min
 double precision xxp0, xyp0, xzp0
 double precision xalmin, xalmax
@@ -137,6 +137,8 @@ call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
 
 iok = 0
+
+gravn = sqrt(gx**2+gy**2+gz**2)
 
 !===============================================================================
 ! 2. ON REPASSE LA MAIN A L'UTILISATEUR POUR LA PROGRAMMATION DES
@@ -279,15 +281,19 @@ if (ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0) then
     call navstv_total_pressure
   endif
 
-else if ((ippmod(idarcy).ge.0).and.(darcy_gravity.ge.1)) then
+else if ((ippmod(idarcy).ge.0).and.(gravn.gt.epzero)) then
 
   call field_get_val_s(ivarfl(ipr), cvar_pr)
   call field_get_val_s(iprtot, cpro_prtot)
 
+  gnx = gx / gravn
+  gny = gy / gravn
+  gnz = gz / gravn
+
   do iel = 1, ncel
-    cpro_prtot(iel) = cvar_pr(iel) - xyzcen(1,iel)*darcy_gravity_x &
-                                   - xyzcen(2,iel)*darcy_gravity_y &
-                                   - xyzcen(3,iel)*darcy_gravity_z
+    cpro_prtot(iel) = cvar_pr(iel) - xyzcen(1,iel)*gnx &
+                                   - xyzcen(2,iel)*gny &
+                                   - xyzcen(3,iel)*gnz
   enddo
 
 endif

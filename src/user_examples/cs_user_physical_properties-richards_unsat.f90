@@ -43,6 +43,7 @@ use paramx
 use pointe
 use numvar
 use optcal
+use cstnum
 use cstphy
 use entsor
 use parall
@@ -77,7 +78,7 @@ double precision darcy_anisotropic_dispersion_l, darcy_anisotropic_dispersion_t
 double precision molecular_diffusion
 double precision velocity_norm
 double precision ki, ki_xx, ki_yy, ki_zz, tmp_lt
-integer          iel, fid
+integer          iel, fid, gravn
 integer          ifcvsl
 
 double precision, dimension(:), pointer :: capacity, permeability
@@ -92,6 +93,9 @@ double precision, dimension(:), pointer :: cvar_pr
 type(gwf_soilwater_partition) :: sorption_scal
 
 !===============================================================================
+
+! Norm of gravity vector
+gravn = sqrt(gx**2+gy**2+gz**2)
 
 ! Index for hydraulic head (H=h+z) and darcian velocity
 call field_get_val_s(ivarfl(ipr), cvar_pr)
@@ -155,7 +159,7 @@ do iel = 1, ncel
   !< [richards_set_press]
   ! Switch from hydraulic head (H=h+z) to pressure head (h)
   darcy_h = cvar_pr(iel)
-  if (darcy_gravity.eq.1) then
+  if (gravn.gt.epzero) then
     darcy_h = cvar_pr(iel) - xyzcen(3,iel)
   endif
   !< [richards_set_press]

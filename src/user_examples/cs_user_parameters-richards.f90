@@ -313,6 +313,7 @@ subroutine user_darcy_ini1
 !===============================================================================
 
 use entsor
+use cstphy
 use darcy_module
 use cs_c_bindings
 use numvar
@@ -335,11 +336,6 @@ type(gwf_soilwater_partition) :: sorption_sca1
 ! Set permeability to isotropic (0) or anisotropic (1) for all soils
 darcy_anisotropic_permeability = 0
 !< [richards_perm]
-
-!< [richards_grav]
-! Set gravity to pass from H to h. Example for H = h + z:
-darcy_gravity = 1
-!< [richards_grav]
 
 !< [richards_conv]
 ! Set convergence criteron of the Newton scheme over pressure (0) or over velocity (1).

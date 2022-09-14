@@ -42,7 +42,9 @@
   \section cs_user_parameters_h_cs_user_model  Base model related options
 
   Definition of user variables or properties as well as choices of physical
-  models should be done here, if not already done through the GUI.;
+  models should be done here, if not already done through the GUI.
+  Gravity and reference frame rotation (for Coriolis) can also
+  be (re)-defined here.
 
   Activate user model
 
@@ -81,6 +83,15 @@
   Add a user property defined on a mesh location (cells, interior faces, boundary faces or vertices).
 
   \snippet cs_user_parameters-base.c user_property_addition
+
+  Define the gravity direction and acceleration (no gravity forces if zero).
+
+  \snippet cs_user_parameters-base.c user_model_gravity
+
+  Indicate the computation will use a rotating reference frame (with Coriolis forces)
+  and specify the associated rotation.
+
+  \snippet cs_user_parameters-base.c user_model_coriolis
 
   \section cs_user_parameters_h_cs_user_parameters General options
 

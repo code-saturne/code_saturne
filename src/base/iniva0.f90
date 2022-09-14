@@ -78,7 +78,7 @@ integer          nscal
 integer          iis   , iscal
 integer          iel   , ifac
 integer          iclip , ii    , jj    , idim, f_dim
-integer          ifcvsl, isou
+integer          ifcvsl
 integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
 integer          kscmin
 integer          f_type, idftnp
@@ -87,7 +87,7 @@ integer          f_id, kdflim
 
 logical          have_previous
 
-double precision xxk, trii, clvfmn, visls_0
+double precision clvfmn, visls_0, gravn2
 
 double precision, dimension(:), pointer :: dt
 double precision, dimension(:), pointer :: brom, crom
@@ -215,8 +215,11 @@ endif
 ! For groundwater flows, the field of index iprtot is the
 ! pressure head (h = H - z). h is only used when gravity is taken
 ! into account
+
+gravn2 = gx**2+gy**2+gz**2
+
 if ((ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0).or.                          &
-    (ippmod(idarcy).ge.0.and.darcy_gravity.ge.1)) then
+    (ippmod(idarcy).ge.0.and.gravn2.gt.epzero**2)) then
   call field_get_val_s(iprtot, cpro_prtot)
   do iel = 1, ncelet
     cpro_prtot(iel) = - rinfin

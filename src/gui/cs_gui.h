@@ -296,19 +296,11 @@ void CS_PROCF (uiexop, UIEXOP)(void);
  * *****************
  * integer         permeability    <--  permeability type
  * integer         diffusion       <--  diffusion type
- * integer         gravity         <--  check if gravity is taken into account
- * double          gravity_x       <--  gravity direction
- * double          gravity_y       <--  gravity direction
- * double          gravity_z       <--  gravity direction
  * integer         unsaturated     <--  unsaturated zone taken into account
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
                                 const int       *diffusion,
-                                const int       *gravity,
-                                const cs_real_t *gravity_x,
-                                const cs_real_t *gravity_y,
-                                const cs_real_t *gravity_z,
                                 const int       *unsaturated);
 
 /*----------------------------------------------------------------------------
@@ -411,6 +403,13 @@ cs_gui_partition(void);
 
 void
 cs_gui_mpi_algorithms(void);
+
+/*----------------------------------------------------------------------------
+ * Treatment of physical constants (gravity and Coriolis).
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_physical_constants(void);
 
 /*----------------------------------------------------------------------------
  * Treatment of gravity and fluid physical properties

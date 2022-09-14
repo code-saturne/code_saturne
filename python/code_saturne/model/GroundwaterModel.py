@@ -75,7 +75,6 @@ class GroundwaterModel(Variables, Model):
         default['permeability' ]     = 'isotropic'
         default['flow' ]             = 'steady'
         default['groundwater_model'] = 'off'
-        default['gravity']           = 'off'
         default['unsaturated']       = 'true'
         default['chemistry_model']   = 'Kd'
         default['fo_decay_rate']     = 0.0
@@ -235,29 +234,6 @@ class GroundwaterModel(Variables, Model):
         self.isInList(choice, ['true', 'false'])
         node = self.node_darcy.xmlInitChildNode('unsaturatedZone')
         node['model'] = choice
-
-
-    @Variables.noUndo
-    def getGravity(self):
-        """
-        Return if gravity is taken into account
-        """
-        node = self.node_darcy.xmlInitChildNode('gravity', 'status')
-        status = node['status']
-        if not status:
-            v = self.__defaultValues()['gravity']
-            self.setGravity(v)
-        return status
-
-
-    @Variables.undoLocal
-    def setGravity(self, v):
-        """
-        Put if gravity is taken into account
-        """
-        self.isOnOff(v)
-        node = self.node_darcy.xmlInitChildNode('gravity', 'status')
-        node['status'] = v
 
 
     @Variables.noUndo

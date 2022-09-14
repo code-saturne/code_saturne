@@ -63,29 +63,6 @@ module darcy_module
   !> - 1: over velocity
   integer :: darcy_convergence_criterion
 
-  !> \anchor darcy_gravity
-  !> Set gravity to compute the pressure head \f$ h \f$ from the hydraulic
-  !> head \f$ H \f$ and the elevation (\f$ z \f$ is the elevation by default).
-  !> Only used in the Van Genuchten model.
-  !> If enabled the pressure head is stored in field of index iprtot.
-  !> The reference elevation is always the elevation of point (0,0,0).
-  integer :: darcy_gravity
-
-  !> \anchor darcy_gravity_x
-  !> Darcy gravity direction x component.
-  !> Gravity direction must be a unit vector.
-  double precision :: darcy_gravity_x
-
-  !> \anchor darcy_gravity_y
-  !> Darcy gravity direction y component.
-  !> Gravity direction must be a unit vector.
-  double precision :: darcy_gravity_y
-
-  !> \anchor darcy_gravity_z
-  !> Darcy gravity direction z component.
-  !> Gravity direction must be a unit vector.
-  double precision :: darcy_gravity_z
-
   !> \anchor darcy_unsaturated
   !> Take into account unsaturated zone (1) or not (0).
   integer :: darcy_unsaturated
