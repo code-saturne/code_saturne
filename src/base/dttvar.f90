@@ -579,12 +579,9 @@ if (idtvar.ge.0) then
 
       ntcam1 = ntcabs - 1
       call cplsyn (ntmabs, ntcam1, dtloc)
-      !==========
-      if (ntmabs.lt.ntcabs) then
-        call csexit(1)
-      endif
 
-      call log_iteration_clipping_field(flid, icfmin(1), icfmax(1), dt, dt,icfmin(1), icfmax(1))
+      call log_iteration_clipping_field(flid, icfmin(1), icfmax(1),    &
+                                        dt, dt, icfmin(1), icfmax(1))
 
       ttcabs = ttcabs + (dtloc - dt(1))
       if (iturbo.eq.2) then
@@ -616,7 +613,8 @@ if (idtvar.ge.0) then
 
       enddo
 
-      call log_iteration_clipping_field(flid, icfmin(1), icfmax(1), vmin, vmax,icfmin(1), icfmax(1))
+      call log_iteration_clipping_field(flid, icfmin(1), icfmax(1),       &
+                                        vmin, vmax,icfmin(1), icfmax(1))
 
     endif
 

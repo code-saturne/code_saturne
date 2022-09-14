@@ -817,9 +817,12 @@ endif
 ! Test presence of control_file to modify ntmabs if required
 call cs_control_check_file
 
-if (      (idtvar.eq.0 .or. idtvar.eq.1)                          &
-    .and. (ttmabs.gt.0 .and. ttcabs.ge.ttmabs)) then
-  ntmabs = ntcabs
+if ((idtvar.eq.0 .or. idtvar.eq.1) .and. (ttmabs.gt.0)) then
+  if (ttcabs.ge.ttmabs) then
+    ntmabs = ntcabs
+  else if (ntmabs.lt.0) then  ! Changed by control_file
+    ntmabs = ntcabs + 1
+  endif
 endif
 
 ! Check for runaway (diverging) computation
