@@ -2010,7 +2010,6 @@ class XMLinit(BaseXmlInit):
         node = XMLThermoPhysicalModelNode.xmlGetNode('groundwater_model')
         if node:
             n = node.xmlGetNode('gravity')
-            print(n)
             if n:
                 XMLPhysicalPropNode = self.case.xmlInitNode('physical_properties')
                 gravity = XMLPhysicalPropNode.xmlGetNode('gravity')
