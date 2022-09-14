@@ -161,6 +161,7 @@ integer          modntl
 integer          iuntur, f_id, iustar
 integer          nlogla, nsubla, iuiptn
 integer          kdflim
+integer          f_id_uk
 integer          f_id_rough
 integer          f_id_tlag
 
@@ -202,8 +203,10 @@ double precision dlmo,dt,theta0,flux
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, ustar
-double precision, dimension(:), allocatable :: byplus, buk
+double precision, dimension(:), pointer :: buk
+double precision, dimension(:), allocatable :: byplus
 double precision, dimension(:), allocatable, target :: buet, bcfnns_loc
+double precision, dimension(:), allocatable, target :: buk_tmp
 double precision, dimension(:), allocatable :: bdlmo
 
 double precision, dimension(:), pointer :: cvar_k, bcfnns
@@ -321,13 +324,25 @@ call field_get_key_id("diffusion_limiter_id", kdflim)
 
 ! --- Save wall friction velocity
 
-call field_get_id_try('ustar', iustar)
+call field_get_id_try("boundary_ustar", iustar)
 if (iustar.ge.0) then !TODO remove, this information is in cofaf cofbf
   call field_get_val_s(iustar, ustar)
 else
   allocate(buet(nfabor))
   ustar => buet
 endif
+
+! Pointers to specific fields
+allocate(byplus(nfabor))
+
+call field_get_id_try("boundary_uk", f_id_uk)
+if (f_id_uk.ge.0) then
+  call field_get_val_s(f_id_uk, buk)
+else
+  allocate(buk_tmp(nfabor))
+  buk => buk_tmp
+endif
+allocate(bdlmo(nfabor))
 
 ! --- Gradient and flux boundary conditions
 
@@ -533,11 +548,6 @@ if (itytur.eq.5) then
   uiptmx = 0.d0
   uiptmn = 0.d0
 endif
-
-! Pointers to specific fields
-allocate(byplus(nfabor))
-allocate(buk(nfabor))
-allocate(bdlmo(nfabor))
 
 call field_get_id_try("non_neutral_scalar_correction", f_id)
 if (f_id.ge.0) then
@@ -1598,8 +1608,8 @@ if (irangp.ge.0) then
 endif
 
 deallocate(byplus)
-deallocate(buk)
 if (allocated(buet)) deallocate(buet)
+if (allocated(buk_tmp)) deallocate(buk_tmp)
 if (allocated(bcfnns_loc)) deallocate(bcfnns_loc)
 deallocate(bdlmo)
 

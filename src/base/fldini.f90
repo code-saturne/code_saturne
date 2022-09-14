@@ -194,7 +194,7 @@ itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 ityloc = 3 ! boundary faces
 
 if (itytur.eq.4 .and. idries.eq.1) then
-  call field_find_or_create('ustar', itycat, ityloc, idim1, f_id)
+  call field_find_or_create("boundary_ustar", itycat, ityloc, idim1, f_id)
 endif
 
 if (staggered.eq.1) then

@@ -336,7 +336,7 @@ ustar => null()
 
 ! --- Save wall friction velocity
 
-call field_get_id_try('ustar', iustar)
+call field_get_id_try('boundary_ustar', iustar)
 if (iustar.ge.0) then
   call field_get_val_s(iustar, ustar)
 else
@@ -869,6 +869,8 @@ do ifac = 1, nfabor
     ! Store u_star and uk if needed
     if(f_id_uet.ge.0) then
       f_uet(ifac) = uet
+    endif
+    if(f_id_uk.ge.0) then
       f_uk(ifac) = uk
     endif
 
@@ -878,10 +880,6 @@ do ifac = 1, nfabor
     ukmin  = min(uk,ukmin)
     yplumx = max(yplus,yplumx)
     yplumn = min(yplus,yplumn)
-
-    if (iustar.ge.0) then
-      ustar(ifac) = uet !TODO remove, this information is in cofaf cofbf
-    endif
 
     ! save turbulent subgrid viscosity after van Driest damping in LES
     ! care is taken to not dampen it twice at boundary cells having more

@@ -173,7 +173,7 @@ call field_get_val_s(iviscl, viscl)
 
 uetbor => null()
 
-call field_get_id_try('ustar', f_id)
+call field_get_id_try("boundary_ustar", f_id)
 if (f_id.ge.0) then
   call field_get_val_s(f_id, uetbor)
 endif
