@@ -2781,12 +2781,6 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
 
   /* Build halo */
 
-  /* TODO: with a a better upstream setting of extended neighborhood type,
-     the halo_type argument to this function should not be needed. */
-  if (   cs_ext_neighborhood_get_type() > CS_EXT_NEIGHBORHOOD_NONE
-      || cs_ext_neighborhood_get_boundary_complete())
-    halo_type = CS_HALO_EXTENDED;
-
   mesh->halo_type = halo_type;
 
   mesh->n_ghost_cells = 0;

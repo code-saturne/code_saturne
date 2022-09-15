@@ -403,6 +403,17 @@ cs_parameters_add_boundary_temperature(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check if extended neighborhood is needed.
+ *
+ * \return  true if extended neighborhoo is needed, false otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_parameters_need_extended_neighborhood(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Complete general equation parameter definitions.
  */
 /*----------------------------------------------------------------------------*/

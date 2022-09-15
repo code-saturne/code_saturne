@@ -138,20 +138,6 @@ extern void CS_PROCF (findpt, FINDPT)
 );
 
 /*----------------------------------------------------------------------------
- * Check necessity of extended mesh from FORTRAN options.
- *
- * Interface Fortran :
- *
- * SUBROUTINE HALTYP (IVOSET)
- * *****************
- *
- * INTEGER          IVOSET      : <-- : Indicator of necessity of extended mesh
- *----------------------------------------------------------------------------*/
-
-extern void
-CS_PROCF (haltyp, HALTYP)(const int  *ivoset);
-
-/*----------------------------------------------------------------------------
  * Main Fortran options initialization
  *----------------------------------------------------------------------------*/
 

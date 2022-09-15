@@ -378,7 +378,6 @@ fldini.f90 \
 fldtri.f90 \
 fldvar.f90 \
 fldprp.f90 \
-haltyp.f90 \
 idrbla.f90 \
 impini.f90 \
 iniini.f90 \

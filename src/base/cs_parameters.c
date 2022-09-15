@@ -46,14 +46,17 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_at_opt_interp.h"
 #include "cs_convection_diffusion.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_gradient.h"
 #include "cs_log.h"
 #include "cs_map.h"
 #include "cs_mesh_location.h"
 #include "cs_post.h"
 #include "cs_parall.h"
+#include "cs_physical_model.h"
 #include "cs_restart.h"
 #include "cs_restart_default.h"
 #include "cs_time_moment.h"
@@ -1482,6 +1485,60 @@ cs_parameters_add_boundary_temperature(void)
   }
 
   return bf;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if extended neighborhood is needed.
+ *
+ * \return  true if extended neighborhoo is needed, false otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_parameters_need_extended_neighborhood(void)
+{
+  bool need_extended_neighborhood = false;
+
+  /* Check if a gradient requires an extended neighborhood */
+
+  cs_gradient_type_t  gradient_type = CS_GRADIENT_GREEN_ITER;
+  cs_halo_type_t  halo_type = CS_HALO_STANDARD;
+
+  cs_gradient_type_by_imrgra(cs_glob_space_disc->imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  if (halo_type == CS_HALO_EXTENDED)
+    need_extended_neighborhood = true;
+
+  else {
+    const int n_fields = cs_field_n_fields();
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      cs_field_t *f = cs_field_by_id(f_id);
+      if (f->type & CS_FIELD_VARIABLE) {
+        cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
+        if (eqp != NULL) {
+          cs_gradient_type_by_imrgra(eqp->imrgra,
+                             &gradient_type,
+                             &halo_type);
+          if (halo_type == CS_HALO_EXTENDED) {
+            need_extended_neighborhood = true;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  /* Check for other options requiring extended neighborhood */
+
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
+    if (cs_at_opt_interp_is_p1_proj_needed())
+      need_extended_neighborhood = true;
+  }
+
+  return need_extended_neighborhood;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -189,8 +189,6 @@ _sigint_handler(int signum)
 static void
 _run(void)
 {
-  int  ivoset = 0;
-
   int  check_mask = 0;
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
 
@@ -296,8 +294,7 @@ _run(void)
 
     CS_PROCF(initi1, INITI1)();
 
-    CS_PROCF (haltyp, HALTYP) (&ivoset);
-    if (ivoset)
+    if (cs_parameters_need_extended_neighborhood())
       halo_type = CS_HALO_EXTENDED;
 
     if (cs_glob_ale > 0) {
