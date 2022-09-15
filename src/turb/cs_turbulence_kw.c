@@ -200,14 +200,12 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
   BFT_MALLOC(prodk, n_cells_ext, cs_real_t);
   BFT_MALLOC(prodw, n_cells_ext, cs_real_t);
 
-  cs_real_33_t *gradv = NULL;
   cs_real_t *s2pw2 = NULL;
   cs_real_t *maxgdsv = NULL;
   cs_real_t *d2uidxi2 = NULL;
 
   if (cs_glob_turb_model->hybrid_turb == 2) {
     /* DDES hybrid model */
-    BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
     BFT_MALLOC(s2pw2, n_cells_ext, cs_real_t);
   }
   else if (cs_glob_turb_model->hybrid_turb == 3) {
@@ -416,6 +414,9 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
 
     /* Computation of the velocity gradient */
 
+    cs_real_33_t *gradv;
+    BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+
     cs_field_gradient_vector(CS_F_(vel),
                              true,  /* use_previous_t */
                              1,     /* inc */
@@ -426,6 +427,8 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
                     + cs_math_3_square_norm(gradv[c_id][1])
                     + cs_math_3_square_norm(gradv[c_id][2]);
     }
+
+    BFT_FREE(gradv);
   }
   else if (cs_glob_turb_model->hybrid_turb == 3) {
 
@@ -1602,7 +1605,6 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
   BFT_FREE(prodk);
   BFT_FREE(prodw);
 
-  BFT_FREE(gradv);
   BFT_FREE(s2pw2);
   BFT_FREE(maxgdsv);
   BFT_FREE(d2uidxi2);
