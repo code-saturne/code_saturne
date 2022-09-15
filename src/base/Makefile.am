@@ -416,7 +416,6 @@ typecl.f90 \
 varpos.f90 \
 vericl.f90 \
 verini.f90 \
-verlon.f90 \
 visecv.f90
 
 libcsbase_a_LIBADD =

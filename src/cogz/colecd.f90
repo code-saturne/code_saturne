@@ -67,8 +67,7 @@ character(len=12) :: nomgaz
 integer          it, igg, ir, ige, iat, ios, igf, igo, igp, iehc
 integer          ncgm, nrgm
 integer          inicoe, inicha
-integer          idebch, ifinch, lonch
-integer          ichai, ichcoe
+integer          lonch, ichai, ichcoe
 integer          iereac(ngazem)
 integer          ncoel, icoel
 integer          mode
@@ -168,8 +167,8 @@ if (indjon.eq.1) then
 
   read(impfpp, *, err=999, end=999)
   read(impfpp, 1010, err=999, end=999) chain1
-  call verlon(chain1, idebch, ifinch, lonch)
-  chain2(1:lonch) = chain1(idebch:ifinch)
+  chain2 = adjustl(chain1)
+  lonch = len(trim(chain2))
 
   ige = 1
   ichcoe = 0

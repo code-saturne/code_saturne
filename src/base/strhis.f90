@@ -72,7 +72,7 @@ parameter        (nbname=12)
 character(len=300) :: nompre, nenvar
 character(len=300, kind=c_char) :: c_nompre, c_nenvar
 character(len=80) :: namevr(nbname)
-integer          ii, jj, ii1, ii2, lpre, lnam, tplnum
+integer          ii, jj, lpre, lnam, tplnum
 double precision, dimension(:), allocatable :: vartmp
 
 ! Time plot number shift (in case multiple routines define plots)
@@ -110,12 +110,13 @@ endif
 ! 2. Initialize output
 !===============================================================================
 
-! Create directory if required
 if (ipass.eq.1 .and. irangp.le.0) then
-  call cs_file_mkdir_default(trim(emphis)//c_null_char)
-endif
 
-if (ipass.eq.1 .and. irangp.le.0) then
+  emphis = adjustl(emphis)
+  prehis = adjustl(prehis)
+
+  ! Create directory if required
+  call cs_file_mkdir_default(trim(emphis)//c_null_char)
 
   namevr(1 ) = "displacement x"
   namevr(2 ) = "displacement y"
@@ -136,17 +137,17 @@ if (ipass.eq.1 .and. irangp.le.0) then
 
     ! plot prefix
     nompre = ' '
-    call verlon(emphis, ii1, ii2, lpre)
-    nompre(1:lpre) = emphis(ii1:ii2)
-    call verlon(prehis, ii1, ii2, lnam)
-    nompre(lpre+1:lpre+lnam) = prehis(ii1:ii2)
-    call verlon(nompre, ii1, ii2, lpre)
+    lpre = len(trim(emphis))
+    nompre(1:lpre) = emphis(1:lpre)
+    lnam = len(trim(prehis))
+    nompre(lpre+1:lpre+lnam) = prehis(1:lnam)
+    lpre = len(trim(nompre))
     nompre(lpre+1:lpre+4) = 'str_'
-    call verlon(nompre, ii1, ii2, lpre)
+    lpre = len(trim(nompre))
 
     ! plot name
     nenvar = namevr(ii)
-    call verlon(nenvar,ii1,ii2,lnam)
+    lnam = len(trim(nenvar))
 
     tplnum = nptpl + ii
 

@@ -72,7 +72,7 @@ character(len=150) :: chain1,chain2
 integer          it     , ice    , iat    , ios , ii , ioxy
 integer          ncoel  , inicoe
 integer          icla
-integer          idebch , ifinch , lonch  , ichai  , ichcoe
+integer          lonch  , ichai  , ichcoe
 integer          atcoel(ngazem,natom), inicha
 
 double precision tmin   , tmax
@@ -120,27 +120,27 @@ endif
 
 do ice=1,ncoel
   do inicoe=1,len(nomcoe(ice))
-    NOMCOE(ICE)(INICOE:INICOE)=' '
+    nomcoe(ice)(inicoe:inicoe)=' '
   enddo
 enddo
 
 do inicha=1,len(chain1)
-  CHAIN1(INICHA:INICHA)=' '
+  chain1(inicha:inicha)=' '
 enddo
 
 do inicha=1,len(chain2)
-  CHAIN2(INICHA:INICHA)=' '
+  chain2(inicha:inicha)=' '
 enddo
 
 read (impfpp,*,err=999,end=999)
 read (impfpp,1010,err=999,end=999 ) chain1
-call verlon (chain1, idebch, ifinch, lonch)
-chain2(1:lonch)=chain1(idebch:ifinch)
+chain2 = adjustl(chain1)
+lonch = len(trim(chain2))
 
 ice=1
 ichcoe=0
 do ichai = 1, lonch
-  IF (CHAIN2(ICHAI:ICHAI).NE.' ') THEN
+  if (chain2(ichai:ichai).ne.' ') then
     ichcoe=ichcoe+1
     nomcoe(ice)(ichcoe:ichcoe) =chain2(ichai:ichai)
   else

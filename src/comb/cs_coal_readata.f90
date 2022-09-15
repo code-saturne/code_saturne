@@ -72,7 +72,7 @@ character(len=150) :: chain1,chain2
 integer          it     , ice    , iat    , ii ,jj
 integer          ncoel  , inicoe , inicha , ierror
 integer          icla   , icha   , is
-integer          idebch , ifinch , lonch  , ichai  , ichcoe
+integer          lonch  , ichai  , ichcoe
 integer          atcoel(ngazem,natom)
 integer          ierr   , ndim
 
@@ -88,12 +88,12 @@ double precision dmf3,dmf4,dmf5,som1,som2
 double precision sm(8),solu(8),mat(8,8)
 
 ! PCI-PCS
-!
+
 double precision pcibrut,pcssec,pcsbrut,pcspur,xwatpc
-!
+
 !MODEL DE NOx
 !============
-!
+
 !Terminologie
 !FM: Fraction massique
 !MV: Matiere volatile
@@ -157,26 +157,25 @@ endif
 
 do ice=1,ncoel
   do inicoe=1,len(nomcoe(ice))
-    NOMCOE(ICE)(INICOE:INICOE)=' '
+    nomcoe(ice)(inicoe:inicoe)=' '
   enddo
 enddo
 
 do inicha=1,len(chain1)
-  CHAIN1(INICHA:INICHA)=' '
+  chain1(inicha:inicha)=' '
 enddo
 
 do inicha=1,len(chain2)
-  CHAIN2(INICHA:INICHA)=' '
+  chain2(inicha:inicha)=' '
 enddo
 
-chain1 = 'CH4 C2H4 CO H2S H2 HCN NH3 O2 CO2 H2O SO2 N2 C(S)'
-call verlon (chain1, idebch, ifinch, lonch)
-chain2(1:lonch)=chain1(idebch:ifinch)
+chain2 = 'CH4 C2H4 CO H2S H2 HCN NH3 O2 CO2 H2O SO2 N2 C(S)'
+lonch = len(trim(chain2))
 
 ice=1
 ichcoe=0
 do ichai=1,lonch
-  IF (CHAIN2(ICHAI:ICHAI).NE.' ') THEN
+  if (chain2(ichai:ichai).ne.' ') then
     ichcoe=ichcoe+1
     nomcoe(ice)(ichcoe:ichcoe) =chain2(ichai:ichai)
   else
@@ -197,8 +196,7 @@ tmax = 2400.d0
 nato = 5
 if ( nato.gt.natom ) then
   write(nfecra,9993) natom,nato
-  call csexit (1)
-  !==========
+  call csexit(1)
 endif
 
 ! ---- Masse molaire especes atomiques
@@ -323,17 +321,13 @@ enddo
 
 ! --> Calcul des enthalpies pour les differentes especes courantes
 
-call pptbht                                                       &
-!==========
- ( ncoel  ,                                                       &
-   nomcoe , ehcoel , cpcoel , wmolce )
+call pptbht(ncoel, nomcoe, ehcoel, cpcoel, wmolce)
 
 ! --> Calcul tabulation enthalpie - temperature pour le melange gazeux
 
 ! ---- Nb de constituants gazeux
 !     ATTENTION ON COMPTE EGALEMENT CH4 et le monomere CH2
 !  on rajoute : H2S, H2 et SO2 (on passe de 5 a 8)
-!
 
 ngaze = 2 + 10 + 2*ncharb
 ngazg = 2 + 10
