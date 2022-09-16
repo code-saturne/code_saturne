@@ -87,9 +87,22 @@ type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
+!===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_turbulence_bc_init_pointers()  &
+    bind(C, name='cs_turbulence_bc_init_pointers')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_turbulence_bc_init_pointers
+
+end interface
 
 !===============================================================================
-! 1. Initialisation
+! Initialisation
 !===============================================================================
 
 nfld = 0
@@ -97,7 +110,7 @@ nfld = 0
 ipass = ipass + 1
 
 !===============================================================================
-! 2. Mapping for post-processing
+! Mapping
 !===============================================================================
 
 ! Velocity and pressure
@@ -348,6 +361,11 @@ do ivar = 1, nvar
     call field_set_n_previous(ivarfl(ivar), vcopt%ibdtso)
   endif
 enddo
+
+! Map pointers to BC's now that BC coefficient pointers are allocated
+!--------------------------------------------------------------------
+
+call cs_turbulence_bc_init_pointers
 
 return
 end subroutine fldtri

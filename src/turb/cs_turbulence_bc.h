@@ -55,21 +55,21 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * Initialize turbulence model boundary condition ids.
+ * Initialize turbulence model boundary condition pointers.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_model_init_bc_ids(void);
+cs_turbulence_bc_init_pointers(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Free memory allocations for turbulence boundary conditions ids.
+ * \brief Free memory allocations for turbulence boundary condition pointers.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_model_free_bc_ids(void);
+cs_turbulence_bc_free_pointers(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -184,7 +184,6 @@ cs_turbulence_bc_ke_turb_intensity(double   uref2,
  * \param[in]     dh         hydraulic diameter \f$ D_H \f$
  * \param[in]     rho        mass density \f$ \rho \f$
  * \param[in]     mu         dynamic viscosity \f$ \nu \f$
- * \param[out]    rcodcl     boundary condition values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -193,8 +192,7 @@ cs_turbulence_bc_inlet_hyd_diam(cs_lnum_t   face_id,
                                 double      uref2,
                                 double      dh,
                                 double      rho,
-                                double      mu,
-                                double     *rcodcl);
+                                double      mu);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -207,7 +205,6 @@ cs_turbulence_bc_inlet_hyd_diam(cs_lnum_t   face_id,
  * \param[in]     uref2         square of the reference flow velocity
  * \param[in]     t_intensity   turbulent intensity \f$ I \f$
  * \param[in]     dh            hydraulic diameter \f$ D_H \f$
- * \param[out]    rcodcl        boundary condition values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -215,8 +212,7 @@ void
 cs_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_id,
                                       double      uref2,
                                       double      t_intensity,
-                                      double      dh,
-                                      double     *rcodcl);
+                                      double      dh);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -226,15 +222,13 @@ cs_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_id,
  * \param[in]     face_id    boundary face id
  * \param[in]     k          turbulent kinetic energy
  * \param[in]     eps        turbulent dissipation
- * \param[out]    rcodcl     boundary condition values
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_turbulence_bc_inlet_k_eps(cs_lnum_t   face_id,
                              double      k,
-                             double      eps,
-                             double     *rcodcl);
+                             double      eps);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -250,7 +244,6 @@ cs_turbulence_bc_inlet_k_eps(cs_lnum_t   face_id,
  * \param[in]     dh         hydraulic diameter \f$ D_H \f$
  * \param[in]     rho        mass density \f$ \rho \f$
  * \param[in]     mu         dynamic viscosity \f$ \nu \f$
- * \param[out]    rcodcl     boundary condition values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -259,8 +252,7 @@ cs_turbulence_bc_set_uninit_inlet_hyd_diam(cs_lnum_t   face_id,
                                            double      uref2,
                                            double      dh,
                                            double      rho,
-                                           double      mu,
-                                           double     *rcodcl);
+                                           double      mu);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -276,7 +268,6 @@ cs_turbulence_bc_set_uninit_inlet_hyd_diam(cs_lnum_t   face_id,
  * \param[in]     uref2         square of the reference flow velocity
  * \param[in]     t_intensity   turbulent intensity \f$ I \f$
  * \param[in]     dh            hydraulic diameter \f$ D_H \f$
- * \param[out]    rcodcl        boundary condition values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -284,8 +275,7 @@ void
 cs_turbulence_bc_set_uninit_inlet_turb_intensity(cs_lnum_t   face_id,
                                                  double      uref2,
                                                  double      t_intensity,
-                                                 double      dh,
-                                                 double     *rcodcl);
+                                                 double      dh);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -297,7 +287,6 @@ cs_turbulence_bc_set_uninit_inlet_turb_intensity(cs_lnum_t   face_id,
  * \param[in]     eps        turbulent dissipation
  * \param[in]     vel_dir    velocity direction
  * \param[in]     shear_dir  shear direction
- * \param[out]    rcodcl     boundary condition values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -306,8 +295,7 @@ cs_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_id,
                                         double      k,
                                         double      eps,
                                         double      vel_dir[],
-                                        double      shear_dir[],
-                                        double     *rcodcl);
+                                        double      shear_dir[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -103,50 +103,47 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  int  k;      /* variable id for k */
-  int  eps;    /* variable id for epsilon */
+  cs_field_bc_coeffs_t  *bc_k;      /* BC coefficients for k */
+  cs_field_bc_coeffs_t  *bc_eps;    /* BC coefficients for epsilon */
 
-  int  rij;    /* variable id for R_ij tensor */
+  cs_field_bc_coeffs_t  *bc_rij;    /* BC coefficients for R_ij tensor */
 
-  int  phi;    /* variable id for phi */
-  int  f_bar;  /* variable id for f_bar */
-  int  alp_bl; /* variable id for blending alpha (dynamic) */
+  cs_field_bc_coeffs_t  *bc_phi;    /* BC coefficients for phi */
+  cs_field_bc_coeffs_t  *bc_f_bar;  /* BC coefficients for f_bar */
+  cs_field_bc_coeffs_t  *bc_alp_bl; /* BC coefficients for blending alpha */
 
-  int  omg;    /* variable id for omega */
-  int  nusa;   /* variable id for nu_t (SA model) */
+  cs_field_bc_coeffs_t  *bc_omg;    /* BC coefficients for omega */
+  cs_field_bc_coeffs_t  *bc_nusa;   /* BC coefficients for nu_t (SA model) */
 
-  int  size_ut;       /* size of array of variable ids for turbulent fluxes */
-  int  size_alp_bl_t; /* size of array of variable ids for blending alpha */
-  int *ut;            /* variable ids for turbulent fluxes */
-  int *alp_bl_t;      /* variable ids for blending alpha */
+  int                    size_ut;   /* number of turbulent flux fields */
+  int                    size_alp_bl_t;  /* number of blending alpha fields */
+  cs_field_t  **f_ut;               /* Fields for turbulent fluxes */
+  cs_field_t  **f_alp_bl_t;         /* Fields for blending alpha */
 
-} cs_turb_bc_id_t;
+} cs_turb_bc_ptr_t;
 
 /*============================================================================
  * Static global variables
  *============================================================================*/
 
-/* Variable ids for main turbulence variables */
+/* BC coefficientss for main turbulence variables */
 
-static cs_turb_bc_id_t
+static cs_turb_bc_ptr_t
 _turb_bc_id =
-{
-  -1, /* k */
-  -1, /* eps */
+  {
+   NULL,  /* bc_k */
+   NULL,  /* bc_eps */
+   NULL,  /* bc_rij */
+   NULL,  /* bc_phi */
+   NULL,  /* bc_f_bar */
+   NULL,  /* bc_alp_bl */
+   NULL,  /* bc_omg */
+   NULL,  /* bc_nusa */
 
-  -1, /* rij */
-
-  -1, /* phi */
-  -1, /* f_bar */
-  -1, /* alp_bl */
-
-  -1, /* omg */
-  -1, /* nusa */
-
-  0,    /* size of ut */
-  0,    /* size of alp_bl_t */
-  NULL, /* ut */
-  NULL  /* alp_bl_t */
+   0,    /* size of ut */
+   0,    /* size of alp_bl_t */
+   NULL,  /* f_id_ut */
+   NULL   /* f_id_alp_bl_t */
 };
 
 /*============================================================================
@@ -159,37 +156,32 @@ cs_f_turbulence_bc_inlet_hyd_diam(cs_lnum_t   face_num,
                                   double      uref2,
                                   double      dh,
                                   double      rho,
-                                  double      mu,
-                                  double     *rcodcl);
+                                  double      mu);
 
 void
 cs_f_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_num,
                                         double      uref2,
                                         double      t_intensity,
-                                        double      dh,
-                                        double     *rcodcl);
+                                        double      dh);
 
 void
 cs_f_turbulence_bc_inlet_k_eps(cs_lnum_t   face_num,
                                double      k,
                                double      eps,
                                double      vel_dir[],
-                               double      shear_dir[],
-                               double     *rcodcl);
+                               double      shear_dir[]);
 
 void
 cs_f_turbulence_bc_init_inlet_k_eps(cs_lnum_t   face_num,
                                     double      k,
-                                    double      eps,
-                                    double     *rcodcl);
+                                    double      eps);
 
 void
 cs_f_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_num,
                                           double      k,
                                           double      eps,
                                           double      vel_dir[],
-                                          double      shear_dir[],
-                                          double     *rcodcl);
+                                          double      shear_dir[]);
 
 /*============================================================================
  * Private function definitions
@@ -318,7 +310,6 @@ _ke_turb_intensity(double   uref2,
  *   vel_dir     <-- velocity direction
  *   shear_dir   <-- shear direction, it also contains the level of
  *                   anisotropy (Rnt = a_nt k)
- *   rcodcl      <-> boundary condition values
  *----------------------------------------------------------------------------*/
 
 static inline void
@@ -326,8 +317,7 @@ _inlet_bc(cs_lnum_t   face_id,
           double      k,
           double      eps,
           double      vel_dir[],
-          double      shear_dir[],
-          double     *rcodcl)
+          double      shear_dir[])
 {
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
@@ -335,47 +325,38 @@ _inlet_bc(cs_lnum_t   face_id,
 
   if (turb_model->itytur == 2) {
 
-    rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
-    rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+    _turb_bc_id.bc_k->rcodcl1[face_id] = k;
+    _turb_bc_id.bc_eps->rcodcl1[face_id] = eps;
 
   }
 
   else if (turb_model->order == CS_TURB_SECOND_ORDER) {
 
-    cs_lnum_t s_r_11 =  _turb_bc_id.rij      * n_b_faces;
-    cs_lnum_t s_r_22 = (_turb_bc_id.rij + 1) * n_b_faces;
-    cs_lnum_t s_r_33 = (_turb_bc_id.rij + 2) * n_b_faces;
-    cs_lnum_t s_r_12 = (_turb_bc_id.rij + 3) * n_b_faces;
-    cs_lnum_t s_r_23 = (_turb_bc_id.rij + 4) * n_b_faces;
-    cs_lnum_t s_r_13 = (_turb_bc_id.rij + 5) * n_b_faces;
-
     double d2s3 = 2./3.;
 
-    rcodcl[s_r_11 + face_id] = d2s3 * k;
-    rcodcl[s_r_22 + face_id] = d2s3 * k;
-    rcodcl[s_r_33 + face_id] = d2s3 * k;
+    for (int ii = 0; ii < 3; ii++)
+      _turb_bc_id.bc_rij->rcodcl1[ii*n_b_faces + face_id] = d2s3 * k;
     if (vel_dir != NULL) {
       cs_math_3_normalize(vel_dir, vel_dir);
       /* Note: do not normalize shear_dir because it contains the level of anisotropy */
       /* Rxy */
-      rcodcl[s_r_12 + face_id]
+      _turb_bc_id.bc_rij->rcodcl1[3*n_b_faces + face_id]
         = k * (vel_dir[0]*shear_dir[1] + vel_dir[1]*shear_dir[0]);
       /* Ryz */
-      rcodcl[s_r_23 + face_id]
+      _turb_bc_id.bc_rij->rcodcl1[4*n_b_faces + face_id]
         = k * (vel_dir[1]*shear_dir[2] + vel_dir[2]*shear_dir[1]);
       /* Rxz */
-      rcodcl[s_r_13 + face_id]
+      _turb_bc_id.bc_rij->rcodcl1[5*n_b_faces + face_id]
         =  k * (vel_dir[0]*shear_dir[2] + vel_dir[2]*shear_dir[0]);
     }
     else {
-      rcodcl[s_r_12 + face_id] = 0.;
-      rcodcl[s_r_23 + face_id] = 0.;
-      rcodcl[s_r_13 + face_id] = 0.;
+      for (int ii = 3; ii < 6; ii++)
+        _turb_bc_id.bc_rij->rcodcl1[ii*n_b_faces + face_id] = 0.;
     }
-    rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+    _turb_bc_id.bc_eps->rcodcl1[face_id] = eps;
 
     if (turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
-      rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id] = 1.;
+      _turb_bc_id.bc_alp_bl->rcodcl1[face_id] = 1.;
 
     /* Initialization of the turbulent fluxes to 0 if DFM or
      * EB-DFM are used for scalars (turbulence_flux_model = 30 or 31)
@@ -383,43 +364,45 @@ _inlet_bc(cs_lnum_t   face_id,
      * initialize to 1 */
 
     if (_turb_bc_id.size_ut > 0) {
-      for (int var_id = 0; var_id < _turb_bc_id.size_ut; var_id++) {
-        rcodcl[_turb_bc_id.ut[var_id]*n_b_faces + face_id] = 0.;
-        rcodcl[(_turb_bc_id.ut[var_id]+1)*n_b_faces + face_id] = 0.;
-        rcodcl[(_turb_bc_id.ut[var_id]+2)*n_b_faces + face_id] = 0.;
+      for (int id = 0; id < _turb_bc_id.size_ut; id++) {
+        cs_field_t *fld = _turb_bc_id.f_ut[id];
+        for (int ii = 0; ii < fld->dim; ii++)
+          fld->bc_coeffs->rcodcl1[ii*n_b_faces + face_id] = 0.;
       }
     }
 
     if (_turb_bc_id.size_alp_bl_t > 0) {
-      for (int var_id = 0; var_id < _turb_bc_id.size_alp_bl_t; var_id++) {
-        rcodcl[_turb_bc_id.alp_bl_t[var_id]*n_b_faces + face_id] = 1.;
+      for (int id = 0; id < _turb_bc_id.size_alp_bl_t; id++) {
+        cs_field_t *fld = _turb_bc_id.f_alp_bl_t[id];
+        for (int ii = 0; ii < fld->dim; ii++)
+          fld->bc_coeffs->rcodcl1[ii*n_b_faces + face_id] = 1.;
       }
     }
 
   }
   else if (turb_model->itytur == 5) {
 
-    rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
-    rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+    _turb_bc_id.bc_k->rcodcl1[face_id] = k;
+    _turb_bc_id.bc_eps->rcodcl1[face_id] = eps;
 
-    rcodcl[_turb_bc_id.phi*n_b_faces + face_id] = 2./3.;
-    if (turb_model->iturb == 50) {
-      rcodcl[_turb_bc_id.f_bar*n_b_faces + face_id] = 0.;
+    _turb_bc_id.bc_phi->rcodcl1[face_id] = 2./3.;
+    if (turb_model->iturb == CS_TURB_V2F_PHI) {
+      _turb_bc_id.bc_f_bar->rcodcl1[face_id] = 0.;
     }
-    else if (turb_model->iturb == 51) {
-      rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id] = 0.;
+    else if (turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+      _turb_bc_id.bc_alp_bl->rcodcl1[face_id] = 0.;
     }
 
   }
   else if (turb_model->iturb == CS_TURB_K_OMEGA) {
 
-    rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
-    rcodcl[_turb_bc_id.omg*n_b_faces + face_id] = eps/cs_turb_cmu/k;
+    _turb_bc_id.bc_k->rcodcl1[face_id] = k;
+    _turb_bc_id.bc_omg->rcodcl1[face_id] = eps/cs_turb_cmu/k;
 
   }
   else if (turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
 
-    rcodcl[_turb_bc_id.nusa*n_b_faces + face_id] = cs_turb_cmu*k*k/eps;
+    _turb_bc_id.bc_nusa->rcodcl1[face_id] = cs_turb_cmu*k*k/eps;
 
   }
 }
@@ -442,65 +425,55 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
                      double      k,
                      double      eps,
                      double      vel_dir[],
-                     double      shear_dir[],
-                     double     *rcodcl)
+                     double      shear_dir[])
 {
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
 
   if (turb_model->itytur == 2) {
 
-    if (rcodcl[_turb_bc_id.k  *n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-      rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
+    if (_turb_bc_id.bc_k->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
+      _turb_bc_id.bc_k->rcodcl1[face_id] = k;
 
-    if (rcodcl[_turb_bc_id.eps*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-      rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+    if (_turb_bc_id.bc_eps->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
+      _turb_bc_id.bc_eps->rcodcl1[face_id] = eps;
 
   }
 
   else if (turb_model->order == CS_TURB_SECOND_ORDER) {
 
-    cs_lnum_t s_r_11 =  _turb_bc_id.rij      * n_b_faces;
-    cs_lnum_t s_r_22 = (_turb_bc_id.rij + 1) * n_b_faces;
-    cs_lnum_t s_r_33 = (_turb_bc_id.rij + 2) * n_b_faces;
-    cs_lnum_t s_r_12 = (_turb_bc_id.rij + 3) * n_b_faces;
-    cs_lnum_t s_r_23 = (_turb_bc_id.rij + 4) * n_b_faces;
-    cs_lnum_t s_r_13 = (_turb_bc_id.rij + 5) * n_b_faces;
-
     double d2s3 = 2./3.;
-    if (rcodcl[s_r_11 + face_id] > 0.5*cs_math_infinite_r)
-      rcodcl[s_r_11 + face_id] = d2s3 * k;
-    if (rcodcl[s_r_22 + face_id] > 0.5*cs_math_infinite_r)
-      rcodcl[s_r_22 + face_id] = d2s3 * k;
-    if (rcodcl[s_r_33 + face_id] > 0.5*cs_math_infinite_r)
-      rcodcl[s_r_33 + face_id] = d2s3 * k;
+    for (int ii = 0; ii < 3; ii++)
+      if (_turb_bc_id.bc_rij->rcodcl1[ii*n_b_faces + face_id]
+          > 0.5*cs_math_infinite_r)
+        _turb_bc_id.bc_rij->rcodcl1[ii*n_b_faces + face_id] = d2s3 * k;
     if (vel_dir != NULL) {
       cs_math_3_normalize(vel_dir, vel_dir);
-      if (rcodcl[s_r_12 + face_id] > 0.5*cs_math_infinite_r)
-        rcodcl[s_r_12 + face_id]
+      if (_turb_bc_id.bc_rij->rcodcl1[3*n_b_faces + face_id]
+          > 0.5*cs_math_infinite_r)
+        _turb_bc_id.bc_rij->rcodcl1[3*n_b_faces + face_id]
           = k * (vel_dir[0]*shear_dir[1] + vel_dir[1]*shear_dir[0]);
-      if (rcodcl[s_r_23 + face_id] > 0.5*cs_math_infinite_r)
-        rcodcl[s_r_23 + face_id]
+      if (_turb_bc_id.bc_rij->rcodcl1[4*n_b_faces + face_id]
+          > 0.5*cs_math_infinite_r)
+        _turb_bc_id.bc_rij->rcodcl1[3*n_b_faces + face_id]
           = k * (vel_dir[1]*shear_dir[2] + vel_dir[2]*shear_dir[1]);
-      if (rcodcl[s_r_13 + face_id] > 0.5*cs_math_infinite_r)
-        rcodcl[s_r_13 + face_id]
+      if (_turb_bc_id.bc_rij->rcodcl1[5*n_b_faces + face_id]
+          > 0.5*cs_math_infinite_r)
+        _turb_bc_id.bc_rij->rcodcl1[3*n_b_faces + face_id]
           = k * (vel_dir[0]*shear_dir[2] + vel_dir[2]*shear_dir[0]);
     }
     else {
-      if (rcodcl[s_r_12 + face_id] > 0.5*cs_math_infinite_r)
-        rcodcl[s_r_12 + face_id] = 0.;
-      if (rcodcl[s_r_23 + face_id] > 0.5*cs_math_infinite_r)
-        rcodcl[s_r_23 + face_id] = 0.;
-      if (rcodcl[s_r_13 + face_id] > 0.5*cs_math_infinite_r)
-        rcodcl[s_r_13 + face_id] = 0.;
+      for (int ii = 3; ii < 6; ii++)
+        if (_turb_bc_id.bc_rij->rcodcl1[ii*n_b_faces + face_id]
+            > 0.5*cs_math_infinite_r)
+          _turb_bc_id.bc_rij->rcodcl1[ii*n_b_faces + face_id] = 0.;
     }
-    if (rcodcl[_turb_bc_id.eps*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-      rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+    if (_turb_bc_id.bc_eps->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
+      _turb_bc_id.bc_eps->rcodcl1[face_id] = eps;
 
-    if (turb_model->iturb == 32)
-      if (  rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id]
-          > 0.5*cs_math_infinite_r)
-        rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id] = 1.;
+    if (turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
+      if (_turb_bc_id.bc_alp_bl->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
+        _turb_bc_id.bc_alp_bl->rcodcl1[face_id] = 1.;
 
     /* Initialization of the turbulent fluxes to 0 if DFM or
      * EB-DFM are used for scalars (turbulence_flux_model = 30 or 31)
@@ -508,60 +481,55 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
      * initialize to 1 */
 
     if (_turb_bc_id.size_ut > 0) {
-      for (int var_id = 0; var_id < _turb_bc_id.size_ut; var_id++) {
-        if (  rcodcl[_turb_bc_id.ut[var_id]*n_b_faces + face_id]
-            > 0.5*cs_math_infinite_r)
-          rcodcl[_turb_bc_id.ut[var_id]*n_b_faces + face_id] = 0.;
-        if (  rcodcl[(_turb_bc_id.ut[var_id]+1)*n_b_faces + face_id]
-            > 0.5*cs_math_infinite_r)
-          rcodcl[(_turb_bc_id.ut[var_id]+1)*n_b_faces + face_id] = 0.;
-        if (  rcodcl[(_turb_bc_id.ut[var_id]+2)*n_b_faces + face_id]
-            > 0.5*cs_math_infinite_r)
-          rcodcl[(_turb_bc_id.ut[var_id]+2)*n_b_faces + face_id] = 0.;
+      for (int id = 0; id < _turb_bc_id.size_ut; id++) {
+        cs_field_t *fld = _turb_bc_id.f_ut[id];
+        for (int ii = 0; ii < fld->dim; ii++)
+          if (fld->bc_coeffs->rcodcl1[ii*n_b_faces + face_id]
+              > 0.5*cs_math_infinite_r)
+            fld->bc_coeffs->rcodcl1[ii*n_b_faces + face_id] = 0.;
       }
     }
 
     if (_turb_bc_id.size_alp_bl_t > 0) {
-      for (int var_id = 0; var_id < _turb_bc_id.size_alp_bl_t; var_id++) {
-        if (  rcodcl[_turb_bc_id.alp_bl_t[var_id]*n_b_faces + face_id]
-            > 0.5*cs_math_infinite_r)
-          rcodcl[_turb_bc_id.alp_bl_t[var_id]*n_b_faces + face_id] = 1.;
+      for (int id = 0; id < _turb_bc_id.size_alp_bl_t; id++) {
+        cs_field_t *fld = _turb_bc_id.f_alp_bl_t[id];
+        for (int ii = 0; ii < fld->dim; ii++)
+          if (fld->bc_coeffs->rcodcl1[ii*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+            fld->bc_coeffs->rcodcl1[ii*n_b_faces + face_id] = 1.;
       }
     }
 
   }
   else if (turb_model->itytur == 5) {
 
-    if (rcodcl[_turb_bc_id.k  *n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-      rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
-    if (rcodcl[_turb_bc_id.eps*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-      rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+    if (_turb_bc_id.bc_k->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
+      _turb_bc_id.bc_k->rcodcl1[face_id] = k;
+    if (_turb_bc_id.bc_eps->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
+      _turb_bc_id.bc_eps->rcodcl1[face_id] = eps;
 
-    if (rcodcl[_turb_bc_id.phi*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-      rcodcl[_turb_bc_id.phi*n_b_faces + face_id] = 2./3.;
-    if (turb_model->iturb == 50) {
-      if (  rcodcl[_turb_bc_id.f_bar*n_b_faces + face_id]
-          > 0.5*cs_math_infinite_r)
-        rcodcl[_turb_bc_id.f_bar*n_b_faces + face_id] = 0.;
+    if (_turb_bc_id.bc_phi->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
+      _turb_bc_id.bc_phi->rcodcl1[face_id] = 2./3.;
+    if (turb_model->iturb == CS_TURB_V2F_PHI) {
+      if (_turb_bc_id.bc_f_bar->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
+        _turb_bc_id.bc_f_bar->rcodcl1[face_id] = 0.;
     }
-    else if (turb_model->iturb == 51) {
-      if (  rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id]
-          > 0.5*cs_math_infinite_r)
-        rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id] = 0.;
+    else if (turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+      if (_turb_bc_id.bc_alp_bl->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
+        _turb_bc_id.bc_alp_bl->rcodcl1[face_id] = 0.;
     }
 
   }
   else if (turb_model->iturb == CS_TURB_K_OMEGA) {
 
-    if (rcodcl[_turb_bc_id.k  *n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-      rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
-    if (rcodcl[_turb_bc_id.omg*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-      rcodcl[_turb_bc_id.omg*n_b_faces + face_id] = eps/cs_turb_cmu/k;
+    if (_turb_bc_id.bc_k->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
+      _turb_bc_id.bc_k->rcodcl1[face_id] = k;
+    if (_turb_bc_id.bc_omg->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
+      _turb_bc_id.bc_omg->rcodcl1[face_id] = eps/cs_turb_cmu/k;
 
   }
   else if (turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
-    if (rcodcl[_turb_bc_id.nusa*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-      rcodcl[_turb_bc_id.nusa*n_b_faces + face_id] = cs_turb_cmu*k*k/eps;
+    if (_turb_bc_id.bc_nusa->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
+      _turb_bc_id.bc_nusa->rcodcl1[face_id] = cs_turb_cmu*k*k/eps;
 
   }
 }
@@ -580,7 +548,6 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
  *   dh       <-- hydraulic diameter \f$ D_H \f$
  *   rho      <-- mass density \f$ \rho \f$
  *   mu       <-- dynamic viscosity \f$ \nu \f$
- *   rcodcl   <-> boundary condition values
  *----------------------------------------------------------------------------*/
 
 void
@@ -588,14 +555,13 @@ cs_f_turbulence_bc_inlet_hyd_diam(cs_lnum_t   face_num,
                                   double      uref2,
                                   double      dh,
                                   double      rho,
-                                  double      mu,
-                                  double     *rcodcl)
+                                  double      mu)
 {
   double ustar2, k, eps;
 
   _ke_hyd_diam(uref2, dh, rho, mu, &ustar2, &k, &eps);
 
-  _inlet_bc(face_num - 1, k, eps, NULL, NULL, rcodcl);
+  _inlet_bc(face_num - 1, k, eps, NULL, NULL);
 }
 
 /*----------------------------------------------------------------------------
@@ -607,21 +573,19 @@ cs_f_turbulence_bc_inlet_hyd_diam(cs_lnum_t   face_num,
  *   uref2       <-- square of the reference flow velocity
  *   t_intensity <-- turbulence intensity
  *   dh          <-- hydraulic diameter \f$ D_H \f$
- *   rcodcl      <-> boundary condition values
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_num,
                                         double      uref2,
                                         double      t_intensity,
-                                        double      dh,
-                                        double     *rcodcl)
+                                        double      dh)
 {
   double k, eps;
 
   _ke_turb_intensity(uref2, t_intensity, dh, &k, &eps);
 
-  _inlet_bc(face_num - 1, k, eps, NULL, NULL, rcodcl);
+  _inlet_bc(face_num - 1, k, eps, NULL, NULL);
 }
 
 /*----------------------------------------------------------------------------
@@ -634,7 +598,6 @@ cs_f_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_num,
  *   eps         <-- turbulent dissipation
  *   vel_dir     <-- velocity direction
  *   shear_dir   <-- shear direction
- *   rcodcl      <-> boundary condition values
  *----------------------------------------------------------------------------*/
 
 void
@@ -642,10 +605,9 @@ cs_f_turbulence_bc_inlet_k_eps(cs_lnum_t   face_num,
                                double      k,
                                double      eps,
                                double      vel_dir[],
-                               double      shear_dir[],
-                               double     *rcodcl)
+                               double      shear_dir[])
 {
-  _inlet_bc(face_num - 1, k, eps, vel_dir, shear_dir, rcodcl);
+  _inlet_bc(face_num - 1, k, eps, vel_dir, shear_dir);
 }
 
 /*----------------------------------------------------------------------------
@@ -658,7 +620,6 @@ cs_f_turbulence_bc_inlet_k_eps(cs_lnum_t   face_num,
  *   eps         <-- turbulent dissipation
  *   vel_dir     <-- velocity direction
  *   shear_dir   <-- shear direction
- *   rcodcl      <-> boundary condition values
  *----------------------------------------------------------------------------*/
 
 void
@@ -666,10 +627,9 @@ cs_f_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_num,
                                           double      k,
                                           double      eps,
                                           double      vel_dir[],
-                                          double      shear_dir[],
-                                          double     *rcodcl)
+                                          double      shear_dir[])
 {
-  _set_uninit_inlet_bc(face_num - 1, k, eps, vel_dir, shear_dir, rcodcl);
+  _set_uninit_inlet_bc(face_num - 1, k, eps, vel_dir, shear_dir);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -680,40 +640,39 @@ cs_f_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_num,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialize turbulence model boundary condition ids.
+ * \brief Initialize turbulence model boundary condition pointers.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_model_init_bc_ids(void)
+cs_turbulence_bc_init_pointers(void)
 {
   /* CAUTION: see note about the cs_turb_bc_id structure above. */
 
-  const int var_key_id       = cs_field_key_id("variable_id");
   const int k_turbt          = cs_field_key_id("turbulent_flux_model");
   const int k_f_turbt        = cs_field_key_id("turbulent_flux_id");
   const int k_f_turbt_alp_bl = cs_field_key_id("alpha_turbulent_flux_id");
   const int k_sca            = cs_field_key_id("scalar_id");
 
   if (CS_F_(k) != NULL)
-    _turb_bc_id.k = cs_field_get_key_int(CS_F_(k), var_key_id) -1;
+    _turb_bc_id.bc_k = CS_F_(k)->bc_coeffs;
   if (CS_F_(eps) != NULL)
-    _turb_bc_id.eps = cs_field_get_key_int(CS_F_(eps), var_key_id) -1;
+    _turb_bc_id.bc_eps = CS_F_(eps)->bc_coeffs;
 
   if (CS_F_(rij) != NULL)
-    _turb_bc_id.rij = cs_field_get_key_int(CS_F_(rij), var_key_id) -1;
+    _turb_bc_id.bc_rij = CS_F_(rij)->bc_coeffs;
 
   if (CS_F_(phi) != NULL)
-    _turb_bc_id.phi = cs_field_get_key_int(CS_F_(phi), var_key_id) -1;
+    _turb_bc_id.bc_phi = CS_F_(phi)->bc_coeffs;
   if (CS_F_(f_bar) != NULL)
-    _turb_bc_id.f_bar = cs_field_get_key_int(CS_F_(f_bar), var_key_id) -1;
+    _turb_bc_id.bc_f_bar = CS_F_(f_bar)->bc_coeffs;
   if (CS_F_(alp_bl) != NULL)
-    _turb_bc_id.alp_bl = cs_field_get_key_int(CS_F_(alp_bl), var_key_id) -1;
+    _turb_bc_id.bc_alp_bl = CS_F_(alp_bl)->bc_coeffs;
 
   if (CS_F_(omg) != NULL)
-    _turb_bc_id.omg = cs_field_get_key_int(CS_F_(omg), var_key_id) -1;
+    _turb_bc_id.bc_omg = CS_F_(omg)->bc_coeffs;
   if (CS_F_(nusa) != NULL)
-    _turb_bc_id.nusa = cs_field_get_key_int(CS_F_(nusa), var_key_id) -1;
+    _turb_bc_id.bc_nusa = CS_F_(nusa)->bc_coeffs;
 
   int n_fields = cs_field_n_fields();
   int n_sca_ut = 0;
@@ -742,9 +701,9 @@ cs_turbulence_model_init_bc_ids(void)
   _turb_bc_id.size_alp_bl_t = n_sca_alp_bl;
 
   if (_turb_bc_id.size_ut > 0)
-    BFT_MALLOC(_turb_bc_id.ut      , n_sca_ut   , int);
+    BFT_MALLOC(_turb_bc_id.f_ut, n_sca_ut, cs_field_t *);
   if (_turb_bc_id.size_alp_bl_t > 0)
-    BFT_MALLOC( _turb_bc_id.alp_bl_t, n_sca_alp_bl, int);
+    BFT_MALLOC(_turb_bc_id.f_alp_bl_t, n_sca_alp_bl, cs_field_t *);
 
   n_sca_ut = 0;
   n_sca_alp_bl = 0;
@@ -757,14 +716,12 @@ cs_turbulence_model_init_bc_ids(void)
         int f_turbt = cs_field_get_key_int(f, k_turbt) ;
         if (f_turbt / 10 == 3) {
           int fid_turbt = cs_field_get_key_int(f, k_f_turbt);
-          _turb_bc_id.ut[n_sca_ut] =
-            cs_field_get_key_int(cs_field_by_id(fid_turbt), var_key_id) -1;
+          _turb_bc_id.f_ut[n_sca_ut] = cs_field_by_id(fid_turbt);
           n_sca_ut ++;
         }
         if (f_turbt == 11 || f_turbt == 21 || f_turbt == 31) {
           int fid_turbt = cs_field_get_key_int(f, k_f_turbt_alp_bl);
-          _turb_bc_id.alp_bl_t[n_sca_alp_bl] =
-            cs_field_get_key_int(cs_field_by_id(fid_turbt), var_key_id) -1;
+          _turb_bc_id.f_alp_bl_t[n_sca_alp_bl] = cs_field_by_id(fid_turbt);
           n_sca_alp_bl ++;
         }
       }
@@ -774,17 +731,17 @@ cs_turbulence_model_init_bc_ids(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Free memory allocations for turbulence boundary conditions ids.
+ * \brief Free memory allocations for turbulence boundary condition pointers.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_model_free_bc_ids(void)
+cs_turbulence_bc_free_pointers(void)
 {
   if (_turb_bc_id.size_ut > 0)
-    BFT_FREE(_turb_bc_id.ut);
+    BFT_FREE(_turb_bc_id.f_ut);
   if (_turb_bc_id.size_alp_bl_t > 0)
-    BFT_FREE( _turb_bc_id.alp_bl_t);
+    BFT_FREE(_turb_bc_id.f_alp_bl_t);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -905,7 +862,6 @@ cs_turbulence_bc_ke_turb_intensity(double   uref2,
  * \param[in]     dh         hydraulic diameter \f$ D_H \f$
  * \param[in]     rho        mass density \f$ \rho \f$
  * \param[in]     mu         dynamic viscosity \f$ \nu \f$
- * \param[out]    rcodcl     boundary condition values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -914,14 +870,13 @@ cs_turbulence_bc_inlet_hyd_diam(cs_lnum_t   face_id,
                                 double      uref2,
                                 double      dh,
                                 double      rho,
-                                double      mu,
-                                double     *rcodcl)
+                                double      mu)
 {
   double ustar2, k, eps;
 
   _ke_hyd_diam(uref2, dh, rho, mu, &ustar2, &k, &eps);
 
-  _inlet_bc(face_id, k, eps, NULL, NULL, rcodcl);
+  _inlet_bc(face_id, k, eps, NULL, NULL);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -935,7 +890,6 @@ cs_turbulence_bc_inlet_hyd_diam(cs_lnum_t   face_id,
  * \param[in]     uref2         square of the reference flow velocity
  * \param[in]     t_intensity   turbulent intensity \f$ I \f$
  * \param[in]     dh            hydraulic diameter \f$ D_H \f$
- * \param[out]    rcodcl        boundary condition values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -943,14 +897,13 @@ void
 cs_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_id,
                                       double      uref2,
                                       double      t_intensity,
-                                      double      dh,
-                                      double     *rcodcl)
+                                      double      dh)
 {
   double k, eps;
 
   _ke_turb_intensity(uref2, t_intensity, dh, &k, &eps);
 
-  _inlet_bc(face_id, k, eps, NULL, NULL, rcodcl);
+  _inlet_bc(face_id, k, eps, NULL, NULL);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -961,17 +914,15 @@ cs_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_id,
  * \param[in]     face_id    boundary face id
  * \param[in]     k          turbulent kinetic energy
  * \param[in]     eps        turbulent dissipation
- * \param[out]    rcodcl     boundary condition values
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_turbulence_bc_inlet_k_eps(cs_lnum_t   face_id,
                              double      k,
-                             double      eps,
-                             double     *rcodcl)
+                             double      eps)
 {
-  _inlet_bc(face_id, k, eps, NULL, NULL, rcodcl);
+  _inlet_bc(face_id, k, eps, NULL, NULL);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -988,7 +939,6 @@ cs_turbulence_bc_inlet_k_eps(cs_lnum_t   face_id,
  * \param[in]     dh         hydraulic diameter \f$ D_H \f$
  * \param[in]     rho        mass density \f$ \rho \f$
  * \param[in]     mu         dynamic viscosity \f$ \nu \f$
- * \param[out]    rcodcl     boundary condition values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -997,14 +947,13 @@ cs_turbulence_bc_set_uninit_inlet_hyd_diam(cs_lnum_t   face_id,
                                            double      uref2,
                                            double      dh,
                                            double      rho,
-                                           double      mu,
-                                           double     *rcodcl)
+                                           double      mu)
 {
   double ustar2, k, eps;
 
   _ke_hyd_diam(uref2, dh, rho, mu, &ustar2, &k, &eps);
 
-  _set_uninit_inlet_bc(face_id, k, eps, NULL, NULL, rcodcl);
+  _set_uninit_inlet_bc(face_id, k, eps, NULL, NULL);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1021,7 +970,6 @@ cs_turbulence_bc_set_uninit_inlet_hyd_diam(cs_lnum_t   face_id,
  * \param[in]     uref2         square of the reference flow velocity
  * \param[in]     t_intensity   turbulent intensity \f$ I \f$
  * \param[in]     dh            hydraulic diameter \f$ D_H \f$
- * \param[out]    rcodcl        boundary condition values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1029,14 +977,13 @@ void
 cs_turbulence_bc_set_uninit_inlet_turb_intensity(cs_lnum_t   face_id,
                                                  double      uref2,
                                                  double      t_intensity,
-                                                 double      dh,
-                                                 double     *rcodcl)
+                                                 double      dh)
 {
   double k, eps;
 
   _ke_turb_intensity(uref2, t_intensity, dh, &k, &eps);
 
-  _set_uninit_inlet_bc(face_id, k, eps, NULL, NULL, rcodcl);
+  _set_uninit_inlet_bc(face_id, k, eps, NULL, NULL);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1050,7 +997,6 @@ cs_turbulence_bc_set_uninit_inlet_turb_intensity(cs_lnum_t   face_id,
  * \param[in]     vel_dir    velocity direction
  * \param[in]     shear_dir  shear direction, it also contains the level of
  *                           anisotropy (Rnt = a_nt k)
- * \param[out]    rcodcl     boundary condition values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1059,10 +1005,9 @@ cs_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_id,
                                         double      k,
                                         double      eps,
                                         double      vel_dir[],
-                                        double      shear_dir[],
-                                        double     *rcodcl)
+                                        double      shear_dir[])
 {
-  _set_uninit_inlet_bc(face_id, k, eps, vel_dir, shear_dir, rcodcl);
+  _set_uninit_inlet_bc(face_id, k, eps, vel_dir, shear_dir);
 }
 
 /*----------------------------------------------------------------------------*/

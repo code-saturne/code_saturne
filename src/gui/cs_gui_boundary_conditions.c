@@ -2730,8 +2730,7 @@ _standard_turbulence_bcs(cs_real_t  rcodcl[])
 
           cs_turbulence_bc_set_uninit_inlet_hyd_diam(face_id, uref2, dh,
                                                      b_rho[face_id],
-                                                     c_mu[cell_id],
-                                                     rcodcl);
+                                                     c_mu[cell_id]);
         }
 
       }
@@ -2749,8 +2748,7 @@ _standard_turbulence_bcs(cs_real_t  rcodcl[])
                                  cs_math_epzero);
 
           cs_turbulence_bc_set_uninit_inlet_turb_intensity(face_id, uref2,
-                                                           t_intensity, dh,
-                                                           rcodcl);
+                                                           t_intensity, dh);
         }
 
       }
