@@ -122,10 +122,9 @@ class ThermodynamicsSaturationView(QWidget, Ui_ThermodynamicsSaturation):
         field_ids = self.interf.getEnthalpyCoupleFieldId()
         couple_str = ""
         if field_ids:
-            couple_str = self.mfm.getLabel(field_ids[0])
-            couple_str += " (liquid)/"
-            couple_str += self.mfm.getLabel(field_ids[1])
-            couple_str += " (gas)"
+            field_1 = self.mfm.getFieldFromId(field_ids[0])
+            field_2 = self.mfm.getFieldFromId(field_ids[1])
+            couple_str = "{0} (liquid) / {1} (gas)".format(field_1.label, field_2.label)
 
         self.lineEditCoupledFields.setText(couple_str)
         self.lineEditCoupledFields.setEnabled(False)

@@ -190,8 +190,9 @@ class StandardItemModelCourantFourier(QStandardItemModel):
         Add/load a field in the model.
         """
         row = self.rowCount()
+        field = self.mdl.mainFieldsModel.getFieldFromId(fieldId)
 
-        label   = self.mdl.mainFieldsModel.getLabel(fieldId)
+        label   = field.label
         courant = self.mdl.getMaxCourant(fieldId)
         fourier = self.mdl.getMaxFourier(fieldId)
 

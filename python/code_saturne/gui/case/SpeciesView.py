@@ -140,8 +140,7 @@ class FieldDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
         self.modelCombo = ComboModel(editor, 1, 1)
-        for fieldId in self.mdl.mainFieldsModel.getFieldIdList(include_none=True):
-            label     = self.mdl.mainFieldsModel.getLabel(fieldId, include_none=True)
+        for label in self.mdl.mainFieldsModel.getFieldLabelsList(include_none=True):
             self.modelCombo.addItem(self.tr(label), label)
 
         editor.installEventFilter(self)
@@ -267,10 +266,8 @@ class StandardItemModelUserScalar(QStandardItemModel):
             name = existing_scalar
 
         fieldId    = self.mdl.getScalarFieldId(row + 1)
-        if fieldId != "none":
-            labelfield = self.mdl.mainFieldsModel.getLabel(fieldId)
-        else:
-            labelfield = "none"
+        field = self.mdl.mainFieldsModel.getFieldFromId(fieldId)
+        labelfield = field.label
         label      = self.mdl.getScalarLabel(row + 1)
 
         scalar = [label, labelfield]

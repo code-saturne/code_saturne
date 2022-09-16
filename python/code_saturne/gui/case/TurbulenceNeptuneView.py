@@ -378,14 +378,12 @@ class StandardItemModelTurbulence(QStandardItemModel):
         Add/load a field in the model.
         """
         row = self.rowCount()
+        field = self.mdl.mainFieldsModel.getFieldFromId(fieldId)
 
-        label        = self.mdl.mainFieldsModel.getLabel(fieldId)
-        carrier      = self.mdl.mainFieldsModel.getCarrierField(fieldId)
-        carrierLabel = ""
-        if carrier != "off" :
-            carrierLabel = self.mdl.mainFieldsModel.getLabel(carrier)
-        else :
-            carrierLabel = carrier
+        label        = field.label
+        carrier_id   = field.carrier_id
+        carrier = self.mdl.mainFieldsModel.getFieldFromId(carrier_id)
+        carrierLabel = carrier.label
         turbulence = self.dicoM2V[self.mdl.getTurbulenceModel(fieldId)]
         turb_flux  = self.dicoM2V[self.mdl.getThermalTurbulentFlux(fieldId)]
         twoway     = self.dicoM2V[self.mdl.getTwoWayCouplingModel(fieldId)]

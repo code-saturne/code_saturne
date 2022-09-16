@@ -106,9 +106,9 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
                 self.zone = zone
                 self.zone_id = str(zone.getCodeNumber())
         self.modelField = ComboModel(self.comboBoxField, 1, 1)
-        for fieldId in self.mfm.getFieldIdList():
-            label = self.mfm.getLabel(fieldId)
-            name = str(fieldId)
+        for field in self.mfm.list_of_fields:
+            label = field.label
+            name = field.f_id
             self.modelField.addItem(self.tr(label), name)
         self.currentId = -1
         if len(self.mfm.getFieldIdList()) > 0:

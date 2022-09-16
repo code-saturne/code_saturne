@@ -265,7 +265,7 @@ class SpeciesModel(Variables, Model):
                     if old_node:
                         old_dico = old_node.xmlGetAttributeDictionary()
                         val = old_node.xmlGetDouble('value')
-                        newbcnode = bnd_node.xmlGetChildNode(bnd['nature'],
+                        newbcnode = bnd_node.xmlInitChildNode(bnd['nature'],
                                                              field_id=carrierfield,
                                                              label=bnd['label'])
 

@@ -95,10 +95,11 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         self.modelLiquidVaporFields.addItem("None", "none")
         for id_pair in liquid_vapor_couples:
             field_descriptions = []
-            for id in id_pair:
-                name = self.mdl.mainFieldsModel.getLabel(id)
-                phase = self.mdl.mainFieldsModel.getFieldNature(id)
-                criterion = self.mdl.mainFieldsModel.getCriterion(id)
+            for fid in id_pair:
+                field = self.mdl.mainFieldsModel.getFieldFromId(fid)
+                name = field.label
+                phase = field.phase
+                criterion = field.flow_type
                 field_descriptions.append("{0} ({1} {2})".format(name, criterion, phase))
             # Display fields as "Field1 (continuous liquid) / Field2 (dispersed gas)"
             view = self.tr(" / ".join(field_descriptions))

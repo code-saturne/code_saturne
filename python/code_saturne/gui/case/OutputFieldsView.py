@@ -388,9 +388,9 @@ class OutputFieldsView(QWidget, Ui_OutputFields):
 
         # Combo box models
         self.modelField = ComboModel(self.comboBoxField, 1, 1)
-        for fieldId in self.mdl.mainFieldsModel.getFieldIdList() :
-            label = self.mdl.mainFieldsModel.getLabel(fieldId)
-            name = str(fieldId)
+        for field in self.mdl.mainFieldsModel.list_of_fields:
+            label = field.label
+            name = field.f_id
             self.modelField.addItem(self.tr(label), name)
 
         self.currentid = -1

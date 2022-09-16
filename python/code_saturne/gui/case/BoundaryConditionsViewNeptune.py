@@ -139,15 +139,16 @@ class StandardItemModelMainFields(QStandardItemModel):
         Add/load a field in the model.
         """
         row = self.rowCount()
+        field = self.mdl.mainFieldsModel.getFieldFromId(fieldId)
 
         if fieldId == "none":
             label     = "Non-convected scalars"
             nature    = "none"
             criterion = "none"
         else:
-            label     = self.mdl.mainFieldsModel.getLabel(fieldId)
-            nature    = self.mdl.mainFieldsModel.getFieldNature(fieldId)
-            criterion = self.mdl.mainFieldsModel.getCriterion(fieldId)
+            label     = field.label
+            nature    = field.phase
+            criterion = field.flow_type
 
         field = [label, nature, criterion]
 

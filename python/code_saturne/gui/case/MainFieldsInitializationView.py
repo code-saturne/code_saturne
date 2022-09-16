@@ -135,10 +135,8 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                 self.zone_id = str(zone.getCodeNumber())
 
         self.modelField = ComboModel(self.comboBoxField, 1, 1)
-        for fieldId in self.mdl.mainFieldsModel.getFieldIdList():
-            label = self.mdl.mainFieldsModel.getLabel(fieldId)
-            name = str(fieldId)
-            self.modelField.addItem(self.tr(label), name)
+        for field in self.mdl.mainFieldsModel.list_of_fields:
+            self.modelField.addItem(self.tr(field.label), field.f_id)
 
         need_none = (SpeciesModel(self.case).getScalarByFieldId("none")!=[])
         if need_none:

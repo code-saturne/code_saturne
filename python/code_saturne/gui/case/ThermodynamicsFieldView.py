@@ -380,7 +380,8 @@ class StandardItemModelProperty(QStandardItemModel):
         load field in the model
         """
         row = self.rowCount()
-        label = self.mdl.mainFieldsModel.getLabel(fieldId)
+        field = self.mdl.mainFieldsModel.getFieldFromId(fieldId)
+        label = field.label
         try:
             material = self.dicoM2V[self.mdl.getMaterials(fieldId)]
         except KeyError:

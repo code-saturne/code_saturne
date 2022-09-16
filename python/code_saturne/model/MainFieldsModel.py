@@ -168,6 +168,10 @@ class MainFieldsModel(Variables, Model):
         for field in self.list_of_fields:
             if str(field.f_id) == str(fieldId):
                 return field
+        if fieldId == "none":
+            return NeptuneField(self.case, "none")
+        elif fieldId == "off":
+            return NeptuneField(self.case, "off")
         return None
 
     @Variables.undoGlobal
@@ -301,34 +305,6 @@ class MainFieldsModel(Variables, Model):
     def hasEnthalpyResolvedField(self) :
         """ return list of fields with enthalpy resolution """
         return ([f for f in self.list_of_fields if f.enthalpy_model != "off"] != [])
-
-
-    @Variables.undoLocal
-    def setLabel(self, fieldId, label):
-        """
-        Put label
-        """
-        self.isInList(str(fieldId),self.getFieldIdList())
-
-        old_label = label
-        label_new = label[:LABEL_LENGTH_MAX]
-        if label_new not in self.getFieldLabelsList():
-            field = self.getFieldFromId(fieldId)
-            field.label = label
-
-
-    @Variables.noUndo
-    def getLabel(self, fieldId, include_none=False):
-        """
-        get label
-        """
-        self.isInList(str(fieldId),self.getFieldIdList(include_none=include_none))
-
-        if fieldId == "none" and include_none:
-            return "none"
-        else:
-            field = self.getFieldFromId(fieldId)
-            return field.label
 
 
     @Variables.undoLocal
@@ -653,8 +629,8 @@ class MainFieldsModel(Variables, Model):
                                          energyModel,
                                          compressible)
 
-            # Remove remnant fields from previous flow choice
-            for fieldId in field_id_list[2:]:
+            # Remove remnant fields from previous flow choice, starting from the last one
+            for fieldId in field_id_list[-1:1:-1]:
                 self.deleteField(fieldId)
 
             # modification du choix pour le predicteur de vitesse
@@ -995,26 +971,6 @@ class MainFieldsTestCase(ModelTest):
         mdl.addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off')
         assert mdl.getFirstGasField() == '2' ,\
             'Could not get FirstGasField'
-
-
-    def checkGetandSetLabel(self):
-        """Check whether the MainFieldsModel class could set and get Label"""
-        mdl = MainFieldsModel(self.case)
-        mdl.addField()
-        mdl.setLabel('1','example_label')
-        doc = '''<fields>
-                         <field field_id="1" label="example_label">
-                                 <type choice="continuous"/>
-                                 <carrier_field field_id="off"/>
-                                 <phase choice="liquid"/>
-                                 <hresolution status="on"/>
-                                 <compressible status="off"/>
-                         </field>
-                 </fields>'''
-        assert mdl.getXMLNodefields() == self.xmlNodeFromString(doc),\
-            'Could not set Label'
-        assert mdl.getLabel('1') == 'example_label',\
-            'Could not get Label'
 
 
     def checkGetandSetCriterion(self):

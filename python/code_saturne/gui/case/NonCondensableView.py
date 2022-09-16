@@ -368,7 +368,8 @@ class StandardItemModelNonCondensable(QStandardItemModel):
            name = existing_noncond
         label      = self.mdl.getNonCondLabel(name)
         fieldId    = self.mdl.getNonCondFieldId(name)
-        labelfield = self.mdl.mainFieldsModel.getLabel(fieldId)
+        field      = self.mdl.mainFieldsModel.getFieldFromId(fieldId)
+        labelfield = field.label
         type       = self.mdl.getNonCondType(name)
         massmol    = self.mdl.getNonCondMassMol(name)
         cobin1     = self.mdl.getNonCondCobin1(name)

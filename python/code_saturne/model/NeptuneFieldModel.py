@@ -41,11 +41,12 @@ class NeptuneField(Variables, Model):
         self.case = case # Could be a global variable (is actually a singleton)
         self._f_id = str(f_id)
 
-        thermo_node = self.case.xmlGetNode('thermophysical_models')
-        fields_node = thermo_node.xmlInitNode('fields')
-        self._xml_node = fields_node.xmlInitNode('field', field_id = self.f_id)
-        self._xml_variable_node = thermo_node.xmlInitNode('variables')
-        self._xml_property_node = thermo_node.xmlInitNode('properties')
+        if (self._f_id not in ["none", "off"]):
+            thermo_node = self.case.xmlGetNode('thermophysical_models')
+            fields_node = thermo_node.xmlInitNode('fields')
+            self._xml_node = fields_node.xmlInitNode('field', field_id = self.f_id)
+            self._xml_variable_node = thermo_node.xmlInitNode('variables')
+            self._xml_property_node = thermo_node.xmlInitNode('properties')
 
         self._label = ""
         self._phase = ""
@@ -90,10 +91,16 @@ class NeptuneField(Variables, Model):
         self._f_id = str(value)
 
     @property
+    @Variables.noUndo
     def label(self):
+        if self.f_id == "none":
+            return "none"
+        elif self.f_id == "off":
+            return "off"
         return self._xml_node.xmlGetAttribute("label", default=self._label)
 
     @label.setter
+    @Variables.undoLocal
     def label(self, value):
         #TODO add rules from MainFieldsModel
         if self.isStr(value):

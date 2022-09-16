@@ -411,7 +411,8 @@ class StandardItemModelMainFields(QStandardItemModel):
         # Update the row in the table
         row = index.row()
         col = index.column()
-        FieldId = self.mdl.list_of_fields[row].f_id
+        field = self.mdl.list_of_fields[row]
+        FieldId = field.f_id
 
         # Label
         if col == 0:
@@ -426,7 +427,7 @@ class StandardItemModelMainFields(QStandardItemModel):
                     nf.xmlSetTextNode(ftext.replace(old_plabel, new_plabel))
 
             self._data[row][col] = new_plabel
-            self.mdl.setLabel(FieldId, new_plabel)
+            field.label = new_plabel
             self.updateItem()
 
         # Nature of field
@@ -449,7 +450,7 @@ class StandardItemModelMainFields(QStandardItemModel):
             new_carrier = from_qvariant(value, to_text_string)
             self._data[row][col] = new_carrier
             # set carrier field Id in XML
-            if self._data[row][col] != "off" :
+            if self._data[row][col] != "off" : # TODO move this test to model part ?
                id = self.mdl.getFieldId(self._data[row][col])
             else :
                id = self._data[row][col]
@@ -490,12 +491,8 @@ class StandardItemModelMainFields(QStandardItemModel):
         label = field.label
         nature = field.phase
         criterion = field.flow_type
-        carrier = field.carrier_id
-        carrierLabel = ""
-        if carrier != "off" :
-            carrierLabel = self.mdl.getLabel(carrier)
-        else :
-            carrierLabel = carrier
+        carrier = self.mdl.getFieldFromId(field.carrier_id)
+        carrierLabel = carrier.label
         compressible = field.compressible
         energy       = field.enthalpy_model
 
@@ -519,13 +516,10 @@ class StandardItemModelMainFields(QStandardItemModel):
 
     def updateItem(self):
         # update carrier field and criterion
-        for i, id in enumerate(self.mdl.getFieldIdList()) :
-            carrier = self.mdl.getCarrierField(id)
-            if carrier != "off" :
-               self._data[i][3] = self.mdl.getLabel(carrier)
-            else :
-               self._data[i][3] = carrier
-            self._data[i][2] = self.mdl.getCriterion(id)
+        for i, field in enumerate(self.mdl.list_of_fields) :
+            carrier_id = field.carrier_id
+            self._data[i][3] = self.mdl.getFieldFromId(carrier_id).label
+            self._data[i][2] = field.flow_type
 
 
     def deleteItem(self, row):
@@ -597,17 +591,14 @@ class MainFieldsView(QWidget, Ui_MainFields):
         else:
             self._initializePushButtons()
 
-        for fieldId in self.mdl.getFieldIdList():
-            label = self.mdl.getLabel(fieldId)
-            nature = self.mdl.getFieldNature(fieldId)
-            criterion = self.mdl.getCriterion(fieldId)
-            carrier = self.mdl.getCarrierField(fieldId)
-            if carrier != "off":
-                carrierLabel = self.mdl.getLabel(carrier)
-            else:
-                carrierLabel = carrier
-            compressible = self.mdl.getCompressibleStatus(fieldId)
-            energy = self.mdl.getEnergyModel(fieldId)
+        for field in self.mdl.list_of_fields:
+            label = field.label
+            nature = field.phase
+            criterion = field.flow_type
+            carrier = field.carrier_id
+            carrierLabel = self.mdl.getFieldFromId(carrier).label
+            compressible = field.compressible
+            energy = field.enthalpy_model
             self.tableModelFields.loadItem(label, nature, criterion, carrierLabel, compressible, energy)
         self.browser.configureTree(self.case)
 
