@@ -144,6 +144,7 @@ class config:
         self.fcmodinclude = d.get('fcmodinclude', '')
         self.rpath = d.get('rpath', '')
         self.special_user_link = d.get('cs_special_user_link', '')
+        self.ld_default_search_path = d.get('ld_default_search_path', '')
 
         system_flags = {'cppflags': d.get('cppflags', ''),
                         'ldflags': d.get('ldflags', ''),

@@ -90,6 +90,7 @@ libs: @LIBS@ @FCLIBS@
 fcmodinclude: @FCMODINCLUDE@
 rpath: @LDRPATH@
 special_user_link: @cs_special_user_link@
+ld_default_search_path: @cs_ld_default_search_path@
 
 [python]
 

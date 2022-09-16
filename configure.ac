@@ -725,6 +725,11 @@ AC_ARG_ENABLE(dlopen-rtld-global,
 FCLIBS=`$PYTHON ${srcdir}/build-aux/cs_build_tools.py clean-lib-flags $FCLIBS`
 AC_SUBST(FCLIBS)
 
+# Check for linker default search path
+
+cs_ld_default_search_path=`$PYTHON ${srcdir}/build-aux/cs_build_tools.py get-ld-default-search-path`
+AC_SUBST(cs_ld_default_search_path)
+
 #------------------------------------------------------------------------------
 # Checks for libraries.
 #------------------------------------------------------------------------------

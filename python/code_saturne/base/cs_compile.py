@@ -319,9 +319,13 @@ class cs_compile(object):
         else:
             args = flags
 
+        # List of libraries already in search path:
+        ld_default_search_path = ['/lib', '/usr/lib']
+        if self.pkg.config.ld_default_search_path:
+            ld_default_search_path += \
+                self.pkg.config.ld_default_search_path.split(':')
         for arg in args:
-            if (arg[0:2] == '-L' and arg[0:10] != '-L/usr/lib'
-                and arg[0:6] != '-L/lib'):
+            if (arg[0:2] == '-L' and arg[2:] not in ld_default_search_path):
                 retval[i] += ":" + arg[2:]
                 count += 1
 

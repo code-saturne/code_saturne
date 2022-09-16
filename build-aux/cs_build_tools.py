@@ -34,7 +34,38 @@ import tempfile
 # Functions
 #===============================================================================
 
+def get_ld_default_search_path():
+    """
+    On Linux systems, try to determine the search path used by
+    the dynamic linker (so as to allow filtering commands to avoid
+    repeating paths already in that path).
+    """
+
+    import subprocess
+
+    path = ""
+    try:
+        cmd = ['/sbin/ldconfig', '-v']
+        p = subprocess.Popen(cmd,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE,
+                             universal_newlines=True)
+        output = p.communicate()
+
+        for l in output[0].splitlines():
+            if l[:1] == '/':
+                path += l
+
+    except Exception:
+        pass
+
+    return path[:-1]
+
 def clean_lib_search_flags(flags):
+    """
+    Clean library search flags, to normalize paths and remove
+    options which are not search flags.
+    """
 
     n_flags = []
     for f in flags:
@@ -49,7 +80,6 @@ def clean_lib_search_flags(flags):
                 # (should not be needed but helps remove options such as
                 # "-loopopt=0" which appears in the autoconf'ed FCLIBS using
                 # the Intel ifx Fortran.
-                # TODO: add a cleanup routinr for FCLIBS instead.
                 if f.find("=") > 0:   # Non-library option
                     continue
         if os.path.isfile(p) or os.path.isdir(p):
@@ -59,7 +89,10 @@ def clean_lib_search_flags(flags):
     c_flags = []
     while n_flags:
         f = n_flags.pop(0)
-        if f not in ('-L/lib', '-L/usr/lib') and n_flags.count(f) < 1:
+        if n_flags.count(f) < 1:
+            if f[0:2] == '-L':
+                if f[2:] in ['/lib', '/usr/lib']:
+                    continue
             c_flags.append(f)
 
     return c_flags
@@ -78,6 +111,13 @@ if __name__ == '__main__':
         for f in c_flags:
             m += ' ' + f
         print(m[1:])
+
+    elif tool == 'get-ld-default-search-path':
+        print(get_ld_default_search_path())
+
+    else:
+        print(sys.argv[0], ": unknown command: ", tool)
+        sys.exit(1)
 
     sys.exit(0)
 
