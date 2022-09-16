@@ -1351,15 +1351,16 @@ class WallBoundary(Boundary) :
         XMLNode = self.boundNode.xmlInitChildNode('wall_model', field_id = fieldId)
 
         choice = XMLNode['model']
+        field = MainFieldsModel(self.case).getFieldFromId(fieldId)
 
         if not choice:
-            if MainFieldsModel(self.case).getCriterion(fieldId) == "continuous":
+            if field.flow_type == "continuous":
                 choice = 'friction'
-            elif MainFieldsModel(self.case).getFieldNature(fieldId) == "gas":
+            elif field.phase == "gas":
                 choice = 'dvr_dn'
-            elif MainFieldsModel(self.case).getFieldNature(fieldId) == "liquid":
+            elif field.phase == "liquid":
                 choice = 'droplet_friction'
-            elif MainFieldsModel(self.case).getFieldNature(fieldId) == "solid":
+            elif field.phase == "solid":
                 choice = 'du2_dn'
             self.setWallModel(fieldId, choice)
         return choice

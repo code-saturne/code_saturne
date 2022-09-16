@@ -159,8 +159,9 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
         """
         self.currentid = self.modelField.dicoV2M[text]
         self.initializeVariables(self.currentid)
+        field = self.mdl.mainFieldsModel.getFieldFromId(self.currentid)
 
-        if self.mdl.mainFieldsModel.getFieldNature(self.currentid) == "gas" :
+        if field.phase == "gas" :
             self.modelSourceTerm.enableItem(0)
         else :
             self.modelSourceTerm.disableItem(0)
@@ -217,6 +218,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
         Initialize variables when a new fieldId is choosen
         """
         self.labelNoDispersedPhase.hide()
+        field = MainFieldsModel(self.case).getFieldFromId(fieldId)
         model = self.mdl.getAreaModel(fieldId)
         self.modelModel.setItem(str_model = model)
 
@@ -239,7 +241,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
             value = self.mdl.getMaxDiameter(self.currentid)
             self.lineEditMaxDiameter.setText(str(value))
 
-            if MainFieldsModel(self.case).getFieldNature(fieldId) != 'gas' :
+            if field.phase != 'gas' :
                 self.modelSourceTerm.disableItem(1)
                 self.modelSourceTerm.disableItem(2)
                 self.modelSourceTerm.disableItem(3)

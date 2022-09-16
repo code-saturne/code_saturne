@@ -287,12 +287,12 @@ class CarrierDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
         self.modelCombo = ComboModel(editor, 1, 1)
-        fieldId = self.mdl.list_of_fields[index.row()].f_id
-        if self.mdl.getCriterion(fieldId) == "continuous" :
+        field = self.mdl.list_of_fields[index.row()]
+        if field.flow_type == "continuous" :
             self.modelCombo.addItem(self.tr("off"), 'off')
         else :
-            for field in self.mdl.getContinuousFieldList() :
-                self.modelCombo.addItem(self.tr(field.label), field.label)
+            for fld in self.mdl.getContinuousFieldList() :
+                self.modelCombo.addItem(self.tr(fld.label), fld.label)
 
         editor.installEventFilter(self)
         return editor
@@ -434,7 +434,7 @@ class StandardItemModelMainFields(QStandardItemModel):
         elif col == 1:
             new_nature = from_qvariant(value, to_text_string)
             self._data[row][col] = new_nature
-            self.mdl.setFieldNature(FieldId, new_nature)
+            field.phase = new_nature
             self.updateItem()
 
         # Interfacial criterion
@@ -451,26 +451,26 @@ class StandardItemModelMainFields(QStandardItemModel):
             self._data[row][col] = new_carrier
             # set carrier field Id in XML
             if self._data[row][col] != "off" : # TODO move this test to model part ?
-               id = self.mdl.getFieldId(self._data[row][col])
+               fid = self.mdl.getFieldId(self._data[row][col])
             else :
-               id = self._data[row][col]
-            self.mdl.setCarrierField(FieldId, id)
+               fid = self._data[row][col]
+            field.carrier_id = fid
 
         # Compressible
         elif col == 4:
             state = from_qvariant(value, int)
             if state == Qt.Unchecked:
                 self._data[row][col] = "off"
-                self.mdl.setCompressibleStatus(FieldId,"off")
+                field.compressible = "off"
             else:
                 self._data[row][col] = "on"
-                self.mdl.setCompressibleStatus(FieldId,"on")
+                field.compressible = "on"
 
         # Energy resolution
         elif col == 5:
             state = from_qvariant(value, to_text_string)
             self._data[row][col] = state
-            self.mdl.setEnergyModel(FieldId, state)
+            field.enthalpy_model = state
 
         self.dataChanged.emit(index, index)
         return True

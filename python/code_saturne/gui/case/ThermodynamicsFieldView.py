@@ -100,9 +100,10 @@ class MaterialsDelegate(QItemDelegate):
         self.modelCombo = ComboModel(editor, 1, 1)
         self.modelCombo.addItem(self.tr(self.dicoM2V["user_material"]), 'user_material')
         fieldId= index.row() + 1
+        field = self.mainFieldsModel.getFieldFromId(fieldId)
         # suppress perfect gas
         tmp = ["Argon", "Nitrogen", "Hydrogen", "Oxygen", "Helium", "Air"]
-        if self.mdl.mainFieldsModel.getFieldNature(fieldId) != "solid" and self.mdl.checkEOSRequirements(fieldId):
+        if field.phase != "solid" and self.mdl.checkEOSRequirements(fieldId):
             fls = self.eos.getListOfFluids()
             for fli in fls:
                 if fli not in tmp:
@@ -212,6 +213,7 @@ class ReferenceDelegate(QItemDelegate):
         self.modelCombo = ComboModel(editor, 1, 1)
 
         fieldId= index.row() + 1
+        field = self.mdl.mainFieldsModel.getFieldFromId(fieldId)
 
         material = self.mdl.getMaterials(fieldId)
         method   = self.mdl.getMethod(fieldId)
@@ -219,11 +221,9 @@ class ReferenceDelegate(QItemDelegate):
             self.modelCombo.addItem(self.tr(self.dicoM2V["user_material"]), 'user_material')
         else :
             if self.eos.isActive():
-                phase = self.mdl.mainFieldsModel.getFieldNature(fieldId)
-
-                if phase == "liquid":
+                if field.phase == "liquid":
                     ref = self.eos.getLiquidReferences(material, method)
-                elif phase == "gas":
+                elif field.phase == "gas":
                     ref = self.eos.getVaporReferences(material, method)
 
                 for r in ref:
@@ -759,14 +759,15 @@ temperature = enthalpy / 1000;
 
         method = self.tableModelProperties.getMethod(row)
         fieldId = row + 1
+        mfm = MainFieldsModel(self.case)
+        field = mfm.getFieldFromId(fieldId)
         self.currentFluid = fieldId
         if method == "user properties" :
             self.groupBoxEOS.hide()
             self.groupBoxConstantProperties.show()
 
             # Deactivate Thermal variable if no energy resolution
-            mfm = MainFieldsModel(self.case)
-            if mfm.getEnergyModel(fieldId) == 'off':
+            if field.enthalpy_model == 'off':
                 self.comboBoxSpecificHeat.setEnabled(False)
                 self.lineEditSpecificHeat.setReadOnly(True)
                 self.lineEditSpecificHeat.setEnabled(False)
@@ -820,7 +821,7 @@ temperature = enthalpy / 1000;
                     __button.setStyleSheet("background-color: None")
 
             # Test for compressible flow
-            if MainFieldsModel(self.case).getCompressibleStatus(fieldId) == "on":
+            if field.compressible == "on":
                 self.groupBoxCompressible.show()
                 exp = self.mdl.getFormula(fieldId, 'd_rho_d_P', zone=self.zone_id)
                 if exp:
@@ -837,7 +838,7 @@ temperature = enthalpy / 1000;
 
             # Temperature / enthalpy law
             self.groupBoxTemperature.hide()
-            if MainFieldsModel(self.case).getEnergyModel(fieldId) != "off":
+            if field.enthalpy_model != "off":
                 self.groupBoxTemperature.show()
 
                 fieldId = self.currentFluid

@@ -294,8 +294,10 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
 
     def fillLiquidVaporModels(self, fieldIda, fieldIdb):
         # fieldIda == continuous by construction and nature(fieldIda) != nature(fieldIdb)
-        if self.mdl.mainFieldsModel.getFieldNature(fieldIda) == "liquid":
-            if self.mdl.mainFieldsModel.getCriterion(fieldIdb) == "continuous":
+        field_a = self.mdl.mainFieldsModel.getFieldFromId(fieldIda)
+        field_b = self.mdl.mainFieldsModel.getFieldFromId(fieldIdb)
+        if field_a.phase == "liquid":
+            if field_b.flow_type == "continuous":
                 self.modelFieldaModel.addItem(self.tr("Coste-Lavieville NURETH13 model, Wall Law Type Model"),
                                               "wall_law_type_model")
                 self.modelFieldbModel.addItem(self.tr("Interfacial Sublayer Model for LI3C"), "sublayer_LI3C")
@@ -309,7 +311,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
                 self.modelFieldbModel.addItem(self.tr("Relaxation time + subcooled gas treatment"),
                                               "relaxation_time_subcooled")
         else:
-            if self.mdl.mainFieldsModel.getCriterion(fieldIdb) == "continuous":
+            if field_b.flow_type == "continuous":
                 self.modelFieldaModel.addItem(self.tr("Interfacial Sublayer Model for LI3C"), "sublayer_LI3C")
                 self.modelFieldbModel.addItem(self.tr("Coste-Lavieville NURETH13 model, Wall Law Type Model"),
                                               "wall_law_type_model")

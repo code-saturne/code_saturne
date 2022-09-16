@@ -130,10 +130,10 @@ class TurbulenceModel(Variables, Model):
         put turbulence model for fieldId
         """
         self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        field = self.mainFieldsModel.getFieldFromId(fieldId)
 
-        field_name = self.mainFieldsModel.getFieldFromId(fieldId).label
-
-        criterion = self.mainFieldsModel.getCriterion(fieldId)
+        field_name = field.label
+        criterion = field.flow_type
         if criterion == "continuous":
            self.isInList(model, TurbulenceModelsDescription.continuousTurbulenceModels)
         else:
@@ -194,14 +194,14 @@ class TurbulenceModel(Variables, Model):
 
            # update other field if continuous and set to none
            if model == "none" and criterion == "continuous":
-               for id in self.mainFieldsModel.getFieldIdList():
-                   if self.mainFieldsModel.getCriterion(id) == "dispersed":
-                       if self.mainFieldsModel.getCarrierField(id) == str(fieldId):
-                           self.setTurbulenceModel(id, TurbulenceModelsDescription.dispersedTurbulenceModels[0])
+               for fld in self.mainFieldsModel.list_of_fields:
+                   if fld.flow_type == "dispersed":
+                       if fld.carrier_id == str(fieldId):
+                           self.setTurbulenceModel(fld.f_id, TurbulenceModelsDescription.dispersedTurbulenceModels[0])
                            if criterion == "continuous":
-                               self.setTwoWayCouplingModel(id, TurbulenceModelsDescription.continuousCouplingModels[0])
+                               self.setTwoWayCouplingModel(fld.f_id, TurbulenceModelsDescription.continuousCouplingModels[0])
                            else:
-                               self.setTwoWayCouplingModel(id, TurbulenceModelsDescription.continuousCouplingModels[0])
+                               self.setTwoWayCouplingModel(fld.f_id, TurbulenceModelsDescription.continuousCouplingModels[0])
 
 
     @Variables.noUndo
@@ -210,8 +210,9 @@ class TurbulenceModel(Variables, Model):
         get turbulence model for fieldId
         """
         self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        field = self.mainFieldsModel.getFieldFromId(fieldId)
 
-        criterion = self.mainFieldsModel.getCriterion(fieldId)
+        criterion = field.flow_type
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
         if node is None:
@@ -230,12 +231,12 @@ class TurbulenceModel(Variables, Model):
     def setThermalTurbulentFlux(self, fieldId, model):
 
         self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
-
         self.isInList(model,TurbulenceModelsDescription.ThermalTurbFluxModels)
+        field = self.mainFieldsModel.getFieldFromId(fieldId)
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
 
-        critrerion =  self.mainFieldsModel.getCriterion(fieldId)
+        critrerion =  field.flow_type
         if node is None:
             if criterion == "continuous":
                 self.XMLturbulence.xmlInitChildNode('field',
@@ -257,16 +258,17 @@ class TurbulenceModel(Variables, Model):
     def getThermalTurbulentFlux(self, fieldId):
 
         self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        field = self.mainFieldsModel.getFieldFromId(fieldId)
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
         if node is None:
-            if self.mainFieldsModel.getEnergyModel(fieldId) != 'off':
+            if field.enthalpy_model != 'off':
                 self.setThermalTurbulentFlux(fieldId,
                                              self.defaultValues()['turb_flux'])
             else:
                 self.setThermalTurbulentFlux(fieldId, 'none')
         else:
-            if self.mainFieldsModel.getEnergyModel(fieldId) == 'off':
+            if field.enthalpy_model == 'off':
                 node['turb_flux'] = 'none'
             elif node['turb_flux'] == 'none':
                node['turb_flux'] = 'sgdh'
@@ -386,7 +388,8 @@ class TurbulenceModel(Variables, Model):
     def useAdvancedThermalFluxes(self, fieldId):
         flag = False
 
-        if self.mainFieldsModel.getCriterion(fieldId) == 'continuous' and \
+        field = self.mainFieldsModel(fieldId)
+        if field.flow_type == 'continuous' and \
            'rij-epsilon' in self.getTurbulenceModel(fieldId):
 
             flag = True

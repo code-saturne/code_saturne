@@ -101,12 +101,13 @@ class InterfacialAreaModel(Variables, Model):
     def getSourceTermList(self, fieldId) :
         """
         """
-        list = []
-        if self.mainFieldsModel.getFieldNature(fieldId) == "gas" :
-            list = self.__GasSourceTerm
+        lst = []
+        field = self.mainFieldsModel.getFieldFromId(fieldId)
+        if field.phase == "gas" :
+            lst = self.__GasSourceTerm
         else :
-            list = self.__SolidSourceTerm
-        return list
+            lst = self.__SolidSourceTerm
+        return lst
 
 
     def getVariableAIList(self) :

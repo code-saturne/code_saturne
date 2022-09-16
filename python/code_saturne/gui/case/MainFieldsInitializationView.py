@@ -178,6 +178,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         else:
             self.pushButtonPressure.setStyleSheet("background-color: red")
         if (len(self.mdl.mainFieldsModel.getFieldIdList()) > 0):
+            field = self.mdl.mainFieldsModel.getFieldFromId(self.currentid)
             self.groupBoxDefinition.show()
             self.initializeVariables(self.zone_id, self.currentid)
 
@@ -194,7 +195,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             else:
                 self.pushButtonFraction.setStyleSheet("background-color: red")
 
-            if self.mdl.mainFieldsModel.getEnergyModel(self.currentid) != "off":
+            if field.enthalpy_model != "off":
                 exp = self.mdl.getFormula(self.zone_id, self.currentid, 'enthalpy')
                 if exp:
                     self.pushButtonEnergy.setStyleSheet("background-color: green")
@@ -231,6 +232,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         self.initializeVariables(self.zone_id, self.currentid)
 
         if self.currentid != 'none':
+            field = self.mdl.mainFieldsModel.getFieldFromId(self.currentid)
             # Velocity
             exp = self.mdl.getFormula(self.zone_id,
                                       self.currentid,
@@ -253,7 +255,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                 self.pushButtonFraction.setStyleSheet("background-color: red")
 
             # Energy
-            if self.mdl.mainFieldsModel.getEnergyModel(self.currentid) != "off":
+            if field.enthalpy_model != "off":
                 exp = self.mdl.getFormula(self.zone_id,
                                           self.currentid,
                                           'enthalpy')
@@ -575,7 +577,8 @@ pressure = P0 + rho0 * g * (zmax - z);"""
         self.labelFraction.setVisible(fieldId!='none')
         self.pushButtonFraction.setVisible(fieldId!='none')
 
-        if fieldId != 'none' and self.mdl.mainFieldsModel.getEnergyModel(fieldId) != "off":
+        field = self.mdl.mainFieldsModel.getFieldFromId(fieldId)
+        if fieldId != 'none' and field.enthalpy_model != "off":
             self.labelEnergy.show()
             self.comboBoxEnergy.show()
             self.pushButtonEnergy.show()

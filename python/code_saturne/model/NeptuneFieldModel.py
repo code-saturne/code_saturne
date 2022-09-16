@@ -183,11 +183,11 @@ class NeptuneField(Variables, Model):
         if node != None:
             return node.xmlGetAttribute("field_id", default=self._carrier_id)
         else:
-            return self._carrier_id
+            return self._carrier_id # or return "off" directly ?
 
     @carrier_id.setter
     def carrier_id(self, field_id):
-        #TODO add rules from MainFieldsModel
+        #TODO add check on existence of carrier field
         child_node = self._xml_node.xmlInitChildNode("carrier_field")
         self._carrier_id = field_id
         child_node.xmlSetAttribute(field_id = str(field_id))

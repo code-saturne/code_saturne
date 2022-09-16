@@ -789,9 +789,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             InterfacialEnthalpyModel(self.case).deleteLiquidVaporEnthalpyTransfer()
         else:
             self.nept.setPhaseChangeTransferStatus("on")
-            for field_id in self.nept.getFieldIdList():
-                if self.nept.getEnergyModel(field_id) == "off":
-                    self.nept.setEnergyModel(field_id, "total_enthalpy")
+            for field in self.nept.list_of_fields:
+                if field.enthalpy_model == "off":
+                    field.enthalpy_model = "total_enthalpy"
         self.browser.configureTree(self.case)
 
     @pyqtSlot(str)

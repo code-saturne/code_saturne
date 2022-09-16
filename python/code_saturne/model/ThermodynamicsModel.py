@@ -159,9 +159,9 @@ class ThermodynamicsModel(Variables, Model):
         Check if EOS material laws can be activated
         :param field_id:
         """
-        if (self.mainFieldsModel.getEnergyModel(field_id) == "off"
-                or self.mainFieldsModel.getEnergyModel(field_id) == "off"
-                or self.mainFieldsModel.getFieldNature(field_id) == "solid"
+        field = self.mainFieldsModel.getFieldFromId(field_id)
+        if (field.enthalpy_model == "off"
+                or field.phase == "solid"
                 or self.mainFieldsModel.getPredefinedFlow() == "particles_flow"): #TODO check if EOS exists for solid phases
             return False
 
@@ -263,6 +263,7 @@ class ThermodynamicsModel(Variables, Model):
         update reference value for EOS
         """
         self.check_field_id(fieldId)
+        field = self.mainFieldsModel.getFieldFromId(fieldId)
         material = self.getMaterials(fieldId)
         if oldMaterial != material :
             _default_method = self.defaultValues(fieldId)['method']
@@ -288,7 +289,7 @@ class ThermodynamicsModel(Variables, Model):
             for tag in ['density', 'molecular_viscosity', 'specific_heat', 'thermal_conductivity'] :
                 self.setPropertyMode(fieldId, tag, choice)
 
-            if self.mainFieldsModel.getFieldNature(fieldId) == "gas":
+            if field.phase == "gas":
                 tag = 'surface_tension'
                 fieldId = "none"
                 self.setPropertyMode(fieldId, tag, choice)
@@ -301,13 +302,14 @@ class ThermodynamicsModel(Variables, Model):
         self.check_field_id(fieldId)
 
         node = self.get_field_node(fieldId)
+        field = self.mainFieldsModel.getFieldFromId(fieldId)
         reference = ""
         material = self.getMaterials(fieldId)
         method = self.getMethod(fieldId)
         if material == "user_material" :
             reference = material
         else :
-            phase = self.mainFieldsModel.getFieldNature(fieldId)
+            phase = field.phase
             if self.eos.isActive():
 
                 ref_idx = 0
@@ -598,6 +600,7 @@ class ThermodynamicsModel(Variables, Model):
         """
         User formula for density
         """
+        field = self.mainFieldsModel.getFieldFromId(fieldId)
         exp = self.getFormula(fieldId, 'density', zone)
         if not exp:
             exp = "rho = 1.8;"
@@ -613,13 +616,13 @@ class ThermodynamicsModel(Variables, Model):
            symbols.append(s)
            known_fields.append(s)
 
-        if self.mainFieldsModel.getEnergyModel(fieldId) != "off":
+        if field.enthalpy_model != "off":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols.append((label, "enthalpy_"+str(fieldId)))
             known_fields.append((label, "enthalpy_"+str(fieldId)))
             # If working on total enthalpy, velocity is needed in order
             # to compute specific_enthalpy
-            if self.mainFieldsModel.getEnergyModel(fieldId) == 'total_enthalpy':
+            if field.enthalpy_model == 'total_enthalpy':
                 ulabel = self.m_out.getVariableLabel(str(fieldId), "velocity")
                 symbols.append((ulabel, 'velocity_'+str(fieldId)))
                 known_fields.append((ulabel, 'velocity_'+str(fieldId),3))
@@ -643,6 +646,7 @@ class ThermodynamicsModel(Variables, Model):
         """
         User formula for molecular viscosity
         """
+        field = self.mainFieldsModel.getFieldFromId(fieldId)
         exp = self.getFormula(fieldId, 'molecular_viscosity', zone)
         if not exp:
             exp = "mu = 4.56e-05;"
@@ -658,13 +662,13 @@ class ThermodynamicsModel(Variables, Model):
            symbols.append(s)
            known_fields.append(s)
 
-        if self.mainFieldsModel.getEnergyModel(fieldId) != "off":
+        if field.enthalpy_model != "off":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols.append((label, 'enthalpy_'+str(fieldId)))
             known_fields.append((label, 'enthalpy_'+str(fieldId)))
             # If working on total enthalpy, velocity is needed in order
             # to compute specific_enthalpy
-            if self.mainFieldsModel.getEnergyModel(fieldId) == 'total_enthalpy':
+            if field.enthalpy_model == 'total_enthalpy':
                 ulabel = self.m_out.getVariableLabel(str(fieldId), "velocity")
                 symbols.append((ulabel, 'velocity_'+str(fieldId)))
                 known_fields.append((ulabel, 'velocity_'+str(fieldId),3))
@@ -688,6 +692,7 @@ class ThermodynamicsModel(Variables, Model):
         """
         User formula for specific heat
         """
+        field = self.mainFieldsModel.getFieldFromId(fieldId)
         exp = self.getFormula(fieldId, 'specific_heat', zone)
 
         if not exp:
@@ -704,13 +709,13 @@ class ThermodynamicsModel(Variables, Model):
            symbols.append(s)
            known_fields.append(s)
 
-        if self.mainFieldsModel.getEnergyModel(fieldId) != "off":
+        if field.enthalpy_model != "off":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols.append((label, "enthalpy_"+str(fieldId)))
             known_fields.append((label, "enthalpy_"+str(fieldId)))
             # If working on total enthalpy, velocity is needed in order
             # to compute specific_enthalpy
-            if self.mainFieldsModel.getEnergyModel(fieldId) == 'total_enthalpy':
+            if field.enthalpy_model == 'total_enthalpy':
                 ulabel = self.m_out.getVariableLabel(str(fieldId), "velocity")
                 symbols.append((ulabel, 'velocity_'+str(fieldId)))
                 known_fields.append((ulabel, 'velocity_'+str(fieldId),3))
@@ -734,6 +739,7 @@ class ThermodynamicsModel(Variables, Model):
         """
         User formula for thermal conductivity
         """
+        field = self.mainFieldsModel.getFieldFromId(fieldId)
         exp = self.getFormula(fieldId, 'thermal_conductivity', zone)
         if not exp:
             exp = "lambda = 1.e-5;"
@@ -749,13 +755,13 @@ class ThermodynamicsModel(Variables, Model):
            symbols.append(s)
            known_fields.append(s)
 
-        if self.mainFieldsModel.getEnergyModel(fieldId) != "off":
+        if field.enthalpy_model != "off":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols.append((label, 'enthalpy_'+str(fieldId)))
             known_fields.append((label, 'enthalpy_'+str(fieldId)))
             # If working on total enthalpy, velocity is needed in order
             # to compute specific_enthalpy
-            if self.mainFieldsModel.getEnergyModel(fieldId) == 'total_enthalpy':
+            if field.enthalpy_model == 'total_enthalpy':
                 ulabel = self.m_out.getVariableLabel(str(fieldId), "velocity")
                 symbols.append((ulabel, 'velocity_'+str(fieldId)))
                 known_fields.append((ulabel, 'velocity_'+str(fieldId),3))
@@ -778,6 +784,7 @@ class ThermodynamicsModel(Variables, Model):
         """
         User formula for temperature as a function of enthalpy
         """
+        field = self.mainFieldsModel.getFieldFromId(fieldId)
         label = self.m_out.getVariableLabel(str(fieldId), 'temperature')
         exp = self.getFormula(fieldId, 'temperature', zone)
         if not exp:
@@ -795,14 +802,14 @@ class ThermodynamicsModel(Variables, Model):
 
         for s in self.list_scalars:
            symbols.append(s)
-        if self.mainFieldsModel.getEnergyModel(fieldId) != "off":
+        if field.enthalpy_model != "off":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols.append((label, 'enthalpy_'+str(fieldId)))
             known_fields.append((label, 'enthalpy_'+str(fieldId)))
 
             # If working on total enthalpy, velocity is needed in order
             # to compute specific_enthalpy
-            if self.mainFieldsModel.getEnergyModel(fieldId) == 'total_enthalpy':
+            if field.enthalpy_model == 'total_enthalpy':
                 ulabel = self.m_out.getVariableLabel(str(fieldId), "velocity")
                 symbols.append((ulabel, 'velocity_'+str(fieldId)))
                 known_fields.append((ulabel, 'velocity_'+str(fieldId),3))
@@ -823,6 +830,7 @@ class ThermodynamicsModel(Variables, Model):
         """
         User formula for d(ro) / dp (compressible flow)
         """
+        field = self.mainFieldsModel.getFieldFromId(fieldId)
         exp = self.getFormula(fieldId, 'd_rho_d_P', zone)
         if not exp:
             exp = "d_rho_d_P = 0.;"
@@ -838,13 +846,13 @@ class ThermodynamicsModel(Variables, Model):
            symbols.append(s)
            known_fields.append(s)
 
-        if self.mainFieldsModel.getEnergyModel(fieldId) != "off":
+        if field.enthalpy_model != "off":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols.append((label, 'enthalpy_'+str(fieldId)))
             known_fields.append((label, 'enthalpy_'+str(fieldId)))
             # If working on total enthalpy, velocity is needed in order
             # to compute specific_enthalpy
-            if self.mainFieldsModel.getEnergyModel(fieldId) == 'total_enthalpy':
+            if field.enthalpy_model == 'total_enthalpy':
                 ulabel = self.m_out.getVariableLabel(str(fieldId), "velocity")
                 symbols.append((ulabel, 'velocity_'+str(fieldId)))
                 known_fields.append((ulabel, 'velocity_'+str(fieldId),3))
@@ -865,6 +873,7 @@ class ThermodynamicsModel(Variables, Model):
         """
         User formula for d(ro) / dh (compressible flow)
         """
+        field = self.mainFieldsModel.getFieldFromId(fieldId)
         exp = self.getFormula(fieldId, 'd_rho_d_h', zone)
         if not exp:
             exp = "d_rho_d_h = 0.;"
@@ -880,13 +889,13 @@ class ThermodynamicsModel(Variables, Model):
            symbols.append(s)
            known_fields.append(s)
 
-        if self.mainFieldsModel.getEnergyModel(fieldId) != "off":
+        if field.enthalpy_model != "off":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols.append((label, 'enthalpy_'+str(fieldId)))
             known_fields.append((label, 'enthalpy_'+str(fieldId)))
             # If working on total enthalpy, velocity is needed in order
             # to compute specific_enthalpy
-            if self.mainFieldsModel.getEnergyModel(fieldId) == 'total_enthalpy':
+            if field.enthalpy_model == 'total_enthalpy':
                 ulabel = self.m_out.getVariableLabel(str(fieldId), "velocity")
                 symbols.append((ulabel, 'velocity_'+str(fieldId)))
                 known_fields.append((ulabel, 'velocity_'+str(fieldId),3))
@@ -1217,11 +1226,11 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
             symbols.append(s)
             known_fields.append(s)
 
-        for fieldId in self.mainFieldsModel.getFieldIdList():
-            if self.mainFieldsModel.getEnergyModel(fieldId) != "off":
-                label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-                symbols.append((label, 'enthalpy_' + str(fieldId)))
-                known_fields.append((label, 'enthalpy_' + str(fieldId)))
+        for field in self.mainFieldsModel.list_of_fields:
+            if field.enthalpy_model != "off":
+                label = self.m_out.getVariableLabel(str(field.f_id), "enthalpy")
+                symbols.append((label, 'enthalpy_' + str(field.f_id)))
+                known_fields.append((label, 'enthalpy_' + str(field.f_id)))
 
         s0_val = self.getInitialValue('none', 'surface_tension')
         symbols.append(('sigma0', 'Surface tension (reference value) = ' + str(s0_val)))

@@ -106,8 +106,10 @@ class InterfacialEnthalpyModel(Variables, Model):
         if field_id_list is None:
             return []
         fieldaId, fieldbId = field_id_list
-        if self.mainFieldsModel.getFieldNature(fieldaId) == "liquid":
-            if self.mainFieldsModel.getCriterion(fieldbId) == "continuous":
+        field_a = self.mainFieldsModel.getFieldFromId(fieldaId)
+        field_b = self.mainFieldsModel.getFieldFromId(fieldbId)
+        if field_a.phase == "liquid":
+            if field_b.flow_type == "continuous":
                 if fieldId == fieldaId:
                     return self.__availableLiquidContinuous
                 else:
@@ -118,7 +120,7 @@ class InterfacialEnthalpyModel(Variables, Model):
                 else:
                     return self.__availableVaporBubble
         else:
-            if self.mainFieldsModel.getCriterion(fieldbId) == "continuous":
+            if field_b.flow_type == "continuous":
                 if fieldId == fieldaId:
                     return self.__availableVaporContinuous
                 else:
@@ -153,13 +155,14 @@ class InterfacialEnthalpyModel(Variables, Model):
 
         for field_id in [field_id_a, field_id_b]:
             model = ""
-            if self.mainFieldsModel.getFieldNature(field_id) == "gas":
-                if self.mainFieldsModel.getCriterion(field_id) == "continuous":
+            field = self.mainFieldsModel.getFieldFromId(field_id)
+            if field.phase == "gas":
+                if field.flow_type == "continuous":
                     model = self.defaultValues()['continuousgas']
                 else:
                     model = self.defaultValues()['dispersedgas']
-            elif self.mainFieldsModel.getFieldNature(field_id) == "liquid":
-                if self.mainFieldsModel.getCriterion(field_id) == "continuous":
+            elif field.phase == "liquid":
+                if field.flow_type == "continuous":
                     model = self.defaultValues()['continuousliquid']
                 else:
                     model = self.defaultValues()['dispersedliquid']
@@ -225,16 +228,18 @@ class InterfacialEnthalpyModel(Variables, Model):
         """
         modela = ""
         modelb = ""
+        field_a = self.mainFieldsModel.getFieldFromId(fieldaId)
+        field_b = self.mainFieldsModel.getFieldFromId(fieldbId)
 
-        if self.mainFieldsModel.getFieldNature(fieldaId) == "liquid":
-            if self.mainFieldsModel.getCriterion(fieldbId) == "continuous":
+        if field_a.phase == "liquid":
+            if field_b.flow_type == "continuous":
                modela = self.defaultValues()['continuousliquid']
                modelb = self.defaultValues()['continuousgas']
             else:
                 modela = self.defaultValues()['continuousliquid']
                 modelb = self.defaultValues()['dispersedgas']
         else:
-            if self.mainFieldsModel.getCriterion(fieldbId) == "continuous":
+            if field_b.flow_type == "continuous":
                 modela = self.defaultValues()['continuousgas']
                 modelb = self.defaultValues()['continuousliquid']
             else:

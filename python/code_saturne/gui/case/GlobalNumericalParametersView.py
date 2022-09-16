@@ -256,8 +256,8 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.groupBoxRestartOption.hide()
 
         is_compressible = False
-        for fid in mfm.getFieldIdList():
-            if mfm.getCompressibleStatus(int(fid)) == 'on':
+        for field in mfm.list_of_fields:
+            if field.compressible == 'on':
                 is_compressible = True
                 break
 

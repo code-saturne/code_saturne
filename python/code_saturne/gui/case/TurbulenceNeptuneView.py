@@ -85,18 +85,19 @@ class TurbulenceDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
         self.modelCombo = ComboModel(editor, 1, 1)
-        fieldId = self.mdl.mainFieldsModel.list_of_fields[index.row()].f_id
+        field = self.mdl.mainFieldsModel.list_of_fields[index.row()]
+        fieldId = field.f_id
 
-        if self.mdl.mainFieldsModel.getCriterion(fieldId) == "continuous":
+        if field.flow_type == "continuous":
             turbulence_models = TurbulenceModelsDescription.continuousTurbulenceModels
         else:
-            carrier = self.mdl.mainFieldsModel.getCarrierField(fieldId)
+            carrier = field.carrier_id
             if self.mdl.mainFieldsModel.getPredefinedFlow() == "boiling_flow":
                 turbulence_models = TurbulenceModelsDescription.bubblyFlowsTurbulenceModels
             elif self.mdl.mainFieldsModel.getPredefinedFlow() == "droplet_flow":
                 turbulence_models = TurbulenceModelsDescription.dropletFlowsTurbulenceModels
             elif self.mdl.getTurbulenceModel(carrier) != "none" or \
-                    self.mdl.mainFieldsModel.getFieldNature(fieldId) == "solid":
+                    field.phase == "solid":
                 turbulence_models = TurbulenceModelsDescription.dispersedTurbulenceModels
             else:
                 turbulence_models = ["none"]
@@ -143,19 +144,20 @@ class CouplingDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
         self.modelCombo = ComboModel(editor, 1, 1)
-        fieldId = self.mdl.mainFieldsModel.list_of_fields[index.row()].f_id
+        field = self.mdl.mainFieldsModel.list_of_fields[index.row()]
+        fieldId = field.f_id
 
-        if self.mdl.mainFieldsModel.getCriterion(fieldId) == "continuous" :
+        if field.flow_type == "continuous" :
                self.modelCombo.addItem(self.tr(self.dicoM2V["none"]), "none")
                self.modelCombo.disableItem(str_model="none")
         else :
                self.modelCombo.addItem(self.tr(self.dicoM2V["none"]), "none")
-               carrier = self.mdl.mainFieldsModel.getCarrierField(fieldId)
+               cbrrier = field.carrier_id
                if self.mdl.getTurbulenceModel(carrier) == "k-epsilon" or \
                   self.mdl.getTurbulenceModel(carrier) == "k-epsilon_linear_production" or \
                   self.mdl.getTurbulenceModel(carrier) == "rij-epsilon_ssg" or \
                   self.mdl.getTurbulenceModel(carrier) == "rij-epsilon_ebrsm":
-                   if self.mdl.mainFieldsModel.getFieldNature(fieldId) == "gas" :
+                   if field.nature == "gas" :
                        # bulles
                        self.modelCombo.addItem(self.tr(self.dicoM2V["large_inclusions"]), "large_inclusions")
                    else :
@@ -205,7 +207,7 @@ class TurbFluxDelegate(QItemDelegate):
         self.modelCombo = ComboModel(editor, 1, 1)
         fieldId = self.mdl.mainFieldsModel.list_of_fields[index.row()].f_id
 
-        if self.mdl.mainFieldsModel.getEnergyModel(fieldId) != 'off':
+        if self.mdl.mainFieldsModel.getFieldFromId(fieldId).enthalpy_model != 'off':
             if self.mdl.useAdvancedThermalFluxes(fieldId) == True:
                 for turbFlux in TurbulenceModelsDescription.ThermalTurbFluxModels:
                     self.modelCombo.addItem(self.tr(self.dicoM2V[turbFlux]), turbFlux)
@@ -290,19 +292,20 @@ class StandardItemModelTurbulence(QStandardItemModel):
 
         # NoItemsFlags is used to have a grayed out option
 
-        fieldId = self.mdl.mainFieldsModel.list_of_fields[index.row()].f_id
+        field = self.mdl.mainFieldsModel.list_of_fields[index.row()]
+        fieldId = field.f_id
         if not index.isValid():
             return Qt.ItemIsEnabled
         if index.column() == 2 :
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
         if index.column() == 3 :
             if self.mdl.useAdvancedThermalFluxes(fieldId) == True \
-                and self.mdl.mainFieldsModel.getEnergyModel(fieldId) != 'off':
+                and field.enthalpy_model != 'off':
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
             else:
                 return Qt.NoItemFlags
         elif index.column() == 1 or index.column() == 4 :
-            if self.mdl.mainFieldsModel.getCriterion(fieldId) == "continuous" :
+            if field.flow_type == "continuous" :
                 return Qt.NoItemFlags
             else :
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable

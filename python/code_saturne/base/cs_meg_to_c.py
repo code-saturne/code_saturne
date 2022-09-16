@@ -1389,6 +1389,7 @@ class meg_to_c_interpreter:
                 #                     exp, req, sym, sca)
 
                 for fieldId in mfm.getFieldIdList():
+                    field = mfm.getFieldFromId(fieldId)
                     if tm.getMaterials(fieldId) == 'user_material':
                         for fk in authorized_fields:
                             if tm.getPropertyMode(fieldId, fk) == 'user_law':
@@ -1401,7 +1402,7 @@ class meg_to_c_interpreter:
                                         self.init_block('vol', zname, name,
                                                         exp, req, sym, sca)
 
-                        if mfm.getCompressibleStatus(fieldId) == 'on':
+                        if field.compressible == 'on':
                             for fk in compressible_fields:
                                 name = fk + '_' + str(fieldId)
                                 for zone in vol_zones:
@@ -1413,7 +1414,7 @@ class meg_to_c_interpreter:
                                                         exp, req, sym, sca)
 
                         # Temperature as a function of enthalpy
-                        if mfm.getEnergyModel(fieldId) != 'off':
+                        if field.enthalpy_model != 'off':
                             name = 'temperature_' + str(fieldId)
                             for zone in vol_zones:
                                 zname = zone.getLabel()
@@ -1979,7 +1980,7 @@ class meg_to_c_interpreter:
                                         exp, req, sym, [])
 
                         # Enthalpy (only if energy resolution is activated)
-                        if mfm.getEnergyModel(fId) != 'off':
+                        if mfm.getFieldFromId(fId).enthalpy_model != 'off':
                             if mfi.getEnergyModel(z_id, fId) != 'hsat_P':
                                 exp, req, sym = mfi.getFormulaComponents(z_id,
                                                                          fId,

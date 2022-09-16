@@ -201,6 +201,7 @@ class MainFieldsModel(Variables, Model):
             compressible = self.defaultValues()['compressibleStatus']
             carrierFieldId = self.defaultValues()['carrierField']
 
+            # TODO replace these lines by call to setDefinedField
             new_field = NeptuneField(self.case, fieldId)
             new_field.label = label
             new_field.flow_type = type
@@ -381,113 +382,6 @@ class MainFieldsModel(Variables, Model):
 
         self.updateXML()
 
-
-    @Variables.noUndo
-    def getCriterion(self, fieldId):
-        """
-        get type of field
-        """
-        self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId)
-        return field.flow_type
-
-
-    @Variables.undoLocal
-    def setFieldNature(self, fieldId, phase):
-        """
-        put nature of field
-        """
-        self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId)
-        field.phase = phase
-        self.updateXML()
-
-
-    @Variables.noUndo
-    def getFieldNature(self, fieldId):
-        """
-        get nature of field
-        """
-        self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId)
-        return field.phase
-
-    @Variables.undoLocal
-    def setEnergyResolution(self, fieldId, status):
-        """
-        set status for energy resolution
-        """
-        self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId)
-        field.enthalpy_model = status
-
-
-    @Variables.noUndo
-    def getEnergyResolution(self, fieldId):
-        """
-        get status for energy resolution
-        """
-        self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId)
-        return field.enthalpy_model
-
-
-    @Variables.undoLocal
-    def setEnergyModel(self, fieldId, mdl):
-        """
-        set model for energy resolution
-        """
-        self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId)
-        field.enthalpy_model = mdl
-
-
-    @Variables.noUndo
-    def getEnergyModel(self, fieldId):
-        """
-        get model for energy resolution
-        """
-        self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId)
-        return field.enthalpy_model
-
-
-    @Variables.undoLocal
-    def setCompressibleStatus(self, fieldId, status):
-        """
-        set status for compressible resolution
-        """
-        self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId)
-        field.compressible = status
-
-
-    @Variables.noUndo
-    def getCompressibleStatus(self, fieldId):
-        """
-        get status for compressible resolution
-        """
-        self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId)
-        return field.compressible
-
-
-    @Variables.undoLocal
-    def setCarrierField(self, fieldId, carrierfield):
-        self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId)
-        if carrierfield != "off":
-            self.isInList(str(carrierfield),self.getFieldIdList())
-        field.carrier_id = carrierfield
-
-
-    @Variables.noUndo
-    def getCarrierField(self, fieldId):
-        self.isInList(str(fieldId),self.getFieldIdList())
-        field = self.getFieldFromId(fieldId)
-        return field.carrier_id
-
-
     @Variables.undoGlobal
     def deleteField(self, fieldId):
         """
@@ -509,7 +403,7 @@ class MainFieldsModel(Variables, Model):
                        # only dispersed field -> change to continuous field
                        currentId = node['field_id']
                        self.setCriterion(currentId, "continuous")
-                       self.setCarrierField(currentId, self.defaultValues()['carrierField'])
+                       self.getFieldFromId(currentId).carrier_id = self.defaultValues()["carrierField"]
 
         # Remove all previous occurences of fieldId
         # Warning : this needs to be done after carrier fields have been updated
@@ -612,15 +506,16 @@ class MainFieldsModel(Variables, Model):
                 fieldId = field_id_list[id]
                 typeChoice = PredefinedFlowsModel.fieldsCoupleProperties[flow_choice][0][id]
                 phase = PredefinedFlowsModel.fieldsCoupleProperties[flow_choice][1][id]
+                field = self.getFieldFromId(fieldId)
                 if typeChoice == "dispersed":
                     carrierField = field_id_list[1 - id]  # other field
                 else:
                     carrierField = "off"
                 if not overwriteEnergy:
-                    energyModel = self.getEnergyModel(fieldId)
+                    energyModel = field.enthalpy_model
                 self.case.undoStop()
                 if not (create_fields):
-                    compressible = self.getCompressibleStatus(fieldId)
+                    compressible = field.compressible
                     self.setDefinedField(fieldId, typeChoice, phase, carrierField, energyModel,
                                          compressible)
                 else:  # Otherwise create a new field
@@ -666,7 +561,7 @@ class MainFieldsModel(Variables, Model):
                 phase = "liquid"
                 carrierField = "off"
                 if not overwriteEnergy:
-                    energyModel = self.getEnergyModel(fieldId)
+                    energyModel = self.getFieldFromId(fieldId).enthalpy_model
                 compressible = "off"
                 self.case.undoStop()
                 self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, energyModel, compressible)
@@ -677,7 +572,7 @@ class MainFieldsModel(Variables, Model):
                 phase = "gas"
                 carrierField = "off"
                 if not overwriteEnergy:
-                    energyModel = self.getEnergyModel(fieldId)
+                    energyModel = self.getFieldFromId(fieldId).enthalpy_model
                 compressible = "off"
                 self.case.undoStop()
                 self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, energyModel, compressible)
@@ -794,18 +689,18 @@ class MainFieldsModel(Variables, Model):
         This method is used to determine the default values in the flow modeling.
         For now this method is implemented only for two-phase flow.
         """
-        id_list = self.getFieldIdList()
-        if len(id_list) != 2:
+        if len(self.list_of_fields) != 2:
             return "unknown"
         # Discriminate between stratified / multiphase flow and dispersed flows
-        if self.getCriterion(id_list[1]) == "continuous":
+        field2 = self.list_of_fields[1]
+        if field2.flow_type == "continuous":
             return "free_surface"
         else:
-            if self.getFieldNature(id_list[1]) == "solid":
+            if field2.phase == "solid":
                 return "particles_flow"
-            elif self.getFieldNature(id_list[1]) == "liquid":
+            elif field2.phase == "liquid":
                 return "droplet_flow"
-            elif self.getFieldNature(id_list[1]) == "gas":
+            elif field2.phase == "gas":
                 return "boiling_flow" # TODO rename into bubbly_flow (need to check backward compatibility issues)
         return "unknown"
 
@@ -976,7 +871,7 @@ class MainFieldsTestCase(ModelTest):
     def checkGetandSetCriterion(self):
         """Check whether the MainFieldsModel class could set and get Criterion"""
         mdl = MainFieldsModel(self.case)
-        mdl.addField()
+        field = mdl.addField()
         mdl.setCriterion('1','dispersed')
         doc = '''<fields>
                          <field field_id="1" label="Field1">
@@ -989,15 +884,15 @@ class MainFieldsTestCase(ModelTest):
                  </fields>'''
         assert mdl.getXMLNodefields() == self.xmlNodeFromString(doc),\
             'Could not set Criterion'
-        assert mdl.getCriterion('1') == 'dispersed',\
+        assert field.flow_type == 'dispersed',\
             'Could not get Criterion'
 
 
     def checkGetandSetFieldNature(self):
         """Check whether the MainFieldsModel class could set and get FieldNature"""
         mdl = MainFieldsModel(self.case)
-        mdl.addField()
-        mdl.setFieldNature('1','gas')
+        field1 = mdl.addField()
+        field1.phase = "gas"
         doc = '''<fields>
                          <field field_id="1" label="Field1">
                                  <type choice="continuous"/>
@@ -1009,58 +904,8 @@ class MainFieldsTestCase(ModelTest):
                  </fields>'''
         assert mdl.getXMLNodefields() == self.xmlNodeFromString(doc),\
             'Could not set FieldNature'
-        assert mdl.getFieldNature('1') == 'gas',\
+        assert field1.phase == 'gas',\
             'Could not get FieldNature'
-
-
-    def checkGetandSetCompressibleStatus(self):
-        """Check whether the MainFieldsModel class could set and get CompressibleStatus"""
-        mdl = MainFieldsModel(self.case)
-        mdl.addField()
-        mdl.setCompressibleStatus('1','on')
-        doc = '''<fields>
-                         <field field_id="1" label="Field1">
-                                 <type choice="continuous"/>
-                                 <carrier_field field_id="off"/>
-                                 <phase choice="liquid"/>
-                                 <hresolution status="on"/>
-                                 <compressible status="on"/>
-                         </field>
-                 </fields>'''
-        assert mdl.getXMLNodefields() == self.xmlNodeFromString(doc),\
-            'Could not set CompressibleStatus'
-        assert mdl.getCompressibleStatus('1') == 'on',\
-            'Could not get CompressibleStatus'
-
-
-    def checkGetandSetCarrierField(self):
-        """Check whether the MainFieldsModel class could set and get CarrierField"""
-        mdl = MainFieldsModel(self.case)
-        mdl.addField()
-        mdl.addField()
-        mdl.setFieldNature('2','gas')
-        mdl.setCarrierField('2','1')
-        doc = '''<fields>
-                         <field field_id="1" label="Field1">
-                                 <type choice="continuous"/>
-                                 <carrier_field field_id="off"/>
-                                 <phase choice="liquid"/>
-                                 <hresolution status="on"/>
-                                 <compressible status="off"/>
-                         </field>
-                         <field field_id="2" label="Field2">
-                                 <type choice="continuous"/>
-                                 <carrier_field field_id="1"/>
-                                 <phase choice="gas"/>
-                                 <hresolution status="on"/>
-                                 <compressible status="off"/>
-                         </field>
-                 </fields>'''
-        assert mdl.getXMLNodefields() == self.xmlNodeFromString(doc),\
-            'Could not set CarrierField'
-        assert mdl.getCarrierField('2') == '1',\
-            'Could not get CarrierField'
-
 
     def checkDeleteField(self):
         """Check whether the MainFieldsModel class could DeleteField"""

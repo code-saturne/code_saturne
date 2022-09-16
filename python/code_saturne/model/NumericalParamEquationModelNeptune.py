@@ -91,13 +91,14 @@ class NumericalParamEquatModel(Variables, Model):
         return list of variables
         """
         list = []
+        # TODO see if we can remove the import from MainFieldsModel
         from code_saturne.model.MainFieldsModel import MainFieldsModel
         for node in self.XMLNodeVariable.xmlGetNodeList('variable') :
             if self._isPressure(node) != 1 :
                 # control to add enthalpy only if solved!!!
                 if self._isEnthalpy(node) == 1 :
-                    field = node['field_id']
-                    if MainFieldsModel(self.case).getEnergyModel(field) != "off":
+                    field = MainFieldsModel(self.case).getFieldFromId(node['field_id'])
+                    if field.enthalpy_model != "off":
                         list.append(node['label'])
                 else:
                     list.append(node['label'])

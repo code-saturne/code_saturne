@@ -573,7 +573,7 @@ class InterfacialForcesTestCase(ModelTest):
         mdl = InterfacialForcesModel(self.case)
         assert mdl.getAvailableDragModels('1','2') == ["none", "ishii", "Wen_Yu"],\
             'Could not get AvailableDragModels'
-        MainFieldsModel(self.case).setFieldNature('2','solid')
+        MainFieldsModel(self.case).list_of_fields[1].phase = "solid"
         assert mdl.getAvailableDragModels('1','2') == ["none", "Gobin"],\
             'Could not get AvailableDragModels'
 
