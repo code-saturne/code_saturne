@@ -388,7 +388,7 @@ class TurbulenceModel(Variables, Model):
     def useAdvancedThermalFluxes(self, fieldId):
         flag = False
 
-        field = self.mainFieldsModel(fieldId)
+        field = self.mainFieldsModel.getFieldFromId(fieldId)
         if field.flow_type == 'continuous' and \
            'rij-epsilon' in self.getTurbulenceModel(fieldId):
 

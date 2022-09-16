@@ -193,7 +193,7 @@ class MainFieldsInitializationModel(Variables, Model):
         Return a formula for initial values
         """
         self.__verifyZone(zone)
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList(include_none=True))
 
         node = self.XMLNonCondvariables.xmlGetNode('variable', field_id=fieldId, name=var_name)
         n = node.xmlInitChildNode('initial_value', zone_id=zone)

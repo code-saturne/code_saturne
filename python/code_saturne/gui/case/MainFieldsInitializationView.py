@@ -600,6 +600,9 @@ pressure = P0 + rho0 * g * (zmax - z);"""
                 self.modelEnergy.enableItem(2)
 
         # Non-condensable initialization
+        self.labelNonCondensable.hide()
+        self.comboBoxNonCondensable.hide()
+        self.pushButtonNonCondensable.hide()
         if fieldId != 'none':
             lst = self.NonCondensable.getNonCondensableByFieldId(fieldId)
             if len(lst) > 0 :
@@ -618,10 +621,6 @@ pressure = P0 + rho0 * g * (zmax - z);"""
                 self.currentNonCond = lst[0]
                 self.currentNonCondLabel = self.modelNonCondensable.dicoM2V[lst[0]]
                 self.modelNonCondensable.setItem(str_model = self.currentNonCond)
-            else:
-                self.labelNonCondensable.hide()
-                self.comboBoxNonCondensable.hide()
-                self.pushButtonNonCondensable.hide()
 
         # species initialization
         lst = self.SpeciesModel.getScalarByFieldId(fieldId)

@@ -232,9 +232,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         Select a Field in the QTable
         """
 
-#        self.__currentField = self.tableViewFields.currentIndex().row() + 1
         rowId = self.tableViewFields.currentIndex().row()
-        # Set currentField to 'none' if we are dealing with the non-convected variables
         self.__currentField = "none"
         if rowId < len(self.mdl.mainFieldsModel.list_of_fields):
             self.__currentField = int(self.mdl.mainFieldsModel.list_of_fields[rowId].f_id)
@@ -268,7 +266,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
             boundary = Boundary(self.__nature, self.__label, self.case, self.__currentField)
             self.tableViewFields.show()
 
-            if self.__currentField > 0:
+            if self.__currentField != -1:
                 if self.__nature == 'inlet':
                     self.__selectInletBoundary(boundary)
                 elif self.__nature == 'outlet':
@@ -325,7 +323,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         self.InterfacialAreaWidget.hideWidget()
         self.ScalarWidget.setup(self.case, self.__currentField)
         self.ScalarWidget.showWidget(boundary)
-        if self.__currentField > 0 :
+        if self.__currentField not in (-1, 0, "none") :
             self.WallWidget.setup(self.case, self.__currentField)
             self.WallWidget.showWidget(boundary)
 
