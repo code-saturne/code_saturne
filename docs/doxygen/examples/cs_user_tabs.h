@@ -48,7 +48,7 @@ Here is a list of user examples. Thoroughly documented snippets are provided.
    - \subpage cs_user_cooling_towers "Cooling towers definition"
 
 \section example_physical_properties Physical properties definition
-   - \subpage physical_properties
+   - \subpage physical_properties_compressible
    - \subpage cs_porosity "Define porous modelling properties"
    - \subpage cs_lagrangian_particle_tracking_physical_properties
    - \subpage drift_coal_scalars

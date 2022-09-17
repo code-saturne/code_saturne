@@ -25,11 +25,11 @@
 /*-----------------------------------------------------------------------------*/
 
 /*!
-  \page physical_properties Define user laws for physical properties
+  \page physical_properties_compressible Define user laws for physical properties with compressible module
 
   \section cs_user_physical_properties_h_intro Introduction
 
-  This page provides examples of code blocks that may be used
+  This page provides examples of code snippets that may be used
   to define physical variable laws.
 
   \warning
@@ -47,25 +47,26 @@
     \c viscls.
 
   \remarks
-   - This routine is called at the beginning of each time step
+   - This function is called at the beginning of each time step
      Thus, <b> AT THE FIRST TIME STEP </b> (non-restart case), the only
      values initialized before this call are those defined
-       - in the GUI or  \ref usipsu (cs_user_parameters.f90)
-              - density    (initialized at \c ro0)
-              - viscosity  (initialized at \c viscl0)
+       - in the GUI or \ref cs_user_parametersu (cs_user_parameters.c)
+          - density    (initialized at \c ro0)
+          - viscosity  (initialized at \c viscl0)
        - in the GUI or \ref cs_user_initialization
-              - calculation variables (initialized at 0 by defaut
-              or to the value given in the GUI or in \ref cs_user_initialization)
+          - calculation variables (initialized at 0 by defaut
+            or to the value given in the GUI or in \ref cs_user_initialization)
 
    - We may define here variation laws for cell properties, for:
-      - density:                                    rom    kg/m3
-      - density at boundary faces:                  romb   kg/m3)
-      - molecular viscosity:                        cpro_viscl  kg/(m s)
-      - specific heat:                              cpro_cp     J/(kg degrees)
-      - diffusivities associated with scalars:      cpro_vscalt kg/(m s)
+      - density:                                      kg/m3
+      - density at boundary faces:                    kg/m3)
+      - molecular viscosity:                          kg/(m s)
+      - specific heat:                                J/(kg degrees)
+      - diffusivities associated with temperatures:   W/(m K)
+      - diffusivities associated with other scalars:  kg/(m s)
 
-  \warning: if the scalar is the temperature, cpro_vscalt corresponds
-  to its conductivity (Lambda) in W/(m K)
+  \warning: if the scalar is the temperature, its associated diffusivity
+  actually corresponds to its conductivity (Lambda) in W/(m K)
 
   The types of boundary faces at the previous time step are available
     (except at the first time step, where arrays \c itypfb and \c itrifb have
@@ -75,11 +76,15 @@
     (i.e. remove all unused example code)
 
 
-  \section example_physical_properties Physical properties
+  \section access_physical_properties Accessing physical properties
 
-  Physical properties (roh, viscl, cp, ...) are computed in \ref cs_user_physical_properties and are not to be modified here.
+  Base physical properties (rho, viscl, cp, ...) may be accessed
+  as in the following snippet (see \ref cs_var_dico for additional
+  information).
 
-  \snippet cs_user_physical_properties.c example
+  \ref cs_user_physical_properties and are not to be modified here.
+
+  \snippet cs_user_physical_properties-compressible.c compressible_properties_init
 
   \section example1_comp Molecular viscosity varying with temperature
 
@@ -88,7 +93,7 @@
 
   Here is the corresponding code:
 
-  \snippet cs_user_physical_properties-compressible_flow.f90 example_1
+  \snippet cs_user_physical_properties-compressible_flow.c example_1
 
 
   \section example2_comp Molecular volumetric viscosity varying with temperature
@@ -98,7 +103,7 @@
 
   Here is the corresponding code:
 
-  \snippet cs_user_physical_properties-compressible_flow.f90 example_2
+  \snippet cs_user_physical_properties-compressible_flow.c example_2
 
 
   \section example3_comp Isobaric specific heat varying with temperature
@@ -108,7 +113,7 @@
 
   Here is the corresponding code:
 
-  \snippet cs_user_physical_properties-compressible_flow.f90 example_3
+  \snippet cs_user_physical_properties-compressible_flow.c example_3
 
 
   \section example4_comp Molecular thermal conductivity varying with temperature
@@ -118,7 +123,7 @@
 
   Here is the corresponding code:
 
-  \snippet cs_user_physical_properties-compressible_flow.f90 example_4
+  \snippet cs_user_physical_properties-compressible_flow.c example_4
 
 
   \section example5_comp Molecular diffusivity of user-defined scalars varying with temperature
@@ -135,7 +140,7 @@
 
   Here is the corresponding code:
 
-  \snippet cs_user_physical_properties-compressible_flow.f90 example_5
+  \snippet cs_user_physical_properties-compressible_flow.c example_5
 
 
 */

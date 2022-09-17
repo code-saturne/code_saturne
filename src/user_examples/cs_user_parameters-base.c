@@ -421,10 +421,10 @@ cs_user_model(void)
 
   /* Example: Choose a thermal model
    *
-   * 0: none
-   * 1: temperature
-   * 2: enthalpy
-   * 3: total energy (only for compressible module)
+   * CS_THERMAL_MODEL_NONE        : none
+   * CS_THERMAL_MODEL_TEMPERATURE : temperature
+   * CS_THERMAL_MODEL_ENTHALPY    : enthalpy
+   * CS_THERMAL_MODEL_TOTAL_ENERGY: total energy (only for compressible module)
    *
    *  For temperature, the temperature scale may be set later using itpscl
    *  (1 for Kelvin, 2 for Celsius).

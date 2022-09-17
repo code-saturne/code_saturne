@@ -35,6 +35,7 @@ documentation. It is also recommended to check the
 - \subpage advanced_radiative_thermal
 - \subpage advanced_conjugate_heat_transfer
 - \subpage advanced_particle_tracking
+- \subpage advanced_compressible
 
 <!-- ----------------------------------------------------------------------- -->
 
@@ -463,3 +464,75 @@ User-defined particle thermal characteristic time
 
 The particle thermal characteristic time may be modified in the \ref cs_user_lagr_rt_t function according to the chosen correlation for the calculation of the
 Nusselt number see \ref cs_user_lagr_module_thermal_relaxation for examples.
+
+<!-- ----------------------------------------------------------------------- -->
+
+\page advanced_compressible Compressible module
+
+When the **compressible module** is activated, it is recommended to:
+    - use the option _time step variable in time and uniform in space_ (idtvar=1) with a maximum
+      Courant number of 0.4 (\ref coumax = 0.4): these choices must be written in \ref cs_user_parameters.c
+      or specified with the **GUI**
+    - keep the convective numerical schemes proposed by default _i.e._: upwind scheme
+
+With the compressible algorithm, the specific total energy is a new solved variable
+CS_F_(e_tot). The temperature variable deduced from the specific total energy variable is
+CS_F_(t_kelvin) for the compressible module.\n
+Initialization of the options of the variables, boundary conditions, initialisation of the variables and
+management of variable physical properties can be done with the **GUI**. We describe below the functions
+the user has to fill in without the **GUI**.
+
+Initialization of the options of the variables
+==============================================
+
+When the GUI is not being used, the function \ref cs_user_parameters in \ref cs_user_parameters.c
+must be completed by the user.\n This function allows to activate the compressible (see \ref cs_user_parameters_h_cs_user_model)
+module and to specify the molecular viscosity (ivivar see \ref cs_user_parameters_h_param_fluid_properties),
+
+Management of the boundary conditions
+=====================================
+
+When running the compressible module without a GUI, the \ref cs_user_boundary_conditions function can be used to define specific boundary conditions
+(see the \ref advanced_loc_var_ce file for examples of boundary conditions with the compressible module).
+
+With the compressible module, the following types of boundary condition are avaliable:\n
+
+  - Inlet/outlet for which velocity and two thermodynamics variables are known see \ref compressible_ex_1.
+  - Supersonic output see \ref compressible_ex_2.
+  - Subsonic  input with density and velocity see \ref compressible_ex_3.
+  - Subsonic outlet \ref compressible_ex_4.
+  - Wall (adiabatic or not) \ref compressible_ex_5.
+
+
+Initialization of the variables
+===============================
+
+When the **GUI** is not used, the function \ref cs_user_initialization is used
+to initialize the velocity, turbulence and passive scalars (see
+the \ref user_initialization_compressible for examples of initialisations with
+the compressible module). Concerning pressure, density, temperature and specific total energy, only 2 variables out
+of these 4 are independent. The user may then initialise the desired variable pair
+(apart from temperature-energy) and the two other variables will be
+calculated automatically by giving the right value to the variable
+ithvar see \ref user_initialization_comp_s_init for example.
+
+Management of variable physical properties
+==========================================
+
+Without the **GUI**, all of the laws governing the physical properties of the fluid
+(molecular viscosity, molecular volumetric viscosity, molecular thermal conductivity and
+molecular diffusivity of the user-defined scalars) can be specified in the function \ref cs_user_physical_properties of
+the \ref cs_user_physical_properties.c file.
+
+The user should check that the defined laws are valid for
+the whole variation range of the variables. Moreover, as only the perfect gas with a constant
+adiabatic coefficient equation of state is available, it is not advised to give a law for the isobaric
+specific heat without modifying the equation of state in the function \ref cs_cf_thermo which is not
+a user function.
+
+For some examples we can see:
+ - [Ex. 1: molecular viscosity varying with temperature](@ref example1_comp)
+ - [Ex. 2: molecular volumetric viscosity varying with temperature](@ref example2_comp)
+ - [Ex. 3: isobaric specific heat varying with temperature](@ref example3_comp)
+ - [Ex. 4: molecular thermal conductivity varying with temperature](@ref example4_comp)
+ - [Ex. 5: molecular diffusivity of user-defined scalars varying with temperature](@ref example5_comp)

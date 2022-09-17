@@ -53,11 +53,10 @@
   - \subpage pulverized_coal1
   - \subpage pulverized_coal2
   - \subpage medcoupling_remapper_2d
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page base_examples Basic examples
 
   The preferred method for defining boundary conditions (besides using the GUI)
@@ -205,11 +204,10 @@
   data when the callback is executed. This is the case for zone pointers,
   even for time-varying zones (whose data may change, but base structure pointer
   is unvarying).
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page note_book Boundary conditions using notebook
 
   Get a user parameter defined in the GUI notebook.
@@ -228,11 +226,10 @@
   (in \ref cs_user_boundary_conditions_setup):
 
   \snippet cs_user_boundary_conditions-notebook.c notebook_dof_inlet
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page base_examples_legacy Basic examples (legacy method)
 
   The preferred method for defining boundary conditions (besides using the GUI)
@@ -355,11 +352,10 @@
   Assign a symmetry condition to boundary faces of group '4'
 
   \snippet cs_user_boundary_conditions-base.f90 example_6
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page channel_inlet_mapped Infinite channel inlet
 
   A method of defining an inlet condition which converges towards an infinite
@@ -444,11 +440,10 @@
   structure:
 
   \snippet cs_user_boundary_conditions-mapped_inlet.f90 example_1_map_free
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page channel_inlet_auto Infinite channel inlet with near-inlet feedback
 
   A second method of defining an inlet condition which converges towards
@@ -491,11 +486,10 @@
   may fail.
 
   \snippet cs_user_boundary_conditions-auto_inlet_profile.f90 example_1
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page advanced_examples Advanced examples
 
   \section advanced_loc_var_be Local variables to be added
@@ -546,11 +540,10 @@
   between rough and smooth.
 
   \snippet cs_user_boundary_conditions-advanced.f90 example_4
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page atmospheric_examples Atmospheric examples
 
   \section advanced_loc_var_atm Local variables to be added
@@ -598,16 +591,15 @@
   Prescribe at boundary faces of color 4 a symmetry.
 
   \snippet cs_user_boundary_conditions-atmospheric.f90 example_5
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page compressible_examples Compressible examples
 
   \section advanced_loc_var_ce Local variables to be added
 
-  \snippet cs_user_boundary_conditions-compressible.f90 loc_var_dec
+  \snippet cs_user_boundary_conditions-compressible.c loc_var_dec
 
   \section base_init_ce Initialization and finalization
 
@@ -615,77 +607,45 @@
 
   \section compressible_ex_1 Example 1
 
-   Example of input / output for which everything is known.
+  Example of input / output for which everything is known.
 
-   Without presuming subsonic or supersonic character,
-   the user wishes to impose all the flow characteristics.
-   A supersonic inlet is a special case.
+  Without presuming subsonic or supersonic character,
+  the user wishes to impose all the flow characteristics.
+  A supersonic inlet is a special case.
 
-   If the speed is outgoing, an homogenous Neumann is imposed
-   on turbulence and user scalars.
+  If the speed is outgoing, an homogenous Neumann is imposed
+  on turbulence and user scalars.
 
-  \snippet cs_user_boundary_conditions-compressible.f90 example_1
+  \snippet cs_user_boundary_conditions-compressible.c example_1
 
   \section compressible_ex_2 Example 2
 
   Example supersonic output
 
-   All features are output.
-   Internal values are used to calculate the flow edge, they should not be imposed.
+  All features are output.
+  Internal values are used to calculate the flow edge, they should not be imposed.
 
+  For turbulence and scalar, if RCODCL values are provided,
+  they will be used in Dirichlet if the mass flow is incoming,
+  otherwise a null flow is imposed (flow outgoing mass or RCODCL informed here).
+  Note that for turbulence RCODCL must be defined for all turbulent variables.
+  Otherwise a null  flow is applied).
 
-   For turbulence and scalar, if RCODCL values are provided,
-   they will be used in Dirichlet if the mass flow is incoming,
-   otherwise a null flow is imposed (flow outgoing mass or RCODCL informed here).
-   Note that for turbulence RCODCL must be defined for all turbulent variables.
-   Otherwise a null  flow is applied).
+  Example of supersonic outlet
 
-TODO : verifier la traduction.
-  Exemple de sortie supersonique
+  All characteristics exit.
+  Nothing should be prescribed (the internal values are used to the computation
+  of boundary fluxes).
 
-     toutes les caracteristiques sortent
-     on ne doit rien imposer (ce sont les valeurs internes qui sont
-       utilisees pour le calcul des flux de bord)
+  For turbulence and scalars, if we provide here values of`rcodcl`, we prescribe
+  them as Dirichlet values if the mass flux is entering. otherwise, we
+  prescribe a zero flux (outgoing mass flux or `rcodcl` defined here).
+  Note that for turbulence, `rcodcl` should be set for all turbulent variables
+  (otherwise, we apply a zero flux).
 
-     pour la turbulence et les scalaires, si on fournit ici des
-       valeurs de RCODCL, on les impose en Dirichlet si le flux
-       de masse est entrant ; sinon, on impose un flux nul (flux de
-       masse sortant ou RCODCL renseigne ici).
-       Noter que pour la turbulence, il faut renseigner RCODCL pour
-       toutes les variables turbulentes (sinon, on applique un flux
-      nul).
-
-  \snippet cs_user_boundary_conditions-compressible.f90 example_2
+  \snippet cs_user_boundary_conditions-compressible.c example_2
 
   \section compressible_ex_3 Example 3
-
-  Subsonic input example (flow, flow calorimetry)
-
-  Two of three characteristics are incoming: two informations must be provided,
-  third is deduced by a scenario of 2-contact and 3-relaxation in the field.
-  Here we choose to give (rho * (U.n) * rho (U.n) * H)
-   - where    H = 1/2 * G G + P / E + rho
-   - and n is the unit normal incoming
-
-  \warning DENSITIES debit (per unit area) are provided.
-
-TODO : Verifier la traduction
-
- Exemple d'entree subsonique (debit, debit enthalpique)
-
-     2 caracteristiques sur 3 entrent : il faut donner 2 informations
-       la troisieme est deduite par un scenario de 2-contact et
-       3-detente dans le domaine
-     ici on choisit de donner (rho*(U.n), rho*(U.n)*H)
-       avec H = 1/2 U*U + P/rho + e
-            n la normale unitaire entrante
-
-     ATTENTION, on donne des DENSITES de debit (par unite de surface)
-
-
-  \snippet cs_user_boundary_conditions-compressible.f90 example_3
-
-  \section compressible_ex_4 Example 4
 
   Subsonic input example with density and velocity.
 
@@ -693,45 +653,36 @@ TODO : Verifier la traduction
   third is deduced by a scenario of 2-contact and 3-relaxation in the field.
   Here we choose to give (rho, U).
 
-TODO : Verifier la traduction
- Exemple d'entree subsonique (masse volumique, vitesse)
+  Example of a subsonic inlet (density, velocity)
 
- 2 caracteristiques sur 3 entrent : il faut donner 2 informations
- la troisieme est deduite par un scenario de 2-contact et
-  3-detente dans le domaine
-   ici on choisit de donner (rho, U)
+  2 characteristcs out ot 3 enter: both informations should be provided
+  the third is deducted by a scenario of 2-contact and 3-relaxation
+  in the domain.
+  Here, whe choose to give (rho, U).
 
+  \snippet cs_user_boundary_conditions-compressible.c example_3
 
-  \snippet cs_user_boundary_conditions-compressible.f90 example_4
+  \section compressible_ex_4 Example 4
+
+  Subsonic outlet example
+
+  1 characteristic out of 3 exits: 1 information must be given
+  the 2 others are deduced by a 2-contact and 3-relaxation in the domain.
+  Here we choose to definer P.
+
+  Turbulence and user scalars take a zero flux.
+
+  \snippet cs_user_boundary_conditions-compressible.c example_4
 
   \section compressible_ex_5 Example 5
 
-   Subsonic outlet example
-
-   1 characteristic out of 3 exits: 1 information must be given
-   the 2 others are deduced by a 2-contact and 3-relaxation in the domain.
-   Here we choose to definer P.
-
-   Turbulence and user scalars take a zero flux.
-
-  \snippet cs_user_boundary_conditions-compressible.f90 example_5
-
-  \section compressible_ex_6 Example 6
-
   Wall example
 
-  \snippet cs_user_boundary_conditions-compressible.f90 example_6
-
-  \section compressible_ex_7 Example 7
-
-  Symmetry example
-
-  \snippet cs_user_boundary_conditions-compressible.f90 example_7
-
+  \snippet cs_user_boundary_conditions-compressible.c example_5
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page electric_arcs_examples Electric arcs examples
 
   \section elec_loc_var Local variables to be added
@@ -782,11 +733,10 @@ TODO : Verifier la traduction
   For boundary faces of color 4 assign a symmetry.
 
   \snippet cs_user_boundary_conditions-electric_arcs.f90 example_6
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page electric_arcs_ieljou_3_or_4_examples Electric arcs Joule examples
 
   \section elec2_loc_var Local variables to be added
@@ -828,11 +778,10 @@ TODO : Verifier la traduction
 
   Test, if not any reference transformer a piece of wall may be at ground:
   \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c step_3
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page fuel_examples Fuel examples
 
   \section advanced_loc_var_fe Local variables to be added
@@ -872,11 +821,10 @@ TODO : Verifier la traduction
   14 and 4 are symmetry
 
   \snippet cs_user_boundary_conditions-fuel.f90 example_5
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page gas_3ptchem_examples Gas 3 PTCHEM examples
 
   \section advanced_loc_var_ptchem Local variables to be added
@@ -916,11 +864,10 @@ TODO : Verifier la traduction
   Definition of symmetric boundary conditions for each face of colour 41 and 4.
 
   \snippet cs_user_boundary_conditions-gas_3ptchem.f90 example_5
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page gas_ebu_examples Gas EBU examples
 
   \section advanced_loc_var_ebu Local variables to be added
@@ -960,11 +907,10 @@ TODO : Verifier la traduction
   Definition of symmetric boundary conditions for each face of colour 41 and 4.
 
   \snippet cs_user_boundary_conditions-gas_ebu.f90 example_5
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page gas_libby_williams_examples Gas Libby-Williams examples
 
   \section advanced_loc_var_lw Local variables to be added
@@ -1004,11 +950,10 @@ TODO : Verifier la traduction
   Definition of symmetric boundary conditions for each face of colour 41 and 4.
 
   \snippet cs_user_boundary_conditions-gas_libby_williams.f90 example_5
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page pulverized_coal1 Pulverized coal
 
   \section advanced_loc_var_pc Local variables to be added
@@ -1048,11 +993,10 @@ TODO : Verifier la traduction
   The color 14 becomes a symmetry plane.
 
   \snippet cs_user_boundary_conditions-pulverized_coal.f90 example_5
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page pulverized_coal2 Pulverized coal lagrangian
 
   \section advanced_loc_var_pcl Local variables to be added
@@ -1092,11 +1036,10 @@ TODO : Verifier la traduction
   The colors 14 and 4 become a symmetry plane.
 
   \snippet cs_user_boundary_conditions-pulverized_coal_lagrangian.f90 example_4
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page medcoupling_remapper_2d Boundary conditions definition by remapping with medcoupling
 
   Local definitions
@@ -1122,5 +1065,5 @@ TODO : Verifier la traduction
   We prescribe for the inlet a Dirichlet condition on the scalar "scalar1":
 
   \snippet cs_user_boundary_conditions-medcoupling_remapper_2d.c dirichlet_condition
-// __________________________________________________________________________________
+
 */

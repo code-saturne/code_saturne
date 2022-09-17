@@ -87,6 +87,7 @@ examplefiles = \
 cs_user_1d_wall_thermal.c \
 cs_user_wall_condensation.c \
 cs_user_boundary_conditions.c \
+cs_user_boundary_conditions-compressible.c \
 cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c \
 cs_user_boundary_conditions-medcoupling_remapper_2d.c \
 cs_user_boundary_conditions-notebook.c \
@@ -106,6 +107,7 @@ cs_user_head_losses.c \
 cs_user_hgn-relax_time_scale.c \
 cs_user_initialization-atmospheric.c \
 cs_user_initialization-base.c \
+cs_user_initialization-compressible.c \
 cs_user_initialization-electric_arcs.c \
 cs_user_initialization-medcoupling_remapper_3d.c \
 cs_user_initialization-time_step.c \
@@ -142,6 +144,7 @@ cs_user_performance_tuning-numbering.c \
 cs_user_performance_tuning-parallel-io.c \
 cs_user_performance_tuning-partition.c \
 cs_user_physical_properties.c \
+cs_user_physical_properties-compressible_flow.c \
 cs_user_physical_properties-scalar_drift.c \
 cs_user_porosity.c \
 cs_user_postprocess.c \
@@ -163,7 +166,6 @@ cs_user_boundary_conditions-advanced.f90 \
 cs_user_boundary_conditions-atmospheric.f90 \
 cs_user_boundary_conditions-auto_inlet_profile.f90 \
 cs_user_boundary_conditions-base.f90 \
-cs_user_boundary_conditions-compressible.f90 \
 cs_user_boundary_conditions-cooling_towers.f90 \
 cs_user_boundary_conditions-electric_arcs.f90 \
 cs_user_boundary_conditions-fuel.f90 \
@@ -179,7 +181,6 @@ cs_user_extra_operations-force_temperature.f90 \
 cs_user_extra_operations-parallel_operations.f90 \
 cs_user_extra_operations-richards_flux.f90 \
 cs_user_fluid_structure_interaction.f90 \
-cs_user_initialization-compressible.f90 \
 cs_user_initialization-cooling_towers.f90 \
 cs_user_initialization-fuel.f90 \
 cs_user_initialization-gas_3ptchem.f90 \
@@ -192,7 +193,6 @@ cs_user_modules-user-arrays.f90 \
 cs_user_parameters-richards.f90 \
 cs_user_parameters.f90 \
 cs_user_physical_properties-coal_drift.f90 \
-cs_user_physical_properties-compressible_flow.f90 \
 cs_user_physical_properties-richards_sat.f90 \
 cs_user_physical_properties-richards_unsat.f90 \
 cs_user_profile.cxx \

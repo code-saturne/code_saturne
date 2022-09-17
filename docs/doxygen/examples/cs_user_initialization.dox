@@ -27,7 +27,6 @@
 /*!
   \page user_initialization cs_user_initialization.f90
 
-
   \section user_initialization_intro Introduction
 
   This page provides several examples of code blocks that may be used
@@ -69,9 +68,9 @@
    - \subpage user_initialization_pulverized_coal
    - \subpage user_initialization_time_step
    - \subpage user_initialization_remapper_3d
-
 */
-// __________________________________________________________________________________
+
+/*-----------------------------------------------------------------------------*/
 /*!
 
   \page user_initialization_base Basic example
@@ -92,7 +91,8 @@
   \snippet cs_user_initialization-base.c init
 
 */
-// __________________________________________________________________________________
+
+/*-----------------------------------------------------------------------------*/
 /*!
 
   \page user_initialization_atmospheric Atmospheric example
@@ -123,42 +123,21 @@
   like in basic example.
 
 */
-// __________________________________________________________________________________
+
+/*-----------------------------------------------------------------------------*/
 /*!
 
   \page user_initialization_compressible Compressible example
 
-  \section compressible Compressible example
+  A complete initialization routine with the compresssible module is provided
+  below. When adapting it, it is recommended to remove all parts not needed
+  or than may be handled through the GUI.
 
-  \subsection user_initialization_comp_loc_var_dec Local variables to be added
-
-  The following local variables need to be defined for the examples
-  in this section:
-
-  \snippet cs_user_initialization-compressible.f90 loc_var_dec
-
-  \subsection user_initialization_comp_alloc Allocation
-
-  Before user initialization, work arrays must be allocated.
-
-  \snippet cs_user_initialization-base.f90 alloc
-
-  \subsection user_initialization_comp_s_init Initialization
-
-  The following initialization block needs to be added for the following examples:
-
-  \snippet cs_user_initialization-compressible.f90 init
-
-  \subsection user_initialization_comp_finalize Finalization
-
-  At the end of the subroutine, it is recommended to deallocate the work arrays:
-
-  \snippet cs_user_initialization-compressible.f90 finalize
-
+  \snippet cs_user_initialization-compressible.c init_compressible
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page user_initialization_electric_arcs Electric arcs example
 
   \section electric_arcs Electric arcs example
@@ -185,11 +164,10 @@
 
   At the end of the subroutine, it is recommended to deallocate the work array lstelt,
   like in basic example.
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page user_initialization_fuel Fuel example
 
   \section fuel Fuel example
@@ -207,9 +185,9 @@
 
   \snippet cs_user_initialization-fuel.f90 init
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page user_initialization_gas_3ptchem Gas 3 PTCHEM example
 
   \section gas_3ptchem Gas 3 PTCHEM example
@@ -236,11 +214,10 @@
 
   At the end of the subroutine, it is recommended to deallocate the work array lstelt,
   like in basic example.
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page user_initialization_gas_ebu Gas EBU example
 
   \section gas_ebu Gas EBU example
@@ -267,11 +244,10 @@
 
   At the end of the subroutine, it is recommended to deallocate the work array lstelt,
   like in basic example.
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page user_initialization_gas_libby_williams Libby-Williams gas example
 
   \section gas_libby_williams  Libby-Williams gas example
@@ -298,11 +274,10 @@
 
   At the end of the subroutine, it is recommended to deallocate the work array lstelt,
   like in basic example.
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page user_initialization_pulverized_coal pulverized_coal example
 
   As usual, one can access any field using the \ref field_get_val_s_by_name
@@ -325,11 +300,10 @@
   default values):
 
   \snippet cs_user_initialization-pulverized_coal.f90 init
-
 */
-// __________________________________________________________________________________
-/*!
 
+/*-----------------------------------------------------------------------------*/
+/*!
   \page user_initialization_time_step Time step modification
 
   \section time_step Time step modification
@@ -346,7 +320,8 @@
 
   \snippet cs_user_initialization-time_step.c init
 */
-// __________________________________________________________________________________
+
+/*-----------------------------------------------------------------------------*/
 /*!
 
   \page user_initialization_remapper_3d Initialization from a 3D post-processing output using MEDCoupling
@@ -399,7 +374,6 @@
   Note that we do not need to specify the field dimensions here,
   but they should match, so mapping a vector field to a scalar
   will produce a crash.
-
 */
 
 

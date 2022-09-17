@@ -58,7 +58,7 @@
 
   \snippet cs_user_parameters-base.c Rij_coupled_solver_choice
 
-  To set a thermal model (0: none, 1: temperature, 2: entyhalpy, 3: total energy)
+  To set a thermal model ( CS_THERMAL_MODEL_NONE: none,  CS_THERMAL_MODEL_TEMPERATURE: temperature, CS_THERMAL_MODEL_ENTHALPY: entyhalpy, CS_THERMAL_MODEL_TOTAL_ENERGY: total energy)
 
   \snippet cs_user_parameters-base.c thermal_model_choice
 
@@ -140,6 +140,10 @@
   To set the optional number of velocity-pressure inner iterations:
 
   \snippet cs_user_parameters-base.c param_vp_netrup
+
+  \subsection cs_user_parameters_h_param_fluid_properties Fluid properties.
+
+  \snippet cs_user_parameters-base.c param_fluid_properties
 
   \subsection cs_user_parameters_h_cs_user_parameters1 Special fields and activate some automatic post-processings
 
