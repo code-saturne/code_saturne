@@ -54,7 +54,11 @@ def get_ld_default_search_path():
 
         for l in output[0].splitlines():
             if l[:1] == '/':
-                path += l
+                idx = l.find(':')
+                if idx > -1:
+                    path += l[:idx+1]
+                else:
+                    path += l
 
     except Exception:
         pass
