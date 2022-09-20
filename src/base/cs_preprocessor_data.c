@@ -1704,6 +1704,7 @@ _read_data(int                 file_id,
 
         /* Allocate for first file read */
         if (mb->face_r_gen == NULL) {
+          BFT_MALLOC(mb->face_r_gen, n_vals, char);
           for (cs_lnum_t ii = 0; ii < n_vals; ii++)
             mb->face_r_gen[ii] = 0;
         }
