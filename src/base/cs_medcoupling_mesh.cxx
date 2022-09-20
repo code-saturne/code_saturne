@@ -141,24 +141,48 @@ _get_face_vertices_permutation(cs_lnum_t  n_face_vertices)
 /*!
  * \brief   Assign vertex coordinates to a MEDCoupling mesh structure
  *
- * \param[in] mesh      pointer to cs_mesh_t structure from which data is copied
- * \param[in] n_vtx     number of vertices to assign
- * \param[in] vtx_id    pointer to vertices id's used for assigning
- * \param[in] med_mesh  pointer to MEDCouplingUMesh to which we copy the
- *                      coordinates
+ * \param[in] mesh          pointer to mesh structure from which data is copied
+ * \param[in] n_vtx         number of vertices to assign
+ * \param[in, out] vtx_id   pointer to vertices id's used for assigning
+ *                          (-1 if not present/0 if present in, id out)
+ * \param[in, out] pmmesh   pointer to associated cs_medcoupling_mesh_t
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_assign_vertex_coords(const cs_mesh_t    *mesh,
-                      cs_lnum_t           n_vtx,
-                      const cs_lnum_t    *vtx_id,
-                      MEDCouplingUMesh   *med_mesh)
+_assign_vertex_coords(const cs_mesh_t        *mesh,
+                      cs_lnum_t               n_vtx,
+                      cs_lnum_t              *vtx_id,
+                      cs_medcoupling_mesh_t  *pmmesh)
 {
+  MEDCouplingUMesh  *med_mesh = pmmesh->med_mesh;
+
   const cs_lnum_t  dim = mesh->dim;
   const cs_coord_t  *vertex_coords = mesh->vtx_coord;
 
   assert(med_mesh != NULL);
+
+  /* Assign vertex list if not all vertices are selected
+     (so as to be able to handle vertex data */
+
+  pmmesh->n_vtx = n_vtx;
+
+  if (n_vtx >= mesh->n_vertices) {
+    for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
+      vtx_id[i] = i;
+  }
+  else {
+    BFT_REALLOC(pmmesh->vtx_list, n_vtx, cs_lnum_t);
+    cs_lnum_t vtx_count = 0;
+    for (cs_lnum_t i = 0; i < mesh->n_vertices; i++) {
+      if (vtx_id[i] > -1) {
+        vtx_id[i] = vtx_count;
+        pmmesh->vtx_list[vtx_count] = i;
+        vtx_count++;
+      }
+    }
+    assert(vtx_count == n_vtx);
+  }
 
   /* Assign all coordinates */
   /*------------------------*/
@@ -166,12 +190,11 @@ _assign_vertex_coords(const cs_mesh_t    *mesh,
   DataArrayDouble *med_coords = DataArrayDouble::New();
   med_coords->alloc(n_vtx, dim);
 
-  if (vtx_id != NULL) {
-    for (cs_lnum_t i = 0; i < mesh->n_vertices; i++) {
-      if (vtx_id[i] > -1) {
-        for (cs_lnum_t j = 0; j < dim; j++) {
-          med_coords->setIJ(vtx_id[i], j, vertex_coords[i*dim + j]);
-        }
+  if (pmmesh->vtx_list != NULL) {
+    for (cs_lnum_t i = 0; i < pmmesh->n_vtx; i++) {
+      cs_lnum_t v_id = pmmesh->vtx_list[i];
+      for (cs_lnum_t j = 0; j < dim; j++) {
+        med_coords->setIJ(i, j, vertex_coords[v_id*dim + j]);
       }
     }
   }
@@ -190,23 +213,22 @@ _assign_vertex_coords(const cs_mesh_t    *mesh,
 /*!
  * \brief   Assign boundary faces to a MEDCoupling mesh structure
  *
- * \param[in] mesh      pointer to cs_mesh_t structure from which data is copie
- * \param[in] n_elts    number of faces to copy
- * \param[in] elts_list list of faces to copy
- * \param[in] med_mesh  pointer to MEDCouplingUMesh to which we copy the faces
+ * \param[in] mesh         pointer to cs_mesh_t structure
+ * \param[in, out] pmmesh  pointer to associated cs_medcoupling_mesh_t
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_assign_face_mesh(const cs_mesh_t   *mesh,
-                  cs_lnum_t          n_elts,
-                  const cs_lnum_t   *elts_list,
-                  MEDCouplingUMesh  *med_mesh,
-                  cs_lnum_t          new_to_old[])
+_assign_face_mesh(const cs_mesh_t        *mesh,
+                  cs_medcoupling_mesh_t  *pmmesh)
 {
+  const cs_lnum_t   n_elts = pmmesh->n_elts;
+  const cs_lnum_t  *elts_list = pmmesh->elt_list;
+  cs_lnum_t        *new_to_old = pmmesh->new_to_old;
+  MEDCouplingUMesh  *med_mesh = pmmesh->med_mesh;
+
   INTERP_KERNEL::NormalizedCellType type;
 
-  cs_lnum_t vtx_count = -1;
   cs_lnum_t elt_buf_size = 4;
   cs_lnum_t *vtx_id = NULL;
 
@@ -227,11 +249,11 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
   }
   BFT_FREE(face_id);
 
-  /* Mark and renumber vertices */
+  /* Mark vertices (-1 if unused, 0 if used) */
+
+  cs_lnum_t vtx_count = 0;
 
   BFT_MALLOC(vtx_id, mesh->n_vertices, cs_lnum_t);
-
-  /* Initialize the value of vtx_id */
   for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
     vtx_id[i] = -1;
 
@@ -245,8 +267,10 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
            j < mesh->b_face_vtx_idx[eid+1];
            j++) {
         cs_lnum_t vid = mesh->b_face_vtx_lst[j];
-        if (vtx_id[vid] < 0)
-          vtx_id[vid] = vtx_count++;
+        if (vtx_id[vid] < 0) {
+          vtx_id[vid] = 0;  /* mark only */
+          vtx_count++;
+        }
       }
     }
 
@@ -258,16 +282,18 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
            j < mesh->b_face_vtx_idx[i+1];
            j++) {
         cs_lnum_t vid = mesh->b_face_vtx_lst[j];
-        if (vtx_id[vid] < 0)
-          vtx_id[vid] = vtx_count++;
+        if (vtx_id[vid] < 0) {
+          vtx_id[vid] = 0;  /* mark only */
+          vtx_count++;
+        }
       }
     }
 
   }
 
-  /* Assign coordinates */
+  /* Assign coordinates and renumber vertices */
 
-  _assign_vertex_coords(mesh, vtx_count, vtx_id, med_mesh);
+  _assign_vertex_coords(mesh, vtx_count, vtx_id, pmmesh);
 
   /* Assign faces */
 
@@ -325,25 +351,23 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
 /*!
  * \brief   Assign cells to a MEDCoupling mesh structure
  *
- * \param[in] mesh        pointer to cs_mesh_t structure from which data is copied
- * \param[in] n_elts      number of cells to assign
- * \param[in] elts_list   list of cells to assign
- * \param[in] med_mesh    pointer to MEDCouplingUMesh to which we copy the cells
- * \param[in] new_to_old  indirection array between local mesh connectivity
- *                        and MEDCouplingUMesh connectivity
+ * \param[in] mesh         pointer to cs_mesh_t structure
+ * \param[in, out] pmmesh  pointer to associated cs_medcoupling_mesh_t
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_assign_cell_mesh(const cs_mesh_t   *mesh,
-                  cs_lnum_t          n_elts,
-                  const cs_lnum_t    elts_list[],
-                  MEDCouplingUMesh  *med_mesh,
-                  cs_lnum_t          new_to_old[])
+_assign_cell_mesh(const cs_mesh_t        *mesh,
+                  cs_medcoupling_mesh_t  *pmmesh)
 {
+  const cs_lnum_t   n_elts = pmmesh->n_elts;
+  const cs_lnum_t  *elts_list = pmmesh->elt_list;
+  cs_lnum_t        *new_to_old = pmmesh->new_to_old;
+  MEDCouplingUMesh  *med_mesh = pmmesh->med_mesh;
+
   INTERP_KERNEL::NormalizedCellType type;
 
-  cs_lnum_t vtx_count = 0, cell_count = 0;
+  cs_lnum_t cell_count = 0;
 
   cs_lnum_t  elt_buf_size = 8;
   cs_lnum_t *vtx_id = NULL;
@@ -364,7 +388,9 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
     new_to_old[cell_id[elts_list[ii]]] = elts_list[ii];
   }
 
-  /* Mark and renumber vertices */
+  /* Mark vertices (-1 if unused, 0 if used) */
+
+  cs_lnum_t vtx_count = 0;
 
   BFT_MALLOC(vtx_id, mesh->n_vertices, cs_lnum_t);
   for (cs_lnum_t vid = 0; vid < mesh->n_vertices; vid++) {
@@ -378,8 +404,10 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
            j < mesh->b_face_vtx_idx[face_id+1];
            j++) {
         cs_lnum_t vid = mesh->b_face_vtx_lst[j];
-        if (vtx_id[vid] < 0)
-          vtx_id[vid] = vtx_count++;
+        if (vtx_id[vid] < 0) {
+          vtx_id[vid] = 0;  /* mark only */
+          vtx_count++;
+        }
       }
     }
   }
@@ -394,15 +422,17 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
            j < mesh->i_face_vtx_idx[face_id+1];
            j++) {
         cs_lnum_t vid = mesh->i_face_vtx_lst[j];
-        if (vtx_id[vid] < 0)
-          vtx_id[vid] = vtx_count++;
+        if (vtx_id[vid] < 0) {
+          vtx_id[vid] = 0;  /* mark only */
+          vtx_count++;
+        }
       }
     }
   }
 
-  /* Assign coordinates */
+  /* Assign coordinates and renumber vertices */
 
-  _assign_vertex_coords(mesh, vtx_count, vtx_id, med_mesh);
+  _assign_vertex_coords(mesh, vtx_count, vtx_id, pmmesh);
 
   /* Build temporary descending connectivity */
 
@@ -567,7 +597,6 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
 
 #endif /* HAVE_MEDCOUPLING - BEGINNING OF PRIVATE FUNCTIONS */
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Get pointer to cs_medcoupling_mesh_t based on selection criteria
@@ -581,10 +610,9 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
 /*----------------------------------------------------------------------------*/
 
 cs_medcoupling_mesh_t *
-_get_mesh_from_parameters(const char *selection_criteria,
-                          const int   elt_dim)
+_get_mesh_from_criteria(const char  *selection_criteria,
+                        int          elt_dim)
 {
-
   cs_medcoupling_mesh_t *m = NULL;
 
   for (int i = 0; i < _n_sub_meshes; i++) {
@@ -601,22 +629,52 @@ _get_mesh_from_parameters(const char *selection_criteria,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get pointer to cs_medcoupling_mesh_t based on name
+ *        and element dimension.
+ *
+ * \param[in]  name     name
+ * \param[in]  elt_dim  dimension of elements. 2: faces, 3: cells
+ *
+ * \return pointer to found mesh instance, NULL if none found.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_medcoupling_mesh_t *
+_get_mesh_from_name(const char  *name,
+                    int          elt_dim)
+{
+  cs_medcoupling_mesh_t *m = NULL;
+
+  for (int i = 0; i < _n_sub_meshes; i++) {
+    cs_medcoupling_mesh_t *mt = _sub_meshes[i];
+
+    if (elt_dim == mt->elt_dim) {
+      const char *m_name = mt->med_mesh->getName().c_str();
+      if (strcmp(m_name, name) == 0) {
+        m = mt;
+        break;
+      }
+    }
+  }
+
+  return m;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Add a cs_medcoupling_mesh_t to the list
  *
- * \param[in] name                name of the mesh
- * \param[in] selection_criteria  selection criteria (entire mesh or part of it)
- * \param[in] elt_dim             dimension of elements. 2: faces, 3: cells
+ * \param[in] name      name of the mesh
+ * \param[in] elt_dim   dimension of elements (2: faces, 3: cells)
  *
  * \return  pointer to the newly created cs_medcoupling_mesh_t struct
  */
 /*----------------------------------------------------------------------------*/
 
 cs_medcoupling_mesh_t *
-_add_medcoupling_mesh(const char *name,
-                      const char *selection_criteria,
-                      int         elt_dim)
+_add_medcoupling_mesh(const char  *name,
+                      int          elt_dim)
 {
-
   cs_medcoupling_mesh_t *m = NULL;
 
 #if !defined(HAVE_MEDCOUPLING)
@@ -629,14 +687,12 @@ _add_medcoupling_mesh(const char *name,
 
   BFT_MALLOC(m, 1, cs_medcoupling_mesh_t);
 
-  size_t len_sel_crit = strlen(selection_criteria);
-  BFT_MALLOC(m->sel_criteria, len_sel_crit+1, char);
-  strcpy(m->sel_criteria, selection_criteria);
-  m->sel_criteria[len_sel_crit] = '\0';
-
+  m->sel_criteria = NULL;
   m->elt_dim  = elt_dim;
   m->n_elts   = 0;
+  m->n_vtx    = 0;
   m->elt_list = NULL;
+  m->vtx_list = NULL;
 
   m->med_mesh = MEDCouplingUMesh::New();
   m->med_mesh->setName(name);
@@ -654,7 +710,43 @@ _add_medcoupling_mesh(const char *name,
 #endif
 
   return m;
+}
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build selection lists based on criteria.
+ *
+ * \param[in] mesh         pointer to cs_mesh_t structure
+ * \param[in, out] pmmesh  pointer to associated cs_medcoupling_mesh_t
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_select_from_criteria(cs_mesh_t              *csmesh,
+                      cs_medcoupling_mesh_t  *pmmesh)
+{
+  if (pmmesh->elt_dim == 3) {
+
+    BFT_MALLOC(pmmesh->elt_list, csmesh->n_cells, cs_lnum_t);
+
+    cs_selector_get_cell_list(pmmesh->sel_criteria,
+                              &(pmmesh->n_elts),
+                              pmmesh->elt_list);
+
+    BFT_REALLOC(pmmesh->elt_list, pmmesh->n_elts, cs_lnum_t);
+
+  }
+  else if (pmmesh->elt_dim == 2) {
+
+    BFT_MALLOC(pmmesh->elt_list, csmesh->n_b_faces, cs_lnum_t);
+
+    cs_selector_get_b_face_list(pmmesh->sel_criteria,
+                                &(pmmesh->n_elts),
+                                pmmesh->elt_list);
+
+    BFT_REALLOC(pmmesh->elt_list, pmmesh->n_elts, cs_lnum_t);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -684,21 +776,9 @@ _copy_mesh_from_base(cs_mesh_t              *csmesh,
 
     /* Creation of a new nodal mesh from selected cells */
 
-    BFT_MALLOC(pmmesh->elt_list, csmesh->n_cells, cs_lnum_t);
-
-    cs_selector_get_cell_list(pmmesh->sel_criteria,
-                              &(pmmesh->n_elts),
-                              pmmesh->elt_list);
-
-    BFT_REALLOC(pmmesh->elt_list, pmmesh->n_elts, cs_lnum_t);
-
     BFT_MALLOC(pmmesh->new_to_old, pmmesh->n_elts, cs_lnum_t);
 
-    _assign_cell_mesh(csmesh,
-                      pmmesh->n_elts,
-                      pmmesh->elt_list,
-                      pmmesh->med_mesh,
-                      pmmesh->new_to_old);
+    _assign_cell_mesh(csmesh, pmmesh);
 
     // BBOX
     if (use_bbox) {
@@ -708,7 +788,8 @@ _copy_mesh_from_base(cs_mesh_t              *csmesh,
       pmmesh->med_mesh->getBoundingBox(pmmesh->bbox);
     }
 
-  } else if (pmmesh->elt_dim == 2) {
+  }
+  else if (pmmesh->elt_dim == 2) {
 
     /* Creation of a new nodal mesh from selected border faces */
 
@@ -722,16 +803,11 @@ _copy_mesh_from_base(cs_mesh_t              *csmesh,
 
     BFT_MALLOC(pmmesh->new_to_old, pmmesh->n_elts, cs_lnum_t);
 
-    _assign_face_mesh(csmesh,
-                      pmmesh->n_elts,
-                      pmmesh->elt_list,
-                      pmmesh->med_mesh,
-                      pmmesh->new_to_old);
+    _assign_face_mesh(csmesh, pmmesh);
 
   }
 #endif
 }
-
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -745,8 +821,8 @@ _copy_mesh_from_base(cs_mesh_t              *csmesh,
  *
  * \param[in] csmesh              pointer to cs_mesh_t instance
  * \param[in] name                name of the mesh
- * \param[in] selection_criteria  selection criteria (entire mesh or part of it)
- * \param[in] elt_dim             dimension of elements. 2: faces, 3: cells
+ * \param[in] selection_criteria  selection criteria string
+ * \param[in] elt_dim             dimension of elements (2: faces, 3: cells)
  * \param[in] use_bbox            Use a reduced bounding box
  *
  * \return  pointer to the newly created cs_medcoupling_mesh_t struct
@@ -754,12 +830,11 @@ _copy_mesh_from_base(cs_mesh_t              *csmesh,
 /*----------------------------------------------------------------------------*/
 
 cs_medcoupling_mesh_t *
-cs_medcoupling_mesh_from_base(cs_mesh_t  *csmesh,
-                              const char *name,
-                              const char *selection_criteria,
-                              const int   elt_dim,
-                              const int   use_bbox)
-
+cs_medcoupling_mesh_from_base(cs_mesh_t   *csmesh,
+                              const char  *name,
+                              const char  *selection_criteria,
+                              int          elt_dim,
+                              int          use_bbox)
 {
   cs_medcoupling_mesh_t *m = NULL;
 
@@ -769,13 +844,69 @@ cs_medcoupling_mesh_from_base(cs_mesh_t  *csmesh,
               "MEDCoupling support\n"));
 #else
 
-  const char *_sel_crit =
-    (selection_criteria != NULL) ? selection_criteria : "all[]";
+  const char *_sel_crit
+    = (selection_criteria != NULL) ? selection_criteria : "all[]";
 
-  m = _get_mesh_from_parameters(_sel_crit, elt_dim);
+  m = _get_mesh_from_criteria(_sel_crit, elt_dim);
 
   if (m == NULL) {
-    m = _add_medcoupling_mesh(name, _sel_crit, elt_dim);
+    m = _add_medcoupling_mesh(name, elt_dim);
+
+    size_t len_sel_crit = strlen(selection_criteria);
+    BFT_MALLOC(m->sel_criteria, len_sel_crit+1, char);
+    strcpy(m->sel_criteria, selection_criteria);
+    m->sel_criteria[len_sel_crit] = '\0';
+
+    _select_from_criteria(csmesh, m);
+
+    _copy_mesh_from_base(csmesh, m, use_bbox);
+  }
+
+#endif
+
+  return m;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   create a new cs_medcoupling_mesh_t instance based on cs_mesh_t
+ *
+ * \param[in] csmesh      pointer to cs_mesh_t instance
+ * \param[in] name        name of the mesh
+ * \param[in] n_elts      local number of elements
+ * \param[in] elt_ids     list of local elements
+ * \param[in] elt_dim     dimension of elements (2: faces, 3: cells)
+ * \param[in] use_bbox    use a reduced bounding box
+ *
+ * \return  pointer to the newly created cs_medcoupling_mesh_t struct
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_medcoupling_mesh_t *
+cs_medcoupling_mesh_from_ids(cs_mesh_t       *csmesh,
+                             const char      *name,
+                             cs_lnum_t        n_elts,
+                             const cs_lnum_t  elt_ids[],
+                             int              elt_dim,
+                             int              use_bbox)
+{
+  cs_medcoupling_mesh_t *m = NULL;
+
+#if !defined(HAVE_MEDCOUPLING)
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: this funnction cannot be called without "
+              "MEDCoupling support\n"));
+#else
+
+  m = _get_mesh_from_name(name, elt_dim);
+
+  if (m == NULL) {
+    m = _add_medcoupling_mesh(name, elt_dim);
+
+    m->n_elts = n_elts;
+    BFT_MALLOC(m->elt_list, n_elts, cs_lnum_t);
+    memcpy(m->elt_list, elt_ids, n_elts*sizeof(cs_lnum_t));
+
     _copy_mesh_from_base(csmesh, m, use_bbox);
   }
 
@@ -885,6 +1016,48 @@ cs_medcoupling_mesh_get_elt_list(cs_medcoupling_mesh_t  *m)
 
   if (m != NULL)
     retval = m->elt_list;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a cs_medcoupling_mesh_t structure's number of vertices
+ *
+ * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ *
+ * \return associated number of vertices
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_medcoupling_mesh_get_n_vertices(cs_medcoupling_mesh_t  *m)
+{
+  cs_lnum_t retval = 0;
+  if (m != NULL)
+    retval = m->n_vtx;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a cs_medcoupling_mesh_t structure's (parent) vertices list
+ *
+ * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ *
+ * \return ids of associated vertices, or NULL if all or no local vertices
+ *         o parent mesh are present.
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_lnum_t *
+cs_medcoupling_mesh_get_vertex_list(cs_medcoupling_mesh_t  *m)
+{
+  const cs_lnum_t *retval = NULL;
+
+  if (m != NULL)
+    retval = m->vtx_list;
 
   return retval;
 }

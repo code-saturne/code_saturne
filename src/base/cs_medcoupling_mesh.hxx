@@ -60,13 +60,19 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  char               *sel_criteria;   /* Element selection criteria */
+  char               *sel_criteria;   /* Element selection criteria
+                                         (if provided) */
 
   int                 elt_dim;        /* Element dimension */
 
   cs_lnum_t           n_elts;         /* Number of coupled elements */
   cs_lnum_t          *elt_list;       /* List of associated elements
                                          (0 to n-1) */
+
+  cs_lnum_t           n_vtx;          /* Number of vertices */
+  cs_lnum_t          *vtx_list;       /* List of associated vertices
+                                         (0 to n-1), or NULL */
+
   cs_lnum_t          *new_to_old;     /* Connectivity used if only a section of
                                          the mesh is read */
 
@@ -90,8 +96,8 @@ typedef struct {
  *
  * \param[in] csmesh              pointer to cs_mesh_t instance
  * \param[in] name                name of the mesh
- * \param[in] selection_criteria  selection criteria (entire mesh or part of it)
- * \param[in] elt_dim             dimension of elements. 2: faces, 3: cells
+ * \param[in] selection_criteria  selection criteria string
+ * \param[in] elt_dim             dimension of elements (2: faces, 3: cells)
  * \param[in] use_bbox            Use a reduced bounding box
  *
  * \return  pointer to the newly created cs_medcoupling_mesh_t struct
@@ -99,11 +105,34 @@ typedef struct {
 /*----------------------------------------------------------------------------*/
 
 cs_medcoupling_mesh_t *
-cs_medcoupling_mesh_from_base(cs_mesh_t  *csmesh,
-                              const char *name,
-                              const char *selection_criteria,
-                              const int   elt_dim,
-                              const int   use_bbox);
+cs_medcoupling_mesh_from_base(cs_mesh_t   *csmesh,
+                              const char  *name,
+                              const char  *selection_criteria,
+                              int          elt_dim,
+                              int          use_bbox);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   create a new cs_medcoupling_mesh_t instance based on cs_mesh_t
+ *
+ * \param[in] csmesh      pointer to cs_mesh_t instance
+ * \param[in] name        name of the mesh
+ * \param[in] n_elts      local number of elements
+ * \param[in] elt_ids     list of local elements
+ * \param[in] elt_dim     dimension of elements (2: faces, 3: cells)
+ * \param[in] use_bbox    use a reduced bounding box
+ *
+ * \return  pointer to the newly created cs_medcoupling_mesh_t struct
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_medcoupling_mesh_t *
+cs_medcoupling_mesh_from_ids(cs_mesh_t       *csmesh,
+                             const char      *name,
+                             cs_lnum_t        n_elts,
+                             const cs_lnum_t  elt_ids[],
+                             int              elt_dim,
+                             int              use_bbox);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -163,6 +192,33 @@ cs_medcoupling_mesh_get_n_elts(cs_medcoupling_mesh_t  *m);
 
 const cs_lnum_t *
 cs_medcoupling_mesh_get_elt_list(cs_medcoupling_mesh_t  *m);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a cs_medcoupling_mesh_t structure's number of vertices
+ *
+ * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ *
+ * \return associated number of vertices
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_medcoupling_mesh_get_n_vertices(cs_medcoupling_mesh_t  *m);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a cs_medcoupling_mesh_t structure's (parent) vertices list
+ *
+ * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ *
+ * \return ids of associated vertices, or NULL if all or no local vertices
+ *         o parent mesh are present.
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_lnum_t *
+cs_medcoupling_mesh_get_vertex_list(cs_medcoupling_mesh_t  *m);
 
 /*----------------------------------------------------------------------------*/
 /*!
