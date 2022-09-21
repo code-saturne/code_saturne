@@ -46,6 +46,7 @@
 #include "cs_ale.h"
 #include "cs_atmo.h"
 #include "cs_all_to_all.h"
+#include "cs_ast_coupling.h"
 #include "cs_base.h"
 #include "cs_base_cuda.h"
 #include "cs_base_fortran.h"
@@ -543,8 +544,9 @@ _run(void)
 
   /* Free coupling-related data */
 
-  cs_syr_coupling_all_finalize();
 #if defined(HAVE_MPI)
+  cs_ast_coupling_finalize();
+  cs_syr_coupling_all_finalize();
   cs_sat_coupling_all_finalize();
   cs_paramedmem_coupling_all_finalize();
   cs_coupling_finalize();

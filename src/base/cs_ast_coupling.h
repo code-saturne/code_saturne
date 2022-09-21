@@ -56,75 +56,6 @@ typedef struct _cs_ast_coupling_t  cs_ast_coupling_t;
  *============================================================================*/
 
 /*============================================================================
- * Public function prototypes for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Send nodes coordinates and structure numbering of coupled mesh.
- *
- * Fortran Interface:
- *
- * SUBROUTINE ASTGEO
- * *****************
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(astgeo, ASTGEO)
-(
- cs_lnum_t  *nbfast,
- cs_lnum_t  *lstfac,
- cs_lnum_t  *idfast,
- cs_lnum_t  *idnast,
- cs_real_t  *almax
-);
-
-/*----------------------------------------------------------------------------
- * Send stresses acting on the fluid/structure interface.
- *
- * Fortran Interface:
- *
- * SUBROUTINE ASTFOR
- * *****************
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(astfor, ASTFOR)
-(
- cs_lnum_t   *nbfast,
- cs_real_t   *forast
-);
-
-/*----------------------------------------------------------------------------
- * Receive displacement values of the fluid/structure interface
- *
- * Fortran Interface:
- *
- * SUBROUTINE ASTCIN
- * *****************
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(astcin, ASTCIN)
-(
- cs_real_3_t  *disale
-);
-
-/*----------------------------------------------------------------------------
- * Exchange time step
- *
- * Fortran Interface:
- *
- * SUBROUTINE ASTPDT
- * *****************
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(astpdt, ASTPDT)
-(
- cs_real_t  *dttab
-);
-
-/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
@@ -132,15 +63,19 @@ void CS_PROCF(astpdt, ASTPDT)
 /*!
  * \brief Initial exchange with code_aster
  *
- * \param[in]  nalimx  maximum number of implicitation iterations of
- *                     the structure displacement
- * \param[in]  epalim  relative precision of implicitation of
- *                     the structure displacement
+ * \param[in]  verbosity      verbosity level for code_aster coupling
+ * \param[in]  visualization  visualization level for code_aster coupling
+ * \param[in]  nalimx         maximum number of implicitation iterations of
+ *                            the structure displacement
+ * \param[in]  epalim         relative precision of implicitation of
+ *                            the structure displacement
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_initialize(int        nalimx,
+cs_ast_coupling_initialize(int        verbosity,
+                           int        visualization,
+                           int        nalimx,
                            cs_real_t  epalim);
 
 /*----------------------------------------------------------------------------*/
@@ -151,6 +86,57 @@ cs_ast_coupling_initialize(int        nalimx,
 
 void
 cs_ast_coupling_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Extract and exchange mesh information for surfaces coupled with
+ *        code_aster.
+ *
+ * \param[in]  n_faces   number of coupled faces.
+ * \param[in]  face_ids  ids of coupled faces (ordered by increasing id)
+ * \param[in]  almax     characteristic macroscopic domain length
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_geometry(cs_lnum_t         n_faces,
+                         const cs_lnum_t  *face_ids,
+                         cs_real_t         almax);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Exchange time-step information with code_aster.
+ *
+ * \param[in, out]  c_dt  time step at each cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_exchange_time_step(cs_real_t  c_dt[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Send stresses acting on the fluid/structure interface
+ *        and receive displacements.
+ *
+ * \param[in]  fluid_forces  forces from fluid at coupled faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_exchange_fields(const cs_real_t  fluid_forces[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute predicted or exact displacement of the
+ *        fluid/structure interface.
+ *
+ * \param[out]  disp  prescribed displacement at vertices
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_compute_displacement(cs_real_t  disp[][3]);
 
 /*----------------------------------------------------------------------------*/
 /*!

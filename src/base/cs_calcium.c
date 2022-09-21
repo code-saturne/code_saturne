@@ -328,37 +328,43 @@ cs_calcium_read_int(int                    rank_id,
 
 #if defined(HAVE_MPI)
 
-  char var_cmp[CS_CALCIUM_VARIABLE_LEN + 1];
-  int meta[3] = {0, 0, 0};
+  if (rank_id > -1) {
 
-  MPI_Status status;
-  MPI_Recv(var_cmp, CS_CALCIUM_VARIABLE_LEN + 1, MPI_CHAR, rank_id,
-           CS_CALCIUM_MPI_TAG, _comm, &status);
+    char var_cmp[CS_CALCIUM_VARIABLE_LEN + 1];
+    int meta[3] = {0, 0, 0};
 
-  if (strncmp(var_cmp, _var_name, CS_CALCIUM_VARIABLE_LEN + 1) != 0) {
-    bft_printf("\n"
-               "Warning: received %s\n"
-               "         expected %s\n",
-               _var_name, var_cmp);
-    bft_printf_flush();
+    MPI_Status status;
+    MPI_Recv(var_cmp, CS_CALCIUM_VARIABLE_LEN + 1, MPI_CHAR, rank_id,
+             CS_CALCIUM_MPI_TAG, _comm, &status);
+
+    if (strncmp(var_cmp, _var_name, CS_CALCIUM_VARIABLE_LEN + 1) != 0) {
+      bft_printf("\n"
+                 "Warning: received %s\n"
+                 "         expected %s\n",
+                 _var_name, var_cmp);
+      bft_printf_flush();
+    }
+
+    MPI_Recv(meta, 3, MPI_INT, rank_id,
+             CS_CALCIUM_MPI_TAG, _comm, &status);
+
+    if (meta[0] != *iteration || meta[1] != n_val_max || meta[2] != 4) {
+      bft_printf("\n"
+                 "Warning: received [%d, %d, %d] for %s\n"
+                 "         expected [%d, %d, %d]\n",
+                 meta[0], meta[1], meta[2], _var_name,
+                 *iteration, n_val_max, 4);
+      bft_printf_flush();
+    }
+
+    MPI_Recv(meta, n_val_max, MPI_INT, rank_id,
+             CS_CALCIUM_MPI_TAG, _comm, &status);
+
+    MPI_Get_count(&status, MPI_INT, n_val_read);
+
   }
-
-  MPI_Recv(meta, 3, MPI_INT, rank_id,
-           CS_CALCIUM_MPI_TAG, _comm, &status);
-
-  if (meta[0] != *iteration || meta[1] != n_val_max || meta[2] != 4) {
-    bft_printf("\n"
-               "Warning: received [%d, %d, %d] for %s\n"
-               "         expected [%d, %d, %d]\n",
-               meta[0], meta[1], meta[2], _var_name,
-               *iteration, n_val_max, 4);
-    bft_printf_flush();
-  }
-
-  MPI_Recv(meta, n_val_max, MPI_INT, rank_id,
-           CS_CALCIUM_MPI_TAG, _comm, &status);
-
-  MPI_Get_count(&status, MPI_INT, n_val_read);
+  else
+    *n_val_read = n_val_max;
 
 #endif
 
@@ -401,37 +407,43 @@ cs_calcium_read_double(int                    rank_id,
 
 #if defined(HAVE_MPI)
 
-  char var_cmp[CS_CALCIUM_VARIABLE_LEN + 1];
-  int meta[3] = {0, 0, 0};
+  if (rank_id > -1) {
 
-  MPI_Status status;
-  MPI_Recv(var_cmp, CS_CALCIUM_VARIABLE_LEN + 1, MPI_CHAR, rank_id,
-           CS_CALCIUM_MPI_TAG, _comm, &status);
+    char var_cmp[CS_CALCIUM_VARIABLE_LEN + 1];
+    int meta[3] = {0, 0, 0};
 
-  if (strncmp(var_cmp, _var_name, CS_CALCIUM_VARIABLE_LEN + 1) != 0) {
-    bft_printf("\n"
-               "Warning: received %s\n"
-               "         expected %s\n",
-               _var_name, var_cmp);
-    bft_printf_flush();
+    MPI_Status status;
+    MPI_Recv(var_cmp, CS_CALCIUM_VARIABLE_LEN + 1, MPI_CHAR, rank_id,
+             CS_CALCIUM_MPI_TAG, _comm, &status);
+
+    if (strncmp(var_cmp, _var_name, CS_CALCIUM_VARIABLE_LEN + 1) != 0) {
+      bft_printf("\n"
+                 "Warning: received %s\n"
+                 "         expected %s\n",
+                 _var_name, var_cmp);
+      bft_printf_flush();
+    }
+
+    MPI_Recv(meta, 3, MPI_INT, rank_id,
+             CS_CALCIUM_MPI_TAG, _comm, &status);
+
+    if (meta[0] != *iteration || meta[1] != n_val_max || meta[2] != 8) {
+      bft_printf("\n"
+                 "Warning: received [%d, %d, %d] for %s\n"
+                 "         expected [%d, %d, %d]\n",
+                 meta[0], meta[1], meta[2], _var_name,
+                 *iteration, n_val_max, 8);
+      bft_printf_flush();
+    }
+
+    MPI_Recv(meta, n_val_max, MPI_DOUBLE, rank_id,
+             CS_CALCIUM_MPI_TAG, _comm, &status);
+
+    MPI_Get_count(&status, MPI_DOUBLE, n_val_read);
+
   }
-
-  MPI_Recv(meta, 3, MPI_INT, rank_id,
-           CS_CALCIUM_MPI_TAG, _comm, &status);
-
-  if (meta[0] != *iteration || meta[1] != n_val_max || meta[2] != 8) {
-    bft_printf("\n"
-               "Warning: received [%d, %d, %d] for %s\n"
-               "         expected [%d, %d, %d]\n",
-               meta[0], meta[1], meta[2], _var_name,
-               *iteration, n_val_max, 8);
-    bft_printf_flush();
-  }
-
-  MPI_Recv(meta, n_val_max, MPI_DOUBLE, rank_id,
-           CS_CALCIUM_MPI_TAG, _comm, &status);
-
-  MPI_Get_count(&status, MPI_DOUBLE, n_val_read);
+  else
+    *n_val_read = n_val_max;
 
 #endif
 
@@ -477,13 +489,15 @@ cs_calcium_write_int(int                    rank_id,
 
 #if defined(HAVE_MPI)
 
-  int meta[3] = {iteration, n_val, 4};
+  if (rank_id > -1) {
+    int meta[3] = {iteration, n_val, 4};
 
-  MPI_Send(_var_name, CS_CALCIUM_VARIABLE_LEN + 1, MPI_CHAR, rank_id,
-           CS_CALCIUM_MPI_TAG, _comm);
-  MPI_Send(meta, 3, MPI_INT, rank_id, CS_CALCIUM_MPI_TAG, _comm);
+    MPI_Send(_var_name, CS_CALCIUM_VARIABLE_LEN + 1, MPI_CHAR, rank_id,
+             CS_CALCIUM_MPI_TAG, _comm);
+    MPI_Send(meta, 3, MPI_INT, rank_id, CS_CALCIUM_MPI_TAG, _comm);
 
-  MPI_Send(_val, n_val, MPI_INT, rank_id, CS_CALCIUM_MPI_TAG, _comm);
+    MPI_Send(_val, n_val, MPI_INT, rank_id, CS_CALCIUM_MPI_TAG, _comm);
+  }
 
 #endif
 
@@ -530,13 +544,15 @@ cs_calcium_write_double(int                    rank_id,
 
 #if defined(HAVE_MPI)
 
-  int meta[3] = {iteration, n_val, 8};
+  if (rank_id > -1) {
+    int meta[3] = {iteration, n_val, 8};
 
-  MPI_Send(_var_name, CS_CALCIUM_VARIABLE_LEN + 1, MPI_CHAR, rank_id,
-           CS_CALCIUM_MPI_TAG, _comm);
-  MPI_Send(meta, 3, MPI_INT, rank_id, CS_CALCIUM_MPI_TAG, _comm);
+    MPI_Send(_var_name, CS_CALCIUM_VARIABLE_LEN + 1, MPI_CHAR, rank_id,
+             CS_CALCIUM_MPI_TAG, _comm);
+    MPI_Send(meta, 3, MPI_INT, rank_id, CS_CALCIUM_MPI_TAG, _comm);
 
-  MPI_Send(_val, n_val, MPI_DOUBLE, rank_id, CS_CALCIUM_MPI_TAG, _comm);
+    MPI_Send(_val, n_val, MPI_DOUBLE, rank_id, CS_CALCIUM_MPI_TAG, _comm);
+  }
 
 #endif
 

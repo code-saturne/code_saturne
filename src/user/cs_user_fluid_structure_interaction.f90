@@ -23,8 +23,6 @@
 !-------------------------------------------------------------------------------
 
 !===============================================================================
-! Purpose:
-! --------
 
 !> \file cs_user_fluid_structure_interaction.f90
 !>
@@ -54,8 +52,6 @@
 !-------------------------------------------------------------------------------
 
 !===============================================================================
-! Function :
-! ----------
 
 !> \brief Definition of internal structures and corresponding initial conditions
 !>       (initial displacement and velocity ).
@@ -123,17 +119,13 @@ allocate(lstelt(nfabor))
 ! 2.  Definition of internal structures
 !===============================================================================
 
-
 ! Deallocate the temporary array
 deallocate(lstelt)
 
 return
 end subroutine usstr1
 
-
 !===============================================================================
-! Purpose :
-! ---------
 
 !> \brief Definition of structural parameters in case of Fluid Structure
 !>        internal coupling : Mass, Friction, Stiffness anf Fluid Stresses.
@@ -209,10 +201,7 @@ return
 
 end subroutine usstr2
 
-
 !===============================================================================
-! Purpose:
-! -------
 
 !> \brief User subroutine dedicated the Fluid-Structure external coupling
 !>        with code_aster :

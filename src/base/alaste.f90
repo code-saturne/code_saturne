@@ -39,12 +39,11 @@ module alaste
   ! ntcast : numero d'iteration de couplage avec code_aster
   ! nbaste : nombre de structures mobiles
   ! nbfast : nombre de faces couplees
-  ! nbnast : nombre de noeuds couples
   ! asddlf : blocage des ddl de force
   ! asddlc : blocage des ddl cinematiques
 
   integer, save ::  ntcast
-  integer, save ::  nbaste, nbfast, nbnast
+  integer, save ::  nbaste, nbfast
   integer, save ::  iforas
   integer, save ::  asddlf(3,nastmx), asddlc(3,nastmx)
 

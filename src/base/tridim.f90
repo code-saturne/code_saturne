@@ -240,6 +240,13 @@ interface
 
   end subroutine strdep
 
+  subroutine cs_ast_coupling_exchange_time_step(c_dt) &
+    bind(C, name='cs_ast_coupling_exchange_time_step')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    real(c_double), dimension(*) , intent(out) :: c_dt
+  end subroutine cs_ast_coupling_exchange_time_step
+
   subroutine cs_lagr_head_losses(n_hl_cells, cell_ids, bc_type, cku) &
     bind(C, name='cs_lagr_head_losses')
     use, intrinsic :: iso_c_binding
@@ -731,14 +738,14 @@ endif
 
 call dttvar &
  ( nvar   , nscal  , ncepdc , ncetsm ,                            &
-   vcopt_u%iwarni   ,                                              &
+   vcopt_u%iwarni  ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
    ckupdc , smacel )
 
 if (nbaste.gt.0.and.itrale.gt.nalinf) then
   ntrela = ntcabs - ntpabs
-  call astpdt(dt)
+  call cs_ast_coupling_exchange_time_step(dt)
 endif
 
 ! Compute the pseudo tensorial time step if needed for the pressure solving

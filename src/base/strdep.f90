@@ -118,6 +118,13 @@ type(var_cal_opt) :: vcopt
 
 interface
 
+  subroutine cs_ast_coupling_exchange_fields(fluid_forces) &
+    bind(C, name='cs_ast_coupling_exchange_fields')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    real(c_double), dimension(*) , intent(in) :: fluid_forces
+  end subroutine cs_ast_coupling_exchange_fields
+
   function cs_ast_coupling_get_ext_cvg() result (icvext) &
     bind(C, name='cs_ast_coupling_get_ext_cvg')
     use, intrinsic :: iso_c_binding
@@ -198,9 +205,9 @@ do istr = 1, nbstru
   enddo
 enddo
 
-!     Envoi de l'effort applique aux structures externes
+! Send effort applied to external structures
 if (nbaste.gt.0) then
-  call astfor(nbfast, forast)
+  call cs_ast_coupling_exchange_fields(forast)
 endif
 
 ! Free memory

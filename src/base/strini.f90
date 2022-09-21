@@ -79,11 +79,9 @@ integer          n_fields, f_id, flag
 integer          ifac  , istr, icompt, ii
 integer          mbstru, mbaste
 
-integer          inod
-integer          indast
+integer          indast, verbosity, visualization
 
-integer, allocatable, dimension(:) :: itrav
-integer, allocatable, dimension(:) :: lstfac, idfloc, idnloc
+integer, allocatable, dimension(:) :: face_ids
 
 !===============================================================================
 
@@ -93,13 +91,23 @@ integer, allocatable, dimension(:) :: lstfac, idfloc, idnloc
 
 interface
 
-  subroutine cs_ast_coupling_initialize(nalimx, epalim) &
+  subroutine cs_ast_coupling_initialize(verbosity, visualization, &
+                                        nalimx, epalim)           &
     bind(C, name='cs_ast_coupling_initialize')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: nalimx
+    integer(c_int), value :: verbosity, visualization, nalimx
     real(kind=c_double), value :: epalim
   end subroutine cs_ast_coupling_initialize
+
+  subroutine cs_ast_coupling_geometry(n_faces, face_ids, almax) &
+    bind(C, name='cs_ast_coupling_geometry')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: n_faces
+    integer(c_int), dimension(*), intent(in) :: face_ids
+    real(kind=c_double), value :: almax
+  end subroutine cs_ast_coupling_geometry
 
 end interface
 
@@ -157,6 +165,12 @@ call usstr1                                                       &
 call uiaste(idfstr, asddlf)
 call usaste(idfstr)
 
+! TODO set verbosity and visualization levels from GUI and user-defined
+! functions (or build base structure earlier and allow settings=
+
+verbosity = 1
+visualization = 1
+
 !===============================================================================
 ! 3.  CALCUL DE NBSTRU ET NBASTE
 !===============================================================================
@@ -170,7 +184,6 @@ do ifac = 1, nfabor
 enddo
 
 if (irangp.ge.0) call parcmx(nbstru)
-                 !==========
 
 if (nbstru.gt.nstrmx) then
   write(nfecra,4000)
@@ -195,7 +208,6 @@ do ifac = 1, nfabor
 enddo
 
 if (irangp.ge.0) call parcmx(nbaste)
-                 !==========
 
 if (nbaste.gt.nastmx) then
   write(nfecra,4002)
@@ -218,68 +230,39 @@ endif
 
 if (nbaste.gt.0) then
 
-  ! Allocate a work array
-  allocate(itrav(nnod))
-
-  do inod = 1, nnod
-     itrav(inod) = 0
-  enddo
-
   nbfast = 0
-  nbnast = 0
 
-!       Calcul du nombre de faces et noeuds couples avec code_aster
+  ! Number of faces coupled with code_aster
   do ifac = 1, nfabor
     istr = idfstr(ifac)
     if (istr.lt.0) then
       nbfast = nbfast + 1
-      do ii = ipnfbr(ifac), ipnfbr(ifac+1)-1
-        inod = nodfbr(ii)
-        itrav(inod) = istr
-      enddo
     endif
-  enddo
-  do inod = 1, nnod
-    if (itrav(inod).lt.0) nbnast = nbnast + 1
   enddo
 
   ! Allocate temporary arrays
-  allocate(lstfac(nbfast))
-  allocate(idfloc(nbfast), idnloc(nbnast))
+  allocate(face_ids(nbfast))
 
   indast = 0
   do ifac = 1, nfabor
     istr = idfstr(ifac)
     if (istr.lt.0) then
       indast = indast + 1
-      lstfac(indast) = ifac
-      idfloc(indast) = -istr
+      face_ids(indast) = ifac - 1   ! O-based numbering for C
     endif
   enddo
   nbfast = indast
 
-  indast = 0
-  do inod = 1, nnod
-    istr = itrav(inod)
-    if (istr.lt.0) then
-      indast = indast + 1
-      idnloc(indast) = -istr
-    endif
-  enddo
-  nbnast = indast
-
   ! Exchange code_aster coupling parameters
-  call cs_ast_coupling_initialize(nalimx, epalim)
+  call cs_ast_coupling_initialize(verbosity, visualization, nalimx, epalim)
 
   ! Send geometric information to code_aster
-  call astgeo(nbfast, lstfac, idfloc, idnloc, almax)
+  call cs_ast_coupling_geometry(nbfast, face_ids, almax)
 
   ! Free memory
-  deallocate(lstfac)
-  deallocate(idfloc, idnloc)
+  deallocate(face_ids)
 
 endif
-
 
 !===============================================================================
 ! 6.  MESSAGES D'INFORMATION SUR LE COUPLAGE

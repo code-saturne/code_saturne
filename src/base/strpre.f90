@@ -102,6 +102,21 @@ double precision, dimension(:), pointer :: cvara_pr
 !===============================================================================
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_ast_coupling_compute_displacement(disale) &
+    bind(C, name='cs_ast_coupling_compute_displacement')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    real(c_double), dimension(*) , intent(out) :: disale
+  end subroutine cs_ast_coupling_compute_displacement
+
+end interface
+
+!===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
 
@@ -188,8 +203,8 @@ if (nbstru.gt.0) then
 
 endif
 
-! 2.2 STRUCTURES EXTERNES (COUPLAGE CODE_ASTER) :
-! -----------------------
+! External structures (code_aster)
+! -------------------
 
 if (nbaste.gt.0) then
 
@@ -211,7 +226,7 @@ if (nbaste.gt.0) then
 
     ! Reception des deplacements predits et remplissage de disale
 
-    call astcin(disale)
+    call cs_ast_coupling_compute_displacement(disale)
 
   endif
 
