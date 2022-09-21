@@ -90,6 +90,9 @@
 using namespace MEDCoupling;
 #endif
 
+#define USE_PARAFIELD 1  /* 1 to use <ParaFIELD> fields,
+                            0 to directly use          MEDCouplingFieldDouble */
+
 /*----------------------------------------------------------------------------*/
 
 /*=============================================================================
@@ -116,7 +119,11 @@ struct _cs_paramedmem_coupling_t {
 
   InterpKernelDEC  *dec;        /* Data Exchange Channel */
 
+#if USE_PARAFIELD == 1
   std::vector<ParaFIELD *>  fields;
+#else
+  std::vector<MEDCouplingFieldDouble *>  fields;
+#endif
 
 #else
 
@@ -127,7 +134,7 @@ struct _cs_paramedmem_coupling_t {
 #endif
 
   int  dec_synced;
-  int  verbosity;
+
 };
 
 /*=============================================================================
@@ -172,10 +179,13 @@ _generate_coupling_mesh(cs_paramedmem_coupling_t  *c,
                                           use_bbox);
 
   /* Define associated ParaMESH */
-  ProcessorGroup *Grp =
-    c->dec->isInSourceSide() ? c->dec->getSourceGrp():c->dec->getTargetGrp();
 
-  c->para_mesh = new ParaMESH(c->mesh->med_mesh, *(Grp), "CoupledMesh");
+  if (c->dec != NULL) {
+    ProcessorGroup *Grp = c->dec->isInSourceSide() ?
+      c->dec->getSourceGrp() : c->dec->getTargetGrp();
+
+    c->para_mesh = new ParaMESH(c->mesh->med_mesh, *(Grp), "CoupledMesh");
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -207,10 +217,12 @@ _generate_coupling_mesh_from_ids(cs_paramedmem_coupling_t  *c,
                                          use_bbox);
 
   /* Define associated ParaMESH */
-  ProcessorGroup *Grp =
-    c->dec->isInSourceSide() ? c->dec->getSourceGrp():c->dec->getTargetGrp();
+  if (c->dec != NULL) {
+    ProcessorGroup *Grp = c->dec->isInSourceSide() ?
+      c->dec->getSourceGrp() : c->dec->getTargetGrp();
 
-  c->para_mesh = new ParaMESH(c->mesh->med_mesh, *(Grp), "CoupledMesh");
+    c->para_mesh = new ParaMESH(c->mesh->med_mesh, *(Grp), "CoupledMesh");
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -231,6 +243,9 @@ _add_paramedmem_coupling(const std::string            cpl_name,
 {
   cs_paramedmem_coupling_t *c = new cs_paramedmem_coupling_t();
 
+  c->dec_synced = 0;
+  c->para_mesh = NULL;
+
   /* Apps identification */
   for (int i = 0; i < 2; i++)
     c->apps[i] = apps[i];
@@ -247,7 +262,39 @@ _add_paramedmem_coupling(const std::string            cpl_name,
   for (int i = 0; i < apps[1].n_ranks; i++)
     grp2_ids.insert(apps[1].root_rank + i);
 
-  c->dec =new InterpKernelDEC(grp1_ids, grp2_ids);
+  c->dec = new InterpKernelDEC(grp1_ids, grp2_ids);
+
+  _paramed_couplers.push_back(c);
+
+  int retval = _paramed_couplers.size() - 1;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a paramedmem coupling for "dry run" mode.
+ *
+ * \param[in]  cpl_name  coupling name
+ */
+/*----------------------------------------------------------------------------*/
+
+static int
+_add_paramedmem_coupling_dry_run(const std::string  cpl_name)
+{
+  cs_paramedmem_coupling_t *c = new cs_paramedmem_coupling_t();
+
+  c->dec_synced = 0;
+  c->para_mesh = NULL;
+
+  memset(c->apps, 0, 2*sizeof(ple_coupling_mpi_set_info_t));
+
+  /* Set coupling name */
+  c->name = cpl_name;
+
+  c->mesh = NULL;
+
+  c->dec = NULL;
 
   _paramed_couplers.push_back(c);
 
@@ -372,7 +419,8 @@ cs_paramedmem_coupling_create(const char  *app1_name,
   /* Check that at least on app name is provided */
   if (app1_name == NULL && app2_name == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              _("Error: Partner application name was not provided.\n"));
+              _("%s: coupled application name not provided.\n"),
+              __func__);
 
   /* Find which app is which */
   const ple_coupling_mpi_set_t *mpi_apps = cs_coupling_get_mpi_apps();
@@ -380,7 +428,7 @@ cs_paramedmem_coupling_create(const char  *app1_name,
   const int n_apps = ple_coupling_mpi_set_n_apps(mpi_apps);
   const int app_id = ple_coupling_mpi_set_get_app_id(mpi_apps);
 
-  /* Get each application ranks */
+  /* Get each application's ranks */
   ple_coupling_mpi_set_info_t apps[2];
   for (int i = 0; i < 2; i++)
     apps[i] = ple_coupling_mpi_set_get_info(mpi_apps, -1);
@@ -425,6 +473,51 @@ cs_paramedmem_coupling_create(const char  *app1_name,
   }
 
   int cpl_id = _add_paramedmem_coupling(_name, apps);
+
+  c = cs_paramedmem_coupling_by_id(cpl_id);
+
+#endif
+
+  return c;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a new ParaMEDMEM handler structure with no actual coupling.
+ *
+ * This can be useful for a "dry run" when setting up a coupling, so as to
+ * first debug local commands before actually running in coupled mode.
+ *
+ * In this case, data "received" matches the initialized values.
+ *
+ * \param[in] app1_name  Name of app n°1 or NULL if calling app is app1
+ * \param[in] app2_name  Name of app n°2 or NULL if calling app is app2
+ * \param[in] cpl_name   Name of the coupling.
+ *                       If NULL an automatic name is generated.
+ *
+ * \return pointer to newly created cs_paramedmem_coupling_t structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_paramedmem_coupling_t *
+cs_paramedmem_coupling_create_uncoupled(const char  *cpl_name)
+{
+  cs_paramedmem_coupling_t *c = NULL;
+
+#if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(cpl_name);
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: %s cannot be called without "
+              "MEDCoupling MPI support."), __func__);
+
+#else
+
+  /* Set coupling name */
+  std::string _name = cpl_name;
+
+  int cpl_id = _add_paramedmem_coupling_dry_run(_name);
 
   c = cs_paramedmem_coupling_by_id(cpl_id);
 
@@ -588,7 +681,6 @@ cs_paramedmem_add_mesh_from_ids(cs_paramedmem_coupling_t  *c,
 #if !defined(HAVE_PARAMEDMEM)
 
   CS_NO_WARN_IF_UNUSED(c);
-  CS_NO_WARN_IF_UNUSED(zone);
   bft_error(__FILE__, __LINE__, 0,
             _("Error: %s cannot be called without "
               "MEDCoupling MPI support."), __func__);
@@ -826,20 +918,34 @@ cs_paramedmem_def_coupled_field(cs_paramedmem_coupling_t  *c,
 
   /* Build ParaFIELD object if required */
   ComponentTopology comp_topo(dim);
+#if USE_PARAFIELD == 1
   ParaFIELD *pf = new ParaFIELD(type, td, c->para_mesh, comp_topo);
+#else
+  MEDCouplingFieldDouble *pf = MEDCouplingFieldDouble::New(type, td);
+  pf->setMesh(c->mesh->med_mesh);
+  c->mesh->med_mesh->decrRef();
+  DataArrayDouble *arr = DataArrayDouble::New();
+  arr->alloc(c->mesh->n_elts, dim);
+  pf->setArray(arr);
+  pf->getArray()->decrRef();
+#endif
 
-  if (type == ON_CELLS)
-    c->dec->setMethod("P0");
-  else
-    c->dec->setMethod("P1");
+  if (c->dec != NULL) {
+    if (type == ON_CELLS)
+      c->dec->setMethod("P0");
+    else
+      c->dec->setMethod("P1");
+  }
 
   c->fields.push_back(pf);
+
   /* TODO: setNature should be set by caller to allow for more options */
 
   /* Set nature of field
    * As default we use intensive conservation since code_saturne is
    * a CFD code :)
    */
+
   NatureOfField nature = IntensiveConservation;
   switch (field_nature) {
   case CS_MEDCPL_FIELD_EXT_CONSERVATION:
@@ -862,9 +968,13 @@ cs_paramedmem_def_coupled_field(cs_paramedmem_coupling_t  *c,
     assert(0);
   }
 
+#if USE_PARAFIELD == 1
   pf->getField()->setNature(nature);
-
   pf->getField()->setName(name);
+#else
+  pf->setNature(nature);
+  pf->setName(name);
+#endif
 
 #endif
 
@@ -959,8 +1069,13 @@ cs_paramedmem_field_export(cs_paramedmem_coupling_t  *c,
 
   MEDCouplingFieldDouble *f = NULL;
   for (size_t i = 0; i < c->fields.size(); i++) {
+#if USE_PARAFIELD == 1
     if (strcmp(name, c->fields[i]->getField()->getName().c_str()) == 0) {
       f = c->fields[i]->getField();
+#else
+    if (strcmp(name, c->fields[i]->getName().c_str()) == 0) {
+      f = c->fields[i];
+#endif
       break;
     }
   }
@@ -1028,8 +1143,13 @@ cs_paramedmem_field_export_l(cs_paramedmem_coupling_t  *c,
 
   MEDCouplingFieldDouble *f = NULL;
   for (size_t i = 0; i < c->fields.size(); i++) {
+#if USE_PARAFIELD == 1
     if (strcmp(name, c->fields[i]->getField()->getName().c_str()) == 0) {
       f = c->fields[i]->getField();
+#else
+    if (strcmp(name, c->fields[i]->getName().c_str()) == 0) {
+      f = c->fields[i];
+#endif
       break;
     }
   }
@@ -1081,8 +1201,13 @@ cs_paramedmem_field_import(cs_paramedmem_coupling_t  *c,
 
   MEDCouplingFieldDouble *f = NULL;
   for (size_t i = 0; i < c->fields.size(); i++) {
+#if USE_PARAFIELD == 1
     if (strcmp(name, c->fields[i]->getField()->getName().c_str()) == 0) {
       f = c->fields[i]->getField();
+#else
+    if (strcmp(name, c->fields[i]->getName().c_str()) == 0) {
+      f = c->fields[i];
+#endif
       break;
     }
   }
@@ -1116,7 +1241,7 @@ cs_paramedmem_field_import(cs_paramedmem_coupling_t  *c,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Copy values from associated ParaFIELD$ structure to array defined
+ * \brief Copy values from associated ParaFIELD structure to array defined
  *        on mesh location corresponding to coupled elements
  *        (and associated ParaMESH).
  *
@@ -1148,8 +1273,13 @@ cs_paramedmem_field_import_l(cs_paramedmem_coupling_t  *c,
 
   MEDCouplingFieldDouble *f = NULL;
   for (size_t i = 0; i < c->fields.size(); i++) {
+#if USE_PARAFIELD == 1
     if (strcmp(name, c->fields[i]->getField()->getName().c_str()) == 0) {
       f = c->fields[i]->getField();
+#else
+    if (strcmp(name, c->fields[i]->getName().c_str()) == 0) {
+      f = c->fields[i];
+#endif
       break;
     }
   }
@@ -1189,7 +1319,8 @@ cs_paramedmem_sync_dec(cs_paramedmem_coupling_t  *c)
 #else
 
   if (c->dec_synced == 0) {
-    c->dec->synchronize();
+    if (c->dec != NULL)
+      c->dec->synchronize();
     c->dec_synced = 1;
   }
 
@@ -1216,7 +1347,8 @@ cs_paramedmem_send_data(cs_paramedmem_coupling_t  *c)
 
 #else
 
-  c->dec->sendData();
+  if (c->dec != NULL)
+    c->dec->sendData();
 
 #endif
 }
@@ -1241,7 +1373,8 @@ cs_paramedmem_recv_data(cs_paramedmem_coupling_t  *c)
 
 #else
 
-  c->dec->recvData();
+  if (c->dec != NULL)
+    c->dec->recvData();
 
 #endif
 }
@@ -1269,7 +1402,8 @@ cs_paramedmem_attach_field_by_id(cs_paramedmem_coupling_t  *c,
 
 #else
 
-  c->dec->attachLocalField(c->fields[field_id]);
+  if (c->dec != NULL)
+    c->dec->attachLocalField(c->fields[field_id]);
 
 #endif
 }
@@ -1297,6 +1431,8 @@ cs_paramedmem_attach_field_by_name(cs_paramedmem_coupling_t  *c,
 
 #else
 
+#if USE_PARAFIELD == 1
+
   ParaFIELD *pf = NULL;
 
   for (size_t i = 0; i < c->fields.size(); i++) {
@@ -1311,6 +1447,26 @@ cs_paramedmem_attach_field_by_name(cs_paramedmem_coupling_t  *c,
               _("Error: Could not find field '%s'\n"), name);
 
   c->dec->attachLocalField(pf);
+
+#else
+
+  MEDCouplingFieldDouble *f = NULL;
+
+  for (size_t i = 0; i < c->fields.size(); i++) {
+    if (strcmp(name, c->fields[i]->getName().c_str()) == 0) {
+      f = c->fields[i];
+      break;
+    }
+  }
+
+  if (f == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: Could not find field '%s'\n"), name);
+
+  if (c->dec != NULL)
+    c->dec->attachLocalField(f);
+
+#endif
 
 #endif
 }

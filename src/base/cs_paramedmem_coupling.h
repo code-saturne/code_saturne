@@ -118,6 +118,27 @@ cs_paramedmem_coupling_create(const char  *app1_name,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Create a new ParaMEDMEM handler structure with no actual coupling.
+ *
+ * This can be useful for a "dry run" when setting up a coupling, so as to
+ * first debug local commands before actually running in coupled mode.
+ *
+ * In this case, data "received" matches the initialized values.
+ *
+ * \param[in] app1_name  Name of app n°1 or NULL if calling app is app1
+ * \param[in] app2_name  Name of app n°2 or NULL if calling app is app2
+ * \param[in] cpl_name   Name of the coupling.
+ *                       If NULL an automatic name is generated.
+ *
+ * \return pointer to newly created cs_paramedmem_coupling_t structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_paramedmem_coupling_t *
+cs_paramedmem_coupling_create_uncoupled(const char  *cpl_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Destroy a given ParaMEDMEM coupling structure
  *
  * \param[in] c pointer to cs_paramedmem_coupling_t structure
@@ -341,7 +362,7 @@ cs_paramedmem_field_import(cs_paramedmem_coupling_t  *c,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Copy values from associated ParaFIELD$ structure to array defined
+ * \brief Copy values from associated ParaFIELD structure to array defined
  *        on mesh location corresponding to coupled elements
  *        (and associated ParaMESH).
  *
@@ -364,7 +385,6 @@ cs_paramedmem_field_import_l(cs_paramedmem_coupling_t  *c,
  * \brief Sync the coupling's InterpKernelDEC
  *
  * \param[in] c pointer to cs_paramedmem_coupling_t structure
- *
  */
 /*----------------------------------------------------------------------------*/
 

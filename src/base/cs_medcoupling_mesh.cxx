@@ -645,17 +645,25 @@ _get_mesh_from_name(const char  *name,
 {
   cs_medcoupling_mesh_t *m = NULL;
 
+#if !defined(HAVE_MEDCOUPLING)
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: this funnction cannot be called without "
+              "MEDCoupling support\n"));
+#else
+
   for (int i = 0; i < _n_sub_meshes; i++) {
     cs_medcoupling_mesh_t *mt = _sub_meshes[i];
 
     if (elt_dim == mt->elt_dim) {
-      const char *m_name = mt->med_mesh->getName().c_str();
-      if (strcmp(m_name, name) == 0) {
+      std::string m_name = mt->med_mesh->getName();
+      if (strcmp(m_name.c_str(), name) == 0) {
         m = mt;
         break;
       }
     }
   }
+
+#endif
 
   return m;
 }
@@ -793,13 +801,15 @@ _copy_mesh_from_base(cs_mesh_t              *csmesh,
 
     /* Creation of a new nodal mesh from selected border faces */
 
-    BFT_MALLOC(pmmesh->elt_list, csmesh->n_b_faces, cs_lnum_t);
+    if (pmmesh->sel_criteria != NULL) {
+      BFT_MALLOC(pmmesh->elt_list, csmesh->n_b_faces, cs_lnum_t);
 
-    cs_selector_get_b_face_list(pmmesh->sel_criteria,
-                                &(pmmesh->n_elts),
-                                pmmesh->elt_list);
+      cs_selector_get_b_face_list(pmmesh->sel_criteria,
+                                  &(pmmesh->n_elts),
+                                  pmmesh->elt_list);
 
-    BFT_REALLOC(pmmesh->elt_list, pmmesh->n_elts, cs_lnum_t);
+      BFT_REALLOC(pmmesh->elt_list, pmmesh->n_elts, cs_lnum_t);
+    }
 
     BFT_MALLOC(pmmesh->new_to_old, pmmesh->n_elts, cs_lnum_t);
 
@@ -928,6 +938,7 @@ cs_medcoupling_mesh_destroy(cs_medcoupling_mesh_t  *mesh)
 {
   BFT_FREE(mesh->sel_criteria);
   BFT_FREE(mesh->elt_list);
+  BFT_FREE(mesh->vtx_list);
   BFT_FREE(mesh->new_to_old);
   BFT_FREE(mesh->bbox);
 
