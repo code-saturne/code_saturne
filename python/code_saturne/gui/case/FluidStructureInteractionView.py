@@ -511,24 +511,19 @@ class CouplingManager:
     """
 
     def __init__(self, mainView, case,
-                 internalTableView, internalTableModel,
-                 externalTableView, externalTableModel):
+                 internalTableView, internalTableModel):
         """
         Constructor
         """
         self.case               = case
         self.case.undoStopGlobal()
         self.__internalTableView = internalTableView
-        self.__externalTableView = externalTableView
         self.__internalTableModel = internalTableModel
-        self.__externalTableModel = externalTableModel
         self.__internalCouplings = []
-        self.__externalCouplings = []
 
         # Init widgets
         self.__initLineEditCouplings(mainView)
         self.__initFormulaCouplings (mainView)
-        self.__initCheckBoxCouplings(mainView)
         self.case.undoStartGlobal()
 
 
@@ -568,20 +563,6 @@ class CouplingManager:
                                           "getInitialVelocityZ",
                                           "setInitialVelocityZ"))
         self.__internalCouplings.extend(couplings)
-
-
-    def __initCheckBoxCouplings(self, mainView):
-        """
-        Initialize the creation of the checkbox coupling
-        """
-        couplings = []
-        couplings.append(CheckBoxCoupling(mainView.checkBoxDDLX,
-                                          "getDDLX", "setDDLX"))
-        couplings.append(CheckBoxCoupling(mainView.checkBoxDDLY,
-                                          "getDDLY", "setDDLY"))
-        couplings.append(CheckBoxCoupling(mainView.checkBoxDDLZ,
-                                          "getDDLZ", "setDDLZ"))
-        self.__externalCouplings.extend(couplings)
 
 
     def __initFormulaCouplings(self, mainView):
@@ -687,16 +668,6 @@ fx = fluid_fx;\nfy = 0;\nfz = fluid_fz;"""
 
     # NOTE: as above, do not use decorator to avoid crash in PyQt5.
 
-    # @pyqtSlot(QItemSelection, QItemSelection)
-    def slotExternalSelectionChanged(self, selected, deselected):
-        """
-        Called when external tableView selection changed
-        """
-        self.__selectionChanged(self.__externalTableView,
-                                self.__externalTableModel,
-                                self.__externalCouplings, selected)
-
-
     def __selectionChanged(self, tableView, tableModel, couplings, selected):
         """
         Called when a tableView selection changed
@@ -745,29 +716,22 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         # Store modelLocalization as attribut to avoid garbage collector to clean it
         self.__modelLocalization = modelLocalization
 
-        # Initialize the internal and external TableViewItemModel
+        # Initialize the internal TableViewItemModel
         self.__internalTableModel = self.__createTableViewItemModel(modelLocalization,
                                                                     'internal_coupling')
-        self.__externalTableModel = self.__createTableViewItemModel(modelLocalization,
-                                                                    'external_coupling')
 
         # Coupling Manager
         couplingManager = CouplingManager(self, case,
                                           self.tableInternalCoupling,
-                                          self.__internalTableModel,
-                                          self.tableExternalCoupling,
-                                          self.__externalTableModel)
+                                          self.__internalTableModel)
         # Avoid garbage collector to delete couplingManager
         self.__couplingManager = couplingManager
 
-        # Initialize internal / external table view
+        # Initialize internal table view
         self.__initTableView(self.tableInternalCoupling,
                              self.__internalTableModel,
                              couplingManager.slotInternalSelectionChanged)
 
-        self.__initTableView(self.tableExternalCoupling,
-                             self.__externalTableModel,
-                             couplingManager.slotExternalSelectionChanged)
         self.case.undoStartGlobal()
 
 

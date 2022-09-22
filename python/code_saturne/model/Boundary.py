@@ -3583,9 +3583,6 @@ class CouplingMobilBoundary(Boundary) :
         self._defaultValues['damping_matrix_formula'    ] = defaultMatrix % {'t':'c'}
         self._defaultValues['stiffness_matrix_formula'  ] = defaultMatrix % {'t':'k'}
         self._defaultValues['fluid_force_matrix_formula'] = defaultFluidMatrix
-        self._defaultValues['DDLX_choice'               ] = 'off'
-        self._defaultValues['DDLY_choice'               ] = 'off'
-        self._defaultValues['DDLZ_choice'               ] = 'off'
 
 
     # Accessors
@@ -3883,54 +3880,6 @@ class CouplingMobilBoundary(Boundary) :
             setter(choice)
 
         return choice
-
-
-    @Variables.undoLocal
-    def setDDLX(self, value):
-        """
-        Set the DDLX to xml
-        """
-        self._setChoice('DDLX', value )
-
-
-    @Variables.noUndo
-    def getDDLX(self):
-        """
-        Get DDLX from xml
-        """
-        return self._getChoice('DDLX', self.setDDLX)
-
-
-    @Variables.undoLocal
-    def setDDLY(self, value):
-        """
-        Set the DDLY to xml
-        """
-        self._setChoice('DDLY', value )
-
-
-    @Variables.noUndo
-    def getDDLY(self):
-        """
-        Get DDLY from xml
-        """
-        return self._getChoice('DDLY', self.setDDLY)
-
-
-    @Variables.undoLocal
-    def setDDLZ(self, value):
-        """
-        Set the DDLZ to xml
-        """
-        self._setChoice('DDLZ', value )
-
-
-    @Variables.noUndo
-    def getDDLZ(self):
-        """
-        Get DDLZ from xml
-        """
-        return self._getChoice('DDLZ', self.setDDLZ)
 
 
 #-------------------------------------------------------------------------------
@@ -5018,35 +4967,6 @@ class CouplingMobilBoundaryTestCase(ModelTest):
            'Could not get damping matrix for coupling mobil wall boundary'
         assert model.getFluidForceMatrix() == 'FluidForceMatrix',\
            'Could not get fluid force matrix for coupling mobil wall boundary'
-
-
-    def checkSetAndGetDDL(self):
-        """Check whether coupling mobil wall boundary could be set and get DDL."""
-        model = Boundary("coupling_mobile_boundary", "Wall_1", self.case)
-        model.boundNode.xmlInitNode('ale')
-        model.setDDLX('on')
-        model.setDDLY('on')
-        model.setDDLZ('on')
-
-        node =  model._XMLBoundaryConditionsNode
-        doc = '''<boundary_conditions>
-                    <wall label="Wall_1">
-                        <ale>
-                            <DDLX choice="on"/>
-                            <DDLY choice="on"/>
-                            <DDLZ choice="on"/>
-                        </ale>
-                    </wall>
-                </boundary_conditions>'''
-
-        assert node == self.xmlNodeFromString(doc),\
-           'Could not set DDL for coupling mobil wall boundary'
-        assert model.getDDLX() == 'on',\
-           'Could not get DDL X for coupling mobil wall boundary'
-        assert model.getDDLY() == 'on',\
-           'Could not get DDL Y for coupling mobil wall boundary'
-        assert model.getDDLZ() == 'on',\
-           'Could not get DDL Z for coupling mobil wall boundary'
 
 
 def suite7():

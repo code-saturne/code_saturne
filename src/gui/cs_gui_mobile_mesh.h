@@ -164,12 +164,10 @@ void CS_PROCF (uistr2, UISTR2) ( double *const  xmstru,
  * parameters:
  *   nfabor    <-- Number of boundary faces
  *   idfstr    <-- Structure definition
- *   asddlf    <-- Block of the DDL forces
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF(uiaste, UIASTE)(int  *idfstr,
-                         int  *asddlf);
+CS_PROCF(uiaste, UIASTE)(int  *idfstr);
 
 /*=============================================================================
  * Public function prototypes

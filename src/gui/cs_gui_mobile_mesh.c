@@ -426,31 +426,6 @@ _get_uistr2_data(const char      *label,
                     &forstr[istruc * 3]);
 }
 
-/*-----------------------------------------------------------------------------
- * Return the external coupling dof ("DDL") value
- *
- *  <boundary_conditions>
- *      <wall label=label_argument">
- *          <ale choice="external_coupling">
- *              <node_name_argument choice="off"/>
- *
- * parameters:
- *   label     <-- boundary label
- *   node_name <--  Node name: DDLX, DDLY or DDLZ.
- *----------------------------------------------------------------------------*/
-
-static int
-_get_external_coupling_dof(cs_tree_node_t  *tn_ec,
-                           const char      *name)
-{
-  cs_tree_node_t *tn = cs_tree_node_get_child(tn_ec, name);
-  const char *choice = cs_tree_node_get_child_value_str(tn, "choice");
-
-  int is_on = cs_gui_strcmp(choice, "on");
-
-  return is_on;
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -774,12 +749,10 @@ void CS_PROCF (uistr2, UISTR2) (double *const  xmstru,
  *
  * parameters:
  *   idfstr    <-- Structure definition
- *   asddlf    --> Block of the DDL forces
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF(uiaste, UIASTE)(int  *idfstr,
-                         int  *asddlf)
+CS_PROCF(uiaste, UIASTE)(int  *idfstr)
 {
   int istruct     = 0;
 
@@ -812,11 +785,6 @@ CS_PROCF(uiaste, UIASTE)(int  *idfstr,
       tn_ec = cs_tree_node_get_sibling_with_tag(tn_ec,
                                                 "choice",
                                                 "external_coupling");
-
-      /* Get DDLX, DDLY and DDLZ values */
-      asddlf[istruct*3 + 0] = _get_external_coupling_dof(tn_ec, "DDLX") ? 0 : 1;
-      asddlf[istruct*3 + 1] = _get_external_coupling_dof(tn_ec, "DDLY") ? 0 : 1;
-      asddlf[istruct*3 + 2] = _get_external_coupling_dof(tn_ec, "DDLZ") ? 0 : 1;
 
       /* Set idfstr with negative value starting from -1 */
       for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {

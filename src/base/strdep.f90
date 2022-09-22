@@ -187,7 +187,7 @@ do ifac = 1, nfabor
   else if (istr.lt.0) then
     indast = indast + 1
     do ii = 1, 3
-      forast(ii,indast) = asddlf(ii,-istr)*forbr(ii,ifac)
+      forast(ii,indast) = forbr(ii,ifac)
     enddo
   endif
 enddo

@@ -29,7 +29,7 @@ module alaste
 
   implicit none
 
-  ! Nombre de structures max en ALE et Couplage code_aster
+  ! Nombre de structures max en ALE et couplage code_aster
 
   integer nastmx
   parameter (nastmx=200)
@@ -39,13 +39,9 @@ module alaste
   ! ntcast : numero d'iteration de couplage avec code_aster
   ! nbaste : nombre de structures mobiles
   ! nbfast : nombre de faces couplees
-  ! asddlf : blocage des ddl de force
-  ! asddlc : blocage des ddl cinematiques
 
   integer, save ::  ntcast
   integer, save ::  nbaste, nbfast
-  integer, save ::  iforas
-  integer, save ::  asddlf(3,nastmx), asddlc(3,nastmx)
 
   !=============================================================================
 

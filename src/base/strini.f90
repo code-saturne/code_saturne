@@ -119,13 +119,6 @@ do istr = 1, nstrmx
   dtstr(istr) = dt(1)
 enddo
 
-do istr = 1, nastmx
-  do ii = 1, 3
-    asddlf(ii,istr) = 1
-    asddlc(ii,istr) = 1
-  enddo
-enddo
-
 !     NBSTRU et NBASTE valent -999 si le calcul n'est pas un calcul
 !       suite ou s'il est une suite d'un calcul sans ALE
 mbstru = nbstru
@@ -162,7 +155,7 @@ call usstr1                                                       &
 
 ! External structures: code_saturne / code_aster coupling
 
-call uiaste(idfstr, asddlf)
+call uiaste(idfstr)
 call usaste(idfstr)
 
 ! TODO set verbosity and visualization levels from GUI and user-defined
