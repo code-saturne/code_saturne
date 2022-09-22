@@ -88,6 +88,7 @@ cs_user_1d_wall_thermal.c \
 cs_user_wall_condensation.c \
 cs_user_boundary_conditions.c \
 cs_user_boundary_conditions-compressible.c \
+cs_user_boundary_conditions-electric_arcs.c \
 cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c \
 cs_user_boundary_conditions-medcoupling_remapper_2d.c \
 cs_user_boundary_conditions-notebook.c \
@@ -167,7 +168,6 @@ cs_user_boundary_conditions-atmospheric.f90 \
 cs_user_boundary_conditions-auto_inlet_profile.f90 \
 cs_user_boundary_conditions-base.f90 \
 cs_user_boundary_conditions-cooling_towers.f90 \
-cs_user_boundary_conditions-electric_arcs.f90 \
 cs_user_boundary_conditions-fuel.f90 \
 cs_user_boundary_conditions-gas_3ptchem.f90 \
 cs_user_boundary_conditions-gas_ebu.f90 \

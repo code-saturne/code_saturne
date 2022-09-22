@@ -36,6 +36,7 @@ documentation. It is also recommended to check the
 - \subpage advanced_conjugate_heat_transfer
 - \subpage advanced_particle_tracking
 - \subpage advanced_compressible
+- \subpage advanced_electric_arcs
 
 <!-- ----------------------------------------------------------------------- -->
 
@@ -536,3 +537,115 @@ For some examples we can see:
  - [Ex. 3: isobaric specific heat varying with temperature](@ref example3_comp)
  - [Ex. 4: molecular thermal conductivity varying with temperature](@ref example4_comp)
  - [Ex. 5: molecular diffusivity of user-defined scalars varying with temperature](@ref example5_comp)
+
+
+<!-- ----------------------------------------------------------------------- -->
+
+\page advanced_electric_arcs Management of the electric arcs module
+
+Activating the electric arcs module
+===================================
+
+The electric arcs module is activated either:
+
+ - in the Graphical User Interface _GUI_: __Calculation features__ --> __Electrical arcs__, the user can choose between _Joule Effect_ for _joule model_ and _Joule Effect_ and _Laplace Forces_ for electric arc
+ - or in the user function \ref cs_user_model in cs_user_parameters.c file, by setting the \ref cs_glob_physical_model_flag[\ref CS_ELECTRIC_ARCS] or \ref cs_glob_physical_model_flag[\ref CS_JOULE_EFFECT] parameter to a non-null value.
+
+Initialisation of the variables
+===============================
+
+The function \re cs_user_initialization allows the user to initialise some of the specific physics variables prompted via \ref cs_user_model. It is called only during the initialisation of the calculation. As usual,the user has access to many geometric variables so that the zones can be treated separately if needed (see [Electric arcs example](@ref user_initialization_electric_arcs)).
+
+The values of potential and its constituents are initialised if required.
+
+It should be noted that the enthalpy is relevant.
+
+ - For the _electric arcs_ module, the _enthalpy_ value is taken from the temperature
+ of reference \ref t0 (given in \ref cs_user_parameters.c)
+ from the temperature-enthalpy tables supplied in the data file **dp_ELE**.
+ The user must not intervene here.
+
+- For the _Joule effect_ module, the value of enthalpy must be specified by the user.
+ Examples of temperature to enthalpy conversion are given in
+ \ref cs_user_physical_properties.c). If not defined, a simple default
+ law is used (\f$H = C_p T\f$).
+
+Variable physical properties
+============================
+
+All the laws of the variation of physical data of the fluid are written (when necessary)
+in the function \ref cs_user_physical_properties.
+
+\warning
+ For the _electric module_, it is here that all the physical variables are defined
+ (including the relative cells and the eventual user scalars): \ref cs_user_physical_properties _is not used_.
+
+The user should ensure that the defined variation laws are valid for the whole range of
+variables. Particular care should be taken with non-linear laws (for example, a
+ \f$3^{rd}\f$ degree polynomial law giving negative values of density)
+
+\warning
+ In the _electric module_, all of the physical properties are considered as variables
+ and are therefore stored using the  cs_field API. \ref cp0, \ref viscls0 and \ref viscl0
+ are not used
+
+For the Joule effect, the user is required to supply the physical properties in the
+function. Examples are given which are to be adapted by the user. If the temperature is
+to be determined to calculate the physical properties, the solved variable, enthalpy must
+ be deduced. The preferred temperature-enthalpy law should be defined
+ (a general example is provided in (\ref cs_user_physical_properties),
+ and can be used for the initialisation of the variables in
+ (\ref cs_user_initialization)).
+ For the _electric arcs_ module, the physical properties are interpolated from the data file
+ __dp_ELE__ supplied by the user. Modifications are generally not necessary.
+
+Boundary conditions
+===================
+
+Boundary conditions can be handled in the GUI or in the cs_user_boundary_conditions function as usual (see [Electric example](@ref electric_arcs_examples).
+ In the \ref cs_user_boundary_conditions report, the main change from the users point of view concerns the
+ specification of the boundary conditions of the potential, which isn't
+ implied by default. The Dirichlet and Neumann conditions must be imposed
+ explicitly using \ref icodcl and \ref rcodcl (as would be done for the classical scalar).
+
+Furthermore, if one wishes to slow down the power dissipation (Joule
+effect module) or the current (electric arcs module) from the imposed values,
+they can be changed by the potential scalar as shown below:
+
+ - For the electric arcs, the imposed current intensity can be a fixed variable and initialize by the GUI see [Figure 1](@ref gui_electric_arcs)
+
+\anchor gui_electric_arcs
+\image html gui_electric_arcs.png "Imposed current intensity"
+
+ - For the *Joule model*, the imposed power can be a fixed variable in the same way as the electric arcs.
+
+\warning :
+*In the case of alternating current, attention should be paid to the values of potential
+ imposed at the limits: the variable named "real potential" represents an affective
+ value if the current is in single phase, and a "real part" if not.*
+
+ - For the Joule studies, a complex potential is sometimes needed
+ (*in the GUI Electrical model -> three-phase*): this is the  case in particular where the current
+ has three phases. To have access to the phase of the potential, and not just to its
+ amplitude.
+
+ - For the Joule studies in which one does not have access to the phases, the real
+ potential (imaginary part =0) will suffice (*in the GUI Electrical model -> AC/DC*): this is
+ obviously the case with
+ continuous current, but also with single phase alternative current. In *code_saturne*
+there is only 1 variable for the potential,  called "real potential". Pay attention to
+ the fact that in alternate current, the "real potential" represents a effective value
+ of potential , \f$\frac{1}{\sqrt{2}}\,Pp_{max}\f$ (in continuous current there is no
+ such ambiguity).
+
+Additions for transformers
+--------------------------
+
+The following additional boundary conditions must be defined for tansformers:
+  - the intensity at each electrode
+  - the voltage on each terminal of transformers. To achieve it, the intensity,
+    the rvoltage at each termin, the Rvoltage, and the total intensity of the
+    transformer are calculated.
+
+Finally, a test is performed to check if the offset is zero or if a boundary
+ face is in contact with the ground.

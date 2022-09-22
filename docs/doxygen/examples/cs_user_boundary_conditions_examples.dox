@@ -683,11 +683,7 @@
 
 /*-----------------------------------------------------------------------------*/
 /*!
-  \page electric_arcs_examples Electric arcs examples
-
-  \section elec_loc_var Local variables to be added
-
-  \snippet cs_user_boundary_conditions-electric_arcs.f90 loc_var_dec
+  \page electric_arcs_examples Electric arcs boundary conditions examples
 
   \section elec_init Initialization and finalization
 
@@ -695,44 +691,44 @@
 
   \section electric_arcs_ex_1 Example 1
 
-  For boundary faces of color 1 assign an inlet
+  For boundary faces of zone "1" assign an inlet
   and assign a cathode for "electric" variables.
 
-  \snippet cs_user_boundary_conditions-electric_arcs.f90 example_1
+  \snippet cs_user_boundary_conditions-electric_arcs.c example_1
 
   \section electric_arcs_ex_2 Example 2
 
-  For boundary faces of color 5 assign an free outlet
+  For boundary faces of zone "2" assign an free outlet
   and example of electrode for Joule Effect by direct conduction.
 
-  \snippet cs_user_boundary_conditions-electric_arcs.f90 example_2
+  \snippet cs_user_boundary_conditions-electric_arcs.c example_2
 
   \section electric_arcs_ex_3 Example 3
 
-   For boundary faces of color 2 assign a free outlet
+   For boundary faces of zone "2" assign a free outlet
    and example of anode for electric arc.
 
-  \snippet cs_user_boundary_conditions-electric_arcs.f90 example_3
+  \snippet cs_user_boundary_conditions-electric_arcs.c example_3
 
   \section electric_arcs_ex_4 Example 4
 
-  For boundary faces of color 3 assign a wall
+  For boundary faces of zone "2" assign a wall
   and example of potential vector Dirichlet condition
 
-  \snippet cs_user_boundary_conditions-electric_arcs.f90 example_4
+  \snippet cs_user_boundary_conditions-electric_arcs.c example_4
 
   \section electric_arcs_ex_5 Example 5
 
-   For boundary faces of color 51 assign a wall
+   For boundary faces of zone "51" assign a wall
    and restriking model for electric arc (anode boundaray condition).
 
-  \snippet cs_user_boundary_conditions-electric_arcs.f90 example_5
+  \snippet cs_user_boundary_conditions-electric_arcs.c example_5
 
   \section electric_arcs_ex_6 Example 6
 
-  For boundary faces of color 4 assign a symmetry.
+  For boundary faces of zone "4" assign a symmetry.
 
-  \snippet cs_user_boundary_conditions-electric_arcs.f90 example_6
+  \snippet cs_user_boundary_conditions-electric_arcs.c example_6
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -751,7 +747,7 @@
 
   \section elec2_step1 Computation of intensity (A/m2) for each electrode
 
-  Pre initialisation
+  Pre initialization
 
   \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c pre_init
 

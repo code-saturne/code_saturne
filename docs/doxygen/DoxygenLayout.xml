@@ -24,6 +24,7 @@
       <tab type="user" visible="yes" url="@ref advanced_conjugate_heat_transfer" title="Conjugate heat transfer"/>
       <tab type="user" visible="yes" url="@ref advanced_particle_tracking" title="Particle-tracking (Lagrangian) module"/>
       <tab type="user" visible="yes" url="@ref advanced_compressible" title="Compressible module"/>
+      <tab type="user" visible="yes" url="@ref advanced_electric_arcs" title="Management of the electric arcs module"/>
     </tab>
     </tab>
     <tab type="user" visible="yes" url="@ref cs_ug_studymanager" title="The STUDYMANAGER tool"/>

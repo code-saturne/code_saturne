@@ -100,7 +100,7 @@ for the following examples:
 
 \snippet cs_user_radiative_transfer_bcs.c loc_var
 
-<b> Remaining initialisation</b>
+<b> Remaining initialization</b>
 
 ivar: number of the thermal variable
 

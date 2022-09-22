@@ -138,7 +138,7 @@
 
 /*-----------------------------------------------------------------------------*/
 /*!
-  \page user_initialization_electric_arcs Electric arcs example
+  \page user_initialization_electric_arcs Electric arcs initialization example
 
   \section electric_arcs Electric arcs example
 
@@ -147,7 +147,7 @@
   The following local variables need to be defined for the examples
   in this section:
 
-  \snippet cs_user_initialization-electric_arcs.f90 loc_var_dec
+  \snippet cs_user_initialization-electric_arcs.c loc_var_dec
 
   \subsection user_initialization_ea_alloc Allocation
 
@@ -158,17 +158,12 @@
 
   Classical initialization:
 
-  \snippet cs_user_initialization-electric_arcs.f90 init2
-
-  \subsection user_initialization_ea_finalize Finalization
-
-  At the end of the subroutine, it is recommended to deallocate the work array lstelt,
-  like in basic example.
+  \snippet cs_user_initialization-electric_arcs.c init2
 */
 
 /*-----------------------------------------------------------------------------*/
 /*!
-  \page user_initialization_fuel Fuel example
+  \page user_initialization_fuel Fuel initializartion example
 
   \section fuel Fuel example
 
