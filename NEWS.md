@@ -3,6 +3,8 @@ Release 7.2.1 (not released yet)
 
 Bug fixes:
 
+- Fix reading of code_saturne.csm files with mesh refinement information.
+
 - GUI: fix handling of job account / WCKey batch parameters.
 
 - Fix handling of `group_name` option for `cs_mesh_remove_cells` function
