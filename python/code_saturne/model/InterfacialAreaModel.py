@@ -124,7 +124,7 @@ class InterfacialAreaModel(Variables, Model):
     def setAreaModel(self, fieldId, model) :
         """
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
         self.isInList(model, self.getAreaModelList())
 
         oldmodel = None
@@ -156,7 +156,7 @@ class InterfacialAreaModel(Variables, Model):
     def getAreaModel(self, fieldId) :
         """
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
 
         cte_field_1 = self.mainFieldsModel.getContinuousFieldList()[0].f_id
 
@@ -176,7 +176,7 @@ class InterfacialAreaModel(Variables, Model):
     def setSourceTerm(self, fieldId, model) :
         """
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
         self.isInList(model, self.getSourceTermList(fieldId))
 
         node = self.XMLAreaDiam.xmlGetNode('field', field_id = fieldId)
@@ -202,7 +202,7 @@ class InterfacialAreaModel(Variables, Model):
     def getSourceTerm(self, fieldId) :
         """
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
 
         node = self.XMLAreaDiam.xmlGetNode('field', field_id = fieldId)
         noden = node.xmlGetNode('source_term')
@@ -219,7 +219,7 @@ class InterfacialAreaModel(Variables, Model):
     def setInitialDiameter(self, fieldId, value) :
         """
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
         self.isPositiveFloat(value)
 
         node = self.XMLAreaDiam.xmlGetNode('field', field_id = fieldId)
@@ -231,7 +231,7 @@ class InterfacialAreaModel(Variables, Model):
     def getInitialDiameter(self, fieldId) :
         """
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
 
         node = self.XMLAreaDiam.xmlGetNode('field', field_id = fieldId)
         value = node.xmlGetDouble('diameter')
@@ -245,7 +245,7 @@ class InterfacialAreaModel(Variables, Model):
     def setMinDiameter(self, fieldId, value):
         """
         """
-        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
         self.isPositiveFloat(value)
 
         node = self.XMLAreaDiam.xmlGetNode('field', field_id=fieldId)
@@ -256,7 +256,7 @@ class InterfacialAreaModel(Variables, Model):
     def getMinDiameter(self, fieldId):
         """
         """
-        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
         node = self.XMLAreaDiam.xmlGetNode('field', field_id=fieldId)
         value = node.xmlGetDouble('min_diameter')
         if value is None:
@@ -269,7 +269,7 @@ class InterfacialAreaModel(Variables, Model):
     def setMaxDiameter(self, fieldId, value):
         """
         """
-        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
         self.isPositiveFloat(value)
 
         node = self.XMLAreaDiam.xmlGetNode('field', field_id=fieldId)
@@ -280,7 +280,7 @@ class InterfacialAreaModel(Variables, Model):
     def getMaxDiameter(self, fieldId):
         """
         """
-        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
         node = self.XMLAreaDiam.xmlGetNode('field', field_id=fieldId)
         value = node.xmlGetDouble('max_diameter')
         if value is None:

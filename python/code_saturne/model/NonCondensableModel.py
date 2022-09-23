@@ -155,7 +155,7 @@ class NonCondensableModel(Model):
         """
         Return the non condensable name list for a fieldId
         """
-        self.isInList(str(FieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(FieldId)
         list = []
         for node in self.XMLNodeNonCondensable.xmlGetNodeList('variable'):
             if self.getNonCondFieldId(node['name']) == str(FieldId) :

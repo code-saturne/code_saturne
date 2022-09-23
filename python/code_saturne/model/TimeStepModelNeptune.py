@@ -307,7 +307,7 @@ class TimeStepModel(Variables, Model):
     def setMaxCourant(self, fieldId, value) :
         """
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
         self.isPositiveFloat(value)
 
         self.__timeParameters.xmlSetData('max_courant_num', value, field_id = fieldId)
@@ -317,7 +317,7 @@ class TimeStepModel(Variables, Model):
     def getMaxCourant(self, fieldId) :
         """
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
 
         value = self.__timeParameters.xmlGetDouble('max_courant_num',  field_id=fieldId)
         if value is None :
@@ -330,7 +330,7 @@ class TimeStepModel(Variables, Model):
     def setMaxFourier(self, fieldId, value) :
         """
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
         self.isPositiveFloat(value)
 
         self.__timeParameters.xmlSetData('max_fourier_num', value, field_id = fieldId)
@@ -340,7 +340,7 @@ class TimeStepModel(Variables, Model):
     def getMaxFourier(self, fieldId) :
         """
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
 
         value = self.__timeParameters.xmlGetDouble('max_fourier_num',  field_id=fieldId)
         if value is None :

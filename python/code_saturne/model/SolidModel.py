@@ -65,7 +65,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         Public method.
         Put model for friction.
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
         self.isInList(model, ('none', 'pressure', 'fluxes'))
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
@@ -79,7 +79,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         Public method.
         Return model for friction.
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         noden = node.xmlGetNode('friction')
@@ -97,7 +97,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         Public method.
         Put model for granular.
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
         self.isInList(model, ('none', 'pressure', 'fluxes'))
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
@@ -111,7 +111,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         Public method.
         Return model for granular.
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         noden = node.xmlGetNode('granular')
@@ -129,7 +129,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         Public method.
         Put model for kinetic.
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
         self.isInList(model, ('none', 'uncorrelate_collision', 'correlate_collision'))
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
@@ -143,7 +143,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         Public method.
         Return model for kinetic.
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         noden = node.xmlGetNode('kinetic')
@@ -184,7 +184,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         """
         put polydispersed coupling status
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
         self.isOnOff(status)
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
@@ -196,7 +196,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         """
         get polydispersed coupling status
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
 

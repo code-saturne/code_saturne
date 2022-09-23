@@ -129,7 +129,7 @@ class TurbulenceModel(Variables, Model):
         """
         put turbulence model for fieldId
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
         field = self.mainFieldsModel.getFieldFromId(fieldId)
 
         field_name = field.label
@@ -209,7 +209,7 @@ class TurbulenceModel(Variables, Model):
         """
         get turbulence model for fieldId
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
         field = self.mainFieldsModel.getFieldFromId(fieldId)
 
         criterion = field.flow_type
@@ -230,7 +230,7 @@ class TurbulenceModel(Variables, Model):
     @Variables.undoLocal
     def setThermalTurbulentFlux(self, fieldId, model):
 
-        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
         self.isInList(model,TurbulenceModelsDescription.ThermalTurbFluxModels)
         field = self.mainFieldsModel.getFieldFromId(fieldId)
 
@@ -257,7 +257,7 @@ class TurbulenceModel(Variables, Model):
     @Variables.noUndo
     def getThermalTurbulentFlux(self, fieldId):
 
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
         field = self.mainFieldsModel.getFieldFromId(fieldId)
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
@@ -300,7 +300,7 @@ class TurbulenceModel(Variables, Model):
         """
         get two way coupling for fieldId dispersed field
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
         if node is None:
@@ -343,7 +343,7 @@ class TurbulenceModel(Variables, Model):
         """
         put value for mixing length
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
         self.isFloat(value)
 
         fieldNode = self.XMLturbulence.xmlGetNode('field', field_id = str(fieldId))
@@ -355,7 +355,7 @@ class TurbulenceModel(Variables, Model):
         """
         get value for mixing length
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
 
         fieldNode = self.XMLturbulence.xmlGetNode('field', field_id = str(fieldId))
         lengthNode = fieldNode.xmlGetNode('length_scale')
@@ -374,7 +374,7 @@ class TurbulenceModel(Variables, Model):
         """
         return 1 if turbulent model of field is k-eps or Rij
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
         flag = 0
         if (self.getTurbulenceModel(fieldId) == "k-epsilon" \
          or self.getTurbulenceModel(fieldId) == "k-epsilon_linear_production" \

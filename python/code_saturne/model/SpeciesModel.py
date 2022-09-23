@@ -101,7 +101,7 @@ class SpeciesModel(Variables, Model):
         """
         Return the scalar name list for a fieldId
         """
-        self.isInList(str(FieldId), self.mainFieldsModel.getFieldIdList(include_none=True))
+        self.mainFieldsModel.isFieldIdValid(FieldId, strict_check=False)
         list = []
         for node in self.XMLScalar.xmlGetNodeList('variable'):
             if self.getScalarFieldIdByName(node['name']) == str(FieldId):
@@ -242,7 +242,7 @@ class SpeciesModel(Variables, Model):
         """
         put carrier field id for scalar
         """
-        self.isInList(str(carrierfield), self.mainFieldsModel.getFieldIdList(include_none=True))
+        self.mainFieldsModel.isFieldIdValid(carrierfield, strict_check=False)
 
         name = "scalar_" + str(scalarId)
         self.isInList(name,self.getScalarNameList())

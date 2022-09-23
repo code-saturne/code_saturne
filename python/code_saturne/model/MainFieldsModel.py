@@ -317,7 +317,7 @@ class MainFieldsModel(Variables, Model):
         #     for MainFieldsModel, InterfacialForcesModel, InterfacialEnthalpyModel, possibly TurbulenceNeptuneModel.
         #TODO move to NeptuneFieldModel if possible (it might be difficult to update
         # the carrier field properly without the knowledge of other fields)
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isFieldIdValid(fieldId)
 
         field = self.getFieldFromId(fieldId)
         oldtype = field.flow_type
@@ -387,7 +387,7 @@ class MainFieldsModel(Variables, Model):
         """
         delete a field in XML and update
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isFieldIdValid(fieldId)
         field_to_delete = self.getFieldFromId(fieldId)
 
         # Update for field Id
@@ -744,6 +744,20 @@ class MainFieldsModel(Variables, Model):
         field = [fld for fld in self.list_of_fields if fld.label == label][0]
         return field.f_id
 
+
+    def isFieldIdValid(self, fieldId, strict_check=True):
+        """
+        Check if fieldId corresponds to an existing field OR if it has
+        an acceptable value ("none", "off", "all").
+        If strict_check = True, fieldId has to match an existing field.
+        """
+        if strict_check:
+            return self.isInList(str(fieldId), self.getFieldIdList())
+        else:
+            if fieldId in ["none", "all", "off"]:
+                return True
+            else:
+                return self.isInList(str(fieldId), self.getFieldIdList())
 
     def getXMLNodefields(self):
         return self.__XMLNodefields

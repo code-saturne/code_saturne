@@ -120,7 +120,7 @@ class MainFieldsInitializationModel(Variables, Model):
         Gives a formula for initial values
         """
         self.__verifyZone(zone)
-        self.isInList(fieldId, self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId, strict_check=True)
 
         node = self.XMLvariables.xmlGetNode('variable', field_id=fieldId, name=var_name)
         n = node.xmlInitChildNode('initial_value', zone_id=zone)
@@ -133,7 +133,7 @@ class MainFieldsInitializationModel(Variables, Model):
         Return a formula for initial values
         """
         self.__verifyZone(zone)
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
 
         node = self.XMLvariables.xmlGetNode('variable', field_id=fieldId, name=var_name)
         n = node.xmlInitChildNode('initial_value', zone_id=zone)
@@ -180,7 +180,7 @@ class MainFieldsInitializationModel(Variables, Model):
         Gives a formula for initial values
         """
         self.__verifyZone(zone)
-        self.isInList(fieldId, self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
 
         node = self.XMLNonCondvariables.xmlGetNode('variable', field_id=fieldId, name=var_name)
         n = node.xmlInitChildNode('initial_value', zone_id=zone)
@@ -193,7 +193,7 @@ class MainFieldsInitializationModel(Variables, Model):
         Return a formula for initial values
         """
         self.__verifyZone(zone)
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList(include_none=True))
+        self.mainFieldsModel.isFieldIdValid(fieldId, strict_check=False)
 
         node = self.XMLNonCondvariables.xmlGetNode('variable', field_id=fieldId, name=var_name)
         n = node.xmlInitChildNode('initial_value', zone_id=zone)
@@ -222,7 +222,7 @@ class MainFieldsInitializationModel(Variables, Model):
         Gives a formula for initial values
         """
         self.__verifyZone(zone)
-        self.isInList(fieldId, self.mainFieldsModel.getFieldIdList(include_none=True))
+        self.mainFieldsModel.isFieldIdValid(fieldId, strict_check=False)
 
         node = self.XMLScalar.xmlGetNode('variable',
                                          field_id=fieldId,
@@ -237,7 +237,7 @@ class MainFieldsInitializationModel(Variables, Model):
         Return a formula for initial values
         """
         self.__verifyZone(zone)
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList(include_none=True))
+        self.mainFieldsModel.isFieldIdValid(fieldId, strict_check=False)
 
         node = self.XMLScalar.xmlGetNode('variable',
                                          field_id=fieldId,
@@ -271,7 +271,7 @@ class MainFieldsInitializationModel(Variables, Model):
         """
         self.__verifyZone(zone)
         self.isInList(model, ('enthalpy', 'temperature', 'hsat_P'))
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
 
         node = self.XMLvariables.xmlGetNode('variable', field_id=fieldId, name="enthalpy")
         if not node:
@@ -294,7 +294,7 @@ class MainFieldsInitializationModel(Variables, Model):
         Return model for initialization of energy initialization
         """
         self.__verifyZone(zone)
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId)
 
         node = self.XMLvariables.xmlGetNode('variable', field_id=fieldId, name="enthalpy")
         if not node:

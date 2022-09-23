@@ -379,9 +379,7 @@ class ThermodynamicsModel(Variables, Model):
         'molecular_viscosity', 'specific_heat', 'thermal_conductivity',
         'surface_tension'
         """
-        fieldIdList = self.mainFieldsModel.getFieldIdList()
-        fieldIdList.append('none')
-        self.isInList(str(fieldId),fieldIdList)
+        self.mainFieldsModel.isFieldIdValid(str(fieldId), strict_check=False)
 
         lst = ('density', 'molecular_viscosity',
                 'specific_heat', 'thermal_conductivity',
@@ -401,9 +399,7 @@ class ThermodynamicsModel(Variables, Model):
         'molecular_viscosity', 'specific_heat', 'thermal_conductivity',
         'surface_tension'
         """
-        fieldIdList = self.mainFieldsModel.getFieldIdList()
-        fieldIdList.append('none')
-        self.isInList(str(fieldId),fieldIdList)
+        self.mainFieldsModel.isFieldIdValid(str(fieldId), strict_check=False)
         lst = ('density', 'molecular_viscosity',
                 'specific_heat', 'thermal_conductivity',
                 'surface_tension')
@@ -458,9 +454,7 @@ class ThermodynamicsModel(Variables, Model):
         """
         Return a formula for properties
         """
-        fieldIdList = self.mainFieldsModel.getFieldIdList()
-        fieldIdList.append('none')
-        self.isInList(str(fieldId), fieldIdList)
+        self.mainFieldsModel.isFieldIdValid(str(fieldId), strict_check=False)
         self.isInList(tag, self.propertiesFormulaList())
         node = self.get_property_node(fieldId, tag)
 
@@ -480,9 +474,7 @@ class ThermodynamicsModel(Variables, Model):
         """
         Gives a formula for properties
         """
-        fieldIdList = self.mainFieldsModel.getFieldIdList()
-        fieldIdList.append('none')
-        self.isInList(str(fieldId), fieldIdList)
+        self.mainFieldsModel.isFieldIdValid(str(fieldId), strict_check=False)
         self.isInList(tag, self.propertiesFormulaList())
         node = self.get_property_node(fieldId, tag)
 
@@ -497,9 +489,7 @@ class ThermodynamicsModel(Variables, Model):
     @Variables.noUndo
     def getPropertyMode(self, fieldId, tag):
         """Return choice of node I{tag}. Choice is constant or variable"""
-        fieldIdList = self.mainFieldsModel.getFieldIdList()
-        fieldIdList.append('none')
-        self.isInList(str(fieldId), fieldIdList)
+        self.mainFieldsModel.isFieldIdValid(str(fieldId), strict_check=False)
         self.isInList(tag, ('density', 'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity', 'surface_tension'))
         node = self.get_property_node(fieldId, tag)
@@ -520,9 +510,7 @@ class ThermodynamicsModel(Variables, Model):
     @Variables.undoLocal
     def setPropertyMode(self, fieldId, tag, choice):
         """Put choice in xml file's node I{tag}"""
-        fieldIdList = self.mainFieldsModel.getFieldIdList()
-        fieldIdList.append('none')
-        self.isInList(str(fieldId), fieldIdList)
+        self.mainFieldsModel.isFieldIdValid(str(fieldId), strict_check=False)
         self.isInList(tag, ('density', 'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity', 'surface_tension'))
         self.isInList(choice, ('constant', 'user_law', 'table_law'))
@@ -538,7 +526,7 @@ class ThermodynamicsModel(Variables, Model):
         return node
 
     def check_field_id(self, fieldId):
-        return self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
+        return self.mainFieldsModel.isFieldIdValid(fieldId)
 
     def get_field_node(self, fieldId):
         node = self.__XMLNodefields.xmlGetNode('field', field_id=fieldId)
@@ -1068,10 +1056,8 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
     @Variables.noUndo
     def getPropertyMode(self, field_id_a, field_id_b, tag):
         """Return choice of node I{tag}. Choice is constant or variable"""
-        fieldIdList = self.mainFieldsModel.getFieldIdList()
-        fieldIdList.append('none')
-        self.isInList(str(field_id_a), fieldIdList)
-        self.isInList(str(field_id_b), fieldIdList)
+        self.mainFieldsModel.isFieldIdValid(str(field_id_a), strict_check=False)
+        self.mainFieldsModel.isFieldIdValid(str(field_id_b))
 
         self.isInList(tag, self.propertiesFormulaList())
         node = self.XMLNodeproperty.xmlGetNode('property', field_id_a=field_id_a, field_id_b=field_id_b, name=tag)
@@ -1092,10 +1078,8 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
     @Variables.undoLocal
     def setPropertyMode(self, field_id_a, field_id_b, tag, choice):
         """Put choice in xml file's node I{tag}"""
-        fieldIdList = self.mainFieldsModel.getFieldIdList()
-        fieldIdList.append('none')
-        self.isInList(str(field_id_a), fieldIdList)
-        self.isInList(str(field_id_b), fieldIdList)
+        self.mainFieldsModel.isFieldIdValid(str(field_id_a), strict_check=False)
+        self.mainFieldsModel.isFieldIdValid(str(field_id_b))
 
         self.isInList(tag, self.propertiesFormulaList())
         self.isInList(choice, self.available_modes)
@@ -1113,10 +1097,8 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
         'molecular_viscosity', 'specific_heat', 'thermal_conductivity',
         'surface_tension'
         """
-        fieldIdList = self.mainFieldsModel.getFieldIdList()
-        fieldIdList.append('none')
-        self.isInList(str(field_id_a), fieldIdList)
-        self.isInList(str(field_id_b), fieldIdList)
+        self.mainFieldsModel.isFieldIdValid(str(field_id_a), strict_check=False)
+        self.mainFieldsModel.isFieldIdValid(str(field_id_b))
 
         self.isInList(tag, self.propertiesFormulaList())
         node = self.XMLNodeproperty.xmlGetNode('property', field_id_a=field_id_a, field_id_b=field_id_b, name=tag)
@@ -1133,10 +1115,8 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
         'molecular_viscosity', 'specific_heat', 'thermal_conductivity',
         'surface_tension'
         """
-        fieldIdList = self.mainFieldsModel.getFieldIdList()
-        fieldIdList.append('none')
-        self.isInList(str(field_id_a), fieldIdList)
-        self.isInList(str(field_id_b), fieldIdList)
+        self.mainFieldsModel.isFieldIdValid(str(field_id_a), strict_check=False)
+        self.mainFieldsModel.isFieldIdValid(str(field_id_b))
 
         self.isInList(tag, self.propertiesFormulaList())
         self.isFloat(val)
@@ -1149,10 +1129,8 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
         """
         Return a formula for properties
         """
-        fieldIdList = self.mainFieldsModel.getFieldIdList()
-        fieldIdList.append('none')
-        self.isInList(str(field_id_a), fieldIdList)
-        self.isInList(str(field_id_b), fieldIdList)
+        self.mainFieldsModel.isFieldIdValid(str(field_id_a), strict_check=False)
+        self.mainFieldsModel.isFieldIdValid(str(field_id_b))
         self.isInList(tag, self.propertiesFormulaList())
 
         node = self.XMLNodeproperty.xmlGetNode('property', field_id_a=field_id_a, field_id_b=field_id_b, name=tag)
@@ -1172,10 +1150,8 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
         """
         Gives a formula for properties
         """
-        fieldIdList = self.mainFieldsModel.getFieldIdList()
-        fieldIdList.append('none')
-        self.isInList(str(field_id_a), fieldIdList)
-        self.isInList(str(field_id_b), fieldIdList)
+        self.mainFieldsModel.isFieldIdValid(str(field_id_a), strict_check=False)
+        self.mainFieldsModel.isFieldIdValid(str(field_id_b))
         self.isInList(tag, self.propertiesFormulaList())
         node = self.XMLNodeproperty.xmlInitChildNode('property', field_id_a=field_id_a, field_id_b=field_id_b, name=tag)
 

@@ -100,7 +100,7 @@ class MaterialsDelegate(QItemDelegate):
         self.modelCombo = ComboModel(editor, 1, 1)
         self.modelCombo.addItem(self.tr(self.dicoM2V["user_material"]), 'user_material')
         fieldId= index.row() + 1
-        field = self.mainFieldsModel.getFieldFromId(fieldId)
+        field = self.mdl.mainFieldsModel.getFieldFromId(fieldId)
         # suppress perfect gas
         tmp = ["Argon", "Nitrogen", "Hydrogen", "Oxygen", "Helium", "Air"]
         if field.phase != "solid" and self.mdl.checkEOSRequirements(fieldId):

@@ -86,9 +86,7 @@ class OutputFieldsModel(Model):
         """
         set label
         """
-        lst = self.mainFieldsModel.getFieldIdList()
-        lst.append("none")
-        self.isInList(fieldId, lst)
+        self.mainFieldsModel.isFieldIdValid(fieldId, strict_check=False)
 
         for variableType in ('variable', 'property', 'scalar', 'time_average') :
             node = self.case.xmlGetNode(variableType, field_id = str(fieldId), label = oldlabel)
@@ -119,9 +117,7 @@ class OutputFieldsModel(Model):
         """
         return label of name variable for fieldId
         """
-        lst = self.mainFieldsModel.getFieldIdList()
-        lst.append("none")
-        self.isInList(fieldId, lst)
+        self.mainFieldsModel.isFieldIdValid(fieldId, strict_check=False)
 
         for variableType in ('variable', 'property', 'scalar', 'time_average') :
             node = self.case.xmlGetNode(variableType, field_id = str(fieldId), name = name)
@@ -142,9 +138,7 @@ class OutputFieldsModel(Model):
         return status for listing output for variable name on fieldId
         """
         self.isOnOff(status)
-        lst = self.mainFieldsModel.getFieldIdList()
-        lst.append("none")
-        self.isInList(fieldId, lst)
+        self.mainFieldsModel.isFieldIdValid(fieldId, strict_check=False)
 
         for variableType in ('variable', 'property', 'scalar', 'time_average') :
             node = self.case.xmlGetNode(variableType, field_id = str(fieldId), label = label)
@@ -164,9 +158,7 @@ class OutputFieldsModel(Model):
         """
         return status for listing output for variable name on fieldId
         """
-        lst = self.mainFieldsModel.getFieldIdList()
-        lst.append("none")
-        self.isInList(fieldId, lst)
+        self.mainFieldsModel.isFieldIdValid(fieldId, strict_check=False)
 
         for variableType in ('variable', 'property', 'scalar', 'time_average') :
             node = self.case.xmlGetNode(variableType, field_id = str(fieldId), name = name)
@@ -190,9 +182,7 @@ class OutputFieldsModel(Model):
         return status for post processing for variable name on fieldId
         """
         self.isOnOff(status)
-        lst = self.mainFieldsModel.getFieldIdList()
-        lst.append("none")
-        self.isInList(fieldId, lst)
+        self.mainFieldsModel.isFieldIdValid(fieldId, strict_check=False)
 
         for variableType in ('variable', 'property', 'scalar', 'time_average') :
             node = self.case.xmlGetNode(variableType, field_id = str(fieldId), label = label)
@@ -212,9 +202,7 @@ class OutputFieldsModel(Model):
         """
         return status for post processing for variable name on fieldId
         """
-        lst = self.mainFieldsModel.getFieldIdList()
-        lst.append("none")
-        self.isInList(fieldId, lst)
+        self.mainFieldsModel.isFieldIdValid(fieldId, strict_check=False)
 
         for variableType in ('variable', 'property', 'scalar', 'time_average') :
             node = self.case.xmlGetNode(variableType, field_id = str(fieldId), name = name)
@@ -237,9 +225,7 @@ class OutputFieldsModel(Model):
         """
         return list of probes for variable name on fieldId
         """
-        l = self.mainFieldsModel.getFieldIdList()
-        l.append("none")
-        self.isInList(fieldId, l)
+        self.mainFieldsModel.isFieldIdValid(fieldId, strict_check=False)
 
         for variableType in ('variable', 'property', 'scalar', 'time_average') :
             node = self.case.xmlGetNode(variableType, field_id = str(fieldId), label = label)
@@ -282,9 +268,7 @@ class OutputFieldsModel(Model):
         """
         return list of probes for variable name on fieldId
         """
-        l = self.mainFieldsModel.getFieldIdList()
-        l.append("none")
-        self.isInList(fieldId, l)
+        self.mainFieldsModel.isFieldIdValid(fieldId, strict_check=False)
 
         l1 = self.getVariableProbeList()
 
@@ -348,7 +332,7 @@ class OutputFieldsModel(Model):
         """
         return list of variables with none field criteria
         """
-        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
+        self.mainFieldsModel.isFieldIdValid(fieldId, strict_check=True)
         lst = []
         for variableType in ('variable', 'property', 'scalar'):
             for node in self.case.xmlGetNodeList(variableType, field_id = str(fieldId)):
