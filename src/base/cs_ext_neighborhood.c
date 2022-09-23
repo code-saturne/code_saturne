@@ -1373,7 +1373,6 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
   const cs_lnum_2_t  *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
   const cs_real_3_t  *cell_cen = (const cs_real_3_t *)mq->cell_cen;
   const cs_real_3_t  *b_face_cog = (const cs_real_3_t *)mq->b_face_cog;
-  const cs_real_3_t  *b_face_normal = (const cs_real_3_t *)mq->b_face_normal;
   const cs_real_3_t  *i_face_cog = (const cs_real_3_t *)mq->i_face_cog;
   const cs_real_t    *cell_vol = (const cs_real_t *)mq->cell_vol;
   const cs_lnum_t  *i_f2v_idx = mesh->i_face_vtx_idx;
@@ -1381,8 +1380,18 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
 
   const cs_real_t one_over_3 = 1./3.;
 
+  const cs_real_t *b_face_surf = (const cs_real_t *)mq->b_face_surf;
+  const cs_real_t *i_face_surf = (const cs_real_t *)mq->i_face_surf;
+
+  /* TODO could use mq->b_sym_flag if it was available */
+
   /* Min number of cells retained in the ext neighborhood. Setting to 1
-     would have same spirit as prev opposite adjacent cell center.*/
+     would have same spirit as prev opposite adjacent cell center.
+     This parameter could be differentiated for different cell
+     types (ex : 10 for tetra, 16 for pyram, 15 for prism and 12 for hexa)
+     but "optimal" values are derived from the case of regular
+     grids... where they are not used. */
+
   const cs_lnum_t n_c_min = 10;
 
   /* Get "cell -> faces" connectivity for the local mesh */
@@ -1488,13 +1497,14 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
 #endif
 
       /* Get regularity of the grid; only hexahedra and prisms are assumed to
-         be regular (if regular, the neighborhood will be restricted) */
+         be possibly regular (if regular, the neighborhood will be restricted) */
 
       bool is_regular = true;
       if (cell_type != FVM_CELL_HEXA && cell_type != FVM_CELL_PRISM)
         is_regular = false;
 
       cs_real_t avg_dj = 0.;
+      cs_real_t sum_s = 0.;
 
       /* Loop on cell's boundary faces */
 
@@ -1502,6 +1512,7 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
 
         cs_lnum_t f_id_0 = cell_b_faces_lst[i];
         n_c_restricted += 1;
+        sum_s+= b_face_surf[f_id_0];
 
         cs_real_t dj[3];
         for (cs_lnum_t j = 0; j < 3; j++) {
@@ -1514,27 +1525,6 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
         avg_dj =   avg_dj * (n_c_restricted-1.)/n_c_restricted
                  + cs_math_3_norm(dj) * 1./n_c_restricted;
 
-        if (is_regular) {
-          /* For prisms, only the triangle faces are considered */
-          cs_lnum_t n_f_vtx = b_f2v_idx[f_id_0+1] - b_f2v_idx[f_id_0];
-          if (cell_type == FVM_CELL_PRISM && n_f_vtx != 3)
-            continue;
-
-          cs_real_t dot_p
-            = cs_math_3_distance_dot_product(cell_cen[c_id],
-                                             b_face_cog[f_id_0],
-                                             b_face_normal[f_id_0]); /* IF.nF */
-          cs_real_t norm_if_2
-            = cs_math_3_square_distance(cell_cen[c_id],
-                                        b_face_cog[f_id_0]);
-          cs_real_t norm_nf_2
-            = cs_math_3_square_norm(b_face_normal[f_id_0]);
-
-          /* if dot_p < 0.95 * sqrt(norm_if_2) * sqrt(norm_nf_2) */
-          if (cs_math_pow2(dot_p) < cs_math_pow2(0.95) * norm_if_2 * norm_nf_2)
-            is_regular = false;
-        }
-
       } /* End of loop on boundary faces */
 
       /* Loop on cell's interior faces */
@@ -1545,6 +1535,8 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
         cs_lnum_t c_id_1 = i_face_cells[f_id_0][1];
         if (c_id_1 == c_id)
           c_id_1 = i_face_cells[f_id_0][0];
+
+        sum_s+= i_face_surf[f_id_0];
 
         n_c_restricted += 1;
 
@@ -1557,10 +1549,6 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
 
         avg_dj =   avg_dj * (n_c_restricted-1.)/n_c_restricted
                  + cs_math_3_norm(dj) * 1./n_c_restricted;
-
-        if (b_f_e_id - b_f_s_id > 0)
-          continue; /* Needed for case with only one
-                       layer of cells in BL. */
 
         if (is_regular) {
           /* For prisms, only the triangle faces are considered */
@@ -1580,8 +1568,8 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
           cs_real_t norm_if_2 = cs_math_3_square_norm(v_if);
           cs_real_t norm_fj_2 = cs_math_3_square_norm(v_jf);
 
-          /* if dot_p < 0.95 * sqrt(norm_if_2) * sqrt(norm_fj_2) */
-          if (cs_math_pow2(dot_p) < cs_math_pow2(0.95) * norm_if_2 * norm_fj_2)
+          /* if dot_p < 0.9 * sqrt(norm_if_2) * sqrt(norm_fj_2) */
+          if (cs_math_pow2(dot_p) < cs_math_pow2(0.9) * norm_if_2 * norm_fj_2)
             is_regular = false;
         }
 
@@ -1596,19 +1584,39 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
       }
 #endif
 
+      /* At simple boundary, adding neighboors increases the risk of
+         spurious modes.
+         At double boundary no risk of spurious mode
+         (the cell is basically alone). */
+
+      cs_lnum_t n_c_min_true = CS_MIN(n_c, n_c_min);
+      cs_real_t l1 = pow(cell_vol[c_id], one_over_3);
+
+      cs_real_t aspect_r = 6.*l1*l1/sum_s;
+
+      if (b_f_e_id-b_f_s_id == 1)
+        is_regular = true;
+      else if (b_f_e_id-b_f_s_id > 1) {
+        is_regular = false;
+        n_c_min_true = n_c_restricted + 1;
+      }
+      else if (aspect_r < 0.1365) { /* large size / small size > 100
+                                       -> use full neighborhood*/
+        is_regular = false;
+        for (cs_lnum_t i = c_s_id; i < c_e_id; i++)
+          cell_cells_tag[i] = 1; /* keep this cell */
+      }
+
       /* Limit to a restricted neighborhood if the grid is regular */
 
       if (! is_regular) {
         cs_lnum_t n_c_selected = n_c_restricted;
-
-        cs_lnum_t n_c_min_true = CS_MIN(n_c, n_c_min);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
         if (dbg_trace != NULL)
           fprintf(dbg_trace, "n_c_min %d\n", n_c_min_true);
 #endif
 
-        cs_real_t l1 = pow(cell_vol[c_id], one_over_3);
         cs_real_t min_crit = HUGE_VAL;
         cs_real_t min_norm_ic = HUGE_VAL;
 
@@ -1643,8 +1651,8 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
                    + cs_math_3_norm(n_c_s[i_c_selected[k]]) * 1./n_c_selected;
 
           cs_real_t crit = (norm_ic + 0.1*l1) * avg_dj;
-          /* Optimize offset and, to a small extent, the average distance of the
-             selected elements. */
+          /* Optimize offset and, to a small extent, the average distance
+             of the selected elements. */
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
           if (dbg_trace != NULL)
