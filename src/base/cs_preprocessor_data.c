@@ -1873,6 +1873,19 @@ _read_data(int                 file_id,
 
         mesh->have_r_gen = true;
 
+        /* Compute range for current file  */
+        _data_range(&header,
+                    pp_in,
+                    mesh->n_g_vertices,
+                    mr->n_g_vertices_read,
+                    1,
+                    0,
+                    mb->vertex_bi.gnum_range,
+                    gnum_range_cur,
+                    &n_g_vertices,
+                    &n_vals,
+                    &n_vals_cur);
+
         n_vertices = n_vals_cur;
         val_offset_cur = mr->n_vertices_read;
 
