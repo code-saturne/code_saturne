@@ -1153,8 +1153,9 @@ _compute_face_vol_contrib(ecs_int_t          n_face_vertices,
 
 /*----------------------------------------------------------------------------
  *  Correction si nécessaire de l'orientation d'un polyedre en connectivité
- *   nodale ; renvoie -1 si l'on ne parvient pas à corriger l'orientation
- *   ou que l'on demande une simple vérification (i.e. correc = false),
+ *   nodale ; renvoie -2 si le polyèdre n'est pas fermé, -1 si l'on ne
+ *   parvient pas à corriger l'orientation ou que l'on demande une simple
+ *   vérification (i.e. correc = false),
  *   0 si l'orientation initiale est bonne, et 1 en cas de correction de
  *   l'orientation par une permutation de la connectivité locale.
  *
@@ -1292,7 +1293,7 @@ _orient_polyhedron(const ecs_coord_t   coord[],
 
   for (edge_id = 0; edge_id < n_edges; edge_id++) {
     if (edges->val[edge_id*4 + 3] == 0)
-      return -1;
+      return -2;
   }
 
   /* Now check if face orientations are compatible */
@@ -2585,6 +2586,7 @@ ecs_table_def__orient_nodal(ecs_coord_t     *vtx_coords,
                                  ECS_ELT_TYP_CEL_HEXA};
 
   ecs_int_t   cpt_cel_erreur = 0;
+  ecs_int_t   cpt_poly_open = 0;
 
   int  foam2vtk = 0;  /* tentative adaptation to meshes transformed with
                          foam2vtk; solves most issues but a few remain */
@@ -2726,7 +2728,10 @@ ecs_table_def__orient_nodal(ecs_coord_t     *vtx_coords,
       };
 
       if (ret_orient < 0) {
-        cpt_orient_erreur[typ_elt] += 1;
+        if (ret_orient == -2)
+          cpt_poly_open += 1;
+        else
+          cpt_orient_erreur[typ_elt] += 1;
         if (liste_cel_err != NULL) {
           if (liste_cel_err->nbr == 0) {
             liste_cel_err->nbr = nbr_cel;
@@ -2757,24 +2762,30 @@ ecs_table_def__orient_nodal(ecs_coord_t     *vtx_coords,
   for (typ_elt = 0; typ_elt < ECS_ELT_TYP_FIN; typ_elt++) {
     if (cpt_orient_correc[typ_elt] > 0) {
       ecs_warn();
-      printf(_("%d elements of type %s had to be re-oriented\n"),
+      printf(_("%d elements of type %s had to be re-oriented.\n"),
              (int)(cpt_orient_correc[typ_elt]),
              _(ecs_fic_elt_typ_liste_c[typ_elt].nom));
     }
     if (cpt_orient_erreur[typ_elt] > 0) {
       if (correc_orient == true) {
         ecs_warn();
-        printf(_("%d elements of type %s were impossible to re-orient\n"),
+        printf(_("%d elements of type %s were impossible to re-orient.\n"),
                (int)(cpt_orient_erreur[typ_elt]),
                _(ecs_fic_elt_typ_liste_c[typ_elt].nom));
       }
       else {
         ecs_warn();
-        printf(_("%d elements of type %s are mis-oriented or highly warped\n"),
+        printf(_("%d elements of type %s are mis-oriented or highly warped.\n"),
                (int)(cpt_orient_erreur[typ_elt]),
                _(ecs_fic_elt_typ_liste_c[typ_elt].nom));
       }
     }
+  }
+  if (cpt_poly_open > 0) {
+    ecs_warn();
+    printf(_("%d elements of type %s are not closed.\n"),
+           (int)cpt_poly_open,
+           _(ecs_fic_elt_typ_liste_c[ECS_ELT_TYP_CEL_POLY].nom));
   }
 
   /* Redimensionnement de la liste des cellules toujours mal orientées */
@@ -2791,6 +2802,99 @@ ecs_table_def__orient_nodal(ecs_coord_t     *vtx_coords,
 
   if (table_def_cel != NULL)
     ecs_table__libere_pos(table_def_cel);
+}
+
+/*----------------------------------------------------------------------------
+ * Remove degenerate cells based on provided list.
+ *----------------------------------------------------------------------------*/
+
+ecs_tab_int_t
+ecs_table_def__suppr_cel(ecs_table_t     *table_def_cel,
+                         ecs_tab_int_t    liste_cel_err)
+{
+  ecs_int_t  nbr_cel_old;
+  ecs_int_t  nbr_cel_new;
+
+  ecs_int_t  ind_cel;
+
+  ecs_int_t  cpt_cel;
+  ecs_int_t  cpt_val;
+  ecs_int_t  ind_val;
+  ecs_int_t  ind_val_deb;
+  ecs_int_t  ind_val_fin;
+
+  ecs_tab_int_t  tab_cel_old_new;
+
+  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
+
+  tab_cel_old_new.nbr = 0;
+  tab_cel_old_new.val = NULL;
+
+  if (table_def_cel == NULL)
+    return tab_cel_old_new;
+
+  ecs_table__regle_en_pos(table_def_cel);
+
+  /* Initialisations */
+
+  nbr_cel_old = table_def_cel->nbr;
+
+  bool *remove_flag;
+  ECS_MALLOC(remove_flag, nbr_cel_old, bool);
+  for (ecs_int_t i = 0; i < nbr_cel_old; i++)
+    remove_flag[i] = false;
+
+  for (size_t i = 0; i < liste_cel_err.nbr; i++)
+    remove_flag[liste_cel_err.val[i]] = true;
+
+  /* Loop on elements (renumbering) */
+  /* ------------------------------ */
+
+  tab_cel_old_new.nbr = nbr_cel_old;
+  ECS_MALLOC(tab_cel_old_new.val, tab_cel_old_new.nbr, ecs_int_t);
+
+  cpt_cel = 0;
+  cpt_val = 0;
+
+  for (ind_cel = 0; ind_cel < nbr_cel_old; ind_cel++) {
+
+    ind_val_deb = table_def_cel->pos[ind_cel    ] - 1;
+    ind_val_fin = table_def_cel->pos[ind_cel + 1] - 1;
+
+    if (remove_flag[ind_cel] == false) {
+
+      for (ind_val = ind_val_deb; ind_val < ind_val_fin; ind_val++)
+        table_def_cel->val[cpt_val++] = table_def_cel->val[ind_val];
+
+      tab_cel_old_new.val[ind_cel] = 1 + cpt_cel++;
+
+      table_def_cel->pos[cpt_cel] = cpt_val + 1;
+
+    }
+    else
+      tab_cel_old_new.val[ind_cel] = 0;
+
+  }
+
+  ECS_FREE(remove_flag);
+
+  nbr_cel_new = cpt_cel;
+
+  printf(_("\nMesh verification:\n\n"
+           "  Removal of %d degenerate cells:\n"
+           "    Initial number of cells           : %10d\n"
+           "    Number of cells after processing  : %10d\n"),
+         (int)(nbr_cel_old - nbr_cel_new), (int)nbr_cel_old, (int)nbr_cel_new);
+
+  /* Resize cells array */
+
+  table_def_cel->nbr = nbr_cel_new;
+  ECS_REALLOC(table_def_cel->pos, nbr_cel_new + 1, ecs_size_t);
+  ECS_REALLOC(table_def_cel->val, cpt_val, ecs_int_t);
+
+  ecs_table__pos_en_regle(table_def_cel);
+
+  return tab_cel_old_new;
 }
 
 /*----------------------------------------------------------------------------

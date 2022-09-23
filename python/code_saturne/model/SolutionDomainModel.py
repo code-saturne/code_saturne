@@ -108,7 +108,6 @@ def getMeshOriginType(case):
     return val
 
 
-
 #-------------------------------------------------------------------------------
 # Class Mesh Model
 #-------------------------------------------------------------------------------
@@ -710,6 +709,31 @@ class SolutionDomainModel(MeshModel, Model):
             del node['grp_cel']
         else:
             node['grp_cel'] = grp_cel
+
+
+    @Variables.undoLocal
+    def setMeshDiscardBadCells(self, mesh, discard_bad_cells):
+        """
+        Sets the --discard-bad-cells option
+        """
+        node = self._getMeshNode(mesh)
+
+        if discard_bad_cells == False:
+            del node['discard_bad_cells']
+        else:
+            node['discard_bad_cells'] = 'on'
+
+
+    @Variables.noUndo
+    def getMeshDiscardBadCells(self, mesh):
+        """
+        Returns the --discard-bad-cells option
+        """
+        node = self._getMeshNode(mesh)
+        discard_bad_cells = False
+        if node['discard_bad_cells'] == 'on':
+            discard_bad_cells = True
+        return discard_bad_cells
 
 
     @Variables.undoLocal

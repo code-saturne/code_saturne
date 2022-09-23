@@ -60,6 +60,7 @@ typedef struct {
   bool                    grp_fac_section;
   bool                    grp_fac_zone;
 
+  bool                    discard_bad_cells;
   bool                    correct_orient;
 
   char                    post_err[8];

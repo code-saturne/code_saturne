@@ -3,6 +3,9 @@ Release 7.2.1 (not released yet)
 
 Bug fixes:
 
+- Preprocessor (mesh import): allow removal of cells with negative volume
+  or incorrect topology.
+
 - Fix reading of code_saturne.csm files with mesh refinement information.
 
 - GUI: fix handling of job account / WCKey batch parameters.
