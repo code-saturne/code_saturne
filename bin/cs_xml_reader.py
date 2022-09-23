@@ -262,6 +262,8 @@ class Parser:
             format = str(node.getAttribute('format'))
             number = str(node.getAttribute('num'))
             reorient = (str(node.getAttribute('reorient')) == 'on')
+            discard_bad_cells = \
+                (str(node.getAttribute('discard_bad_cells')) == 'on')
             grp_cel = str(node.getAttribute('grp_cel'))
             grp_fac = str(node.getAttribute('grp_fac'))
 
@@ -277,6 +279,8 @@ class Parser:
                 l_args.append(number)
             if reorient:
                 l_args.append('--reorient')
+            if discard_bad_cells:
+                l_args.append('--discard-bad-cells')
             if len(grp_cel) > 0:
                 l_args.append('--grp-cel')
                 l_args.append(grp_cel)

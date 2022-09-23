@@ -76,7 +76,7 @@ class MeshNameDelegate(QItemDelegate):
 
     def paint(self, painter, option, index):
         row = index.row()
-        isValid = index.model().dataMeshes[row][7]
+        isValid = index.model().dataMeshes[row][8]
 
         if isValid:
             QItemDelegate.paint(self, painter, option, index)
@@ -355,17 +355,19 @@ class StandardItemModelMeshes(QStandardItemModel):
                         self.tr("Format"),
                         self.tr("Numbers"),
                         self.tr("Reorient"),
+                        self.tr("Fix"),
                         self.tr("Add face groups"),
                         self.tr("Add cell groups"),
                         self.tr("Path")]
 
-        self.tooltip = [self.tr("Preprocessor option: --mesh"),
-                        self.tr("Preprocessor sub-option: --format"),
-                        self.tr("Preprocessor sub-option: --num"),
-                        self.tr("Preprocessor sub-option: --reorient"),
-                        self.tr("Preprocessor sub-option: --grp-fac"),
-                        self.tr("Preprocessor sub-option: --grp-cel"),
-                        self.tr("Preprocessor option: --mesh")]
+        self.tooltip = [self.tr("Base mesh file name"),
+                        self.tr("Mesh format"),
+                        self.tr("Mesh number if multiple meshes are present in the same file"),
+                        self.tr("Try to reorient badly oriented cells"),
+                        self.tr("Discard cells with negative volumes or incorrect topology"),
+                        self.tr("Add groups to faces"),
+                        self.tr("Add groups to cells"),
+                        self.tr("File path")]
 
         self.setColumnCount(len(self.headers))
 
@@ -396,6 +398,7 @@ class StandardItemModelMeshes(QStandardItemModel):
             else:
                 lst.append("")
             lst.append(self.mdl.getMeshReorient(mesh))
+            lst.append(self.mdl.getMeshDiscardBadCells(mesh))
             if format == 'cgns':
                 lst.append(self.mdl.getMeshGroupFaces(mesh))
                 lst.append(self.mdl.getMeshGroupCells(mesh))
@@ -425,7 +428,7 @@ class StandardItemModelMeshes(QStandardItemModel):
             if d:
                 if col == 1:
                     return self.formatDict[d]
-                elif col == 3:
+                elif col in (3, 4):
                     return None
                 else:
                     return d
@@ -433,14 +436,14 @@ class StandardItemModelMeshes(QStandardItemModel):
                 return None
 
         elif role == Qt.TextAlignmentRole:
-            if col == 6:
+            if col == 7:
                 return Qt.AlignLeft
             else:
                 return Qt.AlignCenter
 
         elif role == Qt.CheckStateRole:
-            if col == 3:
-                d = self.dataMeshes[index.row()][3]
+            if col in (3, 4):
+                d = self.dataMeshes[index.row()][col]
                 if d == True:
                     return Qt.Checked
                 else:
@@ -461,11 +464,11 @@ class StandardItemModelMeshes(QStandardItemModel):
         if (index.row(), index.column()) in self.disabledItem:
             return Qt.ItemIsEnabled
 
-        if index.column() in [0, 6]:
+        if index.column() in (0, 7):
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-        elif index.column() in [1, 2, 4, 5]:
+        elif index.column() in (1, 2, 5, 6):
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
-        elif index.column() == 3:
+        elif index.column() in (3, 4):
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
 
 
@@ -480,7 +483,7 @@ class StandardItemModelMeshes(QStandardItemModel):
         col = index.column()
 
 
-        mesh = (self.dataMeshes[row][0], self.dataMeshes[row][6])
+        mesh = (self.dataMeshes[row][0], self.dataMeshes[row][7])
 
         if col == 1:
             v = from_qvariant(value, to_text_string)
@@ -502,7 +505,15 @@ class StandardItemModelMeshes(QStandardItemModel):
                 self.dataMeshes[row][col] = True
             self.mdl.setMeshReorient(mesh, self.dataMeshes[row][col])
 
-        elif col == 4:
+        elif col == 4 and role == Qt.CheckStateRole:
+            state = from_qvariant(value, int)
+            if state == Qt.Unchecked:
+                self.dataMeshes[row][col] = False
+            else:
+                self.dataMeshes[row][col] = True
+            self.mdl.setMeshDiscardBadCells(mesh, self.dataMeshes[row][col])
+
+        elif col == 5:
             if value:
                 v = from_qvariant(value, to_text_string)
             else:
@@ -511,7 +522,7 @@ class StandardItemModelMeshes(QStandardItemModel):
             if v:
                 self.mdl.setMeshGroupFaces(mesh, v)
 
-        elif col == 5:
+        elif col == 6:
             if value:
                 v = from_qvariant(value, to_text_string)
             else:
@@ -529,11 +540,11 @@ class StandardItemModelMeshes(QStandardItemModel):
         Add a row in the table.
         """
         if format == 'med' or format == 'ensight':
-            item = [mesh[0], format, "1", "", "", "", mesh[1]]
+            item = [mesh[0], format, "1", "", "", "", "", mesh[1]]
         elif format == 'cgns':
-            item = [mesh[0], format, "1", "", "off", "off", mesh[1]]
+            item = [mesh[0], format, "1", "", "", "off", "off", mesh[1]]
         else:
-            item = [mesh[0], format, "", "", "", "", mesh[1]]
+            item = [mesh[0], format, "", "", "", "", "", mesh[1]]
         item.append(self.__isMeshPathValid(mesh))
 
         self.dataMeshes.append(item)
@@ -552,8 +563,8 @@ class StandardItemModelMeshes(QStandardItemModel):
 
     def __disableData(self, row):
 
-        mesh = (self.dataMeshes[row][0], self.dataMeshes[row][6])
-        self.dataMeshes[row][7] = self.__isMeshPathValid(mesh)
+        mesh = (self.dataMeshes[row][0], self.dataMeshes[row][7])
+        self.dataMeshes[row][8] = self.__isMeshPathValid(mesh)
 
         if not self.dataMeshes[row][1] in ["cgns", "med", "ensight"]:
             if (row, 2) not in self.disabledItem:
@@ -563,15 +574,15 @@ class StandardItemModelMeshes(QStandardItemModel):
                 self.disabledItem.remove((row, 2))
 
         if self.dataMeshes[row][1] != "cgns":
-            if (row, 4) not in self.disabledItem:
-                self.disabledItem.append((row, 4))
             if (row, 5) not in self.disabledItem:
                 self.disabledItem.append((row, 5))
+            if (row, 6) not in self.disabledItem:
+                self.disabledItem.append((row, 6))
         else:
-            if (row, 4) in self.disabledItem:
-                self.disabledItem.remove((row, 4))
             if (row, 5) in self.disabledItem:
                 self.disabledItem.remove((row, 5))
+            if (row, 6) in self.disabledItem:
+                self.disabledItem.remove((row, 6))
 
 
     def __isMeshPathValid(self, mesh):
@@ -820,10 +831,10 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.tableViewMeshes.setItemDelegateForColumn(2, delegateNumber)
 
         delegateGroupFaces = GroupDelegate(self.tableViewMeshes)
-        self.tableViewMeshes.setItemDelegateForColumn(4, delegateGroupFaces)
+        self.tableViewMeshes.setItemDelegateForColumn(5, delegateGroupFaces)
 
         delegateGroupCells = GroupDelegate(self.tableViewMeshes)
-        self.tableViewMeshes.setItemDelegateForColumn(5, delegateGroupCells)
+        self.tableViewMeshes.setItemDelegateForColumn(6, delegateGroupCells)
 
         self.groupBoxMeshes.resizeEvent = self.MeshesResizeEvent
 
@@ -951,7 +962,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
             mesh_list = self.mdl.getMeshList()
             for i in range(len(mesh_list)):
-                self.modelMeshes.dataMeshes[i][6] = mesh_list[i][1]
+                self.modelMeshes.dataMeshes[i][7] = mesh_list[i][1]
 
 
     def clearDir(self):
@@ -965,7 +976,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
             mesh_list = self.mdl.getMeshList()
             for i in range(len(mesh_list)):
-                self.modelMeshes.dataMeshes[i][6] = mesh_list[i][1]
+                self.modelMeshes.dataMeshes[i][7] = mesh_list[i][1]
 
 
     def selectMeshFiles(self):
@@ -1029,8 +1040,8 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
                 n_num += 1
             elif row[1] in ['med', 'ensight']:
                 n_num += 1
-            if row[6] != None:
-                cmp_width = fm.size(Qt.TextSingleLine, str(row[6])).width()
+            if row[7] != None:
+                cmp_width = fm.size(Qt.TextSingleLine, str(row[7])).width()
                 if cmp_width > last_width:
                     last_width = cmp_width
 
@@ -1050,24 +1061,24 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
                 self.tableViewMeshes.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
 
         if n_groups == 0:
-            self.tableViewMeshes.setColumnHidden(4, True)
             self.tableViewMeshes.setColumnHidden(5, True)
+            self.tableViewMeshes.setColumnHidden(6, True)
         else:
-            self.tableViewMeshes.setColumnHidden(4, False)
             self.tableViewMeshes.setColumnHidden(5, False)
+            self.tableViewMeshes.setColumnHidden(6, False)
             if QT_API == "PYQT4":
-                self.tableViewMeshes.horizontalHeader().setResizeMode(4, QHeaderView.ResizeToContents)
                 self.tableViewMeshes.horizontalHeader().setResizeMode(5, QHeaderView.ResizeToContents)
+                self.tableViewMeshes.horizontalHeader().setResizeMode(6, QHeaderView.ResizeToContents)
             elif QT_API == "PYQT5":
-                self.tableViewMeshes.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
                 self.tableViewMeshes.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
+                self.tableViewMeshes.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeToContents)
 
         # We have a bug under KDE (but not Gnome) if the line below is not commented.
-        # self.tableViewMeshes.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeToContents)
+        # self.tableViewMeshes.horizontalHeader().setSectionResizeMode(7, QHeaderView.ResizeToContents)
 
         self.tableViewMeshes.horizontalHeader().setStretchLastSection(True)
 
-        if last_width > self.tableViewMeshes.columnWidth(6):
+        if last_width > self.tableViewMeshes.columnWidth(7):
             self.tableViewMeshes.horizontalHeader().setStretchLastSection(False)
             self.tableViewMeshes.resizeColumnsToContents()
 
@@ -1260,7 +1271,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         for index in selectionModel.selectedRows():
             row = index.row()
             mesh = (self.modelMeshes.dataMeshes[row][0],
-                    self.modelMeshes.dataMeshes[row][6])
+                    self.modelMeshes.dataMeshes[row][7])
 
             # 2) Delete mesh from view and from model
 

@@ -145,6 +145,14 @@ ecs_maillage__orient_nodal(ecs_maillage_t    *maillage,
                            bool               correc_orient);
 
 /*----------------------------------------------------------------------------
+ *  Remove cells causing errors from mesh in nodal connectivity.
+ *----------------------------------------------------------------------------*/
+
+void
+ecs_maillage__suppr_cel(ecs_maillage_t    *maillage,
+                        ecs_tab_int_t      liste_cel_err);
+
+/*----------------------------------------------------------------------------
  *  Fonction qui assigne la tete de la liste chainee des familles donnee
  *   a la structure de maillage donnee
  *----------------------------------------------------------------------------*/

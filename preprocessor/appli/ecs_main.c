@@ -451,7 +451,6 @@ main(int    argc,
                              &liste_cel_err,
                              cmd->correct_orient);
 
-
   /*==========================================================================*/
   /* Écriture de la connectivité nodale sur fichier pour Post-traitement      */
   /*==========================================================================*/
@@ -471,6 +470,12 @@ main(int    argc,
                       cas_post);
 
   }
+
+  /* Clean mesh */
+
+  if (liste_cel_err.nbr > 0 && cmd->discard_bad_cells)
+    ecs_maillage__suppr_cel(maillage,
+                            liste_cel_err);
 
 
   /* On libère les listes des éléments avec problème d'orientation */

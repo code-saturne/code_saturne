@@ -1,6 +1,11 @@
 Release 7.0.6 (not released yet)
 --------------------------------
 
+User changes:
+
+- Preprocessor (mesh import): allow removal of cells with negative volume
+  or incorrect topology.
+
 Release 7.0.5 (August 25 2022)
 ------------------------------
 
