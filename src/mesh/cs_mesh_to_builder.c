@@ -1147,7 +1147,7 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
 
     if (pp_out != NULL) {
       if (transfer == true)
-        cs_io_write_block("vtx_r_gen",
+        cs_io_write_block("vertex_refinement_generation",
                           mesh->n_g_vertices,
                           1,
                           mesh->n_vertices,
@@ -1158,7 +1158,7 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
                           mb->vtx_r_gen,
                           pp_out);
       else
-        cs_io_write_block_buffer("vtx_r_gen",
+        cs_io_write_block_buffer("vertex_refinement_generation",
                                  mesh->n_g_vertices,
                                  1,
                                  mesh->n_vertices,

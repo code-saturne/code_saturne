@@ -1885,7 +1885,6 @@ _read_data(int                 file_id,
         }
 
         /* Read data */
-        cs_io_assert_cs_real(&header, pp_in);
         if (mb->vtx_r_gen != NULL)
           elts_cur = mb->vtx_r_gen + val_offset_cur;
         else
