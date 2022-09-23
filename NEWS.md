@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 User changes:
 
+- Preprocessor (mesh import): allow removal of cells with negative volume
+  or incorrect topology.
+
 - Ground water flows: for the legacy module, now use global gravity
   definition rather than module-specific (`darcy_gravity`) variables;
   This may require updating case setups: using the GUI is recommended,

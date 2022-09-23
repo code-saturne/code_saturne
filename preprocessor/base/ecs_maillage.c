@@ -627,7 +627,7 @@ _maillage_elt_fam_compacte(int            **elt_fam,
 }
 
 /*----------------------------------------------------------------------------
- *  Suppression des éléments dégénérés
+ * Suppression des éléments dégénérés
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1226,6 +1226,48 @@ ecs_maillage__orient_nodal(ecs_maillage_t    *maillage,
                               maillage->table_def[ECS_ENTMAIL_CEL],
                               liste_cel_err,
                               correc_orient);
+}
+
+/*----------------------------------------------------------------------------
+ *  Remove cells causing errors from mesh in nodal connectivity.
+ *----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------
+ * Suppression des cellules dégénérés
+ *----------------------------------------------------------------------------*/
+
+void
+ecs_maillage__suppr_cel(ecs_maillage_t  *maillage,
+                        ecs_tab_int_t    liste_cel_err)
+{
+  ecs_tab_int_t  tab_cel_old_new;
+
+  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
+
+  assert(maillage != NULL);
+
+  if (maillage->table_def[ECS_ENTMAIL_CEL] == NULL)
+    return;
+
+  /* Cells */
+  /*-------*/
+
+  tab_cel_old_new
+    = ecs_table_def__suppr_cel(maillage->table_def[ECS_ENTMAIL_CEL],
+                               liste_cel_err);
+
+  if (tab_cel_old_new.nbr != 0) {
+
+    /* Inherit "family" fields */
+
+    assert(maillage->table_att[ECS_ENTMAIL_CEL] == NULL);
+
+    _maillage_elt_fam_compacte(&(maillage->elt_fam[ECS_ENTMAIL_CEL]),
+                               &tab_cel_old_new);
+
+    tab_cel_old_new.nbr = 0;
+    ECS_FREE(tab_cel_old_new.val);
+  }
 }
 
 /*----------------------------------------------------------------------------

@@ -163,6 +163,14 @@ ecs_tab_int_t
 ecs_table_def__nettoie_fac(ecs_table_t  *table_def_fac);
 
 /*----------------------------------------------------------------------------
+ * Remove degenerate cells based on provided list.
+ *----------------------------------------------------------------------------*/
+
+ecs_tab_int_t
+ecs_table_def__suppr_cel(ecs_table_t     *table_def_cel,
+                         ecs_tab_int_t    liste_cel_err);
+
+/*----------------------------------------------------------------------------
  *  Fonction qui renvoie un tableau associant un type à chaque face, sous
  * forme de masque : 0 pour face isolée, 1 ou 2 pour face de bord (1 si
  * cellule avec cette face normale sortante, 2 si cellule avec cette face

@@ -390,9 +390,15 @@ _print_help(void)
 
   printf("\n");
 
+  _fct_prt("--discard-bad-cells", "",
+           _(": discard cells with negative volumes or"));
+  _fct_prt("", "", _("  incorrect connectivity"));
+
   _fct_prt("--reorient", "",
            _(": if necessary, correct orientation of"));
   _fct_prt("", "", _("  cells and faces"));
+
+  printf("\n");
 
   printf("\n");
 
@@ -607,6 +613,7 @@ _cmd_initialize(void)
 
   strcpy(cmd->post_err, "ens"); /* default */
 
+  cmd->discard_bad_cells = false;
   cmd->correct_orient = false;
 
   return cmd;
@@ -1008,6 +1015,9 @@ ecs_cmd__lit_arg(int    argc,
       strcpy(cmd->nom_out, outfic);
 
     }
+
+    else if (!strcmp ("--discard-bad-cells", argv[iarg]))
+      cmd->discard_bad_cells = true;
 
     else if (!strcmp ("--reorient", argv[iarg]))
       cmd->correct_orient = true;
