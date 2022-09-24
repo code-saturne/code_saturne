@@ -596,58 +596,6 @@ which enables to bypass, for all the missing \texttt{ityp}, the loops such as \\
 \section{Advanced modelling setup}
 %==================================
 
-
-%==================================
-\subsection{\CS-\CS coupling}
-%==================================
-
-\noindent
-\textit{Function called once during the calculation initialisation.}
-
-The user function \texttt{cs\_user\_saturne\_coupling} (in
- \texttt{cs\_user\_coupling.c} is used to couple \CS with itself.
- It is used for turbo-machine applications for instance, the first \CS managing
- the fluid around the rotor and the other the fluid around the stator.
-In the case of a coupling between two \CS instances, first argument \texttt{saturne\_name}
- of the function '\texttt{cs\_sat\_coupling\_define}' is ignored.
- In case of multiple couplings, a coupling will be matched with available \CS
- instances based on that argument, which should match the directory name for the
- given coupled domain..\\
-The arguments of '\texttt{cs\_sat\_coupling\_define}' are:
-\begin{list}{-}{}
-\item \texttt{saturne\_name}: the matching \CS application name,
-\item \texttt{volume\_sup\_criteria}: the cell selection criteria for support,
-\item \texttt{boundary\_sup\_criteria}: the boundary face selection criteria for support (not functional),
-\item \texttt{volume\_cpl\_criteria}: the cell selection criteria for coupled cells,
-\item \texttt{boundary\_cpl\_criteria}: the boundary face selection criteria for coupled faces,
-\item \texttt{verbosity}: the verbosity level.
-\end{list}
-
-
-%==================================
-\subsection{Fluid-Structure external coupling}
-%==================================
-
-\noindent
-\textit{Function called only once}
-
-The function \texttt{usaste} belongs to the module dedicated to external
- Fluid-Structure coupling with \textit{Code\_Aster}. Here one defines the boundary
- faces coupled with \textit{Code\_Aster} and the fluid forces components which are
- given to structural calculation. When using external coupling with \textit{Code\_Aster},
- structure numbers necessarily need to be negative; the references of coupled faces being
- i.e. -1, -2, \emph{etc.}
-The function performs the following operations:
-\begin{list}{-}{}
- \item '\texttt{getfbr}' is called to get a list of elements matching a
-geometrical criterion or reference number then a structure number (negative value) is associated
- to these elements.
- \item the value passed to \texttt{asddlf}, for user-chosen component, for every negative
- structure number, defines the movement imposed to the external structure.
-\end{list}
-%
-\clearpage
-%
 %==================================
 \subsection{ALE module}
 %==================================

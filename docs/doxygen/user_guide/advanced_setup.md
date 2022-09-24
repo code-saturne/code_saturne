@@ -37,6 +37,7 @@ documentation. It is also recommended to check the
 - \subpage advanced_particle_tracking
 - \subpage advanced_compressible
 - \subpage advanced_electric_arcs
+- \subpage advanced_coupling
 
 <!-- ----------------------------------------------------------------------- -->
 
@@ -649,3 +650,31 @@ The following additional boundary conditions must be defined for tansformers:
 
 Finally, a test is performed to check if the offset is zero or if a boundary
  face is in contact with the ground.
+
+<!-- ----------------------------------------------------------------------- -->
+
+\page advanced_coupling coupling with saturne
+
+code saturne-code saturne coupling
+==================================
+
+The user function \ref cs_user_saturne_coupling in \ref cs_user_coupling.c is
+used to couple *code_saturne* with itself.
+It is used for *turbo-machine* applications for instance, the first *code_saturne* managing
+the fluid around the rotor and the other the fluid around the stator.
+In the case of a coupling between two *code_saturne* instances, first argument *saturne_name*
+of the function \ref cs_sat_coupling_define is ignored.
+In case of multiple couplings, a coupling will be matched with available *code_saturne*
+instances based on that argument, which should match the directory name for the
+given coupled domain see [examples](@ref cs_user_coupling_h_cs_user_saturne_coupling).
+
+Fluid-Structure external coupling
+=================================
+
+The function \ref usaste belongs to the module dedicated to external
+Fluid-Structure coupling with *Code_Aster*. Here one defines the boundary
+faces coupled with *Code_Aster* and the fluid forces components which are
+given to structural calculation. When using external coupling with *Code_Aster*,
+structure numbers necessarily need to be negative;\n
+the references of coupled faces being (*i.e. -1, -2*), etc.
+For examples on the function we can see [examples](@ref cs_user_fluid_structure_interaction_h_usaste)
