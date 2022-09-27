@@ -334,6 +334,16 @@ void
 cs_user_boundary_conditions(cs_domain_t  *domain,
                             int           bc_type[]);
 
+/*----------------------------------------------------------------------------
+ * Boundary conditions for (Arbitrary Lagrangian Eulerian).
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_boundary_conditions_ale(cs_domain_t  *domain,
+                                int           bc_type[],
+                                int           ale_bc_type[],
+                                int           impale[]);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Initialize variables.

@@ -2021,6 +2021,18 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C user function for boundary conditions ALE
+
+    subroutine user_boundary_conditions_ale(bc_type, ale_bc_type, impale)  &
+      bind(C, name='cs_user_boundary_conditions_ale_wrapper')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(kind=c_int), dimension(*), intent(inout) :: bc_type, ale_bc_type
+      integer(c_int), dimension(*), intent(in) :: impale
+    end subroutine user_boundary_conditions_ale
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C user function for boundary mass source terms (condensation)
 
     subroutine cs_user_wall_condensation(nvar, nscal, iappel)  &

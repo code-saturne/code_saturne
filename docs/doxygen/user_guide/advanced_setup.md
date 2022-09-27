@@ -39,6 +39,7 @@ documentation. It is also recommended to check the
 - \subpage advanced_compressible
 - \subpage advanced_electric_arcs
 - \subpage advanced_coupling
+- \subpage advanced_ale
 
 <!-- ----------------------------------------------------------------------- -->
 
@@ -896,8 +897,8 @@ Initialization of the variables
 When the **GUI** is not used, the function \ref cs_user_initialization is used
 to initialize the velocity, turbulence and passive scalars (see
 the \ref user_initialization_compressible for examples of initializations with
-the compressible module). Concerning pressure, density, temperature and specific total energy, only 2 variables out
-of these 4 are independent. The user may then initialise the desired variable pair
+the compressible module). Concerning pressure, density, temperature and specific total energy, only 2 variables out of these 4 are independent.
+The user may then initialize the desired variable pair
 (apart from temperature-energy) and the two other variables will be
 calculated automatically by giving the right value to the variable
 ithvar see \ref user_initialization_comp_s_init for example.
@@ -939,9 +940,9 @@ The electric arcs module is activated either:
 Initialization of the variables
 ===============================
 
-The function \re cs_user_initialization allows the user to initialise some of the specific physics variables prompted via \ref cs_user_model. It is called only during the initialization of the calculation. As usual,the user has access to many geometric variables so that the zones can be treated separately if needed (see [Electric arcs example](@ref user_initialization_electric_arcs)).
+The function \re cs_user_initialization allows the user to initialize some of the specific physics variables prompted via \ref cs_user_model. It is called only during the initialization of the calculation. As usual,the user has access to many geometric variables so that the zones can be treated separately if needed (see [Electric arcs example](@ref user_initialization_electric_arcs)).
 
-The values of potential and its constituents are initialised if required.
+The values of potential and its constituents are initialized if required.
 
 It should be noted that the enthalpy is relevant.
 
@@ -1037,15 +1038,17 @@ Finally, a test is performed to check if the offset is zero or if a boundary
 
 <!-- ----------------------------------------------------------------------- -->
 
-\page advanced_coupling coupling with saturne
+\page advanced_coupling Coupling with other domains
 
 code saturne-code saturne coupling
 ==================================
 
 The user function \ref cs_user_saturne_coupling in \ref cs_user_coupling.c is
 used to couple *code_saturne* with itself.
-It is used for *turbo-machine* applications for instance, the first *code_saturne* managing
-the fluid around the rotor and the other the fluid around the stator.
+
+Such couplings allow explicit exchange of boundary conditions and source terms,
+possibly with different model choices in each domain.
+
 In the case of a coupling between two *code_saturne* instances, first argument *saturne_name*
 of the function \ref cs_sat_coupling_define is ignored.
 In case of multiple couplings, a coupling will be matched with available *code_saturne*
@@ -1056,9 +1059,109 @@ Fluid-Structure external coupling
 =================================
 
 The function \ref usaste belongs to the module dedicated to external
-Fluid-Structure coupling with *Code_Aster*. Here one defines the boundary
-faces coupled with *Code_Aster* and the fluid forces components which are
-given to structural calculation. When using external coupling with *Code_Aster*,
+Fluid-Structure coupling with *code_aster*. Here one defines the boundary
+faces coupled with *code_aster* and the fluid forces components which are
+given to structural calculation. When using external coupling with *code_aster*,
 structure numbers necessarily need to be negative;\n
 the references of coupled faces being (*i.e. -1, -2*), etc.
 For examples on the function we can see [examples](@ref cs_user_fluid_structure_interaction_h_usaste)
+
+<!-- ----------------------------------------------------------------------- -->
+
+\page advanced_ale ALE (Arbitrary Lagrangian Eulerian) module
+
+Setting options
+===============
+
+The **ALE module** may be activated through the Graphical User Interface (GUI)
+in the **Calculation features** section. It can also be activated
+in the \ref cs_user_model function in \ref cs_user_parameters.c.
+See [ALE activation](@ref cs_user_parameters_h_cs_user_ale) for examples.
+
+
+When activated in the GUI, a **Deformable mesh** page appears in the GUI,
+Providing additional options. The user must choose the
+type of mesh viscosity and describe its spatial distribution,
+see [Ini-ale](@ref gui_ale_mei).
+
+\anchor gui_ale_mei
+\image html gui_ale_mei.png "Thermophysical models - mobile mesh (ALE method)"
+
+The options may also be set and completed with the \ref usstr1 function
+found in \ref cs_user_fluid_structure_interaction.f90. It is possible to
+specify informations for the structure module, such as the index of the
+structure (\ref idfstr), and the initial displacement, velocity and acceleration
+values (\ref xstr0, \ref xstreq and \ref vstr0). For examples,
+see [examples](@ref cs_user_fluid_structure_interaction_h_usstr1).
+
+Mesh velocity boundary conditions
+=================================
+
+These boundary conditions can be managed through the GUI, or using the
+\ref cs_user_boundary_conditions_ale  function in
+\ref cs_user_boundary_conditions.c file.
+
+With the GUI, when the item **Deformable mesh** is selected
+in **Calculation features**, specific boundary condition types
+for the mobile mesh may be defined for each zone.
+The user can choose a boundary condition type for ALE (internal coupling),
+including displacements based on a mass-spring model, such as
+[CL-ale1](@ref gui_ale_internal_bc).
+
+\anchor gui_ale_internal_bc
+\image html gui_ale_internal_bc.png "Mesh boundary conditions - internal mass-spring model coupling"
+
+When at least one boundary is of the "internal coupling" (mass-spring model)
+type, a **Coupling parameters** entry appears under
+the one for **Boundary conditions**.
+
+\anchor gui_ale_internal_param
+\image html gui_ale_internal_param.png "Coupling parameters - internal coupling"
+
+Instead of or in addition to settings with the GUI, the
+\ref cs_user_boundary_conditions_ale fonction may be used with the ALE module.
+It is used in a similar way to the \ref cs_user_boundary_conditions
+in the framework of standard calculations, that is to say array values
+are defined for each face to specify the detailed mesh boundary conditions.
+See [Examples of boundary conditions for ALE](@ref example_ale2).
+
+Modification of the mesh viscosity
+==================================
+
+With the ALE module, the \ref cs_user_physical_properties user-defined function
+allows modifying the mesh viscosity.
+It is first called before the time loop, and before reading restart files
+(so the mesh is always in its initial position at this stage).
+The user can modify mesh viscosity values to prevent cells and nodes from huge
+displacements in awkward areas, such as boundary layer for example.
+
+Note that for more complex settings, the mesh viscosity could be modified in
+\ref cs_user_initialization or \ref cs_user_extra_operations.
+The matching field's name is **mesh_viscosity**.
+
+Fluid - structure internal coupling
+===================================
+
+In the file \ref cs_user_fluid_structure_interaction.f90 the user provides the parameters of two functions.
+
+- \ref usstr1 is called at the beginning of the calculation. It is used to
+  define and initialize the internal structures where fluid-Structure coupling
+  occurs. For each boundary face, **idfstr** is the index of the structure the
+  face belongs to (if idfstr(ifac) = 0, the face ifac doesn't belong to any
+  structure). When using internal coupling, the structure index must be strictly
+  positive and smaller than the number of structures.
+  The number of *internal* structures is automatically defined with the maximum
+  value of the **idfstr** table, meaning that internal structure numbers must
+  be defined sequentially with positive values, beginning with integer value
+  **1**
+  [see here for more details](@ref cs_user_fluid_structure_interaction_h_usstr1).
+
+- The second function, \ref usstr2, is called at each iteration. It is used to
+  define structural parameters (considered as potentially time dependent):
+  mass m \ref xmstru, friction coefficients  \ref xcstru, and stiffness
+  k \ref xkstru.
+  The \ref forstr array defines fluid stresses acting on each internal
+  structure
+  [see here for more details](@ref cs_user_fluid_structure_interaction_h_usstr2).
+  Moreover it is also possible to take external forces (gravity for example)
+  into account.

@@ -87,6 +87,7 @@ examplefiles = \
 cs_user_1d_wall_thermal.c \
 cs_user_wall_condensation.c \
 cs_user_boundary_conditions.c \
+cs_user_boundary_conditions_ale-base.c \
 cs_user_boundary_conditions-compressible.c \
 cs_user_boundary_conditions-electric_arcs.c \
 cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c \
@@ -176,7 +177,6 @@ cs_user_boundary_conditions-mapped_inlet.f90 \
 cs_user_boundary_conditions-pulverized_coal.f90 \
 cs_user_boundary_conditions-pulverized_coal_lagrangian.f90 \
 cs_user_boundary_conditions-richards.f90 \
-cs_user_boundary_conditions_ale-base.f90 \
 cs_user_extra_operations-force_temperature.f90 \
 cs_user_extra_operations-parallel_operations.f90 \
 cs_user_extra_operations-richards_flux.f90 \

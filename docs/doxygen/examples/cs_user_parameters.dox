@@ -67,6 +67,8 @@
 
   \snippet cs_user_parameters-base.c enable_cavit
 
+  \subsection cs_user_parameters_h_cs_user_ale Activation ALE
+
   To activate ALE (Arbitrary Lagrangian Eulerian) method
   (CS_ALE_NONE: switch off, CS_ALE_LEGACY: legacy solver, CS_ALE_CDO: CDO solver)
 

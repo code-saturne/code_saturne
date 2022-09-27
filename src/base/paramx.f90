@@ -332,7 +332,7 @@ module paramx
   !> (in which case it is this speed which is considered).
   integer   ivimpo
 
-  parameter(ibfixe=1, igliss=2, ivimpo=3)
+  parameter(ibfixe=1, igliss=2, ivimpo=4)
 
   !> maximum number of structures in ALE
   integer    nstrmx
