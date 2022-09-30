@@ -305,7 +305,7 @@ defined as (\ref cs_thermal_model_field() \f$ \ne \f$  NULL).
 The 1D thermal module is developed assuming the thermal scalar
 as a temperature. If the thermal scalar is an enthalpy, the code calls the
 enthalpy to temperature conversion as defined by the model defaults,
-or by the user in \texttt{cs\_user\_physical\_properties} for each
+or by the user in \ref cs_user_physical_properties for each
 transfer of data between the fluid and the wall in order to convert the
 enthalpy to temperature and vice-versa. If the thermal
 variable is the total (compressible) energy, the thermal module will not work.
@@ -620,10 +620,10 @@ they can be changed by the potential scalar as shown below:
 
  - For the *Joule model*, the imposed power can be a fixed variable in the same way as the electric arcs.
 
-\warning :
-*In the case of alternating current, attention should be paid to the values of potential
+\warning
+ In the case of alternating current, attention should be paid to the values of potential
  imposed at the limits: the variable named "real potential" represents an affective
- value if the current is in single phase, and a "real part" if not.*
+ value if the current is in single phase, and a "real part" if not.
 
  - For the Joule studies, a complex potential is sometimes needed
  (*in the GUI Electrical model -> three-phase*): this is the  case in particular where the current
@@ -633,10 +633,10 @@ they can be changed by the potential scalar as shown below:
  - For the Joule studies in which one does not have access to the phases, the real
  potential (imaginary part =0) will suffice (*in the GUI Electrical model -> AC/DC*): this is
  obviously the case with
- continuous current, but also with single phase alternative current. In *code_saturne*
-there is only 1 variable for the potential,  called "real potential". Pay attention to
+ continuous current, but also with single phase alternative current. In code_saturne
+ there is only 1 variable for the potential,  called "real potential". Pay attention to
  the fact that in alternate current, the "real potential" represents a effective value
- of potential , \f$\frac{1}{\sqrt{2}}\,Pp_{max}\f$ (in continuous current there is no
+ of potential, \f$\frac{1}{\sqrt{2}}\,Pp_{max}\f$ (in continuous current there is no
  such ambiguity).
 
 Additions for transformers

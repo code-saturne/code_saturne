@@ -70,6 +70,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -79,10 +81,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
- *  Global variables
+ * Static global variables
  *============================================================================*/
-
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*!
  * Karman constant. (= 0.42)
@@ -91,9 +91,7 @@ BEGIN_C_DECLS
  *  (mixing length, \f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$,
  * LES, v2f or \f$k-\omega\f$).
  */
-// const double cs_turb_xkappa = 0.42;
 
-//
 // TODO : to remove when the general 1D thermal model replaces
 // the condensation-specific 1D thermal model
 
@@ -114,10 +112,18 @@ static cs_wall_cond_1d_thermal_t _wall_cond_thermal = { .nzones = 0,
                                                         .zdxp  = NULL,
                                                         .ztmur = NULL };
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Global variables
+ *============================================================================*/
+
 // TODO : to remove when the general 1D thermal model replaces
 // the condensation-specific 1D thermal model
 const cs_wall_cond_1d_thermal_t *cs_glob_wall_cond_1d_thermal
   = &_wall_cond_thermal;
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -181,7 +187,7 @@ cs_f_wall_condensation_1d_thermal_get_mesh_pointers(int **      znmurx,
   *ztmur  = _wall_cond_thermal.ztmur;
 }
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

@@ -176,7 +176,7 @@ typedef struct _cs_sles_hypre_t {
 } cs_sles_hypre_t;
 
 /*============================================================================
- *  Global variables
+ * Static global variables
  *============================================================================*/
 
 static int  _n_hypre_systems = 0;
@@ -257,6 +257,8 @@ _ensure_mpi_init(void)
   }
 #endif
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

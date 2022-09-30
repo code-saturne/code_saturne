@@ -19,7 +19,7 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
-!> \file cs_at_source_term.f90
+!> \file cs_at_source_terms.f90
 !
 !> \brief Additional right-hand side source terms for momentum equation in case
 !>        of free inlet
@@ -32,7 +32,7 @@
 !> \param[in]   crvexp          explicit part of the momentum source term
 !-------------------------------------------------------------------------------
 
-subroutine cs_at_source_term_for_inlet ( crvexp )
+subroutine cs_at_source_term_for_inlet(crvexp)
 
 !===============================================================================
 ! Module files

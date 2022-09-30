@@ -61,16 +61,15 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-
 BEGIN_C_DECLS
 
-#endif /* DOXYGEN_SHOULD_SKIP_THIS */
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Regularisation on bad cells for scalars
- *
  */
 /*----------------------------------------------------------------------------*/
 

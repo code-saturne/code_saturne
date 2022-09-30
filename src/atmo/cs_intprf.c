@@ -62,7 +62,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_turb_kw_model.c
+  \file cs_intprf.c
 
   * Temporal and z-axis interpolation for meteorological profiles
  */

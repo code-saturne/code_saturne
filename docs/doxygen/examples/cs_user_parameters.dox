@@ -93,7 +93,7 @@
 
   \snippet cs_user_parameters-base.c user_model_coriolis
 
-  \section cs_user_parameters_h_cs_user_parameters General options
+  \section cs_user_parameters_h_cs_user_parameters_general General options
 
   Choose a time step option
 
@@ -145,7 +145,7 @@
 
   \snippet cs_user_parameters-base.c param_fluid_properties
 
-  \subsection cs_user_parameters_h_cs_user_parameters1 Special fields and activate some automatic post-processings
+  \subsection cs_user_parameters_h_cs_user_parameters_fields Special fields and activate some automatic post-processings
 
   For example, to force the presence of a boundary temperature field, which
   may be useful for postprocessing:

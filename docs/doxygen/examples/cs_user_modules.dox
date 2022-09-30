@@ -43,7 +43,7 @@
 
   \section cs_user_module_h_allocate Arrays allocation
 
-  The \ref init_user_module subroutine allocates \c rwork and \c iwork if they
+  The following code allocates \c rwork and \c iwork if they
   are not already allocated or associated (for \c rwork).
 
   \snippet cs_user_modules-user-arrays.f90 allocate
@@ -51,13 +51,14 @@
   \section cs_user_module_h_c_pointer Access to arrays in C
 
   It is possible to access the \c rwork array in the C part of the code.
-  This can be done by using the \ref get_user_module_rwork subroutine.
+  This can be done by using the \c get_user_module_rwork subroutine
+  in the following example:
 
   \snippet cs_user_modules-user-arrays.f90 c_pointer
 
-  \section cs_user_module_h_free Arrays freeing
+  \section cs_user_module_h_free Freeing arrays
 
-  Eventually, the \ref finalize_user_module subroutine is used to free
+  Finally, the \c finalize_user_module subroutine is used to free
   \c iwork and \c rwork.
 
   \snippet cs_user_modules-user-arrays.f90 free

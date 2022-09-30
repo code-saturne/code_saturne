@@ -601,7 +601,7 @@ module ppincl
   !> \}
 
 
-  !> \defgroup compressible Compressible module
+  !> \defgroup compressible Compressible models options
 
   !> \addtogroup compressible
   !> \{
@@ -612,7 +612,7 @@ module ppincl
   !> temperature deduced from the specific total energy
   integer, save :: itempk
 
-  !> \defgroup comp_homogeneous Homogeneous two-phase flow model
+  !> \defgroup comp_homogeneous Homogeneous two-phase compressible model options
 
   !> \addtogroup comp_homogeneous
   !> \{

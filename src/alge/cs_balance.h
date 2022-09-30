@@ -49,8 +49,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Wrapper to the function which adds the explicit part of the
- * convection/diffusion
- * terms of a transport equation of a scalar field \f$ \varia \f$.
+ * convection/diffusion terms of a transport equation of
+ * a scalar field \f$ \varia \f$.
  *
  * More precisely, the right hand side \f$ Rhs \f$ is updated as
  * follows:
@@ -68,8 +68,11 @@ BEGIN_C_DECLS
  * Options for the convective scheme:
  * - blencp = 0: upwind scheme for the advection
  * - blencp = 1: no upwind scheme except in the slope test
- * - ischcp = 0: second order
+ * - ischcp = 0: SOLU
  * - ischcp = 1: centered
+ * - ischcp = 2: SOLU with upwind gradient reconstruction
+ * - ischcp = 3: blending SOLU centered
+ * - ischcp = 4: NVD-TVD
  * - imucpp = 0: do not multiply the convective part by \f$ C_p \f$
  * - imucpp = 1: multiply the convective part by \f$ C_p \f$
  *
@@ -85,7 +88,9 @@ BEGIN_C_DECLS
  * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
  *                              contains variable calculation options
  * \param[in]     pvar          solved variable (current time step)
+ *                              may be NULL if pvara != NULL
  * \param[in]     pvara         solved variable (previous time step)
+ *                              may be NULL if pvar != NULL
  * \param[in]     coefap        boundary condition array for the variable
  *                               (explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
@@ -168,8 +173,11 @@ cs_balance_scalar(int                idtvar,
  * Options for the convective scheme:
  * - blencp = 0: upwind scheme for the advection
  * - blencp = 1: no upwind scheme except in the slope test
- * - ischcp = 0: second order
+ * - ischcp = 0: SOLU
  * - ischcp = 1: centered
+ * - ischcp = 2: SOLU with upwind gradient reconstruction
+ * - ischcp = 3: blending SOLU centered
+ * - ischcp = 4: NVD-TVD
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)
@@ -264,8 +272,11 @@ cs_balance_vector(int                  idtvar,
  * Options for the convective scheme:
  * - blencp = 0: upwind scheme for the advection
  * - blencp = 1: no upwind scheme except in the slope test
- * - ischcp = 0: second order
+ * - ischcp = 0: SOLU
  * - ischcp = 1: centered
+ * - ischcp = 2: SOLU with upwind gradient reconstruction
+ * - ischcp = 3: blending SOLU centered
+ * - ischcp = 4: NVD-TVD
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)

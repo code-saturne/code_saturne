@@ -170,14 +170,12 @@
       \f$ \overline{\varphi^\prime\varphi^\prime} \f$ for a fluctuating scalar
       <em>ϕ</em>). This can be made either {\em via} the
       interface or by declaring that scalar using
-      \texttt{cs\_parameters\_add\_variable\_variance} in
-      \texttt{cs\_user\_parameters.f90} (if the scalar in question is not a ``user''
-      scalar, the selection is made automatically). For instance, if \texttt{j}
-      and \texttt{k} are ``user'' scalars, the variable $\varphi$ corresponding
-      to \texttt{k} is the variable number
-      \texttt{isca(k)=isca(iscavr(j))}.
-\end{list}
-
+      `cs_parameters_add_variable_variance` in
+      \ref cs_user_parameters.f90 (if the scalar in question is not a ``user''
+      scalar, the selection is made automatically). For instance, if `j`
+      and `k` are ``user'' scalars, the variable \f$\varphi\f$ corresponding
+      to `k` is the variable number
+      `isca(k) = isca(iscavr(j))`.
 
   \par Accessing variables and properties in Fortran:
 
@@ -255,7 +253,7 @@
       <tt>tf->val[cell_id]</tt>. \n
       if there is no thermal scalar, cs_thermal_model_field returns NULL. \n\n
 
-    - In any case, all variables can be accessed using the function \ref cs_field_by_name:\n
+    - In any case, all variables can be accessed using the function \ref cs_field_by_name: \n
       <tt>\ref cs_real_t *cvar_pr = \ref cs_field_by_name("pressure")->val</tt> \n\n
 
     - A field's \ref scalar_id key-word should be ≥ 0 if it is a scalar. \n\n

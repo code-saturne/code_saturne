@@ -1674,8 +1674,6 @@ cs_beta_limiter_building(int              f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * <a name="cs_convection_diffusion_scalar"></a>
- *
  * \brief Add the explicit part of the convection/diffusion terms of a
  * standard transport equation of a scalar field \f$ \varia \f$.
  *
@@ -10744,8 +10742,6 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
 /*!
  * \brief Update the face mass flux with the face pressure (or pressure
  * increment, or pressure double increment) gradient.
- *
- * <a name="itrmas"></a>
  *
  * \f[
  * \dot{m}_\ij = \dot{m}_\ij

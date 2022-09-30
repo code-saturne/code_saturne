@@ -319,6 +319,8 @@ static cs_gztell_t  *_cs_gztell = (cs_gztell_t *)gztell;
 
 #endif /* HAVE_ZLIB */
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
  * Global variables
  *============================================================================*/

@@ -101,9 +101,9 @@ cs_sync_scalar_halo(const cs_mesh_t  *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the normalised face scalar using the specified NVD scheme.
+ * \brief Compute the normalized face scalar using the specified NVD scheme.
  *
- * \param[in]   scheme      choice of the NVD scheme
+ * \param[in]   limiter     choice of the NVD scheme
  * \param[in]   nvf_p_c     normalised property of the current cell
  * \param[in]   nvf_r_f     normalised distance from the face
  * \param[in]   nvf_r_c     normalised distance from the current cell
@@ -3632,7 +3632,6 @@ cs_central_downwind_cells(const cs_lnum_t    ii,
  * \param[in]     cell_cen_d      center of gravity coordinates of downwind cell
  * \param[in]     i_face_normal   normal of face ij
  * \param[in]     i_face_cog      center of gravity coordinates of face ij
- * \param[in]     i_massflux      mass flux at face ij
  * \param[in]     gradv_c         gradient at central cell
  * \param[in]     p_c             value at central cell
  * \param[in]     p_d             value at downwind cell
@@ -5220,6 +5219,10 @@ cs_beta_limiter_building(int              f_id,
  * - \f$ Rhs \f$ has already been initialized before calling bilsc2!
  * - mind the sign minus
  *
+ * Please refer to the
+ * <a href="../../theory.pdf#bilsc2"><b>bilsc2</b></a> section of the
+ * theory guide for more informations.
+ *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)
  * \param[in]     var_cal_opt   variable calculation options
@@ -5813,6 +5816,10 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
  *             - \Delta t \grad_\fij \delta p \cdot \vect{S}_\ij
  * \f]
  *
+ * Please refer to the
+ * <a href="../../theory.pdf#itrmas"><b>itrmas/itrgrp</b></a> section of the
+ * theory guide for more information.
+ *
  * \param[in]     f_id          field id (or -1)
  * \param[in]     m             pointer to mesh
  * \param[in]     fvq           pointer to finite volume quantities
@@ -5824,7 +5831,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
  *                               - 1 otherwise
  * \param[in]     imrgra        indicator
  *                               - 0 iterative gradient
- *                               - 1 least square gradient
+ *                               - 1 least squares gradient
  * \param[in]     nswrgp        number of reconstruction sweeps for the
  *                               gradients
  * \param[in]     imligp        clipping gradient method
@@ -5909,7 +5916,7 @@ cs_face_diffusion_potential(const int                 f_id,
  *                               - 1 otherwise
  * \param[in]     imrgra        indicator
  *                               - 0 iterative gradient
- *                               - 1 least square gradient
+ *                               - 1 least squares gradient
  * \param[in]     nswrgp        number of reconstruction sweeps for the
  *                               gradients
  * \param[in]     imligp        clipping gradient method
@@ -6004,7 +6011,7 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
  *                               - 1 otherwise
  * \param[in]     imrgra        indicator
  *                               - 0 iterative gradient
- *                               - 1 least square gradient
+ *                               - 1 least squares gradient
  * \param[in]     nswrgp        number of reconstruction sweeps for the
  *                               gradients
  * \param[in]     imligp        clipping gradient method
@@ -6012,10 +6019,10 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
  *                               - = 0 thank to neighbooring gradients
  *                               - = 1 thank to the mean gradient
  * \param[in]     iphydp        hydrostatic pressure indicator
+ * \param[in]     iwarnp        verbosity
  * \param[in]     iwgrp         indicator
  *                               - 1 weight gradient by vicosity*porosity
  *                               - weighting determined by field options
- * \param[in]     iwarnp        verbosity
  * \param[in]     epsrgp        relative precision for the gradient
  *                               reconstruction
  * \param[in]     climgp        clipping coeffecient for the computation of
@@ -6067,7 +6074,7 @@ cs_diffusion_potential(const int                 f_id,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add the explicit part of the divergence of the mass flux due to the
- * pressure gradient (routine analog to cs_anisotropic_diffusion_scalar).
+ * pressure gradient (routine analog to diften).
  *
  * More precisely, the divergence of the mass flux side
  * \f$ \sum_{\fij \in \Facei{\celli}} \dot{m}_\fij \f$ is updated as follows:
@@ -6089,7 +6096,7 @@ cs_diffusion_potential(const int                 f_id,
  *                               - 1 otherwise
  * \param[in]     imrgra        indicator
  *                               - 0 iterative gradient
- *                               - 1 least square gradient
+ *                               - 1 least squares gradient
  * \param[in]     nswrgp        number of reconstruction sweeps for the
  *                               gradients
  * \param[in]     imligp        clipping gradient method

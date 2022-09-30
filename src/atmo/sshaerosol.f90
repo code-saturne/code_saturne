@@ -20,7 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-!> \file ssh-aerosol.f90
+!> \file sshaerosol.f90
 !> \brief Module for aerosol chemistry in the atmospheric module
 
 module sshaerosol

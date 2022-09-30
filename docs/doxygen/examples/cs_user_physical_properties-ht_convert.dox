@@ -73,7 +73,7 @@
   Note that \c z->name or \c z->location_id can be used as a filter
   if "per-zone" properties are needed (such as with solid zones).
 
-  \subsection user_ht_convert_h_to_t Temperature to Enthalpy
+  \subsection user_ht_convert_t_to_h Temperature to Enthalpy
 
   The following block must then be added in
   \ref cs_user_physical_properties_t_to_h for the matching

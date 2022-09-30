@@ -271,7 +271,7 @@
 !> the code).
 !>
 !>
-!> \subsection comp_bcs Boundary condition types for enthalpy
+!> \subsection h_bcs Boundary condition types for enthalpy
 !>
 !> For enthalpy, prescribed values in rcodcl(ifac, ivar, 1) may
 !> be defined using the temperature instead. In this case, icodcl(ifac, ivar)

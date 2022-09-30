@@ -111,6 +111,8 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
 
 #endif /* defined(HAVE_CUDA) */
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -435,9 +435,9 @@
 // __________________________________________________________________________________
 /*!
 
-  \page cs_user_extra_operations_examples_verif_cdo_diff Postprocessing of results obtained with CDO schemes for a scalar transport equation.
+  \page cs_user_extra_operations_examples_verif_cdo_diff_p Postprocessing of results obtained with CDO schemes for a scalar transport equation.
 
-  \section cs_user_extra_operations_examples_verif_cdo_diff Postprocessing of results obtained with CDO schemes for a scalar transport equation.
+  \section cs_user_extra_operations_examples_verif_cdo_diff_s Postprocessing of results obtained with CDO schemes for a scalar transport equation.
 
   This is an example of \ref cs_user_extra_operations allowing to add operations on results produced by CDO schemes. It allows to define advanced
   postprocessing.

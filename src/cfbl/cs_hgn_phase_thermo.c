@@ -70,7 +70,7 @@ BEGIN_C_DECLS
  *  Wrappers of thermodynamic relation function are implemented here.
  */
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Static variables

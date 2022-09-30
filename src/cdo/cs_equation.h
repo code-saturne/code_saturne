@@ -66,15 +66,15 @@ typedef struct _cs_equation_t cs_equation_t;
  * an equation without having to build an equation structure. This is useful
  * when handling extra-diagonal block in systems of equations.
  *
- * \var param
+ * \var cs_equation_core_t::param
  *      Set of parameters to specifiy the settings
  *
- * \var builder
+ * \var cs_equation_core_t::builder
  *      Part of the quantities useful to build/manipulate an equation. All
  *      quantities that are shared among all discretizations are in this
  *      structure.
  *
- * \var scheme_context
+ * \var cs_equation_core_t::scheme_context
  *      Part of the quantities useful to build/manipulate an equation. All
  *      quantities that are specific to the discrization are in this structure.
  */

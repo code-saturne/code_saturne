@@ -83,7 +83,7 @@
  *============================================================================*/
 
 /*!
- * \file cs_gradient.c
+ * \file cs_gradient.cxx
  * \brief Gradient reconstruction.
  *
  * Please refer to the
@@ -8508,7 +8508,6 @@ cs_gradient_tensor(const char                *var_name,
  * \param[in]   gradient_type   gradient type
  * \param[in]   halo_type       halo type
  * \param[in]   inc             if 0, solve on increment; 1 otherwise
- * \param[in]   recompute_cocg  should COCG FV quantities be recomputed ?
  * \param[in]   n_r_sweeps      if > 1, number of reconstruction sweeps
  *                              (only used by CS_GRADIENT_GREEN_ITER)
  * \param[in]   hyd_p_flag      flag for hydrostatic pressure

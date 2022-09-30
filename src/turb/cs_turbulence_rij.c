@@ -97,7 +97,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
- *  Global variables
+ * Static global variables
  *============================================================================*/
 
 /* Tensor to vector (t2v) and vector to tensor (v2t) mask arrays */
@@ -2463,6 +2463,8 @@ _solve_epsilon(cs_lnum_t        ncesmp,
   BFT_FREE(weighb);
   BFT_FREE(weighf);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

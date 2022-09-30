@@ -183,32 +183,32 @@ BEGIN_C_DECLS
         reconstruction of the velocity field with the updated pressure option
         - 0: standard gradient of pressure increment (default)
 
-  \var  cs_velocity_pressure_model_t::iifren
+  \var  cs_velocity_pressure_param_t::iifren
         indicates the presence of a Bernoulli boundary face (automatically
         computed)
         - 0: no face
         - 1: at least one face
 
-  \var  cs_velocity_pressure_model_t::irecmf
+  \var  cs_velocity_pressure_param_t::irecmf
         use interpolated face diffusion coefficient instead of cell diffusion
         coefficient for the mass flux reconstruction for the
         non-orthogonalities
         - 1: true
         - 0: false (default)
 
-  \var  cs_velocity_pressure_model_t::igprij
+  \var  cs_velocity_pressure_param_t::igprij
         improve static pressure algorithm
         - 1: take -div(rho R) in the static pressure
           treatment IF iphydr=1
         - 0: no treatment (default)
 
-  \var  cs_velocity_pressure_model_t::igpust
+  \var  cs_velocity_pressure_param_t::igpust
         improve static pressure algorithm
         - 1: take user momentum source terms in the static pressure
           treatment IF iphydr=1
         - 0: no treatment (default)
 
-  \var  cs_velocity_pressure_model_t::ipucou
+  \var  cs_velocity_pressure_param_t::ipucou
         indicates the algorithm for velocity/pressure coupling:
         - 0: standard algorithm,
         - 1: reinforced coupling in case calculation with long time steps\n
@@ -216,7 +216,7 @@ BEGIN_C_DECLS
         for instance, in case of flows with weak convection effects and
         highly variable viscosity).
 
-  \var  cs_velocity_pressure_model_t::itpcol
+  \var  cs_velocity_pressure_param_t::itpcol
         Time scheme option:
         - 0: staggered time scheme. On the time grids, the velocity is
              half a time step behind the density and the buoyant scalar.
@@ -225,20 +225,20 @@ BEGIN_C_DECLS
              at the same location as the density and the buoyant scalar.
              (See \cite Ma:2019)
 
-  \var  cs_velocity_pressure_model_t::arak
+  \var  cs_velocity_pressure_param_t::arak
         <a name="arak"></a>
         Arakawa multiplicator for the Rhie and Chow filter (1 by default).\n\n
         Please refer to the
         <a href="../../theory.pdf#arak"><b>Rhie and Chow filter</b></a> section
         of the theory guide for more informations.
 
-  \var  cs_velocity_pressure_model_t::rcfact
+  \var  cs_velocity_pressure_param_t::rcfact
         <a name="rcfact"></a>
         Factor of the Rhie and Chow filter:\n
         - 0: dt (by default),\n
         - 1: 1/A_u.\n
 
-  \var  cs_stokes_model_t::staggered
+  \var  cs_velocity_pressure_param_t::staggered
         <a name="staggered"></a>
         1D zone simulator option:\n
          - 0: colocated.\n

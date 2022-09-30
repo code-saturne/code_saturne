@@ -393,7 +393,7 @@ _clip(cs_lnum_t  n_cells)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Solve the \tilde{\nu} equations.
+ * \brief Solve the \f$ \tilde{\nu} \f$ equations.
  *
  * Solve the equation of \f$ \tilde{\nu} \f$, which is the scalar
  * quantity defined by the Spalart-Allmaras model for one time-step.

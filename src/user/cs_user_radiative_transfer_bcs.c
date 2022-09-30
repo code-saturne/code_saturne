@@ -68,8 +68,6 @@ BEGIN_C_DECLS
  *
  * \warning the temperature unit here is the Kelvin
  *
- * \section cs_user_radiative_transfer_bcs_zones  Zone definitions
- *
  * For each boundary face face_id, a specific output (logging and
  * postprocessing) class id may be assigned. This allows realizing balance
  * sheets by treating them separately for each zone. By default, the

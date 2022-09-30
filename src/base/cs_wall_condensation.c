@@ -77,6 +77,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -86,7 +88,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
- * Global variables
+ * Static global variables
  *============================================================================*/
 
 //> Constants for the correlation of steam saturated pressure
@@ -140,11 +142,15 @@ static cs_wall_cond_t _wall_cond
       .zxrefcond = NULL,
       .zprojcond = NULL };
 
-const cs_wall_cond_t *cs_glob_wall_cond = &_wall_cond;
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Fortran function prototypes
+ * Global variables
  *============================================================================*/
+
+const cs_wall_cond_t *cs_glob_wall_cond = &_wall_cond;
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -651,7 +657,7 @@ cs_f_wall_condensation_get_pointers(cs_lnum_t **ifbpcd,
   *zprojcond  = _wall_cond.zprojcond;
 }
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

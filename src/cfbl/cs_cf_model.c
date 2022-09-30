@@ -62,7 +62,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 /*!
-  \defgroup compressible Compressible models options
+  \ defgroup compressible Compressible models options
 
   @addtogroup compressible
   @{

@@ -165,7 +165,7 @@ _add_hb_faces_cocg_lsq_cell(cs_lnum_t        c_id,
  * To compute the values at I', we only need the gradient along II', so
  * in most cases, we could simply assume a Neuman BC.
  *
- * The same logic is applied as for \cs_gradient_b_face_iprime_scalar_lsq.
+ * The same logic is applied as for \ref cs_gradient_boundary_iprime_lsq_s.
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
@@ -1041,7 +1041,7 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
  * To compute the values at I', we only need the gradient along II', so
  * in most cases, we could simply assume a Neuman BC.
  *
- * The same logic is applied as for \cs_gradient_b_face_iprime_scalar_lsq.
+ * The same logic is applied as for \ref cs_gradient_boundary_iprime_lsq_s.
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
@@ -1112,7 +1112,7 @@ cs_gradient_boundary_iprime_lsq_v(const cs_mesh_t               *m,
  * To compute the values at I', we only need the gradient along II', so
  * in most cases, we could simply assume a Neuman BC.
  *
- * The same logic is applied as for \cs_gradient_b_face_iprime_scalar_lsq.
+ * The same logic is applied as for \ref cs_gradient_boundary_iprime_lsq_s.
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities

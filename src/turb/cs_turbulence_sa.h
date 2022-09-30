@@ -43,7 +43,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Solve the \tilde{\nu} equations.
+ * \brief Solve the \f$ \tilde{\nu} \f$ equations.
  *
  * Solve the equation of \f$ \tilde{\nu} \f$, which is the scalar
  * quantity defined by the Spalart-Allmaras model for one time-step.

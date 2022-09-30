@@ -96,7 +96,7 @@ module pointe
 
   !> \anchor itypfb
   !> boundary condition type at the boundary face \c ifac
-  !> (see user subroutine \ref cs\_user\_boundary\_conditions)
+  !> (see \ref cs_user_boundary_conditions)
   integer, dimension(:), pointer, save :: itypfb
 
   !> indirection array allowing to sort the boundary faces
@@ -179,8 +179,8 @@ module pointe
   integer, save :: ncetsm
 
   !> \anchor icetsm
-  !> number of the \c ncetsm cells in which a mass source term is imposed.
-  !> See \c iicesm and the user subroutine \ref cs_user_mass_source_terms}}
+  !> number of the \c ncetsm cells in which a mass injection is imposed.
+  !> See \c iicesm and the \c cs_equation_add_volume_mass_injection_* functions
   integer, allocatable, dimension(:), target :: icetsm
 
   !> zone where a mass source term is imposed.

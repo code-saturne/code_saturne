@@ -55,7 +55,7 @@
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_runaway_check.h"
+#include "cs_runaway_check.c"
 
 /*----------------------------------------------------------------------------*/
 
@@ -66,7 +66,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_runaway_check
+  \file cs_runaway_check.c
 
   \brief  Runaway (diverging) computation detection.
 */
