@@ -28,6 +28,7 @@
       <tab type="user" visible="yes" url="@ref advanced_electric_arcs" title="Management of the electric arcs module"/>
       <tab type="user" visible="yes" url="@ref advanced_coupling" title="Coupling with other domains"/>
       <tab type="user" visible="yes" url="@ref advanced_ale" title="ALE (Arbitrary Lagrangian Eulerian) module"/>
+      <tab type="user" visible="yes" url="@ref advanced_atmospheric" title="Atmospheric flows module"/>
     </tab>
     </tab>
     <tab type="user" visible="yes" url="@ref cs_ug_studymanager" title="The STUDYMANAGER tool"/>

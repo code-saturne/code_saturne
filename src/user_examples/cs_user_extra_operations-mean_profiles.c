@@ -105,8 +105,9 @@ cs_user_extra_operations_initialize(cs_domain_t *domain)
 {
   CS_UNUSED(domain);
 
-  /* Initialize a  mean temperature profile over z */
+  /*![Initialize]*/
 
+  /* Initialize a  mean temperature profile over z */
   cs_real_t v_dir[3] = { 0.0, 0.0, 1.0 };
 
 #if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
@@ -138,6 +139,7 @@ cs_user_extra_operations_initialize(cs_domain_t *domain)
   /* Calculate once for each cell percent lying in each layers */
 
   user_compute_cell_volume_per_layer(profile_t);
+  /*![Initialize]*/
 }
 
 /*----------------------------------------------------------------------------*/
@@ -157,12 +159,13 @@ cs_user_extra_operations(cs_domain_t *domain)
   CS_UNUSED(domain);
 
   /* Mean profile calculation and results dumping */
-
+   /*![generate]*/
   user_profile_t *profile_t = user_profile_get_by_name("T_vertical_profile");
   user_profile_compute(profile_t);
 
   user_profile_dump(profile_t, /* pointer to profile structure */
                     15);       /* dumping periodicity (time step) */
+  /*![generate]*/
 }
 
 /*----------------------------------------------------------------------------*/
@@ -181,6 +184,7 @@ cs_user_extra_operations_finalize(cs_domain_t *domain)
 {
   CS_UNUSED(domain);
 
+  /*![finalize]*/
   /* Mean profile calculation and dump at last time step */
 
   user_profiles_compute_all();
@@ -190,6 +194,8 @@ cs_user_extra_operations_finalize(cs_domain_t *domain)
   /* Free profiles memory */
 
   user_free_profiles();
+
+  /*![finalize]*/
 }
 
 /*----------------------------------------------------------------------------*/

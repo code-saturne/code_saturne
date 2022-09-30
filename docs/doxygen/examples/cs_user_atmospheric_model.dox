@@ -56,6 +56,7 @@
   in \ref cs_user_parameters.f90, routine \ref usipsu
   \snippet cs_user_parameters.f90 usatsoil
 
+  \section cs_user_atmospheric_initialization Initialization of atmospheric
   The user has to specify the percentage of each categories for all faces of
   the soil zone in \ref cs_user_initialization.c:
   \snippet cs_user_initialization-atmospheric.c atmo_soil_init

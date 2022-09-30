@@ -58,3 +58,158 @@ The user documentation is in the process of migration from this pdf documentatio
 to the Doxygen documentation, so the user should first lok there.
 One can access the \texttt{Doxygen} main page through \doxygenfile{index.html}{this link} or from a terminal by typing the following command:
 \texttt{code\_saturne info --guide theory}.
+
+%==================================
+\section{Advanced modelling setup}
+%==================================
+
+%==================================
+%\subsection{Cooling tower modelling}
+%==================================
+
+%==================================
+%\subsubsection{Parameters}
+%==================================
+
+%\noindent
+%\textit{Function called only during calculation initialisation? OR AT EACH ITERATION?.}
+
+%The function \texttt{uscti1} contains calculation parameters such as:
+%\begin{list}{-}{}
+% \item  temperature parameters,
+% \item  the number of exchange zones at various locations,
+% \item  the air properties.
+%\end{list}
+
+%==================================
+%\subsubsection{Initialisation of the variables}
+%==================================
+
+%With the additional variables introduced with the air-cooling module, the
+%following quantities may be initialized by  \texttt{cs\_user\_initialization} in
+%user selected zones in addition to the usual quantities:
+%\begin{list}{-}{}
+% \item the air temperature, variable of index \texttt{isca(ihumid)},
+% \item the air humidity, variable of index \texttt{isca(itemp4)},
+%\end{list}
+%where \texttt{iel} can be an element found in a list returned by the routine
+% '\texttt{getcel}'.
+
+%==================================
+%\subsubsection{Definition of the exchange zones}
+%==================================
+
+%The function \texttt{usctdz} is used to define the exchange zones of a cooling
+% tower. The user provides the following parameters:
+%\begin{list}{-}{}
+% \item \texttt{imzech}: its value is related to the model used:
+%      \begin{list}{$\rightarrow$}{}
+%       \item 0: no model is used,
+%       \item 1: Merkel model is used,
+%       \item 2: Poppe model is used,
+%      \end{list}
+% \item 10 exchange zone parameters.
+%\end{list}
+%These arguments are passed to the function '\texttt{defct}' along with a
+%geometrical selection criterion.
+
+%==================================
+\subsection{Turbomachinery computations}
+%==================================
+
+\subsubsection{Introduction}
+
+Two classical models are available in \CS for rotor/stator
+interactions modelling in turbomachinery computations: the steady
+approach which is based on the so-called \emph{Frozen Rotor} modelling
+and the \emph{transient rotor/stator} approach which is based on a
+sliding mesh technique.
+
+\underline{\emph{Warning:}} This section describes these functionalities based on
+a single \CS computation. An alternative rotor/stator coupling based
+on coupling of boundary conditions is also possible (and only briefly
+described in this section) but it is not recommended.
+
+\subsubsection{Meshing reccomendations}\label{tbm_mesh}
+
+\paragraph{Periodicity}\label{tbm_mesh_perio}
+
+The rotational periodicity treatment is possible only in \emph{Frozen
+Rotor}. However, the interface plane between rotor and stator
+must match in the azimutal $\theta$ direction:
+$$\theta_{\text{min}}^{\text{rotor}}(z)=\theta_{\text{min}}^{\text{stator}}(z),\quad\theta_{\text{max}}^{\text{rotor}}(z)=\theta_{\text{max}}^{\text{stator}}(z)$$
+for all $z$ through the rotation axis direction.
+
+\paragraph{Rotor/stator interface}\label{tbm_mesh_interface}
+\begin{itemize}
+\item \emph{Unsteady rotor/stator}: in the input mesh(es), the
+  interface between rotor and stator domains has to be composed of
+  \underline{boundary faces}. Then the interface boundary faces are joined
+  during the computation and become internal faces, as is usual for
+  mesh joining in the preprocessing stage. A simple way to ensure
+  joining is not done prematurely is to provide
+  \underline{separated meshes} for each rotor or stator domain.
+\item \emph{Frozen Rotor}: the interface can be composed of boundary
+   faces (in which case the interface boundary faces are joined at
+   the beginning of the computation) or of internal faces.
+\end{itemize}
+
+\paragraph{Meshing of the interface region}\label{tbm_user_bpg_mesh}
+
+As mentioned above, when a rotor/stator interface boundary exists (in
+particular for the \emph{unsteady rotor/stator} model), boundary faces
+are joined by the solver during the computation, based on the current
+rotor position. It is thus important to be aware that the success of
+a joining operation is strongly dependant on the
+\underline{quality of the mesh at the interface}. More precisely,
+the refinement must be as similar as possible at both sides of the
+interface. Moreover, it is reminded that the tolerance parameter of
+a joining is a fraction of the shortest edge linked with a vertex of
+a joined face. Consequently, cells with high aspect ratios where the
+refinement in the azimutal $\theta$ direction is much coarser than
+those in one of the two others can also lead to a joining failure.
+In particular, the user should be careful to avoid elongated
+viscous layer type cells in curved areas such as a rotor-stator interface.
+
+If the meshes at both sides of the interface are very different
+such that the joining fails, advanced joining parameters are
+available. However, modifying the mesh is more likely to
+succeed. The introduction of a somekind of buffer cells layer on
+both sides of the interface should be very valuable. Ideally, each
+of the two layers should have the same refinement and a constant
+azimutal step (this latter recommandation is relevant only for
+\emph{unsteady rotor/stator} model).
+
+\paragraph{Alternative rotor/stator coupling}\label{tbm_user_bpg_cpl}
+
+If the meshes at both sides of the interface are very different and
+can not be modified, a fallback solution is to use the rotor/stator model
+based on the boundary conditions coupling.
+
+\underline{\emph{Warning:}} Contrarily to the mesh joining approach, the
+boundary conditions coupling approach is not fully conservative.
+
+\subsubsection{Turbomachinery dedicated postprocessing functions}\label{tbm_user_post}
+
+Useful postprocessing functions relative to the machinery
+characteristics are available: postprocessing of the couple on the
+rotor walls and postprocessing of the head generated by the machinery.
+
+\subsubsection{Data setting, keywords and examples}\label{tbm_date_setting}
+Data setting, keywords and examples for turbomachinery computations
+(mesh joining or boundary conditions coupling), are provided in
+\doxygenfile{turbomachinery.html}{the dedicated \texttt{doxygen}
+documentation}.
+
+%==================================
+\subsection{Cavitation module}
+%==================================
+
+The cavitation module is based on an homogeneous mixture model. The
+physical properties (density and dynamic viscosity) of the mixture
+depends on a resolved void fraction and constant reference properties
+of the liquid phase and the gas phase.
+
+For a description of the user management of the cavitation module,
+please refer to \doxygenfile{cavit.html}{the dedicated
+  \texttt{doxygen} documentation}.

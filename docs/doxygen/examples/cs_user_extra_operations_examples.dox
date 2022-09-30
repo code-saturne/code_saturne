@@ -45,6 +45,7 @@
   - \subpage cs_user_extra_operations_examples_nusselt_calculation_p
   - \subpage cs_user_extra_operations_examples_parallel_operations_p
   - \subpage cs_user_extra_operations_examples_stopping_criterion_p
+  - \subpage cs_user_extra_operations_examples_mean_profiles
 
 */
 // __________________________________________________________________________________
@@ -445,3 +446,21 @@
   \snippet cs_user_extra_operations-verif_cdo_diffusion.c extra_verif_cdo_diff
 
 */
+
+*/
+// __________________________________________________________________________________
+/*!
+
+  \page cs_user_extra_operations_examples_mean_profiles Examples to generate vertical profiles for temperature
+
+  \section cs_user_extra_operations_examples_mean_profiles Example for initialization of mean profile
+
+  \snippet cs_user_extra_operations-mean_profiles.c Initialize
+
+  \section cs_user_extra_operations_examples_mean_profiles_generate  Mean profile calculation and results dumping
+
+  \snippet cs_user_extra_operations-mean_profiles.c generate
+
+  \section cs_user_extra_operations_examples_mean_profiles_finalize Free profiles
+
+  \snippet cs_user_extra_operations-mean_profiles.c finalize

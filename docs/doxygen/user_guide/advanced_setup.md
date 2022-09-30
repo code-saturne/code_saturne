@@ -40,6 +40,7 @@ documentation. It is also recommended to check the
 - \subpage advanced_electric_arcs
 - \subpage advanced_coupling
 - \subpage advanced_ale
+- \subpage advanced_atmospheric
 
 <!-- ----------------------------------------------------------------------- -->
 
@@ -1165,3 +1166,362 @@ In the file \ref cs_user_fluid_structure_interaction.f90 the user provides the p
   [see here for more details](@ref cs_user_fluid_structure_interaction_h_usstr2).
   Moreover it is also possible to take external forces (gravity for example)
   into account.
+
+<!-- ----------------------------------------------------------------------- -->
+
+\page advanced_atmospheric Atmospheric flows module
+
+Data files
+==========
+
+When using the atmospheric module, a file called **meteo** may be added to
+a case's **DATA** directorys in order to provide vertical
+profiles of the main variables.
+
+Atmospheric domain mesh requirements
+====================================
+
+An atmospheric mesh has the following specific features:
+
+ - The boundary located at the top of the domain should be a plane.
+So, horizontal wind speed at a given altitude can be prescribed at the top
+face as an inlet boundary.
+
+ - Cells may have very different sizes, from very small (near ground or
+buildings) to very large (near the top of domain or far from zone of interest).
+
+ - Vertical resolution: from tiny cells (e.g. \f$\Delta\f$\upshape z = 1 m) near
+the ground to a few hundreds of meters at the top.
+
+ - Horizontal resolution: from a few meters to hundreds of meters.
+
+ - The length ratio between two adjacent cells (in each direction) should
+preferably be between \f$0.7\f$ and \f$1.3\f$.
+
+ - The z axis represents the vertical axis.
+
+A topography map can be used to generate a mesh. In this case, the preprocessor
+ mode is particularly useful to check the quality of the mesh (run type Mesh
+quality criteria).
+
+Atmospheric flow model and steady/unsteady algorithm
+====================================================
+
+The GUI may be used to enable the atmospheric flow module and set up the
+following calculation parameters in the **Thermophysical models**-**Calculation features**
+page see [fig:steady](@ref gui_atmospheric_user_s_guide_v92).
+
+The atmospheric flow model
+--------------------------
+
+The user can choose one of the following atmospheric flow models:
+ - **Constant density**: To simulate neutral atmosphere.
+ - **Dry atmosphere**: To simulate dry, thermally-stratified atmospheric flows (enables *Potential temperature* as thermal model).
+ - **Humid atmosphere**: To simulate thermally stratified atmospheric flows (air-water mixture) with phase changes
+   (enables *Liquid potential temperature* as thermal model). The model is described in \cite bouzereau.
+
+Allowed time-stepping options
+-----------------------------
+
+- The pseudo-steady time-stepping is usually chosen. It sets a time step
+  variable in space and time. It can be selected if constant boundary
+  conditions are used, and usually provides fastest and smoothest convergence.
+- The unsteady time-stepping algorithm must be used in presence of time varying
+  boundary conditions or source terms (the time step can then be variable in time or constant).
+
+\anchor gui_atmospheric_user_s_guide_v92
+\image html gui_atmospheric_user_s_guide_v92.png "Selection of atmospheric model"
+
+\anchor gui_atmospheric_user_s_guide_v93
+\image html gui_atmospheric_user_s_guide_v93.png "Selection of steady/unsteady flow algorithm"
+
+\warning
+The following points have to be considered when setting the parameters
+described above:
+
+  - The potential temperature thermal model and the liquid potential
+temperature one (see the paragraph **Atmospheric main variables** for the
+definition) requires that the vertical component of the gravity is set to
+\f$g_z=-9.81 m.s^{-2}\f$ (\f$g_x=g_y=0 m.s^{-2}\f$),
+otherwise pressure and density won't be correctly computed.
+  - As well, the use of scalar with drift for atmospheric dispersion requires
+the gravity to be set to \f$g_z=-9.81\f$ (\f$g_x=g_y=0 m.s^{-2}\f$), even if the density
+is constant.
+
+Physical properties
+===================
+
+The specific heat value has to be set to the atmospheric value
+\f$C_{p}=1005 J/kg/K\f$.
+
+| **Parameters** | **Constant** \n **density** | **Dry atmosphere** | **Humid atmosphere** | **Explanation** |
+|----------------|-------------------------|--------------------|----------------------|-----------------|
+|pressure boundary \n condition|Neumann first \n order|Extrapolation|Extrapolation|In case of **Extrapolaion**, \n the pressure gradient is assumed (and set) constant, whereas in case of\n **Neumann first order**, the pressure gradient is assumed (and set) to zero.|
+|Improved pressure|no|yes|yes|If yes, exact balance between the hydrostatic part of the pressure gradient and the gravity term \f$\rho\f$g is numerically ensured.|
+|Gravity (gravity is assumed aligned with the z-axis)|\f$g_z=0\f$ or \f$g_z=-9.81 m.s^{-2}\f$ (the latter is useful for scalar with drift)|\f$g_z=-9.81 m.s^{-2}\f$|\f$g_z=-9.81 m.s^{-2}\f$|              |
+|Thermal variable|no|potential temperature|liquid potential temperature|                        |
+|Others variables|no|no|total water content, droplets number|                                   |
+
+Boundary and initial conditions
+===============================
+
+The *meteo* file can be used to define initial conditions for the
+different fields and to set up the inlet boundary conditions. For the velocity
+field, **code_saturne** can automatically detect if the boundary is an inlet boundary or an
+outflow boundary, according to the wind speed components given in the
+*meteo* file with respect to the boundary face orientation. This is often
+used for the lateral boundaries of the atmospheric domain, especially if the
+profile is evolving in time. In the case of inlet flow, the data given in the
+*meteo* file will be used as the input data (Dirichlet boundary condition)
+for velocity, temperature, humidity and turbulent variables. In the case of
+outflow, a Neumann boundary condition is automatically imposed (except for the
+pressure). The unit of temperature in the *meteo* file is the degree
+Celsius whereas the unit in the GUI is the kelvin.
+
+To be taken into account, the *meteo* file has to be selected in the GUI
+(*Atmospheric flows* page, see [fig:meteo](@ref gui_atmo_read)) and the check
+box on the side ticked. This file gives the profiles of prognostic atmospheric
+variables containing one or a list of time stamps. The file has to be put in the
+**DATA** directory.
+
+\anchor gui_atmo_read
+\image html gui_atmo_read.png "Selection of the *meteo* file"
+
+An example of file *meteo* is given in the directory
+data/user/meteo. The file format has to be strictly respected.
+The horizontal coordinates are not used at the present time (except when
+boundary conditions are based on several meteorological vertical profiles)
+and the vertical profiles are defined with the altitude above sea level. The
+highest altitude of the profile should be above the top of the simulation domain
+and the lowest altitude of the profile should be below or equal to the lowest
+level of the simulation domain. The line at the end of the *meteo* file
+should not be empty.
+
+If the boundary conditions are variable in time, the vertical profiles for
+the different time stamps have to be written sequentially in the *meteo*
+file.
+
+You can also set the profiles of atmospheric variables directly in the GUI.
+The following boundary conditions can be selected in the GUI:
+ - Inlet/Outlet is automatically calculated for lateral boundaries (e.g. North, West\textellipsis ) of the computational domain
+(see [fig:inlet](@ref gui_atmospheric_user_s_guide_v95)).
+ - Inlet for the top of the domain (see [fig:top](@ref gui_atmospheric_user_s_guide_v96)).
+ - Rough wall for building walls (see [fig:walls](@ref gui_atmospheric_user_s_guide_v97)) or for
+the ground (see [fig:ground](@ref gui_atmospheric_user_s_guide_v98)).
+The user has to enter the roughness length. In case of variable roughness
+length, the user has to provide the land use data and the association
+between the roughness length values and land use categories.
+
+\anchor gui_atmospheric_user_s_guide_v95
+\image html gui_atmospheric_user_s_guide_v95.png "Selection of automatic inlet/ outlet for boundary conditions"
+
+\anchor gui_atmospheric_user_s_guide_v96
+\image html gui_atmospheric_user_s_guide_v96.png "Selection of the boundary condition for the top of the domain"
+
+\anchor gui_atmospheric_user_s_guide_v97
+\image html gui_atmospheric_user_s_guide_v97.png "Selection of the boundary condition for building walls"
+
+\anchor gui_atmospheric_user_s_guide_v98
+\image html gui_atmospheric_user_s_guide_v98.png "Selection of the boundary condition for the ground"
+
+\remark
+    If a meteorological file is given, it is used by default to
+initialize the variables. If a meteorological file is not given, the user can
+use the standard **code_saturne** initial and boundary conditions set up but has to be aware
+that even small inconsistencies can create very large buoyancy forces and
+spurious circulations.
+
+Boundary conditions based on several meteorological vertical profiles
+---------------------------------------------------------------------
+
+In some cases, especially when outputs of a mesoscale model are used, you
+need to build input boundary conditions from several meteorological vertical
+wind profiles. Cressman interpolation is then used to create the boundary
+conditions. The following files need to be put in the \texttt{DATA} directory:
+\item All *meteo* files giving the different vertical profiles of
+prognostic variables (wind, temperature, turbulent kinetic energy and
+dissipation).
+ - A file called imbrication_files_list.txt which is a list
+of the *meteo* files used.
+ -  A separate *meteo* file which is used for the initial conditions
+and to impose inlet boundary conditions for the variables for which Cressman
+interpolation is not used (for example: temperature, turbulent kinetic energy).
+This file must follow the rules indicated previously.
+
+The following files should be put in the SRC directory:
+  - The user source file cs_user_parameters.f90. In this file, set
+the cressman_flag of each variable, for which the Cressman
+interpolation should be enabled, to *true*.
+
+User-defined functions
+======================
+
+User-defined functions may be used when the graphical user interface is not
+sufficient to set up the calculation. We provide some examples of user file for
+atmospheric application:
+ - cs_user_source_terms.c: to add a source term in the prognostic equations for forest
+   canopy modelling, wind turbine wake modelling... [see for examples](@ref user_source_terms)
+ - cs_user_parameters.f90: to activate the Cressman interpolation.
+   For example, it is used to impose inhomogeneous boundary conditions.
+   [see for examples](@ref cs_f_user_parameters_h_usati1)
+ - cs_user_extra_operations.c to generate vertical profiles for post processing.
+   [see for examples](@ref cs_user_extra_operations_examples_mean_profiles)
+ - cs_user_boundary_conditions.f90: showq how to set up the boundary conditions and to set
+   a heterogeneous roughness length... [see for examples](@ref atmospheric_examples)
+
+Physical models
+===============
+
+Atmospheric dispersion of pollutants
+------------------------------------
+
+To simulate the atmospheric dispersion of pollutant, one first need to define
+the source(s) term(s). That is to say the location i.e. the list of cells or
+boundary faces, the total air flow, the emitted mass fraction of pollutant,
+the emission temperature and the speed with the associated turbulent parameters.
+The mass fraction of pollutant is simulated through a user added scalar that
+could be a *scalar with drift* if wanted (aerosols for example).
+
+The simulations can be done using 2 different methods:
+ - Prescribing a boundary condition code **total imposed mass flux** for
+some boundary faces using the cs_user_boundary_conditions.f90 user function.
+ - Using a scalar source term. In this case, the air inflow is not taken
+   into account. The user has to add an explicit part to the equations
+   for the scalar through the cs_user_source_terms.c file. This is
+   done by selecting the cells and adding the source term \ref st_exp
+   which equals to the air flux multiplied by the mass fraction, while the
+   implicit part \ref st_imp is set to zero.
+
+With the first method, the same problem of sources interactions appears, and
+moreover standard Dirichlet conditions should not be used (use
+itypfb=i_convective_inlet and icodcl=13 instead) as
+the exact emission rate cannot be prescribed because the diffusive part
+(usually negligible) cannot be quantified. Additionally, it requires that
+the boundary faces of the emission are explicitly represented in the mesh.\n
+
+Finally the second method does not take into account the jet effect of the
+emission and so must be used only if it is sure that the emission does not
+modify the flow.\n
+
+Whatever solution is chosen, the mass conservation should be verified by using
+for example the [cs_user_extra_operations-scalar_balance.c](@ref cs_user_extra_operations_examples_scalar_balance_p) file.
+
+Soil/atmosphere interaction model
+---------------------------------
+
+This model is based on the force restore model (\cite deardorff).
+It takes into account heat and humidity exchanges between the ground and the
+atmosphere at daily scale and the time evolution of ground surface temperature
+and humidity. Surface temperature is calculated with a prognostic equation
+whereas a 2-layers model is used to compute surface humidity.
+
+The parameter \ref iatsoil in the file \ref atini0.f90 needs to be equal to one to
+activate the model. Then, the source file \ref solvar.f90 is used.
+
+Three variables need to be initialized in the file \ref atini0.f90: deep soil
+temperature, surface temperature and humidity.
+
+The user needs to give the values of the model constants in the file
+\ref solcat.f90: roughness length, albedo, emissivity...
+
+In case of a 3D simulation domain, land use data has to be provided for the domain.
+Values of model constants for the land use categories have also to be
+provided.
+
+Radiative model (1D)
+--------------------
+
+The 1D-radiative model calculates the radiative exchange between different
+atmospheric layers and the surface radiative fluxes.
+
+The radiative exchange is computed separately for two wave lengths intervals
+
+- Calculation in the infrared spectral domain (file \ref rayir.f90)
+- Calculation in the spectral range of solar radiation (file \ref rayso.f90)
+
+This 1D-radiative model is needed if the soil/atmosphere interaction model
+is activated.
+
+This model is activated if the parameter \ref iatra1 is equal to one in the
+file cs_users_parameters.f90.
+
+Atmospheric main variables
+==========================
+
+For more details on the topic of atmospheric boundary layers, see \cite stull.
+
+  - Definition of the potential temperature:
+\f[
+\theta =T\left(\frac{P}{P_{r}}\right)^{-\frac{R_{d}}{C_{p}}}
+\f]
+  - Definition of liquid potential temperature:
+\f[
+\theta_{l} = \theta \left( 1-\frac{L}{C_{p}T} q_{l} \right)
+\f]
+  - Definition of virtual temperature:
+\f[
+T_{v} = \left(1+0.61q\right)T
+\f]
+  - Gas law:
+\f[
+P = \rho \frac{R}{M_{d}}\left(1+0,61q\right)T
+\f]
+with \f$R=R_{d} M_{d}\f$.
+  - Hydrostatic state:
+\f[
+\frac{\partial P}{\partial z} = -\rho g
+\f]
+
+| **Constant** **name** | **Symbol** | **Values** | **Unit** |
+|-----------------|----------|----------|--------|
+|Gravity acceleration at sea level|\f$g\f$| \f$9.81\f$|\f$m.s^{-2}\f$|
+|Effective Molecular Mass for dry air| \f$M_{d}\f$ | \f$28.97\f$| \f$kg.kmol^{-1}\f$|
+|Standard reference pressure | \f$P_{r}\f$ | \f$10^{5}\f$ | \f$Pa\f$|
+|Universal gas constant | \f$R\f$| \f$8.3143\f$ | \f$J.K^{-1}.mol\f$|
+|Gas constant for dry air| \f$R_{d}\f$ | \f$287\f$ | \f$J.kg^{-1}.K^{-1}\f$|
+
+
+| **Variable** **name** | **Symbol** |
+|---------------------|----------|
+|Specific heat capacity of dry air | \f$C_{p}\f$|
+|Atmospheric pressure | \f$P\f$|
+|Specific humidity | \f$q\f$|
+|Specific content for liquid water | \f$q_{l}\f$|
+|Temperature | \f$T\f$|
+|Virtual temperature | \f$T_{v}\f$|
+|Potential temperature | \f$\theta\f$|
+|Liquid potential temperature | \f$\theta_{l}\f$|
+|Latent heat of vaporization|\f$L\f$|
+|Density | \f$\rho \f$|
+|Altitude | \f$z\f$|
+
+Recommendations
+===============
+
+This part is a list of recommendations for atmospheric numerical simulations.
+
+- Enough probes at different vertical levels in the domain should be used
+  to check the convergence of the calculation.
+- An inflow boundary condition at the top level of the domain should be set
+  (symmetry and automatic inlet/outlet are not appropriate).
+- A Courant number too small or too big has to be avoided (see code_saturne Best
+  Practice Guidelines). That is the reason why the
+  **variable time step in space and in time** option is recommended for steady
+  simulations when there are large differences of cell size inside the domain
+  (which is generally the case for atmospheric simulations). With this option,
+  it can be necessary to change the reference time step and the time step maximal
+  increase (by default, the time step increase rate is \f$10\f$).
+
+In some cases, results can be improved with the following modifications:
+
+- In some case, the turbulent eddy viscosity can drop to unrealistically low
+  values (especially with \f$k-\varepsilon\f$ model in stable atmospheric condition).
+  In those cases, it is suggested to put an artificial molecular viscosity around
+  \f$0.1 m^{2}.s^{-1}\f$.
+- If the main direction of wind is parallel to the boundary of your computing
+  domain, try to set symmetry boundary conditions for the lateral boundaries to
+  avoid inflow and outflow on the same boundary zone (side of your domain).
+  Another possibility is to use a cylindrical mesh.
+- To avoid inflow and outflow on the same boundary zone (side of your domain),
+  avoid the case of vertical profile in the input data \texttt{meteo} file with
+  changes of the sign of velocity of wind (\f$V_x\f$ or/and \f$V_y\f$).
