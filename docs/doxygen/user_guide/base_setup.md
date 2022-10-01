@@ -201,6 +201,8 @@ as shown in the [examples](@ref user_initialization_remapper_3d).
 
 \page base_setup_boundary_conditions Manage boundary conditions
 
+[TOC]
+
 As usual, except for advanced models where a high level of automation
 is needed through specific preprocessing scripts or tools, using
 the GUI to define boundary conditions is recommended.
@@ -254,10 +256,26 @@ or Robin conditions are not currently directly appplied, but used in conjunction
 with the wall model. To force true Dirichlet or exchange conditions,
 using the legacy boundary condition settings is still needed.
 
-## Legacy user-defined function definitions
+### Verification of the boundary conditions
 
-For definitions using the legacy system, the \ref cs_user_boundary_conditions
-(in C) or \ref cs_f_user_boundary_conditions (Fortran) functions may be used.
+The code checks the main compatibilities between the boundary
+conditions. In particular, the following rules must be respected:
+
+- If the boundary conditions for the velocity belong to the
+  "sliding" type (`icodcl` == 4), the conditions for <em>R<sub>ij</sub>-ε</em>
+   must belong to the "symmetry" type (`icodcl`=4), and vice versa.
+
+- If the boundary conditions for the velocity belongs to the "friction" type
+  (`icodcl` == 5 or 6), the boundary conditions for the turbulent variables must
+  belong to the "friction" type, too.
+
+- If the boundary condition of a scalar belongs to the "friction" type, the
+  boundary condition of the velocity must belong to the "friction" type, too.
+
+In case of errors, if the post-processing output is activated (which
+is the default setting), a special error output, similar to the mesh
+format, is produced in order to better identify and locate boundary condition
+definition errors.
 
 Boundary conditions with LES
 ----------------------------

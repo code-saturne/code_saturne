@@ -17,6 +17,7 @@
     </tab>
     <tab type="user" visible="yes" url="@ref cs_ug_base_setup" title="Basic modeling setup">
     <tab type="usergroup" visible="yes" url="@ref cs_ug_advanced_setup" title="Advanced modeling setup">
+      <tab type="user" visible="yes" url="@ref low_level_boundary_condition_definitions" title="Low-level finite-volume boundary-condition definitions"/>
       <tab type="user" visible="yes" url="@ref advanced_specific_physics" title="Specific physical models"/>
       <tab type="user" visible="yes" url="@ref advanced_coal_and_gas_combution" title="Pulverized coal and gas combustion module"/>
       <tab type="user" visible="yes" url="@ref advanced_fuel_oil_combustion" title="Heavy fuel oil combustion module"/>

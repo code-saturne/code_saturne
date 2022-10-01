@@ -29,6 +29,7 @@ documentation. It is also recommended to check the
 
 [TOC]
 
+- \subpage low_level_boundary_condition_definitions
 - \subpage advanced_specific_physics
 - \subpage advanced_coal_and_gas_combution
 - \subpage advanced_fuel_oil_combustion
@@ -38,6 +39,389 @@ documentation. It is also recommended to check the
 - \subpage advanced_compressible
 - \subpage advanced_electric_arcs
 - \subpage advanced_coupling
+
+<!-- ----------------------------------------------------------------------- -->
+
+\page low_level_boundary_condition_definitions Low-level finite-volume boundary-condition definitions
+
+Low-level user-defined functions for boundary conditions
+========================================================
+
+For definitions using the legacy finite-volume scheme (i.e. not using CDO),
+the \ref cs_user_boundary_conditions (in C) may be used. The Fortran equivalent,
+\ref cs_f_user_boundary_conditions may still be used but is deprecated, and not
+described here (please refer to the documentation from previous versions if needed).
+
+For more details about the treatment of boundary conditions, the user
+may refer to the theoretical and computer documentation [@theory] of the
+function `condli` (for wall conditions, see `clptur`) (to access this
+document on a workstation, use `code_saturne info –guide theory`).
+
+From the user point of view, the boundary conditions are fully defined
+by the arrays specifying the boundary type and conditions
+assigned to each boundary face.
+
+An array common to all variables defines the boundary condition type relative
+to the base flow:
+
+- `bc_type[n_b_faces]`
+
+Other arrays are specific to each solved variable field, and accessible through
+its  \ref cs_field_t::bc_coeffs member:
+
+- `icodcl[n_b_faces]` defines the type of boundary condition for the variable.
+- `rcodcl1[n_b_faces*dim]`, `rcodcl2[n_b_faces*dim]`, and
+  `rcodcl3[n_b_faces*dim]` contain the associated numerical values (value of the
+   Dirichlet condition, of the flux \...).
+
+In the case of standard boundary conditions, even without the GUI, it is sufficient
+to complete `bc_type[face_id]` and parts of `rcodcl*` arrays, as `icodcl`
+and most of `rcodcl*` are filled automatically based on the boundary condition type.
+For non-standard boundary conditions, those arrays must be fully completed.
+
+Coding of standard boundary conditions {#sec_prg_bc_standard}
+--------------------------------------
+
+The standard keywords used by the indicator `bc_type` are, in C:
+\ref CS_INLET, \ref CS_SMOOTHWALL, \ref CS_ROUGHWALL, \ref CS_SYMMETRY,
+\ref CS_OUTLET, \ref CS_FREE_INLET, \ref CS_FREE_SURFACE,
+\ref CS_CONVECTIVE_INLET and \ref CS_INDEF.
+
+- If `bc_type[face_id] == CS_INLET`: inlet face.
+
+  * Zero-flux condition for pressure and Dirichlet condition for all other
+    variables. The value of the Dirichlet condition must be given in
+    `f->bc_coeffs->rcodcl1[coo_id*n_b_faces + face_id]` for each solved variable,
+    except for the pressure (where `coo_id` is the coordinate id for vector or
+    tensor fields, and 0 for scalars).
+    The values of `icodcl`, `rcodc2`, and `rcodcl3` and are filled automatically.
+    <br><br>
+
+- If `bc_type[face_id] == CS_SMOOTHWALL`: smooth solid wall face, impermeable
+  and with friction.
+
+  * the eventual sliding wall velocity of the face is defined by
+    `CS_F_(vel)->bc_coeffs->rcodcl1[coo_id*n_b_faces + face_id]`
+    (with `coo_id`  0, 1, or 2).
+    The initial `rcodcl1` values of  are zero for the three velocity components
+    (and therefore need to be specified only if the velocity is not equal to zero).
+    \warning The sliding wall velocity must belong to the boundary face
+    plane. For safety, the code only uses the projection of this velocity on
+    the face. As a consequence, if the velocity specified by the user does
+    not belong to the face plane, the wall sliding velocity really taken
+    into account will be different.
+
+  * For scalars, two kinds of boundary conditions can be defined:
+
+    - Imposed value at the wall. The user must write:<br>
+      `icodcl[face_id]` = 5<br>
+      `rcodcl1[face_id]` = imposed value.<br>
+
+    - Imposed flux at the wall. The user must write:<br>
+      `icodcl[face_id]` = 3<br>
+      `rcodcl3[face_id]` = imposed flux value<br>
+      (depending on the variable, the user may refer to the case `icodcl`=3 of
+      \ref sec_prg_bc_nonstandard  for the flux definition).<br>
+
+    - If the user does not fill these arrays, the default condition is zero
+      flux.<br><br>
+
+- If `bc_type[face_id] == CS_ROUGHWALL`: rough solid wall face, impermeable
+  and with friction.
+
+  * The same definitions for scalars and for eventual sliding wall velocity apply
+    as for a smooth wall.
+
+  * Roughness is also specified in the `rcodcl3` array associated with the velocity:<br>
+    `rcodcl3[face_id]` for the dynamic roughness<br>
+    `rcodcl2[n_b_faces + face_id]` for the thermal and scalar roughness.<br>
+    `rcodcl[2*n_b_faces + face_id]` is not used.<br><br>
+
+- If `bc_type[face_id] === CS_SYMMETRY`: symmetry face (or wall without friction).
+
+   * Nothing to specify in `icodcl` and `rcodcl` arrays.<br><br>
+
+- If `bc_type[face_id] == CS_OUTLET`: free outlet face (or more precisely free
+  inlet/outlet with forced pressure)
+
+  The pressure is always treated with a Dirichlet condition, calculated with the
+  constraint:
+  \f$ \frac{\partial }{\partial n}\left(\frac{ \partial P}{\partial \tau}\right) = 0 \f$
+
+  The pressure is set to <em>P<sub>0</sub></em> at the `CS_OUTLET` face closest
+  to the reference point defined by `cs_glob_fluid_properties->xyzp0`.
+  The pressure calibration is always done on a single face, even if there are
+  several outlets.
+
+  If the mass flow is incoming, the velocity is set to zero and a Dirichlet
+  condition for the scalars and the turbulent quantities is used (or zero-flux
+  condition if no Dirichlet value has been specified).
+
+  If the mass flow is ougoing, zero-flux condition are set for the velocity,
+  turbulent quantities, and scalars.
+
+  Nothing is set in `icodcl` or `rcodcl` for the pressure or the velocity.
+  An optional Dirichlet condition can be specified for the scalars and turbulent
+  quantities.<br><br>
+
+- If `bc_type[face_id] == CS_FREE_INLET`: free outlet or inlet (based on Bernoulli
+  relationship) face.
+
+  * If outlet, the equivalent to standard outlet. In case of ingoing flux,
+    the Bernoulli relationship which links pressure and velocity is used (see
+    the theory guide for more information). An additional head loss modelling
+    the outside of the domain can be added by the user.<br><br>
+
+- If `bc_type[face_id] == CS_FREE_SURFACE`: free-surface boundary
+   condition.<br><br>
+
+- If `bc_type[face_id] == CS_CONVECTIVE_INLET`: inlet with zero diffusive flux
+  for all transported variables (species and velocity).
+
+  * This allows to exactly impose the ingoing flux, without adding a
+    diffusive term.<br><br>
+
+- If `bc_type[face_id] == CS_INDEF`: undefined type face (non-standard case).
+
+  * Coding is done in a non-standard way by filling `icodcl`, `rcodcl1`,
+    `rcodcl2`, and `rcodcl3` entries associated to that face (see
+    \ref sec_prg_bc_nonstandard).<br><br>
+
+\remarks
+
+- Whatever the value of the indicator `bc_type[face_id]`, if the array
+  `icodcl[face_id]` is modified for a given variable (*i.e.* filled with a
+  non-zero value), the code will not use the default conditions for that
+  variable at face `face_id`. It will take into account only the values of
+  `icodcl` and `rcodcl` provided by the user (these arrays must then be
+  fully completed, like in the non-standard case).
+
+  For instance, for a normal symmetry face where scalar 1 is associated
+  with a Dirichlet condition equal to 23.8 (with an infinite exchange
+  coefficient) for a given variable field with pointer `f`:
+
+  ```{.C}
+  bc_type[face_id] = CS_SYMMETRY;
+  f->bc_coeffs->icodcl[face_id]) = 1;
+  f->bc_coeffs->rcodcl1[face_id] = 23.8;
+
+  // rcodcl2[face_id] = cs_math_infinite_r is already the default value.
+  ```
+
+  The boundary conditions for the other variables are defined automatically.
+
+- The **gradient** boundary conditions in code_saturne boil down to determine
+  a value for the current variable <em>Y</em> at the boundary face
+  <em>f<sub>b</sub></em>, that is to say \f$ \varia_\fib \f$, value expressed
+  as a function of \f$ \varia_{\centip} \f$, value of <em>Y</em> in
+  *I'*, projection of the center of the adjacent cell on the straight
+  line perpendicular to the boundary face and crossing its center:
+  \f[ \varia_\fib=A_{\fib}^g +B_{\fib}^g \varia_{\centip}. \f]
+
+  For a given face, the pair of coefficients \f$ A_{\fib}^g , \, B_{\fib}^g \f$
+  may be accessed using the `f->bc_coeffs->a[face_id]` and
+  `f->bc_coeffs->b[face_id]` arrays, where the `f` is a pointer to the
+  variable's field structure.
+
+  * In the case of a vector or tensor, where `d` represents `f->dim`
+    (3 or 6 respectively), `f->bc_coeffs->a[face_id}` is replaced by
+    `f->bc_coeffs->a[d*face_id + i]` for coordinate `i` in the expressions
+    above, and `f->bc_coeffs->b[face_id}` is replaced by
+    `f->bc_coeffs->b[d*d*face_id + d*i + j]`.<br><br>
+
+- The **flux** boundary conditions in code_saturne boil down to determine the
+  value of the diffusive flux of the current variable <em>Y</em> at the boundary
+  face <em>f<sub>b</sub></em>, that is to say the
+  \f$ D_{\ib} \left(K_\fib, \, \varia \right) \f$,
+  value expressed as a function of \f$ \varia_{\centip} \f$, value of <em>Y</em>
+  in *I'*, projection of the center of the adjacent cell on the
+  straight line perpendicular to the boundary face and crossing its center:
+
+  \f[ D_{\ib} \left(K_\fib, \, \varia \right) = A_{\fib}^f +B_{\fib}^f \varia_{\centip}. \f]
+
+  For a given face, the pair of coefficients \f$ A_{\fib}^f , \, B_{\fib}^f \f$
+  may be accessed using the `f->bc_coeffs->af[face_id]` and
+  `f->bc_coeffs->bf[face_id]` arrays, where the `f` is a pointer to the
+  variable's field structure.
+
+  * In the case of a vector or tensor, where `d` represents `f->dim`
+    (3 or 6 respectively), `f->bc_coeffs->af[face_id}` is replaced by
+    `f->bc_coeffs->af[d*face_id + i]` for coordinate `i` in the expressions
+    above, and `f->bc_coeffs->bf[face_id}` is replaced by
+    `f->bc_coeffs->bf[d*d*face_id + d*i + j]`.<br><br>
+
+  The **divergence** boundary conditions in code_saturne boil down to
+  determining a value for the current variable <em>Y</em> (mainly the Reynolds
+  stress components, the divergence \f$ \divv \left(\tens{R} \right) \f$ used in
+  the calculation of the momentum equation) at the boundary face
+  <em>f<sub>b</sub></em>, that is to say \f$ \varia_\fib \f$, value expressed
+  as a function of \f$ \varia_{\centip} \f$, value of <em>Y</em> in
+  *I'*, projection of the center of the adjacent cell on the straight
+  line perpendicular to the boundary face and crossing its center:
+  \f[ \varia_\fib=A_{\fib}^d +B_{\fib}^d \varia_{\centip}. \f]
+
+  For a given face, the pair of coefficients \f$ A_{\fib}^d , \, B_{\fib}^d \f$
+  may be accessed using the `f->bc_coeffs->ad[face_id]` and
+  `f->bc_coeffs->bd[face_id]` arrays, where the `f` is a pointer to the
+  variable's field structure.
+
+  * In the case of a vector or tensor, where `d` represents `f->dim`
+    (3 or 6 respectively), `f->bc_coeffs->ad[face_id}` is replaced by
+    `f->bc_coeffs->ad[d*face_id + i]` for coordinate `i` in the expressions
+    above, and `f->bc_coeffs->bd[face_id}` is replaced by
+    `f->bc_coeffs->bd[d*d*face_id + d*i + j]`.<br>
+
+Coding of non-standard boundary conditions {#sec_prg_bc_nonstandard}
+------------------------------------------
+
+If a face does not correspond to a standard type, the user must
+completely fill the arrays `bc_type`, `icodcl`, `rcodcl1`, `rcodcl2`,
+and `rcodcl3` fr each variable field. `bc_type[face_id]` is then equal
+to `CS_INDEF` or another value defined by the user (see note at the end
+of \ref sec_prg_bc_standard). The `icodcl` and `rcodcl` arrays must be
+filled as follows:
+
+- If `f->bc_coeffs->icodcl[face_id]` == 1: Dirichlet condition.
+
+  * `f->bc_coeffs->rcodcl1[face_id]` is the value of the variable at the
+    given face.
+    - For vectors and tensors, `f->bc_coeffs->rcodcl1[face_id]` is replaced
+      by `f->bc_coeffs->rcodcl1[n_b_faces*i + face_id]` for coordinate `i`.
+    - This value has the units of the variable:<br>
+      - <em>m/s</em> for the velocity
+      - <em>m<sup>2</sup>/s<sup>2</sup></em> for the Reynolds stress
+      - <em>m<sup>2</sup>/s<sup>3</sup></em> for the dissipation
+      - <em>Pa</em> for the pressure
+      - °C for the temperature
+      - <em>J.kg <sup>-1</sup></em> for the enthalpy
+      - <em>°C<sup>2</sup></em> for temperature fluctuations
+      - <em>J<sup>2</sup>.kg<sup>-2</sup></em> for enthalpy fluctuations
+
+  * `f->bc_coeffs->rcodcl2[face_id]` is the value of the exchange coefficient
+    between the outside and the fluid for the variable.
+    - An "infinite" value (`rcodcl2[face_id] == cs_math_infinite_r`)
+      indicates an ideal transfer between the outside and the fluid (default
+      case).
+    - It has the following units (defined in such way that when multiplying
+      the exchange coefficient by the variable, the given flux has the same
+      units as the flux defined below when `icodcl == 3`):
+      - <em>kg.m <sup>-2</sup>.s <sup>-1</sup></em> for the velocity
+      - <em>kg.m <sup>-2</sup>.s <sup>-1</sup></em> for the Reynolds stress
+      - <em>s.m <sup>-1</sup></em> for the pressure
+      - <em>W.m <sup>-2</sup>.°C <sup>-1</sup></em> for the temperature
+      - <em>kg.m <sup>-2</sup>.s <sup>-1</sup></em> for the enthalpy
+
+  * `f->bc_coeffs->rcodcl3[face_id]` is not used.<br><br>
+
+- If `f->bc_coeffs->icodcl[face_id] == 2`: radiative outlet.
+
+  It reads \f$ \dfrac{\partial \varia }{\partial t} + C \dfrac{\partial \varia}{\partial n} = 0 \f$,
+  where <em>C</em> is a to be defined celerity of radiation.
+
+  - `f->bc_coeffs->rcodcl3[face_id]` is not used.
+
+  - `f->bc_coeffs->rcodcl1[face_id]` is the flux value of the variable
+    at *I'*, projection of the center of the adjacent cell
+    on the straight line perpendicular to the boundary face and crossing its
+    center, at the previous time step.
+
+  - `f->bc_coeffs->rcodcl[face_id]` is CFL number based on the parameter
+    <em>C</em>, the distance to the boundary *I'F* and the
+    time step: \f$ CFL = \dfrac{C dt }{\centip \centf} \f$.<br><br>
+
+- If `f->bc_coeffs->icodcl[face_id] == 3`: flux condition.
+
+  - `f->bc_coeffs->rcodcl1[face_id]` and  `f->bc_coeffs->rcodcl2[face_id]`
+    are not used.
+
+  - `f->bc_coeffs->rcodcl3[face_id]` is the flux value of of the variable
+    at the wall. This flux is negative if it is a source for the fluid. It
+    corresponds to:
+
+    - \f$ -(\lambda_T+C_p\frac{\mu_t}{\sigma_T})\grad T\cdot\vect{n} \f$
+      for a temperature (in \f$ W/m^2 \f$)
+
+    - \f$ -(\frac{\lambda_T}{C_p}+\frac{\mu_t}{\sigma_h})\grad h\cdot\vect{n} \f$
+      for an enthalpy (in \f$ W/m^2 \f$).
+
+    - \f$ -(\lambda_\varphi+\frac{\mu_t}{\sigma_\varphi})\grad\varphi\cdot\vect{n} \f$
+      in the case of another scalar \f$ \varphi \f$ (in \f$ kg.m^{-2}.s^{-1}.[\varphi] \f$,
+      where \f$ [\varphi] \f$ are the units of \f$ \varphi \f$).
+
+    - \f$ -\Delta t\ \grad P\cdot\vect{n} \f$ for the pressure
+      (in \f$ kg.m^{-2}.s^{-1} \f$).
+
+    - \f$ -(\mu+\mu_t)\grad U_i\cdot\vect{n} \f$ for a velocity component
+      (in \f$ kg.m^{-1}.s^{-2} \f$).
+
+    - \f$ -\mu\grad R_{ij}\cdot\vect{n} \f$ for a
+      <em>R<sub>ij</sub>-ε</em> tensor
+      component (in \f$ W/m^2 \f$).
+
+- If `f->bc_coeffs->icodcl[face_id] == 4`: symmetry condition, for
+  symmetry faces or wall faces without friction.
+
+  This condition can only be( used for velocity components
+  (\f$ \vect{U}\cdot\vect{n} = 0 \f$) and the <em>R<sub>ij</sub>-ε</em> tensor
+  components (for other variables, a zero-flux condition type is usually used).
+
+- If `f->bc_coeffs->icodcl[face_id] == 5`: friction condition, for wall
+  faces with friction. This condition can not be applied to the pressure.
+
+  - For the velocity and (if necessary) the turbulent variables, the values
+    at the wall are calculated from theoretical profiles. In the case of a
+    sliding wall, the three components of the sliding velocity are given by
+    `CS_F_(vel)->bc_coeffs->rcodcl1[coo_id*n_b_faces + face_id]`
+    (with `coo_id`  0, 1, or 2), the same as for a standard wall.
+
+  - For scalars, the condition `icodcl[face_id] == 5` is similar to
+    `icodcl[face_id] == 1`, but with a wall exchange coefficient calculated from
+    a theoretical law. Therefore, the values of
+    `f->bc_coeffs->rcodcl1[face_id]` and
+    `f->bc_coeffs->rcodcl2[face_id]` must be specified: see [@theory].
+
+- If `f->bc_coeffs->icodcl[face_id] == 5`: friction condition, for rough wall
+  faces with friction. This condition can not be applied to the pressure.
+
+  - The same rules apply as for a smooth wall, above.
+
+  - The dynamic roughness height is given by
+    `CS_F_(vel)->bc_coeffs->rcodcl3[face_id]` only.
+
+  - For the other scalars, the thermal/scalar roughness height is given by
+    `f->bc_coeffs->rcodcl3[face_id]` only.
+
+- If `f->bc_coeffs->icodcl[face_id] == 9`: free outlet condition for the
+  velocity. This condition is only applicable to velocity components.<br>
+  If the mass flow at the face is negative, this condition is equivalent
+  to a zero-flux condition.<br>
+  If the mass flow at the face is positive, the velocity at the face is
+  set to zero (but not the mass flow).<br>
+  `rcodcl` is not used.
+
+- If `f->bc_coeffs->icodcl[face_id] == 14`: generalized symmetry boundary
+  condition for vectors (Marangoni effect for the velocity for instance).
+
+  This condition is only applicable to vectors and sets a Dirichlet
+  boundary condition on the normal component and a Neumann condition on
+  the tangential components.<br>
+  For each of the 3 components `coo_id`, the required values are:
+
+  `f->bc_coeffs->rcodcl1[coo_id*n_b_faces + face_id]`: Dirichlet value for the
+  `coo_id` coordinate.
+
+  `f->bc_coeffs->rcodcl3[coo_id*n_b_faces + face_id]`: flux value for the
+  `coo_id` coordinate.
+
+  Therefore, the code automatically computes the boundary condition to
+  impose to the normal and to the tangential components.
+
+\note
+
+A standard `CS_OUTLET` outlet face amounts to a Dirichlet condition (`icodcl == 1`)
+for the pressure, a free outlet condition (`icodcl == 9`) for the velocity, and a
+Dirichlet condition (`icodcl == 1`) if the user has specified a Dirichlet value
+or a zero-flux condition (`icodcl == 3`) for the other variables.
 
 <!-- ----------------------------------------------------------------------- -->
 
@@ -480,7 +864,7 @@ When the **compressible module** is activated, it is recommended to:
 With the compressible algorithm, the specific total energy is a new solved variable
 CS_F_(e_tot). The temperature variable deduced from the specific total energy variable is
 CS_F_(t_kelvin) for the compressible module.\n
-Initialization of the options of the variables, boundary conditions, initialisation of the variables and
+Initialization of the options of the variables, boundary conditions, initialization of the variables and
 management of variable physical properties can be done with the **GUI**. We describe below the functions
 the user has to fill in without the **GUI**.
 
@@ -511,7 +895,7 @@ Initialization of the variables
 
 When the **GUI** is not used, the function \ref cs_user_initialization is used
 to initialize the velocity, turbulence and passive scalars (see
-the \ref user_initialization_compressible for examples of initialisations with
+the \ref user_initialization_compressible for examples of initializations with
 the compressible module). Concerning pressure, density, temperature and specific total energy, only 2 variables out
 of these 4 are independent. The user may then initialise the desired variable pair
 (apart from temperature-energy) and the two other variables will be
@@ -552,10 +936,10 @@ The electric arcs module is activated either:
  - in the Graphical User Interface _GUI_: __Calculation features__ --> __Electrical arcs__, the user can choose between _Joule Effect_ for _joule model_ and _Joule Effect_ and _Laplace Forces_ for electric arc
  - or in the user function \ref cs_user_model in cs_user_parameters.c file, by setting the \ref cs_glob_physical_model_flag[\ref CS_ELECTRIC_ARCS] or \ref cs_glob_physical_model_flag[\ref CS_JOULE_EFFECT] parameter to a non-null value.
 
-Initialisation of the variables
+Initialization of the variables
 ===============================
 
-The function \re cs_user_initialization allows the user to initialise some of the specific physics variables prompted via \ref cs_user_model. It is called only during the initialisation of the calculation. As usual,the user has access to many geometric variables so that the zones can be treated separately if needed (see [Electric arcs example](@ref user_initialization_electric_arcs)).
+The function \re cs_user_initialization allows the user to initialise some of the specific physics variables prompted via \ref cs_user_model. It is called only during the initialization of the calculation. As usual,the user has access to many geometric variables so that the zones can be treated separately if needed (see [Electric arcs example](@ref user_initialization_electric_arcs)).
 
 The values of potential and its constituents are initialised if required.
 
@@ -595,7 +979,7 @@ function. Examples are given which are to be adapted by the user. If the tempera
 to be determined to calculate the physical properties, the solved variable, enthalpy must
  be deduced. The preferred temperature-enthalpy law should be defined
  (a general example is provided in (\ref cs_user_physical_properties),
- and can be used for the initialisation of the variables in
+ and can be used for the initialization of the variables in
  (\ref cs_user_initialization)).
  For the _electric arcs_ module, the physical properties are interpolated from the data file
  __dp_ELE__ supplied by the user. Modifications are generally not necessary.
