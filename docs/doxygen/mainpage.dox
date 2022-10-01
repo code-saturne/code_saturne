@@ -33,13 +33,16 @@
   The basic capabilities of code_saturne enable the handling of either
   incompressible or expandable flows with or without heat transfer and
   turbulence. Dedicated modules are available for specific physics such as
-  radiative heat transfer, combustion (gas, coal, heavy fuel oil, ...),
+  radiative heat transfer, combustion (gas, coal, ...),
   magneto-hydrodynamics, compressible flows, two-phase flows
   (Euler-Lagrange approach with two-way coupling), or atmospheric flows.
 
   code_saturne relies on a finite volume discretisation and allows the use of
   various mesh types which may be hybrid (containing several kinds of
   elements) and may have structural non-conformities (hanging nodes).
+
+  A basic overview of the underlying theory is given in \cite Archambeau:2004.
+  More detailed information is available in the theoretical documentation.
 
   \section mainpage_licence Licence
 
