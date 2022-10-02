@@ -1600,7 +1600,6 @@ cs_turb_model_log_setup(void)
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
   const cs_wall_functions_t *wall_fns = cs_get_glob_wall_functions();
 
-
   cs_var_cal_opt_t var_cal_opt;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
@@ -2081,6 +2080,31 @@ cs_turb_constants_log_setup(void)
                     "    cssr2:       %14.5e (Coef c_r2)\n"
                     "    cssr3:       %14.5e (Coef c_r3)\n"),
                   cs_turb_cssr1, cs_turb_cssr2, cs_turb_cssr3);
+
+  const int kturt = cs_field_key_id("turbulent_flux_model");
+  const int n_fields = cs_field_n_fields();
+  bool has_dfm = false;
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (!(f->type & CS_FIELD_VARIABLE))
+      continue;
+
+    const int turb_flux_model = cs_field_get_key_int(f, kturt);
+    const int turb_flux_model_type = turb_flux_model / 10;
+    has_dfm = has_dfm || (turb_flux_model_type == 3);
+  }
+
+  if (has_dfm)
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  Differential Flux Model (DFM)\n"
+                    "    c1trit:      %14.5e (Coef c_1)\n"
+                    "    c2trit:      %14.5e (Coef c_2)\n"
+                    "    c3trit:      %14.5e (Coef c_3)\n"
+                    "    c4trit:      %14.5e (Coef c_4)\n"),
+                  cs_turb_c1trit, cs_turb_c2trit, cs_turb_c3trit,
+                  cs_turb_c4trit);
+
 }
 
 /*----------------------------------------------------------------------------*/
