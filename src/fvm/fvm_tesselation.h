@@ -129,7 +129,7 @@ fvm_tesselation_destroy(fvm_tesselation_t  * this_tesselation);
  *   this_tesselation   <-> partially initialized tesselation structure
  *   dim                <-- spatial dimension
  *   vertex_coords      <-- associated vertex coordinates array
- *   parent_vertex_num  <-- optional indirection to vertex coordinates
+ *   parent_vertex_id   <-- optional indirection to vertex coordinates
  *   error_count        --> number of elements with a tesselation error
  *                          counter (optional)
  *----------------------------------------------------------------------------*/
@@ -138,7 +138,7 @@ void
 fvm_tesselation_init(fvm_tesselation_t  *this_tesselation,
                      int                 dim,
                      const cs_coord_t    vertex_coords[],
-                     const cs_lnum_t     parent_vertex_num[],
+                     const cs_lnum_t     parent_vertex_id[],
                      cs_lnum_t          *error_count);
 
 /*----------------------------------------------------------------------------

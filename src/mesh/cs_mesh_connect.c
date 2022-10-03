@@ -96,8 +96,8 @@ BEGIN_C_DECLS
  *   include_families <-- include family info if true
  *   i_face_list_size <-- size of i_face_list[] array
  *   b_face_list_size <-- size of b_face_list[] array
- *   i_face_list      <-> list of interior faces (1 to n), or NULL
- *   b_face_list      <-> list of boundary faces (1 to n), or NULL
+ *   i_face_list      <-- list of interior faces (0 to n-1), or NULL
+ *   b_face_list      <-- list of boundary faces (0 to n-1), or NULL
  *----------------------------------------------------------------------------*/
 
 static void
@@ -107,16 +107,11 @@ _add_faces_to_nodal(const cs_mesh_t  *mesh,
                     bool              include_families,
                     cs_lnum_t         i_face_list_size,
                     cs_lnum_t         b_face_list_size,
-                    cs_lnum_t         i_face_list[],
-                    cs_lnum_t         b_face_list[])
+                    const cs_lnum_t   i_face_list[],
+                    const cs_lnum_t   b_face_list[])
 {
-  cs_lnum_t   face_id, i;
+  cs_lnum_t   face_id;
 
-  cs_lnum_t   n_max_faces = 0;
-  cs_lnum_t   b_face_count = 0;
-  cs_lnum_t   i_face_count = 0;
-  cs_lnum_t   extr_face_count = 0;
-  cs_lnum_t  *extr_face_idx = NULL;
   cs_lnum_t  *extr_face_list = NULL;
 
   cs_lnum_t   face_num_shift[3];
@@ -127,87 +122,44 @@ _add_faces_to_nodal(const cs_mesh_t  *mesh,
 
   /* Count the number of faces to convert */
 
-  n_max_faces = mesh->n_i_faces + mesh->n_b_faces;
-  BFT_MALLOC(extr_face_idx, n_max_faces, cs_lnum_t);
+  cs_lnum_t n_max_faces = mesh->n_i_faces + mesh->n_b_faces;
+  BFT_MALLOC(extr_face_list, n_max_faces, cs_lnum_t);
 
-  /* Initialize index as marker */
+  /* Initialize list as marker */
 
   for (face_id = 0; face_id < n_max_faces; face_id++)
-    extr_face_idx[face_id] = -1;
+    extr_face_list[face_id] = -1;
 
-  if (b_face_list_size == mesh->n_b_faces) {
-    for (face_id = 0; face_id < mesh->n_b_faces; face_id++)
-      extr_face_idx[face_id] = 1;
-  }
-  else if (b_face_list != NULL) {
+  if (b_face_list != NULL) {
     for (face_id = 0; face_id < b_face_list_size; face_id++)
-      extr_face_idx[b_face_list[face_id] - 1] = 1;
+      extr_face_list[b_face_list[face_id]] = 0;
+  }
+  else {
+    for (face_id = 0; face_id < b_face_list_size; face_id++)
+      extr_face_list[face_id] = 0;
   }
 
-  if (i_face_list_size == mesh->n_i_faces) {
-    for (face_id = 0; face_id < mesh->n_i_faces; face_id++)
-      extr_face_idx[face_id + mesh->n_b_faces] = 1;
-  }
-  else if (i_face_list != NULL) {
+  if (i_face_list != NULL) {
     for (face_id = 0; face_id < i_face_list_size; face_id++)
-      extr_face_idx[i_face_list[face_id] - 1 + mesh->n_b_faces] = 1;
+      extr_face_list[i_face_list[face_id] + mesh->n_b_faces] = 0;
+  }
+  else {
+    for (face_id = 0; face_id < i_face_list_size; face_id++)
+      extr_face_list[face_id + mesh->n_b_faces] = 0;
   }
 
-  /* Convert marked ids to indexes (1 to n) and reconstruct values of
-     b_face_list[] and i_face_list[] to ensure that they are ordered. */
+  /* Convert marked ids to contiguous list (0 to n-1). */
 
-  b_face_count = 0;
-  i_face_count = 0;
+  cs_lnum_t extr_face_count = 0;
 
-  if (b_face_list != NULL) {
-    for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
-      if (extr_face_idx[face_id] == 1) {
-        b_face_list[b_face_count] = face_id + 1;
-        b_face_count++;
-      }
+  for (face_id = 0; face_id < n_max_faces; face_id++) {
+    if (extr_face_list[face_id] == 0) {
+      extr_face_list[extr_face_count] = face_id;
+      extr_face_count++;
     }
   }
-  else
-    b_face_count = CS_MIN(b_face_list_size, mesh->n_b_faces);
 
-  if (i_face_list != NULL) {
-    for (face_id = 0, i = mesh->n_b_faces;
-         face_id < mesh->n_i_faces;
-         face_id++, i++) {
-      if (extr_face_idx[i] == 1) {
-        i_face_list[i_face_count] = face_id + 1;
-        i_face_count++;
-      }
-    }
-  }
-  else
-    i_face_count = CS_MIN(i_face_list_size, mesh->n_i_faces);
-
-  BFT_FREE(extr_face_idx);
-
-  /* Build a contiguous list (boundary faces, interior faces) */
-
-  extr_face_count = b_face_count + i_face_count;
-
-  BFT_MALLOC(extr_face_list, extr_face_count, cs_lnum_t);
-
-  if (b_face_list != NULL) {
-    for (face_id = 0; face_id < b_face_count; face_id++)
-      extr_face_list[face_id] = b_face_list[face_id];
-  }
-  else if (b_face_list == NULL) { /* boundary faces by default if no list */
-    for (face_id = 0; face_id < b_face_count; face_id++)
-      extr_face_list[face_id] = face_id + 1;
-  }
-
-  if (i_face_list != NULL) {
-    for (face_id = 0, i = b_face_count; face_id < i_face_count; face_id++, i++)
-      extr_face_list[i] = i_face_list[face_id] + mesh->n_b_faces;
-  }
-  else if (i_face_list == NULL) {
-    for (face_id = 0, i = b_face_count; face_id < i_face_count; face_id++, i++)
-      extr_face_list[i] = face_id + mesh->n_b_faces + 1;
-  }
+  BFT_REALLOC(extr_face_list, extr_face_count, cs_lnum_t);
 
   if (include_families) {
     _face_families[0] = mesh->b_face_family;
@@ -470,17 +422,14 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t         *mesh,
  * Build a nodal connectivity structure from a subset of a mesh's cells.
  *
  * The list of cells to extract is optional (if none is given, all cells
- * faces are extracted by default); it does not need to be ordered on input,
- * but is always ordered on exit (as cells are extracted by increasing number
- * traversal, the list is reordered to ensure the coherency of the extracted
- * mesh's link to its parent cells, built using this list).
+ * faces are extracted by default).
  *
  * parameters:
  *   mesh             <-- base mesh
  *   name             <-- extracted mesh name
  *   include_families <-- include family info if true
  *   cell_list_size   <-- size of cell_list[] array
- *   cell_list        <-> list of cells (1 to n), or NULL
+ *   cell_list        <-- list of cells (0 to n-1), or NULL
  *
  * returns:
  *   pointer to extracted nodal mesh
@@ -491,13 +440,14 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
                                const char       *name,
                                bool              include_families,
                                cs_lnum_t         cell_list_size,
-                               cs_lnum_t         cell_list[])
+                               const cs_lnum_t   cell_list[])
 {
   cs_lnum_t   face_id, cell_id;
 
   int         null_family = 0;
   cs_lnum_t   extr_cell_count = 0, i_face_count = 0, b_face_count = 0;
   cs_lnum_t  *extr_cell_idx = NULL;
+  cs_lnum_t  *extr_cell_ids = NULL;
 
   cs_lnum_t  *cell_face_idx = NULL;
   cs_lnum_t  *cell_face_num = NULL;
@@ -537,6 +487,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
 
   if (cell_list != NULL) {
 
+    BFT_MALLOC(extr_cell_ids, cell_list_size, cs_lnum_t);
     BFT_MALLOC(extr_cell_idx, mesh->n_cells_with_ghosts, cs_lnum_t);
 
     /* Initialize index as marker */
@@ -545,7 +496,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
       extr_cell_idx[cell_id] = -1;
     for (cell_id = 0; cell_id < cell_list_size; cell_id++) {
       if (cell_list[cell_id] <= mesh->n_cells)
-        extr_cell_idx[cell_list[cell_id] - 1] = 1;
+        extr_cell_idx[cell_list[cell_id]] = 1;
     }
 
     /* Also mark faces bearing families */
@@ -557,7 +508,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
         cs_lnum_t c_id_1 = mesh->i_face_cells[face_id][1];
         if (   (extr_cell_idx[c_id_0] == 1 || extr_cell_idx[c_id_1] == 1)
             && (mesh->i_face_family[face_id] != null_family)) {
-          i_face_list[i_face_count++] = face_id + 1;
+          i_face_list[i_face_count++] = face_id;
         }
       }
       BFT_REALLOC(i_face_list, i_face_count, cs_lnum_t);
@@ -566,7 +517,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
         cs_lnum_t c_id = mesh->b_face_cells[face_id];
         if (   (extr_cell_idx[c_id] == 1)
             && (mesh->b_face_family[face_id] != null_family)) {
-          b_face_list[b_face_count++] = face_id + 1;
+          b_face_list[b_face_count++] = face_id;
         }
       }
       BFT_REALLOC(b_face_list, b_face_count, cs_lnum_t);
@@ -579,7 +530,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
     extr_cell_count = 0;
     for (cell_id = 0; cell_id < mesh->n_cells; cell_id++) {
       if (extr_cell_idx[cell_id] == 1) {
-        cell_list[extr_cell_count] = cell_id + 1;
+        extr_cell_ids[extr_cell_count] = cell_id;
         extr_cell_idx[cell_id] = extr_cell_count++;
       }
     }
@@ -598,7 +549,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
         cs_lnum_t c_id_1 = mesh->i_face_cells[face_id][1];
         if (   (c_id_0 < extr_cell_count || c_id_1 < extr_cell_count)
             && (mesh->i_face_family[face_id] != null_family)) {
-          i_face_list[i_face_count++] = face_id + 1;
+          i_face_list[i_face_count++] = face_id;
         }
       }
       BFT_REALLOC(i_face_list, i_face_count, cs_lnum_t);
@@ -607,7 +558,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
         cs_lnum_t c_id = mesh->b_face_cells[face_id];
         if (   (c_id < extr_cell_count)
             && (mesh->b_face_family[face_id] != null_family)) {
-          b_face_list[b_face_count++] = face_id + 1;
+          b_face_list[b_face_count++] = face_id;
         }
       }
       BFT_REALLOC(b_face_list, b_face_count, cs_lnum_t);
@@ -653,8 +604,10 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
                                 cell_face_idx,
                                 cell_face_num,
                                 cell_family,
-                                cell_list,
+                                extr_cell_ids,
                                 &polyhedra_faces);
+
+  BFT_FREE(extr_cell_ids);
 
   /* Also add faces bearing families */
 
@@ -713,10 +666,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
  * Build a nodal connectivity structure from a subset of a mesh's faces.
  *
  * The lists of faces to extract are optional (if none is given, boundary
- * faces are extracted by default); they do not need to be ordered on input,
- * but they are always ordered on exit (as faces are extracted by increasing
- * number traversal, the lists are reordered to ensure the coherency of
- * the extracted mesh's link to its parent faces, built using these lists).
+ * faces are extracted by default).
  *
  * parameters:
  *   mesh             <-- base mesh
@@ -724,8 +674,8 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
  *   include_families <-- include family info if true
  *   i_face_list_size <-- size of i_face_list[] array
  *   b_face_list_size <-- size of b_face_list[] array
- *   i_face_list      <-> list of interior faces (1 to n), or NULL
- *   b_face_list      <-> list of boundary faces (1 to n), or NULL
+ *   i_face_list      <-- list of interior faces (0 to n-1), or NULL
+ *   b_face_list      <-- list of boundary faces (0 to n-1), or NULL
  *
  * returns:
  *   pointer to extracted nodal mesh
@@ -737,8 +687,8 @@ cs_mesh_connect_faces_to_nodal(const cs_mesh_t  *mesh,
                                bool              include_families,
                                cs_lnum_t         i_face_list_size,
                                cs_lnum_t         b_face_list_size,
-                               cs_lnum_t         i_face_list[],
-                               cs_lnum_t         b_face_list[])
+                               const cs_lnum_t   i_face_list[],
+                               const cs_lnum_t   b_face_list[])
 {
   fvm_nodal_t  *extr_mesh = NULL;
 

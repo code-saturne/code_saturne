@@ -87,17 +87,14 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t         *mesh,
  * Build a nodal connectivity structure from a subset of a mesh's cells.
  *
  * The list of cells to extract is optional (if none is given, all cells
- * faces are extracted by default); it does not need to be ordered on input,
- * but is always ordered on exit (as cells are extracted by increasing number
- * traversal, the list is reordered to ensure the coherency of the extracted
- * mesh's link to its parent cells, built using this list).
+ * faces are extracted by default).
  *
  * parameters:
  *   mesh             <-- base mesh
  *   name             <-- extracted mesh name
  *   include_families <-- include family info if true
  *   cell_list_size   <-- size of cell_list[] array
- *   cell_list        <-> list of cells (1 to n), or NULL
+ *   cell_list        <-- list of cells (0 to n-1), or NULL
  *
  * returns:
  *   pointer to extracted nodal mesh
@@ -108,16 +105,13 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
                                const char       *name,
                                bool              include_families,
                                cs_lnum_t         cell_list_size,
-                               cs_lnum_t         cell_list[]);
+                               const cs_lnum_t   cell_list[]);
 
 /*----------------------------------------------------------------------------
  * Build a nodal connectivity structure from a subset of a mesh's faces.
  *
  * The lists of faces to extract are optional (if none is given, boundary
- * faces are extracted by default); they do not need to be ordered on input,
- * but they are always ordered on exit (as faces are extracted by increasing
- * number traversal, the lists are reordered to ensure the coherency of
- * the extracted mesh's link to its parent faces, built using these lists).
+ * faces are extracted by default).
  *
  * parameters:
  *   mesh             <-- base mesh
@@ -125,8 +119,8 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
  *   include_families <-- include family info if true
  *   i_face_list_size <-- size of i_face_list[] array
  *   b_face_list_size <-- size of b_face_list[] array
- *   i_face_list      <-> list of interior faces (1 to n), or NULL
- *   b_face_list      <-> list of boundary faces (1 to n), or NULL
+ *   i_face_list      <-- list of interior faces (0 to n-1), or NULL
+ *   b_face_list      <-- list of boundary faces (0 to n-1), or NULL
  *
  * returns:
  *   pointer to extracted nodal mesh
@@ -138,8 +132,8 @@ cs_mesh_connect_faces_to_nodal(const cs_mesh_t  *mesh,
                                bool              include_families,
                                cs_lnum_t         i_face_list_size,
                                cs_lnum_t         b_face_list_size,
-                               cs_lnum_t         i_face_list[],
-                               cs_lnum_t         b_face_list[]);
+                               const cs_lnum_t   i_face_list[],
+                               const cs_lnum_t   b_face_list[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

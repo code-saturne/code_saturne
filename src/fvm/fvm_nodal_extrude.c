@@ -134,9 +134,9 @@ _extrude_strided_section(fvm_nodal_section_t  * this_section,
 
   /* Remove old parent numbering */
 
-  this_section->parent_element_num = NULL;
-  if (this_section->_parent_element_num != NULL)
-    BFT_FREE(this_section->_parent_element_num);
+  this_section->parent_element_id = NULL;
+  if (this_section->_parent_element_id != NULL)
+    BFT_FREE(this_section->_parent_element_id);
 
   /* Update global_numbering */
 
@@ -265,11 +265,11 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
 
   BFT_MALLOC(new_coords, n_planes*n_vertices*dim, cs_coord_t);
 
-  if (this_nodal->_parent_vertex_num != NULL) {
+  if (this_nodal->_parent_vertex_id != NULL) {
 
     for (cs_lnum_t i = 0; i < n_vertices; i++) {
       const double *_old_coords
-        = old_coords + ((this_nodal->parent_vertex_num[i]-1) * dim);
+        = old_coords + (this_nodal->parent_vertex_id[i] * dim);
       vertex_shift = n_planes * dim * i;
       for (cs_lnum_t j = 0; j < n_planes; j++) {
         for (cs_lnum_t k = 0; k < dim; k++) {
@@ -304,9 +304,9 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
   this_nodal->_vertex_coords = new_coords;
   this_nodal->vertex_coords = this_nodal->_vertex_coords;
 
-  this_nodal->parent_vertex_num = NULL;
-  if (this_nodal->_parent_vertex_num != NULL)
-    BFT_FREE(this_nodal->_parent_vertex_num);
+  this_nodal->parent_vertex_id = NULL;
+  if (this_nodal->_parent_vertex_id != NULL)
+    BFT_FREE(this_nodal->_parent_vertex_id);
 
   /* Update global numbering */
 

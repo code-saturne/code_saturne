@@ -1439,7 +1439,7 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
   const cs_gnum_t    n_g_vertices
     = fvm_io_num_get_global_count(mesh->global_vertex_num);
 
-  const cs_lnum_t   *parent_vertex_num = mesh->parent_vertex_num;
+  const cs_lnum_t   *parent_vertex_id = mesh->parent_vertex_id;
   const cs_coord_t  *vertex_coords = mesh->vertex_coords;
 
   med_err   retval = 0;
@@ -1501,11 +1501,11 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
 
   cs_lnum_t idx = 0;
 
-  if (parent_vertex_num != NULL) {
+  if (parent_vertex_id != NULL) {
     for (i_lnod = 0; i_lnod < n_vertices; i_lnod++) {
       for (i_dim = 0; i_dim < dim; i_dim++)
         part_coords[idx++]
-          = (med_float)vertex_coords[(parent_vertex_num[i_lnod]-1)*dim + i_dim];
+          = (med_float)vertex_coords[parent_vertex_id[i_lnod]*dim + i_dim];
     }
   }
   else
@@ -1642,7 +1642,7 @@ _export_vertex_coords_l(const fvm_nodal_t     *mesh,
 
   const int  dim = mesh->dim;
   const cs_lnum_t   n_vertices = mesh->n_vertices;
-  const cs_lnum_t    *parent_vertex_num = mesh->parent_vertex_num;
+  const cs_lnum_t    *parent_vertex_id = mesh->parent_vertex_id;
   const cs_coord_t  *vertex_coords = mesh->vertex_coords;
 
   med_err retval = 0;
@@ -1685,12 +1685,12 @@ _export_vertex_coords_l(const fvm_nodal_t     *mesh,
 
   BFT_MALLOC(med_coords, n_vertices * dim, med_float);
 
-  if (parent_vertex_num != NULL) {
+  if (parent_vertex_id != NULL) {
 
     for (i_vtx = 0; i_vtx < n_vertices; i_vtx++) {
       for (i_dim = 0; i_dim < dim; i_dim++)
         med_coords[idx++] = (med_float)
-          vertex_coords[(parent_vertex_num[i_vtx]-1) * dim + i_dim];
+          vertex_coords[parent_vertex_id[i_vtx]*dim + i_dim];
     }
 
   }

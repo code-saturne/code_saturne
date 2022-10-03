@@ -2290,7 +2290,7 @@ cs_join_select_create(const char              *selection_criteria,
     for (cs_lnum_t i = 0; i < selection->n_faces; i++) {
       cs_lnum_t f_id = selection->faces[i]-1;
       if (mesh->b_face_cells[f_id] > -1)
-        selection->faces[j++] = f_id+1;
+        selection->faces[j++] = f_id;
     }
     selection->n_faces = j;
   }
@@ -2301,7 +2301,7 @@ cs_join_select_create(const char              *selection_criteria,
   cs_order_gnum_allocated(selection->faces, NULL, order, selection->n_faces);
 
   for (cs_lnum_t i = 0; i < selection->n_faces; i++)
-    ordered_faces[i] = selection->faces[order[i]];
+    ordered_faces[i] = selection->faces[order[i]] + 1;
 
   BFT_FREE(order);
   BFT_FREE(selection->faces);

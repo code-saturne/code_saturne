@@ -1603,7 +1603,7 @@ _define_regular_mesh(cs_post_mesh_t  *post_mesh)
     if (elt_ids != NULL) {
       BFT_MALLOC(elt_list, n_elts, cs_lnum_t);
       for (cs_lnum_t i = 0; i < n_elts; i++)
-        elt_list[i] = elt_ids[i] + 1;
+        elt_list[i] = elt_ids[i];
     }
 
     switch(loc_type) {
@@ -1635,14 +1635,12 @@ _define_regular_mesh(cs_post_mesh_t  *post_mesh)
       n_cells = mesh->n_cells;
     else {
       BFT_MALLOC(cell_list, mesh->n_cells, cs_lnum_t);
-      cs_selector_get_cell_num_list(criteria, &n_cells, cell_list);
+      cs_selector_get_cell_list(criteria, &n_cells, cell_list);
     }
   }
   else if (post_mesh->sel_func[0] != NULL) {
     cs_post_elt_select_t *sel_func = post_mesh->sel_func[0];
     sel_func(post_mesh->sel_input[0], &n_cells, &cell_list);
-    for (cs_lnum_t i = 0; i < n_cells; i++)
-      cell_list[i] += 1;
   }
 
   if (post_mesh->criteria[1] != NULL) {
@@ -1651,14 +1649,12 @@ _define_regular_mesh(cs_post_mesh_t  *post_mesh)
       n_i_faces = mesh->n_i_faces;
     else {
       BFT_MALLOC(i_face_list, mesh->n_i_faces, cs_lnum_t);
-      cs_selector_get_i_face_num_list(criteria, &n_i_faces, i_face_list);
+      cs_selector_get_i_face_list(criteria, &n_i_faces, i_face_list);
     }
   }
   else if (post_mesh->sel_func[1] != NULL) {
     cs_post_elt_select_t *sel_func = post_mesh->sel_func[1];
     sel_func(post_mesh->sel_input[1], &n_i_faces, &i_face_list);
-    for (cs_lnum_t i = 0; i < n_i_faces; i++)
-      i_face_list[i] += 1;
   }
 
   if (post_mesh->criteria[2] != NULL) {
@@ -1667,14 +1663,12 @@ _define_regular_mesh(cs_post_mesh_t  *post_mesh)
       n_b_faces = mesh->n_b_faces;
     else {
       BFT_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
-      cs_selector_get_b_face_num_list(criteria, &n_b_faces, b_face_list);
+      cs_selector_get_b_face_list(criteria, &n_b_faces, b_face_list);
     }
   }
   else if (post_mesh->sel_func[2] != NULL) {
     cs_post_elt_select_t *sel_func = post_mesh->sel_func[2];
     sel_func(post_mesh->sel_input[2], &n_b_faces, &b_face_list);
-    for (cs_lnum_t i = 0; i < n_b_faces; i++)
-      b_face_list[i] += 1;
   }
 
   /* Define mesh based on current arguments */
@@ -2583,7 +2577,7 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
       for (j = 0, n_cells = 0; j < mesh->n_cells; j++) {
         int f_id = mesh->cell_family[j];
         if (f_id > 0 && fam_flag[f_id - 1])
-          cell_list[n_cells++] = j + 1;
+          cell_list[n_cells++] = j;
       }
       strcpy(part_name, "vol: ");
       strncat(part_name, g_name, 80 - strlen(part_name));
@@ -2609,12 +2603,12 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
   if (mesh->cell_family != NULL) {
     for (j = 0, n_cells = 0; j < mesh->n_cells; j++) {
       if (mesh->cell_family[j] <= max_null_family)
-        cell_list[n_cells++] = j + 1;
+        cell_list[n_cells++] = j;
     }
   }
   else {
     for (j = 0, n_cells = 0; j < mesh->n_cells; j++)
-      cell_list[n_cells++] = j + 1;
+      cell_list[n_cells++] = j;
   }
 
   i = n_cells;
@@ -6413,7 +6407,7 @@ cs_post_renum_cells(const cs_lnum_t  init_cell_num[])
     BFT_MALLOC(renum_ent_parent, n_elts, cs_lnum_t);
 
     for (icel = 0; icel < mesh->n_cells; icel++)
-      renum_ent_parent[init_cell_num[icel]] = icel + 1;
+      renum_ent_parent[init_cell_num[icel]] = icel;
 
     /* Effective modification */
 
@@ -6424,9 +6418,9 @@ cs_post_renum_cells(const cs_lnum_t  init_cell_num[])
       if (   post_mesh->_exp_mesh != NULL
           && post_mesh->ent_flag[CS_POST_LOCATION_CELL] > 0) {
 
-        fvm_nodal_change_parent_num(post_mesh->_exp_mesh,
-                                    renum_ent_parent,
-                                    3);
+        fvm_nodal_change_parent_id(post_mesh->_exp_mesh,
+                                   renum_ent_parent,
+                                   3);
 
       }
 
@@ -6491,11 +6485,11 @@ cs_post_renum_faces(const cs_lnum_t  init_i_face_num[],
 
     if (init_b_face_num == NULL) {
       for (ifac = 0; ifac < mesh->n_b_faces; ifac++)
-        renum_ent_parent[ifac] = ifac + 1;
+        renum_ent_parent[ifac] = ifac;
     }
     else {
       for (ifac = 0; ifac < mesh->n_b_faces; ifac++)
-        renum_ent_parent[init_b_face_num[ifac]] = ifac + 1;
+        renum_ent_parent[init_b_face_num[ifac]] = ifac;
     }
 
     if (init_i_face_num == NULL) {
@@ -6503,14 +6497,14 @@ cs_post_renum_faces(const cs_lnum_t  init_i_face_num[],
            ifac < mesh->n_i_faces;
            ifac++, i++)
         renum_ent_parent[mesh->n_b_faces + ifac]
-          = mesh->n_b_faces + ifac + 1;
+          = mesh->n_b_faces + ifac;
     }
     else {
       for (ifac = 0, i = mesh->n_b_faces;
            ifac < mesh->n_i_faces;
            ifac++, i++)
         renum_ent_parent[mesh->n_b_faces + init_i_face_num[ifac]]
-          = mesh->n_b_faces + ifac + 1;
+          = mesh->n_b_faces + ifac;
     }
 
     /* Effective modification */
@@ -6523,9 +6517,9 @@ cs_post_renum_faces(const cs_lnum_t  init_i_face_num[],
           && (   post_mesh->ent_flag[CS_POST_LOCATION_I_FACE] > 0
               || post_mesh->ent_flag[CS_POST_LOCATION_B_FACE] > 0)) {
 
-        fvm_nodal_change_parent_num(post_mesh->_exp_mesh,
-                                    renum_ent_parent,
-                                    2);
+        fvm_nodal_change_parent_id(post_mesh->_exp_mesh,
+                                   renum_ent_parent,
+                                   2);
 
       }
 

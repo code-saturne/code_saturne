@@ -83,7 +83,7 @@ BEGIN_C_DECLS
  *   vertex_index       <-- polygon face -> vertices index (O to n-1)
  *                          size: face_index[n_elements]
  *   vertex_num         <-- element -> vertex connectivity
- *   parent_element_num <-- element -> parent element number (1 to n) if non
+ *   parent_element_id  <-- element -> parent element id (0 to n-1) if non
  *                          trivial (i.e. if element definitions correspond
  *                          to a subset of the parent mesh), NULL otherwise
  *----------------------------------------------------------------------------*/
@@ -95,7 +95,7 @@ _transfer_to_section(cs_lnum_t       n_elements,
                      cs_lnum_t       face_num[],
                      cs_lnum_t       vertex_index[],
                      cs_lnum_t       vertex_num[],
-                     cs_lnum_t       parent_element_num[])
+                     cs_lnum_t       parent_element_id[])
 {
   fvm_nodal_section_t  *this_section = NULL;
 
@@ -115,7 +115,7 @@ _transfer_to_section(cs_lnum_t       n_elements,
 
   this_section->_vertex_num = vertex_num;
 
-  this_section->_parent_element_num = parent_element_num;
+  this_section->_parent_element_id = parent_element_id;
 
   /* Shared arrays */
 
@@ -123,7 +123,7 @@ _transfer_to_section(cs_lnum_t       n_elements,
   this_section->face_num = this_section->_face_num;
   this_section->vertex_index = this_section->_vertex_index;
   this_section->vertex_num = this_section->_vertex_num;
-  this_section->parent_element_num = this_section->_parent_element_num;
+  this_section->parent_element_id = this_section->_parent_element_id;
 
   /* Connectivity size */
 
@@ -156,20 +156,20 @@ _transfer_to_section(cs_lnum_t       n_elements,
  * parent number arrays to that section.
  *
  * parameters:
- *   n_elements         <-- number of elements in section
- *   type               <-- type of elements to add
- *   face_index         <-- polyhedron -> faces index (O to n-1)
- *                          size: n_elements + 1
- *   face_num           <-- polyhedron -> face numbers (1 to n, signed,
- *                          > 0 for outwards pointing face normal
- *                          < 0 for inwards pointing face normal);
- *                          size: face_index[n_elements]
- *   vertex_index       <-- polygon face -> vertices index (O to n-1)
- *                          size: face_index[n_elements]
- *   vertex_num         <-- element -> vertex connectivity
- *   parent_element_num <-- element -> parent element number (1 to n) if non
- *                          trivial (i.e. if element definitions correspond
- *                          to a subset of the parent mesh), NULL otherwise
+ *   n_elements        <-- number of elements in section
+ *   type              <-- type of elements to add
+ *   face_index        <-- polyhedron -> faces index (O to n-1)
+ *                         size: n_elements + 1
+ *   face_num          <-- polyhedron -> face numbers (1 to n, signed,
+ *                         > 0 for outwards pointing face normal
+ *                         < 0 for inwards pointing face normal);
+ *                         size: face_index[n_elements]
+ *   vertex_index      <-- polygon face -> vertices index (O to n-1)
+ *                         size: face_index[n_elements]
+ *   vertex_num        <-- element -> vertex connectivity
+ *   parent_element_id <-- element -> parent element id (0 to n-1) if non
+ *                         trivial (i.e. if element definitions correspond
+ *                         to a subset of the parent mesh), NULL otherwise
  *----------------------------------------------------------------------------*/
 
 static fvm_nodal_section_t *
@@ -179,7 +179,7 @@ _map_to_section(cs_lnum_t       n_elements,
                 cs_lnum_t       face_num[],
                 cs_lnum_t       vertex_index[],
                 cs_lnum_t       vertex_num[],
-                cs_lnum_t       parent_element_num[])
+                cs_lnum_t       parent_element_id[])
 {
   fvm_nodal_section_t  *this_section = NULL;
 
@@ -199,7 +199,7 @@ _map_to_section(cs_lnum_t       n_elements,
 
   this_section->vertex_num = vertex_num;
 
-  this_section->parent_element_num = parent_element_num;
+  this_section->parent_element_id = parent_element_id;
 
   /* Connectivity size */
 
@@ -239,21 +239,21 @@ _map_to_section(cs_lnum_t       n_elements,
  * that section.
  *
  * parameters:
- *   this_nodal         <-> nodal mesh structure
- *   n_elements         <-- number of elements to add
- *   type               <-- type of elements to add
- *   face_index         <-- polyhedron -> faces index (O to n-1)
- *                          size: n_elements + 1
- *   face_num           <-- polyhedron -> face numbers (1 to n, signed,
- *                          > 0 for outwards pointing face normal
- *                          < 0 for inwards pointing face normal);
- *                          size: face_index[n_elements]
- *   vertex_index       <-- polygon face -> vertices index (O to n-1)
- *                          size: face_index[n_elements]
- *   vertex_num         <-- element -> vertex connectivity
- *   parent_element_num <-- element -> parent element number (1 to n) if non
- *                          trivial (i.e. if element definitions correspond
- *                          to a subset of the parent mesh), NULL otherwise
+ *   this_nodal        <-> nodal mesh structure
+ *   n_elements        <-- number of elements to add
+ *   type              <-- type of elements to add
+ *   face_index        <-- polyhedron -> faces index (O to n-1)
+ *                         size: n_elements + 1
+ *   face_num          <-- polyhedron -> face numbers (1 to n, signed,
+ *                         > 0 for outwards pointing face normal
+ *                         < 0 for inwards pointing face normal);
+ *                         size: face_index[n_elements]
+ *   vertex_index      <-- polygon face -> vertices index (O to n-1)
+ *                         size: face_index[n_elements]
+ *   vertex_num        <-- element -> vertex connectivity
+ *   parent_element_id <-- element -> parent element id (0 to n-1) if non
+ *                         trivial (i.e. if element definitions correspond
+ *                         to a subset of the parent mesh), NULL otherwise
  *----------------------------------------------------------------------------*/
 
 void
@@ -264,7 +264,7 @@ fvm_nodal_append_by_transfer(fvm_nodal_t    *this_nodal,
                              cs_lnum_t       face_num[],
                              cs_lnum_t       vertex_index[],
                              cs_lnum_t       vertex_num[],
-                             cs_lnum_t       parent_element_num[])
+                             cs_lnum_t       parent_element_id[])
 {
   fvm_nodal_section_t  *new_section = NULL;
   int  n_sections = 0;
@@ -283,7 +283,7 @@ fvm_nodal_append_by_transfer(fvm_nodal_t    *this_nodal,
                                      face_num,
                                      vertex_index,
                                      vertex_num,
-                                     parent_element_num);
+                                     parent_element_id);
 
   this_nodal->sections[n_sections] = new_section;
   this_nodal->n_sections += 1;
@@ -314,21 +314,21 @@ fvm_nodal_append_by_transfer(fvm_nodal_t    *this_nodal,
  * function until the nodal mesh is destroyed.
  *
  * parameters:
- *   this_nodal         <-> nodal mesh structure
- *   n_elements         <-- number of elements to add
- *   type               <-- type of elements to add
- *   face_index         <-- polyhedron -> faces index (O to n-1)
- *                          size: n_elements + 1
- *   face_num           <-- polyhedron -> face numbers (1 to n, signed,
- *                          > 0 for outwards pointing face normal
- *                          < 0 for inwards pointing face normal);
- *                          size: face_index[n_elements]
- *   vertex_index       <-- polygon face -> vertices index (O to n-1)
- *                          size: face_index[n_elements]
- *   vertex_num         <-- element -> vertex connectivity
- *   parent_element_num <-- element -> parent element number (1 to n) if non
- *                          trivial (i.e. if element definitions correspond
- *                          to a subset of the parent mesh), NULL otherwise
+ *   this_nodal        <-> nodal mesh structure
+ *   n_elements        <-- number of elements to add
+ *   type              <-- type of elements to add
+ *   face_index        <-- polyhedron -> faces index (O to n-1)
+ *                         size: n_elements + 1
+ *   face_num          <-- polyhedron -> face numbers (1 to n, signed,
+ *                         > 0 for outwards pointing face normal
+ *                         < 0 for inwards pointing face normal);
+ *                         size: face_index[n_elements]
+ *   vertex_index      <-- polygon face -> vertices index (O to n-1)
+ *                         size: face_index[n_elements]
+ *   vertex_num        <-- element -> vertex connectivity
+ *   parent_element_id <-- element -> parent element id (0 to n-1) if non
+ *                         trivial (i.e. if element definitions correspond
+ *                         to a subset of the parent mesh), NULL otherwise
  *----------------------------------------------------------------------------*/
 
 void
@@ -339,7 +339,7 @@ fvm_nodal_append_shared(fvm_nodal_t    *this_nodal,
                         cs_lnum_t       face_num[],
                         cs_lnum_t       vertex_index[],
                         cs_lnum_t       vertex_num[],
-                        cs_lnum_t       parent_element_num[])
+                        cs_lnum_t       parent_element_id[])
 {
   fvm_nodal_section_t  *new_section = NULL;
   int  n_sections = 0;
@@ -358,7 +358,7 @@ fvm_nodal_append_shared(fvm_nodal_t    *this_nodal,
                                 face_num,
                                 vertex_index,
                                 vertex_num,
-                                parent_element_num);
+                                parent_element_id);
 
   this_nodal->sections[n_sections] = new_section;
   this_nodal->n_sections += 1;

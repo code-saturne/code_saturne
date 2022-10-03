@@ -59,13 +59,13 @@ BEGIN_C_DECLS
  *   n_extr_cells    <-- count of cells to add
  *   n_face_lists    <-- number of face lists
  *   face_list_shift <-- face list to common number index shifts;
- *                       size: n_face_lists
+ *                       size: n_face_lists + 1
  *   face_vertex_idx <-- face -> vertex indexes (per face list)
  *   face_vertex     <-- face -> vertex ids (per face list)
  *   cell_face_idx   <-- cell -> face indexes (1 to n)
  *   cell_face_num   <-- cell -> face numbers (1 to n)
  *   cell_gc_id      <-- cell -> group class ids, or NULL
- *   parent_cell_num <-- cell -> parent cell number (1 to n) if non-trivial
+ *   parent_cell_id  <-- cell -> parent cell id (0 to n-1) if non-trivial
  *                       (i.e. if cell definitions correspond to a subset
  *                       of the parent mesh), NULL otherwise.
  *   cell_face_list  --> numbers of faces defining polyhedra
@@ -77,11 +77,11 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
                               const int           n_face_lists,
                               const cs_lnum_t     face_list_shift[],
                               const cs_lnum_t    *face_vertex_idx[],
-                              const cs_lnum_t    *face_vertex_num[],
+                              const cs_lnum_t    *face_vertex[],
                               const cs_lnum_t     cell_face_idx[],
                               const cs_lnum_t     cell_face_num[],
                               const int           cell_gc_id[],
-                              const cs_lnum_t     parent_cell_num[],
+                              const cs_lnum_t     parent_cell_id[],
                               cs_lnum_t          *cell_face_list[]);
 
 /*----------------------------------------------------------------------------
@@ -103,14 +103,14 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
  *   boundary_flag   <-- -1 if unspecified, 0 if faces are not on boundary,
  *                       1 if faces are on boundary
  *   n_extr_faces    <-- count of faces to add
- *   extr_faces      <-- optional filter list of faces to extract (1 to n)
+ *   extr_faces      <-- optional filter list of faces to extract (0 to n-1)
  *   n_face_lists    <-- number of face lists
  *   face_list_shift <-- face list to common number index shifts;
  *                       size: n_face_lists
  *   face_vertex_idx <-- face -> vertex indexes (per face list)
  *   face_vertex     <-- face -> vertex ids (per face list)
  *   face_gc_id      <-- face -> group class ids, or NULL (per face list)
- *   parent_face_num <-- face -> parent face number (1 to n) if non-trivial
+ *   parent_face_id  <-- face -> parent face id (0 to n-1) if non-trivial
  *                       (i.e. if face definitions correspond to a subset
  *                       of the parent mesh), NULL otherwise.
  *----------------------------------------------------------------------------*/
@@ -125,7 +125,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
                               const cs_lnum_t    *face_vertex_idx[],
                               const cs_lnum_t    *face_vertex_num[],
                               const int          *face_gc_id[],
-                              const cs_lnum_t     parent_face_num[]);
+                              const cs_lnum_t     parent_face_id[]);
 
 /*----------------------------------------------------------------------------
  * Determination of a given cell's type.

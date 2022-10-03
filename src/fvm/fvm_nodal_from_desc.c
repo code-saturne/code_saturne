@@ -893,7 +893,7 @@ _nodal_face_from_desc_copy(const cs_lnum_t    face_id,
  * parameters:
  *   this_nodal      <-> nodal mesh structure
  *   n_polys         <-- size of list_poly[]
- *   list_poly       <-- list of polyhedral cells (cell index, 1 to n)
+ *   list_poly       <-- list of polyhedral cells (cell index, 0 to n-1)
  *   n_face_lists    <-- number of face lists
  *   face_list_shift <-- face list to common number number index shifts;
  *                       size: n_face_lists
@@ -947,7 +947,7 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
 
   for (poly_id = 0; poly_id < n_polys; poly_id++) {
 
-    cell_id = list_poly[poly_id] - 1;
+    cell_id = list_poly[poly_id];
 
     idx_start = cell_face_idx[cell_id]     - 1;
     idx_end   = cell_face_idx[cell_id  +1] - 1;
@@ -1008,7 +1008,7 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
 
   for (poly_id = 0; poly_id < n_polys; poly_id++) {
 
-    cell_id = list_poly[poly_id] - 1;
+    cell_id = list_poly[poly_id];
 
     idx_start = cell_face_idx[cell_id]     - 1;
     idx_end   = cell_face_idx[cell_id  +1] - 1;
@@ -1106,42 +1106,36 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
  * should correspond to that parent mesh and not the temporary subset.
  *
  * parameters:
- *   n_sections         <-- size of sections array
- *   sections           <-- array of sections to reduce
- *   parent_element_num <-- element -> parent element number (1 to n) if
- *                          non-trivial (i.e. if element definitions
- *                          correspond to a subset of the parent mesh),
- *                          NULL otherwise.
+ *   n_sections        <-- size of sections array
+ *   sections          <-- array of sections to reduce
+ *   parent_element_id <-- element -> parent element ids (0 to n-1) if
+ *                         non-trivial (i.e. if element definitions
+ *                         correspond to a subset of the parent mesh),
+ *                         NULL otherwise.
  *----------------------------------------------------------------------------*/
 
 static void
-_raise_sections_parent_num(const int             n_sections,
-                           fvm_nodal_section_t  *sections[],
-                           const cs_lnum_t       parent_element_num[])
+_raise_sections_parent_id(const int             n_sections,
+                          fvm_nodal_section_t  *sections[],
+                          const cs_lnum_t       parent_element_id[])
 {
-  int  section_id;
-  cs_lnum_t   element_counter;
-
-  fvm_nodal_section_t  *section;
-
-  if (parent_element_num == NULL)
+  if (parent_element_id == NULL)
     return;
 
-  for (section_id = 0; section_id < n_sections; section_id++) {
-    section = sections[section_id];
+  for (int section_id = 0; section_id < n_sections; section_id++) {
+    fvm_nodal_section_t  *section = sections[section_id];
     if (section != NULL) {
-      if (section->_parent_element_num == NULL) {
-        BFT_MALLOC(section->_parent_element_num,
+      if (section->_parent_element_id == NULL) {
+        BFT_MALLOC(section->_parent_element_id,
                    section->n_elements,
                    cs_lnum_t);
-        section->parent_element_num = section->_parent_element_num;
+        section->parent_element_id = section->_parent_element_id;
       }
-      for (element_counter = 0;
+      for (cs_lnum_t element_counter = 0;
            element_counter < section->n_elements;
            element_counter++)
-        section->_parent_element_num[element_counter]
-          = parent_element_num[section->parent_element_num[element_counter]
-                               - 1];
+        section->_parent_element_id[element_counter]
+          = parent_element_id[section->parent_element_id[element_counter]];
     }
   }
 
@@ -1164,27 +1158,24 @@ static void
 _optimize_sections_parent_num(const int             n_sections,
                               fvm_nodal_section_t  *sections[])
 {
-  int  section_id;
-  cs_lnum_t   element_counter;
-
-  fvm_nodal_section_t  *section;
+  cs_lnum_t  element_counter;
 
   /* If the parent mesh is already complete for a given element type
      (i.e. not based on a partial extraction or then based on the
      n first elements), the parent cell number is not needed */
 
-  for (section_id = 0; section_id < n_sections; section_id++) {
-    section = sections[section_id];
+  for (int section_id = 0; section_id < n_sections; section_id++) {
+    fvm_nodal_section_t *section = sections[section_id];
     if (section != NULL) {
       for (element_counter = 0;
            element_counter < section->n_elements;
            element_counter++) {
-        if (section->parent_element_num[element_counter] != element_counter + 1)
+        if (section->parent_element_id[element_counter] != element_counter)
           break;
       }
       if (element_counter == section->n_elements) {
-        section->parent_element_num = NULL;
-        BFT_FREE(section->_parent_element_num);
+        section->parent_element_id = NULL;
+        BFT_FREE(section->_parent_element_id);
       }
     }
   }
@@ -1265,7 +1256,7 @@ _fvm_nodal_add_sections(fvm_nodal_t          *this_nodal,
  *   cell_face_idx   <-- cell -> face indexes (1 to n)
  *   cell_face_num   <-- cell -> face numbers (1 to n)
  *   cell_gc_id      <-- cell -> group class ids, or NULL
- *   parent_cell_num <-- cell -> parent cell number (1 to n) if non-trivial
+ *   parent_cell_id  <-- cell -> parent cell id (0 to n-1) if non-trivial
  *                       (i.e. if cell definitions correspond to a subset
  *                       of the parent mesh), NULL otherwise.
  *   cell_face_list  --> numbers of faces defining polyhedra
@@ -1281,7 +1272,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
                               const cs_lnum_t     cell_face_idx[],
                               const cs_lnum_t     cell_face_num[],
                               const int           cell_gc_id[],
-                              const cs_lnum_t     parent_cell_num[],
+                              const cs_lnum_t     parent_cell_id[],
                               cs_lnum_t          *cell_face_list[])
 {
   int  type_id;
@@ -1379,8 +1370,8 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
   for (type_id = 0; type_id < FVM_N_ELEMENT_TYPES; type_id++) {
     section = sections[type_id];
     if (section != NULL) {
-      BFT_MALLOC(section->_parent_element_num, section->n_elements, cs_lnum_t);
-      section->parent_element_num = section->_parent_element_num;
+      BFT_MALLOC(section->_parent_element_id, section->n_elements, cs_lnum_t);
+      section->parent_element_id = section->_parent_element_id;
     }
   }
 
@@ -1434,7 +1425,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
        _fvm_nodal_extract_polyhedra() below is based on the local
        numbering, like the cell->face connectivity */
 
-    section->_parent_element_num[n_elements_type[cell_type]] = cell_id + 1;
+    section->_parent_element_id[n_elements_type[cell_type]] = cell_id;
 
     n_elements_type[cell_type] += 1;
 
@@ -1462,7 +1453,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
     _fvm_nodal_extract_polyhedra
       (sections[FVM_CELL_POLY],
        n_elements_type[FVM_CELL_POLY],
-       sections[FVM_CELL_POLY]->parent_element_num,
+       sections[FVM_CELL_POLY]->parent_element_id,
        n_face_lists,
        face_list_shift,
        face_vertex_idx,
@@ -1474,7 +1465,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
   /* We can now base the final value of the parent cell number on
      the parent (and not local) numbering */
 
-  _raise_sections_parent_num(FVM_N_ELEMENT_TYPES, sections, parent_cell_num);
+  _raise_sections_parent_id(FVM_N_ELEMENT_TYPES, sections, parent_cell_id);
 
   _optimize_sections_parent_num(FVM_N_ELEMENT_TYPES, sections);
 
@@ -1487,10 +1478,10 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
       if (section == NULL)
         continue;
       BFT_MALLOC(section->gc_id, section->n_elements, int);
-      if (section->parent_element_num != NULL) {
+      if (section->parent_element_id != NULL) {
         for (cs_lnum_t cell_id = 0; cell_id < section->n_elements; cell_id++)
           section->gc_id[cell_id]
-            = cell_gc_id[section->parent_element_num[cell_id] - 1];
+            = cell_gc_id[section->parent_element_id[cell_id]];
       }
       else
         memcpy(section->gc_id, cell_gc_id, section->n_elements*sizeof(int));
@@ -1521,14 +1512,14 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
  *   boundary_flag   <-- -1 if unspecified, 0 if faces are not on boundary,
  *                       1 if faces are on boundary
  *   n_extr_faces    <-- count of faces to add
- *   extr_faces      <-- optional filter list of faces to extract (1 to n)
+ *   extr_faces      <-- optional filter list of faces to extract (0 to n-1)
  *   n_face_lists    <-- number of face lists
  *   face_list_shift <-- face list to common number index shifts;
  *                       size: n_face_lists
  *   face_vertex_idx <-- face -> vertex indexes (per face list)
  *   face_vertex     <-- face -> vertex ids (per face list)
  *   face_gc_id      <-- face -> group class ids, or NULL (per face list)
- *   parent_face_num <-- face -> parent face number (1 to n) if non-trivial
+ *   parent_face_id  <-- face -> parent face id (0 to n-1) if non-trivial
  *                       (i.e. if face definitions correspond to a subset
  *                       of the parent mesh), NULL otherwise.
  *----------------------------------------------------------------------------*/
@@ -1543,7 +1534,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
                               const cs_lnum_t    *face_vertex_idx[],
                               const cs_lnum_t    *face_vertex[],
                               const int          *face_gc_id[],
-                              const cs_lnum_t     parent_face_num[])
+                              const cs_lnum_t     parent_face_id[])
 {
   int  type_id;
   cs_lnum_t   face_counter, face_id;
@@ -1575,7 +1566,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
   for (face_counter = 0; face_counter < n_extr_faces; face_counter++) {
 
     if (extr_faces != NULL)
-      face_id = extr_faces[face_counter] - 1;
+      face_id = extr_faces[face_counter];
     else
       face_id = face_counter;
 
@@ -1656,8 +1647,8 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
   for (type_id = 0; type_id < FVM_N_ELEMENT_TYPES; type_id++) {
     section = sections[type_id];
     if (section != NULL) {
-      BFT_MALLOC(section->_parent_element_num, section->n_elements, cs_lnum_t);
-      section->parent_element_num = section->_parent_element_num;
+      BFT_MALLOC(section->_parent_element_id, section->n_elements, cs_lnum_t);
+      section->parent_element_id = section->_parent_element_id;
     }
   }
 
@@ -1667,7 +1658,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
   for (face_counter = 0; face_counter < n_extr_faces; face_counter++) {
 
     if (extr_faces != NULL)
-      face_id = extr_faces[face_counter] - 1;
+      face_id = extr_faces[face_counter];
     else
       face_id = face_counter;
 
@@ -1703,7 +1694,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
                                face_vertex,
                                p_vertex_num);
 
-    section->_parent_element_num[n_elements_type[face_type]] = face_id + 1;
+    section->_parent_element_id[n_elements_type[face_type]] = face_id;
 
     n_elements_type[face_type] += 1;
 
@@ -1712,7 +1703,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
   /* We can now base the final value of the parent face number on
      the parent (and not local) numbering */
 
-  _raise_sections_parent_num(FVM_N_ELEMENT_TYPES, sections, parent_face_num);
+  _raise_sections_parent_id(FVM_N_ELEMENT_TYPES, sections, parent_face_id);
 
   _optimize_sections_parent_num(FVM_N_ELEMENT_TYPES, sections);
 
@@ -1730,10 +1721,10 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
 
       BFT_MALLOC(section->gc_id, section->n_elements, int);
 
-      if (section->parent_element_num != NULL) {
+      if (section->parent_element_id != NULL) {
         for (face_id = 0; face_id < section->n_elements; face_id++) {
           int fl;
-          cs_lnum_t _face_id = section->parent_element_num[face_id] - 1;
+          cs_lnum_t _face_id = section->parent_element_id[face_id];
           for (fl = n_face_lists - 1; _face_id < face_list_shift[fl]; fl--);
           assert(fl > -1);
           _face_id -= face_list_shift[fl];

@@ -134,25 +134,25 @@ fvm_nodal_reduce(fvm_nodal_t  *this_nodal,
  * structure's creation.
  *
  * parameters:
- *   this_nodal          <-- nodal mesh structure
- *   new_parent_num      <-- pointer to local parent renumbering array
- *                           ({1, ..., n} <-- {1, ..., n})
- *   entity_dim          <-- 3 for cells, 2 for faces, 1 for edges,
- *                           and 0 for vertices
+ *   this_nodal         <-- nodal mesh structure
+ *   new_parent_id      <-- pointer to local parent renumbering array
+ *                          ({0, ..., n-1} <-- {0, ..., n-1})
+ *   entity_dim         <-- 3 for cells, 2 for faces, 1 for edges,
+ *                          and 0 for vertices
  *----------------------------------------------------------------------------*/
 
 void
-fvm_nodal_change_parent_num(fvm_nodal_t        *this_nodal,
-                            const cs_lnum_t     new_parent_num[],
-                            int                 entity_dim);
+fvm_nodal_change_parent_id(fvm_nodal_t       *this_nodal,
+                           const cs_lnum_t    new_parent_id[],
+                           int                entity_dim);
 
 /*----------------------------------------------------------------------------
  * Remove entity parent numbering; this is useful for example when we
  * want to assign coordinates or fields to an extracted mesh using
  * arrays relative to the mesh, and not to its parent.
  *
- * This is equivalent to calling fvm_nodal_change_parent_num(), with
- * 'trivial' (1 o n) new_parent_num[] values.
+ * This is equivalent to calling fvm_nodal_change_parent_id(), with
+ * 'trivial' (1 o n) new_parent_id[] values.
  *
  * parameters:
  *   this_nodal          <-- nodal mesh structure
@@ -161,8 +161,8 @@ fvm_nodal_change_parent_num(fvm_nodal_t        *this_nodal,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_nodal_remove_parent_num(fvm_nodal_t  *this_nodal,
-                            int           entity_dim);
+fvm_nodal_remove_parent_id(fvm_nodal_t  *this_nodal,
+                           int           entity_dim);
 
 /*----------------------------------------------------------------------------
  * Build external numbering for entities based on global numbers.
@@ -236,8 +236,8 @@ fvm_nodal_remove_tag(fvm_nodal_t  *this_nodal,
 /*----------------------------------------------------------------------------
  * Preset number and list of vertices to assign to a nodal mesh.
  *
- * If the parent_vertex_num argument is NULL, the list is assumed to
- * be {1, 2, ..., n}. If parent_vertex_num is given, it specifies a
+ * If the parent_vertex_id argument is NULL, the list is assumed to
+ * be {1, 2, ..., n}. If parent_vertex_id is given, it specifies a
  * list of n vertices from a larger set (1 to n numbering).
  *
  * Ownership of the given parent vertex numbering array is
@@ -249,15 +249,15 @@ fvm_nodal_remove_tag(fvm_nodal_t  *this_nodal,
  * a mesh containing only vertices).
  *
  * parameters:
- *   this_nodal        <-> nodal mesh structure
- *   n_vertices        <-- number of vertices to assign
- *   parent_vertex_num <-- parent numbers of vertices to assign
+ *   this_nodal       <-> nodal mesh structure
+ *   n_vertices       <-- number of vertices to assign
+ *   parent_vertex_id <-- parent numbers of vertices to assign
  *----------------------------------------------------------------------------*/
 
 void
 fvm_nodal_define_vertex_list(fvm_nodal_t  *this_nodal,
                              cs_lnum_t     n_vertices,
-                             cs_lnum_t     parent_vertex_num[]);
+                             cs_lnum_t     parent_vertex_id[]);
 
 /*----------------------------------------------------------------------------
  * Assign shared vertex coordinates to an extracted nodal mesh,

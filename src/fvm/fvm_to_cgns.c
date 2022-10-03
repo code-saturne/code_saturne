@@ -1708,7 +1708,7 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
   cs_part_to_block_t   *d = NULL;
 
   const double      *vertex_coords = mesh->vertex_coords;
-  const cs_lnum_t   *parent_vertex_num = mesh->parent_vertex_num;
+  const cs_lnum_t   *parent_vertex_id = mesh->parent_vertex_id;
   const cs_lnum_t   n_vertices
     = fvm_io_num_get_local_count(mesh->global_vertex_num);
 
@@ -1778,9 +1778,9 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
 
       if (datatype == CS_FLOAT) {
         float *_part_coords = (float *)part_coords;
-        if (parent_vertex_num != NULL) {
+        if (parent_vertex_id != NULL) {
           for (cs_lnum_t i = 0; i < n_vertices; i++)
-            _part_coords[i] = vertex_coords[(parent_vertex_num[i]-1)*stride + j];
+            _part_coords[i] = vertex_coords[parent_vertex_id[i]*stride + j];
         }
         else {
           for (cs_lnum_t i = 0; i < n_vertices; i++)
@@ -1792,9 +1792,9 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
       else {
         assert(datatype == CS_DOUBLE);
         double *_part_coords = (double *)part_coords;
-        if (parent_vertex_num != NULL) {
+        if (parent_vertex_id != NULL) {
           for (cs_lnum_t i = 0; i < n_vertices; i++)
-            _part_coords[i] = vertex_coords[(parent_vertex_num[i]-1)*stride + j];
+            _part_coords[i] = vertex_coords[parent_vertex_id[i]*stride + j];
         }
         else {
           for (cs_lnum_t i = 0; i < n_vertices; i++)
@@ -1872,7 +1872,7 @@ _export_vertex_coords_l(const fvm_to_cgns_writer_t  *writer,
   cs_coord_t  *coords_tmp = NULL;
 
   const cs_lnum_t   n_vertices = mesh->n_vertices;
-  const cs_lnum_t *parent_vertex_num = mesh->parent_vertex_num;
+  const cs_lnum_t *parent_vertex_id = mesh->parent_vertex_id;
   const cs_coord_t *vertex_coords = mesh->vertex_coords;
 
   const char *const coord_name[3] = {"CoordinateX",
@@ -1908,9 +1908,9 @@ _export_vertex_coords_l(const fvm_to_cgns_writer_t  *writer,
 
     /* Vertex coordinates */
 
-    if (parent_vertex_num != NULL) {
+    if (parent_vertex_id != NULL) {
       for (i = 0; i < n_vertices; i++)
-        coords_tmp[i] = vertex_coords[(parent_vertex_num[i]-1)*stride + j];
+        coords_tmp[i] = vertex_coords[parent_vertex_id[i]*stride + j];
     }
     else {
       for (i = 0; i < n_vertices; i++)

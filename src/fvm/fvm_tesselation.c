@@ -179,10 +179,10 @@ struct _fvm_tesselation_t {
                                            (always interlaced:
                                            x1, y1, z1, x2, y2, z2, ...) */
 
-  const cs_lnum_t    *parent_vertex_num; /* Local numbers (1 to n) of local
-                                            vertices in the parent mesh.
-                                            This array is present only when non
-                                            "trivial" (i.e. not 1, 2, ..., n). */
+  const cs_lnum_t    *parent_vertex_id; /* Local ids (0 to n-1) of local
+                                           vertices in the parent mesh.
+                                           This array is present only when non
+                                           "trivial" (i.e. not 0, 1, ..., n-1). */
 
   /* Pointers to shared connectivity arrays */
 
@@ -296,9 +296,9 @@ _added_vertex_coords(const fvm_tesselation_t  *ts,
 
       vertex_id = ts->vertex_num[ts->vertex_index[face_id] + j] - 1;
 
-      if (ts->parent_vertex_num != NULL)
+      if (ts->parent_vertex_id != NULL)
         current_coords
-          = ts->vertex_coords + ((ts->parent_vertex_num[vertex_id] - 1) * 3);
+          = ts->vertex_coords + (ts->parent_vertex_id[vertex_id] * 3);
       else
         current_coords = ts->vertex_coords + (vertex_id * 3);
 
@@ -324,9 +324,9 @@ _added_vertex_coords(const fvm_tesselation_t  *ts,
 
       vertex_id = ts->vertex_num[ts->vertex_index[face_id] + j] - 1;
 
-      if (ts->parent_vertex_num != NULL)
+      if (ts->parent_vertex_id != NULL)
         current_coords
-          = ts->vertex_coords + ((ts->parent_vertex_num[vertex_id] - 1) * 3);
+          = ts->vertex_coords + (ts->parent_vertex_id[vertex_id] * 3);
       else
         current_coords = ts->vertex_coords + (vertex_id * 3);
 
@@ -704,9 +704,9 @@ _vertex_field_of_real_values(const fvm_tesselation_t  *this_tesselation,
 
         vertex_id = vertex_list[j];
 
-        if (ts->parent_vertex_num != NULL)
+        if (ts->parent_vertex_id != NULL)
           current_coords
-            = ts->vertex_coords + ((ts->parent_vertex_num[vertex_id] - 1) * 3);
+            = ts->vertex_coords + (ts->parent_vertex_id[vertex_id] * 3);
         else
           current_coords = ts->vertex_coords + (vertex_id * 3);
 
@@ -850,7 +850,7 @@ _init_decoding_mask(fvm_tesselation_encoding_t decoding_mask[3])
  *   this_tesselation   <-> partially initialized tesselation structure
  *   dim                <-- spatial dimension
  *   vertex_coords      <-- associated vertex coordinates array
- *   parent_vertex_num  <-- optional indirection to vertex coordinates
+ *   parent_vertex_id   <-- optional indirection to vertex coordinates
  *   error_count        --> number of triangulation errors counter (optional)
  *----------------------------------------------------------------------------*/
 
@@ -858,7 +858,7 @@ static void
 _tesselate_polygons(fvm_tesselation_t  *this_tesselation,
                     int                 dim,
                     const cs_coord_t    vertex_coords[],
-                    const cs_lnum_t     parent_vertex_num[],
+                    const cs_lnum_t     parent_vertex_id[],
                     cs_lnum_t          *error_count)
 {
   int type_id;
@@ -966,7 +966,7 @@ _tesselate_polygons(fvm_tesselation_t  *this_tesselation,
                                             1,
                                             n_vertices,
                                             vertex_coords,
-                                            parent_vertex_num,
+                                            parent_vertex_id,
                                             (  ts->vertex_num
                                              + vertex_id),
                                             FVM_TRIANGULATE_ELT_DEF,
@@ -2048,7 +2048,7 @@ fvm_tesselation_create(fvm_element_t        element_type,
   this_tesselation->n_faces = 0;
 
   this_tesselation->vertex_coords = NULL;
-  this_tesselation->parent_vertex_num = NULL;
+  this_tesselation->parent_vertex_id = NULL;
 
   this_tesselation->face_index = face_index;
   this_tesselation->face_num = face_num;
@@ -2144,19 +2144,19 @@ fvm_tesselation_destroy(fvm_tesselation_t  * this_tesselation)
  * Tesselate a mesh section referred to by an fvm_tesselation_t structure.
  *
  * parameters:
- *   this_tesselation   <-> partially initialized tesselation structure
- *   dim                <-- spatial dimension
- *   vertex_coords      <-- associated vertex coordinates array
- *   parent_vertex_num  <-- optional indirection to vertex coordinates
- *   error_count        --> number of elements with a tesselation error
- *                          counter (optional)
+ *   this_tesselation  <-> partially initialized tesselation structure
+ *   dim               <-- spatial dimension
+ *   vertex_coords     <-- associated vertex coordinates array
+ *   parent_vertex_id  <-- optional indirection to vertex coordinates
+ *   error_count       --> number of elements with a tesselation error
+ *                         counter (optional)
  *----------------------------------------------------------------------------*/
 
 void
 fvm_tesselation_init(fvm_tesselation_t  *this_tesselation,
                      int                 dim,
                      const cs_coord_t    vertex_coords[],
-                     const cs_lnum_t     parent_vertex_num[],
+                     const cs_lnum_t     parent_vertex_id[],
                      cs_lnum_t          *error_count)
 {
   assert(this_tesselation != NULL);
@@ -2164,7 +2164,7 @@ fvm_tesselation_init(fvm_tesselation_t  *this_tesselation,
   this_tesselation->dim = dim;
 
   this_tesselation->vertex_coords = vertex_coords;
-  this_tesselation->parent_vertex_num = parent_vertex_num;
+  this_tesselation->parent_vertex_id = parent_vertex_id;
 
   switch(this_tesselation->type) {
 
@@ -2172,7 +2172,7 @@ fvm_tesselation_init(fvm_tesselation_t  *this_tesselation,
     _tesselate_polygons(this_tesselation,
                         dim,
                         vertex_coords,
-                        parent_vertex_num,
+                        parent_vertex_id,
                         error_count);
     _count_and_index_sub_polyhedra(this_tesselation,
                                    error_count,
@@ -2183,7 +2183,7 @@ fvm_tesselation_init(fvm_tesselation_t  *this_tesselation,
     _tesselate_polygons(this_tesselation,
                         dim,
                         vertex_coords,
-                        parent_vertex_num,
+                        parent_vertex_id,
                         error_count);
     _count_and_index_sub_polygons(this_tesselation,
                                   true);
@@ -2796,13 +2796,13 @@ fvm_tesselation_dump(const fvm_tesselation_t  *this_tesselation)
   bft_printf("\n"
              "Pointers to shared arrays:\n"
              "  vertex_coords         %p\n"
-             "  parent_vertex_num     %p\n"
+             "  parent_vertex_id      %p\n"
              "  face_index:           %p\n"
              "  face_num:             %p\n"
              "  vertex_index:         %p\n"
              "  vertex_num:           %p\n",
              (const void *)this_tesselation->vertex_coords,
-             (const void *)this_tesselation->parent_vertex_num,
+             (const void *)this_tesselation->parent_vertex_id,
              (const void *)this_tesselation->face_index,
              (const void *)this_tesselation->face_num,
              (const void *)this_tesselation->vertex_index,

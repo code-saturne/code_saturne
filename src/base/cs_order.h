@@ -57,12 +57,12 @@ BEGIN_C_DECLS
  * Test if an array of global numbers is ordered.
  *
  * parameters:
- *   list   <-- optional list (1 to n numbering) of selected entities
+ *   list   <-- optional list (0 to n-1 numbering) of selected entities
  *              (or NULL if all nb_ent are selected). This list may
  *              contain element numbers in any order
  *   number <-- array of all entity numbers (number of entity i
- *              given by number[i] or number[list[i] - 1]) if list exists
- *              (if NULL, a default 1 to n numbering is considered)
+ *              given by number[i] or number[list[i]] if list exists
+ *              (if NULL, a default 0 to n-1 numbering is considered)
  *   nb_ent <-- number of entities considered
  *
  * returns:
@@ -78,12 +78,12 @@ cs_order_gnum_test(const cs_lnum_t   list[],
  * Return an ordering table associated with an array of global numbers.
  *
  * parameters:
- *   list   <-- optional list (1 to n numbering) of selected entities
+ *   list   <-- optional list (0 to n-1 numbering) of selected entities
  *              (or NULL if all nb_ent are selected). This list may
  *              contain element numbers in any order
  *   number <-- array of all entity numbers (number of entity i
- *              given by number[i] or number[list[i] - 1]) if list exists
- *              (if NULL, a default 1 to n numbering is considered)
+ *              given by number[i] or number[list[i]]) if list exists
+ *              (if NULL, a default 0 to n-1 numbering is considered)
  *   nb_ent <-- number of entities considered
  *
  * returns:
@@ -102,12 +102,12 @@ cs_order_gnum(const cs_lnum_t   list[],
  * of global numbers.
  *
  * parameters:
- *   list   <-- optional list (1 to n numbering) of selected entities
+ *   list   <-- optional list (0 to n-1 numbering) of selected entities
  *              (or NULL if all nb_ent are selected). This list may
  *              contain element numbers in any order
  *   number <-- array of all entity numbers (number of entity i
- *              given by number[i] or number[list[i] - 1]) if list exists
- *              (if NULL, a default 1 to n numbering is considered)
+ *              given by number[i] or number[list[i]]) if list exists
+ *              (if NULL, a default 0 to n-1 numbering is considered)
  *   stride <-- stride of number array (number of values to compare)
  *   nb_ent <-- number of entities considered
  *
@@ -128,12 +128,12 @@ cs_order_gnum_s(const cs_lnum_t  list[],
  * of global numbers.
  *
  * parameters:
- *   list   <-- optional list (1 to n numbering) of selected entities
+ *   list   <-- optional list (0 to n-1 numbering) of selected entities
  *              (or NULL if all nb_ent are selected). This list may
  *              contain element numbers in any order
  *   number <-- array of all entity numbers (numbers of entity i start
  *              at index[i] or _index[i] (reduced index) if list exists).
- *              If list = NULL, a default 1 to n numbering is considered)
+ *              If list = NULL, a default 0 to n-1 numbering is considered)
  *   index  <-- number of values to compare for each entity
  *   nb_ent <-- number of entities considered
  *
@@ -153,12 +153,12 @@ cs_order_gnum_i(const cs_lnum_t  list[],
  * Compute an ordering table associated with an array of global numbers.
  *
  * parameters:
- *   list   <-- optional list (1 to n numbering) of selected entities
+ *   list   <-- optional list (0 to n-1 numbering) of selected entities
  *              (or NULL if all nb_ent are selected). This list may
  *              contain element numbers in any order
  *   number <-- array of all entity numbers (number of entity i
- *              given by number[i] or number[list[i] - 1]) if list exists
- *              (if NULL, a default 1 to n numbering is considered)
+ *              given by number[i] or number[list[i]]) if list exists
+ *              (if NULL, a default 0 to n-1 numbering is considered)
  *   order  --> pointer to pre-allocated ordering table
  *   nb_ent <-- number of entities considered
  *----------------------------------------------------------------------------*/
@@ -174,12 +174,12 @@ cs_order_gnum_allocated(const cs_lnum_t  list[],
  * strided global numbers.
  *
  * parameters:
- *   list   <-- optional list (1 to n numbering) of selected entities
+ *   list   <-- optional list (0 to n-1 numbering) of selected entities
  *              (or NULL if all nb_ent are selected). This list may
  *              contain element numbers in any order
  *   number <-- array of all entity numbers (numbers of entity i start
- *              at number[i*stride] or number[(list[i] - 1)*stride]) if
- *              list exists (if NULL, a default 1 to n numbering is
+ *              at number[i*stride] or number[list[i]*stride]) if
+ *              list exists (if NULL, a default 0 to n-1 numbering is
  *              considered)
  *   stride <-- stride of number array (number of values to compare)
  *   order  --> pointer to pre-allocated ordering table
@@ -198,12 +198,12 @@ cs_order_gnum_allocated_s(const cs_lnum_t  list[],
  * of global numbers.
  *
  * parameters:
- *   list   <-- optional list (1 to n numbering) of selected entities
+ *   list   <-- optional list (0 to n-1 numbering) of selected entities
  *              (or NULL if all nb_ent are selected). This list may
  *              contain element numbers in any order
  *   number <-- array of all entity numbers (numbers of entity i start
  *              at index[i] or _index[i] (reduced index) if list exists).
- *              If list = NULL, a default 1 to n numbering is considered)
+ *              If list = NULL, a default 0 to n-1 numbering is considered)
  *   index  <-- number of values to compare for each entity (from 0)
  *   order  --> pointer to pre-allocated ordering table
  *   nb_ent <-- number of entities considered
@@ -220,12 +220,12 @@ cs_order_gnum_allocated_i(const cs_lnum_t  list[],
  * Compute an ordering table associated with an array of local numbers.
  *
  * parameters:
- *   list   <-- optional list (1 to n numbering) of selected entities
+ *   list   <-- optional list (0 to n-1 numbering) of selected entities
  *              (or NULL if all nb_ent are selected). This list may
  *              contain element numbers in any order
  *   number <-- array of all entity numbers (number of entity i
- *              given by number[i] or number[list[i] - 1]) if list exists
- *              (if NULL, a default 1 to n numbering is considered)
+ *              given by number[i] or number[list[i]]) if list exists
+ *              (if NULL, a default 0 to n-1 numbering is considered)
  *   order  --> pointer to pre-allocated ordering table
  *   nb_ent <-- number of entities considered
  *----------------------------------------------------------------------------*/
@@ -240,12 +240,12 @@ cs_order_lnum_allocated(const cs_lnum_t  list[],
 /*!
  * \brief Compute an ordering table associated with an array of local values.
  *
- * \param[in]   list    optional list (1 to n numbering) of selected entities
+ * \param[in]   list    optional list (0 to n-1 numbering) of selected entities
  *                      (or NULL if all nb_ent are selected). This list may
  *                      contain element numbers in any order
  * \param[in]   val     array of all entity values (value of entity i given
- *                      by value[i] or value[list[i] - 1]) if list exists
- *                      (if NULL, a default 1 to n numbering is considered)
+ *                      by value[i] or value[list[i]]) if list exists
+ *                      (if NULL, a default 0 to n-1 numbering is considered)
  * \param[out]  order   pointer to pre-allocated ordering table
  * \param[in]   nb_ent  number of entities considered
  */
@@ -262,12 +262,12 @@ cs_order_real_allocated(const cs_lnum_t  list[],
  * strided local numbers.
  *
  * parameters:
- *   list   <-- optional list (1 to n numbering) of selected entities
+ *   list   <-- optional list (0 to n-1 numbering) of selected entities
  *              (or NULL if all nb_ent are selected). This list may
  *              contain element numbers in any order
  *   number <-- array of all entity numbers (numbers of entity i start
- *              at number[i*stride] or number[(list[i] - 1)*stride]) if
- *              list exists (if NULL, a default 1 to n numbering is
+ *              at number[i*stride] or number[list[i]*stride]) if
+ *              list exists (if NULL, a default 0 to n-1 numbering is
  *              considered)
  *   stride <-- stride of number array (number of values to compare)
  *   order  --> pointer to pre-allocated ordering table

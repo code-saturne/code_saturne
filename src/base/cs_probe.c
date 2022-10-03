@@ -1593,8 +1593,8 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
       if (pset->sel_criter != NULL) {
         if (strcmp(pset->sel_criter, "all[]")) {
           BFT_MALLOC(selected_elements, mesh->n_cells, cs_lnum_t);
-          cs_selector_get_cell_num_list(pset->sel_criter,
-                                        &n_select_elements, selected_elements);
+          cs_selector_get_cell_list(pset->sel_criter,
+                                    &n_select_elements, selected_elements);
         }
       } /* Need to define a list of cells ? */
 

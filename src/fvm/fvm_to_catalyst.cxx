@@ -1005,11 +1005,11 @@ _export_vertex_coords(const fvm_nodal_t        *mesh,
 
   points->Allocate(mesh->n_vertices);
 
-  if (mesh->parent_vertex_num != NULL) {
-    const cs_lnum_t  *parent_vertex_num = mesh->parent_vertex_num;
+  if (mesh->parent_vertex_id != NULL) {
+    const cs_lnum_t  *parent_vertex_id = mesh->parent_vertex_id;
     for (i = 0; i < n_vertices; i++) {
       for (j = 0; j < mesh->dim; j++)
-        point[j] = vertex_coords[(parent_vertex_num[i]-1)*stride + j];
+        point[j] = vertex_coords[parent_vertex_id[i]*stride + j];
       for (; j < 3; j++)
         point[j] = 0.;
       points->InsertNextPoint(point[0], point[1], point[2]);
@@ -1278,7 +1278,7 @@ _export_field_values_n(const fvm_nodal_t    *mesh,
                     CS_DOUBLE,
                     n_parent_lists,
                     parent_num_shift,
-                    mesh->parent_vertex_num,
+                    mesh->parent_vertex_id,
                     field_values,
                     values);
 
@@ -1367,7 +1367,7 @@ _export_field_values_e(const fvm_nodal_t         *mesh,
                       CS_DOUBLE,
                       n_parent_lists,
                       parent_num_shift,
-                      section->parent_element_num,
+                      section->parent_element_id,
                       field_values,
                       values + start_id);
 

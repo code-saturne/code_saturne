@@ -437,7 +437,7 @@ _export_vertex_coords_g(const fvm_to_ensight_writer_t  *this_writer,
   size_t                block_buf_size = 0;
 
   const cs_coord_t  *vertex_coords = mesh->vertex_coords;
-  const cs_lnum_t   *parent_vertex_num = mesh->parent_vertex_num;
+  const cs_lnum_t   *parent_vertex_id = mesh->parent_vertex_id;
   const cs_lnum_t   n_vertices
       = fvm_io_num_get_local_count(mesh->global_vertex_num);
   cs_gnum_t   n_g_vertices
@@ -488,9 +488,9 @@ _export_vertex_coords_g(const fvm_to_ensight_writer_t  *this_writer,
 
     if (j < mesh->dim) {
 
-      if (parent_vertex_num != NULL) {
+      if (parent_vertex_id != NULL) {
         for (i = 0; i < n_vertices; i++)
-          part_coords[i] = vertex_coords[(parent_vertex_num[i]-1)*stride + j];
+          part_coords[i] = vertex_coords[parent_vertex_id[i]*stride + j];
       }
       else {
         for (i = 0; i < n_vertices; i++)
@@ -550,7 +550,7 @@ _export_vertex_coords_l(const fvm_to_ensight_writer_t  *this_writer,
 
   const cs_lnum_t    n_vertices = mesh->n_vertices;
   const cs_coord_t  *vertex_coords = mesh->vertex_coords;
-  const cs_lnum_t   *parent_vertex_num = mesh->parent_vertex_num;
+  const cs_lnum_t   *parent_vertex_id = mesh->parent_vertex_id;
 
   const size_t  stride = (size_t)(mesh->dim);
 
@@ -579,11 +579,11 @@ _export_vertex_coords_l(const fvm_to_ensight_writer_t  *this_writer,
     /* First, handle regular vertices */
 
     if (j < mesh->dim) {
-      if (parent_vertex_num != NULL) {
+      if (parent_vertex_id != NULL) {
         for (i = 0; i < n_vertices; i++) {
-          assert(parent_vertex_num[i] != 0);
+          assert(parent_vertex_id[i] != -1);
           coords_tmp[i]
-            = (float)(vertex_coords[(parent_vertex_num[i]-1)*stride + j]);
+            = (float)(vertex_coords[parent_vertex_id[i]*stride + j]);
         }
       }
       else {

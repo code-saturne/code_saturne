@@ -66,7 +66,7 @@ BEGIN_C_DECLS
  *
  * parameters:
  *   number    <-- pointer to numbers of entities that should be ordered.
- *                 (if NULL, a default 1 to n numbering is considered)
+ *                 (if NULL, a default 0 to n-1 numbering is considered)
  *   level     <-- level of the binary tree to descend
  *   nb_ent    <-- number of entities in the binary tree to descend
  *   order     <-> ordering array
@@ -113,7 +113,7 @@ _order_gnum_descend_tree(const cs_gnum_t   number[],
  * Order an array of global numbers.
  *
  * parameters:
- *   number   <-- array of entity numbers (if NULL, a default 1 to n
+ *   number   <-- array of entity numbers (if NULL, a default 0 to n-1
  *                numbering is considered)
  *   order    <-- pre-allocated ordering table
  *   nb_ent   <-- number of entities considered
@@ -159,7 +159,7 @@ _order_gnum(const cs_gnum_t   number[],
  *
  * parameters:
  *   number    <-- pointer to numbers of entities that should be ordered.
- *                 (if NULL, a default 1 to n numbering is considered)
+ *                 (if NULL, a default 0 to n-1 numbering is considered)
  *   stride    <-- stride of array (number of values to compare)
  *   level     <-- level of the binary tree to descend
  *   nb_ent    <-- number of entities in the binary tree to descend
@@ -223,7 +223,7 @@ _order_gnum_descend_tree_s(const cs_gnum_t   number[],
  * Order a strided array of global numbers lexicographically.
  *
  * parameters:
- *   number   <-- array of entity numbers (if NULL, a default 1 to n
+ *   number   <-- array of entity numbers (if NULL, a default 0 to n-1
  *                numbering is considered)
  *   stride   <-- stride of array (number of values to compare)
  *   order    --> pre-allocated ordering table
@@ -274,7 +274,7 @@ _order_gnum_s(const cs_gnum_t   number[],
  *   i2        <-- position in index for the second element
  *   index     <-- number of values to compare for each entity
  *   number    <-- pointer to numbers of entities that should be ordered.
- *                 (if NULL, a default 1 to n numbering is considered)
+ *                 (if NULL, a default 0 to n-1 numbering is considered)
  *
  * returns:
  *   true if element i1 is greater or equal than element i2, false otherwise
@@ -325,7 +325,7 @@ _indexed_is_greater_or_equal(size_t            i1,
  *   i2        <-- position in index for the second element
  *   index     <-- number of values to compare for each entity
  *   number    <-- pointer to numbers of entities that should be ordered.
- *                 (if NULL, a default 1 to n numbering is considered)
+ *                 (if NULL, a default 0 to n-1 numbering is considered)
  *
  * returns:
  *   true if element i1 is strictly greater than element i2, false otherwise
@@ -373,7 +373,7 @@ _indexed_is_greater(size_t            i1,
  *
  * parameters:
  *   number    <-- pointer to numbers of entities that should be ordered.
- *                 (if NULL, a default 1 to n numbering is considered)
+ *                 (if NULL, a default 0 to n-1 numbering is considered)
  *   index     <-- number of values to compare for each entity
  *   level     <-- level of the binary tree to descend
  *   nb_ent    <-- number of entities in the binary tree to descend
@@ -428,7 +428,7 @@ _order_gnum_descend_tree_i(const cs_gnum_t   number[],
  * Order an indexed array of global numbers lexicographically.
  *
  * parameters:
- *   number   <-- array of entity numbers (if NULL, a default 1 to n
+ *   number   <-- array of entity numbers (if NULL, a default 0 to n-1
  *                numbering is considered)
  *   index    <-- number of values to compare for each entity
  *   order    --> pre-allocated ordering table
@@ -477,7 +477,7 @@ _order_gnum_i(const cs_gnum_t   number[],
  *
  * parameters:
  *   number    <-- pointer to numbers of entities that should be ordered.
- *                 (if NULL, a default 1 to n numbering is considered)
+ *                 (if NULL, a default 0 to n-1 numbering is considered)
  *   level     <-- level of the binary tree to descend
  *   nb_ent    <-- number of entities in the binary tree to descend
  *   order     <-> ordering array
@@ -524,7 +524,7 @@ _order_lnum_descend_tree(const cs_lnum_t   number[],
  * Order an array of local numbers.
  *
  * parameters:
- *   number   <-- array of entity numbers (if NULL, a default 1 to n
+ *   number   <-- array of entity numbers (if NULL, a default 0 to n-1
  *                numbering is considered)
  *   order    <-- pre-allocated ordering table
  *   nb_ent   <-- number of entities considered
@@ -570,7 +570,7 @@ _order_lnum(const cs_lnum_t   number[],
  *
  * parameters:
  *   number    <-- pointer to numbers of entities that should be ordered.
- *                 (if NULL, a default 1 to n numbering is considered)
+ *                 (if NULL, a default 0 to n-1 numbering is considered)
  *   stride    <-- stride of array (number of values to compare)
  *   level     <-- level of the binary tree to descend
  *   nb_ent    <-- number of entities in the binary tree to descend
@@ -634,7 +634,7 @@ _order_lnum_descend_tree_s(const cs_lnum_t   number[],
  * Order a strided array of global numbers lexicographically.
  *
  * parameters:
- *   number   <-- array of entity numbers (if NULL, a default 1 to n
+ *   number   <-- array of entity numbers (if NULL, a default 0 to n-1
  *                numbering is considered)
  *   stride   <-- stride of array (number of values to compare)
  *   order    --> pre-allocated ordering table
@@ -776,12 +776,11 @@ _order_real(const cs_real_t   value[],
 /*!
  * \brief Test if an array of global numbers is ordered.
  *
- * \param[in]  list    optional list (1 to n numbering) of selected entities
+ * \param[in]  list    optional list (0 to n-1 numbering) of selected entities
  *                     (or NULL if all nb_ent are selected). This list may
  *                     contain element numbers in any order
  * \param[in]  number  array of all entity numbers (number of entity i given
- *                     by number[i] or number[list[i] - 1]) if list exists
- *                     (if NULL, a default 1 to n numbering is considered)
+ *                     by number[i] or number[list[i]]) if list exists
  * \param[in]  nb_ent  number of entities considered
  *
  * \return  1 if ordered, 0 otherwise.
@@ -801,7 +800,7 @@ cs_order_gnum_test(const cs_lnum_t  list[],
 
     if (list != NULL) {
       for (i = 1 ; i < nb_ent ; i++) {
-        if (number[list[i] - 1] < number[list[i-1] - 1])
+        if (number[list[i]] < number[list[i-1]])
           break;
       }
     }
@@ -837,12 +836,12 @@ cs_order_gnum_test(const cs_lnum_t  list[],
 /*!
  * \brief Return an ordering table associated with an array of global numbers.
  *
- * \param[in]  list    optional list (1 to n numbering) of selected entities
+ * \param[in]  list    optional list (0 to n-1 numbering) of selected entities
  *                     (or NULL if all nb_ent are selected). This list may
  *                     contain element numbers in any order
  * \param[in]  number  array of all entity numbers (number of entity i given
- *                     by number[i] or number[list[i] - 1]) if list exists
- *                     (if NULL, a default 1 to n numbering is considered)
+ *                     by number[i] or number[list[i]]) if list exists
+ *                     (if NULL, a default 0 to n-1 numbering is considered)
  * \param[in]  nb_ent  number of entities considered
  *
  * \return  pointer to list of nb_ent entities (0 to n-1 numbering) ordered by
@@ -861,9 +860,9 @@ cs_order_gnum(const cs_lnum_t  list[],
   BFT_MALLOC(order, nb_ent, cs_lnum_t);
 
   cs_order_gnum_allocated(list,
-                            number,
-                            order,
-                            nb_ent);
+                          number,
+                          order,
+                          nb_ent);
 
   return order;
 }
@@ -873,12 +872,12 @@ cs_order_gnum(const cs_lnum_t  list[],
  * \brief Return a lexicographical ordering table associated with a strided
  * array of global numbers.
  *
- * \param[in]  list    optional list (1 to n numbering) of selected entities
+ * \param[in]  list    optional list (0 to n-1 numbering) of selected entities
  *                     (or NULL if all nb_ent are selected). This list may
  *                     contain element numbers in any order
  * \param[in]  number  array of all entity numbers (number of entity i
- *                     given by number[i] or number[list[i] - 1]) if list
- *                     exists (if NULL, a default 1 to n numbering is
+ *                     given by number[i] or number[list[i]]) if list
+ *                     exists (if NULL, a default 0 to n-1 numbering is
  *                     considered)
  * \param[in]  stride  stride of number array (number of values to compare)
  * \param[in]  nb_ent  number of entities considered
@@ -913,12 +912,12 @@ cs_order_gnum_s(const cs_lnum_t  list[],
  * \brief Return a lexicographical ordering table associated with an indexed
  * array of global numbers.
  *
- * \param[in]  list    optional list (1 to n numbering) of selected entities
+ * \param[in]  list    optional list (0 to n-1 numbering) of selected entities
  *                     (or NULL if all nb_ent are selected). This list may
  *                     contain element numbers in any order
  * \param[in]  number  array of all entity numbers (numbers of entity i start
  *                     at index[i] or _index[i] (reduced index) if list exists).
- *                     If list = NULL, a default 1 to n numbering is considered)
+ *                     If list = NULL, a default 0 to n-1 numbering is considered)
  * \param[in]  index   number of values to compare for each entity
  * \param[in]  nb_ent  number of entities considered
  *
@@ -947,12 +946,12 @@ cs_order_gnum_i(const cs_lnum_t  list[],
 /*!
  * \brief Compute an ordering table associated with an array of global numbers.
  *
- * \param[in]   list    optional list (1 to n numbering) of selected entities
+ * \param[in]   list    optional list (0 to n-1 numbering) of selected entities
  *                      (or NULL if all nb_ent are selected). This list may
  *                      contain element numbers in any order
  * \param[in]   number  array of all entity numbers (number of entity i given
- *                      by number[i] or number[list[i] - 1]) if list exists
- *                      (if NULL, a default 1 to n numbering is considered)
+ *                      by number[i] or number[list[i]]) if list exists
+ *                      (if NULL, a default 0 to n-1 numbering is considered)
  * \param[out]  order   pointer to pre-allocated ordering table
  * \param[in]   nb_ent  number of entities considered
  */
@@ -974,14 +973,14 @@ cs_order_gnum_allocated(const cs_lnum_t  list[],
     if (list != NULL) {
       BFT_MALLOC(number_list, nb_ent, cs_gnum_t);
       for (i = 0 ; i < nb_ent ; i++)
-        number_list[i] = number[list[i] - 1];
+        number_list[i] = number[list[i]];
       _order_gnum(number_list, order, nb_ent);
       BFT_FREE(number_list);
     }
     else
       _order_gnum(number,
-                   order,
-                   nb_ent);
+                  order,
+                  nb_ent);
 
   }
 
@@ -1010,12 +1009,12 @@ cs_order_gnum_allocated(const cs_lnum_t  list[],
  * \brief Compute a lexicographical ordering table associated with an array of
  * strided global numbers.
  *
- * \param[in]   list    optional list (1 to n numbering) of selected entities
+ * \param[in]   list    optional list (0 to n-1 numbering) of selected entities
  *                      (or NULL if all nb_ent are selected). This list may
  *                      contain element numbers in any order
  * \param[in]   number  array of all entity numbers (numbers of entity i start
- *                      at number[i*stride] or number[(list[i] - 1)*stride])
- *                      if list exists (if NULL, a default 1 to n numbering is
+ *                      at number[i*stride] or number[list[i]*stride])
+ *                      if list exists (if NULL, a default 0 to n-1 numbering is
  *                      considered)
  * \param[in]   stride  stride of number array (number of values to compare)
  * \param[out]  order   pointer to pre-allocated ordering table
@@ -1041,7 +1040,7 @@ cs_order_gnum_allocated_s(const cs_lnum_t  list[],
       BFT_MALLOC(number_list, nb_ent*stride, cs_gnum_t);
       for (i = 0 ; i < nb_ent ; i++) {
         for (j = 0; j < stride; j++)
-          number_list[i*stride + j] = number[(list[i] - 1)*stride + j];
+          number_list[i*stride + j] = number[list[i]*stride + j];
       }
       _order_gnum_s(number_list, stride, order, nb_ent);
       BFT_FREE(number_list);
@@ -1064,12 +1063,12 @@ cs_order_gnum_allocated_s(const cs_lnum_t  list[],
  * \brief Compute a lexicographical ordering table associated with an indexed
  *        array of global numbers.
  *
- * \param[in]   list    optional list (1 to n numbering) of selected entities
+ * \param[in]   list    optional list (0 to n-1 numbering) of selected entities
  *                      (or NULL if all nb_ent are selected). This list may
  *                      contain element numbers in any order
  * \param[in]   number  array of all entity numbers (numbers of entity i start
  *                      at index[i] or _index[i] (reduced index) if list
- *                      exists). If list = NULL, a default 1 to n numbering
+ *                      exists). If list = NULL, a default 0 to n-1 numbering
  *                      is considered)
  * \param[in]   index   number of values to compare for each entity (from 0)
  * \param[out]  order   pointer to pre-allocated ordering table
@@ -1100,7 +1099,7 @@ cs_order_gnum_allocated_i(const cs_lnum_t  list[],
       /* Count reduced size */
 
       for (i = 0; i < nb_ent; i++) {
-        ent_id = list[i]-1;
+        ent_id = list[i];
         _index[i+1] = index[ent_id+1] - index[ent_id];
       }
 
@@ -1114,7 +1113,7 @@ cs_order_gnum_allocated_i(const cs_lnum_t  list[],
 
       for (i = 0; i < nb_ent; i++) {
 
-        ent_id = list[i]-1;
+        ent_id = list[i];
         _shift = _index[i];
 
         for (j = index[ent_id], k = 0;
@@ -1151,12 +1150,12 @@ cs_order_gnum_allocated_i(const cs_lnum_t  list[],
 /*!
  * \brief Compute an ordering table associated with an array of local numbers.
  *
- * \param[in]   list    optional list (1 to n numbering) of selected entities
+ * \param[in]   list    optional list (0 to n-1 numbering) of selected entities
  *                      (or NULL if all nb_ent are selected). This list may
  *                      contain element numbers in any order
  * \param[in]   number  array of all entity numbers (number of entity i given
- *                      by number[i] or number[list[i] - 1]) if list exists
- *                      (if NULL, a default 1 to n numbering is considered)
+ *                      by number[i] or number[list[i]]) if list exists
+ *                      (if NULL, a default 0 to n-1 numbering is considered)
  * \param[out]  order   pointer to pre-allocated ordering table
  * \param[in]   nb_ent  number of entities considered
  */
@@ -1178,7 +1177,7 @@ cs_order_lnum_allocated(const cs_lnum_t  list[],
     if (list != NULL) {
       BFT_MALLOC(number_list, nb_ent, cs_lnum_t);
       for (i = 0 ; i < nb_ent ; i++)
-        number_list[i] = number[list[i] - 1];
+        number_list[i] = number[list[i]];
       _order_lnum(number_list,
                   order,
                   nb_ent);
@@ -1218,12 +1217,12 @@ cs_order_lnum_allocated(const cs_lnum_t  list[],
  * \brief Compute a lexicographical ordering table associated with an array of
  * strided local numbers.
  *
- * \param[in]   list    optional list (1 to n numbering) of selected entities
+ * \param[in]   list    optional list (0 to n-1 numbering) of selected entities
  *                      (or NULL if all nb_ent are selected). This list may
  *                      contain element numbers in any order
  * \param[in]   number  array of all entity numbers (numbers of entity i start
- *                      at number[i*stride] or number[(list[i] - 1)*stride])
- *                      if list exists (if NULL, a default 1 to n numbering is
+ *                      at number[i*stride] or number[list[i]*stride])
+ *                      if list exists (if NULL, a default 0 to n-1 numbering is
  *                      considered)
  * \param[in]   stride  stride of number array (number of values to compare)
  * \param[out]  order   pointer to pre-allocated ordering table
@@ -1249,7 +1248,7 @@ cs_order_lnum_allocated_s(const cs_lnum_t  list[],
       BFT_MALLOC(number_list, nb_ent*stride, cs_lnum_t);
       for (i = 0 ; i < nb_ent ; i++) {
         for (j = 0; j < stride; j++)
-          number_list[i*stride + j] = number[(list[i] - 1)*stride + j];
+          number_list[i*stride + j] = number[list[i]*stride + j];
       }
       _order_lnum_s(number_list,
                     stride,
@@ -1280,11 +1279,11 @@ cs_order_lnum_allocated_s(const cs_lnum_t  list[],
 /*!
  * \brief Compute an ordering table associated with an array of local values.
  *
- * \param[in]   list    optional list (1 to n numbering) of selected entities
+ * \param[in]   list    optional list (0 to n-1 numbering) of selected entities
  *                      (or NULL if all nb_ent are selected). This list may
  *                      contain element numbers in any order
  * \param[in]   val     array of all entity values (value of entity i given
- *                      by value[i] or value[list[i] - 1]) if list exists
+ *                      by value[i] or value[list[i]]) if list exists
  * \param[out]  order   pointer to pre-allocated ordering table
  * \param[in]   nb_ent  number of entities considered
  */
@@ -1304,7 +1303,7 @@ cs_order_real_allocated(const cs_lnum_t  list[],
   if (list != NULL) {
     BFT_MALLOC(val_list, nb_ent, cs_real_t);
     for (i = 0 ; i < nb_ent ; i++)
-      val_list[i] = val[list[i] - 1];
+      val_list[i] = val[list[i]];
     _order_real(val_list,
                 order,
                 nb_ent);

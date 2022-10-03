@@ -564,7 +564,7 @@ _field_helper_output_eg(fvm_writer_field_helper_t          *helper,
                           h->datatype,
                           n_parent_lists,
                           parent_num_shift,
-                          section->parent_element_num,
+                          section->parent_element_id,
                           field_values,
                           _part_values);
 
@@ -759,7 +759,7 @@ _field_helper_output_el(fvm_writer_field_helper_t          *helper,
                           h->datatype,
                           n_parent_lists,
                           parent_num_shift,
-                          section->parent_element_num,
+                          section->parent_element_id,
                           field_values,
                           _values);
 
@@ -927,7 +927,7 @@ _field_helper_output_ng(fvm_writer_field_helper_t        *helper,
                         h->datatype,
                         n_parent_lists,
                         parent_num_shift,
-                        mesh->parent_vertex_num,
+                        mesh->parent_vertex_id,
                         field_values,
                         part_values);
 
@@ -964,7 +964,7 @@ _field_helper_output_ng(fvm_writer_field_helper_t        *helper,
                                           h->datatype,
                                           n_parent_lists,
                                           parent_num_shift,
-                                          mesh->parent_vertex_num,
+                                          mesh->parent_vertex_id,
                                           field_values,
                                           part_values + part_values_shift);
 
@@ -1099,7 +1099,7 @@ _field_helper_output_nl(fvm_writer_field_helper_t        *helper,
                         h->datatype,
                         n_parent_lists,
                         parent_num_shift,
-                        mesh->parent_vertex_num,
+                        mesh->parent_vertex_id,
                         field_values,
                         values);
 
@@ -1136,7 +1136,7 @@ _field_helper_output_nl(fvm_writer_field_helper_t        *helper,
                                           h->datatype,
                                           n_parent_lists,
                                           parent_num_shift,
-                                          mesh->parent_vertex_num,
+                                          mesh->parent_vertex_id,
                                           field_values,
                                           values + values_shift);
 
@@ -1935,7 +1935,7 @@ fvm_writer_field_helper_step_el(fvm_writer_field_helper_t   *helper,
   size_t output_buffer_base_size = output_buffer_size;
 
   const fvm_nodal_section_t  *section = export_section->section;
-  const cs_lnum_t   *parent_entity_num = section->parent_element_num;
+  const cs_lnum_t   *parent_entity_id = section->parent_element_id;
 
   /* If output data is interlaced, set stride */
 
@@ -1970,7 +1970,7 @@ fvm_writer_field_helper_step_el(fvm_writer_field_helper_t   *helper,
                         h->datatype,
                         n_parent_lists,
                         parent_num_shift,
-                        parent_entity_num,
+                        parent_entity_id,
                         field_values,
                         output_buffer);
 
@@ -2041,7 +2041,7 @@ fvm_writer_field_helper_step_el(fvm_writer_field_helper_t   *helper,
                         h->datatype,
                         n_parent_lists,
                         parent_num_shift,
-                        parent_entity_num,
+                        parent_entity_id,
                         field_values,
                         output_buffer);
 
@@ -2132,7 +2132,7 @@ fvm_writer_field_helper_step_nl(fvm_writer_field_helper_t   *helper,
 
   int  stride = 1;
 
-  const cs_lnum_t   *parent_entity_num = mesh->parent_vertex_num;
+  const cs_lnum_t   *parent_entity_id = mesh->parent_vertex_id;
 
   /* If output data is interlaced, set stride */
 
@@ -2159,7 +2159,7 @@ fvm_writer_field_helper_step_nl(fvm_writer_field_helper_t   *helper,
                       h->datatype,
                       n_parent_lists,
                       parent_num_shift,
-                      parent_entity_num,
+                      parent_entity_id,
                       field_values,
                       output_buffer);
 
@@ -2214,7 +2214,7 @@ fvm_writer_field_helper_step_nl(fvm_writer_field_helper_t   *helper,
                                           h->datatype,
                                           n_parent_lists,
                                           parent_num_shift,
-                                          mesh->parent_vertex_num,
+                                          mesh->parent_vertex_id,
                                           field_values,
                                           output_buffer);
 

@@ -112,8 +112,8 @@ fvm_triangulate_state_destroy(fvm_triangulate_state_t  *this_state);
  *   base              <-- base numbering (usually 0 or 1)
  *   n_vertices        <-- number of vertices defining the polygon.
  *   coords            <-- coordinates of the triangulation's vertices.
- *   parent_vertex_num <-- optional indirection to vertex coordinates
- *                         (base to n-base).
+ *   parent_vertex_id  <-- optional indirection to vertex coordinates
+ *                         (0 to n-1).
  *   polygon_vertices  <-- polygon connectivity; size: n_vertices or empty.
  *   mode              <-- triangles connectivity by vertex number or
  *                         polygon vertex index.
@@ -130,7 +130,7 @@ fvm_triangulate_polygon(int                             dim,
                         int                             base,
                         int                             n_vertices,
                         const cs_coord_t                coords[],
-                        const cs_lnum_t                 parent_vertex_num[],
+                        const cs_lnum_t                 parent_vertex_id[],
                         const cs_lnum_t                 polygon_vertices[],
                         fvm_triangulate_def_t           mode,
                         cs_lnum_t                       triangle_vertices[],
@@ -150,8 +150,8 @@ fvm_triangulate_polygon(int                             dim,
  *   dim                  <-- spatial dimension (2 or 3).
  *   base                 <-- base numbering (usually 0 or 1)
  *   coords               <-- coordinates of the triangulation's vertices.
- *   parent_vertex_num    <-- optional indirection to vertex coordinates
- *                            (base to n-base numbering).
+ *   parent_vertex_id     <-- optional indirection to vertex coordinates
+ *                            (0 to n-1).
  *   quadrangle_vertices  <-- polygon connectivity; size: n_vertices or empty.
  *   triangle_vertices    --> triangles connectivity; size: 2 * 3.
  *
@@ -163,7 +163,7 @@ int
 fvm_triangulate_quadrangle(int               dim,
                            int               base,
                            const cs_coord_t  coords[],
-                           const cs_lnum_t   parent_vertex_num[],
+                           const cs_lnum_t   parent_vertex_id[],
                            const cs_lnum_t   quadrangle_vertices[],
                            cs_lnum_t         triangle_vertices[]);
 

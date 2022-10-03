@@ -915,9 +915,9 @@ void CS_PROCF (defloc, DEFLOC)
 
     BFT_MALLOC(c_elt_list, cs_glob_mesh->n_cells, cs_lnum_t);
 
-    cs_selector_get_cell_num_list(coupl->cell_loc_sel,
-                                  &(coupl->nbr_cel_sup),
-                                  c_elt_list);
+    cs_selector_get_cell_list(coupl->cell_loc_sel,
+                              &(coupl->nbr_cel_sup),
+                              c_elt_list);
 
   }
 
@@ -925,9 +925,9 @@ void CS_PROCF (defloc, DEFLOC)
 
     BFT_MALLOC(f_elt_list, cs_glob_mesh->n_b_faces, cs_lnum_t);
 
-    cs_selector_get_b_face_num_list(coupl->face_loc_sel,
-                                    &(coupl->nbr_fbr_sup),
-                                    f_elt_list);
+    cs_selector_get_b_face_list(coupl->face_loc_sel,
+                                &(coupl->nbr_fbr_sup),
+                                f_elt_list);
 
   }
 

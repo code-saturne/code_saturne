@@ -978,9 +978,9 @@ fvm_nodal_get_vertex_coords(const fvm_nodal_t  *this_nodal,
   const int dim = this_nodal->dim;
   const cs_lnum_t n_vertices = this_nodal->n_vertices;
   const cs_coord_t *coords = this_nodal->vertex_coords;
-  const cs_lnum_t   *parent_num = this_nodal->parent_vertex_num;
+  const cs_lnum_t *parent_id = this_nodal->parent_vertex_id;
 
-  if (this_nodal->parent_vertex_num == NULL) {
+  if (this_nodal->parent_vertex_id == NULL) {
 
     if (interlace == CS_INTERLACE)
       memcpy(vertex_coords, coords, sizeof(cs_coord_t) * n_vertices * dim);
@@ -995,14 +995,14 @@ fvm_nodal_get_vertex_coords(const fvm_nodal_t  *this_nodal,
     }
 
   }
-  else { /* parent_vertex_num != NULL */
+  else { /* parent_vertex_id != NULL */
 
     if (interlace == CS_INTERLACE) {
 
       for (i = 0; i < dim; i++) {
         for (vertex_id = 0; vertex_id < n_vertices; vertex_id++)
           vertex_coords[vertex_id * dim + i]
-            = coords[(parent_num[vertex_id]-1) * dim + i];
+            = coords[parent_id[vertex_id]*dim + i];
       }
 
     }
@@ -1011,7 +1011,7 @@ fvm_nodal_get_vertex_coords(const fvm_nodal_t  *this_nodal,
       for (i = 0; i < dim; i++) {
         for (vertex_id = 0; vertex_id < n_vertices; vertex_id++)
           vertex_coords[n_vertices*i + vertex_id]
-            = coords[(parent_num[vertex_id]-1) * dim + i];
+            = coords[parent_id[vertex_id]*dim + i];
       }
 
     }
@@ -1048,9 +1048,9 @@ fvm_nodal_get_element_centers(const fvm_nodal_t  *this_nodal,
 
   const int dim = this_nodal->dim;
   const cs_coord_t *coords = this_nodal->vertex_coords;
-  const cs_lnum_t   *parent_num = this_nodal->parent_vertex_num;
+  const cs_lnum_t *parent_id = this_nodal->parent_vertex_id;
   const cs_lnum_t n_elements = fvm_nodal_get_n_entities(this_nodal,
-                                                         entity_dim);
+                                                        entity_dim);
 
   for (section_id = 0; section_id < this_nodal->n_sections; section_id++) {
 
@@ -1070,7 +1070,7 @@ fvm_nodal_get_element_centers(const fvm_nodal_t  *this_nodal,
         _cell_poly_section_centers(section,
                                    n_elements,
                                    &element_count,
-                                   this_nodal->parent_vertex_num,
+                                   this_nodal->parent_vertex_id,
                                    this_nodal->vertex_coords,
                                    interlace,
                                    cell_centers);
@@ -1082,7 +1082,7 @@ fvm_nodal_get_element_centers(const fvm_nodal_t  *this_nodal,
         _cell_strided_section_centers(section,
                                       n_elements,
                                       &element_count,
-                                      this_nodal->parent_vertex_num,
+                                      this_nodal->parent_vertex_id,
                                       this_nodal->vertex_coords,
                                       interlace,
                                       cell_centers);
@@ -1099,7 +1099,7 @@ fvm_nodal_get_element_centers(const fvm_nodal_t  *this_nodal,
         _face_section_centers_3d(section,
                                  n_elements,
                                  &element_count,
-                                 this_nodal->parent_vertex_num,
+                                 this_nodal->parent_vertex_id,
                                  this_nodal->vertex_coords,
                                  interlace,
                                  cell_centers);
@@ -1108,7 +1108,7 @@ fvm_nodal_get_element_centers(const fvm_nodal_t  *this_nodal,
         _face_section_centers_2d(section,
                                  n_elements,
                                  &element_count,
-                                 this_nodal->parent_vertex_num,
+                                 this_nodal->parent_vertex_id,
                                  this_nodal->vertex_coords,
                                  interlace,
                                  cell_centers);
@@ -1130,7 +1130,7 @@ fvm_nodal_get_element_centers(const fvm_nodal_t  *this_nodal,
         double  cell_center[3] = {0., 0., 0.};
         double  denom = 0.;
 
-        if (this_nodal->parent_vertex_num == NULL) {
+        if (this_nodal->parent_vertex_id == NULL) {
           for (j = 0; j < stride; j++) {
             const cs_lnum_t vertex_id
               = section->vertex_num[(element_id * stride) + j] - 1;
@@ -1139,12 +1139,12 @@ fvm_nodal_get_element_centers(const fvm_nodal_t  *this_nodal,
             denom += 1.;
           }
         }
-        else { /* if (this_nodal->parent_vertex_num != NULL) */
+        else { /* if (this_nodal->parent_vertex_id != NULL) */
           for (j = 0; j < stride; j++) {
             const cs_lnum_t vertex_id
               = section->vertex_num[(element_id * stride) + j] - 1;
             for (i = 0; i < dim; i++)
-              cell_center[i] += coords[(parent_num[vertex_id]-1)*dim + i];
+              cell_center[i] += coords[parent_id[vertex_id]*dim + i];
             denom += 1.;
           }
         }
@@ -1445,7 +1445,7 @@ fvm_nodal_extents(const fvm_nodal_t  *this_nodal,
 
     _nodal_section_extents(this_nodal->sections[i],
                            this_nodal->dim,
-                           this_nodal->parent_vertex_num,
+                           this_nodal->parent_vertex_id,
                            this_nodal->vertex_coords,
                            tolerance,
                            section_extents);

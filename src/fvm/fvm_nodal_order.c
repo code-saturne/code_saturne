@@ -72,10 +72,10 @@ BEGIN_C_DECLS
  * Create ordered parent entity list or order existing list.
  *
  * parameters:
- *   _list  <-> pointer to optional list (1 to n numbering) of selected
+ *   _list  <-> pointer to optional list (0 to n-1 numbering) of selected
  *              entities. An existing list is ordered, otherwise one is
  *              created.
- *   list   <-> pointer tooptional list (1 to n numbering) of selected
+ *   list   <-> pointer tooptional list (0 to n-1 numbering) of selected
  *              entities. A shared list is copied to _list and ordered,
  *              a private list (pointed to by _list) is simply ordered.
  *   order  <-- ordering of entities (0 to n-1).
@@ -113,7 +113,7 @@ _fvm_nodal_order_parent_list(cs_lnum_t         * _list[],
     assert(*list == NULL);
 
     for (i = 0 ; i < nb_ent ; i++)
-      ordered_list[i] = order[i] + 1;
+      ordered_list[i] = order[i];
     *_list = ordered_list;
 
   }
@@ -275,7 +275,6 @@ void
 fvm_nodal_order_cells(fvm_nodal_t       *this_nodal,
                       const cs_gnum_t    parent_global_number[])
 {
-  cs_lnum_t   i;
   cs_lnum_t   *order = NULL;
   fvm_nodal_section_t  *section = NULL;
 
@@ -284,7 +283,7 @@ fvm_nodal_order_cells(fvm_nodal_t       *this_nodal,
 
   /* Order locally if necessary */
 
-  for (i = 0 ; i < this_nodal->n_sections ; i++) {
+  for (cs_lnum_t i = 0 ; i < this_nodal->n_sections ; i++) {
 
     section = this_nodal->sections[i];
 
@@ -292,16 +291,16 @@ fvm_nodal_order_cells(fvm_nodal_t       *this_nodal,
 
       assert(section->global_element_num == NULL);
 
-      if (cs_order_gnum_test(section->parent_element_num,
+      if (cs_order_gnum_test(section->parent_element_id,
                              parent_global_number,
                              section->n_elements) == false) {
 
-        order = cs_order_gnum(section->parent_element_num,
+        order = cs_order_gnum(section->parent_element_id,
                               parent_global_number,
                               section->n_elements);
 
-        _fvm_nodal_order_parent_list(&(section->_parent_element_num),
-                                     &(section->parent_element_num),
+        _fvm_nodal_order_parent_list(&(section->_parent_element_id),
+                                     &(section->parent_element_id),
                                      order,
                                      section->n_elements);
 
@@ -364,16 +363,16 @@ fvm_nodal_order_faces(fvm_nodal_t       *this_nodal,
 
       assert(section->global_element_num == NULL);
 
-      if (cs_order_gnum_test(section->parent_element_num,
+      if (cs_order_gnum_test(section->parent_element_id,
                              parent_global_number,
                              section->n_elements) == false) {
 
-        order = cs_order_gnum(section->parent_element_num,
+        order = cs_order_gnum(section->parent_element_id,
                               parent_global_number,
                               section->n_elements);
 
-        _fvm_nodal_order_parent_list(&(section->_parent_element_num),
-                                     &(section->parent_element_num),
+        _fvm_nodal_order_parent_list(&(section->_parent_element_id),
+                                     &(section->parent_element_id),
                                      order,
                                      section->n_elements);
 
@@ -436,21 +435,21 @@ fvm_nodal_order_vertices(fvm_nodal_t       *this_nodal,
 
   /* Return if already ordered */
 
-  if (cs_order_gnum_test(this_nodal->parent_vertex_num,
+  if (cs_order_gnum_test(this_nodal->parent_vertex_id,
                          parent_global_number,
                          this_nodal->n_vertices) == true)
     return;
 
   /* Else, we must re-order vertices and update connectivity */
 
-  order = cs_order_gnum(this_nodal->parent_vertex_num,
+  order = cs_order_gnum(this_nodal->parent_vertex_id,
                         parent_global_number,
                         this_nodal->n_vertices);
 
   /* Re-order parent list */
 
-  _fvm_nodal_order_parent_list(&(this_nodal->_parent_vertex_num),
-                               &(this_nodal->parent_vertex_num),
+  _fvm_nodal_order_parent_list(&(this_nodal->_parent_vertex_id),
+                               &(this_nodal->parent_vertex_id),
                                order,
                                this_nodal->n_vertices);
 

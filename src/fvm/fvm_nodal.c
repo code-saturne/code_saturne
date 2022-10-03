@@ -248,8 +248,8 @@ _fvm_nodal_section_copy(const fvm_nodal_section_t *this_section)
   /* Numbering */
   /*-----------*/
 
-  new_section->parent_element_num = this_section->parent_element_num;
-  new_section->_parent_element_num = NULL;
+  new_section->parent_element_id = this_section->parent_element_id;
+  new_section->_parent_element_id = NULL;
 
   if (this_section->global_element_num != NULL) {
     cs_lnum_t n_ent
@@ -339,50 +339,48 @@ _fvm_nodal_section_reduce(fvm_nodal_section_t  * this_section)
  * parameters:
  *   parent_num_size     <-- size of local parent numbering array
  *   new_parent_num      <-- pointer to local parent renumbering array
- *                           ({1, ..., n} <-- {1, ..., n})
+ *                           ({0, ..., n-1} <-- {0, ..., n-1})
  *   parent_num          <-> pointer to local parent numbering array
  *   _parent_num         <-> pointer to local parent numbering array if
  *                           owner, NULL otherwise
  *
  * returns:
- *   pointer to resulting parent_num[] array
+ *   pointer to resulting parent_id[] array
  *----------------------------------------------------------------------------*/
 
 static cs_lnum_t *
-_renumber_parent_num(cs_lnum_t          parent_num_size,
-                     const cs_lnum_t    new_parent_num[],
-                     const cs_lnum_t    parent_num[],
-                     cs_lnum_t          _parent_num[])
+_renumber_parent_id(cs_lnum_t          parent_id_size,
+                    const cs_lnum_t    new_parent_id[],
+                    const cs_lnum_t    parent_id[],
+                    cs_lnum_t          _parent_id[])
 {
-  int  i;
-  cs_lnum_t   old_num_id;
-  cs_lnum_t *parent_num_p = _parent_num;
+  cs_lnum_t *parent_id_p = _parent_id;
   bool trivial = true;
 
-  if (parent_num_size > 0 && new_parent_num != NULL) {
+  if (parent_id_size > 0 && new_parent_id != NULL) {
 
-    if (parent_num_p != NULL) {
-      for (i = 0; i < parent_num_size; i++) {
-        old_num_id = parent_num_p[i] - 1;
-        parent_num_p[i] = new_parent_num[old_num_id];
-        if (parent_num_p[i] != i+1)
+    if (parent_id_p != NULL) {
+      for (cs_lnum_t i = 0; i < parent_id_size; i++) {
+        cs_lnum_t old_id = parent_id_p[i];
+        parent_id_p[i] = new_parent_id[old_id];
+        if (parent_id_p[i] != i)
           trivial = false;
       }
     }
     else {
-      BFT_MALLOC(parent_num_p, parent_num_size, cs_lnum_t);
-      if (parent_num != NULL) {
-        for (i = 0; i < parent_num_size; i++) {
-          old_num_id = parent_num[i] - 1;
-          parent_num_p[i] = new_parent_num[old_num_id];
-          if (parent_num_p[i] != i+1)
+      BFT_MALLOC(parent_id_p, parent_id_size, cs_lnum_t);
+      if (parent_id != NULL) {
+        for (cs_lnum_t i = 0; i < parent_id_size; i++) {
+          cs_lnum_t old_id = parent_id[i];
+          parent_id_p[i] = new_parent_id[old_id];
+          if (parent_id_p[i] != i)
             trivial = false;
         }
       }
       else {
-        for (i = 0; i < parent_num_size; i++) {
-          parent_num_p[i] = new_parent_num[i];
-          if (parent_num_p[i] != i+1)
+        for (cs_lnum_t i = 0; i < parent_id_size; i++) {
+          parent_id_p[i] = new_parent_id[i];
+          if (parent_id_p[i] != i)
             trivial = false;
         }
       }
@@ -390,9 +388,9 @@ _renumber_parent_num(cs_lnum_t          parent_num_size,
   }
 
   if (trivial == true)
-    BFT_FREE(parent_num_p);
+    BFT_FREE(parent_id_p);
 
-  return parent_num_p;
+  return parent_id_p;
 }
 
 /*----------------------------------------------------------------------------
@@ -413,28 +411,22 @@ _renumber_parent_num(cs_lnum_t          parent_num_size,
 static void
 _renumber_vertices(fvm_nodal_t  *this_nodal)
 {
-  size_t      i;
-  int         section_id;
-  cs_lnum_t   j;
-  cs_lnum_t   vertex_id;
-  cs_lnum_t   n_vertices;
-  fvm_nodal_section_t  *section;
-
-  cs_lnum_t   *loc_vertex_num = NULL;
-  cs_lnum_t    max_vertex_num = 0;
-
   /* Find maximum vertex reference */
   /*-------------------------------*/
+
+  cs_lnum_t  max_vertex_num = 0;
 
   /* The mesh may already contain direct vertex references
      (as in the case of a "mesh" only containing vertices) */
 
   if (this_nodal->n_vertices > 0) {
-    if (this_nodal->parent_vertex_num != NULL) {
-      for (j = 0; j < this_nodal->n_vertices; j++) {
-        if (this_nodal->parent_vertex_num[j] > max_vertex_num)
-          max_vertex_num = this_nodal->parent_vertex_num[j];
+    if (this_nodal->parent_vertex_id != NULL) {
+      cs_lnum_t  max_vertex_id = 0;
+      for (cs_lnum_t j = 0; j < this_nodal->n_vertices; j++) {
+        if (this_nodal->parent_vertex_id[j] > max_vertex_id)
+          max_vertex_id = this_nodal->parent_vertex_id[j];
       }
+      max_vertex_num = max_vertex_id + 1;
     }
     else
       max_vertex_num = this_nodal->n_vertices;
@@ -442,18 +434,18 @@ _renumber_vertices(fvm_nodal_t  *this_nodal)
 
   /* In most cases, the mesh will reference vertices through elements */
 
-  for (section_id = 0; section_id < this_nodal->n_sections; section_id++) {
-    section = this_nodal->sections[section_id];
-    if (this_nodal->parent_vertex_num != NULL) {
-      for (i = 0; i < section->connectivity_size; i++) {
+  for (int section_id = 0; section_id < this_nodal->n_sections; section_id++) {
+    fvm_nodal_section_t  *section = this_nodal->sections[section_id];
+    if (this_nodal->parent_vertex_id != NULL) {
+      for (size_t i = 0; i < section->connectivity_size; i++) {
         cs_lnum_t vertex_num
-          = this_nodal->parent_vertex_num[section->vertex_num[i] - 1];
+          = this_nodal->parent_vertex_id[section->vertex_num[i]] + 1;
         if (vertex_num > max_vertex_num)
           max_vertex_num = vertex_num;
       }
     }
     else {
-      for (i = 0; i < section->connectivity_size; i++) {
+      for (size_t i = 0; i < section->connectivity_size; i++) {
         if (section->vertex_num[i] > max_vertex_num)
           max_vertex_num = section->vertex_num[i];
       }
@@ -463,42 +455,43 @@ _renumber_vertices(fvm_nodal_t  *this_nodal)
   /* Flag referenced vertices and compute size */
   /*-------------------------------------------*/
 
-  BFT_MALLOC(loc_vertex_num, max_vertex_num, cs_lnum_t);
+  cs_lnum_t  *loc_vertex_id = NULL;
+  BFT_MALLOC(loc_vertex_id, max_vertex_num, cs_lnum_t);
 
-  for (vertex_id = 0; vertex_id < max_vertex_num; vertex_id++)
-    loc_vertex_num[vertex_id] = 0;
+  for (cs_lnum_t vertex_id = 0; vertex_id < max_vertex_num; vertex_id++)
+    loc_vertex_id[vertex_id] = -1;
 
   if (this_nodal->n_vertices > 0) {
-    if (this_nodal->parent_vertex_num != NULL) {
-      for (j = 0; j < this_nodal->n_vertices; j++) {
-        vertex_id = this_nodal->parent_vertex_num[j] - 1;
-        if (loc_vertex_num[vertex_id] == 0)
-          loc_vertex_num[vertex_id] = 1;
+    if (this_nodal->parent_vertex_id != NULL) {
+      for (cs_lnum_t j = 0; j < this_nodal->n_vertices; j++) {
+        cs_lnum_t vertex_id = this_nodal->parent_vertex_id[j];
+        if (loc_vertex_id[vertex_id] == -1)
+          loc_vertex_id[vertex_id] = 0;
       }
     }
     else {
-      for (j = 0; j < this_nodal->n_vertices; j++) {
-        if (loc_vertex_num[j] == 0)
-          loc_vertex_num[j] = 1;
+      for (cs_lnum_t j = 0; j < this_nodal->n_vertices; j++) {
+        if (loc_vertex_id[j] == -1)
+          loc_vertex_id[j] = 0;
       }
     }
   }
 
-  for (section_id = 0; section_id < this_nodal->n_sections; section_id++) {
-    section = this_nodal->sections[section_id];
-    if (this_nodal->parent_vertex_num != NULL) {
-      for (i = 0; i < section->connectivity_size; i++) {
-        vertex_id
-          = this_nodal->parent_vertex_num[section->vertex_num[i] - 1] - 1;
-        if (loc_vertex_num[vertex_id] == 0)
-          loc_vertex_num[vertex_id] = 1;
+  for (int section_id = 0; section_id < this_nodal->n_sections; section_id++) {
+    fvm_nodal_section_t  *section = this_nodal->sections[section_id];
+    if (this_nodal->parent_vertex_id != NULL) {
+      for (size_t i = 0; i < section->connectivity_size; i++) {
+        cs_lnum_t vertex_id
+          = this_nodal->parent_vertex_id[section->vertex_num[i] - 1];
+        if (loc_vertex_id[vertex_id] == -1)
+          loc_vertex_id[vertex_id] = 0;
       }
     }
     else {
-      for (i = 0; i < section->connectivity_size; i++) {
-        vertex_id = section->vertex_num[i] - 1;
-        if (loc_vertex_num[vertex_id] == 0)
-          loc_vertex_num[vertex_id] = 1;
+      for (size_t i = 0; i < section->connectivity_size; i++) {
+        cs_lnum_t vertex_id = section->vertex_num[i] - 1;
+        if (loc_vertex_id[vertex_id] == -1)
+          loc_vertex_id[vertex_id] = 0;
       }
     }
   }
@@ -506,12 +499,12 @@ _renumber_vertices(fvm_nodal_t  *this_nodal)
   /* Build vertices renumbering */
   /*----------------------------*/
 
-  n_vertices = 0;
+  cs_lnum_t n_vertices = 0;
 
-  for (vertex_id = 0; vertex_id < max_vertex_num; vertex_id++) {
-    if (loc_vertex_num[vertex_id] == 1) {
+  for (cs_lnum_t vertex_id = 0; vertex_id < max_vertex_num; vertex_id++) {
+    if (loc_vertex_id[vertex_id] == 0) {
+      loc_vertex_id[vertex_id] = n_vertices;
       n_vertices += 1;
-      loc_vertex_num[vertex_id] = n_vertices;
     }
   }
   this_nodal->n_vertices = n_vertices;
@@ -522,51 +515,51 @@ _renumber_vertices(fvm_nodal_t  *this_nodal)
   /* If all vertices are flagged, no need to renumber */
 
   if (n_vertices == max_vertex_num)
-    BFT_FREE(loc_vertex_num);
+    BFT_FREE(loc_vertex_id);
 
   else {
 
     /* Update connectivity */
 
-    for (section_id = 0; section_id < this_nodal->n_sections; section_id++) {
-      section = this_nodal->sections[section_id];
+    for (int section_id = 0; section_id < this_nodal->n_sections; section_id++) {
+      fvm_nodal_section_t  *section = this_nodal->sections[section_id];
       if (section->_vertex_num == NULL)
         fvm_nodal_section_copy_on_write(section, false, false, false, true);
-      if (this_nodal->parent_vertex_num != NULL) {
-        for (i = 0; i < section->connectivity_size; i++) {
-          vertex_id
-            = this_nodal->parent_vertex_num[section->vertex_num[i] - 1] - 1;
-          section->_vertex_num[i] = loc_vertex_num[vertex_id];
+      if (this_nodal->parent_vertex_id != NULL) {
+        for (size_t i = 0; i < section->connectivity_size; i++) {
+          cs_lnum_t vertex_id
+            = this_nodal->parent_vertex_id[section->vertex_num[i] - 1];
+          section->_vertex_num[i] = loc_vertex_id[vertex_id] + 1;
         }
       }
       else {
-        for (i = 0; i < section->connectivity_size; i++) {
-          vertex_id = section->vertex_num[i] - 1;
-          section->_vertex_num[i] = loc_vertex_num[vertex_id];
+        for (size_t i = 0; i < section->connectivity_size; i++) {
+          cs_lnum_t vertex_id = section->vertex_num[i] - 1;
+          section->_vertex_num[i] = loc_vertex_id[vertex_id] + 1;
         }
       }
     }
 
     /* Build or update vertex parent numbering */
 
-    this_nodal->parent_vertex_num = NULL;
-    if (this_nodal->_parent_vertex_num != NULL)
-      BFT_FREE(this_nodal->_parent_vertex_num);
+    this_nodal->parent_vertex_id = NULL;
+    if (this_nodal->_parent_vertex_id != NULL)
+      BFT_FREE(this_nodal->_parent_vertex_id);
 
-    if (loc_vertex_num != NULL) {
-      BFT_MALLOC(this_nodal->_parent_vertex_num, n_vertices, cs_lnum_t);
-      for (vertex_id = 0; vertex_id < max_vertex_num; vertex_id++) {
-        if (loc_vertex_num[vertex_id] > 0)
-          this_nodal->_parent_vertex_num[loc_vertex_num[vertex_id] - 1]
-            = vertex_id + 1;
+    if (loc_vertex_id != NULL) {
+      BFT_MALLOC(this_nodal->_parent_vertex_id, n_vertices, cs_lnum_t);
+      for (cs_lnum_t vertex_id = 0; vertex_id < max_vertex_num; vertex_id++) {
+        if (loc_vertex_id[vertex_id] > -1)
+          this_nodal->_parent_vertex_id[loc_vertex_id[vertex_id]]
+            = vertex_id;
       }
-      this_nodal->parent_vertex_num = this_nodal->_parent_vertex_num;
+      this_nodal->parent_vertex_id = this_nodal->_parent_vertex_id;
     }
   }
 
   /* Free renumbering array */
 
-  BFT_FREE(loc_vertex_num);
+  BFT_FREE(loc_vertex_id);
 }
 
 /*----------------------------------------------------------------------------
@@ -608,12 +601,12 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
              "  face_num:             %p\n"
              "  vertex_index:         %p\n"
              "  vertex_num:           %p\n"
-             "  parent_element_num:   %p\n",
+             "  parent_element_id:    %p\n",
              (const void *)this_section->face_index,
              (const void *)this_section->face_num,
              (const void *)this_section->vertex_index,
              (const void *)this_section->vertex_num,
-             (const void *)this_section->parent_element_num);
+             (const void *)this_section->parent_element_id);
 
   bft_printf("\n"
              "Pointers to local arrays:\n"
@@ -621,14 +614,14 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
              "  _face_num:            %p\n"
              "  _vertex_index:        %p\n"
              "  _vertex_num:          %p\n"
-             "  _parent_element_num:  %p\n"
+             "  _parent_element_id:   %p\n"
              "  gc_id:                %p\n"
              "  tag:                  %p\n",
              (const void *)this_section->_face_index,
              (const void *)this_section->_face_num,
              (const void *)this_section->_vertex_index,
              (const void *)this_section->_vertex_num,
-             (const void *)this_section->_parent_element_num,
+             (const void *)this_section->_parent_element_id,
              (const void *)this_section->gc_id,
              (const void *)this_section->tag);
 
@@ -734,13 +727,13 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
 
   /* Numbers of associated elements in the parent mesh */
 
-  bft_printf("\nLocal element numbers in parent mesh:\n");
-  if (this_section->parent_element_num == NULL)
+  bft_printf("\nLocal element ids in parent mesh:\n");
+  if (this_section->parent_element_id == NULL)
     bft_printf("\n  Nil\n\n");
   else {
     for (i = 0; i < this_section->n_elements; i++)
       bft_printf("  %10ld %10ld\n", (long)i+1,
-                 (long)this_section->parent_element_num[i]);
+                 (long)this_section->parent_element_id[i]);
   }
 
   /* Global element numbers (only for parallel execution) */
@@ -838,8 +831,8 @@ fvm_nodal_section_create(const fvm_element_t  type)
   /* Numbering */
   /*-----------*/
 
-  this_section->parent_element_num = NULL;
-  this_section->_parent_element_num = NULL;
+  this_section->parent_element_id = NULL;
+  this_section->_parent_element_id = NULL;
 
   this_section->global_element_num = NULL;
 
@@ -883,9 +876,9 @@ fvm_nodal_section_destroy(fvm_nodal_section_t  * this_section)
   /* Numbering */
   /*-----------*/
 
-  if (this_section->parent_element_num != NULL) {
-    this_section->parent_element_num = NULL;
-    BFT_FREE(this_section->_parent_element_num);
+  if (this_section->parent_element_id != NULL) {
+    this_section->parent_element_id = NULL;
+    BFT_FREE(this_section->_parent_element_id);
   }
 
   if (this_section->global_element_num != NULL)
@@ -1171,8 +1164,8 @@ fvm_nodal_create(const char  *name,
   this_nodal->vertex_coords = NULL;
   this_nodal->_vertex_coords = NULL;
 
-  this_nodal->parent_vertex_num = NULL;
-  this_nodal->_parent_vertex_num = NULL;
+  this_nodal->parent_vertex_id = NULL;
+  this_nodal->_parent_vertex_id = NULL;
 
   this_nodal->global_vertex_num = NULL;
 
@@ -1215,9 +1208,9 @@ fvm_nodal_destroy(fvm_nodal_t   *this_nodal)
   if (this_nodal->_vertex_coords != NULL)
     BFT_FREE(this_nodal->_vertex_coords);
 
-  if (this_nodal->parent_vertex_num != NULL) {
-    this_nodal->parent_vertex_num = NULL;
-    BFT_FREE(this_nodal->_parent_vertex_num);
+  if (this_nodal->parent_vertex_id != NULL) {
+    this_nodal->parent_vertex_id = NULL;
+    BFT_FREE(this_nodal->_parent_vertex_id);
   }
 
   if (this_nodal->global_vertex_num != NULL)
@@ -1287,8 +1280,8 @@ fvm_nodal_copy(const fvm_nodal_t *this_nodal)
   new_nodal->vertex_coords = this_nodal->vertex_coords;
   new_nodal->_vertex_coords = NULL;
 
-  new_nodal->parent_vertex_num = this_nodal->parent_vertex_num;
-  new_nodal->_parent_vertex_num = NULL;
+  new_nodal->parent_vertex_id = this_nodal->parent_vertex_id;
+  new_nodal->_parent_vertex_id = NULL;
 
   if (this_nodal->global_vertex_num != NULL) {
     cs_lnum_t n_ent
@@ -1358,9 +1351,9 @@ fvm_nodal_reduce(fvm_nodal_t  *this_nodal,
 
   if (del_vertex_num > 0) {
 
-    if (this_nodal->parent_vertex_num != NULL) {
-      this_nodal->parent_vertex_num = NULL;
-      BFT_FREE(this_nodal->_parent_vertex_num);
+    if (this_nodal->parent_vertex_id != NULL) {
+      this_nodal->parent_vertex_id = NULL;
+      BFT_FREE(this_nodal->_parent_vertex_id);
     }
 
     if (this_nodal->global_vertex_num != NULL)
@@ -1379,28 +1372,28 @@ fvm_nodal_reduce(fvm_nodal_t  *this_nodal,
  * structure's creation.
  *
  * parameters:
- *   this_nodal          <-- nodal mesh structure
- *   new_parent_num      <-- pointer to local parent renumbering array
- *                           ({1, ..., n} <-- {1, ..., n})
- *   entity_dim          <-- 3 for cells, 2 for faces, 1 for edges,
- *                           and 0 for vertices
+ *   this_nodal         <-- nodal mesh structure
+ *   new_parent_id      <-- pointer to local parent renumbering array
+ *                          ({0, ..., n-1} <-- {0, ..., n-1})
+ *   entity_dim         <-- 3 for cells, 2 for faces, 1 for edges,
+ *                          and 0 for vertices
  *----------------------------------------------------------------------------*/
 
 void
-fvm_nodal_change_parent_num(fvm_nodal_t       *this_nodal,
-                            const cs_lnum_t    new_parent_num[],
-                            int                entity_dim)
+fvm_nodal_change_parent_id(fvm_nodal_t       *this_nodal,
+                           const cs_lnum_t    new_parent_id[],
+                           int                entity_dim)
 {
   /* Vertices */
 
   if (entity_dim == 0) {
 
-    this_nodal->_parent_vertex_num
-      = _renumber_parent_num(this_nodal->n_vertices,
-                             new_parent_num,
-                             this_nodal->parent_vertex_num,
-                             this_nodal->_parent_vertex_num);
-    this_nodal->parent_vertex_num = this_nodal->_parent_vertex_num;
+    this_nodal->_parent_vertex_id
+      = _renumber_parent_id(this_nodal->n_vertices,
+                            new_parent_id,
+                            this_nodal->parent_vertex_id,
+                            this_nodal->_parent_vertex_id);
+    this_nodal->parent_vertex_id = this_nodal->_parent_vertex_id;
 
   }
 
@@ -1414,12 +1407,12 @@ fvm_nodal_change_parent_num(fvm_nodal_t       *this_nodal,
     for (i = 0; i < this_nodal->n_sections; i++) {
       section = this_nodal->sections[i];
       if (section->entity_dim == entity_dim) {
-        section->_parent_element_num
-          = _renumber_parent_num(section->n_elements,
-                                 new_parent_num,
-                                 section->parent_element_num,
-                                 section->_parent_element_num);
-        section->parent_element_num = section->_parent_element_num;
+        section->_parent_element_id
+          = _renumber_parent_id(section->n_elements,
+                                new_parent_id,
+                                section->parent_element_id,
+                                section->_parent_element_id);
+        section->parent_element_id = section->_parent_element_id;
       }
     }
 
@@ -1432,8 +1425,8 @@ fvm_nodal_change_parent_num(fvm_nodal_t       *this_nodal,
  * want to assign coordinates or fields to an extracted mesh using
  * arrays relative to the mesh, and not to its parent.
  *
- * This is equivalent to calling fvm_nodal_change_parent_num(), with
- * 'trivial' (1 o n) new_parent_num[] values.
+ * This is equivalent to calling fvm_nodal_change_parent_id(), with
+ * 'trivial' (1 o n) new_parent_id[] values.
  *
  * parameters:
  *   this_nodal          <-- nodal mesh structure
@@ -1442,15 +1435,15 @@ fvm_nodal_change_parent_num(fvm_nodal_t       *this_nodal,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_nodal_remove_parent_num(fvm_nodal_t  *this_nodal,
-                            int           entity_dim)
+fvm_nodal_remove_parent_id(fvm_nodal_t  *this_nodal,
+                           int           entity_dim)
 {
   /* Vertices */
 
   if (entity_dim == 0) {
-    this_nodal->parent_vertex_num = NULL;
-    if (this_nodal->_parent_vertex_num != NULL)
-      BFT_FREE(this_nodal->_parent_vertex_num);
+    this_nodal->parent_vertex_id = NULL;
+    if (this_nodal->_parent_vertex_id != NULL)
+      BFT_FREE(this_nodal->_parent_vertex_id);
   }
 
   /* Other elements */
@@ -1463,9 +1456,9 @@ fvm_nodal_remove_parent_num(fvm_nodal_t  *this_nodal,
     for (i = 0; i < this_nodal->n_sections; i++) {
       section = this_nodal->sections[i];
       if (section->entity_dim == entity_dim) {
-        section->parent_element_num = NULL;
-        if (section->_parent_element_num != NULL)
-          BFT_FREE(section->_parent_element_num);
+        section->parent_element_id = NULL;
+        if (section->_parent_element_id != NULL)
+          BFT_FREE(section->_parent_element_id);
       }
     }
 
@@ -1489,27 +1482,24 @@ fvm_nodal_init_io_num(fvm_nodal_t       *this_nodal,
                       const cs_gnum_t    parent_global_numbers[],
                       int                entity_dim)
 {
-  int  i;
-  fvm_nodal_section_t  *section;
-
   if (entity_dim == 0) {
     this_nodal->global_vertex_num
-      = fvm_io_num_create(this_nodal->parent_vertex_num,
-                          parent_global_numbers,
-                          this_nodal->n_vertices,
-                          0);
+      = fvm_io_num_create_from_select(this_nodal->parent_vertex_id,
+                                      parent_global_numbers,
+                                      this_nodal->n_vertices,
+                                      0);
     _remove_global_vertex_labels(this_nodal);
   }
 
   else {
-    for (i = 0; i < this_nodal->n_sections; i++) {
-      section = this_nodal->sections[i];
+    for (int i = 0; i < this_nodal->n_sections; i++) {
+      fvm_nodal_section_t  *section = this_nodal->sections[i];
       if (section->entity_dim == entity_dim) {
         section->global_element_num
-          = fvm_io_num_create(section->parent_element_num,
-                              parent_global_numbers,
-                              section->n_elements,
-                              0);
+          = fvm_io_num_create_from_select(section->parent_element_id,
+                                          parent_global_numbers,
+                                          section->n_elements,
+                                          0);
       }
     }
   }
@@ -1596,8 +1586,8 @@ fvm_nodal_remove_tag(fvm_nodal_t  *this_nodal,
 /*----------------------------------------------------------------------------
  * Preset number and list of vertices to assign to a nodal mesh.
  *
- * If the parent_vertex_num argument is NULL, the list is assumed to
- * be {1, 2, ..., n}. If parent_vertex_num is given, it specifies a
+ * If the parent_vertex_id argument is NULL, the list is assumed to
+ * be {1, 2, ..., n}. If parent_vertex_id is given, it specifies a
  * list of n vertices from a larger set (1 to n numbering).
  *
  * Ownership of the given parent vertex numbering array is
@@ -1609,27 +1599,27 @@ fvm_nodal_remove_tag(fvm_nodal_t  *this_nodal,
  * a mesh containing only vertices).
  *
  * parameters:
- *   this_nodal        <-> nodal mesh structure
- *   n_vertices        <-- number of vertices to assign
- *   parent_vertex_num <-- parent numbers of vertices to assign
+ *   this_nodal       <-> nodal mesh structure
+ *   n_vertices       <-- number of vertices to assign
+ *   parent_vertex_id <-- parent numbers of vertices to assign
  *----------------------------------------------------------------------------*/
 
 void
 fvm_nodal_define_vertex_list(fvm_nodal_t  *this_nodal,
                              cs_lnum_t     n_vertices,
-                             cs_lnum_t     parent_vertex_num[])
+                             cs_lnum_t     parent_vertex_id[])
 {
   assert(this_nodal != NULL);
 
   this_nodal->n_vertices = n_vertices;
 
-  this_nodal->parent_vertex_num = NULL;
-  if (this_nodal->_parent_vertex_num != NULL)
-    BFT_FREE(this_nodal->_parent_vertex_num);
+  this_nodal->parent_vertex_id = NULL;
+  if (this_nodal->_parent_vertex_id != NULL)
+    BFT_FREE(this_nodal->_parent_vertex_id);
 
-  if (parent_vertex_num != NULL) {
-    this_nodal->_parent_vertex_num = parent_vertex_num;
-    this_nodal->parent_vertex_num = parent_vertex_num;
+  if (parent_vertex_id != NULL) {
+    this_nodal->_parent_vertex_id = parent_vertex_id;
+    this_nodal->parent_vertex_id = parent_vertex_id;
   }
 
   _remove_global_vertex_labels(this_nodal);
@@ -1661,7 +1651,7 @@ fvm_nodal_set_shared_vertices(fvm_nodal_t       *this_nodal,
   this_nodal->vertex_coords = vertex_coords;
 
   /* If the mesh contains only vertices, its n_vertices and
-     parent_vertex_num must already have been set, and do not
+     parent_vertex_id must already have been set, and do not
      require updating */
 
   if (this_nodal->n_sections == 0)
@@ -1698,9 +1688,6 @@ cs_coord_t *
 fvm_nodal_transfer_vertices(fvm_nodal_t  *this_nodal,
                             cs_coord_t    vertex_coords[])
 {
-  cs_lnum_t   i;
-  int         j;
-
   cs_coord_t  *_vertex_coords = vertex_coords;
 
   assert(this_nodal != NULL);
@@ -1712,24 +1699,24 @@ fvm_nodal_transfer_vertices(fvm_nodal_t  *this_nodal,
 
   /* If renumbering is necessary, update connectivity */
 
-  if (this_nodal->parent_vertex_num != NULL) {
+  if (this_nodal->parent_vertex_id != NULL) {
 
-    int dim = this_nodal->dim;
-    const cs_lnum_t *parent_vertex_num = this_nodal->parent_vertex_num;
+    cs_lnum_t dim = this_nodal->dim;
+    const cs_lnum_t *parent_vertex_id = this_nodal->parent_vertex_id;
 
     BFT_MALLOC(_vertex_coords, this_nodal->n_vertices * dim, cs_coord_t);
 
-    for (i = 0; i < this_nodal->n_vertices; i++) {
-      for (j = 0; j < dim; j++)
+    for (cs_lnum_t i = 0; i < this_nodal->n_vertices; i++) {
+      for (cs_lnum_t j = 0; j < dim; j++)
         _vertex_coords[i*dim + j]
-          = vertex_coords[(parent_vertex_num[i]-1)*dim + j];
+          = vertex_coords[(parent_vertex_id[i])*dim + j];
     }
 
     BFT_FREE(vertex_coords);
 
-    this_nodal->parent_vertex_num = NULL;
-    if (this_nodal->_parent_vertex_num != NULL)
-      BFT_FREE(this_nodal->_parent_vertex_num);
+    this_nodal->parent_vertex_id = NULL;
+    if (this_nodal->_parent_vertex_id != NULL)
+      BFT_FREE(this_nodal->_parent_vertex_id);
   }
 
   this_nodal->_vertex_coords = _vertex_coords;
@@ -1769,21 +1756,19 @@ fvm_nodal_make_vertices_private(fvm_nodal_t  *this_nodal)
 
     /* If renumbering is necessary, update connectivity */
 
-    if (this_nodal->parent_vertex_num != NULL) {
+    if (this_nodal->parent_vertex_id != NULL) {
 
-      cs_lnum_t i;
-      int j;
-      const cs_lnum_t *parent_vertex_num = this_nodal->parent_vertex_num;
+      const cs_lnum_t *parent_vertex_id = this_nodal->parent_vertex_id;
 
-      for (i = 0; i < n_vertices; i++) {
-        for (j = 0; j < dim; j++)
+      for (cs_lnum_t i = 0; i < n_vertices; i++) {
+        for (cs_lnum_t j = 0; j < dim; j++)
           _vertex_coords[i*dim + j]
-            = vertex_coords[(parent_vertex_num[i]-1)*dim + j];
+            = vertex_coords[(parent_vertex_id[i])*dim + j];
       }
 
-      this_nodal->parent_vertex_num = NULL;
-      if (this_nodal->_parent_vertex_num != NULL)
-        BFT_FREE(this_nodal->_parent_vertex_num);
+      this_nodal->parent_vertex_id = NULL;
+      if (this_nodal->_parent_vertex_id != NULL)
+        BFT_FREE(this_nodal->_parent_vertex_id);
     }
     else
       memcpy(_vertex_coords, vertex_coords, n_vertices*dim*sizeof(cs_coord_t));
@@ -2113,9 +2098,6 @@ fvm_nodal_get_parent_num(const fvm_nodal_t  *this_nodal,
                          int                 entity_dim,
                          cs_lnum_t           parent_num[])
 {
-  int section_id;
-  cs_lnum_t i;
-
   cs_lnum_t entity_count = 0;
 
   assert(this_nodal != NULL);
@@ -2123,12 +2105,12 @@ fvm_nodal_get_parent_num(const fvm_nodal_t  *this_nodal,
   /* Entity dimension 0: vertices */
 
   if (entity_dim == 0) {
-    if (this_nodal->parent_vertex_num != NULL) {
-      for (i = 0; i < this_nodal->n_vertices; i++)
-        parent_num[entity_count++] = this_nodal->parent_vertex_num[i];
+    if (this_nodal->parent_vertex_id != NULL) {
+      for (cs_lnum_t i = 0; i < this_nodal->n_vertices; i++)
+        parent_num[entity_count++] = this_nodal->parent_vertex_id[i] + 1;
     }
     else {
-      for (i = 0; i < this_nodal->n_vertices; i++)
+      for (cs_lnum_t i = 0; i < this_nodal->n_vertices; i++)
         parent_num[entity_count++] = i + 1;
     }
   }
@@ -2137,17 +2119,17 @@ fvm_nodal_get_parent_num(const fvm_nodal_t  *this_nodal,
 
   else {
 
-    for (section_id = 0; section_id < this_nodal->n_sections; section_id++) {
+    for (int section_id = 0; section_id < this_nodal->n_sections; section_id++) {
 
       const fvm_nodal_section_t  *section = this_nodal->sections[section_id];
 
       if (section->entity_dim == entity_dim) {
-        if (section->parent_element_num != NULL) {
-          for (i = 0; i < section->n_elements; i++)
-            parent_num[entity_count++] = section->parent_element_num[i];
+        if (section->parent_element_id != NULL) {
+          for (cs_lnum_t i = 0; i < section->n_elements; i++)
+            parent_num[entity_count++] = section->parent_element_id[i] + 1;
         }
         else {
-          for (i = 0; i < section->n_elements; i++)
+          for (cs_lnum_t i = 0; i < section->n_elements; i++)
             parent_num[entity_count++] = i + 1;
         }
       }
@@ -2177,9 +2159,6 @@ fvm_nodal_get_parent_id(const fvm_nodal_t  *this_nodal,
                         int                 entity_dim,
                         cs_lnum_t           parent_id[])
 {
-  int section_id;
-  cs_lnum_t i;
-
   cs_lnum_t entity_count = 0;
 
   assert(this_nodal != NULL);
@@ -2187,12 +2166,12 @@ fvm_nodal_get_parent_id(const fvm_nodal_t  *this_nodal,
   /* Entity dimension 0: vertices */
 
   if (entity_dim == 0) {
-    if (this_nodal->parent_vertex_num != NULL) {
-      for (i = 0; i < this_nodal->n_vertices; i++)
-        parent_id[entity_count++] = this_nodal->parent_vertex_num[i] - 1;
+    if (this_nodal->parent_vertex_id != NULL) {
+      for (cs_lnum_t i = 0; i < this_nodal->n_vertices; i++)
+        parent_id[entity_count++] = this_nodal->parent_vertex_id[i];
     }
     else {
-      for (i = 0; i < this_nodal->n_vertices; i++)
+      for (cs_lnum_t i = 0; i < this_nodal->n_vertices; i++)
         parent_id[entity_count++] = i;
     }
   }
@@ -2201,17 +2180,17 @@ fvm_nodal_get_parent_id(const fvm_nodal_t  *this_nodal,
 
   else {
 
-    for (section_id = 0; section_id < this_nodal->n_sections; section_id++) {
+    for (int section_id = 0; section_id < this_nodal->n_sections; section_id++) {
 
       const fvm_nodal_section_t  *section = this_nodal->sections[section_id];
 
       if (section->entity_dim == entity_dim) {
-        if (section->parent_element_num != NULL) {
-          for (i = 0; i < section->n_elements; i++)
-            parent_id[entity_count++] = section->parent_element_num[i] - 1;
+        if (section->parent_element_id != NULL) {
+          for (cs_lnum_t i = 0; i < section->n_elements; i++)
+            parent_id[entity_count++] = section->parent_element_id[i];
         }
         else {
-          for (i = 0; i < section->n_elements; i++)
+          for (cs_lnum_t i = 0; i < section->n_elements; i++)
             parent_id[entity_count++] = i;
         }
       }
@@ -2325,7 +2304,7 @@ fvm_nodal_tesselate(fvm_nodal_t    *this_nodal,
       fvm_tesselation_init(section->tesselation,
                            this_nodal->dim,
                            this_nodal->vertex_coords,
-                           this_nodal->parent_vertex_num,
+                           this_nodal->parent_vertex_id,
                            &section_error_count);
 
       if (error_count != NULL)
@@ -2382,8 +2361,8 @@ fvm_nodal_copy_edges(const char         *name,
   new_nodal->vertex_coords = this_nodal->vertex_coords;
   new_nodal->_vertex_coords = NULL;
 
-  new_nodal->parent_vertex_num = this_nodal->parent_vertex_num;
-  new_nodal->_parent_vertex_num = NULL;
+  new_nodal->parent_vertex_id = this_nodal->parent_vertex_id;
+  new_nodal->_parent_vertex_id = NULL;
 
   if (this_nodal->global_vertex_num != NULL) {
     cs_lnum_t n_ent
@@ -2676,20 +2655,20 @@ fvm_nodal_dump(const fvm_nodal_t  *this_nodal)
     bft_printf("\n"
                "Pointers to shareable arrays:\n"
                "  vertex_coords:        %p\n"
-               "  parent_vertex_num:    %p\n",
+               "  parent_vertex_id:     %p\n",
                (const void *)this_nodal->vertex_coords,
-               (const void *)this_nodal->parent_vertex_num);
+               (const void *)this_nodal->parent_vertex_id);
 
     bft_printf("\n"
                "Pointers to local arrays:\n"
                "  _vertex_coords:       %p\n"
-               "  _parent_vertex_num:   %p\n",
+               "  _parent_vertex_id:    %p\n",
                (const void *)this_nodal->_vertex_coords,
-               (const void *)this_nodal->_parent_vertex_num);
+               (const void *)this_nodal->_parent_vertex_id);
 
     /* Output coordinates depending on parent numbering */
 
-    if (this_nodal->parent_vertex_num == NULL) {
+    if (this_nodal->parent_vertex_id == NULL) {
 
       bft_printf("\nVertex coordinates:\n\n");
       switch(this_nodal->dim) {
@@ -2724,7 +2703,7 @@ fvm_nodal_dump(const fvm_nodal_t  *this_nodal)
       case 1:
         for (i = 0; i < this_nodal->n_vertices; i++) {
           coord =   this_nodal->vertex_coords
-                  + (this_nodal->parent_vertex_num[i]-1);
+                  + this_nodal->parent_vertex_id[i];
           bft_printf("%10ld : %12.5f\n",
                      (long)num_vertex++, (double)(coord[0]));
         }
@@ -2732,7 +2711,7 @@ fvm_nodal_dump(const fvm_nodal_t  *this_nodal)
       case 2:
         for (i = 0; i < this_nodal->n_vertices; i++) {
           coord =   this_nodal->vertex_coords
-                  + ((this_nodal->parent_vertex_num[i]-1)*2);
+                  + (this_nodal->parent_vertex_id[i]*2);
           bft_printf("%10ld : %12.5f %12.5f\n",
                      (long)num_vertex++, (double)(coord[0]), (double)(coord[1]));
         }
@@ -2740,7 +2719,7 @@ fvm_nodal_dump(const fvm_nodal_t  *this_nodal)
       case 3:
         for (i = 0; i < this_nodal->n_vertices; i++) {
           coord =   this_nodal->vertex_coords
-                  + ((this_nodal->parent_vertex_num[i]-1)*3);
+                  + (this_nodal->parent_vertex_id[i]*3);
           bft_printf("%10ld : %12.5f %12.5f %12.5f\n",
                      (long)num_vertex++, (double)(coord[0]), (double)(coord[1]),
                      (double)(coord[2]));

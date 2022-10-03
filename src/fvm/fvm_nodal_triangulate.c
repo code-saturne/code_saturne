@@ -77,13 +77,13 @@ BEGIN_C_DECLS
  * Create a new mesh section from the triangulation of a given section.
  *
  * parameters:
- *   dim               <-- spatial dimension
- *   vertex_coords     <-- associated vertex coordinates array
- *   parent_vertex_num <-- optional indirection to vertex coordinates
- *   base_section      <-- pointer to structure that should be triangulated
- *   base_element_num  <-- starting number for element numbers if no
- *                         parent element number is available
- *   error_count       --> number of triangulation errors counter (optional)
+ *   dim              <-- spatial dimension
+ *   vertex_coords    <-- associated vertex coordinates array
+ *   parent_vertex_id <-- optional indirection to vertex coordinates
+ *   base_section     <-- pointer to structure that should be triangulated
+ *   base_element_id  <-- starting id for element numbers if no
+ *                        parent element id is available
+ *   error_count      --> number of triangulation errors counter (optional)
  *
  * returns:
  *  pointer to created nodal mesh section representation structure
@@ -92,9 +92,9 @@ BEGIN_C_DECLS
 static fvm_nodal_section_t *
 _triangulate_section(int                         dim,
                      const cs_coord_t            vertex_coords[],
-                     const cs_lnum_t             parent_vertex_num[],
+                     const cs_lnum_t             parent_vertex_id[],
                      const fvm_nodal_section_t  *base_section,
-                     cs_lnum_t                   base_element_num,
+                     cs_lnum_t                   base_element_id,
                      cs_lnum_t                  *error_count)
 {
   cs_lnum_t n_vertices, n_triangles, n_elements;
@@ -157,10 +157,10 @@ _triangulate_section(int                         dim,
              ret_section->connectivity_size,
              cs_lnum_t);
   ret_section->vertex_num = ret_section->_vertex_num;
-  BFT_MALLOC(ret_section->_parent_element_num,
+  BFT_MALLOC(ret_section->_parent_element_id,
              ret_section->n_elements,
              cs_lnum_t);
-  ret_section->parent_element_num = ret_section->_parent_element_num;
+  ret_section->parent_element_id = ret_section->_parent_element_id;
 
   triangle_id = 0;
 
@@ -189,7 +189,7 @@ _triangulate_section(int                         dim,
         n_triangles = fvm_triangulate_quadrangle(dim,
                                                  1,
                                                  vertex_coords,
-                                                 parent_vertex_num,
+                                                 parent_vertex_id,
                                                  (  base_section->vertex_num
                                                   + vertex_id),
                                                  (  ret_section->_vertex_num
@@ -200,7 +200,7 @@ _triangulate_section(int                         dim,
                                               1,
                                               n_vertices,
                                               vertex_coords,
-                                              parent_vertex_num,
+                                              parent_vertex_id,
                                               (  base_section->vertex_num
                                                + vertex_id),
                                               FVM_TRIANGULATE_MESH_DEF,
@@ -212,15 +212,15 @@ _triangulate_section(int                         dim,
           *error_count += 1;
       }
 
-      if (base_section->parent_element_num != NULL) {
+      if (base_section->parent_element_id != NULL) {
         for (j = 0; j < n_triangles; j++)
-          ret_section->_parent_element_num[triangle_id + j]
-            = base_section->parent_element_num[i];
+          ret_section->_parent_element_id[triangle_id + j]
+            = base_section->parent_element_id[i];
       }
       else {
         for (j = 0; j < n_triangles; j++)
-          ret_section->_parent_element_num[triangle_id + j]
-            = base_element_num + i;
+          ret_section->_parent_element_id[triangle_id + j]
+            = base_element_id + i;
       }
 
       triangle_id += n_triangles;
@@ -237,12 +237,12 @@ _triangulate_section(int                         dim,
         ret_section->_vertex_num[triangle_id*3 + k]
           = base_section->vertex_num[i*3 + k];
 
-      if (base_section->parent_element_num != NULL)
-        ret_section->_parent_element_num[triangle_id]
-          = base_section->parent_element_num[i];
+      if (base_section->parent_element_id != NULL)
+        ret_section->_parent_element_id[triangle_id]
+          = base_section->parent_element_id[i];
       else
-        ret_section->_parent_element_num[triangle_id]
-          = base_element_num + i;
+        ret_section->_parent_element_id[triangle_id]
+          = base_element_id + i;
 
       triangle_id += 1;
     }
@@ -282,8 +282,8 @@ _triangulate_section(int                         dim,
  *   parent_vertex_num <-- optional indirection to vertex coordinates
  *   base_section      <-- pointer to structure that should be triangulated
  *   new_sections      --> array of triangle and quadrangle sections
- *   base_element_num  <-- starting number for element numbers if no
- *                         parent element number is available
+ *   base_element_id   <-- starting number for element ids if no
+ *                         parent element id is available
  *   error_count       --> number of triangulation errors counter (optional)
  *----------------------------------------------------------------------------*/
 
@@ -293,7 +293,7 @@ _triangulate_section_polygons(int                         dim,
                               const cs_lnum_t             parent_vertex_num[],
                               const fvm_nodal_section_t  *base_section,
                               fvm_nodal_section_t        *new_sections[2],
-                              cs_lnum_t                   base_element_num,
+                              cs_lnum_t                   base_element_id,
                               cs_lnum_t                  *error_count)
 {
   int type_id;
@@ -363,10 +363,10 @@ _triangulate_section_polygons(int                         dim,
                  _section->connectivity_size,
                  cs_lnum_t);
       _section->vertex_num = _section->_vertex_num;
-      BFT_MALLOC(_section->_parent_element_num,
+      BFT_MALLOC(_section->_parent_element_id,
                  _section->n_elements,
                  cs_lnum_t);
-      _section->parent_element_num = _section->_parent_element_num;
+      _section->parent_element_id = _section->_parent_element_id;
       new_sections[type_id] = _section;
       if (base_section->global_element_num != NULL)
         BFT_MALLOC(n_sub_elements[type_id], n_elements, cs_lnum_t);
@@ -418,15 +418,15 @@ _triangulate_section_polygons(int                         dim,
       if (n_triangles != (n_vertices - 2) && error_count != NULL)
         *error_count += 1;
 
-      if (base_section->parent_element_num != NULL) {
+      if (base_section->parent_element_id != NULL) {
         for (j = 0; j < n_triangles; j++)
-          _section->_parent_element_num[element_id[0] + j]
-            = base_section->parent_element_num[i];
+          _section->_parent_element_id[element_id[0] + j]
+            = base_section->parent_element_id[i];
       }
       else {
         for (j = 0; j < n_triangles; j++)
-          _section->_parent_element_num[element_id[0] + j]
-            = base_element_num + i;
+          _section->_parent_element_id[element_id[0] + j]
+            = base_element_id + i;
       }
 
       element_id[0] += n_triangles;
@@ -449,12 +449,12 @@ _triangulate_section_polygons(int                         dim,
         _section->_vertex_num[element_id[type_id]*_section->stride + k]
           = base_section->vertex_num[i*_section->stride + k];
 
-      if (base_section->parent_element_num != NULL)
-        _section->_parent_element_num[element_id[type_id]]
-          = base_section->parent_element_num[i];
+      if (base_section->parent_element_id != NULL)
+        _section->_parent_element_id[element_id[type_id]]
+          = base_section->parent_element_id[i];
       else {
-        _section->_parent_element_num[element_id[type_id]]
-          = base_element_num + i;
+        _section->_parent_element_id[element_id[type_id]]
+          = base_element_id + i;
       }
 
       element_id[type_id] += 1;
@@ -511,7 +511,7 @@ fvm_nodal_triangulate(fvm_nodal_t  *this_nodal,
   int i;
   cs_lnum_t j;
 
-  cs_lnum_t base_element_num = 1;
+  cs_lnum_t base_element_id = 0;
   cs_lnum_t section_error_count = 0;
   cs_lnum_t n_faces = 0;
 
@@ -528,15 +528,15 @@ fvm_nodal_triangulate(fvm_nodal_t  *this_nodal,
 
       t_section = _triangulate_section(this_nodal->dim,
                                        this_nodal->vertex_coords,
-                                       this_nodal->parent_vertex_num,
+                                       this_nodal->parent_vertex_id,
                                        _section,
-                                       base_element_num,
+                                       base_element_id,
                                        &section_error_count);
 
       if (error_count != NULL)
         *error_count += section_error_count;
 
-      base_element_num += _section->n_elements;
+      base_element_id += _section->n_elements;
 
       fvm_nodal_section_destroy(_section);
       this_nodal->sections[i] = t_section;
@@ -549,16 +549,16 @@ fvm_nodal_triangulate(fvm_nodal_t  *this_nodal,
       if (_section->entity_dim == 2)
         n_faces +=_section->n_elements;
 
-      if (_section->parent_element_num == NULL) {
-        BFT_MALLOC(_section->_parent_element_num,
+      if (_section->parent_element_id == NULL) {
+        BFT_MALLOC(_section->_parent_element_id,
                    _section->n_elements,
                    cs_lnum_t);
         for (j = 0; j < _section->n_elements; j++)
-          _section->_parent_element_num[j] = base_element_num + j;
-        _section->parent_element_num = _section->_parent_element_num;
+          _section->_parent_element_id[j] = base_element_id + j;
+        _section->parent_element_id = _section->_parent_element_id;
       }
 
-      base_element_num += _section->n_elements;
+      base_element_id += _section->n_elements;
 
     }
 
@@ -584,7 +584,7 @@ fvm_nodal_triangulate_polygons(fvm_nodal_t  *this_nodal,
   fvm_nodal_section_t *new_sections[2];
 
   int n_sections = 0;
-  cs_lnum_t base_element_num = 1;
+  cs_lnum_t base_element_id = 0;
   cs_lnum_t section_error_count = 0;
   cs_lnum_t n_faces = 0;
   fvm_nodal_section_t **sections = NULL;
@@ -607,7 +607,7 @@ fvm_nodal_triangulate_polygons(fvm_nodal_t  *this_nodal,
   /* Now triangulate and update new section list */
 
   n_sections = 0;
-  base_element_num = 1;
+  base_element_id = 0;
 
   for (i = 0; i < this_nodal->n_sections; i++) {
 
@@ -617,16 +617,16 @@ fvm_nodal_triangulate_polygons(fvm_nodal_t  *this_nodal,
 
       _triangulate_section_polygons(this_nodal->dim,
                                     this_nodal->vertex_coords,
-                                    this_nodal->parent_vertex_num,
+                                    this_nodal->parent_vertex_id,
                                     _section,
                                     new_sections,
-                                    base_element_num,
+                                    base_element_id,
                                     &section_error_count);
 
       if (error_count != NULL)
         *error_count += section_error_count;
 
-      base_element_num += _section->n_elements;
+      base_element_id += _section->n_elements;
 
       fvm_nodal_section_destroy(_section);
 
@@ -644,16 +644,16 @@ fvm_nodal_triangulate_polygons(fvm_nodal_t  *this_nodal,
       if (_section->entity_dim == 2)
         n_faces += _section->n_elements;
 
-      if (_section->parent_element_num == NULL) {
-        BFT_MALLOC(_section->_parent_element_num,
+      if (_section->parent_element_id == NULL) {
+        BFT_MALLOC(_section->_parent_element_id,
                    _section->n_elements,
                    cs_lnum_t);
         for (k = 0; k < _section->n_elements; k++)
-          _section->_parent_element_num[k] = base_element_num + k;
-        _section->parent_element_num = _section->_parent_element_num;
+          _section->_parent_element_id[k] = base_element_id + k;
+        _section->parent_element_id = _section->_parent_element_id;
       }
 
-      base_element_num += _section->n_elements;
+      base_element_id += _section->n_elements;
 
       sections[n_sections] = _section;
       n_sections += 1;

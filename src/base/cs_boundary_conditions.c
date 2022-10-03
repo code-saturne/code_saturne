@@ -892,24 +892,12 @@ cs_boundary_conditions_map(cs_mesh_location_type_t    location_type,
 
   fvm_nodal_t *nm = NULL;
 
-  /* Convert from 0-based to 1-based numbering (note that in practice,
-     we probably use 1-based numbering upstream, and convert back to
-     1-based downstream, but we prefer to use a 0-based API here so as
-     to make progress on global 1-based to 0-based conversion). */
-
-  cs_lnum_t *_location_elts = NULL;
-  if (location_elts != NULL) {
-    BFT_MALLOC(_location_elts, n_location_elts, cs_lnum_t);
-    for (cs_lnum_t i = 0; i < n_location_elts; i++)
-      _location_elts[i] = location_elts[i] + 1;
-  }
-
   if (location_type == CS_MESH_LOCATION_CELLS)
     nm = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
                                         "search mesh",
                                         false, /* include_families */
                                         n_location_elts,
-                                        _location_elts);
+                                        location_elts);
   else if (location_type == CS_MESH_LOCATION_BOUNDARY_FACES)
     nm = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
                                         "search mesh",
@@ -917,9 +905,7 @@ cs_boundary_conditions_map(cs_mesh_location_type_t    location_type,
                                         0,
                                         n_location_elts,
                                         NULL,
-                                        _location_elts);
-
-  BFT_FREE(_location_elts);
+                                        location_elts);
 
   /* Now build locator */
   /*-------------------*/

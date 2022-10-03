@@ -77,10 +77,10 @@ BEGIN_C_DECLS
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        source dimension if non interlaced, times one per
  *                        parent list if multiple parent lists, with
@@ -96,14 +96,14 @@ _convert_array_float_to_float(const int                     src_dim,
                               const cs_lnum_t               src_idx_end,
                               const cs_interlace_t          src_interlace,
                               const int                     n_parent_lists,
-                              const cs_lnum_t               parent_num_shift[],
-                              const cs_lnum_t               parent_num[],
+                              const cs_lnum_t               parent_id_shift[],
+                              const cs_lnum_t               parent_id[],
                               const float            *const src_data[],
                               float                  *const dest_data)
 {
   int  pl;
   size_t  i, k, l, min_dim;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   min_dim = (size_t)(CS_MIN((src_dim - src_dim_shift), dest_dim));
 
@@ -118,28 +118,28 @@ _convert_array_float_to_float(const int                     src_dim,
             = src_data[0][j*src_dim + l];
       }
     }
-    else if (parent_num != NULL) {
+    else if (parent_id != NULL) {
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-        for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-             parent_id < parent_num_shift[pl] ;
+        for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+             p_id < parent_id_shift[pl] ;
              pl--);
         assert(pl > -1);
-        parent_id -= parent_num_shift[pl];
+        p_id -= parent_id_shift[pl];
         for (k = 0, l = src_dim_shift ; k < min_dim ; k++, l++)
           dest_data[i*dest_dim + k]
-            = src_data[pl][parent_id*src_dim + l];
+            = src_data[pl][p_id*src_dim + l];
       }
     }
-    else { /* parent_num == NULL: implicit parent numbering */
+    else { /* parent_id == NULL: implicit parent numbering */
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-        for (parent_id = j, pl = n_parent_lists - 1 ;
-             parent_id < parent_num_shift[pl] ;
+        for (p_id = j, pl = n_parent_lists - 1 ;
+             p_id < parent_id_shift[pl] ;
              pl--);
         assert(pl > -1);
-        parent_id -= parent_num_shift[pl];
+        p_id -= parent_id_shift[pl];
         for (k = 0, l = src_dim_shift ; k < min_dim ; k++, l++)
           dest_data[i*dest_dim + k]
-            = src_data[pl][parent_id*src_dim + l];
+            = src_data[pl][p_id*src_dim + l];
       }
     }
 
@@ -155,28 +155,28 @@ _convert_array_float_to_float(const int                     src_dim,
           dest_data[i*dest_dim + k] = src_data[l][j];
       }
     }
-    else if (parent_num != NULL) {
+    else if (parent_id != NULL) {
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-        for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-             parent_id < parent_num_shift[pl] ;
+        for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+             p_id < parent_id_shift[pl] ;
              pl--);
         assert(pl > -1);
-        parent_id -= parent_num_shift[pl];
+        p_id -= parent_id_shift[pl];
         for (k = 0, l = src_dim_shift ; k < min_dim ; k++, l++)
           dest_data[i*dest_dim + k]
-            = src_data[src_dim*pl + l][parent_id];
+            = src_data[src_dim*pl + l][p_id];
       }
     }
-    else { /* parent_num == NULL: implicit parent numbering */
+    else { /* parent_id == NULL: implicit parent numbering */
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-        for (parent_id = j, pl = n_parent_lists - 1 ;
-             parent_id < parent_num_shift[pl] ;
+        for (p_id = j, pl = n_parent_lists - 1 ;
+             p_id < parent_id_shift[pl] ;
              pl--);
         assert(pl > -1);
-        parent_id -= parent_num_shift[pl];
+        p_id -= parent_id_shift[pl];
         for (k = 0, l = src_dim_shift ; k < min_dim ; k++, l++)
           dest_data[i*dest_dim + k]
-            = src_data[src_dim*pl + l][parent_id];
+            = src_data[src_dim*pl + l][p_id];
       }
     }
 
@@ -206,10 +206,10 @@ _convert_array_float_to_float(const int                     src_dim,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        source dimension if non interlaced, times one per
  *                        parent list if multiple parent lists, with
@@ -225,14 +225,14 @@ _convert_array_float_to_double(const int                     src_dim,
                                const cs_lnum_t               src_idx_end,
                                const cs_interlace_t          src_interlace,
                                const int                     n_parent_lists,
-                               const cs_lnum_t               parent_num_shift[],
-                               const cs_lnum_t               parent_num[],
+                               const cs_lnum_t               parent_id_shift[],
+                               const cs_lnum_t               parent_id[],
                                const float            *const src_data[],
                                double                 *const dest_data)
 {
   int  pl;
   size_t  i, k, l, min_dim;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   min_dim = (size_t)(CS_MIN((src_dim - src_dim_shift), dest_dim));
 
@@ -247,28 +247,28 @@ _convert_array_float_to_double(const int                     src_dim,
             = src_data[0][j*src_dim + l];
       }
     }
-    else if (parent_num != NULL) {
+    else if (parent_id != NULL) {
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-        for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-             parent_id < parent_num_shift[pl] ;
+        for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+             p_id < parent_id_shift[pl] ;
              pl--);
         assert(pl > -1);
-        parent_id -= parent_num_shift[pl];
+        p_id -= parent_id_shift[pl];
         for (k = 0, l = src_dim_shift ; k < min_dim ; k++, l++)
           dest_data[i*dest_dim + k]
-            = src_data[pl][parent_id*src_dim + l];
+            = src_data[pl][p_id*src_dim + l];
       }
     }
-    else { /* parent_num == NULL: implicit parent numbering */
+    else { /* parent_id == NULL: implicit parent numbering */
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-        for (parent_id = j, pl = n_parent_lists - 1 ;
-             parent_id < parent_num_shift[pl] ;
+        for (p_id = j, pl = n_parent_lists - 1 ;
+             p_id < parent_id_shift[pl] ;
              pl--);
         assert(pl > -1);
-        parent_id -= parent_num_shift[pl];
+        p_id -= parent_id_shift[pl];
         for (k = 0, l = src_dim_shift ; k < min_dim ; k++, l++)
           dest_data[i*dest_dim + k]
-            = src_data[pl][parent_id*src_dim + l];
+            = src_data[pl][p_id*src_dim + l];
       }
     }
 
@@ -284,28 +284,28 @@ _convert_array_float_to_double(const int                     src_dim,
           dest_data[i*dest_dim + k] = src_data[l][j];
       }
     }
-    else if (parent_num != NULL) {
+    else if (parent_id != NULL) {
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-        for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-             parent_id < parent_num_shift[pl] ;
+        for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+             p_id < parent_id_shift[pl] ;
              pl--);
         assert(pl > -1);
-        parent_id -= parent_num_shift[pl];
+        p_id -= parent_id_shift[pl];
         for (k = 0, l = src_dim_shift ; k < min_dim ; k++, l++)
           dest_data[i*dest_dim + k]
-            = src_data[src_dim*pl + l][parent_id];
+            = src_data[src_dim*pl + l][p_id];
       }
     }
-    else { /* parent_num == NULL: implicit parent numbering */
+    else { /* parent_id == NULL: implicit parent numbering */
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-        for (parent_id = j, pl = n_parent_lists - 1 ;
-             parent_id < parent_num_shift[pl] ;
+        for (p_id = j, pl = n_parent_lists - 1 ;
+             p_id < parent_id_shift[pl] ;
              pl--);
         assert(pl > -1);
-        parent_id -= parent_num_shift[pl];
+        p_id -= parent_id_shift[pl];
         for (k = 0, l = src_dim_shift ; k < min_dim ; k++, l++)
           dest_data[i*dest_dim + k]
-            = src_data[src_dim*pl + l][parent_id];
+            = src_data[src_dim*pl + l][p_id];
       }
     }
 
@@ -335,10 +335,10 @@ _convert_array_float_to_double(const int                     src_dim,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        source dimension if non interlaced, times one per
  *                        parent list if multiple parent lists, with
@@ -354,14 +354,14 @@ _convert_array_double_to_float(const int                     src_dim,
                                const cs_lnum_t               src_idx_end,
                                const cs_interlace_t          src_interlace,
                                const int                     n_parent_lists,
-                               const cs_lnum_t               parent_num_shift[],
-                               const cs_lnum_t               parent_num[],
+                               const cs_lnum_t               parent_id_shift[],
+                               const cs_lnum_t               parent_id[],
                                const double           *const src_data[],
                                float                  *const dest_data)
 {
   int  pl;
   size_t  i, k, l, min_dim;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   min_dim = (size_t)(CS_MIN((src_dim - src_dim_shift), dest_dim));
 
@@ -376,28 +376,28 @@ _convert_array_double_to_float(const int                     src_dim,
             = src_data[0][j*src_dim + l];
       }
     }
-    else if (parent_num != NULL) {
+    else if (parent_id != NULL) {
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-        for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-             parent_id < parent_num_shift[pl] ;
+        for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+             p_id < parent_id_shift[pl] ;
              pl--);
         assert(pl > -1);
-        parent_id -= parent_num_shift[pl];
+        p_id -= parent_id_shift[pl];
         for (k = 0, l = src_dim_shift ; k < min_dim ; k++, l++)
           dest_data[i*dest_dim + k]
-            = src_data[pl][parent_id*src_dim + l];
+            = src_data[pl][p_id*src_dim + l];
       }
     }
-    else { /* parent_num == NULL: implicit parent numbering */
+    else { /* parent_id == NULL: implicit parent numbering */
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-        for (parent_id = j, pl = n_parent_lists - 1 ;
-             parent_id < parent_num_shift[pl] ;
+        for (p_id = j, pl = n_parent_lists - 1 ;
+             p_id < parent_id_shift[pl] ;
              pl--);
         assert(pl > -1);
-        parent_id -= parent_num_shift[pl];
+        p_id -= parent_id_shift[pl];
         for (k = 0, l = src_dim_shift ; k < min_dim ; k++, l++)
           dest_data[i*dest_dim + k]
-            = src_data[pl][parent_id*src_dim + l];
+            = src_data[pl][p_id*src_dim + l];
       }
     }
 
@@ -413,28 +413,28 @@ _convert_array_double_to_float(const int                     src_dim,
           dest_data[i*dest_dim + k] = src_data[l][j];
       }
     }
-    else if (parent_num != NULL) {
+    else if (parent_id != NULL) {
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-        for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-             parent_id < parent_num_shift[pl] ;
+        for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+             p_id < parent_id_shift[pl] ;
              pl--);
         assert(pl > -1);
-        parent_id -= parent_num_shift[pl];
+        p_id -= parent_id_shift[pl];
         for (k = 0, l = src_dim_shift ; k < min_dim ; k++, l++)
           dest_data[i*dest_dim + k]
-            = src_data[src_dim*pl + l][parent_id];
+            = src_data[src_dim*pl + l][p_id];
       }
     }
-    else { /* parent_num == NULL: implicit parent numbering */
+    else { /* parent_id == NULL: implicit parent numbering */
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-        for (parent_id = j, pl = n_parent_lists - 1 ;
-             parent_id < parent_num_shift[pl] ;
+        for (p_id = j, pl = n_parent_lists - 1 ;
+             p_id < parent_id_shift[pl] ;
              pl--);
         assert(pl > -1);
-        parent_id -= parent_num_shift[pl];
+        p_id -= parent_id_shift[pl];
         for (k = 0, l = src_dim_shift ; k < min_dim ; k++, l++)
           dest_data[i*dest_dim + k]
-            = src_data[src_dim*pl + l][parent_id];
+            = src_data[src_dim*pl + l][p_id];
       }
     }
 
@@ -464,10 +464,10 @@ _convert_array_double_to_float(const int                     src_dim,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        source dimension if non interlaced, times one per
  *                        parent list if multiple parent lists, with
@@ -483,14 +483,14 @@ _convert_array_double_to_double(const int                     src_dim,
                                 const cs_lnum_t               src_idx_end,
                                 const cs_interlace_t          src_interlace,
                                 const int                     n_parent_lists,
-                                const cs_lnum_t               parent_num_shift[],
-                                const cs_lnum_t               parent_num[],
+                                const cs_lnum_t               parent_id_shift[],
+                                const cs_lnum_t               parent_id[],
                                 const double           *const src_data[],
                                 double                 *const dest_data)
 {
   int  pl;
   size_t  i, k, l, min_dim;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   min_dim = (size_t)(CS_MIN((src_dim - src_dim_shift), dest_dim));
 
@@ -505,28 +505,28 @@ _convert_array_double_to_double(const int                     src_dim,
             = src_data[0][j*src_dim + l];
       }
     }
-    else if (parent_num != NULL) {
+    else if (parent_id != NULL) {
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-        for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-             parent_id < parent_num_shift[pl] ;
+        for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+             p_id < parent_id_shift[pl] ;
              pl--);
         assert(pl > -1);
-        parent_id -= parent_num_shift[pl];
+        p_id -= parent_id_shift[pl];
         for (k = 0, l = src_dim_shift ; k < min_dim ; k++, l++)
           dest_data[i*dest_dim + k]
-            = src_data[pl][parent_id*src_dim + l];
+            = src_data[pl][p_id*src_dim + l];
       }
     }
-    else { /* parent_num == NULL: implicit parent numbering */
+    else { /* parent_id == NULL: implicit parent numbering */
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-        for (parent_id = j, pl = n_parent_lists - 1 ;
-             parent_id < parent_num_shift[pl] ;
+        for (p_id = j, pl = n_parent_lists - 1 ;
+             p_id < parent_id_shift[pl] ;
              pl--);
         assert(pl > -1);
-        parent_id -= parent_num_shift[pl];
+        p_id -= parent_id_shift[pl];
         for (k = 0, l = src_dim_shift ; k < min_dim ; k++, l++)
           dest_data[i*dest_dim + k]
-            = src_data[pl][parent_id*src_dim + l];
+            = src_data[pl][p_id*src_dim + l];
       }
     }
 
@@ -542,28 +542,28 @@ _convert_array_double_to_double(const int                     src_dim,
           dest_data[i*dest_dim + k] = src_data[l][j];
       }
     }
-    else if (parent_num != NULL) {
+    else if (parent_id != NULL) {
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-        for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-             parent_id < parent_num_shift[pl] ;
+        for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+             p_id < parent_id_shift[pl] ;
              pl--);
         assert(pl > -1);
-        parent_id -= parent_num_shift[pl];
+        p_id -= parent_id_shift[pl];
         for (k = 0, l = src_dim_shift ; k < min_dim ; k++, l++)
           dest_data[i*dest_dim + k]
-            = src_data[src_dim*pl + l][parent_id];
+            = src_data[src_dim*pl + l][p_id];
       }
     }
-    else { /* parent_num == NULL: implicit parent numbering */
+    else { /* parent_id == NULL: implicit parent numbering */
       for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-        for (parent_id = j, pl = n_parent_lists - 1 ;
-             parent_id < parent_num_shift[pl] ;
+        for (p_id = j, pl = n_parent_lists - 1 ;
+             p_id < parent_id_shift[pl] ;
              pl--);
         assert(pl > -1);
-        parent_id -= parent_num_shift[pl];
+        p_id -= parent_id_shift[pl];
         for (k = 0, l = src_dim_shift ; k < min_dim ; k++, l++)
           dest_data[i*dest_dim + k]
-            = src_data[src_dim*pl + l][parent_id];
+            = src_data[src_dim*pl + l][p_id];
       }
     }
 
@@ -590,10 +590,10 @@ _convert_array_double_to_double(const int                     src_dim,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -603,37 +603,37 @@ static void
 _convert_array_int32_to_float(const cs_lnum_t               src_idx_start,
                               const cs_lnum_t               src_idx_end,
                               const int                     n_parent_lists,
-                              const cs_lnum_t               parent_num_shift[],
-                              const cs_lnum_t               parent_num[],
+                              const cs_lnum_t               parent_id_shift[],
+                              const cs_lnum_t               parent_id[],
                               const int32_t          *const src_data[],
                               float                  *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -647,10 +647,10 @@ _convert_array_int32_to_float(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -660,37 +660,37 @@ static void
 _convert_array_int32_to_double(const cs_lnum_t               src_idx_start,
                                const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const cs_lnum_t               parent_num_shift[],
-                               const cs_lnum_t               parent_num[],
+                               const cs_lnum_t               parent_id_shift[],
+                               const cs_lnum_t               parent_id[],
                                const int32_t          *const src_data[],
                                double                 *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -704,10 +704,10 @@ _convert_array_int32_to_double(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -717,37 +717,37 @@ static void
 _convert_array_int32_to_int32(const cs_lnum_t               src_idx_start,
                               const cs_lnum_t               src_idx_end,
                               const int                     n_parent_lists,
-                              const cs_lnum_t               parent_num_shift[],
-                              const cs_lnum_t               parent_num[],
+                              const cs_lnum_t               parent_id_shift[],
+                              const cs_lnum_t               parent_id[],
                               const int32_t          *const src_data[],
                               int32_t                *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -761,10 +761,10 @@ _convert_array_int32_to_int32(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -774,37 +774,37 @@ static void
 _convert_array_int32_to_int64(const cs_lnum_t               src_idx_start,
                               const cs_lnum_t               src_idx_end,
                               const int                     n_parent_lists,
-                              const cs_lnum_t               parent_num_shift[],
-                              const cs_lnum_t               parent_num[],
+                              const cs_lnum_t               parent_id_shift[],
+                              const cs_lnum_t               parent_id[],
                               const int32_t          *const src_data[],
                               int64_t                *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -818,10 +818,10 @@ _convert_array_int32_to_int64(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -831,37 +831,37 @@ static void
 _convert_array_int32_to_uint32(const cs_lnum_t               src_idx_start,
                                const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const cs_lnum_t               parent_num_shift[],
-                               const cs_lnum_t               parent_num[],
+                               const cs_lnum_t               parent_id_shift[],
+                               const cs_lnum_t               parent_id[],
                                const int32_t          *const src_data[],
                                uint32_t               *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -875,10 +875,10 @@ _convert_array_int32_to_uint32(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -888,37 +888,37 @@ static void
 _convert_array_int32_to_uint64(const cs_lnum_t               src_idx_start,
                                const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const cs_lnum_t               parent_num_shift[],
-                               const cs_lnum_t               parent_num[],
+                               const cs_lnum_t               parent_id_shift[],
+                               const cs_lnum_t               parent_id[],
                                const int32_t          *const src_data[],
                                uint64_t               *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -932,10 +932,10 @@ _convert_array_int32_to_uint64(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -945,37 +945,37 @@ static void
 _convert_array_int64_to_float(const cs_lnum_t               src_idx_start,
                               const cs_lnum_t               src_idx_end,
                               const int                     n_parent_lists,
-                              const cs_lnum_t               parent_num_shift[],
-                              const cs_lnum_t               parent_num[],
+                              const cs_lnum_t               parent_id_shift[],
+                              const cs_lnum_t               parent_id[],
                               const int64_t          *const src_data[],
                               float                  *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -989,10 +989,10 @@ _convert_array_int64_to_float(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -1002,37 +1002,37 @@ static void
 _convert_array_int64_to_double(const cs_lnum_t               src_idx_start,
                                const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const cs_lnum_t               parent_num_shift[],
-                               const cs_lnum_t               parent_num[],
+                               const cs_lnum_t               parent_id_shift[],
+                               const cs_lnum_t               parent_id[],
                                const int64_t          *const src_data[],
                                double                 *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -1046,10 +1046,10 @@ _convert_array_int64_to_double(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -1059,37 +1059,37 @@ static void
 _convert_array_int64_to_int32(const cs_lnum_t               src_idx_start,
                               const cs_lnum_t               src_idx_end,
                               const int                     n_parent_lists,
-                              const cs_lnum_t               parent_num_shift[],
-                              const cs_lnum_t               parent_num[],
+                              const cs_lnum_t               parent_id_shift[],
+                              const cs_lnum_t               parent_id[],
                               const int64_t          *const src_data[],
                               int32_t                *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -1103,10 +1103,10 @@ _convert_array_int64_to_int32(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -1116,37 +1116,37 @@ static void
 _convert_array_int64_to_int64(const cs_lnum_t               src_idx_start,
                               const cs_lnum_t               src_idx_end,
                               const int                     n_parent_lists,
-                              const cs_lnum_t               parent_num_shift[],
-                              const cs_lnum_t               parent_num[],
+                              const cs_lnum_t               parent_id_shift[],
+                              const cs_lnum_t               parent_id[],
                               const int64_t          *const src_data[],
                               int64_t                *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -1160,10 +1160,10 @@ _convert_array_int64_to_int64(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -1173,37 +1173,37 @@ static void
 _convert_array_int64_to_uint32(const cs_lnum_t               src_idx_start,
                                const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const cs_lnum_t               parent_num_shift[],
-                               const cs_lnum_t               parent_num[],
+                               const cs_lnum_t               parent_id_shift[],
+                               const cs_lnum_t               parent_id[],
                                const int64_t          *const src_data[],
                                uint32_t               *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -1217,10 +1217,10 @@ _convert_array_int64_to_uint32(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -1230,37 +1230,37 @@ static void
 _convert_array_int64_to_uint64(const cs_lnum_t               src_idx_start,
                                const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const cs_lnum_t               parent_num_shift[],
-                               const cs_lnum_t               parent_num[],
+                               const cs_lnum_t               parent_id_shift[],
+                               const cs_lnum_t               parent_id[],
                                const int64_t          *const src_data[],
                                uint64_t               *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -1274,10 +1274,10 @@ _convert_array_int64_to_uint64(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -1287,37 +1287,37 @@ static void
 _convert_array_uint32_to_float(const cs_lnum_t               src_idx_start,
                                const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const cs_lnum_t               parent_num_shift[],
-                               const cs_lnum_t               parent_num[],
+                               const cs_lnum_t               parent_id_shift[],
+                               const cs_lnum_t               parent_id[],
                                const uint32_t         *const src_data[],
                                float                  *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -1331,10 +1331,10 @@ _convert_array_uint32_to_float(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -1344,37 +1344,37 @@ static void
 _convert_array_uint32_to_double(const cs_lnum_t               src_idx_start,
                                 const cs_lnum_t               src_idx_end,
                                 const int                     n_parent_lists,
-                                const cs_lnum_t               parent_num_shift[],
-                                const cs_lnum_t               parent_num[],
+                                const cs_lnum_t               parent_id_shift[],
+                                const cs_lnum_t               parent_id[],
                                 const uint32_t         *const src_data[],
                                 double                 *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -1388,10 +1388,10 @@ _convert_array_uint32_to_double(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -1401,37 +1401,37 @@ static void
 _convert_array_uint32_to_int32(const cs_lnum_t               src_idx_start,
                                const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const cs_lnum_t               parent_num_shift[],
-                               const cs_lnum_t               parent_num[],
+                               const cs_lnum_t               parent_id_shift[],
+                               const cs_lnum_t               parent_id[],
                                const uint32_t         *const src_data[],
                                int32_t                *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -1445,10 +1445,10 @@ _convert_array_uint32_to_int32(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -1458,37 +1458,37 @@ static void
 _convert_array_uint32_to_int64(const cs_lnum_t               src_idx_start,
                                const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const cs_lnum_t               parent_num_shift[],
-                               const cs_lnum_t               parent_num[],
+                               const cs_lnum_t               parent_id_shift[],
+                               const cs_lnum_t               parent_id[],
                                const uint32_t         *const src_data[],
                                int64_t                *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -1502,10 +1502,10 @@ _convert_array_uint32_to_int64(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -1515,37 +1515,37 @@ static void
 _convert_array_uint32_to_uint32(const cs_lnum_t               src_idx_start,
                                 const cs_lnum_t               src_idx_end,
                                 const int                     n_parent_lists,
-                                const cs_lnum_t               parent_num_shift[],
-                                const cs_lnum_t               parent_num[],
+                                const cs_lnum_t               parent_id_shift[],
+                                const cs_lnum_t               parent_id[],
                                 const uint32_t         *const src_data[],
                                 uint32_t               *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -1559,10 +1559,10 @@ _convert_array_uint32_to_uint32(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -1572,37 +1572,37 @@ static void
 _convert_array_uint32_to_uint64(const cs_lnum_t               src_idx_start,
                                 const cs_lnum_t               src_idx_end,
                                 const int                     n_parent_lists,
-                                const cs_lnum_t               parent_num_shift[],
-                                const cs_lnum_t               parent_num[],
+                                const cs_lnum_t               parent_id_shift[],
+                                const cs_lnum_t               parent_id[],
                                 const uint32_t         *const src_data[],
                                 uint64_t               *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -1616,10 +1616,10 @@ _convert_array_uint32_to_uint64(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -1629,37 +1629,37 @@ static void
 _convert_array_uint64_to_float(const cs_lnum_t               src_idx_start,
                                const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const cs_lnum_t               parent_num_shift[],
-                               const cs_lnum_t               parent_num[],
+                               const cs_lnum_t               parent_id_shift[],
+                               const cs_lnum_t               parent_id[],
                                const uint64_t         *const src_data[],
                                float                  *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -1673,10 +1673,10 @@ _convert_array_uint64_to_float(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -1686,37 +1686,37 @@ static void
 _convert_array_uint64_to_double(const cs_lnum_t               src_idx_start,
                                 const cs_lnum_t               src_idx_end,
                                 const int                     n_parent_lists,
-                                const cs_lnum_t               parent_num_shift[],
-                                const cs_lnum_t               parent_num[],
+                                const cs_lnum_t               parent_id_shift[],
+                                const cs_lnum_t               parent_id[],
                                 const uint64_t         *const src_data[],
                                 double                 *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -1730,10 +1730,10 @@ _convert_array_uint64_to_double(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -1743,37 +1743,37 @@ static void
 _convert_array_uint64_to_int32(const cs_lnum_t               src_idx_start,
                                const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const cs_lnum_t               parent_num_shift[],
-                               const cs_lnum_t               parent_num[],
+                               const cs_lnum_t               parent_id_shift[],
+                               const cs_lnum_t               parent_id[],
                                const uint64_t         *const src_data[],
                                int32_t                *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -1787,10 +1787,10 @@ _convert_array_uint64_to_int32(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -1800,37 +1800,37 @@ static void
 _convert_array_uint64_to_int64(const cs_lnum_t               src_idx_start,
                                const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const cs_lnum_t               parent_num_shift[],
-                               const cs_lnum_t               parent_num[],
+                               const cs_lnum_t               parent_id_shift[],
+                               const cs_lnum_t               parent_id[],
                                const uint64_t         *const src_data[],
                                int64_t                *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -1844,10 +1844,10 @@ _convert_array_uint64_to_int64(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -1857,37 +1857,37 @@ static void
 _convert_array_uint64_to_uint32(const cs_lnum_t               src_idx_start,
                                 const cs_lnum_t               src_idx_end,
                                 const int                     n_parent_lists,
-                                const cs_lnum_t               parent_num_shift[],
-                                const cs_lnum_t               parent_num[],
+                                const cs_lnum_t               parent_id_shift[],
+                                const cs_lnum_t               parent_id[],
                                 const uint64_t         *const src_data[],
                                 uint32_t               *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -1901,10 +1901,10 @@ _convert_array_uint64_to_uint32(const cs_lnum_t               src_idx_start,
  *   src_idx_start    <-- start index in source data
  *   src_idx_end      <-- past-the-end index in source data
  *   src_interlace    <-- indicates if source data is interlaced
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent list to common number index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent list to common number index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        parent list if multiple parent lists)
  *   dest_data        --> destination buffer
@@ -1914,37 +1914,37 @@ static void
 _convert_array_uint64_to_uint64(const cs_lnum_t               src_idx_start,
                                 const cs_lnum_t               src_idx_end,
                                 const int                     n_parent_lists,
-                                const cs_lnum_t               parent_num_shift[],
-                                const cs_lnum_t               parent_num[],
+                                const cs_lnum_t               parent_id_shift[],
+                                const cs_lnum_t               parent_id[],
                                 const uint64_t         *const src_data[],
                                 uint64_t               *const dest_data)
 {
   int  pl;
   size_t  i;
-  cs_lnum_t   j, parent_id;
+  cs_lnum_t   j, p_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
       dest_data[i] = src_data[0][j];
   }
-  else if (parent_num != NULL) {
+  else if (parent_id != NULL) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = parent_num[j] - 1, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = parent_id[j], pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
-  else { /* parent_num == NULL: implicit parent numbering */
+  else { /* parent_id == NULL: implicit parent numbering */
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++) {
-      for (parent_id = j, pl = n_parent_lists - 1 ;
-           parent_id < parent_num_shift[pl] ;
+      for (p_id = j, pl = n_parent_lists - 1 ;
+           p_id < parent_id_shift[pl] ;
            pl--);
       assert(pl > -1);
-      parent_id -= parent_num_shift[pl];
-      dest_data[i] = src_data[pl][parent_id];
+      p_id -= parent_id_shift[pl];
+      dest_data[i] = src_data[pl][p_id];
     }
   }
 
@@ -1980,10 +1980,10 @@ _convert_array_uint64_to_uint64(const cs_lnum_t               src_idx_start,
  *   src_interlace    <-- indicates if source data is interlaced
  *   src_datatype     <-- source data type (float, double, or int)
  *   dest_datatype    <-- destination data type (float, double, or int)
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
- *   parent_num_shift <-- parent number to value array index shifts;
+ *   n_parent_lists   <-- number of parent lists (if parent_id != NULL)
+ *   parent_id_shift  <-- parent number to value array index shifts;
  *                        size: n_parent_lists
- *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
+ *   parent_id        <-- if n_parent_lists > 0, parent entity numbers
  *   src_data         <-- array of source arrays (at least one, with one per
  *                        source dimension if non interlaced, times one per
  *                        parent list if multiple parent lists, with
@@ -2001,8 +2001,8 @@ fvm_convert_array(const int                     src_dim,
                   const cs_datatype_t           src_datatype,
                   const cs_datatype_t           dest_datatype,
                   const int                     n_parent_lists,
-                  const cs_lnum_t               parent_num_shift[],
-                  const cs_lnum_t               parent_num[],
+                  const cs_lnum_t               parent_id_shift[],
+                  const cs_lnum_t               parent_id[],
                   const void             *const src_data[],
                   void                   *const dest_data)
 {
@@ -2022,8 +2022,8 @@ fvm_convert_array(const int                     src_dim,
                                     src_idx_end,
                                     src_interlace,
                                     n_parent_lists,
-                                    parent_num_shift,
-                                    parent_num,
+                                    parent_id_shift,
+                                    parent_id,
                                     (const float *const *const)src_data,
                                     dest_data);
       break;
@@ -2036,8 +2036,8 @@ fvm_convert_array(const int                     src_dim,
                                      src_idx_end,
                                      src_interlace,
                                      n_parent_lists,
-                                     parent_num_shift,
-                                     parent_num,
+                                     parent_id_shift,
+                                     parent_id,
                                      (const float *const *const)src_data,
                                      dest_data);
       break;
@@ -2069,8 +2069,8 @@ fvm_convert_array(const int                     src_dim,
                                      src_idx_end,
                                      src_interlace,
                                      n_parent_lists,
-                                     parent_num_shift,
-                                     parent_num,
+                                     parent_id_shift,
+                                     parent_id,
                                      (const double *const *const)src_data,
                                      dest_data);
       break;
@@ -2083,8 +2083,8 @@ fvm_convert_array(const int                     src_dim,
                                       src_idx_end,
                                       src_interlace,
                                       n_parent_lists,
-                                      parent_num_shift,
-                                      parent_num,
+                                      parent_id_shift,
+                                      parent_id,
                                       (const double *const *const)src_data,
                                       dest_data);
       break;
@@ -2119,8 +2119,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_int32_to_float(src_idx_start,
                                     src_idx_end,
                                     n_parent_lists,
-                                    parent_num_shift,
-                                    parent_num,
+                                    parent_id_shift,
+                                    parent_id,
                                     (const int32_t *const *const)src_data,
                                     dest_data);
       break;
@@ -2129,8 +2129,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_int32_to_double(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
-                                     parent_num_shift,
-                                     parent_num,
+                                     parent_id_shift,
+                                     parent_id,
                                      (const int32_t *const *const)src_data,
                                      dest_data);
       break;
@@ -2139,8 +2139,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_int32_to_int32(src_idx_start,
                                     src_idx_end,
                                     n_parent_lists,
-                                    parent_num_shift,
-                                    parent_num,
+                                    parent_id_shift,
+                                    parent_id,
                                     (const int32_t *const *const)src_data,
                                     dest_data);
       break;
@@ -2149,8 +2149,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_int32_to_int64(src_idx_start,
                                     src_idx_end,
                                     n_parent_lists,
-                                    parent_num_shift,
-                                    parent_num,
+                                    parent_id_shift,
+                                    parent_id,
                                     (const int32_t *const *const)src_data,
                                     dest_data);
       break;
@@ -2159,8 +2159,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_int32_to_uint32(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
-                                     parent_num_shift,
-                                     parent_num,
+                                     parent_id_shift,
+                                     parent_id,
                                      (const int32_t *const *const)src_data,
                                      dest_data);
       break;
@@ -2169,8 +2169,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_int32_to_uint64(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
-                                     parent_num_shift,
-                                     parent_num,
+                                     parent_id_shift,
+                                     parent_id,
                                      (const int32_t *const *const)src_data,
                                      dest_data);
       break;
@@ -2196,8 +2196,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_int64_to_float(src_idx_start,
                                     src_idx_end,
                                     n_parent_lists,
-                                    parent_num_shift,
-                                    parent_num,
+                                    parent_id_shift,
+                                    parent_id,
                                     (const int64_t *const *const)src_data,
                                     dest_data);
       break;
@@ -2206,8 +2206,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_int64_to_double(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
-                                     parent_num_shift,
-                                     parent_num,
+                                     parent_id_shift,
+                                     parent_id,
                                      (const int64_t *const *const)src_data,
                                      dest_data);
       break;
@@ -2216,8 +2216,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_int64_to_int32(src_idx_start,
                                     src_idx_end,
                                     n_parent_lists,
-                                    parent_num_shift,
-                                    parent_num,
+                                    parent_id_shift,
+                                    parent_id,
                                     (const int64_t *const *const)src_data,
                                     dest_data);
       break;
@@ -2226,8 +2226,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_int64_to_int64(src_idx_start,
                                     src_idx_end,
                                     n_parent_lists,
-                                    parent_num_shift,
-                                    parent_num,
+                                    parent_id_shift,
+                                    parent_id,
                                     (const int64_t *const *const)src_data,
                                     dest_data);
       break;
@@ -2236,8 +2236,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_int64_to_uint32(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
-                                     parent_num_shift,
-                                     parent_num,
+                                     parent_id_shift,
+                                     parent_id,
                                      (const int64_t *const *const)src_data,
                                      dest_data);
       break;
@@ -2246,8 +2246,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_int64_to_uint64(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
-                                     parent_num_shift,
-                                     parent_num,
+                                     parent_id_shift,
+                                     parent_id,
                                      (const int64_t *const *const)src_data,
                                      dest_data);
       break;
@@ -2273,8 +2273,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_uint32_to_float(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
-                                     parent_num_shift,
-                                     parent_num,
+                                     parent_id_shift,
+                                     parent_id,
                                      (const uint32_t *const *const)src_data,
                                      dest_data);
       break;
@@ -2283,8 +2283,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_uint32_to_double(src_idx_start,
                                       src_idx_end,
                                       n_parent_lists,
-                                      parent_num_shift,
-                                      parent_num,
+                                      parent_id_shift,
+                                      parent_id,
                                       (const uint32_t *const *const)src_data,
                                       dest_data);
       break;
@@ -2293,8 +2293,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_uint32_to_int32(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
-                                     parent_num_shift,
-                                     parent_num,
+                                     parent_id_shift,
+                                     parent_id,
                                      (const uint32_t *const *const)src_data,
                                      dest_data);
       break;
@@ -2303,8 +2303,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_uint32_to_int64(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
-                                     parent_num_shift,
-                                     parent_num,
+                                     parent_id_shift,
+                                     parent_id,
                                      (const uint32_t *const *const)src_data,
                                      dest_data);
       break;
@@ -2313,8 +2313,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_uint32_to_uint32(src_idx_start,
                                       src_idx_end,
                                       n_parent_lists,
-                                      parent_num_shift,
-                                      parent_num,
+                                      parent_id_shift,
+                                      parent_id,
                                       (const uint32_t *const *const)src_data,
                                       dest_data);
       break;
@@ -2323,8 +2323,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_uint32_to_uint64(src_idx_start,
                                       src_idx_end,
                                       n_parent_lists,
-                                      parent_num_shift,
-                                      parent_num,
+                                      parent_id_shift,
+                                      parent_id,
                                       (const uint32_t *const *const)src_data,
                                       dest_data);
       break;
@@ -2350,8 +2350,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_uint64_to_float(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
-                                     parent_num_shift,
-                                     parent_num,
+                                     parent_id_shift,
+                                     parent_id,
                                      (const uint64_t *const *const)src_data,
                                      dest_data);
       break;
@@ -2360,8 +2360,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_uint64_to_double(src_idx_start,
                                       src_idx_end,
                                       n_parent_lists,
-                                      parent_num_shift,
-                                      parent_num,
+                                      parent_id_shift,
+                                      parent_id,
                                       (const uint64_t *const *const)src_data,
                                       dest_data);
       break;
@@ -2370,8 +2370,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_uint64_to_int32(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
-                                     parent_num_shift,
-                                     parent_num,
+                                     parent_id_shift,
+                                     parent_id,
                                      (const uint64_t *const *const)src_data,
                                      dest_data);
       break;
@@ -2380,8 +2380,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_uint64_to_int64(src_idx_start,
                                      src_idx_end,
                                      n_parent_lists,
-                                     parent_num_shift,
-                                     parent_num,
+                                     parent_id_shift,
+                                     parent_id,
                                      (const uint64_t *const *const)src_data,
                                      dest_data);
       break;
@@ -2390,8 +2390,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_uint64_to_uint32(src_idx_start,
                                       src_idx_end,
                                       n_parent_lists,
-                                      parent_num_shift,
-                                      parent_num,
+                                      parent_id_shift,
+                                      parent_id,
                                       (const uint64_t *const *const)src_data,
                                       dest_data);
       break;
@@ -2400,8 +2400,8 @@ fvm_convert_array(const int                     src_dim,
       _convert_array_uint64_to_uint64(src_idx_start,
                                       src_idx_end,
                                       n_parent_lists,
-                                      parent_num_shift,
-                                      parent_num,
+                                      parent_id_shift,
+                                      parent_id,
                                       (const uint64_t *const *const)src_data,
                                       dest_data);
       break;

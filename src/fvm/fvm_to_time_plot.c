@@ -617,7 +617,7 @@ fvm_to_time_plot_export_nodal(void               *writer,
                               .mesh = mesh,
                               .name = NULL};
 
-    int n_parent_lists = (mesh->parent_vertex_num != NULL) ? 1 : 0;
+    int n_parent_lists = (mesh->parent_vertex_id != NULL) ? 1 : 0;
     cs_lnum_t parent_num_shift[1] = {0};
     const cs_real_t  *coo_ptr[1] = {mesh->vertex_coords};
 

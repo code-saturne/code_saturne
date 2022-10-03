@@ -134,7 +134,7 @@ typedef struct _ccm_writer_section_t {
   cs_lnum_t   num_shift;                /* Element number shift when no
                                            parent lists are used */
 
-  const cs_lnum_t    *parent_elt_num;   /* pointer to parent list */
+  const cs_lnum_t    *parent_elt_id;    /* pointer to parent list */
 
 } ccm_writer_section_t;
 
@@ -312,10 +312,10 @@ _build_ordered_elt_gnum(const fvm_nodal_t  *mesh,
       if (section->global_element_num != NULL) {
         const cs_gnum_t *g_num
           = fvm_io_num_get_global_num(section->global_element_num);
-        if (section->parent_element_num != NULL) {
-          const cs_lnum_t *p_num = section->parent_element_num;
+        if (section->parent_element_id != NULL) {
+          const cs_lnum_t *p_id = section->parent_element_id;
           for (j = 0; j < section->n_elements; j++)
-            elt_gnum[p_num[j]-1] = g_num[j] + num_shift;
+            elt_gnum[p_id[j]] = g_num[j] + num_shift;
         }
         else {
           for (j = 0; j < section->n_elements; j++)
@@ -324,10 +324,10 @@ _build_ordered_elt_gnum(const fvm_nodal_t  *mesh,
         num_shift += fvm_io_num_get_global_count(section->global_element_num);
       }
       else {
-        if (section->parent_element_num != NULL) {
-          const cs_lnum_t *p_num = section->parent_element_num;
+        if (section->parent_element_id != NULL) {
+          const cs_lnum_t *p_id = section->parent_element_id;
           for (j = 0; j < section->n_elements; j++)
-            elt_gnum[p_num[j]-1] = j+1 + num_shift;
+            elt_gnum[p_id[j]] = j+1 + num_shift;
         }
         else {
           for (j = 0; j < section->n_elements; j++)
@@ -534,7 +534,7 @@ _build_export_list(const fvm_nodal_t  *mesh,
   if (export_dim == 0) {
     (export_list[0]).n_elts = mesh->n_vertices;
     (export_list[0]).num_shift = 0;
-    (export_list[0]).parent_elt_num = mesh->parent_vertex_num;
+    (export_list[0]).parent_elt_id = mesh->parent_vertex_id;
   }
   else if (export_dim > 1) {
     n_sections = 0;
@@ -544,7 +544,7 @@ _build_export_list(const fvm_nodal_t  *mesh,
         continue;
       (export_list[n_sections]).n_elts = section->n_elements;
       (export_list[n_sections]).num_shift = num_shift;
-      (export_list[n_sections]).parent_elt_num = section->parent_element_num;
+      (export_list[n_sections]).parent_elt_id = section->parent_element_id;
       n_sections++;
       num_shift += section->n_elements;
     }
@@ -2819,7 +2819,7 @@ _write_field_data_g(CCMIOID                 data_id,
                       dst_datatype,
                       n_parent_lists,
                       parent_num_shift,
-                      section->parent_elt_num,
+                      section->parent_elt_id,
                       field_values,
                       _field_values_p + dest_shift);
 
@@ -3012,7 +3012,7 @@ _write_field_data_l(CCMIOID                     data_id,
                       dst_datatype,
                       n_parent_lists,
                       parent_num_shift,
-                      section->parent_elt_num,
+                      section->parent_elt_id,
                       field_values,
                       _field_values + dest_shift);
 
