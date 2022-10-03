@@ -338,7 +338,8 @@ _inlet_bc(cs_lnum_t   face_id,
       _turb_bc_id.bc_rij->rcodcl1[ii*n_b_faces + face_id] = d2s3 * k;
     if (vel_dir != NULL) {
       cs_math_3_normalize(vel_dir, vel_dir);
-      /* Note: do not normalize shear_dir because it contains the level of anisotropy */
+      /* Note: do not normalize shear_dir because it contains the
+         level of anisotropy */
       /* Rxy */
       _turb_bc_id.bc_rij->rcodcl1[3*n_b_faces + face_id]
         = k * (vel_dir[0]*shear_dir[1] + vel_dir[1]*shear_dir[0]);
@@ -455,11 +456,11 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
           = k * (vel_dir[0]*shear_dir[1] + vel_dir[1]*shear_dir[0]);
       if (_turb_bc_id.bc_rij->rcodcl1[4*n_b_faces + face_id]
           > 0.5*cs_math_infinite_r)
-        _turb_bc_id.bc_rij->rcodcl1[3*n_b_faces + face_id]
+        _turb_bc_id.bc_rij->rcodcl1[4*n_b_faces + face_id]
           = k * (vel_dir[1]*shear_dir[2] + vel_dir[2]*shear_dir[1]);
       if (_turb_bc_id.bc_rij->rcodcl1[5*n_b_faces + face_id]
           > 0.5*cs_math_infinite_r)
-        _turb_bc_id.bc_rij->rcodcl1[3*n_b_faces + face_id]
+        _turb_bc_id.bc_rij->rcodcl1[5*n_b_faces + face_id]
           = k * (vel_dir[0]*shear_dir[2] + vel_dir[2]*shear_dir[0]);
     }
     else {
@@ -494,7 +495,8 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
       for (int id = 0; id < _turb_bc_id.size_alp_bl_t; id++) {
         cs_field_t *fld = _turb_bc_id.f_alp_bl_t[id];
         for (int ii = 0; ii < fld->dim; ii++)
-          if (fld->bc_coeffs->rcodcl1[ii*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+          if (  fld->bc_coeffs->rcodcl1[ii*n_b_faces + face_id]
+              > 0.5*cs_math_infinite_r)
             fld->bc_coeffs->rcodcl1[ii*n_b_faces + face_id] = 1.;
       }
     }
