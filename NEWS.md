@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 User changes:
 
+- Documentation: user guide fully migrated to HTML (based on Doxygen
+  and Markdown).
+
 - Preprocessor (mesh import): allow removal of cells with negative volume
   or incorrect topology.
 

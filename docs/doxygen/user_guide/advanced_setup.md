@@ -540,6 +540,9 @@ For **Reactive flows (combustion)**, it is possible to initialize the specific v
 
 In the GUI, when a **Reactive flows (combustion)** is selected in the item **“Calculation features”**, an additional item appears: __“Gas combustion”__ the user can change it by __“Pulverized coal”__. In this item the user can define coal types, their composition, the oxidant and reactions parameters, see the following figure.
 
+\anchor gui_coal_model
+\image html gui_coal_model.png "Thermophysical models - Pulverized coal, coal model"
+
 \anchor gui_coal_classes
 \image html gui_coal_classes.png "Thermophysical models - Pulverized coal, coal classes"
 
@@ -928,7 +931,19 @@ For some examples we can see:
 
 <!-- ----------------------------------------------------------------------- -->
 
-\page advanced_electric_arcs Management of the electric arcs module
+\page advanced_electric_arcs Electric arcs module
+
+The electric module is composed of a Joule effect module (\ref CS JOULE EFFECT)
+and an electric arcs module (\ref CS ELECTRIC ARCS).
+
+The Joule effect module is designed to take into account that effect (for instance in glass
+furnaces) with real or complex potential in the enthalpy equation. The Laplace forces are not
+taken into account in the impulse momentum equation. Specific boundary conditions can be
+applied to account for the coupled effect of transformers (offset) in glass furnaces.
+
+The electric arcs module is designed to take into account the Joule effect (only with real
+potential) in the enthalpy equation. The Laplace forces are taken into account in the
+impulse momentum equation.
 
 Activating the electric arcs module
 ===================================

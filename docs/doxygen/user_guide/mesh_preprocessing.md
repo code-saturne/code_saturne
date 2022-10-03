@@ -54,6 +54,9 @@ The code_saturne run operation automatically calls the Preprocessor for every
 mesh specified by the user with the GUI or in the `MESHES` list
 defined in `cs_user_scripys.py:define_domain_parameters`.
 
+\anchor gui_mesh_select
+\image html gui_mesh_select.png "Mesh selection with the GUI"
+
 Preprocessor options {#sec_prg_optappelecs}
 --------------------
 
