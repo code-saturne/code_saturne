@@ -27,8 +27,6 @@ The documentation for this section is in the process of migration from the pdf
 documentation. It is also recommended to check the
 [pdf user's guide](../../../user/user.pdf) for sections which may not have been migrated yet.
 
-[TOC]
-
 - \subpage low_level_boundary_condition_definitions
 - \subpage advanced_specific_physics
 - \subpage advanced_coal_and_gas_combution
@@ -1173,6 +1171,8 @@ In the file \ref cs_user_fluid_structure_interaction.f90 the user provides the p
 
 \page advanced_atmospheric Atmospheric flows module
 
+[TOC]
+
 Data files
 ==========
 
@@ -1210,7 +1210,7 @@ Atmospheric flow model and steady/unsteady algorithm
 ====================================================
 
 The GUI may be used to enable the atmospheric flow module and set up the
-following calculation parameters in the **Thermophysical models**-**Calculation features**
+following calculation parameters in the **Thermophysical models - Calculation features**
 page see [fig:steady](@ref gui_atmospheric_user_s_guide_v92).
 
 The atmospheric flow model
@@ -1220,7 +1220,7 @@ The user can choose one of the following atmospheric flow models:
  - **Constant density**: To simulate neutral atmosphere.
  - **Dry atmosphere**: To simulate dry, thermally-stratified atmospheric flows (enables *Potential temperature* as thermal model).
  - **Humid atmosphere**: To simulate thermally stratified atmospheric flows (air-water mixture) with phase changes
-   (enables *Liquid potential temperature* as thermal model). The model is described in \cite bouzereau.
+   (enables *Liquid potential temperature* as thermal model). The model is described in \cite Bouzereau:2004 and \cite Bouzereau:2007.
 
 Allowed time-stepping options
 -----------------------------
@@ -1362,14 +1362,14 @@ User-defined functions may be used when the graphical user interface is not
 sufficient to set up the calculation. We provide some examples of user file for
 atmospheric application:
  - cs_user_source_terms.c: to add a source term in the prognostic equations for forest
-   canopy modelling, wind turbine wake modelling... [see for examples](@ref user_source_terms)
+   canopy modelling, wind turbine wake modelling... [examples](@ref user_source_terms)
  - cs_user_parameters.f90: to activate the Cressman interpolation.
    For example, it is used to impose inhomogeneous boundary conditions.
-   [see for examples](@ref cs_f_user_parameters_h_usati1)
+   [examples](@ref cs_f_user_parameters_h_usati1)
  - cs_user_extra_operations.c to generate vertical profiles for post processing.
-   [see for examples](@ref cs_user_extra_operations_examples_mean_profiles)
+   [examples](@ref cs_user_extra_operations_examples_mean_profiles)
  - cs_user_boundary_conditions.f90: showq how to set up the boundary conditions and to set
-   a heterogeneous roughness length... [see for examples](@ref atmospheric_examples)
+   a heterogeneous roughness length... [examples](@ref atmospheric_examples)
 
 Physical models
 ===============
@@ -1411,7 +1411,7 @@ for example the [cs_user_extra_operations-scalar_balance.c](@ref cs_user_extra_o
 Soil/atmosphere interaction model
 ---------------------------------
 
-This model is based on the force restore model (\cite deardorff).
+This model is based on the force restore model (\cite Deardorff:1978).
 It takes into account heat and humidity exchanges between the ground and the
 atmosphere at daily scale and the time evolution of ground surface temperature
 and humidity. Surface temperature is calculated with a prognostic equation
@@ -1450,26 +1450,26 @@ file cs_users_parameters.f90.
 Atmospheric main variables
 ==========================
 
-For more details on the topic of atmospheric boundary layers, see \cite stull.
+For more details on the topic of atmospheric boundary layers, see \cite stull:1988.
 
-  - Definition of the potential temperature:
+- Definition of the potential temperature:
 \f[
 \theta =T\left(\frac{P}{P_{r}}\right)^{-\frac{R_{d}}{C_{p}}}
 \f]
-  - Definition of liquid potential temperature:
+- Definition of liquid potential temperature:
 \f[
 \theta_{l} = \theta \left( 1-\frac{L}{C_{p}T} q_{l} \right)
 \f]
-  - Definition of virtual temperature:
+- Definition of virtual temperature:
 \f[
 T_{v} = \left(1+0.61q\right)T
 \f]
-  - Gas law:
+- Gas law:
 \f[
 P = \rho \frac{R}{M_{d}}\left(1+0,61q\right)T
 \f]
 with \f$R=R_{d} M_{d}\f$.
-  - Hydrostatic state:
+- Hydrostatic state:
 \f[
 \frac{\partial P}{\partial z} = -\rho g
 \f]
