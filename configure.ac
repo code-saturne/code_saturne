@@ -1215,7 +1215,6 @@ AC_CONFIG_FILES([Makefile
                  python/code_saturne/gui/studymanager_gui/Makefile
 		 docs/Makefile docs/doxygen/Makefile docs/style/csvers.tex
 		 docs/refcard/Makefile docs/theory/Makefile
-		 docs/user/Makefile
 		 tests/Makefile
 		 config/code_saturne_build.cfg.in])
 
