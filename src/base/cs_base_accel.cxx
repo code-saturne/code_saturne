@@ -89,8 +89,10 @@ typedef struct
  *  Global variables
  *============================================================================*/
 
+#if defined(HAVE_OPENMP_TARGET)
 #if !defined(__INTEL_LLVM_COMPILER)
 #pragma omp requires unified_shared_memory
+#endif
 #endif
 
 static std::map<const void *, _cs_base_accel_mem_map> _hd_alloc_map;
@@ -391,7 +393,6 @@ cs_malloc_hd(cs_alloc_mode_t   mode,
 {
   if (_initialized == false) {
    _initialize();
-   mode = cs_alloc_mode;
   }
 
   if (ni == 0)
