@@ -862,9 +862,9 @@ cs_medcoupling_mesh_from_base(cs_mesh_t   *csmesh,
   if (m == NULL) {
     m = _add_medcoupling_mesh(name, elt_dim);
 
-    size_t len_sel_crit = strlen(selection_criteria);
+    size_t len_sel_crit = strlen(_sel_crit);
     BFT_MALLOC(m->sel_criteria, len_sel_crit+1, char);
-    strcpy(m->sel_criteria, selection_criteria);
+    strcpy(m->sel_criteria, _sel_crit);
     m->sel_criteria[len_sel_crit] = '\0';
 
     _select_from_criteria(csmesh, m);
