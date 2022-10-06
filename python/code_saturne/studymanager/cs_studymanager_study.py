@@ -1189,9 +1189,7 @@ class Studies(object):
         #   the repository verification and
         #   the destination creation
 
-        if os.path.isfile(filename):
-            self.__parser = Parser(filename)
-        else:
+        if not os.path.isfile(filename):
             msg = "Error: specified XML parameter file for studymanager does" \
                 + " not exist."
             self.reporting(msg, report=False, exit=True)
@@ -1214,6 +1212,8 @@ class Studies(object):
                 self.reporting(" Note that update is not necessary before the"\
                                + " run step", report=False)
                 self.reporting(" ", report=False)
+
+        self.__parser = Parser(filename, doc=smgr.doc)
 
         # set repository
         if len(options.repo_path) > 0:
@@ -1265,19 +1265,21 @@ class Studies(object):
             if not os.path.isdir(self.__dest):
                 os.makedirs(self.__dest)
 
-            # copy the smgr file in destination for update and restart
+            # copy the updated smgr file in destination for restart
 
-            file = os.path.join(self.__dest, os.path.basename(filename))
+            dest_filename = os.path.join(self.__dest, os.path.basename(filename))
             try:
-                shutil.copyfile(filename, file)
+                smgr['xmlfile'] = dest_filename
+                smgr.xmlSaveDocument(prettyString=False)
             except:
                 pass
 
             # create definitive parser for smgr file in destination
 
-            self.__parser  = Parser(file)
+            self.__parser = Parser(dest_filename)
             self.__parser.setDestination(self.__dest)
             self.__parser.setRepository(self.__repo)
+
             if options.debug:
                 msg = " Studies repository: " + self.__repo + "\n" \
                   + " Studies destination: " + self.__dest

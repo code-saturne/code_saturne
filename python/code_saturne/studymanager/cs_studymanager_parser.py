@@ -71,7 +71,7 @@ def xmlChecker(filename):
 class Parser(object):
     """ Parser -- class to parse XML file."""
 
-    def __init__ (self, XMLFileName):
+    def __init__ (self, XMLFileName, doc=None):
         """
         Constructor of the XML reader.
         @type XMLFileName: C{String}
@@ -81,19 +81,22 @@ class Parser(object):
         self.__repo = None
         self.__dest = None
 
-        try:
-            self.doc =  minidom.parse(XMLFileName)
-        except:
-            print("Error in the syntax of the xml.\n")
-            msg =  xmlChecker(self.filename)
-            if msg:
-                print(msg)
-            sys.exit(1)
+        if doc != None:
+            self.doc = doc
+        else:
+            try:
+                self.doc =  minidom.parse(XMLFileName)
+            except:
+                print("Error in the syntax of the xml.\n")
+                msg =  xmlChecker(self.filename)
+                if msg:
+                    print(msg)
+                sys.exit(1)
 
         self.root = self.doc.firstChild
 
         if self.root.nodeName != "studymanager":
-            print(XMLFileName + ": Wrong XML file. The Root markup is not studymanager.\n")
+            print(XMLFileName + ": not a studymanager XML file.")
             sys.exit(1)
 
     #---------------------------------------------------------------------------
