@@ -462,8 +462,7 @@ be assigned:
 
 - \ref CS_SMOOTHWALL (standard wall)
 - \ref CS_SYMMETRY (standard symmetry)
-- \ref CS_ESICF, \ref CS_SSPCF, \ref CS_SOPCF, \ref CS_EPHCF, or \ref CS_EQHCF
-
+- \ref CS_ESICF, \ref CS_SSPCF, \ref CS_SOPCF, \ref CS_EPHCF, or \ref CS_EQHCF (inlet/outlet)
 
 Combining approaches
 --------------------
