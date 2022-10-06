@@ -134,10 +134,9 @@ The standard keywords used by the indicator `bc_type` are, in C:
   * The same definitions for scalars and for eventual sliding wall velocity apply
     as for a smooth wall.
 
-  * Roughness is also specified in the `rcodcl3` array associated with the velocity:<br>
-    `rcodcl3[face_id]` for the dynamic roughness<br>
-    `rcodcl2[n_b_faces + face_id]` for the thermal and scalar roughness.<br>
-    `rcodcl[2*n_b_faces + face_id]` is not used.<br><br>
+  * Roughness is also specified at each boundary face though associated fields:
+    `boundary_roughness` for the dynamic roughness<br>
+    `boundary_thermal_roughness` for the thermal and scalar roughness.<br>
 
 - If `bc_type[face_id] === CS_SYMMETRY`: symmetry face (or wall without friction).
 
@@ -273,6 +272,10 @@ The standard keywords used by the indicator `bc_type` are, in C:
     above, and `f->bc_coeffs->bd[face_id}` is replaced by
     `f->bc_coeffs->bd[d*d*face_id + d*i + j]`.<br>
 
+- Caution: to prescribe a flux (nonzero) to Rij, the viscosity to take
+  into account is the `molecular_viscosity` field even if the
+  `turbulent viscosity` field (ρ.C<sub>μ</sub>/ε).
+
 Coding of non-standard boundary conditions {#sec_prg_bc_nonstandard}
 ------------------------------------------
 
@@ -300,7 +303,8 @@ filled as follows:
       - <em>J<sup>2</sup>.kg<sup>-2</sup></em> for enthalpy fluctuations
 
   * `f->bc_coeffs->rcodcl2[face_id]` is the value of the exchange coefficient
-    between the outside and the fluid for the variable.
+    between the outside and the fluid for the variable (usually referred to
+    as "exterior" exchange coefficient)..
     - An "infinite" value (`rcodcl2[face_id] == cs_math_infinite_r`)
       indicates an ideal transfer between the outside and the fluid (default
       case).
@@ -418,12 +422,61 @@ filled as follows:
   Therefore, the code automatically computes the boundary condition to
   impose to the normal and to the tangential components.
 
-\note
+### Consistency rules summary
+
+In short, following consistency rules between `icodcl` codes for variables with
+non-standard boundary conditions:
+
+- Codes for vector or tensor components must be identical
+  (the `icodcl` array is handled as a scalar array even for vectors and
+  tensors).
+- If `icodcl` = 4 for velocity or Rij, it must be 4 for both.
+- If `icodcl` = 5 for a scalar or fluctuations, it must be 5 for the velocity.
+  * The same rule applies to `icodcl` = 6.
+- If `icodcl` = 5 for velocity or turbulence variables, it must be 5 for all
+  such variables.
+  * The same rule applies to `icodcl` = 6.
+
+Specific cases
+--------------
+
+### Outlet faces
 
 A standard `CS_OUTLET` outlet face amounts to a Dirichlet condition (`icodcl == 1`)
 for the pressure, a free outlet condition (`icodcl == 9`) for the velocity, and a
 Dirichlet condition (`icodcl == 1`) if the user has specified a Dirichlet value
 or a zero-flux condition (`icodcl == 3`) for the other variables.
+
+### Boundary condition types for enthalpy
+
+For enthalpy, prescribed values in `CS_F_(h)f->bc_coeffs->rcodcl3` may
+be defined using the temperature instead. In this case,
+`CS_F_(h)f->bc_coeffs->icodcl` must be replaced by `- CS_F_(h)f->bc_coeffs->icodcl`
+(i.e. its sign must bev inverted) to mark the face for automatic
+conversion.
+
+### Boundary condition types for compressible flows
+
+For compressible flows, only one of the following boundary condition types
+be assigned:
+
+- \ref CS_SMOOTHWALL (standard wall)
+- \ref CS_SYMMETRY (standard symmetry)
+- \ref CS_ESICF, \ref CS_SSPCF, \ref CS_SOPCF, \ref CS_EPHCF, or \ref CS_EQHCF
+
+
+Combining approaches
+--------------------
+
+Definitions may be based on standard boundary conditions and extended though
+non-stand conditions. For example, `bc_type[face_id]` can be set to
+`CS_SMOOTHWALL` (whether through the GUI or \ref cs_user_boundary_conditions),
+and for a specific variable, the associated `icodcl` and `rcodcl*` arrays
+may be modified.
+
+As always, it is recommended to specify only the values which need to be
+modified relative to the GUI definitions and default values, so as to
+keep user-defined functions concise, readable, and maintainable.
 
 <!-- ----------------------------------------------------------------------- -->
 

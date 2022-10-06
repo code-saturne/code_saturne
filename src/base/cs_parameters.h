@@ -78,22 +78,31 @@ typedef struct {
  *----------------------------------------------------------------------------*/
 
 enum {
-  CS_INDEF = 1,
-  CS_INLET = 2,
-  CS_OUTLET = 3,
+
+  CS_INDEF = 1,              /*!< undefined */
+  CS_INLET = 2,              /*!< standard inlet */
+  CS_OUTLET = 3,             /*!< standard outlet */
   CS_SYMMETRY = 4,
-  CS_SMOOTHWALL = 5,
-  CS_ROUGHWALL = 6,
-  CS_ESICF = 7,
-  CS_SSPCF = 8,
-  CS_SOPCF = 9,
-  CS_EPHCF = 10,
-  CS_EQHCF = 11,
-  CS_COUPLED = 12,           /* coupled face */
-  CS_COUPLED_FD = 13,        /* coupled face with decentered flux */
-  CS_FREE_INLET = 14,
-  CS_FREE_SURFACE = 15,
-  CS_CONVECTIVE_INLET = 16
+
+  CS_SMOOTHWALL = 5,         /*!< solid wall, with friction */
+  CS_ROUGHWALL = 6,          /*!< rough wall, with friction */
+
+  CS_ESICF = 7,              /*!< compressible flow, prescribed inlet/outlet
+                               (for example supersonic inlet) */
+  CS_SSPCF = 8,              /*!< compressible flow, supersonic outlet */
+  CS_SOPCF = 9,              /*!< subsonic outlet with prescribed pressure */
+  CS_EPHCF = 10,             /*!< mixed inlet with prescribed total pressure
+                               and enthalpy */
+  CS_EQHCF = 11,             /*!< subsonic inlet with prescribed mass and
+                               enthalpy flow (not available yet) */
+  CS_COUPLED = 12,           /*!< coupled face */
+  CS_COUPLED_FD = 13,        /*!< coupled face with decentered flux */
+  CS_FREE_INLET = 14,        /*!< free outlet or inlet (based on Bernoulli
+                               relationship) */
+  CS_FREE_SURFACE = 15,      /*!< free surface */
+  CS_CONVECTIVE_INLET = 16   /*!< inlet with zero diffusive flux for all
+                               transported variables (species and velocity) */
+
 };
 
 /*----------------------------------------------------------------------------
