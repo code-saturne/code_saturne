@@ -120,19 +120,16 @@ class BaseXmlInit(Variables):
 
     def _backwardCompatibility(self):
         """
-        Change XML in order to ensure backward compatibility.
+        Update XML in order to ensure backward compatibility.
         """
         cur_vers = self.case['package'].version_short
 
-        if self.case.root()["solver_version"]:
-            his_r = self.case.root()["solver_version"]
+        his_r = self.case.root()["solver_version"]
+        if his_r:
             history = his_r.split(";")
             last_vers = self.__clean_version(history[len(history) - 1])
-            if last_vers == cur_vers:
-                self._backwardCompatibilityCurrentVersion()
-            else:
+            if last_vers != cur_vers:
                 self._backwardCompatibilityOldVersion(last_vers)
-                self._backwardCompatibilityCurrentVersion()
             his = ""
             vp = ""
             for v in history:
@@ -147,13 +144,13 @@ class BaseXmlInit(Variables):
                 self.case.root().xmlSetAttribute(solver_version = his)
 
         else:
-            vers = cur_vers
-            self.case.root().xmlSetAttribute(solver_version = vers)
+            self.case.root().xmlSetAttribute(solver_version = cur_vers)
 
             # apply all backwardCompatibilities as we don't know
             # when it was created
             self._backwardCompatibilityOldVersion("-1")
-            self._backwardCompatibilityCurrentVersion()
+
+        self._backwardCompatibilityCurrentVersion()
 
 
     def _backwardCompatibilityOldVersion(self, from_vers):
