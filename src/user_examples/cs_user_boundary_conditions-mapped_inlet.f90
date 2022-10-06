@@ -235,7 +235,7 @@ enddo
 ! Create locator at initialization
 
 !< [example_1_map_init]
-if (ntcabs.eq.ntpabs+1) then
+if (ntcabs.eq.ntpabs) then
 
   allocate(lstcel(ncel))
 
