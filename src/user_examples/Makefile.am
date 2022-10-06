@@ -147,6 +147,9 @@ cs_user_performance_tuning-parallel-io.c \
 cs_user_performance_tuning-partition.c \
 cs_user_physical_properties.c \
 cs_user_physical_properties-compressible_flow.c \
+cs_user_physical_properties-coal_drift.c \
+cs_user_physical_properties-richards_sat.c \
+cs_user_physical_properties-richards_unsat.c \
 cs_user_physical_properties-scalar_drift.c \
 cs_user_porosity.c \
 cs_user_postprocess.c \
@@ -192,9 +195,6 @@ cs_user_metal_structures_source_terms-condensation.f90 \
 cs_user_modules-user-arrays.f90 \
 cs_user_parameters-richards.f90 \
 cs_user_parameters.f90 \
-cs_user_physical_properties-coal_drift.f90 \
-cs_user_physical_properties-richards_sat.f90 \
-cs_user_physical_properties-richards_unsat.f90 \
 cs_user_profile.cxx \
 cs_user_profile.h \
 cs_user_profile_plot.py
