@@ -160,7 +160,7 @@ cs_user_boundary_conditions_ale(cs_domain_t  *domain,
   }
   /*![example_1]*/
 
-  /* Example: For boundary faces of color 5 assign a fixed displacement on nodes */
+  /* Example: for boundary faces zone "5" assign a fixed displacement on nodes */
 
   /*![example_2]*/
   zn = cs_boundary_zone_by_name("5");
@@ -182,7 +182,7 @@ cs_user_boundary_conditions_ale(cs_domain_t  *domain,
 
   /*![example_2]*/
 
-  /*Example: For boundary faces of color 6 assign a sliding boundary*/
+  /* Example: For boundary faces of zone "6" assign a sliding boundary */
 
   /*![example_3]*/
   zn = cs_boundary_zone_by_name("6");
