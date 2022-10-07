@@ -99,7 +99,7 @@ class InterfacialForcesModel(Variables, Model):
         field_a = self.mainFieldsModel.getFieldFromId(fieldaId)
         field_b = self.mainFieldsModel.getFieldFromId(fieldbId)
         if (field_a.flow_type == "continuous" and field_b.flow_type == "dispersed") :
-            if (self.turb_m.isSecondOrderTurbulenceModel(fieldaId) and self.turb_m.getTurbulenceModel(fieldbId) == "none") :
+            if (self.turb_m.modelLevelIsAboveTwoEquations(fieldaId) and self.turb_m.getTurbulenceModel(fieldbId) == "none") :
                 lst = self.__availableturbulentedispersionModelsList
             else :
                 lst = ["none"]
@@ -131,7 +131,7 @@ class InterfacialForcesModel(Variables, Model):
         # field A is continuous and field B is dispersed
         field_a = self.mainFieldsModel.getFieldFromId(fieldaId)
         field_b = self.mainFieldsModel.getFieldFromId(fieldbId)
-        assert(field_a.flow_type == "continuous")
+        assert((field_a == "all") or (field_a.flow_type == "continuous"))
         assert(field_b.flow_type == "dispersed")
         predefined_flow = self.mainFieldsModel.getPredefinedFlow()
         if predefined_flow == "boiling_flow":

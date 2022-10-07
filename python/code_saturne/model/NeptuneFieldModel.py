@@ -32,7 +32,7 @@ from code_saturne.model.XMLmodel import *
 
 class NeptuneField(Variables, Model):
     """
-    This class defines one single neptune_cfd field
+    This class defines the properties of one single neptune_cfd field
     """
     default_carrier_id = "off"
 
@@ -41,19 +41,24 @@ class NeptuneField(Variables, Model):
         self.case = case # Could be a global variable (is actually a singleton)
         self._f_id = str(f_id)
 
-        if (self._f_id not in ["none", "off"]):
-            thermo_node = self.case.xmlGetNode('thermophysical_models')
-            fields_node = thermo_node.xmlInitNode('fields')
-            self._xml_node = fields_node.xmlInitNode('field', field_id = self.f_id)
-            self._xml_variable_node = thermo_node.xmlInitNode('variables')
-            self._xml_property_node = thermo_node.xmlInitNode('properties')
-
         self._label = ""
         self._phase = ""
         self._flow_type = ""
         self._carrier_id =  ""
         self._enthalpy_model = ""
         self._compressible = ""
+
+        if (self._f_id not in ["none", "off", "all"]):
+            thermo_node = self.case.xmlGetNode('thermophysical_models')
+            fields_node = thermo_node.xmlInitNode('fields')
+            self._xml_node = fields_node.xmlInitNode('field', field_id = self.f_id)
+            self._xml_variable_node = thermo_node.xmlInitNode('variables')
+            self._xml_property_node = thermo_node.xmlInitNode('properties')
+        else:
+            self._label = self._f_id
+            if self._f_id == "all":
+                self._flow_type = "continuous"
+
 
     def __str__(self):
         return str(self._label)
@@ -93,10 +98,8 @@ class NeptuneField(Variables, Model):
     @property
     @Variables.noUndo
     def label(self):
-        if self.f_id == "none":
-            return "none"
-        elif self.f_id == "off":
-            return "off"
+        if self.f_id in ["none", "off", "all"]:
+            return self.f_id
         return self._xml_node.xmlGetAttribute("label", default=self._label)
 
     @label.setter
@@ -116,6 +119,8 @@ class NeptuneField(Variables, Model):
 
     @property
     def flow_type(self):
+        if self._label == "all":
+            return "continuous" # ugly hack...
         node = self._xml_node.xmlGetNode("type")
         if node != None:
             return node.xmlGetAttribute("choice", default=self._flow_type)

@@ -172,6 +172,8 @@ class MainFieldsModel(Variables, Model):
             return NeptuneField(self.case, "none")
         elif fieldId == "off":
             return NeptuneField(self.case, "off")
+        elif fieldId == "all":
+            return NeptuneField(self.case, "all")
         return None
 
     @Variables.undoGlobal
@@ -739,6 +741,8 @@ class MainFieldsModel(Variables, Model):
         """
         return field id  for a label
         """
+        if label in ["none", "off", "all"]:
+            return label
         self.isInList(label, self.getFieldLabelsList(include_none=include_none))
         # TODO : refactor if function is to be kept
         field = [fld for fld in self.list_of_fields if fld.label == label][0]

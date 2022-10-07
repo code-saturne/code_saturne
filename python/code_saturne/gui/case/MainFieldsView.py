@@ -293,6 +293,8 @@ class CarrierDelegate(QItemDelegate):
         else :
             for fld in self.mdl.getContinuousFieldList() :
                 self.modelCombo.addItem(self.tr(fld.label), fld.label)
+            if field.phase == "solid":
+                self.modelCombo.addItem(self.tr("all"), "all")
 
         editor.installEventFilter(self)
         return editor
@@ -450,7 +452,7 @@ class StandardItemModelMainFields(QStandardItemModel):
             new_carrier = from_qvariant(value, to_text_string)
             self._data[row][col] = new_carrier
             # set carrier field Id in XML
-            if self._data[row][col] != "off" : # TODO move this test to model part ?
+            if self._data[row][col] not in ["off", "all"] : # TODO move this test to model part ?
                fid = self.mdl.getFieldId(self._data[row][col])
             else :
                fid = self._data[row][col]

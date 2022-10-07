@@ -88,6 +88,7 @@ class TurbulenceDelegate(QItemDelegate):
         field = self.mdl.mainFieldsModel.list_of_fields[index.row()]
         fieldId = field.f_id
 
+        #TODO : move this to TurbulenceNeptuneModel
         if field.flow_type == "continuous":
             turbulence_models = TurbulenceModelsDescription.continuousTurbulenceModels
         else:
@@ -96,8 +97,7 @@ class TurbulenceDelegate(QItemDelegate):
                 turbulence_models = TurbulenceModelsDescription.bubblyFlowsTurbulenceModels
             elif self.mdl.mainFieldsModel.getPredefinedFlow() == "droplet_flow":
                 turbulence_models = TurbulenceModelsDescription.dropletFlowsTurbulenceModels
-            elif self.mdl.getTurbulenceModel(carrier) != "none" or \
-                    field.phase == "solid":
+            elif field.phase == "solid" or self.mdl.getTurbulenceModel(carrier) != "none":
                 turbulence_models = TurbulenceModelsDescription.dispersedTurbulenceModels
             else:
                 turbulence_models = ["none"]

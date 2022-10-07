@@ -370,19 +370,24 @@ class TurbulenceModel(Variables, Model):
         return value
 
 
-    def isSecondOrderTurbulenceModel(self, fieldId):
+    def modelLevelIsAboveTwoEquations(self, fieldId):
         """
         return 1 if turbulent model of field is k-eps or Rij
         """
-        self.mainFieldsModel.isFieldIdValid(fieldId)
-        flag = 0
-        if (self.getTurbulenceModel(fieldId) == "k-epsilon" \
-         or self.getTurbulenceModel(fieldId) == "k-epsilon_linear_production" \
-         or self.getTurbulenceModel(fieldId) == "rij-epsilon_ssg" \
-         or self.getTurbulenceModel(fieldId) == "rij-epsilon_ebrsm" \
-         or self.getTurbulenceModel(fieldId) == "les_smagorinsky" \
-         or self.getTurbulenceModel(fieldId) == "les_wale" ):
+        if fieldId == "all":
             flag = 1
+            for continuous_field in self.mainFieldsModel.getContinuousFieldList():
+                flag = flag and self.modelLevelIsAboveTwoEquations(continuous_field.f_id)
+        else:
+            flag = 0
+            self.mainFieldsModel.isFieldIdValid(fieldId)
+            if (self.getTurbulenceModel(fieldId) == "k-epsilon" \
+             or self.getTurbulenceModel(fieldId) == "k-epsilon_linear_production" \
+             or self.getTurbulenceModel(fieldId) == "rij-epsilon_ssg" \
+             or self.getTurbulenceModel(fieldId) == "rij-epsilon_ebrsm" \
+             or self.getTurbulenceModel(fieldId) == "les_smagorinsky" \
+             or self.getTurbulenceModel(fieldId) == "les_wale" ):
+                flag = 1
         return flag
 
     def useAdvancedThermalFluxes(self, fieldId):

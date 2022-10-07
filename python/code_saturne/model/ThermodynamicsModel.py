@@ -247,15 +247,26 @@ class ThermodynamicsModel(Variables, Model):
         """
         get the nature of materials
         """
-        self.check_field_id(fieldId)
+        if fieldId == "all":
+            all_non_user_methods = []
+            for continuous_field in self.mainFieldsModel.getContinuousFieldList():
+                method = self.getMethod(continuous_field.f_id)
+                if method != "user_properties":
+                    all_non_user_methods.append(method)
+            if len(all_non_user_methods) != 1:
+                return "user_properties"
+            else:
+                return all_non_user_methods[0]
+        else:
+            self.check_field_id(fieldId)
 
-        node = self.get_field_node(fieldId)
-        nodem = node.xmlGetNode('method')
-        if nodem is None :
-            method = self.defaultValues(fieldId)['method']
-            self.setMethod(fieldId, method)
-        method = node.xmlGetNode('method')['choice']
-        return method
+            node = self.get_field_node(fieldId)
+            nodem = node.xmlGetNode('method')
+            if nodem is None :
+                method = self.defaultValues(fieldId)['method']
+                self.setMethod(fieldId, method)
+            method = node.xmlGetNode('method')['choice']
+            return method
 
     @Variables.undoGlobal
     def updateMethod(self, fieldId, oldMaterial):
