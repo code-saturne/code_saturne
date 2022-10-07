@@ -2369,6 +2369,33 @@ cs_field_by_name_try(const char  *name)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return a pointer to a field based on a composite name.
+ *
+ * The name is expected to be of the form <name_prefix>_<name_suffix>.
+ *
+ * \param[in]  name_prefix  first part of field name
+ * \param[in]  name_suffix  second part of field name
+ *
+ * \return  pointer to the field structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t  *
+cs_field_by_composite_name(const char  *name_prefix,
+                           const char  *name_suffix)
+{
+  cs_field_t *f = cs_field_by_composite_name_try(name_prefix,
+                                                 name_suffix);
+
+  if (f == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Field \"%s_%s\" is not defined."), name_prefix, name_suffix);
+
+  return f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return a pointer to a field based on a composite name if present.
  *
  * The name is expected to be of the form <name_prefix>_<name_suffix>.
