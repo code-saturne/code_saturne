@@ -514,6 +514,7 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
                 file_next = False
             elif o == '--asan-bp': # gcc Adress sanitizer breakpoints
                 cmds.append('b __asan::ReportGenericError')
+                cmds.append('b __asan_on_error')
             elif o.find('--back-end=') == 0: # Specify back-end
                 gdb = o[o.find('=')+1:]
             elif o.find('--breakpoints=') == 0: # Specify breakpoints
