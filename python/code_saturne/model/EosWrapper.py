@@ -45,6 +45,14 @@ class eosWrapper(object):
 
         if self._has_eos:
             self._ava = eosAva.EosAvailable()
+            # Get version
+            _m = [func for func in dir(self._ava) if callable(getattr(self._ava, func)) and not func.startswith("__")]
+            if "whichMethods" in _m:
+                self.version = "1.9.0"
+            elif "which_thmodel" in _m:
+                self.version = "1.10.0"
+            else:
+                raise Exception("Uknown version of EOS.")
 
     def isActive(self):
         """
@@ -71,9 +79,13 @@ class eosWrapper(object):
 
         retval = []
         if self._has_eos:
-            self._ava.setMethods(fluid)
+            if self.version == "1.9.0":
+                self._ava.setMethods(fluid)
+                retval =  self._ava.whichMethods()
+            else:
+                self._ava.set_thmodel(fluid)
+                retval =  self._ava.which_thmodel()
 
-            retval =  self._ava.whichMethods()
 
         return retval
 
@@ -85,10 +97,14 @@ class eosWrapper(object):
 
         retval = []
         if self._has_eos:
-            self._ava.setMethods(fluid)
-            self._ava.setReferences(fluid, method)
-
-            retval =  self._ava.whichReferences()
+            if self.version == "1.9.0":
+                self._ava.setMethods(fluid)
+                self._ava.setReferences(fluid, method)
+                retval =  self._ava.whichReferences()
+            else:
+                self._ava.set_thmodel(fluid)
+                self._ava.set_fldeq(fluid, method)
+                retval =  self._ava.which_fldeq()
 
         return retval
 
