@@ -420,6 +420,20 @@ cs_mesh_discard_free_faces(cs_mesh_t  *mesh);
 void
 cs_mesh_discard_free_vertices(cs_mesh_t  *mesh);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Discard mesh refinement info.
+ *
+ * This information is used only for mesh coarsening or post-processing output
+ * of the refinement level, so can be discarded in other cases.
+ *
+ * \param[in, out]  mesh  pointer to mesh structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_discard_refinement_info(cs_mesh_t  *mesh);
+
 /*----------------------------------------------------------------------------
  * Generate or update list of mesh boundary cells.
  *
@@ -461,14 +475,14 @@ cs_mesh_init_interfaces(cs_mesh_t          *mesh,
  * Treatment of parallel and/or periodic halos for standard and extended
  * ghost cells according to halo type requested by global options.
  *
- * parameters:
- *   \param[in, out]  mesh                   pointer to mesh structure
- *   \param[in, out]  mb                     pointer to mesh builder
- *                                           (for periodicity)
- *   \param[in]       halo_type              type of halo (standard or extended)
- *   \param[in]       verbosity              verbosity
- *   \param[in]       rebuild_vtx_interface  also rebuild vertex interfaces ?
- *----------------------------------------------------------------------------*/
+ * \param[in, out]  mesh                   pointer to mesh structure
+ * \param[in, out]  mb                     pointer to mesh builder
+ *                                         (for periodicity)
+ * \param[in]       halo_type              type of halo (standard or extended)
+ * \param[in]       verbosity              verbosity
+ * \param[in]       rebuild_vtx_interface  also rebuild vertex interfaces ?
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_mesh_init_halo(cs_mesh_t          *mesh,
