@@ -292,3 +292,97 @@ endif
 return
 end subroutine
 
+!==============================================================================
+
+!> \brief Calculation of the gas enthalpy from temperature and concentrations
+!>        for fuel combustion.
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     xesp          mass fraction of the species
+!> \param[in]     tp            gas temperature in \f$ kelvin \f$
+!
+!> \return  eh            gas enthalpy
+!>                              (\f$ j . kg^{-1}\f$ of gas mixture)
+!______________________________________________________________________________!
+
+function cs_fuel_t2h_gas(xesp, tp) result(eh) &
+bind(C, name='cs_fuel_t2h_gas')
+
+!==============================================================================
+! Module files
+!==============================================================================
+
+use ppincl
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision eh,tp
+double precision xesp(ngazem)
+
+! Local variables
+
+integer          mode
+
+!===============================================================================
+
+mode = -1
+call cs_fuel_htconvers1(mode, eh, xesp, tp)
+
+end function cs_fuel_t2h_gas
+
+!===============================================================================
+
+!> \brief Calculation of the gas temperature from enthalpy and concentrations
+!>        for fuel combustion.
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     xesp          mass fraction of the species
+!> \param[in]     eh            gas enthalpy
+!>                              (\f$ j . kg^{-1}\f$ of gas mixture)
+!
+!> \return  gas temperature in \f$ kelvin \f$
+!______________________________________________________________________________!
+
+function cs_fuel_h2t_gas(xesp, eh) result(tp) &
+bind(C, name='cs_fuel_h2t_gas')
+
+!==============================================================================
+! Module files
+!==============================================================================
+
+use ppincl
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision eh,tp
+double precision xesp(ngazem)
+
+! Local variables
+
+integer          mode
+
+!===============================================================================
+
+mode = 1
+call cs_fuel_htconvers1(mode, eh, xesp, tp)
+
+end function cs_fuel_h2t_gas
+
+!===============================================================================
+

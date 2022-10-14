@@ -46,6 +46,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 #include "cs_log.h"
+#include "cs_math.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
 
@@ -97,7 +98,10 @@ cs_combustion_model_t
                                .xsoot = 0.,
                                .rosoot = 0.},
                        .coal = {.nclacp = 0},
-                       .fuel = {.nclafu = 0},
+                       .fuel = {.nclafu = 0,
+                                .hinfue = 0,
+                                .h02fol = 0,
+                                .cp2fol = 0},
                        .n_gas_el_comp = 0,
                        .n_gas_species = 0,
                        .n_atomic_species = 0,
@@ -105,7 +109,8 @@ cs_combustion_model_t
                        .isoot = -1,
                        .ckabs0 = 0,
                        .xco2 = -1,
-                       .xh2o = -1};
+                       .xh2o = -1,
+                       .hinoxy = 0};
 
 cs_combustion_model_t
   *cs_glob_combustion_model = &_combustion_model;
@@ -130,17 +135,22 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          double  **wmolg,
                          double  **xco2,
                          double  **xh2o,
-                         double  **ckabs1);
+                         double  **ckabs1,
+                         double  **fs);
 
 void
 cs_f_coincl_get_pointers(double  **coefeg,
                          double  **compog,
                          double  **xsoot,
-                         double  **rosoot);
+                         double  **rosoot,
+                         double  **hinfue,
+                         double  **hinoxy);
 
 void
 cs_f_cpincl_get_pointers(int     **ico2,
                          int     **ih2o,
+                         int     **io2,
+                         int     **in2,
                          int     **ncharb,
                          int     **nclacp,
                          int     **nclpch,
@@ -154,7 +164,15 @@ cs_f_cpincl_get_pointers(int     **ico2,
                          double  **xmasch);
 
 void
-cs_f_fuel_get_pointers(int     **nclafu);
+cs_f_fuel_get_pointers(int     **nclafu,
+                       double  **h02fol,
+                       double  **cp2fol);
+
+void
+cs_f_ppcpfu_get_pointers(double  **oxyo2,
+                         double  **oxyn2,
+                         double  **oxyh2o,
+                         double  **oxyco2);
 
 /*============================================================================
  * Private function definitions
@@ -196,6 +214,7 @@ cs_f_combustion_model_get_pointers(int  **isoot)
  *   xco2   --> pointer to molar coefficient of co2
  *   xh2o   --> pointer to molar coefficient of h2o
  *   ckabs1 --> pointer to absorption coefficient of gas mixture
+ *   fs     --> pointer to mixing rate at the stoichiometry
  *----------------------------------------------------------------------------*/
 
 void
@@ -208,7 +227,8 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          double  **wmolg,
                          double  **xco2,
                          double  **xh2o,
-                         double  **ckabs1)
+                         double  **ckabs1,
+                         double  **fs)
 {
   *ngaze  = &(cs_glob_combustion_model->n_gas_el_comp);
   *ngazg  = &(cs_glob_combustion_model->n_gas_species);
@@ -221,6 +241,7 @@ cs_f_ppthch_get_pointers(int     **ngaze,
   *xco2   = &(cs_glob_combustion_model->xco2);
   *xh2o   = &(cs_glob_combustion_model->xh2o);
   *ckabs1 = &(cs_glob_combustion_model->ckabs0);
+  *fs     = cs_glob_combustion_model->gas.fs;
 }
 
 /*----------------------------------------------------------------------------
@@ -238,12 +259,16 @@ void
 cs_f_coincl_get_pointers(double  **coefeg,
                          double  **compog,
                          double  **xsoot,
-                         double  **rosoot)
+                         double  **rosoot,
+                         double  **hinfue,
+                         double  **hinoxy)
 {
   *coefeg = &(cs_glob_combustion_model->gas.coefeg[0][0]);
   *compog = &(cs_glob_combustion_model->gas.compog[0][0]);
   *xsoot  = &(cs_glob_combustion_model->gas.xsoot);
   *rosoot = &(cs_glob_combustion_model->gas.rosoot);
+  *hinfue = &(cs_glob_combustion_model->fuel.hinfue);
+  *hinoxy = &(cs_glob_combustion_model->hinoxy);
 }
 
 /*----------------------------------------------------------------------------
@@ -255,6 +280,8 @@ cs_f_coincl_get_pointers(double  **coefeg,
  * parameters:
  *   ico2   --> pointer to cs_glob_combustion_model->ico2
  *   ih2o   --> pointer to cs_glob_combustion_model->ih2o
+ *   io2    --> pointer to cs_glob_combustion_model->io2
+ *   in2    --> pointer to cs_glob_combustion_model->in2
  *   nclacp --> pointer to cs_glob_combustion_model->coal.nclacp
  *   nclacp --> pointer to cs_glob_combustion_model->coal.n_classes_per_coal
  *   ichcor --> pointer to cs_glob_combustion_model->coal.ichcor
@@ -270,6 +297,8 @@ cs_f_coincl_get_pointers(double  **coefeg,
 void
 cs_f_cpincl_get_pointers(int     **ico2,
                          int     **ih2o,
+                         int     **io2,
+                         int     **in2,
                          int     **ncharb,
                          int     **nclacp,
                          int     **nclpch,
@@ -282,6 +311,8 @@ cs_f_cpincl_get_pointers(int     **ico2,
                          double  **xmp0,
                          double  **xmasch)
 {
+  *io2   = &(cs_glob_combustion_model->io2);
+  *in2   = &(cs_glob_combustion_model->in2);
   *ico2   = &(cs_glob_combustion_model->ico2);
   *ih2o   = &(cs_glob_combustion_model->ih2o);
   *ncharb = &(cs_glob_combustion_model->coal.n_coals);
@@ -305,12 +336,42 @@ cs_f_cpincl_get_pointers(int     **ico2,
  *
  * parameters:
  *   nclafu --> pointer to cs_glob_combustion_model->fuel.nclafu
+ *   h02fol --> pointer to cs_glob_combustion_model->fuel.h02fol
+ *   cp2fol --> pointer to cs_glob_combustion_model->fuel.cp2fol
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_fuel_get_pointers(int     **nclafu)
+cs_f_fuel_get_pointers(int     **nclafu,
+                       double  **h02fol,
+                       double  **cp2fol)
 {
   *nclafu = &(cs_glob_combustion_model->fuel.nclafu);
+  *h02fol = &(cs_glob_combustion_model->fuel.h02fol);
+  *cp2fol = &(cs_glob_combustion_model->fuel.cp2fol);
+}
+
+/*----------------------------------------------------------------------------
+ * Get pointers to members of combustion model (ppcpfu).
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *
+ * parameters:
+ *   oxyo2  --> pointer to cs_glob_combustion_model->oxyo2
+ *   oxyn2  --> pointer to cs_glob_combustion_model->oxyn2
+ *   oxyh2o --> pointer to cs_glob_combustion_model->oxyh2o
+ *   oxyco2 --> pointer to cs_glob_combustion_model->oxyco2
+ *----------------------------------------------------------------------------*/
+void
+cs_f_ppcpfu_get_pointers(double  **oxyo2,
+                         double  **oxyn2,
+                         double  **oxyh2o,
+                         double  **oxyco2)
+{
+  *oxyo2 =  cs_glob_combustion_model->oxyo2;
+  *oxyn2 =  cs_glob_combustion_model->oxyn2;
+  *oxyh2o = cs_glob_combustion_model->oxyh2o;
+  *oxyco2 = cs_glob_combustion_model->oxyco2;
 }
 
 /*----------------------------------------------------------------------------*/

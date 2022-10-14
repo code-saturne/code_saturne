@@ -64,6 +64,12 @@ BEGIN_C_DECLS
 #define  CS_COMBUSTION_MAX_COAL_CLASSES    CS_COMBUSTION_MAX_COALS \
                                          * CS_COMBUSTION_MAX_CLASSES_PER_COAL
 
+/*! Maximum number of global reactions in gas phase*/
+#define CS_COMBUSTION_GAS_MAX_GLOBAL_REACTIONS 1
+
+/*! Maximum number of oxydants */
+#define CS_COMBUSTION_MAX_OXYDANTS 3
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -90,6 +96,9 @@ typedef struct {
       elementary species */
   double  compog[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES]
                 [CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
+
+  /*! Mixing rate at the stoichiometry */
+  double fs[CS_COMBUSTION_GAS_MAX_GLOBAL_REACTIONS];
 
 } cs_combustion_gas_model_t;
 
@@ -135,7 +144,10 @@ typedef struct {
 
 typedef struct {
 
-  int     nclafu;                   /*< number of fuel classes */
+  int     nclafu;                   /*! number of fuel classes */
+  double  hinfue;                   /*! input mass enthalpy for fuel */
+  double  h02fol;                   /*! H0 of liquid fuel oil */
+  double  cp2fol;                   /*! fuel oil liquid CP */
 
 } cs_combustion_fuel_model_t;
 
@@ -157,6 +169,8 @@ typedef struct {
 
   int     isoot;                     /*!< soot production modeling flag */
 
+  int     io2;                       /*!< index of o2 in wmole */
+  int     in2;                       /*!< index of n2 in wmole */
   int     ico2;                      /*!< index of co2 in wmole */
   int     ih2o;                      /*!< index of h2o in wmole */
 
@@ -164,9 +178,22 @@ typedef struct {
 
   double  xco2;                      /*!< molar coefficient of CO2 */
   double  xh2o;                      /*!< molar coefficient of H2O */
+  double  hinoxy;                    /*!< input mass enthalpy for the oxidant */
 
   /*! molar mass of an elementary gas component */
   double  wmole[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
+
+  /*! composition of oxidants in O2 */
+   double oxyo2[CS_COMBUSTION_MAX_OXYDANTS];
+
+  /*! composition of N2 oxidants */
+  double oxyn2[CS_COMBUSTION_MAX_OXYDANTS];
+
+  /*! composition of H2O oxidants */
+  double oxyh2o[CS_COMBUSTION_MAX_OXYDANTS];
+
+  /*! composition of CO2 oxidants */
+  double oxyco2[CS_COMBUSTION_MAX_OXYDANTS];
 
 } cs_combustion_model_t;
 

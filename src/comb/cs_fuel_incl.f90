@@ -75,9 +75,11 @@ module cs_fuel_incl
 
   double precision, save :: cfol , hfol , ofol , sfol, xinfol,               &
                             pcifol , rho0fl , rhokf,                         &
-                            h02fol , cp2fol , hrfvap, dfol,                  &
+                            hrfvap, dfol,                                    &
                             ckf , hkf , okf , skf, xinkf, pcikf, fkc,        &
                             hsfov, cofov, chfov, nhcfov
+
+  real(c_double), pointer, save :: h02fol, cp2fol
 
   !      - Parametres pour l'evaporation
   !      TEVAP1      --> temperature de debut d'evaporation
@@ -182,11 +184,11 @@ module cs_fuel_incl
     ! Interface to C function retrieving pointers to members of the
     ! global physical model flags
 
-    subroutine cs_f_fuel_get_pointers(p_nclafu)                                &
+    subroutine cs_f_fuel_get_pointers(p_nclafu, p_h02fol, p_cp2fol)   &
       bind(C, name='cs_f_fuel_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_nclafu
+      type(c_ptr), intent(out) :: p_nclafu, p_h02fol, p_cp2fol
     end subroutine cs_f_fuel_get_pointers
 
     !---------------------------------------------------------------------------
@@ -213,12 +215,13 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: p_nclafu
+    type(c_ptr) :: p_nclafu, p_h02fol, p_cp2fol
 
-    call cs_f_fuel_get_pointers(p_nclafu)
+    call cs_f_fuel_get_pointers(p_nclafu, p_h02fol, p_cp2fol)
 
     call c_f_pointer(p_nclafu, nclafu)
-
+    call c_f_pointer(p_h02fol, h02fol)
+    call c_f_pointer(p_cp2fol, cp2fol)
 
   end subroutine fuel_models_init
 

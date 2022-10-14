@@ -74,6 +74,7 @@ call thch_models_init
 call co_models_init
 call cp_models_init
 call fuel_models_init
+call ppcpfu_models_init
 
 !===============================================================================
 ! 1. REMPLISSAGE INCLUDE ppincl.h

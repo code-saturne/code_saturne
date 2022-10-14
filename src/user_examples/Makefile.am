@@ -110,8 +110,12 @@ cs_user_hgn-relax_time_scale.c \
 cs_user_initialization-atmospheric.c \
 cs_user_initialization-base.c \
 cs_user_initialization-compressible.c \
+cs_user_initialization-cooling_towers.c \
 cs_user_initialization-electric_arcs.c \
+cs_user_initialization-fuel.c \
+cs_user_initialization-gas_3ptchem.c \
 cs_user_initialization-medcoupling_remapper_3d.c \
+cs_user_initialization-richards.c \
 cs_user_initialization-time_step.c \
 cs_user_lagr_boundary_conditions.c \
 cs_user_lagr_volume_conditions.c \
@@ -184,13 +188,9 @@ cs_user_extra_operations-force_temperature.f90 \
 cs_user_extra_operations-parallel_operations.f90 \
 cs_user_extra_operations-richards_flux.f90 \
 cs_user_fluid_structure_interaction.f90 \
-cs_user_initialization-cooling_towers.f90 \
-cs_user_initialization-fuel.f90 \
-cs_user_initialization-gas_3ptchem.f90 \
 cs_user_initialization-gas_ebu.f90 \
 cs_user_initialization-gas_libby_williams.f90 \
 cs_user_initialization-pulverized_coal.f90 \
-cs_user_initialization-richards.f90 \
 cs_user_metal_structures_source_terms-condensation.f90 \
 cs_user_modules-user-arrays.f90 \
 cs_user_parameters-richards.f90 \

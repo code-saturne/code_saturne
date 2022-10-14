@@ -82,8 +82,10 @@ module coincl
 
   integer, save ::         ientox(nozppm), ientfu(nozppm)
 
-  double precision, save :: tinoxy, tinfue, hinfue, hinoxy, hstoea
+  double precision, save :: tinoxy, tinfue, hstoea
   double precision, save :: hh(nmaxhm), ff(nmaxfm), tfh(nmaxfm,nmaxhm)
+
+  real(c_double), pointer, save :: hinfue, hinoxy
 
   !--> MODELE FLAMME DE DIFFUSION: Steady laminar flamelet
   !=============================================================================
@@ -202,12 +204,14 @@ module coincl
     ! Interface to C function retrieving pointers to members of the
     ! global combustion model flags
 
-    subroutine cs_f_coincl_get_pointers(p_coefeg, p_compog, &
-                                        p_xsoot, p_rosoot)  &
+    subroutine cs_f_coincl_get_pointers(p_coefeg, p_compog,   &
+                                        p_xsoot, p_rosoot,    &
+                                        p_hinfue, p_hinoxy)   &
       bind(C, name='cs_f_coincl_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: p_coefeg, p_compog, p_xsoot, p_rosoot
+      type(c_ptr), intent(out) :: p_hinfue, p_hinoxy
     end subroutine cs_f_coincl_get_pointers
 
     !---------------------------------------------------------------------------
@@ -234,14 +238,18 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_coefeg, c_compog, c_xsoot, c_rosoot
+    type(c_ptr) :: c_coefeg, c_compog, c_xsoot, c_rosoot, c_hinfue, c_hinoxy
 
-    call cs_f_coincl_get_pointers(c_coefeg, c_compog, c_xsoot, c_rosoot)
+    call cs_f_coincl_get_pointers(c_coefeg, c_compog, &
+                                  c_xsoot,  c_rosoot,  &
+                                  c_hinfue, c_hinoxy)
 
     call c_f_pointer(c_coefeg, coefeg, [ngazem, ngazgm])
     call c_f_pointer(c_compog, compog, [ngazem, ngazgm])
     call c_f_pointer(c_xsoot, xsoot)
     call c_f_pointer(c_rosoot, rosoot)
+    call c_f_pointer(c_hinfue, hinfue)
+    call c_f_pointer(c_hinoxy, hinoxy)
 
   end subroutine co_models_init
 

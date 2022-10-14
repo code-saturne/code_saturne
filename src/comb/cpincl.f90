@@ -226,9 +226,9 @@ real(c_double), pointer, save :: xashch(:)
   !        f2(ch)
 
   integer, save ::          ichx1c(ncharm), ichx2c(ncharm),                  &
-                            ichx1, ichx2, ico, io2, in2
+                            ichx1, ichx2, ico
 
-  integer(c_int), pointer, save :: ico2, ih2o
+  integer(c_int), pointer, save :: ico2, ih2o, io2, in2
 
   double precision, save :: chx1(ncharm), chx2(ncharm),                      &
                             a1(ncharm), b1(ncharm),c1(ncharm),d1(ncharm),    &
@@ -291,7 +291,8 @@ real(c_double), pointer, save :: xashch(:)
     ! Interface to C function retrieving pointers to members of the
     ! global physical model flags
 
-    subroutine cs_f_cpincl_get_pointers(p_ico2, p_ih2o, p_ncharb, p_nclacp,    &
+    subroutine cs_f_cpincl_get_pointers(p_ico2, p_ih2o, p_io2, p_in2,          &
+                                        p_ncharb, p_nclacp,                    &
                                         p_nclpch, p_ichcor,                    &
                                         p_xashch, p_diam20, p_dia2mn,          &
                                         p_rho20, p_rho2mn,                     &
@@ -299,7 +300,8 @@ real(c_double), pointer, save :: xashch(:)
       bind(C, name='cs_f_cpincl_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_ico2, p_ih2o, p_ncharb, p_nclacp,          &
+      type(c_ptr), intent(out) :: p_ico2, p_ih2o, p_io2, p_in2,                &
+                                  p_ncharb, p_nclacp,                          &
                                   p_nclpch, p_ichcor,                          &
                                   p_xashch, p_diam20, p_dia2mn,                &
                                   p_rho20, p_rho2mn,                           &
@@ -330,16 +332,20 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: p_ico2, p_ih2o, p_ncharb, p_nclacp, p_nclpch, p_ichcor, &
+    type(c_ptr) :: p_ico2, p_ih2o, p_io2, p_in2,                    &
+                   p_ncharb, p_nclacp, p_nclpch, p_ichcor,          &
                    p_xashch, p_diam20, p_dia2mn, p_rho20, p_rho2mn, &
                    p_xmp0, p_xmash
 
-    call cs_f_cpincl_get_pointers(p_ico2, p_ih2o, p_ncharb, p_nclacp, &
-                                  p_nclpch, p_ichcor, &
-                                  p_xashch, p_diam20, p_dia2mn, &
-                                  p_rho20, p_rho2mn, &
+    call cs_f_cpincl_get_pointers(p_ico2, p_ih2o, p_io2, p_in2,     &
+                                  p_ncharb, p_nclacp,               &
+                                  p_nclpch, p_ichcor,               &
+                                  p_xashch, p_diam20, p_dia2mn,     &
+                                  p_rho20, p_rho2mn,                &
                                   p_xmp0, p_xmash)
 
+    call c_f_pointer(p_io2, io2)
+    call c_f_pointer(p_in2, in2)
     call c_f_pointer(p_ico2, ico2)
     call c_f_pointer(p_ih2o, ih2o)
 

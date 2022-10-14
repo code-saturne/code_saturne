@@ -259,6 +259,40 @@ cs_fuel_bt2h(cs_lnum_t        n_faces,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Calculation of the gas enthalpy from temperature and concentrations
+ *        for fuel combustion.
+ *
+ * \param[in]     xesp          mass fraction of the species
+ *                              (size: CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES)
+ * \param[in]     tp            gas temperature in \f$ kelvin \f$
+ *
+ * \return  gas enthalpy
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_fuel_t2h_gas(cs_real_t  xesp[],
+                cs_real_t  tp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the gas temperature from enthalpy and concentrations
+ *        for fuel combustion.
+ *
+ * \param[in]     xesp          mass fraction of the species
+ *                              (size: CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES)
+ * \param[in]     tp            gas temperature in \f$ kelvin \f$
+ *
+ * \return  gas temperature
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_fuel_h2t_gas(cs_real_t  xesp[],
+                cs_real_t  eh);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Calculation of the gas temperature
  *        Function with the gas enthalpy and concentrations
  *
@@ -316,8 +350,8 @@ cs_user_1d_wall_thermal(int iappel,
 
 void
 cs_user_wall_condensation(int nvar,
-                                   int nscal,
-                                   int iappel);
+                          int nscal,
+                          int iappel);
 
 /*----------------------------------------------------------------------------
  * Setup boundary conditions to be applied.

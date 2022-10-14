@@ -167,12 +167,17 @@ module ppcpfu
 
   integer, save :: noxyd
 
+  !> maximal number of oxydants
+  integer   mnoxyd
+
+  parameter(mnoxyd = 3)
+
   !       OXYO2       --> composition des oxydants en O2
   !       OXYN2       --> composition des oxydants en N2
   !       OXYH2O      --> composition des oxydants en H2O
   !       OXYCO2      --> composition des oxydants en CO2
 
-  double precision, save :: oxyo2(3),oxyn2(3),oxyh2o(3),oxyco2(3)
+  real(c_double), pointer, save :: oxyo2(:), oxyn2(:), oxyh2o(:), oxyco2(:)
 
   !--> Conditions aux limites
 
@@ -180,6 +185,65 @@ module ppcpfu
 
   ! The gas enthalpy is transported (x1 h1 to be correct)
   integer, save :: ihgas
+
+  !=============================================================================
+
+  !> \}
+
+  !=============================================================================
+
+  interface
+
+    !---------------------------------------------------------------------------
+
+    !> \cond DOXYGEN_SHOULD_SKIP_THIS
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global physical model flags
+
+    subroutine cs_f_ppcpfu_get_pointers(p_oxyo2, p_oxyn2, p_oxyh2o, p_oxyco2)   &
+      bind(C, name='cs_f_ppcpfu_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: p_oxyo2, p_oxyn2, p_oxyh2o, p_oxyco2
+    end subroutine cs_f_ppcpfu_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
+
+    !---------------------------------------------------------------------------
+
+  end interface
+
+  !=============================================================================
+
+contains
+
+  !=============================================================================
+
+  !> \brief Initialize Fortran combustion models properties API.
+  !> This maps Fortran pointers to global C variables.
+
+  subroutine ppcpfu_models_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: p_oxyo2, p_oxyn2, p_oxyh2o, p_oxyco2
+
+    call cs_f_ppcpfu_get_pointers(p_oxyo2, p_oxyn2, p_oxyh2o, p_oxyco2)
+
+    call c_f_pointer(p_oxyo2, oxyo2, [mnoxyd])
+    call c_f_pointer(p_oxyn2, oxyn2, [mnoxyd])
+    call c_f_pointer(p_oxyh2o, oxyh2o, [mnoxyd])
+    call c_f_pointer(p_oxyco2, oxyco2, [mnoxyd])
+
+  end subroutine ppcpfu_models_init
 
   !=============================================================================
 

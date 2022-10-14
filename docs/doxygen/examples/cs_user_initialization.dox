@@ -167,18 +167,11 @@
 
   \section fuel Fuel example
 
-  \subsection user_initialization_fuel_loc_var_dec Local variables to be added
-
-  The following local variables need to be defined for the examples
-  in this section:
-
-  \snippet cs_user_initialization-fuel.f90 loc_var_dec
-
   \subsection user_initialization_fuel_s_init Initialization
 
   The following initialization block needs to be added for the following examples:
 
-  \snippet cs_user_initialization-fuel.f90 init
+  \snippet cs_user_initialization-fuel.c init
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -187,28 +180,12 @@
 
   \section gas_3ptchem Gas 3 PTCHEM example
 
-  \subsection user_initialization_gas_3p_loc_var_dec Local variables to be added
-
-  The following local variables need to be defined for the examples
-  in this section:
-
-  \snippet cs_user_initialization-gas_3ptchem.f90 loc_var_dec
-
-  \subsection user_initialization_gas_3p_alloc Allocation
-
-  Before user initialization, work arrays lstelt must be allocated,
-  like in basic example.
-
   \subsection user_initialization_gas_3p_s_init Initialization
 
   The following initialization block needs to be added for the following examples:
 
-  \snippet cs_user_initialization-gas_3ptchem.f90 init
+  \snippet cs_user_initialization-gas_3ptchem.c init
 
-  \subsection user_initialization_gas_3p_finalize Finalization
-
-  At the end of the subroutine, it is recommended to deallocate the work array lstelt,
-  like in basic example.
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -370,5 +347,3 @@
   but they should match, so mapping a vector field to a scalar
   will produce a crash.
 */
-
-
