@@ -224,8 +224,6 @@ _svb_init_cell_system(const cs_cell_mesh_t          *cm,
 
   }
 
-
-
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
 
@@ -3301,19 +3299,6 @@ cs_cdovb_scaleq_solve_implicit_incr(bool                        cur2prev,
       _svb_conv_diff_reac(eqp, eqb, eqc, cm,
                           fm, mass_hodge, diff_hodge, csys, cb);
 
-      /* Incremental solving (a current to previous operation should have been
-       * done before calling for the first time this function so that val_n
-       * contains values from field->val which are val^{n+1,k} when one
-       * computes val^{n+1,k+1}.
-       *
-       * fld->val should be the parameter in _svb_init_cell_system()
-       */
-
-      double  *mat_pk = cb->values;
-      cs_sdm_square_matvec(csys->mat, csys->val_n, mat_pk);
-      for (short int i = 0; i < csys->n_dofs; i++) /* n_dofs = n_vc */
-        csys->rhs[i] -= mat_pk[i];
-
       if (cs_equation_param_has_sourceterm(eqp)) { /* SOURCE TERM
                                                     * =========== */
 
@@ -3340,10 +3325,23 @@ cs_cdovb_scaleq_solve_implicit_incr(bool                        cur2prev,
 
       } /* End of term source */
 
-      /* Apply boundary conditions (those which are weakly enforced) */
+      /* Incremental solving (a current to previous operation should have been
+       * done before calling for the first time this function so that val_n
+       * contains values from field->val which are val^{n+1,k} when one
+       * computes val^{n+1,k+1}.
+       *
+       * fld->val should be the parameter in _svb_init_cell_system()
+       */
 
-      _svb_apply_weak_bc(eqp, eqc, cm, fm, diff_hodge, csys, cb);
+      double  *mat_pk = cb->values;
+      cs_sdm_square_matvec(csys->mat, csys->val_n, mat_pk);
+      for (short int i = 0; i < csys->n_dofs; i++) /* n_dofs = n_vc */
+        csys->rhs[i] -= mat_pk[i];
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump("\n>> Cell system before time", csys);
+#endif
 
       /* Unsteady term + time scheme
        * ===========================
@@ -3366,6 +3364,10 @@ cs_cdovb_scaleq_solve_implicit_incr(bool                        cur2prev,
       if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump("\n>> Cell system after time", csys);
 #endif
+
+      /* Apply boundary conditions (those which are weakly enforced) */
+
+      _svb_apply_weak_bc(eqp, eqc, cm, fm, diff_hodge, csys, cb);
 
       /* Enforce values if needed (internal or Dirichlet) */
 
