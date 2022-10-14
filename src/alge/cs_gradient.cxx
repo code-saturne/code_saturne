@@ -70,6 +70,7 @@
 #include "cs_prototypes.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
+#include "cs_boundary_conditions.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1146,6 +1147,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
   const int n_b_threads = m->b_face_numbering->n_threads;
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+  const int *bc_type = cs_glob_bc_type;
 
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
@@ -1161,6 +1163,10 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
     cell_f_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t *restrict cell_f_cen
+    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_normal;
   const cs_real_3_t *restrict i_f_face_normal
     = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
@@ -1169,6 +1175,10 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
+  const cs_real_3_t *restrict i_f_face_cog_cellj
+     = (const cs_real_3_t *restrict)fvq->i_f_face_cog_cellj;
+  const cs_real_3_t *b_face_normal
+    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
 
   // Solid face quantities
   const cs_real_3_t *restrict c_w_face_normal
@@ -1465,10 +1475,186 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
     for (cs_lnum_t j = 0; j < 3; j++)
       grad[cell_id][j] *= dvol;
+
   }
 
   /* Synchronize halos */
 
+  _sync_scalar_gradient_halo(m, CS_HALO_EXTENDED, grad);
+}
+
+/*----------------------------------------------------------------------------
+ * Renomalize scalar gradient.
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
+ *   fvq            <-- pointer to associated finite volume quantities
+ *   cpl            <-- structure associated with internal coupling, or NULL
+ *   w_stride       <-- stride for weighting coefficient
+ *   hyd_p_flag     <-- flag for hydrostatic pressure
+ *   inc            <-- if 0, solve on increment; 1 otherwise
+ *   f_ext          <-- exterior force generating pressure
+ *   coefap         <-- B.C. coefficients for boundary face normals
+ *   coefbp         <-- B.C. coefficients for boundary face normals
+ *   pvar           <-- variable
+ *   c_weight       <-- weighted gradient coefficient variable
+ *   grad           <-> gradient of pvar (halo prepared for periodicity
+ *                      of rotation)
+ *----------------------------------------------------------------------------*/
+
+static void
+_renormalize_scalar_gradient(const cs_mesh_t                *m,
+                            const cs_mesh_quantities_t     *fvq,
+                            int                             hyd_p_flag,
+                            cs_real_3_t           *restrict grad)
+{
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+  const int *bc_type = cs_glob_bc_type;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const int *restrict c_disable_flag = fvq->c_disable_flag;
+  cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
+
+  const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
+  if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
+    cell_f_vol = fvq->cell_vol;
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t *restrict cell_f_cen
+    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict i_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+  const cs_real_3_t *restrict i_face_cog
+    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+  const cs_real_3_t *restrict b_face_cog
+    = (const cs_real_3_t *restrict)fvq->b_face_cog;
+  const cs_real_3_t *restrict i_f_face_cog_celli
+     = (const cs_real_3_t *restrict)fvq->i_f_face_cog_celli;
+  const cs_real_3_t *restrict i_f_face_cog_cellj
+     = (const cs_real_3_t *restrict)fvq->i_f_face_cog_cellj;
+  const cs_real_3_t *b_face_normal
+    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
+
+  /* Correction matrix */
+  cs_real_33_t *cor_mat;
+  BFT_MALLOC(cor_mat, n_cells_ext, cs_real_33_t);
+
+  /* Initialization */
+  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        cor_mat[c_id][i][j] = 0.;
+      }
+    }
+  }
+
+  /* Contribution from interior faces */
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+      for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+          f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+          f_id++) {
+        cs_lnum_t ii = i_face_cells[f_id][0];
+        cs_lnum_t jj = i_face_cells[f_id][1];
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            if (cs_glob_porous_model == 3) {
+              cor_mat[ii][i][j] += (i_f_face_cog_celli[f_id][i] - cell_f_cen[ii][i]) * i_f_face_normal[f_id][j];
+              cor_mat[jj][i][j] -= (i_f_face_cog_cellj[f_id][i] - cell_f_cen[jj][i]) * i_f_face_normal[f_id][j];
+            }
+            else {
+              cor_mat[ii][i][j] += (i_face_cog[f_id][i] - cell_cen[ii][i]) * i_face_normal[f_id][j];
+              cor_mat[jj][i][j] -= (i_face_cog[f_id][i] - cell_cen[jj][i]) * i_face_normal[f_id][j];
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /* Contribution from boundary faces */
+  for (int t_id = 0; t_id < n_b_threads; t_id++) {
+    for (cs_lnum_t face_id = b_group_index[t_id*2];
+        face_id < b_group_index[t_id*2 + 1];
+        face_id++) {
+
+      cs_lnum_t ii = b_face_cells[face_id];
+
+      if (bc_type[face_id] == CS_OUTLET || bc_type[face_id] == CS_SYMMETRY) {
+        cs_real_3_t xip, xij;
+        for (int k = 0; k < 3; k++) {
+          xip[k] = cell_cen[ii][k];
+          xij[k] = b_face_cog[face_id][k];
+        }
+
+        /* Special treatment for outlets */
+        cs_real_3_t xi, nn;
+        for (int k = 0; k < 3; k++) {
+          xi[k] = cell_cen[ii][k];
+          nn[k] = b_face_normal[face_id][k];
+        }
+        cs_real_t psca1 = (xij[0]-xip[0])*nn[0] + (xij[1]-xip[1])*nn[1] + (xij[2]-xip[2])*nn[2];
+        cs_real_t psca2 = (xij[0]-xi[0])*nn[0] + (xij[1]-xi[1])*nn[1] + (xij[2]-xi[2])*nn[2];
+        cs_real_t lambda = psca1 / psca2;
+        for (int k = 0; k < 3; k++) {
+          xij[k] = xip[k] + lambda * (xij[k]-xi[k]);
+        }
+        /* End special treatment for outlets */
+
+        for (int k = 0; k < 3; k++)
+          for (int l = 0; l < 3; l++)
+            cor_mat[ii][k][l] += (xij[k] - xip[k]) * b_f_face_normal[face_id][l];
+      }
+    }
+  }
+
+  if (m->halo != NULL) {
+    cs_halo_sync_var_strided(m->halo, CS_HALO_EXTENDED, (cs_real_t *)cor_mat, 9);
+    if (cs_glob_mesh->have_rotation_perio)
+      cs_halo_perio_sync_var_tens(m->halo, CS_HALO_EXTENDED, (cs_real_t *)cor_mat);
+  }
+
+# pragma omp parallel for
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    cs_real_t dvol;
+    /* Is the cell disabled (for solid or porous)? Not the case if coupled */
+    if (has_dc * c_disable_flag[has_dc * cell_id] == 0)
+      dvol = 1. / cell_f_vol[cell_id];
+    else
+      dvol = 0.;
+
+    for (cs_lnum_t i = 0; i < 3; i++)
+      for (cs_lnum_t j = 0; j < 3; j++)
+        cor_mat[cell_id][i][j] *= dvol;
+
+    cs_math_33_inv_cramer_in_place(cor_mat[cell_id]);
+
+    cs_real_t grd[3];
+    for (cs_lnum_t j = 0; j < 3; j++)
+      grd[j] = grad[cell_id][j];
+
+    if (hyd_p_flag == 1) {
+      cs_math_33_3_product(cor_mat[cell_id], grd, grad[cell_id]);
+    }
+  }
+
+  BFT_FREE(cor_mat);
+
+  /* Synchronize halos */
   _sync_scalar_gradient_halo(m, CS_HALO_EXTENDED, grad);
 }
 
@@ -7571,23 +7757,64 @@ _gradient_scalar(const char                    *var_name,
                                 c_weight,
                                 grad);
 
-    _iterative_scalar_gradient(mesh,
-                               fvq,
-                               cpl,
-                               w_stride,
-                               var_name,
-                               gradient_info,
-                               n_r_sweeps,
-                               hyd_p_flag,
-                               verbosity,
-                               inc,
-                               epsilon,
-                               f_ext,
-                               bc_coeff_a,
-                               bc_coeff_b,
-                               var,
-                               c_weight,
-                               grad);
+    if (hyd_p_flag == 0)
+      _iterative_scalar_gradient(mesh,
+                                 fvq,
+                                 cpl,
+                                 w_stride,
+                                 var_name,
+                                 gradient_info,
+                                 n_r_sweeps,
+                                 hyd_p_flag,
+                                 verbosity,
+                                 inc,
+                                 epsilon,
+                                 f_ext,
+                                 bc_coeff_a,
+                                 bc_coeff_b,
+                                var,
+                                 c_weight,
+                                 grad);
+    break;
+
+  case CS_GRADIENT_GREEN_ITER_R:
+
+    _initialize_scalar_gradient(mesh,
+                                fvq,
+                                cpl,
+                                w_stride,
+                                hyd_p_flag,
+                                inc,
+                                f_ext,
+                                bc_coeff_a,
+                                bc_coeff_b,
+                                var,
+                                c_weight,
+                                grad);
+
+    _renormalize_scalar_gradient(mesh,
+                                 fvq,
+                                 hyd_p_flag,
+                                 grad);
+
+    if (hyd_p_flag == 0)
+      _iterative_scalar_gradient(mesh,
+                                 fvq,
+                                 cpl,
+                                 w_stride,
+                                 var_name,
+                                 gradient_info,
+                                 n_r_sweeps,
+                                 hyd_p_flag,
+                                 verbosity,
+                                 inc,
+                                 epsilon,
+                                 f_ext,
+                                 bc_coeff_a,
+                                 bc_coeff_b,
+                                 var,
+                                 c_weight,
+                                 grad);
     break;
 
   case CS_GRADIENT_LSQ:
@@ -10515,6 +10742,9 @@ cs_gradient_type_by_imrgra(int                  imrgra,
     break;
   case 7:
     *gradient_type = CS_GRADIENT_GREEN_VTX;
+    break;
+  case 8:
+    *gradient_type = CS_GRADIENT_GREEN_ITER_R;
     break;
   default:
     *gradient_type = CS_GRADIENT_GREEN_ITER;
