@@ -395,7 +395,7 @@ void
 cs_thermal_table_finalize(void)
 {
   if (cs_glob_thermal_table != NULL) {
-#if defined(HAVE_EOS) && defined(HAVE_PLUGINS)
+#if defined(HAVE_EOS) /* always a plugin */
     if (cs_glob_thermal_table->type == 2) {
       _cs_eos_destroy();
       cs_base_dlclose("cs_eos", _cs_eos_dl_lib);
@@ -495,7 +495,7 @@ cs_phys_prop_compute(cs_phys_prop_type_t          property,
                            var2_c,
                            val);
   }
-#if defined(HAVE_EOS) && defined(HAVE_PLUGINS)
+#if defined(HAVE_EOS) /* always a plugin */
   else if (cs_glob_thermal_table->type == 2) {
     _cs_phys_prop_eos(cs_glob_thermal_table->thermo_plane,
                       property,

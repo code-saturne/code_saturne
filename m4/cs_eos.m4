@@ -68,6 +68,10 @@ AC_ARG_WITH(eos-lib,
 
 if test "x$with_eos" != "xno" ; then
 
+  if test "x$cs_have_dlloader" = "xno" ; then
+    AC_MSG_ERROR([EOS support requested but dynamic library loader disabled])
+  fi
+
   saved_CPPFLAGS="$CPPFLAGS"
   saved_CXXFLAGS="$CXXFLAGS"
   saved_LDFLAGS="$LDFLAGS"
@@ -82,7 +86,6 @@ if test "x$with_eos" != "xno" ; then
   EOS_LIBS="-leos"
 
   eosversion=`${with_eos}/bin/eos --version`
-
 
   # check for pre-v1.8.0
   # This test is necessary because starting from 1.8.0 definition of mixing
