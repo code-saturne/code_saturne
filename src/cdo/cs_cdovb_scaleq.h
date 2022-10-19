@@ -519,17 +519,17 @@ cs_cdovb_scaleq_flux_across_plane(const cs_real_t             normal[],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Cellwise computation of an approximation of a constant diffusive
- *         flux (a vector) in each cell.
- *         Case of scalar-valued CDO-Vb schemes
+ * \brief Cellwise computation of an approximation of a constant diffusive
+ *        flux (a vector) in each cell.
+ *        Case of scalar-valued CDO-Vb schemes
  *
- * \param[in]       values      discrete values for the potential
- * \param[in]       eqp         pointer to a cs_equation_param_t structure
- * \param[in]       t_eval      time at which one performs the evaluation
- * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  context     pointer to cs_cdovb_scaleq_t structure
- * \param[in, out]  diff_flux   value of the diffusive flux
-  */
+ * \param[in]      values      discrete values for the potential
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
+ * \param[in, out] context     pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out] diff_flux   value of the diffusive flux
+ */
 /*----------------------------------------------------------------------------*/
 
 void
@@ -542,16 +542,16 @@ cs_cdovb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Cellwise computation of the diffusive flux accross dual faces
- *         (a scalar) in each cell.
- *         Case of scalar-valued CDO-Vb schemes
+ * \brief Cellwise computation of the diffusive flux accross dual faces
+ *        (a scalar) in each cell.
+ *        Case of scalar-valued CDO-Vb schemes
  *
- * \param[in]       values      discrete values for the potential
- * \param[in]       eqp         pointer to a cs_equation_param_t structure
- * \param[in]       t_eval      time at which one performs the evaluation
- * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  context     pointer to cs_cdovb_scaleq_t structure
- * \param[in, out]  diff_flux   values of the diffusive flux
+ * \param[in]      values      discrete values for the potential
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
+ * \param[in, out] context     pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out] diff_flux   values of the diffusive flux
  */
 /*----------------------------------------------------------------------------*/
 
@@ -565,12 +565,12 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Operate a current to previous operation for the field associated to
- *         this equation and potentially for related fields/arrays.
+ * \brief Operate a current to previous operation for the field associated to
+ *        this equation and potentially for related fields/arrays.
  *
- * \param[in]       eqp        pointer to a cs_equation_param_t structure
- * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  context    pointer to cs_cdovb_scaleq_t structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -581,11 +581,11 @@ cs_cdovb_scaleq_current_to_previous(const cs_equation_param_t  *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined extra-operations related to this equation
+ * \brief Predefined extra-operations related to this equation
  *
- * \param[in]       eqp        pointer to a cs_equation_param_t structure
- * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  context    pointer to cs_cdovb_scaleq_t structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 

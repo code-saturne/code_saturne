@@ -3177,9 +3177,9 @@ cs_equation_add_graddiv(cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Associate a new term related to the time derivative operator for
- *         the equation associated to the given \ref cs_equation_param_t
- *         structure
+ * \brief Associate a new term related to the time derivative operator for
+ *        the equation associated to the given \ref cs_equation_param_t
+ *        structure
  *
  * \param[in, out] eqp        pointer to a cs_equation_param_t structure
  * \param[in]      property   pointer to a cs_property_t structure
@@ -3203,8 +3203,8 @@ cs_equation_add_time(cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Associate a new term related to the advection operator for the
- *         equation associated to the given \ref cs_equation_param_t structure
+ * \brief Associate a new term related to the advection operator for the
+ *        equation associated to the given \ref cs_equation_param_t structure
  *
  * \param[in, out] eqp        pointer to a cs_equation_param_t structure
  * \param[in]      adv_field  pointer to a cs_adv_field_t structure

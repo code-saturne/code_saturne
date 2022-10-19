@@ -1462,8 +1462,8 @@ _tpf_g_darcy_update(const cs_real_t              t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and initialize the modelling context for the model of
- *         (unsaturated) miscible two-phase flows
+ * \brief Allocate and initialize the modelling context for the model of
+ *        (unsaturated) miscible two-phase flows
  *
  * \return a pointer to a new allocated cs_gwf_two_phase_t structure
  */
@@ -1961,7 +1961,7 @@ _tpf_init_model_context(cs_gwf_two_phase_t     *mc,
  * \brief Perform the initial setup step in the case of a miscible or
  *        immiscible two-phase flows model in porous media
  *
- * \param[in, out]  mc         pointer to the casted model context
+ * \param[in, out] mc         pointer to the casted model context
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2416,11 +2416,6 @@ _tpf_updates(const cs_mesh_t             *mesh,
   cs_param_space_scheme_t  space_scheme =
     cs_equation_get_space_scheme(mc->wl_eq);
 
-  /* New pressure values for the liquid and the gas have been computed */
-
-  const cs_real_t  *l_pr = mc->l_pressure->val;
-  const cs_real_t  *g_pr = mc->g_pressure->val;
-
   /* Update the Darcy fluxes */
 
   cs_gwf_darcy_flux_t  *l_darcy = mc->l_darcy;
@@ -2434,6 +2429,11 @@ _tpf_updates(const cs_mesh_t             *mesh,
   g_darcy->update_func(time_eval, mc->hg_eq, cur2prev,
                        g_darcy->update_input,
                        g_darcy);
+
+  /* New pressure values for the liquid and the gas have been computed */
+
+  const cs_real_t  *l_pr = mc->l_pressure->val;
+  const cs_real_t  *g_pr = mc->g_pressure->val;
 
   /* Avoid to add an unsteady contribution at the first iteration  */
 
@@ -3002,11 +3002,17 @@ _segregated_tpf_compute(const cs_mesh_t              *mesh,
 {
   assert(mc->use_incremental_solver);
 
+  /* Copy the state for time t^n into field->val_pre */
+
   cs_field_current_to_previous(mc->g_pressure);
   cs_field_current_to_previous(mc->l_pressure);
 
+  /* Since the cur2prev operation has been done, avoid to do it again */
+
   bool cur2prev = false;        /* Done just above */
   cs_flag_t  update_flag = 0;   /* No current to previous operation */
+
+  /* Initialize the non-linear algorithm */
 
   cs_iter_algo_t  *algo = mc->nl_algo;
   assert(algo != NULL);
@@ -3268,11 +3274,11 @@ cs_gwf_is_activated(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the module dedicated to groundwater flows
+ * \brief Initialize the module dedicated to groundwater flows
  *
- * \param[in]   model           type of physical modelling
- * \param[in]   option_flag     optional flag to specify this module
- * \param[in]   post_flag       optional automatic postprocessing
+ * \param[in] model           type of physical modelling
+ * \param[in] option_flag     optional flag to specify this module
+ * \param[in] post_flag       optional automatic postprocessing
  *
  * \return a pointer to a new allocated groundwater flow structure
  */
@@ -3716,8 +3722,8 @@ cs_gwf_set_post_options(cs_flag_t       post_flag,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the advection field related to the Darcy flux in the liquid
- *         phase
+ * \brief Retrieve the advection field related to the Darcy flux in the liquid
+ *        phase
  *
  * \return a pointer to a cs_adv_field_t structure or NULL
  */
