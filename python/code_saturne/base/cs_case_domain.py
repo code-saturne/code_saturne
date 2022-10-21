@@ -541,11 +541,14 @@ class domain(base_domain):
 
             case.xmlSaveDocument()
 
-            if params['xml_root_name'] == 'NEPTUNE_CFD_GUI':
-                solver_dir = self.package_compute.get_dir("pkglibexecdir")
-                solver_name = "nc_solver" + self.package_compute.config.exeext
-                self.solver_path = os.path.join(solver_dir, solver_name)
-                self.code_name = 'neptune_cfd'
+            # Update solver name based on xml file
+            solver_name = \
+                    "nc_solver" if params['xml_root_name'] == 'NEPTUNE_CFD_GUI' \
+                    else "cs_solver"
+            solver_name += self.package_compute.config.exeext
+
+            solver_dir = self.package_compute.get_dir("pkglibexecdir")
+            self.solver_path = os.path.join(solver_dir, solver_name)
 
             self.param = "setup.xml"
 
