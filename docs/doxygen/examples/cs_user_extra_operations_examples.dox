@@ -215,19 +215,14 @@
   This is an example of \ref cs_user_extra_operations
   which sets temperature to 20 in a given region starting at t = 12s
 
-  \subsection cs_user_extra_operations_examples_loc_var_ft Local variables to be added
-
-  \snippet cs_user_extra_operations-force_temperature.f90 loc_var_dec
-
   \subsection cs_user_extra_operations_examples_ft_body Body
-
 
   Do this with precaution...
   The user is responsible for the validity of results.
 
   Here is the corresponding code:
 
-  \snippet cs_user_extra_operations-force_temperature.f90 example_1
+  \snippet cs_user_extra_operations-force_temperature.c example_1
 
 */
 // __________________________________________________________________________________
@@ -300,53 +295,50 @@
 
   This is an example of \ref cs_user_extra_operations which performs parallel operations.
 
-  \subsection cs_user_extra_operations_examples_loc_var_po Local variables to be added
-
-  \snippet cs_user_extra_operations-parallel_operations.f90 loc_var_dec
 
   \subsection cs_user_extra_operations_examples_example_1_po Example 1
 
   Sum of an integer counter 'ii', here the number of cells.
 
-  \snippet cs_user_extra_operations-parallel_operations.f90 example_1
+  \snippet cs_user_extra_operations-parallel_operations.c example_1
 
   \subsection cs_user_extra_operations_examples_example_2_po Example 2
 
   Maximum of an integer counter 'ii', here the number of cells.
 
-  \snippet cs_user_extra_operations-parallel_operations.f90 example_2
+  \snippet cs_user_extra_operations-parallel_operations.c example_2
 
   \subsection cs_user_extra_operations_examples_example_3_po Example 3
 
   Sum of a real 'rrr', here the volume.
 
-  \snippet cs_user_extra_operations-parallel_operations.f90 example_3
+  \snippet cs_user_extra_operations-parallel_operations.c example_3
 
   \subsection cs_user_extra_operations_examples_example_4_po Example 4
 
   Minimum of a real 'rrr', here the volume.
 
-  \snippet cs_user_extra_operations-parallel_operations.f90 example_4
+  \snippet cs_user_extra_operations-parallel_operations.c example_4
 
   \subsection cs_user_extra_operations_examples_example_5_po Example 5
 
   Maximum of a real 'rrr', here the volume.
 
-  \snippet cs_user_extra_operations-parallel_operations.f90 example_5
+  \snippet cs_user_extra_operations-parallel_operations.c example_5
 
   \subsection cs_user_extra_operations_examples_example_6_po Example 6
 
   Maximum of a real and associated real values;
   here the volume and its location (3 coordinates).
 
-  \snippet cs_user_extra_operations-parallel_operations.f90 example_6
+  \snippet cs_user_extra_operations-parallel_operations.c example_6
 
   \subsection cs_user_extra_operations_examples_example_7_po Example 7
 
   Minimum of a real and associated real values;
   here the volume and its location (3 coordinates).
 
-  \snippet cs_user_extra_operations-parallel_operations.f90 example_7
+  \snippet cs_user_extra_operations-parallel_operations.c example_7
 
   \subsection cs_user_extra_operations_examples_example_8_po Example 8
 
@@ -358,14 +350,14 @@
   as on a parallel boundary, this is always true for one domain
   and false for the other.
 
-  \snippet cs_user_extra_operations-parallel_operations.f90 example_8
+  \snippet cs_user_extra_operations-parallel_operations.c example_8
 
   \subsection cs_user_extra_operations_examples_example_9_po Example 9
 
   Maxima from an array of integers;
   here, the number of cells, faces, and boundary faces.
 
-  \snippet cs_user_extra_operations-parallel_operations.f90 example_9
+  \snippet cs_user_extra_operations-parallel_operations.c example_9
 
 
   \subsection cs_user_extra_operations_examples_example_10_po Example 10
@@ -373,43 +365,43 @@
   Minima from an array of integers;
   here, the number of cells, faces, and boundary faces.
 
-  \snippet cs_user_extra_operations-parallel_operations.f90 example_10
+  \snippet cs_user_extra_operations-parallel_operations.c example_10
 
   \subsection cs_user_extra_operations_examples_example_11_po Example 11
 
   Sum of an array of reals;
   here, the 3 velocity components (so as to compute a mean for example).
 
-  \snippet cs_user_extra_operations-parallel_operations.f90 example_11
+  \snippet cs_user_extra_operations-parallel_operations.c example_11
 
   \subsection cs_user_extra_operations_examples_example_12_po Example 12
 
   Maximum of an array of reals;
   here, the 3 velocity components.
 
-  \snippet cs_user_extra_operations-parallel_operations.f90 example_12
+  \snippet cs_user_extra_operations-parallel_operations.c example_12
 
   \subsection cs_user_extra_operations_examples_example_13_po Example 13
 
   Maximum of an array of reals;
   here, the 3 velocity components.
 
-  \snippet cs_user_extra_operations-parallel_operations.f90 example_13
+  \snippet cs_user_extra_operations-parallel_operations.c example_13
 
   \subsection cs_user_extra_operations_examples_example_14_po Example 14
 
   Broadcast an array of local integers to other ranks;
   in this example, we use the number of cells, interior faces, and boundary
-  faces from process rank 0 (irangv).
+  faces from process rank 0 (root_rank).
 
-  \snippet cs_user_extra_operations-parallel_operations.f90 example_14
+  \snippet cs_user_extra_operations-parallel_operations.c example_14
 
   \subsection cs_user_extra_operations_examples_example_15_po Example 15
 
   Broadcast an array of local reals to other ranks;
-  in this example, we use 3 velocity values from process rank 0 (irangv).
+  in this example, we use 3 velocity values from process rank 0 (root_rank).
 
-  \snippet cs_user_extra_operations-parallel_operations.f90 example_15
+  \snippet cs_user_extra_operations-parallel_operations.c example_15
 
 */
 // __________________________________________________________________________________
