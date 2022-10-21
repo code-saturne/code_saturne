@@ -1,6 +1,13 @@
 Release 7.0.6 (not released yet)
 --------------------------------
 
+Bug fixes:
+
+- Fix launching of a coupled case created using "neptune_cfd".
+  A coupled case created using neptune_cfd, and containing a code_saturne case
+  led to a launching of the code_saturne case with neptune_cfd, hence leading
+  to an error.
+
 User changes:
 
 - Preprocessor (mesh import): allow removal of cells with negative volume
