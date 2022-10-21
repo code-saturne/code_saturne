@@ -3,6 +3,11 @@ Release 7.1.2 (not released yet)
 
 Bug fixes:
 
+- Fix launching of a coupled case created using "neptune_cfd".
+  A coupled case created using neptune_cfd, and containing a code_saturne case
+  led to a launching of the code_saturne case with neptune_cfd, hence leading
+  to an error.
+
 - GUI: Fix naming of NCFD scalars when creating time averages
 
 - Fix desrtoy function related do medcoupling mesh export to avoid data corruption.
