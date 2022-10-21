@@ -129,6 +129,17 @@ typedef struct {
 
   /*!
    * @}
+   * @name Source term for the mass equation
+   * @{
+   *
+   * \var mass_rhs
+   * Value of the rhs dedicated to the mass equation
+   */
+
+  cs_real_t            mass_rhs;
+
+  /*!
+   * @}
    * @name Boundary conditions
    * @{
    *
@@ -147,6 +158,10 @@ typedef struct {
 
   cs_boundary_type_t  *bf_type;          /* Size: n_fc */
   cs_real_t           *pressure_bc_val;  /* Size: n_fc */
+
+  /*!
+   * @}
+   */
 
 } cs_cdofb_navsto_builder_t;
 

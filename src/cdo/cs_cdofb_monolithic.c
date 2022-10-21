@@ -654,7 +654,7 @@ _mono_apply_remaining_bc(const cs_equation_param_t     *eqp,
  *
  * \param[in]       csys              pointer to a cs_cell_sys_t structure
  * \param[in]       cm                pointer to a cs_cell_mesh_t structure
- * \param[in]       div_op            array with the divergence op. values
+ * \param[in]       nsb               pointer to a navsto builder structure
  * \param[in, out]  sc                pointer to scheme context structure
  * \param[in, out]  eqc               context structure for a vector-valued Fb
  * \param[in, out]  asb               pointer to cs_cdo_assembly_t
@@ -662,12 +662,12 @@ _mono_apply_remaining_bc(const cs_equation_param_t     *eqp,
 /*----------------------------------------------------------------------------*/
 
 static void
-_assembly_by_blocks(const cs_cell_sys_t        *csys,
-                    const cs_cell_mesh_t       *cm,
-                    const cs_real_t            *div_op,
-                    cs_cdofb_monolithic_t      *sc,
-                    cs_cdofb_vecteq_t          *eqc,
-                    cs_cdo_assembly_t          *asb)
+_assembly_by_blocks(const cs_cell_sys_t              *csys,
+                    const cs_cell_mesh_t             *cm,
+                    const cs_cdofb_navsto_builder_t  *nsb,
+                    cs_cdofb_monolithic_t            *sc,
+                    cs_cdofb_vecteq_t                *eqc,
+                    cs_cdo_assembly_t                *asb)
 {
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
@@ -700,7 +700,8 @@ _assembly_by_blocks(const cs_cell_sys_t        *csys,
     } /* Loop on blocks (j) */
   } /* Loop on blocks (i) */
 
-  /* RHS assembly */
+  /* 2.a RHS assembly (momentum)
+   * =========================== */
 
 # pragma omp critical
   {
@@ -710,6 +711,11 @@ _assembly_by_blocks(const cs_cell_sys_t        *csys,
       sh->rhs_array[2][cm->f_ids[f]] += csys->rhs[3*f+2];
     }
   }
+
+  /* 2.b RHS assembly (mass eq. only the cell DoFs)
+   * ============================================= */
+
+  sh->rhs_array[3][cm->c_id] += nsb->mass_rhs;
 
   /* Reset the value of the source term for the cell DoF
      Source term is only hold by the cell DoF in face-based schemes */
@@ -724,7 +730,7 @@ _assembly_by_blocks(const cs_cell_sys_t        *csys,
    * ============================================ */
 
   cs_real_t  *_div = msles->div_op + 3*connect->c2f->idx[cm->c_id];
-  memcpy(_div, div_op, 3*cm->n_fc*sizeof(cs_real_t));
+  memcpy(_div, nsb->div_op, 3*cm->n_fc*sizeof(cs_real_t));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -735,7 +741,7 @@ _assembly_by_blocks(const cs_cell_sys_t        *csys,
  *
  * \param[in]       csys              pointer to a cs_cell_sys_t structure
  * \param[in]       cm                pointer to a cs_cell_mesh_t structure
- * \param[in]       div_op            array with the divergence op. values
+ * \param[in]       nsb               pointer to a navsto builder structure
  * \param[in, out]  sc                pointer to scheme context structure
  * \param[in, out]  eqc               context structure for a vector-valued Fb
  * \param[in, out]  asb               pointer to cs_cdo_assembly_t
@@ -743,12 +749,12 @@ _assembly_by_blocks(const cs_cell_sys_t        *csys,
 /*----------------------------------------------------------------------------*/
 
 static void
-_velocity_full_assembly(const cs_cell_sys_t            *csys,
-                        const cs_cell_mesh_t           *cm,
-                        const cs_real_t                *div_op,
-                        cs_cdofb_monolithic_t          *sc,
-                        cs_cdofb_vecteq_t              *eqc,
-                        cs_cdo_assembly_t              *asb)
+_velocity_full_assembly(const cs_cell_sys_t              *csys,
+                        const cs_cell_mesh_t             *cm,
+                        const cs_cdofb_navsto_builder_t  *nsb,
+                        cs_cdofb_monolithic_t            *sc,
+                        cs_cdofb_vecteq_t                *eqc,
+                        cs_cdo_assembly_t                *asb)
 {
   const short int  n_f = cm->n_fc;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
@@ -766,12 +772,12 @@ _velocity_full_assembly(const cs_cell_sys_t            *csys,
       if (csys->dof_is_forced[i])
         _div[i] = 0.; /* The velocity-block set the value of this DoF */
       else
-        _div[i] = div_op[i];
+        _div[i] = nsb->div_op[i];
     }
 
   }
   else
-    memcpy(_div, div_op, 3*n_f*sizeof(cs_real_t));
+    memcpy(_div, nsb->div_op, 3*n_f*sizeof(cs_real_t));
 
   /* 1. Matrix assembly
    * ================== */
@@ -784,6 +790,11 @@ _velocity_full_assembly(const cs_cell_sys_t            *csys,
   }
 
   cs_cdofb_vecteq_assembly(csys, sh->blocks[0], sh->rhs, eqc, asb);
+
+  /* 2. RHS assembly (mass eq. only the cell DoFs)
+   * ============================================= */
+
+  sh->rhs_array[1][cm->c_id] += nsb->mass_rhs;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -794,7 +805,7 @@ _velocity_full_assembly(const cs_cell_sys_t            *csys,
  *
  * \param[in]      csys             pointer to a cs_cell_sys_t structure
  * \param[in]      cm               pointer to a cs_cell_mesh_t structure
- * \param[in]      div_op           array with the divergence op. values
+ * \param[in]      nsb              pointer to a navsto builder structure
  * \param[in, out] sc               pointer to scheme context structure
  * \param[in, out] eqc              context structure for a vector-valued Fb
  * \param[in, out] asb              pointer to cs_cdo_assembly_t
@@ -802,12 +813,12 @@ _velocity_full_assembly(const cs_cell_sys_t            *csys,
 /*----------------------------------------------------------------------------*/
 
 static void
-_full_assembly(const cs_cell_sys_t            *csys,
-               const cs_cell_mesh_t           *cm,
-               const cs_real_t                *div_op,
-               cs_cdofb_monolithic_t          *sc,
-               cs_cdofb_vecteq_t              *eqc,
-               cs_cdo_assembly_t              *asb)
+_full_assembly(const cs_cell_sys_t              *csys,
+               const cs_cell_mesh_t             *cm,
+               const cs_cdofb_navsto_builder_t  *nsb,
+               cs_cdofb_monolithic_t            *sc,
+               cs_cdofb_vecteq_t                *eqc,
+               cs_cdo_assembly_t                *asb)
 {
   CS_UNUSED(asb);
 
@@ -827,7 +838,8 @@ _full_assembly(const cs_cell_sys_t            *csys,
   cs_cdo_system_xblock_t  *xb = b->block_pointer;
 
   cs_real_t  *eqc_st = eqc->source_terms;
-  cs_real_t  *rhs = sh->rhs;
+  cs_real_t  *mom_rhs = sh->rhs;
+  cs_real_t  *mass_rhs = sh->rhs + 3*n_faces;
 
   const cs_range_set_t  *rset = xb->range_set;
 
@@ -897,7 +909,7 @@ _full_assembly(const cs_cell_sys_t            *csys,
 
       r_gids[bufsize] = bi_gids[ii];
       c_gids[bufsize] = p_gid;
-      values[bufsize] = div_op[3*bi+ii];
+      values[bufsize] = nsb->div_op[3*bi+ii];
       bufsize += 1;
 
       if (bufsize == CS_CDO_ASSEMBLE_BUF_SIZE) {
@@ -911,7 +923,7 @@ _full_assembly(const cs_cell_sys_t            *csys,
 
       r_gids[bufsize] = p_gid;
       c_gids[bufsize] = bi_gids[ii];
-      values[bufsize] = div_op[3*bi+ii];
+      values[bufsize] = nsb->div_op[3*bi+ii];
       bufsize += 1;
 
       if (bufsize == CS_CDO_ASSEMBLE_BUF_SIZE) {
@@ -932,12 +944,17 @@ _full_assembly(const cs_cell_sys_t            *csys,
     bufsize = 0;
   }
 
-  /* 2. RHS assembly (only the part with face DoFs)
-   * ============================================== */
+  /* 2. RHS assembly (momentum eq. and only the part with face DoFs-->static cond)
+   * ============================================================================= */
 
   for (short int f = 0; f < 3*n_f; f++)
 #   pragma omp atomic
-    rhs[csys->dof_ids[f]] += csys->rhs[f];
+    mom_rhs[csys->dof_ids[f]] += csys->rhs[f];
+
+  /* 3. RHS assembly (mass eq. only the cell DoFs)
+   * ============================================= */
+
+  mass_rhs[cm->c_id] += nsb->mass_rhs;
 
   /* Reset the value of the source term for the cell DoF
      Source term is only hold by the cell DoF in face-based schemes so
@@ -958,7 +975,7 @@ _full_assembly(const cs_cell_sys_t            *csys,
  *
  * \param[in]      csys             pointer to a cs_cell_sys_t structure
  * \param[in]      cm               pointer to a cs_cell_mesh_t structure
- * \param[in]      div_op           array with the divergence op. values
+ * \param[in]      nsb              pointer to a navsto builder structure
  * \param[in, out] sc               pointer to scheme context structure
  * \param[in, out] eqc              context structure for a vector-valued Fb
  * \param[in, out] asb              pointer to cs_cdo_assembly_t
@@ -966,17 +983,17 @@ _full_assembly(const cs_cell_sys_t            *csys,
 /*----------------------------------------------------------------------------*/
 
 static void
-_solidification_full_assembly(const cs_cell_sys_t            *csys,
-                              const cs_cell_mesh_t           *cm,
-                              const cs_real_t                *div_op,
-                              cs_cdofb_monolithic_t          *sc,
-                              cs_cdofb_vecteq_t              *eqc,
-                              cs_cdo_assembly_t              *asb)
+_solidification_full_assembly(const cs_cell_sys_t              *csys,
+                              const cs_cell_mesh_t             *cm,
+                              const cs_cdofb_navsto_builder_t  *nsb,
+                              cs_cdofb_monolithic_t            *sc,
+                              cs_cdofb_vecteq_t                *eqc,
+                              cs_cdo_assembly_t                *asb)
 {
   /* 1. First part shared with the assembly of the full saddle-point problem
    * ======================================================================= */
 
-  _full_assembly(csys, cm, div_op, sc, eqc, asb);
+  _full_assembly(csys, cm, nsb->div_op, sc, eqc, asb);
 
   /* 2. Treatment of the solid zone(s)
    * ================================= */
@@ -1024,7 +1041,7 @@ _solidification_full_assembly(const cs_cell_sys_t            *csys,
 
         r_gids[bufsize] = p_gid;
         c_gids[bufsize] = uf_gids[k];
-        values[bufsize] = -div_op[3*f+k]; /* Reset the value for the div. op. */
+        values[bufsize] = -nsb->div_op[3*f+k]; /* Reset the value for the div. op. */
         bufsize += 1;
 
       }
@@ -1054,7 +1071,7 @@ _solidification_full_assembly(const cs_cell_sys_t            *csys,
  *
  * \param[in]      csys             pointer to a cs_cell_sys_t structure
  * \param[in]      cm               pointer to a cs_cell_mesh_t structure
- * \param[in]      div_op           array with the divergence op. values
+ * \param[in]      nsb              pointer to a navsto builder structure
  * \param[in, out] sc               pointer to scheme context structure
  * \param[in, out] eqc              context structure for a vector-valued Fb
  * \param[in, out] asb              pointer to cs_cdo_assembly_t
@@ -1062,17 +1079,17 @@ _solidification_full_assembly(const cs_cell_sys_t            *csys,
 /*----------------------------------------------------------------------------*/
 
 static void
-_notay_full_assembly(const cs_cell_sys_t            *csys,
-                     const cs_cell_mesh_t           *cm,
-                     const cs_real_t                *div_op,
-                     cs_cdofb_monolithic_t          *sc,
-                     cs_cdofb_vecteq_t              *eqc,
-                     cs_cdo_assembly_t              *asb)
+_notay_full_assembly(const cs_cell_sys_t              *csys,
+                     const cs_cell_mesh_t             *cm,
+                     const cs_cdofb_navsto_builder_t  *nsb,
+                     cs_cdofb_monolithic_t            *sc,
+                     cs_cdofb_vecteq_t                *eqc,
+                     cs_cdo_assembly_t                *asb)
 {
   /* 1. First part shared with the assembly of the full saddle-point problem
    * ======================================================================= */
 
-  _full_assembly(csys, cm, div_op, sc, eqc, asb);
+  _full_assembly(csys, cm, nsb->div_op, sc, eqc, asb);
 
   /* 2. Store divergence operator in non assembly
    * ============================================ */
@@ -1085,12 +1102,12 @@ _notay_full_assembly(const cs_cell_sys_t            *csys,
       if (csys->dof_is_forced[i])
         _div[i] = 0.; /* The velocity-block set the value of this DoF */
       else
-        _div[i] = div_op[i];
+        _div[i] = nsb->div_op[i];
     }
 
   }
   else
-    memcpy(_div, div_op, 3*cm->n_fc*sizeof(cs_real_t));
+    memcpy(_div, nsb->div_op, 3*cm->n_fc*sizeof(cs_real_t));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1286,7 +1303,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
 
       /* ************************* ASSEMBLY PROCESS ************************* */
 
-      sc->assemble(csys, cm, nsb.div_op, sc, mom_eqc, asb);
+      sc->assemble(csys, cm, &nsb, sc, mom_eqc, asb);
 
     } /* Main loop on cells */
 
@@ -1524,7 +1541,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
       /* ASSEMBLY PROCESS */
       /* ================ */
 
-      sc->assemble(csys, cm, nsb.div_op, sc, mom_eqc, asb);
+      sc->assemble(csys, cm, &nsb, sc, mom_eqc, asb);
 
     } /* Main loop on cells */
 
@@ -1807,7 +1824,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
 
       /* ************************* ASSEMBLY PROCESS ************************* */
 
-      sc->assemble(csys, cm, nsb.div_op, sc, mom_eqc, asb);
+      sc->assemble(csys, cm, &nsb, sc, mom_eqc, asb);
 
     } /* Main loop on cells */
 
@@ -2079,11 +2096,15 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
     {
       sc->assemble = _assembly_by_blocks;
 
-      cs_lnum_t  block_sizes[2];
-      block_sizes[0] = 3*quant->n_faces, block_sizes[1] = quant->n_cells;
+      cs_lnum_t  block_sizes[4];
+
+      block_sizes[0] = quant->n_faces;
+      block_sizes[1] = quant->n_faces;
+      block_sizes[2] = quant->n_faces;
+      block_sizes[3] = quant->n_cells;
 
       sh = cs_cdo_system_helper_create(CS_CDO_SYSTEM_SADDLE_POINT,
-                                       2,
+                                       4,
                                        block_sizes,
                                        2);
 

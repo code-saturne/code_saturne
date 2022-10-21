@@ -114,7 +114,7 @@ typedef struct _cdofb_monolithic_t  cs_cdofb_monolithic_t;
  *
  * \param[in]       csys              pointer to a cs_cell_sys_t structure
  * \param[in]       cm                pointer to a cs_cell_mesh_t structure
- * \param[in]       div_op            array with the divergence op. values
+ * \param[in]       nsb               pointer to a navsto builder structure
  * \param[in, out]  sc                pointer to scheme context structure
  * \param[in, out]  eqc               context structure for a vector-valued Fb
  * \param[in, out]  asb               pointer to cs_cdo_assembly_t
@@ -122,12 +122,12 @@ typedef struct _cdofb_monolithic_t  cs_cdofb_monolithic_t;
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_cdofb_monolithic_assemble_t)(const cs_cell_sys_t        *csys,
-                                 const cs_cell_mesh_t       *cm,
-                                 const cs_real_t            *div_op,
-                                 cs_cdofb_monolithic_t      *sc,
-                                 cs_cdofb_vecteq_t          *eqc,
-                                 cs_cdo_assembly_t          *asb);
+(cs_cdofb_monolithic_assemble_t)(const cs_cell_sys_t              *csys,
+                                 const cs_cell_mesh_t             *cm,
+                                 const cs_cdofb_navsto_builder_t  *nsb,
+                                 cs_cdofb_monolithic_t            *sc,
+                                 cs_cdofb_vecteq_t                *eqc,
+                                 cs_cdo_assembly_t                *asb);
 
 /*----------------------------------------------------------------------------*/
 /*!

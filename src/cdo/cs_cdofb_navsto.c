@@ -278,6 +278,8 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 
   const short int n_fc = cm->n_fc;
 
+  nsb->mass_rhs = 0;            /* Reset the mass rhs */
+
   /* Update the value of the mass density for the current cell if needed */
   /* TODO: Case of a uniform but not constant in time */
 
