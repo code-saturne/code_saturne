@@ -64,6 +64,7 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_field_default.h"
+#include "cs_field_operator.h"
 #include "cs_geom.h"
 #include "cs_halo.h"
 #include "cs_io.h"
@@ -74,6 +75,7 @@
 #include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
+#include "cs_porous_model.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_physical_constants.h"
 #include "cs_post.h"
@@ -135,6 +137,141 @@ cs_f_porosity_from_scan_get_pointer(bool  **compute_porosity_from_scan);
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+/*----------------------------------------------------------------------------
+ * Compute local solid planes at cells from scan points file.
+ * So that the summed squared distance to all points is minimized.
+ *
+ * parameters:
+ *   m               <-- pointer to mesh
+ *   elt_ids         <-- point to cell id
+ *   n_points        <-- total number of points
+ *   n_points_cell   <-- number of points in cell
+ *   cen_points      <-- center of gravity of points in cell
+ *   dvol            <-- volume of cell
+ *   c_w_face_normal --> normal vector to the solid plane
+ *----------------------------------------------------------------------------*/
+
+static void
+_solid_plane_from_points(const cs_mesh_t    *m,
+                         const cs_lnum_t    elt_ids[],
+                         const cs_lnum_t    n_points,
+                         const cs_real_t    n_points_cell[],
+                         const cs_real_3_t  cen_points[],
+                         const cs_real_3_t  point_coords[],
+                         cs_real_3_t        c_w_face_normal[])
+{
+
+  //TODO Compute as a cross product
+  cs_real_33_t cov_mat = {{0.,0.,0.},{0.,0.,0.},{0.,0.,0.}};
+  cs_real_3_t  point_local;
+  cs_real_6_t  *c, *d, *z, *t;
+  BFT_MALLOC(c, m->n_cells, cs_real_6_t);
+  BFT_MALLOC(d, m->n_cells, cs_real_6_t);
+  BFT_MALLOC(z, m->n_cells, cs_real_6_t);
+  BFT_MALLOC(t, m->n_cells, cs_real_6_t);
+  cs_lnum_t threshold = 3;
+
+  /* Initializing */
+  for (cs_lnum_t i = 0; i < 3; i++)
+    point_local[i] = 0.;
+
+  for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
+    cs_lnum_t k = 0;
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 2; j++) {
+        c[c_id][k] = 0.;
+        d[c_id][k] = 0.;
+        t[c_id][k] = 0.;
+        z[c_id][k] = 0.;
+        k++;
+      }
+    }
+  }
+
+
+  //cs_lnum_t n_cell_unused = 0;
+
+  for (cs_lnum_t p_id = 0; p_id < n_points; p_id++) { //Loop over points
+
+    cs_lnum_t cell_id = elt_ids[p_id];
+
+    if ( n_points_cell[cell_id] > 3 ) { // At least three points required
+
+      for (cs_lnum_t i = 0; i < 3; i++)
+        point_local[i] = point_coords[p_id][i] - cen_points[cell_id][i];
+
+      //Kahan summation
+      cs_lnum_t k = 0;
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          if ( i == j || j > i) {
+            z[cell_id][k] = point_local[i] * point_local[j]
+                            - c[cell_id][k];
+            t[cell_id][k] = d[cell_id][k] + z[cell_id][k];
+            c[cell_id][k] = (t[cell_id][k] - d[cell_id][k]) - z[cell_id][k];
+            d[cell_id][k] = t[cell_id][k];
+            k++;
+          }
+        }
+      }
+    }
+  }//Loop over points
+
+  BFT_FREE(z);
+  BFT_FREE(t);
+  BFT_FREE(c);
+
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) { //Loop over cells
+
+    if ( n_points_cell[cell_id] > threshold ) { // At least three points required
+
+      cov_mat[0][0] = d[cell_id][0];
+      cov_mat[0][1] = d[cell_id][1];
+      cov_mat[0][2] = d[cell_id][2];
+      cov_mat[1][1] = d[cell_id][3];
+      cov_mat[1][2] = d[cell_id][4];
+      cov_mat[2][2] = d[cell_id][5];
+
+      cs_real_t det_x = cov_mat[1][1]*cov_mat[2][2] - cov_mat[1][2]*cov_mat[1][2];
+      cs_real_t det_y = cov_mat[0][0]*cov_mat[2][2] - cov_mat[0][2]*cov_mat[0][2];
+      cs_real_t det_z = cov_mat[0][0]*cov_mat[1][1] - cov_mat[0][1]*cov_mat[0][1];
+
+      cs_real_t det_xy = cov_mat[0][2]*cov_mat[1][2] - cov_mat[0][1]*cov_mat[2][2];
+      cs_real_t det_xz = cov_mat[0][1]*cov_mat[1][2] - cov_mat[0][2]*cov_mat[1][1];
+      cs_real_t det_zy = cov_mat[0][1]*cov_mat[0][2] - cov_mat[1][2]*cov_mat[0][0];
+
+      cs_real_t det_max = CS_MAX( CS_MAX( det_x, det_y ), det_z );
+      if (det_max > 0.0) {
+        // Pick path with best conditioning:
+        if (CS_ABS(det_max - det_x) < cs_math_epzero*det_max) {
+          c_w_face_normal[cell_id][0] = det_x;
+          c_w_face_normal[cell_id][1] = det_xy;
+          c_w_face_normal[cell_id][2] = det_xz;
+        }
+        else if (CS_ABS(det_max - det_y) < cs_math_epzero*det_max) {
+          c_w_face_normal[cell_id][0] = det_xy;
+          c_w_face_normal[cell_id][1] = det_y;
+          c_w_face_normal[cell_id][2] = det_zy;
+        }
+        else {
+          c_w_face_normal[cell_id][0] = det_xz;
+          c_w_face_normal[cell_id][1] = det_zy;
+          c_w_face_normal[cell_id][2] = det_z;
+        }
+        cs_math_3_normalize(c_w_face_normal[cell_id], c_w_face_normal[cell_id]);
+
+      }
+      //else
+      //  n_cell_unused++;
+
+    }
+    //else if ( n_points_cell[cell_id] > 0 )
+    //  n_cell_unused++;
+
+  }//Loop over cells
+
+  BFT_FREE(d);
+}
 
 /*----------------------------------------------------------------------------
  * Prepare computation of porosity from scan points file.
@@ -419,14 +556,31 @@ _count_from_file(const cs_mesh_t             *m,
 
     const cs_lnum_t *elt_ids = ple_locator_get_dist_locations(_locator);
 
-    for (int i = 0; i < n_points_loc; i++) {
+    /* Points local centre of gravity */
+    cs_real_3_t *points_cen = (cs_real_3_t *)cs_field_by_name_try("points_cen")->val;
+    for (int i = 0; i < (int)n_points_loc/cs_glob_n_ranks; i++) {
       if (elt_ids[i] >= 0) { /* Found */
         /* Could be improved with a parallel reading */
-        //TODO Compute the center of gravity of all the points
-        // inside each cell
-        f_nb_scan->val[elt_ids[i]] += 1./cs_glob_n_ranks;
+        f_nb_scan->val[elt_ids[i]] += 1.;
+        for (cs_lnum_t idim = 0; idim < 3; idim++)
+          points_cen[elt_ids[i]][idim] += point_coords[i][idim];
       }
     }
+    for (int c_id = 0; c_id < m->n_cells; c_id++) {
+      if (f_nb_scan->val[c_id] > 0) {
+        for (cs_lnum_t idim = 0; idim < 3; idim++)
+          points_cen[c_id][idim] /= f_nb_scan->val[c_id];
+      }
+    }
+
+    /* Normal vector to the solid plane */
+    _solid_plane_from_points(m,
+                             elt_ids,
+                             (int)n_points_loc/cs_glob_n_ranks,
+                             (const cs_real_t   *)f_nb_scan->val,
+                             (const cs_real_3_t *)points_cen,
+                             (const cs_real_3_t *)point_coords,
+                             (cs_real_3_t *)mq->c_w_face_normal);
 
     /* Free memory */
     _locator = ple_locator_destroy(_locator);
@@ -547,6 +701,8 @@ cs_porosity_from_scan_set_file_name(const char  *file_name)
   }
 
   _porosity_from_scan_opt.compute_porosity_from_scan = true;
+  /* Force porous model */
+  cs_glob_porous_model = 3;
 
   BFT_MALLOC(_porosity_from_scan_opt.file_name,
              strlen(file_name) + 1,
@@ -656,6 +812,7 @@ cs_compute_porosity_from_scan(void)
   const cs_domain_t *domain = cs_glob_domain;
   const cs_mesh_t *m = domain->mesh;
   const cs_mesh_quantities_t *mq = domain->mesh_quantities;
+  cs_real_t *restrict cell_f_vol = mq->cell_f_vol;
 
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)mq->cell_cen;
@@ -667,10 +824,24 @@ cs_compute_porosity_from_scan(void)
      (cs_real_3_t *restrict)mq->i_f_face_normal;
   cs_real_3_t *restrict b_f_face_normal =
      (cs_real_3_t *restrict)mq->b_f_face_normal;
+  const cs_lnum_2_t *i_face_cells
+    = (const cs_lnum_2_t *)m->i_face_cells;
+  const cs_lnum_t *b_face_cells
+    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)mq->i_face_normal;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)mq->b_face_normal;
+  cs_real_t *restrict i_f_face_surf
+    = (cs_real_t *restrict)mq->i_f_face_surf;
+  cs_real_t *restrict b_f_face_surf
+    = (cs_real_t *restrict)mq->b_f_face_surf;
 
   /* Pointer to porosity field */
-  cs_field_t *f = cs_field_by_name_try("porosity_w_field");
+  cs_field_t *f = cs_field_by_name_try("porosity");
 
+  cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+  eqp->verbosity = 2;
   cs_lnum_t *source_c_ids = _porosity_from_scan_opt.source_c_ids;
   int nb_sources = _porosity_from_scan_opt.nb_sources;
 
@@ -860,8 +1031,144 @@ cs_compute_porosity_from_scan(void)
 
   } /* End loop over sources */
 
+  /* Finalization */
+
+  // Porosity gradient
+  /* Enable solid cells in fluid_solid mode */
+  cs_porous_model_set_has_disable_flag(0);
+  // Correction of orientation c_w_face_normal to point towards the solid region
+  cs_real_3_t *grdporo;
+  BFT_MALLOC(grdporo, m->n_cells_with_ghosts, cs_real_3_t);
+
+  int imrgra = eqp->imrgra;
+  eqp->imrgra = 7;
+
+  cs_field_gradient_scalar(f,
+      false, /* use_previous_t */
+      1,
+      (cs_real_3_t *)grdporo);
+
+  eqp->imrgra = imrgra;
+  /* Disable solid cells in fluid_solid mode */
+  cs_porous_model_set_has_disable_flag(1);
+
+  cs_real_3_t *restrict c_w_face_normal
+    = (cs_real_3_t *restrict)mq->c_w_face_normal;
+
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+
+    if ( cs_math_3_dot_product(grdporo[cell_id], c_w_face_normal[cell_id]) >
+         0.0) {
+      for (cs_lnum_t i = 0; i < 3; i++)
+        c_w_face_normal[cell_id][i] = -c_w_face_normal[cell_id][i];
+    }
+  }
+
+  // Add plane in cells with not enough points to construct a plan
+  cs_field_t *f_nb_scan = cs_field_by_name_try("nb_scan_points");
+  for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+    cs_lnum_t ii = i_face_cells[face_id][0];
+    cs_lnum_t jj = i_face_cells[face_id][1];
+    if ( cs_math_3_norm(c_w_face_normal[ii]) < cs_math_epzero &&
+         f_nb_scan->val[ii] > 0. &&
+         cs_math_3_norm(c_w_face_normal[jj]) > 0. )
+      for (cs_lnum_t i = 0; i < 3; i++)
+        c_w_face_normal[ii][i] = c_w_face_normal[jj][i];
+    if ( cs_math_3_norm(c_w_face_normal[jj]) < cs_math_epzero &&
+         f_nb_scan->val[jj] > 0. &&
+         cs_math_3_norm(c_w_face_normal[ii]) > 0. )
+      for (cs_lnum_t i = 0; i < 3; i++)
+        c_w_face_normal[jj][i] = c_w_face_normal[ii][i];
+  }
+
+  // Porosity
+  for (cs_lnum_t c_id = 0; c_id < m->n_cells_with_ghosts; c_id++) {
+    cs_real_t porosity = f->val[c_id];
+    if (porosity < cs_math_epzero) {
+      f->val[c_id] = 0.;
+      mq->c_disable_flag[c_id] = 1;
+    }
+    cell_f_vol[c_id] =  f->val[c_id] * mq->cell_vol[c_id];
+  }
+
+  /* Set interior face values */
+  for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+
+    cs_lnum_t c_id0 = i_face_cells[face_id][0];
+    cs_lnum_t c_id1 = i_face_cells[face_id][1];
+
+    cs_real_t face_porosity = CS_MIN(f->val[c_id0], f->val[c_id1]);
+
+    for (cs_lnum_t i = 0; i < 3; i++)
+      i_f_face_normal[face_id][i] = face_porosity * i_face_normal[face_id][i];
+
+    mq->i_f_face_surf[face_id] = cs_math_3_norm(i_f_face_normal[face_id]);
+
+    if (mq->i_f_face_factor != NULL) {
+      //if (face_porosity > cs_math_epzero) {
+      //  mq->i_f_face_factor[face_id][0] = cpro_porosi[c_id0] / face_porosity;
+      //  mq->i_f_face_factor[face_id][1] = cpro_porosi[c_id1] / face_porosity;
+      //}
+      //else {
+        mq->i_f_face_factor[face_id][0] = 1.;
+        mq->i_f_face_factor[face_id][1] = 1.;
+      //}
+    }
+
+  }
+
+  /* Set boundary face values */
+  for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+
+    cs_lnum_t c_id = b_face_cells[face_id];
+
+    cs_real_t face_porosity = f->val[c_id];
+
+    for (cs_lnum_t i = 0; i < 3; i++)
+      b_f_face_normal[face_id][i] = face_porosity * b_face_normal[face_id][i];
+
+    mq->b_f_face_surf[face_id] = cs_math_3_norm(b_f_face_normal[face_id]);
+
+    if (mq->b_f_face_factor != NULL) {
+      //if (face_porosity > cs_math_epzero) {
+      //  mq->b_f_face_factor[face_id] = cpro_porosi[c_id] / face_porosity;
+      //}
+      //else {
+        mq->b_f_face_factor[face_id] = 1.;
+      //}
+    }
+  }
+
+  /* Set interior face values */
+  for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+
+    cs_lnum_t c_id0 = i_face_cells[face_id][0];
+    cs_lnum_t c_id1 = i_face_cells[face_id][1];
+
+    if (mq->c_disable_flag[c_id0] == 1 || mq->c_disable_flag[c_id1] == 1) {
+      i_f_face_normal[face_id][0] = 0.;
+      i_f_face_normal[face_id][1] = 0.;
+      i_f_face_normal[face_id][2] = 0.;
+      i_f_face_surf[face_id] = 0.;
+    }
+  }
+
+  /* Set boundary face values */
+  for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+
+    cs_lnum_t c_id0 = b_face_cells[face_id];
+
+    if (mq->c_disable_flag[c_id0] == 1) {
+      b_f_face_normal[face_id][0] = 0.;
+      b_f_face_normal[face_id][1] = 0.;
+      b_f_face_normal[face_id][2] = 0.;
+      b_f_face_surf[face_id] = 0.;
+    }
+  }
+
   /* Free memory */
 
+  BFT_FREE(grdporo);
   BFT_FREE(_porosity_from_scan_opt.output_name);
   BFT_FREE(_porosity_from_scan_opt.file_name);
   BFT_FREE(_porosity_from_scan_opt.sources);

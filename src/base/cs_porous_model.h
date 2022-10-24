@@ -100,6 +100,15 @@ cs_porous_model_init_fluid_quantities(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute solid quantities
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_f_mesh_quantities_solid_compute(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Automatic computation of the face porosity and factors.
  *
  * This is useful for the integral porous model.

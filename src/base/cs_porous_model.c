@@ -234,6 +234,9 @@ cs_porous_model_set_has_disable_flag(int  flag)
         mq->b_f_face_normal = mq->b_face_normal;
         mq->i_f_face_surf   = mq->i_face_surf;
         mq->b_f_face_surf   = mq->b_face_surf;
+        mq->i_f_face_cog_celli = mq->i_face_cog;
+        mq->i_f_face_cog_cellj = mq->i_face_cog;
+        mq->b_f_face_cog = mq->b_face_cog;
         mq->i_f_face_factor = NULL;
         mq->b_f_face_factor = NULL;
         mq->cell_f_cen = mq->cell_cen;
@@ -254,6 +257,9 @@ cs_porous_model_set_has_disable_flag(int  flag)
         mq->i_f_face_factor
           = (cs_real_2_t *)cs_field_by_name("i_f_face_factor")->val;
         mq->b_f_face_factor = cs_field_by_name("b_f_face_factor")->val;
+        mq->i_f_face_cog_celli = cs_field_by_name("i_f_face_cog_celli")->val;
+        mq->i_f_face_cog_cellj = cs_field_by_name("i_f_face_cog_cellj")->val;
+        mq->b_f_face_cog    = cs_field_by_name("b_f_face_cog")->val;
         mq->cell_f_cen      = cs_field_by_name("cell_f_cen")->val;
         mq->c_w_face_normal = cs_field_by_name("c_w_face_normal")->val;
         mq->c_w_face_surf   = cs_field_by_name("c_w_face_surf")->val;
@@ -280,6 +286,18 @@ cs_porous_model_init_fluid_quantities(void)
   if (cs_glob_porous_model == 3) {
     cs_mesh_init_fluid_sections(cs_glob_mesh, cs_glob_mesh_quantities);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute solid quantities
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_f_mesh_quantities_solid_compute(void)
+{
+  cs_mesh_quantities_solid_compute(cs_glob_mesh, cs_glob_mesh_quantities);
 }
 
 /*----------------------------------------------------------------------------*/

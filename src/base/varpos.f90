@@ -57,6 +57,7 @@ use radiat
 use mesh
 use post
 use field
+use pointe, only:compute_porosity_from_scan
 use cs_c_bindings
 
 !===============================================================================
@@ -73,7 +74,9 @@ integer          iok
 integer          f_id, idftnp
 integer          iest
 integer          key_buoyant_id, is_buoyant_fld
+integer          keydri
 integer          kturt, turb_flux_model
+integer          ivar, iscdri
 
 double precision gravn2
 
@@ -88,6 +91,9 @@ type(var_cal_opt) :: vcopt
 ! Key id for buoyant field (inside the Navier Stokes loop)
 call field_get_key_id("is_buoyant", key_buoyant_id)
 call field_get_key_id('turbulent_flux_model', kturt)
+
+! Key id for drift scalar
+call field_get_key_id("drift_scalar_model", keydri)
 
 ! Determine itycor now that irccor is known (iturb/itytur known much earlier)
 ! type of rotation/curvature correction for turbulent viscosity models
@@ -408,9 +414,39 @@ itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 
 if (iporos.ge.1) then
   f_name = 'porosity'
-  call field_create(f_name, itycat, ityloc, 1, .false., ipori)
-  call field_set_key_int(ipori, keylog, 1)
-  call field_set_key_int(ipori, keyvis, pflag)
+  if (compute_porosity_from_scan) then
+    !TODO move it to fldvar?
+    call add_variable_field(f_name, f_name, 1, ivar)
+    ipori = ivarfl(ivar)
+
+    ! Pure convection equation (no time term)
+    call field_get_key_struct_var_cal_opt(ipori, vcopt)
+    vcopt%iconv = 1
+    vcopt%blencv= 0.d0 ! Pure upwind
+    vcopt%istat = 0
+    vcopt%nswrsm = 1
+    vcopt%idiff  = 0
+    vcopt%idifft = 0
+    vcopt%relaxv = 1.d0 ! No relaxation, even for steady algorithm.
+    call field_set_key_struct_var_cal_opt(ipori, vcopt)
+
+    ! Activate the drift for all scalars with key "drift" > 0
+    iscdri = 1
+
+    ! GNU function to return the value of iscdri
+    ! with the bit value of iscdri at position
+    ! 'DRIFT_SCALAR_ADD_DRIFT_FLUX' set to one
+    iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+
+    iscdri = ibset(iscdri, DRIFT_SCALAR_IMPOSED_MASS_FLUX)
+
+    call field_set_key_int(ipori, keydri, iscdri)
+
+  else
+    call field_create(f_name, itycat, ityloc, 1, .false., ipori)
+    call field_set_key_int(ipori, keylog, 1)
+    call field_set_key_int(ipori, keyvis, pflag)
+  endif
 
   f_name = 'cell_f_vol'
   call field_create(f_name,&
@@ -472,6 +508,22 @@ if (iporos.ge.1) then
                       .false.,&
                       f_id)
 
+    f_name = 'i_f_face_cog_celli'
+    call field_create(f_name,&
+                      itycat,&
+                      2,& ! location: inner faces
+                      3,& ! dimension
+                      .false.,&
+                      f_id)
+
+    f_name = 'i_f_face_cog_cellj'
+    call field_create(f_name,&
+                      itycat,&
+                      2,& ! location: inner faces
+                      3,& ! dimension
+                      .false.,&
+                      f_id)
+
     f_name = 'b_f_face_normal'
     call field_create(f_name,&
                       itycat,&
@@ -485,6 +537,14 @@ if (iporos.ge.1) then
                       itycat,&
                       3,& ! location: boundary faces
                       1,& ! dimension
+                      .false.,&
+                      f_id)
+
+    f_name = 'b_f_face_cog'
+    call field_create(f_name,&
+                      itycat,&
+                      3,& ! location: boundary faces
+                      3,& ! dimension
                       .false.,&
                       f_id)
 

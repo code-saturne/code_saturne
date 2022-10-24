@@ -60,6 +60,7 @@
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
 #include "cs_porous_model.h"
+#include "cs_porosity_from_scan.h"
 #include "cs_rad_transfer.h"
 #include "cs_restart_default.h"
 #include "cs_thermal_model.h"
@@ -1751,6 +1752,15 @@ cs_parameters_check(void)
                                 "cs_glob_porous_model",
                                 cs_glob_porous_model,
                                 0, 4);
+
+  if (cs_glob_porosity_from_scan_opt->compute_porosity_from_scan)
+    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                  _("while reading input data,\n"
+                                    "Porosity from scan has been activated"
+                                    "and cs_glob_porous_model changed\n"),
+                                  "cs_glob_porous_model",
+                                  cs_glob_porous_model,
+                                  3, 4);
 
   if (cs_glob_porous_model == 3) { /* integral formulation */
     const int imrgra_vals[5] ={0, 4, 5, 6, 7};

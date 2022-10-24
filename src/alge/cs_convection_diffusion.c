@@ -4638,7 +4638,7 @@ cs_convection_diffusion_vector(int                         idtvar,
            for (int isou = 0; isou < 3; isou++) {
               rhs[ii][isou] -= fluxi[isou];
               rhs[jj][isou] += fluxj[isou];
-            }
+           }
 
           }
         }

@@ -3020,6 +3020,17 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Compute solid mesh quantities
+
+    subroutine cs_f_mesh_quantities_solid_compute()   &
+      bind(C, name='cs_f_mesh_quantities_solid_compute')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_f_mesh_quantities_solid_compute
+
+
+    !---------------------------------------------------------------------------
+
     ! Init fluid mesh quantities
 
     subroutine cs_porous_model_init_fluid_quantities()   &

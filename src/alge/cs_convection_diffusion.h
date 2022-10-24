@@ -3863,7 +3863,7 @@ cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
 
     }
 
-    /* Slope test: Pourcentage of upwind
+    /* Slope test: Percentage of upwind
        ----------------------------------*/
 
     if (tesqck <= 0. || testij <= 0.) {

@@ -449,65 +449,77 @@ if (iporos.ge.1) then
   ! Make fluid surfaces of mesh quantity point to the created fields
   call cs_porous_model_set_has_disable_flag(1)
 
-  ! Compute porosity from scan
-  if (compute_porosity_from_scan) then
-    call cs_compute_porosity_from_scan()
-  endif
-
   call cs_porous_model_init_fluid_quantities()
 
-  call uiporo
-  call usporo
+  ! Compute porosity from scan
+  if (compute_porosity_from_scan) then
+    write(nfecra, *) " Compute porosity field from scan"
+    write(nfecra, *) " WARNING: user porosity will be ignored"
+    write(nfecra, *) " (GUI, usporo.f90, cs_user_porosity.c)"
+    call cs_compute_porosity_from_scan()
 
-  ! C version
-  call user_porosity
-  !TODO add routine of porosity if iporos = 3
-  call field_get_val_s(ipori, porosi)
+    ! Note using porosity from scan: give the hand to the user
+  else
 
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(porosi)
-  endif
+    call uiporo
+    call usporo
 
-  do iel = 1, ncelet
-    ! Penalisation of solid cells
-    if (porosi(iel).lt.epzero) then
-      porosi  (iel) = 0.d0
-      isolid_0(iel) = 1
+    ! C version
+    call user_porosity
+
+    call field_get_val_s(ipori, porosi)
+
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(porosi)
     endif
-    cell_f_vol(iel) = volume(iel) * porosi(iel)
-  enddo
 
-  ! For integral formulation, in case of 0 fluid volume, clip fluid faces
-  if (iporos.eq.3) then
-    do ifac = 1, nfac
-      !TODO compute i_f_face_factor with porosi AND fluid surface and surface:
-      ! epsilon_i*surface/f_surface
-      if (isolid_0(ifacel(1, ifac)) .eq. 1) then
-        suffac(1, ifac) = 0.d0
-        suffac(2, ifac) = 0.d0
-        suffac(3, ifac) = 0.d0
-        suffan(ifac) = 0.d0
-      else if (isolid_0(ifacel(2, ifac)).eq.1) then
-        suffac(1, ifac) = 0.d0
-        suffac(2, ifac) = 0.d0
-        suffac(3, ifac) = 0.d0
-        suffan(ifac) = 0.d0
+    do iel = 1, ncelet
+      ! Penalisation of solid cells
+      if (porosi(iel).lt.epzero) then
+        porosi  (iel) = 0.d0
+        isolid_0(iel) = 1
       endif
+      cell_f_vol(iel) = volume(iel) * porosi(iel)
     enddo
 
-    do ifac = 1, nfabor
-      !TODO compute i_f_face_factor with porosi AND fluid surface and surface:
-      ! epsilon_i*surface/f_surface
-      if (isolid_0(ifabor(ifac)) .eq. 1) then
-        suffbo(1, ifac) = 0.d0
-        suffbo(2, ifac) = 0.d0
-        suffbo(3, ifac) = 0.d0
-        suffbn(ifac) = 0.d0
-      endif
-    enddo
+    ! For integral formulation, in case of 0 fluid volume, clip fluid faces
+    if (iporos.eq.3) then
+      do ifac = 1, nfac
+        !TODO compute i_f_face_factor with porosi AND fluid surface and surface:
+        ! epsilon_i*surface/f_surface
+        if (isolid_0(ifacel(1, ifac)) .eq. 1) then
+          suffac(1, ifac) = 0.d0
+          suffac(2, ifac) = 0.d0
+          suffac(3, ifac) = 0.d0
+          suffan(ifac) = 0.d0
+        else if (isolid_0(ifacel(2, ifac)).eq.1) then
+          suffac(1, ifac) = 0.d0
+          suffac(2, ifac) = 0.d0
+          suffac(3, ifac) = 0.d0
+          suffan(ifac) = 0.d0
+        endif
+      enddo
+
+      do ifac = 1, nfabor
+        !TODO compute i_f_face_factor with porosi AND fluid surface and surface:
+        ! epsilon_i*surface/f_surface
+        if (isolid_0(ifabor(ifac)) .eq. 1) then
+          suffbo(1, ifac) = 0.d0
+          suffbo(2, ifac) = 0.d0
+          suffbo(3, ifac) = 0.d0
+          suffbn(ifac) = 0.d0
+        endif
+      enddo
+    endif
+
   endif
 
-  call cs_f_mesh_quantities_fluid_vol_reductions
+  if (iporos.eq.3) then
+    ! Compute solid quantities and update fluid volume
+    call cs_f_mesh_quantities_solid_compute()
+  endif
+
+  call cs_f_mesh_quantities_fluid_vol_reductions()
 
 endif
 

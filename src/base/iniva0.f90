@@ -303,10 +303,15 @@ endif
 ! Porosity
 if (iporos.ge.1) then
   call field_get_val_s(ipori, porosi)
-  do iel = 1, ncelet
-    porosi(iel) = 1.d0
-  enddo
-
+  if (compute_porosity_from_scan) then
+    do iel = 1, ncelet
+      porosi(iel) = 0.d0
+    enddo
+  else
+    do iel = 1, ncelet
+      porosi(iel) = 1.d0
+    enddo
+  endif
   ! Tensorial porosity
   if (iporos.eq.2) then
     call field_get_val_v(iporf, porosf)

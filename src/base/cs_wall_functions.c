@@ -58,6 +58,7 @@
 #include "cs_field.h"
 #include "cs_field_operator.h"
 #include "cs_field_pointer.h"
+#include "cs_field_default.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -608,45 +609,20 @@ cs_immersed_boundary_wall_functions(int         f_id,
   cs_mesh_quantities_t *mq = domain->mesh_quantities;
   const cs_lnum_t  n_cells = m->n_cells;
   const cs_real_t  *cell_f_vol = mq->cell_f_vol;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)mq->cell_cen;
 
   /*  Wall normal*/
-  //TODO switch to mesh_quantities
-  cs_real_t *c_w_face_surf = cs_field_by_name("c_w_face_surf")->val;
-  cs_real_t *c_w_dist_inv = cs_field_by_name("c_w_dist_inv")->val;
-  cs_real_3_t *c_w_face_cog
-    = (cs_real_3_t *)cs_field_by_name("c_w_face_cog")->val;
-  const cs_real_3_t *restrict c_w_face_normal
-    = (const cs_real_3_t *restrict)mq->c_w_face_normal;
+  const cs_real_t *c_w_face_surf
+      = (const cs_real_t *restrict)mq->c_w_face_surf;
+  const cs_real_t *c_w_dist_inv
+      = (const cs_real_t *restrict)mq->c_w_dist_inv;
 
   /* Dynamic viscosity */
   const cs_real_t  *cpro_mu = CS_F_(mu)->val;
 
-  /* Density */
-  cs_real_t *rho = (cs_real_t *)CS_F_(rho)->val;
-
-  /* Velocity */
-  const cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
-
-  /* Velocity */
-  const cs_real_t *p = (cs_real_t *)CS_F_(p)->val;
-  /*  const cs_field_t *fpr = CS_F_(p);*/
-
-  /* Skin-Friction and pressure coefficients */
-  //TODO create an optional field for boundary forces
-  cs_real_3_t *pf;
-  cs_field_t *fpf = cs_field_by_name_try("immersed_pressure_force");
-  if (fpf != NULL)
-    pf = (cs_real_3_t *)(fpf->val);
-
-  cs_real_3_t *grdp;
-  BFT_MALLOC(grdp, n_cells, cs_real_3_t);
-
   cs_wall_functions_t *wall_functions = cs_get_glob_wall_functions();
 
   if (f == CS_F_(vel)) { /* velocity */
-
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
     /* cast to 3D vectors for readability */
     cs_real_3_t   *_st_exp = (cs_real_3_t *)st_exp;
     cs_real_33_t  *_st_imp = (cs_real_33_t *)st_imp;
@@ -661,25 +637,12 @@ cs_immersed_boundary_wall_functions(int         f_id,
         if (surf > cs_math_epzero*pow(cell_f_vol[c_id],2./3.)) {
           for (cs_lnum_t i = 0; i < 3; i++) {
             _st_exp[c_id][i] = 0.;
-            _st_imp[c_id][i][i] = -cpro_mu[c_id] * surf * c_w_dist_inv[c_id];
-          }
-
-          /* Post-processing */
-          if (fpf != NULL) {
-            cs_real_3_t ipbx;
-            for (cs_lnum_t i = 0; i < 3; i++)
-              ipbx[i] = c_w_face_cog[c_id][i] - cell_cen[c_id][i];
-
-            cs_field_gradient_scalar(CS_F_(p),
-                                     false, /* use_previous_t */
-                                     1,
-                                     (cs_real_3_t *)grdp);
-
-            for (cs_lnum_t i = 0; i < 3; i++) {
-              pf[c_id][i] =   (p[c_id]+cs_math_3_dot_product(ipbx,grdp[c_id]))
-                            * c_w_face_normal[c_id][i];
+            for (cs_lnum_t j = 0; j < 3; j++) {
+              _st_imp[c_id][i][j] = 0.;
+              if (i == j && eqp->idiff > 0)
+                _st_imp[c_id][i][j] = - cpro_mu[c_id] * surf * c_w_dist_inv[c_id];
             }
-          } /* End post-processing */
+          }
         }
       }
       break;

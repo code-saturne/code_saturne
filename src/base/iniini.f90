@@ -504,10 +504,6 @@ ikwcln = 1
 irccor = 0
 itycor = -999
 
-! --- Take porosity into account
-
-iporos = 0
-
 ! --- Algorithm to take into account the thermodynamic pressure variation in time
 !     (not used by default except if idilat = 3)
 

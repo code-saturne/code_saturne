@@ -105,6 +105,11 @@ typedef struct {
                                     (L2 norm equals area of the face) */
   cs_real_t     *i_face_cog;     /* Center of gravity of interior faces */
   cs_real_t     *b_face_cog;     /* Center of gravity of border faces */
+  cs_real_t     *i_f_face_cog_celli;/* Center of gravity of fluid interior faces.
+                                       From celli perspective - it allows discontinuity */
+  cs_real_t     *i_f_face_cog_cellj;/* Center of gravity of fluid interior faces.
+                                       From cellj perspective - it allows discontinuity */
+  cs_real_t     *b_f_face_cog;   /* Center of gravity of fluid border faces */
   cs_real_t     *c_w_face_cog;   /* Center of gravity of solid face in cells */
 
   cs_real_t     *i_face_surf;    /* Surface of interior faces. */
