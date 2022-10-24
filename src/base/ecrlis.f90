@@ -289,90 +289,6 @@ do f_id = 0, nfld - 1
     ! Finalize the log of the line
     if (kval.gt.0) write(nfecra,'(a)') chainc(1:ic)
 
-    ! Vector or tensor time drift (by component)
-    if (f_dim.gt.1.and.f_loc.eq.1) then
-      call field_get_val_v(f_id, field_v_v)
-      call field_get_val_prev_v(f_id, field_v_vp)
-
-      dervar(1) = dervars
-
-      ! Loop over the components
-      do c_id = 1, f_dim
-
-        chainc = 'c'
-        chain = ' '
-        ic = 4
-
-        ! Vectors
-        if (f_dim.eq.3) then
-          if (c_id.eq.1) then
-            chain = trim(flabel) // '[X]'
-          else if (c_id.eq.2) then
-            chain = trim(flabel) // '[Y]'
-          else if (c_id.eq.3) then
-            chain = trim(flabel) // '[Z]'
-          endif
-        endif
-
-        ! Symmetric tensors
-        if (f_dim.eq.6) then
-          if (c_id.eq.1) then
-            chain = trim(flabel) // '[XX]'
-          else if (c_id.eq.2) then
-            chain = trim(flabel) // '[YY]'
-          else if (c_id.eq.3) then
-            chain = trim(flabel) // '[ZZ]'
-          else if (c_id.eq.4) then
-            chain = trim(flabel) // '[XY]'
-          else if (c_id.eq.5) then
-            chain = trim(flabel) // '[YZ]'
-          else if (c_id.eq.6) then
-            chain = trim(flabel) // '[XZ]'
-          endif
-        endif
-
-        ! Tensors
-        if (f_dim.eq.9) then
-          if (c_id.eq.1) then
-            chain = trim(flabel) // '[XX]'
-          else if (c_id.eq.2) then
-            chain = trim(flabel) // '[XY]'
-          else if (c_id.eq.3) then
-            chain = trim(flabel) // '[XZ]'
-          else if (c_id.eq.4) then
-            chain = trim(flabel) // '[YX]'
-          else if (c_id.eq.5) then
-            chain = trim(flabel) // '[YY]'
-          else if (c_id.eq.6) then
-            chain = trim(flabel) // '[YZ]'
-          else if (c_id.eq.7) then
-            chain = trim(flabel) // '[ZX]'
-          else if (c_id.eq.8) then
-            chain = trim(flabel) // '[ZY]'
-          else if (c_id.eq.9) then
-            chain = trim(flabel) // '[ZZ]'
-          endif
-        endif
-
-        chainc(ic:ic+max_name_width) = chain(1:max_name_width)
-        ic=ic+max_name_width
-        chainc(ic:ic+12) = ' '
-        ic=ic+13
-        chainc(ic:ic+7) = ' '
-        ic=ic+9
-        chainc(ic:ic+12) = ' '
-        ic=ic+14
-        chain = ' '
-        write(chain,3000) dervar(c_id)
-        chainc(ic:ic+12) = chain(1:12)
-        ic=ic+12
-
-        ! Print the time drift of the component
-        if (kval.gt.0) write(nfecra,'(a)') chainc(1:ic)
-
-      enddo
-    endif
-
     ! Store the time drift and the l2residual
     call field_set_key_struct_solving_info(f_id, sinfo)
   endif
@@ -389,7 +305,7 @@ deallocate(w1, w2)
 !--------
 
  1000 format (/,3X,'** INFORMATION ON CONVERGENCE',/,             &
-          3X,'   --------------------------')
+                3X,'   --------------------------')
 
  3000 format (e12.5)
  4000 format (i7)
