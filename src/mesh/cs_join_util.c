@@ -2274,13 +2274,13 @@ cs_join_select_create(const char              *selection_criteria,
   selection->s_edges = _create_join_sync();
   selection->c_edges = _create_join_sync();
 
-  /* Extract selected boundary faces */
+  /* Extract selected boundary faces (0-based at this stage) */
 
   BFT_MALLOC(selection->faces, mesh->n_b_faces, cs_lnum_t);
 
-  cs_selector_get_b_face_num_list(selection_criteria,
-                                  &(selection->n_faces),
-                                  selection->faces);
+  cs_selector_get_b_face_list(selection_criteria,
+                              &(selection->n_faces),
+                              selection->faces);
 
   /* In case of periodicity, ensure no isolated faces are
      selected */
@@ -2288,7 +2288,7 @@ cs_join_select_create(const char              *selection_criteria,
   if (perio_type != FVM_PERIODICITY_NULL) {
     cs_lnum_t j = 0;
     for (cs_lnum_t i = 0; i < selection->n_faces; i++) {
-      cs_lnum_t f_id = selection->faces[i]-1;
+      cs_lnum_t f_id = selection->faces[i];
       if (mesh->b_face_cells[f_id] > -1)
         selection->faces[j++] = f_id;
     }
@@ -2299,6 +2299,8 @@ cs_join_select_create(const char              *selection_criteria,
   BFT_MALLOC(ordered_faces, selection->n_faces, cs_lnum_t);
 
   cs_order_gnum_allocated(selection->faces, NULL, order, selection->n_faces);
+
+  /* Order faces, switch to 1-based numbering from this stage */
 
   for (cs_lnum_t i = 0; i < selection->n_faces; i++)
     ordered_faces[i] = selection->faces[order[i]] + 1;
@@ -2585,6 +2587,9 @@ cs_join_select_destroy(cs_join_param_t     param,
 
 /*----------------------------------------------------------------------------
  * Extract vertices from a selection of faces.
+ *
+ * This function uses 1-based selection lists
+ * (select_faces and select_vertices)
  *
  * parameters:
  *   n_select_faces    <-- number of selected faces

@@ -242,7 +242,7 @@ typedef struct {
                                 for the joining operation */
   cs_gnum_t     n_g_faces;   /* Global number of border faces selected
                                 for the joining operation */
-  cs_lnum_t    *faces;       /* List of selected border faces */
+  cs_lnum_t    *faces;       /* List of selected border faces (1-based) */
 
   cs_gnum_t    *compact_face_gnum;    /* Global face numbering defined
                                          on the selected faces */
@@ -395,6 +395,9 @@ cs_join_select_destroy(cs_join_param_t     param,
 
 /*----------------------------------------------------------------------------
  * Extract vertices from a selection of faces.
+ *
+ * This function uses 1-based selection lists
+ * (select_faces and select_vertices)
  *
  * parameters:
  *   n_select_faces <-- number of selected faces
