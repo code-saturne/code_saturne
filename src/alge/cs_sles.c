@@ -308,6 +308,8 @@ struct _cs_sles_t {
 
   int                       n_no_op;       /* Number of solves with immediate
                                               exit */
+  bool                      allow_no_op;   /* Allow immediate exit if RHS
+                                              small relative to residual norm */
 
   int                       f_id;          /* matching field id, or < 0 */
 
@@ -422,6 +424,7 @@ _sles_create(int          f_id,
 
   sles->n_calls = 0;
   sles->n_no_op = 0;
+  sles->allow_no_op = false;
 
   sles->post_info = NULL;
 
@@ -681,6 +684,7 @@ _needs_solving(const  char        *name,
                const cs_real_t    *rhs)
 {
   int retval = 1;
+  return retval;
 
   /* Initialize residue, check for immediate return */
 
@@ -1571,6 +1575,44 @@ cs_sles_get_name(const cs_sles_t  *sles)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Query if immediate_return ("no-op") is allowed when initial
+ * guess is zero (solve by increments) and the RHS is already zero within the
+ * normalized tolerance criteria.
+ *
+ * \param[in]  sles  pointer to solver object
+ *
+ * \return  true if immediate return is allowed, false if at least one
+ *          iteration is required
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_sles_get_allow_no_op(const cs_sles_t  *sles)
+{
+  return sles->allow_no_op;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Indicate if immediate_return ("no-op") is allowed when initial
+ * guess is zero (solve by increments) and the RHS is already zero within the
+ * normalized tolerance criteria.
+ *
+ * \param[in, out]  sles         pointer to solver object
+ * \param[in]       allow_no_op  true if immediate return is allowed,
+ *                               false if at least one iteration is required
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_set_allow_no_op(cs_sles_t  *sles,
+                        bool        allow_no_op)
+{
+  sles->allow_no_op = allow_no_op;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Setup sparse linear equation solver.
  *
  * Use of this function is optional: if a \ref cs_sles_solve is called
@@ -1684,20 +1726,23 @@ cs_sles_solve(cs_sles_t           *sles,
 #endif
 
   cs_sles_convergence_state_t state;
+  bool do_solve = true;
 
-  bool do_solve = _needs_solving(sles_name,
-                                 a,
-                                 sles->verbosity,
-                                 precision,
-                                 r_norm,
-                                 residue,
-                                 vx,
-                                 rhs);
+  if (sles->allow_no_op) {
+    do_solve = _needs_solving(sles_name,
+                              a,
+                              sles->verbosity,
+                              precision,
+                              r_norm,
+                              residue,
+                              vx,
+                              rhs);
 
-  if (! do_solve) {
-    sles->n_no_op += 1;
-    *n_iter = 0;
-    state = CS_SLES_CONVERGED;
+    if (! do_solve) {
+      sles->n_no_op += 1;
+      *n_iter = 0;
+      state = CS_SLES_CONVERGED;
+    }
   }
 
   while (do_solve) {

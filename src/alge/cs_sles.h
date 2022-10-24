@@ -603,6 +603,38 @@ cs_sles_get_name(const cs_sles_t  *sles);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Query if immediate_return ("no-op") is allowed when initial
+ * guess is zero (solve by increments) and the RHS is already zero within the
+ * normalized tolerance criteria.
+ *
+ * \param[in]  sles  pointer to solver object
+ *
+ * \return  true if immediate return is allowed, false if at least one
+ *          iteration is required
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_sles_get_allow_no_op(const cs_sles_t  *sles);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Indicate if immediate_return ("no-op") is allowed when initial
+ * guess is zero (solve by increments) and the RHS is already zero within the
+ * normalized tolerance criteria.
+ *
+ * \param[in, out]  sles         pointer to solver object
+ * \param[in]       allow_no_op  true if immediate return is allowed,
+ *                               false if at least one iteration is required
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_set_allow_no_op(cs_sles_t  *sles,
+                        bool        allow_no_op);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Setup sparse linear equation solver.
  *
  * Use of this function is optional: if a \ref cs_sles_solve is called
