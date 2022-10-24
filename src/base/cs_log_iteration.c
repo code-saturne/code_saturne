@@ -515,7 +515,7 @@ _log_clip_info(const char        *prefix,
 static void
 _log_fields(void)
 {
-  int f_id, li, log_count;
+  int f_id, log_count;
 
   int log_count_max = 0;
   int fpe_flag = 0;
