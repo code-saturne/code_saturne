@@ -4571,7 +4571,7 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
           b_size *= 2;
           BFT_REALLOC(b_clean_faces, b_size, cs_lnum_t);
         }
-        b_clean_faces[n_b_clean_faces] = i+1;
+        b_clean_faces[n_b_clean_faces] = i;
       }
 
       n_b_clean_faces++;
@@ -4633,7 +4633,7 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
           i_size *= 2;
           BFT_REALLOC(i_clean_faces, i_size, cs_lnum_t);
         }
-        i_clean_faces[n_i_clean_faces] = i+1;
+        i_clean_faces[n_i_clean_faces] = i;
       }
 
       n_i_clean_faces++;

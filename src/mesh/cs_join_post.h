@@ -127,9 +127,9 @@ cs_join_post_after_split(cs_lnum_t         n_old_i_faces,
  *
  * parameters:
  *   n_i_clean_faces <-- number of interior faces cleaned
- *   i_clean_faces   <-> list of interior face numbers (ordered on exit)
+ *   i_clean_faces   <-> list of interior face ids (ordered on exit)
  *   n_b_clean_faces <-- number of border faces cleaned
- *   b_clean_faces   <-> list of border face numbers (ordered on exit)
+ *   b_clean_faces   <-> list of border face ids (ordered on exit)
  *   param           <-- set of parameters for the joining operation
  *---------------------------------------------------------------------------*/
 

@@ -454,6 +454,14 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
   BFT_MALLOC(mesh_name, strlen("AdjacentJoinFaces_j") + 2 + 1, char);
   sprintf(mesh_name,"%s%02d", "AdjacentJoinFaces_j", join_param.num);
 
+  cs_lnum_t *i_adj_faces, *b_adj_faces;
+  BFT_MALLOC(i_adj_faces, join_select->n_i_adj_faces, cs_lnum_t);
+  BFT_MALLOC(b_adj_faces, join_select->n_b_adj_faces, cs_lnum_t);
+  for (cs_lnum_t i = 0; i < join_select->n_i_adj_faces; i++)
+    i_adj_faces[i] = join_select->i_adj_faces[i] - 1;
+  for (cs_lnum_t i = 0; i < join_select->n_b_adj_faces; i++)
+    b_adj_faces[i] = join_select->b_adj_faces[i] - 1;
+
   adj_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
                                             mesh_name,
                                             false, /* include families */
@@ -461,6 +469,9 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
                                             join_select->n_b_adj_faces,
                                             join_select->i_adj_faces,
                                             join_select->b_adj_faces);
+
+  BFT_FREE(i_adj_faces);
+  BFT_FREE(b_adj_faces);
 
   cs_post_define_existing_mesh(adj_mesh_id,
                                adj_mesh,
@@ -474,6 +485,11 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
 
   BFT_REALLOC(mesh_name, strlen("JoinFacesAfterMerge_j") + 2 + 1, char);
   sprintf(mesh_name,"%s%02d", "JoinFacesAfterMerge_j", join_param.num);
+
+  cs_lnum_t *faces;
+  BFT_MALLOC(faces, join_select->n_faces, cs_lnum_t);
+  for (cs_lnum_t i = 0; i < join_select->n_faces; i++)
+    b_adj_faces[i] = join_select->faces[i] - 1;
 
   sel_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
                                             mesh_name,
@@ -490,6 +506,8 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
                                false,
                                1,
                                writer_ids);
+
+  BFT_FREE(faces);
 
   /* Post */
 
@@ -541,16 +559,16 @@ cs_join_post_after_split(cs_lnum_t         n_old_i_faces,
   const int  n_new_i_faces = mesh->n_i_faces - n_old_i_faces;
   const int  n_new_b_faces = mesh->n_b_faces - n_old_b_faces + n_select_faces;
 
-  /* Define list of faces to post-treat */
+  /* Define list of faces to post-process */
 
   BFT_MALLOC(post_i_faces, n_new_i_faces, cs_lnum_t);
   BFT_MALLOC(post_b_faces, n_new_b_faces, cs_lnum_t);
 
   for (i = n_old_i_faces, j = 0; i < mesh->n_i_faces; i++, j++)
-    post_i_faces[j] = i + 1;
+    post_i_faces[j] = i;
 
   for (i = n_old_b_faces-n_select_faces, j = 0; i < mesh->n_b_faces; i++, j++)
-    post_b_faces[j] = i + 1;
+    post_b_faces[j] = i;
 
   BFT_MALLOC(mesh_name, strlen("InteriorJoinedFaces_j") + 2 + 1, char);
   sprintf(mesh_name,"%s%02d", "InteriorJoinedFaces_j", join_param.num);
@@ -618,9 +636,9 @@ cs_join_post_after_split(cs_lnum_t         n_old_i_faces,
  *
  * parameters:
  *   n_i_clean_faces <-- number of interior faces cleaned
- *   i_clean_faces   <-> list of interior face numbers (ordered on exit)
+ *   i_clean_faces   <-> list of interior face ids (ordered on exit)
  *   n_b_clean_faces <-- number of border faces cleaned
- *   b_clean_faces   <-> list of border face numbers (ordered on exit)
+ *   b_clean_faces   <-> list of border face ids (ordered on exit)
  *   param           <-- set of parameters for the joining operation
  *---------------------------------------------------------------------------*/
 

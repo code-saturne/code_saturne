@@ -257,7 +257,6 @@ _create_locator(cs_internal_coupling_t  *cpl)
 
   const cs_lnum_t n_local = cpl->n_local;
   const int *c_tag = cpl->c_tag;
-  cs_lnum_t *faces_local_num = NULL;
 
   fvm_nodal_t* nm = NULL;
   int *tag_nm = NULL;
@@ -279,17 +278,13 @@ _create_locator(cs_internal_coupling_t  *cpl)
 
   /* Create fvm_nodal_t structure */
 
-  BFT_MALLOC(faces_local_num, n_local, cs_lnum_t);
-  for (cs_lnum_t face_id = 0; face_id < n_local; face_id++)
-    faces_local_num[face_id] = cpl->faces_local[face_id] + 1;
-
   nm = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
                                       mesh_name,
                                       false,
                                       0,
                                       n_local,
                                       NULL,
-                                      faces_local_num); /* 1..n */
+                                      cpl->faces_local);
 
   /* Tag fvm_nodal_t structure */
 
@@ -305,7 +300,7 @@ _create_locator(cs_internal_coupling_t  *cpl)
     /* Default tag is 0 */
     tag_nm[ii] = 0;
     for (cs_lnum_t jj = 0; jj < n_local; jj++) {
-      if (faces_in_nm[ii] == faces_local_num[jj]){
+      if (faces_in_nm[ii] == cpl->faces_local[jj] + 1){
         tag_nm[ii] = c_tag[jj];
         break;
       }
@@ -315,7 +310,6 @@ _create_locator(cs_internal_coupling_t  *cpl)
   /* Free memory */
   BFT_FREE(faces_in_nm);
   BFT_FREE(tag_nm);
-  BFT_FREE(faces_local_num);
 
   /* Creation of distant group cell centers */
 
