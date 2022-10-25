@@ -2650,7 +2650,7 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
         for (j = 0; j < mesh->n_i_faces; j++) {
           int f_id = mesh->i_face_family[j];
           if (f_id > 0 && fam_flag[f_id - 1])
-            i_face_list[n_i_faces++] = j + 1;
+            i_face_list[n_i_faces++] = j;
         }
       }
       n_b_faces = 0;
@@ -2658,7 +2658,7 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
         for (j = 0; j < mesh->n_b_faces; j++) {
           int f_id = mesh->b_face_family[j];
           if (f_id > 0 && fam_flag[f_id - 1])
-            b_face_list[n_b_faces++] = j + 1;
+            b_face_list[n_b_faces++] = j;
         }
       }
 
