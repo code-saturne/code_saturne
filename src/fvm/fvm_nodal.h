@@ -251,7 +251,7 @@ fvm_nodal_remove_tag(fvm_nodal_t  *this_nodal,
  * parameters:
  *   this_nodal       <-> nodal mesh structure
  *   n_vertices       <-- number of vertices to assign
- *   parent_vertex_id <-- parent numbers of vertices to assign
+ *   parent_vertex_id <-- parent ids of vertices to assign
  *----------------------------------------------------------------------------*/
 
 void

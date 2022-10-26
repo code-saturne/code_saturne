@@ -897,17 +897,17 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
       cs_lnum_t i;
       int writer_ids[] = {CS_POST_WRITER_DEFAULT};
       int mesh_id = coupling_ent->post_mesh_id - 1;
-      cs_lnum_t *p_vtx_num = NULL;
+      cs_lnum_t *p_vtx_id = NULL;
       fvm_io_num_t *vtx_io_num = NULL;
       fvm_nodal_t *syr_points = fvm_nodal_create("SYRTHES face centers",
                                                  syr_coupling->dim);
 
-      BFT_MALLOC(p_vtx_num, n_dist_elts, cs_lnum_t);
+      BFT_MALLOC(p_vtx_id, n_dist_elts, cs_lnum_t);
 
       for (i = 0; i < (cs_lnum_t)n_dist_elts; i++)
-        p_vtx_num[i] = i+1;
+        p_vtx_id[i] = i;
 
-      fvm_nodal_define_vertex_list(syr_points, n_dist_elts, p_vtx_num);
+      fvm_nodal_define_vertex_list(syr_points, n_dist_elts, p_vtx_id);
       fvm_nodal_set_shared_vertices
         (syr_points,
          ple_locator_get_dist_coords(coupling_ent->locator));

@@ -2789,7 +2789,7 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
         for (j = 0; j < mesh->n_b_faces; j++) {
           int f_id = mesh->b_face_family[j];
           if (f_id > 0 && fam_flag[f_id - 1])
-            b_face_list[n_b_faces++] = j + 1;
+            b_face_list[n_b_faces++] = j;
         }
       }
 
@@ -2819,12 +2819,12 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
     if (mesh->b_face_family != NULL) {
       for (j = 0, n_b_faces = 0; j < mesh->n_b_faces; j++) {
         if (mesh->b_face_family[j] <= max_null_family)
-          b_face_list[n_b_faces++] = j + 1;
+          b_face_list[n_b_faces++] = j;
       }
     }
     else {
       for (j = 0, n_b_faces = 0; j < mesh->n_b_faces; j++)
-        b_face_list[n_b_faces++] = j + 1;
+        b_face_list[n_b_faces++] = j;
     }
 
     exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,

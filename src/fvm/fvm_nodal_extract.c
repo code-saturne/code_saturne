@@ -100,19 +100,19 @@ BEGIN_C_DECLS
  * of the element's vertices.
  *
  * parameters:
- *   n_vertices         <-- number of face vertices
- *   face_vertex_num    <-- face vertex numbers
- *   parent_vertex_num  <-- pointer to parent vertex numbers (or NULL)
- *   vertex_coords      <-- pointer to vertex coordinates
- *   center             --> face center
- *   normal             --> face normal
- *   surface            --> face surface
+ *   n_vertices        <-- number of face vertices
+ *   face_vertex_num   <-- face vertex numbers
+ *   parent_vertex_id  <-- pointer to parent vertex ids (or NULL)
+ *   vertex_coords     <-- pointer to vertex coordinates
+ *   center            --> face center
+ *   normal            --> face normal
+ *   surface           --> face surface
  *----------------------------------------------------------------------------*/
 
 static inline void
 _face_quantities_3d(cs_lnum_t           n_vertices,
                     const cs_lnum_t     face_vertex_num[],
-                    const cs_lnum_t    *parent_vertex_num,
+                    const cs_lnum_t    *parent_vertex_id,
                     const cs_coord_t    vertex_coords[],
                     double              center[3],
                     double              normal[3],
@@ -135,11 +135,11 @@ _face_quantities_3d(cs_lnum_t           n_vertices,
 
   /* Counting loop on face vertices */
 
-  if (parent_vertex_num != NULL) {
+  if (parent_vertex_id != NULL) {
 
     for (i = 0; i < n_vertices; i++) {
       _coords_0 =   vertex_coords
-                  + (parent_vertex_num[face_vertex_num[i]-1] - 1)*3;
+                  + parent_vertex_id[face_vertex_num[i]-1]*3;
       for (j = 0; j < 3; j++)
         vertices_center[j] += _coords_0[j];
     }
@@ -165,9 +165,9 @@ _face_quantities_3d(cs_lnum_t           n_vertices,
     cs_lnum_t v_id_0 = face_vertex_num[i] - 1;
     cs_lnum_t v_id_1 = face_vertex_num[(i+1)%n_vertices] - 1;
 
-    if (parent_vertex_num != NULL) {
-      _coords_0 = vertex_coords + (parent_vertex_num[v_id_0] - 1)*3;
-      _coords_1 = vertex_coords + (parent_vertex_num[v_id_1] - 1)*3;
+    if (parent_vertex_id != NULL) {
+      _coords_0 = vertex_coords + parent_vertex_id[v_id_0]*3;
+      _coords_1 = vertex_coords + parent_vertex_id[v_id_1]*3;
     }
     else {
       _coords_0 = vertex_coords + v_id_0*3;
@@ -210,18 +210,18 @@ _face_quantities_3d(cs_lnum_t           n_vertices,
  * The algorithm will hande non-convex polygons.
  *
  * parameters:
- *   n_vertices         <-- number of face vertices
- *   face_vertex_num    <-- face vertex numbers
- *   parent_vertex_num  <-- pointer to parent vertex numbers (or NULL)
- *   vertex_coords      <-- pointer to vertex coordinates
- *   center             --> face center
- *   surface            --> face surface
+ *   n_vertices        <-- number of face vertices
+ *   face_vertex_num   <-- face vertex numbers
+ *   parent_vertex_id  <-- pointer to parent vertex ids (or NULL)
+ *   vertex_coords     <-- pointer to vertex coordinates
+ *   center            --> face center
+ *   surface           --> face surface
  *----------------------------------------------------------------------------*/
 
 static inline void
 _face_quantities_2d(cs_lnum_t          n_vertices,
                     const cs_lnum_t    face_vertex_num[],
-                    const cs_lnum_t   *parent_vertex_num,
+                    const cs_lnum_t   *parent_vertex_id,
                     const cs_coord_t   vertex_coords[],
                     double             center[2],
                     double            *surface)
@@ -242,9 +242,9 @@ _face_quantities_2d(cs_lnum_t          n_vertices,
   v_id_1 = face_vertex_num[0] - 1;
   v_id_2 = face_vertex_num[1] - 1;
 
-  if (parent_vertex_num != NULL) {
-    _coords_1 = vertex_coords + (parent_vertex_num[v_id_1] - 1)*2;
-    _coords_2 = vertex_coords + (parent_vertex_num[v_id_2] - 1)*2;
+  if (parent_vertex_id != NULL) {
+    _coords_1 = vertex_coords + parent_vertex_id[v_id_1]*2;
+    _coords_2 = vertex_coords + parent_vertex_id[v_id_2]*2;
   }
   else {
     _coords_1 = vertex_coords + v_id_1*2;
@@ -260,8 +260,8 @@ _face_quantities_2d(cs_lnum_t          n_vertices,
 
     v_id_2 = face_vertex_num[(i+2)%n_vertices] - 1;
 
-    if (parent_vertex_num != NULL)
-      _coords_2 = vertex_coords + (parent_vertex_num[v_id_2] - 1)*2;
+    if (parent_vertex_id != NULL)
+      _coords_2 = vertex_coords + parent_vertex_id[v_id_2]*2;
     else
       _coords_2 = vertex_coords + v_id_2*2;
 
@@ -292,20 +292,20 @@ _face_quantities_2d(cs_lnum_t          n_vertices,
  * Copy element centers from a polyhedral mesh section to an array.
  *
  * parameters:
- *   this_section       <-- pointer to nodal mesh section
- *   n_elements         <-- number of elements of similar dimension in mesh
- *   element_count      <-> number of elements whose centers have been copied
- *   parent_vertex_num  <-- pointer to parent vertex numbers (or NULL)
- *   vertex_coords      <-- pointer to vertex coordinates
- *   interlace          <-- indicates if destination array is interlaced
- *   cell_centers       --> cell centers coordinates (pre-allocated)
+ *   this_section      <-- pointer to nodal mesh section
+ *   n_elements        <-- number of elements of similar dimension in mesh
+ *   element_count     <-> number of elements whose centers have been copied
+ *   parent_vertex_id  <-- pointer to parent vertex ids (or NULL)
+ *   vertex_coords     <-- pointer to vertex coordinates
+ *   interlace         <-- indicates if destination array is interlaced
+ *   cell_centers      --> cell centers coordinates (pre-allocated)
  *----------------------------------------------------------------------------*/
 
 static void
 _cell_poly_section_centers(const fvm_nodal_section_t  *this_section,
                            cs_lnum_t                   n_elements,
                            cs_lnum_t                  *element_count,
-                           const cs_lnum_t            *parent_vertex_num,
+                           const cs_lnum_t            *parent_vertex_id,
                            const cs_coord_t            vertex_coords[],
                            cs_interlace_t              interlace,
                            cs_coord_t                 *cell_centers)
@@ -341,7 +341,7 @@ _cell_poly_section_centers(const fvm_nodal_section_t  *this_section,
 
       _face_quantities_3d(n_vertices,
                           this_section->vertex_num + v_index_start,
-                          parent_vertex_num,
+                          parent_vertex_id,
                           vertex_coords,
                           f_center,
                           f_normal,
@@ -373,20 +373,20 @@ _cell_poly_section_centers(const fvm_nodal_section_t  *this_section,
  * Copy element centers from a strided cell mesh section to an array.
  *
  * parameters:
- *   this_section       <-- pointer to nodal mesh section
- *   n_elements         <-- number of elements of similar dimension in mesh
- *   element_count      <-> number of elements whose centers have been copied
- *   parent_vertex_num  <-- pointer to parent vertex numbers (or NULL)
- *   vertex_coords      <-- pointer to vertex coordinates
- *   interlace          <-- indicates if destination array is interlaced
- *   cell_centers       --> cell centers coordinates (pre-allocated)
+ *   this_section      <-- pointer to nodal mesh section
+ *   n_elements        <-- number of elements of similar dimension in mesh
+ *   element_count     <-> number of elements whose centers have been copied
+ *   parent_vertex_id  <-- pointer to parent vertex ids (or NULL)
+ *   vertex_coords     <-- pointer to vertex coordinates
+ *   interlace         <-- indicates if destination array is interlaced
+ *   cell_centers      --> cell centers coordinates (pre-allocated)
  *----------------------------------------------------------------------------*/
 
 static void
 _cell_strided_section_centers(const fvm_nodal_section_t  *this_section,
                               cs_lnum_t                   n_elements,
                               cs_lnum_t                  *element_count,
-                              const cs_lnum_t            *parent_vertex_num,
+                              const cs_lnum_t            *parent_vertex_id,
                               const cs_coord_t            vertex_coords[],
                               cs_interlace_t              interlace,
                               cs_coord_t                 *cell_centers)
@@ -428,7 +428,7 @@ _cell_strided_section_centers(const fvm_nodal_section_t  *this_section,
 
       _face_quantities_3d(n_face_vertices[j],
                           _vertex_num,
-                          parent_vertex_num,
+                          parent_vertex_id,
                           vertex_coords,
                           f_center,
                           f_normal,
@@ -460,20 +460,20 @@ _cell_strided_section_centers(const fvm_nodal_section_t  *this_section,
  * Copy element centers from a 3d face mesh section to an array.
  *
  * parameters:
- *   this_section       <-- pointer to nodal mesh section
- *   n_elements         <-- number of elements of similar dimension in mesh
- *   element_count      <-> number of elements whose centers have been copied
- *   parent_vertex_num  <-- pointer to parent vertex numbers (or NULL)
- *   vertex_coords      <-- pointer to vertex coordinates
- *   interlace          <-- indicates if destination array is interlaced
- *   cell_centers       --> cell centers coordinates (pre-allocated)
+ *   this_section      <-- pointer to nodal mesh section
+ *   n_elements        <-- number of elements of similar dimension in mesh
+ *   element_count     <-> number of elements whose centers have been copied
+ *   parent_vertex_id  <-- pointer to parent vertex ids (or NULL)
+ *   vertex_coords     <-- pointer to vertex coordinates
+ *   interlace         <-- indicates if destination array is interlaced
+ *   cell_centers      --> cell centers coordinates (pre-allocated)
  *----------------------------------------------------------------------------*/
 
 static void
 _face_section_centers_3d(const fvm_nodal_section_t  *this_section,
                          cs_lnum_t                   n_elements,
                          cs_lnum_t                  *element_count,
-                         const cs_lnum_t            *parent_vertex_num,
+                         const cs_lnum_t            *parent_vertex_id,
                          const cs_coord_t            vertex_coords[],
                          cs_interlace_t              interlace,
                          cs_coord_t                 *cell_centers)
@@ -502,7 +502,7 @@ _face_section_centers_3d(const fvm_nodal_section_t  *this_section,
 
     _face_quantities_3d(n_vertices,
                         this_section->vertex_num + v_index_start,
-                        parent_vertex_num,
+                        parent_vertex_id,
                         vertex_coords,
                         f_center,
                         f_normal,
@@ -528,20 +528,20 @@ _face_section_centers_3d(const fvm_nodal_section_t  *this_section,
  * Copy element centers from a 2d face mesh section to an array.
  *
  * parameters:
- *   this_section       <-- pointer to nodal mesh section
- *   n_elements         <-- number of elements of similar dimension in mesh
- *   element_count      <-> number of elements whose centers have been copied
- *   parent_vertex_num  <-- pointer to parent vertex numbers (or NULL)
- *   vertex_coords      <-- pointer to vertex coordinates
- *   interlace          <-- indicates if destination array is interlaced
- *   cell_centers       --> cell centers coordinates (pre-allocated)
+ *   this_section      <-- pointer to nodal mesh section
+ *   n_elements        <-- number of elements of similar dimension in mesh
+ *   element_count     <-> number of elements whose centers have been copied
+ *   parent_vertex_id  <-- pointer to parent vertex numbers (or NULL)
+ *   vertex_coords     <-- pointer to vertex coordinates
+ *   interlace         <-- indicates if destination array is interlaced
+ *   cell_centers      --> cell centers coordinates (pre-allocated)
  *----------------------------------------------------------------------------*/
 
 static void
 _face_section_centers_2d(const fvm_nodal_section_t  *this_section,
                          cs_lnum_t                   n_elements,
                          cs_lnum_t                  *element_count,
-                         const cs_lnum_t            *parent_vertex_num,
+                         const cs_lnum_t            *parent_vertex_id,
                          const cs_coord_t            vertex_coords[],
                          cs_interlace_t              interlace,
                          cs_coord_t                 *cell_centers)
@@ -570,7 +570,7 @@ _face_section_centers_2d(const fvm_nodal_section_t  *this_section,
 
     _face_quantities_2d(n_vertices,
                         this_section->vertex_num + v_index_start,
-                        parent_vertex_num,
+                        parent_vertex_id,
                         vertex_coords,
                         f_center,
                         &f_surface);
@@ -595,30 +595,30 @@ _face_section_centers_2d(const fvm_nodal_section_t  *this_section,
  * Update element extents with a given vertex
  *
  * parameters:
- *   dim               <-- spatial (coordinates) dimension
- *   vertex_id         <-- vertex index (0 to n-1)
- *   parent_vertex_num <-- pointer to parent vertex numbers (or NULL)
- *   vertex_coords     <-- pointer to vertex coordinates
- *   elt_extents       <-> extents associated with element:
- *                         x_min, y_min, ..., x_max, y_max, ... (size: 2*dim)
- *   elt_initialized   <-> are extents already initialized for this vertex
- *                         (for all element vertices except the first) ?
+ *   dim              <-- spatial (coordinates) dimension
+ *   vertex_id        <-- vertex index (0 to n-1)
+ *   parent_vertex_id <-- pointer to parent vertex ids (or NULL)
+ *   vertex_coords    <-- pointer to vertex coordinates
+ *   elt_extents      <-> extents associated with element:
+ *                        x_min, y_min, ..., x_max, y_max, ... (size: 2*dim)
+ *   elt_initialized  <-> are extents already initialized for this vertex
+ *                        (for all element vertices except the first) ?
  *----------------------------------------------------------------------------*/
 
 inline static void
 _update_elt_extents(int                 dim,
                     cs_lnum_t           vertex_id,
-                    const cs_lnum_t    *parent_vertex_num,
+                    const cs_lnum_t    *parent_vertex_id,
                     const cs_coord_t    vertex_coords[],
                     double              elt_extents[],
                     bool               *elt_initialized)
 {
   cs_lnum_t   i, coord_idx;
 
-  if (parent_vertex_num == NULL)
+  if (parent_vertex_id == NULL)
     coord_idx = vertex_id;
   else
-    coord_idx = parent_vertex_num[vertex_id] - 1;
+    coord_idx = parent_vertex_id[vertex_id];
 
   if (*elt_initialized == false) {
     for (i = 0; i < dim; i++) {
@@ -711,20 +711,20 @@ _update_extents(int               dim,
  * Compute extents of a nodal mesh representation section
  *
  * parameters:
- *   this_section      <-- pointer to section structure
- *   dim               <-- spatial (coordinates) dimension
- *   parent_vertex_num <-- pointer to parent vertex numbers (or NULL)
- *   vertex_coords     <-- pointer to vertex coordinates
- *   tolerance         <-- addition to local extents of each element:
- *                         extent = base_extent * (1 + tolerance)
- *   extents           <-> extents associated with section:
- *                         x_min, y_min, ..., x_max, y_max, ... (size: 2*dim)
+ *   this_section     <-- pointer to section structure
+ *   dim              <-- spatial (coordinates) dimension
+ *   parent_vertex_id <-- pointer to parent vertex ids (or NULL)
+ *   vertex_coords    <-- pointer to vertex coordinates
+ *   tolerance        <-- addition to local extents of each element:
+ *                        extent = base_extent * (1 + tolerance)
+ *   extents          <-> extents associated with section:
+ *                        x_min, y_min, ..., x_max, y_max, ... (size: 2*dim)
  *----------------------------------------------------------------------------*/
 
 static void
 _nodal_section_extents(const fvm_nodal_section_t  *this_section,
                        int                         dim,
-                       const cs_lnum_t            *parent_vertex_num,
+                       const cs_lnum_t            *parent_vertex_id,
                        const cs_coord_t            vertex_coords[],
                        double                      tolerance,
                        double                      extents[])
@@ -757,7 +757,7 @@ _nodal_section_extents(const fvm_nodal_section_t  *this_section,
 
           _update_elt_extents(dim,
                               vertex_id,
-                              parent_vertex_num,
+                              parent_vertex_id,
                               vertex_coords,
                               elt_extents,
                               &elt_initialized);
@@ -790,7 +790,7 @@ _nodal_section_extents(const fvm_nodal_section_t  *this_section,
 
         _update_elt_extents(dim,
                             vertex_id,
-                            parent_vertex_num,
+                            parent_vertex_id,
                             vertex_coords,
                             elt_extents,
                             &elt_initialized);
@@ -818,7 +818,7 @@ _nodal_section_extents(const fvm_nodal_section_t  *this_section,
 
         _update_elt_extents(dim,
                             vertex_id,
-                            parent_vertex_num,
+                            parent_vertex_id,
                             vertex_coords,
                             elt_extents,
                             &elt_initialized);
