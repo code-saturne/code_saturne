@@ -94,72 +94,104 @@ ecs_fic_med_init_elt_liste_c[ECS_MED_NBR_TYP_ELT] = {
     { 1, 2, 3 }
   },
   {                                /* 3 */
+    MED_TRIA7,
+    ECS_ELT_TYP_FAC_TRIA,
+    ECS_MED_ORDER_PARABOLIC,
+    { 1, 2, 3 }
+  },
+  {                                /* 4 */
     MED_QUAD4,
     ECS_ELT_TYP_FAC_QUAD,
     ECS_MED_ORDER_LINEAR,
     { 1, 2, 3, 4 }
   },
-  {                                /* 4 */
+  {                                /* 5 */
     MED_QUAD8,
     ECS_ELT_TYP_FAC_QUAD,
     ECS_MED_ORDER_PARABOLIC,
     { 1, 2, 3, 4 }
   },
-  {                                /* 5 */
+  {                                /* 6 */
+    MED_QUAD9,
+    ECS_ELT_TYP_FAC_QUAD,
+    ECS_MED_ORDER_PARABOLIC,
+    { 1, 2, 3, 4 }
+  },
+  {                                /* 7 */
     MED_TETRA4,
     ECS_ELT_TYP_CEL_TETRA,
     ECS_MED_ORDER_LINEAR,
     { 1, 3, 2, 4 }
   },
-  {                                /* 6 */
+  {                                /* 8 */
     MED_TETRA10,
     ECS_ELT_TYP_CEL_TETRA,
     ECS_MED_ORDER_PARABOLIC,
     { 1, 3, 2, 4 }
   },
-  {                               /*  7 */
+  {                               /*  9 */
     MED_PYRA5,
     ECS_ELT_TYP_CEL_PYRAM,
     ECS_MED_ORDER_LINEAR,
     { 1, 4, 3, 2, 5 }
   },
-  {                               /*  8 */
+  {                               /* 10 */
     MED_PYRA13,
     ECS_ELT_TYP_CEL_PYRAM,
     ECS_MED_ORDER_PARABOLIC,
     { 1, 4, 3, 2, 5 }
   },
-  {                               /*  9 */
+  {                               /* 11 */
     MED_PENTA6,
     ECS_ELT_TYP_CEL_PRISM,
     ECS_MED_ORDER_LINEAR,
     { 1, 3, 2, 4, 6, 5 }
   },
-  {                               /* 10 */
+  {                               /* 12 */
     MED_PENTA15,
     ECS_ELT_TYP_CEL_PRISM,
     ECS_MED_ORDER_PARABOLIC,
     { 1, 3, 2, 4, 6, 5 }
   },
-  {                               /* 11 */
+  {                               /* 13 */
     MED_HEXA8,
     ECS_ELT_TYP_CEL_HEXA,
     ECS_MED_ORDER_LINEAR,
     { 1, 4, 3, 2, 5, 8, 7, 6 },
   },
-  {                               /* 12 */
+  {                               /* 14 */
     MED_HEXA20,
     ECS_ELT_TYP_CEL_HEXA,
     ECS_MED_ORDER_PARABOLIC,
     { 1, 4, 3, 2, 5, 8, 7, 6 },
   },
-  {                               /* 13 */
-    MED_POLYGON,
-    ECS_ELT_TYP_FAC_POLY,
-    ECS_MED_ORDER_LINEAR,
-    { 0 },
+  {                               /* 15 */
+    MED_HEXA27,
+    ECS_ELT_TYP_CEL_HEXA,
+    ECS_MED_ORDER_PARABOLIC,
+    { 1, 4, 3, 2, 5, 8, 7, 6 },
   },
-  {                               /* 14 */
+  {                               /* 16 */
+    MED_HEXA27,
+    ECS_ELT_TYP_CEL_HEXA,
+    ECS_MED_ORDER_PARABOLIC,
+    { 1, 4, 3, 2, 5, 8, 7, 6 },
+  },
+  {                               /* 17 */
+    MED_OCTA12,
+    ECS_ELT_TYP_CEL_POLY,
+    ECS_MED_ORDER_LINEAR,
+    { 1, 2, 3, 4, 5, 6, 1,
+      7, 12, 11, 10, 9, 8, 7,
+      1, 7, 8, 2, 1,
+      2, 8, 9, 3, 2,
+      3, 9, 10, 4, 3,
+      4, 10, 11, 5, 4,
+      5, 11, 12, 6, 5,
+      6, 12, 7, 1, 6
+    },
+  },
+  {                               /* 18 */
     MED_POLYHEDRON,
     ECS_ELT_TYP_CEL_POLY,
     ECS_MED_ORDER_LINEAR,

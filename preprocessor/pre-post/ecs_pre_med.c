@@ -724,7 +724,14 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
 
       if (typ_geo_med != MED_POLYGON && typ_geo_med != MED_POLYHEDRON) {
 
-        nbr_som_elt = ecs_fic_elt_typ_liste_c[typ_geo_ecs].nbr_som;
+        switch (typ_geo_med) {
+        case MED_OCTA12:
+          nbr_som_elt = 44; /* convert to polyhedron */
+          break;
+        default:
+          nbr_som_elt = ecs_fic_elt_typ_liste_c[typ_geo_ecs].nbr_som;
+          break;
+        }
 
         taille = elt_pos_som_ent[entmail_e][cpt_elt_ent[entmail_e]] - 1;
 

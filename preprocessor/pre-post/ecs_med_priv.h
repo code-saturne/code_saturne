@@ -124,8 +124,8 @@ extern "C" {
 #define ECS_MED_ORDER_LINEAR                               1
 #define ECS_MED_ORDER_PARABOLIC                            2
 
-#define ECS_MED_NBR_TYP_ELT                               14
-#define ECS_MED_NBR_MAX_SOM                                8
+#define ECS_MED_NBR_TYP_ELT                               18
+#define ECS_MED_NBR_MAX_SOM                               44
 
 /*============================================================================
  *                         Définitions d'énumerations
