@@ -36,7 +36,6 @@
 #include <string.h>
 #include <assert.h>
 #include <math.h>
-#include <float.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -299,9 +298,7 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
 
 #       pragma omp parallel for if(n_rows > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < n_rows; i++)
-          sd->_ad_inv[i] = (CS_ABS(sd->_ad_inv[i], 0.) > DBL_MIN) ?
-                            1.0 / sd->_ad_inv[i]
-                            : 0.;
+          sd->_ad_inv[i] = 1.0 / sd->_ad_inv[i];
 
       }
       else {
