@@ -1361,6 +1361,49 @@ cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *coefa ,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Prepare (reset) condition coefficients for all variable fields.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_reset(void)
+{
+  const cs_lnum_t n_b_faces
+    = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES)[0];
+
+  const int n_fields = cs_field_n_fields();
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+
+    const cs_field_t  *f = cs_field_by_id(f_id);
+
+    if (f->type & CS_FIELD_VARIABLE && f->bc_coeffs != NULL) {
+
+      int *icodcl  = f->bc_coeffs->icodcl;
+      cs_real_t *rcodcl1 = f->bc_coeffs->rcodcl1;
+      cs_real_t *rcodcl2 = f->bc_coeffs->rcodcl2;
+      cs_real_t *rcodcl3 = f->bc_coeffs->rcodcl3;
+
+      /* Initialize all icodcl and rcodcl values to defaults, to
+         to avoid issues in some Fortran initialization loops
+         which do not do the appropriate checks for variable type. */
+
+      cs_lnum_t n = n_b_faces * (cs_lnum_t)(f->dim);
+
+      for (cs_lnum_t i = 0; i < n; i++) {
+        icodcl[i] = 0;
+        rcodcl1[i] = cs_math_infinite_r;
+        rcodcl2[i] = cs_math_infinite_r;
+        rcodcl3[i] = 0;
+      }
+
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Update per variable boundary condition codes.
  *
  * \param[in]       nvar             number of variables requiring BC's

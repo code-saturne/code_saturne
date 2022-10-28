@@ -319,6 +319,14 @@ interface
 
   end subroutine clsyvt
 
+  subroutine cs_boundary_conditions_reset() &
+    bind(C, name = 'cs_boundary_conditions_reset')
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+  end subroutine cs_boundary_conditions_reset
+
   subroutine cs_boundary_conditions_complete(nvar, itypfb, icodcl, rcodcl) &
     bind(C, name='cs_boundary_conditions_complete')
 
@@ -367,6 +375,8 @@ interface
 !===============================================================================
 
 rijipb => null()
+
+call cs_boundary_conditions_reset
 
 call precli(nvar, icodcl, rcodcl)
 

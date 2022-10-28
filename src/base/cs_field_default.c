@@ -405,7 +405,7 @@ cs_field_build_bc_codes_all(void)
 
       /* Initialize icodcl and rcodcl values to defaults
          (even if they are not mapped to C, to avoid
-         issues in some Fortran initilaization loops
+         issues in some Fortran initialization loops
          which do not do the appropriate checks for
          variable type. */
 

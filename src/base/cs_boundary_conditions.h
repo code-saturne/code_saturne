@@ -493,6 +493,15 @@ cs_boundary_conditions_set_dirichlet_vector_aniso(cs_real_3_t    a,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Prepare (reset) condition coefficients for all variable fields.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_reset(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Update per variable boundary condition codes.
  *
  * \param[in]       nvar             number of variables requiring BC's
