@@ -241,26 +241,11 @@
   immediately after \ref cs_user_boundary_conditions_setup. Choosing one or the
   other should be based on the best balance for reability and maintainability,
 
-  \section base_loc_var_bc Local variables to be added
-
-  The following local variables need to be defined for the examples
-  in this section:
-
-  \snippet cs_user_boundary_conditions-advanced.f90 loc_var_dec
-
-  \section base_init_ex Initialization and finalization
+  \section base_init_ex Initialization
 
   The following initialization block needs to be added for the following examples:
 
-  \snippet cs_user_boundary_conditions-base.f90 init
-
-  Ad the end of the subroutine, it is recommended to deallocate the work array:
-
-  \snippet cs_user_boundary_conditions-base.f90 finalize
-
-  In theory Fortran 95 deallocates locally-allocated arrays automatically,
-  but deallocating arrays in a symmetric manner to their allocation is good
-  practice, and it avoids using a different logic for C and Fortran.
+  \snippet cs_user_boundary_conditions-base.c init
 
   \section base_body_bc Body
 
@@ -268,7 +253,7 @@
 
   \section base_example_1_bc Inlet example with hydraulic diameter
 
-  Assign an inlet to boundary faces of group '2' and x < 0.01.
+  Assign an inlet to boundary faces of in zone 'inlet_1'.
 
   \warning the <, <=, >, and >= operators may only be used with variables x, y, and z.
   This syntax is not a full equation interpreter, so formulas involving x, y, or z
@@ -286,19 +271,19 @@
   We will also be careful if necessary to use a more precise
   formula for the dynamic viscosity use in the calculation of
   the Reynolds number (especially if it is variable, it may be
-  useful to take the law from \ref usphyv. Here, we use by default
-  the 'viscl0" value.
+  useful to take the law from \ref cs_user_physical_properties.
+  Here, we use by default the 'viscl0" value.
 
   Regarding the density, we have access to its value at boundary
-  faces (romb) so this value is the one used here (specifically,
-  it is consistent with the processing in \ref usphyv, in case of
-  variable density).
+  faces (b_roh) so this value is the one used here (specifically,
+  it is consistent with the processing in \ref cs_user_physical_properties,
+  in case of variable density).
 
-  \snippet cs_user_boundary_conditions-base.f90 example_1
+  \snippet cs_user_boundary_conditions-base.c example_1
 
   \section base_example_2_bc Inlet example with turbulence intensity
 
-  Assign an inlet to boundary faces of group '3'.
+  Assign an inlet to boundary faces of zone 'inlet_2'.
 
   Set a a Dirichlet value on the three components of \f$ \vect{u} \f$
   on the faces with the selection criterion '3' and set a Dirichlet
@@ -314,44 +299,44 @@
   the turbulence intensity and standard laws for a circular pipe
   (their initialization is not needed here but is good practice)
 
-  \snippet cs_user_boundary_conditions-base.f90 example_2
+  \snippet cs_user_boundary_conditions-base.c example_2
 
-  \section base_example_3_bc Assign an outlet to boundary faces of group 'outlet'
+  \section base_example_3_bc Assign an outlet to boundary faces of zone 'outlet'
 
   Outlet:
   - zero flux for velocity and temperature, prescribed pressure
   - Note that the pressure will be set to P0 at the first
-  - free outlet face (isolib)
+  - free outlet face (CS_OUTLET)
 
-  \snippet cs_user_boundary_conditions-base.f90 example_3
+  \snippet cs_user_boundary_conditions-base.c example_3
 
   \section base_example_4_bc Wall example
 
-  Assign a wall to boundary faces of group '5'.
+  Assign a wall to boundary faces of zone '5'.
 
   Wall:
   - zero flow (zero flux for pressure)
   - friction for velocities (+ turbulent variables)
   - zero flux for scalars
 
-  \snippet cs_user_boundary_conditions-base.f90 example_4
+  \snippet cs_user_boundary_conditions-base.c example_4
 
   \section base_example_5_bc Rough wall example
 
-  Assign a rough wall to boundary faces of group '7'.
+  Assign a rough wall to boundary faces of zone '7'.
 
   Wall:
   - zero flow (zero flux for pressure)
   - rough friction for velocities (+ turbulent variables)
   - zero flux for scalars
 
-  \snippet cs_user_boundary_conditions-base.f90 example_5
+  \snippet cs_user_boundary_conditions-base.c example_5
 
   \section base_example_6_bc Symmetry example
 
-  Assign a symmetry condition to boundary faces of group '4'
+  Assign a symmetry condition to boundary faces of zone '4'
 
-  \snippet cs_user_boundary_conditions-base.f90 example_6
+  \snippet cs_user_boundary_conditions-base.c example_6
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -363,18 +348,7 @@
   from the inlet.
 
   Here, we define an inlet boundary condition for a very long channel or duct
-  with a section matching the boundary faces of group 'INLET'.
-
-  \section channel_inlet_mapped_loc_var_bc Local variables to be added
-
-  The following local variables need to be defined for the examples
-  in this section:
-
-  \snippet cs_user_boundary_conditions-mapped_inlet.f90 loc_var_dec
-
-  Note that the \c inlet_l pointer has the \c save attribute, as the
-  matching structure usually needs to be built only once, then reused at
-  each time step.
+  with a section matching the boundary faces of zone 'INLET'.
 
   \section channel_inlet_mapped_init_bc Initialization and finalization
 
@@ -393,53 +367,49 @@
   \note We may skip the addition of the following block in the user
   subroutine if we define an equivalent inlet condition using the GUI,
   which will ensure the appropriate initialization before entering the
-  user subroutine.
+  user function.
 
-  \snippet cs_user_boundary_conditions-mapped_inlet.f90 example_1_base
+  \snippet cs_user_boundary_conditions-mapped_inlet.c example_1_base
 
   \section channel_inlet_mapped_example_1_map_init Mapping definition
 
   To define the appropriate mapping object, the
-  \ref cs_c_bindings::boundary_conditions_map "boundary_conditions_map"
-  function is used. In this example, coordinates of the selected inlet face
+  \ref cs_boundary_conditions_map function is used. In this example,
+   coordinates of the selected inlet face
   are shifted by a constant distance (5.95 meters along the \em x axis),
   and mapped to the corresponding mesh cells. Here, all cells are selected
   as point location candidates, but optionally, a restricted list of cells
   may be provided, which may accelerate location (or ensure it is done on a
   selected subset). In most cases, as in this example, a constant coordinate
   shift is used for all inlet points, but it is possible to define a
-  specific shift for each face (defining a \c stride argument of 1 instead of 0
-  and \c coord_shift(:,ifac) instead of \c coord_shift(:,1)).
+  specific shift for each face.
 
-  \snippet cs_user_boundary_conditions-mapped_inlet.f90 example_1_map_init
+  \snippet cs_user_boundary_conditions-mapped_inlet.c example_1_map_init
 
   In general, when defining a pseudo-periodic boundary condition, it is assumed
   that the mesh is not moving, so the mapping may be defined once and for
-  all. Hence the test on \ref optcal::ntcabs "ntcabs" and
-  \ref optcal::ntpabs "ntpabs" and the \c save attribute
-  for the \c inlet_1 pointer.
+  all. Hence the test on \ref nt_cur and \ref nt_prev and the save attribute
+  for the inlet_1 pointer.
 
   \section channel_inlet_mapped_example_1_map_apply Applying the map
 
   At all time steps after the first (possibly even the first if the flow
   at the mapping locations is initialized to nonzero values), the values at
-  points mapped to inlet face centers are applied to the \c rcodcl(ifac,1)
-  values of the corresponding faces, using the
-  \ref cs_c_bindings::boundary_conditions_mapped_set
-  "boundary_conditions_mapped_set" subroutine.
-  Optionally, a normalization by be applied,
+  points mapped to inlet face centers are applied to the field->bc_coeffs->rcodcl1
+  values of the corresponding faces, using the \ref cs_boundary_conditions_mapped_set
+  function. Optionally, a normalization by be applied,
   ensuring the mean values initially defined are preserved. Normalization
   is recommended for the velocity, and possibly scalars, but not for
   turbulent quantities, which should adapt to the velocity.
 
-  \snippet cs_user_boundary_conditions-mapped_inlet.f90 example_1_map_apply
+  \snippet cs_user_boundary_conditions-mapped_inlet.c example_1_map_apply
 
   \section channel_inlet_mapped_example_1_map_clean Finalization
 
   At the end of the computation, it is good practice to free the mapping
   structure:
 
-  \snippet cs_user_boundary_conditions-mapped_inlet.f90 example_1_map_free
+  \snippet cs_user_boundary_conditions-mapped_inlet.c example_1_map_free
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -454,21 +424,16 @@
   (using a gradient correction in the case of a less regular mesh might work,
   but has never been tested.
 
-  \section channel_inlet_auto_loc_var_bc Local variables to be added
-
-  The following local variables need to be defined for the examples
-  in this section:
-
-  \snippet cs_user_boundary_conditions-auto_inlet_profile.f90 loc_var_dec
-
   \section channel_inlet_auto_init_bc Initialization and finalization
 
   Initialization and finalization is similar to that of the base examples
 
+  \snippet cs_user_boundary_conditions-auto_inlet_profile.c init
+
   \section channel_inlet_auto_example_1_bc Body
 
   Here, we define an inlet boundary condition for a very long channel or duct
-  with a section matching the boundary faces of group 'INLET'.
+  with a section matching the boundary faces of zone 'INLET'.
 
   We fix a mean inlet velocity, and use a feedback loop assuming a fixed-point type
   behavior will allow us to reach a state matching that of a very long inlet channel.
@@ -485,16 +450,19 @@
   as to ensure a velocity gradient and turbulent production. Otherwise, the initialization
   may fail.
 
-  \snippet cs_user_boundary_conditions-auto_inlet_profile.f90 example_1
+  \snippet cs_user_boundary_conditions-auto_inlet_profile.c example_1
 */
 
 /*-----------------------------------------------------------------------------*/
 /*!
   \page advanced_examples Advanced examples
 
-  \section advanced_loc_var_be Local variables to be added
+  \section advanced_loc_var_be Local variables common to following examples
 
-  \snippet cs_user_boundary_conditions-advanced.f90 loc_var_dec
+  The following declaration and initialization block is required used for
+  the examples of this section:
+
+  \snippet cs_user_boundary_conditions-advanced.c loc_var_dec
 
   \section base_init_be Initialization and finalization
 
@@ -506,91 +474,74 @@
   on the basis of wall conditions selection
   (mass flow computation, specific logging, ...)
 
-  We prescribe for group '1234' a wall, with in addition:
+  ²We prescribe for zone 'wall_s' a wall, with in addition:
   - a Dirichlet condition on velocity (sliding wall with no-slip condition)
   - a Dirichlet condition on the first scalar.
 
-  \snippet cs_user_boundary_conditions-advanced.f90 example_1
+  \snippet cs_user_boundary_conditions-advanced.c example_1
 
   \section advanced_ex_2 Example 2
 
   Example of specific boundary conditions fully defined by the user,
   with no definition of a specific type.
 
-  We prescribe at group '5678' a homogeneous Neumann condition for
+  We prescribe at zone 'surf_h' a homogeneous Neumann condition for
   all variables.
 
-  \snippet cs_user_boundary_conditions-advanced.f90 example_2
+  \snippet cs_user_boundary_conditions-advanced.c example_2
 
   \section advanced_ex_3 Example 3
-
-  Example of specific boundary conditions fully defined by the user,
-  with the definition of a specific type, for example for future
-  selection (mass flow computation, specific logging, ...)
-
-  We prescribe for group '6789' a homogeneous Neumann condition for
-  all variables, except for the first
-  scalar, for which we select a homogeneous Dirichlet.
-
-  \snippet cs_user_boundary_conditions-advanced.f90 example_3
-
-  \section advanced_ex_4 Example 4
 
   Example of wall boundary condition with automatic continuous switch
   between rough and smooth.
 
-  \snippet cs_user_boundary_conditions-advanced.f90 example_4
+  \snippet cs_user_boundary_conditions-advanced.c example_3
 */
 
 /*-----------------------------------------------------------------------------*/
 /*!
   \page atmospheric_examples Atmospheric examples
 
-  \section advanced_loc_var_atm Local variables to be added
+  \section advanced_loc_var_atm Local variables to be added for the Fortran examples
 
-  \snippet cs_user_boundary_conditions-atmospheric.f90 loc_var_dec
+  \snippet cs_user_boundary_conditions-atmo.f90 loc_var_dec
 
   \section base_init_atm Initialization and finalization
 
   Initialization and finalization is similar to that of the base examples
 
-  \section atmospheric_ex_1 Example 1
+  \section atmospheric_ex_1 Example 1 (Fortran)
 
   For boundary faces of color 11,
   assign an inlet boundary condition prescribed from the
   meteo profile with automatic choice between inlet/ outlet according to
   the meteo profile.
 
-  \snippet cs_user_boundary_conditions-atmospheric.f90 example_1
+  \snippet cs_user_boundary_conditions-atmo.f90 example_1
 
-  \section atmospheric_ex_2 Example 2
+  \section atmospheric_ex_2 Example 2 (Fortran)
 
   For boundary faces of color 21,
   assign an inlet boundary condition prescribed from the
   meteo profile.
 
-  \snippet cs_user_boundary_conditions-atmospheric.f90 example_2
+  \snippet cs_user_boundary_conditions-atmo.f90 example_2
 
   \section atmospheric_ex_3 Example 3
 
-  For boundary faces of color 31,
-  assign an inlet boundary condition prescribed from the
-  meteo profile except for dynamical variables which are prescribed with
-  a rough log law.
+  For boundary faces of zone "inlet_3", assign an inlet boundary condition.
+  Here, all other variables prescribed from the meteo profile
+  are assumed to be managed by the GUI, except for
+  dynamic variables which are prescribed with a rough log law.
 
-  \snippet cs_user_boundary_conditions-atmospheric.f90 example_3
+  \snippet cs_user_boundary_conditions-atmospheric.c example_3
 
   \section atmospheric_ex_4 Example 4
 
-   Prescribe at boundary faces of color '12' an outlet.
+  Define a rough wall at boundary faces of zone 'b_5'.
 
-  \snippet cs_user_boundary_conditions-atmospheric.f90 example_4
+  \snippet cs_user_boundary_conditions-atmospheric.c example_4
 
-  \section atmospheric_ex_5 Example 5
-
-  Prescribe at boundary faces of color 4 a symmetry.
-
-  \snippet cs_user_boundary_conditions-atmospheric.f90 example_5
 */
 
 /*-----------------------------------------------------------------------------*/

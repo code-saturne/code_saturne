@@ -28,7 +28,7 @@
 
 /*!
 
-  \page cs_user_boundary_conditions_ale_f90 Examples of data settings for boundary conditions ale (cs_user_boundary_conditions_ale.f90)
+  \page cs_user_boundary_conditions_examples_ale Examples of data settings for boundary conditions ale (cs_user_boundary_conditions_ale.f90)
 
 
  \brief User subroutine dedicated the use of ALE (Arbitrary Lagrangian
@@ -41,20 +41,17 @@
  Here one defines boundary conditions on a per-face basis.
 
  Boundary faces may be identified using the \ref getfbr subroutine.
- The syntax of this subroutine is described in
  \c cs_user_boundary_conditions.f90 subroutine,
  but a more thorough description can be found in the user guide.
 
  Boundary conditions setup for standard variables (pressure, velocity,
- turbulence, scalars) is described precisely in
- \c cs_user_boundary_conditions.f90 subroutine.
+ turbulence, scalars) is described precisely in the user guide.
 
  Detailed explanation will be found in the theory guide.
 
  \section bc_types_ale Boundary condition types
 
  Boundary conditions may be assigned in two ways.
-
 
  \subsection std_bcs_ale For "standard" boundary conditions
 
@@ -253,8 +250,7 @@
   Interface or in cs_user_boundary_conditions.f90 subroutine.)
   - If \c ialtyb(ifac) = ivimpo: tangential mesh velocity is modeled as a sliding
   wall velocity in fluid boundary conditions unless a value for fluid sliding
-  wall velocity has been specified by USER in code_saturne Interface
-  or in cs_user_boundary_conditions.f90 subroutine.
+  wall velocity has been specified in the GUI or in \ref cs_user_boundary_conditions.
   - If \c ialtyb(ifac) = igliss: tangential mesh velocity is not taken into account
   in fluid boundary conditions (In case of 'fluid sliding wall' modeling
   corresponding condition will be specified in code_saturne Interface
@@ -272,7 +268,6 @@
  conditions for ALE method (i.e. mesh velocity) on the ones for Navier Stokes
  equations(i.e. fluid velocity). (Note that fluid boundary conditions can be
  specified in this subroutine.)
-
 
 \subsubsection cell_id_ale Cells identification
 
@@ -299,37 +294,38 @@ Here is the list of examples:
 
   \page example_ale2 Examples of boundary conditions ale
 
-  \section loc_var Mapping relatif to ALE
+  \section loc_var Mapping relative to ALE
 
   \snippet  cs_user_boundary_conditions_ale-base.c loc_var
 
   \section assign_ale Assign boundary conditions to boundary faces
 
-One may use selection criteria to filter boundary case subsets.\n Loop on faces from a subset. \n Set the boundary condition for each face.
+  One may use selection criteria to filter boundary case subsets.\n
+  Loop on faces from a subset.\n
+  Set the boundary condition for each face.
 
-   \subsection calcualtion_ale Calculation of displacement at current time step
+  \subsection calcualtion_ale Calculation of displacement at current time step
 
-   \snippet  cs_user_boundary_conditions_ale-base.c calcul
+  \snippet  cs_user_boundary_conditions_ale-base.c calcul
 
-   \subsection example1_ale Example 1
- Example : For boundary faces of color 4 assign a fixed velocity
+  \subsection example1_ale Example 1
+  Example : For boundary faces of color 4 assign a fixed velocity
 
-   \snippet  cs_user_boundary_conditions_ale-base.c example_1
+  \snippet  cs_user_boundary_conditions_ale-base.c example_1
 
-   \subsection example2_ale Example 2
-Example: For boundary face of color 5 assign a fixed displacement on nodes
+  \subsection example2_ale Example 2
+  Example: For boundary face of color 5 assign a fixed displacement on nodes
 
-   \snippet  cs_user_boundary_conditions_ale-base.c example_2
+  \snippet  cs_user_boundary_conditions_ale-base.c example_2
 
-   \subsection  example3_ale Example 3
-Example : For boundary faces of color 6 assign a sliding boundary
+  \subsection  example3_ale Example 3
+  Example : For boundary faces of color 6 assign a sliding boundary
 
-   \snippet  cs_user_boundary_conditions_ale-base.c  example_3
+  \snippet  cs_user_boundary_conditions_ale-base.c  example_3
 
-   \subsection  example4_ale Example 4
-Example : Prescribe elsewhere a fixed boundary
+  \subsection  example4_ale Example 4
+  Example : Prescribe elsewhere a fixed boundary
 
-   \snippet  cs_user_boundary_conditions_ale-base.c example_4
-
+  \snippet  cs_user_boundary_conditions_ale-base.c example_4
 
 */

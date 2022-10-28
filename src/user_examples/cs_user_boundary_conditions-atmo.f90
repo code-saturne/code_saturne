@@ -25,10 +25,11 @@
 !===============================================================================
 ! Function:
 ! ---------
-!> \file  cs_user_boundary_conditions-cooling_towers.f90
-!> \brief Example of cs_f_user_boundary_conditions subroutine.f90
-!>        for cooling towers
-!
+
+!> \file cs_user_boundary_conditions-atmospheric.f90
+!>
+!> Atmospheric example of cs_user_boundary_conditions.f90 subroutine
+!>
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -76,11 +77,16 @@ use coincl
 use cpincl
 use ppincl
 use ppcpfu
+use atchem
 use atincl
+use atsoil
 use ctincl
 use cs_fuel_incl
 use mesh
 use field
+use turbomachinery
+use iso_c_binding
+use cs_c_bindings
 
 !===============================================================================
 
@@ -100,10 +106,19 @@ double precision rcodcl(nfabor,nvar,3)
 ! Local variables
 
 !< [loc_var_dec]
-integer          ifac, iel, ii, ivar
-integer          ilelt, nlelt, izone
+integer          ifac, ii
+integer          izone
+integer          ilelt, nlelt
+integer          f_id_rough, f_id_t_rough
+double precision d2s3
+double precision zref, xuref
+double precision ustar, rugd, rugt
+double precision zent, xuent, xvent
+double precision xkent, xeent
 
 integer, allocatable, dimension(:) :: lstelt
+double precision, dimension(:), pointer :: bpro_roughness
+double precision, dimension(:), pointer :: bpro_roughness_t
 !< [loc_var_dec]
 
 !===============================================================================
@@ -114,6 +129,14 @@ integer, allocatable, dimension(:) :: lstelt
 
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 
+d2s3 = 2.d0/3.d0
+
+! Paremeters for the analytical rough wall law (neutral)
+zref = 10.d0
+xuref = 10.d0
+rugd = 0.1d0
+rugt = rugd
+
 !===============================================================================
 ! Assign boundary conditions to boundary faces here
 
@@ -123,73 +146,71 @@ allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 !   - set the boundary condition for each face
 !===============================================================================
 
-! Assign a free outlet for faces of color/group 2
+! --- For boundary faces of color 11,
+!       assign an inlet boundary condition for all phases prescribed from the
+!       meteo profile with automatic choice between inlet/ outlet according to
+!       the meteo profile
 
 !< [example_1]
-call getfbr('2', nlelt, lstelt)
-!==========
+call getfbr('11',nlelt,lstelt)
+
+! Get a new zone number (1 <= izone <= nozppm)
+izone = maxval(izfppp) + 1
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-  izone = 1
+  ! - Zone to which the face belongs
   izfppp(ifac) = izone
 
-  ! outlet: zero flux for velocity and temperature, prescribed pressure
-  !         note that pressure will be set to P0 on the free outlet face
-  !         (isolib) closest to xyz0.
+  ! - Boundary conditions are prescribed from the meteo profile
+  iprofm(izone) = 1
 
+  ! - Chemical boundary conditions are prescribed from the chemistry profile
+  iprofc(izone) = 1
 
-  itypfb(ifac) = isolib
+  ! - boundary condition type can be set to ientre or i_convective_inlet
 
-  ! Precribe a pressure profile for all faces
-  ! Warning: the pressure has to be specified in term of TOTAL pressure
-  ! i.e. including ro0.g.z...
-  icodcl(ifac,ipr) = 1
-  rcodcl(ifac,ipr,1) =                                      &
-    ro0*(  gx*(cdgfbo(1,ifac)-xyzp0(1))                     &
-                + gy*(cdgfbo(2,ifac)-xyzp0(2))              &
-                + gz*(cdgfbo(3,ifac)-xyzp0(3)))
+  itypfb(ifac) = ientre
+
+  ! - automatic determination of type (inlet/outlet) according to sign of
+  !   mass flux
+
+  iautom(ifac) = 1
 
 enddo
 !< [example_1]
 
-! Assign a wall condition for faces of color/group 4
+
+! ---For boundary faces of color 21,
+!     assign an inlet boundary condition for all phases prescribed from the
+!     meteo profile
 
 !< [example_2]
-call getfbr('4', nlelt, lstelt)
-!==========
+call getfbr('21',nlelt,lstelt)
+
+! Get a new zone number (1 <= izone <= nozppm)
+izone = maxval(izfppp) + 1
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-  izone = 2
+  ! - Zone to which the face belongs
   izfppp(ifac) = izone
 
-  itypfb(ifac)   = iparoi
+  ! - Boundary conditions are prescribed from the meteo profile
+  iprofm(izone) = 1
+
+  ! - Chemical boundary conditions are prescribed from the chemistry profile
+  iprofc(izone) = 1
+
+  ! - Assign inlet boundary conditions
+  itypfb(ifac) = ientre
 
 enddo
 !< [example_2]
-
-! Assign a symetry for faces of color/group 5
-
-!< [example_3]
-call getfbr('5', nlelt, lstelt)
-!==========
-
-do ilelt = 1, nlelt
-
-  ifac = lstelt(ilelt)
-
-  izone = 3
-  izfppp(ifac) = izone
-
-  itypfb(ifac) = isymet
-
-enddo
-!< [example_3]
 
 !--------
 ! Formats

@@ -63,12 +63,10 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief User definition of boundary conditions for ALE
+ * \brief User definition of boundary conditions
  *
- * \param[in, out]  domain       pointer to a cs_domain_t structure
- * \param[in, out]  bc_type      boundary face types
- * \param[in, out]  ale_bc_type  boundary face types for mesh velocity
- * \param[in]       impale       indicator for fixed node displacement
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ * \param[in, out]  bc_type  boundary face types
  *
  * The icodcl and rcodcl arrays are pre-initialized based on default
  * and GUI-defined definitions, and may be modified here.
@@ -103,112 +101,50 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_boundary_conditions_ale(cs_domain_t  *domain,
-                                int           bc_type[],
-                                int           ale_bc_type[],
-                                int           impale[])
+cs_user_boundary_conditions(cs_domain_t  *domain,
+                            int           bc_type[])
 {
-  /* Initialization
-   *--------------*/
+  const cs_real_3_t *b_face_cog
+    = (const cs_real_3_t *)domain->mesh_quantities->b_face_cog;
 
-  /*![loc_var]*/
+  const cs_real_t ro0 = cs_glob_fluid_properties->ro0;
+  const cs_real_t *gravity = cs_glob_physical_constants->gravity;
+  const cs_real_t *xyzp0 = (const cs_real_t *)cs_glob_fluid_properties->xyzp0;
 
-  const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
-  const cs_lnum_t *ipnfbr = domain->mesh->b_face_vtx_idx;
-  const cs_lnum_t *nodfbr = domain->mesh->b_face_vtx_lst;
-  const cs_lnum_t *b_face_cells = domain->mesh->b_face_cells;
+  const cs_zone_t  *zn = NULL;
 
-  const int nt_cur = domain->time_step->nt_cur;
-
-  const cs_real_t *dt = CS_F_(dt)->val;
-
-  /* nodes displacement */
-  cs_real_3_t *disale
-    = (cs_real_3_t*)cs_field_by_name("mesh_displacement")->val;
-
-  cs_zone_t  *zn = NULL;
-
-  /*![loc_var]*/
-
-  /* Assign boundary conditions to boundary faces here
-
-   *     One may use selection criteria to filter boundary case subsets
-   *       Loop on faces from a subset
-   *         Set the boundary condition for each face */
+  /* Assign a free outlet for faces of group "OUTLET" */
 
   /*![example_1]*/
+  /* Direct pointers (without multiple indirections) */
 
-  /* Example: For boundary faces of zone '4' assign a fixed velocity */
-  zn = cs_boundary_zone_by_name("4");
+  int       *p_icodcl  = CS_F_(p)->bc_coeffs->icodcl;
+  cs_real_t *p_rcodcl1 = CS_F_(p)->bc_coeffs->rcodcl1;
 
-  cs_field_t *mesh_u = CS_F_(mesh_u);
+  /* Set BC's over zone. */
 
-  /* Calculation of displacement at current time step */
-  const cs_real_t deltaa = sin(3.141596*(nt_cur-1)/50);
-  const cs_real_t delta  = sin(3.141596*nt_cur/50.);
+  zn = cs_boundary_zone_by_name("OUTLET");
 
   for (cs_lnum_t ilelt = 0; ilelt < zn->n_elts; ilelt++) {
 
+    /* outlet: zero flux for velocity and temperature, prescribed pressure
+     *         note that pressure will be set to P0 on the free outlet face
+     *         (CS_OUTLET) closest to xyz0 */
     const cs_lnum_t face_id = zn->elt_ids[ilelt];
-    const cs_lnum_t c_id = b_face_cells[face_id];
 
-    ale_bc_type[face_id] = CS_BOUNDARY_ALE_IMPOSED_VEL;
-    mesh_u->bc_coeffs->rcodcl1[n_b_faces*0 + face_id] = 0;
-    mesh_u->bc_coeffs->rcodcl1[n_b_faces*1 + face_id] = 0;
-    mesh_u->bc_coeffs->rcodcl1[n_b_faces*2 + face_id] = (delta-deltaa)/dt[c_id];
+    bc_type[face_id] = CS_OUTLET;
 
+    /* Precribe a pressure profile for all faces
+     * Warning: the pressure has to be specified in term of TOTAL pressure
+     * i.e. including ro0, gravity ... */
+
+    p_icodcl[face_id] = 1;
+    p_rcodcl1[face_id]
+      = ro0 * cs_math_3_distance_dot_product(xyzp0,
+                                             b_face_cog[face_id],
+                                             gravity);
   }
   /*![example_1]*/
-
-  /* Example: for boundary faces zone "5" assign a fixed displacement on nodes */
-
-  /*![example_2]*/
-  zn = cs_boundary_zone_by_name("5");
-
-  for (cs_lnum_t ilelt = 0; ilelt < zn->n_elts; ilelt++) {
-
-    const cs_lnum_t face_id = zn->elt_ids[ilelt];
-
-    for (cs_lnum_t ii = ipnfbr[face_id]; ii < ipnfbr[face_id+1]; ii++) {
-      const cs_lnum_t inod = nodfbr[ii];
-      if (impale[inod] == 0) {
-        disale[inod][0] = 0;
-        disale[inod][1] = 0;
-        disale[inod][2] = delta;
-        impale[inod] = 1;
-      }
-    }
-  }
-
-  /*![example_2]*/
-
-  /* Example: For boundary faces of zone "6" assign a sliding boundary */
-
-  /*![example_3]*/
-  zn = cs_boundary_zone_by_name("6");
-
-  for (cs_lnum_t ilelt = 0; ilelt < zn->n_elts; ilelt++) {
-
-    const cs_lnum_t face_id = zn->elt_ids[ilelt];
-
-    ale_bc_type[face_id] = CS_BOUNDARY_ALE_SLIDING;
-
-  }
-  /*![example_3]*/
-
-  /* Example: prescribe elsewhere a fixed boundary */
-  /*![example_4]*/
-
-  zn = cs_boundary_zone_by_name("not (4 or 5 or 6)");
-
-  for (cs_lnum_t ilelt = 0; ilelt < zn->n_elts; ilelt++) {
-
-    const cs_lnum_t face_id = zn->elt_ids[ilelt];
-
-    ale_bc_type[face_id] = CS_BOUNDARY_ALE_FIXED;
-
-  }
-  /*![example_4]*/
 }
 
 /*----------------------------------------------------------------------------*/

@@ -184,8 +184,8 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
     if (transfo->ibrpr[ntf] == 0 &&
         transfo->ibrsec[ntf] == 0) {
       nborne[ntf] = 3;
-      double rnbs2 = 3. * transfo->rnbs[ntf]
-                        * transfo->rnbs[ntf];
+      cs_real_t rnbs2 = 3. * transfo->rnbs[ntf]
+                           * transfo->rnbs[ntf];
       ur[ntf][0] = 1.154675 * transfo->tenspr[ntf]
                             / transfo->rnbs[ntf]
                  + (transfo->zr[ntf] * sirb[ntf][0]
@@ -235,7 +235,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   /* 2.4 Take in account of Offset */
 
   /*! [step_2_4] */
-  double capaeq = 3.;
+  cs_real_t capaeq = 3.;
 
   for (int ntf = 0; ntf < nbtrf; ntf++) {
     transfo->uroff[ntf] += sirt[ntf] / capaeq;
@@ -332,7 +332,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
               found = 1;
           }
           else if (ieljou == 4) {
-            double val = fabs(potr_rcodcl1[face_id]);
+            cs_real_t val = fabs(potr_rcodcl1[face_id]);
             if (fabs(poti_rcodcl1[face_id]) < 1.e-20 && val < 1.e-20)
               found = 1;
           }

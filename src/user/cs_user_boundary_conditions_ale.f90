@@ -33,7 +33,7 @@
 !>  - Fills boundary conditions (ialtyb, icodcl, rcodcl) for mesh velocity.
 !>  - This subroutine also enables one to fix displacement on nodes.
 !>
-!> See \ref cs_user_boundary_conditions_ale for examples.
+!> See \ref cs_user_boundary_conditions_examples_ale for examples.
 !>
 !> \section intro_usa Introduction
 !>
