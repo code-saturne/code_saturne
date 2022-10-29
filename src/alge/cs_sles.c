@@ -684,7 +684,6 @@ _needs_solving(const  char        *name,
                const cs_real_t    *rhs)
 {
   int retval = 1;
-  return retval;
 
   /* Initialize residue, check for immediate return */
 
@@ -1728,7 +1727,12 @@ cs_sles_solve(cs_sles_t           *sles,
   cs_sles_convergence_state_t state;
   bool do_solve = true;
 
-  if (sles->allow_no_op) {
+  /* Even if we normally require at least entering the linear equation solver,
+     if the residue normalization is really zero, we probably have zero initial
+     solution and RHS already, so check for that case, rather than enter
+     solvers whose convergence test may fail in these conditions. */
+
+  if (sles->allow_no_op || r_norm <= 0.) {
     do_solve = _needs_solving(sles_name,
                               a,
                               sles->verbosity,
