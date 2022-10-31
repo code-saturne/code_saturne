@@ -70,7 +70,6 @@
 #include "cs_prototypes.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
-#include "cs_boundary_conditions.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1475,7 +1474,6 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
     for (cs_lnum_t j = 0; j < 3; j++)
       grad[cell_id][j] *= dvol;
-
   }
 
   /* Synchronize halos */
@@ -1563,22 +1561,45 @@ _renormalize_scalar_gradient(const cs_mesh_t                *m,
   }
 
   /* Contribution from interior faces */
-  for (int g_id = 0; g_id < n_i_groups; g_id++) {
-    for (int t_id = 0; t_id < n_i_threads; t_id++) {
-      for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-          f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-          f_id++) {
-        cs_lnum_t ii = i_face_cells[f_id][0];
-        cs_lnum_t jj = i_face_cells[f_id][1];
-        for (cs_lnum_t i = 0; i < 3; i++) {
-          for (cs_lnum_t j = 0; j < 3; j++) {
-            if (cs_glob_porous_model == 3) {
-              cor_mat[ii][i][j] += (i_f_face_cog_celli[f_id][i] - cell_f_cen[ii][i]) * i_f_face_normal[f_id][j];
-              cor_mat[jj][i][j] -= (i_f_face_cog_cellj[f_id][i] - cell_f_cen[jj][i]) * i_f_face_normal[f_id][j];
+
+  if (cs_glob_porous_model == 3) {
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+             f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+             f_id++) {
+          cs_lnum_t ii = i_face_cells[f_id][0];
+          cs_lnum_t jj = i_face_cells[f_id][1];
+          for (cs_lnum_t i = 0; i < 3; i++) {
+            for (cs_lnum_t j = 0; j < 3; j++) {
+              cor_mat[ii][i][j] +=   (  i_f_face_cog_celli[f_id][i]
+                                      - cell_f_cen[ii][i])
+                                   * i_f_face_normal[f_id][j];
+              cor_mat[jj][i][j] -=   (  i_f_face_cog_cellj[f_id][i]
+                                      - cell_f_cen[jj][i])
+                                   * i_f_face_normal[f_id][j];
             }
-            else {
-              cor_mat[ii][i][j] += (i_face_cog[f_id][i] - cell_cen[ii][i]) * i_face_normal[f_id][j];
-              cor_mat[jj][i][j] -= (i_face_cog[f_id][i] - cell_cen[jj][i]) * i_face_normal[f_id][j];
+          }
+        }
+      }
+    }
+  }
+  else {
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+             f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+             f_id++) {
+          cs_lnum_t ii = i_face_cells[f_id][0];
+          cs_lnum_t jj = i_face_cells[f_id][1];
+          for (cs_lnum_t i = 0; i < 3; i++) {
+            for (cs_lnum_t j = 0; j < 3; j++) {
+              cor_mat[ii][i][j] +=   (i_face_cog[f_id][i] - cell_cen[ii][i])
+                                   * i_face_normal[f_id][j];
+              cor_mat[jj][i][j] -=   (i_face_cog[f_id][i] - cell_cen[jj][i])
+                                   * i_face_normal[f_id][j];
             }
           }
         }
@@ -1595,20 +1616,24 @@ _renormalize_scalar_gradient(const cs_mesh_t                *m,
       cs_lnum_t ii = b_face_cells[face_id];
 
       if (bc_type[face_id] == CS_OUTLET || bc_type[face_id] == CS_SYMMETRY) {
-        cs_real_3_t xip, xij;
+        cs_real_t xip[3], xij[3];
         for (int k = 0; k < 3; k++) {
           xip[k] = cell_cen[ii][k];
           xij[k] = b_face_cog[face_id][k];
         }
 
         /* Special treatment for outlets */
-        cs_real_3_t xi, nn;
+        cs_real_t xi[3], nn[3];
         for (int k = 0; k < 3; k++) {
           xi[k] = cell_cen[ii][k];
           nn[k] = b_face_normal[face_id][k];
         }
-        cs_real_t psca1 = (xij[0]-xip[0])*nn[0] + (xij[1]-xip[1])*nn[1] + (xij[2]-xip[2])*nn[2];
-        cs_real_t psca2 = (xij[0]-xi[0])*nn[0] + (xij[1]-xi[1])*nn[1] + (xij[2]-xi[2])*nn[2];
+        cs_real_t psca1 =    (xij[0]-xip[0])*nn[0]
+                           + (xij[1]-xip[1])*nn[1]
+                           + (xij[2]-xip[2])*nn[2];
+        cs_real_t psca2 =    (xij[0]-xi[0])*nn[0]
+                           + (xij[1]-xi[1])*nn[1]
+                           + (xij[2]-xi[2])*nn[2];
         cs_real_t lambda = psca1 / psca2;
         for (int k = 0; k < 3; k++) {
           xij[k] = xip[k] + lambda * (xij[k]-xi[k]);
@@ -1623,9 +1648,11 @@ _renormalize_scalar_gradient(const cs_mesh_t                *m,
   }
 
   if (m->halo != NULL) {
-    cs_halo_sync_var_strided(m->halo, CS_HALO_EXTENDED, (cs_real_t *)cor_mat, 9);
+    cs_halo_sync_var_strided(m->halo, CS_HALO_EXTENDED,
+                             (cs_real_t *)cor_mat, 9);
     if (cs_glob_mesh->have_rotation_perio)
-      cs_halo_perio_sync_var_tens(m->halo, CS_HALO_EXTENDED, (cs_real_t *)cor_mat);
+      cs_halo_perio_sync_var_tens(m->halo, CS_HALO_EXTENDED,
+                                  (cs_real_t *)cor_mat);
   }
 
 # pragma omp parallel for
