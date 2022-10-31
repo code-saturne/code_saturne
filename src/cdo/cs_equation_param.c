@@ -461,8 +461,10 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
     else if (strcmp(keyval, "ocs2") == 0)
       eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_OCS2;
-    else if (strcmp(keyval, "bubble") == 0)
+    else if (strcmp(keyval, "bubble") == 0) {
       eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_BUBBLE;
+      eqp->diffusion_hodgep.coef = 2./3.;
+    }
     else if (strcmp(keyval, "voronoi") == 0)
       eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_VORONOI;
     else if (strcmp(keyval, "wbs") == 0)
