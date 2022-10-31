@@ -25,10 +25,13 @@ User changes:
 
 - Simplify the use of soil-atmosphere model of the atmospheric module.
 
-Physical modeling:
+Numercis and physical modeling:
 
 - Add some atmospheric universal functions for large scale idealized wind
   profiles.
+
+- Add experimental immersed boundary features. This can be computed from
+  cloud of points.
 
 Bug fixes:
 
