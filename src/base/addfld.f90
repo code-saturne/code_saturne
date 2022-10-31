@@ -718,6 +718,7 @@ if (compute_porosity_from_scan) then
   call field_set_key_int(iflid, keyvis, POST_ON_LOCATION)
   call field_set_key_int(iflid, keylog, 1)
 
+  itycat = FIELD_INTENSIVE + FIELD_PROPERTY
   f_name  = 'points_cen'
   call field_create(f_name,&
                     itycat,&
