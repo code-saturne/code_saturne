@@ -915,12 +915,23 @@ typedef struct {
  * Set the algorithm used for building the discrete Hodge operator used
  * in the diffusion term. Available choices are:
  * - "voronoi" --> leads to a diagonal discrete Hodge operator but is not
- *   consistent for all meshes. Require an "orthogonal" (or admissible) mesh;
- * - "cost" --> (default for diffusion) is more robust (i.e. it handles more
- *   general meshes but is is less efficient)
+ *                 consistent for all meshes. Require an "orthogonal" (or
+ *                 admissible) mesh; Warning: do not use this algorithm on
+ *                 general meshes.
+ * - "bubble" --> Reconstruction op. relying on a stabilization which is built
+ *                with a bubble function associated to edges
+
+ * - "cost" or "ocs" --> Orthogonal decomposition of the Consistent and
+ *                       Stabilized part. (cost = COnsitent + STabilized) The
+ *                       stabilization part of the reconstruction op. is a
+ *                       piecewise constant polynom on a partition of each cell
+ * - "ocs2" --> (experimental)
  * - "wbs" --> is robust and accurate but is limited to the reconstruction of
- *   potential-like degrees of freedom and needs a correct computation of the
- *   cell barycenter
+ *             potential-like degrees of freedom and needs a correct
+ *             computation of the cell barycenter. Make sense only in the case
+ *             of a CDOVB or CDOVCB scheme. In the case of tetrahedral meshes,
+ *             the stiffness matrix is the same as the one encountered in FE P1
+ *             schemes
  *
  * \var CS_EQKEY_HODGE_DIFF_COEF
  * This key is only useful if CS_EQKEY_HODGE_{TIME, DIFF, REAC}_ALGO is set to
@@ -929,7 +940,8 @@ typedef struct {
  * - "dga" corresponds to the value \f$ 1./3. \f$
  * - "sushi" corresponds to the value \f$1./\sqrt(3.)\f$
  * - "gcr"  corresponds to the value \f$1\f$.
- * - or "1.5", "9" for instance
+ * - "frac23" or "2/3" corresponds to the value \f$2./3.\f$.
+ * - use an expression like "1.5", "9" for a user-defined value
  *
  * \var CS_EQKEY_HODGE_TIME_ALGO
  * Set the algorithm used for building the discrete Hodge operator used
