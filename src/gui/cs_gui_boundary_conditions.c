@@ -65,6 +65,7 @@
 #include "cs_mesh.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
+#include "cs_field_operator.h"
 #include "cs_field_pointer.h"
 #include "cs_physical_model.h"
 #include "cs_thermal_model.h"
@@ -2692,6 +2693,7 @@ _standard_turbulence_bcs(cs_real_t  rcodcl[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
   const int var_key_id = cs_field_key_id("variable_id");
@@ -2706,6 +2708,20 @@ _standard_turbulence_bcs(cs_real_t  rcodcl[])
     _rcodcl_v[coo_id] = rcodcl + (ivar_u + coo_id)*n_b_faces;
 
   /* Inlet BC's */
+
+  cs_field_t *w_dist = cs_field_by_name_try("wall_distance");
+  cs_real_3_t *grady;
+
+  /* Compute the wall direction */
+  if (w_dist != NULL) {
+    BFT_MALLOC(grady, n_cells_ext, cs_real_3_t);
+
+    cs_field_gradient_scalar(w_dist,
+                             false,  /* use_previous_t */
+                             1,      /* inc */
+                             grady);
+
+  }
 
   for (int izone = 0; izone < boundaries->n_zones; izone++) {
 
@@ -2728,7 +2744,24 @@ _standard_turbulence_bcs(cs_real_t  rcodcl[])
           cs_real_t uref2 = fmax(cs_math_3_square_norm(vel),
                                  cs_math_epzero);
 
-          cs_turbulence_bc_set_uninit_inlet_hyd_diam(face_id, uref2, dh,
+          /* Note: should be model dependant */
+          cs_real_t ant = -sqrt(cs_turb_cmu);
+
+          cs_real_t *vel_dir = NULL;
+          cs_real_t *shear_dir = NULL;
+          cs_real_t _shear_dir[3];
+          if (w_dist != NULL) {
+            vel_dir = vel;
+            shear_dir = _shear_dir;
+            cs_math_3_normalize(grady[cell_id], shear_dir);
+            for (int i = 0; i < 3; i++)
+              shear_dir[i] *= ant;
+          }
+
+          cs_turbulence_bc_set_uninit_inlet_hyd_diam(face_id,
+                                                     vel_dir,
+                                                     shear_dir,
+                                                     uref2, dh,
                                                      b_rho[face_id],
                                                      c_mu[cell_id]);
         }
@@ -2756,6 +2789,9 @@ _standard_turbulence_bcs(cs_real_t  rcodcl[])
     } /* End for inlet */
 
   }
+
+  if (w_dist != NULL)
+    BFT_FREE(grady);
 
   /* Automatic wall condition for alpha */
 

@@ -937,6 +937,9 @@ cs_turbulence_bc_inlet_k_eps(cs_lnum_t   face_id,
  * is similar to \ref cs_turbulence_bc_inlet_hyd_diam.
  *
  * \param[in]     face_id    boundary face id
+ * \param[in]     vel_dir    velocity direction (not normalized, or NULL)
+ * \param[in]     shear_dir  shear direction (or NULL), it also contains the
+ *                           level of anisotropy (Rnt = a_nt k)
  * \param[in]     uref2      square of the reference flow velocity
  * \param[in]     dh         hydraulic diameter \f$ D_H \f$
  * \param[in]     rho        mass density \f$ \rho \f$
@@ -946,6 +949,8 @@ cs_turbulence_bc_inlet_k_eps(cs_lnum_t   face_id,
 
 void
 cs_turbulence_bc_set_uninit_inlet_hyd_diam(cs_lnum_t   face_id,
+                                           double      vel_dir[],
+                                           double      shear_dir[],
                                            double      uref2,
                                            double      dh,
                                            double      rho,
@@ -955,7 +960,7 @@ cs_turbulence_bc_set_uninit_inlet_hyd_diam(cs_lnum_t   face_id,
 
   _ke_hyd_diam(uref2, dh, rho, mu, &ustar2, &k, &eps);
 
-  _set_uninit_inlet_bc(face_id, k, eps, NULL, NULL);
+  _set_uninit_inlet_bc(face_id, k, eps, vel_dir, shear_dir);
 }
 
 /*----------------------------------------------------------------------------*/
