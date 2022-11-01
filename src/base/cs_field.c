@@ -3812,7 +3812,7 @@ cs_field_log_defs(void)
     if (cat_id < mask_id_end)
       mask_prev += _type_flag_mask[cat_id];
 
-  } /* End fo loop on categories */
+  } /* End of loop on categories */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4142,7 +4142,8 @@ cs_field_log_key_defs(void)
     tmp_str[1][i] = '-';
   tmp_str[1][12] = '\0';
 
-  cs_log_printf(CS_LOG_SETUP, _("  %s %s -----------------------------------------\n"),
+  cs_log_printf(CS_LOG_SETUP,
+                _("  %s %s -----------------------------------------\n"),
                 tmp_str[0], tmp_str[1]);
 
   for (i = 0; i < _n_keys; i++) {

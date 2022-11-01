@@ -30,10 +30,6 @@ else
   CPPFLAGS_PLE = $(PLE_CPPFLAGS)
 endif
 
-# Libtool modified for CUDA
-
-LIBTOOL_CUDA = $(SHELL) $(top_builddir)/libtool_cuda
-
 # Main part
 
 AM_CPPFLAGS = \

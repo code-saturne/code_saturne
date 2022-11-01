@@ -1517,11 +1517,11 @@ cs_parameters_need_extended_neighborhood(void)
     for (int f_id = 0; f_id < n_fields; f_id++) {
       cs_field_t *f = cs_field_by_id(f_id);
       if (f->type & CS_FIELD_VARIABLE) {
-        cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
+        const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
         if (eqp != NULL) {
           cs_gradient_type_by_imrgra(eqp->imrgra,
-                             &gradient_type,
-                             &halo_type);
+                                     &gradient_type,
+                                     &halo_type);
           if (halo_type == CS_HALO_EXTENDED) {
             need_extended_neighborhood = true;
             break;
