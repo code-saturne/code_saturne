@@ -410,29 +410,29 @@ fi
 
 if test "x$cs_cc_compiler_known" != "xyes" ; then
 
-  $CC -V 2>&1 | grep 'NVIDIA' > /dev/null
+  $CC --version 2>&1 | grep 'NVIDIA' > /dev/null
   if test "$?" = "0" ; then
     $CC -V 2>&1 | grep 'Compilers and Tools' > /dev/null
-  fi
-  if test "$?" = "0" ; then
+    if test "$?" = "0" ; then
 
-    echo "compiler '$CC' is NVIDIA compiler"
+      echo "compiler '$CC' is NVIDIA compiler"
 
-    # Version strings for logging purposes and known compiler flag
-    $CC -V > $outfile 2>&1
-    cs_ac_cc_version=`grep pgcc $outfile | head -1`
-    if test "$cs_ac_cc_version" = "" ; then
-      cs_ac_cc_version=`grep nvc $outfile | head -1`
+      # Version strings for logging purposes and known compiler flag
+      $CC -V > $outfile 2>&1
+      cs_ac_cc_version=`grep pgcc $outfile | head -1`
+      if test "$cs_ac_cc_version" = "" ; then
+        cs_ac_cc_version=`grep nvc $outfile | head -1`
+      fi
+      cs_cc_compiler_known=yes
+
+      # Default compiler flags
+      cflags_default=""
+      cflags_default_dbg="-g -Mbounds"
+      cflags_default_opt="-O2"
+      cflags_default_hot="-fast"
+      cflags_default_omp="-mp"
+
     fi
-    cs_cc_compiler_known=yes
-
-    # Default compiler flags
-    cflags_default=""
-    cflags_default_dbg="-g -Mbounds"
-    cflags_default_opt="-O2"
-    cflags_default_hot="-fast"
-    cflags_default_omp="-mp"
-
   fi
 
 fi
@@ -841,27 +841,27 @@ else
   $CXX -V 2>&1 | grep 'NVIDIA' > /dev/null
   if test "$?" = "0" ; then
     $CXX -V 2>&1 | grep 'Compilers and Tools' > /dev/null
-  fi
-  if test "$?" = "0" ; then
+    if test "$?" = "0" ; then
 
-    echo "compiler '$CXX' is NVIDIA compiler"
+      echo "compiler '$CXX' is NVIDIA compiler"
 
-    # Version strings for logging purposes and known compiler flag
-    $CXX -V conftest.c > $outfile 2>&1
-    cs_ac_cxx_version=`grep pgc++ $outfile | head -1`
-    if test "$cs_ac_cxx_version" = "" ; then
-      cs_ac_cxx_version=`grep nvc++ $outfile | head -1`
+      # Version strings for logging purposes and known compiler flag
+      $CXX -V conftest.c > $outfile 2>&1
+      cs_ac_cxx_version=`grep pgc++ $outfile | head -1`
+      if test "$cs_ac_cxx_version" = "" ; then
+        cs_ac_cxx_version=`grep nvc++ $outfile | head -1`
+      fi
+      cs_cxx_compiler_known=yes
+
+      # Default compiler flags
+      cxxflags_default=""
+      cxxflags_default_dbg="-g -Mbounds"
+      cxxflags_default_opt="-O2"
+      cxxflags_default_hot="-fast"
+      cxxflags_default_omp="-mp"
+      cxxflags_default_std=""
+
     fi
-    cs_cxx_compiler_known=yes
-
-    # Default compiler flags
-    cxxflags_default=""
-    cxxflags_default_dbg="-g -Mbounds"
-    cxxflags_default_opt="-O2"
-    cxxflags_default_hot="-fast"
-    cxxflags_default_omp="-mp"
-    cxxflags_default_std=""
-
   fi
 
 fi
@@ -1028,8 +1028,18 @@ if test "$?" = "0" ; then
   cs_fc_version="`$FC -v 2>&1 |grep 'gcc version' |\
                   sed 's/.*gcc version \([-a-z0-9\.]*\).*/\1/'`"
 
-  cs_fc_compiler_known=yes
-  cs_gfortran=gfortran
+  if test -n "`echo $cs_ac_fc_version | grep Cray`" ; then
+    cs_gfortran=cray
+  elif test -n "`echo $cs_ac_fc_version | grep FRT`" ; then
+    cs_gfortran=fujitsu
+  elif test -n "`echo $cs_ac_fc_version | grep Arm`" ; then
+    cs_gfortran=arm
+  else
+    cs_gfortran=gfortran
+
+fi
+
+if test "$cs_gfortran" = "gfortran"; then
 
   # Version strings for logging purposes and known compiler flag
   $FC -v > $outfile 2>&1
@@ -1166,26 +1176,26 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
   $FC -V 2>&1 | grep 'NVIDIA' > /dev/null
   if test "$?" = "0" ; then
     $FC -V 2>&1 | grep 'Compilers and Tools' > /dev/null
-  fi
-  if test "$?" = "0" ; then
+    if test "$?" = "0" ; then
 
-    echo "compiler '$FC' is NVIDIA compiler"
+      echo "compiler '$FC' is NVIDIA compiler"
 
-    # Version strings for logging purposes and known compiler flag
-    $FC -V > $outfile 2>&1
-    cs_ac_fc_version=`grep pgf $outfile | head -1`
-    if test "$cs_ac_fc_version" = "" ; then
-      cs_ac_fc_version=`grep nvfortran $outfile | head -1`
+      # Version strings for logging purposes and known compiler flag
+      $FC -V > $outfile 2>&1
+      cs_ac_fc_version=`grep pgf $outfile | head -1`
+      if test "$cs_ac_fc_version" = "" ; then
+        cs_ac_fc_version=`grep nvfortran $outfile | head -1`
+      fi
+      cs_fc_compiler_known=yes
+
+      # Default compiler flags
+      fcflags_default="-Mpreprocess -noswitcherror"
+      fcflags_default_dbg="-g -Mbounds"
+      fcflags_default_opt="-O2"
+      fcflags_default_hot="-fast"
+      fcflags_default_omp="-mp"
+
     fi
-    cs_fc_compiler_known=yes
-
-    # Default compiler flags
-    fcflags_default="-Mpreprocess -noswitcherror"
-    fcflags_default_dbg="-g -Mbounds"
-    fcflags_default_opt="-O2"
-    fcflags_default_hot="-fast"
-    fcflags_default_omp="-mp"
-
   fi
 
 fi
