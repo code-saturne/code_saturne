@@ -94,6 +94,12 @@ integer, dimension(:), pointer :: elt_ids
 
 interface
 
+  subroutine cs_function_default_define()  &
+       bind(C, name='cs_function_default_define')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_function_default_define
+
   subroutine cs_gui_physical_constants()  &
        bind(C, name='cs_gui_physical_constants')
     use, intrinsic :: iso_c_binding
@@ -405,6 +411,9 @@ call cs_gui_define_fans()
 
 ! Init error estimator
 call uieres(iescal, iespre, iesder, iescor, iestot)
+
+! Initialize base evaluation functions
+call cs_function_default_define()
 
 !   - User functions
 !     ==============

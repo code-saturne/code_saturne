@@ -27,6 +27,8 @@
 
 /*----------------------------------------------------------------------------*/
 
+#include "cs_defs.h"
+
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -39,6 +41,7 @@
 #include "fvm_writer.h"
 
 #include "cs_base.h"
+#include "cs_function.h"
 #include "cs_interpolate.h"
 #include "cs_probe.h"
 #include "cs_time_step.h"
@@ -91,14 +94,14 @@ BEGIN_C_DECLS
  * Local type definitions
  *============================================================================*/
 
-/* Datatype enumeration */
+/* Datatype enumeration (deprecated; cs_datatype_t preferred) */
 
-typedef enum {
-  CS_POST_TYPE_int,
-  CS_POST_TYPE_cs_real_t,
-  CS_POST_TYPE_float,
-  CS_POST_TYPE_double
-} cs_post_type_t;
+typedef cs_datatype_t cs_post_type_t;
+
+#define CS_POST_TYPE_int        CS_INT_TYPE
+#define CS_POST_TYPE_cs_real_t  CS_REAL_TYPE
+#define CS_POST_TYPE_float      CS_FLOAT
+#define CS_POST_TYPE_double     CS_DOUBLE
 
 /*----------------------------------------------------------------------------
  * Function pointer to elements selection definition.
@@ -1095,7 +1098,7 @@ cs_post_write_meshes(const cs_time_step_t  *ts);
  *                          false otherwise
  * \param[in]  use_parent   true if values are defined on "parent" mesh,
  *                          false if values are defined on post-processing mesh
- * \param[in]  var_type     variable's data type
+ * \param[in]  datatype     variable's data type
  * \param[in]  cel_vals     cell values
  * \param[in]  i_face_vals  interior face values
  * \param[in]  b_face_vals  boundary face values
@@ -1110,11 +1113,40 @@ cs_post_write_var(int                    mesh_id,
                   int                    var_dim,
                   bool                   interlace,
                   bool                   use_parent,
-                  cs_post_type_t         var_type,
+                  cs_datatype_t          datatype,
                   const void            *cel_vals,
                   const void            *i_face_vals,
                   const void            *b_face_vals,
                   const cs_time_step_t  *ts);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output a function evaluation at cells or faces of a
+ *        post-processing mesh using associated writers.
+ *
+ * The associated mesh and function locations must have compatible types.
+ *
+ * Note that while providing functions for multiple mesh locations
+ * (such as interior and boundary faces when a postprocessing mesh contains
+ * both) is possible, it is not handled yet, so such cases will be ignored.
+ *
+ * \param[in]  mesh_id    id of associated mesh
+ * \param[in]  writer_id  id of specified associated writer,
+ *                        or \ref CS_POST_WRITER_ALL_ASSOCIATED for all
+ * \param[in]  cell_f     pointer to function object at cells
+ * \param[in]  i_face_f   pointer to function object at interior faces
+ * \param[in]  b_face_f   pointer to function object at boundary faces
+ * \param[in]  ts         time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_write_function(int                    mesh_id,
+                       int                    writer_id,
+                       const cs_function_t   *cel_f,
+                       const cs_function_t   *i_face_f,
+                       const cs_function_t   *b_face_f,
+                       const cs_time_step_t  *ts);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1131,7 +1163,7 @@ cs_post_write_var(int                    mesh_id,
  *                         false otherwise
  * \param[in]  use_parent  true if values are defined on "parent" mesh,
  *                         false if values are defined on post-processing mesh
- * \param[in]  var_type    variable's data type
+ * \param[in]  datatype    variable's data type
  * \param[in]  vtx_vals    vertex values
  * \param[in]  ts          time step status structure, or NULL
  */
@@ -1144,9 +1176,30 @@ cs_post_write_vertex_var(int                    mesh_id,
                          int                    var_dim,
                          bool                   interlace,
                          bool                   use_parent,
-                         cs_post_type_t         var_type,
+                         cs_datatype_t          datatype,
                          const void            *vtx_vals,
                          const cs_time_step_t  *ts);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output a function evaluation at cells or faces of a
+ *        post-processing mesh using associated writers.
+ *
+ * The associated mesh and function locations must have compatible types.
+ *
+ * \param[in]  mesh_id    id of associated mesh
+ * \param[in]  writer_id  id of specified associated writer,
+ *                        or \ref CS_POST_WRITER_ALL_ASSOCIATED for all
+ * \param[in]  f          pointer to function object at vertices
+ * \param[in]  ts         time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_write_vertex_function(int                    mesh_id,
+                              int                    writer_id,
+                              const cs_function_t   *f,
+                              const cs_time_step_t  *ts);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1184,8 +1237,8 @@ cs_post_write_particle_values(int                    mesh_id,
  * \param[in]  var_name             name of variable to output
  * \param[in]  var_dim              1 for scalar, 3 for vector, 6 for symmetric
  *                                  tensor, 9 for non-symmetric tensor
- * \param[in]  var_type             variable's data type
- * \param[in]  parent_location_id   asociated values mesh location, or 0
+ * \param[in]  datatype             variable's data type
+ * \param[in]  parent_location_id   associated values at mesh location, or 0
  *                                  if values are passed directly
  * \param[in]  interpolate_func     pointer to interpolation function,
  *                                  or NULL for default
@@ -1201,12 +1254,58 @@ cs_post_write_probe_values(int                              mesh_id,
                            int                              writer_id,
                            const char                      *var_name,
                            int                              var_dim,
-                           cs_post_type_t                   var_type,
+                           cs_datatype_t                    datatype,
                            int                              parent_location_id,
                            cs_interpolate_from_location_t  *interpolate_func,
                            void                            *interpolate_input,
                            const void                      *vals,
                            const cs_time_step_t            *ts);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output function-evaluated values at cells or faces of a
+ *        post-processing probe set using associated writers.
+ *
+ * - For real-valued data with interpolation, the function is evaluated on the
+ *   whole parent domain so as to be able to compute gradients, then
+ *    interpolate on the probe set.
+ *    * For vertex-based values, a lighter, cell-based interpolation would
+ *      be feasible, but is not available yet.
+ *    * For cell or face-based values, likewise, only the immediate neighborhood
+ *      of elements containing probes are needed, but such filtering would
+ *      require building the matching element list and adding an indirection
+ *      to the gradients computation.
+ *
+ * - In the specific case where the function evaluation uses an analytic
+ *   function, to which the exact coordinates are provides, such interpolation
+ *   is not deemed necessary, as the anaytic function may handle this more
+ *   efficiently.
+ *
+ * - For non-real-based values, or real-based values other than cs_real_t,
+ *   no interpolation is performed
+ *
+ * \param[in]  mesh_id              id of associated mesh
+ * \param[in]  writer_id            id of specified associated writer,
+ *                                  or \ref CS_POST_WRITER_ALL_ASSOCIATED for all
+ * \param[in]  f                    pointer to associated function object
+ * \param[in]  parent_location_id   associated values at mesh location, or 0
+ *                                  if values are passed directly
+ * \param[in]  interpolate_func     pointer to interpolation function,
+ *                                  or NULL for default
+ * \param[in]  interpolate_input    pointer to optional interpolation input
+ *                                  data, or NULL for default
+ * \param[in]  ts                   time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_write_probe_function(int                              mesh_id,
+                             int                              writer_id,
+                             const cs_function_t             *f,
+                             int                              parent_location_id,
+                             cs_interpolate_from_location_t  *interpolate_func,
+                             void                            *interpolate_input,
+                             const cs_time_step_t            *ts);
 
 /*----------------------------------------------------------------------------*/
 /*!

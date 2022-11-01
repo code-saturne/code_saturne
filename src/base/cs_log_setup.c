@@ -50,6 +50,7 @@
 #include "cs_domain.h"
 #include "cs_fan.h"
 #include "cs_field.h"
+#include "cs_function.h"
 #include "cs_log.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parameters.h"
@@ -219,6 +220,9 @@ cs_log_setup(void)
   cs_field_log_all_key_vals(false);
 
   cs_time_moment_log_setup();
+
+  cs_function_log_defs();
+  cs_function_log_all_settings();
 
   cs_sles_default_setup();
 

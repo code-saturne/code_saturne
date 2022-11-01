@@ -112,6 +112,8 @@ cs_field_operator.h \
 cs_file.h \
 cs_flag_check.h \
 cs_fp_exception.h \
+cs_function.h \
+cs_function_default.h \
 cs_gas_mix.h \
 cs_halo.h \
 cs_halo_perio.h \
@@ -298,6 +300,8 @@ cs_field_default.c \
 cs_field_pointer.c \
 cs_field_operator.c \
 cs_flag_check.c \
+cs_function.c \
+cs_function_default.c \
 cs_gas_mix.c \
 cs_halo.c \
 cs_halo_perio.c \

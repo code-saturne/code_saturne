@@ -65,6 +65,7 @@
 #include "cs_field_pointer.h"
 #include "cs_file.h"
 #include "cs_fp_exception.h"
+#include "cs_function.h"
 #include "cs_gradient.h"
 #include "cs_gui.h"
 #include "cs_gui_boundary_conditions.h"
@@ -592,6 +593,8 @@ _run(void)
   cs_probe_finalize();
   cs_post_finalize();
   cs_log_iteration_destroy_all();
+
+  cs_function_destroy_all();
 
   /* Free moments info */
 

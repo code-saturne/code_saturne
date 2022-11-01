@@ -51,6 +51,7 @@
 #include "cs_boundary_zone.h"
 #include "cs_field.h"
 #include "cs_file.h"
+#include "cs_function.h"
 #include "cs_lagr_extract.h"
 #include "cs_log.h"
 #include "cs_lagr_query.h"
@@ -800,52 +801,6 @@ _activate_if_listed(cs_post_writer_t      *w,
 
   if (force_status)
     w->active = prev_status;
-}
-
-/*----------------------------------------------------------------------------
- * Convert cs_post_type_t datatype to cs_datatype_t.
- *
- * parameters:
- *   type_cs <-- code_saturne data type
- *
- * returns
- *   corresponding FVM datatype
- *----------------------------------------------------------------------------*/
-
-static cs_datatype_t
-_cs_post_cnv_datatype(cs_post_type_t  type_cs)
-{
-  cs_datatype_t type_fvm = CS_DATATYPE_NULL;
-
-  switch(type_cs) {
-
-  case CS_POST_TYPE_cs_real_t:
-    if (sizeof(cs_real_t) == sizeof(double))
-      type_fvm = CS_DOUBLE;
-    else if (sizeof(cs_real_t) == sizeof(float))
-      type_fvm = CS_FLOAT;
-    break;
-
-  case CS_POST_TYPE_int:
-    if (sizeof(int) == 4)
-      type_fvm = CS_INT32;
-    else if (sizeof(int) == 8)
-      type_fvm = CS_INT64;
-    break;
-
-  case CS_POST_TYPE_float:
-    type_fvm = CS_FLOAT;
-    break;
-
-  case CS_POST_TYPE_double:
-    type_fvm = CS_DOUBLE;
-    break;
-
-  default:
-    assert(0);
-  }
-
-  return type_fvm;
 }
 
 /*----------------------------------------------------------------------------
@@ -2275,7 +2230,7 @@ static void
 _cs_post_assmb_var_faces(const fvm_nodal_t  *exp_mesh,
                          cs_lnum_t           n_i_faces,
                          cs_lnum_t           n_b_faces,
-                         int                 var_dim,
+                         cs_lnum_t           var_dim,
                          cs_interlace_t      interlace,
                          const cs_real_t     i_face_vals[],
                          const cs_real_t     b_face_vals[],
@@ -2850,6 +2805,35 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
 
   BFT_FREE(fam_flag);
   BFT_FREE(group_flag);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if an active writer associated to a mesh has a transient
+ *        connectivity.
+ *
+ * \param[in]       mesh  pointer to associated postprocessing mesh
+ *
+ * \return  true if an active associated writer has transent connectivity,
+ *          false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+static bool
+_post_mesh_have_active_non_transient(const cs_post_mesh_t  *post_mesh)
+{
+  bool have_transient_connect = false;
+
+  for (int j = 0; j < post_mesh->n_writers; j++) {
+    cs_post_writer_t  *writer = _cs_post_writers + post_mesh->writer_id[j];
+    if (writer->active == 1) {
+      if (   fvm_writer_get_time_dep(writer->writer)
+          == FVM_WRITER_TRANSIENT_CONNECT)
+        have_transient_connect = true;
+    }
+  }
+
+  return have_transient_connect;
 }
 
 /*----------------------------------------------------------------------------
@@ -3549,6 +3533,185 @@ _attach_probe_set_fields(cs_post_mesh_t  *post_mesh)
 
   BFT_FREE(ps_afi);
   BFT_REALLOC(post_mesh->a_field_info, 3*post_mesh->n_a_fields, int);
+}
+
+/*----------------------------------------------------------------------------
+ * Main post-processing output of additional function data
+ *
+ * parameters:
+ *   post_mesh   <-- pointer to post-processing mesh structure
+ *   ts          <-- time step status structure, or NULL
+ *----------------------------------------------------------------------------*/
+
+static void
+_output_function_data(cs_post_mesh_t        *post_mesh,
+                      const cs_time_step_t  *ts)
+{
+  const int n_functions = cs_function_n_functions();
+  if (n_functions == 0)
+    return;
+
+  int  pset_interpolation = 0;
+  bool pset_on_boundary = false;
+  cs_probe_set_t  *pset = (cs_probe_set_t *)post_mesh->sel_input[4];
+
+  if (pset != NULL) {
+    cs_probe_set_get_post_info(pset,
+                               NULL,
+                               &pset_on_boundary,
+                               NULL,
+                               NULL,
+                               NULL,
+                               NULL,
+                               NULL,
+                               NULL);
+    if (pset_on_boundary == false && cs_probe_set_get_interpolation(pset) == 1)
+      pset_interpolation = 1;
+  }
+
+  bool have_non_transient = _post_mesh_have_active_non_transient(post_mesh);
+
+  /* Base output for cell and boundary meshes */
+  /*------------------------------------------*/
+
+  if (   post_mesh->cat_id == CS_POST_MESH_VOLUME
+      || post_mesh->cat_id == CS_POST_MESH_BOUNDARY
+      || post_mesh->cat_id == CS_POST_MESH_SURFACE) {
+
+    /* Loop on functions */
+
+    for (int f_id = 0; f_id < n_functions; f_id++) {
+
+      const cs_function_t *f = cs_function_by_id(f_id);
+      const cs_time_step_t  *_ts = ts;
+
+      if (! (f->post_vis & CS_POST_ON_LOCATION))
+        continue;
+
+      if (f->type & CS_FUNCTION_TIME_INDEPENDENT) {
+        if (post_mesh->nt_last == -1)
+          _ts = NULL;
+        else if (have_non_transient == false)
+          continue;
+      }
+
+      const cs_mesh_location_type_t f_loc_type
+        = cs_mesh_location_get_type(f->location_id);
+
+      if (_cs_post_match_post_write_var(post_mesh, f_loc_type) == false)
+        continue;
+
+      const char *name = f->label;
+      if (name == NULL)
+        name = f->name;
+
+      if (pset != NULL) {
+        char interpolate_input[96];
+        strncpy(interpolate_input, f->name, 95); interpolate_input[95] = '\0';
+
+        cs_interpolate_from_location_t
+          *interpolate_func = cs_interpolate_from_location_p0;
+        if (   f_loc_type == CS_MESH_LOCATION_CELLS
+            && pset_interpolation == 1)
+          interpolate_func = cs_interpolate_from_location_p1;
+
+        cs_post_write_probe_function(post_mesh->id,
+                                     CS_POST_WRITER_ALL_ASSOCIATED,
+                                     f,
+                                     f->location_id,
+                                     interpolate_func,
+                                     interpolate_input,
+                                     _ts);
+      }
+
+      else if (f_loc_type == CS_MESH_LOCATION_CELLS)
+        cs_post_write_function(post_mesh->id,
+                               CS_POST_WRITER_ALL_ASSOCIATED,
+                               f, NULL, NULL,
+                               _ts);
+
+      else if (f_loc_type == CS_MESH_LOCATION_BOUNDARY_FACES)
+        cs_post_write_function(post_mesh->id,
+                               CS_POST_WRITER_ALL_ASSOCIATED,
+                               NULL, NULL, f,
+                               _ts);
+
+      else if (f_loc_type == CS_MESH_LOCATION_INTERIOR_FACES)
+        cs_post_write_function(post_mesh->id,
+                               CS_POST_WRITER_ALL_ASSOCIATED,
+                               NULL, f, NULL,
+                               _ts);
+      else if (f_loc_type == CS_MESH_LOCATION_VERTICES)
+        cs_post_write_vertex_function(post_mesh->id,
+                                      CS_POST_WRITER_ALL_ASSOCIATED,
+                                      f,
+                                      _ts);
+
+    } /* End of loop on functions */
+
+  } /* End of main output for cell or boundary mesh or submesh */
+
+  /* Base output for probes */
+  /*------------------------*/
+
+  else if (post_mesh->cat_id == CS_POST_MESH_PROBES) {
+
+    /* Loop on functions */
+
+    for (int f_id = 0; f_id < n_functions; f_id++) {
+
+      const cs_function_t  *f = cs_function_by_id(f_id);
+      const cs_time_step_t  *_ts = ts;
+
+      if (! (f->post_vis & CS_POST_MONITOR))
+        continue;
+
+      if (f->type & CS_FUNCTION_TIME_INDEPENDENT) {
+        if (post_mesh->nt_last == -1)
+          _ts = NULL;
+        else
+          continue;
+      }
+
+      const cs_mesh_location_type_t f_loc_type
+        = cs_mesh_location_get_type(f->location_id);
+
+      if (pset_on_boundary) {
+        if (   f_loc_type != CS_MESH_LOCATION_CELLS
+            && f_loc_type != CS_MESH_LOCATION_BOUNDARY_FACES
+            && f_loc_type != CS_MESH_LOCATION_VERTICES)
+          continue;
+      }
+      else {
+        if (   f_loc_type != CS_MESH_LOCATION_CELLS
+            && f_loc_type != CS_MESH_LOCATION_VERTICES)
+          continue;
+      }
+
+      const char *name = f->label;
+      if (name == NULL)
+        name = f->name;
+
+      cs_interpolate_from_location_t
+        *interpolate_func = cs_interpolate_from_location_p0;
+      if (   f_loc_type == CS_MESH_LOCATION_CELLS
+          && pset_interpolation == 1)
+        interpolate_func = cs_interpolate_from_location_p1;
+
+      char interpolate_input[96];
+      strncpy(interpolate_input, f->name, 95); interpolate_input[95] = '\0';
+
+      cs_post_write_probe_function(post_mesh->id,
+                                   CS_POST_WRITER_ALL_ASSOCIATED,
+                                   f,
+                                   f->location_id,
+                                   interpolate_func,
+                                   interpolate_input,
+                                   _ts);
+
+    } /* End of loop on functions */
+
+  } /* End of main output for probes */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5691,7 +5854,7 @@ cs_post_write_meshes(const cs_time_step_t  *ts)
  *                          false otherwise
  * \param[in]  use_parent   true if values are defined on "parent" mesh,
  *                          false if values are defined on post-processing mesh
- * \param[in]  var_type     variable's data type
+ * \param[in]  datatype     variable's data type
  * \param[in]  cel_vals     cell values
  * \param[in]  i_face_vals  interior face values
  * \param[in]  b_face_vals  boundary face values
@@ -5706,7 +5869,7 @@ cs_post_write_var(int                    mesh_id,
                   int                    var_dim,
                   bool                   interlace,
                   bool                   use_parent,
-                  cs_post_type_t         var_type,
+                  cs_datatype_t          datatype,
                   const void            *cel_vals,
                   const void            *i_face_vals,
                   const void            *b_face_vals,
@@ -5716,7 +5879,6 @@ cs_post_write_var(int                    mesh_id,
   int        _mesh_id;
 
   cs_interlace_t  _interlace;
-  cs_datatype_t    datatype;
 
   size_t       dec_ptr = 0;
   int          n_parent_lists = 0;
@@ -5732,9 +5894,6 @@ cs_post_write_var(int                    mesh_id,
                                NULL, NULL, NULL,
                                NULL, NULL, NULL};
 
-  int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
-  double t_cur = (ts != NULL) ? ts->t_cur : 0.;
-
   /* Initializations */
 
   _mesh_id = _cs_post_mesh_id_try(mesh_id);
@@ -5748,8 +5907,6 @@ cs_post_write_var(int                    mesh_id,
     _interlace = CS_INTERLACE;
   else
     _interlace = CS_NO_INTERLACE;
-
-  datatype =  _cs_post_cnv_datatype(var_type);
 
   /* Assign appropriate array to FVM for output */
 
@@ -5896,6 +6053,9 @@ cs_post_write_var(int                    mesh_id,
 
     if (writer->active == 1) {
 
+      int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
+      double t_cur = (ts != NULL) ? ts->t_cur : 0.;
+
       _check_non_transient(writer, &nt_cur, &t_cur);
 
       fvm_writer_export_field(writer->writer,
@@ -5928,6 +6088,221 @@ cs_post_write_var(int                    mesh_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Output a function evaluation at cells or faces of a
+ *        post-processing mesh using associated writers.
+ *
+ * The associated mesh and function locations must have compatible types.
+ *
+ * Note that while providing functions for multiple mesh locations
+ * (such as interior and boundary faces when a postprocessing mesh contains
+ * both) is possible, it is not handled yet, so such cases will be ignored.
+ *
+ * \param[in]  mesh_id    id of associated mesh
+ * \param[in]  writer_id  id of specified associated writer,
+ *                        or \ref CS_POST_WRITER_ALL_ASSOCIATED for all
+ * \param[in]  cell_f     pointer to function object at cells
+ * \param[in]  i_face_f   pointer to function object at interior faces
+ * \param[in]  b_face_f   pointer to function object at boundary faces
+ * \param[in]  ts         time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_write_function(int                    mesh_id,
+                       int                    writer_id,
+                       const cs_function_t   *cel_f,
+                       const cs_function_t   *i_face_f,
+                       const cs_function_t   *b_face_f,
+                       const cs_time_step_t  *ts)
+{
+  cs_post_mesh_t  *post_mesh = NULL;
+
+  const void  *var_ptr[2*9] = {NULL, NULL, NULL,
+                               NULL, NULL, NULL,
+                               NULL, NULL, NULL,
+                               NULL, NULL, NULL,
+                               NULL, NULL, NULL,
+                               NULL, NULL, NULL};
+
+  int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
+  double t_cur = (ts != NULL) ? ts->t_cur : 0.;
+
+  /* Initializations */
+
+  const int _mesh_id = _cs_post_mesh_id_try(mesh_id);
+
+  if (_mesh_id < 0)
+    return;
+
+  post_mesh = _cs_post_meshes + _mesh_id;
+
+  cs_mesh_location_type_t loc_type = CS_MESH_LOCATION_NONE;
+  cs_lnum_t elt_id_shift = 0;
+  const cs_function_t *f = NULL;
+
+  int ent_dim = -1;
+
+  /* Case of cells */
+  /*---------------*/
+
+  if (post_mesh->ent_flag[CS_POST_LOCATION_CELL] == 1) {
+
+    loc_type = CS_MESH_LOCATION_CELLS;
+    f = cel_f;
+    ent_dim = 3;
+
+  }
+
+  /* Case of faces */
+  /*---------------*/
+
+  else if (   post_mesh->ent_flag[CS_POST_LOCATION_I_FACE] == 1
+           || post_mesh->ent_flag[CS_POST_LOCATION_B_FACE] == 1) {
+
+    ent_dim = 2;
+
+    /* FIXME: case where a mesh includes both boundary and interior faces
+       is silently ignored for now. This is rarely used, and does not occur
+       in the default, "automatic" postprocessing meshes where function
+       objects are most relevant.
+       Handling this case would require either:
+       - Filtering parent face ids to call the appropriate function
+         for each subset, then reassembling (merging) interleaved values
+         based on parent ids (where parent ids are grouped by element
+         type, so ids of boundary and interior faces may be interleaved).
+       - Or in the future, perhaps appending boundary and interior faces
+         in a more systematic manner, removing the need for manipulation
+         of parent ids, but requiring functions which can work on both
+         types of faces. */
+
+    if (   post_mesh->ent_flag[CS_POST_LOCATION_I_FACE] == 1
+        && post_mesh->ent_flag[CS_POST_LOCATION_B_FACE] == 1) {
+
+      const char *m_name = fvm_nodal_get_name(post_mesh->exp_mesh);
+      if (i_face_f == NULL || b_face_f == NULL) {
+        bft_error(__FILE__, __LINE__, 0,
+                  _("%s: For postprocessing mesh \"%s\", both\n"
+                    "interior and boundary face function objects must be given\n"
+                    "\n"
+                    "In addition, this combination is not yet handled, so will\n"
+                    "be ignored with a warning."),
+                  __func__, m_name);
+      }
+      else {
+        static bool warned = false;
+        if (warned == false) {
+          bft_printf
+            (_("\nWarning: in %s, handling of combined\n"
+               "interior and boundary face postprocessing mesh and function\n"
+               "objects is not handled yet, so output of function objects\n"
+               "\"%s\" and \"%s\" is ignored for mesh \"%s\".\n"
+               "\n"
+               "This warning applies to all similar potprocessing meshes."),
+             __func__, i_face_f->name, b_face_f->name, m_name);
+          warned = true;
+        }
+      }
+
+    }
+
+    if (post_mesh->ent_flag[CS_POST_LOCATION_I_FACE] == 1) {
+      loc_type = CS_MESH_LOCATION_INTERIOR_FACES;
+      f = i_face_f;
+      elt_id_shift = cs_glob_mesh->n_b_faces;
+    }
+    else {
+      loc_type = CS_MESH_LOCATION_BOUNDARY_FACES;
+      f = b_face_f;
+    }
+
+  }
+
+  if (f == NULL)
+    return;
+
+  if (loc_type != cs_mesh_location_get_type(f->location_id)) {
+    const char *m_name = fvm_nodal_get_name(post_mesh->exp_mesh);
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: postprocessing mesh \"%s\" and function \"%s\"\n"
+                "are not based on compatible mesh locations."),
+              __func__, m_name, f->name);
+  }
+
+  cs_lnum_t n_elts = fvm_nodal_get_n_entities(post_mesh->exp_mesh, ent_dim);
+
+  cs_lnum_t *elt_ids;
+  BFT_MALLOC(elt_ids, n_elts, cs_lnum_t);
+  fvm_nodal_get_parent_id(post_mesh->exp_mesh, ent_dim, elt_ids);
+
+  if (elt_id_shift > 0) {
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      elt_ids[i] -= elt_id_shift;
+  }
+
+  unsigned char *_vals = NULL;
+  size_t elt_size = cs_datatype_size[f->datatype] * f->dim;
+  BFT_MALLOC(_vals, ((size_t)n_elts) * elt_size,  unsigned char);
+
+  cs_function_evaluate(f,
+                       ts,
+                       loc_type,
+                       n_elts,
+                       elt_ids,
+                       _vals);
+
+  BFT_FREE(elt_ids);
+
+  var_ptr[0] = _vals;
+
+  const char *var_name = f->label;
+  if (var_name == NULL)
+    var_name = f->name;
+
+  cs_lnum_t   parent_num_shift[1]  = {0};
+
+  /* Effective output: loop on writers */
+  /*-----------------------------------*/
+
+  for (int i = 0; i < post_mesh->n_writers; i++) {
+
+    cs_post_writer_t *writer = _cs_post_writers + post_mesh->writer_id[i];
+
+    if (writer->id != writer_id && writer_id != CS_POST_WRITER_ALL_ASSOCIATED)
+      continue;
+
+    if (writer->active == 1) {
+
+      _check_non_transient(writer, &nt_cur, &t_cur);
+
+      fvm_writer_export_field(writer->writer,
+                              post_mesh->exp_mesh,
+                              var_name,
+                              FVM_WRITER_PER_ELEMENT,
+                              f->dim,
+                              CS_INTERLACE,
+                              0, /* n_parent_lists, */
+                              parent_num_shift,
+                              f->datatype,
+                              nt_cur,
+                              t_cur,
+                              (const void * *)var_ptr);
+
+      if (nt_cur >= 0) {
+        writer->tc.last_nt = nt_cur;
+        writer->tc.last_t = t_cur;
+      }
+
+    }
+
+  }
+
+  /* Free memory */
+
+  BFT_FREE(_vals);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Output a variable defined at vertices of a post-processing mesh using
  *        associated writers.
  *
@@ -5941,7 +6316,7 @@ cs_post_write_var(int                    mesh_id,
  *                         false otherwise
  * \param[in]  use_parent  true if values are defined on "parent" mesh,
  *                         false if values are defined on post-processing mesh
- * \param[in]  var_type    variable's data type
+ * \param[in]  datatype    variable's data type
  * \param[in]  vtx_vals    vertex values
  * \param[in]  ts          time step status structure, or NULL
  */
@@ -5954,7 +6329,7 @@ cs_post_write_vertex_var(int                    mesh_id,
                          int                    var_dim,
                          bool                   interlace,
                          bool                   use_parent,
-                         cs_post_type_t         var_type,
+                         cs_datatype_t          datatype,
                          const void            *vtx_vals,
                          const cs_time_step_t  *ts)
 {
@@ -5964,7 +6339,6 @@ cs_post_write_vertex_var(int                    mesh_id,
   cs_post_mesh_t  *post_mesh;
   cs_post_writer_t  *writer;
   cs_interlace_t  _interlace;
-  cs_datatype_t  datatype;
 
   size_t       dec_ptr = 0;
   int          n_parent_lists = 0;
@@ -5973,9 +6347,6 @@ cs_post_write_vertex_var(int                    mesh_id,
   const void  *var_ptr[9] = {NULL, NULL, NULL,
                              NULL, NULL, NULL,
                              NULL, NULL, NULL};
-
-  int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
-  double t_cur = (ts != NULL) ? ts->t_cur : 0.;
 
   /* Initializations */
 
@@ -5993,8 +6364,6 @@ cs_post_write_vertex_var(int                    mesh_id,
 
   assert(   sizeof(cs_real_t) == sizeof(double)
          || sizeof(cs_real_t) == sizeof(float));
-
-  datatype =  _cs_post_cnv_datatype(var_type);
 
   /* Assign appropriate array to FVM for output */
 
@@ -6026,6 +6395,9 @@ cs_post_write_vertex_var(int                    mesh_id,
 
     if (writer->active == 1) {
 
+      int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
+      double t_cur = (ts != NULL) ? ts->t_cur : 0.;
+
       _check_non_transient(writer, &nt_cur, &t_cur);
 
       fvm_writer_export_field(writer->writer,
@@ -6050,6 +6422,120 @@ cs_post_write_vertex_var(int                    mesh_id,
 
   }
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output a function evaluation at cells or faces of a
+ *        post-processing mesh using associated writers.
+ *
+ * The associated mesh and function locations must have compatible types.
+ *
+ * \param[in]  mesh_id    id of associated mesh
+ * \param[in]  writer_id  id of specified associated writer,
+ *                        or \ref CS_POST_WRITER_ALL_ASSOCIATED for all
+ * \param[in]  f          pointer to function object at vertices
+ * \param[in]  ts         time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_write_vertex_function(int                    mesh_id,
+                              int                    writer_id,
+                              const cs_function_t   *f,
+                              const cs_time_step_t  *ts)
+{
+  cs_lnum_t    parent_num_shift[1]  = {0};
+
+  const void  *var_ptr[9] = {NULL, NULL, NULL,
+                             NULL, NULL, NULL,
+                             NULL, NULL, NULL};
+
+  /* Initializations */
+
+  const int _mesh_id = _cs_post_mesh_id_try(mesh_id);
+
+  if (_mesh_id < 0)
+    return;
+
+  cs_post_mesh_t *post_mesh = _cs_post_meshes + _mesh_id;
+
+  if (   CS_MESH_LOCATION_VERTICES
+      != cs_mesh_location_get_type(f->location_id)) {
+    const char *m_name = fvm_nodal_get_name(post_mesh->exp_mesh);
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: postprocessing mesh \"%s\" and function \"%s\"\n"
+                "are not based on compatible mesh locations."),
+              __func__, m_name, f->name);
+  }
+
+  cs_lnum_t n_elts = fvm_nodal_get_n_entities(post_mesh->exp_mesh, 0);
+
+  cs_lnum_t *elt_ids;
+  BFT_MALLOC(elt_ids, n_elts, cs_lnum_t);
+  fvm_nodal_get_parent_id(post_mesh->exp_mesh, 0, elt_ids);
+
+  unsigned char *_vals = NULL;
+  size_t elt_size = cs_datatype_size[f->datatype] * f->dim;
+  BFT_MALLOC(_vals, ((size_t)n_elts) * elt_size,  unsigned char);
+
+  cs_function_evaluate(f,
+                       ts,
+                       CS_MESH_LOCATION_VERTICES,
+                       n_elts,
+                       elt_ids,
+                       _vals);
+
+  BFT_FREE(elt_ids);
+
+  var_ptr[0] = _vals;
+
+  const char *var_name = f->label;
+  if (var_name == NULL)
+    var_name = f->name;
+
+  /* Effective output: loop on writers */
+  /*-----------------------------------*/
+
+  for (int i = 0; i < post_mesh->n_writers; i++) {
+
+    cs_post_writer_t *writer = _cs_post_writers + post_mesh->writer_id[i];
+
+    if (writer->id != writer_id && writer_id != CS_POST_WRITER_ALL_ASSOCIATED)
+      continue;
+
+    if (writer->active == 1) {
+
+      int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
+      double t_cur = (ts != NULL) ? ts->t_cur : 0.;
+
+      _check_non_transient(writer, &nt_cur, &t_cur);
+
+      fvm_writer_export_field(writer->writer,
+                              post_mesh->exp_mesh,
+                              var_name,
+                              FVM_WRITER_PER_NODE,
+                              f->dim,
+                              CS_INTERLACE,
+                              0, /* n_parent_lists, */
+                              parent_num_shift,
+                              f->datatype,
+                              nt_cur,
+                              t_cur,
+                              (const void * *)var_ptr);
+
+      if (nt_cur >= 0) {
+        writer->tc.last_nt = nt_cur;
+        writer->tc.last_t = t_cur;
+      }
+
+    }
+
+  }
+
+  /* Free memory */
+
+  BFT_FREE(_vals);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6225,7 +6711,7 @@ cs_post_write_particle_values(int                    mesh_id,
  * \param[in]  var_name             name of variable to output
  * \param[in]  var_dim              1 for scalar, 3 for vector, 6 for symmetric
  *                                  tensor, 9 for non-symmetric tensor
- * \param[in]  var_type             variable's data type
+ * \param[in]  datatype             variable's data type
  * \param[in]  parent_location_id   asociated values mesh location, or 0
  *                                  if values are passed directly
  * \param[in]  interpolate_func     pointer to interpolation function,
@@ -6242,7 +6728,7 @@ cs_post_write_probe_values(int                              mesh_id,
                            int                              writer_id,
                            const char                      *var_name,
                            int                              var_dim,
-                           cs_post_type_t                   var_type,
+                           cs_datatype_t                    datatype,
                            int                              parent_location_id,
                            cs_interpolate_from_location_t  *interpolate_func,
                            void                            *interpolate_input,
@@ -6252,8 +6738,6 @@ cs_post_write_probe_values(int                              mesh_id,
   int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
   double t_cur = (ts != NULL) ? ts->t_cur : 0.;
 
-  bool on_boundary;
-
   /* Initializations */
 
   int _mesh_id = _cs_post_mesh_id_try(mesh_id);
@@ -6261,35 +6745,23 @@ cs_post_write_probe_values(int                              mesh_id,
   if (_mesh_id < 0)
     return;
 
-  cs_post_mesh_t  *post_mesh = _cs_post_meshes + _mesh_id;
-  cs_probe_set_t  *pset = (cs_probe_set_t *)post_mesh->sel_input[4];
+  cs_post_mesh_t *post_mesh = _cs_post_meshes + _mesh_id;
+  cs_probe_set_t *pset = (cs_probe_set_t *)post_mesh->sel_input[4];
 
-  cs_probe_set_get_post_info(pset,
-                             NULL,
-                             &on_boundary,
-                             NULL,
-                             NULL,
-                             NULL,
-                             NULL,
-                             NULL,
-                             NULL);
-
-  cs_datatype_t datatype = _cs_post_cnv_datatype(var_type);
-
-  const void  *var_ptr[1] = {vals};
+  const void *var_ptr[1] = {vals};
   unsigned char *_vals = NULL;
 
   /* Extract or interpolate values */
 
   if (parent_location_id > 0) {
 
-    const cs_lnum_t  n_points = fvm_nodal_get_n_entities(post_mesh->exp_mesh, 0);
+    const cs_lnum_t n_points = fvm_nodal_get_n_entities(post_mesh->exp_mesh, 0);
     const cs_lnum_t *elt_ids = cs_probe_set_get_elt_ids(pset,
                                                         parent_location_id);
 
-    cs_interpolate_from_location_t  *_interpolate_func = interpolate_func;
+    cs_interpolate_from_location_t *_interpolate_func = interpolate_func;
 
-    cs_coord_t  *point_coords = NULL;
+    cs_coord_t *point_coords = NULL;
 
     if (_interpolate_func == NULL)
       _interpolate_func = cs_interpolate_from_location_p0;
@@ -6341,6 +6813,187 @@ cs_post_write_probe_values(int                              mesh_id,
                               0, /* n_parent_lists */
                               parent_num_shift,
                               datatype,
+                              nt_cur,
+                              t_cur,
+                              (const void **)var_ptr);
+
+      if (nt_cur >= 0) {
+        writer->tc.last_nt = nt_cur;
+        writer->tc.last_t = t_cur;
+      }
+
+    }
+
+  }
+
+  BFT_FREE(_vals);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output function-evaluated values at cells or faces of a
+ *        post-processing probe set using associated writers.
+ *
+ * - For real-valued data with interpolation, the function is evaluated on the
+ *   whole parent domain so as to be able to compute gradients, then
+ *    interpolate on the probe set.
+ *    * For vertex-based values, a lighter, cell-based interpolation would
+ *      be feasible, but is not available yet.
+ *    * For cell or face-based values, likewise, only the immediate neighborhood
+ *      of elements containing probes are needed, but such filtering would
+ *      require building the matching element list and adding an indirection
+ *      to the gradients computation.
+ *
+ * - In the specific case where the function evaluation uses an analytic
+ *   function, to which the exact coordinates are provides, such interpolation
+ *   is not deemed necessary, as the anaytic function may handle this more
+ *   efficiently.
+ *
+ * - For non-real-based values, or real-based values other than cs_real_t,
+ *   no interpolation is performed
+ *
+ * \param[in]  mesh_id              id of associated mesh
+ * \param[in]  writer_id            id of specified associated writer,
+ *                                  or \ref CS_POST_WRITER_ALL_ASSOCIATED for all
+ * \param[in]  f                    pointer to associated function object
+ * \param[in]  parent_location_id   associated values at mesh location, or 0
+ *                                  if values are passed directly
+ * \param[in]  interpolate_func     pointer to interpolation function,
+ *                                  or NULL for default
+ * \param[in]  interpolate_input    pointer to optional interpolation input
+ *                                  data, or NULL for default
+ * \param[in]  ts                   time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_write_probe_function(int                              mesh_id,
+                             int                              writer_id,
+                             const cs_function_t             *f,
+                             int                              parent_location_id,
+                             cs_interpolate_from_location_t  *interpolate_func,
+                             void                            *interpolate_input,
+                             const cs_time_step_t            *ts)
+{
+  int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
+  double t_cur = (ts != NULL) ? ts->t_cur : 0.;
+
+  /* Initializations */
+
+  int _mesh_id = _cs_post_mesh_id_try(mesh_id);
+
+  if (_mesh_id < 0)
+    return;
+
+  cs_post_mesh_t *post_mesh = _cs_post_meshes + _mesh_id;
+  cs_probe_set_t *pset = (cs_probe_set_t *)post_mesh->sel_input[4];
+
+  cs_coord_t *point_coords = NULL;
+
+  const void *var_ptr[1] = {NULL};
+  unsigned char *_vals = NULL;
+
+  cs_lnum_t _dim = f->dim;
+
+  const char *var_name = f->label;
+  if (var_name == NULL)
+    var_name = f->name;
+
+  /* Extract or interpolate values (see rules in function description above) */
+
+  if (parent_location_id > 0) {
+
+    const cs_lnum_t n_points = fvm_nodal_get_n_entities(post_mesh->exp_mesh, 0);
+    const cs_lnum_t *elt_ids = cs_probe_set_get_elt_ids(pset,
+                                                        parent_location_id);
+
+    cs_interpolate_from_location_t *_interpolate_func = interpolate_func;
+
+    if (   _interpolate_func == cs_interpolate_from_location_p0
+        || f->analytic_func != NULL
+        || f->datatype != CS_REAL_TYPE)
+      _interpolate_func = NULL;
+
+    BFT_MALLOC(_vals,
+               (size_t)n_points*cs_datatype_size[f->datatype]*((size_t)f->dim),
+               unsigned char);
+
+    if (   _interpolate_func != cs_interpolate_from_location_p0
+        || f->analytic_func != NULL) {
+      BFT_MALLOC(point_coords, n_points*3, cs_coord_t);
+      fvm_nodal_get_vertex_coords(post_mesh->exp_mesh,
+                                  CS_INTERLACE,
+                                  point_coords);
+    }
+
+    if (_interpolate_func != NULL) {
+      const cs_lnum_t *n_p_elts = cs_mesh_location_get_n_elts(parent_location_id);
+      cs_real_t *_p_vals;
+      BFT_MALLOC(_p_vals, n_p_elts[2]*_dim, cs_real_t);
+
+      cs_function_evaluate(f,
+                           ts,
+                           parent_location_id,
+                           n_p_elts[0],
+                           NULL,
+                           _p_vals);
+
+      _interpolate_func(interpolate_input,
+                        f->datatype,
+                        f->dim,
+                        n_points,
+                        elt_ids,
+                        (const cs_real_3_t *)point_coords,
+                        _p_vals,
+                        _vals);
+
+      BFT_FREE(_p_vals);
+    }
+
+    else if (f->analytic_func != NULL)
+      f->analytic_func(ts->t_cur,
+                       n_points,
+                       elt_ids,
+                       (cs_real_t *)point_coords,
+                       true,
+                       f->func_input,
+                       (cs_real_t *)_vals);
+    else
+      cs_function_evaluate(f,
+                           ts,
+                           parent_location_id,
+                           n_points,
+                           elt_ids,
+                           _vals);
+
+    var_ptr[0] = _vals;
+
+    BFT_FREE(point_coords);
+  }
+
+  /* Effective output: loop on writers */
+  /*-----------------------------------*/
+
+  for (int i = 0; i < post_mesh->n_writers; i++) {
+
+    cs_post_writer_t *writer = _cs_post_writers + post_mesh->writer_id[i];
+
+    if (writer->id != writer_id && writer_id != CS_POST_WRITER_ALL_ASSOCIATED)
+      continue;
+
+    if (writer->active == 1) {
+
+      cs_lnum_t  parent_num_shift[1] = {0};
+
+      fvm_writer_export_field(writer->writer,
+                              post_mesh->exp_mesh,
+                              var_name,
+                              FVM_WRITER_PER_NODE,
+                              f->dim,
+                              CS_INTERLACE,
+                              0, /* n_parent_lists */
+                              parent_num_shift,
+                              f->datatype,
                               nt_cur,
                               t_cur,
                               (const void **)var_ptr);
@@ -6867,7 +7520,6 @@ void
 cs_post_time_step_output(const cs_time_step_t  *ts)
 {
   int  j;
-  bool  active;
 
   /* Loop on writers to check if something must be done */
   /*----------------------------------------------------*/
@@ -6904,7 +7556,7 @@ cs_post_time_step_output(const cs_time_step_t  *ts)
 
     cs_post_mesh_t  *post_mesh = _cs_post_meshes + i;
 
-    active = false;
+    bool active = false;
 
     for (j = 0; j < post_mesh->n_writers; j++) {
       cs_post_writer_t  *writer = _cs_post_writers + post_mesh->writer_id[j];
@@ -7018,6 +7670,9 @@ cs_post_time_step_output(const cs_time_step_t  *ts)
 
       if (post_mesh->n_a_fields > 0)
         _cs_post_output_attached_fields(post_mesh, ts);
+
+      if (post_mesh->cat_id < 0)
+        _output_function_data(post_mesh, ts);
 
       /* Output of variables by registered function instances */
 

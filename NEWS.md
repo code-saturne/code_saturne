@@ -3,6 +3,13 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add `cs_function` API to refactor pre and user-defined location data
+  evaluation. This defines function objects which can be evaluated
+  on the fly, on the required mesh subset, and be otherwise used similarly
+  to fields for postprocessing and logging.
+  * This is a first step. Logging output is still missing, and most
+    candidate functions are not migrated yet.
+
 - Documentation: user guide fully migrated to HTML (based on Doxygen
   and Markdown).
 
@@ -25,7 +32,7 @@ User changes:
 
 - Simplify the use of soil-atmosphere model of the atmospheric module.
 
-Numercis and physical modeling:
+Numerics and physical modeling:
 
 - Add some atmospheric universal functions for large scale idealized wind
   profiles.
