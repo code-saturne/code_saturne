@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <float.h>
 #include <math.h>
 
 #if defined(HAVE_MPI)
@@ -338,6 +339,20 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                            xcpp,
                            dam,
                            xam);
+
+
+  /* Precaution if diagonal is 0, which may happen is all surrounding cells
+   * are disabled
+   * If a whole line of the matrix is 0, the diagonal is set to 1 */
+  if (mq->has_disable_flag == 1) {
+# pragma omp parallel for
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      if (CS_ABS(dam[cell_id]) < DBL_MIN) {
+        mq->c_disable_flag[cell_id] = 1;
+        dam[cell_id] += mq->c_disable_flag[cell_id];
+      }
+    }
+  }
 
   /* For steady computations, the diagonal is relaxed */
   if (idtvar < 0) {
@@ -1212,6 +1227,21 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                            dam,
                            xam);
 
+  /* Precaution if diagonal is 0, which may happen is all surrounding cells
+   * are disabled
+   * If a whole line of the matrix is 0, the diagonal is set to 1 */
+  if (mq->has_disable_flag == 1) {
+# pragma omp parallel for
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        if (CS_ABS(dam[cell_id][i][i]) < DBL_MIN) {
+          mq->c_disable_flag[cell_id] = 1;
+          dam[cell_id][i][i] += mq->c_disable_flag[cell_id];
+        }
+      }
+    }
+  }
+
   /*  For steady computations, the diagonal is relaxed */
   if (idtvar < 0) {
 #   pragma omp parallel for
@@ -2041,6 +2071,21 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
                            b_viscm,
                            dam,
                            xam);
+
+  /* Precaution if diagonal is 0, which may happen is all surrounding cells
+   * are disabled
+   * If a whole line of the matrix is 0, the diagonal is set to 1 */
+  if (mq->has_disable_flag == 1) {
+# pragma omp parallel for
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      for (cs_lnum_t i = 0; i < 6; i++) {
+        if (CS_ABS(dam[cell_id][i][i]) < DBL_MIN) {
+          mq->c_disable_flag[cell_id] = 1;
+          dam[cell_id][i][i] += mq->c_disable_flag[cell_id];
+        }
+      }
+    }
+  }
 
   /*  For steady computations, the diagonal is relaxed */
   if (idtvar < 0) {
