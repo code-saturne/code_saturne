@@ -54,7 +54,11 @@
 
 #include "cs_function.h"
 #include "cs_function_default.h"
+#include "cs_mesh_quantities.h"
+#include "cs_math.h"
 #include "cs_post.h"
+#include "cs_physical_constants.h"
+#include "cs_rotation.h"
 #include "cs_turbomachinery.h"
 
 /*----------------------------------------------------------------------------*/
@@ -248,6 +252,188 @@ _location_mpi_rank_id(int               location_id,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate the absolute pressure associated to the given cells.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        pointer to associated mesh structure
+ *                               (to be cast as cs_mesh_t *) for interior
+ *                               faces or vertices, unused otherwise
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_absolute_pressure_f(int               location_id,
+                     cs_lnum_t         n_elts,
+                     const cs_lnum_t  *elt_ids,
+                     void             *input,
+                     void             *vals)
+{
+  CS_UNUSED(input);
+  assert(location_id == CS_MESH_LOCATION_CELLS);
+
+  const cs_rotation_t *r = cs_glob_rotation;
+  const int *c_r_num = NULL;
+  cs_lnum_t c_r_step = 0;
+
+  if (cs_turbomachinery_get_model() != CS_TURBOMACHINERY_NONE) {
+    c_r_num = cs_turbomachinery_get_cell_rotor_num();
+    c_r_step = 1;
+  }
+
+  cs_real_t *p_abs = vals;
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_3_t *cell_cen = (const cs_real_3_t *)(mq->cell_cen);
+  const cs_real_t *cvar_pr = cs_field_by_name("pressure")->val;
+  const cs_real_t *cpro_rho = cs_field_by_name("density")->val;
+
+  if (elt_ids != NULL) {
+    for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
+      cs_lnum_t i = elt_ids[idx];
+      int r_num = c_r_num[i * c_r_step];
+      cs_real_t vr[3];
+      cs_rotation_velocity(r + r_num, cell_cen[i], vr);
+      p_abs[idx] = cvar_pr[i] + cpro_rho[i] * 0.5 * cs_math_3_square_norm(vr);
+    }
+  }
+
+  else {
+    for (cs_lnum_t i = 0; i <  n_elts; i++) {
+      int r_num = c_r_num[i * c_r_step];
+      cs_real_t vr[3];
+      cs_rotation_velocity(r + r_num, cell_cen[i], vr);
+      p_abs[i] = cvar_pr[i] + cpro_rho[i] * 0.5 * cs_math_3_square_norm(vr);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate the absolute velocity associated to the given cells.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        pointer to associated mesh structure
+ *                               (to be cast as cs_mesh_t *) for interior
+ *                               faces or vertices, unused otherwise
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_absolute_velocity_f(int               location_id,
+                     cs_lnum_t         n_elts,
+                     const cs_lnum_t  *elt_ids,
+                     void             *input,
+                     void             *vals)
+{
+  CS_UNUSED(input);
+  assert(location_id == CS_MESH_LOCATION_CELLS);
+
+  const cs_rotation_t *r = cs_glob_rotation;
+  const int *c_r_num = NULL;
+  cs_lnum_t c_r_step = 0;
+
+  if (cs_turbomachinery_get_model() != CS_TURBOMACHINERY_NONE) {
+    c_r_num = cs_turbomachinery_get_cell_rotor_num();
+    c_r_step = 1;
+  }
+
+  cs_real_3_t *v_abs = vals;
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_3_t *cell_cen = (const cs_real_3_t *)(mq->cell_cen);
+  const cs_real_3_t *cvar_vel
+    = (const cs_real_3_t *)cs_field_by_name("velocity")->val;
+
+  if (elt_ids != NULL) {
+    for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
+      cs_lnum_t i = elt_ids[idx];
+      int r_num = c_r_num[i * c_r_step];
+      cs_real_t vr[3];
+      cs_rotation_velocity(r + r_num, cell_cen[i], vr);
+      for (cs_lnum_t j = 0; j < 3; j++)
+        v_abs[idx][j] = cvar_vel[i][j] + vr[j];
+    }
+  }
+
+  else {
+    for (cs_lnum_t i = 0; i <  n_elts; i++) {
+      int r_num = c_r_num[i * c_r_step];
+      cs_real_t vr[3];
+      cs_rotation_velocity(r + r_num, cell_cen[i], vr);
+      for (cs_lnum_t j = 0; j < 3; j++)
+        v_abs[i][j] = cvar_vel[i][j] + vr[j];
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create or access function objects specific to
+ *        turbomachinery models (absolute_pressure, absolute_velocity).
+ *
+ * \return  pointer to the associated function object if turbomachinery model
+ *          is active, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_define_coriolis_functions(void)
+{
+  assert(cs_glob_physical_constants->icorio > 0);
+
+  /* Absolute pressure */
+
+  {
+    cs_function_t *f
+      = cs_function_define_by_func("absolute_pressure",
+                                   CS_MESH_LOCATION_CELLS,
+                                   1,
+                                   false,
+                                   CS_REAL_TYPE,
+                                   _absolute_pressure_f,
+                                   NULL);
+
+    const char label[] = "Abs Pressure";
+    BFT_MALLOC(f->label, strlen(label) + 1, char);
+    strcpy(f->label, label);
+
+    f->type = CS_FUNCTION_INTENSIVE;
+    f->post_vis = CS_POST_ON_LOCATION;
+  }
+
+  /* Absolute velocity */
+
+  {
+    cs_function_t *f
+      = cs_function_define_by_func("absolute_velocity",
+                                   CS_MESH_LOCATION_CELLS,
+                                   3,
+                                   false,
+                                   CS_REAL_TYPE,
+                                   _absolute_velocity_f,
+                                   NULL);
+
+    const char label[] = "Abs Velocity";
+    BFT_MALLOC(f->label, strlen(label) + 1, char);
+    strcpy(f->label, label);
+
+    f->type = CS_FUNCTION_INTENSIVE;
+    f->post_vis = CS_POST_ON_LOCATION;
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -271,6 +457,9 @@ cs_function_default_define(void)
 
   if (cs_turbomachinery_get_model() != CS_TURBOMACHINERY_NONE)
     cs_turbomachinery_define_functions();
+
+  if (cs_glob_physical_constants->icorio > 0)
+    _define_coriolis_functions();
 }
 
 /*----------------------------------------------------------------------------*/
