@@ -1028,18 +1028,8 @@ if test "$?" = "0" ; then
   cs_fc_version="`$FC -v 2>&1 |grep 'gcc version' |\
                   sed 's/.*gcc version \([-a-z0-9\.]*\).*/\1/'`"
 
-  if test -n "`echo $cs_ac_fc_version | grep Cray`" ; then
-    cs_gfortran=cray
-  elif test -n "`echo $cs_ac_fc_version | grep FRT`" ; then
-    cs_gfortran=fujitsu
-  elif test -n "`echo $cs_ac_fc_version | grep Arm`" ; then
-    cs_gfortran=arm
-  else
-    cs_gfortran=gfortran
-
-fi
-
-if test "$cs_gfortran" = "gfortran"; then
+  cs_fc_compiler_known=yes
+  cs_gfortran=gfortran
 
   # Version strings for logging purposes and known compiler flag
   $FC -v > $outfile 2>&1
