@@ -97,11 +97,34 @@ struct _cs_mesh_cartesian_params_t {
 
 static int _build_mesh_cartesian = 0;
 
-static cs_mesh_cartesian_params_t *_mesh_params = NULL;
+static int _n_structured_meshes = 0;
+static cs_mesh_cartesian_params_t **_mesh_params = NULL;
 
 /*============================================================================
  * Private functions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a cartesian mesh parameters based on id.
+ *
+ * \param[in] id  Id of the mesh parameters asked
+ *
+ * \returns pointer to corresponding mesh parameters. Raises an error if not found.
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_mesh_cartesian_params_t *
+_get_structured_mesh_by_id(const int id)
+{
+
+  if (id < 0 || id >= _n_structured_meshes)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: Out of bound id.\n"));
+
+  return _mesh_params[id];
+
+}
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Create the mesh parameters structure
@@ -115,16 +138,25 @@ static cs_mesh_cartesian_params_t *_mesh_params = NULL;
 static cs_mesh_cartesian_params_t *
 _cs_mesh_cartesian_init(int ndir)
 {
-  if (_mesh_params != NULL)
+  // TODO: Test to be removed when multi-blocks are possible
+  if (_n_structured_meshes != 0)
     bft_error(__FILE__, __LINE__, 0,
-              _("Error: cartesian mesh parameters were allready defined!\n"));
+              _("Error: Only one cartesian mesh can be defined!\n"));
 
-  BFT_MALLOC(_mesh_params, 1, cs_mesh_cartesian_params_t);
+  cs_mesh_cartesian_params_t *_new_mesh = NULL;
+  BFT_MALLOC(_new_mesh, 1, cs_mesh_cartesian_params_t);
 
-  _mesh_params->ndir = ndir;
-  BFT_MALLOC(_mesh_params->params, ndir, _cs_mesh_cartesian_direction_t *);
+  _new_mesh->ndir = ndir;
+  BFT_MALLOC(_new_mesh->params, ndir, _cs_mesh_cartesian_direction_t *);
 
-  return _mesh_params;
+  int _id = _n_structured_meshes;
+
+  _n_structured_meshes += 1;
+  BFT_REALLOC(_mesh_params, _n_structured_meshes ,cs_mesh_cartesian_params_t *);
+
+  _mesh_params[_id] = _new_mesh;
+
+  return _new_mesh;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -463,7 +495,9 @@ _add_nz_face(cs_mesh_builder_t  *mb,
 cs_mesh_cartesian_params_t *
 cs_mesh_cartesian_get_params(void)
 {
-  return _mesh_params;
+  cs_mesh_cartesian_params_t *retval = _get_structured_mesh_by_id(0);
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -846,7 +880,9 @@ cs_mesh_cartesian_need_build(void)
 int
 cs_mesh_cartesian_get_ncells(int idim)
 {
-  return _mesh_params->params[idim]->ncells;
+  cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(0);
+
+  return mp->params[idim]->ncells;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -865,7 +901,7 @@ cs_mesh_cartesian_connectivity(cs_mesh_t          *m,
 {
   CS_UNUSED(echo);
 
-  cs_mesh_cartesian_params_t *mp = _mesh_params;
+  cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(0);
 
   /* Number of cells per direction */
   cs_gnum_t nx = mp->params[0]->ncells;
@@ -1030,14 +1066,17 @@ cs_mesh_cartesian_params_destroy(void)
   if (_mesh_params == NULL)
     return;
 
-  for (int i = 0; i < _mesh_params->ndir; i++) {
-    BFT_FREE(_mesh_params->params[i]->s);
-    BFT_FREE(_mesh_params->params[i]);
-  }
-  BFT_FREE(_mesh_params->params);
+  for (int i = 0; i < _n_structured_meshes; i++) {
+    for (int j = 0; j < _mesh_params[i]->ndir; j++) {
+      BFT_FREE(_mesh_params[i]->params[j]->s);
+      BFT_FREE(_mesh_params[i]->params[j]);
+    }
+    BFT_FREE(_mesh_params[i]->params);
 
+    BFT_FREE(_mesh_params[i]);
+  }
   BFT_FREE(_mesh_params);
-  _mesh_params = NULL;
+  _n_structured_meshes = 0;
 }
 
 /*----------------------------------------------------------------------------*/
