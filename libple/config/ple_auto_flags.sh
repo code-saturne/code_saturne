@@ -329,25 +329,25 @@ if test "x$ple_cc_compiler_known" != "xyes" ; then
   $CC -V 2>&1 | grep 'NVIDIA' > /dev/null
   if test "$?" = "0" ; then
     $CC -V 2>&1 | grep 'Compilers and Tools' > /dev/null
-  fi
-  if test "$?" = "0" ; then
+    if test "$?" = "0" ; then
 
-    echo "compiler '$CC' is NVIDIA compiler"
+      echo "compiler '$CC' is NVIDIA compiler"
 
-    # Version strings for logging purposes and known compiler flag
-    $CC -V > $outfile 2>&1
-    ple_ac_cc_version=`grep pgcc $outfile | head -1`
-    if test "$ple_ac_cc_version" = "" ; then
-      ple_ac_cc_version=`grep nvc $outfile | head -1`
+      # Version strings for logging purposes and known compiler flag
+      $CC -V > $outfile 2>&1
+      ple_ac_cc_version=`grep pgcc $outfile | head -1`
+      if test "$ple_ac_cc_version" = "" ; then
+        ple_ac_cc_version=`grep nvc $outfile | head -1`
+      fi
+      ple_cc_compiler_known=yes
+
+      # Default compiler flags
+      cflags_default=""
+      cflags_default_dbg="-g -Mbounds"
+      cflags_default_opt="-O2"
+      cflags_default_omp="-mp"
+
     fi
-    ple_cc_compiler_known=yes
-
-    # Default compiler flags
-    cflags_default=""
-    cflags_default_dbg="-g -Mbounds"
-    cflags_default_opt="-O2"
-    cflags_default_omp="-mp"
-
   fi
 
 fi

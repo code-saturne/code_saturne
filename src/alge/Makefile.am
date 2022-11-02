@@ -81,13 +81,6 @@ libcsalge_hypre_la_CPPFLAGS =\
 -I$(top_srcdir)/src/mesh \
 $(HYPRE_CPPFLAGS) $(MPI_CPPFLAGS)
 
-libcsalge_extension_la_CPPFLAGS =\
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/mesh \
-$(PETSC_CPPFLAGS)  $(MUMPS_CPPFLAGS) $(MPI_CPPFLAGS)
-
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
@@ -212,6 +205,7 @@ libcsalge_extension_la_CPPFLAGS = \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mesh \
 $(PETSC_CPPFLAGS) $(MUMPS_CPPFLAGS) $(AMGX_CPPFLAGS) $(HYPRE_CPPFLAGS) $(MPI_CPPFLAGS)
+
 libcsalge_extension_la_SOURCES = \
 cs_param_sles.c
 
