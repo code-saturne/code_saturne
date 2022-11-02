@@ -56,12 +56,13 @@ BEGIN_C_DECLS
 typedef enum {
 
   CS_GRADIENT_GREEN_ITER,        /*!< Iterative */
-  CS_GRADIENT_GREEN_ITER_R,      /*!< Iterative with renormalization*/
   CS_GRADIENT_LSQ,               /*!< Least-squares */
   CS_GRADIENT_GREEN_LSQ,         /*!< Green-Gauss reconstruction with
                                    least squares gradient face values */
   CS_GRADIENT_GREEN_VTX          /*!< Green-Gauss with vertex interpolation */
 
+  CS_GRADIENT_GREEN_R,           /*!< Green times a renormalization matrix
+                                      to be exact on affine functions */
 } cs_gradient_type_t;
 
 /*----------------------------------------------------------------------------

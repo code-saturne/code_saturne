@@ -1482,7 +1482,8 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 }
 
 /*----------------------------------------------------------------------------
- * Renomalize scalar gradient.
+ * Renomalize scalar gradient by multiplying with a renormalization matrix
+ * (so this gradient is not conservative on non cartesian grids)
  *
  * parameters:
  *   m              <-- pointer to associated mesh structure
@@ -1501,7 +1502,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
  *----------------------------------------------------------------------------*/
 
 static void
-_renormalize_scalar_gradient(const cs_mesh_t                *m,
+_renormalize_scalar_gradient(const cs_mesh_t               *m,
                             const cs_mesh_quantities_t     *fvq,
                             int                             hyd_p_flag,
                             cs_real_3_t           *restrict grad)
@@ -7784,27 +7785,26 @@ _gradient_scalar(const char                    *var_name,
                                 c_weight,
                                 grad);
 
-    if (hyd_p_flag == 0)
-      _iterative_scalar_gradient(mesh,
-                                 fvq,
-                                 cpl,
-                                 w_stride,
-                                 var_name,
-                                 gradient_info,
-                                 n_r_sweeps,
-                                 hyd_p_flag,
-                                 verbosity,
-                                 inc,
-                                 epsilon,
-                                 f_ext,
-                                 bc_coeff_a,
-                                 bc_coeff_b,
-                                var,
-                                 c_weight,
-                                 grad);
+    _iterative_scalar_gradient(mesh,
+                               fvq,
+                               cpl,
+                               w_stride,
+                               var_name,
+                               gradient_info,
+                               n_r_sweeps,
+                               hyd_p_flag,
+                               verbosity,
+                               inc,
+                               epsilon,
+                               f_ext,
+                               bc_coeff_a,
+                               bc_coeff_b,
+                               var,
+                               c_weight,
+                               grad);
     break;
 
-  case CS_GRADIENT_GREEN_ITER_R:
+  case CS_GRADIENT_GREEN_R:
 
     _initialize_scalar_gradient(mesh,
                                 fvq,
@@ -7824,24 +7824,6 @@ _gradient_scalar(const char                    *var_name,
                                  hyd_p_flag,
                                  grad);
 
-    if (hyd_p_flag == 0)
-      _iterative_scalar_gradient(mesh,
-                                 fvq,
-                                 cpl,
-                                 w_stride,
-                                 var_name,
-                                 gradient_info,
-                                 n_r_sweeps,
-                                 hyd_p_flag,
-                                 verbosity,
-                                 inc,
-                                 epsilon,
-                                 f_ext,
-                                 bc_coeff_a,
-                                 bc_coeff_b,
-                                 var,
-                                 c_weight,
-                                 grad);
     break;
 
   case CS_GRADIENT_LSQ:
@@ -10771,7 +10753,7 @@ cs_gradient_type_by_imrgra(int                  imrgra,
     *gradient_type = CS_GRADIENT_GREEN_VTX;
     break;
   case 8:
-    *gradient_type = CS_GRADIENT_GREEN_ITER_R;
+    *gradient_type = CS_GRADIENT_GREEN_R;
     break;
   default:
     *gradient_type = CS_GRADIENT_GREEN_ITER;
