@@ -89,6 +89,8 @@ if test "x$GCC" = "xyes"; then
     ple_gcc=icc
   elif test -n "`echo $ple_ac_cc_version | grep ICX`" ; then
     ple_gcc=icx
+  elif test -n "`echo $ple_ac_cc_version | grep -e DPC++ -e oneAPI`" ; then
+    ple_gcc=oneAPI
   elif test -n "`echo $ple_ac_cc_version | grep clang`" ; then
     ple_gcc=clang
   else
@@ -207,16 +209,17 @@ elif test "x$ple_gcc" = "xicc" ; then
   cflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cflags_default_opt="-O2"
   cflags_default_omp="-qopenmp"
+
   case "$ple_cc_vers_major" in
     1[0123456])
       cflags_default_omp="-openmp"
       ;;
   esac
 
-# Otherwise, are we using ICC NextGen ?
+# Otherwise, are we using ICC NextGen ?  This is a deprecated beta version.
 #--------------------------------------
 
-elif test "x$ple_gcc" = "xicc" -o "x$ple_gcc" = "xicx" ; then
+elif test "x$ple_gcc" = "xicx" ; then
 
   ple_cc_version=`echo $ple_ac_cc_version | grep ICX |sed 's/[a-zA-Z()]//g'`
   echo "compiler '$CC' is Intel ICC NextGen"
@@ -234,12 +237,36 @@ elif test "x$ple_gcc" = "xicc" -o "x$ple_gcc" = "xicx" ; then
   test -n "$ple_cc_vers_patch" || ple_cc_vers_patch=0
 
   # Default compiler flags
-  # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
-  cflags_default="-funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -wd981"
+  cflags_default="-funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
   cflags_default_dbg="-g -O0 -ftrapuv"
   cflags_default_opt="-O2"
-  cflags_default_hot="-O3"
   cflags_default_omp="-qopenmp"
+
+# Otherwise, are we using Intel LLVM DPC++/C++ Compiler (OneAPI) ?
+#-----------------------------------------------------------------
+
+elif test "x$ple_gcc" = "xoneAPI" ; then
+
+  ple_cc_version=`echo $ple_ac_cc_version | grep -e DPC++ -e oneAPI |sed 's/[a-zA-Z()+/]//g'`
+  echo "compiler '$CC' is oneAPI DPC++/C++ Compiler"
+
+  # Version strings for logging purposes and known compiler flag
+  $CC $user_CFLAGS -V conftest.c > $outfile 2>&1
+  ple_cc_compiler_known=yes
+
+  # Some version numbers
+  ple_cc_vers_major=`echo $ple_ac_cc_version | cut -f 5 -d" " | cut -f1 -d.`
+  ple_cc_vers_minor=`echo $ple_ac_cc_version | cut -f 5 -d" " | cut -f2 -d.`
+  ple_cc_vers_patch=`echo $ple_ac_cc_version | cut -f 5 -d" " | cut -f3 -d.`
+  test -n "$ple_cc_vers_major" || ple_cc_vers_major=0
+  test -n "$ple_cc_vers_minor" || ple_cc_vers_minor=0
+  test -n "$ple_cc_vers_patch" || ple_cc_vers_patch=0
+
+  # Default compiler flags
+  cflags_default="-funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -Wno-unused-command-line-argument"
+  cflags_default_dbg="-g -O0"
+  cflags_default_opt="-O2"
+  cflags_default_omp="-fiopenmp"
 
 # Otherwise, are we using clang ?
 #--------------------------------
@@ -401,7 +428,7 @@ if test "x$ple_cc_compiler_known" != "xyes" ; then
 fi
 
 
-if test -f $outfile ; then 
+if test -f $outfile ; then
   ple_ac_cc_version_full=`sed -e '11,$d' $outfile`
   rm -f $outfile
 fi
