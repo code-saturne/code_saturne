@@ -86,7 +86,7 @@ implicit none
 
 ! Local variables
 
-logical(kind=c_bool) :: mesh_modified, log_active
+logical(kind=c_bool) :: mesh_modified, log_active, post_active
 integer(c_int) :: ierr
 
 integer          modhis, iappel, iisuit
@@ -151,6 +151,34 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine turbulence_bc_free_pointers
+
+  !=============================================================================
+
+   subroutine post_activate_by_time_step()             &
+     bind(C, name='cs_f_post_activate_by_time_step')
+     use, intrinsic :: iso_c_binding
+     implicit none
+   end subroutine post_activate_by_time_step
+
+  !=============================================================================
+
+  subroutine cs_post_activate_writer(writer_id, activate)   &
+    bind(C, name='cs_post_activate_writer')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value  :: writer_id
+    logical(c_bool), value :: activate
+  end subroutine cs_post_activate_writer
+
+  !=============================================================================
+
+  subroutine cs_user_postprocess_activate(nt_max_abs, nt_cur_abs, t_cur_abs) &
+    bind(C, name='cs_user_postprocess_activate')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: nt_max_abs, nt_cur_abs
+    real(c_double), value :: t_cur_abs
+  end subroutine cs_user_postprocess_activate
 
   !=============================================================================
 
@@ -1020,7 +1048,8 @@ call cs_user_postprocess_activate(ntmabs, ntcabs, ttcabs)
 
 ! If ITRALE=0, deactivate all writers, as geometry has not been output yet.
 if (itrale.eq.0) then
-  call post_activate_writer(0, .false.)
+  post_active = .false.
+  call cs_post_activate_writer(0, post_active)
 endif
 
 !===============================================================================

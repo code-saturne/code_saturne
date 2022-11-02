@@ -43,38 +43,6 @@ module post
 
     !---------------------------------------------------------------------------
 
-    !> \brief Update "active" or "inactive" flag of writers based on the
-    !>        time step.
-
-    !> Writers are activated if their output frequency is a divisor of the
-    !> current time step, or if their optional time step and value output lists
-    !> contain matches for the current time step.
-
-    subroutine post_activate_by_time_step()             &
-      bind(C, name='cs_f_post_activate_by_time_step')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine post_activate_by_time_step
-
-    !---------------------------------------------------------------------------
-
-    !> \brief User override of default frequency or calculation end
-    !>        based output.
-
-    !> \param[in]  nt_max      maximum time step number
-    !> \param[in]  nt_cur_abs  current time step number
-    !> \param[in]  t_cur_abs   current physical time
-
-    subroutine cs_user_postprocess_activate(nt_max_abs, nt_cur_abs, t_cur_abs) &
-      bind(C, name='cs_user_postprocess_activate')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: nt_max_abs, nt_cur_abs
-      real(c_double), value :: t_cur_abs
-    end subroutine cs_user_postprocess_activate
-
-    !---------------------------------------------------------------------------
-
     !> \cond DOXYGEN_SHOULD_SKIP_THIS
 
     !---------------------------------------------------------------------------
@@ -101,19 +69,6 @@ module post
       real(c_double), dimension(*), intent(in)                :: i_face_vals
       real(c_double), dimension(*), intent(in)                :: b_face_vals
     end subroutine cs_f_post_write_var
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function forcing the "active" or "inactive" flag for
-    ! a specific writer or for all writers for the current time step.
-
-    subroutine cs_post_activate_writer(writer_id, activate)   &
-      bind(C, name='cs_post_activate_writer')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value  :: writer_id
-      logical(c_bool), value :: activate
-    end subroutine cs_post_activate_writer
 
     !---------------------------------------------------------------------------
 
@@ -188,36 +143,6 @@ contains
                              cel_vals, i_face_vals, b_face_vals)
 
   end subroutine post_write_var
-
-  !=============================================================================
-
-  !> \brief Force the "active" or "inactive" flag for a specific writer
-  !>        or for all writers for the current time step.
-
-  !> \param[in]  writer_id  writer id, or 0 for all writers
-  !> \param[in]  activate   false to deactivate, true to activate
-
-  subroutine post_activate_writer(writer_id, activate)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in) :: writer_id
-    logical, intent(in) :: activate
-
-    ! Local variables
-
-    integer(c_int)  :: c_writer_id
-    logical(c_bool) :: c_activate
-
-    c_writer_id = writer_id
-    c_activate = activate
-
-    call cs_post_activate_writer(c_writer_id, c_activate)
-
-  end subroutine post_activate_writer
 
   !=============================================================================
 
