@@ -55,6 +55,7 @@
 #include "cs_function.h"
 #include "cs_function_default.h"
 #include "cs_post.h"
+#include "cs_turbomachinery.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -109,10 +110,10 @@ static void
 _range_set_mpi_rank_id(const cs_range_set_t  *rs,
                        int                    location_id,
                        cs_lnum_t              n_elts,
-                       cs_lnum_t             *elt_ids,
+                       const cs_lnum_t       *elt_ids,
                        void                  *vals)
 {
-  const cs_lnum_t n_loc_elts = cs_mesh_location_get_n_elts( location_id)[0];
+  const cs_lnum_t n_loc_elts = cs_mesh_location_get_n_elts(location_id)[0];
 
   int *e_rank_id;
 
@@ -172,11 +173,11 @@ _range_set_mpi_rank_id(const cs_range_set_t  *rs,
 /*----------------------------------------------------------------------------*/
 
 static void
-_location_mpi_rank_id(int          location_id,
-                      cs_lnum_t    n_elts,
-                      cs_lnum_t   *elt_ids,
-                      void        *input,
-                      void        *vals)
+_location_mpi_rank_id(int               location_id,
+                      cs_lnum_t         n_elts,
+                      const cs_lnum_t  *elt_ids,
+                      void             *input,
+                      void             *vals)
 {
   switch(location_id) {
   case CS_MESH_LOCATION_INTERIOR_FACES:
@@ -267,6 +268,9 @@ cs_function_default_define(void)
     cs_function_define_mpi_rank_id(CS_MESH_LOCATION_BOUNDARY_FACES);
     /* cs_function_define_mpi_rank_id(CS_MESH_LOCATION_VERTICES); */
   }
+
+  if (cs_turbomachinery_get_model() != CS_TURBOMACHINERY_NONE)
+    cs_turbomachinery_define_functions();
 }
 
 /*----------------------------------------------------------------------------*/

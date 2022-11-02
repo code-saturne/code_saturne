@@ -49,6 +49,8 @@
 #include "cs_coupling.h"
 #include "cs_cell_to_vertex.h"
 #include "cs_ext_neighborhood.h"
+#include "cs_field.h"
+#include "cs_function.h"
 #include "cs_gradient.h"
 #include "cs_gui.h"
 #include "cs_gui_mesh.h"
@@ -1143,6 +1145,138 @@ _update_mesh(bool     restart_mode,
   cs_timer_stats_switch(t_top_id);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate the relative pressure associated to the given cells.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        pointer to associated mesh structure
+ *                               (to be cast as cs_mesh_t *) for interior
+ *                               faces or vertices, unused otherwise
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_relative_pressure_f(int               location_id,
+                     cs_lnum_t         n_elts,
+                     const cs_lnum_t  *elt_ids,
+                     void             *input,
+                     void             *vals)
+{
+  CS_UNUSED(input);
+  assert(location_id == CS_MESH_LOCATION_CELLS);
+
+  const cs_turbomachinery_t *tbm = _turbomachinery;
+
+  cs_real_t *p_rel = vals;
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_3_t *cell_cen = (const cs_real_3_t *)(mq->cell_cen);
+  const cs_real_t *cvar_pr = cs_field_by_name("pressure")->val;
+  const cs_real_t *cpro_rho = cs_field_by_name("density")->val;
+
+  if (elt_ids != NULL) {
+    for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
+      cs_lnum_t i = elt_ids[idx];
+      int r_num = tbm->cell_rotor_num[i];
+      cs_real_t vr[3];
+      if (r_num > 0) {
+        cs_rotation_velocity(tbm->rotation + r_num, cell_cen[i], vr);
+      }
+      else {
+        vr[0] = 0; vr[1] = 0; vr[2] = 0;
+      }
+      p_rel[idx] = cvar_pr[i] - cpro_rho[i] * 0.5 * cs_math_3_square_norm(vr);
+    }
+  }
+
+  else {
+    for (cs_lnum_t i = 0; i <  n_elts; i++) {
+      int r_num = tbm->cell_rotor_num[i];
+      cs_real_t vr[3];
+      if (r_num > 0) {
+        cs_rotation_velocity(tbm->rotation + r_num, cell_cen[i], vr);
+      }
+      else {
+        vr[0] = 0; vr[1] = 0; vr[2] = 0;
+      }
+      p_rel[i] = cvar_pr[i] - cpro_rho[i] * 0.5 * cs_math_3_square_norm(vr);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate the relative velocity associated to the given cells.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        pointer to associated mesh structure
+ *                               (to be cast as cs_mesh_t *) for interior
+ *                               faces or vertices, unused otherwise
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_relative_velocity_f(int               location_id,
+                     cs_lnum_t         n_elts,
+                     const cs_lnum_t  *elt_ids,
+                     void             *input,
+                     void             *vals)
+{
+  CS_UNUSED(input);
+  assert(location_id == CS_MESH_LOCATION_CELLS);
+
+  const cs_turbomachinery_t *tbm = _turbomachinery;
+
+  cs_real_3_t *v_rel = vals;
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_3_t *cell_cen = (const cs_real_3_t *)(mq->cell_cen);
+  const cs_real_3_t *cvar_vel
+    = (const cs_real_3_t *)cs_field_by_name("velocity")->val;
+
+  if (elt_ids != NULL) {
+    for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
+      cs_lnum_t i = elt_ids[idx];
+      int r_num = tbm->cell_rotor_num[i];
+      cs_real_t vr[3];
+      if (r_num > 0) {
+        cs_rotation_velocity(tbm->rotation + r_num, cell_cen[i], vr);
+      }
+      else {
+        vr[0] = 0; vr[1] = 0; vr[2] = 0;
+      }
+      for (cs_lnum_t j = 0; j < 3; j++)
+        v_rel[idx][j] = cvar_vel[i][j] - vr[j];
+    }
+  }
+
+  else {
+    for (cs_lnum_t i = 0; i <  n_elts; i++) {
+      int r_num = tbm->cell_rotor_num[i];
+      cs_real_t vr[3];
+      if (r_num > 0) {
+        cs_rotation_velocity(tbm->rotation + r_num, cell_cen[i], vr);
+      }
+      else {
+        vr[0] = 0; vr[1] = 0; vr[2] = 0;
+      }
+      for (cs_lnum_t j = 0; j < 3; j++)
+        v_rel[i][j] = cvar_vel[i][j] - vr[j];
+    }
+  }
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -1923,6 +2057,63 @@ cs_turbomachinery_restart_write(cs_restart_t  *r)
                            t_angle);
 
   BFT_FREE(t_angle);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create or access function objects specific to
+ *        turbomachinery models (relative_pressure, relative_velocity).
+ *
+ * \return  pointer to the associated function object if turbomachinery model
+ *          is active, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbomachinery_define_functions(void)
+{
+  if (_turbomachinery == NULL)
+    return;
+
+  /* Relative pressure */
+
+  {
+    cs_function_t *f
+      = cs_function_define_by_func("relative_pressure",
+                                   CS_MESH_LOCATION_CELLS,
+                                   1,
+                                   false,
+                                   CS_REAL_TYPE,
+                                   _relative_pressure_f,
+                                   NULL);
+
+    const char label[] = "Rel Pressure";
+    BFT_MALLOC(f->label, strlen(label) + 1, char);
+    strcpy(f->label, label);
+
+    f->type = CS_FUNCTION_INTENSIVE;
+    f->post_vis = CS_POST_ON_LOCATION;
+  }
+
+  /* Relative velocity */
+
+  {
+    cs_function_t *f
+      = cs_function_define_by_func("relative_velocity",
+                                   CS_MESH_LOCATION_CELLS,
+                                   3,
+                                   false,
+                                   CS_REAL_TYPE,
+                                   _relative_velocity_f,
+                                   NULL);
+
+    const char label[] = "Rel Velocity";
+    BFT_MALLOC(f->label, strlen(label) + 1, char);
+    strcpy(f->label, label);
+
+    f->type = CS_FUNCTION_INTENSIVE;
+    f->post_vis = CS_POST_ON_LOCATION;
+  }
 }
 
 /*----------------------------------------------------------------------------*/

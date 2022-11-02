@@ -137,61 +137,6 @@ if (numtyp .eq. -1) then
   !  Automatic additional variables
   !  ------------------------------
 
-  ! Relative pressure and velocity in case of turbomachinery
-
-  if (iturbo.ne.0) then
-
-    call field_get_val_s(icrom, crom)
-
-    idimt = 1
-    ientla = .true.
-    ivarpr = .false.
-
-    do iloc = 1, ncelps
-
-      iel = lstcel(iloc)
-      if (irotce(iel).gt.0) then
-        call rotation_velocity(irotce(iel), xyzcen(:,iel), vr)
-      else
-        vr(1) = 0
-        vr(2) = 0
-        vr(3) = 0
-      endif
-
-      tracel(iloc) =   cvar_pr(iel) &
-                     - crom(iel)*0.5d0*(vr(1)**2 + vr(2)**2 + vr(3)**2)
-
-    enddo
-
-    call post_write_var(nummai, 'Rel Pressure', idimt, ientla, ivarpr,  &
-                        ntcabs, ttcabs, tracel, rbid, rbid)
-
-    idimt = 3
-    ientla = .true.
-    ivarpr = .false.
-
-    do iloc = 1, ncelps
-
-      iel = lstcel(iloc)
-      if (irotce(iel).gt.0) then
-        call rotation_velocity(irotce(iel), xyzcen(:,iel), vr)
-      else
-        vr(1) = 0
-        vr(2) = 0
-        vr(3) = 0
-      endif
-
-      tracel(1 + (iloc-1)*idimt) = vel(1,iel) - vr(1)
-      tracel(2 + (iloc-1)*idimt) = vel(2,iel) - vr(2)
-      tracel(3 + (iloc-1)*idimt) = vel(3,iel) - vr(3)
-
-    enddo
-
-    call post_write_var(nummai, 'Rel Velocity', idimt, ientla, ivarpr,  &
-                        ntcabs, ttcabs, tracel, rbid, rbid)
-
-  endif
-
   ! Absolute pressure and velocity in case of relative coordinate system
 
   if (icorio.eq.1) then

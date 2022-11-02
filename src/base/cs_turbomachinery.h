@@ -351,6 +351,19 @@ void
 cs_turbomachinery_restart_write(cs_restart_t  *r);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create or access function objects specific to
+ *        turbomachinery models (relative_pressure, relative_velocity).
+ *
+ * \return  pointer to the associated function object if turbomachinery model
+ *          is active, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbomachinery_define_functions(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

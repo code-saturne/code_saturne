@@ -678,7 +678,7 @@ cs_function_log_all_settings(void)
   cs_log_printf(CS_LOG_SETUP,
                 _("\n"
                   "Settings per function:\n"
-                  "---------------------\n\n"));
+                  "---------------------\n"));
 
   /* First loop to determine field width */
 
