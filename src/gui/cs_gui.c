@@ -3636,13 +3636,14 @@ cs_gui_numerical_options(void)
   _numerical_int_parameters("velocity_pressure_coupling", &(vp_param->ipucou));
   _numerical_int_parameters("piso_sweep_number", &(vp_param->nterup));
 
-  double _relaxp = -1.;
-  _numerical_double_parameters("pressure_relaxation", &_relaxp);
-  if (_relaxp > -1.0 && CS_F_(p) != NULL) {
-    cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(p));
-    eqp->relaxv = _relaxp;
+  if (cs_glob_time_step_options->idtvar > -1) {
+    double _relaxp = -1.;
+    _numerical_double_parameters("pressure_relaxation", &_relaxp);
+    if (_relaxp > -1.0 && CS_F_(p) != NULL) {
+      cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(p));
+      eqp->relaxv = _relaxp;
+    }
   }
-
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
@@ -3650,7 +3651,7 @@ cs_gui_numerical_options(void)
   bft_printf("--ipucou = %i\n", vp_model->ipucou);
   bft_printf("--imrgra = %i\n", *imrgra);
   bft_printf("--nterup = %i\n", vp_param->nterup);
-  bft_printf("--relaxp = %f\n", *relaxp);
+  bft_printf("--relaxp = %f\n", _relaxp);
 #endif
 }
 
