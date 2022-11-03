@@ -61,8 +61,8 @@ typedef enum {
                                    least squares gradient face values */
   CS_GRADIENT_GREEN_VTX,         /*!< Green-Gauss with vertex interpolation */
 
-  CS_GRADIENT_GREEN_R            /*!< Green times a renormalization matrix
-                                      to be exact on affine functions */
+  CS_GRADIENT_GREEN_R            /*!< Green-Gauss times a renormalization
+                                   matrix (to be exact on affine functions) */
 } cs_gradient_type_t;
 
 /*----------------------------------------------------------------------------
