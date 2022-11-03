@@ -2683,29 +2683,22 @@ _init_zones(const cs_lnum_t   n_b_faces,
 
 /*----------------------------------------------------------------------------
  * Define automatic turbulence values.
- *
- * parameters:
- *   rdcodcl <-> boundary condition values
  *----------------------------------------------------------------------------*/
 
 static void
-_standard_turbulence_bcs(cs_real_t  rcodcl[])
+_standard_turbulence_bcs(void)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
-  const int var_key_id = cs_field_key_id("variable_id");
-
   const cs_real_t *b_rho = CS_F_(rho_b)->val;
   const cs_real_t *c_mu = CS_F_(mu)->val;
 
-  cs_lnum_t ivar_u = cs_field_get_key_int(CS_F_(vel), var_key_id) -1;
-
   const cs_real_t  *_rcodcl_v[3];
-  for (int coo_id = 0; coo_id < 3; coo_id++)
-    _rcodcl_v[coo_id] = rcodcl + (ivar_u + coo_id)*n_b_faces;
+  for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
+    _rcodcl_v[coo_id] = CS_F_(vel)->bc_coeffs->rcodcl1 + coo_id*n_b_faces;
 
   /* Inlet BC's */
 
@@ -2797,21 +2790,21 @@ _standard_turbulence_bcs(cs_real_t  rcodcl[])
 
   if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
 
-    cs_lnum_t ivar_alp = cs_field_get_key_int(CS_F_(alp_bl), var_key_id) -1;
+    if (CS_F_(alp_bl)->bc_coeffs != NULL) {
+      cs_real_t *_rcodcl_alp = CS_F_(alp_bl)->bc_coeffs->rcodcl1;
 
-    cs_real_t  *_rcodcl_alp = rcodcl + ivar_alp*n_b_faces;
+      for (int izone = 0; izone < boundaries->n_zones; izone++) {
+        if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
 
-    for (int izone = 0; izone < boundaries->n_zones; izone++) {
-      if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
+          int zone_nbr = boundaries->bc_num[izone];
+          const cs_zone_t *z = cs_boundary_zone_by_id(zone_nbr);
 
-        int zone_nbr = boundaries->bc_num[izone];
-        const cs_zone_t *z = cs_boundary_zone_by_id(zone_nbr);
+          for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+            cs_lnum_t face_id = z->elt_ids[i];
+            _rcodcl_alp[face_id] = 0.;
+          }
 
-        for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-          cs_lnum_t face_id = z->elt_ids[i];
-          _rcodcl_alp[face_id] = 0.;
         }
-
       }
     }
 
@@ -2836,8 +2829,8 @@ _standard_turbulence_bcs(cs_real_t  rcodcl[])
  * *****************
  *
  * integer          nozppm   <-- max number of boundary conditions zone
- * integer          nclpch   <-- number of simulated class per coals
  * integer          iqimp    <-- 1 if mass flow rate is applied
+ * integer          icalke   <-- turbulent inlet type
  * integer          ientat   <-- 1 for air temperature boundary conditions (coal)
  * integer          ientcp   <-- 1 for coal temperature boundary conditions (coal)
  * integer          inmoxy   <-- coal: number of oxydant for the current inlet
@@ -2849,7 +2842,6 @@ _standard_turbulence_bcs(cs_real_t  rcodcl[])
  * integer          iautom   <-- atmospheric flows: auto inlet/outlet flag
  * integer          itypfb   <-- type of boundary for each face
  * integer          izfppp   <-- zone number for each boundary face
- * integer          icodcl   <-- boundary conditions array type
  * double precision cgdfbo   <-- boundary faces center of gravity
  * double precision qimp     <-- inlet flow rate
  * double precision qimpat   <-- inlet air flow rate (coal)
@@ -2859,8 +2851,6 @@ _standard_turbulence_bcs(cs_real_t  rcodcl[])
  * double precision tkent    <-- inlet temperature (gas combustion)
  * double precision fment    <-- Mean Mixture Fraction at Inlet (gas combustion)
  * double precision distch   <-- ratio for each coal
- * integer          nvar     <-- dimension for rcodcl
- * double precision rcodcl   <-- boundary conditions array value
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
@@ -2877,7 +2867,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                int        *iautom,
                                int        *itypfb,
                                int        *izfppp,
-                               int        *icodcl,
                                double     *qimp,
                                double     *qimpat,
                                double     *qimpcp,
@@ -2887,13 +2876,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                double     *timpcp,
                                double     *tkent,
                                double     *fment,
-                               double     *distch,
-                               int        *nvar,
-                               double     *rcodcl)
+                               double     *distch)
 {
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-
-  const int var_key_id = cs_field_key_id("variable_id");
 
   const int ncharm = CS_COMBUSTION_MAX_COALS;
 
@@ -2990,24 +2975,28 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
         if (  boundaries->itype[izone] == CS_ESICF
             ||boundaries->itype[izone] == CS_EPHCF) {
-          const cs_field_t  *fp = cs_field_by_name_try("pressure");
-          int ivarp = cs_field_get_key_int(fp, var_key_id) -1;
+          const cs_field_t  *fp = cs_field_by_name("pressure");
+          if (fp->bc_coeffs != NULL) {
+            cs_real_t *rcodcl1 = fp->bc_coeffs->rcodcl1;
 
-          for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-            cs_lnum_t face_id = bz->elt_ids[elt_id];
-            rcodcl[ivarp * n_b_faces + face_id] = boundaries->prein[izone];
+            for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+              cs_lnum_t face_id = bz->elt_ids[elt_id];
+              rcodcl1[face_id] = boundaries->prein[izone];
+            }
           }
         }
 
         if (boundaries->itype[izone] == CS_ESICF) {
           cs_field_t *b_rho = cs_field_by_name_try("boundary_density");
-          const cs_field_t  *ft = cs_field_by_name_try("temperature");
-          int ivart = cs_field_get_key_int(ft, var_key_id) -1;
+          const cs_field_t  *ft = cs_field_by_name("temperature");
+          if (ft->bc_coeffs != NULL) {
+            cs_real_t *rcodcl1 = ft->bc_coeffs->rcodcl1;
 
-          for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-            cs_lnum_t face_id = bz->elt_ids[elt_id];
-            rcodcl[ivart * n_b_faces + face_id] = boundaries->tempin[izone];
-            b_rho->val[face_id] = boundaries->rhoin[izone];
+            for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+              cs_lnum_t face_id = bz->elt_ids[elt_id];
+              rcodcl1[face_id] = boundaries->tempin[izone];
+              b_rho->val[face_id] = boundaries->rhoin[izone];
+            }
           }
         }
       }
@@ -3067,40 +3056,46 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
             cs_field_t *c_k   = cs_field_by_name("k");
             cs_field_t *c_eps = cs_field_by_name("epsilon");
-            int ivark = cs_field_get_key_int(c_k, var_key_id) -1;
-            int ivare = cs_field_get_key_int(c_eps, var_key_id) -1;
 
-            for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-              cs_lnum_t face_id = bz->elt_ids[elt_id];
-              rcodcl[ivark * n_b_faces + face_id]
-                = new_vals[0 * bz->n_elts + elt_id];
-              rcodcl[ivare * n_b_faces + face_id]
-                = new_vals[1 * bz->n_elts + elt_id];
+            if (c_k->bc_coeffs != NULL && c_eps->bc_coeffs != NULL) {
+              cs_real_t *rcodcl1_k = c_k->bc_coeffs->rcodcl1;
+              cs_real_t *rcodcl1_eps = c_eps->bc_coeffs->rcodcl1;
+
+              for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+                cs_lnum_t face_id = bz->elt_ids[elt_id];
+                rcodcl1_k[face_id] = new_vals[0 * bz->n_elts + elt_id];
+                rcodcl1_eps[face_id] = new_vals[1 * bz->n_elts + elt_id];
+              }
             }
+
             BFT_FREE(new_vals);
           }
-          else if (  cs_gui_strcmp(model, "Rij-epsilon")
-                   ||cs_gui_strcmp(model, "Rij-SSG")) {
+          else if (   cs_gui_strcmp(model, "Rij-epsilon")
+                   || cs_gui_strcmp(model, "Rij-SSG")) {
 
             cs_real_t *new_vals = cs_meg_boundary_function(bz,
                                                            "turbulence_rije",
                                                            "formula");
-            cs_field_t *cfld_rij = cs_field_by_name("rij");
+
+            cs_field_t *c_rij = cs_field_by_name("rij");
             cs_field_t *c_eps = cs_field_by_name("epsilon");
-            int ivarrij = cs_field_get_key_int(cfld_rij, var_key_id) - 1;
-            int ivare   = cs_field_get_key_int(c_eps, var_key_id) -1;
 
-            for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-              cs_lnum_t face_id = bz->elt_ids[elt_id];
+            if (c_rij->bc_coeffs != NULL && c_eps->bc_coeffs != NULL) {
+              cs_real_t *rcodcl1_rij = c_rij->bc_coeffs->rcodcl1;
+              cs_real_t *rcodcl1_eps = c_eps->bc_coeffs->rcodcl1;
 
-              /* Values are stored for rij components then epsilon */
-              for (int ii = 0; ii < 6; ii++)
-                rcodcl[(ivarrij + ii) * n_b_faces + face_id]
-                  = new_vals[bz->n_elts * ii + elt_id];
+              for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+                cs_lnum_t face_id = bz->elt_ids[elt_id];
 
-              rcodcl[ivare * n_b_faces + face_id]
-                = new_vals[bz->n_elts * 6 + elt_id];
+                /* Values are stored for rij components then epsilon */
+                for (cs_lnum_t ii = 0; ii < 6; ii++)
+                  rcodcl1_rij[ii*n_b_faces + face_id]
+                    = new_vals[bz->n_elts*ii + elt_id];
+
+                rcodcl1_eps[face_id] = new_vals[bz->n_elts*6 + elt_id];
+              }
             }
+
             BFT_FREE(new_vals);
           }
           else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
@@ -3109,28 +3104,31 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                                            "turbulence_rij_ebrsm",
                                                            "formula");
 
-            cs_field_t *cfld_rij = cs_field_by_name("rij");
+            cs_field_t *c_rij = cs_field_by_name("rij");
             cs_field_t *c_eps = cs_field_by_name("epsilon");
             cs_field_t *c_a   = cs_field_by_name("alpha");
 
-            int ivarrij = cs_field_get_key_int(cfld_rij, var_key_id) - 1;
-            int ivare   = cs_field_get_key_int(c_eps, var_key_id) -1;
-            int ivara   = cs_field_get_key_int(c_a, var_key_id) -1;
+            if (   c_rij->bc_coeffs != NULL
+                && c_eps->bc_coeffs != NULL
+                && c_a->bc_coeffs != NULL) {
+              cs_real_t *rcodcl1_rij = c_rij->bc_coeffs->rcodcl1;
+              cs_real_t *rcodcl1_eps = c_eps->bc_coeffs->rcodcl1;
+              cs_real_t *rcodcl1_a = c_a->bc_coeffs->rcodcl1;
 
-            for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-              cs_lnum_t face_id = bz->elt_ids[elt_id];
+              for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+                cs_lnum_t face_id = bz->elt_ids[elt_id];
 
-              /* Values are stored for rij components then epsilon and alpha*/
-              for (int ii = 0; ii < 6; ii++)
-                rcodcl[(ivarrij + ii) * n_b_faces + face_id]
-                  = new_vals[bz->n_elts * ii + elt_id];
+                /* Values are stored for rij components then epsilon and alpha*/
+                for (cs_lnum_t ii = 0; ii < 6; ii++)
+                  rcodcl1_rij[ii*n_b_faces + face_id]
+                    = new_vals[bz->n_elts*ii + elt_id];
 
-              rcodcl[ivare * n_b_faces + face_id]
-                = new_vals[bz->n_elts * 6 + elt_id];
+                rcodcl1_eps[face_id] = new_vals[bz->n_elts*6 + elt_id];
 
-              rcodcl[ivara   * n_b_faces + face_id]
-                = new_vals[bz->n_elts * 7 + elt_id];
+                rcodcl1_a[face_id] = new_vals[bz->n_elts * 7 + elt_id];
+              }
             }
+
             BFT_FREE(new_vals);
           }
           else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
@@ -3142,22 +3140,23 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
             cs_field_t *c_eps = cs_field_by_name("epsilon");
             cs_field_t *c_phi = cs_field_by_name("phi");
             cs_field_t *c_a   = cs_field_by_name("alpha");
-            int ivark = cs_field_get_key_int(c_k,   var_key_id) -1;
-            int ivare = cs_field_get_key_int(c_eps, var_key_id) -1;
-            int ivarp = cs_field_get_key_int(c_phi, var_key_id) -1;
-            int ivara = cs_field_get_key_int(c_a,   var_key_id) -1;
 
-            for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-              cs_lnum_t face_id = bz->elt_ids[elt_id];
-              rcodcl[ivark * n_b_faces + face_id]
-                = new_vals[0 * bz->n_elts + elt_id];
-              rcodcl[ivare * n_b_faces + face_id]
-                = new_vals[1 * bz->n_elts + elt_id];
-              rcodcl[ivarp * n_b_faces + face_id]
-                = new_vals[2 * bz->n_elts + elt_id];
-              rcodcl[ivara * n_b_faces + face_id]
-                = new_vals[3 * bz->n_elts + elt_id];
+            if (     c_k->bc_coeffs != NULL && c_eps->bc_coeffs != NULL
+                && c_phi->bc_coeffs != NULL && c_a->bc_coeffs != NULL) {
+              cs_real_t *rcodcl1_k   = c_k->bc_coeffs->rcodcl1;
+              cs_real_t *rcodcl1_eps = c_eps->bc_coeffs->rcodcl1;
+              cs_real_t *rcodcl1_phi = c_phi->bc_coeffs->rcodcl1;
+              cs_real_t *rcodcl1_a   = c_a->bc_coeffs->rcodcl1;
+
+              for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+                cs_lnum_t face_id = bz->elt_ids[elt_id];
+                rcodcl1_k[face_id]   = new_vals[0 * bz->n_elts + elt_id];
+                rcodcl1_eps[face_id] = new_vals[1 * bz->n_elts + elt_id];
+                rcodcl1_phi[face_id] = new_vals[2 * bz->n_elts + elt_id];
+                rcodcl1_a[face_id]   = new_vals[3 * bz->n_elts + elt_id];
+              }
             }
+
             BFT_FREE(new_vals);
           }
           else if (cs_gui_strcmp(model, "k-omega-SST")) {
@@ -3167,16 +3166,18 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
             cs_field_t *c_k = cs_field_by_name("k");
             cs_field_t *c_o = cs_field_by_name("omega");
-            int ivark = cs_field_get_key_int(c_k,   var_key_id) -1;
-            int ivaro = cs_field_get_key_int(c_o,   var_key_id) -1;
 
-            for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-              cs_lnum_t face_id = bz->elt_ids[elt_id];
-              rcodcl[ivark * n_b_faces + face_id]
-                = new_vals[0 * bz->n_elts + elt_id];
-              rcodcl[ivaro * n_b_faces + face_id]
-                = new_vals[1 * bz->n_elts + elt_id];
+            if (c_k->bc_coeffs != NULL && c_o->bc_coeffs != NULL) {
+              cs_real_t *rcodcl1_k = c_k->bc_coeffs->rcodcl1;
+              cs_real_t *rcodcl1_o = c_o->bc_coeffs->rcodcl1;
+
+              for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+                cs_lnum_t face_id = bz->elt_ids[elt_id];
+                rcodcl1_k[face_id] = new_vals[0 * bz->n_elts + elt_id];
+                rcodcl1_o[face_id] = new_vals[1 * bz->n_elts + elt_id];
+              }
             }
+
             BFT_FREE(new_vals);
           }
           else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
@@ -3185,12 +3186,16 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                                            "formula");
 
             cs_field_t *c_nu = cs_field_by_name("nu_tilda");
-            int ivarnu = cs_field_get_key_int(c_nu, var_key_id) -1;
 
-            for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-              cs_lnum_t face_id = bz->elt_ids[elt_id];
-              rcodcl[ivarnu * n_b_faces + face_id] = new_vals[elt_id];
+            if (c_nu->bc_coeffs != NULL) {
+              cs_real_t *rcodcl1_nu = c_nu->bc_coeffs->rcodcl1;
+
+              for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+                cs_lnum_t face_id = bz->elt_ids[elt_id];
+                rcodcl1_nu[face_id] = new_vals[elt_id];
+              }
             }
+
             BFT_FREE(new_vals);
           }
           else
@@ -3328,13 +3333,14 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
         cs_real_t *new_vals =
           cs_meg_boundary_function(bz, "head_loss", "formula");
 
-        const cs_field_t  *fp = cs_field_by_name_try("pressure");
-        int ivarp = cs_field_get_key_int(fp, var_key_id) -1;
+        const cs_field_t  *fp = cs_field_by_name("pressure");
+        if (fp->bc_coeffs != NULL) {
+          cs_real_t *rcodcl2_p   = fp->bc_coeffs->rcodcl2;
 
-        for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-          cs_lnum_t face_id = bz->elt_ids[elt_id];
-          rcodcl[1 * n_b_faces * (*nvar) + ivarp * n_b_faces + face_id]
-            = new_vals[elt_id];
+          for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+            cs_lnum_t face_id = bz->elt_ids[elt_id];
+            rcodcl2_p[face_id] = new_vals[elt_id];
+          }
         }
         BFT_FREE(new_vals);
       }
@@ -3358,13 +3364,16 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
       /* set velocity to 0 */
       const cs_field_t  *fp2 = cs_field_by_name_try("velocity");
       if (fp2 != NULL) {
-        int ivar2 = cs_field_get_key_int(fp2, var_key_id) -1;
+        if (fp2->bc_coeffs != NULL) {
+          int *icodcl = fp2->bc_coeffs->icodcl;
+          cs_real_t *rcodcl1 = fp2->bc_coeffs->rcodcl1;
 
-        for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-          cs_lnum_t face_id = bz->elt_ids[elt_id];
-          for (cs_lnum_t i = 0; i < 3; i++) {
-            icodcl[(ivar2 + i) * n_b_faces + face_id] = 3;
-            rcodcl[(ivar2 + i) * n_b_faces + face_id] = 0.;
+          for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+            cs_lnum_t face_id = bz->elt_ids[elt_id];
+            for (cs_lnum_t i = 0; i < 3; i++) {
+              icodcl[i*n_b_faces + face_id] = 3;
+              rcodcl1[i*n_b_faces + face_id] = 0.;
+            }
           }
         }
       }
@@ -3392,15 +3401,20 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
       for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
         const cs_field_t  *f = cs_field_by_id(f_id);
-        cs_lnum_t ivar = cs_field_get_key_int(f, var_key_id) -1;
         if (f->type & CS_FIELD_VARIABLE) {
           bft_printf("------%s: icodcl=%i, "
-                     "rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n",
+                     "rcodcl1=%12.5e, rcodcl1=%12.5e, rcodcl3=%12.5e\n",
                      f->name,
-                     icodcl[ivar *n_b_faces +face_id ],
-                     rcodcl[0 * n_b_faces * (*nvar) +ivar * n_b_faces +face_id],
-                     rcodcl[1 * n_b_faces * (*nvar) +ivar * n_b_faces +face_id],
-                     rcodcl[2 * n_b_faces * (*nvar) +ivar * n_b_faces +face_id]);
+                     f->bc_coeffs->icodcl[face_id],
+                     f->bc_coeffs->rcodcl1[face_id],
+                     f->bc_coeffs->rcodcl2[face_id],
+                     f->bc_coeffs->rcodcl3[face_id]);
+          for (cs_lnum_t j = 1; j < f->dim; j++) {
+            bft_printf("rcodcl1_%d=%12.5e, rcodcl2_%d=%12.5e, rcodcl3_%d=%12.5e\n",
+                       j, f->bc_coeffs->rcodcl1[face_id],
+                       j, f->bc_coeffs->rcodcl2[face_id],
+                       j, f->bc_coeffs->rcodcl3[face_id]);
+          }
         }
       }
     }
@@ -3427,7 +3441,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
     std_turbulence_bcs = true;
 
   if (std_turbulence_bcs)
-    _standard_turbulence_bcs(rcodcl);
+    _standard_turbulence_bcs();
 
   /* Mass flow (TODO: merge qimp and qimpat) */
 

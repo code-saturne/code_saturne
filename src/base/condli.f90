@@ -385,9 +385,8 @@ call uiclim &
   ( nozppm,                                                        &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm, iautom,                        &
-    itypfb, izfppp, icodcl,                                        &
-    qimp,   qimpat, qimpcp, dh,     xintur,                        &
-    timpat, timpcp, tkent , fment,  distch, nvar, rcodcl)
+    itypfb, izfppp, qimp,   qimpat, qimpcp, dh,     xintur,        &
+    timpat, timpcp, tkent , fment,  distch)
 
 call cs_boundary_conditions_complete(itypfb)
 
@@ -4954,9 +4953,8 @@ call uiclim &
   ( nozppm,                                                        &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm, iautom,                        &
-    itypfb, izfppp, icodcl,                                        &
-    qimp,   qimpat, qimpcp, dh,     xintur,                        &
-    timpat, timpcp, tkent , fment,  distch, nvar, rcodcl)
+    itypfb, izfppp, qimp,   qimpat, qimpcp, dh,     xintur,        &
+    timpat, timpcp, tkent , fment,  distch)
 
 !     - Sous-programme utilisateur
 !       ==========================

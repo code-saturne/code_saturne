@@ -54,8 +54,6 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------
  * Boundary conditions treatment
  *
- * Remember: rdoccl[k][j][i] = rcodcl[ k * dim1 *dim2 + j *dim1 + i]
- *
  * Fortran Interface:
  *
  * subroutine uiclim
@@ -76,7 +74,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                int        *iautom,
                                int        *itypfb,
                                int        *izfppp,
-                               int        *icodcl,
                                double     *qimp,
                                double     *qimpat,
                                double     *qimpcp,
@@ -86,9 +83,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                double     *timpcp,
                                double     *tkent,
                                double     *fment,
-                               double     *distch,
-                               int        *nvar,
-                               double     *rcodcl);
+                               double     *distch);
 
 /*----------------------------------------------------------------------------
  * Boundary conditions input verification

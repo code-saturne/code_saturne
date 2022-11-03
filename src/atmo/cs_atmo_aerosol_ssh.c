@@ -45,12 +45,6 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * PLE library headers
- *----------------------------------------------------------------------------*/
-
-#include <ple_locator.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
@@ -58,31 +52,21 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
-#include "fvm_nodal_extract.h"
-
 #include "cs_base.h"
-#include "cs_boundary_conditions.h"
-#include "cs_boundary_zone.h"
 #include "cs_domain.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_field_pointer.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
-#include "cs_equation_iterative_solve.h"
 #include "cs_physical_constants.h"
 #include "cs_prototypes.h"
 #include "cs_post.h"
-#include "cs_restart.h"
-#include "cs_selector.h"
 #include "cs_thermal_model.h"
-#include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -170,7 +154,6 @@ _send_bool(void               *handle,
            const char         *name,
            bool                flag)
 {
-
   typedef void* (*_tmp_sshaerosol_t)(bool*);
   _tmp_sshaerosol_t fct =
     (_tmp_sshaerosol_t) cs_base_get_dl_function_pointer(handle,
@@ -310,9 +293,10 @@ _sshaerosol_get_aero_name(const int *id, char *name)
 {
   typedef void* (*_tmp_sshaerosol_t)(const int*, char *);
   _tmp_sshaerosol_t fct
-    = (_tmp_sshaerosol_t) cs_base_get_dl_function_pointer(_aerosol_so,
-                                                          "api_sshaerosol_get_aero_name_",
-                                                          true);
+    = (_tmp_sshaerosol_t)cs_base_get_dl_function_pointer
+                           (_aerosol_so,
+                            "api_sshaerosol_get_aero_name_",
+                            true);
   fct(id, name);
 }
 
@@ -377,7 +361,8 @@ cs_atmo_aerosol_ssh_initialize(void)
   _send_bool(_aerosol_so,
              "api_sshaerosol_set_logger_",
              (cs_glob_rank_id <= 0) ? true : false);
-  if (_verbose) bft_printf(" Set sshaerosol logger to true on rank master.\n");
+  if (_verbose)
+    bft_printf(" Set sshaerosol logger to true on rank master.\n");
 
   /* Initialize SSH-aerosol (default file name is namelist.ssh) */
   {
