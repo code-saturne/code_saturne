@@ -2754,8 +2754,8 @@ _standard_turbulence_bcs(cs_real_t  rcodcl[])
             vel_dir = vel;
             shear_dir = _shear_dir;
             cs_math_3_normalize(grady[cell_id], shear_dir);
-            for (int i = 0; i < 3; i++)
-              shear_dir[i] *= ant;
+            for (int j = 0; j < 3; j++)
+              shear_dir[j] *= ant;
           }
 
           cs_turbulence_bc_set_uninit_inlet_hyd_diam(face_id,
@@ -3410,10 +3410,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
   /* Define boundary conditions based on cs_equation_param_t structures */
 
-  cs_boundary_conditions_compute(*nvar,
-                                 itypfb,
-                                 icodcl,
-                                 rcodcl);
+  cs_boundary_conditions_compute(itypfb);
 
   /* Final adjustments */
 

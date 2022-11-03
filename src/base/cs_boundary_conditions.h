@@ -37,9 +37,6 @@
 
 #include <ple_locator.h>
 
-#include "fvm_nodal.h"
-#include "fvm_writer.h"
-
 #include "cs_base.h"
 #include "cs_field.h"
 #include "cs_math.h"
@@ -162,8 +159,6 @@ cs_boundary_conditions_map(cs_mesh_location_type_t    location_type,
  *   faces           <-- list of selected boundary faces (0 to n-1),
  *                       or NULL if no indirection is needed
  *   balance_w       <-- optional balance weight, or NULL
- *   nvar            <-- number of variables requiring BC's
- *   rcodcl          <-> boundary condition values
  *----------------------------------------------------------------------------*/
 
 void
@@ -174,9 +169,7 @@ cs_boundary_conditions_mapped_set(const cs_field_t          *f,
                                   int                        interpolate,
                                   cs_lnum_t                  n_faces,
                                   const cs_lnum_t           *faces,
-                                  cs_real_t                 *balance_w,
-                                  int                        nvar,
-                                  cs_real_t                  rcodcl[]);
+                                  cs_real_t                 *balance_w);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -370,12 +363,12 @@ cs_boundary_conditions_set_dirichlet_vector(cs_real_3_t    a,
                                             cs_real_t      hint,
                                             cs_real_3_t    hextv)
 {
-  for (int isou = 0 ; isou < 3; isou++) {
+  for (int isou = 0; isou < 3; isou++) {
     if (fabs(hextv[isou]) > 0.5*cs_math_infinite_r) {
 
       /* Gradient BCs */
       a[isou] = pimpv[isou];
-      for (int jsou = 0 ; jsou < 3 ; jsou++)
+      for (int jsou = 0; jsou < 3; jsou++)
         b[isou][jsou] = 0.;
 
       /* Flux BCs */
@@ -392,7 +385,7 @@ cs_boundary_conditions_set_dirichlet_vector(cs_real_3_t    a,
 
       /* Gradient BCs */
       a[isou] = hextv[isou]*pimpv[isou]/(hint + hextv[isou]);
-      for (int jsou = 0 ; jsou < 3 ; jsou++) {
+      for (int jsou = 0; jsou < 3; jsou++) {
         if (jsou == isou)
           b[isou][jsou] = hint/(hint + hextv[isou]);
         else
@@ -401,7 +394,7 @@ cs_boundary_conditions_set_dirichlet_vector(cs_real_3_t    a,
 
       /* Flux BCs */
       af[isou] = -heq*pimpv[isou];
-      for (int jsou = 0 ; jsou < 3 ; jsou++) {
+      for (int jsou = 0; jsou < 3; jsou++) {
         if (jsou == isou)
           bf[isou][jsou] = heq;
         else
@@ -460,24 +453,22 @@ cs_boundary_conditions_set_dirichlet_vector_aniso(cs_real_3_t    a,
                                                   cs_real_6_t    hintt,
                                                   cs_real_3_t    hextv)
 {
-  for (int isou = 0 ; isou < 3 ; isou++) {
+  /* Gradient BCs */
+  for (int isou = 0; isou < 3; isou++) {
     if (fabs(hextv[isou]) > 0.5*cs_math_infinite_r) {
-
-      /* Gradient BCs */
       a[isou] = pimpv[isou];
-      for (int jsou = 0 ; jsou < 3 ; jsou++)
+      for (int jsou = 0; jsou < 3; jsou++)
         b[isou][jsou] = 0.;
-
-    } else {
-
+    }
+    else {
+      /* FIXME: at least log error message */
       cs_exit(1);
-
     }
   }
 
   /* Flux BCs */
   cs_math_sym_33_3_product(hintt, pimpv, af);
-  for (int isou = 0 ; isou < 3 ; isou++)
+  for (int isou = 0; isou < 3; isou++)
     af[isou] = -af[isou];
 
   bf[0][0] = hintt[0];
@@ -504,18 +495,12 @@ cs_boundary_conditions_reset(void);
 /*!
  * \brief Update per variable boundary condition codes.
  *
- * \param[in]       nvar             number of variables requiring BC's
- * \param[in]       itypfb           type of boundary for each face
- * \param[in, out]  icodcl           boundary condition codes
- * \param[in, out]  rcodcl           boundary condition values
+ * \param[in]  itypfb  type of boundary for each face
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_compute(int     nvar,
-                               int     itypfb[],
-                               int     icodcl[],
-                               double  rcodcl[]);
+cs_boundary_conditions_compute(int  itypfb[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -525,18 +510,12 @@ cs_boundary_conditions_compute(int     nvar,
  * As portions of stdtcl are migrated to C, they should be called here,
  * before mapped inlets.
  *
- * \param[in]       nvar             number of variables requiring BC's
- * \param[in]       itypfb           type of boundary for each face
- * \param[in, out]  icodcl           boundary condition codes
- * \param[in, out]  rcodcl           boundary condition values
+ * \param[in]  itypfb  type of boundary for each face
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_complete(int     nvar,
-                                int     itypfb[],
-                                int     icodcl[],
-                                double  rcodcl[]);
+cs_boundary_conditions_complete(int  itypfb[]);
 
 /*----------------------------------------------------------------------------*/
 

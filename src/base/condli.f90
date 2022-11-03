@@ -327,14 +327,12 @@ interface
 
   end subroutine cs_boundary_conditions_reset
 
-  subroutine cs_boundary_conditions_complete(nvar, itypfb, icodcl, rcodcl) &
+  subroutine cs_boundary_conditions_complete(itypfb) &
     bind(C, name='cs_boundary_conditions_complete')
 
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: nvar
-    integer(c_int), dimension(*), intent(inout) :: itypfb, icodcl
-    real(kind=c_double), dimension(*), intent(inout) :: rcodcl
+    integer(c_int), dimension(*), intent(inout) :: itypfb
 
   end subroutine cs_boundary_conditions_complete
 
@@ -391,7 +389,7 @@ call uiclim &
     qimp,   qimpat, qimpcp, dh,     xintur,                        &
     timpat, timpcp, tkent , fment,  distch, nvar, rcodcl)
 
-call cs_boundary_conditions_complete(nvar, itypfb, icodcl, rcodcl)
+call cs_boundary_conditions_complete(itypfb)
 
 ! User-defined functions
 ! ==========================
