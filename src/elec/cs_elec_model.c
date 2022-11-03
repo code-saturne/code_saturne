@@ -555,6 +555,239 @@ _cs_elec_convert_h_to_t(const cs_real_t  ym[],
   return 0;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate the imaginary potential gradient at specified cells.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        pointer to associated mesh structure
+ *                               (to be cast as cs_mesh_t *) for interior
+ *                               faces or vertices, unused otherwise
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_pot_gradient_im_f(int               location_id,
+                   cs_lnum_t         n_elts,
+                   const cs_lnum_t  *elt_ids,
+                   void             *input,
+                   void             *vals)
+{
+  CS_UNUSED(input);
+  assert(location_id == CS_MESH_LOCATION_CELLS);
+
+  cs_real_3_t *v = vals;
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_field_t *f = cs_field_by_name("elec_pot_i");
+
+  cs_real_3_t *grad;
+  BFT_MALLOC(grad, m->n_cells_with_ghosts, cs_real_3_t);
+
+  cs_field_gradient_scalar(f, false, 1, grad);
+
+  if (elt_ids != NULL) {
+    for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
+      cs_lnum_t i = elt_ids[idx];
+      for (cs_lnum_t j = 0; j < 3; j++)
+        v[idx][j] = grad[i][j];
+    }
+  }
+
+  else {
+    for (cs_lnum_t i = 0; i <  n_elts; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++)
+        v[i][j] = grad[i][j];
+    }
+  }
+
+  BFT_FREE(grad);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate the imaginary current at specified cells.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        pointer to associated mesh structure
+ *                               (to be cast as cs_mesh_t *) for interior
+ *                               faces or vertices, unused otherwise
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_current_im_f(int               location_id,
+              cs_lnum_t         n_elts,
+              const cs_lnum_t  *elt_ids,
+              void             *input,
+              void             *vals)
+{
+  CS_UNUSED(input);
+  assert(location_id == CS_MESH_LOCATION_CELLS);
+
+  cs_real_3_t *v = vals;
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_field_t *f = cs_field_by_name("elec_pot_i");
+
+  cs_real_3_t *grad;
+  BFT_MALLOC(grad, m->n_cells_with_ghosts, cs_real_3_t);
+
+  cs_field_gradient_scalar(f, false, 1, grad);
+
+  const int kivisl = cs_field_key_id("diffusivity_id");
+  const int diff_id = cs_field_get_key_int(f, kivisl);
+
+  if (diff_id > -1) {
+    const cs_real_t *cvisii = cs_field_by_id(diff_id)->val;
+
+    if (elt_ids != NULL) {
+      for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
+        cs_lnum_t i = elt_ids[idx];
+        for (cs_lnum_t j = 0; j < 3; j++)
+          v[idx][j] = -cvisii[i] * grad[i][j];
+      }
+    }
+
+    else {
+      for (cs_lnum_t i = 0; i <  n_elts; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          v[i][j] = -cvisii[i] * grad[i][j];
+      }
+    }
+  }
+
+  else {
+    const int kvisls0 = cs_field_key_id("diffusivity_ref");
+    const double visls_0 = cs_field_get_key_double(f, kvisls0);
+
+    if (elt_ids != NULL) {
+      for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
+        cs_lnum_t i = elt_ids[idx];
+        for (cs_lnum_t j = 0; j < 3; j++)
+          v[idx][j] = -visls_0 * grad[i][j];
+      }
+    }
+
+    else {
+      for (cs_lnum_t i = 0; i <  n_elts; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          v[i][j] = -visls_0 * grad[i][j];
+      }
+    }
+  }
+
+  BFT_FREE(grad);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate the module of the complex potential at specified cells.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        pointer to associated mesh structure
+ *                               (to be cast as cs_mesh_t *) for interior
+ *                               faces or vertices, unused otherwise
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_pot_module_f(int               location_id,
+              cs_lnum_t         n_elts,
+              const cs_lnum_t  *elt_ids,
+              void             *input,
+              void             *vals)
+{
+  CS_UNUSED(input);
+  assert(location_id == CS_MESH_LOCATION_CELLS);
+
+  cs_real_t *v = vals;
+
+  const cs_real_t *cpotr = cs_field_by_name("elec_pot_r")->val;
+  const cs_real_t *cpoti = cs_field_by_name("elec_pot_i")->val;
+
+  if (elt_ids != NULL) {
+    for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
+      cs_lnum_t i = elt_ids[idx];
+      v[idx] = sqrt(cpotr[i]*cpotr[i] + cpoti[i]*cpoti[i]);
+    }
+  }
+
+  else {
+    for (cs_lnum_t i = 0; i <  n_elts; i++) {
+      v[i] = sqrt(cpotr[i]*cpotr[i] + cpoti[i]*cpoti[i]);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate the argument of the complex potential at specified cells.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        pointer to associated mesh structure
+ *                               (to be cast as cs_mesh_t *) for interior
+ *                               faces or vertices, unused otherwise
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_pot_arg_f(int               location_id,
+           cs_lnum_t         n_elts,
+           const cs_lnum_t  *elt_ids,
+           void             *input,
+           void             *vals)
+{
+  CS_UNUSED(input);
+  assert(location_id == CS_MESH_LOCATION_CELLS);
+
+  cs_real_t *v = vals;
+
+  const cs_real_t *cpotr = cs_field_by_name("elec_pot_r")->val;
+  const cs_real_t *cpoti = cs_field_by_name("elec_pot_i")->val;
+
+  cs_real_t pi_ov_4 = atan(1.);
+
+  for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
+    cs_lnum_t i = (elt_ids != NULL) ? elt_ids[idx] : idx;
+
+    if (cpotr[i] > 0.)
+      v[idx] = atan(cpoti[i] / cpotr[i]);
+    else if (cpotr[i] < 0.){
+      if (cpoti[i] > 0.)
+        v[idx] = 4.*atan(1.) + atan(cpoti[i] / cpotr[i]);
+      else
+        v[idx] = -4.*atan(1.) + atan(cpoti[i] / cpotr[i]);
+    }
+    else {
+      v[idx] = 2.*atan(1.);
+    }
+
+    if (v[idx] < 0)
+      v[idx] += pow(8., pi_ov_4);
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -2339,6 +2572,101 @@ cs_elec_convert_t_to_h_faces(const cs_lnum_t  n_faces,
 
     BFT_FREE(ym);
 
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create or access function objects specific to
+ *        electric arcs models.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_elec_define_functions(void)
+{
+  /* For Joule Heating by direct conduction:
+     gradient of the imaginary component of the potential */
+
+  int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
+
+  if (ieljou == 2 || ieljou == 4) {
+    cs_function_t *f
+      = cs_function_define_by_func("elec_pot_gradient_im",
+                                   CS_MESH_LOCATION_CELLS,
+                                   3,
+                                   false,
+                                   CS_REAL_TYPE,
+                                   _pot_gradient_im_f,
+                                   NULL);
+
+    const char label[] = "Pot_Gradient_Im";
+    BFT_MALLOC(f->label, strlen(label) + 1, char);
+    strcpy(f->label, label);
+
+    f->type = CS_FUNCTION_INTENSIVE;
+    f->post_vis = CS_POST_ON_LOCATION;
+  }
+
+  /* For Joule heating by direct conduction:
+     imaginary component of the current density */
+
+  if (ieljou == 2 || ieljou == 4) {
+    cs_function_t *f
+      = cs_function_define_by_func("elec_current_im",
+                                   CS_MESH_LOCATION_CELLS,
+                                   3,
+                                   false,
+                                   CS_REAL_TYPE,
+                                   _current_im_f,
+                                   NULL);
+
+    const char label[] = "Current_Im";
+    BFT_MALLOC(f->label, strlen(label) + 1, char);
+    strcpy(f->label, label);
+
+    f->type = CS_FUNCTION_INTENSIVE;
+    f->post_vis = CS_POST_ON_LOCATION;
+  }
+
+  /* Calculation of Module of the complex potential */
+
+  if (ieljou == 4) {
+    cs_function_t *f
+      = cs_function_define_by_func("elec_pot_module",
+                                   CS_MESH_LOCATION_CELLS,
+                                   1,
+                                   false,
+                                   CS_REAL_TYPE,
+                                   _pot_module_f,
+                                   NULL);
+
+    const char label[] = "Pot_Module";
+    BFT_MALLOC(f->label, strlen(label) + 1, char);
+    strcpy(f->label, label);
+
+    f->type = CS_FUNCTION_INTENSIVE;
+    f->post_vis = CS_POST_ON_LOCATION;
+  }
+
+  /* Calculation of Argument of the complex potential */
+
+  if (ieljou == 4) {
+    cs_function_t *f
+      = cs_function_define_by_func("elec_pot_arg",
+                                   CS_MESH_LOCATION_CELLS,
+                                   1,
+                                   false,
+                                   CS_REAL_TYPE,
+                                   _pot_arg_f,
+                                   NULL);
+
+    const char label[] = "Pot_Arg";
+    BFT_MALLOC(f->label, strlen(label) + 1, char);
+    strcpy(f->label, label);
+
+    f->type = CS_FUNCTION_INTENSIVE;
+    f->post_vis = CS_POST_ON_LOCATION;
   }
 }
 

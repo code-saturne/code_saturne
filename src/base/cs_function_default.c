@@ -52,12 +52,14 @@
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
+#include "cs_elec_model.h"
 #include "cs_function.h"
 #include "cs_function_default.h"
 #include "cs_mesh_quantities.h"
 #include "cs_math.h"
 #include "cs_post.h"
 #include "cs_physical_constants.h"
+#include "cs_physical_model.h"
 #include "cs_rotation.h"
 #include "cs_turbomachinery.h"
 
@@ -460,6 +462,10 @@ cs_function_default_define(void)
 
   if (cs_glob_physical_constants->icorio > 0)
     _define_coriolis_functions();
+
+  if (   cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > 0
+      || cs_glob_physical_model_flag[CS_JOULE_EFFECT] > 0)
+    cs_elec_define_functions();
 }
 
 /*----------------------------------------------------------------------------*/

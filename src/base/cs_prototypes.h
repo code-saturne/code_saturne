@@ -113,11 +113,8 @@ extern void CS_PROCF (dvvpst, DVVPST)
  const int        *numtyp,    /* <-- number or post-processing type
                                *     (-1 as volume, -2 as boundary, or nummai) */
  const int        *nvar,      /* <-- number of variables */
- const cs_lnum_t  *ncelps,    /* <-- number of post-processed cells */
  const cs_lnum_t  *nfbrps,    /* <-- number of post processed boundary faces */
- const cs_lnum_t   lstcel[],  /* <-- list of post-processed cells */
  const cs_lnum_t   lstfbr[],  /* <-- list of post-processed boundary faces */
- cs_real_t         tracel[],  /* --- work array for output cells */
  cs_real_t         trafbr[]   /* --- work array for output boundary faces */
 );
 

@@ -331,6 +331,16 @@ cs_elec_convert_t_to_h_faces(const cs_lnum_t  n_faces,
                              cs_real_t        h[]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create or access function objects specific to
+ *        electric arcs models.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_elec_define_functions(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

@@ -37,20 +37,13 @@
 !>                               - -2: edge
 !>                               - default: nummai
 !> \param[in]     nvar          total number of variables
-!> \param[in]     ncelps        post-processing mesh cells number
 !> \param[in]     nfbrps        number of boundary faces
-!> \param[in]     lstcel        post-processing mesh cell numbers
 !> \param[in]     lstfbr        post-processing mesh boundary faces numbers
-!> \param[in,out] tracel        post processing cell real values
 !> \param[in,out] trafbr        post processing boundary faces real values
 !______________________________________________________________________________
 
 subroutine dvvpst &
- ( nummai , numtyp ,                                              &
-   nvar   ,                                                       &
-   ncelps , nfbrps ,                                              &
-   lstcel , lstfbr ,                                              &
-   tracel , trafbr )
+ (nummai, numtyp, nvar, nfbrps, lstfbr, trafbr)
 
 !===============================================================================
 ! Module files
@@ -88,9 +81,8 @@ integer          nummai , numtyp
 integer          nvar
 integer          ncelps , nfbrps
 
-integer          lstcel(ncelps), lstfbr(nfbrps)
+integer          lstfbr(nfbrps)
 
-double precision tracel(ncelps*3)
 double precision trafbr(nfbrps*3)
 
 ! Local variables
@@ -98,21 +90,17 @@ double precision trafbr(nfbrps*3)
 character(len=80) :: name80
 
 logical          ientla, ivarpr
-integer          inc
 integer          ifac  , iloc  , ivar
 integer          idimt , kk   , ll, iel
 integer          fldid, fldprv, keycpl, iflcpl
-integer          ifcsii, iflpst, itplus, iprev, f_id
+integer          iflpst, itplus
 
 double precision rbid(1)
-double precision visls_0
 
-double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: tplusp
 double precision, dimension(:), pointer :: valsp, coefap, coefbp
 double precision, dimension(:,:), pointer :: valvp, cofavp, cofbvp
 double precision, dimension(:,:,:), pointer :: cofbtp
-double precision, dimension(:), pointer :: cpotr, cpoti, cvisii
 
 !===============================================================================
 
@@ -344,143 +332,6 @@ if (numtyp .eq. -2) then
   endif ! end of test on output of Nusselt
 
 endif ! end of test on postprocessing mesh number
-
-!===============================================================================
-! Electric module variables
-!===============================================================================
-
-if (numtyp.eq.-1) then
-
-  if (     ippmod(ieljou).ge.1                                      &
-      .or. ippmod(ielarc).ge.1) then
-
-    allocate(grad(3,ncelet))
-
-    ! For Joule Heating by direct conduction:
-    !   gradient of the imaginary component of the potential
-
-    if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
-
-      call field_get_id('elec_pot_i', f_id)
-
-      inc = 1
-      iprev = 0
-
-      call field_gradient_scalar(f_id, iprev, inc, grad)
-
-      idimt  = 3
-      ientla = .true.
-      ivarpr = .true.
-
-      call post_write_var(nummai, 'Pot_Gradient_Im', idimt, ientla, ivarpr,  &
-                          ntcabs, ttcabs, grad, rbid, rbid)
-
-    endif
-
-    ! For Joule heating by direct conduction:
-    !   imaginary component of the current density
-
-    if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
-
-      call field_get_id('elec_pot_i', f_id)
-
-      ! As in elflux
-
-      inc = 1
-      iprev = 0
-
-      call field_gradient_scalar(f_id, iprev, inc, grad)
-
-      call field_get_key_int (f_id, kivisl, ifcsii)
-      if (ifcsii .ge. 0) then
-        call field_get_val_s(ifcsii, cvisii)
-        do iloc = 1, ncelps
-          iel = lstcel(iloc)
-          tracel(1 + (iloc-1)*idimt) = -cvisii(iel)*grad(1,iel)
-          tracel(2 + (iloc-1)*idimt) = -cvisii(iel)*grad(2,iel)
-          tracel(3 + (iloc-1)*idimt) = -cvisii(iel)*grad(3,iel)
-        enddo
-      else
-        call field_get_key_double(f_id, kvisl0, visls_0)
-        do iloc = 1, ncelps
-          iel = lstcel(iloc)
-          tracel(1 + (iloc-1)*idimt) = -visls_0*grad(1,iel)
-          tracel(2 + (iloc-1)*idimt) = -visls_0*grad(2,iel)
-          tracel(3 + (iloc-1)*idimt) = -visls_0*grad(3,iel)
-        enddo
-      endif
-
-      idimt  = 3
-      ientla = .true.
-      ivarpr = .false.
-
-      call post_write_var(nummai, 'Current_Im', idimt, ientla, ivarpr,       &
-                          ntcabs, ttcabs, tracel, rbid, rbid)
-
-    endif
-
-    ! Calculation of Module and Argument of the complex potential if IELJOU = 4
-
-    if (ippmod(ieljou).eq.4) then
-
-      ivar = 0
-
-      call field_get_val_s_by_name('elec_pot_r', cpotr)
-      call field_get_val_s_by_name('elec_pot_i', cpoti)
-
-      do iloc = 1, ncelps
-        iel = lstcel(iloc)
-        tracel(iloc) = sqrt(cpotr(iel)*cpotr(iel) + cpoti(iel)*cpoti(iel))
-      enddo
-
-      idimt  = 1
-      ientla = .true.
-      ivarpr = .false.
-
-      call post_write_var(nummai, 'Pot_Module', idimt, ientla, ivarpr,  &
-                          ntcabs, ttcabs, tracel, rbid, rbid)
-
-      do iloc = 1, ncelps
-
-        iel = lstcel(iloc)
-
-        if (cpotr(iel) .ne. 0.d0) then
-          if (cpotr(iel) .ge. 0.d0) then
-            tracel(iloc) = atan(cpoti(iel)/cpotr(iel))
-          else
-            if (cpoti(iel) .gt. 0.d0) then
-              tracel(iloc) = 4.d0*atan(1.d0)                      &
-                             + atan(cpoti(iel) / cpotr(iel))
-            else
-              tracel(iloc) = -4.d0*atan(1.d0)                     &
-                             + atan(cpoti(iel) / cpotr(iel))
-            endif
-          endif
-        else
-          tracel(iloc) = 2.d0*atan(1.d0)
-        endif
-
-        if (tracel(iloc) .lt. 0.d0) then
-          tracel(iloc) = tracel(iloc) + 8.d0**atan(1.d0)
-        endif
-
-      enddo
-
-      idimt  = 1
-      ientla = .true.
-      ivarpr = .false.
-
-      call post_write_var(nummai, 'Pot_Arg', idimt, ientla, ivarpr,  &
-                          ntcabs, ttcabs, tracel, rbid, rbid)
-
-    endif
-
-    ! Free memory
-    deallocate(grad)
-
-  endif
-
-endif
 
 !----
 ! End

@@ -202,9 +202,9 @@ _write_additional_vars(void                  *input,
   if (cat_id < 0 && ent_flag[1] == 0)
     CS_PROCF(dvvpst, DVVPST) (&nummai, &numtyp,
                               _input->nvar,
-                              &n_cells, &n_b_faces,
-                              cell_num, b_face_num,
-                              cel_vals, b_face_vals);
+                              &n_b_faces,
+                              b_face_num,
+                              b_face_vals);
 
   /* Free work array */
 
