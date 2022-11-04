@@ -180,7 +180,7 @@ module field
     ! Interface to C function returning or creating a field descriptor
 
     function cs_field_find_or_create(name, type_flag, location_id, &
-                                     dim) result(f) &
+                                     dim, has_previous) result(f) &
       bind(C, name='cs_field_find_or_create')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -188,6 +188,7 @@ module field
       integer(c_int), value                                    :: type_flag
       integer(c_int), value                                    :: location_id
       integer(c_int), value                                    :: dim
+      logical(c_bool), value                                   :: has_previous
       type(c_ptr)                                              :: f
     end function cs_field_find_or_create
 
@@ -730,14 +731,17 @@ contains
     integer(c_int) :: c_type_flag
     integer(c_int) :: c_location_id
     integer(c_int) :: c_dim
+    logical(c_bool) :: has_previous
     type(c_ptr)     :: f
 
     c_name = trim(name)//c_null_char
     c_type_flag = type_flag
     c_location_id = location_id
     c_dim = dim
+    has_previous = .false.
 
-    f = cs_field_find_or_create(c_name, c_type_flag, c_location_id, c_dim)
+    f = cs_field_find_or_create(c_name, c_type_flag, c_location_id, c_dim, &
+                                has_previous)
     id = cs_f_field_id_by_name(c_name)
 
     return
