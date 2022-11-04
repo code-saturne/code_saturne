@@ -49,6 +49,7 @@
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_gradient.h"
+#include "cs_gradient_boundary.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_mesh.h"
@@ -885,6 +886,175 @@ cs_field_gradient_tensor(const cs_field_t          *f,
                      bc_coeff_b,
                      var,
                      grad);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the values of a scalar field at boundary face I' positions.
+ *
+ * \param[in]       f               pointer to field
+ * \param[in]       use_previous_t  should we use values from the previous
+ *                                  time step ?
+ * \param[in]       inc             if 0, solve on increment; 1 otherwise
+ * \param[out]      grad            gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
+                                         bool               use_previous_t,
+                                         cs_lnum_t          n_faces,
+                                         const cs_lnum_t   *face_ids,
+                                         cs_real_t          var_iprime[])
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+
+  /* Does the field have a parent (variable) ?
+     Field is its own parent if not parent is specified */
+
+  const cs_field_t *parent_f = f;
+
+  const int f_parent_id
+    = cs_field_get_key_int(f, cs_field_key_id("parent_field_id"));
+  if (f_parent_id > -1)
+    parent_f = cs_field_by_id(f_parent_id);
+
+  int imrgra = cs_glob_space_disc->imrgra;
+  cs_var_cal_opt_t eqp_default = cs_parameters_var_cal_opt_default();
+
+  /* Get the calculation option from the field */
+  const cs_equation_param_t
+    *eqp = cs_field_get_equation_param_const(parent_f);
+
+  if (eqp != NULL)
+    imrgra = eqp->imrgra;
+  else
+    eqp = &eqp_default;
+
+  cs_gradient_type_by_imrgra(imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  int w_stride = 1;
+  cs_real_t *c_weight = NULL;
+  cs_internal_coupling_t  *cpl = NULL;
+
+  if (parent_f->type & CS_FIELD_VARIABLE && eqp->idiff > 0) {
+
+    if (eqp->iwgrec == 1) {
+      /* Weighted gradient coefficients */
+      int key_id = cs_field_key_id("gradient_weighting_id");
+      int diff_id = cs_field_get_key_int(parent_f, key_id);
+      if (diff_id > -1) {
+        cs_field_t *f_weight = cs_field_by_id(diff_id);
+        c_weight = f_weight->val;
+        w_stride = f_weight->dim;
+      }
+    }
+
+    /* Internal coupling structure */
+    int key_id = cs_field_key_id_try("coupling_entity");
+    if (key_id > -1) {
+      int coupl_id = cs_field_get_key_int(parent_f, key_id);
+      if (coupl_id > -1)
+        cpl = cs_internal_coupling_by_id(coupl_id);
+    }
+
+  }
+
+  if (f->n_time_vals < 2 && use_previous_t)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: field %s does not maintain previous time step values\n"
+                "so \"use_previous_t\" can not be handled."),
+              __func__, f->name);
+
+  cs_real_t *var = (use_previous_t) ? f->val_pre : f->val;
+
+  const cs_real_t *bc_coeff_a = NULL, *bc_coeff_b = NULL;
+  if (f->bc_coeffs != NULL) {
+    bc_coeff_a = f->bc_coeffs->a;
+    bc_coeff_b = f->bc_coeffs->b;
+  }
+
+  /* With least-squares gradient, we can use a cheaper, boundary-only
+     reconstruction */
+
+  if (gradient_type == CS_GRADIENT_LSQ) {
+
+    cs_gradient_boundary_iprime_lsq_s(m,
+                                      fvq,
+                                      cpl,
+                                      n_faces,
+                                      face_ids,
+                                      halo_type,
+                                      eqp->climgr,
+                                      bc_coeff_a,
+                                      bc_coeff_b,
+                                      c_weight,
+                                      var,
+                                      var_iprime);
+
+  }
+  else {
+
+    const cs_real_3_t *restrict diipb
+      = (const cs_real_3_t *restrict)fvq->diipb;
+
+    cs_real_3_t *grad;
+    CS_MALLOC_HD(grad,
+                 cs_glob_mesh->n_cells_with_ghosts,
+                 cs_real_3_t,
+                 cs_alloc_mode);
+
+    cs_gradient_scalar(f->name,
+                       gradient_type,
+                       halo_type,
+                       1, /* inc */
+                       eqp->nswrgr,
+                       0, /* hyd_p_flag */
+                       w_stride,
+                       eqp->verbosity,
+                       eqp->imligr,
+                       eqp->epsrgr,
+                       eqp->climgr,
+                       NULL, /* f_ext */
+                       bc_coeff_a,
+                       bc_coeff_b,
+                       var,
+                       c_weight,
+                       cpl, /* internal coupling */
+                       grad);
+
+    /* Finally, reconstruct value at I' */
+
+    const cs_lnum_t *restrict b_face_cells
+      = (const cs_lnum_t *restrict)m->b_face_cells;
+
+    if (face_ids != NULL) {
+      for (cs_lnum_t idx = 0; idx < n_faces; idx++) {
+        cs_lnum_t i = face_ids[idx];
+        cs_lnum_t j = b_face_cells[i];
+        var_iprime[idx] = var[j] + (  grad[j][0]*diipb[i][0]
+                                    + grad[j][1]*diipb[i][1]
+                                    + grad[j][2]*diipb[i][2]);
+      }
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_faces; i++) {
+        cs_lnum_t j = b_face_cells[i];
+        var_iprime[i] = var[j] + (  grad[j][0]*diipb[i][0]
+                                  + grad[j][1]*diipb[i][1]
+                                  + grad[j][2]*diipb[i][2]);
+      }
+    }
+
+    CS_FREE_HD(grad);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/

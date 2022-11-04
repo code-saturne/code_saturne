@@ -147,17 +147,6 @@ module cs_f_interfaces
 
     !---------------------------------------------------------------------------
 
-    subroutine post_boundary_nusselt &
-      (nfbrps, lstfbr, bnussl)
-      use dimens
-      use mesh
-      integer, intent(in)                                        :: nfbrps
-      integer, dimension(nfbrps), intent(in)                     :: lstfbr
-      double precision, dimension(nfbrps), intent(out)           :: bnussl
-    end subroutine post_boundary_nusselt
-
-    !---------------------------------------------------------------------------
-
     subroutine post_stress &
       (nfbrps, lstfbr, stress)
       use dimens

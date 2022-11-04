@@ -706,24 +706,6 @@ ityloc = 3 ! boundary faces
 
 itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 
-! If postprocessing of boundary layer Nusselt required,
-! create appropriate fields; check that a thermal variable is present first
-
-if (iscalt.le.0) then
-  ipstdv(ipstnu) = 0
-endif
-
-if (ipstdv(ipstnu).gt.0) then
-  if (iscalt.gt.0) then
-    f_id = ivarfl(isca(iscalt))
-    call field_get_key_struct_var_cal_opt(f_id, vcopt)
-    if (vcopt%idiff .ne. 0) then
-      call field_find_or_create('tplus', itycat, ityloc, idim1, iflid)
-      call field_find_or_create('tstar', itycat, ityloc, idim1, iflid)
-    endif
-  endif
-endif
-
 ! In case of ALE or boundary efforts postprocessing, create appropriate field
 
 if (iale.ge.1 .or. ipstdv(ipstfo).ne.0) then

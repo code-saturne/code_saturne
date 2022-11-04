@@ -313,24 +313,6 @@ if (numtyp .eq. -2) then
 
   endif
 
-  ! Nusselt at the boundary
-  ! -----------------------
-
-  if (ipstdv(ipstnu).ne.0) then
-
-    idimt = 1        ! variable dimension
-    ientla = .true.  ! interleaved values
-    ivarpr = .false. ! defined on work array
-
-    ! Compute variable on boundary faces
-
-    call post_boundary_nusselt(nfbrps, lstfbr, trafbr)
-
-    call post_write_var(nummai, 'Dimensionless heat flux', idimt, ientla, ivarpr,  &
-                        ntcabs, ttcabs, rbid, rbid, trafbr)
-
-  endif ! end of test on output of Nusselt
-
 endif ! end of test on postprocessing mesh number
 
 !----

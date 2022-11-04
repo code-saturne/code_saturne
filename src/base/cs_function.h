@@ -320,6 +320,19 @@ cs_function_by_name_try(const char  *name);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Assig a label to a function object.
+ *
+ * \param[in, out]  f      pointer to associated function handle
+ * \param[in]       label  associated label
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_function_set_label(cs_function_t   *f,
+                      const char      *label);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Log function definition setup information.
  */
 /*----------------------------------------------------------------------------*/

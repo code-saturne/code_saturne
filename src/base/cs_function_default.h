@@ -88,6 +88,39 @@ cs_function_t *
 cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define functions based on code_saturne case setup.
+
+ * \return  pointer to the associated function object in case of success,
+ *          or NULL in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_function_t *
+cs_function_define_boundary_nusselt(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute local Nusselt number near boundary.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        ignored
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_function_boundary_nusselt(int               location_id,
+                             cs_lnum_t         n_elts,
+                             const cs_lnum_t  *elt_ids,
+                             void             *input,
+                             void             *vals);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

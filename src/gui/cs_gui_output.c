@@ -61,6 +61,7 @@
 #include "cs_post.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_function_default.h"
 #include "cs_prototypes.h"
 #include "cs_thermal_model.h"
 #include "cs_time_moment.h"
@@ -691,8 +692,9 @@ void CS_PROCF (cspstb, CSPSTB) (int  *ipstdv)
       }
     }
 
-    if (_surfacic_variable_post("boundary_layer_nusselt", false))
-      ipstdv[4] = 1;
+    if (_surfacic_variable_post("boundary_layer_nusselt", false)) {
+      cs_function_define_boundary_nusselt();
+    }
   }
 }
 

@@ -133,6 +133,25 @@ cs_field_gradient_tensor(const cs_field_t          *f,
                          int                        inc,
                          cs_real_63_t     *restrict grad);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the values of a scalar field at boundary face I' positions.
+ *
+ * \param[in]       f               pointer to field
+ * \param[in]       use_previous_t  should we use values from the previous
+ *                                  time step ?
+ * \param[in]       inc             if 0, solve on increment; 1 otherwise
+ * \param[out]      grad            gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
+                                         bool               use_previous_t,
+                                         cs_lnum_t          n_faces,
+                                         const cs_lnum_t   *face_ids,
+                                         cs_real_t          var_iprime[]);
+
 /*----------------------------------------------------------------------------
  * Interpolate field values at a given set of points.
  *

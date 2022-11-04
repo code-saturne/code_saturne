@@ -230,7 +230,6 @@ ipstdv(ipstfo) = 0 ! should be 1 by default for Navier-Stokes cases
 ipstdv(ipstyp) = 1
 ipstdv(ipsttp) = 0
 ipstdv(ipstft) = 1
-ipstdv(ipstnu) = 0
 
 ! Ici entsor.f90 est completement initialise
 

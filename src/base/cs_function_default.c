@@ -53,14 +53,18 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_elec_model.h"
+#include "cs_field_default.h"
+#include "cs_field_operator.h"
 #include "cs_function.h"
 #include "cs_function_default.h"
 #include "cs_mesh_quantities.h"
 #include "cs_math.h"
-#include "cs_post.h"
+#include "cs_parameters.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
+#include "cs_post.h"
 #include "cs_rotation.h"
+#include "cs_thermal_model.h"
 #include "cs_turbomachinery.h"
 
 /*----------------------------------------------------------------------------*/
@@ -529,6 +533,269 @@ cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id)
       f->post_vis = CS_POST_ON_LOCATION;
 
   return f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define functions based on code_saturne case setup.
+
+ * \return  pointer to the associated function object in case of success,
+ *          or NULL in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_function_t *
+cs_function_define_boundary_nusselt(void)
+{
+  cs_function_t *f = NULL;
+
+  /* Create appropriate fields if needed;
+     check that a thermal variable is present first */
+
+  cs_field_t *f_t = cs_thermal_model_field();
+
+  if (f_t == NULL)
+    return f;
+
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f_t);
+
+  if (eqp->idiff != 0) {
+    int type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
+    int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
+
+    cs_field_find_or_create("tplus", type, location_id, 1, false);
+    cs_field_find_or_create("tstar", type, location_id, 1, false);
+  }
+
+  f = cs_function_define_by_func("boundary_layer_nusselt",
+                                 CS_MESH_LOCATION_BOUNDARY_FACES,
+                                 1,
+                                 false,
+                                 CS_REAL_TYPE,
+                                 cs_function_boundary_nusselt,
+                                 cs_glob_mesh);
+
+  cs_function_set_label(f, "Dimensionless heat flux");
+
+  f->type = CS_FUNCTION_INTENSIVE;
+
+  f->post_vis = CS_POST_ON_LOCATION;
+
+  return f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute local Nusselt number near boundary.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        ignored
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_function_boundary_nusselt(int               location_id,
+                             cs_lnum_t         n_elts,
+                             const cs_lnum_t  *elt_ids,
+                             void             *input,
+                             void             *vals)
+{
+  CS_UNUSED(input);
+  assert(location_id == CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  cs_real_t *bnussl = vals;
+
+  /* Remarks:
+   *
+   * This function uses local "boundary-only" reconstruction when possible,
+   * to reduce computational cost.
+   *
+   * A more general solution would be to compute the boundary thermal flux
+   * using cs_flux_through_surface(), dividing by the face surfaces,
+   * then removing the convective part if present:
+   * (b_mass_flux/face_surf)*(coefa + coefb*t_cel)
+   *
+   * And finally multiplying by:
+   * b_face_dist / (xvsl * tplus * tstar)
+   *
+   * Where xvsl is the thermal diffusivity (uniform or not) of the adjancent cell.
+   *
+   * This would present the advantage of factoring more code, but in this case,
+   * a boundary-only version of the cs_flux_through_surface function could be useful
+   * so as to allow computing gradients only at the boundary (at least when
+   * least-squares are used).
+   */
+
+  /* T+ and T* if saved */
+
+  const cs_field_t *f_tplus = cs_field_by_name_try("tplus");
+  const cs_field_t *f_tstar = cs_field_by_name_try("tstar");
+
+  if (f_tplus != NULL && f_tstar != NULL) {
+
+    cs_field_t *f_t = cs_thermal_model_field();
+    cs_real_t *tscalp = f_t->val_pre;
+
+    cs_real_t *tplus = f_tplus->val;
+    cs_real_t *tstar = f_tstar->val;
+
+    /* Boundary condition pointers for diffusion */
+
+    cs_real_t *cofaf = f_t->bc_coeffs->af;
+    cs_real_t *cofbf = f_t->bc_coeffs->bf;
+
+    /* Boundary condition pointers for diffusion with coupling */
+
+    cs_real_t *hext = f_t->bc_coeffs->hext;
+    cs_real_t *hint = f_t->bc_coeffs->hint;
+
+    /* Compute variable values at boundary faces */
+
+    const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+    const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
+    const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+    const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f_t);
+
+    const bool *is_coupled = NULL;
+
+    cs_real_t *theipb = NULL, *dist_theipb = NULL;
+    BFT_MALLOC(theipb, n_elts, cs_real_t);
+
+    /* Reconstructed fluxes */
+
+    if (eqp->ircflu > 0 && cs_glob_space_disc->itbrrb == 1) {
+
+      cs_field_gradient_boundary_iprime_scalar(f_t,
+                                               false, /* use_previous_t */
+                                               n_elts,
+                                               elt_ids,
+                                               theipb);
+
+      /* In previous (Fortran) version, we used the previous value for
+         the thermal scalar, with the current gradient. This might be
+         an error, but for now, add term to obtain similar behavior... */
+
+      cs_real_t *tscal = f_t->val;
+
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t j = (elt_ids != NULL) ? elt_ids[i] : i;
+        cs_lnum_t k = b_face_cells[j];
+        theipb[i] += tscalp[k] - tscal[k];
+      }
+
+    }
+    else {
+
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t j = (elt_ids != NULL) ? elt_ids[i] : i;
+        theipb[i] = tscalp[b_face_cells[j]];
+      }
+
+    }
+
+    /* Special case for internal coupling */
+
+    if (eqp->icoupl > 0) {
+
+      cs_real_t *loc_theipb;
+      BFT_MALLOC(loc_theipb, n_b_faces, cs_real_t);
+      BFT_MALLOC(dist_theipb, n_b_faces, cs_real_t);
+
+      for (cs_lnum_t i = 0; i < n_b_faces; i++)
+        loc_theipb[i] = 0;
+
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t j = (elt_ids != NULL) ? elt_ids[i] : i;
+        loc_theipb[j] = theipb[i];
+      }
+
+      const int coupling_key_id = cs_field_key_id("coupling_entity");
+      int coupling_id = cs_field_get_key_int(f_t, coupling_key_id);
+      const cs_internal_coupling_t  *cpl
+        = cs_internal_coupling_by_id(coupling_id);
+
+      is_coupled = cpl->coupled_faces;
+
+      cs_ic_field_dist_data_by_face_id(f_t->id, 1, loc_theipb, dist_theipb);
+
+      BFT_FREE(loc_theipb);
+
+    }
+
+    /* Physical property pointers */
+
+    const int kivisl = cs_field_key_id("diffusivity_id");
+    const int diff_id = cs_field_get_key_int(f_t, kivisl);
+
+    cs_real_t visls_0 = -1;
+    cs_lnum_t viscl_step = 0;
+
+    const cs_real_t *cviscl = &visls_0;
+
+    if (diff_id > -1) {
+      cviscl = cs_field_by_id(diff_id)->val;
+      viscl_step = 1;
+    }
+    else {
+      const int kvisls0 = cs_field_key_id("diffusivity_ref");
+      visls_0 = cs_field_get_key_double(f_t, kvisls0);
+    }
+
+    /* Compute using reconstructed temperature value in boundary cells */
+
+    const cs_real_t *b_dist = fvq->b_dist;
+    const cs_real_t *srfbn = fvq->b_f_face_surf;
+
+    bool have_coupled = (   eqp->icoupl > 0
+                         && (  cs_glob_time_step->nt_cur
+                             > cs_glob_time_step->nt_prev));
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+      cs_lnum_t face_id = (elt_ids != NULL) ? elt_ids[i] : i;
+      cs_lnum_t cell_id = b_face_cells[face_id];
+
+      cs_real_t numer =   (cofaf[face_id] + cofbf[face_id]*theipb[i])
+                        * b_dist[face_id];
+
+      /* here numer = 0 if current face is coupled.
+         FIXME exchange coefs not computed at start of calculation */
+
+      if (have_coupled) {
+        if (is_coupled[face_id]) {
+          cs_real_t heq =   hext[face_id] * hint[face_id]
+                          / ((hext[face_id] + hint[face_id]) * srfbn[face_id]);
+          numer = heq*(theipb[i]-dist_theipb[face_id]) * b_dist[face_id];
+        }
+      }
+
+      cs_real_t xvsl = cviscl[cell_id * viscl_step];
+
+      cs_real_t denom = xvsl * tplus[face_id] * tstar[face_id];
+
+      if (fabs(denom) > 1e-30)
+        bnussl[i] = numer / denom;
+      else
+        bnussl[i] = 0.;
+
+    }
+
+    BFT_FREE(dist_theipb);
+    BFT_FREE(theipb);
+
+  }
+  else { /* Default if not computable */
+
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      bnussl[i] = -1.;
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
