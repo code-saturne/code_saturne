@@ -52,6 +52,7 @@
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
+#include "cs_balance_by_zone.h"
 #include "cs_elec_model.h"
 #include "cs_field_default.h"
 #include "cs_field_operator.h"
@@ -537,8 +538,57 @@ cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define functions based on code_saturne case setup.
+ * \brief Define function object for comutation of boundary thermal flux.
+ *
+ * \return  pointer to the associated function object in case of success,
+ *          or NULL in case of error
+ */
+/*----------------------------------------------------------------------------*/
 
+cs_function_t *
+cs_function_define_boundary_thermal_flux(void)
+{
+  cs_function_t *f = NULL;
+
+  /* Create appropriate fields if needed;
+     check that a thermal variable is present first */
+
+  cs_field_t *f_t = cs_thermal_model_field();
+
+  if (f_t == NULL)
+    return f;
+
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f_t);
+
+  if (eqp->idiff != 0) {
+    int type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
+    int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
+
+    cs_field_find_or_create("tplus", type, location_id, 1, false);
+    cs_field_find_or_create("tstar", type, location_id, 1, false);
+  }
+
+  f = cs_function_define_by_func("boundary_thermal_flux",
+                                 CS_MESH_LOCATION_BOUNDARY_FACES,
+                                 1,
+                                 false,
+                                 CS_REAL_TYPE,
+                                 cs_function_boundary_thermal_flux,
+                                 cs_glob_mesh);
+
+  cs_function_set_label(f, "Input thermal flux");
+
+  f->type = CS_FUNCTION_INTENSIVE;
+
+  f->post_vis = CS_POST_ON_LOCATION;
+
+  return f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define function for computation of boundary layer Nusselt.
+ *
  * \return  pointer to the associated function object in case of success,
  *          or NULL in case of error
  */
@@ -586,7 +636,78 @@ cs_function_define_boundary_nusselt(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute thermal flux at boundary (in \f$ W\,m^{-2} \f$),
+ *
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        ignored
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_function_boundary_thermal_flux(int               location_id,
+                                  cs_lnum_t         n_elts,
+                                  const cs_lnum_t  *elt_ids,
+                                  void             *input,
+                                  void             *vals)
+{
+  CS_UNUSED(input);
+  assert(location_id == CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  cs_real_t *b_face_flux = vals;
+
+  cs_field_t *f_t = cs_thermal_model_field();
+
+  if (f_t != NULL) {
+
+    const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+    const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+
+    cs_real_t normal[] = {0, 0, 0};
+
+    cs_flux_through_surface(f_t->name,
+                            normal,
+                            n_elts,
+                            0,
+                            elt_ids,
+                            NULL,
+                            NULL,
+                            b_face_flux,
+                            NULL);
+
+    if (elt_ids != NULL) {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t e_id = elt_ids[i];
+        b_face_flux[i] /= b_face_surf[e_id];
+      }
+    }
+    else {
+      for (cs_lnum_t f_id = 0; f_id < n_elts; f_id++) {
+        b_face_flux[f_id] /= b_face_surf[f_id];
+      }
+    }
+
+  }
+
+  else { /* Default if not available */
+
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      b_face_flux[i] = 0.;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute local Nusselt number near boundary.
+ *
+ * This function matches the cs_eval_at_location_t function profile.
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements

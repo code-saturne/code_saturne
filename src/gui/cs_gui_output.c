@@ -656,7 +656,7 @@ void CS_PROCF (cspstb, CSPSTB) (int  *ipstdv)
 {
   /* Surfacic variables output */
 
-  for (int i = 0; i < 5; i++)
+  for (int i = 0; i < 3; i++)
     ipstdv[i] = 0;
 
   if (cs_glob_physical_model_flag[CS_GROUNDWATER] == -1) {
@@ -671,8 +671,14 @@ void CS_PROCF (cspstb, CSPSTB) (int  *ipstdv)
       ipstdv[1] = 1;
     if (_surfacic_variable_post("tplus", false))
       ipstdv[2] = 1;
-    if (_surfacic_variable_post("thermal_flux", true))
-      ipstdv[3] = 1;
+
+    if (_surfacic_variable_post("thermal_flux", true)) {
+      /* TODO: move this definition earlier (with thermal model),
+         and only handle "post_vis" option here, to also allow
+         for logging */
+      cs_function_define_boundary_thermal_flux();
+    }
+
     bool post_b_temp = _surfacic_variable_post("boundary_temperature", true);
     /* activate by default using GUI; ignore for non-temperature variable
        when properties not present in GUI, or the thermal model is not

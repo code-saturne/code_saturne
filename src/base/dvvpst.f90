@@ -79,7 +79,7 @@ implicit none
 
 integer          nummai , numtyp
 integer          nvar
-integer          ncelps , nfbrps
+integer          nfbrps
 
 integer          lstfbr(nfbrps)
 
@@ -290,28 +290,7 @@ if (numtyp .eq. -2) then
 
     endif ! end of test on presence ot T+
 
-  endif ! end of test on output of y+
-
-  ! Thermal flux at boundary
-  ! ------------------------
-  !  If working with enthalpy, compute an enthalpy flux
-
-  if (ipstdv(ipstft).ne.0) then
-
-    if (iscalt.gt.0) then
-
-      call post_boundary_thermal_flux(nfbrps, lstfbr, trafbr)
-
-      idimt = 1        ! variable dimension
-      ientla = .true.  ! interleaved values
-      ivarpr = .false. ! defined on work array
-
-      call post_write_var(nummai, 'Input thermal flux', idimt, ientla, ivarpr,  &
-                          ntcabs, ttcabs, rbid, rbid, trafbr)
-
-    endif
-
-  endif
+  endif ! end of test on output of T+
 
 endif ! end of test on postprocessing mesh number
 

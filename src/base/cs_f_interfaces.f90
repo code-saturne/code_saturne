@@ -136,17 +136,6 @@ module cs_f_interfaces
 
     !---------------------------------------------------------------------------
 
-    subroutine post_boundary_thermal_flux &
-      (nfbrps, lstfbr, bflux)
-      use dimens
-      use mesh
-      integer, intent(in)                                        :: nfbrps
-      integer, dimension(nfbrps), intent(in)                     :: lstfbr
-      double precision, dimension(nfbrps), intent(out)           :: bflux
-    end subroutine post_boundary_thermal_flux
-
-    !---------------------------------------------------------------------------
-
     subroutine post_stress &
       (nfbrps, lstfbr, stress)
       use dimens

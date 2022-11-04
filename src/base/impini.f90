@@ -690,8 +690,7 @@ write(nfecra,7532)
 
 write(nfecra,7550)   'ipstfo', ipstdv(ipstfo),                     &
                      'ipstyp', ipstdv(ipstyp),                     &
-                     'ipsttp', ipstdv(ipsttp),                     &
-                     'ipstft', ipstdv(ipstft)
+                     'ipsttp', ipstdv(ipsttp)
 
 write(nfecra,9900)
 
@@ -717,8 +716,7 @@ write(nfecra,9900)
 '       ',a6,' = ',4x,i10,    ' (Force exerted by the',         /,&
 '       ',6x,'   ',4x,10x,    '       fluid on the boundary)',  /,&
 '       ',a6,' = ',4x,i10,    ' (y+ at boundary)',              /,&
-'       ',a6,' = ',4x,i10,    ' (T+ at boundary)',              /,&
-'       ',a6,' = ',4x,i10,    ' (Thermal flux   at boundary)',  /)
+'       ',a6,' = ',4x,i10,    ' (T+ at boundary)',              /)
 
 !===============================================================================
 ! 8. COUPLAGES

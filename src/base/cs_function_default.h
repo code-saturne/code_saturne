@@ -78,7 +78,7 @@ cs_function_default_define(void);
  *        using the a predefined evaluation function.
  *
  * \param[in]   location_id  base associated mesh location id
-
+ *
  * \return  pointer to the associated function object in case of success,
  *          or NULL in case of error
  */
@@ -89,8 +89,20 @@ cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define functions based on code_saturne case setup.
+ * \brief Define function object for computation of boundary thermal flux.
+ *
+ * \return  pointer to the associated function object in case of success,
+ *          or NULL in case of error
+ */
+/*----------------------------------------------------------------------------*/
 
+cs_function_t *
+cs_function_define_boundary_thermal_flux(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define function for computation of boundary layer Nusselt.
+ *
  * \return  pointer to the associated function object in case of success,
  *          or NULL in case of error
  */
@@ -101,7 +113,32 @@ cs_function_define_boundary_nusselt(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute thermal flux at boundary (in \f$ W\,m^{-2} \f$),
+ *
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        ignored
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_function_boundary_thermal_flux(int               location_id,
+                                  cs_lnum_t         n_elts,
+                                  const cs_lnum_t  *elt_ids,
+                                  void             *input,
+                                  void             *vals);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute local Nusselt number near boundary.
+ *
+ * This function matches the cs_eval_at_location_t function profile.
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
