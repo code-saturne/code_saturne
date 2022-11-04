@@ -355,7 +355,7 @@ call csiphy()
 
 ! Postprocessing
 
-call cspstb(ipstdv)
+call cspstb(ipstfo)
 
 ! Define main properties (pointers, checks, ipp) if not in CDO mode only
 if (icdo.lt.2) then

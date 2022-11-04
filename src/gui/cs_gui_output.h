@@ -49,7 +49,7 @@ BEGIN_C_DECLS
  * Determine output boundary fields
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cspstb, CSPSTB) (int  *ipstdv);
+void CS_PROCF (cspstb, CSPSTB) (int  *ipstfo);
 
 /*============================================================================
  * Public function prototypes

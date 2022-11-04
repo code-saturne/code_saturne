@@ -76,7 +76,7 @@ double precision dt(ncelet)
 ! Local variables
 
 integer          n_fields, f_id, flag
-integer          ifac  , istr, icompt, ii
+integer          ifac  , istr, icompt
 integer          mbstru, mbaste
 
 integer          indast, verbosity, visualization

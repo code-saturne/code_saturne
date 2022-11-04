@@ -708,7 +708,7 @@ itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 
 ! In case of ALE or boundary efforts postprocessing, create appropriate field
 
-if (iale.ge.1 .or. ipstdv(ipstfo).ne.0) then
+if (iale.ge.1 .or. ipstfo.ne.0) then
   itycat = FIELD_EXTENSIVE + FIELD_POSTPROCESS
   call field_create('boundary_forces', itycat, ityloc, idim3, inoprv, &
                     iforbr)
@@ -724,18 +724,15 @@ endif
 
 itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 
-! In case of condensation or y+ postprocessing, create appropriate field
+! In case of condensation, create appropriate field
 
-if (icondb.ge.0.or.icondv.ge.0.or.ipstdv(ipstyp).ne.0) then
+if (icondb.ge.0.or.icondv.ge.0) then
   call field_get_id_try('yplus', f_id) ! Test if pre-existing
   call field_find_or_create('yplus', itycat, ityloc, idim1, iyplbr)
   if (f_id .lt. 0) then                ! Set some properties if new
     call field_set_key_str(iyplbr, keylbl, 'Yplus')
     call field_set_key_int(iyplbr, keylog, 1)
   endif
-  ! yplus postprocessed if required
-  flag = POST_ON_LOCATION
-  if (ipstdv(ipstyp).ne.0) call field_set_key_int(iyplbr, keyvis, flag)
 endif
 
 ! Some mappings

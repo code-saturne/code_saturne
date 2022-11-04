@@ -170,6 +170,16 @@ _field_post(const char  *field_type,
   if (f_log != -999)
     cs_field_set_key_int(f, k_log, f_log);
 
+  /* As long as boundary output control is not unified, we need
+     to handle them in a specific manner (as keywors may have
+     been set by the GUI for fields not listed with the commmon
+     hierarchy and "postprocessing_recording" and similar tag) */
+
+  bool allow_default_set = true;
+  if (   f->location_id & CS_MESH_LOCATION_BOUNDARY_FACES
+      && cs_field_is_key_set(f, k_post))
+    allow_default_set = false;
+
   /* Postprocessing outputs */
 
   cs_gui_node_get_status_int(cs_tree_node_get_child
@@ -179,9 +189,11 @@ _field_post(const char  *field_type,
     cs_field_set_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
   else if (f_post == 0)
     cs_field_clear_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
-  else /* status unspecified here but property referenced in tree,
-          could be improved by depending on field type or flags */
+  else if (allow_default_set) { /* status unspecified here but property
+                                   referenced in tree, could be improved by
+                                   depending on field type or flags */
     cs_field_set_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
+  }
 
   cs_gui_node_get_status_int(cs_tree_node_get_child(tn, "probes_recording"),
                              &f_monitor);
@@ -189,12 +201,14 @@ _field_post(const char  *field_type,
     cs_field_set_key_int_bits(f, k_post, CS_POST_MONITOR);
   else if (f_monitor == 0)
     cs_field_clear_key_int_bits(f, k_post, CS_POST_MONITOR);
-  else /* status unspecified here but property referenced in tree,
-          could be improved by depending on field type or flags */
+  else if (allow_default_set) { /* status unspecified here but property
+                                   referenced in tree, could be improved by
+                                   depending on field type or flags */
     if (f->location_id == CS_MESH_LOCATION_CELLS)
       cs_field_set_key_int_bits(f, k_post, CS_POST_MONITOR);
     else
       cs_field_clear_key_int_bits(f, k_post, CS_POST_MONITOR);
+  }
 
   /* Take into account labels */
 
@@ -652,35 +666,76 @@ _selection_func_boundary_cells(void        *input,
  * Determine output boundary fields
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cspstb, CSPSTB) (int  *ipstdv)
+void CS_PROCF (cspstb, CSPSTB) (int  *ipstfo)
 {
   /* Surfacic variables output */
 
-  for (int i = 0; i < 3; i++)
-    ipstdv[i] = 0;
+  *ipstfo = 0;
 
   if (cs_glob_physical_model_flag[CS_GROUNDWATER] == -1) {
     if (_surfacic_variable_post("stress", true))
-      ipstdv[0] += 1;
+      *ipstfo += 1;
     if (_surfacic_variable_post("stress_tangential", false))
-      ipstdv[0] += 2;
+      *ipstfo += 2;
     if (_surfacic_variable_post("stress_normal", false))
-      ipstdv[0] += 4;
+      *ipstfo += 4;
 
-    if (_surfacic_variable_post("yplus", true))
-      ipstdv[1] = 1;
-    if (_surfacic_variable_post("tplus", false))
-      ipstdv[2] = 1;
+    /* TODO: move this following field an function definitions earlier
+       (with thermal model), and only handle "post_vis" option here,
+       to also allow for logging */
+
+    int k_vis = cs_field_key_id("post_vis");
+
+    if (_surfacic_variable_post("yplus", true)) {
+      cs_field_t *bf = cs_field_by_name_try("yplus");
+      if (bf == NULL) {
+        bf = cs_field_create("yplus",
+                             CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                             CS_MESH_LOCATION_BOUNDARY_FACES,
+                             1,
+                             false);
+        cs_field_set_key_int(bf, cs_field_key_id("log"), 1);
+        cs_field_set_key_str(bf, cs_field_key_id("label"), "Yplus");
+      }
+      cs_field_set_key_int(bf, k_vis, 1);
+    }
 
     if (_surfacic_variable_post("thermal_flux", true)) {
-      /* TODO: move this definition earlier (with thermal model),
-         and only handle "post_vis" option here, to also allow
-         for logging */
       cs_function_define_boundary_thermal_flux();
     }
 
+    if (_surfacic_variable_post("boundary_layer_nusselt", false)) {
+      cs_function_define_boundary_nusselt();
+    }
+
+    if (cs_glob_thermal_model->itherm != CS_THERMAL_MODEL_NONE) {
+      int post_vis = _surfacic_variable_post("tplus", true) ? 1 : 0;
+      cs_field_t *bf = cs_field_by_name_try("tplus");
+      if (bf != NULL)
+        cs_field_set_key_int(bf, k_vis, post_vis);
+      else if (post_vis) {
+        bf = cs_field_create("tplus",
+                             CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                             CS_MESH_LOCATION_BOUNDARY_FACES,
+                             1,
+                             false);
+        cs_field_set_key_int(bf, k_vis, post_vis);
+        switch (cs_glob_thermal_model->itherm) {
+        case CS_THERMAL_MODEL_ENTHALPY:
+          cs_field_set_key_str(bf, cs_field_key_id("label"), "Hplus");
+          break;
+        case CS_THERMAL_MODEL_TOTAL_ENERGY:
+          cs_field_set_key_str(bf, cs_field_key_id("label"), "Eplus");
+          break;
+        default:
+          cs_field_set_key_str(bf, cs_field_key_id("label"), "Tplus");
+          break;
+        }
+      }
+    }
+
     bool post_b_temp = _surfacic_variable_post("boundary_temperature", true);
-    /* activate by default using GUI; ignore for non-temperature variable
+    /* Activate by default using GUI; ignore for non-temperature variable
        when properties not present in GUI, or the thermal model is not
        set in the GUI, as this implies the GUI was probably not used
        and we cannot determine easily whether enthalpy to temperature
@@ -692,14 +747,8 @@ void CS_PROCF (cspstb, CSPSTB) (int  *ipstdv)
     }
     if (post_b_temp) {
       cs_field_t *bf = cs_parameters_add_boundary_temperature();
-      if (bf != NULL) {
-        int k_vis = cs_field_key_id("post_vis");
+      if (bf != NULL)
         cs_field_set_key_int(bf, k_vis, 1);
-      }
-    }
-
-    if (_surfacic_variable_post("boundary_layer_nusselt", false)) {
-      cs_function_define_boundary_nusselt();
     }
   }
 }

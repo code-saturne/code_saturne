@@ -688,9 +688,7 @@ write(nfecra,7532)
 
 !   - Post-traitement automatique (bord)
 
-write(nfecra,7550)   'ipstfo', ipstdv(ipstfo),                     &
-                     'ipstyp', ipstdv(ipstyp),                     &
-                     'ipsttp', ipstdv(ipsttp)
+write(nfecra,7550)   'ipstfo', ipstfo
 
 write(nfecra,9900)
 
@@ -712,11 +710,9 @@ write(nfecra,9900)
 ' --- run_solver.log files',                                    /,&
 '       NTLIST = ',4x,i10,    ' (Output frequency     )',       /)
  7550 format(                                                     &
-' --- Additional post-processing variables (ipstdv)',           /,&
+' --- Additional post-processing variables',                    /,&
 '       ',a6,' = ',4x,i10,    ' (Force exerted by the',         /,&
-'       ',6x,'   ',4x,10x,    '       fluid on the boundary)',  /,&
-'       ',a6,' = ',4x,i10,    ' (y+ at boundary)',              /,&
-'       ',a6,' = ',4x,i10,    ' (T+ at boundary)',              /)
+'       ',6x,'   ',4x,10x,    '       fluid on the boundary)',  /)
 
 !===============================================================================
 ! 8. COUPLAGES

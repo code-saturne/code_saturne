@@ -162,19 +162,8 @@ module entsor
   !> \addtogroup other_output
   !> \{
 
-  !> indicates the data to post-process on the boundary mesh (the boundary mesh
-  !> must be associated with an active writer). \ref ipstdv "ipstdv"(key)
-  !> indicates which fields should be created and output on the boundary,
-  !> with \c key in \ref ipstfo, \ref ipstyp, \ref ipsttp.
-  integer, save :: ipstdv(3)
-
   !> post-processed property: Efforts (0: none 1: all; 2: tangent; 4: normal)
-  integer    ipstfo
-  !> post-processed property: \f$ y^+ \f$ at the boundary
-  integer    ipstyp
-  !> post-processed property :\f$ T^+ \f$ at the boundary
-  integer    ipsttp
-  parameter (ipstfo=1, ipstyp=2, ipsttp=3)
+  integer, save :: ipstfo
   !> \}
   !> \}
 

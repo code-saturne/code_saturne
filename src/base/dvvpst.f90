@@ -104,10 +104,6 @@ double precision, dimension(:,:,:), pointer :: cofbtp
 
 !===============================================================================
 
-!===============================================================================
-! Boundary
-!===============================================================================
-
 if (numtyp .eq. -2) then
 
   !  Projection of variables at boundary with no reconstruction
@@ -215,7 +211,7 @@ if (numtyp .eq. -2) then
   ! Handle stresses at boundary
   ! ---------------------------
 
-  if (iand(ipstdv(ipstfo), 1) .ne. 0) then
+  if (iand(ipstfo, 1) .ne. 0) then
 
     ! Compute variable values on boundary faces
 
@@ -230,7 +226,7 @@ if (numtyp .eq. -2) then
 
   endif
 
-  if (iand(ipstdv(ipstfo), 2) .ne. 0) then
+  if (iand(ipstfo, 2) .ne. 0) then
 
     ! Compute variable values on boundary faces
 
@@ -245,7 +241,7 @@ if (numtyp .eq. -2) then
 
   endif
 
-  if (iand(ipstdv(ipstfo), 4) .ne. 0) then
+  if (iand(ipstfo, 4) .ne. 0) then
 
     ! Calcul des valeurs de la variable sur les faces de bord
 
@@ -259,38 +255,6 @@ if (numtyp .eq. -2) then
                         ntcabs, ttcabs, rbid, rbid, trafbr)
 
   endif
-
-  ! T+ near the boundary
-  ! --------------------
-
-  if (ipstdv(ipsttp).ne.0) then
-
-    call field_get_id_try('tplus', itplus)
-
-    if (itplus.ge.0) then
-
-      call field_get_val_s(itplus, tplusp)
-
-      idimt = 1        ! variable dimension
-      ientla = .true.  ! interleaved values
-      ivarpr = .true.  ! defined on parent array
-
-      if (itherm .eq. 1) then
-        name80 = 'Tplus'
-      else if (itherm .eq. 2) then
-        name80 = 'Hplus'
-      else if (itherm .eq. 3) then
-        name80 = 'Eplus'
-      else
-        return
-      endif
-
-      call post_write_var(nummai, name80, idimt, ientla, ivarpr,  &
-                          ntcabs, ttcabs, rbid, rbid, tplusp)
-
-    endif ! end of test on presence ot T+
-
-  endif ! end of test on output of T+
 
 endif ! end of test on postprocessing mesh number
 

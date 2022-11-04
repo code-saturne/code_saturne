@@ -560,14 +560,6 @@ cs_function_define_boundary_thermal_flux(void)
 
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f_t);
 
-  if (eqp->idiff != 0) {
-    int type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
-    int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
-
-    cs_field_find_or_create("tplus", type, location_id, 1, false);
-    cs_field_find_or_create("tstar", type, location_id, 1, false);
-  }
-
   f = cs_function_define_by_func("boundary_thermal_flux",
                                  CS_MESH_LOCATION_BOUNDARY_FACES,
                                  1,
@@ -610,26 +602,37 @@ cs_function_define_boundary_nusselt(void)
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f_t);
 
   if (eqp->idiff != 0) {
-    int type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
-    int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
 
-    cs_field_find_or_create("tplus", type, location_id, 1, false);
-    cs_field_find_or_create("tstar", type, location_id, 1, false);
+    char *names[] = {"tplus", "tstar"};
+
+    for (int i = 0; i < 2; i++) {
+
+      cs_field_t *bf = cs_field_by_name_try(names[i]);
+      if (bf == NULL) {
+        int type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
+        int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
+
+        bf = cs_field_create(names[i], type, location_id, 1, false);
+        cs_field_set_key_int(bf, cs_field_key_id("log"), 0);
+        cs_field_set_key_int(bf, cs_field_key_id("post_vis"), 0);
+      }
+    }
+
+    f = cs_function_define_by_func("boundary_layer_nusselt",
+                                   CS_MESH_LOCATION_BOUNDARY_FACES,
+                                   1,
+                                   false,
+                                   CS_REAL_TYPE,
+                                   cs_function_boundary_nusselt,
+                                   cs_glob_mesh);
+
+    cs_function_set_label(f, "Dimensionless heat flux");
+
+    f->type = CS_FUNCTION_INTENSIVE;
+
+    f->post_vis = CS_POST_ON_LOCATION;
+
   }
-
-  f = cs_function_define_by_func("boundary_layer_nusselt",
-                                 CS_MESH_LOCATION_BOUNDARY_FACES,
-                                 1,
-                                 false,
-                                 CS_REAL_TYPE,
-                                 cs_function_boundary_nusselt,
-                                 cs_glob_mesh);
-
-  cs_function_set_label(f, "Dimensionless heat flux");
-
-  f->type = CS_FUNCTION_INTENSIVE;
-
-  f->post_vis = CS_POST_ON_LOCATION;
 
   return f;
 }

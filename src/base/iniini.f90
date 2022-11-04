@@ -226,9 +226,7 @@ ntlist = 1
 
 ! ---> Post traitement automatique (bord)
 
-ipstdv(ipstfo) = 0 ! should be 1 by default for Navier-Stokes cases
-ipstdv(ipstyp) = 1
-ipstdv(ipsttp) = 0
+ipstfo = 0 ! should be 1 by default for Navier-Stokes cases
 
 ! Ici entsor.f90 est completement initialise
 
