@@ -101,16 +101,19 @@ typedef struct {
                                     (L2 norm equals area of the face) */
   cs_real_t     *b_f_face_normal;/* Fluid surface normal of border faces.
                                     (L2 norm equals area of the face) */
-  cs_real_t     *c_w_face_normal;/* Solid surface normal in the cell.
+  cs_real_t     *c_w_face_normal;/* Solid surface normal immersed in the cells.
                                     (L2 norm equals area of the face) */
   cs_real_t     *i_face_cog;     /* Center of gravity of interior faces */
   cs_real_t     *b_face_cog;     /* Center of gravity of border faces */
-  cs_real_t     *i_f_face_cog_celli;/* Center of gravity of fluid interior faces.
-                                       From celli perspective - it allows discontinuity */
-  cs_real_t     *i_f_face_cog_cellj;/* Center of gravity of fluid interior faces.
-                                       From cellj perspective - it allows discontinuity */
+  cs_real_t     *i_f_face_cog_0; /* Center of gravity of fluid interior faces.
+                                    From cell 0 perspective.
+                                    It allows discontinuity */
+  cs_real_t     *i_f_face_cog_1; /* Center of gravity of fluid interior faces.
+                                    From cell 1 perspective.
+                                    It allows discontinuity */
   cs_real_t     *b_f_face_cog;   /* Center of gravity of fluid border faces */
-  cs_real_t     *c_w_face_cog;   /* Center of gravity of solid face in cells */
+  cs_real_t     *c_w_face_cog;   /* Center of gravity of solid face
+                                    immersed in the cells */
 
   cs_real_t     *i_face_surf;    /* Surface of interior faces. */
   cs_real_t     *b_face_surf;    /* Surface of boundary faces. */
@@ -303,17 +306,21 @@ void
 cs_mesh_init_fluid_sections(const cs_mesh_t       *mesh,
                             cs_mesh_quantities_t  *mesh_quantities);
 
-/*----------------------------------------------------------------------------
- * Compute solid mesh quantities at the initial step
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute cell and faces quantities needed at the immersed boundaries.
  *
- * parameters:
- *   mesh            <-- pointer to a cs_mesh_t structure
- *   mesh_quantities <-> pointer to a cs_mesh_quantities_t structure
- *----------------------------------------------------------------------------*/
+ * \param[in]       m              pointer to mesh structure
+ * \param[in]       cen_points     point belonging to the immersed solid plane
+ *                                 for each cell
+ * \param[in, out]  mq             pointer to mesh quantities structures.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_quantities_solid_compute(const cs_mesh_t       *mesh,
-                                 cs_mesh_quantities_t  *mesh_quantities);
+cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
+                                 const cs_real_3_t     *cen_points,
+                                 cs_mesh_quantities_t  *mq);
 
 /*----------------------------------------------------------------------------
  * Compute mesh quantities

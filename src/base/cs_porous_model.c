@@ -234,8 +234,8 @@ cs_porous_model_set_has_disable_flag(int  flag)
         mq->b_f_face_normal = mq->b_face_normal;
         mq->i_f_face_surf   = mq->i_face_surf;
         mq->b_f_face_surf   = mq->b_face_surf;
-        mq->i_f_face_cog_celli = mq->i_face_cog;
-        mq->i_f_face_cog_cellj = mq->i_face_cog;
+        mq->i_f_face_cog_0 = mq->i_face_cog;
+        mq->i_f_face_cog_1 = mq->i_face_cog;
         mq->b_f_face_cog = mq->b_face_cog;
         mq->i_f_face_factor = NULL;
         mq->b_f_face_factor = NULL;
@@ -257,8 +257,8 @@ cs_porous_model_set_has_disable_flag(int  flag)
         mq->i_f_face_factor
           = (cs_real_2_t *)cs_field_by_name("i_f_face_factor")->val;
         mq->b_f_face_factor = cs_field_by_name("b_f_face_factor")->val;
-        mq->i_f_face_cog_celli = cs_field_by_name("i_f_face_cog_celli")->val;
-        mq->i_f_face_cog_cellj = cs_field_by_name("i_f_face_cog_cellj")->val;
+        mq->i_f_face_cog_0  = cs_field_by_name("i_f_face_cog_0")->val;
+        mq->i_f_face_cog_1  = cs_field_by_name("i_f_face_cog_1")->val;
         mq->b_f_face_cog    = cs_field_by_name("b_f_face_cog")->val;
         mq->cell_f_cen      = cs_field_by_name("cell_f_cen")->val;
         mq->c_w_face_normal = cs_field_by_name("c_w_face_normal")->val;
@@ -290,14 +290,41 @@ cs_porous_model_init_fluid_quantities(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute solid quantities
+ * \brief  Compute solid quantities and update porosity field
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_f_mesh_quantities_solid_compute(void)
 {
-  cs_mesh_quantities_solid_compute(cs_glob_mesh, cs_glob_mesh_quantities);
+  const cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  cs_real_3_t *cen_points = NULL;
+  cs_field_t *f = cs_field_by_name_try("cell_scan_points_cog");
+  if (f != NULL)
+    cen_points = (cs_real_3_t *)f->val;
+
+  cs_mesh_quantities_solid_compute(m, cen_points,  mq);
+
+  /* Update the cell porosity field value */
+  cs_field_t *f_poro = cs_field_by_name("porosity");
+  cs_real_3_t *c_w_face_normal = (cs_real_3_t *)mq->c_w_face_normal;
+
+  /* Reactivate cells at the interface between fluid and solid */
+  for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
+    cs_real_t porosity = mq->cell_f_vol[c_id]/mq->cell_vol[c_id];
+    if (porosity > 1.)
+      porosity = 1.;
+    if (porosity > cs_math_epzero &&
+        cs_math_3_norm(c_w_face_normal[c_id]) > 0.) {
+      f_poro->val[c_id] = porosity;
+      mq->c_disable_flag[c_id] = 0;
+    }
+  }
+  /* synchronize for use in fluid face factor calculation */
+  cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_poro->val);
+
 }
 
 /*----------------------------------------------------------------------------*/

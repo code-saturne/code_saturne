@@ -46,8 +46,6 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
-#include "cs_field.h"
-#include "cs_field_operator.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_math.h"
@@ -2181,19 +2179,30 @@ _b_thickness(const cs_mesh_t             *m,
  *           Sum  Surf(Fi)
  *           i=0
  *
- * \param[in]   mesh              pointer to mesh structure
- * \param[in]   mesh_quantities   pointer to mesh quantities structure
- * \param[in]   i_f_face_cell_normal fluid face normal (cell to face)
- * \param[in]   i_f_face_cell_cog fluid face center of gravity (cell to face)
- * \param[out]  cell_cen          approximate cell centers
+ * \param[in]   m                     pointer to mesh structure
+ * \param[in]   i_f_face_cell_normal  fluid face normal (cell to face)
+ * \param[in]   i_f_face_cog_0        fluid face centers of gravity
+ *                                    (two values for the two sides)
+ * \param[in]   i_f_face_cog_1        fluid face centers of gravity
+ *                                    (two values for the two sides)
+ * \param[in]   b_f_face_normal       fluid surface normal of border faces
+ * \param[in]   b_f_face_cog          fluid center of gravity of border faces
+ * \param[in]   c_w_face_normal       solid surface normal immersed in the cell
+ * \param[in]   c_w_face_cog          solid center of gravity immersed in the
+ *                                    cell
+ * \param[out]  cell_cen              approximate cell centers
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_mesh_quantities_cell_faces_cog_solid(const cs_mesh_t  *m,
-                                      const cs_mesh_quantities_t  *mq,
+_mesh_quantities_cell_faces_cog_solid(const cs_mesh_t    *m,
                                       const cs_real_23_t i_f_face_cell_normal[],
-                                      const cs_real_23_t i_f_face_cell_cog[],
+                                      const cs_real_3_t  i_f_face_cog_0[],
+                                      const cs_real_3_t  i_f_face_cog_1[],
+                                      const cs_real_3_t  b_f_face_normal[],
+                                      const cs_real_3_t  b_f_face_cog[],
+                                      const cs_real_3_t  c_w_face_normal[],
+                                      const cs_real_3_t  c_w_face_cog[],
                                       cs_real_3_t        cell_cen[])
 {
   /* Mesh connectivity */
@@ -2206,14 +2215,6 @@ _mesh_quantities_cell_faces_cog_solid(const cs_mesh_t  *m,
     = (const cs_lnum_2_t *)(m->i_face_cells);
   const  cs_lnum_t  *b_face_cells
     = (const cs_lnum_t *)(m->b_face_cells);
-  const  cs_real_3_t  *c_w_face_normal
-    = (const cs_real_3_t *)(mq->c_w_face_normal);
-  const  cs_real_3_t  *c_w_face_cog
-    = (const cs_real_3_t *)(mq->c_w_face_cog);
-  const cs_real_3_t *b_f_face_cog
-    = (cs_real_3_t *)mq->b_f_face_cog;
-  const cs_real_3_t *b_f_face_normal
-    = (cs_real_3_t *)mq->b_f_face_normal;
 
   /* Initialization */
 
@@ -2229,26 +2230,29 @@ _mesh_quantities_cell_faces_cog_solid(const cs_mesh_t  *m,
     /* For each cell sharing the internal face, we update
      * cell_cen and cell_area */
 
-    cs_lnum_2_t c_id = {i_face_cells[f_id][0], i_face_cells[f_id][1]};
-
     /* Computation of face area  */
-    cs_real_2_t area = {0.,0.};
     for (cs_lnum_t ic = 0; ic < 2; ic++) {
 
-      area[ic] = cs_math_3_norm(i_f_face_cell_normal[f_id][ic]);
+      cs_lnum_t c_id = i_face_cells[f_id][ic];
 
-      if (c_id[ic] > -1) {
+      cs_real_t area = cs_math_3_norm(i_f_face_cell_normal[f_id][ic]);
+      const cs_real_t *_i_f_face_cog = (ic == 0) ?
+                                       i_f_face_cog_0[f_id]:
+                                       i_f_face_cog_1[f_id];
 
-        cell_area[c_id[ic]] += area[ic];
+
+      if (c_id > -1) {
+
+        cell_area[c_id] += area;
 
         for (cs_lnum_t i = 0; i < 3; i++)
-          cell_cen[c_id[ic]][i] += i_f_face_cell_cog[f_id][ic][i]*area[ic];
+          cell_cen[c_id][i] += _i_f_face_cog[i]*area;
       }
     }
 
   } /* End of loop on interior faces */
 
-  /* Loop on boundary faces
+  /* Loop on boundary fluid faces
      --------------------- */
 
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
@@ -2276,14 +2280,25 @@ _mesh_quantities_cell_faces_cog_solid(const cs_mesh_t  *m,
 
   } /* End of loop on boundary faces */
 
+  /* Loop on cells: optional immersed boundary contribution */
+  if (c_w_face_normal != NULL) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      cs_real_t area = cs_math_3_norm(c_w_face_normal[c_id]);
+
+      cell_area[c_id] += area;
+
+      for (cs_lnum_t i = 0; i < 3; i++)
+        cell_cen[c_id][i] +=  c_w_face_cog[c_id][i] * area;
+
+    }
+  }
+
   /* Loop on cells to finalize the computation of center of gravity
      -------------------------------------------------------------- */
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    cs_real_t solid_surf = cs_math_3_norm(c_w_face_normal[c_id]);
     for (cs_lnum_t i = 0; i < 3; i++)  {
-      cell_cen[c_id][i] +=  c_w_face_cog[c_id][i] * solid_surf;
-      cell_cen[c_id][i] /= ( cell_area[c_id] + solid_surf );
+      cell_cen[c_id][i] /= cell_area[c_id];
     }
   }
 
@@ -2295,22 +2310,37 @@ _mesh_quantities_cell_faces_cog_solid(const cs_mesh_t  *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute cell centers and volumes, with porosity enabled.
- * TODO be more specific
+ * \brief  Compute fluid cell centers and volumes, when immersed boundary
+ * is enabled.
  *
- * \param[in]   mesh         pointer to mesh structure
- * \param[in]   mesh         pointer to mesh structure
- * \param[in]   i_face_norm  surface normal of internal faces
- * \param[in]   i_face_cog   center of gravity of internal faces
+ * \param[in]   m                     pointer to mesh structure
+ * \param[in]   i_f_face_cell_normal  interior fluid face normal vector
+ *                                    (two values for the two sides of the face)
+ * \param[in]   i_f_face_cog_0        interior fluid face center of gravity
+ *                                    (two values for the two sides of the face)
+ * \param[in]   i_f_face_cog_1        interior fluid face center of gravity
+ *                                    (two values for the two sides of the face)
+ * \param[in]   b_f_face_normal       fluid surface normal of border faces
+ * \param[in]   b_f_face_cog          fluid center of gravity of border faces
+ * \param[in]   c_w_face_normal       solid surface normal immersed in the cell
+ * \param[in]   c_w_face_cog          solid center of gravity immersed in the
+ *                                    cell
+ * \param[out]  cell_f_cen            fluid cell centers
+ * \param[out]  cell_f_vol            fluid cell volumes
  */
 /*----------------------------------------------------------------------------*/
 
-
 static void
-_compute_fluid_solid_cell_quantities(const cs_mesh_t                 *m,
-                                     const cs_mesh_quantities_t      *mq,
+_compute_fluid_solid_cell_quantities(const cs_mesh_t     *m,
                                      const cs_real_23_t   i_f_face_cell_normal[],
-                                     const cs_real_23_t   i_f_face_cell_cog[])
+                                     const cs_real_3_t    i_f_face_cog_0[],
+                                     const cs_real_3_t    i_f_face_cog_1[],
+                                     const cs_real_3_t    b_f_face_normal[],
+                                     const cs_real_3_t    b_f_face_cog[],
+                                     const cs_real_3_t    c_w_face_normal[],
+                                     const cs_real_3_t    c_w_face_cog[],
+                                     cs_real_3_t          cell_f_cen[restrict],
+                                     cs_real_t            cell_f_vol[restrict])
 {
 
   /* Mesh connectivity */
@@ -2322,43 +2352,43 @@ _compute_fluid_solid_cell_quantities(const cs_mesh_t                 *m,
   const  cs_lnum_2_t  *i_face_cells
     = (const cs_lnum_2_t *)(m->i_face_cells);
   const  cs_lnum_t  *b_face_cells = m->b_face_cells;
-  const cs_real_3_t *b_f_face_cog
-    = (cs_real_3_t *)mq->b_f_face_cog;
-  const cs_real_3_t *b_f_face_normal
-    = (cs_real_3_t *)mq->b_f_face_normal;
-  const  cs_real_3_t  *c_w_face_normal
-    = (const cs_real_3_t *)(mq->c_w_face_normal);
-  const  cs_real_3_t  *c_w_face_cog
-    = (const cs_real_3_t *)(mq->c_w_face_cog);
 
   /* Checking */
 
-  cs_real_t  *cell_f_vol = NULL;
-  BFT_MALLOC(cell_f_vol, n_cells_ext, cs_real_t);
+  assert(cell_f_cen != NULL);
+  assert(cell_f_vol != NULL);
 
-  cs_real_3_t  *cell_cen = NULL;
-  BFT_MALLOC(cell_cen, n_cells_ext, cs_real_3_t);
+  cs_real_t *_cell_f_vol = NULL;
+  BFT_MALLOC(_cell_f_vol, n_cells_ext, cs_real_t);
+
+  cs_real_3_t *_cell_f_cen = NULL;
+  BFT_MALLOC(_cell_f_cen, n_cells_ext, cs_real_3_t);
 
   /* Compute approximate cell center using face centers */
 
-  cs_real_3_t  *a_cell_cen = NULL;
+  cs_real_3_t *a_cell_cen = NULL;
   BFT_MALLOC(a_cell_cen, n_cells_ext, cs_real_3_t);
   memset(a_cell_cen, 0., n_cells_ext * sizeof(cs_real_3_t));
 
+  // TODO merge with cs_mesh_quantities_cell_faces_cog
   _mesh_quantities_cell_faces_cog_solid(m,
-                                        mq,
-                                       (const cs_real_23_t *)i_f_face_cell_normal,
-                                       (const cs_real_23_t *)i_f_face_cell_cog,
-                                       (cs_real_3_t *)a_cell_cen);
+                                        i_f_face_cell_normal,
+                                        i_f_face_cog_0,
+                                        i_f_face_cog_1,
+                                        b_f_face_normal,
+                                        b_f_face_cog,
+                                        c_w_face_normal,
+                                        c_w_face_cog,
+                                        a_cell_cen);
 
   /* Initialization */
 
   for (cs_lnum_t j = 0; j < n_cells_ext; j++)
-    cell_f_vol[j] = 0.;
+    _cell_f_vol[j] = 0.;
 
   for (cs_lnum_t j = 0; j < n_cells_ext; j++) {
     for (cs_lnum_t i = 0; i < 3; i++)
-      cell_cen[j][i] = 0.;
+      _cell_f_cen[j][i] = 0.;
   }
 
   /* Loop on interior faces
@@ -2367,24 +2397,28 @@ _compute_fluid_solid_cell_quantities(const cs_mesh_t                 *m,
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
 
     /* For each cell sharing the internal face, we update
-     * cell_cen and cell_area */
-    cs_lnum_2_t c_id = {i_face_cells[f_id][0], i_face_cells[f_id][1]};
+     * _cell_f_cen and cell_area */
 
     /* Implicit subdivision of cell into face vertices-cell-center pyramids */
     for (cs_lnum_t ic = 0; ic < 2; ic++) {
-      if (c_id[ic] > -1) {
+      cs_lnum_t c_id = i_face_cells[f_id][ic];
+      if (c_id > -1) {
 
         int sign = (ic == 0) ? 1 : -1;
+        cs_real_t *_i_f_face_cog = (ic == 0) ?
+                                    i_f_face_cog_0[f_id]:
+                                    i_f_face_cog_1[f_id];
 
-        cs_real_t pyra_vol_3 = sign * ( cs_math_3_distance_dot_product(
-                                       a_cell_cen[c_id[ic]],
-                                       i_f_face_cell_cog[f_id][ic],
-                                       i_f_face_cell_normal[f_id][ic]) );
+
+        cs_real_t pyra_vol_3 = sign
+          * cs_math_3_distance_dot_product(a_cell_cen[c_id],
+                                           _i_f_face_cog,
+                                           i_f_face_cell_normal[f_id][ic]);
 
         for (cs_lnum_t i = 0; i < 3; i++)
-          cell_cen[c_id[ic]][i] += pyra_vol_3 *(  0.75*i_f_face_cell_cog[f_id][ic][i]
-                                                + 0.25*a_cell_cen[c_id[ic]][i]);
-        cell_f_vol[c_id[ic]] += pyra_vol_3;
+          _cell_f_cen[c_id][i] += pyra_vol_3 *(  0.75*_i_f_face_cog[i]
+                                               + 0.25*a_cell_cen[c_id][i]);
+        _cell_f_vol[c_id] += pyra_vol_3;
       }
     }
 
@@ -2397,7 +2431,7 @@ _compute_fluid_solid_cell_quantities(const cs_mesh_t                 *m,
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
     /* For each cell sharing a border face, we update the numerator
-     * of cell_cen and cell_area */
+     * of _cell_f_cen and cell_area */
 
     cs_lnum_t c_id = b_face_cells[f_id];
 
@@ -2408,12 +2442,12 @@ _compute_fluid_solid_cell_quantities(const cs_mesh_t                 *m,
     if (c_id > -1 ) {
       cs_real_t pyra_vol_3 = cs_math_3_distance_dot_product(a_cell_cen[c_id],
                                                             b_f_face_cog[f_id],
-                                                            b_f_face_normal[f_id]); //b_face_norm[f_id]);
+                                                            b_f_face_normal[f_id]);
 
       for (cs_lnum_t i = 0; i < 3; i++)
-        cell_cen[c_id][i] += pyra_vol_3 *(   0.75*b_f_face_cog[f_id][i]
-                                           + 0.25*a_cell_cen[c_id][i]);
-      cell_f_vol[c_id] += pyra_vol_3;
+        _cell_f_cen[c_id][i] += pyra_vol_3 *(  0.75*b_f_face_cog[f_id][i]
+                                             + 0.25*a_cell_cen[c_id][i]);
+      _cell_f_vol[c_id] += pyra_vol_3;
     }
   } /* End of loop on boundary faces */
 
@@ -2427,9 +2461,9 @@ _compute_fluid_solid_cell_quantities(const cs_mesh_t                 *m,
                                                             c_w_face_cog[c_id],
                                                             c_w_face_normal[c_id]);
       for (cs_lnum_t i = 0; i < 3; i++)
-          cell_cen[c_id][i] += pyra_vol_3 *(  0.75*c_w_face_cog[c_id][i]
+          _cell_f_cen[c_id][i] += pyra_vol_3 *(  0.75*c_w_face_cog[c_id][i]
                                             + 0.25*a_cell_cen[c_id][i]);
-      cell_f_vol[c_id] += pyra_vol_3;
+      _cell_f_vol[c_id] += pyra_vol_3;
 
     }
   }
@@ -2438,21 +2472,24 @@ _compute_fluid_solid_cell_quantities(const cs_mesh_t                 *m,
 
   /* Loop on cells to finalize the computation
      ----------------------------------------- */
-  cs_field_t *f_nb_scan = cs_field_by_name_try("nb_scan_points");
 
+  // TODO loop only over selected cells
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-    if ( cell_f_vol[c_id] > cs_math_epzero*mq->cell_vol[c_id] &&
-         f_nb_scan->val[c_id] > 0 ) {
+    if (_cell_f_vol[c_id] > 0.) {
 
       for (cs_lnum_t i = 0; i < 3; i++) {
-        cell_cen[c_id][i] /= cell_f_vol[c_id];
-        mq->cell_f_cen[c_id*3+i] = cell_cen[c_id][i];
+        _cell_f_cen[c_id][i] /= _cell_f_vol[c_id];
+        cell_f_cen[c_id][i] = _cell_f_cen[c_id][i];
       }
-      cell_f_vol[c_id] /= 3.0;
-      mq->cell_f_vol[c_id] = cell_f_vol[c_id];
+      _cell_f_vol[c_id] /= 3.0;
+      cell_f_vol[c_id] = _cell_f_vol[c_id];
     }
   }
+
+  /* Free memory */
+  BFT_FREE(_cell_f_vol);
+  BFT_FREE(_cell_f_cen);
 
 }
 
@@ -2553,8 +2590,8 @@ cs_mesh_quantities_create(void)
   mesh_quantities->c_w_face_normal = NULL;
   mesh_quantities->i_face_cog = NULL;
   mesh_quantities->b_face_cog = NULL;
-  mesh_quantities->i_f_face_cog_celli = NULL;
-  mesh_quantities->i_f_face_cog_cellj = NULL;
+  mesh_quantities->i_f_face_cog_0 = NULL;
+  mesh_quantities->i_f_face_cog_1 = NULL;
   mesh_quantities->b_f_face_cog = NULL;
   mesh_quantities->c_w_face_cog = NULL;
   mesh_quantities->i_face_surf = NULL;
@@ -2627,8 +2664,8 @@ cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
 
   BFT_FREE(mq->i_face_cog);
   CS_FREE_HD(mq->b_face_cog);
-  mq->i_f_face_cog_celli = NULL;
-  mq->i_f_face_cog_cellj = NULL;
+  mq->i_f_face_cog_0 = NULL;
+  mq->i_f_face_cog_1 = NULL;
   mq->b_f_face_cog = NULL;
   mq->c_w_face_cog = NULL;
   BFT_FREE(mq->i_face_surf);
@@ -2893,13 +2930,16 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
 /*!
  * \brief  Compute cell and faces quantities needed at the immersed boundaries.
  *
- * \param[in]       m   pointer to mesh structure
- * \param[in, out]  mq  pointer to mesh quantities structures.
+ * \param[in]       m              pointer to mesh structure
+ * \param[in]       cen_points     point belonging to the immersed solid plane
+ *                                 for each cell (or NULL)
+ * \param[in, out]  mq             pointer to mesh quantities structures.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
+                                 const cs_real_3_t     *cen_points,
                                  cs_mesh_quantities_t  *mq)
 {
 
@@ -2943,47 +2983,39 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                           (const cs_real_3_t *)mq->b_face_normal,
                           (const cs_real_3_t *)mq->b_face_cog,
                           (cs_real_3_t *)mq->cell_f_cen,
-                          mq->cell_vol);
-  cs_real_23_t *v_int;
-  BFT_MALLOC(v_int, m->n_cells, cs_real_23_t);
+                           mq->cell_vol);
 
-  cs_real_23_t *i_f_face_cell_cog;
-  BFT_MALLOC(i_f_face_cell_cog, m->n_i_faces, cs_real_23_t);
+  /* If no points belogonging to the plane are given, stop here */
+  if (cen_points == NULL)
+    return;
 
   cs_real_23_t *i_f_face_cell_normal;
   BFT_MALLOC(i_f_face_cell_normal, m->n_i_faces, cs_real_23_t);
 
-  memset(v_int, 0., m->n_cells * sizeof(cs_real_23_t));
-  memset(i_f_face_cell_cog, 0., m->n_i_faces * sizeof(cs_real_23_t));
+  memset(mq->i_f_face_cog_0, 0., m->n_i_faces * sizeof(cs_real_3_t));
+  memset(mq->i_f_face_cog_1, 0., m->n_i_faces * sizeof(cs_real_3_t));
   memset(i_f_face_cell_normal, 0., m->n_i_faces * sizeof(cs_real_23_t));
-  memset(c_w_face_cog, 0. , m->n_cells * sizeof(cs_real_3_t) );
-  memset(c_w_face_surf, 0. , m->n_cells * sizeof(cs_real_t) );
+  memset(c_w_face_cog, 0. , m->n_cells_with_ghosts * sizeof(cs_real_3_t) );
+  memset(c_w_face_surf, 0. , m->n_cells_with_ghosts * sizeof(cs_real_t) );
 
  // TODO: uncomment when i_f_face_cell_normal is eliminated
  // cs_real_2_t *i_f_face_cell_surf;
  // BFT_MALLOC(i_f_face_cell_surf, m->n_i_faces, cs_real_2_t);
  // memset(i_face_cell_surf, 0., m->n_i_faces * sizeof(cs_real_2_t));
 
-  cs_real_3_t *v_flag;
-  BFT_MALLOC(v_flag, m->n_cells, cs_real_3_t);
-  memset(v_flag, 0., m->n_cells * sizeof(cs_real_3_t));
-
-  cs_real_t *sum_surf = NULL;
-  BFT_MALLOC(sum_surf, m->n_cells, cs_real_t);
-  memset(sum_surf, 0., m->n_cells * sizeof(cs_real_t));
-
-  cs_lnum_t *s_vtx_id;
-  BFT_MALLOC(s_vtx_id, m->n_cells, cs_lnum_t);
-  memset(s_vtx_id, 0, m->n_cells * sizeof(cs_lnum_t));
+  /* compute and store the first vertex on the solid immersed face
+   * to compute its surface and COG */
+  cs_real_3_t *v_w_ref;
+  BFT_MALLOC(v_w_ref, m->n_cells_with_ghosts, cs_real_3_t);
+  memset(v_w_ref, 0., m->n_cells_with_ghosts * sizeof(cs_real_3_t));
 
   cs_lnum_t *flag_id;
-  BFT_MALLOC(flag_id, m->n_cells, cs_lnum_t);
-  memset(flag_id, 0, m->n_cells * sizeof(cs_lnum_t));
+  BFT_MALLOC(flag_id, m->n_cells_with_ghosts, cs_lnum_t);
+  memset(flag_id, 0, m->n_cells_with_ghosts * sizeof(cs_lnum_t));
 
-  cs_real_3_t *cen_points = (cs_real_3_t *)cs_field_by_name("points_cen")->val;
-  cs_field_t *f_nb_scan = cs_field_by_name_try("nb_scan_points");
-
-/*===========================================================================*/
+  cs_real_t *sum_surf = NULL;
+  BFT_MALLOC(sum_surf, m->n_cells_with_ghosts, cs_real_t);
+  memset(sum_surf, 0., m->n_cells_with_ghosts * sizeof(cs_real_t));
 
   /* Loop on internal faces */
   for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
@@ -2992,197 +3024,191 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
     cs_lnum_t s_id = i_face_vtx_idx[face_id];
     cs_lnum_t e_id = i_face_vtx_idx[face_id + 1];
     cs_lnum_t n_face_vertices = e_id - s_id;
-    cs_lnum_2_t n_s_face_vertices = {0,0};
-    cs_lnum_3_t f_vtx_id = {0,0,0};
 
-    cs_real_33_t *vc;
-    BFT_MALLOC(vc, n_face_vertices, cs_real_33_t);
-    memset(vc, -1., n_face_vertices * sizeof(cs_real_33_t));
+    const cs_lnum_t *vertex_ids = m->i_face_vtx_lst + s_id;
+    /* number of solid vertices seen from each side of the inner face */
+    cs_lnum_2_t n_s_face_vertices = {0, 0};
+    cs_lnum_3_t f_vtx_id = {0, 0, 0};
+
+    cs_real_23_t *vc;
+    BFT_MALLOC(vc, n_face_vertices, cs_real_23_t);
+    memset(vc, -1., n_face_vertices * sizeof(cs_real_23_t));
 
     cs_lnum_t max_n_f_face_vertices = 2*n_face_vertices;
-    cs_real_33_t *f_vtx_coord;
-    BFT_MALLOC(f_vtx_coord, max_n_f_face_vertices, cs_real_33_t);
-    memset(f_vtx_coord, -1., max_n_f_face_vertices * sizeof(cs_real_33_t));
 
-    cs_lnum_2_t c_id = {i_face_cells[face_id][0], i_face_cells[face_id][1]};
+    /* Build fluid vertices coordinates array */
+    cs_real_23_t *f_vtx_coord;
+    BFT_MALLOC(f_vtx_coord, max_n_f_face_vertices, cs_real_23_t);
+    memset(f_vtx_coord, -1., max_n_f_face_vertices * sizeof(cs_real_23_t));
 
     /* Loop over vertices of the face */
-    for (cs_lnum_t i_v = s_id; i_v < e_id; i_v++)  {
-      cs_lnum_t j = i_v-s_id;
-      // Creating vectors from the points COG to face's vertices
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        vc[j][0][i] = vtx_coord[i_face_vtx_lst[i_v]][i] - cen_points[c_id[0]][i];
-        vc[j][1][i] = vtx_coord[i_face_vtx_lst[i_v]][i] - cen_points[c_id[1]][i];
-        vc[j][2][i] = vtx_coord[i_face_vtx_lst[i_v]][i];
-      }
-      // Evaluating if the face vertex is solid or fluid
-      cs_real_2_t vc_dot_nw =
-      {cs_math_3_dot_product(vc[j][0],c_w_face_normal[c_id[0]]),
-       cs_math_3_dot_product(vc[j][1],c_w_face_normal[c_id[1]])};
+    for (cs_lnum_t j = 0; j < n_face_vertices; j++)  {
 
+      /* Creating vectors from the points COG to face's vertices */
       for (cs_lnum_t ic = 0; ic < 2 ; ic++) {
-        if ( vc_dot_nw[ic] > 0. &&
-             cs_math_3_norm(c_w_face_normal[c_id[ic]]) > 0. )
+        cs_lnum_t c_id = i_face_cells[face_id][ic];
+        for (cs_lnum_t i = 0; i < 3; i++)
+          vc[j][ic][i] = vtx_coord[vertex_ids[j]][i] - cen_points[c_id][i];
+
+        /* Evaluating if the face vertex is solid or fluid */
+        /* Vertex seen from cell c_id is solid */
+        if (cs_math_3_dot_product(vc[j][ic], c_w_face_normal[c_id]) > 0.
+              && cs_math_3_norm(c_w_face_normal[c_id]) > 0.)
           n_s_face_vertices[ic]++;
       }
     }
 
-
     for (cs_lnum_t ic = 0; ic < 2 ; ic++) {
+      cs_lnum_t c_id = i_face_cells[face_id][ic];
 
-      if ( f_nb_scan->val[c_id[ic]] < 1. &&
-           mq->c_disable_flag[c_id[ic]] == 1) // Fully solid face
+      /* If the cell is completely immersed the solid,
+       * all the faces are solid.
+       * The c_w_face_normal has a zero norm because it is not at the
+       * immersed interface.
+       */
+      if (cs_math_3_norm(c_w_face_normal[c_id]) < DBL_MIN &&
+          mq->c_disable_flag[c_id] == 1)
         n_s_face_vertices[ic] = n_face_vertices;
-
-      for (cs_lnum_t i = 0; i < 3; i++)
-        i_f_face_cell_cog[face_id][ic][i] = i_face_cog[face_id][i];
     }
 
-    if ( n_s_face_vertices[0] == 0 &&
-         n_s_face_vertices[1] == 0 ) { // Fluid face from both sides
-      for (cs_lnum_t ic = 0; ic < 2 ; ic++) {
-        for (cs_lnum_t i = 0; i < 3; i++) {
-          mq->i_f_face_normal[face_id*3+i] = mq->i_face_normal[face_id*3+i];
-        }
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      mq->i_f_face_cog_0[3*face_id + i] = i_face_cog[face_id][i];
+      mq->i_f_face_cog_1[3*face_id + i] = i_face_cog[face_id][i];
+    }
+    /* Fluid face from both sides */
+    if (n_s_face_vertices[0] == 0 && n_s_face_vertices[1] == 0) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        mq->i_f_face_normal[face_id*3+i] = mq->i_face_normal[face_id*3+i];
       }
       mq->i_f_face_surf[face_id] = mq->i_face_surf[face_id];
     }
 
-   for (cs_lnum_t ic = 0; ic < 2 ; ic++) {
-     if ( n_s_face_vertices[ic] == 0 ) { // Fluid face from one side
-       for (cs_lnum_t i = 0; i < 3; i++)
-         i_f_face_cell_normal[face_id][ic][i] = mq->i_face_normal[face_id*3+i];
-     }
-   }
-
-    cs_lnum_3_t loc_id = {n_face_vertices - 1, 0, 1};
-    cs_real_3_t vfluid;
+    /* Fluid face from one side */
+    for (cs_lnum_t ic = 0; ic < 2 ; ic++) {
+      if (n_s_face_vertices[ic] == 0) {
+        for (cs_lnum_t i = 0; i < 3; i++)
+          i_f_face_cell_normal[face_id][ic][i] = mq->i_face_normal[face_id*3+i];
+      }
+    }
 
     // neighbor cells loop
     for (cs_lnum_t ic = 0; ic < 2 ; ic++)  {
 
-      cs_real_t surf_zero = cs_math_epzero * pow(mq->cell_vol[c_id[ic]],2./3);
-      cs_real_t vol_zero = cs_math_epzero * mq->cell_vol[c_id[ic]];
+      cs_lnum_t c_id = i_face_cells[face_id][ic];
 
-      if ( cs_math_3_norm(c_w_face_normal[c_id[ic]]) > 0.  &&
-           n_s_face_vertices[ic] > 0 &&
-           n_s_face_vertices[ic] < n_face_vertices ) { // Interface face
+      /* We deal with a cell at the immersed interface */
+      if (cs_math_3_norm(c_w_face_normal[c_id]) > 0.  &&
+          n_s_face_vertices[ic] > 0 &&
+          n_s_face_vertices[ic] < n_face_vertices ) {
 
-        if (flag_id[c_id[ic]] == 1)
-          s_vtx_id[c_id[ic]] = 0;
+        /* Counter for the number of vertices at the wall immersed interface */
+        cs_lnum_t s_vtx_id = -1;
 
-        // vertices loop
-        for (cs_lnum_t glob_id = s_id; glob_id < e_id ; glob_id++) {
+        /* Store the (two) vertices at the interface */
+        cs_real_3_t *v_w_inteface;
+        BFT_MALLOC(v_w_inteface, 2, cs_real_3_t);
 
-          loc_id[1] = glob_id-s_id;
+        /* 3 consecutive vertices */
+        cs_lnum_3_t loc_id = {n_face_vertices - 1, 0, 1};
+
+        /* Loop over face vertices */
+        for (cs_lnum_t j = 0; j < n_face_vertices; loc_id[0] = loc_id[1], j++) {
+
+          loc_id[1] = j;
+          loc_id[2] = (j+1)%n_face_vertices;
 
           cs_real_3_t vc_dot_nw = {
-          cs_math_3_dot_product( vc[loc_id[0]][ic], c_w_face_normal[c_id[ic]] ),
-          cs_math_3_dot_product( vc[loc_id[1]][ic], c_w_face_normal[c_id[ic]] ),
-          cs_math_3_dot_product( vc[loc_id[2]][ic], c_w_face_normal[c_id[ic]] )
+            cs_math_3_dot_product(vc[loc_id[0]][ic], c_w_face_normal[c_id]),
+            cs_math_3_dot_product(vc[loc_id[1]][ic], c_w_face_normal[c_id]),
+            cs_math_3_dot_product(vc[loc_id[2]][ic], c_w_face_normal[c_id])
           };
 
-          // Projecting solid vertex to the wall-plane along an edge
-          if ( vc_dot_nw[1] > 0. ) {
+          /* Vertex 1 is solid
+           * Projecting solid vertex to the wall-plane along an edge */
+          if (vc_dot_nw[1] > 0.) {
+
+            cs_real_3_t vfluid;
 
             // 1st neighbor fluid vertex
             if ( !(vc_dot_nw[0] > 0.)) {
+              s_vtx_id++;
+              if (s_vtx_id >= 2)
+                BFT_REALLOC(v_w_inteface, s_vtx_id + 1, cs_real_3_t);
+
               _proj_solid_vtx_to_plane(vc[loc_id[0]][ic],
                                        vc[loc_id[1]][ic],
-                                       c_w_face_normal[c_id[ic]],
-                                       cen_points[c_id[ic]],
+                                       c_w_face_normal[c_id],
+                                       cen_points[c_id],
                                        vfluid);
 
               for (cs_lnum_t i = 0; i < 3; i++) {
                 f_vtx_coord[f_vtx_id[ic]][ic][i] = vfluid[i];
                 // Storing vertex for solid face computations
-                v_int[c_id[ic]][s_vtx_id[c_id[ic]]][i] = vfluid[i];
+                v_w_inteface[s_vtx_id][i] = vfluid[i];
               }
-              if (flag_id[c_id[ic]] == 0) { // Storing flag for solid face computations
+              if (flag_id[c_id] == 0) {
+                // Storing flag for solid face computations
                 for (cs_lnum_t i = 0; i < 3; i++)
-                  v_flag[c_id[ic]][i] = vfluid[i];
+                  v_w_ref[c_id][i] = vfluid[i];
               }
               f_vtx_id[ic]++;
-              s_vtx_id[c_id[ic]]++;
-              flag_id[c_id[ic]] = 1;
+              flag_id[c_id] = 1;
             }
             // 2nd neighbor fluid vertex
             if ( !(vc_dot_nw[2] > 0.) ) {
 
+              s_vtx_id++;
+              if (s_vtx_id >= 2)
+                BFT_REALLOC(v_w_inteface, s_vtx_id + 1, cs_real_3_t);
+
               _proj_solid_vtx_to_plane(vc[loc_id[2]][ic],
                                        vc[loc_id[1]][ic],
-                                       c_w_face_normal[c_id[ic]],
-                                       cen_points[c_id[ic]],
+                                       c_w_face_normal[c_id],
+                                       cen_points[c_id],
                                        vfluid);
 
               for (cs_lnum_t i = 0; i < 3; i++) {
                 f_vtx_coord[f_vtx_id[ic]][ic][i] = vfluid[i];
                 // Storing vertex for solid face computations
-                v_int[c_id[ic]][s_vtx_id[c_id[ic]]][i] = vfluid[i];
+                v_w_inteface[s_vtx_id][i] = vfluid[i];
 
               }
-              if (flag_id[c_id[ic]] == 0) {
+              if (flag_id[c_id] == 0) {
                 // Storing flag for solid face computations
                 for (cs_lnum_t i = 0; i < 3; i++)
-                  v_flag[c_id[ic]][i] = vfluid[i];
+                  v_w_ref[c_id][i] = vfluid[i];
               }
               f_vtx_id[ic]++;
-              s_vtx_id[c_id[ic]]++;
-              flag_id[c_id[ic]] = 1;
+              flag_id[c_id] = 1;
             }
           }
-          else {  // Fluid or wall vertex
+          /* Vertex 1 is either fully fluid or exactly on the wall */
+          else {
             for (cs_lnum_t i = 0; i < 3; i++)
               f_vtx_coord[f_vtx_id[ic]][ic][i] = vc[loc_id[1]][ic][i] +
-                                                 cen_points[c_id[ic]][i];
+                                                 cen_points[c_id][i];
             f_vtx_id[ic]++;
 
-            // Wall vertex (not collinear neighbor vertices => avoid redundancy)
-            cs_real_3_t v01, v02, vn;
-            for (cs_lnum_t i = 0; i < 3; i++) {
-              v01[i] = vc[loc_id[0]][ic][i] - vc[loc_id[1]][ic][i];
-              v02[i] = vc[loc_id[0]][ic][i] - vc[loc_id[2]][ic][i];
-            }
-            cs_math_3_cross_product(v01,v02,vn);
-            if ( CS_ABS(vc_dot_nw[1]) < vol_zero &&
-                 cs_math_3_norm(vn) > surf_zero) { // Wall vertex
-              for (cs_lnum_t i = 0; i < 3; i++)
-                v_int[c_id[ic]][s_vtx_id[c_id[ic]]][i]
-                  = f_vtx_coord[f_vtx_id[ic]][ic][i];
-              if (flag_id[c_id[ic]] == 0) {
-                for (cs_lnum_t i = 0; i < 3; i++)
-                  v_flag[c_id[ic]][i]
-                    = f_vtx_coord[f_vtx_id[ic]][ic][i];
-              }
-              s_vtx_id[c_id[ic]]++;
-              flag_id[c_id[ic]] = 1;
-            }
           }
-
-          loc_id[0] = loc_id[1];
-          loc_id[2]++;
-          if (loc_id[2] > n_face_vertices - 1 )
-            loc_id[2] = 0;
 
         } // Vertices loop
 
         // COG and surface of the solid face
         cs_real_3_t v01, v02, vn;
         for (cs_lnum_t i = 0; i < 3; i++) {
-          v01[i] = v_int[c_id[ic]][0][i] - v_flag[c_id[ic]][i];
-          v02[i] = v_int[c_id[ic]][1][i] - v_flag[c_id[ic]][i];
+          v01[i] = v_w_inteface[0][i] - v_w_ref[c_id][i];
+          v02[i] = v_w_inteface[1][i] - v_w_ref[c_id][i];
         }
         cs_math_3_cross_product(v01, v02, vn);
-        sum_surf[c_id[ic]] += 0.5*cs_math_3_norm(vn);
+        sum_surf[c_id] += 0.5*cs_math_3_norm(vn);
 
         for (cs_lnum_t i = 0; i < 3; i++)
-          c_w_face_cog[c_id[ic]][i] += ( v_flag[c_id[ic]][i]
-                                       + v_int[c_id[ic]][0][i]
-                                       + v_int[c_id[ic]][1][i] )
-                                       * cs_math_3_norm(vn);
+          c_w_face_cog[c_id][i] += ( v_w_ref[c_id][i]
+                                   + v_w_inteface[0][i]
+                                   + v_w_inteface[1][i] )
+                                 * cs_math_3_norm(vn);
       } // Interface
     } // neighbor cells loop
-
 
     cs_lnum_2_t n_f_face_vertices = {f_vtx_id[0], f_vtx_id[1]};
 
@@ -3196,7 +3222,6 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
     // Computing quantities of face intersected by different planes
     for (cs_lnum_t ic = 0; ic < 2 ; ic++) { // Loop neighbor cells
-
       if (n_f_face_vertices[ic] > 2) { // Interface face
 
         cs_lnum_t *f_face_pos;
@@ -3206,8 +3231,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
           f_face_pos[i] = i;
 
         cs_lnum_2_t f_vtx_idx = {0, n_f_face_vertices[ic]};
-        cs_real_3_t i_f_face_cog[1]  = { {0., 0., 0.} };
-        cs_real_3_t i_f_face_nomal[1]= { {0., 0., 0.} };
+        cs_real_3_t _i_f_face_cog[1]  = { {0., 0., 0.} };
+        cs_real_3_t _i_f_face_nomal[1]= { {0., 0., 0.} };
         cs_real_3_t f_vtx_coor[n_f_face_vertices[ic]];
         for (int ffv = 0; ffv < n_f_face_vertices[ic]; ffv++) {
            for (cs_lnum_t i = 0; i < 3; i++)
@@ -3218,38 +3243,44 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                                  f_vtx_coor,
                                  f_vtx_idx,
                                  f_face_pos,
-                                 i_f_face_cog,
-                                 i_f_face_nomal);
+                                 _i_f_face_cog,
+                                 _i_f_face_nomal);
 
-        // Adjusting face porosity and COG
+        /* Adjusting face porosity and COG
+         * we take the smaller surface side and its COG
+         * */
 
-        cs_real_t area = cs_math_3_norm(i_f_face_nomal[0]);
+        cs_real_t area = cs_math_3_norm(_i_f_face_nomal[0]);
         if (area < mq->i_f_face_surf[face_id]) {
           for (cs_lnum_t i = 0; i < 3; i++)
-            i_face_cog[face_id][i] = i_f_face_cog[0][i];
+            i_face_cog[face_id][i] = _i_f_face_cog[0][i];
         }
         mq->i_f_face_surf[face_id] = CS_MIN(mq->i_f_face_surf[face_id],
                                             area);
 
         for (cs_lnum_t i = 0; i < 3; i++) {
-          mq->i_f_face_normal[face_id*3+i] = i_f_face_nomal[0][i]/area *
+          mq->i_f_face_normal[face_id*3+i] = _i_f_face_nomal[0][i]/area *
                                              mq->i_f_face_surf[face_id];
         }
         // Adjusting porosity and COG
 
-        // Storing fluid face associated to the cell
-        // TODO only storage i_f_face_surf instead of the normal
+        // Storing fluid face COG associated to the cell
+        cs_real_3_t *i_f_face_cog = (ic == 0)?
+                                    (cs_real_3_t * )mq->i_f_face_cog_0:
+                                    (cs_real_3_t * )mq->i_f_face_cog_1;
+
         for (cs_lnum_t i = 0; i < 3; i++) {
-          i_f_face_cell_cog[face_id][ic][i] = i_f_face_cog[0][i];
-          i_f_face_cell_normal[face_id][ic][i] = i_f_face_nomal[0][i];
+          i_f_face_cog[face_id][i] = _i_f_face_cog[0][i];
+          // TODO only storage i_f_face_surf instead of the normal
+          i_f_face_cell_normal[face_id][ic][i] = _i_f_face_nomal[0][i];
         }
         BFT_FREE(f_face_pos);
       }
 
     }// Loop neighbor cells
 
-  BFT_FREE(vc);
-  BFT_FREE(f_vtx_coord);
+    BFT_FREE(vc);
+    BFT_FREE(f_vtx_coord);
 
   } /* Loop on internal faces */
 
@@ -3290,9 +3321,13 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         n_s_face_vertices++;
     }
 
-    // Fully solid face
-    if ( f_nb_scan->val[c_id] < 1. &&
-         mq->c_disable_flag[c_id] == 1)
+    /* If the cell is completely immersed the solid,
+     * all the faces are solid.
+     * The c_w_face_normal has a zero norm because it is not at the
+     * immersed interface.
+     */
+    if (cs_math_3_norm(c_w_face_normal[c_id]) < DBL_MIN &&
+        mq->c_disable_flag[c_id] == 1)
       n_s_face_vertices = n_face_vertices;
 
     for (cs_lnum_t i = 0; i < 3; i++)
@@ -3306,34 +3341,44 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
       mq->b_f_face_surf[face_id] = mq->b_face_surf[face_id];
     }
 
-    cs_lnum_3_t loc_id = {n_face_vertices - 1, 0, 1};
     cs_real_3_t vfluid;
-    cs_real_t surf_zero = cs_math_epzero * pow(mq->cell_vol[c_id],2./3);
-    cs_real_t vol_zero = cs_math_epzero * mq->cell_vol[c_id];
 
     /* Initialization*/
 
-    if ( cs_math_3_norm(c_w_face_normal[c_id]) > 0. &&
-         n_s_face_vertices > 0 &&
-         n_s_face_vertices < n_face_vertices ) { // Interface face
+    if (cs_math_3_norm(c_w_face_normal[c_id]) > 0. &&
+        n_s_face_vertices > 0 &&
+        n_s_face_vertices < n_face_vertices ) { // Interface face
 
-      if (flag_id[c_id] == 1)
-        s_vtx_id[c_id] = 0;
+      /* Counter for the number of vertices at the wall immersed interface */
+      cs_lnum_t s_vtx_id = -1;
 
-      for (cs_lnum_t glob_id = s_id; glob_id < e_id ; glob_id++) { // vertices loop
+      /* Store the (two) vertices at the interface */
+      cs_real_3_t *v_w_inteface;
+      BFT_MALLOC(v_w_inteface, 2, cs_real_3_t);
 
-        loc_id[1] = glob_id-s_id;
+      /* 3 consecutive vertices */
+      cs_lnum_3_t loc_id = {n_face_vertices - 1, 0, 1};
+
+      /* Loop over face vertices */
+      for (cs_lnum_t j = 0; j < n_face_vertices; loc_id[0] = loc_id[1], j++) {
+
+        loc_id[1] = j;
+        loc_id[2] = (j+1)%n_face_vertices;
 
         cs_real_3_t vc_dot_nw = {
-        cs_math_3_dot_product( vc[loc_id[0]], c_w_face_normal[c_id] ),
-        cs_math_3_dot_product( vc[loc_id[1]], c_w_face_normal[c_id] ),
-        cs_math_3_dot_product( vc[loc_id[2]], c_w_face_normal[c_id] )
+          cs_math_3_dot_product(vc[loc_id[0]], c_w_face_normal[c_id]),
+          cs_math_3_dot_product(vc[loc_id[1]], c_w_face_normal[c_id]),
+          cs_math_3_dot_product(vc[loc_id[2]], c_w_face_normal[c_id])
         };
 
         // Projecting solid vertex to the wall-plane
-        if ( vc_dot_nw[1] > 0. ) {
+        if (vc_dot_nw[1] > 0.) {
           // 1st neighbor fluid vertex
           if ( !(vc_dot_nw[0] > 0.) ) {
+            s_vtx_id++;
+            if (s_vtx_id >= 2)
+              BFT_REALLOC(v_w_inteface, s_vtx_id + 1, cs_real_3_t);
+
             _proj_solid_vtx_to_plane(vc[loc_id[0]],
                                      vc[loc_id[1]],
                                      c_w_face_normal[c_id],
@@ -3343,18 +3388,20 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
             for (cs_lnum_t i = 0; i < 3; i++) {
               f_vtx_coord[f_vtx_id][i] = vfluid[i];
               // Storing vertex for solid face computations
-              v_int[c_id][s_vtx_id[c_id]][i] = vfluid[i];
+              v_w_inteface[s_vtx_id][i] = vfluid[i];
             }
             if (flag_id[c_id] == 0) { // Storing flag for solid face computations
               for (cs_lnum_t i = 0; i < 3; i++)
-                v_flag[c_id][i] = vfluid[i];
+                v_w_ref[c_id][i] = vfluid[i];
               flag_id[c_id] = 1;
             }
             f_vtx_id++;
-            s_vtx_id[c_id]++;
           }
           // 2nd neighbor fluid vertex
           if ( !(vc_dot_nw[2] > 0.) ) {
+            s_vtx_id++;
+            if (s_vtx_id >= 2)
+              BFT_REALLOC(v_w_inteface, s_vtx_id + 1, cs_real_3_t);
 
             _proj_solid_vtx_to_plane(vc[loc_id[2]],
                                      vc[loc_id[1]],
@@ -3365,72 +3412,47 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
             for (cs_lnum_t i = 0; i < 3; i++) {
               f_vtx_coord[f_vtx_id][i] = vfluid[i];
               // Storing vertex for solid face computations
-              v_int[c_id][s_vtx_id[c_id]][i] = vfluid[i];
+              v_w_inteface[s_vtx_id][i] = vfluid[i];
             }
             if (flag_id[c_id] == 0) { // Storing flag for solid face computations
               for (cs_lnum_t i = 0; i < 3; i++)
-                v_flag[c_id][i] = vfluid[i];
+                v_w_ref[c_id][i] = vfluid[i];
             }
             f_vtx_id++;
-            s_vtx_id[c_id]++;
             flag_id[c_id] = 1;
           }
         }
         else {// Fluid or wall vertex
 
           for (cs_lnum_t i = 0; i < 3; i++)
-            f_vtx_coord[f_vtx_id][i] = vc[loc_id[1]][i] +
-                                       cen_points[c_id][i];
+            f_vtx_coord[f_vtx_id][i] = vc[loc_id[1]][i] + cen_points[c_id][i];
+
           f_vtx_id++;
 
-          // For vertex on the wall (not colinear vertices)
-          cs_real_3_t v01, v02, vn;
-          for (cs_lnum_t i = 0; i < 3; i++) {
-            v01[i] = vc[loc_id[0]][i] - vc[loc_id[1]][i];
-            v02[i] = vc[loc_id[0]][i] - vc[loc_id[2]][i];
-          }
-          cs_math_3_cross_product(v01,v02,vn);
-          if ( CS_ABS(vc_dot_nw[1]) < vol_zero &&
-               cs_math_3_norm(vn) > surf_zero ) {
-            for (cs_lnum_t i = 0; i < 3; i++)
-              v_int[c_id][s_vtx_id[c_id]][i] = f_vtx_coord[f_vtx_id][i];
-            if (flag_id[c_id] == 0) {
-              for (cs_lnum_t i = 0; i < 3; i++)
-                v_flag[c_id][i] = f_vtx_coord[f_vtx_id][i];
-            }
-            s_vtx_id[c_id]++;
-            flag_id[c_id] = 1;
-          }
-
         }
-
-        loc_id[0] = loc_id[1];
-        loc_id[2]++;
-        if (loc_id[2] > n_face_vertices - 1 )
-          loc_id[2] = 0;
 
       }// Vertices loop
 
       // COG and normal/surf of the solid face
       cs_real_3_t v01, v02, vn;
       for (cs_lnum_t i = 0; i < 3; i++) {
-        v01[i] = v_int[c_id][0][i] - v_flag[c_id][i];
-        v02[i] = v_int[c_id][1][i] - v_flag[c_id][i];
+        v01[i] = v_w_inteface[0][i] - v_w_ref[c_id][i];
+        v02[i] = v_w_inteface[1][i] - v_w_ref[c_id][i];
       }
       cs_math_3_cross_product(v01, v02, vn);
       sum_surf[c_id] += 0.5*cs_math_3_norm(vn);
 
       for (cs_lnum_t i = 0; i < 3; i++)
-        c_w_face_cog[c_id][i] += ( v_flag[c_id][i]
-                                  +v_int[c_id][0][i]
-                                  +v_int[c_id][1][i] )
-                                  * cs_math_3_norm(vn);
+        c_w_face_cog[c_id][i] += ( v_w_ref[c_id][i]
+                                 + v_w_inteface[0][i]
+                                 + v_w_inteface[1][i] )
+                               * cs_math_3_norm(vn);
 
     }
 
     cs_lnum_t n_f_face_vertices = f_vtx_id;
 
-    /* Initialization of new fluid face porosity and COG */
+    /* Initialization of new fluid face surface and COG */
     if (n_f_face_vertices > 2) {
       for (cs_lnum_t i = 0; i < 3; i++) {
         b_f_face_normal[face_id][i] = 0.;
@@ -3468,24 +3490,22 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
       for (cs_lnum_t i = 0; i < 3; i++) {
         b_f_face_normal[face_id][i] = face_normal[0][i];
-        b_f_face_cog[face_id][i] =face_cog[0][i];
+        b_f_face_cog[face_id][i] = face_cog[0][i];
       }
       mq->b_f_face_surf[face_id] = cs_math_3_norm(b_f_face_normal[face_id]);
 
       BFT_FREE(f_face_pos);
-    }                                // Interface face
+    }
 
     BFT_FREE(vc);
     BFT_FREE(f_vtx_coord);
   }
   /* Loop on boundary faces */
 
-  BFT_FREE(v_int);
-  BFT_FREE(v_flag);
-  BFT_FREE(s_vtx_id);
+  BFT_FREE(v_w_ref);
   BFT_FREE(flag_id);
 
-/*====== Set center of gravity and normal/surface of solid faces =========*/
+  /* Set center of gravity and normal/surface of solid faces */
 
   /* Loop on cells */
   for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
@@ -3502,7 +3522,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
       }
 
     }
-    else { // Plan outside the cell (it is caused due to tolerance of ple routine)
+    /* Plan outside the cell (it is caused due to tolerance of ple routine) */
+    else {
       c_w_face_surf[c_id] = 0.;
       for (cs_lnum_t i = 0; i < 3; i++) {
         c_w_face_cog[c_id][i] = 0.;
@@ -3513,34 +3534,34 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
   /* Loop on cells */
   BFT_FREE(sum_surf);
 
-/*===========================================================================*/
+  //TODO merge with regular function _compute_cell_quantities
 
+  /* Compute fluid cell centers from face barycenters
+   * and fluid volumes */
   _compute_fluid_solid_cell_quantities(m,
-                                       mq,
-                                      (const cs_real_23_t *)i_f_face_cell_normal,
-                                      (const cs_real_23_t *)i_f_face_cell_cog);
+                                       i_f_face_cell_normal,
+                                       (const cs_real_3_t *)mq->i_f_face_cog_0,
+                                       (const cs_real_3_t *)mq->i_f_face_cog_1,
+                                       (const cs_real_3_t *)mq->b_f_face_normal,
+                                       (const cs_real_3_t *)mq->b_f_face_cog,
+                                       (const cs_real_3_t *)mq->c_w_face_normal,
+                                       (const cs_real_3_t *)mq->c_w_face_cog,
+                                       (cs_real_3_t *)mq->cell_f_cen,
+                                       mq->cell_f_vol);
 
-  /* Storing fluid face cog from the cell perspective */
-  for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
-    for (cs_lnum_t i = 0; i < 3; i++) {
-      mq->i_f_face_cog_celli[3*face_id+i] = i_f_face_cell_cog[face_id][0][i];
-      mq->i_f_face_cog_cellj[3*face_id+i] = i_f_face_cell_cog[face_id][1][i];
-    }
-  }
 
   BFT_FREE(i_f_face_cell_normal);
-  BFT_FREE(i_f_face_cell_cog);
 
-/*===========================================================================*/
-
-/*  Update geometrical entities: distances to the cell center of gravity*/
+  /* Update geometrical entities: distances to the cell center of gravity.
+   * Note: only direction is used for "i_face_normal" and "b_face_normal"
+   * */
 
   _compute_face_distances(m->n_i_faces,
                           m->n_b_faces,
                           (const cs_lnum_2_t *)(m->i_face_cells),
                           m->b_face_cells,
-                          (const cs_real_3_t *)(mq->i_face_normal), // Just normal direction is used
-                          (const cs_real_3_t *)(mq->b_face_normal), // Just normal direction is used
+                          (const cs_real_3_t *)(mq->i_face_normal),
+                          (const cs_real_3_t *)(mq->b_face_normal),
                           (const cs_real_3_t *)(mq->i_face_cog),
                           (const cs_real_3_t *)(mq->b_f_face_cog),
                           (const cs_real_3_t *)(mq->cell_f_cen),
@@ -3565,7 +3586,6 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                         mq->dijpf,
                         mq->diipb,
                         mq->dofij);
-/*===========================================================================*/
 
   /*wall distance*/
 
@@ -3575,7 +3595,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
     cs_real_t surf = cs_math_3_norm(c_w_face_normal[c_id]);
 
-    if (surf > cs_math_epzero*pow(mq->cell_f_vol[c_id],2./3.)) {//TODO change it compare to total surf
+    //TODO change it compare to total surf
+    if (surf > cs_math_epzero*pow(mq->cell_f_vol[c_id],2./3.)) {
 
       cs_real_3_t vc_w_f_cen;
       cs_real_3_t c_w_normal_unit;
@@ -3587,22 +3608,6 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
       c_w_dist_inv[c_id] = 1./cs_math_3_dot_product(vc_w_f_cen,c_w_normal_unit);
     }
   }
-
-  /* Update the cell porosity field value */
-  cs_field_t *f_poro = cs_field_by_name("porosity");
-
-  for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
-    cs_real_t porosity = mq->cell_f_vol[c_id]/mq->cell_vol[c_id];
-    // Reactivate cells at the interface between fluid and solid
-    if ( porosity > 1. ) porosity = 1.;
-    if ( porosity > cs_math_epzero &&
-         f_nb_scan->val[c_id] > 0 ) {
-      f_poro->val[c_id] = porosity;
-      mq->c_disable_flag[c_id] = 0;
-    }
-  }
-  /* synchronize for use in fluid face factor calculation */
-  cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_poro->val);
 
 }
 

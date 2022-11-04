@@ -543,7 +543,7 @@ if (iporos.ge.1) then
   endif
 
   if (iporos.eq.3) then
-    ! Compute solid quantities and update fluid volume
+    ! Compute solid quantities and update fluid volume and porosity
     call cs_f_mesh_quantities_solid_compute()
   endif
 

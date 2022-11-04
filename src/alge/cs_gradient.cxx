@@ -1525,10 +1525,10 @@ _renormalize_scalar_gradient(const cs_mesh_t               *m,
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
-  const cs_real_3_t *restrict i_f_face_cog_celli
-     = (const cs_real_3_t *restrict)fvq->i_f_face_cog_celli;
-  const cs_real_3_t *restrict i_f_face_cog_cellj
-     = (const cs_real_3_t *restrict)fvq->i_f_face_cog_cellj;
+  const cs_real_3_t *restrict i_f_face_cog_0
+     = (const cs_real_3_t *restrict)fvq->i_f_face_cog_0;
+  const cs_real_3_t *restrict i_f_face_cog_1
+     = (const cs_real_3_t *restrict)fvq->i_f_face_cog_1;
   const cs_real_3_t *b_face_normal
     = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
 
@@ -1558,10 +1558,10 @@ _renormalize_scalar_gradient(const cs_mesh_t               *m,
           cs_lnum_t jj = i_face_cells[f_id][1];
           for (cs_lnum_t i = 0; i < 3; i++) {
             for (cs_lnum_t j = 0; j < 3; j++) {
-              cor_mat[ii][i][j] +=   (  i_f_face_cog_celli[f_id][i]
+              cor_mat[ii][i][j] +=   (  i_f_face_cog_0[f_id][i]
                                       - cell_f_cen[ii][i])
                                    * i_f_face_normal[f_id][j];
-              cor_mat[jj][i][j] -=   (  i_f_face_cog_cellj[f_id][i]
+              cor_mat[jj][i][j] -=   (  i_f_face_cog_1[f_id][i]
                                       - cell_f_cen[jj][i])
                                    * i_f_face_normal[f_id][j];
             }

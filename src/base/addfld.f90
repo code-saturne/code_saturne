@@ -691,7 +691,7 @@ if (compute_porosity_from_scan) then
   call field_set_key_int(iflid, keylog, 1)
 
   itycat = FIELD_INTENSIVE + FIELD_PROPERTY
-  f_name  = 'points_cen'
+  f_name  = 'cell_scan_points_cog'
   f_label = 'Point centers'
   call add_property_field(f_name, f_label, 3, .false., iflid)
 endif

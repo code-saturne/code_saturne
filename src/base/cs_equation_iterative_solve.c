@@ -348,8 +348,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 # pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       if (CS_ABS(dam[cell_id]) < DBL_MIN) {
-        mq->c_disable_flag[cell_id] = 1;
-        dam[cell_id] += mq->c_disable_flag[cell_id];
+        dam[cell_id] += 1.;
       }
     }
   }
@@ -1235,8 +1234,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (cs_lnum_t i = 0; i < 3; i++) {
         if (CS_ABS(dam[cell_id][i][i]) < DBL_MIN) {
-          mq->c_disable_flag[cell_id] = 1;
-          dam[cell_id][i][i] += mq->c_disable_flag[cell_id];
+          dam[cell_id][i][i] += 1.;
         }
       }
     }
@@ -2080,8 +2078,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (cs_lnum_t i = 0; i < 6; i++) {
         if (CS_ABS(dam[cell_id][i][i]) < DBL_MIN) {
-          mq->c_disable_flag[cell_id] = 1;
-          dam[cell_id][i][i] += mq->c_disable_flag[cell_id];
+          dam[cell_id][i][i] += 1.;
         }
       }
     }
