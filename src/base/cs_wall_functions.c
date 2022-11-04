@@ -622,7 +622,7 @@ cs_immersed_boundary_wall_functions(int         f_id,
   cs_wall_functions_t *wall_functions = cs_get_glob_wall_functions();
 
   if (f == CS_F_(vel)) { /* velocity */
-    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
     /* cast to 3D vectors for readability */
     cs_real_3_t   *_st_exp = (cs_real_3_t *)st_exp;
     cs_real_33_t  *_st_imp = (cs_real_33_t *)st_imp;
