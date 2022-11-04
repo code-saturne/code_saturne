@@ -688,10 +688,7 @@ write(nfecra,7532)
 
 !   - Post-traitement automatique (bord)
 
-write(nfecra,7550)   'ipstfo', ipstfo
-
 write(nfecra,9900)
-
 
  7500 format(                                                     &
                                                                 /,&
@@ -709,10 +706,6 @@ write(nfecra,9900)
  7540 format(                                                     &
 ' --- run_solver.log files',                                    /,&
 '       NTLIST = ',4x,i10,    ' (Output frequency     )',       /)
- 7550 format(                                                     &
-' --- Additional post-processing variables',                    /,&
-'       ',a6,' = ',4x,i10,    ' (Force exerted by the',         /,&
-'       ',6x,'   ',4x,10x,    '       fluid on the boundary)',  /)
 
 !===============================================================================
 ! 8. COUPLAGES

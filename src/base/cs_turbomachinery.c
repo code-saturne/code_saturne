@@ -2079,7 +2079,7 @@ cs_turbomachinery_define_functions(void)
       = cs_function_define_by_func("relative_pressure",
                                    CS_MESH_LOCATION_CELLS,
                                    1,
-                                   false,
+                                   true,
                                    CS_REAL_TYPE,
                                    _relative_pressure_f,
                                    NULL);
@@ -2099,7 +2099,7 @@ cs_turbomachinery_define_functions(void)
       = cs_function_define_by_func("relative_velocity",
                                    CS_MESH_LOCATION_CELLS,
                                    3,
-                                   false,
+                                   true,
                                    CS_REAL_TYPE,
                                    _relative_velocity_f,
                                    NULL);

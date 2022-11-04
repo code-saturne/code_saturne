@@ -2595,7 +2595,7 @@ cs_elec_define_functions(void)
       = cs_function_define_by_func("elec_pot_gradient_im",
                                    CS_MESH_LOCATION_CELLS,
                                    3,
-                                   false,
+                                   true,
                                    CS_REAL_TYPE,
                                    _pot_gradient_im_f,
                                    NULL);
@@ -2616,7 +2616,7 @@ cs_elec_define_functions(void)
       = cs_function_define_by_func("elec_current_im",
                                    CS_MESH_LOCATION_CELLS,
                                    3,
-                                   false,
+                                   true,
                                    CS_REAL_TYPE,
                                    _current_im_f,
                                    NULL);
@@ -2636,7 +2636,7 @@ cs_elec_define_functions(void)
       = cs_function_define_by_func("elec_pot_module",
                                    CS_MESH_LOCATION_CELLS,
                                    1,
-                                   false,
+                                   true,
                                    CS_REAL_TYPE,
                                    _pot_module_f,
                                    NULL);
@@ -2656,7 +2656,7 @@ cs_elec_define_functions(void)
       = cs_function_define_by_func("elec_pot_arg",
                                    CS_MESH_LOCATION_CELLS,
                                    1,
-                                   false,
+                                   true,
                                    CS_REAL_TYPE,
                                    _pot_arg_f,
                                    NULL);

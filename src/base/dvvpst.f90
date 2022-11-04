@@ -50,26 +50,14 @@ subroutine dvvpst &
 !===============================================================================
 
 use paramx
-use pointe
 use entsor
 use cstnum
-use cstphy
 use optcal
 use numvar
-use parall
-use period
-use lagran
-use ppppar
-use ppthch
-use ppincl
-use cplsat
 use mesh
 use field
-use field_operator
 use post
 use cs_f_interfaces
-use rotation
-use turbomachinery
 
 !===============================================================================
 
@@ -93,11 +81,10 @@ logical          ientla, ivarpr
 integer          ifac  , iloc  , ivar
 integer          idimt , kk   , ll, iel
 integer          fldid, fldprv, keycpl, iflcpl
-integer          iflpst, itplus
+integer          iflpst
 
 double precision rbid(1)
 
-double precision, dimension(:), pointer :: tplusp
 double precision, dimension(:), pointer :: valsp, coefap, coefbp
 double precision, dimension(:,:), pointer :: valvp, cofavp, cofbvp
 double precision, dimension(:,:,:), pointer :: cofbtp
@@ -207,54 +194,6 @@ if (numtyp .eq. -2) then
                         ntcabs, ttcabs, rbid, rbid, trafbr)
 
   enddo ! End of loop on variables
-
-  ! Handle stresses at boundary
-  ! ---------------------------
-
-  if (iand(ipstfo, 1) .ne. 0) then
-
-    ! Compute variable values on boundary faces
-
-    call post_stress(nfbrps, lstfbr, trafbr)
-
-    idimt = 3        ! variable dimension
-    ientla = .true.  ! interleaved values
-    ivarpr = .false. ! defined on work array
-
-    call post_write_var(nummai, 'Stress', idimt, ientla, ivarpr,  &
-                        ntcabs, ttcabs, rbid, rbid, trafbr)
-
-  endif
-
-  if (iand(ipstfo, 2) .ne. 0) then
-
-    ! Compute variable values on boundary faces
-
-    call post_stress_tangential(nfbrps, lstfbr, trafbr)
-
-    idimt = 3        ! variable dimension
-    ientla = .true.  ! interleaved values
-    ivarpr = .false. ! defined on work array
-
-    call post_write_var(nummai, 'Shear Stress', idimt, ientla, ivarpr,  &
-                        ntcabs, ttcabs, rbid, rbid, trafbr)
-
-  endif
-
-  if (iand(ipstfo, 4) .ne. 0) then
-
-    ! Calcul des valeurs de la variable sur les faces de bord
-
-    call post_stress_normal(nfbrps, lstfbr, trafbr)
-
-    idimt = 1        ! variable dimension
-    ientla = .true.  ! interleaved values
-    ivarpr = .false. ! defined on work array
-
-    call post_write_var(nummai, 'Normal Stress', idimt, ientla, ivarpr,  &
-                        ntcabs, ttcabs, rbid, rbid, trafbr)
-
-  endif
 
 endif ! end of test on postprocessing mesh number
 

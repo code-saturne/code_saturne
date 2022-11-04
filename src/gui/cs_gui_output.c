@@ -659,26 +659,82 @@ _selection_func_boundary_cells(void        *input,
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Public Fortran function definitions
+ * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Determine general output options.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_output(void)
+{
+  const int *v_i = NULL;
+
+  const char path_o[] = "analysis_control/output";
+  cs_tree_node_t *tn_o = cs_tree_get_node(cs_glob_tree, path_o);
+
+  v_i = cs_tree_node_get_child_values_int(tn_o,
+                                          "listing_printing_frequency");
+  if (v_i != NULL) cs_glob_log_frequency = v_i[0];
+
+  const int n_fields = cs_field_n_fields();
+
+  /* temporary field -> moment ids */
+  int *moment_id = NULL;
+  const int n_moments = cs_time_moment_n_moments();
+  if (n_moments > 0) {
+    BFT_MALLOC(moment_id, n_fields, int);
+    for (int f_id = 0; f_id < n_fields; f_id++)
+      moment_id[f_id] = -1;
+    for (int m_id = 0; m_id < n_moments; m_id++) {
+      const cs_field_t *f = cs_time_moment_get_field(m_id);
+      if (f != NULL)
+        moment_id[f->id] = m_id;
+    }
+  }
+
+  /* variable output */
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    const cs_field_t  *f = cs_field_by_id(f_id);
+    if (f->type & CS_FIELD_VARIABLE)
+      _field_post("variable", f->id);
+    else if (   (f->type & CS_FIELD_PROPERTY)
+             || (f->type & CS_FIELD_POSTPROCESS)) {
+      if (moment_id != NULL) {
+        if (moment_id[f_id] > -1) {
+          _field_post("time_average", f->id);
+          continue;
+        }
+      }
+      _field_post("property", f->id);
+    }
+  }
+
+  BFT_FREE(moment_id);
+
+#if _XML_DEBUG_
+  bft_printf("%s\n", __func__);
+  bft_printf("--ntlist = %i\n", cs_glob_log_frequency);
+#endif
+}
 
 /*----------------------------------------------------------------------------
  * Determine output boundary fields
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cspstb, CSPSTB) (int  *ipstfo)
+void
+cs_gui_output_boundary(void)
 {
   /* Surfacic variables output */
 
-  *ipstfo = 0;
-
   if (cs_glob_physical_model_flag[CS_GROUNDWATER] == -1) {
     if (_surfacic_variable_post("stress", true))
-      *ipstfo += 1;
+      cs_function_define_boundary_stress();
     if (_surfacic_variable_post("stress_tangential", false))
-      *ipstfo += 2;
+      cs_function_define_boundary_stress_tangential();
     if (_surfacic_variable_post("stress_normal", false))
-      *ipstfo += 4;
+      cs_function_define_boundary_stress_normal();
 
     /* TODO: move this following field an function definitions earlier
        (with thermal model), and only handle "post_vis" option here,
@@ -751,67 +807,6 @@ void CS_PROCF (cspstb, CSPSTB) (int  *ipstfo)
         cs_field_set_key_int(bf, k_vis, 1);
     }
   }
-}
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Determine general output options.
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_output(void)
-{
-  const int *v_i = NULL;
-
-  const char path_o[] = "analysis_control/output";
-  cs_tree_node_t *tn_o = cs_tree_get_node(cs_glob_tree, path_o);
-
-  v_i = cs_tree_node_get_child_values_int(tn_o,
-                                          "listing_printing_frequency");
-  if (v_i != NULL) cs_glob_log_frequency = v_i[0];
-
-  const int n_fields = cs_field_n_fields();
-
-  /* temporary field -> moment ids */
-  int *moment_id = NULL;
-  const int n_moments = cs_time_moment_n_moments();
-  if (n_moments > 0) {
-    BFT_MALLOC(moment_id, n_fields, int);
-    for (int f_id = 0; f_id < n_fields; f_id++)
-      moment_id[f_id] = -1;
-    for (int m_id = 0; m_id < n_moments; m_id++) {
-      const cs_field_t *f = cs_time_moment_get_field(m_id);
-      if (f != NULL)
-        moment_id[f->id] = m_id;
-    }
-  }
-
-  /* variable output */
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-    const cs_field_t  *f = cs_field_by_id(f_id);
-    if (f->type & CS_FIELD_VARIABLE)
-      _field_post("variable", f->id);
-    else if (   (f->type & CS_FIELD_PROPERTY)
-             || (f->type & CS_FIELD_POSTPROCESS)) {
-      if (moment_id != NULL) {
-        if (moment_id[f_id] > -1) {
-          _field_post("time_average", f->id);
-          continue;
-        }
-      }
-      _field_post("property", f->id);
-    }
-  }
-
-  BFT_FREE(moment_id);
-
-#if _XML_DEBUG_
-  bft_printf("%s\n", __func__);
-  bft_printf("--ntlist = %i\n", cs_glob_log_frequency);
-#endif
 }
 
 /*----------------------------------------------------------------------------

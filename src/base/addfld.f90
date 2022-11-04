@@ -79,7 +79,7 @@ integer          ii, iscal
 integer          iscacp, ifcvsl, kbfid
 integer          iflid, iopchr
 integer          itycat, ityloc, idim1, idim3
-integer          f_id, potr, poti, flag
+integer          f_id, potr, poti
 integer          f_vis, f_log, ivtmp
 integer          kturt, kfturt, turb_flux_model, turb_flux_model_type
 integer          kfturt_alpha
@@ -706,12 +706,14 @@ ityloc = 3 ! boundary faces
 
 itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 
-! In case of ALE or boundary efforts postprocessing, create appropriate field
+! In case of ALE or postprocessing, ensure boundary forces are tracked
 
-if (iale.ge.1 .or. ipstfo.ne.0) then
+call field_get_id_try('boundary_forces', iforbr)  ! may already be present
+
+if (iale.ge.1) then
   itycat = FIELD_EXTENSIVE + FIELD_POSTPROCESS
-  call field_create('boundary_forces', itycat, ityloc, idim3, inoprv, &
-                    iforbr)
+  call field_find_or_create('boundary_forces', itycat, ityloc, idim3, &
+                            iforbr)
 endif
 
 ! Boundary efforts postprocessing for immersed boundaries, create field
@@ -724,10 +726,12 @@ endif
 
 itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 
-! In case of condensation, create appropriate field
+! In case of condensation or postprocessing, ensure y+ is tracked
+
+call field_get_id_try('yplus', iyplbr)  ! may already be present
 
 if (icondb.ge.0.or.icondv.ge.0) then
-  call field_get_id_try('yplus', f_id) ! Test if pre-existing
+  f_id = iyplbr ! Test if pre-existing
   call field_find_or_create('yplus', itycat, ityloc, idim1, iyplbr)
   if (f_id .lt. 0) then                ! Set some properties if new
     call field_set_key_str(iyplbr, keylbl, 'Yplus')

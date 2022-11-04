@@ -397,7 +397,6 @@ mmtycl.f90 \
 navstv.f90 \
 newmrk.f90 \
 phyvar.f90 \
-post_util.f90 \
 precli.f90 \
 predfl.f90 \
 predvv.f90 \

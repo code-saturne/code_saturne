@@ -89,6 +89,42 @@ cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define function object for computation of boundary stress.
+ *
+ * \return  pointer to the associated function object in case of success,
+ *          or NULL in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_function_t *
+cs_function_define_boundary_stress(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define function object for computation of normal boundary stress.
+ *
+ * \return  pointer to the associated function object in case of success,
+ *          or NULL in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_function_t *
+cs_function_define_boundary_stress_normal(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define function object for computation of tangential boundary stress.
+ *
+ * \return  pointer to the associated function object in case of success,
+ *          or NULL in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_function_t *
+cs_function_define_boundary_stress_tangential(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define function object for computation of boundary thermal flux.
  *
  * \return  pointer to the associated function object in case of success,
@@ -98,6 +134,75 @@ cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id);
 
 cs_function_t *
 cs_function_define_boundary_thermal_flux(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute stress at boundary.
+ *
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        ignored
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_function_boundary_stress(int               location_id,
+                            cs_lnum_t         n_elts,
+                            const cs_lnum_t  *elt_ids,
+                            void             *input,
+                            void             *vals);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute normal stress at boundary.
+ *
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        ignored
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_function_boundary_stress_normal(int               location_id,
+                                   cs_lnum_t         n_elts,
+                                   const cs_lnum_t  *elt_ids,
+                                   void             *input,
+                                   void             *vals);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute tangential stress at boundary.
+ *
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        ignored
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_function_boundary_stress_tangential(int               location_id,
+                                       cs_lnum_t         n_elts,
+                                       const cs_lnum_t  *elt_ids,
+                                       void             *input,
+                                       void             *vals);
 
 /*----------------------------------------------------------------------------*/
 /*!

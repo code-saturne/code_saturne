@@ -407,7 +407,7 @@ _define_coriolis_functions(void)
       = cs_function_define_by_func("absolute_pressure",
                                    CS_MESH_LOCATION_CELLS,
                                    1,
-                                   false,
+                                   true,
                                    CS_REAL_TYPE,
                                    _absolute_pressure_f,
                                    NULL);
@@ -427,7 +427,7 @@ _define_coriolis_functions(void)
       = cs_function_define_by_func("absolute_velocity",
                                    CS_MESH_LOCATION_CELLS,
                                    3,
-                                   false,
+                                   true,
                                    CS_REAL_TYPE,
                                    _absolute_velocity_f,
                                    NULL);
@@ -438,6 +438,27 @@ _define_coriolis_functions(void)
 
     f->type = CS_FUNCTION_INTENSIVE;
     f->post_vis = CS_POST_ON_LOCATION;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Ensure the "boundary_forces" fiels is present.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_ensure_boundary_forces_are_present(void)
+{
+  const char name[] = "boundary_forces";
+  cs_field_t *bf = cs_field_by_name_try(name);
+  if (bf == NULL) {
+    int type = CS_FIELD_EXTENSIVE | CS_FIELD_POSTPROCESS;
+    int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
+
+    bf = cs_field_create(name, type, location_id, 3, false);
+    cs_field_set_key_int(bf, cs_field_key_id("log"), 0);
+    cs_field_set_key_int(bf, cs_field_key_id("post_vis"), 0);
   }
 }
 
@@ -538,7 +559,109 @@ cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define function object for comutation of boundary thermal flux.
+ * \brief Define function object for computation of boundary stress.
+ *
+ * \return  pointer to the associated function object in case of success,
+ *          or NULL in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_function_t *
+cs_function_define_boundary_stress(void)
+{
+  /* Create appropriate fields if needed. */
+  _ensure_boundary_forces_are_present();
+
+  cs_function_t *f = NULL;
+
+  f = cs_function_define_by_func("boundary_stress",
+                                 CS_MESH_LOCATION_BOUNDARY_FACES,
+                                 3,
+                                 true,
+                                 CS_REAL_TYPE,
+                                 cs_function_boundary_stress,
+                                 cs_glob_mesh);
+
+  cs_function_set_label(f, "Stress");
+
+  f->type = CS_FUNCTION_INTENSIVE;
+
+  f->post_vis = CS_POST_ON_LOCATION;
+
+  return f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define function object for computation of normal boundary stress.
+ *
+ * \return  pointer to the associated function object in case of success,
+ *          or NULL in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_function_t *
+cs_function_define_boundary_stress_normal(void)
+{
+  /* Create appropriate fields if needed. */
+  _ensure_boundary_forces_are_present();
+
+  cs_function_t *f = NULL;
+
+  f = cs_function_define_by_func("boundary_stress_normal",
+                                 CS_MESH_LOCATION_BOUNDARY_FACES,
+                                 1,
+                                 true,
+                                 CS_REAL_TYPE,
+                                 cs_function_boundary_stress_normal,
+                                 NULL);
+
+  cs_function_set_label(f, "Normal Stress");
+
+  f->type = CS_FUNCTION_INTENSIVE;
+
+  f->post_vis = CS_POST_ON_LOCATION;
+
+  return f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define function object for computation of tangential boundary stress.
+ *
+ * \return  pointer to the associated function object in case of success,
+ *          or NULL in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_function_t *
+cs_function_define_boundary_stress_tangential(void)
+{
+  /* Create appropriate fields if needed. */
+  _ensure_boundary_forces_are_present();
+
+  cs_function_t *f = NULL;
+
+  f = cs_function_define_by_func("boundary_stress_tangential",
+                                 CS_MESH_LOCATION_BOUNDARY_FACES,
+                                 3,
+                                 true,
+                                 CS_REAL_TYPE,
+                                 cs_function_boundary_stress_tangential,
+                                 cs_glob_mesh);
+
+  cs_function_set_label(f, "Shear Stress");
+
+  f->type = CS_FUNCTION_INTENSIVE;
+
+  f->post_vis = CS_POST_ON_LOCATION;
+
+  return f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define function object for computation of boundary thermal flux.
  *
  * \return  pointer to the associated function object in case of success,
  *          or NULL in case of error
@@ -558,15 +681,13 @@ cs_function_define_boundary_thermal_flux(void)
   if (f_t == NULL)
     return f;
 
-  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f_t);
-
   f = cs_function_define_by_func("boundary_thermal_flux",
                                  CS_MESH_LOCATION_BOUNDARY_FACES,
                                  1,
-                                 false,
+                                 true,
                                  CS_REAL_TYPE,
                                  cs_function_boundary_thermal_flux,
-                                 cs_glob_mesh);
+                                 NULL);
 
   cs_function_set_label(f, "Input thermal flux");
 
@@ -603,7 +724,7 @@ cs_function_define_boundary_nusselt(void)
 
   if (eqp->idiff != 0) {
 
-    char *names[] = {"tplus", "tstar"};
+    const char *names[] = {"tplus", "tstar"};
 
     for (int i = 0; i < 2; i++) {
 
@@ -621,10 +742,10 @@ cs_function_define_boundary_nusselt(void)
     f = cs_function_define_by_func("boundary_layer_nusselt",
                                    CS_MESH_LOCATION_BOUNDARY_FACES,
                                    1,
-                                   false,
+                                   true,
                                    CS_REAL_TYPE,
                                    cs_function_boundary_nusselt,
-                                   cs_glob_mesh);
+                                   NULL);
 
     cs_function_set_label(f, "Dimensionless heat flux");
 
@@ -635,6 +756,179 @@ cs_function_define_boundary_nusselt(void)
   }
 
   return f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute stress at boundary.
+ *
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        ignored
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_function_boundary_stress(int               location_id,
+                            cs_lnum_t         n_elts,
+                            const cs_lnum_t  *elt_ids,
+                            void             *input,
+                            void             *vals)
+{
+  CS_UNUSED(input);
+  assert(location_id == CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  cs_real_3_t *stress = vals;
+
+  const cs_real_3_t *b_forces
+    = (const cs_real_3_t *)(cs_field_by_name("boundary_forces")->val);
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_t *restrict b_face_surf
+    = (const cs_real_t *restrict)mq->b_face_surf;
+
+  if (elt_ids != NULL) {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t e_id = elt_ids[i];
+      cs_real_t s_mult = 1./b_face_surf[e_id];
+      for (cs_lnum_t j = 0; j < 3; j++)
+        stress[i][j] = b_forces[e_id][j] * s_mult;
+    }
+  }
+
+  else {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_real_t s_mult = 1./b_face_surf[i];
+      for (cs_lnum_t j = 0; j < 3; j++)
+        stress[i][j] = b_forces[i][j] * s_mult;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute normal stress at boundary.
+ *
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        ignored
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_function_boundary_stress_normal(int               location_id,
+                                   cs_lnum_t         n_elts,
+                                   const cs_lnum_t  *elt_ids,
+                                   void             *input,
+                                   void             *vals)
+{
+  CS_UNUSED(input);
+  assert(location_id == CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  cs_real_t *stress = vals;
+
+  const cs_real_3_t *b_forces
+    = (const cs_real_3_t *)(cs_field_by_name("boundary_forces")->val);
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_t *restrict b_face_surf
+    = (const cs_real_t *restrict)mq->b_face_surf;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)mq->b_face_normal;
+
+  if (elt_ids != NULL) {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t e_id = elt_ids[i];
+      cs_real_t s_mult_2 = 1. / cs_math_sq(b_face_surf[e_id]);
+      cs_real_t f_nor = cs_math_3_dot_product(b_forces[e_id],
+                                              b_face_normal[e_id]);
+      stress[i] = f_nor * s_mult_2;
+    }
+  }
+
+  else {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_real_t s_mult_2 = 1. / cs_math_sq(b_face_surf[i]);
+      cs_real_t f_nor = cs_math_3_dot_product(b_forces[i],
+                                              b_face_normal[i]);
+      stress[i] = f_nor * s_mult_2;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute tangential stress at boundary.
+ *
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        ignored
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_function_boundary_stress_tangential(int               location_id,
+                                       cs_lnum_t         n_elts,
+                                       const cs_lnum_t  *elt_ids,
+                                       void             *input,
+                                       void             *vals)
+{
+  CS_UNUSED(input);
+  assert(location_id == CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  cs_real_3_t *stress = vals;
+
+  const cs_real_3_t *b_forces
+    = (const cs_real_3_t *)(cs_field_by_name("boundary_forces")->val);
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_t *restrict b_face_surf
+    = (const cs_real_t *restrict)mq->b_face_surf;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)mq->b_face_normal;
+
+  if (elt_ids != NULL) {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t e_id = elt_ids[i];
+      cs_real_t s_mult = 1./b_face_surf[e_id];
+      cs_real_t s_nor[3] = {b_face_normal[e_id][0] * s_mult,
+                            b_face_normal[e_id][1] * s_mult,
+                            b_face_normal[e_id][2] * s_mult};
+      cs_real_t f_nor = cs_math_3_dot_product(b_forces[e_id], s_nor);
+      for (cs_lnum_t j = 0; j < 3; j++)
+        stress[i][j] = (b_forces[e_id][j] - f_nor*s_nor[j]) * s_mult;
+    }
+  }
+
+  else {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_real_t s_mult = 1./b_face_surf[i];
+      cs_real_t s_nor[3] = {b_face_normal[i][0] * s_mult,
+                            b_face_normal[i][1] * s_mult,
+                            b_face_normal[i][2] * s_mult};
+      cs_real_t f_nor = cs_math_3_dot_product(b_forces[i], s_nor);
+      for (cs_lnum_t j = 0; j < 3; j++)
+        stress[i][j] = (b_forces[i][j] - f_nor*s_nor[j]) * s_mult;
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/

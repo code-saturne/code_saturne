@@ -124,6 +124,12 @@ interface
     implicit none
   end subroutine cs_gui_numerical_options
 
+  subroutine cs_gui_output_boundary()  &
+       bind(C, name='cs_gui_output_boundary')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_output_boundary
+
   subroutine cs_gui_porous_model()  &
        bind(C, name='cs_gui_porous_model')
     use, intrinsic :: iso_c_binding
@@ -355,7 +361,7 @@ call csiphy()
 
 ! Postprocessing
 
-call cspstb(ipstfo)
+call cs_gui_output_boundary
 
 ! Define main properties (pointers, checks, ipp) if not in CDO mode only
 if (icdo.lt.2) then

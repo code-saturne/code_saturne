@@ -157,14 +157,6 @@ module entsor
   !> text editor, problems finding the desired information in the file, ...).
   integer(c_int), pointer, save :: ntlist
 
-  !> \defgroup other_output Boundary post-processing
-
-  !> \addtogroup other_output
-  !> \{
-
-  !> post-processed property: Efforts (0: none 1: all; 2: tangent; 4: normal)
-  integer, save :: ipstfo
-  !> \}
   !> \}
 
   !=============================================================================
