@@ -1928,7 +1928,7 @@ _part_scotch(SCOTCH_Num   n_cells,
 
   SCOTCH_graphExit(&grafdat);
 
-  /* Shift cell_part values to 1 to n numbering and free possible temporary */
+  /* Free possible temporary */
 
   if (sizeof(SCOTCH_Num) != sizeof(int)) {
     for (i = 0; i < n_cells; i++)
@@ -2000,7 +2000,6 @@ _part_ptscotch(cs_gnum_t    n_g_cells,
                MPI_Comm     comm)
 {
   int  n_ranks;
-  SCOTCH_Num  i;
   SCOTCH_Dgraph  grafdat;  /* Scotch graph object to interface with libScotch */
   SCOTCH_Strat  stradat;
 
@@ -2050,6 +2049,36 @@ _part_ptscotch(cs_gnum_t    n_g_cells,
 
   if (retval == 0) {
 
+    /* Allow saving the distributed graph (may be useful to provide PT-Scotch
+       developers with bug reports) */
+
+    const char *dgraph_save_name = getenv("CS_SCOTCH_DGRAPH_SAVE");
+    if (dgraph_save_name != NULL) {
+
+      FILE *graph_save = NULL;
+
+      /* In parallel, we will have one save file per MPI process */
+      if (cs_glob_rank_id >= 0) {
+        char  *l_name = NULL;
+        int n_dec = 1;
+        for (int i = cs_glob_n_ranks; i >= 10; i /= 10, n_dec += 1);
+        l_name = malloc((strlen(dgraph_save_name) + n_dec + 2) * sizeof (char));
+        sprintf(l_name, "%s.%0*d", dgraph_save_name, n_dec, cs_glob_rank_id);
+        graph_save = fopen(l_name, "w");
+        BFT_FREE(l_name);
+      }
+      else {
+        graph_save = fopen(dgraph_save_name, "w");
+      }
+
+      if (SCOTCH_dgraphSave(&grafdat, graph_save) != 0)
+        bft_error(__FILE__, __LINE__, errno,
+                  _("%s: Failed saving PT-Scotch distributed graph to %s.\n"),
+                  __func__, dgraph_save_name);
+
+      fclose(graph_save);
+    }
+
     SCOTCH_stratInit(&stradat);
 
     if (SCOTCH_dgraphCheck(&grafdat) == 0)
@@ -2063,7 +2092,7 @@ _part_ptscotch(cs_gnum_t    n_g_cells,
   /* Shift cell_part values to 1 to n numbering and free possible temporary */
 
   if (sizeof(SCOTCH_Num) != sizeof(int)) {
-    for (i = 0; i < n_cells; i++)
+    for (SCOTCH_Num i = 0; i < n_cells; i++)
       cell_part[i] = _cell_part[i];
     BFT_FREE(_cell_part);
   }

@@ -120,7 +120,7 @@ useful, but is simply a wrapper to the actual build system.
 
 `install_saturne.py` works in 2 or more passes.
 
-* on the first run, the script attemts to detect some tools, and generates
+* on the first run, the script attempts to detect some tools, and generates
   a first `setup` configuration file;
 * The `setup` file should be checked and modified according to need;
 * on subsequent runs, libraries are downloaded and built, and code_saturne
@@ -248,13 +248,13 @@ This is useful for example for:
 * Define which `batch` system is used. The name of the batch system should match
   one of the templates in `<install-prefix>/share/code_saturne/batch`,
   but an absolute path (with a file ending in the given batch system name) can
-  be used to define a batch template taylored to a given system.
+  be used to define a batch template tailored to a given system.
 
 * Define `compute_versions` using the relative paths of alternate builds, so
   as to be able to use them from a "main" build. All specified builds are then
-  available from the GUI and run script, which is especiall y useful to switch
+  available from the GUI and run script, which is especially useful to switch
   from a production to a debug build. In this case the secondary builds do not
-  need to contain the full fromt-end (GUI, documentation, ...).
+  need to contain the full front-end (GUI, documentation, ...).
 
 * Assign a name to the current build or system, so that the run configurations
   defined for each case (number of processors, batch template, ...) are saved
@@ -264,7 +264,7 @@ This is useful for example for:
 
 * Defining the path to a SYRTHES installation to enable conjugate heat transfer.
 
-* All default MPI execution commands and options may be overriden using the
+* All default MPI execution commands and options may be overridden using the
   `mpi` section. Note that only the options defined in this section
   are overridden; defaults continue to apply for all others.
 
@@ -418,8 +418,7 @@ Compilers and interpreters
 
 For a minimal build of code_saturne on a Linux or Posix system, the requirements are:
 * A C compiler, conforming at least to the C11 standard.
-* A Fortran compiler, conforming at least to the Fortran 95 standard
-  and supporting the ISO_C_BINDING Fortran 2003 module.
+* A Fortran compiler, conforming at least to the Fortran 2008 standard.
 * A Python interpreter, with Python version 3.4 or above.
 
 For parallel runs, an MPI library is also necessary (MPI-2 or MPI-3 conforming).
@@ -634,7 +633,7 @@ The list of third-party software usable with code_saturne is provided here:
 * [Melissa](https://melissa-sa.github.io) may be used for in-situ
   statistical analysis and post-processing of ensemble runs.
 
-* `EOS` 1.2 or above may be used for thermodynamic properties of fluids.
+* `EOS` 1.8 or above may be used for thermodynamic properties of fluids.
    it is not currently free, so usually available only to users at EDF,
    CEA, or organisms participating in projects with those entities.
 
@@ -791,8 +790,8 @@ threads may call MPI functions simultaneously, and the use of `MPI_THREAD_MULTIP
 may carry a performance penalty, we prefer to sacrifice some of PT-Scotch's *
 performance by requiring that it be compiled without the `-DSCOTCH_PTHREAD` flag.
 This is not detected at compilation time, but with recent MPI libraries,
-PT-Scotch will complain at run time if it notices that the MPI thread safety
-level in insufficient.
+PT-Scotch 6.0 will complain at run time if it notices that the MPI thread safety level in insufficient. PT-Scotch 7.0 uses a more dynamic configuration
+and does not complain, but its documentation still recommends against this.
 
 Detailed build instructions, including troubleshooting instructions, are given
 in the source tree's `INSTALL.txt` file. In case of trouble, note especially the
