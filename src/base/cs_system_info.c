@@ -199,7 +199,7 @@ _sys_info_cpu(char      *cpu_str,
 }
 
 /*----------------------------------------------------------------------------
- * Return Linux info based on /etc/issue.
+ * Return Linux info based on /etc/ros-release or /etc/issue.
  *
  * Only the information prior to a first escape sequence is returned.
  *
@@ -209,8 +209,8 @@ _sys_info_cpu(char      *cpu_str,
  *----------------------------------------------------------------------------*/
 
 static void
-_sys_info_issue(char      *issue_str,
-                unsigned   issue_str_max)
+_sys_info_release(char      *issue_str,
+                  unsigned   issue_str_max)
 {
   issue_str[0] = '\0';
 
@@ -222,35 +222,79 @@ _sys_info_issue(char      *issue_str,
     FILE *fp;
     char *s;
 
-    fp = fopen("/etc/issue", "r");
+    issue_str[0] = ' ';
+    issue_str[1] = '(';
+
+    fp = fopen("/etc/os-release", "r");
 
     if (fp != NULL) {
 
       issue_str[0] = ' ';
       issue_str[1] = '(';
 
-      s = fgets(issue_str + 2, _issue_str_max - 4, fp);
+      char buffer[256];
+      char name_string[] = "PRETTY_NAME";
+      size_t l = strlen(name_string);
 
-      if (s != NULL) {
-        int l = strlen(s);
-        for (int i = 0; i < l; i++)
-          if (s[i] == '\\') {
-            s[i] = '\0';
-            l = i;
+      while (true) {
+        s = fgets(buffer, 256, fp);
+        if (s == NULL)
+          break;
+
+        if (strncmp(s, name_string, l) == 0) {
+          s += l;
+          while (*s != '"' && *s != '\0') s++;
+          if (*s == '"') s++;
+          l = strlen(s);
+          for (size_t i = 0; i < l; i++) {
+            if (s[i] == '"') {
+              s[i] = '\0';
+            }
           }
-        _string_clean(issue_str + 2);
-        l = strlen(issue_str);
-        if (l > 2) {
-          issue_str[l] = ')';
-          issue_str[l+1] = '\0';
+          _string_clean(s);
+          l = strlen(s);
+          strncpy(issue_str + 2, s, _issue_str_max - 4);
+          issue_str[_issue_str_max - 2] = '\0';
+          break;
         }
-        else /* If no info was kept, empty string */
-          issue_str[0] = '\0';
       }
-
 
       fclose (fp);
     }
+
+    /* If os-release not present try /etc/issue */
+
+    else {
+      fp = fopen("/etc/issue", "r");
+
+      if (fp != NULL) {
+
+        s = fgets(issue_str + 2, _issue_str_max - 4, fp);
+
+        if (s != NULL) {
+          int l = strlen(s);
+          for (int i = 0; i < l; i++)
+            if (s[i] == '\\') {
+              s[i] = '\0';
+              l = i;
+            }
+          _string_clean(issue_str + 2);
+        }
+
+        fclose (fp);
+      }
+
+    }
+
+    /* Now finalize formatting */
+
+    size_t l = strlen(issue_str);
+    if (l > 2) {
+      issue_str[l] = ')';
+      issue_str[l+1] = '\0';
+    }
+    else /* If no info was kept, empty string */
+      issue_str[0] = '\0';
 
   }
 
@@ -364,7 +408,7 @@ _system_info(bool  log)
 
   /* System and machine */
 
-  _sys_info_issue(str_issue, 81);
+  _sys_info_release(str_issue, 81);
 
 #if defined(HAVE_UNAME)
 
