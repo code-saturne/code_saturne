@@ -577,6 +577,13 @@ _system_info(bool  log)
   }
 #endif
 
+#if defined(DEBUG) || !defined(NDEBUG)
+  for (int log_id = 0; log_id < n_logs; log_id++) {
+    cs_log_printf(logs[log_id],
+                  "\n  Debug build\n");
+  }
+#endif
+
 #if    defined(CS_CC_VERSION_STRING) || defined(CS_CXX_VERSION_STRING) \
     || defined(CS_FC_VERSION_STRING) || defined(CS_NVCC_VERSION_STRING)
   for (int log_id = 0; log_id < n_logs; log_id++) {
