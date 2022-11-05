@@ -44,6 +44,8 @@
 #include "bft_error.h"
 #include "bft_mem.h"
 #include "bft_printf.h"
+#include "cs_log.h"
+#include "cs_timer.h"
 
 #include "cs_property.h"
 
@@ -104,8 +106,8 @@ typedef struct {
                                         (cathare, thetis, freesteam, ...) */
   int          type;                 /* 0 for user
                                       * 1 for freesteam
-                                      * 2 for eos
-                                      * 3 for coolprop
+                                      * 2 for EOS
+                                      * 3 for CoolProp
                                       */
 
   cs_phys_prop_thermo_plane_type_t   thermo_plane;
@@ -151,6 +153,9 @@ typedef void
 
 cs_thermal_table_t *cs_glob_thermal_table = NULL;
 
+static cs_timer_counter_t   _physprop_lib_t_tot;   /* Total time in physical
+                                                      property library calls */
+
 #if defined(HAVE_DLOPEN) && defined(HAVE_EOS)
 
 static void                     *_cs_eos_dl_lib = NULL;
@@ -162,6 +167,7 @@ static cs_phys_prop_eos_t       *_cs_phys_prop_eos = NULL;
 
 #if defined(HAVE_COOLPROP)
 
+static char                     *_cs_coolprop_backend = NULL;
 static cs_phys_prop_coolprop_t  *_cs_phys_prop_coolprop = NULL;
 #if defined(HAVE_PLUGINS)
 static void                     *_cs_coolprop_dl_lib = NULL;
@@ -303,22 +309,25 @@ cs_thermal_table_set(const char                        *material,
                      cs_phys_prop_thermo_plane_type_t   thermo_plane,
                      int                                temp_scale)
 {
-  if (cs_glob_thermal_table == NULL)
+  if (cs_glob_thermal_table == NULL) {
     cs_glob_thermal_table = _thermal_table_create();
+    CS_TIMER_COUNTER_INIT(_physprop_lib_t_tot);
+  }
 
-  BFT_MALLOC(cs_glob_thermal_table->material,  strlen(material) +1,  char);
+  BFT_MALLOC(cs_glob_thermal_table->material, strlen(material) +1, char);
   strcpy(cs_glob_thermal_table->material,  material);
 
   if (strcmp(method, "freesteam") == 0 ||
       strcmp(material, "user_material") == 0) {
-    BFT_MALLOC(cs_glob_thermal_table->method,    strlen(method) +1,    char);
+    BFT_MALLOC(cs_glob_thermal_table->method, strlen(method) +1, char);
+    strcpy(cs_glob_thermal_table->method, method);
     if (strcmp(method, "freesteam") == 0)
       cs_glob_thermal_table->type = 1;
     else
       cs_glob_thermal_table->type = 0;
   }
   else if (strcmp(method, "CoolProp") == 0) {
-    BFT_MALLOC(cs_glob_thermal_table->method,    strlen(method) +1,    char);
+    cs_physical_properties_set_coolprop_backend(_cs_coolprop_backend);
     cs_glob_thermal_table->type = 3;
 #if defined(HAVE_COOLPROP)
 #if defined(HAVE_PLUGINS)
@@ -345,7 +354,7 @@ cs_thermal_table_set(const char                        *material,
 #endif
   }
   else {
-    BFT_MALLOC(cs_glob_thermal_table->method,    strlen(method) +5,    char);
+    BFT_MALLOC(cs_glob_thermal_table->method, strlen(method) +5, char);
     strcpy(cs_glob_thermal_table->method, "EOS_");
     strcat(cs_glob_thermal_table->method, method);
     cs_glob_thermal_table->type = 2;
@@ -395,6 +404,15 @@ void
 cs_thermal_table_finalize(void)
 {
   if (cs_glob_thermal_table != NULL) {
+
+    if (cs_glob_thermal_table->method != NULL)
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    _("\n"
+                      "Physical property computations:\n"
+                      "  Total elapsed time for  %s:  %.3f s\n"),
+                    cs_glob_thermal_table->method,
+                    _physprop_lib_t_tot.nsec*1e-9);
+
 #if defined(HAVE_EOS) /* always a plugin */
     if (cs_glob_thermal_table->type == 2) {
       _cs_eos_destroy();
@@ -409,11 +427,65 @@ cs_thermal_table_finalize(void)
       cs_base_dlclose("cs_coolprop", _cs_coolprop_dl_lib);
       _cs_phys_prop_coolprop = NULL;
     }
+    BFT_FREE(_cs_coolprop_backend);
 #endif
     BFT_FREE(cs_glob_thermal_table->material);
     BFT_FREE(cs_glob_thermal_table->method);
     BFT_FREE(cs_glob_thermal_table);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set backend for CoolProp.
+ *
+ * Ignored if CoolProp is not used.
+ *
+ * When called from user-defined functions, this should be set from
+ * cs_user_model rather than cs_user_parameters, as some reference property
+ * values may be computed before calling cs_user_parameters.
+ *
+ * A few primary backends in CoolProp are:
+ *
+ * - "HEOS": The Helmholtz Equation of State backend for use with pure and
+ *   pseudo-pure fluids, and mixtures, all of which are based on multi-parameter
+ *   Helmholtz Energy equations of state.
+ * - "REFPROP": only if REFPROP library is available
+ *   (set ALTERNATIVE_REFPROP_PATH environment variable if needed)
+ * - "INCOMP": Incompressible backend (for pure fluids)
+ * - "TTSE&XXXX": TTSE backend, with tables generated using the XXXX backend
+ *   where XXXX is one of the base backends("HEOS", "REFPROP", etc.)
+ * - "BICUBIC&XXXX": Bicubic backend, with tables generated using the XXXX
+ *   backend where XXXX is one of the base backends("HEOS", "REFPROP", etc.)
+ *
+ * \param[in]  backend  backend name; "HEOS" used if NULL.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_physical_properties_set_coolprop_backend(const char  *backend)
+{
+#if defined(HAVE_COOLPROP)
+
+  if (backend == NULL)
+    backend = "HEOS";
+
+  size_t l = strlen(backend);
+  BFT_REALLOC(_cs_coolprop_backend, l+1, char);
+  strcpy(_cs_coolprop_backend, backend);
+
+  if (cs_glob_thermal_table != NULL) {
+
+    BFT_REALLOC(cs_glob_thermal_table->method,
+                strlen("CoolProp ()") + strlen(_cs_coolprop_backend) + 3,
+                char);
+    strcpy(cs_glob_thermal_table->method, "CoolProp (");
+    strcat(cs_glob_thermal_table->method, _cs_coolprop_backend);
+    strcat(cs_glob_thermal_table->method, ")");
+
+  }
+
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -485,6 +557,8 @@ cs_phys_prop_compute(cs_phys_prop_type_t          property,
     }
   }
 
+  cs_timer_t t0 = cs_timer_time();
+
   /* Compute proper */
 
   if (cs_glob_thermal_table->type == 1) {
@@ -508,7 +582,7 @@ cs_phys_prop_compute(cs_phys_prop_type_t          property,
 #if defined(HAVE_COOLPROP)
   else if (cs_glob_thermal_table->type == 3) {
     _cs_phys_prop_coolprop(cs_glob_thermal_table->material,
-                           "HEOS",
+                           _cs_coolprop_backend,
                            cs_glob_thermal_table->thermo_plane,
                            property,
                            _n_vals,
@@ -517,6 +591,10 @@ cs_phys_prop_compute(cs_phys_prop_type_t          property,
                            val);
   }
 #endif
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&_physprop_lib_t_tot, &t0, &t1);
+
   BFT_FREE(_var1_c);
   BFT_FREE(_var2_c);
 
@@ -1124,7 +1202,6 @@ cs_physical_property_update_zone_values(const char       *name,
 
   _update_def_values(def, vals);
 }
-
 
 /*----------------------------------------------------------------------------*/
 

@@ -89,6 +89,36 @@ cs_thermal_table_set(const char                        *material,
 void
 cs_thermal_table_finalize(void);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set backend for CoolProp.
+ *
+ * Ignored if CoolProp is not used.
+ *
+ * When called from user-defined functions, this should be set from
+ * cs_user_model rather than cs_user_parameters, as some reference property
+ * values may be computed before calling cs_user_parameters.
+ *
+ * A few primary backends in CoolProp are:
+ *
+ * - "HEOS": The Helmholtz Equation of State backend for use with pure and
+ *   pseudo-pure fluids, and mixtures, all of which are based on multi-parameter
+ *   Helmholtz Energy equations of state.
+ * - "REFPROP": only if REFPROP library is available
+ *   (set ALTERNATIVE_REFPROP_PATH environment variable if needed)
+ * - "INCOMP": Incompressible backend (for pure fluids)
+ * - "TTSE&XXXX": TTSE backend, with tables generated using the XXXX backend
+ *   where XXXX is one of the base backends("HEOS", "REFPROP", etc.)
+ * - "BICUBIC&XXXX": Bicubic backend, with tables generated using the XXXX
+ *   backend where XXXX is one of the base backends("HEOS", "REFPROP", etc.)
+ *
+ * \param[in]  backend  backend name
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_physical_properties_set_coolprop_backend(const char  *backend);
+
 /*----------------------------------------------------------------------------
  * Compute a physical property.
  *
