@@ -246,6 +246,8 @@ def build_shared_library(linker,
     # Convert libtool-like "-R' syntax to rpath.
 
     for o in other:
+        if o in ("-lptscotch", "-lscotch"):
+            continue
         if o[:2] == '-R':
             cmd += ["-Wl,-rpath", "-Wl,"+o[2:]]
         else:
