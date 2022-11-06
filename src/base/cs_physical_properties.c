@@ -327,9 +327,9 @@ cs_thermal_table_set(const char                        *material,
       cs_glob_thermal_table->type = 0;
   }
   else if (strcmp(method, "CoolProp") == 0) {
-    cs_physical_properties_set_coolprop_backend(_cs_coolprop_backend);
     cs_glob_thermal_table->type = 3;
 #if defined(HAVE_COOLPROP)
+    cs_physical_properties_set_coolprop_backend(_cs_coolprop_backend);
 #if defined(HAVE_PLUGINS)
     {
       /* Open from shared library */
@@ -485,6 +485,8 @@ cs_physical_properties_set_coolprop_backend(const char  *backend)
 
   }
 
+#else
+  CS_UNUSED(backend);
 #endif
 }
 
