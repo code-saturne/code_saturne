@@ -3,6 +3,8 @@ Release 7.2.1 (not released yet)
 
 Bug fixes:
 
+- Fix trackcvg crash with recent PyQt versions.
+
 - Fix crash when using CoolProp.
 
 - Fix launching of a coupled case created using "neptune_cfd".
