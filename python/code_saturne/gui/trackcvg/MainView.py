@@ -957,9 +957,9 @@ class MainView(object):
             time = from_qvariant(text, float)
             self.timeRefresh = time
             if self.timeRefresh != 0.:
-                self.timer.start(self.timeRefresh * 1000)
+                self.timer.start(int(self.timeRefresh * 1000))
             else:
-                self.timer.start(1.e8 * 1000)
+                self.timer.start(int(1.e8 * 1000))
 
 
     def updateSubplotNumber(self, v):
@@ -1272,7 +1272,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.listingVariable = []
         self.listFileProbes = {}
         self.timer = QTimer()
-        self.timer.start(self.timeRefresh * 1000)
+        self.timer.start(int(self.timeRefresh * 1000))
 
         self.ui_initialize()
 
