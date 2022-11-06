@@ -412,7 +412,6 @@ pthermax= -1.d0
 sleak = 0.d0
 kleak = 2.9d0
 
-
 ! --- Temperature or enthalpy
 
 !   When used without specific physics, if we have chosen to solve in temperature
@@ -446,7 +445,6 @@ endif
 
 iccvfg = 1
 
-
 ! --- Rotation/curvature correction for eddy-viscosity turbulence models
 !      0: deactivated
 !      1: activated
@@ -475,7 +473,6 @@ irccor = 1
 !     Caution:   complete cs_user_physical_properties with the law defining the diffusivity
 !     ========   if and only if ifcvsl = 0 has been set here.
 
-
 ! For thermal scalar
 if (ippmod(icompf).ge.0) then
   ifcvsl = -1
@@ -491,7 +488,6 @@ do iscal = 1, nscaus
     call field_set_key_int(ivarfl(isca(iscal)), kivisl, ifcvsl)
   endif
 enddo
-
 
 ! --- Variable density field id (ifcvsl>=0) or bulk
 !     density (ifcvsl=-1) for USER scalars.
@@ -516,7 +512,6 @@ do iscal = 1, nscaus
     call field_set_key_int(ivarfl(isca(iscal)), kromsl, ifcvsl)
   endif
 enddo
-
 
 ! --- Turbulent flux model u'T' for the scalar T
 !     Algebraic Model
@@ -563,7 +558,6 @@ iescal(iestot) = 2   ! resolution precision for the momentum
 
 nalinf = 75
 
-
 ! Maximum number of iterations in case of implicit Fluid Structure Coupling
 ! with structural calculations (internal and/or external
 ! (i.e. using code_aster)).
@@ -571,11 +565,9 @@ nalinf = 75
 
 nalimx = 15
 
-
 ! Relative precision of sub-cycling Fluid Structure Coupling algorithm.
 
 epalim = 1.d-5
-
 
 !< [usipsu]
 
@@ -655,7 +647,6 @@ endif
 return
 end subroutine usipsu
 
-
 !===============================================================================
 
 !> \brief User subroutine for the input of additional user parameters for
@@ -702,10 +693,6 @@ integer nmodpp
 
 ! Local variables
 
-integer ii, f_id
-
-type(var_cal_opt) :: vcopt
-
 !===============================================================================
 
 !>     This subroutine allows setting parameters
@@ -716,65 +703,12 @@ type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
-!===============================================================================
-! 1. Logging
-!===============================================================================
-
-! Frequency of log output
-
-ntlist = 1
-
-
-! Log verbosity
-
-do ii = 1, nvar
-  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-  vcopt%iwarni = 1
-  call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-enddo
-
-call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
-vcopt%iwarni = 2
-call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
-
-call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
-vcopt%iwarni = 2
-call field_set_key_struct_var_cal_opt(ivarfl(iu), vcopt)
-
-!===============================================================================
-! 2. Definition of deformable structure time plots
-!===============================================================================
-
-! structures output step
+! Definition of deformable structure time plots
 
 nthist = 1
 frhist = -1.d0
 
 tplfmt = 1 ! time plot format (1: .dat, 2: .csv, 3: both)
-
-!===============================================================================
-! 3. Fine control of variables output
-!===============================================================================
-
-! Per variable output control.
-! More examples are provided in cs_user_parameters-output.f90
-
-! User scalar variables.
-
-if (isca(1).gt.0.and.nscaus.ge.1) then
-  f_id = ivarfl(isca(1))
-  call field_set_key_str(f_id, keylbl, 'Scalar 1')
-  call field_set_key_int(f_id, keyvis, POST_ON_LOCATION + POST_MONITOR)
-  call field_set_key_int(f_id, keylog, 1)
-endif
-
-if (isca(2).gt.0.and.nscaus.ge.2) then
-  f_id = ivarfl(isca(2))
-  call field_set_key_str(f_id, keylbl, 'Scalar 2')
-  call field_set_key_int(f_id, keyvis, POST_ON_LOCATION + POST_MONITOR)
-  call field_set_key_int(f_id, keylog, 1)
-endif
-
 
 return
 end subroutine usipes
@@ -859,7 +793,6 @@ srrom = 0.8d0
 ! diftl0: Dynamic Diffusion Coefficient (kg/(m s))
 diftl0 = 4.25d-5
 
-
 ! -----------------------------------------------------------------------------
 ! 2.1 For 3 points combusution model ONLY
 ! -----------------------------------------------------------------------------
@@ -868,14 +801,12 @@ diftl0 = 4.25d-5
 tinfue = 436.d0
 tinoxy = 353.d0
 
-
 ! -----------------------------------------------------------------------------
 ! 2.2 For EBU-model ONLY
 ! -----------------------------------------------------------------------------
 
 ! cebu: EBU-model constant
 cebu   = 2.5d0
-
 
 ! -----------------------------------------------------------------------------
 ! 2.3 For Libby-Williams model ONLY

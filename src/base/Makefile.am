@@ -370,7 +370,6 @@ distpr2.f90 \
 distyp.f90 \
 driflu.f90 \
 dttvar.f90 \
-dvvpst.f90 \
 ecrava.f90 \
 ecrlis.f90 \
 findpt.f90 \

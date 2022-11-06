@@ -172,6 +172,14 @@ interface
 
   !=============================================================================
 
+  subroutine cs_post_default_write_variables()  &
+    bind(C, name='cs_post_default_write_variables')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_post_default_write_variables
+
+  !=============================================================================
+
   subroutine cs_user_postprocess_activate(nt_max_abs, nt_cur_abs, t_cur_abs) &
     bind(C, name='cs_user_postprocess_activate')
     use, intrinsic :: iso_c_binding
@@ -821,7 +829,7 @@ call timer_stats_start(post_stats_id)
 call post_activate_by_time_step
 call cs_user_postprocess_activate(ntmabs, ntcabs, ttcabs)
 
-call pstvar(nvar, nscal)
+call cs_post_default_write_variables
 
 call timer_stats_stop(post_stats_id)
 
@@ -1056,7 +1064,7 @@ endif
 ! Standard visualization output
 !===============================================================================
 
-call pstvar(nvar, nscal)
+call cs_post_default_write_variables
 
 ! CDO module (user-defined equations)
 !====================================

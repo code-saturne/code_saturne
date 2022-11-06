@@ -137,6 +137,29 @@ cs_function_define_boundary_thermal_flux(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute non-reconstructed cell-based field values at boundary.
+ *
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        pointer to field
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_function_field_boundary_nr(int               location_id,
+                              cs_lnum_t         n_elts,
+                              const cs_lnum_t  *elt_ids,
+                              void             *input,
+                              void             *vals);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute stress at boundary.
  *
  * This function matches the cs_eval_at_location_t function profile.

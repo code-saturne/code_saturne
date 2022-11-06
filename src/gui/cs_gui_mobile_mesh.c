@@ -444,7 +444,7 @@ _get_uistr2_data(const char      *label,
  *              of fluid
  * nalimx  <->  max number of iterations of implicitation of
  *              the displacement of the structures
- * epalim  <->  realtive precision of implicitation of
+ * epalim  <->  relative precision of implicitation of
  *              the displacement of the structures
  *
  *----------------------------------------------------------------------------*/

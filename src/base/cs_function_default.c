@@ -52,6 +52,7 @@
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
+#include "cs_assert.h"
 #include "cs_balance_by_zone.h"
 #include "cs_elec_model.h"
 #include "cs_field_default.h"
@@ -756,6 +757,156 @@ cs_function_define_boundary_nusselt(void)
   }
 
   return f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute non-reconstructed cell-based field values at boundary.
+ *
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        pointer to field
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_function_field_boundary_nr(int               location_id,
+                              cs_lnum_t         n_elts,
+                              const cs_lnum_t  *elt_ids,
+                              void             *input,
+                              void             *vals)
+{
+  cs_assert(location_id == CS_MESH_LOCATION_CELLS);
+
+  const cs_field_t *f = input;
+  const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
+
+  /* For higher dimensions, check if components are coupled */
+
+  int coupled = 0;
+  if (   f->type & CS_FIELD_VARIABLE
+      && f->dim > 1
+      && f->bc_coeffs != NULL) {
+    int coupled_key_id = cs_field_key_id_try("coupled");
+    if (coupled_key_id > -1)
+      coupled = cs_field_get_key_int(f, coupled_key_id);
+  }
+
+  cs_real_t *_vals = vals;
+  const cs_real_t *c_vals = f->val;
+
+  /* Scalar fields
+     ------------- */
+
+  if (f->dim == 1) {
+
+    if (f->bc_coeffs != NULL) { /* Variable field with BC definitions */
+
+      const cs_real_t *coefa = f->bc_coeffs->a;
+      const cs_real_t *coefb = f->bc_coeffs->b;
+
+      if (elt_ids != NULL) {
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          cs_lnum_t face_id = elt_ids[i];
+          cs_lnum_t cell_id = b_face_cells[face_id];
+          _vals[i] = coefa[face_id] + coefb[face_id]*c_vals[cell_id];
+        }
+      }
+      else {
+        for (cs_lnum_t face_id = 0; face_id < n_elts; face_id++) {
+          cs_lnum_t cell_id = b_face_cells[face_id];
+          _vals[face_id] = coefa[face_id] + coefb[face_id]*c_vals[cell_id];
+        }
+      }
+
+    }
+
+    else { /* Simply use cell values when no BC's available */
+
+      if (elt_ids != NULL) {
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          cs_lnum_t face_id = elt_ids[i];
+          cs_lnum_t cell_id = b_face_cells[face_id];
+          _vals[i] = c_vals[cell_id];
+        }
+      }
+      else {
+        for (cs_lnum_t face_id = 0; face_id < n_elts; face_id++) {
+          cs_lnum_t cell_id = b_face_cells[face_id];
+          _vals[face_id] = c_vals[cell_id];
+        }
+      }
+    }
+
+  }
+
+  /* Coupled vector and tensor fields (with BC definitions)
+   -------------------------------------------------------- */
+
+  else if (coupled) {
+
+    const cs_real_t *coefa = f->bc_coeffs->a;
+    const cs_real_t *coefb = f->bc_coeffs->b;
+
+    const cs_lnum_t dim = f->dim;
+    const cs_lnum_t dim2 = f->dim * f->dim;
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t face_id = (elt_ids != NULL) ? elt_ids[i] : i;
+      cs_lnum_t cell_id = b_face_cells[face_id];
+      for (cs_lnum_t j = 0; j < 3; j++)
+        _vals[i*dim + j] = coefa[face_id*dim + j];
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        for (cs_lnum_t k = 0; k < 3; k++)
+          _vals[i*dim + j] +=   coefb[face_id*dim2 + k*dim + j]
+                              * c_vals[cell_id*dim + k];
+      }
+    }
+
+  }
+
+  /* Uncoupled vector and tensor fields (with BC definitions)
+     -------------------------------------------------------- */
+
+  else if (f->bc_coeffs != NULL) {
+
+    const cs_real_t *coefa = f->bc_coeffs->a;
+    const cs_real_t *coefb = f->bc_coeffs->b;
+
+    const cs_lnum_t dim = f->dim;
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t face_id = (elt_ids != NULL) ? elt_ids[i] : i;
+      cs_lnum_t cell_id = b_face_cells[face_id];
+      for (cs_lnum_t j = 0; j < 3; j++)
+        _vals[i*dim + j] =   coefa[face_id*dim + j]
+                           + (  coefb[face_id*dim + j]
+                              * c_vals[cell_id*dim + j]);
+    }
+
+  }
+
+  /* Vector and tensor fields without BC definitions
+     ----------------------------------------------- */
+
+  else {
+
+    const cs_lnum_t dim = f->dim;
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t face_id = (elt_ids != NULL) ? elt_ids[i] : i;
+      cs_lnum_t cell_id = b_face_cells[face_id];
+      for (cs_lnum_t j = 0; j < 3; j++)
+        _vals[i*dim + j] = c_vals[cell_id*dim + j];
+    }
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/

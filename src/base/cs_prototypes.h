@@ -104,21 +104,6 @@ extern void CS_PROCF (csinit, CSINIT)
 );
 
 /*----------------------------------------------------------------------------
- * Developer function for output of variables on a post-processing mesh
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (dvvpst, DVVPST)
-(
- const int        *nummai,    /* <-- number or post-processing mesh */
- const int        *numtyp,    /* <-- number or post-processing type
-                               *     (-1 as volume, -2 as boundary, or nummai) */
- const int        *nvar,      /* <-- number of variables */
- const cs_lnum_t  *nfbrps,    /* <-- number of post processed boundary faces */
- const cs_lnum_t   lstfbr[],  /* <-- list of post-processed boundary faces */
- cs_real_t         trafbr[]   /* --- work array for output boundary faces */
-);
-
-/*----------------------------------------------------------------------------
  * Find the nearest cell's center from a node
  *----------------------------------------------------------------------------*/
 

@@ -48,6 +48,8 @@
 #include "cs_boundary_zone.h"
 #include "cs_ctwr.h"
 #include "cs_field.h"
+#include "cs_function.h"
+#include "cs_function_default.h"
 #include "cs_lagr_tracking.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
@@ -76,24 +78,13 @@ BEGIN_C_DECLS
  * Local types and structures
  *============================================================================*/
 
-/* Structure used to pass Fortran array pointer arguments */
-/*--------------------------------------------------------*/
-
-typedef struct {
-
-  const int   *nvar;
-  const int   *nscal;
-
-} cs_post_default_input_t;
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
 
 /* Default output format and options */
 
-static cs_post_default_input_t  _default_input;
-static bool                     _default_input_is_set = false;
+static bool  _default_functions_are_registered = false;
 
 /*============================================================================
  * Private function definitions
@@ -111,7 +102,7 @@ static bool                     _default_input_is_set = false;
  *
  * parameters:
  *   input       <-> pointer to optional (untyped) value or structure;
- *                   here, we should point to _default_input.
+ *                   unused here.
  *   mesh_id     <-- id of the output mesh for the current call
  *   cat_id      <-- category id of the output mesh for the current call
  *   ent_flag    <-- indicate global presence of cells (ent_flag[0]), interior
@@ -139,84 +130,65 @@ _write_additional_vars(void                  *input,
                        const cs_lnum_t        b_face_ids[],
                        const cs_time_step_t  *ts)
 {
-  /* Local variables */
-  CS_UNUSED(ts);
+  CS_UNUSED(input);
+  CS_UNUSED(n_cells);
   CS_UNUSED(n_i_faces);
+  CS_UNUSED(cell_ids);
   CS_UNUSED(i_face_ids);
 
-  cs_post_default_input_t  *_input = input;
+  if (cat_id == CS_POST_MESH_BOUNDARY && ent_flag[1] == 0) {
 
-  int   nummai = mesh_id;
-  int   numtyp = cat_id;
+    const int n_fields = cs_field_n_fields();
+    const int vis_key_id = cs_field_key_id("post_vis");
 
-  cs_real_t  *var_trav = NULL;
-  cs_real_t  *cel_vals = NULL;
-  cs_real_t  *b_face_vals = NULL;
+    for (int f_id = 0; f_id < n_fields; f_id++) {
 
- /* Allocate work array to build variables */
+      cs_field_t  *f = cs_field_by_id(f_id);
 
-  BFT_MALLOC(var_trav,
-             (n_cells + n_b_faces) * 3,
-             cs_real_t);
+      if (f->location_id != CS_MESH_LOCATION_CELLS)
+        continue;
 
-  /* Pointers to variable assembly arrays, set to NULL if unused
-     (so as to provoke an immediate error in case of incorrect use) */
+      if (! (cs_field_get_key_int(f, vis_key_id) & CS_POST_BOUNDARY_NR))
+        continue;
 
-  cel_vals = var_trav;
-  b_face_vals = cel_vals + (n_cells * 3);
+      cs_real_t  *b_face_val = NULL;
+      BFT_MALLOC(b_face_val,
+                 n_b_faces * (cs_lnum_t)(f->dim),
+                 cs_real_t);
 
-  if (n_cells == 0)
-    cel_vals = NULL;
-  if (n_b_faces == 0)
-    b_face_vals = NULL;
+      cs_function_field_boundary_nr(f->location_id,
+                                    n_b_faces,
+                                    b_face_ids,
+                                    f,
+                                    b_face_val);
 
-  /* Add specific outputs for code_saturne */
+      char name[80];
+      snprintf(name, 79, "bc_%s", cs_field_get_label(f)); name[78] = '\0';
 
-  cs_lnum_t *cell_num = NULL, *b_face_num = NULL;
+      cs_post_write_var(mesh_id,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
+                        name,
+                        f->dim,
+                        true,
+                        false, /* use_parent */
+                        CS_POST_TYPE_cs_real_t,
+                        NULL,
+                        NULL,
+                        b_face_val,
+                        ts);
 
-  if (n_cells > 0) {
-    BFT_MALLOC(cell_num, n_cells, cs_lnum_t);
-    if (cell_ids != NULL) {
-      for (cs_lnum_t k = 0; k < n_cells; k++)
-        cell_num[k] = cell_ids[k] + 1;
+      BFT_FREE(b_face_val);
+
     }
-    else {
-      for (cs_lnum_t k = 0; k < n_cells; k++)
-        cell_num[k] = k + 1;
-    }
-  }
-  if (n_b_faces > 0) {
-    BFT_MALLOC(b_face_num, n_b_faces, cs_lnum_t);
-    if (b_face_ids != NULL) {
-      for (cs_lnum_t k = 0; k < n_b_faces; k++)
-        b_face_num[k] = b_face_ids[k] + 1;
-    }
-    else {
-      for (cs_lnum_t k = 0; k < n_b_faces; k++)
-        b_face_num[k] = k + 1;
-    }
+
   }
 
-  /* Automatic outputs from Fortran code */
-
-  if (cat_id < 0 && ent_flag[1] == 0)
-    CS_PROCF(dvvpst, DVVPST) (&nummai, &numtyp,
-                              _input->nvar,
-                              &n_b_faces,
-                              b_face_num,
-                              b_face_vals);
-
-  /* Free work array */
-
-  BFT_FREE(var_trav);
-
-  BFT_FREE(cell_num);
-  BFT_FREE(b_face_num);
 }
 
 /*----------------------------------------------------------------------------
  * Additional output of mesh and time-dependent variables for the
- * radiative model for the call to pstvar / cs_post_write_vars.
+ * radiative model for the call to
+ * cs_post_default_write_variables / cs_post_write_vars.
  *
  * Note: if the input pointer is non-NULL, it must point to valid data
  * when the output function is called, so either:
@@ -226,7 +198,7 @@ _write_additional_vars(void                  *input,
  *
  * parameters:
  *   input       <-> pointer to optional (untyped) value or structure;
- *                   here, we should point to _default_input.
+ *                   ignored here
  *   mesh_id     <-- id of the output mesh for the current call
  *   cat_id      <-- category id of the output mesh for the current call
  *   ent_flag    <-- indicate global presence of cells (ent_flag[0]), interior
@@ -347,60 +319,6 @@ _write_q_criterion(void                  *input,
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Public Fortran function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Loop on post-processing meshes to output variables
- *
- * Fortran interface:
- *
- * subroutine pstvar
- * *****************
- *                  ( nvar,   nscal )
- *
- * integer          nvar        : <-- : number of variables
- * integer          nscal       : <-- : number of scalars
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstvar, PSTVAR)
-(
- const int   *nvar,
- const int   *nscal
-)
-{
-  /* Define or update map of variables */
-
-  _default_input.nvar = nvar;
-  _default_input.nscal = nscal;
-
-  /* Register function for first pass */
-
-  if (_default_input_is_set == false) {
-
-    cs_post_add_time_mesh_dep_output(_write_additional_vars,
-                                     &_default_input);
-
-    if (cs_glob_post_util_flag[CS_POST_UTIL_Q_CRITERION] >= 0)
-      cs_post_add_time_mesh_dep_output(_write_q_criterion,
-                                       &_default_input);
-
-    if (cs_glob_post_util_flag[CS_POST_UTIL_BOUNDARY_CLASS_ID] >= 0)
-      cs_post_add_time_mesh_dep_output(_write_boundary_zone_or_class_id,
-                                       &_default_input);
-
-    _default_input_is_set = true;
-  }
-
-  /* Call main post-processing function */
-
-  if (cs_glob_time_step->nt_cur > -1)
-    cs_post_write_vars(cs_glob_time_step);
-  else
-    cs_post_write_vars(NULL);
-}
-
-/*============================================================================
  * Public function definitions
  *============================================================================*/
 
@@ -417,6 +335,37 @@ cs_post_default_write_meshes(void)
   cs_post_write_meshes(cs_glob_time_step);
 
   cs_timer_stats_switch(t_top_id);
+}
+
+/*----------------------------------------------------------------------------
+ * Loop on post-processing meshes to output variables
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_default_write_variables(void)
+{
+  /* Register function for first pass */
+
+  if (_default_functions_are_registered == false) {
+
+    cs_post_add_time_mesh_dep_output(_write_additional_vars, NULL);
+
+    if (cs_glob_post_util_flag[CS_POST_UTIL_Q_CRITERION] >= 0)
+      cs_post_add_time_mesh_dep_output(_write_q_criterion, NULL);
+
+    if (cs_glob_post_util_flag[CS_POST_UTIL_BOUNDARY_CLASS_ID] >= 0)
+      cs_post_add_time_mesh_dep_output(_write_boundary_zone_or_class_id,
+                                       NULL);
+
+    _default_functions_are_registered = true;
+  }
+
+  /* Call main post-processing function */
+
+  if (cs_glob_time_step->nt_cur > -1)
+    cs_post_write_vars(cs_glob_time_step);
+  else
+    cs_post_write_vars(NULL);
 }
 
 /*----------------------------------------------------------------------------*/

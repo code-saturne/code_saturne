@@ -111,7 +111,6 @@ cs_user_extra_operations(cs_domain_t     *domain)
     const cs_real_t eps_geom = 1e-10;
 
     const int kimasf = cs_field_key_id("inner_mass_flux_id");
-    const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
     const int iflmas = cs_field_get_key_int(CS_F_(vel), kimasf);
     const cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
 

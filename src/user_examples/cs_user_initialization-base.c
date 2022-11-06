@@ -89,7 +89,7 @@ cs_user_initialization(cs_domain_t     *domain)
 {
   /*! [init] */
 
-  const cs_lnum_t *n_cells = domain->mesh->n_cells;
+  const cs_lnum_t n_cells = domain->mesh->n_cells;
 
   /* If this is restarted computation, do not reinitialize values */
   if (domain->time_step->nt_prev > 0)
