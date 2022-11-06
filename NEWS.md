@@ -3,6 +3,8 @@ Release 7.2.1 (not released yet)
 
 Bug fixes:
 
+- Fix crash when using CoolProp.
+
 - Fix launching of a coupled case created using "neptune_cfd".
   A coupled case created using neptune_cfd, and containing a code_saturne case
   led to a launching of the code_saturne case with neptune_cfd, hence leading

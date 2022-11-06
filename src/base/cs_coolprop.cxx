@@ -179,8 +179,8 @@ cs_phys_prop_coolprop(char                              *coolprop_material,
   fractions.clear();
 
   for (cs_lnum_t i = 0; i < n_vals; i++) {
-    val1[i] = var2[i];
-    val2[i] = var1[i];
+    val1.push_back(var2[i]);
+    val2.push_back(var1[i]);
   }
   fractions.push_back(1.0);
 
