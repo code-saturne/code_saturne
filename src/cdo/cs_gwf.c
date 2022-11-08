@@ -128,57 +128,6 @@ static cs_gwf_t  *cs_gwf_main_structure = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Estimate the time at which the evaluation of properties has to be
- *         done
- *
- * \param[in]   ts      pointer to a cs_time_step_t structure
- * \param[in]   eq      pointer to an equation structure
- *
- * \return the time value at which one has to perform evaluation
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_real_t
-_get_time_eval(const cs_time_step_t        *ts,
-               cs_equation_t               *eq)
-
-{
-  cs_real_t  time_eval = ts->t_cur;
-
-  const cs_real_t  dt_cur = ts->dt[0];
-
-  /* Define the time at which one evaluates the properties */
-
-  cs_param_time_scheme_t  time_scheme = cs_equation_get_time_scheme(eq);
-  cs_real_t  theta = -1;
-
-  switch (time_scheme) {
-
-  case CS_TIME_SCHEME_STEADY:
-  case CS_TIME_N_SCHEMES:
-
-    /* Scan tracer equations */
-
-    cs_gwf_tracer_get_time_theta_max();
-
-    if (theta > 0)
-      time_eval = ts->t_cur + theta*dt_cur;
-    else
-      time_eval = ts->t_cur;
-    break;
-
-  default:
-    theta = cs_equation_get_theta_time_val(eq);
-    time_eval = ts->t_cur + theta*dt_cur;
-    break;
-
-  } /* End of switch on the time scheme for the main equation */
-
-  return time_eval;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Retrieve the advection field related to the Darcy flux in the liquid
  *        phase
  *
@@ -776,12 +725,10 @@ _sspf_finalize_setup(const cs_cdo_connect_t            *connect,
  * \param[in]       ts           pointer to a cs_time_step_t structure
  * \param[in]       update_flag  metadata associated to type of operation to do
  * \param[in, out]  mc           pointer to the casted model context
- *
- *\return the value at which one has to evaluate the properties
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_real_t
+static void
 _sspf_updates(const cs_cdo_connect_t            *connect,
               const cs_cdo_quantities_t         *quant,
               const cs_time_step_t              *ts,
@@ -793,7 +740,7 @@ _sspf_updates(const cs_cdo_connect_t            *connect,
 
   if (update_flag & CS_FLAG_CURRENT_TO_PREVIOUS) {
 
-    time_eval = _get_time_eval(ts, mc->richards);
+    time_eval = cs_equation_get_time_eval(ts, mc->richards);
     cur2prev = true;
 
   }
@@ -816,8 +763,6 @@ _sspf_updates(const cs_cdo_connect_t            *connect,
   /* Properties are constant in saturated soils. Therefore, there is no need fo
      an update of the associated properties (permeability and moisture
      content) */
-
-  return time_eval;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1191,8 +1136,6 @@ _uspf_finalize_setup(const cs_cdo_connect_t              *connect,
  * \param[in]      ts           pointer to a cs_time_step_t structure
  * \param[in]      update_flag  metadata associated to type of operation to do
  * \param[in, out] mc           pointer to the casted model context
- *
- *\return the value at which one has to evaluate the properties
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1209,7 +1152,7 @@ _uspf_updates(const cs_mesh_t                    *mesh,
 
   if (update_flag & CS_FLAG_CURRENT_TO_PREVIOUS) {
 
-    time_eval = _get_time_eval(ts, mc->richards);
+    time_eval = cs_equation_get_time_eval(ts, mc->richards);
     cur2prev = true;
 
   }
@@ -1244,8 +1187,6 @@ _uspf_updates(const cs_mesh_t                    *mesh,
   /* Update soil properties with the new head values */
 
   cs_gwf_soil_update(time_eval, mesh, connect, quant);
-
-  return time_eval;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2378,8 +2319,6 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
  * \param[in]      ts           pointer to a cs_time_step_t structure
  * \param[in]      update_flag  metadata associated to type of operation to do
  * \param[in, out] mc           pointer to the casted model context
- *
- *\return the value at which one has to evaluate the properties
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2399,7 +2338,7 @@ _tpf_updates(const cs_mesh_t             *mesh,
 
   if (update_flag & CS_FLAG_CURRENT_TO_PREVIOUS) {
 
-    time_eval = _get_time_eval(ts, mc->wl_eq);
+    time_eval = cs_equation_get_time_eval(ts, mc->wl_eq);
     cur2prev = true;
 
   }
@@ -4197,24 +4136,19 @@ cs_gwf_update(const cs_mesh_t             *mesh,
     bft_error(__FILE__, __LINE__, 0,
               "%s: Groundwater module is not allocated.", __func__);
 
-  cs_real_t  time_eval = ts->t_cur; /* default value */
-
   switch (gw->model) {
 
   case CS_GWF_MODEL_SATURATED_SINGLE_PHASE:
-    time_eval = _sspf_updates(connect, quant, ts, update_flag,
-                              gw->model_context);
+    _sspf_updates(connect, quant, ts, update_flag, gw->model_context);
     break;
 
   case CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE:
-    time_eval = _uspf_updates(mesh, connect, quant, ts, update_flag,
-                              gw->model_context);
+    _uspf_updates(mesh, connect, quant, ts, update_flag, gw->model_context);
     break;
 
   case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
   case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
-    time_eval = _tpf_updates(mesh, connect, quant, ts, update_flag,
-                             gw->model_context);
+    _tpf_updates(mesh, connect, quant, ts, update_flag, gw->model_context);
     break;
 
   default:
@@ -4226,7 +4160,7 @@ cs_gwf_update(const cs_mesh_t             *mesh,
   /* Update the diffusivity tensor associated to each tracer equation since the
      Darcy velocity may have changed */
 
-  cs_gwf_tracer_update_diff_tensor(time_eval, mesh, connect, quant);
+  cs_gwf_tracer_update_diff_tensor(ts, mesh, connect, quant);
 }
 
 /*----------------------------------------------------------------------------*/

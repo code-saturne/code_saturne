@@ -84,11 +84,11 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Generic function to update the phisical properties related to a
- *         tracer modelling
+ * \brief  Generic function to update the properties related to a tracer.
+ *         This function depends on a numerical scheme and a physical model.
  *
  * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
- * \param[in]      t_eval     time at which one performs the evaluation
+ * \param[in]      ts         pointer to a cs_time_step_t structure
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
@@ -97,7 +97,7 @@ typedef void
 
 typedef void
 (cs_gwf_tracer_update_t) (cs_gwf_tracer_t             *tracer,
-                          cs_real_t                    t_eval,
+                          const cs_time_step_t        *ts,
                           const cs_mesh_t             *mesh,
                           const cs_cdo_connect_t      *connect,
                           const cs_cdo_quantities_t   *quant);
@@ -383,15 +383,15 @@ cs_gwf_tracer_finalize_setup(const cs_cdo_connect_t      *connect,
 /*!
  * \brief  Update the diffusion tensor related to each tracer equation
  *
- * \param[in]      t_eval     time at which one performs the evaluation
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts        pointer to a cs_time_step_t structure
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tracer_update_diff_tensor(cs_real_t                    t_eval,
+cs_gwf_tracer_update_diff_tensor(const cs_time_step_t        *ts,
                                  const cs_mesh_t             *mesh,
                                  const cs_cdo_connect_t      *connect,
                                  const cs_cdo_quantities_t   *quant);
