@@ -993,7 +993,7 @@ _solidification_full_assembly(const cs_cell_sys_t              *csys,
   /* 1. First part shared with the assembly of the full saddle-point problem
    * ======================================================================= */
 
-  _full_assembly(csys, cm, nsb->div_op, sc, eqc, asb);
+  _full_assembly(csys, cm, nsb, sc, eqc, asb);
 
   /* 2. Treatment of the solid zone(s)
    * ================================= */
@@ -1089,7 +1089,7 @@ _notay_full_assembly(const cs_cell_sys_t              *csys,
   /* 1. First part shared with the assembly of the full saddle-point problem
    * ======================================================================= */
 
-  _full_assembly(csys, cm, nsb->div_op, sc, eqc, asb);
+  _full_assembly(csys, cm, nsb, sc, eqc, asb);
 
   /* 2. Store divergence operator in non assembly
    * ============================================ */
