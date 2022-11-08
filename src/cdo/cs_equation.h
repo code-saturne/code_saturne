@@ -914,6 +914,22 @@ cs_equation_get_type(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Estimate the time at which the evaluation of properties related to
+ *         the different terms of an equation should be done
+ *
+ * \param[in] ts      pointer to a cs_time_step_t structure
+ * \param[in] eq      pointer to an equation structure
+ *
+ * \return the time value at which one has to perform the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_equation_get_time_eval(const cs_time_step_t     *ts,
+                          const cs_equation_t      *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Apply the current to previous to all fields (and potentially arrays)
  *         related to an equation. This function fas to be called when a solve
  *         step is called with the parameter: cur2prev = false
