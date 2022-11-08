@@ -1,7 +1,7 @@
 Master (not on release branches yet)
 ------------------------------------
 
-## User changes:
+### User changes:
 
 - Add `cs_function` API to refactor pre and user-defined location data
   evaluation. This defines function objects which can be evaluated
@@ -35,12 +35,12 @@ Master (not on release branches yet)
 - Add experimental immersed boundary features. This can be computed from
   cloud of points.
 
-## Physical modeling:
+### Physical modeling:
 
 - Add some atmospheric universal functions for large scale idealized wind
   profiles.
 
-## Bug fixes:
+### Bug fixes:
 
 - Restart from different mesh: fix values shift in variable exchange when
   some points are not located (updated PLE library).
@@ -55,7 +55,7 @@ Master (not on release branches yet)
 - Fix the precipitation model for radionuclide tracers in the GWF
   module (CDO). Add the missing radioactive decay phenomenon.
 
-## Architectural changes:
+### Architectural changes:
 
 - Completed migration of turbulence models source code from Fortran to C.
 
@@ -67,7 +67,7 @@ Master (not on release branches yet)
 
 - Drop support for older EOS versions (prior to 1.8.0).
 
-## Studymanager:
+### Studymanager:
 
 - New option (--slurm-batch-size=N with N>0) to submit batches of cases using
   the SLURM resource manager on cluster. Cases are sorted by number of
@@ -76,7 +76,7 @@ Master (not on release branches yet)
 - New option (--report) to generate description report of studies based on latex
   file in the STUDY/REPORT folder.
 
-## Numerics:
+### Numerics:
 
 - Add MUMPS as a preconditioner of a Krylov method.
 
@@ -94,7 +94,7 @@ Master (not on release branches yet)
 - Add a scaled pressure mass matrix as a Schur approximation for Uzawa
   CG algorithm (used by CDO schemes)
 
-## CDO:
+### CDO:
 
 - Setup: Fix inconsistencies between cs_navsto_param_t and
   cs_equation_param_t for the momentum equation when settings a
