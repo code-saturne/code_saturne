@@ -1253,6 +1253,61 @@ cs_equation_get_type(const cs_equation_t    *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Estimate the time at which the evaluation of properties related to
+ *         the different terms of an equation should be done
+ *
+ * \param[in] ts      pointer to a cs_time_step_t structure
+ * \param[in] eq      pointer to an equation structure
+ *
+ * \return the time value at which one has to perform the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_equation_get_time_eval(const cs_time_step_t     *ts,
+                          const cs_equation_t      *eq)
+{
+  assert(ts != NULL);
+  double  time_eval = ts->t_cur; /* default value */
+
+  if (eq == NULL)
+    return time_eval;
+
+  /* Define the time at which one evaluates the properties */
+
+  const double  dt_cur = ts->dt[0];
+  cs_param_time_scheme_t  time_scheme = cs_equation_get_time_scheme(eq);
+
+  switch (time_scheme) {
+
+  case CS_TIME_SCHEME_CRANKNICO:
+    time_eval = ts->t_cur + 0.5*dt_cur;
+    break;
+
+  case CS_TIME_SCHEME_THETA:
+    {
+      double  theta = cs_equation_get_theta_time_val(eq);
+      time_eval = ts->t_cur + theta*dt_cur;
+    }
+    break;
+
+  case CS_TIME_SCHEME_EULER_IMPLICIT:
+  case CS_TIME_SCHEME_BDF2:
+    time_eval = ts->t_cur + dt_cur;
+    break;
+
+  default:
+  case CS_TIME_SCHEME_STEADY:
+  case CS_TIME_SCHEME_EULER_EXPLICIT:
+    break; /* the default value => t_cur */
+
+  } /* End of switch on the time scheme of the equation */
+
+  return time_eval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return true is the given equation is steady otherwise false
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
