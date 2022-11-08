@@ -522,8 +522,8 @@ _read_field_vals_legacy(cs_restart_t  *r,
                         int            t_id,
                         cs_field_t    *f)
 {
-  char sec_name[128] = "";
-  char old_name_x[96] = "", old_name_y[96] = "", old_name_z[96] = "";
+  char sec_name[156] = "";
+  char old_name_x[128] = "", old_name_y[128] = "", old_name_z[128] = "";
 
   int retcode = CS_RESTART_SUCCESS;
 
@@ -614,42 +614,42 @@ _read_field_vals_legacy(cs_restart_t  *r,
       strncpy(old_name, "flconv_fb", sizeof(old_name));
 
     else if (strcmp(f->name, "dt") == 0)
-      strncpy(sec_name, "dt_variable_espace_ce", 127);
+      strncpy(sec_name, "dt_variable_espace_ce", 155);
 
     else if (strcmp(f->name, "dt") == 0)
-      strncpy(sec_name, "dt_variable_espace_ce", 127);
+      strncpy(sec_name, "dt_variable_espace_ce", 155);
 
     else if (   f->location_id == CS_MESH_LOCATION_VERTICES
              && strcmp(f->name, "mesh_displacement") == 0
              && t_id == 0)
-      strncpy(sec_name, "vertex_displacement", 127);
+      strncpy(sec_name, "vertex_displacement", 155);
 
     else if (strcmp(f->name, "void_fraction") == 0)
-      strncpy(sec_name, "taux_vide_ce", 127);
+      strncpy(sec_name, "taux_vide_ce", 155);
 
     else if (strcmp(f->name, "rad_st") == 0)
-      strncpy(sec_name, "rayexp_ce", 127);
+      strncpy(sec_name, "rayexp_ce", 155);
     else if (strcmp(f->name, "rad_st_implicit") == 0)
-      strncpy(sec_name, "rayimp_ce", 127);
+      strncpy(sec_name, "rayimp_ce", 155);
     else if (f == CS_F_(rad_lumin))
-      strncpy(sec_name, "luminance", 127);
+      strncpy(sec_name, "luminance", 155);
 
     else if (strcmp(f->name, "joule_power") == 0)
-      strncpy(sec_name, "tsource_sc_ce_joule", 127);
+      strncpy(sec_name, "tsource_sc_ce_joule", 155);
     else if (strcmp(f->name, "laplace_force") == 0)
       strncpy(old_name, "laplace_force", sizeof(old_name));
   }
 
   if (sec_name[0] == '\0') {
     if (scalar_id > -1)
-      snprintf(sec_name, 127, "scalaire_ce_%04d", scalar_id);
+      snprintf(sec_name, 155, "scalaire_ce_%04d", scalar_id);
     else if (f->location_id == CS_MESH_LOCATION_CELLS)
-      snprintf(sec_name, 127, "%s_ce_phase01", old_name);
+      snprintf(sec_name, 155, "%s_ce_phase01", old_name);
     else
-      snprintf(sec_name, 127, "%s", old_name);
+      snprintf(sec_name, 155, "%s", old_name);
   }
 
-  sec_name[127] = '\0';
+  sec_name[155] = '\0';
 
   retcode = cs_restart_check_section(r,
                                      sec_name,
@@ -670,24 +670,24 @@ _read_field_vals_legacy(cs_restart_t  *r,
   else if (f->dim == 3 && retcode == CS_RESTART_ERR_EXISTS) {
 
     if (strcmp(old_name, "vit_maillage") == 0) {
-      snprintf(old_name_x, 96, "%s_u_ce", old_name);
-      snprintf(old_name_y, 96, "%s_v_ce", old_name);
-      snprintf(old_name_z, 96, "%s_w_ce", old_name);
+      snprintf(old_name_x, 127, "%s_u_ce", old_name);
+      snprintf(old_name_y, 127, "%s_v_ce", old_name);
+      snprintf(old_name_z, 127, "%s_w_ce", old_name);
     }
     else if (strcmp(old_name, "laplace_force") == 0) {
-      snprintf(old_name_x, 96, "%s_1", old_name);
-      snprintf(old_name_y, 96, "%s_2", old_name);
-      snprintf(old_name_z, 96, "%s_2", old_name);
+      snprintf(old_name_x, 127, "%s_1", old_name);
+      snprintf(old_name_y, 127, "%s_2", old_name);
+      snprintf(old_name_z, 127, "%s_2", old_name);
     }
     else {
-      snprintf(old_name_x, 96, "%s_u_ce_phase01", old_name);
-      snprintf(old_name_y, 96, "%s_v_ce_phase01", old_name);
-      snprintf(old_name_z, 96, "%s_w_ce_phase01", old_name);
+      snprintf(old_name_x, 127, "%s_u_ce_phase01", old_name);
+      snprintf(old_name_y, 127, "%s_v_ce_phase01", old_name);
+      snprintf(old_name_z, 127, "%s_w_ce_phase01", old_name);
     }
 
-    old_name_x[95] = '\0';
-    old_name_y[95] = '\0';
-    old_name_z[95] = '\0';
+    old_name_x[127] = '\0';
+    old_name_y[127] = '\0';
+    old_name_z[127] = '\0';
 
     retcode = cs_restart_check_section(r,
                                        old_name_x,
