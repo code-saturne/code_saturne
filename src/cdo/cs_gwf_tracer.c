@@ -452,7 +452,7 @@ _get_reaction_pty4std_tracer_cw(const cs_cell_mesh_t     *cm,
  *         Generic function relying on the prototype cs_gwf_tracer_update_t
  *
  * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
- * \param[in]      t_eval     time at which one performs the evaluation
+ * \param[in]      ts         pointer to a cs_time_step_t structure
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
@@ -461,7 +461,7 @@ _get_reaction_pty4std_tracer_cw(const cs_cell_mesh_t     *cm,
 
 static void
 _update_sat_diff_pty(cs_gwf_tracer_t             *tracer,
-                     cs_real_t                    t_eval,
+                     const cs_time_step_t        *ts,
                      const cs_mesh_t             *mesh,
                      const cs_cdo_connect_t      *connect,
                      const cs_cdo_quantities_t   *quant)
@@ -469,7 +469,7 @@ _update_sat_diff_pty(cs_gwf_tracer_t             *tracer,
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
   CS_UNUSED(quant);
-  CS_UNUSED(t_eval);
+  CS_UNUSED(ts);
 
   assert(tracer != NULL);
   if (tracer->diffusivity == NULL)
@@ -525,7 +525,6 @@ _update_sat_diff_pty(cs_gwf_tracer_t             *tracer,
     } /* Loop on cells attached to this soil */
 
   } /* Loop on soils */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -536,7 +535,7 @@ _update_sat_diff_pty(cs_gwf_tracer_t             *tracer,
  *         Generic function relying on the prototype cs_gwf_tracer_update_t
  *
  * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
- * \param[in]      t_eval     time at which one performs the evaluation
+ * \param[in]      ts         pointer to a cs_time_step_t structure
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
@@ -545,7 +544,7 @@ _update_sat_diff_pty(cs_gwf_tracer_t             *tracer,
 
 static void
 _update_diff_pty(cs_gwf_tracer_t             *tracer,
-                 cs_real_t                    t_eval,
+                 const cs_time_step_t        *ts,
                  const cs_mesh_t             *mesh,
                  const cs_cdo_connect_t      *connect,
                  const cs_cdo_quantities_t   *quant)
@@ -553,7 +552,7 @@ _update_diff_pty(cs_gwf_tracer_t             *tracer,
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
   CS_UNUSED(quant);
-  CS_UNUSED(t_eval);
+  CS_UNUSED(ts);
 
   assert(tracer != NULL);
   if (tracer->diffusivity == NULL)
@@ -609,7 +608,6 @@ _update_diff_pty(cs_gwf_tracer_t             *tracer,
     } /* Loop on cells attached to this soil */
 
   } /* Loop on soils */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -620,7 +618,7 @@ _update_diff_pty(cs_gwf_tracer_t             *tracer,
  *         Generic function relying on the prototype cs_gwf_tracer_update_t
  *
  * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
- * \param[in]      t_eval     time at which one performs the evaluation
+ * \param[in]      ts         pointer to a cs_time_step_t structure
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
@@ -629,15 +627,15 @@ _update_diff_pty(cs_gwf_tracer_t             *tracer,
 
 static void
 _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
-                         cs_real_t                    t_eval,
+                         const cs_time_step_t        *ts,
                          const cs_mesh_t             *mesh,
                          const cs_cdo_connect_t      *connect,
                          const cs_cdo_quantities_t   *quant)
 {
   CS_UNUSED(mesh);
-  CS_UNUSED(t_eval);
 
   cs_gwf_tracer_default_context_t  *tc = tracer->context;
+
   assert(tc != NULL);
   assert(tc->conc_satura != NULL && tc->conc_precip != NULL);
   assert(cs_shared_liquid_saturation != NULL);
@@ -1652,15 +1650,15 @@ cs_gwf_tracer_finalize_setup(const cs_cdo_connect_t      *connect,
 /*!
  * \brief  Update the diffusion tensor related to each tracer equation
  *
- * \param[in]      t_eval     time at which one performs the evaluation
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts        pointer to a cs_time_step_t structure
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tracer_update_diff_tensor(cs_real_t                    t_eval,
+cs_gwf_tracer_update_diff_tensor(const cs_time_step_t        *ts,
                                  const cs_mesh_t             *mesh,
                                  const cs_cdo_connect_t      *connect,
                                  const cs_cdo_quantities_t   *quant)
@@ -1680,7 +1678,7 @@ cs_gwf_tracer_update_diff_tensor(cs_real_t                    t_eval,
       continue;
 
     if (tracer->update_diff_tensor != NULL)
-      tracer->update_diff_tensor(tracer, t_eval, mesh, connect, quant);
+      tracer->update_diff_tensor(tracer, ts, mesh, connect, quant);
 
   } /* Loop on tracers */
 }
@@ -1778,8 +1776,7 @@ cs_gwf_tracer_compute_steady_all(const cs_mesh_t              *mesh,
       cs_equation_solve_steady_state(mesh, eq);
 
       if (tracer->update_precipitation != NULL)
-        tracer->update_precipitation(tracer,
-                                     time_step->t_cur, mesh, connect, cdoq);
+        tracer->update_precipitation(tracer, time_step, mesh, connect, cdoq);
 
     } /* Solve this equation which is steady */
 
@@ -1830,8 +1827,7 @@ cs_gwf_tracer_compute_all(const cs_mesh_t              *mesh,
       cs_equation_solve(cur2prev, mesh, eq);
 
       if (tracer->update_precipitation != NULL)
-        tracer->update_precipitation(tracer,
-                                     time_step->t_cur, mesh, connect, cdoq);
+        tracer->update_precipitation(tracer, time_step, mesh, connect, cdoq);
 
     } /* Solve this equation which is unsteady */
 

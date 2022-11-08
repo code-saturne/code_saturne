@@ -974,7 +974,6 @@ cs_gwf_soil_update(cs_real_t                     time_eval,
     } /* Switch on the soil model */
 
   } /* Loop on soils */
-
 }
 
 /*----------------------------------------------------------------------------*/
