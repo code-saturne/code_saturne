@@ -50,8 +50,7 @@
   - \subpage gas_3ptchem_examples
   - \subpage gas_ebu_examples
   - \subpage gas_libby_williams_examples
-  - \subpage pulverized_coal1
-  - \subpage pulverized_coal2
+  - \subpage pulverized_coal_bcs
   - \subpage medcoupling_remapper_2d
 */
 
@@ -901,88 +900,49 @@
 
 /*-----------------------------------------------------------------------------*/
 /*!
-  \page pulverized_coal1 Pulverized coal
+  \page pulverized_coal_bcs Pulverized coal
+
+  The examples provided here are only concern inlet boundary conditions.
+  Other boundary condition types are not specific to the pulverized coal
+  model, so generic examples apply (and as usual, the GUI is recommended).
+
+  Note that turbulence variables BC's are usually computed automatically:
+  - If `icalke(izone)` = 1: hydraulic diameter and reference velocity
+       (similar to \ref turbulence_bc_inlet_hyd_diam).
+  - If `icalke(izone)` = 2: hydraulic diameter, reference velocity and
+       turbulence intensity (similar to \ref turbulence_bc_inlet_turb_intensity).
+  - If `icalke(izone)` = 0: non-automatic definition. Turbulence BC's must be
+       defined here for all turbulence variables (k, epsilon, omega, Rij,
+       ... depending on active model).
 
   \section advanced_loc_var_pc Local variables to be added
 
   \snippet cs_user_boundary_conditions-pulverized_coal.f90 loc_var_dec
 
+  This firs example
+
   \section base_init_pc Initialization and finalization
 
   Initialization and finalization is similar to that of the base examples
 
-  \section pulverized_coal1_ex_1 Example 1
+  \section pulverized_coal_ex_1 Example 1
 
-  BOUNDARY FACE corresponding to AIR INLET, e.g. : secondary or tertiary air.
+  Secondary or tertiary air inlet, for zone 'inlet'.
 
   \snippet cs_user_boundary_conditions-pulverized_coal.f90 example_1
 
-  \section pulverized_coal1_ex_2 Example 2
+  \section pulverized_coal_ex_2 Example 2
 
-  BOUNDARY FACE for pulverised COAL & primary air INLET.
+  Primary air inlet, for zone 'primary_inlet'.
 
   \snippet cs_user_boundary_conditions-pulverized_coal.f90 example_2
 
-  \section pulverized_coal1_ex_3 Example 3
+  \section pulverized_coal_ex_3 Example 3
 
-  The color 15 becomes a WALL.
+  Secondary or tertiary air inlet, for zone 'inlet', using the
+  pulverized coal with moisture model (with Lagrangian particle tracking).
 
   \snippet cs_user_boundary_conditions-pulverized_coal.f90 example_3
-
-  \section pulverized_coal1_ex_4 Example 4
-
-  The color 19 becomes an OUTLET.
-
-  \snippet cs_user_boundary_conditions-pulverized_coal.f90 example_4
-
-  \section pulverized_coal1_ex_5 Example 5
-
-  The color 14 becomes a symmetry plane.
-
-  \snippet cs_user_boundary_conditions-pulverized_coal.f90 example_5
-*/
-
-/*-----------------------------------------------------------------------------*/
-/*!
-  \page pulverized_coal2 Pulverized coal lagrangian
-
-  \section advanced_loc_var_pcl Local variables to be added
-
-  \snippet cs_user_boundary_conditions-pulverized_coal_lagrangian.f90 loc_var_dec
-
-  \section base_init_pcl Initialization and finalization
-
-  Initialization and finalization is similar to that of the base examples
-
-  Assign boundary conditions to boundary faces here
-  For each subset:
-   - use selection criteria to filter boundary faces of a given subset
-   - loop on faces from a subset
-   - set the boundary condition for each face
-  The color 15 become a WALL.
-  \section pulverized_coal2_ex_1 Example 1
-
-  BOUNDARY FACE corresponding to AIR INLET, e.g.: secondary or tertiary air.
-
-  \snippet cs_user_boundary_conditions-pulverized_coal_lagrangian.f90 example_1
-
-  \section pulverized_coal2_ex_2 Example 2
-
-  The color 15 becomes a WALL.
-
-  \snippet cs_user_boundary_conditions-pulverized_coal_lagrangian.f90 example_2
-
-  \section pulverized_coal2_ex_3 Example 3
-
-  The color 19 becomes an OUTLET.
-
-  \snippet cs_user_boundary_conditions-pulverized_coal_lagrangian.f90 example_3
-
-  \section pulverized_coal2_ex_4 Example 4
-
-  The colors 14 and 4 become a symmetry plane.
-
-  \snippet cs_user_boundary_conditions-pulverized_coal_lagrangian.f90 example_4
 */
 
 /*-----------------------------------------------------------------------------*/

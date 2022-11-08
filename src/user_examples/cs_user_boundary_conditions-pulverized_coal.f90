@@ -105,9 +105,6 @@ integer          izone
 integer          icha, iclapc
 integer          ilelt, nlelt
 
-double precision uref2, d2s3
-double precision xkent, xeent
-
 integer, allocatable, dimension(:) :: lstelt
 !< [loc_var_dec]
 
@@ -119,8 +116,6 @@ integer, allocatable, dimension(:) :: lstelt
 
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 
-d2s3 = 2.d0/3.d0
-
 !===============================================================================
 ! Assign boundary conditions to boundary faces here
 
@@ -130,113 +125,60 @@ d2s3 = 2.d0/3.d0
 !   - set the boundary condition for each face
 !===============================================================================
 
-! ---- BOUNDARY FACE corresponding to AIR INLET
-!      e.g. : secondary or tertiary air
+! Air inlet with pulverized coal, e.g. secondary or tertiary air.
 
 !< [example_1]
-call getfbr('12', nlelt, lstelt)
-!==========
+call getfbr('inlet', nlelt, lstelt)
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-!   Kind of boundary conditions for standard variables
+  ! Kind of boundary conditions for standard variables
   itypfb(ifac) = ientre
 
-!   zone's number (from 1 to n)
+  ! zone's number (from 1 to n)
   izone = 1
 
-!      - Allocation of the zone's number to the face
+  ! Assign zone number to the face
   izfppp(ifac) = izone
 
-!      - For theses inlet faces, mass flux is fixed
+  ! For theses inlet faces, mass flux is fixed
+  !  The speed direction is given
+  !  (speed vector norm is irrelevant)
 
   ientat(izone) = 1
   iqimp(izone)  = 1
-!      - Oxidizer's number (1 to 3)
-  inmoxy(izone) = 1
-!      - Oxidizer mass flow rate  in kg/s
-  qimpat(izone) = 1.46d-03
-!      - Oxidizer's Temperature in K
-  timpat(izone) = 400.d0 + tkelvi
-
-!      - The color 12 becomes an fixed flow rate inlet
-!        The user gives speed vector direction
-!        (speed vector norm is irrelevent)
 
   rcodcl(ifac,iu,1) = 0.d0
   rcodcl(ifac,iv,1) = 0.d0
   rcodcl(ifac,iw,1) = 5.d0
 
-! ------ Turbulence treatment
-!   Boundary conditions of turbulence
+  ! Oxidizer's number (1 to 3)
+  inmoxy(izone) = 1
+  ! Oxidizer mass flow rate in kg/s
+  qimpat(izone) = 1.46d-03
+  ! Oxidizer Temperature in K
+  timpat(izone) = 400.d0 + tkelvi
+
+  ! Turbulence variables BC's calculated based on icalke(izone):
+  ! - If 1: hydraulic diameter and reference velocity (similar to
+  !         turbulence_bc_inlet_hyd_diam)
+  ! - If 2: hydraulic diameter, reference velocity and turbulence intensity
+  !         (similar to turbulence_bc_inlet_turb_intensity)
+  ! - If 0: must be defined here for all turbulence variables
+  !        (k, epsilon, omega, Rij, ... depending on active model)
+
   icalke(izone) = 1
-!
-!    - If ICALKE = 0 the boundary conditions of turbulence at
-!      the inlet are calculated as follows:
 
-  if(icalke(izone).eq.0) then
-
-    uref2 = rcodcl(ifac,iu,1)**2                           &
-           +rcodcl(ifac,iv,1)**2                           &
-           +rcodcl(ifac,iw,1)**2
-    uref2 = max(uref2,1.d-12)
-    xkent  = epzero
-    xeent  = epzero
-
-    if    (itytur.eq.2) then
-
-      rcodcl(ifac,ik,1)  = xkent
-      rcodcl(ifac,iep,1) = xeent
-
-    elseif(itytur.eq.3) then
-
-      rcodcl(ifac,ir11,1) = d2s3*xkent
-      rcodcl(ifac,ir22,1) = d2s3*xkent
-      rcodcl(ifac,ir33,1) = d2s3*xkent
-      rcodcl(ifac,ir12,1) = 0.d0
-      rcodcl(ifac,ir13,1) = 0.d0
-      rcodcl(ifac,ir23,1) = 0.d0
-      rcodcl(ifac,iep,1)  = xeent
-
-    elseif (iturb.eq.50) then
-
-      rcodcl(ifac,ik,1)   = xkent
-      rcodcl(ifac,iep,1)  = xeent
-      rcodcl(ifac,iphi,1) = d2s3
-      rcodcl(ifac,ifb,1)  = 0.d0
-
-    elseif (iturb.eq.60) then
-
-      rcodcl(ifac,ik,1)   = xkent
-      rcodcl(ifac,iomg,1) = xeent/cmu/xkent
-
-    elseif (iturb.eq.70) then
-
-      rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
-
-    endif
-
-  endif
-!
-!    - If ICALKE = 1 the boundary conditions of turbulence at
-!      the inlet refer to both, a hydraulic diameter and a
-!      reference velocity.
-!
   dh(izone)     = 0.032d0
-!
-!    - If ICALKE = 2 the boundary conditions of turbulence at
-!      the inlet refer to a turbulence intensity.
-!
   xintur(izone) = 0.d0
 
-! ------ Automatic treatment of scalars for extended physic
+  ! Automatic treatment of non-user scalars
 
+  ! Treatment of user-defined scalars
 
-! ------ treatment of user's scalars
-
-  if ( (nscal-nscapp).gt.0 ) then
+  if ((nscal-nscapp).gt.0) then
     do ii = 1, (nscal-nscapp)
       rcodcl(ifac,isca(ii),1) = 1.d0
     enddo
@@ -245,37 +187,43 @@ do ilelt = 1, nlelt
 enddo
 !< [example_1]
 
-! ---- BOUNDARY FACE for pulverised COAL & primary air INLET
+! Primary air inlet with pulverized coal.
 
 !< [example_2]
-call getfbr('11', nlelt, lstelt)
-!==========
+call getfbr('primary_inlet', nlelt, lstelt)
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-!   Kind of boundary conditions for standard variables
+  ! Kind of boundary conditions for standard variables
   itypfb(ifac) = ientre
 
-!   zone's number (from 1 to n)
+  ! zone's number (from 1 to n)
   izone = 2
 
-!      - Allocation of the zone's number to the face
+  ! Assign zone number to the face
   izfppp(ifac) = izone
 
-!      - For theses inlet faces, mass flux is fixed
+  ! For this inlet, mass flux is fixed
+  !  The speed direction is given
+  !  (speed vector norm is irrelevant)
 
   ientcp(izone) = 1
   iqimp(izone)  = 1
-!      - Oxidizer's number (1 to 3)
+
+  rcodcl(ifac,iu,1) = 0.d0
+  rcodcl(ifac,iv,1) = 0.d0
+  rcodcl(ifac,iw,1) = 5.d0
+
+  ! Oxidizer's number (1 to 3)
   inmoxy(izone) = 1
-!      - Oxidizer's mass flow rate in kg/s
+  ! Oxidizer's mass flow rate in kg/s
   qimpat(izone) = 1.46d-03
-!      - Oxidizer's Temperature in K
+  ! Oxidizer's Temperature in K
   timpat(izone) = 800.d0  + tkelvi
 
-!        Coal inlet, initialization
+  !  Coal inlet, initialization
   do icha = 1, ncharm
     qimpcp(izone,icha) = zero
     timpcp(izone,icha) = zero
@@ -284,126 +232,95 @@ do ilelt = 1, nlelt
     enddo
   enddo
 
-! code_saturne deals with NCHA different coals (component of blend)
-!       every coal is described by NCLPCH(icha) class of particles
-!       (each of them described by an inlet diameter)
-!
-!      - Treatment for the first coal
+  ! code_saturne deals with NCHA different coals (component of blend)
+  !       every coal is described by NCLPCH(icha) class of particles
+  !       (each of them described by an inlet diameter)
+
+  ! Treatment for the first coal
   icha = 1
-!      - Coal mass flow rate in kg/s
-   qimpcp(izone,icha) = 1.46d-4
-!      - PERCENTAGE mass fraction of each granulometric class
+  ! Coal mass flow rate in kg/s
+  qimpcp(izone,icha) = 1.46d-4
+  ! Percentage mass fraction of each granulometric class
   do iclapc = 1, nclpch(icha)
     distch(izone,icha,iclapc) = 100.d0/dble(nclpch(icha))
   enddo
-!      - Inlet temperature for coal & primary air
+  ! Inlet temperature for coal & primary air
   timpcp(izone,icha) = 800.d0 + tkelvi
 
-!      - The color 11 becomes an fixed flow rate inlet
-!        The user gives speed vector direction
-!        (speed vector norm is irrelevent)
+  ! Turbulence variables BC's calculated based on icalke(izone):
+  ! - If 1: hydraulic diameter and reference velocity (similar to
+  !         turbulence_bc_inlet_hyd_diam)
+  ! - If 2: hydraulic diameter, reference velocity and turbulence intensity
+  !         (similar to turbulence_bc_inlet_turb_intensity)
+  ! - If 0: must be defined here for all turbulence variables
+  !        (k, epsilon, omega, Rij, ... depending on active model)
+
+  icalke(izone) = 1
+
+  dh(izone)     = 0.1d0
+  xintur(izone) = 0.1d0
+
+enddo
+!< [example_2]
+
+! Air inlet with pulverized coal with Lagragian model,
+! e.g. secondary or tertiary air.
+
+!< [example_3]
+call getfbr('inlet', nlelt, lstelt)
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+  ! Kind of boundary conditions for standard variables
+  itypfb(ifac) = ientre
+
+  ! zone's number (from 1 to n)
+  izone = 1
+
+  ! Assign zone number to the face
+  izfppp(ifac) = izone
+
+  ! For this inlet, mass flux is fixed
+  !  The speed direction is given
+  !  (speed vector norm is irrelevant)
+
+  ientat(izone) = 1
+  iqimp(izone)  = 1
 
   rcodcl(ifac,iu,1) = 0.d0
   rcodcl(ifac,iv,1) = 0.d0
   rcodcl(ifac,iw,1) = 5.d0
 
-! PPl
-! ------ Traitement de la turbulence
+  ! Oxidizer mass flow rate in kg/s
+  qimpat(izone) = 1.46d-03
+  ! Oxidizer Temperature in K
+  timpat(izone) = 400.d0 + tkelvi
 
-!        La turbulence est calculee par defaut si ICALKE different de 0
-!          - soit a partir du diametre hydraulique, d'une vitesse
-!            de reference adaptes a l'entree courante si ICALKE = 1
-!          - soit a partir du diametre hydraulique, d'une vitesse
-!            de reference et de l'intensite turvulente
-!            adaptes a l'entree courante si ICALKE = 2
+  ! Turbulence variables BC's calculated based on icalke(izone):
+  ! - If 1: hydraulic diameter and reference velocity (similar to
+  !         turbulence_bc_inlet_hyd_diam)
+  ! - If 2: hydraulic diameter, reference velocity and turbulence intensity
+  !         (similar to turbulence_bc_inlet_turb_intensity)
+  ! - If 0: must be defined here for all turbulence variables
+  !        (k, epsilon, omega, Rij, ... depending on active model)
 
-!      Choix pour le calcul automatique ICALKE = 1 ou 2
   icalke(izone) = 1
-!      Saisie des donnees
+
   dh(izone)     = 0.1d0
   xintur(izone) = 0.1d0
 
-! PPl
-!
-enddo
-!< [example_2]
+  ! Treatment of user-defined scalars
 
-!     The color 15 become a WALL
-
-!< [example_3]
-call getfbr('15', nlelt, lstelt)
-!==========
-
-do ilelt = 1, nlelt
-
-  ifac = lstelt(ilelt)
-
-!          WALL : NUL MASS FLUX (PRESSURE FLUX is zero valued)
-!                 FRICTION FOR SPEED (& TURBULENCE)
-!                 NUL SCALAR FLUX
-
-!   Kind of boundary conditions for standard variables
-  itypfb(ifac)   = iparoi
-
-
-!   zone's number (from 1 to n)
-  izone = 3
-
-!      - Allocation of the zone's number to the face
-  izfppp(ifac) = izone
+  if ((nscal-nscapp).gt.0) then
+    do ii = 1, (nscal-nscapp)
+      rcodcl(ifac,isca(ii),1) = 1.d0
+    enddo
+  endif
 
 enddo
 !< [example_3]
-
-
-!     The color 19 becomes an OUTLET
-
-!< [example_4]
-call getfbr('19', nlelt, lstelt)
-!==========
-
-do ilelt = 1, nlelt
-
-  ifac = lstelt(ilelt)
-
-!          OUTLET : NUL FLUX for SPEED & SCALARS, FIXED PRESSURE
-
-!   Kind of boundary conditions for standard variables
-  itypfb(ifac)   = isolib
-
-!   zone's number (from 1 to n)
-  izone = 4
-
-!      - Allocation of the zone's number to the face
-  izfppp(ifac) = izone
-
-enddo
-!< [example_4]
-
-!     The color 14 becomes a symetry plane
-
-!< [example_5]
-call getfbr('14 or 4', nlelt, lstelt)
-!==========
-
-do ilelt = 1, nlelt
-
-  ifac = lstelt(ilelt)
-
-!          SYMETRIES
-
-!   Kind of boundary conditions for standard variables
-  itypfb(ifac)   = isymet
-
-!   zone's number (from 1 to n)
-  izone = 5
-
-!      - Allocation of the zone's number to the face
-  izfppp(ifac) = izone
-
-enddo
-!< [example_5]
-
 
 !--------
 ! Formats

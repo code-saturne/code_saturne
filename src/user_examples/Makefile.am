@@ -187,7 +187,6 @@ cs_user_boundary_conditions-gas_3ptchem.f90 \
 cs_user_boundary_conditions-gas_ebu.f90 \
 cs_user_boundary_conditions-gas_libby_williams.f90 \
 cs_user_boundary_conditions-pulverized_coal.f90 \
-cs_user_boundary_conditions-pulverized_coal_lagrangian.f90 \
 cs_user_fluid_structure_interaction.f90 \
 cs_user_initialization-gas_ebu.f90 \
 cs_user_initialization-gas_libby_williams.f90 \
