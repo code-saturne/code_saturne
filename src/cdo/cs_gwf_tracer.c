@@ -652,6 +652,7 @@ _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
 
   const cs_adjacency_t  *c2v = connect->c2v;
   const cs_real_t  *theta = cs_shared_liquid_saturation;
+  const double  dt = ts->dt[0]; /* current time step */
 
   /* 2) Update c_w and c_p */
   /*    ------------------ */
@@ -666,6 +667,7 @@ _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
     if (z->n_elts < 1)
       continue;
 
+    const double  lambda = tc->reaction_rate[soil->id];
     const double  rho = tc->rho_bulk[soil->id];
     const double  inv_rho = 1./rho;
 
@@ -693,6 +695,20 @@ _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
           c_w[v_id] = c_sat;
 
         }
+
+        /*-------------------------------------------------------------------*/
+        /* Remark: Not the best place to integrate radioactive decay...
+         * The most adapted formulae is still to be determined
+         *
+         * Update of the precipitate stock here to model the natural
+         * exponential decay.
+         *
+         * Explicit 1st order formula is used here.
+         * The implicit 1st order formula
+         *   c_p[j] *= 1.0/(1. + lambda*dt);
+         * ------------------------------------------------------------------*/
+
+        c_p[j] -= c_p[j]*lambda*dt;
 
       } /* Loop on cell vertices */
 
