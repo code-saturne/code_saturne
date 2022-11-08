@@ -44,6 +44,7 @@
 #include "cs_cdofb_scaleq.h"
 #include "cs_navsto_system.h"
 #include "cs_parall.h"
+#include "cs_physical_model.h"
 #include "cs_post.h"
 #include "cs_solid_selection.h"
 
@@ -3277,6 +3278,10 @@ cs_solidification_activate(cs_solidification_model_t       model,
   /* Allocate an empty structure */
 
   cs_solidification_t  *solid = _solidification_create();
+
+  /* Set the physical model type */
+
+  cs_glob_physical_model_flag[CS_SOLIDIFICATION] = 1;
 
   /* Set members of the structure according to the given settings */
 

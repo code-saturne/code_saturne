@@ -105,8 +105,28 @@ BEGIN_C_DECLS
 
 /*! Status of specific physical models */
 
-int cs_glob_physical_model_flag[CS_N_PHYSICAL_MODEL_TYPES]
-  = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+int cs_glob_physical_model_flag[CS_N_PHYSICAL_MODEL_TYPES] = {
+  -1,  /* global specific physics flag */
+       /* Combustion models: */
+  -1,  /*    3-point model */
+  -1,  /*    Steady laminar flamelet model */
+  -1,  /*    EBU combustion model */
+  -1,  /*    Libby-Williams combustion model */
+  -1,  /*    Pulverized coal combustion with Lagrangian coupling */
+  -1,  /*    Coal combustion model */
+  -1,  /*    Fuel combustion */
+       /*  Electro-magnetism models: */
+  -1,  /*    Joule effect */
+  -1,  /*    Electric arcs */
+       /*  Other code_saturne's modules */
+  -1,  /*    Compressible model */
+  -1,  /*    Atmospheric model */
+  -1,  /*    Cooling towers */
+  -1,  /*    Gas mix model */
+  -1,  /*    Groundwater flows */
+  -1,  /*    Solidification process */
+  -1   /*    Heat transfer (in solids) */
+};
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 

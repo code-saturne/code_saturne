@@ -38,11 +38,13 @@
 #include <mpi.h>
 #endif
 
+#include <bft_mem.h>
+
+#include "cs_physical_model.h"
+
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
 
 #include "cs_thermal_system.h"
 
@@ -396,6 +398,10 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
   else
     thm = cs_thermal_system;    /* Previously allocated when setting the
                                    reference temperature for instance */
+
+  /* Set the physical model type */
+
+  cs_glob_physical_model_flag[CS_HEAT_TRANSFER] = 1;
 
   /* Set flags */
 

@@ -62,6 +62,7 @@
 #include "cs_parall.h"
 #include "cs_param_types.h"
 #include "cs_physical_constants.h"
+#include "cs_physical_model.h"
 #include "cs_post.h"
 #include "cs_reco.h"
 #include "cs_zone.h"
@@ -3220,6 +3221,10 @@ cs_gwf_activate(cs_gwf_model_type_t      model,
                 cs_flag_t                post_flag)
 {
   cs_gwf_t  *gw = _gwf_create();
+
+  /* Set the physical model type */
+
+  cs_glob_physical_model_flag[CS_GROUNDWATER] = 1;
 
   /* Store the pointer to the groundawater flow structure */
 

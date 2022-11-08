@@ -68,12 +68,14 @@ typedef enum {
   CS_COMBUSTION_COAL,              /*!< coal combustion model */
   CS_COMBUSTION_FUEL,              /*!< fuel combustion */
   CS_JOULE_EFFECT,                 /*!< Joule effect */
-  CS_ELECTRIC_ARCS,                /*!< electric arcs */
-  CS_COMPRESSIBLE,                 /*!< compressible model */
-  CS_ATMOSPHERIC,                  /*!< atmospheric model */
-  CS_COOLING_TOWERS,               /*!< cooling towers */
-  CS_GAS_MIX,                      /*!< gas mix model */
-  CS_GROUNDWATER,                  /*!< Richards model */
+  CS_ELECTRIC_ARCS,                /*!< Electric arcs */
+  CS_COMPRESSIBLE,                 /*!< Compressible model */
+  CS_ATMOSPHERIC,                  /*!< Atmospheric model */
+  CS_COOLING_TOWERS,               /*!< Cooling towers */
+  CS_GAS_MIX,                      /*!< Gas mix model */
+  CS_GROUNDWATER,                  /*!< Groundwater flows module */
+  CS_SOLIDIFICATION,               /*!< Solidification process */
+  CS_HEAT_TRANSFER,                /*!< Heat transfer (in solids) */
 
   CS_N_PHYSICAL_MODEL_TYPES        /*!< Number of physical model types */
 
