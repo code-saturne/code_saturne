@@ -3429,7 +3429,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
   /* Final adjustments */
 
   /* Automatic turbulence values
-     TODO: spcecify which models do not need this instead of those who do.
+     TODO: specify which models do not need this instead of those who do.
      In most cases, even if a model changes this, doing it in all cases
      should be safe. */
 
