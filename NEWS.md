@@ -1,7 +1,7 @@
 Master (not on release branches yet)
 ------------------------------------
 
-User changes:
+## User changes:
 
 - Add `cs_function` API to refactor pre and user-defined location data
   evaluation. This defines function objects which can be evaluated
@@ -32,25 +32,30 @@ User changes:
 
 - Simplify the use of soil-atmosphere model of the atmospheric module.
 
-Numerics and physical modeling:
+- Add experimental immersed boundary features. This can be computed from
+  cloud of points.
+
+## Physical modeling:
 
 - Add some atmospheric universal functions for large scale idealized wind
   profiles.
 
-- Add experimental immersed boundary features. This can be computed from
-  cloud of points.
-
-Bug fixes:
+## Bug fixes:
 
 - Restart from different mesh: fix values shift in variable exchange when
   some points are not located (updated PLE library).
+
 - Fix performance issues with K-cycle and pairwise aggregation and MSR
   matrices in case of penalized diagonal entries or isolated diagonal
   values.
+
 - Fix the stopping criterion for Uzawa-CG algorithm (used by CDO
   schemes for Stokes problems).
 
-Architectural changes:
+- Fix the precipitation model for radionuclide tracers in the GWF
+  module (CDO). Add the missing radioactive decay phenomenon.
+
+## Architectural changes:
 
 - Completed migration of turbulence models source code from Fortran to C.
 
@@ -62,29 +67,34 @@ Architectural changes:
 
 - Drop support for older EOS versions (prior to 1.8.0).
 
-Studymanager:
+## Studymanager:
 
 - New option (--slurm-batch-size=N with N>0) to submit batches of cases using
   the SLURM resource manager on cluster. Cases are sorted by number of
   processors and level of dependency.
+
 - New option (--report) to generate description report of studies based on latex
   file in the STUDY/REPORT folder.
 
-Numerics:
+## Numerics:
 
 - Add MUMPS as a preconditioner of a Krylov method.
+
 - Add SPD matrices as a new type of input matrices for MUMPS. This
   distinction corresponds to the key SYM in MUMPS. Now, "mumps" refers
   to SYM=0 (not symmetric), "mumps_sym" refers to SYM=2 (general
   symmetric) and "mumps_ldlt" refers to SYM=1 (SPD matrices). The same
   behavior applies to the single-precision version.
+
 - Several optimizations/fixes for MUMPS (zero-value entries are not
   sent to MUMPS for instance).
+
 - MUMPS user hook API has been changed
+
 - Add a scaled pressure mass matrix as a Schur approximation for Uzawa
   CG algorithm (used by CDO schemes)
 
-CDO:
+## CDO:
 
 - Setup: Fix inconsistencies between cs_navsto_param_t and
   cs_equation_param_t for the momentum equation when settings a
