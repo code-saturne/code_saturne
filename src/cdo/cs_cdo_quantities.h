@@ -378,8 +378,8 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t  *cdoq);
 /*----------------------------------------------------------------------------*/
 
 const cs_real_t *
-cs_cdo_quantities_get_pvol_fc(const cs_cdo_quantities_t    *cdoq,
-                              const cs_adjacency_t         *c2f);
+cs_cdo_quantities_get_pvol_fc(cs_cdo_quantities_t     *cdoq,
+                              const cs_adjacency_t    *c2f);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -396,9 +396,9 @@ cs_cdo_quantities_get_pvol_fc(const cs_cdo_quantities_t    *cdoq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_quantities_compute_pvol_fc(const cs_cdo_quantities_t    *cdoq,
-                                  const cs_adjacency_t         *c2f,
-                                  cs_real_t                   **p_pvol_fc);
+cs_cdo_quantities_compute_pvol_fc(cs_cdo_quantities_t     *cdoq,
+                                  const cs_adjacency_t    *c2f,
+                                  cs_real_t              **p_pvol_fc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -407,16 +407,16 @@ cs_cdo_quantities_compute_pvol_fc(const cs_cdo_quantities_t    *cdoq,
  *        axis defined by the edge
  *        The computed quantity is scanned with the c2e adjacency
  *
- * \param[in]  cdoq    pointer to cs_cdo_quantities_t structure
- * \param[in]  c2e     pointer to the cell --> edges connectivity
+ * \param[in, out] cdoq    pointer to cs_cdo_quantities_t structure
+ * \param[in]      c2e     pointer to the cell --> edges connectivity
  *
  * \return the volume associated to each edge in each cell
  */
 /*----------------------------------------------------------------------------*/
 
 const cs_real_t *
-cs_cdo_quantities_get_pvol_ec(const cs_cdo_quantities_t    *cdoq,
-                              const cs_adjacency_t         *c2e);
+cs_cdo_quantities_get_pvol_ec(cs_cdo_quantities_t     *cdoq,
+                              const cs_adjacency_t    *c2e);
 
 /*----------------------------------------------------------------------------*/
 /*!

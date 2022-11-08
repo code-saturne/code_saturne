@@ -685,9 +685,10 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
                           cs_real_t                **p_diag_smat,
                           cs_real_t                **p_xtra_smat)
 {
+  CS_UNUSED(uza);
+
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_mesh_t  *m = cs_glob_mesh;
-  const cs_lnum_t  n_cells = m->n_cells;
   const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t  n_i_faces = m->n_i_faces;
   const cs_lnum_t  n_b_faces = m->n_b_faces;
@@ -845,7 +846,6 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_mesh_t  *m = cs_glob_mesh;
-  const cs_lnum_t  n_cells = m->n_cells;
   const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t  n_i_faces = m->n_i_faces;
   const cs_lnum_t  n_b_faces = m->n_b_faces;
@@ -5068,10 +5068,8 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   assert(sh != NULL && sh->n_blocks == 2);
 
   const cs_real_t  *B_op = msles->div_op;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_range_set_t  *range_set = cs_cdo_system_get_range_set(sh, 0);
   const cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
-  const cs_time_step_t  *ts = cs_glob_time_step;
 
   cs_real_t  *u_f = msles->u_f;
   cs_real_t  *p_c = msles->p_c;

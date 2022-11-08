@@ -1461,6 +1461,12 @@ _tpf_g_darcy_update(const cs_real_t              t_eval,
                     void                        *input,
                     cs_gwf_darcy_flux_t         *darcy)
 {
+  CS_UNUSED(t_eval);
+  CS_UNUSED(eq);
+  CS_UNUSED(cur2prev);
+  CS_UNUSED(input);
+  CS_UNUSED(darcy);
+
   /* TODO */
 }
 
@@ -1476,9 +1482,6 @@ _tpf_g_darcy_update(const cs_real_t              t_eval,
 static cs_gwf_two_phase_t *
 _tpf_activate(void)
 {
-  cs_gwf_t  *gw = cs_gwf_main_structure;
-  assert(gw != NULL);
-
   cs_gwf_two_phase_t  *mc = NULL;
 
   BFT_MALLOC(mc, 1, cs_gwf_two_phase_t);
@@ -1816,8 +1819,7 @@ static void
 _tpf_init_model_context(cs_gwf_two_phase_t     *mc,
                         cs_property_type_t      perm_type)
 {
-  cs_gwf_t  *gw = cs_gwf_main_structure;
-  assert(gw != NULL && mc != NULL);
+  assert(mc != NULL);
 
   if (mc->wl_eq == NULL || mc->hg_eq == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -2074,9 +2076,6 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                     cs_gwf_two_phase_t            *mc)
 {
   CS_UNUSED(quant);
-
-  cs_gwf_t  *gw = cs_gwf_main_structure;
-  assert(gw != NULL && mc != NULL);
 
   const cs_adjacency_t  *c2v = connect->c2v;
   const cs_lnum_t  n_cells = connect->n_cells;

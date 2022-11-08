@@ -1380,8 +1380,7 @@ cs_equation_add(const char            *eqname,
 
   size_t  len = strlen(varname);
   BFT_MALLOC(eq->varname, len + 1, char);
-  strncpy(eq->varname, varname, len);
-  eq->varname[len] = '\0';
+  strncpy(eq->varname, varname, len + 1); /* Last character is '\0' */
 
   eq->param = cs_equation_param_create(eqname, eqtype, dim, default_bc);
 

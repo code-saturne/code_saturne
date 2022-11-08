@@ -101,8 +101,7 @@ cs_equation_system_param_create(const char       *name,
 
   size_t  len = strlen(name);
   BFT_MALLOC(sysp->name, len + 1, char);
-  strncpy(sysp->name, name, len);
-  sysp->name[len] = '\0';
+  strncpy(sysp->name, name, len + 1); /* Last character is '\0' */
 
   /* Dimension of the variable for each block */
 
