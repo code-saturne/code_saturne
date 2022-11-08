@@ -3014,6 +3014,8 @@ cs_equation_get_vertex_values(const cs_equation_t    *eq,
 /*!
  * \brief  Compute the integral over the domain of the current variable field
  *         associated to the given equation.
+ *         Parallel synchronization is performed in this function. No need to
+ *         do it outside.
  *
  * \param[in]      connect    pointer to a \ref cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a \ref cs_cdo_quantities_t structure

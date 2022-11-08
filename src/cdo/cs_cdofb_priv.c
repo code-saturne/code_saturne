@@ -94,12 +94,12 @@ cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
   if (eqc == NULL || eqb == NULL)
     return;
 
-  /* Sanity checks */
   assert(eqp != NULL);
 
   /* The open pointer function is set by default. If an extrapolation is
    * requested then the calling code has to set a new function pointer as well
    * as a pointer to an input structure if needed */
+
   eqc->advection_open = cs_cdofb_advection_open_default;
   eqc->advection_main = NULL;
   eqc->advection_close = NULL;
