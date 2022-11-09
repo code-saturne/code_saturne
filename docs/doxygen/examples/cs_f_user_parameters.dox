@@ -61,12 +61,18 @@
 
   \section cs_f_user_parameters_h_usipsu  General options (usipsu)
 
-  \subsection cs_f_user_parameters_h_usipsu_0 All options
-
-  The following code block presents all the options available
+  The following code block presents options available
   in the \ref usipsu subroutine.
 
   \snippet cs_user_parameters.f90 usipsu
+
+  \section cs_f_user_parameters_h_usipes Postprocessing options (usipes)
+
+  The \ref usipes routine can be found in the \ref cs_user_parameters.f90 file,
+  and is used for setting of postprocessing options, as it is called once
+  all fields are defined.
+
+  \snippet cs_user_parameters.f90 usipes
 
   \section cs_f_user_parameters_h_usppmo Specific physic activation (usppmo)
 

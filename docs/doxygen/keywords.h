@@ -153,7 +153,7 @@ char *restart_file;
 
 /*!
   \var diffusivity_id
-  Field if of the matching molecular diffusivity for a scalar.
+  Field id of the matching molecular diffusivity for a scalar.
   Negative value if the field has constant diffusivity.
 
   If set to 0, a matching field will be created and its value
@@ -187,6 +187,26 @@ int diffusivity_id;
   thermochemical data file.
 */
 double diffusivity_ref;
+
+/*!
+  \var density_id
+  Field id of the matching density for a scalar when defined
+  as variable and different from the bulk.
+  This must be consistent with continuity equation, and is used
+  for fluid-solid computations with passive scalars with a different
+  density in the solid.
+
+  Negative value if the field has constant density.
+
+  If set to 0, a matching field will be created and its value
+  reset automatically to that field's id. If set directly to
+  a value > 0, it is assumed that the matching density field
+  has already been defined and is associated with this scalar.
+  This allows both creating an associated field automatically or
+  in more advanced cases, sharing a density field between
+  several scalars.
+*/
+int density_id;
 
 /*!
   \var turbulent_flux_ctheta

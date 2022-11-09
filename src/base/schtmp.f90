@@ -214,7 +214,7 @@ if (iappel.eq.1) then
           call field_current_to_previous(f_id)
         endif
       endif
-      ! Densisty
+      ! Density
       call field_get_key_int (ivarfl(isca(iscal)), kromsl, f_id)
       if (f_id.ge.0.and.iscavr(iscal).le.0) then
         call field_get_key_int(f_id, key_t_ext_id, iroext)

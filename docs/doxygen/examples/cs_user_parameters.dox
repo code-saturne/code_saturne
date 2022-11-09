@@ -54,11 +54,14 @@
 
   \snippet cs_user_parameters-base.c turbulence_model_choice
 
-  Coupled solver for Rij components (when iturb=30, 31 or 32): 0 to switch off, 1 to switch on
+  Coupled solver for Rij components (when Rij is used), and other RANS
+  model specific settings:
 
-  \snippet cs_user_parameters-base.c Rij_coupled_solver_choice
+  \snippet cs_user_parameters-base.c turb_rans_model_settings
 
-  To set a thermal model ( CS_THERMAL_MODEL_NONE: none,  CS_THERMAL_MODEL_TEMPERATURE: temperature, CS_THERMAL_MODEL_ENTHALPY: entyhalpy, CS_THERMAL_MODEL_TOTAL_ENERGY: total energy)
+  To set a thermal model (CS_THERMAL_MODEL_NONE: none,
+  CS_THERMAL_MODEL_TEMPERATURE: temperature, CS_THERMAL_MODEL_ENTHALPY:
+  enthalpy, CS_THERMAL_MODEL_TOTAL_ENERGY: total energy)
 
   \snippet cs_user_parameters-base.c thermal_model_choice
 
@@ -67,7 +70,7 @@
 
   \snippet cs_user_parameters-base.c enable_cavit
 
-  \subsection cs_user_parameters_h_cs_user_ale Activation ALE
+  \subsection cs_user_parameters_h_cs_user_ale ALE activation
 
   To activate ALE (Arbitrary Lagrangian Eulerian) method
   (CS_ALE_NONE: switch off, CS_ALE_LEGACY: legacy solver, CS_ALE_CDO: CDO solver)
@@ -109,11 +112,60 @@
 
   \snippet cs_user_parameters-base.c duration
 
+  To run a computation with a frozen velocity field (only for a restart):
+
+  \snippet cs_user_parameters-base.c param_iccvfg
+
   For example, to change the log (run_solver.log) verbosity of all the variables:
 
   \snippet cs_user_parameters-base.c param_log_verbosity
 
-  For example, to change limiters for the convective scheme for a given scalar:
+  Change the required linear-solver precision required for each increment
+  of the solution on the solved fields:
+
+  \snippet cs_user_parameters-base.c param_linear_solver_epsilo
+
+  To compute a dynamic relaxation for the reconstruction sweeps used to
+  handle non-orthogonalities (for any variable):
+  - iswdyn = 0: no relaxation
+  - iswdyn = 1: means that the last increment is relaxed
+  - iswdyn = 2: (default) means that the last two increments are used
+                to relax.
+
+  \snippet cs_user_parameters-base.c param_iswydn
+
+  For difficult cases, a stabilization may be obtained by not
+  reconstructing the convective and diffusive flux for variables
+  of the turbulence model, that is for k-epsilon models:
+
+  \snippet cs_user_parameters-base.c param_ircflu
+
+  Choice of turbulent flux model u'T' for the scalar T:
+  - Algebraic Models
+    -  0) SGDH
+    - 10) GGDH
+    - 11) EB-GGDH (Elliptic Blending)
+    - 20) AFM
+    - 21  EB-AFM (Elliptic Blending)
+  - Models with transport equations
+    - 30) 30 DFM
+    - 31) EB-DFM (Elliptic Blending)
+
+  \snippet cs_user_parameters-base.c param_iturt
+
+  The following snippet shows how to blend 1st-order upwind and 2nd-order
+  centered convective schemes:
+  To reduce numerical diffusion, it is recommened to use a second-order
+  scheme in space for convection (the default choice). When this causes
+  stability issues, adding a small percent of upwind may help.
+  For exemple, to add 2 percent of upwind, set field's \c blencv parameter
+  (representing the portion of upwind) to (1 - 0.02) to all variables,
+  instead of relying on the defaults (usually pure centered or upwind
+  depending on the variable type):
+
+  \snippet cs_user_parameters-base.c param_convective_scheme
+
+  To change limiters for the convective scheme for a given scalar:
 
   \snippet cs_user_parameters-base.c param_var_limiter_choice
 
@@ -143,9 +195,68 @@
 
   \snippet cs_user_parameters-base.c param_vp_netrup
 
+  The temperature scale may be chosen when solving with temperature
+  (except for predefined physical models), as shown below. When coupling
+   with Syrthes, the same temperature scale should be used. Wen using a
+  radiative model, be careful with conversions, as radiation boundary conditions
+  are always defined in Kelvin.
+
+  \snippet cs_user_parameters-base.c param_itpscl
+
+  If a user-defined scalar behaves like a temperature (relative to Cp):
+  we neeed to set its "is_temperature" keyword to 1 (this is already done
+  for the actual temperature):
+
+  \snippet cs_user_parameters-base.c param_kscacp
+
   \subsection cs_user_parameters_h_param_fluid_properties Fluid properties.
 
+  Most fluid properties can be defined as part of the global
+  \ref cs_glob_fluid_properties structure, whose members can
+  be modified as illustrated here:
+
   \snippet cs_user_parameters-base.c param_fluid_properties
+
+  \subsubsection Variable_diffusivity Variable diffusivity and density
+
+  Variable diffusivity for sclar fields is handled differenty, as
+  each scalar may be assigned a specific diffusivity.
+
+  So to each thermal and user-defined scalar field, we associate a
+  \ref diffusivity_id keyword, which represents the id of an associated
+  diffusivity field when using a variable (local) diffusivity, and
+   -1 (the default) for a constant diffusivity.
+
+  - When initially set to 0, the field will be added automatically,
+    and later calls to `cs_field_get_key_int(f, kivisl)` will return
+    a field's diffusivity field id  (where `kivisl` is the "diffusivity_id"
+    field keyword id).
+
+  - When set to an id > 0, the id of an existing, predefined field is given.
+    This may allow sharing a diffusivity between multiple scalars.
+
+  Note that for user scalars which represent the variance of another user
+  scalar, the diffusivity is assumed to be the same as that of the
+  parent scalar, so values set here will be ignored.
+
+  For non-user scalars from specific physical models (coal, combustion,
+  electric arcs, ...) implicitly defined in the model, the diffusivity
+  should not be modified.
+
+  Caution: do not forget to complete cs_user_physical_properties with the
+  law defining the diffusivity if `ifcvsl` >= 0 has been set here.
+
+  \snippet cs_user_parameters-base.c param_diffusivity_id
+
+  Variable associated density fields may be defined in a similar manner
+  when a scalar's density is variable and different from the bulk density,
+  which is sometimes the case for for fluid-solid computations with
+  passive scalars with a different density in the solid.
+  This must be consitent with continuity equation.
+
+  The logic is similar to that of variable diffusivity fields above:
+
+  \snippet cs_user_parameters-base.c param_density_id
 
   \subsection cs_user_parameters_h_cs_user_parameters_fields Special fields and activate some automatic post-processings
 
@@ -195,7 +306,13 @@
   \snippet cs_user_parameters-base.c param_var_rij_clipping
 
 
-  \section cs_user_parameters_h_finalize_setup Input-output related examples (usipes)
+  \section cs_user_parameters_h_finalize_setup Input-output related examples
+
+  Input-output settings for fields can be applied as soon as a field is
+  defined. As some fields may be defined automatically based on other
+  field's options, it is recommended to define the settings in
+  \ref cs_user_finalize_setup (or \ref usipes for Fortran), where all fields
+  should have been defined.
 
   \subsection cs_user_parameters_h_example_base Basic options
 

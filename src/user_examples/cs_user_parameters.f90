@@ -371,10 +371,6 @@ integer nmodpp
 
 ! Local variables
 
-integer       ii, jj
-integer       iscal, ifcvsl
-integer       kturt, turb_flux_model
-
 !===============================================================================
 
 !< [usipsu]
@@ -392,151 +388,6 @@ integer       kturt, turb_flux_model
 ! Writing of auxiliary restart files may also be deactivated using: iecaux = 0
 
 ileaux = 0
-
-! --- Algorithm to take into account the thermodynamical pressure variation in time
-!     (not used by default except if idilat = 3)
-
-!     by default:
-!     ----------
-!      - the thermodynamic pressure (pther) is initialized with p0 = p_atmos
-!      - the maximum thermodynamic pressure (pthermax) is initialized with -1
-!        (no maximum by default, this term is used to model a venting effect when
-!         a positive value is given by the user)
-!      - a global leak can be set through a leakage surface sleak with a head
-!      loss kleak of 2.9 (Idelcick)
-
-ipthrm = 0
-
-pthermax= -1.d0
-
-sleak = 0.d0
-kleak = 2.9d0
-
-! --- Temperature or enthalpy
-
-!   When used without specific physics, if we have chosen to solve in temperature
-!     (that is if itherm = 1), the fluid temperature is considered to be in
-!     degrees Kelvin by default (be careful for boundary conditions an expression
-!     of physical properties depending on temperature)t.
-
-!     If we wish for the fluid solver to work with a temperature in degrees Celsius,
-!     we must set itpscl = 2.
-
-!     This is recommended for Syrthes Coupling, but not recommended for the
-!     radiative model, as it is a source of user errors in this case:
-!     Indeed, the boundary conditions for the fluid temperature will then be
-!     in degrees Celsius, while the boundary conditions for radiation in
-!     cs_user_radiative_transfer_bcs must still be in Kelvin.
-
-if (nmodpp.eq.0) then
-  itpscl = 2
-endif
-
-!   If a USER scalar behaves like a temperature (relative to Cp):
-!     we set the "is_temperature" keyword to 1.
-
-if (nscaus.gt.0) then
-  do ii = 1, nscaus
-    call field_set_key_int(ivarfl(isca(ii)), kscacp, 1)
-  enddo
-endif
-
-! --- Calculation (restart) with frozen velocity field (1 yes, 0 no)
-
-iccvfg = 1
-
-! --- Rotation/curvature correction for eddy-viscosity turbulence models
-!      0: deactivated
-!      1: activated
-
-
-irccor = 1
-
-! --- Variable diffusivity field id (ifcvsl>=0) or constant
-!     diffusivity (ifcvsl=-1) for the thermal scalar and USER scalars.
-
-!     With ifcvsl = 0, the field will be added automatically, and later calls to
-!       field_get_key_int(ivarfl(isca(iscal)), kivisl, ifcvsl)
-!       will return its id.
-!     With ifcvsl > 0, the id of an existing, predifined field is given. This
-!       may allow sharing a diffusivity between multiple scalars.
-
-!     For user scalars iscal which represent the variance of another user
-!       scalar, the diffusivity of the variance of a scalar is assumed to
-!       have the same behavior as the diffusivity of this scalar,
-!       so values set here will be ignored.
-
-!     For non-user scalars relative to specific physics (coal, combustion,
-!       electric arcs: see usppmo) implicitly defined in the model,
-!       the diffusivity should not be modified here.
-
-!     Caution:   complete cs_user_physical_properties with the law defining the diffusivity
-!     ========   if and only if ifcvsl = 0 has been set here.
-
-! For thermal scalar
-if (ippmod(icompf).ge.0) then
-  ifcvsl = -1
-  call field_set_key_int(ivarfl(isca(itempk)), kivisl, ifcvsl)
-else if (iscalt.gt.0) then
-  ifcvsl = -1
-  call field_set_key_int(ivarfl(isca(iscalt)), kivisl, ifcvsl)
-endif
-
-do iscal = 1, nscaus
-  if (iscavr(iscal).le.0) then
-    ifcvsl = -1
-    call field_set_key_int(ivarfl(isca(iscal)), kivisl, ifcvsl)
-  endif
-enddo
-
-! --- Variable density field id (ifcvsl>=0) or bulk
-!     density (ifcvsl=-1) for USER scalars.
-
-!     With ifcvsl = 0, the field will be added automatically, and later calls to
-!       field_get_key_int(ivarfl(isca(iscal)), kromsl, ifcvsl)
-!       will return its id.
-!     With ifcvsl > 0, the id of an existing, predifined field is given. This
-!       may allow sharing a density between multiple scalars.
-
-!     For user scalars iscal which represent the variance of another user
-!       scalar, the density of the variance of a scalar is assumed to
-!       have the same behavior as the density of this scalar,
-!       so values set here will be ignored.
-
-!     Caution:   complete cs_user_physical_properties with the law defining the density
-!     ========   if and only if ifcvsl = 0 has been set here.
-
-do iscal = 1, nscaus
-  if (iscavr(iscal).le.0) then
-    ifcvsl = -1
-    call field_set_key_int(ivarfl(isca(iscal)), kromsl, ifcvsl)
-  endif
-enddo
-
-! --- Turbulent flux model u'T' for the scalar T
-!     Algebraic Model
-!      0  SGDH
-!      10 GGDH
-!      11 EB-GGDH (Elliptic Blending)
-!      20 AFM
-!      21 EB-AFM (Elliptic Blending)
-!     Model with transport equations
-!      30 DFM
-!      31 EB-DFM (Elliptic Blending)
-
-call field_get_key_id('turbulent_flux_model', kturt)
-
-! GGDH for thermal scalar:
-if (iscalt.gt.0) then
-  turb_flux_model = 10
-  call field_set_key_int(ivarfl(isca(iscalt)), kturt, turb_flux_model)
-endif
-
-! GGDH for all the scalars:
-do jj = 1, nscaus
-  turb_flux_model = 10
-  call field_set_key_int(ivarfl(isca(jj)), kturt, turb_flux_model)
-enddo
 
 ! Error estimators for Navier-Stokes (non-frozen velocity field)
 
@@ -703,12 +554,14 @@ integer nmodpp
 
 !===============================================================================
 
+!< [usipes]
 ! Definition of deformable structure time plots
 
 nthist = 1
 frhist = -1.d0
 
 tplfmt = 1 ! time plot format (1: .dat, 2: .csv, 3: both)
+!< [usipes]
 
 return
 end subroutine usipes

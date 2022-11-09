@@ -372,14 +372,14 @@ cs_user_model(void)
 
   /*--------------------------------------------------------------------------*/
 
-  /*! [Rij_coupled_solver_choice] */
-  /* Example: Coupled solver for Rij components (when iturb=30, 31 or 32)
+  /*! [turb_rans_model_settings] */
+  /* Coupled solver for Rij components (CS_TURB_RIJ_*)
    *   0: switch off
    *   1: switch on (default)
    */
 
   cs_turb_rans_model_t *rans_model = cs_get_glob_turb_rans_model();
-  rans_model->irijco = 1;
+  rans_model->irijco = 0;
 
   /* Advanced re-initialization for EBRSM or k-omega models
      - 0: switch off
@@ -389,12 +389,17 @@ cs_user_model(void)
   rans_model->reinit_turb = 1;
 
   /* Turbulent diffusion model for second moment closure (CS_TURB_RIJ_*)
-     - 0: scalar diffusivity (Shir model)
-     - 1: tensorial diffusivity (Daly and Harlow model, default model)
+     - 0: scalar diffusivity (Shir model, default)
+     - 1: tensorial diffusivity (Daly and Harlow model)
      */
   rans_model->idirsm = 1;
 
-  /*! [Rij_coupled_solver_choice] */
+  /* Rotation/curvature correction for eddy-viscosity turbulence models
+     (k-epsilon, k-omega) */
+
+  rans_model->irccor = 1;
+
+  /*! [turb_rans_model_settings] */
 
   /*--------------------------------------------------------------------------*/
 
@@ -655,6 +660,16 @@ cs_user_parameters(cs_domain_t *domain)
 
   /*! [duration] */
 
+  /* Calculation (restart) with frozen velocity field (1 yes, 0 no) */
+
+  /*! [param_iccvfg] */
+  {
+    cs_time_scheme_t *t_sc = cs_get_glob_time_scheme();
+
+    t_sc->iccvfg = 1;
+  }
+  /*! [param_iccvfg] */
+
   /* Example: set options for Stokes solving */
   /*-----------------------------------------*/
 
@@ -799,29 +814,106 @@ cs_user_parameters(cs_domain_t *domain)
     /* irovar, ivivar, icp: constant or variable density,
                               viscosity/diffusivity, and specific heat
 
-         When a specific physics module is active
-           (coal, combustion, electric arcs, compressible: see usppmo)
-           we MUST NOT set variables 'irovar', 'ivivar', and 'icp' here, as
-           they are defined automatically.
-         Nonetheless, for the compressible case, ivivar may be modified
-           in the uscfx2 user subroutine.
+     When a specific physics module is active
+       (coal, combustion, electric arcs, compressible: see usppmo)
+       we MUST NOT set variables 'irovar', 'ivivar', and 'icp' here, as
+       they are defined automatically.
+     Nonetheless, for the compressible case, ivivar may be modified
+       in the uscfx2 user subroutine.
 
-         When no specific physics module is active, we may specify if the
-           density, specific heat, and the molecular viscosity
-           are constant (irovar=0, ivivar=0, icp=-1), which is the default
-           or variable (irovar=1, ivivar=1, icp=0)
+     When no specific physics module is active, we may specify if the
+       density, specific heat, and the molecular viscosity
+       are constant (irovar=0, ivivar=0, icp=-1), which is the default
+       or variable (irovar=1, ivivar=1, icp=0)
 
-         For those properties we choose as variable, the corresponding law
-           must be defined in cs_user_physical_properties
-           (incs_user_physical_properties.f90);
-           if they are constant, they take values ro0, viscl0, and cp0.
+     For those properties we choose as variable, the corresponding law
+       must be defined in cs_user_physical_properties
+       (incs_user_physical_properties.f90);
+       if they are constant, they take values ro0, viscl0, and cp0.
     */
 
     fp->irovar = 1;
     fp->ivivar = 1;
     fp->icp = -1;
+
+    /* Account the thermodynamical pressure variation in time
+       (only if cs_glob_velocity_pressure_param->idilat = 3)
+
+      By default:
+      ----------
+      - The thermodynamic pressure (pther) is initialized with p0 = p_atmos.
+      - The maximum thermodynamic pressure (pthermax) is initialized with -1
+        (no maximum by default, this term is used to model a venting effect when
+        a positive value is given by the user).
+      - A global leak can be set through a leakage surface sleak with a head
+       loss kleak of 2.9 (Idelcick) */
+
+    fp->ipthrm = 1;
+
+    fp->pthermax= -1.;
+
+    fp->sleak = 0.;
+    fp->kleak = 2.9;
   }
   /*! [param_fluid_properties] */
+
+  /*! [param_diffusivity_id] */
+  {
+    const int kivisl = cs_field_key_id("diffusivity_id");
+
+    /* For thermal scalar */
+    if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0)
+      cs_field_set_key_int(cs_thermal_model_field(), kivisl, -1);
+    else
+      cs_field_set_key_int(cs_field_by_name("temperature"), kivisl, -1);
+
+    /* For user-defined scalars */
+    const int n_fields = cs_field_n_fields();
+    const int k_scal = cs_field_key_id("scalar_id");
+    const int kscavr = cs_field_key_id("first_moment_id");
+
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      cs_field_t *f = cs_field_by_id(f_id);
+      if (f->type & (CS_FIELD_VARIABLE | CS_FIELD_USER)) {
+        int s_num = cs_field_get_key_int(f, k_scal);
+        int iscavr = cs_field_get_key_int(f, kscavr);
+        if (s_num > 0 && iscavr <= 0)
+          cs_field_set_key_int(f, kivisl, 0);
+      }
+    }
+  }
+  /*! [param_diffusivity_id] */
+
+  /*! [param_density_id] */
+  {
+    const int kromsl = cs_field_key_id("density_id");
+
+    /* Example user-defined scalar */
+    cs_field_t *f = cs_field_by_name("scalar1");
+    cs_field_set_key_int(f, kromsl, 0);
+  }
+  /*! [param_density_id] */
+
+  /* Set temperature scale */
+
+  /*! [param_itpscl] */
+  {
+    cs_thermal_model_t *thm = cs_get_glob_thermal_model();
+
+    thm->itpscl = CS_TEMPERATURE_SCALE_CELSIUS;
+  }
+  /*! [param_itpscl] */
+
+  /* If a user-defined scalar behaves like a temperature (relative to Cp):
+     we set the "is_temperature" keyword to 1. */
+
+  /*! [param_kscacp] */
+  {
+    const int kscacp = cs_field_key_id("is_temperature");
+
+    cs_field_set_key_int(cs_field_by_name("t_1"), kscacp, 0);
+  }
+  /*! [param_kscacp] */
 
   /* Example: Change options relative to the inner iterations
    * over prediction-correction.
@@ -866,50 +958,10 @@ cs_user_parameters(cs_domain_t *domain)
   }
   /*! [param_log_verbosity] */
 
-  /*Convective scheme
-
-    blencv = 0 for upwind (order 1 in space, "stable but diffusive")
-           = 1 for centered/second order (order 2 in space)
-      we may use intermediate real values.
-      Here we choose:
-        for the velocity and user scalars:
-          an upwind-centered scheme with 100% centering (blencv=1)
-        for other variables
-          the default code value (upwind standard, centered in LES)
-
-    Specifically, for user scalars
-      if we suspect an excessive level of numerical diffusion on
-        a variable ivar representing a user scalar
-        iscal (with ivar=isca(iscal)), it may be useful to set
-        blencv = 1.0to use a second-order scheme in space for
-        convection. For temperature or enthalpy in particular, we
-        may thus choose in this case:
-
-        cs_field_t *f = cs_thermal_model_field();
-        cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-        eqp->blencv = 1.;
-
-      For non-user scalars relative to specific physics
-        implicitly defined by the model,
-        the corresponding information is set automatically elsewhere:
-        we do not modify blencv here. */
-
-  {
-    int n_fields = cs_field_n_fields();
-
-    for (int f_id = 0; f_id < n_fields; f_id++) {
-
-      cs_field_t *f = cs_field_by_id(f_id);
-
-      if (f->type & CS_FIELD_VARIABLE) {
-        cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-        eqp->blencv = 1.;
-      }
-    }
-  }
-
   /* Linear solver parameters (for each unknown)
      epsilo: relative precision for the solution of the linear system. */
+
+  /*! [param_linear_solver_epsilo] */
   {
     int n_fields = cs_field_n_fields();
 
@@ -923,26 +975,31 @@ cs_user_parameters(cs_domain_t *domain)
       }
     }
   }
+  /*! [param_linear_solver_epsilo] */
 
-  /* Dynamic reconstruction sweeps to handle non-orthogonlaities
-     This parameter computes automatically a dynamic relax factor,
+  /* Dynamic reconstruction sweeps to handle non-orthogonalities
+     This parameter automatically computes a dynamic relax factor,
      and can be activated for any variable.
       - iswdyn = 0: no relaxation
       - iswdyn = 1: means that the last increment is relaxed
       - iswdyn = 2: (default) means that the last two increments are used
                     to relax.
   */
+
+  /*! [param_iswydn] */
   {
     cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(p));
     eqp->iswdyn = 2;
   }
+  /*! [param_iswydn] */
 
   /* Stabilization in turbulent regime
 
     For difficult cases, a stabilization may be obtained by not
     reconstructing the convective and diffusive flux for variables
-    of the turbulence model, that is for k-epsilon models:
-    */
+    of the turbulence model, that is for k-epsilon models: */
+
+  /*! [param_ircflu] */
   {
     cs_equation_param_t *eqp;
 
@@ -952,10 +1009,74 @@ cs_user_parameters(cs_domain_t *domain)
     eqp = cs_field_get_equation_param(CS_F_(eps));
     eqp->ircflu = 0;
   }
+  /*! [param_ircflu] */
+
+  /*
+   * Turbulent flux model u'T' for the scalar T
+   *   Algebraic Model
+   *      0  SGDH
+   *     10 GGDH
+   *     11 EB-GGDH (Elliptic Blending)
+   *     20 AFM
+   *     21 EB-AFM (Elliptic Blending)
+   *   Model with transport equations
+   *     30 DFM
+   *     31 EB-DFM (Elliptic Blending)
+   */
+
+  /*! [param_iturt] */
+  {
+    const int kturt = cs_field_key_id("turbulent_flux_model");
+
+    const int turb_flux_model = 10;
+
+    /* GGDH for thermal scalar */
+    cs_field_t *f_t = cs_thermal_model_field();
+    if (f_t != NULL)
+      cs_field_set_key_int(f_t, kturt, turb_flux_model);
+
+    /* GGDH for all user-defined scalars */
+    const int n_fields = cs_field_n_fields();
+    const int k_scal = cs_field_key_id("scalar_id");
+    const int kscavr = cs_field_key_id("first_moment_id");
+
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      cs_field_t *f = cs_field_by_id(f_id);
+      if (f->type & (CS_FIELD_VARIABLE | CS_FIELD_USER)) {
+        int s_num = cs_field_get_key_int(f, k_scal);
+        int iscavr = cs_field_get_key_int(f, kscavr);
+        if (s_num > 0 && iscavr <= 0)
+          cs_field_set_key_int(f, kturt, turb_flux_model);
+      }
+    }
+  }
+  /*! [param_iturt] */
 
   /* Example: choose a convective scheme and
    * a limiter for a given variable (user and non-user) */
   /*----------------------------------------------*/
+
+  /* Convective scheme
+
+    blencv = 0 for upwind (order 1 in space, "stable but diffusive")
+           = 1 for centered/second order (order 2 in space)
+    We may use intermediate real values. */
+
+  /*! [param_convective_scheme] */
+  {
+    int n_fields = cs_field_n_fields();
+
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+
+      cs_field_t *f = cs_field_by_id(f_id);
+
+      if (f->type & CS_FIELD_VARIABLE) {
+        cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+        eqp->blencv = 0.98;
+      }
+    }
+  }
+  /*! [param_convective_scheme] */
 
   /*! [param_var_limiter_choice] */
   {

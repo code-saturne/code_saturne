@@ -394,10 +394,10 @@ endif
 
 ! Add a scalar density when defined as variable and different from the bulk.
 ! WARNING: it must be consitent with continuity equation, this is used
-! for fluid solid computation with apssive scalars with different density in the solid.
-! The kromsl key should be equal to -1 for constant diffusivity,
-! and f_id for a variable diffusivity defined by field f_id
-! Assuming the first field created is not a diffusivity property
+! for fluid solid computation with passive scalars with different density in the solid.
+! The kromsl key should be equal to -1 for constant density
+! and f_id for a variable density defined by field f_id
+! Assuming the first field created is not a density property
 ! (we define variables first), f_id > 0, so we use 0 to indicate
 ! the density is variable but its field has not been created yet.
 
