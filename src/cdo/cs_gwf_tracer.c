@@ -490,7 +490,6 @@ _update_sat_diff_pty(cs_gwf_tracer_t             *tracer,
     const double  wmd = tc->wmd[soil_id];
     const double  at = tc->alpha_t[soil_id];
     const double  al = tc->alpha_l[soil_id];
-    const double  theta_s = cs_gwf_soil_get_saturated_moisture(soil_id);
 
     for (cs_lnum_t i = 0; i < z->n_elts; i++) {
 
@@ -498,7 +497,7 @@ _update_sat_diff_pty(cs_gwf_tracer_t             *tracer,
       const cs_real_t  *v = velocity + 3*c_id;
       const double  v2[3] = {v[0]*v[0], v[1]*v[1], v[2]*v[2]};
       const double  vnorm = sqrt(v2[0] + v2[1] + v2[2]);
-      const double  coef1 = wmd * theta_s + at*vnorm;
+      const double  coef1 = wmd + at*vnorm;
 
       double  delta = 0.;
       if (vnorm > cs_math_zero_threshold)
@@ -562,7 +561,6 @@ _update_diff_pty(cs_gwf_tracer_t             *tracer,
   cs_gwf_tracer_default_context_t  *tc = tracer->context;
   assert(tc != NULL);
 
-  const cs_real_t  *theta = cs_shared_liquid_saturation;
   const cs_real_t  *velocity = tc->darcy_velocity_field->val;
 
   const int  n_soils = cs_gwf_get_n_soils();
@@ -581,7 +579,7 @@ _update_diff_pty(cs_gwf_tracer_t             *tracer,
       const cs_real_t  *v = velocity + 3*c_id;
       const double  v2[3] = {v[0]*v[0], v[1]*v[1], v[2]*v[2]};
       const double  vnorm = sqrt(v2[0] + v2[1] + v2[2]);
-      const double  coef1 = wmd * theta[c_id] + at*vnorm;
+      const double  coef1 = wmd + at*vnorm;
 
       double  delta = 0.;
       if (vnorm > cs_math_zero_threshold)

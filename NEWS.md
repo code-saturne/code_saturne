@@ -16,7 +16,7 @@ Master (not on release branches yet)
 - Preprocessor (mesh import): allow removal of cells with negative volume
   or incorrect topology.
 
-- Ground water flows: for the legacy module, now use global gravity
+- Groundwater flows: for the legacy module, now use global gravity
   definition rather than module-specific (`darcy_gravity`) variables;
   This may require updating case setups: using the GUI is recommended,
   but otherwise, the gravity may be defined in `cs_user_physical_model`.
@@ -34,6 +34,9 @@ Master (not on release branches yet)
 
 - Add experimental immersed boundary features. This can be computed from
   cloud of points.
+
+- Groundwater flows: for the CDO module, modify the way the dispersive tensor is
+  defined. Remove the theta scaling in front of the molecular diffusivity
 
 ### Physical modeling:
 
