@@ -681,10 +681,10 @@ cs_halo_create_complete(cs_halo_t  *halo)
   if (_halo_comm_mode == CS_HALO_COMM_RMA_GET)
     _exchange_send_shift(halo);
 
+#endif /* defined(HAVE_MPI) */
+
   if (_halo_state == NULL)
     _halo_state = cs_halo_state_create();
-
-#endif /* defined(HAVE_MPI) */
 }
 
 /*----------------------------------------------------------------------------*/
