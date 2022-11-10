@@ -1140,7 +1140,7 @@ _uspf_finalize_setup(const cs_cdo_connect_t              *connect,
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_real_t
+static void
 _uspf_updates(const cs_mesh_t                    *mesh,
               const cs_cdo_connect_t             *connect,
               const cs_cdo_quantities_t          *quant,
