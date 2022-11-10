@@ -636,19 +636,18 @@ on several rules.
   useful: `gcc -dM -E - < /dev/null`
 
 - One of the main uses of the preprocessor is conditional compilation
-
-```{.c}
+  ```{.c}
 #if defined (HAVE_MPI)
 ...
 #endif
-```
+  ```
 
 - To disable code containing comments, nothing beats:
-    ```{.c}
+  ```{.c}
 #if 0
 ...
 #endif
-    ```
+  ```
 
   - This avoids comment nesting issues, and some editors such as _vim_
     even colorize the block as a comment.

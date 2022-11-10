@@ -903,8 +903,8 @@ _solve_eq_phi(const int           istprv,
    *  passing from \f$f\f$ to \f$ \overline{f})\f$. But as it stands,
    *  it makes the calculation unstable (because \f$\mu_t\f$ tends towards 0
    *  at the wall what decouples \f$ \phi \f$ of its boundary condition and
-   *  the molecular diffusion term is integred in \f$ \overline{f} \f$, it is as if it
-   *  was treated as explicit)
+   *  the molecular diffusion term is integred in \f$ \overline{f} \f$,
+   *  it is as if it was treated as explicit).
    *  -> we add artificially diffusion (knowing that as k=0, the phi value
    *  does not matter)
    */
@@ -1291,7 +1291,8 @@ cs_turbulence_v2f_bl_v2k_mu_t(void)
      *
      * When tt = ttlim, tt in
      *   visct(iel) = cmu*xrom*tt*cvar_phi(iel)*cvar_k(iel)
-     * cvar_phi appears in both numerator and denominator, and can be eliminated. */
+     * cvar_phi appears in both numerator and denominator,
+     * and can be eliminated. */
 
     const cs_real_t ft1 = f1/s2[c_id];
     const cs_real_t ft2
