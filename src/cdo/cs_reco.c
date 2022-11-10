@@ -556,6 +556,43 @@ cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Reconstruct a scalar-valued array at vertices from a scalar-valued
+ *         array at cells.
+ *
+ * \param[in]      connect   pointer to additional connectivities for CDO
+ * \param[in]      quant     pointer to the additional quantities for CDO
+ * \param[in]      cell_val  array of scalar-valued values at cells
+ * \param[in, out] vtx_val   array of scalar-valued values at vertices
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_scal_pv_from_pc(const cs_cdo_connect_t      *connect,
+                        const cs_cdo_quantities_t   *quant,
+                        const cs_real_t             *cell_val,
+                        cs_real_t                   *vtx_val)
+{
+  if (cell_val == NULL || vtx_val == NULL)
+    return;
+  assert(quant != NULL && connect != NULL);
+
+  memset(vtx_val, 0, quant->n_vertices*sizeof(cs_real_t));
+
+  const cs_adjacency_t  *c2v = connect->c2v;
+
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+    const cs_real_t  cval = cell_val[c_id];
+    for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+      vtx_val[c2v->ids[j]] += quant->pvol_vc[j] * cval;
+
+  } /* Loop on cells */
+
+  cs_reco_dual_vol_weight_reduction(connect, quant, 1, true, vtx_val);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct a vector-valued array at vertices from a vector-valued
  *         array at cells.
  *

@@ -324,6 +324,24 @@ cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Reconstruct a scalar-valued array at vertices from a scalar-valued
+ *         array at cells.
+ *
+ * \param[in]      connect   pointer to additional connectivities for CDO
+ * \param[in]      quant     pointer to the additional quantities for CDO
+ * \param[in]      cell_val  array of scalar-valued values at cells
+ * \param[in, out] vtx_val   array of scalar-valued values at vertices
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_scal_pv_from_pc(const cs_cdo_connect_t      *connect,
+                        const cs_cdo_quantities_t   *quant,
+                        const cs_real_t             *cell_val,
+                        cs_real_t                   *vtx_val);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct a vector-valued array at vertices from a vector-valued
  *         array at cells.
  *
