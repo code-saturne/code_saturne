@@ -231,12 +231,19 @@ typedef struct { /* Specific mesh quantities */
   cs_lnum_t         n_vertices;      /* Local number of vertices */
   cs_gnum_t         n_g_vertices;    /* Global number of vertices */
 
-  cs_real_t        *pvol_vc;         /* Same as dcell_vol */
-  cs_real_t        *dcell_vol;       /* Dual volume related to each vertex.
-                                      * Scanned with the c2v adjacency.
-                                      * Not always allocated. (deprecated) */
+  cs_real_t        *pvol_vc;         /* Part of the dual cell associated to a
+                                      * vertex in each cell. These quantities
+                                      * are scanned thanks to the c2v
+                                      * adjancency structure */
 
-  const cs_real_t  *vtx_coord;       /* Shared with the cs_mesh_t structure */
+  const cs_real_t  *vtx_coord;       /* Coordinates of the mesh vertices.
+                                      * Shared with the cs_mesh_t structure */
+
+  /* Dual volume related to the dual cell associated in a one-to-one pairing to
+   * each vertex. This quantity has been synchronized in case of parallel
+   * computing. Size of the array = n_vertices.  Not always allocated */
+
+  cs_real_t        *dual_vol;
 
 } cs_cdo_quantities_t;
 

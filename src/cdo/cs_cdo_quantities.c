@@ -191,7 +191,7 @@ _create_cdo_quantities(void)
 
   cdoq->n_vertices = 0;
   cdoq->n_g_vertices = 0;
-  cdoq->dcell_vol = NULL;
+  cdoq->dual_vol = NULL;
   cdoq->pvol_vc = NULL;
 
   /* Shared pointers are not initialized at this stage */
@@ -758,8 +758,6 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
     } /* Loop on cell faces */
 
   } /* Loop on cells */
-
-  quant->dcell_vol = quant->pvol_vc;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1218,8 +1216,7 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *cdoq)
    * vtx_coord is free when the structure cs_mesh_t is destroyed */
 
   BFT_FREE(cdoq->pvol_vc);
-  cdoq->dcell_vol = NULL; /* deprecated but may be used in user extra
-                             operations */
+  BFT_FREE(cdoq->dual_vol);
 
   BFT_FREE(cdoq);
 
