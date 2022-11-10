@@ -1742,37 +1742,10 @@ cs_advection_field_at_vertices(const cs_adv_field_t    *adv,
 
     _compute_adv_vector_at_vertices(cdoq, connect, def, vtx_values);
 
-    /* Synchronization of values at vertices */
-
-    if (connect->vtx_ifs != NULL)
-      cs_interface_set_sum(connect->vtx_ifs,
-                           cdoq->n_vertices,
-                           3,             /* stride */
-                           true,          /* = interlace */
-                           CS_REAL_TYPE,
-                           vtx_values);
-
-    cs_real_t  *dual_vol = NULL;
-    BFT_MALLOC(dual_vol, cdoq->n_vertices, cs_real_t);
-    cs_cdo_quantities_compute_dual_volumes(cdoq, connect->c2v, dual_vol);
-
-    if (connect->vtx_ifs != NULL)
-      cs_interface_set_sum(connect->vtx_ifs,
-                           cdoq->n_vertices,
-                           1,             /* stride */
-                           true,          /* = interlace */
-                           CS_REAL_TYPE,
-                           dual_vol);
-
-#   pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
-    for (cs_lnum_t v_id = 0; v_id < cdoq->n_vertices; v_id++) {
-      const cs_real_t  invvol = 1./dual_vol[v_id];
-      for (int k = 0; k < 3; k++)
-        vtx_values[3*v_id+k] *= invvol;
-    }
-
-    BFT_FREE(dual_vol);
-
+    cs_reco_dual_vol_weight_reduction(connect, cdoq,
+                                      3,    /* = stride */
+                                      true, /* = interlace */
+                                      vtx_values);
   }
   else {
 
@@ -1803,7 +1776,7 @@ cs_advection_field_at_vertices(const cs_adv_field_t    *adv,
           memcpy(vtx_values, ctx->values, 3*cdoq->n_vertices*sizeof(cs_real_t));
 
         else if (cs_flag_test(ctx->loc, cs_flag_primal_cell))
-          cs_reco_vect_pv_from_pc(connect->c2v, cdoq, ctx->values, vtx_values);
+          cs_reco_vect_pv_from_pc(connect, cdoq, ctx->values, vtx_values);
 
         else
           bft_error(__FILE__, __LINE__, 0,
@@ -1820,10 +1793,7 @@ cs_advection_field_at_vertices(const cs_adv_field_t    *adv,
         switch(cs_mesh_location_get_type(field->location_id)) {
 
         case CS_MESH_LOCATION_CELLS:
-          cs_reco_vect_pv_from_pc(cs_cdo_connect->c2v,
-                                  cdoq,
-                                  field->val,
-                                  vtx_values);
+          cs_reco_vect_pv_from_pc(connect, cdoq, field->val, vtx_values);
           break;
 
         case CS_MESH_LOCATION_VERTICES:

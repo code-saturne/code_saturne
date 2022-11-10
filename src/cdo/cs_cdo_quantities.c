@@ -1529,29 +1529,87 @@ cs_cdo_quantities_compute_pvol_ec(const cs_cdo_quantities_t   *cdoq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the dual volume surrounding each vertex
+ * \brief Compute or retrieve the dual volume surrounding each vertex.
+ *        The parallel operation (sum reduction) is performed inside this
+ *        function so that the full dual volume (i.e. taking into account all
+ *        ranks) is computed. The sum of all the portions of dual cell
+ *        associated to a vertex in each cell is taken into account.
  *
- * \param[in]      cdoq       pointer to cs_cdo_quantities_t structure
- * \param[in]      c2v        pointer to the cell-->vertices connectivity
- * \param[in, out] dual_vol   dual volumes related to each vertex
+ * \param[in, out] cdoq         additional quantities for CDO schemes
+ * \param[in]      connect      additional connectivities for CDO schemes
+ *
+ * \return the dual volume associated to each vertex
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_real_t *
+cs_cdo_quantities_get_dual_volumes(cs_cdo_quantities_t      *cdoq,
+                                   const cs_cdo_connect_t   *connect)
+{
+  if (cdoq == NULL || connect == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: The mandatory structures are not allocated.\n", __func__);
+
+  if (cdoq->dual_vol == NULL)
+    cs_cdo_quantities_compute_dual_volumes(cdoq, connect, &(cdoq->dual_vol));
+
+  return cdoq->dual_vol;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the dual volume surrounding each vertex.
+ *        The parallel operation (sum reduction) is performed inside this
+ *        function so that the full dual volume (i.e. taking into account all
+ *        ranks) is computed. The sum of all the portions of dual cell
+ *        associated to a vertex in each cell is taken into account.
+ *
+ * \param[in]      cdoq         additional quantities for CDO schemes
+ * \param[in]      connect      additional connectivities for CDO schemes
+ * \param[in, out] p_dual_vol   double pointer to the dual volumes related to
+ *                              each vertex. Allocated if NULL.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_quantities_compute_dual_volumes(const cs_cdo_quantities_t   *cdoq,
-                                       const cs_adjacency_t        *c2v,
-                                       cs_real_t                   *dual_vol)
+                                       const cs_cdo_connect_t      *connect,
+                                       cs_real_t                  **p_dual_vol)
 {
+  if (cdoq == NULL || connect == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Mandatory structures are not allocated.\n", __func__);
+
+  const cs_lnum_t  n_cells = cdoq->n_cells;
+  const cs_lnum_t  n_vertices = cdoq->n_vertices;
+  const cs_adjacency_t  *c2v = connect->c2v;
+
+  cs_real_t  *dual_vol = *p_dual_vol;
+
+  /* Initialize array */
+
   if (dual_vol == NULL)
-    return;
+    BFT_MALLOC(dual_vol, n_vertices, cs_real_t);
 
-  assert(cdoq != NULL && c2v != NULL);
+  memset(dual_vol, 0, n_vertices*sizeof(cs_real_t));
 
-  memset(dual_vol, 0, cdoq->n_vertices*sizeof(cs_real_t));
-
-  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
       dual_vol[c2v->ids[j]] += cdoq->pvol_vc[j];
+
+  /* Synchronization in case of parallelism or periodicity */
+
+  if (connect->vtx_ifs != NULL)
+    cs_interface_set_sum(connect->vtx_ifs,
+                         n_vertices,
+                         1,             /* stride */
+                         true,          /* = interlace (not useful here) */
+                         CS_REAL_TYPE,
+                         dual_vol);
+
+  /* Return pointer */
+
+  *p_dual_vol = dual_vol;
 }
 
 /*----------------------------------------------------------------------------*/

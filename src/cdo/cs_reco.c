@@ -66,12 +66,103 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Apply 1/|dual_vol| to a synchronized array of DoF vertices
+ *         Parallel synchronization is done inside this function:
+ *         1) A parallel sum reduction is done on the vtx_values
+ *         2) Apply 1/|dual_vol| to each entry
+ *
+ *  \param[in]      connect    pointer to additional connectivities for CDO
+ *  \param[in]      quant      pointer to additional quantities for CDO
+ *  \param[in]      stride     number of entries for each vertex
+ *  \param[in]      interlace  interlaced array (useful if the stride > 1)
+ *  \param[in, out] array      array of DoF values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_dual_vol_weight_reduction(const cs_cdo_connect_t       *connect,
+                                  const cs_cdo_quantities_t    *quant,
+                                  int                           stride,
+                                  bool                          interlace,
+                                  cs_real_t                    *array)
+{
+  if (array == NULL)
+    return;
+
+  assert(stride > 0);
+
+  const cs_lnum_t  n_vertices = quant->n_vertices;
+
+  /* Synchronization of values at vertices */
+
+  if (connect->vtx_ifs != NULL)
+    cs_interface_set_sum(connect->vtx_ifs,
+                         n_vertices,
+                         stride,
+                         interlace,
+                         CS_REAL_TYPE,
+                         array);
+
+  /* Compute or retrieve the dual volumes */
+
+  cs_real_t  *build_dual_vol = NULL;
+  const cs_real_t  *dual_vol;
+
+  if (quant->dual_vol == NULL) {
+
+    cs_cdo_quantities_compute_dual_volumes(quant, connect, &build_dual_vol);
+    dual_vol = build_dual_vol;
+
+  }
+  else
+    dual_vol = quant->dual_vol;
+
+  /* Apply the weighting equal to 1/|dual_vol| */
+
+  if (stride == 1) {
+
+#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
+    for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
+      array[v_id] /= dual_vol[v_id];
+
+  }
+  else {
+
+    if (interlace) {
+
+#     pragma omp parallel for if (n_vertices > CS_THR_MIN)
+      for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+        const cs_real_t  invvol = 1./dual_vol[v_id];
+        for (int k = 0; k < stride; k++)
+          array[stride*v_id+k] *= invvol;
+      }
+
+    }
+    else { /* not interlace */
+
+#     pragma omp parallel for if (n_vertices > CS_THR_MIN)
+      for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+        const cs_real_t  invvol = 1./dual_vol[v_id];
+        for (int k = 0; k < stride; k++)
+          array[k*n_vertices + v_id] *= invvol;
+      }
+
+    } /* interlace ? */
+
+  } /* stride > 1 */
+
+  if (build_dual_vol != NULL)
+    BFT_FREE(build_dual_vol);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct at cell centers and face centers a vertex-based field
  *         Linear interpolation. If p_crec and/or p_frec are not allocated, this
  *         done in this subroutine.
  *
- *  \param[in]      connect  pointer to the connectivity struct.
- *  \param[in]      quant    pointer to the additional quantities struct.
+ *  \param[in]      connect  pointer to additional connectivities for CDO
+ *  \param[in]      quant    pointer to additional quantities for CDO
  *  \param[in]      dof      pointer to the field of vtx-based DoFs
  *  \param[in, out] p_crec   reconstructed values at cell centers
  *  \param[in, out] p_frec   reconstructed values at face centers
@@ -468,49 +559,43 @@ cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
  * \brief  Reconstruct a vector-valued array at vertices from a vector-valued
  *         array at cells.
  *
- *  \param[in]      c2v       cell -> vertices connectivity
- *  \param[in]      quant     pointer to the additional quantities struct.
- *  \param[in]      val       pointer to the array of values
- *  \param[in, out] reco_val  values of the reconstruction at vertices
+ * \param[in]      connect   pointer to additional connectivities for CDO
+ * \param[in]      quant     pointer to the additional quantities for CDO
+ * \param[in]      cell_val  array of vector-valued values at cells
+ * \param[in, out] vtx_val   array of vector-valued values at vertices
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_vect_pv_from_pc(const cs_adjacency_t        *c2v,
+cs_reco_vect_pv_from_pc(const cs_cdo_connect_t      *connect,
                         const cs_cdo_quantities_t   *quant,
-                        const double                *val,
-                        cs_real_t                   *reco_val)
+                        const cs_real_t             *cell_val,
+                        cs_real_t                   *vtx_val)
 {
-  if (val == NULL || reco_val == NULL)
+  if (cell_val == NULL || vtx_val == NULL)
     return;
+  assert(quant != NULL && connect != NULL);
 
-  memset(reco_val, 0, 3*quant->n_vertices*sizeof(cs_real_t));
+  memset(vtx_val, 0, 3*quant->n_vertices*sizeof(cs_real_t));
+
+  const cs_adjacency_t  *c2v = connect->c2v;
 
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+    const cs_real_t  *cval = cell_val + 3*c_id;
     for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
       const cs_real_t  vc_vol = quant->pvol_vc[j];
-      cs_real_t  *rval = reco_val + 3*c2v->ids[j];
+      cs_real_t  *vval = vtx_val + 3*c2v->ids[j];
 
-      rval[0] += vc_vol * val[3*c_id];
-      rval[1] += vc_vol * val[3*c_id + 1];
-      rval[2] += vc_vol * val[3*c_id + 2];
+      vval[0] += vc_vol * cval[0];
+      vval[1] += vc_vol * cval[1];
+      vval[2] += vc_vol * cval[2];
 
-    }
+    } /* Loop on cell vertices */
   } /* Loop on cells */
 
-  cs_real_t  *dual_vol = NULL;
-  BFT_MALLOC(dual_vol, quant->n_vertices, cs_real_t);
-  cs_cdo_quantities_compute_dual_volumes(quant, c2v, dual_vol);
-
-# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
-  for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
-    const cs_real_t  invvol = 1./dual_vol[v_id];
-    for (int k = 0; k < 3; k++)
-      reco_val[3*v_id+k] *= invvol;
-  }
-
-  BFT_FREE(dual_vol);
+  cs_reco_dual_vol_weight_reduction(connect, quant, 3, true, vtx_val);
 }
 
 /*----------------------------------------------------------------------------*/

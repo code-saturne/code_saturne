@@ -241,7 +241,7 @@ typedef struct { /* Specific mesh quantities */
 
   /* Dual volume related to the dual cell associated in a one-to-one pairing to
    * each vertex. This quantity has been synchronized in case of parallel
-   * computing. Size of the array = n_vertices.  Not always allocated */
+   * computing. Size of the array = n_vertices. Not always allocated */
 
   cs_real_t        *dual_vol;
 
@@ -444,18 +444,42 @@ cs_cdo_quantities_compute_pvol_ec(const cs_cdo_quantities_t   *cdoq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the dual volume surrounding each vertex
+ * \brief Compute or retrieve the dual volume surrounding each vertex.
+ *        The parallel operation (sum reduction) is performed inside this
+ *        function so that the full dual volume (i.e. taking into account all
+ *        ranks) is computed. The sum of all the portions of dual cell
+ *        associated to a vertex in each cell is taken into account.
  *
- * \param[in]      cdoq       pointer to cs_cdo_quantities_t structure
- * \param[in]      c2v        pointer to the cell-->vertices connectivity
- * \param[in, out] dual_vol   dual volumes related to each vertex
+ * \param[in, out] cdoq         additional quantities for CDO schemes
+ * \param[in]      connect      additional connectivities for CDO schemes
+ *
+ * \return the dual volume associated to each vertex
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_real_t *
+cs_cdo_quantities_get_dual_volumes(cs_cdo_quantities_t      *cdoq,
+                                   const cs_cdo_connect_t   *connect);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the dual volume surrounding each vertex.
+ *        The parallel operation (sum reduction) is performed inside this
+ *        function so that the full dual volume (i.e. taking into account all
+ *        ranks) is computed. The sum of all the portions of dual cell
+ *        associated to a vertex in each cell is taken into account.
+ *
+ * \param[in]      cdoq         additional quantities for CDO schemes
+ * \param[in]      connect      additional connectivities for CDO schemes
+ * \param[in, out] p_dual_vol   double pointer to the dual volumes related to
+ *                              each vertex. Allocated if NULL.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_quantities_compute_dual_volumes(const cs_cdo_quantities_t   *cdoq,
-                                       const cs_adjacency_t        *c2v,
-                                       cs_real_t                   *dual_vol);
+                                       const cs_cdo_connect_t      *connect,
+                                       cs_real_t                  **p_dual_vol);
 
 /*----------------------------------------------------------------------------*/
 /*!

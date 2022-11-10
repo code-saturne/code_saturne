@@ -157,12 +157,34 @@ cs_reco_cw_scalar_pv_at_cell_center(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Apply 1/|dual_vol| to a synchronized array of DoF vertices
+ *         Parallel synchronization is done inside this function:
+ *         1) A parallel sum reduction is done on the vtx_values
+ *         2) Apply 1/|dual_vol| to each entry
+ *
+ *  \param[in]      connect    pointer to additional connectivities for CDO
+ *  \param[in]      quant      pointer to additional quantities for CDO
+ *  \param[in]      stride     number of entries for each vertex
+ *  \param[in]      interlace  interlaced array (useful if the stride > 1)
+ *  \param[in, out] array      array of DoF values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_dual_vol_weight_reduction(const cs_cdo_connect_t       *connect,
+                                  const cs_cdo_quantities_t    *quant,
+                                  int                           stride,
+                                  bool                          interlace,
+                                  cs_real_t                    *array);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct at cell centers and face centers a vertex-based field
  *         Linear interpolation. If p_crec and/or p_frec are not allocated, this
  *         done in this subroutine.
  *
- *  \param[in]      connect  pointer to the connectivity struct.
- *  \param[in]      quant    pointer to the additional quantities struct.
+ *  \param[in]      connect  pointer to additional connectivities for CDO
+ *  \param[in]      quant    pointer to additional quantities for CDO
  *  \param[in]      dof      pointer to the field of vtx-based DoFs
  *  \param[in, out] p_crec   reconstructed values at cell centers
  *  \param[in, out] p_frec   reconstructed values at face centers
@@ -305,18 +327,18 @@ cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
  * \brief  Reconstruct a vector-valued array at vertices from a vector-valued
  *         array at cells.
  *
- *  \param[in]      c2v       cell -> vertices connectivity
- *  \param[in]      quant     pointer to the additional quantities struct.
- *  \param[in]      val       pointer to the array of values
- *  \param[in, out] reco_val  values of the reconstruction at vertices
+ * \param[in]      connect   pointer to additional connectivities for CDO
+ * \param[in]      quant     pointer to the additional quantities for CDO
+ * \param[in]      cell_val  array of vector-valued values at cells
+ * \param[in, out] vtx_val   array of vector-valued values at vertices
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_vect_pv_from_pc(const cs_adjacency_t        *c2v,
+cs_reco_vect_pv_from_pc(const cs_cdo_connect_t      *connect,
                         const cs_cdo_quantities_t   *quant,
-                        const double                *val,
-                        cs_real_t                   *reco_val);
+                        const cs_real_t             *cell_val,
+                        cs_real_t                   *vtx_val);
 
 /*----------------------------------------------------------------------------*/
 /*!
