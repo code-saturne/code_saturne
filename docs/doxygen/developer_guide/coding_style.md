@@ -84,7 +84,7 @@ Except when adding additional white space to align similar definitions
 or arguments on several lines, standard English punctuation rules should be
 followed:
 
-- Use white space before a punctuation mark (, ; . ), one white space
+- No white space before a punctuation mark (, ; . ), one white space
   after a punctuation mark.
 
 - Use white space before an opening parenthesis, no white space after an opening
@@ -315,11 +315,11 @@ Standard C function         | code_saturne macro or function | Header
 `printf`                    | \ref bft_printf                | \ref bft_printf.h
 `printf` (to standard logs) | \ref cs_log_printf             | \ref cs_log.h
 `malloc`                    | \ref BFT_MALLOC                | \ref bft_mem.h
-                            | \ref CS_MALLOC_HD              | \ref cs_base_accel.h
+` `                         | \ref CS_MALLOC_HD              | \ref cs_base_accel.h
 `realloc`                   | \ref BFT_REALLOC               | \ref bft_mem.h
-                            | \ref CS_REALLOC_HD             | \ref cs_base_accel.h
+` `                         | \ref CS_REALLOC_HD             | \ref cs_base_accel.h
 `free`                      | \ref BFT_FREE                  | \ref bft_mem.h
-                            | \ref CS_FREE_HD                | \ref cs_base_accel.h
+` `                         | \ref CS_FREE_HD                | \ref cs_base_accel.h
 
 Internationalization
 --------------------

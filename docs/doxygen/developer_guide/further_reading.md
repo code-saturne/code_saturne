@@ -762,6 +762,7 @@ The C scoping rules also allow definition of global variables.
 (cs_matrix_t} cs_glob_matrix_default             // cs_matrix.h
 (cs_matrix_structure_t} cs_glob_matrix_default_struct
 
+(cs_domain_t) cs_glob_domain                     // cs_domain.h
 (cs_mesh_t) cs_glob_mesh                         // cs_mesh.h
 (cs_mesh_quantities_t) cs_glob_mesh_quantities   // ...
 
