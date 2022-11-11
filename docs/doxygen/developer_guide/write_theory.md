@@ -28,7 +28,7 @@ General rules
 Theses general rules should be seen as basic golden rules helping the whole
 documentation to be consistent. They are strongly recommended:
 
-- Respect a plan where you first present a general overview of the theory
+- Follow a plan where you first present a general overview of the theory
   (what is it about, what is the main goal), then you present the equations
   in general, and finally the specific choices you have made.
 - Use the macros described in the [macros section](@ref pg_sec_theory_macros)`

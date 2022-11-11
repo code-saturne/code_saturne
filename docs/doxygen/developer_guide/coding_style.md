@@ -404,10 +404,8 @@ file.
 Language {#sec_prg_lang_fortran}
 --------
 
-Fortran 1995 or above is required, and constructs or intrinsic functions
-requiring Fortran 2003 or above should be avoided, except for the
-Fortran 2003 ISO_C_BINDING module, which is available in all
-current Fortran compilers.
+Fortran 2008 or above is required (to allow for intrinsics such as the
+gamma function), though the coding style is inherited from Fortan 95.
 
 ### Interoperability of Fortran and C
 
@@ -418,7 +416,10 @@ Fortran module, but not easy to automate.
 - Does not allow direct mapping of structures with allocated arrays...
 - See \ref field.f90, \ref cs_field.c,  and \ref cs_c_bindings.f90 for simple
   examples, \ref cs_turbulence_model.c for others.
-  -  This will probably make to want to abandon Fortran
+  -  This will probably make youo want to abandon Fortran
+
+Fortran constructs which do not map easily to C using these bindings
+should be avoided.
 
 Migration from Fortran to C
 ---------------------------
@@ -430,7 +431,7 @@ Fortran continues to be one of the best supported languages in HPC
 
 - Many free tools were available for Fortran 77, few have been extended
   to modern Fortran.
-- Available tools are often linked to a few major editors (Intel, NVIDIA, AbSoft, ...)
+- Available tools are often linked to a few major editors (Intel, NVIDIA, ...)
 - No or few "community" tools aside from PHOTRAN (for Eclipse)
   - sign of a more reduced user base;
   - compilers are not as user tested as for C and C++;
@@ -449,16 +450,11 @@ Fortran continues to be one of the best supported languages in HPC
 Python coding style
 ===================
 
-Code should work both using Python 3 or 2. Python 2 support will be
-removed at some future date, but since on many older systems, Python 2 only
-might be installed by default, compatibility should be ensured for
-the near future.
-
 The core python scripts use a coding style similar to PEP-8
 [PEP-8](https://www.python.org/dev/peps/pep-0008/).
 PEP-257 (docstring conventions) is also recommended.
 
-Other parts of the code tend to use a CamelCase naming, but should otherwise
+Other parts of the code tend to use a camelCase naming, but should otherwise
 adhere to the same standards. Moving the to PEP-8 style would be ideal,
 though to avoid confusion, this should be done in an *atomic* step
 for each module.

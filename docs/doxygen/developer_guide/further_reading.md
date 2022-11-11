@@ -30,14 +30,13 @@ and *libraries*.
 
 - *Build system* based on GNU autotools: [autoconf](https://www.gnu.org/software/autoconf),
   [automake](https://www.gnu.org/software/automake/),
-  [libtool](https://www.gnu.org/software/libtool/)
   - Requires optional *sh* shell and *m4* macro languages, some *make* file syntax, some
     *Python* code.
 - *GUI* and scripts (*TUI*): [Python](https://www.python.org/),
   [PyQt](https://riverbankcomputing.com/software/pyqt/intro).
 - *Preprocessor*: *C* compiler (C99 or above)
   - Optional mesh format libraries: *MED*, *CGNS*, *libCCMIO* (see install guide for details).
-- *Solver*: *C* and *Fortran* compilers (C11 or above, Fortran 2003 or above.
+- *Solver*: *C* and *Fortran* compilers (C11 or above, Fortran 2008 or above.
   - Multiple optional external libraries: *MPI*, *PT-SCOTCH*, *MED*, *CGNS*, *Catalyst*,
     *CoolProp*, *PETSc*, and others (see install guide for details)
 

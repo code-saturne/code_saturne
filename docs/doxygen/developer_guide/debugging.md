@@ -194,8 +194,6 @@ including C, C++, and Fortran.
 
       * [KDbg](https://www.kdbg.org/),
 
-      * [Nemiver](https://www.gnu.org/software/ddd),
-
       * [DDD](https://www.gnu.org/software/ddd),
 
     - integration in development environments:
@@ -256,13 +254,6 @@ The [DDD (Data Display Debugger)](https://www.gnu.org/software/ddd)
 front-end is obsolete and uses a dated graphical toolkit, but has the
 advantage of combining a command prompt with graphical tools, and is
 very easy to use, so it might remain an option.
-
-The [Nemiver](https://www.gnu.org/software/ddd) debugger also has a
-GDB back-end. It offers a clean display, but lacks the possibility
-of typing commands; everything must be done using the mouse and menus,
-which is often tedious. The project seems abandoned.
-[KDbg](https://www.kdbg.org/) is similar, slightly more practical,
-but does not seem to have been very active since 2018.
 
 The [gdbgui](https://www.gdbgui.com/) debugger seems promising, and
 a good potential successor to DDD. It is based on a web-browser interface,
