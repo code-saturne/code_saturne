@@ -187,6 +187,27 @@ typedef void
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Transform a counts array to an index.
+ *
+ * The counts array values are assumed shiftet by one, that is
+ * count[i] is stored in elt_idx[i+1]
+ *
+ * \param[in]       n_elts      number of elements
+ * \param[in, out]  elt_idx     counts in, index out
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_counts_to_index(cs_lnum_t   n_elts,
+                 cs_lnum_t   elt_idx[])
+{
+  elt_idx[0] = 0;
+  for (cs_lnum_t i = 0; i < n_elts; i++)
+    elt_idx[i+1] += elt_idx[i];
+}
+
 /*----------------------------------------------------------------------------
  * Print information on a mesh structure.
  *
@@ -1137,9 +1158,9 @@ _cell_r_types(const cs_mesh_t              *m,
  *                                           face first, interior face ids
  *                                           shifted)
  * \param[in, out]  c_r_flag                 cell refinement type
- * \param[in]       b_face_o2n_count         boundary subface count
+ * \param[in]       b_face_o2n_idx           boundary subface index
  * \param[in]       b_face_o2n_connect_size  boundary subface connect size
- * \param[in]       i_face_o2n_count         interior subface count
+ * \param[in]       i_face_o2n_idx           interior subface index
  * \param[in]       i_face_o2n_connect_size  interior subface connect size
  * \param[out]      c_n_s_cells              number of sub-cells
  * \param[out]      c_n_i_faces     number of added interior faces
@@ -1151,9 +1172,9 @@ static void
 _new_cells_i_faces_count(const cs_mesh_t             *m,
                          cs_adjacency_t              *c2f,
                          const cs_mesh_refine_type_t  c_r_flag[],
-                         const cs_lnum_t              b_face_o2n_count[],
+                         const cs_lnum_t              b_face_o2n_idx[],
                          const cs_lnum_t              b_face_o2n_connect_size[],
-                         const cs_lnum_t              i_face_o2n_count[],
+                         const cs_lnum_t              i_face_o2n_idx[],
                          const cs_lnum_t              i_face_o2n_connect_size[],
                          cs_lnum_t                    c_n_s_cells[restrict],
                          cs_lnum_t                    c_n_i_faces[restrict],
@@ -1216,11 +1237,12 @@ _new_cells_i_faces_count(const cs_mesh_t             *m,
         cs_lnum_t f_id = c2f->ids[s_id + i];
 
         if (f_id < m->n_b_faces) {
-          n_s_cells += b_face_o2n_count[f_id];
+          n_s_cells += b_face_o2n_idx[f_id+1] - b_face_o2n_idx[f_id];
           n_i_faces += b_face_o2n_connect_size[f_id];
         }
         else {
-          n_s_cells += i_face_o2n_count[f_id - m->n_b_faces];
+          n_s_cells +=   i_face_o2n_idx[f_id - m->n_b_faces + 1]
+                       - i_face_o2n_idx[f_id - m->n_b_faces];
           n_i_faces += i_face_o2n_connect_size[f_id - m->n_b_faces];
         }
       }
@@ -2461,9 +2483,10 @@ _subdivide_face(cs_lnum_t                 f_id,
  * \param[in]       f_v_idx     for each face, start index of added vertices
  * \param[in]       n_faces     number of faces
  * \param[in]       f_r_flag    face refinement type flag
+ * \param[in]       f2v_idx     face->vertices index
+ * \param[in]       f2v_lst     face->vertices connectivity
  * \param[out]      f_o2n_idx   old to new faces index
- * \param[in, out]  f2v_idx     face->vertices index
- * \param[in, out]  f2v_lst     face->vertices connectivity
+ * \param[out]      f_o2n_connect_size   old to new faces connectivity size
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2475,7 +2498,7 @@ _subdivided_faces_sizes(const cs_adjacency_t         *v2v,
                         const cs_lnum_t               f2v_idx[],
                         const cs_lnum_t               f2v_lst[],
                         cs_lnum_t                   f_o2n_idx[restrict],
-                        cs_lnum_t                   f_o2n_connect_idx[restrict])
+                        cs_lnum_t                   f_o2n_connect_size[restrict])
 {
 # pragma omp parallel for  if(n_faces > CS_THR_MIN)
   for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++) {
@@ -2489,9 +2512,11 @@ _subdivided_faces_sizes(const cs_adjacency_t         *v2v,
                            v2v,
                            e_v_idx,
                            f_o2n_idx + f_id + 1,
-                           f_o2n_connect_idx + f_id +1);
+                           f_o2n_connect_size + f_id +1);
 
   }
+
+  _counts_to_index(n_faces, f_o2n_idx);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3802,27 +3827,6 @@ _subdivide_cells(const cs_mesh_t              *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Transform a counts array to an index.
- *
- * The counts array values are assumed shiftet by one, that is
- * count[i] is stored in elt_idx[i+1]
- *
- * \param[in]       n_elts      number of elements
- * \param[in, out]  elt_idx     counts in, index out
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_counts_to_index(cs_lnum_t   n_elts,
-                 cs_lnum_t   elt_idx[])
-{
-  elt_idx[0] = 0;
-  for (cs_lnum_t i = 0; i < n_elts; i++)
-    elt_idx[i+1] += elt_idx[i];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Update connectivity for a given faces set
  *
  * This function also transforms some counts to indexes
@@ -3837,7 +3841,7 @@ _counts_to_index(cs_lnum_t   n_elts,
  * \param[in]       n_faces            number of faces
  * \param[in]       n_cells            number of cells (if c_f_n_idx present)
  * \param[in]       f_r_flag           face refinement type flag
- * \param[in, out]  f_o2n_idx          old to new faces index (count in)
+ * \param[in, out]  f_o2n_idx          old to new faces index
  * \param[in, out]  f_o2n_connect_idx  old to new faces connectivity index
  *                                     (count in)
  * \param[in, out]  c_f_n_idx          cells to new faces index (count in),
@@ -3859,7 +3863,7 @@ _update_face_connectivity(const cs_adjacency_t         *v2v,
                           cs_lnum_t                     n_faces,
                           cs_lnum_t                     n_cells,
                           const cs_mesh_refine_type_t   f_r_flag[],
-                          cs_lnum_t                     f_o2n_idx[],
+                          const cs_lnum_t               f_o2n_idx[],
                           cs_lnum_t                     f_o2n_connect_idx[],
                           cs_lnum_t                     c_f_n_idx[],
                           cs_lnum_t                     c_f_n_connect_idx[],
@@ -3871,10 +3875,6 @@ _update_face_connectivity(const cs_adjacency_t         *v2v,
 
   /* Convert counts to indexes
      ------------------------- */
-
-  f_o2n_idx[0] = 0;
-  for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++)
-    f_o2n_idx[f_id+1] += f_o2n_idx[f_id];
 
   n_faces_new = f_o2n_idx[n_faces];
 
@@ -4611,9 +4611,9 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   _new_cells_i_faces_count(m,
                            c2f,
                            c_r_flag,
-                           b_face_o2n_idx + 1,
+                           b_face_o2n_idx,
                            b_face_o2n_connect_idx + 1,
-                           i_face_o2n_idx + 1,
+                           i_face_o2n_idx,
                            i_face_o2n_connect_idx + 1,
                            c_o2n_idx + 1,
                            c_i_face_idx + 1,
