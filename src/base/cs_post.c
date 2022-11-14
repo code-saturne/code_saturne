@@ -2911,7 +2911,7 @@ _extract_field_component(const cs_field_t  *f,
     strncat(name_buf, cs_glob_field_comp_name_9[comp_id], 5);
     break;
   default:
-    snprintf(name_buf + strlen(name_buf), 5, "[%ld]", (long)comp_id);
+    snprintf(name_buf + strlen(name_buf), 5, "[%d]", (int)comp_id);
   }
   name_buf[95] = '\0';
 

@@ -1618,7 +1618,6 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
 #endif
 
         cs_real_t min_crit = HUGE_VAL;
-        cs_real_t min_norm_ic = HUGE_VAL;
 
         for (cs_lnum_t k = 0; k < n_c; k++)
           i_c_selected[k] = -1;
@@ -1662,7 +1661,6 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
 
           if (crit < min_crit && k >= n_c_min_true-1) {
             min_crit = crit;
-            min_norm_ic = norm_ic;
             n_c_selected_in_ext = k+1;
             if (norm_ic < 0.01*l1)
               break;
@@ -1673,8 +1671,8 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
         if (dbg_trace != NULL)
           fprintf(dbg_trace,
-                  "n_c_selected_in_ext %d - neighborhood offset %lf %%\n",
-                  n_c_selected_in_ext, 100.*min_norm_ic/l1);
+                  "n_c_selected_in_ext %ld\n",
+                  (long)n_c_selected_in_ext);
 #endif
 
         for (cs_lnum_t k = 0; k < n_c_selected_in_ext; k++)

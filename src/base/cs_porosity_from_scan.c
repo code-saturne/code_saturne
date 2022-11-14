@@ -621,12 +621,12 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   cs_mesh_sync_var_scal(mq->cell_vol);
   if (m->halo != NULL) {
     cs_halo_sync_var_strided(m->halo, CS_HALO_EXTENDED,
-                             cen_points, 3);
+                             (cs_real_t *)cen_points, 3);
     cs_halo_sync_var_strided(m->halo, CS_HALO_EXTENDED,
-                             c_w_face_normal, 3);
+                             (cs_real_t *)c_w_face_normal, 3);
     if (m->n_init_perio > 0)
       cs_halo_perio_sync_coords(m->halo, CS_HALO_EXTENDED,
-                                cen_points);
+                                (cs_real_t *)cen_points);
   }
 
   /* Solid cells should have enough points */

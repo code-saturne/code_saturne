@@ -2405,15 +2405,13 @@ _compute_fluid_solid_cell_quantities(const cs_mesh_t     *m,
       if (c_id > -1) {
 
         int sign = (ic == 0) ? 1 : -1;
-        cs_real_t *_i_f_face_cog = (ic == 0) ?
-                                    i_f_face_cog_0[f_id]:
-                                    i_f_face_cog_1[f_id];
+        const cs_real_t *_i_f_face_cog = (ic == 0) ?
+          i_f_face_cog_0[f_id] : i_f_face_cog_1[f_id];
 
-
-        cs_real_t pyra_vol_3 = sign
-          * cs_math_3_distance_dot_product(a_cell_cen[c_id],
-                                           _i_f_face_cog,
-                                           i_f_face_cell_normal[f_id][ic]);
+        cs_real_t pyra_vol_3
+          = sign*cs_math_3_distance_dot_product(a_cell_cen[c_id],
+                                                _i_f_face_cog,
+                                                i_f_face_cell_normal[f_id][ic]);
 
         for (cs_lnum_t i = 0; i < 3; i++)
           _cell_f_cen[c_id][i] += pyra_vol_3 *(  0.75*_i_f_face_cog[i]
@@ -2422,9 +2420,7 @@ _compute_fluid_solid_cell_quantities(const cs_mesh_t     *m,
       }
     }
 
-
   } /* End of loop on interior faces */
-
 
   /* Loop on boundary faces
      ---------------------- */
