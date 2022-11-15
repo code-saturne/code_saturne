@@ -74,8 +74,7 @@ cs_function_default_define(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create or access a function whose data values will be computed
- *        using the a predefined evaluation function.
+ * \brief Create or access a function for evaluation of element's MPI rank id.
  *
  * \param[in]   location_id  base associated mesh location id
  *
@@ -86,6 +85,21 @@ cs_function_default_define(void);
 
 cs_function_t *
 cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create or access a function for evaluation of mesh element's
+ *        refinement generation (i.e. level).
+ *
+ * \param[in]   location_id  base associated mesh location id
+
+ * \return  pointer to the associated function object in case of success,
+ *          or NULL in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_function_t *
+cs_function_define_refinement_generation(cs_mesh_location_type_t  location_id);
 
 /*----------------------------------------------------------------------------*/
 /*!

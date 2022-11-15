@@ -29,8 +29,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_wall_condensation_1d_thermal.h"
-#include "cs_wall_condensation.h"
 #include "cs_1d_wall_thermal.h"
 #include "cs_1d_wall_thermal_check.h"
 #include "cs_ale.h"
@@ -38,6 +36,7 @@
 #include "cs_array.h"
 #include "cs_array_reduce.h"
 #include "cs_assert.h"
+#include "cs_ast_coupling.h"
 #include "cs_base.h"
 #include "cs_base_accel.h"
 #include "cs_block_dist.h"
@@ -57,6 +56,8 @@
 #include "cs_file.h"
 #include "cs_flag_check.h"
 #include "cs_fp_exception.h"
+#include "cs_function.h"
+#include "cs_function_default.h"
 #include "cs_gas_mix.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
@@ -108,6 +109,8 @@
 #include "cs_volume_mass_injection.h"
 #include "cs_volume_zone.h"
 #include "cs_vof.h"
+#include "cs_wall_condensation.h"
+#include "cs_wall_condensation_1d_thermal.h"
 #include "cs_wall_functions.h"
 #include "cs_xdef_eval_at_zone.h"
 #include "cs_zone.h"

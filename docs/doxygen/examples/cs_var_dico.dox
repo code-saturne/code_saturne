@@ -46,6 +46,7 @@
    - \subpage field
    - \subpage local
    - \subpage field_kw
+   - \subpage function_objects
 
 */
 // _____________________________________________________________________________
@@ -510,8 +511,6 @@ rather than in a field over all mesh cells.
   ------------------ | ---------- | ------------
   <tt> iel           | cell_id    </tt> | Cell index
   <tt> ifac          | face_id    </tt> | Face index
-  <tt> ig            | g_id       </tt> | Interior face number of associated groups (OpenMP)
-  <tt> it            | t_id       </tt> | Interior face number of threads (OpenMP)
   <tt> idimtr        | tr_dim     </tt> | Indicator for tensor perodicity of rotation
   <tt> flumas        | i_massflux </tt> | Mass flux at interior faces
   <tt> flumab        | b_massflux </tt> | Mass flux at boundary faces
@@ -547,5 +546,14 @@ rather than in a field over all mesh cells.
   \page field_kw List of main field keys
 
   A non-exhaustive \ref field_keywords "list of field keys" which are used in the code is provided.
+
+*/
+// _____________________________________________________________________________
+/*!
+
+  \page function_objects List of predifined function objects
+
+  A non-exhaustive \ref function_object_defaults "list of predefined function objects"
+  which may be used in the code is provided.
 
 */
