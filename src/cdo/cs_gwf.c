@@ -3224,9 +3224,10 @@ cs_gwf_activate(cs_gwf_model_type_t      model,
 
   /* Set the physical model type */
 
-  cs_glob_physical_model_flag[CS_GROUNDWATER] = 1;
+  /* Uncomment this line when the FORTRAN code will be removed */
+  //  cs_glob_physical_model_flag[CS_GROUNDWATER] = 1;
 
-  /* Store the pointer to the groundawater flow structure */
+  /* Store the pointer to the groundwater flow structure */
 
   cs_gwf_main_structure = gw;
 
