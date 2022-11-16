@@ -49,6 +49,7 @@
 #include "cs_ctwr.h"
 #include "cs_fan.h"
 #include "cs_field.h"
+#include "cs_function.h"
 #include "cs_log.h"
 #include "cs_map.h"
 #include "cs_mesh.h"
@@ -62,6 +63,7 @@
 #include "cs_time_step.h"
 #include "cs_lagr_stat.h"
 #include "cs_lagr_log.h"
+#include "fvm_convert_array.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -513,9 +515,9 @@ _log_clip_info(const char        *prefix,
  *----------------------------------------------------------------------------*/
 
 static void
-_log_fields(void)
+_log_fields_and_functions(void)
 {
-  int f_id, log_count;
+  int log_count;
 
   int log_count_max = 0;
   int fpe_flag = 0;
@@ -528,18 +530,21 @@ _log_fields(void)
   const char _underline[] = "---------------------------------";
   const int n_locations = cs_mesh_location_n_locations();
   const int n_fields = cs_field_n_fields();
+  const int n_functions = cs_function_n_functions();
   const int n_moments = cs_time_moment_n_moments();
   const int log_key_id = cs_field_key_id("log");
   const int label_key_id = cs_field_key_id("label");
+
+  const int n_ff = n_fields + n_functions;
 
   cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   /* Allocate working arrays */
 
-  log_count_max = n_fields;
+  log_count_max = n_fields + n_functions;
 
-  BFT_MALLOC(log_id, n_fields, int);
+  BFT_MALLOC(log_id, n_ff, int);
   BFT_MALLOC(vmin, log_count_max, double);
   BFT_MALLOC(vmax, log_count_max, double);
   BFT_MALLOC(vsum, log_count_max, double);
@@ -549,8 +554,8 @@ _log_fields(void)
   for (int i = 0; i < n_locations; i++)
     location_log[i] = false;
 
-  BFT_MALLOC(f_location_id, n_fields, int);
-  for (f_id = 0; f_id < n_fields; f_id++) {
+  BFT_MALLOC(f_location_id, n_ff, int);
+  for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
     if (cs_field_get_key_int(f, log_key_id)) {
       f_location_id[f_id] = f->location_id;
@@ -559,10 +564,19 @@ _log_fields(void)
     else
       f_location_id[f_id] = -1;
   }
+  for (int f_id = 0; f_id < n_functions; f_id++) {
+    const cs_function_t  *f = cs_function_by_id(f_id);
+    if (f->log) {
+      f_location_id[n_fields + f_id] = f->location_id;
+      location_log[f->location_id] = true;
+    }
+    else
+      f_location_id[n_fields + f_id] = -1;
+  }
 
   if (n_moments > 0) {
     BFT_MALLOC(moment_id, n_fields, int);
-    for (f_id = 0; f_id < n_fields; f_id++)
+    for (int f_id = 0; f_id < n_fields; f_id++)
       moment_id[f_id] = -1;
     for (int m_id = 0; m_id < n_moments; m_id++) {
       const cs_field_t *f = cs_time_moment_get_field(m_id);
@@ -667,26 +681,102 @@ _log_fields(void)
     if (n_g_elts == 0)
       continue;
 
-    /* First loop on fields */
-
     log_count = 0;
 
-    for (f_id = 0; f_id < n_fields; f_id++) {
+    /* First loop on fields and functions */
 
-      int _dim, c_id;
-
-      const cs_field_t  *f = cs_field_by_id(f_id);
+    for (int f_id = 0; f_id < n_ff; f_id++) {
 
       if (f_location_id[f_id] != loc_id) {
         log_id[f_id] = -1;
         continue;
       }
 
+      bool use_weight = false;
+
+      const char *name;
+      cs_lnum_t f_dim, _dim, c_id;
+      cs_real_t *f_val, *_f_val;
+
+      if (f_id < n_fields) { /* Field */
+        const cs_field_t  *f = cs_field_by_id(f_id);
+
+        name = cs_field_get_key_str(f, label_key_id);
+        if (name == NULL)
+          name = f->name;
+
+        f_dim = f->dim;
+
+        if (have_weight && (f->type & CS_FIELD_INTENSIVE))
+          use_weight = true;
+
+        _f_val = NULL;
+        f_val = f->val;
+      }
+      else {  /* Function */
+        const cs_function_t  *f = cs_function_by_id(f_id - n_fields);
+
+        name = f->label;
+        if (name == NULL)
+          name = f->name;
+
+        f_dim = f->dim;
+
+        if (have_weight && (f->type & CS_FUNCTION_INTENSIVE))
+          use_weight = true;
+
+        BFT_MALLOC(_f_val, f_dim*_n_elts, cs_real_t);
+        f_val = _f_val;
+
+        const cs_time_step_t *ts = cs_glob_time_step;
+
+        if (f->datatype == CS_REAL_TYPE) {
+          cs_function_evaluate(f,
+                               ts,
+                               f->location_id,
+                               _n_elts,
+                               NULL,  /* elt_ids */
+                               _f_val);
+        }
+        else {
+          const cs_lnum_t  parent_id_shift[] = {0};
+          char *buffer;
+          const void *src_data[1];
+          BFT_MALLOC(buffer, f_dim*_n_elts*cs_datatype_size[f->datatype], char);
+          src_data[0] = buffer;
+          cs_function_evaluate(f,
+                               ts,
+                               f->location_id,
+                               _n_elts,
+                               NULL,  /* elt_ids */
+                               (void *)buffer);
+          fvm_convert_array(f->dim, 0, f->dim,
+                            0, _n_elts,
+                            CS_INTERLACE,
+                            f->datatype,
+                            CS_REAL_TYPE,
+                            0, /* n_parent_lists */
+                            parent_id_shift,
+                            NULL, /* parent_id */
+                            src_data,
+                            _f_val);
+          BFT_FREE(buffer);
+        }
+      }
+
+      size_t l_name_width = cs_log_strlen(name);
+      if (f_dim == 3)
+        l_name_width += 3;
+      else if (f_dim > 3)
+        l_name_width += 4;
+
+      max_name_width = CS_MAX(max_name_width, l_name_width);
+
       /* Position in log */
 
       log_id[f_id] = log_count;
 
-      _dim = (f->dim == 3) ? 4 : f->dim;
+      _dim = (f_dim == 3) ? 4 : f_dim;
 
       while (log_count + _dim > log_count_max) {
         log_count_max *= 2;
@@ -696,12 +786,12 @@ _log_fields(void)
         BFT_REALLOC(wsum, log_count_max, double);
       }
 
-      if (have_weight && (f->type & CS_FIELD_INTENSIVE)) {
+      if (use_weight) {
         cs_array_reduce_simple_stats_l_w(_n_elts,
-                                         f->dim,
+                                         f_dim,
                                          NULL,
                                          elt_ids,
-                                         f->val,
+                                         f_val,
                                          weight,
                                          vmin + log_count,
                                          vmax + log_count,
@@ -711,7 +801,7 @@ _log_fields(void)
       }
       else {
 
-        cs_real_t  *field_val = f->val;
+        cs_real_t  *field_val = f_val;
         cs_lnum_t  _n_cur_elts = _n_elts;
 
         /* Eliminate shared values whose local rank is not owner and compact */
@@ -724,20 +814,20 @@ _log_fields(void)
                                                    2,  /* tr_ignore */
                                                    0); /* g_id_base */
 
-          if (f->dim > 1)
-            BFT_REALLOC(gather_array, (f->dim * m->n_vertices), cs_real_t);
+          if (f_dim > 1)
+            BFT_REALLOC(gather_array, (f_dim * m->n_vertices), cs_real_t);
 
           cs_range_set_gather(m->vtx_range_set,
                               CS_REAL_TYPE,
-                              f->dim,
-                              f->val,
+                              f_dim,
+                              f_val,
                               gather_array);
           field_val = gather_array;
           _n_cur_elts = m->vtx_range_set->n_elts[0];
         }
 
         cs_array_reduce_simple_stats_l(_n_cur_elts,
-                                       f->dim,
+                                       f_dim,
                                        NULL,
                                        field_val,
                                        vmin + log_count,
@@ -750,19 +840,9 @@ _log_fields(void)
         }
       }
 
+      BFT_FREE(_f_val);
+
       log_count += _dim;
-
-      const char *name = cs_field_get_key_str(f, label_key_id);
-      if (name == NULL)
-        name = f->name;
-
-      size_t l_name_width = cs_log_strlen(name);
-      if (f->dim == 3)
-        l_name_width += 3;
-      else if (f->dim > 3)
-        l_name_width += 4;
-
-      max_name_width = CS_MAX(max_name_width, l_name_width);
 
     } /* End of first loop on fields */
 
@@ -833,42 +913,55 @@ _log_fields(void)
                     "-  %s  %s  %s  %s\n",
                     tmp_s[0], tmp_s[1], tmp_s[2], tmp_s[3]);
 
-    /* Second loop on fields */
+    /* Second loop on fields and functions */
 
     log_count = 0;
 
-    for (f_id = 0; f_id < n_fields; f_id++) {
+    for (int f_id = 0; f_id < n_ff; f_id++) {
 
-      int _dim;
       if (log_id[f_id] < 0)
         continue;
 
-      const cs_field_t  *f = cs_field_by_id(f_id);
-
-      /* Position in log */
-
-      _dim = (f->dim == 3) ? 4 : f->dim;
-
-      const char *name = cs_field_get_key_str(f, label_key_id);
-      if (name == NULL)
-        name = f->name;
-
+      const char *name;
+      int f_dim;
       double t_weight = -1;
-      if (total_weight > 0 && (f->type & CS_FIELD_INTENSIVE))
-        t_weight = total_weight;
 
       char prefix[] = "v  ";
-      if (moment_id != NULL) {
-        if (moment_id[f_id] > -1)
+
+      if (f_id < n_fields) { /* Field */
+        const cs_field_t  *f = cs_field_by_id(f_id);
+        name = cs_field_get_key_str(f, label_key_id);
+        if (name == NULL)
+          name = f->name;
+        f_dim = f->dim;
+        if (total_weight > 0 && (f->type & CS_FIELD_INTENSIVE))
+          t_weight = total_weight;
+        if (moment_id != NULL) {
+          if (moment_id[f_id] > -1)
+            prefix[0] = 'm';
+        }
+        if (f->type & CS_FIELD_ACCUMULATOR)
           prefix[0] = 'm';
       }
-      if (f->type & CS_FIELD_ACCUMULATOR)
-        prefix[0] = 'm';
+      else {  /* Function */
+        const cs_function_t  *f = cs_function_by_id(f_id - n_fields);
+        name = f->label;
+        if (name == NULL)
+          name = f->name;
+        f_dim = f->dim;
+        if (total_weight > 0 && (f->type & CS_FUNCTION_INTENSIVE))
+          t_weight = total_weight;
+        prefix[0] = 'f';
+      }
+
+      int _dim = (f_dim == 3) ? 4 : f_dim;
+
+      /* Position in log */
 
       _log_array_info(prefix,
                       name,
                       max_name_width,
-                      f->dim,
+                      f_dim,
                       n_g_elts,
                       t_weight,
                       vmin + log_count,
@@ -1468,7 +1561,7 @@ cs_log_iteration(void)
   if (_n_clips > 0)
     _log_clips();
 
-  _log_fields();
+  _log_fields_and_functions();
 
   if (_n_sstats > 0)
     _log_sstats();
