@@ -2213,7 +2213,7 @@ cs_param_sles_create(int          field_id,
 
   slesp->solver_class = CS_PARAM_SLES_CLASS_CS; /* solver family */
   slesp->flexible = false;                      /* not the flexible variant */
-  slesp->precond = CS_PARAM_PRECOND_POLY1;      /* preconditioner */
+  slesp->precond = CS_PARAM_PRECOND_DIAG;       /* preconditioner */
   slesp->solver = CS_PARAM_ITSOL_GCR;           /* iterative solver */
   slesp->amg_type = CS_PARAM_AMG_NONE;          /* no predefined AMG type */
   slesp->pcd_block_type = CS_PARAM_PRECOND_BLOCK_NONE; /* no block by default */
