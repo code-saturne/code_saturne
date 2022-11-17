@@ -11712,7 +11712,7 @@ cs_diffusion_potential(const int                 f_id,
     cs_halo_sync_var(halo, halo_type, pvar);
 
   /*==========================================================================
-    2. Update mass flux without reconstruction technics
+    2. Update mass flux without reconstruction techniques
     ==========================================================================*/
 
   if (nswrgp <= 1) {
@@ -12150,7 +12150,7 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
   }
 
   /*==========================================================================
-    3. Update mass flux with reconstruction technics
+    3. Update mass flux with reconstruction techniques
     ==========================================================================*/
 
   if (nswrgp > 1) {

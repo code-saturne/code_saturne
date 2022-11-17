@@ -3612,6 +3612,17 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                         mq->diipb,
                         mq->dofij);
 
+  _compute_face_sup_vectors(m->n_cells,
+                            m->n_i_faces,
+                            (const cs_lnum_2_t *)(m->i_face_cells),
+                            (const cs_real_3_t *)(mq->i_face_normal),
+                            (const cs_real_3_t *)(mq->i_face_cog),
+                            (const cs_real_3_t *)(mq->cell_f_cen),
+                            mq->cell_f_vol,
+                            mq->i_dist,
+                            (cs_real_3_t *)(mq->diipf),
+                            (cs_real_3_t *)(mq->djjpf));
+
   /*wall distance*/
 
   cs_real_t *c_w_dist_inv = mq->c_w_dist_inv;
