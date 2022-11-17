@@ -151,6 +151,46 @@ cs_function_define_boundary_thermal_flux(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define function for computation of cell Q criterion.
+ *
+ * \return  pointer to the associated function object in case of success,
+ *          or NULL in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_function_t *
+cs_function_define_q_criterion(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Extract optionel boundary face class of element zone id.
+ *
+ * For boundary faces, if no face classes have been defined by
+ * \ref cs_boundary_zone_face_class_id the highest boundary face zone id is
+ *
+ * For cells, the highest cell volume zone id is used.
+
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        pointer to field
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_function_class_or_zone_id(int               location_id,
+                             cs_lnum_t         n_elts,
+                             const cs_lnum_t  *elt_ids,
+                             void             *input,
+                             void             *vals);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute non-reconstructed cell-based field values at boundary.
  *
  * This function matches the cs_eval_at_location_t function profile.
@@ -298,6 +338,38 @@ cs_function_boundary_nusselt(int               location_id,
                              const cs_lnum_t  *elt_ids,
                              void             *input,
                              void             *vals);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the Q-criterion from Hunt et. al over each cell of a specified
+ *        volume region.
+ *
+ * \f[
+ *    Q = \tens{\Omega}:\tens{\Omega} -
+ *    \deviator{ \left(\tens{S} \right)}:\deviator{ \left(\tens{S} \right)}
+ * \f]
+ * where \f$\tens{\Omega}\f$ is the vorticity tensor and
+ * \f$\deviator{ \left(\tens{S} \right)}\f$ the deviatoric of the rate of strain
+ * tensor.
+ *
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        ignored
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_function_q_criterion(int               location_id,
+                        cs_lnum_t         n_elts,
+                        const cs_lnum_t  *elt_ids,
+                        void             *input,
+                        void             *vals);
 
 /*----------------------------------------------------------------------------*/
 

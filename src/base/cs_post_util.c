@@ -80,11 +80,6 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
-/*! Status of post utilities */
-
-int cs_glob_post_util_flag[CS_POST_UTIL_N_TYPES]
-  = {-1, -1};
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -778,56 +773,6 @@ cs_post_anisotropy_invariant(cs_lnum_t               n_cells,
   }
 
   BFT_FREE(rij);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the Q-criterion from Hunt et. al over each cell of a specified
- *        volume region.
- *
- * \f[
- *    Q = \tens{\Omega}:\tens{\Omega} -
- *    \deviator{ \left(\tens{S} \right)}:\deviator{ \left(\tens{S} \right)}
- * \f]
- * where \f$\tens{\Omega}\f$ is the vorticity tensor and
- * \f$\deviator{ \left(\tens{S} \right)}\f$ the deviatoric of the rate of strain
- * tensor.
- *
- * \param[in]  n_loc_cells  number of cells
- * \param[in]  cell_ids     list of cells (0 to n-1)
- * \param[out] q_crit       Q-criterion over the specified volume region.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_post_q_criterion(const cs_lnum_t  n_loc_cells,
-                    const cs_lnum_t  cell_ids[],
-                    cs_real_t        q_crit[])
-{
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-
-  cs_real_33_t *gradv;
-
-  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
-
-  bool use_previous_t = false;
-  int inc = 1;
-  cs_field_gradient_vector(CS_F_(vel),
-                           use_previous_t,
-                           inc,
-                           gradv);
-
-  for (cs_lnum_t i = 0; i < n_loc_cells; i++) {
-    cs_lnum_t c_id = cell_ids[i];
-    q_crit[i] = -1./6. * (   cs_math_sq(gradv[c_id][0][0])
-                          +  cs_math_sq(gradv[c_id][1][1])
-                          +  cs_math_sq(gradv[c_id][2][2]))
-                - gradv[c_id][0][1]*gradv[c_id][1][0]
-                - gradv[c_id][0][2]*gradv[c_id][2][0]
-                - gradv[c_id][1][2]*gradv[c_id][2][1];
-  }
-
-  BFT_FREE(gradv);
 }
 
 /*----------------------------------------------------------------------------*/

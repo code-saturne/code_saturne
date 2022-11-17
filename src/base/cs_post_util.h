@@ -43,23 +43,9 @@ BEGIN_C_DECLS
  * Type Definitions
  *============================================================================*/
 
-typedef enum {
-
-  CS_POST_UTIL_Q_CRITERION,        /*!< Q-criterion output */
-
-  CS_POST_UTIL_BOUNDARY_CLASS_ID,  /*!< Boundary zone class id output */
-
-  CS_POST_UTIL_N_TYPES             /*!< Number of post utility types */
-
-} cs_post_util_type_t;
-
 /*============================================================================
  * Global variables
  *============================================================================*/
-
-/*! Names of post utility outputs */
-
-extern int cs_glob_post_util_flag[];
 
 /*============================================================================
  * Public function prototypes
@@ -304,30 +290,6 @@ cs_post_anisotropy_invariant(cs_lnum_t               n_cells,
                              const cs_lnum_t         cell_ids[],
                              const cs_real_t         coords[][3],
                              cs_real_t               inv[][2]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the Q-criterion from Hunt et. al over each cell of a specified
- *        volume region.
- *
- * \f[
- *    Q = \tens{\Omega}:\tens{\Omega} -
- *    \deviator{ \left(\tens{S} \right)}:\deviator{ \left(\tens{S} \right)}
- * \f]
- * where \f$\tens{\Omega}\f$ is the vorticity tensor and
- * \f$\deviator{ \left(\tens{S} \right)}\f$ the deviatoric of the rate of strain
- * tensor.
- *
- * \param[in]  n_loc_cells  number of cells
- * \param[in]  cell_ids     list of cells (0 to n-1)
- * \param[out] q_crit       Q-criterion over the specified volume region.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_post_q_criterion(const cs_lnum_t  n_loc_cells,
-                    const cs_lnum_t  cell_ids[],
-                    cs_real_t        q_crit[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

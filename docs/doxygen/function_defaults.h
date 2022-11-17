@@ -148,6 +148,17 @@ char *interior_faces_r_gen;
 char *boundary_faces_r_gen;
 
 /*!
+  \var boundary_zone_class_id
+
+  Optional boundary face class or zone ids. If no face classes have been
+  defined by \ref cs_boundary_zone_face_class_id, the boundary face zone
+  id is used instead.
+
+  Activated by default.
+*/
+char *boundary_zone_class_id;
+
+/*!
   \var vertices_r_gen
 
   Refinement generation of vertices. This is determined and stored
@@ -307,6 +318,26 @@ char *elec_pot_module;
   cs_glob_physical_model_flag[CS_JOULE_EFFECT] == 4.
 */
 char *elec_pot_arg;
+
+/*!
+  \var "q_criterion"
+
+  Compute the Q criterion from Hunt et. al.
+
+  \f[
+    Q = \tens{\Omega}:\tens{\Omega} -
+    \deviator{ \left(\tens{S} \right)}:\deviator{ \left(\tens{S} \right)}
+  \f]
+  where \f$\tens{\Omega}\f$ is the vorticity tensor and
+  \f$\deviator{ \left(\tens{S} \right)}\f$ the deviatoric of the rate of strain
+  tensor.
+
+  Accessed or activated using:
+  \code{.c}
+  cs_function_define_q_criterion();
+  \endcode
+*/
+char *q_criterion;
 
 /*!@}*/
 

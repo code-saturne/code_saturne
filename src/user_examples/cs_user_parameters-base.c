@@ -1383,7 +1383,7 @@ cs_user_parameters(cs_domain_t *domain)
 
   /*! [param_var_q_criterion] */
 
-  cs_glob_post_util_flag[CS_POST_UTIL_Q_CRITERION] = 1;
+  cs_function_define_q_criterion();
 
   /*! [param_var_q_criterion] */
 

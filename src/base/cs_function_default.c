@@ -54,6 +54,7 @@
 
 #include "cs_assert.h"
 #include "cs_balance_by_zone.h"
+#include "cs_boundary_zone.h"
 #include "cs_elec_model.h"
 #include "cs_field_default.h"
 #include "cs_field_operator.h"
@@ -68,6 +69,7 @@
 #include "cs_rotation.h"
 #include "cs_thermal_model.h"
 #include "cs_turbomachinery.h"
+#include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -593,6 +595,14 @@ cs_function_default_define(void)
     /* cs_function_define_mpi_rank_id(CS_MESH_LOCATION_VERTICES); */
   }
 
+  cs_function_define_by_func("boundary_zone_class_id",
+                             CS_MESH_LOCATION_BOUNDARY_FACES,
+                             1,
+                             false,
+                             CS_INT_TYPE,
+                             cs_function_class_or_zone_id,
+                             NULL);
+
   if (cs_turbomachinery_get_model() != CS_TURBOMACHINERY_NONE)
     cs_turbomachinery_define_functions();
 
@@ -923,6 +933,91 @@ cs_function_define_boundary_nusselt(void)
   }
 
   return f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define function for computation of cell Q criterion.
+ *
+ * \return  pointer to the associated function object in case of success,
+ *          or NULL in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_function_t *
+cs_function_define_q_criterion(void)
+{
+  cs_function_t *f
+    = cs_function_define_by_func("q_criterion",
+                                 CS_MESH_LOCATION_CELLS,
+                                 1,
+                                 true,
+                                 CS_REAL_TYPE,
+                                 cs_function_q_criterion,
+                                 NULL);
+
+  cs_function_set_label(f, "Q criterion");
+
+  f->type = CS_FUNCTION_INTENSIVE;
+
+  f->post_vis = CS_POST_ON_LOCATION;
+
+  return f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Extract optionel boundary face class of element zone id.
+ *
+ * For boundary faces, if no face classes have been defined by
+ * \ref cs_boundary_zone_face_class_id the highest boundary face zone id is
+ *
+ * For cells, the highest cell volume zone id is used.
+
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        pointer to field
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_function_class_or_zone_id(int               location_id,
+                             cs_lnum_t         n_elts,
+                             const cs_lnum_t  *elt_ids,
+                             void             *input,
+                             void             *vals)
+{
+  CS_UNUSED(input);
+
+  int *z_id = vals;
+  const int *elt_z_id = NULL;;
+
+  if (location_id == CS_MESH_LOCATION_CELLS)
+    elt_z_id = cs_volume_zone_cell_zone_id();
+  else if (location_id == CS_MESH_LOCATION_BOUNDARY_FACES)
+    elt_z_id = cs_boundary_zone_face_class_or_zone_id();
+
+  if (elt_z_id != NULL) {
+    if (elt_ids != NULL) {
+      for (cs_lnum_t i = 0; i < n_elts; i++)
+        z_id[i] = elt_z_id[elt_ids[i]];
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_elts; i++)
+        z_id[i] = elt_z_id[i];
+    }
+  }
+
+  else {
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      z_id[i] = 0;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1531,6 +1626,65 @@ cs_function_boundary_nusselt(int               location_id,
       bnussl[i] = -1.;
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the Q-criterion from Hunt et. al over each cell of a specified
+ *        volume region.
+ *
+ * \f[
+ *    Q = \tens{\Omega}:\tens{\Omega} -
+ *    \deviator{ \left(\tens{S} \right)}:\deviator{ \left(\tens{S} \right)}
+ * \f]
+ * where \f$\tens{\Omega}\f$ is the vorticity tensor and
+ * \f$\deviator{ \left(\tens{S} \right)}\f$ the deviatoric of the rate of strain
+ * tensor.
+ *
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        ignored
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_function_q_criterion(int               location_id,
+                        cs_lnum_t         n_elts,
+                        const cs_lnum_t  *elt_ids,
+                        void             *input,
+                        void             *vals)
+{
+  cs_assert(location_id == CS_MESH_LOCATION_CELLS);
+
+  cs_real_t  *q_crit = vals;
+
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+
+  cs_real_33_t *gradv;
+  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+
+  cs_field_gradient_vector(cs_field_by_name("velocity"),
+                           false,  /* use_previous_t */
+                           1,      /* not on increment */
+                           gradv);
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    cs_lnum_t c_id = (elt_ids != NULL) ? elt_ids[i] : i;
+    q_crit[i] = -1./6. * (   cs_math_sq(gradv[c_id][0][0])
+                          +  cs_math_sq(gradv[c_id][1][1])
+                          +  cs_math_sq(gradv[c_id][2][2]))
+                - gradv[c_id][0][1]*gradv[c_id][1][0]
+                - gradv[c_id][0][2]*gradv[c_id][2][0]
+                - gradv[c_id][1][2]*gradv[c_id][2][1];
+  }
+
+  BFT_FREE(gradv);
 }
 
 /*----------------------------------------------------------------------------*/
