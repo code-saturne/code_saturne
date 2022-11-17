@@ -269,6 +269,18 @@ interface
     real(kind=c_double), dimension(6, *) :: vistet
   end subroutine cs_turbulence_rij_transport_div_tf
 
+  subroutine cs_atmo_aerosol_nuclea(nc,     &
+                                    rom,    &
+                                    qldia,  &
+                                    pphy,   &
+                                    refrad) &
+   bind(C, name='cs_atmo_aerosol_nuclea')
+   use, intrinsic :: iso_c_binding
+   implicit none
+   real(kind=c_double), dimension(*) :: nc, rom, qldia
+   real(kind=c_double), dimension(*) :: pphy, refrad
+ end subroutine cs_atmo_aerosol_nuclea
+
  end interface
 
 !===============================================================================
@@ -1431,12 +1443,11 @@ if (ippmod(iatmos).eq.2.and.modsedi.eq.1.and.iscal.eq.intdrp &
 
     call field_get_val_s_by_name('radiative_cooling', cpro_rad_cool)
 
-    call nuclea (                                                 &
-         cvar_ntdrp,                                              &
-         crom,                                                    &
-         cpro_tempc,                                              &
-         cpro_liqwt,                                              &
-         pphy, cpro_rad_cool)
+    call cs_atmo_aerosol_nuclea(cvar_ntdrp,   &
+                                crom,         &
+                                cpro_liqwt,   &
+                                pphy,         &
+                                cpro_rad_cool)
 
     deallocate(pphy)
 

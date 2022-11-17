@@ -103,7 +103,6 @@ cs_atmo_profile_std.c \
 cs_atprke.c \
 cs_intprf.c \
 kinrates.f90 \
-nuclea.f90 \
 rayigc.f90 \
 rayir.f90 \
 rayive.f90 \

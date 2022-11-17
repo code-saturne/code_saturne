@@ -28,21 +28,10 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * PLE library headers
- *----------------------------------------------------------------------------*/
-
-#include <ple_locator.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_nodal.h"
-
-#include "cs_base.h"
-#include "cs_halo.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -86,21 +75,25 @@ cs_atmo_aerosol_finalize(void);
 /*!
  * \brief This function fills the given array with aerosol concentrations
  *        and numbers from the external aerosol code..
+ *
+ * \param[out]  array  aerosol concentrations and numbers
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_aerosol_get_aero(cs_real_t*);
+cs_atmo_aerosol_get_aero(cs_real_t  *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function fills the given array with gas concentrations from
  *        the external aerosol code.
+ *
+ * \param[out]  array  gas concentrations
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_aerosol_get_gas(cs_real_t*);
+cs_atmo_aerosol_get_gas(cs_real_t  *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -111,6 +104,31 @@ cs_atmo_aerosol_get_gas(cs_real_t*);
 
 void
 cs_atmo_aerosol_time_advance(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute aerosol cloud droplets nucleation when using the atmospheric
+ * humid model using a microphysical model.
+ *
+ * It is taken into account as an additional step split from advection-diffusion
+ * equation, hence the droplet number is first clipped if necessary.
+ *
+ * \param[out]  nc      droplet number (scalar) in 1/cm**3
+ * \param[in]   rom     density of air in kg/m**3
+ * \param[in]   qldia   mass fraction of liquid water in kg/kg
+ * \param[in]   pphy    true pressure in pascals
+ * \param[in]   refrad  radiative cooling
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_aerosol_nuclea(cs_real_t         *nc,
+                       const cs_real_t   *rom,
+                       const cs_real_t   *qldia,
+                       const cs_real_t   *pphy,
+                       const cs_real_t   *refrad);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
