@@ -45,11 +45,13 @@ Master (not on release branches yet)
   to 10^-8). This follows from a first feedack on the VnV cases of the
   default options.
 
-
 ### Physical modeling:
 
 - Add some atmospheric universal functions for large scale idealized wind
   profiles.
+
+- Groundwater flows: Modify the precipitation model (add radioactive
+  decay, work with mass of precipitate rather than concentration)
 
 ### Bug fixes:
 

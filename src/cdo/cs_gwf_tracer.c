@@ -635,25 +635,43 @@ _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
   cs_gwf_tracer_default_context_t  *tc = tracer->context;
 
   assert(tc != NULL);
-  assert(tc->conc_satura != NULL && tc->conc_precip != NULL);
+  assert(tc->precip_mass != NULL);
   assert(cs_shared_liquid_saturation != NULL);
+
+  const cs_lnum_t  n_cells = quant->n_cells;
+  const cs_lnum_t  n_vertices = quant->n_vertices;
+  const cs_adjacency_t  *c2v = connect->c2v;
+  const cs_real_t  *pvol_vc = quant->pvol_vc;
+  const cs_real_t  *theta = cs_shared_liquid_saturation;
+  const double  dt = ts->dt[0]; /* current time step */
 
   /* Retrieve the current values of the concentration of tracer in the liquid
      phase */
 
-  cs_real_t  *c_w = cs_equation_get_vertex_values(tracer->equation, false);
-  cs_real_t  *c_p = tc->conc_precip;
-  cs_real_t  *c_w_save = NULL;
+  cs_real_t  *c_l = cs_equation_get_vertex_values(tracer->equation, false);
 
-  BFT_MALLOC(c_w_save, quant->n_vertices, cs_real_t);
-  memcpy(c_w_save, c_w, quant->n_vertices*sizeof(cs_real_t));
+  /* c_pcp = concentration in precipitate [mol/kg]
+   * m_pcp = current number of moles stored as a precipitate [mol]
+   * m_l_vc = estimated number of moles of tracer in the liquid phase after the
+   *          resolution of the transport equation associated to the tracer.
+   *          This quantity is stored on the pvol_vc (= |c cap dcell(v)|) submesh
+   */
 
-  const cs_adjacency_t  *c2v = connect->c2v;
-  const cs_real_t  *theta = cs_shared_liquid_saturation;
-  const double  dt = ts->dt[0]; /* current time step */
+  cs_real_t  *c_pcp = tc->precip_field->val;
+  cs_real_t  *m_pcp = tc->precip_mass;
+  cs_real_t  *m_l_vc = NULL;
 
-  /* 2) Update c_w and c_p */
-  /*    ------------------ */
+  BFT_MALLOC(m_l_vc, c2v->idx[n_cells], cs_real_t);
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    const cs_real_t  theta_c = theta[c_id];
+    for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+      m_l_vc[j] = theta_c * pvol_vc[j] * c_l[c2v->ids[j]];
+  }
+
+  /* 2) Update c_l and m_pcp
+   *    Update the value of concentration in precipitate in each cell */
+  /*    ------------------------------------------------------------- */
 
   const int  n_soils = cs_gwf_get_n_soils();
   for (int soil_id = 0; soil_id < n_soils; soil_id++) {
@@ -667,85 +685,111 @@ _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
 
     const double  lambda = tc->reaction_rate[soil->id];
     const double  rho = tc->rho_bulk[soil->id];
-    const double  inv_rho = 1./rho;
+    const cs_real_t  c_star = tc->conc_l_star[soil->id];
 
     for (cs_lnum_t i = 0; i < z->n_elts; i++) { /* Loop on cells */
 
       const cs_lnum_t  c_id = (z->elt_ids == NULL) ? i : z->elt_ids[i];
-      const cs_real_t  theta_c = theta[c_id], inv_theta_c = 1./theta_c;
+      const cs_real_t  theta_c = theta[c_id];
 
       for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
         const cs_lnum_t  v_id = c2v->ids[j];
-        const cs_real_t  c_sat = tc->conc_satura[v_id];
 
-        if (c_w_save[v_id] <= c_sat && c_p[j] > 0) { /* Dissolution */
+        double  delta_m = 0.;
 
-          cs_real_t  c_w_max = CS_MIN(c_sat,
-                                      c_w_save[v_id] + rho*inv_theta_c*c_p[j]);
-          c_p[j] -= theta_c*inv_rho*(c_w_max - c_w_save[v_id]);
-          c_w[v_id] = CS_MAX(c_w[v_id], c_w_max);
+        /* Radioactive decay
+         * -----------------
+         * A part of the stock disappears thanks to the radioactive decay
+         * Simply solve:
+         *
+         * d/dt m_pcp = -lambda*m_pcp
+         *
+         * Integration between t^n and t^(n+1) yields
+         *   m_pcp[j](t^(n+1)) = m_pcp[j](t^n) * exp(-lambda*dt)
+         */
+
+        m_pcp[j] *= exp(-lambda*dt);
+
+        /* Precipitation/dissolution
+         * ------------------------- */
+
+        if (c_l[v_id] > c_star) { /* Precipitation */
+
+          delta_m = theta_c*(c_l[v_id] - c_star)*pvol_vc[j];
+          m_pcp[j] += delta_m;
+          m_l_vc[j] -= delta_m;
 
         }
-        else if (c_w_save[v_id] > c_sat) { /* Precipitation */
+        else { /* c_l[v_id] <= c_star: dissolution ? */
 
-          c_p[j] += theta_c*inv_rho*(c_w_save[v_id] - c_sat);
-          c_w[v_id] = c_sat;
+          if (m_pcp[j] > 0) { /* Dissolution */
 
-        }
+            /* Estimate the concentration in the liquid phase if all the mass
+               of precipitate is disolved. Threshold given by c_star */
 
-        /*-------------------------------------------------------------------*/
-        /* Remark: Not the best place to integrate radioactive decay...
-         * The most adapted formulae is still to be determined
-         *
-         * Update of the precipitate stock here to model the natural
-         * exponential decay.
-         *
-         * Explicit 1st order formula is used here.
-         * The implicit 1st order formula
-         *   c_p[j] *= 1.0/(1. + lambda*dt);
-         * ------------------------------------------------------------------*/
+            double  c_l_max = c_l[v_id] + m_pcp[j]/(theta_c*pvol_vc[j]);
 
-        c_p[j] -= c_p[j]*lambda*dt;
+            c_l_max = CS_MIN(c_star, c_l_max);
+            delta_m = theta_c*(c_l_max - c_l[v_id])*pvol_vc[j];
+            m_pcp[j] -= delta_m;
+            m_l_vc[j] += delta_m;
+
+          }
+
+        } /* Dissolution ? */
 
       } /* Loop on cell vertices */
+
+      /* The concentration of precipitate in each cell [mol/kg] can be now
+         computed to define the average concentration in precipitate in each
+         cell (for a post-processing usage) */
+
+      c_pcp[c_id] = 0;
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+        c_pcp[c_id] += m_pcp[j];
+      c_pcp[c_id] /= rho*quant->cell_vol[c_id]; /* Cp = mass(c)/(rho_c*|c|) */
 
     } /* Loop on cells attached to this soil */
 
   } /* Loop on soils */
 
+  /* Update C_l in each dual cell.
+   * At the end of the first step, C_l stores the mass of tracer (in moles) in
+   * each dual cell. Then, the mass is divided by the dual porous volume after
+   * a parallel reduction
+   */
+
+  memset(c_l, 0, n_vertices*sizeof(cs_real_t));
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+      c_l[c2v->ids[j]] += m_l_vc[j];
+
   /* Parallel synchronization (in case of dissolution) */
 
   if (connect->vtx_ifs != NULL)
-    cs_interface_set_max(connect->vtx_ifs,
-                         quant->n_vertices,
-                         1,             /* stride */
-                         false,         /* interlace (not useful here) */
+    cs_interface_set_sum(connect->vtx_ifs,
+                         n_vertices,
+                         1, false, /* stride, interlace (not useful here) */
                          CS_REAL_TYPE,
-                         c_w);
+                         c_l);
 
-  /* 3) Update the value of concentration in precipitate in each cell */
-  /*    ------------------------------------------------------------- */
+  /* C_l is equal to the number of moles in the liquid phase divided by the
+     volume of the liquid phase (the porous volume) in the dual cell volume */
 
-  cs_real_t  *field_val = tc->precip_field->val;
-  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
-    field_val[c_id] = 0;
-
-    for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-      field_val[c_id] += quant->pvol_vc[j]*c_p[j];
-    field_val[c_id] = field_val[c_id]/quant->cell_vol[c_id];
-
-  } /* Loop on cells */
+  const double  *dpv = cs_gwf_soil_get_dual_porous_volume();
+  assert(dpv != NULL);
+  for (cs_lnum_t i = 0; i < n_vertices; i++)
+    c_l[i] /= dpv[i];
 
   /* Free temporary buffer */
 
-  BFT_FREE(c_w_save);
+  BFT_FREE(m_l_vc);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add quantities related to the precipitation model
+ * \brief  Add and initialize quantities related to the precipitation model
  *
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
@@ -760,21 +804,23 @@ _add_precipitation(const cs_cdo_connect_t      *connect,
 {
   cs_gwf_tracer_default_context_t  *tc = tracer->context;
 
-  const int  n_soils = cs_gwf_get_n_soils();
   const cs_adjacency_t  *c2v = connect->c2v;
   const cs_param_space_scheme_t  space_scheme =
     cs_equation_get_space_scheme(tracer->equation);
+  const cs_lnum_t  n_cells = quant->n_cells;
+
+  /* Allocate and initialize the array storing the quantity of precipitate */
 
   cs_lnum_t  a_size = 0;
 
   switch (space_scheme) {
 
   case CS_SPACE_SCHEME_CDOVB:
-    a_size = c2v->idx[quant->n_cells];
+    a_size = c2v->idx[n_cells];
     break;
 
   case CS_SPACE_SCHEME_CDOVCB:
-    a_size = c2v->idx[quant->n_cells] + quant->n_cells;
+    a_size = c2v->idx[n_cells] + n_cells;
     break;
 
   default:
@@ -782,62 +828,27 @@ _add_precipitation(const cs_cdo_connect_t      *connect,
 
   }
 
-  BFT_MALLOC(tc->conc_precip, a_size, cs_real_t);
-  memset(tc->conc_precip, 0, a_size*sizeof(cs_real_t));
-
-  /* Build conc_satura */
+  BFT_MALLOC(tc->precip_mass, a_size, cs_real_t);
+  memset(tc->precip_mass, 0, a_size*sizeof(cs_real_t));
 
   if (space_scheme == CS_SPACE_SCHEME_CDOVCB ||
       space_scheme == CS_SPACE_SCHEME_CDOVB) {
 
-    BFT_MALLOC(tc->conc_satura, quant->n_vertices, cs_real_t);
+    /* Compute the dual volume weigthed by the saturation associated to each
+     * cell. This quantity is useful to compute the concentration in the liquid
+     * phase from the knowdledge of the mass of tracer inside a dual volume.
+     *
+     * C_l(v) = mass(dual(v)) / (SUM_c\in C_v \theta_c |c \cap dual(v)|)
+     *
+     * The vertex-based quantity SUM_c\in C_v \theta_c |c \cap dual(v)| is
+     * denoted by dual porous volume
+     */
 
-    for (int soil_id = 0; soil_id < n_soils; soil_id++) {
-
-      cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
-
-      const double  c_sat = tc->conc_w_star[soil->id];
-
-      if (soil_id == 0) {     /* Initialize with c_sat */
-
-#       pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
-        for (cs_lnum_t v = 0; v < quant->n_vertices; v++)
-          tc->conc_satura[v] = c_sat;
-
-      }
-      else  {
-
-        const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
-        assert(z->elt_ids != NULL);
-
-        for (cs_lnum_t i = 0; i < z->n_elts; i++) { /* Loop on cells */
-
-          const cs_lnum_t  c_id = z->elt_ids[i];
-          for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
-
-            const cs_lnum_t  v_id = c2v->ids[j];
-
-            tc->conc_satura[v_id] = CS_MIN(tc->conc_satura[v_id], c_sat);
-
-          } /* Loop on cell vertices */
-
-        } /* Loop on cells belonging to a soil */
-
-      } /* soild_id > 0 */
-
-    } /* Loop on soils */
+    double  *dpv = cs_gwf_soil_get_dual_porous_volume();
+    if (dpv == NULL)
+      cs_gwf_soil_build_dual_porous_volume(quant, connect);
 
   } /* space scheme with DoFs at vertices */
-
-  /* Interface synchronization */
-
-  if (connect->vtx_ifs != NULL)
-    cs_interface_set_min(connect->vtx_ifs,
-                         quant->n_vertices,
-                         1,             /* stride */
-                         false,         /* interlace (not useful here) */
-                         CS_REAL_TYPE,
-                         tc->conc_satura);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1073,9 +1084,8 @@ _free_default_tracer_context(cs_gwf_tracer_t   *tracer)
 
   if (tracer->model & CS_GWF_TRACER_PRECIPITATION) {
 
-    BFT_FREE(tc->conc_w_star);
-    BFT_FREE(tc->conc_precip);
-    BFT_FREE(tc->conc_satura);
+    BFT_FREE(tc->conc_l_star);
+    BFT_FREE(tc->precip_mass);
 
   }
 
@@ -1135,15 +1145,14 @@ _create_default_tracer_context(cs_gwf_tracer_t    *tracer)
 
   /* Precipitation members */
 
-  context->conc_w_star = NULL;
-  context->conc_precip = NULL;
-  context->conc_satura = NULL;
+  context->conc_l_star = NULL;
+  context->precip_mass = NULL;
   context->precip_field = NULL;
   tracer->update_precipitation = NULL;
 
   if (tracer->model & CS_GWF_TRACER_PRECIPITATION) {
 
-    BFT_MALLOC(context->conc_w_star, n_soils, double);
+    BFT_MALLOC(context->conc_l_star, n_soils, double);
 
     switch (tracer->hydraulic_model) {
 
@@ -1506,7 +1515,7 @@ cs_gwf_tracer_set_main_param(cs_gwf_tracer_t   *tracer,
  * \param[in, out] tracer          pointer to a cs_gwf_tracer_t structure
  * \param[in]      soil_name       name of the related soil (or NULL if all
  *                                 soils are selected)
- * \param[in]      conc_w_star     value of the saturated concentration in the
+ * \param[in]      conc_l_star     value of the saturated concentration in the
  *                                 liquid phase
  */
 /*----------------------------------------------------------------------------*/
@@ -1514,7 +1523,7 @@ cs_gwf_tracer_set_main_param(cs_gwf_tracer_t   *tracer,
 void
 cs_gwf_tracer_set_precip_param(cs_gwf_tracer_t   *tracer,
                                const char        *soil_name,
-                               double             conc_w_star)
+                               double             conc_l_star)
 {
   if (tracer == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_tracer));
 
@@ -1531,7 +1540,7 @@ cs_gwf_tracer_set_precip_param(cs_gwf_tracer_t   *tracer,
 
     const int n_soils = cs_gwf_get_n_soils();
     for (int soil_id = 0; soil_id < n_soils; soil_id++)
-      tc->conc_w_star[soil_id] = conc_w_star;
+      tc->conc_l_star[soil_id] = conc_l_star;
 
   }
   else { /* Set this tracer equation for a specific soil */
@@ -1542,7 +1551,7 @@ cs_gwf_tracer_set_precip_param(cs_gwf_tracer_t   *tracer,
                 " Soil %s not found among the predefined soils.\n"
                 " Please check your settings.", soil_name);
 
-    tc->conc_w_star[soil->id] = conc_w_star;
+    tc->conc_l_star[soil->id] = conc_l_star;
 
   } /* Set a specific couple (tracer, soil) */
 }

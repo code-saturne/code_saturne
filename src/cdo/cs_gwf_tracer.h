@@ -145,22 +145,21 @@ typedef struct {
   /* Precipitation members (set to NULL if not used) */
   /* ----------------------------------------------- */
 
-  double       *conc_w_star;    /* maximal value of the concentraction of tracer
-                                   in the liquid phase. Exceeded quantities are
-                                   stored in the solid phase (->
-                                   conc_precip). These values corresponds to the
-                                   user settings */
+  double       *conc_l_star;    /* maximal value of the concentraction of
+                                   tracer in the liquid phase in mol/m^3. There
+                                   is one user-defined value for each soil. The
+                                   exceeded quantities are stored in the solid
+                                   phase (-> precip_mass). These values
+                                   corresponds to the user settings */
 
-  cs_real_t    *conc_satura;    /* array storing the value of the saturated
-                                   concentration in the liquid phase at vertices
-                                   (only used in case of CDOVB schemes or CDOVCB
-                                   schemes */
-  cs_real_t    *conc_precip;    /* array storing the concentration in the
+  cs_real_t    *precip_mass;    /* array storing the concentration in the
                                    precipitation (solid) storage. The size may
                                    vary w.r.t. to the discrtization scheme.
                                 */
 
-  cs_field_t   *precip_field;
+  cs_field_t   *precip_field;   /* Field structure storing the (interpolated)
+                                   cell values of the concentration of
+                                   precipitate in mol/kg.  */
 
   /* Sorption members (set to NULL if not used) */
   /* ------------------------------------------ */
@@ -345,7 +344,7 @@ cs_gwf_tracer_set_main_param(cs_gwf_tracer_t   *tracer,
  * \param[in, out] tracer          pointer to a cs_gwf_tracer_t structure
  * \param[in]      soil_name       name of the related soil (or NULL if all
  *                                 soils are selected)
- * \param[in]      conc_w_star     value of the saturated concentration in the
+ * \param[in]      conc_l_star     value of the saturated concentration in the
  *                                 liquid phase
  */
 /*----------------------------------------------------------------------------*/
@@ -353,7 +352,7 @@ cs_gwf_tracer_set_main_param(cs_gwf_tracer_t   *tracer,
 void
 cs_gwf_tracer_set_precip_param(cs_gwf_tracer_t   *tracer,
                                const char        *soil_name,
-                               double             conc_w_star);
+                               double             conc_l_star);
 
 /*----------------------------------------------------------------------------*/
 /*!
