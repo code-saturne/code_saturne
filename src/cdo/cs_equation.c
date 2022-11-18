@@ -3608,7 +3608,7 @@ cs_equation_post_balance(const cs_mesh_t            *mesh,
     if (!(eqp->post_flag & CS_EQUATION_POST_BALANCE))
       continue;
 
-    if (eq->compute_balance != NULL)
+    if (eq->compute_balance == NULL)
       bft_error(__FILE__, __LINE__, 0,
                 "%s: Balance for equation %s is requested but\n"
                 " this functionality is not available yet.\n",
