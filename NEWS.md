@@ -35,8 +35,16 @@ Master (not on release branches yet)
 - Add experimental immersed boundary features. This can be computed from
   cloud of points.
 
-- Groundwater flows: for the CDO module, modify the way the dispersive tensor is
-  defined. Remove the theta scaling in front of the molecular diffusivity
+- Groundwater flows: for the CDO module, modify the way the dispersive
+  tensor is defined. Remove the theta scaling in front of the
+  molecular diffusivity.
+
+- Groundwater flows: Modify the default settings for a tracer equation
+  (unsteady/reaction terms to voronoi Hodge, advection scheme - hybrid
+  upwind/centered, linear solvers: jacobi preconditioner and tolerance
+  to 10^-8). This follows from a first feedack on the VnV cases of the
+  default options.
+
 
 ### Physical modeling:
 
