@@ -104,6 +104,11 @@ static cs_gwf_soil_t  **_soils = NULL;
 
 static short int *_cell2soil_ids = NULL;
 
+/* Array storing the dual volume of each vertex weighted by the soil
+   porosity */
+
+static double  *_dual_porous_volume = NULL;
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -593,6 +598,88 @@ cs_gwf_get_cell2soil(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Build an array storing the dual volume associated to each vertex
+ *         taking into account the porosity of the soil
+ *         The computed quantity is stored as a static array. Use the function
+ *         cs_gwf_soil_get_dual_vol_l()
+ *
+ * \param[in] cdoq     pointer to a structure storing additional geometrical
+ *                     quantities for CDO schemes
+ * \param[in] connect  pointer to a structure storing additional connectivities
+ *                     for CDO schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_build_dual_porous_volume(const cs_cdo_quantities_t    *cdoq,
+                                     const cs_cdo_connect_t       *connect)
+{
+  assert(cdoq != NULL && connect != NULL);
+  assert(cdoq->dual_vol != NULL);
+
+  if (_dual_porous_volume != NULL)
+    BFT_REALLOC(_dual_porous_volume, cdoq->n_vertices, double);
+
+  memset(_dual_porous_volume, 0, sizeof(double)*cdoq->n_vertices);
+
+  if (_n_soils == 1) {
+
+    const cs_gwf_soil_t  *soil = _soils[0];
+    for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++)
+      _dual_porous_volume[i] = soil->porosity * cdoq->dual_vol[i];
+
+  }
+  else { /* Several soils to handle */
+
+    const cs_adjacency_t  *c2v = connect->c2v;
+
+    for (int s_id = 0; s_id < _n_soils; s_id++) {
+
+      const cs_gwf_soil_t  *soil = _soils[s_id];
+      const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
+
+      assert(z != NULL);
+
+#     pragma omp parallel for if (z->n_elts > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+
+        const cs_lnum_t  c_id = z->elt_ids[i];
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+          _dual_porous_volume[c2v->ids[j]] += soil->porosity * cdoq->pvol_vc[j];
+
+      } /* Loop on cells */
+
+    } /* Loop on soils */
+
+    /* Parallel synchronization */
+
+    if (connect->vtx_ifs != NULL)
+      cs_interface_set_sum(connect->vtx_ifs,
+                           cdoq->n_vertices,
+                           1, false, /* stride, interlace */
+                           CS_REAL_TYPE,
+                           _dual_porous_volume);
+
+  } /* Several soils */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the array storing the dual volume weighted by the soil porosity
+ *        Array of size n_vertices
+ *
+ * \return a pointer to the requested array
+ */
+/*----------------------------------------------------------------------------*/
+
+const double *
+cs_gwf_soil_get_dual_porous_volume(void)
+{
+  return _dual_porous_volume;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Free all cs_gwf_soil_t structures
  */
 /*----------------------------------------------------------------------------*/
@@ -643,6 +730,7 @@ cs_gwf_soil_free_all(void)
 
   BFT_FREE(_soils);
   BFT_FREE(_cell2soil_ids);
+  BFT_FREE(_dual_porous_volume);
 }
 
 /*----------------------------------------------------------------------------*/

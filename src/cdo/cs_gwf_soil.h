@@ -382,6 +382,36 @@ cs_gwf_get_cell2soil(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Build an array storing the dual volume associated to each vertex
+ *         taking into account the porosity of the soil
+ *         The computed quantity is stored as a static array. Use the function
+ *         cs_gwf_soil_get_dual_vol_l()
+ *
+ * \param[in] cdoq     pointer to a structure storing additional geometrical
+ *                     quantities for CDO schemes
+ * \param[in] connect  pointer to a structure storing additional connectivities
+ *                     for CDO schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_build_dual_porous_volume(const cs_cdo_quantities_t    *cdoq,
+                                     const cs_cdo_connect_t       *connect);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the array storing the dual volume weighted by the soil porosity
+ *        Array of size n_vertices
+ *
+ * \return a pointer to the requested array
+ */
+/*----------------------------------------------------------------------------*/
+
+const double *
+cs_gwf_soil_get_dual_porous_volume(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Free all cs_gwf_soil_t structures
  */
 /*----------------------------------------------------------------------------*/
