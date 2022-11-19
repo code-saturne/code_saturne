@@ -101,6 +101,7 @@ static cs_gwf_soil_t  **_soils = NULL;
 
 /* The following array enables to get the soil id related to each cell.
    The array size is equal to n_cells */
+
 static short int *_cell2soil_ids = NULL;
 
 /*============================================================================
@@ -574,12 +575,13 @@ cs_gwf_build_cell2soil(cs_lnum_t    n_cells)
                   __func__, (long)j);
 
   } /* n_soils > 1 */
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Get the array storing the associated soil for each cell
+ *
+ * \return a pointer to the array
  */
 /*----------------------------------------------------------------------------*/
 

@@ -1620,7 +1620,7 @@ cs_gwf_tracer_finalize_setup(const cs_cdo_connect_t      *connect,
       BFT_MALLOC(cs_shared_liquid_saturation, quant->n_cells, cs_real_t);
 
       /* For a saturated model there is no time evolution of the liquid
-         saturatino so that one can evaluate the moisture content (i.e. the
+         saturation so that one can evaluate the moisture content (i.e. the
          liquid saturation) once and for all */
 
       cs_property_eval_at_cells(0, mc, cs_shared_liquid_saturation);

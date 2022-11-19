@@ -372,6 +372,8 @@ cs_gwf_build_cell2soil(cs_lnum_t    n_cells);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Get the array storing the associated soil for each cell
+ *
+ * \return a pointer to the array
  */
 /*----------------------------------------------------------------------------*/
 
