@@ -1565,6 +1565,7 @@ _csr_assembler_values_init(void        *matrix_p,
 
   cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
 
+  const cs_alloc_mode_t amode = matrix->alloc_mode;
   const cs_lnum_t n_rows = matrix->n_rows;
   cs_lnum_t e_size_2 = eb_size*eb_size;
 
@@ -1572,7 +1573,8 @@ _csr_assembler_values_init(void        *matrix_p,
 
   /* Initialize diagonal values */
 
-  BFT_REALLOC(mc->_val, e_size_2*ms->row_index[ms->n_rows], cs_real_t);
+  CS_FREE_HD(mc->_val);
+  CS_MALLOC_HD(mc->_val, e_size_2*ms->row_index[ms->n_rows], cs_real_t, amode);
   mc->val = mc->_val;
 
 # pragma omp parallel for  if(n_rows*db_size > CS_THR_MIN)
