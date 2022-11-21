@@ -820,8 +820,7 @@ _add_precipitation(const cs_cdo_connect_t      *connect,
      * denoted by dual porous volume
      */
 
-    double  *dpv = cs_gwf_soil_get_dual_porous_volume();
-    if (dpv == NULL)
+    if (cs_gwf_soil_get_dual_porous_volume() == NULL)
       cs_gwf_soil_build_dual_porous_volume(quant, connect);
 
   } /* space scheme with DoFs at vertices */
