@@ -357,8 +357,6 @@ cs_blas_cuda_finalize(void);
 void
 cs_blas_cuda_set_stream(cudaStream_t  stream);
 
-#endif /* defined(__CUDACC__) */
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return pointers to reduction buffers needed for 2-stage reductions.
@@ -384,6 +382,8 @@ cs_blas_cuda_get_2_stage_reduce_buffers(cs_lnum_t      n,
                                         unsigned int   grid_size,
                                         double*       &r_grid,
                                         double*       &r_reduce);
+
+#endif /* defined(__CUDACC__) */
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -1085,7 +1085,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
     if (convergence->precision > 0. || c->plot != NULL) {
       _jacobi_compute_vx_and_residue<blocksize><<<gridsize, blocksize, 0, stream>>>
         (n_rows, ad_inv, ad, rhs, vx, rk, sum_block);
-      cs_blas_cuda_reduce_single_block<blocksize><<<1, blocksize, 0, stream>>>
+      cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
         (gridsize, sum_block, res);
     }
     else
@@ -1287,7 +1287,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
       _block_jacobi_compute_vx_and_residue
         <blocksize><<<gridsize, blocksize, 0, stream>>>
         (n_b_rows, diag_block_size, ad_inv, ad, rhs, vx, rk, sum_block);
-    cs_blas_cuda_reduce_single_block<blocksize><<<1, blocksize, 0, stream>>>
+    cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
       (gridsize, sum_block, res);
 
 #endif /* _USE_GRAPH */
