@@ -52,7 +52,6 @@ namespace cg = cooperative_groups;
 
 #include "bft_error.h"
 #include "bft_mem.h"
-#include "bft_printf.h"
 
 #include "cs_base.h"
 #include "cs_base_accel.h"
@@ -79,6 +78,7 @@ static cudaStream_t _stream = 0;
 static double  *_r_reduce = NULL;
 static double  *_r_grid = NULL;
 static unsigned int  _r_grid_size = 0;
+static unsigned int  _r_tuple_size = 0;
 
 #if defined(HAVE_CUBLAS)
 
@@ -124,7 +124,7 @@ _asum_stage_1_of_2(cs_lnum_t    n,
 
   // Output: b_res for this block
 
-  cs_blas_cuda_block_reduce_sum<blockSize>(stmp, tid, b_res);
+  cs_blas_cuda_block_reduce_sum<blockSize, 1>(stmp, tid, b_res);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -161,7 +161,7 @@ _dot_xy_stage_1_of_2(cs_lnum_t    n,
 
   // Output: b_res for this block
 
-  cs_blas_cuda_block_reduce_sum<blockSize>(stmp, tid, b_res);
+  cs_blas_cuda_block_reduce_sum<blockSize, 1>(stmp, tid, b_res);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -197,7 +197,7 @@ _dot_xx_stage_1_of_2(cs_lnum_t    n,
 
   // Output: b_res for this block
 
-  cs_blas_cuda_block_reduce_sum<blockSize>(stmp, tid, b_res);
+  cs_blas_cuda_block_reduce_sum<blockSize, 1>(stmp, tid, b_res);
 }
 
 /*----------------------------------------------------------------------------
@@ -299,8 +299,9 @@ _grid_size(cs_lnum_t     n,
   unsigned int grid_size = cs_cuda_grid_size(n, block_size);
 
   if (_r_reduce == NULL) {
-    // large enough for 3-way combined dot product.
-    CS_REALLOC_HD(_r_reduce, 3, double, CS_ALLOC_HOST_DEVICE_SHARED);
+    // large enough for 4-way combined dot product.
+    _r_tuple_size = 4;
+    CS_REALLOC_HD(_r_reduce, _r_tuple_size, double, CS_ALLOC_HOST_DEVICE_SHARED);
   }
 
   if (_r_grid_size < grid_size) {
@@ -330,6 +331,7 @@ BEGIN_C_DECLS
 void
 cs_blas_cuda_finalize(void)
 {
+  CS_FREE_HD(_r_reduce);
   CS_FREE_HD(_r_grid);
   _r_grid_size = 0;
 
@@ -372,36 +374,44 @@ cs_blas_cuda_set_stream(cudaStream_t  stream)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return pointer to reduction buffer needed for 2-stage reductions.
+ * \brief Return pointers to reduction buffers needed for 2-stage reductions.
  *
- * This buffer is used internally by all cs_blas_cuda 2-stage operations,
+ * These buffers are used internally by all cs_blas_cuda 2-stage operations,
  * allocated and resized updon demand, and freed when calling
  * cs_blas_cuda_finalize, so it is assumed no two operations (in different
- * threads) use this simultaneously.
+ * streams) use this simultaneously.
  *
  * Also check initialization of work arrays.
  *
- * \param[in]  n           size of arrays
- * \param[in]  tuple_size  number of values per tuple simultaneously reduced
- * \param[in]  grid_size   associated grid size
- *
- * \return  pointer to reduction bufffer.
+ * \param[in]   n           size of arrays
+ * \param[in]   tuple_size  number of values per tuple simultaneously reduced
+ * \param[in]   grid_size   associated grid size
+ * \param[out]  r_grid      first stage reduce buffer
+ * \param[out]  r_reduce    second stage (final result) reduce buffer
  */
 /*----------------------------------------------------------------------------*/
 
-double *
-cs_blas_cuda_get_2_stage_reduce_buffer(cs_lnum_t     n,
-                                       cs_lnum_t     tuple_size,
-                                       unsigned int  grid_size)
+void
+cs_blas_cuda_get_2_stage_reduce_buffers(cs_lnum_t      n,
+                                        cs_lnum_t      tuple_size,
+                                        unsigned int   grid_size,
+                                        double*       &r_grid,
+                                        double*       &r_reduce)
 {
   unsigned int t_grid_size = grid_size * tuple_size;
 
-  if (_r_grid_size < t_grid_size) {
-    CS_REALLOC_HD(_r_grid, t_grid_size, double, CS_ALLOC_DEVICE);
-    _r_grid_size = t_grid_size;
+  if (_r_tuple_size < tuple_size) {
+    _r_tuple_size = tuple_size;
+    CS_REALLOC_HD(_r_reduce, _r_tuple_size, double, CS_ALLOC_HOST_DEVICE_SHARED);
   }
 
-  return _r_grid;
+  if (_r_grid_size < t_grid_size) {
+    _r_grid_size = t_grid_size;
+    CS_REALLOC_HD(_r_grid, _r_grid_size, double, CS_ALLOC_DEVICE);
+  }
+
+  r_grid = _r_grid;
+  r_reduce = _r_reduce;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -424,7 +434,7 @@ cs_blas_cuda_asum(cs_lnum_t        n,
 
   _asum_stage_1_of_2<block_size><<<grid_size, block_size, 0, _stream>>>
     (n, x, _r_grid);
-  cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0, _stream>>>
+  cs_blas_cuda_reduce_single_block<block_size, 1><<<1, block_size, 0, _stream>>>
     (grid_size, _r_grid, _r_reduce);
 
   /* Need to synchronize stream in all cases so as to
@@ -461,7 +471,7 @@ cs_blas_cuda_dot(cs_lnum_t        n,
   else
     _dot_xx_stage_1_of_2<block_size><<<grid_size, block_size, 0, _stream>>>
       (n, x, _r_grid);
-  cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0, _stream>>>
+  cs_blas_cuda_reduce_single_block<block_size, 1><<<1, block_size, 0, _stream>>>
     (grid_size, _r_grid, _r_reduce);
 
   /* Need to synchronize stream in all cases so as to

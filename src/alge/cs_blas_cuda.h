@@ -64,22 +64,63 @@ END_C_DECLS
 /*!
  * \brief  Kernel for sum reduction within a warp (for warp size 32).
  *
+ * \tparam  blockSize  size of CUDA block
+ * \tparam  stride     vector stride
+ * \tparam  T          data type
+ *
  * \param[in, out]  stmp  shared value to reduce
  * \param[in, out]  tid   thread id
  */
 /*----------------------------------------------------------------------------*/
 
-template <size_t blockSize, typename T>
+template <size_t blockSize, size_t stride, typename T>
 __device__ static void __forceinline__
 cs_blas_cuda_warp_reduce_sum(volatile T  *stmp,
                              size_t       tid)
 {
-  if (blockSize >= 64) stmp[tid] += stmp[tid + 32];
-  if (blockSize >= 32) stmp[tid] += stmp[tid + 16];
-  if (blockSize >= 16) stmp[tid] += stmp[tid +  8];
-  if (blockSize >=  8) stmp[tid] += stmp[tid +  4];
-  if (blockSize >=  4) stmp[tid] += stmp[tid +  2];
-  if (blockSize >=  2) stmp[tid] += stmp[tid +  1];
+  if (stride == 1) {
+
+    if (blockSize >= 64) stmp[tid] += stmp[tid + 32];
+    if (blockSize >= 32) stmp[tid] += stmp[tid + 16];
+    if (blockSize >= 16) stmp[tid] += stmp[tid +  8];
+    if (blockSize >=  8) stmp[tid] += stmp[tid +  4];
+    if (blockSize >=  4) stmp[tid] += stmp[tid +  2];
+    if (blockSize >=  2) stmp[tid] += stmp[tid +  1];
+
+  }
+  else {
+
+    if (blockSize >= 64) {
+      #pragma unroll
+      for (size_t i = 0; i < stride; i++)
+        stmp[tid*stride + i] += stmp[(tid + 32)*stride + i];
+    }
+    if (blockSize >= 32) {
+      #pragma unroll
+      for (size_t i = 0; i < stride; i++)
+        stmp[tid*stride + i] += stmp[(tid + 16)*stride + i];
+    }
+    if (blockSize >= 16) {
+      #pragma unroll
+      for (size_t i = 0; i < stride; i++)
+        stmp[tid*stride + i] += stmp[(tid + 8)*stride + i];
+    }
+    if (blockSize >= 8) {
+      #pragma unroll
+      for (size_t i = 0; i < stride; i++)
+        stmp[tid*stride + i] += stmp[(tid + 4)*stride + i];
+    }
+    if (blockSize >= 4) {
+      #pragma unroll
+      for (size_t i = 0; i < stride; i++)
+        stmp[tid*stride + i] += stmp[(tid + 2)*stride + i];
+    }
+    if (blockSize >= 2) {
+      #pragma unroll
+      for (size_t i = 0; i < stride; i++)
+        stmp[tid*stride + i] += stmp[(tid + 1)*stride + i];
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -92,89 +133,191 @@ cs_blas_cuda_warp_reduce_sum(volatile T  *stmp,
  * slightly better performance than the non-unrolled version on an Ampere
  * architecure with CUDA 11.
  *
+ * \tparam  blockSize  size of CUDA block
+ * \tparam  stride     vector stride
+ * \tparam  T          data type
+ *
  * \param[in, out]  stmp       shared value to reduce
  * \param[in, out]  tid        thread id
  * \param[out]      sum_block  contribution of this block to the sum
  */
 /*----------------------------------------------------------------------------*/
 
-template <size_t blockSize, typename T>
+template <size_t blockSize, size_t stride, typename T>
 __device__ static void __forceinline__
 cs_blas_cuda_block_reduce_sum(T       *stmp,
                               size_t   tid,
-                              double  *sum_block)
+                              T       *sum_block)
 {
   __syncthreads();
 
   /* Loop explicitely unrolled */
 
-  if (blockSize >= 1024) {
-    if (tid < 512) {
-      stmp[tid] += stmp[tid + 512];
+  if (stride == 1) { /* Scalar data */
+
+    if (blockSize >= 1024) {
+      if (tid < 512) {
+        stmp[tid] += stmp[tid + 512];
+      }
+      __syncthreads();
     }
-    __syncthreads();
-  }
-  if (blockSize >=  512) {
-    if (tid < 256) {
-      stmp[tid] += stmp[tid + 256];
+    if (blockSize >= 512) {
+      if (tid < 256) {
+        stmp[tid] += stmp[tid + 256];
+      }
+      __syncthreads();
     }
-    __syncthreads();
-  }
-  if (blockSize >=  256) {
-    if (tid < 128) {
-      stmp[tid] += stmp[tid + 128];
-    } __syncthreads();
-  }
-  if (blockSize >=  128) {
-    if (tid <  64) {
-      stmp[tid] += stmp[tid +  64];
-    } __syncthreads();
+    if (blockSize >= 256) {
+      if (tid < 128) {
+        stmp[tid] += stmp[tid + 128];
+      } __syncthreads();
+    }
+    if (blockSize >= 128) {
+      if (tid <  64) {
+        stmp[tid] += stmp[tid +  64];
+      } __syncthreads();
+    }
+
+    if (tid < 32) {
+      cs_blas_cuda_warp_reduce_sum<blockSize, stride>(stmp, tid);
+    }
+
+    // Output: b_res for this block
+
+    if (tid == 0) sum_block[blockIdx.x] = stmp[0];
+
   }
 
-  if (tid < 32)
-    cs_blas_cuda_warp_reduce_sum<blockSize>(stmp, tid);
+  else { /* Vector data */
 
-  // Output: b_res for this block
+    if (blockSize >= 1024) {
+      if (tid < 512) {
+        #pragma unroll
+        for (size_t i = 0; i < stride; i++)
+          stmp[tid*stride + i] += stmp[(tid + 512)*stride + i];
+      }
+      __syncthreads();
+    }
+    if (blockSize >= 512) {
+      if (tid < 256) {
+        #pragma unroll
+        for (size_t i = 0; i < stride; i++)
+          stmp[tid*stride + i] += stmp[(tid + 256)*stride + i];
+      }
+      __syncthreads();
+    }
+    if (blockSize >= 256) {
+      if (tid < 128) {
+        #pragma unroll
+        for (size_t i = 0; i < stride; i++)
+          stmp[tid*stride + i] += stmp[(tid + 128)*stride + i];
+      } __syncthreads();
+    }
+    if (blockSize >= 128) {
+      if (tid <  64) {
+        #pragma unroll
+        for (size_t i = 0; i < stride; i++)
+          stmp[tid*stride + i] += stmp[(tid + 64)*stride + i];
+      } __syncthreads();
+    }
 
-  if (tid == 0) sum_block[blockIdx.x] = stmp[0];
+    if (tid < 32)
+      cs_blas_cuda_warp_reduce_sum<blockSize, stride>(stmp, tid);
+
+    // Output: b_res for this block
+
+    if (tid == 0) {
+      #pragma unroll
+      for (size_t i = 0; i < stride; i++)
+        sum_block[(blockIdx.x)*stride + i] = stmp[i];
+    }
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Kernel for sum reduction within a block.
+ * \brief  Kernel for sum reduction of vector data within a block.
  *
- * \param[in, out]  n        number of values to reduce
+ * \tparam  stride  number of vector components
+ *
+ * \param[in, out]  n        number of vector values to reduce
  * \param[in, out]  g_idata  input array (size n)
  * \param[in, out]  g_odata  onput array (size 1)
  */
 /*----------------------------------------------------------------------------*/
 
-template <size_t blockSize, typename T>
+template <size_t blockSize, size_t stride, typename T>
 __global__ static void
 cs_blas_cuda_reduce_single_block(size_t   n,
                                  T       *g_idata,
                                  T       *g_odata)
 {
-  __shared__ T sdata[blockSize];
+  __shared__ T sdata[blockSize * stride];
 
   size_t tid = threadIdx.x;
-  T r_s = 0;
+  T r_s[stride];
 
-  for (int i = threadIdx.x; i < n; i+= blockSize)
-    r_s += g_idata[i];
+  if (stride == 1) {
 
-  sdata[tid] = r_s;
-  __syncthreads();
+    r_s[0] = 0;
+    sdata[tid] = 0.;
 
-  for (int j = blockSize/2; j > CS_CUDA_WARP_SIZE; j /= 2) {
-    if (tid < j) {
-      sdata[tid] += sdata[tid + j];
-    }
+    for (size_t i = threadIdx.x; i < n; i+= blockSize)
+      r_s[0] += g_idata[i];
+
+    sdata[tid] = r_s[0];
     __syncthreads();
-  }
 
-  if (tid < 32) cs_blas_cuda_warp_reduce_sum<blockSize>(sdata, tid);
-  if (tid == 0) *g_odata = sdata[0];
+    for (size_t j = blockSize/2; j > CS_CUDA_WARP_SIZE; j /= 2) {
+      if (tid < j) {
+        sdata[tid] += sdata[tid + j];
+      }
+      __syncthreads();
+    }
+
+    if (tid < 32) cs_blas_cuda_warp_reduce_sum<blockSize, stride>(sdata, tid);
+    if (tid == 0) *g_odata = sdata[0];
+
+  }
+  else {
+
+    #pragma unroll
+    for (size_t k = 0; k < stride; k++) {
+      r_s[k] = 0;
+      sdata[tid*stride + k] = 0.;
+    }
+
+    for (size_t i = threadIdx.x; i < n; i+= blockSize) {
+      #pragma unroll
+      for (size_t k = 0; k < stride; k++) {
+        r_s[k] += g_idata[i*stride + k];
+      }
+
+      #pragma unroll
+      for (size_t k = 0; k < stride; k++)
+        sdata[tid*stride + k] = r_s[k];
+      __syncthreads();
+
+      for (size_t j = blockSize/2; j > CS_CUDA_WARP_SIZE; j /= 2) {
+        if (tid < j) {
+          #pragma unroll
+          for (size_t k = 0; k < stride; k++)
+            sdata[tid*stride + k] += sdata[(tid + j)*stride + k];
+        }
+        __syncthreads();
+      }
+
+    }
+
+    if (tid < 32) cs_blas_cuda_warp_reduce_sum<blockSize, stride>(sdata, tid);
+    if (tid == 0) {
+      #pragma unroll
+      for (size_t k = 0; k < stride; k++)
+        g_odata[k] = sdata[k];
+    }
+
+  }
 }
 
 #endif /* defined(__CUDACC__) */
@@ -218,27 +361,29 @@ cs_blas_cuda_set_stream(cudaStream_t  stream);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return pointer to reduction buffer needed for 2-stage reductions.
+ * \brief Return pointers to reduction buffers needed for 2-stage reductions.
  *
- * This buffer is used internally by all cs_blas_cuda 2-stage operations,
+ * These buffers are used internally by all cs_blas_cuda 2-stage operations,
  * allocated and resized updon demand, and freed when calling
  * cs_blas_cuda_finalize, so it is assumed no two operations (in different
- * threads) use this simultaneously.
+ * streams) use this simultaneously.
  *
  * Also check initialization of work arrays.
  *
- * \param[in]  n           size of arrays
- * \param[in]  tuple_size  number of values per tuple simultaneously reduced
- * \param[in]  grid_size   associated grid size
- *
- * \return  pointer to reduction bufffer.
+ * \param[in]   n           size of arrays
+ * \param[in]   tuple_size  number of values per tuple simultaneously reduced
+ * \param[in]   grid_size   associated grid size
+ * \param[out]  r_grid      first stage reduce buffer
+ * \param[out]  r_reduce    second stage (final result) reduce buffer
  */
 /*----------------------------------------------------------------------------*/
 
-double *
-cs_blas_cuda_get_2_stage_reduce_buffer(cs_lnum_t     n,
-                                       cs_lnum_t     tuple_size,
-                                       unsigned int  grid_size);
+void
+cs_blas_cuda_get_2_stage_reduce_buffers(cs_lnum_t      n,
+                                        cs_lnum_t      tuple_size,
+                                        unsigned int   grid_size,
+                                        double*       &r_grid,
+                                        double*       &r_reduce);
 
 /*----------------------------------------------------------------------------*/
 /*!

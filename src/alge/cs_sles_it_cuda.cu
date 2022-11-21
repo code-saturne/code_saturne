@@ -55,8 +55,6 @@ namespace cg = cooperative_groups;
  *----------------------------------------------------------------------------*/
 
 #include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
 #include "cs_base.h"
 #include "cs_base_accel.h"
 #include "cs_blas_cuda.h"
@@ -102,6 +100,16 @@ namespace cg = cooperative_groups;
 #define __ldg(ptr) *(ptr);
 #endif
 
+/*============================================================================
+ *  Global variables
+ *============================================================================*/
+
+static bool _use_cublas = false;
+
+/*============================================================================
+ * Private function and kernel definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Kernel for sum reduction within a warp (for warp size 32).
@@ -122,6 +130,35 @@ _warp_reduce_sum(volatile T  *stmp,
   if (block_size >=  8) stmp[tid] += stmp[tid +  4];
   if (block_size >=  4) stmp[tid] += stmp[tid +  2];
   if (block_size >=  2) stmp[tid] += stmp[tid +  1];
+}
+
+/*----------------------------------------------------------------------------
+ * Compute Vx <- Vx - (A-diag).Rk for Jacobi solver.
+ *
+ * parameters:
+ *   n_rows    <-- number of rows
+ *   ad_inv    <-- inverse of diagonal
+ *   ad        <-- diagonal
+ *   rhs       <-- right hand side
+ *   vx        <-> solution at current iteration
+ *   rk        <-> solution at previous iteraton
+ *----------------------------------------------------------------------------*/
+
+template <size_t block_size>
+__global__ static void
+_jacobi_compute_vx(cs_lnum_t          n_rows,
+                   const cs_real_t   *restrict ad_inv,
+                   const cs_real_t   *restrict ad,
+                   const cs_real_t   *rhs,
+                   cs_real_t         *restrict vx,
+                   cs_real_t         *restrict rk)
+{
+  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+
+  if (ii < n_rows) {
+    vx[ii] = (rhs[ii]-vx[ii])*ad_inv[ii];
+    rk[ii] = vx[ii];
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -166,7 +203,7 @@ _jacobi_compute_vx_and_residue(cs_lnum_t          n_rows,
   else
     sdata[tid] = 0.0;
 
-  cs_blas_cuda_block_reduce_sum<block_size>(sdata, tid, sum_block);
+  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
 }
 
 /*----------------------------------------------------------------------------
@@ -248,7 +285,7 @@ _block_3_jacobi_compute_vx_and_residue(cs_lnum_t          n_b_rows,
       rk[ii*3 + kk] = vx[ii*3 + kk];
   }
 
-  cs_blas_cuda_block_reduce_sum<block_size>(sdata, tid, sum_block);
+  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
 }
 
 /*----------------------------------------------------------------------------
@@ -341,7 +378,7 @@ _block_jacobi_compute_vx_and_residue(cs_lnum_t          n_b_rows,
       rk[ii*n + kk] = vx[ii*n + kk];
   }
 
-  cs_blas_cuda_block_reduce_sum<block_size>(sdata, tid, sum_block);
+  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
 }
 
 /*----------------------------------------------------------------------------
@@ -382,7 +419,7 @@ _ymx_dot_yy(cs_lnum_t          n,
     ii += grid_size;
   }
 
-  cs_blas_cuda_block_reduce_sum<block_size>(sdata, tid, sum_block);
+  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
 }
 
 /*----------------------------------------------------------------------------
@@ -425,7 +462,7 @@ _smaxpy_dot_yy(cs_lnum_t          n,
     ii += grid_size;
   }
 
-  cs_blas_cuda_block_reduce_sum<block_size>(sdata, tid, sum_block);
+  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
 }
 
 /*----------------------------------------------------------------------------
@@ -469,7 +506,7 @@ _y_scale_dot_xy(cs_lnum_t         n,
     ii += grid_size;
   }
 
-  cs_blas_cuda_block_reduce_sum<block_size>(sdata, tid, sum_block);
+  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
 }
 
 /*----------------------------------------------------------------------------
@@ -597,10 +634,10 @@ _gcr_update_vx(cs_lnum_t         n_rows,
  *----------------------------------------------------------------------------*/
 
 static void
-_sync_reduction_sum(cs_sles_it_t  *c,
-                    cudaStream_t   stream,
-                    cs_lnum_t      tuple_size,
-                    double         res[])
+_sync_reduction_sum(const cs_sles_it_t  *c,
+                    cudaStream_t         stream,
+                    cs_lnum_t            tuple_size,
+                    double               res[])
 {
   cudaStreamSynchronize(stream);
 
@@ -633,12 +670,16 @@ _dot_product(const cs_sles_it_t  *c,
              const cs_real_t     *x,
              const cs_real_t     *y)
 {
-  /* Alternatives (need to set option for this) */
+  double s;
 
-#if 1
-  double s = cs_blas_cuda_dot(c->setup_data->n_rows, x, y);
-#else
-  double s = cs_blas_cublas_dot(c->setup_data->n_rows, x, y);
+  /* Alternatives */
+
+  if (_use_cublas == false)
+    s = cs_blas_cuda_dot(c->setup_data->n_rows, x, y);
+
+#if defined(HAVE_CUBLAS)
+  if (_use_cublas)
+    s = cs_blas_cublas_dot(c->setup_data->n_rows, x, y);
 #endif
 
 #if defined(HAVE_MPI)
@@ -720,10 +761,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
     ad = (const cs_real_t  *restrict)cs_get_device_ptr(d_val_p);
   }
 
-  double residue;
-
-  double *res;
-  CS_MALLOC_HD(res, 1, double, CS_ALLOC_HOST_DEVICE_SHARED);
+  double residue = -1.;
 
   /* Allocate or map work arrays
      --------------------------- */
@@ -761,8 +799,8 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 
   unsigned int gridsize = cs_cuda_grid_size(n_rows, blocksize);
 
-  double *sum_block
-    = cs_blas_cuda_get_2_stage_reduce_buffer(n_rows, 1, gridsize);
+  double *sum_block, *res;
+  cs_blas_cuda_get_2_stage_reduce_buffers(n_rows, 1, gridsize, sum_block, res);
 
   cs_matrix_spmv_cuda_set_stream(stream);
 
@@ -777,10 +815,16 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 
   /* Compute Vx <- Vx - (A-diag).Rk and residue. */
 
-  _jacobi_compute_vx_and_residue<blocksize><<<gridsize, blocksize, 0, stream>>>
-    (n_rows, ad_inv, ad, rhs, vx, rk, sum_block);
-  cs_blas_cuda_reduce_single_block<blocksize><<<1, blocksize, 0, stream>>>
-    (gridsize, sum_block, res);
+  if (convergence->precision > 0. || c->plot != NULL) {
+    _jacobi_compute_vx_and_residue<blocksize><<<gridsize, blocksize, 0, stream>>>
+      (n_rows, ad_inv, ad, rhs, vx, rk, sum_block);
+    cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
+      (gridsize, sum_block, res);
+  }
+  else {
+    _jacobi_compute_vx<blocksize><<<gridsize, blocksize, 0, stream>>>
+      (n_rows, ad_inv, ad, rhs, vx, rk);
+  }
 
   cudaStreamEndCapture(stream, &graph);
   cudaError_t status = cudaGraphInstantiate(&graph_exec, graph, &graph_node,
@@ -809,16 +853,22 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 
     /* Compute Vx <- Vx - (A-diag).Rk and residue. */
 
-    _jacobi_compute_vx_and_residue<blocksize><<<gridsize, blocksize, 0, stream>>>
-      (n_rows, ad_inv, ad, rhs, vx, rk, sum_block);
-    cs_blas_cuda_reduce_single_block<blocksize><<<1, blocksize, 0, stream>>>
-      (gridsize, sum_block, res);
+    if (convergence->precision > 0. || c->plot != NULL) {
+      _jacobi_compute_vx_and_residue<blocksize><<<gridsize, blocksize, 0, stream>>>
+        (n_rows, ad_inv, ad, rhs, vx, rk, sum_block);
+      cs_blas_cuda_reduce_single_block<blocksize><<<1, blocksize, 0, stream>>>
+        (gridsize, sum_block, res);
+    }
+    else
+      _jacobi_compute_vx<blocksize><<<gridsize, blocksize, 0, stream>>>
+        (n_rows, ad_inv, ad, rhs, vx, rk);
 
 #endif /* _USE_GRAPH */
 
-    _sync_reduction_sum(c, stream, 1, res);
-
-    residue = sqrt(*res); /* Actually, residue of previous iteration */
+    if (convergence->precision > 0. || c->plot != NULL) {
+      _sync_reduction_sum(c, stream, 1, res);
+      residue = sqrt(*res); /* Actually, residue of previous iteration */
+    }
 
     /* Convergence test */
     if (n_iter == 1)
@@ -836,8 +886,6 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 
   if (_aux_vectors != (cs_real_t *)aux_vectors)
     cudaFree(_aux_vectors);
-
-  CS_FREE_HD(res);
 
   cs_matrix_spmv_cuda_set_stream(0);
 
@@ -913,9 +961,6 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
   double residue;
 
-  double *res;
-  CS_MALLOC_HD(res, 1, double, CS_ALLOC_HOST_DEVICE_SHARED);
-
   /* Allocate or map work arrays
      --------------------------- */
 
@@ -950,8 +995,8 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
   unsigned int gridsize = cs_cuda_grid_size(n_b_rows, blocksize);
 
-  double *sum_block
-    = cs_blas_cuda_get_2_stage_reduce_buffer(n_b_rows, 1, gridsize);
+  double *sum_block, *res;
+  cs_blas_cuda_get_2_stage_reduce_buffers(n_b_rows, 1, gridsize, sum_block, res);
 
   cs_matrix_spmv_cuda_set_stream(stream);
 
@@ -975,7 +1020,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
       <blocksize><<<gridsize, blocksize, 0, stream>>>
       (n_b_rows, diag_block_size, ad_inv, ad, rhs, vx, rk, sum_block);
 
-  cs_blas_cuda_reduce_single_block<blocksize><<<1, blocksize, 0, stream>>>
+  cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
     (gridsize, sum_block, res);
 
   cudaStreamEndCapture(stream, &graph);
@@ -1153,7 +1198,6 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
   double *restrict mgkj = _aux_arrays;
   double *restrict alpha = _aux_arrays + n_gkj;
   double *restrict scale = alpha + n_k_per_restart+1;
-  double *restrict res = scale + 1;
 
   cs_real_t *gkj_inv;
   CS_MALLOC_HD(gkj_inv, n_gkj, cs_real_t, CS_ALLOC_DEVICE);
@@ -1166,8 +1210,8 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
   unsigned int gridsize = cs_cuda_grid_size(n_rows, blocksize);
   unsigned int gridsize_blas1 = min(gridsize, 640);
 
-  double *sum_block
-    = cs_blas_cuda_get_2_stage_reduce_buffer(n_rows, 1, gridsize);
+  double *sum_block, *res;
+  cs_blas_cuda_get_2_stage_reduce_buffers(n_rows, 1, gridsize, sum_block, res);
 
   cs_blas_cuda_set_stream(stream);
   cs_matrix_spmv_cuda_set_stream(stream);
@@ -1187,7 +1231,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
       (n_rows, rhs, rk, sum_block);
 
     cs_blas_cuda_reduce_single_block
-      <blocksize_rsb><<<1, blocksize_rsb, 0, stream>>>
+      <blocksize_rsb, 1><<<1, blocksize_rsb, 0, stream>>>
       (gridsize_blas1, sum_block, res);
 
     _sync_reduction_sum(c, stream, 1, res);
@@ -1252,7 +1296,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
           <blocksize_rsb><<<gridsize_blas1, blocksize_rsb, 0, stream>>>
           (n_rows, scale, rk, ck_n, sum_block);
         cs_blas_cuda_reduce_single_block
-          <blocksize_rsb><<<1, blocksize_rsb, 0, stream>>>
+          <blocksize_rsb, 1><<<1, blocksize_rsb, 0, stream>>>
           (gridsize, sum_block, &alpha[n_c_iter]);
         _sync_reduction_sum(c, stream, 1, &alpha[n_c_iter]);
 
@@ -1263,7 +1307,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
       _smaxpy_dot_yy<blocksize_rsb><<<gridsize_blas1, blocksize_rsb, 0, stream>>>
         (n_rows, &alpha[n_c_iter], ck_n, rk, sum_block);
       cs_blas_cuda_reduce_single_block
-        <blocksize_rsb><<<1, blocksize_rsb, 0, stream>>>
+        <blocksize_rsb, 1><<<1, blocksize_rsb, 0, stream>>>
         (gridsize, sum_block, res);
       _sync_reduction_sum(c, stream, 1, res);
 

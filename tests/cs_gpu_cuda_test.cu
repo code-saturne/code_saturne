@@ -107,7 +107,7 @@ _reduce_single_block(size_t   n,
     __syncthreads();
   }
 
-  if (tid < 32) cs_blas_cuda_warp_reduce_sum<blockSize>(sdata, tid);
+  if (tid < 32) cs_blas_cuda_warp_reduce_sum<blockSize, 1>(sdata, tid);
   if (tid == 0) *g_odata = sdata[0];
 }
 
@@ -156,7 +156,7 @@ _dot_xy_stage_1_of_2(cs_lnum_t    n,
   }
 
   if (tid < 32)
-    cs_blas_cuda_warp_reduce_sum<blockSize>(stmp, tid);
+    cs_blas_cuda_warp_reduce_sum<blockSize, 1>(stmp, tid);
 
   // Output: b_res for this block
 
@@ -550,8 +550,7 @@ _dot_products_1(double   t_measure,
     double ref_s = 165 * (n/10) * _pi;
 
     const unsigned int block_size = 256;
-    unsigned int grid_size = (n % block_size) ?
-      n/block_size : n/block_size + 1;
+    unsigned int grid_size = cs_cuda_grid_size(n, block_size);
 
     std::cout << std::endl << "block_size = " << block_size
               << ", grid_size = " << grid_size << std::endl;
@@ -738,7 +737,8 @@ BEGIN_C_DECLS
 void
 main_cuda(void)
 {
-  double t_measure = 10.0;
+  // double t_measure = 10.0;
+  double t_measure = 1.0;
   double test_sum = 0.0;
 
   /* Initialization and environment */
