@@ -571,10 +571,26 @@ cs_realloc_hd(void            *ptr,
     ret_ptr = me.host_ptr;
   }
   else {
+    size_t copy_size = me.size;
+    if (new_size < copy_size)
+      copy_size = new_size;
+    me.size = new_size;
+
     ret_ptr = cs_malloc_hd(mode, 1, me.size,
                            var_name, file_name, line_num);
 
-    memcpy(ret_ptr, ptr, me.size);
+    if (me.mode < CS_ALLOC_DEVICE) {
+      if (mode < CS_ALLOC_DEVICE)
+        memcpy(ret_ptr, ptr, copy_size);
+      else
+        cs_copy_h2d(ret_ptr, ptr, copy_size);
+    }
+    else { /* if (me.mode == CS_ALLOC_DEVICE) */
+      if (mode < CS_ALLOC_DEVICE)
+        cs_copy_d2h(ret_ptr, ptr, copy_size);
+      else
+        cs_copy_d2d(ret_ptr, ptr, copy_size);
+    }
 
     cs_free_hd(ptr, var_name, file_name, line_num);
   }
@@ -1036,7 +1052,15 @@ cs_set_alloc_mode(void             **host_ptr,
       /* TODO: check if we have multiple OpenMP threads, in which
          case applying a "first-touch" policy might be useful here */
 
-      memcpy(ret_ptr, _host_ptr, me.size);
+      if (old_mode < CS_ALLOC_DEVICE) {
+        if (mode < CS_ALLOC_DEVICE)
+          memcpy(ret_ptr, _host_ptr, me.size);
+        else
+          cs_copy_h2d(ret_ptr, _host_ptr, me.size);
+      }
+      else { /* if (old_mode == CS_ALLOC_DEVICE) */
+        cs_copy_d2h(ret_ptr, _host_ptr, me.size);
+      }
 
       cs_free_hd(_host_ptr, "me.host_ptr", __FILE__, __LINE__);
 
