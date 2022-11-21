@@ -538,7 +538,9 @@ cs_realloc_hd(void            *ptr,
   else {
     me = _hd_alloc_map[ptr];
 
-    if (me.device_ptr != me.host_ptr && me.device_ptr != NULL) {
+    if (   me.device_ptr != me.host_ptr
+        && me.device_ptr != NULL
+        && me.host_ptr != NULL) {
 #if defined(HAVE_CUDA)
       cs_cuda_mem_free(me.device_ptr, var_name, file_name, line_num);
       me.device_ptr = NULL;
