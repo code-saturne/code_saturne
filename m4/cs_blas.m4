@@ -250,6 +250,7 @@ if test "x$with_blas" != "xno" ; then
   # Cleanup if no BLAS found
 
   if test "x$cs_have_blas" != "xyes"; then
+    with_blas_type=no
     if test "x$with_blas" != "xcheck" ; then
       AC_MSG_FAILURE([BLAS support is requested, but test for BLAS failed!])
     else

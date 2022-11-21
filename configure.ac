@@ -1277,7 +1277,7 @@ if test x$cs_have_cuda = xyes ; then
   echo "   cuBLAS support: "$cs_have_cublas""
   echo "   cuSPARSE support: "$cs_have_cusparse""
 fi
-echo " BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas""
+echo " BLAS (Basic Linear Algebra Subprograms) support: "$with_blas_type""
 echo " ParMETIS (Parallel Graph Partitioning) support: "$cs_have_parmetis""
 if test x$cs_have_parmetis = xno ; then
   echo " METIS (Graph Partitioning) support: "$cs_have_metis""
