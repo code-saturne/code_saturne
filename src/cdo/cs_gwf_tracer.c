@@ -132,7 +132,7 @@ _get_time_pty4std_sat_tracer(cs_lnum_t                    n_elts,
   const cs_gwf_tracer_default_context_t  *tc = context;
   assert(tc != NULL);
 
-  const short int  *c2s = cs_gwf_get_cell2soil();
+  const short int  *c2s = cs_gwf_soil_get_cell2soil();
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
 
@@ -172,7 +172,7 @@ _get_time_pty4std_sat_tracer_cw(const cs_cell_mesh_t    *cm,
   const cs_gwf_tracer_default_context_t  *tc = context;
   assert(tc != NULL);
 
-  const short int  *c2s = cs_gwf_get_cell2soil();
+  const short int  *c2s = cs_gwf_soil_get_cell2soil();
   const short int  soil_id = c2s[cm->c_id];
   const cs_real_t  saturated_moisture =
     cs_gwf_soil_get_saturated_moisture(soil_id);
@@ -218,7 +218,7 @@ _get_time_pty4std_tracer(cs_lnum_t                    n_elts,
   assert(tc != NULL);
 
   const cs_real_t  *theta = cs_shared_liquid_saturation;
-  const short int  *c2s = cs_gwf_get_cell2soil();
+  const short int  *c2s = cs_gwf_soil_get_cell2soil();
 
   if (elt_ids == NULL)
     for (cs_lnum_t i = 0; i < n_elts; i++)
@@ -257,7 +257,7 @@ _get_time_pty4std_tracer_cw(const cs_cell_mesh_t    *cm,
   CS_UNUSED(t_eval);
 
   const cs_gwf_tracer_default_context_t  *tc = context;
-  const short int  *c2s = cs_gwf_get_cell2soil();
+  const short int  *c2s = cs_gwf_soil_get_cell2soil();
   assert(tc != NULL);
 
   *result = cs_shared_liquid_saturation[cm->c_id] + tc->rho_kd[c2s[cm->c_id]];
@@ -301,7 +301,7 @@ _get_reaction_pty4std_sat_tracer(cs_lnum_t                    n_elts,
   const cs_gwf_tracer_default_context_t  *tc = context;
   assert(tc != NULL);
 
-  const short int  *c2s = cs_gwf_get_cell2soil();
+  const short int  *c2s = cs_gwf_soil_get_cell2soil();
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
 
@@ -341,7 +341,7 @@ _get_reaction_pty4std_sat_tracer_cw(const cs_cell_mesh_t     *cm,
   const cs_gwf_tracer_default_context_t  *tc = context;
   assert(tc != NULL);
 
-  const short int  *c2s = cs_gwf_get_cell2soil();
+  const short int  *c2s = cs_gwf_soil_get_cell2soil();
   const int s = c2s[cm->c_id];
   const cs_real_t  saturated_moisture = cs_gwf_soil_get_saturated_moisture(s);
 
@@ -386,7 +386,7 @@ _get_reaction_pty4std_tracer(cs_lnum_t                    n_elts,
   assert(tc != NULL);
 
   const cs_real_t  *theta = cs_shared_liquid_saturation;
-  const short int  *c2s = cs_gwf_get_cell2soil();
+  const short int  *c2s = cs_gwf_soil_get_cell2soil();
 
   if (elt_ids == NULL) {
 
@@ -436,7 +436,7 @@ _get_reaction_pty4std_tracer_cw(const cs_cell_mesh_t     *cm,
   const cs_gwf_tracer_default_context_t  *tc = context;
   assert(tc != NULL);
 
-  const short int  *c2s = cs_gwf_get_cell2soil();
+  const short int  *c2s = cs_gwf_soil_get_cell2soil();
   const int s = c2s[cm->c_id];
 
   *result =
@@ -864,7 +864,7 @@ _integrate_saturated_tracer(const cs_cdo_connect_t                  *connect,
                             const cs_gwf_tracer_default_context_t   *tc,
                             const cs_zone_t                         *z)
 {
-  const short int  *c2s = cs_gwf_get_cell2soil();
+  const short int  *c2s = cs_gwf_soil_get_cell2soil();
 
   cs_real_t  int_value = 0.0;
 
@@ -959,7 +959,7 @@ _integrate_tracer(const cs_cdo_connect_t                  *connect,
                   const cs_gwf_tracer_default_context_t   *tc,
                   const cs_zone_t                         *z)
 {
-  const short int  *c2s = cs_gwf_get_cell2soil();
+  const short int  *c2s = cs_gwf_soil_get_cell2soil();
   const cs_real_t  *moisture_val = cs_shared_liquid_saturation;
 
   if (moisture_val == NULL)

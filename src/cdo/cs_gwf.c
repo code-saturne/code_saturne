@@ -4025,7 +4025,7 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
   /* Store the soil id for each cell */
 
   cs_gwf_soil_check();
-  cs_gwf_build_cell2soil(quant->n_cells);
+  cs_gwf_soil_build_cell2soil(quant->n_cells);
 
   /* Finalize the tracer setup */
 

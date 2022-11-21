@@ -361,13 +361,14 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Build an array storing the associated soil for each cell
+ *         The lifecycle of this array is managed by the code.
  *
  * \param[in] n_cells      number of cells
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_build_cell2soil(cs_lnum_t    n_cells);
+cs_gwf_soil_build_cell2soil(cs_lnum_t    n_cells);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -378,7 +379,7 @@ cs_gwf_build_cell2soil(cs_lnum_t    n_cells);
 /*----------------------------------------------------------------------------*/
 
 const short int *
-cs_gwf_get_cell2soil(void);
+cs_gwf_soil_get_cell2soil(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
