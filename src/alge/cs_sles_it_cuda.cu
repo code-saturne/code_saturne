@@ -48,6 +48,8 @@
 #endif
 namespace cg = cooperative_groups;
 
+#include <cfloat>
+
 // #include "mpi-ext.h"
 
 /*----------------------------------------------------------------------------
@@ -382,6 +384,102 @@ _block_jacobi_compute_vx_and_residue(cs_lnum_t          n_b_rows,
 }
 
 /*----------------------------------------------------------------------------
+ * FCG initialization: rk <- rhs -rk; qk = 0.
+ *
+ * parameters:
+ *   n         <-- number of elements
+ *   rhs       <-- vector of elements
+ *   rk        <-> vector of elements
+ *   qk        <-> vector of elements
+ *----------------------------------------------------------------------------*/
+
+__global__ static void
+_fcg_init(cs_lnum_t         n,
+          const cs_real_t  *restrict rhs,
+          cs_real_t        *restrict rk,
+          cs_real_t        *restrict qk)
+{
+  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+
+  if (ii < n) {
+    rk[ii] = rhs[ii] - rk[ii];
+    qk[ii] = 0.;
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * FCG update of dk, vk, qk, rk at iterations > 0.
+ *
+ * parameters:
+ *   n      <-- number of elements
+ *   gk_rk1 <-- descent parameter
+ *   ak_rk  <-- descent parameter
+ *   wk     <-- vector of elements
+ *   dk     <-> vector of elements
+ *   qk     <-- vector of elements
+ *   rk     <-- vector of elements
+ *   vk     <-> vector of elements
+ *   vx     <-> vector of elements
+ *----------------------------------------------------------------------------*/
+
+__global__ static void
+_fcg_update_n(cs_lnum_t         n,
+              cs_real_t         gk_rk1,
+              cs_real_t         ak_rk,
+              const cs_real_t  *restrict wk,
+              cs_real_t        *restrict dk,
+              cs_real_t        *restrict qk,
+              cs_real_t        *restrict rk,
+              cs_real_t        *restrict vk,
+              cs_real_t        *restrict vx)
+{
+  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+
+  if (ii < n) {
+    dk[ii] = vk[ii] - gk_rk1 * dk[ii];
+    vx[ii] = vx[ii] + ak_rk * dk[ii];
+
+    qk[ii] = wk[ii] - gk_rk1 * qk[ii];
+    rk[ii] = rk[ii] - ak_rk * qk[ii];
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * FCG update of dk, vk, qk, rk at iteration 0.
+ *
+ * parameters:
+ *   n      <-- number of elements
+ *   ak_rk  <-- descent parameter
+ *   wk     <-- vector of elements
+ *   dk     <-> vector of elements
+ *   qk     <-- vector of elements
+ *   rk     <-- vector of elements
+ *   vk     <-> vector of elements
+ *   vx     <-> vector of elements
+ *----------------------------------------------------------------------------*/
+
+__global__ static void
+_fcg_update_0(cs_lnum_t         n,
+              cs_real_t         ak_rk,
+              const cs_real_t  *restrict wk,
+              cs_real_t        *restrict dk,
+              cs_real_t        *restrict qk,
+              cs_real_t        *restrict rk,
+              cs_real_t        *restrict vk,
+              cs_real_t        *restrict vx)
+{
+  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+
+  if (ii < n) {
+    dk[ii] = vk[ii];
+    vx[ii] = vx[ii] + ak_rk * vk[ii];
+
+    qk[ii] = wk[ii];
+    rk[ii] = rk[ii] - ak_rk * wk[ii];
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Compute y <- y - x and stage 1 of resulting y.y.
  *
  * This call must be followed by
@@ -690,6 +788,137 @@ _dot_product(const cs_sles_it_t  *c,
 #endif /* defined(HAVE_MPI) */
 
   return s;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute dot product x.y, summing result over all threads of a block.
+ *
+ * blockSize must be a power of 2.
+ *
+ * \param[in]   n      array size
+ * \param[in]   v      v vector
+ * \param[in]   w      w vector
+ * \param[in]   q      q vector
+ * \param[in]   r      r vector
+ * \param[out]  b_res  result of s = x.x
+ */
+/*----------------------------------------------------------------------------*/
+
+template <size_t blockSize, typename T>
+__global__ static void
+_dot_products_vr_vw_vq_rr_stage_1_of_2(cs_lnum_t    n,
+                                       const T     *v,
+                                       const T     *w,
+                                       const T     *q,
+                                       const T     *r,
+                                       double      *b_res)
+{
+  __shared__ double stmp[blockSize*4];
+
+  cs_lnum_t tid = threadIdx.x;
+  size_t grid_size = blockDim.x*gridDim.x;
+
+  stmp[tid*4] = 0.;
+  stmp[tid*4 + 1] = 0.;
+  stmp[tid*4 + 2] = 0.;
+  stmp[tid*4 + 3] = 0.;
+
+  for (cs_lnum_t i = blockIdx.x*(blockDim.x) + tid;
+       i < n;
+       i += grid_size) {
+    stmp[tid*4]     += static_cast<double>(v[i] * r[i]);
+    stmp[tid*4 + 1] += static_cast<double>(v[i] * w[i]);
+    stmp[tid*4 + 2] += static_cast<double>(v[i] * q[i]);
+    stmp[tid*4 + 3] += static_cast<double>(r[i] * r[i]);
+  }
+
+  // Output: b_res for this block
+
+  cs_blas_cuda_block_reduce_sum<blockSize, 4>(stmp, tid, b_res);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute 4 dot products, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   v      <-- first vector
+ *   r      <-- second vector
+ *   w      <-- third vector
+ *   q      <-- fourth vector
+ *   s1     --> result of s1 = v.r
+ *   s2     --> result of s2 = v.w
+ *   s3     --> result of s3 = v.q
+ *   s4     --> result of s4 = r.r
+ *----------------------------------------------------------------------------*/
+
+inline static void
+_dot_products_vr_vw_vq_rr(const cs_sles_it_t  *c,
+                          cudaStream_t         stream,
+                          const cs_real_t     *v,
+                          const cs_real_t     *r,
+                          const cs_real_t     *w,
+                          const cs_real_t     *q,
+                          double              *s1,
+                          double              *s2,
+                          double              *s3,
+                          double              *s4)
+{
+  double s[4];
+
+  /* Alternatives (need to set option for this) */
+
+  cudaStreamSynchronize(stream);
+
+  cs_lnum_t n = c->setup_data->n_rows;
+
+  const unsigned int block_size = 256;
+  unsigned int grid_size = cs_cuda_grid_size(n, block_size);
+
+  if (_use_cublas == false) {
+    double *sum_block, *_s;
+    cs_blas_cuda_get_2_stage_reduce_buffers(n, 4, grid_size, sum_block, _s);
+
+    _dot_products_vr_vw_vq_rr_stage_1_of_2
+      <block_size><<<grid_size, block_size, 0, stream>>>
+      (n, v, w, q, r, sum_block);
+    cs_blas_cuda_reduce_single_block<block_size, 4><<<1, block_size, 0, stream>>>
+      (grid_size, sum_block, _s);
+
+    _sync_reduction_sum(c, stream, 4, _s);
+
+    for (int i = 0; i < 4; i++)
+      s[i] = _s[i];
+  }
+
+#if defined(HAVE_CUBLAS)
+
+  if (_use_cublas) {
+
+    s[0] = cs_blas_cublas_dot(c->setup_data->n_rows, v, r);
+    s[1] = cs_blas_cublas_dot(c->setup_data->n_rows, v, w);
+    s[2] = cs_blas_cublas_dot(c->setup_data->n_rows, v, q);
+    s[3] = cs_blas_cublas_dot(c->setup_data->n_rows, r, r);
+
+#if defined(HAVE_MPI)
+
+    if (c->comm != MPI_COMM_NULL) {
+      double _sum[4];
+      MPI_Allreduce(MPI_IN_PLACE, s, 4, MPI_DOUBLE, MPI_SUM, c->comm);
+      memcpy(s, _sum, 4*sizeof(double));
+    }
+
+#endif /* defined(HAVE_MPI) */
+
+  }
+
+#endif /* defined(HAVE_CUBLAS) */
+
+  *s1 = s[0];
+  *s2 = s[1];
+  *s3 = s[2];
+  *s4 = s[3];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1084,8 +1313,183 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
   if (_aux_vectors != (cs_real_t *)aux_vectors)
     cudaFree(_aux_vectors);
 
-  CS_FREE_HD(res);
+  cs_matrix_spmv_cuda_set_stream(0);
 
+  cudaStreamDestroy(stream);
+  cudaStreamDestroy(stream_pf);
+
+  return cvg;
+}
+
+/*----------------------------------------------------------------------------
+ * Solution of A.vx = Rhs using flexible preconditioned conjugate gradient.
+ *
+ * Compared to standard PCG, FCG supports variable preconditioners.
+ *
+ * This variant, described in \cite Notay:2015, allows computing the
+ * required inner products with a single global communication.
+ *
+ * On entry, vx is considered initialized.
+ *
+ * parameters:
+ *   c               <-- pointer to solver context info
+ *   a               <-- matrix
+ *   diag_block_size <-- diagonal block size
+ *   convergence     <-- convergence information structure
+ *   rhs             <-- right hand side
+ *   vx              <-> system solution
+ *   aux_size        <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors     --- optional working area (allocation otherwise)
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+cs_sles_convergence_state_t
+cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
+                    const cs_matrix_t         *a,
+                    cs_lnum_t                  diag_block_size,
+                    cs_sles_it_convergence_t  *convergence,
+                    const cs_real_t           *rhs,
+                    cs_real_t                 *restrict vx,
+                    size_t                     aux_size,
+                    void                      *aux_vectors)
+{
+  cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
+
+  int device_id = cs_get_device_id();
+
+  cudaStream_t stream, stream_pf;
+  cudaStreamCreate(&stream_pf);
+  cudaStreamCreate(&stream);
+
+  assert(c->setup_data != NULL);
+
+  cs_real_t  *_aux_vectors;
+  cs_real_t  *restrict rk, *restrict vk, *restrict wk;
+  cs_real_t  *restrict dk, *restrict qk;
+
+  unsigned n_iter = 0;
+
+  /* Allocate or map work arrays */
+  /*-----------------------------*/
+
+  assert(c->setup_data != NULL);
+
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
+  const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
+
+  size_t vec_size = n_cols * sizeof(cs_real_t);
+
+  cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
+  cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
+
+  if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED)
+    cudaMemPrefetchAsync(vx, vec_size, device_id, stream_pf);
+
+  if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
+    cudaMemPrefetchAsync(rhs, vec_size, device_id, stream_pf);
+  else if (amode_rhs == CS_ALLOC_HOST) {
+    cudaMemPrefetchAsync(rhs, vec_size, device_id, stream_pf);
+  }
+
+  {
+    const size_t n_wa = 5;
+    const size_t wa_size = CS_SIMD_SIZE(n_cols);
+
+    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+      // CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, CS_ALLOC_DEVICE);
+      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, CS_ALLOC_HOST_DEVICE_SHARED);
+    else
+      _aux_vectors = (cs_real_t *)aux_vectors;
+
+    rk = _aux_vectors;
+    vk = _aux_vectors + wa_size;
+    wk = _aux_vectors + wa_size*2;
+    dk = _aux_vectors + wa_size*3;
+    qk = _aux_vectors + wa_size*4;
+  }
+
+  const unsigned int blocksize = CS_BLOCKSIZE;
+
+  cs_cuda_grid_size(n_rows, blocksize);
+
+  unsigned int gridsize = cs_cuda_grid_size(n_rows, blocksize);
+  unsigned int gridsize_blas1 = min(gridsize, 640);
+
+  cs_blas_cuda_set_stream(stream);
+  cs_matrix_spmv_cuda_set_stream(stream);
+
+  /* Initialize iterative calculation */
+  /*----------------------------------*/
+
+  /* Residue and descent direction */
+
+  cs_matrix_vector_multiply_d(a, vx, rk);  /* rk = A.x0 */
+
+  _fcg_init<<<gridsize, blocksize, 0, stream>>>
+    (n_rows, rhs, rk, qk);
+
+  double rho_km1 = 0;
+
+  while (cvg == CS_SLES_ITERATING) {
+
+    /* Preconditioning */
+
+    c->setup_data->pc_apply(c->setup_data->pc_context, rk, vk);
+
+    cs_matrix_vector_multiply_d(a, vk, wk);
+
+    /* Compute residue and prepare descent parameter */
+
+    double alpha_k, beta_k, gamma_k, residue;
+
+    _dot_products_vr_vw_vq_rr(c, stream, vk, rk, wk, qk,
+                              &alpha_k, &beta_k, &gamma_k, &residue);
+
+    residue = sqrt(residue);
+
+    /* Convergence test for end of previous iteration */
+
+    if (n_iter > 0)
+      cvg = cs_sles_it_convergence_test(c, n_iter, residue, convergence);
+    else
+      c->setup_data->initial_residue = residue;
+
+    if (cvg != CS_SLES_ITERATING)
+      break;
+
+    /* Complete descent parameter computation and matrix.vector product */
+
+    if (n_iter > 0) {
+
+      cs_real_t gk_rk1 = (abs(rho_km1) > DBL_MIN) ? gamma_k / rho_km1 : 0.;
+      cs_real_t rho_k = beta_k - gamma_k * gk_rk1;
+      cs_real_t ak_rk = (abs(rho_k) > DBL_MIN) ? alpha_k / rho_k : 0.;
+
+      _fcg_update_n<<<gridsize, blocksize, 0, stream>>>
+        (n_rows, gk_rk1, ak_rk, wk, dk, qk, rk, vk, vx);
+
+      rho_km1 = rho_k;
+    }
+    else { /* n_iter == 0 */
+
+      cs_real_t rho_k = beta_k;
+      cs_real_t ak_rk = (abs(rho_k) > DBL_MIN) ? alpha_k / rho_k : 0.;
+
+      _fcg_update_0<<<gridsize, blocksize, 0, stream>>>
+        (n_rows, ak_rk, wk, dk, qk, rk, vk, vx);
+
+      rho_km1 = rho_k;
+    }
+
+    n_iter += 1;
+  } /* Needs iterating */
+
+  if (_aux_vectors != aux_vectors)
+    CS_FREE_HD(_aux_vectors);
+
+  cs_blas_cuda_set_stream(0);
   cs_matrix_spmv_cuda_set_stream(0);
 
   cudaStreamDestroy(stream);

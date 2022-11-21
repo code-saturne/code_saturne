@@ -252,6 +252,55 @@ _convergence_test(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute 4 dot products, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   v      <-- first vector
+ *   r      <-- second vector
+ *   w      <-- third vector
+ *   q      <-- fourth vector
+ *   s1     --> result of s1 = v.r
+ *   s2     --> result of s2 = v.w
+ *   s3     --> result of s3 = v.q
+ *   s4     --> result of s4 = r.r
+ *----------------------------------------------------------------------------*/
+
+inline static void
+_dot_products_vr_vw_vq_rr(const cs_sles_it_t  *c,
+                          const cs_real_t     *v,
+                          const cs_real_t     *r,
+                          const cs_real_t     *w,
+                          const cs_real_t     *q,
+                          double              *s1,
+                          double              *s2,
+                          double              *s3,
+                          double              *s4)
+{
+  double s[4];
+
+  /* Use two separate call as cs_blas.c does not yet hav matching call */
+
+  cs_dot_xy_yz(c->setup_data->n_rows, w, v, q, s+1, s+2);
+  cs_dot_xx_xy(c->setup_data->n_rows, r, v, s+3, s);
+
+#if defined(HAVE_MPI)
+
+  if (c->comm != MPI_COMM_NULL) {
+    double _sum[4];
+    MPI_Allreduce(s, _sum, 4, MPI_DOUBLE, MPI_SUM, c->comm);
+    memcpy(s, _sum, 4*sizeof(double));
+  }
+
+#endif /* defined(HAVE_MPI) */
+
+  *s1 = s[0];
+  *s2 = s[1];
+  *s3 = s[2];
+  *s4 = s[3];
+}
+
+/*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using preconditioned conjugate gradient.
  *
  * Parallel-optimized version, groups dot products, at the cost of
@@ -1575,11 +1624,10 @@ _jacobi(cs_sles_it_t              *c,
         void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  cs_lnum_t  ii;
-  double  res2, residue;
   cs_real_t *_aux_vectors;
   cs_real_t *restrict rk;
 
+  double residue = -1;
   unsigned n_iter = 0;
 
   /* Allocate or map work arrays */
@@ -1607,7 +1655,7 @@ _jacobi(cs_sles_it_t              *c,
   const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
 
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++) {
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
     rk[ii] = vx[ii];
   }
 
@@ -1624,27 +1672,40 @@ _jacobi(cs_sles_it_t              *c,
 
     cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, rk, vx);
 
-    res2 = 0.0;
+    double  res2 = 0.0;
 
-#   pragma omp parallel for reduction(+:res2) if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++) {
-      vx[ii] = (rhs[ii]-vx[ii])*ad_inv[ii];
-      double r = ad[ii] * (vx[ii]-rk[ii]);
-      res2 += (r*r);
-      rk[ii] = vx[ii];
-    }
+    if (convergence->precision > 0. || c->plot != NULL) {
+
+#     pragma omp parallel for reduction(+:res2) if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+        vx[ii] = (rhs[ii]-vx[ii])*ad_inv[ii];
+        double r = ad[ii] * (vx[ii]-rk[ii]);
+        res2 += (r*r);
+        rk[ii] = vx[ii];
+      }
 
 #if defined(HAVE_MPI)
 
-    if (c->comm != MPI_COMM_NULL) {
-      double _sum;
-      MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
-      res2 = _sum;
-    }
+      if (c->comm != MPI_COMM_NULL) {
+        double _sum;
+        MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+        res2 = _sum;
+      }
 
 #endif /* defined(HAVE_MPI) */
 
-    residue = sqrt(res2); /* Actually, residue of previous iteration */
+      residue = sqrt(res2); /* Actually, residue of previous iteration */
+
+    }
+    else {
+
+#     pragma omp parallel for if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+        vx[ii] = (rhs[ii]-vx[ii])*ad_inv[ii];
+        rk[ii] = vx[ii];
+      }
+
+    }
 
     /* Convergence test */
 
@@ -4196,6 +4257,12 @@ cs_sles_it_setup(void               *context,
 
   case CS_SLES_FCG:
     c->solve = _flexible_conjugate_gradient;
+#if defined(HAVE_CUDA)
+    if (on_device) {
+      c->on_device = true;
+      c->solve = cs_sles_it_cuda_fcg;
+    }
+#endif
     break;
 
   case CS_SLES_IPCG:

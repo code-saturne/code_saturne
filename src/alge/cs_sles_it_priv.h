@@ -483,55 +483,6 @@ _dot_products_xx_yy_xy_xz_yz(const cs_sles_it_t  *c,
 }
 
 /*----------------------------------------------------------------------------
- * Compute 4 dot products, summing result over all ranks.
- *
- * parameters:
- *   c      <-- pointer to solver context info
- *   v      <-- first vector
- *   r      <-- second vector
- *   w      <-- third vector
- *   q      <-- fourth vector
- *   s1     --> result of s1 = v.r
- *   s2     --> result of s2 = v.w
- *   s3     --> result of s3 = v.q
- *   s4     --> result of s4 = r.r
- *----------------------------------------------------------------------------*/
-
-inline static void
-_dot_products_vr_vw_vq_rr(const cs_sles_it_t  *c,
-                          const cs_real_t     *v,
-                          const cs_real_t     *r,
-                          const cs_real_t     *w,
-                          const cs_real_t     *q,
-                          double              *s1,
-                          double              *s2,
-                          double              *s3,
-                          double              *s4)
-{
-  double s[4];
-
-  /* Use two separate call as cs_blas.c does not yet hav matching call */
-
-  cs_dot_xy_yz(c->setup_data->n_rows, w, v, q, s+1, s+2);
-  cs_dot_xx_xy(c->setup_data->n_rows, r, v, s+3, s);
-
-#if defined(HAVE_MPI)
-
-  if (c->comm != MPI_COMM_NULL) {
-    double _sum[4];
-    MPI_Allreduce(s, _sum, 4, MPI_DOUBLE, MPI_SUM, c->comm);
-    memcpy(s, _sum, 4*sizeof(double));
-  }
-
-#endif /* defined(HAVE_MPI) */
-
-  *s1 = s[0];
-  *s2 = s[1];
-  *s3 = s[2];
-  *s4 = s[3];
-}
-
-/*----------------------------------------------------------------------------
  * Block Jacobi utilities.
  * Compute forward and backward to solve an LU 3*3 system.
  *
