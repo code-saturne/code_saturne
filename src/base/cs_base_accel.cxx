@@ -89,10 +89,8 @@ typedef struct
  *  Global variables
  *============================================================================*/
 
-#if defined(HAVE_OPENMP_TARGET)
-#if !defined(__INTEL_LLVM_COMPILER)
+#if defined(HAVE_OPENMP_TARGET_USM)
 #pragma omp requires unified_shared_memory
-#endif
 #endif
 
 static std::map<const void *, _cs_base_accel_mem_map> _hd_alloc_map;

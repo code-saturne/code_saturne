@@ -557,6 +557,7 @@ if test "x$cs_have_openmp" = "xyes" ; then
     fi
   else
     cs_have_openmp=no
+    cs_have_openmp_target=no
     CFLAGS="$saved_CFLAGS"
     CXXFLAGS="$saved_CXXFLAGS"
     FCFLAGS="$saved_FCFLAGS"
@@ -606,6 +607,20 @@ if test "x$auto_flags" = "xyes" ; then
     CXXFLAGS="${CXXFLAGS} ${cxxflags_default_omp_ad}"
     FCFLAGS="${FCFLAGS} ${fcflags_default_omp_ad}"
     LDFLAGS="${LDFLAGS} ${cflags_default_omp_ad}"
+
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+[[#include <omp.h>
+#pragma omp requires unified_shared_memory]],
+[[]])],
+                       [AC_MSG_RESULT([OpenMP target handles unified shared memory])
+                        cs_have_openmp_target_usm=yes
+                       ],
+                       [AC_MSG_RESULT([OpenMP target does not handle unified shared memory])
+                        cs_have_openmp_target_usm=no
+                       ])
+    if test "x$cs_have_openmp_target_usm" = "xyes" ; then
+     AC_DEFINE([HAVE_OPENMP_TARGET_USM], 1, [openmp target unified shared memory support])
+    fi
   fi
 fi
 
@@ -1252,6 +1267,9 @@ fi
 echo " OpenMP support: "$cs_have_openmp""
 if test x$cs_have_openmp = xyes ; then
   echo " OpenMP accelerator support: "$cs_have_openmp_target""
+  if test "x$cs_have_openmp_target" = "xyes" ; then
+    echo "   Unified shared memory support: "$cs_have_openmp_target_usm""
+  fi
   echo " OpenMP Fortran support: "$cs_have_openmp_f""
 fi
 echo " CUDA support: "$cs_have_cuda""
