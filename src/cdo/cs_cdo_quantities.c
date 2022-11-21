@@ -694,6 +694,7 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
 {
   cs_flag_t  masks[2] = { CS_CDO_QUANTITIES_VB_SCHEME |
                           CS_CDO_QUANTITIES_VCB_SCHEME };
+
   if (!cs_flag_at_least(cs_cdo_quantities_flag, 2, masks))
     return;
 
@@ -758,6 +759,11 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
     } /* Loop on cell faces */
 
   } /* Loop on cells */
+
+  /* Compute the (full) dual_volume associated to each vertex (this includes a
+     parallel synchronization) */
+
+  cs_cdo_quantities_compute_dual_volumes(quant, topo, &(quant->dual_vol));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1156,6 +1162,7 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   /* ----------------------- */
 
   /* Compute dual cell volume attached to each vertex in a cell */
+
   _compute_dcell_quantities(topo, cdoq);
 
   /* Edge-related quantities */
