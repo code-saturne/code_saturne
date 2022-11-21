@@ -1481,12 +1481,13 @@ _create_tracer(cs_gwf_tracer_model_t    tr_model,
 
   /* Default advection scheme: centered scheme with 20/100 of upwinding */
 
+  cs_equation_param_set(tr_eqp, CS_EQKEY_ADV_FORMULATION, "non_conservative");
   cs_equation_param_set(tr_eqp, CS_EQKEY_ADV_SCHEME, "mix_centered_upwind");
-  cs_equation_param_set(tr_eqp, CS_EQKEY_ADV_UPWIND_PORTION, "0.2");
+  cs_equation_param_set(tr_eqp, CS_EQKEY_ADV_UPWIND_PORTION, "0.25");
 
   /* Linear algebra */
 
-  cs_equation_param_set(tr_eqp, CS_EQKEY_ITSOL, "gcr");
+  cs_equation_param_set(tr_eqp, CS_EQKEY_ITSOL, "bicgstab2");
   cs_equation_param_set(tr_eqp, CS_EQKEY_PRECOND, "jacobi");
   cs_equation_param_set(tr_eqp, CS_EQKEY_ITSOL_RTOL, "1e-8");
 
