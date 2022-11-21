@@ -650,8 +650,7 @@ _create_property(const char           *name,
 
   size_t  len = strlen(name);
   BFT_MALLOC(pty->name, len + 1, char);
-  strncpy(pty->name, name, len);
-  pty->name[len] = '\0';
+  strncpy(pty->name, name, len + 1);
 
   pty->id = id;
   pty->type = type;
