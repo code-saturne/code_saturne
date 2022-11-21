@@ -207,31 +207,32 @@ struct _gwf_tracer_t{
   /* Pointers to functions */
 
   /*!
-   * \var update_diff_tensor
-   *      Function used to update the diffusion tensor (dispersion + diffusion)
+   * \var update_diff_pty
+   *      Function used to update the diffusion property which is a tensor in
+   *      the most generic case (dispersion + diffusion)
    *
    * \var update_precipitation
    *      Function used to update the quantities related to the precipitation
-   * model
+   *      model
    *
    * \var finalize_setup
-   *       This is a function pointer to finalize the setup of a tracer
-   * equation. There is a function pointer by default but this can be
-   * overloaded by a user-defined function in the case of a user-defined
-   * tracer.
+   *      This is a function pointer to finalize the setup of a tracer
+   *      equation. There is a function pointer by default but this can be
+   *      overloaded by a user-defined function in the case of a user-defined
+   *      tracer.
    *
    * \var init_setup
    *      This is a function pointer to initialize the setup (adding terms in
-   * an equation). At this stage, the mesh has not been loaded.  There is a
-   * function pointer by default but this can be overloaded by a user-defined
-   * function in the case of a user-defined tracer.
+   *      an equation). At this stage, the mesh has not been loaded.  There is
+   *      a function pointer by default but this can be overloaded by a
+   *      user-defined function in the case of a user-defined tracer.
    *
    * \var free_context
    *      Function to free quantities or structure associated to the context
-   * structure of a tracer.
+   *      structure of a tracer.
    */
 
-  cs_gwf_tracer_update_t           *update_diff_tensor;
+  cs_gwf_tracer_update_t           *update_diff_pty;
   cs_gwf_tracer_update_t           *update_precipitation;
   cs_gwf_tracer_finalize_setup_t   *finalize_setup;
   cs_gwf_tracer_init_setup_t       *init_setup;
@@ -380,7 +381,9 @@ cs_gwf_tracer_finalize_setup(const cs_cdo_connect_t      *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the diffusion tensor related to each tracer equation
+ * \brief  Update the diffusion property related to each tracer equation
+ *         The update strategy depends on the soil/tracer features and also
+ *         on the hydraulic model.
  *
  * \param[in]  ts        pointer to a cs_time_step_t structure
  * \param[in]  mesh      pointer to a cs_mesh_t structure
@@ -390,10 +393,10 @@ cs_gwf_tracer_finalize_setup(const cs_cdo_connect_t      *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tracer_update_diff_tensor(const cs_time_step_t        *ts,
-                                 const cs_mesh_t             *mesh,
-                                 const cs_cdo_connect_t      *connect,
-                                 const cs_cdo_quantities_t   *quant);
+cs_gwf_tracer_update_diff_pty(const cs_time_step_t        *ts,
+                              const cs_mesh_t             *mesh,
+                              const cs_cdo_connect_t      *connect,
+                              const cs_cdo_quantities_t   *quant);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -4163,10 +4163,10 @@ cs_gwf_update(const cs_mesh_t             *mesh,
               __func__);
   }
 
-  /* Update the diffusivity tensor associated to each tracer equation since the
-     Darcy velocity may have changed */
+  /* Update the diffusivity property associated to each tracer equation since
+     the Darcy velocity may have changed. */
 
-  cs_gwf_tracer_update_diff_tensor(ts, mesh, connect, quant);
+  cs_gwf_tracer_update_diff_pty(ts, mesh, connect, quant);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -445,10 +445,10 @@ _get_reaction_pty4std_tracer_cw(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update physical properties for a (non-user) tracer model.
+ * \brief  Update the diffusion property for a (non-user) tracer model.
  *         Only the diffusivity is updated (reaction property and time
- *         property are defined by function).
- *         Case of a fully saturated model.
+ *         property are defined and updated thanks to a function).
+ *         Case of a diffusity defined by a value.
  *         Generic function relying on the prototype cs_gwf_tracer_update_t
  *
  * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
@@ -460,11 +460,11 @@ _get_reaction_pty4std_tracer_cw(const cs_cell_mesh_t     *cm,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_sat_diff_pty(cs_gwf_tracer_t             *tracer,
-                     const cs_time_step_t        *ts,
-                     const cs_mesh_t             *mesh,
-                     const cs_cdo_connect_t      *connect,
-                     const cs_cdo_quantities_t   *quant)
+_update_diff_value(cs_gwf_tracer_t             *tracer,
+                   const cs_time_step_t        *ts,
+                   const cs_mesh_t             *mesh,
+                   const cs_cdo_connect_t      *connect,
+                   const cs_cdo_quantities_t   *quant)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
@@ -479,8 +479,6 @@ _update_sat_diff_pty(cs_gwf_tracer_t             *tracer,
   cs_gwf_tracer_default_context_t  *tc = tracer->context;
   assert(tc != NULL);
 
-  const cs_real_t  *velocity = tc->darcy_velocity_field->val;
-
   const int  n_soils = cs_gwf_get_n_soils();
   for (int soil_id = 0; soil_id < n_soils; soil_id++) {
 
@@ -488,38 +486,15 @@ _update_sat_diff_pty(cs_gwf_tracer_t             *tracer,
 
     const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
     const double  wmd = tc->wmd[soil_id];
-    const double  at = tc->alpha_t[soil_id];
-    const double  al = tc->alpha_l[soil_id];
+
+    assert(fabs(tc->alpha_t[soil_id]) < DBL_MIN &&
+           fabs(tc->alpha_l[soil_id]) < DBL_MIN);
 
     for (cs_lnum_t i = 0; i < z->n_elts; i++) {
 
       const cs_lnum_t  c_id = (z->elt_ids == NULL) ? i : z->elt_ids[i];
-      const cs_real_t  *v = velocity + 3*c_id;
-      const double  v2[3] = {v[0]*v[0], v[1]*v[1], v[2]*v[2]};
-      const double  vnorm = sqrt(v2[0] + v2[1] + v2[2]);
-      const double  coef1 = wmd + at*vnorm;
 
-      double  delta = 0.;
-      if (vnorm > cs_math_zero_threshold)
-        delta = (al - at)/vnorm;
-
-      const double  dcv[3] = {delta*v[0], delta*v[1], delta*v[2]};
-
-      cs_real_t  *_r = values + 9*c_id;
-      for (int ki = 0; ki < 3; ki++) {
-
-        /* Diagonal terms */
-
-        _r[3*ki+ki] = coef1 + delta*v2[ki];
-
-        /* Extra-diagonal terms */
-
-        for (int kj = ki + 1; kj < 3; kj++) {
-          _r[3*ki+kj] = dcv[ki]*v[kj];
-          _r[3*kj+ki] = _r[3*ki+kj]; /* tensor is symmetric by construction */
-        }
-
-      }
+      values[c_id] = wmd;
 
     } /* Loop on cells attached to this soil */
 
@@ -531,6 +506,7 @@ _update_sat_diff_pty(cs_gwf_tracer_t             *tracer,
  * \brief  Update physical properties for a (non-user) tracer model.
  *         Only the diffusivity is updated (reaction property and time
  *         property are defined by function).
+ *         Case of an unsaturated model and diffusity defined by a tensor.
  *         Generic function relying on the prototype cs_gwf_tracer_update_t
  *
  * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
@@ -542,11 +518,11 @@ _update_sat_diff_pty(cs_gwf_tracer_t             *tracer,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_diff_pty(cs_gwf_tracer_t             *tracer,
-                 const cs_time_step_t        *ts,
-                 const cs_mesh_t             *mesh,
-                 const cs_cdo_connect_t      *connect,
-                 const cs_cdo_quantities_t   *quant)
+_update_diff_tensor(cs_gwf_tracer_t             *tracer,
+                    const cs_time_step_t        *ts,
+                    const cs_mesh_t             *mesh,
+                    const cs_cdo_connect_t      *connect,
+                    const cs_cdo_quantities_t   *quant)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
@@ -1174,7 +1150,7 @@ _create_default_tracer_context(cs_gwf_tracer_t    *tracer)
 
   /* Common to all default tracers */
 
-  tracer->update_diff_tensor = _update_diff_pty;
+  tracer->update_diff_pty = NULL;
   tracer->free_context = _free_default_tracer_context;
 }
 
@@ -1255,7 +1231,7 @@ _create_tracer(cs_gwf_tracer_model_t    tr_model,
 
   /* Function pointers */
 
-  tracer->update_diff_tensor = NULL;
+  tracer->update_diff_pty = NULL;
   tracer->update_precipitation = NULL;
   tracer->context = NULL;
   tracer->free_context = NULL;
@@ -1676,7 +1652,9 @@ cs_gwf_tracer_finalize_setup(const cs_cdo_connect_t      *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the diffusion tensor related to each tracer equation
+ * \brief  Update the diffusion property related to each tracer equation
+ *         The update strategy depends on the soil/tracer features and also
+ *         on the hydraulic model.
  *
  * \param[in]  ts        pointer to a cs_time_step_t structure
  * \param[in]  mesh      pointer to a cs_mesh_t structure
@@ -1686,10 +1664,10 @@ cs_gwf_tracer_finalize_setup(const cs_cdo_connect_t      *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tracer_update_diff_tensor(const cs_time_step_t        *ts,
-                                 const cs_mesh_t             *mesh,
-                                 const cs_cdo_connect_t      *connect,
-                                 const cs_cdo_quantities_t   *quant)
+cs_gwf_tracer_update_diff_pty(const cs_time_step_t        *ts,
+                              const cs_mesh_t             *mesh,
+                              const cs_cdo_connect_t      *connect,
+                              const cs_cdo_quantities_t   *quant)
 {
   if (_n_tracers == 0)
     return;
@@ -1705,8 +1683,8 @@ cs_gwf_tracer_update_diff_tensor(const cs_time_step_t        *ts,
     if (tracer == NULL)
       continue;
 
-    if (tracer->update_diff_tensor != NULL)
-      tracer->update_diff_tensor(tracer, ts, mesh, connect, quant);
+    if (tracer->update_diff_pty != NULL)
+      tracer->update_diff_pty(tracer, ts, mesh, connect, quant);
 
   } /* Loop on tracers */
 }
@@ -1884,18 +1862,25 @@ cs_gwf_tracer_default_init_setup(cs_gwf_tracer_t     *tracer)
   cs_gwf_tracer_default_context_t  *tc = tracer->context;
   cs_equation_param_t  *eqp = cs_equation_get_param(tracer->equation);
 
-  const int n_soils = cs_gwf_get_n_soils();
+  const int  n_soils = cs_gwf_get_n_soils();
   const double  thd = 100*DBL_MIN; /* threshold to avoid a wrong activation */
   const char *eq_name = cs_equation_get_name(tracer->equation);
 
-  bool  do_diffusion = false, do_reaction = false;
+  /* Loop on soils to check if a reaction or a diffusion term is needed */
 
-  /* Loop on soils to check in a reaction term is needed */
+  bool  do_diffusion = false, do_reaction = false;
+  cs_property_type_t  diff_pty_type = CS_PROPERTY_ISO;
+
   for (int soil_id = 0; soil_id < n_soils; soil_id++) {
 
-    if (fabs(tc->alpha_t[soil_id]) > thd) do_diffusion = true;
-    if (fabs(tc->alpha_l[soil_id]) > thd) do_diffusion = true;
+    if (fabs(tc->alpha_t[soil_id]) > thd)
+      do_diffusion = true, diff_pty_type = CS_PROPERTY_ANISO;
+
+    if (fabs(tc->alpha_l[soil_id]) > thd)
+      do_diffusion = true, diff_pty_type = CS_PROPERTY_ANISO;
+
     if (tc->wmd[soil_id] > thd) do_diffusion = true;
+
     if (fabs(tc->reaction_rate[soil_id]) > thd) do_reaction = true;
 
   }
@@ -1916,14 +1901,18 @@ cs_gwf_tracer_default_init_setup(cs_gwf_tracer_t     *tracer)
     }
     sprintf(name, "%s_diffusivity", eq_name);
 
-    cs_property_t *diff_pty = cs_property_add(name, CS_PROPERTY_ANISO);
+    cs_property_t  *diff_pty = cs_property_add(name, diff_pty_type);
 
     cs_equation_add_diffusion(eqp, diff_pty);
 
     /* Create a new field related to this property */
+
     const int  pty_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
     const bool  pty_has_previous = false; /* no previous snapshot */
-    const int  field_dim = 9;             /* anisotropic */
+
+    int  field_dim = 9;         /* anisotropic case */
+    if (cs_property_is_isotropic(diff_pty))
+      field_dim = 1;            /* isotropic case */
 
     tracer->diffusivity = cs_field_create(name,
                                           pty_mask,
@@ -1933,7 +1922,7 @@ cs_gwf_tracer_default_init_setup(cs_gwf_tracer_t     *tracer)
 
     cs_field_set_key_int(tracer->diffusivity, cs_field_key_id("log"), 1);
 
-  } /* diffusion */
+  } /* Has diffusion */
 
   if (do_reaction) { /* Add a new reaction property for this equation */
 
@@ -1944,11 +1933,11 @@ cs_gwf_tracer_default_init_setup(cs_gwf_tracer_t     *tracer)
     }
     sprintf(name, "%s_reaction", eq_name);
 
-    cs_property_t *r_pty = cs_property_add(name, CS_PROPERTY_ISO);
+    cs_property_t  *r_pty = cs_property_add(name, CS_PROPERTY_ISO);
 
     tracer->reaction_id = cs_equation_add_reaction(eqp, r_pty);
 
-  } /* reaction */
+  } /* Has reaction */
 
   if (tracer->model & CS_GWF_TRACER_PRECIPITATION) {
 
@@ -2001,7 +1990,7 @@ cs_gwf_tracer_sat_finalize_setup(const cs_cdo_connect_t     *connect,
 
   cs_gwf_tracer_default_context_t  *tc = tracer->context;
 
-  /* Set additional (pre-defined) fields */
+  /* Set additional (predefined) fields */
 
   tc->darcy_velocity_field =
     cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
@@ -2026,17 +2015,38 @@ cs_gwf_tracer_sat_finalize_setup(const cs_cdo_connect_t     *connect,
 
   if (eq_flag & CS_EQUATION_DIFFUSION) { /* Setup the diffusion property */
 
-    tracer->update_diff_tensor = _update_sat_diff_pty;
-
     assert(tracer->diffusivity != NULL &&
            tracer->diffusivity->val != NULL); /* Should be done previously */
 
     cs_property_t  *diff_pty =
       cs_equation_get_diffusion_property(tracer->equation);
 
-    cs_property_def_by_field(diff_pty, tracer->diffusivity);
+    if (cs_property_is_isotropic(diff_pty)) {
 
-  } /* diffusion */
+      tracer->update_diff_pty = NULL; /* No need. Value is constant */
+
+      for (int soil_id = 0; soil_id < n_soils; soil_id++) {
+
+        cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
+        const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
+
+        cs_property_def_iso_by_value(diff_pty, z->name, tc->wmd[soil_id]);
+
+      } /* Loop on soils */
+
+      /* Store the value of the diffusivity inside the field values */
+
+      cs_property_eval_at_cells(0, diff_pty, tracer->diffusivity->val);
+
+    }
+    else {
+
+      tracer->update_diff_pty = _update_diff_tensor;
+      cs_property_def_by_field(diff_pty, tracer->diffusivity);
+
+    }
+
+  } /* Has diffusion */
 
   if (eq_flag & CS_EQUATION_REACTION) { /* Setup the reaction property */
 
@@ -2058,7 +2068,7 @@ cs_gwf_tracer_sat_finalize_setup(const cs_cdo_connect_t     *connect,
 
     } /* Loop on soils */
 
-  } /* reaction */
+  } /* Has reaction */
 
   /* Precipitation modelling */
 
@@ -2127,7 +2137,12 @@ cs_gwf_tracer_unsat_finalize_setup(const cs_cdo_connect_t      *connect,
 
     cs_property_def_by_field(diff_pty, tracer->diffusivity);
 
-  } /* diffusion */
+    if (cs_property_is_isotropic(diff_pty))
+      tracer->update_diff_pty = _update_diff_value;
+    else
+      tracer->update_diff_pty = _update_diff_tensor;
+
+  } /* Has diffusion */
 
   if (eq_flag & CS_EQUATION_REACTION) { /* Setup the reaction property */
 
@@ -2149,7 +2164,7 @@ cs_gwf_tracer_unsat_finalize_setup(const cs_cdo_connect_t      *connect,
 
     } /* Loop on soils */
 
-  } /* reaction */
+  } /* Has reaction */
 
   /* Precipitation modelling */
 
