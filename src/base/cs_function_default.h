@@ -92,7 +92,7 @@ cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id);
  *        refinement generation (i.e. level).
  *
  * \param[in]   location_id  base associated mesh location id
-
+ *
  * \return  pointer to the associated function object in case of success,
  *          or NULL in case of error
  */
@@ -163,13 +163,13 @@ cs_function_define_q_criterion(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Extract optionel boundary face class of element zone id.
+ * \brief Extract optional boundary face class of element zone id.
  *
  * For boundary faces, if no face classes have been defined by
  * \ref cs_boundary_zone_face_class_id the highest boundary face zone id is
  *
  * For cells, the highest cell volume zone id is used.
-
+ *
  * This function matches the cs_eval_at_location_t function profile.
  *
  * \param[in]       location_id  base associated mesh location id
