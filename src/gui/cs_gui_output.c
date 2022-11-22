@@ -176,7 +176,7 @@ _field_post(const char  *field_type,
      hierarchy and "postprocessing_recording" and similar tag) */
 
   bool allow_default_set = true;
-  if (   f->location_id & CS_MESH_LOCATION_BOUNDARY_FACES
+  if (   f->location_id == CS_MESH_LOCATION_BOUNDARY_FACES
       && cs_field_is_key_set(f, k_post))
     allow_default_set = false;
 
