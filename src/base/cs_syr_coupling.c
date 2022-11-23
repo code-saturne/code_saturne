@@ -2352,7 +2352,6 @@ cs_syr_coupling_log_setup(void)
   int n_coupl = _syr_n_couplings;
   const int keysca = cs_field_key_id("scalar_id");
   const int kcpsyr = cs_field_key_id("syrthes_coupling");
-  int icpsyr;
 
   if (n_coupl >= 1) {
 
@@ -2363,17 +2362,17 @@ cs_syr_coupling_log_setup(void)
          "    number of couplings: %d\n"),
          n_coupl);
 
-    int n_surf_coupl = 0, n_vol_coupl = 0, issurf, isvol;
+    int n_surf_coupl = 0, n_vol_coupl = 0;
 
     for (int coupl_id = 0; coupl_id < n_coupl; coupl_id++) {
       cs_syr_coupling_t *syr_coupling = _syr_coupling_by_id(coupl_id);
 
       /* Add a new surface coupling if detected */
-      issurf = _syr_coupling_is_surf(syr_coupling);
+      int issurf = _syr_coupling_is_surf(syr_coupling);
       n_surf_coupl += issurf;
 
       /* Add a new volume coupling if detected */
-      isvol = _syr_coupling_is_vol(syr_coupling);
+      int isvol = _syr_coupling_is_vol(syr_coupling);
       n_vol_coupl += isvol;
     }
 
@@ -2386,28 +2385,26 @@ cs_syr_coupling_log_setup(void)
     cs_log_printf
       (CS_LOG_SETUP,
        _("\n"
-         "   Coupled scalars\n"
-         "------------------------\n"
-         " Scalar    Number icpsyr\n"
-         "------------------------\n"));
-
+         "  Coupled scalars\n"
+         "  ---------------\n"));
 
     for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
-      cs_field_t  *f = cs_field_by_id(f_id);
+      cs_field_t *f = cs_field_by_id(f_id);
       if ((f->type & CS_FIELD_VARIABLE) || (f->type & CS_FIELD_USER)) {
-        int ii = cs_field_get_key_int(f, keysca);
-        if (ii > 0) {
-          icpsyr = cs_field_get_key_int(f, kcpsyr);
-          cs_log_printf
-            (CS_LOG_SETUP,
-             _(" %s %7d %7d\n"),cs_field_get_label(f),ii, icpsyr);
+        if (cs_field_get_key_int(f, keysca) > 0) {
+          int icpsyr = cs_field_get_key_int(f, kcpsyr);
+          if (icpsyr > 0)
+            cs_log_printf
+              (CS_LOG_SETUP,
+               _("  %3d: %s\n"), f->id, f->name);
         }
       }
     }
+
     cs_log_printf
       (CS_LOG_SETUP,
-       _("------------------------\n\n"
-         "    icpsyr = 0 or 1         (1: scalar coupled to SYRTHES)\n"));
+       _("\n"));
+
   }
 }
 
