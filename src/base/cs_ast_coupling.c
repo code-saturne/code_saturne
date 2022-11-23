@@ -275,7 +275,8 @@ _recv_dyn(cs_ast_coupling_t  *ast_cpl)
 
   if (verbosity > 1) {
     bft_printf
-      (_("code_aster: starting receive of values at coupled vertices..."));
+      (_("code_aster: starting MEDCouping receive of values "
+         "at coupled vertices..."));
     bft_printf_flush();
   }
 
@@ -813,23 +814,14 @@ cs_ast_coupling_geometry(cs_lnum_t         n_faces,
 
 #endif
 
-  fvm_nodal_t *fsi_mesh = NULL;
-  {
-    cs_lnum_t *lstfac;
-    BFT_MALLOC(lstfac, n_faces, cs_lnum_t);
-    for (cs_lnum_t i = 0; i < n_faces; i++)
-      lstfac[i] = face_ids[i] + 1;
-
-    fsi_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
-                                              "FSI_mesh_1",
-                                              true, /* include families */
-                                              0,
-                                              n_faces,
-                                              NULL,
-                                              lstfac);
-
-    BFT_FREE(lstfac);
-  }
+  fvm_nodal_t *fsi_mesh
+    = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                     "FSI_mesh_1",
+                                     true, /* include families */
+                                     0,
+                                     n_faces,
+                                     NULL,
+                                     face_ids);
 
   cpl->n_g_faces = n_faces;
   cs_parall_counter(&(cpl->n_g_faces), 1);
@@ -1076,7 +1068,8 @@ cs_ast_coupling_exchange_fields(const cs_real_t  fluid_forces[])
 
   if (verbosity > 1) {
     bft_printf
-      (_("code_aster: starting send of values at coupled faces..."));
+      (_("code_aster: starting MEDCoupling send of values "
+         "at coupled faces..."));
     bft_printf_flush();
   }
 

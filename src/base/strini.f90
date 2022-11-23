@@ -159,7 +159,7 @@ call uiaste(idfstr)
 call usaste(idfstr)
 
 ! TODO set verbosity and visualization levels from GUI and user-defined
-! functions (or build base structure earlier and allow settings=
+! functions (or build base structure earlier and allow settings)
 
 verbosity = 1
 visualization = 1
