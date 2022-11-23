@@ -184,7 +184,11 @@ _omp_target_mem_malloc_device(size_t        n,
                               const char   *file_name,
                               int           line_num)
 {
+#if defined(__INTEL_LLVM_COMPILER)
   void *ptr = omp_target_alloc_device(n, cs_glob_omp_target_device_id);
+#else
+  void *ptr = omp_target_alloc(n, cs_glob_omp_target_device_id);
+#endif
 
   if (ptr == NULL)
     bft_error(file_name, line_num, 0,
@@ -228,7 +232,10 @@ _omp_target_mem_malloc_host(size_t        n,
 #if defined(__INTEL_LLVM_COMPILER)
   ptr = omp_target_alloc_host(n, cs_glob_omp_target_device_id);
 #else
-  assert(0 && "Not implemented yet");
+  bft_error(file_name, line_num, 0,
+            "[OpenMP target error]: unified shared memory not supported\n"
+            "  running %s for variable %s.",
+            __func__, var_name);
 #endif
 
   if (ptr == NULL)
@@ -271,10 +278,17 @@ _omp_target_mem_malloc_managed(size_t        n,
 
   void *ptr = omp_target_alloc_shared(n, cs_glob_omp_target_device_id);
 
+#elif defined(HAVE_OPENMP_TARGET_USM)
+
+  void *ptr = omp_target_alloc(n, cs_glob_omp_target_device_id);
+
 #else
 
-  // requires unified_shared_memory (see global pragma above)
-  void *ptr = omp_target_alloc(n, cs_glob_omp_target_device_id);
+  void *ptr = NULL;
+  bft_error(file_name, line_num, 0,
+            "[OpenMP target error]: unified shared memory not supported\n"
+            "  running %s for variable %s.",
+            __func__, var_name);
 
 #endif
 
