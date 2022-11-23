@@ -1080,7 +1080,7 @@ cs_ast_coupling_exchange_fields(const cs_real_t  fluid_forces[])
     bft_printf_flush();
   }
 
-  cs_paramedmem_send_data(cpl->mc_vertices);
+  cs_paramedmem_send_data(cpl->mc_faces);
 
   if (verbosity > 1) {
     bft_printf(_("[ok]\n"));
