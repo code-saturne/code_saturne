@@ -568,6 +568,7 @@ _set_key(cs_equation_param_t   *eqp,
              strcmp(keyval, "diagonal") == 0) {
       eqp->sles_param->solver = CS_PARAM_ITSOL_JACOBI;
       eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
+      eqp->sles_param->flexible = false;
     }
     else if (strcmp(keyval, "minres") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_MINRES;
@@ -583,6 +584,7 @@ _set_key(cs_equation_param_t   *eqp,
              strcmp(keyval, "mumps_sym") == 0) {
 
       eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
+      eqp->sles_param->flexible = false;
 
       /* Modify the default and check availability of MUMPS solvers */
 
@@ -627,10 +629,12 @@ _set_key(cs_equation_param_t   *eqp,
              strcmp(keyval, "sgs") == 0) {
       eqp->sles_param->solver = CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL;
       eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
+      eqp->sles_param->flexible = true;
     }
     else if (strcmp(keyval, "user") == 0) {
       eqp->sles_param->solver = CS_PARAM_ITSOL_USER_DEFINED;
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
+      eqp->sles_param->flexible = true;
     }
     else if (strcmp(keyval, "none") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_NONE;
@@ -691,13 +695,16 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
       eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
       eqp->sles_param->amg_type = CS_PARAM_AMG_NONE;
+      eqp->sles_param->flexible = false;
     }
-    else if (strcmp(keyval, "jacobi") == 0 || strcmp(keyval, "diag") == 0)
+    else if (strcmp(keyval, "jacobi") == 0 || strcmp(keyval, "diag") == 0) {
       eqp->sles_param->precond = CS_PARAM_PRECOND_DIAG;
-
+      eqp->sles_param->flexible = false;
+    }
     else if (strcmp(keyval, "block_jacobi") == 0 ||
              strcmp(keyval, "bjacobi") == 0) {
 
+      eqp->sles_param->flexible = false;
       if (eqp->sles_param->pcd_block_type == CS_PARAM_PRECOND_BLOCK_NONE)
         eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
 
@@ -716,6 +723,7 @@ _set_key(cs_equation_param_t   *eqp,
     else if (strcmp(keyval, "bjacobi_sgs") == 0 ||
              strcmp(keyval, "bjacobi_ssor") == 0) {
 
+      eqp->sles_param->flexible = false;
       if (eqp->sles_param->pcd_block_type == CS_PARAM_PRECOND_BLOCK_NONE)
         eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
 
@@ -740,6 +748,7 @@ _set_key(cs_equation_param_t   *eqp,
     else if (strcmp(keyval, "lu") == 0) {
 
       eqp->sles_param->precond = CS_PARAM_PRECOND_LU;
+      eqp->sles_param->flexible = false;
 
       cs_param_sles_class_t  ret_class =
         cs_param_sles_check_class(CS_PARAM_SLES_CLASS_PETSC);
@@ -761,6 +770,7 @@ _set_key(cs_equation_param_t   *eqp,
     else if (strcmp(keyval, "ilu0") == 0) {
 
       eqp->sles_param->precond = CS_PARAM_PRECOND_ILU0;
+      eqp->sles_param->flexible = false;
 
       /* Either with PETSc or with PETSc/HYPRE using Euclid */
 
@@ -775,6 +785,7 @@ _set_key(cs_equation_param_t   *eqp,
     else if (strcmp(keyval, "icc0") == 0) {
 
       eqp->sles_param->precond = CS_PARAM_PRECOND_ICC0;
+      eqp->sles_param->flexible = false;
 
       /* Either with PETSc or with PETSc/HYPRE using Euclid */
 
@@ -877,6 +888,8 @@ _set_key(cs_equation_param_t   *eqp,
              strcmp(keyval, "smumps_ldlt") == 0      ||
              strcmp(keyval, "smumps_sym") == 0) {
 
+      eqp->sles_param->flexible = false;
+
       /* Only MUMPS is a valid choice */
 
       if (cs_param_sles_check_class(CS_PARAM_SLES_CLASS_MUMPS) !=
@@ -906,14 +919,18 @@ _set_key(cs_equation_param_t   *eqp,
     }
     else if (strcmp(keyval, "poly1") == 0) {
       eqp->sles_param->precond = CS_PARAM_PRECOND_POLY1;
+      eqp->sles_param->flexible = false;
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
     }
     else if (strcmp(keyval, "poly2") == 0) {
       eqp->sles_param->precond = CS_PARAM_PRECOND_POLY2;
+      eqp->sles_param->flexible = false;
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
     }
-    else if (strcmp(keyval, "ssor") == 0)
+    else if (strcmp(keyval, "ssor") == 0) {
       eqp->sles_param->precond = CS_PARAM_PRECOND_SSOR;
+      eqp->sles_param->flexible = false;
+    }
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
