@@ -124,6 +124,10 @@ static int _thread_debug = 0;
 
 static cs_lnum_t _pcg_sr_threshold = 512;
 
+/* Value of the threshold under which BiCGStab and BiCGStab2 break down */
+
+static double  _epzero = 1.e-30; /* smaller than epzero */
+
 /* Sparse linear equation solver type names */
 
 const char *cs_sles_it_type_name[]
@@ -2053,7 +2057,6 @@ _bi_cgstab(cs_sles_it_t              *c,
            void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  double  _epzero = 1.e-30; /* smaller than epzero */
   double  ro_0, ro_1, alpha, beta, betam1, gamma, omega, ukres0;
   double  residue;
   cs_real_t  *_aux_vectors;
@@ -2255,7 +2258,6 @@ _bicgstab2(cs_sles_it_t              *c,
            void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  double  _epzero = 1.e-30;/* smaller than epzero */
   double  ro_0, ro_1, alpha, beta, gamma;
   double  omega_1, omega_2, mu, nu, tau;
   double  residue;
@@ -4882,6 +4884,36 @@ cs_sles_it_assign_order(cs_sles_it_t   *context,
     *order = NULL;
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the threshold value under which a breakdown happens in
+ *        solvers like BiCGStab or BiCGStab2
+ *
+ * \return the value of the threshold
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_sles_it_get_breakdown_threshold(void)
+{
+  return _epzero;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the threshold value under which a breakdown happens in
+ *        solvers like BiCGStab or BiCGStab2
+ *
+ * \param[in]     threshold        value of the threshold
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_set_breakdown_threshold(double         threshold)
+{
+  _epzero = threshold;
 }
 
 /*----------------------------------------------------------------------------*/

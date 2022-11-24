@@ -453,6 +453,30 @@ cs_sles_it_assign_order(cs_sles_it_t   *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the threshold value under which a breakdown happens in
+ *        solvers like BiCGStab or BiCGStab2
+ *
+ * \return the value of the threshold
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_sles_it_get_breakdown_threshold(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the threshold value under which a breakdown happens in
+ *        solvers like BiCGStab or BiCGStab2
+ *
+ * \param[in]     threshold        value of the threshold
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_set_breakdown_threshold(double         threshold);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define convergence level under which the fallback to another
  *        solver may be used if applicable.
  *
