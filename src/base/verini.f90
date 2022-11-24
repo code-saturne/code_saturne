@@ -78,8 +78,8 @@ character        chaine*80
 integer          ii    , iis   , jj    , iisct
 integer          iscal , iest  , iiesca, ivar
 integer          f_id, n_fields
-integer          indest, iiidef, istop
-integer          kscmin, kscmax
+integer          indest, iiidef, istop, iclvfl
+integer          kscmin, kscmax, kclvfl
 integer          keyvar, keysca
 integer          key_t_ext_id, icpext
 integer          iviext, iscacp
@@ -111,6 +111,7 @@ call field_get_key_id("variable_id", keyvar)
 ! Key ids for clippings
 call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
+call field_get_key_id("variance_clipping", kclvfl)
 
 ! Time extrapolation?
 call field_get_key_id("time_extrapolated", key_t_ext_id)
@@ -592,16 +593,16 @@ if (nscal.gt.0) then
 !       (ca permet d'etre sur qu'il sait ce qu'il fait)
   do ii = 1, nscal
     if (iscavr(ii).le.nscal.and.iscavr(ii).gt.0) then
-      if (iclvfl(ii).ne.0.and.                                     &
-         iclvfl(ii).ne.1.and.iclvfl(ii).ne.2) then
+      call field_get_key_int(isca(ii), kclvfl, iclvfl)
+      if (iclvfl.ne.0 .and. iclvfl.ne.1 .and. iclvfl.ne.2) then
         call field_get_label(ivarfl(isca(ii)), chaine)
-        write(nfecra,4330)chaine(1:16),ii,iclvfl(ii)
+        write(nfecra,4330)chaine(1:16),ii,iclvfl
         iok = iok + 1
       endif
     elseif (iscavr(ii).eq.0) then
-      if (iclvfl(ii).ne.-1) then
+      if (iclvfl.ne.-1) then
         call field_get_label(ivarfl(isca(ii)), chaine)
-        write(nfecra,4331)chaine(1:16),ii,iclvfl(ii)
+        write(nfecra,4331)chaine(1:16),ii,iclvfl
         iok = iok + 1
       endif
     endif
@@ -623,7 +624,7 @@ if (nscal.gt.0) then
     call field_get_key_double(ivarfl(isca(ii)), kscmax, scmaxp)
 
     if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal.and.               &
-       iclvfl(ii).eq.2.and.scmaxp.le.0.d0) then
+       iclvfl.eq.2.and.scmaxp.le.0.d0) then
       call field_get_label(ivarfl(isca(ii)), chaine)
       write(nfecra,4370)chaine(1:16),ii,scmaxp
       iok = iok + 1

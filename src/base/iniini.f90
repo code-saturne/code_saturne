@@ -750,7 +750,6 @@ cssr3 = 1.d0
 !    (field first_moment_id < 0) and that variances are clipped to 0 only.
 
 do iscal = 1, nscamx
-  iclvfl(iscal) = -1
   rvarfl(iscal) = 0.8d0
 enddo
 

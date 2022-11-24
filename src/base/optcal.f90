@@ -1062,25 +1062,6 @@ module optcal
   !> \addtogroup scalar_params
   !> \{
 
-  !> iclvfl : 0 : clip variances to zero
-  !>          1 : clip variances to zero and to f(1-f)
-  !>          2 : clip variances to  max(zero,scamin) and scamax
-  !> for every scalar iscal representing the average of the square of the
-  !> fluctuations of another scalar ii= \ref iscavr (iscal) (noted \$f\$),
-  !> indicator of the clipping method:
-  !> - -1: no clipping because the scalar does not represent
-  !> the average of the square of the fluctuations of another scalar
-  !> - 0: clipping to 0 for the lower range of values
-  !> - 1: clipping to 0 for the lower range of values and to
-  !> \f$(f-f_{min})(f_{max}-f)\f$ for higher values, where \f$f\f$ is
-  !> the associated scalar, \f$f_{min}\f$ and \f$f_{max}\f$ its minimum and
-  !> maximum values specified by the user (i.e. scamin (ii) and scamax (ii))
-  !> - 2: clipping to max(0,scamin(iscal)) for lower values and to
-  !>  scamax(iscal) for higher values.scamin and scamax are limits
-  !> specified by the user.\n Useful for the scalars iscal for
-  !> which \ref iscavr (iscal) \f$>\f$0.
-  integer, save ::          iclvfl(nscamx)
-
   !> iscasp(ii) : index of the ii^th species (0 if not a species)
   integer, save ::          iscasp(nscamx)
 

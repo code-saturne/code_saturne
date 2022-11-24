@@ -80,8 +80,8 @@ integer          nvar   , nscal
 character(len=80) :: chaine
 integer          ivar  , iscal
 integer          iel
-integer          iclip , iok   , ii
-integer          kscmin, kscmax, keyvar, n_fields
+integer          iclip , iok   , ii, iclvfl
+integer          kscmin, kscmax, keyvar, n_fields, kclvfl
 integer          f_id, f_dim
 integer          iflid, iflidp
 integer          idimf
@@ -135,6 +135,7 @@ call field_get_key_id("variable_id", keyvar)
 ! Key ids for clipping
 call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
+call field_get_key_id("variance_clipping", kclvfl)
 
 iok = 0
 
@@ -565,8 +566,7 @@ if (nscal.gt.0) then
           call parmin (valmin)
         endif
 
-!     Verification de la coherence pour les clippings
-!                                           des scalaires non variance.
+        ! Check coherence for clippings of non-variance scalars.
         if (valmin.ge.scminp.and.valmax.le.scmaxp) then
           iscal = ii
           call clpsca(iscal)
@@ -581,8 +581,7 @@ if (nscal.gt.0) then
     endif
   enddo
 
-
-!     Variances
+  ! Variances
 
   do ii = 1, nscal
     if(iscavr(ii).gt.0.and.iscavr(ii).le.nscal) then
@@ -607,21 +606,23 @@ if (nscal.gt.0) then
           call parmin (valmin)
         endif
 
-!     Verification de la coherence pour les clippings de variance.
-!     Pour iclvfl = 1 on ne verifie que > 0 sinon ca va devenir difficile
-!     de faire une initialisation correcte.
+        call field_get_key_int(ivarfl(ivar), kclvfl, iclvfl)
 
-        if(iclvfl(ii).eq.0) then
-!       On pourrait clipper dans le cas ou VALMIN.GE.0, mais ca
-!       n'apporterait rien, par definition
+        ! Verification de la coherence pour les clippings de variance.
+        ! Pour iclvfl = 1 on ne verifie que > 0 sinon ca va devenir difficile
+        ! de faire une initialisation correcte.
+
+        if (iclvfl.eq.0) then
+          ! On pourrait clipper dans le cas ou VALMIN.GE.0, mais ca
+          ! n'apporterait rien, par definition
           if(valmin.lt.0.d0) then
             call field_get_name(ivarfl(isca(ii)), chaine)
             write(nfecra,3050)ii,chaine(1:16),                     &
                               valmin,scminp,valmax,scmaxp
             iok = iok + 1
           endif
-        elseif(iclvfl(ii).eq.1) then
-! Ici on clippe pour etre coherent avec la valeur du scalaire
+        elseif (iclvfl.eq.1) then
+          ! Here we clip to be coherent with the scalar's value.
           if(valmin.ge.0.d0) then
             iscal = ii
             call clpsca(iscal)
@@ -630,17 +631,17 @@ if (nscal.gt.0) then
             write(nfecra,3050)ii,chaine(1:16),valmin,scminp,valmax,scmaxp
             iok = iok + 1
           endif
-        elseif(iclvfl(ii).eq.2) then
+        elseif (iclvfl.eq.2) then
           vfmin = 0.d0
           vfmin = max(scminp, vfmin)
           vfmax = scmaxp
-! On pourrait clipper dans le cas ou VALMIN.GE.VFMIN.AND.VALMAX.LE.VFMAX
-!     mais ca n'apporterait rien, par definition
+          ! We could clip when valmin >= vfmin and valmax <= vfmax
+          ! but by definition, this would add nothing.
           if(valmin.lt.vfmin.or.valmax.gt.vfmax) then
             call field_get_name(ivarfl(isca(ii)), chaine)
             write(nfecra,3051)ii,chaine(1:16),                     &
                               valmin,scminp,valmax,scmaxp,         &
-                              ii,iclvfl(ii)
+                              ii,iclvfl
             iok = iok + 1
           endif
         endif

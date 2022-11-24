@@ -73,7 +73,7 @@ implicit none
 ! Local variables
 
 integer          jj, iok
-integer          isc
+integer          isc, iclvfl, kclvfl
 double precision wmolme, turb_schmidt
 !===============================================================================
 ! 1. VARIABLES TRANSPORTEES
@@ -89,8 +89,10 @@ if (ippmod(icod3p).ge.0) then
   ! ---- Variance du taux de melange
   !        Type de clipping superieur pour la variance
   !        0 pas de clipping, 1 clipping var max de fm, 2 clipping a SCAMAX
-  !iclvfl(ifp2m) = 1
-  iclvfl(ifp2m) = 2
+  !iclvfl = 1
+  iclvfl = 2
+  call field_get_key_id("variance_clipping", kclvfl)
+  call field_set_key_int(ivarfl(isca(ifp2m)), kclvfl, iclvfl)
   !        scamin(ifp2m) = 0.d0
   !        scamax(ifp2m) = 0.25D0
 
@@ -108,7 +110,9 @@ if (ippmod(islfm).ge.0) then
   !        Type de clipping superieur pour la variance
   !        0 pas de clipping, 1 clipping var max de fm, 2 clipping a SCAMAX
   if (mode_fp2m .eq. 0) then
-    iclvfl(ifp2m) = 1
+    iclvfl = 1
+    call field_get_key_id("variance_clipping", kclvfl)
+    call field_set_key_int(ivarfl(isca(ifp2m)), kclvfl, iclvfl)
     !        scamin(ifp2m) = 0.d0
     !        scamax(ifp2m) = 0.25D0
   endif
@@ -118,8 +122,12 @@ endif
 ! --> Flamme de premelange : modele LWC
 
 if (ippmod(icolwc).ge.0) then
-  iclvfl(ifp2m) = 0
-  iclvfl(iyfp2m) = 0
+  iclvfl = 0
+  call field_get_key_id("variance_clipping", kclvfl)
+  call field_set_key_int(ivarfl(isca(ifp2m)), kclvfl, iclvfl)
+  iclvfl = 0
+  call field_get_key_id("variance_clipping", kclvfl)
+  call field_set_key_int(ivarfl(isca(iyfp2m)), kclvfl, iclvfl)
 endif
 
 ! 1.4 Donnees physiques ou numeriques propres aux scalaires COMBUSTION

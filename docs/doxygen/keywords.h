@@ -214,6 +214,31 @@ int density_id;
 */
 double turbulent_flux_ctheta;
 
+/*!
+  \var first_moment_id
+  For a variance of a given field, id of the base (first moment) field.
+*/
+int first_moment_id;
+
+/*!
+  \var variance_clipping
+   For every scalar representing the average of the square of the
+   fluctuations of another scalar (noted \$f\$),
+   indicator of the clipping method:
+   - -1: no clipping because the scalar does not represent
+         the average of the square of the fluctuations of another scalar.
+   - 0:  clipping to 0 for the lower range of values.
+   - 1:  clipping to 0 for the lower range of values and to
+         \f$(f-f_{min})(f_{max}-f)\f$ for higher values, where \f$f\f$ is
+         the associated scalar, \f$f_{min}\f$ and \f$f_{max}\f$ its minimum
+         and maximum values specified by the user
+        (i.e. min_scalar_clipping and max_scalar_clipping).
+   - 2: clipping to max(0, min_scalar_clipping) for lower values and to
+        max_scalar_clipping for higher values.scamin and scamax are limits
+       specified by the user.\n Useful for the scalar with a variance.
+*/
+int variance_clipping;
+
 /*!@}*/
 
 /*----------------------------------------------------------------------------*/

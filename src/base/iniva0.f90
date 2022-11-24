@@ -78,7 +78,7 @@ integer          nscal
 integer          iis   , iscal
 integer          iel   , ifac
 integer          iclip , ii    , jj    , idim, f_dim
-integer          ifcvsl
+integer          ifcvsl, iclvfl, kclvfl
 integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
 integer          kscmin
 integer          f_type, idftnp
@@ -147,6 +147,8 @@ if (f_id .ge. 0) then
     field_s_v(iel) = -grand
   enddo
 endif
+
+call field_get_key_id("variance_clipping", kclvfl)
 
 ! Initialize variables to avoid compiler warnings
 
@@ -464,20 +466,26 @@ if (nscal.gt.0) then
 !     Clipping des variances qui sont clippees sans recours au scalaire
 !        associe
   do iis = 1, nscal
-    if(iscavr(iis).ne.0.and.iclvfl(iis).ne.1) then
-      iscal = iis
-      call clpsca(iscal)
-      !==========
+    if (iscavr(iis).ne.0) then
+      call field_get_key_int(ivarfl(isca(iis)), kclvfl, iclvfl)
+      if (iclvfl.ne.1) then
+        iscal = iis
+        call clpsca(iscal)
+        !==========
+      endif
     endif
   enddo
 
 !     Clipping des variances qui sont clippees avec recours au scalaire
 !        associe s'il est connu
   do iis = 1, nscal
-    if (iscavr(iis).le.nscal.and.iscavr(iis).ge.1.and.iclvfl(iis).eq.1) then
-      iscal = iis
-      call clpsca(iscal)
-      !==========
+    if (iscavr(iis).le.nscal.and.iscavr(iis).ge.1) then
+      call field_get_key_int(ivarfl(isca(iis)), kclvfl, iclvfl)
+      if (iclvfl.ne.1) then
+        iscal = iis
+        call clpsca(iscal)
+        !==========
+      endif
     endif
   enddo
 

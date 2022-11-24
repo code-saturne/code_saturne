@@ -62,9 +62,9 @@ integer          iscal
 
 ! Local variables
 
-integer          ivar, iel, iflid
+integer          ivar, iel, iflid, iclvfl
 integer          iclmax(1), iclmin(1), iiscav
-integer          kscmin, kscmax, f_id
+integer          kscmin, kscmax, f_id, kclvfl
 double precision vmin(1), vmax(1), vfmax
 double precision scmax, scmin
 double precision scmaxp, scminp
@@ -90,6 +90,7 @@ call field_get_val_s(ivarfl(ivar), cvar_scal)
 ! Key ids for clipping
 call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
+call field_get_key_id("variance_clipping", kclvfl)
 
 !===============================================================================
 ! 2. Printings and clippings
@@ -115,7 +116,7 @@ iclmin(1) = 0
 call field_get_key_double(iflid, kscmin, scminp)
 call field_get_key_double(iflid, kscmax, scmaxp)
 
-if(scmaxp.gt.scminp)then
+if (scmaxp.gt.scminp)then
   do iel = 1, ncel
     if(cvar_scal(iel).gt.scmaxp)then
       iclmax(1) = iclmax(1) + 1
@@ -130,32 +131,40 @@ endif
 
 ! Clipping of max of variances
 ! Based on associated scalar values (or 0 at min.)
-if (iiscav.ne.0.and. iclvfl(iscal).eq.1) then
 
-  ! Clipping of variances
-
-
-  iclmax(1) = 0
-  iclmin(1) = 0
+if (iiscav.ne.0) then
 
   ! Get the corresponding scalar
   f_id = ivarfl(isca(iiscav))
-  call field_get_val_s(f_id, cvar_scav)
-  ! Get the min clipping of the corresponding scalar
-  call field_get_key_double(f_id, kscmin, scmin)
-  call field_get_key_double(f_id, kscmax, scmax)
+  call field_get_key_int(f_id, kclvfl, iclvfl)
 
-  do iel = 1, ncel
-    vfmax = (cvar_scav(iel)-scmin)*(scmax-cvar_scav(iel))
-    if(cvar_scal(iel).gt.vfmax) then
-      iclmax(1) = iclmax(1) + 1
-      cvar_scal(iel) = vfmax
-    endif
-  enddo
+  if (iclvfl.eq.1) then
+
+    ! Clipping of variances
+
+    iclmax(1) = 0
+    iclmin(1) = 0
+
+    ! Get the corresponding scalar
+    call field_get_val_s(f_id, cvar_scav)
+    ! Get the min clipping of the corresponding scalar
+    call field_get_key_double(f_id, kscmin, scmin)
+    call field_get_key_double(f_id, kscmax, scmax)
+
+    do iel = 1, ncel
+      vfmax = (cvar_scav(iel)-scmin)*(scmax-cvar_scav(iel))
+      if(cvar_scal(iel).gt.vfmax) then
+        iclmax(1) = iclmax(1) + 1
+        cvar_scal(iel) = vfmax
+      endif
+    enddo
+
+  endif
 
 endif
 
-call log_iteration_clipping_field(iflid, iclmin(1), iclmax(1), vmin, vmax, iclmin(1), iclmax(1))
+call log_iteration_clipping_field(iflid, iclmin(1), iclmax(1), &
+                                  vmin, vmax, iclmin(1), iclmax(1))
 
 !--------
 ! Formats

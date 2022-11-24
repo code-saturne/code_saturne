@@ -78,7 +78,7 @@ character        chaine*80
 integer          ii    , iiesca, iest
 integer          kscmin, kscmax, keyvar
 integer          f_id, n_fields
-integer          igg, ige
+integer          igg, ige, iclvfl, kclvfl
 integer          kturt, turb_flux_model
 double precision scmaxp, scminp
 
@@ -544,17 +544,7 @@ if (nscal.ge.1) then
     write(nfecra,6022) chaine(1:16),ii, rvarfl(ii)
   enddo
   write(nfecra,6032)
-  write(nfecra,6013)
-  do ii = 1, nscal
-    ! Get the min clipping
-    f_id = ivarfl(isca(ii))
-    call field_get_key_double(f_id, kscmin, scminp)
-    call field_get_key_double(f_id, kscmax, scmaxp)
-    call field_get_label(f_id, chaine)
-    write(nfecra,6023) chaine(1:16),ii,iclvfl(ii),      &
-                       scminp,scmaxp
-  enddo
-  write(nfecra,6033)
+  
   write(nfecra,6030)
   write(nfecra,6040)
   do ii = 1, nscal
@@ -589,14 +579,6 @@ endif
  1x,    a16,           i7,    e12.4 )
  6032 format(                                                     &
 '-------------------------------------------',                   /)
- 6013 format(                                                     &
-'-------------------------------------------------------',      /,&
-' Variable         Number ICLVFL      SCAMIN      SCAMAX',      /,&
-'-------------------------------------------------------'        )
- 6023 format(                                                     &
- 1x,    a16,    i7,    i7,      e12.4,      e12.4         )
- 6033 format(                                                     &
-'-------------------------------------------------------',       /)
  6030 format(                                                     &
 '-------------------------------------------------------------',/,&
                                                                 /,&

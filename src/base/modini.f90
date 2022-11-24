@@ -63,7 +63,7 @@ integer          f_id
 integer          ii, jj, iok, ikw
 integer          nbccou
 integer          nscacp, iscal, ivar
-integer          imrgrp
+integer          imrgrp, iclvfl, kclvfl
 integer          iscacp, kcpsyr, icpsyr
 integer          nfld, f_type
 integer          key_t_ext_id, icpext, kscmin, kscmax
@@ -89,6 +89,8 @@ call field_get_key_id("time_extrapolated", key_t_ext_id)
 call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
 call field_get_key_id('turbulent_flux_model', kturt)
+
+call field_get_key_id("variance_clipping", kclvfl)
 
 !===============================================================================
 ! 1. ENTREES SORTIES entsor
@@ -812,15 +814,15 @@ endif
 
 do iscal = 1, nscal
   if (iscavr(iscal).gt.0) then
-
+    call field_get_key_int(ivarfl(isca(iscal)), kclvfl, iclvfl)
     ! Get the min clipping
     call field_get_key_double(ivarfl(isca(iscal)), kscmin, scminp)
     ! If modified put 2
-    if (iclvfl(iscal).eq.-1 .and. abs(scminp+grand).ge.epzero) then
-      iclvfl(iscal) = 2
+    if (iclvfl.eq.-1 .and. abs(scminp+grand).ge.epzero) then
+      call field_set_key_int(ivarfl(isca(iscal)), kclvfl, 2)
 
-    else if (iclvfl(iscal).eq.-1) then
-      iclvfl(iscal) = 0
+    else if (iclvfl.eq.-1) then
+      call field_set_key_int(ivarfl(isca(iscal)), kclvfl, 0)
     endif
 
     ! Min for variances is 0 or greater

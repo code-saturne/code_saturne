@@ -933,6 +933,8 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("scalar_class", 0, 0);
   cs_field_define_key_int("first_moment_id", -1, 0); /* iscavr(iscal) */
 
+  cs_field_define_key_int("variance_clipping", -1, 0); /* iclvfl(iscal) */
+
   cs_field_define_key_int("syrthes_coupling", 0, 0); /* icpsyr(iscal) */
 
   cs_field_define_key_int("source_term_prev_id", -1, CS_FIELD_VARIABLE);
