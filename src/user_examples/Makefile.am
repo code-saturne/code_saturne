@@ -115,6 +115,7 @@ cs_user_extra_operations-scalar_balance.c \
 cs_user_extra_operations-turbomachinery.c \
 cs_user_extra_operations-verif_cdo_diffusion.c \
 cs_user_extra_operations-vorticity_field.c \
+cs_user_fluid_structure_interaction-code_aster.c \
 cs_user_head_losses.c \
 cs_user_hgn-relax_time_scale.c \
 cs_user_initialization-atmospheric.c \

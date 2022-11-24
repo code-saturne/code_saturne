@@ -225,24 +225,96 @@ class FluidStructureInteractionModel(Model):
                                     self.setStressPredictionAlpha)
 
     #------------------------------------------------------------------
-    # Monitor point synchronisation
+    # Structure time plots
     #------------------------------------------------------------------
 
     @Variables.undoLocal
-    def setMonitorPointSynchronisation(self, value):
+    def setInternalStructuresTimePlot(self, value):
         """
-        Set value of monitor point synchronisation into xml file.
+        Set activation status of structure time plots into xml file.
         """
         self.__setOnOffXML(const.monitor_point_synchronisation, value)
 
 
     @Variables.noUndo
-    def getMonitorPointSynchronisation(self):
+    def getInternalStructuresTimePlot(self):
         """
-        Get value of monitor point synchronisation from xml file.
+        Get activation status of structure time plots from xml file.
         """
         return self.__getOnOffXML(const.monitor_point_synchronisation,
-                                  self.setMonitorPointSynchronisation)
+                                  self.setInternalStructuresTimePlot)
+
+    #------------------------------------------------------------------
+    # code_aster log verbosity
+    #------------------------------------------------------------------
+
+    @Variables.undoLocal
+    def setAstVerbosity(self, value):
+        """
+        Set code_aster logging level in xml file.
+        """
+        default = 1
+        node_ast = self.__node_ale.xmlGetChildNode('code_aster_coupling')
+        if not node_ast:
+            if value == default:
+                return
+            else:
+                node_ast = self.__node_ale.xmlInitChildNode('code_aster_coupling')
+        if value != default:
+            node_ast.xmlSetData("verbosity", value)
+        else:
+            n = node_ast.xmlGetChildNode('verbosity')
+            if n:
+                n.xmlRemoveNode()
+
+    @Variables.noUndo
+    def getAstVerbosity(self):
+        """
+        Get code_aster logging level from xml file.
+        """
+        node_ast = self.__node_ale.xmlGetChildNode('code_aster_coupling')
+        if node_ast:
+            s = node_ast.xmlGetChildString("verbosity")
+            print(s)
+            if s != None:
+                return int(s)
+        return 1  # default
+
+    #------------------------------------------------------------------
+    # code_aster visualization
+    #------------------------------------------------------------------
+
+    @Variables.undoLocal
+    def setAstVisualization(self, value):
+        """
+        Set code_aster logging level in xml file.
+        """
+        default = 1
+        node_ast = self.__node_ale.xmlGetChildNode('code_aster_coupling')
+        if not node_ast:
+            if value == default:
+                return
+            else:
+                node_ast = self.__node_ale.xmlInitChildNode('code_aster_coupling')
+        if value != default:
+            node_ast.xmlSetData("visualization", value)
+        else:
+            n = node_ast.xmlGetChildNode('visualization')
+            if n:
+                n.xmlRemoveNode()
+
+    @Variables.noUndo
+    def getAstVisualization(self):
+        """
+        Get code_aster logging level from xml file.
+        """
+        node_ast = self.__node_ale.xmlGetChildNode('code_aster_coupling')
+        if node_ast:
+            s = node_ast.xmlGetChildString("visualization")
+            print(s)
+            if s != None:
+                return int(s)
+        return 1  # default
 
     #------------------------------------------------------------------
     # Helper functions
@@ -391,7 +463,6 @@ class FluidStructureInteractionTestCase(ModelTest):
             'Could not get fluid structure interaction displacement prediction alpha'
         assert mdl.getMonitorPointSynchronisation() == 'on', \
             'Could not get fluid structure interaction monitor point synchronisation'
-
 
 
 def suite():

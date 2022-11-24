@@ -2021,7 +2021,7 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C user function for boundary conditions ALE
+    ! Interface to C user function for ALE boundary conditions
 
     subroutine user_boundary_conditions_ale(bc_type, ale_bc_type, impale)  &
       bind(C, name='cs_user_boundary_conditions_ale_wrapper')

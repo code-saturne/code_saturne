@@ -44,10 +44,6 @@
 !>
 !>   \par Fluid-Structure coupling with code_aster:
 !>        the user subroutine \ref usaste has to be used.
-!>
-!>   \par Examples of data settings for fluid-structure interaction (FSI):
-!>        Several examples are available
-!>        \ref cs_user_fluid_structure_interaction "here".
 !
 !-------------------------------------------------------------------------------
 
@@ -200,80 +196,3 @@ double precision dtstr(nstrmx)
 return
 
 end subroutine usstr2
-
-!===============================================================================
-
-!> \brief User subroutine dedicated the Fluid-Structure external coupling
-!>        with code_aster :
-!>          Here one defines the boundary faces coupled
-!>          with code_aster and the fluid forces components
-!>          which are given to structural calculations.
-!
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]     idfstr        boundary faces -> structure definition
-!______________________________________________________________________________!
-
-subroutine usaste &
- ( idfstr )
-
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use cstnum
-use optcal
-use entsor
-use albase
-use parall
-use period
-use alaste
-use mesh
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-integer          nbstru
-
-integer          idfstr(nfabor)
-
-! Local variables
-
-integer, allocatable, dimension(:) :: lstelt
-
-!===============================================================================
-
-!===============================================================================
-! 1.  initialization
-!===============================================================================
-
-! Allocate a temporary array for boundary faces selection
-allocate(lstelt(nfabor))
-
-!===============================================================================
-! 2.  Definition of external structures
-!===============================================================================
-
-!----
-! Formats
-!----
-
-!----
-! End
-!----
-
-! Deallocate the temporary array
-deallocate(lstelt)
-
-return
-end subroutine usaste

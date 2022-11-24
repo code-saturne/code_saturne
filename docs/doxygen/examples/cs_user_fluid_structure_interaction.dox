@@ -25,7 +25,7 @@
 /*----------------------------------------------------------------------------*/
 
 /*!
-  \page cs_user_fluid_structure_interaction Fluid Structure Interaction (cs_user_fluid_structure_interaction.f90)
+  \page cs_user_fluid_structure_interaction Fluid Structure Interaction
 
   \section cs_user_fluid_structure_interaction_h_intro Introduction
 
@@ -33,6 +33,9 @@
   to perform fluid structure interaction computations.
 
   \section cs_user_fluid_structure_interaction_h_usstr1  Internal structures and corresponding initial conditions
+
+  Internal structures and their behavior can be specified through the user subroutines
+  from the \ref cs_user_fluid_structure_interaction.f90 file.
 
   \subsection cs_user_fluid_structure_interaction_h_usstr1_init Initialization
 
@@ -182,36 +185,41 @@
 
   \section cs_user_fluid_structure_interaction_h_usaste Fluid Structure external coupling with code_aster
 
-  \subsection cs_user_fluid_structure_interaction_h_usaste1_init Initialization
-
-  The \c lstelt array is allocated.
-
-  \snippet cs_user_fluid_structure_interaction.f90 usaste_init
+  External structures (simulated with code_aster) can be specified through the
+  cs_user_fsi_external_structure_id user-defined function in
+  \ref cs_user_fluid_structure_interaction.c.
 
   \subsection cs_user_fluid_structure_interaction_h_usaste_example Example
 
   In the following example, two sets of boundary faces that will be coupled with
-  code_aster are defined as well as the fluid force components which are given
-  to structural calculations.
+  code_aster are defined.
 
-  Here one fills array \c idfstr(\ref nfabor)
-  For each boundary face \c ifac, \c idfstr(ifac) is the number of the structure
-  the face belongs to (if \c idfstr(ifac) = 0, the face \c ifac doesn't
+  Here one fills array \c idfstr[]
+  For each boundary face \c face_id, \c idfstr[face_id]) is the number of the structure
+  the face belongs to (if \c idfstr[face_id] = 0, the face \c face_id doesn't
   belong to any structure.)
-  When using external coupling with code_aster, structure number necessarily
-  needs to be negative (as shown in following examples).
+  When using external coupling with code_aster, the structure number
+  necessarily needs to be negative (as shown in following examples).
 
   The number of "external" structures with code_aster is automatically
   defined with the maximum absolute value of \c idfstr table, meaning that
   external structure numbers must be defined sequentially with negative
   values beginning with integer value -1.
 
-  In following example, boundary faces with color 2 and which
-  abscissa \f$ x < 2 \f$ belong to external structure -1.
-  Boundary faces with color 2 and which abscissa \f$ x > 2 \f$ belong to external
-  structure -2. The total number of external structures coupled with
-  code_aster equals 2.
+  In following example, boundary faces in zone "wall_1" are associated
+  to external structure -1, while those in zone "wall_2" are associated
+  to external structure -2.
 
-  \snippet cs_user_fluid_structure_interaction.f90 usaste_example
+  \snippet cs_user_fluid_structure_interaction-code_aster.c fsi_ext_struct_example
+
+  Note that we could also use the lower-level face selections such as
+  \ref cs_selector_get_b_face_list to extract subsets and assign them
+  to different structures.
+
+  Currently, multiple structures associated to faces associated with
+  code_aster are handled in a grouped manner,so the structure number
+  has no importance, as long as it is negative. In the future, in case
+  of coupling with multiple instances of code_aster, we could assign
+  different structures to different solvers for example.
 
 */

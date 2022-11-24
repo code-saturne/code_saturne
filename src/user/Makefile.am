@@ -75,6 +75,7 @@ AM_LDFLAGS =
 
 EXTRA_DIST = cs_user_modules.f90 \
 cs_user_boundary_conditions.f90 cs_user_extra_operations.f90 \
+cs_user_fluid_structure_interaction.f90 \
 cs_user_initialization.f90  \
 cs_user_parameters.f90 \
 cs_user_physical_properties.f90 \
@@ -91,7 +92,7 @@ cs_user_wall_condensation.c \
 cs_user_coupling.c \
 cs_user_electric_scaling.c \
 cs_user_extra_operations.c \
-cs_user_fluid_structure_interaction.f90 \
+cs_user_fluid_structure_interaction.c \
 cs_user_head_losses.c \
 cs_user_hgn.c \
 cs_user_initialization.c \
@@ -133,6 +134,11 @@ cs_user_f_extra_operations = $(top_srcdir)/src/user/cs_user_extra_operations.f90
 cs_f_user_extra_operations.$(OBJEXT): $(cs_user_f_extra_operations)
 	$(FCCOMPILE) -c -o cs_f_user_extra_operations.$(OBJEXT)  $(cs_user_f_extra_operations)
 
+cs_user_f_fluid_structure_interaction = $(top_srcdir)/src/user/cs_user_fluid_structure_interaction.f90
+
+cs_f_user_fluid_structure_interaction.$(OBJEXT): $(cs_user_f_fluid_structure_interaction)
+	$(FCCOMPILE) -c -o cs_f_user_fluid_structure_interaction.$(OBJEXT)  $(cs_user_f_fluid_structure_interaction)
+
 cs_user_f_initialization = $(top_srcdir)/src/user/cs_user_initialization.f90
 
 cs_f_user_initialization.$(OBJEXT): $(cs_user_f_initialization)
@@ -156,6 +162,7 @@ cs_f_user_porosity.$(OBJEXT): $(cs_user_f_porosity)
 noinst_LIBRARIES = libcsuser.a
 libcsuser_a_SOURCES = $(userfiles)
 libcsuser_a_LIBADD = cs_f_user_parameters.$(OBJEXT) cs_f_user_extra_operations.$(OBJEXT) \
+cs_f_user_fluid_structure_interaction.$(OBJEXT) \
 cs_f_user_initialization.$(OBJEXT) cs_f_user_physical_properties.$(OBJEXT) \
 cs_f_user_source_terms.$(OBJEXT) cs_f_user_boundary_conditions.$(OBJEXT) \
 cs_f_user_porosity.$(OBJEXT)
@@ -165,6 +172,7 @@ user_DATA = $(userfiles) cs_user_modules.f90 \
 cs_user_boundary_conditions.f90 \
 cs_user_parameters.f90 \
 cs_user_extra_operations.f90 \
+cs_user_fluid_structure_interaction.f90 \
 cs_user_initialization.f90 \
 cs_user_physical_properties.f90 \
 cs_user_source_terms.f90 \

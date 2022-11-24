@@ -1453,7 +1453,7 @@ could be a *scalar with drift* if wanted (aerosols for example).
 
 The simulations can be done using 2 different methods:
  - Prescribing a boundary condition code **total imposed mass flux** for
-some boundary faces using the cs_user_boundary_conditions.f90 user function.
+some boundary faces using the cs_user_boundary_conditions.c user function.
  - Using a scalar source term. In this case, the air inflow is not taken
    into account. The user has to add an explicit part to the equations
    for the scalar through the cs_user_source_terms.c file. This is

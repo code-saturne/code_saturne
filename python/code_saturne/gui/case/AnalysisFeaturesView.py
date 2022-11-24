@@ -896,6 +896,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         self.browser.configureTree(self.case)
 
+
     @pyqtSlot()
     def slotPther(self):
         """
@@ -908,6 +909,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.gas.setUniformVariableThermodynamicalPressure("off")
 
         self.browser.configureTree(self.case)
+
 
 #-------------------------------------------------------------------------------
 # End

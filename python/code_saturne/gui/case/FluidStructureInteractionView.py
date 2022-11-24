@@ -74,7 +74,7 @@ log = logging.getLogger("FluidStructureInteractionView")
 displacement_prediction_alpha          = 'displacement_prediction_alpha'
 displacement_prediction_beta           = 'displacement_prediction_beta'
 stress_prediction_alpha                = 'stress_prediction_alpha'
-monitor_point_synchronisation          = 'monitor_point_synchronisation'
+structure_time_plot                    = 'monitor_point_synchronisation'
 
 #-------------------------------------------------------------------------------
 # Advanced dialog
@@ -130,16 +130,13 @@ class FluidStructureInteractionAdvancedOptionsView(QDialog,
         """
         # Read from default
         displacementAlpha = str(self.__default[displacement_prediction_alpha])
-        displacementBeta  = str(self.__default[displacement_prediction_beta ])
-        stressAlpha       = str(self.__default[stress_prediction_alpha      ])
-
-        isSynchronizationOn = self.__default[monitor_point_synchronisation] == 'on'
+        displacementBeta  = str(self.__default[displacement_prediction_beta])
+        stressAlpha       = str(self.__default[stress_prediction_alpha])
 
         # Update Widget
         self.lineEditDisplacementAlpha.setText(displacementAlpha)
         self.lineEditDisplacementBeta.setText(displacementBeta)
         self.lineEditStressAlpha.setText(stressAlpha)
-        self.checkBoxSynchronization.setChecked(isSynchronizationOn)
 
 
     def get_result(self):
@@ -158,16 +155,10 @@ class FluidStructureInteractionAdvancedOptionsView(QDialog,
         displacementBeta  = float(self.lineEditDisplacementBeta.text())
         stressAlpha       = float(self.lineEditStressAlpha.text())
 
-        if self.checkBoxSynchronization.isChecked():
-            synchronization = 'on'
-        else:
-            synchronization = 'off'
-
         # Set result attributes
         self.__result[displacement_prediction_alpha] = displacementAlpha
-        self.__result[displacement_prediction_beta ] = displacementBeta
-        self.__result[stress_prediction_alpha      ] = stressAlpha
-        self.__result[monitor_point_synchronisation] = synchronization
+        self.__result[displacement_prediction_beta] = displacementBeta
+        self.__result[stress_prediction_alpha] = stressAlpha
 
         QDialog.accept(self)
 
@@ -215,9 +206,18 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         Define connection for widgets that do not depend on the boundary
         """
         self.lineEditNALIMX.textChanged[str].connect(self.__slotNalimx)
-
         self.lineEditEPALIM.textChanged[str].connect(self.__slotEpalim)
         self.pushButtonAdvanced.clicked.connect(self.__slotAdvanced)
+
+        self.checkBoxStructureTimePlot.stateChanged.connect(self.slotStructureTimePlot)
+
+        self.spinBox_ast_log.valueChanged[int].connect(self.slot_ast_log)
+        self.spinBox_ast_viz.valueChanged[int].connect(self.slot_ast_vis)
+
+        if self.checkBoxStructureTimePlot.isChecked():
+            synchronization = 'on'
+        else:
+            synchronization = 'off'
 
 
     def __addValidators(self):
@@ -234,12 +234,21 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
 
     def __setInitialValues(self):
         """
-        Set Widget initial values that do not depend on the boundary
+        Set Widget initial vaglues that do not depend on the boundary
         """
         nalimx = self.__model.getMaxIterations()
         self.lineEditNALIMX.setText(str(nalimx))
         epalim = self.__model.getPrecision()
         self.lineEditEPALIM.setText(str(epalim))
+
+        structure_time_plot = self.__model.getInternalStructuresTimePlot()
+        stpl_on = structure_time_plot == 'on'
+        self.checkBoxStructureTimePlot.setChecked(stpl_on)
+
+        ast_log = self.__model.getAstVerbosity()
+        self.spinBox_ast_log.setValue(ast_log)
+        ast_vis = self.__model.getAstVisualization()
+        self.spinBox_ast_viz.setValue(ast_vis)
 
 
     @pyqtSlot(str)
@@ -262,6 +271,33 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
             self.__model.setPrecision(epalim)
 
 
+    @pyqtSlot(int)
+    def slotStructureTimePlot(self, val):
+
+        if val == 0:
+            self.__model.setInternalStructuresTimePlot("off")
+        else:
+            self.__model.setInternalStructuresTimePlot("on")
+
+
+    @pyqtSlot(int)
+    def slot_ast_log(self, text):
+        """
+        Set value for code_aster logging
+        """
+        self.__model.setAstVerbosity(int(text))
+        log.debug("slot_ast_log-> %s" % text)
+
+
+    @pyqtSlot(int)
+    def slot_ast_vis(self, text):
+        """
+        Set value for code_aster logging
+        """
+        self.__model.setAstVisualization(int(text))
+        log.debug("slot_ast_vis-> %s" % text)
+
+
     @pyqtSlot()
     def __slotAdvanced(self):
         """
@@ -273,8 +309,6 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         default[displacement_prediction_alpha] = self.__model.getDisplacementPredictionAlpha()
         default[displacement_prediction_beta ] = self.__model.getDisplacementPredictionBeta()
         default[stress_prediction_alpha      ] = self.__model.getStressPredictionAlpha()
-        default[monitor_point_synchronisation] = \
-                            self.__model.getMonitorPointSynchronisation()
         log.debug("slotAdvancedOptions -> %s" % str(default))
 
         # run the dialog
@@ -286,7 +320,6 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
             self.__model.setDisplacementPredictionAlpha(result[displacement_prediction_alpha])
             self.__model.setDisplacementPredictionBeta(result[displacement_prediction_beta])
             self.__model.setStressPredictionAlpha(result[stress_prediction_alpha])
-            self.__model.setMonitorPointSynchronisation(result[monitor_point_synchronisation])
 
 
 #-------------------------------------------------------------------------------

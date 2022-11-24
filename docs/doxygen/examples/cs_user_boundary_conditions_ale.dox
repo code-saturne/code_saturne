@@ -28,8 +28,7 @@
 
 /*!
 
-  \page cs_user_boundary_conditions_examples_ale Examples of data settings for boundary conditions ale (cs_user_boundary_conditions_ale.f90)
-
+  \page cs_user_boundary_conditions_examples_ale Examples of data settings for ALE boundary conditions (cs_user_boundary_conditions_ale.f90)
 
  \brief User subroutine dedicated the use of ALE (Arbitrary Lagrangian
  Eulerian) Method:
@@ -283,7 +282,7 @@
  cs_user_boundary_conditions.f90 subroutine,
  but a more thorough description can be found in the user guide.
 
-  \section example_ale Example of boundary conditions ale
+  \section example_ale Example of ALE boundary conditions
 
 Here is the list of examples:
 
@@ -292,7 +291,7 @@ Here is the list of examples:
 //______________________________________________________________________________________
 /*!
 
-  \page example_ale2 Examples of boundary conditions ale
+  \page example_ale2 Examples of ALE boundary conditions
 
   \section loc_var Mapping relative to ALE
 

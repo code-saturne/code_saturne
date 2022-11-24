@@ -407,6 +407,25 @@ cs_user_extra_operations_finalize(cs_domain_t     *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define external structure ids for faces associated with external
+ *        (code_aster) structures.
+ *
+ * Structure ids associated to a given face have the following values:
+ * - -i where coupled to  i-th (1-to n) external (code_aster) structure.
+ * - 0 where not coupled with an internal or external structure.
+ * - i  where coupled to  i-th (1-to n) internal (mass-spring) structure.
+ *
+ * \param[in, out]  domain         pointer to a cs_domain_t structure
+ * \param[in, out]  structure_id   structure id associated to each face
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_fsi_external_structure_id(cs_domain_t  *domain,
+                                  int           structure_id[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute GUI-defined head losses for a given volume zone.
  *
  * Head loss tensor coefficients for each cell are organized as follows:

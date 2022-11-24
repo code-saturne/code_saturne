@@ -47,6 +47,7 @@
 #include "bft_printf.h"
 
 #include "cs_ale.h"
+#include "cs_ast_coupling.h"
 #include "cs_base.h"
 #include "cs_boundary.h"
 #include "cs_boundary_zone.h"
@@ -171,7 +172,6 @@ _uialcl_fixed_displacement(cs_tree_node_t   *tn_w,
                            int              *impale,
                            cs_real_t         disale[][3])
 {
-
   const cs_mesh_t *m = cs_glob_mesh;
 
   /* Get formula */
@@ -263,7 +263,6 @@ _uialcl_fixed_velocity(cs_tree_node_t  *tn_w,
 
   /* Free memory */
   BFT_FREE(bc_vals);
-
 }
 
 /*-----------------------------------------------------------------------------
@@ -465,6 +464,19 @@ void CS_PROCF (uialin, UIALIN) (int     *nalinf,
                               nalimx);
     cs_gui_node_get_child_real(tn, "implicitation_precision",
                                epalim);
+
+    /* code_aster coupling */
+
+    tn = cs_tree_get_node(tn, "code_aster_coupling");
+    if (tn != NULL) {
+      int verbosity = cs_ast_coupling_get_verbosity();
+      int visualization = cs_ast_coupling_get_visualization();
+      cs_gui_node_get_child_int(tn, "verbosity", &verbosity);
+      cs_gui_node_get_child_int(tn, "visualization", &visualization);
+      cs_ast_coupling_set_verbosity(verbosity);
+      cs_ast_coupling_set_visualization(visualization);
+    }
+
   }
 
 #if _XML_DEBUG_
@@ -474,41 +486,6 @@ void CS_PROCF (uialin, UIALIN) (int     *nalinf,
     bft_printf("--nalinf = %i\n", *nalinf);
     bft_printf("--nalimx = %i\n", *nalimx);
     bft_printf("--epalim = %g\n", *epalim);
-  }
-#endif
-}
-
-/*----------------------------------------------------------------------------
- * ALE diffusion type
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIALVM
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uialvm, UIALVM) ()
-{
-  cs_tree_node_t *tn
-    = cs_tree_get_node(cs_glob_tree, "thermophysical_models/ale_method");
-
-  int iortvm = _ale_visc_type(tn);
-
-  cs_var_cal_opt_t vcopt;
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_field_t *f_mesh_u = cs_field_by_name("mesh_velocity");
-  cs_field_get_key_struct(f_mesh_u, key_cal_opt_id, &vcopt);
-
-  if (iortvm == 1) { /* orthotropic viscosity */
-    vcopt.idften = CS_ANISOTROPIC_LEFT_DIFFUSION;
-  } else { /* isotropic viscosity */
-    vcopt.idften = CS_ISOTROPIC_DIFFUSION;
-  }
-  cs_field_set_key_struct(f_mesh_u, key_cal_opt_id, &vcopt);
-
-#if _XML_DEBUG_
-  bft_printf("==> %s\n", __func__);
-  bft_printf("--iortvm = %i\n",  iortvm);
   }
 #endif
 }
@@ -686,7 +663,7 @@ void CS_PROCF (uistr1, UISTR1) (cs_lnum_t        *idfstr,
         cs_lnum_t ifbr = faces_list[ifac];
         idfstr[ifbr] = istruct + 1;
       }
-      ++istruct;
+      istruct++;
     }
   }
 }
@@ -739,61 +716,8 @@ void CS_PROCF (uistr2, UISTR2) (double *const  xmstru,
                        xkstru,
                        forstr,
                        istru);
-      ++istru;
+      istru++;
     }
-  }
-}
-
-/*-----------------------------------------------------------------------------
- * Retrieve data for external coupling
- *
- * parameters:
- *   idfstr    <-- Structure definition
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF(uiaste, UIASTE)(int  *idfstr)
-{
-  int istruct     = 0;
-
-  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
-
-  cs_tree_node_t *tn_b0 = cs_tree_node_get_child(tn, "boundary");
-  cs_tree_node_t *tn_w0 = cs_tree_node_get_child(tn, "boundary");//FIXME
-
-  /* Loop on boundary faces */
-
-  for (tn = tn_b0; tn != NULL; tn = cs_tree_node_get_next_of_name(tn)) {
-
-    const char *label = cs_tree_node_get_tag(tn, "label");
-
-    cs_tree_node_t *tn_w
-      = cs_tree_node_get_sibling_with_tag(tn_w0, "label", label);
-
-    enum ale_boundary_nature nature =_get_ale_boundary_nature(tn_w);
-
-    if (nature == ale_boundary_nature_external_coupling) {
-
-      const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
-      if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
-        continue;
-
-      cs_lnum_t n_faces = z->n_elts;
-      const cs_lnum_t *faces_list = z->elt_ids;
-
-      cs_tree_node_t *tn_ec = cs_tree_get_node(tn_w, "ale");
-      tn_ec = cs_tree_node_get_sibling_with_tag(tn_ec,
-                                                "choice",
-                                                "external_coupling");
-
-      /* Set idfstr with negative value starting from -1 */
-      for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
-        cs_lnum_t ifbr = faces_list[ifac];
-        idfstr[ifbr]  = -istruct - 1;
-      }
-      istruct++;
-    }
-
   }
 }
 
@@ -819,6 +743,37 @@ cs_gui_get_ale_viscosity_type(int  *type)
 }
 
 /*----------------------------------------------------------------------------
+ * Set ALE diffusion type from GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_ale_diffusion_type(void)
+{
+  cs_tree_node_t *tn
+    = cs_tree_get_node(cs_glob_tree, "thermophysical_models/ale_method");
+
+  int iortvm = _ale_visc_type(tn);
+
+  cs_var_cal_opt_t vcopt;
+  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_field_t *f_mesh_u = cs_field_by_name("mesh_velocity");
+  cs_field_get_key_struct(f_mesh_u, key_cal_opt_id, &vcopt);
+
+  if (iortvm == 1) { /* orthotropic viscosity */
+    vcopt.idften = CS_ANISOTROPIC_LEFT_DIFFUSION;
+  }
+  else { /* isotropic viscosity */
+    vcopt.idften = CS_ISOTROPIC_DIFFUSION;
+  }
+  cs_field_set_key_struct(f_mesh_u, key_cal_opt_id, &vcopt);
+
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+  bft_printf("--iortvm = %i\n",  iortvm);
+#endif
+}
+
+/*----------------------------------------------------------------------------
  * Mesh viscosity setting.
  *----------------------------------------------------------------------------*/
 
@@ -841,7 +796,6 @@ cs_gui_mesh_viscosity(void)
   const cs_zone_t *z_all = cs_volume_zone_by_name("all_cells");
   cs_field_t *fmeg[1] = {CS_F_(vism)};
   cs_meg_volume_function(z_all, fmeg);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -880,8 +834,6 @@ cs_gui_mobile_mesh_get_boundaries(cs_domain_t  *domain)
                     ale_bdy,
                     z->name);
 
-  } /* Loop on mobile_boundary zones */
-
     /* TODO */
     /* else if (nature == ale_boundary_nature_fixed_displacement) { */
     /*   _uialcl_fixed_displacement(tn_bndy, z, */
@@ -893,6 +845,7 @@ cs_gui_mobile_mesh_get_boundaries(cs_domain_t  *domain)
     /*                          ialtyb, rcodcl); */
     /* } */
 
+  } /* Loop on mobile_boundary zones */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -946,6 +899,59 @@ cs_gui_mobile_mesh_get_fixed_velocity(const char    *label)
   }
 
   return NULL; /* avoid a compilation warning */
+}
+
+/*-----------------------------------------------------------------------------
+ * Retrieve structure id associated to faces for external coupling
+ *
+ * parameters:
+ *   idfstr    <-- Structure definition
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_bc_external_structures(int  *idfstr)
+{
+  int istruct = 0;
+
+  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
+
+  cs_tree_node_t *tn_b0 = cs_tree_node_get_child(tn, "boundary");
+  cs_tree_node_t *tn_w0 = cs_tree_node_get_child(tn, "boundary");//FIXME
+
+  /* Loop on boundary faces */
+
+  for (tn = tn_b0; tn != NULL; tn = cs_tree_node_get_next_of_name(tn)) {
+
+    const char *label = cs_tree_node_get_tag(tn, "label");
+
+    cs_tree_node_t *tn_w
+      = cs_tree_node_get_sibling_with_tag(tn_w0, "label", label);
+
+    enum ale_boundary_nature nature =_get_ale_boundary_nature(tn_w);
+
+    if (nature == ale_boundary_nature_external_coupling) {
+
+      const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
+      if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
+        continue;
+
+      cs_lnum_t n_faces = z->n_elts;
+      const cs_lnum_t *faces_list = z->elt_ids;
+
+      cs_tree_node_t *tn_ec = cs_tree_get_node(tn_w, "ale");
+      tn_ec = cs_tree_node_get_sibling_with_tag(tn_ec,
+                                                "choice",
+                                                "external_coupling");
+
+      /* Set idfstr with negative value starting from -1 */
+      for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
+        cs_lnum_t ifbr = faces_list[ifac];
+        idfstr[ifbr]  = -istruct - 1;
+      }
+      istruct++;
+    }
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/

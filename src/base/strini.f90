@@ -79,7 +79,7 @@ integer          n_fields, f_id, flag
 integer          ifac  , istr, icompt
 integer          mbstru, mbaste
 
-integer          indast, verbosity, visualization
+integer          indast
 
 integer, allocatable, dimension(:) :: face_ids
 
@@ -91,12 +91,11 @@ integer, allocatable, dimension(:) :: face_ids
 
 interface
 
-  subroutine cs_ast_coupling_initialize(verbosity, visualization, &
-                                        nalimx, epalim)           &
+  subroutine cs_ast_coupling_initialize(nalimx, epalim)           &
     bind(C, name='cs_ast_coupling_initialize')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: verbosity, visualization, nalimx
+    integer(c_int), value :: nalimx
     real(kind=c_double), value :: epalim
   end subroutine cs_ast_coupling_initialize
 
@@ -108,6 +107,20 @@ interface
     integer(c_int), dimension(*), intent(in) :: face_ids
     real(kind=c_double), value :: almax
   end subroutine cs_ast_coupling_geometry
+
+  subroutine cs_gui_mobile_mesh_bc_external_structures(idfstr) &
+    bind(C, name='cs_gui_mobile_mesh_bc_external_structures')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), dimension(*), intent(out) :: idfstr
+  end subroutine cs_gui_mobile_mesh_bc_external_structures
+
+  subroutine cs_user_fsi_external_structure_id_wrapper(idfstr) &
+    bind(C, name='cs_user_fsi_external_structure_id_wrapper')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), dimension(*), intent(out) :: idfstr
+  end subroutine cs_user_fsi_external_structure_id_wrapper
 
 end interface
 
@@ -155,14 +168,8 @@ call usstr1                                                       &
 
 ! External structures: code_saturne / code_aster coupling
 
-call uiaste(idfstr)
-call usaste(idfstr)
-
-! TODO set verbosity and visualization levels from GUI and user-defined
-! functions (or build base structure earlier and allow settings)
-
-verbosity = 1
-visualization = 1
+call cs_gui_mobile_mesh_bc_external_structures(idfstr)
+call cs_user_fsi_external_structure_id_wrapper(idfstr)
 
 !===============================================================================
 ! 3.  CALCUL DE NBSTRU ET NBASTE
@@ -247,7 +254,7 @@ if (nbaste.gt.0) then
   nbfast = indast
 
   ! Exchange code_aster coupling parameters
-  call cs_ast_coupling_initialize(verbosity, visualization, nalimx, epalim)
+  call cs_ast_coupling_initialize(nalimx, epalim)
 
   ! Send geometric information to code_aster
   call cs_ast_coupling_geometry(nbfast, face_ids, almax)

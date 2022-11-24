@@ -126,7 +126,7 @@ cs_user_boundary_conditions_ale(cs_domain_t  *domain,
   cs_real_3_t *disale
     = (cs_real_3_t*)cs_field_by_name("mesh_displacement")->val;
 
-  cs_zone_t  *zn = NULL;
+  const cs_zone_t  *zn = NULL;
 
   /*![loc_var]*/
 

@@ -67,17 +67,6 @@ void CS_PROCF (uialin, UIALIN) (int    *nalinf,
                                 int    *nalimx,
                                 double *epalim);
 
-/*----------------------------------------------------------------------------
- * ALE diffusion type
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIALVM
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uialvm, UIALVM) (void);
-
 /*-----------------------------------------------------------------------------
  * uialcl
  *
@@ -184,6 +173,13 @@ void
 cs_gui_get_ale_viscosity_type(int  *type);
 
 /*----------------------------------------------------------------------------
+ * Set ALE diffusion type from GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_ale_diffusion_type(void);
+
+/*----------------------------------------------------------------------------
  * Mesh viscosity setting.
  *----------------------------------------------------------------------------*/
 
@@ -214,6 +210,16 @@ cs_gui_mobile_mesh_get_boundaries(cs_domain_t     *domain);
 
 cs_real_t *
 cs_gui_mobile_mesh_get_fixed_velocity(const char*    label);
+
+/*-----------------------------------------------------------------------------
+ * Retrieve structure id associated to faces for external coupling
+ *
+ * parameters:
+ *   idfstr    <-- Structure definition
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_bc_external_structures(int  *idfstr);
 
 /*----------------------------------------------------------------------------*/
 

@@ -160,6 +160,9 @@ static const char _name_f_f[] = "fluid_forces";
 static const char _name_m_d[] = "mesh_displacement";
 static const char _name_m_v[] = "mesh_velocity";
 
+static int _verbosity = 1;
+static int _visualization = 1;
+
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -562,19 +565,15 @@ _cs_ast_coupling_post_function(void                  *coupling,
 /*!
  * \brief Initial exchange with code_aster
  *
- * \param[in]  verbosity      verbosity level for code_aster coupling
- * \param[in]  visualization  visualization level for code_aster coupling
- * \param[in]  nalimx         maximum number of implicitation iterations of
- *                            the structure displacement
- * \param[in]  epalim         relative precision of implicitation of
- *                            the structure displacement
+ * \param[in]  nalimx  maximum number of implicitation iterations of
+ *                     the structure displacement
+ * \param[in]  epalim  relative precision of implicitation of
+ *                     the structure displacement
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_initialize(int        verbosity,
-                           int        visualization,
-                           int        nalimx,
+cs_ast_coupling_initialize(int        nalimx,
                            cs_real_t  epalim)
 {
   const cs_time_step_t *ts = cs_glob_time_step;
@@ -604,8 +603,8 @@ cs_ast_coupling_initialize(int        verbosity,
 
 #endif
 
-  cpl->verbosity = verbosity;
-  cpl->visualization = visualization;
+  cpl->verbosity = _verbosity;
+  cpl->visualization = _visualization;
 
   cpl->post_mesh = NULL;
 
@@ -634,13 +633,6 @@ cs_ast_coupling_initialize(int        verbosity,
 
   cs_glob_ast_coupling = cpl;
 
-  /* Set verbosity based on environment variable */
-
-  const char *verbosity_s = getenv("CS_AST_COUPLING_VERBOSITY");
-  if (verbosity_s != NULL) {
-    int _verbosity = atoi(verbosity_s);
-    cpl->verbosity = _verbosity;
-  }
   cs_calcium_set_verbosity(cpl->verbosity);
 
   /* Find root rank of coupling */
@@ -720,7 +712,6 @@ cs_ast_coupling_initialize(int        verbosity,
                             &(cpl->dtref));
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1257,6 +1248,72 @@ cs_ast_coupling_send_cvg(int  icved)
   cs_ast_coupling_t  *cpl = cs_glob_ast_coupling;
 
   cpl->icv2 = icved;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get verbosity level for code_aster coupling.
+ *
+ * \return  verbosity level for code_aster coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_ast_coupling_get_verbosity(void)
+{
+  return _verbosity;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set verbosity level for code_aster coupling.
+ *
+ * \param[in]  verbosity      verbosity level for code_aster coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_set_verbosity(int   verbosity)
+{
+  _verbosity = verbosity;
+
+  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+  if (cpl != NULL) {
+    cpl->verbosity = verbosity;
+    cs_calcium_set_verbosity(verbosity);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get visualization level for code_aster coupling.
+ *
+ * \return  visualization level for code_aster coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_ast_coupling_get_visualization(void)
+{
+  return _visualization;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set visualization level for code_aster coupling.
+ *
+ * \param[in]  visualization  visualization level for code_aster coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_set_visualization(int   visualization)
+{
+  _visualization = visualization;
+
+  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+  if (cpl != NULL) {
+    cpl->visualization = visualization;
+  }
 }
 
 /*----------------------------------------------------------------------------*/

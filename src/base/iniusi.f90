@@ -100,6 +100,12 @@ interface
     implicit none
   end subroutine cs_function_default_define
 
+  subroutine cs_gui_ale_diffusion_type()  &
+       bind(C, name='cs_gui_ale_diffusion_type')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_ale_diffusion_type
+
   subroutine cs_gui_physical_constants()  &
        bind(C, name='cs_gui_physical_constants')
     use, intrinsic :: iso_c_binding
@@ -280,9 +286,8 @@ if (icdo.lt.2) then
   call cs_pressure_correction_model_activate
 endif
 
-
 if (iale.ge.1) then
-  call uialvm
+  call cs_gui_ale_diffusion_type
 endif
 call csivis
 
@@ -296,7 +301,6 @@ nscmax = nscamx
 ! settings
 
 ! Ground water flow (Darcy)
-
 
 if (ippmod(idarcy).ge.0) then
   call daini1

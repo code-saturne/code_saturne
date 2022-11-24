@@ -63,19 +63,15 @@ typedef struct _cs_ast_coupling_t  cs_ast_coupling_t;
 /*!
  * \brief Initial exchange with code_aster
  *
- * \param[in]  verbosity      verbosity level for code_aster coupling
- * \param[in]  visualization  visualization level for code_aster coupling
- * \param[in]  nalimx         maximum number of implicitation iterations of
- *                            the structure displacement
- * \param[in]  epalim         relative precision of implicitation of
- *                            the structure displacement
+ * \param[in]  nalimx  maximum number of implicitation iterations of
+ *                     the structure displacement
+ * \param[in]  epalim  relative precision of implicitation of
+ *                     the structure displacement
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_initialize(int        verbosity,
-                           int        visualization,
-                           int        nalimx,
+cs_ast_coupling_initialize(int        nalimx,
                            cs_real_t  epalim);
 
 /*----------------------------------------------------------------------------*/
@@ -160,6 +156,50 @@ cs_ast_coupling_get_ext_cvg(void);
 
 void
 cs_ast_coupling_send_cvg(int  icved);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get verbosity level for code_aster coupling.
+ *
+ * \return  verbosity level for code_aster coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_ast_coupling_get_verbosity(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set verbosity level for code_aster coupling.
+ *
+ * \param[in]  verbosity      verbosity level for code_aster coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_set_verbosity(int  verbosity);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get visualization level for code_aster coupling.
+ *
+ * \return  visualization level for code_aster coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_ast_coupling_get_visualization(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set visualization level for code_aster coupling.
+ *
+ * \param[in]  visualization  visualization level for code_aster coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_set_visualization(int  visualization);
 
 /*----------------------------------------------------------------------------*/
 
