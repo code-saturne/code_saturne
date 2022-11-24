@@ -65,6 +65,7 @@
 #include "cs_physical_model.h"
 #include "cs_post.h"
 #include "cs_reco.h"
+#include "cs_sles_it.h"
 #include "cs_zone.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
@@ -3832,6 +3833,12 @@ cs_gwf_add_tracer(cs_gwf_tracer_model_t     tr_model,
                                                adv,
                                                init_setup,
                                                finalize_setup);
+
+  /* The default value of the breakdown threshold may be too high when dealing
+     with a tracer equation since the concentration of radionuclides are (very)
+     small in general */
+
+  cs_sles_it_set_breakdown_threshold(1e-36);
 
   return tracer;
 }
