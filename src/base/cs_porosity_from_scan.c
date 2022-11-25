@@ -143,8 +143,8 @@ cs_f_porosity_from_scan_get_pointer(bool  **compute_porosity_from_scan);
  *
  * parameters:
  *   m               <-- pointer to mesh
- *   elt_ids         <-- point to cell id
  *   n_points        <-- total number of points
+ *   elt_ids         <-- point to cell id
  *   n_points_cell   <-- number of points in cell
  *   cen_points      <-- center of gravity of points in cell
  *   dvol            <-- volume of cell
@@ -152,18 +152,18 @@ cs_f_porosity_from_scan_get_pointer(bool  **compute_porosity_from_scan);
  *----------------------------------------------------------------------------*/
 
 static void
-_solid_plane_from_points(const cs_mesh_t    *m,
+_solid_plane_from_points(const cs_mesh_t   *m,
+                         cs_lnum_t          n_points,
                          const cs_lnum_t    elt_ids[],
-                         const cs_lnum_t    n_points,
                          const cs_real_t    n_points_cell[],
                          const cs_real_3_t  cen_points[],
                          const cs_real_3_t  point_coords[],
                          cs_real_3_t        c_w_face_normal[])
 {
-
-  //TODO Compute as a cross product
-  cs_real_33_t cov_mat = {{0.,0.,0.},{0.,0.,0.},{0.,0.,0.}};
-  cs_real_3_t  point_local;
+  // TODO Compute as a cross product
+  cs_real_33_t cov_mat = {{0., 0., 0.},
+                          {0., 0., 0.},
+                          {0., 0., 0.}};
   cs_real_6_t  *c, *d, *z, *t;
   BFT_MALLOC(c, m->n_cells, cs_real_6_t);
   BFT_MALLOC(d, m->n_cells, cs_real_6_t);
@@ -171,37 +171,32 @@ _solid_plane_from_points(const cs_mesh_t    *m,
   BFT_MALLOC(t, m->n_cells, cs_real_6_t);
   const cs_real_t threshold = _porosity_from_scan_opt.threshold;
 
-  /* Initializing */
-  for (cs_lnum_t i = 0; i < 3; i++)
-    point_local[i] = 0.;
+  // Initialization
 
   for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
-    cs_lnum_t k = 0;
-    for (cs_lnum_t i = 0; i < 3; i++) {
-      for (cs_lnum_t j = 0; j < 2; j++) {
-        c[c_id][k] = 0.;
-        d[c_id][k] = 0.;
-        t[c_id][k] = 0.;
-        z[c_id][k] = 0.;
-        k++;
-      }
+    for (cs_lnum_t k = 0; k < 6; k++) {
+      c[c_id][k] = 0.;
+      d[c_id][k] = 0.;
+      t[c_id][k] = 0.;
+      z[c_id][k] = 0.;
     }
   }
 
-  for (cs_lnum_t p_id = 0; p_id < n_points; p_id++) { //Loop over points
+  for (cs_lnum_t p_id = 0; p_id < n_points; p_id++) { // Loop over points
 
     cs_lnum_t cell_id = elt_ids[p_id];
 
     if (n_points_cell[cell_id] > threshold) { // At least three points required
 
+      cs_real_t point_local[3];
       for (cs_lnum_t i = 0; i < 3; i++)
         point_local[i] = point_coords[p_id][i] - cen_points[cell_id][i];
 
-      //Kahan summation
+      // Kahan summation
       cs_lnum_t k = 0;
       for (cs_lnum_t i = 0; i < 3; i++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
-          if ( i == j || j > i) {
+          if (i == j || j > i) {
             z[cell_id][k] = point_local[i] * point_local[j]
                             - c[cell_id][k];
             t[cell_id][k] = d[cell_id][k] + z[cell_id][k];
@@ -212,13 +207,14 @@ _solid_plane_from_points(const cs_mesh_t    *m,
         }
       }
     }
-  }//Loop over points
+
+  } // Loop over points
 
   BFT_FREE(z);
   BFT_FREE(t);
   BFT_FREE(c);
 
-  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) { //Loop over cells
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
 
     /* At least three points required */
     if (n_points_cell[cell_id] > threshold) {
@@ -230,15 +226,21 @@ _solid_plane_from_points(const cs_mesh_t    *m,
       cov_mat[1][2] = d[cell_id][4];
       cov_mat[2][2] = d[cell_id][5];
 
-      cs_real_t det_x = cov_mat[1][1]*cov_mat[2][2] - cov_mat[1][2]*cov_mat[1][2];
-      cs_real_t det_y = cov_mat[0][0]*cov_mat[2][2] - cov_mat[0][2]*cov_mat[0][2];
-      cs_real_t det_z = cov_mat[0][0]*cov_mat[1][1] - cov_mat[0][1]*cov_mat[0][1];
+      cs_real_t det_x =   cov_mat[1][1]*cov_mat[2][2]
+                        - cov_mat[1][2]*cov_mat[1][2];
+      cs_real_t det_y =   cov_mat[0][0]*cov_mat[2][2]
+                        - cov_mat[0][2]*cov_mat[0][2];
+      cs_real_t det_z =   cov_mat[0][0]*cov_mat[1][1]
+                        - cov_mat[0][1]*cov_mat[0][1];
 
-      cs_real_t det_xy = cov_mat[0][2]*cov_mat[1][2] - cov_mat[0][1]*cov_mat[2][2];
-      cs_real_t det_xz = cov_mat[0][1]*cov_mat[1][2] - cov_mat[0][2]*cov_mat[1][1];
-      cs_real_t det_zy = cov_mat[0][1]*cov_mat[0][2] - cov_mat[1][2]*cov_mat[0][0];
+      cs_real_t det_xy =   cov_mat[0][2]*cov_mat[1][2]
+                         - cov_mat[0][1]*cov_mat[2][2];
+      cs_real_t det_xz =   cov_mat[0][1]*cov_mat[1][2]
+                         - cov_mat[0][2]*cov_mat[1][1];
+      cs_real_t det_zy =   cov_mat[0][1]*cov_mat[0][2]
+                         - cov_mat[1][2]*cov_mat[0][0];
 
-      cs_real_t det_max = CS_MAX( CS_MAX( det_x, det_y ), det_z );
+      cs_real_t det_max = fmax(fmax(det_x, det_y), det_z);
       if (det_max > 0.0) {
         // Pick path with best conditioning:
         if (CS_ABS(det_max - det_x) < cs_math_epzero*det_max) {
@@ -256,27 +258,26 @@ _solid_plane_from_points(const cs_mesh_t    *m,
           c_w_face_normal[cell_id][1] = det_zy;
           c_w_face_normal[cell_id][2] = det_z;
         }
-        cs_math_3_normalize(c_w_face_normal[cell_id], c_w_face_normal[cell_id]);
-
+        cs_math_3_normalize(c_w_face_normal[cell_id],
+                            c_w_face_normal[cell_id]);
       }
 
-      /* c_w_face_normal is forced to be 0 vector  */
+      // c_w_face_normal is forced to be 0 vector
       else {
         c_w_face_normal[cell_id][0] = 0.;
         c_w_face_normal[cell_id][1] = 0.;
         c_w_face_normal[cell_id][2] = 0.;
-
       }
     }
-    /* If not enough points, c_w_face_normal is forced to be 0 vector  */
+
+    // If not enough points, c_w_face_normal is forced to be 0 vector
     else {
       c_w_face_normal[cell_id][0] = 0.;
       c_w_face_normal[cell_id][1] = 0.;
       c_w_face_normal[cell_id][2] = 0.;
-
     }
 
-  }//Loop over cells
+  } // Loop over cells
 
   BFT_FREE(d);
 }
@@ -444,8 +445,9 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
     }
 
     if (n_read_points > 0)
-      bft_printf(_("  Porosity from scan: %ld additional points to be read.\n\n"),
-                 n_read_points);
+      bft_printf
+        (_("  Porosity from scan: %ld additional points to be read.\n\n"),
+         n_read_points);
 
     /* FVM meshes for writers */
     if (_porosity_from_scan_opt.postprocess_points) {
@@ -554,56 +556,54 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
     /* Shift from 1-base to 0-based locations */
     ple_locator_shift_locations(_locator, -1);
 
-    /* dump locator */
 #if 0
     ple_locator_dump(_locator);
 #endif
 
-    /* Get the element ids (list of points on the local rank) */
-    cs_lnum_t n_points_loc = ple_locator_get_n_dist_points(_locator);
+    /* Number of distant points located on local mesh. */
+    cs_lnum_t n_points_dist = ple_locator_get_n_dist_points(_locator);
 
 #if 0
     bft_printf("ple_locator_get_n_dist_points = %d, n_points = %d\n",
-               n_points_loc, n_points);
+               n_points_dist, n_points);
 #endif
 
-    const cs_lnum_t *elt_ids = ple_locator_get_dist_locations(_locator);
+    const cs_lnum_t *dist_loc = ple_locator_get_dist_locations(_locator);
+    const ple_coord_t *dist_coords = ple_locator_get_dist_coords(_locator);
 
-    for (int i = 0; i < (int)n_points_loc/cs_glob_n_ranks; i++) {
-      if (elt_ids[i] >= 0) { /* Found */
-        /* Could be improved with a parallel reading */
-        f_nb_scan->val[elt_ids[i]] += 1.;
-        for (cs_lnum_t idim = 0; idim < 3; idim++)
-          cen_points[elt_ids[i]][idim] += point_coords[i][idim];
-      }
+    for (cs_lnum_t i = 0; i < n_points_dist; i++) {
+      cs_lnum_t c_id = dist_loc[i];
+      f_nb_scan->val[c_id] += 1.;
+      for (cs_lnum_t idim = 0; idim < 3; idim++)
+        cen_points[c_id][idim] += dist_coords[i*3 + idim];
     }
-    for (int c_id = 0; c_id < m->n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
       if (f_nb_scan->val[c_id] > 0) {
         for (cs_lnum_t idim = 0; idim < 3; idim++)
           cen_points[c_id][idim] /= f_nb_scan->val[c_id];
       }
     }
 
-    /* Normal vector to the solid plane */
+    // Normal vector to the solid plane
     cs_real_3_t *restrict c_w_face_normal
       = (cs_real_3_t *restrict)mq->c_w_face_normal;
-    //TODO do it incrementally and finalize it outside of the loop
+    // TODO do it incrementally and finalize it outside of the loop
     _solid_plane_from_points(m,
-                             elt_ids,
-                             (int)n_points_loc/cs_glob_n_ranks,
+                             n_points_dist,
+                             dist_loc,
                              (const cs_real_t   *)f_nb_scan->val,
                              (const cs_real_3_t *)cen_points,
                              (const cs_real_3_t *)point_coords,
                              c_w_face_normal);
 
-    /* Free memory */
+    // Free memory
     _locator = ple_locator_destroy(_locator);
     BFT_FREE(point_coords);
     BFT_FREE(colors);
 
-  } /* End loop on multiple scans */
+  } // End loop on multiple scans
 
-  /* Bounding box*/
+  /* Bounding box */
   bft_printf(_("  Global bounding box [%f, %f, %f], [%f, %f, %f].\n\n"),
              min_vec_tot[0], min_vec_tot[1], min_vec_tot[2],
              max_vec_tot[0], max_vec_tot[1], max_vec_tot[2]);
