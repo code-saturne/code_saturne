@@ -1880,6 +1880,71 @@ _set_petsc_hypre_sles(bool                 use_field_id,
 #if defined(HAVE_HYPRE)
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the solver when HYPRE is used
+ *         Check HYPRE documentation for available options:
+ *         https://hypre.readthedocs.io/en/latest/index.html
+ *
+ * \param[in]      slesp   pointer to a set of SLES parameters
+ * \param[in, out] hs      pointer to the HYPRE solver structure
+ *
+ * \return a HYPRE_Solver structure (pointer) for the preconditioner
+ */
+/*----------------------------------------------------------------------------*/
+
+static HYPRE_Solver
+_set_hypre_solver(cs_param_sles_t    *slesp,
+                  HYPRE_Solver        hs)
+{
+  HYPRE_Solver  pc = NULL;
+
+  switch (slesp->solver) {
+
+  case CS_PARAM_ITSOL_AMG: /* BoomerAMG as solver. Nothing to do at this
+                              stage. This is done in the calling function. */
+    pc = hs;
+    break;
+
+  case CS_PARAM_ITSOL_BICG:
+  case CS_PARAM_ITSOL_BICGSTAB2:
+    HYPRE_BiCGSTABSetTol(hs, (HYPRE_Real)slesp->eps);
+    HYPRE_BiCGSTABSetMaxIter(hs, (HYPRE_Int)slesp->n_max_iter);
+    HYPRE_BiCGSTABGetPrecond(hs, &pc);
+    break;
+
+  case CS_PARAM_ITSOL_CG:
+  case CS_PARAM_ITSOL_FCG:
+    HYPRE_PCGSetMaxIter(hs, (HYPRE_Int)slesp->n_max_iter);
+    HYPRE_PCGSetTol(hs, (HYPRE_Real)slesp->eps);
+    HYPRE_PCGGetPrecond(hs, &pc);
+    break;
+
+  case CS_PARAM_ITSOL_FGMRES:
+  case CS_PARAM_ITSOL_GCR:
+    HYPRE_FlexGMRESSetMaxIter(hs, (HYPRE_Int)slesp->n_max_iter);
+    HYPRE_FlexGMRESSetKDim(hs, (HYPRE_Int)slesp->restart);
+    HYPRE_FlexGMRESSetTol(hs, (HYPRE_Real)slesp->eps);
+    HYPRE_FlexGMRESGetPrecond(hs, &pc);
+    break;
+
+  case CS_PARAM_ITSOL_GMRES:
+    HYPRE_GMRESSetMaxIter(hs, (HYPRE_Int)slesp->n_max_iter);
+    HYPRE_GMRESSetKDim(hs, (HYPRE_Int)slesp->restart);
+    HYPRE_GMRESSetTol(hs, (HYPRE_Real)slesp->eps);
+    HYPRE_GMRESGetPrecond(hs, &pc);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid type of solver for eq. \"%s\"\n",
+              __func__, slesp->name);
+    break;
+  }
+
+  return pc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Setup hook function for a Hypre KSP solver with preconditioner
  *         This function is called at the end of the setup stage for a KSP
  *         solver.
@@ -1906,39 +1971,8 @@ _hypre_boomeramg_hook(int    verbosity,
 
   cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
   HYPRE_Solver  hs = solver_p;
-  HYPRE_Solver  amg = NULL;
-  bool  amg_as_precond = false;
-
-  switch (slesp->solver) {
-
-  case CS_PARAM_ITSOL_AMG: /* BoomerAMG as solver */
-    amg = hs;
-    break;
-
-  case CS_PARAM_ITSOL_CG:
-  case CS_PARAM_ITSOL_FCG:
-    HYPRE_PCGGetPrecond(hs, &amg);
-    HYPRE_PCGSetMaxIter(hs, (HYPRE_Int)slesp->n_max_iter);
-    HYPRE_PCGSetTol(hs, (HYPRE_Real)slesp->eps);
-    amg_as_precond = true;
-    break;
-
-  case CS_PARAM_ITSOL_FGMRES:
-  case CS_PARAM_ITSOL_GCR:
-  case CS_PARAM_ITSOL_GMRES:
-    HYPRE_FlexGMRESGetPrecond(hs, &amg);
-    HYPRE_FlexGMRESSetMaxIter(hs, (HYPRE_Int)slesp->n_max_iter);
-    HYPRE_FlexGMRESSetKDim(hs, (HYPRE_Int)slesp->restart);
-    HYPRE_FlexGMRESSetTol(hs, (HYPRE_Real)slesp->eps);
-    amg_as_precond = true;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid type of AMG for eq. \"%s\"\n",
-              __func__, slesp->name);
-    break;
-  }
+  HYPRE_Solver  amg = _set_hypre_solver(slesp, hs);
+  bool  amg_as_precond = (slesp->solver == CS_PARAM_ITSOL_AMG) ? false : true;
 
   /* Set the type of cycle */
 
@@ -2084,7 +2118,7 @@ _hypre_boomeramg_hook(int    verbosity,
     HYPRE_BoomerAMGSetNonGalerkTol(amg, 3, nongalerkin_tol);
 
   }
-  else {
+  else { /* AMG as solver */
 
     HYPRE_BoomerAMGSetRelaxType(amg, 6);      /* Sym G.S./Jacobi hybrid */
     HYPRE_BoomerAMGSetMaxIter(amg, slesp->n_max_iter);
@@ -2094,6 +2128,55 @@ _hypre_boomeramg_hook(int    verbosity,
 
     HYPRE_BoomerAMGSetKeepTranspose(amg, 1);  /* keep transpose to avoid
                                                  SpMTV */
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Setup hook function for a Hypre solver with preconditioner
+ *         This function is called at the end of the setup stage for a solver.
+ *
+ *         Check HYPRE documentation for available options:
+ *         https://hypre.readthedocs.io/en/latest/index.html
+ *
+ * \param[in]      verbosity   verbosity level
+ * \param[in, out] context     pointer to optional (untyped) value or structure
+ * \param[in, out] solve_pr    handle to HYPRE solver
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_hypre_generic_pc_hook(int    verbosity,
+                       void  *context,
+                       void  *solver_p)
+{
+  CS_NO_WARN_IF_UNUSED(verbosity);
+
+  cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
+  HYPRE_Solver  hs = solver_p;
+  HYPRE_Solver  pc = _set_hypre_solver(slesp, hs);
+
+  switch (slesp->precond) {
+
+  case CS_PARAM_PRECOND_NONE:
+  case CS_PARAM_PRECOND_DIAG:
+    break;
+
+  case CS_PARAM_PRECOND_ILU0:
+    HYPRE_ILUSetMaxIter(pc, (HYPRE_Int)1);
+    HYPRE_ILUSetTol(pc, (HYPRE_Real)0.0);
+    HYPRE_ILUSetType(pc, (HYPRE_Int)0);
+    break;
+
+  case CS_PARAM_PRECOND_BJACOB_ILU0:
+    HYPRE_EuclidSetLevel(pc, (HYPRE_Int)0);
+    HYPRE_EuclidSetBJ(pc, (HYPRE_Int)1);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: System: %s\n Invalid solver/preconditioner with HYPRE.",
+              __func__, slesp->name);
   }
 }
 
@@ -2117,6 +2200,7 @@ _set_hypre_sles(bool                 use_field_id,
 {
   assert(slesp != NULL);  /* Sanity checks */
 
+  const char  errmsg[] = "Invalid couple (solver,preconditionner) with HYPRE.";
   const  char  *sles_name = use_field_id ? NULL : slesp->name;
   assert(slesp->field_id > -1 || sles_name != NULL);
 
@@ -2133,6 +2217,53 @@ _set_hypre_sles(bool                 use_field_id,
                          (void *)slesp);
     break;
 
+  case CS_PARAM_ITSOL_BICG:
+  case CS_PARAM_ITSOL_BICGSTAB2:
+    switch (slesp->precond) {
+
+    case CS_PARAM_PRECOND_AMG:
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_BICGSTAB,
+                           CS_SLES_HYPRE_BOOMERAMG,
+                           _hypre_boomeramg_hook,
+                           (void *)slesp);
+      break;
+
+    case CS_PARAM_PRECOND_DIAG:
+    case CS_PARAM_PRECOND_NONE:
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_BICGSTAB,
+                           CS_SLES_HYPRE_NONE,
+                           _hypre_generic_pc_hook,
+                           (void *)slesp);
+      break;
+
+    case CS_PARAM_PRECOND_BJACOB_ILU0:
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_BICGSTAB,
+                           CS_SLES_HYPRE_EUCLID,
+                           _hypre_generic_pc_hook,
+                           (void *)slesp);
+      break;
+
+    case CS_PARAM_PRECOND_ILU0:
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_BICGSTAB,
+                           CS_SLES_HYPRE_ILU,
+                           _hypre_generic_pc_hook,
+                           (void *)slesp);
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: System: %s\n %s\n", __func__, slesp->name, errmsg);
+    }
+    break;
+
   case CS_PARAM_ITSOL_CG:
   case CS_PARAM_ITSOL_FCG:
     switch (slesp->precond) {
@@ -2146,16 +2277,42 @@ _set_hypre_sles(bool                 use_field_id,
                            (void *)slesp);
       break;
 
+    case CS_PARAM_PRECOND_DIAG:
+    case CS_PARAM_PRECOND_NONE:
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_PCG,
+                           CS_SLES_HYPRE_NONE,
+                           _hypre_generic_pc_hook,
+                           (void *)slesp);
+      break;
+
+    case CS_PARAM_PRECOND_BJACOB_ILU0:
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_PCG,
+                           CS_SLES_HYPRE_EUCLID,
+                           _hypre_generic_pc_hook,
+                           (void *)slesp);
+      break;
+
+    case CS_PARAM_PRECOND_ILU0:
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_PCG,
+                           CS_SLES_HYPRE_ILU,
+                           _hypre_generic_pc_hook,
+                           (void *)slesp);
+      break;
+
     default:
       bft_error(__FILE__, __LINE__, 0,
-                " %s: System: %s\n Invalid solver/preconditioner with HYPRE.",
-                __func__, slesp->name);
+                " %s: System: %s\n %s\n", __func__, slesp->name, errmsg);
     }
     break;
 
   case CS_PARAM_ITSOL_FGMRES:
   case CS_PARAM_ITSOL_GCR:
-  case CS_PARAM_ITSOL_GMRES:
     switch (slesp->precond) {
 
     case CS_PARAM_PRECOND_AMG:
@@ -2164,6 +2321,81 @@ _set_hypre_sles(bool                 use_field_id,
                            CS_SLES_HYPRE_FLEXGMRES,
                            CS_SLES_HYPRE_BOOMERAMG,
                            _hypre_boomeramg_hook,
+                           (void *)slesp);
+      break;
+
+    case CS_PARAM_PRECOND_NONE:
+    case CS_PARAM_PRECOND_DIAG:
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_FLEXGMRES,
+                           CS_SLES_HYPRE_NONE,
+                           _hypre_generic_pc_hook,
+                           (void *)slesp);
+      break;
+
+    case CS_PARAM_PRECOND_BJACOB_ILU0:
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_FLEXGMRES,
+                           CS_SLES_HYPRE_EUCLID,
+                           _hypre_generic_pc_hook,
+                           (void *)slesp);
+      break;
+
+    case CS_PARAM_PRECOND_ILU0:
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_FLEXGMRES,
+                           CS_SLES_HYPRE_ILU,
+                           _hypre_generic_pc_hook,
+                           (void *)slesp);
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: System: %s\n Invalid solver/preconditioner with HYPRE.",
+                __func__, slesp->name);
+    }
+    break;
+
+  case CS_PARAM_ITSOL_GMRES:
+    switch (slesp->precond) {
+
+    case CS_PARAM_PRECOND_AMG:
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_GMRES,
+                           CS_SLES_HYPRE_BOOMERAMG,
+                           _hypre_boomeramg_hook,
+                           (void *)slesp);
+      break;
+
+    case CS_PARAM_PRECOND_DIAG:
+    case CS_PARAM_PRECOND_NONE:
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_GMRES,
+                           CS_SLES_HYPRE_NONE,
+                           _hypre_generic_pc_hook,
+                           (void *)slesp);
+      break;
+
+    case CS_PARAM_PRECOND_BJACOB_ILU0:
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_GMRES,
+                           CS_SLES_HYPRE_EUCLID,
+                           _hypre_generic_pc_hook,
+                           (void *)slesp);
+      break;
+
+    case CS_PARAM_PRECOND_ILU0:
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_GMRES,
+                           CS_SLES_HYPRE_ILU,
+                           _hypre_generic_pc_hook,
                            (void *)slesp);
       break;
 

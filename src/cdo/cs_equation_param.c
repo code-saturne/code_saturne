@@ -543,24 +543,36 @@ _set_key(cs_equation_param_t   *eqp,
     }
     else if (strcmp(keyval, "gmres") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_GMRES;
+
     else if (strcmp(keyval, "fgmres") == 0) {
 
-      cs_param_sles_class_t  ret_class =
-        cs_param_sles_check_class(CS_PARAM_SLES_CLASS_PETSC);
+      cs_param_sles_class_t  ret_class;
+      if (eqp->sles_param->solver_class == CS_PARAM_SLES_CLASS_CS)
+        ret_class = cs_param_sles_check_class(CS_PARAM_SLES_CLASS_HYPRE);
+      else
+        ret_class = cs_param_sles_check_class(eqp->sles_param->solver_class);
 
       eqp->sles_param->flexible = true;
 
-      if (ret_class != CS_PARAM_SLES_CLASS_PETSC) {
+      switch (ret_class) {
 
+      case CS_PARAM_SLES_CLASS_PETSC:
+        eqp->sles_param->solver = CS_PARAM_ITSOL_FGMRES;
+        eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
+        break;
+
+      case CS_PARAM_SLES_CLASS_HYPRE:
+        eqp->sles_param->solver = CS_PARAM_ITSOL_FGMRES;
+        eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_HYPRE;
+        break;
+
+      default:
         cs_base_warn(__FILE__, __LINE__);
         bft_printf(" Switch to the GCR implementation of code_saturne\n");
         eqp->sles_param->solver = CS_PARAM_ITSOL_GCR;
         eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
+        break;
 
-      }
-      else {
-        eqp->sles_param->solver = CS_PARAM_ITSOL_FGMRES;
-        eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
       }
 
     }
