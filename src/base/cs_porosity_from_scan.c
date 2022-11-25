@@ -539,16 +539,19 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
     _locator = ple_locator_create();
 #endif
 
+    cs_lnum_t _n_points = (cs_glob_rank_id < 1) ? n_points : 0;
+    cs_real_t *_point_coords = (cs_glob_rank_id < 1) ? (cs_real_t *)point_coords : NULL;
+
     ple_locator_set_mesh(_locator,
                          location_mesh,
                          options,
                          0., /* tolerance_base */
                          0.1, /* tolerance */
                          3, /* dim */
-                         n_points,
+                         _n_points,
                          NULL,
                          NULL, /* point_tag */
-                         (cs_real_t *)point_coords,
+                         _point_coords,
                          NULL, /* distance */
                          cs_coupling_mesh_extents,
                          cs_coupling_point_in_mesh_p);
@@ -593,7 +596,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
                              dist_loc,
                              (const cs_real_t   *)f_nb_scan->val,
                              (const cs_real_3_t *)cen_points,
-                             (const cs_real_3_t *)point_coords,
+                             (const cs_real_3_t *)dist_coords,
                              c_w_face_normal);
 
     // Free memory
