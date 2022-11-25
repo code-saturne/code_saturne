@@ -2032,6 +2032,7 @@ cs_restart_checkpoint_required(const cs_time_step_t  *ts)
 
   else if (_checkpoint_wt_interval >= 0) {
     double wt = cs_timer_wtime();
+    cs_parall_bcast(0, 1, CS_DOUBLE, &wt);
     if (wt - _checkpoint_wt_last >= _checkpoint_wt_interval)
       retval = true;
   }
@@ -2075,8 +2076,9 @@ cs_restart_checkpoint_done(const cs_time_step_t  *ts)
 
   if (_checkpoint_wt_interval >= 0) {
     double wt = cs_timer_wtime();
+    cs_parall_bcast(0, 1, CS_DOUBLE, &wt);
     if (wt - _checkpoint_wt_last >= _checkpoint_wt_interval)
-      _checkpoint_wt_last = cs_timer_wtime();
+      _checkpoint_wt_last = wt;
   }
 }
 
