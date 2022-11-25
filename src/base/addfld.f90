@@ -694,6 +694,7 @@ if (compute_porosity_from_scan) then
   f_name  = 'cell_scan_points_cog'
   f_label = 'Point centers'
   call add_property_field(f_name, f_label, 3, .false., iflid)
+  call field_set_key_int(iflid, keylog, 1)
 endif
 
 !===============================================================================

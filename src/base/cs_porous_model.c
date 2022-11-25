@@ -316,11 +316,11 @@ cs_f_mesh_quantities_solid_compute(void)
     cs_real_t porosity = mq->cell_f_vol[c_id]/mq->cell_vol[c_id];
     if (porosity > 1.)
       porosity = 1.;
-    if (porosity > cs_math_epzero &&
-        cs_math_3_norm(c_w_face_normal[c_id]) > 0.) {
-      f_poro->val[c_id] = porosity;
+
+    f_poro->val[c_id] = porosity;
+    if (porosity > cs_math_epzero)
       mq->c_disable_flag[c_id] = 0;
-    }
+
   }
   /* synchronize for use in fluid face factor calculation */
   cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_poro->val);

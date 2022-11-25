@@ -2236,10 +2236,9 @@ _mesh_quantities_cell_faces_cog_solid(const cs_mesh_t    *m,
       cs_lnum_t c_id = i_face_cells[f_id][ic];
 
       cs_real_t area = cs_math_3_norm(i_f_face_cell_normal[f_id][ic]);
-      const cs_real_t *_i_f_face_cog = (ic == 0) ?
-                                       i_f_face_cog_0[f_id]:
-                                       i_f_face_cog_1[f_id];
-
+      cs_real_t *_i_f_face_cog = (ic == 0) ?
+                                  i_f_face_cog_0[f_id]:
+                                  i_f_face_cog_1[f_id];
 
       if (c_id > -1) {
 
@@ -2311,7 +2310,24 @@ _mesh_quantities_cell_faces_cog_solid(const cs_mesh_t    *m,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute fluid cell centers and volumes, when immersed boundary
- * is enabled.
+ * is enabled (considering solid face for cs_glob_porous_model = 3).
+ *
+ * Volume V and center of gravity G of the fluid cells C is computed from the
+ * approximate center of the fluid cell Ga(C), the center of gravity G(Fi) and
+ * the normal N(Fi) of the faces, including the solid face when the cell is
+ * cut by a solid wall.
+ *
+ *         n-1
+ *         Sum  (G(Fi) - Ga(C)) . N(Fi)
+ *         i=0
+ *  V(C) = --------------------------------
+ *                        3
+ *
+ *         n-1
+ *         Sum  0.75 * G(Fi) + 0.25 G(C)
+ *         i=0
+ *  G(C) = -----------------------------
+ *                 3 * V(C_fluid)
  *
  * \param[in]   m                     pointer to mesh structure
  * \param[in]   i_f_face_cell_normal  interior fluid face normal vector
@@ -2947,8 +2963,6 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
     = (const cs_lnum_t *)m->i_face_vtx_idx;
   const cs_lnum_t * b_face_vtx_idx
     = (const cs_lnum_t *)m->b_face_vtx_idx;
-  const cs_lnum_t * i_face_vtx_lst
-    = (const cs_lnum_t *)m->i_face_vtx_lst;
   const cs_lnum_t * b_face_vtx_lst
     = (const cs_lnum_t *)m->b_face_vtx_lst;
 
@@ -2981,7 +2995,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                           (cs_real_3_t *)mq->cell_f_cen,
                            mq->cell_vol);
 
-  /* If no points belogonging to the plane are given, stop here */
+  /* If no points belonging to the plane are given, stop here */
   if (cen_points == NULL)
     return;
 
@@ -3057,13 +3071,13 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
     for (cs_lnum_t ic = 0; ic < 2 ; ic++) {
       cs_lnum_t c_id = i_face_cells[face_id][ic];
 
-      /* If the cell is completely immersed the solid,
+      /* If the cell is completely immersed in the solid,
        * all the faces are solid.
        * The c_w_face_normal has a zero norm because it is not at the
        * immersed interface.
        */
       if (cs_math_3_norm(c_w_face_normal[c_id]) < DBL_MIN &&
-          mq->c_disable_flag[c_id] == 1)
+          mq->cell_f_vol[c_id] < DBL_MIN)
         n_s_face_vertices[ic] = n_face_vertices;
     }
 
@@ -3317,13 +3331,13 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         n_s_face_vertices++;
     }
 
-    /* If the cell is completely immersed the solid,
+    /* If the cell is completely immersed in the solid,
      * all the faces are solid.
      * The c_w_face_normal has a zero norm because it is not at the
      * immersed interface.
      */
     if (cs_math_3_norm(c_w_face_normal[c_id]) < DBL_MIN &&
-        mq->c_disable_flag[c_id] == 1)
+        mq->cell_f_vol[c_id] < DBL_MIN )
       n_s_face_vertices = n_face_vertices;
 
     for (cs_lnum_t i = 0; i < 3; i++)
@@ -3448,15 +3462,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
     cs_lnum_t n_f_face_vertices = f_vtx_id;
 
-    /* Initialization of new fluid face surface and COG */
-    if (n_f_face_vertices > 2) {
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        b_f_face_normal[face_id][i] = 0.;
-        b_f_face_cog[face_id][i] = 0.;
-      }
-    }
-
-    // Computing quantities of fluid part of interface faces
+    /* Computing quantities of fluid part of interface faces */
     if (n_f_face_vertices > 2) {
 
       cs_lnum_t *f_face_pos;
@@ -3511,8 +3517,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
       c_w_face_surf[c_id] = sum_surf[c_id];
 
       for (cs_lnum_t i = 0; i < 3; i++) {
-        c_w_face_cog[c_id][i]
-          = 1./(6.*c_w_face_surf[c_id]) * c_w_face_cog[c_id][i];
+        c_w_face_cog[c_id][i]    *= 1./(6.*c_w_face_surf[c_id]);
         //From now the normal is not unitary anymore
         c_w_face_normal[c_id][i] *= c_w_face_surf[c_id];
       }
@@ -3547,6 +3552,27 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
 
   BFT_FREE(i_f_face_cell_normal);
+
+  /* Correction of small or negative volumes
+     (doesn't conserve the total volume) */
+
+  if (cs_glob_mesh_quantities_flag & CS_CELL_VOLUME_RATIO_CORRECTION)
+    _cell_bad_volume_correction(m,
+                                mq->cell_f_vol);
+
+  /* Synchronize geometric quantities */
+
+  if (m->halo != NULL) {
+
+    cs_halo_sync_var_strided(m->halo, CS_HALO_EXTENDED,
+                             mq->cell_f_cen, 3);
+    if (m->n_init_perio > 0)
+      cs_halo_perio_sync_coords(m->halo, CS_HALO_EXTENDED,
+                                mq->cell_f_cen);
+
+    cs_halo_sync_var(m->halo, CS_HALO_EXTENDED, mq->cell_f_vol);
+
+  }
 
   /* Update geometrical entities: distances to the cell center of gravity.
    * Note: only direction is used for "i_face_normal" and "b_face_normal"

@@ -357,8 +357,8 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
    * ------------------------ */
 
   /* Points local centre of gravity */
-  cs_real_3_t *cen_points =
-    (cs_real_3_t *)cs_field_by_name("cell_scan_points_cog")->val;
+  cs_real_t *cen_points =
+    (cs_real_t *)cs_field_by_name("cell_scan_points_cog")->val;
 
   for (int n_scan = 0; n_read_points > 0; n_scan++) {
     n_points = n_read_points;
@@ -578,12 +578,12 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
       cs_lnum_t c_id = dist_loc[i];
       f_nb_scan->val[c_id] += 1.;
       for (cs_lnum_t idim = 0; idim < 3; idim++)
-        cen_points[c_id][idim] += dist_coords[i*3 + idim];
+        cen_points[c_id*3+idim] += dist_coords[i*3 + idim];
     }
     for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
       if (f_nb_scan->val[c_id] > 0) {
         for (cs_lnum_t idim = 0; idim < 3; idim++)
-          cen_points[c_id][idim] /= f_nb_scan->val[c_id];
+          cen_points[c_id*3+idim] /= f_nb_scan->val[c_id];
       }
     }
 
@@ -599,7 +599,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
                              (const cs_real_3_t *)dist_coords,
                              c_w_face_normal);
 
-    // Free memory
+    /* Free memory */
     _locator = ple_locator_destroy(_locator);
     BFT_FREE(point_coords);
     BFT_FREE(colors);
