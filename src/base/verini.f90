@@ -592,8 +592,8 @@ if (nscal.gt.0) then
 !       On demande donc a l'utilisateur de ne pas y toucher
 !       (ca permet d'etre sur qu'il sait ce qu'il fait)
   do ii = 1, nscal
+    call field_get_key_int(isca(ii), kclvfl, iclvfl)
     if (iscavr(ii).le.nscal.and.iscavr(ii).gt.0) then
-      call field_get_key_int(isca(ii), kclvfl, iclvfl)
       if (iclvfl.ne.0 .and. iclvfl.ne.1 .and. iclvfl.ne.2) then
         call field_get_label(ivarfl(isca(ii)), chaine)
         write(nfecra,4330)chaine(1:16),ii,iclvfl
@@ -622,7 +622,7 @@ if (nscal.gt.0) then
   do ii = 1, nscal
     ! Get the max clipping
     call field_get_key_double(ivarfl(isca(ii)), kscmax, scmaxp)
-
+    call field_get_key_int(isca(ii), kclvfl, iclvfl)
     if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal.and.               &
        iclvfl.eq.2.and.scmaxp.le.0.d0) then
       call field_get_label(ivarfl(isca(ii)), chaine)

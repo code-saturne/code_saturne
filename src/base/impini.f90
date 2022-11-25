@@ -78,7 +78,7 @@ character        chaine*80
 integer          ii    , iiesca, iest
 integer          kscmin, kscmax, keyvar
 integer          f_id, n_fields
-integer          igg, ige, iclvfl, kclvfl
+integer          igg, ige
 integer          kturt, turb_flux_model
 double precision scmaxp, scminp
 
