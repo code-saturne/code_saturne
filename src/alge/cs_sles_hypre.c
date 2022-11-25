@@ -714,7 +714,7 @@ cs_sles_hypre_setup(void               *context,
         setup_ftn[i] = HYPRE_ILUSetup;
 
         if (i == 0) { /* preconditioner */
-          HYPRE_ILUSetTol(sd->solver, 0.);
+          HYPRE_ILUSetTol(hs, 0.);
         }
         else { /* solver */
           have_set_pc = false;
