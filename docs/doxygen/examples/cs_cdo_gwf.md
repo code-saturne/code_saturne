@@ -275,8 +275,8 @@ Here are collected two examples of such functions:
 
 
 
-Tacers
-======
+Tracers
+=======
 
 The third step (which is not mandatory) is to add tracer(s) thanks to the
 function \ref cs_gwf_add_tracer This tracer will be advected by the Darcy flux
