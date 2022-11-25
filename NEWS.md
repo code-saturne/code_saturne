@@ -3,6 +3,8 @@ Release 7.2.1 (not released yet)
 
 Bug fixes:
 
+- Fix occasional deadlock when checkpointing based on wall-clock time.
+
 - Fix the precipitation model in the GWF module (CDO). Take into
   account the radiactive decay.
 
