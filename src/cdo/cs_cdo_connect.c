@@ -1287,8 +1287,7 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect,
   for (cs_lnum_t i = 0; i < connect->n_cells; i++)
     n_type_cells[connect->cell_type[i]] += 1;
 
-  if (cs_glob_n_ranks > 1)
-    cs_parall_sum(FVM_N_ELEMENT_TYPES, CS_GNUM_TYPE, n_type_cells);
+  cs_parall_sum(FVM_N_ELEMENT_TYPES, CS_GNUM_TYPE, n_type_cells);
 
   cs_log_printf(CS_LOG_DEFAULT, "\n Connectivity information:\n");
   cs_log_printf(CS_LOG_DEFAULT,

@@ -122,12 +122,11 @@ typedef void
 
 typedef struct {
 
-  /* Parameters to determine the behavior in each soil
-   * (array of size: n_soils)
-   */
-
   /* Common settings shared by all physical modelling */
   /* ------------------------------------------------ */
+  /* These parameters are defined for each  each soil
+   * (arrays of size equal to n_soils)
+   */
 
   double    *rho_bulk;      /* bulk density (kg.m^-3) */
   double    *kd0;           /* reference value of the distribution coefficient
@@ -146,20 +145,23 @@ typedef struct {
   /* ----------------------------------------------- */
 
   double       *conc_l_star;    /* maximal value of the concentraction of
-                                   tracer in the liquid phase in mol/m^3. There
-                                   is one user-defined value for each soil. The
-                                   exceeded quantities are stored in the solid
-                                   phase (-> precip_mass). These values
-                                   corresponds to the user settings */
+                                 * tracer in the liquid phase in mol/m^3. There
+                                 * is one user-defined value for each soil. The
+                                 * exceeded quantities are stored in the solid
+                                 * phase (-> precip_mass). These values
+                                 * corresponds to the user settings
+                                 */
 
-  cs_real_t    *precip_mass;    /* array storing the concentration in the
-                                   precipitation (solid) storage. The size may
-                                   vary w.r.t. to the discrtization scheme.
-                                */
+  cs_real_t    *precip_mass;    /* array storing the mass of precipitate
+                                 * (solid) in the dedicated auxiliary
+                                 * storage. The size of this array may vary
+                                 * w.r.t. to the discretization scheme.
+                                 */
 
   cs_field_t   *precip_field;   /* Field structure storing the (interpolated)
-                                   cell values of the concentration of
-                                   precipitate in mol/kg.  */
+                                 * values of the concentration of precipitate
+                                 * in mol/kg in each cell.
+                                 */
 
   /* Sorption members (set to NULL if not used) */
   /* ------------------------------------------ */

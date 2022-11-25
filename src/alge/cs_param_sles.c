@@ -1894,7 +1894,8 @@ _set_petsc_hypre_sles(bool                 use_field_id,
  * \param[in]      verbosity  verbosity level
  * \param[in, out] context    pointer to optional (untyped) value or structure
  * \param[in, out] solver     handle to HYPRE solver
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _hypre_boomeramg_hook(int    verbosity,
