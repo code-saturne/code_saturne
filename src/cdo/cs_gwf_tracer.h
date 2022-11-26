@@ -497,10 +497,10 @@ cs_gwf_tracer_unsat_finalize_setup(const cs_cdo_connect_t      *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the integral over a given set of cells of the field related
- *         to a tracer equation. This integral turns out to be exact for linear
- *         functions. The parallel operation (a sum reduction) is performed
- *         inside this function.
+ * \brief Compute the integral of the tracer concentration over a given set of
+ *        cells. This integral gives the number of moles of tracer inside the
+ *        related volume. Moreover, it turns out to be exact for linear
+ *        functions. A parallel operation (a sum reduction) is performed
  *
  * \param[in]    connect   pointer to a \ref cs_cdo_connect_t structure
  * \param[in]    cdoq      pointer to a \ref cs_cdo_quantities_t structure
