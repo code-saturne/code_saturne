@@ -134,22 +134,21 @@ endif
 
 if (iiscav.ne.0) then
 
-  ! Get the corresponding scalar
-  f_id = ivarfl(isca(iiscav))
-  call field_get_key_int(f_id, kclvfl, iclvfl)
+  call field_get_key_int(iflid, kclvfl, iclvfl)
 
   if (iclvfl.eq.1) then
 
-    ! Clipping of variances
-
-    iclmax(1) = 0
-    iclmin(1) = 0
-
     ! Get the corresponding scalar
+    f_id = ivarfl(isca(iiscav))
     call field_get_val_s(f_id, cvar_scav)
+
     ! Get the min clipping of the corresponding scalar
     call field_get_key_double(f_id, kscmin, scmin)
     call field_get_key_double(f_id, kscmax, scmax)
+
+    ! Clipping of variances
+    iclmax(1) = 0
+    iclmin(1) = 0
 
     do iel = 1, ncel
       vfmax = (cvar_scav(iel)-scmin)*(scmax-cvar_scav(iel))
