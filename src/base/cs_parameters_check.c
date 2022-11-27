@@ -812,6 +812,7 @@ cs_parameters_check(void)
   int n_fields = cs_field_n_fields();
   const int keysca = cs_field_key_id("scalar_id");
   const int kscavr = cs_field_key_id("first_moment_id");
+  const int kclvfl = cs_field_key_id("variance_clipping");
   const int keyvar = cs_field_key_id("variable_id");
   const int kcpsyr = cs_field_key_id("syrthes_coupling");
   const int kivisl = cs_field_key_id("diffusivity_id");
@@ -1491,7 +1492,7 @@ cs_parameters_check(void)
                                   cs_glob_turb_rans_model->ikecou,
                                   0, 2);
 
-    /* En k-eps a prod lin/LS/Quad et en v2f on force IKECOU a 0 */
+    /* In k-eps with lin prod/LS/Quad and in v2f we force ikecou to 0 */
     if (   turb_model->iturb == CS_TURB_K_EPSILON_LIN_PROD
         || turb_model->iturb == CS_TURB_K_EPSILON_LS
         || turb_model->iturb == CS_TURB_K_EPSILON_QUAD
@@ -1508,7 +1509,7 @@ cs_parameters_check(void)
          0);
     }
 
-    /* En stationnaire on force IEKCOU a 0 */
+    /* In steady mode force IEKCOU to 0 */
     if (cs_glob_time_step_options->idtvar < 0) {
       cs_parameters_is_equal_int(CS_ABORT_DELAYED,
                                  _("while reading input data,\n"
@@ -1846,7 +1847,7 @@ cs_parameters_check(void)
     nbsccp += cs_field_get_key_int(f, kcpsyr);
   }
 
-  /* On regarde s'il y a du couplage */
+  /* Check if there is coupling */
   n_coupl = cs_syr_coupling_n_couplings();
 
   /* if no coupling with SYRTHES */
@@ -1988,6 +1989,8 @@ cs_parameters_check(void)
                                      -1);
 
       int fscavr_id = cs_field_get_key_int(f, kscavr);
+      int vr_clip = cs_field_get_key_int(f, kclvfl);
+
       if (fscavr_id > -1) {
         cs_field_t *fluct_f = cs_field_by_id(fscavr_id);
 
@@ -1998,7 +2001,20 @@ cs_parameters_check(void)
                                    "scalar id for this variance",
                                    cs_parameters_iscavr(fluct_f),
                                    0);
+
+        cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                      _(f_desc),
+                                      "variance_clipping",
+                                      vr_clip,
+                                      0, 3);
+
       }
+      else
+        cs_parameters_is_equal_int(CS_ABORT_DELAYED,
+                                   _(f_desc),
+                                   "variance_clipping",
+                                   vr_clip,
+                                   -1);
 
       BFT_FREE(f_desc);
     }

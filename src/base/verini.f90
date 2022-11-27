@@ -587,27 +587,6 @@ if (nscal.gt.0) then
     endif
   enddo
 
-!     Mode de clipping dans le cas des variances
-!       pour les scalaires non variance, on n'utilise pas ICLVFL.
-!       On demande donc a l'utilisateur de ne pas y toucher
-!       (ca permet d'etre sur qu'il sait ce qu'il fait)
-  do ii = 1, nscal
-    call field_get_key_int(isca(ii), kclvfl, iclvfl)
-    if (iscavr(ii).le.nscal.and.iscavr(ii).gt.0) then
-      if (iclvfl.ne.0 .and. iclvfl.ne.1 .and. iclvfl.ne.2) then
-        call field_get_label(ivarfl(isca(ii)), chaine)
-        write(nfecra,4330)chaine(1:16),ii,iclvfl
-        iok = iok + 1
-      endif
-    elseif (iscavr(ii).eq.0) then
-      if (iclvfl.ne.-1) then
-        call field_get_label(ivarfl(isca(ii)), chaine)
-        write(nfecra,4331)chaine(1:16),ii,iclvfl
-        iok = iok + 1
-      endif
-    endif
-  enddo
-
 !     Valeur du Schmidt turbulent positif
   do ii = 1, nscal
     call field_get_key_double(ivarfl(isca(ii)), ksigmas, turb_schmidt)
@@ -1385,44 +1364,6 @@ endif
 '@   it has value', i1,                                         /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data.',                                      /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 4330 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    SCALAR ', a16,                                            /,&
-'@    ICLVFL(',i10, ') MUST BE AN INTEGER EQUAL TO 0, 1 or 2',  /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  ICLVFL(I) defines the type of clipping of scalar I',        /,&
-'@    when it is a variance of  fluctuations.',                 /,&
-'@',                                                            /,&
-'@ Check the input data.',                                      /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 4331 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    SCALAR ', a16,                                            /,&
-'@    ICLVFL(',i10,   ') is only used for  VARIANCES',          /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@    BUT THE SCALAR IS NOT A VARIANCE',                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  ICLVFL(I) flags the type of clipping for scalar I',         /,&
 '@',                                                            /,&
 '@ Check the input data.',                                      /,&
 '@',                                                            /,&
