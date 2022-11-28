@@ -46,6 +46,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 typedef struct _gwf_tracer_t  cs_gwf_tracer_t;
+typedef struct _gwf_tracer_default_context_t  cs_gwf_tracer_default_context_t;
 
 /*============================================================================
  * Public function pointer prototypes
@@ -113,6 +114,31 @@ typedef void
 typedef void
 (cs_gwf_tracer_free_context_t) (cs_gwf_tracer_t      *tracer);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the quantity of tracer using an integral of the tracer
+ *        concentration over a given set of cells (the cells of the volume
+ *        zone). Several terms can be computed.
+ *        The quantity is given in moles. A parallel operation (a sum
+ *        reduction) is performed inside this function.
+ *
+ * \param[in]      connect   pointer to a \ref cs_cdo_connect_t structure
+ * \param[in]      cdoq      pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]      eq        equation related to a tracer
+ * \param[in]      zone      pointer to a volume zone structure
+ * \param[in]      context   pointer to a context structure for a tracer
+ * \param[in, out] results   resulting array of values
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_gwf_tracer_integrate_t)(const cs_cdo_connect_t          *connect,
+                            const cs_cdo_quantities_t       *cdoq,
+                            const cs_equation_t             *eq,
+                            const cs_zone_t                 *zone,
+                            void                            *context,
+                            double                           results[]);
+
 /*============================================================================
  * Structure definitions
  *============================================================================*/
@@ -120,7 +146,7 @@ typedef void
 /* Set of parameters related to a tracer equation attached to a standard
    modelling */
 
-typedef struct {
+struct _gwf_tracer_default_context_t {
 
   /* Common settings shared by all physical modelling */
   /* ------------------------------------------------ */
@@ -177,8 +203,7 @@ typedef struct {
 
   const cs_field_t  *darcy_velocity_field;
 
-} cs_gwf_tracer_default_context_t;
-
+};
 
 /* Set of parameters describing a tracer structure */
 /* ----------------------------------------------- */
@@ -200,11 +225,11 @@ struct _gwf_tracer_t{
    *  \brief pointer to the related equation structure
    */
 
-  cs_equation_t                  *equation;
+  cs_equation_t               *equation;
 
   /* Pointer to a context structure according to the model */
 
-  void                           *context;
+  void                        *context;
 
   /* Pointers to functions */
 
@@ -217,17 +242,22 @@ struct _gwf_tracer_t{
    *      Function used to update the quantities related to the precipitation
    *      model
    *
-   * \var finalize_setup
-   *      This is a function pointer to finalize the setup of a tracer
-   *      equation. There is a function pointer by default but this can be
-   *      overloaded by a user-defined function in the case of a user-defined
-   *      tracer.
+   * \var integrate
+   *      Function to compute the quantity of tracer inside a volume. The way
+   *      to compute this quantity may be optimized according to the hydraulic
+   *      model or the tracer modelling.
    *
    * \var init_setup
    *      This is a function pointer to initialize the setup (adding terms in
    *      an equation). At this stage, the mesh has not been loaded.  There is
    *      a function pointer by default but this can be overloaded by a
    *      user-defined function in the case of a user-defined tracer.
+   *
+   * \var finalize_setup
+   *      This is a function pointer to finalize the setup of a tracer
+   *      equation. There is a function pointer by default but this can be
+   *      overloaded by a user-defined function in the case of a user-defined
+   *      tracer.
    *
    * \var free_context
    *      Function to free quantities or structure associated to the context
@@ -236,8 +266,10 @@ struct _gwf_tracer_t{
 
   cs_gwf_tracer_update_t           *update_diff_pty;
   cs_gwf_tracer_update_t           *update_precipitation;
-  cs_gwf_tracer_finalize_setup_t   *finalize_setup;
+  cs_gwf_tracer_integrate_t        *integrate;
+
   cs_gwf_tracer_init_setup_t       *init_setup;
+  cs_gwf_tracer_finalize_setup_t   *finalize_setup;
   cs_gwf_tracer_free_context_t     *free_context;
 
 };
@@ -512,11 +544,38 @@ cs_gwf_tracer_unsat_finalize_setup(const cs_cdo_connect_t      *connect,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
+double
 cs_gwf_tracer_integrate(const cs_cdo_connect_t     *connect,
                         const cs_cdo_quantities_t  *cdoq,
                         const cs_gwf_tracer_t      *tracer,
                         const char                 *z_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the quantity of tracer using the integral of the tracer
+ *        concentration over a given set of cells. Two terms are computed: one
+ *        for the quantity of moles inside the liquid phase and another one for
+ *        the quantity of tracer inside the precipitation state (in moles). A
+ *        parallel operation (a sum reduction) is performed inside this
+ *        function.
+ *
+ * \param[in]      connect   pointer to a \ref cs_cdo_connect_t structure
+ * \param[in]      cdoq      pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]      tracer    pointer to a \ref cs_gwf_tracer_t structure
+ * \param[in]      z_name    name of the volume zone where the integral is
+ *                           done (if NULL or "" all cells are considered)
+ * \param[in, out] results   array of values. [0]= the quantity of moles
+ *                           in the liquid phase, [1]= the quantity of
+ *                           moles inside the precipitation state
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_tracer_integrate_by_terms(const cs_cdo_connect_t     *connect,
+                                 const cs_cdo_quantities_t  *cdoq,
+                                 const cs_gwf_tracer_t      *tracer,
+                                 const char                 *z_name,
+                                 double                      results[]);
 
 /*----------------------------------------------------------------------------*/
 
