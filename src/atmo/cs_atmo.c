@@ -176,7 +176,8 @@ static cs_atmo_option_t  _atmo_option = {
 static const char *_univ_fn_name[] = {N_("Cheng 2005"),
                                       N_("Hogstrom 1988"),
                                       N_("Businger 1971"),
-                                      N_("Hartogensis 2007")};
+                                      N_("Hartogensis 2007"),
+                                      N_("Carl 1973")};
 
 /* global atmo constants structure */
 static cs_atmo_constants_t _atmo_constants = {
@@ -889,6 +890,15 @@ _mo_phim_u(cs_real_t              z,
       return a*pow((1.-b*x),e);
     }
 
+  case CS_ATMO_UNIV_FN_CARL:
+    {
+      cs_real_t a = 1.;
+      cs_real_t b = 16.;
+      cs_real_t e = -1./3.;
+
+      return a*pow((1.-b*x),e);
+    }
+
   default:
     assert(0);
     return -1;
@@ -1110,6 +1120,19 @@ _mo_psim_u(cs_real_t              z,
 
       return log(z/z0) - 2.*log((1. + x)/(1. + x0))
         - log((1. + pow(x,2.))/(1. + pow(x0,2.))) + 2.*atan(x) - 2.*atan(x0);
+    }
+
+  case CS_ATMO_UNIV_FN_CARL:
+    {
+      cs_real_t b = 16.;
+      cs_real_t e = 1./3.;
+      cs_real_t x = pow((1. - b*z*dlmo), e);
+      cs_real_t x0 = pow((1. - b*z0*dlmo), e);
+
+      return log(z/z0) - 1.5*log((1. + x + pow(x,2.))/3.)
+        + pow(3., 0.5)*atan((1. + 2.*x)/pow(3., 0.5))
+        + 1.5*log((1. + x0 + pow(x0,2.))/3.)
+        - pow(3., 0.5)*atan((1. + 2.*x0)/pow(3., 0.5));
     }
 
   default:
