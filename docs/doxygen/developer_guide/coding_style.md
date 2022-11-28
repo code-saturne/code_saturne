@@ -172,6 +172,16 @@ The following coding rules are strongly recommended:
   values is that a compiler may issue a warning when a `switch`
   construct has no `case` for a given enumeration value.
 
+Line spacing
+------------
+
+Try to be consistent regarding line spacing. Use 1 separation line to
+highlight code blocks, but no more (i.e. avoid 2 successive blank lines).
+Make the code symmetric also: when a blank line follows an opening brace
+`{`, a similar line should precede the matching closing brace `}`.
+When no such line is used after an opening brace, none should be used
+either before the closing brace.
+
 Automatic formatting
 --------------------
 
@@ -186,13 +196,13 @@ manual fine-tuning.
 Language {#sec_prg_lang_c}
 --------
 
-ANSI C 1999 or above is required, so C99-specific constructs are allowed,
+ANSI C11 or above is required, so C11-specific constructs are allowed,
 though C++ style comments should be avoided, so as to maintain a consistent
 style. C99 variable-length arrays should be avoided, as it is not
 always clear whether they are allocated on the stack or heap, and are
-an optional feature only in the C newer 2011 standard (though we could
-expect that support for those constructs will remain available on
-general-purpose architectures, and removed only in the embedded space).
+an optional feature only (though we could expect that support for those
+constructs will remain available on general-purpose architectures, and
+removed only in the embedded space).
 
 Assertions
 ----------
