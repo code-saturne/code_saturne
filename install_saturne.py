@@ -542,6 +542,10 @@ class Setup:
 
         p = self.packages['code_saturne']
 
+        if not os.path.exists(os.path.join(self.top_srcdir, 'configure')):
+            sys.stdout.write(f"Executing {os.path.join(self.top_srcdir, 'sbin/bootstrap')}\n")
+            subprocess.Popen('./sbin/bootstrap', cwd=self.top_srcdir)
+
         p.set_version_from_configure(os.path.join(self.top_srcdir, 'configure'))
 
         p.use = 'yes'
