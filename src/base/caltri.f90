@@ -263,6 +263,14 @@ interface
 
   !=============================================================================
 
+  subroutine cs_htles_initialization()  &
+    bind(C, name='cs_htles_initialization')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_htles_initialization
+
+  !=============================================================================
+
   subroutine cs_volume_mass_injection_build_lists(ncetsm, icetsm, izctsm) &
     bind(C, name='cs_volume_mass_injection_build_lists')
     use, intrinsic :: iso_c_binding
@@ -678,6 +686,13 @@ call phyvar(nvar, nscal, iterns, dt)
 
 if (ippmod(iatmos).ge.2) then
   call atmsol()
+endif
+
+! Initialization for the Hybrid Temporal LES model (HTLES)
+!===============================================================================
+
+if (hybrid_turb.eq.4) then
+  call cs_htles_initialization
 endif
 
 !===============================================================================

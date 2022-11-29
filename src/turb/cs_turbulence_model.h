@@ -101,10 +101,11 @@ enum {
 
 enum {
 
-  CS_HYBRID_NONE = 0,
-  CS_HYBRID_DES  = 1,
-  CS_HYBRID_DDES = 2,
-  CS_HYBRID_SAS  = 3
+  CS_HYBRID_NONE  = 0,
+  CS_HYBRID_DES   = 1,
+  CS_HYBRID_DDES  = 2,
+  CS_HYBRID_SAS   = 3,
+  CS_HYBRID_HTLES = 4
 
 };
 
@@ -138,11 +139,13 @@ typedef struct {
   int           itytur;       /* class of turbulence model (integer value
                                  iturb/10) */
   int           hybrid_turb;  /* Type of Hybrid Turbulence Model
-                                   - CS_HYBRID_NONE: No model
-                                   - CS_HYBRID_DES:  Detached Eddy Simulation
-                                   - CS_HYBRID_DDES: Delayed Detached Eddy
-                                                     Simulation
-                                   - CS_HYBRID_SAM:  Scale Adaptive Model */
+                                   - CS_HYBRID_NONE:  No model
+                                   - CS_HYBRID_DES:   Detached Eddy Simulation
+                                   - CS_HYBRID_DDES:  Delayed Detached Eddy
+                                                      Simulation
+                                   - CS_HYBRID_SAM:   Scale Adaptive Model
+                                   - CS_HYBRID_HTLES: Hybrid Temporal Large
+                                                      Eddy Simulation */
   int           type;  /* Type of turbulence modelling:
                           - CS_TURB_NONE: No model
                           - CS_TURB_RANS: RANS modelling
@@ -248,6 +251,26 @@ typedef struct {
 
 } cs_turb_les_model_t;
 
+/* Hybrid turbulence model descriptor */
+/*------------------------------------*/
+
+typedef struct {
+
+  int           iicc;      /* Internal Consistency Constraint applied
+                              (only for hybrid_turb=4)
+                                 - 1: true
+                                 - 0: false */
+  int           ishield;   /* Shielding function applied at the wall
+                              (only for hybrid_turb=4)
+                                 - 1: true
+                                 - 0: false */
+
+  cs_lnum_t     n_iter_mean; /* number of iteration for the exponential mean */
+  cs_lnum_t     time_mean;   /* time for the exponential mean, automatically
+                                computed if n_iter_mean > 0 */
+
+} cs_turb_hybrid_model_t;
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -267,6 +290,10 @@ extern const cs_turb_rans_model_t    *cs_glob_turb_rans_model;
 /* Pointer to LES turbulence model descriptor structure */
 
 extern const cs_turb_les_model_t     *cs_glob_turb_les_model;
+
+/* Pointer to hybrid turbulence model descriptor structure */
+
+extern const cs_turb_hybrid_model_t  *cs_glob_turb_hybrid_model;
 
 /* Constant for turbulence models */
 
@@ -332,6 +359,7 @@ extern double cs_turb_ckwc1;
 extern double cs_turb_cddes;
 extern double cs_turb_csas;
 extern double cs_turb_csas_eta2;
+extern double cs_turb_chtles_bt0;
 extern double cs_turb_cnl1;
 extern double cs_turb_cnl2;
 extern double cs_turb_cnl3;
@@ -444,6 +472,15 @@ cs_get_glob_turb_rans_model(void);
 
 cs_turb_les_model_t *
 cs_get_glob_turb_les_model(void);
+
+/*----------------------------------------------------------------------------
+ * Provide access to cs_glob_turb_hybrid_model
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_turb_hybrid_model_t *
+cs_get_glob_turb_hybrid_model(void);
 
 /*----------------------------------------------------------------------------*
  * Print the turbulence model parameters to setup.log.

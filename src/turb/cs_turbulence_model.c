@@ -114,12 +114,13 @@ BEGIN_C_DECLS
         - 1: Detached Eddy Simulation
         - 2: Delayed Detached Eddy Simulation
         - 3: Scale Adaptive Model (Menter et al.)
+        - 4. Hybrid Temporal LES
   \var  cs_turb_model_t::type
         Type of modelling
         - CS_TURB_NONE: No model
         - CS_TURB_RANS: RANS
         - CS_TURB_LES: LES
-        - CS_TURB_HYBRID: Hybrid RANS LES
+        - CS_TURB_HYBRID: Hybrid RANS-LES
 */
 
 /*----------------------------------------------------------------------------*/
@@ -302,6 +303,35 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 
+/*! \struct cs_turb_hybrid_model_t
+
+  \brief Hybrid turbulence model descriptor.
+
+  Members of this turbulence model are publicly accessible, to allow for concise
+  syntax, as it is expected to be used in many places.
+
+  \var  cs_turb_hybrid_model_t::iicc
+        Applied or not the Internal Consistency
+        Constraint (ICC) for the HTLES model,
+        in order to recover the correct RANS
+        behavior when the energy ratio is forced
+        to one in the RANS region:
+          - 1: True (default)
+          - 0: False
+        Useful if and only if \ref hybrid_turb=4
+
+  \var  cs_turb_hybrid_model_t::ishield
+        Applied or not the two-fold shielding
+        function (\f$f_s(\xi_K,\xi_D)\f$ of HTLES,
+        to properly control the RANS-to-LES
+        transition in the vicinity of the wall:
+          - 1: True (default)
+          - 0: False
+        Useful if and only if \ref hybrid_turb=4
+*/
+
+/*----------------------------------------------------------------------------*/
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -370,6 +400,18 @@ static cs_turb_les_model_t  _turb_les_model =
 };
 
 const cs_turb_les_model_t  *cs_glob_turb_les_model = &_turb_les_model;
+
+/* Hybrid turbulence model structure and associated pointer */
+
+static cs_turb_hybrid_model_t  _turb_hybrid_model =
+{
+  .iicc    = 1,
+  .ishield = 1,
+  .n_iter_mean = -1,
+  .time_mean = -1.
+};
+
+const cs_turb_hybrid_model_t  *cs_glob_turb_hybrid_model = &_turb_hybrid_model;
 
 /*============================================================================
  *  Global variables
@@ -708,6 +750,14 @@ double cs_turb_csas = 0.11;
 double cs_turb_csas_eta2 = 3.51;
 
 /*!
+ * Constant \f$ \beta_0 \f$ for the HTLES model.
+ * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
+ * or if \ref iturb=51 (\f$BL-v^2-k\f$)
+ * and hybrid_turb=4.
+ */
+double cs_turb_chtles_bt0 = 0.48;
+
+/*!
  * Specific constant of Spalart-Allmaras.
  */
 double cs_turb_csab1 = 0.1355;
@@ -999,6 +1049,10 @@ void
 cs_f_turb_les_model_get_pointers(int     **idries);
 
 void
+cs_f_turb_hybrid_model_get_pointers(int  **iicc,
+				    int  **ishield);
+
+void
 cs_f_turb_reference_values(double  **almax,
                            double  **uref,
                            double  **xlomlg);
@@ -1027,7 +1081,8 @@ cs_f_turb_model_constants_get_pointers(double  **cmu,
                                        double  **c4trit,
                                        double  **cddes,
                                        double  **csas,
-                                       double  **csas_eta2);
+                                       double  **csas_eta2,
+                                       double  **chtles_bt0);
 
 /*============================================================================
  * Private function definitions
@@ -1137,6 +1192,26 @@ cs_f_turb_les_model_get_pointers(int     **idries)
 }
 
 /*----------------------------------------------------------------------------
+ * Get pointers to members of the hybrid turbulence model structure.
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *
+ * parameters:
+ *   iicc    --> pointer to cs_glob_turb_hybrid_model->iicc
+ *   ishield --> pointer to cs_glob_turb_hybrid_model->ishield
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_turb_hybrid_model_get_pointers(int  **iicc,
+				    int  ** ishield)
+{
+  *iicc    = &(_turb_hybrid_model.iicc);
+  *ishield = &(_turb_hybrid_model.ishield);
+}
+
+
+/*----------------------------------------------------------------------------
  * Get pointers to members of the RANS turbulence functions structure.
  *
  * This function is intended for use by Fortran wrappers, and
@@ -1206,7 +1281,8 @@ cs_f_turb_model_constants_get_pointers(double  **cmu,
                                        double  **c4trit,
                                        double  **cddes,
                                        double  **csas,
-                                       double  **csas_eta2)
+                                       double  **csas_eta2,
+                                       double  **chtles_bt0)
 {
   *cmu    = &cs_turb_cmu;
   *cmu025 = &cs_turb_cmu025;
@@ -1233,6 +1309,7 @@ cs_f_turb_model_constants_get_pointers(double  **cmu,
   *cddes = &cs_turb_cddes;
   *csas  = &cs_turb_csas;
   *csas_eta2 = &cs_turb_csas_eta2;
+  *chtles_bt0 = &cs_turb_chtles_bt0;
 }
 
 /*============================================================================
@@ -1528,6 +1605,15 @@ cs_turb_compute_constants(void)
     cs_turb_cddes = 0.60;
   }
 
+  if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA){
+    /* SST HTLES */
+    cs_turb_chtles_bt0 = 0.48;
+  }
+  else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+    /* BL-v2/k HTLES */
+    cs_turb_chtles_bt0 = 0.42;
+  }
+
   double xkappa2 = cs_turb_xkappa*cs_turb_xkappa;
   cs_turb_ckwgm1 =   cs_turb_ckwbt1/cs_turb_cmu
                    - xkappa2/(cs_turb_ckwsw1*sqrt(cs_turb_cmu));
@@ -1583,6 +1669,20 @@ cs_turb_les_model_t *
 cs_get_glob_turb_les_model(void)
 {
   return &_turb_les_model;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide access to cs_glob_turb_hybrid_model
+ *
+ * needed to initialize structure with GUI
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_turb_hybrid_model_t *
+cs_get_glob_turb_hybrid_model(void)
+{
+  return &_turb_hybrid_model;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1788,8 +1888,7 @@ cs_turb_model_log_setup(void)
          cs_turb_cdries, cs_turb_xlesfd, cs_turb_csmago_max);
 
   }
-  else if (   turb_model->iturb == CS_TURB_V2F_PHI
-           || turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+  else if (turb_model->iturb == CS_TURB_V2F_PHI) {
 
     cs_log_printf(CS_LOG_SETUP,
        _("    almax:       %14.5e (Characteristic length)\n"
@@ -1822,13 +1921,56 @@ cs_turb_model_log_setup(void)
       cs_log_printf(CS_LOG_SETUP,_("\n"));
 
   }
+  else if (turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+
+    const char *hybrid_turb_value_str[]
+      = {N_("CS_HYBRID_NONE (no RANS-LES hybrid model)"),
+         N_("CS_HYBRID_DES (RANS-LES hybrid model)"),
+         N_("CS_HYBRID_DDES  (RANS-LES hybrid model)"),
+         N_("CS_HYBRID_SAS (Scale Adpative Model)"),
+         N_("CS_HYBRID_HTLES (Hybrid Temporal LES)")};
+
+    cs_log_printf(CS_LOG_SETUP,
+       _("    almax:       %14.5e (Characteristic length)\n"
+         "    uref:        %14.5e (Characteristic velocity)\n"
+         "    iclkep:      %14d (k-epsilon clipping model)\n"
+         "    ikecou:      %14d (k-epsilon coupling mode)\n"
+         "    hybrid_turb: %s\n"
+         "    igrake:      %14d (Account for gravity)\n"),
+         cs_glob_turb_ref_values->almax,
+         cs_glob_turb_ref_values->uref,
+         cs_glob_turb_rans_model->iclkep,
+         cs_glob_turb_rans_model->ikecou,
+	 hybrid_turb_value_str[turb_model->hybrid_turb],
+         cs_glob_turb_rans_model->igrake);
+
+    if (   cs_glob_turb_rans_model->ikecou == 0
+        && cs_glob_time_step_options->idtvar >= 0) {
+
+      cs_real_t relaxvk, relaxve;
+      cs_field_get_key_struct(CS_F_(k), key_cal_opt_id, &var_cal_opt);
+      relaxvk = var_cal_opt.relaxv;
+      cs_field_get_key_struct(CS_F_(eps), key_cal_opt_id, &var_cal_opt);
+      relaxve = var_cal_opt.relaxv;
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("    relaxv:      %14.5e for k (Relaxation)\n"
+           "    relaxv:      %14.5e for epsilon (Relaxation)\n"),
+           relaxvk, relaxve);
+
+    }
+    else
+      cs_log_printf(CS_LOG_SETUP,_("\n"));
+
+  }
   else if (turb_model->iturb == CS_TURB_K_OMEGA) {
 
     const char *hybrid_turb_value_str[]
       = {N_("CS_HYBRID_NONE (no RANS-LES hybrid model)"),
          N_("CS_HYBRID_DES (RANS-LES hybrid model)"),
          N_("CS_HYBRID_DDES  (RANS-LES hybrid model)"),
-         N_("CS_HYBRID_SAS (Scale Adpative Model)")};
+         N_("CS_HYBRID_SAS (Scale Adpative Model)"),
+         N_("CS_HYBRID_HTLES (Hybrid Temporal LES)")};
 
     cs_log_printf(CS_LOG_SETUP,
        _("    almax:       %14.5e (Characteristic length)\n"

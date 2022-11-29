@@ -1386,8 +1386,9 @@ cs_parameters_check(void)
                                  NULL);
   }
 
-  /* Hybrid RANS/LES model only with k-omega SST model */
-  if (turb_model->hybrid_turb > 0) {
+  /* Hybrid RANS/LES models (DES, DDES, SAS) only with k-omega SST model */
+  if (   turb_model->hybrid_turb > 0
+      && turb_model->hybrid_turb < 4) {
     const int iturb_ddes_vals[1] = {CS_TURB_K_OMEGA};
 
     cs_parameters_is_in_list_int(CS_ABORT_DELAYED,
@@ -1399,6 +1400,23 @@ cs_parameters_check(void)
                                  turb_model->iturb,
                                  1,
                                  iturb_ddes_vals,
+                                 NULL);
+
+  }
+
+  /* HTLES model only with k-omega SST and BL-v2/k model */
+  if (turb_model->hybrid_turb == 4) {
+    const int iturb_htles_vals[2] = {CS_TURB_K_OMEGA, CS_TURB_V2F_BL_V2K};
+
+    cs_parameters_is_in_list_int(CS_ABORT_DELAYED,
+                                 _("while reading input data,\n"
+                                   "HTLES model is only compatible"
+                                   "with k-omega SST model (iturb=60)"
+                                   "and BL-v2/k model (iturb=51)"),
+                                 "cs_glob_turb_model->iturb",
+                                 turb_model->iturb,
+                                 2,
+                                 iturb_htles_vals,
                                  NULL);
 
   }

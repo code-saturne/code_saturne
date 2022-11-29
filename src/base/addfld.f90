@@ -498,7 +498,8 @@ if ( iturb.eq.23.or.                                &
      (iturb.eq.30.and.irijec.eq.1).or.              &
      (itytur.eq.4.and.idries.eq.1).or.              &
      iturb.eq.60.or.iturb.eq.70.or.                 &
-     iflow.eq.1) then
+     iflow.eq.1.or.                                 &
+     hybrid_turb.eq.4) then
   ineedy = 1
 endif
 

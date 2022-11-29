@@ -134,6 +134,7 @@ call thermal_model_init
 call turb_model_init
 call turb_rans_model_init
 call turb_les_model_init
+call turb_hybrid_model_init
 call turb_model_constants_init
 call wall_functions_init
 call physical_constants_init
@@ -489,6 +490,8 @@ iclsyr = 1
 iclptr = 0
 idries =-1
 ikwcln = 1
+iicc   = 1
+ishield = 1
 
 ! --- Rotation/curvature correction of turbulence models
 !     Unactivated by default

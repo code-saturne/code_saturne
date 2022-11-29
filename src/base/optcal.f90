@@ -519,7 +519,7 @@ module optcal
   !> Class of turbulence model (integer value iturb/10)
   integer(c_int), pointer, save :: itytur
 
-  !> Activation of Hybrid RANS/LES model (only valid for iturb equal to 60)
+  !> Activation of Hybrid RANS/LES model (only valid for iturb equal to 60 or 51)
   integer(c_int), pointer, save :: hybrid_turb
 
   !> Activation of rotation/curvature correction for eddy viscosity turbulence
@@ -709,6 +709,25 @@ module optcal
   !> Useful if and only if \ref iturb = 40 or 41
   integer(c_int), pointer, save :: idries
 
+  !> Applied or not the Internal Consistency 
+  !> Constraint (ICC) for the HTLES model, 
+  !> in order to recover the correct RANS 
+  !> behavior when the energy ratio is forced 
+  !> to one in the RANS region:
+  !>   - 1: True (default)
+  !>   - 0: False
+  !> Useful if and only if \ref hybrid_turb=4
+  integer(c_int), pointer, save :: iicc
+
+  !> Applied or not the two-fold shielding 
+  !> function (\f$f_s(\xi_K,\xi_D)\f$ of HTLES,
+  !> to properly control the RANS-to-LES 
+  !> transition in the vicinity of the wall:
+  !>    - 1: True (default)
+  !>    - 0: False
+  !> Useful if and only if \ref hybrid_turb=4
+  integer(c_int), pointer, save :: ishield
+  
   !> Wall boundary condition on omega in k-omega SST
   !> 0: Deprecated Neumann boundary condition
   !> 1: Dirichlet boundary condition consistent with Menter's
@@ -1293,6 +1312,16 @@ module optcal
     end subroutine cs_f_turb_les_model_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
+    ! hybrid turbulence model structure
+
+    subroutine cs_f_turb_hybrid_model_get_pointers(iicc, ishield) &
+      bind(C, name='cs_f_turb_hybrid_model_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: iicc, ishield
+    end subroutine cs_f_turb_hybrid_model_get_pointers
+
+    ! Interface to C function retrieving pointers to members of the
     ! LES balance structure
     subroutine cs_f_les_balance_get_pointer(i_les_balance) &
       bind(C, name='cs_f_les_balance_get_pointer')
@@ -1642,6 +1671,25 @@ contains
     call c_f_pointer(c_i_les_balance, i_les_balance)
 
   end subroutine turb_les_model_init
+
+  !> \brief Initialize Fortran hybrid turbulence model API.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine turb_hybrid_model_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_iicc, c_ishield
+
+    call cs_f_turb_hybrid_model_get_pointers(c_iicc, c_ishield)
+    
+    call c_f_pointer(c_iicc, iicc)
+    call c_f_pointer(c_ishield, ishield)
+
+  end subroutine turb_hybrid_model_init
 
   !> \brief Initialize Fortran Stokes options API.
   !> This maps Fortran pointers to global C structure members.

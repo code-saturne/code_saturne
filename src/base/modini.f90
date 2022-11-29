@@ -801,7 +801,8 @@ if (iturb.eq.60) then !sst-ddes
   ! SST SAS
   csas  = 0.11d0
   csas_eta2 = 3.51d0
-elseif (iturb.eq.51) then !phif-ddes
+elseif (iturb.eq.51) then !bl-v2/k-ddes
+  ! BL DDES
   cddes = 0.60d0
 endif
 

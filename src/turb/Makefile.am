@@ -67,6 +67,7 @@ cs_turbulence_rij.h \
 cs_turbulence_rij_transport.h \
 cs_turbulence_sa.h \
 cs_turbulence_v2f.h \
+cs_turbulence_htles.h \
 cs_turbulence_headers.h
 
 # Library source files
@@ -88,5 +89,6 @@ cs_turbulence_rij.c \
 cs_turbulence_rij_transport.c \
 cs_turbulence_rotation.c \
 cs_turbulence_sa.c \
-cs_turbulence_v2f.c
+cs_turbulence_v2f.c \
+cs_turbulence_htles.c
 

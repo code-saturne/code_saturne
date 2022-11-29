@@ -314,6 +314,18 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   if (sigmae_id >= 0)
     cpro_sigmae = cs_field_by_id(sigmae_id)->val;
 
+  /* Initialization of work arrays in case of Hybrid turbulence modelling
+   * ==================================================================== */
+
+  cs_real_t *htles_psi       = NULL;
+  cs_real_t *htles_t         = NULL;
+  cs_real_t *hybrid_fd_coeff = NULL;
+  if (cs_glob_turb_model->hybrid_turb == 4) {
+    htles_psi = cs_field_by_name("htles_psi")->val;
+    htles_t   = cs_field_by_name("htles_t")->val;
+    hybrid_fd_coeff = cs_field_by_name("hybrid_blend")->val;
+  }
+
   /* Initialilization
      ================ */
 
@@ -1057,10 +1069,21 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       w10[c_id] = -w10[c_id]/volume[c_id]/cvara_ep[c_id];
       w10[c_id] = tanh(pow(fabs(w10[c_id]), 1.5));
-      w10[c_id] = cs_turb_cpale2*(1.
-                                  -  (cs_turb_cpale2-cs_turb_cpale4)
-                                    / cs_turb_cpale2*w10[c_id]
-                                    * cs_math_pow3(cvara_al[c_id]));
+      if (cs_glob_turb_model->hybrid_turb == 4) {
+        /* HTLES method */
+        cs_real_t xcr = hybrid_fd_coeff[c_id];
+        w10[c_id] = cs_turb_cpale2*(1.
+                                    -  (cs_turb_cpale2-cs_turb_cpale4)
+                                      / cs_turb_cpale2*w10[c_id]
+                                      * cs_math_pow3(cvara_al[c_id])
+		  	  	      * (1. - xcr));
+      }
+      else {
+        w10[c_id] = cs_turb_cpale2*(1.
+                                    -  (cs_turb_cpale2-cs_turb_cpale4)
+                                      / cs_turb_cpale2*w10[c_id]
+                                      * cs_math_pow3(cvara_al[c_id]));
+      }
     }
 
     /* Calculation of 2*Ceps3*(1-alpha)^3*nu*nut/eps*d2Ui/dxkdxj*d2Ui/dxkdxj:
@@ -1288,43 +1311,93 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   }
   else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    if (cs_glob_turb_model->hybrid_turb == 0) {
+    
+#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-      cs_real_t rho   = cromo[c_id];
-      cs_real_t xnu   = cpro_pcvlo[c_id]/rho;
-      cs_real_t xeps  = cvara_ep[c_id];
-      cs_real_t xk    = cvara_k[c_id];
-      cs_real_t ttke  = xk / xeps;
-      cs_real_t ttmin = cs_turb_cpalct*sqrt(xnu/xeps);
-      cs_real_t tt    = sqrt(cs_math_pow2(ttke) + cs_math_pow2(ttmin));
+        cs_real_t rho   = cromo[c_id];
+        cs_real_t xnu   = cpro_pcvlo[c_id]/rho;
+        cs_real_t xeps  = cvara_ep[c_id];
+        cs_real_t xk    = cvara_k[c_id];
+        cs_real_t ttke  = xk / xeps;
+        cs_real_t ttmin = cs_turb_cpalct*sqrt(xnu/xeps);
+        cs_real_t tt    = sqrt(cs_math_pow2(ttke) + cs_math_pow2(ttmin));
 
-      /* Explicit part */
-      smbrk[c_id] = cell_f_vol[c_id] * ( smbrk[c_id]
-                                        - rho*xeps
-                                        - rho*w11[c_id]*xk
-                                        - d2s3*rho*xk*divu[c_id]);
+        /* Explicit part */
+        smbrk[c_id] = cell_f_vol[c_id] * ( smbrk[c_id]
+                                          - rho*xeps
+                                          - rho*w11[c_id]*xk
+                                          - d2s3*rho*xk*divu[c_id]);
 
-      smbre[c_id] =   cell_f_vol[c_id]
-                    * ( 1./tt*(cs_turb_cpale1*smbre[c_id] - w10[c_id]*rho*xeps)
-                       - d2s3*rho*cs_turb_cpale1*xk/tt*divu[c_id]);
+        smbre[c_id] =   cell_f_vol[c_id]
+                      * ( 1./tt*(cs_turb_cpale1*smbre[c_id] - w10[c_id]*rho*xeps)
+                         - d2s3*rho*cs_turb_cpale1*xk/tt*divu[c_id]);
 
-      /* We store the part with Pk in prdv2f which will be reused in resv2f */
-      prdv2f[c_id] = prdv2f[c_id] - d2s3*rho*cvara_k[c_id]*divu[c_id];
-      /*FIXME this term should be removed */
+        /* We store the part with Pk in prdv2f which will be reused in resv2f */
+        prdv2f[c_id] = prdv2f[c_id] - d2s3*rho*cvara_k[c_id]*divu[c_id];
+        /*FIXME this term should be removed */
 
-      /* Implicit part */
-      tinstk[c_id] += rho*cell_f_vol[c_id]/fmax(ttke, cs_math_epzero * ttmin);
+        /* Implicit part */
+        tinstk[c_id] += rho*cell_f_vol[c_id]/fmax(ttke, cs_math_epzero * ttmin);
 
-      tinstk[c_id] += fmax(d2s3*rho*cell_f_vol[c_id]*divu[c_id], 0.);
-      /* Note that w11 is positive */
-      tinstk[c_id] += w11[c_id]*rho*cell_f_vol[c_id];
-      /* Note that w10 is positive */
-      tinste[c_id] +=   w10[c_id]*rho*cell_f_vol[c_id]/tt
-                      + fmax(  d2s3*cs_turb_cpale1*ttke
-                             / tt*rho*cell_f_vol[c_id]*divu[c_id],
-                             0.);
+        tinstk[c_id] += fmax(d2s3*rho*cell_f_vol[c_id]*divu[c_id], 0.);
+        /* Note that w11 is positive */
+        tinstk[c_id] += w11[c_id]*rho*cell_f_vol[c_id];
+        /* Note that w10 is positive */
+        tinste[c_id] +=   w10[c_id]*rho*cell_f_vol[c_id]/tt
+                        + fmax(  d2s3*cs_turb_cpale1*ttke
+                               / tt*rho*cell_f_vol[c_id]*divu[c_id],
+                               0.);
+      }
+    }
+    else if (cs_glob_turb_model->hybrid_turb == 4) {
+      /* HTLES */
+      
+#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
+        cs_real_t rho   = cromo[c_id];
+        cs_real_t xnu   = cpro_pcvlo[c_id]/rho;
+        cs_real_t xeps  = cvara_ep[c_id];
+        cs_real_t xk    = cvara_k[c_id];
+	
+	/* HTLES method */
+	cs_real_t xpsi  = htles_psi[c_id];
+	cs_real_t xtm   = htles_t[c_id];
+        cs_real_t xepsh = xk/xtm;
+
+	/* Modif. definition of Kolmogorov time scale */
+	cs_real_t ttke  = xk / xeps;
+        cs_real_t ttmin = cs_turb_cpalct*sqrt(xnu/(xpsi*xeps));
+        cs_real_t tt    = sqrt(cs_math_pow2(ttke) + cs_math_pow2(ttmin));
+
+        /* Explicit part */
+        smbrk[c_id] = cell_f_vol[c_id] * ( smbrk[c_id]
+                                          - rho*xepsh
+                                          - rho*w11[c_id]*xk
+                                          - d2s3*rho*xk*divu[c_id]);
+
+        smbre[c_id] =   cell_f_vol[c_id]
+                      * ( 1./tt*(cs_turb_cpale1*smbre[c_id] - w10[c_id]*rho*xeps)
+                         - d2s3*rho*cs_turb_cpale1*xk/tt*divu[c_id]);
+
+        /* We store the part with Pk in prdv2f which will be reused in resv2f */
+        prdv2f[c_id] = prdv2f[c_id] - d2s3*rho*cvara_k[c_id]*divu[c_id];
+        /*FIXME this term should be removed */
+
+        /* Implicit part */
+        tinstk[c_id] += rho*cell_f_vol[c_id]/fmax(xtm, cs_math_epzero * ttmin);
+
+        tinstk[c_id] += fmax(d2s3*rho*cell_f_vol[c_id]*divu[c_id], 0.);
+        /* Note that w11 is positive */
+        tinstk[c_id] += w11[c_id]*rho*cell_f_vol[c_id];
+        /* Note that w10 is positive */
+        tinste[c_id] +=   w10[c_id]*rho*cell_f_vol[c_id]/tt
+                        + fmax(  d2s3*cs_turb_cpale1*ttke
+                               / tt*rho*cell_f_vol[c_id]*divu[c_id],
+                               0.);
+      }
     }
 
   }

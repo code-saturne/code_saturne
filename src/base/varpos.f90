@@ -182,7 +182,7 @@ endif
 !       for LES: 2nd order; 1st order otherwise
 !       (2nd order forbidden for "coupled" k-epsilon)
 if (ischtp.eq.-1) then
-  if (itytur.eq.4) then
+  if ((itytur.eq.4).or.(hybrid_turb.eq.4)) then
     ischtp = 2
   else
     ischtp = 1
@@ -280,11 +280,11 @@ if (ischtp.eq. 2.and.iturb.eq.50) then
   write(nfecra,8114) ischtp,iturb
   iok = iok + 1
 endif
-if (ischtp.eq. 2.and.iturb.eq.51) then
+if (ischtp.eq. 2.and.iturb.eq.51.and.hybrid_turb.ne.4) then
   write(nfecra,8117) ischtp,iturb
   iok = iok + 1
 endif
-if (ischtp.eq. 2.and.iturb.eq.60) then
+if (ischtp.eq. 2.and.iturb.eq.60.and.hybrid_turb.ne.4) then
   write(nfecra,8115) ischtp,iturb
   iok = iok + 1
 endif

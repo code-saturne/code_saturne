@@ -47,6 +47,8 @@ Master (not on release branches yet)
 
 ### Physical modeling:
 
+- Add hybrid RANS/LES turbulence model (HTLES) from V. Duffal PhD.
+
 - Add some atmospheric universal functions for large scale idealized wind
   profiles.
 

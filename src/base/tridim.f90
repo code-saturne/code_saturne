@@ -329,6 +329,13 @@ interface
     real(kind=c_double), dimension(*) :: smacel
   end subroutine cs_volume_mass_injection_eval
 
+  subroutine cs_turbulence_htles &
+       () &
+    bind(C, name='cs_turbulence_htles')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_turbulence_htles
+
 end interface
 
 !===============================================================================
@@ -1357,6 +1364,11 @@ if (iccvfg.eq.0) then
       enddo
     endif
 
+    ! HTLES
+    if (hybrid_turb.eq.4) then
+      call cs_turbulence_htles()
+    end if
+
   else if(itytur.eq.3) then
 
     ! Compute Alpha for EBRSM
@@ -1387,6 +1399,11 @@ if (iccvfg.eq.0) then
         cvar_k(iel)   = relaxk*cvar_k(iel)   + (1.d0-relaxk)*cvara_k(iel)
         cvar_omg(iel) = relaxw*cvar_omg(iel) + (1.d0-relaxw)*cvara_omg(iel)
       enddo
+    end if
+
+    ! HTLES
+    if (hybrid_turb.eq.4) then
+      call cs_turbulence_htles()
     end if
 
   else if (iturb.eq.70) then

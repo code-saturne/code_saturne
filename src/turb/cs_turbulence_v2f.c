@@ -357,6 +357,14 @@ _solve_eq_fbr_al(const int         istprv,
     rovsdt[i] = 0;
   }
 
+  /* Initialization of work arrays in case of HTLES */
+  cs_real_t *htles_psi = NULL;
+  cs_real_t *htles_r   = NULL;
+  if (cs_glob_turb_model->hybrid_turb == 4) {
+    htles_psi = cs_field_by_name("htles_psi")->val;
+    htles_r   = cs_field_by_name("htles_r")->val;
+  }
+
   /* User source terms
      ----------------- */
 
@@ -544,17 +552,30 @@ _solve_eq_fbr_al(const int         istprv,
     const cs_real_t x_e = cvara_ep[i];
     const cs_real_t x_nu = viscl[i]/crom[i];
 
-    const cs_real_t ll_ke = pow(x_k, 1.5)/x_e;
     if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
+      const cs_real_t ll_ke = pow(x_k, 1.5)/x_e;
       const cs_real_t ll_min
         = cs_turb_cv2fet*pow(cs_math_pow3(x_nu)/x_e, 0.25);
       l2 = cs_math_pow2(cs_turb_cv2fcl*cs_math_fmax(ll_ke, ll_min));
     }
     else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
-      const cs_real_t ll_min
-        = cs_turb_cpalet*pow(cs_math_pow3(x_nu)/x_e, 0.25);
-      l2 =   cs_math_pow2(cs_turb_cpalcl)
-           * (cs_math_pow2(ll_ke) + cs_math_pow2(ll_min));
+      if (cs_glob_turb_model->hybrid_turb == 4) {
+      /* HTLES method */
+        const cs_real_t x_psi  = htles_psi[i];
+        const cs_real_t x_r    = htles_r[i];
+	const cs_real_t ll_ke  = pow(x_k, 1.5)/(x_psi*x_e);
+        const cs_real_t ll_min = pow(x_r, 1.5)
+          * cs_turb_cpalet*pow(cs_math_pow3(x_nu)/(x_psi*x_e), 0.25);
+	l2 =   cs_math_pow2(cs_turb_cpalcl)
+            * (cs_math_pow2(ll_ke) + cs_math_pow2(ll_min));
+      }
+      else {
+        const cs_real_t ll_ke = pow(x_k, 1.5)/x_e;
+        const cs_real_t ll_min
+          = cs_turb_cpalet*pow(cs_math_pow3(x_nu)/x_e, 0.25);
+	l2 =   cs_math_pow2(cs_turb_cpalcl)
+            * (cs_math_pow2(ll_ke) + cs_math_pow2(ll_min));
+      }
     }
     rhs[i] = (- cell_f_vol[i] * cvara_var[i] + rhs[i]) / l2;
 
@@ -623,7 +644,7 @@ _solve_eq_fbr_al(const int         istprv,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Solve the quation of phi
+ * \brief Solve the equation of phi
  *
  * \param[in]        istprv       value associated with the key of source
  *                                terms at previous time step
@@ -714,6 +735,12 @@ _solve_eq_phi(const int           istprv,
   for (cs_lnum_t i = 0; i < n_cells; i++) {
     rhs[i] = 0;
     rovsdt[i] = 0;
+  }
+
+  /* Initialization of work arrays in case of HTLES */
+  cs_real_t *htles_psi = NULL;
+  if (cs_glob_turb_model->hybrid_turb == 4) {
+    htles_psi = cs_field_by_name("htles_psi")->val;
   }
 
   /* User source terms
@@ -836,15 +863,30 @@ _solve_eq_phi(const int           istprv,
       const cs_real_t x_rho = cromo[i];
       const cs_real_t x_nu = viscl[i] / crom[i];
 
-      const cs_real_t tt_ke = x_k/x_e;
-      const cs_real_t tt_min = cs_turb_cpalct*sqrt(x_nu/x_e);
-      const cs_real_t tt = sqrt(cs_math_pow2(tt_ke) + cs_math_pow2(tt_min));
-      const cs_real_t fhomog = -1.0/tt*(  cs_turb_cpalc1-1.0
-                                        + cs_turb_cpalc2*prdv2f[i]/x_e/x_rho)
-                                      *(cvara_phi[i] - d2s3);
-      w2[i] = cell_f_vol[i] * (cs_math_pow3(cvara_al[i])*fhomog*x_rho
-                             + 2./x_k *cpro_pcvto[i]/sigmak*grad_pk[i]);
-      /* FIXME implicit negative w1 and fhomog */
+      if (cs_glob_turb_model->hybrid_turb == 4) {
+        /* HTLES method */
+        const cs_real_t x_psi = htles_psi[i];
+        const cs_real_t tt_ke = x_k/(x_psi*x_e);
+        const cs_real_t tt_min = cs_turb_cpalct*sqrt(x_nu/(x_psi*x_e));
+        const cs_real_t tt = sqrt(cs_math_pow2(tt_ke) + cs_math_pow2(tt_min));
+        const cs_real_t fhomog = -1.0/tt*(  cs_turb_cpalc1-1.0
+	       				  + cs_turb_cpalc2*prdv2f[i]/(x_psi*x_e)/x_rho)
+                                        *(cvara_phi[i] - d2s3);
+	w2[i] = cell_f_vol[i] * (cs_math_pow3(cvara_al[i])*fhomog*x_rho
+                               + 2./x_k *cpro_pcvto[i]/sigmak*grad_pk[i]);
+        /* FIXME implicit negative w1 and fhomog */
+      }
+      else {
+        const cs_real_t tt_ke = x_k/x_e;
+        const cs_real_t tt_min = cs_turb_cpalct*sqrt(x_nu/x_e);
+        const cs_real_t tt = sqrt(cs_math_pow2(tt_ke) + cs_math_pow2(tt_min));
+        const cs_real_t fhomog = -1.0/tt*(  cs_turb_cpalc1-1.0
+	       				  + cs_turb_cpalc2*prdv2f[i]/x_e/x_rho)
+                                        *(cvara_phi[i] - d2s3);
+	w2[i] = cell_f_vol[i] * (cs_math_pow3(cvara_al[i])*fhomog*x_rho
+                               + 2./x_k *cpro_pcvto[i]/sigmak*grad_pk[i]);
+        /* FIXME implicit negative w1 and fhomog */
+      }
     }
   }
 
@@ -885,12 +927,25 @@ _solve_eq_phi(const int           istprv,
       const cs_real_t x_rho = cromo[i];
       const cs_real_t prdv2f_m = cs_math_fmax(prdv2f[i], 0.0);
       const cs_real_t al_3 = cs_math_pow3(cvara_al[i]);
-      rhs[i] -= cell_f_vol[i] * (  prdv2f[i] + x_rho*cvara_ep[i]/2.
-                                 * (1. - al_3))
-                              * cvar_phi[i] / cvara_k[i];
-      rovsdt[i] += cell_f_vol[i] * (  prdv2f_m + x_rho*cvara_ep[i]/2.
-                                    * (1. - al_3))
-                                 / cvara_k[i] * thetap;
+
+      if (cs_glob_turb_model->hybrid_turb == 4) {
+	/* HTLES method */
+        const cs_real_t x_psi = htles_psi[i];
+	rhs[i] -= cell_f_vol[i] * (  prdv2f[i] + x_rho*(x_psi*cvara_ep[i])/2.
+                                   * (1. - al_3))
+                                * cvar_phi[i] / cvara_k[i];
+        rovsdt[i] += cell_f_vol[i] * (  prdv2f_m + x_rho*(x_psi*cvara_ep[i])/2.
+                                      * (1. - al_3))
+                                   / cvara_k[i] * thetap;
+      }
+      else {
+        rhs[i] -= cell_f_vol[i] * (  prdv2f[i] + x_rho*cvara_ep[i]/2.
+                                   * (1. - al_3))
+                                * cvar_phi[i] / cvara_k[i];
+        rovsdt[i] += cell_f_vol[i] * (  prdv2f_m + x_rho*cvara_ep[i]/2.
+                                      * (1. - al_3))
+                                   / cvara_k[i] * thetap;
+      }
     }
   }
 
@@ -1192,17 +1247,29 @@ cs_turbulence_v2f_phi_mu_t(void)
   const cs_real_t *cvar_ep = CS_F_(eps)->val;
   const cs_real_t *cvar_phi = CS_F_(phi)->val;
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    const cs_real_t xk   = cvar_k[c_id];
-    const cs_real_t xe   = cvar_ep[c_id];
-    const cs_real_t xrom = crom[c_id];
-    const cs_real_t xnu  = viscl[c_id]/xrom;
+  /* HTLES method */
+  if (cs_glob_turb_model->hybrid_turb == 4) {
 
-    const cs_real_t ttke = xk / xe;
-    const cs_real_t ttmin = cs_turb_cv2fct * sqrt(xnu/xe);
-    const cs_real_t tt = fmax(ttke, ttmin);
+    cs_real_t *psi = cs_field_by_name("htles_psi")->val;
+    cs_real_t *blend = cs_field_by_name("hybrid_blend")->val;
 
-    visct[c_id] = cs_turb_cmu*xrom*tt*cvar_phi[c_id]*xk;
+    //TODO VD
+    cs_exit(1);
+
+  }
+  else {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      const cs_real_t xk   = cvar_k[c_id];
+      const cs_real_t xe   = cvar_ep[c_id];
+      const cs_real_t xrom = crom[c_id];
+      const cs_real_t xnu  = viscl[c_id]/xrom;
+
+      const cs_real_t ttke = xk / xe;
+      const cs_real_t ttmin = cs_turb_cv2fct * sqrt(xnu/xe);
+      const cs_real_t tt = fmax(ttke, ttmin);
+
+      visct[c_id] = cs_turb_cmu*xrom*tt*cvar_phi[c_id]*xk;
+    }
   }
 }
 
@@ -1274,32 +1341,60 @@ cs_turbulence_v2f_bl_v2k_mu_t(void)
 
   const cs_real_t f1 = 0.6 / sqrt(3.) / cs_turb_cmu;
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  /* HTLES method */
+  if (cs_glob_turb_model->hybrid_turb == 4) {
 
-    const cs_real_t xk   = cvar_k[c_id];
-    const cs_real_t xe   = cvar_ep[c_id];
-    const cs_real_t xrom = crom[c_id];
-    const cs_real_t xnu  = viscl[c_id]/xrom;
+    cs_real_t *psi = cs_field_by_name("htles_psi")->val;
+    cs_real_t *blend = cs_field_by_name("hybrid_blend")->val;
 
-    const cs_real_t ttke = xk/xe;
-    const cs_real_t ttmin = cs_turb_cpalct*sqrt(xnu/xe);
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      const cs_real_t xk   = cvar_k[c_id];
+      const cs_real_t xe   = cvar_ep[c_id];
+      const cs_real_t xrom = crom[c_id];
+      const cs_real_t xnu  = viscl[c_id]/xrom;
 
-    /* We initially have:
-     * ttlim = 0.6/cvar_phi(iel)/sqrt(3)/cmu/s2(iel)
-     * tt = min(ttlim, sqrt(ttke^2 + ttmin^2))
-     * visct(iel) = cmu*xrom*tt*cvar_phi(iel)*cvar_k(iel)
-     *
-     * When tt = ttlim, tt in
-     *   visct(iel) = cmu*xrom*tt*cvar_phi(iel)*cvar_k(iel)
-     * cvar_phi appears in both numerator and denominator,
-     * and can be eliminated. */
+      const cs_real_t ttke = xk / xe;
+      /* Modif. definition Kolmogorov Length scale */
+      const cs_real_t ttmin = cs_turb_cv2fct * sqrt(xnu/(psi[c_id] * xe));
 
-    const cs_real_t ft1 = f1/s2[c_id];
-    const cs_real_t ft2
-      = sqrt(cs_math_pow2(ttke) + cs_math_pow2(ttmin))*cvar_phi[c_id];
+      /*  ft1 is not taken into account in LES mode (1/(1-xrc)->infty) */
+      cs_real_t xfs2 = (s2[c_id] * CS_MAX(cs_math_epzero, 1. - blend[c_id]));
+      const cs_real_t ft1 = f1 / xfs2;
+      const cs_real_t ft2
+        = sqrt(cs_math_pow2(ttke) + cs_math_pow2(ttmin))*cvar_phi[c_id];
 
-    visct[c_id] = cs_turb_cmu*xrom*cvar_k[c_id]*fmin(ft1, ft2);
+      visct[c_id] = cs_turb_cmu*xrom*cvar_k[c_id]*fmin(ft1, ft2) / psi[c_id];
+    }
 
+  }
+  else {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      const cs_real_t xk   = cvar_k[c_id];
+      const cs_real_t xe   = cvar_ep[c_id];
+      const cs_real_t xrom = crom[c_id];
+      const cs_real_t xnu  = viscl[c_id]/xrom;
+
+      const cs_real_t ttke = xk/xe;
+      const cs_real_t ttmin = cs_turb_cpalct*sqrt(xnu/xe);
+
+      /* We initially have:
+       * ttlim = 0.6/cvar_phi(iel)/sqrt(3)/cmu/s2(iel)
+       * tt = min(ttlim, sqrt(ttke^2 + ttmin^2))
+       * visct(iel) = cmu*xrom*tt*cvar_phi(iel)*cvar_k(iel)
+       *
+       * When tt = ttlim, tt in
+       *   visct(iel) = cmu*xrom*tt*cvar_phi(iel)*cvar_k(iel)
+       * cvar_phi appears in both numerator and denominator,
+       * and can be eliminated. */
+
+      const cs_real_t ft1 = f1/s2[c_id];
+      const cs_real_t ft2
+        = sqrt(cs_math_pow2(ttke) + cs_math_pow2(ttmin))*cvar_phi[c_id];
+
+      visct[c_id] = cs_turb_cmu*xrom*cvar_k[c_id]*fmin(ft1, ft2);
+
+    }
   }
 
   /* Free memory */

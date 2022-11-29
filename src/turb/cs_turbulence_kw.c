@@ -403,6 +403,9 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
 
   cs_real_t *hybrid_fd_coeff = NULL;
   cs_real_t *sas_source_term = NULL;
+  cs_real_t *psi       = NULL;
+  cs_real_t *htles_t         = NULL;
+  cs_real_t *htles_kwsst_f1  = NULL;
   if (cs_glob_turb_model->hybrid_turb >= 1) {
     /* For all hybrid model, possibility to have hybrid scheme */
     hybrid_fd_coeff = cs_field_by_name("hybrid_blend")->val;
@@ -521,6 +524,14 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
     BFT_FREE(vel_laplacian);
 
   }
+  else if (cs_glob_turb_model->hybrid_turb == 4) {
+    /* HTLES model [Manceau; 2018] */
+
+    psi = cs_field_by_name("htles_psi")->val;
+    htles_t   = cs_field_by_name("htles_t")->val;
+
+    htles_kwsst_f1 = cs_field_by_name("f1_kwsst")->val;
+  }
 
 # pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
@@ -556,6 +567,9 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
       xarg1 = fmin(xarg1,
                    4.*ro*xk/cs_turb_ckwsw2/cdkw/cs_math_pow2(distf));
       xf1[c_id] = tanh(cs_math_pow4(xarg1));
+      if (cs_glob_turb_model->hybrid_turb == 4) {
+        htles_kwsst_f1[c_id] = xf1[c_id];
+      }
     }
 
     /* Unsteady terms (stored in tinstk and tinstw)
@@ -582,6 +596,9 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
       cs_real_t xeps = cs_turb_cmu*xw*xk;
       cs_real_t visct = cpro_pcvto[c_id];
       /* k / (mu_T * omega) , clipped to 1 if mu_t is zero */
+      if (cs_glob_turb_model->hybrid_turb == 4) {
+        xeps = cs_turb_cmu*xw*xk*psi[c_id];
+      }
 
       cs_real_t k_dmut_dom;
       if (visct*xw <= cs_math_epzero*xk)
@@ -853,7 +870,8 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
     }
 
     /* Scale Adaptive mode for k-w SST */
-    else {
+
+    else if (cs_glob_turb_model->hybrid_turb == 3) {
 
 #     pragma omp for nowait
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -901,6 +919,47 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
                         * fmax(-2.*ro/cs_math_pow2(xw)*(1. - xxf1)
                                /cs_turb_ckwsw2*gdkgdw[c_id], 0.);
       }
+    }
+
+    /* HTLES mode for k-w SST */
+
+    else if (cs_glob_turb_model->hybrid_turb == 4) {
+
+#     pragma omp for nowait
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+        cs_real_t visct  = cpro_pcvto[c_id];
+        cs_real_t ro     = cromo[c_id];
+        cs_real_t xk     = cvara_k[c_id];
+        cs_real_t xw     = cvara_omg[c_id];
+        cs_real_t xxf1   = xf1[c_id];
+        cs_real_t xgamma = xxf1 * cs_turb_ckwgm1 + (1. - xxf1)*cs_turb_ckwgm2;
+        cs_real_t xbeta  = xxf1 * cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
+        cs_real_t xcmu   = cs_turb_cmu;
+
+        /* HTLES method */
+        cs_real_t xpsi  = psi[c_id];
+        cs_real_t xt    = htles_t[c_id];
+        cs_real_t xep   = xk/xt;
+
+        cs_real_t prodw_dmut;
+        if (visct <= cs_math_epzero*prodw[c_id])
+          prodw_dmut = 0.;
+        else
+          prodw_dmut = prodw[c_id]/visct;
+
+        smbrk[c_id] += cell_f_vol[c_id]*(prodk[c_id] - ro*xep);
+
+        smbrw[c_id] += cell_f_vol[c_id]*(  ro*xgamma*prodw_dmut/xpsi
+                                         - xbeta*ro*cs_math_pow2(xw)
+                                         + 2.*ro/xpsi/xw*(1.-xxf1)
+					   /cs_turb_ckwsw2*gdkgdw[c_id]);
+
+        tinstw[c_id] +=   cell_f_vol[c_id]
+                        * fmax(  -2.*ro/xpsi/cs_math_pow2(xw)*(1. - xxf1)
+                               / cs_turb_ckwsw2*gdkgdw[c_id], 0.);
+      }
+
     } /* End of test on hybrid models */
 
     /* If the solving of k-omega is uncoupled,
@@ -919,6 +978,8 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
         if (   cs_glob_turb_model->hybrid_turb == 1
             || cs_glob_turb_model->hybrid_turb == 2)
           fhybr = w1[c_id];
+        else if (cs_glob_turb_model->hybrid_turb == 4)
+          fhybr = 1./(cs_turb_cmu*xw*htles_t[c_id]);
         else
           fhybr = 1.;
 
@@ -1699,9 +1760,16 @@ cs_turbulence_kw_mu_t(void)
   /* Calculation of viscosity
    * ======================== */
 
+  cs_real_t *psi   = NULL;
+  cs_real_t *blend = NULL;
+  if (cs_glob_turb_model->hybrid_turb == 4) {
+    psi = cs_field_by_name("htles_psi")->val;
+    blend = cs_field_by_name("hybrid_blend")->val;
+  }
+
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
     const cs_real_t xk = cvar_k[c_id];
-    const cs_real_t xw = cvar_omg[c_id];
+    cs_real_t xw = cvar_omg[c_id];
     const cs_real_t rom = crom[c_id];
     const cs_real_t xmu = viscl[c_id];
 
@@ -1720,6 +1788,11 @@ cs_turbulence_kw_mu_t(void)
         cs_real_t xarg2 = fmax(2.0 * sqrt(xk) / cs_turb_cmu / xw / xdist,
                                500.0 * xmu / rom / xw / cs_math_pow2(xdist));
         xf2 = tanh(cs_math_pow2(xarg2));
+      }
+
+      if (cs_glob_turb_model->hybrid_turb == 4) {
+        xw *= psi[c_id];
+        xf2 *= CS_MAX(cs_math_epzero, 1. - blend[c_id]);
       }
       visct[c_id] =   rom*cs_turb_ckwa1*xk
                     / fmax(cs_turb_ckwa1*xw, sqrt(cpro_s2kw[c_id])*xf2);

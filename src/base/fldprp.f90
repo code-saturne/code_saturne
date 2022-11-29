@@ -178,6 +178,33 @@ if (hybrid_turb.eq.3) then
   call add_property_field_1d('hybrid_sas_source_term', 'SAS hybrid source term', iflid)
 endif
 
+if (hybrid_turb.eq.4) then
+  call add_property_field_1d('k_tot',     'Energy total',     iflid)
+  call add_property_field_1d('k_mod',     'Modelised Energy', iflid)
+  call add_property_field_1d('k_res',     'Resolved Energy',  iflid)
+  call add_property_field_1d('eps_mod',   'Mean Dissipation', iflid)
+  if (iturb.eq.60) then
+    call add_property_field_1d('omg_mod',  'Mean Specific Dissipation', iflid)
+    call add_property_field_1d('f1_kwsst', 'Function F1 of k-omg SST',  iflid)
+  end if
+  call add_property_field_1d('htles_psi', 'Psi HTLES',          iflid)
+  call add_property_field_1d('htles_r',   'Energy ratio',       iflid)
+  call add_property_field_1d('htles_t',   'Time scale HTLES',   iflid)
+  call add_property_field_1d('htles_icc', 'ICC coefficient',    iflid)
+  call add_property_field_1d('htles_fs',  'Shielding function', iflid)
+  call add_property_field_1d('Delta_max', 'Delta max',          iflid)
+
+  ! Time averaged with exponential filtering, TODO use standard time moment
+  call add_property_field_1d('vel_mag_mean','Mean velocity mag.',iflid)
+  has_previous = .false.
+  call add_property_field('velocity_mean', 'Vel Tavg', idim3, &
+                          has_previous, iflid)
+  ! Diagonal part of time moment of uiuj
+  call add_property_field('ui2_mean', 'Vel Tavg', idim3, &
+                          has_previous, iflid)
+
+endif
+
 if  (iturb.eq.60) then
   call add_property_field_1d('s2', 'S2', is2kw)
   call hide_property(is2kw)
