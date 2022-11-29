@@ -2422,6 +2422,10 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
+  if (   eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
+      && bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
+    bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
+
   /* Add a new cs_xdef_t structure */
 
   int  dim = eqp->dim;
@@ -2439,10 +2443,6 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
                 "%s: This situation is not handled yet.\n", __func__);
 
   }
-
-  if (   eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
-      && bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
-    bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
 
   cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
     (cs_flag_t)bc_type : cs_cdo_bc_get_flag(bc_type);
@@ -2495,28 +2495,22 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
+  if (   eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
+      && bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
+    bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
+
   assert(cs_flag_test(loc, cs_flag_primal_face)   ||
          cs_flag_test(loc, cs_flag_boundary_face) ||
          cs_flag_test(loc, cs_flag_primal_vtx)    ||
          cs_flag_test(loc, cs_flag_primal_edge)); /* for circulation */
 
   int  z_id = cs_get_bdy_zone_id(z_name);
-
-  /* Add a new cs_xdef_t structure */
-
-  cs_xdef_array_context_t  input = {.z_id = z_id,
-                                    .stride = eqp->dim,
-                                    .loc = loc,
-                                    .values = array,
-                                    .index = index,
-                                    .ids = ids,
-                                    .is_owner = is_owner};
-
+  int  dim = eqp->dim;
   cs_flag_t  state_flag = 0;
+
   if (loc == cs_flag_primal_face || loc == cs_flag_boundary_face)
     state_flag = CS_FLAG_STATE_FACEWISE;
 
-  int dim = eqp->dim;
   if (bc_type == CS_PARAM_BC_NEUMANN_FULL)
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
 
@@ -2532,13 +2526,18 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
 
   }
 
-  if (   eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
-      && bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
-    bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
-
-
   cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
     (cs_flag_t)bc_type : cs_cdo_bc_get_flag(bc_type);
+
+  /* Add a new cs_xdef_t structure */
+
+  cs_xdef_array_context_t  input = {.z_id = z_id,
+                                    .stride = dim,
+                                    .loc = loc,
+                                    .values = array,
+                                    .index = index,
+                                    .ids = ids,
+                                    .is_owner = is_owner};
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
                                           dim,
