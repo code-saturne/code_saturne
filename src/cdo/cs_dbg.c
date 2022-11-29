@@ -258,7 +258,6 @@ cs_dbg_darray_to_listing(const char        *header,
       cs_log_printf(CS_LOG_DEFAULT, " (%04ld) % 6.4e", (long)j, array[j]);
     cs_log_printf(CS_LOG_DEFAULT, "\n");
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -294,7 +293,6 @@ cs_dbg_iarray_to_listing(const char        *header,
       cs_log_printf(CS_LOG_DEFAULT, " (%04ld) % 6ld", (long)j, (long)array[j]);
     cs_log_printf(CS_LOG_DEFAULT, "\n");
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

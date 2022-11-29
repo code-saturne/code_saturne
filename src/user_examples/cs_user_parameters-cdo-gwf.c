@@ -381,7 +381,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
                               "right",       /* boundary zone name */
                               &right_val);   /* value to set */
 
-  /* 2. Set the Richards equation */
+  /* 2. Set the tracer equation */
   /* ---------------------------- */
 
   cs_equation_param_t  *t_eqp = cs_equation_param_by_name("Tracer_01");

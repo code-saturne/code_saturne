@@ -325,9 +325,7 @@ cs_gwf_tracer_add(cs_gwf_tracer_model_t            tr_model,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free all tracers
- *
- * \return a NULL pointer
+ * \brief  Free all tracer structures
  */
 /*----------------------------------------------------------------------------*/
 

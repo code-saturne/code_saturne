@@ -68,7 +68,7 @@ BEGIN_C_DECLS
  * Local macro definitions
  *============================================================================*/
 
-#define CS_GWF_TRACER_DBG 0
+#define CS_GWF_TRACER_DBG  0
 
 /*============================================================================
  * Structure definitions
@@ -314,7 +314,6 @@ _get_reaction_pty4std_sat_tracer(cs_lnum_t                    n_elts,
     result[id] = (saturated_moisture + tc->rho_kd[s]) * tc->reaction_rate[s];
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -410,7 +409,6 @@ _get_reaction_pty4std_tracer(cs_lnum_t                    n_elts,
     }
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1465,9 +1463,7 @@ cs_gwf_tracer_add(cs_gwf_tracer_model_t            tr_model,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free all tracers
- *
- * \return a NULL pointer
+ * \brief  Free all tracer structures
  */
 /*----------------------------------------------------------------------------*/
 
