@@ -367,32 +367,6 @@ cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Take into account generic BCs by a weak enforcement using Nitsche
- *          technique. According to the settings one can apply Neumann BCs if
- *          alpha = 0, Dirichlet BCs if alpha >> 1 or Robin BCs
- *          Case of scalar-valued CDO-Vb schemes with a CO+ST algorithm.
- *          Predefined prototype to match the function pointer
- *          cs_cdo_enforce_bc_t
- *
- * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
- * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
- * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
- * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
- * \param[in, out]  csys      structure storing the cellwise system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
-                                  const cs_cell_mesh_t           *cm,
-                                  cs_face_mesh_t                 *fm,
-                                  cs_hodge_t                     *hodge,
-                                  cs_cell_builder_t              *cb,
-                                  cs_cell_sys_t                  *csys);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique. Case of scalar-valued CDO-Vb schemes with an orthogonal
  *          splitting between the consistency/stabilization parts (OCS)
