@@ -74,7 +74,7 @@ integer          nscal  , iappel
 
 integer          iel    , ifac   , iscal
 integer          iflmas , iflmab
-integer          f_id   , kinitvs
+integer          f_id   , kthetvs, kinitvs
 integer          key_t_ext_id, icpext
 integer          iviext, initvs
 integer          iroext
@@ -97,6 +97,7 @@ double precision, dimension(:), pointer :: cpro_rho_mass, bpro_rho_mass
 !===============================================================================
 
 call field_get_key_id("time_extrapolated", key_t_ext_id)
+call field_get_key_id("diffusivity_extrapolated", kthetvs)
 call field_get_key_id("scalar_diffusity_prev", kinitvs)
 
 call field_get_id_try("density_mass", f_id)
@@ -340,7 +341,7 @@ elseif (iappel.eq.2) then
       if (f_id.ge.0.and.iscavr(iscal).le.0) then
         call field_get_key_int(f_id, key_t_ext_id, iviext)
         if (iviext.gt.0) then
-          theta  = thetvs(iscal)
+          call field_get_key_double(ivarfl(isca(iscal)), kthetvs, theta)
           call field_get_val_s(f_id, cpro_visls)
           call field_get_val_prev_s(f_id, cproa_visls)
           do iel = 1, ncel
@@ -356,7 +357,6 @@ elseif (iappel.eq.2) then
   endif
 
   return
-
 
 !===============================================================================
 ! 3.  JUSTE APRES NAVSTO, DANS LES BOUCLES U/P ET ALE

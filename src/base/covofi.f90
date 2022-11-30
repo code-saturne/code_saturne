@@ -165,7 +165,7 @@ integer          icvflb, f_dim, iflwgr
 integer          icla
 integer          icrom_scal
 integer          key_buoyant_id, is_buoyant_fld
-integer          key_t_ext_id, krvarfl
+integer          key_t_ext_id, krvarfl, kthetss
 integer          iviext
 integer          key_turb_schmidt, key_turb_diff
 integer          t_scd_id, t_dif_id
@@ -408,7 +408,8 @@ else
 endif
 
 ! S pour Source, V pour Variable
-thets  = thetss(iscal)
+call field_get_key_id("st_exp_extrapolated", kthetss)
+call field_get_key_double(iflid, kthetss, thets)
 thetv  = vcopt%thetav
 
 call field_get_name(ivarfl(ivar), chaine)

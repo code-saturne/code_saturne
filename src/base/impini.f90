@@ -540,11 +540,6 @@ if (nscal.ge.1) then
   write(nfecra,6032)
 
   write(nfecra,6030)
-  write(nfecra,6040)
-  do ii = 1, nscal
-    write(nfecra,6041) ii,thetss(ii),thetvs(ii)
-  enddo
-  write(nfecra,6042)
 
   write(nfecra,9900)
 
@@ -584,19 +579,6 @@ endif
 '       SCAMAX =                (Max authorized value        )',/,&
 '        For variances, SCAMIN is ignored and SCAMAX is used',  /,&
 '          only if ICLVFL = 2',                                 /)
- 6040 format(                                                     &
-'------------------------------------------------------',       /,&
-'   Scalar        THETSS      THETVS',                /,&
-'------------------------------------------------------'         )
- 6041 format(                                                     &
- 1x,     i10,      e12.4,     e12.4                   )
- 6042 format(                                                     &
-'------------------------------------------------------',       /,&
-                                                                /,&
-'       THETSS =                (theta for source terms      )',/,&
-'                               ((1+theta).new-theta.old     )',/,&
-'       THETVS =                (theta for scalar diffusivity', /,&
-'                               ((1+theta).new-theta.old     )',/)
 
 !===============================================================================
 ! 6. GESTION DU CALCUL

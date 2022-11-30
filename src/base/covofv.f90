@@ -130,7 +130,7 @@ integer          iescap, ivissv
 integer          idftnp
 integer          iflid , st_prv_id, st_id,  keydri, iscdri
 integer          icvflb, f_dim, iflwgr
-integer          key_buoyant_id, is_buoyant_fld
+integer          key_buoyant_id, is_buoyant_fld, kthetss
 
 integer          ivoid(1)
 
@@ -189,6 +189,8 @@ call field_get_val_prev_v(iflid, cvara_var)
 ! Key id for buoyant field (inside the Navier Stokes loop)
 call field_get_key_id("is_buoyant", key_buoyant_id)
 call field_get_key_int(iflid, key_buoyant_id, is_buoyant_fld)
+
+call field_get_key_id("st_exp_extrapolated", kthetss)
 
 ! If the vector is buoyant, it is inside the Navier Stokes loop, and so iterns >=1
 ! otherwise it is outside of the loop and iterns = -1.
@@ -262,7 +264,7 @@ else
 endif
 
 ! S pour Source, V pour Variable
-thets  = thetss(iscal)
+call field_get_key_double(ivarfl(isca(iscal)), kthetss, thets)
 thetv  = vcopt%thetav
 
 call field_get_name(iflid, chaine)

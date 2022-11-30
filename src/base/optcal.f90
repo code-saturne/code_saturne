@@ -138,18 +138,6 @@ module optcal
   !> The value of \f$theta\f$ (see \ref thetst in cs_time_scheme_t).
   real(c_double), pointer, save :: thetst
 
-  !> \f$ \theta \f$-scheme for the extrapolation of the nonlinear
-  !> explicit source term \f$S_e\f$ of the scalar transport equation
-  !> when the source term extrapolation has been activated (see
-  !> \ref isso2t), following the formula
-  !> \f$(S_e)^{n+\theta}=(1+\theta)S_e^n-\theta S_e^{n-1}\f$.\n
-  !> The value of \f$\theta\f$ = \ref thetss is deduced from the value
-  !> chosen for \ref isso2t. Generally, only the value 0.5 is used.
-  !>    -  0 : explicit
-  !>    - 1/2: extrapolated in n+1/2
-  !>    -  1 : extrapolated in n+1
-  double precision, save :: thetss(nscamx)
-
   !> \f$ \theta \f$-scheme for the extrapolation of the physical
   !> property \f$\phi\f$ "total viscosity" when the extrapolation
   !> has been activated (see \ref time_extrapolated key word), according to the
@@ -172,18 +160,6 @@ module optcal
   !>    - 1/2: extrapolated in n+1/2
   !>    -  1 : extrapolated in n+1
   double precision, save :: thetcp
-
-  !> \f$ \theta \f$-scheme for the extrapolation of the physical
-  !> property \f$\phi\f$ "diffusivity" when the extrapolation has
-  !> been activated (see \ref time_extrapolated key word), according to the
-  !> formula \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
-  !> The value of\f$\theta\f$ = \ref thetvs is deduced from the value
-  !> chosen for \ref time_extrapolated key word. Generally, only the value 0.5
-  !> is used.
-  !>    -  0 : explicit
-  !>    - 1/2: extrapolated in n+1/2
-  !>    -  1 : extrapolated in n+1
-  double precision, save :: thetvs(nscamx)
 
   !> relative precision for the convergence test of the iterative process on
   !> velocity-pressure coupling (inner iterations)

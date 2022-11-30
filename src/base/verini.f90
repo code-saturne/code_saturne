@@ -85,8 +85,8 @@ integer          key_t_ext_id, icpext
 integer          iviext, iscacp
 integer          iroext, isso2t
 integer          ivisext, krvarfl, kisso2t
-integer          kturt, turb_flux_model
-double precision scmaxp, rvarfl
+integer          kturt, turb_flux_model, kthetss, kthetvs
+double precision scmaxp, rvarfl, thetss, thetvs
 double precision turb_schmidt, visls_0
 
 character(len=3), dimension(3) :: nomext3
@@ -112,6 +112,9 @@ call field_get_key_id("variable_id", keyvar)
 call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
 call field_get_key_id("variance_clipping", kclvfl)
+
+call field_get_key_id("st_exp_extrapolated", kthetss)
+call field_get_key_id("diffusivity_extrapolated", kthetvs)
 
 ! Time extrapolation?
 call field_get_key_id("time_extrapolated", key_t_ext_id)
@@ -383,9 +386,11 @@ if (ippmod(iphpar).ge.1) then
       (icpext .gt.0   )) istop = 1
   do iscal = 1, nscal
     call field_get_key_int(ivarfl(isca(iscal)), kisso2t, isso2t)
-    if ((thetss(iscal)       .gt.0.d0 ).or.            &
-        (isso2t       .gt.0    ).or.                   &
-        (thetvs(iscal).gt.0.d0 )) istop = 1
+    call field_get_key_double(ivarfl(isca(iscal)), kthetss, thetss)
+    call field_get_key_double(ivarfl(isca(iscal)), kthetvs, thetvs)
+    if ((thetss.gt.0.d0).or.            &
+        (isso2t.gt.0   ).or.            &
+        (thetvs.gt.0.d0)) istop = 1
   enddo
 
   if (istop.ne.0) then
@@ -405,10 +410,11 @@ if (iilagr .eq. 2) then
     iok = iok + 1
   endif
   call field_get_key_int(ivarfl(isca(iscalt)), kisso2t, isso2t)
+  call field_get_key_double(ivarfl(isca(iscalt)), kthetss, thetss)
   if ((itherm.eq.1 .and. itpscl.eq.1) .or. itherm.eq.2) then
-    if (thetss(iscalt).gt.0.d0 .or. isso2t.gt.0) then
+    if (thetss.gt.0.d0 .or. isso2t.gt.0) then
       write(nfecra,2148)                                           &
-        'lagrangian ',iscal,thetss(iscalt),isso2t, 'cs_user_lagr_model'
+        'lagrangian ',ivarfl(isca(iscal)),thetss,isso2t, 'cs_user_lagr_model'
       iok = iok + 1
     endif
   endif
@@ -420,9 +426,10 @@ endif
 if (iirayo.gt.0) then
   if (iscalt.gt.0) then
     call field_get_key_int(ivarfl(isca(iscalt)), kisso2t, isso2t)
-    if (thetss(iscalt).gt.0.d0 .or. isso2t.gt.0) then
+    call field_get_key_double(ivarfl(isca(iscalt)), kthetss, thetss)
+    if (thetss.gt.0.d0 .or. isso2t.gt.0) then
       write(nfecra,2148)                                           &
-        'rayonnement',iscal,thetss(iscalt),'usray1'
+        'rayonnement',iscal,thetss,'usray1'
       iok = iok + 1
     endif
   endif

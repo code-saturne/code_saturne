@@ -949,7 +949,7 @@ cs_parameters_define_field_keys(void)
 
   cs_field_define_key_int("boundary_value_id", -1, 0);
 
-  cs_field_define_key_int("convection_limiter_id", -1, 0);
+  cs_field_define_key_int("convection_limiter_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_int("diffusion_limiter_id", -1, CS_FIELD_VARIABLE);
 
   cs_field_define_key_int("coupling_entity", -1, 0);
@@ -970,8 +970,11 @@ cs_parameters_define_field_keys(void)
    */
 
   cs_field_define_key_int("time_extrapolated", -1, 0);
-  cs_field_define_key_int("scalar_time_scheme", -1, 0); /* isso2t(iscal) */
-
+  cs_field_define_key_int("scalar_time_scheme", -1, 0); /* ex-isso2t */
+  cs_field_define_key_double("st_exp_extrapolated", -1,
+                             CS_FIELD_VARIABLE); /* ex-thetss */
+  cs_field_define_key_double("diffusivity_extrapolated", -1,
+                             CS_FIELD_VARIABLE); /* ex-thetvs */
   cs_field_define_key_int("measures_set_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_int("opt_interp_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_int("opt_interp_analysis_id", -1, CS_FIELD_VARIABLE);

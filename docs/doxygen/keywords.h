@@ -270,16 +270,46 @@ int scalar_diffusivity_prev;
   the other terms \f$S_e\f$ are expressed as second-order terms by
   extrapolation (according to the formula
   \f$(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]\f$,
-  \f$\theta\f$ being given by the value of \ref thetss(iscal) = 0.5)
+  \f$\theta\f$ being given by the value of \ref st_exp_extrapolated = 0.5)
   - 2: the linear terms \f$S_i\phi\f$ are treated in the same way as
   when scalar_time_scheme = 1; the other terms \f$S_e\f$ are extrapolated
   according to the same formula as when scalar_time_scheme = 1, but with
-  \f$\theta\f$ = \ref thetss(iscal) = 1.\n
+  \f$\theta\f$ = \ref st_exp_extrapolated = 1.\n
   By default, scalar_time_scheme is initialised to 1 (second-order)
   when the selected time scheme is second-order (\ref ischtp = 2),
   otherwise to 0.
 */
 int scalar_time_scheme;
+
+/*!
+  \var st_exp_extrapolated
+  \f$ \theta \f$-scheme for the extrapolation of the nonlinear
+  explicit source term \f$S_e\f$ of the scalar transport equation
+  when the source term extrapolation has been activated (see
+  \ref scalar_time_scheme), following the formula
+  \f$(S_e)^{n+\theta}=(1+\theta)S_e^n-\theta S_e^{n-1}\f$.\n
+  The value of \f$\theta\f$ = \ref thetss is deduced from the value
+  chosen for \ref scalar_time_scheme. Generally, only the value 0.5 is used.
+  - 0: explicit
+  - 1/2: extrapolated in n+1/2
+  - 1: extrapolated in n+1
+*/
+double st_exp_extrapolated;
+
+/*!
+  \var diffusivity_extrapolated
+  \f$ \theta \f$-scheme for the extrapolation of the physical
+  property \f$\phi\f$ "diffusivity" when the extrapolation has
+  been activated (see \ref time_extrapolated key word), according to the
+  formula \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
+  The value of\f$\theta\f$ = \ref thetvs is deduced from the value
+  chosen for \ref time_extrapolated key word. Generally, only the value 0.5
+  is used.
+  - 0: explicit
+  - 1/2: extrapolated in n+1/2
+  - 1: extrapolated in n+1
+*/
+double diffusivity_extrapolated;
 
 /*!@}*/
 

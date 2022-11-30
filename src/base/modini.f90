@@ -59,7 +59,7 @@ implicit none
 
 ! Local variables
 
-integer          f_id
+integer          f_id, f_id_d
 integer          ii, jj, iok, ikw
 integer          nbccou
 integer          nscacp, iscal, ivar
@@ -67,11 +67,11 @@ integer          imrgrp, iclvfl, kclvfl
 integer          iscacp, kcpsyr, icpsyr
 integer          nfld, f_type
 integer          key_t_ext_id, icpext, kscmin, kscmax
-integer          iviext, isso2t, kisso2t
+integer          iviext, isso2t, kisso2t, kthetss, kthetvs
 integer          kturt, turb_flux_model, turb_flux_model_type
 
 double precision relxsp, clvfmn, clvfmx, visls_0, visls_cmp
-double precision scminp
+double precision scminp, thetss, thetvs
 
 character(len=80) :: name
 
@@ -89,7 +89,8 @@ call field_get_key_id("time_extrapolated", key_t_ext_id)
 call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
 call field_get_key_id('turbulent_flux_model', kturt)
-
+call field_get_key_id("st_exp_extrapolated", kthetss)
+call field_get_key_id("diffusivity_extrapolated", kthetvs)
 call field_get_key_id("scalar_time_scheme", kisso2t)
 
 call field_get_key_id("variance_clipping", kclvfl)
@@ -165,7 +166,7 @@ if (isuit1.eq.-1) isuit1 = isuite
 !    -- Proprietes physiques
 call field_get_key_int(iviscl, key_t_ext_id, iviext)
 if (abs(thetvi+999.d0).gt.epzero) then
-  write(nfecra,1011) 'IVIEXT',iviext,'THETVI'
+  write(nfecra,1011) 'IVIEXT', iviext, 'THETVI'
   iok = iok + 1
 elseif (iviext.eq.0) then
   thetvi = 0.0d0
@@ -178,7 +179,7 @@ endif
 if (icp.ge.0) then
   call field_get_key_int(icp, key_t_ext_id, icpext)
   if (abs(thetcp+999.d0).gt.epzero) then
-    write(nfecra,1011) 'ICPEXT',icpext,'THETCP'
+    write(nfecra,1011) 'ICPEXT', icpext, 'THETCP'
     iok = iok + 1
   elseif (icpext.eq.0) then
     thetcp = 0.0d0
@@ -191,7 +192,7 @@ endif
 
 !    -- Termes sources NS
 if (abs(thetsn+999.d0).gt.epzero) then
-  write(nfecra,1011) 'ISNO2T',isno2t,'THETSN'
+  write(nfecra,1011) 'ISNO2T', isno2t, 'THETSN'
   iok = iok + 1
 elseif (isno2t.eq.1) then
   thetsn = 0.5d0
@@ -203,7 +204,7 @@ endif
 
 !    -- Termes sources grandeurs turbulentes
 if (abs(thetst+999.d0).gt.epzero) then
-  write(nfecra,1011) 'ISTO2T',isto2t,'THETST'
+  write(nfecra,1011) 'ISTO2T', isto2t, 'THETST'
   iok = iok + 1
 elseif (isto2t.eq.1) then
   thetst = 0.5d0
@@ -215,33 +216,42 @@ endif
 
 do iscal = 1, nscal
 !    -- Termes sources des scalaires
-   call field_get_key_int(ivarfl(isca(iscal)), kisso2t, isso2t)
-  if (abs(thetss(iscal)+999.d0).gt.epzero) then
-    write(nfecra,1021) iscal,'ISSO2T',isso2t,'THETSS'
+  f_id = ivarfl(isca(iscal))
+  call field_get_key_int(f_id, kisso2t, isso2t)
+  call field_get_key_double(f_id, kthetss, thetss)
+  if (abs(thetss+1.d0).gt.epzero) then
+    write(nfecra,1021) f_id, 'ISSO2T', isso2t, 'THETSS'
     iok = iok + 1
   elseif (isso2t.eq.1) then
-    thetss(iscal) = 0.5d0
+    thetss = 0.5d0
+    call field_set_key_double(f_id, kthetss, thetss)
   elseif (isso2t.eq.2) then
-    thetss(iscal) = 1.d0
+    thetss = 1.d0
+    call field_set_key_double(f_id, kthetss, thetss)
   elseif (isso2t.eq.0) then
-    thetss(iscal) = 0.d0
+    thetss = 0.d0
+    call field_set_key_double(f_id, kthetss, thetss)
   endif
   ! Scalars diffusivity
-  call field_get_key_int(ivarfl(isca(iscal)), kivisl, f_id)
-  if (f_id.ge.0) then
-    call field_get_key_int(f_id, key_t_ext_id, iviext)
+  call field_get_key_int(f_id, kivisl, f_id_d)
+  if (f_id_d.ge.0) then
+    call field_get_key_int(f_id_d, key_t_ext_id, iviext)
   else
     iviext = 0
   endif
-  if (abs(thetvs(iscal)+999.d0).gt.epzero) then
-    write(nfecra,1021) iscal,'IVSEXT',iviext,'THETVS'
+  call field_get_key_double(f_id, kthetvs, thetvs)
+  if (abs(thetvs+1.d0).gt.epzero) then
+    write(nfecra,1021) iscal, 'IVSEXT', iviext, 'THETVS'
     iok = iok + 1
   elseif (iviext.eq.0) then
-    thetvs(iscal) = 0.d0
+    thetvs = 0.d0
+    call field_set_key_double(f_id, kthetvs, thetvs)
   elseif (iviext.eq.1) then
-    thetvs(iscal) = 0.5d0
+    thetvs = 0.5d0
+    call field_set_key_double(f_id, kthetvs, thetvs)
   elseif (iviext.eq.2) then
-    thetvs(iscal) = 1.d0
+    thetvs = 1.d0
+    call field_set_key_double(f_id, kthetvs, thetvs)
   endif
 enddo
 
