@@ -1241,16 +1241,20 @@ _create_default_tracer_context(cs_gwf_tracer_t    *tracer)
   switch (tracer->hydraulic_model) {
 
   case CS_GWF_MODEL_SATURATED_SINGLE_PHASE:
-    if (tracer->model & CS_GWF_TRACER_PRECIPITATION)
+    if (tracer->model & CS_GWF_TRACER_PRECIPITATION) {
       tracer->integrate = _integrate_sat_precip_tracer;
+      tracer->update_precipitation = _update_precipitation_vb;
+    }
     else
       tracer->integrate = _integrate_sat_tracer;
 
-    tracer->update_precipitation = _update_precipitation_vb;
     break;
 
   case CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE:
     if (tracer->model & CS_GWF_TRACER_PRECIPITATION) {
+
+      tracer->update_precipitation = _update_precipitation_vb;
+
       cs_base_warn(__FILE__, __LINE__);
       bft_printf("%s: Precipitation effect are taken into account"
                  " for tracer \"%s\" but no tracer integration.\n",
@@ -1259,7 +1263,6 @@ _create_default_tracer_context(cs_gwf_tracer_t    *tracer)
     else
       tracer->integrate = _integrate_tracer;
 
-    tracer->update_precipitation = _update_precipitation_vb;
     break;
 
   default:
