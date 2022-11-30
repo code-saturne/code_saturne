@@ -83,8 +83,8 @@ integer          kscmin, kscmax, kclvfl
 integer          keyvar, keysca
 integer          key_t_ext_id, icpext
 integer          iviext, iscacp
-integer          iroext
-integer          ivisext, krvarfl
+integer          iroext, isso2t
+integer          ivisext, krvarfl, kisso2t
 integer          kturt, turb_flux_model
 double precision scmaxp, rvarfl
 double precision turb_schmidt, visls_0
@@ -115,6 +115,8 @@ call field_get_key_id("variance_clipping", kclvfl)
 
 ! Time extrapolation?
 call field_get_key_id("time_extrapolated", key_t_ext_id)
+
+call field_get_key_id("scalar_time_scheme", kisso2t)
 
 call field_get_key_id("variance_dissipation", krvarfl)
 
@@ -215,8 +217,9 @@ if (abs(vcopt%thetav-0.5d0).lt.epzero.and.             &
        iroext,iviext,icpext
 endif
 do iscal = 1, nscal
-  if (isso2t(iscal).ne.isno2t) then
-    write(nfecra,2133) iscal,isso2t(iscal),isno2t
+  call field_get_key_int(ivarfl(isca(iscal)), kisso2t, isso2t)
+  if (isso2t.ne.isno2t) then
+    write(nfecra,2133) isno2t
   endif
   call field_get_key_int (ivarfl(isca(iscal)), kivisl, f_id)
   if (f_id.ge.0.and.iscavr(iscal).le.0) then
@@ -379,8 +382,9 @@ if (ippmod(iphpar).ge.1) then
       (thetcp .gt.0.d0).or.                                &
       (icpext .gt.0   )) istop = 1
   do iscal = 1, nscal
+    call field_get_key_int(ivarfl(isca(iscal)), kisso2t, isso2t)
     if ((thetss(iscal)       .gt.0.d0 ).or.            &
-        (isso2t(iscal)       .gt.0    ).or.            &
+        (isso2t       .gt.0    ).or.                   &
         (thetvs(iscal).gt.0.d0 )) istop = 1
   enddo
 
@@ -400,10 +404,11 @@ if (iilagr .eq. 2) then
     write(nfecra,2147)thetsn,isno2t,thetst,isto2t
     iok = iok + 1
   endif
+  call field_get_key_int(ivarfl(isca(iscalt)), kisso2t, isso2t)
   if ((itherm.eq.1 .and. itpscl.eq.1) .or. itherm.eq.2) then
-    if (thetss(iscalt).gt.0.d0 .or. isso2t(iscalt).gt.0) then
+    if (thetss(iscalt).gt.0.d0 .or. isso2t.gt.0) then
       write(nfecra,2148)                                           &
-        'lagrangian ',iscal,thetss(iscalt),isso2t(iscalt), 'cs_user_lagr_model'
+        'lagrangian ',iscal,thetss(iscalt),isso2t, 'cs_user_lagr_model'
       iok = iok + 1
     endif
   endif
@@ -414,9 +419,10 @@ endif
 !       On pourrait le signaler et continuer : on s'arrete.
 if (iirayo.gt.0) then
   if (iscalt.gt.0) then
-    if (thetss(iscalt).gt.0.d0 .or. isso2t(iscalt).gt.0) then
+    call field_get_key_int(ivarfl(isca(iscalt)), kisso2t, isso2t)
+    if (thetss(iscalt).gt.0.d0 .or. isso2t.gt.0) then
       write(nfecra,2148)                                           &
-        'rayonnement',iscal,thetss(iscalt),isso2t(iscalt),'usray1'
+        'rayonnement',iscal,thetss(iscalt),'usray1'
       iok = iok + 1
     endif
   endif

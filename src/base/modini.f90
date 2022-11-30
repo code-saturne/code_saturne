@@ -67,7 +67,7 @@ integer          imrgrp, iclvfl, kclvfl
 integer          iscacp, kcpsyr, icpsyr
 integer          nfld, f_type
 integer          key_t_ext_id, icpext, kscmin, kscmax
-integer          iviext
+integer          iviext, isso2t, kisso2t
 integer          kturt, turb_flux_model, turb_flux_model_type
 
 double precision relxsp, clvfmn, clvfmx, visls_0, visls_cmp
@@ -89,6 +89,8 @@ call field_get_key_id("time_extrapolated", key_t_ext_id)
 call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
 call field_get_key_id('turbulent_flux_model', kturt)
+
+call field_get_key_id("scalar_time_scheme", kisso2t)
 
 call field_get_key_id("variance_clipping", kclvfl)
 
@@ -213,14 +215,15 @@ endif
 
 do iscal = 1, nscal
 !    -- Termes sources des scalaires
+   call field_get_key_int(ivarfl(isca(iscal)), kisso2t, isso2t)
   if (abs(thetss(iscal)+999.d0).gt.epzero) then
-    write(nfecra,1021) iscal,'ISSO2T',isso2t(iscal),'THETSS'
+    write(nfecra,1021) iscal,'ISSO2T',isso2t,'THETSS'
     iok = iok + 1
-  elseif (isso2t(iscal).eq.1) then
+  elseif (isso2t.eq.1) then
     thetss(iscal) = 0.5d0
-  elseif (isso2t(iscal).eq.2) then
+  elseif (isso2t.eq.2) then
     thetss(iscal) = 1.d0
-  elseif (isso2t(iscal).eq.0) then
+  elseif (isso2t.eq.0) then
     thetss(iscal) = 0.d0
   endif
   ! Scalars diffusivity

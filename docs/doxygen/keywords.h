@@ -254,6 +254,33 @@ double variance_dissipation;
 */
 int scalar_diffusivity_prev;
 
+/*!
+  \var scalar_time_scheme
+  For each scalar, specifies the time scheme activated
+  for the source terms of the equation for the scalar, apart from convection
+  and diffusion (for instance: variance production, user-specified terms, ...).
+  - 0: "standard" first-order: the terms which are linear
+  functions of the solved variable are implicit and the others are explicit
+  - 1: second-order: the terms of the form \f$S_i\phi\f$ which are
+  linear functions of the solved variable \f$\phi\f$ are expressed
+  as second-order terms by interpolation (according to the formula
+  \f$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]\f$,
+  \f$\theta\f$ being given by the value of \ref thetav associated with
+  the variable \f$\phi\f$);
+  the other terms \f$S_e\f$ are expressed as second-order terms by
+  extrapolation (according to the formula
+  \f$(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]\f$,
+  \f$\theta\f$ being given by the value of \ref thetss(iscal) = 0.5)
+  - 2: the linear terms \f$S_i\phi\f$ are treated in the same way as
+  when scalar_time_scheme = 1; the other terms \f$S_e\f$ are extrapolated
+  according to the same formula as when scalar_time_scheme = 1, but with
+  \f$\theta\f$ = \ref thetss(iscal) = 1.\n
+  By default, scalar_time_scheme is initialised to 1 (second-order)
+  when the selected time scheme is second-order (\ref ischtp = 2),
+  otherwise to 0.
+*/
+int scalar_time_scheme;
+
 /*!@}*/
 
 /*----------------------------------------------------------------------------*/

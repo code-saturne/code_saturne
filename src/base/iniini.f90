@@ -417,7 +417,6 @@ do iscal = 1, nscamx
 !     > 0 utilisation du thetav
 !     Noter cpdt que le TS d'acc. masse n'est pas regi par I..EXT
 !       (il suit bilsc2)
-  isso2t(iscal) = -999
   thetss(iscal) =-999.d0
 
 !    -- Proprietes physiques

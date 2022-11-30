@@ -75,8 +75,8 @@ integer          f_id, idftnp
 integer          iest
 integer          key_buoyant_id, is_buoyant_fld
 integer          keydri
-integer          kturt, turb_flux_model
-integer          ivar, iscdri
+integer          kturt, turb_flux_model, kisso2t
+integer          ivar, iscdri, isso2t
 
 double precision gravn2
 
@@ -91,6 +91,7 @@ type(var_cal_opt) :: vcopt
 ! Key id for buoyant field (inside the Navier Stokes loop)
 call field_get_key_id("is_buoyant", key_buoyant_id)
 call field_get_key_id('turbulent_flux_model', kturt)
+call field_get_key_id("scalar_time_scheme", kisso2t)
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
@@ -235,16 +236,21 @@ endif
 
 do iscal = 1, nscal
   ! Termes sources Scalaires,
-  if (isso2t(iscal).eq.-999) then
+  call field_get_key_int(ivarfl(isca(iscal)), kisso2t, isso2t)
+  if (isso2t.eq.-1) then
     if (ischtp.eq.1) then
-      isso2t(iscal) = 0
+      isso2t = 0
+      call field_set_key_int(ivarfl(isca(iscal)), kisso2t, isso2t)
     else if (ischtp.eq.2) then
       ! Pour coherence avec Navier Stokes on prend l'ordre 2
       ! mais de toute facon qui dit ordre 2 dit LES et donc
       ! generalement pas de TS scalaire a interpoler.
-      isso2t(iscal) = 1
-      if (iscal.eq.iscalt .and. iirayo.gt.0) &
-        isso2t(iscal) = 0
+      isso2t = 1
+      call field_set_key_int(ivarfl(isca(iscal)), kisso2t, isso2t)
+      if (iscal.eq.iscalt .and. iirayo.gt.0) then
+        isso2t = 0
+        call field_set_key_int(ivarfl(isca(iscal)), kisso2t, isso2t)
+      end if
     endif
   endif
 
@@ -312,9 +318,9 @@ endif
 
 do iscal = 1, nscal
   ! Schema en temps pour les termes sources des scalaires
-  if (isso2t(iscal).ne.0.and.                                    &
-      isso2t(iscal).ne. 1.and.isso2t(iscal).ne.2) then
-    write(nfecra,8141) iscal,'ISSO2T',isso2t(iscal)
+  call field_get_key_int(ivarfl(isca(iscal)), kisso2t, isso2t)
+  if (isso2t.ne.0.and.isso2t.ne. 1.and.isso2t.ne.2) then
+    write(nfecra,8141) iscal,'ISSO2T',isso2t
     iok = iok + 1
   endif
 enddo
@@ -392,7 +398,8 @@ endif
 ! Proprietes des scalaires : termes sources pour theta schema
 if (nscal.ge.1) then
   do ii = 1, nscal
-    if (isso2t(ii).gt.0) then
+    call field_get_key_int(ivarfl(isca(ii)), kisso2t, isso2t)
+    if (isso2t.gt.0) then
       ! For buoyant scalars, save the current user source term
       call field_get_key_int(ivarfl(isca(ii)), key_buoyant_id, is_buoyant_fld)
       if (is_buoyant_fld.eq.1) then

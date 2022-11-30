@@ -970,6 +970,7 @@ cs_parameters_define_field_keys(void)
    */
 
   cs_field_define_key_int("time_extrapolated", -1, 0);
+  cs_field_define_key_int("scalar_time_scheme", -1, 0); /* isso2t(iscal) */
 
   cs_field_define_key_int("measures_set_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_int("opt_interp_id", -1, CS_FIELD_VARIABLE);
