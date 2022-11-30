@@ -934,6 +934,7 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("first_moment_id", -1, 0); /* iscavr(iscal) */
 
   cs_field_define_key_int("variance_clipping", -1, 0); /* iclvfl(iscal) */
+  cs_field_define_key_double("variance_dissipation", 0.8, 0); /* rvarfl(iscal) */
 
   cs_field_define_key_int("syrthes_coupling", 0, 0); /* icpsyr(iscal) */
 

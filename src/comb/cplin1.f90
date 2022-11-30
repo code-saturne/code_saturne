@@ -77,14 +77,16 @@ implicit none
 ! Local variables
 
 integer          ii , jj, iok
-integer          icha , isc , is
-double precision wmolme, turb_schmidt
+integer          icha , isc , is, krvarfl
+double precision wmolme, turb_schmidt, rvarfl
 
 type(var_cal_opt) :: vcopt
 
 !===============================================================================
 ! 1. VARIABLES TRANSPORTEES
 !===============================================================================
+
+call field_get_key_id("variance_dissipation", krvarfl)
 
 ! --> Nature des scalaires transportes
 
@@ -114,7 +116,8 @@ do isc = 1, nscapp
 
 ! ---- Coeff dissipation des fluctuations
 
-  rvarfl(jj) = 0.8d0
+  rvarfl = 0.8d0
+  call field_set_key_double(ivarfl(isca(jj)), krvarfl, rvarfl)
 
   ii = isca(iscapp(isc))
 

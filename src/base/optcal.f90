@@ -1085,15 +1085,6 @@ module optcal
   integer, save ::          iscasp(nscamx)
   ! Note that this is already mapped to C using a specific gas-mix structure.
 
-  !> When iscavr(iscal)>0, \ref rvarfl is the coefficient \f$R_f\f$ in
-  !> the dissipation term \f$\-\frac{\rho}{R_f}\frac{\varepsilon}{k}\f$
-  !> of the equation concerning the scalar,
-  !> which represents the root mean square of the fluctuations
-  !> of the scalar.\n
-  !> Useful if and only if there is 1\f$\leqslant\f$ iscal \f$\leqslant\f$
-  !> \ref dimens::nscal "nscal" such as iscavr(iscal)>0
-  double precision, save :: rvarfl(nscamx)
-
   !> flag for computing the drift mass flux:
   !> (for coal classes for instance, only the first
   !>  scalar of a class compute the drift flux of the class

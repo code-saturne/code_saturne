@@ -165,7 +165,7 @@ integer          icvflb, f_dim, iflwgr
 integer          icla
 integer          icrom_scal
 integer          key_buoyant_id, is_buoyant_fld
-integer          key_t_ext_id
+integer          key_t_ext_id, krvarfl
 integer          iviext
 integer          key_turb_schmidt, key_turb_diff
 integer          t_scd_id, t_dif_id
@@ -184,7 +184,7 @@ double precision xR, prdtl, alpha_theta
 double precision normp
 double precision l2norm, l2errork, dl2norm
 double precision dum
-double precision qliqmax, ctheta
+double precision qliqmax, ctheta, rvarfl
 
 double precision rvoid(1)
 
@@ -335,6 +335,9 @@ if (vcopt%iwgrec.eq.1) then
 endif
 
 call field_get_key_double(ivarfl(isca(iscal)), kctheta, ctheta)
+
+call field_get_key_id("variance_dissipation", krvarfl)
+call field_get_key_double(iflid, krvarfl, rvarfl)
 
 ! Allocate temporary arrays
 allocate(w1(ncelet))
@@ -1033,7 +1036,7 @@ if (itspdv.eq.1) then
       else
         prdtl = viscl(iel)*xcpp(iel)/visls_0
       endif
-      xR = ( 1.d0 - alpha_theta ) * prdtl + alpha_theta * rvarfl(iscal)
+      xR = ( 1.d0 - alpha_theta ) * prdtl + alpha_theta * rvarfl
 
       rhovst = xcpp(iel)*crom(iel)*xe/(xk * xR)       &
              *cell_f_vol(iel)
@@ -1480,7 +1483,7 @@ if (idilat.ge.4.and.itspdv.eq.1) then
       xk = cvara_k(iel)
       xe = cmu*xk*cvara_omg(iel)
     endif
-    rhovst = xcpp(iel)*crom(iel)*xe/(xk * rvarfl(iscal))       &
+    rhovst = xcpp(iel)*crom(iel)*xe/(xk * rvarfl)       &
            *cell_f_vol(iel)
 
     cpro_tsscal(iel) = cpro_tsscal(iel) - rhovst*cvar_var(iel)

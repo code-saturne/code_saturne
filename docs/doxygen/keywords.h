@@ -239,7 +239,15 @@ int first_moment_id;
 */
 int variance_clipping;
 
+/*!
+  \var variance_dissipation
+   Represents the coefficient $R_f$ in the dissipation term
+   $\-\frac{\rho}{R_f}\frac{\varepsilon}{k}$ of the equation
+   concerning the scalar, which represents the mean square root
+   of the fluctuations of the scalar.
+*/
+double variance_dissipation
+
 /*!@}*/
 
 /*----------------------------------------------------------------------------*/
-

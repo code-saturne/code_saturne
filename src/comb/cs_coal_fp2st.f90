@@ -87,14 +87,14 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 integer           iel    , ifac   , f_id0
 integer           icla   , icha
 integer           inc    , imrgrp , nswrgp , imligp , iwarnp
-integer           iold
+integer           iold   , krvarfl
 
 double precision xk     , xe     , rhovst
 double precision epsrgp , climgp
 double precision aux
 double precision gdev1 , gdev2
 double precision fsd   , fdev  , diamdv , gdev
-double precision turb_schmidt
+double precision turb_schmidt, rvarfl
 
 integer           iok1,iok2
 double precision, dimension(:) ,allocatable :: x1,f1f2
@@ -116,8 +116,11 @@ type(var_cal_opt) :: vcopt
 ! 1. Initialization
 !===============================================================================
 
+call field_get_key_id("variance_dissipation", krvarfl)
+call field_get_key_double(ivarfl(isca(iscal)), krvarfl, rvarfl)
+
 !===============================================================================
-! Deallocation dynamic arrays
+! Allocation dynamic arrays
 !----
 allocate(x1(1:ncelet) , f1f2(1:ncelet),                STAT=iok1)
 allocate(grad(3,ncelet), stat=iok1)
@@ -240,7 +243,7 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
       xe = cmu*xk*cvara_omg(iel)
     endif
 
-    rhovst = cpro_rom1(iel)*xe/(xk*rvarfl(iscal))*volume(iel)
+    rhovst = cpro_rom1(iel)*xe/(xk*rvarfl)*volume(iel)
     rovsdt(iel) = rovsdt(iel) + max(zero,rhovst)
     smbrs(iel) = smbrs(iel)                                            &
                 + 2.d0*visct(iel)*volume(iel)/turb_schmidt             &

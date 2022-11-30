@@ -70,8 +70,8 @@ implicit none
 
 integer          ii , jj , iok , icla
 integer          isc
-integer          kscmin
-double precision wmolme, turb_schmidt
+integer          kscmin, krvarfl
+double precision wmolme, turb_schmidt, rvarfl
 
 type(var_cal_opt) :: vcopt
 
@@ -81,6 +81,8 @@ type(var_cal_opt) :: vcopt
 
 ! Key ids for clipping
 call field_get_key_id("min_scalar_clipping", kscmin)
+
+call field_get_key_id("variance_dissipation", krvarfl)
 
 !===============================================================================
 ! 1. VARIABLES TRANSPORTEES
@@ -114,7 +116,8 @@ do isc = 1, nscapp
 
 ! ------ Coeff dissipation des fluctuations
 
-  rvarfl(jj) = 0.8d0
+  rvarfl = 0.8d0
+  call field_set_key_double(ivarfl(isca(jj)), krvarfl, rvarfl)
 
   ii = isca(iscapp(isc))
 

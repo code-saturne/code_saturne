@@ -70,9 +70,9 @@ use cs_c_bindings
 implicit none
 
 integer          ii , jj , iok
-integer          icha , isc
+integer          icha , isc, krvarfl
 
-double precision wmolme, turb_schmidt
+double precision wmolme, turb_schmidt, rvarfl
 
 type(var_cal_opt) :: vcopt
 
@@ -90,6 +90,9 @@ enddo
 
 itherm = 2
 call field_set_key_int(ivarfl(isca(iscalt)), kscacp, 0)
+
+
+call field_get_key_id("variance_dissipation", krvarfl)
 
 ! --> Donnees physiques ou numeriques propres aux scalaires CP
 
@@ -113,7 +116,8 @@ do isc = 1, nscapp
 
 ! ------ Coeff dissipation des fluctuations
 
-  rvarfl(jj) = 0.8d0
+  rvarfl = 0.8d0
+  call field_set_key_double(ivarfl(isca(jj)), krvarfl, rvarfl)
 
 !   - Interface code_saturne:
 !     ======================

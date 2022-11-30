@@ -84,9 +84,9 @@ integer          keyvar, keysca
 integer          key_t_ext_id, icpext
 integer          iviext, iscacp
 integer          iroext
-integer          ivisext
+integer          ivisext, krvarfl
 integer          kturt, turb_flux_model
-double precision scmaxp
+double precision scmaxp, rvarfl
 double precision turb_schmidt, visls_0
 
 character(len=3), dimension(3) :: nomext3
@@ -115,6 +115,8 @@ call field_get_key_id("variance_clipping", kclvfl)
 
 ! Time extrapolation?
 call field_get_key_id("time_extrapolated", key_t_ext_id)
+
+call field_get_key_id("variance_dissipation", krvarfl)
 
 if (icp.ge.0) then
   call field_get_key_int(icp, key_t_ext_id, icpext)
@@ -612,10 +614,12 @@ if (nscal.gt.0) then
 
 !     Warning sur Rvarfl < 0
   do ii = 1, nscal
+    call field_get_key_double(ivarfl(isca(ii)), krvarfl, rvarfl)
+
     if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal.and.               &
-                           rvarfl(ii).le.0.d0) then
+                           rvarfl.le.0.d0) then
       call field_get_label(ivarfl(isca(ii)), chaine)
-      write(nfecra,4380)chaine(1:16),ii,rvarfl(ii)
+      write(nfecra,4380)chaine(1:16),ii,rvarfl
       iok = iok + 1
     endif
   enddo
@@ -1416,12 +1420,12 @@ endif
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
 '@    SCALAR ', a16,                                            /,&
-'@    RVARFL(', i10,  ') MUST BE A STRICTLY POSITIVE REAL',     /,&
+'@    RVARFL MUST BE A STRICTLY POSITIVE REAL',     /,&
 '@   IT HAS VALUE', e14.5,                                      /,&
 '@',                                                            /,&
 '@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&
-'@  RVARFL(I) is the coefficient R for the scalar I (which is', /,&
+'@  RVARFL is the coefficient R for the scalar I (which is', /,&
 '@ a variance) related to the dissipation equation sourceterme',/,&
 '@    - (1/R) rho scalaire epsilon/k',                          /,&
 '@',                                                            /,&

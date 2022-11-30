@@ -73,11 +73,13 @@ implicit none
 ! Local variables
 
 integer          jj, iok
-integer          isc, iclvfl, kclvfl
-double precision wmolme, turb_schmidt
+integer          isc, iclvfl, kclvfl, krvarfl
+double precision wmolme, turb_schmidt, rvarfl
 !===============================================================================
 ! 1. VARIABLES TRANSPORTEES
 !===============================================================================
+
+call field_get_key_id("variance_dissipation", krvarfl)
 
 ! 1.1 Definition des scamin et des scamax des variables transportees
 ! ==================================================================
@@ -153,7 +155,8 @@ do isc = 1, nscapp
 
   ! Coeff dissipation des fluctuations
 
-  rvarfl(jj) = 0.8d0
+  rvarfl = 0.8d0
+  call field_set_key_double(ivarfl(isca(jj)), krvarfl, rvarfl)
 
 enddo
 

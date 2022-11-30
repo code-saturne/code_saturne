@@ -537,12 +537,6 @@ if (nscal.ge.1) then
     write(nfecra,6021) chaine(1:16), ii, turb_flux_model
   enddo
   write(nfecra,6031)
-  write(nfecra,6012)
-  do ii = 1, nscal
-    f_id = ivarfl(isca(ii))
-    call field_get_label(f_id, chaine)
-    write(nfecra,6022) chaine(1:16),ii, rvarfl(ii)
-  enddo
   write(nfecra,6032)
 
   write(nfecra,6030)
@@ -571,10 +565,6 @@ endif
  1x,    a16,    i7,    i7 )
  6031 format( &
 '-------------------------------------------------------------',/)
- 6012 format( &
-'------------------------------------',                         /,&
-' Variable         Number      RVARFL',                         /,&
-'------------------------------------' )
  6022 format( &
  1x,    a16,           i7,    e12.4 )
  6032 format(                                                     &
@@ -591,7 +581,6 @@ endif
 '       is_temerature = 0 or 1  (use Cp or not               )',/,&
 '       VISLS0 = >0             (Reference viscosity         )',/,&
 '       SIGMAS = >0             (Schmidt                     )',/,&
-'       RVARFL = >0             (Rf, cf variance dissipation )',/,&
 '       ICLVFL = 0, 1 or 2      (Variance clipping mode      )',/,&
 '       SCAMIN =                (Min authorized value        )',/,&
 '       SCAMAX =                (Max authorized value        )',/,&

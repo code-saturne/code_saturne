@@ -85,14 +85,14 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 ! Local variables
 
 integer           iel    , ifac   , f_id0
-integer           icla
+integer           icla   , krvarfl
 integer           inc    , imrgrp , nswrgp , imligp , iwarnp
 
 double precision xk     , xe     , rhovst
 double precision epsrgp , climgp
 double precision aux
 double precision gvap , t2mt1
-double precision turb_schmidt
+double precision turb_schmidt, rvarfl
 !
 integer           iok1,iok2
 double precision, dimension(:), allocatable :: x1,f1f2
@@ -111,9 +111,10 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+call field_get_key_id("variance_dissipation", krvarfl)
 
 !===============================================================================
-! Deallocation dynamic arrays
+! Allocation dynamic arrays
 
 allocate(x1(1:ncelet) ,f1f2(1:ncelet),              STAT=iok1)
 allocate(grad(3,ncelet), stat=iok1)
@@ -154,6 +155,7 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
      itytur.eq.3 .or. iturb.eq.60      ) then
   inc = 1
 
+  call field_get_key_double(ivarfl(isca(iscal)), krvarfl, rvarfl)
   call field_get_key_struct_var_cal_opt(ivarfl(isca(ifvap)), vcopt)
   imrgrp = vcopt%imrgra
   nswrgp = vcopt%nswrgr
@@ -222,7 +224,7 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
       xe = cmu*xk*cvara_omg(iel)
     endif
 
-    rhovst = cpro_rom1(iel)*xe/(xk*rvarfl(iscal))*volume(iel)
+    rhovst = cpro_rom1(iel)*xe/(xk*rvarfl)*volume(iel)
     rovsdt(iel) = rovsdt(iel) + max(zero,rhovst)
     smbrs(iel) = smbrs(iel)                                                   &
                 +2.d0*visct(iel)*volume(iel)/turb_schmidt                     &

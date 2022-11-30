@@ -99,12 +99,12 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 
 integer          ivar   , ivarsc , ivarut, f_id0
 integer          iel, ifac
-integer          icha
+integer          icha , krvarfl
 integer          inc , imrgrp , nswrgp , imligp , iwarnp
 
 double precision xk , xe , rhovst
 double precision epsrgp , climgp
-double precision turb_schmidt
+double precision turb_schmidt, rvarfl
 
 double precision, allocatable, dimension(:) :: coefap, coefbp
 double precision, allocatable, dimension(:,:) :: grad
@@ -145,6 +145,9 @@ if (iscala.gt.0) then
 else
   ivarsc = 0
 endif
+
+call field_get_key_id("variance_dissipation", krvarfl)
+call field_get_key_double(ivarfl(isca(iscal)), krvarfl, rvarfl)
 
 ! --- Numero des grandeurs physiques
 call field_get_val_s(icrom, crom)
@@ -266,7 +269,7 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
     endif
 
     rhovst = crom(iel)*xe/                                           &
-             (xk * rvarfl(iscal))*volume(iel)
+             (xk * rvarfl)*volume(iel)
     rovsdt(iel) = rovsdt(iel) + max(zero,rhovst)
     smbrs(iel) = smbrs(iel) +                                        &
                 2.d0*visct(iel)*volume(iel)/turb_schmidt             &

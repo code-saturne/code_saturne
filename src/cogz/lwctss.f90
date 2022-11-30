@@ -112,11 +112,11 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 
 integer          ivar, iel, idirac
 integer          inc , iprev
-integer          ii
+integer          ii  , krvarfl
 
 double precision sum, epsi
 double precision tsgrad, tschim, tsdiss
-double precision turb_schmidt
+double precision turb_schmidt, rvarfl
 
 double precision, allocatable, dimension(:,:) :: gradf, grady
 double precision, allocatable, dimension(:) :: w10, w11
@@ -141,6 +141,8 @@ epsi   = 1.0d-10
 
 ! --- Numero de la variable associee au scalaire a traiter ISCAL
 ivar = isca(iscal)
+call field_get_key_id("variance_dissipation", krvarfl)
+call field_get_key_double(ivarfl(ivar), krvarfl, rvarfl)
 
 ! ---
 call field_get_val_s(icrom, crom)
@@ -308,7 +310,7 @@ if (ivar.eq.isca(icoyfp)) then
 ! terme implicite
 
 
-    w11(iel) = w11(iel)/(w10(iel)*rvarfl(iscal))                  &
+    w11(iel) = w11(iel)/(w10(iel)*rvarfl)                         &
          *volume(iel)*crom(iel)
     rovsdt(iel) = rovsdt(iel) + max(w11(iel),zero)
 

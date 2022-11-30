@@ -745,10 +745,6 @@ cssr3 = 1.d0
 !  Especially, assume there is no variance
 !    (field first_moment_id < 0) and that variances are clipped to 0 only.
 
-do iscal = 1, nscamx
-  rvarfl(iscal) = 0.8d0
-enddo
-
 ! For the AFM model (Algebraic flux model)
 xiafm  = 0.7d0
 etaafm = 0.4d0
