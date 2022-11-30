@@ -432,7 +432,6 @@ do iscal = 1, nscamx
 !       fichier suite portant les valeurs adaptees)
 
   thetvs(iscal) = -999.d0
-  initvs(iscal) = 0
 
 enddo
 

@@ -246,7 +246,13 @@ int variance_clipping;
    concerning the scalar, which represents the mean square root
    of the fluctuations of the scalar.
 */
-double variance_dissipation
+double variance_dissipation;
+
+/*!
+  \var scalar_diffusivity
+  scalar diffusivity read from checkpoint file
+*/
+int scalar_diffusivity_prev;
 
 /*!@}*/
 

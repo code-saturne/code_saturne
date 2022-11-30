@@ -74,9 +74,9 @@ integer          nscal  , iappel
 
 integer          iel    , ifac   , iscal
 integer          iflmas , iflmab
-integer          f_id
+integer          f_id   , kinitvs
 integer          key_t_ext_id, icpext
-integer          iviext
+integer          iviext, initvs
 integer          iroext
 
 double precision flux   , theta  , aa, bb, viscos, varcp
@@ -97,6 +97,7 @@ double precision, dimension(:), pointer :: cpro_rho_mass, bpro_rho_mass
 !===============================================================================
 
 call field_get_key_id("time_extrapolated", key_t_ext_id)
+call field_get_key_id("scalar_diffusity_prev", kinitvs)
 
 call field_get_id_try("density_mass", f_id)
 if (f_id.ge.0) &
@@ -267,8 +268,10 @@ elseif (iappel.eq.2) then
   if (nscal.ge.1) then
     do iscal = 1, nscal
       ! Diffusivity
-      if (initvs(iscal).ne.1) then
-        initvs(iscal) = 1
+      call field_get_key_int(ivarfl(isca(iscal)), kinitvs, initvs)
+      if (initvs.ne.1) then
+        initvs = 1
+        call field_set_key_int(ivarfl(isca(iscal)), kinitvs, initvs)
         call field_get_key_int (ivarfl(isca(iscal)), kivisl, f_id)
         if (f_id.ge.0.and.iscavr(iscal).le.0) then
           call field_current_to_previous(f_id)

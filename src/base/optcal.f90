@@ -149,9 +149,6 @@ module optcal
   !> initcp : =1 if specific heat read from checkpoint file
   integer, save ::          initcp
 
-  !> initvs : =1 if scalar diffusivity read from checkpoint file
-  integer, save ::          initvs(nscamx)
-
   !> \f$ \theta_S \f$-scheme for the source terms \f$S_e\f$ in the
   !> Navier-Stokes equations when the source term extrapolation has
   !> been activated (see \ref isno2t), following the formula

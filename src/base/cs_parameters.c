@@ -901,6 +901,8 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("diffusivity_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_double("diffusivity_ref",
                              -1.e12*10., CS_FIELD_VARIABLE);
+
+  cs_field_define_key_int("scalar_diffusivity_prev", 0, CS_FIELD_VARIABLE);
   cs_field_define_key_int("turbulent_diffusivity_id", -1, CS_FIELD_VARIABLE);
 
   /* Only used for turbulent scalar flux model in LES */
@@ -960,8 +962,8 @@ cs_parameters_define_field_keys(void)
    *     variables known at the end of the previous time step) is used
    *  1: second-order: the physical property \f$\phi\f$ is
    *     extrapolated according to the formula
-   *     \f$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]\f$, \f$\theta\f$ being
-   *     given by the value of 0.5
+   *     \f$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]\f$,
+   *     \f$\theta\f$ being given by the value of 0.5
    *  2: first-order: the physical property \f$\phi\f$ is
    *     extrapolated at $n+1$ according to the same formula
    *     as when = 1 but with \f$\theta\f$ = 1
