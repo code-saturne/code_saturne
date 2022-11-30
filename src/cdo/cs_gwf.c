@@ -678,6 +678,22 @@ _sspf_init_setup(cs_gwf_saturated_single_phase_t   *mc)
 
   } /* Gravitation effect is activated */
 
+  if (gw->post_flag & CS_GWF_POST_PERMEABILITY) {
+
+    int  permeability_dim = cs_property_get_dim(gw->abs_permeability);
+    int  pty_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY | CS_FIELD_CDO;
+
+    mc->permeability_field = cs_field_create("permeability",
+                                             pty_mask,
+                                             c_loc_id,
+                                             permeability_dim,
+                                             true); /* has_previous */
+
+    cs_field_set_key_int(mc->permeability_field, log_key, 1);
+    cs_field_set_key_int(mc->permeability_field, post_key, 1);
+
+  }
+
   /* Add default post-processing related to groundwater flow module */
 
   cs_post_add_time_mesh_dep_output(cs_gwf_extra_post_sspf, gw);
@@ -4066,6 +4082,19 @@ cs_gwf_init_values(const cs_mesh_t             *mesh,
 
   switch (gw->model) {
 
+  case CS_GWF_MODEL_SATURATED_SINGLE_PHASE:
+    {
+      cs_gwf_saturated_single_phase_t  *mc = gw->model_context;
+
+      /* Compute the (absolute) permeability field if requested */
+
+      if (gw->post_flag & CS_GWF_POST_PERMEABILITY)
+        cs_property_eval_at_cells(ts->t_cur,
+                                  gw->abs_permeability,
+                                  mc->permeability_field->val);
+    }
+    break;
+
   case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
   case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
     {
@@ -4425,32 +4454,6 @@ cs_gwf_extra_post_sspf(void                   *input,
       BFT_FREE(liquid_saturation);
 
     } /* Post-processing of the liquid saturation */
-
-    if (gw->post_flag & CS_GWF_POST_PERMEABILITY) {
-
-      int  dim = cs_property_get_dim(gw->abs_permeability);
-      cs_real_t  *permeability = NULL;
-      BFT_MALLOC(permeability, dim*n_cells, cs_real_t);
-
-      cs_property_eval_at_cells(time_step->t_cur,
-                                gw->abs_permeability,
-                                permeability);
-
-      cs_post_write_var(mesh_id,
-                        CS_POST_WRITER_DEFAULT,
-                        "permeability",
-                        dim,
-                        true,
-                        false,
-                        CS_POST_TYPE_cs_real_t,
-                        permeability,
-                        NULL,
-                        NULL,
-                        time_step);
-
-      BFT_FREE(permeability);
-
-    } /* Post-processing of the permeability field */
 
   } /* volume mesh id */
 }

@@ -163,6 +163,11 @@ typedef struct {
    * @name Additional fields/arrays
    * @{
    *
+   * \var permeability_field
+   * Pointer to a \ref cs_field_t structure. May be not allocated according to
+   * the postprocessing options. Store the value of the absolute permeability
+   * field in each cell
+   *
    * \var pressure_head
    * Pointer to a \ref cs_field_t structure. Allocated only if the gravitation
    * effect is active. Location of this field depends on the discretization
@@ -172,6 +177,7 @@ typedef struct {
    * h = H - gravity_potential
    */
 
+  cs_field_t                   *permeability_field;
   cs_field_t                   *pressure_head;
 
   /*!
