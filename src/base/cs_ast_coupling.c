@@ -283,6 +283,7 @@ _recv_dyn(cs_ast_coupling_t  *ast_cpl)
     bft_printf_flush();
   }
 
+  cs_paramedmem_sync_dec(ast_cpl->mc_vertices);
   cs_paramedmem_recv_data(ast_cpl->mc_vertices);
 
   if (verbosity > 1) {
@@ -1064,6 +1065,7 @@ cs_ast_coupling_exchange_fields(const cs_real_t  fluid_forces[])
     bft_printf_flush();
   }
 
+  cs_paramedmem_sync_dec(cpl->mc_faces);
   cs_paramedmem_send_data(cpl->mc_faces);
 
   if (verbosity > 1) {
