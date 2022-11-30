@@ -41,6 +41,8 @@ documentation. It is also recommended to check the
 - \subpage advanced_atmospheric
 - \subpage advanced_turbomachinery
 - \subpage advanced_cavitation
+- [Groundwater flows (CDO)](@ref cs_gwf_cdo)
+- \subpage advanced_solidification
 
 <!-- ----------------------------------------------------------------------- -->
 
@@ -1786,3 +1788,14 @@ of the liquid phase and the gas phase.
 
 For a description of the user management of the cavitation module,
 please refer to [the dedicated doxygen documentation.](@ref cavit)
+
+<!-- ----------------------------------------------------------------------- -->
+
+\page advanced_solidification Solidification module
+
+The solidification module is available either in the Finite Volume
+(FV) framework or in the Compatible Discrete Operators (CDO)
+framework. In the case of FV schemes, it relies on the eloboration of
+several user files (See the validation test case "Voller" for more
+details). In the case of CDO schemes, details are given
+[here](@ref cs_solidification_cdo).
