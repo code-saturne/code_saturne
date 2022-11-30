@@ -738,7 +738,7 @@ typedef struct {
    * @name Properties
    * @{
    *
-   * \var porosity
+   * \var soil_porosity
    *      Also called the saturated moisture content. This is a
    *      characterization of the portion of volume in a soil where the liquid
    *      (or also the gas) can be present. All models relies on this quantity.

@@ -839,9 +839,9 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
 
   if (cs_gwf_is_activated())
     cs_gwf_init_values(domain->mesh,
-                      domain->connect,
-                      domain->cdo_quantities,
-                      domain->time_step);
+                       domain->connect,
+                       domain->cdo_quantities,
+                       domain->time_step);
 
   /* Last word for the user function */
 
