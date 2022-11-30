@@ -1225,8 +1225,6 @@ cs_equation_compute_neumann_svb(cs_real_t                   t_eval,
   case CS_XDEF_BY_ARRAY:
     {
       cs_xdef_array_context_t  *ac = def->context;
-
-      assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
       assert(ac->stride == 1);
 
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
@@ -1303,8 +1301,6 @@ cs_equation_compute_full_neumann_svb(cs_real_t                   t_eval,
   case CS_XDEF_BY_ARRAY:
     {
       cs_xdef_array_context_t  *ac = def->context;
-
-      assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
       assert(ac->stride == 3);
 
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
@@ -1383,7 +1379,6 @@ cs_equation_compute_neumann_sfb(cs_real_t                    t_eval,
     {
       cs_xdef_array_context_t  *ac = def->context;
 
-      assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
       assert(ac->stride == 1);
       assert(cs_flag_test(ac->loc, cs_flag_primal_face) ||
              cs_flag_test(ac->loc, cs_flag_boundary_face));
@@ -1455,7 +1450,6 @@ cs_equation_compute_full_neumann_sfb(cs_real_t                    t_eval,
     {
       cs_xdef_array_context_t  *ac = def->context;
 
-      assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
       assert(ac->stride == 3);
       assert(cs_flag_test(ac->loc, cs_flag_primal_face) ||
              cs_flag_test(ac->loc, cs_flag_boundary_face));
@@ -1533,7 +1527,6 @@ cs_equation_compute_neumann_vfb(cs_real_t                    t_eval,
     {
       cs_xdef_array_context_t  *ac = def->context;
 
-      assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
       assert(ac->stride == 3);
       assert(cs_flag_test(ac->loc, cs_flag_primal_face) ||
              cs_flag_test(ac->loc, cs_flag_boundary_face));
@@ -1622,7 +1615,6 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
     {
       cs_xdef_array_context_t  *c = def->context;
 
-      assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
       assert(c->stride == 3);
       assert(cs_flag_test(c->loc, cs_flag_primal_face) ||
              cs_flag_test(c->loc, cs_flag_boundary_face));
