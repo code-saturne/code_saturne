@@ -1809,7 +1809,8 @@ cs_cdo_diffusion_sfb_cost_robin(const cs_equation_param_t      *eqp,
   if (csys->has_robin == false)
     return;  /* Nothing to do */
 
-  /* Robin BC expression: K du/dn + alpha*(u - u0) = g */
+  /* Robin BC expression: -K du/dn = alpha*(u - u0) + beta */
+  /* ----------------------------------------------------- */
 
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
@@ -1819,17 +1820,14 @@ cs_cdo_diffusion_sfb_cost_robin(const cs_equation_param_t      *eqp,
 
     if (csys->bf_flag[f] & CS_CDO_BC_ROBIN) {
 
-      /* Robin BC expression: K du/dn + alpha*(u - u0) = g */
-      /* ------------------------------------------------- */
-
       const double  alpha = csys->rob_values[3*f];
       const double  u0 = csys->rob_values[3*f+1];
-      const double  g = csys->rob_values[3*f+2];
+      const double  beta = csys->rob_values[3*f+2];
       const cs_real_t  f_meas = cm->face[f].meas;
 
       /* Update the RHS and the local system */
 
-      csys->rhs[f] += (alpha*u0 + g)*f_meas;
+      csys->rhs[f] += (alpha*u0 - beta)*f_meas;
 
       cs_real_t  *row_f_val = csys->mat->val + f*csys->n_dofs;
       row_f_val[f] += alpha*f_meas;
@@ -1877,7 +1875,8 @@ cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
   if (csys->has_robin == false)
     return;  /* Nothing to do */
 
-  /* Robin BC expression: K du/dn + alpha*(u - u0) = beta */
+  /* Robin BC expression: -K du/dn = alpha*(u - u0) + beta */
+  /* ----------------------------------------------------- */
 
   cs_sdm_t  *bc_op = cb->loc;
 
@@ -1897,13 +1896,10 @@ cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
 
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
 
-      /* Robin BC expression: K du/dn + alpha*(u - u0) = beta */
-      /* ---------------------------------------------------- */
-
       const double  alpha = csys->rob_values[3*f];
       const double  u0 = csys->rob_values[3*f+1];
       const double  beta = csys->rob_values[3*f+2];
-      const double  g = beta + alpha*u0;
+      const double  g = -beta + alpha*u0;
 
       /* Update the RHS and the local system */
 
@@ -1918,6 +1914,7 @@ cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
       }
 
     }  /* Robin face */
+
   } /* Loop on boundary faces */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
@@ -2417,10 +2414,10 @@ cs_cdo_diffusion_svb_wbs_robin(const cs_equation_param_t      *eqp,
 
   assert(cm != NULL && cb != NULL);
 
-  /* Robin BC expression: K du/dn + alpha*(u - u0) = g
-   * Store x = alpha*u0 + g */
+  /* Robin BC expression: -K du/dn = alpha*(u - u0) + beta */
+  /* ----------------------------------------------------- */
 
-  cs_real_t  *x = cb->values;
+  cs_real_t  *g = cb->values;
   cs_sdm_t  *bc_op = cb->loc;
   cs_sdm_t  *hloc = cb->aux; /* 2D Hodge operator on a boundary face */
 
@@ -2442,17 +2439,14 @@ cs_cdo_diffusion_svb_wbs_robin(const cs_equation_param_t      *eqp,
 
       cs_hodge_compute_wbs_surfacic(fm, hloc);  /* hloc is of size n_vf */
 
-      /* Robin BC expression: K du/dn + alpha*(u - u0) = g */
-      /* ------------------------------------------------- */
-
       const double  alpha = csys->rob_values[3*f];
       const double  u0 = csys->rob_values[3*f+1];
-      const double  g = csys->rob_values[3*f+2];
+      const double  beta = csys->rob_values[3*f+2];
 
-      memset(x, 0, sizeof(cs_real_t)*cm->n_vc);
+      memset(g, 0, sizeof(cs_real_t)*cm->n_vc);
       for (short int v = 0; v < fm->n_vf; v++) {
         const short int  vi = fm->v_ids[v];
-        x[vi] = alpha*u0 + g;
+        g[vi] = alpha*u0 - beta;
       }
 
       /* Update the RHS and the local system */
@@ -2466,7 +2460,7 @@ cs_cdo_diffusion_svb_wbs_robin(const cs_equation_param_t      *eqp,
         for (short int vfj = 0; vfj < fm->n_vf; vfj++) {
 
           const short int  vj = fm->v_ids[vfj];
-          csys->rhs[vi] += hfi[vfj]*x[vj];
+          csys->rhs[vi] += hfi[vfj]*g[vj];
           opi[vj] += alpha * hfi[vfj];
 
         }

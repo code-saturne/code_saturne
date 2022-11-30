@@ -2434,7 +2434,7 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
 
   if (bc_type == CS_PARAM_BC_ROBIN) {
 
-    /* FluxNormal + alpha * (u - u_0) = beta => Set (alpha, u_0, beta) */
+    /* FluxDiff = alpha * (u - u0) + beta => Set (alpha, u0, beta) */
 
     if (eqp->dim == 1)
       dim = 3;
@@ -2516,7 +2516,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
 
   if (bc_type == CS_PARAM_BC_ROBIN) {
 
-    /* FluxNormal = alpha * (u_0 - u) + beta => Set (alpha, beta, u_0) */
+    /* FluxDiff = alpha * (u - u0) + beta => Set (alpha, u0, beta) */
 
     if (eqp->dim == 1)
       dim = 3;
@@ -2586,7 +2586,7 @@ cs_equation_add_bc_by_field(cs_equation_param_t        *eqp,
 
   if (bc_type == CS_PARAM_BC_ROBIN) {
 
-    /* FluxNormal = alpha * (u_0 - u) + beta => Set (alpha, beta, u_0) */
+    /* FluxDiff = alpha * (u - u0) + beta => Set (alpha, u0, beta) */
 
     if (eqp->dim == 1)
       dim = 3;
@@ -2675,7 +2675,7 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
 
   if (bc_type == CS_PARAM_BC_ROBIN) {
 
-    /* FluxNormal = alpha * (u_0 - u) + beta => Set (alpha, beta, u_0) */
+    /* FluxDiff = alpha * (u - u0) + beta => Set (alpha, u0, beta) */
 
     if (eqp->dim == 1)
       dim = 3;
@@ -2767,7 +2767,7 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
 
   if (bc_type == CS_PARAM_BC_ROBIN) {
 
-    /* FluxNormal = alpha * (u_0 - u) + beta => Set (alpha, beta, u_0) */
+    /* FluxDiff = alpha * (u - u0) + beta => Set (alpha, u0, beta) */
 
     if (eqp->dim == 1)
       dim = 3;

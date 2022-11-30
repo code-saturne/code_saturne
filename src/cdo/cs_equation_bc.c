@@ -1613,7 +1613,7 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
 
   case CS_XDEF_BY_ARRAY:
     {
-      cs_xdef_array_context_t  *c = def->context;
+      const cs_xdef_array_context_t  *c = def->context;
 
       assert(c->stride == 3);
       assert(cs_flag_test(c->loc, cs_flag_primal_face) ||
@@ -1621,7 +1621,7 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
 
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);
-      cs_real_t  *parameters = c->values + 3*bf_id;
+      const cs_real_t  *parameters = c->values + 3*bf_id;
 
       rob_values[3*f  ] = parameters[0];
       rob_values[3*f+1] = parameters[1];

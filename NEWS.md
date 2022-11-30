@@ -68,6 +68,8 @@ Master (not on release branches yet)
 - Fix the precipitation model for radionuclide tracers in the GWF
   module (CDO). Add the missing radioactive decay phenomenon.
 
+- Fix the treatment of Robin BCs in CDO schemes
+
 ### Architectural changes:
 
 - Completed migration of turbulence models source code from Fortran to C.

@@ -4502,7 +4502,7 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
           const short int  f = cs_cell_mesh_get_f(f_id, cm);
           const cs_real_t  f_area = quant->b_face_surf[bf_id];
 
-          /* Robin BC expression: K du/dn + alpha*(p - p0) = g */
+          /* Robin BC expression: -K du/dn = alpha*(u - u0) + beta */
 
           cs_equation_compute_robin(cb->t_bc_eval,
                                     face_bc->def_ids[bf_id],
@@ -4512,15 +4512,15 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
                                     robin_values);
 
           const cs_real_t  alpha = robin_values[0];
-          const cs_real_t  p0 = robin_values[1];
-          const cs_real_t  g = robin_values[2];
+          const cs_real_t  u0 = robin_values[1];
+          const cs_real_t  beta = robin_values[2];
 
           cs_cdo_quantities_compute_b_wvf(connect, quant, bf_id, wvf);
 
           short int n_vf = 0;
           for (int i = cm->f2v_idx[f]; i < cm->f2v_idx[f+1]; i++) {
             const cs_real_t  pv = pdi[cm->v_ids[cm->f2v_ids[i]]];
-            _flx[n_vf] = f_area*wvf[n_vf]*(alpha*(p0 - pv) + g);
+            _flx[n_vf] = f_area * wvf[n_vf] * (alpha*(pv - u0) + beta);
             n_vf++;
           }
         }
