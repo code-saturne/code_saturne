@@ -736,7 +736,7 @@ double cs_turb_ckwc1 = 10.0;
  * Constant \f$ C_{DDES} \f$ for the \f$k-\omega\f$ SST model.
  * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST) and hybrid_turb=1.
  */
-double cs_turb_cddes = -1.;
+double cs_turb_cddes = 0.65;
 
 /*!
  * Constant \f$ C_{SAS}\f$ for the hybrid \f$k-\omega\f$ SST model.
