@@ -302,36 +302,80 @@ cs_user_model(void)
   /* 3. Add and define tracer equations */
   /* ---------------------------------- */
 
-  /*! [param_cdo_gwf_add_tracer] */
+  /*! [param_cdo_gwf_add_rtracer] */
   {
     /*
-      Add a tracer equation which is unsteady and convected by the darcean flux
-      This implies the creation of a new equation called eqname along with a
-      new field called varname.
+      Add a tracer equation which is unsteady and convected by the darcean
+      flux. The created equation is called "eqname" along with a new field
+      called "varname".
     */
 
-    cs_gwf_tracer_model_t  model = 0; /* default model without precipitation
+    cs_gwf_tracer_model_t  model = 0; /* Default model without precipitation
                                          effect */
 
-    cs_gwf_tracer_t  *tr = cs_gwf_add_tracer(model,     /* tracer model */
-                                             "Tracer",  /* eq. name */
-                                             "C");      /* var. name */
+    cs_gwf_tracer_t  *tr = cs_gwf_add_tracer(/* Tracer model */
+                                             model,
+                                             /* Equation name */
+                                             "Tracer_01",
+                                             /* Variable name */
+                                             "C");
 
-    /* For "simple" tracer definitions, definition can be made here.
+    /* For a "default" tracer, the definition can be made as follows.
      *
      * The parameters defining the tracer behavior can be set soil by soil
-     * (give the soil name as the second argument) or to all soils in one call
-     * (give NULL as the second argument)
+     * (thanks to the soil name as the second argument) or to all soils in one
+     * call (using NULL as the second argument)
      */
 
-    cs_gwf_tracer_set_main_param(tr,
+    cs_gwf_tracer_set_soil_param(tr,
                                  NULL,     /* soil name or NULL for all */
                                  0.,       /* water molecular diffusivity */
                                  1., 0.,   /* alpha (longi. and transvesal) */
-                                 1e-4,     /* distribution coef. */
-                                 0.01);    /* 1st order decay coef. */
+                                 1e-4);    /* distribution coef. */
   }
   /*! [param_cdo_gwf_add_tracer] */
+
+  /*! [param_cdo_gwf_add_rtracer] */
+  {
+    /*
+      Add a radioactive tracer equation which is unsteady and convected by the
+      darcean flux. A reaction term related to the first order deacy
+      coefficient is automatically added to the tracer equation. The created
+      equation is called "eqname" along with a new field called "varname".
+    */
+
+    /* Default tracer model with precipitation effects */
+    cs_gwf_tracer_model_t  model = CS_GWF_TRACER_PRECIPITATION;
+
+    cs_gwf_tracer_t  *rtr = cs_gwf_add_radioactive_tracer(/* Tracer model */
+                                                          model,
+                                                          /* Equation name */
+                                                          "Tracer",
+                                                          /* Variable name */
+                                                          "C",
+                                                          /* Decay coeff. */
+                                                          0.01);
+
+    /* For a "default" tracer, the definition can be made as follows.
+     *
+     * The parameters defining the tracer behavior can be set soil by soil
+     * (thanks to the soil name as the second argument) or to all soils in one
+     * call (using NULL as the second argument)
+     */
+
+    cs_gwf_tracer_set_soil_param(rtr,
+                                 NULL,     /* soil name or NULL for all */
+                                 0.,       /* water molecular diffusivity */
+                                 1., 0.,   /* alpha (longi. and transvesal) */
+                                 1e-4);    /* distribution coef. */
+
+    /* Set the parameters for the precipitation model */
+
+    cs_gwf_tracer_set_precip_param(rtr,
+                                   NULL,    /* soil name/NULL for all */
+                                   1e-4);   /* liquid concentration threshold */
+  }
+  /*! [param_cdo_gwf_add_rtracer] */
 
   /*! [param_cdo_gwf_get_tracer] */
   {

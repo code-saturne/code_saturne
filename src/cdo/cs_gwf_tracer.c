@@ -53,6 +53,7 @@
 #include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_reco.h"
+#include "cs_sles_it.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -311,7 +312,7 @@ _get_reaction_pty4std_sat_tracer(cs_lnum_t                    n_elts,
     const short int  s = c2s[c_id];
     const cs_real_t  saturated_moisture = cs_gwf_soil_get_saturated_moisture(s);
 
-    result[id] = (saturated_moisture + tc->rho_kd[s]) * tc->reaction_rate[s];
+    result[id] = (saturated_moisture + tc->rho_kd[s]) * tc->decay_coef;
 
   }
 }
@@ -345,7 +346,7 @@ _get_reaction_pty4std_sat_tracer_cw(const cs_cell_mesh_t     *cm,
   const int s = c2s[cm->c_id];
   const cs_real_t  saturated_moisture = cs_gwf_soil_get_saturated_moisture(s);
 
-  *result = (saturated_moisture + tc->rho_kd[s]) * tc->reaction_rate[s];
+  *result = (saturated_moisture + tc->rho_kd[s]) * tc->decay_coef;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -392,7 +393,7 @@ _get_reaction_pty4std_tracer(cs_lnum_t                    n_elts,
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       const int  s = c2s[i];  /* soil_id */
-      result[i] = (theta[i] + tc->rho_kd[s]) * tc->reaction_rate[s];
+      result[i] = (theta[i] + tc->rho_kd[s]) * tc->decay_coef;
     }
 
   }
@@ -404,7 +405,7 @@ _get_reaction_pty4std_tracer(cs_lnum_t                    n_elts,
       const int  s = c2s[c_id];
       const cs_lnum_t  id = (dense_output) ? i : c_id;
 
-      result[id] = (theta[c_id] + tc->rho_kd[s]) * tc->reaction_rate[s];
+      result[id] = (theta[c_id] + tc->rho_kd[s]) * tc->decay_coef;
 
     }
 
@@ -439,7 +440,7 @@ _get_reaction_pty4std_tracer_cw(const cs_cell_mesh_t     *cm,
   const int s = c2s[cm->c_id];
 
   *result =
-    (cs_shared_liquid_saturation[cm->c_id]+tc->rho_kd[s])*tc->reaction_rate[s];
+    (cs_shared_liquid_saturation[cm->c_id] + tc->rho_kd[s]) * tc->decay_coef;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -649,6 +650,8 @@ _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
   /*    ------------------------------------------------------------- */
 
   const int  n_soils = cs_gwf_get_n_soils();
+  const double  lambda = tc->decay_coef;
+
   for (int soil_id = 0; soil_id < n_soils; soil_id++) {
 
     cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
@@ -658,7 +661,6 @@ _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
     if (z->n_elts < 1)
       continue;
 
-    const double  lambda = tc->reaction_rate[soil->id];
     const double  rho = tc->rho_bulk[soil->id];
     const cs_real_t  c_star = tc->conc_l_star[soil->id];
 
@@ -1147,7 +1149,6 @@ _free_default_tracer_context(cs_gwf_tracer_t   *tracer)
   BFT_FREE(tc->alpha_l);
   BFT_FREE(tc->alpha_t);
   BFT_FREE(tc->wmd);
-  BFT_FREE(tc->reaction_rate);
 
   /* Sorption phenomena */
 
@@ -1180,11 +1181,13 @@ _free_default_tracer_context(cs_gwf_tracer_t   *tracer)
  * \brief Create and initialize the context by default for a "standard" tracer
  *
  * \param[in, out]  tracer   pointer to a cs_gwf_tracer_t structure
+ * \param[in]       lambda   value of the first order decay coefficient
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_create_default_tracer_context(cs_gwf_tracer_t    *tracer)
+_create_default_tracer_context(cs_gwf_tracer_t    *tracer,
+                               double              lambda)
 {
   if (tracer == NULL)
     return;
@@ -1192,13 +1195,15 @@ _create_default_tracer_context(cs_gwf_tracer_t    *tracer)
   if ((tracer->model & CS_GWF_TRACER_USER) != 0) /* user-defined ? */
     return;
 
-  /* One handles a standard tracer */
-
-  const int  n_soils = cs_gwf_get_n_soils();
-
   cs_gwf_tracer_default_context_t  *context = NULL;
 
   BFT_MALLOC(context, 1, cs_gwf_tracer_default_context_t);
+
+  context->decay_coef = lambda;
+
+  /* One handles a standard tracer */
+
+  const int  n_soils = cs_gwf_get_n_soils();
 
   BFT_MALLOC(context->rho_bulk, n_soils, double);
   BFT_MALLOC(context->kd0, n_soils, double);
@@ -1206,7 +1211,6 @@ _create_default_tracer_context(cs_gwf_tracer_t    *tracer)
   BFT_MALLOC(context->alpha_l, n_soils, double);
   BFT_MALLOC(context->alpha_t, n_soils, double);
   BFT_MALLOC(context->wmd, n_soils, double);
-  BFT_MALLOC(context->reaction_rate, n_soils, double);
 
   context->darcy_velocity_field = NULL;
 
@@ -1407,19 +1411,23 @@ cs_gwf_tracer_by_name(const char   *eq_name)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a new cs_gwf_tracer_t structure and initialize its members by
- *         default.
- *         Add a new equation related to the groundwater flow module.
- *         This equation is a specific transport equation.
- *         Tracer is advected thanks to the darcian velocity which is given
- *         by the resolution of the Richards equation.
- *         Diffusion/reaction parameters result from a physical modelling.
+ * \brief Create a new cs_gwf_tracer_t structure and initialize its members.
+ *        This creation of a new tracer is fully done in the case of a default
+ *        tracer. Additional settings has to be done in the case of a
+ *        user-defined tracer.
+ *
+ *        Add a new equation related to the groundwater flow module. This
+ *        equation is a specific transport equation. The tracer is advected
+ *        thanks to the darcian velocity (in the liquid phase) which is given
+ *        by the resolution of the Richards equation. Diffusion and reaction
+ *        coefficients result from a physical modelling.
  *
  * \param[in]   tr_model        model related to this tracer
  * \param[in]   gwf_model       main model for the GWF module
  * \param[in]   eq_name         name of the tracer equation
  * \param[in]   var_name        name of the related variable
  * \param[in]   adv_field       pointer to a cs_adv_field_t structure
+ * \param[in]   lambda          value of the first order decay coefficient
  * \param[in]   init_setup      function pointer (predefined prototype)
  * \param[in]   finalize_setup  function pointer (predefined prototype)
  *
@@ -1433,6 +1441,7 @@ cs_gwf_tracer_add(cs_gwf_tracer_model_t            tr_model,
                   const char                      *eq_name,
                   const char                      *var_name,
                   cs_adv_field_t                  *adv_field,
+                  double                           lambda,
                   cs_gwf_tracer_init_setup_t      *init_setup,
                   cs_gwf_tracer_finalize_setup_t  *finalize_setup)
 {
@@ -1450,7 +1459,13 @@ cs_gwf_tracer_add(cs_gwf_tracer_model_t            tr_model,
   tracer->finalize_setup = finalize_setup;
 
   if ((tracer->model & CS_GWF_TRACER_USER) == 0)
-    _create_default_tracer_context(tracer);
+    _create_default_tracer_context(tracer, lambda);
+
+  /* The default value of the breakdown threshold may be too high when dealing
+     with a tracer equation since the concentration of radionuclides are (very)
+     small in general */
+
+  cs_sles_it_set_breakdown_threshold(1e-36);
 
   /* Update the array storing all tracers */
 
@@ -1538,8 +1553,8 @@ cs_gwf_tracer_get_time_theta_max(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a tracer for a specified soil when the tracer is attached to
- *         the default model
+ * \brief Set the main parameters corresponding to a default modelling of a
+ *        tracer transport equation for a specified soil
  *
  * \param[in, out] tracer          pointer to a cs_gwf_tracer_t structure
  * \param[in]      soil_name       name of the related soil (or NULL if all
@@ -1548,18 +1563,16 @@ cs_gwf_tracer_get_time_theta_max(void)
  * \param[in]      alpha_l         value of the longitudinal dispersivity
  * \param[in]      alpha_t         value of the transversal dispersivity
  * \param[in]      distrib_coef    value of the distribution coefficient
- * \param[in]      reaction_rate   value of the first order rate of reaction
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tracer_set_main_param(cs_gwf_tracer_t   *tracer,
+cs_gwf_tracer_set_soil_param(cs_gwf_tracer_t   *tracer,
                              const char        *soil_name,
                              double             wmd,
                              double             alpha_l,
                              double             alpha_t,
-                             double             distrib_coef,
-                             double             reaction_rate)
+                             double             distrib_coef)
 {
   if (tracer == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_tracer));
 
@@ -1581,9 +1594,8 @@ cs_gwf_tracer_set_main_param(cs_gwf_tracer_t   *tracer,
       tc->alpha_l[soil_id] = alpha_l;
       tc->alpha_t[soil_id] = alpha_t;
       tc->wmd[soil_id] = wmd;
-      tc->reaction_rate[soil_id] = reaction_rate;
 
-    } /* Loop on soils */
+    } /* Loop on all soils */
 
   }
   else { /* Set this tracer equation for a specific soil */
@@ -1600,7 +1612,6 @@ cs_gwf_tracer_set_main_param(cs_gwf_tracer_t   *tracer,
     tc->alpha_l[soil->id] = alpha_l;
     tc->alpha_t[soil->id] = alpha_t;
     tc->wmd[soil->id] = wmd;
-    tc->reaction_rate[soil->id] = reaction_rate;
 
   } /* Set a specific couple (tracer, soil) */
 }
@@ -1988,9 +1999,17 @@ cs_gwf_tracer_default_init_setup(cs_gwf_tracer_t     *tracer)
   const double  thd = 100*DBL_MIN; /* threshold to avoid a wrong activation */
   const char *eq_name = cs_equation_get_name(tracer->equation);
 
-  /* Loop on soils to check if a reaction or a diffusion term is needed */
+  int  max_len = 0;
+  char  *name = NULL;
 
-  bool  do_diffusion = false, do_reaction = false;
+  const int  log_key = cs_field_key_id("log");
+  const int  c_loc_id = cs_mesh_location_get_id_by_name("cells");
+  const int  post_key = cs_field_key_id("post_vis");
+
+  /* Add a diffusion term ? */
+  /* ---------------------- */
+
+  bool  do_diffusion = false;
   cs_property_type_t  diff_pty_type = CS_PROPERTY_ISO;
 
   for (int soil_id = 0; soil_id < n_soils; soil_id++) {
@@ -2003,16 +2022,7 @@ cs_gwf_tracer_default_init_setup(cs_gwf_tracer_t     *tracer)
 
     if (tc->wmd[soil_id] > thd) do_diffusion = true;
 
-    if (fabs(tc->reaction_rate[soil_id]) > thd) do_reaction = true;
-
   }
-
-  int  max_len = 0;
-  char  *name = NULL;
-
-  const int  log_key = cs_field_key_id("log");
-  const int  c_loc_id = cs_mesh_location_get_id_by_name("cells");
-  const int  post_key = cs_field_key_id("post_vis");
 
   if (do_diffusion) { /* Add a new diffusion property for this equation */
 
@@ -2045,6 +2055,12 @@ cs_gwf_tracer_default_init_setup(cs_gwf_tracer_t     *tracer)
     cs_field_set_key_int(tracer->diffusivity, cs_field_key_id("log"), 1);
 
   } /* Has diffusion */
+
+  /* Add a reaction term ? */
+  /* --------------------- */
+
+  bool  do_reaction = false;
+  if (fabs(tc->decay_coef) > thd) do_reaction = true;
 
   if (do_reaction) { /* Add a new reaction property for this equation */
 

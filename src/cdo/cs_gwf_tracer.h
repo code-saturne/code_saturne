@@ -45,7 +45,19 @@ BEGIN_C_DECLS
  * Typedef definition
  *============================================================================*/
 
+/*! \struct cs_gwf_tracer_t
+ *
+ *  \brief Set of parameters describing a tracer structure
+ */
+
 typedef struct _gwf_tracer_t  cs_gwf_tracer_t;
+
+/* \struct cs_gwf_tracer_default_context_t
+ *
+ * \brief Set of parameters related to a tracer equation attached to a standard
+ *        modelling
+ */
+
 typedef struct _gwf_tracer_default_context_t  cs_gwf_tracer_default_context_t;
 
 /*============================================================================
@@ -150,9 +162,14 @@ struct _gwf_tracer_default_context_t {
 
   /* Common settings shared by all physical modelling */
   /* ------------------------------------------------ */
-  /* These parameters are defined for each  each soil
-   * (arrays of size equal to n_soils)
-   */
+
+  double     decay_coef; /* First order decay coefficient (related to the
+                               reaction term). This value is intrinsic to the
+                               component (a radioactive element for instance)
+                               and not to the soil. */
+
+  /* The following parameters are defined for each soil (arrays of size equal
+   * to n_soils) */
 
   double    *rho_bulk;      /* bulk density (kg.m^-3) */
   double    *kd0;           /* reference value of the distribution coefficient
@@ -163,9 +180,6 @@ struct _gwf_tracer_default_context_t {
   double    *alpha_t;       /* Transversal dispersivity */
 
   double    *wmd;           /* Water molecular diffusivity (m^2.s^-1) */
-
-  double    *reaction_rate; /* First order decay coefficient (related to the
-                               reaction term) */
 
   /* Precipitation members (set to NULL if not used) */
   /* ----------------------------------------------- */
@@ -201,7 +215,7 @@ struct _gwf_tracer_default_context_t {
 
   /* Variables used for the update of physical properties (shared pointers) */
 
-  const cs_field_t  *darcy_velocity_field;
+  const cs_field_t    *darcy_velocity_field;
 
 };
 
@@ -210,28 +224,64 @@ struct _gwf_tracer_default_context_t {
 
 struct _gwf_tracer_t{
 
+  /*!
+   * @name Physical modelling information for a tracer
+   * @{
+   */
+
+  /*! \var hydraulic_model
+   *       Type of hydraulic model to consider. This is an information shared
+   *       with the main gorundwater flow structure
+   */
+
   cs_gwf_model_type_t          hydraulic_model;
 
-  /* Physical modelling adopted for this tracer */
+  /*! \var model
+   *       Type of tracer model to consider. 0 corresponds to the default
+   *       behavior.
+   */
 
   cs_gwf_tracer_model_t        model;
 
-  cs_field_t                  *diffusivity; /* NULL if no diffusion term is
-                                               build in the tracer equation */
-  int                          reaction_id; /* id related to the reaction
-                                               term in the tracer equation */
+  /*! \var diffusivity
+   *       Field related to the property associated to the diffusion term.
+   *       NULL if no diffusion term is build in the tracer equation.
+   */
 
-  /*! \var eq
-   *  \brief pointer to the related equation structure
+  cs_field_t                  *diffusivity;
+
+  /*! \var reaction_id
+   *       Since there can be several reaction terms associated to an
+   *       equation. One stores the id related to the reaction term wich is
+   *       automatically added when a radioactive tracer is considered.
+   */
+
+  int                          reaction_id;
+
+  /*!
+   * @}
+   * @name Other members
+   * @{
+   */
+
+  /*! \var equation
+   *       Pointer to the related equation structure
    */
 
   cs_equation_t               *equation;
 
-  /* Pointer to a context structure according to the model */
+  /*! \var context
+   *       Pointer to a context structure cast on-the-fly according to the
+   *       model.
+   */
 
   void                        *context;
 
-  /* Pointers to functions */
+  /*!
+   * @}
+   * @name Function pointers associated to a tracer
+   * @{
+   */
 
   /*!
    * \var update_diff_pty
@@ -272,6 +322,9 @@ struct _gwf_tracer_t{
   cs_gwf_tracer_finalize_setup_t   *finalize_setup;
   cs_gwf_tracer_free_context_t     *free_context;
 
+  /*!
+   * @}
+   */
 };
 
 /*============================================================================
@@ -294,19 +347,23 @@ cs_gwf_tracer_by_name(const char   *eq_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a new cs_gwf_tracer_t structure and initialize its members by
- *         default.
- *         Add a new equation related to the groundwater flow module.
- *         This equation is a specific transport equation.
- *         Tracer is advected thanks to the darcian velocity which is given
- *         by the resolution of the Richards equation.
- *         Diffusion/reaction parameters result from a physical modelling.
+ * \brief Create a new cs_gwf_tracer_t structure and initialize its members.
+ *        This creation of a new tracer is fully done in the case of a default
+ *        tracer. Additional settings has to be done in the case of a
+ *        user-defined tracer.
+ *
+ *        Add a new equation related to the groundwater flow module. This
+ *        equation is a specific transport equation. The tracer is advected
+ *        thanks to the darcian velocity (in the liquid phase) which is given
+ *        by the resolution of the Richards equation. Diffusion and reaction
+ *        coefficients result from a physical modelling.
  *
  * \param[in]   tr_model        model related to this tracer
  * \param[in]   gwf_model       main model for the GWF module
  * \param[in]   eq_name         name of the tracer equation
  * \param[in]   var_name        name of the related variable
  * \param[in]   adv_field       pointer to a cs_adv_field_t structure
+ * \param[in]   lambda          value of the first order decay coefficient
  * \param[in]   init_setup      function pointer (predefined prototype)
  * \param[in]   finalize_setup  function pointer (predefined prototype)
  *
@@ -320,6 +377,7 @@ cs_gwf_tracer_add(cs_gwf_tracer_model_t            tr_model,
                   const char                      *eq_name,
                   const char                      *var_name,
                   cs_adv_field_t                  *adv_field,
+                  double                           lambda,
                   cs_gwf_tracer_init_setup_t      *init_setup,
                   cs_gwf_tracer_finalize_setup_t  *finalize_setup);
 
@@ -346,8 +404,8 @@ cs_gwf_tracer_get_time_theta_max(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  For a specified soil set the main parameters corresponding to a
- *         default modelling of a tracer transport
+ * \brief Set the main parameters corresponding to a default modelling of a
+ *        tracer transport equation for a specified soil
  *
  * \param[in, out] tracer          pointer to a cs_gwf_tracer_t structure
  * \param[in]      soil_name       name of the related soil (or NULL if all
@@ -356,18 +414,16 @@ cs_gwf_tracer_get_time_theta_max(void);
  * \param[in]      alpha_l         value of the longitudinal dispersivity
  * \param[in]      alpha_t         value of the transversal dispersivity
  * \param[in]      distrib_coef    value of the distribution coefficient
- * \param[in]      reaction_rate   value of the first order rate of reaction
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tracer_set_main_param(cs_gwf_tracer_t   *tracer,
+cs_gwf_tracer_set_soil_param(cs_gwf_tracer_t   *tracer,
                              const char        *soil_name,
                              double             wmd,
                              double             alpha_l,
                              double             alpha_t,
-                             double             distrib_coef,
-                             double             reaction_rate);
+                             double             distrib_coef);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -252,9 +252,9 @@ cs_gwf_add_aniso_soil(const char                *z_name,
  * \brief  Add a new equation related to the groundwater flow module
 
  *         This equation is a particular type of unsteady advection-diffusion
- *         reaction equation. Tracer is advected thanks to the darcian velocity
- *         and diffusion/reaction parameters result from a physical modelling.
- *         Terms solved in this equation are activated according to predefined
+ *         equation. The tracer is advected thanks to the darcian velocity and
+ *         the diffusion property results from a physical modelling. Terms
+ *         solved in this equation are activated according to predefined
  *         settings. The advection field corresponds to that of the liquid
  *         phase.
  *
@@ -270,6 +270,33 @@ cs_gwf_tracer_t *
 cs_gwf_add_tracer(cs_gwf_tracer_model_t     tr_model,
                   const char               *eq_name,
                   const char               *var_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new equation related to the groundwater flow module
+
+ *         This equation is a particular type of unsteady advection-diffusion
+ *         reaction equation. The tracer is advected thanks to the darcian
+ *         velocity. The diffusion and reaction properties result from
+ *         predefined physical modelling given by the parameter "tr_model".
+ *         Other terms solved in this equation are activated according to
+ *         predefined settings. The advection field corresponds to that of the
+ *         liquid phase.
+ *
+ * \param[in]  tr_model   physical modelling to consider (0 = default settings)
+ * \param[in]  eq_name    name of the tracer equation
+ * \param[in]  var_name   name of the related variable
+ * \param[in]  lambda     first order radioactive decay coefficient
+ *
+ * \return a pointer to the new cs_gwf_tracer_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gwf_tracer_t *
+cs_gwf_add_radioactive_tracer(cs_gwf_tracer_model_t     tr_model,
+                              const char               *eq_name,
+                              const char               *var_name,
+                              double                    lambda);
 
 /*----------------------------------------------------------------------------*/
 /*!

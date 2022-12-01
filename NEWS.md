@@ -45,6 +45,11 @@ Master (not on release branches yet)
   to 10^-8). This follows from a first feedack on the VnV cases of the
   default options.
 
+- Groundwater flows: Add a radioactive tracer. The default tracer has
+  no first order decay coefficient from now. The first order decay
+  coefficient is not anymore associated to a couple (tracer, soil) but
+  only to a tracer.
+
 ### Physical modeling:
 
 - Add hybrid RANS/LES turbulence model (HTLES) from V. Duffal PhD.

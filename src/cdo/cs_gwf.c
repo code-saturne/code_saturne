@@ -65,7 +65,6 @@
 #include "cs_physical_model.h"
 #include "cs_post.h"
 #include "cs_reco.h"
-#include "cs_sles_it.h"
 #include "cs_zone.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
@@ -3797,9 +3796,9 @@ cs_gwf_add_aniso_soil(const char                *z_name,
  * \brief  Add a new equation related to the groundwater flow module
 
  *         This equation is a particular type of unsteady advection-diffusion
- *         reaction equation. Tracer is advected thanks to the darcian velocity
- *         and diffusion/reaction parameters result from a physical modelling.
- *         Terms solved in this equation are activated according to predefined
+ *         equation. The tracer is advected thanks to the darcian velocity and
+ *         the diffusion property results from a physical modelling. Terms
+ *         solved in this equation are activated according to predefined
  *         settings. The advection field corresponds to that of the liquid
  *         phase.
  *
@@ -3847,14 +3846,73 @@ cs_gwf_add_tracer(cs_gwf_tracer_model_t     tr_model,
                                                eq_name,
                                                var_name,
                                                adv,
+                                               0.,  /* lambda */
                                                init_setup,
                                                finalize_setup);
 
-  /* The default value of the breakdown threshold may be too high when dealing
-     with a tracer equation since the concentration of radionuclides are (very)
-     small in general */
+  return tracer;
+}
 
-  cs_sles_it_set_breakdown_threshold(1e-36);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new equation related to the groundwater flow module
+
+ *         This equation is a particular type of unsteady advection-diffusion
+ *         reaction equation. The tracer is advected thanks to the darcian
+ *         velocity. The diffusion and reaction properties result from
+ *         predefined physical modelling given by the parameter "tr_model".
+ *         Other terms solved in this equation are activated according to
+ *         predefined settings. The advection field corresponds to that of the
+ *         liquid phase.
+ *
+ * \param[in]  tr_model   physical modelling to consider (0 = default settings)
+ * \param[in]  eq_name    name of the tracer equation
+ * \param[in]  var_name   name of the related variable
+ * \param[in]  lambda     first order radioactive decay coefficient
+ *
+ * \return a pointer to the new cs_gwf_tracer_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gwf_tracer_t *
+cs_gwf_add_radioactive_tracer(cs_gwf_tracer_model_t     tr_model,
+                              const char               *eq_name,
+                              const char               *var_name,
+                              double                    lambda)
+{
+  cs_gwf_t  *gw = cs_gwf_main_structure;
+
+  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
+
+  if (tr_model & CS_GWF_TRACER_USER)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: User-defined is not allowed in this context.\n"
+              " Please consider cs_gwf_add_user_tracer() instead.", __func__);
+
+  /* Set the advection field structure */
+
+  cs_adv_field_t  *adv = _get_l_adv_field(gw);
+
+  /* Set the function pointers */
+
+  cs_gwf_tracer_init_setup_t  *init_setup = cs_gwf_tracer_default_init_setup;
+  cs_gwf_tracer_finalize_setup_t  *finalize_setup = NULL;
+
+  if (gw->model == CS_GWF_MODEL_SATURATED_SINGLE_PHASE)
+    finalize_setup = cs_gwf_tracer_sat_finalize_setup;
+  else
+    finalize_setup = cs_gwf_tracer_unsat_finalize_setup;
+
+  /* Call the main function to add a new tracer */
+
+  cs_gwf_tracer_t  *tracer = cs_gwf_tracer_add(tr_model,
+                                               gw->model,
+                                               eq_name,
+                                               var_name,
+                                               adv,
+                                               lambda,
+                                               init_setup,
+                                               finalize_setup);
 
   return tracer;
 }
@@ -3899,6 +3957,7 @@ cs_gwf_add_user_tracer(const char                       *eq_name,
                                                eq_name,
                                                var_name,
                                                adv,
+                                               0., /* not useful here */
                                                init_setup,
                                                finalize_setup);
 
