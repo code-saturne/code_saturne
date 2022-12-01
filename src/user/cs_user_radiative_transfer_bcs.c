@@ -101,39 +101,33 @@ BEGIN_C_DECLS
  *  - epap   = thickness (m)
  *  - textp  = outside temperature (K)
  *
- * \param[in]     nvar          total number of variable BC's
- * \param[in]     bc_type       boundary face types
- * \param[in]     icodcl        boundary face code
- * \param[in]     isothp        boundary face type for radiative transfer
- * \param[out]    tmin          min allowed value of the wall temperature
- * \param[out]    tmax          max allowed value of the wall temperature
- * \param[in]     tx            relaxation coefficient (0 < tx < 1)
- * \param[in]     dt            time step (per cell)
- * \param[in]     rcodcl        boundary condition values
- *                                rcodcl(3) = flux density value
- *                                (negative for gain) in W/m2
- * \param[in]     thwall        inside current wall temperature (K)
- * \param[in]     qincid        radiative incident flux  (W/m2)
- * \param[in]     hfcnvp        convective exchange coefficient (W/m2/K)
- * \param[in]     flcnvp        convective flux (W/m2)
- * \param[out]    xlamp         conductivity (W/m/K)
- * \param[out]    epap          thickness (m)
- * \param[out]    epsp          emissivity (>0)
- * \param[out]    textp         outside temperature (K)
+ * \param[in, out]  domain        pointer to a cs_domain_t structure
+ * \param[in]       bc_type       boundary face types
+ * \param[in]       isothp        boundary face type for radiative transfer
+ * \param[out]      tmin          min allowed value of the wall temperature
+ * \param[out]      tmax          max allowed value of the wall temperature
+ * \param[in]       tx            relaxation coefficient (0 < tx < 1)
+ * \param[in]       dt            time step (per cell)
+ * \param[in]       thwall        inside current wall temperature (K)
+ * \param[in]       qincid        radiative incident flux  (W/m2)
+ * \param[in]       hfcnvp        convective exchange coefficient (W/m2/K)
+ * \param[in]       flcnvp        convective flux (W/m2)
+ * \param[out]      xlamp         conductivity (W/m/K)
+ * \param[out]      epap          thickness (m)
+ * \param[out]      epsp          emissivity (>0)
+ * \param[out]      textp         outside temperature (K)
  */
 /*----------------------------------------------------------------------------*/
 
 #pragma weak cs_user_radiative_transfer_bcs
 void
-cs_user_radiative_transfer_bcs(int               nvar,
+cs_user_radiative_transfer_bcs(cs_domain_t      *domain,
                                const int         bc_type[],
-                               int               icodcl[],
                                int               isothp[],
                                cs_real_t        *tmin,
                                cs_real_t        *tmax,
                                cs_real_t        *tx,
                                const cs_real_t   dt[],
-                               cs_real_t         rcodcl[],
                                const cs_real_t   thwall[],
                                const cs_real_t   qincid[],
                                cs_real_t         hfcnvp[],
@@ -143,15 +137,13 @@ cs_user_radiative_transfer_bcs(int               nvar,
                                cs_real_t         epsp[],
                                cs_real_t         textp[])
 {
-  CS_UNUSED(nvar);
+  CS_UNUSED(domain);
   CS_UNUSED(bc_type);
-  CS_UNUSED(icodcl);
   CS_UNUSED(isothp);
   CS_UNUSED(tmin);
   CS_UNUSED(tmax);
   CS_UNUSED(tx);
   CS_UNUSED(dt);
-  CS_UNUSED(rcodcl);
   CS_UNUSED(thwall);
   CS_UNUSED(qincid);
   CS_UNUSED(hfcnvp);

@@ -786,15 +786,13 @@ cs_user_radiative_transfer_parameters(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_radiative_transfer_bcs(int               nvar,
+cs_user_radiative_transfer_bcs(cs_domain_t      *domain,
                                const int         bc_type[],
-                               int               icodcl[],
                                int               isothp[],
                                cs_real_t        *tmin,
                                cs_real_t        *tmax,
                                cs_real_t        *tx,
                                const cs_real_t   dt[],
-                               cs_real_t         rcodcl[],
                                const cs_real_t   thwall[],
                                const cs_real_t   qincid[],
                                cs_real_t         hfcnvp[],

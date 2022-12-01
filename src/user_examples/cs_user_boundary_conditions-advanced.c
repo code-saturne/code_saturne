@@ -116,7 +116,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
    *   - a Dirichlet condition on velocity (sliding wall with no-slip condition)
    *   - a Dirichlet condition on the first scalar. */
 
-  cs_zone_t  *zn = NULL;
+  const cs_zone_t  *zn = NULL;
 
   cs_field_t *scal = cs_field_by_name("scalar1");
   /*! [loc_var_dec] */
