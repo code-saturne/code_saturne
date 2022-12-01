@@ -1399,7 +1399,8 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
 
     if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       // CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, CS_ALLOC_DEVICE);
-      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, CS_ALLOC_HOST_DEVICE_SHARED);
+      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t,
+                   CS_ALLOC_HOST_DEVICE_SHARED);
     else
       _aux_vectors = (cs_real_t *)aux_vectors;
 
@@ -1471,6 +1472,7 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
         (n_rows, gk_rk1, ak_rk, wk, dk, qk, rk, vk, vx);
 
       rho_km1 = rho_k;
+
     }
     else { /* n_iter == 0 */
 
@@ -1481,9 +1483,11 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
         (n_rows, ak_rk, wk, dk, qk, rk, vk, vx);
 
       rho_km1 = rho_k;
+
     }
 
     n_iter += 1;
+
   } /* Needs iterating */
 
   if (_aux_vectors != aux_vectors)

@@ -215,16 +215,16 @@ _axpy(cs_lnum_t         n,
       const cs_real_t  *alpha,
       const cs_real_t  *restrict x,
       cs_real_t        *restrict y)
- {
-   cs_real_t _alpha = *alpha;
-   cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+{
+  cs_real_t _alpha = *alpha;
+  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
 
-   size_t grid_size = blockDim.x*gridDim.x;
-   while (ii < n){
-     y[ii] += _alpha * x[ii];
-     ii += grid_size;
-   }
- }
+  size_t grid_size = blockDim.x*gridDim.x;
+  while (ii < n){
+    y[ii] += _alpha * x[ii];
+    ii += grid_size;
+  }
+}
 
 /*----------------------------------------------------------------------------
  * Compute x <- alpha.x (device kernel)
@@ -239,16 +239,16 @@ __global__ static void
 _scal(cs_lnum_t         n,
       const cs_real_t  *alpha,
       cs_real_t        *restrict x)
- {
-   cs_real_t _alpha = *alpha;
-   cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+{
+  cs_real_t _alpha = *alpha;
+  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
 
-   size_t grid_size = blockDim.x*gridDim.x;
-   while (ii < n){
-     x[ii] *= _alpha;
-     ii += grid_size;
-   }
- }
+  size_t grid_size = blockDim.x*gridDim.x;
+  while (ii < n){
+    x[ii] *= _alpha;
+    ii += grid_size;
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

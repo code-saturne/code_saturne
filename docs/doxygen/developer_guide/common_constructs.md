@@ -81,7 +81,7 @@ strided arrays), and the total size of `array_data` is equal to
 `array_index[n]` for a zero-based index, or
 `array_index[n] - array_index[0]` in general.
 
-similar popular data structures
+Similar popular data structures
 -------------------------------
 
 Readers familiar with *Compressed Sparse Row* or similar matrix or
