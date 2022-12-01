@@ -79,23 +79,11 @@ void CS_PROCF (uialin, UIALIN) (int    *nalinf,
  *   ialtyb       --> ialtyb
  *   impale       --> uialcl_fixed_displacement
  *   disale       --> See uialcl_fixed_displacement
- *   iuma         <-- See uialcl_fixed_velocity
- *   ivma         <-- See uialcl_fixed_velocity
- *   iwma         <-- See uialcl_fixed_velocity
- *   rcodcl       --> See uialcl_fixed_velocity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
-                                const int *const    igliss,
-                                const int *const    ivimpo,
-                                const int *const    ifresf,
-                                int       *const    ialtyb,
-                                int       *const    impale,
-                                cs_real_3_t        *disale,
-                                const int *const    iuma,
-                                const int *const    ivma,
-                                const int *const    iwma,
-                                double *const       rcodcl);
+void CS_PROCF (uialcl, UIALCL) (int         *const  ialtyb,
+                                int         *const  impale,
+                                cs_real_3_t        *disale);
 
 /*-----------------------------------------------------------------------------
  * Retrieve data for internal coupling. Called once at initialization
@@ -196,7 +184,7 @@ cs_gui_mesh_viscosity(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gui_mobile_mesh_get_boundaries(cs_domain_t     *domain);
+cs_gui_mobile_mesh_get_boundaries(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -209,7 +197,7 @@ cs_gui_mobile_mesh_get_boundaries(cs_domain_t     *domain);
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_gui_mobile_mesh_get_fixed_velocity(const char*    label);
+cs_gui_mobile_mesh_get_fixed_velocity(const char  *label);
 
 /*-----------------------------------------------------------------------------
  * Retrieve structure id associated to faces for external coupling

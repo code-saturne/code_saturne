@@ -86,7 +86,7 @@
   <tt> nnod     | cs_glob_mesh->n_vertices </tt>        | Number of vertices
   -             | <tt> cs_glob_mesh->n_b_cells </tt>    | Number of boundary cells
   <tt> lndfac   | cs_glob_mesh->i_face_vtx_connect_size </tt> | Size of the connectivity \n interior faces -> vertices
-  <tt> lndfbr   | cs_glob_mesh->b_face_vtx_connect_size  </tt>| Size of the connectivity \n boundary faces -> vertices
+  <tt> lndfbr   | cs_glob_mesh->b_face_vtx_connect_size </tt>| Size of the connectivity \n boundary faces -> vertices
   <tt> ifacel   | cs_glob_mesh->i_face_cells </tt>      | Interior faces -> cells connectivity
   <tt> ifabor   | cs_glob_mesh->b_face_cells </tt>      | Boundary faces -> cells connectivity
   <tt> ipnfac   | cs_glob_mesh->i_face_vtx_idx </tt>    | Interior faces -> vertices index
@@ -95,6 +95,9 @@
   <tt> nodfbr   | cs_glob_mesh->b_face_vtx_lst </tt>    | Boundary faces -> vertices connectivity
   -             | <tt> cs_glob_mesh->b_cells </tt>      | Boundary cell list
   <tt> xyznod   | cs_glob_mesh->vtx_coord </tt>         | Vertex coordinates
+
+ Note that the faces - vertices connectivity is stored using
+ [indexed arrays](@ref sec_prg_indexed_arrays).
 
   \section cs_var_dico_mesh_q_vars Mesh quantity variables
 

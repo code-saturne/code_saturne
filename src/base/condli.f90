@@ -426,10 +426,7 @@ if (iale.ge.1) then
   ! - Interface code_saturne
   !   ======================
 
-  call uialcl(ibfixe, igliss, ivimpo, ifresf,   &
-             ialtyb, impale, disale,            &
-             iuma, ivma, iwma,                  &
-             rcodcl)
+  call uialcl(ialtyb, impale, disale)
 
   ! TODO in the future version: remove dt, xyzno0, and disale
   ! because they are avaliable as fields.
@@ -4981,21 +4978,11 @@ if (iale.ge.1) then
   ! - Interface code_saturne
   !   ======================
 
-  call uialcl &
-    ( ibfixe, igliss, ivimpo, ifresf,    &
-      ialtyb,                            &
-      impale,                            &
-      disale,                            &
-      iuma, ivma, iwma,                  &
-      rcodcl)
+  call uialcl(ialtyb, impale, disale)
 
-  call usalcl &
-    ( itrale ,                                                       &
-    nvar   , nscal  ,                                              &
-    icodcl , itypfb , ialtyb ,                                     &
-    impale ,                                                       &
-    dt     ,                                                       &
-    rcodcl , xyzno0 , disale )
+  call usalcl(itrale, nvar, nscal,              &
+              icodcl, itypfb, ialtyb, impale,   &
+              dt, rcodcl, xyzno0, disale)
 
   !     Au cas ou l'utilisateur aurait touche disale sans mettre impale=1, on
   !     remet le deplacement initial

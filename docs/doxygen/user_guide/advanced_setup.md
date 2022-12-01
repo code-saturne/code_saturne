@@ -464,6 +464,89 @@ be assigned:
 - \ref CS_SYMMETRY (standard symmetry)
 - \ref CS_ESICF, \ref CS_SSPCF, \ref CS_SOPCF, \ref CS_EPHCF, or \ref CS_EQHCF (inlet/outlet)
 
+Boundary conditions for ALE (Arbitrary Lagrangian Eulerian)  {#sec_ug_bc_ale_legacy}
+-----------------------------------------------------------
+
+### Fixed displacement on vertices
+
+For a better precision concerning mesh displacement, one can also assign
+values of displacement to certain internal and/or boundary vertices. To do this
+one needs to fill the \c depale array and the vertex-based "mesh_displacement"
+field values. This property field tracks the total displacement of vertices
+relative to their initial position in the mesh.
+\c impale[vtx_id] = 1 indicates that the displacement of vertex
+\c vtx_id is imposed.
+
+\note Note that the \c impale array is initialized to 0; if its value
+      is not modified, corresponding value in \c depale array will be
+      ignored.
+
+During the mesh deformation calculation at each time step, the position
+of the vertices whose displacement is fixed (i.e. \c impale=1) is not
+computed using the value of mesh velocity at the center of corresponding
+cell, but directly filled using the values of \c depale.
+
+If the displacement is fixed for all vertices of a boundary face it is not
+necessary to prescribe boundary conditions at this face on mesh velocity.
+\c bc_coeffs->icodcl and \c bc_coeffs->rcodcl1 values of the "mesh_velocity"
+field will be overwritten:
+  - \c icodcl is automatically set to 1 (Dirichlet)
+  - \c rcodcl1 will be automatically set to face's mean mesh velocity
+    value, that is calculated using the "mesh_displacement" field's values.
+
+If a fixed boundary condition (\c ialtyb[face_id]) = CS_BOUNDARY_ALE_FIXED)
+is imposed to the face \c face_id, the displacement of each vertex \c vtx_id
+belonging to that face is considered
+to be fixed, meaning that \c impale[vtx_id] = 1 and
+\c displacment[vtx_id][*] = 0 (where mesh_displacement id a pointer to
+the "mesh_displacement's" values array).
+
+### Influence on boundary conditions related to fluid velocity
+
+The effect of fluid velocity and ALE modeling on boundary faces that
+are declared as walls really depends on the physical nature of this interface.
+
+Indeed when studying an immersed structure the motion of corresponding
+boundary faces is the one of the structure, meaning that it leads to
+fluid motion. On the other hand when studying a piston the motion of vertices
+belonging to lateral boundaries has no physical meaning, therefore it has
+no influence on fluid motion.
+
+Whatever the case, the mesh velocity component that is normal to the boundary
+face is always taken into account
+(\f$ \vect{u}_{fluid} \cdot \vect{n} = \vect{w}_{mesh} \cdot \vect{n} \f$).
+
+The modeling of tangential mesh velocity component differs from one case
+to another.
+
+The influence of mesh velocity on boundary conditions for fluid modeling is
+managed and modeled in code_saturne as follows (using array names from
+\ref cs_user_boundary_conditions_ale):
+
+- If `ale_bc_type[face_id]` = \ref CS_BOUNDARY_ALE_FIXED: the face is motionless;
+  mesh velocity equals 0.
+
+- If `ale_bc_type[face_id]` = \ref CS_BOUNDARY_ALE_IMPOSED_VEL: tangential mesh
+  velocity is modeled as a sliding wall velocity in fluid boundary conditions
+  unless a value for fluid sliding wall velocity has been specified.
+
+- If `ale_bc_type[face_id]` = \ref CS_BOUNDARY_ALE_SLIDING: tangential mesh
+  velocity is not taken into account in fluid boundary conditions.
+
+- If `impale[vtx_id] = 1 for all vertices of a boundary face: tangential mesh
+  velocity value that has been derived from vertices displacement is modeled as a
+  sliding wall velocity in fluid boundary conditions unless a value for fluid
+  sliding wall velocity has been specified by USER in code_saturne Interface or
+  in 'cs_user_boundary_conditions' function.
+
+Note that mesh velocity has no influence on modeling of
+boundary faces with "inlet" or "free outlet" fluid boundary conditions.
+
+For "non standard" conditions, the user has to manage the influence of
+ALE boundary conditions (i.e. mesh velocity) on the ones for Navier Stokes
+equations(i.e. fluid velocity). (Note that fluid boundary conditions can be
+specified in this function.)
+
 Combining approaches
 --------------------
 

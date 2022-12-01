@@ -185,7 +185,7 @@ module paramx
   !>  - Homogeneous Neumann boundary condition for velocity and total energy (seen by the reconstruction
   !> gradients and the diffusion operator).
   !>  - Dirichlet (\ref icodcl=1) for the pressure.
-  !> Alse a boundary condition type for mesh velocity in ALE for modelling
+  !> Also a boundary condition type for mesh velocity in ALE for modelling
   !> free surface (\f$ \vect{u} \cdot \vect{S} = \vect{w} \cdot \vect{S} \f$).
   integer   ifresf
 
@@ -201,11 +201,13 @@ module paramx
   !> convection only).
   integer   i_convective_inlet
 
-
   parameter(iindef=1, ientre=2, isolib=3, isymet=4, iparoi=5,       &
             iparug=6, iesicf=7, isspcf=8, isopcf=9, iephcf=10,      &
-            ieqhcf=11, icscpl=12, icscpd=13, ifrent=14, ifresf=15,  &
+            ieqhcf=11, icscpl=12, icscpd=13, ifrent=14, ifresf=64,  &
             i_convective_inlet=16)
+
+  ! Note the ifresf maps to CS_BOUNDARY_ALE_FREE_SURFACE (1 << 6) in C,
+  ! so its value should not be changed here.
 
   !> maximal number of valuators for Navier-Stokes
   integer    nestmx
