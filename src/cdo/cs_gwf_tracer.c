@@ -2325,6 +2325,7 @@ cs_gwf_tracer_unsat_finalize_setup(const cs_cdo_connect_t      *connect,
  *                         (if NULL or "" all cells are considered)
  *
  * \return the value of the integral (number of moles in the zone)
+ *         parallel synchronization is done
  */
 /*----------------------------------------------------------------------------*/
 
