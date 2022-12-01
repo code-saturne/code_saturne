@@ -325,6 +325,39 @@ cs_gwf_add_user_tracer(const char                       *eq_name,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Add a set of tracer equations corresponding to a radioactive decay
+ *        chain in the groundwater flow module
+
+ *        This equation is a particular type of unsteady advection-diffusion
+ *        reaction equation. Tracer is advected thanks to the darcian velocity
+ *        and diffusion/reaction parameters result from a physical modelling.
+ *        Terms solved in this equation are activated according to predefined
+ *        settings. The advection field corresponds to that of the liquid
+ *        phase. A difference w.r.t. to standard tracer is the definition of
+ *        specific source term taking into account the source/sink of the
+ *        parent/current equation.
+ *
+ * \param[in] n_tracers    number of tracers equations
+ * \param[in] unit         type of unit used in the tracer equations
+ * \param[in] chain_name   name of the decay chain
+ * \param[in] var_names    array of names of the related variable
+ * \param[in] models       model associated to each tracer equation
+ * \param[in] lambda_vals  set of first order radiactive decay coefficient
+ *
+ * \return a pointer to the new cs_gwf_tracer_decay_chain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gwf_tracer_decay_chain_t *
+cs_gwf_add_decay_chain(int                       n_tracers,
+                       cs_gwf_tracer_unit_t      unit,
+                       const char               *chain_name,
+                       const char               *var_names[],
+                       cs_gwf_tracer_model_t     models[],
+                       double                    lambda_vals[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Initialize the context of the model after the activation of the
  *         module and a first settings of the model parameters (physical and
  *         numerical). At this stage, cs_user_parameters() has not been called

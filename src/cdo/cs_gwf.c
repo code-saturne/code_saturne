@@ -3458,7 +3458,7 @@ cs_gwf_log_setup(void)
 
   cs_gwf_soil_log_setup();
 
-  /* Tracers */
+  /* Tracers and decay chains */
 
   cs_gwf_tracer_log_all();
 }
@@ -3847,6 +3847,8 @@ cs_gwf_add_tracer(cs_gwf_tracer_model_t     tr_model,
                                                var_name,
                                                adv,
                                                0.,  /* lambda */
+                                               -1,  /* chain position */
+                                               -1,  /* chain id */
                                                init_setup,
                                                finalize_setup);
 
@@ -3911,6 +3913,8 @@ cs_gwf_add_radioactive_tracer(cs_gwf_tracer_model_t     tr_model,
                                                var_name,
                                                adv,
                                                lambda,
+                                               -1, /* chain position */
+                                               -1, /* chain id */
                                                init_setup,
                                                finalize_setup);
 
@@ -3957,11 +3961,111 @@ cs_gwf_add_user_tracer(const char                       *eq_name,
                                                eq_name,
                                                var_name,
                                                adv,
-                                               0., /* not useful here */
+                                               0., /* not relevant here */
+                                               -1, /* not relevant here */
+                                               -1, /* not relevant here */
                                                init_setup,
                                                finalize_setup);
 
   return tracer;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a set of tracer equations corresponding to a radioactive decay
+ *        chain in the groundwater flow module
+
+ *        This equation is a particular type of unsteady advection-diffusion
+ *        reaction equation. Tracer is advected thanks to the darcian velocity
+ *        and diffusion/reaction parameters result from a physical modelling.
+ *        Terms solved in this equation are activated according to predefined
+ *        settings. The advection field corresponds to that of the liquid
+ *        phase. A difference w.r.t. to standard tracer is the definition of
+ *        specific source term taking into account the source/sink of the
+ *        parent/current equation.
+ *
+ * \param[in] n_tracers    number of tracers equations
+ * \param[in] unit         type of unit used in the tracer equations
+ * \param[in] chain_name   name of the decay chain
+ * \param[in] var_names    array of names of the related variable
+ * \param[in] models       model associated to each tracer equation
+ * \param[in] lambda_vals  set of first order radiactive decay coefficient
+ *
+ * \return a pointer to the new cs_gwf_tracer_decay_chain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gwf_tracer_decay_chain_t *
+cs_gwf_add_decay_chain(int                       n_tracers,
+                       cs_gwf_tracer_unit_t      unit,
+                       const char               *chain_name,
+                       const char               *var_names[],
+                       cs_gwf_tracer_model_t     models[],
+                       double                    lambda_vals[])
+{
+  cs_gwf_tracer_decay_chain_t  *tdc = NULL;
+
+  if (n_tracers < 1)
+    return tdc;
+
+  cs_gwf_t  *gw = cs_gwf_main_structure;
+
+  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
+  assert(var_names != NULL && models != NULL && lambda_vals != NULL);
+
+  /* Create a structure for the decay chain */
+
+  tdc = cs_gwf_tracer_create_decay_chain(n_tracers, chain_name, unit);
+
+  /* Set the advection field structure */
+
+  cs_adv_field_t  *adv = _get_l_adv_field(gw);
+
+  /* Set the function pointers */
+
+  cs_gwf_tracer_init_setup_t  *init_setup = cs_gwf_tracer_default_init_setup;
+  cs_gwf_tracer_finalize_setup_t  *finalize_setup = NULL;
+
+  if (gw->model == CS_GWF_MODEL_SATURATED_SINGLE_PHASE)
+    finalize_setup = cs_gwf_tracer_sat_finalize_setup;
+  else
+    finalize_setup = cs_gwf_tracer_unsat_finalize_setup;
+
+  size_t  max_len = strlen(var_names[0]);
+  for (int i = 1; i < n_tracers; i++)
+    if (strlen(var_names[i]) > max_len)
+      max_len = strlen(var_names[i]);
+  max_len += strlen("DecayChain%02d_") + 1;
+
+  char  *eqname = NULL;
+  BFT_MALLOC(eqname, max_len, char);
+
+  for (int i = 0; i < n_tracers; i++) {
+
+    /* Define automatically the equation name */
+
+    const char  *varname = var_names[i];
+
+    sprintf(eqname, "DecayChain%02d_%s", i, varname);
+
+    /* Call the main function to add a new tracer */
+
+    tdc->tracers[i] = cs_gwf_tracer_add(models[i],
+                                        gw->model,
+                                        eqname,
+                                        varname,
+                                        adv,
+                                        lambda_vals[i],
+                                        i,       /* position in the chain */
+                                        tdc->id, /* id of the related chain */
+                                        init_setup,
+                                        finalize_setup);
+
+  }
+
+  BFT_FREE(eqname);
+
+  return tdc;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4262,8 +4366,14 @@ cs_gwf_update(const cs_mesh_t             *mesh,
               __func__);
   }
 
-  /* Update the diffusivity property associated to each tracer equation since
-     the Darcy velocity may have changed. */
+  /* Update the quantities related to tracer which depends on the "hydraulic"
+   * state (the saturation, the hydraulic head, the Darcy velocity, etc.). Some
+   * quantities are updated on-the-fly with functions associated to properties
+   * but others needs to compute the new field or array to perform the update.
+   *
+   * For now, only the diffusion property associated to each tracer equation is
+   * considered since the Darcy velocity may have changed.
+   */
 
   cs_gwf_tracer_update_diff_pty(ts, mesh, connect, quant);
 }
@@ -4288,6 +4398,9 @@ cs_gwf_compute_steady_state(const cs_mesh_t              *mesh,
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
+  /* Compute the new "hydraulic" state */
+  /* --------------------------------- */
+
   switch (gw->model) {
 
   case CS_GWF_MODEL_SATURATED_SINGLE_PHASE:
@@ -4309,8 +4422,12 @@ cs_gwf_compute_steady_state(const cs_mesh_t              *mesh,
               __func__);
   }
 
-  /* Compute tracers */
-  /* --------------- */
+  /* Solve the tracer equations */
+  /* -------------------------- */
+
+  /* Once tracers are computed, one updates related quantities (the quantities
+     associated to the tracer itsel) for instance the precipitation or the
+     source term in the decay chain */
 
   cs_gwf_tracer_compute_steady_all(mesh, time_step, connect, cdoq);
 }
@@ -4333,6 +4450,9 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
                const cs_cdo_quantities_t    *cdoq)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
+
+  /* Compute the new "hydraulic" state */
+  /* --------------------------------- */
 
   switch (gw->model) {
 
@@ -4363,8 +4483,12 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
               __func__);
   }
 
-  /* Compute tracers */
-  /* --------------- */
+  /* Solve the tracer equations */
+  /* -------------------------- */
+
+  /* Once tracers are computed, one updates related quantities (the quantities
+     associated to the tracer itsel) for instance the precipitation or the
+     source term in the decay chain */
 
   cs_gwf_tracer_compute_all(mesh, time_step, connect, cdoq);
 }

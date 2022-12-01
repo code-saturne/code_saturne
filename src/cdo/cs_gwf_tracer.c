@@ -83,8 +83,13 @@ static const char _err_empty_tracer[] =
   " Stop execution. The structure related to a tracer is empty.\n"
   " Please check your settings.\n";
 
+/* Store shared structures (tracers and decay chains) */
+
 static int  _n_tracers = 0;
 static cs_gwf_tracer_t  **_tracers = NULL;
+
+static int  _n_decay_chains = 0;
+static cs_gwf_tracer_decay_chain_t  **_decay_chains = NULL;
 
 /* liquid saturation also called the moisture content, denoted by \theta (-) no
    unit. This array is shared across all tracers. It may be allocated inside
@@ -452,6 +457,7 @@ _get_reaction_pty4std_tracer_cw(const cs_cell_mesh_t     *cm,
  *         Generic function relying on the prototype cs_gwf_tracer_update_t
  *
  * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
+ * \param[in, out] context    NULL or pointer to a structure cast on-the-fly
  * \param[in]      ts         pointer to a cs_time_step_t structure
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
@@ -461,15 +467,19 @@ _get_reaction_pty4std_tracer_cw(const cs_cell_mesh_t     *cm,
 
 static void
 _update_diff_value(cs_gwf_tracer_t             *tracer,
+                   void                        *context,
                    const cs_time_step_t        *ts,
                    const cs_mesh_t             *mesh,
                    const cs_cdo_connect_t      *connect,
                    const cs_cdo_quantities_t   *quant)
 {
-  CS_UNUSED(mesh);
-  CS_UNUSED(connect);
-  CS_UNUSED(quant);
-  CS_UNUSED(ts);
+  /* Parameters not used since it relies on a generic function pointer */
+
+  CS_NO_WARN_IF_UNUSED(context);
+  CS_NO_WARN_IF_UNUSED(mesh);
+  CS_NO_WARN_IF_UNUSED(connect);
+  CS_NO_WARN_IF_UNUSED(quant);
+  CS_NO_WARN_IF_UNUSED(ts);
 
   assert(tracer != NULL);
   if (tracer->diffusivity == NULL)
@@ -510,6 +520,7 @@ _update_diff_value(cs_gwf_tracer_t             *tracer,
  *         Generic function relying on the prototype cs_gwf_tracer_update_t
  *
  * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
+ * \param[in, out] context    NULL or pointer to a structure cast on-the-fly
  * \param[in]      ts         pointer to a cs_time_step_t structure
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
@@ -519,15 +530,19 @@ _update_diff_value(cs_gwf_tracer_t             *tracer,
 
 static void
 _update_diff_tensor(cs_gwf_tracer_t             *tracer,
+                    void                        *context,
                     const cs_time_step_t        *ts,
                     const cs_mesh_t             *mesh,
                     const cs_cdo_connect_t      *connect,
                     const cs_cdo_quantities_t   *quant)
 {
-  CS_UNUSED(mesh);
-  CS_UNUSED(connect);
-  CS_UNUSED(quant);
-  CS_UNUSED(ts);
+  /* Parameters not used since it relies on a generic function pointer */
+
+  CS_NO_WARN_IF_UNUSED(context);
+  CS_NO_WARN_IF_UNUSED(mesh);
+  CS_NO_WARN_IF_UNUSED(connect);
+  CS_NO_WARN_IF_UNUSED(quant);
+  CS_NO_WARN_IF_UNUSED(ts);
 
   assert(tracer != NULL);
   if (tracer->diffusivity == NULL)
@@ -592,6 +607,7 @@ _update_diff_tensor(cs_gwf_tracer_t             *tracer,
  *         Generic function relying on the prototype cs_gwf_tracer_update_t
  *
  * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
+ * \param[in, out] context    NULL or pointer to a structure cast on-the-fly
  * \param[in]      ts         pointer to a cs_time_step_t structure
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
@@ -601,12 +617,14 @@ _update_diff_tensor(cs_gwf_tracer_t             *tracer,
 
 static void
 _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
+                         void                        *context,
                          const cs_time_step_t        *ts,
                          const cs_mesh_t             *mesh,
                          const cs_cdo_connect_t      *connect,
                          const cs_cdo_quantities_t   *quant)
 {
-  CS_UNUSED(mesh);
+  CS_NO_WARN_IF_UNUSED(mesh);
+  CS_NO_WARN_IF_UNUSED(context);
 
   cs_gwf_tracer_default_context_t  *tc = tracer->context;
 
@@ -1317,6 +1335,7 @@ _create_tracer(cs_gwf_tracer_model_t    tr_model,
   tracer->hydraulic_model = gwf_model;
   tracer->diffusivity = NULL;
   tracer->reaction_id = -1;
+  tracer->chain_position_id = -1; /* Not in a chain */
 
   /* Add a new property related to the time-depedent term */
 
@@ -1360,13 +1379,506 @@ _create_tracer(cs_gwf_tracer_model_t    tr_model,
 
   tracer->update_diff_pty = NULL;
   tracer->update_precipitation = NULL;
+  tracer->update_decay_chain_st = NULL;
+
   tracer->context = NULL;
   tracer->free_context = NULL;
   tracer->init_setup = NULL;
   tracer->finalize_setup = NULL;
+
   tracer->integrate = NULL;
 
   return tracer;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the source term taking into account the decay chain for the
+ *        current tracer Case of CDO-Vb schemes with saturated soils and mole
+ *        unit.
+ *        Generic function relying on the prototype cs_gwf_tracer_update_t
+ *
+ * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
+ * \param[in, out] context    NULL or pointer to a structure cast on-the-fly
+ * \param[in]      ts         pointer to a cs_time_step_t structure
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_vb_sat_decay_chain_molar_st(cs_gwf_tracer_t             *tracer,
+                             void                        *context,
+                             const cs_time_step_t        *ts,
+                             const cs_mesh_t             *mesh,
+                             const cs_cdo_connect_t      *connect,
+                             const cs_cdo_quantities_t   *quant)
+{
+  /* Parameters not used since it relies on a generic function pointer */
+
+  CS_NO_WARN_IF_UNUSED(context);
+  CS_NO_WARN_IF_UNUSED(mesh);
+  CS_NO_WARN_IF_UNUSED(ts);
+
+  assert(tracer != NULL);
+  if (tracer->chain_id < 0)
+    return;
+  if (tracer->chain_position_id < 1)
+    return; /* Nothing to do for the common ancestor */
+
+  const cs_adjacency_t  *c2v = connect->c2v;
+
+  /* Retrieve the decay chain structure */
+
+  cs_gwf_tracer_decay_chain_t  *tdc =
+    cs_gwf_tracer_decay_chain_by_id(tracer->chain_id);
+  assert(tdc != NULL);
+
+  /* Definition associated to this tracer in the decay chain */
+
+  cs_xdef_t  *st_def = tdc->st_defs[tracer->chain_position_id];
+  double  *st_values = cs_xdef_get_array(st_def);
+
+  memset(st_values, 0, c2v->idx[quant->n_cells]*sizeof(double));
+
+  /* Retrieve information on the parent tracer */
+
+  cs_gwf_tracer_t  *tr_parent = tdc->tracers[tracer->chain_position_id-1];
+  assert(tr_parent != NULL);
+  const cs_field_t  *tr_field_parent =
+    cs_equation_get_field(tr_parent->equation);
+  const cs_real_t  *parent_vals = tr_field_parent->val;
+
+  cs_gwf_tracer_default_context_t  *tc_parent = tr_parent->context;
+  assert(tc_parent != NULL);
+  const double  lamb_parent = tc_parent->decay_coef;
+
+  const int  n_soils = cs_gwf_get_n_soils();
+  for (int soil_id = 0; soil_id < n_soils; soil_id++) {
+
+    /* When the soil is saturated, the moisture content is equal to the
+     * porosity
+     */
+
+    const cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
+    const double  coef =
+      lamb_parent * (soil->porosity + tc_parent->rho_kd[soil_id]);
+    const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
+    assert(z->elt_ids != NULL);
+
+    for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+
+      const cs_lnum_t  c_id = z->elt_ids[i];
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+        st_values[j] += parent_vals[c2v->ids[j]] * coef;
+
+    } /* Loop on cells attached to this soil */
+
+  } /* Loop on soils */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the source term taking into account the decay chain for the
+ *        current tracer Case of CDO-Vb schemes with unsaturated soils and mole
+ *        unit.
+ *        Generic function relying on the prototype cs_gwf_tracer_update_t
+ *
+ * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
+ * \param[in, out] context    NULL or pointer to a structure cast on-the-fly
+ * \param[in]      ts         pointer to a cs_time_step_t structure
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_vb_decay_chain_molar_st(cs_gwf_tracer_t             *tracer,
+                         void                        *context,
+                         const cs_time_step_t        *ts,
+                         const cs_mesh_t             *mesh,
+                         const cs_cdo_connect_t      *connect,
+                         const cs_cdo_quantities_t   *quant)
+{
+  /* Parameters not used since it relies on a generic function pointer */
+
+  CS_NO_WARN_IF_UNUSED(context);
+  CS_NO_WARN_IF_UNUSED(mesh);
+  CS_NO_WARN_IF_UNUSED(ts);
+
+  assert(tracer != NULL);
+  if (tracer->chain_id < 0)
+    return;
+  if (tracer->chain_position_id < 1)
+    return; /* Nothing to do for the common ancestor */
+
+  const cs_adjacency_t  *c2v = connect->c2v;
+  const cs_real_t  *theta = cs_shared_liquid_saturation;
+  assert(theta != NULL);
+
+  /* Retrieve the decay chain structure */
+
+  cs_gwf_tracer_decay_chain_t  *tdc =
+    cs_gwf_tracer_decay_chain_by_id(tracer->chain_id);
+  assert(tdc != NULL);
+
+  /* Definition associated to this tracer in the decay chain */
+
+  cs_xdef_t  *st_def = tdc->st_defs[tracer->chain_position_id];
+  double  *st_values = cs_xdef_get_array(st_def);
+
+  memset(st_values, 0, c2v->idx[quant->n_cells]*sizeof(double));
+
+  /* Retrieve information on the parent tracer */
+
+  cs_gwf_tracer_t  *tr_parent = tdc->tracers[tracer->chain_position_id-1];
+  assert(tr_parent != NULL);
+  const cs_field_t  *tr_field_parent =
+    cs_equation_get_field(tr_parent->equation);
+  const cs_real_t  *parent_vals = tr_field_parent->val;
+
+  cs_gwf_tracer_default_context_t  *tc_parent = tr_parent->context;
+  assert(tc_parent != NULL);
+  const double  lamb_parent = tc_parent->decay_coef;
+
+  const int  n_soils = cs_gwf_get_n_soils();
+  for (int soil_id = 0; soil_id < n_soils; soil_id++) {
+
+    const cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
+    const double  rhokd_parent = tc_parent->rho_kd[soil_id];
+    const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
+    assert(z->elt_ids != NULL);
+
+    for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+
+      const cs_lnum_t  c_id = z->elt_ids[i];
+      const double  coef = lamb_parent * (theta[c_id] + rhokd_parent);
+
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+        st_values[j] += parent_vals[c2v->ids[j]] * coef;
+
+    } /* Loop on cells attached to this soil */
+
+  } /* Loop on soils */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the source term taking into account the decay chain for the
+ *        current tracer. Case of CDO-Vb schemes with saturated soils and
+ *        Becquerel unit.
+ *        Generic function relying on the prototype cs_gwf_tracer_update_t
+ *
+ * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
+ * \param[in, out] context    NULL or pointer to a structure cast on-the-fly
+ * \param[in]      ts         pointer to a cs_time_step_t structure
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_vb_sat_decay_chain_becqu_st(cs_gwf_tracer_t             *tracer,
+                             void                        *context,
+                             const cs_time_step_t        *ts,
+                             const cs_mesh_t             *mesh,
+                             const cs_cdo_connect_t      *connect,
+                             const cs_cdo_quantities_t   *quant)
+{
+  /* Parameters not used since it relies on a generic function pointer */
+
+  CS_NO_WARN_IF_UNUSED(context);
+  CS_NO_WARN_IF_UNUSED(mesh);
+  CS_NO_WARN_IF_UNUSED(ts);
+
+  assert(tracer != NULL);
+  if (tracer->chain_id < 0)
+    return;
+  if (tracer->chain_position_id < 1)
+    return; /* Nothing to do for the common ancestor */
+
+  const cs_adjacency_t  *c2v = connect->c2v;
+
+  /* Retrieve the decay chain structure */
+
+  cs_gwf_tracer_decay_chain_t  *tdc =
+    cs_gwf_tracer_decay_chain_by_id(tracer->chain_id);
+  assert(tdc != NULL);
+
+  /* Definition associated to this tracer in the decay chain */
+
+  cs_xdef_t  *st_def = tdc->st_defs[tracer->chain_position_id];
+  double  *st_values = cs_xdef_get_array(st_def);
+
+  memset(st_values, 0, c2v->idx[quant->n_cells]*sizeof(double));
+
+  /* Retrieve information on the parent tracer */
+
+  cs_gwf_tracer_t  *tr_parent = tdc->tracers[tracer->chain_position_id-1];
+  assert(tr_parent != NULL);
+  const cs_field_t  *tr_field_parent =
+    cs_equation_get_field(tr_parent->equation);
+  const cs_real_t  *parent_vals = tr_field_parent->val;
+
+  cs_gwf_tracer_default_context_t  *tc_parent = tr_parent->context;
+  assert(tc_parent != NULL);
+  cs_gwf_tracer_default_context_t  *tc = tracer->context;
+  assert(tc != NULL);
+  const double  lamb = tc->decay_coef;
+
+  const int  n_soils = cs_gwf_get_n_soils();
+  for (int soil_id = 0; soil_id < n_soils; soil_id++) {
+
+    /* When the soil is saturated, the moisture content is equal to the
+     * porosity
+     */
+
+    const cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
+    const double  coef = lamb * (soil->porosity + tc_parent->rho_kd[soil_id]);
+    const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
+    assert(z->elt_ids != NULL);
+
+    for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+
+      const cs_lnum_t  c_id = z->elt_ids[i];
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+        st_values[j] += parent_vals[c2v->ids[j]] * coef;
+
+    } /* Loop on cells attached to this soil */
+
+  } /* Loop on soils */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the source term taking into account the decay chain for the
+ *        current tracer. Case of CDO-Vb schemes with unsaturated soils and
+ *        Becquerel unit.
+ *        Generic function relying on the prototype cs_gwf_tracer_update_t
+ *
+ * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
+ * \param[in, out] context    NULL or pointer to a structure cast on-the-fly
+ * \param[in]      ts         pointer to a cs_time_step_t structure
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_vb_decay_chain_becqu_st(cs_gwf_tracer_t             *tracer,
+                         void                        *context,
+                         const cs_time_step_t        *ts,
+                         const cs_mesh_t             *mesh,
+                         const cs_cdo_connect_t      *connect,
+                         const cs_cdo_quantities_t   *quant)
+{
+  /* Parameters not used since it relies on a generic function pointer */
+
+  CS_NO_WARN_IF_UNUSED(context);
+  CS_NO_WARN_IF_UNUSED(mesh);
+  CS_NO_WARN_IF_UNUSED(ts);
+
+  assert(tracer != NULL);
+  if (tracer->chain_id < 0)
+    return;
+  if (tracer->chain_position_id < 1)
+    return; /* Nothing to do for the common ancestor */
+
+  const cs_adjacency_t  *c2v = connect->c2v;
+  const cs_real_t  *theta = cs_shared_liquid_saturation;
+
+  /* Retrieve the decay chain structure */
+
+  cs_gwf_tracer_decay_chain_t  *tdc =
+    cs_gwf_tracer_decay_chain_by_id(tracer->chain_id);
+  assert(tdc != NULL);
+
+  /* Definition associated to this tracer in the decay chain */
+
+  cs_xdef_t  *st_def = tdc->st_defs[tracer->chain_position_id];
+  double  *st_values = cs_xdef_get_array(st_def);
+
+  memset(st_values, 0, c2v->idx[quant->n_cells]*sizeof(double));
+
+  /* Retrieve information on the parent tracer */
+
+  cs_gwf_tracer_t  *tr_parent = tdc->tracers[tracer->chain_position_id-1];
+  assert(tr_parent != NULL);
+  const cs_field_t  *tr_field_parent =
+    cs_equation_get_field(tr_parent->equation);
+  const cs_real_t  *parent_vals = tr_field_parent->val;
+
+  cs_gwf_tracer_default_context_t  *tc_parent = tr_parent->context;
+  assert(tc_parent != NULL);
+  cs_gwf_tracer_default_context_t  *tc = tracer->context;
+  assert(tc != NULL);
+  const double  lamb = tc->decay_coef;
+
+  const int  n_soils = cs_gwf_get_n_soils();
+  for (int soil_id = 0; soil_id < n_soils; soil_id++) {
+
+    /* When the soil is saturated, the moisture content is equal to the
+     * porosity
+     */
+
+    const cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
+    const double  rhokd_parent = tc_parent->rho_kd[soil_id];
+    const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
+    assert(z->elt_ids != NULL);
+
+    for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+
+      const cs_lnum_t  c_id = z->elt_ids[i];
+      const double  coef = lamb * (theta[c_id] + rhokd_parent);
+
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+        st_values[j] += parent_vals[c2v->ids[j]] * coef;
+
+    } /* Loop on cells attached to this soil */
+
+  } /* Loop on soils */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the members related to a tracer belonging to a decay chain
+ *
+ * \param[in, out] tracer          pointer to the tracer to update
+ * \param[in]      chain_id        -1 or id of the associated decay chain
+ * \param[in]      chain_position  -1 or id in the chain (position)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_decay_chain_members(cs_gwf_tracer_t    *tracer,
+                         int                 chain_id,
+                         int                 chain_position)
+{
+  if (tracer == NULL)
+    return;
+
+  assert(chain_position > -1 && chain_id > -1);
+
+  tracer->chain_id = chain_id;
+  tracer->chain_position_id = chain_position;
+
+  cs_gwf_tracer_decay_chain_t  *tdc = cs_gwf_tracer_decay_chain_by_id(chain_id);
+  assert(tdc != NULL);
+
+  switch (tdc->unit) {
+
+  case CS_GWF_TRACER_UNIT_BECQUEREL:
+    if (tracer->hydraulic_model == CS_GWF_MODEL_SATURATED_SINGLE_PHASE)
+      tracer->update_decay_chain_st = _vb_sat_decay_chain_becqu_st;
+    else
+      tracer->update_decay_chain_st = _vb_decay_chain_becqu_st;
+    break;
+
+  case CS_GWF_TRACER_UNIT_MOLE:
+    if (tracer->hydraulic_model == CS_GWF_MODEL_SATURATED_SINGLE_PHASE)
+      tracer->update_decay_chain_st = _vb_sat_decay_chain_molar_st;
+    else
+      tracer->update_decay_chain_st = _vb_decay_chain_molar_st;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Undefined unit for a decay chain.",
+              __func__);
+    break;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Display the main features related to each tracer
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_log_decay_chains(void)
+{
+  cs_log_printf(CS_LOG_SETUP,
+                "  * GWF | Number of decay chains: %d\n", _n_decay_chains);
+
+  if (_n_decay_chains == 0)
+    return;
+  assert(_decay_chains != NULL);
+
+  for (int i = 0; i < _n_decay_chains; i++) {
+
+    cs_gwf_tracer_decay_chain_t  *tdc = _decay_chains[i];
+    assert(tdc != NULL);
+
+    cs_log_printf(CS_LOG_SETUP, "\n  * GWF | Decay chain: %s\n", tdc->name);
+
+    if (tdc->unit == CS_GWF_TRACER_UNIT_BECQUEREL)
+      cs_log_printf(CS_LOG_SETUP, "  ** %s | Unit: Becquerel\n", tdc->name);
+    else if (tdc->unit == CS_GWF_TRACER_UNIT_MOLE)
+      cs_log_printf(CS_LOG_SETUP, "  ** %s | Unit: mole\n", tdc->name);
+
+    cs_log_printf(CS_LOG_SETUP, "  ** %s | n_tracers: %d\n", tdc->name,
+                  tdc->n_tracers);
+
+    if (tdc->n_tracers > 0) {
+
+      cs_log_printf(CS_LOG_SETUP, "  ** %s | Chain description\n", tdc->name);
+      cs_log_printf(CS_LOG_SETUP, "  ** %s |", tdc->name);
+
+      const cs_gwf_tracer_t  *tr0 = tdc->tracers[0];
+      cs_log_printf(CS_LOG_SETUP, "%s", cs_equation_get_name(tr0->equation));
+
+      for (int j = 1; j < tdc->n_tracers; j++) {
+
+        const cs_gwf_tracer_t  *tr = tdc->tracers[j];
+        cs_log_printf(CS_LOG_SETUP, " --> %s",
+                      cs_equation_get_name(tr->equation));
+
+      }
+
+      cs_log_printf(CS_LOG_SETUP, "\n");
+
+    }
+
+  } /* Loop on decay chains */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free all decay chain structures used to manage several linked tracers
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_free_all_decay_chains(void)
+{
+  if (_n_decay_chains < 1)
+    return;
+  assert(_decay_chains != NULL);
+
+  for (int i = 0; i < _n_decay_chains; i++) {
+
+    cs_gwf_tracer_decay_chain_t  *tdc = _decay_chains[i];
+
+    if (tdc == NULL)
+      continue;
+
+    BFT_FREE(tdc->name);
+    BFT_FREE(tdc->tracers);
+    BFT_FREE(tdc->st_defs);
+
+    BFT_FREE(tdc);
+    _decay_chains[i] = NULL;
+
+  }
+
+  BFT_FREE(_decay_chains);
+  _n_decay_chains = 0;
+  _decay_chains = NULL;
 }
 
 /*============================================================================
@@ -1422,14 +1934,16 @@ cs_gwf_tracer_by_name(const char   *eq_name)
  *        by the resolution of the Richards equation. Diffusion and reaction
  *        coefficients result from a physical modelling.
  *
- * \param[in]   tr_model        model related to this tracer
- * \param[in]   gwf_model       main model for the GWF module
- * \param[in]   eq_name         name of the tracer equation
- * \param[in]   var_name        name of the related variable
- * \param[in]   adv_field       pointer to a cs_adv_field_t structure
- * \param[in]   lambda          value of the first order decay coefficient
- * \param[in]   init_setup      function pointer (predefined prototype)
- * \param[in]   finalize_setup  function pointer (predefined prototype)
+ * \param[in] tr_model        model related to this tracer
+ * \param[in] gwf_model       main model for the GWF module
+ * \param[in] eq_name         name of the tracer equation
+ * \param[in] var_name        name of the related variable
+ * \param[in] adv_field       pointer to a cs_adv_field_t structure
+ * \param[in] lambda          value of the first order decay coefficient
+ * \param[in] chain_position  -1 if not used or the id in the chain position
+ * \param[in] chain_id        -1 or id of the associated decay chain
+ * \param[in] init_setup      function pointer (predefined prototype)
+ * \param[in] finalize_setup  function pointer (predefined prototype)
  *
  * \return a pointer to the new allocated structure
  */
@@ -1442,6 +1956,8 @@ cs_gwf_tracer_add(cs_gwf_tracer_model_t            tr_model,
                   const char                      *var_name,
                   cs_adv_field_t                  *adv_field,
                   double                           lambda,
+                  int                              chain_position,
+                  int                              chain_id,
                   cs_gwf_tracer_init_setup_t      *init_setup,
                   cs_gwf_tracer_finalize_setup_t  *finalize_setup)
 {
@@ -1457,6 +1973,13 @@ cs_gwf_tracer_add(cs_gwf_tracer_model_t            tr_model,
 
   tracer->init_setup = init_setup;
   tracer->finalize_setup = finalize_setup;
+
+  /* If this tracer is embedded inside a decay chain */
+
+  if (chain_position > -1 && chain_id > -1)
+    _set_decay_chain_members(tracer, chain_id, chain_position);
+
+  /* If this is not a user-defined tracer, initialize the default context */
 
   if ((tracer->model & CS_GWF_TRACER_USER) == 0)
     _create_default_tracer_context(tracer, lambda);
@@ -1478,13 +2001,19 @@ cs_gwf_tracer_add(cs_gwf_tracer_model_t            tr_model,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free all tracer structures
+ * \brief  Free all tracer structures and all decay chains
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_gwf_tracer_free_all(void)
 {
+  /* Destroy all decay chains */
+
+  _free_all_decay_chains();
+
+  /* Free tracer structures */
+
   if (_n_tracers == 0)
     return;
   assert(_tracers != NULL);
@@ -1817,7 +2346,7 @@ cs_gwf_tracer_update_diff_pty(const cs_time_step_t        *ts,
       continue;
 
     if (tracer->update_diff_pty != NULL)
-      tracer->update_diff_pty(tracer, ts, mesh, connect, quant);
+      tracer->update_diff_pty(tracer, NULL, ts, mesh, connect, quant);
 
   } /* Loop on tracers */
 }
@@ -1831,6 +2360,12 @@ cs_gwf_tracer_update_diff_pty(const cs_time_step_t        *ts,
 void
 cs_gwf_tracer_log_all(void)
 {
+  /* Log details about decay chains */
+
+  _log_decay_chains();
+
+  /* Log details about tracer equations */
+
   cs_log_printf(CS_LOG_SETUP,
                 "  * GWF | Number of tracer equations: %d\n", _n_tracers);
 
@@ -1850,24 +2385,39 @@ cs_gwf_tracer_log_all(void)
 
     cs_equation_t  *eq = tracer->equation;
     cs_field_t  *f = cs_equation_get_field(eq);
+    const char  *eqname = cs_equation_get_name(eq);
 
-    cs_log_printf(CS_LOG_SETUP,
-                  "  * GWF | Tracer: %s (variable: %s)\n",
-                  cs_equation_get_name(eq), f->name);
+    cs_log_printf(CS_LOG_SETUP, "\n  ** %s | Variable: %s\n", eqname, f->name);
 
     if (tracer->model & CS_GWF_TRACER_USER)
-      cs_log_printf(CS_LOG_SETUP,
-                    "  * GWF | Tracer: User-defined model\n");
+      cs_log_printf(CS_LOG_SETUP, "  ** %s | User-defined model\n", eqname);
 
     else {
 
-      cs_log_printf(CS_LOG_SETUP, "  * GWF | Tracer: Default model\n");
+      cs_log_printf(CS_LOG_SETUP, "  ** %s | Default model\n", eqname);
+
+      if (tracer->chain_id > -1 && tracer->chain_position_id > -1) {
+
+        cs_gwf_tracer_decay_chain_t  *tdc =
+          cs_gwf_tracer_decay_chain_by_id(tracer->chain_id);
+        assert(tdc != NULL);
+
+        cs_log_printf(CS_LOG_SETUP,
+                      "  ** %s | Belongs to a decay chain \"%s\" at position"
+                      " %d\n", eqname, tdc->name, tracer->chain_position_id);
+
+      }
+
       if (tracer->model & CS_GWF_TRACER_PRECIPITATION)
-        cs_log_printf(CS_LOG_SETUP, "  * GWF | + Precipitation effects\n");
+        cs_log_printf(CS_LOG_SETUP, "  ** %s | Add precipitation effects\n",
+                      eqname);
+
       if (tracer->model & CS_GWF_TRACER_SORPTION_EK_3_PARAMETERS)
-        cs_log_printf(CS_LOG_SETUP, "  * GWF | + EK model with 3 parameters\n");
+        cs_log_printf(CS_LOG_SETUP,
+                      "  ** %s | Use an EK model with 3 parameters\n", eqname);
       else if (tracer->model & CS_GWF_TRACER_SORPTION_EK_5_PARAMETERS)
-        cs_log_printf(CS_LOG_SETUP, "  * GWF | + EK model with 5 parameters\n");
+        cs_log_printf(CS_LOG_SETUP,
+                      "  ** %s | Use an EK model with 5 parameters\n", eqname);
 
     }
 
@@ -1915,7 +2465,8 @@ cs_gwf_tracer_compute_steady_all(const cs_mesh_t              *mesh,
       cs_equation_solve_steady_state(mesh, eq);
 
       if (tracer->update_precipitation != NULL)
-        tracer->update_precipitation(tracer, time_step, mesh, connect, cdoq);
+        tracer->update_precipitation(tracer, NULL,
+                                     time_step, mesh, connect, cdoq);
 
     } /* Solve this equation which is steady */
 
@@ -1966,7 +2517,12 @@ cs_gwf_tracer_compute_all(const cs_mesh_t              *mesh,
       cs_equation_solve(cur2prev, mesh, eq);
 
       if (tracer->update_precipitation != NULL)
-        tracer->update_precipitation(tracer, time_step, mesh, connect, cdoq);
+        tracer->update_precipitation(tracer, NULL,
+                                     time_step, mesh, connect, cdoq);
+
+      if (tracer->update_decay_chain_st != NULL)
+        tracer->update_decay_chain_st(tracer, NULL,
+                                      time_step, mesh, connect, cdoq);
 
     } /* Solve this equation which is unsteady */
 
@@ -2098,6 +2654,40 @@ cs_gwf_tracer_default_init_setup(cs_gwf_tracer_t     *tracer)
 
   }
 
+  if (tracer->chain_position_id > 0) {
+
+    const cs_param_space_scheme_t  space_scheme =
+      cs_equation_get_space_scheme(tracer->equation);
+
+    if (space_scheme != CS_SPACE_SCHEME_CDOVB)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Case not handle yet.\n"
+                "  Specify a CDO-Vb scheme for the equation \"%s\"\n",
+                __func__, eq_name);
+
+    /* The common ancestor has no source term. Add a source term for all
+     * children. At this step, mesh has not been preprocessed. A second stage
+     * will be done after this one in *_finalize_setup()
+     *
+     * A CDO-Vb scheme is assumed. The source term is defined on the
+     * intersection between the primal and dual cell so that one can manage the
+     * properties defined on cells and the variable defined at vertices.
+     */
+
+    cs_gwf_tracer_decay_chain_t  *tdc =
+      cs_gwf_tracer_decay_chain_by_id(tracer->chain_id);
+    assert(tdc != NULL);
+
+    tdc->st_defs[tracer->chain_position_id] =
+      cs_equation_add_source_term_by_array(eqp,
+                                           NULL, /* all soils */
+                                           cs_flag_dual_cell_byc,
+                                           NULL,
+                                           false, /* ownership */
+                                           NULL, NULL);
+
+  }
+
   BFT_FREE(name);
 }
 
@@ -2212,6 +2802,32 @@ cs_gwf_tracer_sat_finalize_setup(const cs_cdo_connect_t     *connect,
 
   if (tracer->model & CS_GWF_TRACER_PRECIPITATION)
     _add_precipitation(connect, quant, tracer);
+
+  /* Handle the source term in the decay chain */
+
+  if (tracer->chain_position_id > 0) {
+
+    /* Second step: Associate the array to the source term */
+
+    const cs_adjacency_t  *c2v = connect->c2v;
+
+    double  *array = NULL;
+    BFT_MALLOC(array, c2v->idx[quant->n_cells], double);
+    memset(array, 0, c2v->idx[quant->n_cells]*sizeof(double));
+
+    cs_gwf_tracer_decay_chain_t  *tdc =
+      cs_gwf_tracer_decay_chain_by_id(tracer->chain_id);
+    assert(tdc != NULL);
+
+    cs_xdef_t  *st_def = tdc->st_defs[tracer->chain_position_id];
+
+    cs_xdef_set_array(st_def,
+                      true,     /* transfer ownership */
+                      array);
+
+    cs_xdef_set_array_pointers(st_def, c2v->idx, c2v->ids);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2308,6 +2924,32 @@ cs_gwf_tracer_unsat_finalize_setup(const cs_cdo_connect_t      *connect,
 
   if (tracer->model & CS_GWF_TRACER_PRECIPITATION)
     _add_precipitation(connect, quant, tracer);
+
+  /* Handle the source term in the decay chain */
+
+  if (tracer->chain_position_id > 0) {
+
+    /* Second step: Associate the array to the source term */
+
+    const cs_adjacency_t  *c2v = connect->c2v;
+
+    double  *array = NULL;
+    BFT_MALLOC(array, c2v->idx[quant->n_cells], double);
+    memset(array, 0, quant->n_cells*sizeof(double));
+
+    cs_gwf_tracer_decay_chain_t  *tdc =
+      cs_gwf_tracer_decay_chain_by_id(tracer->chain_id);
+    assert(tdc != NULL);
+
+    cs_xdef_t  *st_def = tdc->st_defs[tracer->chain_position_id];
+
+    cs_xdef_set_array(st_def,
+                      true,     /* transfer ownership */
+                      array);
+
+    cs_xdef_set_array_pointers(st_def, c2v->idx, c2v->ids);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2397,6 +3039,119 @@ cs_gwf_tracer_integrate_by_terms(const cs_cdo_connect_t     *connect,
 
   tracer->integrate(connect, cdoq, tracer->equation, zone, tracer->context,
                     results);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a decay chain structure to manage several linked tracers
+ *
+ * \param[in] n_tracers    number of tracers equations
+ * \param[in] chain_name   name of the decay chain
+ * \param[in] unit         type of unit used in the tracer equations
+ *
+ * \return a pointer to the new cs_gwf_tracer_decay_chain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gwf_tracer_decay_chain_t *
+cs_gwf_tracer_create_decay_chain(int                      n_tracers,
+                                 const char              *chain_name,
+                                 cs_gwf_tracer_unit_t     unit)
+{
+  if (n_tracers < 1)
+    return NULL;
+
+  int  tdc_id = _n_decay_chains;
+
+  cs_gwf_tracer_decay_chain_t  *tdc = NULL;
+
+  BFT_MALLOC(tdc, 1, cs_gwf_tracer_decay_chain_t);
+
+  tdc->n_tracers = n_tracers;
+  tdc->unit = unit;
+
+  size_t  len = strlen(chain_name);
+  BFT_MALLOC(tdc->name, len + 1, char);
+  strncpy(tdc->name, chain_name, len + 1); /* Last character is '\0' */
+
+  tdc->id = tdc_id;
+
+  BFT_MALLOC(tdc->tracers, n_tracers, cs_gwf_tracer_t *);
+  BFT_MALLOC(tdc->st_defs, n_tracers, cs_xdef_t *);
+
+  for (int i = 0; i < n_tracers; i++) {
+    tdc->tracers[i] = NULL;
+    tdc->st_defs[i] = NULL;
+  }
+
+  /* Update the array storing all decay chains */
+
+  _n_decay_chains += 1;
+  BFT_REALLOC(_decay_chains, _n_decay_chains, cs_gwf_tracer_decay_chain_t *);
+  _decay_chains[tdc_id] = tdc;
+
+  return tdc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the decay chain structure associated to the given id
+ *        If not found, it returns the NULL pointer.
+ *
+ * \param[in] id   id of the decay chain to retrieve
+ *
+ * \return a pointer to a new cs_gwf_tracer_decay_chain_t structure or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gwf_tracer_decay_chain_t *
+cs_gwf_tracer_decay_chain_by_id(int        id)
+{
+  if (_n_decay_chains < 1)
+    return NULL;
+  if (id < 0)
+    return NULL;
+
+  assert(_decay_chains != NULL);
+
+  return  _decay_chains[id];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the decay chain structure associated to the name given as
+ *        parameter. If not found, it returns the NULL pointer.
+ *
+ * \param[in] chain_name   name of the decay chain
+ *
+ * \return a pointer to a new cs_gwf_tracer_decay_chain_t structure or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gwf_tracer_decay_chain_t *
+cs_gwf_tracer_decay_chain_by_name(const char      *chain_name)
+{
+  if (_n_decay_chains < 1)
+    return NULL;
+  if (chain_name == NULL)
+    return NULL;
+
+  cs_gwf_tracer_decay_chain_t  *tdc = NULL;
+
+  size_t  len = strlen(chain_name);
+  for (int i = 0; i < _n_decay_chains; i++) {
+
+    cs_gwf_tracer_decay_chain_t  *_c = _decay_chains[i];
+    if (_c == NULL)
+      continue;
+
+    if (strlen(_c->name) == len)
+      if (strcmp(_c->name, chain_name) == 0)
+        return _c;
+
+  }
+
+  return tdc;
 }
 
 /*----------------------------------------------------------------------------*/

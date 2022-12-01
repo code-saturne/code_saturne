@@ -101,6 +101,7 @@ typedef void
  *         This function depends on a numerical scheme and a physical model.
  *
  * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
+ * \param[in, out] context    NULL or pointer to a structure cast on-the-fly
  * \param[in]      ts         pointer to a cs_time_step_t structure
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
@@ -110,6 +111,7 @@ typedef void
 
 typedef void
 (cs_gwf_tracer_update_t) (cs_gwf_tracer_t             *tracer,
+                          void                        *context,
                           const cs_time_step_t        *ts,
                           const cs_mesh_t             *mesh,
                           const cs_cdo_connect_t      *connect,
@@ -154,6 +156,27 @@ typedef void
 /*============================================================================
  * Structure definitions
  *============================================================================*/
+
+/* Structure to handle of radioactive decay chain  */
+
+typedef struct {
+
+  char                  *name;       /* Name of the decay chain */
+  int                    id;         /* Position in the array of chain decays */
+
+  int                    n_tracers;  /* Number of tracers in the decay chain */
+  cs_gwf_tracer_unit_t   unit;       /* Type of unit measure:
+                                      *  - mole (classical tracer)
+                                      *  - Becquerel (activity)
+                                      */
+
+  cs_gwf_tracer_t      **tracers;   /* Array of tracers associated to the
+                                       decay chain. tracers[0] is the parent
+                                       without any ancestor. */
+
+  cs_xdef_t            **st_defs;   /* List of source term definitions */
+
+} cs_gwf_tracer_decay_chain_t;
 
 /* Set of parameters related to a tracer equation attached to a standard
    modelling */
@@ -222,7 +245,7 @@ struct _gwf_tracer_default_context_t {
 /* Set of parameters describing a tracer structure */
 /* ----------------------------------------------- */
 
-struct _gwf_tracer_t{
+struct _gwf_tracer_t {
 
   /*!
    * @name Physical modelling information for a tracer
@@ -234,21 +257,21 @@ struct _gwf_tracer_t{
    *       with the main gorundwater flow structure
    */
 
-  cs_gwf_model_type_t          hydraulic_model;
+  cs_gwf_model_type_t     hydraulic_model;
 
   /*! \var model
    *       Type of tracer model to consider. 0 corresponds to the default
    *       behavior.
    */
 
-  cs_gwf_tracer_model_t        model;
+  cs_gwf_tracer_model_t   model;
 
   /*! \var diffusivity
    *       Field related to the property associated to the diffusion term.
    *       NULL if no diffusion term is build in the tracer equation.
    */
 
-  cs_field_t                  *diffusivity;
+  cs_field_t             *diffusivity;
 
   /*! \var reaction_id
    *       Since there can be several reaction terms associated to an
@@ -256,7 +279,7 @@ struct _gwf_tracer_t{
    *       automatically added when a radioactive tracer is considered.
    */
 
-  int                          reaction_id;
+  int                     reaction_id;
 
   /*!
    * @}
@@ -268,14 +291,29 @@ struct _gwf_tracer_t{
    *       Pointer to the related equation structure
    */
 
-  cs_equation_t               *equation;
+  cs_equation_t          *equation;
 
   /*! \var context
    *       Pointer to a context structure cast on-the-fly according to the
    *       model.
    */
 
-  void                        *context;
+  void                   *context;
+
+  /*! \var chain_position_id
+   *       Position of the current tracer inside a decay chain. The default
+   *       value is -1 meaning that this is not a tracer associated to a decay
+   *       chain.
+   */
+
+  int                     chain_position_id;
+
+  /*! \var chain_id
+   *       id in the array of decay chains. (-1 if not  associated to a decay
+   *       chain; this is the default behavior)
+   */
+
+  int                     chain_id;
 
   /*!
    * @}
@@ -291,6 +329,10 @@ struct _gwf_tracer_t{
    * \var update_precipitation
    *      Function used to update the quantities related to the precipitation
    *      model
+   *
+   * \var update_decay_chain_st
+   *      Function used to update the source term induced by the parent in a
+   *      decay chain
    *
    * \var integrate
    *      Function to compute the quantity of tracer inside a volume. The way
@@ -316,6 +358,8 @@ struct _gwf_tracer_t{
 
   cs_gwf_tracer_update_t           *update_diff_pty;
   cs_gwf_tracer_update_t           *update_precipitation;
+  cs_gwf_tracer_update_t           *update_decay_chain_st;
+
   cs_gwf_tracer_integrate_t        *integrate;
 
   cs_gwf_tracer_init_setup_t       *init_setup;
@@ -358,14 +402,16 @@ cs_gwf_tracer_by_name(const char   *eq_name);
  *        by the resolution of the Richards equation. Diffusion and reaction
  *        coefficients result from a physical modelling.
  *
- * \param[in]   tr_model        model related to this tracer
- * \param[in]   gwf_model       main model for the GWF module
- * \param[in]   eq_name         name of the tracer equation
- * \param[in]   var_name        name of the related variable
- * \param[in]   adv_field       pointer to a cs_adv_field_t structure
- * \param[in]   lambda          value of the first order decay coefficient
- * \param[in]   init_setup      function pointer (predefined prototype)
- * \param[in]   finalize_setup  function pointer (predefined prototype)
+ * \param[in] tr_model        model related to this tracer
+ * \param[in] gwf_model       main model for the GWF module
+ * \param[in] eq_name         name of the tracer equation
+ * \param[in] var_name        name of the related variable
+ * \param[in] adv_field       pointer to a cs_adv_field_t structure
+ * \param[in] lambda          value of the first order decay coefficient
+ * \param[in] chain_position  -1 if not used or the id in the chain position
+ * \param[in] chain_id        -1 or id of the associated decay chain
+ * \param[in] init_setup      function pointer (predefined prototype)
+ * \param[in] finalize_setup  function pointer (predefined prototype)
  *
  * \return a pointer to the new allocated structure
  */
@@ -378,12 +424,14 @@ cs_gwf_tracer_add(cs_gwf_tracer_model_t            tr_model,
                   const char                      *var_name,
                   cs_adv_field_t                  *adv_field,
                   double                           lambda,
+                  int                              chain_position,
+                  int                              chain_id,
                   cs_gwf_tracer_init_setup_t      *init_setup,
                   cs_gwf_tracer_finalize_setup_t  *finalize_setup);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free all tracer structures
+ * \brief  Free all tracer structures and all decay chains
  */
 /*----------------------------------------------------------------------------*/
 
@@ -631,6 +679,51 @@ cs_gwf_tracer_integrate_by_terms(const cs_cdo_connect_t     *connect,
                                  const cs_gwf_tracer_t      *tracer,
                                  const char                 *z_name,
                                  double                      results[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a decay chain structure to manage several linked tracers
+ *
+ * \param[in] n_tracers    number of tracers equations
+ * \param[in] chain_name   name of the decay chain
+ * \param[in] unit         type of unit used in the tracer equations
+ *
+ * \return a pointer to the new cs_gwf_tracer_decay_chain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gwf_tracer_decay_chain_t *
+cs_gwf_tracer_create_decay_chain(int                      n_tracers,
+                                 const char              *chain_name,
+                                 cs_gwf_tracer_unit_t     unit);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the decay chain structure associated to the given id
+ *        If not found, it returns the NULL pointer.
+ *
+ * \param[in] id   id of the decay chain to retrieve
+ *
+ * \return a pointer to a new cs_gwf_tracer_decay_chain_t structure or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gwf_tracer_decay_chain_t *
+cs_gwf_tracer_decay_chain_by_id(int        id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the decay chain structure associated to the name given as
+ *        parameter. If not found, it returns the NULL pointer.
+ *
+ * \param[in] chain_name   name of the decay chain
+ *
+ * \return a pointer to a new cs_gwf_tracer_decay_chain_t structure or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gwf_tracer_decay_chain_t *
+cs_gwf_tracer_decay_chain_by_name(const char      *chain_name);
 
 /*----------------------------------------------------------------------------*/
 

@@ -92,6 +92,22 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
+ * @name Type of unit used for the inventory of radioactive tracers
+ * @{
+ *
+ * \enum cs_gwf_tracer_unit_t
+ * \brief Type of unit for the expression of the radioactive inventory
+ */
+
+typedef enum {
+
+  CS_GWF_TRACER_UNIT_BECQUEREL,
+  CS_GWF_TRACER_UNIT_MOLE
+
+} cs_gwf_tracer_unit_t;
+
+/*!
+ * @}
  * @name Model definition for the groundwater flow module
  * @{
  *
@@ -273,7 +289,7 @@ typedef enum {
    * All terms can be modified with user functions
    */
 
-  CS_GWF_TRACER_USER                        = 1<< 0, /* =    1 */
+  CS_GWF_TRACER_USER                        = 1<< 0, /* =     1 */
 
   /* Physical phenomena to consider */
   /* ------------------------------ */
@@ -285,7 +301,7 @@ typedef enum {
    * model with 3 parameters. Sorption is assumed to be infinite
    */
 
-  CS_GWF_TRACER_SORPTION_EK_3_PARAMETERS    = 1<< 1, /* =    2 */
+  CS_GWF_TRACER_SORPTION_EK_3_PARAMETERS    = 1<< 2, /* =     4 */
 
   /*!
    * \brief EK model with 5 parameters.
@@ -296,7 +312,7 @@ typedef enum {
    * second kind of sites.
    */
 
-  CS_GWF_TRACER_SORPTION_EK_5_PARAMETERS    = 1<< 2, /* =    4 */
+  CS_GWF_TRACER_SORPTION_EK_5_PARAMETERS    = 1<< 3, /* =     8 */
 
   /*!
    * \brief Add the precipitation phenomena to the default tracer equation
