@@ -333,13 +333,6 @@ if (idtvar.ge.0) then
 !   - Coef multiplicatif du pas de temps
 
   write(nfecra,3040)
-  do f_id = 0, n_fields-1
-    call field_get_key_int(f_id, keyvar, ii)
-    if (ii.lt.0) cycle
-    call field_get_label(f_id, chaine)
-    call field_get_key_struct_var_cal_opt(f_id, vcopt)
-    write(nfecra,3041) chaine(1:16),vcopt%istat,cdtvar(ii)
-  enddo
   write(nfecra,3042)
 
 
@@ -368,15 +361,12 @@ write(nfecra,9900)
 ' --- Per-variable properties',                                 /,&
                                                                 /,&
 '------------------------------------',                         /,&
-' Variable          ISTAT      CDTVAR',                         /,&
+' Variable          ISTAT      '                                /,&
 '------------------------------------'                            )
- 3041 format(                                                     &
- 1x,    a16,    i7,      e12.4                                    )
  3042 format(                                                     &
 '----------------------------',                                 /,&
                                                                 /,&
-'       ISTAT  =  0 ou  1       (1 for unsteady              )',/,&
-'       CDTVAR >  0             (time step multiplier        )',/)
+'       ISTAT  =  0 ou  1       (1 for unsteady              )',/)
 
  3050 format(                                                     &
 '--- Relaxation coefficient',                                   /,&

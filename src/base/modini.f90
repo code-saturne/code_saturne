@@ -67,11 +67,11 @@ integer          imrgrp, iclvfl, kclvfl
 integer          iscacp, kcpsyr, icpsyr
 integer          nfld, f_type
 integer          key_t_ext_id, icpext, kscmin, kscmax
-integer          iviext, isso2t, kisso2t, kthetss, kthetvs
+integer          iviext, isso2t, kisso2t, kthetss, kthetvs, kcdtvar
 integer          kturt, turb_flux_model, turb_flux_model_type
 
 double precision relxsp, clvfmn, clvfmx, visls_0, visls_cmp
-double precision scminp, thetss, thetvs
+double precision scminp, thetss, thetvs, cdtvar
 
 character(len=80) :: name
 
@@ -94,6 +94,7 @@ call field_get_key_id("diffusivity_extrapolated", kthetvs)
 call field_get_key_id("scalar_time_scheme", kisso2t)
 
 call field_get_key_id("variance_clipping", kclvfl)
+call field_get_key_id("time_step_factor", kcdtvar)
 
 !===============================================================================
 ! 1. ENTREES SORTIES entsor
@@ -508,38 +509,50 @@ endif
 ! Init. of time step factor for velocity, pressure and turbulent variables
 ! FIXME time step factor is used ONLY for additional variables (user or model)
 
-cdtvar(iv ) = cdtvar(iu)
-cdtvar(iw ) = cdtvar(iu)
-cdtvar(ipr) = cdtvar(iu)
+call field_get_key_double(ivarfl(iu), kcdtvar, cdtvar)
+call field_set_key_double(ivarfl(iv), kcdtvar, cdtvar)
+call field_set_key_double(ivarfl(iw), kcdtvar, cdtvar)
+call field_set_key_double(ivarfl(ipr), kcdtvar, cdtvar)
 
 if (itytur.eq.2) then
-  cdtvar(iep ) = cdtvar(ik  )
+  call field_get_key_double(ivarfl(ik), kcdtvar, cdtvar)
+  call field_set_key_double(ivarfl(iep), kcdtvar, cdtvar)
+
 elseif (itytur.eq.3) then
-  cdtvar(ir22) = cdtvar(ir11)
-  cdtvar(ir33) = cdtvar(ir11)
-  cdtvar(ir12) = cdtvar(ir11)
-  cdtvar(ir13) = cdtvar(ir11)
-  cdtvar(ir23) = cdtvar(ir11)
-  cdtvar(iep ) = cdtvar(ir11)
-  ! cdtvar(ial) is useless because no time dependance in the equation of alpha.
+  call field_get_key_double(ivarfl(ir11), kcdtvar, cdtvar)
+  call field_set_key_double(ivarfl(ir22), kcdtvar, cdtvar)
+  call field_set_key_double(ivarfl(ir33), kcdtvar, cdtvar)
+  call field_set_key_double(ivarfl(ir12), kcdtvar, cdtvar)
+  call field_set_key_double(ivarfl(ir13), kcdtvar, cdtvar)
+  call field_set_key_double(ivarfl(ir23), kcdtvar, cdtvar)
+  call field_set_key_double(ivarfl(iep), kcdtvar, cdtvar)
+
+  ! cdtvar for ial is useless because no time dependance in the equation of alpha.
   if (iturb.eq.32) then
-    cdtvar(ial) = cdtvar(ir11)
+    call field_get_key_double(ivarfl(ir11), kcdtvar, cdtvar)
+    call field_set_key_double(ivarfl(ial), kcdtvar, cdtvar)
   endif
 elseif (itytur.eq.5) then
-  cdtvar(iep ) = cdtvar(ik  )
-  cdtvar(iphi) = cdtvar(ik  )
-!     CDTVAR(IFB/IAL) est en fait inutile car pas de temps dans
+  call field_get_key_double(ivarfl(ik), kcdtvar, cdtvar)
+  call field_set_key_double(ivarfl(iep), kcdtvar, cdtvar)
+  call field_set_key_double(ivarfl(iphi), kcdtvar, cdtvar)
+
+!     CDTVAR pour IFB/IAL est en fait inutile car pas de temps dans
 !     l'eq de f_barre/alpha
   if (iturb.eq.50) then
-    cdtvar(ifb ) = cdtvar(ik  )
+    call field_get_key_double(ivarfl(ik), kcdtvar, cdtvar)
+    call field_set_key_double(ivarfl(ifb), kcdtvar, cdtvar)
   elseif (iturb.eq.51) then
-    cdtvar(ial ) = cdtvar(ik  )
+    call field_get_key_double(ivarfl(ik), kcdtvar, cdtvar)
+    call field_set_key_double(ivarfl(ial), kcdtvar, cdtvar)
   endif
 elseif (iturb.eq.60) then
-  cdtvar(iomg) = cdtvar(ik  )
+  call field_get_key_double(ivarfl(ik), kcdtvar, cdtvar)
+  call field_set_key_double(ivarfl(iomg), kcdtvar, cdtvar)
 elseif (iturb.eq.70) then
-  ! cdtvar est a 1.0 par defaut dans iniini.f90
-  cdtvar(inusa)= cdtvar(inusa)
+  ! cdtvar est a 1.0 par defaut dans cs_parameters.c
+  call field_get_key_double(ivarfl(inusa), kcdtvar, cdtvar)
+  call field_set_key_double(ivarfl(inusa), kcdtvar, cdtvar)
 endif
 
 ! ---> IWALLF

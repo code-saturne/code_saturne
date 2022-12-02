@@ -366,20 +366,6 @@ module optcal
   !> Take \ref dtmax = max (ld/ud, sqrt(lt/(gdelta rho/rho)), ...)
   real(c_double), pointer, save :: dtmax
 
-  !> multiplicator coefficient for the time step of each variable
-  !>    - useless for u,v,w,p
-  !>    - for k,e     the same value is taken (value of k)
-  !>    - for Rij, e  the same value is taken (value of r11)\n
-  !> Hence, the time step used when solving the evolution equation for
-  !> the variable is the time step used for the dynamic equations
-  !> (velocity/pressure) multiplied by \ref cdtvar.
-  !> The size of the array \ref cdtvar is \ref dimens::nvar "nvar". For instance,
-  !> the multiplicative coefficient applied to the scalar 2 is cdtvar(isca(2))).
-  !> Yet, the value of cdtvar for the velocity components and the pressure is
-  !> not used. Also, although it is possible to change the value of \ref cdtvar
-  !> for the turbulent variables, it is highly not recommended.
-  double precision, save :: cdtvar(nvarmx)
-
   !> relaxation coefficient for the steady algorithm
   !> \ref relxst = 1 : no relaxation.
   real(c_double), pointer, save :: relxst

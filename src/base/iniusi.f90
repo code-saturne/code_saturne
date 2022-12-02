@@ -85,10 +85,12 @@ implicit none
 
 integer          nmodpp
 integer          nscmax
-integer          l_size, f_id
-integer          error, n_elts
+integer          l_size, f_id, ii
+integer          error, n_elts, kcdtvar
 double precision l_cp(1), l_xmasm(1), l_cv(1)
 integer, dimension(:), pointer :: elt_ids
+double precision, dimension(:), allocatable :: cdtvar
+
 
 !===============================================================================
 
@@ -393,7 +395,14 @@ call cstime()
 
 ! Local numerical options
 
+allocate(cdtvar(nvarmx))
+call field_get_key_id("time_step_factor", kcdtvar)
+
 call uinum1(cdtvar)
+do ii = 1, nvarmx
+  call field_set_key_double(ivarfl(ii), kcdtvar, cdtvar(ii))
+end do
+deallocate(cdtvar)
 
 ! If CDO mode only, no pressure is defined at this stage
 if (icdo.lt.2) then

@@ -80,9 +80,10 @@ double precision dt(ncelet)
 
 integer          iscal, ivar, iel, isou, ifac
 integer          ii, iisc, itspdv, icalc, iappel, ifcvsl
-integer          ispecf, scal_id, f_id, f_dim
+integer          ispecf, scal_id, f_id, f_dim, kcdtvar
 
 double precision fmb, hint, pimp, hext, cmax, cmid, cmin
+double precision cdtvar
 double precision, allocatable, dimension(:) :: dtr
 double precision, allocatable, dimension(:) :: viscf, viscb
 
@@ -107,6 +108,7 @@ save             ipass
 !===============================================================================
 
 call field_get_key_id("scalar_id", keyvar)
+call field_get_key_id("time_step_factor", kcdtvar)
 
 ! Allocate temporary arrays for the species resolution
 allocate(dtr(ncelet))
@@ -199,10 +201,10 @@ if (nscapp.gt.0) then
     ivar  = isca(iscal)
 
     ! ---> Pas de temps (avec facteur multiplicatif eventuel)
-
-    if (cdtvar(ivar).ne.1.d0) then
+    call field_get_key_double(ivarfl(ivar), kcdtvar, cdtvar)
+    if (cdtvar.ne.1.d0) then
       do iel = 1, ncel
-        dtr(iel) = dt(iel)*cdtvar(ivar)
+        dtr(iel) = dt(iel)*cdtvar
       enddo
     else
       do iel = 1, ncel
@@ -470,10 +472,10 @@ if (nscaus.gt.0) then
     ivar  = isca(iscal)
 
 ! ---> Pas de temps (avec facteur multiplicatif eventuel)
-
-    if (cdtvar(ivar).ne.1.d0) then
+    call field_get_key_double(ivarfl(ivar), kcdtvar, cdtvar)
+    if (cdtvar.ne.1.d0) then
       do iel = 1, ncel
-        dtr(iel) = dt(iel)*cdtvar(ivar)
+        dtr(iel) = dt(iel)*cdtvar
       enddo
     else
       do iel = 1, ncel

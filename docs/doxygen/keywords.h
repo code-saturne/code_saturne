@@ -311,6 +311,22 @@ double st_exp_extrapolated;
 */
 double diffusivity_extrapolated;
 
+/*!
+  \var time_step_factor
+  Multiplicator coefficient for the time step of each variable
+  - unused for vel, p
+  - for k, epsilon the same value is taken (value of k)
+  - for Rij, epsilon the same value is taken (value of Rij[xx])\n
+  Hence, the time step used when solving the evolution equation for
+  the variable is the time step used for the dynamic equations
+  (velocity/pressure) multiplied by \ref time_step_factor.
+  Yet, the value of \ref time_step_factor for the velocity components
+  and the pressure is not used. Also, although it is possible to
+  change the value of \ref time_step_factor for the turbulent variables,
+  it is highly discouraged.
+*/
+double time_step_factor;
+
 /*!@}*/
 
 /*----------------------------------------------------------------------------*/

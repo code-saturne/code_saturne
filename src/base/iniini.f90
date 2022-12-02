@@ -417,10 +417,6 @@ isuit1 = -1
 ttpmob = 0.d0
 ttcmob = ttpmob
 
-do ii = 1, nvarmx
-  cdtvar(ii) = 1.d0
-enddo
-
 ! Thermal model
 
 ! No thermal scalar by default

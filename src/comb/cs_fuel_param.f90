@@ -70,8 +70,8 @@ implicit none
 
 integer          ii , jj , iok , icla
 integer          isc
-integer          kscmin, krvarfl
-double precision wmolme, turb_schmidt, rvarfl
+integer          kscmin, krvarfl, kcdtvar
+double precision wmolme, turb_schmidt, rvarfl, cdtvar
 
 type(var_cal_opt) :: vcopt
 
@@ -83,6 +83,7 @@ type(var_cal_opt) :: vcopt
 call field_get_key_id("min_scalar_clipping", kscmin)
 
 call field_get_key_id("variance_dissipation", krvarfl)
+call field_get_key_id("time_step_factor", kcdtvar)
 
 !===============================================================================
 ! 1. VARIABLES TRANSPORTEES
@@ -121,7 +122,8 @@ do isc = 1, nscapp
 ! ------ Informations relatives a la resolution des scalaires
 
 !         - Facteur multiplicatif du pas de temps
-  cdtvar(ii) = 1.d0
+  cdtvar = 1.d0
+  call field_set_key_double(ivarfl(ii), kcdtvar, cdtvar)
 
 !         - Schema convectif % schema 2ieme ordre
 !           = 0 : upwind

@@ -82,11 +82,11 @@ integer          indest, iiidef, istop, iclvfl
 integer          kscmin, kscmax, kclvfl
 integer          keyvar, keysca
 integer          key_t_ext_id, icpext
-integer          iviext, iscacp
+integer          iviext, iscacp, kcdtvar
 integer          iroext, isso2t
 integer          ivisext, krvarfl, kisso2t
 integer          kturt, turb_flux_model, kthetss, kthetvs
-double precision scmaxp, rvarfl, thetss, thetvs
+double precision scmaxp, rvarfl, thetss, thetvs, cdtvar
 double precision turb_schmidt, visls_0
 
 character(len=3), dimension(3) :: nomext3
@@ -122,6 +122,7 @@ call field_get_key_id("time_extrapolated", key_t_ext_id)
 call field_get_key_id("scalar_time_scheme", kisso2t)
 
 call field_get_key_id("variance_dissipation", krvarfl)
+call field_get_key_id("time_step_factor", kcdtvar)
 
 if (icp.ge.0) then
   call field_get_key_int(icp, key_t_ext_id, icpext)
@@ -457,9 +458,10 @@ endif
 do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
-    if (cdtvar(ii).le.0.d0) then
+    call field_get_key_double(ivarfl(ii), kcdtvar, cdtvar)
+    if (cdtvar.le.0.d0) then
       call field_get_label(f_id, chaine)
-      write(nfecra,2530) chaine(1:16),ii,cdtvar(ii)
+      write(nfecra,2530) chaine(1:16),ivarfl(ii),cdtvar
       iok = iok + 1
     endif
   endif
@@ -1239,12 +1241,12 @@ endif
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
 '@    VARIABLE', a16,                                           /,&
-'@    CDTVAR(',i10,   ') MUST BE A  STRICTLY POSITIVE REAL',    /,&
+'@    WITH ID i10 CDTVAR MUST BE A  STRICTLY POSITIVE REAL',    /,&
 '@   IT HAS VALUE', e14.5,                                      /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@  CDTVAR(I) multiplier coefficient applied to the',           /,&
+'@  CDTVAR multiplier coefficient applied to the',              /,&
 '@  timestep for the  resolution of variable I.',               /,&
 '@',                                                            /,&
 '@ Check the input data.',                                      /,&
