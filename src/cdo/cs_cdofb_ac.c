@@ -924,7 +924,7 @@ cs_cdofb_ac_init_common(const cs_cdo_quantities_t     *quant,
  * \param[in] fb_type     type of boundary for each boundary face
  * \param[in] nsc_input   pointer to a \ref cs_navsto_ac_t structure
  *
- * \return a pointer to a new allocated \ref cs_cdofb_ac_t structure
+ * \return a pointer to a new allocated cs_cdofb_ac_t structure
  */
 /*----------------------------------------------------------------------------*/
 

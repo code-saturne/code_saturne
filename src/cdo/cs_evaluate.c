@@ -1493,6 +1493,7 @@ cs_evaluate_array_reduction(int                     dim,
  * \param[in]      dim     local array dimension (max: 3)
  * \param[in]      n_x     number of elements
  * \param[in]      array   array to analyze
+ * \param[in]      c2x     pointer to the associated cs_adjacency_t structure
  * \param[in]      w_x     weight to apply (may be set to  NULL)
  * \param[in, out] min     resulting min array (size: dim, or 4 if dim = 3)
  * \param[in, out] max     resulting max array (size: dim, or 4 if dim = 3)

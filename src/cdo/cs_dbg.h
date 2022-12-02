@@ -132,7 +132,7 @@ cs_dbg_array_fprintf(FILE             *fp,
  *         side
  *
  * \param[in] eqname     name of the related equation
- * \param[in] nt         number of time step
+ * \param[in] id         id number
  * \param[in] level      level of debug
  * \param[in] sol        solution array
  * \param[in] rhs        rhs array
@@ -142,7 +142,7 @@ cs_dbg_array_fprintf(FILE             *fp,
 
 void
 cs_dbg_fprintf_system(const char        *eqname,
-                      int                nt,
+                      int                id,
                       int                level,
                       const cs_real_t   *sol,
                       const cs_real_t   *rhs,
@@ -186,8 +186,8 @@ cs_dbg_iarray_to_listing(const char        *header,
 /*!
  * \brief  In debug mode, dump a linear system. Case of scalar-valued entries.
  *
- * \param[in] eqname     name of the equation related to the current system
- * \param[in] matrix     pointer to the matrix to dump
+ * \param[in] name      name of the equation related to the current system
+ * \param[in] matrix    pointer to the matrix to dump
  */
 /*----------------------------------------------------------------------------*/
 

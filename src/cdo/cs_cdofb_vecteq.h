@@ -79,15 +79,14 @@ typedef struct _cs_cdofb_t cs_cdofb_vecteq_t;
  *         and add it to the local rhs
  *         Mass matrix is optional. It can be set to NULL.
  *
- * \param[in]       cm      pointer to a \ref cs_cell_mesh_t structure
- * \param[in]       eqp     pointer to a \ref cs_equation_param_t structure
- * \param[in]       coef    scaling of the time source (for theta schemes)
- * \param[in]       t_eval  time at which the source term is evaluated
- * \param[in, out]  hodge   pointer to a \ref cs_hodge_t structure (mass matrix)
- * \param[in, out]  cb      pointer to a \ref cs_cell_builder_t structure
- * \param[in, out]  eqb     pointer to a \ref cs_equation_builder_t structure
- * \param[in, out]  csys    pointer to a \ref cs_cell_sys_t structure
- *
+ * \param[in]      cm          pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      eqp         pointer to a \ref cs_equation_param_t structure
+ * \param[in]      t_eval      time at which the source term is evaluated
+ * \param[in]      coef        scaling of the time source (for theta schemes)
+ * \param[in, out] mass_hodge  pointer to a \ref cs_hodge_t(mass matrix)
+ * \param[in, out] cb          pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out] eqb         pointer to a \ref cs_equation_builder_t structure
+ * \param[in, out] csys        pointer to a \ref cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 

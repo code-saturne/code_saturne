@@ -101,7 +101,7 @@ cs_cdofb_predco_init_common(const cs_cdo_quantities_t     *quant,
  * \param[in] mflux       current values of the mass flux across primal faces
  * \param[in] mflux_pre   previous values of the mass flux across primal faces
  * \param[in] fb_type     type of boundary for each boundary face
- * \param[in] nsc_input   pointer to a \ref cs_navsto_predco_t structure
+ * \param[in] nsc_input   pointer to a \ref cs_navsto_projection_t structure
  *
  * \return a pointer to a new allocated cs_cdofb_predco_t structure
  */

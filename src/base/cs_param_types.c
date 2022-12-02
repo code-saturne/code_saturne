@@ -367,7 +367,7 @@ cs_param_get_advection_strategy_name(cs_param_advection_strategy_t   adv_stra)
  * \brief  Get the label associated to the extrapolation used for the advection
  *         field
  *
- * \param[in] adv_stra      type of extrapolation for the advection field
+ * \param[in] extrapol   type of extrapolation for the advection field
  *
  * \return the associated label
  */

@@ -459,20 +459,20 @@ cs_gwf_soil_set_genuchten_param(cs_gwf_soil_t              *soil,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a soil defined by a user-defined hydraulic model
+ * \brief  Set a soil defined by a user-defined model
  *
  * \param[in, out] soil              pointer to a cs_gwf_soil_t structure
- * \param[in]      context           pointer to a structure cast on-the-fly
+ * \param[in]      param             pointer to a structure cast on-the-fly
  * \param[in]      update_func       function pointer to update propoerties
- * \param[in]      free_param_func   function pointer to free the context
+ * \param[in]      free_param_func   function pointer to free the param struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_set_user(cs_gwf_soil_t               *soil,
-                     void                        *context,
-                     cs_gwf_soil_update_t        *update_func,
-                     cs_gwf_soil_free_param_t    *free_param_func);
+cs_gwf_soil_set_user(cs_gwf_soil_t                *soil,
+                     void                         *param,
+                     cs_gwf_soil_update_t         *update_func,
+                     cs_gwf_soil_free_param_t     *free_param_func);
 
 /*----------------------------------------------------------------------------*/
 /*!

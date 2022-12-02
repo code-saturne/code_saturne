@@ -386,7 +386,7 @@ cs_cdo_solve_scalar_cell_system(cs_lnum_t                n_dofs,
  * \param[in]  n_scatter_dofs local number of DoFs (may be != n_gather_elts)
  * \param[in]  slesp          pointer to a cs_param_sles_t structure
  * \param[in]  matrix         pointer to a cs_matrix_t structure
- * \param[in]  rs             pointer to a cs_range_set_t structure
+ * \param[in]  rset           pointer to a cs_range_set_t structure
  * \param[in]  normalization  value used for the residual normalization
  * \param[in]  rhs_redux      do or not a parallel sum reduction on the RHS
  * \param[in, out] sles       pointer to a cs_sles_t structure

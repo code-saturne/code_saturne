@@ -144,13 +144,20 @@ struct _equation_builder_t {
    * @{
    */
 
+  /*! \var  system_helper
+   *  Pointer to the associated system helper structure
+   */
+
   cs_cdo_system_helper_t     *system_helper;
 
-  /*! \var  */
   /*!
    * @}
    * @name Enforcement of degrees of freedom (DoFs)
    * @{
+   */
+
+  /*! \var  enforced_values
+   *  Array of values to enforced
    */
 
   cs_real_t                  *enforced_values;

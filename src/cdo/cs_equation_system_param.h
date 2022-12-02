@@ -46,7 +46,7 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*! \enum cs_equation_system_sles_t
+/*! \enum cs_equation_system_sles_strategy_t
  *  \brief High-level information about the way of solving the system of
  *         equations
  *

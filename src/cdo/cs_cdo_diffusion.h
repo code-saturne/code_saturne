@@ -740,17 +740,16 @@ cs_cdo_diffusion_wbs_get_cell_flux(const cs_cell_mesh_t   *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the normal flux for a face assuming only the knowledge
- *          of the potential at cell vertices (and at cell center).
- *          WBS algorithm is used for reconstructing the normal flux from the
- *          degrees of freedom.
+ * \brief Compute the normal flux for a face assuming only the knowledge of the
+ *        potential at cell vertices (and at cell center). WBS algorithm is
+ *        used for reconstructing the normal flux from the degrees of freedom.
  *
- * \param[in]      f          face id in the cell mesh
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in]      pot        array of values of the potential (all the mesh)
- * \param[in]      hodge      pointer to a \ref cs_hodge_t structure
- * \param[in, out] cb         auxiliary structure dedicated to diffusion
- * \param[in, out] vf_flux    array of values to set (size: n_vc)
+ * \param[in]      f        face id in the cell mesh
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      pot      array of values of the potential (all the mesh)
+ * \param[in]      hodge    pointer to a \ref cs_hodge_t structure
+ * \param[in, out] cb       auxiliary structure dedicated to diffusion
+ * \param[in, out] flux     array of values to set (size: n_vc)
  */
 /*----------------------------------------------------------------------------*/
 

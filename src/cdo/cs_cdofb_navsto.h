@@ -332,13 +332,13 @@ cs_cdofb_navsto_cell_divergence(const cs_lnum_t               c_id,
 /*!
  * \brief  Compute an estimation of the pressure at faces
  *
- * \param[in]       mesh       pointer to a cs_mesh_t structure
- * \param[in]       connect    pointer to a cs_cdo_connect_t structure
- * \param[in]       quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]       time_step  pointer to a cs_time_step_t structure
- * \param[in]       nsp        pointer to a \ref cs_navsto_param_t struct.
- * \param[in]       p_cell     value of the pressure inside each cell
- * \param[in, out]  p_face     value of the pressure at each face
+ * \param[in]       mesh      pointer to a cs_mesh_t structure
+ * \param[in]       connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]       quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in]       ts        pointer to a cs_time_step_t structure
+ * \param[in]       nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]       p_cell    value of the pressure inside each cell
+ * \param[in, out]  p_face    value of the pressure at each face
  */
 /*----------------------------------------------------------------------------*/
 
@@ -756,7 +756,7 @@ cs_cdofb_navsto_boussinesq_by_part(const cs_navsto_param_t           *nsp,
 /*!
  * \brief  Get the source term for computing the stream function.
  *         This relies on the prototype associated to the generic function
- *         pointer \ref cs_dof_function_t
+ *         pointer \ref cs_dof_func_t
  *
  * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       list of elements ids

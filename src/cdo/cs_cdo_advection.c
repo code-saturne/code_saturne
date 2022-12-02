@@ -1596,7 +1596,7 @@ cs_cdofb_advection(const cs_equation_param_t   *eqp,
 /*!
  * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme
- *         - non-conservative formulation beta \cdot \grad
+ *         - non-conservative formulation \f$ \vec{beta} \cdot \nabla \f$
  *         - upwind scheme
  *         Rely on the work performed during R. Milani's PhD
  *
@@ -1693,7 +1693,7 @@ cs_cdofb_advection_upwnoc(int                        dim,
 /*!
  * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme
- *         - conservative formulation div(\beta )
+ *         - conservative formulation \f$ \nabla\cdot(\beta ) \f$
  *         - upwind scheme
  *         Rely on the work performed during R. Milani's PhD
  *

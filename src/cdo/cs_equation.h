@@ -1031,7 +1031,7 @@ cs_equation_get_vertex_values(const cs_equation_t    *eq,
  * \param[in]      connect    pointer to a \ref cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a \ref cs_cdo_quantities_t structure
  * \param[in]      eq         pointer to a \ref cs_equation_t structure
- * \param[in, out] integral   result of the computation
+ * \param[in, out] result     result of the computation
  */
 /*----------------------------------------------------------------------------*/
 

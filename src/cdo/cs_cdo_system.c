@@ -1674,6 +1674,7 @@ cs_cdo_system_get_matrix(const cs_cdo_system_helper_t  *sh,
  *
  * \param[in, out]  sh         pointer to the system_helper structure to update
  * \param[in]       block_id   id of the block to consider
+ * \param[in]       sub_id     id in the slip block
  *
  * \return a pointer to a cs_matrix_t structure or NULL
  */

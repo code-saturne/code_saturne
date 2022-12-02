@@ -398,7 +398,7 @@ cs_cdo_local_get_d_buffer(int   thr_id)
 /*!
  * \brief   Check if at least one entity of the cell belongs to the boundary
  *
- * \param[in]       cm      pointer to a cs_cell_mesh_t structure
+ * \param[in] cb   pointer to a cs_cell_builder_t structure
  *
  * \return true or false
  */

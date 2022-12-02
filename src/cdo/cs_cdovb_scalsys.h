@@ -89,7 +89,7 @@ cs_cdovb_scalsys_init_sharing(const cs_mesh_t              *mesh,
  * \param[in]      n_eqs            number of equations
  * \param[in]      sysp             set of parameters to specify a system of eqs
  * \param[in, out] block_factories  array of the core members for an equation
- * \param[out]     sh               system helper structure to initialize
+ * \param[out]     p_sh             system helper structure to initialize
  *
  * \return a pointer to a new allocated system context structure
  */
@@ -131,7 +131,7 @@ cs_cdovb_scalsys_free(int                     n_eqs,
  *        with a CDO-Vb scheme using an implicit time scheme.
  *
  * \param[in]      cur2prev     do a "current to previous" operation ?
- * \param[in]      n_eqs        number of equations
+ * \param[in]      n_equations  number of equations
  * \param[in]      sysp         set of paremeters for the system of equations
  * \param[in, out] blocks       array of the core members for an equation
  * \param[in, out] sys_context  pointer to a structure cast on-the-fly

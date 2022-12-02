@@ -1191,7 +1191,7 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
 /*!
  * \brief Destroy a cs_cdo_quantities_t structure
  *
- * \param[in]  cdoq      pointer to the cs_cdo_quantities_t struct. to free
+ * \param[in]  cdoq    pointer to structure to free
  *
  * \return a NULL pointer
  */

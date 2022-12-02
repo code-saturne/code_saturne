@@ -82,7 +82,7 @@ BEGIN_C_DECLS
  *
  * \param[in]      eqp    pointer to a \ref cs_equation_param_t structure
  * \param[in, out] eqb    pointer to a \ref cs_equation_builder_t structure
- * \param[in, out] eqc    pointer to a \ref cs_cdofb_priv_t structure
+ * \param[in, out] eqc    pointer to a cs_cdofb_priv_t structure
  */
 /*----------------------------------------------------------------------------*/
 

@@ -345,10 +345,10 @@ cs_cdo_balance_reset(cs_cdo_balance_t   *b)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Synchronize balance terms if this is a parallel computation
+ * \brief Synchronize balance terms if this is a parallel computation
  *
  * \param[in]      connect   pointer to a cs_cdo_connect_t structure
- * \param[in, out] b         pointer to a cs_cdo_balance_t to rsync
+ * \param[in, out] b         pointer to a cs_cdo_balance_t to sync
  */
 /*----------------------------------------------------------------------------*/
 

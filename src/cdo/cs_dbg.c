@@ -299,8 +299,8 @@ cs_dbg_iarray_to_listing(const char        *header,
 /*!
  * \brief  In debug mode, dump a linear system. Case of scalar-valued entries.
  *
- * \param[in] eqname     name of the equation related to the current system
- * \param[in] matrix     pointer to the matrix to dump
+ * \param[in] name      name of the equation related to the current system
+ * \param[in] matrix    pointer to the matrix to dump
  */
 /*----------------------------------------------------------------------------*/
 

@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file vof.f90
-!> Module for Volume-Of-Fluid method
+!> \brief Module for Volume-Of-Fluid method
 
 module vof
 
@@ -66,6 +66,7 @@ module vof
   !> volume fraction gradient factor in drift velocity
   real(c_double), pointer, save :: kdrift
 
+  !> \}
   !> \}
 
   !=============================================================================

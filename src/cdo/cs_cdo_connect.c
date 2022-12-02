@@ -1220,10 +1220,10 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
  *        From an edge-based array (seen as circulations) compute a face-based
  *        array (seen as fluxes)
  *
- * \param[in]      connect      pointer to a cs_cdo_connect_t struct.
- * \param[in]      edge_values  array of values at edges
- * \param[in, out] curl_values  array storing the curl across faces (allocated
- *                              if necessary)
+ * \param[in]      connect        pointer to a cs_cdo_connect_t struct.
+ * \param[in]      edge_values    array of values at edges
+ * \param[in, out] p_curl_values  array storing the curl across faces. This
+ *                                array is allocated if necessary.
  */
 /*----------------------------------------------------------------------------*/
 

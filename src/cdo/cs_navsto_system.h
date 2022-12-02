@@ -138,61 +138,59 @@ typedef void
 
 /*! \struct cs_navsto_system_t
  *  \brief  Structure managing the Navier-Stokes system
- *
  */
 
 typedef struct {
 
   /*! \var param
-   *  Set of parameters to handle the Navier-Stokes system
+   *       Set of parameters to handle the Navier-Stokes system
    */
 
   cs_navsto_param_t          *param;
 
   /*! \var adv_field
-   *  Pointer to the \ref cs_adv_field_t structure storing the advection
-   *  field used in the Navier-Stokes equations
+   *       Pointer to the \ref cs_adv_field_t structure storing the advection
+   *       field used in the Navier-Stokes equations
    */
 
   cs_adv_field_t             *adv_field;
 
   /*! \var mass_flux_array
-   *  Current values of the mass flux (if this is a CDO Face-based scheme,
-   *  array is allocated to the number of faces; first interior faces then
-   *  boundary faces)
+   *       Current values of the mass flux (if this is a CDO Face-based scheme,
+   *       array is allocated to the number of faces; first interior faces then
+   *       boundary faces)
    */
 
   cs_real_t                  *mass_flux_array;
 
   /*! \var mass_flux_array_pre
-   *  Previous values of the mass flux (if this is a CDO Face-based scheme,
-   *  array is allocated to the number of faces; first interior faces then
-   *  boundary faces)
+   *       Previous values of the mass flux (if this is a CDO Face-based
+   *       scheme, array is allocated to the number of faces; first interior
+   *       faces then boundary faces)
    */
 
   cs_real_t                  *mass_flux_array_pre;
 
-  /*! \var boundary_type
-   * Array storing the type of boundary for each boundary face
+  /*! \var bf_type
+   *       Array storing the type of boundary for each boundary face
    */
 
   cs_boundary_type_t         *bf_type;
 
   /*!
    * @name Variable fields
-   * Set of fields (resolved variables): fields are created according to the
-   * choice of model for Navier-Stokes
-   * @{
+   *       Set of fields (resolved variables): fields are created according to
+   *       the choice of model for Navier-Stokes @{
    */
 
   /*! \var velocity
-   *  Velocity, vector-valued, pointer to \ref cs_field_t
+   *       Velocity, vector-valued, pointer to \ref cs_field_t
    */
 
   cs_field_t                 *velocity;
 
   /*! \var pressure
-   *  Pressure, scalar-valued, pointer to \ref cs_field_t
+   *       Pressure, scalar-valued, pointer to \ref cs_field_t
    */
 
   cs_field_t                 *pressure;
@@ -200,16 +198,16 @@ typedef struct {
   /*!
    * @}
    * @name Related systems of equations
-   * According to the modelling choice other systems of equations can
-   * be solved in a more or less coupled manner. For instance, the
-   * energy equation (with the thermal system) or the magneto-hydrodynamic
-   * equations (with the Maxwell system of equations)
+   *       According to the modelling choice other systems of equations can be
+   *       solved in a more or less coupled manner. For instance, the energy
+   *       equation (with the thermal system) or the magneto-hydrodynamic
+   *       equations (with the Maxwell system of equations)
    * @{
    */
 
   /*! \var turbulence
-   *  Structure storing all settings, fields or properties related to the
-   *  turbulence modelling
+   *       Structure storing all settings, fields or properties related to the
+   *       turbulence modelling
    */
 
   cs_turbulence_t            *turbulence;
@@ -217,89 +215,89 @@ typedef struct {
   /*!
    * @}
    * @name Post-processing
-   * Set of fields which are induced by the variable fields and which have
-   * meaningful information for understanding the flow. Structure maning the
-   * post-processing.
+   *       Set of fields which are induced by the variable fields and which
+   *       have meaningful information for understanding the flow. Structure
+   *       managing the post-processing.
    * @{
    */
 
   /*! \var plot_writer
-   * Writer for monitoring the evolution of predefined global variables (the
-   * integral of the mass in the computational domain or the divergence of the
-   * velocity field for instance)
+   *       Writer for monitoring the evolution of predefined global variables
+   *       (the integral of the mass in the computational domain or the
+   *       divergence of the velocity field for instance)
    */
 
   cs_time_plot_t             *plot_writer;
 
   /*! \var velocity_divergence
-   *  Divergence of the velocity fied.
-   *  Pointer to a scalar-valued \ref cs_field_t
+   *       Divergence of the velocity fied.
+   *       Pointer to a scalar-valued \ref cs_field_t
    */
 
   cs_field_t                 *velocity_divergence;
 
   /*! \var pressure_gradient
-   *  Pressure gradient
-   *  Pointer to a vector-valued \ref cs_field_t
+   *       Pressure gradient
+   *       Pointer to a vector-valued \ref cs_field_t
    */
 
   cs_field_t                 *pressure_gradient;
 
   /*! \var kinetic_energy
-   *  Kinetic energy defined as \f$ 1/2 velocity \cdot velocity \f$
-   *  Pointer to a scalar-valued \ref cs_field_t
+   *       Kinetic energy defined as \f$ 1/2 velocity \cdot velocity \f$
+   *       Pointer to a scalar-valued \ref cs_field_t
    */
 
   cs_field_t                 *kinetic_energy;
 
   /*! \var mass_density
-   *  Mass density
-   *
-   *  Available when a Boussinesq approximation is on and a postprocessing has
-   *  been requested. Pointer to a scalar-valued \ref cs_field_t
+   *       Mass density
+   *       Available when a Boussinesq approximation is on and a postprocessing
+   *       has been requested. Pointer to a scalar-valued \ref cs_field_t
    */
 
   cs_field_t                 *mass_density;
 
   /*! \var mass_flux_balance
-   *  Cellwise balance of the mass flux. Useful to check settings
-   *  (injection/suction) or the expected behavior f the numerical algorithm.
+   *       Cellwise balance of the mass flux. Useful to check settings
+   *       (injection/suction) or the expected behavior of the numerical
+   *        algorithm.
   */
 
   cs_field_t                 *mass_flux_balance;
 
   /*! \var vorticity
-   *  Vorticity of the velocity field defined as curl(velocity)
-   *  Pointer to a vector-valued \ref cs_field_t
+   *       Vorticity of the velocity field defined as curl(velocity)
+   *       Pointer to a vector-valued \ref cs_field_t
    */
 
   cs_field_t                 *vorticity;
 
   /*! \var helicity
-   *  Helicity is defined as \f$ \int_c velocity \cdot \f$ vorticity
-   *  Pointer to a scalar-valued \ref cs_field_t
+   *       Helicity is defined as \f$ \int_c velocity \cdot \f$ vorticity
+   *       Pointer to a scalar-valued \ref cs_field_t
    */
 
   cs_field_t                 *helicity;
 
   /*! \var enstrophy
-   *  Enstrophy is defined as \f$ \int_c vorticity \cdot \f$ vorticity
-   *  Pointer to a scalar-valued \ref cs_field_t
+   *       Enstrophy is defined as \f$ \int_c vorticity \cdot \f$ vorticity
+   *       Pointer to a scalar-valued \ref cs_field_t
    */
 
   cs_field_t                 *enstrophy;
 
   /*! \var velocity_gradient
-   *  Pointer to a tensor-valued \ref cs_field_t
+   *       Pointer to a tensor-valued \ref cs_field_t
    */
 
   cs_field_t                 *velocity_gradient;
 
   /*! \var stream_function_eq
-   *  Pointer to a \ref cs_equation_t structure related to the computation
-   *  of the stream function -Laplacian(psi) = vorticity_z where psi is the
-   *  scalar-valued stream function. This is relevant only for a 2D
-   *  computation
+   *       Pointer to a \ref cs_equation_t structure related to the computation
+   *       of the stream function -Laplacian(psi) = vorticity_z where psi is
+   *       the scalar-valued stream function. This is relevant only for a 2D
+   *       computation
    */
 
   cs_equation_t              *stream_function_eq;
@@ -312,16 +310,17 @@ typedef struct {
    */
 
   /*! \var coupling_context
-   * Additional structure storing information according to the way equations
-   * of model for the Navier-Stokes system are coupled and thus solved
+   *       Additional structure storing information according to the way
+   *       equations of model for the Navier-Stokes system are coupled and thus
+   *       solved
    */
 
   void                       *coupling_context;
 
   /*! \var scheme_context
-   * Additional structure storing information according to the space
-   * discretization scheme used for solving the model for the Navier-Stokes
-   * system
+   *       Additional structure storing information according to the space
+   *       discretization scheme used for solving the model for the
+   *       Navier-Stokes system
    */
 
   void                       *scheme_context;
@@ -333,44 +332,44 @@ typedef struct {
    */
 
   /*! \var init_scheme_context
-   *  Pointer of functions related to the initialization of the context
-   *  structure related to a given discretization scheme for the resolution
-   *  of the Navier-Stokes system
+   *       Pointer of functions related to the initialization of the context
+   *       structure related to a given discretization scheme for the
+   *       resolution of the Navier-Stokes system
    */
 
   cs_navsto_init_scheme_context_t   *init_scheme_context;
 
   /*! \var free_scheme_context
-   *  Pointer of functions related to the destruction of the context
-   *  structure related to a given discretization scheme for the resolution
-   *  of the Navier-Stokes system
+   *       Pointer of functions related to the destruction of the context
+   *       structure related to a given discretization scheme for the
+   *       resolution of the Navier-Stokes system
    */
 
   cs_navsto_free_scheme_context_t   *free_scheme_context;
 
   /*! \var init_velocity
-   *  Pointer of functions related to the initialization of variable values
-   *  Case of the velocity
+   *       Pointer of functions related to the initialization of variable values
+   *       Case of the velocity
    */
 
   cs_navsto_init_values_t           *init_velocity;
 
   /*! \var init_pressure
-   *  Pointer of functions related to the initialization of variable values
-   *  Case of the pressure
+   *       Pointer of functions related to the initialization of variable values
+   *       Case of the pressure
    */
   cs_navsto_init_values_t           *init_pressure;
 
   /*! \var compute_steady
-   *  Pointer of functions related to resolution of the Navier-Stokes steady
-   *  system. Handle the build of the system and its resolution
+   *       Pointer of functions related to resolution of the Navier-Stokes
+   *       steady system. Handle the build of the system and its resolution
    */
 
   cs_navsto_compute_t               *compute_steady;
 
   /*! \var compute
-   *  Pointer of functions related to resolution of the Navier-Stokes unsteady
-   *  system. Handle the build of the system and its resolution
+   *       Pointer of functions related to resolution of the Navier-Stokes
+   *       unsteady system. Handle the build of the system and its resolution
    */
 
   cs_navsto_compute_t               *compute;
