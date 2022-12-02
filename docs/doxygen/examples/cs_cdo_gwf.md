@@ -35,20 +35,21 @@ Introduction {#sec_cdo_gwf_intro}
 
 The Hydrogeology module of code_saturne is a numerical model for groundwater
 flow and solute transport in continuous porous media. The flow part is based on
-the Richards equation, derived from the Darcy law and the conservation of
-mass. The transport part is based on the the classical advection-diffusion
-equation of tracers, slightly modified to account the specificities of
-groundwater transport.
+the Richards equation, derived from the Darcy law and the conservation of the
+mass of water in the soil. The transport part is based on the the classical
+advection-diffusion equation of tracers, slightly modified to take into account
+the specificities of groundwater transport.
 
 This module can be used to simulate transfers of water and solutes in several
 saturated and/or unsaturated porous media. The flow part can be steady or
-unsteady, with isotropic or anisotropic permeabilities and allows for any type
-of soil water retention model thanks to a user-defined model. Two classical
+unsteady, with isotropic or anisotropic soil permeabilities and allows for any
+type of soil water retention model thanks to a user-defined model. Two classical
 models are predefined: the saturated model and the van Genuchten-Mualen
-model. The transport part considers dispersion, sorption and radioactive
-decay. The partition between soil and water phases can be modeled by a
-classical Kd approach model. Additionaly solute precipitation/dissolution
-phenomena can also be taken into account by an instantaneous model.
+model. The transport part considers dispersion, sorption and radioactive decay
+in the case of a radioactive tracer. The sorption between soil and water phases
+is modeled by the classical Kd approach model. Additionaly solute
+precipitation/dissolution phenomena can also be taken into account by an
+instantaneous model.
 
 Physical concepts and equations are presented in the [theory guide](../../theory.pdf)
 
@@ -62,9 +63,9 @@ concepts underpinning CDO schemes.
 * [**Article:** New Polyhedral Discretisation Methods applied to the Richards Equation: CDO Schemes in Code Saturne][BoFoM18] ([**HAL** preprint version][BoFoM18_hal])
 
 
-To set-up a GWF computation, one has to update the cs_user_parameters.c file
-and edit the function \ref cs_user_model at least in simple cases. In more
-complex cases, editing \ref cs_user_finalize_setup should be necessary.
+To set-up a GWF computation, one has to update the cs_user_parameters.c file and
+edit the function \ref cs_user_model at least in simple cases. In more complex
+cases, editing \ref cs_user_finalize_setup should be necessary.
 
 
 Activate the GWF module {#sec_cdo_gwf_activate}
@@ -278,19 +279,27 @@ Here are collected two examples of such functions:
 Tracers
 =======
 
-The third step (which is not mandatory) is to add tracer(s) thanks to the
-function \ref cs_gwf_add_tracer This tracer will be advected by the Darcy flux
-arising from the Richards equation.
+The third step (which is not mandatory) is to add tracer(s). There are several
+ways to add a tracer or a set of tracers. All tracers will be advected by the
+Darcy flux arising from the Richards equation. There are currently two main
+models available which is specified with a parameter when adding a tracer:
 
-There are currently two models :
+  - a standard model (the default one) which can be upgraded with the following
+    tag:
+    - \ref CS_GWF_TRACER_PRECIPITATION to consider also the precipitation effect
+  - a user-defined model which is automatically associated to the tag \ref
+    CS_GWF_TRACER_USER
 
-  - a default model (the predefined one; see \ref cs_gwf_cdo_predef_tracer)
-  - a user-defined model (see \ref cs_gwf_cdo_user_tracer)
-
-The first parameter in \ref cs_gwf_add_tracer is a flag which can be built with
-
-  - \ref CS_GWF_TRACER_USER (to switch to a user-defined tracer)
-  - \ref CS_GWF_TRACER_PRECIPITATION (to add the precipitation effect)
+According to the type of tracer at stake, the following functions can be used to
+add tracers:
+    - \ref cs_gwf_add_tracer (an unsteady diffusion/convection equation)
+    - \ref cs_gwf_add_radioactive_tracer (an unsteady diffusion/convection
+      equation with a reaction term taking into account the radioactive decay)
+    - \ref cs_gwf_add_user_tracer (an equation defined terms by terms by the
+      user)
+    - \ref cs_gwf_add_decay_chain (a set of radioactive tracers whith a link
+      between the parent/child equations through a source/sink term at the
+      right-hand side)
 
 
 Predefined tracers
@@ -301,9 +310,38 @@ function \ref cs_user_model
 
 \snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_add_tracer
 
+Here is another example for a radioactive tracer taking into account
+precipitation effects. The two types of definition can be mixed in the same
+setting.
+
+\snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_add_rtracer
+
 Remark: Get a tracer structure.
 
 \snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_get_tracer
+
+Decay chain
+-----------
+
+A decay chain is a set of radioactive tracer equations which are linked. This
+link is expressed through a source term which is automatically defined. The
+order in the chain corresponds to the order in which the array of variables is
+given. According to the type of unit used to express the quantity of tracer in
+the soil (Becquerel or mole), the source term is modified.
+
+The two possibilities for the unit associated to a tracer is:
+- \ref CS_GWF_TRACER_UNIT_MOLE
+- \ref CS_GWF_TRACER_UNIT_BECQUEREL
+
+Here is a complete example to define the physical parameters associated to a
+decay chain
+
+\snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_add_decay_chain
+
+It is possible to retrieve the structure associated to a decay chain thanks to
+its name as follows:
+
+\snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_get_decay_chain
 
 
 User-defined tracers

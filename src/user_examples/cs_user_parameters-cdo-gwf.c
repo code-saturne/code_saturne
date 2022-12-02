@@ -302,7 +302,7 @@ cs_user_model(void)
   /* 3. Add and define tracer equations */
   /* ---------------------------------- */
 
-  /*! [param_cdo_gwf_add_rtracer] */
+  /*! [param_cdo_gwf_add_tracer] */
   {
     /*
       Add a tracer equation which is unsteady and convected by the darcean
@@ -339,12 +339,13 @@ cs_user_model(void)
   {
     /*
       Add a radioactive tracer equation which is unsteady and convected by the
-      darcean flux. A reaction term related to the first order deacy
+      darcean flux. A reaction term related to the first order decay
       coefficient is automatically added to the tracer equation. The created
       equation is called "eqname" along with a new field called "varname".
     */
 
     /* Default tracer model with precipitation effects */
+
     cs_gwf_tracer_model_t  model = CS_GWF_TRACER_PRECIPITATION;
 
     cs_gwf_tracer_t  *rtr = cs_gwf_add_radioactive_tracer(/* Tracer model */
@@ -377,10 +378,70 @@ cs_user_model(void)
   }
   /*! [param_cdo_gwf_add_rtracer] */
 
+  /*! [param_cdo_gwf_add_decay_chain] */
+  {
+    /*
+      Add a radioactive decay chain defining a set of linked tracer equations
+    */
+
+    /* Example of a chain with 3 tracers with the last one taking into account
+       the precipitation effects. Each tracer is associated to a quantity in
+       mole */
+
+    int  n_tracers = 3;
+    const char  *species_names[3] = {"grandfather", "father", "son"};
+    cs_gwf_tracer_model_t  models[3] = {0, 0, CS_GWF_TRACER_PRECIPITATION};
+    double  decay_rates[3] = {1e-3, 1e-5, 1e-4};
+
+    cs_gwf_tracer_decay_chain_t  *tdc =
+      cs_gwf_add_decay_chain(n_tracers,
+                             CS_GWF_TRACER_UNIT_MOLE,
+                             "my_decay_chain",
+                             species_names,
+                             models,
+                             decay_rates);
+
+    /* Now set the parameter associated to each couple (soil, tracer).
+     *
+     * Example with two soils named: "soil1" and "soil2"
+     */
+
+    const char  *soil_names[2] = {"soil1", "soil2"};
+    const double  kd_values[2][3] = {{1e-3, 5e-3, 4e-5},
+                                     {1e-3, 1e-3, 1e-5}};
+
+    for (int i = 0; i < tdc->n_tracers; i++) {
+
+      /* Retrieve the tracer in the chain */
+
+      cs_gwf_tracer_t  *rtr = tdc->tracers[i];
+
+      /* Set now the tracer for each soil */
+
+      for (int is = 0; is < 2; is++)
+        cs_gwf_tracer_set_soil_param(rtr,
+                                     soil_names[is],
+                                     0.,       /* water molecular diffusivity */
+                                     1., 0.,   /* alpha (longi. and trans.) */
+                                     kd_values[is][i]); /* distribution coef. */
+
+      /* Set the parameters for the precipitation model. One assumes the
+         parameter is the same for the two soils */
+
+      if (i == tdc->n_tracers - 1)
+        cs_gwf_tracer_set_precip_param(rtr,
+                                       NULL,  /* soil name/NULL for all */
+                                       1e-4); /* liquid conc. threshold */
+
+    } /* Loop on tracers */
+
+  }
+  /*! [param_cdo_gwf_add_decay_chain] */
+
   /*! [param_cdo_gwf_get_tracer] */
   {
-    /* If the tracer structure has been added but not already defined, one can
-     * retrieve it thanks to \ref cs_gwf_tracer_by_name
+    /* If the tracer structure has been added but not totally defined, one can
+     * retrieve it thanks to cs_gwf_tracer_by_name
      *
      * The name of the tracer is the same as the name of the associated
      * equation given at the creation of the tracer
@@ -389,6 +450,18 @@ cs_user_model(void)
     cs_gwf_tracer_t *tr = cs_gwf_tracer_by_name("Tracer_01");
   }
   /*! [param_cdo_gwf_get_tracer] */
+
+  /*! [param_cdo_gwf_get_decay_chain] */
+  {
+    /* If the decay chain structure has been added and one wants to access
+     * members of this structure, one can retrieve it thanks to
+     * cs_gwf_tracer_decay_chain_by_name
+     */
+
+    cs_gwf_tracer_decay_chain_t  *tdc =
+      cs_gwf_tracer_decay_chain_by_name("my_chain");
+  }
+  /*! [param_cdo_gwf_get_decay_chain] */
 }
 
 /*----------------------------------------------------------------------------*/
