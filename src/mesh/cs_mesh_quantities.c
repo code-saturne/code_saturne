@@ -3679,6 +3679,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   mq->b_f_face_surf = mq->b_face_surf;
 
   mq->cell_f_vol = mq->cell_vol;
+  mq->cell_f_cen = mq->cell_cen;
 
   /* Porous models */
   if (mq->c_disable_flag == NULL) {
