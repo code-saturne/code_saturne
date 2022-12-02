@@ -399,24 +399,35 @@
 
   \subsection cs_user_parameters_h_cdo_add_user_pty Add user-defined properties with CDO/HHO schemes
 
-  The add of a new user-defined property with CDO/HHO schemes is specified as follows:
+  The add of a new user-defined property with CDO/HHO schemes is specified as
+  follows:
 
   \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_properties
 
-  If you want to compute the Fourier number related to a given property in an unsteady simulation
+  If you want to compute the Fourier number related to a given property in an
+  unsteady simulation
+
   \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_properties_opt
 
   \subsection cs_user_parameters_h_cdo_add_user_adv_field Add user-defined advection field with CDO/HHO schemes
 
-  The definition of an advection field allows one to handle flows with a frozen velocity field or
-  the transport of scalar quantities without solving the Navier-Stokes system.
-  The add of a new user-defined advection field with CDO/HHO schemes is specified as follows:
+  The definition of an advection field allows one to handle flows with a frozen
+  velocity field or the transport of scalar quantities without solving the
+  Navier-Stokes system. The add of a new user-defined advection field with
+  CDO/HHO schemes is specified as follows:
 
   \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_adv_field
 
-  If you need to activate options related to advection fields, you can also specify
+  If you need to activate advanced options related to advection fields, you can also
+  specify a user-defined advection field as follows:
 
-  \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_adv_field_opt
+  \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_adv_field
+
+  When an advection is defined, it is possible to retrieve it and then set a
+  post-processing operation as follows:
+
+  \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_adv_field_post
+
 
   \section cs_user_parameters_h_cs_user_parameters Define or modify general numerical and physical user parameters
 
