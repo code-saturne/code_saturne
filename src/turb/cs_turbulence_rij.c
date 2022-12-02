@@ -3530,7 +3530,7 @@ cs_turbulence_rij_clip(cs_lnum_t  n_cells)
   cs_parall_max(3, CS_REAL_TYPE, rijmax);
 
   const cs_real_t trref = rijmax[0] + rijmax[1] + rijmax[2];
-  const cs_real_t rijref = cs_math_fmax(trref/3, cs_math_epzero);
+  const cs_real_t rijref = cs_math_fmax(trref/3., cs_math_epzero);
 
 # pragma omp parallel if(n_cells > CS_THR_MIN)
   {
@@ -3591,13 +3591,13 @@ cs_turbulence_rij_clip(cs_lnum_t  n_cells)
 
           eigen_min = cs_math_fmin(eigen_min, -eigen_tol);
           cs_real_t eigen_offset
-            = cs_math_fmin(-eigen_min/(1.0/3-eigen_min)+0.1, 1.0);
+            = cs_math_fmin(-eigen_min/(1.0/3.0-eigen_min)+0.1, 1.0);
 
           for (cs_lnum_t ii = 0; ii < 6; ii++) {
             cvar_rij[c_id][ii] = (1.0-eigen_offset)*cvar_rij[c_id][ii];
 
             if (ii < 3)
-              cvar_rij[c_id][ii] += trrij*(eigen_offset+eigen_tol)/3;
+              cvar_rij[c_id][ii] += trrij*(eigen_offset+eigen_tol)/3.;
 
             if (cpro_rij_clipped != NULL)
               cpro_rij_clipped[c_id][ii] = eigen_offset*cvar_rij[c_id][ii];
