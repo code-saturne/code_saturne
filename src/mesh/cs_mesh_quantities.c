@@ -3217,6 +3217,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                                    + v_w_inteface[0][i]
                                    + v_w_inteface[1][i] )
                                  * cs_math_3_norm(vn);
+
+        BFT_FREE(v_w_inteface);
       } // Interface
     } // neighbor cells loop
 
@@ -3458,6 +3460,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                                  + v_w_inteface[1][i] )
                                * cs_math_3_norm(vn);
 
+      BFT_FREE(v_w_inteface);
     }
 
     cs_lnum_t n_f_face_vertices = f_vtx_id;
