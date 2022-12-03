@@ -1083,6 +1083,7 @@ module optcal
 
   !> iscasp(ii) : index of the ii^th species (0 if not a species)
   integer, save ::          iscasp(nscamx)
+  ! Note that this is already mapped to C using a specific gas-mix structure.
 
   !> When iscavr(iscal)>0, \ref rvarfl is the coefficient \f$R_f\f$ in
   !> the dissipation term \f$\-\frac{\rho}{R_f}\frac{\varepsilon}{k}\f$

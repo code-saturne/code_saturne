@@ -1167,7 +1167,8 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
   const cs_real_3_t *restrict b_f_face_normal
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
   const cs_real_3_t *restrict i_f_face_cog
-    = (const cs_real_3_t *restrict)fvq->i_face_cog;// TODO create global field i_f_face_cog
+    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+  // TODO create global field i_f_face_cog
   const cs_real_3_t *restrict b_f_face_cog
     = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
 
@@ -1547,8 +1548,8 @@ _renormalize_scalar_gradient(const cs_mesh_t               *m,
 
   /* TODO change i_f_face_normal into i_f_face_normal_0 or 1
    * TODO merge the two loops, by default they should point toward the same
-   * array
-   * */
+   * array */
+
   if (cs_glob_porous_model == 3) {
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #     pragma omp parallel for
@@ -2065,14 +2066,14 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
           /* Reconstruction part */
           cs_real_t pfac
             =   coefap[f_id] * inc
-                + coefbp[f_id]
-                   * (  diipb[f_id][0] * (grad[c_id][0] - f_ext[c_id][0])
-                      + diipb[f_id][1] * (grad[c_id][1] - f_ext[c_id][1])
-                      + diipb[f_id][2] * (grad[c_id][2] - f_ext[c_id][2])
-                      + (b_face_cog[f_id][0]-cell_f_cen[c_id][0]) * f_ext[c_id][0]
-                      + (b_face_cog[f_id][1]-cell_f_cen[c_id][1]) * f_ext[c_id][1]
-                      + (b_face_cog[f_id][2]-cell_f_cen[c_id][2]) * f_ext[c_id][2]
-                      + poro);
+              + coefbp[f_id]
+                 * (  diipb[f_id][0] * (grad[c_id][0] - f_ext[c_id][0])
+                    + diipb[f_id][1] * (grad[c_id][1] - f_ext[c_id][1])
+                    + diipb[f_id][2] * (grad[c_id][2] - f_ext[c_id][2])
+                    + (b_face_cog[f_id][0]-cell_f_cen[c_id][0]) * f_ext[c_id][0]
+                    + (b_face_cog[f_id][1]-cell_f_cen[c_id][1]) * f_ext[c_id][1]
+                    + (b_face_cog[f_id][2]-cell_f_cen[c_id][2]) * f_ext[c_id][2]
+                    + poro);
 
           pfac += (coefbp[f_id] -1.0) * pvar[c_id];
 
@@ -4058,14 +4059,14 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
 
           cs_real_t pfaci
             =  ktpond
-                 * (  (i_face_cog[f_id][0] - cell_f_cen[c_id1][0])*f_ext[c_id1][0]
-                    + (i_face_cog[f_id][1] - cell_f_cen[c_id1][1])*f_ext[c_id1][1]
-                    + (i_face_cog[f_id][2] - cell_f_cen[c_id1][2])*f_ext[c_id1][2]
+                 * (  (i_face_cog[f_id][0]-cell_f_cen[c_id1][0])*f_ext[c_id1][0]
+                    + (i_face_cog[f_id][1]-cell_f_cen[c_id1][1])*f_ext[c_id1][1]
+                    + (i_face_cog[f_id][2]-cell_f_cen[c_id1][2])*f_ext[c_id1][2]
                     + poro[0])
             +  (1.0 - ktpond)
-                 * (  (i_face_cog[f_id][0] - cell_f_cen[c_id2][0])*f_ext[c_id2][0]
-                    + (i_face_cog[f_id][1] - cell_f_cen[c_id2][1])*f_ext[c_id2][1]
-                    + (i_face_cog[f_id][2] - cell_f_cen[c_id2][2])*f_ext[c_id2][2]
+                 * (  (i_face_cog[f_id][0]-cell_f_cen[c_id2][0])*f_ext[c_id2][0]
+                    + (i_face_cog[f_id][1]-cell_f_cen[c_id2][1])*f_ext[c_id2][1]
+                    + (i_face_cog[f_id][2]-cell_f_cen[c_id2][2])*f_ext[c_id2][2]
                     + poro[1]);
 
           cs_real_t pfacj = pfaci;
@@ -4217,7 +4218,8 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
 
     /* Contribution from coupled faces */
     if (cpl != NULL) {
-      cs_internal_coupling_initialize_scalar_gradient(cpl, c_weight, c_var, grad);
+      cs_internal_coupling_initialize_scalar_gradient
+        (cpl, c_weight, c_var, grad);
       cs_internal_coupling_reconstruct_scalar_gradient(cpl, r_grad, grad);
     }
 
@@ -6350,7 +6352,9 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
     /* Iterative process */
     /*-------------------*/
 
-    for (isweep = 1; isweep < n_r_sweeps && l2_residual > epsrgp*l2_norm; isweep++) {
+    for (isweep = 1;
+         isweep < n_r_sweeps && l2_residual > epsrgp*l2_norm;
+         isweep++) {
 
       /* Computation of the Right Hand Side*/
 
