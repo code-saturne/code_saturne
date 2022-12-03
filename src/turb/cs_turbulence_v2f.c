@@ -563,17 +563,17 @@ _solve_eq_fbr_al(const int         istprv,
       /* HTLES method */
         const cs_real_t x_psi  = htles_psi[i];
         const cs_real_t x_r    = htles_r[i];
-	const cs_real_t ll_ke  = pow(x_k, 1.5)/(x_psi*x_e);
+        const cs_real_t ll_ke  = pow(x_k, 1.5)/(x_psi*x_e);
         const cs_real_t ll_min = pow(x_r, 1.5)
           * cs_turb_cpalet*pow(cs_math_pow3(x_nu)/(x_psi*x_e), 0.25);
-	l2 =   cs_math_pow2(cs_turb_cpalcl)
+        l2 =   cs_math_pow2(cs_turb_cpalcl)
             * (cs_math_pow2(ll_ke) + cs_math_pow2(ll_min));
       }
       else {
         const cs_real_t ll_ke = pow(x_k, 1.5)/x_e;
         const cs_real_t ll_min
           = cs_turb_cpalet*pow(cs_math_pow3(x_nu)/x_e, 0.25);
-	l2 =   cs_math_pow2(cs_turb_cpalcl)
+        l2 =   cs_math_pow2(cs_turb_cpalcl)
             * (cs_math_pow2(ll_ke) + cs_math_pow2(ll_min));
       }
     }
@@ -835,8 +835,8 @@ _solve_eq_phi(const int           istprv,
   /* Explicit term, store temporarily in w2 */
 
   const cs_real_t d2s3 = 2.0/3.0;
-  cs_real_t sigmak = cs_field_get_key_double(CS_F_(k),
-                                             cs_field_key_id("turbulent_schmidt"));
+  cs_real_t sigmak = cs_field_get_key_double
+                       (CS_F_(k), cs_field_key_id("turbulent_schmidt"));
 
   if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
     const cs_real_t *cvar_fb = CS_F_(f_bar)->val;
@@ -870,9 +870,10 @@ _solve_eq_phi(const int           istprv,
         const cs_real_t tt_min = cs_turb_cpalct*sqrt(x_nu/(x_psi*x_e));
         const cs_real_t tt = sqrt(cs_math_pow2(tt_ke) + cs_math_pow2(tt_min));
         const cs_real_t fhomog = -1.0/tt*(  cs_turb_cpalc1-1.0
-	       				  + cs_turb_cpalc2*prdv2f[i]/(x_psi*x_e)/x_rho)
+                                          +   cs_turb_cpalc2*prdv2f[i]
+                                            / (x_psi*x_e)/x_rho)
                                         *(cvara_phi[i] - d2s3);
-	w2[i] = cell_f_vol[i] * (cs_math_pow3(cvara_al[i])*fhomog*x_rho
+        w2[i] = cell_f_vol[i] * (cs_math_pow3(cvara_al[i])*fhomog*x_rho
                                + 2./x_k *cpro_pcvto[i]/sigmak*grad_pk[i]);
         /* FIXME implicit negative w1 and fhomog */
       }
@@ -881,9 +882,9 @@ _solve_eq_phi(const int           istprv,
         const cs_real_t tt_min = cs_turb_cpalct*sqrt(x_nu/x_e);
         const cs_real_t tt = sqrt(cs_math_pow2(tt_ke) + cs_math_pow2(tt_min));
         const cs_real_t fhomog = -1.0/tt*(  cs_turb_cpalc1-1.0
-	       				  + cs_turb_cpalc2*prdv2f[i]/x_e/x_rho)
+                                          + cs_turb_cpalc2*prdv2f[i]/x_e/x_rho)
                                         *(cvara_phi[i] - d2s3);
-	w2[i] = cell_f_vol[i] * (cs_math_pow3(cvara_al[i])*fhomog*x_rho
+        w2[i] = cell_f_vol[i] * (cs_math_pow3(cvara_al[i])*fhomog*x_rho
                                + 2./x_k *cpro_pcvto[i]/sigmak*grad_pk[i]);
         /* FIXME implicit negative w1 and fhomog */
       }
@@ -929,9 +930,9 @@ _solve_eq_phi(const int           istprv,
       const cs_real_t al_3 = cs_math_pow3(cvara_al[i]);
 
       if (cs_glob_turb_model->hybrid_turb == 4) {
-	/* HTLES method */
+        /* HTLES method */
         const cs_real_t x_psi = htles_psi[i];
-	rhs[i] -= cell_f_vol[i] * (  prdv2f[i] + x_rho*(x_psi*cvara_ep[i])/2.
+        rhs[i] -= cell_f_vol[i] * (  prdv2f[i] + x_rho*(x_psi*cvara_ep[i])/2.
                                    * (1. - al_3))
                                 * cvar_phi[i] / cvara_k[i];
         rovsdt[i] += cell_f_vol[i] * (  prdv2f_m + x_rho*(x_psi*cvara_ep[i])/2.

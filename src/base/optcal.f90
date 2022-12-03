@@ -709,25 +709,25 @@ module optcal
   !> Useful if and only if \ref iturb = 40 or 41
   integer(c_int), pointer, save :: idries
 
-  !> Applied or not the Internal Consistency 
-  !> Constraint (ICC) for the HTLES model, 
-  !> in order to recover the correct RANS 
-  !> behavior when the energy ratio is forced 
+  !> Applied or not the Internal Consistency
+  !> Constraint (ICC) for the HTLES model,
+  !> in order to recover the correct RANS
+  !> behavior when the energy ratio is forced
   !> to one in the RANS region:
   !>   - 1: True (default)
   !>   - 0: False
   !> Useful if and only if \ref hybrid_turb=4
   integer(c_int), pointer, save :: iicc
 
-  !> Applied or not the two-fold shielding 
+  !> Applied or not the two-fold shielding
   !> function (\f$f_s(\xi_K,\xi_D)\f$ of HTLES,
-  !> to properly control the RANS-to-LES 
+  !> to properly control the RANS-to-LES
   !> transition in the vicinity of the wall:
   !>    - 1: True (default)
   !>    - 0: False
   !> Useful if and only if \ref hybrid_turb=4
   integer(c_int), pointer, save :: ishield
-  
+
   !> Wall boundary condition on omega in k-omega SST
   !> 0: Deprecated Neumann boundary condition
   !> 1: Dirichlet boundary condition consistent with Menter's
@@ -1686,7 +1686,7 @@ contains
     type(c_ptr) :: c_iicc, c_ishield
 
     call cs_f_turb_hybrid_model_get_pointers(c_iicc, c_ishield)
-    
+
     call c_f_pointer(c_iicc, iicc)
     call c_f_pointer(c_ishield, ishield)
 

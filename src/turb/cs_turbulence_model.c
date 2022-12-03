@@ -1050,7 +1050,7 @@ cs_f_turb_les_model_get_pointers(int     **idries);
 
 void
 cs_f_turb_hybrid_model_get_pointers(int  **iicc,
-				    int  **ishield);
+                                    int  **ishield);
 
 void
 cs_f_turb_reference_values(double  **almax,
@@ -1204,7 +1204,7 @@ cs_f_turb_les_model_get_pointers(int     **idries)
 
 void
 cs_f_turb_hybrid_model_get_pointers(int  **iicc,
-				    int  ** ishield)
+                                    int  ** ishield)
 {
   *iicc    = &(_turb_hybrid_model.iicc);
   *ishield = &(_turb_hybrid_model.ishield);
@@ -1941,7 +1941,7 @@ cs_turb_model_log_setup(void)
          cs_glob_turb_ref_values->uref,
          cs_glob_turb_rans_model->iclkep,
          cs_glob_turb_rans_model->ikecou,
-	 hybrid_turb_value_str[turb_model->hybrid_turb],
+         hybrid_turb_value_str[turb_model->hybrid_turb],
          cs_glob_turb_rans_model->igrake);
 
     if (   cs_glob_turb_rans_model->ikecou == 0

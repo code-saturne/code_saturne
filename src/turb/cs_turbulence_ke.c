@@ -1076,7 +1076,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                                     -  (cs_turb_cpale2-cs_turb_cpale4)
                                       / cs_turb_cpale2*w10[c_id]
                                       * cs_math_pow3(cvara_al[c_id])
-		  	  	      * (1. - xcr));
+                                      * (1. - xcr));
       }
       else {
         w10[c_id] = cs_turb_cpale2*(1.
@@ -1312,7 +1312,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
 
     if (cs_glob_turb_model->hybrid_turb == 0) {
-    
+
 #     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
@@ -1353,7 +1353,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
     }
     else if (cs_glob_turb_model->hybrid_turb == 4) {
       /* HTLES */
-      
+
 #     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
@@ -1361,14 +1361,14 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
         cs_real_t xnu   = cpro_pcvlo[c_id]/rho;
         cs_real_t xeps  = cvara_ep[c_id];
         cs_real_t xk    = cvara_k[c_id];
-	
-	/* HTLES method */
-	cs_real_t xpsi  = htles_psi[c_id];
-	cs_real_t xtm   = htles_t[c_id];
+        
+        /* HTLES method */
+        cs_real_t xpsi  = htles_psi[c_id];
+        cs_real_t xtm   = htles_t[c_id];
         cs_real_t xepsh = xk/xtm;
 
-	/* Modif. definition of Kolmogorov time scale */
-	cs_real_t ttke  = xk / xeps;
+        /* Modif. definition of Kolmogorov time scale */
+        cs_real_t ttke  = xk / xeps;
         cs_real_t ttmin = cs_turb_cpalct*sqrt(xnu/(xpsi*xeps));
         cs_real_t tt    = sqrt(cs_math_pow2(ttke) + cs_math_pow2(ttmin));
 

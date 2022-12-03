@@ -544,7 +544,7 @@ if (nscal.ge.1) then
     write(nfecra,6022) chaine(1:16),ii, rvarfl(ii)
   enddo
   write(nfecra,6032)
-  
+
   write(nfecra,6030)
   write(nfecra,6040)
   do ii = 1, nscal

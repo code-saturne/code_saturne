@@ -953,7 +953,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
         smbrw[c_id] += cell_f_vol[c_id]*(  ro*xgamma*prodw_dmut/xpsi
                                          - xbeta*ro*cs_math_pow2(xw)
                                          + 2.*ro/xpsi/xw*(1.-xxf1)
-					   /cs_turb_ckwsw2*gdkgdw[c_id]);
+                                           /cs_turb_ckwsw2*gdkgdw[c_id]);
 
         tinstw[c_id] +=   cell_f_vol[c_id]
                         * fmax(  -2.*ro/xpsi/cs_math_pow2(xw)*(1. - xxf1)
