@@ -1294,19 +1294,24 @@ cs_math_reduce_sym_prod_33_to_66(const cs_real_t  s[3][3],
       sout[i][j] = 0;
   }
 
-  /* Consider : W = R*s^t + s*R.
-   *            W_ij = Sum_{k<3} [s_jk*r_ik + s_ik*r_jk]
-   * We look for A such as A*R = W
+  /* Consider : W = s*R + R*s^t .
+   *            W_ij = Sum_{k<3} [s_ik*r_jk + s_jk*r_ik]
+   * We look for A_(ij,pq) such as A*R = W
+   *
+   * so
+   *   A_(ij,jk) takes s_ik
+   * and
+   *   A_(ij,ik) takes s_jk
    */
-  for (int i = 0; i < 6; i++) {
-    int ii = iv2t[i];
-    int jj = jv2t[i];
+  for (int ij = 0; ij < 6; ij++) {
+    int i = iv2t[ij];
+    int j = jv2t[ij];
     for (int k = 0; k < 3; k++) {
-      int ik = t2v[k][ii];
-      int jk = t2v[k][jj];
+      int ik = t2v[i][k];
+      int jk = t2v[j][k];
 
-      sout[ik][i] += s[k][jj];
-      sout[jk][i] += s[k][ii];
+      sout[ij][ik] += s[j][k];
+      sout[ij][jk] += s[i][k];
     }
   }
 }
