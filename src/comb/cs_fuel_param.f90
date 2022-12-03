@@ -114,11 +114,6 @@ do isc = 1, nscapp
   turb_schmidt = 0.7d0
   call field_set_key_double(ivarfl(isca(jj)), ksigmas, turb_schmidt)
 
-! ------ Coeff dissipation des fluctuations
-
-  rvarfl = 0.8d0
-  call field_set_key_double(ivarfl(isca(jj)), krvarfl, rvarfl)
-
   ii = isca(iscapp(isc))
 
   call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)

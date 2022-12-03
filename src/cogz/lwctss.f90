@@ -310,8 +310,7 @@ if (ivar.eq.isca(icoyfp)) then
 ! terme implicite
 
 
-    w11(iel) = w11(iel)/(w10(iel)*rvarfl)                         &
-         *volume(iel)*crom(iel)
+    w11(iel) = w11(iel)/(w10(iel)*rvarfl)*volume(iel)*crom(iel)
     rovsdt(iel) = rovsdt(iel) + max(w11(iel),zero)
 
 ! terme de gradient

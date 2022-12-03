@@ -268,8 +268,7 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
       xe = cmu*xk*cvara_omg(iel)
     endif
 
-    rhovst = crom(iel)*xe/                                           &
-             (xk * rvarfl)*volume(iel)
+    rhovst = crom(iel)*xe/(xk * rvarfl)*volume(iel)
     rovsdt(iel) = rovsdt(iel) + max(zero,rhovst)
     smbrs(iel) = smbrs(iel) +                                        &
                 2.d0*visct(iel)*volume(iel)/turb_schmidt             &

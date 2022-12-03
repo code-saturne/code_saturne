@@ -616,8 +616,7 @@ if (nscal.gt.0) then
   do ii = 1, nscal
     call field_get_key_double(ivarfl(isca(ii)), krvarfl, rvarfl)
 
-    if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal.and.               &
-                           rvarfl.le.0.d0) then
+    if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal.and.rvarfl.le.0.d0) then
       call field_get_label(ivarfl(isca(ii)), chaine)
       write(nfecra,4380)chaine(1:16),ii,rvarfl
       iok = iok + 1
@@ -1426,7 +1425,7 @@ endif
 '@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&
 '@  RVARFL is the coefficient R for the scalar I (which is', /,&
-'@ a variance) related to the dissipation equation sourceterme',/,&
+'@ a variance) related to the dissipation equation source term',/,&
 '@    - (1/R) rho scalaire epsilon/k',                          /,&
 '@',                                                            /,&
 '@ Check the input data.',                                      /,&
