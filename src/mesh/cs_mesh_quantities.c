@@ -976,8 +976,8 @@ _correct_cell_face_center(const cs_mesh_t  *mesh,
       /* F = I + lambda * IJ */
       for (int i = 0; i < 3; i++)
         i_face_cen[face_id][i] = cell_cen[cell_id1][i]
-                               + lambda * (   cell_cen[cell_id2][i]
-                                            - cell_cen[cell_id1][i]);
+                               + lambda * (  cell_cen[cell_id2][i]
+                                           - cell_cen[cell_id1][i]);
     }
 
     /* Compute the projection of I on the boundary face: b_face_cen */
@@ -995,7 +995,8 @@ _correct_cell_face_center(const cs_mesh_t  *mesh,
 
         for (int i = 0; i < 3; i++)
           b_face_cen[face_id][i] = cell_cen[cell_id][i] + lambda * normal[i];
-      } else {
+      }
+      else {
         for (int i = 0; i < 3; i++)
           b_face_cen[face_id][i] =  b_face_cog[face_id][i];
       }
@@ -1055,9 +1056,9 @@ _correct_cell_face_center(const cs_mesh_t  *mesh,
       }
 
       for (cs_lnum_t cell_id = 0; cell_id <  mesh->n_cells; cell_id++) {
-        double vol = (   dxidxj[cell_id][0][0]
-                       + dxidxj[cell_id][1][1]
-                       + dxidxj[cell_id][2][2] ) / 3.;
+        double vol = (  dxidxj[cell_id][0][0]
+                      + dxidxj[cell_id][1][1]
+                      + dxidxj[cell_id][2][2]) / 3.;
 
         //FIXME
         if (vol >= 0)
@@ -2473,8 +2474,8 @@ _compute_fluid_solid_cell_quantities(const cs_mesh_t     *m,
                                                             c_w_face_cog[c_id],
                                                             c_w_face_normal[c_id]);
       for (cs_lnum_t i = 0; i < 3; i++)
-          _cell_f_cen[c_id][i] += pyra_vol_3 *(  0.75*c_w_face_cog[c_id][i]
-                                            + 0.25*a_cell_cen[c_id][i]);
+        _cell_f_cen[c_id][i] += pyra_vol_3 *(  0.75*c_w_face_cog[c_id][i]
+                                             + 0.25*a_cell_cen[c_id][i]);
       _cell_f_vol[c_id] += pyra_vol_3;
 
     }
@@ -3677,6 +3678,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   mq->b_f_face_normal = mq->b_face_normal;
   mq->i_f_face_surf = mq->i_face_surf;
   mq->b_f_face_surf = mq->b_face_surf;
+  mq->b_f_face_cog = mq->b_face_cog;
 
   mq->cell_f_vol = mq->cell_vol;
   mq->cell_f_cen = mq->cell_cen;
