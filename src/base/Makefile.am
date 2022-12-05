@@ -162,6 +162,7 @@ cs_restart_map.h \
 cs_rotation.h \
 cs_runaway_check.h \
 cs_sat_coupling.h \
+cs_scalar_clipping.h \
 cs_search.h \
 cs_selector.h \
 cs_sort.h \
@@ -254,7 +255,6 @@ altycl.f90 \
 calhyd.f90 \
 caltri.f90 \
 cs_mass_source_terms.c \
-clpsca.f90 \
 clptrg.f90 \
 clptur.f90 \
 clsyvt.f90 \
@@ -342,6 +342,7 @@ cs_restart_map.c \
 cs_rotation.c \
 cs_runaway_check.c \
 cs_sat_coupling.c \
+cs_scalar_clipping.c\
 cs_search.c \
 cs_selector.c \
 cs_selector_f2c.f90 \

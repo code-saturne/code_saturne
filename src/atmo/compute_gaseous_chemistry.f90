@@ -59,6 +59,7 @@ use mesh
 use field
 use dimens
 use atchem
+use cs_c_bindings
 
 implicit none
 

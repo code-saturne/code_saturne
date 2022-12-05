@@ -95,6 +95,7 @@
 #include "cs_rotation.h"
 #include "cs_runaway_check.h"
 #include "cs_sat_coupling.h"
+#include "cs_scalar_clipping.h"
 #include "cs_selector.h"
 #include "cs_syr_coupling.h"
 #include "cs_thermal_model.h"

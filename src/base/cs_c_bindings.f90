@@ -343,6 +343,17 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Scalar clipping
+
+    subroutine cs_f_scalar_clipping(f_id)  &
+      bind(C, name='cs_f_scalar_clipping')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(in), value :: f_id
+    end subroutine cs_f_scalar_clipping
+
+    !---------------------------------------------------------------------------
+
     ! Temporal and z-axis interpolation for meteorological profiles
 
     function cs_intprf(nprofz, nproft, profz, proft,              &
@@ -5528,5 +5539,28 @@ contains
   end subroutine atmo_chemistry_set_aerosol_file_name
 
   !=============================================================================
+  !> brief Clipping scalar field.
+  ! \param[in]   iscal
 
-  end module cs_c_bindings
+  subroutine clpsca(iscal)
+
+    use, intrinsic :: iso_c_binding
+    use numvar
+    implicit none
+
+    ! Arguments
+    integer, intent(in) :: iscal
+
+    ! Local variables
+
+    integer(c_int) :: f_id
+
+    f_id = ivarfl(isca(iscal))
+
+    call cs_f_scalar_clipping(f_id)
+
+  end subroutine clpsca
+
+ !=============================================================================
+
+end module cs_c_bindings
