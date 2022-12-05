@@ -158,17 +158,6 @@ void CS_PROCF (csisui, CSISUI) (int *ntsuit,
 void CS_PROCF (cstime, CSTIME) (void);
 
 /*----------------------------------------------------------------------------
- *
- * Fortran Interface:
- *
- * SUBROUTINE UINUM1
- * *****************
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uinum1, UINUM1) (double *cdtvar);
-
-/*----------------------------------------------------------------------------
  * Global numerical parameters.
  *
  * Fortran Interface:
@@ -323,6 +312,13 @@ void CS_PROCF (uieres, UIERES) (int *iescal,
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Space scheme options, linear solver precision and time step factor
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_equation_parameters(void);
 
 /*-----------------------------------------------------------------------------
  * Free memory: clean global private variables.

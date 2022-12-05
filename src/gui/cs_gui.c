@@ -1840,87 +1840,6 @@ void CS_PROCF (cstime, CSTIME) (void)
 }
 
 /*----------------------------------------------------------------------------
- * Space scheme options, linear solver precision and time step factor
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
-{
-  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  const int var_key_id = cs_field_key_id("variable_id");
-  const int keysca = cs_field_key_id("scalar_id");
-  cs_var_cal_opt_t var_cal_opt;
-
-  int n_fields = cs_field_n_fields();
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
-    if (f->type & CS_FIELD_VARIABLE) {
-      int j = cs_field_get_key_int(f, var_key_id) -1;
-      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-
-      const char *ref_name = f->name;
-      if (   cs_gui_strcmp(f->name, "r11")
-          || cs_gui_strcmp(f->name, "r22")
-          || cs_gui_strcmp(f->name, "r33")
-          || cs_gui_strcmp(f->name, "r12")
-          || cs_gui_strcmp(f->name, "r23")
-          || cs_gui_strcmp(f->name, "r13"))
-        ref_name = "rij";
-
-      cs_tree_node_t *tn_v = _find_node_variable(ref_name);
-
-      cs_gui_node_get_child_real(tn_v, "solver_precision", &var_cal_opt.epsilo);
-      cs_gui_node_get_child_status_int(tn_v, "flux_reconstruction",
-                                       &var_cal_opt.ircflu);
-      cs_gui_node_get_child_int(tn_v, "rhs_reconstruction",
-                                &var_cal_opt.nswrsm);
-      cs_gui_node_get_child_int(tn_v, "verbosity", &var_cal_opt.verbosity);
-
-      /* For CDO equation, if non-automatic value ie != -1 */
-      cs_equation_param_t *eqp = cs_equation_param_by_name(f->name);
-      if (   eqp != NULL && cs_gui_is_equal_real(var_cal_opt.epsilo, -1) == 0
-          && eqp->sles_param != NULL)
-        eqp->sles_param->eps = var_cal_opt.epsilo;
-
-      /* convection scheme options */
-      if (var_cal_opt.iconv > 0) {
-        cs_gui_node_get_child_real(tn_v, "blending_factor",
-                                   &var_cal_opt.blencv);
-        _order_scheme_value(tn_v, &var_cal_opt.ischcv);
-        _slope_test_value(tn_v, &var_cal_opt.isstpc);
-      }
-
-      /* set field calculation options */
-      cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
-
-      /* only for additional variables (user or model) */
-      int isca = cs_field_get_key_int(f, keysca);
-      if (isca > 0) {
-        /* time step factor */
-        cs_gui_node_get_child_real(tn_v, "time_step_factor", &cdtvar[j]);
-      }
-    }
-  }
-
-#if _XML_DEBUG_
-  bft_printf("==> %s\n", __func__);
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-    const cs_field_t  *f = cs_field_by_id(f_id);
-    if (f->type & CS_FIELD_VARIABLE) {
-      j = cs_field_get_key_int(f, var_key_id) -1;
-      bft_printf("-->variable[%i] = %s\n", j, f->name);
-      bft_printf("--blencv = %f\n", var_cal_opt.blencv);
-      bft_printf("--epsilo = %g\n", var_cal_opt.epsilo);
-      bft_printf("--cdtvar = %g\n", cdtvar[j]);
-      bft_printf("--ischcv = %i\n", var_cal_opt.ischcv);
-      bft_printf("--isstpc = %i\n", var_cal_opt.isstpc);
-      bft_printf("--ircflu = %i\n", var_cal_opt.ircflu);
-      bft_printf("--nswrsm = %i\n", var_cal_opt.nswrsm);
-    }
-  }
-#endif
-}
-
-/*----------------------------------------------------------------------------
  * Define porosity.
  *
  * Fortran Interface:
@@ -2832,8 +2751,92 @@ void CS_PROCF (uieres, UIERES) (int *iescal,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Initialize GUI reader structures.
+ * Space scheme options, linear solver precision and time step factor
  *----------------------------------------------------------------------------*/
+
+void
+cs_gui_equation_parameters(void)
+{
+  const int var_key_id = cs_field_key_id("variable_id");
+  const int keysca = cs_field_key_id("scalar_id");
+  const int k_ts_fact = cs_field_key_id("time_step_factor");
+
+  int n_fields = cs_field_n_fields();
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (f->type & CS_FIELD_VARIABLE) {
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      cs_equation_param_t *eqp_eq = NULL;
+
+      int j = cs_field_get_key_int(f, var_key_id) -1;
+
+      const char *ref_name = f->name;
+      if (   cs_gui_strcmp(f->name, "r11")
+          || cs_gui_strcmp(f->name, "r22")
+          || cs_gui_strcmp(f->name, "r33")
+          || cs_gui_strcmp(f->name, "r12")
+          || cs_gui_strcmp(f->name, "r23")
+          || cs_gui_strcmp(f->name, "r13"))
+        ref_name = "rij";
+
+      cs_tree_node_t *tn_v = _find_node_variable(ref_name);
+
+      cs_gui_node_get_child_real(tn_v, "solver_precision", &(eqp->epsilo));
+      cs_gui_node_get_child_status_int(tn_v, "flux_reconstruction",
+                                       &(eqp->ircflu));
+      cs_gui_node_get_child_int(tn_v, "rhs_reconstruction",
+                                &(eqp->nswrsm));
+      cs_gui_node_get_child_int(tn_v, "verbosity", &(eqp->verbosity));
+
+      /* For CDO equation, if non-automatic value ie != -1 */
+      if (eqp_eq == NULL)
+        eqp_eq = cs_equation_param_by_name(f->name);
+
+      if (   eqp_eq != NULL && cs_gui_is_equal_real(eqp_eq->epsilo, -1) == 0
+          && eqp_eq->sles_param != NULL)
+        eqp_eq->sles_param->eps = eqp->epsilo;
+
+      /* convection scheme options */
+      if (eqp->iconv > 0) {
+        cs_gui_node_get_child_real(tn_v, "blending_factor",
+                                   &(eqp->blencv));
+        _order_scheme_value(tn_v, &(eqp->ischcv));
+        _slope_test_value(tn_v, &(eqp->isstpc));
+      }
+
+      /* only for additional variables (user or model) */
+      int isca = cs_field_get_key_int(f, keysca);
+      if (isca > 0) {
+        /* time step factor */
+        double cdtvar = cs_field_get_key_double(f, k_ts_fact);
+        cs_gui_node_get_child_real(tn_v, "time_step_factor", &cdtvar);
+        cs_field_set_key_double(f, k_ts_fact, cdtvar);
+      }
+    }
+  }
+
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    const cs_field_t  *f = cs_field_by_id(f_id);
+    if (f->type & CS_FIELD_VARIABLE) {
+      j = cs_field_get_key_int(f, var_key_id) -1;
+      bft_printf("-->variable[%i] = %s\n", j, f->name);
+      bft_printf("--blencv = %f\n", eqp->blencv);
+      bft_printf("--epsilo = %g\n", eqp->epsilo);
+      bft_printf("--ischcv = %i\n", eqp->ischcv);
+      bft_printf("--isstpc = %i\n", eqp->isstpc);
+      bft_printf("--ircflu = %i\n", eqp->ircflu);
+      bft_printf("--nswrsm = %i\n", eqp->nswrsm);
+      if (cs_field_get_key_int(f, keysca) > 0) {
+        double cdtvar = cs_field_get_key_double(f, k_ts_fact);
+        cs_gui_node_get_child_real(tn_v, "time_step_factor", &cdtvar);
+        bft_printf("--cdtvar = %g\n", cdtvar);
+      }
+    }
+  }
+#endif
+}
 
 /*-----------------------------------------------------------------------------
  * Free memory: clean global private variables.

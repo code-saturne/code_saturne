@@ -86,11 +86,9 @@ implicit none
 integer          nmodpp
 integer          nscmax
 integer          l_size, f_id, ii
-integer          error, n_elts, kcdtvar
+integer          error, n_elts
 double precision l_cp(1), l_xmasm(1), l_cv(1)
 integer, dimension(:), pointer :: elt_ids
-double precision, dimension(:), allocatable :: cdtvar
-
 
 !===============================================================================
 
@@ -125,6 +123,12 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_gui_define_fans
+
+  subroutine cs_gui_equation_parameters()  &
+       bind(C, name='cs_gui_equation_parameters')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_equation_parameters
 
   subroutine cs_gui_numerical_options()  &
        bind(C, name='cs_gui_numerical_options')
@@ -193,6 +197,8 @@ interface
 end interface
 
 !===============================================================================
+
+elt_ids => null()
 
 ! Check for restart and read matching time steps
 
@@ -395,14 +401,7 @@ call cstime()
 
 ! Local numerical options
 
-allocate(cdtvar(nvarmx))
-call field_get_key_id("time_step_factor", kcdtvar)
-
-call uinum1(cdtvar)
-do ii = 1, nvarmx
-  call field_set_key_double(ivarfl(ii), kcdtvar, cdtvar(ii))
-end do
-deallocate(cdtvar)
+call cs_gui_equation_parameters
 
 ! If CDO mode only, no pressure is defined at this stage
 if (icdo.lt.2) then
