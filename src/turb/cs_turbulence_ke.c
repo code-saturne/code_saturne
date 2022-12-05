@@ -1361,7 +1361,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
         cs_real_t xnu   = cpro_pcvlo[c_id]/rho;
         cs_real_t xeps  = cvara_ep[c_id];
         cs_real_t xk    = cvara_k[c_id];
-        
+
         /* HTLES method */
         cs_real_t xpsi  = htles_psi[c_id];
         cs_real_t xtm   = htles_t[c_id];
