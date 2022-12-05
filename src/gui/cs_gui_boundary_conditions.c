@@ -157,19 +157,6 @@ typedef struct {
 /* xdef contexts associated to various cases
    ----------------------------------------- */
 
-/*! Arguments passed by context pointer to cs_meg_* functions */
-
-typedef struct {
-
-  const  cs_zone_t    *zone;        /*<! Pointer to zone */
-
-  const  char         *name;        /*<! Pointer to field or array name */
-  const  char         *condition;   /*<! Pointer to condition name type */
-
-  int                  dim;         /*<! Values dimension */
-
-} cs_gui_boundary_meg_context_t;
-
 /*! Arguments passed by context pointer using "per zone" values */
 
 typedef struct {
@@ -252,69 +239,6 @@ _add_boundary_const_context(const  cs_zone_t   *zone,
   _n_b_contexts += 1;
 
   return c;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Add new MEG-based cs_dof_func_t context info.
- *
- * \param[in]  zone       pointer to associated zone
- * \param[in]  name       name of associated field or array
- * \param[in]  condition  associated condition type
- * \param[in]  dim        associated dimension
- *
- * \return: pointer to cs_dof_func_t context info
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_gui_boundary_meg_context_t *
-_add_boundary_meg_context(const  cs_zone_t   *zone,
-                          const  char        *name,
-                          const  char        *condition,
-                          int                 dim)
-{
-  BFT_REALLOC(_b_contexts,
-              _n_b_contexts+1,
-              void *);
-
-  cs_gui_boundary_meg_context_t  *c = NULL;
-  BFT_MALLOC(c, 1, cs_gui_boundary_meg_context_t);
-
-  c->zone = zone;
-  c->name = name;
-  c->condition = condition;
-  c->dim = dim;
-
-  /* Now set in structure */
-
-  _b_contexts[_n_b_contexts] = c;
-  _n_b_contexts += 1;
-
-  return c;
-}
-
-/*----------------------------------------------------------------------------
- * Return a pointer to equation parameters based on a field or equation name.
- *
- * parameters:
- *   name <-- field or equation name
- *
- * return:
- *   pointer to matching child string
- *----------------------------------------------------------------------------*/
-
-static cs_equation_param_t *
-_get_equation_param(const char  *name)
-{
-  cs_equation_param_t *eqp = NULL;
-
-  cs_field_t *f = cs_field_by_name_try(name);
-  if (f != NULL)
-    eqp = cs_field_get_equation_param(f);
-
-  /* FIXME: else get by equation name */
-
-  return eqp;
 }
 
 /*----------------------------------------------------------------------------
@@ -799,7 +723,7 @@ static void
 _set_vel_profile(cs_tree_node_t    *tn_vp,
                  const  cs_zone_t  *z)
 {
-  cs_equation_param_t *eqp = _get_equation_param("velocity");
+  cs_equation_param_t *eqp = cs_gui_get_equation_param("velocity");
 
   if (cs_equation_find_bc(eqp, z->name) != NULL)   /* Ignore if already set */
     return;                                        /* (priority) */
@@ -1259,7 +1183,7 @@ _sliding_wall(cs_tree_node_t   *tn_vp,
               const char       *z_name)
 {
   const char f_name[] = "velocity";
-  cs_equation_param_t *eqp = _get_equation_param(f_name);
+  cs_equation_param_t *eqp = cs_gui_get_equation_param(f_name);
 
   if (cs_equation_find_bc(eqp, z_name) != NULL)  /* Ignore if already set */
     return;
@@ -1324,76 +1248,6 @@ _inlet_turbulence(cs_tree_node_t  *tn_bc,
     if (v != NULL)
       boundaries->xintur[izone] = v[0] * 0.01;
   }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief cs_dof_func_t function to compute a boundary profiles
- *        using a MEG generated function.
- *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
- * be accessed with an indirection. The same indirection can be applied to fill
- * retval if dense_output is set to false.
- * In the current case, retval is allocated to mesh->n_b_faces
- *
- * \param[in]      n_elts        number of elements to consider
- * \param[in]      elt_ids       list of elements ids
- * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
- * \param[in, out] retval        resulting value(s). Must be allocated.
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_dof_meg_profile(cs_lnum_t         n_elts,
-                 const cs_lnum_t  *elt_ids,
-                 bool              dense_output,
-                 void             *input,
-                 cs_real_t        *retval)
-{
-  cs_gui_boundary_meg_context_t  *c
-    = (cs_gui_boundary_meg_context_t *)input;
-
-  cs_real_t *v_loc = cs_meg_boundary_function(c->zone,
-                                              c->name,
-                                              c->condition);
-
-  const cs_lnum_t dim = c->dim;
-
-  if (dense_output) {  /* common/expected case */
-
-    if (dim == 1) {
-      for (cs_lnum_t i = 0; i < n_elts; i++) {
-        retval[i] = v_loc[i];
-      }
-    }
-    else {
-      for (cs_lnum_t i = 0; i < n_elts; i++) {
-        for (cs_lnum_t k = 0; k < dim; k++)
-          retval[i*dim + k] = v_loc[k*n_elts + i];
-      }
-    }
-
-  }
-  else { /* sparse/indirect case */
-
-    if (dim == 1) {
-      for (cs_lnum_t i = 0; i < n_elts; i++) {
-        cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
-        retval[elt_id] = v_loc[i];
-      }
-    }
-    else {
-      for (cs_lnum_t i = 0; i < n_elts; i++) {
-        cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
-        for (cs_lnum_t k = 0; k < dim; k++)
-          retval[elt_id*dim + k] = v_loc[k*n_elts + i];
-      }
-    }
-
-  }
-
-  BFT_FREE(v_loc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1562,7 +1416,7 @@ _boundary_elec_potential(cs_tree_node_t       *tn_s,
 
       if (s != NULL) {
         cs_gui_boundary_meg_context_t  *c
-          = _add_boundary_meg_context(z, f->name, choice, f->dim);
+          = cs_gui_boundary_add_meg_context(z, f->name, choice, f->dim);
 
         cs_equation_add_bc_by_dof_func(eqp,
                                        bc_wall_prescribed,
@@ -1635,7 +1489,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
   cs_tree_node_t *tn_s = cs_tree_node_get_child(tn_bc, "scalar");
   tn_s = cs_tree_node_get_sibling_with_tag(tn_s, "name", f->name);
 
-  cs_equation_param_t *eqp = _get_equation_param(f->name);
+  cs_equation_param_t *eqp = cs_gui_get_equation_param(f->name);
 
   /* Some specific models or the user may have associated boundary
      conditions already, so if the value here is the default, it should
@@ -1743,7 +1597,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
 
     if (s != NULL) {
       cs_gui_boundary_meg_context_t  *c
-        = _add_boundary_meg_context(z, f->name, choice, dim);
+        = cs_gui_boundary_add_meg_context(z, f->name, choice, dim);
 
       if (f == CS_F_(h) && cs_gui_strcmp(cnv, "temperature"))
         cs_equation_add_bc_by_dof_func(eqp,
@@ -1758,7 +1612,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
                                        bc_wall_prescribed,
                                        z->name,
                                        cs_flag_boundary_face,
-                                       _dof_meg_profile,
+                                       cs_gui_boundary_conditions_dof_func_meg,
                                        c);
       }
 
@@ -1771,13 +1625,13 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
     const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
     if (s != NULL) {
       cs_gui_boundary_meg_context_t  *c
-        = _add_boundary_meg_context(z, f->name, choice, dim);
+        = cs_gui_boundary_add_meg_context(z, f->name, choice, dim);
 
       cs_equation_add_bc_by_dof_func(eqp,
                                      CS_PARAM_BC_NEUMANN,
                                      z->name,
                                      cs_flag_boundary_face,
-                                     _dof_meg_profile,
+                                     cs_gui_boundary_conditions_dof_func_meg,
                                      c);
     }
 
@@ -1788,7 +1642,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
     const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
     if (s != NULL) {
       cs_gui_boundary_meg_context_t  *c
-        = _add_boundary_meg_context(z, f->name, choice, dim);
+        = cs_gui_boundary_add_meg_context(z, f->name, choice, dim);
 
       cs_equation_add_bc_by_dof_func(eqp,
                                      CS_PARAM_BC_ROBIN,
@@ -2023,7 +1877,7 @@ _inlet_compressible(cs_tree_node_t  *tn_vp,
     if (status)
       cs_gui_node_get_real(tn, &te_in);
 
-    cs_equation_param_t *eqp = _get_equation_param("total_energy");
+    cs_equation_param_t *eqp = cs_gui_get_equation_param("total_energy");
     cs_equation_remove_bc(eqp, z->name);
     cs_equation_add_bc_by_value(eqp,
                                 CS_PARAM_BC_DIRICHLET,
@@ -2041,7 +1895,7 @@ _inlet_compressible(cs_tree_node_t  *tn_vp,
     cs_real_t h_in = cs_math_infinite_r;
     cs_gui_node_get_child_real(tn_vp, "enthalpy", &h_in);
 
-    cs_equation_param_t *eqp = _get_equation_param("total_energy");
+    cs_equation_param_t *eqp = cs_gui_get_equation_param("total_energy");
     cs_equation_remove_bc(eqp, z->name);
     cs_equation_add_bc_by_value(eqp,
                                 CS_PARAM_BC_DIRICHLET,
@@ -2076,7 +1930,7 @@ _outlet_compressible(cs_tree_node_t  *tn_bc,
     boundaries->itype[izone] = CS_SOPCF;
 
     const char name[] = "pressure";
-    cs_equation_param_t *eqp = _get_equation_param(name);
+    cs_equation_param_t *eqp = cs_gui_get_equation_param(name);
 
     tn = cs_tree_node_get_child(tn_bc, "dirichlet");
     tn = cs_tree_node_get_sibling_with_tag(tn, "name", name);
@@ -2116,7 +1970,7 @@ _boundary_darcy(cs_tree_node_t   *tn_bc,
 
   cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(head));
   if (eqp == NULL)
-    eqp = _get_equation_param("pressure_head"); /* CDO version */
+    eqp = cs_gui_get_equation_param("pressure_head"); /* CDO version */
 
   if (cs_equation_find_bc(eqp, z->name) != NULL)  /* Ignore if already set */
     return;
@@ -2146,12 +2000,12 @@ _boundary_darcy(cs_tree_node_t   *tn_bc,
     const char *formula = cs_tree_node_get_child_value_str(tn, "formula");
     if (formula != NULL) {
       cs_gui_boundary_meg_context_t  *c
-        = _add_boundary_meg_context(z, "hydraulic_head", choice, 1);
+        = cs_gui_boundary_add_meg_context(z, "hydraulic_head", choice, 1);
       cs_equation_add_bc_by_dof_func(eqp,
                                      CS_PARAM_BC_DIRICHLET,
                                      z->name,
                                      cs_flag_boundary_face,
-                                     _dof_meg_profile,
+                                     cs_gui_boundary_conditions_dof_func_meg,
                                      c);
    }
     else {
@@ -2180,7 +2034,7 @@ _boundary_imposed_pressure(cs_tree_node_t  *tn_bc,
   cs_real_t value = 0;
   cs_gui_node_get_real(tn, &value);
 
-  cs_equation_param_t *eqp = _get_equation_param(name);
+  cs_equation_param_t *eqp = cs_gui_get_equation_param(name);
 
   if (cs_equation_find_bc(eqp, z_name) == NULL)  /* Ignore if already set */
     cs_equation_add_bc_by_value(eqp,
@@ -3793,6 +3647,115 @@ cs_gui_boundary_conditions_free_memory(void)
     BFT_FREE(_b_contexts[i]);
 
   BFT_FREE(_b_contexts);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add new MEG-based cs_dof_func_t context info.
+ *
+ * \param[in]  zone       pointer to associated zone
+ * \param[in]  name       name of associated field or array
+ * \param[in]  condition  associated condition type
+ * \param[in]  dim        associated dimension
+ *
+ * \return: pointer to cs_dof_func_t context info
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gui_boundary_meg_context_t *
+cs_gui_boundary_add_meg_context(const  cs_zone_t   *zone,
+                                const  char        *name,
+                                const  char        *condition,
+                                int                 dim)
+{
+  BFT_REALLOC(_b_contexts,
+              _n_b_contexts+1,
+              void *);
+
+  cs_gui_boundary_meg_context_t  *c = NULL;
+  BFT_MALLOC(c, 1, cs_gui_boundary_meg_context_t);
+
+  c->zone = zone;
+  c->name = name;
+  c->condition = condition;
+  c->dim = dim;
+
+  /* Now set in structure */
+
+  _b_contexts[_n_b_contexts] = c;
+  _n_b_contexts += 1;
+
+  return c;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_dof_func_t function to compute boundary condition values
+ *        using a MEG generated function.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
+ * In the current case, retval is allocated to mesh->n_b_faces
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_boundary_conditions_dof_func_meg(cs_lnum_t         n_elts,
+                                        const cs_lnum_t  *elt_ids,
+                                        bool              dense_output,
+                                        void             *input,
+                                        cs_real_t        *retval)
+{
+  cs_gui_boundary_meg_context_t  *c
+    = (cs_gui_boundary_meg_context_t *)input;
+
+  cs_real_t *v_loc = cs_meg_boundary_function(c->zone,
+                                              c->name,
+                                              c->condition);
+
+  const cs_lnum_t dim = c->dim;
+
+  if (dense_output) {  /* common/expected case */
+
+    if (dim == 1) {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        retval[i] = v_loc[i];
+      }
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        for (cs_lnum_t k = 0; k < dim; k++)
+          retval[i*dim + k] = v_loc[k*n_elts + i];
+      }
+    }
+
+  }
+  else { /* sparse/indirect case */
+
+    if (dim == 1) {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+        retval[elt_id] = v_loc[i];
+      }
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+        for (cs_lnum_t k = 0; k < dim; k++)
+          retval[elt_id*dim + k] = v_loc[k*n_elts + i];
+      }
+    }
+
+  }
+
+  BFT_FREE(v_loc);
 }
 
 /*----------------------------------------------------------------------------*/

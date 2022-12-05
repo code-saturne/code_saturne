@@ -52,6 +52,7 @@
 #include "cs_boundary.h"
 #include "cs_boundary_zone.h"
 #include "cs_convection_diffusion.h"
+#include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_gui.h"
 #include "cs_gui_util.h"
@@ -221,7 +222,6 @@ _uialcl_fixed_displacement(cs_tree_node_t   *tn_w,
 
 static void
 _uialcl_fixed_velocity(cs_tree_node_t  *tn_w,
-                       cs_lnum_t        nfabor,
                        const cs_zone_t *z,
                        int              ialtyb[])
 {
@@ -238,20 +238,12 @@ _uialcl_fixed_velocity(cs_tree_node_t  *tn_w,
                                                 "mesh_velocity",
                                                 "fixed_velocity");
 
-  cs_field_t *f_mesh_u = cs_field_by_name("mesh_velocity");
-  cs_real_t *rcodcl_mv = f_mesh_u->bc_coeffs->rcodcl1;
+  /* mesh_velocity rcodcl values handled through dof_function */
 
   /* Loop over boundary faces */
   for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
     const cs_lnum_t face_id = z->elt_ids[elt_id];
-
-    /* Fill  rcodcl */
-    rcodcl_mv[nfabor*0 + face_id] = bc_vals[elt_id + 0 * z->n_elts];
-    rcodcl_mv[nfabor*1 + face_id] = bc_vals[elt_id + 1 * z->n_elts];
-    rcodcl_mv[nfabor*2 + face_id] = bc_vals[elt_id + 2 * z->n_elts];
-
     ialtyb[face_id] = CS_BOUNDARY_ALE_IMPOSED_VEL;
-
   }
 
   /* Free memory */
@@ -283,7 +275,7 @@ _get_ale_boundary_nature(cs_tree_node_t  *tn)
     /* get the matching BC node */
     tn = cs_tree_node_get_child(tn->parent, nat_bndy);
 
-    /* Now searh from siblings */
+    /* Now search from siblings */
     tn = cs_tree_node_get_sibling_with_tag(tn, "label", label);
 
     /* Finaly get child node ALE */
@@ -496,8 +488,6 @@ void CS_PROCF (uialcl, UIALCL) (int         *const  ialtyb,
                                 int         *const  impale,
                                 cs_real_3_t        *disale)
 {
-  const cs_mesh_t *m = cs_glob_mesh;
-
   cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
 
   /* Loop on boundary zones */
@@ -551,7 +541,7 @@ void CS_PROCF (uialcl, UIALCL) (int         *const  ialtyb,
                                  disale);
     }
     else if (nature == ale_boundary_nature_fixed_velocity) {
-      _uialcl_fixed_velocity(tn_bc, m->n_b_faces, z, ialtyb);
+      _uialcl_fixed_velocity(tn_bc, z, ialtyb);
     }
   }
 }
@@ -790,6 +780,17 @@ cs_gui_mobile_mesh_get_boundaries(cs_domain_t  *domain)
 {
   assert(domain != NULL);
 
+  /* Only add xdef-based BC's for legacy fields for now, as CDO
+     uses in intermediate mechanism so as to ensure face-based to
+     vertex-based conditions.
+
+     TODO: use a dedicated dof function evaluating the MEG expression
+     and distributing values to vertices direclty, rather than using
+     array-based DOF for this in cs_ale.c */
+
+  cs_field_t *f_mesh_u = cs_field_by_name("mesh_velocity");
+  cs_equation_param_t *eqp = cs_field_get_equation_param(f_mesh_u);
+
   cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
 
   /* Loop on boundary zones */
@@ -812,16 +813,36 @@ cs_gui_mobile_mesh_get_boundaries(cs_domain_t  *domain)
                     ale_bdy,
                     z->name);
 
+    if (eqp == NULL)
+      continue;
+
+    /* Ignore if already set (priority) */
+
+    if (cs_equation_find_bc(eqp, z->name) != NULL)
+      continue;
+
     /* TODO */
-    /* else if (nature == ale_boundary_nature_fixed_displacement) { */
+    /* if (nature == ale_boundary_nature_fixed_displacement) { */
     /*   _uialcl_fixed_displacement(tn_bndy, z, */
     /*                              impale, disale); */
     /* } */
-    /* else if (nature == ale_boundary_nature_fixed_velocity) { */
-    /*   _uialcl_fixed_velocity(tn_bndy, *ivimpo, */
-    /*                          m->n_b_faces, z, */
-    /*                          ialtyb); */
-    /* } */
+
+    if (ale_bdy == CS_BOUNDARY_ALE_IMPOSED_VEL) {
+
+      cs_gui_boundary_meg_context_t *c
+        = cs_gui_boundary_add_meg_context(z,
+                                          f_mesh_u->name,
+                                          "fixed_velocity",
+                                          f_mesh_u->dim);
+
+      cs_equation_add_bc_by_dof_func(eqp,
+                                     CS_PARAM_BC_DIRICHLET,
+                                     z->name,
+                                     cs_flag_boundary_face,
+                                     cs_gui_boundary_conditions_dof_func_meg,
+                                     c);
+
+    }
 
   } /* Loop on mobile_boundary zones */
 }
@@ -853,7 +874,7 @@ cs_gui_mobile_mesh_get_fixed_velocity(const char  *label)
     /* get the matching BC node */
     cs_tree_node_t *tn = cs_tree_node_get_child(tn_bndy->parent, nat_bndy);
 
-    /* Now searh from siblings */
+    /* Now search from siblings */
     tn = cs_tree_node_get_sibling_with_tag(tn, "label", label_bndy);
 
     if (strcmp(label_bndy, label) == 0) {

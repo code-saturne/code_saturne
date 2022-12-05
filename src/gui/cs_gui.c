@@ -2852,6 +2852,31 @@ cs_gui_finalize(void)
   BFT_FREE(_v_meg_contexts);
 }
 
+/*----------------------------------------------------------------------------
+ * Return a pointer to equation parameters based on a field or equation name.
+ *
+ * parameters:
+ *   name <-- field or equation name
+ *
+ * return:
+ *   pointer to matching child string
+ *----------------------------------------------------------------------------*/
+
+cs_equation_param_t *
+cs_gui_get_equation_param(const char  *name)
+{
+  cs_equation_param_t *eqp = NULL;
+
+  cs_field_t *f = cs_field_by_name_try(name);
+  if (f != NULL)
+    eqp = cs_field_get_equation_param(f);
+
+  else
+    eqp = cs_equation_param_by_name(name);
+
+  return eqp;
+}
+
 /*-----------------------------------------------------------------------------
  * Get value of reference fluid properties parameter.
  *

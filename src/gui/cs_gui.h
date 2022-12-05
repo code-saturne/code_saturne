@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_equation_param.h"
 #include "cs_field.h"
 #include "cs_zone.h"
 
@@ -329,6 +330,19 @@ void CS_PROCF (uieres, UIERES) (int *iescal,
 
 void
 cs_gui_finalize(void);
+
+/*----------------------------------------------------------------------------
+ * Return a pointer to equation parameters based on a field or equation name.
+ *
+ * parameters:
+ *   name <-- field or equation name
+ *
+ * return:
+ *   pointer to matching child string
+ *----------------------------------------------------------------------------*/
+
+cs_equation_param_t *
+cs_gui_get_equation_param(const char  *name);
 
 /*-----------------------------------------------------------------------------
  * Get value of reference fluid properties parameter.

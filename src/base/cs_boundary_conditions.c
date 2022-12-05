@@ -382,6 +382,14 @@ _compute_dirichlet_bc(const cs_mesh_t            *mesh,
 
   bc_type *= icodcl_m;
 
+  /* Special case for mesh velocity (ALE) wall BC type. */
+
+  if (f->dim == 3) {
+    if (   (strcmp(f->name, "mesh_velocity") == 0)
+        && (boundary_type & CS_BOUNDARY_WALL))
+      bc_type = 1;
+  }
+
   if (f->dim != def_dim) {
     bft_error(__FILE__, __LINE__, 0,
               _(" %s: Boundary condition definition:\n"

@@ -43,6 +43,19 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*! Arguments passed by context pointer to cs_meg_* functions */
+
+typedef struct {
+
+  const  cs_zone_t    *zone;        /*<! Pointer to zone */
+
+  const  char         *name;        /*<! Pointer to field or array name */
+  const  char         *condition;   /*<! Pointer to condition name type */
+
+  int                  dim;         /*<! Values dimension */
+
+} cs_gui_boundary_meg_context_t;
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -122,6 +135,50 @@ cs_gui_boundary_conditions_define(cs_boundary_t  *bdy);
 
 void
 cs_gui_boundary_conditions_free_memory(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add new MEG-based cs_dof_func_t context info.
+ *
+ * \param[in]  zone       pointer to associated zone
+ * \param[in]  name       name of associated field or array
+ * \param[in]  condition  associated condition type
+ * \param[in]  dim        associated dimension
+ *
+ * \return: pointer to cs_dof_func_t context info
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gui_boundary_meg_context_t *
+cs_gui_boundary_add_meg_context(const  cs_zone_t   *zone,
+                                const  char        *name,
+                                const  char        *condition,
+                                int                 dim);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_dof_func_t function to compute a boundary profiles
+ *        using a MEG generated function.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
+ * In the current case, retval is allocated to mesh->n_b_faces
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_boundary_conditions_dof_func_meg(cs_lnum_t         n_elts,
+                                        const cs_lnum_t  *elt_ids,
+                                        bool              dense_output,
+                                        void             *input,
+                                        cs_real_t        *retval);
 
 /*----------------------------------------------------------------------------*/
 
