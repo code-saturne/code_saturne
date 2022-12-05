@@ -1735,9 +1735,8 @@ class Studies(object):
 
     def run_slurm_batches(self):
         """
-        Update and run all cases.
-        Warning, if the markup of the case is repeated in the xml file of parameters,
-        the run of the case is also repeated.
+        Run all cases in slurm batch mode.
+        Number of case per batch and maximum wall time are given by smgr options.
         """
 
         slurm_batch_template = """#!/bin/sh
@@ -1773,9 +1772,6 @@ class Studies(object):
 
                             if self.__n_iter is not None:
                                 case.add_control_file(self.__n_iter)
-
-                            self.reporting('    - will run %s ...' % case.title,
-                                           stdout=True, report=False, status=True)
 
                             # append content of batch command with run of the case
                             batch_cmd += case.build_run_batch()
@@ -1823,9 +1819,7 @@ class Studies(object):
                                 match = re.search('\d{8}', msg)
                                 job_id = match.group()
                                 cur_job_id_list.append(job_id)
-                                self.reporting('    - job submission %s ...' % msg,
-                                               stdout=True, report=True,
-                                               status=True)
+                                self.reporting('    - %s ...' % msg)
 
                                 batch_cmd = ""
                                 cur_batch_id += 1
@@ -1871,8 +1865,7 @@ class Studies(object):
                     match = re.search('\d{8}', msg)
                     job_id = match.group()
                     cur_job_id_list.append(job_id)
-                    self.reporting('    - job submission %s ...' % msg,
-                                   stdout=True, report=True, status=True)
+                    self.reporting('    - %s ...' % msg)
 
                     batch_cmd = ""
                     cur_batch_id += 1
