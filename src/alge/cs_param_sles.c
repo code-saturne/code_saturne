@@ -2463,8 +2463,7 @@ cs_param_sles_create(int          field_id,
   if (system_name != NULL) {
     size_t  len = strlen(system_name);
     BFT_MALLOC(slesp->name, len + 1, char);
-    strncpy(slesp->name, system_name, len);
-    slesp->name[len] = '\0';
+    strncpy(slesp->name, system_name + 1, len);
   }
 
   return slesp;
