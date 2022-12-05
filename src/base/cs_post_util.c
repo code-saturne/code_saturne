@@ -225,8 +225,9 @@ cs_cell_segment_intersect_probes_define(void          *input,
   cs_lnum_t *cell_ids = NULL;
   cs_real_t *seg_c_len = NULL;
 
-  /* This version is better than cs_cell_segment_intersect_select because it gives the cell
-   * if the segment is included in this cell */
+  /* This version is better than cs_cell_segment_intersect_select
+     because it gives the cell
+     if the segment is included in this cell */
   cs_cell_polyline_intersect_select(input, 2, &n_cells, &cell_ids, &seg_c_len);
 
   cs_real_3_t *_coords;
@@ -509,9 +510,9 @@ cs_post_stress_tangential(cs_lnum_t        n_b_faces,
     srfnor[0] = surfbo[ifac][0] / srfbn;
     srfnor[1] = surfbo[ifac][1] / srfbn;
     srfnor[2] = surfbo[ifac][2] / srfbn;
-    fornor = forbr[ifac][0]*srfnor[0]
-           + forbr[ifac][1]*srfnor[1]
-           + forbr[ifac][2]*srfnor[2];
+    fornor =   forbr[ifac][0]*srfnor[0]
+             + forbr[ifac][1]*srfnor[1]
+             + forbr[ifac][2]*srfnor[2];
     stress[iloc][0] = (forbr[ifac][0] - fornor*srfnor[0]) / srfbn;
     stress[iloc][1] = (forbr[ifac][1] - fornor*srfnor[1]) / srfbn;
     stress[iloc][2] = (forbr[ifac][2] - fornor*srfnor[2]) / srfbn;
@@ -544,11 +545,9 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
   cs_real_3_t *f_ext = (hyd_p_flag == 1) ?
     (cs_real_3_t *)cs_field_by_name_try("volume_forces")->val:NULL;
 
-  bool use_previous_t = false;
-  int inc = 1;
   cs_field_gradient_potential(CS_F_(p),
-                              use_previous_t,
-                              inc,
+                              false, /* use_previous_t */
+                              1,     /* inc */
                               hyd_p_flag,
                               f_ext,
                               gradp);
@@ -575,11 +574,9 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
     cs_real_3_t *gradk;
     BFT_MALLOC(gradk, m->n_cells_with_ghosts, cs_real_3_t);
 
-    use_previous_t = false;
-    inc = 1;
     cs_field_gradient_scalar(CS_F_(k),
-                             use_previous_t,
-                             inc,
+                             false,  /* use_previous_t */
+                             1,      /* inc */
                              gradk);
 
     for (cs_lnum_t iloc = 0 ; iloc < n_b_faces; iloc++) {
@@ -619,7 +616,7 @@ cs_post_evm_reynolds_stresses(cs_field_interpolate_t  interpolation_type,
                               const cs_real_3_t      *coords,
                               cs_real_6_t            *rst)
 {
-  const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
+  const cs_turb_model_t  *turb_model = cs_glob_turb_model;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
   if (   turb_model->itytur != 2
@@ -634,11 +631,9 @@ cs_post_evm_reynolds_stresses(cs_field_interpolate_t  interpolation_type,
   cs_real_33_t *gradv;
   BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
-  bool use_previous_t = false;
-  int inc = 1;
   cs_field_gradient_vector(CS_F_(vel),
-                           use_previous_t,
-                           inc,
+                           false,  /* use_previous_t */
+                           1,      /* inc */
                            gradv);
 
   const cs_real_t *xk = CS_F_(k)->val;
@@ -657,7 +652,6 @@ cs_post_evm_reynolds_stresses(cs_field_interpolate_t  interpolation_type,
     else {
       for (cs_lnum_t i = 0; i < n_cells; i++) {
         _xk[i] = xk[cell_ids[i]];
-
       }
     }
 
@@ -707,7 +701,7 @@ cs_post_anisotropy_invariant(cs_lnum_t               n_cells,
                              const cs_real_t         coords[][3],
                              cs_real_2_t             inv[])
 {
-  const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
+  const cs_turb_model_t  *turb_model = cs_glob_turb_model;
 
   if (   turb_model->itytur != 2
       && turb_model->itytur != 3
@@ -941,7 +935,6 @@ cs_post_field_cell_to_b_face_values(const cs_field_t  *f,
               _("Postprocessing face boundary values for field %s"
                 " of dimension %d:\n not implemented."),
               f->name, f->dim);
-
 }
 
 /*----------------------------------------------------------------------------*/
