@@ -100,7 +100,7 @@ double precision, pointer, dimension(:)   :: dt
 
 logical          must_return
 
-integer          iel   , ifac  , ivar  , iscal , iappel, n_fans
+integer          iel   , ifac  , ivar  , iscal , n_fans
 integer          iok   , nfld  , f_id  , f_dim  , f_type
 integer          nbccou
 integer          ntrela
@@ -523,8 +523,7 @@ if (ntmabs.eq.ntpabs .and. isuite.eq.1) return
 !  If itrale=0, we are initializing ALE, we do not touch the mas flux either.
 
 if (itrale.gt.0) then
-  iappel = 1
-  call schtmp(nscal, iappel)
+  call schtmp(nscal, 1)
 endif
 
 !===============================================================================
@@ -557,8 +556,7 @@ iterns = -1
 call phyvar(nvar, nscal, iterns, dt)
 
 if (itrale.gt.0) then
-  iappel = 2
-  call schtmp(nscal, iappel)
+  call schtmp(nscal, 2)
 endif
 
 ! REMPLISSAGE DES COEFS DE PDC
@@ -610,8 +608,6 @@ htot_cond => null()
 
 if (nftcdt.gt.0) then
 
-  iappel = 3
-
   ! Condensation source terms arrays initialized
   do ii = 1, nfbpcd
     do ivar = 1, nvar
@@ -621,7 +617,7 @@ if (nftcdt.gt.0) then
     enddo
   enddo
 
-  call cs_user_wall_condensation(nvar, nscal, iappel)
+  call cs_user_wall_condensation(nvar, nscal, 3)
 
   ! Use empiric correlations to compute heat and mass transfer due to wall condensation
   allocate(htot_cond(nfbpcd))
@@ -1198,8 +1194,7 @@ do while (iterns.le.nterup)
     endif
 
     if (istmpf.eq.2.and.itpcol.eq.1) then
-      iappel = 3
-      call schtmp(nscal, iappel)
+      call schtmp(nscal, 3)
     endif
 
     !     Si c'est la derniere iteration : INSLST = 1
@@ -1222,8 +1217,7 @@ do while (iterns.le.nterup)
 
       ! For explicit mass flux
       if (istmpf.eq.0.and.inslst.eq.0) then
-        iappel = 3
-        call schtmp(nscal, iappel)
+        call schtmp(nscal, 3)
       endif
 
       if (inslst.eq.1) goto 100
@@ -1310,8 +1304,7 @@ if (iccvfg.eq.0) then
 
   !     On ne passe dans SCHTMP que si ISTMPF.EQ.0 (explicite)
   if (istmpf.eq.0) then
-    iappel = 4
-    call schtmp(nscal, iappel)
+    call schtmp(nscal, 4)
   endif
 
 !===============================================================================
@@ -1476,8 +1469,7 @@ deallocate(isostd)
 !      UN THETA SCHEMA
 !===============================================================================
 
-iappel = 5
-call schtmp(nscal, iappel)
+call schtmp(nscal, 5)
 
 !===============================================================================
 ! Update flow through fans
