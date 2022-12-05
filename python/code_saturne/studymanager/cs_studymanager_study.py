@@ -471,9 +471,9 @@ class Case(object):
             fail_info = 'FAILED'
             if have_case_log:
                 if have_status_prepared:
-                    fail_info = 'FAILED (already prepared)'
+                    fail_info = 'SKIPPED (already prepared)'
                 else:
-                    fail_info = 'FAILED (already present)'
+                    fail_info = 'SKIPPED (already present)'
             log_lines += ['      * prepare run folder: {0} --> {1}'.format(self.title, fail_info)]
             if not have_status_prepared:
                 log_lines += ['        - see ' + log_path]
@@ -2155,7 +2155,7 @@ class Studies(object):
         if not content:
             os.system("rm -f " + self.__log_post_name)
         else:
-            self.reporting(" /!\ ERROR during post. See %s\n" \
+            self.reporting(" Warning: logs generated during post. See %s\n" \
                            %self.__log_post_name, stdout=True, report=True)
 
         self.reporting('')
