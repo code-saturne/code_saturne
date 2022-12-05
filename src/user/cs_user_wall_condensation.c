@@ -166,7 +166,9 @@ BEGIN_C_DECLS
 
 #pragma weak cs_user_wall_condensation
 void
-cs_user_wall_condensation(int nvar, int nscal, int iappel)
+cs_user_wall_condensation(int  nvar,
+                          int  nscal,
+                          int  iappel)
 {
   CS_UNUSED(nvar);
   CS_UNUSED(nscal);
