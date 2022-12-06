@@ -589,6 +589,30 @@ cs_cdo_advection_vb_mcucsv(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the convection operator attached to a cell with a CDO
+ *          vertex-based scheme when a mixed centered/upwind scheme with
+ *          a non-conservative formulation is used.
+ *          The local matrix related to this operator is stored in cb->loc
+ *          Predefined prototype to match the function pointer
+ *          cs_cdovb_advection_t
+ *
+ * \param[in]      eqp       pointer to a \ref cs_equation_param_t structure
+ * \param[in]      cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      diff_pty  pointer to a \ref cs_property_data_t structure
+ * \param[in, out] fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a \ref cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_vb_mcunoc(const cs_equation_param_t   *eqp,
+                           const cs_cell_mesh_t        *cm,
+                           const cs_property_data_t    *diff_pty,
+                           cs_face_mesh_t              *fm,
+                           cs_cell_builder_t           *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the convection operator attached to a cell with a CDO
  *          vertex-based scheme with an upwind scheme and a conservative
  *          formulation. The portion of upwinding relies on an evaluation
  *          of the weigth associated to the given property.

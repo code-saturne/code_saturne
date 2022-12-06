@@ -1634,6 +1634,10 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
         eqc->get_advection_matrix = cs_cdo_advection_vb_cennoc;
         break;
 
+      case CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND:
+        eqc->get_advection_matrix = cs_cdo_advection_vb_mcunoc;
+        break;
+
       case CS_PARAM_ADVECTION_SCHEME_UPWIND:
       case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
       case CS_PARAM_ADVECTION_SCHEME_SG:

@@ -446,6 +446,68 @@ _build_cell_epcd_cen(const cs_cell_mesh_t          *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Define the local convection operator between primal edges and
+ *          dual cells. (Non-conservative formulation and mixed centered/upwind)
+ *
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      upwp     portion of upwinding to apply
+ * \param[in]      fluxes   array of fluxes on dual faces
+ * \param[in, out] adv      pointer to a cs_sdm_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_build_cell_epcd_mcu(const cs_cell_mesh_t    *cm,
+                     const cs_real_t          upwp,
+                     const cs_real_t          fluxes[],
+                     cs_sdm_t                *adv)
+{
+  /* Loop on cell edges */
+
+  for (short int e = 0; e < cm->n_ec; e++) {
+
+    const cs_real_t  beta_flx = fluxes[e];
+
+    if (fabs(beta_flx) > 0) {
+
+      short int  sgn_v1 = cm->e2v_sgn[e];
+
+      /* Compute the upwind coefficient knowing that fd(e),cd(v) = -v,e */
+
+      const double  wup1 = _get_upwind_weight(-sgn_v1*beta_flx); /* 0 or 1 */
+
+      /* (1-upwp)*0.5 --> centered scheme contribution
+         upwp * wup1  --> upwind scheme contribution */
+
+      const double  wv1 = wup1 * upwp + 0.5*(1 - upwp);
+      const double  cw1 = sgn_v1 * beta_flx * wv1;
+      const double  cw2 = sgn_v1 * beta_flx * (1 - wv1);
+
+      /* Update local convection matrix */
+
+      short int  v1 = cm->e2v_ids[2*e];
+      short int  v2 = cm->e2v_ids[2*e+1];
+      assert(v1 != -1 && v2 != -1);  /* Sanity check */
+
+      /* Update for the vertex v1 */
+
+      double  *m1 = adv->val + v1*adv->n_rows;
+      m1[v1] +=  cw2;           /* diagonal term */
+      m1[v2] =  -cw2;           /* extra-diag term */
+
+      /* Update for the vertex v2 */
+
+      double  *m2 = adv->val + v2*adv->n_rows;
+      m2[v2] += -cw1;           /* diagonal term */
+      m2[v1] =   cw1;           /* extra-diag term */
+
+    } /* Convective flux is greater than zero */
+
+  } /* Loop on cell edges */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Define the local convection operator between primal vertices and
  *          dual faces. (Conservative formulation and Upwind flux)
  *
@@ -2129,6 +2191,57 @@ cs_cdo_advection_vb_mcucsv(const cs_equation_param_t   *eqp,
   if (cs_dbg_cw_test(eqp, cm, NULL)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
     cs_sdm_dump(cm->c_id, NULL, NULL, cb->loc);
+  }
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the convection operator attached to a cell with a CDO
+ *          vertex-based scheme when a mixed centered/upwind scheme with
+ *          a non-conservative formulation is used.
+ *          The local matrix related to this operator is stored in cb->loc
+ *          Predefined prototype to match the function pointer
+ *          cs_cdovb_advection_t
+ *
+ * \param[in]      eqp       pointer to a \ref cs_equation_param_t structure
+ * \param[in]      cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      diff_pty  pointer to a \ref cs_property_data_t structure
+ * \param[in, out] fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a \ref cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_vb_mcunoc(const cs_equation_param_t   *eqp,
+                           const cs_cell_mesh_t        *cm,
+                           const cs_property_data_t    *diff_pty,
+                           cs_face_mesh_t              *fm,
+                           cs_cell_builder_t           *cb)
+{
+  CS_NO_WARN_IF_UNUSED(fm);
+  CS_NO_WARN_IF_UNUSED(diff_pty);
+  assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB);  /* Sanity check */
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PV | CS_FLAG_COMP_EV));
+
+  /* Initialize the local matrix structure */
+
+  cs_sdm_t  *adv = cb->loc;
+  cs_sdm_square_init(cm->n_vc, adv);
+
+  /* Compute the flux across the dual face attached to each edge of the cell */
+
+  cs_real_t  *fluxes = cb->values;  /* size n_ec */
+  cs_advection_field_cw_dface_flux(cm, eqp->adv_field, cb->t_bc_eval, fluxes);
+
+  /* Define the local operator for advection */
+
+  _build_cell_epcd_mcu(cm, eqp->upwind_portion, fluxes, adv);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
+  if (cs_dbg_cw_test(eqp, cm, NULL)) {
+    cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
+    cs_sdm_dump(cm->c_id, NULL, NULL, adv);
   }
 #endif
 }
