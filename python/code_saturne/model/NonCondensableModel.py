@@ -67,59 +67,22 @@ class NonCondensableModel(Model):
         default['Cobin2']      = 1.5
         return default
 
+    def getNonCondensableGasValues(self, gas):
+        """
+        Return in a dictionnary which contains gas parameters values
+        """
 
-    def HydrogenValues(self):
-        """
-        Return in a dictionnary which contains default values
-        """
-        hydrogen = {}
-        hydrogen['MolarMass'] = 0.002016
-        hydrogen['Cobin1'] = 0.78e-4
-        hydrogen['Cobin2'] = 1.75
-        return hydrogen
+        _vals = {'H2':{'MolarMass':0.002016, 'Cobin1':0.78e-4, 'Cobin2':1.75},
+                 'N2':{'MolarMass':28.0134e-3, 'Cobin1':0.227e-4, 'Cobin2':1.75},
+                 'HE':{'MolarMass':4.003e-3, 'Cobin1':0.73e-4, 'Cobin2':1.75},
+                 'O2':{'MolarMass':32.e-3, 'Cobin1':0.24e-4, 'Cobin2':1.71},
+                 'Air':{'MolarMass':0.02896, 'Cobin1':2.2e-5, 'Cobin2':1.5}}
 
+        if gas not in _vals.keys():
+            return {'MolarMass':0., 'Cobin1':0., 'Cobin2':0.}
+        else:
+            return _vals[gas]
 
-    def AirValues(self):
-        """
-        Return in a dictionnary which contains default values
-        """
-        air = {}
-        air['MolarMass']   = 0.02896
-        air['Cobin1']      = 2.2e-5
-        air['Cobin2']      = 1.5
-        return air
-
-
-    def NitrogenValues(self):
-        """
-        Return in a dictionnary which contains default values
-        """
-        nitrogen = {}
-        nitrogen['MolarMass'] = 28.0134e-3
-        nitrogen['Cobin1'] = 0.227e-4
-        nitrogen['Cobin2'] = 1.75
-        return nitrogen
-
-
-    def HeliumValues(self):
-        """
-        Return in a dictionnary which contains default values
-        """
-        helium = {}
-        helium['MolarMass'] = 4.003e-3
-        helium['Cobin1'] = 0.73e-4
-        helium['Cobin2'] = 1.75
-        return helium
-
-    def OxygenValues(self):
-        """
-        Return in a dictionnary which contains default values
-        """
-        oxygen = {}
-        oxygen['MolarMass'] = 32.e-3
-        oxygen['Cobin1'] = 0.24e-4
-        oxygen['Cobin2'] = 1.71
-        return oxygen
 
     def checkNonCondensableRequirements(self):
         """
@@ -281,29 +244,12 @@ class NonCondensableModel(Model):
 
     @Variables.undoGlobal
     def setIncTyp(self, name, Inctyp):
-        masmol = 0.
-        cobin1 = 0.
-        cobin2 = 0.
-        if Inctyp == 'H2' :
-            masmol = self.HydrogenValues()['MolarMass']
-            cobin1 = self.HydrogenValues()['Cobin1']
-            cobin2 = self.HydrogenValues()['Cobin2']
-        elif Inctyp == 'N2' :
-            masmol = self.NitrogenValues()['MolarMass']
-            cobin1 = self.NitrogenValues()['Cobin1']
-            cobin2 = self.NitrogenValues()['Cobin2']
-        elif Inctyp == 'HE' :
-            masmol = self.HeliumValues()['MolarMass']
-            cobin1 = self.HeliumValues()['Cobin1']
-            cobin2 = self.HeliumValues()['Cobin2']
-        elif Inctyp == 'O2' :
-            masmol = self.OxygenValues()['MolarMass']
-            cobin1 = self.OxygenValues()['Cobin1']
-            cobin2 = self.OxygenValues()['Cobin2']
-        elif Inctyp == 'Air' :
-            masmol = self.AirValues()['MolarMass']
-            cobin1 = self.AirValues()['Cobin1']
-            cobin2 = self.AirValues()['Cobin2']
+
+        gas_vals = self.getNonCondensableGasValues(Inctyp)
+
+        masmol = gas_vals['MolarMass']
+        cobin1 = gas_vals['Cobin1']
+        cobin2 = gas_vals['Cobin2']
 
         self.setNonCondMassMol(name, masmol)
         self.setNonCondCobin1( name, cobin1)
