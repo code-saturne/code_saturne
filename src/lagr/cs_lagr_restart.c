@@ -598,7 +598,13 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
       int n_sections = stride;
 
       if (   attr == CS_LAGR_VELOCITY
-          || attr == CS_LAGR_VELOCITY_SEEN)
+          || attr == CS_LAGR_VELOCITY_SEEN
+	  || attr == CS_LAGR_RADII
+	  || attr == CS_LAGR_SHAPE_PARAM
+	  || attr == CS_LAGR_ORIENTATION
+	  || attr == CS_LAGR_QUATERNION
+	  || attr == CS_LAGR_ANGULAR_VEL
+	  || attr == CS_LAGR_EULER)
         n_sections = 1;
 
       for (int s_id = 0; s_id < n_sections; s_id++) {
@@ -802,7 +808,13 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
       int n_sections = stride;
 
       if (   attr == CS_LAGR_VELOCITY
-          || attr == CS_LAGR_VELOCITY_SEEN)
+          || attr == CS_LAGR_VELOCITY_SEEN
+	  || attr == CS_LAGR_RADII
+	  || attr == CS_LAGR_SHAPE_PARAM
+	  || attr == CS_LAGR_ORIENTATION
+	  || attr == CS_LAGR_QUATERNION
+	  || attr == CS_LAGR_ANGULAR_VEL
+	  || attr == CS_LAGR_EULER)
         n_sections = 1;
 
       for (int s_id = 0; s_id < n_sections; s_id++) {
