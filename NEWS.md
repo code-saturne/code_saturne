@@ -3,6 +3,8 @@ Release 7.0.6 (not released yet)
 
 Bug fixes:
 
+- Lagrangian module: fix for restart with non-spherical particles.
+
 - Fix occasional deadlock when checkpointing based on wall-clock time.
 
 - Fix launching of a coupled case created using "neptune_cfd".
