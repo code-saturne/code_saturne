@@ -388,12 +388,27 @@ cs_gwf_soil_check(void)
 
   for (int i = 0; i < _n_soils; i++) {
 
-    if (_soils[i]->model == CS_GWF_SOIL_N_HYDRAULIC_MODELS) {
-      const cs_zone_t  *z = cs_volume_zone_by_id(_soils[i]->zone_id);
+    const cs_zone_t  *z = cs_volume_zone_by_id(_soils[i]->zone_id);
+    assert(z != NULL);
+
+    if (_soils[i]->model == CS_GWF_SOIL_N_HYDRAULIC_MODELS)
       bft_error(__FILE__, __LINE__, 0,
                 "%s: Invalid model of soil attached to zone %s\n",
                 __func__, z->name);
+
+    if (z->n_g_elts < 1) {
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(" %s: The soil \"%s\" is defined but associated to no cell.\n"
+                 " Please check your settings.\n",
+                 __func__, z->name);
     }
+
+    if (z->n_elts > 0)
+      if (z->elt_ids == NULL)
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: One assumes that z->elt_ids != NULL.\n"
+                  " This is not the case for the soil \"%s\"\n",
+                  __func__, z->name);
 
   } /* Loop on soils */
 }

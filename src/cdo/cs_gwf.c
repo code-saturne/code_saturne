@@ -3978,7 +3978,11 @@ cs_gwf_init_model_context(void)
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
-  cs_gwf_soil_check();
+
+  if (cs_gwf_get_n_soils() < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Groundwater module is activated but no soil is defined.",
+              __func__);
 
   int dim = cs_gwf_soil_get_permeability_max_dim();
   cs_property_type_t  perm_type = CS_PROPERTY_ISO;
