@@ -1354,7 +1354,7 @@ cs_cdovb_scaleq_finalize_sharing(void)
  */
 /*----------------------------------------------------------------------------*/
 
-void  *
+void *
 cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
                              int                          var_id,
                              int                          bflux_id,
