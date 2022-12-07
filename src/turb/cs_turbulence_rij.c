@@ -1637,11 +1637,11 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         impl_id_cst = - d2s3 * cssgr1 * cs_math_fmin(trprod, 0)
                       - d1s3 * cssgs2 * cvara_ep[c_id] * aii
                       + cphi3impl * trrij * eigen_max
-                      + 2 * d2s3 * cssgr4 * trrij * eigen_max
+                      + 2. * d2s3 * cssgr4 * trrij * eigen_max
                       + d2s3 * trrij * cssgr4 * cs_math_fmax(aklskl, 0);
 
         /* Linear constant */
-        impl_lin_cst = eigen_max * (1 + cssgr4 + cssgr5);
+        impl_lin_cst = eigen_max * (1. + cssgr4 + cssgr5);
 
         cs_real_t implmat2add[3][3];
         for (cs_lnum_t jj = 0; jj < 3; jj++) {

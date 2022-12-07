@@ -68,7 +68,6 @@ integer          fid_axz
 double precision d2s3
 double precision zent,xuent,xvent, xwent, xkent,xeent,tpent,qvent,ncent
 double precision xcent
-double precision r_nt
 double precision vel_dir(3), shear_dir(3)
 
 type(var_cal_opt) :: vcopt_p, vcopt_u
@@ -355,7 +354,6 @@ if (isuite.eq.0) then
 
         elseif (itytur.eq.3) then
 
-          r_nt = - sqrt(cmu) * xkent
           cvar_rij(1,iel) = d2s3*xkent
           cvar_rij(2,iel) = d2s3*xkent
           cvar_rij(3,iel) = d2s3*xkent
