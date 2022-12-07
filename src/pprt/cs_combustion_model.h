@@ -81,6 +81,8 @@ typedef struct {
 
   int     iic;                     /*!< rank of C in gas composition (base 1) */
 
+  double  hinfue;                  /*! input mass enthalpy for fuel */
+
   double  xsoot;                   /*!< soot fraction production (isoot = 0) */
   double  rosoot;                  /*!< soot density */
 

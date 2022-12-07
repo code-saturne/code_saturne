@@ -95,6 +95,7 @@ BEGIN_C_DECLS
 
 cs_combustion_model_t
   _combustion_model = {.gas = {.iic = 0,
+                               .hinfue = 0,
                                .xsoot = 0.,
                                .rosoot = 0.},
                        .coal = {.nclacp = 0},
@@ -267,7 +268,7 @@ cs_f_coincl_get_pointers(double  **coefeg,
   *compog = &(cs_glob_combustion_model->gas.compog[0][0]);
   *xsoot  = &(cs_glob_combustion_model->gas.xsoot);
   *rosoot = &(cs_glob_combustion_model->gas.rosoot);
-  *hinfue = &(cs_glob_combustion_model->fuel.hinfue);
+  *hinfue = &(cs_glob_combustion_model->gas.hinfue);
   *hinoxy = &(cs_glob_combustion_model->hinoxy);
 }
 
