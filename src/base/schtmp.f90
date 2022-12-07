@@ -98,7 +98,7 @@ double precision, dimension(:), pointer :: cpro_rho_mass, bpro_rho_mass
 
 call field_get_key_id("time_extrapolated", key_t_ext_id)
 call field_get_key_id("diffusivity_extrapolated", kthetvs)
-call field_get_key_id("scalar_diffusity_prev", kinitvs)
+call field_get_key_id("scalar_diffusivity_prev", kinitvs)
 
 call field_get_id_try("density_mass", f_id)
 if (f_id.ge.0) &
