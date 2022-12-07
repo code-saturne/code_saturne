@@ -60,7 +60,7 @@ C programming
   (see Lectures)
 - For French readers, the IDRIS course is recommended: http://www.idris.fr/formations/c/
   - *MPI* and *OpenMP* Courses may also be found on the main course material page:
-    (http://www.idris.fr/formations/supports_de_cours.html
+    [MPI_OpenMP](http://www.idris.fr/formations/supports_de_cours.html)
 
 C and Fortran basics
 ====================
@@ -600,7 +600,7 @@ Explicit memory allocation operations return pointers
   - If memory is allocated but never freed, memory "leaks" then possibly runs out
   - Use [Valgrind](https://www.valgrind.org), the GCC and Clang
     [AddressSanitizer](https://github.com/google/sanitizers/wiki/AddressSanitizer)
-    tools, or `export CS_MEM_LOG=mem_log` in your environment to check for this.
+    tools, or `export CS_MEM_LOG=mem.log` in your environment to check for this.
 - Automatic allocation of variables and fixed-size arrays is done on a smaller
   memory area called the [stack](https://en.wikipedia.org/wiki/Stack_(abstract_data_type))
   - Does not incurr any overhead (fast).

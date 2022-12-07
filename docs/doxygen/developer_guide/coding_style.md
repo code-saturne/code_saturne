@@ -492,7 +492,7 @@ When modifying arguments to a function or modifying structures, make sure
 the special Doxygen comments are kept up to date. In C code, comments may
 appear both in the C and Fortran parts of the code. Using Doxygen
 comments in the C code and simplified comments in the headers
-(see cs_field.c and cs_field.h for example) is recommended, but as this
+(see \ref cs_field.c and \ref cs_field.h for example) is recommended, but as this
 adds to the coding effort, duplicating the headers from the reference
 C code to the headers is allowed. Recent versions of Doxygen do complain
 about this, so avoiding duplicates is still desirable.
