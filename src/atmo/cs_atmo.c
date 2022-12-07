@@ -1525,6 +1525,9 @@ cs_atmo_hydrostatic_profiles_compute(void)
   }
 
   /* Initialize temperature, pressure and density from neutral conditions
+   *
+   * p(z) = p0 (1 - g z / (Cp T0))^(Cp/R)
+   * Note: Cp/R = gamma/(gamma-1)
    *=====================================================================*/
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
     cs_real_t z  = cell_cen[cell_id][2] - xyzp0[2];
@@ -1534,7 +1537,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
 
     /* Do not overwrite pressure in case of restart */
     if (has_restart == 0)
-      f->val[cell_id] = p_ground * pow(factor, rscp)
+      f->val[cell_id] = p_ground * pow(factor, 1./rscp)
                       /* correction factor for z > 11000m */
                       * exp(- g/(rair*temp->val[cell_id]) * (z - zt));
 

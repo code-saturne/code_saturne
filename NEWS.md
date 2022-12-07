@@ -3,6 +3,9 @@ Release 7.0.6 (not released yet)
 
 Bug fixes:
 
+- Atmospheric module: fix meteo_pressure intialization when using meteo
+  profiles.
+
 - Lagrangian module: fix for restart with non-spherical particles.
 
 - Fix occasional deadlock when checkpointing based on wall-clock time.
