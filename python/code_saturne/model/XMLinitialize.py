@@ -106,7 +106,7 @@ class BaseXmlInit(Variables):
         i = vers.find("-patch")
         if i > -1:
             vers = vers[:i]
-       
+
         if v_shift != 0:
             try:
                 vxy = vers.split(".")
