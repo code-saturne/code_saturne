@@ -92,30 +92,32 @@ class BaseXmlInit(Variables):
     def __clean_version(self, vers):
         """
         Simplify version history number, replacing "alpha" or "beta"
-        version with previous version  to force ensuring of backward
-        compatibility.
+        version with previous version and "patch" with current version
+        to force ensuring of backward compatibility.
         Not-yet released versions may appear here, as long as the
         planned release order is correct.
         """
-        known_versions = ["3.0", "3.1", "3.2", "3.3",
-                          "4.0", "4.1", "4.2", "4.3",
-                          "5.0", "5.1", "5.2", "5.3",
-                          "6.0", "6.1", "6.2", "6.3",
-                          "7.0", "7.1", "7.2", "7.3",
-                          "8.0"]
-        j = -2
-        for i in range(0, len(known_versions)):
-            if vers.find(known_versions[i]) == 0:
-                j = i
-                for e in ("-alpha", "-beta"):
-                    if vers.find(e) > -1:
-                        j = i-1
-                break
-        if j == -1:
-            if not vers:
-                vers = "-1.0"
-        elif j > 0:
-            vers = known_versions[j]
+        v_shift = 0
+        for e in ("-alpha", "-beta"):
+            i = vers.find(e)
+            if i > -1:
+                v_shift = -1
+                vers = vers[:i]
+        i = vers.find("-patch")
+        if i > -1:
+            vers = vers[:i]
+       
+        if v_shift != 0:
+            try:
+                vxy = vers.split(".")
+                vx = int(vxy[0])
+                vy = int(vxy[1]) - 1
+                if vy < 0:
+                  vx -= 1
+                  vy = 3
+                vers = str(vx) + "." + str(y)
+            except Exception:
+                pass
         return vers
 
     def _backwardCompatibility(self):
@@ -123,17 +125,22 @@ class BaseXmlInit(Variables):
         Update XML in order to ensure backward compatibility.
         """
         cur_vers = self.case['package'].version_short
+        i = cur_vers.find("-patch")
+        if i > -1:
+            cur_vers = cur_vers[:i]
 
         his_r = self.case.root()["solver_version"]
         if his_r:
             history = his_r.split(";")
-            last_vers = self.__clean_version(history[len(history) - 1])
+            for i, h in enumerate(history):
+                history[i] = self.__clean_version(h)
+            last_vers = history[len(history) - 1]
+            history.sort()
             if last_vers != cur_vers:
                 self._backwardCompatibilityOldVersion(last_vers)
             his = ""
             vp = ""
-            for v in history:
-                vc = self.__clean_version(v)
+            for vc in history:
                 if vc != vp:
                     his += vc + ";"
                     vp = vc
