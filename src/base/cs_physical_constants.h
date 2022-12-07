@@ -113,6 +113,8 @@ extern const double cs_physical_constants_celsius_to_kelvin; /* Celsius to
                                                                 Kelvin*/
 extern const double cs_physical_constants_stephan; /* Stephan constant
                                                      (W/m2/K4)*/
+extern const double cs_physical_constants_avogadro; /* Avogadro constant
+                                                       (1/mol) */
 
 /* Pointer to main physical constants structure */
 

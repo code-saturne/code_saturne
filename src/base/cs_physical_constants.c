@@ -392,6 +392,12 @@ const double cs_physical_constants_celsius_to_kelvin = 273.15;
 
 const double cs_physical_constants_stephan = 5.6703e-8;
 
+/*! Avogadro constant (mole definition) \f$N_A\f$ in \f$mol^{-1}$\f */
+
+const double cs_physical_constants_avogadro = 6.02214076e23;
+
+/* Other physical constants/properties */
+
 const cs_physical_constants_t  *cs_glob_physical_constants =
                                   &_physical_constants;
 
