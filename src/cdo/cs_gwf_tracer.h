@@ -186,10 +186,10 @@ struct _gwf_tracer_default_context_t {
   /* Common settings shared by all physical modelling */
   /* ------------------------------------------------ */
 
-  double     decay_coef; /* First order decay coefficient (related to the
-                               reaction term). This value is intrinsic to the
-                               component (a radioactive element for instance)
-                               and not to the soil. */
+  double     decay_coef;   /* First order decay coefficient (related to the
+                              reaction term). This value is intrinsic to the
+                              component (a radioactive element for instance)
+                              and not to the soil. */
 
   /* The following parameters are defined for each soil (arrays of size equal
    * to n_soils) */

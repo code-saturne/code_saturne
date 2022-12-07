@@ -4048,6 +4048,17 @@ cs_gwf_add_decay_chain(int                       n_tracers,
 
     sprintf(eqname, "DecayChain%02d_%s", i, varname);
 
+    /* Check the validity of the input data */
+
+    if (lambda_vals[i] < 0) {
+
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(" %s: The decay coefficient for the tracer \"%s\" has a"
+                 " negative value (%6.4e).\n",
+                 __func__, varname, lambda_vals[i]);
+
+    }
+
     /* Call the main function to add a new tracer */
 
     tdc->tracers[i] = cs_gwf_tracer_add(models[i],
