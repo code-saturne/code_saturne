@@ -113,6 +113,7 @@ cs_gwf.h \
 cs_gwf_param.h \
 cs_gwf_priv.h \
 cs_gwf_soil.h \
+cs_gwf_toolbox.h \
 cs_gwf_tracer.h \
 cs_hho_builder.h \
 cs_hho_scaleq.h \
@@ -190,6 +191,7 @@ cs_flag.c \
 cs_gwf.c \
 cs_gwf_priv.c \
 cs_gwf_soil.c \
+cs_gwf_toolbox.c \
 cs_gwf_tracer.c \
 cs_hho_builder.c \
 cs_hho_scaleq.c \

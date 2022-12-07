@@ -71,6 +71,7 @@
 #include "cs_gwf.h"
 #include "cs_gwf_param.h"
 #include "cs_gwf_soil.h"
+#include "cs_gwf_toolbox.h"
 #include "cs_gwf_tracer.h"
 #include "cs_hho_builder.h"
 #include "cs_hho_scaleq.h"

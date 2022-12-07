@@ -50,6 +50,10 @@ Master (not on release branches yet)
   coefficient is not anymore associated to a couple (tracer, soil) but
   only to a tracer.
 
+- Groundwater flows: Easier handling of a radioactive decay chain. Add
+  a function following the Bateman's solution to define the initial
+  state of each radioactive tracer.
+
 ### Physical modeling:
 
 - Add hybrid RANS/LES turbulence model (HTLES) from V. Duffal PhD.
