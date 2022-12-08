@@ -1098,32 +1098,33 @@ class Studies(object):
 
         # Store options
 
-        self.__pkg               = pkg
-        self.__create_xml        = options.create_xml
-        self.__update_smgr       = options.update_smgr
-        self.__update_setup      = options.update_setup
-        self.__force_rm          = options.remove_existing
-        self.__disable_ow        = options.disable_overwrite
-        self.__debug             = options.debug
-        self.__n_procs           = options.n_procs
-        self.__filter_level      = options.filter_level
-        self.__filter_n_procs    = options.filter_n_procs
+        self.__pkg                     = pkg
+        self.__create_xml              = options.create_xml
+        self.__update_smgr             = options.update_smgr
+        self.__update_setup            = options.update_setup
+        self.__force_rm                = options.remove_existing
+        self.__disable_ow              = options.disable_overwrite
+        self.__debug                   = options.debug
+        self.__n_procs                 = options.n_procs
+        self.__filter_level            = options.filter_level
+        self.__filter_n_procs          = options.filter_n_procs
         # Use the provided resource name if forced
-        self.__resource_name     = options.resource_name
-        self.__quiet             = options.quiet
-        self.__running           = options.runcase
-        self.__n_iter            = options.n_iterations
-        self.__compare           = options.compare
-        self.__ref               = options.reference
-        self.__postpro           = options.post
-        self.__slurm_batch_size  = options.slurm_batch_size
-        self.__slurm_batch_wtime = options.slurm_batch_wtime
-        self.__sheet             = options.sheet
-        self.__default_fmt       = options.default_fmt
+        self.__resource_name           = options.resource_name
+        self.__quiet                   = options.quiet
+        self.__running                 = options.runcase
+        self.__n_iter                  = options.n_iterations
+        self.__compare                 = options.compare
+        self.__ref                     = options.reference
+        self.__postpro                 = options.post
+        self.__slurm_batch_size        = options.slurm_batch_size
+        self.__slurm_batch_wtime       = options.slurm_batch_wtime
+        self.__slurm_sbatch_parameters = options.slurm_sbatch_parameters
+        self.__sheet                   = options.sheet
+        self.__default_fmt             = options.default_fmt
         # do not use tex in matplotlib (built-in mathtext is used instead)
-        self.__dis_tex           = options.disable_tex
+        self.__dis_tex                 = options.disable_tex
         # tex reports compilation with pdflatex
-        self.__pdflatex          = not options.disable_pdflatex
+        self.__pdflatex                = not options.disable_pdflatex
 
         # Query install configuration and current environment
         # (add number of procs based on resources to install
@@ -1792,6 +1793,12 @@ class Studies(object):
                                 # computation with at least 6 processors
                                 if nproc+1 > 5:
                                     cmd += "#SBATCH --exclusive"
+
+                                # add user defined options if needed
+                                if self.__slurm_sbatch_parameters:
+                                    for _p in self.__slurm_sbatch_parameters.split(','):
+                                        cmd += "#SBATCH " + _p + "\n"
+
                                 cmd += "\n"
 
                                 slurm_batch_file.write(cmd)
