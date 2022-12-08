@@ -146,8 +146,8 @@ BEGIN_C_DECLS
         \ref iturb = 60 or 70)
   \var  cs_turb_rans_model_t::idirsm
         turbulent diffusion model for second moment closure
-        - 0: scalar diffusivity (Shir model)
-        - 1: tensorial diffusivity (Daly and Harlow model, default model)
+        - 0: scalar diffusivity (Shir model, default model)
+        - 1: tensorial diffusivity (Daly and Harlow model)
   \var  cs_turb_rans_model_t::iclkep
         Indicates the clipping method used for \f$k\f$ and
         \f$\varepsilon\f$, for the \f$k-\epsilon\f$ and v2f models\n
