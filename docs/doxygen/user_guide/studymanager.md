@@ -43,7 +43,7 @@ directories will be found in `<CASE>`.
 For each duplicated case, SMGR can run the case, compare the obtained checkpoint
 file with the previous one from a reference destination repository,
 and plot curves in order to illustrate the computations. All generated figures are
-batched in`report_figures.pdf`. For each duplicated study, SMGR can generate the
+batched in `report_figures.pdf`. For each duplicated study, SMGR can generate the
 description report based on the latex file in the `REPORT` folder.
 
 In the **repository**, previous results of computations are required only for
@@ -199,8 +199,8 @@ The last line of the parameters file must be:
 </studymanager>
 ```
 
-Studies and cases attibutes
--------------------------
+Studies and cases attributes
+----------------------------
 
 ```{.xml}
     <study label="MyStudy1" status="on" tags="coarse, test">
@@ -424,7 +424,7 @@ Several comparisons with different options are permitted:
 </study>
 ```
 
-Comparison results will be summarized in a table in the file `report_detailed.pdf`
+Comparison of results will be summarized in a table in the file `report_detailed.pdf`
 (see [output](@ref sec_smgr_restart) section):
 
 <table>
@@ -856,7 +856,7 @@ command line.
 
 SMGR can include files into the final detailed report. These files must be in
 the directory of results either in the **destination** or in the **repository**.
-The following example shows the inclusion of two figures from the 
+The following example shows the inclusion of two figures from the
 **destination**, and the **repository**:
 
 ```{.xml}
@@ -937,7 +937,7 @@ In the following example, nothing from the study `MyStudy2` will be read:
         <case label="Grid1" status="on" compute="on" post="on"/>
         <case label="Grid2" status="on" compute="off" post="on"/>
     </study>
-    < !-- 
+    < !--
     <study label="MyStudy2" status="on">
         <case label="k-eps" status="on" compute="on" post="on"/>
         <case label="Rij-eps" status="on" compute="on" post="on"/>
