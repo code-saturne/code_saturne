@@ -332,10 +332,18 @@ This is activated by defining `N > 0` using the following command-line option:
 `--slurm-batch-size=N`
 `--slurm-batch-wtime=M` can also be used to specify the wall time limit in hours
 of submissions (3 hours by default).
+Additional slurm batch (SBATCH) parameters can be also specified at run time
+using the `--sbatch-parameter` option.
+This option only takes into account only one argument at a time.
+For example, to add the "exclusive" and send an e-mail notification use the
+following command-line option:
+`--sbatch-parameter=--exclusive --sbatch-parameter=--mail-user=name.last@email.com`
 
 \warning
-For EDF users, the `wckey` argument should be defined in the user
-environnement with the following command: `export SBATCH_WCKEY=<key>`.
+For EDF users, the `wckey` argument should be defined. It can be done
+by either using `--sbatch-parameter=--wckey=<key>` during run time, or
+by setting an environnement variable with the following
+command: `export SBATCH_WCKEY=<key>`.
 
 ### Definition of dependencies
 
