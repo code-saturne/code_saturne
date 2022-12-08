@@ -38,6 +38,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/cdo \
+-I$(top_srcdir)/src/comb \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
@@ -90,7 +91,7 @@ cs_stl.h
 # Library source files
 
 noinst_LIBRARIES = libcsmesh.a \
-                   libcspartition.a
+		   libcspartition.a
 
 libcsmesh_a_SOURCES = \
 cs_geom.c \

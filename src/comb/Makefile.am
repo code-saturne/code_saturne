@@ -22,7 +22,29 @@
 
 #-------------------------------------------------------------------------------
 
+# PLE dependency
+
+if HAVE_INTERNAL_PLE
+  CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
+else
+  CPPFLAGS_PLE = $(PLE_CPPFLAGS)
+endif
+
 # Main part
+
+AM_CPPFLAGS = \
+-I$(top_srcdir)/src/alge \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/cdo \
+-I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/pprt \
+-I$(top_srcdir)/src/turb \
+$(CPPFLAGS_PLE) \
+$(MPI_CPPFLAGS)
+
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
@@ -45,13 +67,16 @@ AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS =
+pkginclude_HEADERS = \
+cs_coal_radst.h \
+cs_comb_headers.h
 
 # Library source files
 
 noinst_LIBRARIES = libcscomb.a
 libcscomb_a_SOURCES = \
 cs_coal_bcond.f90 \
+cs_coal_radst.c \
 cplin1.f90 \
 cplini.f90 \
 cplph1.f90 \
@@ -78,7 +103,6 @@ cs_coal_physprop1.f90 \
 cs_coal_physprop2.f90 \
 cs_coal_physprop.f90 \
 cs_coal_prop.f90 \
-cs_coal_radst.f90 \
 cs_coal_readata.f90 \
 cs_coal_scast.f90 \
 cs_coal_thfieldconv1.f90 \

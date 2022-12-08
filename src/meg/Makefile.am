@@ -39,6 +39,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/cfbl \
 -I$(top_srcdir)/src/cogz \
+-I$(top_srcdir)/src/comb \
 -I$(top_srcdir)/src/darc \
 -I$(top_srcdir)/src/ctwr \
 -I$(top_srcdir)/src/elec \
@@ -75,4 +76,3 @@ cs_meg_volume_function.c
 
 noinst_LIBRARIES = libcsmeg.a
 libcsmeg_a_SOURCES = $(megfiles)
-

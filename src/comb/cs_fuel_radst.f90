@@ -115,7 +115,6 @@ call field_get_id(f_name, f_id)
 call field_get_val_s(f_id,cpro_tsre)
 call field_get_val_s(iyfol(numcla),cpro_yfol)
 
-
 do iel = 1,ncel
   cpro_tsri(iel) = max(-cpro_tsri(iel),zero)
 enddo

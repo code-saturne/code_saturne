@@ -281,6 +281,14 @@ interface
    real(kind=c_double), dimension(*) :: pphy, refrad
  end subroutine cs_atmo_aerosol_nuclea
 
+ subroutine coal_radst(f_id, smbrs, rovsdt) &
+   bind(C, name='cs_f_coal_radst')
+   use, intrinsic :: iso_c_binding
+   implicit none
+   integer(c_int), intent(in), value :: f_id
+   real(kind=c_double), dimension(*), intent(inout) :: smbrs, rovsdt
+ end subroutine coal_radst
+
  end interface
 
 !===============================================================================
@@ -663,10 +671,7 @@ if (iirayo.ge.1) then
     if (isca(iscal).ge.isca(ih2(1)) .and.       &
         isca(iscal).le.isca(ih2(nclacp))) then
 
-      call cs_coal_radst &
-      !=================
-      ( ivar   , ncelet , ncel  ,               &
-        cell_f_vol , smbrs , rovsdt )
+      call coal_radst(ivarfl(ivar), smbrs, rovsdt)
 
     endif
 
@@ -698,10 +703,7 @@ if (iirayo.ge.1) then
     if (isca(iscal).ge.isca(ih2(1)) .and.       &
         isca(iscal).le.isca(ih2(nclafu))) then
 
-      call cs_fuel_radst &
-     !==================
-     ( ivar   , ncelet , ncel  ,                &
-       cell_f_vol , smbrs , rovsdt)
+      call cs_fuel_radst(ivar, ncelet, ncel, cell_f_vol, smbrs, rovsdt)
 
     endif
   endif
