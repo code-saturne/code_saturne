@@ -178,7 +178,7 @@ do ifac = 1, nfabor
   if (ialtyb(ifac).ne.0      .and.                                &
       ialtyb(ifac).ne.ibfixe .and.                                &
       ialtyb(ifac).ne.igliss .and.                                &
-      ialtyb(ifac).ne.ifresf .and.                                &
+      ialtyb(ifac).ne.ibalfs .and.                                &
       ialtyb(ifac).ne.ivimpo ) then
     if (ialtyb(ifac).gt.0) then
       ialtyb(ifac) = -ialtyb(ifac)
@@ -281,7 +281,7 @@ do ifac = 1, nfabor
     if (icodcl(ifac,iwma).eq.0) icodcl(ifac,iwma) = 1
 
   ! --> Free surface face: the mesh velocity is imposed by the mass flux
-  elseif (ialtyb(ifac).eq.ifresf) then
+  elseif (ialtyb(ifac).eq.ibalfs) then
 
     if (icodcl(ifac,iuma).eq.0) then
       icodcl(ifac,iuma) = 1

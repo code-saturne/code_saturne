@@ -700,7 +700,7 @@ iok = 0
 if (iale.ge.1) then
   grav2 = gx**2 + gy**2 + gz**2
   do ifac = 1, nfabor
-    if (ialtyb(ifac).eq.ifresf.and.grav2.le.epzero**2) then
+    if (ialtyb(ifac).eq.ibalfs.and.grav2.le.epzero**2) then
       iok = 1
     endif
   enddo

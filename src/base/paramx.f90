@@ -182,11 +182,9 @@ module paramx
 
   !> \anchor ifresf
   !> if \ref itypfb=ifresf: free surface for mobile mesh boundary condition
-  !>  - Homogeneous Neumann boundary condition for velocity and total energy (seen by the reconstruction
-  !> gradients and the diffusion operator).
+  !>  - Homogeneous Neumann boundary condition for velocity and total energy
+  !> (seen by the reconstruction gradients and the diffusion operator).
   !>  - Dirichlet (\ref icodcl=1) for the pressure.
-  !> Also a boundary condition type for mesh velocity in ALE for modelling
-  !> free surface (\f$ \vect{u} \cdot \vect{S} = \vect{w} \cdot \vect{S} \f$).
   integer   ifresf
 
   !> \anchor i_convective_inlet
@@ -203,7 +201,7 @@ module paramx
 
   parameter(iindef=1, ientre=2, isolib=3, isymet=4, iparoi=5,       &
             iparug=6, iesicf=7, isspcf=8, isopcf=9, iephcf=10,      &
-            ieqhcf=11, icscpl=12, icscpd=13, ifrent=14, ifresf=64,  &
+            ieqhcf=11, icscpl=12, icscpd=13, ifrent=14, ifresf=15,  &
             i_convective_inlet=16)
 
   ! Note the ifresf maps to CS_BOUNDARY_ALE_FREE_SURFACE (1 << 6) in C,
@@ -325,16 +323,23 @@ module paramx
   !> - In the case where all the nodes of a face have a imposed displacement,
   !> it is not necessary to fill the tables with boundary conditions
   !> mesh velocity for this face, they will be erased. In the other case,
-  !> the value of the Dirichlet must be given in \ref rcodcl "rcodcl"(ifac,ivar,1)
+  !> the value of the Dirichlet must be given in
+  !> \ref rcodcl "rcodcl"(ifac,ivar,1)
   !> for every value of \c ivar (\ref iuma, \ref ivma and \ref iwma).
   !> The other boxes of \ref rcodcl and \ref icodcl are completed automatically.
   !> The tangential mesh velocity is taken like a tape speed under the
   !> boundary conditions of wall for the fluid, except if wall fluid velocity
-  !> was specified by the user in the interface or \ref cs_user_boundary_conditions
-  !> (in which case it is this speed which is considered).
+  !> was specified by the user in the interface or
+  !> \ref cs_user_boundary_conditions (in which case it is this speed
+  !> which is considered).
   integer   ivimpo
 
-  parameter(ibfixe=1, igliss=2, ivimpo=4)
+  !> \anchor ifresf
+  !> Boundary condition type for mesh velocity in ALE for modelling
+  !> free surface (\f$ \vect{u} \cdot \vect{S} = \vect{w} \cdot \vect{S} \f$).
+  integer   ibalfs
+
+  parameter(ibfixe=1, igliss=2, ivimpo=4, ibalfs=64)
 
   !> maximum number of structures in ALE
   integer    nstrmx

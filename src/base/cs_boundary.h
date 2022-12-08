@@ -116,10 +116,10 @@ typedef enum {
   CS_BOUNDARY_INLET_SUBSONIC_PH   = 1<<11,
 
   /*! compressible subsonic */
-  CS_BOUNDARY_SUBSONIC             = 1<<12,
+  CS_BOUNDARY_SUBSONIC            = 1<<12,
 
   /*! compressible supersonic */
-  CS_BOUNDARY_SUPERSONIC           = 1<<13,
+  CS_BOUNDARY_SUPERSONIC          = 1<<13,
 
   /*! free surface */
   CS_BOUNDARY_FREE_SURFACE        = 1<<14,
