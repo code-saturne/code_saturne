@@ -1251,12 +1251,12 @@ cs_turbulence_v2f_phi_mu_t(void)
   /* HTLES method */
   if (cs_glob_turb_model->hybrid_turb == 4) {
 
-    cs_real_t *psi = cs_field_by_name("htles_psi")->val;
-    cs_real_t *blend = cs_field_by_name("hybrid_blend")->val;
+    // cs_real_t *psi = cs_field_by_name("htles_psi")->val;
+    // cs_real_t *blend = cs_field_by_name("hybrid_blend")->val;
 
     //TODO VD
-    cs_exit(1);
-
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: not implemented for hybrid_turb = 4."), __func__);
   }
   else {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {

@@ -935,7 +935,6 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
         cs_real_t xxf1   = xf1[c_id];
         cs_real_t xgamma = xxf1 * cs_turb_ckwgm1 + (1. - xxf1)*cs_turb_ckwgm2;
         cs_real_t xbeta  = xxf1 * cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
-        cs_real_t xcmu   = cs_turb_cmu;
 
         /* HTLES method */
         cs_real_t xpsi  = psi[c_id];

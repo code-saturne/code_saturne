@@ -433,7 +433,6 @@ cs_htles_initialization(void) {
   cs_lnum_t max_edg_per_cells = max_faces_per_cells*max_edg_per_faces;
 
   cs_lnum_t c_id_1, c_id_2;
-  cs_lnum_t vtx1, vtx2;
   cs_lnum_t vtx1_id, vtx2_id;
   cs_lnum_t vtx1_edg1_id, vtx2_edg1_id;
   cs_lnum_t vtx1_edg2_id, vtx2_edg2_id;

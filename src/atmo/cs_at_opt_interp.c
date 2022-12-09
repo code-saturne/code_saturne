@@ -703,7 +703,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
 {
   cs_real_t val;
   char line[MAX_LINE_SIZE];
-  FILE* fichier = NULL;
+  FILE* fh = NULL;
 
   BFT_MALLOC(oi->relax, f_dim, cs_real_t);
   for (int kk = 0; kk < f_dim; kk++)
@@ -721,20 +721,20 @@ cs_at_opt_interp_read_file(char const           filename[50],
   oi->type_nudging = 0;
 
   /* First reading - test if file exists */
-  fichier = fopen(filename, "r");
-  if (fichier == NULL) {
-    bft_printf(" Error when opening file %s - exit\n",filename);
-    cs_exit(EXIT_FAILURE);
+  fh = fopen(filename, "r");
+  if (fh == NULL) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error when opening file %s."), filename);
   }
-  fclose(fichier);
+  fclose(fh);
 
   /* Second reading */
-  fichier = fopen(filename, "r");
-  while (fgets(line, MAX_LINE_SIZE, fichier)) {
+  fh = fopen(filename, "r");
+  while (fgets(line, MAX_LINE_SIZE, fh)) {
     /* Reading Number of observations */
     if (strncmp(line, "_nobs_", 6) == 0) {
       int n_measures;
-      fscanf(fichier, "%i", &n_measures);
+      fscanf(fh, "%i", &n_measures);
       ms->nb_measures = n_measures;
 
 #if _OI_DEBUG_
@@ -742,28 +742,28 @@ cs_at_opt_interp_read_file(char const           filename[50],
 #endif
 
       if (ms->nb_measures <= 0) {
-        bft_printf(" File %s. The number of observations (_nobs_) must be "
-                   "strictly positive.\n"
-                   " Otherwise turn off nudging for the corresponding variable"
-                   "- exit\n", filename);
-        cs_exit(EXIT_FAILURE);
+        bft_error(__FILE__, __LINE__, 0,
+                  _("File %s. The number of observations (_nobs_) must be "
+                    "strictly positive.\n"
+                    "Otherwise turn off nudging for the corresponding variable."),
+                  filename);
       }
     }
 
     /* Reading dimension of measures */
     if (strncmp(line, "_dim_", 5) == 0) {
-      fscanf(fichier, "%i", &(ms->dim));
+      fscanf(fh, "%i", &(ms->dim));
 
 #if _OI_DEBUG_
       bft_printf("   *Reading _dim_ : %i\n", ms->dim);
 #endif
 
       if (ms->dim <= 0) {
-        bft_printf(" File %s. The observation dimension (_dim_) must be "
-                   "strictly positive.\n"
-                   " Otherwise turn off nudging for the corresponding variable"
-                   "- exit\n", filename);
-        cs_exit(EXIT_FAILURE);
+        bft_error(__FILE__, __LINE__, 0,
+                  _("File %s. The observation dimension (_dim_) must be "
+                    "strictly positive.\n"
+                    "Otherwise turn off nudging for the corresponding variable."),
+                  filename);
       }
       BFT_MALLOC(ms->comp_ids, ms->dim, int);
     }
@@ -771,34 +771,34 @@ cs_at_opt_interp_read_file(char const           filename[50],
 
     /* Reading observation times */
     if (strncmp(line, "_times_", 7) == 0) {
-      fscanf(fichier, "%i", &(oi->nb_times));
+      fscanf(fh, "%i", &(oi->nb_times));
 
 #if _OI_DEBUG_
       bft_printf("   * Reading _times_ : %i\n    ", oi->nb_times);
 #endif
 
       if (oi->nb_times < 0) {
-        bft_printf(" File %s. The number of times (_times_) must be positive.\n"
-                   " Otherwise turn off nudging for the corresponding variable"
-                   "- exit\n", filename);
-        cs_exit(EXIT_FAILURE);
+        bft_error(__FILE__, __LINE__, 0,
+                  _("File %s. The number of times (_times_) must be positive.\n"
+                    "Otherwise turn off nudging for the corresponding variable."),
+                  filename);
       }
 
       /* 3DVar mode */
       if (oi->nb_times == 0) {
         oi->nb_times = 1;
-        fscanf(fichier, "%i", &(oi->steady));
+        fscanf(fh, "%i", &(oi->steady));
 
 #if _OI_DEBUG_
         bft_printf("3DVar mode active for iteration %i\n",oi->steady);
 #endif
 
         if (oi->steady <= 0) {
-          bft_printf(" File %s. The iteration identifier (_times_ with 0 time) "
-                     "must be strictly positive for 3DVar mode.\n"
-                     " Otherwise turn off nudging for the corresponding variable"
-                     " - exit\n", filename);
-          cs_exit(EXIT_FAILURE);
+          bft_error(__FILE__, __LINE__, 0,
+                    _("File %s. The iteration identifier (_times_ with 0 time) "
+                      "must be strictly positive for 3DVar mode.\n"
+                      "Otherwise turn off nudging for the corresponding variable."),
+                    filename);
         }
       }
 
@@ -807,7 +807,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
         BFT_MALLOC(oi->times_read, oi->nb_times, cs_real_t);
 
         for (cs_lnum_t i = 0; i < oi->nb_times; i++)
-          fscanf(fichier, "%lf", oi->times_read+i);
+          fscanf(fh, "%lf", oi->times_read+i);
 
 #if _OI_DEBUG_
         for (cs_lnum_t i = 0; i < oi->nb_times; i++)
@@ -819,12 +819,12 @@ cs_at_opt_interp_read_file(char const           filename[50],
     }
 
   }
-  fclose(fichier);
+  fclose(fh);
 
   int n_obs = ms->nb_measures;
 
   /* Third reading */
-  fichier = fopen(filename, "r");
+  fh = fopen(filename, "r");
 
   /* initialize count */
   int *_n_readable_measures;
@@ -832,52 +832,52 @@ cs_at_opt_interp_read_file(char const           filename[50],
   for (int kk = 0; kk < ms->dim+1; kk++)
     _n_readable_measures[kk] = 0;
 
-  while (fgets(line, MAX_LINE_SIZE, fichier)) {
+  while (fgets(line, MAX_LINE_SIZE, fh)) {
 
     /* counting non nan measures */
 
     if (strncmp(line, "_measures_", 10) == 0) {
       for (int kk = 0; kk < ms->dim-1; kk++) {
-        fscanf(fichier, "%i ", &ms->comp_ids[kk]);
+        fscanf(fh, "%i ", &ms->comp_ids[kk]);
       }
-      fscanf(fichier, "%i", &ms->comp_ids[ms->dim-1]);
+      fscanf(fh, "%i", &ms->comp_ids[ms->dim-1]);
 
       for (int ii = 0; ii < n_obs; ii++)
         for (int jj = 0; jj < oi->nb_times; jj++) {
           for (int kk = 0; kk < ms->dim-1; kk++) {
-            fscanf(fichier, "%lf ", &val);
+            fscanf(fh, "%lf ", &val);
             if (!isnan(val))
               _n_readable_measures[kk+1] += 1;
           }
-          fscanf(fichier, "%lf", &val); /* read after because of ending space */
+          fscanf(fh, "%lf", &val); /* read after because of ending space */
           if (!isnan(val))
             _n_readable_measures[ms->dim] += 1;
         }
     }
   }
-  fclose(fichier);
+  fclose(fh);
 
   int _tot_n_readable_measures = 0;
   for (int kk = 0; kk < ms->dim + 1; kk++)
     _tot_n_readable_measures += _n_readable_measures[kk];
 
   /* 4th reading */
-  fichier = fopen(filename, "r");
-  while (fgets(line, MAX_LINE_SIZE, fichier)) {
+  fh = fopen(filename, "r");
+  while (fgets(line, MAX_LINE_SIZE, fh)) {
 
     /*Reading influence radius*/
     if (strncmp(line, "_L_", 3) == 0) {
-      fscanf(fichier, "%lf", &(oi->ir[0]));
-      fscanf(fichier, "%lf", &(oi->ir[1]));
+      fscanf(fh, "%lf", &(oi->ir[0]));
+      fscanf(fh, "%lf", &(oi->ir[1]));
 
 #if _OI_DEBUG_
       bft_printf("   * Reading _L_ : %.2f %.2f\n", oi->ir[0], oi->ir[1]);
 #endif
 
       if (oi->ir[0] <= 0. || oi->ir[1] <= 0.) {
-        bft_printf(" File %s. The observation influence radii (_L_ in m)"
-                   " must be strictly positive - exit\n", filename);
-        cs_exit(EXIT_FAILURE);
+        bft_error(__FILE__, __LINE__, 0,
+                  _("File %s. The observation influence radii (_L_ in m)"
+                    " must be strictly positive."), filename);
       }
     }
 
@@ -886,8 +886,8 @@ cs_at_opt_interp_read_file(char const           filename[50],
       cs_real_t *tau = NULL;
       BFT_MALLOC(tau, ms->dim, cs_real_t);
       for (int kk = 0; kk < ms->dim-1; kk++)
-        fscanf(fichier, "%lf ", tau+kk);
-      fscanf(fichier, "%lf", tau+ms->dim-1);
+        fscanf(fh, "%lf ", tau+kk);
+      fscanf(fh, "%lf", tau+ms->dim-1);
 
 #if _OI_DEBUG_
       bft_printf("   * Reading _t_ :");
@@ -898,9 +898,9 @@ cs_at_opt_interp_read_file(char const           filename[50],
 
       for (int kk = 0; kk < ms->dim; kk++) {
         if (tau[kk] <= 0.) {
-          bft_printf(" File %s. Each relaxation time (_t_ in s) must be"
-                     " strictly positive - exit\n", filename);
-          cs_exit(EXIT_FAILURE);
+          bft_error(__FILE__, __LINE__, 0,
+                    _("File %s. Each relaxation time (_t_ in s) must be"
+                     " strictly positive."), filename);
         }
         oi->relax[ms->comp_ids[kk]] = 1/tau[kk];
       }
@@ -908,7 +908,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
 
     /* Reading the number of obs/times to print in the log */
     if (strncmp(line, "_n_log_data_", 12) == 0) {
-      fscanf(fichier, "%i", &(oi->n_log_data));
+      fscanf(fh, "%i", &(oi->n_log_data));
       if (oi->n_log_data < 0)
         oi->n_log_data = 0;
 
@@ -920,7 +920,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
 
     /* Reading the frequency of analysis computation */
     if (strncmp(line, "_frequency_", 11) == 0) {
-      fscanf(fichier, "%i", &(oi->frequency));
+      fscanf(fh, "%i", &(oi->frequency));
       if (oi->frequency < 1)
         oi->frequency = 1;
 
@@ -932,7 +932,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
 
     /* Reading the type of nudging applied */
     if (strncmp(line, "_nudging_", 9) == 0) {
-      fgets(line, MAX_LINE_SIZE, fichier);
+      fgets(line, MAX_LINE_SIZE, fh);
       if (strncmp(line, "explicit", 8) == 0) {
         oi->type_nudging = 1;
 
@@ -950,15 +950,15 @@ cs_at_opt_interp_read_file(char const           filename[50],
 
       }
       else {
-        bft_printf(" File %s. Section _nudging_: wrong key"
-                    " (admissible keys: explicit, implicit) - exit\n", filename);
-        cs_exit(EXIT_FAILURE);
+        bft_error(__FILE__, __LINE__, 0,
+                  _("File %s. Section _nudging_: wrong key"
+                    " (admissible keys: explicit, implicit)."), filename);
       }
     }
 
     /* Reading interpolation type */
     if (strncmp(line, "_interp_", 8) == 0) {
-      fgets(line, MAX_LINE_SIZE, fichier);
+      fgets(line, MAX_LINE_SIZE, fh);
       if (strncmp(line, "P0", 2) == 0) {
         oi->interp_type = CS_AT_OPT_INTERP_P0;
 
@@ -976,9 +976,9 @@ cs_at_opt_interp_read_file(char const           filename[50],
 
       }
       else {
-        bft_printf(" File %s. Section _interp_: wrong key"
-                   " (admissible keys: P0, P1) - exit\n", filename);
-        cs_exit(EXIT_FAILURE);
+        bft_error(__FILE__, __LINE__, 0,
+                  _("File %s. Section _interp_: wrong key"
+                    " (admissible keys: P0, P1)."), filename);
       }
     }
 
@@ -986,7 +986,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
     if (strncmp(line,"_coordinates_", 13) == 0) {
       BFT_MALLOC(ms->coords, n_obs*3, cs_real_t);
       for (cs_lnum_t i = 0; i < n_obs; i++)
-        fscanf(fichier, "%lf %lf %lf", ms->coords+3*i,
+        fscanf(fh, "%lf %lf %lf", ms->coords+3*i,
                                        ms->coords+3*i+1,
                                        ms->coords+3*i+2);
 
@@ -1027,9 +1027,9 @@ cs_at_opt_interp_read_file(char const           filename[50],
       /* read again components to skip the line */
 
       for (int kk = 0; kk < ms->dim-1; kk++) {
-        fscanf(fichier, "%i ", &ms->comp_ids[kk]);
+        fscanf(fh, "%i ", &ms->comp_ids[kk]);
       }
-      fscanf(fichier, "%i", &ms->comp_ids[ms->dim-1]);
+      fscanf(fh, "%i", &ms->comp_ids[ms->dim-1]);
 
       /* read measures */
 
@@ -1045,7 +1045,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
         for (int jj = 0; jj < oi->nb_times; jj++) {
           val = 0;
           for (int kk = 0; kk < ms->dim-1; kk++) {
-            fscanf(fichier, "%lf ", &val);
+            fscanf(fh, "%lf ", &val);
             if (!isnan(val)) {
               int cc = _n_readable_measures[kk] + _n_readable_measures_c[kk];
 
@@ -1060,7 +1060,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
             }
           }
           val = 0;
-          fscanf(fichier, "%lf", &val); /* read after because of ending space */
+          fscanf(fh, "%lf", &val); /* read after because of ending space */
           if (!isnan(val)) {
             int cc = _n_readable_measures[ms->dim-1]
                    + _n_readable_measures_c[ms->dim-1];
@@ -1142,14 +1142,14 @@ cs_at_opt_interp_read_file(char const           filename[50],
 
     /* Reading observations error covariances */
     if (strncmp(line, "_errors_", 8) == 0) {
-      fgets(line, MAX_LINE_SIZE, fichier);
+      fgets(line, MAX_LINE_SIZE, fh);
 
       if (strncmp(line, "diagonal", 8) == 0) {
         BFT_MALLOC(oi->obs_cov, ms->dim*n_obs, cs_real_t);
         oi->obs_cov_is_diag = true;
 
         for (int ii = 0; ii < ms->dim*n_obs; ii++)
-          fscanf(fichier, "%lf", oi->obs_cov + ii);
+          fscanf(fh, "%lf", oi->obs_cov + ii);
 
 #if _OI_DEBUG_
         bft_printf("   * Reading _errors_ : diagonal\n    ");
@@ -1165,7 +1165,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
         for (int ii = 0; ii < n_obs; ii++)
           for (int jj = 0; jj < n_obs; jj++)
             for (int kk = 0; kk < ms->dim; kk++)
-              fscanf(fichier, "%lf", oi->obs_cov + ms->dim*(ii*n_obs + jj) + kk);
+              fscanf(fh, "%lf", oi->obs_cov + ms->dim*(ii*n_obs + jj) + kk);
 
 #if _OI_DEBUG_
         bft_printf("   * Reading _errors_ : full\n");
@@ -1178,29 +1178,32 @@ cs_at_opt_interp_read_file(char const           filename[50],
         }
 #endif
 
-      } else {
-        bft_printf(" File %s. Section _errors_: wrong key (admissible"
-                   " keys: diagonal, full) - exit\n", filename);
-        cs_exit(EXIT_FAILURE);
+      }
+      else {
+        bft_error(__FILE__, __LINE__, 0,
+                  _("File %s. Section _errors_: wrong key (admissible"
+                    " keys: diagonal, full)."), filename);
       }
     }
 
     /* Reading observations time window */
     if (strncmp(line, "_temps_", 7) == 0) {
       BFT_MALLOC(oi->time_window, 4, cs_real_t);
-      fgets(line, MAX_LINE_SIZE, fichier);
+      fgets(line, MAX_LINE_SIZE, fh);
       if (strncmp(line, "sym", 3) == 0) {
-        fscanf(fichier, "%lf", oi->time_window + 2);
-        fscanf(fichier, "%lf", oi->time_window + 3);
+        fscanf(fh, "%lf", oi->time_window + 2);
+        fscanf(fh, "%lf", oi->time_window + 3);
         oi->time_window[1] = - oi->time_window[2];
         oi->time_window[0] = - oi->time_window[3];
-      } else if (strncmp(line,"asym", 4) == 0) {
+      }
+      else if (strncmp(line,"asym", 4) == 0) {
         for (cs_lnum_t i = 0; i < 4; i++)
-          fscanf(fichier, "%lf", oi->time_window + i);
-      } else {
-        bft_printf(" File %s. Section _temps_: wrong key (admissible"
-                   " keys: sym, asym) - exit\n", filename);
-        cs_exit(EXIT_FAILURE);
+          fscanf(fh, "%lf", oi->time_window + i);
+      }
+      else {
+        bft_error(__FILE__, __LINE__, 0,
+                  _("File %s. Section _temps_: wrong key (admissible"
+                    " keys: sym, asym)."), filename);
       }
 
       /* Automatic corrections */
@@ -1227,7 +1230,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
 
     }
   }
-  fclose(fichier);
+  fclose(fh);
 
 #if _OI_DEBUG_
   bft_printf("\n   * File %s closed\n\n", filename);
@@ -1235,18 +1238,18 @@ cs_at_opt_interp_read_file(char const           filename[50],
 
   /* Verifications */
   if (ms->coords == NULL) {
-    bft_printf(" File %s. The observation coordinates are missing"
-               " (_coordinates_) - exit\n", filename);
-    cs_exit(EXIT_FAILURE);
+    bft_error(__FILE__, __LINE__, 0,
+              _("File %s. The observation coordinates are missing"
+                " (_coordinates_)."), filename);
   }
   if (oi->steady <= 0 && oi->times == NULL) {
-    bft_printf(" File %s. The observation times are missing"
-               " (_times_) - exit\n", filename);
-    cs_exit(EXIT_FAILURE);
+    bft_error(__FILE__, __LINE__, 0,
+              _("File %s. The observation times are missing"
+                " (_times_)."), filename);
   }
   if (ms->measures == NULL) {
-    bft_printf(" File %s. The measures are missing (_measures_) - exit\n", filename);
-    cs_exit(EXIT_FAILURE);
+    bft_error(__FILE__, __LINE__, 0,
+              _("File %s. The measures are missing (_measures_)."), filename);
   }
 }
 

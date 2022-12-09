@@ -815,10 +815,6 @@ cs_lagr_restart_read_p(void)
 
   cs_parameters_error_barrier();
 
-  /* Stop */
-  if (iok != 0)
-    cs_exit(1);
-
   {
     ierror = cs_restart_read_section(lag_stat_restart,
                                      "indicateur_diametre_particules",

@@ -2768,8 +2768,6 @@ cs_gui_equation_parameters(void)
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
       cs_equation_param_t *eqp_eq = NULL;
 
-      int j = cs_field_get_key_int(f, var_key_id) -1;
-
       const char *ref_name = f->name;
       if (   cs_gui_strcmp(f->name, "r11")
           || cs_gui_strcmp(f->name, "r22")

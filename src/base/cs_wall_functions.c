@@ -646,31 +646,13 @@ cs_immersed_boundary_wall_functions(int         f_id,
         }
       }
       break;
-      // TODO
-    case CS_WALL_F_1SCALE_POWER:
-      cs_exit(EXIT_FAILURE);
-      break;
-    case CS_WALL_F_1SCALE_LOG:
-      cs_exit(EXIT_FAILURE);
-      break;
-    case CS_WALL_F_2SCALES_LOG:
-      cs_exit(EXIT_FAILURE);
-      break;
-    case CS_WALL_F_SCALABLE_2SCALES_LOG:
-      cs_exit(EXIT_FAILURE);
-      break;
-    case CS_WALL_F_2SCALES_VDRIEST:
-      cs_exit(EXIT_FAILURE);
-      break;
-    case CS_WALL_F_2SCALES_SMOOTH_ROUGH:
-      cs_exit(EXIT_FAILURE);
-      break;
-    case CS_WALL_F_2SCALES_CONTINUOUS:
-      cs_exit(EXIT_FAILURE);
-      break;
-      // TODO
+
     default:
-      cs_exit(EXIT_FAILURE);
+      // TODO handle other cases.
+
+      bft_error(__FILE__, __LINE__, 0,
+                _("%s: wall_functions->iwallf == %d not handled yet."),
+                __func__, wall_functions->iwallf);
       break;
     }
   }
