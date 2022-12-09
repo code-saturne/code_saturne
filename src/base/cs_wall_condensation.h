@@ -60,6 +60,8 @@ typedef enum {
 
 typedef struct {
   int icondb; // Switch used to activate wall condensation (0 : activated)
+  int icondv; /* Switch used to activate wall condensation
+                 with metal structures(0 : activated) */
   // Model type
   cs_wall_cond_natural_conv_model_t natural_conv_model;
   cs_wall_cond_forced_conv_model_t  forced_conv_model;
@@ -115,9 +117,11 @@ void cs_wall_condensation_set_model(cs_wall_cond_natural_conv_model_t model);
  * \brief Set the onoff state of wall condensation modeling
  *
  * \param[in] icondb integer corresponding to the onoff state (-1 : off, 0: on)
+ * \param[in] icondv integer corresponding to the onoff state with
+                     metal structures(-1 : off, 0: on)
  */
 /*----------------------------------------------------------------------------*/
-void cs_wall_condensation_set_onoff_state(int icondb);
+void cs_wall_condensation_set_onoff_state(int icondb, int icondv);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -113,6 +113,7 @@ static const cs_real_t lcond = 2278.0e+3;
 
 static cs_wall_cond_t _wall_cond
   = { .icondb             = -1,
+      .icondv             = -1,
       .natural_conv_model = CS_WALL_COND_MODEL_COPAIN,
       .forced_conv_model  = CS_WALL_COND_MODEL_WALL_LAW, // fixed for now
       .mixed_conv_model   = CS_WALL_COND_MIXED_MAX,      // fixed for now
@@ -159,6 +160,7 @@ const cs_wall_cond_t *cs_glob_wall_cond = &_wall_cond;
 
 void cs_f_wall_condensation_get_model_pointers(
   int **                              icondb,
+  int **                              icondv,
   cs_wall_cond_natural_conv_model_t **icondb_model);
 
 void cs_f_wall_condensation_get_size_pointers(cs_lnum_t **nfbpcd,
@@ -182,7 +184,7 @@ void cs_f_wall_condensation_get_pointers(cs_lnum_t **ifbpcd,
 
 void cs_wall_condensation_set_model(cs_wall_cond_natural_conv_model_t model);
 
-void cs_wall_condensation_set_onoff_state(int icondb);
+void cs_wall_condensation_set_onoff_state(int icondb, int icondv);
 
 /*============================================================================
  * Private function definitions
@@ -610,9 +612,11 @@ _compute_exchange_coefficients(cs_lnum_t  ieltcd,
 void
 cs_f_wall_condensation_get_model_pointers(
   int **                              icondb,
+  int **                              icondv,
   cs_wall_cond_natural_conv_model_t **icondb_model)
 {
   *icondb       = &(_wall_cond.icondb);
+  *icondv       = &(_wall_cond.icondv);
   *icondb_model = &(_wall_cond.natural_conv_model);
 }
 
@@ -686,9 +690,10 @@ cs_wall_condensation_set_model(cs_wall_cond_natural_conv_model_t model)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_wall_condensation_set_onoff_state(int icondb)
+cs_wall_condensation_set_onoff_state(int icondb, int icondv)
 {
   _wall_cond.icondb = icondb;
+  _wall_cond.icondv = icondv;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -2359,13 +2359,16 @@ module cs_c_bindings
     !> \brief Set wall condensation on/off state
     !
     !> \param[in]   icondb     Integer related to the onoff state of wall
-   !                           condensation modeling (-1: off, O: on)
+    !                           condensation modeling (-1: off, O: on)
+    !> \param[in]   icondv     Integer related to the onoff state of wall
+    !                           condensation modeling with metal
+    !                           structures (-1: off, O: on)
     !---------------------------------------------------------------------------
-    subroutine cs_wall_condensation_set_onoff_state(icondb)   &
+    subroutine cs_wall_condensation_set_onoff_state(icondb, icondv)   &
       bind(C, name='cs_wall_condensation_set_onoff_state')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), intent(in), value ::icondb
+      integer(c_int), intent(in), value :: icondb, icondv
     end subroutine cs_wall_condensation_set_onoff_state
 
     !---------------------------------------------------------------------------
