@@ -175,9 +175,9 @@ def process_cmd_line(argv, pkg):
     parser.add_option("--slurm-batch-wtime", dest="slurm_batch_wtime", default=3,
                       type="int", help="wall time in hours used in slurm batch mode")
 
-    parser.add_option("--sbatch-parameter", dest="slurm_sbatch_parameters",
+    parser.add_option("--slurm-batch-arg", dest="slurm_batch_args",
                       default=None, type=str, action='append',
-                      help="additional sbatch parameters. use --sbatch-parameter=<param> to handle -- in argument.")
+                      help="additional sbatch arguments. use --slurm-batch-arg=<arg> to handle -- in argument.")
 
     if len(argv)==0:
         parser.print_help(sys.stderr)
