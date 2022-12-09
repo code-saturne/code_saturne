@@ -158,7 +158,8 @@ static cs_pressure_correction_cdo_t *cs_pressure_correction_cdo = NULL;
  * \param[in]       nfbpcd    number of faces with condensation source term
  * \param[in]       ncmast    number of cells with condensation source terms
  * \param[in]       ifbpcd    index of faces with condensation source term
- * \param[in]       ltmast    index of cells with condensation source terms
+ * \param[in]       ltmast    list of cells with condensation source terms
+ *                            (1 to n numbering)
  * \param[in]       isostd    indicator of standard outlet and index
  *                            of the reference outlet face
  * \param[in]       vel       velocity
@@ -3231,7 +3232,8 @@ cs_pressure_correction_cdo_destroy_all(void)
  * \param[in]       nfbpcd    number of faces with condensation source term
  * \param[in]       ncmast    number of cells with condensation source terms
  * \param[in]       ifbpcd    index of faces with condensation source term
- * \param[in]       ltmast    index of cells with condensation source terms
+ * \param[in]       ltmast    list of cells with condensation source terms
+ *                            (1 to n numbering)
  * \param[in]       isostd    indicator of standard outlet and index
  *                            of the reference outlet face
  * \param[in]       vel       velocity

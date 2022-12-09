@@ -1,5 +1,5 @@
 /*============================================================================
- * Base wall condensation model data.
+ * Base wall condensation model.
  *============================================================================*/
 
 /*
@@ -26,8 +26,6 @@
 
 #include "cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -46,32 +44,29 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
-#include "cs_defs.h"
+#include "cs_1d_wall_thermal.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
-#include "cs_log.h"
-#include "cs_map.h"
-#include "cs_mesh_location.h"
-#include "cs_parall.h"
-#include "cs_parameters.h"
-#include "cs_time_step.h"
-
 #include "cs_gas_mix.h"
-#include "cs_log_iteration.h"
+#include "cs_log.h"
 #include "cs_math.h"
+#include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
+#include "cs_parall.h"
 #include "cs_physical_constants.h"
+#include "cs_prototypes.h"
 #include "cs_restart.h"
 #include "cs_thermal_model.h"
+#include "cs_time_step.h"
 #include "cs_velocity_pressure.h"
+#include "cs_wall_condensation_1d_thermal.h"
 #include "cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_1d_wall_thermal.h"
 #include "cs_wall_condensation.h"
-#include "cs_wall_condensation_1d_thermal.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -94,20 +89,20 @@ BEGIN_C_DECLS
 //> Constants for the correlation of steam saturated pressure
 static const cs_real_t pr_c = 221.2e+5;
 static const cs_real_t t_c  = 647.3e0;
-static const cs_real_t C_k1 = -7.691234564e0;
-static const cs_real_t C_k2 = -26.08023696e0;
-static const cs_real_t C_k3 = -168.1706546e0;
-static const cs_real_t C_k4 = 64.23285504e0;
-static const cs_real_t C_k5 = -118.9646225e0;
-static const cs_real_t C_k6 = 4.16711732e0;
-static const cs_real_t C_k7 = 20.9750676e0;
-static const cs_real_t C_k8 = -1.e+9;
-static const cs_real_t C_k9 = 6.e0;
+static const cs_real_t c_k1 = -7.691234564e0;
+static const cs_real_t c_k2 = -26.08023696e0;
+static const cs_real_t c_k3 = -168.1706546e0;
+static const cs_real_t c_k4 = 64.23285504e0;
+static const cs_real_t c_k5 = -118.9646225e0;
+static const cs_real_t c_k6 = 4.16711732e0;
+static const cs_real_t c_k7 = 20.9750676e0;
+static const cs_real_t c_k8 = -1.e+9;
+static const cs_real_t c_k9 = 6.e0;
 
 //> Caracteristic length for natural convection models
 static const cs_real_t lcar_nc = 1.0;
 //> Turbulent Prandtl
-static const cs_real_t Pr_tur = 0.9;
+static const cs_real_t pr_tur = 0.9;
 //> Latent heat of condensation (water)
 static const cs_real_t lcond = 2278.0e+3;
 
@@ -164,29 +159,40 @@ cs_f_wall_condensation_get_model_pointers
    int                                **icondv,
    cs_wall_cond_natural_conv_model_t  **icondb_model);
 
-void cs_f_wall_condensation_get_size_pointers(cs_lnum_t **nfbpcd,
-                                              cs_lnum_t **nzones);
+void
+cs_f_wall_condensation_get_size_pointers(cs_lnum_t **nfbpcd,
+                                         cs_lnum_t **nzones);
 
-void cs_f_wall_condensation_get_pointers(cs_lnum_t **ifbpcd,
-                                         cs_lnum_t **itypcd,
-                                         cs_lnum_t **izzftcd,
-                                         cs_real_t **spcond,
-                                         cs_real_t **hpcond,
-                                         cs_real_t **twall_cond,
-                                         cs_real_t **thermflux,
-                                         cs_real_t **flthr,
-                                         cs_real_t **dflthr,
-                                         cs_lnum_t **izcophc,
-                                         cs_lnum_t **izcophg,
-                                         cs_lnum_t **iztag1d,
-                                         cs_real_t **ztpar,
-                                         cs_real_t **xrefcond,
-                                         cs_real_t **projcond);
+void
+cs_f_wall_condensation_get_pointers(cs_lnum_t **ifbpcd,
+                                    cs_lnum_t **itypcd,
+                                    cs_lnum_t **izzftcd,
+                                    cs_real_t **spcond,
+                                    cs_real_t **hpcond,
+                                    cs_real_t **twall_cond,
+                                    cs_real_t **thermflux,
+                                    cs_real_t **flthr,
+                                    cs_real_t **dflthr,
+                                    cs_lnum_t **izcophc,
+                                    cs_lnum_t **izcophg,
+                                    cs_lnum_t **iztag1d,
+                                    cs_real_t **ztpar,
+                                    cs_real_t **xrefcond,
+                                    cs_real_t **projcond);
 
-void cs_wall_condensation_set_model(cs_wall_cond_natural_conv_model_t  model);
-
-void cs_wall_condensation_set_onoff_state(int icondb,
-                                          int icondv);
+void
+cs_f_wall_condensation_source_terms(int              id,
+                                    cs_lnum_t        ncmast,
+                                    const cs_lnum_t  ltmast[],
+                                    const cs_lnum_t  itypst[],
+                                    const cs_real_t  spcondp[],
+                                    const cs_real_t  gam_s[],
+                                    const cs_real_t  svcondp[],
+                                    const cs_real_t  gam_ms[],
+                                    const cs_real_t  fluxv_ms[],
+                                    const cs_real_t  pvara[],
+                                    cs_real_t        st_exp[],
+                                    cs_real_t        st_imp[]);
 
 /*============================================================================
  * Private function definitions
@@ -204,12 +210,12 @@ _compute_psat(cs_real_t temperature)
   cs_real_t psat
     = pr_c
       * exp((1.0 / dtheta)
-              * (C_k1 * dtheta_comp + C_k2 * cs_math_pow2(dtheta_comp)
-                 + C_k3 * cs_math_pow3(dtheta_comp)
-                 + C_k4 * cs_math_pow4(dtheta_comp)
-                 + C_k5 * pow(dtheta_comp, 5.0))
-              / (1.0 + C_k6 * dtheta_comp + C_k7 * cs_math_pow2(dtheta_comp))
-            - dtheta_comp / (C_k8 * cs_math_pow2(dtheta_comp) + C_k9));
+              * (c_k1 * dtheta_comp + c_k2 * cs_math_pow2(dtheta_comp)
+                 + c_k3 * cs_math_pow3(dtheta_comp)
+                 + c_k4 * cs_math_pow4(dtheta_comp)
+                 + c_k5 * pow(dtheta_comp, 5.0))
+              / (1.0 + c_k6 * dtheta_comp + c_k7 * cs_math_pow2(dtheta_comp))
+            - dtheta_comp / (c_k8 * cs_math_pow2(dtheta_comp) + c_k9));
   return psat;
 }
 
@@ -354,7 +360,7 @@ _compute_exchange_forced_convection(cs_lnum_t   ieltcd,
   const cs_real_t dyn_visc = cs_field_by_name("molecular_viscosity")->val[iel];
   const cs_real_t lambda_over_cp
     = cs_field_by_name("thermal_diffusivity")->val[iel];
-  const cs_real_t Pr_lam = dyn_visc / lambda_over_cp;
+  const cs_real_t pr_lam = dyn_visc / lambda_over_cp;
 
   // Schmidt number
   const cs_real_t mass_diffusion
@@ -403,16 +409,16 @@ _compute_exchange_forced_convection(cs_lnum_t   ieltcd,
         = _compute_tangential_velocity(velocity[iel], surfbo[ifac],
                                        1. / surfbn[ifac]);
       // Reynolds number
-      const cs_real_t Re    = rho * u_ref * lcar / dyn_visc;
+      const cs_real_t re    = rho * u_ref * lcar / dyn_visc;
       cs_real_t       theta = 1.0;
       if (x_vap_int < x_vap_core) {
         // here a choice between the different suction coefficients must be made
         // => we choose to use the updated value of Benteboula and Dabbene
         theta = 0.8254 + 0.616 * (x_vap_core - x_vap_int) / (1.0 - x_vap_int);
       }
-      const cs_real_t Nu  = _compute_schlichting(theta, Re, Pr_lam);
-      *hconv              = lambda_over_cp * Nu / lcar;
-      const cs_real_t She = _compute_schlichting(theta, Re, Sch);
+      const cs_real_t nu  = _compute_schlichting(theta, re, pr_lam);
+      *hconv              = lambda_over_cp * nu / lcar;
+      const cs_real_t She = _compute_schlichting(theta, re, Sch);
       kcond               = mass_diffusion * She / lcar;
     }
     break;
@@ -432,8 +438,8 @@ _compute_exchange_forced_convection(cs_lnum_t   ieltcd,
       cs_real_t                hpflui, ypth;
       cs_wall_functions_scalar(iwalfs,
                                kin_visc,
-                               Pr_lam,
-                               Pr_tur,
+                               pr_lam,
+                               pr_tur,
                                rough_t,
                                uk,
                                yplus,
@@ -443,7 +449,7 @@ _compute_exchange_forced_convection(cs_lnum_t   ieltcd,
 
       const cs_real_t distbf = cs_glob_mesh_quantities->b_dist[ifac];
       *hconv                 = lambda_over_cp * hpflui / distbf;
-      cs_wall_functions_scalar(iwalfs, kin_visc, Sch, Pr_tur, rough_t,
+      cs_wall_functions_scalar(iwalfs, kin_visc, Sch, pr_tur, rough_t,
                                uk, yplus, dplus, &hpflui, &ypth);
       kcond = mass_diffusion * hpflui / distbf;
     }
@@ -544,9 +550,9 @@ _compute_exchange_natural_convection(cs_lnum_t  ieltcd,
           = _compute_mole_fraction(y_vap_core, mix_mol_mas, mol_mas_vap);
         theta = 1.0 + 0.625 * (x_vap_core - x_vap_int) / (1.0 - x_vap_int);
       }
-      cs_real_t Gr = _compute_grashof(gravity, drho, lcar_nc, mu / rho);
-      cs_real_t Nu = _compute_mac_adams(theta, Gr, Pr);
-      *hconv       = cp * lambda_over_cp * Nu / lcar_nc;
+      cs_real_t gr = _compute_grashof(gravity, drho, lcar_nc, mu / rho);
+      cs_real_t nu = _compute_mac_adams(theta, gr, Pr);
+      *hconv       = cp * lambda_over_cp * nu / lcar_nc;
     }
     break;
 
@@ -563,9 +569,9 @@ _compute_exchange_natural_convection(cs_lnum_t  ieltcd,
           = _compute_mole_fraction(y_vap_core, mix_mol_mas, mol_mas_vap);
         theta = 0.8254 + 0.616 * (x_vap_core - x_vap_int) / (1.0 - x_vap_int);
       }
-      cs_real_t Gr = _compute_grashof(gravity, drho, lcar_nc, mu / rho);
-      cs_real_t Nu = _compute_mac_adams(theta, Gr, Pr);
-      *hconv       = cp * lambda_over_cp * Nu / lcar_nc;
+      cs_real_t gr = _compute_grashof(gravity, drho, lcar_nc, mu / rho);
+      cs_real_t nu = _compute_mac_adams(theta, gr, Pr);
+      *hconv       = cp * lambda_over_cp * nu / lcar_nc;
     }
     break;
 
@@ -588,9 +594,9 @@ _compute_exchange_natural_convection(cs_lnum_t  ieltcd,
       cs_real_t drho = fabs(rho_wall - rho) / rho; // different from Fortran
       if (y_vap_int < y_vap_core)
         theta = 1.33 * log(1.0 + spalding) / spalding;
-      cs_real_t Gr = _compute_grashof(gravity, drho, lcar_nc, mu / rho);
-      cs_real_t Nu = _compute_mac_adams(theta, Gr, Pr);
-      *hconv       = cp * lambda_over_cp * Nu / lcar_nc;
+      cs_real_t gr = _compute_grashof(gravity, drho, lcar_nc, mu / rho);
+      cs_real_t nu = _compute_mac_adams(theta, gr, Pr);
+      *hconv       = cp * lambda_over_cp * nu / lcar_nc;
     }
     break;
   }
@@ -733,11 +739,80 @@ cs_f_wall_condensation_get_pointers(cs_lnum_t **ifbpcd,
   *zprojcond  = _wall_cond.zprojcond;
 }
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Explicit and implicit source terms from sources
+ *        condensation computation.
+ *
+ * \param[in]      id        field id
+ * \param[in]      ncmast    number of cells with metal mass condensation
+ * \param[in]      ltmast    list of cells with condensation source terms
+ *                           (1 to n numbering)
+ * \param[in]      itypst    type of metal mass condensation source terms
+ * \param[in]      spcondp   value of the variable associated
+ *                           to surface condensation source term
+ * \param[in]      gam_s     surface condensation flow rate value
+ * \param[in]      svcondp   value of the variable associated
+ *                           to metal mass condensation source term
+ * \param[in]      gam_ms    metal mass condensation flow rate value
+ * \param[in]      fluxv_ms  metal mass condensation heat transfer flux
+ * \param[in]      pvara     variable value at time step beginning
+ * \param[in,out]  st_exp    explicit source term part linear in the variable
+ * \param[in,out]  st_imp    associated value with \c tsexp
+ *                           to be stored in the matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_f_wall_condensation_source_terms(const int        id,
+                                    const cs_lnum_t  ncmast,
+                                    const cs_lnum_t  ltmast[],
+                                    const cs_lnum_t  itypst[],
+                                    const cs_real_t  spcondp[],
+                                    const cs_real_t  gam_s[],
+                                    const cs_real_t  svcondp[],
+                                    const cs_real_t  gam_ms[],
+                                    const cs_real_t  fluxv_ms[],
+                                    const cs_real_t  pvara[],
+                                    cs_real_t        st_exp[],
+                                    cs_real_t        st_imp[])
+
+{
+  const cs_field_t *f = cs_field_by_id(id);
+
+  cs_wall_condensation_source_terms(f,
+                                    ncmast,
+                                    ltmast,
+                                    itypst,
+                                    spcondp,
+                                    gam_s,
+                                    svcondp,
+                                    gam_ms,
+                                    fluxv_ms,
+                                    pvara,
+                                    st_exp,
+                                    st_imp);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide writable access to _wall_cond structure.
+ *
+ * \return pointer to global wall_cond structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_wall_cond_t *
+cs_get_glob_wall_cond(void)
+{
+  return &_wall_cond;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -989,17 +1064,100 @@ cs_wall_condensation_log(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Provide writable access to _wall_cond structure.
+/*
+ * \brief Explicit and implicit sources terms from sources
+ *        condensation computation.
  *
- * \return pointer to global wall_cond structure
+ * \param[in]      f         pointer to field structure
+ * \param[in]      ncmast    number of cells with metal mass condensation
+ * \param[in]      ltmast    list of cells with condensation source terms
+ *                           (1 to n numbering)
+ * \param[in]      itypst    type of metal mass condensation source terms
+ * \param[in]      spcondp   value of the variable associated
+ *                           to surface condensation source term
+ * \param[in]      gam_s     surface condensation flow rate value
+ * \param[in]      svcondp   value of the variable associated
+ *                           to metal mass condensation source term
+ * \param[in]      gam_ms    metal mass condensation flow rate value
+ * \param[in]      fluxv_ms  metal mass condensation heat transfer flux
+ * \param[in]      pvara     variable value at time step beginning
+ * \param[in,out]  st_exp    explicit source term part linear in the variable
+ * \param[in,out]  st_imp    associated value with \c tsexp
+ *                           to be stored in the matrix
  */
 /*----------------------------------------------------------------------------*/
 
-cs_wall_cond_t *
-cs_get_glob_wall_cond(void)
+void
+cs_wall_condensation_source_terms(const cs_field_t  *f,
+                                  cs_lnum_t          ncmast,
+                                  const cs_lnum_t    ltmast[],
+                                  const cs_lnum_t    itypst[],
+                                  const cs_real_t    spcondp[],
+                                  const cs_real_t    gam_s[],
+                                  const cs_real_t    svcondp[],
+                                  const cs_real_t    gam_ms[],
+                                  const cs_real_t    fluxv_ms[],
+                                  const cs_real_t    pvara[],
+                                  cs_real_t          st_exp[],
+                                  cs_real_t          st_imp[])
 {
-  return &_wall_cond;
+  const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
+
+  const cs_real_t tot_vol = cs_glob_mesh_quantities->tot_vol;
+  const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
+  const cs_real_t *restrict b_face_surf
+    = (const cs_real_t *restrict)cs_glob_mesh_quantities->b_face_surf;
+
+  const cs_wall_cond_t *wall_cond = cs_glob_wall_cond;
+  const cs_lnum_t nfbpcd = wall_cond->nfbpcd;
+  const cs_lnum_t *ifbpcd = wall_cond->ifbpcd;
+  const cs_lnum_t *itypcd = wall_cond->itypcd;
+
+  const int var_id_key = cs_field_key_id("variable_id");
+  int ivar = cs_field_get_key_int(f, var_id_key) - 1;
+
+  if (wall_cond->icondb == 0) {
+    /*  Compute condensation sourrece terms associated to surface zones */
+    for (cs_lnum_t ii = 0; ii < nfbpcd; ii++) {
+      const cs_lnum_t f_id = ifbpcd[ii];
+      const cs_lnum_t c_id = b_face_cells[f_id];
+
+      /* Compute the explicit term of the condensation model */
+      st_exp[c_id] += -b_face_surf[f_id] * gam_s[ii] * pvara[c_id];
+      if (itypcd[ivar*nfbpcd + ii] == 1)
+        st_exp[c_id] += b_face_surf[f_id] * gam_s[ii] * spcondp[ii];
+
+      /* Compute the implicit term of the condensation model
+       * here we just use actually a explicit form no implicit term */
+      if (gam_s[ii] > 0)
+        st_imp[c_id] += b_face_surf[f_id] * gam_s[ii];
+    }
+  }
+
+  if (wall_cond->icondv == 0) {
+    /* Compute condensation source terms associated to volume zones
+       with the metal mass structures modelling */
+
+    cs_real_t s_metal = cs_tagms_s_metal();
+
+    for (cs_lnum_t ii = 0; ii < ncmast; ii++) {
+      const cs_lnum_t c_id = ltmast[ii] - 1;
+      const cs_real_t surfbm = s_metal*cell_vol[c_id]/tot_vol;
+
+      /* Compute the explicit term of the condensation model */
+      st_exp[c_id] -= surfbm * gam_ms[c_id] * pvara[c_id];
+      if (itypst[c_id] == 1) {
+        if (f == CS_F_(h))
+          st_exp[c_id] += surfbm*gam_ms[c_id]*svcondp[c_id] - fluxv_ms[c_id];
+        else
+          st_exp[c_id] += surfbm*gam_ms[c_id]*svcondp[c_id];
+      }
+
+      /* Compute the implicit term of the condensation model */
+      if (gam_ms[c_id] > 0)
+        st_imp[c_id] += surfbm*gam_ms[c_id];
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/

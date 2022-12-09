@@ -289,6 +289,21 @@ interface
    real(kind=c_double), dimension(*), intent(inout) :: smbrs, rovsdt
  end subroutine coal_radst
 
+ subroutine wall_condensation_source_terms(id, ncmast, ltmast,    &
+                                           itypst, spcondp,       &
+                                           gam_s, svcondp,        &
+                                           gam_ms, fluxv_ms,      &
+                                           pvara, st_exp, st_imp) &
+   bind(C, name='cs_f_wall_condensation_source_terms')
+   use, intrinsic :: iso_c_binding
+   implicit none
+   integer(c_int), intent(in), value :: id, ncmast
+   integer(c_int), dimension(*), intent(in) :: ltmast, itypst
+   real(kind=c_double), dimension(*), intent(inout) :: st_exp, st_imp
+   real(kind=c_double), dimension(*), intent(in) :: spcondp, gam_s, svcondp
+   real(kind=c_double), dimension(*), intent(in) :: gam_ms, fluxv_ms, pvara
+ end subroutine wall_condensation_source_terms
+
  end interface
 
 !===============================================================================
@@ -780,15 +795,10 @@ if (nfbpcd.gt.0) then
     endif
   enddo
 
-  call condensation_source_terms &
-  (ncelet ,                                              &
-   iscal  ,                                              &
-   nfbpcd , ifbpcd  , itypcd(1,ivar) ,                   &
-   0      , ivoid   , ivoid          ,                   &
-   spcond(1,ivar)   , srccond        ,                   &
-   rvoid  , rvoid   , rvoid          ,                   &
-   cvara_var        ,                                    &
-   smbrs            , rovsdt )
+  call wall_condensation_source_terms(ivarfl(isca(iscal)), 0,        &
+                                      ivoid, ivoid, spcond(1,ivar),  &
+                                      srccond, rvoid, rvoid, rvoid,  &
+                                      cvara_var, smbrs, rovsdt)
 
   deallocate(srccond)
 
@@ -812,15 +822,11 @@ if (icondv.eq.0) then
     endif
   enddo
 
-  call condensation_source_terms &
-  (ncelet ,                                              &
-   iscal  ,                                              &
-   0      , ivoid   , ivoid          ,                   &
-   ncmast , ltmast  , itypst(1,ivar) ,                   &
-   rvoid  , rvoid   ,                                    &
-   svcond(1,ivar)   , srcmst         , flxmst  ,         &
-   cvara_var        ,                                    &
-   smbrs            , rovsdt )
+  call wall_condensation_source_terms(ivarfl(isca(iscal)),             &
+                                      ncmast, ltmast, itypst(1,ivar),  &
+                                      rvoid, rvoid, svcond(1,ivar),    &
+                                      srcmst, flxmst, cvara_var,       &
+                                      smbrs, rovsdt )
 
   deallocate(srcmst)
 

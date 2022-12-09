@@ -1,8 +1,8 @@
-#ifndef __CS_WALLCONDENSATION_MODEL_H__
-#define __CS_WALLCONDENSATION_MODEL_H__
+#ifndef __CS_WALL_CONDENSATION_H__
+#define __CS_WALL_CONDENSATION_H__
 
 /*============================================================================
- * Base wall condensation model data.
+ * Base wall condensation model.
  *============================================================================*/
 
 /*
@@ -105,6 +105,17 @@ extern const cs_wall_cond_t *cs_glob_wall_cond;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Provide writable access to _wall_cond structure.
+ *
+ * \return pointer to global wall_cond structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_wall_cond_t *
+cs_get_glob_wall_cond(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set the wall condensation model
  *
  * \param[in] model    integer corresponding to the desired model
@@ -170,18 +181,45 @@ void
 cs_wall_condensation_log(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Provide writable access to _wall_cond structure.
+/*
+ * \brief Explicit and implicit sources terms from sources
+ *        condensation computation.
  *
- * \return pointer to global wall_cond structure
+ * \param[in]      f         pointer to field structure
+ * \param[in]      ncmast    number of cells with metal mass condensation
+ * \param[in]      ltmast    list of cells with condensation source terms
+ *                           (1 to n numbering)
+ * \param[in]      itypst    type of metal mass condensation source terms
+ * \param[in]      spcondp   value of the variable associated
+ *                           to surface condensation source term
+ * \param[in]      gam_s     surface condensation flow rate value
+ * \param[in]      svcondp   value of the variable associated
+ *                           to metal mass condensation source term
+ * \param[in]      gam_ms    metal mass condensation flow rate value
+ * \param[in]      fluxv_ms  metal mass condensation heat transfer flux
+ * \param[in]      pvara     variable value at time step beginning
+ * \param[in,out]  st_exp    explicit source term part linear in the variable
+ * \param[in,out]  st_imp    associated value with \c tsexp
+ *                           to be stored in the matrix
  */
 /*----------------------------------------------------------------------------*/
 
-cs_wall_cond_t *
-cs_get_glob_wall_cond(void);
+void
+cs_wall_condensation_source_terms(const cs_field_t  *f,
+                                  cs_lnum_t          ncmast,
+                                  const cs_lnum_t    ltmast[],
+                                  const cs_lnum_t    itypst[],
+                                  const cs_real_t    spcondp[],
+                                  const cs_real_t    gam_s[],
+                                  const cs_real_t    svcondp[],
+                                  const cs_real_t    gam_ms[],
+                                  const cs_real_t    fluxv_ms[],
+                                  const cs_real_t    pvara[],
+                                  cs_real_t          st_exp[],
+                                  cs_real_t          st_imp[]);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_WALLCONDESATION_MODEL_H__ */
+#endif /* __CS_WALL_CONDENSATION_H__ */
