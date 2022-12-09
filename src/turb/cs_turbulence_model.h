@@ -505,6 +505,84 @@ cs_clip_turbulent_fluxes(int  flux_id,
                          int  ivartt);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return or estimate the value of the turbulent kinetic energy
+ *        over specified elements.
+ *
+ * Returned values are zero for turbulence models other than RANS.
+ *
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        ignored
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_function_k(int               location_id,
+                         cs_lnum_t         n_elts,
+                         const cs_lnum_t  *elt_ids,
+                         void             *input,
+                         void             *vals);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return or estimate the value of the turbulent dissipation
+ *        over specified elements.
+ *
+ * Returned values are zero for turbulence models other than RANS.
+ *
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        ignored
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_function_eps(int               location_id,
+                           cs_lnum_t         n_elts,
+                           const cs_lnum_t  *elt_ids,
+                           void             *input,
+                           void             *vals);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return or estimate the value of the Reynolds stresses
+ *        over specified elements.
+ *
+ * Returned values are zero for turbulence models other than RANS.
+ *
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        ignored
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_function_rij(int               location_id,
+                           cs_lnum_t         n_elts,
+                           const cs_lnum_t  *elt_ids,
+                           void             *input,
+                           void             *vals);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

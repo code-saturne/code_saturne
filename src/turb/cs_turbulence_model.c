@@ -46,10 +46,13 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_assert.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_function.h"
+#include "cs_gradient.h"
 #include "cs_log.h"
-#include "cs_map.h"
+#include "cs_mesh.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
 #include "cs_mesh_location.h"
@@ -2360,6 +2363,281 @@ cs_clip_turbulent_fluxes(int  flux_id,
                                   iclip_tab_min,
                                   iclip_tab_max);
   return;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return or estimate the value of the turbulent kinetic energy
+ *        over specified elements.
+ *
+ * Returned values are zero for turbulence models other than RANS.
+ *
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        ignored
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_function_k(int               location_id,
+                         cs_lnum_t         n_elts,
+                         const cs_lnum_t  *elt_ids,
+                         void             *input,
+                         void             *vals)
+{
+  CS_UNUSED(input);
+
+  cs_real_t *k = vals;
+
+  cs_assert(location_id == CS_MESH_LOCATION_CELLS);
+
+  const cs_turb_model_t *tm = cs_glob_turb_model;
+
+  const cs_real_t *val_k = (CS_F_(k) != NULL) ? CS_F_(k)->val : NULL;
+
+  if (val_k != NULL) {
+    if (elt_ids != NULL) {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t c_id = elt_ids[i];
+        k[i] = val_k[c_id];
+      }
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        k[i] = val_k[i];
+      }
+    }
+  }
+  else if (tm->itytur == 3) {
+    const cs_real_6_t *rij = (const cs_real_6_t *)CS_F_(rij)->val;
+    if (elt_ids != NULL) {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t c_id = elt_ids[i];
+        k[i] = (rij[c_id][0] + rij[c_id][1] + rij[c_id][2]) * 0.5;
+      }
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        k[i] = (rij[i][0] + rij[i][1] + rij[i][2]) * 0.5;
+      }
+    }
+  }
+  else {
+    if (cs_log_default_is_active()) {
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("%s: cannot simply determine k from other variables\n"
+                   "with turbulence model %s.\n"),
+                 __func__,
+                 _turbulence_model_enum_name(tm->iturb));
+    }
+
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      k[i] = 0;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return or estimate the value of the turbulent dissipation
+ *        over specified elements.
+ *
+ * Returned values are zero for turbulence models other than RANS.
+ *
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        ignored
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_function_eps(int               location_id,
+                           cs_lnum_t         n_elts,
+                           const cs_lnum_t  *elt_ids,
+                           void             *input,
+                           void             *vals)
+{
+  CS_UNUSED(input);
+
+  cs_real_t *eps = vals;
+
+  cs_assert(location_id == CS_MESH_LOCATION_CELLS);
+
+  const cs_turb_model_t *tm = cs_glob_turb_model;
+
+  const cs_real_t *val_eps = (CS_F_(eps) != NULL) ? CS_F_(eps)->val : NULL;
+
+  if (val_eps != NULL) {
+    if (elt_ids != NULL) {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t c_id = elt_ids[i];
+        eps[i] = val_eps[c_id];
+      }
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        eps[i] = val_eps[i];
+      }
+    }
+  }
+  else if (tm->iturb == CS_TURB_K_OMEGA) {
+    const cs_real_t *val_k = CS_F_(omg)->val;
+    const cs_real_t *val_omg = CS_F_(omg)->val;
+    if (elt_ids != NULL) {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t c_id = elt_ids[i];
+        eps[i] = cs_turb_cmu * val_k[c_id] * val_omg[c_id];
+      }
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        eps[i] = cs_turb_cmu * val_k[i] * val_omg[i];
+      }
+    }
+  }
+  else {
+    if (cs_log_default_is_active()) {
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("%s: cannot simply determine k from other variables\n"
+                   "with turbulence model %s.\n"),
+                 __func__,
+                 _turbulence_model_enum_name(tm->iturb));
+    }
+
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      eps[i] = 0;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return or estimate the value of the Reynolds stresses
+ *        over specified elements.
+ *
+ * Returned values are zero for turbulence models other than RANS.
+ *
+ * This function matches the cs_eval_at_location_t function profile.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ *                               filtering is required
+ * \param[in, out]  input        ignored
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_function_rij(int               location_id,
+                           cs_lnum_t         n_elts,
+                           const cs_lnum_t  *elt_ids,
+                           void             *input,
+                           void             *vals)
+{
+  CS_UNUSED(input);
+
+  cs_real_6_t *rij = vals;
+
+  cs_assert(location_id == CS_MESH_LOCATION_CELLS);
+
+  const cs_turb_model_t *tm = cs_glob_turb_model;
+
+  const cs_real_6_t *val_rij = NULL;
+  if (CS_F_(rij) != NULL)
+    val_rij = (const cs_real_6_t *)CS_F_(rij)->val;
+
+  /* Rij already present */
+
+  if (val_rij != NULL) {
+    if (elt_ids != NULL) {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t c_id = elt_ids[i];
+        for (cs_lnum_t j = 0; j < 6; j++)
+          rij[i][j] = val_rij[c_id][j];
+      }
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        for (cs_lnum_t j = 0; j < 6; j++)
+          rij[i][j] = val_rij[i][j];
+      }
+    }
+  }
+
+  /* Rij estimated from turbulent viscosity and velocity gradient */
+
+  else if (CS_F_(k) != NULL) {
+
+    const cs_real_t d2o3 = 2./3.;
+    const cs_real_t *cpro_mu_t = CS_F_(mu_t)->val;
+    const cs_real_t *cpro_rho = CS_F_(rho)->val;
+    const cs_real_t *cvar_k = CS_F_(k)->val;
+
+    const cs_mesh_t *m = cs_glob_mesh;
+    const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+    cs_halo_type_t halo_type
+      = (m->cell_cells_idx != NULL) ? CS_HALO_EXTENDED : CS_HALO_STANDARD;
+
+    const cs_field_t *f_vel = CS_F_(vel);
+
+#   pragma omp parallel for if(n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+      cs_lnum_t c_id = (elt_ids != NULL) ? elt_ids[i] : i;
+
+      cs_real_t gradv[6][3];
+
+      cs_gradient_vector_cell(m,
+                              fvq,
+                              c_id,
+                              halo_type,
+                              (const cs_real_3_t *)f_vel->bc_coeffs->a,
+                              (const cs_real_33_t *)f_vel->bc_coeffs->b,
+                              (const cs_real_3_t *)f_vel->val,
+                              NULL,
+                              gradv);
+
+      cs_real_t divu = gradv[0][0] + gradv[1][1] + gradv[2][2];
+      cs_real_t nut = cpro_mu_t[c_id] / cpro_rho[c_id];
+      cs_real_t xdiag = d2o3*(cvar_k[c_id]+ nut*divu);
+
+      rij[i][0] =  xdiag - 2.*nut*gradv[0][0];
+      rij[i][1] =  xdiag - 2.*nut*gradv[1][1];
+      rij[i][2] =  xdiag - 2.*nut*gradv[2][2];
+      rij[i][3] = -nut*(gradv[1][0]+gradv[0][1]);
+      rij[i][4] = -nut*(gradv[2][1]+gradv[1][2]);
+      rij[i][5] = -nut*(gradv[2][0]+gradv[0][2]);
+
+    }
+
+  }
+
+  else {
+    if (cs_log_default_is_active()) {
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("%s: cannot simply determine Rij from other variables\n"
+                   "with turbulence model %s.\n"),
+                 __func__,
+                 _turbulence_model_enum_name(tm->iturb));
+    }
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      for (cs_lnum_t j = 0; j < 6; j++)
+        rij[i][j] = 0;
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
