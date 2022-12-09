@@ -139,11 +139,12 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
 
     bc_type[face_id] = CS_INLET;
 
-    for (cs_lnum_t ii = 0; ii< CS_F_(vel)->dim; ii++)
-      vel_rcodcl1[n_b_faces*ii + face_id] = 1.1;
+    vel_rcodcl1[n_b_faces*0 + face_id] = 0;     /* vel_x */
+    vel_rcodcl1[n_b_faces*1 + face_id] = 1.1;   /* vel_y */
+    vel_rcodcl1[n_b_faces*2 + face_id] = 0;     /* vel_z */
 
     cs_real_t uref2 = 0;
-    for (cs_lnum_t ii = 0; ii< CS_F_(vel)->dim; ii++)
+    for (cs_lnum_t ii = 0; ii < 3; ii++)
       uref2 += cs_math_pow2(vel_rcodcl1[n_b_faces*ii + face_id]);
     uref2 = cs_math_fmax(uref2, 1e-12);
 
@@ -169,7 +170,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
        the turbulence intensity and standard laws for a circular pipe
        (their initialization is not needed here but is good practice) */
 
-    cs_real_t b_rho = bpro_rho[c_id];
+    cs_real_t b_rho = bpro_rho[face_id];
 
     cs_turbulence_bc_inlet_hyd_diam(face_id,
                                     uref2,
@@ -203,11 +204,12 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
 
     bc_type[face_id] = CS_INLET;
 
-    for (cs_lnum_t ii = 0; ii< CS_F_(vel)->dim; ii++)
-      vel_rcodcl1[n_b_faces*ii + face_id] = 1.1;
+    vel_rcodcl1[n_b_faces*0 + face_id] = 0;     /* vel_x */
+    vel_rcodcl1[n_b_faces*1 + face_id] = 1.1;   /* vel_y */
+    vel_rcodcl1[n_b_faces*2 + face_id] = 0;     /* vel_z */
 
     cs_real_t uref2 = 0;
-    for (cs_lnum_t ii = 0; ii< CS_F_(vel)->dim; ii++)
+    for (cs_lnum_t ii = 0; ii < 3; ii++)
       uref2 += cs_math_pow2(vel_rcodcl1[n_b_faces*ii + face_id]);
     uref2 = cs_math_fmax(uref2, 1e-12);
 

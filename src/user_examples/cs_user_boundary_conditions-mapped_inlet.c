@@ -180,7 +180,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
        the turbulence intensity and standard laws for a circular pipe
        (their initialization is not needed here but is good practice) */
 
-    cs_real_t b_rho = bpro_rho[c_id];
+    cs_real_t b_rho = bpro_rho[face_id];
 
     cs_turbulence_bc_inlet_hyd_diam(face_id,
                                     uref2,
