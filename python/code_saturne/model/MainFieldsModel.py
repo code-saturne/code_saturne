@@ -485,8 +485,10 @@ class MainFieldsModel(Variables, Model):
         self.XMLMassTrans = self.XMLNodeclosure.xmlInitNode('mass_transfer_model')
 
         # Variables : neptune_cfd.core.XMLvariables.Variables
-        self.setNewVariableProperty("property", "constant", self.XMLNodeproperty, "none",
-                                                    "surface_tension", "Surf_tens")
+        self.setNewVariableProperty("property", "constant",
+                                    self.XMLNodeproperty, "none",
+                                    "surface_tension", "Surf_tens")
+
         energyModel = "total_enthalpy"
         if self.getPhaseChangeTransferStatus() == "off":
             energyModel = "off"

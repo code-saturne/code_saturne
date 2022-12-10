@@ -187,10 +187,10 @@ class FluidCharacteristicsModel(Variables, Model):
         self.node_models = self.case.xmlGetNode('thermophysical_models')
         self.node_prop   = self.case.xmlGetNode('physical_properties')
         self.node_fluid  = self.node_prop.xmlInitNode('fluid_properties')
-        self.node_comp   = self.node_models.xmlInitNode('compressible_model', 'model')
-        self.node_gas    = self.node_models.xmlInitNode('gas_combustion',     'model')
-        self.node_coal   = self.node_models.xmlInitNode('solid_fuels',        'model')
-        self.node_hgn    = self.node_models.xmlInitNode('hgn_model',          'model')
+        self.node_comp   = self.node_models.xmlGetNode('compressible_model', 'model')
+        self.node_gas    = self.node_models.xmlGetNode('gas_combustion', 'model')
+        self.node_coal   = self.node_models.xmlGetNode('solid_fuels', 'model')
+        self.node_hgn    = self.node_models.xmlGetNode('hgn_model', 'model')
 
         # Info on available libraries
 
@@ -211,10 +211,12 @@ class FluidCharacteristicsModel(Variables, Model):
                                           output="Molecular viscosity",
                                           ref_tag="mu0",
                                           unit="Pa.s")
-        self.properties_info.add_property(name="surface_tension",
-                                          output="Surface tension",
-                                          ref_tag="sigma0",
-                                          unit="N/m")
+        if self.node_hgn:
+            if self.node_hgn['model'] not in [None, "off"]:
+                self.properties_info.add_property(name="surface_tension",
+                                                  output="Surface tension",
+                                                  ref_tag="sigma0",
+                                                  unit="N/m")
         self.properties_info.add_property(name="specific_heat",
                                           output="Sepcific heat",
                                           ref_tag="cp0",
@@ -287,11 +289,12 @@ class FluidCharacteristicsModel(Variables, Model):
 
         # Get surface tension for Vof model
 
-        if self.node_hgn['model'] not in [None, "off"]:
-            self.lst.append(('surface_tension', 'Sigma'))
-            self.node_surface_tension   = self.setNewFluidProperty(self.node_fluid, \
-                                                                   'surface_tension')
-            self.node_lst.append(self.node_surface_tension)
+        if self.node_hgn:
+            if self.node_hgn['model'] not in [None, "off"]:
+                self.lst.append(('surface_tension', 'Sigma'))
+                self.node_surface_tension = self.setNewFluidProperty(self.node_fluid, \
+                                                                     'surface_tension')
+                self.node_lst.append(self.node_surface_tension)
 
         # Get thermal scalar and model
 
@@ -312,15 +315,15 @@ class FluidCharacteristicsModel(Variables, Model):
 
         # Define volume viscosity for compressible model
 
-        if self.node_comp['model'] not in [None, "off"]:
+        if self.__check_node_on(self.node_comp):
             self.lst.append(('volume_viscosity', 'Viscv0'))
             self.node_vol_visc  = self.setNewFluidProperty(self.node_fluid, \
                                                            'volume_viscosity')
             self.node_lst.append(self.node_vol_visc)
 
         # Define dynamic diffusion for reactive flow
-        elif self.node_coal['model'] not in [None, "off"] \
-             or self.node_gas['model'] not in [None, "off"]:
+        elif self.__check_node_on(self.node_coal) \
+             or self.__check_node_on(self.node_gas):
             self.lst.append(('dynamic_diffusion', 'Diftl0'))
             self.node_dyn = self.setNewFluidProperty(self.node_fluid, \
                                                      'dynamic_diffusion')
@@ -346,9 +349,19 @@ class FluidCharacteristicsModel(Variables, Model):
         self.notebook = NotebookModel(self.case)
 
 
+    def __check_node_on(self, node):
+        """
+        Private method: check if noe exists and is active
+        """
+        if node:
+            if node['model'] not in [None, "off"]:
+                return True
+        return False
+
+
     def __nodeFromTag(self, name):
         """
-        Private method : return node with attibute name 'name'
+        Private method: return node with attibute name 'name'
         """
         for node in self.node_lst:
             if node['name'] == name:
@@ -364,7 +377,7 @@ class FluidCharacteristicsModel(Variables, Model):
         l = ['density', 'molecular_viscosity']
 
         # Vof properties
-        if self.node_hgn['model'] not in [None, "off"]:
+        if self.__check_node_on(self.node_hgn):
             l.append('surface_tension')
 
         # Thermal properties
@@ -372,7 +385,7 @@ class FluidCharacteristicsModel(Variables, Model):
             l.extend(['specific_heat', 'thermal_conductivity'])
 
         # Compressible properties
-        if self.node_comp['model'] not in [None, "off"]:
+        if self.__check_node_on(self.node_comp):
             l.append('volume_viscosity')
 
         if first_elt in l:
