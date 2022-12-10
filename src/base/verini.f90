@@ -410,9 +410,9 @@ if (iilagr .eq. 2) then
     write(nfecra,2147)thetsn,isno2t,thetst,isto2t
     iok = iok + 1
   endif
-  call field_get_key_int(ivarfl(isca(iscalt)), kisso2t, isso2t)
-  call field_get_key_double(ivarfl(isca(iscalt)), kthetss, thetss)
   if ((itherm.eq.1 .and. itpscl.eq.1) .or. itherm.eq.2) then
+    call field_get_key_int(ivarfl(isca(iscalt)), kisso2t, isso2t)
+    call field_get_key_double(ivarfl(isca(iscalt)), kthetss, thetss)
     if (thetss.gt.0.d0 .or. isso2t.gt.0) then
       write(nfecra,2148)                                           &
         'lagrangian ',ivarfl(isca(iscal)),thetss,isso2t, 'cs_user_lagr_model'
