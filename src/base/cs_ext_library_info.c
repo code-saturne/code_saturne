@@ -163,21 +163,21 @@ _ext_library_version_info(bool  log)
                   "\n  External libraries:\n");
 
 #if defined(HAVE_PETSC)
-    cs_sles_petsc_library_info(log_id);
+    cs_sles_petsc_library_info(logs[log_id]);
 #endif
 #if defined(HAVE_HYPRE)
-    cs_sles_hypre_library_info(log_id);
+    cs_sles_hypre_library_info(logs[log_id]);
 #endif
 #if defined(HAVE_AMGX)
-    cs_sles_amgx_library_info(log_id);
+    cs_sles_amgx_library_info(logs[log_id]);
 #endif
 #if defined(HAVE_MUMPS)
-    cs_sles_mumps_library_info(log_id);
+    cs_sles_mumps_library_info(logs[log_id]);
 #endif
 
 #if    defined(HAVE_METIS)  || defined(HAVE_PARMETIS) \
     || defined(HAVE_SCOTCH) || defined(HAVE_PTSCOTCH)
-    cs_partition_external_library_info(log_id);
+    cs_partition_external_library_info(logs[log_id]);
 #endif
 
   }
