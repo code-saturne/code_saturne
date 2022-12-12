@@ -1441,7 +1441,7 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
  * \param[in, out]  pty       pointer to a cs_property_t structure
  * \param[in]       zname     name of the associated zone (if NULL or "" all
  *                            cells are considered)
- * \param[in]       symtens   values to set (6 values -- symmetric storage)
+ * \param[in]       symtens   values to set (6 values)
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -1487,13 +1487,13 @@ cs_property_def_aniso_sym_by_value(cs_property_t    *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_property_t structure thanks to an analytic function in
- *         a subdomain attached to the mesh location named ml_name
+ * \brief  Define the value of a cs_property_t structure thanks to a time
+ *         function for all cells associated to the zone named zname
  *
  * \param[in, out]  pty      pointer to a cs_property_t structure
  * \param[in]       zname    name of the associated zone (if NULL or "" all
  *                           cells are considered)
- * \param[in]       func     pointer to a cs_analytic_func_t function
+ * \param[in]       func     pointer to a cs_time_func_t function
  * \param[in]       input    NULL or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the resulting cs_xdef_t structure
@@ -1564,8 +1564,8 @@ cs_property_def_by_time_func(cs_property_t      *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_property_t structure thanks to an analytic function in
- *         a subdomain attached to the mesh location named ml_name
+ * \brief  Define the value of a cs_property_t structure thanks to an analytic
+ *         function for all cells associated to the zone named zname
  *
  * \param[in, out]  pty      pointer to a cs_property_t structure
  * \param[in]       zname    name of the associated zone (if NULL or "" all
@@ -1612,9 +1612,10 @@ cs_property_def_by_analytic(cs_property_t        *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_property_t structure thanks to law depending on one
- *         scalar variable in a subdomain attached to the mesh location named
- *         ml_name
+ * \brief Define the value of a cs_property_t structure thanks to low-level
+ *        functions specifying how to evaluate the property in each cell (with
+ *        cell-wise structures or not). This definition applies to all cells
+ *        associated to the zone named zname
  *
  * \param[in, out]  pty      pointer to a cs_property_t structure
  * \param[in]       zname    name of the associated zone (if NULL or "" all
@@ -1660,7 +1661,8 @@ cs_property_def_by_func(cs_property_t         *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_property_t structure thanks to an array of values
+ * \brief  Define a cs_property_t structure thanks to an array of values. One
+ *         assumes that all cells are defined using this array.
  *
  * \param[in, out]  pty       pointer to a cs_property_t structure
  * \param[in]       loc       information to know where are located values
@@ -1745,7 +1747,8 @@ cs_property_def_by_array(cs_property_t      *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_property_t structure thanks to a field structure
+ * \brief  Define a cs_property_t structure thanks to a field structure. One
+ *         assumes that all cells are defined using this array.
  *
  * \param[in, out]  pty       pointer to a cs_property_t structure
  * \param[in]       field     pointer to a cs_field_t structure
