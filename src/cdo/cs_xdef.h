@@ -367,14 +367,15 @@ typedef struct {
 static inline int
 cs_get_vol_zone_id(const char   *z_name)
 {
-  int z_id = 0;
   if (z_name != NULL) {
     if (strlen(z_name) > 0) {
       const cs_zone_t  *z = cs_volume_zone_by_name(z_name);
-      z_id = z->id;
+      assert(z != NULL);
+      return z->id;
     }
   }
-  return z_id;
+
+  return 0; /* Return the default zone by default */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -391,14 +392,15 @@ cs_get_vol_zone_id(const char   *z_name)
 static inline int
 cs_get_bdy_zone_id(const char   *z_name)
 {
-  int z_id = 0;
   if (z_name != NULL) {
     if (strlen(z_name) > 0) {
       const cs_zone_t  *z = cs_boundary_zone_by_name(z_name);
-      z_id = z->id;
+      assert(z != NULL);
+      return z->id;
     }
   }
-  return z_id;
+
+  return 0; /* Return the default zone by default */
 }
 
 /*----------------------------------------------------------------------------*/

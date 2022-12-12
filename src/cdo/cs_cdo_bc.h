@@ -103,7 +103,7 @@ BEGIN_C_DECLS
  *
  * For of scalar-valued equations, only some the classical (Dirichlet, Neumann
  * and Robin types are available. Other types of boundary conditions are
- * possible for vector-valued equations
+ * possible for vector-valued equations.
  */
 
 typedef struct {
@@ -113,10 +113,12 @@ typedef struct {
   cs_lnum_t    n_b_faces;    /* Number of boundary faces */
 
   /* Type of boundary conditions associated to a face. Size: n_b_faces */
+
   cs_flag_t   *flag;
 
   /* Id of the boundary condition definition or CS_BC_DEFAULT (=-1) if this face
      is related to the default boundary condition. Size = n_b_faces */
+
   short int   *def_ids;
 
   /* List of face ids by type of boundary conditions. Homogeneous types don't
@@ -125,26 +127,31 @@ typedef struct {
    */
 
   /* Dirichlet */
+
   cs_lnum_t    n_hmg_dir_faces;
   cs_lnum_t   *hmg_dir_ids;
   cs_lnum_t    n_nhmg_dir_faces;
   cs_lnum_t   *nhmg_dir_ids;
 
   /* Neumann */
+
   cs_lnum_t    n_hmg_neu_faces;
   cs_lnum_t   *hmg_neu_ids;
   cs_lnum_t    n_nhmg_neu_faces;
   cs_lnum_t   *nhmg_neu_ids;
 
   /* Robin */
+
   cs_lnum_t    n_robin_faces;
   cs_lnum_t   *robin_ids;
 
   /* Sliding wall */
+
   cs_lnum_t    n_sliding_faces;
   cs_lnum_t   *sliding_ids;
 
   /* Circulation */
+
   cs_lnum_t    n_circulation_faces;
   cs_lnum_t   *circulation_ids;
 

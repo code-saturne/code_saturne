@@ -1002,7 +1002,7 @@ cs_property_finalize_setup(void)
       bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
     if (pty->type & CS_PROPERTY_BY_PRODUCT)
-      continue;
+      continue; /* This is done after */
 
     if (pty->n_definitions > 1) { /* Initialization of def_ids */
 
@@ -1022,7 +1022,6 @@ cs_property_finalize_setup(void)
         assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
         const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
-
         assert(z != NULL);
 
 #       pragma omp parallel for if (z->n_elts > CS_THR_MIN)
@@ -1031,18 +1030,19 @@ cs_property_finalize_setup(void)
 
       } /* Loop on definitions */
 
-      /* Check if the property is defined everywhere */
+      /* Check if a definition id is associated to each cell */
 
       for (cs_lnum_t j = 0; j < n_cells; j++)
         if (pty->def_ids[j] == -1)
           bft_error(__FILE__, __LINE__, 0,
-                    " %s: cell %ld is unset for property %s\n",
+                    " %s: cell %ld is unset for the property \"%s\"\n",
                     __func__, (long)j, pty->name);
 
     }
     else if (pty->n_definitions == 0) {
 
-      /* Default initialization */
+      /* Default definition based on the reference value */
+
       if (pty->type & CS_PROPERTY_ISO)
         cs_property_def_iso_by_value(pty, NULL, pty->ref_value);
       else if (pty->type & CS_PROPERTY_ORTHO) {
@@ -1059,8 +1059,9 @@ cs_property_finalize_setup(void)
         bft_error(__FILE__, __LINE__, 0, "%s: Incompatible property type.",
                   __func__);
 
+      cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_DEFAULT,
-                    "\n Property \"%s\" will be defined using its reference"
+                    "\n The property \"%s\" will be defined using its reference"
                     " value.\n", pty->name);
 
     }
@@ -1288,7 +1289,7 @@ cs_property_def_iso_by_value(cs_property_t    *pty,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
   if ((pty->type & CS_PROPERTY_ISO) == 0)
     bft_error(__FILE__, __LINE__, 0,
-              " Invalid setting: property %s is not isotropic.\n"
+              " Invalid setting: property \"%s\" is not isotropic.\n"
               " Please check your settings.", pty->name);
 
   int  new_id = _add_new_def(pty);
@@ -1344,7 +1345,7 @@ cs_property_def_ortho_by_value(cs_property_t    *pty,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
   if ((pty->type & CS_PROPERTY_ORTHO) == 0)
     bft_error(__FILE__, __LINE__, 0,
-              " Invalid setting: property %s is not orthotropic.\n"
+              " Invalid setting: property \"%s\" is not orthotropic.\n"
               " Please check your settings.", pty->name);
 
   int  new_id = _add_new_def(pty);
@@ -1395,17 +1396,17 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
   if ((pty->type & CS_PROPERTY_ANISO) == 0)
     bft_error(__FILE__, __LINE__, 0,
-              " Invalid setting: property %s is not anisotropic.\n"
+              " Invalid setting: property \"%s\" is not anisotropic.\n"
               " Please check your settings.", pty->name);
 
   /* Check the symmetry */
 
   if (!_is_tensor_symmetric((const cs_real_t (*)[3])tens))
     bft_error(__FILE__, __LINE__, 0,
-              _(" The definition of the tensor related to the"
-                " property %s is not symmetric.\n"
-                " This case is not handled. Please check your settings.\n"),
-              pty->name);
+              " %s: The definition of the tensor related to the property"
+              " \"%s\" is not symmetric.\n"
+              " This case is not handled. Please check your settings.\n",
+              __func__, pty->name);
 
   int  new_id = _add_new_def(pty);
   int  z_id = cs_get_vol_zone_id(zname);
@@ -1435,7 +1436,7 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define an anisotropic cs_property_t structure by value for entities
- *         related to a volume zone
+ *         related to a volume zone. Optimized case with a symmetric storage.
  *
  * \param[in, out]  pty       pointer to a cs_property_t structure
  * \param[in]       zname     name of the associated zone (if NULL or "" all
@@ -1455,7 +1456,7 @@ cs_property_def_aniso_sym_by_value(cs_property_t    *pty,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
   if ((pty->type & CS_PROPERTY_ANISO_SYM) == 0)
     bft_error(__FILE__, __LINE__, 0,
-              " Invalid setting: property %s is not anisotropic"
+              " Invalid setting: property \"%s\" is not anisotropic"
               " with a symmetric storage.\n"
               " Please check your settings.", pty->name);
 
@@ -1539,8 +1540,9 @@ cs_property_def_by_time_func(cs_property_t      *pty,
     pty->get_eval_at_cell[new_id] = cs_xdef_eval_tensor_at_cells_by_time_func;
   }
   else
-    bft_error(__FILE__, __LINE__, 0, "%s: Incompatible property type.",
-              __func__);
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Incompatible type for the property \"%s\".",
+              __func__, pty->name);
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_TIME_FUNCTION,
                                         dim,
@@ -1680,22 +1682,23 @@ cs_property_def_by_array(cs_property_t      *pty,
                          const cs_lnum_t    *index,
                          const cs_lnum_t    *ids)
 {
+  if (array == NULL)
+    return NULL;
   if (pty == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
   int  id = _add_new_def(pty);
+  int  dim = cs_property_get_dim(pty);
+  cs_flag_t  state_flag = 0; /* Will be updated during the creation */
+  cs_flag_t  meta_flag = 0;  /* metadata */
 
   if (pty->n_definitions > 1)
     bft_error(__FILE__, __LINE__, 0,
               " When a definition by array is requested, the max. number"
               " of subdomains to consider should be equal to 1.\n"
-              " Current value is %d for property %s.\n"
+              " Current value is %d for property \"%s\".\n"
               " Please modify your settings.",
               pty->n_definitions, pty->name);
-
-  int  dim = cs_property_get_dim(pty);
-  cs_flag_t  state_flag = 0; /* Will be updated during the creation */
-  cs_flag_t  meta_flag = 0;  /* metadata */
 
   /* z_id = 0 since all the support is selected in this case */
 
@@ -1729,7 +1732,8 @@ cs_property_def_by_array(cs_property_t      *pty,
       cs_flag_test(loc, cs_flag_dual_face_byc) == false &&
       cs_flag_test(loc, cs_flag_dual_cell_byc) == false)
     bft_error(__FILE__, __LINE__, 0,
-              " %s: case not available.\n", __func__);
+              " %s: Property \"%s\". Case not available.\n",
+              __func__, pty->name);
 
   /* Set the state flag */
 
