@@ -913,8 +913,8 @@ contains
 
     call cs_f_physical_model_get_pointers(p_ippmod)
     call cs_f_combustion_model_get_pointers(p_isoot)
-    call cs_f_wall_condensation_get_model_pointers(p_icondb,&
-                                                   p_icondv,&
+    call cs_f_wall_condensation_get_model_pointers(p_icondb,  &
+                                                   p_icondv,  &
                                                    p_icondb_model)
 
     call c_f_pointer(p_ippmod, ippmod, [nmodmx])

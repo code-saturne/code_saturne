@@ -28,7 +28,7 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
@@ -110,7 +110,9 @@ extern const cs_wall_cond_t *cs_glob_wall_cond;
  * \param[in] model    integer corresponding to the desired model
  */
 /*----------------------------------------------------------------------------*/
-void cs_wall_condensation_set_model(cs_wall_cond_natural_conv_model_t model);
+
+void
+cs_wall_condensation_set_model(cs_wall_cond_natural_conv_model_t  model);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -121,44 +123,51 @@ void cs_wall_condensation_set_model(cs_wall_cond_natural_conv_model_t model);
                      metal structures(-1 : off, 0: on)
  */
 /*----------------------------------------------------------------------------*/
-void cs_wall_condensation_set_onoff_state(int icondb, int icondv);
+
+void cs_wall_condensation_set_onoff_state(int  icondb,
+                                          int  icondv);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Create the context for wall condensation models.
  *
- * \param[in] nfbpcd   number of faces with wall condensation
- * \param[in] nzones   number of zones with wall condensation
- * \param[in] nvar     number of variables (?)
+ * \param[in]  nfbpcd  number of faces with wall condensation
+ * \param[in]  nzones  number of zones with wall condensation
+ * \param[in]  nvar    number of variables (?)
  */
 /*----------------------------------------------------------------------------*/
+
 void
-cs_wall_condensation_create(cs_lnum_t nfbpcd, cs_lnum_t nzones, cs_lnum_t nvar);
+cs_wall_condensation_create(cs_lnum_t  nfbpcd,
+                            cs_lnum_t  nzones,
+                            cs_lnum_t  nvar);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Free all structures related to wall condensation models
  */
 /*----------------------------------------------------------------------------*/
-void cs_wall_condensation_free(void);
+
+void
+cs_wall_condensation_free(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the wall condensation source terms.
- *
- * \return
  */
 /*----------------------------------------------------------------------------*/
-void cs_wall_condensation_compute(cs_real_t total_htc[]);
+
+void
+cs_wall_condensation_compute(cs_real_t  total_htc[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Output statistics about wall condensation source terms (for user log)
- *
- * \return
  */
 /*----------------------------------------------------------------------------*/
-void cs_wall_condensation_log(void);
+
+void
+cs_wall_condensation_log(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -168,7 +177,8 @@ void cs_wall_condensation_log(void);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_wall_cond_t *cs_get_glob_wall_cond(void);
+cs_wall_cond_t *
+cs_get_glob_wall_cond(void);
 
 /*----------------------------------------------------------------------------*/
 

@@ -112,36 +112,36 @@ static const cs_real_t Pr_tur = 0.9;
 static const cs_real_t lcond = 2278.0e+3;
 
 static cs_wall_cond_t _wall_cond
-  = { .icondb             = -1,
-      .icondv             = -1,
-      .natural_conv_model = CS_WALL_COND_MODEL_COPAIN,
-      .forced_conv_model  = CS_WALL_COND_MODEL_WALL_LAW, // fixed for now
-      .mixed_conv_model   = CS_WALL_COND_MIXED_MAX,      // fixed for now
+  = {.icondb             = -1,
+     .icondv             = -1,
+     .natural_conv_model = CS_WALL_COND_MODEL_COPAIN,
+     .forced_conv_model  = CS_WALL_COND_MODEL_WALL_LAW, // fixed for now
+     .mixed_conv_model   = CS_WALL_COND_MIXED_MAX,      // fixed for now
 
-      // Mesh related quantities
-      // TODO : clean unnecessary quantities
-      .nfbpcd                    = 0,
-      .ifbpcd                    = NULL,
-      .itypcd                    = NULL,
-      .izzftcd                   = NULL,
-      .spcond                    = NULL,
-      .hpcond                    = NULL,
-      .twall_cond                = NULL,
-      .thermal_condensation_flux = NULL,
-      .convective_htc            = NULL,
-      .condensation_htc          = NULL,
-      .total_htc                 = NULL,
-      .flthr                     = NULL,
-      .dflthr                    = NULL,
+     // Mesh related quantities
+     // TODO: clean unnecessary quantities
+     .nfbpcd                    = 0,
+     .ifbpcd                    = NULL,
+     .itypcd                    = NULL,
+     .izzftcd                   = NULL,
+     .spcond                    = NULL,
+     .hpcond                    = NULL,
+     .twall_cond                = NULL,
+     .thermal_condensation_flux = NULL,
+     .convective_htc            = NULL,
+     .condensation_htc          = NULL,
+     .total_htc                 = NULL,
+     .flthr                     = NULL,
+     .dflthr                    = NULL,
 
-      // Zone related quantities
-      .nzones    = -1,
-      .izcophc   = NULL,
-      .izcophg   = NULL,
-      .iztag1d   = NULL,
-      .ztpar     = NULL,
-      .zxrefcond = NULL,
-      .zprojcond = NULL };
+     // Zone related quantities
+     .nzones    = -1,
+     .izcophc   = NULL,
+     .izcophg   = NULL,
+     .iztag1d   = NULL,
+     .ztpar     = NULL,
+     .zxrefcond = NULL,
+     .zprojcond = NULL };
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -158,10 +158,11 @@ const cs_wall_cond_t *cs_glob_wall_cond = &_wall_cond;
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
-void cs_f_wall_condensation_get_model_pointers(
-  int **                              icondb,
-  int **                              icondv,
-  cs_wall_cond_natural_conv_model_t **icondb_model);
+void
+cs_f_wall_condensation_get_model_pointers
+  (int                                **icondb,
+   int                                **icondv,
+   cs_wall_cond_natural_conv_model_t  **icondb_model);
 
 void cs_f_wall_condensation_get_size_pointers(cs_lnum_t **nfbpcd,
                                               cs_lnum_t **nzones);
@@ -182,19 +183,22 @@ void cs_f_wall_condensation_get_pointers(cs_lnum_t **ifbpcd,
                                          cs_real_t **xrefcond,
                                          cs_real_t **projcond);
 
-void cs_wall_condensation_set_model(cs_wall_cond_natural_conv_model_t model);
+void cs_wall_condensation_set_model(cs_wall_cond_natural_conv_model_t  model);
 
-void cs_wall_condensation_set_onoff_state(int icondb, int icondv);
+void cs_wall_condensation_set_onoff_state(int icondb,
+                                          int icondv);
 
 /*============================================================================
  * Private function definitions
  *============================================================================*/
 
-/* Compute saturation pressure at given temperature (in Kelvins) */
+/*----------------------------------------------------------------------------
+ * Compute saturation pressure at given temperature (in Kelvins)
+ *----------------------------------------------------------------------------*/
+
 static cs_real_t
 _compute_psat(cs_real_t temperature)
 {
-
   cs_real_t dtheta      = temperature / t_c;
   cs_real_t dtheta_comp = 1.0 - dtheta;
   cs_real_t psat
@@ -209,19 +213,25 @@ _compute_psat(cs_real_t temperature)
   return psat;
 }
 
-/* Compute mole fraction from mass fraction */
+/*---------------------------------------------------------------------------
+ * Compute mole fraction from mass fraction
+ *----------------------------------------------------------------------------*/
+
 static cs_real_t
-_compute_mole_fraction(cs_real_t mass_fraction,
-                       cs_real_t mix_mol_mas,
-                       cs_real_t mol_mas)
+_compute_mole_fraction(cs_real_t  mass_fraction,
+                       cs_real_t  mix_mol_mas,
+                       cs_real_t  mol_mas)
 {
   return mass_fraction * mix_mol_mas / mol_mas;
 }
 
-static cs_real_t
-_get_wall_temperature(cs_lnum_t ieltcd)
-{
+/*---------------------------------------------------------------------------
+ * Get wall temperature at a given face
+ *----------------------------------------------------------------------------*/
 
+static cs_real_t
+_get_wall_temperature(cs_lnum_t  ieltcd)
+{
   cs_real_t temperature;
   int       izone = _wall_cond.izzftcd[ieltcd];
   if (_wall_cond.iztag1d[izone] == 1) {
@@ -243,12 +253,16 @@ _get_wall_temperature(cs_lnum_t ieltcd)
   }
 
   _wall_cond.twall_cond[ieltcd] = temperature;
+
   return temperature;
 }
 
-/* Compute Mac Adams natural convection correlation for mass or
- * heat transfer exchange coefficient */
-static cs_real_t
+/*----------------------------------------------------------------------------
+ * Compute Mac Adams natural convection correlation for mass or
+ * heat transfer exchange coefficient
+ *----------------------------------------------------------------------------*/
+
+static inline cs_real_t
 _compute_mac_adams(cs_real_t theta,
                    cs_real_t grashof,
                    cs_real_t schmidt_or_prandtl)
@@ -256,31 +270,41 @@ _compute_mac_adams(cs_real_t theta,
   return theta * 0.13 * pow(grashof * schmidt_or_prandtl, cs_math_1ov3);
 }
 
-static cs_real_t
+/*----------------------------------------------------------------------------
+ * Compute Schlichting number
+ *----------------------------------------------------------------------------*/
+
+static inline cs_real_t
 _compute_schlichting(cs_real_t theta,
                      cs_real_t reynolds,
                      cs_real_t schmidt_or_prandtl)
 {
-  return theta * 0.0296 * pow(reynolds, 0.8)
+  return   theta * 0.0296 * pow(reynolds, 0.8)
          * pow(schmidt_or_prandtl, cs_math_1ov3);
 }
 
-/* COmpute Grashof number */
-static cs_real_t
-_compute_grashof(cs_real_t gravity,
-                 cs_real_t drho,
-                 cs_real_t length,
-                 cs_real_t kin_viscosity)
+/*----------------------------------------------------------------------------
+ * Compute Grashof number
+ *----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+_compute_grashof(cs_real_t  gravity,
+                 cs_real_t  drho,
+                 cs_real_t  length,
+                 cs_real_t  kin_viscosity)
 {
-  return gravity * fabs(drho) * cs_math_pow3(length)
+  return   gravity * fabs(drho) * cs_math_pow3(length)
          / cs_math_pow2(kin_viscosity);
 }
 
-/* Compute characteristic length for schlichting model */
+/*----------------------------------------------------------------------------
+ * Compute characteristic length for schlichting model
+ *----------------------------------------------------------------------------*/
+
 static cs_real_t
-_compute_characteristic_length(const cs_real_3_t point,
-                               const cs_real_3_t ref_point,
-                               const cs_real_3_t ref_direction)
+_compute_characteristic_length(const cs_real_t  point[3],
+                               const cs_real_t  ref_point[3],
+                               const cs_real_t  ref_direction[3])
 {
   cs_real_t lcar = 0.0;
   for (int idir = 0; idir < 3; idir++) {
@@ -289,11 +313,14 @@ _compute_characteristic_length(const cs_real_3_t point,
   return lcar;
 }
 
-/* Compute tangential velocity (for schlichting model) */
+/*----------------------------------------------------------------------------*/
+/* Compute tangential velocity (for Schlichting model)                        */
+/*----------------------------------------------------------------------------*/
+
 static cs_real_t
-_compute_tangential_velocity(const cs_real_3_t velocity,
-                             const cs_real_3_t normal_vector,
-                             const cs_real_t   coeff)
+_compute_tangential_velocity(const cs_real_t  velocity[3],
+                             const cs_real_t  normal_vector[3],
+                             const cs_real_t  coeff)
 {
   cs_real_t u_square = 0.0;
   cs_real_t u_normal = 0.0;
@@ -304,12 +331,19 @@ _compute_tangential_velocity(const cs_real_3_t velocity,
   return sqrt(u_square - u_normal * u_normal);
 }
 
-static void
-_compute_exchange_forced_convection(cs_lnum_t  ieltcd,
-                                    cs_real_t *hconv,
-                                    cs_real_t *hcond)
-{
+/*----------------------------------------------------------------------------
+ * Compute forced convection exchange
+ *
+ * TODO: this function uses costly "cs_field_by_name" calls at each
+ *       element. The loop on faces should be inside this function,
+ *       not outside.
+ *----------------------------------------------------------------------------*/
 
+static void
+_compute_exchange_forced_convection(cs_lnum_t   ieltcd,
+                                    cs_real_t  *hconv,
+                                    cs_real_t  *hcond)
+{
   // Mesh related indices
   const cs_lnum_t *ifabor = cs_glob_mesh->b_face_cells;
   const cs_lnum_t  ifac   = _wall_cond.ifbpcd[ieltcd];
@@ -351,64 +385,69 @@ _compute_exchange_forced_convection(cs_lnum_t  ieltcd,
 
   switch (_wall_cond.forced_conv_model) {
 
-  case CS_WALL_COND_MODEL_SCHLICHTING: {
-    cs_real_3_t *cdgfbo = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
-    const cs_real_3_t *surfbo
-      = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
-    const cs_real_t *  surfbn = cs_glob_mesh_quantities->b_face_surf;
-    const cs_real_3_t *velocity
-      = (cs_real_3_t *)cs_field_by_name("velocity")->val;
-    const cs_real_3_t *n_ref = (cs_real_3_t *)_wall_cond.zprojcond;
-    const cs_real_3_t *x_ref = (cs_real_3_t *)_wall_cond.zxrefcond;
-    cs_real_3_t        n_ref_norm;
-    cs_math_3_normalize(n_ref[iz], n_ref_norm);
-    const cs_real_t lcar
-      = _compute_characteristic_length(cdgfbo[ifac], x_ref[iz], n_ref_norm);
-    const cs_real_t u_ref = _compute_tangential_velocity(
-      velocity[iel], surfbo[ifac], 1.0 / surfbn[ifac]);
-    // Reynolds number
-    const cs_real_t Re    = rho * u_ref * lcar / dyn_visc;
-    cs_real_t       theta = 1.0;
-    if (x_vap_int < x_vap_core) {
-      // here a choice between the different suction coefficients must be made
-      // => we choose to use the updated value of Benteboula and Dabbene
-      theta = 0.8254 + 0.616 * (x_vap_core - x_vap_int) / (1.0 - x_vap_int);
+  case CS_WALL_COND_MODEL_SCHLICHTING:
+    {
+      cs_real_3_t *cdgfbo = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+      const cs_real_3_t *surfbo
+        = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
+      const cs_real_t *  surfbn = cs_glob_mesh_quantities->b_face_surf;
+      const cs_real_3_t *velocity
+        = (cs_real_3_t *)cs_field_by_name("velocity")->val;
+      const cs_real_3_t *n_ref = (cs_real_3_t *)_wall_cond.zprojcond;
+      const cs_real_3_t *x_ref = (cs_real_3_t *)_wall_cond.zxrefcond;
+      cs_real_3_t        n_ref_norm;
+      cs_math_3_normalize(n_ref[iz], n_ref_norm);
+      const cs_real_t lcar
+        = _compute_characteristic_length(cdgfbo[ifac], x_ref[iz], n_ref_norm);
+      const cs_real_t u_ref
+        = _compute_tangential_velocity(velocity[iel], surfbo[ifac],
+                                       1. / surfbn[ifac]);
+      // Reynolds number
+      const cs_real_t Re    = rho * u_ref * lcar / dyn_visc;
+      cs_real_t       theta = 1.0;
+      if (x_vap_int < x_vap_core) {
+        // here a choice between the different suction coefficients must be made
+        // => we choose to use the updated value of Benteboula and Dabbene
+        theta = 0.8254 + 0.616 * (x_vap_core - x_vap_int) / (1.0 - x_vap_int);
+      }
+      const cs_real_t Nu  = _compute_schlichting(theta, Re, Pr_lam);
+      *hconv              = lambda_over_cp * Nu / lcar;
+      const cs_real_t She = _compute_schlichting(theta, Re, Sch);
+      kcond               = mass_diffusion * She / lcar;
     }
-    const cs_real_t Nu  = _compute_schlichting(theta, Re, Pr_lam);
-    *hconv              = lambda_over_cp * Nu / lcar;
-    const cs_real_t She = _compute_schlichting(theta, Re, Sch);
-    kcond               = mass_diffusion * She / lcar;
-  } break;
+    break;
 
   case CS_WALL_COND_MODEL_WALL_LAW:
-  default: {
-    const cs_real_t   rough_t = 0.0;
-    cs_real_t         uk      = 0.0;
-    const cs_field_t *f_ustar = cs_field_by_name_try("ustar");
-    if (f_ustar != NULL) {
-      uk = f_ustar->val[ifac];
-    }
-    const cs_real_t          dplus  = 0.0;
-    const cs_real_t          yplus  = cs_field_by_name("yplus")->val[ifac];
-    const cs_wall_f_s_type_t iwalfs = cs_glob_wall_functions->iwalfs;
-    cs_real_t                hpflui, ypth;
-    cs_wall_functions_scalar(iwalfs,
-                             kin_visc,
-                             Pr_lam,
-                             Pr_tur,
-                             rough_t,
-                             uk,
-                             yplus,
-                             dplus,
-                             &hpflui,
-                             &ypth);
+  default:
+    {
+      const cs_real_t   rough_t = 0.0;
+      cs_real_t         uk      = 0.0;
+      const cs_field_t *f_ustar = cs_field_by_name_try("ustar");
+      if (f_ustar != NULL) {
+        uk = f_ustar->val[ifac];
+      }
+      const cs_real_t          dplus  = 0.0;
+      const cs_real_t          yplus  = cs_field_by_name("yplus")->val[ifac];
+      const cs_wall_f_s_type_t iwalfs = cs_glob_wall_functions->iwalfs;
+      cs_real_t                hpflui, ypth;
+      cs_wall_functions_scalar(iwalfs,
+                               kin_visc,
+                               Pr_lam,
+                               Pr_tur,
+                               rough_t,
+                               uk,
+                               yplus,
+                               dplus,
+                               &hpflui,
+                               &ypth);
 
-    const cs_real_t distbf = cs_glob_mesh_quantities->b_dist[ifac];
-    *hconv                 = lambda_over_cp * hpflui / distbf;
-    cs_wall_functions_scalar(
-      iwalfs, kin_visc, Sch, Pr_tur, rough_t, uk, yplus, dplus, &hpflui, &ypth);
-    kcond = mass_diffusion * hpflui / distbf;
-  } break;
+      const cs_real_t distbf = cs_glob_mesh_quantities->b_dist[ifac];
+      *hconv                 = lambda_over_cp * hpflui / distbf;
+      cs_wall_functions_scalar(iwalfs, kin_visc, Sch, Pr_tur, rough_t,
+                               uk, yplus, dplus, &hpflui, &ypth);
+      kcond = mass_diffusion * hpflui / distbf;
+    }
+    break;
   }
 
   // Spalding number (only for condensation)
@@ -431,16 +470,23 @@ _compute_exchange_forced_convection(cs_lnum_t  ieltcd,
   *hconv *= cp;
 }
 
+/*----------------------------------------------------------------------------
+ * Compute natural convection exchange
+ *
+ * TODO: this function uses costly "cs_field_by_name" calls at each
+ *       element. The loop on faces should be inside this function,
+ *       not outside.
+ *----------------------------------------------------------------------------*/
+
 static void
 _compute_exchange_natural_convection(cs_lnum_t  ieltcd,
                                      cs_real_t *hconv,
                                      cs_real_t *hcond)
 {
-
   cs_lnum_t *     ifabor   = cs_glob_mesh->b_face_cells;
-  const cs_real_t pressure = (cs_glob_velocity_pressure_model->idilat == 3)
-                               ? cs_glob_fluid_properties->pther
-                               : cs_glob_fluid_properties->p0;
+  const cs_real_t pressure =   (cs_glob_velocity_pressure_model->idilat == 3)
+                             ? cs_glob_fluid_properties->pther
+                             : cs_glob_fluid_properties->p0;
 
   // Mesh quantities
   cs_lnum_t ifac = _wall_cond.ifbpcd[ieltcd];
@@ -489,59 +535,76 @@ _compute_exchange_natural_convection(cs_lnum_t  ieltcd,
   const cs_real_t gravity = cs_math_3_norm(cs_glob_physical_constants->gravity);
   switch (_wall_cond.natural_conv_model) {
 
-  case CS_WALL_COND_MODEL_COPAIN: {
-    cs_real_t drho = fabs((t_inf - t_wall) / t_inf);
-    if (y_vap_int < y_vap_core) { // condensation
-      cs_real_t mix_mol_mas = cs_field_by_name("mix_mol_mas")->val[iel];
-      cs_real_t x_vap_core
-        = _compute_mole_fraction(y_vap_core, mix_mol_mas, mol_mas_vap);
-      theta = 1.0 + 0.625 * (x_vap_core - x_vap_int) / (1.0 - x_vap_int);
+  case CS_WALL_COND_MODEL_COPAIN:
+    {
+      cs_real_t drho = fabs((t_inf - t_wall) / t_inf);
+      if (y_vap_int < y_vap_core) { // condensation
+        cs_real_t mix_mol_mas = cs_field_by_name("mix_mol_mas")->val[iel];
+        cs_real_t x_vap_core
+          = _compute_mole_fraction(y_vap_core, mix_mol_mas, mol_mas_vap);
+        theta = 1.0 + 0.625 * (x_vap_core - x_vap_int) / (1.0 - x_vap_int);
+      }
+      cs_real_t Gr = _compute_grashof(gravity, drho, lcar_nc, mu / rho);
+      cs_real_t Nu = _compute_mac_adams(theta, Gr, Pr);
+      *hconv       = cp * lambda_over_cp * Nu / lcar_nc;
     }
-    cs_real_t Gr = _compute_grashof(gravity, drho, lcar_nc, mu / rho);
-    cs_real_t Nu = _compute_mac_adams(theta, Gr, Pr);
-    *hconv       = cp * lambda_over_cp * Nu / lcar_nc;
-  } break;
+    break;
 
-  case CS_WALL_COND_MODEL_COPAIN_BD: {
-    cs_real_t drho = fabs(
-      1.0 - t_wall / t_inf
-      + (y_vap_core - y_vap_int)
-          / (mol_mas_ncond / (mol_mas_ncond - mol_mas_vap) - 1.0 + y_vap_int));
-    if (y_vap_int < y_vap_core) { // condensation
-      cs_real_t mix_mol_mas = cs_field_by_name("mix_mol_mas")->val[iel];
-      cs_real_t x_vap_core
-        = _compute_mole_fraction(y_vap_core, mix_mol_mas, mol_mas_vap);
-      theta = 0.8254 + 0.616 * (x_vap_core - x_vap_int) / (1.0 - x_vap_int);
+  case CS_WALL_COND_MODEL_COPAIN_BD:
+    {
+      cs_real_t drho
+        = fabs(1. - t_wall / t_inf
+               + (y_vap_core - y_vap_int)
+               / (  mol_mas_ncond / (mol_mas_ncond - mol_mas_vap)
+                  - 1.0 + y_vap_int));
+      if (y_vap_int < y_vap_core) { // condensation
+        cs_real_t mix_mol_mas = cs_field_by_name("mix_mol_mas")->val[iel];
+        cs_real_t x_vap_core
+          = _compute_mole_fraction(y_vap_core, mix_mol_mas, mol_mas_vap);
+        theta = 0.8254 + 0.616 * (x_vap_core - x_vap_int) / (1.0 - x_vap_int);
+      }
+      cs_real_t Gr = _compute_grashof(gravity, drho, lcar_nc, mu / rho);
+      cs_real_t Nu = _compute_mac_adams(theta, Gr, Pr);
+      *hconv       = cp * lambda_over_cp * Nu / lcar_nc;
     }
-    cs_real_t Gr = _compute_grashof(gravity, drho, lcar_nc, mu / rho);
-    cs_real_t Nu = _compute_mac_adams(theta, Gr, Pr);
-    *hconv       = cp * lambda_over_cp * Nu / lcar_nc;
-  } break;
+    break;
 
-  case CS_WALL_COND_MODEL_UCHIDA: {
-    cs_real_t h_uchida = 0.0;
-    if ((y_vap_core > 0)
-        && (y_vap_core < 1)) // Uchida correlation is developed for steam
-                             // fractions between 0.10 and 0.80
-      h_uchida = 380.0 * pow(y_vap_core / (1.0 - y_vap_core), 0.7);
-    _wall_cond.total_htc[ieltcd] = h_uchida;
-    *hconv                       = h_uchida / (1.0 + hcd_over_hcv);
-  } break;
+  case CS_WALL_COND_MODEL_UCHIDA:
+    {
+      cs_real_t h_uchida = 0.0;
+      if ((y_vap_core > 0)
+          && (y_vap_core < 1)) // Uchida correlation is developed for steam
+                               // fractions between 0.10 and 0.80
+        h_uchida = 380.0 * pow(y_vap_core / (1.0 - y_vap_core), 0.7);
+      _wall_cond.total_htc[ieltcd] = h_uchida;
+      *hconv                       = h_uchida / (1.0 + hcd_over_hcv);
+    }
+    break;
 
-  case CS_WALL_COND_MODEL_DEHBI: {
-    cs_real_t rho_wall
-      = pressure * mol_mas_int / (cs_physical_constants_r * t_wall);
-    cs_real_t drho = fabs(rho_wall - rho) / rho; // different from Fortran
-    if (y_vap_int < y_vap_core)
-      theta = 1.33 * log(1.0 + spalding) / spalding;
-    cs_real_t Gr = _compute_grashof(gravity, drho, lcar_nc, mu / rho);
-    cs_real_t Nu = _compute_mac_adams(theta, Gr, Pr);
-    *hconv       = cp * lambda_over_cp * Nu / lcar_nc;
-  } break;
+  case CS_WALL_COND_MODEL_DEHBI:
+    {
+      cs_real_t rho_wall
+        = pressure * mol_mas_int / (cs_physical_constants_r * t_wall);
+      cs_real_t drho = fabs(rho_wall - rho) / rho; // different from Fortran
+      if (y_vap_int < y_vap_core)
+        theta = 1.33 * log(1.0 + spalding) / spalding;
+      cs_real_t Gr = _compute_grashof(gravity, drho, lcar_nc, mu / rho);
+      cs_real_t Nu = _compute_mac_adams(theta, Gr, Pr);
+      *hconv       = cp * lambda_over_cp * Nu / lcar_nc;
+    }
+    break;
   }
 
   *hcond = *hconv * hcd_over_hcv;
 }
+
+/*----------------------------------------------------------------------------
+ * Compute mixed convection exchange
+ *
+ * TODO: this function uses costly "cs_field_by_name" calls at each
+ *       element. The loop on faces should be inside this function,
+ *       not outside.
+ *----------------------------------------------------------------------------*/
 
 static void
 _compute_exchange_mixed_convection(cs_lnum_t  ieltcd,
@@ -577,6 +640,14 @@ _compute_exchange_mixed_convection(cs_lnum_t  ieltcd,
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Compute exchange coefficients
+ *
+ * TODO: this function uses costly "cs_field_by_name" calls at each
+ *       element. The loop on faces should be inside this function,
+ *       not outside.
+ *----------------------------------------------------------------------------*/
+
 static void
 _compute_exchange_coefficients(cs_lnum_t  ieltcd,
                                cs_real_t *hconv,
@@ -585,10 +656,10 @@ _compute_exchange_coefficients(cs_lnum_t  ieltcd,
   const int iz = _wall_cond.izzftcd[ieltcd];
   // For now, izcophc and izcophg are kept for backward compatibility
   if (_wall_cond.izcophc[iz] != _wall_cond.izcophg[iz]) {
-    bft_printf("  -- Warning : izcophc and izcophg have different values for "
-               "zone : %d\n",
+    bft_printf("  -- Warning: izcophc and izcophg have different values for "
+               "zone: %d\n",
                iz);
-    bft_printf("               izcophg is set to the value of izcophg : %d\n",
+    bft_printf("              izcophg is set to the value of izcophg: %d\n",
                _wall_cond.izcophc[iz]);
     _wall_cond.izcophg[iz] = _wall_cond.izcophc[iz];
   }
@@ -610,10 +681,10 @@ _compute_exchange_coefficients(cs_lnum_t  ieltcd,
  *============================================================================*/
 
 void
-cs_f_wall_condensation_get_model_pointers(
-  int **                              icondb,
-  int **                              icondv,
-  cs_wall_cond_natural_conv_model_t **icondb_model)
+cs_f_wall_condensation_get_model_pointers
+  (int                                **icondb,
+   int                                **icondv,
+   cs_wall_cond_natural_conv_model_t  **icondb_model)
 {
   *icondb       = &(_wall_cond.icondb);
   *icondv       = &(_wall_cond.icondv);
@@ -621,7 +692,8 @@ cs_f_wall_condensation_get_model_pointers(
 }
 
 void
-cs_f_wall_condensation_get_size_pointers(cs_lnum_t **nfbpcd, cs_lnum_t **nzones)
+cs_f_wall_condensation_get_size_pointers(cs_lnum_t **nfbpcd,
+                                         cs_lnum_t **nzones)
 {
   *nfbpcd = &(_wall_cond.nfbpcd);
   *nzones = &(_wall_cond.nzones);
@@ -676,7 +748,7 @@ cs_f_wall_condensation_get_pointers(cs_lnum_t **ifbpcd,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_wall_condensation_set_model(cs_wall_cond_natural_conv_model_t model)
+cs_wall_condensation_set_model(cs_wall_cond_natural_conv_model_t  model)
 {
   _wall_cond.natural_conv_model = model;
 }
@@ -686,11 +758,14 @@ cs_wall_condensation_set_model(cs_wall_cond_natural_conv_model_t model)
  * \brief Set the onoff state of wall condensation modeling
  *
  * \param[in] icondb integer corresponding to the onoff state (-1 : off, 0: on)
+ * \param[in] icondv integer corresponding to the onoff state with
+                     metal structures(-1 : off, 0: on)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_wall_condensation_set_onoff_state(int icondb, int icondv)
+cs_wall_condensation_set_onoff_state(int  icondb,
+                                     int  icondv)
 {
   _wall_cond.icondb = icondb;
   _wall_cond.icondv = icondv;
@@ -700,14 +775,16 @@ cs_wall_condensation_set_onoff_state(int icondb, int icondv)
 /*!
  * \brief  Create the context for wall condensation models.
  *
- * \param[in] nfbpcd   number of faces with wall condensation
- * \param[in] nzones   number of zones with wall condensation
- * \param[in] nvar     number of variables (?)
+ * \param[in]  nfbpcd  number of faces with wall condensation
+ * \param[in]  nzones  number of zones with wall condensation
+ * \param[in]  nvar    number of variables (?)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_wall_condensation_create(cs_lnum_t nfbpcd, cs_lnum_t nzones, cs_lnum_t nvar)
+cs_wall_condensation_create(cs_lnum_t  nfbpcd,
+                            cs_lnum_t  nzones,
+                            cs_lnum_t  nvar)
 {
   _wall_cond.nfbpcd = nfbpcd;
   if (nzones < 1) {
@@ -808,16 +885,11 @@ cs_wall_condensation_free(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the wall condensation source terms.
- *
- * \param[in] nvar     number of variables (?)
- * \param[in] izzftcd  pointer to the table connecting faces to their
- *                     condensation zone
- *
- * \return
  */
 /*----------------------------------------------------------------------------*/
+
 void
-cs_wall_condensation_compute(cs_real_t total_htc[])
+cs_wall_condensation_compute(cs_real_t  total_htc[])
 {
   cs_field_t *f          = cs_field_by_name("pressure");
   const int   var_id_key = cs_field_key_id("variable_id");
@@ -855,20 +927,19 @@ cs_wall_condensation_compute(cs_real_t total_htc[])
     }
   }
 
-  if (cs_glob_time_step->nt_cur % cs_glob_log_frequency == 0)
+  if (cs_log_default_is_active())
     cs_wall_condensation_log();
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Print information about min/max values of condensation exchange
+ * \brief Output statistics about wall condensation source terms (for user log)
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_wall_condensation_log(void)
 {
-
   const cs_field_t *f          = cs_field_by_name("pressure");
   const int         var_id_key = cs_field_key_id("variable_id");
   const int         ipr        = cs_field_get_key_int(f, var_id_key) - 1;
