@@ -187,6 +187,18 @@ struct _cs_property_t {
   int                     n_related_properties;
   const cs_property_t   **related_properties;
 
+  /* Optional: Definition(s) of the property at the boundary. If nothing is
+     set, then one uses the definition on the volume to get information on the
+     boundary. This is the default behavior. */
+
+  int                     n_b_definitions;
+  cs_xdef_t             **b_defs;
+
+  /* Store the definition id for each boundary face, NULL if there is only one
+     boundary definition set */
+
+  short int              *b_def_ids;
+
 };
 
 
@@ -633,6 +645,26 @@ cs_property_def_iso_by_value(cs_property_t    *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define the value at the boundary for the given (isotropic)
+ *        property. This value is uniform and steady for all the boundary
+ *        faces associated to the boundary zone named zname
+ *
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           boundary faces are considered)
+ * \param[in]       val      value to set
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_property_boundary_def_iso_by_value(cs_property_t    *pty,
+                                      const char       *zname,
+                                      double            val);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define an orthotropic cs_property_t structure by value for entities
  *         related to a volume zone
  *
@@ -649,6 +681,26 @@ cs_xdef_t *
 cs_property_def_ortho_by_value(cs_property_t    *pty,
                                const char       *zname,
                                double            val[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the value at the boundary for the given (orthotropic)
+ *        property. This value is uniform and steady for all the boundary
+ *        faces associated to the boundary zone named zname
+ *
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           boundary faces are considered)
+ * \param[in]       vals     values to set
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_property_boundary_def_ortho_by_value(cs_property_t    *pty,
+                                        const char       *zname,
+                                        double            vals[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -671,13 +723,34 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define an anisotropic cs_property_t structure by value for entities
- *         related to a volume zone
+ * \brief Define the value at the boundary for the given (anisotropic)
+ *        property. This value is uniform and steady for all the boundary
+ *        faces associated to the boundary zone named zname
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       zname     name of the associated zone (if NULL or "" all
- *                            cells are considered)
- * \param[in]       symtens   values to set (6 values)
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           boundary faces are considered)
+ * \param[in]       tens     values to set given as a 3x3 tensor
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_property_boundary_def_aniso_by_value(cs_property_t    *pty,
+                                        const char       *zname,
+                                        double            tens[3][3]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the value of a cs_property_t structure thanks to a time
+ *         function for all cells associated to the zone named zname.
+ *         Optimized case with a symmetric storage.
+ *
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           boundary faces are considered)
+ * \param[in]       tens     tensor to set given as an array of 6 values
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -690,8 +763,29 @@ cs_property_def_aniso_sym_by_value(cs_property_t    *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the value of a cs_property_t structure thanks to a time
- *         function for all cells associated to the zone named zname
+ * \brief Define the value at the boundary for the given (anisotropic)
+ *        property. This value is uniform and steady for all the boundary
+ *        faces associated to the boundary zone named zname
+ *        Optimized case with a symmetric storage.
+ *
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           boundary faces are considered)
+ * \param[in]       tens     tensor to set given as an array of 6 values
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_property_boundary_def_aniso_sym_by_value(cs_property_t    *pty,
+                                            const char       *zname,
+                                            double            tens[6]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a cs_property_t structure thanks to a time function for all
+ *        cells associated to the zone named zname
  *
  * \param[in, out]  pty      pointer to a cs_property_t structure
  * \param[in]       zname    name of the associated zone (if NULL or "" all
@@ -708,6 +802,27 @@ cs_property_def_by_time_func(cs_property_t      *pty,
                              const char         *zname,
                              cs_time_func_t     *func,
                              void               *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the value of a cs_property_t structure at the boundary thanks
+ *        to a time function in a subdomain attached to a zone named zname
+ *
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           boundary faces are considered)
+ * \param[in]       func     pointer to a cs_time_func_t function
+ * \param[in]       input    NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_property_boundary_def_by_time_func(cs_property_t      *pty,
+                                      const char         *zname,
+                                      cs_time_func_t     *func,
+                                      void               *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -729,6 +844,28 @@ cs_property_def_by_analytic(cs_property_t        *pty,
                             const char           *zname,
                             cs_analytic_func_t   *func,
                             void                 *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the value of a cs_property_t structure at the boundary thanks
+ *        to a time function for all boundary faces associated to the zone
+ *        named zname
+ *
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           boundary faces are considered)
+ * \param[in]       func     pointer to a cs_analytic_func_t function
+ * \param[in]       input    NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_property_boundary_def_by_analytic(cs_property_t        *pty,
+                                     const char           *zname,
+                                     cs_analytic_func_t   *func,
+                                     void                 *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -782,6 +919,34 @@ cs_property_def_by_array(cs_property_t      *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define the values of a property at the boundarye thanks to an array
+ *         All boundary faces associated to the zone named zname are defined
+ *         using this definition.
+ *
+ * \param[in, out]  pty       pointer to a cs_property_t structure
+ * \param[in]       zname     NULL or name of the boundary zone
+ * \param[in]       loc       information to know where are located values
+ * \param[in]       array     pointer to an array
+ * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
+ *                            (true or false)
+ * \param[in]       index     optional pointer to an array of index values
+ * \param[in]       ids       optional pointer to a list of entity ids
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_property_boundary_def_by_array(cs_property_t      *pty,
+                                  const char         *zname,
+                                  cs_flag_t           loc,
+                                  cs_real_t          *array,
+                                  bool                is_owner,
+                                  const cs_lnum_t    *index,
+                                  const cs_lnum_t    *ids);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define a cs_property_t structure thanks to a field structure. One
  *         assumes that all cells are defined using this array.
  *
@@ -795,6 +960,23 @@ cs_property_def_by_array(cs_property_t      *pty,
 cs_xdef_t *
 cs_property_def_by_field(cs_property_t    *pty,
                          cs_field_t       *field);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the values of a property at the boundary thanks to a field
+ *        structure. One assumes that all boundary faces are defined using
+ *        this array.
+ *
+ * \param[in, out]  pty       pointer to a cs_property_t structure
+ * \param[in]       field     pointer to a cs_field_t structure
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_property_boundary_def_by_field(cs_property_t    *pty,
+                                  cs_field_t       *field);
 
 /*----------------------------------------------------------------------------*/
 /*!

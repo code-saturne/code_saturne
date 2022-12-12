@@ -93,6 +93,9 @@ Master (not on release branches yet)
 
 - Drop support for older EOS versions (prior to 1.8.0).
 
+- Add the possibility to define the values at the boundary faces for a
+  cs_property_t structure
+
 ### Studymanager:
 
 - New option (--slurm-batch-size=N with N>0) to submit batches of cases using
