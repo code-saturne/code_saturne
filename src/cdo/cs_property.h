@@ -422,13 +422,15 @@ cs_property_get_dim(const cs_property_t   *pty)
 /*!
  * \brief  Set shared pointers to main domain members
  *
+ * \param[in]  mesh        mesh structure shared between FV and CDO
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_init_sharing(const cs_cdo_quantities_t    *quant,
+cs_property_init_sharing(const cs_mesh_t              *mesh,
+                         const cs_cdo_quantities_t    *quant,
                          const cs_cdo_connect_t       *connect);
 
 /*----------------------------------------------------------------------------*/

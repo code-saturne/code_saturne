@@ -670,7 +670,9 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
                                   domain->cdo_quantities,
                                   domain->time_step);
 
-  cs_property_init_sharing(domain->cdo_quantities, domain->connect);
+  cs_property_init_sharing(domain->mesh,
+                           domain->cdo_quantities,
+                           domain->connect);
 
   cs_source_term_init_sharing(domain->cdo_quantities, domain->connect);
 

@@ -44,6 +44,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_defs.h"
 #include "cs_log.h"
 #include "cs_param_cdo.h"
@@ -79,6 +80,7 @@ static const char _err_empty_pty[] =
 
 static const cs_cdo_quantities_t  *cs_cdo_quant;
 static const cs_cdo_connect_t  *cs_cdo_connect;
+static const cs_mesh_t  *cs_mesh;
 
 static int  _n_properties = 0;
 static int  _n_max_properties = 0;
@@ -140,7 +142,7 @@ _print_tensor(const cs_real_3_t   *tensor)
  */
 /*----------------------------------------------------------------------------*/
 
-inline static int
+static inline int
 _add_new_def(cs_property_t     *pty)
 {
   int  new_id = pty->n_definitions;
@@ -166,7 +168,7 @@ _add_new_def(cs_property_t     *pty)
  */
 /*----------------------------------------------------------------------------*/
 
-inline static int
+static inline int
 _add_new_b_def(cs_property_t     *pty)
 {
   int  new_id = pty->n_b_definitions;
@@ -188,7 +190,7 @@ _add_new_b_def(cs_property_t     *pty)
  */
 /*----------------------------------------------------------------------------*/
 
-inline static int
+static inline int
 _get_def_id(cs_lnum_t                c_id,
             const cs_property_t     *pty)
 {
@@ -201,6 +203,69 @@ _get_def_id(cs_lnum_t                c_id,
   }
   else
     return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of a property at the cell center
+ *
+ * \param[in]   c_id     id of the current cell
+ * \param[in]   t_eval   physical time at which one evaluates the term
+ * \param[in]   pty      pointer to a cs_property_t structure
+ *
+ * \return the value of the property for the given cell
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+_get_cell_value(cs_lnum_t              c_id,
+                cs_real_t              t_eval,
+                const cs_property_t   *pty)
+{
+  int  def_id = _get_def_id(c_id, pty);
+
+  assert(pty->get_eval_at_cell[def_id] != NULL);
+
+  cs_xdef_t  *def = pty->defs[def_id];
+  cs_real_t  result = 0;
+
+  pty->get_eval_at_cell[def_id](1, &c_id, true, /* dense output */
+                                cs_mesh,
+                                cs_cdo_connect,
+                                cs_cdo_quant,
+                                t_eval,
+                                def->context,
+                                &result);
+
+  return result;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of a property at the cell center
+ *         Version using a cs_cell_mesh_t structure
+ *
+ * \param[in]  cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]  pty       pointer to a cs_property_t structure
+ * \param[in]  t_eval    physical time at which one evaluates the term
+ *
+ * \return the value of the property for the given cell
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+_value_in_cell(const cs_cell_mesh_t   *cm,
+               const cs_property_t    *pty,
+               cs_real_t               t_eval)
+{
+  cs_real_t  result = 0;
+  int  def_id = _get_def_id(cm->c_id, pty);
+  cs_xdef_t  *def = pty->defs[def_id];
+
+  assert(pty->get_eval_at_cell_cw[def_id] != NULL);
+  pty->get_eval_at_cell_cw[def_id](cm, t_eval, def->context, &result);
+
+  return result;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -251,69 +316,6 @@ _invert_tensor(cs_real_3_t          *tens,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value of a property at the cell center
- *
- * \param[in]   c_id     id of the current cell
- * \param[in]   t_eval   physical time at which one evaluates the term
- * \param[in]   pty      pointer to a cs_property_t structure
- *
- * \return the value of the property for the given cell
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_real_t
-_get_cell_value(cs_lnum_t              c_id,
-                cs_real_t              t_eval,
-                const cs_property_t   *pty)
-{
-  int  def_id = _get_def_id(c_id, pty);
-
-  assert(pty->get_eval_at_cell[def_id] != NULL);
-
-  cs_xdef_t  *def = pty->defs[def_id];
-  cs_real_t  result = 0;
-
-  pty->get_eval_at_cell[def_id](1, &c_id, true, /* dense output */
-                                cs_glob_mesh,
-                                cs_cdo_connect,
-                                cs_cdo_quant,
-                                t_eval,
-                                def->context,
-                                &result);
-
-  return result;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the value of a property at the cell center
- *         Version using a cs_cell_mesh_t structure
- *
- * \param[in]  cm        pointer to a cs_cell_mesh_t structure
- * \param[in]  pty       pointer to a cs_property_t structure
- * \param[in]  t_eval    physical time at which one evaluates the term
- *
- * \return the value of the property for the given cell
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_real_t
-_value_in_cell(const cs_cell_mesh_t   *cm,
-               const cs_property_t    *pty,
-               cs_real_t               t_eval)
-{
-  cs_real_t  result = 0;
-  int  def_id = _get_def_id(cm->c_id, pty);
-  cs_xdef_t  *def = pty->defs[def_id];
-
-  assert(pty->get_eval_at_cell_cw[def_id] != NULL);
-  pty->get_eval_at_cell_cw[def_id](cm, t_eval, def->context, &result);
-
-  return result;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Compute the value of the tensor attached to a property at the cell
  *         center
  *
@@ -339,7 +341,7 @@ _get_cell_tensor(cs_lnum_t               c_id,
 
     double  eval;
     pty->get_eval_at_cell[def_id](1, &c_id, true,  /* dense output */
-                                  cs_glob_mesh,
+                                  cs_mesh,
                                   cs_cdo_connect,
                                   cs_cdo_quant,
                                   t_eval,
@@ -353,7 +355,7 @@ _get_cell_tensor(cs_lnum_t               c_id,
 
     double  eval[3];
     pty->get_eval_at_cell[def_id](1, &c_id, true,  /* dense output */
-                                  cs_glob_mesh,
+                                  cs_mesh,
                                   cs_cdo_connect,
                                   cs_cdo_quant,
                                   t_eval,
@@ -368,7 +370,7 @@ _get_cell_tensor(cs_lnum_t               c_id,
 
     double  eval[6];
     pty->get_eval_at_cell[def_id](1, &c_id, true,  /* dense output */
-                                  cs_glob_mesh,
+                                  cs_mesh,
                                   cs_cdo_connect,
                                   cs_cdo_quant,
                                   t_eval,
@@ -392,7 +394,7 @@ _get_cell_tensor(cs_lnum_t               c_id,
 
     assert(pty->type & CS_PROPERTY_ANISO);
     pty->get_eval_at_cell[def_id](1, &c_id, true,  /* dense output */
-                                  cs_glob_mesh,
+                                  cs_mesh,
                                   cs_cdo_connect,
                                   cs_cdo_quant,
                                   t_eval,
@@ -427,7 +429,7 @@ _get_cell_tensor_by_property_product(cs_lnum_t               c_id,
   cs_real_t  tensor_a[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
   cs_real_t  tensor_b[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
-  /* Evaluates each property */
+  /* Evaluate each property */
 
   _get_cell_tensor(c_id, t_eval, a, tensor_a);
   _get_cell_tensor(c_id, t_eval, b, tensor_b);
@@ -542,7 +544,7 @@ _tensor_in_cell_by_property_product(const cs_cell_mesh_t   *cm,
   cs_real_t  tensor_a[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
   cs_real_t  tensor_b[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
-  /* Evaluates each property */
+  /* Evaluate each property */
 
   _tensor_in_cell(cm, a, t_eval, tensor_a);
   _tensor_in_cell(cm, b, t_eval, tensor_b);
@@ -607,6 +609,41 @@ _define_pty_by_product(cs_property_t          *pty)
   pty->defs[id] = d;
   pty->get_eval_at_cell[id] = NULL;
   pty->get_eval_at_cell_cw[id] = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate the values at all cells from the definition at cells eval
+ *        should be allocated with a size equal to dim*n_cells (dim depends on
+ *        the type of property to handle)
+ *
+ * \param[in]      pty       pointer to a property structure
+ * \param[in]      t_eval    time at which one performs the evaluation
+ * \param[in, out] eval      array storing the result of the evaluation(s)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_evaluate_property_at_cells(const cs_property_t    *pty,
+                            double                  t_eval,
+                            cs_real_t              *eval)
+{
+  for (int i = 0; i < pty->n_definitions; i++) {
+
+    cs_xdef_t  *def = pty->defs[i];
+    const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+
+    pty->get_eval_at_cell[i](z->n_elts,
+                             z->elt_ids,
+                             false, /* without dense output */
+                             cs_mesh,
+                             cs_cdo_connect,
+                             cs_cdo_quant,
+                             t_eval,
+                             def->context,
+                             eval);
+
+  } /* Loop on definitions */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -707,15 +744,18 @@ _create_property(const char           *name,
 /*!
  * \brief  Set shared pointers to main domain members
  *
+ * \param[in]  mesh        mesh structure shared between FV and CDO
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_init_sharing(const cs_cdo_quantities_t    *quant,
+cs_property_init_sharing(const cs_mesh_t              *mesh,
+                         const cs_cdo_quantities_t    *quant,
                          const cs_cdo_connect_t       *connect)
 {
+  cs_mesh = mesh;
   cs_cdo_quant = quant;
   cs_cdo_connect = connect;
 }
@@ -2357,6 +2397,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
   assert(pty != NULL && array != NULL);
 
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+  const cs_lnum_t  n_cells = quant->n_cells;
 
   if (pty->type & CS_PROPERTY_BY_PRODUCT) {
 
@@ -2364,206 +2405,83 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
     const cs_property_t  *a = pty->related_properties[0];
     const cs_property_t  *b = pty->related_properties[1];
 
+    cs_real_t  *tmp_val = NULL;
+    BFT_MALLOC(tmp_val, n_cells, cs_real_t);
+    memset(tmp_val, 0, n_cells*sizeof(cs_real_t));
+
     if (pty->type & CS_PROPERTY_ISO) {
 
-      cs_real_t  *val_a = NULL;
-      BFT_MALLOC(val_a, quant->n_cells, cs_real_t);
-      memset(val_a, 0, quant->n_cells*sizeof(cs_real_t));
+      /* 1. Evaluate the property A */
 
-      /* 1. Evaluates the property A */
+      _evaluate_property_at_cells(a, t_eval, tmp_val);
 
-      for (int i = 0; i < a->n_definitions; i++) {
+      /* 2. Evaluate the property B and operates the product */
 
-        cs_xdef_t  *def = a->defs[i];
-        const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+      _evaluate_property_at_cells(b, t_eval, array);
 
-        a->get_eval_at_cell[i](z->n_elts,
-                               z->elt_ids,
-                               false, /* without dense output */
-                               cs_glob_mesh,
-                               cs_cdo_connect,
-                               quant,
-                               t_eval,
-                               def->context,
-                               val_a);
-
-      } /* Loop on definitions */
-
-      /* 2. Evaluates the property B and operates the product */
-
-      for (int i = 0; i < b->n_definitions; i++) {
-
-        cs_xdef_t  *def = b->defs[i];
-        const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
-
-        b->get_eval_at_cell[i](z->n_elts,
-                               z->elt_ids,
-                               false, /* without dense output */
-                               cs_glob_mesh,
-                               cs_cdo_connect,
-                               quant,
-                               t_eval,
-                               def->context,
-                               array);
-
-        for (cs_lnum_t j = 0; j < z->n_elts; j++)
-          array[z->elt_ids[j]] *= val_a[z->elt_ids[j]];
-
-      } /* Loop on definitions */
-
-      BFT_FREE(val_a);
+      for (cs_lnum_t i = 0; i < n_cells; i++)
+        array[i] *= tmp_val[i];
 
     }
     else {
 
       if (a->type & CS_PROPERTY_ISO) {
 
-        cs_real_t  *val_a = NULL;
-        BFT_MALLOC(val_a, quant->n_cells, cs_real_t);
-        memset(val_a, 0, quant->n_cells*sizeof(cs_real_t));
+        /* 1. Evaluate the property A */
 
-        /* 1. Evaluates the property A */
+        _evaluate_property_at_cells(a, t_eval, tmp_val);
 
-        for (int i = 0; i < a->n_definitions; i++) {
-
-          cs_xdef_t  *def = a->defs[i];
-          const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
-
-          a->get_eval_at_cell[i](z->n_elts,
-                                 z->elt_ids,
-                                 false, /* without dense output */
-                                 cs_glob_mesh,
-                                 cs_cdo_connect,
-                                 quant,
-                                 t_eval,
-                                 def->context,
-                                 val_a);
-
-        } /* Loop on definitions */
+        /* 2. Evaluate the property B and operates the product */
 
         int  b_dim = cs_property_get_dim(b);
 
-        /* 2. Evaluates the property B and operates the product */
+        _evaluate_property_at_cells(b, t_eval, array);
 
-        for (int i = 0; i < b->n_definitions; i++) {
-
-          cs_xdef_t  *def = b->defs[i];
-          const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
-
-          b->get_eval_at_cell[i](z->n_elts,
-                                 z->elt_ids,
-                                 false, /* without dense output */
-                                 cs_glob_mesh,
-                                 cs_cdo_connect,
-                                 quant,
-                                 t_eval,
-                                 def->context,
-                                 array);
-
-          for (cs_lnum_t j = 0; j < z->n_elts; j++) {
-            const cs_real_t  acoef = val_a[z->elt_ids[j]];
-            cs_real_t  *_a = array + b_dim*z->elt_ids[j];
-            for (int k = 0; k < b_dim; k++)
-              _a[k] *= acoef;
-          }
-
-        } /* Loop on definitions */
-
-        BFT_FREE(val_a);
+        for (cs_lnum_t i = 0; i < n_cells; i++) {
+          const cs_real_t  acoef = tmp_val[i];
+          cs_real_t  *_a = array + b_dim*i;
+          for (int k = 0; k < b_dim; k++)
+            _a[k] *= acoef;
+        }
 
       }
       else if (b->type & CS_PROPERTY_ISO) {
 
-        cs_real_t  *val_b = NULL;
-        BFT_MALLOC(val_b, quant->n_cells, cs_real_t);
-        memset(val_b, 0, quant->n_cells*sizeof(cs_real_t));
+        /* 1. Evaluate the property B */
 
-        /* 1. Evaluates the property B */
+        _evaluate_property_at_cells(b, t_eval, tmp_val);
 
-        for (int i = 0; i < b->n_definitions; i++) {
-
-          cs_xdef_t  *def = b->defs[i];
-          const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
-
-          b->get_eval_at_cell[i](z->n_elts,
-                                 z->elt_ids,
-                                 false, /* without dense output */
-                                 cs_glob_mesh,
-                                 cs_cdo_connect,
-                                 quant,
-                                 t_eval,
-                                 def->context,
-                                 val_b);
-
-        } /* Loop on definitions */
+        /* 2. Evaluate the property A and operates the product */
 
         int  a_dim = cs_property_get_dim(a);
 
-        /* 2. Evaluates the property A and operates the product */
+        _evaluate_property_at_cells(a, t_eval, array);
 
-        for (int i = 0; i < a->n_definitions; i++) {
-
-          cs_xdef_t  *def = a->defs[i];
-          const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
-
-          a->get_eval_at_cell[i](z->n_elts,
-                                 z->elt_ids,
-                                 false, /* without dense output */
-                                 cs_glob_mesh,
-                                 cs_cdo_connect,
-                                 quant,
-                                 t_eval,
-                                 def->context,
-                                 array);
-
-          for (cs_lnum_t j = 0; j < z->n_elts; j++) {
-            const cs_real_t  bcoef = val_b[z->elt_ids[j]];
-            cs_real_t  *_a = array + a_dim*z->elt_ids[j];
-            for (int k = 0; k < a_dim; k++)
-              _a[k] *= bcoef;
-          }
-
-        } /* Loop on definitions */
-
-        BFT_FREE(val_b);
+        for (cs_lnum_t i = 0; i < n_cells; i++) {
+          const cs_real_t  bcoef = tmp_val[i];
+          cs_real_t  *_a = array + a_dim*i;
+          for (int k = 0; k < a_dim; k++)
+            _a[k] *= bcoef;
+        }
 
       }
       else
         bft_error(__FILE__, __LINE__, 0,
-                  " %s: Case not handled yet.\n", __func__);
+                  " %s: Property \"%s\". Case not handled yet.\n",
+                  __func__, pty->name);
 
     } /* Either a or b is an isotropic property */
+
+    BFT_FREE(tmp_val);
 
   }
   else { /* Simple case: One has to evaluate the property */
 
-    if ((pty->type & CS_PROPERTY_ISO) && cs_property_is_constant(pty)) {
+    if ((pty->type & CS_PROPERTY_ISO) && cs_property_is_constant(pty))
+      cs_array_real_set_scalar(n_cells, pty->ref_value, array);
 
-#     pragma omp parallel for if (cs_cdo_connect->n_cells > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < cs_cdo_connect->n_cells; i++)
-        array[i] = pty->ref_value;
-
-    }
-    else {
-
-      for (int i = 0; i < pty->n_definitions; i++) {
-
-        cs_xdef_t  *def = pty->defs[i];
-        const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
-
-        pty->get_eval_at_cell[i](z->n_elts,
-                                 z->elt_ids,
-                                 false, /* without dense output */
-                                 cs_glob_mesh,
-                                 cs_cdo_connect,
-                                 quant,
-                                 t_eval,
-                                 def->context,
-                                 array);
-
-      } /* Loop on definitions */
-
-    } /* Not isotropic and not constant */
+    else
+      _evaluate_property_at_cells(pty, t_eval, array);
 
   } /* Not defined as the product of two existing properties */
 }
