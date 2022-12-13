@@ -43,6 +43,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_defs.h"
 #include "cs_field.h"
 #include "cs_mesh_location.h"
@@ -1248,39 +1249,25 @@ cs_xdef_eval_cell_by_field(cs_lnum_t                    n_elts,
   cs_field_t  *field = (cs_field_t *)context;
   assert(eval != NULL || field != NULL);
 
-  cs_real_t  *values = field->val;
+  const cs_real_t  *values = field->val;
 
-  const int  c_ml_id = cs_mesh_location_get_id_by_name(N_("cells"));
-  const int  v_ml_id = cs_mesh_location_get_id_by_name(N_("vertices"));
+  switch (cs_mesh_location_get_type(field->location_id)) {
 
-  if (field->location_id == c_ml_id) {
+  case CS_MESH_LOCATION_CELLS:
+    if (elt_ids != NULL && !dense_output)
+      cs_array_real_copy_sublist(n_elts, field->dim, elt_ids,
+                                 CS_ARRAY_INOUT_SUBLIST,
+                                 values,
+                                 eval);
+    else
+      cs_array_real_copy_sublist(n_elts, field->dim, elt_ids,
+                                 CS_ARRAY_IN_SUBLIST,
+                                 values,
+                                 eval);
+    break;
 
-    if (elt_ids != NULL && !dense_output) {
-      for (cs_lnum_t i = 0; i < n_elts; i++) {
-        const cs_lnum_t  c_id = elt_ids[i];
-        for (int k = 0; k < field->dim; k++)
-          eval[field->dim*c_id + k] = values[field->dim*c_id + k];
-      }
-    }
-    else if (elt_ids != NULL && dense_output) {
-
-      for (cs_lnum_t i = 0; i < n_elts; i++) {
-        const cs_lnum_t  c_id = elt_ids[i];
-        for (int k = 0; k < field->dim; k++)
-          eval[field->dim*i + k] = values[field->dim*c_id + k];
-      }
-
-    }
-    else {
-
-      assert(elt_ids == NULL);
-      memcpy(eval, values, field->dim*n_elts * sizeof(cs_real_t));
-
-    }
-
-  }
-  else if (field->location_id == v_ml_id) {
-
+  case CS_MESH_LOCATION_VERTICES: /* One operates a reconstruction at the cell
+                                     centers */
     assert(connect != NULL);
     if (field->dim > 1)
       bft_error(__FILE__, __LINE__, 0,
@@ -1323,11 +1310,13 @@ cs_xdef_eval_cell_by_field(cs_lnum_t                    n_elts,
                                   eval + c_id);
 
     }
+    break;
 
-  }
-  else
+  default:
     bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid case for the input field", __func__);
+              " %s: Invalid case for the field \"%s\"",
+              __func__, field->name);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

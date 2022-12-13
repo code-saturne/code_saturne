@@ -47,6 +47,11 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+#define CS_ARRAY_NO_SUBLIST    -1
+#define CS_ARRAY_IN_SUBLIST     0
+#define CS_ARRAY_OUT_SUBLIST    1
+#define CS_ARRAY_INOUT_SUBLIST  2
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -59,46 +64,42 @@ BEGIN_C_DECLS
  * Public inline function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Assign zero to all elements of an array.
- *
- * \param[in]      size    total number of elements to set to zero
- * \param[in, out] a       array to set
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_array_real_fill_zero(cs_lnum_t  size,
-                        cs_real_t  a[])
-{
-  memset(a, 0, size*sizeof(cs_real_t));
-}
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Copy an array (ref) into another array (dest) and apply an
- *        inderection at the same time. Array with stride > 1 are assumed to be
- *        interlaced. The indirectino is applied to ref
+ * \brief Copy an array ("ref") into another array ("dest") on possibly only a
+ *        part of the array(s). Array with stride > 1 are assumed to be
+ *        interlaced.  The sublist of element on which working is defined by
+ *        "elt_ids" (of size "n_elts"). The way to apply the sublist is set
+ *        with the parameter "mode" as follows:
+ *        - Only the "ref" array if mode = 0 (CS_ARRAY_IN_SUBLIST)
+ *        - Only the "dest" array if mode = 1 (CS_ARRAY_OUT_SUBLIST)
+ *        - Both "ref" and "dest" arrays if mode = 2 (CS_ARRAY_INOUT_SUBLIST)
+ *
+ *        It elt_ids = NULL or mode < 0 (CS_ARRAY_NO_SUBLIST), then the
+ *        behavior is as \ref cs_array_real_copy
+ *
+ *        One assumes that all arrays are allocated with a correct size.
  *
  * \param[in]      n_elts   number of elements in the array
  * \param[in]      stride   number of values for each element
- * \param[in]      elt_ids  indirection list
+ * \param[in]      mode     type of indirection to apply
+ * \param[in]      elt_ids  sub list of element ids to consider
  * \param[in]      ref      reference values to copy
  * \param[in, out] dest     array storing values after applying the indirection
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_copy_with_indirection(cs_lnum_t        n_elts,
-                                    int              stride,
-                                    const cs_lnum_t  elt_ids[],
-                                    const cs_real_t  ref[],
-                                    cs_real_t        dest[]);
+cs_array_real_copy_sublist(cs_lnum_t         n_elts,
+                           int               stride,
+                           const cs_lnum_t   elt_ids[],
+                           int               mode,
+                           const cs_real_t   ref[],
+                           cs_real_t         dest[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -134,6 +135,25 @@ cs_array_real_set_scalar(cs_lnum_t  n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Assign a constant scalar value to an array on a selected subset of
+ *        elements. If elt_ids = NULL, then one recovers the function
+ *        cs_array_real_set_scalar
+ *
+ * \param[in]      n_elts   number of elements
+ * \param[in]      elt_ids  list of ids defining the subset or NULL
+ * \param[in]      ref_val  value to assign
+ * \param[in, out] a        array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_set_scalar_on_subset(cs_lnum_t        n_elts,
+                                   const cs_lnum_t  elt_ids[],
+                                   cs_real_t        ref_val,
+                                   cs_real_t        a[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Assign a constant vector to an array of stride 3 which is interlaced
  *
  * \param[in]      n_elts   number of elements
@@ -149,7 +169,26 @@ cs_array_real_set_vector(cs_lnum_t         n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Assign a constant vector of size 6 (optimzed way to define a
+ * \brief Assign a constant vector to an interlaced array (of stride 3) on a
+ *        selected subset of elements. If elt_ids = NULL, then one recovers the
+ *        function cs_array_real_set_vector
+ *
+ * \param[in]      n_elts   number of elements
+ * \param[in]      elt_ids  list of ids defining the subset or NULL
+ * \param[in]      ref_val  vector to assign
+ * \param[in, out] a        array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_set_vector_on_subset(cs_lnum_t         n_elts,
+                                   const cs_lnum_t   elt_ids[],
+                                   const cs_real_t   ref_val[3],
+                                   cs_real_t         a[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a constant vector of size 6 (optimized way to define a
  *        symmetric tensor) to an array (of stride 6) which is interlaced
  *
  * \param[in]      n_elts   number of elements
@@ -162,6 +201,26 @@ void
 cs_array_real_set_symm_tensor(cs_lnum_t         n_elts,
                               const cs_real_t   ref_val[6],
                               cs_real_t        *a);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a constant vector of size 6 (optimized way to define a
+ *        symmetric tensor) to an interlaced array (of stride 6) on a selected
+ *        subset of elements. If elt_ids = NULL, then one recovers the function
+ *        cs_array_real_set_symm_tensor
+ *
+ * \param[in]      n_elts   number of elements
+ * \param[in]      elt_ids  list of ids defining the subset or NULL
+ * \param[in]      ref_val  vector to assign
+ * \param[in, out] a        array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_set_symm_tensor_on_subset(cs_lnum_t         n_elts,
+                                        const cs_lnum_t   elt_ids[],
+                                        const cs_real_t   ref_val[6],
+                                        cs_real_t        *a);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -178,6 +237,38 @@ void
 cs_array_real_set_tensor(cs_lnum_t         n_elts,
                          const cs_real_t   ref_tens[3][3],
                          cs_real_t        *a);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a constant 3x3 tensor to an interlaced array (of stride 9) on
+ *        a subset of elements. If elt_ids = NULL, then one recovers the
+ *        function cs_array_real_set_tensor
+ *
+ * \param[in]      n_elts    number of elements
+ * \param[in]      elt_ids   list of ids defining the subset or NULL
+ * \param[in]      ref_tens  tensor to assign
+ * \param[in, out] a         array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_set_tensor_on_subset(cs_lnum_t         n_elts,
+                                   const cs_lnum_t   elt_ids[],
+                                   const cs_real_t   ref_tens[3][3],
+                                   cs_real_t        *a);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign zero to all elements of an array.
+ *
+ * \param[in]      size    total number of elements to set to zero
+ * \param[in, out] a       array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_fill_zero(cs_lnum_t  size,
+                        cs_real_t  a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

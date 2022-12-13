@@ -73,24 +73,36 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Copy an array (ref) into another array (dest) and apply an
- *        inderection at the same time. Array with stride > 1 are assumed to be
- *        interlaced. The indirectino is applied to ref
+ * \brief Copy an array ("ref") into another array ("dest") on possibly only a
+ *        part of the array(s). Array with stride > 1 are assumed to be
+ *        interlaced.  The sublist of element on which working is defined by
+ *        "elt_ids" (of size "n_elts"). The way to apply the sublist is set
+ *        with the parameter "mode" as follows:
+ *        - Only the "ref" array if mode = 0 (CS_ARRAY_IN_SUBLIST)
+ *        - Only the "dest" array if mode = 1 (CS_ARRAY_OUT_SUBLIST)
+ *        - Both "ref" and "dest" arrays if mode = 2 (CS_ARRAY_INOUT_SUBLIST)
+ *
+ *        It elt_ids = NULL or mode < 0 (CS_ARRAY_NO_SUBLIST), then the
+ *        behavior is as \ref cs_array_real_copy
+ *
+ *        One assumes that all arrays are allocated with a correct size.
  *
  * \param[in]      n_elts   number of elements in the array
  * \param[in]      stride   number of values for each element
- * \param[in]      elt_ids  indirection list
+ * \param[in]      mode     type of indirection to apply
+ * \param[in]      elt_ids  sub list of element ids to consider
  * \param[in]      ref      reference values to copy
  * \param[in, out] dest     array storing values after applying the indirection
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_copy_with_indirection(cs_lnum_t        n_elts,
-                                    int              stride,
-                                    const cs_lnum_t  elt_ids[],
-                                    const cs_real_t  ref[],
-                                    cs_real_t        dest[])
+cs_array_real_copy_sublist(cs_lnum_t         n_elts,
+                           int               stride,
+                           const cs_lnum_t   elt_ids[],
+                           int               mode,
+                           const cs_real_t   ref[],
+                           cs_real_t         dest[])
 {
   if (n_elts < 1)
     return;
@@ -103,27 +115,88 @@ cs_array_real_copy_with_indirection(cs_lnum_t        n_elts,
 
   else {
 
-    if (stride == 1) {
+    switch (mode) {
 
-#     pragma omp parallel for if (n_elts > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < n_elts; i++)
-        dest[i] = ref[elt_ids[i]];
+    case CS_ARRAY_IN_SUBLIST: /* Indirection is applied to ref */
+      if (stride == 1) {
 
-    }
-    else {
-
-#     pragma omp parallel for if (n_elts > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < n_elts; i++) {
-
-        const cs_real_t  *_ref = ref + elt_ids[i]*stride;
-        cs_real_t  *_dest = dest + i*stride;
-
-        for (int k = 0; k < stride; k++)
-          _dest[k] = _ref[k];
+#       pragma omp parallel for if (n_elts > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < n_elts; i++)
+          dest[i] = ref[elt_ids[i]];
 
       }
+      else {
 
-    } /* stride > 1 */
+#       pragma omp parallel for if (n_elts > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+          const cs_real_t  *_ref = ref + elt_ids[i]*stride;
+          cs_real_t  *_dest = dest + i*stride;
+
+          for (int k = 0; k < stride; k++)
+            _dest[k] = _ref[k];
+
+        }
+
+      } /* stride > 1 */
+      break;
+
+    case CS_ARRAY_OUT_SUBLIST: /* Indirection is applied to dest */
+      if (stride == 1) {
+
+#       pragma omp parallel for if (n_elts > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < n_elts; i++)
+          dest[elt_ids[i]] = ref[i];
+
+      }
+      else {
+
+#       pragma omp parallel for if (n_elts > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+          const cs_real_t  *_ref = ref + i*stride;
+          cs_real_t  *_dest = dest + elt_ids[i]*stride;
+
+          for (int k = 0; k < stride; k++)
+            _dest[k] = _ref[k];
+
+        }
+
+      } /* stride > 1 */
+      break;
+
+    case CS_ARRAY_INOUT_SUBLIST: /* Indirection is applied to ref/dest */
+      if (stride == 1) {
+
+#       pragma omp parallel for if (n_elts > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          const cs_lnum_t  elt_id = elt_ids[i];
+          dest[elt_id] = ref[elt_id];
+        }
+
+      }
+      else {
+
+#       pragma omp parallel for if (n_elts > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+          const cs_lnum_t  shift = elt_ids[i]*stride;
+          const cs_real_t  *_ref = ref + shift;
+          cs_real_t  *_dest = dest + shift;
+
+          for (int k = 0; k < stride; k++)
+            _dest[k] = _ref[k];
+
+        }
+
+      } /* stride > 1 */
+      break;
+
+    default: /* No indirection */
+      memcpy(dest, ref, sizeof(cs_real_t)*stride*n_elts);
+      break;
+
+    } /* Switch on the indirection mode */
 
   } /* elt_ids != NULL */
 }
@@ -174,6 +247,37 @@ cs_array_real_set_scalar(cs_lnum_t  n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Assign a constant scalar value to an array on a selected subset of
+ *        elements. If elt_ids = NULL, then one recovers the function
+ *        cs_array_real_set_scalar
+ *
+ * \param[in]      n_elts   number of elements
+ * \param[in]      elt_ids  list of ids defining the subset or NULL
+ * \param[in]      ref_val  value to assign
+ * \param[in, out] a        array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_set_scalar_on_subset(cs_lnum_t        n_elts,
+                                   const cs_lnum_t  elt_ids[],
+                                   cs_real_t        ref_val,
+                                   cs_real_t        a[])
+{
+  if (elt_ids == NULL)
+    cs_array_real_set_scalar(n_elts, ref_val, a);
+
+  else {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_elts; ii++)
+      a[elt_ids[ii]] = ref_val;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Assign a constant vector to an array of stride 3 which is interlaced
  *
  * \param[in]      n_elts   number of elements
@@ -196,7 +300,40 @@ cs_array_real_set_vector(cs_lnum_t         n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Assign a constant vector of size 6 (optimzed way to define a
+ * \brief Assign a constant vector to an interlaced array (of stride 3) on a
+ *        selected subset of elements. If elt_ids = NULL, then one recovers the
+ *        function cs_array_real_set_vector
+ *
+ * \param[in]      n_elts   number of elements
+ * \param[in]      elt_ids  list of ids defining the subset or NULL
+ * \param[in]      ref_val  vector to assign
+ * \param[in, out] a        array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_set_vector_on_subset(cs_lnum_t         n_elts,
+                                   const cs_lnum_t   elt_ids[],
+                                   const cs_real_t   ref_val[3],
+                                   cs_real_t         a[])
+{
+  if (elt_ids == NULL)
+    cs_array_real_set_vector(n_elts, ref_val, a);
+
+  else {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
+      cs_real_t  *_a = a + 3*elt_ids[ii];
+      _a[0] = ref_val[0], _a[1] = ref_val[1], _a[2] = ref_val[2];
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a constant vector of size 6 (optimized way to define a
  *        symmetric tensor) to an array (of stride 6) which is interlaced
  *
  * \param[in]      n_elts   number of elements
@@ -220,6 +357,41 @@ cs_array_real_set_symm_tensor(cs_lnum_t         n_elts,
     cs_real_t  *_a = a + 6*ii;
     _a[0] = ref_val[0], _a[1] = ref_val[1], _a[2] = ref_val[2];
     _a[3] = ref_val[3], _a[4] = ref_val[4], _a[5] = ref_val[5];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a constant vector of size 6 (optimized way to define a
+ *        symmetric tensor) to an interlaced array (of stride 6) on a selected
+ *        subset of elements. If elt_ids = NULL, then one recovers the function
+ *        cs_array_real_set_symm_tensor
+ *
+ * \param[in]      n_elts   number of elements
+ * \param[in]      elt_ids  list of ids defining the subset or NULL
+ * \param[in]      ref_val  vector to assign
+ * \param[in, out] a        array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_set_symm_tensor_on_subset(cs_lnum_t         n_elts,
+                                        const cs_lnum_t   elt_ids[],
+                                        const cs_real_t   ref_val[6],
+                                        cs_real_t        *a)
+{
+  if (elt_ids == NULL)
+    cs_array_real_set_vector(n_elts, ref_val, a);
+
+  else {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
+      cs_real_t  *_a = a + 6*elt_ids[ii];
+      _a[0] = ref_val[0], _a[1] = ref_val[1], _a[2] = ref_val[2];
+      _a[3] = ref_val[3], _a[4] = ref_val[4], _a[5] = ref_val[5];
+    }
+
   }
 }
 
@@ -254,6 +426,66 @@ cs_array_real_set_tensor(cs_lnum_t         n_elts,
     _a[6] = ref_tens[2][0], _a[7] = ref_tens[2][1], _a[8] = ref_tens[2][2];
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a constant 3x3 tensor to an interlaced array (of stride 9) on
+ *        a subset of elements. If elt_ids = NULL, then one recovers the
+ *        function cs_array_real_set_tensor
+ *
+ * \param[in]      n_elts    number of elements
+ * \param[in]      elt_ids   list of ids defining the subset or NULL
+ * \param[in]      ref_tens  tensor to assign
+ * \param[in, out] a         array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_set_tensor_on_subset(cs_lnum_t         n_elts,
+                                   const cs_lnum_t   elt_ids[],
+                                   const cs_real_t   ref_tens[3][3],
+                                   cs_real_t        *a)
+{
+  if (elt_ids == NULL)
+    cs_array_real_set_tensor(n_elts, ref_tens, a);
+
+  else {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
+
+      cs_real_t  *_a = a + 9*elt_ids[ii];
+
+      _a[0] = ref_tens[0][0], _a[1] = ref_tens[0][1], _a[2] = ref_tens[0][2];
+      _a[3] = ref_tens[1][0], _a[4] = ref_tens[1][1], _a[5] = ref_tens[1][2];
+      _a[6] = ref_tens[2][0], _a[7] = ref_tens[2][1], _a[8] = ref_tens[2][2];
+
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign zero to all elements of an array.
+ *
+ * \param[in]      size    total number of elements to set to zero
+ * \param[in, out] a       array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_fill_zero(cs_lnum_t  size,
+                        cs_real_t  a[])
+{
+  if (cs_glob_n_threads > 1) {
+#   pragma omp parallel for if (size > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < size; i++)
+      a[i] = 0;
+  }
+  else
+    memset(a, 0, size*sizeof(cs_real_t));
 }
 
 /*----------------------------------------------------------------------------*/
