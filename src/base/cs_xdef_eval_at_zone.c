@@ -429,35 +429,35 @@ cs_xdef_eval_at_zone(const cs_xdef_t   *def,
 
   case CS_XDEF_BY_TIME_FUNCTION:
     if (def_dim == 1)
-      cs_xdef_eval_scalar_at_cells_by_time_func(z->n_elts,
-                                                z->elt_ids,
-                                                dense,
-                                                NULL, /* m */
-                                                NULL, /* connect */
-                                                NULL, /* quant */
-                                                t_eval,
-                                                def->context,
-                                                values);
+      cs_xdef_eval_scalar_by_time_func(z->n_elts,
+                                       z->elt_ids,
+                                       dense,
+                                       NULL, /* m */
+                                       NULL, /* connect */
+                                       NULL, /* quant */
+                                       t_eval,
+                                       def->context,
+                                       values);
     else if (def_dim == 3)
-      cs_xdef_eval_vector_at_cells_by_time_func(z->n_elts,
-                                                z->elt_ids,
-                                                dense,
-                                                NULL, /* m */
-                                                NULL, /* connect */
-                                                NULL, /* quant */
-                                                t_eval,
-                                                def->context,
-                                                values);
+      cs_xdef_eval_vector_by_time_func(z->n_elts,
+                                       z->elt_ids,
+                                       dense,
+                                       NULL, /* m */
+                                       NULL, /* connect */
+                                       NULL, /* quant */
+                                       t_eval,
+                                       def->context,
+                                       values);
     else if (def_dim == 6)
-      cs_xdef_eval_tensor_at_cells_by_time_func(z->n_elts,
-                                                z->elt_ids,
-                                                dense,
-                                                NULL, /* m */
-                                                NULL, /* connect */
-                                                NULL, /* quant */
-                                                t_eval,
-                                                def->context,
-                                                values);
+      cs_xdef_eval_tensor_by_time_func(z->n_elts,
+                                       z->elt_ids,
+                                       dense,
+                                       NULL, /* m */
+                                       NULL, /* connect */
+                                       NULL, /* quant */
+                                       t_eval,
+                                       def->context,
+                                       values);
     else
       bft_error(__FILE__, __LINE__, 0,
                 _(" %s: %s\n"

@@ -109,27 +109,16 @@ cs_xdef_eval_scalar_by_val(cs_lnum_t                    n_elts,
   CS_UNUSED(connect);
   CS_UNUSED(time_eval);
 
-  if (n_elts == 0)
+  if (n_elts < 1)
     return;
 
   const cs_real_t  *constant_val = (cs_real_t *)context;
-
   assert(eval != NULL && constant_val != NULL);
 
-  if (elt_ids != NULL && !dense_output) {
-
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++)
-      eval[elt_ids[i]] = constant_val[0];
-
-  }
-  else {
-
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++)
-      eval[i] = constant_val[0];
-
-  }
+  if (elt_ids != NULL && !dense_output)
+    cs_array_real_set_scalar_on_subset(n_elts, elt_ids, constant_val[0], eval);
+  else
+    cs_array_real_set_scalar(n_elts, constant_val[0], eval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -166,41 +155,16 @@ cs_xdef_eval_vector_by_val(cs_lnum_t                    n_elts,
   CS_UNUSED(connect);
   CS_UNUSED(time_eval);
 
-  if (n_elts == 0)
+  if (n_elts < 1)
     return;
 
   const cs_real_t  *constant_val = (cs_real_t *)context;
-
   assert(eval != NULL && constant_val != NULL);
 
-  if (elt_ids != NULL && !dense_output) {
-
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-
-      cs_real_t  *_res = eval + 3*elt_ids[i];
-
-      _res[0] = constant_val[0];
-      _res[1] = constant_val[1];
-      _res[2] = constant_val[2];
-
-    }
-
-  }
-  else {
-
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-
-      cs_real_t  *_res = eval + 3*i;
-
-      _res[0] = constant_val[0];
-      _res[1] = constant_val[1];
-      _res[2] = constant_val[2];
-
-    }
-
-  }
+  if (elt_ids != NULL && !dense_output)
+    cs_array_real_set_vector_on_subset(n_elts, elt_ids, constant_val, eval);
+  else
+    cs_array_real_set_vector(n_elts, constant_val, eval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -238,37 +202,17 @@ cs_xdef_eval_symtens_by_val(cs_lnum_t                    n_elts,
   CS_UNUSED(connect);
   CS_UNUSED(time_eval);
 
-  if (n_elts == 0)
+  if (n_elts < 1)
     return;
 
   const cs_real_t  *constant_val = (const cs_real_t *)context;
-
   assert(eval != NULL && constant_val != NULL);
 
-  if (elt_ids != NULL && !dense_output) {
-
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-
-      cs_real_t  *shift_eval = eval + 6*elt_ids[i];
-      for (int k = 0; k < 6; k++)
-        shift_eval[k] = constant_val[k];
-
-    }
-
-  }
-  else {
-
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-
-      cs_real_t  *shift_eval = eval + 6*i;
-      for (int k = 0; k < 6; k++)
-        shift_eval[k] = constant_val[k];
-
-    }
-
-  }
+  if (elt_ids != NULL && !dense_output)
+    cs_array_real_set_symm_tensor_on_subset(n_elts, elt_ids, constant_val,
+                                            eval);
+  else
+    cs_array_real_set_symm_tensor(n_elts, constant_val, eval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -305,39 +249,16 @@ cs_xdef_eval_tensor_by_val(cs_lnum_t                    n_elts,
   CS_UNUSED(connect);
   CS_UNUSED(time_eval);
 
-  if (n_elts == 0)
+  if (n_elts < 1)
     return;
 
   const cs_real_3_t  *constant_val = (const cs_real_3_t *)context;
-
   assert(eval != NULL && constant_val != NULL);
 
-  if (elt_ids != NULL && !dense_output) {
-
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-
-      cs_real_t  *shift_eval = eval + 9*elt_ids[i];
-      for (int ki = 0; ki < 3; ki++)
-        for (int kj = 0; kj < 3; kj++)
-          shift_eval[3*ki+kj] = constant_val[ki][kj];
-
-    }
-
-  }
-  else {
-
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-
-      cs_real_t  *shift_eval = eval + 9*i;
-      for (int ki = 0; ki < 3; ki++)
-        for (int kj = 0; kj < 3; kj++)
-          shift_eval[3*ki+kj] = constant_val[ki][kj];
-
-    }
-
-  }
+  if (elt_ids != NULL && !dense_output)
+    cs_array_real_set_tensor_on_subset(n_elts, elt_ids, constant_val, eval);
+  else
+    cs_array_real_set_tensor(n_elts, constant_val, eval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -360,15 +281,15 @@ cs_xdef_eval_tensor_by_val(cs_lnum_t                    n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_eval_scalar_at_cells_by_time_func(cs_lnum_t                   n_elts,
-                                          const cs_lnum_t            *elt_ids,
-                                          bool                   dense_output,
-                                          const cs_mesh_t            *mesh,
-                                          const cs_cdo_connect_t     *connect,
-                                          const cs_cdo_quantities_t  *quant,
-                                          cs_real_t                   time_eval,
-                                          void                       *context,
-                                          cs_real_t                  *eval)
+cs_xdef_eval_scalar_by_time_func(cs_lnum_t                   n_elts,
+                                 const cs_lnum_t            *elt_ids,
+                                 bool                        dense_output,
+                                 const cs_mesh_t            *mesh,
+                                 const cs_cdo_connect_t     *connect,
+                                 const cs_cdo_quantities_t  *quant,
+                                 cs_real_t                   time_eval,
+                                 void                       *context,
+                                 cs_real_t                  *eval)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(quant);
@@ -382,25 +303,16 @@ cs_xdef_eval_scalar_at_cells_by_time_func(cs_lnum_t                   n_elts,
   cs_real_t  _eval;
   tfc->func(time_eval, tfc->input, &_eval);
 
-  if (elt_ids != NULL && !dense_output) {
-
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++)
-      eval[elt_ids[i]] = _eval;
-
-  }
-  else {
-
-    for (cs_lnum_t i = 0; i < n_elts; i++)
-      eval[i] = _eval;
-
-  }
+  if (elt_ids != NULL && !dense_output)
+    cs_array_real_set_scalar_on_subset(n_elts, elt_ids, _eval, eval);
+  else
+    cs_array_real_set_scalar(n_elts, _eval, eval);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Evaluate a vector-valued quantity with only a time-dependent
- *        variation for a list of elements
+ *        variation for a list of elements.
  *        This function complies with the generic function type defined as
  *        cs_xdef_eval_t
  *
@@ -417,15 +329,15 @@ cs_xdef_eval_scalar_at_cells_by_time_func(cs_lnum_t                   n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_eval_vector_at_cells_by_time_func(cs_lnum_t                   n_elts,
-                                          const cs_lnum_t            *elt_ids,
-                                          bool                   dense_output,
-                                          const cs_mesh_t            *mesh,
-                                          const cs_cdo_connect_t     *connect,
-                                          const cs_cdo_quantities_t  *quant,
-                                          cs_real_t                   time_eval,
-                                          void                       *context,
-                                          cs_real_t                  *eval)
+cs_xdef_eval_vector_by_time_func(cs_lnum_t                   n_elts,
+                                 const cs_lnum_t            *elt_ids,
+                                 bool                        dense_output,
+                                 const cs_mesh_t            *mesh,
+                                 const cs_cdo_connect_t     *connect,
+                                 const cs_cdo_quantities_t  *quant,
+                                 cs_real_t                   time_eval,
+                                 void                       *context,
+                                 cs_real_t                  *eval)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(quant);
@@ -439,22 +351,10 @@ cs_xdef_eval_vector_at_cells_by_time_func(cs_lnum_t                   n_elts,
   cs_real_t  _eval[3];
   tfc->func(time_eval, tfc->input, _eval);
 
-  if (elt_ids != NULL && !dense_output) {
-
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++)
-      for (int k = 0; k < 3; k++)
-        eval[3*elt_ids[i] + k] = _eval[k];
-
-  }
-  else {
-
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++)
-      for (int k = 0; k < 3; k++)
-        eval[3*i+k] = _eval[k];
-
-  }
+  if (elt_ids != NULL && !dense_output)
+    cs_array_real_set_vector_on_subset(n_elts, elt_ids, _eval, eval);
+  else
+    cs_array_real_set_vector(n_elts, _eval, eval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -477,15 +377,15 @@ cs_xdef_eval_vector_at_cells_by_time_func(cs_lnum_t                   n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_eval_symtens_at_cells_by_time_func(cs_lnum_t                  n_elts,
-                                           const cs_lnum_t           *elt_ids,
-                                           bool                   dense_output,
-                                           const cs_mesh_t           *mesh,
-                                           const cs_cdo_connect_t    *connect,
-                                           const cs_cdo_quantities_t *quant,
-                                           cs_real_t                  time_eval,
-                                           void                      *context,
-                                           cs_real_t                 *eval)
+cs_xdef_eval_symtens_by_time_func(cs_lnum_t                   n_elts,
+                                  const cs_lnum_t            *elt_ids,
+                                  bool                        dense_output,
+                                  const cs_mesh_t            *mesh,
+                                  const cs_cdo_connect_t     *connect,
+                                  const cs_cdo_quantities_t  *quant,
+                                  cs_real_t                   time_eval,
+                                  void                       *context,
+                                  cs_real_t                  *eval)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(quant);
@@ -499,22 +399,10 @@ cs_xdef_eval_symtens_at_cells_by_time_func(cs_lnum_t                  n_elts,
   cs_real_t  _eval[6];
   tfc->func(time_eval, tfc->input, _eval);
 
-  if (elt_ids != NULL && !dense_output) {
-
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++)
-      for (int k = 0; k < 6; k++)
-        eval[6*elt_ids[i] + k] = _eval[k];
-
-  }
-  else {
-
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++)
-      for (int k = 0; k < 6; k++)
-        eval[6*i+k] = _eval[k];
-
-  }
+  if (elt_ids != NULL && !dense_output)
+    cs_array_real_set_symm_tensor_on_subset(n_elts, elt_ids, _eval, eval);
+  else
+    cs_array_real_set_symm_tensor(n_elts, _eval, eval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -537,15 +425,15 @@ cs_xdef_eval_symtens_at_cells_by_time_func(cs_lnum_t                  n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_eval_tensor_at_cells_by_time_func(cs_lnum_t                   n_elts,
-                                          const cs_lnum_t            *elt_ids,
-                                          bool                   dense_output,
-                                          const cs_mesh_t            *mesh,
-                                          const cs_cdo_connect_t     *connect,
-                                          const cs_cdo_quantities_t  *quant,
-                                          cs_real_t                   time_eval,
-                                          void                       *context,
-                                          cs_real_t                  *eval)
+cs_xdef_eval_tensor_by_time_func(cs_lnum_t                   n_elts,
+                                 const cs_lnum_t            *elt_ids,
+                                 bool                        dense_output,
+                                 const cs_mesh_t            *mesh,
+                                 const cs_cdo_connect_t     *connect,
+                                 const cs_cdo_quantities_t  *quant,
+                                 cs_real_t                   time_eval,
+                                 void                       *context,
+                                 cs_real_t                  *eval)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(quant);
@@ -558,23 +446,14 @@ cs_xdef_eval_tensor_at_cells_by_time_func(cs_lnum_t                   n_elts,
 
   cs_real_t  _eval[9];
   tfc->func(time_eval, tfc->input, _eval);
+  cs_real_t   tens[3][3] = {{_eval[0], _eval[1], _eval[2]},
+                            {_eval[3], _eval[4], _eval[5]},
+                            {_eval[6], _eval[7], _eval[8]}};
 
-  if (elt_ids != NULL && !dense_output) {
-
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++)
-      for (int k = 0; k < 9; k++)
-        eval[9*elt_ids[i] + k] = _eval[k];
-
-  }
-  else {
-
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++)
-      for (int k = 0; k < 9; k++)
-        eval[9*i+k] = _eval[k];
-
-  }
+  if (elt_ids != NULL && !dense_output)
+    cs_array_real_set_tensor_on_subset(n_elts, elt_ids, tens, eval);
+  else
+    cs_array_real_set_tensor(n_elts, tens, eval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1271,7 +1150,8 @@ cs_xdef_eval_cell_by_field(cs_lnum_t                    n_elts,
     assert(connect != NULL);
     if (field->dim > 1)
       bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid field dimension.", __func__);
+                " %s: Invalid dimension for field \"%s\".",
+                __func__, field->name);
 
     if (elt_ids != NULL && !dense_output) {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
@@ -1316,7 +1196,9 @@ cs_xdef_eval_cell_by_field(cs_lnum_t                    n_elts,
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid case for the field \"%s\"",
               __func__, field->name);
-  }
+    break;
+
+  } /* Switch on mesh location */
 }
 
 /*----------------------------------------------------------------------------*/

@@ -214,20 +214,20 @@ cs_xdef_eval_tensor_by_val(cs_lnum_t                    n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_eval_scalar_at_cells_by_time_func(cs_lnum_t                   n_elts,
-                                          const cs_lnum_t            *elt_ids,
-                                          bool                   dense_output,
-                                          const cs_mesh_t            *mesh,
-                                          const cs_cdo_connect_t     *connect,
-                                          const cs_cdo_quantities_t  *quant,
-                                          cs_real_t                   time_eval,
-                                          void                       *context,
-                                          cs_real_t                  *eval);
+cs_xdef_eval_scalar_by_time_func(cs_lnum_t                   n_elts,
+                                 const cs_lnum_t            *elt_ids,
+                                 bool                        dense_output,
+                                 const cs_mesh_t            *mesh,
+                                 const cs_cdo_connect_t     *connect,
+                                 const cs_cdo_quantities_t  *quant,
+                                 cs_real_t                   time_eval,
+                                 void                       *context,
+                                 cs_real_t                  *eval);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Evaluate a vector-valued quantity with only a time-dependent
- *        variation for a list of elements
+ *        variation for a list of elements.
  *        This function complies with the generic function type defined as
  *        cs_xdef_eval_t
  *
@@ -244,15 +244,15 @@ cs_xdef_eval_scalar_at_cells_by_time_func(cs_lnum_t                   n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_eval_vector_at_cells_by_time_func(cs_lnum_t                   n_elts,
-                                          const cs_lnum_t            *elt_ids,
-                                          bool                   dense_output,
-                                          const cs_mesh_t            *mesh,
-                                          const cs_cdo_connect_t     *connect,
-                                          const cs_cdo_quantities_t  *quant,
-                                          cs_real_t                   time_eval,
-                                          void                       *context,
-                                          cs_real_t                  *eval);
+cs_xdef_eval_vector_by_time_func(cs_lnum_t                   n_elts,
+                                 const cs_lnum_t            *elt_ids,
+                                 bool                        dense_output,
+                                 const cs_mesh_t            *mesh,
+                                 const cs_cdo_connect_t     *connect,
+                                 const cs_cdo_quantities_t  *quant,
+                                 cs_real_t                   time_eval,
+                                 void                       *context,
+                                 cs_real_t                  *eval);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -274,15 +274,15 @@ cs_xdef_eval_vector_at_cells_by_time_func(cs_lnum_t                   n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_eval_symtens_at_cells_by_time_func(cs_lnum_t                  n_elts,
-                                           const cs_lnum_t           *elt_ids,
-                                           bool                   dense_output,
-                                           const cs_mesh_t           *mesh,
-                                           const cs_cdo_connect_t    *connect,
-                                           const cs_cdo_quantities_t *quant,
-                                           cs_real_t                  time_eval,
-                                           void                      *context,
-                                           cs_real_t                 *eval);
+cs_xdef_eval_symtens_by_time_func(cs_lnum_t                   n_elts,
+                                  const cs_lnum_t            *elt_ids,
+                                  bool                        dense_output,
+                                  const cs_mesh_t            *mesh,
+                                  const cs_cdo_connect_t     *connect,
+                                  const cs_cdo_quantities_t  *quant,
+                                  cs_real_t                   time_eval,
+                                  void                       *context,
+                                  cs_real_t                  *eval);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -304,15 +304,15 @@ cs_xdef_eval_symtens_at_cells_by_time_func(cs_lnum_t                  n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_eval_tensor_at_cells_by_time_func(cs_lnum_t                   n_elts,
-                                          const cs_lnum_t            *elt_ids,
-                                          bool                   dense_output,
-                                          const cs_mesh_t            *mesh,
-                                          const cs_cdo_connect_t     *connect,
-                                          const cs_cdo_quantities_t  *quant,
-                                          cs_real_t                   time_eval,
-                                          void                       *context,
-                                          cs_real_t                  *eval);
+cs_xdef_eval_tensor_by_time_func(cs_lnum_t                   n_elts,
+                                 const cs_lnum_t            *elt_ids,
+                                 bool                        dense_output,
+                                 const cs_mesh_t            *mesh,
+                                 const cs_cdo_connect_t     *connect,
+                                 const cs_cdo_quantities_t  *quant,
+                                 cs_real_t                   time_eval,
+                                 void                       *context,
+                                 cs_real_t                  *eval);
 
 /*----------------------------------------------------------------------------*/
 /*!

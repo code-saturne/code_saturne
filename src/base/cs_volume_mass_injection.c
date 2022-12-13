@@ -381,25 +381,25 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
 
   case CS_XDEF_BY_TIME_FUNCTION:
     if (dim == 1)
-      cs_xdef_eval_scalar_at_cells_by_time_func(z->n_elts,
-                                                z->elt_ids,
-                                                dense,
-                                                m,
-                                                connect,
-                                                quant,
-                                                t_eval,
-                                                def->context,
-                                                st_loc);
+      cs_xdef_eval_scalar_by_time_func(z->n_elts,
+                                       z->elt_ids,
+                                       dense,
+                                       m,
+                                       connect,
+                                       quant,
+                                       t_eval,
+                                       def->context,
+                                       st_loc);
     else if (dim == 3)
-      cs_xdef_eval_vector_at_cells_by_time_func(z->n_elts,
-                                                z->elt_ids,
-                                                dense,
-                                                m,
-                                                connect,
-                                                quant,
-                                                t_eval,
-                                                def->context,
-                                                st_loc);
+      cs_xdef_eval_vector_by_time_func(z->n_elts,
+                                       z->elt_ids,
+                                       dense,
+                                       m,
+                                       connect,
+                                       quant,
+                                       t_eval,
+                                       def->context,
+                                       st_loc);
     else if (dim == 6)
       _eval_sym_tensor_at_cells_by_time_func(z->n_elts,
                                              z->elt_ids,

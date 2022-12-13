@@ -1779,19 +1779,19 @@ cs_property_def_by_time_func(cs_property_t      *pty,
   int  dim = 0;
   if (pty->type & CS_PROPERTY_ISO) {
     dim = 1;
-    pty->get_eval_at_cell[new_id] = cs_xdef_eval_scalar_at_cells_by_time_func;
+    pty->get_eval_at_cell[new_id] = cs_xdef_eval_scalar_by_time_func;
   }
   else if (pty->type & CS_PROPERTY_ORTHO) {
     dim = 3;
-    pty->get_eval_at_cell[new_id] = cs_xdef_eval_vector_at_cells_by_time_func;
+    pty->get_eval_at_cell[new_id] = cs_xdef_eval_vector_by_time_func;
   }
   else if (pty->type & CS_PROPERTY_ANISO_SYM) {
     dim = 6;
-    pty->get_eval_at_cell[new_id] = cs_xdef_eval_symtens_at_cells_by_time_func;
+    pty->get_eval_at_cell[new_id] = cs_xdef_eval_symtens_by_time_func;
   }
   else if (pty->type & CS_PROPERTY_ANISO) {
     dim = 9;
-    pty->get_eval_at_cell[new_id] = cs_xdef_eval_tensor_at_cells_by_time_func;
+    pty->get_eval_at_cell[new_id] = cs_xdef_eval_tensor_by_time_func;
   }
   else
     bft_error(__FILE__, __LINE__, 0,
