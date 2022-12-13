@@ -123,6 +123,25 @@ class Boundary(Model) :
             self.boundNode.xmlRemoveNode()
 
 
+    @Variables.noUndo
+    def getDefaultEnthalpyFormula(self, energy_choice='dirichlet'):
+        """
+        Get default enthalpy formula
+        """
+
+        if energy_choice == 'dirichlet_formula':
+            formula = "enthalpy = 50000.0;"
+        elif energy_choice == 'flux_formula':
+            formula = "flux = 1000.;"
+        elif energy_choice in ['temperature_formula', 'timp_K_formula']:
+            formula = "temperature = 293.15;"
+        else:
+            formula = None
+
+        return formula
+
+
+
 #-------------------------------------------------------------------------------
 # InletBoundary class
 #-------------------------------------------------------------------------------
@@ -145,7 +164,7 @@ class InletBoundary(Boundary):
         self.__directionChoices = ['normal', 'formula']
         self.__directionTags = ['direction_formula']
         self.__turbulenceChoices = ['hydraulic_diameter', 'turbulent_intensity', 'formula']
-        self.__enthalpyChoices = ['flux', 'dirichlet', 'timp_K', 'hsat_P']
+        self.__enthalpyChoices = ['flux', 'enthalpy', 'timp_K', 'hsat_P']
 
         # Initialize nodes if necessary
         for field in self.mainFieldsModel.getFieldIdList():
@@ -242,7 +261,7 @@ class InletBoundary(Boundary):
             value = XMLVelocityNode.xmlGetChildDouble(choice)
         elif choice in ('norm_formula', 'flow1_formula'):
             value = XMLVelocityNode.xmlGetChildString(choice)
-        if value is None:
+        if value in [None, ""]:
             value = self.__defaultValues(fieldId)[choice]
             self.setVelocity(fieldId, value)
 
@@ -611,8 +630,6 @@ R12-23 = 5e-05;"""
         choice = XMLEnergyNode['choice']
         if not choice:
             choice = self.__defaultValues(fieldId)['EnthalpyModel']
-            if ThermodynamicsModel(self.case).getMaterials(fieldId) == 'user_material' :
-                choice = 'dirichlet'
             self.setEnthalpyChoice(fieldId, choice)
         return choice
 
@@ -623,7 +640,6 @@ R12-23 = 5e-05;"""
         Set the enthalpy choice for field
         """
         self.mainFieldsModel.isFieldIdValid(fieldId)
-        Model().isInList(value, ['dirichlet','flux','timp_K','hsat_P'])
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
         XMLEnergyNode = node.xmlInitNode('variable', 'choice', name='enthalpy')
@@ -642,17 +658,25 @@ R12-23 = 5e-05;"""
         Get energy value for field
         """
         self.mainFieldsModel.isFieldIdValid(fieldId)
-        node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
+        node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet",
+                                                          field_id = fieldId,
+                                                          label = self._label)
         XMLEnergyNode = node.xmlGetChildNode('variable', 'choice', name='enthalpy')
 
-        Model().isInList(XMLEnergyNode['choice'], ['dirichlet','flux','timp_K'])
+        choice = self.getEnthalpyChoice(fieldId)
 
-        Childnode = XMLEnergyNode.xmlGetChildNode('value')
-        if Childnode is None :
-            value = self.__defaultValues(fieldId)['enthalpy']
+        if "formula" == choice[-7:]:
+            value = XMLEnergyNode.xmlGetChildString(choice)
+        else:
+            value = XMLEnergyNode.xmlGetChildDouble('value')
+
+        if value in [None, ""]:
+            if choice[-7:] == 'formula':
+                value = self.getDefaultEnthalpyFormula(choice)
+            else:
+                value = self.__defaultValues(fieldId)['enthalpy']
             self.setEnthalpy(fieldId, value)
 
-        value = XMLEnergyNode.xmlGetChildDouble('value')
         return value
 
 
@@ -662,11 +686,19 @@ R12-23 = 5e-05;"""
         Set energy value for field
         """
         self.mainFieldsModel.isFieldIdValid(fieldId)
-        Model().isFloat(value)
+        _c = self.getEnthalpyChoice(fieldId) \
+                if "_formula" in self.getEnthalpyChoice(fieldId) else 'value'
 
-        node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
+        if _c == 'value':
+            Model().isFloat(value)
+
+        node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet",
+                                                          field_id = fieldId,
+                                                          label = self._label)
+
         XMLEnergyNode = node.xmlGetChildNode('variable', 'choice', name='enthalpy')
-        XMLEnergyNode.xmlSetData('value', str(value))
+
+        XMLEnergyNode.xmlSetData(_c, str(value))
 
 
     @Variables.noUndo
@@ -936,7 +968,9 @@ class OutletBoundary(Boundary) :
         Get the enthalpy choice for field
         """
         self.mainFieldsModel.isFieldIdValid(fieldId)
-        node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
+        node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet",
+                                                          field_id = fieldId,
+                                                          label = self._label)
         XMLEnergyNode = node.xmlInitNode('variable', 'choice', name='enthalpy')
 
         choice = XMLEnergyNode['choice']
@@ -952,7 +986,6 @@ class OutletBoundary(Boundary) :
         Set the enthalpy choice for field
         """
         self.mainFieldsModel.isFieldIdValid(fieldId)
-        Model().isInList(value, ['dirichlet','flux','timp_K','hsat_P'])
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
         XMLEnergyNode = node.xmlInitNode('variable', 'choice', name='enthalpy')
@@ -971,17 +1004,25 @@ class OutletBoundary(Boundary) :
         Get energy value for field
         """
         self.mainFieldsModel.isFieldIdValid(fieldId)
-        node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
+        node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet",
+                                                          field_id = fieldId,
+                                                          label = self._label)
         XMLEnergyNode = node.xmlGetChildNode('variable', 'choice', name='enthalpy')
 
-        Model().isInList(XMLEnergyNode['choice'], ['dirichlet','flux','timp_K'])
+        choice = self.getEnthalpyChoice(fieldId)
 
-        Childnode = XMLEnergyNode.xmlGetChildNode('value')
-        if Childnode is None :
-            value = self.__defaultValues()['enthalpy']
+        if "formula" == choice[-7:]:
+            value = XMLEnergyNode.xmlGetChildString(choice)
+        else:
+            value = XMLEnergyNode.xmlGetChildDouble('value')
+
+        if value in [None, ""]:
+            if choice[-7:] == 'formula':
+                value = self.getDefaultEnthalpyFormula(choice)
+            else:
+                value = self.__defaultValues()['enthalpy']
             self.setEnthalpy(fieldId, value)
 
-        value = XMLEnergyNode.xmlGetChildDouble('value')
         return value
 
 
@@ -991,7 +1032,8 @@ class OutletBoundary(Boundary) :
         Set energy value for field
         """
         self.mainFieldsModel.isFieldIdValid(fieldId)
-        Model().isFloat(value)
+        if '_formula' not in self.getEnthalpyChoice(fieldId):
+            Model().isFloat(value)
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
         XMLEnergyNode = node.xmlGetChildNode('variable', 'choice', name='enthalpy')
@@ -1236,7 +1278,6 @@ class WallBoundary(Boundary) :
         """
         Set the enthalpy choice for field
         """
-        Model().isInList(value, ['temperature','flux', 'syrthes_coupling'])
 
         XMLEnergyNode = self.boundNode.xmlInitNode('variable', 'choice', name='enthalpy')
 
@@ -1250,16 +1291,24 @@ class WallBoundary(Boundary) :
         """
         XMLEnergyNode = self.boundNode.xmlGetChildNode('variable', 'choice', name='enthalpy')
 
-        Model().isInList(XMLEnergyNode['choice'], ['temperature','flux','syrthes_coupling'])
 
         Childnode = XMLEnergyNode.xmlGetChildNode('value')
         if Childnode is None :
             value = self.__defaultValues()['flux']
             self.setEnthalpy(fieldId, value)
 
-        value = XMLEnergyNode.xmlGetChildString('value')
-        if self.getEnthalpyChoice("none") != "syrthes_coupling":
+        choice = self.getEnthalpyChoice("none")
+        value = XMLEnergyNode.xmlGetChildString(choice)
+        if value in [None, ""]:
+            if choice[-7:] == 'formula':
+                value = self.getDefaultEnthalpyFormula(choice)
+            else:
+                value = self.__defaultValues()['flux']
+            self.setEnthalpy('none', value)
+
+        if choice != "syrthes_coupling" and choice[-7:] != 'formula':
             value = float(value)
+
         return value
 
 
