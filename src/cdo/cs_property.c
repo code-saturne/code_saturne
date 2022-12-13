@@ -1752,15 +1752,59 @@ cs_property_def_by_array(cs_property_t      *pty,
  *
  * \param[in, out]  pty       pointer to a cs_property_t structure
  * \param[in]       field     pointer to a cs_field_t structure
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_property_def_by_field(cs_property_t    *pty,
                          cs_field_t       *field)
 {
+  if (field == NULL)
+    return NULL;
   if (pty == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+
+  int  id = _add_new_def(pty);
+  int  dim = cs_property_get_dim(pty);
+  cs_flag_t  state_flag = CS_FLAG_STATE_CELLWISE;
+  cs_flag_t  meta_flag = 0; /* metadata */
+
+  assert(dim == field->dim);
+  assert(id == 0); /* z_id = 0 since all the support is selected in this case */
+
+  const cs_zone_t  *z = cs_volume_zone_by_id(0);
+  if (field->location_id != z->location_id)
+    bft_error(__FILE__, __LINE__, 0,
+              " Property defined by field requests that the field location"
+              " is supported by cells\n"
+              " Property %s\n", pty->name);
+  if (pty->n_definitions > 1)
+    bft_error(__FILE__, __LINE__, 0,
+              " When a definition by field is requested, the max. number"
+              " of subdomains to consider should be equal to 1.\n"
+              " Current value is %d for property %s.\n"
+              " Please modify your settings.",
+              pty->n_definitions, pty->name);
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_FIELD,
+                                        dim,
+                                        0, /* zone_id */
+                                        state_flag,
+                                        meta_flag,
+                                        field);
+
+  pty->defs[id] = d;
+  pty->get_eval_at_cell[id] = cs_xdef_eval_cell_by_field;
+  pty->get_eval_at_cell_cw[id] = cs_xdef_cw_eval_by_field;
+
+  /* Set the state flag */
+
+  pty->state_flag |= CS_FLAG_STATE_CELLWISE;
+
+  return d;
+}
 
   if (field == NULL)
     return;

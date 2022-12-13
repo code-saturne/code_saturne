@@ -787,10 +787,12 @@ cs_property_def_by_array(cs_property_t      *pty,
  *
  * \param[in, out]  pty       pointer to a cs_property_t structure
  * \param[in]       field     pointer to a cs_field_t structure
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_property_def_by_field(cs_property_t    *pty,
                          cs_field_t       *field);
 
