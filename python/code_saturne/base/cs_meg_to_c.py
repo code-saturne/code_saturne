@@ -1738,6 +1738,65 @@ class meg_to_c_interpreter:
                                             sym,
                                             [],
                                             condition=tc)
+                # Thermal conditions
+                if zone.getNature() in ['inlet', 'outlet']:
+                    for fId in mfm.getFieldIdList():
+                        boundary = Boundary(zone.getNature(),
+                                            zone.getLabel(),
+                                            self.case,
+                                            fId)
+
+                        c = boundary.getEnthalpyChoice(fId)
+                        if '_formula' in c:
+                            sym  = ['x', 'y', 'z', 't', 'dt', 'iter', 'surface']
+                            if c == "dirichlet_formula":
+                                req = ['enthalpy']
+                            elif c == "flux_formula":
+                                req = ['flux']
+                            elif c in ['temperature_formula', 'timp_K_formula']:
+                                req = ['temperature']
+
+                            for (name, val) in NotebookModel(self.case).getNotebookList():
+                                sym.append((name, 'value (notebook) = ' + str(val)))
+
+                            exp = boundary.getEnthalpy(fId)
+                            self.init_block('bnd',
+                                            zone.getLabel(),
+                                            'enthalpy_'+str(fId),
+                                            exp,
+                                            req,
+                                            sym,
+                                            [],
+                                            condition=c)
+
+                if zone.getNature() == "wall":
+                    boundary = Boundary(zone.getNature(),
+                                        zone.getLabel(),
+                                        self.case,
+                                        'none')
+                    c = boundary.getEnthalpyChoice('none')
+                    if '_formula' in c:
+                        sym  = ['x', 'y', 'z', 't', 'dt', 'iter', 'surface']
+                        if c == "dirichlet_formula":
+                            req = ['enthalpy']
+                        elif c == "flux_formula":
+                            req = ['flux']
+                        elif c in ['temperature_formula', 'timp_K_formula']:
+                            req = ['temperature']
+
+                        for (name, val) in NotebookModel(self.case).getNotebookList():
+                            sym.append((name, 'value (notebook) = ' + str(val)))
+
+                        exp = boundary.getEnthalpy('none')
+                        self.init_block('bnd',
+                                        zone.getLabel(),
+                                        'enthalpy',
+                                        exp,
+                                        req,
+                                        sym,
+                                        [],
+                                        condition=c)
+
 
     #---------------------------------------------------------------------------
 
