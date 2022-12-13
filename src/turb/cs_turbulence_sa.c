@@ -247,7 +247,7 @@ _src_terms(const cs_real_t    dt[],
     BFT_FREE(w1);
   }
   else {
-    cs_array_set_value_real(n_cells, 1, cs_turb_csab1, csab1r);
+    cs_array_real_set_scalar(n_cells, cs_turb_csab1, csab1r);
   }
 
   /* To avoid numerical problem, constant used to prevent taussa from
@@ -348,7 +348,7 @@ _clip(cs_lnum_t  n_cells)
   cs_real_t *cpro_nusa_clipped = NULL;
   if (clip_nusa_id >= 0) {
     cpro_nusa_clipped = cs_field_by_id(clip_nusa_id)->val;
-    cs_array_set_value_real(n_cells, 1, 0, cpro_nusa_clipped);
+    cs_array_real_fill_zero(n_cells, cpro_nusa_clipped);
   }
 
   /* Save min and max for log */

@@ -1140,10 +1140,7 @@ cs_lagr_init_c_arrays(int          dim_cs_glob_lagr_source_terms[2],
   for (cs_lnum_t i = 0; i < cs_glob_lagr_dim->ntersl; i++) {
     cs_real_t *st =   cs_glob_lagr_source_terms->st_val
                    + i*cs_glob_mesh->n_cells_with_ghosts;
-    cs_array_set_value_real(cs_glob_mesh->n_cells_with_ghosts,
-                            1,
-                            0,
-                            st);
+    cs_array_real_fill_zero(cs_glob_mesh->n_cells_with_ghosts, st);
   }
 
   *p_cs_glob_lagr_source_terms     = cs_glob_lagr_source_terms->st_val;

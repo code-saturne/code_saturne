@@ -123,8 +123,8 @@ cs_user_physical_properties(cs_domain_t   *domain)
     const double *rho20  = cs_glob_combustion_model->coal.rho20;
     const double *diam20 = cs_glob_combustion_model->coal.diam20;
 
-    cs_array_set_value_real(n_cells, 1, viscl0, visco);
-    cs_array_set_value_real(n_cells, 1, ro0, cpro_rom1);
+    cs_array_real_set_scalar(n_cells, viscl0, visco);
+    cs_array_real_set_scalar(n_cells, ro0, cpro_rom1);
 
     for (int icla = 0; icla < n_class; icla++) {
       char rho_name[64], diam_name[64];
@@ -227,7 +227,8 @@ cs_user_physical_properties(cs_domain_t   *domain)
         = cs_field_by_composite_name("drift_tau", fld->name)->val;
 
       /* Initialize to 0 */
-      cs_array_set_value_real(n_cells, 1, 0., cpro_taupg);
+      cs_array_real_fill_zero(n_cells, cpro_taupg);
+
     }
   }
 

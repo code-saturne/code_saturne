@@ -153,7 +153,7 @@ _tsepls(cs_real_t w1[])
   /* Calculation of the term d2Ui/dxkdxj*d2Ui/dxkdxj
    * ================================================ */
 
-  cs_array_set_value_real(n_cells, 1, 0, w1);
+  cs_array_real_fill_zero(n_cells, w1);
 
   cs_field_gradient_vector(CS_F_(vel),
                            true, // use_previous_t
@@ -165,7 +165,7 @@ _tsepls(cs_real_t w1[])
 
   for (cs_lnum_t isou = 0; isou < 3; isou++) {
 
-    cs_array_set_value_real(n_cells_ext, 9, 0, (cs_real_t *)w7);
+    cs_array_real_fill_zero(9*n_cells_ext, (cs_real_t *)w7);
 
 #   pragma omp parallel for if(n_i_faces > CS_THR_MIN)
     for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
@@ -1959,8 +1959,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   }
   else {
 
-    cs_array_set_value_real(n_i_faces, 1, 0, viscf);
-    cs_array_set_value_real(n_b_faces, 1, 0, viscb);
+    cs_array_real_fill_zero(n_i_faces, viscf);
+    cs_array_real_fill_zero(n_b_faces, viscb);
 
   }
 

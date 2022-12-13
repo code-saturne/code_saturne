@@ -86,6 +86,7 @@ cs_user_initialization(cs_domain_t     *domain)
 {
   /*![init]*/
   /* If this is restarted computation, do not reinitialize values */
+
   if (domain->time_step->nt_prev > 0)
     return;
 
@@ -137,7 +138,7 @@ cs_user_initialization(cs_domain_t     *domain)
 
   cs_real_t h1init = cs_fuel_t2h_gas(coefe, t1init);
 
-  cs_array_set_value_real(n_cells, 1, h1init, CS_F_(h)->val);
+  cs_array_real_set_scalar(n_cells, h1init, CS_F_(h)->val);
 
   /* Transported variables for the mix (passive scalars, variance)
    * Variables not present here are initialized to 0. */
@@ -145,6 +146,7 @@ cs_user_initialization(cs_domain_t     *domain)
   if (CS_F_(yco2) != NULL) {
 
     /* Consider oxydant 1 */
+
     const int ioxy = 0;
     const cs_real_t wmo2 = wmole[io2];
     const cs_real_t wmco2 = wmole[ico2];
@@ -152,9 +154,9 @@ cs_user_initialization(cs_domain_t     *domain)
     const cs_real_t wmn2 = wmole[in2];
     const cs_real_t dmas = ( oxyo2 [ioxy]*wmo2  + oxyn2[ioxy]*wmn2
                            + oxyh2o[ioxy]*wmh2o + oxyco2[ioxy]*wmco2);
-
     const cs_real_t co2 = oxyco2[ioxy]*wmco2/dmas;
-    cs_array_set_value_real(n_cells, 1, co2, CS_F_(yco2)->val);
+
+    cs_array_real_set_scalar(n_cells, co2, CS_F_(yco2)->val);
 
   }
   /*![init]*/

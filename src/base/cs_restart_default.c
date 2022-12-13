@@ -1624,11 +1624,11 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
         /* Velocity fluctuations before modifications with Lund's method */
         cs_real_3_t  *fluctuations = NULL;
         BFT_MALLOC(fluctuations, n_cells, cs_real_3_t);
-        cs_array_set_value_real(n_cells, 3, 0, (cs_real_t *)fluctuations);
+        cs_array_real_fill_zero(3*n_cells, (cs_real_t *)fluctuations);
 
         cs_real_3_t *vel_l = NULL;
         BFT_MALLOC(vel_l, n_cells, cs_real_3_t);
-        cs_array_set_value_real(n_cells, 3, 0, (cs_real_t *)vel_l);
+        cs_array_real_fill_zero(3*n_cells, (cs_real_t *)vel_l);
 
         cs_real_3_t *point_coordinates = NULL;
         BFT_MALLOC(point_coordinates, n_cells, cs_real_3_t);

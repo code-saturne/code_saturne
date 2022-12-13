@@ -104,11 +104,12 @@ cs_user_initialization(cs_domain_t     *domain)
   int n_gasses = cs_glob_elec_properties->ngaz;
 
   if (n_gasses > 1) {
-    cs_array_set_value_real(n_cells, 1, 1.0, CS_FI_(ycoel, 0)->val);
 
-    for (int sp_id = 1; sp_id < n_gasses-1; sp_id++) {
-      cs_array_set_value_real(n_cells, 1, 0.0, CS_FI_(ycoel, sp_id)->val);
-    }
+    cs_array_real_set_scalar(n_cells, 1.0, CS_FI_(ycoel, 0)->val);
+
+    for (int sp_id = 1; sp_id < n_gasses-1; sp_id++)
+      cs_array_real_fill_zero(n_cells, CS_FI_(ycoel, sp_id)->val);
+
   }
 
   /* Enthalpy = H(T0) or 0
@@ -147,18 +148,18 @@ cs_user_initialization(cs_domain_t     *domain)
       cvar_h[i] = hhot;
   }
 
-  /* Set electric potential to 0 */
+  /* Set electric potential to 0 (real component and imaginary component -- for
+     Joule heating by direct conduction) */
 
-  /* real component */
-  cs_array_set_value_real(n_cells, 1, 0.0, CS_F_(potr)->val);
+  cs_array_real_fill_zero(n_cells, CS_F_(potr)->val);
 
-  /* imaginary component (for Joule heating by direct conduction) */
   if (CS_F_(poti) != NULL)
-    cs_array_set_value_real(n_cells, 1, 0.0, CS_F_(poti)->val);
+    cs_array_real_fill_zero(n_cells, CS_F_(poti)->val);
 
   /* Vector potential (electric arcs, 3d) */
+
   if (CS_F_(potva) != NULL)
-    cs_array_set_value_real(n_cells, 3, 0.0, CS_F_(potva)->val);
+    cs_array_real_fill_zero(3*n_cells, CS_F_(potva)->val);
   /*! [init2] */
 }
 

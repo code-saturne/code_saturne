@@ -1858,7 +1858,7 @@ void CS_PROCF(uiporo, UIPORO)(void)
   cs_field_t *ftporo = CS_F_(t_poro);
 
   if (fporo != NULL)
-    cs_array_set_value_real(n_cells_ext, 1, 1., fporo->val);
+    cs_array_real_set_scalar(n_cells_ext, 1., fporo->val);
 
   if (ftporo != NULL) {
     cs_real_6_t *porosf = (cs_real_6_t *)ftporo->val;

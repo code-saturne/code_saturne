@@ -708,7 +708,7 @@ _pressure_correction_fv(int        iterns,
   cs_real_t *rovsdt;
   BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
 
-  cs_array_set_value_real(n_cells, 1, 0., rovsdt);
+  cs_array_real_fill_zero(n_cells, rovsdt);
 
   /* Implicit part of the cavitation source */
   if (i_vof_mass_transfer != 0 && cavitation_parameters->itscvi == 1) {
@@ -775,7 +775,7 @@ _pressure_correction_fv(int        iterns,
                         b_visc);
 
       if (f_weight != NULL) {  /* Weighting for gradient */
-        cs_array_copy_real(n_cells, 1, c_visc, f_weight->val);
+        cs_array_real_copy(n_cells, 1, c_visc, f_weight->val);
         cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_weight->val);
       }
 
@@ -798,7 +798,7 @@ _pressure_correction_fv(int        iterns,
                                            b_visc);
 
       if (f_weight != NULL) { /* Weighting for gradient */
-        cs_array_copy_real(n_cells, 6, (const cs_real_t *)vitenp, f_weight->val);
+        cs_array_real_copy(n_cells, 6, (const cs_real_t *)vitenp, f_weight->val);
         cs_mesh_sync_var_sym_tens((cs_real_6_t *)(f_weight->val));
       }
 
@@ -807,8 +807,8 @@ _pressure_correction_fv(int        iterns,
   }
   else {
 
-    cs_array_set_value_real(n_i_faces, 1, 0., i_visc);
-    cs_array_set_value_real(n_b_faces, 1, 0., b_visc);
+    cs_array_real_fill_zero(n_i_faces, i_visc);
+    cs_array_real_fill_zero(n_b_faces, b_visc);
 
   }
 
@@ -880,7 +880,7 @@ _pressure_correction_fv(int        iterns,
   }
   else {
 
-    cs_array_copy_real(n_cells,
+    cs_array_real_copy(n_cells,
                        3,
                        (const cs_real_t *)gradp,
                        (cs_real_t *)trav);
@@ -931,7 +931,7 @@ _pressure_correction_fv(int        iterns,
   }
 
   else {
-    cs_array_set_value_real(n_cells, 3, 0., (cs_real_t *)trav);
+    cs_array_real_fill_zero(3*n_cells, (cs_real_t *)trav);
   }
 
   if (idilat < 4) {
@@ -982,8 +982,8 @@ _pressure_correction_fv(int        iterns,
     cs_real_t *sti = cs_field_by_name("inner_face_source_term")->val;
 
     if (ts->nt_cur == 1 && ts->nt_prev == 0) {
-      cs_array_copy_real(n_i_faces, 1, imasfl, imasfla);
-      cs_array_copy_real(n_b_faces, 1, bmasfl, bmasfla);
+      cs_array_real_copy(n_i_faces, 1, imasfl, imasfla);
+      cs_array_real_copy(n_b_faces, 1, bmasfl, bmasfla);
     }
 
     if (cs_glob_porous_model >= 1) {
@@ -2318,7 +2318,7 @@ _pressure_correction_fv(int        iterns,
 
     /* Convective source term */
 
-    cs_array_set_value_real(n_cells, 1, 0., rhs);
+    cs_array_real_fill_zero(n_cells, rhs);
 
     cs_equation_param_t  eqp_loc = *eqp_p;
 

@@ -128,7 +128,7 @@ _clip_v2f(cs_lnum_t  n_cells,
   int clip_phi_id = cs_field_get_key_int(CS_F_(phi), kclipp);
   if (clip_phi_id > -1) {
     cpro_phi_clipped = cs_field_by_id(clip_phi_id)->val;
-    cs_array_set_value_real(n_cells, 1, 0, cpro_phi_clipped);
+    cs_array_real_fill_zero(n_cells, cpro_phi_clipped);
   }
 
   cs_real_t *cvar_al = NULL, *cpro_a_clipped = NULL;
@@ -137,7 +137,7 @@ _clip_v2f(cs_lnum_t  n_cells,
     int  clip_a_id = cs_field_get_key_int(CS_F_(alp_bl), kclipp);
     if (clip_a_id > -1) {
       cpro_a_clipped = cs_field_by_id(clip_a_id)->val;
-      cs_array_set_value_real(n_cells, 1, 0, cpro_a_clipped);
+      cs_array_real_fill_zero(n_cells, cpro_a_clipped);
     }
   }
 

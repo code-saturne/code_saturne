@@ -85,10 +85,12 @@ cs_user_initialization(cs_domain_t     *domain)
   const cs_lnum_t n_cells = domain->mesh->n_cells;
 
   /* Apply only at the true computation start, not on restarts */
+
   if (domain->time_step->nt_prev > 0)
     return;
 
   /* Map field arrays */
+
   cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
   cs_real_t *cvar_temp = cs_thermal_model_field()->val;
   cs_real_t *cpro_humid = cs_field_by_name("humidity")->val;
@@ -96,8 +98,8 @@ cs_user_initialization(cs_domain_t     *domain)
   /* Initialize temperature of humid air at 11 deg Celsius
    * and of humidity at 0.0063 */
 
-   cs_array_set_value_real(n_cells, 1, 11.0, cvar_temp);
-   cs_array_set_value_real(n_cells, 1, 0.0063, cpro_humid);
+   cs_array_real_set_scalar(n_cells, 11.0, cvar_temp);
+   cs_array_real_set_scalar(n_cells, 0.0063, cpro_humid);
 
    /* Initialize temperature of humid air at 20 deg Celsius
     * and of humidity at 0.012

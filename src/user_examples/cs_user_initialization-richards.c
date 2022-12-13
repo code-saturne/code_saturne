@@ -118,7 +118,7 @@ cs_user_initialization(cs_domain_t     *domain)
   cs_real_t *cpro_sorb = cs_field_by_id(isorb)->val;
 
   /* no initial contamination of sorbed phase */
-  cs_array_set_value_real(n_cells, 1, 0., cpro_sorb);
+  cs_array_real_fill_zero(n_cells, cpro_sorb);
   /*![richards_init_sorb]*/
 
   /*![richards_init_precip]*/
@@ -128,7 +128,7 @@ cs_user_initialization(cs_domain_t     *domain)
   cs_real_t *cpro_precip = cs_field_by_id(igwfpr)->val;
 
   /* no initial precipitation phase */
-  cs_array_set_value_real(n_cells, 1, 0., cpro_precip);
+  cs_array_real_fill_zero(n_cells, cpro_precip);
   /*![richards_init_precip]*/
 }
 

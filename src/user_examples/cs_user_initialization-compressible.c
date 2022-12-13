@@ -105,13 +105,13 @@ cs_user_initialization(cs_domain_t     *domain)
   const cs_real_t cv0 = cs_glob_fluid_properties->cv0;
 
   /* Velocity all components */
-  cs_array_set_value_real(n_cells, 3, 0., (cs_real_t*)cvar_vel);
+  cs_array_real_fill_zero(3*n_cells, (cs_real_t*)cvar_vel);
 
   /* User defined scalars */
   cs_real_t * cvar_scal = cs_field_by_name("user_name")->val;
 
   /* Initialize each cell value */
-  cs_array_set_value_real(n_cells, 1, 0., cvar_scal);
+  cs_array_real_fill_zero(n_cells, cvar_scal);
 
   /* Pressure, Density, Temperature, Total Energy
 
@@ -139,25 +139,25 @@ cs_user_initialization(cs_domain_t     *domain)
   /* 1. Pressure (Pa) */
   if (true) {
     cf_model->ithvar = 2*ithvar;
-    cs_array_set_value_real(n_cells, 1, p0, cvar_pr);
+    cs_array_real_set_scalar(n_cells, p0, cvar_pr);
   }
 
   /*  2. Density (kg.m-3) */
   if (false) {
     cf_model->ithvar = 3*ithvar;
-    cs_array_set_value_real(n_cells, 1, ro0, cpro_rho);
+    cs_array_real_set_scalar(n_cells, ro0, cpro_rho);
   }
 
   /* 3. Temperature (K -- Warning: Kelvin) */
   if (true) {
     cf_model->ithvar = 5*ithvar;
-    cs_array_set_value_real(n_cells, 1, t0, cvar_tempk);
+    cs_array_real_set_scalar(n_cells, t0, cvar_tempk);
   }
 
   /* 4. Total Energy (J/kg) */
   if (false) {
     cf_model->ithvar = 7*ithvar;
-    cs_array_set_value_real(n_cells, 1, cv0*t0, cvar_energ);
+    cs_array_real_set_scalar(n_cells, cv0*t0, cvar_energ);
   }
   /*! [init_compressible] */
 }

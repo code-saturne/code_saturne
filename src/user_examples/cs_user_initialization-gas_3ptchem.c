@@ -92,7 +92,7 @@ cs_user_initialization(cs_domain_t     *domain)
   const cs_real_t fs = cm->gas.fs[0];
 
   /* Mean Mixture Fraction */
-  cs_array_set_value_real(n_cells, 1, fs, cvar_fm);
+  cs_array_real_set_scalar(n_cells, fs, cvar_fm);
 
   /* Enthalpy */
 
@@ -101,7 +101,7 @@ cs_user_initialization(cs_domain_t     *domain)
     const cs_real_t hinfue = cm->fuel.hinfue;
 
     cs_real_t h_ini = hinfue*fs + hinoxy*(1.0-fs);
-    cs_array_set_value_real(n_cells, 1, h_ini, cvar_scalt);
+    cs_array_real_set_scalar(n_cells, h_ini, cvar_scalt);
   }
   /*![init]*/
 }

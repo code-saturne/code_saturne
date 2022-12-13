@@ -248,7 +248,7 @@ cs_user_physical_properties(cs_domain_t   *domain)
   /* Set soil density (bulk density!) for delay computation
      (delay = 1 + soil_density * K_d / saturation)*/
 
-  cs_array_set_value_real(n_cells, 1, 1.5, soil_density);
+  cs_array_real_set_scalar(n_cells, 1.5, soil_density);
 
   /* Get soil-water partition structure */
   cs_gwf_soilwater_partition_t sorption_scal;
@@ -263,15 +263,15 @@ cs_user_physical_properties(cs_domain_t   *domain)
   cs_real_t *cpro_kminus = cs_field_by_id(sorption_scal.ikm)->val;
 
   /* Set sorption parameters */
-  cs_array_set_value_real(n_cells, 1, 5., cpro_kd);
+  cs_array_real_set_scalar(n_cells, 5., cpro_kd);
 
   /* if EK model is chosen, set specific parameters */
-  cs_array_set_value_real(n_cells, 1, 1e-3, cpro_kplus);
-  cs_array_set_value_real(n_cells, 1, 1e-4, cpro_kminus);
+  cs_array_real_set_scalar(n_cells, 1e-3, cpro_kplus);
+  cs_array_real_set_scalar(n_cells, 1e-4, cpro_kminus);
 
   /* Field for cpro_mxsol index (if precipitation option is activated) */
   cs_real_t *cpro_mxsol = cs_field_by_id(sorption_scal.imxsol)->val;
-  cs_array_set_value_real(n_cells, 1, 10., cpro_mxsol);
+  cs_array_real_set_scalar(n_cells, 10., cpro_mxsol);
 
   /*![richards_unsat_soilwater_partition]*/
 }

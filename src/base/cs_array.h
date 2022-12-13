@@ -28,6 +28,12 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
+
+#include <string.h>
+
+/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
@@ -50,8 +56,49 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*=============================================================================
+ * Public inline function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign zero to all elements of an array.
+ *
+ * \param[in]      size    total number of elements to set to zero
+ * \param[in, out] a       array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_array_real_fill_zero(cs_lnum_t  size,
+                        cs_real_t  a[])
+{
+  memset(a, 0, size*sizeof(cs_real_t));
+}
+
+/*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy an array (ref) into another array (dest) and apply an
+ *        inderection at the same time. Array with stride > 1 are assumed to be
+ *        interlaced. The indirectino is applied to ref
+ *
+ * \param[in]      n_elts   number of elements in the array
+ * \param[in]      stride   number of values for each element
+ * \param[in]      elt_ids  indirection list
+ * \param[in]      ref      reference values to copy
+ * \param[in, out] dest     array storing values after applying the indirection
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_copy_with_indirection(cs_lnum_t        n_elts,
+                                    int              stride,
+                                    const cs_lnum_t  elt_ids[],
+                                    const cs_real_t  ref[],
+                                    cs_real_t        dest[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -65,20 +112,83 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_copy_real(cs_lnum_t        n_elts,
+cs_array_real_copy(cs_lnum_t        n_elts,
                    cs_lnum_t        dim,
                    const cs_real_t  src[],
                    cs_real_t        dest[restrict]);
 
-/*----------------------------------------------------------------------------
- * Assign a constant value to an array.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a constant scalar value to an array.
  *
- * parameters:
- *   n_elts  <-- number of associated elements
- *   dim     <-- associated dimension
- *   v       <-- value to assign
- *   a       --> array values (size: n_elts*dim]
- *----------------------------------------------------------------------------*/
+ * \param[in]      n_elts   number of elements
+ * \param[in]      ref_val  value to assign
+ * \param[in, out] a        array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_set_scalar(cs_lnum_t  n_elts,
+                         cs_real_t  ref_val,
+                         cs_real_t  a[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a constant vector to an array of stride 3 which is interlaced
+ *
+ * \param[in]      n_elts   number of elements
+ * \param[in]      ref_val  vector to assign
+ * \param[in, out] a        array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_set_vector(cs_lnum_t         n_elts,
+                         const cs_real_t   ref_val[3],
+                         cs_real_t        *a);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a constant vector of size 6 (optimzed way to define a
+ *        symmetric tensor) to an array (of stride 6) which is interlaced
+ *
+ * \param[in]      n_elts   number of elements
+ * \param[in]      ref_val  vector to assign
+ * \param[in, out] a        array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_set_symm_tensor(cs_lnum_t         n_elts,
+                              const cs_real_t   ref_val[6],
+                              cs_real_t        *a);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a constant 3x3 tensor to an array (of stride 9) which is
+ *        interlaced
+ *
+ * \param[in]      n_elts    number of elements
+ * \param[in]      ref_tens  tensor to assign
+ * \param[in, out] a         array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_set_tensor(cs_lnum_t         n_elts,
+                         const cs_real_t   ref_tens[3][3],
+                         cs_real_t        *a);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a constant value to an array (deprecated function).
+ *
+ * \param[in]   n_elts  number of associated elements
+ * \param[in]   dim     associated dimension
+ * \param[in]   v       value to assign
+ * \param[out]  a       array values (size: n_elts*dim]
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_array_set_value_real(cs_lnum_t  n_elts,

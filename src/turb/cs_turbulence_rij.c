@@ -157,7 +157,7 @@ _clip_alpha(const int          f_id,
   int clip_a_id = cs_field_get_key_int(cs_field_by_id(f_id), kclipp);
   if (clip_a_id > -1) {
     cpro_a_clipped = cs_field_by_id(clip_a_id)->val;
-    cs_array_set_value_real(n_cells, 1, 0, cpro_a_clipped);
+    cs_array_real_fill_zero(n_cells, cpro_a_clipped);
   }
 
   /* Store local min and max for logging */
@@ -343,7 +343,7 @@ _rij_echo(const cs_real_t  produc[][6],
   /* Calculation of work variables
    * ----------------------------- */
 
-  cs_array_set_value_real(n_cells, 6, 0, (cs_real_t *)w6);
+  cs_array_real_fill_zero(6*n_cells, (cs_real_t *)w6);
 
 # pragma omp parallel for if(n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -858,7 +858,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
   if (cs_glob_turb_rans_model->irijec == 1) { // todo
 
-    cs_array_set_value_real(n_cells, 6, 0, (cs_real_t*)w2);
+    cs_array_real_fill_zero(6*n_cells, (cs_real_t*)w2);
 
     _rij_echo(produc, w2);
 
@@ -959,7 +959,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
       }
     }
     else
-      cs_array_copy_real(n_cells, 1, viscl, w1);
+      cs_array_real_copy(n_cells, 1, viscl, w1);
 
     cs_face_viscosity(m,
                       fvq,
@@ -1233,7 +1233,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
 
   if (cs_glob_turb_rans_model->irijec == 1) { // todo
 
-    cs_array_set_value_real(n_cells, 6, 0, (cs_real_t*)w2);
+    cs_array_real_fill_zero(6*n_cells, (cs_real_t*)w2);
 
     _rij_echo(produc, w2);
 
@@ -1334,7 +1334,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
       }
     }
     else
-      cs_array_copy_real(n_cells, 1, viscl, w1);
+      cs_array_real_copy(n_cells, 1, viscl, w1);
 
     cs_face_viscosity(m,
                       fvq,
@@ -1988,7 +1988,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         w1[c_id] = viscl[c_id] + (csrij * visct[c_id] / cs_turb_cmu);
     }
     else
-      cs_array_copy_real(n_cells, 1, viscl, w1);
+      cs_array_real_copy(n_cells, 1, viscl, w1);
 
     cs_face_viscosity(m,
                       fvq,
@@ -2096,8 +2096,8 @@ _solve_epsilon(cs_lnum_t        ncesmp,
   const cs_real_t thets = time_scheme->thetst;
   const cs_real_t thetv = eqp->thetav;
 
-  cs_array_set_value_real(n_cells, 1, 0, rhs);
-  cs_array_set_value_real(n_cells, 1, 0, rovsdt);
+  cs_array_real_fill_zero(n_cells, rhs);
+  cs_array_real_fill_zero(n_cells, rovsdt);
 
   /* Work arrays */
   cs_real_t *w1;
@@ -2383,7 +2383,7 @@ _solve_epsilon(cs_lnum_t        ncesmp,
         w1[c_id] = viscl[c_id] + visct[c_id]/sigmae;
     }
     else
-      cs_array_copy_real(n_cells, 1, viscl, w1);
+      cs_array_real_copy(n_cells, 1, viscl, w1);
 
     cs_face_viscosity(m,
                       fvq,
@@ -2855,7 +2855,7 @@ cs_turbulence_rij(cs_lnum_t    ncesmp,
          * We use viscb to store the relative coefficient of rom
          * We impose in Dirichlet (coefa) the value romb */
 
-        cs_array_set_value_real(n_b_faces, 1, 0, viscb);
+        cs_array_real_fill_zero(n_b_faces, viscb);
 
         int key_t_ext_id = cs_field_key_id("time_extrapolated");
         int iroext = cs_field_get_key_int(CS_F_(rho), key_t_ext_id);
@@ -2902,8 +2902,8 @@ cs_turbulence_rij(cs_lnum_t    ncesmp,
   /* Source terms for Rij
    * -------------------- */
 
-  cs_array_set_value_real(n_cells, 6, 0, (cs_real_t*)smbrts);
-  cs_array_set_value_real(n_cells, 36, 0, (cs_real_t*)rovsdtts);
+  cs_array_real_fill_zero(6*n_cells, (cs_real_t*)smbrts);
+  cs_array_real_fill_zero(36*n_cells, (cs_real_t*)rovsdtts);
 
   cs_user_source_terms(cs_glob_domain,
                        CS_F_(rij)->id,
@@ -3228,8 +3228,8 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   BFT_MALLOC(rhs, n_cells_ext, cs_real_t);
   BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
 
-  cs_array_set_value_real(n_cells, 1, 0, rhs);
-  cs_array_set_value_real(n_cells, 1, 0, rovsdt);
+  cs_array_real_fill_zero(n_cells, rhs);
+  cs_array_real_fill_zero(n_cells, rovsdt);
 
   /* Source term of alpha
    *  \f$ rhs = \dfrac{1}{L^2 (\alpha)} - \dfrac{1}{L^2}\f$
@@ -3299,7 +3299,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   BFT_MALLOC(viscf, n_i_faces, cs_real_t);
   BFT_MALLOC(viscb, n_b_faces, cs_real_t);
 
-  cs_array_set_value_real(n_cells, 1, 1, w1);
+  cs_array_real_set_scalar(n_cells, 1., w1);
 
   cs_face_viscosity(m,
                     fvq,
@@ -3376,8 +3376,8 @@ cs_turbulence_rij_solve_alpha(int        f_id,
    * boundary cell values are 0. This value is thefore non zero but
    * much smaller than the wanted value. */
 
-  cs_array_set_value_real(n_cells_ext, 1, 0, alpha_min);
-  cs_array_copy_real(n_cells, 1, rovsdt, alpha_min);
+  cs_array_real_fill_zero(n_cells_ext, alpha_min);
+  cs_array_real_copy(n_cells, 1, rovsdt, alpha_min);
 
   for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
     const cs_lnum_t ii = i_face_cells[face_id][0];
@@ -3462,7 +3462,7 @@ cs_turbulence_rij_init_by_ref_quantities(cs_real_t  uref,
 
   if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
     cs_real_t *cvar_al = CS_F_(alp_bl)->val;
-    cs_array_set_value_real(n_cells, 1, 1., cvar_al);
+    cs_array_real_set_scalar(n_cells, 1., cvar_al);
   }
 }
 
@@ -3491,13 +3491,12 @@ cs_turbulence_rij_clip(cs_lnum_t  n_cells)
   int clip_e_id = cs_field_get_key_int(CS_F_(eps), kclipp);
   if (clip_e_id > -1) {
     cpro_eps_clipped = cs_field_by_id(clip_e_id)->val;
-    cs_array_set_value_real(n_cells, 1, 0, cpro_eps_clipped);
+    cs_array_real_fill_zero(n_cells, cpro_eps_clipped);
   }
   int clip_r_id = cs_field_get_key_int(CS_F_(rij), kclipp);
   if (clip_r_id > -1) {
     cpro_rij_clipped = (cs_real_6_t *)cs_field_by_id(clip_r_id)->val;
-    cs_array_set_value_real(n_cells,
-                            CS_F_(rij)->dim, 0,
+    cs_array_real_fill_zero(n_cells*CS_F_(rij)->dim,
                             (cs_real_t *)cpro_rij_clipped);
   }
 

@@ -142,9 +142,9 @@ cs_les_mu_t_smago_dyn(cs_real_33_t  *gradv)
    * Constant density case: Reynolds filtering */
 
   if (irovar == 1)
-    cs_array_copy_real(n_cells, 1, crom, xro);
+    cs_array_real_copy(n_cells, 1, crom, xro);
   else
-    cs_array_set_value_real(n_cells, 1, 1.0, xro);
+    cs_array_real_set_scalar(n_cells, 1.0, xro);
 
   /* In case of constant density, xrof always 1.0 */
 

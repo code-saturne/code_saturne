@@ -321,7 +321,7 @@ cs_mass_source_terms(int                   iterns,
      * right-hand side) is used for the 2nd-order time scheme. */
 
   if (iterns == 1) {
-    cs_array_set_value_real(n_cells, dim, 0, gapinj);
+    cs_array_real_fill_zero(n_cells*dim, gapinj);
 
     if (dim == 1) {
       for (cs_lnum_t i = 0; i < ncesmp; i++) {

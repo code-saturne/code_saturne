@@ -605,7 +605,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
       vistet[c_id][5] = crom[c_id]*ctheta*xtt*xrij[2][0];
     }
 
-  } /* end loop on cells */
+  } /* End loop on cells */
 
   /* FIXME the line below would reproduce the previous behavior, which
      is incorrect (see issue #387). Either we should consider
@@ -614,12 +614,12 @@ _thermal_flux_and_diff(cs_field_t         *f,
   /* cs_field_set_key_double(f, kctheta, ctheta); */
 
   cs_real_3_t *coefat;
-  cs_real_33_t*coefbt;
+  cs_real_33_t *coefbt;
 
   BFT_MALLOC(coefat, n_b_faces, cs_real_3_t);
   BFT_MALLOC(coefbt, n_b_faces, cs_real_33_t);
 
-  cs_array_set_value_real(n_b_faces, 3, 0, (cs_real_t *)coefat);
+  cs_array_real_fill_zero(3*n_b_faces, (cs_real_t *)coefat);
 
   const cs_real_t kr_33[3][3] = {{1., 0., 0.},
                                  {0., 1., 0.},
@@ -760,8 +760,8 @@ _solve_rit(const cs_field_t     *f,
   BFT_MALLOC(fimp, n_cells_ext, cs_real_33_t);
   BFT_MALLOC(rhs_ut, n_cells_ext, cs_real_3_t);
 
-  cs_array_set_value_real(n_cells_ext, 3, 0, (cs_real_t *)rhs_ut);
-  cs_array_set_value_real(n_cells_ext, 9, 0, (cs_real_t *)fimp);
+  cs_array_real_fill_zero(3*n_cells_ext, (cs_real_t *)rhs_ut);
+  cs_array_real_fill_zero(9*n_cells_ext, (cs_real_t *)fimp);
 
   /* Find the corresponding variance of the scalar */
 
@@ -1087,8 +1087,8 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
 
   if (turb_flux_model_type != 3) {
 
-    cs_array_set_value_real(n_i_faces, 1, 0, thflxf);
-    cs_array_set_value_real(n_b_faces, 1, 0, thflxb);
+    cs_array_real_fill_zero(n_i_faces, thflxf);
+    cs_array_real_fill_zero(n_b_faces, thflxb);
 
     _thermal_flux_and_diff(f,
                            f_tv,

@@ -91,9 +91,10 @@ cs_user_extra_operations(cs_domain_t     *domain)
   if ((CS_F_(t) != NULL) && (t_cur >= 12.0)) {
 
     cs_real_t *cvar_t = CS_F_(t)->val;
-    cs_array_set_value_real(domain->mesh->n_cells, 1, 20.0, cvar_t);
+    cs_array_real_set_scalar(domain->mesh->n_cells, 20.0, cvar_t);
 
     bft_printf("User modification of variables at the end of the time step");
+
   }
 
   /*![example_1]*/

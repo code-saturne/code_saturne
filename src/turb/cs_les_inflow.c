@@ -556,7 +556,7 @@ void CS_PROCF(synthe, SYNTHE)
     /*----------------------------------------*/
 
     BFT_MALLOC(fluctuations, n_elts, cs_real_3_t);
-    cs_array_set_value_real(n_elts, 3, 0, (cs_real_t *)fluctuations);
+    cs_array_real_fill_zero(3*n_elts, (cs_real_t *)fluctuations);
 
     switch(inlet->type) {
 
@@ -597,10 +597,10 @@ void CS_PROCF(synthe, SYNTHE)
           }
 
           BFT_REALLOC(vel_m_l, n_cells, cs_real_3_t);
-          cs_array_set_value_real(n_cells, 3, 0, (cs_real_t *)vel_m_l);
+          cs_array_real_fill_zero(3*n_cells, (cs_real_t *)vel_m_l);
 
           BFT_REALLOC(eps_r, n_points, cs_real_t);
-          cs_array_set_value_real(n_cells, 1, dissiprate, eps_r);
+          cs_array_real_set_scalar(n_cells, dissiprate, eps_r);
 
           cs_real_3_t *point_coordinates = NULL;
           BFT_MALLOC(point_coordinates, n_cells, cs_real_3_t);
@@ -610,7 +610,7 @@ void CS_PROCF(synthe, SYNTHE)
           }
 
           BFT_REALLOC(fluctuations, n_points, cs_real_3_t);
-          cs_array_set_value_real(n_cells, 3, 0, (cs_real_t *)fluctuations);
+          cs_array_real_fill_zero(3*n_cells, (cs_real_t *)fluctuations);
 
           cs_les_synthetic_eddy_method(cs_glob_mesh->n_cells,
                                        elt_ids,

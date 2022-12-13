@@ -486,7 +486,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
 
     cs_real_3_t *vel_laplacian;
     BFT_MALLOC(vel_laplacian, n_cells_ext, cs_real_3_t);
-    cs_array_set_value_real(n_cells_ext, 3, 0, (cs_real_t *)vel_laplacian);
+    cs_array_real_fill_zero(3*n_cells_ext, (cs_real_t *)vel_laplacian);
 
     cs_balance_vector(cs_glob_time_step_options->idtvar,
                       -1, /* f_id */
@@ -758,7 +758,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
     BFT_FREE(grad);
   }
   else {
-    cs_array_set_value_real(n_cells, 1, 0, grad_dot_g);
+    cs_array_real_fill_zero(n_cells, grad_dot_g);
   }
 
   /* Finalization of explicit and implicit source terms
