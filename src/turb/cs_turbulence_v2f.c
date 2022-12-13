@@ -228,7 +228,7 @@ _clip_v2f(cs_lnum_t  n_cells,
 
     cs_parall_counter(nclp, 2);
 
-    nclpmn[1] = nclp[0], nclpmx[1] = nclp[1];
+    nclpmn[0] = nclp[0], nclpmx[0] = nclp[1];
     cs_log_iteration_clipping_field(CS_F_(alp_bl)->id,
                                     nclpmn[0], nclpmx[0],
                                     vmin+1, vmax+1,
