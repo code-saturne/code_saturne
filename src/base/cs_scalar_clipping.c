@@ -43,6 +43,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_array.h"
 #include "cs_field.h"
 #include "cs_log_iteration.h"
 #include "cs_math.h"
@@ -143,6 +144,16 @@ cs_scalar_clipping(cs_field_t  *f)
   const int kscmin = cs_field_key_id_try("min_scalar_clipping");
   const int kscmax = cs_field_key_id_try("max_scalar_clipping");
 
+  int kclipp = cs_field_key_id("clipping_id");
+
+  /* Post-process clippings ? */
+  int clip_f_id = cs_field_get_key_int(f, kclipp);
+  cs_real_t *cpro_f_clipped = NULL;
+  if (clip_f_id > -1) {
+    cpro_f_clipped = cs_field_by_id(clip_f_id)->val;
+    cs_array_set_value_real(n_cells, 1, 0, cpro_f_clipped);
+  }
+
   cs_real_t *cvar_scal = f->val;
 
   int variance_id = cs_field_get_key_int(f, kscavr);
@@ -175,10 +186,15 @@ cs_scalar_clipping(cs_field_t  *f)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       if (cvar_scal[c_id] > scmaxp) {
         iclmax[0] += 1;
+        if (cpro_f_clipped != NULL)
+          cpro_f_clipped[c_id] = cvar_scal[c_id] - scmaxp;
+
         cvar_scal[c_id] = scmaxp;
       }
       if (cvar_scal[c_id] < scminp) {
          iclmin[0] += 1;
+         if (cpro_f_clipped != NULL)
+           cpro_f_clipped[c_id] = cvar_scal[c_id] - scminp;
          cvar_scal[c_id] = scminp;
       }
     }

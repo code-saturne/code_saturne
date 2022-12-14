@@ -101,6 +101,7 @@ integer          imucpp
 integer          icvflb, kiflux, kbflux, icflux_id, bcflux_id
 integer          ivoid(1)
 integer          kscmin, kscmax, iclmin(1), iclmax(1)
+integer          kclipp, clip_voidf_id
 
 double precision epsrgp, climgp
 
@@ -119,6 +120,7 @@ double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: c_st_voidf
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr, icflux, bcflux
 double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
+double precision, dimension(:), pointer :: cpro_voidf_clipped
 
 type(var_cal_opt) :: vcopt
 type(var_cal_opt), target :: vcopt_loc
@@ -365,14 +367,31 @@ if ((i_mass_transfer.ne.0.and.dt(1).gt.dtmaxg).or.i_mass_transfer.eq.0) then
   call field_get_key_double(ivarfl(ivar), kscmin, scminp)
   call field_get_key_double(ivarfl(ivar), kscmax, scmaxp)
 
+  call field_get_key_id("clipping_id", kclipp)
+
+  ! Postprocess clippings?
+  call field_get_key_int(ivarfl(ivar), kclipp, clip_voidf_id)
+  if (clip_voidf_id.ge.0) then
+    call field_get_val_s(clip_voidf_id, cpro_voidf_clipped)
+    do iel = 1, ncel
+      cpro_voidf_clipped(iel) = 0.d0
+    enddo
+  endif
+
   if (scmaxp.gt.scminp) then
     do iel = 1, ncel
       if(cvar_voidf(iel).gt.scmaxp)then
         iclmax(1) = iclmax(1) + 1
+        if (clip_voidf_id.ge.0) then
+          cpro_voidf_clipped(iel) = cvar_voidf(iel) - scmaxp
+        endif
         cvar_voidf(iel) = scmaxp
       endif
       if(cvar_voidf(iel).lt.scminp)then
         iclmin(1) = iclmin(1) + 1
+        if (clip_voidf_id.ge.0) then
+          cpro_voidf_clipped(iel) = cvar_voidf(iel) - scminp
+        endif
         cvar_voidf(iel) = scminp
       endif
     enddo
