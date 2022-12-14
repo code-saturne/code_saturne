@@ -215,6 +215,19 @@ int density_id;
 double turbulent_flux_ctheta;
 
 /*!
+  \var turbulent_flux_model
+  Turbulent flux model
+   - 0: Simple Gradient Diffusion Hypothesis (SGDH)
+   - 10: Generalized Gradient Diffusion Hypothesis (GGDH)
+   - 11: Generalized Gradient Diffusion Hypothesis with Elliptic Blending (EB-GGDH)
+   - 20: Algebraic Flux Model (AFM)
+   - 21: Algebraic Flux Model with Elliptic Blending (EB-AFM)
+   - 30: Differential Flux Model (DFM)
+   - 31: Differential Flux Model with Elliptic Blending (EB-DFM)
+*/
+double turbulent_flux_model;
+
+/*!
   \var first_moment_id
   For a variance of a given field, id of the base (first moment) field.
 */
