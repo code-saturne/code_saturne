@@ -36,6 +36,7 @@
 #include "cs_base.h"
 #include "cs_boundary_zone.h"
 #include "cs_field.h"
+#include "cs_mesh_adjacencies.h"
 #include "cs_param_types.h"
 #include "cs_quadrature.h"
 #include "cs_volume_zone.h"
@@ -209,12 +210,15 @@ typedef struct {
 
   /*!
    * \var z_id
-   * id related to a zone (volume or boundary) used for the size of the array.
+   * id related to a zone (volume or boundary).
+   * If id = 0, then all cells (in case of volume zone) or all boundary faces
+   * (in case of boundary zone) are selected. A full length array is thus
+   * considered and the way to apply a definition by array is simpler.
    *
    * \var stride
    * Stride to access the array values
    *
-   * \var loc
+   * \var value_location
    * Flag to know where are defined array values
    *
    * \var values
@@ -224,27 +228,45 @@ typedef struct {
    * If true the lifecycle of the values is managed by the cs_xdef_t structure.
    * Otherwise, the lifecycle is managed by the calling code.
    *
-   * \var index
-   * Optional index for accessing to the values. (shared pointer => One assumes
-   * that the lifecycle of this buffer is managed outside (pointer to a
-   * cs_adjacency_t stored either in the \ref cs_cdo_connect_t struct. or the
-   * \ref cs_mesh_t struct.
+   * \var full_length
+   * The array describes only a part of the support. To know which part is
+   * defined, one can relies on the elements of the zone when the support flag
+   * corresponds to the (primal) cells or to the boundary faces. In other
+   * cases, one needs the number of elements and its associated list.
    *
-   * \var ids
-   * Optional list of entity ids (shared pointer)
-   * This can be either the list of ids associated to the given index (case of
-   * a \ref cs_adjacency_t struct.) or simply an indirection list if index is
-   * set to NULL
+   * \var n_list_elts
+   * (Optional) Number of element in the (sub)list of elements when the array
+   * describes only a part of the full-length array (Case of value_location which is
+   * neither the cells nor the boundary faces).
+   *
+   * \var elt_ids
+   * (Optional) List of element ids. Useful when the array describes only a
+   * part of the full-length array and the value location is neither the cells
+   * nor the boundary faces. One assumes that the lifecycle of this array is
+   * managed outside.
+   *
+   * \var adjacency
+   * (Optional) Pointer to a shared adjacency structure (an indexed list). This
+   * structure can be useful to manipulate arrays with advanced value location
+   * (i.e. not the classical ones as vertices, cells or boundary faces). One
+   * assumes that the lifecycle of this buffer is managed outside (pointer to a
+   * cs_adjacency_t stored either in the \ref cs_cdo_connect_t struct. or the
+   * \ref cs_mesh_t struct. for instance)
    */
 
-  int                 z_id;
-  int                 stride;
-  cs_flag_t           loc;
-  cs_real_t          *values;
-  bool                is_owner;
+  int                     z_id;
+  int                     stride;
+  cs_flag_t               value_location;
+  bool                    is_owner;
+  bool                    full_length;
 
-  const cs_lnum_t    *index;
-  const cs_lnum_t    *ids;
+  cs_real_t              *values;
+
+  /* Optional parameters */
+
+  cs_lnum_t               n_list_elts;
+  const cs_lnum_t        *elt_ids;
+  const cs_adjacency_t   *adjacency;
 
 } cs_xdef_array_context_t;
 
@@ -295,12 +317,12 @@ typedef struct {
 
   int                    z_id;
 
-  /*! \var loc
+  /*! \var dof_location
    *  Flag to know which type of entities are given as parameter in the
    *  \ref cs_dof_func_t
    */
 
-  cs_flag_t              loc;
+  cs_flag_t              dof_location;
 
   /*! \var func
    * pointer to a \ref cs_dof_func_t to call
@@ -440,7 +462,7 @@ cs_xdef_get_scalar_value(cs_xdef_t     *def)
 /*----------------------------------------------------------------------------*/
 
 static inline cs_real_t *
-cs_xdef_get_array(cs_xdef_t     *def)
+cs_xdef_array_get_values(cs_xdef_t     *def)
 {
   if (def == NULL)
     return NULL;
@@ -464,7 +486,7 @@ cs_xdef_get_array(cs_xdef_t     *def)
 /*----------------------------------------------------------------------------*/
 
 static inline cs_field_t *
-cs_xdef_get_field(cs_xdef_t     *def)
+cs_xdef_field_get(cs_xdef_t     *def)
 {
   if (def == NULL)
     return NULL;
@@ -577,9 +599,9 @@ cs_xdef_copy(cs_xdef_t     *src);
 /*!
  * \brief In the case of a definition by an analytic function, a time function
  *        or a function relying on degrees of freedom (DoFs), this function
- *        allows one to set a more or less complex input data structure.  This
- *        call should be done before the first evaluation call of the
- *        associated cs_xdef_t structure.
+ *        allows one to set a more or less complex input data structure. This
+ *        call should be done before the first evaluation of the associated
+ *        cs_xdef_t structure.
  *
  * \param[in, out]  d         pointer to a cs_xdef_t structure
  * \param[in]       input     pointer to an input structure
@@ -606,54 +628,6 @@ cs_xdef_set_input_context(cs_xdef_t       *d,
 void
 cs_xdef_set_free_input_function(cs_xdef_t               *d,
                                 cs_xdef_free_input_t    *free_input);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  In case of definition by array, set the array after having added
- *         this definition
- *
- * \param[in, out]  d          pointer to a cs_xdef_t structure
- * \param[in]       is_owner   manage or not the lifecycle of the array values
- * \param[in]       array      values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_xdef_set_array(cs_xdef_t     *d,
-                  bool           is_owner,
-                  cs_real_t     *array);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  In case of definition by array, set the zone id related to the size
- *         of the array. By default, the zone id is the same as the zone id
- *         related to the definition so that there is no need to call this
- *         function.
- *
- * \param[in, out]  d       pointer to a cs_xdef_t structure
- * \param[in]       z_id    zone id associated to the array size
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_xdef_set_array_zone_id(cs_xdef_t     *d,
-                          int            z_id);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  In case of definition by array, set the optional index and ids
- *         arrays that may be useful when operating on definitions by array
- *
- * \param[in, out]  d         pointer to a cs_xdef_t structure
- * \param[in]       index     optional pointer to an array of index values
- * \param[in]       ids       optional pointer to a list of entity ids
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_xdef_set_array_pointers(cs_xdef_t            *d,
-                           const cs_lnum_t      *index,
-                           const cs_lnum_t      *ids);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -711,19 +685,6 @@ cs_xdef_get_state_flag(const cs_xdef_t     *d);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Get the current field values in case of definition by field
- *
- * \param[in]  def    pointer to a cs_xdef_t structure
- *
- * \return the pointer to the current field values
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_xdef_get_field_values(cs_xdef_t     *def);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Output the settings related to a cs_xdef_t structure in the setup
  *         logging file
  *
@@ -763,6 +724,81 @@ cs_xdef_log(cs_log_t             log_type,
 
 const char *
 cs_xdef_type_get_name(cs_xdef_type_t  xdef_type);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In case of definition by array, set the array values after having
+ *         added this definition
+ *
+ * \param[in, out]  d          pointer to a cs_xdef_t structure
+ * \param[in]       is_owner   manage or not the lifecycle of the array values
+ * \param[in]       values     array of values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_array_set_values(cs_xdef_t     *d,
+                         bool           is_owner,
+                         cs_real_t     *values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In case of definition by array, set the zone id related to the size
+ *         of the array. By default, the zone id is the same as the zone id
+ *         related to the definition so that there is no need to call this
+ *         function.
+ *
+ * \param[in, out]  d       pointer to a cs_xdef_t structure
+ * \param[in]       z_id    zone id associated to the array size
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_array_set_zone_id(cs_xdef_t     *d,
+                          int            z_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In case of definition by array, set the optional adjacency structure
+ *
+ * \param[in, out]  d      pointer to a cs_xdef_t structure
+ * \param[in]       adj    pointer to the adjacency structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_array_set_adjacency(cs_xdef_t             *d,
+                            const cs_adjacency_t  *adj);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In case of definition by array, set the optional sub-list of
+ *         elements used to link elements in the partial view and in the
+ *         full-length view
+ *
+ * \param[in, out]  d        pointer to a cs_xdef_t structure
+ * \param[in]       n_elts   number of elements in the sub-list
+ * \param[in]       elt_ids  list of element ids constituting the sub-list
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_array_set_sublist(cs_xdef_t         *d,
+                          cs_lnum_t          n_elts,
+                          const cs_lnum_t    elt_ids[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the current field values in case of definition by field
+ *
+ * \param[in]  def    pointer to a cs_xdef_t structure
+ *
+ * \return the pointer to the current field values
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_xdef_field_get_values(cs_xdef_t     *def);
 
 /*----------------------------------------------------------------------------*/
 

@@ -42,7 +42,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft_mem.h"
+#include "bft_printf.h"
 
 #include "cs_array.h"
 #include "cs_defs.h"
@@ -2013,12 +2014,12 @@ cs_property_boundary_def_by_analytic(cs_property_t        *pty,
  *        cell-wise structures or not). This definition applies to all cells
  *        associated to the zone named zname
  *
- * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if NULL or "" all
- *                           cells are considered)
- * \param[in]       context              pointer to a structure (may be NULL)
- * \param[in]       get_eval_at_cell     pointer to a function
- * \param[in]       get_eval_at_cell_cw  pointer to a function
+ * \param[in, out] pty           pointer to a cs_property_t structure
+ * \param[in]      zname         name of the zone (if NULL or "" then all cells
+ *                               are selected)
+ * \param[in]      context       pointer to a structure (may be NULL)
+ * \param[in]      get_eval_at_cell      pointer to a function
+ * \param[in]      get_eval_at_cell_cw   pointer to a function
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -2057,16 +2058,20 @@ cs_property_def_by_func(cs_property_t         *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_property_t structure thanks to an array of values. One
- *         assumes that all cells are defined using this array.
+ * \brief Define a cs_property_t structure thanks to an array of values. If an
+ *        advanced usage of the definition by array is needed, then call \ref
+ *        cs_xdef_array_set_adjacency and/or \ref cs_xdef_array_set_sublist
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       loc       information to know where are located values
- * \param[in]       array     pointer to an array
- * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
- *                            (true or false)
- * \param[in]       index     optional pointer to an array of index values
- * \param[in]       ids       optional pointer to a list of entity ids
+ * \param[in, out] pty           pointer to a cs_property_t structure
+ * \param[in]      zname         name of the zone (if NULL or "" then all cells
+ *                               are selected)
+ * \param[in]      val_location  information to know where are located values
+ * \param[in]      array         pointer to an array
+ * \param[in]      is_owner      transfer the lifecycle to the cs_xdef_t struc.
+ *                               (true or false)
+ * \param[in]      full_length   if true, array size is allocated and filled to
+ *                               access the full-length array corresponding to
+ *                               all locations where are defined the values
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -2074,11 +2079,11 @@ cs_property_def_by_func(cs_property_t         *pty,
 
 cs_xdef_t *
 cs_property_def_by_array(cs_property_t      *pty,
-                         cs_flag_t           loc,
+                         const char         *zname,
+                         cs_flag_t           val_location,
                          cs_real_t          *array,
                          bool                is_owner,
-                         const cs_lnum_t    *index,
-                         const cs_lnum_t    *ids)
+                         bool                full_length)
 {
   if (array == NULL)
     return NULL;
@@ -2086,27 +2091,29 @@ cs_property_def_by_array(cs_property_t      *pty,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
   int  id = _add_new_def(pty);
+  int  z_id = cs_get_vol_zone_id(zname);
   int  dim = cs_property_get_dim(pty);
   cs_flag_t  state_flag = 0; /* Will be updated during the creation */
   cs_flag_t  meta_flag = 0;  /* metadata */
 
-  if (pty->n_definitions > 1)
-    bft_error(__FILE__, __LINE__, 0,
-              " When a definition by array is requested, the max. number"
-              " of subdomains to consider should be equal to 1.\n"
-              " Current value is %d for property \"%s\".\n"
-              " Please modify your settings.",
-              pty->n_definitions, pty->name);
+  if (z_id == 0 && full_length == false) {
+    full_length = true;
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf("%s: Inconsistency detected in the settings of property \"%s\""
+               "\n A full-length array is set since z_id=0.",
+               __func__, pty->name);
+  }
 
-  /* z_id = 0 since all the support is selected in this case */
-
-  cs_xdef_array_context_t  input = { .z_id = 0,
-                                     .stride = dim,
-                                     .loc = loc,
-                                     .values = array,
-                                     .is_owner = is_owner,
-                                     .index = index,
-                                     .ids = ids };
+  cs_xdef_array_context_t  input = {.z_id = 0,
+                                    .stride = dim,
+                                    .value_location = val_location,
+                                    .is_owner = is_owner,
+                                    .full_length = full_length,
+                                    .values = array,
+                                    /* Optional parameters (not used) */
+                                    .adjacency = NULL,
+                                    .n_list_elts = 0,
+                                    .elt_ids = NULL };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ARRAY,
                                         dim,
@@ -2125,17 +2132,17 @@ cs_property_def_by_array(cs_property_t      *pty,
     pty->get_eval_at_cell[id] = cs_xdef_eval_nd_at_cells_by_array;
   pty->get_eval_at_cell_cw[id] = cs_xdef_cw_eval_by_array;
 
-  if (cs_flag_test(loc, cs_flag_primal_cell)   == false &&
-      cs_flag_test(loc, cs_flag_primal_vtx)    == false &&
-      cs_flag_test(loc, cs_flag_dual_face_byc) == false &&
-      cs_flag_test(loc, cs_flag_dual_cell_byc) == false)
+  if (cs_flag_test(val_location, cs_flag_primal_cell)   == false &&
+      cs_flag_test(val_location, cs_flag_primal_vtx)    == false &&
+      cs_flag_test(val_location, cs_flag_dual_face_byc) == false &&
+      cs_flag_test(val_location, cs_flag_dual_cell_byc) == false)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Property \"%s\". Case not available.\n",
               __func__, pty->name);
 
   /* Set the state flag */
 
-  if (cs_flag_test(loc, cs_flag_primal_cell))
+  if (cs_flag_test(val_location, cs_flag_primal_cell))
     pty->state_flag |= CS_FLAG_STATE_CELLWISE;
 
   return d;
@@ -2143,18 +2150,20 @@ cs_property_def_by_array(cs_property_t      *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the values of a property at the boundarye thanks to an array
- *         All boundary faces associated to the zone named zname are defined
- *         using this definition.
+ * \brief Define the values of a property at the boundary thanks to an array.
+ *        If an advanced usage of the definition by array is needed, then call
+ *        \ref cs_xdef_array_set_adjacency and/or \ref
+ *        cs_xdef_array_set_sublist
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       zname     NULL or name of the boundary zone
- * \param[in]       loc       information to know where are located values
- * \param[in]       array     pointer to an array
- * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
- *                            (true or false)
- * \param[in]       index     optional pointer to an array of index values
- * \param[in]       ids       optional pointer to a list of entity ids
+ * \param[in, out] pty          pointer to a cs_property_t structure
+ * \param[in]      zname        NULL or name of the boundary zone
+ * \param[in]      val_loc      information to know where are located values
+ * \param[in]      array        pointer to an array
+ * \param[in]      is_owner     transfer the lifecycle to the cs_xdef_t struct.
+ *                              (true or false)
+ * \param[in]      full_length  if true, array size is allocated and filled to
+ *                              access the full-length array corresponding to
+ *                              all locations where are defined the values
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -2163,11 +2172,10 @@ cs_property_def_by_array(cs_property_t      *pty,
 cs_xdef_t *
 cs_property_boundary_def_by_array(cs_property_t      *pty,
                                   const char         *zname,
-                                  cs_flag_t           loc,
+                                  cs_flag_t           val_loc,
                                   cs_real_t          *array,
                                   bool                is_owner,
-                                  const cs_lnum_t    *index,
-                                  const cs_lnum_t    *ids)
+                                  bool                full_length)
 {
   if (array == NULL)
     return NULL;
@@ -2179,13 +2187,25 @@ cs_property_boundary_def_by_array(cs_property_t      *pty,
   int  dim = cs_property_get_dim(pty);
   cs_flag_t  state_flag = 0;
   cs_flag_t  meta_flag = 0;
-  cs_xdef_array_context_t  input = { .z_id = z_id,
-                                     .stride = dim,
-                                     .loc = loc,
-                                     .values = array,
-                                     .is_owner = is_owner,
-                                     .index = index,
-                                     .ids = ids };
+
+  if (z_id == 0 && full_length == false) {
+    full_length = true;
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf("%s: Inconsistency detected in the settings of property \"%s\""
+               "\n A full-length array is set since z_id=0.",
+               __func__, pty->name);
+  }
+
+  cs_xdef_array_context_t  input = {.z_id = z_id,
+                                    .stride = dim,
+                                    .value_location = val_loc,
+                                    .is_owner = is_owner,
+                                    .full_length = full_length,
+                                    .values = array,
+                                    /* Optional parameters (not used) */
+                                    .adjacency = NULL,
+                                    .n_list_elts = 0,
+                                    .elt_ids = NULL };
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
                                           dim,
@@ -2196,9 +2216,9 @@ cs_property_boundary_def_by_array(cs_property_t      *pty,
 
   pty->b_defs[new_id] = d;
 
-  if (cs_flag_test(loc, cs_flag_primal_face)   == false &&
-      cs_flag_test(loc, cs_flag_primal_vtx)    == false &&
-      cs_flag_test(loc, cs_flag_boundary_face) == false)
+  if (cs_flag_test(val_loc, cs_flag_primal_face)   == false &&
+      cs_flag_test(val_loc, cs_flag_primal_vtx)    == false &&
+      cs_flag_test(val_loc, cs_flag_boundary_face) == false)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Property \"%s\". Case not available.\n",
               __func__, pty->name);
@@ -2725,23 +2745,24 @@ cs_property_c2v_values(const cs_cell_mesh_t   *cm,
 
       assert(cx->stride == 1);
 
-      if (cx->loc == cs_flag_primal_vtx || cx->loc == cs_flag_dual_cell) {
+      if (cx->value_location == cs_flag_primal_vtx ||
+          cx->value_location == cs_flag_dual_cell) {
 
         for (int i = 0; i < cm->n_vc; i++)
           eval[i] = cx->values[cm->v_ids[i]];
 
       }
-      else if (cx->loc == cs_flag_primal_cell) {
+      else if (cx->value_location == cs_flag_primal_cell) {
 
         const cs_real_t val_c = cx->values[cm->c_id];
         for (int i = 0; i < cm->n_vc; i++)
           eval[i] = val_c;
 
       }
-      else if (cx->loc == cs_flag_dual_cell_byc) {
+      else if (cx->value_location == cs_flag_dual_cell_byc) {
 
-        assert(cx->index != NULL);
-        cs_real_t  *_val = cx->values + cx->index[cm->c_id];
+        const cs_adjacency_t  *adj = cx->adjacency;
+        cs_real_t  *_val = cx->values + adj->idx[cm->c_id];
         memcpy(eval, _val, cm->n_vc*sizeof(cs_real_t));
 
       }

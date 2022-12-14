@@ -1,6 +1,13 @@
 Master (not on release branches yet)
 ------------------------------------
 
+### User changes:
+
+- The API for the definition by array has been modified to handle more
+  complex cases. This induces a modification of some user settings,
+  for instance when defininig a property, a boundary condition or a
+  source term by array. This mainly occurs when using CDO schemes.
+
 Release 7.3.0 (not released yet)
 --------------------------------
 

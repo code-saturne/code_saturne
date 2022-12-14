@@ -4482,10 +4482,11 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
     memset(solid->forcing_mom_array, 0, size_c);
 
     cs_property_def_by_array(solid->forcing_mom,
+                             NULL,  /* all cells */
                              cs_flag_primal_cell,
                              solid->forcing_mom_array,
                              false, /* definition is owner ? */
-                             NULL, NULL); /* no index, no ids */
+                             true); /* full length */
 
     /* Add the temperature array for the Boussinesq term (thermal effect) */
 
@@ -4507,10 +4508,11 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
     memset(solid->thermal_reaction_coef_array, 0, size_c);
 
     cs_property_def_by_array(solid->thermal_reaction_coef,
+                             NULL,  /* all cells */
                              cs_flag_primal_cell,
                              solid->thermal_reaction_coef_array,
                              false, /* definition is owner ? */
-                             NULL, NULL); /* no index, no ids */
+                             true); /* full length */
 
     BFT_MALLOC(solid->thermal_source_term_array, n_cells, cs_real_t);
     memset(solid->thermal_source_term_array, 0, size_c);
@@ -4523,7 +4525,7 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
                                          cs_flag_primal_cell,
                                          solid->thermal_source_term_array,
                                          false,  /* definition is owner ? */
-                                         NULL, NULL); /* no index, no ids */
+                                         true);  /* full length */
 
   }
 
@@ -4585,10 +4587,11 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
       cs_property_set_reference_value(alloy->eta_coef_pty, eta_ref_value);
 
       cs_property_def_by_array(alloy->eta_coef_pty,
+                               NULL,  /* all cells */
                                cs_flag_primal_cell,
                                alloy->eta_coef_array,
-                               false,
-                               NULL, NULL); /* no index, no ids */
+                               false, /* not owner */
+                               true); /* full length */
 
     }
 
@@ -4607,10 +4610,11 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
       alloy->diff_pty_array[i] = pty_ref_value;
 
     cs_property_def_by_array(alloy->diff_pty,
+                             NULL,  /* all cells */
                              cs_flag_primal_cell,
                              alloy->diff_pty_array,
-                             false,
-                             NULL, NULL); /* no index/ids */
+                             false, /* not owner */
+                             true); /* full length */
 
     if (solid->post_flag & CS_SOLIDIFICATION_ADVANCED_ANALYSIS) {
 

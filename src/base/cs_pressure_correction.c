@@ -3141,9 +3141,8 @@ cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain)
                                        NULL,  /* all cells */
                                        cs_flag_primal_cell,
                                        pred_divu,
-                                       false, /*is owner */
-                                       NULL,  /* index */
-                                       NULL); /* ids */
+                                       false, /* is owner */
+                                       true); /* full length */
 
   for (int i = 0; i < domain->boundaries->n_boundaries; i++) {
 
@@ -3166,13 +3165,12 @@ cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain)
                                   cs_flag_primal_face,
                                   prcdo->bdy_pressure_incr,
                                   false, /* Do not transfer ownership */
-                                  NULL, NULL);
+                                  true); /* full length */
 
     }
   } /* Loop on pressure definitions */
 
-  /* Initialization defination
-     ------------------------ */
+  /* Definition for the initialization */
 
   cs_real_t ic_value = 0.;
   cs_equation_add_ic_by_value(eqp, NULL, &ic_value);

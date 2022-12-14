@@ -41,7 +41,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft_mem.h"
+#include "bft_printf.h"
 
 #include "cs_boundary_zone.h"
 #include "cs_cdo_toolbox.h"
@@ -210,40 +211,36 @@ _cw_fill_uniform_boundary_flux(const cs_cell_mesh_t   *cm,
  * \brief  Compute a vector-valued reconstruction of the advection field at
  *         vertices from the definition of the advection field
  *
- * \param[in]      quant        additional mesh quantities struct.
- * \param[in]      connect      pointer to a cs_cdo_connect_t struct.
  * \param[in]      def          pointer to a cs_xdef_t struct.
  * \param[in, out] vtx_values   values of the reconstruction
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_adv_vector_at_vertices(const cs_cdo_quantities_t  *quant,
-                                const cs_cdo_connect_t     *connect,
-                                cs_xdef_t                  *def,
+_compute_adv_vector_at_vertices(cs_xdef_t                  *def,
                                 cs_real_t                  *vtx_values)
 {
-  memset(vtx_values, 0, 3*quant->n_vertices*sizeof(cs_real_t));
-
+  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+  const cs_cdo_connect_t  *connect = cs_cdo_connect;
   const cs_adjacency_t  *c2v = connect->c2v;
+
+  memset(vtx_values, 0, 3*quant->n_vertices*sizeof(cs_real_t));
 
   switch (def->type) {
 
   case CS_XDEF_BY_ARRAY:
     {
       cs_real_t  cell_vector[3];
-      cs_xdef_array_context_t  *actx = def->context;
+      cs_xdef_array_context_t  *cx = def->context;
 
-      if (cs_flag_test(actx->loc, cs_flag_dual_face_byc)) {
-
-        assert(actx->index == connect->c2e->idx);
+      if (cs_flag_test(cx->value_location, cs_flag_dual_face_byc)) {
 
         for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
           cs_reco_dfbyc_at_cell_center(c_id,
                                        connect->c2e,
                                        quant,
-                                       actx->values,
+                                       cx->values,
                                        cell_vector);
 
           for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
@@ -260,14 +257,14 @@ _compute_adv_vector_at_vertices(const cs_cdo_quantities_t  *quant,
         } /* Loop on cells */
 
       }
-      else if (cs_flag_test(actx->loc, cs_flag_primal_face)) {
+      else if (cs_flag_test(cx->value_location, cs_flag_primal_face)) {
 
         for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
           cs_reco_cell_vector_by_face_dofs(c_id,
                                            connect->c2f,
                                            quant,
-                                           actx->values,
+                                           cx->values,
                                            false, /* local input ? */
                                            cell_vector);
 
@@ -303,7 +300,7 @@ _compute_adv_vector_at_vertices(const cs_cdo_quantities_t  *quant,
       cs_real_t  *fluxes = cs_cdo_local_get_d_buffer(t_id);
       cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)def->context;
 
-      if (cs_flag_test(cx->loc, cs_flag_primal_face) == false)
+      if (cs_flag_test(cx->dof_location, cs_flag_primal_face) == false)
         bft_error(__FILE__, __LINE__, 0,
                   "%s: Invalid location for definition by DoFs.\n", __func__);
 
@@ -784,10 +781,10 @@ cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
   cs_flag_t  state_flag = 0;
   cs_flag_t  meta_flag = CS_FLAG_FULL_LOC;
   int  dim = _get_dim_def(adv);
-  cs_xdef_analytic_context_t  ac = { .z_id = 0, /* all cells */
-                                     .func = func,
-                                     .input = input,
-                                     .free_input = NULL };
+  cs_xdef_analytic_context_t  ac = {.z_id = 0, /* all cells */
+                                    .func = func,
+                                    .input = input,
+                                    .free_input = NULL };
 
   adv->definition = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                           dim,
@@ -801,16 +798,16 @@ cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
 /*!
  * \brief  Define a cs_adv_field_t structure using a cs_dof_func_t
  *
- * \param[in, out] adv       pointer to a cs_adv_field_t structure
- * \param[in]      loc_flag  location where values are computed
- * \param[in]      func      pointer to a cs_dof_func_t function
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] adv           pointer to a cs_adv_field_t structure
+ * \param[in]      dof_location  location where values are computed
+ * \param[in]      func          pointer to a cs_dof_func_t function
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_def_by_dof_func(cs_adv_field_t    *adv,
-                                   cs_flag_t          loc_flag,
+                                   cs_flag_t          dof_location,
                                    cs_dof_func_t     *func,
                                    void              *input)
 {
@@ -820,11 +817,11 @@ cs_advection_field_def_by_dof_func(cs_adv_field_t    *adv,
   cs_flag_t  state_flag = 0;
   cs_flag_t  meta_flag = CS_FLAG_FULL_LOC;
   int  dim = _get_dim_def(adv);
-  cs_xdef_dof_context_t  cx = { .z_id = 0, /* all cells */
-                                .loc = loc_flag,
-                                .func = func,
-                                .input = input,
-                                .free_input = NULL };
+  cs_xdef_dof_context_t  cx = {.z_id = 0, /* all cells */
+                               .dof_location = dof_location,
+                               .func = func,
+                               .input = input,
+                               .free_input = NULL };
 
   adv->definition = cs_xdef_volume_create(CS_XDEF_BY_DOF_FUNCTION,
                                           dim,
@@ -836,38 +833,41 @@ cs_advection_field_def_by_dof_func(cs_adv_field_t    *adv,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_adv_field_t structure thanks to an array of values
+ * \brief Define a cs_adv_field_t structure thanks to an array of values. If
+ *        an advanced usage of the definition by array is needed, then call
+ *        \ref cs_xdef_array_set_adjacency or \ref cs_xdef_array_set_sublist
  *
- * \param[in, out]  adv       pointer to a cs_adv_field_t structure
- * \param[in]       loc       information to know where are located values
- * \param[in]       array     pointer to an array
- * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
- *                            (true or false)
- * \param[in]       index     optional pointer to an array of index values
- * \param[in]       ids       optional pointer to a list of entity ids
+ * \param[in, out] adv           pointer to a cs_adv_field_t structure
+ * \param[in]      val_location  information to know where are located values
+ * \param[in]      array         pointer to an array
+ * \param[in]      is_owner      transfer the lifecycle to the cs_xdef_t struc.
+ *                               (true or false)
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_advection_field_def_by_array(cs_adv_field_t    *adv,
-                                cs_flag_t          loc,
+                                cs_flag_t          val_location,
                                 cs_real_t         *array,
-                                bool               is_owner,
-                                const cs_lnum_t   *index,
-                                const cs_lnum_t   *ids)
+                                bool               is_owner)
 {
   if (adv == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_adv));
 
   cs_flag_t  state_flag = 0; /* Will be updated during the creation */
   cs_flag_t  meta_flag = CS_FLAG_FULL_LOC;
-  cs_xdef_array_context_t  context = {.z_id = 0, /* all cells */
+  cs_xdef_array_context_t  context = {.z_id = 0,   /* all cells */
                                       .stride = 3, /* default initialization */
-                                      .loc = loc,
+                                      .value_location = val_location,
                                       .values = array,
                                       .is_owner = is_owner,
-                                      .index = index,
-                                      .ids = ids };
+                                      .full_length = true,
+                                      /* Optional parameters */
+                                      .adjacency = NULL,
+                                      .n_list_elts = 0,
+                                      .elt_ids= NULL };
 
   /* Set the stride accord to the status (flux or vector) */
 
@@ -875,13 +875,13 @@ cs_advection_field_def_by_array(cs_adv_field_t    *adv,
 
   /* Checkings */
 
-  if ((loc & CS_FLAG_SCALAR) && context.stride == 3)
+  if ((val_location & CS_FLAG_SCALAR) && context.stride == 3)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Incompatible setting for advection field %s\n"
               " Array is set as a flux while the advection field as a vector.",
               __func__, adv->name);
 
-  if ((loc & CS_FLAG_VECTOR) && context.stride == 1)
+  if ((val_location & CS_FLAG_VECTOR) && context.stride == 1)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Incompatible setting for advection field %s\n"
               " Array is set as a vector while the advection field as a flux.",
@@ -893,6 +893,8 @@ cs_advection_field_def_by_array(cs_adv_field_t    *adv,
                                           state_flag,
                                           meta_flag,
                                           (void *)&context);
+
+  return adv->definition;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1014,30 +1016,32 @@ cs_advection_field_def_boundary_flux_by_analytic(cs_adv_field_t        *adv,
  * \brief  Define the value of the boundary normal flux for the given
  *         cs_adv_field_t structure using an array of values
  *
- * \param[in, out]  adv       pointer to a cs_adv_field_t structure
- * \param[in]       zname     name of the boundary zone to consider
- * \param[in]       loc       information to know where are located values
- * \param[in]       array     pointer to an array
- * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
- *                            (true or false)
- * \param[in]       index     optional pointer to an array of index values
- * \param[in]       ids       optional pointer to a list of entity ids
+ * \param[in, out] adv          pointer to a cs_adv_field_t structure
+ * \param[in]      zname        name of the boundary zone to consider
+ * \param[in]      val_loc      information to know where are located values
+ * \param[in]      array        pointer to an array
+ * \param[in]      is_owner     transfer the lifecycle to the cs_xdef_t struct.
+ *                              (true or false)
+ * \param[in]      full_length  if true, array size is allocated and filled to
+ *                              access the full-length array corresponding to
+ *                              all locations where are defined the values
+ *
+ * \return a pointer to the resulting definition
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
                                               const char        *zname,
-                                              cs_flag_t          loc,
+                                              cs_flag_t          val_loc,
                                               cs_real_t         *array,
                                               bool               is_owner,
-                                              const cs_lnum_t   *index,
-                                              const cs_lnum_t   *ids)
+                                              bool               full_length)
 {
   if (adv == NULL)
-    bft_error(__FILE__, __LINE__, 0, _(_err_empty_adv));
+    return NULL;
 
-  if (loc & CS_FLAG_VECTOR)
+  if (val_loc & CS_FLAG_VECTOR)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Advection field: %s\n"
               " The boundary flux is not compatible with a vector-valued"
@@ -1050,13 +1054,24 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
   if (z_id == 0)
     meta_flag  |= CS_FLAG_FULL_LOC;
 
+  if (z_id == 0 && full_length == false) {
+    full_length = true;
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf("%s: Inconsistency detected in the settings of property \"%s\""
+               "\n A full-length array is set since z_id=0.",
+               __func__, adv->name);
+  }
+
   cs_xdef_array_context_t  context = {.z_id = z_id,
                                       .stride = 1,
-                                      .loc = loc,
-                                      .values = array,
+                                      .value_location = val_loc,
                                       .is_owner = is_owner,
-                                      .index = index,
-                                      .ids = ids };
+                                      .full_length = full_length,
+                                      .values = array,
+                                      /* Optional parameters (not used) */
+                                      .adjacency = NULL,
+                                      .n_list_elts = 0,
+                                      .elt_ids = NULL };
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
                                           1,  /* dim. */
@@ -1069,6 +1084,8 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
   adv->n_bdy_flux_defs += 1;
   BFT_REALLOC(adv->bdy_flux_defs, adv->n_bdy_flux_defs, cs_xdef_t *);
   adv->bdy_flux_defs[def_id] = d;
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1382,20 +1399,20 @@ cs_advection_field_cw_eval_at_xyz(const cs_adv_field_t  *adv,
 
     case CS_XDEF_BY_ARRAY:        /* P0 approximation */
       {
-        cs_xdef_array_context_t  *actx = def->context;
+        cs_xdef_array_context_t  *cx = def->context;
 
-        if (cs_flag_test(actx->loc, cs_flag_dual_face_byc)) {
+        if (cs_flag_test(cx->value_location, cs_flag_dual_face_byc)) {
 
-          assert(actx->index == cs_cdo_connect->c2e->idx);
+          assert(cx->adjacency == cs_cdo_connect->c2e);
           cs_reco_dfbyc_in_cell(cm,
-                                actx->values + actx->index[cm->c_id],
+                                cx->values + cx->adjacency->idx[cm->c_id],
                                 vector_values);
 
         }
-        else if (cs_flag_test(actx->loc, cs_flag_primal_face)) {
+        else if (cs_flag_test(cx->value_location, cs_flag_primal_face)) {
 
-          const cs_real_t  *i_flux = actx->values;
-          const cs_real_t  *b_flux = actx->values + cs_cdo_quant->n_i_faces;
+          const cs_real_t  *i_flux = cx->values;
+          const cs_real_t  *b_flux = cx->values + cs_cdo_quant->n_i_faces;
 
           cs_reco_cw_cell_vect_from_face_dofs(cm,
                                               i_flux,
@@ -1435,7 +1452,7 @@ cs_advection_field_cw_eval_at_xyz(const cs_adv_field_t  *adv,
 
         /* Values of the function are defined at the primal faces */
 
-        if (cs_flag_test(cx->loc, cs_flag_primal_face))
+        if (cs_flag_test(cx->dof_location, cs_flag_primal_face))
           cx->func(cm->n_fc, cm->f_ids, true, /* dense output */
                    cx->input, fluxes);
         else
@@ -1541,28 +1558,24 @@ cs_advection_field_in_cells(const cs_adv_field_t   *adv,
 
     case CS_XDEF_BY_ARRAY:
       {
-        cs_xdef_array_context_t  *actx = def->context;
+        cs_xdef_array_context_t  *cx = def->context;
 
-        if (cs_flag_test(actx->loc, cs_flag_dual_face_byc)) {
-
-          assert(actx->index == cs_cdo_connect->c2e->idx);
+        if (cs_flag_test(cx->value_location, cs_flag_dual_face_byc)) {
 
 #         pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
           for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++)
             cs_reco_dfbyc_at_cell_center(c_id,
                                          cs_cdo_connect->c2e,
                                          cdoq,
-                                         actx->values,
+                                         cx->values,
                                          cell_values + 3*c_id);
 
         }
-        else if (cs_flag_test(actx->loc, cs_flag_primal_face)) {
-
-          assert(adv->status & CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX);
+        else if (cs_flag_test(cx->value_location, cs_flag_primal_face)) {
 
           cs_reco_cell_vectors_by_face_dofs(cs_cdo_connect->c2f,
                                             cdoq,
-                                            actx->values,
+                                            cx->values,
                                             cell_values);
 
         }
@@ -1604,7 +1617,7 @@ cs_advection_field_in_cells(const cs_adv_field_t   *adv,
         cs_real_t  *fluxes = cs_cdo_toolbox_get_tmpbuf();
         cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)def->context;
 
-        if (cs_flag_test(cx->loc, cs_flag_primal_face) == false)
+        if (cs_flag_test(cx->dof_location, cs_flag_primal_face) == false)
           bft_error(__FILE__, __LINE__, 0,
                     "%s: Invalid location for definition by DoFs.\n", __func__);
         assert(cs_cdo_toolbox_get_tmpbuf_size() <= (size_t)cdoq->n_faces);
@@ -1651,15 +1664,15 @@ cs_advection_field_in_cells(const cs_adv_field_t   *adv,
 
     case CS_XDEF_BY_ARRAY:
       {
-        cs_xdef_array_context_t  *actx = def->context;
+        cs_xdef_array_context_t  *cx = def->context;
 
-        assert(actx->stride == 3);
-        if (!cs_flag_test(actx->loc, cs_flag_primal_cell))
+        assert(cx->stride == 3);
+        if (!cs_flag_test(cx->value_location, cs_flag_primal_cell))
           bft_error(__FILE__, __LINE__, 0,
                     " %s: Invalid location for array", __func__);
 
-        memcpy(cell_values, actx->values,
-               actx->stride*cdoq->n_cells*sizeof(cs_real_t));
+        memcpy(cell_values, cx->values,
+               cx->stride*cdoq->n_cells*sizeof(cs_real_t));
       }
       break; /* definition by array */
 
@@ -1740,14 +1753,14 @@ cs_advection_field_at_vertices(const cs_adv_field_t    *adv,
 
     /* Compute the vector-valued vector at each vertex */
 
-    _compute_adv_vector_at_vertices(cdoq, connect, def, vtx_values);
+    _compute_adv_vector_at_vertices(def, vtx_values);
 
     cs_reco_dual_vol_weight_reduction(connect, cdoq,
                                       3,    /* = stride */
                                       true, /* = interlace */
                                       vtx_values);
   }
-  else {
+  else { /* Advection field define as a vector-valued potential */
 
     assert(adv->status & CS_ADVECTION_FIELD_TYPE_VELOCITY_VECTOR);
 
@@ -1757,7 +1770,7 @@ cs_advection_field_at_vertices(const cs_adv_field_t    *adv,
       {
         const cs_real_t  *constant_val = (cs_real_t *)def->context;
 
-#     pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
+#       pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
           vtx_values[3*i  ] = constant_val[0];
           vtx_values[3*i+1] = constant_val[1];
@@ -1769,14 +1782,14 @@ cs_advection_field_at_vertices(const cs_adv_field_t    *adv,
 
     case CS_XDEF_BY_ARRAY:
       {
-        cs_xdef_array_context_t  *ctx = def->context;
-        assert(ctx->stride == 3);
+        cs_xdef_array_context_t  *cx = def->context;
+        assert(cx->stride == 3);
 
-        if (cs_flag_test(ctx->loc, cs_flag_primal_vtx))
-          memcpy(vtx_values, ctx->values, 3*cdoq->n_vertices*sizeof(cs_real_t));
+        if (cs_flag_test(cx->value_location, cs_flag_primal_vtx))
+          memcpy(vtx_values, cx->values, 3*cdoq->n_vertices*sizeof(cs_real_t));
 
-        else if (cs_flag_test(ctx->loc, cs_flag_primal_cell))
-          cs_reco_vect_pv_from_pc(connect, cdoq, ctx->values, vtx_values);
+        else if (cs_flag_test(cx->value_location, cs_flag_primal_cell))
+          cs_reco_vect_pv_from_pc(connect, cdoq, cx->values, vtx_values);
 
         else
           bft_error(__FILE__, __LINE__, 0,
@@ -1883,25 +1896,25 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
 
     case CS_XDEF_BY_ARRAY:
       {
-        cs_xdef_array_context_t *actx = def->context;
-        assert(actx->stride == 3);
+        cs_xdef_array_context_t *cx = def->context;
+        assert(cx->stride == 3);
 
-        if (cs_flag_test(actx->loc, cs_flag_primal_face)) {
+        if (cs_flag_test(cx->value_location, cs_flag_primal_face)) {
 
           /* Boundary faces come after interior faces */
 
-          const cs_real_t  *const bface_vel = actx->values + 3*n_i_faces;
+          const cs_real_t  *const bface_vel = cx->values + 3*n_i_faces;
 
 #         pragma omp parallel for if  (n_b_faces > CS_THR_MIN)
           for (cs_lnum_t i = 0; i < n_b_faces; i++)
             flx_values[i] = _dp3(cdoq->b_face_normal + 3*i, bface_vel + 3*i);
 
         }
-        else if (cs_flag_test(actx->loc, cs_flag_primal_cell)) {
+        else if (cs_flag_test(cx->value_location, cs_flag_primal_cell)) {
 
           const cs_adjacency_t  *f2c = cs_cdo_connect->f2c;
           const cs_lnum_t  *const bf2c_ids = f2c->ids + 2*n_i_faces;
-          const cs_real_t  *const cell_vel = actx->values;
+          const cs_real_t  *const cell_vel = cx->values;
 
 #         pragma omp parallel for if  (n_b_faces > CS_THR_MIN)
           for (cs_lnum_t i = 0; i < n_b_faces; i++) {
@@ -1995,14 +2008,14 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
 
       case CS_XDEF_BY_ARRAY:
         {
-          const cs_xdef_array_context_t  *actx = def->context;
+          const cs_xdef_array_context_t  *cx = def->context;
 
-          assert(actx->stride == 1);
+          assert(cx->stride == 1);
           assert(def->meta & CS_FLAG_FULL_LOC); /* over the volume hence the
                                                    shift with n_i_faces */
 
-          if (cs_flag_test(actx->loc, cs_flag_primal_face))
-            memcpy(flx_values, actx->values + n_i_faces,
+          if (cs_flag_test(cx->value_location, cs_flag_primal_face))
+            memcpy(flx_values, cx->values + n_i_faces,
                    sizeof(cs_real_t)*n_b_faces);
         }
         break;
@@ -2011,7 +2024,7 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
         {
           cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)def->context;
 
-          if (cs_flag_test(cx->loc, cs_flag_primal_face) == false)
+          if (cs_flag_test(cx->dof_location, cs_flag_primal_face) == false)
             bft_error(__FILE__, __LINE__, 0,
                       "%s: Invalid location for definition by DoFs.\n",
                       __func__);
@@ -2073,22 +2086,24 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
 
         case CS_XDEF_BY_ARRAY:
           {
-            const cs_xdef_array_context_t  *actx = bdef->context;
-            const cs_real_t  *val = actx->values;
+            const cs_xdef_array_context_t  *cx = bdef->context;
+            const cs_real_t  *val = cx->values;
 
-            assert(actx->stride == 1);
+            assert(cx->stride == 1);
             assert(bdef->meta & CS_FLAG_FULL_LOC || z->elt_ids == NULL);
 
-            if (cs_flag_test(actx->loc, cs_flag_primal_face))
+            if (cs_flag_test(cx->value_location, cs_flag_primal_face))
               memcpy(flx_values, val, sizeof(cs_real_t)*n_b_faces);
 
-            else if (cs_flag_test(actx->loc, cs_flag_dual_closure_byf)) {
+            else if (cs_flag_test(cx->value_location,
+                                  cs_flag_dual_closure_byf)) {
+
+              const cs_adjacency_t  *adj = cx->adjacency;
 
               for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
 
                 flx_values[bf_id] = 0;
-                for (cs_lnum_t i = actx->index[bf_id]; i < actx->index[bf_id+1];
-                     i++)
+                for (cs_lnum_t i = adj->idx[bf_id]; i < adj->idx[bf_id+1]; i++)
                   flx_values[bf_id] += val[i];
 
               } /* Loop on border faces */
@@ -2096,9 +2111,8 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
             }
             else
               bft_error(__FILE__, __LINE__, 0, "%s: Invalid case.", __func__);
-
           }
-          break; /* definition by array */
+          break; /* Definition by array */
 
         case CS_XDEF_BY_FIELD:
           {
@@ -2107,12 +2121,16 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
             assert(field->dim == 1);
             assert(bdef->meta & CS_FLAG_FULL_LOC || z->elt_ids == NULL);
 
-            if (field->location_id ==
-                cs_mesh_location_get_id_by_name(N_("boundary faces")))
-              memcpy(flx_values, field->val, sizeof(cs_real_t)*n_b_faces);
-            else
-              bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.", __func__);
+            switch (cs_mesh_location_get_type(field->location_id)) {
 
+            case CS_MESH_LOCATION_BOUNDARY_FACES:
+              memcpy(flx_values, field->val, sizeof(cs_real_t)*n_b_faces);
+              break;
+
+            default:
+              bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.", __func__);
+              break;
+            }
           }
           break; /* definition by field */
 
@@ -2279,11 +2297,11 @@ cs_advection_field_cw_boundary_face_flux(const cs_real_t          time_eval,
 
       case CS_XDEF_BY_ARRAY:
         {
-          const cs_xdef_array_context_t  *actx = def->context;
+          const cs_xdef_array_context_t  *cx = def->context;
 
-          assert(actx->stride == 1);
-          if (cs_flag_test(actx->loc, cs_flag_primal_face))
-            f_flux = actx->values[cm->f_ids[f]];
+          assert(cx->stride == 1);
+          if (cs_flag_test(cx->value_location, cs_flag_primal_face))
+            f_flux = cx->values[cm->f_ids[f]];
           else
             bft_error(__FILE__, __LINE__, 0,
                       "%s: Invalid array support.", __func__);
@@ -2294,7 +2312,7 @@ cs_advection_field_cw_boundary_face_flux(const cs_real_t          time_eval,
         {
           cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)def->context;
 
-          if (cs_flag_test(cx->loc, cs_flag_primal_face) == false)
+          if (cs_flag_test(cx->dof_location, cs_flag_primal_face) == false)
             bft_error(__FILE__, __LINE__, 0,
                       "%s: Invalid location for definition by DoFs.\n",
                       __func__);
@@ -2333,17 +2351,17 @@ cs_advection_field_cw_boundary_face_flux(const cs_real_t          time_eval,
 
       case CS_XDEF_BY_ARRAY:
         {
-          const cs_xdef_array_context_t  *actx = bdef->context;
+          const cs_xdef_array_context_t  *cx = bdef->context;
 
-          assert(actx->stride == 1);
-          if (cs_flag_test(actx->loc, cs_flag_primal_face))
-            f_flux = actx->values[bf_id];
+          assert(cx->stride == 1);
+          if (cs_flag_test(cx->value_location, cs_flag_primal_face))
+            f_flux = cx->values[bf_id];
 
-          else if (cs_flag_test(actx->loc, cs_flag_dual_closure_byf)) {
+          else if (cs_flag_test(cx->value_location, cs_flag_dual_closure_byf)) {
 
             const cs_adjacency_t  *bf2v = cs_cdo_connect->bf2v;
             for (cs_lnum_t i = bf2v->idx[bf_id]; i < bf2v->idx[bf_id+1]; i++)
-              f_flux += actx->values[i];
+              f_flux += cx->values[i];
 
           }
           else
@@ -2451,10 +2469,10 @@ cs_advection_field_cw_boundary_f2v_flux(const cs_cell_mesh_t   *cm,
         bft_error(__FILE__, __LINE__, 0,
                   "%s: Invalid type of definition", __func__);
 
-      const cs_xdef_array_context_t  *actx = def->context;
+      const cs_xdef_array_context_t  *cx = def->context;
 
-      assert(cs_flag_test(actx->loc, cs_flag_primal_face));
-      _cw_fill_uniform_boundary_flux(cm, f, actx->values[bf_id], fluxes);
+      assert(cs_flag_test(cx->value_location, cs_flag_primal_face));
+      _cw_fill_uniform_boundary_flux(cm, f, cx->values[bf_id], fluxes);
 
     }
     else {
@@ -2480,19 +2498,19 @@ cs_advection_field_cw_boundary_f2v_flux(const cs_cell_mesh_t   *cm,
 
       case CS_XDEF_BY_ARRAY:
         {
-          const cs_xdef_array_context_t  *actx = def->context;
+          const cs_xdef_array_context_t  *cx = def->context;
 
-          assert(actx->stride == 1);
-          if (cs_flag_test(actx->loc, cs_flag_primal_face))
-            _cw_fill_uniform_boundary_flux(cm, f, actx->values[bf_id], fluxes);
+          assert(cx->stride == 1);
+          if (cs_flag_test(cx->value_location, cs_flag_primal_face))
+            _cw_fill_uniform_boundary_flux(cm, f, cx->values[bf_id], fluxes);
 
-          else if (cs_flag_test(actx->loc, cs_flag_dual_closure_byf)) {
+          else if (cs_flag_test(cx->value_location, cs_flag_dual_closure_byf)) {
 
             const cs_adjacency_t  *bf2v = cs_cdo_connect->bf2v;
             for (cs_lnum_t i = bf2v->idx[bf_id]; i < bf2v->idx[bf_id+1]; i++) {
               const short int v = cs_cell_mesh_get_v(bf2v->ids[i], cm);
               assert(v > -1 && v != cm->n_vc);
-              fluxes[v] += actx->values[i];
+              fluxes[v] += cx->values[i];
             }
 
           }
@@ -2661,11 +2679,10 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
 
     case CS_XDEF_BY_ARRAY:
       {
-        const cs_real_t  *xdef_fluxes = cs_xdef_get_array(def);
+        const cs_real_t  *xdef_fluxes = cs_xdef_array_get_values(def);
         assert(fluxes != NULL);
         for (short int f = 0; f < cm->n_fc; f++)
           fluxes[f] = xdef_fluxes[cm->f_ids[f]];
-
       }
       break;
 
@@ -2702,7 +2719,7 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
       {
         cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)def->context;
 
-        assert(cs_flag_test(cx->loc, cs_flag_primal_face));
+        assert(cs_flag_test(cx->dof_location, cs_flag_primal_face));
         cx->func(cm->n_fc, cm->f_ids, true, /* dense_output */
                  cx->input,
                  fluxes);
@@ -2744,21 +2761,21 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
     case CS_XDEF_BY_ARRAY:
       {
         cs_nvec3_t  nv;
-        cs_xdef_array_context_t  *actx = def->context;
+        cs_xdef_array_context_t  *cx = def->context;
 
         assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ));
-        assert(actx->values != NULL);
+        assert(cx->values != NULL);
 
         /* Test if location has at least the pattern of the reference support */
 
-        if (cs_flag_test(actx->loc, cs_flag_primal_face)) {
+        if (cs_flag_test(cx->value_location, cs_flag_primal_face)) {
 
           for (short int f = 0; f < cm->n_fc; f++) {
 
             /* Retrieve the advection field:
                Switch to a cs_nvec3_t representation */
 
-            cs_nvec3(actx->values + 3*cm->f_ids[f], &nv);
+            cs_nvec3(cx->values + 3*cm->f_ids[f], &nv);
 
             fluxes[f] = nv.meas*cm->face[f].meas * _dp3(nv.unitv,
                                                         cm->face[f].unitv);
@@ -2766,12 +2783,12 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
           } /* Loop on cell faces */
 
         }
-        else if (cs_flag_test(actx->loc, cs_flag_primal_cell)) {
+        else if (cs_flag_test(cx->value_location, cs_flag_primal_cell)) {
 
           /* Retrieve the advection field:
              Switch to a cs_nvec3_t representation */
 
-          cs_nvec3(actx->values + 3*cm->c_id, &nv);
+          cs_nvec3(cx->values + 3*cm->c_id, &nv);
 
           for (short int f = 0; f < cm->n_fc; f++)
             fluxes[f] = nv.meas*cm->face[f].meas * _dp3(nv.unitv,
@@ -3009,24 +3026,24 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
 
   case CS_XDEF_BY_ARRAY:
     {
-      cs_xdef_array_context_t  *actx = def->context;
+      cs_xdef_array_context_t  *cx = def->context;
 
       /* Test if location has at least the pattern of the reference support */
 
-      if (cs_flag_test(actx->loc, cs_flag_dual_face_byc)) {
+      if (cs_flag_test(cx->value_location, cs_flag_dual_face_byc)) {
 
         assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PE));
 
         const cs_real_t  *flux_array =
-          actx->values + cs_cdo_connect->c2e->idx[cm->c_id];
+          cx->values + cs_cdo_connect->c2e->idx[cm->c_id];
         for (short int e = 0; e < cm->n_ec; e++)
           fluxes[e] = flux_array[e];
 
       }
-      else if (cs_flag_test(actx->loc, cs_flag_primal_face)) {
+      else if (cs_flag_test(cx->value_location, cs_flag_primal_face)) {
 
-        const cs_real_t  *i_mflx = actx->values;
-        const cs_real_t  *b_mflx = actx->values + cm->bface_shift;
+        const cs_real_t  *i_mflx = cx->values;
+        const cs_real_t  *b_mflx = cx->values + cm->bface_shift;
 
         assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
                              CS_FLAG_COMP_DFQ | CS_FLAG_COMP_PEQ));
@@ -3038,13 +3055,13 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
           fluxes[e] = cm->dface[e].meas * _dp3(cell_mflx, cm->dface[e].unitv);
 
       }
-      else if (cs_flag_test(actx->loc, cs_flag_primal_cell)) {
+      else if (cs_flag_test(cx->value_location, cs_flag_primal_cell)) {
 
         /* Retrieve the advection field:
            Switch to a cs_nvec3_t representation */
 
         cs_nvec3_t  nv;
-        cs_nvec3(actx->values + 3*cm->c_id, &nv);
+        cs_nvec3(cx->values + 3*cm->c_id, &nv);
 
         assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_DFQ | CS_FLAG_COMP_PEQ));
 
@@ -3332,9 +3349,9 @@ cs_advection_field_divergence_at_vertices(const cs_adv_field_t     *adv,
 
     case CS_XDEF_BY_ARRAY:
       {
-        cs_xdef_array_context_t  *actx = def->context;
+        cs_xdef_array_context_t  *cx = def->context;
 
-        if (cs_flag_test(actx->loc, cs_flag_dual_face_byc)) {
+        if (cs_flag_test(cx->value_location, cs_flag_dual_face_byc)) {
 
           const cs_adjacency_t  *c2e = connect->c2e;
 
@@ -3342,7 +3359,7 @@ cs_advection_field_divergence_at_vertices(const cs_adv_field_t     *adv,
             for (cs_lnum_t j = c2e->idx[c_id]; j < c2e->idx[c_id+1]; j++) {
 
               const cs_lnum_t  e_id = c2e->ids[j];
-              const cs_real_t  flx = actx->values[j];
+              const cs_real_t  flx = cx->values[j];
               const cs_lnum_t  eshift = 2*e_id;
               const cs_lnum_t  v0 = e2v->ids[eshift];
               const cs_lnum_t  v1 = e2v->ids[eshift+1];
@@ -3398,24 +3415,23 @@ cs_advection_field_divergence_at_vertices(const cs_adv_field_t     *adv,
 
       case CS_XDEF_BY_ARRAY:
         {
-          const cs_xdef_array_context_t  *actx = def->context;
-          const cs_real_t  *val = actx->values;
+          const cs_xdef_array_context_t  *cx = def->context;
+          const cs_real_t  *val = cx->values;
 
-          assert(actx->stride == 1);
+          assert(cx->stride == 1);
           assert(z->id == 0);
 
-          if (cs_flag_test(actx->loc, cs_flag_primal_face)) {
+          if (cs_flag_test(cx->value_location, cs_flag_primal_face)) {
 
             for (cs_lnum_t bf_id = 0; bf_id < cdoq->n_b_faces; bf_id++)
               _fill_uniform_boundary_flux(cdoq, f2e, e2v, bf_id, val[bf_id],
                                           divergence);
 
           }
-          else if (cs_flag_test(actx->loc, cs_flag_dual_closure_byf)) {
+          else if (cs_flag_test(cx->value_location, cs_flag_dual_closure_byf)) {
 
             const cs_adjacency_t  *bf2v = connect->bf2v;
             const cs_lnum_t  *idx = bf2v->idx;
-            assert(idx == actx->index);
 
             for (cs_lnum_t bf_id = 0; bf_id < cdoq->n_b_faces; bf_id++) {
               for (cs_lnum_t i = idx[bf_id]; i < idx[bf_id+1]; i++) {

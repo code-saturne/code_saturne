@@ -174,7 +174,7 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
       assert(a->z_id == z_id);
       b->z_id = a->z_id;
       b->func = a->func;
-      b->loc = a->loc;
+      b->dof_location = a->dof_location;
       b->input = a->input;
       b->free_input = a->free_input;
 
@@ -202,19 +202,29 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
       cs_xdef_array_context_t  *b = NULL;
 
       BFT_MALLOC(b, 1, cs_xdef_array_context_t);
+
+      /* Metadata */
+
       assert(a->z_id == z_id);
       b->z_id = a->z_id;
       b->stride = a->stride;
-      b->loc = a->loc;
-      b->values = a->values;
+      b->value_location = a->value_location;
       b->is_owner = a->is_owner;
-      b->index = a->index;
-      b->ids = a->ids;
+      b->full_length = a->full_length;
 
-      /* Update state flag */
+      /* Array values */
 
-      if (cs_flag_test(b->loc, cs_flag_primal_cell) ||
-          cs_flag_test(b->loc, cs_flag_dual_face_byc))
+      b->values = a->values;
+
+      /* The optional parameters are set if needed with a call to
+       * - cs_xdef_array_set_adjacency()
+       * - cs_xdef_array_set_sublist()
+       */
+
+      /* Update the state flag */
+
+      if (cs_flag_test(b->value_location, cs_flag_primal_cell) ||
+          cs_flag_test(b->value_location, cs_flag_dual_face_byc))
         d->state |= CS_FLAG_STATE_CELLWISE;
 
       d->context = b;
@@ -343,15 +353,20 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
 
       BFT_MALLOC(b, 1, cs_xdef_dof_context_t);
       b->func = a->func;
-      b->loc = a->loc;
+      b->dof_location = a->dof_location;
       b->input = a->input;
       b->free_input = a->free_input;
 
       d->context = b;
 
+      /* The optional parameters are set if needed with a call to
+       * - cs_xdef_array_set_adjacency()
+       * - cs_xdef_array_set_sublist()
+       */
+
       /* Update the state flag */
 
-      if (cs_flag_test(b->loc, cs_flag_primal_face))
+      if (cs_flag_test(b->dof_location, cs_flag_primal_face))
         d->state |= CS_FLAG_STATE_FACEWISE;
     }
     break;
@@ -364,17 +379,18 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
       BFT_MALLOC(b, 1, cs_xdef_array_context_t);
       b->z_id = a->z_id;
       b->stride = a->stride;
-      b->loc = a->loc;
-      b->values = a->values;
+      b->value_location = a->value_location;
       b->is_owner = a->is_owner;
-      b->index = a->index;
-      b->ids = a->ids;
+      b->full_length = a->full_length;
+
+      b->values = a->values;
 
       d->context = b;
 
       /* Update the state flag */
 
-      if (cs_flag_test(b->loc, cs_flag_primal_face))
+      if (cs_flag_test(b->value_location, cs_flag_primal_face) ||
+          cs_flag_test(b->value_location, cs_flag_boundary_face))
         d->state |= CS_FLAG_STATE_FACEWISE;
     }
     break;
@@ -642,9 +658,9 @@ cs_xdef_copy(cs_xdef_t     *src)
 /*!
  * \brief In the case of a definition by an analytic function, a time function
  *        or a function relying on degrees of freedom (DoFs), this function
- *        allows one to set a more or less complex input data structure.  This
- *        call should be done before the first evaluation call of the
- *        associated cs_xdef_t structure.
+ *        allows one to set a more or less complex input data structure. This
+ *        call should be done before the first evaluation of the associated
+ *        cs_xdef_t structure.
  *
  * \param[in, out]  d         pointer to a cs_xdef_t structure
  * \param[in]       input     pointer to an input structure
@@ -754,102 +770,6 @@ cs_xdef_set_free_input_function(cs_xdef_t               *d,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  In case of definition by array, set the array after having added
- *         this definition
- *
- * \param[in, out]  d          pointer to a cs_xdef_t structure
- * \param[in]       is_owner   manage or not the lifecycle of the array values
- * \param[in]       array      values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_xdef_set_array(cs_xdef_t     *d,
-                  bool           is_owner,
-                  cs_real_t     *array)
-{
-  if (d == NULL)
-    return;
-
-  if (d->type != CS_XDEF_BY_ARRAY)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: The given cs_xdef_t structure should be defined by array.",
-              __func__);
-
-  cs_xdef_array_context_t  *a = (cs_xdef_array_context_t *)d->context;
-
-  /* An array is already assigned and one manages the lifecycle */
-
-  if (a->is_owner && a->values != NULL)
-    BFT_FREE(a->values);
-
-  /* Set the new values */
-
-  a->is_owner = is_owner;
-  a->values = array;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  In case of definition by array, set the zone id related to the size
- *         of the array. By default, the zone id is the same as the zone id
- *         related to the definition so that there is no need to call this
- *         function.
- *
- * \param[in, out]  d       pointer to a cs_xdef_t structure
- * \param[in]       z_id    zone id associated to the array size
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_xdef_set_array_zone_id(cs_xdef_t     *d,
-                          int            z_id)
-{
-  if (d == NULL)
-    return;
-
-  if (d->type != CS_XDEF_BY_ARRAY)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: The given cs_xdef_t structure should be defined by array.",
-              __func__);
-
-  cs_xdef_array_context_t  *actx = d->context;
-
-  actx->z_id = z_id;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  In case of definition by array, set the optional index and ids
- *         arrays that may be useful when operating on definitions by array
- *
- * \param[in, out]  d         pointer to a cs_xdef_t structure
- * \param[in]       index     optional pointer to an array of index values
- * \param[in]       ids       optional pointer to a list of entity ids
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_xdef_set_array_pointers(cs_xdef_t            *d,
-                           const cs_lnum_t      *index,
-                           const cs_lnum_t      *ids)
-{
-  if (d == NULL)
-    return;
-
-  if (d->type != CS_XDEF_BY_ARRAY)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: The given cs_xdef_t structure should be defined by array.",
-              __func__);
-
-  cs_xdef_array_context_t  *actx = d->context;
-
-  actx->index = index;
-  actx->ids = ids;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Set the type of quadrature to use for evaluating the given
  *         description
  *
@@ -924,33 +844,6 @@ cs_xdef_get_state_flag(const cs_xdef_t     *d)
     return 0;
   else
     return d->state;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get the current field values in case of definition by field
- *
- * \param[in]  def    pointer to a cs_xdef_t structure
- *
- * \return the pointer to the current field values
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_xdef_get_field_values(cs_xdef_t     *def)
-{
-  if (def == NULL)
-    return NULL;
-
-  if (def->type != CS_XDEF_BY_FIELD)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid type of definition.\n"
-              " One expects a definition by field.", __func__);
-
-  cs_field_t  *f = def->context;
-  assert(f != NULL);
-
-  return f->val;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1127,6 +1020,156 @@ cs_xdef_type_get_name(cs_xdef_type_t  xdef_type)
     xdef_type = CS_N_XDEF_TYPES;
 
   return _xdef_type_name[xdef_type];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In case of definition by array, set the array values after having
+ *         added this definition
+ *
+ * \param[in, out]  d          pointer to a cs_xdef_t structure
+ * \param[in]       is_owner   manage or not the lifecycle of the array values
+ * \param[in]       values     array of values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_array_set_values(cs_xdef_t     *d,
+                         bool           is_owner,
+                         cs_real_t     *values)
+{
+  if (d == NULL)
+    return;
+
+  if (d->type != CS_XDEF_BY_ARRAY)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: The given cs_xdef_t structure should be defined by array.",
+              __func__);
+
+  cs_xdef_array_context_t  *a = (cs_xdef_array_context_t *)d->context;
+
+  /* An array is already assigned and one manages the lifecycle */
+
+  if (a->is_owner && a->values != NULL)
+    BFT_FREE(a->values);
+
+  /* Set the new values */
+
+  a->is_owner = is_owner;
+  a->values = values;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In case of definition by array, set the zone id related to the size
+ *         of the array. By default, the zone id is the same as the zone id
+ *         related to the definition so that there is no need to call this
+ *         function.
+ *
+ * \param[in, out]  d       pointer to a cs_xdef_t structure
+ * \param[in]       z_id    zone id associated to the array size
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_array_set_zone_id(cs_xdef_t     *d,
+                          int            z_id)
+{
+  if (d == NULL)
+    return;
+
+  if (d->type != CS_XDEF_BY_ARRAY)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: The given cs_xdef_t structure should be defined by array.",
+              __func__);
+
+  cs_xdef_array_context_t  *actx = d->context;
+
+  actx->z_id = z_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In case of definition by array, set the optional adjacency structure
+ *
+ * \param[in, out]  d      pointer to a cs_xdef_t structure
+ * \param[in]       adj    pointer to the adjacency structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_array_set_adjacency(cs_xdef_t             *d,
+                            const cs_adjacency_t  *adj)
+{
+  if (d == NULL)
+    return;
+
+  if (d->type != CS_XDEF_BY_ARRAY)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: The given cs_xdef_t structure should be defined by array.",
+              __func__);
+
+  cs_xdef_array_context_t  *cx = d->context;
+
+  cx->adjacency = adj;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In case of definition by array, set the optional sub-list of
+ *         elements used to link elements in the partial view and in the
+ *         full-length view
+ *
+ * \param[in, out]  d        pointer to a cs_xdef_t structure
+ * \param[in]       n_elts   number of elements in the sub-list
+ * \param[in]       elt_ids  list of element ids constituting the sub-list
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_array_set_sublist(cs_xdef_t         *d,
+                          cs_lnum_t          n_elts,
+                          const cs_lnum_t    elt_ids[])
+{
+  if (d == NULL)
+    return;
+
+  if (d->type != CS_XDEF_BY_ARRAY)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: The given cs_xdef_t structure should be defined by array.",
+              __func__);
+
+  cs_xdef_array_context_t  *cx = d->context;
+
+  cx->n_list_elts = n_elts;
+  cx->elt_ids = elt_ids;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the current field values in case of definition by field
+ *
+ * \param[in]  def    pointer to a cs_xdef_t structure
+ *
+ * \return the pointer to the current field values
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_xdef_field_get_values(cs_xdef_t     *def)
+{
+  if (def == NULL)
+    return NULL;
+
+  if (def->type != CS_XDEF_BY_FIELD)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid type of definition.\n"
+              " One expects a definition by field.", __func__);
+
+  cs_field_t  *f = def->context;
+  assert(f != NULL);
+
+  return f->val;
 }
 
 /*----------------------------------------------------------------------------*/

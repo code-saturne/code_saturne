@@ -706,16 +706,18 @@ cs_navsto_projection_last_setup(const cs_cdo_quantities_t  *quant,
   cs_equation_param_t  *corr_eqp = cs_equation_get_param(corr_eq);
 
   cs_equation_add_source_term_by_array(corr_eqp,
-                                       NULL,
+                                       NULL,        /* all cells */
                                        cs_flag_primal_cell,
                                        nsc->div_st,
                                        false,       /* xdef is not owner */
-                                       NULL, NULL); /* no index/ids */
+                                       true);       /* full length */
 
   /* Defined BC for the pressure increment in the correction step */
 
   BFT_MALLOC(nsc->bdy_pressure_incr, quant->n_b_faces, cs_real_t);
   memset(nsc->bdy_pressure_incr, 0, quant->n_b_faces*sizeof(cs_real_t));
+
+  bool  full_length = (nsp->n_pressure_bc_defs > 1) ? true : false;
 
   for (int i = 0; i < nsp->n_pressure_bc_defs; i++) {
 
@@ -727,8 +729,8 @@ cs_navsto_projection_last_setup(const cs_cdo_quantities_t  *quant,
                                 z->name,
                                 cs_flag_primal_face,
                                 nsc->bdy_pressure_incr,
-                                false, /* xdef is not owner */
-                                NULL, NULL); /* no index, no ids */
+                                false,         /* xdef is not owner */
+                                full_length);  /* full length */
 
   } /* Loop on pressure definitions */
 }

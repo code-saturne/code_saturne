@@ -2354,11 +2354,11 @@ cs_equation_add_ic_by_dof_func(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_dof_context_t  context = { .func = func,
-                                     .input = input,
-                                     .free_input = NULL,
-                                     .loc = loc_flag,
-                                     .z_id = z_id };
+  cs_xdef_dof_context_t  context = {.func = func,
+                                    .input = input,
+                                    .free_input = NULL,
+                                    .dof_location = loc_flag,
+                                    .z_id = z_id };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_DOF_FUNCTION,
                                         eqp->dim, z_id,
@@ -2468,15 +2468,16 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
  *         related to the given equation structure
  *         z_name corresponds to the name of a pre-existing cs_zone_t
  *
- * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
- * \param[in]       bc_type   type of boundary condition to add
- * \param[in]       z_name    name of the related boundary zone
- * \param[in]       loc       information to know where are located values
- * \param[in]       array     pointer to an array
- * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
- *                            (true or false)
- * \param[in]       index     optional pointer to an array of index values
- * \param[in]       ids       optional pointer to a list of entity ids
+ * \param[in, out] eqp           pointer to a cs_equation_param_t structure
+ * \param[in]      bc_type       type of boundary condition to add
+ * \param[in]      z_name        name of the related boundary zone
+ * \param[in]      loc           information to know where are located values
+ * \param[in]      array         pointer to an array
+ * \param[in]      is_owner      transfer the lifecycle to the cs_xdef_t struct.
+ *                               (true or false)
+ * \param[in]      full_length   if true, array size is allocated and filled to
+ *                               access the full-length array corresponding to
+ *                               all locations where are defined the values
  *
  * \return a pointer to the new allocated \ref cs_xdef_t structure
  */
@@ -2489,8 +2490,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
                             cs_flag_t                   loc,
                             cs_real_t                  *array,
                             bool                        is_owner,
-                            const cs_lnum_t            *index,
-                            const cs_lnum_t            *ids)
+                            bool                        full_length)
 {
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
@@ -2533,11 +2533,14 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
 
   cs_xdef_array_context_t  input = {.z_id = z_id,
                                     .stride = dim,
-                                    .loc = loc,
+                                    .value_location = loc,
+                                    .is_owner = is_owner,
+                                    .full_length = full_length,
                                     .values = array,
-                                    .index = index,
-                                    .ids = ids,
-                                    .is_owner = is_owner};
+                                    /* Optional parameters */
+                                    .adjacency = NULL,
+                                    .n_list_elts = 0,
+                                    .elt_ids= NULL };
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
                                           dim,
@@ -2785,11 +2788,11 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
 
   /* Add a new cs_xdef_t structure */
 
-  cs_xdef_dof_context_t  cx = { .z_id = z_id,
-                                .loc = loc_flag,
-                                .func = func,
-                                .input = input,
-                                .free_input = NULL };
+  cs_xdef_dof_context_t  cx = {.z_id = z_id,
+                               .dof_location = loc_flag,
+                               .func = func,
+                               .input = input,
+                               .free_input = NULL };
 
   cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
     (cs_flag_t)bc_type : cs_cdo_bc_get_flag(bc_type);
@@ -3280,11 +3283,11 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_dof_context_t  context = { .z_id = z_id,
-                                     .func = func,
-                                     .input = input,
-                                     .free_input = NULL,
-                                     .loc = loc_flag };
+  cs_xdef_dof_context_t  context = {.z_id = z_id,
+                                    .func = func,
+                                    .input = input,
+                                    .free_input = NULL,
+                                    .dof_location = loc_flag };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_DOF_FUNCTION,
                                         eqp->dim,
@@ -3310,15 +3313,16 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
  * \brief  Add a new source term by initializing a cs_xdef_t structure.
  *         Case of a definition by an array.
  *
- * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
- * \param[in]      loc       information to know where are located values
- * \param[in]      array     pointer to an array
- * \param[in]      is_owner  transfer the lifecycle to the cs_xdef_t structure
- *                           (true or false)
- * \param[in]      index     optional pointer to an array of index values
- * \param[in]      ids       optional pointer to a list of entity ids
+ * \param[in, out] eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      z_name       name of the associated zone (if NULL or "" if
+ *                              all cells are considered)
+ * \param[in]      loc          information to know where are located values
+ * \param[in]      array        pointer to an array
+ * \param[in]      is_owner     transfer the lifecycle to the cs_xdef_t struct.
+ *                              (true or false)
+ * \param[in]      full_length  if true, array size is allocated and filled to
+ *                              access the full-length array corresponding to
+ *                              all locations where are defined the values
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -3330,8 +3334,7 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
                                      cs_flag_t               loc,
                                      cs_real_t              *array,
                                      bool                    is_owner,
-                                     const cs_lnum_t        *index,
-                                     const cs_lnum_t        *ids)
+                                     bool                    full_length)
 {
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
@@ -3353,20 +3356,23 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_array_context_t  ctxt = {.z_id = z_id,
+  cs_xdef_array_context_t  cx = {.z_id = z_id,
                                    .stride = eqp->dim,
-                                   .loc = loc,
+                                   .value_location = loc,
                                    .values = array,
                                    .is_owner = is_owner,
-                                   .index = index,
-                                   .ids = ids };
+                                   .full_length = full_length,
+                                   /* Optional parameters */
+                                   .adjacency = NULL,
+                                   .n_list_elts = 0,
+                                   .elt_ids= NULL };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ARRAY,
                                         eqp->dim,
                                         z_id,
                                         state_flag,
                                         meta_flag,
-                                        (void *)&ctxt);
+                                        (void *)&cx);
 
   int  new_id = eqp->n_source_terms;
   eqp->n_source_terms += 1;
@@ -3561,10 +3567,10 @@ cs_equation_add_volume_mass_injection_by_dof_func(cs_equation_param_t  *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_dof_context_t  ac = {.func = func,
+  cs_xdef_dof_context_t  cx = {.func = func,
                                .input = input,
                                .free_input = NULL,
-                               .loc = loc_flag,
+                               .dof_location = loc_flag,
                                .z_id = z_id};
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_DOF_FUNCTION,
@@ -3572,7 +3578,7 @@ cs_equation_add_volume_mass_injection_by_dof_func(cs_equation_param_t  *eqp,
                                         z_id,
                                         state_flag,
                                         meta_flag,
-                                        &ac);
+                                        &cx);
 
   int  new_id = eqp->n_volume_mass_injections;
   eqp->n_volume_mass_injections += 1;

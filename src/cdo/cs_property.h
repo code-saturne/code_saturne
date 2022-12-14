@@ -876,12 +876,12 @@ cs_property_boundary_def_by_analytic(cs_property_t        *pty,
  *        cell-wise structures or not). This definition applies to all cells
  *        associated to the zone named zname
  *
- * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if NULL or "" all
- *                           cells are considered)
- * \param[in]       context              pointer to a structure (may be NULL)
- * \param[in]       get_eval_at_cell     pointer to a function
- * \param[in]       get_eval_at_cell_cw  pointer to a function
+ * \param[in, out] pty           pointer to a cs_property_t structure
+ * \param[in]      zname         name of the zone (if NULL or "" then all cells
+ *                               are selected)
+ * \param[in]      context       pointer to a structure (may be NULL)
+ * \param[in]      get_eval_at_cell      pointer to a function
+ * \param[in]      get_eval_at_cell_cw   pointer to a function
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -896,16 +896,20 @@ cs_property_def_by_func(cs_property_t         *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_property_t structure thanks to an array of values. One
- *         assumes that all cells are defined using this array.
+ * \brief Define a cs_property_t structure thanks to an array of values. If an
+ *        advanced usage of the definition by array is needed, then call \ref
+ *        cs_xdef_array_set_adjacency and/or \ref cs_xdef_array_set_sublist
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       loc       information to know where are located values
- * \param[in]       array     pointer to an array
- * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
- *                            (true or false)
- * \param[in]       index     optional pointer to an array of index values
- * \param[in]       ids       optional pointer to a list of entity ids
+ * \param[in, out] pty           pointer to a cs_property_t structure
+ * \param[in]      zname         name of the zone (if NULL or "" then all cells
+ *                               are selected)
+ * \param[in]      val_location  information to know where are located values
+ * \param[in]      array         pointer to an array
+ * \param[in]      is_owner      transfer the lifecycle to the cs_xdef_t struc.
+ *                               (true or false)
+ * \param[in]      full_length   if true, array size is allocated and filled to
+ *                               access the full-length array corresponding to
+ *                               all locations where are defined the values
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -913,26 +917,28 @@ cs_property_def_by_func(cs_property_t         *pty,
 
 cs_xdef_t *
 cs_property_def_by_array(cs_property_t      *pty,
-                         cs_flag_t           loc,
+                         const char         *zname,
+                         cs_flag_t           val_location,
                          cs_real_t          *array,
                          bool                is_owner,
-                         const cs_lnum_t    *index,
-                         const cs_lnum_t    *ids);
+                         bool                full_length);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the values of a property at the boundarye thanks to an array
- *         All boundary faces associated to the zone named zname are defined
- *         using this definition.
+ * \brief Define the values of a property at the boundary thanks to an array.
+ *        If an advanced usage of the definition by array is needed, then call
+ *        \ref cs_xdef_array_set_adjacency and/or \ref
+ *        cs_xdef_array_set_sublist
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       zname     NULL or name of the boundary zone
- * \param[in]       loc       information to know where are located values
- * \param[in]       array     pointer to an array
- * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
- *                            (true or false)
- * \param[in]       index     optional pointer to an array of index values
- * \param[in]       ids       optional pointer to a list of entity ids
+ * \param[in, out] pty          pointer to a cs_property_t structure
+ * \param[in]      zname        NULL or name of the boundary zone
+ * \param[in]      val_loc      information to know where are located values
+ * \param[in]      array        pointer to an array
+ * \param[in]      is_owner     transfer the lifecycle to the cs_xdef_t struct.
+ *                              (true or false)
+ * \param[in]      full_length  if true, array size is allocated and filled to
+ *                              access the full-length array corresponding to
+ *                              all locations where are defined the values
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -941,11 +947,10 @@ cs_property_def_by_array(cs_property_t      *pty,
 cs_xdef_t *
 cs_property_boundary_def_by_array(cs_property_t      *pty,
                                   const char         *zname,
-                                  cs_flag_t           loc,
+                                  cs_flag_t           val_loc,
                                   cs_real_t          *array,
                                   bool                is_owner,
-                                  const cs_lnum_t    *index,
-                                  const cs_lnum_t    *ids);
+                                  bool                full_length);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -1046,8 +1046,8 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
           cs_xdef_array_context_t  *ac = def->context;
 
           assert(ac->stride == eqp->dim);
-          assert(cs_flag_test(ac->loc, cs_flag_primal_face) ||
-                 cs_flag_test(ac->loc, cs_flag_boundary_face));
+          assert(cs_flag_test(ac->value_location, cs_flag_primal_face) ||
+                 cs_flag_test(ac->value_location, cs_flag_boundary_face));
 
           if (bz->id == ac->z_id) {
 
@@ -1230,8 +1230,8 @@ cs_equation_compute_neumann_svb(cs_real_t                   t_eval,
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);
 
-      if (cs_flag_test(ac->loc, cs_flag_primal_face) ||
-          cs_flag_test(ac->loc, cs_flag_boundary_face))
+      if (cs_flag_test(ac->value_location, cs_flag_primal_face) ||
+          cs_flag_test(ac->value_location, cs_flag_boundary_face))
         cs_xdef_cw_eval_flux_v_by_scalar_val(cm, f, t_eval,
                                              ac->values + bf_id,
                                              neu_values);
@@ -1306,8 +1306,8 @@ cs_equation_compute_full_neumann_svb(cs_real_t                   t_eval,
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);
 
-      if (cs_flag_test(ac->loc, cs_flag_primal_face) ||
-          cs_flag_test(ac->loc, cs_flag_boundary_face))
+      if (cs_flag_test(ac->value_location, cs_flag_primal_face) ||
+          cs_flag_test(ac->value_location, cs_flag_boundary_face))
         cs_xdef_cw_eval_flux_v_by_vector_val(cm, f, t_eval,
                                              ac->values + 3*bf_id,
                                              neu_values);
@@ -1380,8 +1380,8 @@ cs_equation_compute_neumann_sfb(cs_real_t                    t_eval,
       cs_xdef_array_context_t  *ac = def->context;
 
       assert(ac->stride == 1);
-      assert(cs_flag_test(ac->loc, cs_flag_primal_face) ||
-             cs_flag_test(ac->loc, cs_flag_boundary_face));
+      assert(cs_flag_test(ac->value_location, cs_flag_primal_face) ||
+             cs_flag_test(ac->value_location, cs_flag_boundary_face));
 
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);
@@ -1451,8 +1451,8 @@ cs_equation_compute_full_neumann_sfb(cs_real_t                    t_eval,
       cs_xdef_array_context_t  *ac = def->context;
 
       assert(ac->stride == 3);
-      assert(cs_flag_test(ac->loc, cs_flag_primal_face) ||
-             cs_flag_test(ac->loc, cs_flag_boundary_face));
+      assert(cs_flag_test(ac->value_location, cs_flag_primal_face) ||
+             cs_flag_test(ac->value_location, cs_flag_boundary_face));
 
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);
@@ -1528,8 +1528,8 @@ cs_equation_compute_neumann_vfb(cs_real_t                    t_eval,
       cs_xdef_array_context_t  *ac = def->context;
 
       assert(ac->stride == 3);
-      assert(cs_flag_test(ac->loc, cs_flag_primal_face) ||
-             cs_flag_test(ac->loc, cs_flag_boundary_face));
+      assert(cs_flag_test(ac->value_location, cs_flag_primal_face) ||
+             cs_flag_test(ac->value_location, cs_flag_boundary_face));
 
       const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);
@@ -1616,8 +1616,8 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
       const cs_xdef_array_context_t  *c = def->context;
 
       assert(c->stride == 3);
-      assert(cs_flag_test(c->loc, cs_flag_primal_face) ||
-             cs_flag_test(c->loc, cs_flag_boundary_face));
+      assert(cs_flag_test(c->value_location, cs_flag_primal_face) ||
+             cs_flag_test(c->value_location, cs_flag_boundary_face));
 
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);

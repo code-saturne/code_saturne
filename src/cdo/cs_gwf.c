@@ -2107,10 +2107,11 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
   memset(mc->diff_wl_array, 0, csize);
 
   cs_property_def_by_array(mc->diff_wl_pty,
+                           NULL,                 /* all cells */
                            cs_flag_primal_cell,  /* where data are located */
                            mc->diff_wl_array,
                            false,                /* not owner of the array */
-                           NULL, NULL);          /* no index, no ids */
+                           true);                /* full length */
 
   /* Define the array storing the diffusion property in the hydrogen eq. */
 
@@ -2118,19 +2119,21 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
   memset(mc->diff_hg_array, 0, csize);
 
   cs_property_def_by_array(mc->diff_hg_pty,
+                           NULL,                 /* all cells */
                            cs_flag_primal_cell,  /* where data are located */
                            mc->diff_hg_array,
                            false,                /* not owner of the array */
-                           NULL, NULL);          /* no index/ids */
+                           true);                /* full length */
 
   BFT_MALLOC(mc->diff_hl_array, n_cells, cs_real_t);
   memset(mc->diff_hl_array, 0, csize);
 
   cs_property_def_by_array(mc->diff_hl_pty,
+                           NULL,                 /* all cells */
                            cs_flag_primal_cell,  /* where data are located */
                            mc->diff_hl_array,
                            false,                /* not owner of the array */
-                           NULL, NULL);          /* no index/ids */
+                           true);                /* full length */
 
   if (mc->use_coupled_solver) {
 
@@ -2140,37 +2143,41 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
     memset(mc->time_wl_array, 0, csize);
 
     cs_property_def_by_array(mc->time_wl_pty,
+                             NULL,                 /* all cells */
                              cs_flag_primal_cell,  /* where data are located */
                              mc->time_wl_array,
                              false,                /* not owner of the array */
-                             NULL, NULL);          /* no index, no ids */
+                             true);                /* full length */
 
     BFT_MALLOC(mc->time_wg_array, n_cells, cs_real_t);
     memset(mc->time_wg_array, 0, csize);
 
     cs_property_def_by_array(mc->time_wg_pty,
+                             NULL,                 /* all cells */
                              cs_flag_primal_cell,  /* where data are located */
                              mc->time_wg_array,
                              false,                /* not owner of the array */
-                             NULL, NULL);          /* no index, no ids */
+                             true);                /* full length */
 
     BFT_MALLOC(mc->time_hl_array, n_cells, cs_real_t);
     memset(mc->time_hl_array, 0, csize);
 
     cs_property_def_by_array(mc->time_hl_pty,
+                             NULL,
                              cs_flag_primal_cell,  /* where data are located */
                              mc->time_hl_array,
                              false,                /* not owner of the array */
-                             NULL, NULL);          /* no index, no ids */
+                             true);                /* full length */
 
     BFT_MALLOC(mc->time_hg_array, n_cells, cs_real_t);
     memset(mc->time_hg_array, 0, csize);
 
     cs_property_def_by_array(mc->time_hg_pty,
+                             NULL,                 /* all cells */
                              cs_flag_primal_cell,  /* where data are located */
                              mc->time_hg_array,
                              false,                /* not owner of the array */
-                             NULL, NULL);          /* no index, no ids */
+                             true);                /* full length */
 
   }
   else { /* Segregated system */
@@ -2190,12 +2197,15 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
       BFT_MALLOC(mc->srct_wl_array, c2v_size, cs_real_t);
       memset(mc->srct_wl_array, 0, c2v_alloc_size);
 
-      cs_equation_add_source_term_by_array(cs_equation_get_param(mc->wl_eq),
-                                           NULL,        /* all cells */
-                                           cs_flag_dual_cell_byc,
-                                           mc->srct_wl_array,
-                                           false,       /* is owner ? */
-                                           c2v->idx, c2v->ids);
+      cs_xdef_t  *st_def =
+        cs_equation_add_source_term_by_array(cs_equation_get_param(mc->wl_eq),
+                                             NULL,        /* all cells */
+                                             cs_flag_dual_cell_byc,
+                                             mc->srct_wl_array,
+                                             false,       /* is owner ? */
+                                             true);       /* full length */
+
+      cs_xdef_array_set_adjacency(st_def, c2v);
 
       if (mc->use_explicit_dsldt_liquid) {
 
@@ -2208,11 +2218,15 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
         BFT_MALLOC(mc->time_wl_array, c2v_size, cs_real_t);
         memset(mc->time_wl_array, 0, c2v_alloc_size);
 
-        cs_property_def_by_array(mc->time_wl_pty,
-                                 cs_flag_dual_cell_byc,  /* data location */
-                                 mc->time_wl_array,
-                                 false,                  /* not owner */
-                                 c2v->idx, c2v->ids);
+        cs_xdef_t  *pty_def =
+          cs_property_def_by_array(mc->time_wl_pty,
+                                   NULL,                   /* all cells */
+                                   cs_flag_dual_cell_byc,  /* data location */
+                                   mc->time_wl_array,
+                                   false,                  /* not owner */
+                                   true);                  /* full length */
+
+        cs_xdef_array_set_adjacency(pty_def, c2v);
 
       }
 
@@ -2227,16 +2241,17 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                                            cs_flag_primal_cell,
                                            mc->srct_wl_array,
                                            false,  /* is owner ? */
-                                           NULL, NULL);  /* no index/ids */
+                                           true);  /* full length */
 
       BFT_MALLOC(mc->time_wl_array, n_cells, cs_real_t);
       memset(mc->time_wl_array, 0, csize);
 
       cs_property_def_by_array(mc->time_wl_pty,
+                               NULL,                 /* all cells */
                                cs_flag_primal_cell,  /* data location */
                                mc->time_wl_array,
                                false,                /* not owner */
-                               NULL, NULL);
+                               true);                /* full length */
 
     }
 
@@ -2247,12 +2262,15 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
       BFT_MALLOC(mc->srct_hg_array, c2v_size, cs_real_t);
       memset(mc->srct_hg_array, 0, c2v_alloc_size);
 
-      cs_equation_add_source_term_by_array(cs_equation_get_param(mc->hg_eq),
-                                           NULL,   /* all cells */
-                                           cs_flag_dual_cell_byc,
-                                           mc->srct_hg_array,
-                                           false,  /* is owner ? */
-                                           c2v->idx, c2v->ids);
+      cs_xdef_t  *st_def =
+        cs_equation_add_source_term_by_array(cs_equation_get_param(mc->hg_eq),
+                                             NULL,   /* all cells */
+                                             cs_flag_dual_cell_byc,
+                                             mc->srct_hg_array,
+                                             false,  /* is owner ? */
+                                             true);  /* full length */
+
+      cs_xdef_array_set_adjacency(st_def, c2v);
 
     }
     else { /* Properties on cells */
@@ -2265,7 +2283,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                                            cs_flag_primal_cell,
                                            mc->srct_hg_array,
                                            false,  /* is owner ? */
-                                           NULL, NULL);
+                                           true);  /* full length */
 
     }
 
@@ -2276,11 +2294,15 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
       BFT_MALLOC(mc->time_hg_array, c2v_size, cs_real_t);
       memset(mc->time_hg_array, 0, c2v_alloc_size);
 
-      cs_property_def_by_array(mc->time_hg_pty,
-                               cs_flag_dual_cell_byc, /* data location */
-                               mc->time_hg_array,
-                               false,                 /* not owner */
-                               c2v->idx, c2v->ids);
+      cs_xdef_t  *pty_def =
+        cs_property_def_by_array(mc->time_hg_pty,
+                                 NULL,                  /* all cells */
+                                 cs_flag_dual_cell_byc, /* data location */
+                                 mc->time_hg_array,
+                                 false,                 /* not owner */
+                                 true);                 /* full length */
+
+      cs_xdef_array_set_adjacency(pty_def, c2v);
 
     }
     else { /* Properties on cells */
@@ -2289,10 +2311,11 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
       memset(mc->time_hg_array, 0, csize);
 
       cs_property_def_by_array(mc->time_hg_pty,
+                               NULL,                /* all cells */
                                cs_flag_primal_cell, /* where data are located */
                                mc->time_hg_array,
                                false,               /* not owner of the array */
-                               NULL, NULL);         /* no index, no ids */
+                               true);               /* full length */
 
     }
 
@@ -2303,11 +2326,16 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
       BFT_MALLOC(mc->reac_hg_array, c2v_size, cs_real_t);
       memset(mc->reac_hg_array, 0, c2v_alloc_size);
 
-      cs_property_def_by_array(mc->reac_hg_pty,
-                               cs_flag_dual_cell_byc, /* data location */
-                               mc->reac_hg_array,
-                               false,                 /* not owner */
-                               c2v->idx, c2v->ids);
+      cs_xdef_t  *pty_def =
+        cs_property_def_by_array(mc->reac_hg_pty,
+                                 NULL,                  /* all cells */
+                                 cs_flag_dual_cell_byc, /* data location */
+                                 mc->reac_hg_array,
+                                 false,                 /* not owner */
+                                 true);                 /* full length */
+
+      cs_xdef_array_set_adjacency(pty_def, c2v);
+
     }
     else {
 
@@ -2315,11 +2343,11 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
       memset(mc->reac_hg_array, 0, csize);
 
       cs_property_def_by_array(mc->reac_hg_pty,
+                               NULL,                /* all cells */
                                cs_flag_primal_cell, /* where data are located */
                                mc->reac_hg_array,
                                false,               /* not owner of the array */
-                               NULL, NULL);         /* no index/ids */
-
+                               true);               /* full length */
     }
 
   } /* Segregated solve */

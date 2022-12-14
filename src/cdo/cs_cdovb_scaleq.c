@@ -1576,7 +1576,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
         cs_xdef_t  *def = eqp->adv_field->definition;
         cs_xdef_array_context_t  *ctx = def->context;
 
-        if (cs_flag_test(ctx->loc, cs_flag_primal_face))
+        if (cs_flag_test(ctx->value_location, cs_flag_primal_face))
           eqb->msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ;
         else
           eqb->msh_flag |= CS_FLAG_COMP_PEQ;

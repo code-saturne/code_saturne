@@ -264,7 +264,7 @@ cs_xdef_eval_at_zone(const cs_xdef_t   *def,
         break;
       }
 
-      if (cs_flag_test(cx->loc, test_flag) == false)
+      if (cs_flag_test(cx->dof_location, test_flag) == false)
         bft_error(__FILE__, __LINE__, 0,
                   "%s: Invalid location for definition by DoFs.\n",
                   __func__);

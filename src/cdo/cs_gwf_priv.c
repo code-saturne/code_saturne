@@ -107,10 +107,10 @@ _update_vb_darcy_flux_at_boundary(cs_real_t                t_eval,
               __func__);
 
   cs_xdef_t  *def = adv->bdy_flux_defs[0];
-  cs_xdef_array_context_t  *actx = (cs_xdef_array_context_t *)def->context;
-  cs_real_t  *nflx_val = actx->values;
+  cs_xdef_array_context_t  *cx = (cs_xdef_array_context_t *)def->context;
+  cs_real_t  *nflx_val = cx->values;
 
-  if (cs_flag_test(actx->loc, cs_flag_dual_closure_byf) == false)
+  if (cs_flag_test(cx->value_location, cs_flag_dual_closure_byf) == false)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field at the boundary",
               __func__);
@@ -400,15 +400,15 @@ cs_gwf_darcy_flux_define(const cs_cdo_connect_t       *connect,
       BFT_MALLOC(darcy->boundary_flux_val, array_size, cs_real_t);
       memset(darcy->boundary_flux_val, 0, array_size*sizeof(cs_real_t));
 
-      /* Do not transfer the ownership */
+      cs_xdef_t  *bdy_def =
+        cs_advection_field_def_boundary_flux_by_array(adv,
+                                                      NULL,  /* all cells */
+                                                      array_location,
+                                                      darcy->boundary_flux_val,
+                                                      false, /* not owner */
+                                                      true); /* full length */
 
-      cs_advection_field_def_boundary_flux_by_array(adv,
-                                                    NULL,
-                                                    array_location,
-                                                    darcy->boundary_flux_val,
-                                                    false,
-                                                    bf2v->idx,
-                                                    bf2v->ids);
+      cs_xdef_array_set_adjacency(bdy_def, bf2v);
 
       /* Define the advection field in the volume */
 
@@ -421,14 +421,14 @@ cs_gwf_darcy_flux_define(const cs_cdo_connect_t       *connect,
         BFT_MALLOC(darcy->flux_val, array_size, cs_real_t);
         memset(darcy->flux_val, 0, array_size*sizeof(cs_real_t));
 
-        /* Do not transfer the ownership */
+        /* Do not transfer the ownership (automatically on the full domain) */
 
-        cs_advection_field_def_by_array(adv,
-                                        array_location,
-                                        darcy->flux_val,
-                                        false, /* transfer ownership */
-                                        c2e->idx,
-                                        c2e->ids);
+        cs_xdef_t  *adv_def = cs_advection_field_def_by_array(adv,
+                                                              array_location,
+                                                              darcy->flux_val,
+                                                              false);
+
+        cs_xdef_array_set_adjacency(adv_def, c2e);
 
         /* Reset the type of advection field */
 
@@ -539,10 +539,11 @@ cs_gwf_darcy_flux_balance(const cs_cdo_connect_t       *connect,
 
 #if defined(DEBUG) && !defined(NDEBUG)
       cs_xdef_t  *_def = adv->bdy_flux_defs[0];
-      cs_xdef_array_context_t  *actx = _def->context;
+      cs_xdef_array_context_t  *cx = _def->context;
 
       assert(adv->n_bdy_flux_defs == 1 && _def->type == CS_XDEF_BY_ARRAY);
-      assert(cs_flag_test(actx->loc, cs_flag_dual_closure_byf) == true);
+      assert(cs_flag_test(cx->value_location,
+                          cs_flag_dual_closure_byf) == true);
 #endif
 
       for (cs_lnum_t i = 0; i < z->n_elts; i++) {

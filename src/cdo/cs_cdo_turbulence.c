@@ -501,10 +501,11 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
   memset(tbs->mu_tot_array, 0, quant->n_cells*sizeof(cs_real_t));
 
   cs_property_def_by_array(tbs->mu_tot,
+                           NULL, /* all cells */
                            cs_flag_primal_cell,
                            tbs->mu_tot_array,
                            false, /* definition is owner ? */
-                           NULL, NULL); /* no index/ids */
+                           true); /* full length */
 
   /* Last setup for each turbulence model */
 
@@ -523,15 +524,16 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
                                              NULL, /* all cells */
                                              cs_flag_primal_cell,
                                              NULL,
-                                             false, /*is owner */
-                                             NULL, NULL); /* no index/ids */
+                                             false, /* is owner */
+                                             true); /* full length */
 
       kec->tke_reaction =
         cs_property_def_by_array(cs_property_by_name("k_reaction"),
+                                 NULL,  /* all cells */
                                  cs_flag_primal_cell,
                                  NULL,
-                                 false, /* definition is owner ? */
-                                 NULL, NULL); /* no index/ids */
+                                 false, /* is owner */
+                                 true); /* full length */
 
       cs_equation_param_t  *eps_eqp = cs_equation_get_param(kec->eps);
       kec->eps_source_term =
@@ -539,21 +541,23 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
                                              NULL, /* all cells */
                                              cs_flag_primal_cell,
                                              NULL,
-                                             false, /*is owner */
-                                             NULL, NULL); /* no index/ids */
+                                             false, /* is owner */
+                                             true); /* full length */
 
       kec->eps_reaction =
         cs_property_def_by_array(cs_property_by_name("eps_reaction"),
+                                 NULL,  /* all cells */
                                  cs_flag_primal_cell,
                                  NULL,
-                                 false, /* definition is owner ? */
-                                 NULL, NULL); /* no index/ids */
+                                 false, /* is owner ? */
+                                 true); /* full length */
 
       cs_property_def_by_array(tbs->mu_tot,
+                               NULL,  /* all cells */
                                cs_flag_primal_cell,
                                tbs->mu_tot_array,
-                               false, /* definition is owner ? */
-                               NULL, NULL); /* no index/ids */
+                               false, /* is owner */
+                               true); /* full length */
 
       /* Initialize TKE */
 
@@ -673,10 +677,10 @@ cs_turb_init_k_eps_context(const cs_turb_model_t      *tbm)
 
   /* Reaction (implicit source terms) coefficients */
 
-  cs_property_t *k_reaction
-    = cs_property_add("k_reaction", CS_PROPERTY_ISO);
-  cs_property_t *eps_reaction
-    = cs_property_add("epsilon_reaction", CS_PROPERTY_ISO);
+  cs_property_t *k_reaction = cs_property_add("k_reaction",
+                                              CS_PROPERTY_ISO);
+  cs_property_t *eps_reaction = cs_property_add("epsilon_reaction",
+                                                CS_PROPERTY_ISO);
 
   /* Retrieve the mass density */
 
@@ -834,7 +838,7 @@ cs_turb_compute_k_eps(const cs_mesh_t            *mesh,
   if (tbs == NULL)
     return;
 
-  /* Get k epsilon context */
+  /* Get the k-epsilon context */
 
   cs_turb_context_k_eps_t  *kec = (cs_turb_context_k_eps_t *)tbs->context;
   cs_equation_t *tke_eq = kec->tke;
@@ -845,29 +849,29 @@ cs_turb_compute_k_eps(const cs_mesh_t            *mesh,
 
   cs_real_t *tke_source_term = NULL, *eps_source_term = NULL;
   cs_real_t *tke_reaction = NULL, *eps_reaction = NULL;
+
   BFT_MALLOC(tke_source_term, mesh->n_cells, cs_real_t);
   BFT_MALLOC(eps_source_term, mesh->n_cells, cs_real_t);
   BFT_MALLOC(tke_reaction, mesh->n_cells, cs_real_t);
   BFT_MALLOC(eps_reaction, mesh->n_cells, cs_real_t);
 
-  /* Set xdefs */
+  /* Set the array values for each cs_xdef_t structures */
 
-  cs_xdef_set_array(kec->tke_reaction,
-                    false, /* is_owner */
-                    tke_reaction);
+  cs_xdef_array_set_values(kec->tke_reaction,
+                           false, /* is_owner */
+                           tke_reaction);
 
+  cs_xdef_array_set_values(kec->eps_reaction,
+                           false, /* is_owner */
+                           eps_reaction);
 
-  cs_xdef_set_array(kec->eps_reaction,
-                    false, /* is_owner */
-                    eps_reaction);
+  cs_xdef_array_set_values(kec->tke_source_term,
+                           false, /* is_owner */
+                           tke_source_term);
 
-  cs_xdef_set_array(kec->tke_source_term,
-                    false, /* is_owner */
-                    tke_source_term);
-
-  cs_xdef_set_array(kec->eps_source_term,
-                    false, /* is_owner */
-                    eps_source_term);
+  cs_xdef_array_set_values(kec->eps_source_term,
+                           false, /* is_owner */
+                           eps_source_term);
 
   _prepare_ke(mesh,
               connect,

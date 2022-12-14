@@ -1685,7 +1685,7 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
                                   cs_flag_primal_vtx,
                                   _cdo_bc->vtx_values,
                                   false, /* Do not transfer ownership */
-                                  NULL, NULL); /* No index, no ids */
+                                  true); /* full length */
 
       /* Add a new list of selected vertices. */
       _update_bc_list(mesh, z, vtag);
@@ -1698,7 +1698,7 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
                                   cs_flag_primal_vtx,
                                   _cdo_bc->vtx_values,
                                   false, /* Do not transfer ownership */
-                                  NULL, NULL); /* No index, no ids */
+                                  true); /* full length */
 
       /* Add a new list of selected vertices. */
       _update_bc_list(mesh, z, vtag);
@@ -1711,7 +1711,7 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
                                   cs_flag_primal_vtx,
                                   _cdo_bc->vtx_values,
                                   false, /* Do not transfer ownership */
-                                  NULL, NULL); /* No index */
+                                  true); /* full length */
 
       /* Add a new list of selected vertices. */
       _update_bc_list(mesh, z, vtag);

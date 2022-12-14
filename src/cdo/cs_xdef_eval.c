@@ -687,9 +687,8 @@ cs_xdef_eval_at_cells_by_dof_func(cs_lnum_t                    n_elts,
 
   /* Values of the function are defined at the cells */
 
-  if (cs_flag_test(cx->loc, cs_flag_primal_cell))
-    cx->func(n_elts, elt_ids, dense_output, cx->input,
-             eval);
+  if (cs_flag_test(cx->dof_location, cs_flag_primal_cell))
+    cx->func(n_elts, elt_ids, dense_output, cx->input, eval);
   else
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid location.\n", __func__);
 }
@@ -734,9 +733,8 @@ cs_xdef_eval_at_vertices_by_dof_func(cs_lnum_t                    n_elts,
 
   /* Values of the function are defined at vertices */
 
-  if (cs_flag_test(cx->loc, cs_flag_primal_vtx))
-    cx->func(n_elts, elt_ids, dense_output, cx->input,
-             eval);
+  if (cs_flag_test(cx->dof_location, cs_flag_primal_vtx))
+    cx->func(n_elts, elt_ids, dense_output, cx->input, eval);
   else
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid location.\n", __func__);
 }
@@ -781,7 +779,7 @@ cs_xdef_eval_at_b_faces_by_dof_func(cs_lnum_t                    n_elts,
 
   /* Values of the function are defined at the boundary faces */
 
-  if (cs_flag_test(cx->loc, cs_flag_boundary_face))
+  if (cs_flag_test(cx->dof_location, cs_flag_boundary_face))
     cx->func(n_elts, elt_ids, dense_output, cx->input, eval);
   else
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid location.\n", __func__);
@@ -820,14 +818,14 @@ cs_xdef_eval_scalar_at_cells_by_array(cs_lnum_t                    n_elts,
   CS_UNUSED(mesh);
   CS_UNUSED(time_eval);
 
-  if (n_elts == 0)
+  if (n_elts < 1)
     return;
 
   cs_xdef_array_context_t  *cx = (cs_xdef_array_context_t *)context;
   assert(eval != NULL || cx != NULL);
   assert(cx->stride == 1);
 
-  if (cs_flag_test(cx->loc, cs_flag_primal_cell)) {
+  if (cs_flag_test(cx->value_location, cs_flag_primal_cell)) {
 
     if (elt_ids != NULL && !dense_output) {
 
@@ -851,7 +849,7 @@ cs_xdef_eval_scalar_at_cells_by_array(cs_lnum_t                    n_elts,
     }
 
   }
-  else if (cs_flag_test(cx->loc, cs_flag_primal_vtx)) {
+  else if (cs_flag_test(cx->value_location, cs_flag_primal_vtx)) {
 
     assert(connect != NULL && quant != NULL);
     if (elt_ids != NULL && !dense_output) {
@@ -917,8 +915,9 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
 {
   CS_UNUSED(mesh);
   CS_UNUSED(time_eval);
+  CS_UNUSED(connect); /* Only in debug mode for a check */
 
-  if (n_elts == 0)
+  if (n_elts < 1)
     return;
 
   cs_xdef_array_context_t  *cx = (cs_xdef_array_context_t *)context;
@@ -926,7 +925,7 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
 
   const int  stride = cx->stride;
 
-  if (cs_flag_test(cx->loc, cs_flag_primal_cell)) {
+  if (cs_flag_test(cx->value_location, cs_flag_primal_cell)) {
 
     assert(stride > 1);
     if (elt_ids != NULL && !dense_output) {
@@ -955,17 +954,19 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
     }
 
   }
-  else if (cs_flag_test(cx->loc, cs_flag_dual_face_byc)) {
+  else if (cs_flag_test(cx->value_location, cs_flag_dual_face_byc)) {
 
     assert(stride == 3);
     assert(connect!= NULL && quant != NULL);
-    assert(cx->index == connect->c2e->idx);
+
+    const cs_adjacency_t  *adj = cx->adjacency;
+    assert(adj == connect->c2e);
 
     if (elt_ids != NULL && !dense_output) {
 
       for (cs_lnum_t i = 0; i < n_elts; i++) {
         const cs_lnum_t  c_id = elt_ids[i];
-        cs_reco_dfbyc_at_cell_center(c_id, connect->c2e, quant, cx->values,
+        cs_reco_dfbyc_at_cell_center(c_id, adj, quant, cx->values,
                                      eval + c_id*stride);
       }
 
@@ -973,15 +974,14 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
     else if (elt_ids != NULL && dense_output) {
 
       for (cs_lnum_t i = 0; i < n_elts; i++)
-        cs_reco_dfbyc_at_cell_center(elt_ids[i], connect->c2e, quant,
-                                     cx->values,
+        cs_reco_dfbyc_at_cell_center(elt_ids[i], adj, quant, cx->values,
                                      eval + i*stride);
 
     }
     else {
 
       for (cs_lnum_t i = 0; i < n_elts; i++)
-        cs_reco_dfbyc_at_cell_center(i, connect->c2e, quant, cx->values,
+        cs_reco_dfbyc_at_cell_center(i, adj, quant, cx->values,
                                      eval + i*stride);
 
     }
@@ -1026,7 +1026,7 @@ cs_xdef_eval_at_vertices_by_array(cs_lnum_t                    n_elts,
   CS_UNUSED(quant);
   CS_UNUSED(time_eval);
 
-  if (n_elts == 0)
+  if (n_elts < 1)
     return;
 
   cs_xdef_array_context_t  *cx = (cs_xdef_array_context_t *)context;
@@ -1034,7 +1034,7 @@ cs_xdef_eval_at_vertices_by_array(cs_lnum_t                    n_elts,
 
   const int  stride = cx->stride;
 
-  if (cs_flag_test(cx->loc, cs_flag_primal_vtx)) {
+  if (cs_flag_test(cx->value_location, cs_flag_primal_vtx)) {
 
     if (elt_ids != NULL && !dense_output) {
 
@@ -1122,7 +1122,7 @@ cs_xdef_eval_cell_by_field(cs_lnum_t                    n_elts,
   CS_UNUSED(mesh);
   CS_UNUSED(time_eval);
 
-  if (n_elts == 0)
+  if (n_elts < 1)
     return;
 
   cs_field_t  *field = (cs_field_t *)context;

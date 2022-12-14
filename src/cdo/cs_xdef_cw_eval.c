@@ -699,19 +699,19 @@ cs_xdef_cw_eval_by_array(const cs_cell_mesh_t      *cm,
 {
   CS_UNUSED(time_eval);
 
-  cs_xdef_array_context_t  *ac = (cs_xdef_array_context_t *)context;
+  cs_xdef_array_context_t  *cx = (cs_xdef_array_context_t *)context;
 
-  const int  stride = ac->stride;
+  const int  stride = cx->stride;
 
   /* Array is assumed to be interlaced */
 
-  if (cs_flag_test(ac->loc, cs_flag_primal_cell)) {
+  if (cs_flag_test(cx->value_location, cs_flag_primal_cell)) {
 
     for (int k = 0; k < stride; k++)
-      eval[k] = ac->values[stride*cm->c_id + k];
+      eval[k] = cx->values[stride*cm->c_id + k];
 
   }
-  else if (cs_flag_test(ac->loc, cs_flag_primal_vtx)) {
+  else if (cs_flag_test(cx->value_location, cs_flag_primal_vtx)) {
 
     assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
@@ -719,17 +719,18 @@ cs_xdef_cw_eval_by_array(const cs_cell_mesh_t      *cm,
 
     for (short int v = 0; v < cm->n_vc; v++)
       for (int k = 0; k < stride; k++)
-        eval[k] += cm->wvc[v] * ac->values[stride*cm->v_ids[v] + k];
+        eval[k] += cm->wvc[v] * cx->values[stride*cm->v_ids[v] + k];
 
   }
-  else if (cs_flag_test(ac->loc, cs_flag_dual_face_byc)) {
+  else if (cs_flag_test(cx->value_location, cs_flag_dual_face_byc)) {
 
-    assert(ac->index != NULL);
+    const cs_adjacency_t  *adj = cx->adjacency;
+    assert(adj != NULL);
 
     /* Reconstruct (or interpolate) value at the current cell center */
 
     cs_reco_dfbyc_in_cell(cm,
-                          ac->values + ac->index[cm->c_id],
+                          cx->values + adj->idx[cm->c_id],
                           eval);
 
   }
@@ -849,18 +850,22 @@ cs_xdef_cw_eval_vector_at_xyz_by_array(const cs_cell_mesh_t     *cm,
   CS_UNUSED(xyz);
   CS_UNUSED(time_eval);
 
-  cs_xdef_array_context_t  *ac = (cs_xdef_array_context_t *)context;
+  cs_xdef_array_context_t  *cx = (cs_xdef_array_context_t *)context;
 
-  const int  stride = ac->stride;
+  const int  stride = cx->stride;
 
   /* Array is assumed to be interlaced */
 
-  if (cs_flag_test(ac->loc, cs_flag_primal_cell)) {
+  if (cs_flag_test(cx->value_location, cs_flag_primal_cell)) {
 
     assert(stride == 3);
+    assert(stride == n_points);
+
     cs_real_3_t  cell_vector;
+    const cs_real_t  *_val = cx->values + stride*cm->c_id;
     for (int k = 0; k < stride; k++)
-      cell_vector[k] = ac->values[stride*cm->c_id + k];
+      cell_vector[k] = _val[k];
+
     for (int i = 0; i < n_points; i++) {
       eval[3*i    ] = cell_vector[0];
       eval[3*i + 1] = cell_vector[1];
@@ -868,7 +873,7 @@ cs_xdef_cw_eval_vector_at_xyz_by_array(const cs_cell_mesh_t     *cm,
     }
 
   }
-  else if (cs_flag_test(ac->loc, cs_flag_primal_vtx)) {
+  else if (cs_flag_test(cx->value_location, cs_flag_primal_vtx)) {
 
     assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
     assert(stride == 3);
@@ -877,18 +882,19 @@ cs_xdef_cw_eval_vector_at_xyz_by_array(const cs_cell_mesh_t     *cm,
 
     for (int k = 0; k < stride; k++)
       for (short int v = 0; v < cm->n_vc; v++)
-        eval[k] += cm->wvc[v] * ac->values[stride*cm->v_ids[v] + k];
+        eval[k] += cm->wvc[v] * cx->values[stride*cm->v_ids[v] + k];
 
   }
-  else if (cs_flag_test(ac->loc, cs_flag_dual_face_byc)) {
+  else if (cs_flag_test(cx->value_location, cs_flag_dual_face_byc)) {
 
-    assert(ac->index != NULL);
+    const cs_adjacency_t  *adj = cx->adjacency;
+    assert(adj != NULL);
 
     /* Reconstruct (or interpolate) value at the current cell center */
 
     cs_real_3_t  cell_vector;
     cs_reco_dfbyc_in_cell(cm,
-                          ac->values + ac->index[cm->c_id],
+                          cx->values + adj->idx[cm->c_id],
                           cell_vector);
 
     for (int i = 0; i < n_points; i++) {

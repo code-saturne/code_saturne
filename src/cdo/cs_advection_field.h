@@ -570,25 +570,25 @@ cs_advection_field_def_by_dof_func(cs_adv_field_t    *adv,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_adv_field_t structure thanks to an array of values
+ * \brief  Define a cs_adv_field_t structure thanks to an array of values.
+ *         If an advanced usage of the definition by array is needed, then
+ *         call \ref cs_xdef_set_array_advanced
  *
- * \param[in, out]  adv       pointer to a cs_adv_field_t structure
- * \param[in]       loc       information to know where are located values
- * \param[in]       array     pointer to an array
- * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
- *                            (true or false)
- * \param[in]       index     optional pointer to an array of index values
- * \param[in]       ids       optional pointer to a list of entity ids
+ * \param[in, out] adv           pointer to a cs_adv_field_t structure
+ * \param[in]      val_location  information to know where are located values
+ * \param[in]      array         pointer to an array
+ * \param[in]      is_owner      transfer the lifecycle to the cs_xdef_t struc.
+ *                               (true or false)
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_advection_field_def_by_array(cs_adv_field_t    *adv,
-                                cs_flag_t          loc,
+                                cs_flag_t          val_location,
                                 cs_real_t         *array,
-                                bool               is_owner,
-                                const cs_lnum_t   *index,
-                                const cs_lnum_t   *ids);
+                                bool               is_owner);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -642,25 +642,27 @@ cs_advection_field_def_boundary_flux_by_analytic(cs_adv_field_t        *adv,
  * \brief  Define the value of the boundary normal flux for the given
  *         cs_adv_field_t structure using an array of values
  *
- * \param[in, out]  adv       pointer to a cs_adv_field_t structure
- * \param[in]       zname     name of the boundary zone to consider
- * \param[in]       loc       information to know where are located values
- * \param[in]       array     pointer to an array
- * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
- *                            (true or false)
- * \param[in]       index     optional pointer to an array of index values
- * \param[in]       ids       optional pointer to a list of entity ids
+ * \param[in, out] adv          pointer to a cs_adv_field_t structure
+ * \param[in]      zname        name of the boundary zone to consider
+ * \param[in]      val_loc      information to know where are located values
+ * \param[in]      array        pointer to an array
+ * \param[in]      is_owner     transfer the lifecycle to the cs_xdef_t struct.
+ *                              (true or false)
+ * \param[in]      full_length  if true, array size is allocated and filled to
+ *                              access the full-length array corresponding to
+ *                              all locations where are defined the values
+ *
+ * \return a pointer to the resulting definition
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
                                               const char        *zname,
-                                              cs_flag_t          loc,
+                                              cs_flag_t          val_loc,
                                               cs_real_t         *array,
                                               bool               is_owner,
-                                              const cs_lnum_t   *index,
-                                              const cs_lnum_t   *ids);
+                                              bool               full_length);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -1438,7 +1438,7 @@ _vb_sat_decay_chain_molar_st(cs_gwf_tracer_t             *tracer,
   /* Definition associated to this tracer in the decay chain */
 
   cs_xdef_t  *st_def = tdc->st_defs[tracer->chain_position_id];
-  double  *st_values = cs_xdef_get_array(st_def);
+  double  *st_values = cs_xdef_array_get_values(st_def);
 
   memset(st_values, 0, c2v->idx[quant->n_cells]*sizeof(double));
 
@@ -1527,7 +1527,7 @@ _vb_decay_chain_molar_st(cs_gwf_tracer_t             *tracer,
   /* Definition associated to this tracer in the decay chain */
 
   cs_xdef_t  *st_def = tdc->st_defs[tracer->chain_position_id];
-  double  *st_values = cs_xdef_get_array(st_def);
+  double  *st_values = cs_xdef_array_get_values(st_def);
 
   memset(st_values, 0, c2v->idx[quant->n_cells]*sizeof(double));
 
@@ -1611,7 +1611,7 @@ _vb_sat_decay_chain_becqu_st(cs_gwf_tracer_t             *tracer,
   /* Definition associated to this tracer in the decay chain */
 
   cs_xdef_t  *st_def = tdc->st_defs[tracer->chain_position_id];
-  double  *st_values = cs_xdef_get_array(st_def);
+  double  *st_values = cs_xdef_array_get_values(st_def);
 
   memset(st_values, 0, c2v->idx[quant->n_cells]*sizeof(double));
 
@@ -1700,7 +1700,7 @@ _vb_decay_chain_becqu_st(cs_gwf_tracer_t             *tracer,
   /* Definition associated to this tracer in the decay chain */
 
   cs_xdef_t  *st_def = tdc->st_defs[tracer->chain_position_id];
-  double  *st_values = cs_xdef_get_array(st_def);
+  double  *st_values = cs_xdef_array_get_values(st_def);
 
   memset(st_values, 0, c2v->idx[quant->n_cells]*sizeof(double));
 
@@ -2680,11 +2680,11 @@ cs_gwf_tracer_default_init_setup(cs_gwf_tracer_t     *tracer)
 
     tdc->st_defs[tracer->chain_position_id] =
       cs_equation_add_source_term_by_array(eqp,
-                                           NULL, /* all soils */
+                                           NULL,  /* all soils */
                                            cs_flag_dual_cell_byc,
                                            NULL,
                                            false, /* ownership */
-                                           NULL, NULL);
+                                           true); /* full length */
 
   }
 
@@ -2811,9 +2811,9 @@ cs_gwf_tracer_sat_finalize_setup(const cs_cdo_connect_t     *connect,
 
     const cs_adjacency_t  *c2v = connect->c2v;
 
-    double  *array = NULL;
-    BFT_MALLOC(array, c2v->idx[quant->n_cells], double);
-    memset(array, 0, c2v->idx[quant->n_cells]*sizeof(double));
+    double  *st_values = NULL;
+    BFT_MALLOC(st_values, c2v->idx[quant->n_cells], double);
+    memset(st_values, 0, c2v->idx[quant->n_cells]*sizeof(double));
 
     cs_gwf_tracer_decay_chain_t  *tdc =
       cs_gwf_tracer_decay_chain_by_id(tracer->chain_id);
@@ -2821,11 +2821,11 @@ cs_gwf_tracer_sat_finalize_setup(const cs_cdo_connect_t     *connect,
 
     cs_xdef_t  *st_def = tdc->st_defs[tracer->chain_position_id];
 
-    cs_xdef_set_array(st_def,
-                      true,     /* transfer ownership */
-                      array);
+    cs_xdef_array_set_values(st_def,
+                             true,     /* transfer ownership */
+                             st_values);
 
-    cs_xdef_set_array_pointers(st_def, c2v->idx, c2v->ids);
+    cs_xdef_array_set_adjacency(st_def, c2v);
 
   }
 }
@@ -2933,9 +2933,9 @@ cs_gwf_tracer_unsat_finalize_setup(const cs_cdo_connect_t      *connect,
 
     const cs_adjacency_t  *c2v = connect->c2v;
 
-    double  *array = NULL;
-    BFT_MALLOC(array, c2v->idx[quant->n_cells], double);
-    memset(array, 0, quant->n_cells*sizeof(double));
+    double  *st_values = NULL;
+    BFT_MALLOC(st_values, c2v->idx[quant->n_cells], double);
+    memset(st_values, 0, c2v->idx[quant->n_cells]*sizeof(double));
 
     cs_gwf_tracer_decay_chain_t  *tdc =
       cs_gwf_tracer_decay_chain_by_id(tracer->chain_id);
@@ -2943,11 +2943,11 @@ cs_gwf_tracer_unsat_finalize_setup(const cs_cdo_connect_t      *connect,
 
     cs_xdef_t  *st_def = tdc->st_defs[tracer->chain_position_id];
 
-    cs_xdef_set_array(st_def,
-                      true,     /* transfer ownership */
-                      array);
+    cs_xdef_array_set_values(st_def,
+                             true,     /* transfer ownership */
+                             st_values);
 
-    cs_xdef_set_array_pointers(st_def, c2v->idx, c2v->ids);
+    cs_xdef_array_set_adjacency(st_def, c2v);
 
   }
 }

@@ -1436,15 +1436,16 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
  * \brief  Define the velocity field for an inlet boundary using an array
  *         of values
  *
- * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" all
- *                           boundary faces are considered)
- * \param[in]      loc       information to know where are located values
- * \param[in]      array     pointer to an array
- * \param[in]      is_owner  transfer the lifecycle to the cs_xdef_t structure
- *                           (true or false)
- * \param[in]      index     optional pointer to an array of index values
- * \param[in]      ids       optional pointer to a list of entity ids
+ * \param[in]  nsp          pointer to a \ref cs_navsto_param_t structure
+ * \param[in]  z_name       name of the associated zone (if NULL or "" all
+ *                          boundary faces are considered)
+ * \param[in]  loc          information to know where are located values
+ * \param[in]  array        pointer to an array
+ * \param[in]  is_owner     transfer the lifecycle to the cs_xdef_t structure
+ *                          (true or false)
+ * \param[in]  full_length  if true, array size is allocated and filled to
+ *                          access the full-length array corresponding to
+ *                          all locations where are defined the values
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -1456,8 +1457,7 @@ cs_navsto_set_velocity_inlet_by_array(cs_navsto_param_t    *nsp,
                                       cs_flag_t             loc,
                                       cs_real_t            *array,
                                       bool                  is_owner,
-                                      const cs_lnum_t      *index,
-                                      const cs_lnum_t      *ids);
+                                      bool                  full_length);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1466,6 +1466,7 @@ cs_navsto_set_velocity_inlet_by_array(cs_navsto_param_t    *nsp,
  * \param[in]  nsp         pointer to a \ref cs_navsto_param_t structure
  * \param[in]  z_name      name of the associated zone (if NULL or "" all
  *                         boundary faces are considered)
+ * \param[in]  dof_loc     where are located DoFs
  * \param[in]  func        pointer to a \ref cs_dof_function_t
  * \param[in]  func_input  NULL or pointer to a structure cast on-the-fly
  *
@@ -1476,6 +1477,7 @@ cs_navsto_set_velocity_inlet_by_array(cs_navsto_param_t    *nsp,
 cs_xdef_t *
 cs_navsto_set_velocity_inlet_by_dof_func(cs_navsto_param_t    *nsp,
                                          const char           *z_name,
+                                         cs_flag_t             dof_loc,
                                          cs_dof_func_t        *func,
                                          void                 *func_input);
 
@@ -1521,15 +1523,16 @@ cs_navsto_add_source_term_by_val(cs_navsto_param_t    *nsp,
 /*!
  * \brief  Define a new source term structure defined by an array
  *
- * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" all
- *                           cells are considered)
- * \param[in]      loc       information to know where are located values
- * \param[in]      array     pointer to an array
- * \param[in]      is_owner  transfer the lifecycle to the cs_xdef_t structure
- *                           (true or false)
- * \param[in]      index     optional pointer to the array index
- * \param[in]      ids       optional pointer to a list of entity ids
+ * \param[in] nsp           pointer to a \ref cs_navsto_param_t structure
+ * \param[in] z_name        name of the associated zone (if NULL or "" all
+ *                          cells are considered)
+ * \param[in] loc           information to know where are located values
+ * \param[in] array         pointer to an array
+ * \param[in] is_owner      transfer the lifecycle to the cs_xdef_t structure
+ *                          (true or false)
+ * \param[in] full_length   if true, array size is allocated and filled to
+ *                          access the full-length array corresponding to
+ *                          all locations where are defined the values
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -1541,8 +1544,7 @@ cs_navsto_add_source_term_by_array(cs_navsto_param_t    *nsp,
                                    cs_flag_t             loc,
                                    cs_real_t            *array,
                                    bool                  is_owner,
-                                   const cs_lnum_t      *index,
-                                   const cs_lnum_t      *ids);
+                                   bool                  full_length);
 
 /*----------------------------------------------------------------------------*/
 /*!

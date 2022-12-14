@@ -2353,7 +2353,7 @@ cs_evaluate_circulation_along_edges_by_array(const cs_xdef_t   *def,
   const cs_real_t  *edge_vector = cs_cdo_quant->edge_vector;
 
   cs_xdef_array_context_t  *ac = (cs_xdef_array_context_t *)def->context;
-  assert(cs_flag_test(ac->loc, cs_flag_primal_edge));
+  assert(cs_flag_test(ac->value_location, cs_flag_primal_edge));
 
   /* DoF is scalar-valued since this is a circulation but the definition is
    * either scalar-valued meaning that one only gives the tangential part or
@@ -2735,7 +2735,7 @@ cs_evaluate_average_on_cells_by_array(const cs_xdef_t   *def,
   const int  stride = ac->stride;
   const cs_real_t  *val = ac->values;
 
-  if (cs_flag_test(ac->loc, cs_flag_primal_cell) == false)
+  if (cs_flag_test(ac->value_location, cs_flag_primal_cell) == false)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid case. Not implemented yet.",
               __func__);
 

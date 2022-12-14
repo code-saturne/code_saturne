@@ -445,7 +445,7 @@ _set_vb_function(const cs_xdef_t              *st_def,
 
       *msh_flag |= CS_FLAG_COMP_PVQ;
 
-      if (cs_flag_test(cx->loc, cs_flag_primal_vtx)) {
+      if (cs_flag_test(cx->value_location, cs_flag_primal_vtx)) {
         if (st_def->meta & CS_FLAG_DUAL)
           func = cs_source_term_dcsd_by_pv_array;
         else {
@@ -453,7 +453,7 @@ _set_vb_function(const cs_xdef_t              *st_def,
           func = cs_source_term_pvsp_by_array;
         }
       }
-      else if (cs_flag_test(cx->loc, cs_flag_dual_cell_byc))  {
+      else if (cs_flag_test(cx->value_location, cs_flag_dual_cell_byc))  {
 
         /* Should be before cs_flag_dual_cell */
         if (st_def->meta & CS_FLAG_DUAL)
@@ -464,9 +464,9 @@ _set_vb_function(const cs_xdef_t              *st_def,
         }
 
       }
-      else if (cs_flag_test(cx->loc, cs_flag_dual_cell))
+      else if (cs_flag_test(cx->value_location, cs_flag_dual_cell))
         func = cs_source_term_dcsd_by_pv_array;
-      else if (cs_flag_test(cx->loc, cs_flag_primal_cell))
+      else if (cs_flag_test(cx->value_location, cs_flag_primal_cell))
         func = cs_source_term_dcsd_by_pc_array;
       else
         bft_error(__FILE__, __LINE__, 0,
@@ -1122,7 +1122,7 @@ cs_source_term_pvsp_by_array(const cs_xdef_t           *source,
     (cs_xdef_array_context_t *)source->context;
 
   assert(ac->stride == 1);
-  assert(ac->loc == cs_flag_primal_vtx);
+  assert(ac->value_location == cs_flag_primal_vtx);
 
   /* Retrieve the values of the potential at each cell vertices */
 
@@ -1181,15 +1181,15 @@ cs_source_term_pvsp_by_c2v_array(const cs_xdef_t           *source,
     (cs_xdef_array_context_t *)source->context;
 
   assert(ac->stride == 1);
-  assert(ac->loc == cs_flag_primal_vtx);
-  assert(ac->index != NULL);
+  assert(ac->value_location == cs_flag_primal_vtx);
+  assert(ac->adjacency != NULL);
 
   double  *eval = cb->values;
 
   /* Multiply these values by a cellwise Hodge operator previously computed */
 
   cs_sdm_square_matvec(mass_hodge->matrix,
-                       ac->values + ac->index[cm->c_id],
+                       ac->values + ac->adjacency->idx[cm->c_id],
                        eval);
 
   for (short int v = 0; v < cm->n_vc; v++)
@@ -1312,7 +1312,7 @@ cs_source_term_dcsd_by_pv_array(const cs_xdef_t           *source,
 
   const cs_xdef_array_context_t  *ac = source->context;
 
-  assert(cs_flag_test(ac->loc, cs_flag_primal_vtx));
+  assert(cs_flag_test(ac->value_location, cs_flag_primal_vtx));
   for (int v = 0; v < cm->n_vc; v++)
     values[v] += ac->values[cm->v_ids[v]] * cm->wvc[v] * cm->vol_c;
 }
@@ -1351,17 +1351,16 @@ cs_source_term_dcsd_by_c2v_array(const cs_xdef_t           *source,
   assert(values != NULL && cm != NULL);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
-  const cs_xdef_array_context_t  *ac =
-    (const cs_xdef_array_context_t *)source->context;
+  const cs_xdef_array_context_t  *ac = source->context;
+  const cs_adjacency_t  *adj = ac->adjacency;
 
-  assert(cs_flag_test(ac->loc, cs_flag_dual_cell_byc));
-  assert(ac->index != NULL && ac->ids != NULL);
+  assert(cs_flag_test(ac->value_location, cs_flag_dual_cell_byc));
+  assert(adj != NULL);
 
-  const cs_real_t  *_val = ac->values + ac->index[cm->c_id];
-  const cs_lnum_t  *_ids = ac->ids + ac->index[cm->c_id];
+  const cs_real_t  *_val = ac->values + adj->idx[cm->c_id];
 
   for (int v = 0; v < cm->n_vc; v++) {
-    assert(cm->v_ids[v] == _ids[v]);
+    assert(cm->v_ids[v] == adj->ids[adj->idx[cm->c_id] + v]);
     values[v] += _val[v] * cm->wvc[v] * cm->vol_c;
   }
 }
@@ -1401,7 +1400,7 @@ cs_source_term_dcsd_by_pc_array(const cs_xdef_t           *source,
 
   assert(values != NULL && cm != NULL);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
-  assert(cs_flag_test(ac->loc, cs_flag_primal_cell));
+  assert(cs_flag_test(ac->value_location, cs_flag_primal_cell));
 
   const cs_real_t  val_c = ac->values[cm->c_id] * cm->vol_c;
   for (int v = 0; v < cm->n_vc; v++)
@@ -1442,14 +1441,15 @@ cs_source_term_dcsd_by_dof_func(const cs_xdef_t           *source,
 
   assert(values != NULL && cm != NULL);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
-  assert(cs_flag_test(dc->loc, cs_flag_primal_cell)); /* Up to now this should
-                                                         be the only location
-                                                         allowed */
+
+  /* Up to now this should be the only location allowed */
+
+  assert(cs_flag_test(dc->dof_location, cs_flag_primal_cell));
 
   /* Call the DoF function to evaluate the function at xc */
 
   double  cell_eval;
-  dc->func(1, &(cm->c_id), true,  /* compacted output ? */
+  dc->func(1, &(cm->c_id), true,  /* dense output ? */
            dc->input,
            &cell_eval);
 
@@ -2199,20 +2199,20 @@ cs_source_term_fb_pcsd_by_dof_func(const cs_xdef_t           *source,
   if (source == NULL)
     return;
 
-  cs_xdef_dof_context_t  *context = (cs_xdef_dof_context_t *)source->context;
+  cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)source->context;
 
   assert(values != NULL && cm != NULL);
 
   /* Up to now this should be the only location allowed */
 
-  assert(cs_flag_test(context->loc, cs_flag_primal_cell));
+  assert(cs_flag_test(cx->dof_location, cs_flag_primal_cell));
 
   /* Call the DoF function to evaluate the function at xc */
 
   double  cell_eval;
-  context->func(1, &(cm->c_id), true,  /* compacted output ? */
-                context->input,
-                &cell_eval);
+  cx->func(1, &(cm->c_id), true,  /* dense output ? */
+           cx->input,
+           &cell_eval);
 
   values[cm->n_fc] += cell_eval * cm->vol_c;
 }
@@ -2248,20 +2248,20 @@ cs_source_term_fb_pcvd_by_dof_func(const cs_xdef_t           *source,
   if (source == NULL)
     return;
 
-  cs_xdef_dof_context_t  *context = (cs_xdef_dof_context_t *)source->context;
+  cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)source->context;
 
   assert(values != NULL && cm != NULL);
 
   /* Up to now this should be the only location allowed */
 
-  assert(cs_flag_test(context->loc, cs_flag_primal_cell));
+  assert(cs_flag_test(cx->dof_location, cs_flag_primal_cell));
 
   /* Call the DoF function to evaluate the function at xc */
 
   cs_real_t  cell_eval[3];
-  context->func(1, &(cm->c_id), true,  /* compacted output ? */
-                context->input,
-                cell_eval);
+  cx->func(1, &(cm->c_id), true,  /* compacted output ? */
+           cx->input,
+           cell_eval);
 
   for (int k = 0; k < 3; k++)
     values[3*cm->n_fc+k] += cell_eval[k] * cm->vol_c;
@@ -2516,10 +2516,10 @@ cs_source_term_fb_pcsd_by_array(const cs_xdef_t           *source,
 
   assert(values != NULL && cm != NULL);
 
-  const cs_xdef_array_context_t  *actx = source->context;
+  const cs_xdef_array_context_t  *cx = source->context;
 
-  assert(cs_flag_test(actx->loc, cs_flag_primal_cell));
-  values[cm->n_fc] += actx->values[cm->c_id];
+  assert(cs_flag_test(cx->value_location, cs_flag_primal_cell));
+  values[cm->n_fc] += cx->values[cm->c_id];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2744,10 +2744,10 @@ cs_source_term_fb_pcvd_by_array(const cs_xdef_t           *source,
   assert(values != NULL && cm != NULL);
   assert(source->dim == 3);
 
-  const cs_xdef_array_context_t  *actx = source->context;
-  const double  *arr = actx->values + 3*cm->c_id;
+  const cs_xdef_array_context_t  *cx = source->context;
+  const double  *arr = cx->values + 3*cm->c_id;
 
-  assert(cs_flag_test(actx->loc, cs_flag_primal_cell));
+  assert(cs_flag_test(cx->value_location, cs_flag_primal_cell));
 
   double  *val_c = values + 3*cm->n_fc;
   val_c[0] += arr[0];

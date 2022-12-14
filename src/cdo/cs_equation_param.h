@@ -1838,15 +1838,16 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
  *         related to the given equation structure
  *         z_name corresponds to the name of a pre-existing cs_zone_t
  *
- * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
- * \param[in]       bc_type   type of boundary condition to add
- * \param[in]       z_name    name of the related boundary zone
- * \param[in]       loc       information to know where are located values
- * \param[in]       array     pointer to an array
- * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
- *                            (true or false)
- * \param[in]       index     optional pointer to an array of index values
- * \param[in]       ids       optional pointer to a list of entity ids
+ * \param[in, out] eqp           pointer to a cs_equation_param_t structure
+ * \param[in]      bc_type       type of boundary condition to add
+ * \param[in]      z_name        name of the related boundary zone
+ * \param[in]      loc           information to know where are located values
+ * \param[in]      array         pointer to an array
+ * \param[in]      is_owner      transfer the lifecycle to the cs_xdef_t struct.
+ *                               (true or false)
+ * \param[in]      full_length   if true, array size is allocated and filled to
+ *                               access the full-length array corresponding to
+ *                               all locations where are defined the values
  *
  * \return a pointer to the new allocated \ref cs_xdef_t structure
  */
@@ -1859,8 +1860,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
                             cs_flag_t                   loc,
                             cs_real_t                  *array,
                             bool                        is_owner,
-                            const cs_lnum_t            *index,
-                            const cs_lnum_t            *ids);
+                            bool                        full_length);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2155,15 +2155,16 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
  * \brief  Add a new source term by initializing a cs_xdef_t structure.
  *         Case of a definition by an array.
  *
- * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
- * \param[in]      loc       information to know where are located values
- * \param[in]      array     pointer to an array
- * \param[in]      is_owner  transfer the lifecycle to the cs_xdef_t structure
- *                           (true or false)
- * \param[in]      index     optional pointer to an array of index values
- * \param[in]      ids       optional pointer to a list of entity ids
+ * \param[in, out] eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      z_name       name of the associated zone (if NULL or "" if
+ *                              all cells are considered)
+ * \param[in]      loc          information to know where are located values
+ * \param[in]      array        pointer to an array
+ * \param[in]      is_owner     transfer the lifecycle to the cs_xdef_t struct.
+ *                              (true or false)
+ * \param[in]      full_length  if true, array size is allocated and filled to
+ *                              access the full-length array corresponding to
+ *                              all locations where are defined the values
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -2175,8 +2176,7 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
                                      cs_flag_t               loc,
                                      cs_real_t              *array,
                                      bool                    is_owner,
-                                     const cs_lnum_t        *index,
-                                     const cs_lnum_t        *ids);
+                                     bool                    full_length);
 
 /*----------------------------------------------------------------------------*/
 /*!

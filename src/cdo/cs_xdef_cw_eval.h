@@ -411,12 +411,12 @@ cs_xdef_cw_eval_scalar_face_avg_by_array(const cs_cell_mesh_t       *cm,
               " %s: Array storing the evaluation should be allocated before"
               " the call to this function.", __func__);
 
-  const cs_xdef_array_context_t *actx = (const cs_xdef_array_context_t *)input;
+  const cs_xdef_array_context_t *cx = (const cs_xdef_array_context_t *)input;
 
   assert(input != NULL);
-  assert(cs_flag_test(actx->loc, cs_flag_primal_face));
+  assert(cs_flag_test(cx->value_location, cs_flag_primal_face));
 
-  eval[0] = actx->values[cm->f_ids[f]];
+  eval[0] = cx->values[cm->f_ids[f]];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -437,12 +437,12 @@ cs_xdef_cw_eval_scalar_face_avg_by_array(const cs_cell_mesh_t       *cm,
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_xdef_cw_eval_face_drhm_by_analytic(const cs_cell_mesh_t       *cm,
-                                      short int                   f,
-                                      cs_real_t                   t_eval,
-                                      void                       *input,
-                                      cs_quadrature_type_t        qtype,
-                                      cs_real_t                  *eval)
+cs_xdef_cw_eval_face_drham_by_analytic(const cs_cell_mesh_t       *cm,
+                                       short int                   f,
+                                       cs_real_t                   t_eval,
+                                       void                       *input,
+                                       cs_quadrature_type_t        qtype,
+                                       cs_real_t                  *eval)
 {
   CS_UNUSED(qtype);
   cs_xdef_analytic_context_t *anai = (cs_xdef_analytic_context_t *)input;
@@ -519,12 +519,12 @@ cs_xdef_cw_eval_vector_face_avg_by_array(const cs_cell_mesh_t     *cm,
               " %s: Array storing the evaluation should be allocated before"
               " the call to this function.", __func__);
 
-  const cs_xdef_array_context_t *actx = (const cs_xdef_array_context_t *)input;
+  const cs_xdef_array_context_t *cx = (const cs_xdef_array_context_t *)input;
 
   assert(input != NULL);
-  assert(cs_flag_test(actx->loc, cs_flag_primal_face));
+  assert(cs_flag_test(cx->value_location, cs_flag_primal_face));
 
-  memcpy(eval, actx->values + 3*cm->f_ids[f], 3*sizeof(cs_real_t));
+  memcpy(eval, cx->values + 3*cm->f_ids[f], 3*sizeof(cs_real_t));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -598,12 +598,12 @@ cs_xdef_cw_eval_tensor_face_avg_by_array(const cs_cell_mesh_t     *cm,
               " %s: Array storing the evaluation should be allocated before"
               " the call to this function.", __func__);
 
-  const cs_xdef_array_context_t *actx = (const cs_xdef_array_context_t *)input;
+  const cs_xdef_array_context_t *cx = (const cs_xdef_array_context_t *)input;
 
   assert(input != NULL);
-  assert(cs_flag_test(actx->loc, cs_flag_primal_face));
+  assert(cs_flag_test(cx->value_location, cs_flag_primal_face));
 
-  memcpy(eval, actx->values + 9*cm->f_ids[f], 9*sizeof(cs_real_t));
+  memcpy(eval, cx->values + 9*cm->f_ids[f], 9*sizeof(cs_real_t));
 }
 
 /*============================================================================
