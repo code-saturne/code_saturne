@@ -942,8 +942,13 @@ endif
 
 ! VoF model enabled
 if (ivofmt.gt.0) then
-  ro0    = rho2
-  viscl0 = mu2
+  if (rho2.gt.rho1) then
+    ro0    = rho2
+    viscl0 = mu2
+  else
+    ro0    = rho1
+    viscl0 = mu1
+  endif
 
   ! VOF algorithm: continuity of the flux across internal faces
   call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)

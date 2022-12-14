@@ -191,10 +191,6 @@ do iel = 1, ncel
   smbrs(iel) = 0.d0
 enddo
 
-do iel = 1, ncel
-  rovsdt(iel) = 0.d0
-enddo
-
 ! Arbitrary initialization (no diffusion for void fraction)
 do ifac = 1, nfac
   viscf(ifac) = 1.d0
@@ -268,6 +264,17 @@ if (i_mass_transfer.ne.0) then
   enddo
 endif
 
+! Source terms assembly for cs_equation_iterative_solve_scalar
+
+! If source terms are extrapolated over time
+if (isno2t.gt.0) then
+  do iel = 1, ncel
+    tsexp = c_st_voidf(iel)
+    c_st_voidf(iel) = smbrs(iel)
+    smbrs(iel) = -thets*tsexp + (1.d0+thets)*c_st_voidf(iel)
+  enddo
+endif
+
 ! Source term linked with the non-conservative form of convection term
 ! in cs_equation_iterative_solve_scalar (always implicited)
 ! FIXME set imasac per variable? Here it could be set to 0
@@ -276,27 +283,11 @@ init = 1
 call divmas (init,ivolfl,bvolfl,divu)
 
 do iel = 1, ncel
-  rovsdt(iel) = rovsdt(iel) - divu(iel)
+  smbrs(iel) = smbrs(iel) - divu(iel)*cvara_voidf(iel)
+  rovsdt(iel) = divu(iel)
 enddo
 
-! Source terms assembly for cs_equation_iterative_solve_scalar
-
-! If source terms are extrapolated over time
-if (isno2t.gt.0) then
-  do iel = 1, ncel
-    tsexp = c_st_voidf(iel)
-    c_st_voidf(iel) = smbrs(iel)
-    smbrs(iel) = -thets*tsexp + (1.d0+thets)*c_st_voidf(iel) &
-                 + rovsdt(iel)*cvara_voidf(iel)
-    rovsdt(iel) = -thetv*rovsdt(iel)
-  enddo
-! If source terms are not extrapolated over time
-else
-  do iel = 1, ncel
-    smbrs(iel) = smbrs(iel) + rovsdt(iel)*cvara_voidf(iel)
-    rovsdt(iel) = -rovsdt(iel)
-  enddo
-endif
+deallocate(divu)
 
 if (idrift.gt.0) then
   imrgrp = vcopt%imrgra
@@ -332,7 +323,6 @@ normp = -1.d0
 
 vcopt_loc = vcopt
 
-vcopt_loc%istat  = -1
 vcopt_loc%icoupl = -1
 vcopt_loc%idifft = -1
 vcopt_loc%iwgrec = 0 ! Warning, may be overwritten if a field
@@ -397,7 +387,6 @@ call log_iteration_clipping_field(ivarfl(ivar), iclmin(1), iclmax(1), &
 deallocate(viscf, viscb)
 deallocate(smbrs, rovsdt)
 deallocate(dpvar)
-deallocate(divu)
 
 !--------
 ! Formats
