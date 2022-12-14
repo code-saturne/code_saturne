@@ -643,22 +643,6 @@ class ComboModel:
         msg += "Value reset to " + str(self.items[0]) + " but should be checked.\n"
         QMessageBox.warning(self.combo, title, msg)
 
-    def enableItem(self, index=None, str_model="", str_view=""):
-        """
-        Enable the item specified with its index or a string.
-        """
-        if index is not None:
-            self.__enableItem(index)
-
-        elif str_model:
-            index = self.items.index(str_model)
-            self.__enableItem(index)
-
-        elif str_view:
-            str_model = self.dicoV2M[str_view]
-            index = self.items.index(str_model)
-            self.__enableItem(index)
-
 
     def hide(self):
         """
