@@ -35,6 +35,7 @@
 
 #include "cs_base.h"
 #include "cs_boundary_zone.h"
+#include "cs_field.h"
 #include "cs_param_types.h"
 #include "cs_quadrature.h"
 #include "cs_volume_zone.h"
@@ -415,7 +416,7 @@ cs_get_bdy_zone_id(const char   *z_name)
  */
 /*----------------------------------------------------------------------------*/
 
-inline static cs_real_t
+static inline cs_real_t
 cs_xdef_get_scalar_value(cs_xdef_t     *def)
 {
   assert(def != NULL);
@@ -438,15 +439,39 @@ cs_xdef_get_scalar_value(cs_xdef_t     *def)
  */
 /*----------------------------------------------------------------------------*/
 
-inline static cs_real_t *
+static inline cs_real_t *
 cs_xdef_get_array(cs_xdef_t     *def)
 {
-  assert(def != NULL);
+  if (def == NULL)
+    return NULL;
+
   assert(def->type == CS_XDEF_BY_ARRAY);
 
   cs_xdef_array_context_t  *ai = (cs_xdef_array_context_t *)def->context;
 
   return ai->values;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief When the definition relies on a cs_field_t structure, return the
+ *        pointer to the field structure
+ *
+ * \param[in]  def    pointer to a cs_xdef_t structure
+ *
+ * \return the pointer to the field structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_field_t *
+cs_xdef_get_field(cs_xdef_t     *def)
+{
+  if (def == NULL)
+    return NULL;
+
+  assert(def->type == CS_XDEF_BY_FIELD);
+
+  return (cs_field_t *)def->context;
 }
 
 /*============================================================================
@@ -683,6 +708,19 @@ cs_xdef_get_type(const cs_xdef_t     *d);
 
 cs_flag_t
 cs_xdef_get_state_flag(const cs_xdef_t     *d);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the current field values in case of definition by field
+ *
+ * \param[in]  def    pointer to a cs_xdef_t structure
+ *
+ * \return the pointer to the current field values
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_xdef_get_field_values(cs_xdef_t     *def);
 
 /*----------------------------------------------------------------------------*/
 /*!

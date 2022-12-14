@@ -928,6 +928,33 @@ cs_xdef_get_state_flag(const cs_xdef_t     *d)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get the current field values in case of definition by field
+ *
+ * \param[in]  def    pointer to a cs_xdef_t structure
+ *
+ * \return the pointer to the current field values
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_xdef_get_field_values(cs_xdef_t     *def)
+{
+  if (def == NULL)
+    return NULL;
+
+  if (def->type != CS_XDEF_BY_FIELD)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid type of definition.\n"
+              " One expects a definition by field.", __func__);
+
+  cs_field_t  *f = def->context;
+  assert(f != NULL);
+
+  return f->val;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Output the settings related to a cs_xdef_t structure in the setup
  *         logging file
  *
