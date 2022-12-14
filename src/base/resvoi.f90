@@ -375,7 +375,7 @@ if ((i_mass_transfer.ne.0.and.dt(1).gt.dtmaxg).or.i_mass_transfer.eq.0) then
   call field_get_key_double(ivarfl(ivar), kscmin, scminp)
   call field_get_key_double(ivarfl(ivar), kscmax, scmaxp)
 
-  if(scmaxp.gt.scminp) then
+  if (scmaxp.gt.scminp) then
     do iel = 1, ncel
       if(cvar_voidf(iel).gt.scmaxp)then
         iclmax(1) = iclmax(1) + 1

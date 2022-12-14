@@ -774,7 +774,7 @@ cs_vof_update_phys_prop(const cs_mesh_t  *m)
  * \brief Write in main log the global mixture mass budget:
  * \f[
  * \sum_\celli\left(
- * |\Omega_\celli|\dfrac{\alpha_\celli^n - \alpha_\celli^{n-1}}{\Delta t} +
+ * |\Omega_\celli|\dfrac{\rho_\celli^n - \rho_\celli^{n-1}}{\Delta t} +
  * \sum_{\cellj\in\Face{\celli}}\left(\rho\vect{u}\vect{S}\right)_{\ij}^n
  * \right).
  * \f]
