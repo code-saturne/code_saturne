@@ -1007,6 +1007,53 @@ cs_property_iso_get_cell_values(cs_real_t               t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Evaluate the values of the property at cells from the given
+ *        definition. According to the parameter "dense_ouput", the "eval"
+ *        array should be allocated with a size equal to pty->dim*n_cells
+ *        (where "dim" depends on the type of property to handle) when no dense
+ *        ouput is requested. Otherwise, an allocation size equal to pty->dim *
+ *        the number of cells associated to the definition "def" is enough.
+ *
+ * \param[in]      pty           pointer to a property structure
+ * \param[in]      def_id        id associated to the definition
+ * \param[in]      dense_output  true/false
+ * \param[in]      t_eval        time at which one performs the evaluation
+ * \param[in, out] eval          array storing the result of the evaluations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_evaluate_def(const cs_property_t    *pty,
+                         int                     def_id,
+                         bool                    dense_output,
+                         double                  t_eval,
+                         cs_real_t              *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate the values of a property at boundary faces from the given
+ *        boundary definition. If a dense ouput is not requested, then the size
+ *        of the resulting array should be allocated at least to pty->dim *
+ *        n_b_faces. Otherwise, n_b_faces can be replaced by the number of
+ *        boundary faces associated to the current definition.
+ *
+ * \param[in]      pty           pointer to a cs_property_t structure
+ * \param[in]      def_id        id associated to the definition
+ * \param[in]      dense_output  true/false
+ * \param[in]      t_eval        time at which one performs the evaluation
+ * \param[in, out] array         array storing the result of the evaluation(s)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_evaluate_boundary_def(const cs_property_t  *pty,
+                                  int                   def_id,
+                                  bool                  dense_output,
+                                  double                t_eval,
+                                  cs_real_t            *array);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Evaluate the value of the property at each cell. Store the
  *         evaluation in the given array.
  *
@@ -1020,6 +1067,22 @@ void
 cs_property_eval_at_cells(cs_real_t               t_eval,
                           const cs_property_t    *pty,
                           cs_real_t              *array);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the value of the property at each boundary face. Store the
+ *         result of the evaluation in the given array.
+ *
+ * \param[in]       t_eval   physical time at which one evaluates the term
+ * \param[in]       pty      pointer to a cs_property_t structure
+ * \param[in, out]  array    pointer to an array of values (must be allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_eval_at_boundary_faces(cs_real_t               t_eval,
+                                   const cs_property_t    *pty,
+                                   cs_real_t              *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
