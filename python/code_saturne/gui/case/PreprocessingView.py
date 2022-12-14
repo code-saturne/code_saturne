@@ -274,7 +274,7 @@ class StandardItemModelExtrude(QStandardItemModel):
 
         self.headers = [ self.tr("zone id"),
                          self.tr("n layers"),
-                         self.tr("thickness"),
+                         self.tr("total thickness"),
                          self.tr("expansion factor"),
                          self.tr("selector")]
 
