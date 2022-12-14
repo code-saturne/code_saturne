@@ -143,7 +143,8 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
       double  *_context_cpy = (double *)d->context;
       for (int i = 0; i < dim; i++) _context_cpy[i] = _context[i];
 
-      /* Update state flag */
+      /* Update the state flag */
+
       d->state |= CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
     }
     break;
@@ -230,16 +231,12 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
       const cs_mesh_location_type_t  loc_type =
         cs_mesh_location_get_type(f->location_id);
 
-      /* Update state flag */
+      /* Update the state flag */
 
       switch(loc_type) {
 
       case CS_MESH_LOCATION_CELLS:
         d->state |= CS_FLAG_STATE_CELLWISE;
-        d->meta |= CS_FLAG_FULL_LOC;
-        break;
-      case CS_MESH_LOCATION_VERTICES:
-        d->meta |= CS_FLAG_FULL_LOC;
         break;
 
       default:
@@ -317,7 +314,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
       double  *_context_cpy = (double *)d->context;
       for (int i = 0; i < dim; i++) _context_cpy[i] = _context[i];
 
-      /* Update state flag */
+      /* Update the state flag */
 
       d->state |= CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_FACEWISE;
     }
@@ -352,7 +349,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
 
       d->context = b;
 
-      /* Update state flag */
+      /* Update the state flag */
 
       if (cs_flag_test(b->loc, cs_flag_primal_face))
         d->state |= CS_FLAG_STATE_FACEWISE;
@@ -375,7 +372,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
 
       d->context = b;
 
-      /* Update state flag */
+      /* Update the state flag */
 
       if (cs_flag_test(b->loc, cs_flag_primal_face))
         d->state |= CS_FLAG_STATE_FACEWISE;
@@ -391,10 +388,9 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
       const cs_mesh_location_type_t  loc_type =
         cs_mesh_location_get_type(f->location_id);
 
-      /* Update flags */
+      /* Update the state flag */
 
       if (loc_type == CS_MESH_LOCATION_BOUNDARY_FACES) {
-        d->meta |= CS_FLAG_FULL_LOC;
         d->state |= CS_FLAG_STATE_FACEWISE;
       }
       else
