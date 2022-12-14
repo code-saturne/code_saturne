@@ -594,6 +594,17 @@ class ComboModel:
             self.__enableItem(index)
 
 
+    def setItemStatus(self, enable, index=None, str_model="", str_view=""):
+        """
+        Enable or disable item depending on a given variable.
+        """
+
+        if enable:
+            self.enableItem(index=index, str_model=str_model, str_view=str_view)
+        else:
+            self.disableItem(index=index, str_model=str_model, str_view=str_view)
+
+
     def setItem(self, index=None, str_model="", str_view=""):
         """
         Set item as current.
