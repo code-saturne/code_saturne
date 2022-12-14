@@ -878,7 +878,7 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
         cs_real_t vr[3];
         cs_rotation_velocity(cs_glob_rotation + rot_ce_i, b_face_cog[f_id], vr);
 
-        b_massflux[f_id] +=
+        b_massflux_abs[f_id] +=
           bpro_rom[f_id] * cs_math_3_dot_product(b_f_face_normal[f_id], vr);
       }
     }
@@ -902,7 +902,6 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
     BFT_FREE(i_massflux_abs);
     BFT_FREE(b_massflux_abs);
   }
-  i_massflux = NULL, b_massflux = NULL;
 
   /* Unsteady term  and mass budget */
 
