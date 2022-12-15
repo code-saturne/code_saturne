@@ -195,7 +195,7 @@ typedef struct {
    * storing the evaluation of the associated property
    */
 
-  cs_sdm_t                *matrix;    /*!< Matrix storing operator values  */
+  cs_sdm_t                *matrix;    /*!< Matrix storing the operator values */
 
 } cs_hodge_t;
 
@@ -228,8 +228,8 @@ typedef bool
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Check if two sets of parameters related to how build a discrete
- *          Hodge operator are similar.
+ * \brief  Check if two sets of parameters related to how build a discrete
+ *         Hodge operator are similar.
  *
  * \param[in]  h1_info     pointer to a first cs_hodge_param_t structure
  * \param[in]  h2_info     pointer to a second cs_hodge_param_t structure
@@ -434,10 +434,10 @@ cs_hodge_set_property_value_cw(const cs_cell_mesh_t   *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local stiffness matrix using the generic COST algo.
- *          The computed matrix is stored in cb->loc and the related discrete
- *          hodge operator in hodge->matrix
- *          Case of CDO face-based schemes
+ * \brief  Build a local stiffness matrix using the generic COST algo.
+ *         The computed matrix is stored in cb->loc and the related discrete
+ *         hodge operator in hodge->matrix
+ *         Case of CDO face-based schemes
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -454,11 +454,11 @@ cs_hodge_fb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local stiffness matrix using the generic COST algo.
- *          with the usage of bubble stabilization.
- *          The computed matrix is stored in cb->loc and the related discrete
- *          hodge operator in hodge->matrix
- *          Case of CDO face-based schemes
+ * \brief  Build a local stiffness matrix using the generic COST algo.
+ *         with the usage of bubble stabilization.
+ *         The computed matrix is stored in cb->loc and the related discrete
+ *         hodge operator in hodge->matrix
+ *         Case of CDO face-based schemes
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -475,10 +475,10 @@ cs_hodge_fb_bubble_get_stiffness(const cs_cell_mesh_t    *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local stiffness matrix using the Voronoi algorithm
- *          The computed matrix is stored in cb->loc and the related discrete
- *          hodge operator in hodge->matrix
- *          Case of CDO face-based schemes
+ * \brief  Build a local stiffness matrix using the Voronoi algorithm
+ *         The computed matrix is stored in cb->loc and the related discrete
+ *         hodge operator in hodge->matrix
+ *         Case of CDO face-based schemes
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -495,10 +495,10 @@ cs_hodge_fb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local stiffness matrix using the generic COST algo.
- *          The computed matrix is stored in cb->loc and the related discrete
- *          hodge operator in hodge->matrix
- *          Case of CDO vertex-based schemes and an isotropic property
+ * \brief  Build a local stiffness matrix using the generic COST algo.
+ *         The computed matrix is stored in cb->loc and the related discrete
+ *         hodge operator in hodge->matrix
+ *         Case of CDO vertex-based schemes and an isotropic property
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -515,10 +515,10 @@ cs_hodge_vb_cost_get_iso_stiffness(const cs_cell_mesh_t   *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local stiffness matrix using the generic COST algo.
- *          The computed matrix is stored in cb->loc and the related discrete
- *          hodge operator in hodge->matrix
- *          Case of CDO vertex-based schemes and an anistropic property
+ * \brief  Build a local stiffness matrix using the generic COST algo.
+ *         The computed matrix is stored in cb->loc and the related discrete
+ *         hodge operator in hodge->matrix
+ *         Case of CDO vertex-based schemes and an anistropic property
  *
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge    pointer to a cs_hodge_t structure
@@ -535,10 +535,10 @@ cs_hodge_vb_cost_get_aniso_stiffness(const cs_cell_mesh_t    *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local stiffness matrix using the generic Bubble algo.
- *          The computed matrix is stored in cb->loc and the related discrete
- *          hodge operator in hodge->matrix
- *          Case of CDO vertex-based schemes and isotropic material property
+ * \brief  Build a local stiffness matrix using the generic Bubble algo.
+ *         The computed matrix is stored in cb->loc and the related discrete
+ *         hodge operator in hodge->matrix
+ *         Case of CDO vertex-based schemes and isotropic material property
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -555,10 +555,10 @@ cs_hodge_vb_bubble_get_iso_stiffness(const cs_cell_mesh_t    *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local stiffness matrix using the generic Bubble algo.
- *          The computed matrix is stored in cb->loc and the related discrete
- *          hodge operator in hodge->matrix
- *          Case of CDO vertex-based schemes and anisotropic material property
+ * \brief  Build a local stiffness matrix using the generic Bubble algo.
+ *         The computed matrix is stored in cb->loc and the related discrete
+ *         hodge operator in hodge->matrix
+ *         Case of CDO vertex-based schemes and anisotropic material property
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -575,12 +575,12 @@ cs_hodge_vb_bubble_get_aniso_stiffness(const cs_cell_mesh_t    *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local stiffness matrix using the Orthogonal
- *          Consistent/Sub-Stabilization decomposition (OCS2) with a
- *          subdivision of pvol_{e,c}.
- *          The computed matrix is stored in cb->loc and the related discrete
- *          hodge operator in hodge->matrix
- *          Case Vb schemes and an anisotropic material property
+ * \brief  Build a local stiffness matrix using the Orthogonal
+ *         Consistent/Sub-Stabilization decomposition (OCS2) with a subdivision
+ *         of pvol_{e,c}.
+ *         The computed matrix is stored in cb->loc and the related discrete
+ *         hodge operator in hodge->matrix
+ *         Case Vb schemes and an anisotropic material property
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -597,10 +597,10 @@ cs_hodge_vb_ocs2_get_aniso_stiffness(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local stiffness matrix using the generic COST algo.
- *          The computed matrix is stored in cb->loc and the related discrete
- *          hodge operator in hodge->matrix
- *          Case of CDO vertex-based schemes
+ * \brief  Build a local stiffness matrix using the generic COST algo.
+ *         The computed matrix is stored in cb->loc and the related discrete
+ *         hodge operator in hodge->matrix
+ *         Case of CDO vertex-based schemes
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -617,10 +617,10 @@ cs_hodge_vb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local stiffness matrix using the Voronoi algorithm
- *          The computed matrix is stored in cb->loc and the related discrete
- *          hodge operator in hodge->matrix
- *          Case of CDO vertex-based schemes
+ * \brief  Build a local stiffness matrix using the Voronoi algorithm
+ *         The computed matrix is stored in cb->loc and the related discrete
+ *         hodge operator in hodge->matrix
+ *         Case of CDO vertex-based schemes
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -637,10 +637,9 @@ cs_hodge_vb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local stiffness matrix using the generic WBS algo.
- *          WBS standing for Whitney Barycentric Subdivision (WBS)
- *          algo.
- *          The computed matrix is stored in cb->loc
+ * \brief  Build a local stiffness matrix using the generic WBS algo.
+ *         WBS means for Whitney Barycentric Subdivision (WBS) algo.
+ *         The computed matrix is stored in cb->loc
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -657,9 +656,9 @@ cs_hodge_vb_wbs_get_stiffness(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local stiffness matrix using the generic WBS algo.
- *          WBS standing for Whitney Barycentric Subdivision (WBS) algo.
- *          The computed matrix is stored in cb->loc
+ * \brief  Build a local stiffness matrix using the generic WBS algo.
+ *         WBS means Whitney Barycentric Subdivision (WBS) algo.
+ *         The computed matrix is stored in cb->loc
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -696,10 +695,10 @@ cs_hodge_fb_get(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell using the Voronoi
- *          algo. This leads to a diagonal operator.
- *          This function is specific for vertex+cell-based schemes
- *          The discrete Hodge operator is stored in hodge->matrix
+ * \brief  Build a local Hodge operator for a given cell using the Voronoi
+ *         algo. This leads to a diagonal operator.
+ *         This function is specific for vertex+cell-based schemes
+ *         The discrete Hodge operator is stored in hodge->matrix
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -716,9 +715,9 @@ cs_hodge_vcb_voro_get(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell using the WBS algo.
- *          This function is specific for vertex+cell-based schemes
- *          The discrete Hodge operator is stored in hodge->matrix
+ * \brief  Build a local Hodge operator for a given cell using the WBS algo.
+ *         This function is specific for vertex+cell-based schemes
+ *         The discrete Hodge operator is stored in hodge->matrix
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -775,10 +774,10 @@ cs_hodge_vpcd_voro_get(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell using VORONOI algo.
- *          Hodge op. from primal edges to dual faces.
- *          The discrete Hodge operator is stored in hodge->matrix
- *          This function is specific for vertex-based schemes
+ * \brief  Build a local Hodge operator for a given cell using VORONOI algo.
+ *         Hodge op. from primal edges to dual faces.
+ *         The discrete Hodge operator is stored in hodge->matrix
+ *         This function is specific for vertex-based schemes
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -795,10 +794,10 @@ cs_hodge_epfd_voro_get(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell using the COST algo.
- *          Hodge op. from primal edges to dual faces.
- *          The discrete Hodge operator is stored in hodge->matrix
- *          This function is specific for vertex-based schemes
+ * \brief  Build a local Hodge operator for a given cell using the COST algo.
+ *         Hodge op. from primal edges to dual faces.
+ *         The discrete Hodge operator is stored in hodge->matrix
+ *         This function is specific for vertex-based schemes
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -815,11 +814,11 @@ cs_hodge_epfd_cost_get(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell using the COST algo.
- *          with a bubble stabilization.
- *          The discrete Hodge operator is stored in hodge->matrix
- *          Hodge op. from primal edges to dual faces. This function is
- *          specific for vertex-based schemes
+ * \brief  Build a local Hodge operator for a given cell using the COST algo.
+ *         with a bubble stabilization.
+ *         The discrete Hodge operator is stored in hodge->matrix
+ *         Hodge op. from primal edges to dual faces. This function is
+ *         specific for vertex-based schemes
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -836,12 +835,12 @@ cs_hodge_epfd_bubble_get(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell using the Orthogonal
- *          Consistent/Sub-Stabilization decomposition (OCS2) with a
- *          subdivision of pvol_{e,c}.
- *          The discrete Hodge operator is stored in hodge->matrix
- *          Hodge op. from primal edges to dual faces.
- *          This function is specific for vertex-based schemes
+ * \brief  Build a local Hodge operator for a given cell using the Orthogonal
+ *         Consistent/Sub-Stabilization decomposition (OCS2) with a subdivision
+ *         of pvol_{e,c}.
+ *         The discrete Hodge operator is stored in hodge->matrix
+ *         Hodge op. from primal edges to dual faces.
+ *         This function is specific for vertex-based schemes
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -858,10 +857,10 @@ cs_hodge_epfd_ocs2_get(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell using VORONOI algo.
- *          Hodge op. from primal faces to dual edges.
- *          The discrete Hodge operator is stored in hodge->matrix
- *          This function is related to cell-based schemes
+ * \brief  Build a local Hodge operator for a given cell using VORONOI algo.
+ *         Hodge op. from primal faces to dual edges.
+ *         The discrete Hodge operator is stored in hodge->matrix
+ *         This function is related to cell-based schemes
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -878,10 +877,10 @@ cs_hodge_fped_voro_get(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell using the COST algo.
- *          Hodge op. from primal faces to dual edges.
- *          The discrete Hodge operator is stored in hodge->matrix
- *          This function is related to cell-based schemes
+ * \brief  Build a local Hodge operator for a given cell using the COST algo.
+ *         Hodge op. from primal faces to dual edges.
+ *         The discrete Hodge operator is stored in hodge->matrix
+ *         This function is related to cell-based schemes
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -898,10 +897,10 @@ cs_hodge_fped_cost_get(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell using the Bubble algo.
- *          Hodge op. from primal faces to dual edges.
- *          The discrete Hodge operator is stored in hodge->matrix
- *          This function is related to cell-based schemes
+ * \brief  Build a local Hodge operator for a given cell using the Bubble algo.
+ *         Hodge op. from primal faces to dual edges.
+ *         The discrete Hodge operator is stored in hodge->matrix
+ *         This function is related to cell-based schemes
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -918,10 +917,10 @@ cs_hodge_fped_bubble_get(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell using VORONOI algo.
- *          Hodge op. from dual edges to primal faces.
- *          The discrete Hodge operator is stored in hodge->matrix
- *          This function is related to face-based schemes
+ * \brief  Build a local Hodge operator for a given cell using VORONOI algo.
+ *         Hodge op. from dual edges to primal faces.
+ *         The discrete Hodge operator is stored in hodge->matrix
+ *         This function is related to face-based schemes
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -938,9 +937,9 @@ cs_hodge_edfp_voro_get(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell using the COST algo.
- *          Hodge op. from dual edges to primal faces.
- *          This function is related to face-based schemes
+ * \brief  Build a local Hodge operator for a given cell using the COST algo.
+ *         Hodge op. from dual edges to primal faces.
+ *         This function is related to face-based schemes
  *
  * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
  * \param[in, out] hodge     pointer to a cs_hodge_t structure
@@ -957,10 +956,10 @@ cs_hodge_edfp_cost_get(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell using the Bubble algo.
- *          Hodge op. from dual edges to primal faces.
- *          The discrete Hodge operator is stored in hodge->matrix
- *          This function is related to face-based schemes
+ * \brief  Build a local Hodge operator for a given cell using the Bubble algo.
+ *         Hodge op. from dual edges to primal faces.
+ *         The discrete Hodge operator is stored in hodge->matrix
+ *         This function is related to face-based schemes
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -977,9 +976,9 @@ cs_hodge_edfp_bubble_get(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell using the COST algo.
- *          Hodge op. from dual edges to primal faces.
- *          This function is related to face-based schemes
+ * \brief  Build a local Hodge operator for a given cell using the COST algo.
+ *         Hodge op. from dual edges to primal faces.
+ *         This function is related to face-based schemes
  *
  * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
  * \param[in, out] hodge     pointer to a cs_hodge_t structure
@@ -996,10 +995,10 @@ cs_hodge_edfp_cost_get_opt(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell using the Bubble algo.
- *          Hodge op. from dual edges to primal faces.
- *          The discrete Hodge operator is stored in hodge->matrix
- *          This function is related to face-based schemes
+ * \brief  Build a local Hodge operator for a given cell using the Bubble algo.
+ *         Hodge op. from dual edges to primal faces.
+ *         The discrete Hodge operator is stored in hodge->matrix
+ *         This function is related to face-based schemes
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
@@ -1016,12 +1015,12 @@ cs_hodge_edfp_bubble_get(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute cellwise a discrete hodge operator and multiple it with
- *          a vector
+ * \brief  Compute cellwise a discrete hodge operator and multiple it with
+ *         a vector
  *
  * \param[in]      connect   pointer to a cs_cdo_connect_t structure
  * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]      hodgep      cs_hodge_param_t structure
+ * \param[in]      hodgep    cs_hodge_param_t structure
  * \param[in]      pty       pointer to a cs_property_t structure or NULL
  * \param[in]      in_vals   vector to multiply with the discrete Hodge op.
  * \param[in]      t_eval    time at which one performs the evaluation
@@ -1040,13 +1039,13 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute cellwise a discrete hodge operator in order to define
- *          a circulation array from a flux array
+ * \brief  Compute cellwise a discrete hodge operator in order to define a
+ *         circulation array from a flux array
  *
  * \param[in]      connect   pointer to a cs_cdo_connect_t structure
  * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
  * \param[in]      t_eval    time at which one performs the evaluation
- * \param[in]      hodgep      cs_hodge_param_t structure
+ * \param[in]      hodgep    cs_hodge_param_t structure
  * \param[in]      pty       pointer to a cs_property_t structure or NULL
  * \param[in]      flux      vector to multiply with the discrete Hodge op.
  * \param[in, out] circul    array storing the resulting matrix-vector product
@@ -1064,9 +1063,9 @@ cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the hodge operator related to a face (i.e. a mass matrix
- *          with unity property) using a Whitney Barycentric Subdivision (WBS)
- *          algorithm
+ * \brief  Compute the hodge operator related to a face (i.e. a mass matrix
+ *         with unity property) using a Whitney Barycentric Subdivision (WBS)
+ *         algorithm
  *
  * \param[in]      fm        pointer to a cs_face_mesh_t structure
  * \param[in, out] hf        pointer to a cs_sdm_t structure to define

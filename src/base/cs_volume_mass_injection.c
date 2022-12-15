@@ -270,7 +270,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
   cs_lnum_t  dim = def->dim;
 
   switch(def->type) {
-  case  CS_XDEF_BY_ANALYTIC_FUNCTION:
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
     cs_xdef_eval_at_cells_by_analytic(z->n_elts,
                                       z->elt_ids,
                                       dense,
@@ -317,7 +317,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
                                       st_loc);
     break;
 
-  case  CS_XDEF_BY_FIELD:
+  case CS_XDEF_BY_FIELD:
     cs_xdef_eval_cell_by_field(z->n_elts,
                                z->elt_ids,
                                dense,

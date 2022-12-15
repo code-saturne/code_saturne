@@ -108,8 +108,8 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the values defined by a cs_xdef_t structure associated to
- *          a given volume or boundary zone.
+ * \brief  Compute the values defined by a cs_xdef_t structure associated to
+ *         a given volume or boundary zone.
  *
  * \param[in]      def                 pointer to a cs_xdef_t structure
  * \param[in]      caller_description  information string (for error logging)

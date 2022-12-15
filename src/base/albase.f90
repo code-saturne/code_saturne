@@ -38,7 +38,7 @@ module albase
   !> \addtogroup albase
   !> \{
 
-  !> Activates (=1 o) or not (=0), activate the ALE module:
+  !> Activates (> 0) or not (= 0), activate the ALE module:
   !>  - 0: not activated
   !>  - 1: legacy solver
   !>  - 2: CDO solver
