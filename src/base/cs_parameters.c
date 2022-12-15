@@ -567,8 +567,9 @@ _log_func_default_var_cal_opt(const void *t)
   cs_log_printf(CS_LOG_SETUP, fmt_i, "ischcv", _t->ischcv,
                 _("Type of convective scheme: 2nd order with centered-gradient "
                   "upwind reconstruction (0), centered (1), "
-                  "2nd order with upwind-gradient upwind-reconstruction (SOLU) (2)"
-                  "and 3 for NVD/TVD scheme"));
+                  "2nd order with upwind-gradient upwind-reconstruction (SOLU) (2) "
+                  "continuous blending between upwind and another scheme (3) "
+                  "and NVD/TVD scheme (4)"));
   cs_log_printf(CS_LOG_SETUP, fmt_i, "isstpc", _t->isstpc,
                 _("0 for slope test, 1 for no slope test, 2 for min/max limiter "));
   cs_log_printf(CS_LOG_SETUP, fmt_r, "blencv", _t->blencv,
