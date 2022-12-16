@@ -2841,7 +2841,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 
     cs_real_t  *tmp_val = NULL;
     BFT_MALLOC(tmp_val, n_cells, cs_real_t);
-    memset(tmp_val, 0, n_cells*sizeof(cs_real_t));
+    cs_array_real_fill_zero(n_cells, tmp_val);
 
     if (pty->type & CS_PROPERTY_ISO) {
 
@@ -3008,7 +3008,7 @@ cs_property_eval_at_boundary_faces(cs_real_t               t_eval,
 
       cs_real_t  *tmp_val = NULL;
       BFT_MALLOC(tmp_val, n_b_faces*dim_ab, cs_real_t);
-      memset(tmp_val, 0, n_b_faces*dim_ab*sizeof(cs_real_t));
+      cs_array_real_fill_zero(n_b_faces*dim_ab, tmp_val);
 
       if (pty->type & CS_PROPERTY_ISO) { /* A and B are isotropic */
 
@@ -3199,7 +3199,7 @@ cs_property_eval_at_boundary_faces(cs_real_t               t_eval,
           int  dim = cs_property_get_dim(pty);
           cs_real_t  *tmp_val = NULL;
           BFT_MALLOC(tmp_val, n_b_faces*dim, cs_real_t);
-          memset(tmp_val, 0, n_b_faces*dim*sizeof(cs_real_t));
+          cs_array_real_fill_zero(n_b_faces*dim, tmp_val);
 
           _evaluate_property_at_boundary_from_cells(pty, def_idx, cell_ids,
                                                     t_eval,

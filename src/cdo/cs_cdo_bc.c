@@ -40,6 +40,7 @@
 
 #include "bft_mem.h"
 
+#include "cs_array.h"
 #include "cs_boundary_zone.h"
 #include "cs_mesh_location.h"
 
@@ -91,7 +92,7 @@ _cdo_bc_face_create(bool       is_steady,
 
   bc->flag = NULL;
   BFT_MALLOC(bc->flag, n_b_faces, cs_flag_t);
-  memset(bc->flag, 0, n_b_faces*sizeof(cs_flag_t));
+  cs_array_flag_fill_zero(n_b_faces, bc->flag);
 
   /* Default initialization */
 

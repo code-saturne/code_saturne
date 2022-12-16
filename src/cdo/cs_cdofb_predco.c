@@ -48,6 +48,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_blas.h"
 #include "cs_cdo_assembly.h"
 #include "cs_cdo_bc.h"
@@ -857,12 +858,12 @@ cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t   *nsp,
   /* Values of the predicted velocity at faces */
 
   BFT_MALLOC(sc->predicted_velocity_f, 3*quant->n_faces, cs_real_t);
-  memset(sc->predicted_velocity_f, 0, 3*quant->n_faces*sizeof(cs_real_t));
+  cs_array_real_fill_zero(3*quant->n_faces, sc->predicted_velocity_f);
 
   /* Values of the pressure at faces */
 
   BFT_MALLOC(sc->pressure_f, quant->n_faces, cs_real_t);
-  memset(sc->pressure_f, 0, quant->n_faces*sizeof(cs_real_t));
+  cs_array_real_fill_zero(quant->n_faces, sc->pressure_f);
 
   /* Boundary treatment */
 

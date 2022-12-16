@@ -47,6 +47,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_cdo_toolbox.h"
 #include "cs_cdovb_scaleq.h"
 #include "cs_cdovb_vecteq.h"
@@ -223,13 +224,7 @@ _prepare_fb_solving(void              *eq_to_cast,
   }
   else { /* Serial mode *** without periodicity *** */
 
-#if defined(HAVE_OPENMP)
-#   pragma omp parallel for if (n_dofs > CS_THR_MIN)
-    for (cs_lnum_t  i = 0; i < n_dofs; i++)
-      x[i] = f_values[i];
-#else
-    memcpy(x, f_values, n_dofs * sizeof(cs_real_t));
-#endif
+    cs_array_real_copy(n_dofs, f_values, x);
 
   }
 

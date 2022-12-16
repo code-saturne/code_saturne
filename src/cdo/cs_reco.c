@@ -39,6 +39,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_math.h"
 #include "cs_scheme_geometry.h"
 
@@ -360,9 +361,7 @@ cs_reco_cell_vectors_by_ib_face_dofs(const cs_adjacency_t       *c2f,
 {
   assert(c2f != NULL && i_face_vals != NULL && b_face_vals != NULL);
 
-  /* Initialization */
-
-  memset(cell_reco, 0, 3*cdoq->n_cells*sizeof(cs_real_t));
+  cs_array_real_fill_zero(3*cdoq->n_cells, cell_reco);
 
 # pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
@@ -486,9 +485,7 @@ cs_reco_cell_vectors_by_face_dofs(const cs_adjacency_t       *c2f,
 {
   assert(c2f != NULL && cdoq !=  NULL && face_dofs != NULL);
 
-  /* Initialization */
-
-  memset(cell_reco, 0, 3*cdoq->n_cells*sizeof(cs_real_t));
+  cs_array_real_fill_zero(3*cdoq->n_cells, cell_reco);
 
 # pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
@@ -576,7 +573,7 @@ cs_reco_scal_pv_from_pc(const cs_cdo_connect_t      *connect,
     return;
   assert(quant != NULL && connect != NULL);
 
-  memset(vtx_val, 0, quant->n_vertices*sizeof(cs_real_t));
+  cs_array_real_fill_zero(quant->n_vertices, vtx_val);
 
   const cs_adjacency_t  *c2v = connect->c2v;
 
@@ -613,7 +610,7 @@ cs_reco_vect_pv_from_pc(const cs_cdo_connect_t      *connect,
     return;
   assert(quant != NULL && connect != NULL);
 
-  memset(vtx_val, 0, 3*quant->n_vertices*sizeof(cs_real_t));
+  cs_array_real_fill_zero(3*quant->n_vertices, vtx_val);
 
   const cs_adjacency_t  *c2v = connect->c2v;
 

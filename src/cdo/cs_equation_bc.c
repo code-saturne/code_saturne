@@ -40,6 +40,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_boundary_zone.h"
 #include "cs_cdo_toolbox.h"
 #include "cs_evaluate.h"
@@ -287,7 +288,7 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                    t_eval,
 {
   /* We assume a homogeneous Neumann boundary condition as a default */
 
-  memset(values, 0, sizeof(cs_real_t)*cdoq->n_b_faces);
+  cs_array_real_fill_zero(cdoq->n_b_faces, values);
 
   for (int def_id = 0; def_id < eqp->n_bc_defs; def_id++) {
 
@@ -694,7 +695,7 @@ cs_equation_bc_set_vertex_flag(const cs_cdo_connect_t     *connect,
 
   /* Initialization */
 
-  memset(vflag, 0, n_vertices*sizeof(cs_flag_t));
+  cs_array_flag_fill_zero(n_vertices, vflag);
 
   for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
 
@@ -753,7 +754,7 @@ cs_equation_bc_set_edge_flag(const cs_cdo_connect_t     *connect,
 
   /* Initialization */
 
-  memset(edge_flag, 0, n_edges*sizeof(cs_flag_t));
+  cs_array_flag_fill_zero(n_edges, edge_flag);
 
   for (cs_lnum_t bf_id = 0, f_id = n_i_faces; f_id < n_faces;
        f_id++, bf_id++) {
@@ -822,13 +823,14 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
   /* Initialization */
 
   cs_real_t  *bcvals = cs_cdo_toolbox_get_tmpbuf();
-  memset(bcvals, 0, eqp->dim*quant->n_vertices*sizeof(cs_real_t));
+
+  cs_array_real_fill_zero(eqp->dim*quant->n_vertices, bcvals);
 
   /* Number of faces with a Dir. related to a vertex */
 
   int  *counter = NULL;
   BFT_MALLOC(counter, quant->n_vertices, int);
-  memset(counter, 0, quant->n_vertices*sizeof(int));
+  cs_array_lnum_fill_zero(quant->n_vertices, counter);
 
   if (face_bc->is_steady == false) /* Update bcflag if needed */
     cs_equation_bc_set_vertex_flag(connect, face_bc, bcflag);
@@ -1011,7 +1013,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
       assert(eqp->dim == def->dim);
 
       const cs_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
-      const cs_lnum_t  *elt_ids = bz->elt_ids;
+      const cs_lnum_t  *elt_ids = (def->z_id == 0) ? NULL : bz->elt_ids;
 
       switch(def->type) {
 
@@ -1019,25 +1021,18 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
         {
           const cs_real_t  *constant_val = (cs_real_t *)def->context;
 
-          if (def->dim ==  1) {
-
-#           pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
-            for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
-              const cs_lnum_t  elt_id = (elt_ids == NULL) ? i : elt_ids[i];
-              values[elt_id] = constant_val[0];
-            }
-
-          }
-          else {
-
-#           pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
-            for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
-              const cs_lnum_t  elt_id = (elt_ids == NULL) ? i : elt_ids[i];
-              for (int k = 0; k < def->dim; k++)
-                values[def->dim*elt_id+k] = constant_val[k];
-            }
-
-          }
+          if (def->dim == 1)
+            cs_array_real_set_scalar_on_subset(bz->n_elts, elt_ids,
+                                               constant_val[0],
+                                               values);
+          else if (def->dim == 3)
+            cs_array_real_set_vector_on_subset(bz->n_elts, elt_ids,
+                                               constant_val,
+                                               values);
+          else
+            cs_array_real_set_value_on_subset(bz->n_elts, def->dim, elt_ids,
+                                              constant_val,
+                                              values);
         }
         break;
 
@@ -1051,41 +1046,38 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
 
           if (bz->id == ac->z_id) {
 
-            if (ac->z_id == 0) {  /* Array is defined on the full location */
+            if (ac->z_id == 0) { /* Array is defined on the full location */
 
               assert(bz->n_elts == quant->n_b_faces);
-              assert(eqp->n_bc_defs == 1); /* Only one definition */
-              memcpy(values, ac->values, sizeof(cs_real_t)*bz->n_elts*eqp->dim);
+              cs_array_real_copy(bz->n_elts*eqp->dim, ac->values, values);
 
             }
             else { /* Zone is only a part of the location */
 
-#             pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
-              for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
-
-                const cs_lnum_t  r_shift = def->dim*elt_ids[i];
-                const cs_lnum_t  s_shift = def->dim*i;
-
-                for (int k = 0; k < def->dim; k++)
-                  values[r_shift+k] = ac->values[s_shift+k];
-
-              }
+              if (ac->full_length)
+                cs_array_real_copy_sublist(bz->n_elts, def->dim, elt_ids,
+                                           CS_ARRAY_INOUT_SUBLIST,
+                                           ac->values,
+                                           values);
+              else
+                cs_array_real_copy_sublist(bz->n_elts, def->dim, elt_ids,
+                                           CS_ARRAY_OUT_SUBLIST,
+                                           ac->values,
+                                           values);
 
             }
 
           }
           else { /* bz->id != ac->z_id */
 
-            if (ac->z_id == 0) {  /* Array is defined on the full location */
+            if (ac->z_id == 0 || ac->full_length) { /* Array is defined on the
+                                                       full location */
 
               assert(elt_ids != NULL);
-
-#             pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
-              for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
-                const cs_lnum_t  shift = def->dim*elt_ids[i];
-                for (int k = 0; k < def->dim; k++)
-                  values[shift+k] = ac->values[shift+k];
-              }
+              cs_array_real_copy_sublist(bz->n_elts, def->dim, elt_ids,
+                                         CS_ARRAY_INOUT_SUBLIST,
+                                         ac->values,
+                                         values);
 
             }
             else

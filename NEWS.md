@@ -8,6 +8,14 @@ Master (not on release branches yet)
   for instance when defininig a property, a boundary condition or a
   source term by array. This mainly occurs when using CDO schemes.
 
+### Architectural changes:
+
+- Add and deploy several functions in cs_array.[c,h] to centralize
+  simple operations on arrays (fill with zero, set a constant value on
+  the whole array or partly, copy partly or fully an array into
+  another one and so on). These operations take into acount OpenMP if
+  available.
+
 Release 7.3.0 (not released yet)
 --------------------------------
 

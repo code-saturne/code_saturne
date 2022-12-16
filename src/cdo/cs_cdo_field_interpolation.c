@@ -42,6 +42,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_cdovcb_scaleq.h"
 #include "cs_equation.h"
@@ -210,7 +211,7 @@ cs_cdo_field_interpolation_cell_to_vertices(const cs_mesh_t    *mesh,
   /* Copy the computed solution into the given array at vertices */
 
   cs_field_t  *f = cs_field_by_id(eq->field_id);
-  memcpy(vtx_values, f->val, mesh->n_vertices*sizeof(cs_real_t));
+  cs_array_real_copy(mesh->n_vertices, f->val, vtx_values);
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);
@@ -260,10 +261,10 @@ cs_cdo_field_interpolation_cell_to_faces(const cs_mesh_t    *mesh,
 
   /* Copy the computed solution into the given array on faces */
 
-  cs_real_t *_face_values =
-    cs_cdofb_scaleq_get_face_values(eq->scheme_context, false);
-  memcpy(face_values, _face_values,
-         (mesh->n_i_faces + mesh->n_b_faces)*sizeof(cs_real_t));
+  cs_real_t *f_values = cs_cdofb_scaleq_get_face_values(eq->scheme_context,
+                                                        false);
+
+  cs_array_real_copy(mesh->n_i_faces + mesh->n_b_faces, f_values, face_values);
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);

@@ -45,6 +45,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_array.h"
 #include "cs_base.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
@@ -2221,7 +2222,7 @@ _mesh_quantities_cell_faces_cog_solid(const cs_mesh_t    *m,
 
   cs_real_t  *cell_area = NULL;
   BFT_MALLOC(cell_area, n_cells_ext, cs_real_t);
-  memset(cell_area, 0., n_cells_ext * sizeof(cs_real_t));
+  cs_array_real_fill_zero(n_cells_ext, cell_area);
 
   /* Loop on interior faces
      ---------------------- */
@@ -3020,11 +3021,11 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
   cs_lnum_t *flag_id;
   BFT_MALLOC(flag_id, m->n_cells_with_ghosts, cs_lnum_t);
-  memset(flag_id, 0, m->n_cells_with_ghosts * sizeof(cs_lnum_t));
+  cs_array_lnum_fill_zero(m->n_cells_with_ghosts, flag_id);
 
   cs_real_t *sum_surf = NULL;
   BFT_MALLOC(sum_surf, m->n_cells_with_ghosts, cs_real_t);
-  memset(sum_surf, 0., m->n_cells_with_ghosts * sizeof(cs_real_t));
+  cs_array_real_fill_zero(m->n_cells_with_ghosts, sum_surf);
 
   /* Loop on internal faces */
   for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {

@@ -40,6 +40,7 @@
 #include "bft_error.h"
 #include "bft_mem.h"
 
+#include "cs_array.h"
 #include "cs_flag.h"
 #include "cs_matrix_priv.h"
 
@@ -1833,12 +1834,7 @@ cs_cdo_system_helper_init_system(cs_cdo_system_helper_t    *sh,
   else
     sh->rhs = rhs;
 
-#if defined(HAVE_OPENMP)
-# pragma omp parallel for if  (sh->full_rhs_size > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < sh->full_rhs_size; i++) sh->rhs[i] = 0.0;
-#else
-  memset(sh->rhs, 0, sh->full_rhs_size*sizeof(cs_real_t));
-#endif
+  cs_array_real_fill_zero(sh->full_rhs_size, sh->rhs);
 
   /* Initialize structures */
 

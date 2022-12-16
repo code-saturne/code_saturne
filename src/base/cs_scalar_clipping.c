@@ -151,7 +151,7 @@ cs_scalar_clipping(cs_field_t  *f)
   cs_real_t *cpro_f_clipped = NULL;
   if (clip_f_id > -1) {
     cpro_f_clipped = cs_field_by_id(clip_f_id)->val;
-    cs_array_set_value_real(n_cells, 1, 0, cpro_f_clipped);
+    cs_array_real_fill_zero(n_cells, cpro_f_clipped);
   }
 
   cs_real_t *cvar_scal = f->val;

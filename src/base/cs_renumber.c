@@ -89,6 +89,7 @@ extern "C" {
 #include "fvm_morton.h"
 #include "fvm_hilbert.h"
 
+#include "cs_array.h"
 #include "cs_defs.h"
 #include "cs_halo.h"
 #include "cs_join.h"
@@ -895,17 +896,12 @@ _cs_renumber_update_vertices(cs_mesh_t        *mesh,
 
   /* Update the vertex coordinates */
 
-  memcpy(vtx_coord_old, mesh->vtx_coord, 3*n_vertices*sizeof(cs_real_t));
+  cs_array_real_copy(3*n_vertices, mesh->vtx_coord, vtx_coord_old);
 
-  for (cs_lnum_t new_v_id = 0; new_v_id < n_vertices; new_v_id++) {
-
-    const cs_real_t  *old_coord = vtx_coord_old + 3*n2o_v[new_v_id];
-    cs_real_t *new_coord = mesh->vtx_coord + 3*new_v_id;
-
-    for (int k = 0; k < 3; k++)
-      new_coord[k] = old_coord[k];
-
-  }
+  cs_array_real_copy_sublist(n_vertices, 3, n2o_v,
+                             CS_ARRAY_IN_SUBLIST, /* apply n2o_v to ref */
+                             vtx_coord_old,       /* ref */
+                             mesh->vtx_coord);    /* dest */
 
   BFT_FREE(vtx_coord_old);
 

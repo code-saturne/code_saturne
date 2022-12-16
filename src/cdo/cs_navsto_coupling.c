@@ -47,6 +47,8 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
+
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -700,7 +702,7 @@ cs_navsto_projection_last_setup(const cs_cdo_quantities_t  *quant,
      predicted velocity */
 
   BFT_MALLOC(nsc->div_st, quant->n_cells, cs_real_t);
-  memset(nsc->div_st, 0, quant->n_cells*sizeof(cs_real_t));
+  cs_array_real_fill_zero(quant->n_cells, nsc->div_st);
 
   cs_equation_t  *corr_eq = nsc->correction;
   cs_equation_param_t  *corr_eqp = cs_equation_get_param(corr_eq);
@@ -715,7 +717,7 @@ cs_navsto_projection_last_setup(const cs_cdo_quantities_t  *quant,
   /* Defined BC for the pressure increment in the correction step */
 
   BFT_MALLOC(nsc->bdy_pressure_incr, quant->n_b_faces, cs_real_t);
-  memset(nsc->bdy_pressure_incr, 0, quant->n_b_faces*sizeof(cs_real_t));
+  cs_array_real_fill_zero(quant->n_b_faces, nsc->bdy_pressure_incr);
 
   bool  full_length = (nsp->n_pressure_bc_defs > 1) ? true : false;
 

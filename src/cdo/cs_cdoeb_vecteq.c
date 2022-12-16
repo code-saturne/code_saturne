@@ -53,6 +53,7 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
+#include "cs_array.h"
 #include "cs_cdo_diffusion.h"
 #include "cs_cdo_toolbox.h"
 #include "cs_cdo_solve.h"
@@ -705,7 +706,7 @@ cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
   if (cs_equation_param_has_sourceterm(eqp)) {
 
     BFT_MALLOC(eqc->source_terms, n_edges, cs_real_t);
-    memset(eqc->source_terms, 0, sizeof(cs_real_t)*n_edges);
+    cs_array_real_fill_zero(n_edges, eqc->source_terms);
 
   } /* There is at least one source term */
 
@@ -859,7 +860,7 @@ cs_cdoeb_vecteq_init_values(cs_real_t                     t_eval,
 
   /* By default, 0 is set as initial condition for the computational domain */
 
-  memset(eqc->edge_values, 0, quant->n_edges*sizeof(cs_real_t));
+  cs_array_real_fill_zero(quant->n_edges, eqc->edge_values);
 
   if (eqp->n_ic_defs > 0) {
 
@@ -961,7 +962,7 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
      boundary */
 
   BFT_MALLOC(eqb->dir_values, n_edges, cs_real_t);
-  memset(eqb->dir_values, 0, n_edges*sizeof(cs_real_t));
+  cs_array_real_fill_zero(n_edges, eqb->dir_values);
 
   cs_equation_compute_circulation_eb(time_eval,
                                      mesh,
@@ -1117,7 +1118,7 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
   /* Update edge arrays */
 
   if (cur2prev && eqc->edge_values_pre != NULL)
-    memcpy(eqc->edge_values_pre, eqc->edge_values, sizeof(cs_real_t)*n_edges);
+    cs_array_real_copy(n_edges,  eqc->edge_values, eqc->edge_values_pre);
 
   cs_cdo_solve_scalar_system(eqc->n_dofs,
                              eqp->sles_param,
@@ -1173,8 +1174,7 @@ cs_cdoeb_vecteq_current_to_previous(const cs_equation_param_t  *eqp,
   /* Edge values */
 
   if (eqc->edge_values_pre != NULL)
-    memcpy(eqc->edge_values_pre, eqc->edge_values,
-           sizeof(cs_real_t)*eqc->n_dofs);
+    cs_array_real_copy(eqc->n_dofs, eqc->edge_values, eqc->edge_values_pre);
 
   /* Cell values */
 

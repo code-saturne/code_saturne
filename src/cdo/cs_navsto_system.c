@@ -44,6 +44,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_cdofb_ac.h"
 #include "cs_cdofb_monolithic.h"
 #include "cs_cdofb_monolithic_sles.h"
@@ -1017,10 +1018,10 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
   case CS_SPACE_SCHEME_HHO_P0:
     {
       BFT_MALLOC(ns->mass_flux_array, quant->n_faces, cs_real_t);
-      memset(ns->mass_flux_array, 0, sizeof(cs_real_t)*quant->n_faces);
+      cs_array_real_fill_zero(quant->n_faces, ns->mass_flux_array);
 
       BFT_MALLOC(ns->mass_flux_array_pre, quant->n_faces, cs_real_t);
-      memset(ns->mass_flux_array_pre, 0, sizeof(cs_real_t)*quant->n_faces);
+      cs_array_real_fill_zero(quant->n_faces, ns->mass_flux_array_pre);
 
       cs_flag_t loc_flag =
         CS_FLAG_FULL_LOC | CS_FLAG_SCALAR | cs_flag_primal_face;
@@ -1508,7 +1509,7 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
     cs_real_t  *th_var_iter_prev = NULL;
 
     BFT_MALLOC(th_var_iter_prev, quant->n_cells, cs_real_t);
-    memcpy(th_var_iter_prev, th_var, quant->n_cells*sizeof(cs_real_t));
+    cs_array_real_copy(quant->n_cells, th_var, th_var_iter_prev);
 
     cs_real_t  inv_tref = cs_thermal_system_get_reference_temperature();
 

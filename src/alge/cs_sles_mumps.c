@@ -57,6 +57,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_array.h"
 #include "cs_base.h"
 #include "cs_log.h"
 #include "cs_fp_exception.h"
@@ -455,14 +456,12 @@ _mumps_pc_apply(void                *context,
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(c->matrix) * db_size;
     BFT_MALLOC(_rhs, n_cols, cs_real_t);
 
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-      _rhs[ii] = x_out[ii];
+    cs_array_real_copy(n_rows, x_out, _rhs);
     rhs = _rhs;
 
   }
 
-  memset(x_out, 0, n_rows*sizeof(cs_real_t));
+  cs_array_real_fill_zero(n_rows, x_out);
 
   cs_sles_convergence_state_t  cvg = cs_sles_mumps_solve(context,
                                                          slesp->name,
@@ -2749,7 +2748,7 @@ cs_sles_mumps_solve(void                *context,
 
       assert(n_rows == dmumps->n);
       dmumps->nrhs = 1;
-      memcpy(vx, rhs, n_rows*sizeof(double));
+      cs_array_real_copy(n_rows, rhs, vx);
       dmumps->rhs = vx;
 
     }

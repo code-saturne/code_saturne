@@ -43,6 +43,7 @@
 #include <bft_mem.h>
 
 #include "cs_advection_field.h"
+#include "cs_array.h"
 #include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
@@ -398,7 +399,7 @@ cs_gwf_darcy_flux_define(const cs_cdo_connect_t       *connect,
       size_t  array_size = bf2v->idx[quant->n_b_faces];
 
       BFT_MALLOC(darcy->boundary_flux_val, array_size, cs_real_t);
-      memset(darcy->boundary_flux_val, 0, array_size*sizeof(cs_real_t));
+      cs_array_real_fill_zero(array_size, darcy->boundary_flux_val);
 
       cs_xdef_t  *bdy_def =
         cs_advection_field_def_boundary_flux_by_array(adv,
@@ -419,7 +420,7 @@ cs_gwf_darcy_flux_define(const cs_cdo_connect_t       *connect,
         array_location = CS_FLAG_SCALAR | darcy->flux_location;
         array_size = c2e->idx[quant->n_cells];
         BFT_MALLOC(darcy->flux_val, array_size, cs_real_t);
-        memset(darcy->flux_val, 0, array_size*sizeof(cs_real_t));
+        cs_array_real_fill_zero(array_size, darcy->flux_val);
 
         /* Do not transfer the ownership (automatically on the full domain) */
 

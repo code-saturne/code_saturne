@@ -44,6 +44,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_cdo_advection.h"
 #include "cs_cdo_bc.h"
 #include "cs_cdo_diffusion.h"
@@ -1080,7 +1081,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
           eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO) {
 
         BFT_MALLOC(eqc->source_terms, eqc->n_dofs, cs_real_t);
-        memset(eqc->source_terms, 0, eqc->n_dofs*sizeof(cs_real_t));
+        cs_array_real_fill_zero(eqc->n_dofs, eqc->source_terms);
 
       } /* Theta scheme */
     } /* Time-dependent equation */
@@ -1260,7 +1261,7 @@ cs_cdovb_vecteq_init_values(cs_real_t                     t_eval,
      for vertex-based schemes
   */
 
-  memset(v_vals, 0, 3*quant->n_vertices*sizeof(cs_real_t));
+  cs_array_real_fill_zero(3*quant->n_vertices, v_vals);
 
   if (eqp->n_ic_defs > 0) {
 
@@ -1684,7 +1685,8 @@ cs_cdovb_vecteq_get_cell_values(void      *context,
 
   if (eqc->cell_values == NULL)
     BFT_MALLOC(eqc->cell_values, 3*quant->n_cells, cs_real_t);
-  memset(eqc->cell_values, 0, 3*quant->n_cells*sizeof(cs_real_t));
+
+  cs_array_real_fill_zero(3*quant->n_cells, eqc->cell_values);
 
   /* Compute the values at cell centers from an interpolation of the field
      values defined at vertices */

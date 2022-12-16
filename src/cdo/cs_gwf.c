@@ -47,6 +47,7 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_array.h"
 #include "cs_boundary_zone.h"
 #include "cs_cdo_blas.h"
 #include "cs_cdovb_scaleq.h"
@@ -1108,7 +1109,7 @@ _uspf_finalize_setup(const cs_cdo_connect_t              *connect,
   case CS_SPACE_SCHEME_CDOVCB:
     BFT_MALLOC(mc->head_in_law, n_cells, cs_real_t);
 #if defined(DEBUG) && !defined(NDEBUG)
-    memset(mc->head_in_law, 0, sizeof(cs_real_t)*n_cells);
+    cs_array_real_fill_zero(n_cells, mc->head_in_law);
 #endif
     break;
 
@@ -2038,8 +2039,6 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
   const cs_adjacency_t  *c2v = connect->c2v;
   const cs_lnum_t  n_cells = connect->n_cells;
   const cs_lnum_t  c2v_size = c2v->idx[n_cells];
-  const size_t  csize = n_cells*sizeof(cs_real_t);
-  const size_t  c2v_alloc_size = c2v_size*sizeof(cs_real_t);
 
   /* Set the Darcian flux (in the volume and at the boundary) */
   /* -------------------------------------------------------- */
@@ -2067,34 +2066,32 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
      phase */
 
   BFT_MALLOC(mc->l_rel_permeability, n_cells, cs_real_t);
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_cells; i++)
-    mc->l_rel_permeability[i] = 1; /* saturated by default */
-
   BFT_MALLOC(mc->g_rel_permeability, n_cells, cs_real_t);
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_cells; i++)
-    mc->g_rel_permeability[i] = 1; /* saturated by default */
+
+  /* One assumes that the medium is saturated by default */
+
+  cs_array_real_set_scalar(n_cells, 1., mc->l_rel_permeability);
+  cs_array_real_set_scalar(n_cells, 1., mc->g_rel_permeability);
 
   /* Interpolation of the gas pressure at cell centers is used to define
    * the properties associated to terms in the water or hydrogen eq. */
 
   BFT_MALLOC(mc->g_cell_pressure, n_cells, cs_real_t);
-  memset(mc->g_cell_pressure, 0, sizeof(cs_real_t)*n_cells);
+  cs_array_real_fill_zero(n_cells, mc->g_cell_pressure);
 
   if (mc->use_properties_on_submesh) {
 
     BFT_MALLOC(mc->l_capacity, c2v_size, cs_real_t);
-    memset(mc->l_capacity, 0, c2v_alloc_size);
+    cs_array_real_fill_zero(c2v_size, mc->l_capacity);
 
   }
   else {
 
     BFT_MALLOC(mc->capillarity_cell_pressure, n_cells, cs_real_t);
-    memset(mc->capillarity_cell_pressure, 0, sizeof(cs_real_t)*n_cells);
+    cs_array_real_fill_zero(n_cells, mc->capillarity_cell_pressure);
 
     BFT_MALLOC(mc->l_capacity, n_cells, cs_real_t);
-    memset(mc->l_capacity, 0, sizeof(cs_real_t)*n_cells);
+    cs_array_real_fill_zero(n_cells, mc->l_capacity);
 
   }
 
@@ -2104,7 +2101,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
   /* Define the array storing the diffusion property for the water eq. */
 
   BFT_MALLOC(mc->diff_wl_array, n_cells, cs_real_t);
-  memset(mc->diff_wl_array, 0, csize);
+  cs_array_real_fill_zero(n_cells, mc->diff_wl_array);
 
   cs_property_def_by_array(mc->diff_wl_pty,
                            NULL,                 /* all cells */
@@ -2116,7 +2113,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
   /* Define the array storing the diffusion property in the hydrogen eq. */
 
   BFT_MALLOC(mc->diff_hg_array, n_cells, cs_real_t);
-  memset(mc->diff_hg_array, 0, csize);
+  cs_array_real_fill_zero(n_cells, mc->diff_hg_array);
 
   cs_property_def_by_array(mc->diff_hg_pty,
                            NULL,                 /* all cells */
@@ -2126,7 +2123,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                            true);                /* full length */
 
   BFT_MALLOC(mc->diff_hl_array, n_cells, cs_real_t);
-  memset(mc->diff_hl_array, 0, csize);
+  cs_array_real_fill_zero(n_cells, mc->diff_hl_array);
 
   cs_property_def_by_array(mc->diff_hl_pty,
                            NULL,                 /* all cells */
@@ -2140,7 +2137,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
     /* Define the arrays storing the time property for all blocks */
 
     BFT_MALLOC(mc->time_wl_array, n_cells, cs_real_t);
-    memset(mc->time_wl_array, 0, csize);
+    cs_array_real_fill_zero(n_cells, mc->time_wl_array);
 
     cs_property_def_by_array(mc->time_wl_pty,
                              NULL,                 /* all cells */
@@ -2150,7 +2147,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                              true);                /* full length */
 
     BFT_MALLOC(mc->time_wg_array, n_cells, cs_real_t);
-    memset(mc->time_wg_array, 0, csize);
+    cs_array_real_fill_zero(n_cells, mc->time_wg_array);
 
     cs_property_def_by_array(mc->time_wg_pty,
                              NULL,                 /* all cells */
@@ -2160,7 +2157,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                              true);                /* full length */
 
     BFT_MALLOC(mc->time_hl_array, n_cells, cs_real_t);
-    memset(mc->time_hl_array, 0, csize);
+    cs_array_real_fill_zero(n_cells, mc->time_hl_array);
 
     cs_property_def_by_array(mc->time_hl_pty,
                              NULL,
@@ -2170,7 +2167,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                              true);                /* full length */
 
     BFT_MALLOC(mc->time_hg_array, n_cells, cs_real_t);
-    memset(mc->time_hg_array, 0, csize);
+    cs_array_real_fill_zero(n_cells, mc->time_hg_array);
 
     cs_property_def_by_array(mc->time_hg_pty,
                              NULL,                 /* all cells */
@@ -2192,10 +2189,10 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
     if (mc->use_properties_on_submesh) {
 
       BFT_MALLOC(mc->l_saturation_submesh, c2v_size, cs_real_t);
-      memset(mc->l_saturation_submesh, 0, c2v_alloc_size);
+      cs_array_real_fill_zero(c2v_size, mc->l_saturation_submesh);
 
       BFT_MALLOC(mc->srct_wl_array, c2v_size, cs_real_t);
-      memset(mc->srct_wl_array, 0, c2v_alloc_size);
+      cs_array_real_fill_zero(c2v_size, mc->srct_wl_array);
 
       cs_xdef_t  *st_def =
         cs_equation_add_source_term_by_array(cs_equation_get_param(mc->wl_eq),
@@ -2210,13 +2207,13 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
       if (mc->use_explicit_dsldt_liquid) {
 
         BFT_MALLOC(mc->l_saturation_submesh_pre, c2v_size, cs_real_t);
-        memset(mc->l_saturation_submesh_pre, 0, c2v_alloc_size);
+        cs_array_real_fill_zero(c2v_size, mc->l_saturation_submesh_pre);
 
       }
       else { /* Implicit treatment for dSl/dt */
 
         BFT_MALLOC(mc->time_wl_array, c2v_size, cs_real_t);
-        memset(mc->time_wl_array, 0, c2v_alloc_size);
+        cs_array_real_fill_zero(c2v_size, mc->time_wl_array);
 
         cs_xdef_t  *pty_def =
           cs_property_def_by_array(mc->time_wl_pty,
@@ -2234,7 +2231,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
     else { /* Properties on cells */
 
       BFT_MALLOC(mc->srct_wl_array, n_cells, cs_real_t);
-      memset(mc->srct_wl_array, 0, csize);
+      cs_array_real_fill_zero(n_cells, mc->srct_wl_array);
 
       cs_equation_add_source_term_by_array(cs_equation_get_param(mc->wl_eq),
                                            NULL,   /* all cells */
@@ -2244,7 +2241,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                                            true);  /* full length */
 
       BFT_MALLOC(mc->time_wl_array, n_cells, cs_real_t);
-      memset(mc->time_wl_array, 0, csize);
+      cs_array_real_fill_zero(n_cells, mc->time_wl_array);
 
       cs_property_def_by_array(mc->time_wl_pty,
                                NULL,                 /* all cells */
@@ -2260,7 +2257,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
     if (mc->use_properties_on_submesh) {
 
       BFT_MALLOC(mc->srct_hg_array, c2v_size, cs_real_t);
-      memset(mc->srct_hg_array, 0, c2v_alloc_size);
+      cs_array_real_fill_zero(c2v_size, mc->srct_hg_array);
 
       cs_xdef_t  *st_def =
         cs_equation_add_source_term_by_array(cs_equation_get_param(mc->hg_eq),
@@ -2276,7 +2273,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
     else { /* Properties on cells */
 
       BFT_MALLOC(mc->srct_hg_array, n_cells, cs_real_t);
-      memset(mc->srct_hg_array, 0, csize);
+      cs_array_real_fill_zero(n_cells, mc->srct_hg_array);
 
       cs_equation_add_source_term_by_array(cs_equation_get_param(mc->hg_eq),
                                            NULL,   /* all cells */
@@ -2292,7 +2289,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
     if (mc->use_properties_on_submesh) {
 
       BFT_MALLOC(mc->time_hg_array, c2v_size, cs_real_t);
-      memset(mc->time_hg_array, 0, c2v_alloc_size);
+      cs_array_real_fill_zero(c2v_size, mc->time_hg_array);
 
       cs_xdef_t  *pty_def =
         cs_property_def_by_array(mc->time_hg_pty,
@@ -2308,7 +2305,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
     else { /* Properties on cells */
 
       BFT_MALLOC(mc->time_hg_array, n_cells, cs_real_t);
-      memset(mc->time_hg_array, 0, csize);
+      cs_array_real_fill_zero(n_cells, mc->time_hg_array);
 
       cs_property_def_by_array(mc->time_hg_pty,
                                NULL,                /* all cells */
@@ -2324,7 +2321,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
     if (mc->use_properties_on_submesh) {
 
       BFT_MALLOC(mc->reac_hg_array, c2v_size, cs_real_t);
-      memset(mc->reac_hg_array, 0, c2v_alloc_size);
+      cs_array_real_fill_zero(c2v_size, mc->reac_hg_array);
 
       cs_xdef_t  *pty_def =
         cs_property_def_by_array(mc->reac_hg_pty,
@@ -2340,7 +2337,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
     else {
 
       BFT_MALLOC(mc->reac_hg_array, n_cells, cs_real_t);
-      memset(mc->reac_hg_array, 0, csize);
+      cs_array_real_fill_zero(n_cells, mc->reac_hg_array);
 
       cs_property_def_by_array(mc->reac_hg_pty,
                                NULL,                /* all cells */

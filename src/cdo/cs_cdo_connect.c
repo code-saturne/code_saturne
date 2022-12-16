@@ -43,6 +43,7 @@
 
 #include "fvm_io_num.h"
 
+#include "cs_array.h"
 #include "cs_flag.h"
 #include "cs_log.h"
 #include "cs_mesh_adjacencies.h"
@@ -613,7 +614,7 @@ _build_cell_flag(cs_cdo_connect_t   *connect,
   const cs_lnum_t  n_cells = connect->n_cells;
 
   BFT_MALLOC(connect->cell_flag, n_cells, cs_flag_t);
-  memset(connect->cell_flag, 0, n_cells*sizeof(cs_flag_t));
+  cs_array_flag_fill_zero(n_cells, connect->cell_flag);
 
   /* Loop on volume zones to find solid zones and then tag cells */
 
@@ -639,7 +640,7 @@ _build_cell_flag(cs_cdo_connect_t   *connect,
 
     cs_flag_t  *is_border_vtx = NULL;
     BFT_MALLOC(is_border_vtx, n_vertices, cs_flag_t);
-    memset(is_border_vtx, 0, n_vertices*sizeof(cs_flag_t));
+    cs_array_flag_fill_zero(n_vertices, is_border_vtx);
 
     const cs_adjacency_t  *bf2v = connect->bf2v;
     for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
@@ -677,7 +678,7 @@ _build_cell_flag(cs_cdo_connect_t   *connect,
 
     cs_flag_t  *is_border_edge = NULL;
     BFT_MALLOC(is_border_edge, n_edges, cs_flag_t);
-    memset(is_border_edge, 0, n_edges*sizeof(cs_flag_t));
+    cs_array_flag_fill_zero(n_edges, is_border_edge);
 
     const cs_adjacency_t  *f2e = connect->f2e;
     for (cs_lnum_t bf_id = n_i_faces; bf_id < n_i_faces + n_b_faces; bf_id++) {

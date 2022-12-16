@@ -42,6 +42,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_array_reduce.h"
 #include "cs_log.h"
 #include "cs_order.h"
@@ -597,7 +598,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
       const cs_lnum_t  *c2e_ids = topo->c2e->ids + c2e_idx[0];
       const short int  n_ec = c2e_idx[1] - c2e_idx[0];
 
-      /* Initialize cell_dface */
+      /* Initialization of cell_dface by each thread */
 
       cs_real_t  *cell_dface = quant->dface_normal + 3*c2e_idx[0];
       memset(cell_dface, 0, 3*n_ec*sizeof(cs_real_t));
@@ -1419,7 +1420,7 @@ cs_cdo_quantities_compute_pvol_fc(cs_cdo_quantities_t     *cdoq,
     BFT_MALLOC(pvol_fc, c2f->idx[n_cells], cs_real_t);
 
 #if defined(DEBUG) && !defined(NDEBUG)
-  memset(pvol_fc, 0, c2f->idx[n_cells]*sizeof(cs_real_t));
+  cs_array_real_fill_zero(c2f->idx[n_cells], pvol_fc);
 #endif
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
@@ -1505,12 +1506,12 @@ cs_cdo_quantities_compute_pvol_ec(const cs_cdo_quantities_t   *cdoq,
     BFT_MALLOC(pvol_ec, c2e->idx[n_cells], cs_real_t);
 
   if (cdoq->pvol_ec != NULL)
-    memcpy(pvol_ec, cdoq->pvol_ec, c2e->idx[n_cells]*sizeof(cs_real_t));
+    cs_array_real_copy(c2e->idx[n_cells], cdoq->pvol_ec, pvol_ec);
 
   else {
 
 #if defined(DEBUG) && !defined(NDEBUG)
-    memset(pvol_ec, 0, c2e->idx[n_cells]*sizeof(cs_real_t));
+    cs_array_real_fill_zero(c2e->idx[n_cells], pvol_ec);
 #endif
 
 #   pragma omp parallel for if (n_cells > CS_THR_MIN)
@@ -1598,7 +1599,7 @@ cs_cdo_quantities_compute_dual_volumes(const cs_cdo_quantities_t   *cdoq,
   if (dual_vol == NULL)
     BFT_MALLOC(dual_vol, n_vertices, cs_real_t);
 
-  memset(dual_vol, 0, n_vertices*sizeof(cs_real_t));
+  cs_array_real_fill_zero(n_vertices, dual_vol);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)

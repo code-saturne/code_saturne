@@ -43,6 +43,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_cdo_advection.h"
 #include "cs_cdo_assembly.h"
 #include "cs_cdo_bc.h"
@@ -801,16 +802,16 @@ _update_cell_fields(cs_timer_counter_t      *tce,
 {
   cs_timer_t  t0 = cs_timer_time();
 
+  const cs_cdo_connect_t  *cdoc = cs_shared_connect;
+
   /* Copy current field values to previous values */
 
-  if (cur2prev && eqc->cell_values_pre != NULL) {
-    size_t  bsize = cs_shared_connect->n_cells*sizeof(cs_real_t);
-    memcpy(eqc->cell_values_pre, eqc->cell_values, bsize);
-  }
+  if (cur2prev && eqc->cell_values_pre != NULL)
+    cs_array_real_copy(cdoc->n_cells, eqc->cell_values, eqc->cell_values_pre);
 
   /* Compute values at cells pc = acc^-1*(RHS - Acv*pv) */
 
-  cs_static_condensation_recover_scalar(cs_shared_connect->c2v,
+  cs_static_condensation_recover_scalar(cdoc->c2v,
                                         eqc->rc_tilda,
                                         eqc->acv_tilda,
                                         fld->val,
@@ -1036,9 +1037,10 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
   BFT_MALLOC(eqc->acv_tilda, connect->c2v->idx[n_cells], cs_real_t);
 
   eqc->cell_values_pre = NULL;  /* For a future usage */
-  memset(eqc->cell_values, 0, sizeof(cs_real_t)*n_cells);
-  memset(eqc->rc_tilda, 0, sizeof(cs_real_t)*n_cells);
-  memset(eqc->acv_tilda, 0, sizeof(cs_real_t)*connect->c2v->idx[n_cells]);
+
+  cs_array_real_fill_zero(n_cells, eqc->cell_values);
+  cs_array_real_fill_zero(n_cells, eqc->rc_tilda);
+  cs_array_real_fill_zero(connect->c2v->idx[n_cells], eqc->acv_tilda);
 
   /* Flag to indicate what to build in a cell mesh */
 
@@ -1402,8 +1404,8 @@ cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
      for vertex-based schemes
   */
 
-  memset(v_vals, 0, quant->n_vertices*sizeof(cs_real_t));
-  memset(c_vals, 0, quant->n_cells*sizeof(cs_real_t));
+  cs_array_real_fill_zero(quant->n_vertices, v_vals);
+  cs_array_real_fill_zero(quant->n_cells, c_vals);
 
   if (eqp->n_ic_defs > 0) {
 
@@ -1522,8 +1524,8 @@ cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_vertices = quant->n_vertices;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
+  const cs_lnum_t  n_vertices = cdoq->n_vertices;
 
   /* Build an array storing the Dirichlet values at vertices
    * First argument is set to t_cur even if this is a steady computation since
@@ -1547,7 +1549,7 @@ cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
    * Main OpenMP block on cell
    * ------------------------- */
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+# pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1588,7 +1590,7 @@ cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
      * --------------------------------------------- */
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
       /* Set the current cell flag */
 
@@ -1598,7 +1600,7 @@ cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
       cs_cell_mesh_build(c_id,
                          cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
-                         connect, quant, cm);
+                         connect, cdoq, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
@@ -1719,9 +1721,9 @@ cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
                              fld->val,
                              rhs);
 
-  /* Compute values at cells pc = acc^-1*(RHS - Acv*pv) */
+  /* Copy the knowledge of cell values into the context structure */
 
-  memcpy(eqc->cell_values, cell_values, quant->n_cells*sizeof(cs_real_t));
+  cs_array_real_copy(cdoq->n_cells, cell_values, eqc->cell_values);
 
   /* Free remaining buffers */
 
@@ -2355,7 +2357,8 @@ cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
 
       for (cs_lnum_t v = 0; v < n_vertices; v++)
         rhs[v] += tcoef * eqc->source_terms[v];
-      memset(eqc->source_terms, 0, n_vertices * sizeof(cs_real_t));
+
+      cs_array_real_fill_zero(n_vertices, eqc->source_terms);
 
       if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC ||
           eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED) {
@@ -2778,7 +2781,8 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   if (cs_equation_param_has_diffusion(eqp) == false) {
-    memset(vf_flux, 0, connect->bf2v->idx[quant->n_b_faces]*sizeof(cs_real_t));
+
+    cs_array_real_fill_zero(connect->bf2v->idx[quant->n_b_faces], vf_flux);
 
     cs_timer_t  t1 = cs_timer_time();
     cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
@@ -3188,7 +3192,7 @@ cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   if (cs_equation_param_has_diffusion(eqp) == false) {
-    memset(diff_flux, 0, 3*quant->n_cells);
+    cs_array_real_fill_zero(3*quant->n_cells, diff_flux);
     return;
   }
 
@@ -3288,7 +3292,7 @@ cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   if (cs_equation_param_has_diffusion(eqp) == false) {
-    memset(diff_flux, 0, connect->c2e->idx[quant->n_cells]*sizeof(cs_real_t));
+    cs_array_real_fill_zero(connect->c2e->idx[quant->n_cells], diff_flux);
     return;
   }
 
@@ -3608,8 +3612,8 @@ cs_cdovcb_scaleq_current_to_previous(const cs_equation_param_t  *eqp,
   /* Cell values */
 
   if (eqc->cell_values_pre != NULL)
-    memcpy(eqc->cell_values_pre, eqc->cell_values,
-           sizeof(cs_real_t)*cs_shared_quant->n_cells);
+    cs_array_real_copy(cs_shared_quant->n_cells,
+                       eqc->cell_values, eqc->cell_values_pre);
 
   /* Vertex values */
 

@@ -52,6 +52,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_array.h"
 #include "cs_blas.h"
 #include "cs_cdo_solve.h"
 #include "cs_log.h"
@@ -137,6 +138,29 @@ _get_id(int    m,
   return j + i*m - (i*(i + 1))/2;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the scalar multiplication of a vector split into the x1 and
+ *        x2 part
+ *
+ * \param[in]     ssys     pointer to a cs_saddle_system_t structure
+ * \param[in]     scalar   scaling coefficient to apply
+ * \param[in]     x        vector to consider
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_scalar_scaling(cs_saddle_system_t   *ssys,
+                const cs_real_t       scalar,
+                cs_real_t            *x)
+{
+  assert(x != NULL);
+  cs_real_t  *x1 = x, *x2 = x + ssys->max_x1_size;
+
+  cs_array_real_scale(ssys->x1_size, scalar, x1);
+  cs_array_real_scale(ssys->x2_size, scalar, x2);
+}
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -189,34 +213,6 @@ _cvg_test(cs_iter_algo_t       *ia)
     return true;
   else
     return false;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the scalar multiplication of a vector split into the x1 and
- *        x2 part
- *
- * \param[in]     ssys     pointer to a cs_saddle_system_t structure
- * \param[in]     scalar   scaling coefficient to apply
- * \param[in]     x        vector to consider
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_scalar_scaling(cs_saddle_system_t   *ssys,
-                const cs_real_t       scalar,
-                cs_real_t            *x)
-{
-  assert(x != NULL);
-  cs_real_t  *x1 = x, *x2 = x + ssys->max_x1_size;
-
-# pragma omp parallel for if (ssys->x1_size > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < ssys->x1_size; i++)
-    x1[i] *= scalar;
-
-# pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < ssys->x2_size; i++)
-    x2[i] *= scalar;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -488,7 +484,8 @@ _compute_residual_3(cs_saddle_system_t   *ssys,
   const cs_range_set_t  *rset = ssys->rset;
 
   cs_real_t  *res1 = res, *res2 = res + ssys->max_x1_size;
-  memset(res1, 0, sizeof(cs_real_t)*ssys->max_x1_size);
+
+  cs_array_real_fill_zero(ssys->max_x1_size, res1);
 
   /* Two parts:
    * a) rhs1 - M11.x1 - M12.x2
@@ -497,7 +494,7 @@ _compute_residual_3(cs_saddle_system_t   *ssys,
 
   cs_real_t  *m12x2 = NULL;
   BFT_MALLOC(m12x2, ssys->x1_size, cs_real_t);
-  memset(m12x2, 0, ssys->x1_size*sizeof(cs_real_t));
+  cs_array_real_fill_zero(ssys->x1_size, m12x2);
 
   const cs_adjacency_t  *adj = ssys->m21_adjacency;
 
@@ -584,7 +581,7 @@ _matvec_product(cs_saddle_system_t   *ssys,
 
   cs_real_t  *m12v2 = NULL;
   BFT_MALLOC(m12v2, ssys->x1_size, cs_real_t);
-  memset(m12v2, 0, ssys->x1_size*sizeof(cs_real_t));
+  cs_array_real_fill_zero(ssys->x1_size, m12v2);
 
   assert(ssys->x2_size == adj->n_elts);
 # pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
@@ -671,7 +668,7 @@ _solve_m11_approximation(cs_saddle_system_t          *ssys,
 
   /* Solve the linear solver */
 
-  memset(z, 0, sizeof(cs_real_t)*n_x1_elts);
+  cs_array_real_fill_zero(n_x1_elts, z);
 
   cs_solving_info_t  m11_info =
     {.n_it = 0, .res_norm = DBL_MAX, .rhs_norm = r_norm};
@@ -737,8 +734,9 @@ _solve_schur_approximation(cs_saddle_system_t          *ssys,
   int  n_iter = 0;
 
   if (sbp->schur_sles == NULL ||
-      sbp->schur_type == CS_PARAM_SCHUR_IDENTITY) /* Precond = Identity */
-    memcpy(z_schur, r_schur, sizeof(cs_real_t)*ssys->x2_size);
+      sbp->schur_type == CS_PARAM_SCHUR_IDENTITY)
+    /* Precond = Identity: z_schur <-- r_schur */
+    cs_array_real_copy(ssys->x2_size, r_schur, z_schur);
 
   else if (sbp->schur_type == CS_PARAM_SCHUR_MASS_SCALED) {
 
@@ -758,7 +756,8 @@ _solve_schur_approximation(cs_saddle_system_t          *ssys,
     cs_parall_sum(1, CS_DOUBLE, &r_norm);
     r_norm = sqrt(fabs(r_norm));
 
-    memset(z_schur, 0, sizeof(cs_real_t)*ssys->x2_size);
+    cs_array_real_fill_zero(ssys->x2_size, z_schur);
+
     n_iter += cs_cdo_solve_scalar_cell_system(ssys->x2_size,
                                               sbp->schur_slesp,
                                               sbp->schur_matrix,
@@ -828,7 +827,7 @@ _elman_schur_approximation(cs_saddle_system_t          *ssys,
 
   cs_real_t  *m12z2 = pc_wsp;   /* size = x1_size */
 
-  memset(m12z2, 0, ssys->x1_size*sizeof(cs_real_t));
+  cs_array_real_fill_zero(ssys->x1_size, m12z2);
 
   /* Update += of m12z2 inside the following function */
 
@@ -850,7 +849,8 @@ _elman_schur_approximation(cs_saddle_system_t          *ssys,
                       m12z2); /* out: size=rset->n_elts[0] */
 
   cs_real_t  *mmz = pc_wsp + ssys->max_x1_size; /* size = x1_size */
-  memset(mmz, 0, sizeof(cs_real_t)*ssys->max_x1_size);
+
+  cs_array_real_fill_zero(ssys->max_x1_size, mmz);
 
   cs_matrix_vector_multiply(m11, m12z2, mmz);
 
@@ -1317,9 +1317,11 @@ _no_pc_apply(cs_saddle_system_t          *ssys,
 
   if (z == NULL)
     return 0;
-
   assert(r != NULL);
-  memcpy(z, r, sizeof(cs_real_t)*(ssys->max_x1_size + ssys->max_x2_size));
+
+  /* z <-- r */
+
+  cs_array_real_copy(ssys->max_x1_size + ssys->max_x2_size, r, z);
 
   return 0;
 }
@@ -1595,7 +1597,6 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
   /* Workspace */
 
   const cs_lnum_t  ssys_size = ssys->max_x1_size + ssys->max_x2_size;
-  const size_t  n_bytes = sizeof(cs_real_t)*ssys_size;
   cs_lnum_t  wsp_size = 7*ssys_size;
   cs_real_t  *wsp = NULL;
 
@@ -1690,7 +1691,8 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
 
     /* Apply preconditionning: M.z(k+1) = v(k+1) */
 
-    memcpy(zold, z, n_bytes);
+    cs_array_real_copy(ssys_size, z, zold);
+
     ia->n_inner_iter += pc_apply(ssys, sbp, v, z, pc_wsp);
 
     /* New value for beta: beta = sqrt(<v, z>) */
@@ -1938,7 +1940,8 @@ cs_saddle_gcr(int                          restart,
     }
 
     cs_real_t  *update = c_tmp;
-    memset(update, 0, ssys_size*sizeof(cs_real_t));
+    cs_array_real_fill_zero(ssys_size, update);
+
     for (int k = 0; k < _restart; k++)
       _add_scaled_vector(ssys, beta[k], zsave + k*ssys_size, update);
 
@@ -2063,7 +2066,7 @@ cs_matrix_vector_multiply_gs(const cs_range_set_t      *rset,
   cs_real_t  *vecx = NULL;
   if (n_cols > vec_len) {
     BFT_MALLOC(vecx, n_cols, cs_real_t);
-    memcpy(vecx, vec, sizeof(cs_real_t)*vec_len);
+    cs_array_real_copy(vec_len, vec, vecx);
   }
   else
     vecx = vec;

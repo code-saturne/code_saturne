@@ -2707,9 +2707,10 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
       && compressible_flag < 0
       && cs_restart_present() == false){
 
-    memset(gradp, 0.0,  n_cells*sizeof(cs_real_3_t));
-    memset(ipotfl, 0.0, n_i_faces*sizeof(cs_real_t));
-    memset(bpotfl, 0.0, n_b_faces*sizeof(cs_real_t));
+    cs_array_real_fill_zero(3*n_cells, prcdo->pressure_gradient->val);
+    cs_array_real_fill_zero(n_i_faces, ipotfl);
+    cs_array_real_fill_zero(n_b_faces, bpotfl);
+
   }
 
   /* Building the linear system to solve.

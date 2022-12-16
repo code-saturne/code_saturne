@@ -44,6 +44,7 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_array.h"
 #include "cs_field.h"
 #include "cs_gwf_priv.h"
 #include "cs_hodge.h"
@@ -641,13 +642,16 @@ cs_gwf_soil_build_dual_porous_volume(const cs_cdo_quantities_t    *cdoq,
   else
     BFT_REALLOC(_dual_porous_volume, n_vertices, double);
 
-  memset(_dual_porous_volume, 0, sizeof(double)*n_vertices);
+  cs_array_real_fill_zero(n_vertices, _dual_porous_volume);
 
   if (_n_soils == 1) {
 
     const cs_gwf_soil_t  *soil = _soils[0];
-    for (cs_lnum_t i = 0; i < n_vertices; i++)
-      _dual_porous_volume[i] = soil->porosity * cdoq->dual_vol[i];
+
+    cs_array_real_set_wscalar(n_vertices, soil->porosity, cdoq->dual_vol,
+                              _dual_porous_volume);
+
+    /* cdoq->dual_vol is already synchronized (parallel sum reduction) */
 
   }
   else { /* Several soils to handle */

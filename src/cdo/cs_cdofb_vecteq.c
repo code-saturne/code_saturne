@@ -44,6 +44,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_cdo_advection.h"
 #include "cs_cdo_bc.h"
 #include "cs_cdo_diffusion.h"
@@ -296,7 +297,7 @@ cs_cdofb_vecteq_setup(cs_real_t                     t_eval,
   /* Initialize and compute the values of the Dirichlet BC */
 
   BFT_MALLOC(eqb->dir_values, 3*quant->n_b_faces, cs_real_t);
-  memset(eqb->dir_values, 0, 3*quant->n_b_faces*sizeof(cs_real_t));
+  cs_array_real_fill_zero(3*quant->n_b_faces, eqb->dir_values);
 
   cs_cell_builder_t  *cb = cs_cdofb_cell_bld[0]; /* Always allocated */
 
@@ -1676,7 +1677,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   /* Assume the 3x3 matrix is diagonal */
 
   BFT_MALLOC(eqc->acf_tilda, 3*connect->c2f->idx[n_cells], cs_real_t);
-  memset(eqc->acf_tilda, 0, 3*connect->c2f->idx[n_cells]*sizeof(cs_real_t));
+  cs_array_real_fill_zero(3*connect->c2f->idx[n_cells], eqc->acf_tilda);
 
   bool  need_eigen =
     (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
@@ -1974,8 +1975,8 @@ cs_cdofb_vecteq_init_values(cs_real_t                     t_eval,
 
   /* By default, 0 is set as initial condition for the computational domain */
 
-  memset(f_vals, 0, 3*quant->n_faces*sizeof(cs_real_t));
-  memset(c_vals, 0, 3*quant->n_cells*sizeof(cs_real_t));
+  cs_array_real_fill_zero(3*quant->n_faces, f_vals);
+  cs_array_real_fill_zero(3*quant->n_cells, c_vals);
 
   if (eqp->n_ic_defs > 0) {
 

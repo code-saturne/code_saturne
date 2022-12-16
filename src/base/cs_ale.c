@@ -37,6 +37,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_array.h"
 #include "cs_base.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
@@ -442,7 +443,7 @@ _update_bc_list(const cs_mesh_t   *mesh,
   BFT_REALLOC(_cdo_bc->vtx_select, _cdo_bc->n_selections, cs_lnum_t *);
 
   /* Reset vtag */
-  memset(vtag, 0, n_vertices*sizeof(bool));
+  cs_array_bool_fill_false(n_vertices, vtag);
 
   /* Count the number of vertices to select */
   for (cs_lnum_t i = 0; i < z->n_elts; i++) {
@@ -466,7 +467,7 @@ _update_bc_list(const cs_mesh_t   *mesh,
   BFT_MALLOC(_cdo_bc->vtx_select[id], counter, cs_lnum_t);
 
   /* Fill the list of selected vertices */
-  memset(vtag, 0, n_vertices*sizeof(bool));
+  cs_array_bool_fill_false(n_vertices, vtag);
   counter = 0;
   for (cs_lnum_t i = 0; i < z->n_elts; i++) {
 
@@ -1647,9 +1648,9 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
   if (_cdo_bc == NULL) {
 
     BFT_MALLOC(_cdo_bc, 1, cs_ale_cdo_bc_t);
-
     BFT_MALLOC(_cdo_bc->vtx_values, 3*n_vertices, cs_real_t);
-    memset(_cdo_bc->vtx_values, 0, 3*n_vertices*sizeof(cs_real_t));
+
+    cs_array_real_fill_zero(3*n_vertices, _cdo_bc->vtx_values);
 
     _cdo_bc->n_selections = 0;
     _cdo_bc->n_vertices = NULL;

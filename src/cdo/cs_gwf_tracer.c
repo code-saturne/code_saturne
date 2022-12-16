@@ -44,6 +44,7 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_array.h"
 #include "cs_field.h"
 #include "cs_gwf_soil.h"
 #include "cs_hodge.h"
@@ -755,7 +756,8 @@ _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
    * a parallel reduction
    */
 
-  memset(c_l, 0, n_vertices*sizeof(cs_real_t));
+  cs_array_real_fill_zero(n_vertices, c_l);
+
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
       c_l[c2v->ids[j]] += m_l_vc[j];
@@ -824,7 +826,7 @@ _add_precipitation(const cs_cdo_connect_t      *connect,
   }
 
   BFT_MALLOC(tc->precip_mass, a_size, cs_real_t);
-  memset(tc->precip_mass, 0, a_size*sizeof(cs_real_t));
+  cs_array_real_fill_zero(a_size, tc->precip_mass);
 
   if (space_scheme == CS_SPACE_SCHEME_CDOVCB ||
       space_scheme == CS_SPACE_SCHEME_CDOVB) {
@@ -1440,7 +1442,7 @@ _vb_sat_decay_chain_molar_st(cs_gwf_tracer_t             *tracer,
   cs_xdef_t  *st_def = tdc->st_defs[tracer->chain_position_id];
   double  *st_values = cs_xdef_array_get_values(st_def);
 
-  memset(st_values, 0, c2v->idx[quant->n_cells]*sizeof(double));
+  cs_array_real_fill_zero(c2v->idx[quant->n_cells], st_values);
 
   /* Retrieve information on the parent tracer */
 
@@ -1529,7 +1531,7 @@ _vb_decay_chain_molar_st(cs_gwf_tracer_t             *tracer,
   cs_xdef_t  *st_def = tdc->st_defs[tracer->chain_position_id];
   double  *st_values = cs_xdef_array_get_values(st_def);
 
-  memset(st_values, 0, c2v->idx[quant->n_cells]*sizeof(double));
+  cs_array_real_fill_zero(c2v->idx[quant->n_cells], st_values);
 
   /* Retrieve information on the parent tracer */
 
@@ -1613,7 +1615,7 @@ _vb_sat_decay_chain_becqu_st(cs_gwf_tracer_t             *tracer,
   cs_xdef_t  *st_def = tdc->st_defs[tracer->chain_position_id];
   double  *st_values = cs_xdef_array_get_values(st_def);
 
-  memset(st_values, 0, c2v->idx[quant->n_cells]*sizeof(double));
+  cs_array_real_fill_zero(c2v->idx[quant->n_cells], st_values);
 
   /* Retrieve information on the parent tracer */
 
@@ -1702,7 +1704,7 @@ _vb_decay_chain_becqu_st(cs_gwf_tracer_t             *tracer,
   cs_xdef_t  *st_def = tdc->st_defs[tracer->chain_position_id];
   double  *st_values = cs_xdef_array_get_values(st_def);
 
-  memset(st_values, 0, c2v->idx[quant->n_cells]*sizeof(double));
+  cs_array_real_fill_zero(c2v->idx[quant->n_cells], st_values);
 
   /* Retrieve information on the parent tracer */
 
@@ -2813,7 +2815,7 @@ cs_gwf_tracer_sat_finalize_setup(const cs_cdo_connect_t     *connect,
 
     double  *st_values = NULL;
     BFT_MALLOC(st_values, c2v->idx[quant->n_cells], double);
-    memset(st_values, 0, c2v->idx[quant->n_cells]*sizeof(double));
+    cs_array_real_fill_zero(c2v->idx[quant->n_cells], st_values);
 
     cs_gwf_tracer_decay_chain_t  *tdc =
       cs_gwf_tracer_decay_chain_by_id(tracer->chain_id);
@@ -2935,7 +2937,7 @@ cs_gwf_tracer_unsat_finalize_setup(const cs_cdo_connect_t      *connect,
 
     double  *st_values = NULL;
     BFT_MALLOC(st_values, c2v->idx[quant->n_cells], double);
-    memset(st_values, 0, c2v->idx[quant->n_cells]*sizeof(double));
+    cs_array_real_fill_zero(c2v->idx[quant->n_cells], st_values);
 
     cs_gwf_tracer_decay_chain_t  *tdc =
       cs_gwf_tracer_decay_chain_by_id(tracer->chain_id);

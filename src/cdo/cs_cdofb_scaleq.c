@@ -43,6 +43,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_cdo_advection.h"
 #include "cs_cdo_bc.h"
 #include "cs_cdo_diffusion.h"
@@ -176,7 +177,7 @@ _setup(cs_real_t                     t_eval,
   /* Compute the values of the Dirichlet BC */
 
   BFT_MALLOC(eqb->dir_values, quant->n_b_faces, cs_real_t);
-  memset(eqb->dir_values, 0, quant->n_b_faces*sizeof(cs_real_t));
+  cs_array_real_fill_zero(quant->n_b_faces, eqb->dir_values);
 
   cs_equation_compute_dirichlet_fb(mesh, quant, connect, eqp, eqb->face_bc,
                                    t_eval,
@@ -853,14 +854,12 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* Values at each face (interior and border) i.e. take into account BCs */
 
   BFT_MALLOC(eqc->face_values, n_faces, cs_real_t);
-# pragma omp parallel for if (n_faces > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_faces; i++) eqc->face_values[i] = 0;
+  cs_array_real_fill_zero(n_faces, eqc->face_values);
 
   eqc->face_values_pre = NULL;
   if (cs_equation_param_has_time(eqp)) {
     BFT_MALLOC(eqc->face_values_pre, n_faces, cs_real_t);
-# pragma omp parallel for if (n_faces > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_faces; i++) eqc->face_values_pre[i] = 0;
+    cs_array_real_fill_zero(n_faces, eqc->face_values_pre);
   }
 
   /* Store the last computed values of the field at cell centers and the data
@@ -871,8 +870,8 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
   BFT_MALLOC(eqc->rc_tilda, n_cells, cs_real_t);
   BFT_MALLOC(eqc->acf_tilda, connect->c2f->idx[n_cells], cs_real_t);
 
-  memset(eqc->rc_tilda, 0, sizeof(cs_real_t)*n_cells);
-  memset(eqc->acf_tilda, 0, sizeof(cs_real_t)*connect->c2f->idx[n_cells]);
+  cs_array_real_fill_zero(n_cells, eqc->rc_tilda);
+  cs_array_real_fill_zero(connect->c2f->idx[n_cells], eqc->acf_tilda);
 
   bool  need_eigen =
     (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
@@ -1034,7 +1033,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
   if (cs_equation_param_has_sourceterm(eqp)) {
 
     BFT_MALLOC(eqc->source_terms, n_cells, cs_real_t);
-    memset(eqc->source_terms, 0, sizeof(cs_real_t)*n_cells);
+    cs_array_real_fill_zero(n_cells, eqc->source_terms);
 
   } /* There is at least one source term */
 
@@ -1170,8 +1169,8 @@ cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
 
   /* By default, 0 is set as initial condition for the computational domain */
 
-  memset(f_vals, 0, quant->n_faces*sizeof(cs_real_t));
-  memset(c_vals, 0, quant->n_cells*sizeof(cs_real_t));
+  cs_array_real_fill_zero(quant->n_faces, f_vals);
+  cs_array_real_fill_zero(quant->n_cells, c_vals);
 
   if (eqp->n_ic_defs > 0) {
 
@@ -1249,7 +1248,7 @@ cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
     BFT_FREE(def2f_idx);
 
     if (fld->val_pre != NULL)
-      memcpy(fld->val_pre, c_vals, quant->n_cells*sizeof(cs_real_t));
+      cs_array_real_copy(quant->n_cells, c_vals, fld->val_pre);
 
   } /* Initial values to set */
 
@@ -1266,8 +1265,7 @@ cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
                                    f_vals + quant->n_i_faces);
 
   if (eqc->face_values_pre != NULL)
-    memcpy(eqc->face_values_pre, eqc->face_values,
-           quant->n_faces*sizeof(cs_real_t));
+    cs_array_real_copy(quant->n_faces, eqc->face_values, eqc->face_values_pre);
 }
 
 /*----------------------------------------------------------------------------*/

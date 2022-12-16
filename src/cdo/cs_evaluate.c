@@ -2524,8 +2524,8 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
 
-  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
   const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
+  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
   const cs_lnum_t  *elt_ids = (n_cells == z->n_elts) ? NULL : z->elt_ids;
 
   cs_quadrature_tetra_integral_t
@@ -2536,11 +2536,9 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
 
   case 1: /* Scalar-valued */
     if (elt_ids == NULL)
-      memset(retval, 0, cs_cdo_quant->n_cells*sizeof(cs_real_t));
-    else {
-      for (cs_lnum_t i = 0; i < z->n_elts; i++)
-        retval[z->elt_ids[i]] = 0;
-    }
+      cs_array_real_fill_zero(n_cells, retval);
+    else
+      cs_array_real_set_scalar_on_subset(z->n_elts, elt_ids, 0., retval);
 
     _pcsa_by_analytic(time_eval,
                       ac->func, ac->input, z->n_elts, elt_ids, qfunc,
@@ -2549,11 +2547,10 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
 
   case 3: /* Vector-valued */
     if (elt_ids == NULL)
-      memset(retval, 0, 3*cs_cdo_quant->n_cells*sizeof(cs_real_t));
+      cs_array_real_fill_zero(3*n_cells, retval);
     else {
-      for (cs_lnum_t i = 0; i < z->n_elts; i++)
-        for (int k = 0; k < 3; k++)
-          retval[3*z->elt_ids[i]+k] = 0;
+      cs_real_t  zero[3] = {0, 0, 0};
+      cs_array_real_set_vector_on_subset(z->n_elts, elt_ids, zero, retval);
     }
 
     _pcva_by_analytic(time_eval,

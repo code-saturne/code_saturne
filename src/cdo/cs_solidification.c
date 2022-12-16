@@ -41,6 +41,7 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_array.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_navsto_system.h"
 #include "cs_parall.h"
@@ -4440,7 +4441,6 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
   if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
 
   const cs_lnum_t  n_cells = quant->n_cells;
-  const size_t  size_c = n_cells*sizeof(cs_real_t);
 
   /* Retrieve the field associated to the temperature */
 
@@ -4479,7 +4479,7 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
        equation. This term is related to the liquid fraction */
 
     BFT_MALLOC(solid->forcing_mom_array, n_cells, cs_real_t);
-    memset(solid->forcing_mom_array, 0, size_c);
+    cs_array_real_fill_zero(n_cells, solid->forcing_mom_array);
 
     cs_property_def_by_array(solid->forcing_mom,
                              NULL,  /* all cells */
@@ -4505,7 +4505,7 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
   if (solid->thermal_reaction_coef != NULL) {
 
     BFT_MALLOC(solid->thermal_reaction_coef_array, n_cells, cs_real_t);
-    memset(solid->thermal_reaction_coef_array, 0, size_c);
+    cs_array_real_fill_zero(n_cells, solid->thermal_reaction_coef_array);
 
     cs_property_def_by_array(solid->thermal_reaction_coef,
                              NULL,  /* all cells */
@@ -4515,7 +4515,7 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
                              true); /* full length */
 
     BFT_MALLOC(solid->thermal_source_term_array, n_cells, cs_real_t);
-    memset(solid->thermal_source_term_array, 0, size_c);
+    cs_array_real_fill_zero(n_cells, solid->thermal_source_term_array);
 
     cs_equation_param_t  *thm_eqp =
       cs_equation_param_by_name(CS_THERMAL_EQNAME);
@@ -4542,10 +4542,8 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
     /* Allocate an array to store the liquid concentration */
 
     BFT_MALLOC(alloy->c_l_cells, n_cells, cs_real_t);
-
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_cells; i++)
-      alloy->c_l_cells[i] = alloy->ref_concentration;
+    cs_array_real_set_scalar(n_cells, alloy->ref_concentration,
+                             alloy->c_l_cells);
 
     /* Add the c_l_cells array for the Boussinesq term (solutal effect) */
 
@@ -4571,14 +4569,12 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
 
     const cs_real_t  eta_ref_value = 1.;
     BFT_MALLOC(alloy->eta_coef_array, n_cells, cs_real_t);
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_cells; i++)
-      alloy->eta_coef_array[i] = eta_ref_value;
+    cs_array_real_set_scalar(n_cells, eta_ref_value, alloy->eta_coef_array);
 
     if (solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM) {
 
       BFT_MALLOC(alloy->c_l_faces, quant->n_faces, cs_real_t);
-      memset(alloy->c_l_faces, 0, sizeof(cs_real_t)*quant->n_faces);
+      cs_array_real_fill_zero(quant->n_faces, alloy->c_l_faces);
 
     }
     else { /* Estimate the reference value for the solutal diffusion property
@@ -4604,10 +4600,7 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
     cs_property_set_reference_value(alloy->diff_pty, pty_ref_value);
 
     BFT_MALLOC(alloy->diff_pty_array, n_cells, cs_real_t);
-
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_cells; i++)
-      alloy->diff_pty_array[i] = pty_ref_value;
+    cs_array_real_set_scalar(n_cells, pty_ref_value, alloy->diff_pty_array);
 
     cs_property_def_by_array(alloy->diff_pty,
                              NULL,  /* all cells */
@@ -4619,9 +4612,10 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
     if (solid->post_flag & CS_SOLIDIFICATION_ADVANCED_ANALYSIS) {
 
       BFT_MALLOC(alloy->tbulk_minus_tliq, n_cells, cs_real_t);
-      memset(alloy->tbulk_minus_tliq, 0, size_c);
+      cs_array_real_fill_zero(n_cells, alloy->tbulk_minus_tliq);
+
       BFT_MALLOC(alloy->cliq_minus_cbulk, n_cells, cs_real_t);
-      memset(alloy->cliq_minus_cbulk, 0, size_c);
+      cs_array_real_fill_zero(n_cells, alloy->cliq_minus_cbulk);
 
     }
 

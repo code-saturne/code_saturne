@@ -57,6 +57,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_array.h"
 #include "cs_blas.h"
 #include "cs_cdo_blas.h"
 #include "cs_cdo_solve.h"
@@ -730,8 +731,8 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
   BFT_MALLOC(diag_smat, n_cells_ext, cs_real_t);
   BFT_MALLOC(xtra_smat, 2*n_i_faces, cs_real_t);
 
-  memset(diag_smat, 0, n_cells_ext*sizeof(cs_real_t));
-  memset(xtra_smat, 0, 2*n_i_faces*sizeof(cs_real_t));
+  cs_array_real_fill_zero(n_cells_ext, diag_smat);
+  cs_array_real_fill_zero(2*n_i_faces, xtra_smat);
 
   /* Add diagonal and extra-diagonal contributions from interior faces */
 
@@ -856,12 +857,11 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
 
   /* Compute A^-1 lumped. Consider a rhs with only one values. */
 
-  for (cs_lnum_t i = 0; i < uza->n_u_dofs; i++)
-    uza->rhs[i] = 1;
+  cs_array_real_set_scalar(uza->n_u_dofs, 1., uza->rhs);
 
   cs_real_t  *invA_lumped = NULL;
   BFT_MALLOC(invA_lumped, uza->n_u_dofs, cs_real_t);
-  memset(invA_lumped, 0, sizeof(cs_real_t)*uza->n_u_dofs);
+  cs_array_real_fill_zero(uza->n_u_dofs, invA_lumped);
 
   /* Modify the tolerance. Only a coarse approximation is needed */
 
@@ -911,8 +911,8 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
   BFT_MALLOC(diag_smat, n_cells_ext, cs_real_t);
   BFT_MALLOC(xtra_smat, 2*n_i_faces, cs_real_t);
 
-  memset(diag_smat, 0, n_cells_ext*sizeof(cs_real_t));
-  memset(xtra_smat, 0, 2*n_i_faces*sizeof(cs_real_t));
+  cs_array_real_fill_zero(n_cells_ext, diag_smat);
+  cs_array_real_fill_zero(2*n_i_faces, xtra_smat);
 
   /* Add diagonal and extra-diagonal contributions from interior faces */
 
@@ -1052,8 +1052,8 @@ _diag_schur_sbp(const cs_navsto_param_t       *nsp,
   BFT_MALLOC(diag_smat, n_cells_ext, cs_real_t);
   BFT_MALLOC(xtra_smat, 2*n_i_faces, cs_real_t);
 
-  memset(diag_smat, 0, n_cells_ext*sizeof(cs_real_t));
-  memset(xtra_smat, 0, 2*n_i_faces*sizeof(cs_real_t));
+  cs_array_real_fill_zero(n_cells_ext, diag_smat);
+  cs_array_real_fill_zero(2*n_i_faces, xtra_smat);
 
   /* Add diagonal and extra-diagonal contributions from interior faces */
 
@@ -1220,8 +1220,8 @@ _elman_schur_sbp(const cs_navsto_param_t       *nsp,
   BFT_MALLOC(diag_smat, n_cells_ext, cs_real_t);
   BFT_MALLOC(xtra_smat, 2*n_i_faces, cs_real_t);
 
-  memset(diag_smat, 0, n_cells_ext*sizeof(cs_real_t));
-  memset(xtra_smat, 0, 2*n_i_faces*sizeof(cs_real_t));
+  cs_array_real_fill_zero(n_cells_ext, diag_smat);
+  cs_array_real_fill_zero(2*n_i_faces, xtra_smat);
 
   /* Add diagonal and extra-diagonal contributions from interior faces */
 
@@ -1332,11 +1332,11 @@ _invlumped_schur_sbp(const cs_navsto_param_t       *nsp,
 
   cs_real_t  *rhs = NULL;
   BFT_MALLOC(rhs, b11_size, cs_real_t);
-  for (cs_lnum_t i = 0; i < b11_size; i++) rhs[i] = 1;
+  cs_array_real_set_scalar(b11_size, 1., rhs);
 
   cs_real_t  *inv_lumped = NULL;
   BFT_MALLOC(inv_lumped, b11_size, cs_real_t);
-  memset(inv_lumped, 0, sizeof(cs_real_t)*b11_size);
+  cs_array_real_fill_zero(b11_size, inv_lumped);
 
   cs_cdo_solve_scalar_system(b11_size,
                              slesp0,
@@ -1361,8 +1361,8 @@ _invlumped_schur_sbp(const cs_navsto_param_t       *nsp,
   BFT_MALLOC(diag_smat, n_cells_ext, cs_real_t);
   BFT_MALLOC(xtra_smat, 2*n_i_faces, cs_real_t);
 
-  memset(diag_smat, 0, n_cells_ext*sizeof(cs_real_t));
-  memset(xtra_smat, 0, 2*n_i_faces*sizeof(cs_real_t));
+  cs_array_real_fill_zero(n_cells_ext, diag_smat);
+  cs_array_real_fill_zero(2*n_i_faces, xtra_smat);
 
   /* Add diagonal and extra-diagonal contributions from interior faces */
 
@@ -3243,7 +3243,7 @@ _init_gkb_builder(const cs_navsto_param_t    *nsp,
   /* Auxiliary vectors */
 
   BFT_MALLOC(gkb->v, n_u_dofs, cs_real_t);
-  memset(gkb->v, 0, n_u_dofs*sizeof(cs_real_t));
+  cs_array_real_fill_zero(n_u_dofs, gkb->v);
 
   BFT_MALLOC(gkb->q, n_p_dofs, cs_real_t);
   BFT_MALLOC(gkb->d, n_p_dofs, cs_real_t);
@@ -3271,7 +3271,7 @@ _init_gkb_builder(const cs_navsto_param_t    *nsp,
     gkb->z_size = CS_MAX(1, CS_GKB_TRUNCATION_THRESHOLD - 4);
 
   BFT_MALLOC(gkb->zeta_array, gkb->z_size, cs_real_t);
-  memset(gkb->zeta_array, 0, gkb->z_size*sizeof(cs_real_t));
+  cs_array_real_fill_zero(gkb->z_size, gkb->zeta_array);
 
   gkb->zeta_square_sum = 0.;
 
@@ -3498,7 +3498,7 @@ _apply_div_op_transpose(const cs_real_t   *div_op,
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_adjacency_t  *c2f = cs_shared_connect->c2f;
 
-  memset(dt_q, 0, 3*quant->n_faces*sizeof(cs_real_t));
+  cs_array_real_fill_zero(3*quant->n_faces, dt_q);
 
 # pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
@@ -5208,7 +5208,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
    *   Solve smat.zk = r0
    *   g0 = alpha zk + nu Mp^-1 r0 */
 
-  memset(zk, 0, sizeof(cs_real_t)*uza->n_p_dofs);
+  cs_array_real_fill_zero(uza->n_p_dofs, zk);
 
   _n_iter = 0;
   switch (nsp->sles_param->schur_approximation) {
@@ -5225,6 +5225,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
     break;
 
   case CS_PARAM_SCHUR_MASS_SCALED:
+#   pragma omp parallel for if (msles->n_cells > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < msles->n_cells; i++)
       zk[i] = rk[i]/uza->inv_mp[i];
     break;
@@ -5244,7 +5245,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
   /* dk0 <-- gk0 */
 
-  memcpy(dk, gk, uza->n_p_dofs*sizeof(cs_real_t));
+  cs_array_real_copy(uza->n_p_dofs, gk, dk);
 
   double  beta_denum = cs_gdot(uza->n_p_dofs, rk, gk);
   uza->algo->normalization = sqrt(beta_denum);
@@ -5294,7 +5295,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
     /* Solve smat.zk = dwk */
 
-    memset(zk, 0, sizeof(cs_real_t)*uza->n_p_dofs);
+    cs_array_real_fill_zero(uza->n_p_dofs, zk);
 
     _n_iter = 0;
     switch (nsp->sles_param->schur_approximation) {
@@ -5311,6 +5312,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
       break;
 
     case CS_PARAM_SCHUR_MASS_SCALED:
+#     pragma omp parallel for if (msles->n_cells > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < msles->n_cells; i++)
         zk[i] = dwk[i]/uza->inv_mp[i];
       break;
@@ -5553,13 +5555,11 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
                            uza->n_u_dofs, 1, false, CS_REAL_TYPE,
                            uza->rhs);
 
-#   pragma omp parallel for if (uza->n_u_dofs > CS_THR_MIN)
-    for (cs_lnum_t iu = 0; iu < uza->n_u_dofs; iu++)
-      uza->rhs[iu] *= -gamma;
+    cs_array_real_scale(uza->n_u_dofs, -gamma, uza->rhs);
 
     /* Solve AL.u_f = rhs */
 
-    memset(delta_u, 0, sizeof(cs_real_t)*uza->n_u_dofs);
+    cs_array_real_fill_zero(uza->n_u_dofs, delta_u);
 
     uza->algo->n_inner_iter
       += (uza->algo->last_inner_iter =

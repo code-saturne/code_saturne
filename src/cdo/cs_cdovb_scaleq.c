@@ -43,6 +43,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_boundary_zone.h"
 #include "cs_cdo_advection.h"
 #include "cs_cdo_bc.h"
@@ -1867,7 +1868,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
           eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO) {
 
         BFT_MALLOC(eqc->source_terms, eqc->n_dofs, cs_real_t);
-        memset(eqc->source_terms, 0, eqc->n_dofs*sizeof(cs_real_t));
+        cs_array_real_fill_zero(eqc->n_dofs, eqc->source_terms);
 
       } /* Theta scheme */
 
@@ -2373,7 +2374,7 @@ cs_cdovb_scaleq_init_values(cs_real_t                     t_eval,
      for vertex-based schemes
   */
 
-  memset(v_vals, 0, quant->n_vertices*sizeof(cs_real_t));
+  cs_array_real_fill_zero(quant->n_vertices, v_vals);
 
   if (eqp->n_ic_defs > 0) {
 
@@ -2904,7 +2905,8 @@ cs_cdovb_scaleq_solve_steady_state_incr(bool                        cur2prev,
 
   if (eqb->increment == NULL)
     BFT_MALLOC(eqb->increment, eqc->n_dofs, cs_real_t);
-  memset(eqb->increment, 0, eqc->n_dofs*sizeof(cs_real_t));
+
+  cs_array_real_fill_zero(eqc->n_dofs, eqb->increment);
 
   cs_cdo_solve_scalar_system(eqc->n_dofs,
                              eqp->sles_param,
@@ -3425,7 +3427,8 @@ cs_cdovb_scaleq_solve_implicit_incr(bool                        cur2prev,
 
   if (eqb->increment == NULL)
     BFT_MALLOC(eqb->increment, eqc->n_dofs, cs_real_t);
-  memset(eqb->increment, 0, eqc->n_dofs*sizeof(cs_real_t));
+
+  cs_array_real_fill_zero(eqc->n_dofs, eqb->increment);
 
   cs_cdo_solve_scalar_system(eqc->n_dofs,
                              eqp->sles_param,
@@ -3529,7 +3532,8 @@ cs_cdovb_scaleq_solve_theta(bool                        cur2prev,
       assert(cs_equation_param_has_sourceterm(eqp));
       for (cs_lnum_t v = 0; v < n_vertices; v++)
         rhs[v] += tcoef * eqc->source_terms[v];
-      memset(eqc->source_terms, 0, n_vertices * sizeof(cs_real_t));
+
+      cs_array_real_fill_zero(n_vertices, eqc->source_terms);
 
       if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC ||
           eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED) {
@@ -3821,7 +3825,8 @@ cs_cdovb_scaleq_get_cell_values(void      *context,
 
   if (eqc->cell_values == NULL)
     BFT_MALLOC(eqc->cell_values, quant->n_cells, cs_real_t);
-  memset(eqc->cell_values, 0, quant->n_cells*sizeof(cs_real_t));
+
+  cs_array_real_fill_zero(quant->n_cells, eqc->cell_values);
 
   /* Compute the values at cell centers from an interpolation of the field
      values defined at vertices */
@@ -4372,7 +4377,8 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   if (cs_equation_param_has_diffusion(eqp) == false) {
-    memset(vf_flux, 0, connect->bf2v->idx[quant->n_b_faces]*sizeof(cs_real_t));
+
+    cs_array_real_fill_zero(connect->bf2v->idx[quant->n_b_faces], vf_flux);
 
     cs_timer_t  t1 = cs_timer_time();
     cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
@@ -4795,7 +4801,7 @@ cs_cdovb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
   /* If no diffusion, return after resetting */
 
   if (cs_equation_param_has_diffusion(eqp) == false) {
-    memset(diff_flux, 0, 3*quant->n_cells*sizeof(cs_real_t));
+    cs_array_real_fill_zero(3*quant->n_cells, diff_flux);
     return;
   }
 
@@ -4917,7 +4923,7 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
   /* If no diffusion, return after resetting */
 
   if (cs_equation_param_has_diffusion(eqp) == false) {
-    memset(diff_flux, 0, connect->c2e->idx[quant->n_cells]*sizeof(cs_real_t));
+    cs_array_real_fill_zero(connect->c2e->idx[quant->n_cells], diff_flux);
     return;
   }
 

@@ -47,6 +47,7 @@
 #include "fvm_nodal_append.h"
 #include "fvm_nodal_extract.h"
 
+#include "cs_array.h"
 #include "cs_base.h"
 #include "cs_boundary_zone.h"
 #include "cs_field.h"
@@ -3159,15 +3160,10 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
 
           /* Now scatter values from subset to parent location. */
 
-          if (elt_ids != NULL) {
-            for (cs_lnum_t i = 0; i < n_elts; i++) {
-              for (cs_lnum_t j = 0; j < f_dim; j++)
-                tmp_val[elt_ids[i]*f_dim + j] = f->val[i*f_dim + j];
-            }
-            f_val = tmp_val;
-          }
-          else
-            memcpy(tmp_val, f->val, sizeof(cs_real_t)*n_vals);
+          cs_array_real_copy_sublist(n_elts, f_dim, elt_ids,
+                                     CS_ARRAY_OUT_SUBLIST, /* elt_ids on dest */
+                                     f->val,               /* ref */
+                                     tmp_val);             /* dest <-- ref */
 
         } /* End of case for field on sub-location */
 

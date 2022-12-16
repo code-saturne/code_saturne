@@ -50,6 +50,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_array.h"
 #include "cs_halo.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
@@ -1643,7 +1644,7 @@ cs_mesh_adjacency_c2f(const cs_mesh_t  *m,
   BFT_MALLOC(c2f->sgn, idx_size, short int);
 
   BFT_MALLOC(cell_shift, n_cells, cs_lnum_t);
-  memset(cell_shift, 0, n_cells*sizeof(cs_lnum_t));
+  cs_array_lnum_fill_zero(n_cells, cell_shift);
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
 
@@ -1760,7 +1761,7 @@ cs_mesh_adjacency_c2f_lower(const cs_mesh_t  *m,
   BFT_MALLOC(c2f->sgn, idx_size, short int);
 
   BFT_MALLOC(cell_shift, n_cells, cs_lnum_t);
-  memset(cell_shift, 0, n_cells*sizeof(cs_lnum_t));
+  cs_array_lnum_fill_zero(n_cells, cell_shift);
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
 
@@ -1843,7 +1844,7 @@ cs_mesh_adjacency_c2f_boundary(const cs_mesh_t  *m)
   BFT_MALLOC(c2f->ids, idx_size, cs_lnum_t);
 
   BFT_MALLOC(cell_shift, n_cells, cs_lnum_t);
-  memset(cell_shift, 0, n_cells*sizeof(cs_lnum_t));
+  cs_array_lnum_fill_zero(n_cells, cell_shift);
 
   for (cs_lnum_t  f_id = 0; f_id < n_b_faces; f_id++) {
 

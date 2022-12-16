@@ -44,6 +44,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_array.h"
 #include "cs_boundary_zone.h"
 #include "cs_cdo_toolbox.h"
 #include "cs_evaluate.h"
@@ -224,7 +225,11 @@ _compute_adv_vector_at_vertices(cs_xdef_t                  *def,
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
   const cs_adjacency_t  *c2v = connect->c2v;
 
-  memset(vtx_values, 0, 3*quant->n_vertices*sizeof(cs_real_t));
+  /* Reset array */
+
+  cs_array_real_fill_zero(3*quant->n_vertices, vtx_values);
+
+  /* Compute the advection vector-valued field */
 
   switch (def->type) {
 
@@ -1671,8 +1676,7 @@ cs_advection_field_in_cells(const cs_adv_field_t   *adv,
           bft_error(__FILE__, __LINE__, 0,
                     " %s: Invalid location for array", __func__);
 
-        memcpy(cell_values, cx->values,
-               cx->stride*cdoq->n_cells*sizeof(cs_real_t));
+        cs_array_real_copy(3*cdoq->n_cells, cx->values, cell_values);
       }
       break; /* definition by array */
 
@@ -1691,7 +1695,7 @@ cs_advection_field_in_cells(const cs_adv_field_t   *adv,
           /* If not the field associated to the advection field */
 
           if (field->id != adv->cell_field_id)
-            memcpy(cell_values, field->val, 3*cdoq->n_cells*sizeof(cs_real_t));
+            cs_array_real_copy(3*cdoq->n_cells, field->val, cell_values);
           break;
 
         case CS_MESH_LOCATION_VERTICES:
@@ -1786,7 +1790,7 @@ cs_advection_field_at_vertices(const cs_adv_field_t    *adv,
         assert(cx->stride == 3);
 
         if (cs_flag_test(cx->value_location, cs_flag_primal_vtx))
-          memcpy(vtx_values, cx->values, 3*cdoq->n_vertices*sizeof(cs_real_t));
+          cs_array_real_copy(3*cdoq->n_vertices, cx->values, vtx_values);
 
         else if (cs_flag_test(cx->value_location, cs_flag_primal_cell))
           cs_reco_vect_pv_from_pc(connect, cdoq, cx->values, vtx_values);
@@ -1812,8 +1816,7 @@ cs_advection_field_at_vertices(const cs_adv_field_t    *adv,
         case CS_MESH_LOCATION_VERTICES:
           /* If not the field associated to the advection field */
           if (field->id != adv->vtx_field_id)
-            memcpy(vtx_values, field->val,
-                   3*cdoq->n_vertices*sizeof(cs_real_t));
+            cs_array_real_copy(3*cdoq->n_vertices, field->val, vtx_values);
           break;
 
         default:
@@ -2015,8 +2018,7 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
                                                    shift with n_i_faces */
 
           if (cs_flag_test(cx->value_location, cs_flag_primal_face))
-            memcpy(flx_values, cx->values + n_i_faces,
-                   sizeof(cs_real_t)*n_b_faces);
+            cs_array_real_copy(n_b_faces, cx->values + n_i_faces, flx_values);
         }
         break;
 
@@ -2069,18 +2071,9 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
           {
             const cs_real_t  *constant_val = (cs_real_t *)bdef->context;
 
-            if (z->elt_ids == NULL) {
-              assert(z->n_elts == n_b_faces);
-#             pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-              for (cs_lnum_t i = 0; i < n_b_faces; i++)
-                flx_values[i] = constant_val[0];
-            }
-            else {
-#             pragma omp parallel for if (z->n_elts > CS_THR_MIN)
-              for (cs_lnum_t i = 0; i < z->n_elts; i++)
-                flx_values[z->elt_ids[i]] = constant_val[0];
-            }
-
+            cs_array_real_set_scalar_on_subset(z->n_elts, z->elt_ids,
+                                               constant_val[0],
+                                               flx_values);
           }
           break;
 
@@ -2093,7 +2086,7 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
             assert(bdef->meta & CS_FLAG_FULL_LOC || z->elt_ids == NULL);
 
             if (cs_flag_test(cx->value_location, cs_flag_primal_face))
-              memcpy(flx_values, val, sizeof(cs_real_t)*n_b_faces);
+              cs_array_real_copy(n_b_faces, val, flx_values);
 
             else if (cs_flag_test(cx->value_location,
                                   cs_flag_dual_closure_byf)) {
@@ -2124,7 +2117,7 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
             switch (cs_mesh_location_get_type(field->location_id)) {
 
             case CS_MESH_LOCATION_BOUNDARY_FACES:
-              memcpy(flx_values, field->val, sizeof(cs_real_t)*n_b_faces);
+              cs_array_real_copy(n_b_faces, field->val, flx_values);
               break;
 
             default:
@@ -3340,7 +3333,7 @@ cs_advection_field_divergence_at_vertices(const cs_adv_field_t     *adv,
   const cs_adjacency_t  *e2v = connect->e2v;
 
   BFT_MALLOC(divergence, cdoq->n_vertices, cs_real_t);
-  memset(divergence, 0, sizeof(cs_real_t)*cdoq->n_vertices);
+  cs_array_real_fill_zero(cdoq->n_vertices, divergence);
 
   { /* Volume part */
     const cs_xdef_t  *def = adv->definition;
