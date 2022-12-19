@@ -1,4 +1,4 @@
-Release 7.2.1 (not released yet)
+Release 7.2.1 (December 19 2022)
 --------------------------------
 
 Bug fixes:
