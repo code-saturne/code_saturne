@@ -1,5 +1,7 @@
-Release 7.1.2 (not released yet)
+Release 7.1.2 (December 19 2022)
 --------------------------------
+
+This is the last release of the 7.1 series.
 
 Bug fixes:
 
@@ -16,7 +18,8 @@ Bug fixes:
 
 - GUI: Fix naming of NCFD scalars when creating time averages
 
-- Fix desrtoy function related do medcoupling mesh export to avoid data corruption.
+- Fix destroy function related to medcoupling mesh export to avoid
+  data corruption.
 
 - Restart from different mesh: fix values shift in variable exchange when
   some points are not located (updated PLE library).
