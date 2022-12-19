@@ -378,56 +378,6 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the volume zone if from the zone name (If name = NULL or
- *         has an empty length, all entities are selected)
- *
- * \param[in] z_name            name of the zone
- *
- * \return the id of the related zone
- */
-/*----------------------------------------------------------------------------*/
-
-static inline int
-cs_get_vol_zone_id(const char   *z_name)
-{
-  if (z_name != NULL) {
-    if (strlen(z_name) > 0) {
-      const cs_zone_t  *z = cs_volume_zone_by_name(z_name);
-      assert(z != NULL);
-      return z->id;
-    }
-  }
-
-  return 0; /* Return the default zone by default */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the boundary zone if from the zone name (If name = NULL or
- *         has an empty length, all entities are selected)
- *
- * \param[in] z_name            name of the zone
- *
- * \return the id of the related zone
- */
-/*----------------------------------------------------------------------------*/
-
-static inline int
-cs_get_bdy_zone_id(const char   *z_name)
-{
-  if (z_name != NULL) {
-    if (strlen(z_name) > 0) {
-      const cs_zone_t  *z = cs_boundary_zone_by_name(z_name);
-      assert(z != NULL);
-      return z->id;
-    }
-  }
-
-  return 0; /* Return the default zone by default */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Retrieve the value associated to the given definition.
  *         This should be a definition by value and the dimension should be
  *         equal to one.

@@ -2980,7 +2980,7 @@ cs_gwf_tracer_integrate(const cs_cdo_connect_t     *connect,
   if (tracer == NULL)
     return 0;
 
-  const int  z_id = cs_get_vol_zone_id(z_name);
+  const int  z_id = cs_volume_zone_id_by_name(z_name);
   const cs_zone_t  *zone = cs_volume_zone_by_id(z_id);
 
   if (tracer->model & CS_GWF_TRACER_USER)
@@ -3034,7 +3034,7 @@ cs_gwf_tracer_integrate_by_terms(const cs_cdo_connect_t     *connect,
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid type of tracer.\n",
               __func__);
 
-  const int  z_id = cs_get_vol_zone_id(z_name);
+  const int  z_id = cs_volume_zone_id_by_name(z_name);
   const cs_zone_t  *zone = cs_volume_zone_by_id(z_id);
 
   tracer->integrate(connect, cdoq, tracer->equation, zone, tracer->context,

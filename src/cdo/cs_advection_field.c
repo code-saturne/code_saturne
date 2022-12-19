@@ -959,7 +959,7 @@ cs_advection_field_def_boundary_flux_by_value(cs_adv_field_t    *adv,
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                           1,  /* dim. */
-                                          cs_get_bdy_zone_id(zname),
+                                          cs_boundary_zone_id_by_name(zname),
                                           state_flag,
                                           meta_flag,
                                           (void *)&normal_flux);
@@ -992,7 +992,7 @@ cs_advection_field_def_boundary_flux_by_analytic(cs_adv_field_t        *adv,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_adv));
 
   cs_flag_t  state_flag = 0, meta_flag = 0;
-  int  z_id = cs_get_bdy_zone_id(zname);
+  int  z_id = cs_boundary_zone_id_by_name(zname);
   cs_xdef_analytic_context_t  ac = { .z_id = z_id,
                                      .func = func,
                                      .input = input,
@@ -1050,7 +1050,7 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
   cs_flag_t  state_flag =  0;
   cs_flag_t  meta_flag = 0;
 
-  int  z_id = cs_get_bdy_zone_id(zname);
+  int  z_id = cs_boundary_zone_id_by_name(zname);
   if (z_id == 0)
     meta_flag  |= CS_FLAG_FULL_LOC;
 

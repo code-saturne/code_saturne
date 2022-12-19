@@ -747,6 +747,38 @@ cs_boundary_zone_by_name_try(const char  *name)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the boundary zone id from its zone name.
+ *         If the zone name is equal to NULL or has an empty length, then
+ *         the default zone id (=0) corresponding to all entities is returned
+ *
+ * \param[in] z_name        name of the zone or NULL or ""
+ *
+ * \return the id of the boundary zone
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_boundary_zone_id_by_name(const char   *z_name)
+{
+  int  id = 0; /* Return the default zone correspoinding to all boundary faces
+                  by default */
+
+  if (z_name != NULL) {
+    if (strlen(z_name) > 0) {
+
+      id = cs_map_name_to_id_try(_zone_map, z_name);
+      if (id < 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Boundary zone \"%s\" not found.", __func__, z_name);
+
+    }
+  }
+
+  return id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set type flag for a given boundary zone.
  *
  * \param[in]  id         boundary zone id

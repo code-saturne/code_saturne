@@ -2192,7 +2192,7 @@ cs_equation_add_ic_by_value(cs_equation_param_t    *eqp,
 
   /* Add a new cs_xdef_t structure */
 
-  int  z_id = cs_get_vol_zone_id(z_name);
+  int  z_id = cs_volume_zone_id_by_name(z_name);
 
   cs_flag_t  meta_flag = 0;
   if (z_id == 0)
@@ -2241,7 +2241,7 @@ cs_equation_add_ic_by_qov(cs_equation_param_t    *eqp,
 
   /* Add a new cs_xdef_t structure */
 
-  int z_id = cs_get_vol_zone_id(z_name);
+  int z_id = cs_volume_zone_id_by_name(z_name);
 
   cs_flag_t  meta_flag = 0;
   if (z_id == 0)
@@ -2291,7 +2291,7 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
 
   /* Add a new cs_xdef_t structure */
 
-  int z_id = cs_get_vol_zone_id(z_name);
+  int z_id = cs_volume_zone_id_by_name(z_name);
 
   cs_flag_t  meta_flag = 0;
   if (z_id == 0)
@@ -2346,7 +2346,7 @@ cs_equation_add_ic_by_dof_func(cs_equation_param_t    *eqp,
 
   /* Add a new cs_xdef_t structure */
 
-  int z_id = cs_get_vol_zone_id(z_name);
+  int z_id = cs_volume_zone_id_by_name(z_name);
 
   /* Define a flag according to the kind of space discretization */
 
@@ -2449,7 +2449,7 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                           dim,
-                                          cs_get_bdy_zone_id(z_name),
+                                          cs_boundary_zone_id_by_name(z_name),
                                           CS_FLAG_STATE_UNIFORM, /* state */
                                           meta_flag,
                                           (void *)values);
@@ -2504,7 +2504,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
          cs_flag_test(loc, cs_flag_primal_vtx)    ||
          cs_flag_test(loc, cs_flag_primal_edge)); /* for circulation */
 
-  int  z_id = cs_get_bdy_zone_id(z_name);
+  int  z_id = cs_boundary_zone_id_by_name(z_name);
   int  dim = eqp->dim;
   cs_flag_t  state_flag = 0;
 
@@ -2581,7 +2581,7 @@ cs_equation_add_bc_by_field(cs_equation_param_t        *eqp,
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
-  int  z_id = cs_get_bdy_zone_id(z_name);
+  int  z_id = cs_boundary_zone_id_by_name(z_name);
 
   int dim = eqp->dim;
   if (bc_type == CS_PARAM_BC_NEUMANN_FULL)
@@ -2692,7 +2692,7 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
       && bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
     bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
 
-  int  z_id = cs_get_bdy_zone_id(z_name);
+  int  z_id = cs_boundary_zone_id_by_name(z_name);
 
   /* Add a new cs_xdef_t structure */
 
@@ -2784,7 +2784,7 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
       && bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
     bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
 
-  int  z_id = cs_get_bdy_zone_id(z_name);
+  int  z_id = cs_boundary_zone_id_by_name(z_name);
 
   /* Add a new cs_xdef_t structure */
 
@@ -2931,7 +2931,7 @@ cs_equation_add_sliding_condition(cs_equation_param_t     *eqp,
 
   d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                               1,
-                              cs_get_bdy_zone_id(z_name),
+                              cs_boundary_zone_id_by_name(z_name),
                               CS_FLAG_STATE_UNIFORM,  /* state flag */
                               CS_CDO_BC_SLIDING,      /* meta */
                               (void *)&val);
@@ -3160,7 +3160,7 @@ cs_equation_add_source_term_by_val(cs_equation_param_t    *eqp,
 
   /* Add a new cs_xdef_t structure */
 
-  int z_id = cs_get_vol_zone_id(z_name);
+  int z_id = cs_volume_zone_id_by_name(z_name);
 
   /* Define a flag according to the kind of space discretization */
 
@@ -3215,7 +3215,7 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
   cs_flag_t  state_flag = 0, meta_flag = 0;
   cs_source_term_set_default_flag(eqp->space_scheme, &state_flag, &meta_flag);
 
-  int z_id = cs_get_vol_zone_id(z_name);
+  int z_id = cs_volume_zone_id_by_name(z_name);
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
@@ -3273,7 +3273,7 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
 
   /* Add a new cs_xdef_t structure */
 
-  int z_id = cs_get_vol_zone_id(z_name);
+  int z_id = cs_volume_zone_id_by_name(z_name);
 
   /* Define a flag according to the kind of space discretization */
 
@@ -3341,7 +3341,7 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
 
   /* Add a new cs_xdef_t structure */
 
-  int z_id = cs_get_vol_zone_id(z_name);
+  int z_id = cs_volume_zone_id_by_name(z_name);
 
   /* Define a flag according to the kind of space discretization */
 
@@ -3406,7 +3406,7 @@ cs_equation_add_volume_mass_injection_by_value(cs_equation_param_t  *eqp,
 
   /* Add a new cs_xdef_t structure */
 
-  int z_id = cs_get_vol_zone_id(z_name);
+  int z_id = cs_volume_zone_id_by_name(z_name);
 
   cs_flag_t state_flag = 0, meta_flag = 0;
 
@@ -3455,7 +3455,7 @@ cs_equation_add_volume_mass_injection_by_qov(cs_equation_param_t  *eqp,
 
   /* Add a new cs_xdef_t structure */
 
-  int z_id = cs_get_vol_zone_id(z_name);
+  int z_id = cs_volume_zone_id_by_name(z_name);
 
   cs_flag_t state_flag = 0, meta_flag = 0;
 
@@ -3505,7 +3505,7 @@ cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t   *eqp,
 
   /* Add a new cs_xdef_t structure */
 
-  int z_id = cs_get_vol_zone_id(z_name);
+  int z_id = cs_volume_zone_id_by_name(z_name);
 
   cs_flag_t  state_flag = 0, meta_flag = 0;
   if (z_id == 0)
@@ -3561,7 +3561,7 @@ cs_equation_add_volume_mass_injection_by_dof_func(cs_equation_param_t  *eqp,
 
   /* Add a new cs_xdef_t structure */
 
-  int z_id = cs_get_vol_zone_id(z_name);
+  int z_id = cs_volume_zone_id_by_name(z_name);
 
   cs_flag_t  state_flag = 0, meta_flag = 0;
   if (z_id == 0)

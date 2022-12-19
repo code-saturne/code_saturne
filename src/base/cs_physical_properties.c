@@ -212,12 +212,12 @@ _thermal_table_create(void)
 /*----------------------------------------------------------------------------*/
 
 static cs_xdef_t *
-_get_property_def_on_zone(const cs_property_t *pty,
-                          const char          *zname)
+_get_property_def_on_zone(const cs_property_t   *pty,
+                          const char            *zname)
 {
   cs_xdef_t *def = NULL;
 
-  const int z_id = cs_get_vol_zone_id(zname);
+  const int z_id = cs_volume_zone_id_by_name(zname);
   for (int i = 0; i < pty->n_definitions; i++) {
     if (pty->defs[i]->z_id == z_id) {
       def = pty->defs[i];

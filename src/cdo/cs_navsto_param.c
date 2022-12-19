@@ -1631,7 +1631,7 @@ cs_navsto_add_velocity_ic_by_analytic(cs_navsto_param_t      *nsp,
 
     /* Add a new cs_xdef_t structure */
 
-    int z_id = cs_get_vol_zone_id(z_name);
+    int z_id = cs_volume_zone_id_by_name(z_name);
 
     cs_flag_t  meta_flag = 0;
     if (z_id == 0)
@@ -1741,7 +1741,7 @@ cs_navsto_add_pressure_ic_by_analytic(cs_navsto_param_t      *nsp,
 
   /* Add a new cs_xdef_t structure */
 
-  int z_id = cs_get_vol_zone_id(z_name);
+  int z_id = cs_volume_zone_id_by_name(z_name);
 
   cs_flag_t  meta_flag = 0;
   if (z_id == 0)
@@ -1946,7 +1946,7 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
   if (nsp == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
 
-  int  z_id = cs_get_bdy_zone_id(z_name);
+  int  z_id = cs_boundary_zone_id_by_name(z_name);
   if (z_id < 0)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Zone \"%s\" does not exist.\n"
@@ -2035,7 +2035,7 @@ cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t    *nsp,
   if (nsp == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
 
-  int  z_id = cs_get_bdy_zone_id(z_name);
+  int  z_id = cs_boundary_zone_id_by_name(z_name);
   if (z_id < 0)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Zone \"%s\" does not exist.\n"
@@ -2096,7 +2096,7 @@ cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t    *nsp,
   if (nsp == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
 
-  int  z_id = cs_get_bdy_zone_id(z_name);
+  int  z_id = cs_boundary_zone_id_by_name(z_name);
   if (z_id < 0)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Zone \"%s\" does not exist.\n"
@@ -2160,7 +2160,7 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
   if (nsp == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
 
-  int  z_id = cs_get_bdy_zone_id(z_name);
+  int  z_id = cs_boundary_zone_id_by_name(z_name);
   if (z_id < 0)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Zone \"%s\" does not exist.\n"
@@ -2240,7 +2240,7 @@ cs_navsto_set_velocity_inlet_by_array(cs_navsto_param_t    *nsp,
   if (nsp == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
 
-  int  z_id = cs_get_bdy_zone_id(z_name);
+  int  z_id = cs_boundary_zone_id_by_name(z_name);
   if (z_id < 0)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Zone \"%s\" does not exist.\n"
@@ -2310,7 +2310,7 @@ cs_navsto_set_velocity_inlet_by_dof_func(cs_navsto_param_t    *nsp,
   if (nsp == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
 
-  int  z_id = cs_get_bdy_zone_id(z_name);
+  int  z_id = cs_boundary_zone_id_by_name(z_name);
   if (z_id < 0)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Zone \"%s\" does not exist.\n"

@@ -1404,7 +1404,7 @@ cs_property_def_iso_by_value(cs_property_t    *pty,
               " Please check your settings.", pty->name);
 
   int  new_id = _add_new_def(pty);
-  int  z_id = cs_get_vol_zone_id(zname);
+  int  z_id = cs_volume_zone_id_by_name(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE |
     CS_FLAG_STATE_STEADY;
   cs_flag_t  meta_flag = 0; /* metadata */
@@ -1461,7 +1461,7 @@ cs_property_boundary_def_iso_by_value(cs_property_t    *pty,
               " Please check your settings.", pty->name);
 
   int  new_id = _add_new_b_def(pty);
-  int  z_id = cs_get_bdy_zone_id(zname);
+  int  z_id = cs_boundary_zone_id_by_name(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_FACEWISE |
     CS_FLAG_STATE_STEADY;
   cs_flag_t  meta_flag = 0; /* metadata */
@@ -1504,7 +1504,7 @@ cs_property_def_ortho_by_value(cs_property_t    *pty,
               " Please check your settings.", pty->name);
 
   int  new_id = _add_new_def(pty);
-  int  z_id = cs_get_vol_zone_id(zname);
+  int  z_id = cs_volume_zone_id_by_name(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE |
         CS_FLAG_STATE_STEADY;
   cs_flag_t  meta_flag = 0; /* metadata */
@@ -1556,7 +1556,7 @@ cs_property_boundary_def_ortho_by_value(cs_property_t    *pty,
               " Please check your settings.", pty->name);
 
   int  new_id = _add_new_b_def(pty);
-  int  z_id = cs_get_bdy_zone_id(zname);
+  int  z_id = cs_boundary_zone_id_by_name(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_FACEWISE |
     CS_FLAG_STATE_STEADY;
   cs_flag_t  meta_flag = 0; /* metadata */
@@ -1608,7 +1608,7 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
               __func__, pty->name);
 
   int  new_id = _add_new_def(pty);
-  int  z_id = cs_get_vol_zone_id(zname);
+  int  z_id = cs_volume_zone_id_by_name(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE |
         CS_FLAG_STATE_STEADY;
   cs_flag_t  meta_flag = 0; /* metadata */
@@ -1666,7 +1666,7 @@ cs_property_boundary_def_aniso_by_value(cs_property_t    *pty,
               __func__, pty->name);
 
   int  new_id = _add_new_b_def(pty);
-  int  z_id = cs_get_bdy_zone_id(zname);
+  int  z_id = cs_boundary_zone_id_by_name(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_FACEWISE |
     CS_FLAG_STATE_STEADY;
   cs_flag_t  meta_flag = 0; /* metadata */
@@ -1710,7 +1710,7 @@ cs_property_def_aniso_sym_by_value(cs_property_t    *pty,
               " Please check your settings.", pty->name);
 
   int  new_id = _add_new_def(pty);
-  int  z_id = cs_get_vol_zone_id(zname);
+  int  z_id = cs_volume_zone_id_by_name(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE |
     CS_FLAG_STATE_STEADY;
   cs_flag_t  meta_flag = 0; /* metadata */
@@ -1764,7 +1764,7 @@ cs_property_boundary_def_aniso_sym_by_value(cs_property_t    *pty,
               " Please check your settings.", pty->name);
 
   int  new_id = _add_new_b_def(pty);
-  int  z_id = cs_get_bdy_zone_id(zname);
+  int  z_id = cs_boundary_zone_id_by_name(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_FACEWISE |
     CS_FLAG_STATE_STEADY;
   cs_flag_t  meta_flag = 0; /* metadata */
@@ -1805,7 +1805,7 @@ cs_property_def_by_time_func(cs_property_t      *pty,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
   int  new_id = _add_new_def(pty);
-  int  z_id = cs_get_vol_zone_id(zname);
+  int  z_id = cs_volume_zone_id_by_name(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
   cs_flag_t  meta_flag = 0; /* metadata */
   cs_xdef_time_func_context_t  tfc = { .func = func,
@@ -1884,7 +1884,7 @@ cs_property_boundary_def_by_time_func(cs_property_t      *pty,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
   int  new_id = _add_new_b_def(pty);
-  int  z_id = cs_get_bdy_zone_id(zname);
+  int  z_id = cs_boundary_zone_id_by_name(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
   cs_flag_t  meta_flag = 0; /* metadata */
   cs_xdef_time_func_context_t  tfc = { .func = func,
@@ -1935,7 +1935,7 @@ cs_property_def_by_analytic(cs_property_t        *pty,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
   cs_flag_t  state_flag = 0, meta_flag = 0; /* metadata */
-  int  z_id = cs_get_vol_zone_id(zname);
+  int  z_id = cs_volume_zone_id_by_name(zname);
   cs_xdef_analytic_context_t  ac = { .z_id = z_id,
                                      .func = func,
                                      .input = input,
@@ -1986,7 +1986,7 @@ cs_property_boundary_def_by_analytic(cs_property_t        *pty,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
   int  new_id = _add_new_b_def(pty);
-  int  z_id = cs_get_bdy_zone_id(zname);
+  int  z_id = cs_boundary_zone_id_by_name(zname);
   int  dim = cs_property_get_dim(pty);
   cs_flag_t  state_flag = 0, meta_flag = 0; /* metadata */
   cs_xdef_analytic_context_t  ac = { .z_id = z_id,
@@ -2036,7 +2036,7 @@ cs_property_def_by_func(cs_property_t         *pty,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
   int  def_id = _add_new_def(pty);
-  int  z_id = cs_get_vol_zone_id(zname);
+  int  z_id = cs_volume_zone_id_by_name(zname);
   cs_flag_t  state_flag = 0;
   cs_flag_t  meta_flag = 0; /* metadata */
 
@@ -2091,7 +2091,7 @@ cs_property_def_by_array(cs_property_t      *pty,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
   int  id = _add_new_def(pty);
-  int  z_id = cs_get_vol_zone_id(zname);
+  int  z_id = cs_volume_zone_id_by_name(zname);
   int  dim = cs_property_get_dim(pty);
   cs_flag_t  state_flag = 0; /* Will be updated during the creation */
   cs_flag_t  meta_flag = 0;  /* metadata */
@@ -2183,7 +2183,7 @@ cs_property_boundary_def_by_array(cs_property_t      *pty,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
   int  new_id = _add_new_b_def(pty);
-  int  z_id = cs_get_bdy_zone_id(zname);
+  int  z_id = cs_boundary_zone_id_by_name(zname);
   int  dim = cs_property_get_dim(pty);
   cs_flag_t  state_flag = 0;
   cs_flag_t  meta_flag = 0;
