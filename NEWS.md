@@ -3,6 +3,8 @@ Release 7.1.2 (not released yet)
 
 Bug fixes:
 
+- Fix log info of set means for mesh sizes above 2.147 billion cells.
+
 - Lagrangian module: fix for restart with non-spherical particles.
 
 - Fix occasional deadlock when checkpointing based on wall-clock time.
