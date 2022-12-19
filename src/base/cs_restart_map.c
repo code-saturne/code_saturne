@@ -43,17 +43,15 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "ple_locator.h"
+
 #include "bft_mem.h"
 #include "bft_error.h"
 #include "bft_printf.h"
-
+#include "cs_assert.h"
 #include "cs_base.h"
-
-#include "fvm_nodal.h"
-#include "ple_locator.h"
-
-#include "cs_io.h"
 #include "cs_coupling.h"
+#include "cs_io.h"
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
 #include "cs_mesh_location.h"
@@ -62,6 +60,8 @@
 #include "cs_preprocessor_data.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
+#include "fvm_nodal.h"
+#include "fvm_interpolate.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -97,7 +97,11 @@ static float _tolerance[2] = {0, 0.1};
 /* Save previous section read function */
 static cs_restart_read_section_t   *_read_section_f  = NULL;
 
-static  ple_locator_t  *_locator = NULL;  /* PLE locator for restart */
+/* PLE locators for main mesh locations (not all used) */
+bool _need_locator[4] = {true, false, false, false};
+static  ple_locator_t  *_locator[4] = {NULL, NULL, NULL, NULL};
+
+fvm_nodal_t  *_nodal_src = NULL;
 
 /*============================================================================
  * Private function definitions
@@ -178,7 +182,62 @@ _interpolate_p0(ple_locator_t          *locator,
       dest[j] = src[j];
   }
 
-  ple_locator_exchange_point_var(_locator,
+  ple_locator_exchange_point_var(locator,
+                                 send_var,
+                                 val,
+                                 NULL,
+                                 type_size,
+                                 n_location_vals,
+                                 0);
+
+  BFT_FREE(send_var);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Interolate at vertices from source to destination mesh entity.
+ *
+ * \param[in]       locator          associated locator
+ * \param[in]       n_location_vals  number of values per location (interlaced)
+ * \param[in]       val_type         value type
+ * \param[in]       val_src          array of source values
+ * \param[out]      val              array of values
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_interpolate_vtx(ple_locator_t          *locator,
+                 int                     n_location_vals,
+                 cs_restart_val_type_t   val_type,
+                 const void             *val_src,
+                 void                   *val)
+{
+  cs_assert(val_type == CS_TYPE_cs_real_t);
+
+  size_t type_size = _type_size(val_type);
+  size_t loc_size = type_size*n_location_vals;
+
+  size_t  n_dist = ple_locator_get_n_dist_points(locator);
+  const cs_lnum_t  *dist_loc = ple_locator_get_dist_locations(locator);
+  const ple_coord_t  *point_coords = ple_locator_get_dist_coords(locator);
+
+  /* Prepare and send data */
+
+  unsigned char  *send_var;
+  BFT_MALLOC(send_var, n_dist*loc_size, unsigned char);
+
+  cs_assert(_nodal_src != NULL);
+
+  fvm_interpolate_vtx_data(_nodal_src,
+                           3,                /* entity_dim */
+                           n_location_vals,  /* data_dim */
+                           n_dist,
+                           dist_loc,
+                           point_coords,
+                           (const cs_real_t *)val_src,
+                           (cs_real_t *)send_var);
+
+  ple_locator_exchange_point_var(locator,
                                  send_var,
                                  val,
                                  NULL,
@@ -233,7 +292,14 @@ _read_section_interpolate(cs_restart_t           *restart,
                              val_type,
                              val);
 
-  else if (location_id == CS_MESH_LOCATION_CELLS) {
+  else {
+
+    ple_locator_t  *locator = NULL;
+    if (location_id < 5)
+      locator = _locator[location_id - 1];
+
+    if (locator == NULL)
+      return CS_RESTART_ERR_NO_MAP;
 
     const cs_lnum_t n_src_elts
       = cs_restart_get_n_location_elts(restart, location_id);
@@ -252,12 +318,22 @@ _read_section_interpolate(cs_restart_t           *restart,
                              val_type,
                              read_buffer);
 
-    if (retval == CS_RESTART_SUCCESS)
-      _interpolate_p0(_locator,
-                      n_location_vals,
-                      val_type,
-                      read_buffer,
-                      val);
+    if (retval == CS_RESTART_SUCCESS) {
+
+      if (location_id < CS_MESH_LOCATION_VERTICES)
+        _interpolate_p0(locator,
+                        n_location_vals,
+                        val_type,
+                        read_buffer,
+                        val);
+      else if (location_id == CS_MESH_LOCATION_VERTICES)
+        _interpolate_vtx(locator,
+                         n_location_vals,
+                         val_type,
+                         read_buffer,
+                         val);
+
+    }
 
     BFT_FREE(read_buffer);
   }
@@ -310,7 +386,43 @@ cs_restart_map_set_options(float  tolerance_base,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Indicate whether location for restart file mapping is needed at
+ *         cells or vertices.
+ *
+ * By default, mapping is done for cell-based quantities, but not for
+ * vertex-based quantities.
+ *
+ * Mapping of quantities at faces or particles is not handled yet, but will
+ * use the cell-center or vertex based mappings in the future in all cases:
+ * - interior faces may not be aligned with previous faces, so some sort of
+ *   cell-based interpolation will be required
+ * - boundary faces can use the boundary face / cell adjacency to avoid an
+ *   additional mapping
+ * - for particles, as the previous location is stored based on cell ids,
+ *   updating particle locations will require locating them in the matching
+ *   cell and completing a trajectory adjustment (direct location should be
+ *   avoided in case of concave boundaries).
+ *
+ * \param[in]  map_cell_centers    locate cell centers in the previous mesh.
+ * \param[in]  map_vertices        locate vertices in the previous mesh.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_map_set_locations(bool map_cell_centers,
+                             bool map_vertices)
+{
+  _need_locator[0] = map_cell_centers;
+  _need_locator[1] = false;
+  _need_locator[2] = false;
+  _need_locator[3] = map_vertices;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build mapping of restart files to different mesh if defined.
+ *
+ * \param[in]  need_vertices  indicate if location at vertices is needed
  */
 /*----------------------------------------------------------------------------*/
 
@@ -397,35 +509,58 @@ cs_restart_map_build(void)
     options[i] = 0;
   options[PLE_LOCATOR_NUMBERING] = 0; /* base 0 numbering */
 
+  cs_lnum_t n_points[4] = {m_c->n_cells, 0, 0, m_c->n_vertices};
+  const cs_real_t *point_coords[4] = {mq->cell_cen, NULL, NULL, m_c->vtx_coord};
+
+  for (int i = 0; i < 4; i++) {
+
+    if (_need_locator[i] == false) continue;
+
 #if defined(PLE_HAVE_MPI)
-  _locator = ple_locator_create(cs_glob_mpi_comm,
-                                cs_glob_n_ranks,
-                                0);
+    _locator[i] = ple_locator_create(cs_glob_mpi_comm,
+                                     cs_glob_n_ranks,
+                                     0);
 #else
-  _locator = ple_locator_create();
+    _locator[i] = ple_locator_create();
 #endif
 
-  ple_locator_set_mesh(_locator,
-                       nm,
-                       options,
-                       _tolerance[0],
-                       _tolerance[1],
-                       3, /* dim */
-                       m_c->n_cells,
-                       NULL,
-                       NULL, /* point_tag */
-                       mq->cell_cen,
-                       NULL, /* distance */
-                       cs_coupling_mesh_extents,
-                       cs_coupling_point_in_mesh_p);
+    /* For cells (or faces), locate relative to parent mesh.
+       For vertices, locate relative to sections, as this will be better
+       adapted to the fvm_point_location_interpolate_vtx_data call. */
 
-  /* Shift from 1-base to 0-based locations */
+    ple_mesh_elements_locate_t  *mesh_elements_locate_f
+      = cs_coupling_point_in_mesh_p;
+    if (i == 3)
+      mesh_elements_locate_f = cs_coupling_point_in_mesh;
 
-  ple_locator_shift_locations(_locator, -1);
+    ple_locator_set_mesh(_locator[i],
+                         nm,
+                         options,
+                         _tolerance[0],
+                         _tolerance[1],
+                         3, /* dim */
+                         n_points[i],
+                         NULL,
+                         NULL, /* point_tag */
+                         point_coords[i],
+                         NULL, /* distance */
+                         cs_coupling_mesh_extents,
+                         mesh_elements_locate_f);
 
-  /* Nodal mesh is not needed anymore */
+    /* Shift from 1-base to 0-based locations */
 
-  nm = fvm_nodal_destroy(nm);
+    ple_locator_shift_locations(_locator[i], -1);
+
+  }
+
+  /* Nodal mesh may not be needed anymore */
+
+  if (_need_locator[3]) {
+    _nodal_src = nm;
+    nm = NULL;
+  }
+  else
+    nm = fvm_nodal_destroy(nm);
 
   /* Set associated read function if not already set */
 
@@ -452,6 +587,9 @@ cs_restart_map_free(void)
   _tolerance[0] = 0;
   _tolerance[1] = 0.1;
 
+  if (_nodal_src != NULL)
+    _nodal_src = fvm_nodal_destroy(_nodal_src);
+
   if (_read_section_f != NULL) {
     (void)cs_restart_set_read_section_func(_read_section_f);
     _read_section_f = NULL;
@@ -459,18 +597,31 @@ cs_restart_map_free(void)
     cs_restart_clear_locations_ref();
   }
 
-  double loc_times[4];
+  double loc_times[4] = {0, 0, 0, 0};
 
-  ple_locator_get_times(_locator,
-                        loc_times,
-                        NULL,
-                        loc_times+1,
-                        NULL);
-  ple_locator_get_comm_times(_locator,
-                             loc_times+2,
-                             NULL,
-                             loc_times+3,
-                             NULL);
+  for (int i = 0; i < 4; i++ ) {
+
+    if (_locator[i] != NULL) {
+
+      double _loc_times[4];
+
+      ple_locator_get_times(_locator[i],
+                            _loc_times,
+                            NULL,
+                            _loc_times+1,
+                            NULL);
+      ple_locator_get_comm_times(_locator[i],
+                                 _loc_times+2,
+                                 NULL,
+                                 _loc_times+3,
+                                 NULL);
+
+      for (int j = 0; j < 4; j++)
+        loc_times[j] += _loc_times[j];
+
+    }
+
+  }
 
   if (cs_glob_n_ranks < 2)
     cs_log_printf
@@ -518,7 +669,10 @@ cs_restart_map_free(void)
 
   cs_log_separator(CS_LOG_PERFORMANCE);
 
-  _locator = ple_locator_destroy(_locator);
+  for (int i = 0; i < 4; i++ ) {
+    if (_locator[i] != NULL)
+      _locator[i] = ple_locator_destroy(_locator[i]);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

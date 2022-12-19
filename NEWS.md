@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- Now allow handling vertex-based fields when restarting from a different
+  mesh. This can be sueful for ALE.
+
 - Add `cs_function` API to refactor pre and user-defined location data
   evaluation. This defines function objects which can be evaluated
   on the fly, on the required mesh subset, and be otherwise used similarly

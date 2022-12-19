@@ -62,6 +62,8 @@ BEGIN_C_DECLS
 #define CS_RESTART_ERR_N_VALS    -4 /*!< Number of values does not match */
 #define CS_RESTART_ERR_MODE      -5 /*!< Incompatible access mode */
 #define CS_RESTART_ERR_EXISTS    -6 /*!< Section not available */
+#define CS_RESTART_ERR_NO_MAP    -7 /*!< Mapping from previous to current
+                                     *   mesh not available */
 
 /*============================================================================
  * Local type definitions

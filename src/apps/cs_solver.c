@@ -300,6 +300,7 @@ _run(void)
       halo_type = CS_HALO_EXTENDED;
 
     if (cs_glob_ale > 0) {
+      cs_restart_map_set_locations(true, true);
       cs_gui_mobile_mesh_get_boundaries(cs_glob_domain);
       if (cs_glob_mesh->time_dep < CS_MESH_TRANSIENT_COORDS)
         cs_glob_mesh->time_dep = CS_MESH_TRANSIENT_COORDS;

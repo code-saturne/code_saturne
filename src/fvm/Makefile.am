@@ -53,6 +53,7 @@ pkginclude_HEADERS = \
 fvm_defs.h \
 fvm_group.h \
 fvm_headers.h \
+fvm_interpolate.h \
 fvm_io_num.h \
 fvm_neighborhood.h \
 fvm_nodal.h \
@@ -110,6 +111,7 @@ fvm_convert_array.c \
 fvm_defs.c \
 fvm_group.c \
 fvm_hilbert.c \
+fvm_interpolate.c \
 fvm_io_num.c \
 fvm_morton.c \
 fvm_neighborhood.c \

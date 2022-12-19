@@ -89,6 +89,34 @@ cs_restart_map_set_options(float  tolerance_base,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Indicate whether location for restart file mapping is needed at
+ *         cells or vertices.
+ *
+ * By default, mapping is done for cell-based quantities, but not for
+ * vertex-based quantities.
+ *
+ * Mapping of quantities at faces or particles is not handled yet, but will
+ * use the cell-center or vertex based mappings in the future in all cases:
+ * - interior faces may not be aligned with previous faces, so some sort of
+ *   cell-based interpolation will be required
+ * - boundary faces can use the boundary face / cell adjacency to avoid an
+ *   additional mapping
+ * - for particles, as the previous location is stored based on cell ids,
+ *   updating particle locations will require locating them in the matching
+ *   cell and completing a trajectory adjustment (direct location should be
+ *   avoided in case of concave boundaries).
+ *
+ * \param[in]  map_cell_centers    locate cell centers in the previous mesh.
+ * \param[in]  map_vertices        locate vertices in the previous mesh.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_map_set_locations(bool map_cell_centers,
+                             bool map_vertices);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build mapping of restart files to different mesh if defined.
  */
 /*----------------------------------------------------------------------------*/

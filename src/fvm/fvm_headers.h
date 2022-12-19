@@ -31,6 +31,7 @@
 
 #include "fvm_defs.h"
 #include "fvm_group.h"
+#include "fvm_interpolate.h"
 #include "fvm_io_num.h"
 #include "fvm_neighborhood.h"
 #include "fvm_nodal.h"
