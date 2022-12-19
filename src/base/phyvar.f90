@@ -468,6 +468,7 @@ elseif (itytur.eq.3) then
 
     xk   = 0.5d0*(xrij(1,1)+xrij(2,2)+xrij(3,3))
     xrnn = (1.d0-alpha3)*xrnn + alpha3*xk
+    xrnn = max(xrnn, 1.d-12)
     xe = cvar_ep(iel)
     visct(iel) = crom(iel)*cmu*xrnn*xk/xe
   enddo
