@@ -296,6 +296,10 @@ cs_user_model(void)
      */
 
     cs_gwf_soil_t  *s1 = cs_gwf_soil_by_name("soil1");
+
+    /* s1 pointer can be used to set futher options in advanced settings */
+
+    assert(s1 != NULL);
   }
   /*! [param_cdo_gwf_get_soil] */
 

@@ -2757,7 +2757,6 @@ void CS_PROCF (uieres, UIERES) (int *iescal,
 void
 cs_gui_equation_parameters(void)
 {
-  const int var_key_id = cs_field_key_id("variable_id");
   const int keysca = cs_field_key_id("scalar_id");
   const int k_ts_fact = cs_field_key_id("time_step_factor");
 
@@ -2814,6 +2813,7 @@ cs_gui_equation_parameters(void)
   }
 
 #if _XML_DEBUG_
+  const int var_key_id = cs_field_key_id("variable_id");
   bft_printf("==> %s\n", __func__);
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
