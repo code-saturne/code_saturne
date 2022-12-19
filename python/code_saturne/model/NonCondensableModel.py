@@ -67,6 +67,7 @@ class NonCondensableModel(Model):
         default['Cobin2']      = 1.5
         return default
 
+
     def getNonCondensableGasValues(self, gas):
         """
         Return in a dictionnary which contains gas parameters values
@@ -78,10 +79,7 @@ class NonCondensableModel(Model):
                  'O2':{'MolarMass':32.e-3, 'Cobin1':0.24e-4, 'Cobin2':1.71},
                  'Air':{'MolarMass':0.02896, 'Cobin1':2.2e-5, 'Cobin2':1.5}}
 
-        if gas not in _vals.keys():
-            return {'MolarMass':0., 'Cobin1':0., 'Cobin2':0.}
-        else:
-            return _vals[gas]
+        return _vals.get(gas, {'MolarMass':0., 'Cobin1':0., 'Cobin2':0.})
 
 
     def checkNonCondensableRequirements(self):
@@ -93,6 +91,7 @@ class NonCondensableModel(Model):
             if field.enthalpy_model != "off":
                 return True
         return False
+
 
     def getNonCondensableLabelList(self):
         """
