@@ -629,12 +629,12 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcsd_by_value(const cs_xdef_t           *source,
-                             const cs_cell_mesh_t      *cm,
-                             cs_real_t                  time_eval,
-                             cs_cell_builder_t         *cb,
-                             void                      *input,
-                             double                    *values);
+cs_source_term_fb_pcsd_by_value(const cs_xdef_t           *source,
+                                const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
+                                cs_cell_builder_t         *cb,
+                                void                      *input,
+                                double                    *values);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -653,12 +653,12 @@ cs_source_term_pcsd_by_value(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcsd_by_dof_func(const cs_xdef_t           *source,
-                                const cs_cell_mesh_t      *cm,
-                                cs_real_t                  time_eval,
-                                cs_cell_builder_t         *cb,
-                                void                      *input,
-                                double                    *values);
+cs_source_term_fb_pcsd_by_dof_func(const cs_xdef_t           *source,
+                                   const cs_cell_mesh_t      *cm,
+                                   cs_real_t                  time_eval,
+                                   cs_cell_builder_t         *cb,
+                                   void                      *input,
+                                   double                    *values);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -677,12 +677,12 @@ cs_source_term_pcsd_by_dof_func(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcvd_by_dof_func(const cs_xdef_t           *source,
-                                const cs_cell_mesh_t      *cm,
-                                cs_real_t                  time_eval,
-                                cs_cell_builder_t         *cb,
-                                void                      *input,
-                                double                    *values);
+cs_source_term_fb_pcvd_by_dof_func(const cs_xdef_t           *source,
+                                   const cs_cell_mesh_t      *cm,
+                                   cs_real_t                  time_eval,
+                                   cs_cell_builder_t         *cb,
+                                   void                      *input,
+                                   double                    *values);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -702,12 +702,12 @@ cs_source_term_pcvd_by_dof_func(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcvd_by_value(const cs_xdef_t           *source,
-                             const cs_cell_mesh_t      *cm,
-                             cs_real_t                  time_eval,
-                             cs_cell_builder_t         *cb,
-                             void                      *input,
-                             double                    *values);
+cs_source_term_fb_pcvd_by_value(const cs_xdef_t           *source,
+                                const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
+                                cs_cell_builder_t         *cb,
+                                void                      *input,
+                                double                    *values);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -729,12 +729,12 @@ cs_source_term_pcvd_by_value(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcsd_bary_by_analytic(const cs_xdef_t           *source,
-                                     const cs_cell_mesh_t      *cm,
-                                     cs_real_t                  time_eval,
-                                     cs_cell_builder_t         *cb,
-                                     void                      *input,
-                                     double                    *values);
+cs_source_term_fb_pcsd_bary_by_analytic(const cs_xdef_t           *source,
+                                        const cs_cell_mesh_t      *cm,
+                                        cs_real_t                  time_eval,
+                                        cs_cell_builder_t         *cb,
+                                        void                      *input,
+                                        double                    *values);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -742,6 +742,7 @@ cs_source_term_pcsd_bary_by_analytic(const cs_xdef_t           *source,
  *         the given array of values.
  *         Case of a scalar density (sd) defined on primal cells by an analytic
  *         function.
+ *         Case of CDO face-based schemes.
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -753,18 +754,19 @@ cs_source_term_pcsd_bary_by_analytic(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcsd_by_analytic(const cs_xdef_t           *source,
-                                const cs_cell_mesh_t      *cm,
-                                cs_real_t                  time_eval,
-                                cs_cell_builder_t         *cb,
-                                void                      *input,
-                                double                    *values);
+cs_source_term_fb_pcsd_by_analytic(const cs_xdef_t           *source,
+                                   const cs_cell_mesh_t      *cm,
+                                   cs_real_t                  time_eval,
+                                   cs_cell_builder_t         *cb,
+                                   void                      *input,
+                                   double                    *values);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the contribution for a cell related to a source term and
  *         add it to the given array of values.
  *         Case of a scalar density defined at primal cells by an array.
+ *         Case of CDO face-based schemes.
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -776,12 +778,12 @@ cs_source_term_pcsd_by_analytic(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcsd_by_array(const cs_xdef_t           *source,
-                             const cs_cell_mesh_t      *cm,
-                             cs_real_t                  time_eval,
-                             cs_cell_builder_t         *cb,
-                             void                      *input,
-                             double                    *values);
+cs_source_term_fb_pcsd_by_array(const cs_xdef_t           *source,
+                                const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
+                                cs_cell_builder_t         *cb,
+                                void                      *input,
+                                double                    *values);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -803,12 +805,12 @@ cs_source_term_pcsd_by_array(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcvd_bary_by_analytic(const cs_xdef_t           *source,
-                                     const cs_cell_mesh_t      *cm,
-                                     cs_real_t                  time_eval,
-                                     cs_cell_builder_t         *cb,
-                                     void                      *input,
-                                     double                    *values);
+cs_source_term_fb_pcvd_bary_by_analytic(const cs_xdef_t           *source,
+                                        const cs_cell_mesh_t      *cm,
+                                        cs_real_t                  time_eval,
+                                        cs_cell_builder_t         *cb,
+                                        void                      *input,
+                                        double                    *values);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -816,6 +818,7 @@ cs_source_term_pcvd_bary_by_analytic(const cs_xdef_t           *source,
  *         the given array of values.
  *         Case of a vector average (va) defined on primal cells by an analytic
  *         function.
+ *         Case of CDO face-based schemes.
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -827,18 +830,19 @@ cs_source_term_pcvd_bary_by_analytic(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcvd_by_analytic(const cs_xdef_t           *source,
-                                const cs_cell_mesh_t      *cm,
-                                cs_real_t                  time_eval,
-                                cs_cell_builder_t         *cb,
-                                void                      *input,
-                                double                    *values);
+cs_source_term_fb_pcvd_by_analytic(const cs_xdef_t           *source,
+                                   const cs_cell_mesh_t      *cm,
+                                   cs_real_t                  time_eval,
+                                   cs_cell_builder_t         *cb,
+                                   void                      *input,
+                                   double                    *values);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the contribution of a source term for a cell and add it to
  *         the given array of values.
  *         Case of a vector density (vd) defined on primal cells by an array
+ *         Case of CDO face-based schemes.
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -850,12 +854,12 @@ cs_source_term_pcvd_by_analytic(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcvd_by_array(const cs_xdef_t           *source,
-                             const cs_cell_mesh_t      *cm,
-                             cs_real_t                  time_eval,
-                             cs_cell_builder_t         *cb,
-                             void                      *input,
-                             double                    *values);
+cs_source_term_fb_pcvd_by_array(const cs_xdef_t           *source,
+                                const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
+                                cs_cell_builder_t         *cb,
+                                void                      *input,
+                                double                    *values);
 
 /*----------------------------------------------------------------------------*/
 /*!

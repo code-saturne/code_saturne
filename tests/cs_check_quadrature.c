@@ -1246,13 +1246,13 @@ _test_cdofb_source(FILE                     *out,
 
       case 1:
         t0 = cs_timer_time();
-        cs_source_term_pcsd_by_value(st, cm, teval, cb, NULL, st0);
+        cs_source_term_fb_pcsd_by_value(st, cm, teval, cb, NULL, st0);
         t1 = cs_timer_time();
         break;
 
       case 3:
         t0 = cs_timer_time();
-        cs_source_term_pcvd_by_value(st, cm, teval, cb, NULL, st0);
+        cs_source_term_fb_pcvd_by_value(st, cm, teval, cb, NULL, st0);
         t1 = cs_timer_time();
         break;
 
@@ -1312,31 +1312,31 @@ _test_cdofb_source(FILE                     *out,
 
       case 1:
         t0 = cs_timer_time();
-        cs_source_term_pcsd_bary_by_analytic(st, cm, teval, cb, NULL, st0);
+        cs_source_term_fb_pcsd_bary_by_analytic(st, cm, teval, cb, NULL, st0);
         t1 = cs_timer_time();
         cs_xdef_set_quadrature(st, CS_QUADRATURE_BARY_SUBDIV);
-        cs_source_term_pcsd_by_analytic(st, cm, teval, cb, NULL, st1);
+        cs_source_term_fb_pcsd_by_analytic(st, cm, teval, cb, NULL, st1);
         t2 = cs_timer_time();
         cs_xdef_set_quadrature(st, CS_QUADRATURE_HIGHER);
-        cs_source_term_pcsd_by_analytic(st, cm, teval, cb, NULL, st2);
+        cs_source_term_fb_pcsd_by_analytic(st, cm, teval, cb, NULL, st2);
         t3 = cs_timer_time();
         cs_xdef_set_quadrature(st, CS_QUADRATURE_HIGHEST);
-        cs_source_term_pcsd_by_analytic(st, cm, teval, cb, NULL, st3);
+        cs_source_term_fb_pcsd_by_analytic(st, cm, teval, cb, NULL, st3);
         t4 = cs_timer_time();
         break;
 
       case 3:
         t0 = cs_timer_time();
-        cs_source_term_pcvd_bary_by_analytic(st, cm, teval, cb, NULL, st0);
+        cs_source_term_fb_pcvd_bary_by_analytic(st, cm, teval, cb, NULL, st0);
         t1 = cs_timer_time();
         cs_xdef_set_quadrature(st, CS_QUADRATURE_BARY_SUBDIV);
-        cs_source_term_pcvd_by_analytic(st, cm, teval, cb, NULL, st1);
+        cs_source_term_fb_pcvd_by_analytic(st, cm, teval, cb, NULL, st1);
         t2 = cs_timer_time();
         cs_xdef_set_quadrature(st, CS_QUADRATURE_HIGHER);
-        cs_source_term_pcvd_by_analytic(st, cm, teval, cb, NULL, st2);
+        cs_source_term_fb_pcvd_by_analytic(st, cm, teval, cb, NULL, st2);
         t3 = cs_timer_time();
         cs_xdef_set_quadrature(st, CS_QUADRATURE_HIGHEST);
-        cs_source_term_pcvd_by_analytic(st, cm, teval, cb, NULL, st3);
+        cs_source_term_fb_pcvd_by_analytic(st, cm, teval, cb, NULL, st3);
         t4 = cs_timer_time();
         break;
 

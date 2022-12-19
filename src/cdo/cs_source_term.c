@@ -774,16 +774,16 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
       case CS_XDEF_BY_VALUE:
         if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
-          compute_source[st_id] = cs_source_term_pcvd_by_value;
+          compute_source[st_id] = cs_source_term_fb_pcvd_by_value;
         else
-          compute_source[st_id] = cs_source_term_pcsd_by_value;
+          compute_source[st_id] = cs_source_term_fb_pcsd_by_value;
         break;
 
       case CS_XDEF_BY_DOF_FUNCTION:
         if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
-          compute_source[st_id] = cs_source_term_pcvd_by_dof_func;
+          compute_source[st_id] = cs_source_term_fb_pcvd_by_dof_func;
         else
-          compute_source[st_id] = cs_source_term_pcsd_by_dof_func;
+          compute_source[st_id] = cs_source_term_fb_pcsd_by_dof_func;
         break;
 
       case CS_XDEF_BY_ANALYTIC_FUNCTION:
@@ -793,7 +793,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
           /* Switch only to allow more precise quadratures */
 
           if (st_def->qtype == CS_QUADRATURE_BARY)
-            compute_source[st_id] = cs_source_term_pcvd_bary_by_analytic;
+            compute_source[st_id] = cs_source_term_fb_pcvd_bary_by_analytic;
 
           else {
 
@@ -803,7 +803,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
             msh_flag |= CS_FLAG_COMP_EV  |CS_FLAG_COMP_EF | CS_FLAG_COMP_PFQ |
                         CS_FLAG_COMP_FEQ |CS_FLAG_COMP_HFQ| CS_FLAG_COMP_PEQ |
                         CS_FLAG_COMP_FE;
-            compute_source[st_id] = cs_source_term_pcvd_by_analytic;
+            compute_source[st_id] = cs_source_term_fb_pcvd_by_analytic;
 
           }
         }
@@ -812,7 +812,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
           /* Switch only to allow more precise quadratures */
 
           if (st_def->qtype == CS_QUADRATURE_BARY)
-            compute_source[st_id] = cs_source_term_pcsd_bary_by_analytic;
+            compute_source[st_id] = cs_source_term_fb_pcsd_bary_by_analytic;
 
           else {
 
@@ -822,7 +822,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
             msh_flag |= CS_FLAG_COMP_EV  |CS_FLAG_COMP_EF | CS_FLAG_COMP_PFQ |
                         CS_FLAG_COMP_FEQ |CS_FLAG_COMP_HFQ| CS_FLAG_COMP_PEQ |
                         CS_FLAG_COMP_FE;
-            compute_source[st_id] = cs_source_term_pcsd_by_analytic;
+            compute_source[st_id] = cs_source_term_fb_pcsd_by_analytic;
 
           }
 
@@ -831,9 +831,9 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
       case CS_XDEF_BY_ARRAY:
         if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
-          compute_source[st_id] = cs_source_term_pcvd_by_array;
+          compute_source[st_id] = cs_source_term_fb_pcvd_by_array;
         else
-          compute_source[st_id] = cs_source_term_pcsd_by_array;
+          compute_source[st_id] = cs_source_term_fb_pcsd_by_array;
         break;
 
       default:
@@ -2146,7 +2146,7 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcsd_by_value(const cs_xdef_t           *source,
+cs_source_term_fb_pcsd_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
                              cs_real_t                  time_eval,
                              cs_cell_builder_t         *cb,
@@ -2172,7 +2172,8 @@ cs_source_term_pcsd_by_value(const cs_xdef_t           *source,
  * \brief  Compute the contribution for a cell related to a source term and
  *         add it to the given array of values.
  *         Case of a density defined on primal cells by a DoF function.
- *         Case of scalar-valued face-based schemes
+ *         Case of scalar-valued face-based schemes.
+ *         Case of CDO face-based schemes.
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -2184,12 +2185,12 @@ cs_source_term_pcsd_by_value(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcsd_by_dof_func(const cs_xdef_t           *source,
-                                const cs_cell_mesh_t      *cm,
-                                cs_real_t                  time_eval,
-                                cs_cell_builder_t         *cb,
-                                void                      *input,
-                                double                    *values)
+cs_source_term_fb_pcsd_by_dof_func(const cs_xdef_t           *source,
+                                   const cs_cell_mesh_t      *cm,
+                                   cs_real_t                  time_eval,
+                                   cs_cell_builder_t         *cb,
+                                   void                      *input,
+                                   double                    *values)
 {
   CS_UNUSED(cb);
   CS_UNUSED(time_eval);
@@ -2233,12 +2234,12 @@ cs_source_term_pcsd_by_dof_func(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcvd_by_dof_func(const cs_xdef_t           *source,
-                                const cs_cell_mesh_t      *cm,
-                                cs_real_t                  time_eval,
-                                cs_cell_builder_t         *cb,
-                                void                      *input,
-                                double                    *values)
+cs_source_term_fb_pcvd_by_dof_func(const cs_xdef_t           *source,
+                                   const cs_cell_mesh_t      *cm,
+                                   cs_real_t                  time_eval,
+                                   cs_cell_builder_t         *cb,
+                                   void                      *input,
+                                   double                    *values)
 {
   CS_UNUSED(cb);
   CS_UNUSED(time_eval);
@@ -2284,12 +2285,12 @@ cs_source_term_pcvd_by_dof_func(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcvd_by_value(const cs_xdef_t           *source,
-                             const cs_cell_mesh_t      *cm,
-                             cs_real_t                  time_eval,
-                             cs_cell_builder_t         *cb,
-                             void                      *input,
-                             double                    *values)
+cs_source_term_fb_pcvd_by_value(const cs_xdef_t           *source,
+                                const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
+                                cs_cell_builder_t         *cb,
+                                void                      *input,
+                                double                    *values)
 {
   CS_UNUSED(cb);
   CS_UNUSED(input);
@@ -2325,12 +2326,12 @@ cs_source_term_pcvd_by_value(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcsd_bary_by_analytic(const cs_xdef_t           *source,
-                                     const cs_cell_mesh_t      *cm,
-                                     cs_real_t                  time_eval,
-                                     cs_cell_builder_t         *cb,
-                                     void                      *input,
-                                     double                    *values)
+cs_source_term_fb_pcsd_bary_by_analytic(const cs_xdef_t           *source,
+                                        const cs_cell_mesh_t      *cm,
+                                        cs_real_t                  time_eval,
+                                        cs_cell_builder_t         *cb,
+                                        void                      *input,
+                                        double                    *values)
 {
   CS_UNUSED(cb);
   CS_UNUSED(input);
@@ -2372,12 +2373,12 @@ cs_source_term_pcsd_bary_by_analytic(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcsd_by_analytic(const cs_xdef_t           *source,
-                                const cs_cell_mesh_t      *cm,
-                                cs_real_t                  time_eval,
-                                cs_cell_builder_t         *cb,
-                                void                      *input,
-                                double                    *values)
+cs_source_term_fb_pcsd_by_analytic(const cs_xdef_t           *source,
+                                   const cs_cell_mesh_t      *cm,
+                                   cs_real_t                  time_eval,
+                                   cs_cell_builder_t         *cb,
+                                   void                      *input,
+                                   double                    *values)
 {
   CS_UNUSED(input);
   if (source == NULL)
@@ -2390,7 +2391,7 @@ cs_source_term_pcsd_by_analytic(const cs_xdef_t           *source,
   assert(source->dim == 1);
 
   if (source->qtype == CS_QUADRATURE_BARY)
-    cs_source_term_pcsd_bary_by_analytic(source, cm, time_eval, cb, input,
+    cs_source_term_fb_pcsd_bary_by_analytic(source, cm, time_eval, cb, input,
                                          values);
 
   else {
@@ -2487,6 +2488,7 @@ cs_source_term_pcsd_by_analytic(const cs_xdef_t           *source,
  * \brief  Compute the contribution for a cell related to a source term and
  *         add it to the given array of values.
  *         Case of a scalar density defined at primal cells by an array.
+ *         Case of CDO face-based schemes.
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -2498,12 +2500,12 @@ cs_source_term_pcsd_by_analytic(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcsd_by_array(const cs_xdef_t           *source,
-                             const cs_cell_mesh_t      *cm,
-                             cs_real_t                  time_eval,
-                             cs_cell_builder_t         *cb,
-                             void                      *input,
-                             double                    *values)
+cs_source_term_fb_pcsd_by_array(const cs_xdef_t           *source,
+                                const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
+                                cs_cell_builder_t         *cb,
+                                void                      *input,
+                                double                    *values)
 {
   CS_UNUSED(cb);
   CS_UNUSED(input);
@@ -2540,12 +2542,12 @@ cs_source_term_pcsd_by_array(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcvd_bary_by_analytic(const cs_xdef_t           *source,
-                                     const cs_cell_mesh_t      *cm,
-                                     cs_real_t                  time_eval,
-                                     cs_cell_builder_t         *cb,
-                                     void                      *input,
-                                     double                    *values)
+cs_source_term_fb_pcvd_bary_by_analytic(const cs_xdef_t           *source,
+                                        const cs_cell_mesh_t      *cm,
+                                        cs_real_t                  time_eval,
+                                        cs_cell_builder_t         *cb,
+                                        void                      *input,
+                                        double                    *values)
 {
   CS_UNUSED(cb);
   CS_UNUSED(input);
@@ -2590,12 +2592,12 @@ cs_source_term_pcvd_bary_by_analytic(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcvd_by_analytic(const cs_xdef_t           *source,
-                                const cs_cell_mesh_t      *cm,
-                                cs_real_t                  time_eval,
-                                cs_cell_builder_t         *cb,
-                                void                      *input,
-                                double                    *values)
+cs_source_term_fb_pcvd_by_analytic(const cs_xdef_t           *source,
+                                   const cs_cell_mesh_t      *cm,
+                                   cs_real_t                  time_eval,
+                                   cs_cell_builder_t         *cb,
+                                   void                      *input,
+                                   double                    *values)
 {
   CS_UNUSED(input);
 
@@ -2609,7 +2611,7 @@ cs_source_term_pcvd_by_analytic(const cs_xdef_t           *source,
   assert(source->dim == 3);
 
   if (source->qtype == CS_QUADRATURE_BARY)
-    cs_source_term_pcvd_bary_by_analytic(source, cm, time_eval, cb, input,
+    cs_source_term_fb_pcvd_bary_by_analytic(source, cm, time_eval, cb, input,
                                          values);
 
   else {
@@ -2713,6 +2715,7 @@ cs_source_term_pcvd_by_analytic(const cs_xdef_t           *source,
  * \brief  Compute the contribution of a source term for a cell and add it to
  *         the given array of values.
  *         Case of a vector density (vd) defined on primal cells by an array
+ *         Case of CDO face-based schemes.
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -2724,12 +2727,12 @@ cs_source_term_pcvd_by_analytic(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_pcvd_by_array(const cs_xdef_t           *source,
-                             const cs_cell_mesh_t      *cm,
-                             cs_real_t                  time_eval,
-                             cs_cell_builder_t         *cb,
-                             void                      *input,
-                             double                    *values)
+cs_source_term_fb_pcvd_by_array(const cs_xdef_t           *source,
+                                const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
+                                cs_cell_builder_t         *cb,
+                                void                      *input,
+                                double                    *values)
 {
   CS_UNUSED(cb);
   CS_UNUSED(input);
