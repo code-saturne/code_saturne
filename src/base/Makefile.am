@@ -74,7 +74,12 @@ $(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
 
 AM_LDFLAGS =
 
-EXTRA_DIST = cs_version.h.in
+# Files nor built through classical Automake rules need to be explicitely
+# added to distribution.
+
+EXTRA_DIST = \
+cs_base.c \
+cs_version.h.in
 
 # Public header files (to be installed)
 

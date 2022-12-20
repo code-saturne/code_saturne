@@ -46,14 +46,11 @@ configure \
 build-aux/ar-lib \
 build-aux/compile \
 build-aux/config.guess \
-build-aux/config.rpath \
 build-aux/config.sub \
 build-aux/depcomp \
 build-aux/install-sh \
-build-aux/ltmain.sh \
 build-aux/missing \
-build-aux/py-compile \
-build-aux/ylwrap
+build-aux/py-compile
 
 EXTRA_DIST = \
 $(AUX_DIST) \
@@ -67,9 +64,11 @@ build-aux/catalyst-5.6 \
 build-aux/cs_build_tools.py \
 build-aux/cs_compile_build.py \
 build-aux/cs_config_test.py \
+build-aux/cs_link_library.py \
 build-aux/cs_user_src_filter.py \
 build-aux/cs_version.py \
 build-aux/list_modules.sh \
+build-aux/mumps.makefile \
 build-aux/petsc-petscvariables.makefile \
 build-aux/petsc-variables.makefile \
 sbin/backup \
