@@ -703,11 +703,6 @@ cs_ast_coupling_initialize(int        nalimx,
     cs_calcium_write_double(cpl->aci.root_rank, 0, "EPSILO", 1,
                             &(cpl->epsilo));
 
-    /* Send isyncp and ntchr (false, removed function) */
-    int isyncp = 0, ntchr = -1;
-    cs_calcium_write_int(cpl->aci.root_rank, 0, "ISYNCP", 1, &(isyncp));
-    cs_calcium_write_int(cpl->aci.root_rank, 0, "NTCHRO", 1, &(ntchr));
-
     cs_calcium_write_double(cpl->aci.root_rank, 0, "TTINIT", 1, &ttinit);
     cs_calcium_write_double(cpl->aci.root_rank, 0, "PDTREF", 1,
                             &(cpl->dtref));
