@@ -40,6 +40,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_array_reduce.h"
 #include "cs_halo.h"
 #include "cs_math.h"
@@ -2363,23 +2364,19 @@ cs_evaluate_circulation_along_edges_by_array(const cs_xdef_t   *def,
 
   case 1: /* Scalar-valued integral */
     assert(ac->stride == 1);
-    if (n_edges == n_e_selected) {
-
-#     pragma omp parallel for if (n_edges > CS_THR_MIN)
-      for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++)
-        retval[e_id] = ac->values[e_id];
-
-    }
-    else { /* A selection of edges is selected */
-
-      assert(selected_lst != NULL);
-
-#     pragma omp parallel for if (n_e_selected > CS_THR_MIN)
-      for (cs_lnum_t e = 0; e < n_e_selected; e++) {
-        const cs_lnum_t e_id = selected_lst[e];
-        retval[e_id] = ac->values[e_id];
-      }
-
+    if (n_edges == n_e_selected)
+      cs_array_real_copy(n_edges, ac->values, retval);
+    else {
+      if (ac->full_length)
+        cs_array_real_copy_sublist(n_e_selected, 1, selected_lst,
+                                   CS_ARRAY_INOUT_SUBLIST,
+                                   ac->values,
+                                   retval);
+      else
+        cs_array_real_copy_sublist(n_e_selected, 1, selected_lst,
+                                   CS_ARRAY_OUT_SUBLIST,
+                                   ac->values,
+                                   retval);
     }
     break;
 
@@ -2740,7 +2737,7 @@ cs_evaluate_average_on_cells_by_array(const cs_xdef_t   *def,
               __func__);
 
   if (def->meta & CS_FLAG_FULL_LOC)
-    memcpy(retval, val, stride*sizeof(cs_real_t)*cs_cdo_quant->n_cells);
+    cs_array_real_copy(stride*cs_cdo_quant->n_cells, val, retval);
 
   else {
 
@@ -2791,8 +2788,8 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
-  const cs_lnum_t  *elt_ids
-    = (cs_cdo_quant->n_cells == z->n_elts) ? NULL : z->elt_ids;
+  const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
+  const cs_lnum_t  *elt_ids = (n_cells == z->n_elts) ? NULL : z->elt_ids;
 
   cs_quadrature_tetra_integral_t
     *qfunc = cs_quadrature_get_tetra_integral(def->dim, def->qtype);

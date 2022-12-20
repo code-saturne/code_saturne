@@ -775,7 +775,7 @@ _pressure_correction_fv(int        iterns,
                         b_visc);
 
       if (f_weight != NULL) {  /* Weighting for gradient */
-        cs_array_real_copy(n_cells, 1, c_visc, f_weight->val);
+        cs_array_real_copy(n_cells, c_visc, f_weight->val);
         cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_weight->val);
       }
 
@@ -798,7 +798,7 @@ _pressure_correction_fv(int        iterns,
                                            b_visc);
 
       if (f_weight != NULL) { /* Weighting for gradient */
-        cs_array_real_copy(n_cells, 6, (const cs_real_t *)vitenp, f_weight->val);
+        cs_array_real_copy(6*n_cells, (const cs_real_t *)vitenp, f_weight->val);
         cs_mesh_sync_var_sym_tens((cs_real_6_t *)(f_weight->val));
       }
 
@@ -880,10 +880,7 @@ _pressure_correction_fv(int        iterns,
   }
   else {
 
-    cs_array_real_copy(n_cells,
-                       3,
-                       (const cs_real_t *)gradp,
-                       (cs_real_t *)trav);
+    cs_array_real_copy(3*n_cells, (const cs_real_t *)gradp, (cs_real_t *)trav);
 
   }
 
@@ -982,8 +979,8 @@ _pressure_correction_fv(int        iterns,
     cs_real_t *sti = cs_field_by_name("inner_face_source_term")->val;
 
     if (ts->nt_cur == 1 && ts->nt_prev == 0) {
-      cs_array_real_copy(n_i_faces, 1, imasfl, imasfla);
-      cs_array_real_copy(n_b_faces, 1, bmasfl, bmasfla);
+      cs_array_real_copy(n_i_faces, imasfl, imasfla);
+      cs_array_real_copy(n_b_faces, bmasfl, bmasfla);
     }
 
     if (cs_glob_porous_model >= 1) {

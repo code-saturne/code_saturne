@@ -120,7 +120,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
     cs_real_t *scalar_diffusion;
     BFT_MALLOC(scalar_diffusion, n_cells_ext, cs_real_t);
-    cs_array_real_copy(n_cells, 1, cpro_vscalt, scalar_diffusion);
+    cs_array_real_copy(n_cells, cpro_vscalt, scalar_diffusion);
 
     const cs_equation_param_t *eqp
       = cs_field_get_equation_param_const(scalar1);

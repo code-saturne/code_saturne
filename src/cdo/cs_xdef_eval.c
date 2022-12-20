@@ -209,10 +209,9 @@ cs_xdef_eval_symtens_by_val(cs_lnum_t                    n_elts,
   assert(eval != NULL && constant_val != NULL);
 
   if (elt_ids != NULL && !dense_output)
-    cs_array_real_set_symm_tensor_on_subset(n_elts, elt_ids, constant_val,
-                                            eval);
+    cs_array_real_set_value_on_subset(n_elts, 6, elt_ids, constant_val, eval);
   else
-    cs_array_real_set_symm_tensor(n_elts, constant_val, eval);
+    cs_array_real_set_value(n_elts, 6, constant_val, eval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -400,9 +399,9 @@ cs_xdef_eval_symtens_by_time_func(cs_lnum_t                   n_elts,
   tfc->func(time_eval, tfc->input, _eval);
 
   if (elt_ids != NULL && !dense_output)
-    cs_array_real_set_symm_tensor_on_subset(n_elts, elt_ids, _eval, eval);
+    cs_array_real_set_value_on_subset(n_elts, 6, elt_ids, _eval, eval);
   else
-    cs_array_real_set_symm_tensor(n_elts, _eval, eval);
+    cs_array_real_set_value(n_elts, 6, _eval, eval);
 }
 
 /*----------------------------------------------------------------------------*/

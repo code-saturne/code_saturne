@@ -959,7 +959,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
       }
     }
     else
-      cs_array_real_copy(n_cells, 1, viscl, w1);
+      cs_array_real_copy(n_cells, viscl, w1);
 
     cs_face_viscosity(m,
                       fvq,
@@ -1334,7 +1334,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
       }
     }
     else
-      cs_array_real_copy(n_cells, 1, viscl, w1);
+      cs_array_real_copy(n_cells, viscl, w1);
 
     cs_face_viscosity(m,
                       fvq,
@@ -1988,7 +1988,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         w1[c_id] = viscl[c_id] + (csrij * visct[c_id] / cs_turb_cmu);
     }
     else
-      cs_array_real_copy(n_cells, 1, viscl, w1);
+      cs_array_real_copy(n_cells, viscl, w1);
 
     cs_face_viscosity(m,
                       fvq,
@@ -2383,7 +2383,7 @@ _solve_epsilon(cs_lnum_t        ncesmp,
         w1[c_id] = viscl[c_id] + visct[c_id]/sigmae;
     }
     else
-      cs_array_real_copy(n_cells, 1, viscl, w1);
+      cs_array_real_copy(n_cells, viscl, w1);
 
     cs_face_viscosity(m,
                       fvq,
@@ -3377,7 +3377,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
    * much smaller than the wanted value. */
 
   cs_array_real_fill_zero(n_cells_ext, alpha_min);
-  cs_array_real_copy(n_cells, 1, rovsdt, alpha_min);
+  cs_array_real_copy(n_cells, rovsdt, alpha_min);
 
   for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
     const cs_lnum_t ii = i_face_cells[face_id][0];

@@ -641,10 +641,6 @@ _assign_ref_value(int                 pty_dim,
     cs_array_real_set_vector_on_subset(n_elts, elt_ids, ref_val, array);
     break;
 
-  case 6: /* Anisotropic with symmetric storage */
-    cs_array_real_set_symm_tensor_on_subset(n_elts, elt_ids, ref_val, array);
-    break;
-
   case 9: /* Anisotropic */
     {
       cs_real_t  tens[3][3] = {{ref_val[0], ref_val[1], ref_val[2]},
@@ -655,9 +651,9 @@ _assign_ref_value(int                 pty_dim,
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid dimension value (%d)\n", __func__, pty_dim);
-
+    /* Include the anisotropic with symmetric storage (pty_dim = 6) */
+    cs_array_real_set_value_on_subset(n_elts, pty_dim, elt_ids, ref_val, array);
+    break;
   }
 }
 
@@ -2716,7 +2712,7 @@ cs_property_evaluate_boundary_def(const cs_property_t  *pty,
       if (cs_flag_test(cx->value_location, cs_flag_primal_face)) {
 
         if (elt_ids == NULL) /* All the boundary is considered */
-          cs_array_real_copy(cs_mesh->n_b_faces, pty_dim, cx->values, array);
+          cs_array_real_copy(pty_dim*cs_mesh->n_b_faces, cx->values, array);
 
         else { /* Only a part of the boundary is considered */
 
@@ -2737,7 +2733,7 @@ cs_property_evaluate_boundary_def(const cs_property_t  *pty,
           else {
 
             if (dense_output)
-              cs_array_real_copy(n_elts, pty_dim, cx->values, array);
+              cs_array_real_copy(pty_dim*n_elts, cx->values, array);
             else
               cs_array_real_copy_sublist(n_elts, pty_dim, elt_ids,
                                          CS_ARRAY_OUT_SUBLIST,
@@ -2782,7 +2778,7 @@ cs_property_evaluate_boundary_def(const cs_property_t  *pty,
                   "%s: Invalid field location. Property \"%s\"; Zone \"%s\".\n",
                   __func__, pty->name, z->name);
 
-      cs_array_real_copy(cs_mesh->n_b_faces, field->dim, field->val, array);
+      cs_array_real_copy(field->dim*cs_mesh->n_b_faces, field->val, array);
     }
     break;
 

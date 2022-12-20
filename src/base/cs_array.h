@@ -70,11 +70,79 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Assign true to all elements of an array. Case of an array of booleans
+ *
+ * \param[in]      size    total number of elements to set
+ * \param[in, out] a       array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_bool_fill_true(cs_lnum_t  size,
+                        bool       a[restrict]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign false to all elements of an array. Case of an array of booleans
+ *
+ * \param[in]      size    total number of elements to set
+ * \param[in, out] a       array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_bool_fill_false(cs_lnum_t  size,
+                         bool       a[restrict]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign zero to all elements of an array. Case of a cs_flag_t array.
+ *
+ * \param[in]      size    total number of elements to set to zero
+ * \param[in, out] a       array of flags to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_flag_fill_zero(cs_lnum_t  size,
+                        cs_flag_t  a[restrict]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign zero to all elements of an array. Case of a cs_lnum_t array.
+ *
+ * \param[in]      size    total number of elements to set to zero
+ * \param[in, out] a       array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_lnum_fill_zero(cs_lnum_t  size,
+                        cs_lnum_t  a[restrict]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign the value "num" to all elements of an array. Case of a
+ *        cs_lnum_t array.
+ *
+ * \param[in]      size    total number of elements to set
+ * \param[in]      num     value to set
+ * \param[in, out] a       array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_lnum_set_value(cs_lnum_t  size,
+                        cs_lnum_t  num,
+                        cs_lnum_t  a[restrict]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Copy an array ("ref") into another array ("dest") on possibly only a
  *        part of the array(s). Array with stride > 1 are assumed to be
  *        interlaced.  The sublist of element on which working is defined by
- *        "elt_ids" (of size "n_elts"). The way to apply the sublist is set
- *        with the parameter "mode" as follows:
+ *        "elt_ids". The way to apply the sublist is set with the parameter
+ *        "mode" as follows:
  *        - Only the "ref" array if mode = 0 (CS_ARRAY_IN_SUBLIST)
  *        - Only the "dest" array if mode = 1 (CS_ARRAY_OUT_SUBLIST)
  *        - Both "ref" and "dest" arrays if mode = 2 (CS_ARRAY_INOUT_SUBLIST)
@@ -87,7 +155,7 @@ BEGIN_C_DECLS
  * \param[in]      n_elts   number of elements in the array
  * \param[in]      stride   number of values for each element
  * \param[in]      mode     type of indirection to apply
- * \param[in]      elt_ids  sub list of element ids to consider
+ * \param[in]      elt_ids  list of ids in the subset or NULL (size: n_elts)
  * \param[in]      ref      reference values to copy
  * \param[in, out] dest     array storing values after applying the indirection
  */
@@ -105,18 +173,118 @@ cs_array_real_copy_sublist(cs_lnum_t         n_elts,
 /*!
  * \brief Copy real values from an array to another of the same dimensions.
  *
- * \param[in]   n_elts  number of associated elements
- * \param[in]   dim     associated dimension
- * \param[in]   src     source array values (size: n_elts*dim]
- * \param[out]  dest    destination array values (size: n_elts*dim]
+ * \param[in]   size    number of elements * dimension
+ * \param[in]   src     source array values (size: n_elts*dim)
+ * \param[out]  dest    destination array values (size: n_elts*dim)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_copy(cs_lnum_t        n_elts,
-                   cs_lnum_t        dim,
+cs_array_real_copy(cs_lnum_t        size,
                    const cs_real_t  src[],
                    cs_real_t        dest[restrict]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Multiply each value by a scaling factor
+ *        dest *= scaling_factor
+ *
+ * \param[in]   size             total number of entries (n_elts * dim)
+ * \param[in]   scaling_factor   value of the scaling factor
+ * \param[out]  dest             destination array values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_scale(cs_lnum_t     size,
+                    cs_real_t     scaling_factor,
+                    cs_real_t     dest[restrict]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a constant value of dim "stride" to an interlaced array
+ *        sharing the same stride
+ *
+ * \param[in]      n_elts    number of elements
+ * \param[in]      stride    number of values for each element
+ * \param[in]      ref_val   list of values to assign (size: stride)
+ * \param[in, out] a         array to set (size: n_elts*stride)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_set_value(cs_lnum_t          n_elts,
+                        int                stride,
+                        const cs_real_t    ref_val[],
+                        cs_real_t         *a);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a weighted constant value of dim "stride" to an interlaced
+ *        array sharing the same stride. Apply a weight for each element. This
+ *        weight is constant for each component of an element.
+ *
+ * \param[in]      n_elts    number of elements
+ * \param[in]      stride    number of values for each element
+ * \param[in]      ref_val   list of values to assign (size: stride)
+ * \param[in]      weight    values of the weight to apply (size: n_elts)
+ * \param[in, out] a         array to set (size: n_elts*stride)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_set_wvalue(cs_lnum_t          n_elts,
+                         int                stride,
+                         const cs_real_t    ref_val[],
+                         const cs_real_t    weight[],
+                         cs_real_t         *a);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a constant value of dim "stride" to an interlaced array
+ *        sharing the same stride. Only a subset of elements are considered.
+ *        If elt_ids = NULL, then one recovers the function
+ *        \ref cs_array_real_set_value
+ *
+ * \param[in]      n_elts    number of elements
+ * \param[in]      stride    number of values for each element
+ * \param[in]      elt_ids   list of ids in the subset or NULL (size: n_elts)
+ * \param[in]      ref_val   list of values to assign (size: stride)
+ * \param[in, out] a         array to set (size >= n_elts * stride)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_set_value_on_subset(cs_lnum_t          n_elts,
+                                  int                stride,
+                                  const cs_lnum_t    elt_ids[],
+                                  const cs_real_t    ref_val[],
+                                  cs_real_t         *a);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a weighted constant value of dim "stride" to an interlaced
+ *        array sharing the same stride. Only a subset of elements are
+ *        considered.  If elt_ids = NULL, then one recovers the function \ref
+ *        cs_array_real_set_wvalue Apply a weight for each element. This
+ *        weight is constant for each component of an element.
+ *
+ * \param[in]      n_elts   number of elements
+ * \param[in]      stride   number of values for each element
+ * \param[in]      elt_ids  list of ids in the subset or NULL (size: n_elts)
+ * \param[in]      ref_val  list of values to assign (size: stride)
+ * \param[in]      weight   values of the weight to apply (size >= n_elts)
+ * \param[in, out] a        array to set (size >= n_elts*stride)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_set_wvalue_on_subset(cs_lnum_t          n_elts,
+                                   int                stride,
+                                   const cs_lnum_t    elt_ids[],
+                                   const cs_real_t    ref_val[],
+                                   const cs_real_t    weight[],
+                                   cs_real_t         *a);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -131,7 +299,25 @@ cs_array_real_copy(cs_lnum_t        n_elts,
 void
 cs_array_real_set_scalar(cs_lnum_t  n_elts,
                          cs_real_t  ref_val,
-                         cs_real_t  a[]);
+                         cs_real_t  a[restrict]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a weighted constant scalar value to an array.
+ *        The weight array has the same size as the array "a".
+ *
+ * \param[in]      n_elts   number of elements
+ * \param[in]      ref_val  value to assign
+ * \param[in]      weight   values of the weight to apply
+ * \param[in, out] a        array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_set_wscalar(cs_lnum_t        n_elts,
+                          cs_real_t        ref_val,
+                          const cs_real_t  weight[],
+                          cs_real_t        a[restrict]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -140,7 +326,7 @@ cs_array_real_set_scalar(cs_lnum_t  n_elts,
  *        cs_array_real_set_scalar
  *
  * \param[in]      n_elts   number of elements
- * \param[in]      elt_ids  list of ids defining the subset or NULL
+ * \param[in]      elt_ids  list of ids in the subset or NULL (size: n_elts)
  * \param[in]      ref_val  value to assign
  * \param[in, out] a        array to set
  */
@@ -150,7 +336,28 @@ void
 cs_array_real_set_scalar_on_subset(cs_lnum_t        n_elts,
                                    const cs_lnum_t  elt_ids[],
                                    cs_real_t        ref_val,
-                                   cs_real_t        a[]);
+                                   cs_real_t        a[restrict]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a weighted constant scalar value to an array on a selected
+ *        subset of elements. If elt_ids = NULL, then one recovers the function
+ *        cs_array_real_set_wscalar
+ *
+ * \param[in]      n_elts   number of elements
+ * \param[in]      elt_ids  list of ids in the subset or NULL (size: n_elts)
+ * \param[in]      ref_val  value to assign
+ * \param[in]      weight   values of weights to apply
+ * \param[in, out] a        array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_set_wscalar_on_subset(cs_lnum_t        n_elts,
+                                    const cs_lnum_t  elt_ids[],
+                                    cs_real_t        ref_val,
+                                    const cs_real_t  weight[],
+                                    cs_real_t        a[restrict]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -169,12 +376,30 @@ cs_array_real_set_vector(cs_lnum_t         n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Assign a weighted constant vector value to an interlaced array (of
+ *        stride 3). The array of weights has the same size as the array "a".
+ *
+ * \param[in]      n_elts   number of elements
+ * \param[in]      ref_val  vector to assign
+ * \param[in]      weight   values of the weight to apply
+ * \param[in, out] a        array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_set_wvector(cs_lnum_t          n_elts,
+                          const cs_real_t    ref_val[3],
+                          const cs_real_t    weight[],
+                          cs_real_t         *a);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Assign a constant vector to an interlaced array (of stride 3) on a
  *        selected subset of elements. If elt_ids = NULL, then one recovers the
  *        function cs_array_real_set_vector
  *
  * \param[in]      n_elts   number of elements
- * \param[in]      elt_ids  list of ids defining the subset or NULL
+ * \param[in]      elt_ids  list of ids in the subset or NULL (size: n_elts)
  * \param[in]      ref_val  vector to assign
  * \param[in, out] a        array to set
  */
@@ -188,39 +413,25 @@ cs_array_real_set_vector_on_subset(cs_lnum_t         n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Assign a constant vector of size 6 (optimized way to define a
- *        symmetric tensor) to an array (of stride 6) which is interlaced
+ * \brief Assign a weighted constant vector value to an interlaced array (of
+ *        stride 3). The subset selection is given by elt_ids. If NULL, then
+ *        one recovers the function \ref cs_array_real_set_wvector
+ *        The array of weights has the same size as the array "a".
  *
  * \param[in]      n_elts   number of elements
+ * \param[in]      elt_ids  list of ids in the subset or NULL (size: n_elts)
  * \param[in]      ref_val  vector to assign
+ * \param[in]      weight   values of the weight to apply
  * \param[in, out] a        array to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_set_symm_tensor(cs_lnum_t         n_elts,
-                              const cs_real_t   ref_val[6],
-                              cs_real_t        *a);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Assign a constant vector of size 6 (optimized way to define a
- *        symmetric tensor) to an interlaced array (of stride 6) on a selected
- *        subset of elements. If elt_ids = NULL, then one recovers the function
- *        cs_array_real_set_symm_tensor
- *
- * \param[in]      n_elts   number of elements
- * \param[in]      elt_ids  list of ids defining the subset or NULL
- * \param[in]      ref_val  vector to assign
- * \param[in, out] a        array to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_array_real_set_symm_tensor_on_subset(cs_lnum_t         n_elts,
-                                        const cs_lnum_t   elt_ids[],
-                                        const cs_real_t   ref_val[6],
-                                        cs_real_t        *a);
+cs_array_real_set_wvector_on_subset(cs_lnum_t          n_elts,
+                                    const cs_lnum_t    elt_ids[],
+                                    const cs_real_t    ref_val[3],
+                                    const cs_real_t    weight[],
+                                    cs_real_t         *a);
 
 /*----------------------------------------------------------------------------*/
 /*!
