@@ -22,6 +22,11 @@
 
 #-------------------------------------------------------------------------------
 
+# Files nor built through classical Automake rules need to be explicitely
+# added to distribution.
+
+EXTRA_DIST = cs_solver.c
+
 # Build flat archives
 
 # PLE dependency
