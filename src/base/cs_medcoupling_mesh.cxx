@@ -160,7 +160,7 @@ _assign_vertex_coords(const cs_mesh_t        *mesh,
   const cs_lnum_t  dim = mesh->dim;
   const cs_coord_t  *vertex_coords = mesh->vtx_coord;
 
-  assert(med_mesh != NULL);
+  assert(pmmesh->n_elts > 0);
 
   /* Assign vertex list if not all vertices are selected
      (so as to be able to handle vertex data */
@@ -780,6 +780,10 @@ _copy_mesh_from_base(cs_mesh_t              *csmesh,
             _("Error: this funnction cannot be called without "
               "MEDCoupling support\n"));
 #else
+  // Assign mesh only if non empty list of elements
+  if (pmmesh->n_elts == 0)
+    return;
+
   if (pmmesh->elt_dim == 3) {
 
     /* Creation of a new nodal mesh from selected cells */
