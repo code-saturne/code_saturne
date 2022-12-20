@@ -1,4 +1,4 @@
-Release 7.1.2 (December 19 2022)
+Release 7.1.2 (December 20 2022)
 --------------------------------
 
 This is the last release of the 7.1 series.
