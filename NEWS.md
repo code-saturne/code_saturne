@@ -1,10 +1,10 @@
-Release 7.3.0 (not released yet)
+Release 7.3.0 (December 20 2022)
 --------------------------------
 
 ### User changes:
 
 - Now allow handling vertex-based fields when restarting from a different
-  mesh. This can be sueful for ALE.
+  mesh. This can be useful for ALE.
 
 - Add `cs_function` API to refactor pre and user-defined location data
   evaluation. This defines function objects which can be evaluated
