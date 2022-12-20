@@ -293,8 +293,8 @@ _tag_geometric_entities(cs_lnum_t          n_elts,
 
   if (n_elts < n_cells) { /* Only some cells are selected */
 
-    memset(v_tags, 0, n_vertices * sizeof(cs_lnum_t));
-    memset(c_tags, 0, m->n_cells_with_ghosts * sizeof(cs_lnum_t));
+    cs_array_lnum_fill_zero(n_vertices, v_tags);
+    cs_array_lnum_fill_zero(m->n_cells_with_ghosts, c_tags);
 
     /* First pass: flag cells and vertices */
 
@@ -313,20 +313,13 @@ _tag_geometric_entities(cs_lnum_t          n_elts,
 
     assert(n_cells == n_elts);
 
-#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
-    for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
-      v_tags[v_id] = -1;
-
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      c_tags[c_id] = 1;
-    for (cs_lnum_t c_id = n_cells; c_id < m->n_cells_with_ghosts; c_id++)
-      c_tags[c_id] = 0;
+    cs_array_lnum_set_value(n_vertices, -1, v_tags);
+    cs_array_lnum_set_value(n_cells, 1, c_tags);
+    cs_array_lnum_fill_zero(m->n_ghost_cells, c_tags + n_cells);
 
   }
 
-  if (m->halo != NULL)
-    cs_halo_sync_num(m->halo, CS_HALO_STANDARD, c_tags);
+  cs_halo_sync_num(m->halo, CS_HALO_STANDARD, c_tags);
 
   /* Second pass: detect cells at the frontier of the selection */
 
@@ -415,9 +408,7 @@ _pvsp_by_qov(const cs_real_t    quantity_val,
   }
   else { /* All cells are selected */
 
-#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
-    for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
-      v_vals[v_id] = val_to_set;
+    cs_array_real_set_scalar(n_vertices, val_to_set, v_vals);
 
   }
 
@@ -490,9 +481,7 @@ _pvcsp_by_qov(const cs_real_t    quantity_val,
 
     assert(elt_ids != NULL);
 
-#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++)
-      c_vals[elt_ids[i]] = val_to_set;
+    cs_array_real_set_scalar_on_subset(n_elts, elt_ids, val_to_set, c_vals);
 
 #   pragma omp parallel for if (n_vertices > CS_THR_MIN)
     for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
@@ -502,13 +491,8 @@ _pvcsp_by_qov(const cs_real_t    quantity_val,
   }
   else { /* All cells are selected */
 
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      c_vals[c_id] = val_to_set;
-
-#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
-    for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
-      v_vals[v_id] = val_to_set;
+    cs_array_real_set_scalar(n_cells, val_to_set, c_vals);
+    cs_array_real_set_scalar(n_vertices, val_to_set, v_vals);
 
   }
 
@@ -699,7 +683,7 @@ _pcsd_by_analytic(cs_real_t                        time_eval,
         const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
         const double  hfco =
           cs_math_1ov3 * cs_math_3_dot_product(pfq.unitv,
-                                                   quant->dedge_vector+3*i);
+                                               quant->dedge_vector+3*i);
         const cs_lnum_t  start = f2e->idx[f_id], end = f2e->idx[f_id+1];
 
         if (end - start == 3) {
@@ -1112,154 +1096,6 @@ _dcvd_by_value(const cs_real_t    const_vec[3],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the integral over a (primal) cell of a value related to
- *         scalar density field
- *
- * \param[in]      const_val   constant value
- * \param[in]      n_elts      number of elements to consider
- * \param[in]      elt_ids     pointer to the list of selected ids
- * \param[in, out] values      pointer to the computed values
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_pcsd_by_value(const cs_real_t    const_val,
-               const cs_lnum_t    n_elts,
-               const cs_lnum_t   *elt_ids,
-               cs_real_t          values[])
-{
-  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
-
-  if (elt_ids == NULL) { /* All the support entities are selected */
-#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
-      values[c_id] = quant->cell_vol[c_id]*const_val;
-  }
-
-  else { /* Loop on selected cells */
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-      cs_lnum_t  c_id = elt_ids[i];
-      values[c_id] = quant->cell_vol[c_id]*const_val;
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the average over a (primal) cell of a scalar field
- *
- * \param[in]      const_val   constant value
- * \param[in]      n_loc_elts  number of elements to consider
- * \param[in]      elt_ids     pointer to the list of selected ids
- * \param[in, out] values      pointer to the computed values
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_pcsa_by_value(const cs_real_t    const_val,
-               const cs_lnum_t    n_elts,
-               const cs_lnum_t   *elt_ids,
-               cs_real_t          values[])
-{
-  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
-
-  if (elt_ids == NULL) { /* All the support entities are selected */
-#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
-      values[c_id] = const_val;
-  }
-
-  else { /* Loop on selected cells */
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-      cs_lnum_t  c_id = elt_ids[i];
-      values[c_id] = const_val;
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the integral over a (primal) cell of a vector-valued
- *         density field
- *
- * \param[in]      const_vec   constant values
- * \param[in]      n_elts      number of elements to consider
- * \param[in]      elt_ids     pointer to the list of selected ids
- * \param[in, out] values      pointer to the computed values
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_pcvd_by_value(const cs_real_t     const_vec[3],
-               const cs_lnum_t     n_elts,
-               const cs_lnum_t    *elt_ids,
-               cs_real_t           values[])
-{
-  const cs_real_t  *vol = cs_cdo_quant->cell_vol;
-
-  if (elt_ids == NULL) { /* All the support entities are selected */
-#   pragma omp parallel for if (cs_cdo_quant->n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < cs_cdo_quant->n_cells; c_id++) {
-      const cs_real_t  vol_c = vol[c_id];
-      cs_real_t  *val_c = values + 3*c_id;
-
-      val_c[0] = vol_c * const_vec[0];
-      val_c[1] = vol_c * const_vec[1];
-      val_c[2] = vol_c * const_vec[2];
-    }
-  }
-
-  else { /* Loop on selected cells */
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-      const cs_lnum_t  c_id = elt_ids[i];
-      const cs_real_t  vol_c = vol[c_id];
-      cs_real_t  *val_c = values + 3*c_id;
-
-      val_c[0] = vol_c * const_vec[0];
-      val_c[1] = vol_c * const_vec[1];
-      val_c[2] = vol_c * const_vec[2];
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the average over a (primal) cell of a vector-valued field
- *
- * \param[in]      const_vec   constant values
- * \param[in]      n_loc_elts  number of elements to consider
- * \param[in]      elt_ids     pointer to the list of selected ids
- * \param[in, out] values      pointer to the computed values
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_pcva_by_value(const cs_real_t     const_vec[3],
-               const cs_lnum_t     n_elts,
-               const cs_lnum_t    *elt_ids,
-               cs_real_t           values[])
-{
-  if (elt_ids == NULL) { /* All the support entities are selected */
-#   pragma omp parallel for if (cs_cdo_quant->n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < cs_cdo_quant->n_cells; c_id++) {
-      memcpy(values + 3*c_id, const_vec, 3*sizeof(cs_real_t));
-    }
-  }
-
-  else { /* Loop on selected cells */
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-      const cs_lnum_t  c_id = elt_ids[i];
-      memcpy(values+3*c_id, const_vec, 3*sizeof(cs_real_t));
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Get the average at each primal faces for a scalar potential
  *         defined by an analytical function on a selection of (primal) cells
  *
@@ -1408,6 +1244,51 @@ _pfva_by_analytic(cs_real_t                       time_eval,
   } /* Loop on faces */
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set an array by a constant definition by value
+ *
+ * \param[in]      n_elts     number of elements
+ * \param[in]      stride     number of values for each element
+ * \param[in]      elt_ids    NULL or list of element ids
+ * \param[in]      ref_val    value(s) to set
+ * \param[in, out] retval     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_eval_by_value(cs_lnum_t          n_elts,
+               int                stride,
+               const cs_lnum_t   *elt_ids,
+               const cs_real_t    ref_val[],
+               cs_real_t          retval[])
+{
+  switch (stride) {
+
+  case 1:  /* DoF is scalar-valued */
+    cs_array_real_set_scalar_on_subset(n_elts, elt_ids, ref_val[0], retval);
+    break;
+
+  case 3: /* DoF is vector-valued */
+    cs_array_real_set_vector_on_subset(n_elts, elt_ids, ref_val, retval);
+    break;
+
+  case 9: /* DoF is tensor-valued */
+    {
+      const cs_real_t  tensor[3][3] = {{ref_val[0], ref_val[1], ref_val[2]},
+                                       {ref_val[3], ref_val[4], ref_val[5]},
+                                       {ref_val[6], ref_val[7], ref_val[8]}};
+
+      cs_array_real_set_tensor_on_subset(n_elts, elt_ids, tensor, retval);
+    }
+    break;
+
+  default:
+    cs_array_real_set_value_on_subset(n_elts, stride, elt_ids, ref_val, retval);
+    break;
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1461,6 +1342,9 @@ cs_evaluate_array_reduction(int                     dim,
                             cs_real_t              *asum,
                             cs_real_t              *ssum)
 {
+  if (array == NULL)
+    return;
+
   assert(cs_cdo_quant != NULL && cs_cdo_connect != NULL);
 
   /* Get reduced quantities for this array and for this MPI rank */
@@ -1516,11 +1400,13 @@ cs_evaluate_scatter_array_reduction(int                     dim,
                                     cs_real_t              *asum,
                                     cs_real_t              *ssum)
 {
-  assert(cs_cdo_quant != NULL && cs_cdo_connect != NULL);
-
+  if (array == NULL)
+    return;
   if (c2x == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " %s: One needs an adjacency.\n", __func__);
+
+  assert(cs_cdo_quant != NULL && cs_cdo_connect != NULL);
 
   /* Get the min/max for this MPI rank */
 
@@ -1544,7 +1430,8 @@ cs_evaluate_scatter_array_reduction(int                     dim,
 /*!
  * \brief  Evaluate the quantity defined by a value in the case of a density
  *         field for all the degrees of freedom
- *         Accessor to the value is by unit of volume
+ *         Accessor to the value is by unit of volume and the return values are
+ *         integrated over a volume
  *
  * \param[in]      dof_flag  indicate where the evaluation has to be done
  * \param[in]      def       pointer to a cs_xdef_t structure
@@ -1557,38 +1444,43 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
                              const cs_xdef_t   *def,
                              cs_real_t          retval[])
 {
+  if (def == NULL)
+    return;
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+  assert(def->type == CS_XDEF_BY_VALUE);
 
   /* Retrieve information from mesh location structures */
 
+  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_real_t  *ref_val = (const cs_real_t *)def->context;
+  const cs_lnum_t *elt_ids = (cdoq->n_cells == z->n_elts) ? NULL : z->elt_ids;
 
   /* Perform the evaluation */
 
-  if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
+  if (cs_flag_test(dof_flag, cs_flag_primal_cell)) {
 
-    const cs_real_t  *constant_val = (const cs_real_t *)def->context;
-
-    if (cs_flag_test(dof_flag, cs_flag_primal_cell))
-      _pcsd_by_value(constant_val[0], z->n_elts, z->elt_ids, retval);
-    else if (cs_flag_test(dof_flag, cs_flag_dual_cell))
-      _dcsd_by_value(constant_val[0], z->n_elts, z->elt_ids, retval);
+    if (dof_flag & CS_FLAG_SCALAR)
+      cs_array_real_set_wscalar_on_subset(z->n_elts, elt_ids, ref_val[0],
+                                          cdoq->cell_vol, /* weights */
+                                          retval);
+    else if (dof_flag & CS_FLAG_VECTOR)
+      cs_array_real_set_wvector_on_subset(z->n_elts, elt_ids, ref_val,
+                                          cdoq->cell_vol, /* weights */
+                                          retval);
     else
       bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
 
   }
-  else if (dof_flag & CS_FLAG_VECTOR) { /* DoF is vector-valued */
+  else if (cs_flag_test(dof_flag, cs_flag_dual_cell)) {
 
-    const cs_real_t  *constant_vec = (const cs_real_t *)def->context;
-
-    if (cs_flag_test(dof_flag, cs_flag_primal_cell))
-      _pcvd_by_value(constant_vec, z->n_elts, z->elt_ids, retval);
-    else if (cs_flag_test(dof_flag, cs_flag_dual_cell))
-      _dcvd_by_value(constant_vec, z->n_elts, z->elt_ids, retval);
+    if (dof_flag & CS_FLAG_SCALAR)
+      _dcsd_by_value(ref_val[0], z->n_elts, z->elt_ids, retval);
+    else if (dof_flag & CS_FLAG_VECTOR)
+      _dcvd_by_value(ref_val, z->n_elts, z->elt_ids, retval);
     else
       bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
 
@@ -1600,7 +1492,8 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the value related to each DoF in the case of a density field
- *         The value defined by the analytic function is by unity of volume
+ *         The value defined by the analytic function is by unity of volume and
+ *         the return values are integrated over a volume
  *
  * \param[in]      dof_flag    indicate where the evaluation has to be done
  * \param[in]      def         pointer to a cs_xdef_t structure
@@ -1615,11 +1508,13 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
                                 cs_real_t           time_eval,
                                 cs_real_t           retval[])
 {
+  if (def == NULL)
+    return;
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+  assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
 
   /* Retrieve information from mesh location structures */
 
@@ -1683,65 +1578,21 @@ cs_evaluate_potential_at_vertices_by_value(const cs_xdef_t   *def,
                                            const cs_lnum_t   *selected_lst,
                                            cs_real_t          retval[])
 {
+  if (def == NULL)
+    return;
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
-  assert(def != NULL);
+
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_VALUE);
 
-  const cs_lnum_t  n_vertices = cs_cdo_quant->n_vertices;
-  const cs_real_t  *input = (cs_real_t *)def->context;
-
   /* Perform the evaluation */
 
-  if (def->dim == 1) { /* DoF is scalar-valued */
+  const cs_lnum_t  n_vertices = cs_cdo_quant->n_vertices;
+  const cs_real_t  *input = (cs_real_t *)def->context;
+  const cs_lnum_t  *elt_ids = (n_v_selected == n_vertices) ? NULL:selected_lst;
 
-    const cs_real_t  const_val = input[0];
-
-    if (n_v_selected == n_vertices) {
-
-#     pragma omp parallel for if (n_vertices > CS_THR_MIN)
-      for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
-        retval[v_id] = const_val;
-
-    }
-    else {  /* Partial selection */
-
-      assert(selected_lst != NULL);
-
-      /* Loop on selected vertices */
-
-      for (cs_lnum_t i = 0; i < n_v_selected; i++)
-        retval[selected_lst[i]] = const_val;
-
-    }
-
-  }
-  else if (def->dim == 3) {
-
-    const size_t _3real = 3*sizeof(cs_real_t);
-
-    if (n_v_selected == n_vertices) {
-
-#     pragma omp parallel for if (n_vertices > CS_THR_MIN)
-      for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
-        memcpy(retval + 3*v_id, input, _3real);
-
-    }
-    else { /* Partial selection */
-
-      assert(selected_lst != NULL);
-
-      /* Loop on selected vertices */
-
-      for (cs_lnum_t i = 0; i < n_v_selected; i++)
-        memcpy(retval + 3*selected_lst[i], input, _3real);
-
-    }
-
-  }
-  else
-    bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
+  _eval_by_value(n_v_selected, def->dim, elt_ids, input, retval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1764,10 +1615,11 @@ cs_evaluate_potential_at_vertices_by_analytic(const cs_xdef_t   *def,
                                               const cs_lnum_t   *selected_lst,
                                               cs_real_t          retval[])
 {
+  if (def == NULL)
+    return;
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
 
@@ -1810,10 +1662,11 @@ cs_evaluate_potential_at_vertices_by_dof_func(const cs_xdef_t   *def,
                                               const cs_lnum_t   *selected_lst,
                                               cs_real_t          retval[])
 {
+  if (def == NULL)
+    return;
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_DOF_FUNCTION);
 
@@ -1853,79 +1706,21 @@ cs_evaluate_potential_at_faces_by_value(const cs_xdef_t   *def,
                                         const cs_lnum_t   *selected_lst,
                                         cs_real_t          retval[])
 {
+  if (def == NULL)
+    return;
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
-  assert(def != NULL);
+
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_VALUE);
 
+  /* Perform the evaluation */
+
   const cs_lnum_t  n_faces = cs_cdo_quant->n_faces;
   const cs_real_t  *input = (cs_real_t *)def->context;
+  const cs_lnum_t  *elt_ids = (n_f_selected == n_faces) ? NULL : selected_lst;
 
-  if (def->dim == 1) { /* DoF is scalar-valued */
-
-    if (n_faces == n_f_selected) {
-
-#     pragma omp parallel for if (n_faces > CS_THR_MIN)
-      for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++)
-        retval[f_id] = input[0];
-
-    }
-    else {
-
-      assert(selected_lst != NULL);
-
-#     pragma omp parallel for if (n_faces > CS_THR_MIN)
-      for (cs_lnum_t f = 0; f < n_f_selected; f++)
-        retval[selected_lst[f]] = input[0];
-
-    }
-
-  }
-  else if (def->dim == 3) {
-
-    const size_t _3real = 3*sizeof(cs_real_t);
-
-    if (n_faces == n_f_selected) {
-
-#     pragma omp parallel for if (n_faces > CS_THR_MIN)
-      for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++)
-        memcpy(retval + 3*f_id, input, _3real);
-
-    }
-    else {
-
-      assert(selected_lst != NULL);
-
-#     pragma omp parallel for if (n_faces > CS_THR_MIN)
-      for (cs_lnum_t f = 0; f < n_f_selected; f++)
-        memcpy(retval + 3*selected_lst[f], input, _3real);
-
-    }
-
-  }
-  else {
-
-    const size_t s = def->dim*sizeof(cs_real_t);
-
-    if (n_faces == n_f_selected) {
-
-#     pragma omp parallel for if (n_faces > CS_THR_MIN)
-      for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++)
-        memcpy(retval + def->dim*f_id, input, s);
-
-    }
-    else {
-
-      assert(selected_lst != NULL);
-
-#     pragma omp parallel for if (n_faces > CS_THR_MIN)
-      for (cs_lnum_t f = 0; f < n_f_selected; f++)
-        memcpy(retval + def->dim*selected_lst[f], input, s);
-
-    }
-
-  }
+  _eval_by_value(n_f_selected, def->dim, elt_ids, input, retval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1948,10 +1743,11 @@ cs_evaluate_potential_at_faces_by_analytic(const cs_xdef_t   *def,
                                            const cs_lnum_t   *selected_lst,
                                            cs_real_t          retval[])
 {
+  if (def == NULL)
+    return;
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
 
@@ -2030,74 +1826,20 @@ void
 cs_evaluate_potential_at_cells_by_value(const cs_xdef_t   *def,
                                         cs_real_t          retval[])
 {
+  if (def == NULL)
+    return;
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_VALUE);
 
   const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
   const cs_real_t  *input = (cs_real_t *)def->context;
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_lnum_t  *elt_ids = (z->n_elts == n_cells) ? NULL : z->elt_ids;
 
-  if (def->dim == 1) { /* DoF is scalar-valued */
-
-    const cs_real_t  const_val = input[0];
-
-    if (n_cells == z->n_elts) {
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        retval[c_id] = const_val;
-
-    }
-    else { /* Partial selection */
-
-#     pragma omp parallel for if (z->n_elts > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < z->n_elts; i++)
-        retval[z->elt_ids[i]] = const_val;
-
-    }
-
-  }
-  else if (def->dim == 3) {
-
-    const size_t _3real = 3*sizeof(cs_real_t);
-
-    if (n_cells == z->n_elts) {
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        memcpy(retval + 3*c_id, input, _3real);
-
-    }
-    else { /* Partial selection */
-
-#     pragma omp parallel for if (z->n_elts > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < z->n_elts; i++)
-        memcpy(retval + 3*z->elt_ids[i], input, _3real);
-
-    }
-
-  }
-  else {
-
-    const size_t s = def->dim*sizeof(cs_real_t);
-
-    if (n_cells == z->n_elts) {
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        memcpy(retval + def->dim*c_id, input, s);
-
-    }
-    else { /* Partial selection */
-
-#     pragma omp parallel for if (z->n_elts > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < z->n_elts; i++)
-        memcpy(retval + def->dim*z->elt_ids[i], input, s);
-
-    }
-
-  }
+  _eval_by_value(z->n_elts, def->dim, elt_ids, input, retval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2116,10 +1858,11 @@ cs_evaluate_potential_at_cells_by_analytic(const cs_xdef_t    *def,
                                            const cs_real_t     time_eval,
                                            cs_real_t           retval[])
 {
+  if (def == NULL)
+    return;
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
 
@@ -2158,10 +1901,11 @@ void
 cs_evaluate_potential_at_cells_by_dof_func(const cs_xdef_t   *def,
                                            cs_real_t          retval[])
 {
+  if (def == NULL)
+    return;
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_DOF_FUNCTION);
 
@@ -2207,11 +1951,13 @@ cs_evaluate_potential_by_qov(cs_flag_t          dof_flag,
                              cs_real_t          vvals[],
                              cs_real_t          wvals[])
 {
+  if (def == NULL)
+    return;
   if (vvals == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+  assert(def->type == CS_XDEF_BY_QOV);
 
   const cs_real_t  *input = (cs_real_t *)def->context;
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
@@ -2224,14 +1970,19 @@ cs_evaluate_potential_by_qov(cs_flag_t          dof_flag,
     const cs_real_t  const_val = input[0];
 
     if (cs_flag_test(dof_flag, cs_flag_primal_vtx | cs_flag_primal_cell)) {
+
       if (wvals == NULL)
         bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
       _pvcsp_by_qov(const_val, z->n_elts, z->elt_ids, vvals, wvals);
       check = true;
+
     }
     else if (cs_flag_test(dof_flag, cs_flag_primal_vtx)) {
+
       _pvsp_by_qov(const_val, z->n_elts, z->elt_ids, vvals);
       check = true;
+
     }
 
   } /* Located at primal vertices */
@@ -2260,10 +2011,12 @@ cs_evaluate_circulation_along_edges_by_value(const cs_xdef_t   *def,
                                              const cs_lnum_t   *selected_lst,
                                              cs_real_t          retval[])
 {
-  if (retval == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+  if (def == NULL)
+    return;
+ if (retval == NULL)
+   bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_VALUE);
 
   const cs_lnum_t  n_edges = cs_cdo_quant->n_edges;
@@ -2277,24 +2030,11 @@ cs_evaluate_circulation_along_edges_by_value(const cs_xdef_t   *def,
   switch (def->dim) {
 
   case 1: /* Scalar-valued integral */
-    if (n_edges == n_e_selected) {
-
-#     pragma omp parallel for if (n_edges > CS_THR_MIN)
-      for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++)
-        retval[e_id] = input[0];
-
-    }
-    else { /* A selection of edges is selected */
-
-      assert(selected_lst != NULL);
-
-#     pragma omp parallel for if (n_e_selected > CS_THR_MIN)
-      for (cs_lnum_t e = 0; e < n_e_selected; e++) {
-        const cs_lnum_t e_id = selected_lst[e];
-        retval[e_id] = input[0];
-      }
-
-    }
+    if (n_edges == n_e_selected)
+      cs_array_real_set_scalar(n_edges, input[0], retval);
+    else
+      cs_array_real_set_scalar_on_subset(n_e_selected, selected_lst, input[0],
+                                         retval);
     break;
 
   case 3:
@@ -2344,10 +2084,12 @@ cs_evaluate_circulation_along_edges_by_array(const cs_xdef_t   *def,
                                              const cs_lnum_t   *selected_lst,
                                              cs_real_t          retval[])
 {
+  if (def == NULL)
+    return;
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_ARRAY);
 
   const cs_lnum_t  n_edges = cs_cdo_quant->n_edges;
@@ -2430,10 +2172,12 @@ cs_evaluate_circulation_along_edges_by_analytic(const cs_xdef_t   *def,
                                                 const cs_lnum_t   *selected_lst,
                                                 cs_real_t          retval[])
 {
+  if (def == NULL)
+    return;
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
 
   const cs_lnum_t  n_edges = cs_cdo_quant->n_edges;
@@ -2560,56 +2304,21 @@ cs_evaluate_average_on_faces_by_value(const cs_xdef_t   *def,
                                       const cs_lnum_t   *selected_lst,
                                       cs_real_t          retval[])
 {
+  if (def == NULL)
+    return;
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_VALUE);
 
+  /* Perform the evaluation */
+
   const cs_lnum_t  n_faces = cs_cdo_quant->n_faces;
+  const cs_lnum_t  *elt_ids = (n_f_selected == n_faces) ? NULL : selected_lst;
   const cs_real_t  *values = (cs_real_t *)def->context;
 
-  if (n_faces == n_f_selected) {
-
-    if (def->dim == 1) { /* DoF is scalar-valued */
-
-#     pragma omp parallel for if (n_faces > CS_THR_MIN)
-      for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++)
-        retval[f_id] = values[0];
-
-    }
-    else { /* Multi-valued case */
-
-      const size_t  s = def->dim*sizeof(cs_real_t);
-#     pragma omp parallel for if (n_faces > CS_THR_MIN)
-      for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++)
-        memcpy(retval + def->dim*f_id, values, s);
-
-    }
-
-  }
-  else { /* Definition does not apply to all entities */
-
-    assert(selected_lst != NULL);
-
-    if (def->dim == 1) {
-
-#     pragma omp parallel for if (n_faces > CS_THR_MIN)
-      for (cs_lnum_t f = 0; f < n_f_selected; f++)
-        retval[selected_lst[f]] = values[0];
-
-    }
-    else { /* Multi-valued case */
-
-      const size_t  s = def->dim*sizeof(cs_real_t);
-#     pragma omp parallel for if (n_faces > CS_THR_MIN)
-      for (cs_lnum_t f = 0; f < n_f_selected; f++)
-        memcpy(retval + def->dim*selected_lst[f], values, s);
-
-    }
-
-  } /* Deal with a selection of cells */
+  _eval_by_value(n_f_selected, def->dim, elt_ids, values, retval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2632,10 +2341,11 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t    *def,
                                          const cs_lnum_t    *selected_lst,
                                          cs_real_t           retval[])
 {
+  if (def == NULL)
+    return;
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
 
@@ -2670,6 +2380,49 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t    *def,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Evaluate the average value on faces following the given definition
+ *
+ * \param[in]      def            pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval      physical time at which one evaluates the term
+ * \param[in]      n_f_selected   number of selected faces
+ * \param[in]      selected_lst   list of selected faces
+ * \param[in, out] retval         pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_average_on_faces(const cs_xdef_t   *def,
+                             cs_real_t          time_eval,
+                             const cs_lnum_t    n_f_selected,
+                             const cs_lnum_t   *selected_lst,
+                             cs_real_t          retval[])
+{
+  if (def == NULL)
+    return;
+
+  switch (def->type) {
+
+  case CS_XDEF_BY_VALUE:
+    cs_evaluate_average_on_faces_by_value(def,
+                                          n_f_selected, selected_lst,
+                                          retval);
+    break;
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    cs_evaluate_average_on_faces_by_analytic(def,
+                                             time_eval,
+                                             n_f_selected, selected_lst,
+                                             retval);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, " %s: Case not handled yet.", __func__);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Evaluate the average of a function on the cells
  *
  * \param[in]      def       pointer to a cs_xdef_t pointer
@@ -2681,31 +2434,20 @@ void
 cs_evaluate_average_on_cells_by_value(const cs_xdef_t   *def,
                                       cs_real_t          retval[])
 {
+  if (def == NULL)
+    return;
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+  assert(def->type == CS_XDEF_BY_VALUE);
 
+  const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_lnum_t  *elt_ids = (z->n_elts == n_cells) ? NULL : z->elt_ids;
   const cs_real_t  *values = (cs_real_t *)def->context;
 
-  switch (def->dim) {
-
-  case 1: /* Scalar-valued */
-    _pcsa_by_value(values[0], z->n_elts, z->elt_ids, retval);
-    break;
-
-  case 3: /* Vector-valued */
-    _pcva_by_value(values, z->n_elts, z->elt_ids, retval);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" %s: Invalid dimension of analytical function.\n"), __func__);
-    break;
-
-  } /* End of switch on dimension */
+  _eval_by_value(z->n_elts, def->dim, elt_ids, values, retval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2721,11 +2463,13 @@ void
 cs_evaluate_average_on_cells_by_array(const cs_xdef_t   *def,
                                       cs_real_t          retval[])
 {
+  if (def == NULL)
+    return;
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+  assert(def->type == CS_XDEF_BY_ARRAY);
 
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
   const cs_xdef_array_context_t  *ac = (cs_xdef_array_context_t *)def->context;
@@ -2735,32 +2479,23 @@ cs_evaluate_average_on_cells_by_array(const cs_xdef_t   *def,
   if (cs_flag_test(ac->value_location, cs_flag_primal_cell) == false)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid case. Not implemented yet.",
               __func__);
+  assert(stride == def->dim);
 
   if (def->meta & CS_FLAG_FULL_LOC)
     cs_array_real_copy(stride*cs_cdo_quant->n_cells, val, retval);
 
   else {
 
-    assert(z->elt_ids != NULL);
-    if (stride == 1) {
-
-#     pragma omp parallel for if (z->n_elts > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-        const cs_lnum_t  c_id = z->elt_ids[i];
-        retval[c_id] = val[c_id];
-      }
-
-    }
-    else {
-
-#     pragma omp parallel for if (z->n_elts > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-        const cs_lnum_t  c_id = z->elt_ids[i];
-        memcpy(retval + stride*c_id, val + stride*c_id,
-               stride*sizeof(cs_real_t));
-      }
-
-    }
+    if (ac->full_length)
+      cs_array_real_copy_sublist(z->n_elts, stride, z->elt_ids,
+                                 CS_ARRAY_INOUT_SUBLIST,
+                                 val,
+                                 retval);
+    else
+      cs_array_real_copy_sublist(z->n_elts, stride, z->elt_ids,
+                                 CS_ARRAY_OUT_SUBLIST,
+                                 val,
+                                 retval);
 
   } /* Deal with a selection of cells */
 }
@@ -2781,11 +2516,13 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
                                          cs_real_t          time_eval,
                                          cs_real_t          retval[])
 {
+  if (def == NULL)
+    return;
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+  assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
 
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
   const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
@@ -2834,13 +2571,54 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Evaluate the average value on cells following the given definition
+ *         The cells associated to this definition (through the related zone)
+ *         are all considered.
+ *
+ * \param[in]      def        pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] retval     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_average_on_cells(const cs_xdef_t   *def,
+                             cs_real_t          time_eval,
+                             cs_real_t          retval[])
+{
+  if (def == NULL)
+    return;
+
+  switch (def->type) {
+
+  case CS_XDEF_BY_VALUE:
+    cs_evaluate_average_on_cells_by_value(def, retval);
+    break;
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    cs_evaluate_average_on_cells_by_analytic(def, time_eval, retval);
+    break;
+
+  case CS_XDEF_BY_ARRAY:
+    cs_evaluate_average_on_cells_by_array(def, retval);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, " %s: Case not handled yet.", __func__);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Evaluate the integral over the full computational domain of a
- *         quantity defined by an array
+ *         quantity defined by an array. The parallel sum reduction is
+ *         performed inside this function.
  *
- * \param[in]      array_loc  flag indicating where are located values
- * \param[in]      array_val  array of values
+ * \param[in]  array_loc   flag indicating where are located values
+ * \param[in]  array_val   array of values
  *
- * \return the value of the integration
+ * \return the value of the integration (parallel sum reduction done)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2865,12 +2643,37 @@ cs_evaluate_scal_domain_integral_by_array(cs_flag_t         array_loc,
   else if (cs_flag_test(array_loc, cs_flag_primal_vtx)) {
 
     const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
-    const cs_real_t  *dc_vol = quant->pvol_vc;
+    const cs_real_t  *wvc = quant->pvol_vc;
+    assert(wvc != NULL);
 
 #   pragma omp parallel for reduction(+:result)
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
       for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-        result += dc_vol[j] * array_val[c2v->ids[j]];
+        result += wvc[j] * array_val[c2v->ids[j]];
+
+  }
+  else if (cs_flag_test(array_loc, cs_flag_primal_edge)) {
+
+    const cs_adjacency_t  *c2e = cs_cdo_connect->c2e;
+    const cs_real_t  *wec = quant->pvol_ec;
+    assert(wec != NULL);
+
+#   pragma omp parallel for reduction(+:result)
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
+      for (cs_lnum_t j = c2e->idx[c_id]; j < c2e->idx[c_id+1]; j++)
+        result += wec[j] * array_val[c2e->ids[j]];
+
+  }
+  else if (cs_flag_test(array_loc, cs_flag_primal_face)) {
+
+    const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
+    const cs_real_t  *wfc = quant->pvol_fc;
+    assert(wfc != NULL);
+
+#   pragma omp parallel for reduction(+:result)
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
+      for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++)
+        result += wfc[j] * array_val[c2f->ids[j]];
 
   }
   else

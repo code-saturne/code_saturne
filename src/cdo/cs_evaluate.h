@@ -50,6 +50,10 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
+ * Inline public function prototypes
+ *============================================================================*/
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
@@ -131,7 +135,8 @@ cs_evaluate_scatter_array_reduction(int                     dim,
 /*!
  * \brief  Evaluate the quantity defined by a value in the case of a density
  *         field for all the degrees of freedom
- *         Accessor to the value is by unit of volume
+ *         Accessor to the value is by unit of volume and the return values are
+ *         integrated over a volume
  *
  * \param[in]      dof_flag  indicate where the evaluation has to be done
  * \param[in]      def       pointer to a cs_xdef_t structure
@@ -147,7 +152,8 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the value related to each DoF in the case of a density field
- *         The value defined by the analytic function is by unity of volume
+ *         The value defined by the analytic function is by unity of volume and
+ *         the return values are integrated over a volume
  *
  * \param[in]      dof_flag    indicate where the evaluation has to be done
  * \param[in]      def         pointer to a cs_xdef_t structure
@@ -415,6 +421,25 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t   *def,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Evaluate the average value on faces following the given definition
+ *
+ * \param[in]      def            pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval      physical time at which one evaluates the term
+ * \param[in]      n_f_selected   number of selected faces
+ * \param[in]      selected_lst   list of selected faces
+ * \param[in, out] retval         pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_average_on_faces(const cs_xdef_t   *def,
+                             cs_real_t          time_eval,
+                             const cs_lnum_t    n_f_selected,
+                             const cs_lnum_t   *selected_lst,
+                             cs_real_t          retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Evaluate the average of a function on the cells
  *
  * \param[in]      def       pointer to a cs_xdef_t pointer
@@ -457,70 +482,9 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate the integral over the full computational domain of a
- *         quantity defined by an array
- *
- * \param[in]      array_loc  flag indicating where are located values
- * \param[in]      array_val  array of values
- *
- * \return the value of the integration
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t
-cs_evaluate_scal_domain_integral_by_array(cs_flag_t         array_loc,
-                                          const cs_real_t  *array_val);
-
-/*============================================================================
- * Inline public function prototypes
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Evaluate the average of a function on the faces
- *
- * \param[in]      def            pointer to a cs_xdef_t pointer
- * \param[in]      time_eval      physical time at which one evaluates the term
- * \param[in]      n_f_selected   number of selected faces
- * \param[in]      selected_lst   list of selected faces
- * \param[in, out] retval         pointer to the computed values
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_evaluate_average_on_faces(const cs_xdef_t   *def,
-                             cs_real_t          time_eval,
-                             const cs_lnum_t    n_f_selected,
-                             const cs_lnum_t   *selected_lst,
-                             cs_real_t          retval[])
-{
-  /* Sanity checks */
-  assert(def != NULL);
-
-  switch (def->type) {
-
-  case CS_XDEF_BY_VALUE:
-    cs_evaluate_average_on_faces_by_value(def,
-                                          n_f_selected, selected_lst,
-                                          retval);
-    break;
-
-  case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    cs_evaluate_average_on_faces_by_analytic(def,
-                                             time_eval,
-                                             n_f_selected, selected_lst,
-                                             retval);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, " %s: Case not handled yet.", __func__);
-
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Evaluate the average of a function on the cells
+ * \brief  Evaluate the average value on cells following the given definition
+ *         The cells associated to this definition (through the related zone)
+ *         are all considered.
  *
  * \param[in]      def        pointer to a cs_xdef_t pointer
  * \param[in]      time_eval  physical time at which one evaluates the term
@@ -528,32 +492,27 @@ cs_evaluate_average_on_faces(const cs_xdef_t   *def,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+void
 cs_evaluate_average_on_cells(const cs_xdef_t   *def,
                              cs_real_t          time_eval,
-                             cs_real_t          retval[])
-{
-  /* Sanity checks */
-  assert(def != NULL);
+                             cs_real_t          retval[]);
 
-  switch (def->type) {
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the integral over the full computational domain of a
+ *         quantity defined by an array. The parallel sum reduction is
+ *         performed inside this function.
+ *
+ * \param[in]  array_loc   flag indicating where are located values
+ * \param[in]  array_val   array of values
+ *
+ * \return the value of the integration (parallel sum reduction done)
+ */
+/*----------------------------------------------------------------------------*/
 
-  case CS_XDEF_BY_VALUE:
-    cs_evaluate_average_on_cells_by_value(def, retval);
-    break;
-
-  case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    cs_evaluate_average_on_cells_by_analytic(def, time_eval, retval);
-    break;
-
-  case CS_XDEF_BY_ARRAY:
-    cs_evaluate_average_on_cells_by_array(def, retval);
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, " %s: Case not handled yet.", __func__);
-
-  }
-}
+cs_real_t
+cs_evaluate_scal_domain_integral_by_array(cs_flag_t         array_loc,
+                                          const cs_real_t  *array_val);
 
 /*----------------------------------------------------------------------------*/
 
