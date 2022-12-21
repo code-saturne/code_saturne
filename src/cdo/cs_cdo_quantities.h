@@ -72,6 +72,7 @@ typedef enum {
 
 } cs_cdo_quantities_cell_center_algo_t;
 
+
 /*! \enum cs_cdo_quantities_bit_t
  *  \brief Bit values for setting which quantities to compute
  *
@@ -93,7 +94,6 @@ typedef enum {
  * \var CS_CDO_QUANTITIES_CB_SCHEME
  * Geometrical quantities related to cell-based schemes
  */
-
 
 typedef enum {
 

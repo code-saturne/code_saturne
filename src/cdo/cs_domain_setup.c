@@ -676,7 +676,6 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
                            domain->time_step,
                            cc->eb_scheme_flag,
                            cc->fb_scheme_flag,
-                           cc->cb_scheme_flag,
                            cc->vb_scheme_flag,
                            cc->vcb_scheme_flag,
                            cc->hho_scheme_flag);

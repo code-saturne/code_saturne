@@ -1121,6 +1121,7 @@ typedef struct {
  * - "cdo_vcb" or "cdovcb" for CDO vertex+cell-based scheme
  * - "cdo_fb"  or "cdofb" for CDO face-based scheme
  * - "cdo_eb"  or "cdoeb" for CDO edge-based scheme
+ * - "cdo_cb"  or "cdocb" for CDO cell-based scheme
  * - "hho_p1" for HHO schemes with \f$\mathbb{P}_1\f$ polynomial approximation
  * - "hho_p2" for HHO schemes with \f$\mathbb{P}_2\f$ polynomial approximation
  *

@@ -189,7 +189,7 @@ cs_cdo_toolbox_init(const cs_cdo_connect_t       *connect,
         cwb_size = CS_MAX(cwb_size, (size_t)n_faces);
 
       if (cb_flag & CS_FLAG_SCHEME_SCALAR)
-        cwb_size = CS_MAX(cwb_size, (size_t)n_faces);
+        cwb_size = CS_MAX(cwb_size, (size_t)(n_faces + n_cells));
 
       if (hho_flag & CS_FLAG_SCHEME_SCALAR)
         cwb_size = CS_MAX(cwb_size, (size_t)n_faces);

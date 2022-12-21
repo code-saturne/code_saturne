@@ -191,6 +191,10 @@ typedef void
  * \var CS_SPACE_SCHEME_CDOFB
  * CDO scheme with face-based positioning
  *
+ * \var CS_SPACE_SCHEME_CDOCB
+ * CDO scheme with cell-based positioning (potential at cells and fluxes at
+ * faces)
+ *
  * \var CS_SPACE_SCHEME_HHO_P0
  * Hybrid High Order (HHO) schemes
  * HHO scheme with face-based positioning (lowest order)
