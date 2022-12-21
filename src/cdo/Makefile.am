@@ -94,6 +94,9 @@ cs_cdovb_scalsys.h \
 cs_cdovb_priv.h \
 cs_cdovb_vecteq.h \
 cs_cdovcb_scaleq.h \
+cs_cdocb_scaleq.h \
+cs_cdocb_monolithic_sles.h \
+cs_cdocb_priv.h \
 cs_dbg.h \
 cs_domain.h \
 cs_domain_op.h \
@@ -175,6 +178,7 @@ cs_cdovb_scaleq.c \
 cs_cdovb_scalsys.c \
 cs_cdovb_vecteq.c \
 cs_cdovcb_scaleq.c \
+cs_cdocb_scaleq.c \
 cs_dbg.c \
 cs_domain.c \
 cs_domain_op.c \
@@ -228,14 +232,16 @@ cs_cdofb_monolithic_sles.c \
 cs_cdofb_predco.c \
 cs_equation_system_sles.c \
 cs_navsto_param.c \
-cs_navsto_sles.c
+cs_navsto_sles.c \
+cs_cdocb_monolithic_sles.c
 libcscdo_a_LIBADD += \
 libcscdo_extension_a-cs_cdofb_ac.$(OBJEXT) \
 libcscdo_extension_a-cs_cdofb_monolithic_sles.$(OBJEXT) \
 libcscdo_extension_a-cs_cdofb_predco.$(OBJEXT) \
 libcscdo_extension_a-cs_equation_system_sles.$(OBJEXT) \
 libcscdo_extension_a-cs_navsto_param.$(OBJEXT) \
-libcscdo_extension_a-cs_navsto_sles.$(OBJEXT)
+libcscdo_extension_a-cs_navsto_sles.$(OBJEXT) \
+libcscdo_extension_a-cs_cdocb_monolithic_sles.$(OBJEXT)
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod

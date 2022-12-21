@@ -55,6 +55,7 @@
 #include "cs_cdoeb_vecteq.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_cdofb_vecteq.h"
+#include "cs_cdocb_scaleq.h"
 #include "cs_equation_bc.h"
 #include "cs_equation_priv.h"
 #include "cs_evaluate.h"
@@ -367,11 +368,13 @@ _add_field(int               n_previous,
     break;
   case CS_SPACE_SCHEME_CDOEB:
   case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_CDOCB:
   case CS_SPACE_SCHEME_HHO_P0:
   case CS_SPACE_SCHEME_HHO_P1:
   case CS_SPACE_SCHEME_HHO_P2:
     location_id = cs_mesh_location_get_id_by_name("cells");
     break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               "%s: Space scheme for eq. \"%s\" is incompatible with a field.\n"
@@ -1345,7 +1348,8 @@ cs_equation_uses_new_mechanism(const cs_equation_t    *eq)
   if (eq->param->dim == 1) {
     if ((eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB)  ||
         (eq->param->space_scheme == CS_SPACE_SCHEME_CDOVCB) ||
-        (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB))
+        (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB)  ||
+        (eq->param->space_scheme == CS_SPACE_SCHEME_CDOCB))
       return true;
   }
   else if (eq->param->dim == 3) {
@@ -1818,10 +1822,11 @@ cs_equation_set_sles(void)
  * \param[in]  connect          pointer to a cs_cdo_connect_t structure
  * \param[in]  quant            pointer to additional mesh quantities struct.
  * \param[in]  time_step        pointer to a time step structure
- * \param[in]  eb_scheme_flag   metadata for Eb schemes
- * \param[in]  fb_scheme_flag   metadata for Fb schemes
- * \param[in]  vb_scheme_flag   metadata for Vb schemes
- * \param[in]  vcb_scheme_flag  metadata for V+C schemes
+ * \param[in]  cb_scheme_flag   metadata for cell-based schemes
+ * \param[in]  eb_scheme_flag   metadata for edge-based schemes
+ * \param[in]  fb_scheme_flag   metadata for face_based schemes
+ * \param[in]  vb_scheme_flag   metadata for vertex-based schemes
+ * \param[in]  vcb_scheme_flag  metadata for vertex+cell-based schemes
  * \param[in]  hho_scheme_flag  metadata for HHO schemes
  */
 /*----------------------------------------------------------------------------*/
@@ -1830,6 +1835,7 @@ void
 cs_equation_init_sharing(const cs_cdo_connect_t      *connect,
                          const cs_cdo_quantities_t   *quant,
                          const cs_time_step_t        *time_step,
+                         cs_flag_t                    cb_scheme_flag,
                          cs_flag_t                    eb_scheme_flag,
                          cs_flag_t                    fb_scheme_flag,
                          cs_flag_t                    vb_scheme_flag,
@@ -1871,6 +1877,14 @@ cs_equation_init_sharing(const cs_cdo_connect_t      *connect,
 
   } /* Face-based class of discretization schemes */
 
+  if (cb_scheme_flag > 0) {
+
+    if (cs_flag_test(cb_scheme_flag,
+                     CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_SCALAR))
+      cs_cdocb_scaleq_init_sharing(quant, connect, time_step);
+
+  } /* Cell-based class of discretization schemes */
+
   if (hho_scheme_flag > 0) {
 
     if (hho_scheme_flag & CS_FLAG_SCHEME_SCALAR)
@@ -1886,19 +1900,21 @@ cs_equation_init_sharing(const cs_cdo_connect_t      *connect,
 /*!
  * \brief  Free shared local structures among the discretization schemes
  *
- * \param[in]  vb_scheme_flag   metadata for Vb schemes
- * \param[in]  vcb_scheme_flag  metadata for V+C schemes
+ * \param[in]  cb_scheme_flag   metadata for Cb schemes
  * \param[in]  eb_scheme_flag   metadata for Eb schemes
  * \param[in]  fb_scheme_flag   metadata for Fb schemes
+ * \param[in]  vb_scheme_flag   metadata for Vb schemes
+ * \param[in]  vcb_scheme_flag  metadata for V+C schemes
  * \param[in]  hho_scheme_flag  metadata for HHO schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_finalize_sharing(cs_flag_t    vb_scheme_flag,
-                             cs_flag_t    vcb_scheme_flag,
+cs_equation_finalize_sharing(cs_flag_t    cb_scheme_flag,
                              cs_flag_t    eb_scheme_flag,
                              cs_flag_t    fb_scheme_flag,
+                             cs_flag_t    vb_scheme_flag,
+                             cs_flag_t    vcb_scheme_flag,
                              cs_flag_t    hho_scheme_flag)
 {
   /* Free common local structures specific to a numerical scheme */
@@ -2300,6 +2316,62 @@ cs_equation_set_functions(void)
       }
       else
         bft_error(__FILE__, __LINE__, 0, sv_err_msg, __func__);
+
+      break;
+
+    case CS_SPACE_SCHEME_CDOCB:
+      if (eqp->dim == 1) {
+
+        eq->init_context = cs_cdocb_scaleq_init_context;
+        eq->free_context = cs_cdocb_scaleq_free_context;
+        eq->init_field_values = cs_cdocb_scaleq_init_values;
+
+        /* Deprecated */
+
+        eq->set_dir_bc = NULL;
+        eq->build_system = NULL;
+        eq->prepare_solving = NULL;
+        eq->update_field = NULL;
+
+        /* New mechanism */
+
+        if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Eq. %s. Incremental form is not available.\n",
+                    __func__, eqp->name);
+
+        eq->solve_steady_state = cs_cdocb_scaleq_solve_steady_state;
+        switch (eqp->time_scheme) {
+        case CS_TIME_SCHEME_STEADY:
+          eq->solve = eq->solve_steady_state;
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Eq. %s. This time scheme is not yet implemented",
+                    __func__, eqp->name);
+        }
+
+        eq->compute_balance = cs_cdocb_scaleq_balance;
+        eq->apply_stiffness = NULL;
+        eq->postprocess = cs_cdocb_scaleq_extra_post;
+        eq->current_to_previous = cs_cdocb_scaleq_current_to_previous;
+
+        eq->read_restart = NULL;
+        eq->write_restart = NULL;
+
+        /* Function pointers to retrieve values at mesh locations */
+
+        eq->get_vertex_values = NULL;
+        eq->get_edge_values = NULL;
+        eq->get_face_values = cs_cdocb_scaleq_get_face_values;
+        eq->get_cell_values = cs_cdocb_scaleq_get_cell_values;
+
+        eq->get_cw_build_structures = cs_cdocb_scaleq_get;
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
 
       break;
 

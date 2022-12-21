@@ -674,6 +674,7 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
   cs_equation_init_sharing(domain->connect,
                            domain->cdo_quantities,
                            domain->time_step,
+                           cc->cb_scheme_flag,
                            cc->eb_scheme_flag,
                            cc->fb_scheme_flag,
                            cc->vb_scheme_flag,
