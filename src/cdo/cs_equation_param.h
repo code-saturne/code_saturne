@@ -925,7 +925,6 @@ typedef struct {
  *                       Stabilized part. (cost = COnsitent + STabilized) The
  *                       stabilization part of the reconstruction op. is a
  *                       piecewise constant polynom on a partition of each cell
- * - "ocs2" --> (experimental)
  * - "wbs" --> is robust and accurate but is limited to the reconstruction of
  *             potential-like degrees of freedom and needs a correct
  *             computation of the cell barycenter. Make sense only in the case

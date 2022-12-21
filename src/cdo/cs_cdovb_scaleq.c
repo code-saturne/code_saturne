@@ -1430,12 +1430,6 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
         eqc->get_stiffness_matrix = cs_hodge_vb_bubble_get_aniso_stiffness;
       break;
 
-    case CS_HODGE_ALGO_OCS2:
-      eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_SEF;
-      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
-      eqc->get_stiffness_matrix = cs_hodge_vb_ocs2_get_aniso_stiffness;
-      break;
-
     case CS_HODGE_ALGO_VORONOI:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
       eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
@@ -1477,7 +1471,6 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_HODGE_ALGO_COST:
     case CS_HODGE_ALGO_BUBBLE:
-    case CS_HODGE_ALGO_OCS2:
     case CS_HODGE_ALGO_VORONOI:
       eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ;
       eqc->enforce_robin_bc = cs_cdo_diffusion_svb_cost_robin;
@@ -1510,7 +1503,6 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     switch (eqp->diffusion_hodgep.algo) {
 
     case CS_HODGE_ALGO_COST:
-    case CS_HODGE_ALGO_OCS2:
     case CS_HODGE_ALGO_VORONOI:
     case CS_HODGE_ALGO_BUBBLE:
       eqc->enforce_dirichlet = cs_cdo_diffusion_svb_ocs_weak_dirichlet;
@@ -1532,7 +1524,6 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     switch (eqp->diffusion_hodgep.algo) {
 
     case CS_HODGE_ALGO_COST:
-    case CS_HODGE_ALGO_OCS2:
     case CS_HODGE_ALGO_VORONOI:
     case CS_HODGE_ALGO_BUBBLE:
       eqc->enforce_dirichlet = cs_cdo_diffusion_svb_ocs_wsym_dirichlet;

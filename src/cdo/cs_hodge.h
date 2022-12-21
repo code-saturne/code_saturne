@@ -115,12 +115,6 @@ typedef enum {
  * operators like SUSHI, DGA and GCR (these discretizations only differ from
  * the scaling coefficient in front of the stabilization term)
  *
- * \var CS_HODGE_ALGO_OCS2
- * This algorithm is close to \ref CS_HODGE_ALGO_COST but relies on a
- * subdivision of each polyhedral cell corresponding to the refinement
- * considered in \ref CS_HODGE_ALGO_COST for the building of the stabilization
- * term
- *
  * \var CS_HODGE_ALGO_BUBBLE
  * This algorithm also relies on an orthogonal decomposition between the
  * consistency (CO) and the stabilization (ST) parts but the stabilization part
@@ -137,7 +131,6 @@ typedef enum {
   CS_HODGE_ALGO_VORONOI,
   CS_HODGE_ALGO_WBS,
   CS_HODGE_ALGO_COST,
-  CS_HODGE_ALGO_OCS2,
   CS_HODGE_ALGO_BUBBLE,
   CS_HODGE_ALGO_AUTO,
 
@@ -169,8 +162,8 @@ typedef struct {
 
   /*!< \brief Scaling coefficient value
    *
-   * Value of the coefficient scaling the stabilization part if the COST or
-   * OCS2 algorithm is used. Otherwise the value is set to 0 and ignored.
+   * Value of the coefficient scaling the stabilization part if the COST
+   * algorithm is used. Otherwise the value is set to 0 and ignored.
    */
 
 } cs_hodge_param_t;
@@ -575,28 +568,6 @@ cs_hodge_vb_bubble_get_aniso_stiffness(const cs_cell_mesh_t    *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build a local stiffness matrix using the Orthogonal
- *         Consistent/Sub-Stabilization decomposition (OCS2) with a subdivision
- *         of pvol_{e,c}.
- *         The computed matrix is stored in cb->loc and the related discrete
- *         hodge operator in hodge->matrix
- *         Case Vb schemes and an anisotropic material property
- *
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in, out] hodge   pointer to a cs_hodge_t structure
- * \param[in, out] cb      pointer to a cs_cell_builder_t structure
- *
- * \return true if something has been computed or false otherwise
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_hodge_vb_ocs2_get_aniso_stiffness(const cs_cell_mesh_t     *cm,
-                                     cs_hodge_t               *hodge,
-                                     cs_cell_builder_t        *cb);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Build a local stiffness matrix using the generic COST algo.
  *         The computed matrix is stored in cb->loc and the related discrete
  *         hodge operator in hodge->matrix
@@ -832,28 +803,6 @@ bool
 cs_hodge_epfd_bubble_get(const cs_cell_mesh_t     *cm,
                          cs_hodge_t               *hodge,
                          cs_cell_builder_t        *cb);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Build a local Hodge operator for a given cell using the Orthogonal
- *         Consistent/Sub-Stabilization decomposition (OCS2) with a subdivision
- *         of pvol_{e,c}.
- *         The discrete Hodge operator is stored in hodge->matrix
- *         Hodge op. from primal edges to dual faces.
- *         This function is specific for vertex-based schemes
- *
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in, out] hodge   pointer to a cs_hodge_t structure
- * \param[in, out] cb      pointer to a cs_cell_builder_t structure
- *
- * \return true if something has been computed or false otherwise
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_hodge_epfd_ocs2_get(const cs_cell_mesh_t     *cm,
-                       cs_hodge_t               *hodge,
-                       cs_cell_builder_t        *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
