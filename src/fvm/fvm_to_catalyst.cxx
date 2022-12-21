@@ -69,16 +69,10 @@
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
 #include <vtkUnstructuredGrid.h>
-// __has_include() standard from C++17, extension in gcc, clang
-// vtkPVVersion.h preferred from version 5.10 on.
-#if defined  __has_include
-  #if __has_include(<vtkPVVersion.h>)
-    #include <vtkPVVersion.h>
-  #else
-    #include <vtkPVConfig.h>
-  #endif
+#if defined(HAVE_VTKPVVERSION_H)
+#include <vtkPVVersion.h>  // Preferred from version 5.10 on.
 #else
-  #include <vtkPVVersion.h>
+#include <vtkPVConfig.h>
 #endif
 
 #include <vtkCPDataDescription.h>
