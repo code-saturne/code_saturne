@@ -3849,7 +3849,7 @@ cs_hodge_fped_voro_get(const cs_cell_mesh_t     *cm,
 
       for (short int f = 0; f < cm->n_fc; f++)
         hmat->val[f*cm->n_fc+f] =
-          ptyd->value*cm->face[f].meas/cm->dedge[f].meas;
+          ptyd->value*cm->dedge[f].meas/cm->face[f].meas;
 
     }
     else
