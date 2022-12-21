@@ -7,6 +7,10 @@ Bug fixes:
 
 - Fix mpmd command generation and launch when using ccc_mprun (CCRT).
 
+Architectural changes:
+
+- Update ParaView/Catalyst compilation for ParaView 5.11 compatibility.
+
 Release 6.0.8 (March 16 2022)
 -----------------------------
 
