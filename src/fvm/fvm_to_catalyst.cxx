@@ -69,7 +69,11 @@
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
 #include <vtkUnstructuredGrid.h>
-#include <vtkPVConfig.h>    // vtkPVVersion.h preferred from version 5.10 on.
+#if defined(HAVE_VTKPVVERSION_H)
+#include <vtkPVVersion.h>  // Preferred from version 5.10 on.
+#else
+#include <vtkPVConfig.h>
+#endif
 
 #include <vtkCPDataDescription.h>
 #include <vtkCPInputDataDescription.h>

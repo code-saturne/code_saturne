@@ -196,6 +196,7 @@ if test "x$with_catalyst" != "xno" ; then
     AC_LANG_PUSH([C++])
     CPPFLAGS="${saved_CPPFLAGS} ${CATALYST_CPPFLAGS}"
     AC_CHECK_HEADERS([vtkCPPythonScriptV2Pipeline.h])
+    AC_CHECK_HEADERS([vtkPVVersion.h])
     AC_LANG_POP([C++])
   fi
 
