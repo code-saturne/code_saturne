@@ -2801,9 +2801,10 @@ cs_cdo_advection_vb_bc(const cs_cell_mesh_t       *cm,
         if (v_nflx[v_id] < 0) { /* Advection field is inward w.r.t. the face
                                    normal */
 
-          if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET)
-            /* Homogeneous Dirichlet don't contribute. Other Bcs are invalid */
+          if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f]))
             tmp_rhs[v_id] -= v_nflx[v_id] * csys->dir_values[v_id];
+          else
+            mat_diag[v_id] += v_nflx[v_id];
 
         }
         else  /* Advection is oriented outward */
