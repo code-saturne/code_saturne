@@ -1,3 +1,10 @@
+Release 7.3.1 (not released yet)
+--------------------------------
+
+### Architectural changes:
+
+- Update ParaView/Catalyst compilation for ParaView 5.11 compatibility.
+
 Release 7.3.0 (December 20 2022)
 --------------------------------
 
