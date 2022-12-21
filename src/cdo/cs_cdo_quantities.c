@@ -502,11 +502,12 @@ _compute_face_based_quantities(const cs_cdo_connect_t  *topo,
 
   /* Compute the volume of the pyramid */
 
-  cs_flag_t  masks[3] = { CS_CDO_QUANTITIES_FB_SCHEME,
+  cs_flag_t  masks[4] = { CS_CDO_QUANTITIES_FB_SCHEME,
+                          CS_CDO_QUANTITIES_CB_SCHEME,
                           CS_CDO_QUANTITIES_HHO_SCHEME,
                           CS_CDO_QUANTITIES_VCB_SCHEME };
 
-  if (cs_flag_at_least(cs_cdo_quantities_flag, 3, masks))
+  if (cs_flag_at_least(cs_cdo_quantities_flag, 4, masks))
     cs_cdo_quantities_compute_pvol_fc(cdoq, topo->c2f, &(cdoq->pvol_fc));
 }
 

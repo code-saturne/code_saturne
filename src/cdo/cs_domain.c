@@ -146,6 +146,7 @@ _create_cdo_context(int     cdo_mode)
   cc->vcb_scheme_flag = 0;
   cc->eb_scheme_flag = 0;
   cc->fb_scheme_flag = 0;
+  cc->cb_scheme_flag = 0;
   cc->hho_scheme_flag = 0;
 
   return cc;

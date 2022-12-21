@@ -1089,6 +1089,12 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->reaction_hodgep.algo = CS_HODGE_ALGO_VORONOI;
       eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EDFP;
     }
+    else if (strcmp(keyval, "cdo_cb") == 0 ||
+             strcmp(keyval, "cdocb") == 0) {
+      eqp->space_scheme = CS_SPACE_SCHEME_CDOCB;
+      eqp->space_poly_degree = 0;
+      eqp->diffusion_hodgep.type = CS_HODGE_TYPE_FPED;
+    }
     else if (strcmp(keyval, "cdo_eb") == 0 ||
              strcmp(keyval, "cdoeb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOEB;

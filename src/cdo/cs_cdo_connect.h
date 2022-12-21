@@ -257,6 +257,7 @@ cs_cdo_connect_define_face_interface(const cs_mesh_t       *mesh);
  * \param[in, out]  mesh              pointer to a cs_mesh_t structure
  * \param[in]       eb_scheme_flag    metadata for Edge-based schemes
  * \param[in]       fb_scheme_flag    metadata for Face-based schemes
+ * \param[in]       cb_scheme_flag    metadata for Cell-based schemes
  * \param[in]       vb_scheme_flag    metadata for Vertex-based schemes
  * \param[in]       vcb_scheme_flag   metadata for Vertex+Cell-based schemes
  * \param[in]       hho_scheme_flag   metadata for HHO schemes
@@ -269,6 +270,7 @@ cs_cdo_connect_t *
 cs_cdo_connect_init(cs_mesh_t      *mesh,
                     cs_flag_t       eb_scheme_flag,
                     cs_flag_t       fb_scheme_flag,
+                    cs_flag_t       cb_scheme_flag,
                     cs_flag_t       vb_scheme_flag,
                     cs_flag_t       vcb_scheme_flag,
                     cs_flag_t       hho_scheme_flag);

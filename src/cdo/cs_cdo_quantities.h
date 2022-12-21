@@ -89,7 +89,11 @@ typedef enum {
  *
  * \var CS_CDO_QUANTITIES_VCB_SCHEME
  * Geometrical quantities related to vertex+cell-based schemes
+ *
+ * \var CS_CDO_QUANTITIES_CB_SCHEME
+ * Geometrical quantities related to cell-based schemes
  */
+
 
 typedef enum {
 
@@ -100,6 +104,7 @@ typedef enum {
   CS_CDO_QUANTITIES_HHO_SCHEME                 = 1<<2,  /* =   4 */
   CS_CDO_QUANTITIES_VB_SCHEME                  = 1<<3,  /* =   8 */
   CS_CDO_QUANTITIES_VCB_SCHEME                 = 1<<4,  /* =  16 */
+  CS_CDO_QUANTITIES_CB_SCHEME                  = 1<<5,  /* =  32 */
 
 } cs_cdo_quantities_bit_t;
 

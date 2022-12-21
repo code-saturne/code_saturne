@@ -126,6 +126,7 @@ typedef struct {
 
   cs_flag_t                 eb_scheme_flag;
   cs_flag_t                 fb_scheme_flag;
+  cs_flag_t                 cb_scheme_flag;
   cs_flag_t                 vb_scheme_flag;
   cs_flag_t                 vcb_scheme_flag;
   cs_flag_t                 hho_scheme_flag;

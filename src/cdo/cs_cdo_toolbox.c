@@ -117,6 +117,7 @@ void
 cs_cdo_toolbox_init(const cs_cdo_connect_t       *connect,
                     cs_flag_t                     eb_flag,
                     cs_flag_t                     fb_flag,
+                    cs_flag_t                     cb_flag,
                     cs_flag_t                     vb_flag,
                     cs_flag_t                     vcb_flag,
                     cs_flag_t                     hho_flag)
@@ -177,13 +178,17 @@ cs_cdo_toolbox_init(const cs_cdo_connect_t       *connect,
 
   } /* Edge-based schemes */
 
-  if (fb_flag > 0 || hho_flag > 0) {
+  if (fb_flag > 0 || cb_flag > 0 || hho_flag > 0) {
 
     if (cs_flag_test(fb_flag, CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_SCALAR) ||
+        cs_flag_test(cb_flag, CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_SCALAR) ||
         cs_flag_test(hho_flag, CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_SCALAR)) {
 
       assert(n_faces > n_cells);
       if (fb_flag & CS_FLAG_SCHEME_SCALAR)
+        cwb_size = CS_MAX(cwb_size, (size_t)n_faces);
+
+      if (cb_flag & CS_FLAG_SCHEME_SCALAR)
         cwb_size = CS_MAX(cwb_size, (size_t)n_faces);
 
       if (hho_flag & CS_FLAG_SCHEME_SCALAR)

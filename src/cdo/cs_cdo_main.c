@@ -919,6 +919,7 @@ cs_cdo_finalize(cs_domain_t    *domain)
                                domain->cdo_context->vcb_scheme_flag,
                                domain->cdo_context->eb_scheme_flag,
                                domain->cdo_context->fb_scheme_flag,
+                               domain->cdo_context->cb_scheme_flag,
                                domain->cdo_context->hho_scheme_flag);
 
   /* Free the memory related to equations */

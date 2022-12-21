@@ -1000,6 +1000,7 @@ cs_cdo_connect_t *
 cs_cdo_connect_init(cs_mesh_t      *mesh,
                     cs_flag_t       eb_scheme_flag,
                     cs_flag_t       fb_scheme_flag,
+                    cs_flag_t       cb_scheme_flag,
                     cs_flag_t       vb_scheme_flag,
                     cs_flag_t       vcb_scheme_flag,
                     cs_flag_t       hho_scheme_flag)
@@ -1079,7 +1080,7 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
   else
     connect->v2v = NULL;
 
-  if (fb_scheme_flag > 0 || hho_scheme_flag > 0)
+  if (fb_scheme_flag > 0 || cb_scheme_flag > 0 || hho_scheme_flag > 0)
     connect->f2f = _build_f2f_through_cell(connect);
   else
     connect->f2f = NULL;
@@ -1120,7 +1121,7 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
 
   /* CDO face-based schemes or HHO schemes with k=0 */
 
-  if (fb_scheme_flag > 0 || hho_scheme_flag > 0) {
+  if (fb_scheme_flag > 0 || cb_scheme_flag > 0 || hho_scheme_flag > 0) {
 
     connect->face_ifs = _define_face_interface(mesh);
 

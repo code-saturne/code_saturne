@@ -184,6 +184,18 @@ _set_scheme_flags(cs_domain_t    *domain)
         bft_error(__FILE__, __LINE__, 0, "Invalid case");
       break;
 
+    case CS_SPACE_SCHEME_CDOCB:
+      quant_flag |= CS_CDO_QUANTITIES_CB_SCHEME;
+      cc->cb_scheme_flag |= CS_FLAG_SCHEME_POLY0;
+
+      /* Always build quantities related to scalar-valued equations (in
+         particular the scalar-valued interface can be useful */
+
+      cc->cb_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
+      if (vardim > 1)
+        bft_error(__FILE__, __LINE__, 0, "Invalid case");
+      break;
+
     case CS_SPACE_SCHEME_HHO_P0:
       assert(cs_equation_get_space_poly_degree(eq) == 0);
       quant_flag |= CS_CDO_QUANTITIES_HHO_SCHEME;
@@ -621,6 +633,7 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
   domain->connect = cs_cdo_connect_init(domain->mesh,
                                         cc->eb_scheme_flag,
                                         cc->fb_scheme_flag,
+                                        cc->cb_scheme_flag,
                                         cc->vb_scheme_flag,
                                         cc->vcb_scheme_flag,
                                         cc->hho_scheme_flag);
@@ -632,6 +645,8 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
     cdo_quantities_flag |= CS_CDO_QUANTITIES_EB_SCHEME;
   if (cc->fb_scheme_flag)
     cdo_quantities_flag |= CS_CDO_QUANTITIES_FB_SCHEME;
+  if (cc->cb_scheme_flag)
+    cdo_quantities_flag |= CS_CDO_QUANTITIES_CB_SCHEME;
   if (cc->hho_scheme_flag)
     cdo_quantities_flag |= CS_CDO_QUANTITIES_HHO_SCHEME;
   if (cc->vb_scheme_flag)
@@ -661,6 +676,7 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
                            domain->time_step,
                            cc->eb_scheme_flag,
                            cc->fb_scheme_flag,
+                           cc->cb_scheme_flag,
                            cc->vb_scheme_flag,
                            cc->vcb_scheme_flag,
                            cc->hho_scheme_flag);
@@ -681,6 +697,7 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
   cs_cdo_toolbox_init(domain->connect,
                       cc->eb_scheme_flag,
                       cc->fb_scheme_flag,
+                      cc->cb_scheme_flag,
                       cc->vb_scheme_flag,
                       cc->vcb_scheme_flag,
                       cc->hho_scheme_flag);
