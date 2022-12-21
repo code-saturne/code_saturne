@@ -1055,15 +1055,15 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
             else { /* Zone is only a part of the location */
 
               if (ac->full_length)
-                cs_array_real_copy_sublist(bz->n_elts, def->dim, elt_ids,
-                                           CS_ARRAY_INOUT_SUBLIST,
-                                           ac->values,
-                                           values);
+                cs_array_real_copy_subset(bz->n_elts, def->dim, elt_ids,
+                                          CS_ARRAY_SUBSET_INOUT,
+                                          ac->values,
+                                          values);
               else
-                cs_array_real_copy_sublist(bz->n_elts, def->dim, elt_ids,
-                                           CS_ARRAY_OUT_SUBLIST,
-                                           ac->values,
-                                           values);
+                cs_array_real_copy_subset(bz->n_elts, def->dim, elt_ids,
+                                          CS_ARRAY_SUBSET_OUT,
+                                          ac->values,
+                                          values);
 
             }
 
@@ -1074,10 +1074,10 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
                                                        full location */
 
               assert(elt_ids != NULL);
-              cs_array_real_copy_sublist(bz->n_elts, def->dim, elt_ids,
-                                         CS_ARRAY_INOUT_SUBLIST,
-                                         ac->values,
-                                         values);
+              cs_array_real_copy_subset(bz->n_elts, def->dim, elt_ids,
+                                        CS_ARRAY_SUBSET_INOUT,
+                                        ac->values,
+                                        values);
 
             }
             else

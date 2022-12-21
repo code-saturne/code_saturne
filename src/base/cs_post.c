@@ -3160,10 +3160,10 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
 
           /* Now scatter values from subset to parent location. */
 
-          cs_array_real_copy_sublist(n_elts, f_dim, elt_ids,
-                                     CS_ARRAY_OUT_SUBLIST, /* elt_ids on dest */
-                                     f->val,               /* ref */
-                                     tmp_val);             /* dest <-- ref */
+          cs_array_real_copy_subset(n_elts, f_dim, elt_ids,
+                                    CS_ARRAY_SUBSET_OUT, /* elt_ids on dest */
+                                    f->val,              /* ref */
+                                    tmp_val);            /* dest <-- ref */
 
         } /* End of case for field on sub-location */
 

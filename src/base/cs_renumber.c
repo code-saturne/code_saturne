@@ -898,10 +898,10 @@ _cs_renumber_update_vertices(cs_mesh_t        *mesh,
 
   cs_array_real_copy(3*n_vertices, mesh->vtx_coord, vtx_coord_old);
 
-  cs_array_real_copy_sublist(n_vertices, 3, n2o_v,
-                             CS_ARRAY_IN_SUBLIST, /* apply n2o_v to ref */
-                             vtx_coord_old,       /* ref */
-                             mesh->vtx_coord);    /* dest */
+  cs_array_real_copy_subset(n_vertices, 3, n2o_v,
+                            CS_ARRAY_SUBSET_IN, /* apply n2o_v to ref */
+                            vtx_coord_old,      /* ref (in) */
+                            mesh->vtx_coord);   /* dest (out) */
 
   BFT_FREE(vtx_coord_old);
 

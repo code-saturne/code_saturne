@@ -47,10 +47,14 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-#define CS_ARRAY_NO_SUBLIST    -1
-#define CS_ARRAY_IN_SUBLIST     0
-#define CS_ARRAY_OUT_SUBLIST    1
-#define CS_ARRAY_INOUT_SUBLIST  2
+/* Define the way to apply a subset. In case of a copy, the subset is related
+   to the reference (input array) and/or the destination array (output
+   array) */
+
+#define CS_ARRAY_SUBSET_NULL  -1
+#define CS_ARRAY_SUBSET_IN     0
+#define CS_ARRAY_SUBSET_OUT    1
+#define CS_ARRAY_SUBSET_INOUT  2
 
 /*============================================================================
  * Type definitions
@@ -140,21 +144,21 @@ cs_array_lnum_set_value(cs_lnum_t  size,
 /*!
  * \brief Copy an array ("ref") into another array ("dest") on possibly only a
  *        part of the array(s). Array with stride > 1 are assumed to be
- *        interlaced.  The sublist of element on which working is defined by
- *        "elt_ids". The way to apply the sublist is set with the parameter
+ *        interlaced.  The subset of elements on which working is defined by
+ *        "elt_ids". The way to apply the subset is defined with the parameter
  *        "mode" as follows:
- *        - Only the "ref" array if mode = 0 (CS_ARRAY_IN_SUBLIST)
- *        - Only the "dest" array if mode = 1 (CS_ARRAY_OUT_SUBLIST)
- *        - Both "ref" and "dest" arrays if mode = 2 (CS_ARRAY_INOUT_SUBLIST)
+ *        - Only the "ref" array if mode = 0 (CS_ARRAY_SUBSET_IN)
+ *        - Only the "dest" array if mode = 1 (CS_ARRAY_SUBSET_OUT)
+ *        - Both "ref" and "dest" arrays if mode = 2 (CS_ARRAY_SUBSET_INOUT)
  *
- *        It elt_ids = NULL or mode < 0 (CS_ARRAY_NO_SUBLIST), then the
+ *        It elt_ids = NULL or mode < 0 (CS_ARRAY_SUBSET_NULL), then the
  *        behavior is as \ref cs_array_real_copy
  *
  *        One assumes that all arrays are allocated with a correct size.
  *
  * \param[in]      n_elts   number of elements in the array
  * \param[in]      stride   number of values for each element
- * \param[in]      mode     type of indirection to apply
+ * \param[in]      mode     apply the subset ids to which array(s)
  * \param[in]      elt_ids  list of ids in the subset or NULL (size: n_elts)
  * \param[in]      ref      reference values to copy
  * \param[in, out] dest     array storing values after applying the indirection
@@ -162,12 +166,12 @@ cs_array_lnum_set_value(cs_lnum_t  size,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_copy_sublist(cs_lnum_t         n_elts,
-                           int               stride,
-                           const cs_lnum_t   elt_ids[],
-                           int               mode,
-                           const cs_real_t   ref[],
-                           cs_real_t         dest[]);
+cs_array_real_copy_subset(cs_lnum_t         n_elts,
+                          int               stride,
+                          const cs_lnum_t   elt_ids[],
+                          int               mode,
+                          const cs_real_t   ref[],
+                          cs_real_t         dest[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

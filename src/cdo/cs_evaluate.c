@@ -2110,15 +2110,15 @@ cs_evaluate_circulation_along_edges_by_array(const cs_xdef_t   *def,
       cs_array_real_copy(n_edges, ac->values, retval);
     else {
       if (ac->full_length)
-        cs_array_real_copy_sublist(n_e_selected, 1, selected_lst,
-                                   CS_ARRAY_INOUT_SUBLIST,
-                                   ac->values,
-                                   retval);
+        cs_array_real_copy_subset(n_e_selected, 1, selected_lst,
+                                  CS_ARRAY_SUBSET_INOUT,
+                                  ac->values,
+                                  retval);
       else
-        cs_array_real_copy_sublist(n_e_selected, 1, selected_lst,
-                                   CS_ARRAY_OUT_SUBLIST,
-                                   ac->values,
-                                   retval);
+        cs_array_real_copy_subset(n_e_selected, 1, selected_lst,
+                                  CS_ARRAY_SUBSET_OUT,
+                                  ac->values,
+                                  retval);
     }
     break;
 
@@ -2487,15 +2487,15 @@ cs_evaluate_average_on_cells_by_array(const cs_xdef_t   *def,
   else {
 
     if (ac->full_length)
-      cs_array_real_copy_sublist(z->n_elts, stride, z->elt_ids,
-                                 CS_ARRAY_INOUT_SUBLIST,
-                                 val,
-                                 retval);
+      cs_array_real_copy_subset(z->n_elts, stride, z->elt_ids,
+                                CS_ARRAY_SUBSET_INOUT,
+                                val,
+                                retval);
     else
-      cs_array_real_copy_sublist(z->n_elts, stride, z->elt_ids,
-                                 CS_ARRAY_OUT_SUBLIST,
-                                 val,
-                                 retval);
+      cs_array_real_copy_subset(z->n_elts, stride, z->elt_ids,
+                                CS_ARRAY_SUBSET_OUT,
+                                val,
+                                retval);
 
   } /* Deal with a selection of cells */
 }

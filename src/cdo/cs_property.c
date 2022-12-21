@@ -2719,15 +2719,15 @@ cs_property_evaluate_boundary_def(const cs_property_t  *pty,
           if (cx->full_length) {
 
             if (dense_output)
-              cs_array_real_copy_sublist(n_elts, pty_dim, elt_ids,
-                                         CS_ARRAY_IN_SUBLIST,
-                                         cx->values,
-                                         array);
+              cs_array_real_copy_subset(n_elts, pty_dim, elt_ids,
+                                        CS_ARRAY_SUBSET_IN,
+                                        cx->values,
+                                        array);
             else
-              cs_array_real_copy_sublist(n_elts, pty_dim, elt_ids,
-                                         CS_ARRAY_INOUT_SUBLIST,
-                                         cx->values,
-                                         array);
+              cs_array_real_copy_subset(n_elts, pty_dim, elt_ids,
+                                        CS_ARRAY_SUBSET_INOUT,
+                                        cx->values,
+                                        array);
 
           }
           else {
@@ -2735,10 +2735,10 @@ cs_property_evaluate_boundary_def(const cs_property_t  *pty,
             if (dense_output)
               cs_array_real_copy(pty_dim*n_elts, cx->values, array);
             else
-              cs_array_real_copy_sublist(n_elts, pty_dim, elt_ids,
-                                         CS_ARRAY_OUT_SUBLIST,
-                                         cx->values,
-                                         array);
+              cs_array_real_copy_subset(n_elts, pty_dim, elt_ids,
+                                        CS_ARRAY_SUBSET_OUT,
+                                        cx->values,
+                                        array);
 
           }
 
@@ -3027,10 +3027,10 @@ cs_property_eval_at_boundary_faces(cs_real_t               t_eval,
 
           /* Apply the indirection to fill the array to return */
 
-          cs_array_real_copy_sublist(n_b_faces, 1, a_bf_ids,
-                                     CS_ARRAY_IN_SUBLIST,
-                                     tmp_val,
-                                     array);
+          cs_array_real_copy_subset(n_b_faces, 1, a_bf_ids,
+                                    CS_ARRAY_SUBSET_IN,
+                                    tmp_val,
+                                    array);
 
         }
 
@@ -3073,10 +3073,10 @@ cs_property_eval_at_boundary_faces(cs_real_t               t_eval,
 
             /* Apply the indirection to fill the array to return */
 
-            cs_array_real_copy_sublist(n_b_faces, dim_b, b_bf_ids,
-                                       CS_ARRAY_IN_SUBLIST,
-                                       tmp_val,
-                                       array);
+            cs_array_real_copy_subset(n_b_faces, dim_b, b_bf_ids,
+                                      CS_ARRAY_SUBSET_IN,
+                                      tmp_val,
+                                      array);
 
           }
 
@@ -3129,10 +3129,10 @@ cs_property_eval_at_boundary_faces(cs_real_t               t_eval,
 
             /* Apply the indirection to fill the array to return */
 
-            cs_array_real_copy_sublist(n_b_faces, dim_a, a_bf_ids,
-                                       CS_ARRAY_IN_SUBLIST,
-                                       tmp_val,
-                                       array);
+            cs_array_real_copy_subset(n_b_faces, dim_a, a_bf_ids,
+                                      CS_ARRAY_SUBSET_IN,
+                                      tmp_val,
+                                      array);
 
           }
 
@@ -3207,10 +3207,10 @@ cs_property_eval_at_boundary_faces(cs_real_t               t_eval,
 
           /* Apply the indirection to fill the array to return */
 
-          cs_array_real_copy_sublist(n_b_faces, dim, bf_ids,
-                                     CS_ARRAY_IN_SUBLIST,
-                                     tmp_val,
-                                     array);
+          cs_array_real_copy_subset(n_b_faces, dim, bf_ids,
+                                    CS_ARRAY_SUBSET_IN,
+                                    tmp_val,
+                                    array);
 
         }
 

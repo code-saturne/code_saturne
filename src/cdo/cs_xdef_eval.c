@@ -1133,15 +1133,15 @@ cs_xdef_eval_cell_by_field(cs_lnum_t                    n_elts,
 
   case CS_MESH_LOCATION_CELLS:
     if (elt_ids != NULL && !dense_output)
-      cs_array_real_copy_sublist(n_elts, field->dim, elt_ids,
-                                 CS_ARRAY_INOUT_SUBLIST,
-                                 values,
-                                 eval);
+      cs_array_real_copy_subset(n_elts, field->dim, elt_ids,
+                                CS_ARRAY_SUBSET_INOUT,
+                                values,
+                                eval);
     else
-      cs_array_real_copy_sublist(n_elts, field->dim, elt_ids,
-                                 CS_ARRAY_IN_SUBLIST,
-                                 values,
-                                 eval);
+      cs_array_real_copy_subset(n_elts, field->dim, elt_ids,
+                                CS_ARRAY_SUBSET_IN,
+                                values,
+                                eval);
     break;
 
   case CS_MESH_LOCATION_VERTICES: /* One operates a reconstruction at the cell
