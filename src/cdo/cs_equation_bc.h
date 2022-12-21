@@ -188,6 +188,29 @@ cs_equation_bc_set_cw_fb(const cs_cell_mesh_t         *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Set the BC into a cellwise view of the current system.
+ *          Case of Face-based schemes
+ *
+ * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      face_bc     pointer to a cs_cdo_bc_face_t structure
+ * \param[in]      dir_values  Dirichlet values associated to each face
+ * \param[in, out] csys        pointer to a cellwise view of the system
+ * \param[in, out] cb          pointer to a cellwise builder
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_bc_set_cw_cb(const cs_cell_mesh_t         *cm,
+                         const cs_equation_param_t    *eqp,
+                         const cs_cdo_bc_face_t       *face_bc,
+                         const cs_real_t               dir_values[],
+                         cs_cell_sys_t                *csys,
+                         cs_cell_builder_t            *cb);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Define an array of flags for each vertex collecting the flags
  *          of associated boundary faces
  *
@@ -273,6 +296,54 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
                                  cs_real_t                   t_eval,
                                  cs_cell_builder_t          *cb,
                                  cs_real_t                  *values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the Dirichlet BCs when DoFs are attached to
+ *          CDO cell-based schemes
+ *
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
+ * \param[in]      eqp        pointer to a cs_equation_param_t
+ * \param[in]      face_bc    pointer to a cs_cdo_bc_face_t structure
+ * \param[in]      t_eval     time at which one evaluates the boundary cond.
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] values     pointer to the array of values to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_dirichlet_cb(const cs_mesh_t            *mesh,
+                                 const cs_cdo_quantities_t  *quant,
+                                 const cs_cdo_connect_t     *connect,
+                                 const cs_equation_param_t  *eqp,
+                                 const cs_cdo_bc_face_t     *face_bc,
+                                 cs_real_t                   t_eval,
+                                 cs_cell_builder_t          *cb,
+                                 cs_real_t                  *values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the Neumann BCs when DoFs are attached to
+ *          CDO cell-based schemes
+ * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in]      def_id      id of the definition for setting the Neumann BC
+ * \param[in]      f           local face number in the cs_cell_mesh_t
+ * \param[in]      eqp         pointer to a cs_equation_param_t
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in, out] neu_values  array storing the Neumann values for all DoFs
+
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_neumann_cb(cs_real_t                   t_eval,
+                               short int                   def_id,
+                               short int                   f,
+                               const cs_equation_param_t  *eqp,
+                               const cs_cell_mesh_t       *cm,
+                               double                     *neu_values);
 
 /*----------------------------------------------------------------------------*/
 /*!

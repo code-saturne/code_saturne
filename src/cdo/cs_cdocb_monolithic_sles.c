@@ -161,6 +161,24 @@ cs_cdocb_monolithic_sles_t *
 cs_cdocb_monolithic_sles_create(cs_lnum_t    n_faces,
                                 cs_lnum_t    n_cells)
 {
+  cs_cdocb_monolithic_sles_t  *msles = NULL;
+
+  BFT_MALLOC(msles, 1, cs_cdocb_monolithic_sles_t);
+
+  msles->div_op = NULL;
+
+  msles->graddiv_coef = 0.;
+
+  msles->sles = NULL;
+  msles->schur_sles = NULL;
+
+  msles->n_faces = n_faces;
+  msles->n_cells = n_cells;
+
+  msles->flux = NULL;
+  msles->potential = NULL;
+
+  return msles;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -174,6 +192,11 @@ cs_cdocb_monolithic_sles_create(cs_lnum_t    n_faces,
 void
 cs_cdocb_monolithic_sles_clean(cs_cdocb_monolithic_sles_t   *msles)
 {
+  if (msles == NULL)
+    return;
+
+  cs_sles_free(msles->sles);
+  cs_sles_free(msles->schur_sles);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -187,6 +210,19 @@ cs_cdocb_monolithic_sles_clean(cs_cdocb_monolithic_sles_t   *msles)
 void
 cs_cdocb_monolithic_sles_free(cs_cdocb_monolithic_sles_t   **p_msles)
 {
+  cs_cdocb_monolithic_sles_t  *msles = *p_msles;
+
+  if (msles == NULL)
+    return;
+
+  /* sles are freed elsewhere */
+
+  BFT_FREE(msles->div_op);
+
+  /* Other pointer are shared, thus no free at this stage */
+
+  BFT_FREE(msles);
+  *p_msles = NULL;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -202,6 +238,10 @@ void
 cs_cdocb_monolithic_sles_init_sharing(const cs_cdo_connect_t        *connect,
                                       const cs_cdo_quantities_t     *quant)
 {
+  /* Assign static const pointers */
+
+  cs_shared_connect = connect;
+  cs_shared_quant = quant;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -214,6 +254,7 @@ cs_cdocb_monolithic_sles_init_sharing(const cs_cdo_connect_t        *connect,
 void
 cs_cdocb_monolithic_sles_finalize(void)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -231,6 +272,39 @@ void
 cs_cdocb_monolithic_set_sles(cs_equation_param_t   *eqp,
                              void                  *context)
 {
+  cs_param_sles_t  *slesp = eqp->sles_param;
+  cs_cdocb_scaleq_t *eqc = (cs_cdocb_scaleq_t *) context;
+
+  int  field_id = eqc->var_field_id;
+
+  slesp->field_id = field_id;
+
+#if defined(HAVE_MUMPS)
+  if (slesp->solver != CS_PARAM_ITSOL_MUMPS &&
+      slesp->solver != CS_PARAM_ITSOL_MUMPS_LDLT &&
+      slesp->solver != CS_PARAM_ITSOL_MUMPS_FLOAT &&
+      slesp->solver != CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT)
+    slesp->solver = CS_PARAM_ITSOL_MUMPS;
+
+  cs_sles_mumps_define(field_id,
+                       NULL,
+                       slesp,
+                       cs_user_sles_mumps_hook,
+                       NULL);
+#endif  /* HAVE_MUMPS */
+
+  /* Define the level of verbosity for SLES structure */
+
+  if (slesp->verbosity > 1) {
+
+    cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
+
+    /* Set verbosity */
+
+    cs_sles_set_verbosity(sles, slesp->verbosity);
+
+    eqc->msles->sles = sles;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -253,6 +327,112 @@ cs_cdocb_monolithic_solve(const cs_equation_param_t     *eqp,
                           const cs_cdo_system_helper_t  *sh,
                           cs_cdocb_monolithic_sles_t    *msles)
 {
+  assert(sh != NULL);
+  assert(sh->n_blocks == 1);
+
+  const cs_range_set_t  *range_set = cs_cdo_system_get_range_set(sh, 0);
+  const cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
+  const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
+  const cs_lnum_t  n_faces = msles->n_faces;
+  const cs_lnum_t  n_cells = msles->n_cells;
+  const cs_lnum_t  n_scatter_elts = n_faces + n_cells;
+
+  /* De-interlace the velocity array and the rhs for the face DoFs */
+
+  cs_real_t  *sol = NULL;
+  BFT_MALLOC(sol, CS_MAX(n_cols, n_scatter_elts), cs_real_t);
+
+  cs_real_t  *b = NULL;
+  BFT_MALLOC(b, n_scatter_elts, cs_real_t);
+
+# pragma omp parallel for if (CS_THR_MIN > n_faces)     \
+  shared(msles, sol, b) firstprivate(n_faces)
+  for (cs_lnum_t f = 0; f < n_faces; f++) {
+
+    sol[f] = msles->flux[f];
+
+    b[f] = sh->rhs[f];
+
+  }
+
+  /* Add the pressure related elements */
+
+  memcpy(sol + n_faces, msles->potential, n_cells*sizeof(cs_real_t));
+  memcpy(b + n_faces, sh->rhs + n_faces, n_cells*sizeof(cs_real_t));
+
+  int  n_iters = 0;
+  double  residual = DBL_MAX;
+
+  /* Prepare solving (handle parallelism) */
+
+  cs_cdo_solve_prepare_system(1,     /* stride */
+                              false, /* interlace (managed here) */
+                              n_scatter_elts,
+                              range_set,
+                              true,  /* rhs_redux */
+                              sol, b);
+
+  /* Solve the linear solver */
+
+  const cs_param_sles_t  *sles_param = eqp->sles_param;
+  const double  r_norm = 1.0; /* No renormalization by default (TODO) */
+
+  cs_real_t  rtol = sles_param->eps;
+  cs_sles_convergence_state_t  code = cs_sles_solve(msles->sles,
+                                                    matrix,
+                                                    rtol,
+                                                    r_norm,
+                                                    &n_iters,
+                                                    &residual,
+                                                    b,
+                                                    sol,
+                                                    0,      /* aux. size */
+                                                    NULL);  /* aux. buffers */
+
+  /* Output information about the convergence of the resolution */
+
+  if (sles_param->verbosity > 1)
+    cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d> n_iters %d |"
+                  " residual % -8.4e\n",
+                  eqp->name, code, n_iters, residual);
+
+  /* sol is computed and stored in a "gather" view. Switch to a "scatter"
+     view */
+
+  cs_range_set_scatter(range_set,
+                       CS_REAL_TYPE, 1, /* type and stride */
+                       sol, sol);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOCB_MONOLITHIC_SLES_DBG > 1
+  cs_range_set_scatter(range_set,
+                       CS_REAL_TYPE, 1, /* type and stride */
+                       b, b);
+
+  cs_dbg_fprintf_system(eqp->name,
+                        -1,
+                        CS_CDOCB_MONOLITHIC_SLES_DBG,
+                        sol, b, n_faces);
+#endif
+
+  /* Switch from sol (not interlaced) to flux and potential */
+
+  cs_real_t  *flux = msles->flux;
+
+  /* Copy the part of the solution array related to the pressure in cells */
+
+  memcpy(msles->potential, sol + n_faces, n_cells*sizeof(cs_real_t));
+
+# pragma omp parallel for if (CS_THR_MIN > n_faces)     \
+  shared(msles, sol) firstprivate(n_faces)
+  for (cs_lnum_t f = 0; f < n_faces; f++)
+    flux[f] = sol[f];
+
+  /* Free what can be freed at this stage */
+
+  BFT_FREE(sol);
+  BFT_FREE(b);
+
+  return n_iters;
 }
 
 /*----------------------------------------------------------------------------*/
