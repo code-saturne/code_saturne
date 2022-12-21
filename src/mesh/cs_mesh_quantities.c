@@ -2235,11 +2235,9 @@ _mesh_quantities_cell_faces_cog_solid(const cs_mesh_t    *m,
     for (cs_lnum_t ic = 0; ic < 2; ic++) {
 
       cs_lnum_t c_id = i_face_cells[f_id][ic];
-
       cs_real_t area = cs_math_3_norm(i_f_face_cell_normal[f_id][ic]);
-      cs_real_t *_i_f_face_cog = (ic == 0) ?
-                                  i_f_face_cog_0[f_id]:
-                                  i_f_face_cog_1[f_id];
+      const cs_real_t *_i_f_face_cog = (ic == 0) ?
+        i_f_face_cog_0[f_id] : i_f_face_cog_1[f_id];
 
       if (c_id > -1) {
 
