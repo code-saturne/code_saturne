@@ -22,7 +22,7 @@
 
 #-------------------------------------------------------------------------------
 
-# Files nor built through classical Automake rules need to be explicitely
+# Files not built through classical Automake rules need to be explicitely
 # added to distribution.
 
 EXTRA_DIST = cs_solver.c

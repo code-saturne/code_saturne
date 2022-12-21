@@ -256,8 +256,11 @@ cs_tree_test_LDADD    = $(LDADD_CS_TESTS)
 #TESTS=$(check_PROGRAMS)
 
 # Distribution
+# Files not built through classical Automake rules need to be explicitely
+# added to distribution.
 
 EXTRA_DIST = \
+cs_gpu_cuda_test.cu \
 unittests.py \
 $(top_srcdir)/tests/graphics
 

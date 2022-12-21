@@ -225,6 +225,8 @@ data/thch/dp_radiat_wave \
 data/thch/JANAF \
 data/user/cs_user_scripts.py \
 data/user/dp_C3P \
+data/user/dp_C3P_EHC \
+data/user/dp_C3P_auto_EHC \
 data/user/dp_C3PSJ \
 data/user/dp_C4P \
 data/user/dp_ELE \
