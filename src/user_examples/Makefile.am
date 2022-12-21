@@ -113,6 +113,7 @@ cs_user_extra_operations-nusselt_calculation.c \
 cs_user_extra_operations-parallel_operations.c \
 cs_user_extra_operations-richards_flux.c \
 cs_user_extra_operations-scalar_balance.c \
+cs_user_extra_operations-stopping_criterion.c \
 cs_user_extra_operations-turbomachinery.c \
 cs_user_extra_operations-verif_cdo_diffusion.c \
 cs_user_extra_operations-vorticity_field.c \
@@ -169,6 +170,7 @@ cs_user_physical_properties-richards_unsat.c \
 cs_user_physical_properties-scalar_drift.c \
 cs_user_porosity.c \
 cs_user_postprocess.c \
+cs_user_postprocess-boundary_pressure_profile.c \
 cs_user_postprocess-profiles.c \
 cs_user_postprocess-probes-interpolate.c \
 cs_user_postprocess-sfc.c \

@@ -74,11 +74,12 @@ $(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
 
 AM_LDFLAGS =
 
-# Files nor built through classical Automake rules need to be explicitely
+# Files not built through classical Automake rules need to be explicitely
 # added to distribution.
 
 EXTRA_DIST = \
 cs_base.c \
+cs_coolprop.cxx \
 cs_version.h.in
 
 # Public header files (to be installed)

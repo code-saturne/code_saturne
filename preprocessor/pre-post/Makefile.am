@@ -22,6 +22,11 @@
 
 #-------------------------------------------------------------------------------
 
+# Files not built through classical Automake rules need to be explicitely
+# added to distribution.
+
+EXTRA_DIST = ecs_pre_ccm.c
+
 # Main part
 
 AM_CPPFLAGS = -I$(top_srcdir)/preprocessor/base -I$(top_srcdir)/preprocessor/util \

@@ -31,6 +31,7 @@ TEXMAIN = theory.tex
 TEXOTHERS = \
 algebr.tex \
 apintr.tex \
+atmo.tex \
 bilsc2.tex \
 biblio.tex \
 bndcnd.tex \
@@ -59,6 +60,7 @@ ground_water.tex \
 inimas.tex \
 introd.tex \
 itrmas.tex \
+lagrangian.tex \
 matrix.tex \
 mesh_algo.tex \
 mesh_quality.tex \

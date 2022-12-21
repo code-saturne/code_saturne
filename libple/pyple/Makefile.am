@@ -23,7 +23,9 @@
 
 if HAVE_MPI4PY
 
-EXTRA_DIST = pyple_coupler.py.in
+EXTRA_DIST = \
+pyple_coupler.py.in \
+ple_coupling_wrapper.c
 
 edit_python = sed \
 	-e 's|@mpi4pydir[@]|$(MPI4PY_PATH)|g'
