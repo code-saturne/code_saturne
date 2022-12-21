@@ -6,7 +6,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2021 EDF S.A.
+  Copyright (C) 1998-2022 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -69,7 +69,11 @@
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
 #include <vtkUnstructuredGrid.h>
+#if defined(HAVE_VTKPVVERSION_H)
+#include <vtkPVVersion.h>  // Preferred from version 5.10 on.
+#else
 #include <vtkPVConfig.h>
+#endif
 
 #include <vtkCPDataDescription.h>
 #include <vtkCPInputDataDescription.h>
@@ -120,7 +124,7 @@
 /* Macro for version test (tests are done on ParaView and not VTK version,
    as ParaView usually includes its own VTK, and ParaView 5.0 seems to
    indicate VTK 7.1 just like 5.1, but that version did not contain
-   SetTypedTuple or have SetTupleValue depecated for vtkTypedDataArray) */
+   SetTypedTuple or have SetTupleValue deprecated for vtkTypedDataArray) */
 
 #define CS_PV_VERSION  (PARAVIEW_VERSION_MAJOR*10 + PARAVIEW_VERSION_MINOR)
 
@@ -519,8 +523,8 @@ _add_dir_scripts(const char  *dir_path)
  *   comm         <-- associated MPI communicator.
  *----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI)
 static void
+#if defined(HAVE_MPI)
 _init_coprocessor(bool      private_comm,
                   MPI_Comm  comm)
 #else

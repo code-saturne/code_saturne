@@ -20,6 +20,10 @@ User changes:
 - Preprocessor (mesh import): allow removal of cells with negative volume
   or incorrect topology.
 
+Architectural changes:
+
+- Update ParaView/Catalyst compilation for ParaView 5.11 compatibility.
+
 Release 7.0.5 (August 25 2022)
 ------------------------------
 
