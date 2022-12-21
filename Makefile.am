@@ -19,36 +19,33 @@
 #   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-AUX_DIST = build-aux/compile \
-           build-aux/config.guess \
-           build-aux/config.sub \
-           build-aux/depcomp \
-           build-aux/install-sh \
-           build-aux/ltmain.sh \
-           build-aux/missing \
-           m4/ax_python_devel.m4 \
-           m4/extern-inline.m4 \
-           m4/libtool.m4 \
-           m4/lt~obsolete.m4 \
-           m4/ltoptions.m4 \
-           m4/ltsugar.m4 \
-           m4/ltversion.m4
+AUX_DIST = \
+build-aux/ar-lib \
+build-aux/compile \
+build-aux/config.guess \
+build-aux/config.sub \
+build-aux/depcomp \
+build-aux/install-sh \
+build-aux/missing \
+build-aux/py-compile
 
 MAINTAINERCLEANFILES = aclocal.m4 configure $(AUX_DIST)
 
 SUBDIRS = src pyple tests doc
 
-EXTRA_DIST = README.md \
-             m4/ple_config_info.m4 \
-             m4/ple_config_publ.m4 \
-             m4/ple_mpi.m4 \
-             m4/ple_mpi4py.m4 \
-             m4/ple_types.m4 \
-             config/ple_auto_flags.sh \
-             sbin/backup \
-             sbin/bootstrap \
-             sbin/clean \
-             sbin/rmb
+EXTRA_DIST = \
+NEWS.md \
+README.md \
+m4/ple_config_info.m4 \
+m4/ple_config_publ.m4 \
+m4/ple_mpi.m4 \
+m4/ple_mpi4py.m4 \
+m4/ple_types.m4 \
+config/ple_auto_flags.sh \
+sbin/backup \
+sbin/bootstrap \
+sbin/clean \
+sbin/rmb
 
 # One adds the examples sub-directories with a dist-hook.
 # The reason for this trick is that
