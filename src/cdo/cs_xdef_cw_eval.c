@@ -726,6 +726,9 @@ cs_xdef_cw_eval_by_array(const cs_cell_mesh_t      *cm,
 
     /* Reconstruct (or interpolate) value at the current cell center */
 
+    for (int k = 0; k < stride; k++)
+      eval[k] = 0;
+
     for (short int v = 0; v < cm->n_vc; v++)
       for (int k = 0; k < stride; k++)
         eval[k] += cm->wvc[v] * cx->values[stride*cm->v_ids[v] + k];
