@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 PROJECT(CoProcessingTest CXX C)
 
+# Avoid failures with CMake 2.23 and above
+# We need to find a better long term solution.
+cmake_policy(SET CMP0028 OLD)
+
 # include(CMakeDependentOption)
 find_package(MPI COMPONENTS C CXX)
 find_package(ParaView CONFIG COMPONENTS Catalyst PythonCatalyst)
