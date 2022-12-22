@@ -350,8 +350,7 @@ _spf_update_head(const cs_cdo_quantities_t   *cdoq,
         const cs_real_t  *hydraulic_head_cells =
           cs_equation_get_cell_values(richards, false); /* current values */
 
-        memcpy(head_in_law, hydraulic_head_cells,
-               sizeof(cs_real_t)*cdoq->n_cells);
+        cs_array_real_copy(cdoq->n_cells, hydraulic_head_cells, head_in_law);
       }
       break;
 
@@ -2410,8 +2409,7 @@ _tpf_updates(const cs_mesh_t             *mesh,
   /* Avoid to add an unsteady contribution at the first iteration  */
 
   if (update_flag & CS_FLAG_INITIALIZATION)
-    memcpy(mc->g_pressure->val_pre, g_pr,          /* dest, src */
-           connect->n_vertices*sizeof(cs_real_t)); /* size */
+    cs_array_real_copy(connect->n_vertices, g_pr, mc->g_pressure->val_pre);
 
   /* Update the capillary pressure: P_c = P_g - P_l */
 
@@ -2421,9 +2419,9 @@ _tpf_updates(const cs_mesh_t             *mesh,
     cs_field_current_to_previous(mc->l_saturation);
 
     if (mc->use_properties_on_submesh && mc->use_explicit_dsldt_liquid)
-      memcpy(mc->l_saturation_submesh_pre,                           /* dest */
-             mc->l_saturation_submesh,                               /* src */
-             connect->c2v->idx[connect->n_cells]*sizeof(cs_real_t)); /* size */
+      cs_array_real_copy(connect->c2v->idx[connect->n_cells],
+                         mc->l_saturation_submesh,       /* src */
+                         mc->l_saturation_submesh_pre);  /* dest */
 
   }
 
@@ -2488,9 +2486,9 @@ _tpf_updates(const cs_mesh_t             *mesh,
 
     if (mc->use_explicit_dsldt_liquid &&
         (update_flag & CS_FLAG_INITIALIZATION))
-      memcpy(mc->l_saturation_submesh_pre,                           /* dest */
-             mc->l_saturation_submesh,                               /* src */
-             connect->c2v->idx[connect->n_cells]*sizeof(cs_real_t)); /* size */
+      cs_array_real_copy(connect->c2v->idx[connect->n_cells],
+                         mc->l_saturation_submesh,       /* src */
+                         mc->l_saturation_submesh_pre);  /* dest */
 
   } /* Properties on submesh */
 
@@ -2784,13 +2782,11 @@ _coupled_tpf_picard_compute(const cs_mesh_t              *mesh,
   cs_real_t  *pg_kp1 = NULL, *pl_kp1 = NULL;  /* at ^{n+1,k+1} */
   cs_real_t  *pg_k = NULL, *pl_k = NULL;      /* at ^{n+1,k} */
 
-  const size_t  vsize = cdoq->n_vertices*sizeof(cs_real_t);
-
   BFT_MALLOC(pg_k, 2*cdoq->n_vertices, cs_real_t);
   pl_k = pg_k + cdoq->n_vertices;
 
-  memcpy(pg_k, mc->g_pressure->val_pre, vsize);
-  memcpy(pl_k, mc->l_pressure->val_pre, vsize);
+  cs_array_real_copy(cdoq->n_vertices, mc->g_pressure->val_pre, pg_k);
+  cs_array_real_copy(cdoq->n_vertices, mc->l_pressure->val_pre, pl_k);
 
   pg_kp1 = mc->g_pressure->val;
   pl_kp1 = mc->l_pressure->val;
@@ -2812,9 +2808,8 @@ _coupled_tpf_picard_compute(const cs_mesh_t              *mesh,
                            pg_k, pg_kp1, pl_k, pl_kp1,
                            algo) == CS_SLES_ITERATING) {
 
-
-    memcpy(pg_k, pg_kp1, vsize);
-    memcpy(pl_k, pl_kp1, vsize);
+    cs_array_real_copy(cdoq->n_vertices, pg_kp1, pg_k);
+    cs_array_real_copy(cdoq->n_vertices, pl_kp1, pl_k);
 
     /* Build and solve the linear system related to the coupled system of
        equations. First call: current --> previous and then no operation */
@@ -2884,21 +2879,19 @@ _coupled_tpf_anderson_compute(const cs_mesh_t              *mesh,
   cs_real_t  *pg_kp1 = NULL, *pl_kp1 = NULL;  /* at ^{n+1,k+1} */
   cs_real_t  *pg_k = NULL, *pl_k = NULL;      /* at ^{n+1,k} */
 
-  const size_t  vsize = cdoq->n_vertices*sizeof(cs_real_t);
-
   BFT_MALLOC(pg_k, 2*cdoq->n_vertices, cs_real_t);
   pl_k = pg_k + cdoq->n_vertices;
 
-  memcpy(pg_k, mc->g_pressure->val_pre, vsize);
-  memcpy(pl_k, mc->l_pressure->val_pre, vsize);
+  cs_array_real_copy(cdoq->n_vertices, mc->g_pressure->val_pre, pg_k);
+  cs_array_real_copy(cdoq->n_vertices, mc->l_pressure->val_pre, pl_k);
 
   /* One needs only one array gathering the liquid and gas pressures */
 
   BFT_MALLOC(pg_kp1, 2*cdoq->n_vertices, cs_real_t);
   pl_kp1 = pg_kp1 + cdoq->n_vertices;
 
-  memcpy(pg_kp1, mc->g_pressure->val, vsize);
-  memcpy(pl_kp1, mc->l_pressure->val, vsize);
+  cs_array_real_copy(cdoq->n_vertices, mc->g_pressure->val, pg_kp1);
+  cs_array_real_copy(cdoq->n_vertices, mc->l_pressure->val, pl_kp1);
 
   /* Set the normalization factor */
 
@@ -2914,8 +2907,8 @@ _coupled_tpf_anderson_compute(const cs_mesh_t              *mesh,
                            pg_k, pg_kp1, pl_k, pl_kp1,
                            algo) == CS_SLES_ITERATING) {
 
-    memcpy(pg_k, pg_kp1, vsize);
-    memcpy(pl_k, pl_kp1, vsize);
+    cs_array_real_copy(cdoq->n_vertices, pg_kp1, pg_k);
+    cs_array_real_copy(cdoq->n_vertices, pl_kp1, pl_k);
 
     /* Update the variables related to the groundwater flow system.
      * In case of an Anderson acceleration, pg_kp1 and pl_kp1 may be
@@ -2923,9 +2916,8 @@ _coupled_tpf_anderson_compute(const cs_mesh_t              *mesh,
 
     if (algo->n_algo_iter >= mc->anderson_param.starting_iter) {
 
-      memcpy(mc->g_pressure->val, pg_kp1, vsize);
-      memcpy(mc->l_pressure->val, pl_kp1, vsize);
-
+      cs_array_real_copy(cdoq->n_vertices, pg_kp1, mc->g_pressure->val);
+      cs_array_real_copy(cdoq->n_vertices, pl_kp1, mc->l_pressure->val);
     }
 
     cs_gwf_update(mesh, connect, cdoq, time_step, update_flag);
@@ -2935,8 +2927,8 @@ _coupled_tpf_anderson_compute(const cs_mesh_t              *mesh,
 
     cs_equation_system_solve(cur2prev, mc->system);
 
-    memcpy(pg_kp1, mc->g_pressure->val, vsize);
-    memcpy(pl_kp1, mc->l_pressure->val, vsize);
+    cs_array_real_copy(cdoq->n_vertices, mc->g_pressure->val, pg_kp1);
+    cs_array_real_copy(cdoq->n_vertices, mc->l_pressure->val, pl_kp1);
 
   } /* Until convergence */
 
@@ -4322,9 +4314,9 @@ cs_gwf_init_values(const cs_mesh_t             *mesh,
         /* Initialise other previous quantities */
 
         if (mc->use_properties_on_submesh && mc->use_explicit_dsldt_liquid)
-          memcpy(mc->l_saturation_submesh_pre,                      /* dest */
-                 mc->l_saturation_submesh,                          /* src */
-                 connect->c2v->idx[connect->n_cells]*sizeof(cs_real_t));
+          cs_array_real_copy(connect->c2v->idx[connect->n_cells],
+                             mc->l_saturation_submesh,       /* src */
+                             mc->l_saturation_submesh_pre);  /* dest */
 
       }
 

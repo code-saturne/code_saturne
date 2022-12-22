@@ -40,6 +40,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_blas.h"
 #include "cs_math.h"
 #include "cs_parall.h"
@@ -126,7 +127,7 @@ _set_xsol(int                 stride,
 
     assert(cs_glob_n_ranks > 1);
     BFT_MALLOC(xsol, stride*n_cols, cs_real_t);
-    memcpy(xsol, x, stride*n_scatter_elts*sizeof(cs_real_t));
+    cs_array_real_copy(stride*n_scatter_elts, x, xsol);
 
   }
   else
@@ -338,8 +339,8 @@ cs_cdo_solve_scalar_cell_system(cs_lnum_t                n_dofs,
     BFT_MALLOC(_b, n_cols_ext, cs_real_t);
     BFT_MALLOC(_x, n_cols_ext, cs_real_t);
 
-    memcpy(_x, x, n_dofs*sizeof(cs_real_t));
-    memcpy(_b, b, n_dofs*sizeof(cs_real_t));
+    cs_array_real_copy(n_dofs, x, _x);
+    cs_array_real_copy(n_dofs, b, _b);
 
     cs_matrix_pre_vector_multiply_sync(matrix, _b);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, _x);
@@ -360,7 +361,7 @@ cs_cdo_solve_scalar_cell_system(cs_lnum_t                n_dofs,
 
   if (n_cols_ext > n_rows) {
     BFT_FREE(_b);
-    memcpy(x, _x, n_dofs*sizeof(cs_real_t));
+    cs_array_real_copy(n_dofs, _x, x);
     BFT_FREE(_x);
   }
 

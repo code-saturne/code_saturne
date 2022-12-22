@@ -1504,7 +1504,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
   /* Update field (cell values ar known) */
 
-  memcpy(fld->val, cell_values, quant->n_cells*sizeof(cs_real_t));
+  cs_array_real_copy(quant->n_cells, cell_values, fld->val);
 
   cs_sles_free(sles);
   cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
@@ -1705,7 +1705,7 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
   if (cur2prev && eqc->face_values_pre != NULL)
-    memcpy(eqc->face_values_pre, eqc->face_values, sizeof(cs_real_t)*n_faces);
+    cs_array_real_copy(n_faces, eqc->face_values, eqc->face_values_pre);
 
   /* Solve the linear system */
   /* ======================= */
@@ -1995,7 +1995,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
   if (cur2prev && eqc->face_values_pre != NULL)
-    memcpy(eqc->face_values_pre, eqc->face_values, sizeof(cs_real_t)*n_faces);
+    cs_array_real_copy(n_faces, eqc->face_values, eqc->face_values_pre);
 
   /* Solve the linear system */
   /* ======================= */
@@ -2074,8 +2074,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
 
   /* Store the current face values as previous */
 
-  memcpy(eqc->face_values_pre, eqc->face_values,
-         quant->n_faces*sizeof(cs_real_t));
+  cs_array_real_copy(n_faces, eqc->face_values, eqc->face_values_pre);
 
   /* Detect the first call (in this case, we compute the initial source term)*/
 
@@ -2345,7 +2344,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
   if (cur2prev && eqc->face_values_pre != NULL)
-    memcpy(eqc->face_values_pre, eqc->face_values, sizeof(cs_real_t)*n_faces);
+    cs_array_real_copy(n_faces, eqc->face_values, eqc->face_values_pre);
 
   /* Solve the linear system */
   /* ======================= */
@@ -2995,8 +2994,7 @@ cs_cdofb_scaleq_current_to_previous(const cs_equation_param_t  *eqp,
   /* Face values */
 
   if (eqc->face_values_pre != NULL)
-    memcpy(eqc->face_values_pre, eqc->face_values,
-           sizeof(cs_real_t)*eqc->n_faces);
+    cs_array_real_copy(eqc->n_faces, eqc->face_values, eqc->face_values_pre);
 
   /* Cell values */
 

@@ -908,7 +908,7 @@ cs_cdofb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
   if (cur2prev && eqc->face_values_pre != NULL)
-    memcpy(eqc->face_values_pre, eqc->face_values, sizeof(cs_real_t)*3*n_faces);
+    cs_array_real_copy(3*n_faces, eqc->face_values, eqc->face_values_pre);
 
   /* Solve the linear system (treated as a scalar-valued system
      with 3 times more DoFs) */
@@ -1148,7 +1148,7 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
   if (cur2prev && eqc->face_values_pre != NULL)
-    memcpy(eqc->face_values_pre, eqc->face_values, sizeof(cs_real_t)*3*n_faces);
+    cs_array_real_copy(3*n_faces, eqc->face_values, eqc->face_values_pre);
 
   /* Solve the linear system (treated as a scalar-valued system
      with 3 times more DoFs) */
@@ -1433,7 +1433,7 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
   if (cur2prev && eqc->face_values_pre != NULL)
-    memcpy(eqc->face_values_pre, eqc->face_values, sizeof(cs_real_t)*3*n_faces);
+    cs_array_real_copy(3*n_faces, eqc->face_values, eqc->face_values_pre);
 
   /* Solve the linear system (treated as a scalar-valued system
      with 3 times more DoFs) */
@@ -2094,8 +2094,7 @@ cs_cdofb_vecteq_current_to_previous(const cs_equation_param_t  *eqp,
   /* Face values */
 
   if (eqc->face_values_pre != NULL)
-    memcpy(eqc->face_values_pre, eqc->face_values,
-           sizeof(cs_real_t)*3*eqc->n_faces);
+    cs_array_real_copy(3*eqc->n_faces, eqc->face_values, eqc->face_values_pre);
 
   /* Cell values */
 

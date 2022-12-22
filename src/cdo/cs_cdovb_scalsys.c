@@ -44,6 +44,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_cdo_assembly.h"
 #include "cs_cdo_system.h"
 #include "cs_cdovb_priv.h"
@@ -268,7 +269,7 @@ _set_dof_vals(int                                 n_eqs,
     assert(f != NULL);
     assert(f->val != NULL);
 
-    memcpy(dof_vals + i*n_vertices, f->val, sizeof(cs_real_t)*n_vertices);
+    cs_array_real_copy(n_vertices, f->val, dof_vals + i*n_vertices);
 
   }
 
@@ -302,8 +303,7 @@ _set_field_vals(int                                n_eqs,
   for (int i = 0; i < n_eqs; i++) {
 
     cs_field_t  *f = fields[i];
-
-    memcpy(f->val, dof_vals + i*n_vertices, sizeof(cs_real_t)*n_vertices);
+    cs_array_real_copy(n_vertices, dof_vals + i*n_vertices, f->val);
 
   }
 }

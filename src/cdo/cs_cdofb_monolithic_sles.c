@@ -3574,7 +3574,7 @@ _transform_gkb_system(const cs_matrix_t              *matrix,
 
   }
   else
-    memcpy(gkb->b_tilda, b_f, gkb->n_u_dofs*sizeof(cs_real_t));
+    cs_array_real_copy(gkb->n_u_dofs, b_f, gkb->b_tilda);
 
   /* Modifiy the tolerance in order to be more accurate on the next solve
      step (the final accuracy relies on this step) */
@@ -3719,7 +3719,7 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
   /* Store M^-1.(b_f + gamma. Bt.N^-1.b_c) in b_tilda which is not useful
    * anymore */
 
-  memcpy(gkb->b_tilda, gkb->v, gkb->n_u_dofs*sizeof(cs_real_t));
+  cs_array_real_copy(gkb->n_u_dofs, gkb->v, gkb->b_tilda);
 
   if (fabs(gkb->beta) > FLT_MIN) {
     const  cs_real_t  inv_beta = 1./gkb->beta;
@@ -4507,12 +4507,12 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 
   /* Add the pressure related elements */
 
-  memcpy(sol + 3*n_faces, msles->p_c, n_cells*sizeof(cs_real_t));
-  memcpy(b + 3*n_faces, sh->rhs + 3*n_faces, n_cells*sizeof(cs_real_t));
+  cs_array_real_copy(n_cells, msles->p_c, sol + 3*n_faces);
+  cs_array_real_copy(n_cells, sh->rhs + 3*n_faces, b + 3*n_faces);
 
   if (nslesp->strategy == CS_NAVSTO_SLES_NOTAY_TRANSFORM) {
 
-# pragma omp parallel for if (CS_THR_MIN > n_cells)     \
+#   pragma omp parallel for if (CS_THR_MIN > n_cells)   \
   shared(b) firstprivate(n_faces)
     for (cs_lnum_t f = 3*n_faces; f < n_scatter_elts; f++)
       b[f] = -1.0*b[f];
@@ -4586,7 +4586,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 
   /* Copy the part of the solution array related to the pressure in cells */
 
-  memcpy(msles->p_c, sol + 3*n_faces, n_cells*sizeof(cs_real_t));
+  cs_array_real_copy(n_cells, sol + 3*n_faces, msles->p_c);
 
   if (nslesp->strategy == CS_NAVSTO_SLES_NOTAY_TRANSFORM) {
 
@@ -4748,7 +4748,7 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
 
   cs_real_t  *xu = NULL;
   BFT_MALLOC(xu, ssys->max_x1_size, cs_real_t);
-  memcpy(xu, msles->u_f, ssys->x1_size*sizeof(cs_real_t));
+  cs_array_real_copy(ssys->x1_size, msles->u_f, xu);
 
   switch (nslesp->strategy) {
 
@@ -4847,7 +4847,7 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
     break;
   }
 
-  memcpy(msles->u_f, xu, ssys->x1_size*sizeof(cs_real_t));
+  cs_array_real_copy(ssys->x1_size, xu, msles->u_f);
 
   /* Free the saddle-point system */
 

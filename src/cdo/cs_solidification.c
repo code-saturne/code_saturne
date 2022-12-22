@@ -2716,7 +2716,6 @@ _stefan_thermal_non_linearities(const cs_mesh_t              *mesh,
   cs_solidification_stefan_t  *s_model
     = (cs_solidification_stefan_t *)solid->model_context;
 
-  const size_t  csize = quant->n_cells*sizeof(cs_real_t);
   const cs_equation_t  *t_eq = solid->thermal_sys->thermal_eq;
 
   /* Retrieve the current values */
@@ -2727,7 +2726,7 @@ _stefan_thermal_non_linearities(const cs_mesh_t              *mesh,
 
   cs_real_t  *hk = NULL;        /* enthalpy h^{n+1,k} */
   BFT_MALLOC(hk, quant->n_cells, cs_real_t);
-  memcpy(hk, enthalpy, csize);
+  cs_array_real_copy(quant->n_cells, enthalpy, hk);
 
   /* Non-linear iterations (k) are performed to converge on the relation
    * h^{n+1,k+1} = h^{n+1,k} + eps with eps a user-defined tolerance
@@ -2907,10 +2906,7 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
     (cs_solidification_voller_t *)solid->model_context;
 
   cs_iter_algo_t  *algo = v_model->nl_algo;
-
   assert(algo != NULL);
-
-  const size_t  csize = quant->n_cells*sizeof(cs_real_t);
 
   /* Retrieve the current values */
 
@@ -2960,7 +2956,7 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
      * enthalpy stores k+1,n+1 and hk stores k,n+1
      */
 
-    memcpy(hk, hkp1, csize);
+    cs_array_real_copy(quant->n_cells, hkp1, hk);
 
     _compute_enthalpy(quant,
                       time_step->t_cur,        /* t_eval */
@@ -2985,8 +2981,6 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
                   "## Solidification: Stop non-linear algo. after %d iters,"
                   " residual = %5.3e\n",
                   algo->n_algo_iter, algo->res);
-
-  /* Monitoring */
 
   _monitor_cell_state(connect, quant, solid);
 
@@ -3025,7 +3019,6 @@ _default_binary_coupling(const cs_mesh_t              *mesh,
     = (cs_solidification_binary_alloy_t *)solid->model_context;
   cs_equation_t  *c_eq = alloy->solute_equation;
 
-  const size_t  csize = quant->n_cells*sizeof(cs_real_t);
   const cs_equation_t  *t_eq = solid->thermal_sys->thermal_eq;
   const cs_real_t  rho0 = solid->mass_density->ref_value;
 
@@ -3065,8 +3058,8 @@ _default_binary_coupling(const cs_mesh_t              *mesh,
 
   /* At the beginning, field_{n+1}^{k=0} = field_n */
 
-  memcpy(alloy->tk_bulk, temp, csize);
-  memcpy(alloy->ck_bulk, conc, csize);
+  cs_array_real_copy(quant->n_cells, temp, alloy->tk_bulk);
+  cs_array_real_copy(quant->n_cells, conc, alloy->ck_bulk);
 
   cs_real_t  delta_temp = 1 + alloy->delta_tolerance;
   cs_real_t  delta_cbulk = 1 + alloy->delta_tolerance;
@@ -4930,19 +4923,19 @@ cs_solidification_init_values(const cs_mesh_t              *mesh,
 
       /* One assumes that all the alloy mixture is liquid thus C_l = C_bulk */
 
-      const size_t  csize = sizeof(cs_real_t)*quant->n_cells;
+      const cs_lnum_t  n_cells = quant->n_cells;
 
-      memcpy(alloy->c_l_cells, alloy->c_bulk->val, csize);
+      cs_array_real_copy(n_cells, alloy->c_bulk->val, alloy->c_l_cells);
 
       /* Set the previous iterate before calling update functions */
 
-      memcpy(alloy->tk_bulk, solid->temperature->val, csize);
-      memcpy(alloy->ck_bulk, alloy->c_bulk->val, csize);
+      cs_array_real_copy(n_cells, solid->temperature->val, alloy->tk_bulk);
+      cs_array_real_copy(n_cells, alloy->c_bulk->val, alloy->ck_bulk);
 
       if (alloy->c_l_faces != NULL) {
         cs_real_t  *c_bulk_faces =
           cs_equation_get_face_values(alloy->solute_equation, false);
-        memcpy(alloy->c_l_faces, c_bulk_faces,quant->n_faces*sizeof(cs_real_t));
+        cs_array_real_copy(quant->n_faces, c_bulk_faces, alloy->c_l_faces);
       }
 
       if (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY)

@@ -49,6 +49,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_blas.h"
 #include "cs_cdo_bc.h"
 #include "cs_cdo_blas.h"
@@ -136,7 +137,7 @@ static inline void
 _mono_fields_to_previous(cs_cdofb_monolithic_t        *sc,
                          cs_navsto_monolithic_t       *cc)
 {
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
 
   /* Cell unknows: velocity, pressure) */
 
@@ -145,15 +146,15 @@ _mono_fields_to_previous(cs_cdofb_monolithic_t        *sc,
 
   /* Face unknows: mass flux and face velocity */
 
-  memcpy(sc->mass_flux_array_pre, sc->mass_flux_array,
-         quant->n_faces * sizeof(cs_real_t));
+  cs_array_real_copy(cdoq->n_faces,
+                     sc->mass_flux_array, sc->mass_flux_array_pre);
 
   cs_cdofb_vecteq_t  *mom_eqc
     = (cs_cdofb_vecteq_t *)cc->momentum->scheme_context;
 
   if (mom_eqc->face_values_pre != NULL)
-    memcpy(mom_eqc->face_values_pre, mom_eqc->face_values,
-           3 * quant->n_faces * sizeof(cs_real_t));
+    cs_array_real_copy(3*cdoq->n_faces,
+                       mom_eqc->face_values, mom_eqc->face_values_pre);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2773,8 +2774,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
     /* Compute the new mass flux used as the advection field */
 
-    memcpy(sc->mass_flux_array_pre, sc->mass_flux_array,
-           n_faces*sizeof(cs_real_t));
+    cs_array_real_copy(n_faces, sc->mass_flux_array, sc->mass_flux_array_pre);
 
     cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
                               sc->mass_flux_array);
@@ -3104,7 +3104,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
     if (mass_flux_array_k == NULL)
       BFT_MALLOC(mass_flux_array_k, n_faces, cs_real_t);
-    memcpy(mass_flux_array_k, mass_flux_array_kp1, n_faces*sizeof(cs_real_t));
+    cs_array_real_copy(n_faces, mass_flux_array_kp1, mass_flux_array_k);
 
     cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
                               mass_flux_array_kp1);

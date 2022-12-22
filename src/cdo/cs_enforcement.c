@@ -41,6 +41,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_cdo_bc.h"
 #include "cs_parall.h"
 
@@ -140,7 +141,7 @@ cs_enforcement_param_create(cs_enforcement_selection_t    sel_type,
 
   case CS_ENFORCEMENT_BY_DOF_VALUES:
     BFT_MALLOC(efp->values, stride*n_elts, cs_real_t);
-    memcpy(efp->values, values, stride*n_elts*sizeof(cs_real_t));
+    cs_array_real_copy(stride*n_elts, values, efp->values);
     break;
 
   default:
@@ -202,7 +203,7 @@ cs_enforcement_param_reset(cs_enforcement_param_t       *efp,
 
   case CS_ENFORCEMENT_BY_DOF_VALUES:
     BFT_REALLOC(efp->values, stride*n_elts, cs_real_t);
-    memcpy(efp->values, values, stride*n_elts*sizeof(cs_real_t));
+    cs_array_real_copy(stride*n_elts, values, efp->values);
     break;
 
   default:
