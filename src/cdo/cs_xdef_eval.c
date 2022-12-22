@@ -826,26 +826,38 @@ cs_xdef_eval_scalar_at_cells_by_array(cs_lnum_t                    n_elts,
 
   if (cs_flag_test(cx->value_location, cs_flag_primal_cell)) {
 
-    if (elt_ids != NULL && !dense_output) {
+    if (elt_ids != NULL) {
 
-      for (cs_lnum_t i = 0; i < n_elts; i++) {
-        const cs_lnum_t  c_id = elt_ids[i];
-        eval[c_id] = cx->values[c_id];
+      if (cx->full_length) {
+
+        if (!dense_output)
+          cs_array_real_copy_subset(n_elts, 1, elt_ids,
+                                    CS_ARRAY_SUBSET_INOUT,
+                                    cx->values,
+                                    eval);
+        else
+          cs_array_real_copy_subset(n_elts, 1, elt_ids,
+                                    CS_ARRAY_SUBSET_IN,
+                                    cx->values,
+                                    eval);
+
+      }
+      else { /* Not full length. We assume that n_elts and elt_ids are
+                associated to the same zone as the current definition */
+
+        if (!dense_output)
+          cs_array_real_copy_subset(n_elts, 1, elt_ids,
+                                    CS_ARRAY_SUBSET_OUT,
+                                    cx->values,
+                                    eval);
+        else
+          cs_array_real_copy(n_elts, cx->values, eval);
+
       }
 
     }
-    else if (elt_ids != NULL && dense_output) {
-
-      for (cs_lnum_t i = 0; i < n_elts; i++)
-        eval[i] = cx->values[elt_ids[i]];
-
-    }
-    else {
-
-      assert(elt_ids == NULL);
-      memcpy(eval, cx->values, n_elts * sizeof(cs_real_t));
-
-    }
+    else
+      cs_array_real_copy(n_elts, cx->values, eval);
 
   }
   else if (cs_flag_test(cx->value_location, cs_flag_primal_vtx)) {
@@ -926,36 +938,42 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
 
   if (cs_flag_test(cx->value_location, cs_flag_primal_cell)) {
 
-    assert(stride > 1);
-    if (elt_ids != NULL && !dense_output) {
+    if (elt_ids != NULL) {
 
-      for (cs_lnum_t i = 0; i < n_elts; i++) {
-        const cs_lnum_t  c_id = elt_ids[i];
-        for (int k = 0; k < stride; k++)
-          eval[stride*c_id + k] = cx->values[stride*c_id + k];
+      if (cx->full_length) {
+
+        if (!dense_output)
+          cs_array_real_copy_subset(n_elts, stride, elt_ids,
+                                    CS_ARRAY_SUBSET_INOUT,
+                                    cx->values,
+                                    eval);
+        else
+          cs_array_real_copy_subset(n_elts, stride, elt_ids,
+                                    CS_ARRAY_SUBSET_IN,
+                                    cx->values,
+                                    eval);
+
+      }
+      else { /* Not full length. We assume that n_elts and elt_ids are
+                associated to the same zone as the current definition */
+
+        if (!dense_output)
+          cs_array_real_copy_subset(n_elts, stride, elt_ids,
+                                    CS_ARRAY_SUBSET_OUT,
+                                    cx->values,
+                                    eval);
+        else
+          cs_array_real_copy(stride*n_elts, cx->values, eval);
+
       }
 
     }
-    else if (elt_ids != NULL && dense_output) {
-
-      for (cs_lnum_t i = 0; i < n_elts; i++) {
-        const cs_lnum_t  c_id = elt_ids[i];
-        for (int k = 0; k < stride; k++)
-          eval[stride*i + k] = cx->values[stride*c_id + k];
-      }
-
-    }
-    else { /* All elements are considered */
-
-      assert(elt_ids == NULL);
-      memcpy(eval, cx->values, stride*n_elts * sizeof(cs_real_t));
-
-    }
+    else
+      cs_array_real_copy(stride*n_elts, cx->values, eval);
 
   }
   else if (cs_flag_test(cx->value_location, cs_flag_dual_face_byc)) {
 
-    assert(stride == 3);
     assert(connect!= NULL && quant != NULL);
 
     const cs_adjacency_t  *adj = cx->adjacency;
@@ -966,7 +984,7 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
       for (cs_lnum_t i = 0; i < n_elts; i++) {
         const cs_lnum_t  c_id = elt_ids[i];
         cs_reco_dfbyc_at_cell_center(c_id, adj, quant, cx->values,
-                                     eval + c_id*stride);
+                                     eval + 3*c_id);
       }
 
     }
@@ -974,14 +992,13 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
 
       for (cs_lnum_t i = 0; i < n_elts; i++)
         cs_reco_dfbyc_at_cell_center(elt_ids[i], adj, quant, cx->values,
-                                     eval + i*stride);
+                                     eval + 3*i);
 
     }
     else {
 
       for (cs_lnum_t i = 0; i < n_elts; i++)
-        cs_reco_dfbyc_at_cell_center(i, adj, quant, cx->values,
-                                     eval + i*stride);
+        cs_reco_dfbyc_at_cell_center(i, adj, quant, cx->values, eval + 3*i);
 
     }
 

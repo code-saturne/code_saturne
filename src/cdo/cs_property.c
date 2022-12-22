@@ -1256,7 +1256,7 @@ cs_property_finalize_setup(void)
 
       for (int id = 0; id < pty->n_definitions; id++) {
 
-        const cs_xdef_t  *def = pty->defs[id];
+        cs_xdef_t  *def = pty->defs[id];
 
         assert(def->z_id > 0);
         assert(def->support == CS_XDEF_SUPPORT_VOLUME);
@@ -1267,6 +1267,26 @@ cs_property_finalize_setup(void)
 #       pragma omp parallel for if (z->n_elts > CS_THR_MIN)
         for (cs_lnum_t j = 0; j < z->n_elts; j++)
           pty->def_ids[z->elt_ids[j]] = id;
+
+        /* If the definition is by array on a subset with an array allocated on
+           this subset, then one has to define an additional array */
+
+        if (def->type == CS_XDEF_BY_ARRAY) {
+
+          cs_xdef_array_context_t  *cx = def->context;
+
+          if (!cx->full_length) {
+
+            if (def->z_id != cx->z_id)
+              bft_error(__FILE__, __LINE__, 0,
+                        "%s: Issue with the volume definition by array"
+                        " for the property \"%s\"\n", __func__, pty->name);
+
+            cs_xdef_array_build_full2subset(def);
+
+          }
+
+        } /* Definition by array */
 
       } /* Loop on definitions */
 
@@ -1318,7 +1338,7 @@ cs_property_finalize_setup(void)
 
       for (int id = 0; id < pty->n_b_definitions; id++) {
 
-        const cs_xdef_t  *def = pty->b_defs[id];
+        cs_xdef_t  *def = pty->b_defs[id];
 
         assert(def->z_id > 0);
         assert(def->support == CS_XDEF_SUPPORT_BOUNDARY);
@@ -1329,6 +1349,26 @@ cs_property_finalize_setup(void)
 #       pragma omp parallel for if (z->n_elts > CS_THR_MIN)
         for (cs_lnum_t j = 0; j < z->n_elts; j++)
           pty->b_def_ids[z->elt_ids[j]] = id;
+
+        /* If the definition is by array on a subset with an array allocated on
+           this subset, then one has to define an additional array */
+
+        if (def->type == CS_XDEF_BY_ARRAY) {
+
+          cs_xdef_array_context_t  *cx = def->context;
+
+          if (!cx->full_length) {
+
+            if (def->z_id != cx->z_id)
+              bft_error(__FILE__, __LINE__, 0,
+                        "%s: Issue with the boundary definition by array"
+                        " for the property \"%s\"\n", __func__, pty->name);
+
+            cs_xdef_array_build_full2subset(def);
+
+          }
+
+        } /* Definition by array */
 
       } /* Loop on definitions */
 
@@ -2269,7 +2309,7 @@ cs_property_def_by_array(cs_property_t      *pty,
                __func__, pty->name);
   }
 
-  cs_xdef_array_context_t  input = {.z_id = 0,
+  cs_xdef_array_context_t  input = {.z_id = z_id,
                                     .stride = dim,
                                     .value_location = val_location,
                                     .is_owner = is_owner,
@@ -2283,7 +2323,7 @@ cs_property_def_by_array(cs_property_t      *pty,
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ARRAY,
                                         dim,
-                                        0, /* zone_id */
+                                        z_id,
                                         state_flag,
                                         meta_flag,
                                         &input);

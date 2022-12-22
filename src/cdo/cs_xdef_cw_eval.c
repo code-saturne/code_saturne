@@ -703,13 +703,26 @@ cs_xdef_cw_eval_by_array(const cs_cell_mesh_t      *cm,
 
   if (cs_flag_test(cx->value_location, cs_flag_primal_cell)) {
 
-    for (int k = 0; k < stride; k++)
-      eval[k] = cx->values[stride*cm->c_id + k];
+    if (cx->full_length)
+      for (int k = 0; k < stride; k++)
+        eval[k] = cx->values[stride*cm->c_id + k];
+
+    else {
+
+      assert(cx->full2subset != NULL);
+      cs_lnum_t  compact_id = cx->full2subset[cm->c_id];
+      assert(compact_id > -1);
+
+      for (int k = 0; k < stride; k++)
+        eval[k] = cx->values[stride*compact_id + k];
+
+    }
 
   }
   else if (cs_flag_test(cx->value_location, cs_flag_primal_vtx)) {
 
     assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
+    assert(cx->full_length == true);
 
     /* Reconstruct (or interpolate) value at the current cell center */
 
@@ -722,6 +735,7 @@ cs_xdef_cw_eval_by_array(const cs_cell_mesh_t      *cm,
 
     const cs_adjacency_t  *adj = cx->adjacency;
     assert(adj != NULL);
+    assert(cx->full_length == true);
 
     /* Reconstruct (or interpolate) value at the current cell center */
 
