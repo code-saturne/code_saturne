@@ -513,9 +513,9 @@ cs_cell_mesh_get_f2v(short int                    f,
 
   for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-    const int  shift_e = 2*cm->f2e_ids[i];
-    v_ids[cm->e2v_ids[shift_e]] = 1;
-    v_ids[cm->e2v_ids[shift_e+1]] = 1;
+    const short int  *e2v = cm->e2v_ids + 2*cm->f2e_ids[i];
+    v_ids[e2v[0]] = 1;
+    v_ids[e2v[1]] = 1;
 
   } /* Loop on face edges */
 

@@ -184,8 +184,8 @@ cs_xdef_cw_eval_c_int_by_analytic(const cs_cell_mesh_t            *cm,
         const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
         const int  start = cm->f2e_idx[f];
         const int  end = cm->f2e_idx[f+1];
-        const short int n_vf = end - start; /* #vertices (=#edges) */
-        const short int *f2e_ids = cm->f2e_ids + start;
+        const short int  n_vf = end - start; /* #vertices (=#edges) */
+        const short int  *f2e_ids = cm->f2e_ids + start;
 
         assert(n_vf > 2);
         switch(n_vf){
@@ -211,10 +211,9 @@ cs_xdef_cw_eval_c_int_by_analytic(const cs_cell_mesh_t            *cm,
 
             for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
 
-              /* Edge-related variables */
-              const short int e0  = f2e_ids[e];
-              const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
-              const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
+              const short int  *e2v = cm->e2v_ids + 2*f2e_ids[e];
+              const double  *xv0 = cm->xv + 3*e2v[0];
+              const double  *xv1 = cm->xv + 3*e2v[1];
 
               qfunc(t_eval, xv0, xv1, pfq.center, cm->xc, hf_coef * tef[e],
                     ana, input, eval);
@@ -299,8 +298,8 @@ cs_xdef_cw_eval_fc_int_by_analytic(const cs_cell_mesh_t             *cm,
       const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
-      const short int n_vf = end - start; /* #vertices (=#edges) */
-      const short int *f2e_ids = cm->f2e_ids + start;
+      const short int  n_vf = end - start; /* #vertices (=#edges) */
+      const short int  *f2e_ids = cm->f2e_ids + start;
 
       assert(n_vf > 2);
       switch(n_vf){
@@ -313,10 +312,9 @@ cs_xdef_cw_eval_fc_int_by_analytic(const cs_cell_mesh_t             *cm,
           const double  *xv1 = cm->xv + 3*v1;
           const double  *xv2 = cm->xv + 3*v2;
 
-          q_tet(t_eval, xv0, xv1, xv2, cm->xc,  hf_coef * pfq.meas,
+          q_tet(t_eval, xv0, xv1, xv2, cm->xc, hf_coef * pfq.meas,
                 ana, input, c_int);
-          q_tri(t_eval, cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, pfq.meas,
-                ana, input, f_int + dim*f);
+          q_tri(t_eval, xv0, xv1, xv2, pfq.meas, ana, input, f_int + dim*f);
         }
         break;
 
@@ -326,10 +324,9 @@ cs_xdef_cw_eval_fc_int_by_analytic(const cs_cell_mesh_t             *cm,
 
           for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
 
-            /* Edge-related variables */
-            const short int e0  = f2e_ids[e];
-            const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
-            const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
+            const short int  *e2v = cm->e2v_ids + 2*f2e_ids[e];
+            const double  *xv0 = cm->xv + 3*e2v[0];
+            const double  *xv1 = cm->xv + 3*e2v[1];
 
             q_tet(t_eval, xv0, xv1, pfq.center, cm->xc, hf_coef*tef[e],
                   ana, input, c_int);

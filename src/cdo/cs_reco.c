@@ -1372,9 +1372,9 @@ cs_reco_cw_vgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
     double  p_f = 0.;
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-      const short int  *_v_ids = cm->e2v_ids + 2*cm->f2e_ids[i];
+      const short int  *e2v = cm->e2v_ids + 2*cm->f2e_ids[i];
 
-      p_f += cm->tef[i]*(  p_v[_v_ids[0]] + p_v[_v_ids[1]] );
+      p_f += cm->tef[i]*(  p_v[e2v[0]] + p_v[e2v[1]] );
 
     }
     p_f *= 0.5/pfq.meas;
@@ -1386,8 +1386,8 @@ cs_reco_cw_vgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
     const cs_real_t  hf_coef = cs_math_1ov3 * cm->hfc[f];
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-      const short int  *_v_ids = cm->e2v_ids + 2*cm->f2e_ids[i];
-      const short int  v1 = _v_ids[0], v2 = _v_ids[1];
+      const short int  *e2v = cm->e2v_ids + 2*cm->f2e_ids[i];
+      const short int  v1 = e2v[0], v2 = e2v[1];
 
       cs_compute_grd_ve(v1, v2, deq, (const cs_real_t (*)[3])u_vc, l_vc,
                         grd_v1, grd_v2);
@@ -1473,10 +1473,10 @@ cs_reco_cw_cgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
     double  p_f = 0.;
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-      const short int  ee = 2*cm->f2e_ids[i];
+      const short int  *e2v = cm->e2v_ids + 2*cm->f2e_ids[i];
 
-      p_f += cm->tef[i]*(  p_v[cm->e2v_ids[ee]]      /* p_v1 */
-                         + p_v[cm->e2v_ids[ee+1]] ); /* p_v2 */
+      p_f += cm->tef[i]*( p_v[e2v[0]] + p_v[e2v[1]] );
+
     }
     p_f *= 0.5/pfq.meas;
 
@@ -1487,9 +1487,8 @@ cs_reco_cw_cgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
     const cs_real_t  hf_coef = cs_math_1ov3 * cm->hfc[f];
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-      const short int  ee = 2*cm->f2e_ids[i];
-      const short int  v1 = cm->e2v_ids[ee];
-      const short int  v2 = cm->e2v_ids[ee+1];
+      const short int  *e2v = cm->e2v_ids + 2*cm->f2e_ids[i];
+      const short int  v1 = e2v[0], v2 = e2v[1];
 
       cs_compute_grd_ve(v1, v2, deq, (const cs_real_t (*)[3])u_vc, l_vc,
                         grd_v1, grd_v2);

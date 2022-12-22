@@ -196,13 +196,11 @@ _cw_fill_uniform_boundary_flux(const cs_cell_mesh_t   *cm,
 
   for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-    const short int  eshift = 2*cm->f2e_ids[i];
-    const short int  v0 = cm->e2v_ids[eshift];
-    const short int  v1 = cm->e2v_ids[eshift+1];
+    const short int  *e2v = cm->e2v_ids + 2*cm->f2e_ids[i];
     const double  weighted_flux = face_coef * cm->tef[i];
 
-    fluxes[v0] += weighted_flux;
-    fluxes[v1] += weighted_flux;
+    fluxes[e2v[0]] += weighted_flux;
+    fluxes[e2v[1]] += weighted_flux;
 
   } /* Loop on face edges */
 }
