@@ -131,15 +131,14 @@ cs_xdef_cw_eval_f_int_by_analytic(const cs_cell_mesh_t            *cm,
       const double *tef = cm->tef + start;
       for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
 
-        /* Edge-related variables */
-        const short int e0  = f2e_ids[e];
-        const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
-        const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
+        const short int  *e2v = cm->e2v_ids + 2*f2e_ids[e];
+        const double  *xv0 = cm->xv + 3*e2v[0];
+        const double  *xv1 = cm->xv + 3*e2v[1];
 
         qfunc(t_eval, xv0, xv1, pfq.center, tef[e], ana, input, eval);
+
       }
     }
-
   } /* Switch */
 }
 
@@ -1009,10 +1008,10 @@ cs_xdef_cw_eval_flux_v_by_scalar_val(const cs_cell_mesh_t     *cm,
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
       const double  _flx = 0.5 * cm->tef[i] * flux[0];
-      const short int  ee = 2*cm->f2e_ids[i];
+      const short int  *e2v = cm->e2v_ids + 2*cm->f2e_ids[i];
 
-      eval[cm->e2v_ids[ee  ]] += _flx;
-      eval[cm->e2v_ids[ee+1]] += _flx;
+      eval[e2v[0]] += _flx;
+      eval[e2v[1]] += _flx;
 
     }
 
@@ -1070,10 +1069,10 @@ cs_xdef_cw_eval_flux_v_by_vector_val(const cs_cell_mesh_t     *cm,
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
       const double  _flx = 0.5 * cm->tef[i] * _dp3(flux, cm->face[f].unitv);
-      const short int  ee = 2*cm->f2e_ids[i];
+      const short int  *e2v = cm->e2v_ids + 2*cm->f2e_ids[i];
 
-      eval[cm->e2v_ids[ee  ]] += _flx;
-      eval[cm->e2v_ids[ee+1]] += _flx;
+      eval[e2v[0]] += _flx;
+      eval[e2v[1]] += _flx;
 
     }
 
@@ -1947,7 +1946,14 @@ cs_xdef_cw_eval_flux_by_vector_analytic(const cs_cell_mesh_t      *cm,
                                         cs_quadrature_type_t       qtype,
                                         cs_real_t                 *eval)
 {
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
+  assert(eval != NULL);
+
   cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
+
+  const cs_quant_t  pfq = cm->face[f];
+
+  eval[f] = 0.; /* Reset value */
 
   switch (qtype) {
 
@@ -1958,14 +1964,12 @@ cs_xdef_cw_eval_flux_by_vector_analytic(const cs_cell_mesh_t      *cm,
 
       /* Evaluate the function for this time at the face center */
 
-      ac->func(time_eval, 1, NULL, cm->face[f].center,
-               true, /* compacted output ? */
+      ac->func(time_eval, 1, NULL, pfq.center,
+               true, /* dense output ? */
                ac->input,
                flux_xf);
 
-      /* Plug into the evaluation by value now */
-
-      cs_xdef_cw_eval_flux_by_vector_val(cm, f, time_eval, flux_xf, eval);
+      eval[f] = pfq.meas * _dp3(pfq.unitv, flux_xf);
     }
     break;
 
@@ -1974,33 +1978,27 @@ cs_xdef_cw_eval_flux_by_vector_analytic(const cs_cell_mesh_t      *cm,
       assert(cs_flag_test(cm->flag,
                           CS_FLAG_COMP_EV |CS_FLAG_COMP_FE |CS_FLAG_COMP_FEQ));
 
-      const cs_quant_t  fq = cm->face[f];
-      const cs_real_t  *xv = cm->xv;
-
       cs_real_3_t  _val, _xyz;
-
-      eval[f] = 0.; /* Reset value */
 
       /* Loop on face edges */
 
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-        const short int  e = cm->f2e_ids[i];
-        const short int v1 = cm->e2v_ids[2*e];
-        const short int v2 = cm->e2v_ids[2*e+1];
+        const short int  *e2v = cm->e2v_ids + 2*cm->f2e_ids[i];
+        const cs_real_t  *xv0 = cm->xv + 3*e2v[0];
+        const cs_real_t  *xv1 = cm->xv + 3*e2v[1];
 
         for (int k = 0; k < 3; k++)
-          _xyz[k] = cs_math_1ov3 * (fq.center[k] + xv[3*v1+k] + xv[3*v2+k]);
+          _xyz[k] = cs_math_1ov3 * (pfq.center[k] + xv0[k] + xv1[k]);
 
         /* Evaluate the function for this time at the given coordinates */
 
         ac->func(time_eval, 1, NULL,
-                 (const cs_real_t *)_xyz, true, /* compacted output ? */
+                 (const cs_real_t *)_xyz, true, /* dense output ? */
                  ac->input,
                  (cs_real_t *)_val);
 
-        eval[f] += cm->tef[i] * _dp3(_val, fq.unitv);
-
+        eval[f] += cm->tef[i] * _dp3(_val, pfq.unitv);
       }
     }
     break; /* BARY_SUBDIV */
@@ -2017,34 +2015,28 @@ cs_xdef_cw_eval_flux_by_vector_analytic(const cs_cell_mesh_t      *cm,
       cs_real_t  w[4], _val[12];
       cs_real_3_t  gpts[4];
 
-      const cs_quant_t  fq = cm->face[f];
-
-      eval[f] = 0.; /* Reset value */
-
       /* Loop on face edges */
 
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-        const short int  e = cm->f2e_ids[i];
-        const short int v1 = cm->e2v_ids[2*e];
-        const short int v2 = cm->e2v_ids[2*e+1];
+        const short int  *e2v = cm->e2v_ids + 2*cm->f2e_ids[i];
+        const cs_real_t  *xv0 = cm->xv + 3*e2v[0];
+        const cs_real_t  *xv1 = cm->xv + 3*e2v[1];
 
         /* Evaluate the field at the three quadrature points */
 
-        cs_quadrature_tria_4pts(fq.center, cm->xv + 3*v1, cm->xv + 3*v2,
-                                cm->tef[i],
-                                gpts, w);
+        cs_quadrature_tria_4pts(pfq.center, xv0, xv1, cm->tef[i], gpts, w);
 
         /* Evaluate the function for this time at the given coordinates */
 
         ac->func(time_eval, 4, NULL,
-                 (const cs_real_t *)gpts, true,  /* compacted output ? */
+                 (const cs_real_t *)gpts, true,  /* dense output ? */
                  ac->input,
                  _val);
 
         cs_real_t  add = 0;
         for (int p = 0; p < 4; p++)
-          add += w[p] * _dp3(_val+3*p, fq.unitv);
+          add += w[p] * _dp3(_val+3*p, pfq.unitv);
 
         eval[f] += add;
 
@@ -2065,34 +2057,28 @@ cs_xdef_cw_eval_flux_by_vector_analytic(const cs_cell_mesh_t      *cm,
       cs_real_t  w[7], _val[21];
       cs_real_3_t  gpts[7];
 
-      const cs_quant_t  fq = cm->face[f];
-
-      eval[f] = 0.; /* Reset value */
-
       /* Loop on face edges */
 
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-        const short int  e = cm->f2e_ids[i];
-        const short int v1 = cm->e2v_ids[2*e];
-        const short int v2 = cm->e2v_ids[2*e+1];
+        const short int  *e2v = cm->e2v_ids + 2*cm->f2e_ids[i];
+        const cs_real_t  *xv0 = cm->xv + 3*e2v[0];
+        const cs_real_t  *xv1 = cm->xv + 3*e2v[1];
 
         /* Evaluate the field at the three quadrature points */
 
-        cs_quadrature_tria_7pts(fq.center, cm->xv + 3*v1, cm->xv + 3*v2,
-                                cm->tef[i],
-                                gpts, w);
+        cs_quadrature_tria_7pts(pfq.center, xv0, xv1, cm->tef[i], gpts, w);
 
         /* Evaluate the function for this time at the given coordinates */
 
         ac->func(time_eval, 7, NULL,
-                 (const cs_real_t *)gpts, true,  /* compacted output ? */
+                 (const cs_real_t *)gpts, true,  /* dense output ? */
                  ac->input,
                  _val);
 
         cs_real_t  add = 0;
         for (int p = 0; p < 7; p++)
-          add += w[p] * _dp3(_val+3*p, fq.unitv);
+          add += w[p] * _dp3(_val+3*p, pfq.unitv);
 
         eval[f] += add;
 
@@ -2132,26 +2118,31 @@ cs_xdef_cw_eval_vector_flux_by_analytic(const cs_cell_mesh_t      *cm,
                                         cs_quadrature_type_t       qtype,
                                         cs_real_t                 *eval)
 {
-  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
+  assert(eval != NULL);
+
+  cs_xdef_analytic_context_t  *cx = (cs_xdef_analytic_context_t *)context;
+
+  const cs_quant_t  pfq = cm->face[f];
+
+  cs_real_t  *f_eval = eval + 3*f;
+  f_eval[0] = f_eval[1] = f_eval[2] = 0.;
 
   switch (qtype) {
 
   case CS_QUADRATURE_NONE:
   case CS_QUADRATURE_BARY:
     {
-      const cs_quant_t  fq = cm->face[f];
       cs_real_3_t  flux_xf = {0, 0, 0};
 
       /* Evaluate the function for this time at the cell center */
 
-      ac->func(time_eval, 1, NULL, fq.center, true,  /* compacted output ? */
-               ac->input,
+      cx->func(time_eval, 1, NULL, pfq.center, true,  /* dense output ? */
+               cx->input,
                (cs_real_t *)flux_xf);
 
-      /* Plug into the evaluation by value now */
-
       for (int k = 0; k < 3; k++)
-        eval[3*f+k] = fq.meas * flux_xf[k];
+        f_eval[k] = pfq.meas * flux_xf[k];
     }
     break;
 
@@ -2160,35 +2151,28 @@ cs_xdef_cw_eval_vector_flux_by_analytic(const cs_cell_mesh_t      *cm,
       assert(cs_flag_test(cm->flag,
                           CS_FLAG_COMP_EV| CS_FLAG_COMP_FE| CS_FLAG_COMP_FEQ));
 
-      const cs_quant_t  fq = cm->face[f];
-      const cs_real_t  *xv = cm->xv;
-
       cs_real_3_t  _xyz, _eval;
-
-      for (int k = 0; k < 3; k++)
-        eval[3*f+k] = 0.; /* Reset value */
 
       /* Loop on face edges */
 
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-        const short int  _2e = 2*cm->f2e_ids[i];
-        const short int v1 = cm->e2v_ids[_2e];
-        const short int v2 = cm->e2v_ids[_2e+1];
+        const short int  *e2v = cm->e2v_ids + 2*cm->f2e_ids[i];
+        const cs_real_t  *xv0 = cm->xv + 3*e2v[0];
+        const cs_real_t  *xv1 = cm->xv + 3*e2v[1];
 
         for (int k = 0; k < 3; k++)
-          _xyz[k] = cs_math_1ov3 * (fq.center[k] + xv[3*v1+k] + xv[3*v2+k]);
+          _xyz[k] = cs_math_1ov3 * (pfq.center[k] + xv0[k] + xv1[k]);
 
         /* Evaluate the function for this time at the given coordinates */
 
-        ac->func(time_eval, 1, NULL,
-                 (const cs_real_t *)_xyz, true,  /* compacted output ? */
-                 ac->input,
+        cx->func(time_eval, 1, NULL,
+                 (const cs_real_t *)_xyz, true,  /* dense output ? */
+                 cx->input,
                  (cs_real_t *)_eval);
 
         for (int k = 0; k < 3; k++)
-          eval[3*f+k] += cm->tef[i] * _eval[k];
-
+          f_eval[k] += cm->tef[i] * _eval[k];
       }
     }
     break; /* BARY_SUBDIV */
@@ -2204,37 +2188,28 @@ cs_xdef_cw_eval_vector_flux_by_analytic(const cs_cell_mesh_t      *cm,
       cs_real_t  w[4], _eval[12];
       cs_real_3_t  gpts[4];
 
-      const cs_quant_t  fq = cm->face[f];
-      const cs_real_t  *xv = cm->xv;
-
-      for (int k = 0; k < 3; k++)
-        eval[3*f+k] = 0.; /* Reset value */
-
       /* Loop on face edges */
 
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-        const short int  e = cm->f2e_ids[i];
-        const short int v1 = cm->e2v_ids[2*e];
-        const short int v2 = cm->e2v_ids[2*e+1];
+        const short int  *e2v = cm->e2v_ids + 2*cm->f2e_ids[i];
+        const cs_real_t  *xv0 = cm->xv + 3*e2v[0];
+        const cs_real_t  *xv1 = cm->xv + 3*e2v[1];
 
         /* Evaluate the field at the three quadrature points */
 
-        cs_quadrature_tria_4pts(fq.center, xv + 3*v1, xv + 3*v2,
-                                cm->tef[i],
-                                gpts, w);
+        cs_quadrature_tria_4pts(pfq.center, xv0, xv1, cm->tef[i], gpts, w);
 
         /* Evaluate the function for this time at the given coordinates */
 
-        ac->func(time_eval, 4, NULL,
-                 (const cs_real_t *)gpts, true,  /* compacted output ? */
-                 ac->input,
+        cx->func(time_eval, 4, NULL,
+                 (const cs_real_t *)gpts, true,  /* dense output ? */
+                 cx->input,
                  _eval);
 
         for (int p = 0; p < 4; p++)
           for (int k = 0; k < 3; k++)
-            eval[3*f+k] += w[p] * _eval[3*p+k];
-
+            f_eval[k] += w[p] * _eval[3*p+k];
       }
     }
     break;
@@ -2250,37 +2225,28 @@ cs_xdef_cw_eval_vector_flux_by_analytic(const cs_cell_mesh_t      *cm,
       cs_real_t  w[7], _eval[21];
       cs_real_3_t  gpts[7];
 
-      const cs_quant_t  fq = cm->face[f];
-
-      for (int k = 0; k < 3; k++)
-        eval[3*f+k] = 0.; /* Reset value */
-
       /* Loop on face edges */
 
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-        const short int  e = cm->f2e_ids[i];
-        const short int v1 = cm->e2v_ids[2*e];
-        const short int v2 = cm->e2v_ids[2*e+1];
+        const short int  *e2v = cm->e2v_ids + 2*cm->f2e_ids[i];
+        const cs_real_t  *xv0 = cm->xv + 3*e2v[0];
+        const cs_real_t  *xv1 = cm->xv + 3*e2v[1];
 
         /* Evaluate the field at the three quadrature points */
 
-        cs_quadrature_tria_7pts(fq.center, cm->xv + 3*v1, cm->xv + 3*v2,
-                                cm->tef[i],
-                                gpts, w);
+        cs_quadrature_tria_7pts(pfq.center, xv0, xv1, cm->tef[i], gpts, w);
 
         /* Evaluate the function for this time at the given coordinates */
 
-        ac->func(time_eval, 7, NULL,
-                 (const cs_real_t *)gpts, true,  /* compacted output ? */
-                 ac->input,
+        cx->func(time_eval, 7, NULL,
+                 (const cs_real_t *)gpts, true,  /* dense output ? */
+                 cx->input,
                  _eval);
 
-        for (int p = 0; p < 7; p++) {
+        for (int p = 0; p < 7; p++)
           for (int k = 0; k < 3; k++)
-            eval[3*f+k] += w[p] * _eval[3*p+k];
-        }
-
+            f_eval[k] += w[p] * _eval[3*p+k];
       }
     }
     break;
