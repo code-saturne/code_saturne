@@ -127,15 +127,19 @@ if test "x$with_catalyst" != "xno" ; then
   rm -rf "$cs_prv_dir"/CMakeCache.txt
 
   cs_abs_srcdir=`cd $srcdir && pwd`
+  catalyst_cmake_options=""
+
+  if test "x$with_catalyst" != "xyes" ; then
+    catalyst_cmake_options="-DCMAKE_PREFIX_PATH=${with_catalyst}"
+  fi
 
   # Work around some detection issues on some systems
-  catalyst_cmake_options=""
   if test "x$TBB_INCLUDE_DIR" != "x" ; then
-    catalyst_cmake_options="$catalyst_cmake_options -DTBB_INCLUDE_DIR=${TBB_INCLUDE_DIR}"
+    catalyst_cmake_options="${catalyst_cmake_options} -DTBB_INCLUDE_DIR=${TBB_INCLUDE_DIR}"
   fi
 
   mkdir catalyst_test && cd catalyst_test
-  "$CMAKE" -DCMAKE_PREFIX_PATH="$with_catalyst" "$cs_abs_srcdir/build-aux/$detection_variant" $catalyst_cmake_options >&5
+  "$CMAKE" ${catalyst_cmake_options} "${cs_abs_srcdir}/build-aux/$detection_variant" >&5
 
   if test $? = 0 ; then
 

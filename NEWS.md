@@ -16,7 +16,7 @@ Master (not on release branches yet)
   another one and so on). These operations take into acount OpenMP if
   available.
 
-Release 7.3.0 (not released yet)
+Release 7.3.0 (December 20 2022)
 --------------------------------
 
 ### User changes:
