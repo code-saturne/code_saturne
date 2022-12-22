@@ -39,6 +39,7 @@
 
 #include "bft_mem.h"
 
+#include "cs_array.h"
 #include "cs_field.h"
 #include "cs_flag.h"
 #include "cs_log.h"
@@ -212,11 +213,15 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
       b->is_owner = a->is_owner;
       b->full_length = a->full_length;
 
+      /* Optional list */
+
+      b->full2subset = NULL;
+
       /* Array values */
 
       b->values = a->values;
 
-      /* The optional parameters are set if needed with a call to
+      /* The other optional parameters are set if needed with a call to
        * - cs_xdef_array_set_adjacency()
        * - cs_xdef_array_set_sublist()
        */
@@ -377,21 +382,35 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
       cs_xdef_array_context_t  *b = NULL;
 
       BFT_MALLOC(b, 1, cs_xdef_array_context_t);
+
+      /* Metadata */
+
       b->z_id = a->z_id;
       b->stride = a->stride;
       b->value_location = a->value_location;
       b->is_owner = a->is_owner;
       b->full_length = a->full_length;
 
+      /* Optional list */
+
+      b->full2subset = NULL;
+
+      /* Array values */
+
       b->values = a->values;
 
-      d->context = b;
+      /* The other optional parameters are set if needed with a call to
+       * - cs_xdef_array_set_adjacency()
+       * - cs_xdef_array_set_sublist()
+       */
 
       /* Update the state flag */
 
       if (cs_flag_test(b->value_location, cs_flag_primal_face) ||
           cs_flag_test(b->value_location, cs_flag_boundary_face))
         d->state |= CS_FLAG_STATE_FACEWISE;
+
+      d->context = b;
     }
     break;
 
@@ -537,12 +556,16 @@ cs_xdef_free(cs_xdef_t     *d)
 
   case CS_XDEF_BY_ARRAY:
     {
-      cs_xdef_array_context_t  *a = (cs_xdef_array_context_t *)d->context;
-      if (a->is_owner)
-        BFT_FREE(a->values);
+      cs_xdef_array_context_t  *c = (cs_xdef_array_context_t *)d->context;
 
-      /* ids and idx if set are only shared so that one does not have to free
-         thme at this stage */
+      if (c->is_owner)
+        BFT_FREE(c->values);
+
+      if (c->full2subset != NULL)
+        BFT_FREE(c->full2subset);
+
+      /* If the members "adjacency" and "elt_ids" are set. One does not free
+         them since these are shared */
 
       BFT_FREE(d->context);
     }
@@ -1086,6 +1109,59 @@ cs_xdef_array_set_zone_id(cs_xdef_t     *d,
   cs_xdef_array_context_t  *actx = d->context;
 
   actx->z_id = z_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In case of definition by array, build the full2subset array.
+ *
+ * \param[in, out]  d      pointer to a cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_array_build_full2subset(cs_xdef_t         *d)
+{
+  if (d == NULL)
+    return;
+
+  if (d->type != CS_XDEF_BY_ARRAY)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: The given cs_xdef_t structure should be defined by array.",
+              __func__);
+
+  cs_xdef_array_context_t  *cx = (cs_xdef_array_context_t *)d->context;
+
+  const cs_zone_t  *refz, *z;
+
+  if (d->support == CS_XDEF_SUPPORT_VOLUME) {
+
+    refz = cs_volume_zone_by_id(0);
+    z = cs_volume_zone_by_id(cx->z_id);
+
+  }
+  else if (d->support == CS_XDEF_SUPPORT_BOUNDARY) {
+
+    refz = cs_boundary_zone_by_id(0);
+    z = cs_boundary_zone_by_id(cx->z_id);
+
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid support.\n", __func__);
+
+  assert(z != NULL && refz != NULL);
+
+  /* Allocate if needed and then define the array. If an element is not
+     associated to this definition, then the default value is -1 */
+
+  if (cx->full2subset == NULL)
+    BFT_MALLOC(cx->full2subset, refz->n_elts, cs_lnum_t);
+
+  cs_array_lnum_set_value(refz->n_elts, -1, cx->full2subset);
+
+  for (cs_lnum_t i = 0; i < z->n_elts; i++)
+    cx->full2subset[z->elt_ids[i]] = i;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -1193,7 +1193,7 @@ cs_equation_compute_neumann_svb(cs_real_t                   t_eval,
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_FV));
 
-  const cs_xdef_t  *def = eqp->bc_defs[def_id];
+  cs_xdef_t  *def = eqp->bc_defs[def_id];
 
   assert(def->dim == 1); /* flux is a scalar-valued quantity in this case */
   assert(def->meta & CS_CDO_BC_NEUMANN); /* Neuman BC */
@@ -1209,9 +1209,9 @@ cs_equation_compute_neumann_svb(cs_real_t                   t_eval,
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     cs_xdef_cw_eval_flux_v_by_scalar_analytic(cm, f, t_eval,
-                                                   def->context,
-                                                   def->qtype,
-                                                   neu_values);
+                                              def->context,
+                                              def->qtype,
+                                              neu_values);
     break;
 
   case CS_XDEF_BY_ARRAY:
@@ -1222,14 +1222,39 @@ cs_equation_compute_neumann_svb(cs_real_t                   t_eval,
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);
 
-      if (cs_flag_test(ac->value_location, cs_flag_primal_face) ||
-          cs_flag_test(ac->value_location, cs_flag_boundary_face))
-        cs_xdef_cw_eval_flux_v_by_scalar_val(cm, f, t_eval,
-                                             ac->values + bf_id,
-                                             neu_values);
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid array location.", __func__);
+      if (ac->full_length) {
+
+        if (cs_flag_test(ac->value_location, cs_flag_primal_face) ||
+            cs_flag_test(ac->value_location, cs_flag_boundary_face))
+          cs_xdef_cw_eval_flux_v_by_scalar_val(cm, f, t_eval,
+                                               ac->values + bf_id,
+                                               neu_values);
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    " %s: Invalid array location.", __func__);
+
+      }
+      else {
+
+        if (ac->full2subset == NULL)
+          cs_xdef_array_build_full2subset(def);
+
+        if (cs_flag_test(ac->value_location, cs_flag_primal_face) ||
+            cs_flag_test(ac->value_location, cs_flag_boundary_face)) {
+
+          cs_lnum_t  id = ac->full2subset[bf_id];
+          assert(id != -1);
+
+          cs_xdef_cw_eval_flux_v_by_scalar_val(cm, f, t_eval,
+                                               ac->values + id,
+                                               neu_values);
+
+        }
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    " %s: Invalid array location.", __func__);
+
+      } /* full length array or not ? */
     }
     break;
 
@@ -1269,7 +1294,7 @@ cs_equation_compute_full_neumann_svb(cs_real_t                   t_eval,
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_FV));
 
-  const cs_xdef_t  *def = eqp->bc_defs[def_id];
+  cs_xdef_t  *def = eqp->bc_defs[def_id];
 
   assert(def->dim == 3); /* flux is a vector-valued quantity in this case */
   assert(def->meta & CS_CDO_BC_FULL_NEUMANN); /* Full Neuman BC */
@@ -1298,14 +1323,39 @@ cs_equation_compute_full_neumann_svb(cs_real_t                   t_eval,
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);
 
-      if (cs_flag_test(ac->value_location, cs_flag_primal_face) ||
-          cs_flag_test(ac->value_location, cs_flag_boundary_face))
-        cs_xdef_cw_eval_flux_v_by_vector_val(cm, f, t_eval,
-                                             ac->values + 3*bf_id,
-                                             neu_values);
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid array location.", __func__);
+      if (ac->full_length) {
+
+        if (cs_flag_test(ac->value_location, cs_flag_primal_face) ||
+            cs_flag_test(ac->value_location, cs_flag_boundary_face))
+          cs_xdef_cw_eval_flux_v_by_vector_val(cm, f, t_eval,
+                                               ac->values + 3*bf_id,
+                                               neu_values);
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    " %s: Invalid array location.", __func__);
+
+      }
+      else {
+
+        if (ac->full2subset == NULL)
+          cs_xdef_array_build_full2subset(def);
+
+        if (cs_flag_test(ac->value_location, cs_flag_primal_face) ||
+            cs_flag_test(ac->value_location, cs_flag_boundary_face)) {
+
+          cs_lnum_t  id = ac->full2subset[bf_id];
+          assert(id != -1);
+
+          cs_xdef_cw_eval_flux_v_by_vector_val(cm, f, t_eval,
+                                               ac->values + 3*id,
+                                               neu_values);
+
+        }
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    " %s: Invalid array location.", __func__);
+
+      } /* full length array or not ? */
     }
     break;
 
@@ -1344,7 +1394,7 @@ cs_equation_compute_neumann_sfb(cs_real_t                    t_eval,
   assert(def_id > -1);
   assert(eqp->dim == 1);
 
-  const cs_xdef_t  *def = eqp->bc_defs[def_id];
+  cs_xdef_t  *def = eqp->bc_defs[def_id];
 
   assert(def->meta & CS_CDO_BC_NEUMANN);
 
@@ -1378,7 +1428,20 @@ cs_equation_compute_neumann_sfb(cs_real_t                    t_eval,
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);
 
-      neu_values[f] = cm->face[f].meas * ac->values[bf_id];
+      if (ac->full_length)
+        neu_values[f] = cm->face[f].meas * ac->values[bf_id];
+
+      else {
+
+        if (ac->full2subset == NULL)
+          cs_xdef_array_build_full2subset(def);
+
+        cs_lnum_t  id = ac->full2subset[bf_id];
+        assert(id > -1);
+
+        neu_values[f] = cm->face[f].meas * ac->values[id];
+
+      }
     }
     break;
 
@@ -1417,7 +1480,7 @@ cs_equation_compute_full_neumann_sfb(cs_real_t                    t_eval,
   assert(def_id > -1);
   assert(eqp->dim == 1);
 
-  const cs_xdef_t  *def = eqp->bc_defs[def_id];
+  cs_xdef_t  *def = eqp->bc_defs[def_id];
 
   assert(def->meta & CS_CDO_BC_FULL_NEUMANN); /* Full Neuman BC */
 
@@ -1446,10 +1509,24 @@ cs_equation_compute_full_neumann_sfb(cs_real_t                    t_eval,
       assert(cs_flag_test(ac->value_location, cs_flag_primal_face) ||
              cs_flag_test(ac->value_location, cs_flag_boundary_face));
 
+      cs_real_t  *face_val;
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);
 
-      cs_real_t  *face_val = ac->values + 3*bf_id;
+      if (ac->full_length)
+        face_val = ac->values + 3*bf_id;
+
+      else {
+
+        if (ac->full2subset == NULL)
+          cs_xdef_array_build_full2subset(def);
+
+        cs_lnum_t  id = ac->full2subset[bf_id];
+        assert(id > -1);
+
+        face_val = ac->values + 3*id;
+
+      }
 
       cs_xdef_cw_eval_flux_by_vector_val(cm, f, t_eval, face_val,
                                          neu_values);
@@ -1491,7 +1568,7 @@ cs_equation_compute_neumann_vfb(cs_real_t                    t_eval,
   assert(def_id > -1);
   assert(eqp->dim == 3);
 
-  const cs_xdef_t  *def = eqp->bc_defs[def_id];
+  cs_xdef_t  *def = eqp->bc_defs[def_id];
 
   assert(def->meta & CS_CDO_BC_FULL_NEUMANN); /* Neuman BC */
 
@@ -1523,9 +1600,24 @@ cs_equation_compute_neumann_vfb(cs_real_t                    t_eval,
       assert(cs_flag_test(ac->value_location, cs_flag_primal_face) ||
              cs_flag_test(ac->value_location, cs_flag_boundary_face));
 
+      const cs_real_t  *face_val;
       const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);
-      const cs_real_t  *face_val = ac->values + 3*bf_id;
+
+      if (ac->full_length)
+        face_val = ac->values + 3*bf_id;
+
+      else {
+
+        if (ac->full2subset == NULL)
+          cs_xdef_array_build_full2subset(def);
+
+        cs_lnum_t  id = ac->full2subset[bf_id];
+        assert(id > -1);
+
+        face_val = ac->values + 3*id;
+
+      }
 
       for (int k = 0; k < 3; k++)
         neu_values[3*f+k] = cm->face[f].meas * face_val[k];
@@ -1565,7 +1657,7 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
   assert(def_id > -1);
   assert(eqp->dim == 1);
 
-  const cs_xdef_t  *def = eqp->bc_defs[def_id];
+  cs_xdef_t  *def = eqp->bc_defs[def_id];
 
   /* Flux is a vector in the scalar-valued case and a tensor in the
      vector-valued case */
@@ -1613,7 +1705,21 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
 
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);
-      const cs_real_t  *parameters = cx->values + 3*bf_id;
+      const cs_real_t  *parameters;
+
+      if (cx->full_length)
+        parameters = cx->values + 3*bf_id;
+
+      else {
+
+        if (cx->full2subset == NULL)
+          cs_xdef_array_build_full2subset(def);
+
+        cs_lnum_t  id = cx->full2subset[bf_id];
+        assert(id > -1);
+        parameters = cx->values + 3*id;
+
+      }
 
       rob_values[3*f  ] = parameters[0];
       rob_values[3*f+1] = parameters[1];

@@ -2536,6 +2536,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
                                     .full_length = full_length,
                                     .values = array,
                                     /* Optional parameters */
+                                    .full2subset = NULL,
                                     .adjacency = NULL,
                                     .n_list_elts = 0,
                                     .elt_ids= NULL };
@@ -3361,6 +3362,7 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
                                    .is_owner = is_owner,
                                    .full_length = full_length,
                                    /* Optional parameters */
+                                   .full2subset = NULL,
                                    .adjacency = NULL,
                                    .n_list_elts = 0,
                                    .elt_ids= NULL };

@@ -2276,6 +2276,7 @@ cs_property_def_by_array(cs_property_t      *pty,
                                     .full_length = full_length,
                                     .values = array,
                                     /* Optional parameters (not used) */
+                                    .full2subset = NULL,
                                     .adjacency = NULL,
                                     .n_list_elts = 0,
                                     .elt_ids = NULL };
@@ -2368,6 +2369,7 @@ cs_property_boundary_def_by_array(cs_property_t      *pty,
                                     .full_length = full_length,
                                     .values = array,
                                     /* Optional parameters (not used) */
+                                    .full2subset = NULL,
                                     .adjacency = NULL,
                                     .n_list_elts = 0,
                                     .elt_ids = NULL };

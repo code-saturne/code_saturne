@@ -234,16 +234,22 @@ typedef struct {
    * corresponds to the (primal) cells or to the boundary faces. In other
    * cases, one needs the number of elements and its associated list.
    *
+   * \var full2subset
+   * (Optional) Array of size equal to the full support to get the position in
+   * the subset list of an element. Allocated only if full_length is set to
+   * false and only if needed.
+   *
    * \var n_list_elts
    * (Optional) Number of element in the (sub)list of elements when the array
-   * describes only a part of the full-length array (Case of value_location which is
-   * neither the cells nor the boundary faces).
+   * describes only a part of the full-length array (Case of value_location
+   * which is neither the cells nor the boundary faces).
    *
    * \var elt_ids
    * (Optional) List of element ids. Useful when the array describes only a
    * part of the full-length array and the value location is neither the cells
-   * nor the boundary faces. One assumes that the lifecycle of this array is
-   * managed outside.
+   * for a volume definition nor the boundary faces for a boundary
+   * definition. One assumes that the lifecycle of this array is managed
+   * outside.
    *
    * \var adjacency
    * (Optional) Pointer to a shared adjacency structure (an indexed list). This
@@ -261,6 +267,10 @@ typedef struct {
   bool                    full_length;
 
   cs_real_t              *values;
+
+  /* Automatic parameter */
+
+  cs_lnum_t              *full2subset;
 
   /* Optional parameters */
 
@@ -706,6 +716,17 @@ cs_xdef_array_set_values(cs_xdef_t     *d,
 void
 cs_xdef_array_set_zone_id(cs_xdef_t     *d,
                           int            z_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In case of definition by array, build the full2subset array.
+ *
+ * \param[in, out]  d      pointer to a cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_array_build_full2subset(cs_xdef_t         *d);
 
 /*----------------------------------------------------------------------------*/
 /*!

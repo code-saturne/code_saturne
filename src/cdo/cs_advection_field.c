@@ -870,6 +870,7 @@ cs_advection_field_def_by_array(cs_adv_field_t    *adv,
                                       .is_owner = is_owner,
                                       .full_length = true,
                                       /* Optional parameters */
+                                      .full2subset = NULL,
                                       .adjacency = NULL,
                                       .n_list_elts = 0,
                                       .elt_ids= NULL };
@@ -1074,6 +1075,7 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
                                       .full_length = full_length,
                                       .values = array,
                                       /* Optional parameters (not used) */
+                                      .full2subset = NULL,
                                       .adjacency = NULL,
                                       .n_list_elts = 0,
                                       .elt_ids = NULL };

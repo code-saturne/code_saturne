@@ -2263,7 +2263,8 @@ cs_navsto_set_velocity_inlet_by_array(cs_navsto_param_t    *nsp,
                                       .value_location = loc,
                                       .values = array,
                                       .is_owner = is_owner,
-                                      .full_length = full_length };
+                                      .full_length = full_length,
+                                      .full2subset = NULL };
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
                                           3,
