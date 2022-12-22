@@ -1033,60 +1033,35 @@ cs_xdef_eval_at_vertices_by_array(cs_lnum_t                    n_elts,
 
   const int  stride = cx->stride;
 
-  if (cs_flag_test(cx->value_location, cs_flag_primal_vtx)) {
+  if (cs_flag_test(cx->value_location, cs_flag_primal_vtx) == false)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid support for the input array", __func__);
 
-    if (elt_ids != NULL && !dense_output) {
+  if (cx->full_length) {
 
-      switch (stride) {
+    if (elt_ids != NULL && !dense_output)
+      cs_array_real_copy_subset(n_elts, stride, elt_ids,
+                                CS_ARRAY_SUBSET_INOUT,
+                                cx->values,
+                                eval);
 
-      case 1: /* Scalar-valued */
-        for (cs_lnum_t i = 0; i < n_elts; i++) {
-          const cs_lnum_t  v_id = elt_ids[i];
-          eval[v_id] = cx->values[v_id];
-        }
-        break;
+    else if (elt_ids != NULL && dense_output)
+      cs_array_real_copy_subset(n_elts, stride, elt_ids,
+                                CS_ARRAY_SUBSET_IN,
+                                cx->values,
+                                eval);
 
-      default:
-        for (cs_lnum_t i = 0; i < n_elts; i++) {
-          const cs_lnum_t  v_id = elt_ids[i];
-          for (int j = 0; j < stride; j++)
-            eval[stride*v_id + j] = cx->values[stride*v_id+j];
-        }
-        break;
-
-      } /* End of switch */
-
-    }
-    else if (elt_ids != NULL && dense_output) {
-
-      switch (stride) {
-
-      case 1: /* Scalar-valued */
-        for (cs_lnum_t i = 0; i < n_elts; i++)
-          eval[i] = cx->values[elt_ids[i]];
-        break;
-
-      default:
-        for (cs_lnum_t i = 0; i < n_elts; i++) {
-          for (int j = 0; j < stride; j++)
-            eval[stride*i + j] = cx->values[stride*elt_ids[i] + j];
-        }
-        break;
-
-      } /* End of switch */
-
-    }
     else {
 
       assert(elt_ids == NULL);
-      memcpy(eval, cx->values, n_elts*stride * sizeof(cs_real_t));
+      cs_array_real_copy(n_elts*stride, cx->values, eval);
 
     }
 
   }
   else
     bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid support for the input array", __func__);
+              "%s: TODO. BC defined by an array on a subset.\n", __func__);
 }
 
 /*----------------------------------------------------------------------------*/
