@@ -74,10 +74,9 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Take into account Dirichlet BCs by a weak enforcement by a
- *          penalization technique with a huge value
- *          Predefined prototype to match the function pointer
- *          cs_cdo_enforce_bc_t
+ * \brief Take into account Dirichlet BCs by a weak enforcement by a
+ *        penalization technique with a huge value. Predefined prototype to
+ *        match the function pointer cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure

@@ -208,7 +208,7 @@ _cdofb_normal_flux_reco(short int                  fb,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the cellwise consistent gradient for Vb schemes
+ * \brief Compute the cellwise consistent gradient for Vb schemes
  *
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
  * \param[in, out] grd_cell  cellwise gradient vector attached to each vertex
@@ -250,9 +250,9 @@ _svb_cellwise_grd(const cs_cell_mesh_t   *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the normal diffusive flux reconstruction for Vb schemes
- *          using the COST/VORONOI/BUBBLE algorithm. This normal flux is
- *          computed in each t_{ek,f}: the triangle with base e_k and apex xf
+ * \brief Compute the normal diffusive flux reconstruction for Vb schemes using
+ *        the COST/VORONOI/BUBBLE algorithm. This normal flux is computed in
+ *        each t_{ek,f}: the triangle with base e_k and apex xf
  *
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
  * \param[in]      dbeta     d times the value of the stabilization coef.
@@ -333,9 +333,9 @@ _nflux_reco_svb_ocs_in_pec(const cs_cell_mesh_t   *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the normal trace operator for a given border face when a
- *          COST/BUBLLE or Voronoï algo. is used for reconstructing a flux
- *          from the degrees of freedom
+ * \brief Compute the normal trace operator for a given border face when a
+ *        COST/BUBLLE or Voronoï algo. is used for reconstructing a flux from
+ *        the degrees of freedom
  *
  * \param[in]      fm      pointer to a cs_face_mesh_t structure
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
@@ -402,10 +402,10 @@ _vb_ocs_normal_flux_op(const short int           f,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the transposed of the normal trace operator and the full
- *          boundary operator to enforce weakly a Robin BC for a given border
- *          face when a COST algo. is used for reconstructing the degrees of
- *          freedom
+ * \brief Compute the transposed of the normal trace operator and the full
+ *        boundary operator to enforce weakly a Robin BC for a given border
+ *        face when a COST algo. is used for reconstructing the degrees of
+ *        freedom
  *
  * \param[in]      fm         pointer to a cs_face_mesh_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -491,8 +491,8 @@ _vb_cost_full_flux_op(const short int           f,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the normal trace operator for a given border face when a
- *          WBS algo. is used for reconstructing the degrees of freedom
+ * \brief Compute the normal trace operator for a given border face when a WBS
+ *        algo. is used for reconstructing the degrees of freedom
  *
  * \param[in]      fm        pointer to a cs_face_mesh_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
@@ -630,9 +630,9 @@ _vb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the normal trace operator for a given border face when a
- *          WBS algo. is used for reconstructing the degrees of freedom
- *          Specific to CDO-V+C schemes
+ * \brief Compute the normal trace operator for a given border face when a WBS
+ *        algo. is used for reconstructing the degrees of freedom Specific to
+ *        CDO-V+C schemes
  *
  * \param[in]      fm        pointer to a cs_face_mesh_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
@@ -759,8 +759,8 @@ _vcb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Weak enforcement of Dirichlet BCs using a Nitsche technique.
- *          Scalar-valued case for CDO-VB or CDO-VCb schemes
+ * \brief Weak enforcement of Dirichlet BCs using a Nitsche technique.
+ *        Scalar-valued case for CDO-VB or CDO-VCb schemes
  *
  * \param[in]       pcoef     value of the penalization coefficient
  * \param[in]       fm        pointer to a cs_face_mesh_t structure
@@ -801,17 +801,16 @@ _svb_nitsche(const double              pcoef,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Take into account Dirichlet BCs by a weak enforcement by a
- *          penalization technique with a huge value
- *          Predefined prototype to match the function pointer
- *          cs_cdo_enforce_bc_t
+ * \brief Take into account Dirichlet BCs by a weak enforcement by a
+ *        penalization technique with a huge value. Predefined prototype to
+ *        match the function pointer cs_cdo_enforce_bc_t
  *
- * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
- * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
- * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
- * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
- * \param[in, out]  csys      structure storing the cell-wise system
+ * \param[in]       eqp     pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm      pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm      pointer to a cs_face_mesh_t structure
+ * \param[in, out]  hodge   pointer to a \ref cs_hodge_t structure
+ * \param[in, out]  cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys    structure storing the cell-wise system
  */
 /*----------------------------------------------------------------------------*/
 
@@ -851,18 +850,17 @@ cs_cdo_diffusion_pena_dirichlet(const cs_equation_param_t       *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Take into account Dirichlet BCs by a weak enforcement by a
- *          penalization technique with a huge value.
- *          Case of a cellwise system defined by block.
- *          Predefined prototype to match the function pointer
- *          cs_cdo_enforce_bc_t
+ * \brief Take into account Dirichlet BCs by a weak enforcement by a
+ *        penalization technique with a huge value. Case of a cellwise system
+ *        defined by block. Predefined prototype to match the function pointer
+ *        cs_cdo_enforce_bc_t
  *
- * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
- * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
- * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
- * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
- * \param[in, out]  csys      structure storing the cell-wise system
+ * \param[in]      eqp    pointer to a \ref cs_equation_param_t struct.
+ * \param[in]      cm     pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out] fm     pointer to a cs_face_mesh_t structure
+ * \param[in, out] hodge  pointer to a \ref cs_hodge_t structure
+ * \param[in, out] cb     pointer to a cs_cell_builder_t structure
+ * \param[in, out] csys   structure storing the cell-wise system
  */
 /*----------------------------------------------------------------------------*/
 
@@ -919,9 +917,9 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Take into account Dirichlet BCs by keeping the DoFs related to
- *          Dirichlet BCs in the algebraic system (i.e. a weak enforcement)
- *          The corresponding DoFs are algebraically "removed" of the system
+ * \brief Take into account Dirichlet BCs by keeping the DoFs related to
+ *        Dirichlet BCs in the algebraic system (i.e. a weak enforcement). The
+ *        corresponding DoFs are algebraically "removed" of the system
  *
  *          |      |     |     |      |     |     |  |     |          |
  *          | Aii  | Aid |     | Aii  |  0  |     |bi|     |bi-Aid.bd |
@@ -929,9 +927,9 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
  *          |      |     |     |      |     |     |  |     |          |
  *          | Adi  | Add |     |  0   |  Id |     |bd|     |    xd    |
  *
- *          where xd is the value of the Dirichlet BC
- *          Predefined prototype to match the function pointer
- *          cs_cdo_enforce_bc_t
+ *        where xd is the value of the Dirichlet BC
+
+ *        Predefined prototype related to the function pointer cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
@@ -1775,10 +1773,10 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Take into account Robin BCs.
- *          Case of scalar-valued CDO-Fb schemes with a CO+ST algorithm.
- *          Predefined prototype to match the function pointer
- *          cs_cdo_enforce_bc_t
+ * \brief  Take into account Robin BCs.
+ *         Case of scalar-valued CDO-Fb schemes with a CO+ST algorithm.
+ *         Predefined prototype to match the function pointer
+ *         cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
@@ -1844,10 +1842,10 @@ cs_cdo_diffusion_sfb_cost_robin(const cs_equation_param_t      *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Take into account Robin BCs.
- *          Case of scalar-valued CDO-Vb schemes with a CO+ST algorithm.
- *          Predefined prototype to match the function pointer
- *          cs_cdo_enforce_bc_t
+ * \brief  Take into account Robin BCs.
+ *         Case of scalar-valued CDO-Vb schemes with a CO+ST algorithm.
+ *         Predefined prototype to match the function pointer
+ *         cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure

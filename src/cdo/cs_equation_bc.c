@@ -355,8 +355,8 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                    t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Set the BC into a cellwise view of the current system.
- *          Case of vertex-based schemes
+ * \brief Set the BC into a cellwise view of the current system.
+ *        Case of vertex-based schemes.
  *
  * \param[in]      cm           pointer to a cellwise view of the mesh
  * \param[in]      eqp          pointer to a cs_equation_param_t structure
@@ -974,8 +974,8 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the values of the Dirichlet BCs when DoFs are attached to
- *          CDO face-based schemes
+ * \brief Compute the values of the Dirichlet BCs when DoFs are attached to CDO
+ *        face-based schemes
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
@@ -1605,15 +1605,15 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
 
   case CS_XDEF_BY_ARRAY:
     {
-      const cs_xdef_array_context_t  *c = def->context;
+      const cs_xdef_array_context_t  *cx = def->context;
 
-      assert(c->stride == 3);
-      assert(cs_flag_test(c->value_location, cs_flag_primal_face) ||
-             cs_flag_test(c->value_location, cs_flag_boundary_face));
+      assert(cx->stride == 3);
+      assert(cs_flag_test(cx->value_location, cs_flag_primal_face) ||
+             cs_flag_test(cx->value_location, cs_flag_boundary_face));
 
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);
-      const cs_real_t  *parameters = c->values + 3*bf_id;
+      const cs_real_t  *parameters = cx->values + 3*bf_id;
 
       rob_values[3*f  ] = parameters[0];
       rob_values[3*f+1] = parameters[1];

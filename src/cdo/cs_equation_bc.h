@@ -52,8 +52,8 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Apply a boundary condition for a given face (inlet, outlet, wall,
- *         sliding wall, symmetry...)
+ * \brief Apply a boundary condition for a given face (inlet, outlet, wall,
+ *        sliding wall, symmetry...)
  *
  * \param[in]       f       face id in the cell mesh numbering
  * \param[in]       eqp     pointer to a \ref cs_equation_param_t struct.
@@ -74,7 +74,7 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Enforcement of a boundary condition (Dirichlet, Robin, sliding...)
+ * \brief Enforcement of a boundary condition (Dirichlet, Robin, sliding...)
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
@@ -118,8 +118,8 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                   t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Set the BC into a cellwise view of the current system.
- *          Case of vertex-based schemes
+ * \brief Set the BC into a cellwise view of the current system.
+ *        Case of vertex-based schemes.
  *
  * \param[in]      cm           pointer to a cellwise view of the mesh
  * \param[in]      eqp          pointer to a cs_equation_param_t structure
@@ -250,8 +250,8 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the values of the Dirichlet BCs when DoFs are attached to
- *          CDO face-based schemes
+ * \brief Compute the values of the Dirichlet BCs when DoFs are attached to CDO
+ *        face-based schemes
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
