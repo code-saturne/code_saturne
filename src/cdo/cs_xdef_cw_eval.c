@@ -2139,18 +2139,19 @@ cs_xdef_cw_eval_vector_flux_by_analytic(const cs_cell_mesh_t      *cm,
   case CS_QUADRATURE_NONE:
   case CS_QUADRATURE_BARY:
     {
-      cs_real_3_t  flux_xc = {0, 0, 0};
+      const cs_quant_t  fq = cm->face[f];
+      cs_real_3_t  flux_xf = {0, 0, 0};
 
       /* Evaluate the function for this time at the cell center */
 
-      ac->func(time_eval, 1, NULL, cm->xc, true,  /* compacted output ? */
+      ac->func(time_eval, 1, NULL, fq.center, true,  /* compacted output ? */
                ac->input,
-               (cs_real_t *)flux_xc);
+               (cs_real_t *)flux_xf);
 
       /* Plug into the evaluation by value now */
 
       for (int k = 0; k < 3; k++)
-        eval[3*f+k] = cm->face[f].meas * flux_xc[k];
+        eval[3*f+k] = fq.meas * flux_xf[k];
     }
     break;
 
@@ -2171,7 +2172,7 @@ cs_xdef_cw_eval_vector_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-        const short int  _2e = cm->f2e_ids[i];
+        const short int  _2e = 2*cm->f2e_ids[i];
         const short int v1 = cm->e2v_ids[_2e];
         const short int v2 = cm->e2v_ids[_2e+1];
 

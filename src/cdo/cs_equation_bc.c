@@ -1570,7 +1570,7 @@ cs_equation_compute_neumann_vfb(cs_real_t                    t_eval,
 
   cs_xdef_t  *def = eqp->bc_defs[def_id];
 
-  assert(def->meta & CS_CDO_BC_FULL_NEUMANN); /* Neuman BC */
+  assert(def->meta & CS_CDO_BC_NEUMANN); /* Neuman BC */
 
   /* Flux is a vector in the vector-valued case */
 
