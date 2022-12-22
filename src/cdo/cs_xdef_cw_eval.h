@@ -278,7 +278,7 @@ cs_xdef_cw_eval_vector_at_xyz_by_val(const cs_cell_mesh_t       *cm,
   for (int i = 0; i < n_points; i++) {
     eval[3*i    ] = constant_val[0];
     eval[3*i + 1] = constant_val[1];
-    eval[2*i + 2] = constant_val[2];
+    eval[3*i + 2] = constant_val[2];
   }
 }
 
