@@ -4,6 +4,7 @@ Release 7.2.2 (not released yet)
 ### Architectural changes:
 
 - Update ParaView/Catalyst compilation for ParaView 5.11 compatibility.
+  * Also fix ParaView/Catalyst detection with for CMake 3.23 or above.
 
 Release 7.2.1 (December 19 2022)
 --------------------------------
