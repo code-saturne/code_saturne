@@ -621,12 +621,9 @@ The list of third-party software usable with code_saturne is provided here:
   but it seems that the ParMETIS licence has not been updated so far.
   METIS 5.0 or above and ParMETIS 4.0 or above are supported.
 
-  Also, the original ParMETIS website is not operational anymore,
-  and the source tree (now hosted on GitHub) only includes Development branches, with no stable branches or releases yet.
-
 * [ParaView Catalyst](https://www.paraview.org/in-situ) or full ParaView
   may be used for co-visualization or in-situ visualization.
-  This requires ParaView 4.2 or above, though 5.6 or above is recommended.
+  This requires ParaView 5.4 or above, though 5.9 or above is recommended.
   Note that ParaView must be built with MPI support for Catalyst to
   be usable.
 
@@ -679,7 +676,9 @@ The list of third-party software usable with code_saturne is provided here:
   code_saturne and the BLAS were configured and interact, and this can actually
   lead to lower performance.
   Use of BLAS libraries is thus useful as a unit benchmarking feature,
-  but has no influence on full calculations.
+  but has no influence on full calculations. Note also that BLAS may be used
+  indirectly by linear algebra libraries which may make a better use of them,
+  but this is mostly transparent to the code_saturne install.
 
 * [PETSc](https://www.mcs.anl.gov/petsc/) (Portable, Extensible Toolkit
   for Scientific Computation), consists  of a variety of libraries,
@@ -700,7 +699,7 @@ The list of third-party software usable with code_saturne is provided here:
   It includes a flexible solver composition system that allows
   a user to easily construct complex nested solvers and preconditioners.
 
-* The [SYRTHES](https://www.edf.fr/en/the-edf-group/world-s-largest-power-company/activities/research-and-development/scientific-communities/simulation-softwares?logiciel=10818)
+* The [SYRTHES](https://www.edf.fr/en/the-edf-group/inventing-the-future-of-energy/r-d-global-expertise/our-offers/simulation-softwares/syrthes)
   code may be used for conjugate heat transfer.
 
 For developers, the GNU Autotools (Autoconf and Automake)
@@ -975,7 +974,7 @@ ${PARAVIEW_SRC_PATH}
 ```
 
 More info may also be found on the
-[ParaView Wiki](http://www.paraview.org/Wiki/ParaView/ParaView_And_Mesa_3D).
+[ParaView Wiki](https://kitware.github.io/paraview-docs/latest/cxx/Offscreen.html).
 
 Note that when ParaView uses libraries which are in non-standard locations,
 it may be necessary to specify those locations in the CMake prefix path
@@ -985,7 +984,7 @@ the `CMAKE_PREFIX_PATH`, so if multiple directories need to be included,
 an enquoted and semicolon-separated path may be used, for example:
 
 ```
---with-catalyst="/home/user/opt/paraview-5.8;/home/user/opt/ospray2"
+--with-catalyst="/home/user/opt/paraview-5.11;/home/user/opt/ospray2"
 ```
 
 Also, if the detection of Catalyst fails due to incorrect detection
@@ -994,7 +993,7 @@ be set to pass the correct path to the configuration scripts.
 
 On some systems, loading the Catalyst module as a plug-in (which is the
 default) seems to interfere with the detection of required OpenGL2 features
-or extensions required by ParaView 5.2 and above. In this case, Catalyst
+or extensions required by ParaView. In this case, Catalyst
 support may be linked in the standard manner by using the
 `--disable-catalyst-as-plugin` configuration option.
 A less extreme option is to use the `--enable-dlopen-rtld-global`
