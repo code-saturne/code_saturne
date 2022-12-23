@@ -56,8 +56,8 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief    Check if the generic structures for building a CDO-vertex+cell
- *           based scheme are allocated
+ * \brief Check if the generic structures for building a CDO-vertex+cell
+ *        based scheme are allocated
  *
  * \return  true or false
  */
@@ -68,11 +68,11 @@ cs_cdovcb_scaleq_is_initialized(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief    Allocate work buffer and general structures related to CDO
- *           vertex+cell-based schemes
- *           Set shared pointers.
+ * \brief Allocate work buffer and general structures related to CDO
+ *        vertex+cell-based schemes
+ *        Set shared pointers.
  *
- * \param[in]  quant       additional mesh quantities struct.
+ * \param[in]  cdoq        additional CDO mesh quantities
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]  time_step   pointer to a time step structure
  */

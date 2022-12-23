@@ -226,7 +226,7 @@ cs_evaluate_potential_at_vertices_by_dof_func(const cs_xdef_t   *def,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate a potential field atface centers from a definition by a
+ * \brief  Evaluate a potential field at face centers from a definition by a
  *         constant value
  *
  * \param[in]      def             pointer to a cs_xdef_t pointer

@@ -253,15 +253,15 @@ _setup_vcb(cs_real_t                     t_eval,
            cs_flag_t                    *vtx_bc_flag)
 {
   assert(vtx_bc_flag != NULL);  /* Sanity check */
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
 
   /* Compute the values of the Dirichlet BC */
 
-  BFT_MALLOC(eqb->dir_values, quant->n_vertices, cs_real_t);
+  BFT_MALLOC(eqb->dir_values, cdoq->n_vertices, cs_real_t);
 
   cs_equation_compute_dirichlet_vb(t_eval,
                                    mesh,
-                                   quant,
+                                   cdoq,
                                    connect,
                                    eqp,
                                    eqb->face_bc,
@@ -835,11 +835,11 @@ _set_cip_coef(const cs_equation_param_t  *eqp)
   const double  gseed = 1e-2;  /* Default value to multiply according to the
                                   problem and the ratio of diameters */
 
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const double  hc_max = quant->cell_info.h_max;
-  const double  hc_min = quant->cell_info.h_min;
-  const double  hf_max = quant->face_info.h_max;
-  const double  hf_min = quant->face_info.h_min;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
+  const double  hc_max = cdoq->cell_info.h_max;
+  const double  hc_min = cdoq->cell_info.h_min;
+  const double  hf_max = cdoq->face_info.h_max;
+  const double  hf_min = cdoq->face_info.h_min;
   const double  hcMm = hc_max * hc_min;
   const double  hfMm = hf_min * hf_max;
   const double  rho_fc = hcMm / hfMm;
@@ -864,8 +864,8 @@ _set_cip_coef(const cs_equation_param_t  *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief    Check if the generic structures for building a CDO-vertex+cell
- *           based scheme are allocated
+ * \brief Check if the generic structures for building a CDO-vertex+cell
+ *        based scheme are allocated
  *
  * \return  true or false
  */
@@ -882,24 +882,24 @@ cs_cdovcb_scaleq_is_initialized(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief    Allocate work buffer and general structures related to CDO
- *           vertex+cell-based schemes
- *           Set shared pointers.
+ * \brief Allocate work buffer and general structures related to CDO
+ *        vertex+cell-based schemes
+ *        Set shared pointers.
  *
- * \param[in]  quant       additional mesh quantities struct.
+ * \param[in]  cdoq        additional CDO mesh quantities
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]  time_step   pointer to a time step structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_init_sharing(const cs_cdo_quantities_t    *quant,
+cs_cdovcb_scaleq_init_sharing(const cs_cdo_quantities_t    *cdoq,
                               const cs_cdo_connect_t       *connect,
                               const cs_time_step_t         *time_step)
 {
   /* Assign static const pointers */
 
-  cs_shared_quant = quant;
+  cs_shared_quant = cdoq;
   cs_shared_connect = connect;
   cs_shared_time_step = time_step;
 
@@ -1389,7 +1389,7 @@ cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
                              cs_equation_builder_t        *eqb,
                              void                         *context)
 {
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t *)context;
@@ -1404,8 +1404,8 @@ cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
      for vertex-based schemes
   */
 
-  cs_array_real_fill_zero(quant->n_vertices, v_vals);
-  cs_array_real_fill_zero(quant->n_cells, c_vals);
+  cs_array_real_fill_zero(cdoq->n_vertices, v_vals);
+  cs_array_real_fill_zero(cdoq->n_cells, c_vals);
 
   if (eqp->n_ic_defs > 0) {
 
@@ -1483,7 +1483,7 @@ cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
 
   cs_equation_compute_dirichlet_vb(t_eval,
                                    mesh,
-                                   quant,
+                                   cdoq,
                                    connect,
                                    eqp,
                                    eqb->face_bc,
@@ -1762,8 +1762,8 @@ cs_cdovcb_scaleq_solve_steady_state(bool                        cur2prev,
 
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_vertices = quant->n_vertices;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
+  const cs_lnum_t  n_vertices = cdoq->n_vertices;
 
   /* Build an array storing the Dirichlet values at vertices
    * First argument is set to t_cur even if this is a steady computation since
@@ -1787,7 +1787,7 @@ cs_cdovcb_scaleq_solve_steady_state(bool                        cur2prev,
    * Main OpenMP block on cell
    * ------------------------- */
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+# pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1827,7 +1827,7 @@ cs_cdovcb_scaleq_solve_steady_state(bool                        cur2prev,
      * --------------------------------------------- */
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
       /* Set the current cell flag */
 
@@ -1837,7 +1837,7 @@ cs_cdovcb_scaleq_solve_steady_state(bool                        cur2prev,
 
       cs_cell_mesh_build(c_id,
                          cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
-                         connect, quant, cm);
+                         connect, cdoq, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
@@ -1940,7 +1940,7 @@ cs_cdovcb_scaleq_solve_steady_state(bool                        cur2prev,
   /* Last step in the computation of the renormalization coefficient */
 
   cs_cdo_solve_sync_rhs_norm(eqp->sles_param->resnorm_type,
-                             quant->vol_tot,
+                             cdoq->vol_tot,
                              n_vertices,
                              rhs,
                              &rhs_norm);
@@ -2004,8 +2004,8 @@ cs_cdovcb_scaleq_solve_implicit(bool                        cur2prev,
 
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_vertices = quant->n_vertices;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
+  const cs_lnum_t  n_vertices = cdoq->n_vertices;
 
   assert(cs_equation_param_has_time(eqp) == true);
   assert(eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
@@ -2029,7 +2029,7 @@ cs_cdovcb_scaleq_solve_implicit(bool                        cur2prev,
    * Main OpenMP block on cell
    * ------------------------- */
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+# pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -2071,7 +2071,7 @@ cs_cdovcb_scaleq_solve_implicit(bool                        cur2prev,
      * --------------------------------------------- */
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
       /* Set the current cell flag */
 
@@ -2081,7 +2081,7 @@ cs_cdovcb_scaleq_solve_implicit(bool                        cur2prev,
 
       cs_cell_mesh_build(c_id,
                          cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
-                         connect, quant, cm);
+                         connect, cdoq, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
@@ -2253,7 +2253,7 @@ cs_cdovcb_scaleq_solve_implicit(bool                        cur2prev,
   /* Last step in the computation of the renormalization coefficient */
 
   cs_cdo_solve_sync_rhs_norm(eqp->sles_param->resnorm_type,
-                             quant->vol_tot,
+                             cdoq->vol_tot,
                              n_vertices,
                              rhs,
                              &rhs_norm);
@@ -2321,8 +2321,8 @@ cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
 
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_vertices = quant->n_vertices;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
+  const cs_lnum_t  n_vertices = cdoq->n_vertices;
   const cs_real_t  tcoef = 1 - eqp->theta;
 
   /* Build an array storing the Dirichlet values at vertices.
@@ -2378,7 +2378,7 @@ cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
    * Main OpenMP block on cell
    * ------------------------- */
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+# pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -2397,7 +2397,7 @@ cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = _vcbs_cell_system[t_id];
     cs_cell_builder_t  *cb = _vcbs_cell_builder[t_id];
-    cs_real_t  *cell_sources = eqc->source_terms + quant->n_vertices;
+    cs_real_t  *cell_sources = eqc->source_terms + cdoq->n_vertices;
     cs_hodge_t  *diff_hodge =
       (eqc->diffusion_hodge == NULL) ? NULL : eqc->diffusion_hodge[t_id];
     cs_hodge_t  *mass_hodge =
@@ -2424,7 +2424,7 @@ cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
      * --------------------------------------------- */
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
       /* Set the current cell flag */
 
@@ -2434,7 +2434,7 @@ cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
 
       cs_cell_mesh_build(c_id,
                          cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
-                         connect, quant, cm);
+                         connect, cdoq, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
@@ -2651,7 +2651,7 @@ cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
   /* Last step in the computation of the renormalization coefficient */
 
   cs_cdo_solve_sync_rhs_norm(eqp->sles_param->resnorm_type,
-                             quant->vol_tot,
+                             cdoq->vol_tot,
                              n_vertices,
                              rhs,
                              &rhs_norm);
@@ -2777,12 +2777,12 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
   cs_timer_t  t0 = cs_timer_time();
 
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   if (cs_equation_param_has_diffusion(eqp) == false) {
 
-    cs_array_real_fill_zero(connect->bf2v->idx[quant->n_b_faces], vf_flux);
+    cs_array_real_fill_zero(connect->bf2v->idx[cdoq->n_b_faces], vf_flux);
 
     cs_timer_t  t1 = cs_timer_time();
     cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
@@ -2791,8 +2791,8 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
   cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t *)context;
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
-  shared(quant, connect, eqp, eqb, eqc, vf_flux, pot_v, pot_c,          \
+# pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)                   \
+  shared(cdoq, connect, eqp, eqb, eqc, vf_flux, pot_v, pot_c,           \
          _vcbs_cell_builder)                                            \
   firstprivate(t_eval)
   {
@@ -2805,7 +2805,7 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
     const cs_cdo_bc_face_t  *face_bc = eqb->face_bc;
     const cs_adjacency_t  *bf2v = connect->bf2v;
     const cs_adjacency_t  *f2c = connect->f2c;
-    const cs_lnum_t  fidx_shift = f2c->idx[quant->n_i_faces];
+    const cs_lnum_t  fidx_shift = f2c->idx[cdoq->n_i_faces];
 
     /* Set inside the OMP section so that each thread has its own value */
 
@@ -2840,9 +2840,9 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
                                   diff_pty->tensor);
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
-    for (cs_lnum_t bf_id = 0; bf_id < quant->n_b_faces; bf_id++) {
+    for (cs_lnum_t bf_id = 0; bf_id < cdoq->n_b_faces; bf_id++) {
 
-      const cs_lnum_t  f_id = bf_id + quant->n_i_faces;
+      const cs_lnum_t  f_id = bf_id + cdoq->n_i_faces;
       const cs_lnum_t  c_id = f2c->ids[bf_id + fidx_shift];
       const cs_lnum_t  *idx  = bf2v->idx + bf_id;
 
@@ -2861,7 +2861,7 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
           /* Set the local mesh structure for the current cell */
 
-          cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+          cs_cell_mesh_build(c_id, msh_flag, connect, cdoq, cm);
 
           const short int  f = cs_cell_mesh_get_f(f_id, cm);
 
@@ -2893,10 +2893,10 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
           /* Set the local mesh structure for the current cell */
 
-          cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+          cs_cell_mesh_build(c_id, msh_flag, connect, cdoq, cm);
 
           const short int  f = cs_cell_mesh_get_f(f_id, cm);
-          const cs_real_t  f_area = quant->b_face_surf[bf_id];
+          const cs_real_t  f_area = cdoq->b_face_surf[bf_id];
 
           /* Robin BC expression: -K dp/dn = alpha*(p - p0) + beta */
 
@@ -2911,7 +2911,7 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
           const cs_real_t  p0 = robin_values[1];
           const cs_real_t  beta = robin_values[2];
 
-          cs_cdo_quantities_compute_b_wvf(connect, quant, bf_id, wvf);
+          cs_cdo_quantities_compute_b_wvf(connect, cdoq, bf_id, wvf);
 
           short int n_vf = 0;
           for (int i = cm->f2v_idx[f]; i < cm->f2v_idx[f+1]; i++) {
@@ -2927,7 +2927,7 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
           /* Set the local mesh structure for the current cell */
 
-          cs_cell_mesh_build(c_id, msh_flag | add_flag, connect, quant, cm);
+          cs_cell_mesh_build(c_id, msh_flag | add_flag, connect, cdoq, cm);
 
           const short int  f = cs_cell_mesh_get_f(f_id, cm);
 
@@ -3023,7 +3023,7 @@ cs_cdovcb_scaleq_flux_across_plane(const cs_real_t             normal[],
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_adjacency_t  *f2c = connect->f2c;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
   const cs_real_t  t_cur = cs_shared_time_step->t_cur;
 
   double  flx, p_f;
@@ -3053,7 +3053,7 @@ cs_cdovcb_scaleq_flux_across_plane(const cs_real_t             normal[],
 
       /* Build a face-wise view of the mesh */
 
-      cs_face_mesh_build(c_id, f_id, connect, quant, fm);
+      cs_face_mesh_build(c_id, f_id, connect, cdoq, fm);
 
       const short int  sgn = (_dp3(fm->face.unitv, normal) < 0) ? -1 : 1;
 
@@ -3109,7 +3109,7 @@ cs_cdovcb_scaleq_flux_across_plane(const cs_real_t             normal[],
 
         /* Build a face-wise view of the mesh */
 
-        cs_face_mesh_build(c_id, f_id, connect, quant, fm);
+        cs_face_mesh_build(c_id, f_id, connect, cdoq, fm);
 
         const short int  sgn = (_dp3(fm->face.unitv, normal) < 0) ? -1 : 1;
 
@@ -3188,11 +3188,11 @@ cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
   if (diff_flux == NULL)
     return ;
 
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   if (cs_equation_param_has_diffusion(eqp) == false) {
-    cs_array_real_fill_zero(3*quant->n_cells, diff_flux);
+    cs_array_real_fill_zero(3*cdoq->n_cells, diff_flux);
     return;
   }
 
@@ -3202,8 +3202,8 @@ cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
 
   cs_timer_t  t0 = cs_timer_time();
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                \
-  shared(quant, connect, eqp, eqb, eqc, diff_flux, values,            \
+# pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)                \
+  shared(cdoq, connect, eqp, eqb, eqc, diff_flux, values,            \
          t_eval, _vcbs_cell_builder)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
@@ -3233,13 +3233,13 @@ cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
     /* Define the flux by cellwise contributions */
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
       cb->cell_flag = 0; /* No need to make a distincition between cells */
 
       /* Set the local mesh structure for the current cell */
 
-      cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+      cs_cell_mesh_build(c_id, msh_flag, connect, cdoq, cm);
 
       if (!eqb->diff_pty_uniform) /* cell_flag is always set to 0 */
         cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
@@ -3288,11 +3288,11 @@ cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
   if (diff_flux == NULL)
     return ;
 
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   if (cs_equation_param_has_diffusion(eqp) == false) {
-    cs_array_real_fill_zero(connect->c2e->idx[quant->n_cells], diff_flux);
+    cs_array_real_fill_zero(connect->c2e->idx[cdoq->n_cells], diff_flux);
     return;
   }
 
@@ -3303,8 +3303,8 @@ cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
 
   cs_timer_t  t0 = cs_timer_time();
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                \
-  shared(quant, connect, eqp, eqb, eqc, diff_flux, values,            \
+# pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)                \
+  shared(cdoq, connect, eqp, eqb, eqc, diff_flux, values,            \
          t_eval, _vcbs_cell_builder)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
@@ -3336,13 +3336,13 @@ cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
     /* Define the flux by cellwise contributions */
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
       cb->cell_flag = 0; /* No need to make a distincition between cells */
 
       /* Set the local mesh structure for the current cell */
 
-      cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+      cs_cell_mesh_build(c_id, msh_flag, connect, cdoq, cm);
 
       if (!eqb->diff_pty_uniform) /* cell_flag is always set to 0 */
         cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
@@ -3388,7 +3388,7 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
 {
   cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t  *)context;
 
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   if (v_gradient == NULL)
@@ -3396,19 +3396,19 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
               " Result array has to be allocated prior to the call.");
 
   cs_real_t  *dualcell_vol = NULL;
-  BFT_MALLOC(dualcell_vol, quant->n_vertices, cs_real_t);
+  BFT_MALLOC(dualcell_vol, cdoq->n_vertices, cs_real_t);
 
-# pragma omp parallel for if (3*quant->n_vertices > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < 3*quant->n_vertices; i++)
+# pragma omp parallel for if (3*cdoq->n_vertices > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < 3*cdoq->n_vertices; i++)
     v_gradient[i]  = 0;
-# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < quant->n_vertices; i++)
+# pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++)
     dualcell_vol[i] = 0;
 
   cs_timer_t  t0 = cs_timer_time();
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)            \
-  shared(quant, connect, eqc, v_gradient, v_values, dualcell_vol, \
+# pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)            \
+  shared(cdoq, connect, eqc, v_gradient, v_values, dualcell_vol, \
          _vcbs_cell_builder, cs_glob_n_ranks)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
@@ -3434,11 +3434,11 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
     /* Define the flux by cellwise contributions */
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
       /* Set the local mesh structure for the current cell */
 
-      cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+      cs_cell_mesh_build(c_id, msh_flag, connect, cdoq, cm);
 
       /* Define a local buffer keeping the value of the discrete potential
          for the current cell */
@@ -3478,7 +3478,7 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
     }
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
-    for (cs_lnum_t i = 0; i < quant->n_vertices; i++) {
+    for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
       cs_real_t  inv_dualcell_vol = 1/dualcell_vol[i];
       for (int k = 0; k < 3; k++)
         v_gradient[3*i + k] *= inv_dualcell_vol;

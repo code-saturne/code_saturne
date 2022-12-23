@@ -820,12 +820,12 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
   assert(eqp != NULL && eqb != NULL);
 
   if (eqp->space_scheme != CS_SPACE_SCHEME_CDOFB && eqp->dim != 1)
-    bft_error(__FILE__, __LINE__, 0, " Invalid type of equation.\n"
-              " Expected: scalar-valued CDO face-based equation.");
+    bft_error(__FILE__, __LINE__, 0, " %s: Invalid type of equation.\n"
+              " Expected: scalar-valued CDO face-based equation.", __func__);
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  cs_lnum_t  n_cells = connect->n_cells;
-  cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
+  const cs_lnum_t  n_cells = connect->n_cells;
+  const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
   cs_cdofb_scaleq_t  *eqc = NULL;
 
   BFT_MALLOC(eqc, 1, cs_cdofb_scaleq_t);
