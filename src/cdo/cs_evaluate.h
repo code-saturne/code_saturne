@@ -265,6 +265,20 @@ cs_evaluate_potential_at_faces_by_analytic(const cs_xdef_t   *def,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Evaluate a potential field at cell centers from a definition by
+ *         array
+ *
+ * \param[in]      def       pointer to a cs_xdef_t pointer
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_potential_at_cells_by_array(const cs_xdef_t   *def,
+                                        cs_real_t          retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate a potential field at cell centers from a definition by
  *         value
  *
  * \param[in]      def       pointer to a cs_xdef_t pointer

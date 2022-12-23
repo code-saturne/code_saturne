@@ -308,7 +308,6 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
  * \param[in]      eqp        pointer to a cs_equation_param_t
  * \param[in]      face_bc    pointer to a cs_cdo_bc_face_t structure
  * \param[in]      t_eval     time at which one evaluates the boundary cond.
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] values     pointer to the array of values to set
  */
 /*----------------------------------------------------------------------------*/
@@ -320,7 +319,6 @@ cs_equation_compute_dirichlet_cb(const cs_mesh_t            *mesh,
                                  const cs_equation_param_t  *eqp,
                                  const cs_cdo_bc_face_t     *face_bc,
                                  cs_real_t                   t_eval,
-                                 cs_cell_builder_t          *cb,
                                  cs_real_t                  *values);
 
 /*----------------------------------------------------------------------------*/

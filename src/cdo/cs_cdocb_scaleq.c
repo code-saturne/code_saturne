@@ -49,6 +49,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_blas.h"
 #include "cs_domain.h"
 #include "cs_cdo_bc.h"
@@ -66,9 +67,7 @@
 #include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_sdm.h"
-#include "cs_solid_selection.h"
 #include "cs_source_term.h"
-#include "cs_static_condensation.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -120,8 +119,128 @@ static cs_cell_builder_t           **_scb_cell_builder = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize the local builder structure used for building the system
- *          cellwise
+ * \brief  Take into account a Neumann BCs on the potential, which is equivelant
+ *         to applying Dirichlet BCs on the flux
+ *         This prototype matches the function pointer cs_cdo_apply_boundary_t
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       fm        pointer to a cs_face_mesh_t structure
+ * \param[in]       hodge     pointer to a \ref cs_hodge_t structure
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_scb_apply_neumann(const cs_equation_param_t    *eqp,
+                   const cs_cell_mesh_t         *cm,
+                   cs_face_mesh_t               *fm,
+                   cs_hodge_t                   *hodge,
+                   cs_cell_builder_t            *cb,
+                   cs_cell_sys_t                *csys)
+{
+  CS_NO_WARN_IF_UNUSED(eqp);
+  CS_NO_WARN_IF_UNUSED(fm);
+  CS_NO_WARN_IF_UNUSED(hodge);
+
+  double  *x_neu = cb->values;
+  double  *ax_neu = cb->values + 1;
+  cs_sdm_t  *m = csys->mat;
+
+  for (short int f = 0; f < csys->n_dofs; f++) {
+
+    if (cs_cdo_bc_is_neumann(csys->bf_flag[f])) {
+
+      /* Build x_neu */
+
+      bool  is_non_homogeneous = false; /* Assume homogeneous by default */
+
+      memset(cb->values, 0, 2*sizeof(double));
+
+      if (csys->bf_flag[f] & CS_CDO_BC_NEUMANN) {
+        *x_neu = csys->neu_values[f];
+        is_non_homogeneous = true;
+        csys->rhs[cm->n_fc] -= -*x_neu*cm->f_sgn[f];
+      }
+
+      if (is_non_homogeneous) {
+
+        for (int i = 0; i < m->n_rows; i++) {
+
+          if (i == f)
+            continue;
+
+          *ax_neu = *x_neu * m->val[i*m->n_rows + f];
+          csys->rhs[i] -= *ax_neu;
+
+        }
+
+      } /* Non-homogeneous Dirichlet BC */
+
+      /* Set RHS to the Dirichlet value for the related face */
+
+      csys->rhs[f] = *x_neu;
+
+      /* Second pass: Replace the Dirichlet entry by a one and fill with
+       * zero the remaining row and column */
+
+      for (int i = 0; i < m->n_rows; i++) {
+
+        if (i != f) {
+          m->val[i*m->n_rows + f] = 0.0;
+        }
+        else { /* i == f */
+
+          for (int j = 0; j < m->n_cols; j++)
+            m->val[f*m->n_rows + j] = 0.0;
+
+          m->val[f*m->n_rows + f] = 1.0;
+        }
+
+      } /* row i */
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Take into account a Dirichlet BCs on the potential
+ *         This prototype matches the function pointer cs_cdo_apply_boundary_t
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       fm        pointer to a cs_face_mesh_t structure
+ * \param[in]       hodge     pointer to a \ref cs_hodge_t structure
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_scb_apply_dirichlet(const cs_equation_param_t   *eqp,
+                     const cs_cell_mesh_t        *cm,
+                     cs_face_mesh_t              *fm,
+                     cs_hodge_t                  *hodge,
+                     cs_cell_builder_t           *cb,
+                     cs_cell_sys_t               *csys)
+{
+  CS_NO_WARN_IF_UNUSED(eqp);
+  CS_NO_WARN_IF_UNUSED(fm);
+  CS_NO_WARN_IF_UNUSED(hodge);
+  CS_NO_WARN_IF_UNUSED(cb);
+
+  /* Update the RHS with the Dirichlet value for the related face */
+
+  for (short int f = 0; f < csys->n_dofs; f++)
+    if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f]))
+      csys->rhs[f] += -cm->f_sgn[f]*csys->dir_values[f];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize the local builder structure used for building the system
+ *        cellwise
  *
  * \param[in]      connect     pointer to a cs_cdo_connect_t structure
  *
@@ -403,7 +522,7 @@ _full_assembly(const cs_cell_sys_t            *csys,
                cs_cdocb_scaleq_t              *eqc,
                cs_cdo_assembly_t              *asb)
 {
-  CS_UNUSED(asb);
+  CS_NO_WARN_IF_UNUSED(asb);
 
   const short int  n_f = cm->n_fc;
   const cs_lnum_t  n_faces = cs_shared_quant->n_faces;
@@ -516,46 +635,55 @@ _full_assembly(const cs_cell_sys_t            *csys,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize the local structure for the current cell
+ * \brief Initialize the local structure for the current cell
  *
- * \param[in]      cm          pointer to a cellwise view of the mesh
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      eqc         pointer to a cs_cdocb_scaleq_t strucutre
- * \param[in, out] csys        pointer to a cellwise view of the system
- * \param[in, out] cb          pointer to a cellwise builder
+ * \param[in]      cm      pointer to a cellwise view of the mesh
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      eqb     pointer to a cs_equation_builder_t structure
+ * \param[in, out] eqc     pointer to a cs_cdocb_scaleq_t strucutre
+ * \param[in, out] csys    pointer to a cellwise view of the system
+ * \param[in, out] cb      pointer to a cellwise builder
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_cdocb_scaleq_init_cell_system(const cs_cell_mesh_t         *cm,
-                               const cs_equation_param_t    *eqp,
-                               const cs_equation_builder_t  *eqb,
-                               const cs_cdocb_scaleq_t      *eqc,
-                               cs_cell_sys_t                *csys,
-                               cs_cell_builder_t            *cb)
+_scb_init_cell_system(const cs_cell_mesh_t         *cm,
+                      const cs_equation_param_t    *eqp,
+                      const cs_equation_builder_t  *eqb,
+                      cs_cdocb_scaleq_t            *eqc,
+                      cs_cell_sys_t                *csys,
+                      cs_cell_builder_t            *cb)
 {
+  /* Determine the OpenMP thread id */
+
+  int t_id = 0;
+#if defined(HAVE_OPENMP)
+  t_id = omp_get_thread_num();
+  assert(t_id < cs_glob_n_threads);
+#endif /* openMP */
+
   /* Cell-wise view of the linear system to build */
 
-  const int  n_dofs = cm->n_fc;
+  const int  n_dofs = cm->n_fc + 1;
 
   csys->c_id = cm->c_id;
   csys->n_dofs = n_dofs;
 
-  /* Initialize the local system */
+  /* Initialize the local system (Only the A block is considered, B is stored
+   * in an unassembled way during the system building)
+   *
+   *     |        |         |
+   *     |   A    |    Bt   |  B is the divergence (Bt the gradient)
+   *     |        |         |  A is csys->mat in what follows
+   *     |--------|---------|  The viscous part arising from the CDO-Cb
+   *     |        |         |  schemes for scalar-valued variables
+   *     |   B    |    0    |
+   *     |        |         |
+   *
+   */
 
   cs_cell_sys_reset(cm->n_fc, csys);
-
-  cs_sdm_square_init(n_dofs, csys->mat);
-
-  memset(csys->rhs, 0., (n_dofs + 1)*sizeof(cs_real_t));
-
-  int t_id = 0;
-
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-  t_id = omp_get_thread_num();
-  assert(t_id < cs_glob_n_threads);
-#endif /* openMP */
+  cs_sdm_square_init(cm->n_fc, csys->mat);
 
   for (short int f = 0; f < cm->n_fc; f++) {
 
@@ -584,8 +712,7 @@ _cdocb_scaleq_init_cell_system(const cs_cell_mesh_t         *cm,
   cs_real_t *div_op = eqc->div_op_cw[t_id];
 
   for (short int f = 0; f < cm->n_fc; f++)
-    div_op[f] = (  csys->bf_flag[f] & CS_CDO_BC_HMG_NEUMANN
-                 ||csys->bf_flag[f] & CS_CDO_BC_NEUMANN) ? 0.0: -cm->f_sgn[f];
+    div_op[f] = (cs_cdo_bc_is_neumann(csys->bf_flag[f])) ? 0.0 : -cm->f_sgn[f];
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOCB_SCALEQ > 2
   if (cs_dbg_cw_test(NULL, cm, csys)) {
@@ -608,37 +735,34 @@ _cdocb_scaleq_init_cell_system(const cs_cell_mesh_t         *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build a linear system in the steady-state case
+ * \brief  Build a linear system in the steady-state case for scalar-valued
+ *         cell-based schemes
  *
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in]      eqb       pointer to a cs_equation_builder_t structure
+ * \param[in,out]  eqb       pointer to a cs_equation_builder_t structure
  * \param[in,out]  eqc       pointer to a cs_cdocb_scaleq_t strucutre
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_steady_build(const cs_equation_param_t      *eqp,
-              const cs_equation_builder_t    *eqb,
+_scb_steady_build(const cs_equation_param_t      *eqp,
+              cs_equation_builder_t          *eqb,
               cs_cdocb_scaleq_t              *eqc)
 {
   /* Retrieve shared structures */
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
   const cs_time_step_t  *ts = cs_shared_time_step;
 
 #if defined(DEBUG) && !defined(NDEBUG)
-  if (quant->n_b_faces > 0)
+  if (cdoq->n_b_faces > 0)
     assert(eqb->dir_values != NULL);
 #endif
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+# pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)
   {
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
@@ -669,7 +793,7 @@ _steady_build(const cs_equation_param_t      *eqp,
     /* --------------------------------------------- */
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
       /* Set the current cell flag */
 
@@ -679,7 +803,7 @@ _steady_build(const cs_equation_param_t      *eqp,
 
       cs_cell_mesh_build(c_id,
                          cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
-                         connect, quant, cm);
+                         connect, cdoq, cm);
 
       /* For the stationary problem, the global system writes:
        *
@@ -687,19 +811,18 @@ _steady_build(const cs_equation_param_t      *eqp,
        *     |   A    |    Bt   |  B is the divergence (Bt the gradient)
        *     |        |         |  A is csys->mat in what follows
        *     |--------|---------|  The viscous part arising from the CDO-Cb
-       *     |        |         |  schemes for vector-valued variables and
-       *     |   B    |    0    |  additional terms as the linearized
-       *     |        |         |  convective term
+       *     |        |         |  schemes for scalar-valued variables
+       *     |   B    |    0    |
+       *     |        |         |
        *
        * Set the local (i.e. cellwise) structures for the current cell
        */
 
-      _cdocb_scaleq_init_cell_system(cm, eqp, eqb,
-                                     eqc, csys, cb);
+      _scb_init_cell_system(cm, eqp, eqb, eqc, csys, cb);
 
 
-      /* 2- SCALAR EQUATION */
-      /* ================================ */
+      /* 2- SCALAR DIFFUSION EQUATION */
+      /* ============================ */
 
       cs_cdocb_scaleq_diffusion(eqp, eqb, eqc, cm,
                                 mass_hodge, csys, cb);
@@ -767,14 +890,13 @@ _steady_build(const cs_equation_param_t      *eqp,
 static void
 _cdocb_scaleq_current_to_previous(cs_cdocb_scaleq_t       *eqc)
 {
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
 
   if (eqc->flux_pre != NULL)
-    memcpy(eqc->flux_pre, eqc->flux,
-           quant->n_faces * sizeof(cs_real_t));
-  if (eqc->potential_pre != NULL)
-    memcpy(eqc->potential_pre, eqc->potential,
-           quant->n_cells * sizeof(cs_real_t));
+    cs_array_real_copy(cdoq->n_faces, eqc->flux, eqc->flux_pre);
+
+  cs_field_t  *fld = cs_field_by_id(eqc->var_field_id);
+  cs_field_current_to_previous(fld);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -808,43 +930,29 @@ _cdocb_cell_divergence(const cs_cell_mesh_t         *cm,
   return div;
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update the variables related to CDO-Cb system after a resolution
- *
- * \param[in, out] tce       pointer to a timer counter
- * \param[in, out] fld       pointer to a cs_field_t structure
- * \param[in, out] eqc       pointer to a context structure
- * \param[in]      cur2prev  true if one performs "current to previous" op.
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_update_cell_fields(cs_timer_counter_t      *tce,
-                    cs_field_t              *fld,
-                    cs_cdocb_scaleq_t       *eqc,
-                    bool                     cur2prev)
-{
-  cs_timer_t  t0 = cs_timer_time();
-
-  cs_cdo_quantities_t *quant = cs_shared_quant;
-
-  /* Copy current field values to previous values */
-
-  if (cur2prev)
-    cs_field_current_to_previous(fld);
-
-  memcpy(fld->val, eqc->potential, quant->n_cells*sizeof(cs_real_t));
-
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(tce, &t0, &t1);
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if the generic structures for building a CDO-Cb scheme are
+ *        allocated
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_cdocb_scaleq_is_initialized(void)
+{
+  if (_scb_cell_system == NULL || _scb_cell_builder == NULL)
+    return false;
+  else
+    return true;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -872,222 +980,26 @@ cs_cdocb_scaleq_get(cs_cell_sys_t       **csys,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Copy current content of the related variables-fields
- *         to previous values
- *         Case of the monolithic coupling algorithm.
- *
- * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in, out] eqb       pointer to a cs_equation_builder_t structure
- * \param[in, out] context   pointer to a scheme context structure
- *
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdocb_scaleq_current_to_previous(const cs_equation_param_t  *eqp,
-                                   cs_equation_builder_t       *eqb,
-                                   void                        *context)
-{
-  CS_UNUSED(eqp);
-  CS_UNUSED(eqb);
-
-  cs_cdocb_scaleq_t *eqc = (cs_cdocb_scaleq_t *)context;
-  _cdocb_scaleq_current_to_previous(eqc);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Build the local matrices arising from the diffusion term in the
- *          scalar-valued CDO-Cb schemes.
- *
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      eqc         context for this kind of discretization
- * \param[in]      cm          pointer to a cellwise view of the mesh
- * \param[in, out] mass_hodge  pointer to a cs_hodge_t structure for diffusion
- * \param[in, out] csys        pointer to a cellwise view of the system
- * \param[in, out] cb          pointer to a cellwise builder
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdocb_scaleq_diffusion(const cs_equation_param_t     *eqp,
-                          const cs_equation_builder_t   *eqb,
-                          const cs_cdocb_scaleq_t       *eqc,
-                          const cs_cell_mesh_t          *cm,
-                          cs_hodge_t                    *mass_hodge,
-                          cs_cell_sys_t                 *csys,
-                          cs_cell_builder_t             *cb)
-{
-  if (cs_equation_param_has_diffusion(eqp)) {   /* DIFFUSION TERM
-                                                 * ============== */
-
-    /* Set the diffusion property */
-
-    assert(mass_hodge != NULL);
-    if (!(eqb->diff_pty_uniform))
-      cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
-                                     mass_hodge);
-
-    /* Define the local stiffness matrix: local matrix owned by the cellwise
-       builder (store in cb->loc) */
-
-    bool computed = eqc->get_mass_matrix(cm, mass_hodge, cb);
-
-    /* Add the local diffusion operator to the local system */
-    if(computed)
-      cs_sdm_add(csys->mat, mass_hodge->matrix);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOCB_SCALEQ_DBG > 1
-    if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after diffusion", csys);
-#endif
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Predefined extra-operations related to this equation
- *
- * \param[in]       eqp        pointer to a cs_equation_param_t structure
- * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  context    pointer to cs_cdocb_scaleq_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdocb_scaleq_extra_post(const cs_equation_param_t  *eqp,
-                           cs_equation_builder_t      *eqb,
-                           void                       *context)
-{
-  CS_UNUSED(eqp);
-
-  cs_timer_t  t0 = cs_timer_time();
-
-  cs_cdocb_scaleq_t  *eqc = (cs_cdocb_scaleq_t *)context;
-
-  const cs_field_t  *field = cs_field_by_id(eqc->var_field_id);
-  const cs_lnum_t  n_i_faces = cs_shared_connect->n_faces[CS_INT_FACES];
-  const cs_real_t  *bface_values = eqc->flux + n_i_faces;
-
-  /* In case of postprocessing of the border faces, one has to check if there
-     is a mesh modification. In particular, a removal of 2D extruded border
-     faces*/
-
-  bool  use_parent = (cs_shared_quant->remove_boundary_faces) ? false : true;
-
-  /* Field post-processing */
-
-  char *postlabel = NULL;
-  int  len = strlen(field->name) + 8 + 1;
-  BFT_MALLOC(postlabel, len, char);
-  sprintf(postlabel, "%s.Border", field->name);
-
-  cs_post_write_var(CS_POST_MESH_BOUNDARY,
-                    CS_POST_WRITER_ALL_ASSOCIATED,
-                    postlabel,
-                    field->dim,
-                    true,                  /* interlaced arrays */
-                    use_parent,
-                    CS_POST_TYPE_cs_real_t,
-                    NULL,                  /* values on cells */
-                    NULL,                  /* values at internal faces */
-                    bface_values,          /* values at border faces */
-                    cs_shared_time_step);  /* time step management structure */
-
-  BFT_FREE(postlabel);
-
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve an array of values at mesh faces for the current context.
- *         The lifecycle of this array is managed by the code. So one does not
- *         have to free the return pointer.
- *
- * \param[in, out]  context    pointer to a data structure cast on-the-fly
- * \param[in]       previous   retrieve the previous state (true/false)
- *
- * \return  a pointer to an array of cs_real_t (size n_faces)
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdocb_scaleq_get_face_values(void    *context,
-                                bool     previous)
-{
-  cs_cdocb_scaleq_t  *eqc = (cs_cdocb_scaleq_t *)context;
-
-  if (eqc == NULL)
-    return NULL;
-
-  if (previous) {
-    assert(eqc->flux_pre != NULL);
-    return eqc->flux_pre;
-  }
-  else
-    return eqc->flux;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve an array of values at mesh vertices for the variable field
- *         associated to the given context
- *         The lifecycle of this array is managed by the code. So one does not
- *         have to free the return pointer.
- *
- * \param[in, out]  context    pointer to a data structure cast on-the-fly
- * \param[in]       previous   retrieve the previous state (true/false)
- *
- * \return  a pointer to an array of cs_real_t (size: n_cells)
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdocb_scaleq_get_cell_values(void        *context,
-                                bool         previous)
-{
-  cs_cdocb_scaleq_t  *eqc = (cs_cdocb_scaleq_t *)context;
-  if (eqc == NULL)
-    return NULL;
-
-  cs_field_t *potential_fld = cs_field_by_id(eqc->var_field_id);
-
-  if (previous) {
-    assert(potential_fld->val_pre != NULL);
-    return potential_fld->val_pre;
-  }
-  else
-    return potential_fld->val;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Set shared pointers from the main domain members
  *
- * \param[in]  quant       additional mesh quantities struct.
+ * \param[in]  cdoq        additional CDO mesh quantities
  * \param[in]  connect     pointer to a \ref cs_cdo_connect_t struct.
  * \param[in]  time_step   pointer to a \ref cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdocb_scaleq_init_sharing(const cs_cdo_quantities_t     *quant,
+cs_cdocb_scaleq_init_sharing(const cs_cdo_quantities_t     *cdoq,
                              const cs_cdo_connect_t        *connect,
                              const cs_time_step_t          *time_step)
 {
   /* Assign static const pointers */
 
-  cs_shared_quant = quant;
+  cs_shared_quant = cdoq;
   cs_shared_connect = connect;
   cs_shared_time_step = time_step;
 
-  /* Need to build special range set and interfaces ? */
-
-  int  row_size = connect->n_max_fbyc,
-       col_size = connect->n_max_fbyc;
+  /* Define local structures */
 
   assert(cs_glob_n_threads > 0);
   BFT_MALLOC(_scb_cell_system, cs_glob_n_threads, cs_cell_sys_t *);
@@ -1098,7 +1010,7 @@ cs_cdocb_scaleq_init_sharing(const cs_cdo_quantities_t     *quant,
     _scb_cell_builder[i] = NULL;
   }
 
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+#if defined(HAVE_OPENMP) /* Each thread initializes its structures */
 #pragma omp parallel
   {
     int t_id = omp_get_thread_num();
@@ -1106,21 +1018,22 @@ cs_cdocb_scaleq_init_sharing(const cs_cdo_quantities_t     *quant,
 
     _scb_cell_system[t_id] = cs_cell_sys_create(connect->n_max_fbyc + 1,
                                                 connect->n_max_fbyc,
-                                                1, NULL);
+                                                1, NULL); /* One block */
+
     _scb_cell_builder[t_id] = _cell_builder_create(connect);
   }
 #else
   assert(cs_glob_n_threads == 1);
   _scb_cell_system[0] = cs_cell_sys_create(connect->n_max_fbyc + 1,
                                            connect->n_max_fbyc,
-                                           1, NULL);
-  _scb_cell_builder[0] = _cell_builder_create(connect);
+                                           1, NULL); /* One block */
 
-#endif /* openMP */
+  _scb_cell_builder[0] = _cell_builder_create(connect);
+#endif /* OpenMP */
 
   /* SLES needs these structures for advanced PETSc hooks */
 
-  cs_cdocb_monolithic_sles_init_sharing(connect, quant);
+  cs_cdocb_monolithic_sles_init_sharing(connect, cdoq);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1132,8 +1045,6 @@ cs_cdocb_scaleq_init_sharing(const cs_cdo_quantities_t     *quant,
 void
 cs_cdocb_scaleq_finalize_sharing(void)
 {
-  /* Need to build special range set and interfaces ? */
-
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 #pragma omp parallel
   {
@@ -1177,15 +1088,12 @@ cs_cdocb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   if (eqp->space_scheme != CS_SPACE_SCHEME_CDOCB && eqp->dim != 1)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid type of equation.\n"
-              " Expected: scalar-valued CDO Cell-based equation.", __func__);
+              " Expected: scalar-valued CDO cell-based equation.", __func__);
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_cdo_quantities_t *quant = cs_shared_quant;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
   const cs_lnum_t  n_cells = connect->n_cells;
   const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
-
-  const cs_domain_t *domain = cs_glob_domain;
-
   cs_cdocb_scaleq_t  *eqc = NULL;
 
   BFT_MALLOC(eqc, 1, cs_cdocb_scaleq_t);
@@ -1196,47 +1104,24 @@ cs_cdocb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* Dimensions of the algebraic system */
 
   eqc->n_faces = n_faces;
-  eqc->n_dofs = n_faces;
+  eqc->n_dofs = n_faces + n_cells;
 
   /* Flag to indicate the minimal set of quantities to build in a cell mesh
      According to the situation, additional flags have to be set */
+
   eqb->msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ;
 
+  /* Values of the flux at each face (interior and border) i.e. take into
+     account BCs */
+
   BFT_MALLOC(eqc->flux, n_faces, cs_real_t);
-  BFT_MALLOC(eqc->flux_pre, n_faces, cs_real_t);
-  BFT_MALLOC(eqc->potential, n_cells, cs_real_t);
-  BFT_MALLOC(eqc->potential_pre, n_cells, cs_real_t);
-  BFT_MALLOC(eqc->rc_tilda, n_cells, cs_real_t);
+  cs_array_real_fill_zero(n_faces, eqc->flux);
 
-# pragma omp parallel if (n_cells > CS_THR_MIN)
-  {
-    /* Values at each face (interior and border) i.e. take into account BCs */
-
-#   pragma omp for nowait
-    for (cs_lnum_t i = 0; i < n_faces; i++) eqc->flux[i] = 0;
-
-#   pragma omp for nowait
-    for (cs_lnum_t i = 0; i < n_faces; i++) eqc->flux_pre[i] = 0;
-
-#   pragma omp for nowait
-    for (cs_lnum_t i = 0; i < n_cells; i++) {
-      eqc->potential[i] = 0.;
-      eqc->potential_pre[i] = 0.;
-    }
-
-    /* Store the last computed values of the field at cell centers and the data
-       needed to compute the cell values from the face values.
-       No need to synchronize all these quantities since they are only cellwise
-       quantities. */
-
-#   pragma omp for
-    for (cs_lnum_t i = 0; i < n_cells; i++) eqc->rc_tilda[i] = 0;
+  eqc->flux_pre = NULL;
+  if (cs_equation_param_has_time(eqp)) {
+    BFT_MALLOC(eqc->flux_pre, n_faces, cs_real_t);
+    cs_array_real_fill_zero(n_faces, eqc->flux_pre);
   }
-
-  /* Assume the matrix is diagonal */
-
-  BFT_MALLOC(eqc->acf_tilda, connect->c2f->idx[n_cells], cs_real_t);
-  memset(eqc->acf_tilda, 0, connect->c2f->idx[n_cells]*sizeof(cs_real_t));
 
   bool  need_eigen =
     (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
@@ -1244,12 +1129,11 @@ cs_cdocb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* Diffusion term */
 
-  /* For Cell-based scheme, no diffusion hodge
+  /* For cell-based scheme, no diffusion hodge
    * operator is needed, only mass hodge operator
    * is used in a coupled Saddle-Point system. */
   /* ----------------------------------------- */
 
-  eqc->get_stiffness_matrix = NULL;
   eqc->diffusion_hodge = NULL;
 
   eqc->get_mass_matrix = NULL;
@@ -1290,8 +1174,8 @@ cs_cdocb_scaleq_init_context(const cs_equation_param_t   *eqp,
   switch (eqp->default_enforcement) {
 
   case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
-    eqc->enforce_neumann = cs_cdocb_neumann;
-    eqc->enforce_dirichlet = cs_cdocb_dirichlet;
+    eqc->enforce_neumann = _scb_apply_neumann;
+    eqc->enforce_dirichlet = _scb_apply_dirichlet;
     break;
 
   default:
@@ -1316,7 +1200,7 @@ cs_cdocb_scaleq_init_context(const cs_equation_param_t   *eqp,
   if (cs_equation_param_has_sourceterm(eqp)) {
 
     BFT_MALLOC(eqc->source_terms, n_cells, cs_real_t);
-    memset(eqc->source_terms, 0, n_cells*sizeof(cs_real_t));
+    cs_array_real_fill_zero(n_cells, eqc->source_terms);
 
   } /* There is at least one source term */
 
@@ -1325,7 +1209,7 @@ cs_cdocb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   cs_cdo_system_helper_t  *sh = NULL;
 
-  cs_lnum_t  block_size = quant->n_faces + quant->n_cells;
+  cs_lnum_t  block_size = cdoq->n_faces + cdoq->n_cells;
 
   sh = cs_cdo_system_helper_create(CS_CDO_SYSTEM_SADDLE_POINT,
                                    1,
@@ -1333,7 +1217,7 @@ cs_cdocb_scaleq_init_context(const cs_equation_param_t   *eqp,
                                    1);
 
   cs_cdocb_monolithic_sles_t  *msles =
-    cs_cdocb_monolithic_sles_create(quant->n_faces, quant->n_cells);
+    cs_cdocb_monolithic_sles_create(cdoq->n_faces, cdoq->n_cells);
 
   eqc->msles = msles;
 
@@ -1403,17 +1287,10 @@ cs_cdocb_scaleq_free_context(void       *scheme_context)
   if (eqc->flux_pre != NULL)
     BFT_FREE(eqc->flux_pre);
 
-  BFT_FREE(eqc->potential);
-  if (eqc->potential_pre != NULL)
-    BFT_FREE(eqc->potential_pre);
-
-  BFT_FREE(eqc->rc_tilda);
-  BFT_FREE(eqc->acf_tilda);
-
   cs_hodge_free_context(&(eqc->diffusion_hodge));
   cs_hodge_free_context(&(eqc->mass_hodge));
 
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+#if defined(HAVE_OPENMP)
 #pragma omp parallel
   {
     int t_id = omp_get_thread_num();
@@ -1421,8 +1298,8 @@ cs_cdocb_scaleq_free_context(void       *scheme_context)
   }
 #else
   assert(cs_glob_n_threads == 1);
-    BFT_FREE(eqc->div_op_cw[0]);
-#endif /* openMP */
+  BFT_FREE(eqc->div_op_cw[0]);
+#endif
 
   BFT_FREE(eqc->div_op_cw);
 
@@ -1430,11 +1307,11 @@ cs_cdocb_scaleq_free_context(void       *scheme_context)
 
   cs_cdocb_monolithic_sles_free(&(eqc->msles));
 
-  /* Other pointers are only shared (i.e. not owner) */
+  /* Other pointers are shared (i.e. not owner) */
 
   BFT_FREE(eqc);
 
-  return;
+  return NULL;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1457,21 +1334,20 @@ cs_cdocb_scaleq_setup(cs_real_t                      t_eval,
                       const cs_equation_param_t     *eqp,
                       cs_equation_builder_t         *eqb)
 {
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   /* Compute the values of the Dirichlet BC */
 
-  BFT_MALLOC(eqb->dir_values, quant->n_b_faces, cs_real_t);
-  memset(eqb->dir_values, 0, quant->n_b_faces*sizeof(cs_real_t));
+  BFT_MALLOC(eqb->dir_values, cdoq->n_b_faces, cs_real_t);
+  cs_array_real_fill_zero(cdoq->n_b_faces, eqb->dir_values);
 
   cs_equation_compute_dirichlet_cb(mesh,
-                                   quant,
+                                   cdoq,
                                    connect,
                                    eqp,
                                    eqb->face_bc,
                                    t_eval,
-                                   _scb_cell_builder[0], /* static variable */
                                    eqb->dir_values);
 
   /* Internal enforcement of DoFs */
@@ -1506,70 +1382,393 @@ cs_cdocb_scaleq_init_values(cs_real_t                     t_eval,
                             cs_equation_builder_t        *eqb,
                             void                         *context)
 {
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  CS_NO_WARN_IF_UNUSED(eqb);
+
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   cs_cdocb_scaleq_t  *eqc = (cs_cdocb_scaleq_t *)context;
-  cs_real_t  *potential_vals = eqc->potential;
-  cs_real_t  *flux_vals = eqc->flux;
-
-  /* Check that a face interface has been defined */
-
-  if (eqp->n_ic_defs > 0 && cs_glob_n_ranks > 1 && connect->face_ifs == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Interface set structure at faces not allocated.\n",
-              __func__);
+  assert(eqc->var_field_id == field_id);
+  cs_field_t  *fld = cs_field_by_id(field_id);
 
   /* By default, 0 is set as initial condition for the computational domain */
 
-  memset(flux_vals, 0, quant->n_faces*sizeof(cs_real_t));
-  memset(potential_vals, 0, quant->n_cells*sizeof(cs_real_t));
+  cs_array_real_fill_zero(cdoq->n_faces, eqc->flux);
+  cs_array_real_fill_zero(cdoq->n_cells, fld->val);
 
-  if (eqp->n_ic_defs > 0) {
+  for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
 
-    cs_lnum_t  *def2f_ids = (cs_lnum_t *)cs_cdo_toolbox_get_tmpbuf();
-    cs_lnum_t  *def2f_idx = NULL;
+    const cs_xdef_t  *def = eqp->ic_defs[def_id];
 
-    BFT_MALLOC(def2f_idx, eqp->n_ic_defs + 1, cs_lnum_t);
+    switch(def->type) {
 
-    cs_cdo_sync_vol_def_at_faces(eqp->n_ic_defs, eqp->ic_defs,
-                                 def2f_idx,
-                                 def2f_ids);
+    case CS_XDEF_BY_ARRAY:
+      cs_evaluate_potential_at_cells_by_array(def, fld->val);
+      break;
 
-    for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
+    case CS_XDEF_BY_VALUE:
+      cs_evaluate_potential_at_cells_by_value(def, fld->val);
+      break;
 
-      /* Get and then set the definition of the initial condition */
+    case CS_XDEF_BY_ANALYTIC_FUNCTION:
+      cs_evaluate_potential_at_cells_by_analytic(def, t_eval, fld->val);
+      break;
 
-      const cs_xdef_t  *def = eqp->ic_defs[def_id];
-      const cs_lnum_t  n_f_selected = def2f_idx[def_id+1] - def2f_idx[def_id];
-      const cs_lnum_t  *selected_lst = def2f_ids + def2f_idx[def_id];
+    case CS_XDEF_BY_DOF_FUNCTION:
+      cs_evaluate_potential_at_cells_by_dof_func(def, fld->val);
+      break;
 
-      switch(def->type) {
+    case CS_XDEF_BY_QOV:
+      cs_evaluate_potential_by_qov(CS_FLAG_SCALAR | cs_flag_primal_cell,
+                                   def, fld->val, NULL);
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid way to initialize field values for eq. %s.\n",
+                __func__, eqp->name);
+
+    } /* Switch on possible type of definition */
+
+  } /* Loop on definitions */
+
+  /* From the Neumann boundary conditions, add the knowledge of the boundary
+     flux */
+
+  for (int def_id = 0; def_id < eqp->n_bc_defs; def_id++) {
+
+    cs_xdef_t  *bc_def = eqp->bc_defs[def_id];
+
+    const cs_zone_t  *z = cs_boundary_zone_by_id(bc_def->z_id);
+
+    assert((bc_def->meta & CS_CDO_BC_FULL_NEUMANN) == 0);
+
+    if (bc_def->meta & CS_CDO_BC_NEUMANN) {
+
+      switch(bc_def->type) {
+
+      case CS_XDEF_BY_ARRAY:
+        cs_xdef_eval_at_b_faces_by_array(z->n_elts,
+                                         z->elt_ids,
+                                         false, /* no dense output */
+                                         mesh,
+                                         connect,
+                                         cdoq,
+                                         t_eval,
+                                         bc_def->context,
+                                         eqc->flux);
+        break;
 
       case CS_XDEF_BY_VALUE:
-        cs_evaluate_potential_at_cells_by_value(def, potential_vals);
+        cs_xdef_eval_scalar_by_val(z->n_elts,
+                                   z->elt_ids,
+                                   false, /* no dense output */
+                                   mesh,
+                                   connect,
+                                   cdoq,
+                                   t_eval,
+                                   bc_def->context,
+                                   eqc->flux);
+        break;
+
+      case CS_XDEF_BY_ANALYTIC_FUNCTION:
+        cs_xdef_eval_at_b_faces_by_analytic(z->n_elts,
+                                            z->elt_ids,
+                                            false, /* no dense output */
+                                            mesh,
+                                            connect,
+                                            cdoq,
+                                            t_eval,
+                                            bc_def->context,
+                                            eqc->flux);
+        break;
+
+      case CS_XDEF_BY_DOF_FUNCTION:
+        cs_xdef_eval_at_b_faces_by_dof_func(z->n_elts,
+                                            z->elt_ids,
+                                            false, /* no dense output */
+                                            mesh,
+                                            connect,
+                                            cdoq,
+                                            t_eval,
+                                            bc_def->context,
+                                            eqc->flux);
         break;
 
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid way to initialize field values for eq. %s.\n",
+                  " %s: Invalid way to initialize flux values for eq. %s.\n",
                   __func__, eqp->name);
 
       } /* Switch on possible type of definition */
 
-    } /* Loop on definitions */
+    } /* Neumann BC */
 
-    BFT_FREE(def2f_idx);
-
-  } /* Initial values to set */
+  } /* Loop on boundary definitions */
 
   if (eqc->flux_pre != NULL)
-    memcpy(eqc->flux_pre, eqc->flux,
-           quant->n_faces*sizeof(cs_real_t));
+    cs_array_real_copy(cdoq->n_faces, eqc->flux, eqc->flux_pre);
 
-  if (eqc->potential_pre != NULL)
-    memcpy(eqc->potential_pre, eqc->potential,
-           quant->n_cells*sizeof(cs_real_t));
+  if (fld->val_pre != NULL)
+    cs_array_real_copy(cdoq->n_cells, fld->val, fld->val_pre);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Build the local matrices arising from the diffusion term in the
+ *          scalar-valued CDO-Cb schemes.
+ *
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqb         pointer to a cs_equation_builder_t structure
+ * \param[in]      eqc         context for this kind of discretization
+ * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in, out] mass_hodge  pointer to a cs_hodge_t structure for diffusion
+ * \param[in, out] csys        pointer to a cellwise view of the system
+ * \param[in, out] cb          pointer to a cellwise builder
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdocb_scaleq_diffusion(const cs_equation_param_t     *eqp,
+                          const cs_equation_builder_t   *eqb,
+                          const cs_cdocb_scaleq_t       *eqc,
+                          const cs_cell_mesh_t          *cm,
+                          cs_hodge_t                    *mass_hodge,
+                          cs_cell_sys_t                 *csys,
+                          cs_cell_builder_t             *cb)
+{
+  if (cs_equation_param_has_diffusion(eqp)) {   /* DIFFUSION TERM
+                                                 * ============== */
+
+    /* Set the diffusion property */
+
+    assert(mass_hodge != NULL);
+    if (!(eqb->diff_pty_uniform))
+      cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
+                                     mass_hodge);
+
+    /* Define the local stiffness matrix: local matrix owned by the cellwise
+       builder (store in cb->loc) */
+
+    bool computed = eqc->get_mass_matrix(cm, mass_hodge, cb);
+
+    /* Add the local diffusion operator to the local system */
+    if(computed)
+      cs_sdm_add(csys->mat, mass_hodge->matrix);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOCB_SCALEQ_DBG > 1
+    if (cs_dbg_cw_test(eqp, cm, csys))
+      cs_cell_sys_dump("\n>> Cell system after diffusion", csys);
+#endif
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve the steady-state equation with a CDO cell-based scheme
+ *         Scalar-valued diffusion equation up-to-now
+ *         One works cellwise and then process to the assembly
+ *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      field_id   id of the variable field related to this equation
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to cs_cdocb_scaleq_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdocb_scaleq_solve_steady_state(bool                        cur2prev,
+                                   const cs_mesh_t            *mesh,
+                                   const int                   field_id,
+                                   const cs_equation_param_t  *eqp,
+                                   cs_equation_builder_t      *eqb,
+                                   void                       *context)
+{
+  cs_timer_t  t0 = cs_timer_time();
+
+  /* Retrieve high-level structures */
+
+  cs_cdocb_scaleq_t  *eqc = (cs_cdocb_scaleq_t *) context;
+  cs_cdo_system_helper_t  *sh = eqb->system_helper;
+  assert(eqc->var_field_id == field_id);
+  cs_field_t *potential_fld = cs_field_by_id(eqc->var_field_id);
+
+  /*--------------------------------------------------------------------------
+   *                      BUILD: START
+   *--------------------------------------------------------------------------*/
+
+  const cs_time_step_t  *ts = cs_shared_time_step;
+  const cs_real_t  t_cur = ts->t_cur;
+
+  /* Build an array storing the Dirichlet values at faces */
+
+  cs_cdocb_scaleq_setup(t_cur, mesh, eqp, eqb);
+
+  /* Initialize the matrix and all its related structures needed during
+   * the assembly step as well as the rhs */
+
+  cs_real_t  *rhs = NULL;  /* Since it is NULL, sh get sthe ownership */
+
+  cs_cdo_system_helper_init_system(sh, &rhs);
+
+  /* Main loop on cells to define the linear system to solve */
+
+  _scb_steady_build(eqp, eqb, eqc);
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
+
+  /* Free temporary buffers and structures */
+
+  cs_equation_builder_reset(eqb);
+
+  /* End of the system building */
+
+  /*--------------------------------------------------------------------------
+   *                      BUILD: END
+   *--------------------------------------------------------------------------*/
+
+  /* Current to previous for main variable fields */
+
+  if (cur2prev)
+    _cdocb_scaleq_current_to_previous(eqc);
+
+  /* Solve the linear system */
+
+  cs_timer_t  t_solve_start = cs_timer_time();
+  cs_cdocb_monolithic_sles_t  *msles = eqc->msles;
+
+  /* Matrix has been already assigned to the msles structure */
+
+  msles->flux = eqc->flux;                /* Flux DoFs at faces */
+  msles->potential = potential_fld->val;  /* Potential DoFs at cells */
+
+  msles->sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
+
+  int  cumulated_inner_iters = cs_cdocb_monolithic_solve(eqp, sh, msles);
+
+  cs_cdo_bc_face_t *face_bc = eqb->face_bc;
+  if (face_bc->n_hmg_dir_faces + face_bc->n_nhmg_dir_faces == 0)
+    cs_field_set_volume_average(potential_fld, 0.);
+
+  cs_timer_t  t_solve_end = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcs), &t_solve_start, &t_solve_end);
+
+  cs_log_printf(CS_LOG_DEFAULT, " -cvg- CDO Cb: cumulated_inner_iters: %d\n",
+                cumulated_inner_iters);
+  cs_log_printf_flush(CS_LOG_DEFAULT);
+
+  /* Free a part of the structure */
+
+  cs_cdocb_monolithic_sles_clean(msles);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Operate a current to previous operation for the field associated to
+ *         this equation and potentially for related fields/arrays.
+ *
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb       pointer to a cs_equation_builder_t structure
+ * \param[in, out] context   pointer to a scheme context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdocb_scaleq_current_to_previous(const cs_equation_param_t  *eqp,
+                                   cs_equation_builder_t       *eqb,
+                                   void                        *context)
+{
+  CS_NO_WARN_IF_UNUSED(eqp);
+  CS_NO_WARN_IF_UNUSED(eqb);
+
+  cs_cdocb_scaleq_t *eqc = (cs_cdocb_scaleq_t *)context;
+  _cdocb_scaleq_current_to_previous(eqc);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve an array of values at mesh vertices for the variable field
+ *         associated to the given context
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
+ *
+ * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
+ *
+ * \return  a pointer to an array of cs_real_t (size: n_cells)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdocb_scaleq_get_cell_values(void        *context,
+                                bool         previous)
+{
+  cs_cdocb_scaleq_t  *eqc = (cs_cdocb_scaleq_t *)context;
+  if (eqc == NULL)
+    return NULL;
+
+  cs_field_t *potential_fld = cs_field_by_id(eqc->var_field_id);
+
+  if (previous) {
+    assert(potential_fld->val_pre != NULL);
+    return potential_fld->val_pre;
+  }
+  else
+    return potential_fld->val;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Cellwise computation of the diffusive flux accross (primal) faces
+ *         A scalar-valued flux for each face.
+ *         Case of scalar-valued CDO-Cb schemes
+ *
+ * \param[in]       values      discrete values for the potential
+ * \param[in]       eqp         pointer to a cs_equation_param_t structure
+ * \param[in]       t_eval      time at which one performs the evaluation
+ * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
+ * \param[in, out]  context     pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out]  diff_flux   values of the diffusive flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdocb_scaleq_diff_flux_faces(const cs_real_t             *values,
+                                const cs_equation_param_t   *eqp,
+                                cs_real_t                    t_eval,
+                                cs_equation_builder_t       *eqb,
+                                void                        *context,
+                                cs_real_t                   *diff_flux)
+{
+  CS_NO_WARN_IF_UNUSED(values);
+  CS_NO_WARN_IF_UNUSED(t_eval);
+  CS_NO_WARN_IF_UNUSED(eqb);
+
+  if (diff_flux == NULL)
+    return;
+
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
+
+  /* If no diffusion, return after resetting */
+
+  if (cs_equation_param_has_diffusion(eqp) == false) {
+    cs_array_real_fill_zero(cdoq->n_faces, diff_flux);
+    return;
+  }
+
+  /* If there is no advection, then the total flux is the diffusive flux */
+
+  cs_cdocb_scaleq_t  *eqc = (cs_cdocb_scaleq_t *)context;
+
+  if (cs_equation_param_has_convection(eqp) == false)
+    cs_array_real_copy(cdoq->n_faces, eqc->flux, diff_flux);
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Eq. \"%s\". Case not handled up to now.\n",
+              __func__, eqp->name);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1594,7 +1793,6 @@ cs_cdocb_scaleq_balance(const cs_equation_param_t     *eqp,
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_time_step_t  *ts = cs_shared_time_step;
-  const char *func_name = __func__;
 
   cs_timer_t  t0 = cs_timer_time();
 
@@ -1606,14 +1804,9 @@ cs_cdocb_scaleq_balance(const cs_equation_param_t     *eqp,
                                                 quant->n_cells);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
-  shared(quant, connect, ts, eqp, eqb, eqc, eb, _scb_cell_builder, \
-         func_name)
+  shared(quant, connect, ts, eqp, eqb, eqc, eb, _scb_cell_builder)
   {
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
@@ -1635,7 +1828,7 @@ cs_cdocb_scaleq_balance(const cs_equation_param_t     *eqp,
 
     /* Set inside the OMP section so that each thread has its own value */
 
-    cs_real_t *flux, *flux_pre;
+    cs_real_t  *flux;
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -1722,101 +1915,56 @@ cs_cdocb_scaleq_balance(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve the steady Stokes or Oseen system with a CDO cell-based scheme
- *         using a monolithic approach and GKB algorithm
+ * \brief  Predefined extra-operations related to this equation
  *
- * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
- * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
+ * \param[in]       eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out]  context    pointer to cs_cdocb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdocb_scaleq_solve_steady_state(bool                        cur2prev,
-                                   const cs_mesh_t            *mesh,
-                                   const int                   field_id,
-                                   const cs_equation_param_t  *eqp,
-                                   cs_equation_builder_t      *eqb,
-                                   void                       *context)
+cs_cdocb_scaleq_extra_post(const cs_equation_param_t  *eqp,
+                           cs_equation_builder_t      *eqb,
+                           void                       *context)
 {
   cs_timer_t  t0 = cs_timer_time();
-  /* Retrieve high-level structures */
 
-  cs_cdocb_scaleq_t  *eqc = (cs_cdocb_scaleq_t *) context;
-  cs_cdo_system_helper_t  *sh = eqb->system_helper;
+  cs_cdocb_scaleq_t  *eqc = (cs_cdocb_scaleq_t *)context;
 
-  cs_field_t *potential_fld = cs_field_by_id(eqc->var_field_id);
+  const cs_lnum_t  n_i_faces = cs_shared_connect->n_faces[CS_INT_FACES];
+  const cs_real_t  *bface_fluxes = eqc->flux + n_i_faces;
 
-  /*--------------------------------------------------------------------------
-   *                      BUILD: START
-   *--------------------------------------------------------------------------*/
+  /* In case of postprocessing of the border faces, one has to check if there
+   * is a mesh modification. In particular, a removal of 2D extruded border
+   * faces.
+   */
 
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_time_step_t  *ts = cs_shared_time_step;
-  const cs_real_t  t_cur = ts->t_cur;
+  bool  use_parent = (cs_shared_quant->remove_boundary_faces) ? false : true;
 
-  /* Build an array storing the Dirichlet values at faces */
+  /* Field post-processing */
 
-  cs_cdocb_scaleq_setup(t_cur, mesh, eqp, eqb);
+  char *postlabel = NULL;
+  int  len = strlen(eqp->name) + 13 + 1;
+  BFT_MALLOC(postlabel, len, char);
+  sprintf(postlabel, "%s.BoundaryFlux", eqp->name);
 
-  /* Initialize the matrix and all its related structures needed during
-   * the assembly step as well as the rhs */
+  cs_post_write_var(CS_POST_MESH_BOUNDARY,
+                    CS_POST_WRITER_ALL_ASSOCIATED,
+                    postlabel,
+                    eqp->dim,
+                    true,                  /* interlaced arrays */
+                    use_parent,
+                    CS_POST_TYPE_cs_real_t,
+                    NULL,                  /* values on cells */
+                    NULL,                  /* values at internal faces */
+                    bface_fluxes,          /* flux at border faces */
+                    cs_shared_time_step);  /* time step management structure */
 
-  cs_real_t  *rhs = NULL;  /* Since it is NULL, sh get sthe ownership */
-
-  cs_cdo_system_helper_init_system(sh, &rhs);
-
-  /* Main loop on cells to define the linear system to solve */
-
-  _steady_build(eqp, eqb, eqc);
+  BFT_FREE(postlabel);
 
   cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
-
-  /* Free temporary buffers and structures */
-
-  cs_equation_builder_reset(eqb);
-
-  /* End of the system building */
-
-  /*--------------------------------------------------------------------------
-   *                      BUILD: END
-   *--------------------------------------------------------------------------*/
-
-  /* Current to previous for main variable fields */
-
-  _cdocb_scaleq_current_to_previous(eqc);
-
-  /* Solve the linear system */
-
-  cs_timer_t  t_solve_start = cs_timer_time();
-  cs_cdocb_monolithic_sles_t  *msles = eqc->msles;
-
-  /* matrix has been already assigned to the msles structure */
-
-  msles->flux = eqc->flux; /* FLux DoFs at faces */
-  msles->potential = eqc->potential;    /* pressure DoFs at cells */
-
-  msles->sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
-
-  int  cumulated_inner_iters = cs_cdocb_monolithic_solve(eqp, sh, msles);
-
-  _update_cell_fields(&(eqb->tcs), potential_fld, eqc, false);
-
-  cs_cdo_bc_face_t *face_bc = eqb->face_bc;
-  if (face_bc->n_hmg_dir_faces + face_bc->n_nhmg_dir_faces == 0) {
-    cs_field_set_volume_average(potential_fld, 0.);
-    memcpy(eqc->potential, potential_fld->val, quant->n_cells*sizeof(cs_real_t));
-  }
-
-  cs_timer_t  t_solve_end = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tcs), &t_solve_start, &t_solve_end);
-
-  cs_log_printf(CS_LOG_DEFAULT, " -cvg- CDO Cb: cumulated_inner_iters: %d\n",
-      cumulated_inner_iters);
-  cs_log_printf_flush(CS_LOG_DEFAULT);
-
-  /* Frees */
-  cs_cdocb_monolithic_sles_clean(msles);
+  cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/

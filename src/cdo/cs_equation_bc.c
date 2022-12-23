@@ -1273,7 +1273,6 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
  * \param[in]      eqp        pointer to a cs_equation_param_t
  * \param[in]      face_bc    pointer to a cs_cdo_bc_face_t structure
  * \param[in]      t_eval     time at which one evaluates the boundary cond.
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] values     pointer to the array of values to set
  */
 /*----------------------------------------------------------------------------*/
@@ -1285,12 +1284,9 @@ cs_equation_compute_dirichlet_cb(const cs_mesh_t            *mesh,
                                  const cs_equation_param_t  *eqp,
                                  const cs_cdo_bc_face_t     *face_bc,
                                  cs_real_t                   t_eval,
-                                 cs_cell_builder_t          *cb,
                                  cs_real_t                  *values)
 {
   assert(face_bc != NULL);
-
-  CS_UNUSED(cb);
 
   /* Define the array storing the Dirichlet values */
 
@@ -1301,9 +1297,10 @@ cs_equation_compute_dirichlet_cb(const cs_mesh_t            *mesh,
     if (def->meta & CS_CDO_BC_DIRICHLET) {
 
       assert(eqp->dim == def->dim);
+      assert(def->dim == 1);
 
       const cs_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
-      const cs_lnum_t  *elt_ids = bz->elt_ids;
+      const cs_lnum_t  *elt_ids = (def->z_id == 0) ? NULL : bz->elt_ids;
 
       switch(def->type) {
 
@@ -1311,25 +1308,18 @@ cs_equation_compute_dirichlet_cb(const cs_mesh_t            *mesh,
         {
           const cs_real_t  *constant_val = (cs_real_t *)def->context;
 
-          if (def->dim ==  1) {
-
-#           pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
-            for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
-              const cs_lnum_t  elt_id = (elt_ids == NULL) ? i : elt_ids[i];
-              values[elt_id] = constant_val[0];
-            }
-
-          }
-          else {
-
-#           pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
-            for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
-              const cs_lnum_t  elt_id = (elt_ids == NULL) ? i : elt_ids[i];
-              for (int k = 0; k < def->dim; k++)
-                values[def->dim*elt_id+k] = constant_val[k];
-            }
-
-          }
+          if (def->dim == 1)
+            cs_array_real_set_scalar_on_subset(bz->n_elts, elt_ids,
+                                               constant_val[0],
+                                               values);
+          else if (def->dim == 3)
+            cs_array_real_set_vector_on_subset(bz->n_elts, elt_ids,
+                                               constant_val,
+                                               values);
+          else
+            cs_array_real_set_value_on_subset(bz->n_elts, def->dim, elt_ids,
+                                              constant_val,
+                                              values);
         }
         break;
 
@@ -1338,46 +1328,45 @@ cs_equation_compute_dirichlet_cb(const cs_mesh_t            *mesh,
           cs_xdef_array_context_t  *ac = def->context;
 
           assert(ac->stride == eqp->dim);
-          assert(cs_flag_test(ac->loc, cs_flag_primal_face) ||
-                 cs_flag_test(ac->loc, cs_flag_boundary_face));
+          assert(cs_flag_test(ac->value_location, cs_flag_primal_face) ||
+                 cs_flag_test(ac->value_location, cs_flag_boundary_face));
 
-          if (bz->id == ac->z_id) {
+          if (def->z_id == ac->z_id) {
 
             if (ac->z_id == 0) {  /* Array is defined on the full location */
 
-              assert(bz->n_elts == quant->n_b_faces);
+              assert(ac->full_length);
+              assert(bz->n_elts == mesh->n_b_faces);
               assert(eqp->n_bc_defs == 1); /* Only one definition */
-              memcpy(values, ac->values, sizeof(cs_real_t)*bz->n_elts*eqp->dim);
+              cs_array_real_copy(bz->n_elts*ac->stride, ac->values, values);
 
             }
             else { /* Zone is only a part of the location */
 
-#             pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
-              for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
-
-                const cs_lnum_t  r_shift = def->dim*elt_ids[i];
-                const cs_lnum_t  s_shift = def->dim*i;
-
-                for (int k = 0; k < def->dim; k++)
-                  values[r_shift+k] = ac->values[s_shift+k];
-
-              }
+              if (ac->full_length)
+                cs_array_real_copy_subset(bz->n_elts, def->dim, elt_ids,
+                                          CS_ARRAY_SUBSET_INOUT,
+                                          ac->values,
+                                          values);
+              else
+                cs_array_real_copy_subset(bz->n_elts, def->dim, elt_ids,
+                                          CS_ARRAY_SUBSET_OUT,
+                                          ac->values,
+                                          values);
 
             }
 
           }
           else { /* bz->id != ac->z_id */
 
-            if (ac->z_id == 0) {  /* Array is defined on the full location */
+            if (ac->z_id == 0 || ac->full_length) {  /* Array is defined on the
+                                                        full location */
 
               assert(elt_ids != NULL);
-
-#             pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
-              for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
-                const cs_lnum_t  shift = def->dim*elt_ids[i];
-                for (int k = 0; k < def->dim; k++)
-                  values[shift+k] = ac->values[shift+k];
-              }
+              cs_array_real_copy_subset(bz->n_elts, def->dim, elt_ids,
+                                        CS_ARRAY_SUBSET_INOUT,
+                                        ac->values,
+                                        values);
 
             }
             else
@@ -1520,15 +1509,27 @@ cs_equation_compute_neumann_cb(cs_real_t                   t_eval,
     {
       cs_xdef_array_context_t  *ac = def->context;
 
-      assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
       assert(ac->stride == 1);
-      assert(cs_flag_test(ac->loc, cs_flag_primal_face) ||
-             cs_flag_test(ac->loc, cs_flag_boundary_face));
+      assert(cs_flag_test(ac->value_location, cs_flag_primal_face) ||
+             cs_flag_test(ac->value_location, cs_flag_boundary_face));
 
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);
 
-      neu_values[f] = cm->face[f].meas * ac->values[bf_id];
+      if (ac->full_length)
+        neu_values[f] = cm->face[f].meas * ac->values[bf_id];
+
+      else {
+
+        if (ac->full2subset == NULL)
+          cs_xdef_array_build_full2subset(def);
+
+        cs_lnum_t  id = ac->full2subset[bf_id];
+        assert(id > -1);
+
+        neu_values[f] = cm->face[f].meas * ac->values[id];
+
+      }
     }
     break;
 

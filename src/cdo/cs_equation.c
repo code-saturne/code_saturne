@@ -1937,6 +1937,9 @@ cs_equation_finalize_sharing(cs_flag_t    cb_scheme_flag,
   if (fb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
     cs_cdofb_vecteq_finalize_sharing();
 
+  if (cb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
+    cs_cdocb_scaleq_finalize_sharing();
+
   if (hho_scheme_flag & CS_FLAG_SCHEME_SCALAR)
     cs_hho_scaleq_finalize_sharing();
 
@@ -2364,7 +2367,7 @@ cs_equation_set_functions(void)
 
         eq->get_vertex_values = NULL;
         eq->get_edge_values = NULL;
-        eq->get_face_values = cs_cdocb_scaleq_get_face_values;
+        eq->get_face_values = NULL;
         eq->get_cell_values = cs_cdocb_scaleq_get_cell_values;
 
         eq->get_cw_build_structures = cs_cdocb_scaleq_get;
@@ -3491,6 +3494,18 @@ cs_equation_compute_diffusive_flux(const cs_equation_t   *eq,
   case CS_SPACE_SCHEME_CDOFB:
     if (cs_flag_test(location, cs_flag_primal_face))
       cs_cdofb_scaleq_diff_flux_faces(fld->val,
+                                      eqp,
+                                      t_eval,
+                                      eq->builder,
+                                      eq->scheme_context,
+                                      diff_flux);
+    else
+      bft_error(__FILE__, __LINE__, 0, lmsg, __func__, eqp->name);
+    break;
+
+  case CS_SPACE_SCHEME_CDOCB:
+    if (cs_flag_test(location, cs_flag_primal_face))
+      cs_cdocb_scaleq_diff_flux_faces(fld->val,
                                       eqp,
                                       t_eval,
                                       eq->builder,
