@@ -106,14 +106,13 @@ Release 7.3.0 (December 20 2022)
 - Fix the precipitation model for radionuclide tracers in the GWF
   module (CDO). Add the missing radioactive decay phenomenon.
 
-- Fix the treatment of Robin BCs in CDO schemes
+- Fix the treatment of Robin BCs in CDO schemes.
 
 ### Architectural changes:
 
 - Completed migration of turbulence models source code from Fortran to C.
 
-- Remove libtool dependency for compiled code.
-  Libtool is still used for Python libraries.
+- Remove libtool dependency.
 
 - FMI: modified FMU client and code_saturne controller communication
   protocol to regroup input/output variables exchange and reduce latency.
