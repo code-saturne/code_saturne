@@ -419,6 +419,38 @@ class Package:
 
     #---------------------------------------------------------------------------
 
+    def install_parmetis(self):
+
+        current_dir = os.getcwd()
+
+        build_dir = self.source_dir + '.build'
+        if os.path.isdir(build_dir): shutil.rmtree(build_dir)
+
+        # Copy source files in build directory as VPATH feature is unsupported
+        shutil.copytree(self.source_dir, build_dir)
+
+        for d in [os.path.join(build_dir, 'metis'), build_dir]:
+
+            os.chdir(d)
+
+            configure = "make config prefix=" + self.install_dir
+            configure += " cc=" + self.cc
+            if self.cxx:
+                configure += " cxx=" + self.cxx
+            if self.shared:
+                configure += " shared=1 "
+
+            # Install the package and clean build directory
+            run_command(configure, "Configure", self.name, self.log_file)
+            run_command("make", "Compile", self.name, self.log_file)
+            run_command("make install", "Install", self.name, self.log_file)
+            run_command("make clean", "Clean", self.name, self.log_file)
+
+        # End of installation
+        os.chdir(current_dir)
+
+    #---------------------------------------------------------------------------
+
     def test_library(self, executables=None, header=None, libname=None):
 
         libroot = None
@@ -484,7 +516,7 @@ class Setup:
         self.top_srcdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 
         # Optional libraries
-        self.optlibs = ['hdf5', 'cgns', 'med', 'scotch']
+        self.optlibs = ['hdf5', 'cgns', 'med', 'scotch', 'parmetis']
 
         # Optional libraries configure could find in salome
         self.salome_optlibs = ['hdf5', 'cgns', 'med']
@@ -586,6 +618,16 @@ class Setup:
 
         p = self.packages['med']
         p.config_opts = "--with-med_int=long --disable-fortran --disable-python"
+
+        # ParMETIS
+
+        self.packages['parmetis'] = \
+            Package(name="parmetis",
+                    description="ParMETIS",
+                    package="parmetis",
+                    version="4.0.3",
+                    archive="parmetis-4.0.3.tar.gz",
+                    url="http://glaros.dtc.umn.edu/gkhome/fetch/sw/parmetis/%s")
 
         # SCOTCH
 
@@ -938,7 +980,7 @@ Check the setup file and some utilities presence.
             p.cxx = self.cxx
             if lib in ['scotch'] and self.mpicc:
                 p.cc = self.mpicc
-            elif lib in ['code_saturne']:
+            elif lib in ['code_saturne', 'parmetis']:
                 if self.mpicc:
                     p.cc = self.mpicc
                 if self.mpicxx:
@@ -957,6 +999,7 @@ Check the setup file and some utilities presence.
         cgns = self.packages['cgns']
         med= self.packages['med']
         scotch = self.packages['scotch']
+        parmetis = self.packages['parmetis']
 
         # Disable GUI
 
@@ -995,6 +1038,13 @@ Check the setup file and some utilities presence.
         else:
             if med.install_dir:
                 config_opts = config_opts + " --with-med=" + med.install_dir
+
+        # ParMetis
+
+        if parmetis.use == 'no':
+            config_opts = config_opts + " --without-metis"
+        else:
+            config_opts = config_opts + " --with-metis=" + parmetis.install_dir
 
         # PT-Scotch
 
@@ -1047,6 +1097,8 @@ Check the setup file and some utilities presence.
                     p.info()
                 if lib == 'scotch':
                     p.install_ptscotch()
+                elif lib == 'parmetis':
+                    p.install_parmetis()
                 else:
                     p.install()
                 p.installation = 'no'
@@ -1161,7 +1213,8 @@ salome    %(salome)s
 # CGNS / HDF5 For CGNS file support
 #             (used by many meshing tools).
 #
-# Scotch (includes PT-Scotch) for parallel partitioning.
+# Scotch (includes PT-Scotch) and/or ParMetis
+# for parallel partitioning
 #
 #   For Linux workstations, HDF5, CGNS, and even MED
 # packages may be available through the package manager.
@@ -1175,7 +1228,7 @@ salome    %(salome)s
 # distributions, but may be built with options
 # incompatible with non-threaded code_saturne runs.
 #
-#   To install CGNS the CMake
+#   To install CGNS or ParMetis, the CMake
 # configuration/installation tool is required
 # (it is available in most Linux distributions).
 #--------------------------------------------------------
