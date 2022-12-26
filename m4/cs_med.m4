@@ -42,10 +42,10 @@ AC_ARG_WITH(med,
             [if test "x$withval" = "x"; then
                with_med=yes
              elif test "x$withval" = "xsalome"; then
-               if test -z "$MEDHOME"; then
+               if test -z "$MEDFILE_ROOT_DIR"; then
                  AC_MSG_FAILURE([no SALOME path information for MED (needed by --with-med=salome)!])
                else
-                 with_med=$MEDHOME
+                 with_med=$MEDFILE_ROOT_DIR
                fi
              fi],
             [with_med=check])

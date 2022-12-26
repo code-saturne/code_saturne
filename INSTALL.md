@@ -430,12 +430,9 @@ and their role is given in a dedicated [section](@ref cs_install_list_ext_lib)).
 For some external libraries, such as MED, MEDCoupling, and ParaView Catalyst,
 a C++11 compliant C++ compiler is also required.
 
-The SALOME platform V9 and above may require Python 3.6 at least,
-and a matching version should be used when building with SALOME support.
-
 In practice, the code is known to build and function properly at least with the
 GNU compilers 4.4 and above (up to 9.x at this date), Intel compilers 11 and
-above (up to 2020 at this date), and Clang (tested with 3.7 or above).
+above (up to 2022 at this date), and Clang (tested with 3.7 or above).
 
 Note also that while code_saturne makes heavy use of Python, this is for scripts and
 for the GUI only; The solver only uses compiled code, so we could for example use
@@ -1175,7 +1172,8 @@ files produced with a given version of CGNS or MED should be readable
 with the same or a newer version of that library.
 
 Unless a specific `--with-medcoupling` option is given, a compatible
-MEDCoupling library is also searched for in the SALOME distribution.
+MEDCoupling library is also searched for in the SALOME distribution
+by default.
 
 Also note that for SALOME builds containing their own Python interpreter
 and library, using that same interpreter for code_saturne may avoid some

@@ -106,6 +106,45 @@ def ld_library_path_filter(l):
     print(s)
 
 #-------------------------------------------------------------------------------
+
+def salome_paraview_ld_add_path_filter(l):
+    """
+    Build a minimal string for the LD_LIBRARY_PATH shell variable additions
+    for ParaView Catalyst from SALOME distribution.
+    """
+
+    e = []
+    k = 'LD_LIBRARY_PATH'
+    if not k in os.environ:
+        return
+
+    # 'cgns' and 'TTK' do not seem to be needed at least in a simple case,
+    # but might be with more complex scripts.
+    keep_list = ('catalyst', 'cgns', 'embree', 'hdf5', 'openturns',
+                 'openVKL', 'ospray', 'rkCommon', 'TTK')
+
+    e = os.environ[k].split(':')
+
+    p = []
+    for d in e:
+        if not os.path.isdir(d):
+            continue
+        for c in keep_list:
+            if d.find(c) > -1:
+                p.append(d)
+                break
+
+    s = ''
+    for d in p:
+        if d.find(' ') > -1:
+            s += '\"' + d + '\":'
+        else:
+            s += d + ':'
+    if len(s) > 0:
+        s = s[:-1]
+    print(s)
+
+#-------------------------------------------------------------------------------
 # Main
 #-------------------------------------------------------------------------------
 
@@ -131,6 +170,9 @@ if __name__ == '__main__':
     elif cmd == 'ld_library_path_filter':
         ld_library_path_filter(sys.argv[2:])
 
+    elif cmd == 'salome_paraview_ld_add_path_filter':
+        salome_paraview_ld_add_path_filter(sys.argv[2:])
+
     else:
         usage = \
             """Usage: %(prog)s <tool> [arguments]
@@ -138,6 +180,7 @@ if __name__ == '__main__':
 Tools:
   pythonpath_filter
   ld_library_path_filter
+  salome_paraview_ld_add_path_filter
 
 Options:
   -h, --help  show this help message and exit"""

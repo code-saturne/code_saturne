@@ -1197,6 +1197,8 @@ class domain(base_domain):
         add_lib_dirs = get_ld_library_path_additions(self.package)
         if add_lib_dirs:
             ld_library_path_save = os.getenv('LD_LIBRARY_PATH')
+            if ld_library_path_save is None:
+                ld_library_path_save = ""
             ld_library_path = ""
             for d in add_lib_dirs:
                 ld_library_path += d + ':'

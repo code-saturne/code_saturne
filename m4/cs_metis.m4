@@ -37,10 +37,10 @@ AC_ARG_WITH(metis,
             [if test "x$withval" = "x"; then
                with_metis=yes
              elif test "x$withval" = "xsalome"; then
-               if test -z "$METISDIR"; then
+               if test -z "$METIS_ROOT_DIR"; then
                  AC_MSG_FAILURE([no SALOME path information for METIS (needed by --with-metis=salome)!])
                else
-                 with_metis=$METISDIR
+                 with_metis=$METIS_ROOT_DIR
                fi
              fi],
             [with_metis=no])

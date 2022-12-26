@@ -41,11 +41,14 @@ AC_ARG_WITH(catalyst,
             [if test "x$withval" = "x"; then
                with_catalyst=no
              elif test "x$withval" = "xsalome"; then
-               if test -z "$CATALYST_ROOT_DIR"; then
+               if test -z "$PARAVIEW_ROOT_DIR"; then
                  AC_MSG_FAILURE([no SALOME  path information for Catalyst
-(CATALYST_ROOT_DIR environment variable needed by --with-catalyst=salome)!])
+(PARAVIEW_ROOT_DIR environment variable needed by --with-catalyst=salome)!])
                else
-                 with_catalyst=$CATALYST_ROOT_DIR
+                 with_catalyst=$PARAVIEW_ROOT_DIR
+                 if test -z "$CATALYST_LD_ADD_PATH" ; then
+                   CATALYST_LD_ADD_PATH=`(/bin/bash -c "unset LD_LIBRARY_PATH ; $SALOMEENVCMD ; python3 -B $ac_aux_dir/cs_config_test.py salome_paraview_ld_add_path_filter")`
+                 fi
                fi
              fi],
             [with_catalyst=no])
@@ -139,6 +142,7 @@ if test "x$with_catalyst" != "xno" ; then
   fi
 
   mkdir catalyst_test && cd catalyst_test
+  echo "$CMAKE" ${catalyst_cmake_options} "${cs_abs_srcdir}/build-aux/$detection_variant"
   "$CMAKE" ${catalyst_cmake_options} "${cs_abs_srcdir}/build-aux/$detection_variant" >&5
 
   if test $? = 0 ; then
@@ -234,6 +238,6 @@ AC_SUBST(CATALYST_CPPFLAGS)
 AC_SUBST(CATALYST_CXXFLAGS)
 AC_SUBST(CATALYST_LDFLAGS)
 AC_SUBST(CATALYST_LIBS)
-AC_SUBST(CATALYSTRUNPATH)
+AC_SUBST(CATALYST_LD_ADD_PATH)
 
 ])dnl

@@ -1422,7 +1422,10 @@ class case:
         # Add additional library search paths in case DT_RUNPATH
         # is used instead of DT_RPATH in ELF library
 
-        add_lib_dirs = get_ld_library_path_additions(self.package)
+        add_lib_dirs = get_ld_library_path_additions(self.package_compute)
+        if add_lib_dirs:
+            cs_exec_environment.write_script_comment(s, \
+               'Additional library search paths for dependencies.\n')
         while add_lib_dirs:
             d = add_lib_dirs.pop()
             cs_exec_environment.write_prepend_path(s,
@@ -1433,27 +1436,37 @@ class case:
 
         lib_dirs, plugin_pythonpath_dirs, plugin_env_vars \
             = self.package_compute.config.get_run_environment_dependencies()
-        for d in lib_dirs:
-            cs_exec_environment.write_prepend_path(s,
-                                                   'LD_LIBRARY_PATH',
-                                                   d)
-        for d in plugin_pythonpath_dirs:
-            cs_exec_environment.write_prepend_path(s,
-                                                   'PYTHONPATH',
-                                                   d)
 
-        # Add paths for local libraries
-        if self.package_compute.config.features['relocatable'] == "yes":
-            d = self.package_compute.get_dir('libdir')
-            if d != '/usr/lib' and d != '/usr/local/lib':
+        if lib_dirs or plugin_pythonpath_dirs:
+            cs_exec_environment.write_script_comment(s, \
+               'Library search paths for dependencies.\n')
+            for d in lib_dirs:
                 cs_exec_environment.write_prepend_path(s,
                                                        'LD_LIBRARY_PATH',
                                                        d)
+            for d in plugin_pythonpath_dirs:
+                cs_exec_environment.write_prepend_path(s,
+                                                       'PYTHONPATH',
+                                                       d)
+            s.write('\n')
 
-        # Add additional environment variables
+        # Add paths for local libraries
+        d = self.package_compute.get_dir('libdir')
+        if d != '/usr/lib' and d != '/usr/local/lib':
+            cs_exec_environment.write_script_comment(s, \
+               'Library search path for code_saturne.\n')
+            cs_exec_environment.write_prepend_path(s,
+                                                   'LD_LIBRARY_PATH',
+                                                   d)
+            s.write('\n')
 
-        for v in plugin_env_vars:
-            cs_exec_environment.write_export_env(s, v, plugin_env_vars[v])
+        # Additional environment variables for plugins
+
+        if plugin_env_vars:
+            cs_exec_environment.write_script_comment(s, \
+               'Environment variables for plugins.\n')
+            for v in plugin_env_vars:
+                cs_exec_environment.write_export_env(s, v, plugin_env_vars[v])
 
         s.write('\n')
 

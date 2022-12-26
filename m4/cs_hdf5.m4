@@ -38,10 +38,10 @@ AC_ARG_WITH(hdf5,
             [if test "x$withval" = "x"; then
                with_hdf5=yes
              elif test "x$withval" = "xsalome"; then
-               if test -z "$HDF5HOME"; then
+               if test -z "$HDF5_ROOT_DIR"; then
                  AC_MSG_FAILURE([no SALOME path information for HDF5 (needed by --with-hdf5=salome)!])
                else
-                 with_hdf5=$HDF5HOME
+                 with_hdf5=$HDF5_ROOT_DIR
                fi
              fi],
             [with_hdf5=check])
