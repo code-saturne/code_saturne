@@ -119,6 +119,7 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
      | FVM_WRITER_FORMAT_HAS_POLYHEDRON),
     FVM_WRITER_TRANSIENT_CONNECT,
     0,                                 /* dynamic library count */
+    0,                                 /* dynamic library flags */
     NULL,                              /* dynamic library */
     NULL,                              /* dynamic library name */
     NULL,                              /* dynamic library prefix */
@@ -142,6 +143,7 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
      | FVM_WRITER_FORMAT_HAS_POLYHEDRON),
     FVM_WRITER_FIXED_MESH,
     0,                                 /* dynamic library count */
+    0,                                 /* dynamic library flags */
     NULL,                              /* dynamic library */
     NULL,                              /* dynamic library name */
     NULL,                              /* dynamic library prefix */
@@ -176,6 +178,7 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
      | FVM_WRITER_FORMAT_HAS_POLYGON),
     FVM_WRITER_TRANSIENT_COORDS,
     0,                                 /* dynamic library count */
+    0,                                 /* dynamic library flags */
     NULL,                              /* dynamic library */
     NULL,                              /* dynamic library name */
     NULL,                              /* dynamic library prefix */
@@ -202,10 +205,18 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
 #endif
   },
 
-  /* Catalyst (VTK) writer (plugin) */
+  /* Catalyst (VTK) writer (plugin)
+
+     On some systems, loading the Catalyst module as a plug-in (default)
+     seems to interfere with the detection of required OpenGL2 features
+     or extensions required by ParaView, or with other associated libraries
+     (such as importing vtk libraries from Python on Debian 10 with
+     a SALOME 9.10 CAS build of ParaView).
+     Adding the RTLD_GLOBAL flag to dlopen seems to be sufficient to avoid
+     these issues on current systems. */
   {
     "Catalyst",
-    "4.2 +",
+    "5.4 +",
     (  FVM_WRITER_FORMAT_USE_EXTERNAL
      | FVM_WRITER_FORMAT_HAS_POLYGON
      | FVM_WRITER_FORMAT_HAS_POLYHEDRON
@@ -213,6 +224,11 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
     FVM_WRITER_TRANSIENT_CONNECT,
 #if !defined(HAVE_CATALYST) || defined(HAVE_PLUGIN_CATALYST)
     0,                                 /* dynamic library count */
+#  if defined(HAVE_DLOPEN)
+    RTLD_LAZY | RTLD_GLOBAL,
+#  else
+    0,                                 /* dynamic library flags */
+#  endif
     NULL,                              /* dynamic library */
 #if defined(HAVE_CATALYST)
     "fvm_catalyst",                    /* dynamic library name */
@@ -232,6 +248,7 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
     NULL
 #else
     0,                                 /* dynamic library count */
+    0,                                 /* dynamic library flags */
     NULL,                              /* dynamic library */
     NULL,                              /* dynamic library name */
     NULL,                              /* dynamic library prefix */
@@ -255,6 +272,7 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
      | FVM_WRITER_FORMAT_HAS_POLYGON),
     FVM_WRITER_TRANSIENT_CONNECT,
     0,                                 /* dynamic library count */
+    0,                                 /* dynamic library flags */
     NULL,                              /* dynamic library */
 #if defined(HAVE_MEDCOUPLING)
     "fvm_medcoupling",                 /* dynamic library name */
@@ -284,6 +302,7 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
     FVM_WRITER_TRANSIENT_COORDS,
 #if !defined(HAVE_MELISSA) || defined(HAVE_PLUGIN_MELISSA)
     0,                                 /* dynamic library count */
+    0,                                 /* dynamic library flags */
     NULL,                              /* dynamic library */
 #if defined(HAVE_MELISSA)
     "fvm_melissa",                     /* dynamic library name */
@@ -303,6 +322,7 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
     NULL
 #else
     0,                                 /* dynamic library count */
+    0,                                 /* dynamic library flags */
     NULL,                              /* dynamic library */
     NULL,                              /* dynamic library name */
     NULL,                              /* dynamic library prefix */
@@ -328,6 +348,7 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
      | FVM_WRITER_FORMAT_NAME_IS_OPTIONAL),
        FVM_WRITER_TRANSIENT_CONNECT,
     0,                                 /* dynamic library count */
+    0,                                 /* dynamic library flags */
     NULL,                              /* dynamic library */
     NULL,                              /* dynamic library name */
     NULL,                              /* dynamic library prefix */
@@ -352,6 +373,7 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
      | FVM_WRITER_FORMAT_NAME_IS_OPTIONAL),
     FVM_WRITER_TRANSIENT_CONNECT,
     0,                                 /* dynamic library count */
+    0,                                 /* dynamic library flags */
     NULL,                              /* dynamic library */
     NULL,                              /* dynamic library name */
     NULL,                              /* dynamic library prefix */
@@ -376,6 +398,7 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
      | FVM_WRITER_FORMAT_NAME_IS_OPTIONAL),
     FVM_WRITER_FIXED_MESH,
     0,                                 /* dynamic library count */
+    0,                                 /* dynamic library flags */
     NULL,                              /* dynamic library */
     NULL,                              /* dynamic library name */
     NULL,                              /* dynamic library prefix */
@@ -399,6 +422,7 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
      | FVM_WRITER_FORMAT_HAS_POLYHEDRON),
     FVM_WRITER_FIXED_MESH,
     0,                                 /* dynamic library count */
+    0,                                 /* dynamic library flags */
     NULL,                              /* dynamic library */
     NULL,                              /* dynamic library name */
     NULL,                              /* dynamic library prefix */
@@ -544,7 +568,18 @@ _load_plugin(fvm_writer_format_t  *wf)
 {
   /* Open from shared library */
 
+  int flags_save = 0;
+
+  if (wf->dl_flags != 0) {
+    flags_save = cs_base_dlopen_get_flags();
+    cs_base_dlopen_set_flags(wf->dl_flags);
+  }
+
   wf->dl_lib = cs_base_dlopen_plugin(wf->dl_name);
+
+  if (wf->dl_flags != 0) {
+    cs_base_dlopen_set_flags(flags_save);
+  }
 
   /* Increment reference count */
 

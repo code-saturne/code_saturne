@@ -172,6 +172,7 @@ dynamic_load: @cs_py_have_plugin_catalyst@
 cppflags: @CATALYST_CPPFLAGS@
 ldflags: @CATALYST_LDFLAGS@
 libs: @CATALYST_LIBS@
+ld_add_path: @CATALYST_LD_ADD_PATH@
 
 [melissa]
 have: @cs_have_melissa@

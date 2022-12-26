@@ -213,7 +213,6 @@ $(CATALYST_CPPFLAGS) $(MPI_CPPFLAGS)
 libfvm_catalyst_a_CXXFLAGS = \
 $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
 $(CATALYST_CXXFLAGS) $(CXXFLAGS_SHARED)
-$(CATALYSTRUNPATH)
 libfvm_catalyst_a_SOURCES = fvm_to_catalyst.cxx \
                             fvm_to_vtk_histogram.cxx
 noinst_LIBRARIES += libfvm_catalyst.a
@@ -221,8 +220,7 @@ noinst_LIBRARIES += libfvm_catalyst.a
 if HAVE_PLUGIN_CATALYST
 
 LDADD_CATALYST = \
-$(CATALYST_LDFLAGS) $(CATALYST_LIBS) \
-$(CATALYSTRUNPATH)
+$(CATALYST_LDFLAGS) $(CATALYST_LIBS)
 
 fvm_catalyst.${SHARED_LIB_EXT}: libfvm_catalyst.a
 	@echo "Building fvm_catalyst plugin..."

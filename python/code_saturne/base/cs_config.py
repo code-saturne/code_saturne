@@ -84,6 +84,10 @@ class prerequisite:
                 for k in ('cppflags', 'ldflags', 'libs'):
                     self.flags[k] = d.get(k, '')
 
+                ld_add_path = d.get('ld_add_path', None)
+                if ld_add_path != None:
+                    self.flags['ld_add_path'] = ld_add_path
+
                 pythonpath = d.get('pythonpath', None)
                 if pythonpath != None:
                     self.flags['pythonpath'] = pythonpath
@@ -193,6 +197,8 @@ class config:
 
         self.env_modules = d.get('env_modules', '')
         self.env_modulecmd = d.get('env_modulecmd', '')
+
+        self.salome_env = d.get('salome_env', '')
 
         # Setup the optionnal features
 
@@ -305,6 +311,10 @@ class config:
         # Add possible additional Catalyst dependency paths
 
         catalyst_ld_add_path = os.getenv('CATALYST_LD_ADD_PATH')
+        if not catalyst_ld_add_path:
+            catalyst_ld_add_path = self.libs['catalyst'].flags.get('ld_add_path',
+                                                                   None)
+
         if catalyst_ld_add_path:
             for d in catalyst_ld_add_path.split(os.pathsep):
                 if d: # avoid empty values before first or after last separator
@@ -330,7 +340,7 @@ class config:
         env_vars = {}
 
         for lib in self.deplibs:
-            if self.libs[lib].have == "yes":
+            if self.libs[lib].have == True:
 
                 if lib == 'catalyst':
                     catalyst_lib_dirs, catalyst_pythonpath_dirs, catalyst_env_vars \
@@ -369,7 +379,7 @@ class config:
         lib_dirs = []
 
         for lib in self.deplibs:
-            if self.libs[lib].have == "yes":
+            if self.libs[lib].have == True:
 
                 if lib == 'catalyst':
                     catalyst_lib_dirs = self.__get_dep_libs_path_catalyst__()

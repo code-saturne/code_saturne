@@ -11,6 +11,18 @@ Release 7.3.1 (not released yet)
 - Update ParaView/Catalyst compilation for ParaView 5.11 compatibility.
   * Also fix ParaView/Catalyst detection with for CMake 3.23 or above.
 
+- Update and improve build configuration automation, especially
+  when using the `--with-salome` option with SALOME 9.9 or 9.10 CAS builds.
+  * For ParaView Catalyst, the `--enable-dlopen-rtld-global` option is no
+    longer necessary, as the matching option is handled automatically
+    when loading the matching plugin.
+
+- Add and deploy several functions in cs_array.[c,h] to centralize
+  simple operations on arrays (fill with zero, set a constant value on
+  the whole array or partly, copy partly or fully an array into
+  another one and so on). These operations take into acount OpenMP if
+  available.
+
 Release 7.3.0 (December 20 2022)
 --------------------------------
 

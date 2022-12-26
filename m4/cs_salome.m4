@@ -55,7 +55,7 @@ if test "x$with_salome" != "xno" ; then
     AC_MSG_FAILURE([directory specified by --with-salome=$with_salome does not exist!])
   fi
 
-  # Recommended environment file for salome-platform.org installer builds
+  # Recommended environment file for older salome-platform.org installer builds
   if test "x$SALOMEENVCMD" = "x"; then
     salome_env=$(find $with_salome -maxdepth 2 -name salome.sh | tail -1 2>/dev/null)
     if test "x$salome_env" != "x"; then
@@ -93,35 +93,53 @@ if test "x$with_salome" != "xno" ; then
     (/bin/bash -c "$SALOMEENVCMD ; env > conftest.salome_env")
 
     if test -z "$MEDCOUPLING_ROOT_DIR" ; then
-      MEDCOUPLING_ROOT_DIR=$(grep MEDCOUPLING_ROOT_DIR conftest.salome_env | cut -f2 -d'=')
+      MEDCOUPLING_ROOT_DIR=`(grep ^MEDCOUPLING_ROOT_DIR conftest.salome_env | cut -f2 -d'=')`
     fi
 
-    if test -z "$HDF5HOME" ; then
-      HDF5HOME=$(grep HDF5HOME conftest.salome_env | cut -f2 -d'=')
+    if test -z "$HDF5_ROOT_DIR" ; then
+      HDF5_ROOT_DIR=`(grep ^HDF5_ROOT_DIR conftest.salome_env | cut -f2 -d'=')`
+      if test -z "$HDF5_ROOT_DIR" ; then
+        HDF5_ROOT_DIR=`(grep ^HDF5HOME conftest.salome_env | cut -f2 -d'=')`
+      fi
     fi
 
-    if test -z "$MEDHOME" ; then
-      MEDHOME=$(grep MEDHOME conftest.salome_env | cut -f2 -d'=')
+    if test -z "$MEDFILE_ROOT_DIR" ; then
+      MEDFILE_ROOT_DIR=`(grep ^MEDFILE_ROOT_DIR conftest.salome_env | cut -f2 -d'=')`
+      if test -z "$MEDFILE_ROOT_DIR" ; then
+        MEDFILE_ROOT_DIR=`(grep ^MEDHOME conftest.salome_env | cut -f2 -d'=')`
+      fi
     fi
 
-    if test -z "$CGNSHOME" ; then
-      CGNSHOME=$(grep CGNSHOME conftest.salome_env | cut -f2 -d'=')
+    if test -z "$CGNS_ROOT_DIR" ; then
+      CGNS_ROOT_DIR=`(grep ^CGNS_ROOT_DIR conftest.salome_env | cut -f2 -d'=')`
+    fi
+    if test -z "$CGNS_ROOT_DIR" ; then
+      CGNS_ROOT_DIR=`(grep ^CGNSHOME conftest.salome_env | cut -f2 -d'=')`
     fi
 
-    if test -z "$CATALYST_ROOT_DIR" ; then
-      CATALYST_ROOT_DIR=$(grep CATALYST_ROOT_DIR conftest.salome_env | cut -f2 -d'=')
+    if test -z "$PARAVIEW_ROOT_DIR" ; then
+      PARAVIEW_ROOT_DIR=`(grep ^PARAVIEW_ROOT_DIR conftest.salome_env | cut -f2 -d'=')`
     fi
 
     if test -z "$COOLPROPHOME" ; then
-      COOLPROPHOME=$(grep COOLPROPHOME conftest.salome_env | cut -f2 -d'=')
+      COOLPROPHOME=`(grep ^COOLPROPHOME conftest.salome_env | cut -f2 -d'=')`
     fi
 
-    if test -z "$METISDIR" ; then
-      METISDIR=$(grep METISDIR conftest.salome_env | cut -f2 -d'=')
+    if test -z "$METIS_ROOT_DIR" ; then
+      METIS_ROOT_DIR=`(grep ^METIS_ROOT_DIR conftest.salome_env | cut -f2 -d'=')`
     fi
 
-    if test -z "$SCOTCHDIR" ; then
-      SCOTCHDIR=$(grep SCOTCHDIR conftest.salome_env | cut -f2 -d'=')
+    if test -z "$SCOTCH_ROOT_DIR" ; then
+      SCOTCH_ROOT_DIR=`(grep ^SCOTCH_ROOT_DIR conftest.salome_env | cut -f2 -d'=')`
+    fi
+
+    # Also use cmake provided by SALOME if present, assuming it is more
+    # recent than the system one.
+    if test -z "$CMAKE" ; then
+      CMAKE_ROOT=`(grep ^CMAKE_ROOT conftest.salome_env | cut -f2 -d'=')`
+      if test -n "$CMAKE_ROOT" ; then
+        CMAKE="${CMAKE_ROOT}/bin/cmake"
+      fi
     fi
 
     \rm -rf conftest.salome_env

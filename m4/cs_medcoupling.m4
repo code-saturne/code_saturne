@@ -31,22 +31,32 @@ cs_have_medcoupling=no
 cs_have_medcoupling_loader=no
 cs_have_paramedmem=no
 
+AC_ARG_VAR([MEDCOUPLING_ROOT_DIR], [MEDCOUPLING root directory (superseded by --with-medcoupling=PATH)])
+
 # Configure options
 #------------------
 
 AC_ARG_WITH(medcoupling,
             [AS_HELP_STRING([--with-medcoupling=PATH],
                             [specify directory for MEDCoupling and ParaMEDMEM])],
-            [if test "x$withval" = "x"; then
-               with_medcoupling=yes
-             elif test "x$withval" = "xsalome"; then
-               if test -z "$MEDCOUPLING_ROOT_DIR"; then
-                 AC_MSG_FAILURE([no SALOME path information for MED (needed by --with-medcoupling=salome)!])
-               else
+            [if test "x$withval" = "xyes"; then
+               if test "x$MEDCOUPLING_ROOT_DIR" != "x"; then
                  with_medcoupling=$MEDCOUPLING_ROOT_DIR
                fi
+             elif test "x$withval" = "xsalome"; then
+               cs_salome_medcoupling_root_dir=`(/bin/bash -c "unset LD_LIBRARY_PATH ; $SALOMEENVCMD > /dev/null 2>&1 ; echo $MEDCOUPLING_ROOT_DIR")`
+               if test -z "cs_salome_medcoupling_root_dir"; then
+                 AC_MSG_FAILURE([no SALOME path information for MEDCoupling (needed by --with-medcoupling=salome)!])
+               else
+                 with_medcoupling=$cs_salome_medcoupling_root_dir
+               fi
+               unset cs_salome_medcoupling_root_dir
              fi],
-            [with_medcoupling=check])
+             [if test "x$MEDCOUPLING_ROOT_DIR" != "x"; then
+               with_medcoupling=$MEDCOUPLING_ROOT_DIR
+             else
+               with_medcoupling=check
+             fi])
 
 AC_ARG_ENABLE(medcoupling-as-plugin,
   [AS_HELP_STRING([--enable-medcoupling-as-plugin], [use MEDCoupling as plugin])],
