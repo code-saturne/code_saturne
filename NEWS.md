@@ -632,7 +632,7 @@ Numerics and physical modelling:
   Also rename verbose mode for Radiative transfer (iimlum -> verbosity).
 
 - Remove "extrag" option for the pressure gradient, as its use was
-  limited to orthogonal meshes and was long superceded by the
+  limited to orthogonal meshes and was long superseded by the
   `iphydr=1` option.
 
 Architectural changes:

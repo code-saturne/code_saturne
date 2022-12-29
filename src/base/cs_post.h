@@ -211,7 +211,7 @@ typedef void
  *        default output interval for associated variables.
  *
  * This function must be called before the time loop. If a writer with a
- * given id is defined multiple times, the last definition supercedes the
+ * given id is defined multiple times, the last definition supersedes the
  * previous ones.
  *
  * Current reserved ids are the following: CS_POST_WRITER_DEFAULT

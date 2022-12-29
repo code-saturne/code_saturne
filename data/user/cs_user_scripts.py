@@ -160,7 +160,7 @@ def define_domain_parameters(domain):
 
     # Note that compiler flags will be added before the default flags;
     # this helps ensure added search paths have priority, but also implies
-    # that user optimization options may be superceded by the default ones.
+    # that user optimization options may be superseded by the default ones.
 
     domain.compile_cflags = None
     domain.compile_cxxflags = None

@@ -276,7 +276,7 @@ practice is to:
 - With user-defined functions:
   - set the proper velocity profile at inlet in \ref cs_user_boundary_conditions.f90.
     The dummy velocity entered in the GUI will not be taken into account as it is
-    superceded by this definition (but should appear as the initial value
+    superseded by this definition (but should appear as the initial value
     in the corresponding arrays).
 
 The GUI is launched with the `./code_saturne` command in a case's
