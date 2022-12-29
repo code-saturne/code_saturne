@@ -133,6 +133,15 @@ if test "x$with_salome" != "xno" ; then
       SCOTCH_ROOT_DIR=`(grep ^SCOTCH_ROOT_DIR conftest.salome_env | cut -f2 -d'=')`
     fi
 
+    # Also use cmake provided by SALOME if present, assuming it is more
+    # recent than the system one.
+    if test -z "$CMAKE" ; then
+      CMAKE_ROOT=`(grep ^CMAKE_ROOT conftest.salome_env | cut -f2 -d'=')`
+      if test -n "$CMAKE_ROOT" ; then
+        CMAKE="${CMAKE_ROOT}/bin/cmake"
+      fi
+    fi
+
     \rm -rf conftest.salome_env
 
   fi

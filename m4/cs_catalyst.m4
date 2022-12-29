@@ -32,6 +32,8 @@ cs_have_plugin_catalyst=yes
 
 cs_catalyst_version=""
 
+AC_ARG_VAR([PARAVIEW_ROOT_DIR], [ParaView root directory (superseded by --with-catalyst=PATH)])
+
 # Configure options
 #------------------
 
@@ -40,17 +42,30 @@ AC_ARG_WITH(catalyst,
                             [specify prefix directory for Catalyst])],
             [if test "x$withval" = "x"; then
                with_catalyst=no
+             elif test "x$withval" = "xyes"; then
+               if test "x$PARAVIEW_ROOT_DIR" != "x" ; then
+                 with_catalyst=$PARAVIEW_ROOT_DIR
+                 if test -z "$CATALYST_LD_ADD_PATH" -a -n "$SALOMEENVCMD" ; then
+                   CATALYST_LD_ADD_PATH=`(/bin/bash -c "unset LD_LIBRARY_PATH ; $SALOMEENVCMD ; python3 -B $ac_aux_dir/cs_config_test.py salome_paraview_ld_add_path_filter")`
+                 fi
+               else
+                 with_catalyst=yes
+               fi
              elif test "x$withval" = "xsalome"; then
-               if test -z "$PARAVIEW_ROOT_DIR"; then
+               cs_salome_pv_root_dir=`(/bin/bash -c "unset LD_LIBRARY_PATH ; $SALOMEENVCMD > /dev/null 2>&1 ; echo $PARAVIEW_ROOT_DIR")`
+               if test -z "$cs_salome_pv_root_dir"; then
                  AC_MSG_FAILURE([no SALOME  path information for Catalyst
 (PARAVIEW_ROOT_DIR environment variable needed by --with-catalyst=salome)!])
                else
-                 with_catalyst=$PARAVIEW_ROOT_DIR
+                 with_catalyst=$cs_salome_pv_root_dir
                  if test -z "$CATALYST_LD_ADD_PATH" ; then
                    CATALYST_LD_ADD_PATH=`(/bin/bash -c "unset LD_LIBRARY_PATH ; $SALOMEENVCMD ; python3 -B $ac_aux_dir/cs_config_test.py salome_paraview_ld_add_path_filter")`
                  fi
                fi
-             fi],
+               unset cs_salome_pv_root_dir
+             fi
+
+],
             [with_catalyst=no])
 
 AC_ARG_WITH(catalyst-version,

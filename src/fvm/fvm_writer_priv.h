@@ -144,6 +144,9 @@ typedef struct {
   int                      dl_count;     /* Number of writers using the
                                             dynamically loadable library
                                             for this format, if relevant */
+  int                      dl_flags;     /* dlopen flags for dynamically
+                                            loadable library, if used
+                                            (0 for default) */
   void                    *dl_lib;       /* Pointer to dynamically loadable
                                             library, if used */
   const char              *dl_name;      /* Prefix for name of dynamically

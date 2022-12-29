@@ -32,19 +32,29 @@ cs_have_hdf5_header=no
 cs_hdf5_libpath=""
 hdf5_prefix=""
 
+AC_ARG_VAR([HDF5_ROOT_DIR], [HDF5 root directory (superseded by --with-hdf5=PATH)])
+
 AC_ARG_WITH(hdf5,
             [AS_HELP_STRING([--with-hdf5=PATH],
                             [specify prefix directory for HDF5])],
-            [if test "x$withval" = "x"; then
-               with_hdf5=yes
-             elif test "x$withval" = "xsalome"; then
-               if test -z "$HDF5_ROOT_DIR"; then
-                 AC_MSG_FAILURE([no SALOME path information for HDF5 (needed by --with-hdf5=salome)!])
-               else
+            [if test "x$withval" = "xyes"; then
+               if test "x$HDF5_ROOT_DIR" != "x"; then
                  with_hdf5=$HDF5_ROOT_DIR
                fi
+             elif test "x$withval" = "xsalome"; then
+               cs_salome_hdf5_root_dir=`(/bin/bash -c "unset LD_LIBRARY_PATH ; $SALOMEENVCMD > /dev/null 2>&1 ; echo $HDF5_ROOT_DIR")`
+               if test -z "cs_salome_hdf5_root_dir"; then
+                 AC_MSG_FAILURE([no SALOME path information for HDF5 (needed by --with-hdf5=salome)!])
+               else
+                 with_hdf5=$cs_salome_hdf5_root_dir
+               fi
+               unset cs_salome_hdf5_root_dir
              fi],
-            [with_hdf5=check])
+            [if test "x$HDF5_ROOT_DIR" != "x"; then
+               with_hdf5=$HDF5_ROOT_DIR
+             else
+               with_hdf5=check
+             fi])
 
 AC_ARG_WITH(hdf5-include,
             [AS_HELP_STRING([--with-hdf5-include=PATH],

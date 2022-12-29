@@ -10,6 +10,12 @@ Master (not on release branches yet)
 
 ### Architectural changes:
 
+- Update and improve build configuration automation, especially
+  when using the `--with-salome` option with SALOME 9.9 or 9.10 CAS builds.
+  * For ParaView Catalyst, the `--enable-dlopen-rtld-global` option is no
+    longer necessary, as the matching option is handled automatically
+    when loading the matching plugin.
+
 - Add and deploy several functions in cs_array.[c,h] to centralize
   simple operations on arrays (fill with zero, set a constant value on
   the whole array or partly, copy partly or fully an array into

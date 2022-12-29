@@ -33,22 +33,32 @@ cs_have_med_headers=no
 cs_have_med_link_cxx=no
 med_prefix=""
 
+AC_ARG_VAR([MEDFILE_ROOT_DIR], [MED root directory (superseded by --with-med=PATH)])
+
 # Configure options
 #------------------
 
 AC_ARG_WITH(med,
             [AS_HELP_STRING([--with-med=PATH],
                             [specify prefix directory for MED])],
-            [if test "x$withval" = "x"; then
-               with_med=yes
-             elif test "x$withval" = "xsalome"; then
-               if test -z "$MEDFILE_ROOT_DIR"; then
-                 AC_MSG_FAILURE([no SALOME path information for MED (needed by --with-med=salome)!])
-               else
+            [if test "x$withval" = "xyes"; then
+               if test "x$MEDFILE_ROOT_DIR" != "x"; then
                  with_med=$MEDFILE_ROOT_DIR
                fi
+             elif test "x$withval" = "xsalome"; then
+               cs_salome_medfile_root_dir=`(/bin/bash -c "unset LD_LIBRARY_PATH ; $SALOMEENVCMD > /dev/null 2>&1 ; echo $MEDFILE_ROOT_DIR")`
+               if test -z "$cs_salome_medfile_root_dir"; then
+                 AC_MSG_FAILURE([no SALOME path information for MED (needed by --with-med=salome)!])
+               else
+                 with_med=$cs_salome_medfile_root_dir
+               fi
+               unset cs_salome_medfile_root_dir
              fi],
-            [with_med=check])
+            [if test "x$MEDFILE_ROOT_DIR" != "x"; then
+               with_med=$MEDFILE_ROOT_DIR
+             else
+               with_med=check
+             fi])
 
 AC_ARG_WITH(med-include,
             [AS_HELP_STRING([--with-med-include=PATH],
