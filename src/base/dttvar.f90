@@ -131,7 +131,7 @@ double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2, w3, dtsdt0
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom
-double precision, dimension(:), pointer :: viscl, visct, cpro_cour, cpro_four
+double precision, dimension(:), pointer :: viscl, visct
 
 type(var_cal_opt) :: vcopt_u, vcopt_p
 
@@ -198,8 +198,6 @@ call field_get_val_s(iviscl, viscl)
 call field_get_val_s(ivisct, visct)
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
-call field_get_val_s(icour, cpro_cour)
-call field_get_val_s(ifour, cpro_four)
 
 !===============================================================================
 ! 1. Compute CFL like condition on the time step for positive density for the

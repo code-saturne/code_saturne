@@ -363,6 +363,7 @@ _pressure_correction_fv(int        iterns,
     cs_real_t *cpro_rho_mass = cs_field_by_name("density_mass")->val;
     cs_real_t *bpro_rho_mass = cs_field_by_name("boundary_density_mass")->val;
 
+    /* Staggered in time velocity and pressure */
     if (eqp_u->thetav < 1 && iterns > 1 && vp_param->itpcol == 0) {
       BFT_MALLOC(cpro_rho_tc, n_cells_ext, cs_real_t);
       BFT_MALLOC(bpro_rho_tc, m->n_b_faces, cs_real_t);
