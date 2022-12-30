@@ -114,7 +114,9 @@ double precision normp
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbrs, rovsdt
-double precision, allocatable, dimension(:) :: dpvar, divu
+double precision, allocatable, dimension(:) :: dpvar
+double precision, allocatable, dimension(:), target :: t_divu
+double precision, dimension(:), pointer :: divu
 double precision, dimension(:), pointer :: ivolfl, bvolfl
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: c_st_voidf
@@ -155,7 +157,6 @@ allocate(smbrs(ncelet),rovsdt(ncelet))
 
 ! Allocate work arrays
 allocate(dpvar(ncelet))
-allocate(divu(ncelet))
 
 ! --- Boundary conditions
 
@@ -279,17 +280,31 @@ endif
 
 ! Source term linked with the non-conservative form of convection term
 ! in cs_equation_iterative_solve_scalar (always implicited)
-! FIXME set imasac per variable? Here it could be set to 0
-! and divu not added
+! FIXME set imasac per variable? Here it could be set to 0 and divu not added
+! Note: we prefer to be not perfectly conservative (up to the precision
+! of the pressure solver, but that allows to fullfill the min/max principle
+! on alpha
 init = 1
+call field_get_id_try("velocity_divergence", f_id)
+if (f_id.ge.0) then
+  call field_get_val_s(f_id, divu)
+else
+  !Allocation
+  allocate(t_divu(ncelet))
+  divu => t_divu
+endif
+
+
 call divmas (init,ivolfl,bvolfl,divu)
 
 do iel = 1, ncel
-  smbrs(iel) = smbrs(iel) - divu(iel)*cvara_voidf(iel)
-  rovsdt(iel) = divu(iel)
+  ! Should be for the consrvative form:
+  ! smbrs(iel) = smbrs(iel) - divu(iel)*cvara_voidf(iel)
+  ! rovsdt(iel) = divu(iel)
+  rovsdt(iel) = 0.d0
 enddo
 
-deallocate(divu)
+if (allocated(t_divu)) deallocate(t_divu)
 
 if (idrift.gt.0) then
   imrgrp = vcopt%imrgra
@@ -300,7 +315,6 @@ if (idrift.gt.0) then
   climgp = vcopt%climgr
 
   call vof_drift_term &
-  !==========
 ( imrgrp , nswrgp , imligp , iwarnp , epsrgp , climgp ,          &
   cvar_voidf      , cvara_voidf     , smbrs  )
 endif
