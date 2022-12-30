@@ -137,7 +137,7 @@ _calc_heq(cs_real_t h1,
  * beta limiter (ensuring preservation of a given min/max pair of values).
  *
  * parameters:
- *   f_id        <-- field id (or -1)
+ *   f_id        <-- field id
  *   inc         <-- 0 if an increment, 1 otherwise
  *   denom_inf   --> computed denominator for the inferior bound
  *   denom_sup   --> computed denominator for the superior bound
@@ -450,16 +450,16 @@ _beta_limiter_denom(const int              f_id,
         cs_real_t partii = 0.5*(flux + CS_ABS(flux));
         cs_real_t partjj = 0.5*(flux - CS_ABS(flux));
 
-        denom_inf[ii] = denom_inf[ii] + partii;
-        denom_inf[jj] = denom_inf[jj] - partjj;
+        denom_inf[ii] += partii;
+        denom_inf[jj] -= partjj;
 
         /* blending to prevent SUPERIOR bound violation
           We need to take the negative part
           Note: the swap between ii and jj is due to the fact
           that an upwind value on (Y-bound) is equivalent to a
           downwind value on (bound-Y) */
-        denom_sup[ii] = denom_sup[ii] - partjj;
-        denom_sup[jj] = denom_sup[jj] + partii;
+        denom_sup[ii] -= partjj;
+        denom_sup[jj] += partii;
       }
     }
   }
@@ -541,8 +541,8 @@ _beta_limiter_num(const int           f_id,
 
 # pragma omp parallel for
   for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
-    num_inf[ii] = rovsdt[ii] * (pvara[ii] -scalar_min);
-    num_sup[ii] = rovsdt[ii] * (scalar_max-pvara[ii]);
+    num_inf[ii] = rovsdt[ii] * fmax(pvara[ii] -scalar_min, 0.);
+    num_sup[ii] = rovsdt[ii] * fmax(scalar_max-pvara[ii], 0.);
   }
 
   /* ---> Contribution from interior faces */
@@ -560,14 +560,14 @@ _beta_limiter_num(const int           f_id,
         cs_real_t flui = 0.5*(i_massflux[face_id] + fabs(i_massflux[face_id]));
         cs_real_t fluj = 0.5*(i_massflux[face_id] - fabs(i_massflux[face_id]));
 
-        cs_real_t pi = pvara[ii]-scalar_min;
-        cs_real_t pj = pvara[jj]-scalar_min;
+        cs_real_t pi = fmax(pvara[ii]-scalar_min, 0.);
+        cs_real_t pj = fmax(pvara[jj]-scalar_min, 0.);
 
         num_inf[ii] -= thetex *(pi * flui + pj * fluj);
         num_inf[jj] += thetex *(pj * fluj + pi * flui);
 
-        pi = scalar_max-pvara[ii];
-        pj = scalar_max-pvara[jj];
+        pi = fmax(scalar_max-pvara[ii], 0.);
+        pj = fmax(scalar_max-pvara[jj], 0.);
 
         num_sup[ii] -= thetex *(pi * flui + pj * fluj);
         num_sup[jj] += thetex *(pj * fluj + pi * flui);
@@ -589,10 +589,10 @@ _beta_limiter_num(const int           f_id,
       cs_real_t fluf = 0.5*(b_massflux[face_id]-fabs(b_massflux[face_id]));
       cs_real_t pfabor = inc*coefap[face_id]+coefbp[face_id]*pvara[ii];
 
-      num_inf[ii] -= thetex *( (pvara[ii]-scalar_min) * flui
-                              + (pfabor   -scalar_min) * fluf);
-      num_sup[ii] -= thetex *( (scalar_max-pvara[ii]) * flui
-                              + (scalar_max-pfabor   ) * fluf);
+      num_inf[ii] -= thetex *( fmax(pvara[ii]-scalar_min, 0.) * flui
+                              + fmax(pfabor  -scalar_min, 0.) * fluf);
+      num_sup[ii] -= thetex *( fmax(scalar_max-pvara[ii], 0.) * flui
+                              + fmax(scalar_max-pfabor,   0.) * fluf);
     }
   }
 }
@@ -915,8 +915,6 @@ cs_cell_courant_number(const int   f_id,
 
   /* ---> Contribution from interior faces */
 
-  cs_real_t cnt;
-
   for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #   pragma omp parallel for
     for (int t_id = 0; t_id < n_i_threads; t_id++) {
@@ -926,8 +924,8 @@ cs_cell_courant_number(const int   f_id,
         cs_lnum_t ii = i_face_cells[face_id][0];
         cs_lnum_t jj = i_face_cells[face_id][1];
 
-        cnt = CS_ABS(i_massflux[face_id])*dt[ii]/vol[ii];
-        courant[ii] = CS_MAX(courant[ii], cnt);
+        cs_real_t cnt = CS_ABS(i_massflux[face_id])*dt[ii]/vol[ii];
+        courant[ii] = CS_MAX(courant[ii], cnt);//FIXME may contains rho
 
         cnt = CS_ABS(i_massflux[face_id])*dt[jj]/vol[jj];
         courant[jj] = CS_MAX(courant[jj], cnt);
@@ -944,7 +942,7 @@ cs_cell_courant_number(const int   f_id,
          face_id++) {
       cs_lnum_t ii = b_face_cells[face_id];
 
-      cnt = CS_ABS(b_massflux[face_id])*dt[ii]/vol[ii];
+      cs_real_t cnt = CS_ABS(b_massflux[face_id])*dt[ii]/vol[ii];
       courant[ii] = CS_MAX(courant[ii], cnt);
     }
   }
@@ -1112,9 +1110,9 @@ cs_slope_test_gradient(int                     f_id,
 
       cs_real_t pfac = inc*coefap[face_id] + coefbp[face_id]
         * (pvar[ii] + cs_math_3_dot_product(grad[ii], diipb[face_id]));
-      grdpa[ii][0] = grdpa[ii][0] + pfac*b_face_normal[face_id][0];
-      grdpa[ii][1] = grdpa[ii][1] + pfac*b_face_normal[face_id][1];
-      grdpa[ii][2] = grdpa[ii][2] + pfac*b_face_normal[face_id][2];
+      grdpa[ii][0] += pfac*b_face_normal[face_id][0];
+      grdpa[ii][1] += pfac*b_face_normal[face_id][1];
+      grdpa[ii][2] += pfac*b_face_normal[face_id][2];
 
     }
   }
@@ -1124,9 +1122,9 @@ cs_slope_test_gradient(int                     f_id,
 
     cs_real_t unsvol = 1./cell_vol[cell_id];
 
-    grdpa[cell_id][0] = grdpa[cell_id][0]*unsvol;
-    grdpa[cell_id][1] = grdpa[cell_id][1]*unsvol;
-    grdpa[cell_id][2] = grdpa[cell_id][2]*unsvol;
+    grdpa[cell_id][0] *= unsvol;
+    grdpa[cell_id][1] *= unsvol;
+    grdpa[cell_id][2] *= unsvol;
 
   }
 
@@ -1210,17 +1208,11 @@ cs_upwind_gradient(const int                     f_id,
         cs_real_t pfac = pjf;
         if (i_massflux[face_id] > 0.) pfac = pif;
 
-        cs_real_t pfac1 = pfac*i_face_normal[face_id][0];
-        cs_real_t pfac2 = pfac*i_face_normal[face_id][1];
-        cs_real_t pfac3 = pfac*i_face_normal[face_id][2];
-
-        grdpa[ii][0] = grdpa[ii][0] + pfac1;
-        grdpa[ii][1] = grdpa[ii][1] + pfac2;
-        grdpa[ii][2] = grdpa[ii][2] + pfac3;
-
-        grdpa[jj][0] = grdpa[jj][0] - pfac1;
-        grdpa[jj][1] = grdpa[jj][1] - pfac2;
-        grdpa[jj][2] = grdpa[jj][2] - pfac3;
+        for (cs_lnum_t k = 0; k < 3; k++) {
+          cs_real_t pfack = pfac*i_face_normal[face_id][k];
+          grdpa[ii][k] += pfack;
+          grdpa[jj][k] -= pfack;
+        }
 
       }
     }
