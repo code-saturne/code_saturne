@@ -847,15 +847,39 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
         prev_s_pvar[iel] = pvar[iel]-dpvar[iel];
       }
 
-      cs_real_t *i_flux2;
-      BFT_MALLOC(i_flux2, 2*n_i_faces, cs_real_t);
+      cs_real_2_t *i_flux2;
+      BFT_MALLOC(i_flux2, n_i_faces, cs_real_2_t);
       for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
-        i_flux2[2*face_id  ] = 0.;
-        i_flux2[2*face_id+1] = 0.;
+        i_flux2[face_id][0] = 0.;
+        i_flux2[face_id][1] = 0.;
       }
 
       inc  = 1;
       imasac = 0; /* mass accumluation not taken into account */
+
+      /* If thetex = 0, no need to do more */
+      if (fabs(thetex) > cs_math_epzero) {
+        cs_real_t thetap = var_cal_opt->thetav;
+        var_cal_opt->thetav = thetex;
+
+        cs_face_convection_scalar(idtvar,
+                                  f_id,
+                                  *var_cal_opt,
+                                  icvflb,
+                                  inc,
+                                  imasac,
+                                  NULL, /* pvar == pvara */
+                                  pvara,
+                                  icvfli,
+                                  coefap,
+                                  coefbp,
+                                  i_massflux,
+                                  b_massflux,
+                                  i_flux2,
+                                  b_flux->val);
+
+        var_cal_opt->thetav = thetap;
+      }
 
       cs_face_convection_scalar(idtvar,
                                 f_id,
@@ -870,7 +894,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                 coefbp,
                                 i_massflux,
                                 b_massflux,
-                                (cs_real_2_t *)i_flux2,
+                                i_flux2,
                                 b_flux->val);
       BFT_FREE(prev_s_pvar);
 
@@ -899,13 +923,15 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                 coefbp,
                                 i_massflux,
                                 b_massflux,
-                                (cs_real_2_t *)i_flux2,
+                                i_flux2,
                                 b_flux->val);
 
       /* FIXME diffusion part */
 
+      /* Store the convectif flux,
+       * Note that the two sides are equal if imasac=0 */
       for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
-        i_flux->val[face_id] += i_flux2[2*face_id];
+        i_flux->val[face_id] += i_flux2[face_id][0];
       BFT_FREE(i_flux2);
     }
   }
