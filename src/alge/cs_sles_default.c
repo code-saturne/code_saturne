@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2022 EDF S.A.
+  Copyright (C) 1998-2023 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -107,6 +107,7 @@ static cs_matrix_t  *_matrix_setup[CS_SLES_DEFAULT_N_SETUPS][2];
 
 static const int _poly_degree_default = 0;
 static const int _n_max_iter_default = 10000;
+static const int _n_max_iter_default_jacobi = 100;
 
 /*============================================================================
  * Private function definitions
@@ -237,13 +238,23 @@ _sles_default_native(int                f_id,
   else if (multigrid == 2)
     cs_multigrid_define(f_id, name, CS_MULTIGRID_V_CYCLE);
 
-  else
-    (void)cs_sles_it_define(f_id,
-                            name,
-                            sles_it_type,
-                            _poly_degree_default,
-                            n_max_iter);
+  else {
+    cs_sles_it_t *context = cs_sles_it_define(f_id,
+                                              name,
+                                              sles_it_type,
+                                              _poly_degree_default,
+                                              n_max_iter);
 
+    if (   sles_it_type == CS_SLES_JACOBI
+        || sles_it_type == CS_SLES_P_GAUSS_SEIDEL
+        || sles_it_type == CS_SLES_P_SYM_GAUSS_SEIDEL) {
+      cs_sles_it_set_fallback_threshold(context,
+                                        CS_SLES_ITERATING,
+                                        n_max_iter);
+      cs_sles_it_set_n_max_iter(context, _n_max_iter_default_jacobi);
+    }
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/

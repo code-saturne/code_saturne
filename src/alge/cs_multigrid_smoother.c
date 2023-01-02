@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2022 EDF S.A.
+  Copyright (C) 1998-2023 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1780,6 +1780,9 @@ cs_multigrid_smoother_create(cs_sles_it_type_t    smoother_type,
   c->on_device = false;
   c->update_stats = false;
   c->ignore_convergence = true;
+
+  c->fallback_cvg = CS_SLES_DIVERGED;
+  c->fallback_n_max_iter = 0;
   c->fallback = NULL;
 
   switch (smoother_type) {      /* Valid choices */

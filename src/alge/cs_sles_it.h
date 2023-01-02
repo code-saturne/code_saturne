@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2022 EDF S.A.
+  Copyright (C) 1998-2023 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -71,7 +71,7 @@ typedef enum {
   CS_SLES_USER_DEFINED,        /*!< User-defined iterative solver */
 
   CS_SLES_N_IT_TYPES,          /*!< Number of resolution algorithms
-                                    excluding smoother only*/
+                                    excluding smoother only */
 
   CS_SLES_TS_F_GAUSS_SEIDEL,   /*!< Truncated forward Gauss-Seidel smoother */
   CS_SLES_TS_B_GAUSS_SEIDEL,   /*!< Truncated backward Gauss-Seidel smoother */
@@ -490,12 +490,14 @@ cs_sles_it_set_breakdown_threshold(double  threshold);
  *
  * \param[in, out]  context    pointer to iterative solver info and context
  * \param[in]       threshold  convergence level under which fallback is used
+ * \param[in]       n_iter_max  maximum number of iterations fo fallback solver
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_sles_it_set_fallback_threshold(cs_sles_it_t                 *context,
-                                  cs_sles_convergence_state_t   threshold);
+                                  cs_sles_convergence_state_t   threshold,
+                                  int                           n_iter_max);
 
 /*----------------------------------------------------------------------------*/
 /*!

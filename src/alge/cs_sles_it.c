@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2022 EDF S.A.
+  Copyright (C) 1998-2023 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -155,6 +155,32 @@ const char *cs_sles_it_type_name[]
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Return a solver category based on possible preconditioning type.
+ *
+ * parameters:
+ *   solver_type  <-- solver type
+ *
+ * returns:
+ *   1 for Krylov-type solvers, 2 for Jacobi or Gauss-seidel, 0 otherwise
+ *----------------------------------------------------------------------------*/
+
+static int
+_setup_category(cs_sles_it_type_t  solver_type)
+{
+  int retval = 1;
+
+  if (   solver_type == CS_SLES_JACOBI
+      || solver_type == CS_SLES_P_GAUSS_SEIDEL
+      || solver_type == CS_SLES_P_SYM_GAUSS_SEIDEL)
+    retval = 2;
+
+  else if (solver_type >= CS_SLES_USER_DEFINED)
+    retval = 0;
+
+  return retval;
+}
 
 /*----------------------------------------------------------------------------
  * Convergence test.
@@ -3706,12 +3732,20 @@ _fallback(cs_sles_it_t                    *c,
 
   if (c->fallback == NULL) {
 
-    c->fallback = cs_sles_it_create(solver_type,
-                                    -1, /* poly_degree */
-                                    c->n_max_iter,
-                                    c->update_stats);
+    /* Share context if possible */
 
-    cs_sles_it_set_shareable(c->fallback, c);
+    if (_setup_category(c->type) == _setup_category(solver_type)) {
+      c->fallback = cs_sles_it_create(solver_type,
+                                      -1, /* poly_degree */
+                                      c->fallback_n_max_iter,
+                                      c->update_stats);
+      cs_sles_it_set_shareable(c->fallback, c);
+    }
+    else
+      c->fallback = cs_sles_it_create(solver_type,
+                                      0, /* poly_degree */
+                                      c->fallback_n_max_iter,
+                                      c->update_stats);
 
     c->fallback->plot = c->plot;
 
@@ -3958,9 +3992,7 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   c->add_data = NULL;
   c->shared = NULL;
 
-  /* Fallback mechanism; note that for fallbacks,
-     the preconditioner is shared, so Krylov methods
-     may not be mixed with Jacobi or Gauss-Seidel methods */
+  /* Fallback mechanism */
 
   switch(c->type) {
   case CS_SLES_BICGSTAB:
@@ -3971,6 +4003,7 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   default:
     c->fallback_cvg = CS_SLES_DIVERGED;
   }
+  c->fallback_n_max_iter = n_max_iter;
 
   c->fallback = NULL;
 
@@ -4543,7 +4576,7 @@ cs_sles_it_solve(void                *context,
 
   cs_sles_it_type_t fallback_type = CS_SLES_N_IT_TYPES;
   if (cvg < c->fallback_cvg)
-    fallback_type = CS_SLES_GMRES;
+    fallback_type = (c->on_device) ? CS_SLES_GCR : CS_SLES_GMRES;
 
   if (c->update_stats == true) {
 
@@ -4551,14 +4584,12 @@ cs_sles_it_solve(void                *context,
 
     c->n_solves += 1;
 
-    if (fallback_type == CS_SLES_N_IT_TYPES) {
-      if (c->n_iterations_tot == 0)
-        c->n_iterations_min = _n_iter;
-      else if (c->n_iterations_min > _n_iter)
-        c->n_iterations_min = _n_iter;
-      if (c->n_iterations_max < _n_iter)
-        c->n_iterations_max = _n_iter;
-    }
+    if (c->n_iterations_tot == 0)
+      c->n_iterations_min = _n_iter;
+    else if (c->n_iterations_min > _n_iter)
+      c->n_iterations_min = _n_iter;
+    if (c->n_iterations_max < _n_iter)
+      c->n_iterations_max = _n_iter;
 
     c->n_iterations_last = _n_iter;
     c->n_iterations_tot += _n_iter;
@@ -4936,9 +4967,11 @@ cs_sles_it_set_breakdown_threshold(double  threshold)
 
 void
 cs_sles_it_set_fallback_threshold(cs_sles_it_t                 *context,
-                                  cs_sles_convergence_state_t   threshold)
+                                  cs_sles_convergence_state_t   threshold,
+                                  int                           n_iter_max)
 {
   context->fallback_cvg = threshold;
+  context->fallback_n_max_iter = n_iter_max;
 }
 
 /*----------------------------------------------------------------------------*/
