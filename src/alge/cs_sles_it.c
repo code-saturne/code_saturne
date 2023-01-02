@@ -3966,7 +3966,7 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   case CS_SLES_BICGSTAB:
   case CS_SLES_BICGSTAB2:
   case CS_SLES_PCR3:
-    c->fallback_cvg = CS_SLES_BREAKDOWN;
+    c->fallback_cvg = CS_SLES_MAX_ITERATION;
     break;
   default:
     c->fallback_cvg = CS_SLES_DIVERGED;
@@ -4906,12 +4906,12 @@ cs_sles_it_get_breakdown_threshold(void)
  * \brief Define the threshold value under which a breakdown happens in
  *        solvers like BiCGStab or BiCGStab2
  *
- * \param[in]     threshold        value of the threshold
+ * \param[in]  threshold  value of the threshold
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sles_it_set_breakdown_threshold(double         threshold)
+cs_sles_it_set_breakdown_threshold(double  threshold)
 {
   _epzero = threshold;
 }
@@ -4921,11 +4921,13 @@ cs_sles_it_set_breakdown_threshold(double         threshold)
  * \brief Define convergence level under which the fallback to another
  *        solver may be used if applicable.
  *
- * Currently, this mechanism is only by default used for BiCGstab and
- * 3-layer conjugate residual solvers with scalar matrices, which may
- * fall back to a preconditioned GMRES solver. For those solvers, the
- * default threshold is \ref CS_SLES_BREAKDOWN, meaning that divergence
- * (but not breakdown) will lead to the use of the fallback mechanism.
+ * Currently, this mechanism is used by default for solvers which may exhibit
+ * breakdown, such as BiCGstab and 3-layer conjugate residual solvers, which
+ * may fall back to a a more robust preconditioned GMRES solver.
+ *
+ * For those solvers, the default threshold is \ref CS_SLES_MAX_ITERATION,
+ * meaning that reaching breakdown will lead to the use of the
+ * fallback mechanism.
  *
  * \param[in, out]  context    pointer to iterative solver info and context
  * \param[in]       threshold  convergence level under which fallback is used
@@ -4944,14 +4946,14 @@ cs_sles_it_set_fallback_threshold(cs_sles_it_t                 *context,
  * \brief Define the number of iterations to be done before restarting the
  *        solver. Useful only for GCR or GMRES algorithms.
  *
- * \param[in, out]  context    pointer to iterative solver info and context
- * \param[in]       interval   convergence level under which fallback is used
+ * \param[in, out]  context   pointer to iterative solver info and context
+ * \param[in]       interval  convergence level under which fallback is used
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sles_it_set_restart_interval(cs_sles_it_t                 *context,
-                                int                           interval)
+cs_sles_it_set_restart_interval(cs_sles_it_t  *context,
+                                int            interval)
 {
   if (context == NULL)
     return;
@@ -4969,8 +4971,8 @@ cs_sles_it_set_restart_interval(cs_sles_it_t                 *context,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sles_it_set_n_max_iter(cs_sles_it_t        *context,
-                          int                  n_max_iter)
+cs_sles_it_set_n_max_iter(cs_sles_it_t  *context,
+                          int            n_max_iter)
 {
   if (context == NULL)
     return;
