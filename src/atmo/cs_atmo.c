@@ -935,6 +935,15 @@ _mo_phih_u(cs_real_t              z,
       return a*pow(1.-b*x, e);
     }
 
+  case CS_ATMO_UNIV_FN_CARL:
+    {
+      cs_real_t a = 0.74;
+      cs_real_t b = 16.;
+      cs_real_t e = -0.5;
+
+      return a*pow(1.-b*x, e);
+    }
+
   default:
     assert(0);
     return -1;
@@ -1167,6 +1176,17 @@ _mo_psih_u(cs_real_t              z,
      {
        cs_real_t a = 0.74;
        cs_real_t b = 9.;
+       cs_real_t e = 0.5;
+       cs_real_t x = pow((1. - b*z*dlmo), e);
+       cs_real_t x0 = pow((1. - b*z0*dlmo), e);
+
+       return a*(log(z/z0) - 2.*log((1. + x)/(1. + x0)));
+     }
+
+   case  CS_ATMO_UNIV_FN_CARL:
+     {
+       cs_real_t a = 0.74;
+       cs_real_t b = 16.;
        cs_real_t e = 0.5;
        cs_real_t x = pow((1. - b*z*dlmo), e);
        cs_real_t x0 = pow((1. - b*z0*dlmo), e);
