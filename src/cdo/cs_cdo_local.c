@@ -226,8 +226,8 @@ cs_cdo_local_finalize(void)
 /*!
  * \brief  Allocate a \ref cs_cell_sys_t structure
  *
- * \param[in]   n_max_dofbyc    max number of entries
- * \param[in]   n_max_fbyc      max number of faces in a cell
+ * \param[in]   n_max_dofbyc    max. number of DoFs at a cell-wise level
+ * \param[in]   n_max_fbyc      max. number of faces in a cell
  * \param[in]   n_blocks        number of blocks in a row/column
  * \param[in]   block_sizes     size of each block or NULL.
  *                              Specific treatment n_blocks = 1.
@@ -242,114 +242,121 @@ cs_cell_sys_create(int      n_max_dofbyc,
                    int      n_blocks,
                    int     *block_sizes)
 {
+  const size_t  s = n_max_dofbyc * sizeof(double);
+
   cs_cell_sys_t  *csys = NULL;
 
   BFT_MALLOC(csys, 1, cs_cell_sys_t);
 
   /* Metadata about DoFs */
 
-  csys->c_id = -1;
   csys->n_dofs = 0;
-  csys->dof_ids = NULL;
+
   csys->dof_flag = NULL;
+  BFT_MALLOC(csys->dof_flag, n_max_dofbyc, cs_flag_t);
+  memset(csys->dof_flag, 0, sizeof(cs_flag_t)*n_max_dofbyc);
 
-  /* System and previous values */
+  csys->dof_ids = NULL;
+  BFT_MALLOC(csys->dof_ids, n_max_dofbyc, cs_lnum_t);
+  memset(csys->dof_ids, 0, sizeof(cs_lnum_t)*n_max_dofbyc);
 
+  /* Cell-wise view of the system and its DoF values */
+
+  csys->c_id = -1;
   csys->mat = NULL;
+
+  if (block_sizes == NULL) {  /* No block */
+
+    csys->mat = cs_sdm_square_create(n_max_dofbyc);
+
+  }
+  else if (n_blocks == 1) {
+
+    assert(block_sizes != NULL);
+    if (block_sizes[0] == 3) {  /* Interlaced vetor-valued system */
+      int  n_row_blocks = n_max_dofbyc/3;
+      assert(n_max_dofbyc % 3 == 0);
+      csys->mat = cs_sdm_block33_create(n_row_blocks, n_row_blocks);
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid initialization of the cellwise block matrix\n",
+                __func__);
+
+  }
+  else { /* General case */
+
+    csys->mat = cs_sdm_block_create(n_blocks, n_blocks,
+                                    block_sizes,
+                                    block_sizes);
+
+  }
+
   csys->rhs = NULL;
+  BFT_MALLOC(csys->rhs, n_max_dofbyc, double);
+  memset(csys->rhs, 0, s);
+
   csys->source = NULL;
+  BFT_MALLOC(csys->source, n_max_dofbyc, double);
+  memset(csys->source, 0, s);
+
   csys->val_n = NULL;
+  BFT_MALLOC(csys->val_n, n_max_dofbyc, double);
+  memset(csys->val_n, 0, s);
+
   csys->val_nm1 = NULL;
+  BFT_MALLOC(csys->val_nm1, n_max_dofbyc, double);
+  memset(csys->val_nm1, 0, s);
 
   /* Internal enforcement */
 
   csys->has_internal_enforcement = false;
-  csys->dof_is_forced = NULL;
 
-  if (n_max_dofbyc > 0)
-    BFT_MALLOC(csys->dof_is_forced, n_max_dofbyc, bool);
+  csys->dof_is_forced = NULL;
+  BFT_MALLOC(csys->dof_is_forced, n_max_dofbyc, bool);
 
   /* Boundary conditions */
+  /* ------------------- */
 
   csys->n_bc_faces = 0;
-  csys->_f_ids = NULL;
-  csys->bf_ids = NULL;
+
   csys->bf_flag = NULL;
+  BFT_MALLOC(csys->bf_flag, n_max_fbyc, cs_flag_t);
+  memset(csys->bf_flag, 0, sizeof(cs_flag_t)*n_max_fbyc);
+
+  csys->_f_ids = NULL;
+  BFT_MALLOC(csys->_f_ids, n_max_fbyc, short int);
+  memset(csys->_f_ids, 0, sizeof(short int)*n_max_fbyc);
+
+  csys->bf_ids = NULL;
+  BFT_MALLOC(csys->bf_ids, n_max_fbyc, cs_lnum_t);
+  memset(csys->bf_ids, 0, sizeof(cs_lnum_t)*n_max_fbyc);
+
+  /* Dirichlet */
 
   csys->has_dirichlet = false;
-  csys->dir_values = NULL;
+  csys->dir_values = NULL; /* Warning: values on DoFs */
+  BFT_MALLOC(csys->dir_values, n_max_dofbyc, double);
+  memset(csys->dir_values, 0, s);
+
+  /* Neumann */
 
   csys->has_nhmg_neumann = false;
   csys->neu_values = NULL;
+  BFT_MALLOC(csys->neu_values, n_max_dofbyc, double);
+  memset(csys->neu_values, 0, s);
 
-  csys->has_robin = false;
-  csys->rob_values = NULL;
-
-  csys->has_sliding = false;
-
-  if (n_max_fbyc > 0) {
-
-    BFT_MALLOC(csys->bf_flag, n_max_fbyc, cs_flag_t);
-    memset(csys->bf_flag, 0, sizeof(cs_flag_t)*n_max_fbyc);
-
-    BFT_MALLOC(csys->_f_ids, n_max_fbyc, short int);
-    memset(csys->_f_ids, 0, sizeof(short int)*n_max_fbyc);
-
-    BFT_MALLOC(csys->bf_ids, n_max_fbyc, cs_lnum_t);
-    memset(csys->bf_ids, 0, sizeof(cs_lnum_t)*n_max_fbyc);
-
-  }
-
-  if (n_max_dofbyc > 0) {
-
-    BFT_MALLOC(csys->dof_flag, n_max_dofbyc, cs_flag_t);
-    memset(csys->dof_flag, 0, sizeof(cs_flag_t)*n_max_dofbyc);
-
-    BFT_MALLOC(csys->dof_ids, n_max_dofbyc, cs_lnum_t);
-    memset(csys->dof_ids, 0, sizeof(cs_lnum_t)*n_max_dofbyc);
-
-    if (block_sizes == NULL)
-      csys->mat = cs_sdm_square_create(n_max_dofbyc);
-
-    else if (n_blocks == 1) {
-
-      assert(block_sizes != NULL);
-      if (block_sizes[0] == 3) {
-        int  n_row_blocks = n_max_dofbyc/3;
-        assert(n_max_dofbyc % 3 == 0);
-        csys->mat = cs_sdm_block33_create(n_row_blocks, n_row_blocks);
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Invalid initialization of the cellwise block matrix\n",
-                  __func__);
-
-    }
-    else
-      csys->mat = cs_sdm_block_create(n_blocks, n_blocks,
-                                      block_sizes,
-                                      block_sizes);
-
-    BFT_MALLOC(csys->rhs       , n_max_dofbyc, double);
-    BFT_MALLOC(csys->source    , n_max_dofbyc, double);
-    BFT_MALLOC(csys->val_n     , n_max_dofbyc, double);
-    BFT_MALLOC(csys->val_nm1   , n_max_dofbyc, double);
-    BFT_MALLOC(csys->dir_values, n_max_dofbyc, double);
-    BFT_MALLOC(csys->neu_values, n_max_dofbyc, double);
-
-    const size_t  s = n_max_dofbyc * sizeof(double);
-
-    memset(csys->rhs       , 0, s);
-    memset(csys->source    , 0, s);
-    memset(csys->val_n     , 0, s);
-    memset(csys->val_nm1   , 0, s);
-    memset(csys->dir_values, 0, s);
-    memset(csys->neu_values, 0, s);
-  }
+  /* Robin */
 
   int  n_rob_size = n_robin_parameters*CS_MAX(n_max_dofbyc, n_max_fbyc);
+  csys->has_robin = false;
+  csys->rob_values = NULL;
   BFT_MALLOC(csys->rob_values, n_rob_size, double);
   memset(csys->rob_values, 0, n_rob_size*sizeof(cs_real_t));
+
+  /* Sliding (only for vector-valued system) */
+
+  csys->has_sliding = false;
 
   return csys;
 }
