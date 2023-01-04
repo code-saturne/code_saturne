@@ -946,12 +946,7 @@ void
 cs_cdovcb_scaleq_get(cs_cell_sys_t       **csys,
                      cs_cell_builder_t   **cb)
 {
-  int t_id = 0;
-
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-  t_id = omp_get_thread_num();
-  assert(t_id < cs_glob_n_threads);
-#endif /* openMP */
+  int  t_id = cs_get_thread_id();
 
   *csys = _vcbs_cell_system[t_id];
   *cb = _vcbs_cell_builder[t_id];
@@ -1554,11 +1549,7 @@ cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
 
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
@@ -1792,11 +1783,7 @@ cs_cdovcb_scaleq_solve_steady_state(bool                        cur2prev,
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
 
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
@@ -2034,11 +2021,7 @@ cs_cdovcb_scaleq_solve_implicit(bool                        cur2prev,
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
 
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
@@ -2383,11 +2366,7 @@ cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
 
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
@@ -2796,12 +2775,7 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
          _vcbs_cell_builder)                                            \
   firstprivate(t_eval)
   {
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
-
+    const int  t_id = cs_get_thread_id();
     const cs_cdo_bc_face_t  *face_bc = eqb->face_bc;
     const cs_adjacency_t  *bf2v = connect->bf2v;
     const cs_adjacency_t  *f2c = connect->f2c;
@@ -3206,11 +3180,7 @@ cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
   shared(cdoq, connect, eqp, eqb, eqc, diff_flux, values,            \
          t_eval, _vcbs_cell_builder)
   {
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     cs_eflag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ |
       CS_FLAG_COMP_HFQ | CS_FLAG_COMP_DEQ  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV;
@@ -3286,7 +3256,7 @@ cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
                                   cs_real_t                   *diff_flux)
 {
   if (diff_flux == NULL)
-    return ;
+    return;
 
   const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
@@ -3307,11 +3277,7 @@ cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
   shared(cdoq, connect, eqp, eqb, eqc, diff_flux, values,            \
          t_eval, _vcbs_cell_builder)
   {
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     cs_eflag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ |
       CS_FLAG_COMP_SEF | CS_FLAG_COMP_DEQ  | CS_FLAG_COMP_FEQ |
@@ -3411,11 +3377,8 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
   shared(cdoq, connect, eqc, v_gradient, v_values, dualcell_vol, \
          _vcbs_cell_builder, cs_glob_n_ranks)
   {
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
+
     cs_real_3_t  cgrd;
 
     /* Set inside the OMP section so that each thread has its own value */

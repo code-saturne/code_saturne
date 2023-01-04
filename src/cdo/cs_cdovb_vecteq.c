@@ -747,7 +747,7 @@ cs_cdovb_vecteq_init_sharing(const cs_cdo_quantities_t    *quant,
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 #pragma omp parallel
   {
-    int t_id = omp_get_thread_num();
+    int  t_id = omp_get_thread_num();
     assert(t_id < cs_glob_n_threads);
 
     cs_cell_builder_t  *cb = _vvb_create_cell_builder(connect);
@@ -786,12 +786,7 @@ void
 cs_cdovb_vecteq_get(cs_cell_sys_t       **csys,
                     cs_cell_builder_t   **cb)
 {
-  int t_id = 0;
-
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-  t_id = omp_get_thread_num();
-  assert(t_id < cs_glob_n_threads);
-#endif /* openMP */
+  int  t_id = cs_get_thread_id();
 
   *csys = _vvb_cell_system[t_id];
   *cb = _vvb_cell_builder[t_id];
@@ -1394,11 +1389,7 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
 
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */

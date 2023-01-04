@@ -550,11 +550,7 @@ _cdovb_scalsys_build_implicit(bool                           cur2prev,
         /* Set variables and structures inside the OMP section so that each
            thread has its own value */
 
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-        int  t_id = omp_get_thread_num();
-#else
-        int  t_id = 0;
-#endif
+        const int  t_id = cs_get_thread_id();
 
         cs_cell_builder_t  *cb = NULL;
         cs_cell_sys_t *csys = NULL;

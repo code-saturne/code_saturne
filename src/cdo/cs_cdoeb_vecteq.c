@@ -554,12 +554,7 @@ void
 cs_cdoeb_vecteq_get(cs_cell_sys_t       **csys,
                     cs_cell_builder_t   **cb)
 {
-  int t_id = 0;
-
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-  t_id = omp_get_thread_num();
-  assert(t_id < cs_glob_n_threads);
-#endif /* openMP */
+  const int  t_id = cs_get_thread_id();
 
   *csys = cs_cdoeb_cell_system[t_id];
   *cb = cs_cdoeb_cell_builder[t_id];
@@ -948,6 +943,8 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   cs_cdoeb_vecteq_t  *eqc = (cs_cdoeb_vecteq_t *)context;
+  assert(eqc->curlcurl_hodge != NULL);
+
   cs_cdo_system_helper_t  *sh = eqb->system_helper;
   cs_field_t  *fld = cs_field_by_id(field_id); /* vector-valued cell-based */
 
@@ -993,12 +990,7 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
 
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
-    assert(eqc->curlcurl_hodge != NULL);
+    const int  t_id = cs_get_thread_id();
 
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdoeb_cell_system[t_id];

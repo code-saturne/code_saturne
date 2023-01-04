@@ -4207,14 +4207,8 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
   shared(quant, connect, in_vals, t_eval, result, pty, func_name)  \
   firstprivate(hodgep)
   {
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
-
     cs_eflag_t  msh_flag = 0;
-    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(cs_get_thread_id());
     cs_cell_builder_t  *cb = NULL;
     double  *_in = NULL;
 
@@ -4434,17 +4428,11 @@ cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
   shared(quant, connect, flux, t_eval, circul, pty, func_name)          \
   firstprivate(hodgep)
   {
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
-
     const cs_adjacency_t  *c2f = connect->c2f;
     const cs_flag_t  cell_flag = 0;
 
     cs_eflag_t  msh_flag = 0;
-    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(cs_get_thread_id());
     cs_cell_builder_t  *cb = NULL;
     double  *_fluxes = NULL;
 

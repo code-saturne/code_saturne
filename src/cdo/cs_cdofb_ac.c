@@ -666,11 +666,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */

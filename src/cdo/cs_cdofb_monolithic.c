@@ -672,17 +672,12 @@ _assembly_by_blocks(const cs_cell_sys_t              *csys,
 {
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
-  int  t_id = 0;
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-  t_id = omp_get_thread_num();
-#endif
-
   cs_cdo_system_helper_t  *sh = sc->system_helper;
   cs_cdo_system_block_t  *b = sh->blocks[0];
   assert(b->type == CS_CDO_SYSTEM_BLOCK_SPLIT);
   cs_cdo_system_sblock_t  *sb = b->block_pointer;
   cs_cdofb_monolithic_sles_t  *msles = sc->msles;
-  cs_sdm_t  *cw_mat = cs_cdofb_monolithic_cw_mat[t_id];
+  cs_sdm_t  *cw_mat = cs_cdofb_monolithic_cw_mat[cs_get_thread_id()];
 
   /* Convert csys->mat into a block view by component */
 
@@ -1157,11 +1152,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
@@ -1363,12 +1354,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
-
+    const int  t_id = cs_get_thread_id();
     const cs_real_t  t_eval = ts->t_cur + ts->dt[0];
     const cs_real_t  inv_dtcur = 1./ts->dt[0];
 
@@ -1607,12 +1593,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
-
+    const int  t_id = cs_get_thread_id();
     const cs_real_t  t_cur = ts->t_cur;
     const cs_real_t  dt_cur = ts->dt[0];
     const double  tcoef = 1 - mom_eqp->theta;

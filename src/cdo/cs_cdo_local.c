@@ -1141,14 +1141,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
   if (build_flag & CS_FLAG_COMP_EV || build_flag & CS_FLAG_COMP_FV) {
 
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int t_id = omp_get_thread_num();
-    assert(t_id < cs_glob_n_threads);
-#else
-    int t_id = 0;
-#endif /* openMP */
-
-    short int  *kbuf = cs_cdo_local_kbuf[t_id];
+    short int  *kbuf = cs_cdo_local_kbuf[cs_get_thread_id()];
 
     /* Store in a compact way ids for vertices: mesh --> cell mesh */
 
@@ -1221,14 +1214,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
   if (build_flag & cs_flag_need_fe) {
 
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int t_id = omp_get_thread_num();
-    assert(t_id < cs_glob_n_threads);
-#else
-    int t_id = 0;
-#endif /* openMP */
-
-    short int  *kbuf = cs_cdo_local_kbuf[t_id];
+    short int  *kbuf = cs_cdo_local_kbuf[cs_get_thread_id()];
 
     /* Store in compact way: mesh --> cell mesh ids for edges */
 
@@ -1407,13 +1393,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
       /* Now compute an approximation of the diameter for each cell face */
 
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-      int t_id = omp_get_thread_num();
-      assert(t_id < cs_glob_n_threads);
-#else
-      int t_id = 0;
-#endif /* openMP */
-      short int  *vtag = cs_cdo_local_kbuf[t_id];
+      short int  *vtag = cs_cdo_local_kbuf[cs_get_thread_id()];
 
       for (short int f = 0; f < cm->n_fc; f++) {
 

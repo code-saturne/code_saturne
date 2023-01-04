@@ -691,12 +691,7 @@ cs_hho_vecteq_get(cs_cell_sys_t       **csys,
                   cs_cell_builder_t   **cb,
                   cs_hho_builder_t    **hhob)
 {
-  int t_id = 0;
-
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-  t_id = omp_get_thread_num();
-  assert(t_id < cs_glob_n_threads);
-#endif /* openMP */
+  const int  t_id = cs_get_thread_id();
 
   *csys = cs_hho_cell_sys[t_id];
   *cb = cs_hho_cell_bld[t_id];
@@ -1033,11 +1028,7 @@ cs_hho_vecteq_compute_source(const cs_equation_param_t  *eqp,
          cs_hho_cell_sys, cs_hho_cell_bld, cs_hho_builders)             \
   firstprivate(t_cur)
   {
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
@@ -1145,11 +1136,7 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Set inside the OMP section so that each thread has its own value
      * Each thread get back its related structures:
@@ -1421,11 +1408,7 @@ cs_hho_vecteq_update_field(const cs_real_t            *solu,
   shared(quant, connect, eqp, eqb, eqc, rhs, solu, field_val,           \
          cs_hho_cell_bld, cs_hho_builders)
   {
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */

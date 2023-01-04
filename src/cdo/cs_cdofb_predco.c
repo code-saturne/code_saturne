@@ -624,13 +624,10 @@ _update_variables(cs_cdofb_predco_t           *sc)
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
-#if defined(HAVE_OPENMP) /* Retrieve the cell mesh structure w.r.t. the mode */
-    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(omp_get_thread_num());
-#else
-    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(0);
-#endif
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(cs_get_thread_id());
     cs_cell_sys_t  *csys = NULL;
     cs_cell_builder_t  *cb = NULL;
+
     cs_cdofb_vecteq_get(&csys, &cb);
 
     /* Reset the velocity at faces */
@@ -1100,11 +1097,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */

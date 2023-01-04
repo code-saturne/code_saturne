@@ -294,13 +294,8 @@ _compute_adv_vector_at_vertices(cs_xdef_t                  *def,
 
   case CS_XDEF_BY_DOF_FUNCTION:
     {
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-      int  t_id = omp_get_thread_num();
-#else
-      int  t_id = 0;
-#endif
       cs_real_t  cell_vector[3];
-      cs_real_t  *fluxes = cs_cdo_local_get_d_buffer(t_id);
+      cs_real_t  *fluxes = cs_cdo_local_get_d_buffer(cs_get_thread_id());
       cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)def->context;
 
       if (cs_flag_test(cx->dof_location, cs_flag_primal_face) == false)
@@ -1447,12 +1442,7 @@ cs_advection_field_cw_eval_at_xyz(const cs_adv_field_t  *adv,
 
     case CS_XDEF_BY_DOF_FUNCTION:   /* P0 approximation */
       {
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-        int  t_id = omp_get_thread_num();
-#else
-        int  t_id = 0;
-#endif
-        cs_real_t  *fluxes = cs_cdo_local_get_d_buffer(t_id);
+        cs_real_t  *fluxes = cs_cdo_local_get_d_buffer(cs_get_thread_id());
         cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)def->context;
 
         /* Values of the function are defined at the primal faces */

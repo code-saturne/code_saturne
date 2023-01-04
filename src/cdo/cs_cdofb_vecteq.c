@@ -787,11 +787,7 @@ cs_cdofb_vecteq_solve_steady_state(bool                        cur2prev,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
@@ -994,11 +990,7 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
@@ -1240,11 +1232,7 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
@@ -1561,12 +1549,7 @@ void
 cs_cdofb_vecteq_get(cs_cell_sys_t            **csys,
                     cs_cell_builder_t        **cb)
 {
-  int t_id = 0;
-
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-  t_id = omp_get_thread_num();
-  assert(t_id < cs_glob_n_threads);
-#endif /* openMP */
+  const int  t_id = cs_get_thread_id();
 
   *csys = cs_cdofb_cell_sys[t_id];
   *cb = cs_cdofb_cell_bld[t_id];

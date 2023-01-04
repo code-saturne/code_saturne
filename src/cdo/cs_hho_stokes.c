@@ -407,12 +407,7 @@ cs_hho_stokes_get(cs_cell_sys_t       **csys,
                   cs_cell_builder_t   **cb,
                   cs_hho_builder_t    **hhob)
 {
-  int t_id = 0;
-
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-  t_id = omp_get_thread_num();
-  assert(t_id < cs_glob_n_threads);
-#endif /* openMP */
+  const int  t_id = cs_get_thread_id();
 
   *csys = cs_hho_cell_sys[t_id];
   *cb = cs_hho_cell_bld[t_id];

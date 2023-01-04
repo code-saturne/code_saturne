@@ -757,12 +757,7 @@ void
 cs_cdofb_scaleq_get(cs_cell_sys_t       **csys,
                     cs_cell_builder_t   **cb)
 {
-  int t_id = 0;
-
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-  t_id = omp_get_thread_num();
-  assert(t_id < cs_glob_n_threads);
-#endif /* openMP */
+  const int  t_id = cs_get_thread_id();
 
   *csys = cs_cdofb_cell_sys[t_id];
   *cb = cs_cdofb_cell_bld[t_id];
@@ -1320,11 +1315,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
@@ -1561,11 +1552,7 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
@@ -1795,11 +1782,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
@@ -2098,11 +2081,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
@@ -2420,11 +2399,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
   shared(quant, connect, ts, eqp, eqb, eqc, pot, eb, cs_cdofb_cell_bld, \
          func_name)
   {
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
@@ -2738,11 +2713,7 @@ cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *c_values,
   shared(t_eval, quant, connect, eqp, eqb, diff_flux, c_values,         \
          f_values, get_diffusion_hodge, cs_cdofb_cell_bld)
   {
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
+    const int  t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */
@@ -2864,12 +2835,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
          cs_cdofb_cell_bld)                                             \
   firstprivate(t_eval)
   {
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
-
+    const int  t_id = cs_get_thread_id();
     const cs_cdo_bc_face_t  *face_bc = eqb->face_bc;
     const cs_adjacency_t  *f2c = connect->f2c;
     const cs_lnum_t  fidx_shift = f2c->idx[quant->n_i_faces];
