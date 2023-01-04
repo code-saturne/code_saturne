@@ -453,15 +453,13 @@ _build_shared_full_structures(cs_cdo_system_block_t     *block,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Apply the boundary conditions to the cell system when this should
- *          be done before the static condensation.
+ * \brief   Apply the boundary conditions to the cell system
  *          Case of CDO-Cb schemes with a monolithic flux-potential coupling
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       eqc              context structure for a scalar-valued Cb
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       fm        pointer to a cs_face_mesh_t structure
- * \param[in]       hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  */
@@ -472,7 +470,6 @@ _scb_apply_bc(const cs_equation_param_t     *eqp,
               const cs_cdocb_scaleq_t       *eqc,
               const cs_cell_mesh_t          *cm,
               cs_face_mesh_t                *fm,
-              cs_hodge_t                    *hodge,
               cs_cell_sys_t                 *csys,
               cs_cell_builder_t             *cb)
 {
@@ -486,13 +483,13 @@ _scb_apply_bc(const cs_equation_param_t     *eqp,
      * The minus just above implies the minus just below */
 
     if (csys->has_nhmg_neumann)
-      eqc->enforce_neumann(eqp, cm, fm, hodge, cb, csys);
+      eqc->enforce_neumann(eqp, cm, fm, NULL, cb, csys);
 
     /* The enforcement of the Dirichlet has to be done after all
        other contributions */
 
     if (csys->has_dirichlet) /* csys is updated inside (matrix and rhs) */
-       eqc->enforce_dirichlet(eqp, cm, fm, hodge, cb, csys);
+       eqc->enforce_dirichlet(eqp, cm, fm, NULL, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOCB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -770,8 +767,8 @@ _scb_steady_build(const cs_equation_param_t      *eqp,
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
-    cs_hodge_t  *mass_hodge =
-      (eqc->mass_hodge == NULL) ? NULL:eqc->mass_hodge[t_id];
+    cs_hodge_t  *diff_hodge =
+      (eqc->diff_hodge == NULL) ? NULL : eqc->diff_hodge[t_id];
 
     cs_cell_sys_t  *csys = NULL;
     cs_cell_builder_t  *cb = NULL;
@@ -786,7 +783,7 @@ _scb_steady_build(const cs_equation_param_t      *eqp,
 
     /* Initialization of the values of properties */
 
-    cs_equation_builder_init_properties(eqp, eqb, mass_hodge, cb);
+    cs_equation_builder_init_properties(eqp, eqb, diff_hodge, cb);
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -825,7 +822,7 @@ _scb_steady_build(const cs_equation_param_t      *eqp,
       /* ============================ */
 
       cs_cdocb_scaleq_diffusion(eqp, eqb, eqc, cm,
-                                mass_hodge, csys, cb);
+                                diff_hodge, csys, cb);
 
       /* 3- SOURCE TERM COMPUTATION (for the equation) */
       /* ====================================================== */
@@ -846,7 +843,7 @@ _scb_steady_build(const cs_equation_param_t      *eqp,
                                         eqb->source_mask,
                                         eqb->compute_source,
                                         cb->t_st_eval,
-                                        mass_hodge,
+                                        NULL,
                                         cb,
                                         csys->source);
 
@@ -860,7 +857,7 @@ _scb_steady_build(const cs_equation_param_t      *eqp,
        * BOUNDARY CONDITIONS
        * =================== */
 
-      _scb_apply_bc(eqp, eqc, cm, fm, mass_hodge, csys, cb);
+      _scb_apply_bc(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOCB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
@@ -1094,8 +1091,8 @@ cs_cdocb_scaleq_init_context(const cs_equation_param_t   *eqp,
   const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
   const cs_lnum_t  n_cells = connect->n_cells;
   const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
-  cs_cdocb_scaleq_t  *eqc = NULL;
 
+  cs_cdocb_scaleq_t  *eqc = NULL;
   BFT_MALLOC(eqc, 1, cs_cdocb_scaleq_t);
 
   eqc->var_field_id = var_id;
@@ -1128,43 +1125,40 @@ cs_cdocb_scaleq_init_context(const cs_equation_param_t   *eqp,
      eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) ? true : false;
 
   /* Diffusion term */
+  /* -------------- */
 
-  /* For cell-based scheme, no diffusion hodge
-   * operator is needed, only mass hodge operator
-   * is used in a coupled Saddle-Point system. */
-  /* ----------------------------------------- */
+  /* For cell-based scheme, the mass matrix is trivial --> |c|
+   * There is no stiffness matrix, only the diffusion hodge is used. */
 
-  eqc->diffusion_hodge = NULL;
+  eqc->diff_hodge = NULL;
 
-  eqc->get_mass_matrix = NULL;
-  eqc->mass_hodge = NULL;
-
-  if (cs_equation_param_has_diffusion(eqp)) {
-
-    /* Mass matrix */
-
-    eqc->mass_hodgep.inv_pty = true;
-    eqc->mass_hodgep.type = CS_HODGE_TYPE_FPED;
-    eqc->mass_hodgep.algo = CS_HODGE_ALGO_COST;
-    eqc->mass_hodgep.coef = cs_math_1ov3;
-
-    eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
-
-    eqc->get_mass_matrix = cs_hodge_fped_cost_get;
-    eqc->mass_hodge = cs_hodge_init_context(connect,
+  if (cs_equation_param_has_diffusion(eqp))
+    eqc->diff_hodge = cs_hodge_init_context(connect,
                                             eqp->diffusion_property,
-                                            &(eqc->mass_hodgep),
+                                            &(eqp->diffusion_hodgep),
                                             true,  /* tensor ? */
                                             need_eigen); /* eigen ? */
 
-    if (eqp->verbosity > 1) {
-      cs_log_printf(CS_LOG_SETUP,
-                    "#### Parameters of the mass matrix of the equation %s\n",
-                    eqp->name);
-      cs_hodge_param_log("Mass matrix", NULL, eqc->mass_hodgep);
-    }
+  switch (eqp->diffusion_hodgep.algo) {
 
-  } /* Diffusion term is requested */
+  case CS_HODGE_ALGO_VORONOI:
+    eqc->compute_diff_hodge = cs_hodge_fped_voro_get;
+    break;
+
+  case CS_HODGE_ALGO_COST:
+    eqc->compute_diff_hodge = cs_hodge_fped_cost_get;
+    break;
+
+  case CS_HODGE_ALGO_BUBBLE:
+    eqc->compute_diff_hodge = cs_hodge_fped_bubble_get;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid algorithm to build the diffusion Hodge operator"
+              " for the eq. \"%s\"\n", __func__, eqp->name);
+
+  }
 
   /* Boundary conditions */
   /* ------------------- */
@@ -1240,7 +1234,7 @@ cs_cdocb_scaleq_init_context(const cs_equation_param_t   *eqp,
   if (eqp->sles_param->resnorm_type == CS_PARAM_RESNORM_WEIGHTED_RHS)
     eqb->msh_flag |= CS_FLAG_COMP_PFC;
 
-  BFT_MALLOC(eqc->div_op_cw, cs_glob_n_threads, cs_real_t*);
+  BFT_MALLOC(eqc->div_op_cw, cs_glob_n_threads, cs_real_t *);
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 #pragma omp parallel
@@ -1253,7 +1247,6 @@ cs_cdocb_scaleq_init_context(const cs_equation_param_t   *eqp,
 #else
 
   assert(cs_glob_n_threads == 1);
-
   BFT_MALLOC(eqc->div_op_cw[0], connect->n_max_fbyc, cs_real_t);
 
 #endif /* openMP */
@@ -1287,8 +1280,7 @@ cs_cdocb_scaleq_free_context(void       *scheme_context)
   if (eqc->flux_pre != NULL)
     BFT_FREE(eqc->flux_pre);
 
-  cs_hodge_free_context(&(eqc->diffusion_hodge));
-  cs_hodge_free_context(&(eqc->mass_hodge));
+  cs_hodge_free_context(&(eqc->diff_hodge));
 
 #if defined(HAVE_OPENMP)
 #pragma omp parallel
@@ -1522,7 +1514,7 @@ cs_cdocb_scaleq_init_values(cs_real_t                     t_eval,
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
- * \param[in, out] mass_hodge  pointer to a cs_hodge_t structure for diffusion
+ * \param[in, out] diff_hodge  pointer to a cs_hodge_t structure for diffusion
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
@@ -1533,7 +1525,7 @@ cs_cdocb_scaleq_diffusion(const cs_equation_param_t     *eqp,
                           const cs_equation_builder_t   *eqb,
                           const cs_cdocb_scaleq_t       *eqc,
                           const cs_cell_mesh_t          *cm,
-                          cs_hodge_t                    *mass_hodge,
+                          cs_hodge_t                    *diff_hodge,
                           cs_cell_sys_t                 *csys,
                           cs_cell_builder_t             *cb)
 {
@@ -1542,19 +1534,20 @@ cs_cdocb_scaleq_diffusion(const cs_equation_param_t     *eqp,
 
     /* Set the diffusion property */
 
-    assert(mass_hodge != NULL);
+    assert(diff_hodge != NULL);
     if (!(eqb->diff_pty_uniform))
       cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
-                                     mass_hodge);
+                                     diff_hodge);
 
-    /* Define the local stiffness matrix: local matrix owned by the cellwise
-       builder (store in cb->loc) */
+    /* Define the local Hodge matrix (no stiffness matrix in case of cell-based
+       schemes). The local (cell-wise) matrix is stored in cb->loc */
 
-    bool computed = eqc->get_mass_matrix(cm, mass_hodge, cb);
+    bool  computed = eqc->compute_diff_hodge(cm, diff_hodge, cb);
 
     /* Add the local diffusion operator to the local system */
+
     if(computed)
-      cs_sdm_add(csys->mat, mass_hodge->matrix);
+      cs_sdm_add(csys->mat, diff_hodge->matrix);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOCB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -1813,8 +1806,8 @@ cs_cdocb_scaleq_balance(const cs_equation_param_t     *eqp,
 
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_builder_t  *cb = _scb_cell_builder[t_id];
-    cs_hodge_t  *mass_hodge =
-      (eqc->mass_hodge == NULL) ? NULL : eqc->mass_hodge[t_id];
+    cs_hodge_t  *diff_hodge =
+      (eqc->diff_hodge == NULL) ? NULL : eqc->diff_hodge[t_id];
 
     /* Set times at which one evaluates quantities when needed */
 
@@ -1824,11 +1817,7 @@ cs_cdocb_scaleq_balance(const cs_equation_param_t     *eqp,
 
     /* Initialization of the values of properties */
 
-    cs_equation_builder_init_properties(eqp, eqb, mass_hodge, cb);
-
-    /* Set inside the OMP section so that each thread has its own value */
-
-    cs_real_t  *flux;
+    cs_equation_builder_init_properties(eqp, eqb, diff_hodge, cb);
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -1836,6 +1825,8 @@ cs_cdocb_scaleq_balance(const cs_equation_param_t     *eqp,
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      /* Set inside the OMP section so that each thread has its own value */
 
       cb->cell_flag = connect->cell_flag[c_id];
 
@@ -1847,19 +1838,9 @@ cs_cdocb_scaleq_balance(const cs_equation_param_t     *eqp,
 
       /* Set the value of the current potential */
 
-      flux = eqc->flux;
+      const cs_real_t  *flux = eqc->flux;
 
-      if (eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX) { /* MASS MATRIX
-                                                      * =========== */
-        assert(mass_hodge != NULL);
-
-        /* Build the mass matrix and store it in mass_hodge->matrix */
-
-        eqc->get_mass_matrix(cm, mass_hodge, cb);
-
-      }
-
-      /* Diffusion term */
+      /* Diffusion term (only diffusion is available up-to-now) */
 
       if (cs_equation_param_has_diffusion(eqp)) {
 
@@ -1889,7 +1870,7 @@ cs_cdocb_scaleq_balance(const cs_equation_param_t     *eqp,
                                         eqb->source_mask,
                                         eqb->compute_source,
                                         cb->t_st_eval,
-                                        mass_hodge,
+                                        NULL,
                                         cb,
                                         src);
 

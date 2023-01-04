@@ -73,7 +73,7 @@ typedef struct {
 
 /* Algebraic system for CDO cell-based discretization */
 
-struct  _cs_cdocb_t {
+struct _cs_cdocb_t {
 
   /* Ids related to the variable field and to the boundary flux field */
 
@@ -105,17 +105,18 @@ struct  _cs_cdocb_t {
 
   /* Pointer of function to build the diffusion term */
 
-  cs_hodge_t                 **diffusion_hodge;
+  cs_hodge_t                 **diff_hodge;
+  cs_hodge_compute_t          *compute_diff_hodge;
+
+  /* Boundary conditions */
+  /* ------------------- */
 
   cs_cdo_enforce_bc_t         *enforce_dirichlet;
   cs_cdo_enforce_bc_t         *enforce_neumann;
   cs_cdo_enforce_bc_t         *enforce_robin_bc;
 
-  /* If one needs to build a local hodge op. for time and reaction */
-
-  cs_hodge_param_t             mass_hodgep;
-  cs_hodge_t                 **mass_hodge;
-  cs_hodge_compute_t          *get_mass_matrix;
+  /* Linear system */
+  /* ------------- */
 
   cs_cdocb_monolithic_sles_t  *msles;
   cs_sles_t                   *schur_sles;
