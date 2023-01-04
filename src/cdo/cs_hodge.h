@@ -67,6 +67,9 @@ BEGIN_C_DECLS
  * \var CS_HODGE_TYPE_CPVD
  * Hodge operator from primal cells to dual vertices
  *
+ * \var CS_HODGE_TYPE_VDCP
+ * Hodge operator from dual vertices to primal cells
+ *
  * \var CS_HODGE_TYPE_FB
  * Hodge operator playing the role of mass matrix for face-based schemes.
  * This operator deals with a hybrid space of degrees of freedom (faces and
@@ -85,6 +88,7 @@ typedef enum {
   CS_HODGE_TYPE_FPED,
   CS_HODGE_TYPE_EDFP,
   CS_HODGE_TYPE_CPVD,
+  CS_HODGE_TYPE_VDCP,
   CS_HODGE_TYPE_FB,
   CS_HODGE_TYPE_VC,
 

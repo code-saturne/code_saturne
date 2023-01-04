@@ -102,7 +102,11 @@ cs_hodge_type_desc[CS_HODGE_N_TYPES][CS_BASE_STRING_LEN] =
     N_("EpFd"),
     N_("FpEd"),
     N_("EdFp"),
-    N_("CpVd")  };
+    N_("CpVd"),
+    N_("VdCp"),
+    N_("Face-based"),
+    N_("Vertex+Cell-based"),
+  };
 
 static const char
 cs_hodge_algo_desc[CS_HODGE_N_ALGOS][CS_BASE_STRING_LEN] =
@@ -1177,6 +1181,7 @@ cs_hodge_create(const cs_cdo_connect_t   *connect,
     hdg->matrix = cs_sdm_square_create(connect->n_max_fbyc);
     break;
   case CS_HODGE_TYPE_CPVD:
+  case CS_HODGE_TYPE_VDCP:
     hdg->matrix = cs_sdm_square_create(1);
     break;
   case CS_HODGE_TYPE_FB:
@@ -1548,10 +1553,8 @@ cs_hodge_param_log(const char               *prefix,
                 _p, cs_hodge_type_desc[hp.type]);
   cs_log_printf(CS_LOG_SETUP, "%s | Algo: %s\n",
                 _p, cs_hodge_algo_desc[hp.algo]);
-  if (hp.algo == CS_HODGE_ALGO_COST ||
-      hp.algo == CS_HODGE_ALGO_BUBBLE)
-    cs_log_printf(CS_LOG_SETUP, "%s | Algo.Coef: %.3e\n",
-                  _p, hp.coef);
+  if (hp.algo == CS_HODGE_ALGO_COST || hp.algo == CS_HODGE_ALGO_BUBBLE)
+    cs_log_printf(CS_LOG_SETUP, "%s | Algo.Coef: %.3e\n", _p, hp.coef);
 
   if (property != NULL)
     cs_log_printf(CS_LOG_SETUP, "%s | Associated property: %s\n",

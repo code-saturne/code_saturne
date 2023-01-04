@@ -1061,68 +1061,110 @@ _set_key(cs_equation_param_t   *eqp,
   case CS_EQKEY_SPACE_SCHEME:
     if (strcmp(keyval, "cdo_vb") == 0 ||
         strcmp(keyval, "cdovb") == 0) {
+
       eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
       eqp->space_poly_degree = 0;
+
       eqp->time_hodgep.type = CS_HODGE_TYPE_VPCD;
+
       eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EPFD;
       eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_BUBBLE;
       eqp->diffusion_hodgep.coef = 2*cs_math_1ov3;
+
       eqp->reaction_hodgep.type = CS_HODGE_TYPE_VPCD;
       eqp->reaction_hodgep.algo = CS_HODGE_ALGO_WBS;
+
     }
     else if (strcmp(keyval, "cdo_vcb") == 0 ||
              strcmp(keyval, "cdovcb") == 0) {
+
       eqp->space_scheme = CS_SPACE_SCHEME_CDOVCB;
       eqp->space_poly_degree = 0;
+
       eqp->time_hodgep.type = CS_HODGE_TYPE_VPCD;
+
       eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_WBS;
       eqp->diffusion_hodgep.type = CS_HODGE_TYPE_VC;
+
       eqp->reaction_hodgep.type = CS_HODGE_TYPE_VPCD;
       eqp->reaction_hodgep.algo = CS_HODGE_ALGO_WBS;
+
     }
     else if (strcmp(keyval, "cdo_fb") == 0 ||
              strcmp(keyval, "cdofb") == 0) {
+
       eqp->space_scheme = CS_SPACE_SCHEME_CDOFB;
       eqp->space_poly_degree = 0;
+
       eqp->time_hodgep.type = CS_HODGE_TYPE_CPVD;
       eqp->time_hodgep.algo = CS_HODGE_ALGO_VORONOI;
+
       eqp->reaction_hodgep.algo = CS_HODGE_ALGO_VORONOI;
+
       eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EDFP;
+
     }
     else if (strcmp(keyval, "cdo_cb") == 0 ||
              strcmp(keyval, "cdocb") == 0) {
+
       eqp->space_scheme = CS_SPACE_SCHEME_CDOCB;
       eqp->space_poly_degree = 0;
+
+      eqp->diffusion_hodgep.inv_pty = true;
       eqp->diffusion_hodgep.type = CS_HODGE_TYPE_FPED;
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
+
+      eqp->time_hodgep.type = CS_HODGE_TYPE_VDCP;
+      eqp->time_hodgep.algo = CS_HODGE_ALGO_VORONOI;
+
+      eqp->reaction_hodgep.type = CS_HODGE_TYPE_VDCP;
+      eqp->reaction_hodgep.algo = CS_HODGE_ALGO_VORONOI;
+
     }
     else if (strcmp(keyval, "cdo_eb") == 0 ||
              strcmp(keyval, "cdoeb") == 0) {
+
       eqp->space_scheme = CS_SPACE_SCHEME_CDOEB;
       eqp->space_poly_degree = 0;
+
       eqp->time_hodgep.type = CS_HODGE_TYPE_EPFD;
+
       eqp->diffusion_hodgep.type = CS_HODGE_TYPE_FPED;
+
       eqp->reaction_hodgep.type = CS_HODGE_TYPE_EPFD;
     }
 
     /* Only diffusion is implemented for HHO schemes up to now */
 
     else if (strcmp(keyval, "hho_p0") == 0) {
+
       eqp->space_scheme = CS_SPACE_SCHEME_HHO_P0;
       eqp->space_poly_degree = 0;
+
       eqp->time_hodgep.type = CS_HODGE_TYPE_CPVD;
+
       eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EDFP;
+
     }
     else if (strcmp(keyval, "hho_p1") == 0) {
+
       eqp->space_scheme = CS_SPACE_SCHEME_HHO_P1;
       eqp->space_poly_degree = 1;
+
       eqp->time_hodgep.type = CS_HODGE_TYPE_CPVD;
+
       eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EDFP;
+
     }
     else if (strcmp(keyval, "hho_p2") == 0) {
+
       eqp->space_scheme = CS_SPACE_SCHEME_HHO_P2;
       eqp->space_poly_degree = 2;
+
       eqp->time_hodgep.type = CS_HODGE_TYPE_CPVD;
+
       eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EDFP;
+
     }
     else {
       const char *_val = keyval;
@@ -1301,7 +1343,7 @@ cs_equation_param_create(const char            *name,
     .inv_pty = false,
     .algo = CS_HODGE_ALGO_COST,
     .type = CS_HODGE_TYPE_EPFD,
-    .coef = 1./3.,
+    .coef = cs_math_1ov3,
   };
 
   /* Description of the discetization of the curl-curl term */
@@ -1311,7 +1353,7 @@ cs_equation_param_create(const char            *name,
     .inv_pty = true,
     .algo = CS_HODGE_ALGO_COST,
     .type = CS_HODGE_TYPE_FPED,
-    .coef = 1./3.,
+    .coef = cs_math_1ov3,
   };
 
   /* Description of the discetization of the grad-div term */
@@ -1321,7 +1363,7 @@ cs_equation_param_create(const char            *name,
     .inv_pty = false,
     .algo = CS_HODGE_ALGO_VORONOI,
     .type = CS_HODGE_TYPE_EPFD,
-    .coef = 1./3.,
+    .coef = cs_math_1ov3,
   };
 
   /* Advection term */
