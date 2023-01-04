@@ -613,6 +613,35 @@ cs_xdef_eval_at_vertices_by_array(cs_lnum_t                    n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Evaluate a quantity defined at boundary faces using an array
+ *        This function complies with the generic function type defined as
+ *        cs_xdef_eval_t
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of element ids
+ * \param[in]      dense_output  perform an indirection for output (true/false)
+ * \param[in]      mesh          pointer to a cs_mesh_t structure
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_eval     physical time at which one evaluates the term
+ * \param[in]      context       NULL or pointer to a context structure
+ * \param[in, out] eval          array storing the result (must be allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_at_b_faces_by_array(cs_lnum_t                    n_elts,
+                                 const cs_lnum_t             *elt_ids,
+                                 bool                         dense_output,
+                                 const cs_mesh_t             *mesh,
+                                 const cs_cdo_connect_t      *connect,
+                                 const cs_cdo_quantities_t   *quant,
+                                 cs_real_t                    time_eval,
+                                 void                        *context,
+                                 cs_real_t                   *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Evaluate a quantity inside a cell defined using a field
  *         This function complies with the generic function type defined as
  *         cs_xdef_eval_t

@@ -1083,6 +1083,88 @@ cs_xdef_eval_at_vertices_by_array(cs_lnum_t                    n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Evaluate a quantity defined at boundary faces using an array
+ *        This function complies with the generic function type defined as
+ *        cs_xdef_eval_t
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of element ids
+ * \param[in]      dense_output  perform an indirection for output (true/false)
+ * \param[in]      mesh          pointer to a cs_mesh_t structure
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_eval     physical time at which one evaluates the term
+ * \param[in]      context       NULL or pointer to a context structure
+ * \param[in, out] eval          array storing the result (must be allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_at_b_faces_by_array(cs_lnum_t                    n_elts,
+                                 const cs_lnum_t             *elt_ids,
+                                 bool                         dense_output,
+                                 const cs_mesh_t             *mesh,
+                                 const cs_cdo_connect_t      *connect,
+                                 const cs_cdo_quantities_t   *quant,
+                                 cs_real_t                    time_eval,
+                                 void                        *context,
+                                 cs_real_t                   *eval)
+{
+  CS_UNUSED(mesh);
+  CS_UNUSED(connect);
+  CS_UNUSED(quant);
+  CS_UNUSED(time_eval);
+
+  if (n_elts < 1)
+    return;
+
+  cs_xdef_array_context_t  *cx = (cs_xdef_array_context_t *)context;
+  assert(eval != NULL || cx != NULL);
+
+  const int  stride = cx->stride;
+
+  if (cs_flag_test(cx->value_location, cs_flag_boundary_face) == false)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid support for the input array", __func__);
+
+  if (cx->full_length) {
+
+    if (elt_ids != NULL && !dense_output)
+      cs_array_real_copy_subset(n_elts, stride, elt_ids,
+                                CS_ARRAY_SUBSET_INOUT,
+                                cx->values,
+                                eval);
+
+    else if (elt_ids != NULL && dense_output)
+      cs_array_real_copy_subset(n_elts, stride, elt_ids,
+                                CS_ARRAY_SUBSET_IN,
+                                cx->values,
+                                eval);
+
+    else {
+
+      assert(elt_ids == NULL);
+      cs_array_real_copy(n_elts*stride, cx->values, eval);
+
+    }
+
+  }
+  else {
+
+    assert(elt_ids != NULL);
+    if (dense_output)
+      cs_array_real_copy(n_elts*stride, cx->values, eval);
+    else
+      cs_array_real_copy_subset(n_elts, stride, elt_ids,
+                                CS_ARRAY_SUBSET_OUT,
+                                cx->values,
+                                eval);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Evaluate a quantity inside a cell defined using a field
  *         This function complies with the generic function type defined as
  *         cs_xdef_eval_t
