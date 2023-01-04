@@ -419,6 +419,60 @@ _pvsp_by_qov(const cs_real_t    quantity_val,
 /*!
  * \brief  Define a value to each DoF such that a given quantity is put inside
  *         the volume associated to the list of cells
+ *         Case of primal cells for scalar-valued quantities.
+ *
+ * \param[in]      quantity_val  amount of quantity to distribute
+ * \param[in]      n_elts        number of cells to consider
+ * \param[in]      elt_ids       pointer to the list of selected cell ids
+ * \param[in, out] c_vals        pointer to the array storing the values
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_pcsp_by_qov(const cs_real_t    quantity_val,
+             cs_lnum_t          n_elts,
+             const cs_lnum_t   *elt_ids,
+             cs_real_t          c_vals[])
+{
+  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
+  const cs_lnum_t  n_cells = cdoq->n_cells;
+
+  double  volume_marked = 0.;
+
+  if (n_elts == n_cells) {
+
+#   pragma omp parallel for reduction(+:volume_marked) if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      volume_marked += cdoq->cell_vol[i];
+
+  }
+  else {
+
+    assert(elt_ids != NULL);
+#   pragma omp parallel for reduction(+:volume_marked) if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      volume_marked += cdoq->cell_vol[elt_ids[i]];
+
+  }
+
+  /* Handle parallelism */
+
+  cs_parall_sum(1, CS_DOUBLE, &volume_marked);
+
+  cs_real_t  val_to_set = quantity_val;
+  if (volume_marked > 0)
+    val_to_set /= volume_marked;
+
+  if (n_elts == n_cells)
+    cs_array_real_set_scalar(n_cells, val_to_set, c_vals);
+  else
+    cs_array_real_set_scalar_on_subset(n_elts, elt_ids, val_to_set, c_vals);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a value to each DoF such that a given quantity is put inside
+ *         the volume associated to the list of cells
  *         Case of primal vertices and cells for scalar-valued quantities.
  *
  * \param[in]      quantity_val  amount of quantity to distribute
@@ -1981,6 +2035,12 @@ cs_evaluate_potential_by_qov(cs_flag_t          dof_flag,
     else if (cs_flag_test(dof_flag, cs_flag_primal_vtx)) {
 
       _pvsp_by_qov(const_val, z->n_elts, z->elt_ids, vvals);
+      check = true;
+
+    }
+    else if (cs_flag_test(dof_flag, cs_flag_primal_cell)) {
+
+      _pcsp_by_qov(const_val, z->n_elts, z->elt_ids, vvals);
       check = true;
 
     }
