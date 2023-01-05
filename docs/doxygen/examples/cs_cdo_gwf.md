@@ -58,7 +58,7 @@ vertex+cell-based discretization schemes. Here is listed a set of references
 useful for the reader willing to get a better understanding of the mathematical
 concepts underpinning CDO schemes.
 
-* [**PhD thesis**: Compatible Discrete Operator schemes on polyhedral meshes for elliptic and Stokes equations][Bonel14]
+* [**PhD thesis**: Compatible Discrete Operator schemes on polyhedral meshes for elliptic and Stokes equations][Bonel14] \cite Bonel14
 
 * [**Article:** New Polyhedral Discretisation Methods applied to the Richards Equation: CDO Schemes in Code Saturne][BoFoM18] ([**HAL** preprint version][BoFoM18_hal])
 
