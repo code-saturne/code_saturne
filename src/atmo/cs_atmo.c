@@ -591,9 +591,9 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
     /* Writing */
     if (eqp_p->iwarni >= 2) {
       bft_printf("%s: CV_DIF_TS, IT: %d, Res: %12.5e, Norm: %12.5e\n",
-          name, sweep, residu, rnorm);
+                 name, sweep, residu, rnorm);
       bft_printf("%s: Current reconstruction sweep: %d, "
-          "Iterations for solver: %d\n", name, sweep, niterf);
+                 "Iterations for solver: %d\n", name, sweep, niterf);
     }
 
   }
@@ -719,7 +719,7 @@ _mo_psih_n(cs_real_t              z,
            cs_real_t              z0,
            cs_real_t              dlmo)
 {
- CS_UNUSED(dlmo);
+  CS_UNUSED(dlmo);
 
   return log(z/z0);
 }
@@ -1895,15 +1895,17 @@ cs_atmo_init_meteo_profiles(void)
         }
       }
 #if 0
-      bft_printf("IT %d: dlmo = %f, error = %f\n",it, dlmo, error);
+      bft_printf("IT %d: dlmo = %f, error = %f\n", it, dlmo, error);
 #endif
     }
 
-    if (it == it_max)
-      bft_printf("Warning: meteo preprocessor did not converge to find inverse\n"
-                 " of LMO length, current value is %f.\n"
-                 "Please, check reference velocity, reference altitude and ustar\n",
+    if (it == it_max) {
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("Meteo preprocessor did not converge to find inverse\n"
+                   "of LMO length, current value is %f.\n"
+                   "Please, check reference velocity, reference altitude and ustar\n"),
                  dlmo);
+    }
 
     aopt->meteo_dlmo = dlmo;
   }
@@ -1918,11 +1920,8 @@ cs_atmo_init_meteo_profiles(void)
 
   /* Compute uref from ground friction velocity and dlmo */
   if (aopt->meteo_uref < 0. && zref > 0.)
-    aopt->meteo_uref =
-      aopt->meteo_ustar0 / kappa
-      * cs_mo_psim(zref + z0,
-                   z0,
-                   aopt->meteo_dlmo);
+    aopt->meteo_uref =   aopt->meteo_ustar0 / kappa
+                       * cs_mo_psim(zref + z0, z0, aopt->meteo_dlmo);
 
   /* LMO inverse, ustar at ground */
   cs_real_t dlmo = aopt->meteo_dlmo;
@@ -1950,7 +1949,7 @@ cs_atmo_init_meteo_profiles(void)
   /* All other cases */
   else{
     bft_printf("Lambert coordinates were given, latitude"
-                " and longitude are automatically computed\n");
+               " and longitude are automatically computed\n");
     _convert_from_l93_to_wgs84();
   }
 
@@ -1986,8 +1985,8 @@ cs_atmo_compute_meteo_profiles(void)
 
   /* Get fields */
   cs_real_t *cpro_met_potemp = cs_field_by_name("meteo_pot_temperature")->val;
-  cs_real_3_t *cpro_met_vel =
-    (cs_real_3_t *) (cs_field_by_name("meteo_velocity")->val);
+  cs_real_3_t *cpro_met_vel
+    = (cs_real_3_t *) (cs_field_by_name("meteo_velocity")->val);
   cs_real_t *cpro_met_k = cs_field_by_name("meteo_tke")->val;
   cs_real_t *cpro_met_eps = cs_field_by_name("meteo_eps")->val;
 
@@ -2052,6 +2051,7 @@ cs_atmo_compute_meteo_profiles(void)
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++) {
     dlmo_var[cell_id] = 0.0;
   }
+
   /* For DRSM models store Rxz/k */
   cs_field_t *f_axz = cs_field_by_name_try("meteo_shear_anisotropy");
 
@@ -2105,14 +2105,16 @@ cs_atmo_compute_meteo_profiles(void)
     }
   }
 
-  cs_parall_min(1,CS_REAL_TYPE, &z_lim);
-  cs_parall_min(1,CS_REAL_TYPE, &u_met_min);
-  cs_parall_min(1,CS_REAL_TYPE, &theta_met_min);
+  cs_parall_min(1, CS_REAL_TYPE, &z_lim);
+  cs_parall_min(1, CS_REAL_TYPE, &u_met_min);
+  cs_parall_min(1, CS_REAL_TYPE, &theta_met_min);
 
   /* Very stable cases, corresponding to mode 0 in the Python prepro */
-  if (z_lim < 0.5*cs_math_big_r) { // Clipping only if there are cells to be clipped
+  if (z_lim < 0.5*cs_math_big_r) {
+    // Clipping only if there are cells to be clipped
     bft_printf("Switching to very stable clipping for meteo profile.\n");
-    bft_printf("All altitudes above %f have been modified by clipping.\n",z_lim);
+    bft_printf("All altitudes above %f have been modified by clipping.\n",
+               z_lim);
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
 
       cs_real_t z_grd = 0.;
@@ -2186,7 +2188,7 @@ void
 cs_atmo_z_ground_compute(void)
 {
   /* Initialization
-   *===============*/
+   * ============== */
 
   if (!_atmo_option.compute_z_ground)
     return;
@@ -2225,7 +2227,7 @@ cs_atmo_z_ground_compute(void)
     normal[i] *= -1.;
 
   /* Compute the mass flux due to V = - g / ||g||
-   *=============================================*/
+   * ============================================ */
 
   for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++)
     i_massflux[face_id] = cs_math_3_dot_product(normal, i_face_normal[face_id]);
@@ -2234,7 +2236,7 @@ cs_atmo_z_ground_compute(void)
     b_massflux[face_id] = cs_math_3_dot_product(normal, b_face_normal[face_id]);
 
   /* Boundary conditions
-   *====================*/
+   * =================== */
 
   cs_real_t norm = 0.;
   cs_real_t ground_surf = 0.;
@@ -2279,7 +2281,7 @@ cs_atmo_z_ground_compute(void)
   cs_parall_max(1, CS_INT_TYPE, &(eqp_p->ndircl));
 
   /* Matrix
-   *=======*/
+   * ====== */
 
   cs_real_t *rovsdt, *dpvar;
   BFT_MALLOC(rovsdt, m->n_cells_with_ghosts, cs_real_t);
@@ -2289,8 +2291,9 @@ cs_atmo_z_ground_compute(void)
     rovsdt[cell_id] = 0.;
     dpvar[cell_id] = 0.;
   }
+
   /* Right hand side
-   *================*/
+   * =============== */
 
   cs_real_t *rhs;
   BFT_MALLOC(rhs, m->n_cells_with_ghosts, cs_real_t);
@@ -2299,7 +2302,7 @@ cs_atmo_z_ground_compute(void)
     rhs[cell_id] = 0.;
 
   /* Norm
-   *======*/
+   * ==== */
 
   cs_parall_sum(1, CS_REAL_TYPE, &norm);
   cs_parall_sum(1, CS_REAL_TYPE, &ground_surf);
@@ -2312,7 +2315,7 @@ cs_atmo_z_ground_compute(void)
   }
 
   /* Solving
-   *=========*/
+   * ======= */
 
   /* In case of a theta-scheme, set theta = 1;
      no relaxation in steady case either */
@@ -2395,8 +2398,8 @@ cs_atmo_z_ground_compute(void)
 void
 cs_atmo_hydrostatic_profiles_compute(void)
 {
-   /* Initialization
-   *===============*/
+  /* Initialization
+   * ============== */
 
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -2427,7 +2430,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
   const int idilat = vp_model->idilat;
 
   /* Get the lowest altitude (should also be minimum of z_ground)
-   *=============================================================*/
+   * ============================================================ */
 
   cs_real_t z_min = cs_math_big_r;
 
@@ -2462,6 +2465,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
    * p(z) = p0 (1 - g z / (Cp T0))^(Cp/R)
    * Note: Cp/R = gamma/(gamma-1)
    *=====================================================================*/
+
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
     cs_real_t z  = cell_cen[cell_id][2] - z_min;
     cs_real_t zt = fmin(z, 11000.);
@@ -2470,13 +2474,13 @@ cs_atmo_hydrostatic_profiles_compute(void)
 
     /* Do not overwrite pressure in case of restart */
     if (has_restart == 0)
-      f->val[cell_id] = p_ground * pow(factor, 1./rscp)
-                      /* correction factor for z > 11000m */
-                      * exp(- g/(rair*temp->val[cell_id]) * (z - zt));
+      f->val[cell_id] =   p_ground * pow(factor, 1./rscp)
+                          /* correction factor for z > 11000m */
+                        * exp(- g/(rair*temp->val[cell_id]) * (z - zt));
 
     if (idilat > 0)
-      temp->val[cell_id] = potemp->val[cell_id]
-                         * pow((f->val[cell_id]/pref), rscp);
+      temp->val[cell_id] =   potemp->val[cell_id]
+                           * pow((f->val[cell_id]/pref), rscp);
     density->val[cell_id] = f->val[cell_id] / (rair * temp->val[cell_id]);
   }
 
@@ -2485,10 +2489,10 @@ cs_atmo_hydrostatic_profiles_compute(void)
 
   /* Boussinesq hypothesis */
   if (idilat == 0) {
-    bft_printf(
-        "Meteo profiles are computed according to Boussinesq approximation.\n"
-        "Using adiabatic profiles for temperature and pressure."
-        "Density is computed accordingly.\n");
+    bft_printf
+      ("Meteo profiles are computed according to Boussinesq approximation.\n"
+       "Using adiabatic profiles for temperature and pressure."
+       "Density is computed accordingly.\n");
   }
 
   cs_real_t *i_massflux = NULL;
@@ -2531,7 +2535,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
   }
 
   /* Solving
-  *=========*/
+   * ======= */
 
   cs_real_t *dam = NULL;
   BFT_MALLOC(dam, m->n_cells_with_ghosts, cs_real_t);
@@ -2582,8 +2586,8 @@ cs_atmo_hydrostatic_profiles_compute(void)
 
       /* Boussinesq hypothesis: do not update adiabatic temperature profile */
       if (idilat > 0) {
-        temp->val[cell_id] = potemp->val[cell_id]
-                           * pow((f->val[cell_id]/pref), rscp);
+        temp->val[cell_id] =   potemp->val[cell_id]
+                             * pow((f->val[cell_id]/pref), rscp);
       }
 
       /* f_ext = rho^k * g */
@@ -2594,12 +2598,13 @@ cs_atmo_hydrostatic_profiles_compute(void)
       f_ext[cell_id][1] = rho_k * phys_cst->gravity[1];
       f_ext[cell_id][2] = rho_k * phys_cst->gravity[2];
     }
-    cs_parall_max(1, CS_REAL_TYPE ,&inf_norm);
 
-    if (cs_log_default_is_active())
+    if (cs_log_default_is_active()) {
+      cs_parall_max(1, CS_REAL_TYPE, &inf_norm);
       bft_printf
         (_("Meteo profiles: iterative process to compute hydrostatic pressure\n"
            "  sweep %d, L infinity norm (delta p) / ps =%e\n"), sweep, inf_norm);
+    }
   }
 
   /* Free memory */
@@ -3043,7 +3048,6 @@ cs_atmo_log_setup(void)
        _("  Large scale Meteo file: %s\n\n"),
        cs_glob_atmo_option->meteo_file_name);
   }
-
 
   if (cs_glob_atmo_option->meteo_profile == 2) {
     cs_log_printf
