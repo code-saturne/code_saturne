@@ -75,7 +75,7 @@ module atchem
   !> conversion factors for reaction rates Jacobian matrix
   double precision, allocatable, dimension(:) ::  conv_factor_jac
   !> kinetics constants
-  double precision, allocatable, dimension(:) ::  reacnum
+  double precision, dimension(:), pointer ::  reacnum
 
   !> maximal time step for chemistry resolution
   double precision dtchemmax
@@ -146,6 +146,18 @@ module atchem
 
     !---------------------------------------------------------------------------
 
+
+    !> \brief Return pointer to reacnum
+
+    subroutine  cs_f_atmo_chem_initialize_reacnum (reacnum)&
+      bind(C, name='cs_f_atmo_chem_initialize_reacnum')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: reacnum
+
+    end subroutine cs_f_atmo_chem_initialize_reacnum
+
+    !---------------------------------------------------------------------------
 
   end interface
 
@@ -262,11 +274,17 @@ contains
   subroutine init_chemistry_reacnum
 
     use mesh, only: ncel
+    use, intrinsic :: iso_c_binding
+    use cs_c_bindings
 
     implicit none
 
+    type(c_ptr) :: c_reacnum
+
     ! Dynamical allocations
-    allocate(reacnum(ncel*nrg))
+    call cs_f_atmo_chem_initialize_reacnum(c_reacnum)
+
+    call c_f_pointer(c_reacnum, reacnum, [ncel*nrg])
 
   end subroutine init_chemistry_reacnum
 
@@ -330,7 +348,6 @@ contains
     call cs_f_atmo_chem_finalize()
 
     deallocate(conv_factor_jac)
-    deallocate(reacnum)
     deallocate(idespgi)
     deallocate(espnum)
     deallocate(zproc)

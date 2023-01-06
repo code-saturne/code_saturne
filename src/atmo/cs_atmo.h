@@ -334,6 +334,8 @@ typedef struct {
   /*! Molar mass of the chemical species (g/mol) */
   cs_real_t *molar_mass;
   int *chempoint;
+  /*! kinetics constants */
+  cs_real_t *reacnum;
 
   /*! Name of the file used to initialize the aerosol shared library */
   char *aero_file_name;

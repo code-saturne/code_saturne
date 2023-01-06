@@ -201,6 +201,7 @@ static cs_atmo_chemistry_t _atmo_chem = {
   .species_to_field_id = NULL,
   .molar_mass = NULL,
   .chempoint = NULL,
+  .reacnum = NULL,
   .aero_file_name = NULL,
   .chem_conc_file_name = NULL,
   .aero_conc_file_name = NULL
@@ -305,6 +306,9 @@ void
 cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
                                    cs_real_t **molar_mass,
                                    int       **chempoint);
+
+void
+cs_f_atmo_chem_initialize_reacnum(cs_real_t **reacnum);
 
 void
 cs_f_atmo_chem_initialize_species_to_fid(int *species_fid);
@@ -1577,6 +1581,17 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
 }
 
 void
+cs_f_atmo_chem_initialize_reacnum(cs_real_t **reacnum)
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+  if (_atmo_chem.reacnum == NULL)
+    BFT_MALLOC(_atmo_chem.reacnum, _atmo_chem.n_reactions*n_cells, cs_real_t);
+
+  *reacnum = _atmo_chem.reacnum;
+}
+
+void
 cs_f_atmo_chem_initialize_species_to_fid(int *species_fid)
 {
   assert(species_fid != NULL);
@@ -1592,6 +1607,7 @@ cs_f_atmo_chem_finalize(void)
   if (_atmo_chem.aerosol_model != CS_ATMO_AEROSOL_OFF)
     cs_atmo_aerosol_finalize();
 
+  BFT_FREE(_atmo_chem.reacnum);
   BFT_FREE(_atmo_chem.species_to_scalar_id);
   BFT_FREE(_atmo_chem.species_to_field_id);
   BFT_FREE(_atmo_chem.molar_mass);
