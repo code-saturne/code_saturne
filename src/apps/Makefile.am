@@ -141,24 +141,6 @@ noinst_LIBRARIES =
 local_libraries_add = libsaturne.${LIB_EXT} libcs_solver.${LIB_EXT}
 local_libraries_v_add =
 
-LDADD_SATURNE = \
-$(LDFLAGS_PLE) $(LIBS_PLE) $(PLERUNPATH) \
-$(CCM_LDFLAGS) $(CCMRUNPATH) $(CCM_LIBS) \
-$(CGNS_LDFLAGS) $(CGNSRUNPATH) $(CGNS_LIBS) \
-$(MED_LDFLAGS) $(MED_LIBS) $(MEDRUNPATH) \
-$(HDF5_LDFLAGS) $(HDF5_LIBS) $(HDF5RUNPATH) \
-$(LDADD_MUMPS) \
-$(METIS_LDFLAGS) $(METIS_LIBS) $(METISRUNPATH) \
-$(SCOTCH_LDFLAGS) $(SCOTCH_LIBS) $(SCOTCHRUNPATH) \
-$(FREESTEAM_LDFLAGS) $(FREESTEAM_LIBS) $(FREESTEAMRUNPATH) \
-$(LDADD_CATALYST) $(LDADD_MEDCOUPLING) $(LDADD_MELISSA) \
-$(LDADD_COOLPROP) \
-$(MPI_LDFLAGS) $(MPI_LIBS) \
-$(LDADD_BLAS) \
-$(CUDA_LDFLAGS) $(CUDA_LIBS) \
-$(LTLIBINTL) \
-$(FCLIBS)
-
 libsaturne_a_libs = \
 $(top_builddir)/src/fvm/libfvm_filters.a \
 $(top_builddir)/src/base/libcsbase.a \
@@ -194,11 +176,19 @@ if ENABLE_SHARED
 
 libsaturne.${SHARED_LIB_EXT}: ${libsaturne_a_libs}
 	rm -f $@ ; \
-	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py -o $@ --echo --linker ${CS_LD} --version ${cs_version_lib} --whole-archive-start ${libsaturne_a_libs} --whole-archive-end ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} ${LDFLAGS} ${AM_LDFLAGS} ${LDADD_SATURNE} $(LIBS)
+	ldadd_saturne=`PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
+	CS_TOP_BUILDDIR=$(top_builddir) \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
+	 --lib-flags-only` ; \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py -o $@ --echo --linker ${CS_LD} --version ${cs_version_lib} --whole-archive-start ${libsaturne_a_libs} --whole-archive-end ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} ${LDFLAGS} ${AM_LDFLAGS} $${ldadd_saturne}
 
 libcs_solver.${SHARED_LIB_EXT}: libsaturne.${SHARED_LIB_EXT} cs_solver.$(OBJEXT)
 	rm -f $@ ; \
-	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py -o $@ --echo --linker ${CS_LD} --version ${cs_version_lib} ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} cs_solver.$(OBJEXT) ${LDFLAGS} -L. -lsaturne-${cs_version_lib} ${AM_LDFLAGS} ${LDADD_SATURNE} $(LIBS)
+	ldadd_saturne=`PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
+	CS_TOP_BUILDDIR=$(top_builddir) \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
+	 --lib-flags-only` ; \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py -o $@ --echo --linker ${CS_LD} --version ${cs_version_lib} ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} cs_solver.$(OBJEXT) ${LDFLAGS} -L. -lsaturne-${cs_version_lib} ${AM_LDFLAGS} $${ldadd_saturne}
 
 local_libraries_v_add += \
 libsaturne-${cs_version_lib}.${SHARED_LIB_EXT} \
@@ -241,7 +231,7 @@ endif
 if HAVE_FRONTEND
 cs_io_dump_CPPFLAGS = -DLOCALEDIR=\"'$(localedir)'\" -I$(top_srcdir)/src/base
 cs_io_dump_SOURCES = cs_io_dump.c
-cs_io_dump_LDADD = $(LTLIBINTL)
+cs_io_dump_LDADD =
 endif
 
 # cs_solver executable is built using the same Python script as when

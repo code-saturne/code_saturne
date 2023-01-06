@@ -50,4 +50,4 @@ bft_mem.c \
 bft_mem_usage.c \
 bft_printf.c
 
-libbft_a_LIBADD = $(LTLIBINTL)
+libbft_a_LIBADD =

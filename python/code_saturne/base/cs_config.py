@@ -34,7 +34,7 @@ from optparse import OptionParser
 class prerequisite:
 
     def __init__(self, name, key, config_dict, have = None,
-                 variant = None, dynamic_load = False,
+                 add_rpath = True,
                  prefix = None,
                  bindir = None, includedir = None, libdir = None,
                  flags = None):
@@ -67,6 +67,11 @@ class prerequisite:
             self.dynamic_load = False
         elif self.dynamic_load in true_t:
             self.dynamic_load = True
+
+        # Add in rpath
+        self.add_rpath = d.get('add_rpath', None)
+        if self.add_rpath == None:
+            self.add_rpath = add_rpath
 
         # Library variant
         self.variant = d.get('variant', None)
@@ -235,15 +240,15 @@ class config:
         # paths to the command line
 
         self.libs['ple'] = \
-            prerequisite('PLE', 'ple', config_dict,
-                         have=True, variant='internal')
+            prerequisite('PLE', 'ple', config_dict, have=True)
 
         # Setup user and system libraries
 
         self.libs['system'] = \
             prerequisite('System', None, None,
                          have = True,
-                         flags = system_flags)
+                         flags = system_flags,
+                         add_rpath = False)
 
         # Setup the optionnal libraries
 
@@ -263,7 +268,7 @@ class config:
         self.libs['freesteam'] = prerequisite('FREESTEAM', 'freesteam', config_dict)
         self.libs['coolprop']  = prerequisite('COOLPROP', 'coolprop', config_dict)
 
-        self.libs['mpi'] = prerequisite('MPI', 'mpi', config_dict)
+        self.libs['mpi'] = prerequisite('MPI', 'mpi', config_dict, add_rpath=False)
 
         self.libs['scotch'] = prerequisite('SCOTCH', 'scotch', config_dict)
         self.libs['metis']  = prerequisite('METIS', 'metis', config_dict)

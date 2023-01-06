@@ -101,7 +101,7 @@ fvm_writer_priv.h
 lib_LIBRARIES =
 pkglib_LIBRARIES =
 noinst_LIBRARIES = libfvm.a libfvm_filters.a
-libfvm_a_LIBADD = $(LTLIBINTL)
+libfvm_a_LIBADD =
 libfvm_filters_a_LIBADD =
 
 libfvm_a_SOURCES = \

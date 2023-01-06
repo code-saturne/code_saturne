@@ -87,9 +87,6 @@ if test "x$with_eos" != "xno" ; then
 
   eosversion=`${with_eos}/bin/eos --version`
 
-  # check for pre-v1.8.0
-  # This test is necessary because starting from 1.8.0 definition of mixing
-  # in EOS changed.
   AC_MSG_CHECKING([if EOS version >= 1.8.0])
   AS_VERSION_COMPARE(${eosversion}, 1.8.0, [EOS_PRE_V1_8=-1], [EOS_PRE_V1_8=0], [EOS_PRE_V1_8=1])
 
@@ -118,6 +115,8 @@ if test "x$with_eos" != "xno" ; then
   done
 
   AC_MSG_RESULT($cs_have_eos)
+
+  AC_LANG_POP([C++])
 
   if test "x$cs_have_eos" = "xno" ; then
     if test "x$with_eos" != "xcheck" ; then
@@ -150,8 +149,6 @@ AC_SUBST(EOS_CPPFLAGS)
 AC_SUBST(EOS_LDFLAGS)
 AC_SUBST(EOS_LIBS)
 AC_SUBST(EOSRUNPATH)
-
-AC_LANG_POP([C++])
 
 ])dnl
 

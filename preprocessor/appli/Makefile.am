@@ -83,7 +83,7 @@ ecs_cmd.h
 cs_preprocess_LDADD = \
 $(top_builddir)/preprocessor/pre-post/libprepostecs.a \
 $(top_builddir)/preprocessor/base/libbaseecs.a \
-$(top_builddir)/preprocessor/util/libutilecs.a $(LTLIBINTL) \
+$(top_builddir)/preprocessor/util/libutilecs.a \
 $(LDADD_CCM) \
 $(MED_LDFLAGS) $(MEDRUNPATH) $(MED_LIBS) \
 $(CGNS_LDFLAGS) $(CGNSRUNPATH) $(CGNS_LIBS) \
