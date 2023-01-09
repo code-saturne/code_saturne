@@ -361,7 +361,7 @@ cs_restart_map_set_mesh_input(const char  *mesh_path)
   size_t n = strlen(mesh_path);
   BFT_REALLOC(_mesh_input_path, n + 1, char);
 
-  strncpy(_mesh_input_path, mesh_path, n);
+  strncpy(_mesh_input_path, mesh_path, n + 1);
   _mesh_input_path[n] = '\0';
 }
 

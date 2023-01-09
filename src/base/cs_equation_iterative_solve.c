@@ -859,7 +859,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
       /* If thetex = 0, no need to do more */
       if (fabs(thetex) > cs_math_epzero) {
-        cs_real_t thetap = var_cal_opt->thetav;
+        thetap = var_cal_opt->thetav;
         var_cal_opt->thetav = thetex;
 
         cs_face_convection_scalar(idtvar,

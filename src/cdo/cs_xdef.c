@@ -1114,13 +1114,16 @@ cs_xdef_array_set_zone_id(cs_xdef_t     *d,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  In case of definition by array, build the full2subset array.
+ *         The direct members of the cs_xdef_t structure are not modified but
+ *         the context dedicated to definition by array is updated.
+ *         d is declared as const to avoid a compiler warning
  *
  * \param[in, out]  d      pointer to a cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_array_build_full2subset(cs_xdef_t         *d)
+cs_xdef_array_build_full2subset(const cs_xdef_t        *d)
 {
   if (d == NULL)
     return;
@@ -1146,9 +1149,13 @@ cs_xdef_array_build_full2subset(cs_xdef_t         *d)
     z = cs_boundary_zone_by_id(cx->z_id);
 
   }
-  else
+  else {
+
+    refz = NULL, z = NULL;      /* Avoid a compiler warning */
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid support.\n", __func__);
+
+  }
 
   assert(z != NULL && refz != NULL);
 
