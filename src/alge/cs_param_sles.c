@@ -2584,7 +2584,7 @@ void
 cs_param_sles_copy_from(cs_param_sles_t   *src,
                         cs_param_sles_t   *dst)
 {
-  if (dst == NULL)
+  if (src == NULL || dst == NULL)
     return;
 
   /* Remark: name is managed at the creation of the structure */
