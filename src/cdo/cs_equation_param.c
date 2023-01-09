@@ -1439,16 +1439,16 @@ cs_equation_param_create(const char            *name,
  * \brief  Copy the settings from one \ref cs_equation_param_t structure to
  *         another one. The name is not copied.
  *
- * \param[in]      ref       pointer to the reference \ref cs_equation_param_t
- * \param[in, out] dst       pointer to the \ref cs_equation_param_t to update
- * \param[in]      copy_fid  copy also the field id or not
+ * \param[in]      ref          pointer to the reference cs_equation_param_t
+ * \param[in, out] dst          pointer to the cs_equation_param_t to update
+ * \param[in]      copy_fld_id  copy also the field id or not
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_param_copy_from(const cs_equation_param_t   *ref,
                             cs_equation_param_t         *dst,
-                            bool                         copy_fid)
+                            bool                         copy_fld_id)
 {
   /* Generic members */
 
@@ -1596,7 +1596,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
 
   /* Copy the settings driving the linear algebra algorithms */
 
-  if (copy_fid)
+  if (copy_fld_id)
     cs_param_sles_copy_from(ref->sles_param, dst->sles_param);
 
   else {

@@ -55,9 +55,9 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value of the constant gradient of the Lagrange function
- *         attached to xc in p_{f,c} (constant inside this volume)
- *         Cell-wise version.
+ * \brief Compute the value of the constant gradient of the Lagrange function
+ *        attached to xc in p_{f,c} (constant inside this volume)
+ *        Cell-wise version.
  *
  * \param[in]      f        face number in the cellwise numbering to handle
  * \param[in]      cm       pointer to a cell_mesh_t structure
@@ -70,7 +70,6 @@ cs_compute_grdfc_cw(short int               f,
                     const cs_cell_mesh_t   *cm,
                     cs_real_t              *grd_c)
 {
-  /* Sanity checks */
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ));
 
   const cs_real_t  ohf = -cm->f_sgn[f]/cm->hfc[f];
@@ -117,7 +116,6 @@ cs_compute_wef(short int                 f,
                const cs_cell_mesh_t     *cm,
                cs_real_t                *wef)
 {
-  /* Sanity checks */
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ));
 
   const short int  *f2e_idx = cm->f2e_idx + f;
@@ -125,6 +123,7 @@ cs_compute_wef(short int                 f,
   const double  inv_f = 1./cm->face[f].meas;
 
   /* Compute a weight for each edge of the current face */
+
   for (short int e = 0; e < f2e_idx[1] - f2e_idx[0]; e++)
     wef[e] = tef_vals[e] * inv_f;
 }
@@ -145,7 +144,6 @@ cs_compute_pefc(short int                 f,
                 const cs_cell_mesh_t     *cm,
                 cs_real_t                *pefc)
 {
-  /* Sanity checks */
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_PFC));
 
@@ -154,6 +152,7 @@ cs_compute_pefc(short int                 f,
   const double  f_coef = cm->pvol_f[f]/cm->face[f].meas;
 
   /* Compute a weight for each edge of the current face */
+
   for (short int e = 0; e < f2e_idx[1] - f2e_idx[0]; e++)
     pefc[e] = tef_vals[e] * f_coef;
 }
@@ -176,11 +175,11 @@ cs_compute_wvf(short int                 f,
                const cs_cell_mesh_t     *cm,
                cs_real_t                *wvf)
 {
-  /* Sanity checks */
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   /* Reset weights */
+
   memset(wvf, 0, cm->n_vc*sizeof(cs_real_t));
 
   const short int  *f2e_idx = cm->f2e_idx + f;
@@ -189,6 +188,7 @@ cs_compute_wvf(short int                 f,
   const double  inv_f = 1./cm->face[f].meas;
 
   /* Compute a weight for each vertex of the current face */
+
   for (short int e = 0; e < f2e_idx[1] - f2e_idx[0]; e++) {
 
     const short int  *v = cm->e2v_ids + 2*f2e_ids[e];
@@ -205,16 +205,16 @@ cs_compute_wvf(short int                 f,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the inertial matrix of a cell with respect to the point
- *          called "center". This computation is performed exactly thanks to
- *          quadrature based on a "tetrahedrization" of the cell.
+ * \brief Compute the inertial matrix of a cell with respect to the point
+ *        called "center". This computation is performed exactly thanks to
+ *        quadrature based on a "tetrahedrization" of the cell.
  *
- * \param[in]       cm       pointer to a cs_cell_mesh_t structure
- * \param[in]       f        id of the face in the cell numbering
- * \param[in]       ax       main X-axis for the face-related coordinate system
- * \param[in]       ay       main Y-axis for the face-related coordinate system
- * \param[in]       center   coordinates of the face center
- * \param[in, out]  cov      2x2 symmetric covariance matrix to compute
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      f        id of the face in the cell numbering
+ * \param[in]      ax       main X-axis for the face-related coordinate system
+ * \param[in]      ay       main Y-axis for the face-related coordinate system
+ * \param[in]      center   coordinates of the face center
+ * \param[in, out] cov      2x2 symmetric covariance matrix to compute
  */
 /*----------------------------------------------------------------------------*/
 
@@ -228,13 +228,13 @@ cs_compute_face_covariance_tensor(const cs_cell_mesh_t   *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the inertial matrix of a cell with respect to the point
- *          called "center". This computation is performed exactly thanks to
- *          quadrature based on a "tetrahedrization" of the cell.
+ * \brief Compute the inertial matrix of a cell with respect to the point
+ *        called "center". This computation is performed exactly thanks to
+ *        quadrature based on a "tetrahedrization" of the cell.
  *
- * \param[in]       cm       pointer to a cs_cell_mesh_t structure
- * \param[in]       center   coordinates of the cell center
- * \param[in, out]  inertia  inertia matrix to compute
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      center    coordinates of the cell center
+ * \param[in, out] inertia   inertia matrix to compute
  */
 /*----------------------------------------------------------------------------*/
 
@@ -245,17 +245,17 @@ cs_compute_inertia_tensor(const cs_cell_mesh_t   *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the gradient of a Lagrange function related to primal
- *          vertices in a p_{ef,c} subvolume of a cell c where e is an edge
- *          belonging to the face f with vertices v1 and v2
+ * \brief Compute the gradient of a Lagrange function related to primal
+ *        vertices in a p_{ef,c} subvolume of a cell c where e is an edge
+ *        belonging to the face f with vertices v1 and v2
  *
- * \param[in]       v1        number of the first vertex in cell numbering
- * \param[in]       v2        number of the second vertex in cell numbering
- * \param[in]       deq       dual edge quantities
- * \param[in]       uvc       xc --> xv unit tangent vector
- * \param[in]       lvc       xc --> xv vector length
- * \param[in, out]  grd_v1   gradient of Lagrange function related to v1
- * \param[in, out]  grd_v2   gradient of Lagrange function related to v2
+ * \param[in]      v1        number of the first vertex in cell numbering
+ * \param[in]      v2        number of the second vertex in cell numbering
+ * \param[in]      deq       dual edge quantities
+ * \param[in]      uvc       xc --> xv unit tangent vector
+ * \param[in]      lvc       xc --> xv vector length
+ * \param[in, out] grd_v1    gradient of Lagrange function related to v1
+ * \param[in, out] grd_v2    gradient of Lagrange function related to v2
  */
 /*----------------------------------------------------------------------------*/
 
@@ -270,16 +270,16 @@ cs_compute_grd_ve(const short int      v1,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute for a face the weight related to each vertex w_{v,f} and
- *         the weight related to each edge
- *         w_{v,f} = |dc(v) cap f|/|f|
- *         Sum of w_{v,f} over the face vertices is equal to 1
- *         Sum of w_{e,f} over the face edges is equal to 1
+ * \brief Compute for a face the weight related to each vertex w_{v,f} and
+ *        the weight related to each edge
+ *        w_{v,f} = |dc(v) cap f|/|f|
+ *        Sum of w_{v,f} over the face vertices is equal to 1
+ *        Sum of w_{e,f} over the face edges is equal to 1
  *
- * \param[in]       f      id of the face in the cell-wise numbering
- * \param[in]       cm     pointer to a cs_cell_mesh_t structure
- * \param[in, out]  wvf    weights of each face vertex
- * \param[in, out]  wef    weights of each face edge
+ * \param[in]      f      id of the face in the cell-wise numbering
+ * \param[in]      cm     pointer to a cs_cell_mesh_t structure
+ * \param[in, out] wvf    weights of each face vertex
+ * \param[in, out] wef    weights of each face edge
  */
 /*----------------------------------------------------------------------------*/
 

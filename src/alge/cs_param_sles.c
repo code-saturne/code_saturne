@@ -1654,7 +1654,7 @@ _set_saturne_sles(bool                 use_field_id,
 
   } /* Iterative solver already defined */
 
-  if (slesp->flexible) {   /*  Additional check */
+  if (slesp->flexible) { /* Additional checks */
 
     switch (cs_sles_it_get_type(itsol)) {
 
@@ -1969,9 +1969,9 @@ _set_hypre_solver(cs_param_sles_t    *slesp,
 /*----------------------------------------------------------------------------*/
 
 static void
-_hypre_boomeramg_hook(int    verbosity,
-                      void  *context,
-                      void  *solver_p)
+_hypre_boomeramg_hook(int     verbosity,
+                      void   *context,
+                      void   *solver_p)
 {
   CS_NO_WARN_IF_UNUSED(verbosity);
 
@@ -2152,9 +2152,9 @@ _hypre_boomeramg_hook(int    verbosity,
 /*----------------------------------------------------------------------------*/
 
 static void
-_hypre_generic_pc_hook(int    verbosity,
-                       void  *context,
-                       void  *solver_p)
+_hypre_generic_pc_hook(int     verbosity,
+                       void   *context,
+                       void   *solver_p)
 {
   CS_NO_WARN_IF_UNUSED(verbosity);
 

@@ -344,6 +344,7 @@ cs_cdo_solve_scalar_cell_system(cs_lnum_t                n_dofs,
 
     cs_matrix_pre_vector_multiply_sync(matrix, _b);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, _x);
+
   }
 
   /* Solve the linear solver */

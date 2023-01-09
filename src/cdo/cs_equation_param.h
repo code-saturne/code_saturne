@@ -190,9 +190,9 @@ typedef struct {
    * @{
    */
 
-  char *restrict       name;           /*!< name of the equation */
-  cs_equation_type_t   type;           /*!< type of equation: predefined... */
-  int                  dim;            /*!< Dimension of the unknown */
+  char *restrict              name;    /*!< name of the equation */
+  cs_equation_type_t          type;    /*!< type of equation: predefined... */
+  int                         dim;     /*!< Dimension of the unknown */
 
   /*! \var verbosity
    *  Verbosity for the resolution (0 or 1 for a reasonable log size,  2 or more
@@ -203,8 +203,8 @@ typedef struct {
    */
 
   union {
-    int                verbosity;
-    int                iwarni;
+    int                       verbosity;
+    int                       iwarni;
   };
 
   /*! \var flag
@@ -212,25 +212,25 @@ typedef struct {
    *  or source terms are activated or not
    */
 
-  cs_flag_t                  flag;
+  cs_flag_t                   flag;
 
   /*! \var post_flag
    *  Flag to determine if predefined post-treatments such as Peclet,
    *  are requested
    */
 
-  cs_flag_t                  post_flag;
+  cs_flag_t                   post_flag;
 
   /* Numerical settings */
 
-  cs_param_space_scheme_t    space_scheme;  /*!< Space discretization scheme */
-  cs_param_dof_reduction_t   dof_reduction; /*!< How is defined DoF */
+  cs_param_space_scheme_t     space_scheme;  /*!< Space discretization scheme */
+  cs_param_dof_reduction_t    dof_reduction; /*!< How is defined DoF */
 
   /*! \var space_poly_degree
    * Maximum degree of the polynomial basis
    */
 
-  int                        space_poly_degree;
+  int                         space_poly_degree;
 
   /*!
    * @}
@@ -238,6 +238,7 @@ typedef struct {
    * @{
    *
    * \var iconv
+
    * Indicate if the convection is taken into account (1) or not (0). By default,
    * 0 for the pressure or f in v2f model, 1 for the other unknowns.
    *
@@ -382,7 +383,7 @@ typedef struct {
    * Generally, only the values 1 and 0.5 are used. The user is not allowed to
    * modify this variable.
    * - 1: first-order
-   * - 0.5: second-order \n
+   * - 0.5: second-order\n
    * For the pressure, \ref thetav is always 1. For  the other variables,
    * \ref thetav = 0.5 is used when the  second-order time scheme is activated
    * (\ref optcal::ischtp "ischtp = 2", standard for LES calculations),
@@ -506,13 +507,13 @@ typedef struct {
    *
    */
 
-  cs_param_bc_type_t            default_bc;
-  int                           n_bc_defs;
-  cs_xdef_t                   **bc_defs;
+  cs_param_bc_type_t          default_bc;
+  int                         n_bc_defs;
+  cs_xdef_t                 **bc_defs;
 
-  cs_param_bc_enforce_t         default_enforcement;
-  cs_real_t                     strong_pena_bc_coeff;
-  cs_real_t                     weak_pena_bc_coeff;
+  cs_param_bc_enforce_t       default_enforcement;
+  cs_real_t                   strong_pena_bc_coeff;
+  cs_real_t                   weak_pena_bc_coeff;
 
   /*!
    * @}
@@ -526,8 +527,8 @@ typedef struct {
    * List of pointers to the definition of the inititial condition
    */
 
-  int                           n_ic_defs;
-  cs_xdef_t                   **ic_defs;
+  int                         n_ic_defs;
+  cs_xdef_t                 **ic_defs;
 
   /*!
    * @}
@@ -541,7 +542,7 @@ typedef struct {
    * quadrature.
    */
 
-  bool                          do_lumping;
+  bool                        do_lumping;
 
   /*!
    * \var time_hodgep
@@ -559,10 +560,10 @@ typedef struct {
    *
    */
 
-  cs_hodge_param_t              time_hodgep;
-  cs_property_t                *time_property;
-  cs_param_time_scheme_t        time_scheme;
-  cs_real_t                     theta;
+  cs_hodge_param_t            time_hodgep;
+  cs_property_t              *time_property;
+  cs_param_time_scheme_t      time_scheme;
+  cs_real_t                   theta;
 
   /*!
    * @}
@@ -576,8 +577,8 @@ typedef struct {
    * Pointer to the property related to the diffusion term
    */
 
-  cs_hodge_param_t              diffusion_hodgep;
-  cs_property_t                *diffusion_property;
+  cs_hodge_param_t            diffusion_hodgep;
+  cs_property_t              *diffusion_property;
 
   /*!
    * @}
@@ -592,8 +593,8 @@ typedef struct {
    * Pointer to the property related to the curl-curl term
    */
 
-  cs_hodge_param_t              curlcurl_hodgep;
-  cs_property_t                *curlcurl_property;
+  cs_hodge_param_t            curlcurl_hodgep;
+  cs_property_t              *curlcurl_property;
 
   /*!
    * @}
@@ -608,8 +609,8 @@ typedef struct {
    * Pointer to the property related to the grad-div term
    */
 
-  cs_hodge_param_t              graddiv_hodgep;
-  cs_property_t                *graddiv_property;
+  cs_hodge_param_t            graddiv_hodgep;
+  cs_property_t              *graddiv_property;
 
   /*!
    * @}
@@ -643,19 +644,19 @@ typedef struct {
    *
    * \var adv_scaling_property
    * May be set to NULL even if the advection term is activated. The value of
-   * this property in each cell is multiplicative coefficient in front of the
+   * this property in each cell is a multiplicative coefficient in front of the
    * advection term (boundary terms are also considered) This is useful to treat
    * the thermal module using the variable temperature instead of the enthalpy
    * for instance or in the solidification module.
    */
 
-  cs_param_advection_form_t        adv_formulation;
-  cs_param_advection_scheme_t      adv_scheme;
-  cs_param_advection_strategy_t    adv_strategy;
-  cs_param_advection_extrapol_t    adv_extrapol;
-  cs_real_t                        upwind_portion;
-  cs_adv_field_t                  *adv_field;
-  cs_property_t                   *adv_scaling_property;
+  cs_param_advection_form_t             adv_formulation;
+  cs_param_advection_scheme_t           adv_scheme;
+  cs_param_advection_strategy_t         adv_strategy;
+  cs_param_advection_extrapol_t         adv_extrapol;
+  cs_real_t                             upwind_portion;
+  cs_adv_field_t                       *adv_field;
+  cs_property_t                        *adv_scaling_property;
 
   /*!
    * @}
@@ -676,9 +677,9 @@ typedef struct {
    * List of properties associated to each reaction term
    */
 
-  cs_hodge_param_t              reaction_hodgep;
-  int                           n_reaction_terms;
-  cs_property_t               **reaction_properties;
+  cs_hodge_param_t            reaction_hodgep;
+  int                         n_reaction_terms;
+  cs_property_t             **reaction_properties;
 
   /*!
    * @}
@@ -694,8 +695,8 @@ typedef struct {
    * List of definition of each source term
    */
 
-  int                           n_source_terms;
-  cs_xdef_t                   **source_terms;
+  int                         n_source_terms;
+  cs_xdef_t                 **source_terms;
 
   /*!
    * @}
@@ -714,8 +715,8 @@ typedef struct {
    * List of definitions of injection values
    */
 
-  int                           n_volume_mass_injections;
-  cs_xdef_t                   **volume_mass_injections;
+  int                         n_volume_mass_injections;
+  cs_xdef_t                 **volume_mass_injections;
 
   /*!
    * @}
@@ -781,7 +782,7 @@ typedef struct {
    * When OpenMP is active, choice of parallel reduction for the assembly
    */
 
-  cs_param_assemble_omp_strategy_t     omp_assembly_choice;
+  cs_param_assemble_omp_strategy_t      omp_assembly_choice;
 
   /*! @} */
 
@@ -1497,16 +1498,16 @@ cs_equation_create_param(const char            *name,
  * \brief  Copy the settings from one \ref cs_equation_param_t structure to
  *         another one. The name is not copied.
  *
- * \param[in]      ref       pointer to the reference \ref cs_equation_param_t
- * \param[in, out] dst       pointer to the \ref cs_equation_param_t to update
- * \param[in]      copy_fid  copy also the field id or not
+ * \param[in]      ref          pointer to the reference cs_equation_param_t
+ * \param[in, out] dst          pointer to the cs_equation_param_t to update
+ * \param[in]      copy_fld_id  copy also the field id or not
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_param_copy_from(const cs_equation_param_t   *ref,
                             cs_equation_param_t         *dst,
-                            bool                         copy_fid);
+                            bool                         copy_fld_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
