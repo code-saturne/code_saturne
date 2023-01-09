@@ -706,11 +706,13 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
     switch (space_scheme) {
 
     case CS_SPACE_SCHEME_CDOVB:
+      /* --------------------- */
       msh_flag |= CS_FLAG_COMP_PV;
       compute_source[st_id] = _set_vb_function(st_def, sys_flag, &msh_flag);
       break;
 
     case CS_SPACE_SCHEME_CDOVCB:
+      /* ---------------------- */
       if (st_def->meta & CS_FLAG_DUAL) {
 
         bft_error(__FILE__, __LINE__, 0,
@@ -754,6 +756,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
       break; /* CDOVCB */
 
     case CS_SPACE_SCHEME_CDOEB:
+      /* --------------------- */
       switch (st_def->type) {
 
       case CS_XDEF_BY_VALUE:
@@ -768,22 +771,75 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
       }
       break; /* CDOEB */
 
+    case CS_SPACE_SCHEME_CDOCB:
+      /* --------------------- */
+
+      if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
+        bft_error(__FILE__, __LINE__, 0, "%s: Invalid case", __func__);
+
+      switch (st_def->type) {
+
+      case CS_XDEF_BY_ANALYTIC_FUNCTION:
+        msh_flag |= CS_FLAG_COMP_PV;
+
+        /* Switch only to allow more precise quadratures */
+
+        switch (st_def->qtype) {
+
+        case CS_QUADRATURE_HIGHEST:
+        case CS_QUADRATURE_HIGHER:
+        case CS_QUADRATURE_BARY_SUBDIV:
+          msh_flag |= CS_FLAG_COMP_EV | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ |
+            CS_FLAG_COMP_HFQ| CS_FLAG_COMP_PEQ | CS_FLAG_COMP_FE;
+          compute_source[st_id] = cs_source_term_fcb_pcsd_by_analytic;
+          break;
+
+        default:
+          /* CS_QUADRATURE_BARY or CS_QUADRATURE_NONE */
+          compute_source[st_id] = cs_source_term_fcb_pcsd_bary_by_analytic;
+          break;
+
+        } /* Switch on the type of quadrature */
+        break;
+
+      case CS_XDEF_BY_ARRAY:
+        compute_source[st_id] = cs_source_term_fcb_pcsd_by_array;
+        break;
+
+      case CS_XDEF_BY_DOF_FUNCTION:
+        compute_source[st_id] = cs_source_term_fcb_pcsd_by_dof_func;
+        break;
+
+      case CS_XDEF_BY_VALUE:
+        compute_source[st_id] = cs_source_term_fcb_pcsd_by_value;
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid type of source term definition in CDO-CB",
+                  __func__);
+        break;
+
+      }
+      break;
+
     case CS_SPACE_SCHEME_CDOFB:
     case CS_SPACE_SCHEME_HHO_P0:
+      /* ---------------------- */
       switch (st_def->type) {
 
       case CS_XDEF_BY_VALUE:
         if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
           compute_source[st_id] = cs_source_term_fb_pcvd_by_value;
         else
-          compute_source[st_id] = cs_source_term_fb_pcsd_by_value;
+          compute_source[st_id] = cs_source_term_fcb_pcsd_by_value;
         break;
 
       case CS_XDEF_BY_DOF_FUNCTION:
         if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
           compute_source[st_id] = cs_source_term_fb_pcvd_by_dof_func;
         else
-          compute_source[st_id] = cs_source_term_fb_pcsd_by_dof_func;
+          compute_source[st_id] = cs_source_term_fcb_pcsd_by_dof_func;
         break;
 
       case CS_XDEF_BY_ANALYTIC_FUNCTION:
@@ -811,20 +867,25 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
           /* Switch only to allow more precise quadratures */
 
-          if (st_def->qtype == CS_QUADRATURE_BARY)
-            compute_source[st_id] = cs_source_term_fb_pcsd_bary_by_analytic;
+          switch (st_def->qtype) {
 
-          else {
-
+          case CS_QUADRATURE_HIGHEST:
+          case CS_QUADRATURE_HIGHER:
+          case CS_QUADRATURE_BARY_SUBDIV:
             /* TODO: Are all these flags really necessary? Check in the */
             /* integration */
 
-            msh_flag |= CS_FLAG_COMP_EV  |CS_FLAG_COMP_EF | CS_FLAG_COMP_PFQ |
-                        CS_FLAG_COMP_FEQ |CS_FLAG_COMP_HFQ| CS_FLAG_COMP_PEQ |
-                        CS_FLAG_COMP_FE;
-            compute_source[st_id] = cs_source_term_fb_pcsd_by_analytic;
+            msh_flag |= CS_FLAG_COMP_EV | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ |
+              CS_FLAG_COMP_HFQ| CS_FLAG_COMP_PEQ | CS_FLAG_COMP_FE;
+            compute_source[st_id] = cs_source_term_fcb_pcsd_by_analytic;
+            break;
 
-          }
+          default:
+            /* CS_QUADRATURE_BARY, CS_QUADRATURE_NONE */
+            compute_source[st_id] = cs_source_term_fcb_pcsd_bary_by_analytic;
+            break;
+
+          } /* Switch on the type of quadrature */
 
         }
         break;
@@ -833,7 +894,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
         if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
           compute_source[st_id] = cs_source_term_fb_pcvd_by_array;
         else
-          compute_source[st_id] = cs_source_term_fb_pcsd_by_array;
+          compute_source[st_id] = cs_source_term_fcb_pcsd_by_array;
         break;
 
       default:
@@ -847,6 +908,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
     case CS_SPACE_SCHEME_HHO_P1:
     case CS_SPACE_SCHEME_HHO_P2:
+      /* ---------------------- */
       switch (st_def->type) {
 
       case CS_XDEF_BY_VALUE:
@@ -995,7 +1057,7 @@ cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
                              void                      *input,
                              double                    *values)
 {
-  CS_UNUSED(time_eval);
+  CS_NO_WARN_IF_UNUSED(time_eval);
 
   if (source == NULL)
     return;
@@ -1106,7 +1168,7 @@ cs_source_term_pvsp_by_array(const cs_xdef_t           *source,
                              void                      *input,
                              double                    *values)
 {
-  CS_UNUSED(time_eval);
+  CS_NO_WARN_IF_UNUSED(time_eval);
 
   if (source == NULL)
     return;
@@ -1165,7 +1227,7 @@ cs_source_term_pvsp_by_c2v_array(const cs_xdef_t           *source,
                                  void                      *input,
                                  double                    *values)
 {
-  CS_UNUSED(time_eval);
+  CS_NO_WARN_IF_UNUSED(time_eval);
 
   if (source == NULL)
     return;
@@ -1219,9 +1281,9 @@ cs_source_term_dcsd_by_value(const cs_xdef_t           *source,
                              void                      *input,
                              double                    *values)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(input);
-  CS_UNUSED(time_eval);
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(time_eval);
 
   if (source == NULL)
     return;
@@ -1259,9 +1321,9 @@ cs_source_term_dcvd_by_value(const cs_xdef_t           *source,
                              void                      *input,
                              double                    *values)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(input);
-  CS_UNUSED(time_eval);
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(time_eval);
 
   if (source == NULL)
     return;
@@ -1300,9 +1362,9 @@ cs_source_term_dcsd_by_pv_array(const cs_xdef_t           *source,
                                 void                      *input,
                                 double                    *values)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(input);
-  CS_UNUSED(time_eval);
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(time_eval);
 
   if (source == NULL)
     return;
@@ -1341,9 +1403,9 @@ cs_source_term_dcsd_by_c2v_array(const cs_xdef_t           *source,
                                  void                      *input,
                                  double                    *values)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(input);
-  CS_UNUSED(time_eval);
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(time_eval);
 
   if (source == NULL)
     return;
@@ -1389,9 +1451,9 @@ cs_source_term_dcsd_by_pc_array(const cs_xdef_t           *source,
                                 void                      *input,
                                 double                    *values)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(input);
-  CS_UNUSED(time_eval);
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(time_eval);
 
   if (source == NULL)
     return;
@@ -1430,9 +1492,9 @@ cs_source_term_dcsd_by_dof_func(const cs_xdef_t           *source,
                                 void                      *input,
                                 double                    *values)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(time_eval);
-  CS_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(time_eval);
+  CS_NO_WARN_IF_UNUSED(input);
 
   if (source == NULL)
     return;
@@ -1482,8 +1544,8 @@ cs_source_term_dcsd_none_by_analytic(const cs_xdef_t           *source,
                                      void                      *input,
                                      double                    *values)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(input);
 
   if (source == NULL)
     return;
@@ -1534,7 +1596,7 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
                                      void                      *input,
                                      double                    *values)
 {
-  CS_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(input);
 
   if (source == NULL)
     return;
@@ -1644,8 +1706,8 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
                                      void                      *input,
                                      double                    *values)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(input);
 
   if (source == NULL)
     return;
@@ -1723,7 +1785,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
                                       void                      *input,
                                       double                    *values)
 {
-  CS_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(input);
 
   if (source == NULL)
     return;
@@ -1935,7 +1997,7 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
                                      void                      *input,
                                      double                    *values)
 {
-  CS_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(input);
 
   if (source == NULL)
     return;
@@ -2036,7 +2098,7 @@ cs_source_term_vcsp_by_value(const cs_xdef_t           *source,
                              void                      *input,
                              double                    *values)
 {
-  CS_UNUSED(time_eval);
+  CS_NO_WARN_IF_UNUSED(time_eval);
 
   if (source == NULL)
     return;
@@ -2134,7 +2196,7 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
  * \brief  Compute the contribution for a cell related to a source term and
  *         add it to the given array of values.
  *         Case of a scalar density (sd) defined on primal cells by a value.
- *         Case of face-based schemes
+ *         Case of face-based/cell-based schemes
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -2146,16 +2208,16 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_fb_pcsd_by_value(const cs_xdef_t           *source,
-                             const cs_cell_mesh_t      *cm,
-                             cs_real_t                  time_eval,
-                             cs_cell_builder_t         *cb,
-                             void                      *input,
-                             double                    *values)
+cs_source_term_fcb_pcsd_by_value(const cs_xdef_t           *source,
+                                 const cs_cell_mesh_t      *cm,
+                                 cs_real_t                  time_eval,
+                                 cs_cell_builder_t         *cb,
+                                 void                      *input,
+                                 double                    *values)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(input);
-  CS_UNUSED(time_eval);
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(time_eval);
 
   if (source == NULL)
     return;
@@ -2173,7 +2235,7 @@ cs_source_term_fb_pcsd_by_value(const cs_xdef_t           *source,
  *         add it to the given array of values.
  *         Case of a density defined on primal cells by a DoF function.
  *         Case of scalar-valued face-based schemes.
- *         Case of CDO face-based schemes.
+ *         Case of face-based and cell-based schemes
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -2185,16 +2247,16 @@ cs_source_term_fb_pcsd_by_value(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_fb_pcsd_by_dof_func(const cs_xdef_t           *source,
-                                   const cs_cell_mesh_t      *cm,
-                                   cs_real_t                  time_eval,
-                                   cs_cell_builder_t         *cb,
-                                   void                      *input,
-                                   double                    *values)
+cs_source_term_fcb_pcsd_by_dof_func(const cs_xdef_t           *source,
+                                    const cs_cell_mesh_t      *cm,
+                                    cs_real_t                  time_eval,
+                                    cs_cell_builder_t         *cb,
+                                    void                      *input,
+                                    double                    *values)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(time_eval);
-  CS_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(time_eval);
+  CS_NO_WARN_IF_UNUSED(input);
 
   if (source == NULL)
     return;
@@ -2241,9 +2303,9 @@ cs_source_term_fb_pcvd_by_dof_func(const cs_xdef_t           *source,
                                    void                      *input,
                                    double                    *values)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(time_eval);
-  CS_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(time_eval);
+  CS_NO_WARN_IF_UNUSED(input);
 
   if (source == NULL)
     return;
@@ -2292,9 +2354,9 @@ cs_source_term_fb_pcvd_by_value(const cs_xdef_t           *source,
                                 void                      *input,
                                 double                    *values)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(input);
-  CS_UNUSED(time_eval);
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(time_eval);
 
   if (source == NULL)
     return;
@@ -2314,7 +2376,7 @@ cs_source_term_fb_pcvd_by_value(const cs_xdef_t           *source,
  *         function.
  *         Use the barycentric approximation as quadrature to evaluate the
  *         integral. Exact for linear function.
- *         Case of face-based schemes
+ *         Case of face-based and cell-based schemes
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -2326,15 +2388,15 @@ cs_source_term_fb_pcvd_by_value(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_fb_pcsd_bary_by_analytic(const cs_xdef_t           *source,
-                                        const cs_cell_mesh_t      *cm,
-                                        cs_real_t                  time_eval,
-                                        cs_cell_builder_t         *cb,
-                                        void                      *input,
-                                        double                    *values)
+cs_source_term_fcb_pcsd_bary_by_analytic(const cs_xdef_t           *source,
+                                         const cs_cell_mesh_t      *cm,
+                                         cs_real_t                  time_eval,
+                                         cs_cell_builder_t         *cb,
+                                         void                      *input,
+                                         double                    *values)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(input);
 
   if (source == NULL)
     return;
@@ -2361,7 +2423,7 @@ cs_source_term_fb_pcsd_bary_by_analytic(const cs_xdef_t           *source,
  *         the given array of values.
  *         Case of a scalar density (sd) defined on primal cells by an analytic
  *         function.
- *         Case of face-based schemes
+ *         Case of face-based and cell-based schemes
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -2373,14 +2435,14 @@ cs_source_term_fb_pcsd_bary_by_analytic(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_fb_pcsd_by_analytic(const cs_xdef_t           *source,
-                                   const cs_cell_mesh_t      *cm,
-                                   cs_real_t                  time_eval,
-                                   cs_cell_builder_t         *cb,
-                                   void                      *input,
-                                   double                    *values)
+cs_source_term_fcb_pcsd_by_analytic(const cs_xdef_t           *source,
+                                    const cs_cell_mesh_t      *cm,
+                                    cs_real_t                  time_eval,
+                                    cs_cell_builder_t         *cb,
+                                    void                      *input,
+                                    double                    *values)
 {
-  CS_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(input);
   if (source == NULL)
     return;
 
@@ -2390,9 +2452,10 @@ cs_source_term_fb_pcsd_by_analytic(const cs_xdef_t           *source,
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
   assert(source->dim == 1);
 
-  if (source->qtype == CS_QUADRATURE_BARY)
-    cs_source_term_fb_pcsd_bary_by_analytic(source, cm, time_eval, cb, input,
-                                         values);
+  if (source->qtype == CS_QUADRATURE_BARY ||
+      source->qtype == CS_QUADRATURE_NONE)
+    cs_source_term_fcb_pcsd_bary_by_analytic(source, cm, time_eval, cb, input,
+                                             values);
 
   else {
 
@@ -2455,6 +2518,7 @@ cs_source_term_fb_pcsd_by_analytic(const cs_xdef_t           *source,
             for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
 
               /* Edge-related variables */
+
               const short int e0  = f2e_ids[e];
               const double  *xv0 = xv + 3*cm->e2v_ids[2*e0];
               const double  *xv1 = xv + 3*cm->e2v_ids[2*e0+1];
@@ -2488,7 +2552,7 @@ cs_source_term_fb_pcsd_by_analytic(const cs_xdef_t           *source,
  * \brief  Compute the contribution for a cell related to a source term and
  *         add it to the given array of values.
  *         Case of a scalar density defined at primal cells by an array.
- *         Case of CDO face-based schemes.
+ *         Case of face-based and cell-based schemes
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -2500,16 +2564,16 @@ cs_source_term_fb_pcsd_by_analytic(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_fb_pcsd_by_array(const cs_xdef_t           *source,
-                                const cs_cell_mesh_t      *cm,
-                                cs_real_t                  time_eval,
-                                cs_cell_builder_t         *cb,
-                                void                      *input,
-                                double                    *values)
+cs_source_term_fcb_pcsd_by_array(const cs_xdef_t           *source,
+                                 const cs_cell_mesh_t      *cm,
+                                 cs_real_t                  time_eval,
+                                 cs_cell_builder_t         *cb,
+                                 void                      *input,
+                                 double                    *values)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(input);
-  CS_UNUSED(time_eval);
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(time_eval);
 
   if (source == NULL)
     return;
@@ -2549,8 +2613,8 @@ cs_source_term_fb_pcvd_bary_by_analytic(const cs_xdef_t           *source,
                                         void                      *input,
                                         double                    *values)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(input);
 
   if (source == NULL)
     return;
@@ -2599,7 +2663,7 @@ cs_source_term_fb_pcvd_by_analytic(const cs_xdef_t           *source,
                                    void                      *input,
                                    double                    *values)
 {
-  CS_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(input);
 
   if (source == NULL)
     return;
@@ -2734,9 +2798,9 @@ cs_source_term_fb_pcvd_by_array(const cs_xdef_t           *source,
                                 void                      *input,
                                 double                    *values)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(input);
-  CS_UNUSED(time_eval);
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(time_eval);
 
   if (source == NULL)
     return;
@@ -2779,8 +2843,8 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
                               void                      *input,
                               double                    *values)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(time_eval);
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(time_eval);
 
   if (source == NULL)
     return;
@@ -2909,8 +2973,8 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
                                  void                      *input,
                                  double                    *values)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(time_eval);
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(time_eval);
 
   if (source == NULL)
     return;
@@ -3026,7 +3090,7 @@ cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
                                  void                      *input,
                                  double                    *values)
 {
-  CS_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(cb);
   if (source == NULL)
     return;
 
@@ -3139,12 +3203,12 @@ cs_source_term_dfsf_by_value(const cs_xdef_t           *source,
                              void                      *input,
                              double                    *values)
 {
+  CS_NO_WARN_IF_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(time_eval);
+
   if (source == NULL)
     return;
-
-  CS_UNUSED(input);
-  CS_UNUSED(cb);
-  CS_UNUSED(time_eval);
 
   assert(values != NULL && cm != NULL);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_DFQ));
