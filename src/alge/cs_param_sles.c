@@ -846,10 +846,10 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
   PetscInt  maxit;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
   KSPSetTolerances(ksp,
-                   slesp->eps,          /* relative convergence tolerance */
-                   abstol,              /* absolute convergence tolerance */
-                   dtol,                /* divergence tolerance */
-                   slesp->n_max_iter);  /* max number of iterations */
+                   slesp->cvg_param.rtol,  /* relative convergence tolerance */
+                   slesp->cvg_param.atol,  /* absolute convergence tolerance */
+                   slesp->cvg_param.dtol,  /* divergence tolerance */
+                   slesp->cvg_param.n_max_iter);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1423,19 +1423,19 @@ _set_saturne_sles(bool                 use_field_id,
 
           cs_multigrid_set_solver_options
             (mg,
-             CS_SLES_JACOBI,    /* descent smoother type (CS_SLES_PCG) */
-             CS_SLES_JACOBI,    /* ascent smoother type (CS_SLES_PCG) */
-             CS_SLES_PCG,       /* coarse solver type (CS_SLES_PCG) */
-             slesp->n_max_iter, /* n max cycles (100) */
-             5,                 /* n max iter for descent (10) */
-             5,                 /* n max iter for ascent (10) */
-             1000,              /* n max iter coarse solver (10000) */
-             0,                 /* polynomial precond. degree descent (0) */
-             0,                 /* polynomial precond. degree ascent (0) */
-             -1,                /* polynomial precond. degree coarse (0) */
-             1.0,    /* precision multiplier descent (< 0 forces max iters) */
-             1.0,    /* precision multiplier ascent (< 0 forces max iters) */
-             1);     /* requested precision multiplier coarse (default 1) */
+             CS_SLES_JACOBI,              /* descent smoother (CS_SLES_PCG) */
+             CS_SLES_JACOBI,              /* ascent smoother (CS_SLES_PCG) */
+             CS_SLES_PCG,                 /* coarse solver (CS_SLES_PCG) */
+             slesp->cvg_param.n_max_iter, /* n max cycles (100) */
+             5,       /* n max iter for descent (10) */
+             5,       /* n max iter for ascent (10) */
+             1000,    /* n max iter coarse solver (10000) */
+             0,       /* polynomial precond. degree descent (0) */
+             0,       /* polynomial precond. degree ascent (0) */
+             -1,      /* polynomial precond. degree coarse (0) */
+             1.0,     /* precision multiplier descent (< 0 forces max iters) */
+             1.0,     /* precision multiplier ascent (< 0 forces max iters) */
+             1);      /* requested precision multiplier coarse (default 1) */
           break;
 
         case CS_PARAM_AMG_HOUSE_K:
@@ -1444,19 +1444,19 @@ _set_saturne_sles(bool                 use_field_id,
 
           cs_multigrid_set_solver_options
             (mg,
-             CS_SLES_P_SYM_GAUSS_SEIDEL, /* descent smoother */
-             CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoother */
-             CS_SLES_PCG,                /* coarse smoother */
-             slesp->n_max_iter,          /* n_max_cycles */
-             1,                          /* n_max_iter_descent, */
-             1,                          /* n_max_iter_ascent */
-             100,                        /* n_max_iter_coarse */
-             0,                          /* poly_degree_descent */
-             0,                          /* poly_degree_ascent */
-             0,                          /* poly_degree_coarse */
-             -1.0,                       /* precision_mult_descent */
-             -1.0,                       /* precision_mult_ascent */
-             1);                         /* precision_mult_coarse */
+             CS_SLES_P_SYM_GAUSS_SEIDEL,    /* descent smoother */
+             CS_SLES_P_SYM_GAUSS_SEIDEL,    /* ascent smoother */
+             CS_SLES_PCG,                   /* coarse smoother */
+             slesp->cvg_param.n_max_iter,   /* n_max_cycles */
+             1,                             /* n_max_iter_descent, */
+             1,                             /* n_max_iter_ascent */
+             100,                           /* n_max_iter_coarse */
+             0,                             /* poly_degree_descent */
+             0,                             /* poly_degree_ascent */
+             0,                             /* poly_degree_coarse */
+             -1.0,                          /* precision_mult_descent */
+             -1.0,                          /* precision_mult_ascent */
+             1);                            /* precision_mult_coarse */
           break;
 
         default:
@@ -1474,14 +1474,14 @@ _set_saturne_sles(bool                 use_field_id,
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                 CS_SLES_BICGSTAB,
                                 poly_degree,
-                                slesp->n_max_iter);
+                                slesp->cvg_param.n_max_iter);
       break;
 
     case CS_PARAM_ITSOL_BICGSTAB2:
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                 CS_SLES_BICGSTAB2,
                                 poly_degree,
-                                slesp->n_max_iter);
+                                slesp->cvg_param.n_max_iter);
       break;
 
     case CS_PARAM_ITSOL_CG:
@@ -1490,20 +1490,20 @@ _set_saturne_sles(bool                 use_field_id,
         itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                   CS_SLES_IPCG,
                                   poly_degree,
-                                  slesp->n_max_iter);
+                                  slesp->cvg_param.n_max_iter);
       }
       else
         itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                   CS_SLES_PCG,
                                   poly_degree,
-                                  slesp->n_max_iter);
+                                  slesp->cvg_param.n_max_iter);
       break;
 
     case CS_PARAM_ITSOL_CR3:
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                 CS_SLES_PCR3,
                                 poly_degree,
-                                slesp->n_max_iter);
+                                slesp->cvg_param.n_max_iter);
       break;
 
     case CS_PARAM_ITSOL_FCG:
@@ -1511,14 +1511,14 @@ _set_saturne_sles(bool                 use_field_id,
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                 CS_SLES_IPCG,
                                 poly_degree,
-                                slesp->n_max_iter);
+                                slesp->cvg_param.n_max_iter);
       break;
 
     case CS_PARAM_ITSOL_GAUSS_SEIDEL:
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                 CS_SLES_P_GAUSS_SEIDEL,
                                 -1, /* Not useful to apply a preconditioner */
-                                slesp->n_max_iter);
+                                slesp->cvg_param.n_max_iter);
       break;
 
     case CS_PARAM_ITSOL_GKB_GMRES:
@@ -1526,7 +1526,7 @@ _set_saturne_sles(bool                 use_field_id,
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                 CS_SLES_GCR,
                                 poly_degree,
-                                slesp->n_max_iter);
+                                slesp->cvg_param.n_max_iter);
       break;
 
     case CS_PARAM_ITSOL_GMRES:
@@ -1535,34 +1535,34 @@ _set_saturne_sles(bool                 use_field_id,
         itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                   CS_SLES_GCR,
                                   poly_degree,
-                                  slesp->n_max_iter);
+                                  slesp->cvg_param.n_max_iter);
       }
       else
         itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                   CS_SLES_GMRES,
                                   poly_degree,
-                                  slesp->n_max_iter);
+                                  slesp->cvg_param.n_max_iter);
       break;
 
     case CS_PARAM_ITSOL_JACOBI:
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                 CS_SLES_JACOBI,
                                 -1, /* Not useful to apply a preconditioner */
-                                slesp->n_max_iter);
+                                slesp->cvg_param.n_max_iter);
       break;
 
     case CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL:
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                 CS_SLES_P_SYM_GAUSS_SEIDEL,
                                 -1, /* Not useful to apply a preconditioner */
-                                slesp->n_max_iter);
+                                slesp->cvg_param.n_max_iter);
       break;
 
     case CS_PARAM_ITSOL_USER_DEFINED:
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                 CS_SLES_USER_DEFINED,
                                 poly_degree,
-                                slesp->n_max_iter);
+                                slesp->cvg_param.n_max_iter);
       break;
 
     default:
@@ -1912,30 +1912,30 @@ _set_hypre_solver(cs_param_sles_t    *slesp,
 
   case CS_PARAM_ITSOL_BICG:
   case CS_PARAM_ITSOL_BICGSTAB2:
-    HYPRE_BiCGSTABSetTol(hs, (HYPRE_Real)slesp->eps);
-    HYPRE_BiCGSTABSetMaxIter(hs, (HYPRE_Int)slesp->n_max_iter);
+    HYPRE_BiCGSTABSetTol(hs, (HYPRE_Real)slesp->cvg_param.rtol);
+    HYPRE_BiCGSTABSetMaxIter(hs, (HYPRE_Int)slesp->cvg_param.n_max_iter);
     HYPRE_BiCGSTABGetPrecond(hs, &pc);
     break;
 
   case CS_PARAM_ITSOL_CG:
   case CS_PARAM_ITSOL_FCG:
-    HYPRE_PCGSetMaxIter(hs, (HYPRE_Int)slesp->n_max_iter);
-    HYPRE_PCGSetTol(hs, (HYPRE_Real)slesp->eps);
+    HYPRE_PCGSetTol(hs, (HYPRE_Real)slesp->cvg_param.rtol);
+    HYPRE_PCGSetMaxIter(hs, (HYPRE_Int)slesp->cvg_param.n_max_iter);
     HYPRE_PCGGetPrecond(hs, &pc);
     break;
 
   case CS_PARAM_ITSOL_FGMRES:
   case CS_PARAM_ITSOL_GCR:
-    HYPRE_FlexGMRESSetMaxIter(hs, (HYPRE_Int)slesp->n_max_iter);
+    HYPRE_FlexGMRESSetTol(hs, (HYPRE_Real)slesp->cvg_param.rtol);
+    HYPRE_FlexGMRESSetMaxIter(hs, (HYPRE_Int)slesp->cvg_param.n_max_iter);
     HYPRE_FlexGMRESSetKDim(hs, (HYPRE_Int)slesp->restart);
-    HYPRE_FlexGMRESSetTol(hs, (HYPRE_Real)slesp->eps);
     HYPRE_FlexGMRESGetPrecond(hs, &pc);
     break;
 
   case CS_PARAM_ITSOL_GMRES:
-    HYPRE_GMRESSetMaxIter(hs, (HYPRE_Int)slesp->n_max_iter);
+    HYPRE_GMRESSetTol(hs, (HYPRE_Real)slesp->cvg_param.rtol);
+    HYPRE_GMRESSetMaxIter(hs, (HYPRE_Int)slesp->cvg_param.n_max_iter);
     HYPRE_GMRESSetKDim(hs, (HYPRE_Int)slesp->restart);
-    HYPRE_GMRESSetTol(hs, (HYPRE_Real)slesp->eps);
     HYPRE_GMRESGetPrecond(hs, &pc);
     break;
 
@@ -2127,7 +2127,7 @@ _hypre_boomeramg_hook(int     verbosity,
   else { /* AMG as solver */
 
     HYPRE_BoomerAMGSetRelaxType(amg, 6);      /* Sym G.S./Jacobi hybrid */
-    HYPRE_BoomerAMGSetMaxIter(amg, slesp->n_max_iter);
+    HYPRE_BoomerAMGSetMaxIter(amg, slesp->cvg_param.n_max_iter);
     HYPRE_BoomerAMGSetRelaxOrder(amg, 0);
 
     /* This option is recommended for GPU usage */
@@ -2428,6 +2428,135 @@ _set_hypre_sles(bool                 use_field_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Create a cs_param_sles_saddle_t structure and assign a minimalist
+ *        default settings
+ *
+ * \return a pointer to the new cs_param_sles_saddle_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_sles_saddle_t *
+cs_param_sles_saddle_create(void)
+{
+  cs_param_sles_saddle_t  *saddlep = NULL;
+
+  BFT_MALLOC(saddlep, 1, cs_param_sles_saddle_t);
+
+  saddlep->verbosity = 0;
+  saddlep->solver = CS_PARAM_SADDLE_SOLVER_NONE;  /* Not used */
+  saddlep->precond = CS_PARAM_SADDLE_PRECOND_NONE;
+  saddlep->schur_approximation = CS_PARAM_SCHUR_NONE;
+
+  saddlep->cvg_param =  (cs_param_sles_cvg_t) {
+    .n_max_iter = 50,
+    .atol = 1e-12,       /* absolute tolerance */
+    .rtol = 1e-6,        /* relative tolerance */
+    .dtol = 1e3 };       /* divergence tolerance */
+
+  saddlep->schur_sles_param = NULL;
+
+  return saddlep;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize a \ref cs_param_sles_t structure for the Schur
+ *        approximation nested inside a ref cs_param_sles_saddle_t
+ *        structure. By default, this member is not allocated. Do nothing if
+ *        the related structure is already allocated.
+ *
+ * \param[in]      basename   prefix for the naming of the Schur system
+ * \param[in, out] saddlep    pointer to the structure to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_saddle_init_schur(const char                *basename,
+                                cs_param_sles_saddle_t    *saddlep)
+{
+  if (saddlep == NULL)
+    return;
+
+  if (saddlep->schur_sles_param != NULL)
+    return; /* Initialization has already been performed */
+
+  char  *schur_name = NULL;
+  size_t  len = sizeof(basename) + sizeof("_schur_system");
+
+  BFT_MALLOC(schur_name, len + 1, char);
+  sprintf(schur_name, "%s_schur_system", basename);
+
+  cs_param_sles_t  *schur_slesp = cs_param_sles_create(-1, schur_name);
+
+  schur_slesp->precond = CS_PARAM_PRECOND_AMG;   /* preconditioner */
+  schur_slesp->solver = CS_PARAM_ITSOL_FCG;      /* iterative solver */
+  schur_slesp->amg_type = CS_PARAM_AMG_HOUSE_K;  /* no predefined AMG type */
+  schur_slesp->cvg_param.rtol = 1e-4;            /* relative tolerance to stop
+                                                    the iterative solver */
+
+  BFT_FREE(schur_name);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy a cs_param_sles_saddle_t structure from ref to dest
+ *
+ * \param[in]      ref     reference structure to be copied
+ * \param[in, out] dest    destination structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_saddle_copy(const cs_param_sles_saddle_t   *ref,
+                          cs_param_sles_saddle_t         *dest)
+{
+  if (ref == NULL)
+    return;
+
+  dest->solver = ref->solver;
+  dest->precond = ref->precond;
+  dest->schur_approximation = ref->schur_approximation;
+
+  dest->cvg_param.rtol = ref->cvg_param.rtol;
+  dest->cvg_param.atol = ref->cvg_param.atol;
+  dest->cvg_param.dtol = ref->cvg_param.dtol;
+  dest->cvg_param.n_max_iter = ref->cvg_param.n_max_iter;
+
+  if (ref->schur_sles_param != NULL) {
+
+    if (dest->schur_sles_param == NULL)
+      cs_param_sles_saddle_init_schur("automatic", dest);
+
+    cs_param_sles_copy_from(ref->schur_sles_param, dest->schur_sles_param);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free the structure storing the parameter settings for a saddle-point
+ *        system
+ *
+ * \param[in, out] p_saddlep    double pointer to the structure to free
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_saddle_free(cs_param_sles_saddle_t    **p_saddlep)
+{
+  if (p_saddlep == NULL)
+    return;
+
+  cs_param_sles_saddle_t  *saddlep = *p_saddlep;
+
+  cs_param_sles_free(&(saddlep->schur_sles_param));
+
+  BFT_FREE(saddlep);
+  *p_saddlep = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create a \ref cs_param_sles_t structure and assign a default
  *         settings
  *
@@ -2446,31 +2575,32 @@ cs_param_sles_create(int          field_id,
 
   BFT_MALLOC(slesp, 1, cs_param_sles_t);
 
-  slesp->verbosity = 0;                         /* SLES verbosity */
-
-  slesp->field_id = field_id;                   /* associated field id */
-
-  slesp->solver_class = CS_PARAM_SLES_CLASS_CS; /* solver family */
-  slesp->flexible = false;                      /* not the flexible variant */
-  slesp->precond = CS_PARAM_PRECOND_DIAG;       /* preconditioner */
-  slesp->solver = CS_PARAM_ITSOL_GCR;           /* iterative solver */
-  slesp->amg_type = CS_PARAM_AMG_NONE;          /* no predefined AMG type */
-  slesp->pcd_block_type = CS_PARAM_PRECOND_BLOCK_NONE; /* no block by default */
-
-  slesp->restart = 15;                       /* max. iter. before restarting */
-  slesp->n_max_iter = 10000;                 /* max. number of iterations */
-  slesp->eps = 1e-6;                         /* relative tolerance to stop
-                                                an iterative solver */
-
-  slesp->resnorm_type = CS_PARAM_RESNORM_FILTERED_RHS;
-  slesp->setup_done = false;
-
   slesp->name = NULL;
   if (system_name != NULL) {
     size_t  len = strlen(system_name);
     BFT_MALLOC(slesp->name, len + 1, char);
     strncpy(slesp->name, system_name, len + 1);
   }
+
+  slesp->field_id = field_id;                   /* associated field id */
+  slesp->verbosity = 0;                         /* SLES verbosity */
+  slesp->setup_done = false;
+
+  slesp->solver_class = CS_PARAM_SLES_CLASS_CS; /* solver family */
+  slesp->precond = CS_PARAM_PRECOND_DIAG;       /* preconditioner */
+  slesp->solver = CS_PARAM_ITSOL_GCR;           /* iterative solver */
+  slesp->flexible = false;                      /* not the flexible variant */
+  slesp->restart = 15;                          /* restart after ? iterations */
+  slesp->amg_type = CS_PARAM_AMG_NONE;          /* no predefined AMG type */
+
+  slesp->pcd_block_type = CS_PARAM_PRECOND_BLOCK_NONE; /* no block by default */
+  slesp->resnorm_type = CS_PARAM_RESNORM_FILTERED_RHS;
+
+  slesp->cvg_param =  (cs_param_sles_cvg_t) {
+    .n_max_iter = 10000, /* max. number of iterations */
+    .atol = 1e-15,       /* absolute tolerance */
+    .rtol = 1e-6,        /* relative tolerance */
+    .dtol = 1e3 };       /* divergence tolerance */
 
   return slesp;
 }
@@ -2546,16 +2676,16 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
                 slesp->name,
                 cs_param_get_precond_block_name(slesp->pcd_block_type));
 
-  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.MaxIter:     %d\n",
-                slesp->name, slesp->n_max_iter);
+  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.max_iter:    %d\n",
+                slesp->name, slesp->cvg_param.n_max_iter);
+  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.rtol:       % -10.6e\n",
+                slesp->name, slesp->cvg_param.rtol);
+
   if (slesp->solver == CS_PARAM_ITSOL_GMRES ||
       slesp->solver == CS_PARAM_ITSOL_FGMRES ||
       slesp->solver == CS_PARAM_ITSOL_GCR)
     cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Restart:     %d\n",
                   slesp->name, slesp->restart);
-
-  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Eps:        % -10.6e\n",
-                slesp->name, slesp->eps);
 
   cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Normalization:      ",
                 slesp->name);
@@ -2604,10 +2734,12 @@ cs_param_sles_copy_from(cs_param_sles_t   *src,
   dst->solver = src->solver;
   dst->amg_type = src->amg_type;
   dst->pcd_block_type = src->pcd_block_type;
-
   dst->resnorm_type = src->resnorm_type;
-  dst->n_max_iter = src->n_max_iter;
-  dst->eps = src->eps;
+
+  dst->cvg_param.rtol = src->cvg_param.rtol;
+  dst->cvg_param.atol = src->cvg_param.atol;
+  dst->cvg_param.dtol = src->cvg_param.dtol;
+  dst->cvg_param.n_max_iter = src->cvg_param.n_max_iter;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2718,6 +2850,8 @@ cs_param_sles_update_cvg_settings(bool                     use_field_id,
   if (sles == NULL)
     return;
 
+  cs_param_sles_cvg_t  cvgp = slesp->cvg_param;
+
   switch (slesp->solver_class) {
 
   case CS_PARAM_SLES_CLASS_CS: /* code_saturne's own solvers */
@@ -2729,7 +2863,7 @@ cs_param_sles_update_cvg_settings(bool                     use_field_id,
           cs_multigrid_t  *mg = cs_sles_get_context(sles);
           assert(mg != NULL);
 
-          cs_multigrid_set_max_cycles(mg, slesp->n_max_iter);
+          cs_multigrid_set_max_cycles(mg, cvgp.n_max_iter);
         }
         break;
 
@@ -2739,7 +2873,7 @@ cs_param_sles_update_cvg_settings(bool                     use_field_id,
           cs_sles_it_t  *itsol = cs_sles_get_context(sles);
           assert(itsol != NULL);
 
-          cs_sles_it_set_n_max_iter(itsol, slesp->n_max_iter);
+          cs_sles_it_set_n_max_iter(itsol, cvgp.n_max_iter);
           cs_sles_it_set_restart_interval(itsol, slesp->restart);
         }
         break;
@@ -2749,7 +2883,7 @@ cs_param_sles_update_cvg_settings(bool                     use_field_id,
           cs_sles_it_t  *itsol = cs_sles_get_context(sles);
           assert(itsol != NULL);
 
-          cs_sles_it_set_n_max_iter(itsol, slesp->n_max_iter);
+          cs_sles_it_set_n_max_iter(itsol, cvgp.n_max_iter);
         }
         break;
 
@@ -2764,7 +2898,9 @@ cs_param_sles_update_cvg_settings(bool                     use_field_id,
       cs_sles_petsc_t  *petsc_ctx = cs_sles_get_context(sles);
       assert(petsc_ctx);
 
-      cs_sles_petsc_set_cvg_criteria(petsc_ctx, slesp->eps, slesp->n_max_iter);
+      cs_sles_petsc_set_cvg_criteria(petsc_ctx,
+                                     cvgp.rtol, cvgp.atol, cvgp.dtol,
+                                     cvgp.n_max_iter);
     }
     break;
 #endif
@@ -2775,7 +2911,7 @@ cs_param_sles_update_cvg_settings(bool                     use_field_id,
       cs_sles_hypre_t  *hypre_ctx = cs_sles_get_context(sles);
       assert(hypre_ctx);
 
-      cs_sles_hypre_set_n_max_iter(hypre_ctx, slesp->n_max_iter);
+      cs_sles_hypre_set_n_max_iter(hypre_ctx, cvgp.n_max_iter);
     }
     break;
 #endif

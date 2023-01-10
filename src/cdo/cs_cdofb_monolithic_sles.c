@@ -866,16 +866,16 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
   /* Modify the tolerance. Only a coarse approximation is needed */
 
   char  *init_system_name = slesp->name;
-  double  init_eps = slesp->eps;
-  int  init_max_iter = slesp->n_max_iter;
+  double  init_eps = slesp->cvg_param.rtol;
+  int  init_max_iter = slesp->cvg_param.n_max_iter;
 
   char  *system_name = NULL;
   BFT_MALLOC(system_name, strlen(eqp->name) + strlen(":inv_lumped") + 1, char);
   sprintf(system_name, "%s:inv_lumped", eqp->name);
 
   slesp->name = system_name;
-  slesp->eps = 1e-2;  /* Only a coarse approximation is needed */
-  slesp->n_max_iter = 10;
+  slesp->cvg_param.rtol = 1e-2;  /* Only a coarse approximation is needed */
+  slesp->cvg_param.n_max_iter = 10;
 
   cs_param_sles_update_cvg_settings(true, slesp); /* use the field id */
 
@@ -894,8 +894,8 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
   /* Set back the initial parameters */
 
   slesp->name = init_system_name;
-  slesp->eps = init_eps;
-  slesp->n_max_iter = init_max_iter;
+  slesp->cvg_param.rtol = init_eps;
+  slesp->cvg_param.n_max_iter = init_max_iter;
 
   cs_param_sles_update_cvg_settings(true, slesp); /* use the field id */
 
@@ -1327,8 +1327,8 @@ _invlumped_schur_sbp(const cs_navsto_param_t       *nsp,
   cs_param_sles_t  *slesp0 = cs_param_sles_create(-1, "schur:inv_lumped");
 
   cs_param_sles_copy_from(sbp->m11_slesp, slesp0);
-  slesp0->eps = 1e-3;
-  slesp0->n_max_iter = 50;
+  slesp0->cvg_param.rtol = 1e-3;
+  slesp0->cvg_param.n_max_iter = 50;
 
   cs_real_t  *rhs = NULL;
   BFT_MALLOC(rhs, b11_size, cs_real_t);
@@ -1992,7 +1992,10 @@ _additive_amg_hook(void     *context,
 
   /* Set the KSP used as preconditioner for the velocity block */
 
-  _set_velocity_ksp(slesp, slesp->eps, slesp->n_max_iter, up_subksp[0]);
+  _set_velocity_ksp(slesp,
+                    slesp->cvg_param.rtol,
+                    slesp->cvg_param.n_max_iter,
+                    up_subksp[0]);
 
   /* User function for additional settings */
 
@@ -2090,7 +2093,10 @@ _multiplicative_hook(void     *context,
 
   /* Set the velocity block */
 
-  _set_velocity_ksp(slesp, slesp->eps, slesp->n_max_iter, up_subksp[0]);
+  _set_velocity_ksp(slesp,
+                    slesp->cvg_param.rtol,
+                    slesp->cvg_param.n_max_iter,
+                    up_subksp[0]);
 
   /* User function for additional settings */
 
@@ -2195,7 +2201,10 @@ _diag_schur_hook(void     *context,
 
   /* Set the velocity block */
 
-  _set_velocity_ksp(slesp, slesp->eps, slesp->n_max_iter, up_subksp[0]);
+  _set_velocity_ksp(slesp,
+                    slesp->cvg_param.rtol,
+                    slesp->cvg_param.n_max_iter,
+                    up_subksp[0]);
 
   /* User function for additional settings */
 
@@ -2932,7 +2941,10 @@ _upper_schur_hook(void     *context,
 
   /* Set the velocity block */
 
-  _set_velocity_ksp(slesp, slesp->eps, slesp->n_max_iter, up_subksp[0]);
+  _set_velocity_ksp(slesp,
+                    slesp->cvg_param.rtol,
+                    slesp->cvg_param.n_max_iter,
+                    up_subksp[0]);
 
   /* User function for additional settings */
 
@@ -3026,7 +3038,10 @@ _gkb_hook(void     *context,
   PCFieldSplitGetSubKSP(up_pc, &n_split, &up_subksp);
   assert(n_split == 2);
 
-  _set_velocity_ksp(slesp, slesp->eps, slesp->n_max_iter, up_subksp[0]);
+  _set_velocity_ksp(slesp,
+                    slesp->cvg_param.rtol,
+                    slesp->cvg_param.n_max_iter,
+                    up_subksp[0]);
 
   /* User function for additional settings */
 
@@ -3125,7 +3140,10 @@ _gkb_precond_hook(void     *context,
 
   /* Set KSP options for the velocity block */
 
-  _set_velocity_ksp(slesp, slesp->eps, slesp->n_max_iter, up_subksp[0]);
+  _set_velocity_ksp(slesp,
+                    slesp->cvg_param.rtol,
+                    slesp->cvg_param.n_max_iter,
+                    up_subksp[0]);
 
   /* User function for additional settings */
 
@@ -3182,10 +3200,10 @@ _mumps_hook(void     *context,
   PetscInt  max_it;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
-                   slesp->eps,  /* relative convergence tolerance */
-                   abstol,      /* absolute convergence tolerance */
-                   dtol,        /* divergence tolerance */
-                   slesp->n_max_iter); /* max number of iterations */
+                   slesp->cvg_param.rtol,  /* relative convergence tolerance */
+                   slesp->cvg_param.atol,  /* absolute convergence tolerance */
+                   slesp->cvg_param.dtol,  /* divergence tolerance */
+                   slesp->cvg_param.n_max_iter);
 
   /* User function for additional settings */
 
@@ -3580,16 +3598,16 @@ _transform_gkb_system(const cs_matrix_t              *matrix,
      step (the final accuracy relies on this step) */
 
   char  *init_system_name = slesp->name;
-  double  init_eps = slesp->eps;
+  double  init_eps = slesp->cvg_param.rtol;
 
   char  *system_name = NULL;
   BFT_MALLOC(system_name, strlen(eqp->name) + strlen(":gkb_transfo") + 1, char);
   sprintf(system_name, "%s:gkb_transfo", eqp->name);
 
   slesp->name = system_name;
-  slesp->eps = _set_transfo_tol(init_eps,
-                                nslesp->il_algo_param.rtol,
-                                nslesp->il_algo_param.atol);
+  slesp->cvg_param.rtol = _set_transfo_tol(init_eps,
+                                           nslesp->il_algo_param.rtol,
+                                           nslesp->il_algo_param.atol);
 
   /* Compute M^-1.(b_f + gamma. Bt.N^-1.b_c) */
 
@@ -3608,7 +3626,7 @@ _transform_gkb_system(const cs_matrix_t              *matrix,
   /* Set back the initial parameters */
 
   slesp->name = init_system_name;
-  slesp->eps = init_eps;
+  slesp->cvg_param.rtol = init_eps;
 
   /* Compute the initial u_tilda := u_f - M^-1.(b_f + gamma. Bt.N^-1.b_c) */
 
@@ -3880,7 +3898,7 @@ _uza_cg_cvg_test(cs_uza_builder_t         *uza,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 0
   cs_log_printf(CS_LOG_DEFAULT,
-                "\nUZA-CG.It%02d-- res = %6.4e ?<? eps %6.4e\n",
+                "\nUZA-CG.It%02d-- res=%6.4e | rtol=%6.4e\n",
                 uza->algo->n_algo_iter, uza->algo->res, uza->algo->param.rtol);
 #endif
 
@@ -3942,7 +3960,7 @@ _uza_cvg_test(cs_uza_builder_t           *uza)
   /* Set the convergence status */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 0
-  cs_log_printf(CS_LOG_DEFAULT, "\nUZA.It%02d-- res = %6.4e ?<? eps %6.4e\n",
+  cs_log_printf(CS_LOG_DEFAULT, "\nUZA.It%02d-- res=%6.4e | rtol=%6.4e\n",
                 uza->algo->n_algo_iter, uza->algo->res, uza->algo->param.rtol);
 #endif
 
@@ -4535,7 +4553,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
 
-  cs_real_t  rtol = slesp->eps;
+  cs_real_t  rtol = slesp->cvg_param.rtol;
 
   if (nslesp->strategy == CS_NAVSTO_SLES_UPPER_SCHUR_GMRES              ||
       nslesp->strategy == CS_NAVSTO_SLES_DIAG_SCHUR_GMRES               ||
@@ -5148,16 +5166,18 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
    * Modify the tolerance in order to be more accurate on this step */
 
   char  *init_system_name = slesp->name;
-  double  init_eps = slesp->eps;
-  int  init_max_iter = slesp->n_max_iter;
+  double  init_eps = slesp->cvg_param.rtol;
+  int  init_max_iter = slesp->cvg_param.n_max_iter;
 
   char  *system_name = NULL;
   BFT_MALLOC(system_name, strlen(eqp->name) + strlen(":init_guess") + 1, char);
   sprintf(system_name, "%s:init_guess", eqp->name);
 
   slesp->name = system_name;
-  slesp->eps = fmin(slesp->eps, 0.5*nslesp->il_algo_param.rtol);
-  slesp->n_max_iter = CS_MAX(100, init_max_iter);
+  slesp->cvg_param.rtol = fmax(slesp->cvg_param.atol,
+                               fmin(slesp->cvg_param.rtol,
+                                    0.5*nslesp->il_algo_param.rtol));
+  slesp->cvg_param.n_max_iter = CS_MAX(100, init_max_iter);
 
   cs_param_sles_update_cvg_settings(true, slesp); /* use the field id */
 
@@ -5176,8 +5196,8 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   /* Set back the initial parameters */
 
   slesp->name = init_system_name;
-  slesp->eps = init_eps;
-  slesp->n_max_iter = init_max_iter;
+  slesp->cvg_param.rtol = init_eps;
+  slesp->cvg_param.n_max_iter = init_max_iter;
 
   cs_param_sles_update_cvg_settings(true, slesp);
 
@@ -5484,16 +5504,16 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
    */
 
   char  *init_system_name = slesp->name;
-  double  init_eps = slesp->eps;
+  double  init_eps = slesp->cvg_param.rtol;
 
   char  *system_name = NULL;
   BFT_MALLOC(system_name, strlen(eqp->name) + strlen(":alu0") + 1, char);
   sprintf(system_name, "%s:alu0", eqp->name);
 
   slesp->name = system_name;
-  slesp->eps = _set_transfo_tol(init_eps,
-                                nsp->sles_param->il_algo_param.rtol,
-                                nsp->sles_param->il_algo_param.atol);
+  slesp->cvg_param.rtol = _set_transfo_tol(init_eps,
+                                           nsp->sles_param->il_algo_param.rtol,
+                                           nsp->sles_param->il_algo_param.atol);
 
   cs_real_t  normalization = cs_cdo_blas_square_norm_pfvp(uza->rhs);
 
@@ -5517,7 +5537,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   /* Set back the initial parameters */
 
   slesp->name = init_system_name;
-  slesp->eps = init_eps;
+  slesp->cvg_param.rtol = init_eps;
 
   /* Partial free */
 

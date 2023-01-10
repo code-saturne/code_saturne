@@ -2770,7 +2770,7 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
 
   const cs_equation_param_t  *eqp = eq->param;
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
-  const cs_param_sles_t  *sles_param = eqp->sles_param;
+  const cs_param_sles_t  *slesp = eqp->sles_param;
 
   /* Handle parallelism (the the x array and for the rhs) */
 
@@ -2780,7 +2780,7 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
 
   cs_sles_convergence_state_t code = cs_sles_solve(sles,
                                                    matrix,
-                                                   sles_param->eps,
+                                                   slesp->cvg_param.rtol,
                                                    r_norm,
                                                    &n_iters,
                                                    &residual,
@@ -2789,7 +2789,7 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
                                                    0,      /* aux. size */
                                                    NULL);  /* aux. buffers */
 
-  if (sles_param->verbosity > 0)
+  if (slesp->verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT,
                   "  <%s/sles_cvg> code %-d n_iters %d residual % -8.4e\n",
                   eqp->name, code, n_iters, residual);

@@ -522,7 +522,8 @@ cs_user_linear_solvers(void)
           if (slesp->solver == CS_PARAM_ITSOL_CG ||
               slesp->solver == CS_PARAM_ITSOL_FCG)
             itsol =  cs_sles_it_define(slesp->field_id, NULL,
-                                       CS_SLES_IPCG, -1, slesp->n_max_iter);
+                                       CS_SLES_IPCG, -1,
+                                       slesp->cvg_param.n_max_iter);
           else
             bft_error(__FILE__, __LINE__, 0,
                       " %s: Case not treated.\n", __func__);

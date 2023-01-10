@@ -276,10 +276,10 @@ cs_navsto_sles_amg_block_hook(void     *context,
   PetscInt  maxit;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
   KSPSetTolerances(ksp,
-                   slesp->eps,        /* relative convergence tolerance */
-                   abstol,            /* absolute convergence tolerance */
-                   dtol,              /* divergence tolerance */
-                   slesp->n_max_iter); /* max number of iterations */
+                   slesp->cvg_param.rtol, /* relative convergence tolerance */
+                   slesp->cvg_param.atol, /* absolute convergence tolerance */
+                   slesp->cvg_param.dtol, /* divergence tolerance */
+                   slesp->cvg_param.n_max_iter);
 
   switch (slesp->resnorm_type) {
 

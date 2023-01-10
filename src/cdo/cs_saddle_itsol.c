@@ -680,7 +680,7 @@ _solve_m11_approximation(cs_saddle_system_t          *ssys,
 
   cs_sles_convergence_state_t  code = cs_sles_solve(sbp->m11_sles,
                                                     m11,
-                                                    m11_slesp->eps,
+                                                    m11_slesp->cvg_param.rtol,
                                                     m11_info.rhs_norm,
                                                     &(m11_info.n_it),
                                                     &(m11_info.res_norm),

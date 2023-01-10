@@ -2791,7 +2791,7 @@ cs_gui_equation_parameters(void)
 
       if (   eqp_eq != NULL && cs_gui_is_equal_real(eqp_eq->epsilo, -1) == 0
           && eqp_eq->sles_param != NULL)
-        eqp_eq->sles_param->eps = eqp->epsilo;
+        eqp_eq->sles_param->cvg_param.rtol = eqp->epsilo;
 
       /* convection scheme options */
       if (eqp->iconv > 0) {

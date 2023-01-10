@@ -1525,19 +1525,24 @@ cs_sles_petsc_log_setup(void  *ksp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set some of the convergence criteria for the associated KSP structure
+ * \brief Set the parameters driving the termination of an iterative process
+ *        associated to a KSP structure
  *
- * \param[in, out] context    pointer to iterative solver info and context
- *                            (actual type: cs_sles_petsc_t  *)
- * \param[in]      rtol       relative tolerance value
- * \param[in]      max_iter   max. number of iterations
+ * \param[in, out] context   pointer to iterative solver info and context
+ *                           (actual type: cs_sles_petsc_t  *)
+ * \param[in]      rtol      relative tolerance
+ * \param[in]      atol      absolute tolerance
+ * \param[in]      dtol      divergence tolerance
+ * \param[in]      max_it    max. number of iterations
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sles_petsc_set_cvg_criteria(const void  *context,
-                               double       rtol,
-                               int          max_iter)
+cs_sles_petsc_set_cvg_criteria(const void      *context,
+                               double           rtol,
+                               double           atol,
+                               double           dtol,
+                               int              max_it)
 {
   const cs_sles_petsc_t  *c = context;
   if (c == NULL)
@@ -1548,7 +1553,7 @@ cs_sles_petsc_set_cvg_criteria(const void  *context,
     return; /* No need to continue. This will be done during the first call to
                the solve function */
 
-  KSPSetTolerances(sd->ksp, rtol, 1e-30, 1.e10, max_iter);
+  KSPSetTolerances(sd->ksp, rtol, atol, dtol, max_it);
 }
 
 /*----------------------------------------------------------------------------*/

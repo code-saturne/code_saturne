@@ -658,11 +658,12 @@ _set_key(cs_equation_param_t   *eqp,
     break;
 
   case CS_EQKEY_ITSOL_MAX_ITER:
-    eqp->sles_param->n_max_iter = atoi(keyval);
+    eqp->sles_param->cvg_param.n_max_iter = atoi(keyval);
     break;
 
-  case CS_EQKEY_ITSOL_EPS:
-    eqp->sles_param->eps = atof(keyval);
+  case CS_EQKEY_ITSOL_EPS:  /* keep for backward compatibility */
+  case CS_EQKEY_ITSOL_RTOL:
+    eqp->sles_param->cvg_param.rtol = atof(keyval);
     break;
 
   case CS_EQKEY_ITSOL_RESNORM_TYPE:
@@ -977,6 +978,53 @@ _set_key(cs_equation_param_t   *eqp,
     }
     break;
 
+  case CS_EQKEY_SADDLE_RTOL:
+    eqp->saddle_param->cvg_param.rtol = atof(keyval);
+    break;
+
+  case CS_EQKEY_SADDLE_PRECOND:
+    if (strcmp(keyval, "none") == 0)
+      eqp->saddle_param->precond = CS_PARAM_SADDLE_PRECOND_NONE;
+    else if (strcmp(keyval, "diag") == 0 ||
+             strcmp(keyval, "diag_schur") == 0)
+      eqp->saddle_param->precond = CS_PARAM_SADDLE_PRECOND_DIAG_SCHUR;
+    else if (strcmp(keyval, "lower") == 0 ||
+             strcmp(keyval, "lower_schur") == 0)
+      eqp->saddle_param->precond = CS_PARAM_SADDLE_PRECOND_LOWER_SCHUR;
+    else if (strcmp(keyval, "upper") == 0 ||
+             strcmp(keyval, "upper_schur") == 0)
+      eqp->saddle_param->precond = CS_PARAM_SADDLE_PRECOND_UPPER_SCHUR;
+    else {
+      const char *_val = keyval;
+      bft_error(__FILE__, __LINE__, 0,
+                emsg, __func__, eqname, _val, "CS_EQKEY_SADDLE_PRECOND");
+    }
+    break;
+
+  case CS_EQKEY_SADDLE_SOLVER:
+    if (strcmp(keyval, "none") == 0)
+      eqp->saddle_param->solver = CS_PARAM_SADDLE_N_SOLVERS;
+    else if (strcmp(keyval, "gcr") == 0)
+      eqp->saddle_param->solver = CS_PARAM_SADDLE_SOLVER_GCR;
+    else if (strcmp(keyval, "minres") == 0) {
+      eqp->saddle_param->solver = CS_PARAM_SADDLE_SOLVER_MINRES;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_FCG;
+    }
+    else if (strcmp(keyval, "mumps") == 0) {
+      eqp->saddle_param->solver = CS_PARAM_SADDLE_SOLVER_MUMPS;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_SYM;
+    }
+    else {
+      const char *_val = keyval;
+      bft_error(__FILE__, __LINE__, 0,
+                emsg, __func__, eqname, _val, "CS_EQKEY_SADDLE_SOLVER");
+    }
+    break;
+
+  case CS_EQKEY_SADDLE_VERBOSITY:
+    eqp->saddle_param->verbosity = atoi(keyval);
+    break;
+
   case CS_EQKEY_SLES_VERBOSITY: /* "verbosity" for SLES structures */
     eqp->sles_param->verbosity = atoi(keyval);
     break;
@@ -1119,6 +1167,9 @@ _set_key(cs_equation_param_t   *eqp,
 
       eqp->reaction_hodgep.type = CS_HODGE_TYPE_VDCP;
       eqp->reaction_hodgep.algo = CS_HODGE_ALGO_VORONOI;
+
+      eqp->saddle_param->solver = CS_PARAM_SADDLE_SOLVER_MUMPS;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_SYM;
 
     }
     else if (strcmp(keyval, "cdo_eb") == 0 ||
@@ -1408,6 +1459,8 @@ cs_equation_param_create(const char            *name,
 
   eqp->sles_param = cs_param_sles_create(-1, name); /* field_id, system_name */
 
+  eqp->saddle_param = cs_param_sles_saddle_create();
+
   /* By default, there is no incremental solving */
 
   eqp->incremental_algo_type = CS_PARAM_NL_ALGO_NONE;
@@ -1607,6 +1660,8 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
 
   }
 
+  cs_param_sles_saddle_copy(ref->saddle_param, dst->saddle_param);
+
   /* Settings related to the performance */
 
   dst->omp_assembly_choice = ref->omp_assembly_choice;
@@ -1754,6 +1809,7 @@ cs_equation_param_clear(cs_equation_param_t   *eqp)
   /* Information related to the linear algebra settings */
 
   cs_param_sles_free(&(eqp->sles_param));
+  BFT_FREE(eqp->saddle_param);
 
   BFT_FREE(eqp->name);
 }

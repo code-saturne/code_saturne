@@ -377,7 +377,7 @@ cs_cdocb_monolithic_solve(const cs_equation_param_t     *eqp,
   const cs_param_sles_t  *sles_param = eqp->sles_param;
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
 
-  cs_real_t  rtol = sles_param->eps;
+  cs_real_t  rtol = sles_param->cvg_param.rtol;
   cs_sles_convergence_state_t  code = cs_sles_solve(msles->sles,
                                                     matrix,
                                                     rtol,

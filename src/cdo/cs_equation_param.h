@@ -750,6 +750,14 @@ typedef struct {
    *  - preconditioner
    *  - tolerance...
    *
+   * \var saddle_param
+   * Set of parameters to specify how to to solve a saddle-point system.
+   * Up to now, only CDO cell-based schemes yield this type of problem. Other
+   * saddle-point problems arise when dealing with Stokes or Navier-Stokes
+   * equations with a monolithic velocity/pressure coupling. In the latter
+   * case, this is directly handled by the structures dedicated to the
+   * Navier-Stokes solver.
+   *
    * \var incremental_algo_type
    * Type of algorithm used to handle a (non-linear) incremental resolution
    *
@@ -767,6 +775,7 @@ typedef struct {
    */
 
   cs_param_sles_t            *sles_param;
+  cs_param_sles_saddle_t     *saddle_param;
 
   cs_param_nl_algo_t          incremental_algo_type;
   cs_iter_algo_param_t        incremental_algo_param;
@@ -1042,6 +1051,11 @@ typedef struct {
  * buffer of double with a size equal to restart*sizeof(solution array)
  * - Example: "20"
  *
+ * \var CS_EQKEY_ITSOL_RTOL
+ * Relative tolerance factor for stopping the iterative process for solving the
+ * linear system related to an equation\n
+ * - Example: "1e-10"
+ *
  * \var CS_EQKEY_OMP_ASSEMBLY_STRATEGY
  * Choice of the way to perform the assembly when OpenMP is active
  * Available choices are:
@@ -1050,7 +1064,7 @@ typedef struct {
  * \var CS_EQKEY_PRECOND
  * Specify the preconditioner associated to an iterative solver. Be careful
  * some options are only available with a given solver class. Be sure that your
- * installation has been installed with the appropriate library.
+ * installation has been installed with the appropriate library.\n
  * Available choices are:
  * - "none": no preconditioner is used
  * - "jacobi" or "diag": diagonal preconditoner
@@ -1099,7 +1113,7 @@ typedef struct {
  * Specify the type of block preconditioner associated to a preconditioner.
  * When "full" is specified. That means that the smallest possible blocks are
  * considered. Be careful: Most of these options are available only with
- * PETSc/HYPRE.
+ * PETSc/HYPRE.\n
  * Available choices are:
  * - "none": no block preconditioner (default choice)
  * - "diag": diagonal (or additive) block preconditoner
@@ -1110,6 +1124,42 @@ typedef struct {
  * - "full_lower": full lower triangular (multiplicative) block preconditioner
  * - "full_upper": upper triangular (multiplicative) block preconditioner
  * - "full_symm": symmetric Gauss-Seidel block preconditioner
+ *
+ * \var CS_EQKEY_SADDLE_PRECOND
+ * Preconditioner used to solve a saddle-point system.\n
+ * Please refer to \ref cs_param_saddle_precond_t for more details.\n
+ * Available choices are:\n
+ * - "none" No preconditioner is used (default)
+ * - "diag"
+ * - "lower"
+ * - "upper"
+ *
+ * \var CS_EQKEY_SADDLE_RTOL
+ * Relative tolerance under which the iterative process stops
+ * - Example: "1e-7"
+ *
+ * \var CS_EQKEY_SADDLE_SOLVER
+ * Strategy/solver used to solve a saddle-point system.\n
+ * Available choices are:
+ * - "none" No solver (default --> no saddle-point system)
+ * - "gcr"  GCR iterative solver
+ * - "mumps" MUMPS sparse direct solver (external library)
+ * - "minres" MINRES iterative solver
+ *
+ * \var CS_EQKEY_SADDLE_VERBOSITY
+ * Level of details displayed for the resolution of a saddle-point system
+ * - Examples: "0", "1", "2" or higher
+ *
+ * \var CS_EQKEY_SCHUR_APPROX
+ * Choice of apprixmation of the Schur complement. Only useful when a
+ * saddle-point problem has to be solved. Some solvers or choices of
+ * preconditioner/solver may not need an approximation of the schur complement.
+ * Please refer to \ref cs_param_schur_approx_t for more details.\n
+ * Available choices are:
+ * "none" no Schur approximation --> the identity is used
+ * "diag_inv" use the inverse of the (1,1)-block diagonal
+ * "lumped_inv" use the inverse of the (1,1)-block after lumping
+ * "mass" use a scaled mass matrix for the space related to the (2,2)-block
  *
  * \var CS_EQKEY_SLES_VERBOSITY
  * Level of details written by the code for the resolution of the linear system
@@ -1176,9 +1226,15 @@ typedef enum {
   CS_EQKEY_ITSOL_MAX_ITER,
   CS_EQKEY_ITSOL_RESNORM_TYPE,
   CS_EQKEY_ITSOL_RESTART,
+  CS_EQKEY_ITSOL_RTOL,
   CS_EQKEY_OMP_ASSEMBLY_STRATEGY,
   CS_EQKEY_PRECOND,
   CS_EQKEY_PRECOND_BLOCK_TYPE,
+  CS_EQKEY_SADDLE_PRECOND,
+  CS_EQKEY_SADDLE_RTOL,
+  CS_EQKEY_SADDLE_SOLVER,
+  CS_EQKEY_SADDLE_VERBOSITY,
+  CS_EQKEY_SCHUR_APPROX,
   CS_EQKEY_SLES_VERBOSITY,
   CS_EQKEY_SOLVER_FAMILY,
   CS_EQKEY_SPACE_SCHEME,
