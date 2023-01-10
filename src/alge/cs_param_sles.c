@@ -1964,7 +1964,7 @@ _set_hypre_solver(cs_param_sles_t    *slesp,
  *
  * \param[in]      verbosity  verbosity level
  * \param[in, out] context    pointer to optional (untyped) value or structure
- * \param[in, out] solver     handle to HYPRE solver
+ * \param[in, out] solver_p   pointer to a HYPRE solver (cast ont-the-fly)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2147,7 +2147,7 @@ _hypre_boomeramg_hook(int    verbosity,
  *
  * \param[in]      verbosity   verbosity level
  * \param[in, out] context     pointer to optional (untyped) value or structure
- * \param[in, out] solve_pr    handle to HYPRE solver
+ * \param[in, out] solver_p    pointer to a HYPRE solver (cast ont-the-fly)
  */
 /*----------------------------------------------------------------------------*/
 

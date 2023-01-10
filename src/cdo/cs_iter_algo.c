@@ -471,8 +471,8 @@ cs_iter_algo_update_cvg(cs_iter_algo_t         *ia)
 /*!
  * \brief  Reset a cs_iter_algo_t structure in case of a non-linear algorothm
  *
- * \param[in]       type   type of non-linear algorithm
- * \param[in, out]  algo   pointer to a cs_iter_algo_t
+ * \param[in]       nl_algo_type   type of non-linear algorithm
+ * \param[in, out]  algo           pointer to a cs_iter_algo_t
  */
 /*----------------------------------------------------------------------------*/
 

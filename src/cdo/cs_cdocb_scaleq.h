@@ -65,17 +65,6 @@ typedef struct _cs_cdocb_t  cs_cdocb_scaleq_t;
  * Static inline public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the values of the velocity on the faces
- *
- * \param[in] previous        retrieve the previous state (true/false)
- *
- * \return a pointer to an array of \ref cs_real_t
- */
-/*----------------------------------------------------------------------------*/
-
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -151,16 +140,16 @@ cs_cdocb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy a \ref cs_cdocb_monolithic_t structure
+ * \brief Destroy a cs_cdocb_scaleq_t structure
  *
- * \param[in] scheme_context   pointer to a scheme context structure to free
+ * \param[in, out] scheme_context   pointer to a scheme context to free
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdocb_scaleq_free_context(void *scheme_context);
+cs_cdocb_scaleq_free_context(void       *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -173,7 +162,6 @@ cs_cdocb_scaleq_free_context(void *scheme_context);
  * \param[in]      mesh            pointer to a cs_mesh_t structure
  * \param[in]      eqp             pointer to a cs_equation_param_t structure
  * \param[in, out] eqb             pointer to a cs_equation_builder_t structure
- * \param[in, out] vtx_bc_flag     pointer to an array of BC flag for each vtx
  */
 /*----------------------------------------------------------------------------*/
 

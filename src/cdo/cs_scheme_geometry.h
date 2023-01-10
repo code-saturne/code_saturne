@@ -57,7 +57,7 @@ BEGIN_C_DECLS
 /*!
  * \brief  Compute the value of the constant gradient of the Lagrange function
  *         attached to xc in p_{f,c} (constant inside this volume)
- *         Cellwise version.
+ *         Cell-wise version.
  *
  * \param[in]      f        face number in the cellwise numbering to handle
  * \param[in]      cm       pointer to a cell_mesh_t structure
@@ -82,12 +82,11 @@ cs_compute_grdfc_cw(short int               f,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value of the constant gradient of the Lagrange function
- *         attached to xc in p_{f,c} (constant inside this volume)
- *         Facewise version.
+ * \brief Compute the value of the constant gradient of the Lagrange function
+ *        attached to xc in p_{f,c} (constant inside this volume)
+ *        Face-wise version.
  *
- * \param[in]      f        face number in the cellwise numbering to handle
- * \param[in]      cm       pointer to a cell_mesh_t structure
+ * \param[in]      fm       pointer to a local mesh structure on a face
  * \param[in, out] grd_c    gradient of the Lagrange function related to xc
  */
 /*----------------------------------------------------------------------------*/
@@ -105,11 +104,11 @@ cs_compute_grdfc_fw(const cs_face_mesh_t   *fm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the weight wef = |tef|/|f|
+ * \brief Compute the weight wef = |tef|/|f|
  *
- * \param[in]       f          id of the face in the cell-wise numbering
- * \param[in]       cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out]  wef        pointer to an array storing the weight/vertex
+ * \param[in]      f       id of the face in the cell-wise numbering
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] wef     pointer to an array storing the weight/vertex
  */
 /*----------------------------------------------------------------------------*/
 

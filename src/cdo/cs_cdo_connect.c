@@ -988,11 +988,12 @@ cs_cdo_connect_assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
  * \param[in, out]  mesh              pointer to a cs_mesh_t structure
  * \param[in]       eb_scheme_flag    metadata for Edge-based schemes
  * \param[in]       fb_scheme_flag    metadata for Face-based schemes
+ * \param[in]       cb_scheme_flag    metadata for Cell-based schemes
  * \param[in]       vb_scheme_flag    metadata for Vertex-based schemes
  * \param[in]       vcb_scheme_flag   metadata for Vertex+Cell-based schemes
  * \param[in]       hho_scheme_flag   metadata for HHO schemes
  *
- * \return  a pointer to a cs_cdo_connect_t structure
+ * \return a pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 

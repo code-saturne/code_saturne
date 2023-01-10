@@ -1342,9 +1342,11 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a new Boussinesq term (source term for the momemtum equation)
+ * \brief Add a new Boussinesq term (source term for the momemtum equation)
  *
- * \param[in, out]  nsp    pointer to a cs_navsto_param_t structure
+ * \param[in, out] nsp               pointer to a cs_navsto_param_t struct.
+ * \param[in]      dilatation_coef   value of the dilatation coefficient
+ * \param[in]      reference_value   reference value of the associated variable
  *
  * \return a pointer to the newly added structure
  */
@@ -1929,10 +1931,10 @@ cs_navsto_set_outlets(cs_navsto_param_t    *nsp)
 /*!
  * \brief  Set the pressure field on a boundary using a uniform value.
  *
- * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" all
- *                           boundary faces are considered)
- * \param[in]      value     value to set
+ * \param[in] nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in] z_name    name of the associated zone (if NULL or "" all
+ *                      boundary faces are considered)
+ * \param[in] values    value to set
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -2294,7 +2296,7 @@ cs_navsto_set_velocity_inlet_by_array(cs_navsto_param_t    *nsp,
  * \param[in]  z_name      name of the associated zone (if NULL or "" all
  *                         boundary faces are considered)
  * \param[in]  dof_loc     where are located DoFs
- * \param[in]  func        pointer to a \ref cs_dof_function_t
+ * \param[in]  func        pointer to a cs_dof_function_t
  * \param[in]  func_input  NULL or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure

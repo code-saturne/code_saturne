@@ -961,8 +961,7 @@ typedef struct {
  *
  * \var CS_EQKEY_ITSOL
  * Specify the iterative solver for solving the linear system related to an
- * equation. Avalaible choices are:
-
+ * equation. Avalaible choices are:\n
  * - "amg"                         --> Algebraic MultiGrid iterative solver.
  *                                     Good choice for a scalable solver
  *                                     related to symmetric positive definite
@@ -1014,8 +1013,8 @@ typedef struct {
  * - "none"          --> No solver.
  *
  * \var CS_EQKEY_ITSOL_EPS
- * Tolerance factor for stopping the iterative processus for solving the
- * linear system related to an equation
+ * Tolerance factor for stopping the iterative process for solving the
+ * linear system related to an equation\n
  * - Example: "1e-10"
  *
  * \var CS_EQKEY_ITSOL_MAX_ITER

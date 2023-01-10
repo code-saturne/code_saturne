@@ -262,7 +262,7 @@ cs_cdo_connect_define_face_interface(const cs_mesh_t       *mesh);
  * \param[in]       vcb_scheme_flag   metadata for Vertex+Cell-based schemes
  * \param[in]       hho_scheme_flag   metadata for HHO schemes
  *
- * \return  a pointer to a cs_cdo_connect_t structure
+ * \return a pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 

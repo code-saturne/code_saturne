@@ -46,7 +46,7 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*! \struct cs_iter_algo_t
+/*! \struct cs_iter_algo_param_t
  *  \brief Set of common parameters to manage an iterative algorithm
  */
 
@@ -288,8 +288,8 @@ cs_iter_algo_update_cvg(cs_iter_algo_t         *ia);
 /*!
  * \brief  Reset a cs_iter_algo_t structure in case of a non-linear algorothm
  *
- * \param[in]       type   type of non-linear algorithm
- * \param[in, out]  algo   pointer to a cs_iter_algo_t
+ * \param[in]       nl_algo_type   type of non-linear algorithm
+ * \param[in, out]  algo           pointer to a cs_iter_algo_t
  */
 /*----------------------------------------------------------------------------*/
 

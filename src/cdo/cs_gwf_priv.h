@@ -517,8 +517,8 @@ typedef struct {
    * \var srct_hg_array
    *      Values in each vertex of the source term corresponding to a quantity
    *      proportional to the time evolution of the unsteady term in the hg
-   *      equation. This term is allocated only if the flag \ref
-   *      CS_GWF_LIQUID_SATURATION_ON_SUBMESH is activated
+   *      equation. This term is allocated only if the optional parameter
+   *      use_properties_on_submesh is activated
    *
    * \var time_hl_array
    *      Values in each cell of the coefficient appearing in front of the

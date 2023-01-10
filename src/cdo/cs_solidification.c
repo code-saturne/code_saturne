@@ -3735,14 +3735,12 @@ cs_solidification_set_voller_model(cs_real_t    beta,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the main physical parameters which describe the Voller and
- *         Prakash modelling
+ * \brief Set the main physical parameters which describe the Voller and
+ *        Prakash modelling
  *
- * \param[in]  beta           thermal dilatation coefficient
- * \param[in]  t_ref          reference temperature (for the Boussinesq approx)
- * \param[in]  t_solidus      solidus temperature (in K)
- * \param[in]  t_liquidus     liquidus temperature (in K)
- * \param[in]  latent_heat    latent heat
+ * \param[in] t_solidus      solidus temperature (in K)
+ * \param[in] t_liquidus     liquidus temperature (in K)
+ * \param[in] latent_heat    latent heat
  */
 /*----------------------------------------------------------------------------*/
 

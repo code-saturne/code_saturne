@@ -284,7 +284,7 @@ BEGIN_C_DECLS
         latent heat of evaporation
 
   \var  cs_fluid_properties_t::xmasmr
-        molar mass of the perfect gas in \f$ kg/mol \f$
+        molar mass of the perfect gas in \f$kg/mol\f$
         (if \ref cstphy::ieos "ieos"=1)
 
         Always useful.
@@ -392,7 +392,7 @@ const double cs_physical_constants_celsius_to_kelvin = 273.15;
 
 const double cs_physical_constants_stephan = 5.6703e-8;
 
-/*! Avogadro constant (mole definition) \f$N_A\f$ in \f$mol^{-1}$\f */
+/*! Avogadro constant (mole definition) \f$N_A\f$ in \f$mol^{-1}\f$ */
 
 const double cs_physical_constants_avogadro = 6.02214076e23;
 

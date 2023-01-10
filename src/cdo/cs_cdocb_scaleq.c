@@ -1256,9 +1256,9 @@ cs_cdocb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy a \ref cs_cdocb_scaleq_t structure
+ * \brief Destroy a cs_cdocb_scaleq_t structure
  *
- * \param[in] scheme_context   pointer to a scheme context structure to free
+ * \param[in, out] scheme_context   pointer to a scheme context to free
  *
  * \return a NULL pointer
  */

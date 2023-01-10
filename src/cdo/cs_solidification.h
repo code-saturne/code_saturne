@@ -75,7 +75,7 @@ BEGIN_C_DECLS
  * \def CS_SOLIDIFICATION_POST_SEGREGATION_INDEX
  * \brief Activate the computation and output in the file solidification.dat
  *        for each time step of the segregation index defined by
- *        sqrt( 1/|Domaine| * \int_{Domain} ((C_bulk - C_0)/C_0)**2 )
+ *        sqrt( 1/|Domaine| * integral_{Domain} ((C_bulk - C_0)/C_0)**2 )
  *        Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
  *        is activated
  *
@@ -776,14 +776,12 @@ cs_solidification_set_voller_model(cs_real_t    beta,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the main physical parameters which describe the Voller and
- *         Prakash modelling
+ * \brief Set the main physical parameters which describe the Voller and
+ *        Prakash modelling
  *
- * \param[in]  beta           thermal dilatation coefficient
- * \param[in]  t_ref          reference temperature (for the Boussinesq approx)
- * \param[in]  t_solidus      solidus temperature (in K)
- * \param[in]  t_liquidus     liquidus temperature (in K)
- * \param[in]  latent_heat    latent heat
+ * \param[in] t_solidus      solidus temperature (in K)
+ * \param[in] t_liquidus     liquidus temperature (in K)
+ * \param[in] latent_heat    latent heat
  */
 /*----------------------------------------------------------------------------*/
 

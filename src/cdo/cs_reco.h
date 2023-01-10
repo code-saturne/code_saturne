@@ -56,11 +56,11 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reconstruct the value at the face center from an array of values
- *         defined on primal vertices.
+ * \brief Reconstruct the value at the face center from an array of values
+ *        defined on primal vertices.
  *
- *  \param[in]      fm     pointer to cs_face_mesh_t structure
- *  \param[in]      p_v    pointer to an array of values (local to this face)
+ * \param[in] fm     pointer to cs_face_mesh_t structure
+ * \param[in] p_v    pointer to an array of values (local to this face)
  *
  * \return the value of the reconstruction at the face center
  */
@@ -86,12 +86,12 @@ cs_reco_fw_scalar_pv_at_face_center(const cs_face_mesh_t    *fm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reconstruct the value at the face center from an array of values
- *         defined on primal vertices.
+ * \brief Reconstruct the value at the face center from an array of values
+ *        defined on primal vertices.
  *
- * \param[in]  f      id of the face in the cellwise numbering
- * \param[in]  cm     pointer to cs_cell_mesh_t structure
- * \param[in]  p_v    pointer to an array of values (local to the cell)
+ * \param[in] f      id of the face in the cellwise numbering
+ * \param[in] cm     pointer to cs_cell_mesh_t structure
+ * \param[in] p_v    pointer to an array of values (local to the cell)
  *
  * \return the value of the reconstruction at the face center
  */
@@ -122,14 +122,14 @@ cs_reco_cw_scalar_pv_at_face_center(const short int          f,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reconstruct the value of a scalar potential at the cell center from
- *         an array of values defined on primal vertices.
- *         Algorithm based on the cs_cell_mesh_t structure.
+ * \brief Reconstruct the value of a scalar potential at the cell center from
+ *        an array of values defined on primal vertices.
+ *        Algorithm based on the cs_cell_mesh_t structure.
  *
- *  \param[in]      cm       pointer to a cs_cell_mesh_t structure
- *  \param[in]      array    pointer to the array of values (size: n_vc)
+ * \param[in] cm    pointer to a cs_cell_mesh_t structure
+ * \param[in] p_v   pointer to the array of values at vertices (size: n_vc)
  *
- *  \return the value of the reconstruction at the cell center
+ * \return the value of the reconstruction at the cell center
  */
 /*----------------------------------------------------------------------------*/
 
@@ -262,14 +262,14 @@ cs_reco_cell_vectors_by_ib_face_dofs(const cs_adjacency_t       *c2f,
  *        DoFs (interior and boundary). Scalar-valued face DoFs are related to
  *        the normal flux across faces.
  *
- * \param[in]   c_id          id of the cell to handle
- * \param[in]   c2f           cell -> faces connectivity
- * \param[in]   quant         pointer to the additional quantities struct.
- * \param[in]   face_dofs     array of DoF values at faces
- * \param[in]   local_input   true means that face_dofs is of size n_cell_faces
- * \param[out]  cell_reco     vector-valued reconstruction inside cells. This
- *                            quantity should have been allocated before calling
- *                            this function
+ * \param[in]  c_id          id of the cell to handle
+ * \param[in]  c2f           cell -> faces connectivity
+ * \param[in]  cdoq          pointer to the additional quantities struct.
+ * \param[in]  face_dofs     array of DoF values at faces
+ * \param[in]  local_input   true means that face_dofs is of size n_cell_faces
+ * \param[out] cell_reco     vector-valued reconstruction inside cells. This
+ *                           quantity should have been allocated before calling
+ *                           this function
  */
 /*----------------------------------------------------------------------------*/
 
@@ -287,12 +287,12 @@ cs_reco_cell_vector_by_face_dofs(cs_lnum_t                   c_id,
  *        DoFs (interior and boundary). Scalar-valued face DoFs are related to
  *        the normal flux across faces.
  *
- * \param[in]   c2f           cell -> faces connectivity
- * \param[in]   quant         pointer to the additional quantities struct.
- * \param[in]   face_dofs     array of DoF values at faces
- * \param[out]  cell_reco     vector-valued reconstruction inside cells. This
- *                            quantity should have been allocated before calling
- *                            this function
+ * \param[in]  c2f          cell -> faces connectivity
+ * \param[in]  cdoq         pointer to the additional quantities struct.
+ * \param[in]  face_dofs    array of DoF values at faces
+ * \param[out] cell_reco    vector-valued reconstruction inside cells. This
+ *                          quantity should have been allocated before calling
+ *                          this function
  */
 /*----------------------------------------------------------------------------*/
 

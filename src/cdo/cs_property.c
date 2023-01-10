@@ -1889,13 +1889,14 @@ cs_property_boundary_def_aniso_by_value(cs_property_t    *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define an anisotropic cs_property_t structure by value for entities
- *         related to a volume zone. Optimized case with a symmetric storage.
+ * \brief Define the value of a cs_property_t structure thanks to a time
+ *        function for all cells associated to the zone named zname.
+ *        Optimized case with a symmetric storage.
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       zname     name of the associated zone (if NULL or "" all
- *                            cells are considered)
- * \param[in]       symtens   values to set (6 values)
+ * \param[in, out] pty       pointer to a cs_property_t structure
+ * \param[in]      zname     name of the associated zone (if NULL or "" all
+ *                           boundary faces are considered)
+ * \param[in]      symtens   symmetric tensor given as an array of 6 values
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -2556,13 +2557,13 @@ cs_property_boundary_def_by_field(cs_property_t    *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate the value of the property at each cell. Store the
- *         evaluation in the given array.
+ * \brief Evaluate the value of the property at each cell. Store the evaluation
+ *        in the given array.
  *
- * \param[in]       t_eval      physical time at which one evaluates the term
- * \param[in]       pty         pointer to a cs_property_t structure
- * \param[out]      pty_stride  = 0 if uniform, =1 otherwise
- * \param[in, out]  pty_vals    pointer to an array of values. Allocated if not
+ * \param[in]      t_eval       physical time at which one evaluates the term
+ * \param[in]      pty          pointer to a cs_property_t structure
+ * \param[out]     pty_stride   = 0 if uniform, =1 otherwise
+ * \param[in, out] p_pty_vals   pointer to an array of values. Allocated if not
  *                              The size of the allocation depends on the value
  *                              of the pty_stride
  */

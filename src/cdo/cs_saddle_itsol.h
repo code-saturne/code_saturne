@@ -251,7 +251,7 @@ cs_matrix_vector_multiply_gs_allocated(const cs_range_set_t      *rset,
  * \param[in]      mat       matrix
  * \param[in]      vec_len   size of vec
  * \param[in, out] vec       vector of real numbers
- * \param[out]     matvec    resulting vector for the matrix-vector product
+ * \param[out]     p_matvec  resulting vector for the matrix-vector product
  */
 /*----------------------------------------------------------------------------*/
 

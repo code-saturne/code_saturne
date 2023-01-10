@@ -570,9 +570,9 @@ cs_advection_field_def_by_dof_func(cs_adv_field_t    *adv,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_adv_field_t structure thanks to an array of values.
- *         If an advanced usage of the definition by array is needed, then
- *         call \ref cs_xdef_set_array_advanced
+ * \brief Define a cs_adv_field_t structure thanks to an array of values. If
+ *        an advanced usage of the definition by array is needed, then call
+ *        \ref cs_xdef_array_set_sublist or \ref cs_xdef_array_set_adjacency
  *
  * \param[in, out] adv           pointer to a cs_adv_field_t structure
  * \param[in]      val_location  information to know where are located values

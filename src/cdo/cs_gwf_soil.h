@@ -188,7 +188,7 @@ struct _gwf_soil_t {
    *
    * \var model
    *      Type of model describing the hydraulic behaviour of a soil (cf. \ref
-   *      \cs_gwf_soil_model_t for more details)
+   *      cs_gwf_soil_model_t for more details)
    *
    * \var model_param
    *      Pointer to a structure cast on-the-fly (it depends on the type of

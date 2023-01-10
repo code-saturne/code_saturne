@@ -107,6 +107,7 @@ static const cs_cdo_connect_t  *cs_shared_connect;
  * \param[in]  connect      pointer to a cs_cdo_connect_t structure
  * \param[in]  eb_flag      metadata for Edge-based schemes
  * \param[in]  fb_flag      metadata for Face-based schemes
+ * \param[in]  cb_flag      metadata for Cell-based schemes
  * \param[in]  vb_flag      metadata for Vertex-based schemes
  * \param[in]  vcb_flag     metadata for Vertex+Cell-basde schemes
  * \param[in]  hho_flag     metadata for HHO schemes
