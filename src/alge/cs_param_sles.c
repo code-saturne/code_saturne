@@ -1680,8 +1680,10 @@ _set_saturne_sles(bool                 use_field_id,
 
     assert(itsol != NULL);
 
-    if (slesp->precond == CS_PARAM_PRECOND_AMG) {
+    switch (slesp->precond) {
 
+    case CS_PARAM_PRECOND_AMG:
+      /* -------------------- */
       if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V) {
 
         pc = cs_multigrid_pc_create(CS_MULTIGRID_V_CYCLE);
@@ -1726,14 +1728,14 @@ _set_saturne_sles(bool                 use_field_id,
         bft_error(__FILE__, __LINE__, 0, " %s: System: %s;"
                   " Invalid AMG type with code_saturne solvers.",
                   __func__, slesp->name);
+      break;
 
-    } /* Multigrid as preconditioner */
-
-    else if (slesp->precond == CS_PARAM_PRECOND_MUMPS            ||
-             slesp->precond == CS_PARAM_PRECOND_MUMPS_FLOAT      ||
-             slesp->precond == CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT ||
-             slesp->precond == CS_PARAM_PRECOND_MUMPS_LDLT) {
-
+    case CS_PARAM_PRECOND_MUMPS:
+    case CS_PARAM_PRECOND_MUMPS_FLOAT:
+    case CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT:
+    case CS_PARAM_PRECOND_MUMPS_FLOAT_SYM:
+    case CS_PARAM_PRECOND_MUMPS_LDLT:
+    case CS_PARAM_PRECOND_MUMPS_SYM:
 #if defined(HAVE_MUMPS)
       pc = cs_sles_mumps_pc_create(slesp);
 #else
@@ -1741,10 +1743,14 @@ _set_saturne_sles(bool                 use_field_id,
                 __func__);
 #endif
       cs_sles_it_transfer_pc(itsol, &pc);
+      break;
 
-    }
+    default: /* Nothing else to do */
+      break;
 
-  } /* preconditioner is not defined */
+    } /* Switch on the preconditioner */
+
+  } /* Preconditioner is not defined */
 
   /* In case of high verbosity, additional output are generated */
 
@@ -2627,7 +2633,7 @@ cs_param_sles_set(bool                 use_field_id,
 
   switch (slesp->solver_class) {
 
-  case CS_PARAM_SLES_CLASS_CS: /* code_saturne's own solvers */
+  case CS_PARAM_SLES_CLASS_CS: /* code_saturne's solvers */
     /* true = use field_id instead of slesp->name to set the sles */
     _set_saturne_sles(use_field_id, slesp);
     break;
