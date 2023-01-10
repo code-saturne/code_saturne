@@ -1544,7 +1544,7 @@ class XMLengineTestCase(unittest.TestCase):
         return self.doc.parseString(string).root()
 
 
-    def checkXMLDocumentInstantiation(self):
+    def testXMLDocumentInstantiation(self):
         """Check whether the Case class could be instantiated."""
         xmldoc = None
         tag    = None
@@ -1553,7 +1553,7 @@ class XMLengineTestCase(unittest.TestCase):
         assert xmldoc, 'Could not instantiate XMLDocument'
 
 
-    def checkXmlAddChild(self):
+    def testXmlAddChild(self):
         """Check whether a node child could be added."""
         node = self.doc.xmlAddChild("table", name="test")
         node.xmlAddChild("field", "label", name="info", type="text")
@@ -1565,7 +1565,7 @@ class XMLengineTestCase(unittest.TestCase):
         assert doc == truc, 'Could not use the xmlAddChild method'
 
 
-    def checkNodeList(self):
+    def testNodeList(self):
         """Check whether a node could be found if it does exist."""
         xmldoc = self.doc.parseString(self.xmlNewFile())
         node = '<fruits color="red"/>'
@@ -1583,7 +1583,7 @@ class XMLengineTestCase(unittest.TestCase):
         assert node == truc, 'Could not use the _nodeList method'
 
 
-    def checkChildNodeList(self):
+    def testChildNodeList(self):
         """Check whether a child node could be found if it does exist."""
         xmldoc = self.doc.parseString(self.xmlNewFile())
         n = self.doc._inst(xmldoc.doc.firstChild.childNodes[1])
@@ -1605,7 +1605,7 @@ class XMLengineTestCase(unittest.TestCase):
         self.failUnless(nodeList==[], 'Could not use the _childNodeList method')
 
 
-    def checkXmlInitNodeList(self):
+    def testXmlInitNodeList(self):
         """Check whether a node child list could be get."""
         nList1 = self.doc.xmlInitNodeList("table", name="test")
         nList2 = nList1[0].xmlInitNodeList("field", "label", name="info", type="text")
@@ -1632,7 +1632,7 @@ class XMLengineTestCase(unittest.TestCase):
         assert node == truc, 'Could not use the xmlinitNodeList method'
 
 
-    def checkXmlInitNode(self):
+    def testXmlInitNode(self):
         """Check whether a node child could be get."""
         n1 = self.doc.xmlInitNode("table", name="test")
         n2 = n1.xmlInitNode("field", "label", name="info", type="text")
@@ -1656,7 +1656,7 @@ class XMLengineTestCase(unittest.TestCase):
         assert node == truc, 'Could not use the xmlInitNode method'
 
 
-    def checkXmlInitChildNodeList(self):
+    def testXmlInitChildNodeList(self):
         """Check whether a child node list could be found if it does exist."""
         xmldoc = self.doc.parseString(self.xmlNewFile())
         thermo = self.doc._inst(xmldoc.doc.firstChild.childNodes[1])
@@ -1678,7 +1678,7 @@ class XMLengineTestCase(unittest.TestCase):
         assert node == truc, 'Could not use the xmlInitChildNodeList method'
 
 
-    def checkXmlInitChildNode(self):
+    def testXmlInitChildNode(self):
         """Check whether a node child could be get."""
         n1 = self.doc.xmlInitChildNode("table", name="test")
         n2 = n1.xmlInitChildNode("field", "label", name="info", type="text")
@@ -1703,7 +1703,7 @@ class XMLengineTestCase(unittest.TestCase):
         assert node == truc, 'Could not use the xmlInitChildNode method'
 
 
-    def checkXmlGetNodeList(self):
+    def testXmlGetNodeList(self):
         """Check whether a node list could be found if it does exist."""
         xmldoc = self.doc.parseString(self.xmlNewFile())
         node = '<fruits color="red"/>'
@@ -1724,7 +1724,7 @@ class XMLengineTestCase(unittest.TestCase):
         self.failIf(nodeList==[], 'Could not use the xmlGetNodeList method')
 
 
-    def checkXmlGetChildNodeList(self):
+    def testXmlGetChildNodeList(self):
         """Check whether a child node list could be found if it does exist."""
         xmldoc = self.doc.parseString(self.xmlNewFile())
         thermo = self.doc._inst(xmldoc.doc.firstChild.childNodes[1])
@@ -1746,7 +1746,7 @@ class XMLengineTestCase(unittest.TestCase):
         self.failUnless(nodeList==[], 'Could not use the xmlGetChildNodeList method')
 
 
-    def checkXmlGetNode(self):
+    def testXmlGetNode(self):
         """Check whether a child node could be found if it does exist."""
         xmldoc = self.doc.parseString(self.xmlNewFile())
         node = '<fruits color="red"/>'
@@ -1764,7 +1764,7 @@ class XMLengineTestCase(unittest.TestCase):
         assert empty, 'Could not use the xmlGetNode method'
 
 
-    def checkXmlGetChildNode(self):
+    def testXmlGetChildNode(self):
         """Check whether a child node could be found if it does exist."""
         xmldoc = self.doc.parseString(self.xmlNewFile())
         n = self.doc._inst(xmldoc.doc.firstChild.childNodes[1])
@@ -1783,7 +1783,7 @@ class XMLengineTestCase(unittest.TestCase):
         self.failUnless(empty==None, 'Could not use the xmlGetChildNode method')
 
 
-    def checkXMLDocumentUnicodeParseString(self):
+    def testXMLDocumentUnicodeParseString(self):
         """Check whether a XMLDocument with unicode string could be created."""
         d = XMLDocument()
         d.parseString(u'<fran\xe7ais> a=attach\xe9</fran\xe7ais>')
@@ -1800,7 +1800,7 @@ class XMLengineTestCase(unittest.TestCase):
         assert d.root() == t, 'Could not use the parseString method with utf-8 encoding'
 
 
-    def checkXmlNodeFromString(self):
+    def testXmlNodeFromString(self):
         """"Check whether two XML nodes could be compared."""
         n1 = self.xmlNodeFromString(u'<fruits taste="ok" color="red"><a>toto</a><c a="2é"/></fruits>')
         n2 = XMLDocument().parseString(u'<fruits color="red" taste="ok"><c a="2é"/><a>toto</a></fruits>').root()
@@ -1844,14 +1844,14 @@ class XMLengineTestCase(unittest.TestCase):
         n6 = XMLDocument().parseString(d2).root()
         assert n5 == n6, 'This two node are not identical'
 
-    def checkCaseInstantiation(self):
+    def testCaseInstantiation(self):
         """Check whether the Case class could be instantiated."""
         case = None
         case = Case()
         assert case, 'Could not instantiate Case'
 
 
-    def checkCaseParseString(self):
+    def testCaseParseString(self):
         """Check whether a Case could be created."""
         rootNode = '<' + '_GUI study="" case="" version="2.0"/>'
         case = Case()
@@ -1859,7 +1859,7 @@ class XMLengineTestCase(unittest.TestCase):
                'Could not use the parseString method'
 
 
-    def checkXmlSaveDocument(self):
+    def testXmlSaveDocument(self):
         """Check whether a Case could be save on the file system"""
         case = Case()
         case.parseString(u'<fruits color="red" taste="ok"><c a="2é">to</c></fruits>')
@@ -1879,19 +1879,9 @@ class XMLengineTestCase(unittest.TestCase):
                'Could not use the xmlSaveDocument method'
 
 
-##    def checkFailUnless(self):
-##        """Test"""
-##        self.failUnless(1==1, "One should be one.")
-##
-##
-##    def checkFailIf(self):
-##        """Test"""
-##        self.failIf(1==2,"I don't one to be one, I want it to be two.")
-
-
 def suite():
     """unittest function"""
-    testSuite = unittest.makeSuite(XMLengineTestCase, "check")
+    testSuite = unittest.makeSuite(XMLengineTestCase, "test")
     return testSuite
 
 
