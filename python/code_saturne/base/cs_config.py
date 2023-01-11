@@ -147,7 +147,8 @@ class config:
             self.compilers[k] = d.get(k, None)
 
         self.flags = {}
-        for k in ('cflags', 'cxxflags', 'fcflags', 'nvccflags'):
+        for k in ('cflags', 'cxxflags', 'fcflags', 'nvccflags',
+                  'cflags_shared', 'cxxflags_shared', 'fcflags_shared'):
             self.flags[k] = d.get(k, '')
 
         self.fcmodinclude = d.get('fcmodinclude', '')
@@ -157,6 +158,7 @@ class config:
 
         system_flags = {'cppflags': d.get('cppflags', ''),
                         'ldflags': d.get('ldflags', ''),
+                        'ldflags_shared': d.get('ldflags_shared', ''),
                         'libs': d.get('libs', '')}
 
         # Constants for system-dependant file extensions
