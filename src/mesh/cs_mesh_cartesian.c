@@ -495,7 +495,11 @@ _add_nz_face(cs_mesh_builder_t  *mb,
 cs_mesh_cartesian_params_t *
 cs_mesh_cartesian_get_params(void)
 {
-  cs_mesh_cartesian_params_t *retval = _get_structured_mesh_by_id(0);
+
+  cs_mesh_cartesian_params_t *retval = NULL;
+
+  if (_n_structured_meshes > 0)
+    retval = _get_structured_mesh_by_id(0);
 
   return retval;
 }
