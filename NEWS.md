@@ -1,6 +1,11 @@
 Release 7.3.1 (not released yet)
 --------------------------------
 
+### Bug fixes:
+
+- Fix possible crash in cartesian mesh creation in user function.
+  Bug introduced in commit 45202bee (02/11/22)
+
 ### Architectural changes:
 
 - Update ParaView/Catalyst compilation for ParaView 5.11 compatibility.
