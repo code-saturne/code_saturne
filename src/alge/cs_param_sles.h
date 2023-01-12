@@ -195,6 +195,39 @@ typedef struct {
  *============================================================================*/
 
 /*============================================================================
+ * Static inline public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Find if a MUMPS-related solver is set or not
+ *
+ * \param[in] solver   type of solver
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_param_sles_is_mumps_set(cs_param_itsol_type_t  solver)
+{
+  switch (solver) {
+
+  case CS_PARAM_ITSOL_MUMPS:
+  case CS_PARAM_ITSOL_MUMPS_FLOAT:
+  case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
+  case CS_PARAM_ITSOL_MUMPS_FLOAT_SYM:
+  case CS_PARAM_ITSOL_MUMPS_LDLT:
+  case CS_PARAM_ITSOL_MUMPS_SYM:
+    return true;
+
+  default:
+    return false;
+
+  }
+}
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 

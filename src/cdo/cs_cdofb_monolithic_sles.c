@@ -1836,7 +1836,7 @@ _set_velocity_ksp(const cs_param_sles_t   *slesp,
 
   } /* Switch on solver */
 
-  if (slesp->solver != CS_PARAM_ITSOL_MUMPS)
+  if (!cs_param_sles_is_mumps_set(slesp->solver))
     PCSetType(u_pc, pc_type);
 
   /* Additional settings for the preconditioner */
@@ -2776,6 +2776,10 @@ _notay_hook(void     *context,
 
   case CS_PARAM_ITSOL_MUMPS:
   case CS_PARAM_ITSOL_MUMPS_FLOAT:
+  case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
+  case CS_PARAM_ITSOL_MUMPS_FLOAT_SYM:
+  case CS_PARAM_ITSOL_MUMPS_LDLT:
+  case CS_PARAM_ITSOL_MUMPS_SYM:
 #if defined(PETSC_HAVE_MUMPS)
     {
       KSPSetType(ksp, KSPPREONLY);
@@ -4410,15 +4414,10 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
 #endif  /* HAVE_PETSC */
 
   case CS_NAVSTO_SLES_MUMPS:
-#if defined(HAVE_MUMPS)
-    if (mom_slesp->solver != CS_PARAM_ITSOL_MUMPS &&
-        mom_slesp->solver != CS_PARAM_ITSOL_MUMPS_LDLT &&
-        mom_slesp->solver != CS_PARAM_ITSOL_MUMPS_SYM &&
-        mom_slesp->solver != CS_PARAM_ITSOL_MUMPS_FLOAT &&
-        mom_slesp->solver != CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT &&
-        mom_slesp->solver != CS_PARAM_ITSOL_MUMPS_FLOAT_SYM)
+    if (!cs_param_sles_is_mumps_set(mom_slesp->solver))
       mom_slesp->solver = CS_PARAM_ITSOL_MUMPS;
 
+#if defined(HAVE_MUMPS)
     cs_sles_mumps_define(field_id,
                          NULL,
                          mom_slesp,
@@ -4459,7 +4458,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
 
     cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
 
-    /* Set verbosity */
+    /* Set the verbosity */
 
     cs_sles_set_verbosity(sles, mom_slesp->verbosity);
 

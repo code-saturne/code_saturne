@@ -165,12 +165,7 @@ cs_equation_system_sles_init(int                            n_eqs,
       cs_equation_param_t  *eqp00 = block00->param;
       cs_param_sles_t  *slesp00 = eqp00->sles_param;
 
-      if (slesp00->solver != CS_PARAM_ITSOL_MUMPS &&
-          slesp00->solver != CS_PARAM_ITSOL_MUMPS_LDLT &&
-          slesp00->solver != CS_PARAM_ITSOL_MUMPS_SYM &&
-          slesp00->solver != CS_PARAM_ITSOL_MUMPS_FLOAT &&
-          slesp00->solver != CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT &&
-          slesp00->solver != CS_PARAM_ITSOL_MUMPS_FLOAT_SYM)
+      if (!cs_param_sles_is_mumps_set(slesp00->solver))
         slesp00->solver = CS_PARAM_ITSOL_MUMPS;
 
       cs_sles_mumps_define(-1,

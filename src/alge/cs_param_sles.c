@@ -94,26 +94,6 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return true if a solver involving the MUMPS library is requested
- */
-/*----------------------------------------------------------------------------*/
-
-static inline bool
-_mumps_is_needed(cs_param_itsol_type_t   solver)
-{
-  if (solver == CS_PARAM_ITSOL_MUMPS      ||
-      solver == CS_PARAM_ITSOL_MUMPS_LDLT ||
-      solver == CS_PARAM_ITSOL_MUMPS_SYM  ||
-      solver == CS_PARAM_ITSOL_MUMPS_FLOAT      ||
-      solver == CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT ||
-      solver == CS_PARAM_ITSOL_MUMPS_FLOAT_SYM)
-    return true;
-  else
-    return false;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Return true if the prescribed solver implies a symmetric linear
  *        system
  */
@@ -522,7 +502,7 @@ static void
 _petsc_set_pc_type(cs_param_sles_t   *slesp,
                    KSP                ksp)
 {
-  if (_mumps_is_needed(slesp->solver))
+  if (cs_param_sles_is_mumps_set(slesp->solver))
     return; /* Direct solver: Nothing to do at this stage */
 
   PC  pc;
@@ -1306,7 +1286,7 @@ _petsc_block_hook(void     *context,
 static void
 _check_settings(cs_param_sles_t     *slesp)
 {
-  if (_mumps_is_needed(slesp->solver)) { /* Checks related to MUMPS */
+  if (cs_param_sles_is_mumps_set(slesp->solver)) { /* Checks related to MUMPS */
 
     cs_param_sles_class_t  ret_class =
       cs_param_sles_check_class(CS_PARAM_SLES_CLASS_MUMPS);
