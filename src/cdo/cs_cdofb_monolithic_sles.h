@@ -176,11 +176,11 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 /*----------------------------------------------------------------------------*/
 
 int
-cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
-                                         const cs_equation_param_t     *eqp,
-                                         const cs_cdo_system_helper_t  *sh,
-                                         cs_param_sles_t               *slesp,
-                                         cs_cdofb_monolithic_sles_t    *msles);
+cs_cdofb_monolithic_block_krylov(const cs_navsto_param_t       *nsp,
+                                 const cs_equation_param_t     *eqp,
+                                 const cs_cdo_system_helper_t  *sh,
+                                 cs_param_sles_t               *slesp,
+                                 cs_cdofb_monolithic_sles_t    *msles);
 
 /*----------------------------------------------------------------------------*/
 /*!

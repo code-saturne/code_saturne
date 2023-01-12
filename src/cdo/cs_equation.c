@@ -49,13 +49,13 @@
 
 #include "cs_array.h"
 #include "cs_cdo_toolbox.h"
-#include "cs_cdovb_scaleq.h"
-#include "cs_cdovb_vecteq.h"
-#include "cs_cdovcb_scaleq.h"
+#include "cs_cdocb_scaleq.h"
 #include "cs_cdoeb_vecteq.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_cdofb_vecteq.h"
-#include "cs_cdocb_scaleq.h"
+#include "cs_cdovb_scaleq.h"
+#include "cs_cdovb_vecteq.h"
+#include "cs_cdovcb_scaleq.h"
 #include "cs_equation_bc.h"
 #include "cs_equation_priv.h"
 #include "cs_evaluate.h"
@@ -1784,7 +1784,7 @@ cs_equation_set_default_param(cs_equation_key_t      key,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Setup the linear algebra requirements
+ * \brief Setup the linear algebra requirements
  */
 /*----------------------------------------------------------------------------*/
 

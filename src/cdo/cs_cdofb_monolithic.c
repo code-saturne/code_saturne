@@ -765,6 +765,7 @@ _velocity_full_assembly(const cs_cell_sys_t              *csys,
   if (csys->has_internal_enforcement) {
 
     for (int i = 0; i < 3*n_f; i++) {
+
       if (csys->dof_is_forced[i])
         _div[i] = 0.; /* The velocity-block set the value of this DoF */
       else
@@ -816,7 +817,7 @@ _full_assembly(const cs_cell_sys_t              *csys,
                cs_cdofb_vecteq_t                *eqc,
                cs_cdo_assembly_t                *asb)
 {
-  CS_UNUSED(asb);
+  CS_NO_WARN_IF_UNUSED(asb);
 
   const short int  n_f = cm->n_fc;
   const cs_lnum_t  n_faces = cs_shared_quant->n_faces;
@@ -1128,8 +1129,8 @@ _steady_build(const cs_navsto_param_t      *nsp,
               const cs_real_t               vel_c_nm1[],
               cs_cdofb_monolithic_t        *sc)
 {
-  CS_UNUSED(vel_f_nm1);
-  CS_UNUSED(vel_c_nm1);
+  CS_NO_WARN_IF_UNUSED(vel_f_nm1);
+  CS_NO_WARN_IF_UNUSED(vel_c_nm1);
 
   /* Retrieve shared structures */
 
@@ -1330,8 +1331,8 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
                       const cs_real_t           vel_c_nm1[],
                       cs_cdofb_monolithic_t    *sc)
 {
-  CS_UNUSED(vel_f_nm1);
-  CS_UNUSED(vel_c_nm1);
+  CS_NO_WARN_IF_UNUSED(vel_f_nm1);
+  CS_NO_WARN_IF_UNUSED(vel_c_nm1);
 
   /* Retrieve high-level structures */
 
@@ -1563,8 +1564,8 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
                     const cs_real_t           vel_c_nm1[],
                     cs_cdofb_monolithic_t    *sc)
 {
-  CS_UNUSED(vel_f_nm1);
-  CS_UNUSED(vel_c_nm1);
+  CS_NO_WARN_IF_UNUSED(vel_f_nm1);
+  CS_NO_WARN_IF_UNUSED(vel_c_nm1);
 
   /* Retrieve high-level structures */
 
@@ -2367,10 +2368,10 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
 
   /* Set the solve function pointer */
 
-  switch (nsp->sles_param->strategy) {
+  switch (strategy) {
 
   case CS_NAVSTO_SLES_BY_BLOCKS:
-    sc->solve = cs_cdofb_monolithic_krylov_block_precond;
+    sc->solve = cs_cdofb_monolithic_block_krylov;
     break;
 
   case CS_NAVSTO_SLES_GKB_SATURNE:
@@ -2385,7 +2386,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
   case CS_NAVSTO_SLES_SGS_SCHUR_GCR:
   case CS_NAVSTO_SLES_UPPER_SCHUR_GCR:
   case CS_NAVSTO_SLES_UZAWA_SCHUR_GCR:
-    sc->solve = cs_cdofb_monolithic_krylov_block_precond;
+    sc->solve = cs_cdofb_monolithic_block_krylov;
     break;
 
   case CS_NAVSTO_SLES_UZAWA_AL:

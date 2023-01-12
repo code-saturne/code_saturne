@@ -1714,7 +1714,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
  *        resolution of the linear system.
  *        Settings are related to this equation.
  *
- * \param[in, out]  eqp           pointer to a cs_equation_param_t structure
+ * \param[in, out] eqp         pointer to a cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 

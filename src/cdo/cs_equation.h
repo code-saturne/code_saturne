@@ -556,7 +556,7 @@ cs_equation_set_default_param(cs_equation_key_t      key,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Setup the linear algebra requirements
+ * \brief Setup the linear algebra requirements
  */
 /*----------------------------------------------------------------------------*/
 

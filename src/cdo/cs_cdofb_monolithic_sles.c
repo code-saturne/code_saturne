@@ -1949,7 +1949,7 @@ _additive_amg_hook(void     *context,
 
   /* Apply modifications to the KSP structure */
 
-  PC up_pc, p_pc;
+  PC  up_pc, p_pc;
 
   KSPGetPC(ksp, &up_pc);
   PCSetType(up_pc, PCFIELDSPLIT);
@@ -4689,17 +4689,18 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 /*----------------------------------------------------------------------------*/
 
 int
-cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
-                                         const cs_equation_param_t     *eqp,
-                                         const cs_cdo_system_helper_t  *sh,
-                                         cs_param_sles_t               *slesp,
-                                         cs_cdofb_monolithic_sles_t    *msles)
+cs_cdofb_monolithic_block_krylov(const cs_navsto_param_t       *nsp,
+                                 const cs_equation_param_t     *eqp,
+                                 const cs_cdo_system_helper_t  *sh,
+                                 cs_param_sles_t               *slesp,
+                                 cs_cdofb_monolithic_sles_t    *msles)
 {
   CS_UNUSED(eqp);
 
   if (msles == NULL)
     return 0;
 
+  assert(sh != NULL);
   if (sh->type != CS_CDO_SYSTEM_SADDLE_POINT)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid type of system: saddle-point system expected\n",

@@ -32,7 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <ctype.h>
+#include <ctype.h>  /* tolower() function */
 #include <stdlib.h>
 #include <string.h>
 
@@ -47,11 +47,9 @@
 #include "cs_boundary_zone.h"
 #include "cs_cdo_advection.h"
 #include "cs_cdo_bc.h"
-#include "cs_fp_exception.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_mesh_location.h"
-#include "cs_multigrid.h"
 #include "cs_sles.h"
 #include "cs_source_term.h"
 #include "cs_volume_zone.h"
@@ -99,8 +97,8 @@ static const char _err_empty_eqp[] =
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if PETSc or HYPRE is available and return the possible
- *         solver class.
+ * \brief Check if PETSc or HYPRE is available and return the possible
+ *        solver class.
  *
  * \param[in] slesp      pointer to a \ref cs_param_sles_t structure
  * \param[in] keyname    name of the key to handle
@@ -1881,7 +1879,7 @@ cs_equation_param_set(cs_equation_param_t   *eqp,
  *        resolution of the linear system.
  *        Settings are related to this equation.
  *
- * \param[in, out]  eqp           pointer to a cs_equation_param_t structure
+ * \param[in, out] eqp     pointer to a cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 

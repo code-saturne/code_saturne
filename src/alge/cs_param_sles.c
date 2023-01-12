@@ -2743,32 +2743,30 @@ cs_param_sles_set(bool                 use_field_id,
 
   _check_settings(slesp);
 
+  /* use_field_id set to true means that slesp->name is used instead of
+     field_id to retrieve the associated SLES structure */
+
   switch (slesp->solver_class) {
 
   case CS_PARAM_SLES_CLASS_CS: /* code_saturne's solvers */
-    /* true = use field_id instead of slesp->name to set the sles */
     _set_saturne_sles(use_field_id, slesp);
     break;
 
   case CS_PARAM_SLES_CLASS_MUMPS: /* MUMPS sparse direct solvers */
-    /* true = use field_id instead of slesp->name to set the sles */
     _set_mumps_sles(use_field_id, slesp);
     break;
 
 #if defined(HAVE_HYPRE)
   case CS_PARAM_SLES_CLASS_HYPRE: /* HYPRE solvers through PETSc or not */
-    /* true = use field_id instead of slesp->name to set the sles */
     _set_hypre_sles(use_field_id, slesp);
     break;
 
   case CS_PARAM_SLES_CLASS_PETSC: /* PETSc solvers */
-    /* true = use field_id instead of slesp->name to set the sles */
     _set_petsc_hypre_sles(use_field_id, slesp);
     break;
 #else
   case CS_PARAM_SLES_CLASS_HYPRE: /* HYPRE solvers through PETSc */
   case CS_PARAM_SLES_CLASS_PETSC: /* PETSc solvers */
-    /* true = use field_id instead of slesp->name to set the sles */
     _set_petsc_hypre_sles(use_field_id, slesp);
     break;
 #endif
