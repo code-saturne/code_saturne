@@ -1475,9 +1475,6 @@ _schur_approximation(const cs_navsto_param_t       *nsp,
   case CS_PARAM_SCHUR_DIAG_INVERSE:
     _diag_schur_sbp(nsp, ssys, sbp);
     break;
-  case CS_PARAM_SCHUR_ELMAN:
-    _elman_schur_sbp(nsp, ssys, sbp);
-    break;
   case CS_PARAM_SCHUR_IDENTITY:
     break; /* Nothing to do */
   case CS_PARAM_SCHUR_LUMPED_INVERSE:

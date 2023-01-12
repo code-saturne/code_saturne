@@ -709,45 +709,44 @@ typedef enum {
 /*! \enum cs_param_schur_approx_t
  *
  *  \brief Strategy to build the Schur complement approximation. This appears
- *  in block preconditioning or uzawa algorithms when a monolithic (fully
- *  coupled approach) is used.
- *  | A   B^t|
- *  | B   0  |
+ *         in block preconditioning or Uzawa algorithms when a fully coupled
+ *         (also called monolithic) approach) is used.
+ *  \f[ \begin{bmatrix} A&B^t\\ B&O  \end{bmatrix}\f]
+ *  The exact Schur complement is then
+ * \f[ S = -B \cdot A^{-1} \cdot B \f]
  *
  *  \var CS_PARAM_SCHUR_NONE
- *  There is no schur complement approximation.
+ *  There is no Schur complement approximation.
  *
  *  \var CS_PARAM_SCHUR_DIAG_INVERSE
- *  The schur complement approximation is defined as B.diag(A)^-1.B^t
- *
- *  \var CS_PARAM_SCHUR_ELMAN
- *  The inverse of the schur complement matrix is approximated by
- *  (BBt)^-1 B.A.B^t (B.Bt)^-1
- *  This formulation is detailed in Elman'99, SIAM J. SCI. COMPUT.
+ *  The Schur complement approximation is defined as
+ *  \f[ S \approx -B \cdot diag(A)^{-1} \cdot B^t \f]
  *
  *  \var CS_PARAM_SCHUR_IDENTITY
- *  The schur complement approximation is simply the identity matrix
+ *  The Schur complement approximation is simply the identity matrix
  *
  *  \var CS_PARAM_SCHUR_LUMPED_INVERSE
- *  The schur complement approximation is defined as B.lumped(A^-1).B^t where
- *  x=lumped(A^-1) results from A.x = 1 (1 is the array fills with 1 in each
- *  entry)
+ *  The Schur complement approximation is defined as
+ * \f[ B \cdot lumped(A^{-1}) \cdot B^t \f]
+ *  where \f$x=lumped(A^{-1})\f$ results from \f$A.x = \bf{1}\f$ (\f$\bf{1}\f$
+ *  is the array fills with 1 in each entry)
  *
  *  \var CS_PARAM_SCHUR_MASS_SCALED
- *  The schur complement approximation is simply a scaled diagonal mass matrix
- *  related to the 22 block
+ *  The Schur complement approximation is simply a scaled **diagonal** mass
+ *  matrix related to the (2,2)-block
  *
  *  \var CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE
- *  The schur complement approximation is defined as
- *  S \approx alpha.M22 + 1/dt*B.diag(A)^-1.B^t
- *  where M22 is the mass matrix related to the (2,2) block
+ *  The Schur complement approximation is defined as
+ *  \f[ S \approx \alpha M_{22} + \frac{1}{dt} B.diag(A)^{-1}.B^t \f]
+ *  where \f$M_{22}\f$ is the mass matrix related to the (2,2)-block
  *
  *  \var CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE
- *  The schur complement approximation is defined as
- *  S \approx alpha.M22 + 1/dt*B.lumped(A^-1).B^t
- *  where M22 is the mass matrix related to the (2,2) block and where
- *  x=lumped(A^-1) results from A.x = 1 (1 is the array fills with 1 in each
- *  entry)
+ *  The Schur complement approximation is defined as
+ *  \f[ S \approx \alpha \cdot M_{22} + \frac{1}{dt} B\cdot lumped(A^{-1})
+ *  \cdot B^t \f]
+ *  where \f$ M_{22} \f$ is the mass matrix related to the (2,2) block and where
+ *  \f$x=lumped(A^{-1})\f$ results from \f$A.x = \bf{1}\f$ (\f$\bf{1}\f$
+ *  is the array fills with 1 in each entry)
  */
 
 typedef enum {
@@ -755,7 +754,6 @@ typedef enum {
   CS_PARAM_SCHUR_NONE,
 
   CS_PARAM_SCHUR_DIAG_INVERSE,
-  CS_PARAM_SCHUR_ELMAN,
   CS_PARAM_SCHUR_IDENTITY,
   CS_PARAM_SCHUR_LUMPED_INVERSE,
   CS_PARAM_SCHUR_MASS_SCALED,

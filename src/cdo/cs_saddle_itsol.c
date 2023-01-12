@@ -785,98 +785,6 @@ _solve_schur_approximation(cs_saddle_system_t          *ssys,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Apply a diagonal block preconditioning within a Schur complement
- *         approximation devised in Elman'99 SIAM J. SCI. COMP.
- *
- * \param[in]      ssys     pointer to a cs_saddle_system_t structure
- * \param[in]      sbp      block-preconditioner for the Saddle-point problem
- * \param[in]      r_schur  rhs of the Schur system (size = x2_size)
- * \param[in, out] z_schur  array to compute (size = x2_size)
- * \param[in, out] pc_wsp   work space related to the preconditioner
- *
- * \return the number of iterations performed for this step of preconditioning
- */
-/*----------------------------------------------------------------------------*/
-
-static int
-_elman_schur_approximation(cs_saddle_system_t          *ssys,
-                           cs_saddle_block_precond_t   *sbp,
-                           cs_real_t                   *r_schur,
-                           cs_real_t                   *z_schur,
-                           cs_real_t                   *pc_wsp)
-{
-  if (z_schur == NULL)
-    return 0;
-
-  assert(ssys != NULL && sbp != NULL);
-  assert(r_schur != NULL);
-
-  const cs_range_set_t  *rset = ssys->rset;
-  const cs_matrix_t  *m11 = ssys->m11_matrices[0];
-
-  /* Block M22 = the Schur approx.
-     S^-1 \approx (BBt)^-1 * BABt * (BBt)^-1 => Several sub-steps */
-
-  /* 1: Solve BBt z_schur = r_schur
-     ============================== */
-
-  int  n_iter = _solve_schur_approximation(ssys, sbp, r_schur, z_schur);
-
-  /* 2: Compute m12z2 = m12.z_schur
-     ============================== */
-
-  cs_real_t  *m12z2 = pc_wsp;   /* size = x1_size */
-
-  cs_array_real_fill_zero(ssys->x1_size, m12z2);
-
-  /* Update += of m12z2 inside the following function */
-
-  _m12_vector_multiply(ssys, z_schur, m12z2);
-
-  if (rset->ifs != NULL)
-    cs_interface_set_sum(rset->ifs,
-                         ssys->x1_size,
-                         1, false, CS_REAL_TYPE, /* stride, interlaced */
-                         m12z2);
-
-  /* 3: Compute mmz = M11 * m12z2
-     ============================ */
-
-  /* scatter view to gather view */
-
-  cs_range_set_gather(rset, CS_REAL_TYPE, 1, /* stride */
-                      m12z2,  /* in:  size=x1_size */
-                      m12z2); /* out: size=rset->n_elts[0] */
-
-  cs_real_t  *mmz = pc_wsp + ssys->max_x1_size; /* size = x1_size */
-
-  cs_array_real_fill_zero(ssys->max_x1_size, mmz);
-
-  cs_matrix_vector_multiply(m11, m12z2, mmz);
-
-  /* gather to scatter view (i.e. algebraic to mesh view) */
-
-  cs_range_set_scatter(rset, CS_REAL_TYPE, 1, /* type and stride */
-                       mmz, mmz);
-
-  /* 4: m21 * mmz = r2_tilda
-     ======================= */
-
-  assert(ssys->x1_size >= ssys->x2_size);
-  cs_real_t  *r2_tilda = m12z2; /* re-use the buffer */
-
-  _m21_vector_multiply(ssys, mmz, r2_tilda);
-
-  /* 5: Solve BBt z_schur = r2_tilda
-     =============================== */
-
-  n_iter += _solve_schur_approximation(ssys, sbp, r2_tilda, z_schur);
-
-  return n_iter;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Apply a block diagonal preconditioning: Compute z s.t. P_d z = r
  *
  * \param[in]      ssys    pointer to a cs_saddle_system_t structure
@@ -915,15 +823,9 @@ _diag_schur_pc_apply(cs_saddle_system_t          *ssys,
   /* 2. Solve S.z2 = r2 (the M22 block is a Schur approx.)
      ===================================================== */
 
-  if (sbp->schur_type == CS_PARAM_SCHUR_ELMAN)
-    n_iter += _elman_schur_approximation(ssys, sbp,
-                                         r + ssys->max_x1_size, /* r_schur */
-                                         z + ssys->max_x1_size, /* z_schur */
-                                         pc_wsp);
-  else
-    n_iter += _solve_schur_approximation(ssys, sbp,
-                                         r + ssys->max_x1_size,  /* r_schur */
-                                         z + ssys->max_x1_size); /* z_schur */
+  n_iter += _solve_schur_approximation(ssys, sbp,
+                                       r + ssys->max_x1_size,  /* r_schur */
+                                       z + ssys->max_x1_size); /* z_schur */
 
   return n_iter;
 }
@@ -982,13 +884,7 @@ _lower_schur_pc_apply(cs_saddle_system_t          *ssys,
   /* 3. Solve S z2 = r2_tilda (S -> Schur approximation for the m22 block)
      ===================================================================== */
 
-  if (sbp->schur_type == CS_PARAM_SCHUR_ELMAN)
-    n_iter += _elman_schur_approximation(ssys, sbp,
-                                         r2_tilda, /* r_schur */
-                                         z2,       /* z_schur */
-                                         pc_wsp + ssys->max_x2_size);
-  else
-    n_iter += _solve_schur_approximation(ssys, sbp, r2_tilda, z2);
+  n_iter += _solve_schur_approximation(ssys, sbp, r2_tilda, z2);
 
   return n_iter;
 }
@@ -1030,15 +926,9 @@ _upper_schur_pc_apply(cs_saddle_system_t          *ssys,
   /* 1. Solve S z2 = r2 (S -> Schur approximation for the m22 block)
      =============================================================== */
 
-  if (sbp->schur_type == CS_PARAM_SCHUR_ELMAN)
-    n_iter += _elman_schur_approximation(ssys, sbp,
-                                         r + ssys->max_x1_size, /* r_schur */
-                                         z2,                    /* z_schur */
-                                         pc_wsp);
-  else
-    n_iter += _solve_schur_approximation(ssys, sbp,
-                                         r + ssys->max_x1_size, /* r_schur */
-                                         z2);                   /* z_schur */
+  n_iter += _solve_schur_approximation(ssys, sbp,
+                                       r + ssys->max_x1_size, /* r_schur */
+                                       z2);                   /* z_schur */
 
   /* 2. Build r1_tilda = r1 - Bt.z2
      ============================== */
@@ -1130,16 +1020,9 @@ _sgs_schur_pc_apply(cs_saddle_system_t          *ssys,
 
   cs_real_t  *z2 = z + ssys->max_x1_size;
 
-  if (sbp->schur_type == CS_PARAM_SCHUR_ELMAN)
-    n_iter += _elman_schur_approximation(ssys, sbp,
-                                         r2_hat, /* r_schur */
-                                         z2,     /* z_schur */
-                                         pc_wsp +
-                                         ssys->max_x1_size + ssys->max_x2_size);
-  else
-    n_iter += _solve_schur_approximation(ssys, sbp,
-                                         r2_hat, /* r_schur */
-                                         z2);    /* z_schur */
+  n_iter += _solve_schur_approximation(ssys, sbp,
+                                       r2_hat, /* r_schur */
+                                       z2);    /* z_schur */
 
   /* 4. Build r1_tilda = m11.z1_hat + m12.z2
      ======================================= */
@@ -1371,10 +1254,6 @@ _set_pc(const cs_saddle_system_t          *ssys,
       case CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE:
       case CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE:
         return _diag_schur_pc_apply;
-      case CS_PARAM_SCHUR_ELMAN:
-        *wsp_size = 2*ssys->max_x1_size;
-        BFT_MALLOC(*p_wsp, *wsp_size, cs_real_t);
-        return _diag_schur_pc_apply;
 
       default:
         bft_error(__FILE__, __LINE__, 0,
@@ -1393,10 +1272,6 @@ _set_pc(const cs_saddle_system_t          *ssys,
       case CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE:
       case CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE:
         *wsp_size = ssys->max_x2_size;
-        BFT_MALLOC(*p_wsp, *wsp_size, cs_real_t);
-        return _lower_schur_pc_apply;
-      case CS_PARAM_SCHUR_ELMAN:
-        *wsp_size = ssys->max_x2_size + 2*ssys->max_x1_size;
         BFT_MALLOC(*p_wsp, *wsp_size, cs_real_t);
         return _lower_schur_pc_apply;
 
@@ -1419,10 +1294,6 @@ _set_pc(const cs_saddle_system_t          *ssys,
         *wsp_size = 2*ssys->max_x1_size;
         BFT_MALLOC(*p_wsp, *wsp_size, cs_real_t);
         return _sgs_schur_pc_apply;
-      case CS_PARAM_SCHUR_ELMAN:
-        *wsp_size = 4*ssys->max_x1_size;
-        BFT_MALLOC(*p_wsp, *wsp_size, cs_real_t);
-        return _sgs_schur_pc_apply;
 
       default:
         bft_error(__FILE__, __LINE__, 0,
@@ -1441,10 +1312,6 @@ _set_pc(const cs_saddle_system_t          *ssys,
       case CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE:
       case CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE:
         *wsp_size = ssys->max_x1_size;
-        BFT_MALLOC(*p_wsp, *wsp_size, cs_real_t);
-        return  _upper_schur_pc_apply;
-      case CS_PARAM_SCHUR_ELMAN:
-        *wsp_size = 2*ssys->max_x1_size;
         BFT_MALLOC(*p_wsp, *wsp_size, cs_real_t);
         return  _upper_schur_pc_apply;
 

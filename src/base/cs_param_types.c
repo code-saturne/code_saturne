@@ -184,7 +184,6 @@ static const char
 cs_param_schur_approx_name[CS_PARAM_N_SCHUR_APPROX][CS_BASE_STRING_LEN] =
   { N_("None"),
     N_("Based on the diagonal"),
-    N_("Elman'99"),
     N_("Identity matrix"),
     N_("Lumped inverse"),
     N_("Scaled mass matrix"),
@@ -741,7 +740,6 @@ cs_param_get_schur_approx_name(cs_param_schur_approx_t   type)
   case CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE:
   case CS_PARAM_SCHUR_LUMPED_INVERSE:
   case CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE:
-  case CS_PARAM_SCHUR_ELMAN:
     return cs_param_schur_approx_name[type];
 
   default:

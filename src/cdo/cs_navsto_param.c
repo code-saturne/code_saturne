@@ -998,13 +998,11 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
       nsp->sles_param->schur_approximation = CS_PARAM_SCHUR_DIAG_INVERSE;
     else if (strcmp(val, "lumped_schur") == 0)
       nsp->sles_param->schur_approximation = CS_PARAM_SCHUR_LUMPED_INVERSE;
-    else if (strcmp(val, "elman") == 0)
-      nsp->sles_param->schur_approximation = CS_PARAM_SCHUR_ELMAN;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
                 _(" %s: Invalid value \"%s\" not among  valid choices:\n"
-                  " \"diag_schur\", \"lumped_schur\", \"elman\"."),
+                  " \"diag_schur\", \"lumped_schur\"."),
                 __func__, _val);
     }
     break;
