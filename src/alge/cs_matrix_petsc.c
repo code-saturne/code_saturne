@@ -162,6 +162,7 @@ _mat_vec_p_aij(const cs_matrix_t  *matrix,
                cs_real_t          *restrict x,
                cs_real_t          *restrict y)
 {
+  CS_NO_WARN_IF_UNUSED(sync);
   assert(exclude_diag == false);
 
   const PetscInt  n_rows = matrix->n_rows * matrix->db_size;
@@ -1590,8 +1591,6 @@ cs_matrix_set_type_petsc(cs_matrix_t  *matrix,
     matrix->destroy_coefficients(matrix);
 
   _setup_coeffs(matrix, type_name);
-
-  cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
 
   /* Set function pointers here */
 

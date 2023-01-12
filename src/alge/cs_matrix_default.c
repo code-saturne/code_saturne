@@ -912,7 +912,7 @@ cs_matrix_default_set_type(cs_matrix_fill_type_t  fill_type,
 /*----------------------------------------------------------------------------*/
 
 const cs_gnum_t *
-cs_matrix_get_block_row_g_id(cs_matrix_t  *m)
+cs_matrix_get_block_row_g_id(const cs_matrix_t  *m)
 {
   const cs_lnum_t  n_rows = m->n_rows;
   const cs_halo_t  *halo = m->halo;
