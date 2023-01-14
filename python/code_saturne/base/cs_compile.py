@@ -162,6 +162,32 @@ def files_to_compile(src_dir):
 
     return src_files
 
+#---------------------------------------------------------------------------
+
+def separate_compiler_args(s):
+    """
+    Separate arguments if compiler command includes options, which are
+    assumed to start with "-".
+    """
+
+    l = []
+    if s:
+        sl = s.split(' ')
+        t = sl.pop(0)
+        for a in sl:
+            if a == '':
+                continue
+            if a[0] == '-':
+                l.append(t)
+                t = a
+            else:
+                t += " " + a
+
+        if t != '':
+            l.append(t)
+
+    return l
+
 #===============================================================================
 # Class used to manage compilation
 #===============================================================================
@@ -396,7 +422,7 @@ class cs_compile(object):
         for f in c_files:
             if (retval != 0 and not keep_going):
                 break
-            cmd = [self.get_compiler('cc')]
+            cmd = separate_compiler_args(self.get_compiler('cc'))
             if opt_cflags != None:
                 cmd += separate_args(opt_cflags)
             for d in c_include_dirs:
@@ -416,7 +442,7 @@ class cs_compile(object):
         for f in cxx_files:
             if (retval != 0 and not keep_going):
                 break
-            cmd = [self.get_compiler('cxx')]
+            cmd = separate_compiler_args(self.get_compiler('cxx'))
             if opt_cxxflags != None:
                 cmd += separate_args(opt_cxxflags)
             for d in cxx_include_dirs:
@@ -435,7 +461,7 @@ class cs_compile(object):
         for f in cu_files:
             if (retval != 0 and not keep_going):
                 break
-            cmd = [self.get_compiler('nvcc')]
+            cmd = separate_compiler_args(self.get_compiler('nvcc'))
             if opt_nvccflags != None:
                 cmd += separate_args(opt_nvccflags)
             for d in cxx_include_dirs:
@@ -454,7 +480,7 @@ class cs_compile(object):
         for f in f_files:
             if (retval != 0 and not keep_going):
                 break
-            cmd = [self.get_compiler('fc')]
+            cmd = separate_compiler_args(self.get_compiler('fc'))
             f_base = os.path.basename(f)
             o_name = self.obj_name(f)
             if f_base == 'cs_user_boundary_conditions.f90':
@@ -550,7 +576,7 @@ class cs_compile(object):
 
         # Prepare link command
 
-        cmd = [self.get_compiler('ld')]
+        cmd = separate_compiler_args(self.get_compiler('ld'))
         cmd += ["-o", exec_name]
         if o_files:
             cmd += o_files
