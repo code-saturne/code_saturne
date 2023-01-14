@@ -242,4 +242,4 @@ clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod
 
 .cu.$(OBJEXT):
-	$(NVCC) $(AM_CPPFLAGS) -I$(top_srcdir)/src/alge -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_SHARED) -c -o $@ $<
+	$(NVCC) $(AM_CPPFLAGS) -I$(top_srcdir)/src/alge -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) -c -o $@ $<
