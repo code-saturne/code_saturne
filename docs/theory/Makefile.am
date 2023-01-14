@@ -54,6 +54,7 @@ comprs.tex \
 condli.tex \
 covofi.tex \
 elbase.tex \
+ext_neighborhood.tex \
 goveqn.tex \
 gradrc.tex \
 ground_water.tex \

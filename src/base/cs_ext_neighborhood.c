@@ -107,6 +107,8 @@ BEGIN_C_DECLS
        This option is similar to \ref CS_EXT_NEIGHBORHOOD_CELL_CENTER_OPPOSITE,
        keeping additional neighbors based on geometric tests and cell type.
 
+       See the theory documentation for additional details.
+
   \var CS_EXT_NEIGHBORHOOD_CELL_CENTER_OPPOSITE
        Cells with centers best aligned opposite to face-adjacent cell centers
 
