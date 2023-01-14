@@ -113,7 +113,8 @@ cs_user_initialization(cs_domain_t     *domain)
 
   /*! [atmo_soil_init] */
   if (cs_glob_atmo_option->soil_model == 1) {
-    cs_zone_t *z = cs_boundary_zone_by_id(cs_glob_atmo_option->soil_zone_id);
+    const cs_zone_t *z
+      = cs_boundary_zone_by_id(cs_glob_atmo_option->soil_zone_id);
 
     cs_field_t *f = cs_field_by_name("atmo_soil_percentages");
 
