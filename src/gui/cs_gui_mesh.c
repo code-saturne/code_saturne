@@ -678,7 +678,7 @@ cs_gui_mesh_build_cartesian(void)
 void
 cs_gui_mesh_cartesian_define(void)
 {
- cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_create(NULL);
+  cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_create(NULL);
   for (int idim = 0; idim < 3; idim++) {
     int       iparams[2] = {0, 0};
     cs_real_t rparams[3] = {0., 0., 0.};

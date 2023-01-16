@@ -110,6 +110,7 @@ struct _cs_mesh_cartesian_params_t {
   cs_gnum_t n_cells_on_rank;
   cs_gnum_t n_faces_on_rank;
   cs_gnum_t n_vtx_on_rank;
+
 };
 
 /*============================================================================
@@ -161,7 +162,8 @@ _intersect_intervals(const cs_gnum_t *i1,
  *
  * \param[in] id  Id of the mesh parameters asked
  *
- * \returns pointer to corresponding mesh parameters. Raises an error if not found.
+ * \returns pointer to corresponding mesh parameters.
+ *          Raises an error if not found.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -174,7 +176,6 @@ _get_structured_mesh_by_id(const int id)
               _("Error: Out of bound id.\n"));
 
   return _mesh_params[id];
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -183,7 +184,8 @@ _get_structured_mesh_by_id(const int id)
  *
  * \param[in] name  Name of mesh
  *
- * \returns pointer to corresponding mesh parameters. NULL if mesh does not exist.
+ * \returns pointer to corresponding mesh parameters, or NULL if mesh does
+ *          not exist
  */
 /*----------------------------------------------------------------------------*/
 
@@ -210,7 +212,7 @@ _get_structured_mesh_by_name_try(const char *name)
  *
  * \param[in] ndir  number of directions
  *
- * \return  pointer to mesh parameters structure.
+ * \return  pointer to mesh parameters structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -220,9 +222,10 @@ _cs_mesh_cartesian_init(const char *name,
 {
   if (_n_structured_meshes_max > 0 &&
       _n_structured_meshes == _n_structured_meshes_max)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error: Maximum number \"%d\" of cartesian mesh blcoks reached.\n"),
-              _n_structured_meshes_max);
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Error: Maximum number \"%d\" of cartesian mesh blocks reached.\n"),
+       _n_structured_meshes_max);
 
   cs_mesh_cartesian_params_t *_new_mesh =
     _get_structured_mesh_by_name_try(name);
@@ -647,7 +650,8 @@ cs_mesh_cartesian_by_id(const int id)
  *
  * \param[in] name  Name of mesh
  *
- * \returns pointer to corresponding mesh parameters. NULL if mesh does not exist.
+ * \returns pointer to corresponding mesh parameters, or NULL if mesh
+ *          does not exist.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -793,7 +797,7 @@ cs_mesh_cartesian_define_dir_user(cs_mesh_cartesian_params_t *mp,
  *         (resp. decreasing) geometric progression of the cell size when
  *         moving along the direction of increasing coordinates.
  *
- * \param[in] mp         Pointer to mesh parameters
+ * \param[in] mp            Pointer to mesh parameters
  * \param[in] idir          Direction index. 0->X, 1->Y, 2->Z
  * \param[in] n_parts       Number of parts to define the direction
  * \param[in] part_coords   Position delimiting each part (size = n_parts + 1)
@@ -806,9 +810,9 @@ void
 cs_mesh_cartesian_define_dir_geom_by_part(cs_mesh_cartesian_params_t *mp,
                                           int                         idir,
                                           int                         n_parts,
-                                          const cs_real_t             part_coords[],
-                                          const cs_lnum_t             n_part_cells[],
-                                          const cs_real_t             amp_factors[])
+                                          const cs_real_t  part_coords[],
+                                          const cs_lnum_t  n_part_cells[],
+                                          const cs_real_t  amp_factors[])
 {
   if (n_parts == 0)
     return;
@@ -898,8 +902,8 @@ cs_mesh_cartesian_define_dir_geom_by_part(cs_mesh_cartesian_params_t *mp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_define_from_csv(const char *name,
-                                  const char *csv_file_name)
+cs_mesh_cartesian_define_from_csv(const char  *name,
+                                  const char  *csv_file_name)
 {
   cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_create(name);
 
@@ -995,13 +999,13 @@ cs_mesh_cartesian_define_from_csv(const char *name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_define_dir_params(cs_mesh_cartesian_params_t *mp,
-                                    int                         idim,
-                                    cs_mesh_cartesian_law_t     law,
-                                    int                         ncells,
-                                    cs_real_t                   smin,
-                                    cs_real_t                   smax,
-                                    cs_real_t                   progression)
+cs_mesh_cartesian_define_dir_params(cs_mesh_cartesian_params_t  *mp,
+                                    int                          idim,
+                                    cs_mesh_cartesian_law_t      law,
+                                    int                          ncells,
+                                    cs_real_t                    smin,
+                                    cs_real_t                    smax,
+                                    cs_real_t                    progression)
 {
   assert(mp != NULL);
 
@@ -1078,7 +1082,7 @@ cs_mesh_cartesian_need_build(void)
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_mesh_cartesian_get_name(const int id)
+cs_mesh_cartesian_get_name(int  id)
 {
   cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(id);
 
@@ -1096,7 +1100,7 @@ cs_mesh_cartesian_get_name(const int id)
 /*----------------------------------------------------------------------------*/
 
 int
-cs_mesh_cartesian_get_gc_id_shift(const int id)
+cs_mesh_cartesian_get_gc_id_shift(int  id)
 {
   cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(id);
 
@@ -1114,8 +1118,8 @@ cs_mesh_cartesian_get_gc_id_shift(const int id)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_set_gc_id_shift(const int id,
-                                  const int shift)
+cs_mesh_cartesian_set_gc_id_shift(int  id,
+                                  int  shift)
 {
   cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(id);
 
@@ -1133,7 +1137,7 @@ cs_mesh_cartesian_set_gc_id_shift(const int id,
 /*----------------------------------------------------------------------------*/
 
 cs_gnum_t
-cs_mesh_cartesian_get_n_g_cells(const int id)
+cs_mesh_cartesian_get_n_g_cells(int  id)
 {
   cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(id);
 
@@ -1151,7 +1155,7 @@ cs_mesh_cartesian_get_n_g_cells(const int id)
 /*----------------------------------------------------------------------------*/
 
 cs_gnum_t
-cs_mesh_cartesian_get_n_g_faces(const int id)
+cs_mesh_cartesian_get_n_g_faces(int  id)
 {
   cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(id);
 
@@ -1169,7 +1173,7 @@ cs_mesh_cartesian_get_n_g_faces(const int id)
 /*----------------------------------------------------------------------------*/
 
 cs_gnum_t
-cs_mesh_cartesian_get_n_g_vtx(const int id)
+cs_mesh_cartesian_get_n_g_vtx(int  id)
 {
   cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(id);
 
@@ -1187,8 +1191,8 @@ cs_mesh_cartesian_get_n_g_vtx(const int id)
 /*----------------------------------------------------------------------------*/
 
 int
-cs_mesh_cartesian_get_ncells(const int id,
-                             const int idim)
+cs_mesh_cartesian_get_ncells(int  id,
+                             int  idim)
 {
   cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(id);
 
@@ -1206,7 +1210,7 @@ cs_mesh_cartesian_get_ncells(const int id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_block_connectivity(const int           id,
+cs_mesh_cartesian_block_connectivity(int                 id,
                                      cs_mesh_t          *m,
                                      cs_mesh_builder_t  *mb,
                                      long                echo)
@@ -1464,7 +1468,7 @@ cs_mesh_cartesian_params_destroy(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_set_max_number_of_blocks(const int n_blocks)
+cs_mesh_cartesian_set_max_number_of_blocks(int  n_blocks)
 {
   if (n_blocks < _n_structured_meshes)
     bft_error(__FILE__, __LINE__, 0,

@@ -26,7 +26,7 @@
 */
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
@@ -81,7 +81,8 @@ cs_mesh_cartesian_by_id(const int id);
  *
  * \param[in] name  Name of mesh
  *
- * \returns pointer to corresponding mesh parameters. NULL if mesh does not exist.
+ * \returns pointer to corresponding mesh parameters, or NULL if mesh
+ *          does not exist.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -103,12 +104,11 @@ cs_mesh_cartesian_params_t *
 cs_mesh_cartesian_by_name(const char *name);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Create cartesian mesh structure
+/*! \brief Create cartesian mesh structure
  *
- * \param[in] name  Name of mesh
+ * \param[in] name  Name of mesh to create
  *
- * \returns pointer newly created mesh parameters.
+ * \returns pointer to newly created mesh parameters
  */
 /*----------------------------------------------------------------------------*/
 
@@ -162,6 +162,7 @@ cs_mesh_cartesian_define_dir_user(cs_mesh_cartesian_params_t *mp,
  *         (resp. decreasing) geometric progression of the cell size when
  *         moving along the direction of increasing coordinates.
  *
+ * \param[in] mp            Pointer to mesh parameters
  * \param[in] idir          Direction index. 0->X, 1->Y, 2->Z
  * \param[in] n_parts       Number of parts to define the direction
  * \param[in] part_coords   Position delimiting each part (size = n_parts + 1)
@@ -174,9 +175,9 @@ void
 cs_mesh_cartesian_define_dir_geom_by_part(cs_mesh_cartesian_params_t *mp,
                                           int                         idir,
                                           int                         n_parts,
-                                          const cs_real_t             part_coords[],
-                                          const cs_lnum_t             n_part_cells[],
-                                          const cs_real_t             amp_factors[]);
+                                          const cs_real_t  part_coords[],
+                                          const cs_lnum_t  n_part_cells[],
+                                          const cs_real_t  amp_factors[]);
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Define a simple cartesian mesh based on a CSV file.
@@ -246,7 +247,7 @@ cs_mesh_cartesian_need_build(void);
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_mesh_cartesian_get_name(const int id);
+cs_mesh_cartesian_get_name(int  id);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -259,7 +260,7 @@ cs_mesh_cartesian_get_name(const int id);
 /*----------------------------------------------------------------------------*/
 
 int
-cs_mesh_cartesian_get_gc_id_shift(const int id);
+cs_mesh_cartesian_get_gc_id_shift(int  id);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -272,8 +273,8 @@ cs_mesh_cartesian_get_gc_id_shift(const int id);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_set_gc_id_shift(const int id,
-                                  const int shift);
+cs_mesh_cartesian_set_gc_id_shift(int  id,
+                                  int  shift);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -286,7 +287,7 @@ cs_mesh_cartesian_set_gc_id_shift(const int id,
 /*----------------------------------------------------------------------------*/
 
 cs_gnum_t
-cs_mesh_cartesian_get_n_g_cells(const int id);
+cs_mesh_cartesian_get_n_g_cells(int  id);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -299,7 +300,7 @@ cs_mesh_cartesian_get_n_g_cells(const int id);
 /*----------------------------------------------------------------------------*/
 
 cs_gnum_t
-cs_mesh_cartesian_get_n_g_faces(const int id);
+cs_mesh_cartesian_get_n_g_faces(int  id);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -312,7 +313,7 @@ cs_mesh_cartesian_get_n_g_faces(const int id);
 /*----------------------------------------------------------------------------*/
 
 cs_gnum_t
-cs_mesh_cartesian_get_n_g_vtx(const int id);
+cs_mesh_cartesian_get_n_g_vtx(int  id);
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Get number of cells in a given direction.
@@ -325,8 +326,8 @@ cs_mesh_cartesian_get_n_g_vtx(const int id);
 /*----------------------------------------------------------------------------*/
 
 int
-cs_mesh_cartesian_get_ncells(const int id,
-                             const int idim);
+cs_mesh_cartesian_get_ncells(int  id,
+                             int  idim);
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Build unstructured connectivity needed for partitionning.
@@ -339,7 +340,7 @@ cs_mesh_cartesian_get_ncells(const int id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_block_connectivity(const int           id,
+cs_mesh_cartesian_block_connectivity(int                 id,
                                      cs_mesh_t          *m,
                                      cs_mesh_builder_t  *mb,
                                      long                echo);
@@ -370,7 +371,7 @@ cs_mesh_cartesian_params_destroy(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_set_max_number_of_blocks(const int n_blocks);
+cs_mesh_cartesian_set_max_number_of_blocks(int  n_blocks);
 
 /*----------------------------------------------------------------------------*/
 
