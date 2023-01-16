@@ -1156,9 +1156,6 @@ _read_cartesian_dimensions(const int          id,
         mesh->family_item[mesh->n_families*j + (mesh->n_families-_n_cart_families+i)] = 0;
     }
   }
-  for (int ii = 0; ii < mesh->n_families; ii++)
-    bft_printf("Familly[%d] = %d\n", ii, mesh->family_item[ii]);
-  bft_printf_flush();
 
   // ---------------------------------
   // Compute total size of group names
