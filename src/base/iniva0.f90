@@ -90,7 +90,7 @@ logical          have_previous
 double precision clvfmn, visls_0, gravn2
 
 double precision, dimension(:), pointer :: dt
-double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: brom, crom, cpro_beta
 double precision, dimension(:), pointer :: cofbcp
 double precision, dimension(:), pointer :: porosi
 double precision, dimension(:,:), pointer :: porosf
@@ -191,6 +191,14 @@ call field_current_to_previous(icrom)
 call field_current_to_previous(icrom)
 call field_current_to_previous(ibrom)
 call field_current_to_previous(ibrom)
+
+! Boussinesq
+if (ibeta.ge.0) then
+  call field_get_val_s(ibeta, cpro_beta)
+  do iel = 1, ncelet
+    cpro_beta(iel) = -1.d0
+  enddo
+endif
 
 ! Molecular viscosity
 call field_get_val_s(iviscl, viscl)
