@@ -58,7 +58,7 @@ module atchem
   integer, save :: ifilechemistry
   !> isepchemistry: splitted (=1) or semi-coupled (=2, pu-sun) resolution
   !> of chemistry
-  integer, save :: isepchemistry
+  integer(c_int), pointer, save :: isepchemistry
   !> photolysis: inclusion (true) or not (false) of photolysis reactions
   logical(kind=c_bool), pointer, save :: photolysis
   !> Number of chemical species
