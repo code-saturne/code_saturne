@@ -139,8 +139,8 @@ _calc_heq(cs_real_t h1,
  * parameters:
  *   f_id        <-- field id
  *   inc         <-- 0 if an increment, 1 otherwise
- *   denom_inf   --> computed denominator for the inferior bound
- *   denom_sup   --> computed denominator for the superior bound
+ *   denom_inf   --> computed denominator for the lower bound
+ *   denom_sup   --> computed denominator for the upper bound
  *
  * return:
  *   pointer to local values array, or NULL;
@@ -332,7 +332,8 @@ _beta_limiter_denom(const int              f_id,
         if (ischcp == 3) {
           hybrid_coef_ii = CS_F_(hybrid_blend)->val[ii];
           hybrid_coef_jj = CS_F_(hybrid_blend)->val[jj];
-        } else {
+        }
+        else {
           hybrid_coef_ii = 0.;
           hybrid_coef_jj = 0.;
         }
@@ -340,7 +341,8 @@ _beta_limiter_denom(const int              f_id,
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
         if (df_limiter != NULL && ircflp > 0)
-          bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+          bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                0.);
 
         if (ischcp == 4) {
           /* NVD/TVD family of high accuracy schemes */
@@ -387,7 +389,8 @@ _beta_limiter_denom(const int              f_id,
                                courant_c,
                                &pifa,
                                &pjfa);
-        } else {
+        }
+        else {
           /* Value at time n */
           cs_i_cd_unsteady(bldfrp,
                            ischcp,
@@ -445,7 +448,7 @@ _beta_limiter_denom(const int              f_id,
                        + (1.-thetap) * ( (pifa - pia)*flui
                                        + (pjfa - pja)*fluj);
 
-        /* blending to prevent INFERIOR bound violation
+        /* blending to prevent lower bound violation
           We need to take the positive part*/
         cs_real_t partii = 0.5*(flux + CS_ABS(flux));
         cs_real_t partjj = 0.5*(flux - CS_ABS(flux));
@@ -453,7 +456,7 @@ _beta_limiter_denom(const int              f_id,
         denom_inf[ii] += partii;
         denom_inf[jj] -= partjj;
 
-        /* blending to prevent SUPERIOR bound violation
+        /* blending to prevent upper bound violation
           We need to take the negative part
           Note: the swap between ii and jj is due to the fact
           that an upwind value on (Y-bound) is equivalent to a
@@ -479,8 +482,8 @@ _beta_limiter_denom(const int              f_id,
  * parameters:
  *   f_id        <-- field id (or -1)
  *   rovsdt      <-- rho * volume / dt
- *   num_inf     --> computed numerator for the inferior bound
- *   num_sup     --> computed numerator for the superior bound
+ *   num_inf     --> computed numerator for the lower bound
+ *   num_sup     --> computed numerator for the upper bound
  *
  *----------------------------------------------------------------------------*/
 
@@ -925,10 +928,10 @@ cs_cell_courant_number(const int   f_id,
         cs_lnum_t jj = i_face_cells[face_id][1];
 
         cs_real_t cnt = CS_ABS(i_massflux[face_id])*dt[ii]/vol[ii];
-        courant[ii] = CS_MAX(courant[ii], cnt);//FIXME may contains rho
+        courant[ii] = cs_math_fmax(courant[ii], cnt); //FIXME may contain rho
 
         cnt = CS_ABS(i_massflux[face_id])*dt[jj]/vol[jj];
-        courant[jj] = CS_MAX(courant[jj], cnt);
+        courant[jj] = cs_math_fmax(courant[jj], cnt);
       }
     }
   }
@@ -943,7 +946,7 @@ cs_cell_courant_number(const int   f_id,
       cs_lnum_t ii = b_face_cells[face_id];
 
       cs_real_t cnt = CS_ABS(b_massflux[face_id])*dt[ii]/vol[ii];
-      courant[ii] = CS_MAX(courant[ii], cnt);
+      courant[ii] = cs_math_fmax(courant[ii], cnt);
     }
   }
 }
@@ -1607,14 +1610,14 @@ cs_beta_limiter_building(int              f_id,
   BFT_MALLOC(num_inf, n_cells_ext, cs_real_t);
   BFT_MALLOC(num_sup, n_cells_ext, cs_real_t);
 
-  /* computation of the denominator for the inferior and superior bound */
+  /* computation of the denominator for the inferior and upper bound */
 
   _beta_limiter_denom(f_id,
                       inc,
                       denom_inf,
                       denom_sup);
 
-  /* computation of the numerator for the inferior and superior bound */
+  /* computation of the numerator for the inferior and upper bound */
 
   _beta_limiter_num(f_id,
                     inc,
@@ -1625,7 +1628,7 @@ cs_beta_limiter_building(int              f_id,
 # pragma omp parallel for
   for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
 
-    /* Treatment of the inferior bound */
+    /* Treatment of the lower bound */
     cs_real_t beta_inf;
     if (denom_inf[ii] <= num_inf[ii]) {
       beta_inf = 1.;
@@ -1635,10 +1638,10 @@ cs_beta_limiter_building(int              f_id,
     }
     else {
       beta_inf = num_inf[ii]/denom_inf[ii]; //FIXME division by 0
-      beta_inf = CS_MIN(beta_inf, 1.);
+      beta_inf = cs_math_fmin(beta_inf, 1.);
     }
 
-    /* Treatment of the superior bound */
+    /* Treatment of the upper bound */
     cs_real_t beta_sup;
     if (denom_sup[ii] <= num_sup[ii]) {
       beta_sup = 1.;
@@ -1648,10 +1651,10 @@ cs_beta_limiter_building(int              f_id,
     }
     else {
       beta_sup = num_sup[ii]/denom_sup[ii]; //FIXME division by 0
-      beta_sup = CS_MIN(beta_sup, 1.);
+      beta_sup = cs_math_fmin(beta_sup, 1.);
     }
 
-    cpro_beta[ii] = CS_MIN(beta_inf, beta_sup);
+    cpro_beta[ii] = cs_math_fmin(beta_inf, beta_sup);
   }
 
   /* Synchronize variable */
@@ -1886,7 +1889,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
   else if (isstpp > 1) {
     bft_error(__FILE__, __LINE__, 0,
               _("invalid value of isstpp for a work array"));
-  } else {
+  }
+  else {
     strncpy(var_name, "[scalar convection-diffusion]", 63);
   }
   var_name[63] = '\0';
@@ -1896,7 +1900,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
       bft_printf(
         _(" %s: Convection in centered blending with %f percent of upwind\n"),
         var_name, (1.-blencp)*100.);
-    } else {
+    }
+    else {
       bft_printf(
         _(" %s: Convection in 2nd order blending with %f percent of upwind\n"),
         var_name, (1.-blencp)*100.);
@@ -1934,7 +1939,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
   if (  (idiffp != 0 && ircflp == 1)
      || (  iconvp != 0 && iupwin == 0
-        && (ischcp == 0 || ircflp == 1 || isstpp == 0 || ischcp == 3 || ischcp == 4))) {
+        && (   ischcp == 0 || ischcp == 3 || ischcp == 4
+            || ircflp == 1 || isstpp == 0))) {
 
     if (f_id != -1) {
       /* Get the calculation option from the field */
@@ -1971,7 +1977,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                     cpl,
                                     grad);
 
-  } else {
+  }
+  else {
 
 #   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
@@ -2079,7 +2086,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]), 0.);
 
             cs_i_cd_steady_upwind(bldfrp,
                                   relaxp,
@@ -2131,7 +2138,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
       }
 
     /* Unsteady */
-    } else {
+    }
+    else {
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for reduction(+:n_upwind)
@@ -2156,7 +2164,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]), 0.);
 
             cs_i_cd_unsteady_upwind(bldfrp,
                                     diipf[face_id],
@@ -2205,7 +2213,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
   /* --> Flux with no slope test or Min/Max Beta limiter
     ====================================================*/
 
-  } else if (isstpp == 1 || isstpp == 2) {
+  }
+  else if (isstpp == 1 || isstpp == 2) {
 
     if (ischcp < 0 || ischcp > 4) {
       bft_error(__FILE__, __LINE__, 0,
@@ -2233,7 +2242,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii],
+                                                 df_limiter[jj]), 0.);
 
             cs_i_cd_steady(bldfrp,
                            ischcp,
@@ -2293,7 +2303,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
       }
 
     /* Unsteady */
-    } else {
+    }
+    else {
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for
@@ -2312,7 +2323,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
             /* Beta blending coefficient ensuring positivity of the scalar */
             if (isstpp == 2) {
-              beta = CS_MAX(CS_MIN(cv_limiter[ii], cv_limiter[jj]), 0.);
+              beta = cs_math_fmax(cs_math_fmin(cv_limiter[ii], cv_limiter[jj]),
+                                  0.);
             }
 
             cs_real_2_t fluxij = {0.,0.};
@@ -2320,14 +2332,16 @@ cs_convection_diffusion_scalar(int                       idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             if (ischcp != 4) {
               cs_real_t hybrid_coef_ii, hybrid_coef_jj;
               if (ischcp == 3) {
                 hybrid_coef_ii = CS_F_(hybrid_blend)->val[ii];
                 hybrid_coef_jj = CS_F_(hybrid_blend)->val[jj];
-              } else {
+              }
+              else {
                 hybrid_coef_ii = 0.;
                 hybrid_coef_jj = 0.;
               }
@@ -2367,7 +2381,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
                              1., /* xcpp */
                              fluxij);
 
-            } else {
+            }
+            else {
               /* NVD/TVD family of high accuracy schemes */
 
               cs_lnum_t ic, id;
@@ -2449,7 +2464,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
   /* --> Flux with slope test
     ============================================*/
 
-  } else { /* isstpp = 0 */
+  }
+  else { /* isstpp = 0 */
 
     if (ischcp < 0 || ischcp > 2) {
       bft_error(__FILE__, __LINE__, 0,
@@ -2478,7 +2494,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]), 0.);
 
             cs_i_cd_steady_slope_test(&upwind_switch,
                                       iconvp,
@@ -2559,7 +2575,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
       }
 
     /* Unsteady */
-    } else {
+    }
+    else {
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for reduction(+:n_upwind)
@@ -2581,7 +2598,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_unsteady_slope_test(&upwind_switch,
                                         iconvp,
@@ -2692,7 +2710,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(df_limiter[ii], 0.);
+            bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
           cs_b_cd_steady(bldfrp,
                          relaxp,
@@ -2745,7 +2763,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(df_limiter[jj], 0.);
+            bldfrp = cs_math_fmax(df_limiter[jj], 0.);
 
           cs_b_cd_steady(bldfrp,
                          relaxp,
@@ -2787,7 +2805,9 @@ cs_convection_diffusion_scalar(int                       idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(CS_MIN(df_limiter_local[ii], df_limiter[jj]), 0.);
+            bldfrp = cs_math_fmax(cs_math_fmin(df_limiter_local[ii],
+                                               df_limiter[jj]),
+                                  0.);
 
           cs_b_cd_steady(bldfrp,
                          relaxp,
@@ -2838,7 +2858,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(df_limiter[ii], 0.);
+            bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
           cs_b_cd_unsteady(bldfrp,
                            diipb[face_id],
@@ -2888,7 +2908,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(df_limiter[jj], 0.);
+            bldfrp = cs_math_fmax(df_limiter[jj], 0.);
 
           cs_b_cd_unsteady(bldfrp,
                            diipb[face_id],
@@ -2927,7 +2947,9 @@ cs_convection_diffusion_scalar(int                       idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(CS_MIN(df_limiter_local[ii], df_limiter[jj]), 0.);
+            bldfrp = cs_math_fmax(cs_math_fmin(df_limiter_local[ii],
+                                               df_limiter[jj]),
+                                  0.);
 
           cs_b_cd_unsteady(bldfrp,
                            diipb[face_id],
@@ -2960,13 +2982,15 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
   /* Boundary convective flux is imposed at some faces
      (tagged in icvfli array) */
-  } else if (icvflb == 1) {
+  }
+  else if (icvflb == 1) {
 
     /* Retrieve the value of the convective flux to be imposed */
     if (f_id != -1) {
       coface = f->bc_coeffs->ac;
       cofbce = f->bc_coeffs->bc;
-    } else {
+    }
+    else {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of icvflb and f_id"));
     }
@@ -2988,7 +3012,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(df_limiter[ii], 0.);
+            bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
           cs_b_cd_steady(bldfrp,
                          relaxp,
@@ -3048,7 +3072,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(df_limiter[ii], 0.);
+            bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
           cs_b_cd_unsteady(bldfrp,
                            diipb[face_id],
@@ -3295,7 +3319,8 @@ cs_face_convection_scalar(int                       idtvar,
   else if (isstpp > 1) {
     bft_error(__FILE__, __LINE__, 0,
               _("invalid value of isstpp for a work array"));
-  } else {
+  }
+  else {
     strncpy(var_name, "[scalar face flux from convection]", 63);
   }
   var_name[63] = '\0';
@@ -3305,7 +3330,8 @@ cs_face_convection_scalar(int                       idtvar,
       bft_printf(
         _(" %s: Convection in centered blending with %f percent of upwind\n"),
         var_name, (1.-blencp)*100.);
-    } else {
+    }
+    else {
       bft_printf(
         _(" %s: Convection in 2nd order blending with %f percent of upwind\n"),
         var_name, (1.-blencp)*100.);
@@ -3373,7 +3399,8 @@ cs_face_convection_scalar(int                       idtvar,
                                     cpl,
                                     grad);
 
-  } else {
+  }
+  else {
 
 #   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
@@ -3472,7 +3499,9 @@ cs_face_convection_scalar(int                       idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii],
+                                                 df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_steady_upwind(bldfrp,
                                   relaxp,
@@ -3512,7 +3541,8 @@ cs_face_convection_scalar(int                       idtvar,
       }
 
     /* Unsteady */
-    } else {
+    }
+    else {
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for reduction(+:n_upwind)
@@ -3535,7 +3565,7 @@ cs_face_convection_scalar(int                       idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]), 0.);
 
             cs_i_cd_unsteady_upwind(bldfrp,
                                     diipf[face_id],
@@ -3572,7 +3602,8 @@ cs_face_convection_scalar(int                       idtvar,
   /* --> Flux with no slope test or Min/Max Beta limiter
     ====================================================*/
 
-  } else if (isstpp == 1 || isstpp == 2) {
+  }
+  else if (isstpp == 1 || isstpp == 2) {
 
     if (ischcp < 0 || ischcp > 4) {
       bft_error(__FILE__, __LINE__, 0,
@@ -3598,7 +3629,8 @@ cs_face_convection_scalar(int                       idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_steady(bldfrp,
                            ischcp,
@@ -3646,7 +3678,8 @@ cs_face_convection_scalar(int                       idtvar,
       }
 
     /* Unsteady */
-    } else {
+    }
+    else {
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for
@@ -3665,20 +3698,23 @@ cs_face_convection_scalar(int                       idtvar,
 
             /* Beta blending coefficient ensuring positivity of the scalar */
             if (isstpp == 2) {
-              beta = CS_MAX(CS_MIN(cv_limiter[ii], cv_limiter[jj]), 0.);
+              beta = cs_math_fmax(cs_math_fmin(cv_limiter[ii], cv_limiter[jj]),
+                                  0.);
             }
 
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             if (ischcp != 4) {
               cs_real_t hybrid_coef_ii, hybrid_coef_jj;
               if (ischcp == 3) {
                 hybrid_coef_ii = CS_F_(hybrid_blend)->val[ii];
                 hybrid_coef_jj = CS_F_(hybrid_blend)->val[jj];
-              } else {
+              }
+              else {
                 hybrid_coef_ii = 0.;
                 hybrid_coef_jj = 0.;
               }
@@ -3717,7 +3753,8 @@ cs_face_convection_scalar(int                       idtvar,
                              1., /* xcpp */
                              1., /* xcpp */
                              i_conv_flux[face_id]);
-            } else {
+            }
+            else {
               /* NVD/TVD family of high accuracy schemes */
 
               cs_lnum_t ic, id;
@@ -3772,7 +3809,8 @@ cs_face_convection_scalar(int                       idtvar,
   /* --> Flux with slope test or NVD/TVD limiter
     ============================================*/
 
-  } else { /* isstpp = 0 */
+  }
+  else { /* isstpp = 0 */
 
     if (ischcp < 0 || ischcp > 2) {
       bft_error(__FILE__, __LINE__, 0,
@@ -3799,7 +3837,8 @@ cs_face_convection_scalar(int                       idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_steady_slope_test(&upwind_switch,
                                       iconvp,
@@ -3868,7 +3907,8 @@ cs_face_convection_scalar(int                       idtvar,
       }
 
     /* Unsteady */
-    } else {
+    }
+    else {
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for reduction(+:n_upwind)
@@ -3888,7 +3928,9 @@ cs_face_convection_scalar(int                       idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii],
+                                                 df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_unsteady_slope_test(&upwind_switch,
                                         iconvp,
@@ -3986,7 +4028,7 @@ cs_face_convection_scalar(int                       idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(df_limiter[ii], 0.);
+            bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
           cs_b_cd_steady(bldfrp,
                          relaxp,
@@ -4031,7 +4073,7 @@ cs_face_convection_scalar(int                       idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(df_limiter[ii], 0.);
+            bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
           cs_b_cd_unsteady(bldfrp,
                            diipb[face_id],
@@ -4059,13 +4101,15 @@ cs_face_convection_scalar(int                       idtvar,
 
   /* Boundary convective flux is imposed at some faces
      (tagged in icvfli array) */
-  } else if (icvflb == 1) {
+  }
+  else if (icvflb == 1) {
 
     /* Retrieve the value of the convective flux to be imposed */
     if (f_id != -1) {
       coface = f->bc_coeffs->ac;
       cofbce = f->bc_coeffs->bc;
-    } else {
+    }
+    else {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of icvflb and f_id"));
     }
@@ -4086,7 +4130,7 @@ cs_face_convection_scalar(int                       idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(df_limiter[ii], 0.);
+            bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
           cs_b_cd_steady(bldfrp,
                          relaxp,
@@ -4134,7 +4178,7 @@ cs_face_convection_scalar(int                       idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(df_limiter[ii], 0.);
+            bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
           cs_b_cd_unsteady(bldfrp,
                            diipb[face_id],
@@ -4408,7 +4452,8 @@ cs_convection_diffusion_vector(int                         idtvar,
         (
          _(" %s: Convection in centered blending with %f percent of upwind\n"),
          var_name, (1.-blencp)*100.);
-    } else {
+    }
+    else {
       bft_printf
         (
          _(" %s: Convection in 2nd order blending with %f percent of upwind\n"),
@@ -4478,7 +4523,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                     cpl,
                                     grad);
 
-  } else {
+  }
+  else {
 #   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       for (int isou = 0; isou < 3; isou++) {
@@ -4581,7 +4627,7 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]), 0.);
 
             cs_i_cd_steady_upwind_vector(bldfrp,
                                          relaxp,
@@ -4637,7 +4683,8 @@ cs_convection_diffusion_vector(int                         idtvar,
       }
 
     /* Unsteady */
-    } else {
+    }
+    else {
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for reduction(+:n_upwind)
@@ -4680,7 +4727,7 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]), 0.);
 
             cs_i_cd_unsteady_upwind_vector(bldfrp,
                                            diipf[face_id],
@@ -4732,7 +4779,8 @@ cs_convection_diffusion_vector(int                         idtvar,
     /* --> Flux with no slope test
        ============================*/
 
-  } else if (isstpp == 1) {
+  }
+  else if (isstpp == 1) {
 
     if (ischcp < 0 || ischcp == 2 || ischcp > 3) {
       bft_error(__FILE__, __LINE__, 0,
@@ -4782,7 +4830,8 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_steady_vector(bldfrp,
                                   ischcp,
@@ -4843,7 +4892,8 @@ cs_convection_diffusion_vector(int                         idtvar,
       }
 
       /* Unsteady */
-    } else {
+    }
+    else {
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for
@@ -4883,7 +4933,8 @@ cs_convection_diffusion_vector(int                         idtvar,
             if (ischcp == 3) {
               hybrid_coef_ii = CS_F_(hybrid_blend)->val[ii];
               hybrid_coef_jj = CS_F_(hybrid_blend)->val[jj];
-            } else {
+            }
+            else {
               hybrid_coef_ii = 0.;
               hybrid_coef_jj = 0.;
             }
@@ -4891,7 +4942,8 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_unsteady_vector(bldfrp,
                                     ischcp,
@@ -4951,7 +5003,8 @@ cs_convection_diffusion_vector(int                         idtvar,
     /* --> Flux with slope test
        =========================*/
 
-  } else {
+  }
+  else {
 
     if (ischcp < 0 || ischcp > 1) {
       bft_error(__FILE__, __LINE__, 0,
@@ -5002,7 +5055,8 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_steady_slope_test_vector(&upwind_switch,
                                              iconvp,
@@ -5072,7 +5126,8 @@ cs_convection_diffusion_vector(int                         idtvar,
       }
 
       /* Unsteady */
-    } else {
+    }
+    else {
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for reduction(+:n_upwind)
@@ -5111,7 +5166,8 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_unsteady_slope_test_vector(&upwind_switch,
                                                iconvp,
@@ -5243,7 +5299,7 @@ cs_convection_diffusion_vector(int                         idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(df_limiter[ii], 0.);
+            bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
           cs_b_cd_steady_vector(bldfrp,
                                 relaxp,
@@ -5304,7 +5360,7 @@ cs_convection_diffusion_vector(int                         idtvar,
           /* Note: to be treated exactly as a internal face, should be a bending
            * between the two cells... */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(df_limiter[jj], 0.);
+            bldfrp = cs_math_fmax(df_limiter[jj], 0.);
 
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
@@ -5369,7 +5425,9 @@ cs_convection_diffusion_vector(int                         idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(CS_MIN(df_limiter_local[ii], df_limiter[jj]), 0.);
+            bldfrp = cs_math_fmax(cs_math_fmin(df_limiter_local[ii],
+                                               df_limiter[jj]),
+                                  0.);
 
           cs_b_cd_steady_vector(bldfrp,
                                 relaxp,
@@ -5439,7 +5497,7 @@ cs_convection_diffusion_vector(int                         idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(df_limiter[ii], 0.);
+            bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
           cs_b_cd_unsteady_vector(bldfrp,
                                   diipb[face_id],
@@ -5498,7 +5556,7 @@ cs_convection_diffusion_vector(int                         idtvar,
           /* Note: to be treated exactly as a internal face, should be a bending
            * between the two cells... */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(df_limiter[jj], 0.);
+            bldfrp = cs_math_fmax(df_limiter[jj], 0.);
 
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
@@ -5559,7 +5617,9 @@ cs_convection_diffusion_vector(int                         idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(CS_MIN(df_limiter_local[ii], df_limiter[jj]), 0.);
+            bldfrp = cs_math_fmax(cs_math_fmin(df_limiter_local[ii],
+                                               df_limiter[jj]),
+                                  0.);
 
           cs_b_cd_unsteady_vector(bldfrp,
                                   diipb[face_id],
@@ -5594,13 +5654,15 @@ cs_convection_diffusion_vector(int                         idtvar,
     } /* idtvar */
 
     /* Boundary convective flux imposed at some faces (tags in icvfli array) */
-  } else if (icvflb == 1) {
+  }
+  else if (icvflb == 1) {
 
     /* Retrieve the value of the convective flux to be imposed */
     if (f_id != -1) {
       coface = (const cs_real_3_t *)(f->bc_coeffs->ac);
       cofbce = (const cs_real_33_t *)(f->bc_coeffs->bc);
-    } else {
+    }
+    else {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of icvflb and f_id"));
     }
@@ -5640,7 +5702,7 @@ cs_convection_diffusion_vector(int                         idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(df_limiter[ii], 0.);
+            bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
           cs_b_cd_steady_vector(bldfrp,
                                 relaxp,
@@ -5717,7 +5779,7 @@ cs_convection_diffusion_vector(int                         idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(df_limiter[ii], 0.);
+            bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
           cs_b_cd_unsteady_vector(bldfrp,
                                   diipb[face_id],
@@ -5826,7 +5888,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                           + ipjp[2] * (      pnd*grad[ii][2][isou]
                                       + (1.-pnd)*grad[jj][2][isou]);
 
-            double flux = visco*tgrdfl + secvis*grdtrv*i_f_face_normal[face_id][isou];
+            double flux =   visco*tgrdfl
+                          + secvis*grdtrv*i_f_face_normal[face_id][isou];
 
             rhs[ii][isou] += thetap * flux*bndcel[ii];
             rhs[jj][isou] -= thetap * flux*bndcel[jj];
@@ -6055,7 +6118,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
         (
          _(" %s: Convection in centered blending with %f percent of upwind\n"),
          var_name, (1.-blencp)*100.);
-    } else {
+    }
+    else {
       bft_printf
         (
          _(" %s: Convection in 2nd order blending with %f percent of upwind\n"),
@@ -6096,7 +6160,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                     _pvar,
                                     grad);
 
-  } else {
+  }
+  else {
 #   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       for (int isou = 0; isou < 6; isou++) {
@@ -6178,7 +6243,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_steady_upwind_tensor(bldfrp,
                                          relaxp,
@@ -6234,7 +6300,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
       }
 
     /* Unsteady */
-    } else {
+    }
+    else {
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for reduction(+:n_upwind)
@@ -6261,7 +6328,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_unsteady_upwind_tensor(bldfrp,
                                            diipf[face_id],
@@ -6314,7 +6382,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
     /* --> Flux with no slope test
        ============================*/
 
-  } else if (isstpp == 1) {
+  }
+  else if (isstpp == 1) {
 
     if (ischcp < 0 || ischcp > 1) {
       bft_error(__FILE__, __LINE__, 0,
@@ -6346,7 +6415,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_steady_tensor(bldfrp,
                                   ischcp,
@@ -6407,7 +6477,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
       }
 
       /* Unsteady */
-    } else {
+    }
+    else {
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for
@@ -6430,7 +6501,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_unsteady_tensor(bldfrp,
                                     ischcp,
@@ -6486,7 +6558,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
     /* --> Flux with slope test
        =========================*/
 
-  } else {
+  }
+  else {
 
     if (ischcp < 0 || ischcp > 1) {
       bft_error(__FILE__, __LINE__, 0,
@@ -6518,7 +6591,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_steady_slope_test_tensor(&upwind_switch,
                                              iconvp,
@@ -6588,7 +6662,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
       }
 
       /* Unsteady */
-    } else {
+    }
+    else {
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for reduction(+:n_upwind)
@@ -6612,7 +6687,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_unsteady_slope_test_tensor(&upwind_switch,
                                                iconvp,
@@ -6697,7 +6773,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
   }
 
   /* ======================================================================
-     ---> Contribution from boundary faces
+     Contribution from boundary faces
      ======================================================================*/
 
   /* Boundary convective flux are all computed with an upwind scheme */
@@ -6723,7 +6799,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(df_limiter[ii], 0.);
+            bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
           cs_b_cd_steady_tensor(bldfrp,
                                 relaxp,
@@ -6783,7 +6859,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(df_limiter[ii], 0.);
+            bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
           cs_b_cd_unsteady_tensor(bldfrp,
                                   diipb[face_id],
@@ -7041,7 +7117,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
         (
          _(" %s: Convection in centered blending with %f percent of upwind\n"),
          var_name, (1.-blencp)*100.);
-    } else {
+    }
+    else {
       bft_printf
         (
          _(" %s: Convection in 2nd order blending with %f percent of upwind\n"),
@@ -7115,7 +7192,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                     cpl, /* internal coupling */
                                     grad);
 
-  } else {
+  }
+  else {
 #   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       grad[cell_id][0] = 0.;
@@ -7128,7 +7206,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
      ---> Compute uncentered gradient gradpa for the slope test
      ======================================================================*/
 
-  /* 2.1 Compute the gradient for convective scheme (the slope test, limiter, SOLU, etc) */
+  /* 2.1 Compute the gradient for convective scheme
+     (the slope test, limiter, SOLU, etc) */
 
   /* Slope test gradient */
   if (iconvp > 0 && iupwin == 0 && isstpp == 0) {
@@ -7222,7 +7301,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_steady_upwind(bldfrp,
                                   relaxp,
@@ -7274,7 +7354,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
       }
 
       /* Unsteady */
-    } else {
+    }
+    else {
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for reduction(+:n_upwind)
@@ -7299,7 +7380,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_unsteady_upwind(bldfrp,
                                     diipf[face_id],
@@ -7348,7 +7430,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
   /* --> Flux with no slope test or Min/Max Beta limiter
     ====================================================*/
 
-  } else if (isstpp == 1 || isstpp == 2) {
+  }
+  else if (isstpp == 1 || isstpp == 2) {
 
     if (ischcp < 0 || ischcp > 2) {
       bft_error(__FILE__, __LINE__, 0,
@@ -7376,7 +7459,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_steady(bldfrp,
                            ischcp,
@@ -7436,7 +7520,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
       }
 
       /* Unsteady */
-    } else {
+    }
+    else {
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for
@@ -7455,7 +7540,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
             /* Beta blending coefficient ensuring the positivity of the scalar */
             if (isstpp == 2) {
-              beta = CS_MAX(CS_MIN(cv_limiter[ii], cv_limiter[jj]), 0.);
+              beta = cs_math_fmax(cs_math_fmin(cv_limiter[ii], cv_limiter[jj]), 0.);
             }
 
             cs_real_2_t fluxij = {0.,0.};
@@ -7463,7 +7548,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_real_t hybrid_coef_ii, hybrid_coef_jj;
             if (ischcp == 3) {
@@ -7505,7 +7591,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
                              xcpp[ii],
                              xcpp[jj],
                              fluxij);
-            } else if (ischcp == 4) {
+            }
+            else if (ischcp == 4) {
               /* NVD/TVD family of high accuracy schemes */
 
               cs_lnum_t ic, id;
@@ -7562,7 +7649,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                       &pip,
                                       &pjp);
 
-            } else {
+            }
+            else {
               hybrid_coef_ii = 0.;
               hybrid_coef_jj = 0.;
 
@@ -7625,7 +7713,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
   /* --> Flux with slope test
     ============================================*/
 
-  } else {
+  }
+  else {
 
     if (ischcp < 0 || ischcp > 2) {
       bft_error(__FILE__, __LINE__, 0,
@@ -7659,7 +7748,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_steady_slope_test(&upwind_switch,
                                       iconvp,
@@ -7740,7 +7830,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
       }
 
       /* Unsteady */
-    } else {
+    }
+    else {
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for reduction(+:n_upwind)
@@ -7762,7 +7853,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_unsteady_slope_test(&upwind_switch,
                                         iconvp,
@@ -7871,7 +7963,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
         if (df_limiter != NULL && ircflp > 0)
-          bldfrp = CS_MAX(df_limiter[ii], 0.);
+          bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         cs_b_cd_steady(bldfrp,
                        relaxp,
@@ -7926,7 +8018,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
         /* Note: to be treated exactly as a internal face, should be a bending
          * between the two cells... */
         if (df_limiter != NULL && ircflp > 0)
-          bldfrp = CS_MAX(df_limiter[jj], 0.);
+          bldfrp = cs_math_fmax(df_limiter[jj], 0.);
 
         cs_b_cd_steady(bldfrp,
                        relaxp,
@@ -7966,7 +8058,9 @@ cs_convection_diffusion_thermal(int                       idtvar,
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
         if (df_limiter != NULL && ircflp > 0)
-          bldfrp = CS_MAX(CS_MIN(df_limiter_local[ii], df_limiter[jj]), 0.);
+          bldfrp = cs_math_fmax(cs_math_fmin(df_limiter_local[ii],
+                                             df_limiter[jj]),
+                                0.);
 
         cs_b_cd_steady(bldfrp,
                        relaxp,
@@ -8018,7 +8112,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
         if (df_limiter != NULL && ircflp > 0)
-          bldfrp = CS_MAX(df_limiter[ii], 0.);
+          bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         cs_b_cd_unsteady(bldfrp,
                          diipb[face_id],
@@ -8070,7 +8164,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
         /* Note: to be treated exactly as a internal face, should be a bending
          * between the two cells... */
         if (df_limiter != NULL && ircflp > 0)
-          bldfrp = CS_MAX(df_limiter[jj], 0.);
+          bldfrp = cs_math_fmax(df_limiter[jj], 0.);
 
         cs_b_cd_unsteady(bldfrp,
                          diipb[face_id],
@@ -8107,7 +8201,9 @@ cs_convection_diffusion_thermal(int                       idtvar,
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
         if (df_limiter != NULL && ircflp > 0)
-          bldfrp = CS_MAX(CS_MIN(df_limiter_local[ii], df_limiter[jj]), 0.);
+          bldfrp = cs_math_fmax(cs_math_fmin(df_limiter_local[ii],
+                                             df_limiter[jj]),
+                                0.);
 
         cs_b_cd_unsteady(bldfrp,
                          diipb[face_id],
@@ -8338,7 +8434,8 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
     viscce = viscel;
 
     /* With porosity */
-  } else if (porosi != NULL && porosf == NULL) {
+  }
+  else if (porosi != NULL && porosf == NULL) {
     BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (int isou = 0; isou < 6; isou++) {
@@ -8348,7 +8445,8 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
     viscce = w2;
 
     /* With tensorial porosity */
-  } else if (porosi != NULL && porosf != NULL) {
+  }
+  else if (porosi != NULL && porosf != NULL) {
     BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       cs_math_sym_33_product(porosf[cell_id],
@@ -8380,7 +8478,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
   /* 2. Compute the diffusive part with reconstruction technics */
 
   /* ======================================================================
-     ---> Compute the gradient of the current variable if needed
+     Compute the gradient of the current variable if needed
      ======================================================================*/
 
   if (ircflp == 1) {
@@ -8420,7 +8518,8 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
                                     cpl, /* internal coupling */
                                     grad);
 
-  } else {
+  }
+  else {
 #   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       grad[cell_id][0] = 0.;
@@ -8461,7 +8560,8 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+            bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                  0.);
 
           /* Recompute II" and JJ"
              ----------------------*/
@@ -8486,9 +8586,9 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
           /* II" = IF + FI" */
           for (int i = 0; i < 3; i++) {
             diippf[i] = i_face_cog[face_id][i]-cell_cen[ii][i]
-                      - fikdvi*( visci[0][i]*i_face_normal[face_id][0]
-                               + visci[1][i]*i_face_normal[face_id][1]
-                               + visci[2][i]*i_face_normal[face_id][2] );
+                        - fikdvi*(  visci[0][i]*i_face_normal[face_id][0]
+                                  + visci[1][i]*i_face_normal[face_id][1]
+                                  + visci[2][i]*i_face_normal[face_id][2]);
           }
 
           viscj[0][0] = viscce[jj][0];
@@ -8506,10 +8606,10 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
           /* JJ" = JF + FJ" */
           for (int i = 0; i < 3; i++) {
-            djjppf[i] = i_face_cog[face_id][i]-cell_cen[jj][i]
-                      + fjkdvi*( viscj[0][i]*i_face_normal[face_id][0]
-                               + viscj[1][i]*i_face_normal[face_id][1]
-                               + viscj[2][i]*i_face_normal[face_id][2] );
+            djjppf[i] =   i_face_cog[face_id][i]-cell_cen[jj][i]
+                        + fjkdvi*(  viscj[0][i]*i_face_normal[face_id][0]
+                                  + viscj[1][i]*i_face_normal[face_id][1]
+                                  + viscj[2][i]*i_face_normal[face_id][2]);
           }
 
           /* p in I" and J" */
@@ -8543,7 +8643,8 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
     }
 
     /* Unsteady */
-  } else {
+  }
+  else {
 
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #     pragma omp parallel for
@@ -8561,7 +8662,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(df_limiter[jj], 0.);
+            bldfrp = cs_math_fmax(df_limiter[jj], 0.);
 
           /* Recompute II" and JJ"
              ----------------------*/
@@ -8585,10 +8686,10 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
           /* II" = IF + FI" */
           for (int i = 0; i < 3; i++) {
-            diippf[i] = i_face_cog[face_id][i]-cell_cen[ii][i]
-                      - fikdvi*( visci[0][i]*i_face_normal[face_id][0]
-                               + visci[1][i]*i_face_normal[face_id][1]
-                               + visci[2][i]*i_face_normal[face_id][2] );
+            diippf[i] =   i_face_cog[face_id][i]-cell_cen[ii][i]
+                        - fikdvi*(  visci[0][i]*i_face_normal[face_id][0]
+                                  + visci[1][i]*i_face_normal[face_id][1]
+                                  + visci[2][i]*i_face_normal[face_id][2]);
           }
 
           viscj[0][0] = viscce[jj][0];
@@ -8653,7 +8754,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
         if (df_limiter != NULL && ircflp > 0)
-          bldfrp = CS_MAX(df_limiter[ii], 0.);
+          bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         /* Recompute II"
            --------------*/
@@ -8712,7 +8813,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
         if (df_limiter != NULL && ircflp > 0)
-          bldfrp = CS_MAX(df_limiter[ii], 0.);
+          bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         /* Recompute II"
            --------------*/
@@ -8806,7 +8907,9 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
         if (df_limiter != NULL && ircflp > 0)
-          bldfrp = CS_MAX(CS_MIN(df_limiter_local[ii], df_limiter[jj]), 0.);
+          bldfrp = cs_math_fmax(cs_math_fmin(df_limiter_local[ii],
+                                             df_limiter[jj]),
+                                0.);
 
         /* Recompute II" and JJ" */
         cs_real_t visci[3][3], viscj[3][3];
@@ -8850,10 +8953,11 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
         /* JJ" = JF + FJ"
          *   */
         for (int i = 0; i < 3; i++) {
-          djjppf[i] = b_face_cog[face_id][i]-cell_cen[ii][i]-cpl->ci_cj_vect[jj][i]
-                    + fjkdvi*( viscj[0][i]*b_face_normal[face_id][0]
-                             + viscj[1][i]*b_face_normal[face_id][1]
-                             + viscj[2][i]*b_face_normal[face_id][2] );
+          djjppf[i] =    b_face_cog[face_id][i]
+                      - cell_cen[ii][i]-cpl->ci_cj_vect[jj][i]
+                      + fjkdvi*(  viscj[0][i]*b_face_normal[face_id][0]
+                                + viscj[1][i]*b_face_normal[face_id][1]
+                                + viscj[2][i]*b_face_normal[face_id][2]);
         }
 
         /* p in I" and J" */
@@ -9095,7 +9199,8 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
                                     cpl,
                                     gradv);
 
-  } else {
+  }
+  else {
 #   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       for (int isou = 0; isou < 3; isou++) {
@@ -9136,7 +9241,8 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+            bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                  0.);
 
           /*-----------------
             X-Y-Z components, p = u, v, w */
@@ -9155,13 +9261,17 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
             cs_real_t pja = pvara[jj][isou];
 
             /* reconstruction only if IRCFLP = 1 */
-            pip[isou] = pi + bldfrp * (cs_math_3_dot_product(dpvf, diipf[face_id]));
-            pjp[isou] = pj + bldfrp * (cs_math_3_dot_product(dpvf, djjpf[face_id]));
+            pip[isou] = pi + bldfrp * (cs_math_3_dot_product(dpvf,
+                                                             diipf[face_id]));
+            pjp[isou] = pj + bldfrp * (cs_math_3_dot_product(dpvf,
+                                                             djjpf[face_id]));
 
             pipr[isou] = pi /relaxp - (1.-relaxp)/relaxp * pia
-                         + bldfrp * (cs_math_3_dot_product(dpvf, diipf[face_id]));
+                         + bldfrp * (cs_math_3_dot_product(dpvf,
+                                                           diipf[face_id]));
             pjpr[isou] = pj /relaxp - (1.-relaxp)/relaxp * pja
-                         + bldfrp * (cs_math_3_dot_product(dpvf, djjpf[face_id]));
+                         + bldfrp * (cs_math_3_dot_product(dpvf,
+                                                           djjpf[face_id]));
 
           }
 
@@ -9184,7 +9294,8 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
     }
 
     /* Unsteady */
-  } else {
+  }
+  else {
 
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #     pragma omp parallel for
@@ -9201,7 +9312,8 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+            bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                  0.);
 
           /*-----------------
             X-Y-Z components, p = u, v, w */
@@ -9216,8 +9328,10 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
             cs_real_t pi = _pvar[ii][isou];
             cs_real_t pj = _pvar[jj][isou];
 
-            pip[isou] = pi + bldfrp * (cs_math_3_dot_product(dpvf, diipf[face_id]));
-            pjp[isou] = pj + bldfrp * (cs_math_3_dot_product(dpvf, djjpf[face_id]));
+            pip[isou] = pi + bldfrp * (cs_math_3_dot_product(dpvf,
+                                                             diipf[face_id]));
+            pjp[isou] = pj + bldfrp * (cs_math_3_dot_product(dpvf,
+                                                             djjpf[face_id]));
 
           }
 
@@ -9256,7 +9370,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
         if (df_limiter != NULL && ircflp > 0)
-          bldfrp = CS_MAX(df_limiter[cell_id], 0.);
+          bldfrp = cs_math_fmax(df_limiter[cell_id], 0.);
 
         const cs_real_t *diipbv = diipb[face_id];
         cs_real_t pipr[3];
@@ -9303,7 +9417,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
         if (df_limiter != NULL && ircflp > 0)
-          bldfrp = CS_MAX(df_limiter[cell_id], 0.);
+          bldfrp = cs_math_fmax(df_limiter[cell_id], 0.);
 
         cs_real_t diipbv[3];
 
@@ -9638,7 +9752,8 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
                                     cpl,
                                     grad);
 
-  } else {
+  }
+  else {
 #   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       for (int isou = 0; isou < 3; isou++) {
@@ -9689,7 +9804,8 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+            bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                  0.);
 
           /* Recompute II' and JJ' at this level */
 
@@ -9708,10 +9824,10 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
 
           /* II" = IF + FI" */
           for (int i = 0; i < 3; i++) {
-            diippf[i] = i_face_cog[face_id][i]-cell_cen[ii][i]
-                      - fikdvi*( visci[0][i]*i_face_normal[face_id][0]
-                               + visci[1][i]*i_face_normal[face_id][1]
-                               + visci[2][i]*i_face_normal[face_id][2] );
+            diippf[i] =   i_face_cog[face_id][i]-cell_cen[ii][i]
+                        - fikdvi*(  visci[0][i]*i_face_normal[face_id][0]
+                                  + visci[1][i]*i_face_normal[face_id][1]
+                                  + visci[2][i]*i_face_normal[face_id][2]);
           }
 
           viscj[0][0] = viscce[jj][0];
@@ -9767,7 +9883,8 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
     }
 
     /* Unsteady */
-  } else {
+  }
+  else {
 
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #     pragma omp parallel for
@@ -9791,7 +9908,8 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+            bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                  0.);
 
           /* Recompute II' and JJ' at this level */
 
@@ -9810,10 +9928,10 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
 
           /* II" = IF + FI" */
           for (int i = 0; i < 3; i++) {
-            diippf[i] = i_face_cog[face_id][i]-cell_cen[ii][i]
-                      - fikdvi*( visci[0][i]*i_face_normal[face_id][0]
-                               + visci[1][i]*i_face_normal[face_id][1]
-                               + visci[2][i]*i_face_normal[face_id][2] );
+            diippf[i] =   i_face_cog[face_id][i]-cell_cen[ii][i]
+                        - fikdvi*(  visci[0][i]*i_face_normal[face_id][0]
+                                  + visci[1][i]*i_face_normal[face_id][1]
+                                  + visci[2][i]*i_face_normal[face_id][2]);
           }
 
           viscj[0][0] = viscce[jj][0];
@@ -9831,20 +9949,20 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
 
           /* JJ" = JF + FJ" */
           for (int i = 0; i < 3; i++) {
-            djjppf[i] = i_face_cog[face_id][i]-cell_cen[jj][i]
-                      + fjkdvi*( viscj[0][i]*i_face_normal[face_id][0]
-                               + viscj[1][i]*i_face_normal[face_id][1]
-                               + viscj[2][i]*i_face_normal[face_id][2] );
+            djjppf[i] =   i_face_cog[face_id][i]-cell_cen[jj][i]
+                        + fjkdvi*(  viscj[0][i]*i_face_normal[face_id][0]
+                                  + viscj[1][i]*i_face_normal[face_id][1]
+                                  + viscj[2][i]*i_face_normal[face_id][2]);
           }
 
           for (int isou = 0; isou < 3; isou++) {
             /* p in I" and J" */
-            pipp[isou] = pi[isou] + bldfrp*( grad[ii][isou][0]*diippf[0]
-                                           + grad[ii][isou][1]*diippf[1]
-                                           + grad[ii][isou][2]*diippf[2]);
-            pjpp[isou] = pj[isou] + bldfrp*( grad[jj][isou][0]*djjppf[0]
-                                           + grad[jj][isou][1]*djjppf[1]
-                                           + grad[jj][isou][2]*djjppf[2]);
+            pipp[isou] = pi[isou] + bldfrp*(  grad[ii][isou][0]*diippf[0]
+                                            + grad[ii][isou][1]*diippf[1]
+                                            + grad[ii][isou][2]*diippf[2]);
+            pjpp[isou] = pj[isou] + bldfrp*(  grad[jj][isou][0]*djjppf[0]
+                                            + grad[jj][isou][1]*djjppf[1]
+                                            + grad[jj][isou][2]*djjppf[2]);
 
             cs_real_t flux = i_visc[face_id]*(pipp[isou] -pjpp[isou]);
 
@@ -9887,7 +10005,7 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
         if (df_limiter != NULL && ircflp > 0)
-          bldfrp = CS_MAX(df_limiter[ii], 0.);
+          bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         /* Recompute II"
            --------------*/
@@ -9953,7 +10071,7 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
         if (df_limiter != NULL && ircflp > 0)
-          bldfrp = CS_MAX(df_limiter[ii], 0.);
+          bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         /* Recompute II"
            --------------*/
@@ -10054,7 +10172,9 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
         if (df_limiter != NULL && ircflp > 0)
-          bldfrp = CS_MAX(CS_MIN(df_limiter_local[ii], df_limiter[jj]), 0.);
+          bldfrp = cs_math_fmax(cs_math_fmin(df_limiter_local[ii],
+                                             df_limiter[jj]),
+                                0.);
 
         /* Recompute II" and JJ" */
         cs_real_t visci[3][3], viscj[3][3];
@@ -10098,10 +10218,11 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
         /* JJ" = JF + FJ"
          *   */
         for (int i = 0; i < 3; i++) {
-          djjppf[i] = b_face_cog[face_id][i]-cell_cen[ii][i]-cpl->ci_cj_vect[jj][i]
-                    + fjkdvi*( viscj[0][i]*b_face_normal[face_id][0]
-                             + viscj[1][i]*b_face_normal[face_id][1]
-                             + viscj[2][i]*b_face_normal[face_id][2] );
+          djjppf[i] =   b_face_cog[face_id][i]
+                      - cell_cen[ii][i] - cpl->ci_cj_vect[jj][i]
+                       + fjkdvi*(  viscj[0][i]*b_face_normal[face_id][0]
+                                 + viscj[1][i]*b_face_normal[face_id][1]
+                                 + viscj[2][i]*b_face_normal[face_id][2]);
         }
 
         for (int isou = 0; isou < 3; isou++) {
@@ -10317,7 +10438,8 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
     viscce = viscel;
 
     /* With porosity */
-  } else if (porosi != NULL && porosf == NULL) {
+  }
+  else if (porosi != NULL && porosf == NULL) {
     BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (int isou = 0; isou < 6; isou++) {
@@ -10327,7 +10449,8 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
     viscce = w2;
 
     /* With tensorial porosity */
-  } else if (porosi != NULL && porosf != NULL) {
+  }
+  else if (porosi != NULL && porosf != NULL) {
     BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       cs_math_sym_33_product(porosf[cell_id],
@@ -10366,7 +10489,8 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
                                     _pvar,
                                     grad);
 
-  } else {
+  }
+  else {
 #   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       for (int isou = 0; isou < 6; isou++) {
@@ -10417,8 +10541,8 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
-
+            bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                  0.);
 
           /* Recompute II" and JJ"
              ----------------------*/
@@ -10459,33 +10583,31 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
 
           /* JJ" = JF + FJ" */
           for (int i = 0; i < 3; i++) {
-            djjppf[i] = i_face_cog[face_id][i]-cell_cen[jj][i]
-                      + fjkdvi*( viscj[0][i]*i_face_normal[face_id][0]
-                               + viscj[1][i]*i_face_normal[face_id][1]
-                               + viscj[2][i]*i_face_normal[face_id][2] );
+            djjppf[i] =   i_face_cog[face_id][i]-cell_cen[jj][i]
+                        + fjkdvi*(  viscj[0][i]*i_face_normal[face_id][0]
+                                  + viscj[1][i]*i_face_normal[face_id][1]
+                                  + viscj[2][i]*i_face_normal[face_id][2]);
           }
 
           for (int isou = 0; isou < 6; isou++) {
             /* p in I" and J" */
-            pipp[isou] = pi[isou] + bldfrp*( grad[ii][isou][0]*diippf[0]
-                                           + grad[ii][isou][1]*diippf[1]
-                                           + grad[ii][isou][2]*diippf[2]);
-            pjpp[isou] = pj[isou] + bldfrp*( grad[jj][isou][0]*djjppf[0]
-                                           + grad[jj][isou][1]*djjppf[1]
-                                           + grad[jj][isou][2]*djjppf[2]);
+            pipp[isou] = pi[isou] + bldfrp*(  grad[ii][isou][0]*diippf[0]
+                                            + grad[ii][isou][1]*diippf[1]
+                                            + grad[ii][isou][2]*diippf[2]);
+            pjpp[isou] = pj[isou] + bldfrp*(  grad[jj][isou][0]*djjppf[0]
+                                            + grad[jj][isou][1]*djjppf[1]
+                                            + grad[jj][isou][2]*djjppf[2]);
 
             pir[isou] = pi[isou]/relaxp - (1.-relaxp)/relaxp * pia[isou];
             pjr[isou] = pj[isou]/relaxp - (1.-relaxp)/relaxp * pja[isou];
 
-
             /* pr in I" and J" */
-            pippr[isou] = pir[isou] + bldfrp*( grad[ii][isou][0]*diippf[0]
-                                             + grad[ii][isou][1]*diippf[1]
-                                             + grad[ii][isou][2]*diippf[2]);
-            pjppr[isou] = pjr[isou] + bldfrp*( grad[jj][isou][0]*djjppf[0]
-                                             + grad[jj][isou][1]*djjppf[1]
-                                             + grad[jj][isou][2]*djjppf[2]);
-
+            pippr[isou] = pir[isou] + bldfrp*(  grad[ii][isou][0]*diippf[0]
+                                              + grad[ii][isou][1]*diippf[1]
+                                              + grad[ii][isou][2]*diippf[2]);
+            pjppr[isou] = pjr[isou] + bldfrp*(  grad[jj][isou][0]*djjppf[0]
+                                              + grad[jj][isou][1]*djjppf[1]
+                                              + grad[jj][isou][2]*djjppf[2]);
 
             cs_real_t fluxi = i_visc[face_id]*(pippr[isou] - pjpp[isou]);
             cs_real_t fluxj = i_visc[face_id]*(pipp[isou] - pjppr[isou]);
@@ -10498,7 +10620,8 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
     }
 
     /* Unsteady */
-  } else {
+  }
+  else {
 
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #     pragma omp parallel for
@@ -10522,7 +10645,8 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+            bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                  0.);
 
           /* Recompute II" and JJ"
              ----------------------*/
@@ -10542,10 +10666,10 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
 
           /* II" = IF + FI" */
           for (int i = 0; i < 3; i++) {
-            diippf[i] = i_face_cog[face_id][i]-cell_cen[ii][i]
-                      - fikdvi*( visci[0][i]*i_face_normal[face_id][0]
-                               + visci[1][i]*i_face_normal[face_id][1]
-                               + visci[2][i]*i_face_normal[face_id][2] );
+            diippf[i] =   i_face_cog[face_id][i]-cell_cen[ii][i]
+                        - fikdvi*(  visci[0][i]*i_face_normal[face_id][0]
+                                  + visci[1][i]*i_face_normal[face_id][1]
+                                  + visci[2][i]*i_face_normal[face_id][2]);
           }
 
           viscj[0][0] = viscce[jj][0];
@@ -10571,12 +10695,12 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
 
           for (int isou = 0; isou < 6; isou++) {
             /* p in I" and J" */
-            pipp[isou] = pi[isou] + bldfrp*( grad[ii][isou][0]*diippf[0]
-                                           + grad[ii][isou][1]*diippf[1]
-                                           + grad[ii][isou][2]*diippf[2]);
-            pjpp[isou] = pj[isou] + bldfrp*( grad[jj][isou][0]*djjppf[0]
-                                           + grad[jj][isou][1]*djjppf[1]
-                                           + grad[jj][isou][2]*djjppf[2]);
+            pipp[isou] = pi[isou] + bldfrp*(  grad[ii][isou][0]*diippf[0]
+                                            + grad[ii][isou][1]*diippf[1]
+                                            + grad[ii][isou][2]*diippf[2]);
+            pjpp[isou] = pj[isou] + bldfrp*(  grad[jj][isou][0]*djjppf[0]
+                                            + grad[jj][isou][1]*djjppf[1]
+                                            + grad[jj][isou][2]*djjppf[2]);
 
             cs_real_t flux = i_visc[face_id]*(pipp[isou] -pjpp[isou]);
 
@@ -10616,7 +10740,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
         if (df_limiter != NULL && ircflp > 0)
-          bldfrp = CS_MAX(df_limiter[ii], 0.);
+          bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         /* Recompute II"
            --------------*/
@@ -10680,7 +10804,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
         if (df_limiter != NULL && ircflp > 0)
-          bldfrp = CS_MAX(df_limiter[ii], 0.);
+          bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         /* Recompute II"
            --------------*/
@@ -10848,11 +10972,11 @@ cs_face_diffusion_potential(const int                 f_id,
 
   cs_real_t *gweight = NULL;
 
-  /*==========================================================================*/
+  /*===========================================================================*/
 
   /* i_visc and carry similar information */
 
-  /*============================================================================
+  /*===========================================================================
     1. Initialization
     ==========================================================================*/
 
@@ -10865,7 +10989,8 @@ cs_face_diffusion_potential(const int                 f_id,
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
       b_massflux[face_id] = 0.;
     }
-  } else if (init != 0) {
+  }
+  else if (init != 0) {
     bft_error(__FILE__, __LINE__, 0,
               _("invalid value of init"));
   }
@@ -11208,7 +11333,8 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
       b_massflux[face_id] = 0.;
     }
-  } else if (init != 0) {
+  }
+  else if (init != 0) {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of init"));
   }
@@ -11314,7 +11440,8 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
       viscce = viscel;
 
       /* With porosity */
-    } else if (porosi != NULL && porosf == NULL) {
+    }
+    else if (porosi != NULL && porosf == NULL) {
       BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         for (int isou = 0; isou < 6; isou++) {
@@ -11324,7 +11451,8 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
       viscce = w2;
 
       /* With tensorial porosity */
-    } else if (porosi != NULL && porosf != NULL) {
+    }
+    else if (porosi != NULL && porosf != NULL) {
       BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         cs_math_sym_33_product(porosf[cell_id],
@@ -11431,7 +11559,8 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
+            bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                  0.);
 
 
           /* IF.Ki.S / ||Ki.S||^2 */
@@ -11495,7 +11624,7 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
         if (df_limiter != NULL && ircflp > 0)
-          bldfrp = CS_MAX(df_limiter[ii], 0.);
+          bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         /* Recompute II"
            --------------*/
@@ -11658,8 +11787,6 @@ cs_diffusion_potential(const int                 f_id,
 
   cs_real_t *gweight = NULL;
 
-  /*==========================================================================*/
-
   /*==========================================================================
     1. Initialization
     ==========================================================================*/
@@ -11669,12 +11796,14 @@ cs_diffusion_potential(const int                 f_id,
     for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
       diverg[ii] = 0.;
     }
-  } else if (init == 0 && n_cells_ext > n_cells) {
+  }
+  else if (init == 0 && n_cells_ext > n_cells) {
 #   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
     for (cs_lnum_t ii = n_cells; ii < n_cells_ext; ii++) {
       diverg[ii] = 0.;
     }
-  } else if (init != 0) {
+  }
+  else if (init != 0) {
     bft_error(__FILE__, __LINE__, 0,
               _("invalid value of init"));
   }
@@ -12040,12 +12169,14 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
     for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
       diverg[ii] = 0.;
     }
-  } else if (init == 0 && n_cells_ext > n_cells) {
+  }
+  else if (init == 0 && n_cells_ext > n_cells) {
 #   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
     for (cs_lnum_t ii = n_cells+0; ii < n_cells_ext; ii++) {
       diverg[ii] = 0.;
     }
-  } else if (init != 0) {
+  }
+  else if (init != 0) {
     bft_error(__FILE__, __LINE__, 0,
               _("invalid value of init"));
   }
@@ -12155,7 +12286,8 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
       viscce = viscel;
 
       /* With porosity */
-    } else if (porosi != NULL && porosf == NULL) {
+    }
+    else if (porosi != NULL && porosf == NULL) {
       BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         for (int isou = 0; isou < 6; isou++) {
@@ -12165,7 +12297,8 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
       viscce = w2;
 
       /* With tensorial porosity */
-    } else if (porosi != NULL && porosf != NULL) {
+    }
+    else if (porosi != NULL && porosf != NULL) {
       BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         cs_math_sym_33_product(porosf[cell_id],
@@ -12256,8 +12389,8 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
           if (df_limiter != NULL && ircflp > 0)
-            bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
-
+            bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                  0.);
 
           /* Recompute II" and JJ"
              ----------------------*/
@@ -12341,7 +12474,7 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
         if (df_limiter != NULL && ircflp > 0)
-          bldfrp = CS_MAX(df_limiter[ii], 0.);
+          bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         /* Recompute II"
            --------------*/
