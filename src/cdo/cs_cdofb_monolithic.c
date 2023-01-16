@@ -2071,7 +2071,8 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
   /* Define the layout of the system and how to assemble the system. It depends
      on the strategy to solve the saddle-point problem */
 
-  cs_navsto_sles_t  strategy = nsp->sles_param->strategy;
+  const cs_param_sles_t  *mom_slesp = mom_eqp->sles_param;
+  const cs_navsto_sles_t  strategy = nsp->sles_param->strategy;
 
   switch (strategy) {
 
@@ -2093,29 +2094,11 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
 
       /* Choose the right class of matrix to avoid copy.
        * The way to perform the assembly may change if an external librairy is
-       * used for solving the linear system */
+       * used for solving the linear system.
+       */
 
-      cs_cdo_system_matrix_class_t  matclass;
-
-      switch (mom_eqp->sles_param->solver_class) {
-
-      case CS_PARAM_SLES_CLASS_CS:
-        matclass = CS_CDO_SYSTEM_MATRIX_CS;
-        break;
-
-      case CS_PARAM_SLES_CLASS_HYPRE:
-#if defined(HAVE_HYPRE)
-        matclass = CS_CDO_SYSTEM_MATRIX_HYPRE;
-#else
-        matclass = CS_CDO_SYSTEM_MATRIX_CS;
-#endif
-        break;
-
-      default:
-        matclass = CS_CDO_SYSTEM_MATRIX_CS;
-        break;
-
-      }
+      cs_cdo_system_matrix_class_t
+        matclass = cs_cdo_system_get_matrix_class(mom_slesp->solver_class);
 
       /* Add a first block for the (0,0) block and then define the underpinning
          structures */
@@ -2175,31 +2158,13 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
       /* Add a first block for the (0,0) block and then define the underpinning
          structures */
 
-      cs_cdo_system_matrix_class_t  matclass;
-
       /* Choose the right class of matrix to avoid copy.
        * The way to perform the assembly may change if an external librairy is
-       * used for solving the linear system */
+       * used for solving the linear system.
+       */
 
-      switch (mom_eqp->sles_param->solver_class) {
-
-      case CS_PARAM_SLES_CLASS_CS:
-        matclass = CS_CDO_SYSTEM_MATRIX_CS;
-        break;
-
-      case CS_PARAM_SLES_CLASS_HYPRE:
-#if defined(HAVE_HYPRE)
-        matclass = CS_CDO_SYSTEM_MATRIX_HYPRE;
-#else
-        matclass = CS_CDO_SYSTEM_MATRIX_CS;
-#endif
-        break;
-
-      default:
-        matclass = CS_CDO_SYSTEM_MATRIX_CS;
-        break;
-
-      }
+      cs_cdo_system_matrix_class_t
+        matclass = cs_cdo_system_get_matrix_class(mom_slesp->solver_class);
 
       cs_cdo_system_block_t  *a =
         cs_cdo_system_add_dblock(sh, 0,                /* block id */

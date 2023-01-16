@@ -42,6 +42,7 @@
 
 #include "cs_cdo_assembly.h"
 #include "cs_cdo_connect.h"
+#include "cs_param_types.h"
 #include "cs_matrix.h"
 #include "cs_matrix_assembler.h"
 #include "cs_range_set.h"
@@ -425,6 +426,44 @@ typedef struct {
   cs_cdo_system_block_t  **blocks;
 
 } cs_cdo_system_helper_t;
+
+/*============================================================================
+ * Inline public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the best available class of matrix w.r.t. the solver class
+ *
+ * \param[in] solver_class   family of solver to consider
+ *
+ * \return the bast class of matrices which is available
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_cdo_system_matrix_class_t
+cs_cdo_system_get_matrix_class(cs_param_sles_class_t    solver_class)
+{
+  switch (solver_class) {
+
+  case CS_PARAM_SLES_CLASS_CS:
+    return CS_CDO_SYSTEM_MATRIX_CS;
+    break;
+
+  case CS_PARAM_SLES_CLASS_HYPRE:
+#if defined(HAVE_HYPRE)
+    return CS_CDO_SYSTEM_MATRIX_HYPRE;
+#else
+    return CS_CDO_SYSTEM_MATRIX_CS;
+#endif
+    break;
+
+  default:
+    return CS_CDO_SYSTEM_MATRIX_CS;
+    break;
+
+  }
+}
 
 /*============================================================================
  * Public function prototypes
