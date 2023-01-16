@@ -80,6 +80,14 @@ extern void cs_hydrostatic_pressure_compute(int              *indhyd,
                                             cs_real_t         rhs[]);
 
 /*----------------------------------------------------------------------------
+ * Exchange of coupling variables between tow instances
+ * of code_saturne thanks to cells.
+ *----------------------------------------------------------------------------*/
+
+extern void cs_sat_coupling_exchange_at_cells(int         f_id,
+                                              cs_real_t   st_exp[]);
+
+/*----------------------------------------------------------------------------
  * Convert gas temperature to and from enthalpy based on concentrations
  *----------------------------------------------------------------------------*/
 

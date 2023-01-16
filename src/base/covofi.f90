@@ -541,7 +541,7 @@ call user_source_terms(iflid, smbrs, rovsdt)
 
 ! Coupling between two code_saturne
 if (nbrcpl.gt.0) then
-  call csccel(ivar, smbrs)
+  call csccel(ivarfl(ivar), smbrs)
 endif
 
 ! Take into account radioactive decay rate (implicit source term)
@@ -1593,4 +1593,4 @@ if (allocated(diverg)) deallocate(diverg)
 
 return
 
-end subroutine
+end subroutine covofi

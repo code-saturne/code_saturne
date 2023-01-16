@@ -31,14 +31,14 @@
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[in]     ivar          variable number
-!> \param[out]    crvimp        working table for implicit part
+!> \param[in]     f_id          field id
 !> \param[out]    crvexp        working table for explicit part
 !______________________________________________________________________________
 
 subroutine csccel &
- ( ivar   ,                                                       &
-   crvexp )
+ ( f_id   ,                                                       &
+   crvexp )                  &
+   bind(C, name='cs_sat_coupling_exchange_at_cells')
 
 !===============================================================================
 ! Module files
@@ -63,13 +63,13 @@ implicit none
 
 ! Arguments
 
-integer          ivar
+integer(c_int), value :: f_id
 
 double precision crvexp(3,ncelet)
 
 ! Local variables
 
-integer          f_id, f_dim
+integer          f_dim
 integer          numcpl
 integer          ncesup , nfbsup
 integer          ncecpl , nfbcpl , ncencp , nfbncp
@@ -87,11 +87,8 @@ double precision, allocatable, dimension(:,:) :: rvdis, rvcel
 !===============================================================================
 
 ! cannot be called for non variables ...
-if (ivar.le.0) then
-  f_id = -1
+if (f_id.lt.0) then
   call csexit(1)
-else
-  f_id = ivarfl(ivar)
 endif
 
 !get the dimension of the variable
