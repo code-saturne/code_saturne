@@ -169,7 +169,7 @@ struct _cs_cdovb_scalsys_t {
    * Total number of degrees of freedom for this system
    */
 
-  cs_lnum_t                      n_dofs;
+  cs_lnum_t                        n_dofs;
 
   /*!
    * @}
@@ -178,7 +178,7 @@ struct _cs_cdovb_scalsys_t {
    * @{
    */
 
-  cs_cdovb_scalsys_build_t          *build;
+  cs_cdovb_scalsys_build_t        *build;
 
   /*!
    * @}
@@ -192,7 +192,7 @@ struct _cs_cdovb_scalsys_t {
    * system of equation
    */
 
-  cs_cdovb_scalsys_asb_t            *assemble;
+  cs_cdovb_scalsys_asb_t          *assemble;
 
   /*!
    * @}
@@ -204,11 +204,10 @@ struct _cs_cdovb_scalsys_t {
    * Function dedicated to the resolution of the linear system
    */
 
-  cs_cdovb_scalsys_solve_t          *solve;
+  cs_cdovb_scalsys_solve_t        *solve;
 
   /*! @} */
 };
-
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -453,7 +452,7 @@ _solve_mumps(int                                 n_eqs,
 
   /* Output information about the convergence of the resolution */
 
-  if (sysp->linear_solver.verbosity > 0)
+  if (sysp->verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d>"
                   " n_iter %3d | res.norm % -8.4e | rhs.norm % -8.4e\n",
                   sysp->name, code, sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm);

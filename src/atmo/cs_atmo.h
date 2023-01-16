@@ -445,6 +445,7 @@ cs_atmo_hydrostatic_profiles_compute(void);
  *
  * \param[in]  z             altitude
  * \param[in]  dlmo          Inverse Monin Obukhov length
+ *
  * \return                   factor
  */
 /*----------------------------------------------------------------------------*/
@@ -459,6 +460,7 @@ cs_mo_phim(cs_real_t              z,
  *
  * \param[in]  z             altitude
  * \param[in]  dlmo          Inverse Monin Obukhov length
+ *
  * \return                   factor
  */
 /*----------------------------------------------------------------------------*/
@@ -474,6 +476,7 @@ cs_mo_phih(cs_real_t              z,
  * \param[in]  z             altitude
  * \param[in]  z0            roughness
  * \param[in]  dlmo          Inverse Monin Obukhov length
+ *
  * \return                   factor
  */
 /*----------------------------------------------------------------------------*/
@@ -490,6 +493,7 @@ cs_mo_psim(cs_real_t              z,
  * \param[in]  z             altitude
  * \param[in]  z0            roughness
  * \param[in]  dlmo          Inverse Monin Obukhov length
+ *
  * \return                   factor
  */
 /*----------------------------------------------------------------------------*/

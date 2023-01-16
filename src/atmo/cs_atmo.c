@@ -669,12 +669,14 @@ _convert_from_wgs84_to_l93(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Universal functions, for neutral
+/*!
+ * \brief Universal functions, for neutral
  *        (derivative function Phi_m and Phi_h)
- *  \return coef
  *
  * \param[in]  z             altitude
  * \param[in]  dlmo          Inverse Monin Obukhov length
+ *
+ * \return coef
  */
 /*----------------------------------------------------------------------------*/
 
@@ -699,12 +701,15 @@ _mo_phih_n(cs_real_t              z,
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Universal functions, for neutral
+/*!
+ * \brief Universal functions, for neutral
  *        (Integrated version from z0 to z)
  *
  * \param[in]  z             altitude
  * \param[in]  z0            altitude of the starting point integration
  * \param[in]  dlmo          Inverse Monin Obukhov length
+ *
+ * \return coef
  */
 /*----------------------------------------------------------------------------*/
 
@@ -729,12 +734,15 @@ _mo_psih_n(cs_real_t              z,
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Universal functions for stable
+/*!
+ * \brief Universal functions for stable
  *        (derivative function Phi_m and Phi_h)
  *
  * \param[in]  z             altitude
  * \param[in]  z0            altitude of the starting point integration
  * \param[in]  dlmo          inverse Monin Obukhov length
+ *
+ * \return coef
  */
 /*----------------------------------------------------------------------------*/
 
@@ -809,6 +817,18 @@ _mo_phim_s(cs_real_t              z,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Universal functions for unstable
+ *        (derivative function)
+ *
+ * \param[in]  z             altitude
+ * \param[in]  dlmo          inverse Monin Obukhov length
+ *
+ * \return coef
+ */
+/*----------------------------------------------------------------------------*/
+
 static cs_real_t
 _mo_phih_s(cs_real_t              z,
            cs_real_t              dlmo)
@@ -860,11 +880,14 @@ _mo_phih_s(cs_real_t              z,
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Universal functions for unstable
+/*!
+ * \brief Universal functions for unstable
  *        (derivative function)
  *
  * \param[in]  z             altitude
  * \param[in]  dlmo          inverse Monin Obukhov length
+ *
+ * \return coef
  */
 /*----------------------------------------------------------------------------*/
 
@@ -951,12 +974,15 @@ _mo_phih_u(cs_real_t              z,
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Universal functions for stable
+/*!
+ * \brief Universal functions for stable
  *        (integral functions Psi_m and Psi_h, integrated version from z0 to z)
  *
  * \param[in]  z             altitude
  * \param[in]  z0            altitude of the starting point integration
  * \param[in]  dlmo          inverse Monin Obukhov length
+ *
+ * \return coef
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1096,13 +1122,15 @@ _mo_psih_s(cs_real_t              z,
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Universal functions for unstable
+/*!
+ * \brief Universal functions for unstable
  *        (integral functions Psi_m and Psi_h, integrated version from z0 to z)
  *
  * \param[in]  z             altitude
  * \param[in]  z0            altitude of the starting point integration
  * \param[in]  dlmo          inverse Monin Obukhov length
  *
+ * \return coef
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1210,6 +1238,7 @@ _mo_psih_u(cs_real_t              z,
  *
  * \param[in]  z             altitude
  * \param[in]  dlmo          Inverse Monin Obukhov length
+ *
  * \return                   factor
  */
 /*----------------------------------------------------------------------------*/
@@ -1237,6 +1266,7 @@ cs_mo_phim(cs_real_t              z,
  *
  * \param[in]  z             altitude
  * \param[in]  dlmo          Inverse Monin Obukhov length
+ *
  * \return                   factor
  */
 /*----------------------------------------------------------------------------*/
@@ -1265,6 +1295,7 @@ cs_mo_phih(cs_real_t              z,
  * \param[in]  z             altitude
  * \param[in]  z0            altitude of the starting point integration
  * \param[in]  dlmo          Inverse Monin Obukhov length
+ *
  * \return                   factor
  */
 /*----------------------------------------------------------------------------*/
@@ -1294,6 +1325,7 @@ cs_mo_psim(cs_real_t              z,
  * \param[in]  z             altitude
  * \param[in]  z0            altitude of the starting point integration
  * \param[in]  dlmo          Inverse Monin Obukhov length
+ *
  * \return                   factor
  */
 /*----------------------------------------------------------------------------*/
@@ -2319,7 +2351,7 @@ cs_atmo_z_ground_compute(void)
   /* Matrix
    * ====== */
 
-  cs_real_t *rovsdt, *dpvar;
+  cs_real_t *rovsdt = NULL, *dpvar = NULL;
   BFT_MALLOC(rovsdt, m->n_cells_with_ghosts, cs_real_t);
   BFT_MALLOC(dpvar, m->n_cells_with_ghosts, cs_real_t);
 
@@ -2331,10 +2363,10 @@ cs_atmo_z_ground_compute(void)
   /* Right hand side
    * =============== */
 
-  cs_real_t *rhs;
+  cs_real_t *rhs = NULL;
   BFT_MALLOC(rhs, m->n_cells_with_ghosts, cs_real_t);
 
-  for (cs_lnum_t cell_id = 0; cell_id< m->n_cells_with_ghosts; cell_id++)
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
     rhs[cell_id] = 0.;
 
   /* Norm
@@ -2346,7 +2378,8 @@ cs_atmo_z_ground_compute(void)
   if (ground_surf > 0.)
     norm = sqrt(norm / ground_surf) * mq->tot_vol;
   else {
-    bft_printf("No ground BC or no gravity: no computation of ground elevation.\n");
+    bft_printf("No ground BC or no gravity:"
+               " no computation of ground elevation.\n");
     return;
   }
 
@@ -2358,7 +2391,8 @@ cs_atmo_z_ground_compute(void)
   cs_real_t inf_norm = 1.;
 
   /* Overall loop in order to ensure convergence */
-  for (int sweep = 0; sweep < eqp_p->nswrsm && inf_norm > eqp_p->epsrsm; sweep++) {
+  for (int sweep = 0; sweep < eqp_p->nswrsm && inf_norm > eqp_p->epsrsm;
+       sweep++) {
 
     cs_equation_iterative_solve_scalar(0,   /* idtvar: no steady state algo */
                                        -1,  /* no over loops */
