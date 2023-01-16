@@ -42,8 +42,8 @@
 
 subroutine chem_source_terms &
  ( iscal  ,                  &
-   crvexp , crvimp)
-
+   crvexp , crvimp)          &
+   bind(C, name='cs_atmo_chem_source_terms')
 
 !===============================================================================
 ! Module files
@@ -69,14 +69,11 @@ implicit none
 
 ! Arguments
 
-integer          iscal
-double precision crvexp(ncelet), crvimp(ncelet)
+integer(c_int), value :: iscal
+double precision  crvexp(ncelet), crvimp(ncelet)
 
 ! Local variables
 
-!  Variables used for computation of the explicit chemical source term
-! integer(kind=c_int) :: c_iscal
-! real(kind=c_double) :: c_crvexp(ncelet)
 integer iel, ii
 double precision dlconc(nespg), source(nespg), dchema(nespg)
 double precision rk(nrg)
