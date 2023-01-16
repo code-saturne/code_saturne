@@ -347,9 +347,9 @@ _check_nl_cvg(cs_param_nl_algo_t        nl_algo_type,
 
   /* Update the convergence members */
 
-  cs_iter_algo_update_cvg(algo);
+  cs_iter_algo_update_cvg_default(algo);
 
-  if (algo->param.verbosity > 0) {
+  if (algo->verbosity > 0) {
 
     if (algo->n_algo_iter == 1)
       cs_log_printf(CS_LOG_DEFAULT,
@@ -362,7 +362,7 @@ _check_nl_cvg(cs_param_nl_algo_t        nl_algo_type,
 
   } /* verbosity > 0 */
 
-  return algo->cvg;
+  return algo->cvg_status;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3421,17 +3421,16 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
       /* Non-linear algorithm */
 
-      cs_iter_algo_param_t  nl_param = {
-        .verbosity = 0,         /* level of display to output */
-        .n_max_algo_iter = 15,  /* n_max iter. */
-        .atol = 1e-6,           /* absolute tolerance */
-        .rtol = 1e-2,           /* relative tolerance */
-        .dtol = 1e3 };          /* divergence tolerance */
+      cs_param_sles_cvg_t  nl_cvg_param = {
+        .n_max_iter = 15,   /* n_max iter. */
+        .atol = 1e-6,       /* absolute tolerance */
+        .rtol = 1e-2,       /* relative tolerance */
+        .dtol = 1e3 };      /* divergence tolerance */
 
       if (solid->model == CS_SOLIDIFICATION_MODEL_VOLLER_NL) {
 
         v_model->nl_algo_type = CS_PARAM_NL_ALGO_PICARD;
-        v_model->nl_algo = cs_iter_algo_create(nl_param);
+        v_model->nl_algo = cs_iter_algo_create(solid->verbosity, nl_cvg_param);
 
       }
       else {
@@ -4704,8 +4703,8 @@ cs_solidification_log_setup(void)
       cs_solidification_voller_t  *v_model
         = (cs_solidification_voller_t *)solid->model_context;
 
-      cs_iter_algo_t  *ia = v_model->nl_algo;
-      assert(ia != NULL);
+      cs_iter_algo_t  *algo = v_model->nl_algo;
+      assert(algo != NULL);
 
       cs_log_printf(CS_LOG_SETUP, "  * %s |"
                     " **Model: Voller-Prakash (1987) with non-linearities**\n",
@@ -4719,8 +4718,8 @@ cs_solidification_log_setup(void)
                       " atol: %5.3e, dtol: %5.3e\n",
                       module, v_model->t_liquidus, v_model->t_solidus,
                       module, solid->latent_heat,
-                      module, ia->param.n_max_algo_iter, ia->param.rtol,
-                      ia->param.atol, ia->param.dtol);
+                      module, algo->cvg_param.n_max_iter, algo->cvg_param.rtol,
+                      algo->cvg_param.atol, algo->cvg_param.dtol);
       else
         cs_log_printf(CS_LOG_SETUP,
                       "  * %s | Tliq: %5.3e; Tsol: %5.3e\n"
@@ -4731,8 +4730,8 @@ cs_solidification_log_setup(void)
                       module, v_model->t_liquidus, v_model->t_solidus,
                       module, solid->latent_heat,
                       module, solid->forcing_coef, v_model->s_das,
-                      module, ia->param.n_max_algo_iter, ia->param.rtol,
-                      ia->param.atol, ia->param.dtol);
+                      module, algo->cvg_param.n_max_iter, algo->cvg_param.rtol,
+                      algo->cvg_param.atol, algo->cvg_param.dtol);
     }
     break;
 

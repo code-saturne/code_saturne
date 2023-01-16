@@ -258,14 +258,11 @@ cs_user_parameters(cs_domain_t    *domain)
     cs_solidification_voller_t
       *model_struct = cs_solidification_get_voller_struct();
 
-    int  n_iter_max = 20;
-    double  rel_tolerance = 1e-3;
-
     /* Drive the convergence of the non-linear algorithm to update the thermal
      * source term. */
 
-    model_struct->nl_algo->param.n_max_algo_iter = n_iter_max;
-    model_struct->nl_algo->param.rtol = rel_tolerance;
+    model_struct->nl_algo->cvg_param.n_max_iter = 20;
+    model_struct->nl_algo->cvg_param.rtol = 1e-3; /* relative tolerance */
   }
   /*! [param_cdo_solidification_nl_voller_advanced] */
 

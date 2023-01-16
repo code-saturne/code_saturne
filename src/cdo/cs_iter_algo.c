@@ -361,44 +361,47 @@ _aa_damping(cs_iter_algo_aa_t    *aa,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and initialize a new cs_iter_algo_t structure
+ * \brief Create and initialize a new cs_iter_algo_t structure
  *
- * \param[in] param     main set of parameters driving the iterative algorithm
+ * \param[in] verbosity  level of information to print
+ * \param[in] param      set of parameters driving the convergence of the
+ *                       iterative algorithm
  *
  * \return a pointer to the new allocated structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_iter_algo_t *
-cs_iter_algo_create(cs_iter_algo_param_t    param)
+cs_iter_algo_create(int                    verbosity,
+                    cs_param_sles_cvg_t    cvg_param)
 {
-  cs_iter_algo_t  *ia = NULL;
+  cs_iter_algo_t  *algo = NULL;
 
-  BFT_MALLOC(ia, 1, cs_iter_algo_t);
+  BFT_MALLOC(algo, 1, cs_iter_algo_t);
 
-  ia->param.verbosity = param.verbosity;
-  ia->param.atol = param.atol;
-  ia->param.rtol = param.rtol;
-  ia->param.dtol = param.dtol;
-  ia->param.n_max_algo_iter = param.n_max_algo_iter;
+  algo->verbosity = verbosity;
+  algo->cvg_param.atol = cvg_param.atol;
+  algo->cvg_param.rtol = cvg_param.rtol;
+  algo->cvg_param.dtol = cvg_param.dtol;
+  algo->cvg_param.n_max_iter = cvg_param.n_max_iter;
 
-  ia->normalization = 1.0;
-  ia->context = NULL;
+  algo->normalization = 1.0;
+  algo->context = NULL;
 
-  cs_iter_algo_reset(ia);       /* default initialization */
+  cs_iter_algo_reset(algo);       /* default initialization */
 
-  return ia;
+  return algo;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if something wrong happens during the iterative process
- *         after one new iteration
+ * \brief Check if something wrong happens during the iterative process after
+ *        one new iteration
  *
  * \param[in] func_name    name of the calling function
  * \param[in] eq_name      name of the equation being solved
  * \param[in] algo_name    name of the iterative algo. used
- * \param[in] ia           pointer to the iterative algo. structure
+ * \param[in] algo         pointer to the iterative algorithm structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -406,74 +409,111 @@ void
 cs_iter_algo_post_check(const char          *func_name,
                         const char          *eq_name,
                         const char          *algo_name,
-                        cs_iter_algo_t      *ia)
+                        cs_iter_algo_t      *algo)
 {
-  if (ia == NULL)
+  if (algo == NULL)
     return;
 
-  if (ia->cvg == CS_SLES_DIVERGED)
+  if (algo->cvg_status == CS_SLES_DIVERGED)
     bft_error(__FILE__, __LINE__, 0,
               "%s: %s algorithm divergence detected.\n"
               "%s: Equation \"%s\" can not be solved correctly.\n"
               "%s: Last iteration=%d; last residual=%5.3e\n",
               func_name, algo_name,
               func_name, eq_name,
-              func_name, ia->n_algo_iter, ia->res);
+              func_name, algo->n_algo_iter, algo->res);
 
-  else if (ia->cvg == CS_SLES_MAX_ITERATION) {
+  else if (algo->cvg_status == CS_SLES_MAX_ITERATION) {
 
     cs_base_warn(__FILE__, __LINE__);
     bft_printf(" %s: %s algorithm reaches the max. number of iterations"
                " when solving equation \"%s\"\n"
                " %s: max_iter=%d; last residual=%5.3e\n",
                func_name, algo_name, eq_name,
-               func_name, ia->param.n_max_algo_iter, ia->res);
+               func_name, algo->cvg_param.n_max_iter, algo->res);
 
   }
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the convergence state and the number of iterations
+ * \brief Update the convergence status and the number of iterations. The
+ *        tolerance threshold has to be computed outside the function and
+ *        before calling this function.
  *
- * \param[in, out] ia      pointer to a cs_iter_algo_t structure
+ * \param[in, out] algo      pointer to a cs_iter_algo_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_update_cvg(cs_iter_algo_t         *ia)
+cs_iter_algo_update_cvg(cs_iter_algo_t         *algo)
 {
-  /* Set the tolerance criterion (computed at each call if the normalization is
-     modified between two successive calls) */
+  /* Increment the number of iterations */
 
-  ia->tol = fmax(ia->param.rtol*ia->normalization, ia->param.atol);
-
-  /* Increment the number of Picard iterations */
-
-  ia->n_algo_iter += 1;
+  algo->n_algo_iter += 1;
 
   /* Set the convergence status */
 
-  if (ia->res < ia->tol)
-    ia->cvg = CS_SLES_CONVERGED;
+  if (algo->res < algo->tol)
+    algo->cvg_status = CS_SLES_CONVERGED;
 
-  else if (ia->n_algo_iter >= ia->param.n_max_algo_iter)
-    ia->cvg = CS_SLES_MAX_ITERATION;
+  else if (algo->n_algo_iter >= algo->cvg_param.n_max_iter)
+    algo->cvg_status = CS_SLES_MAX_ITERATION;
 
-  else if (ia->res > ia->param.dtol * ia->prev_res ||
-           ia->res > ia->param.dtol * ia->res0)
-    ia->cvg = CS_SLES_DIVERGED;
+  else if (algo->res > algo->cvg_param.dtol * algo->prev_res ||
+           algo->res > algo->cvg_param.dtol * algo->res0)
+    algo->cvg_status = CS_SLES_DIVERGED;
 
   else
-    ia->cvg = CS_SLES_ITERATING;
+    algo->cvg_status = CS_SLES_ITERATING;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reset a cs_iter_algo_t structure in case of a non-linear algorothm
+ * \brief Update the convergence status and the number of iterations. The
+ *        tolerance threshold is computed by a default formula relying on the
+ *        relative tolerance scaled by the normalization factor and the
+ *        absolute tolerance.
  *
- * \param[in]       nl_algo_type   type of non-linear algorithm
- * \param[in, out]  algo           pointer to a cs_iter_algo_t
+ * \param[in, out] algo      pointer to a cs_iter_algo_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_iter_algo_update_cvg_default(cs_iter_algo_t         *algo)
+{
+  /* Set the tolerance criterion (computed at each call if the normalization is
+     modified between two successive calls) */
+
+  algo->tol = fmax(algo->cvg_param.rtol*algo->normalization,
+                   algo->cvg_param.atol);
+
+  /* Increment the number of iterations */
+
+  algo->n_algo_iter += 1;
+
+  /* Set the convergence status */
+
+  if (algo->res < algo->tol)
+    algo->cvg_status = CS_SLES_CONVERGED;
+
+  else if (algo->n_algo_iter >= algo->cvg_param.n_max_iter)
+    algo->cvg_status = CS_SLES_MAX_ITERATION;
+
+  else if (algo->res > algo->cvg_param.dtol * algo->prev_res ||
+           algo->res > algo->cvg_param.dtol * algo->res0)
+    algo->cvg_status = CS_SLES_DIVERGED;
+
+  else
+    algo->cvg_status = CS_SLES_ITERATING;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reset a cs_iter_algo_t structure in case of a non-linear algorothm
+ *
+ * \param[in]      nl_algo_type   type of non-linear algorithm
+ * \param[in, out] algo           pointer to a cs_iter_algo_t
  */
 /*----------------------------------------------------------------------------*/
 

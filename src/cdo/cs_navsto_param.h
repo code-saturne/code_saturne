@@ -475,6 +475,12 @@ typedef enum {
 
 typedef struct {
 
+  /*! \var verbosity
+   *  Level of information printed
+   */
+
+  int                           verbosity;
+
   /*! \var strategy
    *  Choice of strategy for solving the Navier--Stokes system
    */
@@ -493,14 +499,15 @@ typedef struct {
    * @{
    */
 
-  /*! \var il_algo_param
-   *  Structure storing several tolerances and metadata to drive the inner
-   *  (linear) iterative algorithm used to solve either the Oseen or the Stokes
-   *  system. This algorithm is for instance an Uzawa or GKB algorithm. This is
-   *  incorporated in a non-linear process in case of Navier--Stokes equations.
+  /*! \var il_algo_cvg
+   *  Structure storing several tolerances and metadata to drive the
+   *  convergence of the inner (linear) iterative algorithm used to solve
+   *  either the Oseen or the Stokes system. This algorithm is for instance an
+   *  Uzawa or GKB algorithm. This is incorporated in a non-linear process in
+   *  the case of Navier--Stokes equations.
    */
 
-  cs_iter_algo_param_t          il_algo_param;
+  cs_param_sles_cvg_t           il_algo_cvg;
 
   /*! \var il_algo_restart
    *  Number of iterations before restarting the iterative solver associated to
@@ -524,13 +531,13 @@ typedef struct {
 
   cs_param_nl_algo_t            nl_algo_type;
 
-  /*! \var nl_algo_param
-   *  Structure storing several tolerances and metadata to drive the non-linear
-   *  iterative algorithm used to solve te Navier-Stokes when the advection
-   *  term is implicit and non linearized.
+  /*! \var nl_algo_cvg
+   *  Structure storing several tolerances and metadata to drive the
+   *  convergence of the non-linear iterative algorithm used to solve te
+   *  Navier-Stokes when the advection term is implicit and non linearized.
    */
 
-  cs_iter_algo_param_t          nl_algo_param;
+  cs_param_sles_cvg_t           nl_algo_cvg;
 
   /*! \var anderson_param
    * Set of parameters to drive the Anderson acceleration (useful if the type
@@ -912,10 +919,6 @@ typedef struct {
  * Number of iterations before restarting a Krylov solver as the main solver
  * (useful if the strategy implied a GMRES, flexible GMRES or GCR)
  *
- * \var CS_NSKEY_IL_ALGO_VERBOSITY
- * Level of verbosity related to the inner linear algorithm (cf. \ref
- * CS_NSKEY_SLES_STRATEGY)
- *
  * \var CS_NSKEY_MAX_IL_ALGO_ITER
  * Set the maximal number of iteration for solving the inner linear system.
  *
@@ -942,9 +945,6 @@ typedef struct {
  * Relative tolerance at which the non-linearity arising from the advection
  * term is resolved
  *
- * \var CS_NSKEY_NL_ALGO_VERBOSITY
- * Level of verbosity related to the non-linear algorithm
- *
  * \var CS_NSKEY_QUADRATURE
  * Set the type to use in all functions involving quadrature (similar to
  * \ref CS_EQKEY_BC_QUADRATURE)
@@ -956,6 +956,10 @@ typedef struct {
  * \var CS_NSKEY_SLES_STRATEGY
  * Strategy for solving the SLES arising from the discretization of the
  * Navier-Stokes system
+ *
+ * \var CS_NSKEY_SLES_VERBOSITY
+ * Level of verbosity related to the resolution step (inner linear and
+ * non-linear algoritms according to the settings)
  *
  * \var CS_NSKEY_SPACE_SCHEME
  * Numerical scheme for the space discretization. Available choices are:
@@ -978,7 +982,6 @@ typedef enum {
   CS_NSKEY_IL_ALGO_DTOL,
   CS_NSKEY_IL_ALGO_RTOL,
   CS_NSKEY_IL_ALGO_RESTART,
-  CS_NSKEY_IL_ALGO_VERBOSITY,
   CS_NSKEY_MAX_IL_ALGO_ITER,
   CS_NSKEY_MAX_NL_ALGO_ITER,
   CS_NSKEY_MAX_OUTER_ITER,
@@ -986,10 +989,10 @@ typedef enum {
   CS_NSKEY_NL_ALGO_ATOL,
   CS_NSKEY_NL_ALGO_DTOL,
   CS_NSKEY_NL_ALGO_RTOL,
-  CS_NSKEY_NL_ALGO_VERBOSITY,
   CS_NSKEY_QUADRATURE,
   CS_NSKEY_SCHUR_STRATEGY,
   CS_NSKEY_SLES_STRATEGY,
+  CS_NSKEY_SLES_VERBOSITY,
   CS_NSKEY_SPACE_SCHEME,
   CS_NSKEY_THERMAL_TOLERANCE,
   CS_NSKEY_VERBOSITY,

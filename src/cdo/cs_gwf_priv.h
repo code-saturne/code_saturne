@@ -32,6 +32,7 @@
 #include "cs_advection_field.h"
 #include "cs_equation_system.h"
 #include "cs_gwf_param.h"
+#include "cs_param_sles.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -681,8 +682,8 @@ typedef struct {
    * \var nl_algo_type
    *      Type of algorithm to solve the non-linearities
    *
-   * \var nl_algo_param
-   *      Set of parameters to control the non-linear solver
+   * \var nl_algo_cvg
+   *      Set of parameters to drive the convergence of the non-linear solver
    *
    * \var anderson_param
    *      Set of parameters to drive the Anderson acceleration (useful if the
@@ -698,7 +699,7 @@ typedef struct {
   bool                           use_explicit_dsldt_liquid;
 
   cs_param_nl_algo_t             nl_algo_type;
-  cs_iter_algo_param_t           nl_algo_param;
+  cs_param_sles_cvg_t            nl_algo_cvg;
   cs_iter_algo_param_aa_t        anderson_param;
 
   cs_iter_algo_t                *nl_algo;
@@ -723,6 +724,10 @@ typedef struct {
    * @name Metadata
    * @{
    *
+   *
+   * \var verbosity
+   *      level of information printed
+   *
    * \var model
    *      Model used to describe the behavior of the flow in the GWF module
    *      (system of equations related to the chosen physical modelling). See
@@ -735,6 +740,7 @@ typedef struct {
    *      Flag dedicated to the (automatic) post-processing of the GWF module
    */
 
+  int                           verbosity;
   cs_gwf_model_type_t           model;
   cs_flag_t                     flag;
   cs_flag_t                     post_flag;

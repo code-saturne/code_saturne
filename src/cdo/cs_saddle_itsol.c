@@ -170,46 +170,47 @@ _scalar_scaling(cs_saddle_system_t   *ssys,
  * \brief Test if one needs one more iteration. The residual criterion is
  *        computed inside the main algorithm.
  *
- * \param[in, out] ia     pointer to an iterative algo. structure
+ * \param[in, out] algo     pointer to an iterative algo. structure
  *
  * \return true (one more iteration) otherwise false
  */
 /*----------------------------------------------------------------------------*/
 
 static bool
-_cvg_test(cs_iter_algo_t       *ia)
+_cvg_test(cs_iter_algo_t       *algo)
 {
   /* Increment the number of algo. iterations */
 
-  ia->n_algo_iter += 1;
+  algo->n_algo_iter += 1;
 
-  const cs_real_t  prev_res = ia->res;
-  const double  epsilon = fmax(ia->param.rtol * ia->res0, ia->param.atol);
+  const cs_real_t  prev_res = algo->res;
+  const double  epsilon = fmax(algo->cvg_param.rtol * algo->res0,
+                               algo->cvg_param.atol);
 
   /* Set the convergence status */
 
-  if (ia->res < epsilon)
-    ia->cvg = CS_SLES_CONVERGED;
+  if (algo->res < epsilon)
+    algo->cvg_status = CS_SLES_CONVERGED;
 
-  else if (ia->n_algo_iter >= ia->param.n_max_algo_iter)
-    ia->cvg = CS_SLES_MAX_ITERATION;
+  else if (algo->n_algo_iter >= algo->cvg_param.n_max_iter)
+    algo->cvg_status = CS_SLES_MAX_ITERATION;
 
-  else if (ia->res > ia->param.dtol * prev_res)
-    ia->cvg = CS_SLES_DIVERGED;
+  else if (algo->res > algo->cvg_param.dtol * prev_res)
+    algo->cvg_status = CS_SLES_DIVERGED;
 
-  else if (ia->res > ia->param.dtol * ia->res0)
-    ia->cvg = CS_SLES_DIVERGED;
+  else if (algo->res > algo->cvg_param.dtol * algo->res0)
+    algo->cvg_status = CS_SLES_DIVERGED;
 
   else
-    ia->cvg = CS_SLES_ITERATING;
+    algo->cvg_status = CS_SLES_ITERATING;
 
-  if (ia->param.verbosity > 0)
+  if (algo->verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT,
                   "<Krylov.It%02d> res %5.3e | %4d %6d cvg%d | fit.eps %5.3e\n",
-                  ia->n_algo_iter, ia->res, ia->last_inner_iter,
-                  ia->n_inner_iter, ia->cvg, epsilon);
+                  algo->n_algo_iter, algo->res, algo->last_inner_iter,
+                  algo->n_inner_iter, algo->cvg_status, epsilon);
 
-  if (ia->cvg == CS_SLES_ITERATING)
+  if (algo->cvg_status == CS_SLES_ITERATING)
     return true;
   else
     return false;
@@ -1450,7 +1451,7 @@ cs_saddle_block_precond_free(cs_saddle_block_precond_t  **p_sbp)
  * \param[in]      sbp     Block-preconditioner for the Saddle-point problem
  * \param[in, out] x1      array for the first part
  * \param[in, out] x2      array for the second part
- * \param[in, out] ia      pointer to a cs_iter_algo_t structure
+ * \param[in, out] algo    pointer to a cs_iter_algo_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1459,7 +1460,7 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
                  cs_saddle_block_precond_t   *sbp,
                  cs_real_t                   *x1,
                  cs_real_t                   *x2,
-                 cs_iter_algo_t              *ia)
+                 cs_iter_algo_t              *algo)
 {
   /* Workspace */
 
@@ -1500,10 +1501,10 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
 
   /* Apply preconditioning: M.z = v */
 
-  ia->n_inner_iter += pc_apply(ssys, sbp, v, z, pc_wsp);
+  algo->n_inner_iter += pc_apply(ssys, sbp, v, z, pc_wsp);
 
-  ia->res0 = _norm(ssys, v); /* ||v|| */
-  ia->res = ia->res0;
+  algo->res0 = _norm(ssys, v); /* ||v|| */
+  algo->res = algo->res0;
 
   /* dp = eta = <v, z>; beta = sqrt(dp) */
 
@@ -1518,7 +1519,7 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
 
   /* --- MAIN LOOP --- */
 
-  while (ia->cvg == CS_SLES_ITERATING) {
+  while (algo->cvg_status == CS_SLES_ITERATING) {
 
     /* z = z * ibeta; */
 
@@ -1560,7 +1561,7 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
 
     cs_array_real_copy(ssys_size, z, zold);
 
-    ia->n_inner_iter += pc_apply(ssys, sbp, v, z, pc_wsp);
+    algo->n_inner_iter += pc_apply(ssys, sbp, v, z, pc_wsp);
 
     /* New value for beta: beta = sqrt(<v, z>) */
 
@@ -1617,7 +1618,7 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
 
     /* Compute the current residual */
 
-    ia->res *= fabs(s);
+    algo->res *= fabs(s);
 
     /* Last updates */
 
@@ -1625,13 +1626,13 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
 
     /* Check the convergence criteria */
 
-    _cvg_test(ia);
+    _cvg_test(algo);
 
   } /* main loop */
 
   /* --- ALGO END --- */
 
-  if (ia->param.verbosity > 1) {
+  if (algo->verbosity > 1) {
 
     /* Compute the real residual norm at exit */
 
@@ -1639,7 +1640,7 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
     beta = _norm(ssys, v); /* ||v|| */
     cs_log_printf(CS_LOG_DEFAULT,
                   " %s: Residual norm at exit= %6.4e in %d iterations\n",
-                  __func__, beta, ia->n_algo_iter);
+                  __func__, beta, algo->n_algo_iter);
   }
 
   /* Free temporary workspace */
@@ -1663,7 +1664,7 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
  * \param[in]      sbp      block-preconditioner for the Saddle-point problem
  * \param[in, out] x1       array for the first part
  * \param[in, out] x2       array for the second part
- * \param[in, out] ia       pointer to a cs_iter_algo_t structure
+ * \param[in, out] algo     pointer to a cs_iter_algo_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1673,7 +1674,7 @@ cs_saddle_gcr(int                          restart,
               cs_saddle_block_precond_t   *sbp,
               cs_real_t                   *x1,
               cs_real_t                   *x2,
-              cs_iter_algo_t              *ia)
+              cs_iter_algo_t              *algo)
 {
   /* Workspace: Specific buffers for this algorithm */
 
@@ -1718,16 +1719,16 @@ cs_saddle_gcr(int                          restart,
 
   _compute_residual_3(ssys, x1, x2, r);
 
-  ia->res0 = _norm(ssys, r); /* ||r|| */
-  ia->res = ia->res0;
+  algo->res0 = _norm(ssys, r); /* ||r|| */
+  algo->res = algo->res0;
 
   /* --- MAIN LOOP --- */
 
   int  _restart = restart;
 
-  while (ia->cvg == CS_SLES_ITERATING) {
+  while (algo->cvg_status == CS_SLES_ITERATING) {
 
-    if (ia->n_algo_iter > 0)
+    if (algo->n_algo_iter > 0)
       _compute_residual_3(ssys, x1, x2, r);
 
     for (int j = 0; j < _restart; j++) {
@@ -1735,7 +1736,7 @@ cs_saddle_gcr(int                          restart,
       /* Apply preconditioning: M.z = r */
 
       cs_real_t  *zj = zsave + j*ssys_size;
-      ia->n_inner_iter += pc_apply(ssys, sbp, r, zj, pc_wsp);
+      algo->n_inner_iter += pc_apply(ssys, sbp, r, zj, pc_wsp);
 
       /* Compute the matrix-vector product M.z = cj
        * cj plays the role of the temporary buffer during the first part of the
@@ -1781,13 +1782,13 @@ cs_saddle_gcr(int                          restart,
 
       /* New residual norm */
 
-      ia->res = _norm(ssys, r); /* ||r|| */
+      algo->res = _norm(ssys, r); /* ||r|| */
 
       /* Check convergence */
 
-      _cvg_test(ia);
+      _cvg_test(algo);
 
-      if (ia->cvg != CS_SLES_ITERATING)
+      if (algo->cvg_status != CS_SLES_ITERATING)
         _restart = j + 1; /* Stop the loop on j */
 
     } /* j < _restart */
@@ -1826,13 +1827,16 @@ cs_saddle_gcr(int                          restart,
 
   /* --- ALGO END --- */
 
-  if (ia->param.verbosity > 1) {
+  if (algo->verbosity > 1) {
+
     /* Compute the real residual norm at exit */
+
     _compute_residual_3(ssys, x1, x2, r);
     double _beta = _norm(ssys, r); /* ||r|| */
     cs_log_printf(CS_LOG_DEFAULT,
                   " %s: Residual norm at exit= %6.4e in %d iterations\n",
-                  __func__, _beta, ia->n_algo_iter);
+                  __func__, _beta, algo->n_algo_iter);
+
   }
 
   BFT_FREE(gamma);

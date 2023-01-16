@@ -1462,12 +1462,11 @@ cs_equation_param_create(const char            *name,
   /* By default, there is no incremental solving */
 
   eqp->incremental_algo_type = CS_PARAM_NL_ALGO_NONE;
-  eqp->incremental_algo_param = (cs_iter_algo_param_t) {
-    .verbosity = 0,         /* level of display to output */
-    .n_max_algo_iter = 15,  /* n_max iter. */
+  eqp->incremental_algo_cvg = (cs_param_sles_cvg_t) {
     .atol = 1e-6,           /* absolute tolerance */
     .rtol = 1e-2,           /* relative tolerance */
-    .dtol = 1e3 };          /* divergence tolerance */
+    .dtol = 1e3,            /* divergence tolerance */
+    .n_max_iter = 15 };     /* n_max iter. */
 
   eqp->incremental_relax_factor = 1.0; /* No relaxation by default */
 
@@ -2209,12 +2208,12 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
                   eqname,
                   cs_param_get_nl_algo_name(eqp->incremental_algo_type));
     cs_log_printf(CS_LOG_SETUP, "  * %s | Tolerances of the incremental algo:"
-                  " rtol: %5.3e; atol: %5.3e; dtol: %5.3e\n",
-                  eqname, eqp->incremental_algo_param.rtol,
-                  eqp->incremental_algo_param.atol,
-                  eqp->incremental_algo_param.dtol);
+                  " rtol: %5.3e; atol: %5.3e; dtol: %5.3e\n", eqname,
+                  eqp->incremental_algo_cvg.rtol,
+                  eqp->incremental_algo_cvg.atol,
+                  eqp->incremental_algo_cvg.dtol);
     cs_log_printf(CS_LOG_SETUP, "  * %s | Max of non-linear iterations: %d\n",
-                  eqname, eqp->incremental_algo_param.n_max_algo_iter);
+                  eqname, eqp->incremental_algo_cvg.n_max_iter);
     cs_log_printf(CS_LOG_SETUP, "  * %s | Relaxation factor: %.3f\n",
                   eqname, eqp->incremental_relax_factor);
 

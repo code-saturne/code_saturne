@@ -177,7 +177,8 @@ cs_equation_builder_create(const cs_equation_param_t   *eqp,
 
   eqb->increment = NULL;
   if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-    eqb->incremental_algo = cs_iter_algo_create(eqp->incremental_algo_param);
+    eqb->incremental_algo = cs_iter_algo_create(eqp->verbosity,
+                                                eqp->incremental_algo_cvg);
   else
     eqb->incremental_algo = NULL;
 

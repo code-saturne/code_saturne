@@ -1035,7 +1035,7 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-  sc->nl_algo = cs_iter_algo_create(nslesp->nl_algo_param);
+  sc->nl_algo = cs_iter_algo_create(nslesp->verbosity, nslesp->nl_algo_cvg);
 
   if (nslesp->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
     sc->nl_algo->context = cs_iter_algo_aa_create(nslesp->anderson_param,

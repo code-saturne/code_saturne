@@ -1534,10 +1534,10 @@ _set_petsc_main_solver(const cs_navsto_param_model_t   model,
   PetscInt  max_it;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
-                   nslesp->il_algo_param.rtol,  /* relative convergence tol. */
-                   nslesp->il_algo_param.atol,  /* absolute convergence tol. */
-                   nslesp->il_algo_param.dtol,  /* divergence tol. */
-                   nslesp->il_algo_param.n_max_algo_iter); /* max number iter */
+                   nslesp->il_algo_cvg.rtol,  /* relative convergence tol. */
+                   nslesp->il_algo_cvg.atol,  /* absolute convergence tol. */
+                   nslesp->il_algo_cvg.dtol,  /* divergence tol. */
+                   nslesp->il_algo_cvg.n_max_iter); /* max number iter */
 
   /* Set the normalization of the residual */
 
@@ -2809,10 +2809,10 @@ _notay_hook(void     *context,
       PetscInt  max_it;
       KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
       KSPSetTolerances(ksp,
-                       nslesp->il_algo_param.rtol,      /* relative tol. */
-                       nslesp->il_algo_param.atol,      /* absolute tol. */
-                       nslesp->il_algo_param.dtol,      /* divergence tol. */
-                       nslesp->il_algo_param.n_max_algo_iter);
+                       nslesp->il_algo_cvg.rtol,      /* relative tol. */
+                       nslesp->il_algo_cvg.atol,      /* absolute tol. */
+                       nslesp->il_algo_cvg.dtol,      /* divergence tol. */
+                       nslesp->il_algo_cvg.n_max_iter);
 
       KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
 
@@ -3011,8 +3011,8 @@ _gkb_hook(void     *context,
   PCSetType(up_pc, PCFIELDSPLIT);
   PCFieldSplitSetType(up_pc, PC_COMPOSITE_GKB);
 
-  PCFieldSplitSetGKBTol(up_pc, 10*nslesp->il_algo_param.rtol);
-  PCFieldSplitSetGKBMaxit(up_pc, nslesp->il_algo_param.n_max_algo_iter);
+  PCFieldSplitSetGKBTol(up_pc, 10*nslesp->il_algo_cvg.rtol);
+  PCFieldSplitSetGKBMaxit(up_pc, nslesp->il_algo_cvg.n_max_iter);
   PCFieldSplitSetGKBNu(up_pc, 0);
   PCFieldSplitSetGKBDelay(up_pc, CS_GKB_TRUNCATION_THRESHOLD);
 
@@ -3296,7 +3296,7 @@ _init_gkb_builder(const cs_navsto_param_t    *nsp,
 
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-  gkb->algo = cs_iter_algo_create(nslesp->il_algo_param);
+  gkb->algo = cs_iter_algo_create(nslesp->verbosity, nslesp->il_algo_cvg);
 
   return gkb;
 }
@@ -3433,7 +3433,7 @@ _init_uzawa_builder(const cs_navsto_param_t      *nsp,
 
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-  uza->algo = cs_iter_algo_create(nslesp->il_algo_param);
+  uza->algo = cs_iter_algo_create(nslesp->verbosity, nslesp->il_algo_cvg);
 
   return uza;
 }
@@ -3607,8 +3607,8 @@ _transform_gkb_system(const cs_matrix_t              *matrix,
 
   slesp->name = system_name;
   slesp->cvg_param.rtol = _set_transfo_tol(init_eps,
-                                           nslesp->il_algo_param.rtol,
-                                           nslesp->il_algo_param.atol);
+                                           nslesp->il_algo_cvg.rtol,
+                                           nslesp->il_algo_cvg.atol);
 
   /* Compute M^-1.(b_f + gamma. Bt.N^-1.b_c) */
 
@@ -3747,7 +3747,7 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
       gkb->q[i] *= inv_beta;
   }
   else {
-    gkb->algo->cvg = CS_SLES_CONVERGED;
+    gkb->algo->cvg_status = CS_SLES_CONVERGED;
     return;
   }
 
@@ -3779,7 +3779,7 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
   assert(gkb->alpha > -DBL_MIN);
   gkb->alpha = sqrt(gkb->alpha);
 
-  const double ov_alpha = 1./gkb->alpha;
+  const double  ov_alpha = 1./gkb->alpha;
 
   gkb->zeta = gkb->beta * ov_alpha;
 
@@ -3810,65 +3810,68 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
 static void
 _gkb_cvg_test(cs_gkb_builder_t           *gkb)
 {
+  cs_iter_algo_t  *algo = gkb->algo;
+
   /* Update the sum of square of zeta values (used for renormalization) */
 
   cs_real_t  z2 = gkb->zeta*gkb->zeta;
 
   gkb->zeta_square_sum += z2;
-  gkb->zeta_array[gkb->algo->n_algo_iter % gkb->z_size] = z2;
+  gkb->zeta_array[algo->n_algo_iter % gkb->z_size] = z2;
 
-  /* Increment the number of Picard iterations */
+  /* Compute the relative energy norm for the definition of the tolerance
+     threshold. The normalization arises from an iterative estimation of the
+     initial error in the energy norm */
 
-  gkb->algo->n_algo_iter += 1;
-
-  /* Compute the relative energy norm. The normalization arises from an
-     iterative estimation of the initial error in the energy norm */
-
-  const cs_real_t  prev_res = gkb->algo->res;
+  algo->prev_res = algo->res;
 
   int  n = gkb->z_size;
-  if (gkb->algo->n_algo_iter < gkb->z_size)
-    n = gkb->algo->n_algo_iter;
+  if (algo->n_algo_iter < gkb->z_size)
+    n = algo->n_algo_iter;
 
   cs_real_t  err2_energy = 0.;
   for (int i = 0; i < n; i++)
     err2_energy += gkb->zeta_array[i];
 
   double  tau = (gkb->gamma > 0) ?
-    gkb->gamma*gkb->algo->param.rtol : gkb->algo->param.rtol;
+    gkb->gamma*algo->cvg_param.rtol : algo->cvg_param.rtol;
 
-  gkb->algo->res = sqrt(err2_energy);
+  algo->res = sqrt(err2_energy);
 
-  if (gkb->algo->n_algo_iter < 2)
-    gkb->algo->res0 = gkb->algo->res;
+  if (algo->n_algo_iter < 2)
+    algo->res0 = algo->res;
+
+  /* Increment the number of iterations */
+
+  algo->n_algo_iter += 1;
 
   /* Set the convergence status */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 0
   cs_log_printf(CS_LOG_DEFAULT,
                 "\nGKB.It%02d-- err2 = %6.4e ?<? tau * square_sum %6.4e\n",
-                gkb->algo->n_algo_iter, err2_energy, tau*gkb->zeta_square_sum);
+                algo->n_algo_iter, err2_energy, tau*gkb->zeta_square_sum);
 #endif
 
   if (err2_energy < tau * gkb->zeta_square_sum)
-    gkb->algo->cvg = CS_SLES_CONVERGED;
+    algo->cvg_status = CS_SLES_CONVERGED;
 
-  else if (gkb->algo->n_algo_iter >= gkb->algo->param.n_max_algo_iter)
-    gkb->algo->cvg = CS_SLES_MAX_ITERATION;
+  else if (algo->n_algo_iter >= algo->cvg_param.n_max_iter)
+    algo->cvg_status = CS_SLES_MAX_ITERATION;
 
-  else if (gkb->algo->res > gkb->algo->param.dtol * prev_res ||
-           gkb->algo->res > gkb->algo->param.dtol * gkb->algo->res0)
-    gkb->algo->cvg = CS_SLES_DIVERGED;
+  else if (algo->res > algo->cvg_param.dtol * algo->prev_res ||
+           algo->res > algo->cvg_param.dtol * algo->res0)
+    algo->cvg_status = CS_SLES_DIVERGED;
 
   else
-    gkb->algo->cvg = CS_SLES_ITERATING;
+    algo->cvg_status = CS_SLES_ITERATING;
 
-  if (gkb->algo->param.verbosity > 0)
+  if (algo->verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT,
                   "### GKB.It%d %5.3e %5d %6d z2:%6.4e renorm:%6.4e cvg:%d\n",
-                  gkb->algo->n_algo_iter, gkb->algo->res,
-                  gkb->algo->last_inner_iter, gkb->algo->n_inner_iter,
-                  z2, sqrt(gkb->zeta_square_sum), gkb->algo->cvg);
+                  algo->n_algo_iter, algo->res,
+                  algo->last_inner_iter, algo->n_inner_iter,
+                  z2, sqrt(gkb->zeta_square_sum), algo->cvg_status);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3878,54 +3881,29 @@ _gkb_cvg_test(cs_gkb_builder_t           *gkb)
  *         computed before calling this function.
  *
  * \param[in, out] uza     pointer to a Uzawa builder structure
- * \param[in]      prev_res previous residual
  *
  * \return true (one more iteration) otherwise false
  */
 /*----------------------------------------------------------------------------*/
 
 static bool
-_uza_cg_cvg_test(cs_uza_builder_t         *uza,
-                 double                    prev_res)
+_uza_cg_cvg_test(cs_uza_builder_t         *uza)
 {
-  /* Increment the number of algo. iterations */
+  cs_iter_algo_t  *algo = uza->algo;
 
-  uza->algo->n_algo_iter += 1;
+  /* The current residual is computing before calling this function */
 
-  /* Compute the new residual based on the norm of the divergence constraint */
+  algo->prev_res = algo->res;
 
-  const double  tau = fmax(uza->algo->param.rtol * uza->algo->normalization,
-                           uza->algo->param.atol);
+  cs_iter_algo_update_cvg_default(algo);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 0
-  cs_log_printf(CS_LOG_DEFAULT,
-                "\nUZA-CG.It%02d-- res=%6.4e | rtol=%6.4e\n",
-                uza->algo->n_algo_iter, uza->algo->res, uza->algo->param.rtol);
-#endif
-
-  /* Set the convergence status */
-
-  if (uza->algo->res < tau)
-    uza->algo->cvg = CS_SLES_CONVERGED;
-
-  else if (uza->algo->n_algo_iter >= uza->algo->param.n_max_algo_iter)
-    uza->algo->cvg = CS_SLES_MAX_ITERATION;
-
-  else if (uza->algo->res > uza->algo->param.dtol * prev_res ||
-           uza->algo->res > uza->algo->param.dtol * uza->algo->res0)
-    uza->algo->cvg = CS_SLES_DIVERGED;
-
-  else
-    uza->algo->cvg = CS_SLES_ITERATING;
-
-  if (uza->algo->param.verbosity > 0)
+  if (algo->verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT,
-                  "<UZACG.It%02d> res %5.3e | %4d %6d cvg%d | fit.eps %5.3e\n",
-                  uza->algo->n_algo_iter, uza->algo->res,
-                  uza->algo->last_inner_iter, uza->algo->n_inner_iter,
-                  uza->algo->cvg, tau);
+                  "<UZACG.It%02d> res:%5.3e; threshold:%5.3e | %4d %6d cvg%d\n",
+                  algo->n_algo_iter, algo->res, algo->tol,
+                  algo->last_inner_iter, algo->n_inner_iter, algo->cvg_status);
 
-  if (uza->algo->cvg == CS_SLES_ITERATING)
+  if (algo->cvg_status == CS_SLES_ITERATING)
     return true;
   else
     return false;
@@ -3942,46 +3920,31 @@ _uza_cg_cvg_test(cs_uza_builder_t         *uza,
 static void
 _uza_cvg_test(cs_uza_builder_t           *uza)
 {
-  /* Increment the number of algo. iterations */
-
-  uza->algo->n_algo_iter += 1;
+  cs_iter_algo_t  *algo = uza->algo;
 
   /* Compute the new residual based on the norm of the divergence constraint */
 
-  const cs_real_t  prev_res = uza->algo->res;
+  algo->prev_res = algo->res;
 
   cs_real_t  res_square = cs_dot_wxx(uza->n_p_dofs, uza->inv_mp, uza->res_p);
   cs_parall_sum(1, CS_DOUBLE, &res_square);
   assert(res_square > -DBL_MIN);
-  uza->algo->res = sqrt(res_square);
+  algo->res = sqrt(res_square);
 
-  double  tau = (uza->gamma > 0) ?
-    uza->algo->param.rtol/sqrt(uza->gamma) : uza->algo->param.rtol;
+  /* Define the tolerance threshold */
 
-  /* Set the convergence status */
+  algo->tol = (uza->gamma > 0) ?
+    algo->cvg_param.rtol/sqrt(uza->gamma) : algo->cvg_param.rtol;
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 0
-  cs_log_printf(CS_LOG_DEFAULT, "\nUZA.It%02d-- res=%6.4e | rtol=%6.4e\n",
-                uza->algo->n_algo_iter, uza->algo->res, uza->algo->param.rtol);
-#endif
+  /* Update the convergence status */
 
-  if (uza->algo->res < tau)
-    uza->algo->cvg = CS_SLES_CONVERGED;
+  cs_iter_algo_update_cvg(algo);
 
-  else if (uza->algo->n_algo_iter >= uza->algo->param.n_max_algo_iter)
-    uza->algo->cvg = CS_SLES_MAX_ITERATION;
-
-  else if (uza->algo->res > uza->algo->param.dtol * prev_res)
-    uza->algo->cvg = CS_SLES_DIVERGED;
-
-  else
-    uza->algo->cvg = CS_SLES_ITERATING;
-
-  if (uza->algo->param.verbosity > 0)
+  if (algo->verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT, "### UZA.It%02d-- %5.3e %5d %6d cvg:%d\n",
                   uza->algo->n_algo_iter, uza->algo->res,
                   uza->algo->last_inner_iter, uza->algo->n_inner_iter,
-                  uza->algo->cvg);
+                  uza->algo->cvg_status);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4018,26 +3981,26 @@ _uza_incr_cvg_test(cs_real_t                   delta_u_l2,
     algo->res0 = algo->res;
     algo->normalization = algo->res0;
 
-    if (algo->param.verbosity > 1)
+    if (algo->verbosity > 1)
       cs_log_printf(CS_LOG_DEFAULT, "### UZAi.res0:%5.3e modified rtol:%5.3e"
                     " atol:%5.3e\n",
-                    algo->res0, algo->normalization*algo->param.rtol,
-                    algo->param.atol);
+                    algo->res0, algo->normalization*algo->cvg_param.rtol,
+                    algo->cvg_param.atol);
 
   }
 
   /* Update the convergence status */
 
-  cs_iter_algo_update_cvg(algo);
+  cs_iter_algo_update_cvg_default(algo);
 
-  if (algo->param.verbosity > 0)
+  if (algo->verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT,
                   "### UZAi.It%02d %5.3e %5d %6d cvg:%d div:%5.3e, du:%5.3e\n",
                   algo->n_algo_iter, algo->res,
                   algo->last_inner_iter, algo->n_inner_iter,
-                  algo->cvg, divu_l2, delta_u_l2);
+                  algo->cvg_status, divu_l2, delta_u_l2);
 
-  if (algo->cvg == CS_SLES_ITERATING)
+  if (algo->cvg_status == CS_SLES_ITERATING)
     return true;
   else
     return false;
@@ -4556,7 +4519,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
       nslesp->strategy == CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK  ||
       nslesp->strategy == CS_NAVSTO_SLES_NOTAY_TRANSFORM                ||
       nslesp->strategy == CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK)
-    rtol = nslesp->il_algo_param.rtol;
+    rtol = nslesp->il_algo_cvg.rtol;
 
   cs_sles_convergence_state_t  code = cs_sles_solve(msles->sles,
                                                     matrix,
@@ -4726,7 +4689,8 @@ cs_cdofb_monolithic_block_krylov(const cs_navsto_param_t       *nsp,
 
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-  cs_iter_algo_t  *saddle_algo = cs_iter_algo_create(nslesp->il_algo_param);
+  cs_iter_algo_t  *saddle_algo = cs_iter_algo_create(nslesp->verbosity,
+                                                     nslesp->il_algo_cvg);
 
   /* Set the saddle-point system */
   /* --------------------------- */
@@ -4872,11 +4836,10 @@ cs_cdofb_monolithic_block_krylov(const cs_navsto_param_t       *nsp,
 
   int n_algo_iter = saddle_algo->n_algo_iter;
 
-  if (nslesp->il_algo_param.verbosity > 1)
+  if (nslesp->verbosity > 1)
     cs_log_printf(CS_LOG_DEFAULT,
                   " -cvg- inner_algo: cumulated_iters: %d\n",
                   saddle_algo->n_inner_iter);
-
 
   BFT_FREE(saddle_algo);
 
@@ -4941,7 +4904,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
   /* Main loop */
   /* ========= */
 
-  while (gkb->algo->cvg == CS_SLES_ITERATING) {
+  while (gkb->algo->cvg_status == CS_SLES_ITERATING) {
 
     /* Compute g (store as an update of d__v), q */
 
@@ -5173,7 +5136,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   slesp->name = system_name;
   slesp->cvg_param.rtol = fmax(slesp->cvg_param.atol,
                                fmin(slesp->cvg_param.rtol,
-                                    0.5*nslesp->il_algo_param.rtol));
+                                    0.5*nslesp->il_algo_cvg.rtol));
   slesp->cvg_param.n_max_iter = CS_MAX(100, init_max_iter);
 
   cs_param_sles_update_cvg_settings(true, slesp); /* use the field id */
@@ -5269,12 +5232,10 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   uza->algo->res0 = uza->algo->normalization;
   uza->algo->res = uza->algo->res0;
 
-  double  prev_res = uza->algo->res0;
-
   /* Main loop knowing g0, r0, d0, u0, p0 */
   /* ------------------------------------ */
 
-  while (_uza_cg_cvg_test(uza, prev_res)) {
+  while (_uza_cg_cvg_test(uza)) {
 
     /* Sensitivity step: Compute wk as the solution of A.wk = B^t.dk */
 
@@ -5375,7 +5336,6 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
     double  beta_factor = beta_num/beta_denum;
     beta_denum = beta_num; /* Next time it is used at the denumerator */
 
-    prev_res = uza->algo->res;
     uza->algo->res = sqrt(beta_num);
 
     /* dk <-- gk + beta_factor * dk */
@@ -5509,8 +5469,8 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
 
   slesp->name = system_name;
   slesp->cvg_param.rtol = _set_transfo_tol(init_eps,
-                                           nsp->sles_param->il_algo_param.rtol,
-                                           nsp->sles_param->il_algo_param.atol);
+                                           nsp->sles_param->il_algo_cvg.rtol,
+                                           nsp->sles_param->il_algo_cvg.atol);
 
   cs_real_t  normalization = cs_cdo_blas_square_norm_pfvp(uza->rhs);
 

@@ -32,6 +32,7 @@
 
 #include "cs_equation_param.h"
 #include "cs_iter_algo.h"
+#include "cs_param_sles.h"
 #include "cs_param_types.h"
 
 /*----------------------------------------------------------------------------*/
@@ -115,7 +116,7 @@ typedef struct {
 
   cs_equation_system_sles_strategy_t     sles_strategy;
 
-  cs_iter_algo_param_t                   linear_solver;
+  cs_param_sles_cvg_t                    linear_solver_cvg;
 
   /*!
    * @}
@@ -137,9 +138,6 @@ typedef struct {
  * \var CS_SYSKEY_LINEAR_SOLVER_RTOL
  *      Relative tolerance for which the (main) linear solver stops iterating
  *
- * \var CS_SYSKEY_LINEAR_SOLVER_VERBOSITY
- *      Level of verbosity for the (main) linear solver
- *
  * \var CS_SYSKEY_LINEAR_SOLVER_MAX_ITER
  *      Maximal number of iterations for the (main) linear solver
  *
@@ -158,7 +156,6 @@ typedef enum {
   CS_SYSKEY_LINEAR_SOLVER_ATOL,
   CS_SYSKEY_LINEAR_SOLVER_DTOL,
   CS_SYSKEY_LINEAR_SOLVER_RTOL,
-  CS_SYSKEY_LINEAR_SOLVER_VERBOSITY,
   CS_SYSKEY_LINEAR_SOLVER_MAX_ITER,
   CS_SYSKEY_SLES_STRATEGY,
   CS_SYSKEY_VERBOSITY,
@@ -172,10 +169,10 @@ typedef enum {
  *============================================================================*/
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and initialize a new cs_equation_system_param_t structure
+ * \brief Create and initialize a new cs_equation_system_param_t structure
  *
- * \param[in]  name            name of system of equations
- * \param[in]  block_var_dim   dimension of the variable in each block
+ * \param[in] name            name of system of equations
+ * \param[in] block_var_dim   dimension of the variable in each block
  *
  * \return a pointer to a newly initialized cs_equation_system_param_t
  */
@@ -187,9 +184,9 @@ cs_equation_system_param_create(const char       *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a cs_equation_system_param_t structure
+ * \brief Free a cs_equation_system_param_t structure
  *
- * \param[in, out]  sysp     pointer to the structure to free
+ * \param[in, out] sysp     pointer to the structure to free
  *
  * \return a NULL pointer
  */
@@ -200,7 +197,7 @@ cs_equation_system_param_free(cs_equation_system_param_t    *sysp);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Log the setup gathered in the structure cs_equation_system_param_t
+ * \brief Log the setup gathered in the structure cs_equation_system_param_t
  *
  * \param[in] sysp     pointer to a parameter structure to log
  */
@@ -211,8 +208,8 @@ cs_equation_system_param_log(const cs_equation_system_param_t    *sysp);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a parameter related to a keyname in a cs_equation_system_param_t
- *         structure
+ * \brief Set a parameter related to a keyname in a cs_equation_system_param_t
+ *        structure
  *
  * \param[in, out] sysp     pointer to a parameter structure to set
  * \param[in]      key      key related to the member of eq to set

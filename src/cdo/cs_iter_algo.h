@@ -31,6 +31,7 @@
 
 #include "cs_cdo_blas.h"
 #include "cs_math.h"
+#include "cs_param_sles.h"
 #include "cs_param_types.h"
 #include "cs_sles.h"
 
@@ -45,48 +46,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-/*! \struct cs_iter_algo_param_t
- *  \brief Set of common parameters to manage an iterative algorithm
- */
-
-typedef struct {
-
-/*!
- * @name Generic parameters
- * @{
- *
- * \var verbosity
- * Level of printed information
- *
- * @}
- * @name Stoppping criteria
- * Set of tolerances to drive the convergence of the iterative algorithm or
- * max. number of iterations
- * @{
- *
- * \var n_max_algo_iter
- * Maximal number of iterations for the algorithm
- *
- * \var atol
- * Absolute tolerance
- *
- * \var rtol
- * Relative tolerance
- *
- * \var dtol
- * Tolerance to detect a divergence of the algorithm. Not used if < 0
- *
- * @}
- */
-
-  int                  verbosity;
-  int                  n_max_algo_iter;
-  double               atol;
-  double               rtol;
-  double               dtol;
-
-} cs_iter_algo_param_t;
 
 /*! \struct cs_iter_algo_t
  *  \brief Structure to handle the convergence of an iterative algorithm
@@ -104,17 +63,20 @@ typedef struct {
  * @name Generic parameters
  * @{
  *
- * \var param
+ * \var verbosity
+ * Level of printed information
+ *
+ * \var cvg_param
  * structure storing the main settings
  *
  * \var context
  * pointer to structure cast on the fly
  *
  * @}
- * @name Convergence indicators
+ * @name Convergence monitoring
  * @{
  *
- * \var cvg
+ * \var cvg_status
  * Converged, iterating or diverged status
  *
  * \var normalization
@@ -150,11 +112,12 @@ typedef struct {
  * @}
  */
 
-  cs_iter_algo_param_t             param;
+  int                              verbosity;
+  cs_param_sles_cvg_t              cvg_param;
 
   void                            *context;
 
-  cs_sles_convergence_state_t      cvg;
+  cs_sles_convergence_state_t      cvg_status;
   double                           normalization;
   double                           tol;
 
@@ -217,25 +180,25 @@ typedef struct _cs_iter_algo_aa_t  cs_iter_algo_aa_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reset a cs_iter_algo_t structure
+ * \brief Reset a cs_iter_algo_t structure
  *
- * \param[in, out]  info   pointer to a cs_iter_algo_t
+ * \param[in, out] algo    pointer to a cs_iter_algo_t
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_iter_algo_reset(cs_iter_algo_t    *info)
+cs_iter_algo_reset(cs_iter_algo_t    *algo)
 {
-  if (info == NULL)
+  if (algo == NULL)
     return;
 
-  info->cvg = CS_SLES_ITERATING;
-  info->res0 = cs_math_big_r;
-  info->prev_res = cs_math_big_r;
-  info->res = cs_math_big_r;
-  info->n_algo_iter = 0;
-  info->n_inner_iter = 0;
-  info->last_inner_iter = 0;
+  algo->cvg_status = CS_SLES_ITERATING;
+  algo->res0 = cs_math_big_r;
+  algo->prev_res = cs_math_big_r;
+  algo->res = cs_math_big_r;
+  algo->n_algo_iter = 0;
+  algo->n_inner_iter = 0;
+  algo->last_inner_iter = 0;
 }
 
 /*============================================================================
@@ -278,14 +241,30 @@ cs_iter_algo_post_check(const char            *func_name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the convergence state and the number of iterations
+ * \brief Update the convergence status and the number of iterations. The
+ *        tolerance threshold has to be computed outside the function and
+ *        before calling this function.
  *
- * \param[in, out] ia      pointer to a cs_iter_algo_t structure
+ * \param[in, out] algo      pointer to a cs_iter_algo_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_update_cvg(cs_iter_algo_t         *ia);
+cs_iter_algo_update_cvg(cs_iter_algo_t         *algo);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the convergence status and the number of iterations. The
+ *        tolerance threshold is computed by a default formula relying on the
+ *        relative tolerance scaled by the normalization factor and the
+ *        absolute tolerance.
+ *
+ * \param[in, out] algo      pointer to a cs_iter_algo_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_iter_algo_update_cvg_default(cs_iter_algo_t         *algo);
 
 /*----------------------------------------------------------------------------*/
 /*!

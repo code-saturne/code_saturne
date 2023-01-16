@@ -1571,11 +1571,10 @@ _tpf_activate(void)
 
   mc->nl_algo_type = CS_PARAM_NL_ALGO_NONE; /* Linear algo. by default */
 
-  mc->nl_algo_param.n_max_algo_iter = 50;
-  mc->nl_algo_param.rtol = 1e-5;
-  mc->nl_algo_param.atol = 1e-5;
-  mc->nl_algo_param.dtol = 1e3;
-  mc->nl_algo_param.verbosity = 1;
+  mc->nl_algo_cvg.n_max_iter = 50;
+  mc->nl_algo_cvg.rtol = 1e-5;
+  mc->nl_algo_cvg.atol = 1e-5;
+  mc->nl_algo_cvg.dtol = 1e3;
 
   mc->anderson_param.n_max_dir = 5;
   mc->anderson_param.starting_iter = 3;
@@ -1741,11 +1740,9 @@ _tpf_log_context(cs_gwf_two_phase_t   *mc)
                   cs_param_get_nl_algo_name(mc->nl_algo_type));
 
     cs_log_printf(CS_LOG_SETUP, "  * GWF | Tolerances of non-linear algo:"
-                  " rtol: %5.3e; atol: %5.3e; dtol: %5.3e\n",
-                  mc->nl_algo_param.rtol, mc->nl_algo_param.atol,
-                  mc->nl_algo_param.dtol);
-    cs_log_printf(CS_LOG_SETUP, "  * GWF | Max of non-linear iterations: %d\n",
-                  mc->nl_algo_param.n_max_algo_iter);
+                  " rtol: %5.3e; atol: %5.3e; dtol: %5.3e; max_iter: %d\n",
+                  mc->nl_algo_cvg.rtol, mc->nl_algo_cvg.atol,
+                  mc->nl_algo_cvg.dtol, mc->nl_algo_cvg.n_max_iter);
 
     if (mc->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
 
@@ -2640,9 +2637,9 @@ _check_nl_tpf_dpc_cvg(cs_param_nl_algo_t        nl_algo_type,
 
   /* Update the convergence members */
 
-  cs_iter_algo_update_cvg(algo);
+  cs_iter_algo_update_cvg_default(algo);
 
-  if (algo->param.verbosity > 0) {
+  if (algo->verbosity > 0) {
 
     if (algo->n_algo_iter == 1)
       cs_log_printf(CS_LOG_DEFAULT,
@@ -2656,7 +2653,7 @@ _check_nl_tpf_dpc_cvg(cs_param_nl_algo_t        nl_algo_type,
 
   } /* verbosity > 0 */
 
-  return algo->cvg;
+  return algo->cvg_status;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2712,13 +2709,13 @@ _check_nl_tpf_cvg(cs_param_nl_algo_t        nl_algo_type,
 
   /* Update the convergence members */
 
-  cs_iter_algo_update_cvg(algo);
+  cs_iter_algo_update_cvg_default(algo);
 
-  if (algo->param.verbosity > 0) {
+  if (algo->verbosity > 0) {
 
     if (algo->n_algo_iter == 1) {
 
-      if (algo->param.verbosity > 1)
+      if (algo->verbosity > 1)
         cs_log_printf(CS_LOG_DEFAULT,
                       "### GWF.TPF %10s.It    Algo.Res   Tolerance"
                       "  ||D_Pg||  ||D_Pl||\n",
@@ -2730,7 +2727,7 @@ _check_nl_tpf_cvg(cs_param_nl_algo_t        nl_algo_type,
 
     }
 
-    if (algo->param.verbosity > 1)
+    if (algo->verbosity > 1)
       cs_log_printf(CS_LOG_DEFAULT,
                     "### GWF.TPF %10s.It%02d  %5.3e  %6.4e %5.3e %5.3e\n",
                     cs_param_get_nl_algo_label(nl_algo_type),
@@ -2744,7 +2741,7 @@ _check_nl_tpf_cvg(cs_param_nl_algo_t        nl_algo_type,
 
   } /* verbosity > 0 */
 
-  return algo->cvg;
+  return algo->cvg_status;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3198,6 +3195,7 @@ _gwf_create(void)
 
   /* Default initialization */
 
+  gw->verbosity = 0;
   gw->model = CS_GWF_N_MODEL_TYPES;
   gw->flag = 0;
   gw->post_flag = CS_GWF_POST_DARCY_FLUX_BALANCE;
@@ -4324,7 +4322,7 @@ cs_gwf_init_values(const cs_mesh_t             *mesh,
 
       if (mc->nl_algo_type != CS_PARAM_NL_ALGO_NONE) {
 
-        mc->nl_algo = cs_iter_algo_create(mc->nl_algo_param);
+        mc->nl_algo = cs_iter_algo_create(gw->verbosity, mc->nl_algo_cvg);
 
         /* One assumes that the discretization schemes are all set to CDO
            vertex-based schemes */

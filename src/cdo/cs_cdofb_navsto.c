@@ -1972,9 +1972,9 @@ cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t        nl_algo_type,
 
   /* Update the convergence members */
 
-  cs_iter_algo_update_cvg(algo);
+  cs_iter_algo_update_cvg_default(algo);
 
-  if (algo->param.verbosity > 0) {
+  if (algo->verbosity > 0) {
 
     if (algo->n_algo_iter == 1)
       cs_log_printf(CS_LOG_DEFAULT,
@@ -1988,7 +1988,7 @@ cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t        nl_algo_type,
 
   } /* verbosity > 0 */
 
-  return algo->cvg;
+  return algo->cvg_status;
 }
 
 /*----------------------------------------------------------------------------*/

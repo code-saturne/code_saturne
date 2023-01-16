@@ -174,7 +174,7 @@ cs_saddle_block_precond_free(cs_saddle_block_precond_t  **p_sbp);
  * \param[in]      sbp     Block-preconditioner for the Saddle-point problem
  * \param[in, out] x1      array for the first part
  * \param[in, out] x2      array for the second part
- * \param[in, out] ia      pointer to a cs_iter_algo_t structure
+ * \param[in, out] algo    pointer to a cs_iter_algo_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -183,7 +183,7 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
                  cs_saddle_block_precond_t   *sbp,
                  cs_real_t                   *x1,
                  cs_real_t                   *x2,
-                 cs_iter_algo_t              *ia);
+                 cs_iter_algo_t              *algo);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -200,7 +200,7 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
  * \param[in]      sbp      block-preconditioner for the Saddle-point problem
  * \param[in, out] x1       array for the first part
  * \param[in, out] x2       array for the second part
- * \param[in, out] ia       pointer to a cs_iter_algo_t structure
+ * \param[in, out] algo     pointer to a cs_iter_algo_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -210,7 +210,7 @@ cs_saddle_gcr(int                          restart,
               cs_saddle_block_precond_t   *sbp,
               cs_real_t                   *x1,
               cs_real_t                   *x2,
-              cs_iter_algo_t              *ia);
+              cs_iter_algo_t              *algo);
 
 /*----------------------------------------------------------------------------*/
 /*!
