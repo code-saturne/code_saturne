@@ -1037,6 +1037,14 @@ cs_mesh_cartesian_define_dir_params(cs_mesh_cartesian_params_t *mp,
     }
   }
 
+  if (mp->params[idim] != NULL) {
+    bft_printf("Warning: You are modifying parameters for direction \"%d\ "
+               "which was allready defined.\n",
+               idim);
+    bft_printf_flush();
+    BFT_FREE(mp->params[idim]);
+  }
+
   mp->params[idim] = _cs_mesh_cartesian_create_direction(_law,
                                                          ncells,
                                                          smin,
