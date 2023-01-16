@@ -59,7 +59,7 @@ typedef struct _cs_mesh_cartesian_params_t cs_mesh_cartesian_params_t;
  */
 /*----------------------------------------------------------------------------*/
 
-const int
+int
 cs_mesh_cartesian_get_number_of_meshes(void);
 
 /*----------------------------------------------------------------------------*/
@@ -258,7 +258,7 @@ cs_mesh_cartesian_get_name(const int id);
  */
 /*----------------------------------------------------------------------------*/
 
-const int
+int
 cs_mesh_cartesian_get_gc_id_shift(const int id);
 
 /*----------------------------------------------------------------------------*/

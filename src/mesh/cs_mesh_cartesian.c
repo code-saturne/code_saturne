@@ -617,7 +617,7 @@ _add_nz_face(cs_mesh_cartesian_params_t *mp,
  */
 /*----------------------------------------------------------------------------*/
 
-const int
+int
 cs_mesh_cartesian_get_number_of_meshes(void)
 {
   return _n_structured_meshes;
@@ -1095,7 +1095,7 @@ cs_mesh_cartesian_get_name(const int id)
  */
 /*----------------------------------------------------------------------------*/
 
-const int
+int
 cs_mesh_cartesian_get_gc_id_shift(const int id)
 {
   cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(id);
