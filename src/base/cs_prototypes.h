@@ -129,17 +129,6 @@ extern void CS_PROCF (initi1, INITI1)
  void
 );
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return pointer to automatic face bc flag array.
- *
- * \return  auto_flag  pointer to automatic boundary condition array
- */
-/*----------------------------------------------------------------------------*/
-
-int *
-cs_atmo_get_auto_flag(void);
-
 /*----------------------------------------------------------------------------
  * Add field indexes associated with a new non-user solved variable,
  * with default options
@@ -164,6 +153,27 @@ cs_add_model_field_indexes(int  f_id);
 
 void
 cs_add_model_thermal_field_indexes(int  f_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to automatic face bc flag array.
+ *
+ * \return  auto_flag  pointer to automatic boundary condition array
+ */
+/*----------------------------------------------------------------------------*/
+
+int *
+cs_atmo_get_auto_flag(void);
+
+/*----------------------------------------------------------------------------
+ * Computes the explicit chemical source term for atmospheric chemistry in
+ * case of a semi-coupled resolution
+ *----------------------------------------------------------------------------*/
+
+void
+cs_atmo_chem_source_terms(int         iscal,
+                          cs_real_t   st_exp[],
+                          cs_real_t   st_imp[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -315,6 +325,15 @@ void
 cs_lagr_status(int  *model_flag,
                int  *restart_flag,
                int  *frozen_flag);
+
+/*----------------------------------------------------------------------------
+ * Exchange of coupling variables between tow instances
+ * of code_saturne thanks to cells.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sat_coupling_exchange_at_cells(int         f_id,
+                                  cs_real_t   st_exp[]);
 
 /*----------------------------------------------------------------------------
  * Return condensation model metal structures metal surface.

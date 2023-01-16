@@ -2834,6 +2834,19 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Computes the explicit chemical source term for atmospheric chemistry
+    ! in case of a semi-coupled resolution
+
+     subroutine chem_source_terms(iscal, st_exp, st_imp) &
+       bind(C, name='cs_atmo_chem_source_terms')
+       use, intrinsic :: iso_c_binding
+       implicit none
+       integer(c_int), value :: iscal
+       real(kind=c_double), dimension(*), intent(inout) :: st_exp, st_imp
+     end subroutine chem_source_terms
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C user function for cooling tower
 
     subroutine cs_ctwr_field_pointer_map()  &
