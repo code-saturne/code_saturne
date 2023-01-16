@@ -3,6 +3,13 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- Cartesian mesher can now handle multiple blocks
+  * This requires modification of basic API, specifically by adding
+    an additional input argument for some functions (name of id).
+  * A cartesian block can now have a name, which will lead to a renaming
+    of boundary groups such as instead of "X0" the user will have
+    "<name>_X0".
+
 - The API for the definition by array has been modified to handle more
   complex cases. This induces a modification of some user settings,
   for instance when defininig a property, a boundary condition or a

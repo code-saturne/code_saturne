@@ -1059,73 +1059,152 @@ _read_dimensions(cs_mesh_t          *mesh,
  * This function updates the information in the mesh
  *
  * parameters
+ *   id       <-> id of structured mesh to build
  *   mesh     <-> pointer to mesh structure
  *   mb       <-> pointer to mesh builder helper structure
  *----------------------------------------------------------------------------*/
 
 static void
-_read_cartesian_dimensions(cs_mesh_t         *mesh,
+_read_cartesian_dimensions(const int          id,
+                           cs_mesh_t         *mesh,
                            cs_mesh_builder_t *mb)
 {
-  cs_gnum_t _nx = cs_mesh_cartesian_get_ncells(0);
-  cs_gnum_t _ny = cs_mesh_cartesian_get_ncells(1);
-  cs_gnum_t _nz = cs_mesh_cartesian_get_ncells(2);
+
+  /* Set shift value for group ids */
+  cs_mesh_cartesian_set_gc_id_shift(id, mesh->n_families);
+
+  // Get number of cells in each direction
+  const cs_gnum_t _n_g_cells = cs_mesh_cartesian_get_n_g_cells(id);
+  const cs_gnum_t _n_g_faces = cs_mesh_cartesian_get_n_g_faces(id);
+  const cs_gnum_t _n_g_vtx   = cs_mesh_cartesian_get_n_g_vtx(id);
 
   /* Get total number of cells */
-  mesh->n_g_cells = _nx * _ny * _nz;
+  mesh->n_g_cells += _n_g_cells;
 
   /* Total number of faces */
-  mb->n_g_faces = 3 * _nx * _ny * _nz
-                + _nx * _ny
-                + _nx * _nz
-                + _ny * _nz;
+  mb->n_g_faces += _n_g_faces;
 
   /* Vertices */
-  mesh->n_g_vertices = (_nx + 1) * (_ny + 1) * (_nz + 1);
+  mesh->n_g_vertices += _n_g_vtx;
 
   /* Face to vertices connectivity.
    * Quadrangles means we have 4 vertices per face.
    */
-  mb->n_g_face_connect_size = 4 * mb->n_g_faces;
+  mb->n_g_face_connect_size += 4 * _n_g_faces;
 
-  /* One family */
-  mesh->n_families = 7;
-  mesh->n_max_family_items = 1;
-  if (mesh->family_item == NULL)
-    BFT_MALLOC(mesh->family_item, mesh->n_families, int);
-  for (int i = 0; i < mesh->n_families - 1; i++)
-    mesh->family_item[i] = -(i+1);
+  /* Families : 1 for volume and 6 for boundaries + default */
+  const int _n_cart_families = 8;
+  //mesh->n_families += _n_cart_families + 1;
+  mesh->n_families += _n_cart_families;
 
-  mesh->family_item[mesh->n_families - 1] = 0;
+  /* We use groups names, default or user defined, hence no need for group properties */
+  /* 1 property - color/name */
+
+  const int _n_cart_props_max = 1;
+  if (_n_cart_props_max > mesh->n_max_family_items) {
+    // Update (pad) previous definitions
+    BFT_REALLOC(mesh->family_item,
+                mesh->n_families*_n_cart_props_max,
+                int);
+
+    for (int i = mesh->n_max_family_items;
+         i < _n_cart_props_max;
+         i++) {
+      for (int j = 0; j < mesh->n_families - _n_cart_families; j++)
+        mesh->family_item[(mesh->n_families - _n_cart_families)*i + j] = 0;
+    }
+    mesh->n_max_family_items = _n_cart_props_max;
+  }
+
+  // --------------
+  // Group class id
+  // --------------
 
   /* Add groups : 6 boundary face */
-  mesh->n_groups = 6;
-  BFT_MALLOC(mesh->group_idx, mesh->n_groups + 1, int);
-  mesh->group_idx[0] = 0;
-  for (int i = 0; i < mesh->n_groups; i++)
-    mesh->group_idx[i+1] = mesh->group_idx[i] + 3;
+  const int _n_grp_cart = 7;
+  const char *_default_b_names[7] = {"BOX_VOLUME",
+                                     "X0", "X1", "Y0", "Y1", "Z0", "Z1"};
 
-  BFT_REALLOC(mesh->group, 19, char);
+  mesh->n_groups += _n_grp_cart;
 
-  for (int i = 0; i < mesh->n_groups; i++) {
-    int i0 = 3*i;
-    char *_buf = mesh->group + i0;
-    if (i == 0)
-      strcpy(_buf, "X0");
-    if (i == 1)
-      strcpy(_buf, "X1");
-    if (i == 2)
-      strcpy(_buf, "Y0");
-    if (i == 3)
-      strcpy(_buf, "Y1");
-    if (i == 4)
-      strcpy(_buf, "Z0");
-    if (i == 5)
-      strcpy(_buf, "Z1");
+  if (mesh->family_item == NULL)
+    BFT_MALLOC(mesh->family_item,
+               mesh->n_families * mesh->n_max_family_items,
+               int);
 
-    _buf[2] = '\0';
+  if (mesh->n_families == _n_cart_families) {
+    for (int i = 0; i < mesh->n_families - 1; i++)
+      mesh->family_item[i] = -(i+1);
+    mesh->family_item[mesh->n_families - 1] = 0;
   }
-  mesh->group[18] = '\0';
+  else {
+    BFT_REALLOC(mesh->family_item,
+                mesh->n_families * mesh->n_max_family_items,
+                int);
+    /* Shift previous data */
+    for (int j = mesh->n_max_family_items - 1; j > 0; j--) {
+      for (int i = mesh->n_families - _n_cart_families - 1; i > -1; i--)
+        mesh->family_item[mesh->n_families*j + i]
+          = mesh->family_item[(mesh->n_families - _n_cart_families)*j + i];
+    }
+    for (int i = 0; i < _n_cart_families - 1; i++) {
+      /* Copy group class data, shifting group names if necessary */
+      mesh->family_item[mesh->n_families-_n_cart_families+i]
+        = -(i + 1 + mesh->n_groups - _n_grp_cart);
+      /* Pad if necessary */
+      for (int j = _n_cart_props_max; j < mesh->n_max_family_items; j++)
+        mesh->family_item[mesh->n_families*j + (mesh->n_families-_n_cart_families+i)] = 0;
+    }
+  }
+  for (int ii = 0; ii < mesh->n_families; ii++)
+    bft_printf("Familly[%d] = %d\n", ii, mesh->family_item[ii]);
+  bft_printf_flush();
+
+  // ---------------------------------
+  // Compute total size of group names
+  // ---------------------------------
+
+  if (mesh->group_idx == NULL) {
+    BFT_MALLOC(mesh->group_idx, mesh->n_groups + 1, int);
+    mesh->group_idx[0] = 0;
+  }
+  else {
+    BFT_REALLOC(mesh->group_idx, mesh->n_groups + 1, int);
+  }
+
+  /* Check if block prefix is available */
+  const char *_m_name = cs_mesh_cartesian_get_name(id);
+  int _prefix_name_len = 0;
+  if (_m_name != NULL && strlen(_m_name) != 0)
+    _prefix_name_len += strlen(_m_name) + 1; // "_" separator
+
+  /* Compute each group name length */
+  int _i0 = mesh->n_groups - _n_grp_cart;
+  for (int i = mesh->n_groups - _n_grp_cart; i < mesh->n_groups; i++)
+    mesh->group_idx[i+1] = mesh->group_idx[i] + _prefix_name_len
+                         + strlen(_default_b_names[i-_i0]) + 1;
+
+  int _gp_id0 = mesh->group_idx[mesh->n_groups - _n_grp_cart] - mesh->group_idx[0];
+
+  BFT_REALLOC(mesh->group,
+              mesh->group_idx[mesh->n_groups]-mesh->group_idx[0],
+              char);
+
+  _i0 = 0;
+  for (int i = 0; i < _n_grp_cart; i++) {
+    char *_buf = mesh->group + _gp_id0 + _i0;
+
+    int _grp_len = _prefix_name_len + strlen(_default_b_names[i]) + 1;
+
+    if (_prefix_name_len == 0)
+      snprintf(_buf, _grp_len, "%s", _default_b_names[i]);
+    else
+      snprintf(_buf, _grp_len, "%s_%s", _m_name, _default_b_names[i]);
+
+    _i0 += _grp_len;
+  }
+  // snprintf adds the '\0' terminator when called
+
 }
 
 /*----------------------------------------------------------------------------
@@ -2248,7 +2327,9 @@ cs_preprocessor_data_read_headers(cs_mesh_t          *mesh,
 
   if (_n_mesh_files == 0 && cs_mesh_cartesian_need_build()) {
 
-    _read_cartesian_dimensions(mesh, mesh_builder);
+    int _n_cartesian_meshes = cs_mesh_cartesian_get_number_of_meshes();
+    for (int m_id = 0; m_id < _n_cartesian_meshes; m_id++)
+      _read_cartesian_dimensions(m_id, mesh, mesh_builder);
 
   } else {
     _mesh_reader_t *mr = NULL;
@@ -2354,7 +2435,8 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
     _set_block_ranges(mesh, mesh_builder);
 
   if (cs_mesh_cartesian_need_build()) {
-    cs_mesh_cartesian_connectivity(mesh, mesh_builder, echo);
+    for (int m_id = 0; m_id < cs_mesh_cartesian_get_number_of_meshes(); m_id++)
+      cs_mesh_cartesian_block_connectivity(m_id, mesh, mesh_builder, echo);
     mesh->modified |= CS_MESH_MODIFIED;
   }
   else {

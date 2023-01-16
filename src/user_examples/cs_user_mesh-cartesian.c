@@ -68,7 +68,9 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define a cartesian mesh to use during computation.
+ * \brief Define a cartesian mesh to use during computation. If a cartesian block
+ * is created with a non NULL name, then all groups will be prefixed with the
+ * given name. For example, "X0" face group will be called "<name>_X0" instead.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -92,17 +94,21 @@ cs_user_mesh_cartesian_define(void)
      */
     cs_real_t xyz[6] = {0., -1., 0.5, 1., 1., 2.5};
 
-    cs_mesh_cartesian_define_simple(nxyz, xyz);
+    /* No name for this mesh */
+    const char *_name = NULL;
+
+    cs_mesh_cartesian_define_simple(_name, nxyz, xyz);
   }
   /*! [mesh_cartesian_1] */
 
   /*! [mesh_cartesian_2] */
   {
     /* Create a mesh using simple parameters */
-    cs_mesh_cartesian_create();
+    cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_create(NULL);
 
     /* Constant step for X direction */
-    cs_mesh_cartesian_define_dir_params(0, /* Direction index */
+    cs_mesh_cartesian_define_dir_params(mp, /* Pointer to mesh parameters */
+                                        0,  /* Direction index */
                                         CS_MESH_CARTESIAN_CONSTANT_LAW,
                                         10, /* Number of cells */
                                         0., /* Min value of direction coord */
@@ -114,7 +120,8 @@ cs_user_mesh_cartesian_define(void)
      * arguments are the same of the Parabolic law:
      * CS_MESH_CARTESIAN_PARABOLIC
      */
-    cs_mesh_cartesian_define_dir_params(1, /* Direction index */
+    cs_mesh_cartesian_define_dir_params(mp, /* Pointer to mesh parameters */
+                                        1, /* Direction index */
                                         CS_MESH_CARTESIAN_GEOMETRIC_LAW,
                                         15, /* Number of cells */
                                         0., /* Min value of direction coord */
@@ -127,7 +134,10 @@ cs_user_mesh_cartesian_define(void)
      */
     int nz = 7;
     cs_real_t zvtx[8] = {0., 0.1, 0.3, 0.42, 0.8, 0.9, 1.2, 1.5};
-    cs_mesh_cartesian_define_dir_user(2, nz, zvtx);
+    cs_mesh_cartesian_define_dir_user(mp, /* Pointer to mesh parameters */
+                                      2,
+                                      nz,
+                                      zvtx);
 
   }
   /*! [mesh_cartesian_2] */
@@ -151,7 +161,8 @@ cs_user_mesh_cartesian_define(void)
      *
      */
 
-    cs_mesh_cartesian_define_from_csv("cartesian_vertex_coordinates.csv");
+    cs_mesh_cartesian_define_from_csv("NULL", /* No defined name for this mesh */
+                                      "cartesian_vertex_coordinates.csv");
   }
   /*! [mesh_cartesian_3] */
 

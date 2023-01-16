@@ -37,11 +37,11 @@
 
 typedef enum {
 
-  CS_MESH_CARTESIAN_CONSTANT_LAW,
-  CS_MESH_CARTESIAN_GEOMETRIC_LAW,
-  CS_MESH_CARTESIAN_PARABOLIC_LAW,
-  CS_MESH_CARTESIAN_USER_LAW,
-  CS_MESH_CARTESIAN_N_LAW_TYPES
+  CS_MESH_CARTESIAN_CONSTANT_LAW,  /* Constant step law */
+  CS_MESH_CARTESIAN_GEOMETRIC_LAW, /* Geometric step law */
+  CS_MESH_CARTESIAN_PARABOLIC_LAW, /* Parabolic step law */
+  CS_MESH_CARTESIAN_USER_LAW,      /* User defined discretization */
+  CS_MESH_CARTESIAN_N_LAW_TYPES    /* Number of step discretization laws */
 
 } cs_mesh_cartesian_law_t;
 
@@ -53,27 +53,73 @@ typedef struct _cs_mesh_cartesian_params_t cs_mesh_cartesian_params_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return number of structured meshes to build.
+ *
+ * \returns number of structured meshes to build.
+ */
+/*----------------------------------------------------------------------------*/
+
+const int
+cs_mesh_cartesian_get_number_of_meshes(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return pointer to cartesian mesh parameters structure
+ *
+ * \param[in] id    Id of the cartesian mesh
  *
  * \return pointer to cs_mesh_cartesian_params_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_mesh_cartesian_params_t *
-cs_mesh_cartesian_get_params(void);
+cs_mesh_cartesian_by_id(const int id);
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Create cartesian mesh structure
+/*!
+ * \brief Get function for structured mesh based on its name.
+ *
+ * \param[in] name  Name of mesh
+ *
+ * \returns pointer to corresponding mesh parameters. NULL if mesh does not exist.
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_mesh_cartesian_create(void);
+cs_mesh_cartesian_params_t *
+cs_mesh_cartesian_by_name_try(const char *name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get function for structured mesh based on its name.
+ *
+ * \param[in] name  Name of mesh
+ *
+ * \returns pointer to corresponding mesh parameters. Raises error if mesh does
+ * not exist.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_mesh_cartesian_params_t *
+cs_mesh_cartesian_by_name(const char *name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create cartesian mesh structure
+ *
+ * \param[in] name  Name of mesh
+ *
+ * \returns pointer newly created mesh parameters.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_mesh_cartesian_params_t *
+cs_mesh_cartesian_create(const char *name);
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Define a simple cartesian mesh with a constant step in all
  *         directions
  *
+ * \param[in] name    Name of mesh to create
  * \param[in] ncells  Array of size 3 containing number of cells in each
  *                    direction
  * \param[in] xyz     Array of size 6 containing min values, followed by
@@ -81,13 +127,15 @@ cs_mesh_cartesian_create(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_mesh_cartesian_define_simple(int        ncells[3],
-                                cs_real_t  xyz[6]);
+int
+cs_mesh_cartesian_define_simple(const char *name,
+                                int         ncells[3],
+                                cs_real_t   xyz[6]);
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Define directions parameters based on a user input
  *
+ * \param[in] mp         Pointer to mesh parameters
  * \param[in] idir       Direction index. 0->X, 1->Y, 2->Z
  * \param[in] ncells     Number of cells for the direction
  * \param[in] vtx_coord  Array of size ncells+1 containing 1D coordinate values
@@ -96,9 +144,10 @@ cs_mesh_cartesian_define_simple(int        ncells[3],
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_define_dir_user(int       idir,
-                                  int       ncells,
-                                  cs_real_t vtx_coord[]);
+cs_mesh_cartesian_define_dir_user(cs_mesh_cartesian_params_t *mp,
+                                  int                         idir,
+                                  int                         ncells,
+                                  cs_real_t                   vtx_coord[]);
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Define direction parameters based on a piecewise definition. Each
@@ -122,11 +171,12 @@ cs_mesh_cartesian_define_dir_user(int       idir,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_define_dir_geom_by_part(int                idir,
-                                          int                n_parts,
-                                          const cs_real_t    part_coords[],
-                                          const cs_lnum_t    n_part_cells[],
-                                          const cs_real_t    amp_factors[]);
+cs_mesh_cartesian_define_dir_geom_by_part(cs_mesh_cartesian_params_t *mp,
+                                          int                         idir,
+                                          int                         n_parts,
+                                          const cs_real_t             part_coords[],
+                                          const cs_lnum_t             n_part_cells[],
+                                          const cs_real_t             amp_factors[]);
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Define a simple cartesian mesh based on a CSV file.
@@ -142,16 +192,19 @@ cs_mesh_cartesian_define_dir_geom_by_part(int                idir,
  *             For example, if for index 'j' the first direction is empty,
  *             format is : ';X2[j];X3[j]'
  *
+ * \param[in] name           Name of new mesh
  * \param[in] csv_file_name  name of CSV file containing mesh information.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_define_from_csv(const char *csv_file_name);
+cs_mesh_cartesian_define_from_csv(const char *name,
+                                  const char *csv_file_name);
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Define parameters for a given direction.
  *
+ * \param[in] mp           Pointer to mesh parameters
  * \param[in] idim         Geometrical direction: 0->X, 1->Y, 2->Z
  * \param[in] law          1D discretization law: constant, geometric or
  *                         parabolic
@@ -164,12 +217,13 @@ cs_mesh_cartesian_define_from_csv(const char *csv_file_name);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_define_dir_params(int                     idim,
-                                    cs_mesh_cartesian_law_t law,
-                                    int                     ncells,
-                                    cs_real_t               smin,
-                                    cs_real_t               smax,
-                                    cs_real_t               progression);
+cs_mesh_cartesian_define_dir_params(cs_mesh_cartesian_params_t *mp,
+                                    int                         idim,
+                                    cs_mesh_cartesian_law_t     law,
+                                    int                         ncells,
+                                    cs_real_t                   smin,
+                                    cs_real_t                   smax,
+                                    cs_real_t                   progression);
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Indicate if a cartesian mesh is to be built.
@@ -182,8 +236,88 @@ int
 cs_mesh_cartesian_need_build(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get name of structured mesh
+ *
+ * \param[in] id    Id of the cartesian mesh
+ *
+ * \returns Name of the mesh
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_mesh_cartesian_get_name(const int id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get group class id shift of cartesian mesh
+ *
+ * \param[in] id    Id of the cartesian mesh
+ *
+ * \returns shift value
+ */
+/*----------------------------------------------------------------------------*/
+
+const int
+cs_mesh_cartesian_get_gc_id_shift(const int id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set group class id shift of cartesian mesh
+ *
+ * \param[in] id    Id of the cartesian mesh
+ * \param[in] shift Value of shift index
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_cartesian_set_gc_id_shift(const int id,
+                                  const int shift);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get global number of cells of a cartesian mesh
+ *
+ * \param[in] id    Id of the cartesian mesh
+ *
+ * \returns number of cells
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gnum_t
+cs_mesh_cartesian_get_n_g_cells(const int id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get global number of faces of a cartesian mesh
+ *
+ * \param[in] id    Id of the cartesian mesh
+ *
+ * \returns number of faces
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gnum_t
+cs_mesh_cartesian_get_n_g_faces(const int id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get global number of vertices of a cartesian mesh
+ *
+ * \param[in] id    Id of the cartesian mesh
+ *
+ * \returns number of vertices
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gnum_t
+cs_mesh_cartesian_get_n_g_vtx(const int id);
+
+/*----------------------------------------------------------------------------*/
 /*! \brief Get number of cells in a given direction.
  *
+ * \param[in] id    Id of the cartesian mesh
  * \param[in] idim  Index of direction: 0->X, 1->Y, 2->Z
  *
  * \return Number of cells in corresponding direction (int)
@@ -191,11 +325,13 @@ cs_mesh_cartesian_need_build(void);
 /*----------------------------------------------------------------------------*/
 
 int
-cs_mesh_cartesian_get_ncells(int idim);
+cs_mesh_cartesian_get_ncells(const int id,
+                             const int idim);
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Build unstructured connectivity needed for partitionning.
  *
+ * \param[in] id    Id of the cartesian mesh
  * \param[in] m     pointer to cs_mesh_t structure
  * \param[in] mb    pointer to cs_mesh_builder_t structure
  * \param[in] echo  verbosity flag
@@ -203,9 +339,19 @@ cs_mesh_cartesian_get_ncells(int idim);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_connectivity(cs_mesh_t          *m,
-                               cs_mesh_builder_t  *mb,
-                               long                echo);
+cs_mesh_cartesian_block_connectivity(const int           id,
+                                     cs_mesh_t          *m,
+                                     cs_mesh_builder_t  *mb,
+                                     long                echo);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute all global values for meshes.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_cartesian_finalize_definition(void);
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Destroy cartesian mesh parameters
@@ -214,6 +360,17 @@ cs_mesh_cartesian_connectivity(cs_mesh_t          *m,
 
 void
 cs_mesh_cartesian_params_destroy(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set maximum number of cartesian blocks (by default is set to None)
+ *
+ * \param[in] n_blocks  maximum number of cartesian blocks which can be created
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_cartesian_set_max_number_of_blocks(const int n_blocks);
 
 /*----------------------------------------------------------------------------*/
 

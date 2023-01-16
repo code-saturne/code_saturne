@@ -83,26 +83,77 @@ typedef struct {
 
 struct _cs_mesh_cartesian_params_t {
 
+  // Name of cartesian block
+  char                           *name;
+
+  // Id of the mesh
+  int                             id;
+
   /* Number of direction, set to 3 by default */
   int                             ndir;
 
   /* Array of size ndir, containing parameters for each direction */
   _cs_mesh_cartesian_direction_t **params;
 
+  /* Index shifting for group id */
+  int                              gc_id_shift;
+
+  /* global values */
+  cs_gnum_t n_g_cells;
+  cs_gnum_t n_g_faces;
+  cs_gnum_t n_g_vtx;
+
+  cs_gnum_t n_g_cells_offset;
+  cs_gnum_t n_g_faces_offset;
+  cs_gnum_t n_g_vtx_offset;
+
+  cs_gnum_t n_cells_on_rank;
+  cs_gnum_t n_faces_on_rank;
+  cs_gnum_t n_vtx_on_rank;
 };
 
 /*============================================================================
  * Private global variables
  *============================================================================*/
 
+/* Flag to tell if a cartesian mesh is to be built */
 static int _build_mesh_cartesian = 0;
 
+/* Parameters for structured mesh */
 static int _n_structured_meshes = 0;
 static cs_mesh_cartesian_params_t **_mesh_params = NULL;
+
+/* Flag to set a maximum number of cartesian blocks */
+static int _n_structured_meshes_max = -1;
 
 /*============================================================================
  * Private functions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute intersection between two intervals
+ *
+ * \param[in]  i1 First interval
+ * \param[in]  i2 Second interval
+ * \param[out] i3 Intersection interval
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_intersect_intervals(const cs_gnum_t *i1,
+                     const cs_gnum_t *i2,
+                     cs_gnum_t *i3)
+{
+  if (i1[0] > i2[1] || i2[0] > i1[1]) {
+    i3[0] = -1;
+    i3[1] = -1;
+  }
+  else {
+    i3[0] = (i1[0] < i2[0]) ? i2[0] : i1[0]; // start with max
+    i3[1] = (i1[1] < i2[1]) ? i1[1] : i2[1]; // end with min
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -127,6 +178,34 @@ _get_structured_mesh_by_id(const int id)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get function for structured mesh based on its name.
+ *
+ * \param[in] name  Name of mesh
+ *
+ * \returns pointer to corresponding mesh parameters. NULL if mesh does not exist.
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_mesh_cartesian_params_t *
+_get_structured_mesh_by_name_try(const char *name)
+{
+  cs_mesh_cartesian_params_t *retval = NULL;
+
+  if (name != NULL && strlen(name) > 0) {
+    for (int i = 0; i < _n_structured_meshes; i++) {
+      if (_mesh_params[i]->name != NULL &&
+          strcmp(_mesh_params[i]->name, name) == 0) {
+        retval = _mesh_params[i];
+        break;
+      }
+    }
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
 /*! \brief Create the mesh parameters structure
  *
  * \param[in] ndir  number of directions
@@ -136,20 +215,56 @@ _get_structured_mesh_by_id(const int id)
 /*----------------------------------------------------------------------------*/
 
 static cs_mesh_cartesian_params_t *
-_cs_mesh_cartesian_init(int ndir)
+_cs_mesh_cartesian_init(const char *name,
+                        const int   ndir)
 {
-  // TODO: Test to be removed when multi-blocks are possible
-  if (_n_structured_meshes != 0)
+  if (_n_structured_meshes_max > 0 &&
+      _n_structured_meshes == _n_structured_meshes_max)
     bft_error(__FILE__, __LINE__, 0,
-              _("Error: Only one cartesian mesh can be defined!\n"));
+              _("Error: Maximum number \"%d\" of cartesian mesh blcoks reached.\n"),
+              _n_structured_meshes_max);
 
-  cs_mesh_cartesian_params_t *_new_mesh = NULL;
+  cs_mesh_cartesian_params_t *_new_mesh =
+    _get_structured_mesh_by_name_try(name);
+
+  if (_new_mesh != NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "Error: a mesh with name \"%s\" allready exists.\n",
+              name);
+
   BFT_MALLOC(_new_mesh, 1, cs_mesh_cartesian_params_t);
 
+  _new_mesh->name = NULL;
+  if (name != NULL && strlen(name) > 0) {
+    size_t _l = strlen(name);
+    BFT_MALLOC(_new_mesh->name, _l+1, char);
+    strcpy(_new_mesh->name, name);
+    _new_mesh->name[_l] = '\0';
+  }
+
+  _new_mesh->gc_id_shift = 0;
+
+  /* Global values */
+  _new_mesh->n_g_cells = 0;
+  _new_mesh->n_g_faces = 0;
+  _new_mesh->n_g_vtx   = 0;
+
+  _new_mesh->n_g_cells_offset = 0;
+  _new_mesh->n_g_faces_offset = 0;
+  _new_mesh->n_g_vtx_offset   = 0;
+
+  _new_mesh->n_cells_on_rank = 0;
+  _new_mesh->n_faces_on_rank = 0;
+  _new_mesh->n_vtx_on_rank   = 0;
+
+  _new_mesh->ndir = ndir;
   _new_mesh->ndir = ndir;
   BFT_MALLOC(_new_mesh->params, ndir, _cs_mesh_cartesian_direction_t *);
+  for (int i = 0; i < ndir; i++)
+    _new_mesh->params[i] = NULL;
 
   int _id = _n_structured_meshes;
+  _new_mesh->id = _id;
 
   _n_structured_meshes += 1;
   BFT_REALLOC(_mesh_params, _n_structured_meshes ,cs_mesh_cartesian_params_t *);
@@ -265,6 +380,7 @@ _cs_mesh_cartesian_create_direction(cs_mesh_cartesian_law_t law,
 /*----------------------------------------------------------------------------*/
 /*! \brief Add a face with x-normal.
  *
+ * \param[in]       mp    pointer to cartesian mesh parameters
  * \param[in, out]  mb    pointer to cs_mesh_builder_t structure
  * \param[in]       f_id  id of added face
  * \param[in]       nx    number of cells in x direction
@@ -277,36 +393,38 @@ _cs_mesh_cartesian_create_direction(cs_mesh_cartesian_law_t law,
 /*----------------------------------------------------------------------------*/
 
 static void
-_add_nx_face(cs_mesh_builder_t  *mb,
-             cs_lnum_t           f_id,
-             cs_gnum_t           nx,
-             cs_gnum_t           ny,
-             cs_gnum_t           nz,
-             cs_gnum_t           i,
-             cs_gnum_t           j,
-             cs_gnum_t           k)
+_add_nx_face(cs_mesh_cartesian_params_t *mp,
+             cs_mesh_builder_t          *mb,
+             cs_lnum_t                   f_id,
+             cs_gnum_t                   nx,
+             cs_gnum_t                   ny,
+             cs_gnum_t                   nz,
+             cs_gnum_t                   i,
+             cs_gnum_t                   j,
+             cs_gnum_t                   k)
 {
   CS_UNUSED(nz);
 
   /* Global numbering starts at 1! */
 
-  cs_lnum_t i0 = 1;
+  cs_lnum_t i0 = 1 + mp->n_g_vtx_offset;
 
   cs_gnum_t nxp1 = nx+1, nyp1 = ny+1;
 
   /* Face to cell connectivity */
-  cs_gnum_t c0 = i + j*nx + k*nx*ny;
+  cs_gnum_t c0 = i + j*nx + k*nx*ny + mp->n_g_cells_offset;
 
   cs_gnum_t c_id1 = 0;
   cs_gnum_t c_id2 = 0;
 
   if (i == 0) {
     c_id2 = c0 + 1;
-    mb->face_gc_id[f_id] = 1;
+    mb->face_gc_id[f_id] = 1 + (mp->gc_id_shift + 1);
+
   }
   else if (i == nx) {
     c_id1 = c0;
-    mb->face_gc_id[f_id] = 2;
+    mb->face_gc_id[f_id] = 2 + (mp->gc_id_shift + 1);
   }
   else {
     c_id1 = c0;
@@ -340,6 +458,7 @@ _add_nx_face(cs_mesh_builder_t  *mb,
 /*----------------------------------------------------------------------------*/
 /*! \brief Add a face with y-normal.
  *
+ * \param[in]       mp    pointer to cartesian mesh parameters
  * \param[in, out]  mb    pointer to cs_mesh_builder_t structure
  * \param[in]       f_id  id of added face
  * \param[in]       nx    number of cells in x direction
@@ -352,21 +471,24 @@ _add_nx_face(cs_mesh_builder_t  *mb,
 /*----------------------------------------------------------------------------*/
 
 static void
-_add_ny_face(cs_mesh_builder_t  *mb,
-             cs_lnum_t           f_id,
-             cs_gnum_t           nx,
-             cs_gnum_t           ny,
-             cs_gnum_t           nz,
-             cs_gnum_t           i,
-             cs_gnum_t           j,
-             cs_gnum_t           k)
+_add_ny_face(cs_mesh_cartesian_params_t *mp,
+             cs_mesh_builder_t          *mb,
+             cs_lnum_t                   f_id,
+             cs_gnum_t                   nx,
+             cs_gnum_t                   ny,
+             cs_gnum_t                   nz,
+             cs_gnum_t                   i,
+             cs_gnum_t                   j,
+             cs_gnum_t                   k)
 {
   CS_UNUSED(ny);
   CS_UNUSED(nz);
 
-  /* Global numbering starts at 1! */
-
-  cs_lnum_t i0 = 1;
+  /* Global numbering starts at 1!
+   * Adding block offset
+   */
+  const cs_gnum_t i0 = 1 + mp->n_g_vtx_offset;
+  const cs_gnum_t c0 = 1 + mp->n_g_cells_offset;
 
   cs_gnum_t nxp1 = nx+1, nyp1 = ny+1;
 
@@ -376,14 +498,14 @@ _add_ny_face(cs_mesh_builder_t  *mb,
   cs_gnum_t c_id2 = 0;
 
   if (j == 0) {
-    c_id2 = i0 + i + j*nx + k*nx*ny;
-    mb->face_gc_id[f_id] = 3;
+    c_id2 = c0 + i + j*nx + k*nx*ny;
+    mb->face_gc_id[f_id] = 3 + (mp->gc_id_shift + 1);
   } else if (j == ny) {
-    c_id1 = i0 + i + (j-1)*nx + k*nx*ny;
-    mb->face_gc_id[f_id] = 4;
+    c_id1 = c0 + i + (j-1)*nx + k*nx*ny;
+    mb->face_gc_id[f_id] = 4 + (mp->gc_id_shift + 1);
   } else {
-    c_id1 = i0 + i + (j-1)*nx + k*nx*ny;
-    c_id2 = i0 + i + j*nx     + k*nx*ny;
+    c_id1 = c0 + i + (j-1)*nx + k*nx*ny;
+    c_id2 = c0 + i + j*nx     + k*nx*ny;
   }
 
   mb->face_cells[2*f_id]     = c_id1;
@@ -414,6 +536,7 @@ _add_ny_face(cs_mesh_builder_t  *mb,
 /*----------------------------------------------------------------------------*/
 /*! \brief Add a face with z-normal.
  *
+ * \param[in]       mp    pointer to cartesian mesh parameters
  * \param[in, out]  mb    pointer to cs_mesh_builder_t structure
  * \param[in]       f_id  id of added face
  * \param[in]       nx    number of cells in x direction
@@ -426,18 +549,20 @@ _add_ny_face(cs_mesh_builder_t  *mb,
 /*----------------------------------------------------------------------------*/
 
 static void
-_add_nz_face(cs_mesh_builder_t  *mb,
-             cs_lnum_t           f_id,
-             cs_gnum_t           nx,
-             cs_gnum_t           ny,
-             cs_gnum_t           nz,
-             cs_gnum_t           i,
-             cs_gnum_t           j,
-             cs_gnum_t           k)
+_add_nz_face(cs_mesh_cartesian_params_t *mp,
+             cs_mesh_builder_t          *mb,
+             cs_lnum_t                   f_id,
+             cs_gnum_t                   nx,
+             cs_gnum_t                   ny,
+             cs_gnum_t                   nz,
+             cs_gnum_t                   i,
+             cs_gnum_t                   j,
+             cs_gnum_t                   k)
 {
   /* Global numbering starts at 1! */
 
-  cs_lnum_t i0 = 1;
+  const cs_gnum_t i0 = 1 + mp->n_g_vtx_offset;
+  const cs_gnum_t c0 = 1 + mp->n_g_cells_offset;
 
   cs_gnum_t nxp1 = nx+1, nyp1 = ny+1;
 
@@ -445,14 +570,14 @@ _add_nz_face(cs_mesh_builder_t  *mb,
   cs_gnum_t c_id2 = 0;
 
   if (k == 0) {
-    c_id2 = i0 + i + j*nx + k*nx*ny;
-    mb->face_gc_id[f_id] = 5;
+    c_id2 = c0 + i + j*nx + k*nx*ny;
+    mb->face_gc_id[f_id] = 5 + (mp->gc_id_shift + 1);
   } else if (k == nz) {
-    c_id1 = i0 + i + j*nx + (k-1)*nx*ny;
-    mb->face_gc_id[f_id] = 6;
+    c_id1 = c0 + i + j*nx + (k-1)*nx*ny;
+    mb->face_gc_id[f_id] = 6 + (mp->gc_id_shift + 1);
   } else {
-    c_id1 = i0 + i + j*nx + (k-1)*nx*ny;
-    c_id2 = i0 + i + j*nx + k*nx*ny;
+    c_id1 = c0 + i + j*nx + (k-1)*nx*ny;
+    c_id2 = c0 + i + j*nx + k*nx*ny;
   }
 
   mb->face_cells[2*f_id]     = c_id1;
@@ -486,41 +611,107 @@ _add_nz_face(cs_mesh_builder_t  *mb,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return number of structured meshes to build.
+ *
+ * \returns number of structured meshes to build.
+ */
+/*----------------------------------------------------------------------------*/
+
+const int
+cs_mesh_cartesian_get_number_of_meshes(void)
+{
+  return _n_structured_meshes;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return pointer to cartesian mesh parameters structure
+ *
+ * \param[in] id    Id of the cartesian mesh
  *
  * \return pointer to cs_mesh_cartesian_params_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_mesh_cartesian_params_t *
-cs_mesh_cartesian_get_params(void)
+cs_mesh_cartesian_by_id(const int id)
+{
+  cs_mesh_cartesian_params_t *retval = _get_structured_mesh_by_id(id);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get function for structured mesh based on its name.
+ *
+ * \param[in] name  Name of mesh
+ *
+ * \returns pointer to corresponding mesh parameters. NULL if mesh does not exist.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_mesh_cartesian_params_t *
+cs_mesh_cartesian_by_name_try(const char *name)
+{
+  cs_mesh_cartesian_params_t *retval = _get_structured_mesh_by_name_try(name);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get function for structured mesh based on its name.
+ *
+ * \param[in] name  Name of mesh
+ *
+ * \returns pointer to corresponding mesh parameters. Raises error if mesh does
+ * not exist.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_mesh_cartesian_params_t *
+cs_mesh_cartesian_by_name(const char *name)
 {
 
-  cs_mesh_cartesian_params_t *retval = NULL;
+  if (name == NULL || strlen(name) == 0)
+    bft_error(__FILE__, __LINE__, 0,
+              "Error: Empty name string.\n");
 
-  if (_n_structured_meshes > 0)
-    retval = _get_structured_mesh_by_id(0);
+  cs_mesh_cartesian_params_t *retval = _get_structured_mesh_by_name_try(name);
+
+  if (retval == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "Error: cartesian mesh \"%s\" does not exist.\n",
+              name);
 
   return retval;
 }
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Create cartesian mesh structure
+ *
+ * \param[in] name  Name of mesh to create
+ *
+ * \returns pointer to newly created mesh parameters
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_mesh_cartesian_create(void)
+cs_mesh_cartesian_params_t *
+cs_mesh_cartesian_create(const char *name)
 {
-  _cs_mesh_cartesian_init(3);
+  cs_mesh_cartesian_params_t *retval = _cs_mesh_cartesian_init(name, 3);
 
   _build_mesh_cartesian = 1;
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Define a simple cartesian mesh with a constant step in all
  *         directions
  *
+ * \param[in] name    Name of mesh to create
  * \param[in] ncells  Array of size 3 containing number of cells in each
  *                    direction
  * \param[in] xyz     Array of size 6 containing min values, followed by
@@ -528,16 +719,12 @@ cs_mesh_cartesian_create(void)
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_mesh_cartesian_define_simple(int        ncells[3],
-                                cs_real_t  xyz[6])
+int
+cs_mesh_cartesian_define_simple(const char *name,
+                                int         ncells[3],
+                                cs_real_t   xyz[6])
 {
-  cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_get_params();
-
-  if (mp == NULL) {
-    cs_mesh_cartesian_create();
-    mp = cs_mesh_cartesian_get_params();
-  }
+  cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_create(name);
 
   for (int idim = 0; idim < 3; idim++)
     mp->params[idim] =
@@ -546,11 +733,14 @@ cs_mesh_cartesian_define_simple(int        ncells[3],
                                           xyz[idim],
                                           xyz[idim+3],
                                           -1.);
+
+  return mp->id;
 }
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Define directions parameters based on a user input
  *
+ * \param[in] mp         Pointer to mesh parameters
  * \param[in] idir       Direction index. 0->X, 1->Y, 2->Z
  * \param[in] ncells     Number of cells for the direction
  * \param[in] vtx_coord  Array of size ncells+1 containing 1D coordinate values
@@ -559,16 +749,17 @@ cs_mesh_cartesian_define_simple(int        ncells[3],
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_define_dir_user(int       idir,
-                                  int       ncells,
-                                  cs_real_t vtx_coord[])
+cs_mesh_cartesian_define_dir_user(cs_mesh_cartesian_params_t *mp,
+                                  int                         idir,
+                                  int                         ncells,
+                                  cs_real_t                   vtx_coord[])
 {
-  cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_get_params();
+  assert(mp != NULL);
 
-  if (mp == NULL) {
-    cs_mesh_cartesian_create();
-    mp = cs_mesh_cartesian_get_params();
-  }
+  if (mp->params[idir] != NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "Error: %d-th component was allready defined for this mesh.\n",
+              idir);
 
   _cs_mesh_cartesian_direction_t *dirp = NULL;
   BFT_MALLOC(dirp, 1, _cs_mesh_cartesian_direction_t);
@@ -602,6 +793,7 @@ cs_mesh_cartesian_define_dir_user(int       idir,
  *         (resp. decreasing) geometric progression of the cell size when
  *         moving along the direction of increasing coordinates.
  *
+ * \param[in] mp         Pointer to mesh parameters
  * \param[in] idir          Direction index. 0->X, 1->Y, 2->Z
  * \param[in] n_parts       Number of parts to define the direction
  * \param[in] part_coords   Position delimiting each part (size = n_parts + 1)
@@ -611,11 +803,12 @@ cs_mesh_cartesian_define_dir_user(int       idir,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_define_dir_geom_by_part(int                idir,
-                                          int                n_parts,
-                                          const cs_real_t    part_coords[],
-                                          const cs_lnum_t    n_part_cells[],
-                                          const cs_real_t    amp_factors[])
+cs_mesh_cartesian_define_dir_geom_by_part(cs_mesh_cartesian_params_t *mp,
+                                          int                         idir,
+                                          int                         n_parts,
+                                          const cs_real_t             part_coords[],
+                                          const cs_lnum_t             n_part_cells[],
+                                          const cs_real_t             amp_factors[])
 {
   if (n_parts == 0)
     return;
@@ -680,7 +873,7 @@ cs_mesh_cartesian_define_dir_geom_by_part(int                idir,
 
   /* Finally, one relies on the user-defined API to build the direction */
 
-  cs_mesh_cartesian_define_dir_user(idir, n_tot_cells, vtx_coord);
+  cs_mesh_cartesian_define_dir_user(mp, idir, n_tot_cells, vtx_coord);
 
   BFT_FREE(vtx_coord);
 }
@@ -699,21 +892,18 @@ cs_mesh_cartesian_define_dir_geom_by_part(int                idir,
  *             For example, if for index 'j' the first direction is empty,
  *             format is : ';X2[j];X3[j]'
  *
+ * \param[in] name           Name of new mesh
  * \param[in] csv_file_name  name of CSV file containing mesh information.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_define_from_csv(const char *csv_file_name)
+cs_mesh_cartesian_define_from_csv(const char *name,
+                                  const char *csv_file_name)
 {
-  cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_get_params();
+  cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_create(name);
 
   const int _ndim = 3;
-
-  if (mp == NULL) {
-    cs_mesh_cartesian_create();
-    mp = cs_mesh_cartesian_get_params();
-  }
 
   /* Read CSV file */
   FILE *f = fopen(csv_file_name, "r");
@@ -781,7 +971,7 @@ cs_mesh_cartesian_define_from_csv(const char *csv_file_name)
   }
 
   for (int i = 0; i < _ndim; i++)
-    cs_mesh_cartesian_define_dir_user(i, nc[i]-1, s[i]);
+    cs_mesh_cartesian_define_dir_user(mp, i, nc[i]-1, s[i]);
 
   for (int i = 0; i < _ndim; i++)
     BFT_FREE(s[i]);
@@ -792,6 +982,7 @@ cs_mesh_cartesian_define_from_csv(const char *csv_file_name)
 /*----------------------------------------------------------------------------*/
 /*! \brief Define parameters for a given direction.
  *
+ * \param[in] mp           Pointer to mesh parameters
  * \param[in] idim         Geometrical direction: 0->X, 1->Y, 2->Z
  * \param[in] law          1D discretization law: constant, geometric or
  *                         parabolic
@@ -804,19 +995,15 @@ cs_mesh_cartesian_define_from_csv(const char *csv_file_name)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_define_dir_params(int                     idim,
-                                    cs_mesh_cartesian_law_t law,
-                                    int                     ncells,
-                                    cs_real_t               smin,
-                                    cs_real_t               smax,
-                                    cs_real_t               progression)
+cs_mesh_cartesian_define_dir_params(cs_mesh_cartesian_params_t *mp,
+                                    int                         idim,
+                                    cs_mesh_cartesian_law_t     law,
+                                    int                         ncells,
+                                    cs_real_t                   smin,
+                                    cs_real_t                   smax,
+                                    cs_real_t                   progression)
 {
-  cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_get_params();
-
-  if (mp == NULL) {
-    cs_mesh_cartesian_create();
-    mp = cs_mesh_cartesian_get_params();
-  }
+  assert(mp != NULL);
 
   cs_mesh_cartesian_law_t _law = law;
   cs_real_t _p   = progression;
@@ -873,8 +1060,118 @@ cs_mesh_cartesian_need_build(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get name of structured mesh
+ *
+ * \param[in] id    Id of the cartesian mesh
+ *
+ * \returns Name of the mesh
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_mesh_cartesian_get_name(const int id)
+{
+  cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(id);
+
+  return mp->name;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get group class id shift of cartesian mesh
+ *
+ * \param[in] id    Id of the cartesian mesh
+ *
+ * \returns shift value
+ */
+/*----------------------------------------------------------------------------*/
+
+const int
+cs_mesh_cartesian_get_gc_id_shift(const int id)
+{
+  cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(id);
+
+  return mp->gc_id_shift;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set group class id shift of cartesian mesh
+ *
+ * \param[in] id    Id of the cartesian mesh
+ * \param[in] shift Value of shift index
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_cartesian_set_gc_id_shift(const int id,
+                                  const int shift)
+{
+  cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(id);
+
+  mp->gc_id_shift = shift;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get global number of cells of a cartesian mesh
+ *
+ * \param[in] id    Id of the cartesian mesh
+ *
+ * \returns number of cells
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gnum_t
+cs_mesh_cartesian_get_n_g_cells(const int id)
+{
+  cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(id);
+
+  return mp->n_g_cells;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get global number of faces of a cartesian mesh
+ *
+ * \param[in] id    Id of the cartesian mesh
+ *
+ * \returns number of faces
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gnum_t
+cs_mesh_cartesian_get_n_g_faces(const int id)
+{
+  cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(id);
+
+  return mp->n_g_faces;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get global number of vertices of a cartesian mesh
+ *
+ * \param[in] id    Id of the cartesian mesh
+ *
+ * \returns number of vertices
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gnum_t
+cs_mesh_cartesian_get_n_g_vtx(const int id)
+{
+  cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(id);
+
+  return mp->n_g_vtx;
+}
+
+/*----------------------------------------------------------------------------*/
 /*! \brief Get number of cells in a given direction.
  *
+ * \param[in] id    Id of the cartesian mesh
  * \param[in] idim  Index of direction: 0->X, 1->Y, 2->Z
  *
  * \return Number of cells in corresponding direction (int)
@@ -882,9 +1179,10 @@ cs_mesh_cartesian_need_build(void)
 /*----------------------------------------------------------------------------*/
 
 int
-cs_mesh_cartesian_get_ncells(int idim)
+cs_mesh_cartesian_get_ncells(const int id,
+                             const int idim)
 {
-  cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(0);
+  cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(id);
 
   return mp->params[idim]->ncells;
 }
@@ -892,6 +1190,7 @@ cs_mesh_cartesian_get_ncells(int idim)
 /*----------------------------------------------------------------------------*/
 /*! \brief Build unstructured connectivity needed for partitionning.
  *
+ * \param[in] id    Id of the cartesian mesh
  * \param[in] m     pointer to cs_mesh_t structure
  * \param[in] mb    pointer to cs_mesh_builder_t structure
  * \param[in] echo  verbosity flag
@@ -899,78 +1198,110 @@ cs_mesh_cartesian_get_ncells(int idim)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_connectivity(cs_mesh_t          *m,
-                               cs_mesh_builder_t  *mb,
-                               long                echo)
+cs_mesh_cartesian_block_connectivity(const int           id,
+                                     cs_mesh_t          *m,
+                                     cs_mesh_builder_t  *mb,
+                                     long                echo)
 {
   CS_UNUSED(echo);
 
-  cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(0);
+  cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(id);
 
-  /* Number of cells per direction */
-  cs_gnum_t nx = mp->params[0]->ncells;
-  cs_gnum_t ny = mp->params[1]->ncells;
-  cs_gnum_t nz = mp->params[2]->ncells;
+  const cs_gnum_t nx = cs_mesh_cartesian_get_ncells(id, 0);
+  const cs_gnum_t ny = cs_mesh_cartesian_get_ncells(id, 1);
+  const cs_gnum_t nz = cs_mesh_cartesian_get_ncells(id, 2);
 
-  /* Number of vertices per direction */
-  cs_gnum_t nxp1 = nx+1;
-  cs_gnum_t nyp1 = ny+1;
-  cs_gnum_t nzp1 = nz+1;
+  const cs_gnum_t nxp1 = nx + 1;
+  const cs_gnum_t nyp1 = ny + 1;
+  const cs_gnum_t nzp1 = nz + 1;
 
   /* Compute global values and distribution */
-  cs_gnum_t n_g_cells = nx * ny * nz;
-  cs_gnum_t n_g_vtx = nxp1 * nyp1 * nzp1;
-  cs_gnum_t n_g_faces = 3*n_g_cells + nx*ny + nx*nz + ny*nz;
-
-  mb->n_g_faces = n_g_faces;
-  mb->n_g_face_connect_size = n_g_faces * 2;
-
-  m->n_g_cells = n_g_cells;
-  m->n_g_vertices = n_g_vtx;
-
-  cs_mesh_builder_define_block_dist(mb,
-                                    cs_glob_rank_id,
-                                    cs_glob_n_ranks,
-                                    mb->min_rank_step,
-                                    0,
-                                    m->n_g_cells,
-                                    mb->n_g_faces,
-                                    m->n_g_vertices);
+  const cs_gnum_t n_g_cells = mp->n_g_cells;;
+  const cs_gnum_t n_g_vtx   = mp->n_g_vtx;
+  const cs_gnum_t n_g_faces = mp->n_g_faces;
 
   cs_lnum_t n_cells = (mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0]);
   cs_lnum_t n_faces = (mb->face_bi.gnum_range[1] - mb->face_bi.gnum_range[0]);
   cs_lnum_t n_vertices = (  mb->vertex_bi.gnum_range[1]
                           - mb->vertex_bi.gnum_range[0]);
 
-  /* Group ids */
-  BFT_REALLOC(mb->cell_gc_id, n_cells, int);
-  for (cs_lnum_t i = 0; i < n_cells; i++)
-    mb->cell_gc_id[i] = 7;
+  // Compute the intervals of cells/faces/vertices of this mesh which are no
+  // this rank
+  const cs_gnum_t mp_g_c_range[2] = {mp->n_g_cells_offset + 1,
+                                     mp->n_g_cells_offset + 1 + n_g_cells};
+  cs_gnum_t _rank_c_range[2] = {0.};
+  _intersect_intervals(mb->cell_bi.gnum_range, mp_g_c_range, _rank_c_range);
 
-  BFT_REALLOC(mb->face_gc_id, n_faces, int);
-  for (cs_lnum_t i = 0; i < n_faces; i++)
-    mb->face_gc_id[i] = 7;
+  const cs_gnum_t mp_g_f_range[2] = {mp->n_g_faces_offset + 1,
+                                     mp->n_g_faces_offset + 1 + n_g_faces};
+  cs_gnum_t _rank_f_range[2] = {0.};
+  _intersect_intervals(mb->face_bi.gnum_range, mp_g_f_range, _rank_f_range);
+
+  const cs_gnum_t mp_g_v_range[2] = {mp->n_g_vtx_offset + 1,
+                                     mp->n_g_vtx_offset + 1 + n_g_vtx};
+  cs_gnum_t _rank_v_range[2] = {0.};
+  _intersect_intervals(mb->vertex_bi.gnum_range, mp_g_v_range, _rank_v_range);
+
+  // Number of cells on this rank
+  mp->n_cells_on_rank = _rank_c_range[1] - _rank_c_range[0];
+  mp->n_faces_on_rank = _rank_f_range[1] - _rank_f_range[0];
+  mp->n_vtx_on_rank   = _rank_v_range[1] - _rank_v_range[0];
+
+  /* Compute local offset on rank */
+  cs_gnum_t _rank_c_offset = 0;
+  cs_gnum_t _rank_f_offset = 0;
+  cs_gnum_t _rank_v_offset = 0;
+
+  if (id > 0) {
+    for (int i = 0; i < id; i++) {
+      _rank_c_offset += _mesh_params[i]->n_cells_on_rank;
+      _rank_f_offset += _mesh_params[i]->n_faces_on_rank;
+      _rank_v_offset += _mesh_params[i]->n_vtx_on_rank;
+    }
+  }
+
+  /* --------- */
+  /* Group ids */
+  /* --------- */
+  if (mb->cell_gc_id == NULL)
+    BFT_MALLOC(mb->cell_gc_id, n_cells, int);
+
+  for (cs_lnum_t i = 0; i < mp->n_cells_on_rank; i++)
+    mb->cell_gc_id[i + _rank_c_offset] = 1 + mp->gc_id_shift;
+
+  if (mb->face_gc_id == NULL)
+    BFT_MALLOC(mb->face_gc_id, n_faces, int);
+
+  // Default face group is 8
+  for (cs_lnum_t i = 0; i < mp->n_faces_on_rank; i++)
+    mb->face_gc_id[i + _rank_f_offset] = mp->gc_id_shift + 8;
 
   /* number of vertices per face array */
-  BFT_REALLOC(mb->face_vertices_idx, n_faces+1, cs_lnum_t);
+  if (mb->face_vertices_idx == NULL) {
+    BFT_MALLOC(mb->face_vertices_idx, n_faces + 1, cs_lnum_t);
+    /* First value is always 0 */
+    mb->face_vertices_idx[0] = 0;
+  }
 
-  mb->face_vertices_idx[0] = 0;
-  for (cs_lnum_t i = 0; i < n_faces; i++)
-    mb->face_vertices_idx[i+1] = mb->face_vertices_idx[i] + 4;
+  for (cs_lnum_t i = 0; i < mp->n_faces_on_rank; i++)
+    mb->face_vertices_idx[_rank_f_offset + i + 1] =
+      mb->face_vertices_idx[_rank_f_offset + i] + 4;
 
   /* Face to cell connectivity using global numbering */
-  BFT_REALLOC(mb->face_cells, 2*n_faces, cs_gnum_t);
-  BFT_REALLOC(mb->face_vertices, 4*n_faces, cs_gnum_t);
+  if (mb->face_cells == NULL)
+    BFT_MALLOC(mb->face_cells, 2*n_faces, cs_gnum_t);
+  if (mb->face_vertices == NULL)
+    BFT_MALLOC(mb->face_vertices, 4*n_faces, cs_gnum_t);
 
   /* Global numbering starts at 1! */
 
-  cs_lnum_t f_id = 0;
-  cs_gnum_t g_f_num = 1;
+  cs_lnum_t f_id = _rank_f_offset;
+  cs_gnum_t g_f_num = 1 + mp->n_g_faces_offset;
 
   /* We should find a better way of filtering what is built on the
      current rank, but currently ignore everything which is out of range */
-  cs_gnum_t g_f_num_min = mb->face_bi.gnum_range[0];
-  cs_gnum_t g_f_num_max = mb->face_bi.gnum_range[1];
+  cs_gnum_t g_f_num_min = _rank_f_range[0];
+  cs_gnum_t g_f_num_max = _rank_f_range[1];
 
   /* X normal faces */
 
@@ -979,7 +1310,7 @@ cs_mesh_cartesian_connectivity(cs_mesh_t          *m,
       for (cs_gnum_t i = 0; i < nxp1 && g_f_num < g_f_num_max; i++) {
 
         if (g_f_num >= g_f_num_min) {
-          _add_nx_face(mb, f_id, nx, ny, nz, i, j, k);
+          _add_nx_face(mp, mb, f_id, nx, ny, nz, i, j, k);
           f_id += 1;
         }
         g_f_num += 1;
@@ -994,7 +1325,7 @@ cs_mesh_cartesian_connectivity(cs_mesh_t          *m,
       for (cs_gnum_t i = 0; i < nx && g_f_num < g_f_num_max; i++) {
 
         if (g_f_num >= g_f_num_min) {
-          _add_ny_face(mb, f_id, nx, ny, nz, i, j, k);
+          _add_ny_face(mp, mb, f_id, nx, ny, nz, i, j, k);
           f_id += 1;
         }
         g_f_num += 1;
@@ -1009,7 +1340,7 @@ cs_mesh_cartesian_connectivity(cs_mesh_t          *m,
       for (cs_gnum_t i = 0; i < nx && g_f_num < g_f_num_max; i++) {
 
         if (g_f_num >= g_f_num_min) {
-          _add_nz_face(mb, f_id, nx, ny, nz, i, j, k);
+          _add_nz_face(mp, mb, f_id, nx, ny, nz, i, j, k);
           f_id += 1;
         }
         g_f_num += 1;
@@ -1018,12 +1349,12 @@ cs_mesh_cartesian_connectivity(cs_mesh_t          *m,
     }
   }
 
-  BFT_REALLOC(mb->vertex_coords, n_vertices*3, cs_real_t);
+  BFT_REALLOC(mb->vertex_coords, 3*(_rank_v_offset + n_vertices), cs_real_t);
 
   /* We should find a better way of filtering what is built on the
      current rank, but currently ignore everything which is out of range */
-  cs_gnum_t g_v_num_min = mb->vertex_bi.gnum_range[0];
-  cs_gnum_t g_v_num_max = mb->vertex_bi.gnum_range[1];
+  cs_gnum_t g_v_num_min = _rank_v_range[0];
+  cs_gnum_t g_v_num_max = _rank_v_range[1];
 
   /* Vertex coords */
   cs_lnum_t v_id = 0;
@@ -1031,7 +1362,7 @@ cs_mesh_cartesian_connectivity(cs_mesh_t          *m,
   for (cs_gnum_t k = 0; k < nzp1; k++) {
     for (cs_gnum_t j = 0; j < nyp1; j++) {
       for (cs_gnum_t i = 0; i < nxp1; i++) {
-        cs_gnum_t g_v_num = 1 + i + j*nxp1 + k*nxp1*nyp1;
+        cs_gnum_t g_v_num = 1 + mp->n_g_vtx_offset + i + j*nxp1 + k*nxp1*nyp1;
 
         if (g_v_num >= g_v_num_min && g_v_num < g_v_num_max) {
 
@@ -1040,20 +1371,53 @@ cs_mesh_cartesian_connectivity(cs_mesh_t          *m,
           for (cs_lnum_t idim = 0; idim < 3; idim++) {
             /* Constant step: xyz[idim] = xyzmin[idim] + ijk*dx[idim] */
             if (mp->params[idim]->law == CS_MESH_CARTESIAN_CONSTANT_LAW) {
-              mb->vertex_coords[3*v_id + idim]
+              mb->vertex_coords[3*(_rank_v_offset+v_id) + idim]
                 = mp->params[idim]->smin + ijk[idim] * mp->params[idim]->s[0];
             }
             /* Non constant step: We allready stored the vertices in dx,
              * since dx[j+1] - dx[j] == dx of cell j */
             else {
-              mb->vertex_coords[3*v_id + idim] = mp->params[idim]->s[ijk[idim]];
+              mb->vertex_coords[3*(_rank_v_offset+v_id) + idim]
+                = mp->params[idim]->s[ijk[idim]];
             }
           }
-
           v_id++;
         }
 
       }
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute all global values for meshes.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_cartesian_finalize_definition(void)
+{
+
+  for (int i = 0; i < _n_structured_meshes; i++) {
+    cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(i);
+    cs_real_t nxyz[3] = {0.};
+    for (int j = 0; j < 3; j++)
+      nxyz[j] = mp->params[j]->ncells;
+
+    mp->n_g_cells = nxyz[0] * nxyz[1] * nxyz[2];
+    mp->n_g_faces = (nxyz[0] + 1) * nxyz[1] * nxyz[2]
+                  + (nxyz[1] + 1) * nxyz[2] * nxyz[0]
+                  + (nxyz[2] + 1) * nxyz[0] * nxyz[1];
+    mp->n_g_vtx   = (nxyz[0] + 1) * (nxyz[1] + 1) * (nxyz[2] + 1);
+
+    /* If multiple blocks, compute offset */
+    if (i > 0) {
+      cs_mesh_cartesian_params_t *mp_m1 = _get_structured_mesh_by_id(i-1);
+      mp->n_g_cells_offset = mp_m1->n_g_cells_offset + mp_m1->n_g_cells;
+      mp->n_g_faces_offset = mp_m1->n_g_faces_offset + mp_m1->n_g_faces;
+      mp->n_g_vtx_offset   = mp_m1->n_g_vtx_offset   + mp_m1->n_g_vtx;
     }
   }
 
@@ -1081,6 +1445,26 @@ cs_mesh_cartesian_params_destroy(void)
   }
   BFT_FREE(_mesh_params);
   _n_structured_meshes = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set maximum number of cartesian blocks (by default is set to None)
+ *
+ * \param[in] n_blocks  maximum number of cartesian blocks which can be created
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_cartesian_set_max_number_of_blocks(const int n_blocks)
+{
+  if (n_blocks < _n_structured_meshes)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: Max number of cartesian mesh blocks was set to \"%d\""
+                " using \"%s\" while \"%d\" allready exist.\n"),
+              n_blocks, __func__, _n_structured_meshes);
+
+  _n_structured_meshes_max = n_blocks;
 }
 
 /*----------------------------------------------------------------------------*/
