@@ -244,26 +244,29 @@ cs_iter_algo_reset(cs_iter_algo_t    *info)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and initialize a new cs_iter_algo_t structure
+ * \brief Create and initialize a new cs_iter_algo_t structure
  *
- * \param[in] param     main set of parameters driving the iterative algorithm
+ * \param[in] verbosity  level of information to print
+ * \param[in] param      set of parameters driving the convergence of the
+ *                       iterative algorithm
  *
  * \return a pointer to the new allocated structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_iter_algo_t *
-cs_iter_algo_create(cs_iter_algo_param_t    param);
+cs_iter_algo_create(int                    verbosity,
+                    cs_param_sles_cvg_t    cvg_param);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if something wrong happens during the iterative process
- *         after one new iteration
+ * \brief Check if something wrong happens during the iterative process after
+ *        one new iteration
  *
  * \param[in] func_name    name of the calling function
  * \param[in] eq_name      name of the equation being solved
  * \param[in] algo_name    name of the iterative algo. used
- * \param[in] ia           pointer to the iterative algo. structure
+ * \param[in] algo         pointer to the iterative algo. structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -271,7 +274,7 @@ void
 cs_iter_algo_post_check(const char            *func_name,
                         const char            *eq_name,
                         const char            *algo_name,
-                        cs_iter_algo_t        *ia);
+                        cs_iter_algo_t        *algo);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -286,10 +289,10 @@ cs_iter_algo_update_cvg(cs_iter_algo_t         *ia);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reset a cs_iter_algo_t structure in case of a non-linear algorothm
+ * \brief Reset a cs_iter_algo_t structure in case of a non-linear algorothm
  *
- * \param[in]       nl_algo_type   type of non-linear algorithm
- * \param[in, out]  algo           pointer to a cs_iter_algo_t
+ * \param[in]      nl_algo_type   type of non-linear algorithm
+ * \param[in, out] algo           pointer to a cs_iter_algo_t
  */
 /*----------------------------------------------------------------------------*/
 
@@ -299,10 +302,10 @@ cs_iter_algo_reset_nl(cs_param_nl_algo_t   nl_algo_type,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a new cs_iter_algo_aa_t structure
+ * \brief Create a new cs_iter_algo_aa_t structure for Anderson acceleration
  *
- * \param[in] aap             set of parameters for the Anderson acceleration
- * \param[in] n_elts          number of elements by direction
+ * \param[in] aap          set of parameters for the Anderson acceleration
+ * \param[in] n_elts       number of elements by direction
  *
  * \return a pointer to the new allocated structure
  */
@@ -314,27 +317,27 @@ cs_iter_algo_aa_create(cs_iter_algo_param_aa_t    aap,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the set of parameters for an Anderson algorithm
+ * \brief Retrieve the set of parameters for an Anderson algorithm
  *
- * \param[in, out] ia      pointer to a cs_iter_algo_t structure
+ * \param[in, out] algo      pointer to a cs_iter_algo_t structure
  *
  * \return a cs_iter_algo_param_aa_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_iter_algo_param_aa_t
-cs_iter_algo_get_anderson_param(cs_iter_algo_t         *ia);
+cs_iter_algo_get_anderson_param(cs_iter_algo_t         *algo);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate arrays useful for the Anderson acceleration
+ * \brief Allocate arrays needed by the "Anderson acceleration" algorithm
  *
- * \param[in, out] aa     pointer to the structure managing the Anderson algo.
+ * \param[in, out] aa    pointer to the structure managing the Anderson algo.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_aa_allocate_arrays(cs_iter_algo_aa_t  *aa);
+cs_iter_algo_aa_allocate_arrays(cs_iter_algo_aa_t     *aa);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -349,34 +352,34 @@ cs_iter_algo_aa_free_arrays(cs_iter_algo_aa_t     *aa);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a cs_iter_algo_aa_t structure used to manage the Anderson
- *         acceleration
+ * \brief Free a cs_iter_algo_aa_t structure inside a cs_iter_algo_t structure
+ *        This structure is used to manage the Anderson acceleration
  *
- * \param[in, out]  info
+ * \param[in, out] algo    pointer the main structure. Free the context part.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_aa_free(cs_iter_algo_t  *info);
+cs_iter_algo_aa_free(cs_iter_algo_t  *algo);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Apply one more iteration of the Anderson acceleration
+ * \brief Apply one more iteration of the Anderson acceleration
  *
- * \param[in, out] ia           pointer to a cs_iter_algo_t structure
- * \param[in, out] cur_iterate   current iterate
- * \param[in]      pre_iterate   previous iterate
- * \param[in]      dotprod       function to compute a dot product
- * \param[in]      sqnorm        function to compute a square norm
+ * \param[in, out] algo           pointer to a cs_iter_algo_t structure
+ * \param[in, out] cur_iterate    current iterate
+ * \param[in]      pre_iterate    previous iterate
+ * \param[in]      dotprod        function to compute a dot product
+ * \param[in]      sqnorm         function to compute a square norm
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_aa_update(cs_iter_algo_t              *ia,
-                       cs_real_t                   *cur_iterate,
-                       const cs_real_t             *pre_iterate,
-                       cs_cdo_blas_dotprod_t       *dotprod,
-                       cs_cdo_blas_square_norm_t   *sqnorm);
+cs_iter_algo_aa_update(cs_iter_algo_t               *algo,
+                       cs_real_t                    *cur_iterate,
+                       const cs_real_t              *pre_iterate,
+                       cs_cdo_blas_dotprod_t        *dotprod,
+                       cs_cdo_blas_square_norm_t    *sqnorm);
 
 /*----------------------------------------------------------------------------*/
 

@@ -42,6 +42,7 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_array.h"
 #include "cs_parall.h"
 #include "cs_sdm.h"
 
@@ -496,10 +497,10 @@ cs_iter_algo_reset_nl(cs_param_nl_algo_t   nl_algo_type,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a new cs_iter_algo_aa_t structure
+ * \brief Create a new cs_iter_algo_aa_t structure for Anderson acceleration
  *
- * \param[in] aap             set of parameters for the Anderson acceleration
- * \param[in] n_elts          number of elements by direction
+ * \param[in] aap          set of parameters for the Anderson acceleration
+ * \param[in] n_elts       number of elements by direction
  *
  * \return a pointer to the new allocated structure
  */
@@ -541,20 +542,20 @@ cs_iter_algo_aa_create(cs_iter_algo_param_aa_t    aap,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the set of parameters for an Anderson algorithm
+ * \brief Retrieve the set of parameters for an Anderson algorithm
  *
- * \param[in, out] ia      pointer to a cs_iter_algo_t structure
+ * \param[in, out] algo      pointer to a cs_iter_algo_t structure
  *
  * \return a cs_iter_algo_param_aa_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_iter_algo_param_aa_t
-cs_iter_algo_get_anderson_param(cs_iter_algo_t         *ia)
+cs_iter_algo_get_anderson_param(cs_iter_algo_t         *algo)
 {
-  if (ia != NULL) {
+  if (algo != NULL) {
 
-    cs_iter_algo_aa_t  *aa = ia->context;
+    cs_iter_algo_aa_t  *aa = algo->context;
 
     if (aa != NULL)
       return aa->param;
@@ -575,38 +576,37 @@ cs_iter_algo_get_anderson_param(cs_iter_algo_t         *ia)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate arrays useful for the Anderson acceleration
+ * \brief Allocate arrays needed by the "Anderson acceleration" algorithm
  *
- * \param[in, out] aa     pointer to the structure managing the Anderson algo.
+ * \param[in, out] aa    pointer to the structure managing the Anderson algo.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_aa_allocate_arrays(cs_iter_algo_aa_t  *aa)
+cs_iter_algo_aa_allocate_arrays(cs_iter_algo_aa_t     *aa)
 {
   if (aa == NULL)
     return;
 
-  int  n_max_dir = aa->param.n_max_dir;
-  size_t  s = sizeof(cs_real_t)*aa->n_elts;
+  const int  n_max_dir = aa->param.n_max_dir;
 
   BFT_MALLOC(aa->fold, aa->n_elts, cs_real_t);
-  memset(aa->fold, 0, s);
+  cs_array_real_fill_zero(aa->n_elts, aa->fold);
 
   BFT_MALLOC(aa->df, aa->n_elts, cs_real_t);
-  memset(aa->df, 0, s);
+  cs_array_real_fill_zero(aa->n_elts, aa->df);
 
   BFT_MALLOC(aa->gold, aa->n_elts, cs_real_t);
-  memset(aa->gold, 0, s);
+  cs_array_real_fill_zero(aa->n_elts, aa->gold);
 
   BFT_MALLOC(aa->dg, aa->n_elts*n_max_dir, cs_real_t);
-  memset(aa->dg, 0, s*n_max_dir);
+  cs_array_real_fill_zero(aa->n_elts*n_max_dir, aa->dg);
 
   BFT_MALLOC(aa->gamma, n_max_dir, cs_real_t);
   memset(aa->gamma, 0, sizeof(cs_real_t)*n_max_dir);
 
   BFT_MALLOC(aa->Q, aa->n_elts*n_max_dir, cs_real_t);
-  memset(aa->Q, 0, s*n_max_dir);
+  cs_array_real_fill_zero(aa->n_elts*n_max_dir, aa->Q);
 
   aa->R = cs_sdm_square_create(n_max_dir);
   cs_sdm_square_init(n_max_dir, aa->R);
@@ -614,7 +614,7 @@ cs_iter_algo_aa_allocate_arrays(cs_iter_algo_aa_t  *aa)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free arrays used during the Anderson acceleration
+ * \brief Free arrays used during the Anderson acceleration
  *
  * \param[in, out] aa     pointer to the structure managing the Anderson algo.
  */
@@ -640,20 +640,20 @@ cs_iter_algo_aa_free_arrays(cs_iter_algo_aa_t  *aa)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a cs_iter_algo_aa_t structure used to manage the Anderson
- *         acceleration
+ * \brief Free a cs_iter_algo_aa_t structure inside a cs_iter_algo_t structure
+ *        This structure is used to manage the Anderson acceleration
  *
- * \param[in, out]  info
+ * \param[in, out] algo    pointer the main structure. Free the context part.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_aa_free(cs_iter_algo_t  *info)
+cs_iter_algo_aa_free(cs_iter_algo_t  *algo)
 {
-  if (info == NULL)
+  if (algo == NULL)
     return;
 
-  cs_iter_algo_aa_t *aa = (cs_iter_algo_aa_t *)info->context;
+  cs_iter_algo_aa_t  *aa = (cs_iter_algo_aa_t *)algo->context;
 
   if (aa == NULL)
     return;
@@ -665,33 +665,33 @@ cs_iter_algo_aa_free(cs_iter_algo_t  *info)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Apply one more iteration of the Anderson acceleration
+ * \brief Apply one more iteration of the Anderson acceleration
  *
- * \param[in, out] ia            pointer to a cs_iter_algo_t structure
- * \param[in, out] cur_iterate   current iterate
- * \param[in]      pre_iterate   previous iterate
- * \param[in]      dotprod       function to compute a dot product
- * \param[in]      sqnorm        function to compute a square norm
+ * \param[in, out] algo           pointer to a cs_iter_algo_t structure
+ * \param[in, out] cur_iterate    current iterate
+ * \param[in]      pre_iterate    previous iterate
+ * \param[in]      dotprod        function to compute a dot product
+ * \param[in]      sqnorm         function to compute a square norm
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_aa_update(cs_iter_algo_t              *ia,
-                       cs_real_t                   *cur_iterate,
-                       const cs_real_t             *pre_iterate,
-                       cs_cdo_blas_dotprod_t       *dotprod,
-                       cs_cdo_blas_square_norm_t   *sqnorm)
+cs_iter_algo_aa_update(cs_iter_algo_t               *algo,
+                       cs_real_t                    *cur_iterate,
+                       const cs_real_t              *pre_iterate,
+                       cs_cdo_blas_dotprod_t        *dotprod,
+                       cs_cdo_blas_square_norm_t    *sqnorm)
 {
-  if (ia == NULL)
+  if (algo == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Structure not allocated.\n", __func__);
 
-  cs_iter_algo_aa_t  *aa = (cs_iter_algo_aa_t *)ia->context;
+  cs_iter_algo_aa_t  *aa = (cs_iter_algo_aa_t *)algo->context;
   assert(aa != NULL);
 
   /* Check if anderson has to begin */
 
-  const int shifted_iter = ia->n_algo_iter - aa->param.starting_iter;
+  const int  shifted_iter = algo->n_algo_iter - aa->param.starting_iter;
   if (shifted_iter < 0)
     return;
 
@@ -712,12 +712,9 @@ cs_iter_algo_aa_update(cs_iter_algo_t              *ia,
   const cs_real_t  *gcur = cur_iterate;
 
   /* Step 1: Update arrays useful for the Q.R factorization (df and dg)
-   * -------
-   */
+   * ------- */
 
-  if (shifted_iter == 0) {
-
-    /* The first iteration is simpler than the other one */
+  if (shifted_iter == 0) { /* The first iteration is simpler */
 
     assert(aa->n_dir == 0);
 
@@ -775,8 +772,7 @@ cs_iter_algo_aa_update(cs_iter_algo_t              *ia,
 #endif
 
   /* Step 2: Update the Q.R factorization
-   * -------
-   */
+   * ------- */
 
   cs_real_t  *Rval = aa->R->val;
 
@@ -794,8 +790,8 @@ cs_iter_algo_aa_update(cs_iter_algo_t              *ia,
   }
   else {
 
-    if (aa->n_dir > m_max) {   /* Remove the first column and last line in the
-                                   Q.R factorization */
+    if (aa->n_dir > m_max) { /* Remove the first column and last line in the
+                                Q.R factorization */
 
       _qrdelete(m_max, aa->n_elts, aa->Q, aa->R);
       aa->n_dir--;
@@ -834,8 +830,7 @@ cs_iter_algo_aa_update(cs_iter_algo_t              *ia,
   } /* n_dir > 1 */
 
   /* Step 3: Improve the condition number of R if needed
-   * -------
-   */
+   * ------- */
 
   if (aa->param.max_cond > 0) {
 
@@ -862,18 +857,16 @@ cs_iter_algo_aa_update(cs_iter_algo_t              *ia,
   }
 
   /* Step 4: Solve the least square problem (upper triangular solve)
-   * -------
-   */
+   * ------- */
 
   _aa_compute_gamma(aa, dotprod);
 
   /* Step 5: Update cur_iterate by cur_iterate = cur_iterate[i] - gamma.dg
-   * -------
-   */
+   * ------- */
 
   for (int j = 0; j < aa->n_dir; j++) {
 
-    const cs_real_t *dg_j = aa->dg + j*aa->n_elts;
+    const cs_real_t  *dg_j = aa->dg + j*aa->n_elts;
     const double  gamma_j = aa->gamma[j];
 
 #   pragma omp parallel if (aa->n_elts > CS_THR_MIN)
@@ -882,13 +875,11 @@ cs_iter_algo_aa_update(cs_iter_algo_t              *ia,
 
   }
 
-  /* Step 4: Damping of cur_iterate
-   * -------
-   */
+  /* Step 6: Damping of cur_iterate
+   * ------- */
 
   if ((aa->param.beta > 0.0) && (aa->param.beta < 1.0))
     _aa_damping(aa, cur_iterate);
-
 }
 
 /*----------------------------------------------------------------------------*/
