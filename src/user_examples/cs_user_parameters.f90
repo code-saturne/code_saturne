@@ -434,9 +434,9 @@ call atmo_set_chem_conc_file_name('chem_01_01_2001')
 ! Change the name of the aerosol concentration profile
 call atmo_set_aero_conc_file_name('aero_01_01_2001')
 
-! isepchemistry: splitted (=1) or semi-coupled (=2, pu-sun)
+! isepchemistry: split (=1) or semi-coupled (=2, pu-sun)
 ! resolution of chemistry.
-! Splitted (=1) mandatory for aerosols.
+! Split (=1) mandatory for aerosols.
 ! Semi-coupled (=2) by default.
 isepchemistry = 1
 

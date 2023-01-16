@@ -310,8 +310,11 @@ typedef struct {
   int n_species;
   int n_reactions;
 
+  /*! split (=1) or semi-coupled (=2, pu-sun) resolution of chemistry */
+  int chemistry_sep_mode;
+
   /* Flag to deactivate photolysis */
-  bool  chemistry_with_photolysis;
+  bool chemistry_with_photolysis;
 
   /*! Choice of the aerosol model
        - CS_ATMO_AEROSOL_OFF ---> no aerosol model
@@ -345,6 +348,7 @@ typedef struct {
   /*! Name of the file used to initialize and to apply boundary
    *  conditions on aerosol species */
   char *aero_conc_file_name;
+
 } cs_atmo_chemistry_t;
 
 /*============================================================================

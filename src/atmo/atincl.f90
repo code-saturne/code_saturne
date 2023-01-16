@@ -428,7 +428,7 @@ double precision, save:: zaero
         compute_z_ground, iatmst,                                       &
         sedimentation_model, deposition_model, nucleation_model,        &
         subgrid_model, distribution_model,                              &
-        ichemistry, nespg, nrg, chem_with_photo,                        &
+        ichemistry, isepchemistry, nespg, nrg, chem_with_photo,         &
         iaerosol, frozen_gas_chem, init_gas_with_lib,                   &
         init_aero_with_lib, n_aero, n_sizebin, imeteo,                  &
         nbmetd, nbmett, nbmetm, iatra1, nbmaxt,                         &
@@ -438,7 +438,7 @@ double precision, save:: zaero
       implicit none
       type(c_ptr), intent(out) :: ps
       type(c_ptr), intent(out) :: compute_z_ground, iatmst
-      type(c_ptr), intent(out) :: ichemistry, nespg, nrg
+      type(c_ptr), intent(out) :: ichemistry, isepchemistry, nespg, nrg
       type(c_ptr), intent(out) :: sedimentation_model, deposition_model
       type(c_ptr), intent(out) :: nucleation_model
       type(c_ptr), intent(out) :: subgrid_model, distribution_model
@@ -743,7 +743,7 @@ contains
   subroutine atmo_init
 
     use, intrinsic :: iso_c_binding
-    use atchem, only: nrg, nespg, ichemistry, photolysis
+    use atchem, only: nrg, nespg, ichemistry, isepchemistry, photolysis
     use sshaerosol
     use cs_c_bindings
 
@@ -763,7 +763,7 @@ contains
     type(c_ptr) :: c_imeteo
     type(c_ptr) :: c_nbmetd, c_nbmett, c_nbmetm, c_iatra1, c_nbmaxt
     type(c_ptr) :: c_meteo_zi
-    type(c_ptr) :: c_iatsoil
+    type(c_ptr) :: c_iatsoil, c_isepchemistry
 
     call cs_f_atmo_get_pointers(c_ps,             &
       c_syear, c_squant, c_shour, c_smin, c_ssec, &
@@ -773,9 +773,9 @@ contains
       c_sedimentation_model, c_deposition_model,  &
       c_nucleation_model, c_subgrid_model,        &
       c_distribution_model,                       &
-      c_model, c_nespg, c_nrg, c_chem_with_photo, &
-      c_modelaero, c_frozen_gas_chem,             &
-      c_init_gas_with_lib,                        &
+      c_model, c_isepchemistry, c_nespg, c_nrg,   &
+      c_chem_with_photo,  c_modelaero,            &
+      c_frozen_gas_chem, c_init_gas_with_lib,     &
       c_init_aero_with_lib, c_nlayer,             &
       c_nsize, c_imeteo,                          &
       c_nbmetd, c_nbmett, c_nbmetm, c_iatra1, c_nbmaxt, &
@@ -803,6 +803,7 @@ contains
     call c_f_pointer(c_distribution_model, moddis)
 
     call c_f_pointer(c_model, ichemistry)
+    call c_f_pointer(c_isepchemistry, isepchemistry)
     call c_f_pointer(c_nespg, nespg)
     call c_f_pointer(c_nrg, nrg)
     call c_f_pointer(c_chem_with_photo, photolysis)

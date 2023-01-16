@@ -189,6 +189,7 @@ static cs_atmo_chemistry_t _atmo_chem = {
   .model = 0,
   .n_species = 0,
   .n_reactions = 0,
+  .chemistry_sep_mode = 2,
   .chemistry_with_photolysis = true,
   .aerosol_model = CS_ATMO_AEROSOL_OFF,
   .frozen_gas_chem = false,
@@ -263,6 +264,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **subgrid_model,
                        int                    **distribution_model,
                        int                    **model,
+                       int                    **isepchemistry,
                        int                    **n_species,
                        int                    **n_reactions,
                        bool                   **chemistry_with_photolysis,
@@ -1458,6 +1460,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **subgrid_model,
                        int                    **distribution_model,
                        int                    **model,
+                       int                    **isepchemistry,
                        int                    **n_species,
                        int                    **n_reactions,
                        bool                   **chemistry_with_photolysis,
@@ -1502,6 +1505,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *meteo_zi   = &(_atmo_option.meteo_zi);
   *soil_model = &(_atmo_option.soil_model);
   *model = &(_atmo_chem.model);
+  *isepchemistry = &(_atmo_chem.chemistry_sep_mode);
   *n_species = &(_atmo_chem.n_species);
   *n_reactions = &(_atmo_chem.n_reactions);
   *chemistry_with_photolysis = &(_atmo_chem.chemistry_with_photolysis);
