@@ -256,12 +256,13 @@ double precision a_coeff
 double precision alpha,al
 double precision sig_flu ! standard deviation of qw'-alpha*theta'
 double precision var_tl,var_q,cov_tlq
-double precision q1,qsup, rvap
+double precision q1,qsup, rvap, rscp
 
 double precision, dimension(:), pointer :: cvar_k, cvar_ep
 double precision, dimension(:), pointer :: nn, nebdia
 
 rvap = rair*rvsra
+rscp = rair/cp0
 
 allocate(dtlsd(3,ncelet))
 allocate(dqsd(3,ncelet))
