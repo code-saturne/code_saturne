@@ -56,6 +56,10 @@ if test "x$with_mumps" != "xno" ; then
     MUMPS_LIBS="${MUMPS_LIBS} -lifcore -lm"
   elif test "x$FC" = "xmpiifort" ; then
     MUMPS_LIBS="${MUMPS_LIBS} -lifcore -lm"
+  elif test "x$FC" = "xmpifc" ; then
+    MUMPS_LIBS="${MUMPS_LIBS} -lifcore -lm"
+  elif test "x$FC" = "xifx" ; then
+    MUMPS_LIBS="${MUMPS_LIBS} -lifcore -lm"
   else
     MUMPS_LIBS="${MUMPS_LIBS} -lgfortran -lm"
   fi
