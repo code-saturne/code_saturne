@@ -1882,7 +1882,7 @@ cs_cdofb_monolithic_init_sharing(const cs_navsto_param_t       *nsp,
 
   /* SLES needs these structures for advanced PETSc hooks */
 
-  cs_cdofb_monolithic_sles_init_sharing(connect, quant);
+  cs_cdofb_monolithic_sles_init_sharing(mesh, connect, quant);
 }
 
 /*----------------------------------------------------------------------------*/

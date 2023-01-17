@@ -280,14 +280,16 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
 /*!
  * \brief Destroy a cs_cdo_connect_t structure
  *
- * \param[in]  connect     pointer to the cs_cdo_connect_t struct. to destroy
+ * \param[in]      mesh        pointer to a mesh structure
+ * \param[in, out] connect     pointer to additional CDO connectivities
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_connect_t *
-cs_cdo_connect_free(cs_cdo_connect_t   *connect);
+cs_cdo_connect_free(const cs_mesh_t    *mesh,
+                    cs_cdo_connect_t   *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!

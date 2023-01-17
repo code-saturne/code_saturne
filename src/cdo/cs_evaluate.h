@@ -59,16 +59,18 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set shared pointers to main domain members
+ * \brief Set shared pointers to main domain members
  *
- * \param[in]  quant       additional mesh quantities struct.
- * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
+ * \param[in] quant    pointer to additional mesh quantities for CDO schemes
+ * \param[in] connect  pointer to additional mesh connectivities for CDO schemes
+ * \param[in] mesh     pointer to the shared mesh structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_evaluate_init_sharing(const cs_cdo_quantities_t    *quant,
-                         const cs_cdo_connect_t       *connect);
+                         const cs_cdo_connect_t       *connect,
+                         const cs_mesh_t              *mesh);
 
 /*----------------------------------------------------------------------------*/
 /*!

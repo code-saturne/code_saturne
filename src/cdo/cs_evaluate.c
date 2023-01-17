@@ -84,6 +84,7 @@ BEGIN_C_DECLS
 
 static const cs_cdo_quantities_t  *cs_cdo_quant;
 static const cs_cdo_connect_t  *cs_cdo_connect;
+static const cs_mesh_t  *cs_shared_mesh;
 
 static const char _err_empty_array[] =
   " %s: Array storing the evaluation should be allocated before the call"
@@ -245,7 +246,7 @@ _untag_frontier_vertices(cs_lnum_t         c_id,
                          const cs_lnum_t   c_tags[],
                          cs_lnum_t         v_tags[])
 {
-  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_mesh_t  *m = cs_shared_mesh;
   const cs_lnum_t  *f2v_idx = m->i_face_vtx_idx;
   const cs_lnum_t  *f2v_lst = m->i_face_vtx_lst;
   const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
@@ -282,19 +283,20 @@ _tag_geometric_entities(cs_lnum_t          n_elts,
                         const cs_lnum_t   *elt_ids,
                         cs_lnum_t          v_tags[])
 {
-  const cs_mesh_t  *m = cs_glob_mesh;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_lnum_t  n_cells = quant->n_cells;
   const cs_lnum_t  n_vertices = quant->n_vertices;
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
+  const cs_mesh_t  *mesh = cs_shared_mesh;
+  const cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
 
   cs_lnum_t  *c_tags = NULL;
-  BFT_MALLOC(c_tags, m->n_cells_with_ghosts, cs_lnum_t);
+  BFT_MALLOC(c_tags, n_cells_with_ghosts, cs_lnum_t);
 
   if (n_elts < n_cells) { /* Only some cells are selected */
 
     cs_array_lnum_fill_zero(n_vertices, v_tags);
-    cs_array_lnum_fill_zero(m->n_cells_with_ghosts, c_tags);
+    cs_array_lnum_fill_zero(n_cells_with_ghosts, c_tags);
 
     /* First pass: flag cells and vertices */
 
@@ -315,11 +317,11 @@ _tag_geometric_entities(cs_lnum_t          n_elts,
 
     cs_array_lnum_set_value(n_vertices, -1, v_tags);
     cs_array_lnum_set_value(n_cells, 1, c_tags);
-    cs_array_lnum_fill_zero(m->n_ghost_cells, c_tags + n_cells);
+    cs_array_lnum_fill_zero(mesh->n_ghost_cells, c_tags + n_cells);
 
   }
 
-  cs_halo_sync_num(m->halo, CS_HALO_STANDARD, c_tags);
+  cs_halo_sync_num(mesh->halo, CS_HALO_STANDARD, c_tags);
 
   /* Second pass: detect cells at the frontier of the selection */
 
@@ -1351,21 +1353,24 @@ _eval_by_value(cs_lnum_t          n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set shared pointers to main domain members
+ * \brief Set shared pointers to main domain members
  *
- * \param[in]  quant       additional mesh quantities struct.
- * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
+ * \param[in] quant    pointer to additional mesh quantities for CDO schemes
+ * \param[in] connect  pointer to additional mesh connectivities for CDO schemes
+ * \param[in] mesh     pointer to the shared mesh structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_evaluate_init_sharing(const cs_cdo_quantities_t    *quant,
-                         const cs_cdo_connect_t       *connect)
+                         const cs_cdo_connect_t       *connect,
+                         const cs_mesh_t              *mesh)
 {
   /* Assign static const pointers */
 
   cs_cdo_quant = quant;
   cs_cdo_connect = connect;
+  cs_shared_mesh = mesh;
 }
 
 /*----------------------------------------------------------------------------*/

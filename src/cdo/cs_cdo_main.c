@@ -991,7 +991,7 @@ cs_cdo_finalize(cs_domain_t    *domain)
   /* Free CDO structures related to geometric quantities and connectivity */
 
   domain->cdo_quantities = cs_cdo_quantities_free(domain->cdo_quantities);
-  domain->connect = cs_cdo_connect_free(domain->connect);
+  domain->connect = cs_cdo_connect_free(domain->mesh, domain->connect);
 
   cs_timer_stats_stop(_cdo_ts_id);
 }

@@ -95,16 +95,18 @@ cs_cdofb_monolithic_sles_free(cs_cdofb_monolithic_sles_t   **p_msles);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set pointers to shared structures
+ * \brief Set pointers to shared structures
  *
- * \param[in]  connect  pointer to cdo connectivities
- * \param[in]  quant    pointer to additional mesh quantities
+ * \param[in] mesh     pointer to the mesh structure
+ * \param[in] connect  pointer to additional CDO connectivities
+ * \param[in] quant    pointer to additional CDO mesh quantities
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_sles_init_sharing(const cs_cdo_connect_t        *connect,
-                                      const cs_cdo_quantities_t     *quant);
+cs_cdofb_monolithic_sles_init_sharing(const cs_mesh_t             *mesh,
+                                      const cs_cdo_connect_t      *connect,
+                                      const cs_cdo_quantities_t   *quant);
 
 /*----------------------------------------------------------------------------*/
 /*!

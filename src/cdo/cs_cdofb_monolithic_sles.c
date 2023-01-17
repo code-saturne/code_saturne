@@ -231,8 +231,9 @@ typedef struct {
 
 /* Pointer to shared structures */
 
-static const cs_cdo_connect_t       *cs_shared_connect;
-static const cs_cdo_quantities_t    *cs_shared_quant;
+static const cs_cdo_connect_t  *cs_shared_connect;
+static const cs_cdo_quantities_t  *cs_shared_quant;
+static const cs_mesh_t  *cs_shared_mesh;
 
 static cs_cdofb_monolithic_petsc_context_t   *_petsc_hook_context = NULL;
 
@@ -689,14 +690,14 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
   CS_UNUSED(uza);
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_mesh_t  *m = cs_glob_mesh;
-  const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_t  n_i_faces = m->n_i_faces;
-  const cs_lnum_t  n_b_faces = m->n_b_faces;
+  const cs_mesh_t  *mesh = cs_shared_mesh;
+  const cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
+  const cs_lnum_t  n_i_faces = mesh->n_i_faces;
+  const cs_lnum_t  n_b_faces = mesh->n_b_faces;
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *restrict)mesh->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *restrict)mesh->b_face_cells;
 
   /* Synchronize the diagonal values for A */
 
@@ -719,7 +720,7 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
   else {
 
     diagA = cs_matrix_get_diagonal(a);
-    assert(m->periodicity == NULL); /* TODO */
+    assert(mesh->periodicity == NULL); /* TODO */
 
   }
 
@@ -846,14 +847,14 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
                                cs_real_t                  **p_xtra_smat)
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_mesh_t  *m = cs_glob_mesh;
-  const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_t  n_i_faces = m->n_i_faces;
-  const cs_lnum_t  n_b_faces = m->n_b_faces;
+  const cs_mesh_t  *mesh = cs_shared_mesh;
+  const cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
+  const cs_lnum_t  n_i_faces = mesh->n_i_faces;
+  const cs_lnum_t  n_b_faces = mesh->n_b_faces;
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *restrict)mesh->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *restrict)mesh->b_face_cells;
 
   /* Compute A^-1 lumped. Consider a rhs with only one values. */
 
@@ -1014,14 +1015,14 @@ _diag_schur_sbp(const cs_navsto_param_t       *nsp,
   CS_UNUSED(nsp);
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_mesh_t  *m = cs_glob_mesh;
-  const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_t  n_i_faces = m->n_i_faces;
-  const cs_lnum_t  n_b_faces = m->n_b_faces;
+  const cs_mesh_t  *mesh = cs_shared_mesh;
+  const cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
+  const cs_lnum_t  n_i_faces = mesh->n_i_faces;
+  const cs_lnum_t  n_b_faces = mesh->n_b_faces;
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *restrict)mesh->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *restrict)mesh->b_face_cells;
 
   const cs_lnum_t  b11_size = ssys->x1_size;
 
@@ -1149,10 +1150,9 @@ _scaled_mass_sbp(const cs_navsto_param_t       *nsp,
   CS_UNUSED(sbp);
   CS_UNUSED(ssys);
 
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
   const cs_time_step_t  *ts = cs_glob_time_step;
-  const cs_mesh_t  *m = cs_glob_mesh;
-  const cs_lnum_t  n_cells = m->n_cells;
+  const cs_lnum_t  n_cells = cdoq->n_cells;
 
   assert(ssys->x2_size == n_cells);
   BFT_MALLOC(sbp->mass22_diag, n_cells, cs_real_t);
@@ -1163,16 +1163,16 @@ _scaled_mass_sbp(const cs_navsto_param_t       *nsp,
 
     const cs_real_t  visc_val = nsp->lam_viscosity->ref_value;
 #   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t i2 = 0; i2 < n_cells; i2++)
-      sbp->mass22_diag[i2] = visc_val/quant->cell_vol[i2];
+    for (cs_lnum_t i = 0; i < n_cells; i++)
+      sbp->mass22_diag[i] = visc_val/cdoq->cell_vol[i];
 
   }
   else {
 
     cs_property_eval_at_cells(ts->t_cur, nsp->tot_viscosity, sbp->mass22_diag);
 #   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t i2 = 0; i2 < n_cells; i2++)
-      sbp->mass22_diag[i2] /= quant->cell_vol[i2];
+    for (cs_lnum_t i = 0; i < n_cells; i++)
+      sbp->mass22_diag[i] /= cdoq->cell_vol[i];
 
   }
 
@@ -1201,14 +1201,14 @@ _invlumped_schur_sbp(const cs_navsto_param_t       *nsp,
                      cs_saddle_block_precond_t     *sbp)
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_mesh_t  *m = cs_glob_mesh;
-  const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_t  n_i_faces = m->n_i_faces;
-  const cs_lnum_t  n_b_faces = m->n_b_faces;
+  const cs_mesh_t  *mesh = cs_shared_mesh;
+  const cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
+  const cs_lnum_t  n_i_faces = mesh->n_i_faces;
+  const cs_lnum_t  n_b_faces = mesh->n_b_faces;
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *restrict)mesh->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *restrict)mesh->b_face_cells;
 
   const cs_lnum_t  b11_size = ssys->x1_size;
 
@@ -3229,13 +3229,12 @@ _free_gkb_builder(cs_gkb_builder_t   **p_gkb)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and initialize a Uzawa builder structure
+ * \brief Create and initialize a Uzawa builder structure
  *
- * \param[in]  nsp        pointer to a cs_navsto_param_t structure
- * \param[in]  gamma      value of the grad-div coefficient
- * \param[in]  n_u_dofs   number of velocity DoFs (degrees of freedom)
- * \param[in]  n_p_dofs   number of pressure DoFs
- * \param[in]  quant      pointer to additional mesh quantities
+ * \param[in] nsp        pointer to a cs_navsto_param_t structure
+ * \param[in] gamma      value of the grad-div coefficient
+ * \param[in] n_u_dofs   number of velocity DoFs (degrees of freedom)
+ * \param[in] n_p_dofs   number of pressure DoFs
  *
  * \return a pointer to a new allocated Uzawa builder
  */
@@ -3245,9 +3244,11 @@ static cs_uza_builder_t *
 _init_uzawa_builder(const cs_navsto_param_t      *nsp,
                     cs_real_t                     gamma,
                     cs_lnum_t                     n_u_dofs,
-                    cs_lnum_t                     n_p_dofs,
-                    const cs_cdo_quantities_t    *quant)
+                    cs_lnum_t                     n_p_dofs)
 {
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
   cs_uza_builder_t  *uza = NULL;
 
   BFT_MALLOC(uza, 1, cs_uza_builder_t);
@@ -3278,7 +3279,7 @@ _init_uzawa_builder(const cs_navsto_param_t      *nsp,
 
     cs_lnum_t  size = n_p_dofs;
     if (cs_glob_n_ranks > 1)
-      size = CS_MAX(n_p_dofs, cs_glob_mesh->n_cells_with_ghosts);
+      size = CS_MAX(n_p_dofs, connect->n_cells_with_ghosts);
     BFT_MALLOC(uza->gk, size, cs_real_t);
 
     BFT_MALLOC(uza->dzk, n_u_dofs, cs_real_t);
@@ -4036,19 +4037,22 @@ cs_cdofb_monolithic_sles_free(cs_cdofb_monolithic_sles_t   **p_msles)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set pointers to shared structures
+ * \brief Set pointers to shared structures
  *
- * \param[in]  connect  pointer to cdo connectivities
- * \param[in]  quant    pointer to additional mesh quantities
+ * \param[in] mesh     pointer to the mesh structure
+ * \param[in] connect  pointer to additional CDO connectivities
+ * \param[in] quant    pointer to additional CDO mesh quantities
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_sles_init_sharing(const cs_cdo_connect_t        *connect,
-                                      const cs_cdo_quantities_t     *quant)
+cs_cdofb_monolithic_sles_init_sharing(const cs_mesh_t             *mesh,
+                                      const cs_cdo_connect_t      *connect,
+                                      const cs_cdo_quantities_t   *quant)
 {
   /* Assign static const pointers */
 
+  cs_shared_mesh = mesh;
   cs_shared_connect = connect;
   cs_shared_quant = quant;
 }
@@ -4604,7 +4608,7 @@ cs_cdofb_monolithic_block_krylov(const cs_navsto_param_t       *nsp,
   assert(msles->div_op == div_ublock->values);
 
   ssys->x2_size = sh->col_block_sizes[1];
-  ssys->max_x2_size = cs_glob_mesh->n_cells_with_ghosts;
+  ssys->max_x2_size = cs_shared_mesh->n_cells_with_ghosts;
   ssys->rhs2 = sh->rhs_array[1];
 
   ssys->m21_stride = 3;
@@ -4951,8 +4955,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   cs_uza_builder_t  *uza = _init_uzawa_builder(nsp,
                                                0, /* grad-div scaling */
                                                3*msles->n_faces,
-                                               msles->n_cells,
-                                               cs_shared_quant);
+                                               msles->n_cells);
 
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
@@ -5278,7 +5281,6 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
 {
   assert(nsp != NULL && nsp->sles_param->strategy == CS_NAVSTO_SLES_UZAWA_AL);
 
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_real_t  gamma = msles->graddiv_coef;
   const cs_real_t  *div_op = msles->div_op;
   const cs_range_set_t  *range_set = cs_cdo_system_get_range_set(sh, 0);
@@ -5294,8 +5296,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   cs_uza_builder_t  *uza = _init_uzawa_builder(nsp,
                                                gamma,
                                                3*msles->n_faces,
-                                               msles->n_cells,
-                                               quant);
+                                               msles->n_cells);
 
   /* Transformation of the initial right-hand side */
 
