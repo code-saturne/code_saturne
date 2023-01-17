@@ -1793,8 +1793,7 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
   cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
 
-  if ((    cs_glob_lagr_time_scheme->interpol_field != 0
-        || cs_glob_lagr_time_scheme->extended_t_scheme !=0)
+  if (   cs_glob_lagr_time_scheme->extended_t_scheme !=0
       && cs_glob_lagr_model->idistu == 1)
       BFT_MALLOC(extra->grad_lagr_time, ncelet, cs_real_3_t);
 

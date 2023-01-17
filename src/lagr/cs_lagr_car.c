@@ -304,8 +304,7 @@ cs_lagr_car(int              iprev,
       if (beta != NULL)
         BFT_MALLOC(cell_grad_lagr_time_r, n_cells, cs_real_3_t);
 
-      if (cs_glob_lagr_time_scheme->interpol_field == 0)
-        BFT_MALLOC(cell_tlag_et, n_cells, cs_real_3_t);
+      BFT_MALLOC(cell_tlag_et, n_cells, cs_real_3_t);
 
       int stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY);
       cs_field_t *stat_vel
@@ -345,14 +344,10 @@ cs_lagr_car(int              iprev,
                                               orthogonal to n */
           cell_bbi[cell_id][2] = sqrt(at);
 
-        /* Compute the timescale in parallel and transverse directions
-         * if interpol_field == 1 for each particle the change of ref.
-         * is made after the P1 interpolation*/
-          if (cs_glob_lagr_time_scheme->interpol_field == 0) {
-            for (int id = 0; id < 3; id++)
-              cell_tlag_et[cell_id][id] = extra->lagr_time->val[cell_id]
-                                        / cell_bbi[cell_id][id];
-          }
+          /* Compute the timescale in parallel and transverse directions */
+          for (int id = 0; id < 3; id++)
+            cell_tlag_et[cell_id][id] = extra->lagr_time->val[cell_id]
+                                      / cell_bbi[cell_id][id];
 
           /* Compute the main direction in the global reference
            * frame */
@@ -484,28 +479,8 @@ cs_lagr_car(int              iprev,
           && energi[cell_id] > cs_math_epzero) {
         if (turb_disp_model) {
 
-          if (cs_glob_lagr_time_scheme->interpol_field == 1) {
-
-            /* P1-interpolation of tlag at the position of the particles.
-             * Interpolate in the absolute ref. then project in the local ref.*/
-            cs_real_t *part_coord    = cs_lagr_particle_attr(particle, p_am,
-                                                            CS_LAGR_COORDS);
-            cs_real_t *cell_cen = cs_glob_mesh_quantities->cell_cen+(3*cell_id);
-            tlag[ip][0] = extra->lagr_time->val[cell_id];
-            for (int j = 0; j < 3; j++)
-              tlag[ip][0] += grad_lagr_time[cell_id][j]
-                           * (part_coord[j] - cell_cen[j]);
-            tlag[ip][0]  = CS_MAX(tlag[ip][0], cs_math_epzero);
-            tlag[ip][1]  = tlag[ip][0];
-            tlag[ip][2]  = tlag[ip][0];
-            for (int id = 0; id < 3; id++) {
-              tlag[ip][id] /= cell_bbi[cell_id][id];
-            }
-          }
-          else {
-            for (cs_lnum_t id = 0; id < 3; id++)
-              tlag[ip][id] = cell_tlag_et[cell_id][id];
-          }
+          for (cs_lnum_t id = 0; id < 3; id++)
+            tlag[ip][id] = cell_tlag_et[cell_id][id];
 
           for (cs_lnum_t id = 0; id < 3; id++) {
             tlag[ip][id]  = CS_MAX(tlag[ip][id], cs_math_epzero);
@@ -544,15 +519,6 @@ cs_lagr_car(int              iprev,
         }
         else { //turb_disp_model == 0
           tlag[ip][0] = extra->lagr_time->val[cell_id];
-          if (cs_glob_lagr_time_scheme->interpol_field == 1) {
-            /* P1-interpolation of the tlag at the position of the particles*/
-            cs_real_t *part_coord    = cs_lagr_particle_attr(particle, p_am,
-                                                            CS_LAGR_COORDS);
-            cs_real_t *cell_cen = cs_glob_mesh_quantities->cell_cen+(3*cell_id);
-            for (int j = 0; j < 3; j++)
-                tlag[ip][0] += grad_lagr_time[cell_id][j]
-                             * (part_coord[j] - cell_cen[j]);
-          }
           tlag[ip][0] = CS_MAX(tlag[ip][0], cs_math_epzero);
 
           if (cs_glob_lagr_model->idiffl == 0) {

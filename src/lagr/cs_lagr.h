@@ -223,8 +223,8 @@ typedef struct {
    * (0 off, 1 on) */
   int  extended_t_scheme;
 
-  /*! activation (=1) or not (=0) P1 interpolation of velocity and
-   *  Lagragian time at the location of the particle */
+  /*! activation (=1) or not (=0) of P1 interpolation of mean carrier velocity
+   *  at the location of the particles */
   int interpol_field;
 
   /*! activation (=1) or not (=0) of the solution of a Poisson's equation for
