@@ -210,6 +210,20 @@ module ppcpfu
       type(c_ptr), intent(out) :: p_oxyo2, p_oxyn2, p_oxyh2o, p_oxyco2
     end subroutine cs_f_ppcpfu_get_pointers
 
+    ! Interface to C function
+    ! Defines the source terms for scalars which are part of
+    ! specific physics models. Source terms are defined over one time step.
+
+    !---------------------------------------------------------------------------
+
+    subroutine pptssc(iscal, smbrs, rovsdt)  &
+      bind(C, name='cs_physical_model_scalar_source_terms')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: iscal
+      real(kind=c_double), dimension(*), intent(inout) :: smbrs, rovsdt
+    end subroutine pptssc
+
     !---------------------------------------------------------------------------
 
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond

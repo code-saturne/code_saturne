@@ -61,13 +61,12 @@
 !> \param[in]     iscal         scalar number
 !> \param[in,out] smbrs         explicit source term part
 !> \param[in,out] rovsdt        implicite source term part
-!> \param[in]     tslagr        coupling term for the Lagrangian module
 !______________________________________________________________________________!
 
-
-subroutine pptssc &
- ( iscal  ,                                                         &
-   smbrs  , rovsdt , tslagr )
+subroutine pptssc     &
+ ( iscal  ,           &
+   smbrs  , rovsdt )  &
+  bind(C, name='cs_physical_model_scalar_source_terms')
 
 !===============================================================================
 ! Module files
@@ -79,7 +78,7 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use pointe, only: itypfb
+use pointe, only: itypfb, tslagr
 use ppppar
 use ppthch
 use coincl
@@ -96,10 +95,9 @@ implicit none
 
 ! Arguments
 
-integer          iscal
+integer(c_int), value :: iscal
 
 double precision smbrs(ncelet), rovsdt(ncelet)
-double precision tslagr(ncelet,*)
 
 ! Local variables
 

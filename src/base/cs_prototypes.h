@@ -326,6 +326,15 @@ cs_lagr_status(int  *model_flag,
                int  *frozen_flag);
 
 /*----------------------------------------------------------------------------
+ * Compute source terms for specific physical model scalars.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_physical_model_scalar_source_terms(int         iscal,
+                                      cs_real_t   st_imp[],
+                                      cs_real_t   st_exp[]);
+
+/*----------------------------------------------------------------------------
  * Exchange of coupling variables between tow instances
  * of code_saturne thanks to cells.
  *----------------------------------------------------------------------------*/
