@@ -1059,6 +1059,7 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
   connect->n_faces[CS_BND_FACES] = mesh->n_b_faces;
   connect->n_faces[CS_INT_FACES] = mesh->n_i_faces;
   connect->n_cells = n_cells;
+  connect->n_cells_with_ghosts = mesh->n_cells_with_ghosts;
 
   /* Build additional connectivity cell --> edges and cell --> vertices
      Useful for accessing dual faces and dual volumes for instance */

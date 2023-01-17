@@ -63,64 +63,65 @@ typedef struct {
   /* Vertex-related members */
   /* ---------------------- */
 
-  cs_lnum_t          n_vertices;
+  cs_lnum_t              n_vertices;
 
   /* range set and interface set structures for scalar-valued vertex DoFs
      (these structures may be not allocated according to the settings) */
 
-  cs_range_set_t      *vtx_rset;
-  cs_interface_set_t  *vtx_ifs;
+  cs_range_set_t        *vtx_rset;
+  cs_interface_set_t    *vtx_ifs;
 
 
   /* Edge-related members */
   /* -------------------- */
 
-  cs_lnum_t          n_edges;
-  cs_gnum_t          n_g_edges;
+  cs_lnum_t              n_edges;
+  cs_gnum_t              n_g_edges;
 
-  cs_adjacency_t      *e2v;             /* edge --> vertices connectivity */
+  cs_adjacency_t        *e2v; /* edge --> vertices connectivity */
 
   /* range set and interface set structures for scalar-valued edge DoFs
      (these structures may be not allocated according to the settings) */
 
-  cs_range_set_t      *edge_rset;
-  cs_interface_set_t  *edge_ifs;
+  cs_range_set_t        *edge_rset;
+  cs_interface_set_t    *edge_ifs;
 
   /* Face-related members */
   /* -------------------- */
 
-  cs_lnum_t          n_faces[3];  /* 0: all, 1: border, 2: interior */
+  cs_lnum_t              n_faces[3];  /* 0: all, 1: border, 2: interior */
 
-  cs_adjacency_t    *f2c;         /* face --> cells connectivity */
-  cs_adjacency_t    *f2e;         /* face --> edges connectivity */
-  cs_adjacency_t    *bf2v;        /* border face --> vertices connectivity
-                                     (map from cs_mesh_t) */
-  cs_adjacency_t    *if2v;        /* interior face --> vertices connectivity
-                                     (map from cs_mesh_t) */
+  cs_adjacency_t        *f2c;         /* face --> cells connectivity */
+  cs_adjacency_t        *f2e;         /* face --> edges connectivity */
+  cs_adjacency_t        *bf2v;        /* border face --> vertices connectivity
+                                         (map from cs_mesh_t) */
+  cs_adjacency_t        *if2v;        /* interior face --> vertices connectivity
+                                         (map from cs_mesh_t) */
 
   /* range set and interface set structures for scalar-valued edge DoFs
      (these structures may be not allocated according to the settings) */
 
-  cs_range_set_t      *face_rset;
-  cs_interface_set_t  *face_ifs;
+  cs_range_set_t        *face_rset;
+  cs_interface_set_t    *face_ifs;
 
   /* Cell-related members */
   /* -------------------- */
 
-  cs_lnum_t          n_cells;
+  cs_lnum_t              n_cells;
+  cs_lnum_t              n_cells_with_ghosts;
 
-  fvm_element_t     *cell_type;   /* type of cell */
-  cs_flag_t         *cell_flag;   /* Flag (Border/Solid) */
-  cs_adjacency_t    *c2f;         /* cell --> faces connectivity */
-  cs_adjacency_t    *c2e;         /* cell --> edges connectivity */
-  cs_adjacency_t    *c2v;         /* cell --> vertices connectivity */
+  fvm_element_t         *cell_type;   /* type of cell */
+  cs_flag_t             *cell_flag;   /* Flag (Border/Solid) */
+  cs_adjacency_t        *c2f;         /* cell --> faces connectivity */
+  cs_adjacency_t        *c2e;         /* cell --> edges connectivity */
+  cs_adjacency_t        *c2v;         /* cell --> vertices connectivity */
 
   /* Delta of ids between the min./max. values of entities related to a cell
      Useful to store compactly the link between mesh ids and cell mesh ids
      needed during the cell mesh definition */
 
-  cs_lnum_t  e_max_cell_range;
-  cs_lnum_t  v_max_cell_range;
+  cs_lnum_t              e_max_cell_range;
+  cs_lnum_t              v_max_cell_range;
 
   /* Max. connectitivy size for cells */
 
@@ -133,9 +134,9 @@ typedef struct {
 
   /* Adjacency related to linear systems (allocated only if needed) */
 
-  cs_adjacency_t       *v2v;    /* vertex to vertices through cells */
-  cs_adjacency_t       *f2f;    /* face to faces through cells */
-  cs_adjacency_t       *e2e;    /* edge to edges through cells */
+  cs_adjacency_t        *v2v;    /* vertex to vertices through cells */
+  cs_adjacency_t        *f2f;    /* face to faces through cells */
+  cs_adjacency_t        *e2e;    /* edge to edges through cells */
 
 } cs_cdo_connect_t;
 
