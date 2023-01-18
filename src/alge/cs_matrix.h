@@ -258,7 +258,7 @@ cs_matrix_structure_create_msr_shared(bool                    direct_assmbly,
  * \param[in]  type  type of matrix considered
  * \param[in]  ma    pointer to matrix assembler structure
  *
- * \return  a pointer to a created matrix structure
+ * \return a pointer to a created matrix structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -386,74 +386,83 @@ cs_matrix_get_type_name(const cs_matrix_t  *matrix);
 const char *
 cs_matrix_get_type_fullname(const cs_matrix_t  *matrix);
 
-/*----------------------------------------------------------------------------
- * Return number of columns in matrix.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return number of columns in a matrix.
  *
- * parameters:
- *   matrix --> pointer to matrix structure
- *----------------------------------------------------------------------------*/
+ * \param[in] matrix  pointer to matrix structure
+ *
+ * \return the number of columns
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_lnum_t
 cs_matrix_get_n_columns(const cs_matrix_t  *matrix);
 
-/*----------------------------------------------------------------------------
- * Return number of rows in matrix.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the number of rows in matrix.
  *
- * parameters:
- *   matrix --> pointer to matrix structure
- *----------------------------------------------------------------------------*/
+ * \param[in] matrix  pointer to matrix structure
+ *
+ * \return the number of rows
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_lnum_t
 cs_matrix_get_n_rows(const cs_matrix_t  *matrix);
 
-/*----------------------------------------------------------------------------
- * Return number of entries in matrix.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the number of entries in matrix.
  *
  * When the block size is > 1, the number reported is the number of
  * entry blocks, not individual entries.
  *
- * parameters:
- *   matrix --> pointer to matrix structure
- *----------------------------------------------------------------------------*/
+ * \param[in] matrix  pointer to matrix structure
+ *
+ * \return the number of entries
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_lnum_t
 cs_matrix_get_n_entries(const cs_matrix_t  *matrix);
 
-/*----------------------------------------------------------------------------
- * Return matrix diagonal block sizes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the size of the diagonal block for the given matrix structure
  *
- * parameters:
- *   matrix <-- pointer to matrix structure
+ * \param[in] matrix  pointer to matrix structure
  *
- * returns:
- *   diagonal block sizes
- *----------------------------------------------------------------------------*/
+ * \return the of the diagonal block
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_lnum_t
 cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix);
 
-/*----------------------------------------------------------------------------
- * Return matrix extra-diagonal block sizes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the size of the extra-diagonal block for the given matrix
  *
- * parameters:
- *   matrix <-- pointer to matrix structure
+ * \param[in] matrix  pointer to matrix structure
  *
- * returns:
- *   extra-diagonal block sizes
- *----------------------------------------------------------------------------*/
+ * \return the size of the extra-diagonal block
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_lnum_t
 cs_matrix_get_extra_diag_block_size(const cs_matrix_t  *matrix);
 
-/*----------------------------------------------------------------------------
- * Return pointer to matrix halo structure.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the pointer to the halo structure for the given matrix
  *
- * parameters:
- *   matrix <-- pointer to matrix structure
+ * \param[in] matrix  pointer to matrix structure
  *
- * returns:
- *   pointer to halo strucuture
- *----------------------------------------------------------------------------*/
+ * \return pointer to the associated halo structure
+ */
+/*----------------------------------------------------------------------------*/
 
 const cs_halo_t *
 cs_matrix_get_halo(const cs_matrix_t  *matrix);
@@ -463,9 +472,9 @@ cs_matrix_get_halo(const cs_matrix_t  *matrix);
  * \brief Return a pointer to local global row range associated with a
  *        matrix, if available
  *
- * \param[in]  ma   pointer to matrix structure
+ * \param[in] ma   pointer to matrix structure
  *
- * \return  pointer to local range, or NULL
+ * \return pointer to local range, or NULL
  */
 /*----------------------------------------------------------------------------*/
 
@@ -476,7 +485,7 @@ cs_matrix_get_l_range(const cs_matrix_t  *matrix);
 /*!
  *\brief Query matrix allocation mode.
  *
- * \param[in]  matrix  pointer to matrix structure
+ * \param[in] matrix  pointer to matrix structure
  *
  * \return  host/device allocation mode
  */
@@ -489,8 +498,8 @@ cs_matrix_get_alloc_mode(const cs_matrix_t  *matrix);
 /*!
  *\brief Set matrix allocation mode.
  *
- * \param[in, out]  matrix      pointer to matrix structure
- * \param[in]       alloc_mode  host/device allocation mode
+ * \param[in, out] matrix      pointer to matrix structure
+ * \param[in]      alloc_mode  host/device allocation mode
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1081,12 +1090,15 @@ cs_matrix_variant_set_func(cs_matrix_variant_t     *mv,
                            const cs_numbering_t    *numbering,
                            const char              *func_name);
 
-/*----------------------------------------------------------------------------
- * Get the type associated with a matrix variant.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the type associated with a matrix variant.
  *
- * parameters:
- *   mv <-- pointer to matrix variant structure
- *----------------------------------------------------------------------------*/
+ * \param[in] mv  pointer to matrix variant structure
+ *
+ * \return the type of matrix
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_matrix_type_t
 cs_matrix_variant_type(const cs_matrix_variant_t  *mv);

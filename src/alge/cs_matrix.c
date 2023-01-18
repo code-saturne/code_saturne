@@ -4757,8 +4757,7 @@ cs_matrix_type_t
 cs_matrix_get_type(const cs_matrix_t  *matrix)
 {
   if (matrix == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("The matrix is not defined."));
+    bft_error(__FILE__, __LINE__, 0, _("The matrix is not defined."));
   return matrix->type;
 }
 
@@ -4773,8 +4772,7 @@ const char *
 cs_matrix_get_type_name(const cs_matrix_t  *matrix)
 {
   if (matrix == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("%s: matrix not defined."), __func__);
+    bft_error(__FILE__, __LINE__, 0, _("%s: matrix not defined."), __func__);
 
   return matrix->type_name;
 }
@@ -4790,8 +4788,7 @@ const char *
 cs_matrix_get_type_fullname(const cs_matrix_t  *matrix)
 {
   if (matrix == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("%s: matrix not defined."), __func__);
+    bft_error(__FILE__, __LINE__, 0, _("%s: matrix not defined."), __func__);
 
   return matrix->type_fname;
 }
@@ -4800,7 +4797,9 @@ cs_matrix_get_type_fullname(const cs_matrix_t  *matrix)
 /*!
  * \brief Return number of columns in a matrix.
  *
- * \param[in]  matrix  pointer to matrix structure
+ * \param[in] matrix  pointer to matrix structure
+ *
+ * \return the number of columns
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4808,16 +4807,18 @@ cs_lnum_t
 cs_matrix_get_n_columns(const cs_matrix_t  *matrix)
 {
   if (matrix == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("The matrix is not defined."));
+    bft_error(__FILE__, __LINE__, 0, _("The matrix is not defined."));
+
   return matrix->n_cols_ext;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return number of rows in matrix.
+ * \brief Return the number of rows in matrix.
  *
- * \param[in]  matrix  pointer to matrix structure
+ * \param[in] matrix  pointer to matrix structure
+ *
+ * \return the number of rows
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4825,19 +4826,21 @@ cs_lnum_t
 cs_matrix_get_n_rows(const cs_matrix_t  *matrix)
 {
   if (matrix == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("The matrix is not defined."));
+    bft_error(__FILE__, __LINE__, 0, _("The matrix is not defined."));
+
   return matrix->n_rows;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return number of entries in matrix.
+ * \brief Return the number of entries in matrix.
  *
  * When the block size is > 1, the number reported is the number of
  * entry blocks, not individual entries.
  *
- * \param[in]  matrix  pointer to matrix structure
+ * \param[in] matrix  pointer to matrix structure
+ *
+ * \return the number of entries
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4847,8 +4850,7 @@ cs_matrix_get_n_entries(const cs_matrix_t  *matrix)
   cs_lnum_t retval = 0;
 
   if (matrix == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("The matrix is not defined."));
+    bft_error(__FILE__, __LINE__, 0, _("The matrix is not defined."));
 
   switch(matrix->type) {
   case CS_MATRIX_NATIVE:
@@ -4887,11 +4889,11 @@ cs_matrix_get_n_entries(const cs_matrix_t  *matrix)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return matrix diagonal block sizes.
+ * \brief Return the size of the diagonal block for the given matrix
  *
- * \param[in]  matrix  pointer to matrix structure
+ * \param[in] matrix  pointer to matrix structure
  *
- * \return  diagonal block sizes
+ * \return the of the diagonal block
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4899,19 +4901,18 @@ cs_lnum_t
 cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix)
 {
   if (matrix == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("The matrix is not defined."));
+    bft_error(__FILE__, __LINE__, 0, _("The matrix is not defined."));
 
   return matrix->db_size;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return matrix extra-diagonal block sizes.
+ * \brief Return the size of the extra-diagonal block for the given matrix
  *
- * \param[in]  matrix  pointer to matrix structure
+ * \param[in] matrix  pointer to matrix structure
  *
- * \return  extra-diagonal block sizes
+ * \return the size of the extra-diagonal block
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4919,19 +4920,18 @@ cs_lnum_t
 cs_matrix_get_extra_diag_block_size(const cs_matrix_t  *matrix)
 {
   if (matrix == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("The matrix is not defined."));
+    bft_error(__FILE__, __LINE__, 0, _("The matrix is not defined."));
 
   return matrix->eb_size;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return pointer to matrix halo structure.
+ * \brief Return the pointer to the halo structure for the given matrix
  *
- * \param[in]  matrix  pointer to matrix structure
+ * \param[in] matrix  pointer to matrix structure
  *
- * \return  pointer to halo strucuture
+ * \return pointer to the associated halo structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4939,8 +4939,7 @@ const cs_halo_t *
 cs_matrix_get_halo(const cs_matrix_t  *matrix)
 {
   if (matrix == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("The matrix is not defined."));
+    bft_error(__FILE__, __LINE__, 0, _("The matrix is not defined."));
 
   return matrix->halo;
 }
@@ -4950,9 +4949,9 @@ cs_matrix_get_halo(const cs_matrix_t  *matrix)
  * \brief Return a pointer to local global row range associated with a
  *        matrix, if available
  *
- * \param[in]  matrix   pointer to matrix structure
+ * \param[in] matrix   pointer to matrix structure
  *
- * \return  pointer to local range, or NULL
+ * \return pointer to local range, or NULL
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4971,7 +4970,7 @@ cs_matrix_get_l_range(const cs_matrix_t  *matrix)
 
 /*----------------------------------------------------------------------------*/
 /*!
- *\brief Query matrix allocation mode.
+ * \brief Query matrix allocation mode.
  *
  * \param[in]  matrix  pointer to matrix structure
  *
@@ -5086,18 +5085,18 @@ cs_matrix_set_coefficients(cs_matrix_t        *matrix,
                            const cs_real_t    *xa)
 {
   if (matrix == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("The matrix is not defined."));
+    bft_error(__FILE__, __LINE__, 0, _("The matrix is not defined."));
 
   cs_base_check_bool(&symmetric);
 
-  /* Set fill type */
+  /* Set the fill type */
+
   _set_fill_info(matrix,
                  symmetric,
                  diag_block_size,
                  extra_diag_block_size);
 
-  /* Set coefficients */
+  /* Set the coefficients */
 
   if (matrix->set_coefficients != NULL) {
     matrix->xa = xa;
@@ -5145,8 +5144,7 @@ cs_matrix_copy_coefficients(cs_matrix_t        *matrix,
                             const cs_real_t    *xa)
 {
   if (matrix == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("The matrix is not defined."));
+    bft_error(__FILE__, __LINE__, 0, _("The matrix is not defined."));
 
   cs_base_check_bool(&symmetric);
 
@@ -5203,8 +5201,7 @@ cs_matrix_transfer_coefficients_msr(cs_matrix_t         *matrix,
   const cs_real_t  *x_val_p = (x_val != NULL) ? *x_val : NULL;
 
   if (matrix == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("The matrix is not defined."));
+    bft_error(__FILE__, __LINE__, 0, _("The matrix is not defined."));
 
   cs_base_check_bool(&symmetric);
 
@@ -5266,8 +5263,7 @@ cs_matrix_release_coefficients(cs_matrix_t  *matrix)
   /* Check API state */
 
   if (matrix == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("The matrix is not defined."));
+    bft_error(__FILE__, __LINE__, 0, _("The matrix is not defined."));
 
   if (matrix->destroy_adaptor != NULL) {
     matrix->destroy_adaptor(matrix);
@@ -5353,8 +5349,7 @@ cs_matrix_copy_diagonal(const cs_matrix_t  *matrix,
   /* Check API state */
 
   if (matrix == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("The matrix is not defined."));
+    bft_error(__FILE__, __LINE__, 0, _("The matrix is not defined."));
 
   if (matrix->copy_diagonal != NULL)
     matrix->copy_diagonal(matrix, da);
@@ -5902,8 +5897,7 @@ cs_matrix_get_msr_arrays(const cs_matrix_t   *matrix,
     bft_error
       (__FILE__, __LINE__, 0,
        _("%s is not available for matrix using %s storage."),
-       __func__,
-       matrix->type_name);
+       __func__, matrix->type_name);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6546,18 +6540,18 @@ cs_matrix_variant_set_func(cs_matrix_variant_t     *mv,
          func_name, mv->name[spmv_type], _matrix_type_name[mv->type]);
   }
   else if (retcode == 2)
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("Matrix.vector product function type \"%s\"\n"
-         "is not available in this build."),
-       func_name);
+    bft_error (__FILE__, __LINE__, 0,
+               _("Matrix.vector product function type \"%s\"\n"
+                 "is not available in this build."), func_name);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Get the type associated with a matrix variant.
  *
- * \param[in]  mv  pointer to matrix variant structure
+ * \param[in] mv  pointer to matrix variant structure
+ *
+ * \return the type of matrix
  */
 /*----------------------------------------------------------------------------*/
 
