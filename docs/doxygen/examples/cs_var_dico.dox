@@ -275,6 +275,7 @@
   standard solver and the specific physics features:
     - \ref cs_var_dico_vars
     - \ref cs_var_dico_props
+    - \ref cs_var_dico_refs
     - \ref cs_var_dico_part
     - \ref cs_var_dico_atmo
     - \ref cs_var_dico_comb
@@ -366,6 +367,20 @@ rather than in a field over all mesh cells.
     <tt> int k_f_id = \ref cs_field_get_key_int(f, \ref cs_field_key_id("diffusivity_id")); \n
     cs_field_t *kf = \ref cs_field_by_id(k_f_id); </tt>
 
+  \section cs_var_dico_refs Reference physical values
+
+  Reference physical values represent either the fluid properties if they are
+  constant, either simple mean values for the initialization if properties are
+  variable and defined in \ref cs_user_physical_properties.
+  Reference values can be set in the GUI or in files \ref cs_user_parameters.f90
+  and \ref cs_user_parameters.c.
+
+  Fortran code | C code | Description
+  -------------|------- | -----------
+  <tt> \ref cstphy::p0 "p0" | \ref cs_glob_fluid_properties "cs_glob_fluid_properties"->\ref cs_fluid_properties_t::p0 "p0" | Reference total pressure
+  \ref cstphy::ro0 "ro0" | \ref cs_glob_fluid_properties "cs_glob_fluid_properties"->\ref cs_fluid_properties_t::ro0 "ro0" | Reference density
+  \ref cstphy::viscl0 "viscl0" | \ref cs_glob_fluid_properties "cs_glob_fluid_properties"->\ref cs_fluid_properties_t::viscl0 "viscl0" | Reference molecular dynamic viscosity
+  \ref cstphy::cp0 "cp0" | \ref cs_glob_fluid_properties "cs_glob_fluid_properties"->\ref cs_fluid_properties_t::cp0 "cp0" | Reference specific heat </tt>
 
   \section cs_var_dico_part Specific physical models
 
