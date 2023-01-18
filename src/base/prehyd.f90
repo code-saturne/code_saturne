@@ -105,31 +105,24 @@ integer          iterns
 
 ! Local variables
 
-integer          iccocg, inc, isym  , f_id
+integer          inc, isym  , f_id
 integer          iel   , ifac
-integer          nswrgp, imligp, iwarnp
+integer          nswrgp, iwarnp
 integer          iflmas, iflmab
-integer          idiffp, iconvp, ndircp
 integer          ibsize
-integer          iescap, ircflp, ischcp, isstpp, f_id0
-integer          nswrsp
-integer          imucpp, idftnp, iswdyp
+integer          iescap, f_id0
+integer          imucpp
 integer          iharmo
 integer          icvflb, hyd_p_flag
 integer          ivoid(1)
 
-double precision thetap
-double precision epsrgp, climgp, extrap, epsilp
-double precision hint, qimp, epsrsp, blencp, relaxp
+double precision hint, qimp
 double precision normp
 
 double precision rvoid(1)
 
 real(kind=c_double), dimension(:,:), pointer :: pvoid2
 real(kind=c_double), dimension(1,1), target :: rvoid2
-type(var_cal_opt), target   :: vcoptph
-type(var_cal_opt), pointer  :: p_k_value
-type(c_ptr)                 :: c_k_value
 
 double precision, allocatable, dimension(:) :: coefap, cofafp, coefbp, cofbfp
 
@@ -141,6 +134,9 @@ double precision, dimension(:), pointer :: imasfl, bmasfl, prhyd
 double precision, dimension(:), pointer :: crom
 
 type(var_cal_opt) :: vcopt
+type(var_cal_opt), target   :: vcopt_loc
+type(var_cal_opt), pointer  :: p_k_value
+type(c_ptr)                 :: c_k_value
 
 !===============================================================================
 ! 1. Initializations
@@ -229,94 +225,60 @@ enddo
 ! We do not yet use the multigrid to resolve the hydrostatic pressure
 !--------------------------------------------------------------------------
 
-call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 f_id0  = -1
-iconvp = 0
-idiffp = 1
-ndircp = 0
-nswrsp = 1           ! no reconstruction gradient
-nswrgp = vcopt%nswrgr
-imligp = vcopt%imligr
-ircflp = vcopt%ircflu
-ischcp = vcopt%ischcv
-isstpp = vcopt%isstpc
 iescap = 0
 imucpp = 0
-idftnp = ISOTROPIC_DIFFUSION
-iswdyp = vcopt%iswdyn
-iwarnp = vcopt%iwarni
-blencp = vcopt%blencv
-epsilp = vcopt%epsilo
-epsrsp = vcopt%epsrsm
-epsrgp = vcopt%epsrgr
-climgp = vcopt%climgr
-extrap = 0.d0
-relaxp = vcopt%relaxv
-thetap = vcopt%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
 normp = -1.d0
 
 ! Solve the diffusion equation
-p_k_value => vcoptph
+
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+vcopt_loc = vcopt
+
+vcopt_loc%iconv = 0
+vcopt_loc%istat = 0
+vcopt_loc%icoupl = -1
+vcopt_loc%ndircl = 0
+vcopt_loc%idiff  = 1
+vcopt_loc%idifft = -1
+vcopt_loc%idften = ISOTROPIC_DIFFUSION
+vcopt_loc%nswrsm = 1      ! no reconstruction gradient
+                          ! (important for mesh with reconstruction)
+vcopt_loc%imrgra = imrgra
+vcopt_loc%iwgrec = 0      ! Warning, may be overwritten if a field
+vcopt_loc%blend_st = 0    ! Warning, may be overwritten if a field
+
+p_k_value => vcopt_loc
 c_k_value = c_loc(p_k_value)
 
-vcoptph%iwarni = iwarnp
-
-vcoptph%iconv  = iconvp
-vcoptph%istat  = 0
-
-vcoptph%icoupl = -1
-vcoptph%ndircl = ndircp
-vcoptph%idiff  = idiffp
-vcoptph%idifft = -1
-vcoptph%idften = idftnp
-vcoptph%iswdyn = iswdyp
-vcoptph%ischcv = ischcp
-vcoptph%isstpc = isstpp
-vcoptph%nswrgr = nswrgp
-vcoptph%nswrsm = nswrsp ! Important for mesh with reconstruction
-vcoptph%imrgra = imrgra
-vcoptph%imligr = imligp
-vcoptph%ircflu = ircflp
-vcoptph%iwgrec = 0      ! Warning, may be overwritten if a field
-vcoptph%thetav = thetap
-vcoptph%blencv = blencp
-vcoptph%blend_st = 0    ! Warning, may be overwritten if a field
-vcoptph%epsilo = epsilp
-vcoptph%epsrsm = epsrsp
-vcoptph%epsrgr = epsrgp
-vcoptph%climgr = climgp
-vcoptph%relaxv = relaxp
-
-call cs_equation_iterative_solve_scalar          &
- ( idtvar , iterns ,                             &
-   f_id0    , "Prhydro"      ,                   &
-   iescap , imucpp , normp  , c_k_value       ,  &
-   prhyd       , prhyd      ,                    &
-   coefap , coefbp , cofafp , cofbfp ,           &
-   imasfl , bmasfl ,                             &
-   viscf  , viscb  , viscf  , viscb  ,           &
-   rvoid , rvoid , rvoid ,                       &
-   icvflb , ivoid  ,                             &
+call cs_equation_iterative_solve_scalar      &
+ ( idtvar , iterns ,                         &
+   f_id0  , "Prhydro"       ,                &
+   iescap , imucpp , normp  , c_k_value   ,  &
+   prhyd  , prhyd  ,                         &
+   coefap , coefbp , cofafp , cofbfp ,       &
+   imasfl , bmasfl ,                         &
+   viscf  , viscb  , viscf  , viscb  ,       &
+   rvoid , rvoid , rvoid ,                   &
+   icvflb , ivoid  ,                         &
    rovsdt , smbr  , prhyd        , dpvar  ,  &
-   rvoid   , rvoid  )
+   rvoid  , rvoid  )
 
 ! Free memory
 deallocate(dpvar)
 
 inc    = 1
-iccocg = 1
 nswrgp = 1
-extrap = 0.d0
 f_id = -1
 
 hyd_p_flag = 0
 
 call gradient_weighted_s &
- ( f_id   , imrgra , inc    , nswrgp , imligp ,                  &
+ ( f_id   , imrgra , inc    , nswrgp , vcopt_loc%imligr ,        &
    hyd_p_flag,                                                   &
-   iwarnp , epsrgp , climgp , pvoid2 ,                           &
+   iwarnp , vcopt_loc%epsrgr , vcopt_loc%climgr , pvoid2 ,       &
    prhyd  , xinvro , coefap , coefbp ,                           &
    grdphd   )
 
