@@ -168,15 +168,15 @@ endif
 iok = 0
 
 !  Pression hydrostatique
-if (iphydr.eq.0) then
-  icalhy = 0
-else if (iphydr.eq.1.and.icalhy.eq.-1) then
+if (iphydr.eq.1.and.icalhy.eq.-1) then
   gravn2 = gx**2+gy**2+gz**2
   if (gravn2.lt.epzero**2) then
     icalhy = 0
   else
     icalhy = 1
   endif
+else
+  icalhy = 0
 endif
 
 !   Global time stepping

@@ -694,7 +694,7 @@ if (ilu.ne.0) then
 endif
 
 !===============================================================================
-! 10.  FORCE EXTERIEURE
+! 10.  External forces
 !===============================================================================
 
 if (iphydr.eq.1) then
@@ -703,6 +703,20 @@ if (iphydr.eq.1) then
   nbval  = 3
 
   call field_get_id('volume_forces', f_id)
+  call restart_read_field_vals(rp, f_id, 0, ierror)
+
+endif
+
+!===============================================================================
+! 11. Predicted hydrostatic pressure
+!===============================================================================
+
+if (iphydr.eq.2) then
+
+  itysup = 1
+  nbval  = 1
+
+  call field_get_id('hydrostatic_pressure_prd', f_id)
   call restart_read_field_vals(rp, f_id, 0, ierror)
 
 endif

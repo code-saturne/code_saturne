@@ -1764,7 +1764,7 @@ cs_parameters_check(void)
                                 _("while reading input data"),
                                 "cs_glob_velocity_pressure_param->iphydr",
                                 vp_param->iphydr,
-                                0, 2);
+                                0, 3);
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("while reading input data"),

@@ -86,7 +86,10 @@ typedef struct {
   int         iphydr;         /* improve hydrostatic pressure algorithm
                                  - 1: impose the equilibrium of the hydrostaic
                                    part of the pressure with any external force,
-                                   even head losses */
+                                   even head losses
+                                 - 2: compute an hydrostatic pressure due to
+                                   buoyancy forces before the prediction step
+                                 - 0: no treatment (default) */
 
   int         icalhy;         /* compute the hydrostatic pressure in order to
                                  compute the Dirichlet conditions on the

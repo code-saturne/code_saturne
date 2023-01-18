@@ -495,10 +495,17 @@ if (iecaux.eq.1) then
     write(nfecra,1110)car54
   endif
 
-! ---> Force exterieure
+! ---> External forces
 
   if (iphydr.eq.1) then
     call field_get_id('volume_forces', f_id)
+    call restart_write_field_vals(rp, f_id, 0)
+  endif
+
+! ---> Predicted hydrostatic pressure
+
+  if (iphydr.eq.2) then
+    call field_get_id('hydrostatic_pressure_prd', f_id)
     call restart_write_field_vals(rp, f_id, 0)
   endif
 

@@ -797,8 +797,17 @@ module optcal
   !>        \ref icalhy = 0 in order to deactivate the recalculation of the
   !>        hydrostatic pressure at the boundary, which may otherwise cause
   !>        instabilities. Please refer to the
-  !>    <a href="../../theory.pdf#iphydr"><b>handling of the hydrostatic pressure</b></a>
-  !>      section of the theory guide for more informations.
+  !>        <a href="../../theory.pdf#iphydr"><b>handling of the hydrostatic pressure</b></a>
+  !>        section of the theory guide for more information.\n
+  !>        The iphydr = 2 option is a legacy treatment to improve the computation
+  !>        of the pressure gradient for buoyant/stratified flows. In most cases,
+  !>        iphydr = 2 is equivalent to iphydr = 1, but for the following situations,
+  !>        iphydr = 2 can yield better results:
+  !>        - multiple inlet/outlets with different altitudes
+  !>        - outlets normal to the gravity
+  !>        Note that iphydr = 2 is less general than iphydr = 1 : only gravity forces
+  !>        are taken into account.
+
   integer(c_int), pointer, save :: iphydr
 
   !> improve static pressure algorithm

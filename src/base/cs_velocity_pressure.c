@@ -137,6 +137,9 @@ BEGIN_C_DECLS
         gradient and source terms (as gravity and head losses)
         - 1: impose the equilibrium of the static part of the pressure with
           any external force, even head losses (default)
+        - 2: hydrostatic pressure computation with an apriori momentum equation
+             to obtain a hydrostatic pressure taking into account the imbalance
+             between the pressure gradient and the gravity source term.
         - 0: no treatment\n\n
         When the density effects are important, the choice of \ref iphydr = 1
         allows to improve the interpolation of the pressure and correct the
@@ -157,7 +160,15 @@ BEGIN_C_DECLS
         hydrostatic pressure at the boundary, which may otherwise cause
         instabilities. Please refer to the
         <a href="../../theory.pdf#iphydr"><b>handling of the hydrostatic pressure</b></a>
-        section of the theory guide for more informations.
+        section of the theory guide for more information.\n
+        The iphydr = 2 option is a legacy treatment to improve the computation
+        of the pressure gradient for buoyant/stratified flows. In most cases,
+        iphydr = 2 is equivalent to iphydr = 1, but for the following situations,
+        iphydr = 2 can yield better results:
+        - multiple inlet/outlets with different altitudes
+        - outlets normal to the gravity
+        Note that iphydr = 2 is less general than iphydr = 1: only gravity forces
+        are taken into account.\n
 
   \var  cs_velocity_pressure_param_t::icalhy
         compute the hydrostatic pressure in order to compute the Dirichlet
@@ -623,7 +634,10 @@ cs_velocity_pressure_param_log_setup(void)
           "   static pressure algorithm)"),
        N_("1 (account for explicit balance between pressure\n"
           "                   "
-          "   gradient, gravity source terms and head losses)")};
+          "   gradient, gravity source terms and head losses)"),
+       N_("2 (compute a hydrostatic pressure which is\n"
+          "                   "
+          "   in balance with buoyancy)")};
   cs_log_printf(CS_LOG_SETUP,
                 _("    iphydr:        %s\n"),
                 _(iphydr_value_str[vp_param->iphydr]));

@@ -152,6 +152,7 @@ double precision, allocatable, dimension(:) :: secvif, secvib
 double precision, allocatable, dimension(:,:), target :: gradp
 double precision, dimension(:,:), pointer :: cpro_gradp
 double precision, dimension(:), pointer :: coefa_dp, coefb_dp
+double precision, dimension(:,:), pointer :: grdphd
 double precision, dimension(:,:), pointer :: da_uu
 double precision, dimension(:,:), pointer :: vel, vela
 double precision, dimension(:,:,:), pointer :: viscfi
@@ -251,6 +252,12 @@ call field_get_id("pressure_increment",f_iddp)
 
 call field_get_coefa_s(f_iddp, coefa_dp)
 call field_get_coefb_s(f_iddp, coefb_dp)
+
+if (iphydr.eq.2) then
+  allocate(grdphd(3, ncelet))
+else
+  grdphd => rvoid2
+endif
 
 allocate(dfrcxt(3,ncelet))
 if (iand(vcopt_u%idften, ISOTROPIC_DIFFUSION).ne.0) then
@@ -429,6 +436,14 @@ if ((idilat.eq.2.or.idilat.eq.3).and. &
 endif
 
 !===============================================================================
+! 2. Hydrostatic pressure prediction in case of Low Mach compressible algorithm
+!===============================================================================
+
+if (iphydr.eq.2) then
+  call prehyd(grdphd, iterns)
+endif
+
+!===============================================================================
 ! 3. Pressure resolution and computation of mass flux for compressible flow
 !===============================================================================
 
@@ -479,7 +494,7 @@ call predvv &
   icepdc , icetsm , itypsm ,                                     &
   dt     , vel    , vela   , velk   , da_uu  ,                   &
   tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
-  ckupdc , smacel , frcxt  ,                                     &
+  ckupdc , smacel , frcxt  , grdphd ,                            &
   trava  ,                   dfrcxt , dttens ,  trav  ,          &
   viscf  , viscb  , viscfi , viscbi , secvif , secvib )
 
@@ -756,6 +771,8 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
       if (iphydr.eq.1) then
         call field_get_val_v_by_name('volume_forces', frcxt)
+      elseif (iphydr.eq.2) then
+        call resize_vec_real_array(grdphd)
       endif
 
       ! Update local pointers on "cells" fields
@@ -1533,7 +1550,7 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
    icepdc , icetsm , itypsm ,                                     &
    dt     , vel    , vel    , velk   , da_uu  ,                   &
    tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
-   ckupdc , smacel , frcxt  ,                                     &
+   ckupdc , smacel , frcxt  , grdphd ,                            &
    trava  ,                   dfrcxt , dttens , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib )
 
@@ -1793,6 +1810,7 @@ if (allocated(uvwk)) deallocate(uvwk)
 if (allocated(secvif)) deallocate(secvif, secvib)
 if (allocated(cpro_rho_tc)) deallocate(cpro_rho_tc)
 if (allocated(bpro_rho_tc)) deallocate(bpro_rho_tc)
+if (iphydr.eq.2) deallocate(grdphd)
 
 !--------
 ! Formats

@@ -184,6 +184,9 @@ if (iphydr.eq.1) then
 
   call field_set_key_int(f_id, keylog, 1)
   call field_set_key_int(f_id, keyvis, 0)
+else if (iphydr.eq.2) then
+  call field_find_or_create('hydrostatic_pressure_prd', &
+                            itycat, ityloc, idim1, f_id)
 endif
 
 ! friction velocity at the wall, in the case of a LES calculation

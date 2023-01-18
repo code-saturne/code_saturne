@@ -683,6 +683,9 @@ cs_user_parameters(cs_domain_t *domain)
     /* Activate RT0 reconstruction for the velocity from
      * mass fluxes */
     vp_param->irevmc = 1;
+
+    /* Change the hydrostatic pressure algorithm */
+    vp_param->iphydr = 1;
   }
   /*! [param_vp_arak] */
 

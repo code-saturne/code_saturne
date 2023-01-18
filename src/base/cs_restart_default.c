@@ -619,6 +619,9 @@ _read_field_vals_legacy(cs_restart_t  *r,
     else if (strcmp(f->name, "dt") == 0)
       strncpy(sec_name, "dt_variable_espace_ce", 155);
 
+    else if (strcmp(f->name, "hydrostatic_pressure_prd") == 0)
+      strncpy(sec_name, "Prhyd_pre_phase01", 155);
+
     else if (   f->location_id == CS_MESH_LOCATION_VERTICES
              && strcmp(f->name, "mesh_displacement") == 0
              && t_id == 0)
