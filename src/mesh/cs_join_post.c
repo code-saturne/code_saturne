@@ -511,7 +511,7 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
 
   /* Post */
 
-  cs_post_activate_writer(_cs_join_post_param.writer_num, 1);
+  cs_post_activate_writer(_cs_join_post_param.writer_num, true);
   cs_post_write_meshes(NULL);
 
   cs_post_free_mesh(sel_mesh_id);
@@ -617,7 +617,7 @@ cs_join_post_after_split(cs_lnum_t         n_old_i_faces,
 
   /* Post */
 
-  cs_post_activate_writer(_cs_join_post_param.writer_num, 1);
+  cs_post_activate_writer(_cs_join_post_param.writer_num, true);
   cs_post_write_meshes(NULL);
 
   if (post_b_mesh_id != 0)
@@ -680,7 +680,7 @@ cs_join_post_cleaned_faces(cs_lnum_t        n_i_clean_faces,
 
   /* Output post-processing data */
 
-  cs_post_activate_writer(_cs_join_post_param.writer_num, 1);
+  cs_post_activate_writer(_cs_join_post_param.writer_num, true);
   cs_post_write_meshes(NULL);
 
   cs_post_free_mesh(post_mesh_id);

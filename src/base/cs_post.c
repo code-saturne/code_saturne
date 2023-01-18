@@ -5496,12 +5496,13 @@ cs_post_get_free_mesh_id(void)
 void
 cs_post_activate_by_time_step(const cs_time_step_t  *ts)
 {
-  int  i;
-  cs_post_writer_t  *writer;
+  assert(ts != NULL);
 
-  for (i = 0; i < _cs_post_n_writers; i++) {
+  /* Activation based on time-control (interval) */
 
-    writer = _cs_post_writers + i;
+  for (int i = 0; i < _cs_post_n_writers; i++) {
+
+    cs_post_writer_t  *writer = _cs_post_writers + i;
 
     if (writer->active < 0)
       continue;
@@ -5514,15 +5515,46 @@ cs_post_activate_by_time_step(const cs_time_step_t  *ts)
       continue;
     }
 
-    /* Activation based on interval */
-
     writer->active = cs_time_control_is_active(&(writer->tc), ts);
+
+  }
+
+  /* Activation by formula;
+
+     TODO: in the future, use `cs_time_control_init_by_func` in
+     the matching time control function, so as to unify the
+     behavior. */
+
+  cs_meg_post_activate();
+  cs_user_postprocess_activate(ts->nt_max, ts->nt_cur, ts->t_cur);
+
+  /* Activation at first or last time step is given priority over
+     MEG-based or user-defined functions, as it can be set independently */
+
+  for (int i = 0; i < _cs_post_n_writers; i++) {
+    cs_post_writer_t  *writer = _cs_post_writers + i;
+    if (writer->active == 0) {
+      if (   (ts->nt_cur == ts->nt_prev && writer->tc.at_start)
+          || (ts->nt_cur == ts->nt_max && writer->tc.at_end)) {
+        writer->active = 1;
+      }
+    }
+  }
+
+  /* Ensure consistency and priority of controls by list */
+
+  for (int i = 0; i < _cs_post_n_writers; i++) {
+
+    cs_post_writer_t  *writer = _cs_post_writers + i;
+
+    if (writer->active < 0)
+      continue;
 
     /* Activation based on time step lists */
 
     _activate_if_listed(writer, ts);
 
-    /* Do not activate transient writers for time-independent stages */
+    /* Deactivate transient writers for time-independent stages */
 
     if (ts->nt_cur < 0) {
       fvm_writer_time_dep_t  time_dep;
@@ -5570,18 +5602,48 @@ void
 cs_post_activate_writer(int   writer_id,
                         bool  activate)
 {
-  int i;
-  cs_post_writer_t  *writer;
-
   if (writer_id != 0) {
-    i = _cs_post_writer_id(writer_id);
-    writer = _cs_post_writers + i;
+    int i = _cs_post_writer_id(writer_id);
+    cs_post_writer_t  *writer = _cs_post_writers + i;
     writer->active = (activate) ? 1 : 0;
   }
   else {
-    for (i = 0; i < _cs_post_n_writers; i++) {
-      writer = _cs_post_writers + i;
+    for (int i = 0; i < _cs_post_n_writers; i++) {
+      cs_post_writer_t  *writer = _cs_post_writers + i;
       writer->active = (activate) ? 1 : 0;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Force the "active" or "inactive" flag for a specific writer or for all
+ * writers for the current time step.
+ *
+ * This is ignored for writers which are currently disabled.
+ *
+ * \param[in]  writer_id  writer id, or 0 for all writers
+ * \param[in]  activate   false to deactivate, true to activate
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_activate_writer_if_enabled(int   writer_id,
+                                   bool  activate)
+{
+  if (writer_id != 0) {
+    int i = _cs_post_writer_id(writer_id);
+    cs_post_writer_t  *writer = _cs_post_writers + i;
+    if (writer->active > -1) {
+      writer->active = (activate) ? 1 : 0;
+    }
+  }
+  else {
+    for (int i = 0; i < _cs_post_n_writers; i++) {
+      cs_post_writer_t  *writer = _cs_post_writers + i;
+      if (writer->active > -1) {
+        writer->active = (activate) ? 1 : 0;
+      }
     }
   }
 }

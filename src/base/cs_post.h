@@ -961,6 +961,22 @@ cs_post_activate_writer(int   writer_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Force the "active" or "inactive" flag for a specific writer or for all
+ * writers for the current time step.
+ *
+ * This is ignored for writers which are currently disabled.
+ *
+ * \param[in]  writer_id  writer id, or 0 for all writers
+ * \param[in]  activate   false to deactivate, true to activate
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_activate_writer_if_enabled(int   writer_id,
+                                   bool  activate);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Disable specific writer or all writers not currently active until
  *        \ref cs_post_enable_writer or \ref cs_post_activate_writer
  *        is called for those writers.

@@ -998,7 +998,7 @@ _update_mesh(bool     restart_mode,
                                               false, /* auto variables */
                                               1,
                                               writer_ids);
-          cs_post_activate_writer(writer_id, 1);
+          cs_post_activate_writer(writer_id, true);
           cs_post_write_meshes(NULL);
           bft_error(__FILE__, __LINE__, 0,
                     _(join_err_fmt),

@@ -394,7 +394,7 @@ _postprocess(const char   *error_mesh_name,
 
   }
 
-  cs_post_activate_writer(writer_id, 1);
+  cs_post_activate_writer(writer_id, true);
 
   cs_post_write_meshes(NULL);
 

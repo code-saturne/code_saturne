@@ -1222,7 +1222,8 @@ class meg_to_c_interpreter:
                                           'pwa',
                                           glob_tokens,
                                           loop_tokens,
-                                          indent_decl=3)
+                                          indent_decl=3,
+                                          indent_main=4)
 
         usr_code += parsed_exp[0]
         if parsed_exp[1] != '':
@@ -1239,7 +1240,7 @@ class meg_to_c_interpreter:
 
         usr_blck += tab*2 + '}\n'
         usr_blck += '\n'
-        usr_blck += tab + '  cs_post_activate_writer('+w_id+', is_active);\n'
+        usr_blck += tab + '  cs_post_activate_writer_if_enabled('+w_id+', is_active);\n'
         usr_blck += tab + '}\n'
 
         return usr_blck

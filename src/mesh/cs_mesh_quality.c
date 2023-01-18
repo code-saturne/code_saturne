@@ -1078,7 +1078,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
      For the moment, we export the mesh at this stage; this should be moved
      once PSTEMA has been moved from CALTRI to an earlier step. */
 
-  cs_post_activate_writer(0, 1);
+  cs_post_activate_writer(0, true);
 
   if (vol_fields || brd_fields)
     cs_post_write_meshes(ts);
