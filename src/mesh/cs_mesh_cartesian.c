@@ -1042,7 +1042,7 @@ cs_mesh_cartesian_define_dir_params(cs_mesh_cartesian_params_t  *mp,
   }
 
   if (mp->params[idim] != NULL) {
-    bft_printf("Warning: You are modifying parameters for direction \"%d\ "
+    bft_printf("Warning: You are modifying parameters for direction \"%d\""
                "which was allready defined.\n",
                idim);
     bft_printf_flush();
@@ -1275,17 +1275,18 @@ cs_mesh_cartesian_block_connectivity(int                 id,
   /* --------- */
   /* Group ids */
   /* --------- */
+
   if (mb->cell_gc_id == NULL)
     BFT_MALLOC(mb->cell_gc_id, n_cells, int);
 
-  for (cs_lnum_t i = 0; i < mp->n_cells_on_rank; i++)
+  for (cs_gnum_t i = 0; i < mp->n_cells_on_rank; i++)
     mb->cell_gc_id[i + _rank_c_offset] = 1 + mp->gc_id_shift;
 
   if (mb->face_gc_id == NULL)
     BFT_MALLOC(mb->face_gc_id, n_faces, int);
 
   // Default face group is 8
-  for (cs_lnum_t i = 0; i < mp->n_faces_on_rank; i++)
+  for (cs_gnum_t i = 0; i < mp->n_faces_on_rank; i++)
     mb->face_gc_id[i + _rank_f_offset] = mp->gc_id_shift + 8;
 
   /* number of vertices per face array */
@@ -1295,7 +1296,7 @@ cs_mesh_cartesian_block_connectivity(int                 id,
     mb->face_vertices_idx[0] = 0;
   }
 
-  for (cs_lnum_t i = 0; i < mp->n_faces_on_rank; i++)
+  for (cs_gnum_t i = 0; i < mp->n_faces_on_rank; i++)
     mb->face_vertices_idx[_rank_f_offset + i + 1] =
       mb->face_vertices_idx[_rank_f_offset + i] + 4;
 
