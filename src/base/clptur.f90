@@ -160,7 +160,7 @@ integer          iscal, clsyme
 integer          modntl
 integer          iuntur, f_dim
 integer          nlogla, nsubla, iuiptn
-integer          f_id_rough, f_id, iustar
+integer          f_id_rough, f_id_rough_t,f_id, iustar
 integer          f_id_uet, f_id_uk
 integer          f_id_tlag
 
@@ -312,9 +312,9 @@ if (f_id_rough.ge.0) then
   call field_get_val_s(f_id_rough, bpro_rough_t)
 endif
 
-call field_get_id_try("boundary_thermal_roughness", f_id_rough)
-if (f_id_rough.ge.0) then
-  call field_get_val_s(f_id_rough, bpro_rough_t)
+call field_get_id_try("boundary_thermal_roughness", f_id_rough_t)
+if (f_id_rough_t.ge.0) then
+  call field_get_val_s(f_id_rough_t, bpro_rough_t)
 endif
 
 f_uet => null()
@@ -2302,7 +2302,7 @@ integer          ivar, f_id, b_f_id, isvhbl
 integer          f_id_ut, f_id_al
 integer          ifac, iel, isou, jsou
 integer          iscacp, ifcvsl, itplus, itstar
-integer          f_id_rough
+integer          f_id_rough, f_id_rough_t
 integer          kturt, turb_flux_model, turb_flux_model_type
 
 double precision cpp, rkl, prdtl, visclc, romc, tplus, cofimp, cpscv
@@ -2483,9 +2483,9 @@ if (f_id_rough.ge.0) then
   call field_get_val_s(f_id_rough, bpro_rough_t)
 endif
 
-call field_get_id_try("boundary_thermal_roughness", f_id_rough)
-if (f_id_rough.ge.0) then
-  call field_get_val_s(f_id_rough, bpro_rough_t)
+call field_get_id_try("boundary_thermal_roughness", f_id_rough_t)
+if (f_id_rough_t.ge.0) then
+  call field_get_val_s(f_id_rough_t, bpro_rough_t)
 endif
 
 if (vcopt%icoupl.gt.0) then
@@ -3124,7 +3124,7 @@ double precision, dimension(:) :: byplus, bdplus, buk
 integer          ivar, f_id, isvhbl
 integer          ifac, iel
 integer          iscacp, ifcvsl
-integer          f_id_rough
+integer          f_id_rough, f_id_rough_t
 integer          kturt, turb_flux_model, turb_flux_model_type
 
 double precision cpp, rkl, prdtl, visclc, romc, cofimp
@@ -3206,9 +3206,9 @@ if (f_id_rough.ge.0) then
   call field_get_val_s(f_id_rough, bpro_rough_t)
 endif
 
-call field_get_id_try("boundary_thermal_roughness", f_id_rough)
-if (f_id_rough.ge.0) then
-  call field_get_val_s(f_id_rough, bpro_rough_t)
+call field_get_id_try("boundary_thermal_roughness", f_id_rough_t)
+if (f_id_rough_t.ge.0) then
+  call field_get_val_s(f_id_rough_t, bpro_rough_t)
 endif
 
 if (vcopt%icoupl.gt.0) then
