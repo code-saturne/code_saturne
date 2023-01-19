@@ -311,8 +311,8 @@ if __name__ == '__main__':
             if s == '-Wl,--end-group':  # Eliminate empty start/end group sequences
                 p = other.pop()
                 if p != '-Wl,--start-group':
-                    other.apend(p)
-                    other.apend(s)
+                    other.append(p)
+                    other.append(s)
             else:
                 other.append(s)
 
