@@ -3,6 +3,9 @@ Release 7.0.6 (not released yet)
 
 Bug fixes:
 
+- Wall laws: fix handling wall roughness when no separate thermal roughness
+  is present (rougness was incorrectly taken as 0 in this case).
+
 - Atmospheric module: fix meteo_pressure intialization when using meteo
   profiles.
 
