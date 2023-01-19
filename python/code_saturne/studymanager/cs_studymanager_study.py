@@ -1554,6 +1554,16 @@ class Studies(object):
                                    " REPOSITORY to generate description report"
                                    " of study %s" %study)
 
+            # Copy README file if it exists
+            readme = os.path.join(repo_study, "README")
+            if os.path.isfile(readme):
+                dest_file = os.path.join(dest_study, "README")
+                if os.path.isfile(dest_file):
+                    self.reporting("    /!\ README file is overwritten in %s"
+                                   " use option --dow to disable overwrite"
+                                   %study)
+                shutil.copyfile(readme, dest_file)
+
         os.chdir(home)
 
     #---------------------------------------------------------------------------
