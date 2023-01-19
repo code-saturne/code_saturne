@@ -1597,7 +1597,9 @@ class Studies(object):
         for l, s in self.studies:
             for case in s.cases:
                 if case.compute == "on":
-                    global_graph.add_node(case)
+                    msg = global_graph.add_node(case)
+                    if msg:
+                        self.reporting("Warning in global graph: " + msg)
 
         # extract the sub graph based on filters and tags
         if filter_level is not None or filter_n_procs is not None:
@@ -1618,7 +1620,9 @@ class Studies(object):
                     target_n_procs = node.n_procs is int(filter_n_procs)
 
                 if target_level and target_n_procs:
-                    sub_graph.add_node(node)
+                    msg = sub_graph.add_node(node)
+                    if msg:
+                        self.reporting("Warning in filtered graph: " + msg)
 
             self.graph = sub_graph
 
@@ -2493,6 +2497,7 @@ class dependency_graph(object):
         """ Add a case in the graph if not already there.
             Add a dependency when depends parameters is defined
         """
+        msg = None
         if case not in self.graph_dict:
             self.graph_dict[case] = []
 
@@ -2507,14 +2512,18 @@ class dependency_graph(object):
                         self.max_level = max([self.max_level, case.level])
                         break
                 if case.level is None:
-                    msg = "Problem in graph construction : dependency " \
-                          + case.depends + " is not found.\n"
-                    sys.exit(msg)
+                    case.level = 0
+                    msg = "Dependency " + case.depends + " was not found in the list " \
+                          + "of considered cases. " + case.title + " will be considered " \
+                          + "without dependency in the graph. Please check that the " \
+                          + "required results exist.\n"
+
             else:
                 # cases with no dependency are level 0
                 case.level = 0
 
             self.max_proc = max([self.max_proc, int(case.n_procs)])
+        return msg
 
     def nodes(self):
         """ returns the cases of the dependency graph """
@@ -2540,7 +2549,9 @@ class dependency_graph(object):
             if filter_n_procs is not None:
                 keep_node_p = int(node.n_procs) is int(filter_n_procs)
             if keep_node_l and keep_node_p:
-                sub_graph.add_node(node)
+                msg = sub_graph.add_node(node)
+                if msg:
+                    self.reporting("Warning in sub graph: " + msg)
         return sub_graph
 
     def __str__(self):
