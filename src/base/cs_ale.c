@@ -496,8 +496,9 @@ _update_bc_list(const cs_mesh_t   *mesh,
  *        These BCs are required for the fluid BCs and therefore needs to be
  *        updated before.
  *
- * \param[in]     domain        domain quantities
- * \param[out]    b_fluid_vel   boundary fluid velocity
+ * \param[in]   domain       domain quantities
+ * \param[out]  ale_bc_type  ALE boundary condition type
+ * \param[out]  b_fluid_vel  boundary fluid velocity
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1480,7 +1481,6 @@ cs_ale_update_bcs(int         *ale_bc_type,
 
   /* First update ALE BCs expect free surface that will be updated after */
   _update_bcs(cs_glob_domain, ale_bc_type, b_fluid_vel);
-
 }
 
 /*----------------------------------------------------------------------------*/

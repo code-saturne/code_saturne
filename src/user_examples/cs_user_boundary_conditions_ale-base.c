@@ -109,13 +109,13 @@ cs_user_boundary_conditions_ale(cs_domain_t  *domain,
                                 int           impale[])
 {
   /* Initialization
-   *--------------*/
+   * -------------- */
 
   /*![loc_var]*/
 
   const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
-  const cs_lnum_t *ipnfbr = domain->mesh->b_face_vtx_idx;
-  const cs_lnum_t *nodfbr = domain->mesh->b_face_vtx_lst;
+  const cs_lnum_t *b_face_vtx_idx = domain->mesh->b_face_vtx_idx;
+  const cs_lnum_t *b_face_vtx_lst = domain->mesh->b_face_vtx_lst;
   const cs_lnum_t *b_face_cells = domain->mesh->b_face_cells;
 
   const int nt_cur = domain->time_step->nt_cur;
@@ -138,8 +138,8 @@ cs_user_boundary_conditions_ale(cs_domain_t  *domain,
 
   /*![example_1]*/
 
-  /* Example: For boundary faces of zone '4' assign a fixed velocity */
-  zn = cs_boundary_zone_by_name("4");
+  /* Example: For boundary faces of zone 'fv' assign a fixed velocity */
+  zn = cs_boundary_zone_by_name("fv");
 
   cs_field_t *mesh_u = CS_F_(mesh_u);
 
@@ -160,32 +160,34 @@ cs_user_boundary_conditions_ale(cs_domain_t  *domain,
   }
   /*![example_1]*/
 
-  /* Example: for boundary faces zone "5" assign a fixed displacement on nodes */
+  /* Example: for boundary faces zone "fd" assign a fixed displacement on nodes */
 
   /*![example_2]*/
-  zn = cs_boundary_zone_by_name("5");
+  zn = cs_boundary_zone_by_name("fd");
 
   for (cs_lnum_t ilelt = 0; ilelt < zn->n_elts; ilelt++) {
 
     const cs_lnum_t face_id = zn->elt_ids[ilelt];
 
-    for (cs_lnum_t ii = ipnfbr[face_id]; ii < ipnfbr[face_id+1]; ii++) {
-      const cs_lnum_t inod = nodfbr[ii];
-      if (impale[inod] == 0) {
-        disale[inod][0] = 0;
-        disale[inod][1] = 0;
-        disale[inod][2] = delta;
-        impale[inod] = 1;
+    for (cs_lnum_t ii = b_face_vtx_idx[face_id];
+         ii < b_face_vtx_idx[face_id+1];
+         ii++) {
+      const cs_lnum_t vtx_id = b_face_vtx_lst[ii];
+      if (impale[vtx_id] == 0) {
+        disale[vtx_id][0] = 0;
+        disale[vtx_id][1] = 0;
+        disale[vtx_id][2] = delta;
+        impale[vtx_id] = 1;
       }
     }
   }
 
   /*![example_2]*/
 
-  /* Example: For boundary faces of zone "6" assign a sliding boundary */
+  /* Example: For boundary faces of zone "sb" assign a sliding boundary */
 
   /*![example_3]*/
-  zn = cs_boundary_zone_by_name("6");
+  zn = cs_boundary_zone_by_name("sb");
 
   for (cs_lnum_t ilelt = 0; ilelt < zn->n_elts; ilelt++) {
 
@@ -196,10 +198,10 @@ cs_user_boundary_conditions_ale(cs_domain_t  *domain,
   }
   /*![example_3]*/
 
-  /* Example: prescribe elsewhere a fixed boundary */
+  /* Example: prescribe a fixed boundary for zone "fixed" */
   /*![example_4]*/
 
-  zn = cs_boundary_zone_by_name("not (4 or 5 or 6)");
+  zn = cs_boundary_zone_by_name("fixed");
 
   for (cs_lnum_t ilelt = 0; ilelt < zn->n_elts; ilelt++) {
 

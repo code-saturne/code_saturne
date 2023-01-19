@@ -435,6 +435,8 @@ if (iale.ge.1) then
               icodcl, itypfb, ialtyb, impale,   &
               dt, rcodcl, xyzno0, disale)
 
+  call user_boundary_conditions_ale(itypfb, ialtyb, impale)
+
   !     Au cas ou l'utilisateur aurait touche disale sans mettre impale=1, on
   !     remet le deplacement initial
   do ii  = 1, nnod
@@ -635,10 +637,7 @@ if (     ippmod(iphpar).ge.1.and.ippmod(igmix).eq.-1               &
 endif
 
 if (iale.ge.1) then
-  call altycl &
- ( itypfb , ialtyb , icodcl , impale , .false. ,                  &
-   dt     ,                                                       &
-   rcodcl )
+  call altycl(itypfb, ialtyb, icodcl, impale, .false., dt, rcodcl)
 endif
 
 if (iturbo.ne.0) then
@@ -4984,6 +4983,8 @@ if (iale.ge.1) then
               icodcl, itypfb, ialtyb, impale,   &
               dt, rcodcl, xyzno0, disale)
 
+  call user_boundary_conditions_ale(itypfb, ialtyb, impale)
+
   !     Au cas ou l'utilisateur aurait touche disale sans mettre impale=1, on
   !     remet le deplacement initial
   do ii  = 1, nnod
@@ -5005,10 +5006,7 @@ call cs_internal_coupling_bcs(itypfb)
 !===============================================================================
 
 if (iale.ge.1) then
-  call altycl &
- ( itypfb , ialtyb , icodcl , impale , .true. ,                   &
-   dt     ,                                                       &
-   rcodcl )
+  call altycl(itypfb, ialtyb, icodcl, impale, .true., dt, rcodcl)
 endif
 
 if (iturbo.ne.0) then

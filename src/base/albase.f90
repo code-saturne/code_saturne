@@ -67,7 +67,7 @@ contains
 
   !=============================================================================
 
-  subroutine init_ale (nfabor, nnod)
+  subroutine init_ale(nfabor, nnod)
 
     use cplsat
     use optcal
