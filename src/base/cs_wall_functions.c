@@ -232,8 +232,22 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
 {
   assert(*iwallf >= 0 && *iwallf <= 7);
 
-  cs_wall_functions_velocity((cs_wall_f_type_t)*iwallf,
-                             *ifac,
+  cs_gnum_t nsubla_loc = *nsubla;
+  cs_gnum_t nlogla_loc = *nlogla;
+
+  /* Get the adjacent border cell and its fluid/solid tag */
+  cs_lnum_t cell_id = cs_glob_mesh->b_face_cells[*ifac-1] ;
+
+  /* If the cell is a solid cell, disable wall functions */
+
+  cs_wall_f_type_t iwallf_loc = (cs_wall_f_type_t)*iwallf;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  if (mq->has_disable_flag) {
+    if (mq->c_disable_flag[cell_id])
+      iwallf_loc = CS_WALL_F_DISABLED;
+  }
+
+  cs_wall_functions_velocity(iwallf_loc,
                              *l_visc,
                              *t_visc,
                              *vel,
@@ -242,14 +256,17 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
                              *rnnb,
                              *kinetic_en,
                              iuntur,
-                             nsubla,
-                             nlogla,
+                             &nsubla_loc,
+                             &nlogla_loc,
                              ustar,
                              uk,
                              yplus,
                              ypup,
                              cofimp,
                              dplus);
+
+  *nsubla = (cs_lnum_t)nsubla_loc;
+  *nlogla = (cs_lnum_t)nlogla_loc;
 }
 
 /*----------------------------------------------------------------------------
@@ -303,7 +320,6 @@ cs_get_glob_wall_functions(void)
  * \brief Compute the friction velocity and \f$y^+\f$ / \f$u^+\f$.
  *
  * \param[in]     iwallf        wall function type
- * \param[in]     ifac          face number
  * \param[in]     l_visc        kinematic viscosity
  * \param[in]     t_visc        turbulent kinematic viscosity
  * \param[in]     vel           wall projected cell center velocity
@@ -328,7 +344,6 @@ cs_get_glob_wall_functions(void)
 
 void
 cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
-                           cs_lnum_t         ifac,
                            cs_real_t         l_visc,
                            cs_real_t         t_visc,
                            cs_real_t         vel,
@@ -337,8 +352,8 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                            cs_real_t         rnnb,
                            cs_real_t         kinetic_en,
                            int              *iuntur,
-                           cs_lnum_t        *nsubla,
-                           cs_lnum_t        *nlogla,
+                           cs_gnum_t        *nsubla,
+                           cs_gnum_t        *nlogla,
                            cs_real_t        *ustar,
                            cs_real_t        *uk,
                            cs_real_t        *yplus,
@@ -354,17 +369,6 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
 
   /* Activation of wall function by default */
   *iuntur = 1;
-
-  /* Get the adjacent border cell and its fluid/solid tag */
-  cs_lnum_t cell_id = cs_glob_mesh->b_face_cells[ifac-1] ;
-
-  /* If the cell is a solid cell, disable wall functions */
-
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  if (mq->has_disable_flag) {
-    if (mq->c_disable_flag[cell_id])
-      iwallf = CS_WALL_F_DISABLED;
-  }
 
   /* Sand Grain roughness */
   cs_real_t sg_rough = rough_d * exp(cs_turb_xkappa*cs_turb_cstlog_rough);
@@ -399,8 +403,7 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                                    cofimp);
     break;
   case CS_WALL_F_1SCALE_LOG:
-    cs_wall_functions_1scale_log(ifac,
-                                 l_visc,
+    cs_wall_functions_1scale_log(l_visc,
                                  vel,
                                  y,
                                  iuntur,
@@ -610,51 +613,148 @@ cs_immersed_boundary_wall_functions(int         f_id,
   const cs_lnum_t  n_cells = m->n_cells;
   const cs_real_t  *cell_f_vol = mq->cell_f_vol;
 
-  /*  Wall normal*/
+  /*  Wall */
   const cs_real_t *c_w_face_surf
       = (const cs_real_t *restrict)mq->c_w_face_surf;
+  const cs_real_3_t *c_w_face_normal
+      = (const cs_real_3_t *restrict)mq->c_w_face_normal;
   const cs_real_t *c_w_dist_inv
       = (const cs_real_t *restrict)mq->c_w_dist_inv;
+  //TODO create a field for immersed solid roughness
+  //if (cs_field_by_name_try("boundary_roughness") != NULL)
+  //  bpro_roughness = cs_field_by_name_try("boundary_roughness")->val;
 
   /* Dynamic viscosity */
   const cs_real_t  *cpro_mu = CS_F_(mu)->val;
+  const cs_real_t  *cpro_mut = CS_F_(mu_t)->val;
+
+  /* Density */
+  const cs_real_t *rho = (cs_real_t *)CS_F_(rho)->val;
+
+  /* Velocity */
+  const cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
 
   cs_wall_functions_t *wall_functions = cs_get_glob_wall_functions();
+  const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
 
-  if (f == CS_F_(vel)) { /* velocity */
-    const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
+  cs_real_6_t *cvar_rij = (CS_F_(rij) != NULL) ?
+                          (cs_real_6_t *)CS_F_(rij)->val :
+                          NULL;
+
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
+
+  if (f == CS_F_(vel) && eqp->idiff == 1) { /* velocity */
     /* cast to 3D vectors for readability */
     cs_real_3_t   *_st_exp = (cs_real_3_t *)st_exp;
     cs_real_33_t  *_st_imp = (cs_real_33_t *)st_imp;
 
-    switch (wall_functions->iwallf) {
-    case CS_WALL_F_DISABLED:
+    cs_gnum_t nsubla = 0;
+    cs_gnum_t nlogla = 0;
+    cs_real_t rnnb = 0.;
 
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
+      //Geometric quantities
+      cs_real_t solid_surf = c_w_face_surf[c_id];
+
+      if (solid_surf > cs_math_epzero*pow(cell_f_vol[c_id], 2./3.)) {
+
+        cs_real_t wall_dist  = (c_w_dist_inv[c_id] < DBL_MIN) ?
+                                0.:
+                                1. / c_w_dist_inv[c_id];
+
+        /* 1. Velocity components on the solid surface */
+
+        // Unit normal
+        cs_real_3_t nw;
+        cs_math_3_normalize(c_w_face_normal[c_id], nw);
+
+        // Tangential velocity
+        cs_real_3_t nt;
+        cs_real_t utau;
+        cs_math_3_orthogonal_projection(nw, vel[c_id], nt);
+        cs_real_t ek = 0.;
+        utau = cs_math_3_norm(nt);
+
+        // Unit tangent
+        cs_math_3_normalize(nt, nt);
+
+        /* 2. Friction velocities */
+
+        if (utau <= cs_math_epzero) utau = cs_math_epzero;
+
+        cs_real_t l_visc = cpro_mu[c_id]/rho[c_id];
+        cs_real_t t_visc = cpro_mut[c_id]/rho[c_id];
+
+        if (   turb_model->order == CS_TURB_FIRST_ORDER
+            && turb_model->type  == CS_TURB_RANS) {
+          ek = CS_F_(k)->val[c_id];
+        }
+        else if (   turb_model->order == CS_TURB_SECOND_ORDER
+                 && turb_model->type  == CS_TURB_RANS) {
+
+          ek = 0.5*(cvar_rij[c_id][0]+cvar_rij[c_id][1]+cvar_rij[c_id][2]);
+          rnnb = cs_math_3_sym_33_3_dot_product(nw, cvar_rij[c_id], nw);
+        }
+        //TODO create a cell wall roughness
+        cs_real_t w_roughness = 0;
+
+        int iuntur;
+        cs_real_t ustar;
+        cs_real_t uk;
+        cs_real_t yplus;
+        cs_real_t ypup;
+        cs_real_t cofimp;
+        cs_real_t dplus;
+
+        /* If the cell is a solid cell, disable wall functions */
+
+        cs_wall_f_type_t iwallf_loc = wall_functions->iwallf;
+        if (mq->has_disable_flag) {
+          if (mq->c_disable_flag[c_id])
+            iwallf_loc = CS_WALL_F_DISABLED;
+        }
+
+        cs_wall_functions_velocity(iwallf_loc,
+                                   l_visc,
+                                   t_visc,
+                                   utau,
+                                   wall_dist,
+                                   w_roughness,
+                                   rnnb,
+                                   ek,
+                                   &iuntur,
+                                   &nsubla,
+                                   &nlogla,
+                                   &ustar,
+                                   &uk,
+                                   &yplus,
+                                   &ypup,
+                                   &cofimp,
+                                   &dplus);
+
+
+        cs_real_t hint = (   turb_model->order == CS_TURB_SECOND_ORDER
+                          && turb_model->type  == CS_TURB_RANS) ?
+                         cpro_mu[c_id]*c_w_dist_inv[c_id] :
+                         (cpro_mu[c_id]+cpro_mut[c_id])*c_w_dist_inv[c_id];
+
+        cs_real_t hflui = cpro_mu[c_id]*c_w_dist_inv[c_id]*ypup;
         cs_real_t surf = c_w_face_surf[c_id];
 
-        if (surf > cs_math_epzero*pow(cell_f_vol[c_id],2./3.)) {
-          for (cs_lnum_t i = 0; i < 3; i++) {
-            _st_exp[c_id][i] = 0.;
-            for (cs_lnum_t j = 0; j < 3; j++) {
-              _st_imp[c_id][i][j] = 0.;
-              if (i == j && eqp->idiff > 0)
-                _st_imp[c_id][i][j] = - cpro_mu[c_id] * surf * c_w_dist_inv[c_id];
-            }
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          //TODO moving walls
+          _st_exp[c_id][i] = 0.;
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            _st_imp[c_id][i][j] = - ( hflui * cs_math_33_identity[i][j]
+                                    + (hint - hflui) * nw[i] * nw[j] )
+                                    * surf;
           }
         }
       }
-      break;
-
-    default:
-      // TODO handle other cases.
-
-      bft_error(__FILE__, __LINE__, 0,
-                _("%s: wall_functions->iwallf == %d not handled yet."),
-                __func__, wall_functions->iwallf);
-      break;
     }
+    cs_parall_counter(&nsubla, 1);
+    cs_parall_counter(&nlogla, 1);
   }
 }
 
