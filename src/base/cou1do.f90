@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 subroutine cou1do &
- ( cvcst ,  hbord  , tbord  )
+ ( hbord  , tbord  )
 
 !===============================================================================
 ! FONCTION :
@@ -34,7 +34,6 @@ subroutine cou1do &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! cvcst            ! r  ! <-- ! chaleur specifique si constante                !
 ! hbord(nfabor)    ! ra ! <-> ! coefficients d'echange aux bords               !
 ! tbord(nfabor)    ! ra ! <-> ! temperatures aux bords                         !
 !__________________!____!_____!________________________________________________!
@@ -69,7 +68,6 @@ implicit none
 
 ! Arguments
 
-double precision cvcst
 double precision hbord(nfabor),tbord(nfabor)
 
 !     VARIABLES LOCALES
@@ -136,10 +134,12 @@ else if (itherm.eq.3) then
                            + vel(2,iel)**2                      &
                            + vel(3,iel)**2)                     &
                     + wa(iel) )
+    ! Warning, it should be the cv of the coupled phase
+    ! in cse of many coupling...
     if (icv.ge.0) then
       tbord(ifac) = cvt/cpro_cv(iel)
     else
-      tbord(ifac) = cvt/cvcst
+      tbord(ifac) = cvt/cv0
     endif
   enddo
 

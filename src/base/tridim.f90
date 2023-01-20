@@ -115,7 +115,6 @@ integer          ielpdc, iflmas, iflmab
 integer          kcpsyr, icpsyr
 integer          key_buoyant_id, is_buoyant_fld, st_prv_id
 
-double precision cvcst
 double precision xxp0, xyp0, xzp0
 double precision relaxk, relaxe, relaxw, relaxn
 double precision hdls(6)
@@ -940,20 +939,6 @@ do while (iterns.le.nterup)
   !     FACILEMENT (I.E. SANS RECALCULS INUTILES) LES TERMES A
   !     ENVOYER POUR LES COUPLAGES AUX BORDS (TYPE SYRTHES)
 
-  ! En compressible et si on couple ave l'energie
-  ! on recupere le Cv de la phase couplee
-
-  if (itherm .eq. 3) then
-
-    if(icv.ge.0) then
-      cvcst = 0.d0
-    else
-      cvcst = cv0
-    endif
-  else
-    cvcst = 0.d0
-  endif
-
   ! On envoie le tout vers SYRTHES, en distinguant CP
   !  constant ou variable
   if (itrfin.eq.1 .and. itrfup.eq.1) then
@@ -963,7 +948,7 @@ do while (iterns.le.nterup)
     endif
 
     if (iscalt.gt.0 .and. nfpt1t.gt.0) then
-      call cou1do(cvcst, hbord, theipb)
+      call cou1do(hbord, theipb)
 
       if ((iirayo.ge.1).or.(icondb.eq.0)) then
         call cou1di(nfabor, iscalt, icodcl, rcodcl)
