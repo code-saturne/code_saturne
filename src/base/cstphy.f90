@@ -477,8 +477,8 @@ module cstphy
   !> total domain volume
   double precision, save :: voltot
 
-  !> constant of EB-AFM and EB-DFM (0.122*2.5d0, See F. Dehoux thesis)
-  double precision, save :: xclt = 0.305d0
+  !> constant of EB-AFM and EB-DFM
+  real(c_double), pointer, save :: xclt
 
   !> \}
 
@@ -583,14 +583,14 @@ module cstphy
 
     subroutine cs_f_turb_model_constants_get_pointers(apow, bpow, cmu, cmu025, &
         crij1, crij2, crij3, csmago, xlesfd, xlesfl,                           &
-        ales, bles, cdries, csrij) &
+        ales, bles, cdries, csrij, xclt) &
       bind(C, name='cs_f_turb_model_constants_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: apow, bpow, cmu  , cmu025 , crij1 , crij2, crij3
       type(c_ptr), intent(out) :: csmago
       type(c_ptr), intent(out) :: xlesfd, xlesfl, cdries
-      type(c_ptr), intent(out) :: ales, bles, csrij
+      type(c_ptr), intent(out) :: ales, bles, csrij, xclt
     end subroutine cs_f_turb_model_constants_get_pointers
 
     !---------------------------------------------------------------------------
@@ -719,14 +719,14 @@ contains
 
     type(c_ptr) :: c_apow, c_bpow, c_cmu, c_cmu025, c_crij1, c_crij2, c_crij3
     type(c_ptr) :: c_csmago
-    type(c_ptr) :: c_xlesfd, c_xlesfl, c_ales, c_bles, c_cdries, c_csrij
+    type(c_ptr) :: c_xlesfd, c_xlesfl, c_ales, c_bles, c_cdries, c_csrij, c_xclt
 
     call cs_f_turb_model_constants_get_pointers(c_apow, c_bpow,                &
                                                 c_cmu, c_cmu025,               &
                                                 c_crij1, c_crij2, c_crij3,     &
                                                 c_csmago, c_xlesfd, c_xlesfl,  &
                                                 c_ales, c_bles,                &
-                                                c_cdries, c_csrij)
+                                                c_cdries, c_csrij, c_xclt)
 
     call c_f_pointer(c_apow, apow)
     call c_f_pointer(c_bpow, bpow)
@@ -742,6 +742,7 @@ contains
     call c_f_pointer(c_bles  , bles  )
     call c_f_pointer(c_cdries, cdries)
     call c_f_pointer(c_csrij , csrij )
+    call c_f_pointer(c_xclt, xclt)
 
   end subroutine turb_model_constants_init
 

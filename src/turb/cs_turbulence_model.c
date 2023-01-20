@@ -1023,9 +1023,12 @@ double cs_turb_cthafm = 0.236;
  * Constant of GGDH and AFM on the thermal scalar.
  */
 double cs_turb_cthdfm = 0.31;
-double cs_turb_cthebdfm = 0.22; /* For the EB-DFM model
-                                   (0.122*2.5, See F. Dehoux thesis) */
+double cs_turb_cthebdfm = 0.22;
 
+/*!
+  * constant of EB-AFM and EB-DFM (0.122*2.5, See F. Dehoux thesis)
+  */
+double cs_turb_xclt = 0.305;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -1084,7 +1087,8 @@ cs_f_turb_model_constants_get_pointers(double  **apow,
                                        double  **ales,
                                        double  **bles,
                                        double  **cdries,
-                                       double  **csrij);
+                                       double  **csrij,
+                                       double  **xclt);
 
 /*============================================================================
  * Private function definitions
@@ -1257,7 +1261,8 @@ cs_f_turb_model_constants_get_pointers(double  **apow,
                                        double  **ales,
                                        double  **bles,
                                        double  **cdries,
-                                       double  **csrij)
+                                       double  **csrij,
+                                       double  **xclt)
 {
   *apow   = &cs_turb_apow;
   *bpow   = &cs_turb_bpow;
@@ -1275,6 +1280,7 @@ cs_f_turb_model_constants_get_pointers(double  **apow,
   *bles  = &cs_turb_bles;
   *cdries= &cs_turb_cdries;
   *csrij = &cs_turb_csrij;
+  *xclt = &cs_turb_xclt;
 }
 
 /*============================================================================

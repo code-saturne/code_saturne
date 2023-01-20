@@ -336,6 +336,7 @@ extern double cs_turb_cebmmu;
 extern double cs_turb_xcl;
 extern double cs_turb_xa1;
 extern double cs_turb_xct;
+extern double cs_turb_xclt;
 extern double cs_turb_xceta;
 extern double cs_turb_cpale1;
 extern double cs_turb_cpale2;
