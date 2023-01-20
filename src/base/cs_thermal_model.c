@@ -77,46 +77,25 @@ BEGIN_C_DECLS
   Members of this thermal model are publicly accessible, to allow for concise
   syntax, as it is expected to be used in many places.
 
-  \var  cs_thermal_model_t::itherm
-        Thermal model
-           - 0: no thermal model
-           - 1: temperature
-           - 2: enthalpy
-           - 3: total energy (only for compressible module)\n
+  \var  cs_thermal_model_t::thermal_variable
+        Thermal variable solved for this physical model.
+
         When a particular physics module is activated (gas combustion,
-        pulverised coal, electricity or compressible), the user must not
-        modify \ref itherm (the choice is made automatically: the solved
-        variable is either the enthalpy or the total energy). The user is
-        also reminded that, in the case of a coupling with SYRTHES, the
-        solved thermal variable should be the temperature (\ref itherm = 1).
-        More precisely, everything is designed in the code to allow for the
-        running of a calculation coupled with SYRTHES with the enthalpy as
-        thermal variable. With the compressible model, it is possible to
-        carry out calculations coupled with SYRTHES, although the thermal
-        scalar represents the total energy and not the temperature.
-  \var  cs_thermal_model_t::itpscl
+        pulverized coal, electricity or compressible), the user must not
+        modify \ref thermal_variable (the choice is made automatically:
+        the solved variable is either the enthalpy or the total energy).
+
+  \var  cs_thermal_model_t::itherm
+        \deprecated alias/old name for thermal_variable
+
+  \var  cs_thermal_model_t::temperature_scale
         Temperature scale
-        - 0: none
-        - 1: Kelvin
-        - 2: Celsius
-        The distinction between \ref itpscl = 1 or 2 is useful only in case of
-        radiation modelling. For calculations without radiation modelling,
-        use \ref itpscl = 1 for the temperature.\n
-        Useful if and only if \ref dimens::nscal "nscal" \f$\geqslant\f$ 1.
-  \var  cs_thermal_model_t::iscalt
-        Index of the thermal scalar (temperature, energy or enthalpy).\n
+        The specification of the temperature scale in a consistent
+        manner with the values used (initial and boundary conditions)
+        is especially important in case of radiation modelling.
 
-        The index of the corresponding variable is isca(iscalt)
-        If \ref iscalt = -1, neither the temperature nor the enthalpy is
-        represented by a scalar. When a specific physics module is activated
-        (gas combustion, pulverised coal, electricity or compressible), the user
-        must not modify \ref iscalt (the choice is made automatically). In the
-        case of the compressible module, \ref iscalt does not correspond to
-        the temperature nor enthalpy but to the total energy}.
-
-        \deprecated
-        This should only be used to set Fortran mappings. In C, use of
-        \ref cs_thermal_model_field is recommended instead.
+  \var  cs_thermal_model_t::itpscl
+        \deprecated alias/old name for temperature_scale
 
 */
 
@@ -138,8 +117,7 @@ BEGIN_C_DECLS
 
 static cs_thermal_model_t  _thermal_model = {
   .itherm = -999,
-  .itpscl = 1,
-  .iscalt = -1};
+  .itpscl = 1};
 
 const cs_thermal_model_t  *cs_glob_thermal_model = &_thermal_model;
 
@@ -150,8 +128,7 @@ const cs_thermal_model_t  *cs_glob_thermal_model = &_thermal_model;
 
 void
 cs_f_thermal_model_get_pointers(int     **itherm,
-                                int     **itpscl,
-                                int     **iscalt);
+                                int     **itpscl);
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -174,17 +151,14 @@ cs_f_thermal_model_get_pointers(int     **itherm,
  * parameters:
  *   itherm --> pointer to cs_glob_thermal_model->itherm
  *   itpscl --> pointer to cs_glob_thermal_model->itpscl
- *   iscalt --> pointer to cs_glob_thermal_model->iscalt
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_thermal_model_get_pointers(int     **itherm,
-                                int     **itpscl,
-                                int     **iscalt)
+                                int     **itpscl)
 {
   *itherm = &(_thermal_model.itherm);
   *itpscl = &(_thermal_model.itpscl);
-  *iscalt = &(_thermal_model.iscalt);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

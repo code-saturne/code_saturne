@@ -163,8 +163,14 @@ typedef struct {
 
   int           time_order;   /* Global time order of the time stepping */
 
+  int           isno2t;       /* time scheme activated for the source
+                                 terms of the momentum, apart from
+                                 convection and diffusion */
+
   int           isto2t;       /* time scheme activated for the source
                                  terms of turbulent equations */
+
+  double        thetsn;       /* value of \f$theta_S\f$ for turbulence */
 
   double        thetst;       /* value of \f$theta\f$ for turbulence */
 

@@ -132,7 +132,7 @@ BEGIN_C_DECLS
 
   \var  cs_velocity_pressure_param_t::iphydr
         <a name="iphydr"></a>
-        improve static pressure algorithm
+        Improved pressure interpolation scheme.
         Take into account the balance or imbalance between the pressure
         gradient and source terms (as gravity and head losses)
         - 1: impose the equilibrium of the static part of the pressure with
@@ -190,6 +190,11 @@ BEGIN_C_DECLS
         - 1: true (default)
         - 0: false
 
+  \var  cs_velocity_pressure_param_t::ipredfl
+        Switch on mass flux prediction before momentum solving to be fully
+        conservative in momentum over time for variable density flows.
+        \deprecated Will be removed in a future version.
+
   \var  cs_velocity_pressure_param_t::irevmc
         reconstruction of the velocity field with the updated pressure option
         - 0: standard gradient of pressure increment (default)
@@ -214,7 +219,7 @@ BEGIN_C_DECLS
         - 0: no treatment (default)
 
   \var  cs_velocity_pressure_param_t::igpust
-        improve static pressure algorithm
+        Improved pressure interpolation scheme:
         - 1: take user momentum source terms in the static pressure
           treatment IF iphydr=1
         - 0: no treatment (default)
@@ -310,6 +315,7 @@ static cs_velocity_pressure_param_t  _velocity_pressure_param =
   .iphydr = 1,
   .icalhy = -1,
   .iprco  = 1,
+  .ipredfl = 0,
   .irevmc = 0,
   .iifren = 0,
   .irecmf = 0,
@@ -345,6 +351,7 @@ void
 cs_f_velocity_pressure_param_get_pointers(int     **iphydr,
                                           int     **icalhy,
                                           int     **iprco,
+                                          int     **ipredfl,
                                           int     **irevmc,
                                           int     **iifren,
                                           int     **irecmf,
@@ -397,6 +404,7 @@ void
 cs_f_velocity_pressure_param_get_pointers(int     **iphydr,
                                           int     **icalhy,
                                           int     **iprco,
+                                          int     **ipredfl,
                                           int     **irevmc,
                                           int     **iifren,
                                           int     **irecmf,
@@ -416,6 +424,7 @@ cs_f_velocity_pressure_param_get_pointers(int     **iphydr,
   *iphydr = &(_velocity_pressure_param.iphydr);
   *icalhy = &(_velocity_pressure_param.icalhy);
   *iprco  = &(_velocity_pressure_param.iprco);
+  *ipredfl = &(_velocity_pressure_param.ipredfl);
   *irevmc = &(_velocity_pressure_param.irevmc);
   *iifren = &(_velocity_pressure_param.iifren);
   *irecmf = &(_velocity_pressure_param.irecmf);

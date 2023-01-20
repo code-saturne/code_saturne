@@ -86,33 +86,14 @@ module optcal
 
   !> number of iterations on the velocity-pressure coupling on Navier-Stokes
   !> (for the U/P inner iterations scheme)
-  integer(c_int), pointer, save ::          nterup
+  integer(c_int), pointer, save :: nterup
 
-  !> \ref isno2t specifies the time scheme activated for the source
-  !> terms of the momentum equation, apart from convection and
-  !> diffusion (for instance: head loss, transposed gradient, ...).
-  !> - 0: "standard" first-order: the terms which are linear
-  !> functions of the solved variable are implicit and the others
-  !> are explicit
-  !> - 1: second-order: the terms of the form \f$S_i\phi\f$ which are
-  !> linear functions of the solved variable \f$\phi\f$ are expressed
-  !> as second-order terms by interpolation (according to the formula
-  !> \f$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]\f$,
-  !> \f$\theta\f$ being given by the value of \ref thetav associated
-  !> with the variable \f$\phi\f$); the other terms \f$S_e\f$ are
-  !> expressed as second-order terms by extrapolation (according to the
-  !> formula \f$(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]\f$,
-  !> \f$\theta\f$ being given by the value of \ref thetsn = 0.5).\n
-  !> - 2: the linear terms \f$S_i\phi\f$ are treated in the same
-  !> way as when \ref isno2t = 1; the other terms \f$S_e\f$ are
-  !> extrapolated according to the same formula as when \ref isno2t = 1,
-  !> but with \f$\theta\f$= \ref thetsn = 1. By default, \ref isno2t
-  !> is initialised to 1 (second-order) when the selected time scheme
-  !> is second-order (\ref ischtp = 2), otherwise to 0.
-  integer, save ::          isno2t
+  !> Time scheme for source terms of momentum equations
+  !> (see \ref cs_time_scheme_t::isno2t).
+  integer(c_int), pointer, save :: isno2t
 
   !> Time scheme for source terms of turbulence equations
-  !> (see \ref isto2t in cs_time_scheme_t).
+  !> (see \ref cs_time_scheme_t::isto2t).
   integer(c_int), pointer, save :: isto2t
 
   !> initvi : =1 if total viscosity read from checkpoint file
@@ -124,18 +105,10 @@ module optcal
   !> initcp : =1 if specific heat read from checkpoint file
   integer, save ::          initcp
 
-  !> \f$ \theta_S \f$-scheme for the source terms \f$S_e\f$ in the
-  !> Navier-Stokes equations when the source term extrapolation has
-  !> been activated (see \ref isno2t), following the formula
-  !> \f$(S_e)^{n+\theta}=(1+\theta)S_e^n-\theta S_e^{n-1}\f$.\n The value
-  !> of \f$theta\f$ = \ref thetsn is deduced from the value chosen for
-  !> \ref isno2t. Generally only the value 0.5 is used.
-  !>    -  0 : second viscosity explicit
-  !>    - 1/2: second viscosity extrapolated in n+1/2
-  !>    -  1 : second viscosity extrapolated in n+1
-  double precision, save :: thetsn
+  !> The value of \f$theta_S\f$ (see \ref cs_time_scheme_t::thetsn).
+  real(c_double), pointer, save :: thetsn
 
-  !> The value of \f$theta\f$ (see \ref thetst in cs_time_scheme_t).
+  !> The value of \f$theta\f$ (see \ref cs_time_scheme_t::thetst).
   real(c_double), pointer, save :: thetst
 
   !> \f$ \theta \f$-scheme for the extrapolation of the physical
@@ -225,7 +198,7 @@ module optcal
   !> Indicator of a calculation restart (=1) or not (=0).
   !> This value is set automatically by the code; depending on
   !> whether a restart directory is present, and should not be modified by
-  !> the user
+  !> the user (no need for C mapping).
   integer, save :: isuite
 
   !> Indicates the reading (=1) or not (=0) of the auxiliary
@@ -419,7 +392,7 @@ module optcal
   !> case of the compressible module, \ref iscalt does not correspond to
   !> the temperature nor enthalpy but to the total energy}.\n Useful if
   !> and only if \ref dimens::nscal "nscal" \f$\geqslant\f$ 1.
-  integer(c_int), pointer, save :: iscalt
+  integer, save :: iscalt
 
   !> \}
 
@@ -666,7 +639,7 @@ module optcal
   !> 0: Deprecated Neumann boundary condition
   !> 1: Dirichlet boundary condition consistent with Menter's
   !>    original model: w_wall = 60*nu/(beta*d**2)
-  integer, save :: ikwcln
+  integer, save :: ikwcln = 1
 
   !> Activates or not the LES balance module
   !> - 0: false (default)
@@ -755,17 +728,15 @@ module optcal
   !>    - 4: algorithm for fire
   integer(c_int), pointer, save :: idilat
 
-  !> Option to switch on massflux prediction befor momentum solving
+  !> Option to switch on massflux prediction before momentum solving
   !> to be fully conservative in momentum over time for variable density flows.
   !> This option is to be removed.
-  integer, save :: ipredfl
+  integer(c_int), pointer, save :: ipredfl
 
   !> parameter of diagonal pressure strengthening
   real(c_double), pointer, save :: epsdp
 
-  !TODO doxygen
-  ! Type des conditions limites et index min et max
-  !                 des sous listes defaces de bord
+  ! Boundary condition types and min/max index of sub-lists.
   integer, save :: idebty(ntypmx), ifinty(ntypmx)
 
   !> accurate treatment of the wall temperature
@@ -774,52 +745,17 @@ module optcal
   !> (see \ref condli, useful in case of coupling with syrthes)
   integer(c_int), pointer, save :: itbrrb
 
-  !> improve static pressure algorithm
-  !>    - 1: impose the equilibrium of the static part of the pressure
-  !>         with any external force, even head losses
-  !>    - 0: no treatment (default)
-  !>        When the density effects are important, the choice of \ref iphydr = 1
-  !>        allows to improve the interpolation of the pressure and correct the
-  !>        non-physical velocities which may appear in highly stratified areas
-  !>        or near horizontal walls.\n
-  !>        The improved algorithm also allows eradicating the velocity
-  !>        oscillations which tend to appear at the frontiers of areas with
-  !>        high head losses.\n
-  !>        In the case of a stratified flow, the calculation cost is higher when
-  !>        the improved algorithm is used (about 30\% depending on the case)
-  !>        because the hydrostatic pressure must be recalculated at the outlet
-  !>        boundary conditions: see \ref icalhy.\n
-  !>        On meshes of insufficient quality, in order to
-  !>        improve the convergence, it may be useful to increase the number of
-  !>        iterations for the reconstruction of the pressure right-hand side,
-  !>        i.e. \ref cs_var_cal_opt_t::nswrsm "nswrsm".\n If head losses are
-  !>        present just along an outlet boundary, it is necessary to specify
-  !>        \ref icalhy = 0 in order to deactivate the recalculation of the
-  !>        hydrostatic pressure at the boundary, which may otherwise cause
-  !>        instabilities. Please refer to the
-  !>        <a href="../../theory.pdf#iphydr"><b>handling of the hydrostatic pressure</b></a>
-  !>        section of the theory guide for more information.\n
-  !>        The iphydr = 2 option is a legacy treatment to improve the computation
-  !>        of the pressure gradient for buoyant/stratified flows. In most cases,
-  !>        iphydr = 2 is equivalent to iphydr = 1, but for the following situations,
-  !>        iphydr = 2 can yield better results:
-  !>        - multiple inlet/outlets with different altitudes
-  !>        - outlets normal to the gravity
-  !>        Note that iphydr = 2 is less general than iphydr = 1 : only gravity forces
-  !>        are taken into account.
+  !> Improved pressure interpolation scheme.
+  !> See \ref cs_velocity_pressure_param_t::iphydr.
 
   integer(c_int), pointer, save :: iphydr
 
-  !> improve static pressure algorithm
-  !>    - 1: take -div(rho R) in the static pressure
-  !>      treatment IF iphydr=1
-  !>    - 0: no treatment (default)
+  !> Improved pressure interpolation scheme.
+  !> See \ref cs_velocity_pressure_param_t::igprij
   integer(c_int), pointer, save :: igprij
 
-  !> improve static pressure algorithm
-  !>    - 1: take user source term in the static pressure
-  !>      treatment IF iphydr=1 (default)
-  !>    - 0: no treatment
+  !> Improved pressure interpolation scheme.
+  !> See \ref cs_velocity_pressure_param_t::igpust
   integer(c_int), pointer, save :: igpust
 
   !> indicates the presence of a Bernoulli boundary face (automatically computed)
@@ -859,7 +795,6 @@ module optcal
   !>         coefficient
   integer, save :: itagms
 
-
   !> \ref iescal indicates the calculation mode for the error estimator
   !> \ref paramx::iespre "iespre", \ref paramx::iesder "iesder",
   !> \ref paramx::iescor "iescor" or \ref paramx::iestot "iestot"
@@ -886,7 +821,6 @@ module optcal
   !>    - 0: Legacy FV method
   !>    - 1: Use CDF face-based scheme
   integer(c_int), pointer, save :: iprcdo
-
 
   !> \}
 
@@ -1025,7 +959,7 @@ module optcal
   !> \{
 
   !> iscasp(ii) : index of the ii^th species (0 if not a species)
-  integer, save ::          iscasp(nscamx)
+  integer, save ::  iscasp(nscamx)
   ! Note that this is already mapped to C using a specific gas-mix structure.
 
   !> flag for computing the drift mass flux:
@@ -1190,11 +1124,11 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! global thermal model structure
 
-    subroutine cs_f_thermal_model_get_pointers(itherm, itpscl, iscalt) &
+    subroutine cs_f_thermal_model_get_pointers(itherm, itpscl) &
       bind(C, name='cs_f_thermal_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: itherm, itpscl, iscalt
+      type(c_ptr), intent(out) :: itherm, itpscl
     end subroutine cs_f_thermal_model_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1290,13 +1224,13 @@ module optcal
     ! velocity pressure parameters structure
 
     subroutine cs_f_velocity_pressure_param_get_pointers  &
-      (iphydr, icalhy, iprco, irevmc, iifren, irecmf,  &
+      (iphydr, icalhy, iprco, ipredfl, irevmc, iifren, irecmf,  &
        igprij, igpust, ipucou, itpcol, arak, rcfact, staggered, nterup, epsup, &
        xnrmu, xnrmu0, c_epsdp)  &
       bind(C, name='cs_f_velocity_pressure_param_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: iphydr, icalhy, iprco, irevmc, iifren
+      type(c_ptr), intent(out) :: iphydr, icalhy, iprco, ipredfl, irevmc, iifren
       type(c_ptr), intent(out) :: irecmf, igprij, igpust, ipucou, itpcol
       type(c_ptr), intent(out) :: arak, rcfact, staggered, nterup, epsup
       type(c_ptr), intent(out) :: xnrmu, xnrmu0, c_epsdp
@@ -1315,11 +1249,13 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! global time schemeoptions structure
 
-    subroutine cs_f_time_scheme_get_pointers(ischtp, isto2t, thetst, iccvfg)  &
+    subroutine cs_f_time_scheme_get_pointers(ischtp, isno2t, isto2t, &
+                                             thetsn, thetst, iccvfg)  &
       bind(C, name='cs_f_time_scheme_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ischtp, isto2t, thetst, iccvfg
+      type(c_ptr), intent(out) :: ischtp, isno2t, isto2t
+      type(c_ptr), intent(out) :: thetsn, thetst, iccvfg
     end subroutine cs_f_time_scheme_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1488,13 +1424,12 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_itherm, c_itpscl, c_iscalt
+    type(c_ptr) :: c_itherm, c_itpscl
 
-    call cs_f_thermal_model_get_pointers(c_itherm, c_itpscl, c_iscalt)
+    call cs_f_thermal_model_get_pointers(c_itherm, c_itpscl)
 
     call c_f_pointer(c_itherm, itherm)
     call c_f_pointer(c_itpscl, itpscl)
-    call c_f_pointer(c_iscalt, iscalt)
 
   end subroutine thermal_model_init
 
@@ -1636,7 +1571,8 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_iporos, c_ivisse, c_irevmc, c_iprco, c_arak, c_rcfact, c_staggered
+    type(c_ptr) :: c_iporos, c_ivisse, c_irevmc, c_iprco, c_ipredfl,  c_arak
+    type(c_ptr) :: c_rcfact, c_staggered
     type(c_ptr) :: c_ipucou, c_itpcol, c_idilat, c_epsdp, c_iphydr
     type(c_ptr) :: c_igprij, c_igpust, c_iifren, c_icalhy, c_irecmf
     type(c_ptr) :: c_fluid_solid, c_iprcdo
@@ -1656,13 +1592,14 @@ contains
     call c_f_pointer(c_iprcdo, iprcdo)
 
     call cs_f_velocity_pressure_param_get_pointers  &
-      (c_iphydr, c_icalhy, c_iprco, c_irevmc, c_iifren, c_irecmf,  &
+      (c_iphydr, c_icalhy, c_iprco, c_ipredfl, c_irevmc, c_iifren, c_irecmf,  &
        c_igprij, c_igpust, c_ipucou, c_itpcol, c_arak, c_rcfact,   &
        c_staggered, c_nterup, c_epsup, c_xnrmu, c_xnrmu0, c_epsdp)
 
     call c_f_pointer(c_iphydr, iphydr)
     call c_f_pointer(c_icalhy, icalhy)
-    call c_f_pointer(c_iprco , iprco )
+    call c_f_pointer(c_iprco, iprco)
+    call c_f_pointer(c_ipredfl, ipredfl)
     call c_f_pointer(c_irevmc, irevmc)
     call c_f_pointer(c_iifren, iifren)
     call c_f_pointer(c_irecmf, irecmf)
@@ -1670,14 +1607,14 @@ contains
     call c_f_pointer(c_igpust, igpust)
     call c_f_pointer(c_ipucou, ipucou)
     call c_f_pointer(c_itpcol, itpcol)
-    call c_f_pointer(c_arak  , arak  )
+    call c_f_pointer(c_arak, arak)
     call c_f_pointer(c_rcfact, rcfact)
     call c_f_pointer(c_staggered, staggered)
     call c_f_pointer(c_nterup, nterup)
     call c_f_pointer(c_epsup, epsup)
     call c_f_pointer(c_xnrmu, xnrmu)
     call c_f_pointer(c_xnrmu0, xnrmu0)
-    call c_f_pointer(c_epsdp , epsdp )
+    call c_f_pointer(c_epsdp, epsdp)
 
   end subroutine velocity_pressure_options_init
 
@@ -1712,13 +1649,17 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_ischtp, c_isto2t, c_thetst, c_iccvfg
+    type(c_ptr) :: c_ischtp, c_isno2t, c_isto2t
+    type(c_ptr) :: c_thetsn, c_thetst, c_iccvfg
 
-    call cs_f_time_scheme_get_pointers(c_ischtp, c_isto2t, c_thetst, c_iccvfg)
+    call cs_f_time_scheme_get_pointers(c_ischtp, c_isno2t, c_isto2t, &
+                                       c_thetsn, c_thetst, c_iccvfg)
 
     call c_f_pointer(c_ischtp, ischtp)
+    call c_f_pointer(c_isno2t, isno2t)
     call c_f_pointer(c_isto2t, isto2t)
     call c_f_pointer(c_thetst, thetst)
+    call c_f_pointer(c_thetsn, thetsn)
     call c_f_pointer(c_iccvfg, iccvfg)
 
   end subroutine time_scheme_options_init

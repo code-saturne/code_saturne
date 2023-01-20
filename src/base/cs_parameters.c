@@ -153,6 +153,30 @@ BEGIN_C_DECLS
         - 2: 2nd order
         - 1: 1st order (default)
 
+  \var  cs_time_scheme_t::isno2t
+        \anchor isno2t
+        Specifies the time scheme activated for the source
+        terms of the momentum equation, apart from convection and
+        diffusion (for instance: head loss, transposed gradient, ...).
+        - 0: "standard" first-order: the terms which are linear
+             functions of the solved variable are implicit and the others
+             are explicit.
+        - 1: second-order: the terms of the form \f$S_i\phi\f$ which are
+             linear functions of the solved variable \f$\phi\f$ are expressed
+             as second-order terms by interpolation (according to the formula
+             \f$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]\f$,
+             \f$\theta\f$ being given by the value of \ref thetav associated
+             with the variable \f$\phi\f$); the other terms \f$S_e\f$ are
+             expressed as second-order terms by extrapolation (according to the
+             formula \f$(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]\f$,
+             \f$\theta\f$ being given by the value of \ref thetsn = 0.5).\n
+        - 2: the linear terms \f$S_i\phi\f$ are treated in the same
+             way as when \ref isno2t = 1; the other terms \f$S_e\f$ are
+             extrapolated according to the same formula as when \ref isno2t = 1,
+             but with \f$\theta\f$= \ref thetsn = 1. By default, \ref isno2t
+             is initialized to 1 (second-order) when the selected time scheme
+             is second-order (\ref ischtp = 2), otherwise to 0.
+
   \var  cs_time_scheme_t::isto2t
         \anchor isto2t
         Specifies the time scheme activated for
@@ -161,7 +185,7 @@ BEGIN_C_DECLS
         \f$\overline{f}\f$), apart from convection and diffusion.
         - 0: standard first-order: the terms which are linear
              functions of the solved variable are implicit and the others
-              are explicit
+             are explicit.
         - 1: second-order: the terms of the form \f$S_i\phi\f$ which are
              linear functions of the solved variable \f$\phi\f$ are
              expressed as second-order terms by interpolation (according to
@@ -181,6 +205,18 @@ BEGIN_C_DECLS
              \ref isto2t is allowed the value 1 or 2 only for the
              \f$R_{ij}\f$ models (\ref iturb = 30 or 31);
              hence, it is always initialised to 0.
+
+  \var  cs_time_scheme_t::thetsn
+        \anchor thetsn
+        \f$ \theta_S \f$-scheme for the source terms \f$S_e\f$ in the
+        Navier-Stokes equations when the source term extrapolation has
+        been activated (see \ref isno2t), following the formula
+        \f$(S_e)^{n+\theta}=(1+\theta)S_e^n-\theta S_e^{n-1}\f$.\n The value
+        \f$theta\f$ = \ref thetsn is deduced from the value chosen for
+        \ref isno2t. Generally only the value 0.5 is used.
+        -  0 : second viscosity explicit
+        - 1/2: second viscosity extrapolated in n+1/2
+        -  1 : second viscosity extrapolated in n+1
 
   \var  cs_time_scheme_t::thetst
         \anchor thetst
@@ -419,7 +455,9 @@ const cs_space_disc_t  *cs_glob_space_disc = &_space_disc;
 static cs_time_scheme_t  _time_scheme =
 {
   .time_order = -1,
+  .isno2t = -999,
   .isto2t = -999,
+  .thetsn = -999.0,
   .thetst = -999.0,
   .iccvfg = 0
 };
@@ -473,10 +511,11 @@ cs_f_space_disc_get_pointers(int     **imvisf,
 
 void
 cs_f_time_scheme_get_pointers(int     **ischtp,
+                              int     **isno2t,
                               int     **isto2t,
+                              double  **thetsn,
                               double  **thetst,
-                              int     **iccvfg
-);
+                              int     **iccvfg);
 
 void
 cs_f_restart_auxiliary_get_pointers(int  **ileaux,
@@ -691,12 +730,16 @@ cs_f_space_disc_get_pointers(int     **imvisf,
 
 void
 cs_f_time_scheme_get_pointers(int     **ischtp,
+                              int     **isno2t,
                               int     **isto2t,
+                              double  **thetsn,
                               double  **thetst,
                               int     **iccvfg)
 {
   *ischtp = &(_time_scheme.time_order);
+  *isno2t = &(_time_scheme.isno2t);
   *isto2t = &(_time_scheme.isto2t);
+  *thetsn = &(_time_scheme.thetsn);
   *thetst = &(_time_scheme.thetst);
   *iccvfg = &(_time_scheme.iccvfg);
 }

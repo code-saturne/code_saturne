@@ -73,19 +73,15 @@ typedef enum {
 
 typedef struct {
 
-  int           itherm;      /* thermal model
-                                - 0: no thermal model
-                                - 1: temperature
-                                - 2: enthalpy
-                                - 3: total energy (only for compressible
-                                     module) */
-  int           itpscl;      /* temperature scale
-                                - 0: none
-                                - 1: Kelvin
-                                - 2: Celsius */
-  int           iscalt;      /* index of the thermal scalar (temperature,
-                                energy or enthalpy), the index of the
-                                corresponding variable is isca(iscalt) */
+  union {
+    cs_thermal_model_variable_t  thermal_variable;   /* Thermal variable */
+    int                          itherm;
+  };
+
+  union {
+    cs_temperature_scale_t       temperature_scale;  /* Temperature scale */
+    int                          itpscl;
+  };
 
 } cs_thermal_model_t;
 

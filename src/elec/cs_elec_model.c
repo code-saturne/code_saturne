@@ -1998,8 +1998,7 @@ cs_elec_add_variable_fields(void)
 
     /* set thermal model */
     cs_thermal_model_t *thermal = cs_get_glob_thermal_model();
-    thermal->itherm = CS_THERMAL_MODEL_ENTHALPY;
-    thermal->iscalt = isca;
+    thermal->thermal_variable = CS_THERMAL_MODEL_ENTHALPY;
   }
 
   {

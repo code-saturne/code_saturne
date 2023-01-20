@@ -102,6 +102,11 @@ typedef struct {
                                  - 1: true (default)
                                  - 0: false */
 
+  int         ipredfl;        /* deprecated:
+                                 switch on mass flux prediction before momentum
+                                 solving to be fully conservative in momentum
+                                 over time for variable density flows. */
+
   int         irevmc;         /* reconstruction of the velocity field with the
                                  updated pressure option
                                  - 0: default */

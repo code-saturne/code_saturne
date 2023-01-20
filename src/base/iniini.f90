@@ -347,31 +347,11 @@ itempb = -1
 !       Elles ne sont pas completees directement par l'utilisateur
 !       Les tests dans l'algo portent sur ces indicateurs
 
-
 !   -- Flux de masse (-999 = non initialise)
 !     = 1 Standard d'ordre 1
 !     = 0 Explicite
 !     = 2 Ordre deux
 istmpf = -999
-
-
-!   -- Termes sources Navier Stokes
-!     Pour les termes sources explicites en std, I..EXT definit
-!       l'extrapolation -theta ancien + (1+theta) nouveau
-!     = 0 explicite
-!     = 1 extrapolation avec theta = 1/2
-!     = 2 extrapolation avec theta = 1
-!       0 implique pas de reservation de tableaux
-!       1 et 2 sont deux options equivalentes, la difference etant faite
-!       uniquement au moment de fixer theta
-!     Pour les termes sources implicites en std, I..EXT definit
-!       la mise a l'ordre 2 ou non avec le thetav de la variable associee
-!     = 0 implicite (std)
-!     > 0 utilisation du thetav
-!     Noter cpdt que le TS d'acc. masse n'est pas regi par I..EXT
-!       (il suit bilsc2)
-isno2t = -999
-thetsn =-999.d0
 
 !    -- Proprietes physiques
 !     I..EXT definit l'extrapolation -theta ancien + (1+theta) nouveau
@@ -427,45 +407,10 @@ iscalt =-1
 ! No enthalpy for the gas (combustion) by default
 ihgas = -1
 
-! --- Turbulence
-!     Le modele de turbulence devra etre choisi par l'utilisateur
-!     En fait on n'a pas besoin d'initialiser ITYTUR (cf. varpos)
-!     On suppose qu'il n'y a pas de temperature
-
-iturb  =-999
-itytur =-999
-hybrid_turb  = 0
-
-! Parfois, IGRHOK=1 donne des vecteurs non physiques en paroi
-!        IGRHOK = 1
-igrhok = 0
-igrake = 1
-iclkep = 0
-irijnu = 0
-irijrb = 0
-irijec = 0
-igrari = 1
-idifre = 1
-iclsyr = 1
-iclptr = 0
-idries =-1
-ikwcln = 1
-iicc   = 1
-ishield = 1
-
-! --- Rotation/curvature correction of turbulence models
-!     Unactivated by default
-!     Correction type (itycor) is set in fldvar
-irccor = 0
-itycor = -999
-
 ! --- Algorithm to take into account the thermodynamic pressure variation in time
 !     (not used by default except if idilat = 3)
 
 ipthrm = 0
-
-! Call predfl subroutine?
-ipredfl = 0
 
 !     by default:
 !     ----------
@@ -481,9 +426,6 @@ pthermax= -1.d0
 
 sleak = 0.d0
 kleak = 2.9d0
-
-! --- Radiative Transfert (not activated by default)
-iirayo = 0
 
 ! --- Initialize the zones number for the condensation modelling
 nzones = -1
@@ -507,48 +449,6 @@ ifrslb = 0
 itbslb = 0
 
 ! --- Estimateurs d'erreur pour Navier-Stokes
-!       En attendant un retour d'experience et pour l'avoir,
-!       on active les estimateurs par defaut.
-
-!     Le numero d'estimateur IEST prend les valeurs suivantes
-!        IESPRE : prediction
-!                 L'estimateur est base sur la grandeur
-!                 I = rho_n (u*-u_n)/dt + rho_n u_n grad u*
-!                   - rho_n div (mu+mu_t)_n grad u* + grad P_n
-!                   - reste du smb(u_n, P_n, autres variables_n)
-!                 Idealement nul quand les methodes de reconstruction
-!                   sont parfaites et le systeme est resolu exactement
-!        IESDER : derive
-!                 L'estimateur est base sur la grandeur
-!                 I = div (flux de masse corrige apres etape pression)
-!                 Idealement nul quand l'equation de Poisson est resolue
-!                   exactement
-!        IESCOR : correction
-!                 L'estimateur est base sur la grandeur
-!                 I = div (rho_n u_(n+1))
-!                 Idealement nul quand IESDER est nul et que le passage
-!                   des flux de masse aux faces vers les vitesses au centre
-!                   se fait dans un espace de fonctions a divergence nulle.
-!        IESTOT : total
-!                 L'estimateur est base sur la grandeur
-!                 I = rho_n (u_(n+1)-u_n)/dt + rho_n u_(n+1) grad u_(n+1)
-!                   - rho_n div (mu+mu_t)_n grad u_(n+1) + gradP_(n_+1)
-!                   - reste du smb(u_(n+1), P_(n+1), autres variables_n)
-!                 Le flux du terme convectif est calcule a partir de u_(n+1)
-!                   pris au centre des cellules (et non pas a partir du flux
-!                   de masse aux faces actualise)
-
-!     On evalue l'estimateur IEST selon les valeurs de IESCAL
-
-!        iescal(iest) = 0 : l'estimateur IEST n'est pas calcule
-!        iescal(iest) = 1 : l'estimateur IEST   est     calcule,
-!                         sans contribution du volume  (on prend abs(I))
-!        iescal(iest) = 2 : l'estimateur IEST   est     calcule,
-!                         avec contribution du volume ("norme L2")
-!                         soit abs(I)*SQRT(Volume_cellule),
-!                         sauf pour IESCOR : on calcule abs(I)*Volume_cellule
-!                         pour mesurer l'ecart en kg/s
-
 
 do iest = 1, nestmx
   iescal(iest) = 0
@@ -584,25 +484,15 @@ i_les_balance = 0
 ! TABLEAUX DE cstphy.f90
 !===============================================================================
 
-! --- Gravite
-
-gx = 0.d0
-gy = 0.d0
-gz = 0.d0
-
-! --- Vecteur rotation
-
-icorio = 0
-
 ! --- Physical constants initialized in C (cs_physical_constants.c)
 
 ! Reset pther to p0
 pther = p0
 
-! --- Turbulence
-!     YPLULI est mis a -GRAND*10. Si l'utilisateur ne l'a pas specifie dans usipsu, on
-!     modifie sa valeur dans modini (10.88 avec les lois de paroi invariantes,
-!     1/kappa sinon)
+! Turbulence
+! ypluli is set to -grand*10. If the user has not changed this value,
+! its value is modified in  modini (10.88 with invariant wall laws,
+! 1/kappa otherwise)
 ypluli = -grand*10.d0
 xkappa  = 0.42d0
 cstlog  = 5.2d0
@@ -717,7 +607,7 @@ cthebdfm = 0.22d0
 xclt   = 0.305d0
 rhebdfm = 0.5d0
 
-! --- Ici tout cstphy a ete initialise
+! Here all of cstphy has been initialized.
 
 !===============================================================================
 ! INITIALISATION DES PARAMETRES ALE de albase.f90 et alstru.f90

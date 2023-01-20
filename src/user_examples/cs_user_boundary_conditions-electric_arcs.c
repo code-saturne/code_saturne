@@ -197,7 +197,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
 
         /* Handle Scalars
 
-         * Enthalpy in J/kg (iscalt)
+         * Enthalpy in J/kg
          * On this example we impose the value of the enthalpy
          * the arbitrary value of 1.d6 corresponds to a temperature
          * of 2200 Kelvin for argon at atmospheric pressure (see dp_ELE) */
