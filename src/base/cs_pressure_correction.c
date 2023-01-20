@@ -77,7 +77,8 @@
 #include "cs_vof.h"
 #include "cs_post.h"
 #include "cs_cdo_headers.h"
-
+#include "cs_thermal_model.h"
+#include "cs_air_props.h"
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cs_dbg.h"
 #endif
@@ -234,6 +235,7 @@ _pressure_correction_fv(int        iterns,
 
   cs_field_t *f_p = CS_F_(p);
   const cs_field_t *f_vel = CS_F_(vel);
+  const cs_real_3_t *vela = CS_F_(vel)->val_pre;
 
   assert((cs_real_t *)vel == f_vel->val);
 
@@ -288,6 +290,9 @@ _pressure_correction_fv(int        iterns,
 
   cs_real_3_t *trav;
   BFT_MALLOC(trav, n_cells_ext, cs_real_3_t);
+  cs_real_3_t *trav2;
+  BFT_MALLOC(trav2, n_cells_ext, cs_real_3_t);
+
 
   cs_real_t *adxk = NULL, *adxkm1 = NULL, *dphim1 = NULL, *rhs0 = NULL;
   if (eqp_p->iswdyn > 0) {
@@ -344,9 +349,11 @@ _pressure_correction_fv(int        iterns,
 
   cs_real_t *crom_eos = CS_F_(rho)->val;
   const cs_real_t *croma = NULL;
-  if (vp_param->icalhy == 1 || idilat > 1 || fluid_props->irovar)
+  const cs_real_t *cromaa = NULL;
+  if (vp_param->icalhy == 1 || idilat > 1 || fluid_props->irovar) {
     croma = CS_F_(rho)->val_pre;
-
+    cromaa = CS_F_(rho)->vals[2];
+  }
   const cs_real_t *brom_eos = CS_F_(rho_b)->val;
   const cs_real_t *broma = NULL;
   if (fluid_props->irovar)
@@ -711,6 +718,72 @@ _pressure_correction_fv(int        iterns,
 
   cs_array_real_fill_zero(n_cells, rovsdt);
 
+  /* compressible scheme implicit part */
+  /* Getting the thermal parameters */
+  int ieos = cs_glob_cf_model->ieos;
+  int thermal_variable = cs_glob_thermal_model->thermal_variable;
+  int kinetic_st = cs_glob_thermal_model->has_kinetic_st;
+  cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
+  cs_physical_constants_t *pc = cs_get_glob_physical_constants();
+
+  cs_real_t *xcpp, *temp, *dc2, *tempk;
+  cs_real_t coef_ ;
+  cs_real_t cvl = phys_pro->cvl ;
+  cs_real_t cpv = phys_pro->cpv0 ;
+  cs_real_t l00 =  phys_pro->l00 ;
+  cs_real_t *yw, *yv;
+  cs_real_t *scalt = CS_F_(t)->val;
+
+  if (idilat == 2) {
+    /* allocation */
+    BFT_MALLOC(dc2, n_cells_ext, cs_real_t);
+    BFT_MALLOC(xcpp, n_cells_ext, cs_real_t);
+    BFT_MALLOC(temp, n_cells_ext, cs_real_t);
+    /* Theta scheme related term */
+    coef_ = 1. + 2. * (1. - eqp_u->thetav);
+    /* Get the temperature */
+    if (thermal_variable == CS_THERMAL_MODEL_TEMPERATURE) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        temp[c_id] = scalt[c_id];
+    } else {
+      tempk = cs_field_by_name("temperature")->val;
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        temp[c_id] = tempk[c_id];
+    }
+    /* Get cp */
+    if (fluid_props -> icp > 0) {
+      cs_real_t *cpro_cp = CS_F_(cp)->val;
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        xcpp[c_id] = cpro_cp[c_id];
+    } else {
+      cs_array_set_value_real(n_cells, 1, 1., xcpp);
+    }
+    /* Get mass fractions if needed */
+    if (ieos == CS_EOS_MOIST_AIR) {
+      yw = cs_field_by_name("yw") -> val;
+      yv = cs_field_by_name("yv") -> val;
+    } else {
+      yw = NULL;
+      yv = NULL;
+    }
+    cs_real_t *cvar_fracm = NULL;
+
+    /* Compute dc2 */
+    cs_thermal_model_c_square(xcpp,
+                              cpv,
+                              cvl,
+                              l00,
+                              temp,
+                              cvar_pr,
+                              yv,
+                              cvar_fracm,
+                              yw,
+                              dc2,
+                              n_cells);
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      rovsdt[c_id] += cell_f_vol[c_id] * coef_ * dc2[c_id] / dt[c_id];
+  }
   /* Implicit part of the cavitation source */
   if (i_vof_mass_transfer != 0 && cavitation_parameters->itscvi == 1) {
     cs_real_t *dgdpca = cs_get_cavitation_dgdp_st();
@@ -935,8 +1008,10 @@ _pressure_correction_fv(int        iterns,
   if (idilat < 4) {
 #   pragma omp parallel for if (n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      for (cs_lnum_t j = 0; j < 3; j++)
+      for (cs_lnum_t j = 0; j < 3; j++) {
         trav[c_id][j] += vel[c_id][j];
+        trav2[c_id][j] = trav[c_id][j];
+      }
     }
   }
 
@@ -1436,32 +1511,37 @@ _pressure_correction_fv(int        iterns,
   /* Source term associated to the mass aggregation */
 
   if ((idilat == 2 || idilat == 3) && compressible_flag != 3) {
+    if (ieos == CS_EOS_NONE) { // If no particular EOS is set
+      if (vp_param->itpcol == 1 && eqp_u->thetav < 1.) {
+        cs_real_t *imasfla
+          = cs_field_by_id(cs_field_get_key_int(f_p, kimasf))->val_pre;
+        cs_real_t *bmasfla
+          = cs_field_by_id(cs_field_get_key_int(f_p, kbmasf))->val_pre;
+        cs_real_t *divu_prev;
+        BFT_MALLOC(divu_prev, n_cells_ext, cs_real_t);
 
-    if (vp_param->itpcol == 1 && eqp_u->thetav < 1.) {
+        cs_divergence(m, 1, imasfla, bmasfla, divu_prev);
 
-      cs_real_t *imasfla
-        = cs_field_by_id(cs_field_get_key_int(f_p, kimasf))->val_pre;
-      cs_real_t *bmasfla
-        = cs_field_by_id(cs_field_get_key_int(f_p, kbmasf))->val_pre;
-
-      cs_real_t *divu_prev;
-      BFT_MALLOC(divu_prev, n_cells_ext, cs_real_t);
-
-      cs_divergence(m, 1, imasfla, bmasfla, divu_prev);
-
-      cs_real_t thetav = eqp_u->thetav;
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        cs_real_t drom = crom_eos[c_id] - croma[c_id];
-        cpro_divu[c_id] +=  (1. + thetav)*drom*cell_f_vol[c_id]/dt[c_id]
-                           + thetav*divu_prev[c_id];
+        cs_real_t thetav = eqp_u->thetav;
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          cs_real_t drom = crom_eos[c_id] - croma[c_id];
+          cpro_divu[c_id] +=  (1. + thetav) *drom *cell_f_vol[c_id] /dt[c_id]
+            + thetav *divu_prev[c_id];
+        }
+        BFT_FREE(divu_prev);
       }
-
-      BFT_FREE(divu_prev);
-    }
-    else {
+      else {
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          cs_real_t drom = crom_eos[c_id] - croma[c_id];
+          cpro_divu[c_id] += drom *cell_f_vol[c_id] /dt[c_id];
+        }
+      }
+    } else {/* compressible scheme explicit part*/
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         cs_real_t drom = crom_eos[c_id] - croma[c_id];
-        cpro_divu[c_id] += drom*cell_f_vol[c_id]/dt[c_id];
+        cs_real_t drop = (-1 + coef_ ) * (cvar_pr[c_id] - cvara_pr[c_id])
+          * dc2[c_id];
+        cpro_divu[c_id] += (drom + drop) *cell_f_vol[c_id] /dt[c_id];
       }
     }
 
@@ -2332,7 +2412,7 @@ _pressure_correction_fv(int        iterns,
                                         seem more logical */
     eqp_loc.nswrsm = -1;
     eqp_loc.iwgrec = 0;
-    eqp_loc.thetav = 1.;
+    eqp_loc.thetav = 1;
     eqp_loc.blend_st = 0; /* Warning, may be overwritten if a field */
     eqp_loc.epsilo = -1;
     eqp_loc.epsrsm = -1;
@@ -2528,24 +2608,108 @@ _pressure_correction_fv(int        iterns,
 
   /* Update the pressure field
      ========================= */
+  // Pressure at the last sub-iteration
+  cs_real_t *pk1 ;
+  BFT_MALLOC(pk1, n_cells_ext, cs_real_t);
 
   if (idtvar < 0) {
     const cs_real_t relaxv = eqp_p->relaxv;
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      pk1[c_id] = cvar_pr[c_id];
       cvar_pr[c_id] += relaxv*phi[c_id];
+    }
   }
   else {
     if (vp_param->staggered == 0) {
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        pk1[c_id] = cvar_pr[c_id];
         cvar_pr[c_id] += phi[c_id];
+      }
     }
     else {
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        pk1[c_id] = cvar_pr[c_id];
         cvar_pr[c_id] = phi[c_id];
+      }
     }
   }
 
   /* Transformation of volume fluxes into mass fluxes */
+
+  /* Update the density when solving the Helmholtz equation */
+  if (ieos != CS_EOS_NONE) {
+    cs_real_t *cpro_rho_mass = cs_field_by_name("density_mass")->val;
+    cs_real_t drop;
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      drop = (coef_ * cvar_pr[c_id] - (coef_ - 1.) * cvara_pr[c_id]
+           - pk1[c_id]) * dc2[c_id];
+      crom_eos[c_id] += drop;
+      cpro_rho_mass[c_id] = crom_eos[c_id];
+    }
+  }
+  /* Compute the isobaric heat capacity if needed */
+  cs_field_t  *f_cv = cs_field_by_name_try("isobaric_heat_capacity");
+  if (f_cv != NULL) {
+     cs_thermal_model_cv(f_cv->val);
+  }
+  /* Correction of the temperature and yv after the pressure */
+  if (idilat == 2 && thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY
+      && ieos == CS_EOS_MOIST_AIR) {
+    /* Last argument is the method used, 1 for the newton, 2 for the
+     * pressure increment (explicit correction)*/
+    cs_thermal_model_newton_t(yw,
+                              yv,
+                              tempk,
+                              scalt,
+                              pk1,
+                              cvar_pr,
+                              cvara_pr,
+                              2);
+  }
+
+  /* Kinetic source term
+   * Compute the kinetic energy related source term.
+   * This source term is injected in the thermal equation */
+  /* Density at the last inner iteration */
+  if (kinetic_st == 1) {
+    cs_real_t *sk = cs_field_by_name("kinetic_energy_thermal_st") -> val;
+    cs_array_set_value_real(n_cells, 1, 0., sk);
+    cs_thermal_model_compute_kinetic_st(croma,
+                                        cromaa,
+                                        crom_eos,
+                                        vel,
+                                        vela,
+                                        sk);
+  }
+
+  /* Save some information */
+  if (idilat == 2 && ieos != CS_EOS_NONE) {
+    const cs_real_3_t *surfac = (const cs_real_3_t *) fvq->i_face_normal;
+    const cs_real_3_t *surfbo = (const cs_real_3_t *) fvq->b_face_normal;
+    /* CFL conditions related to the pressure equation */
+    cs_real_t *cflp = NULL ;
+    cs_field_t *f_cflp = cs_field_by_name_try("cfl_p");
+    if (f_cflp != NULL) {
+      cflp = f_cflp -> val;
+      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+        cflp[c_id] = 0.;
+      }
+      /* Call the function to compute the cfl condition related to the pressure
+       * equation */
+      cs_thermal_model_cflp(croma,
+                            trav2,
+                            cvara_pr,
+                            imasfl,
+                            cflp);
+    }
+    if (kinetic_st == 1) {
+      /* Save rho k-1 , est ce le bon endroit ?*/
+      cs_real_t *rho_k_prev = cs_field_by_name("rho_k_prev")->val ;
+      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+        rho_k_prev[c_id] =  crom_eos[c_id];
+      }
+    }
+  }
 
   if (idilat == 4) {
 

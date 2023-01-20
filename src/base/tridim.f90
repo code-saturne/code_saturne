@@ -102,6 +102,7 @@ logical          must_return
 
 integer          iel   , ifac  , ivar  , iscal , n_fans
 integer          iok   , nfld  , f_id  , f_dim  , f_type
+integer          f_id_temp
 integer          nbccou
 integer          ntrela
 integer          icmst
@@ -113,13 +114,14 @@ integer          iterns, inslst, icvrge
 integer          italim, itrfin, itrfup, ineefl
 integer          ielpdc, iflmas, iflmab
 integer          kcpsyr, icpsyr
+integer          order_buoyant_scalar
 integer          key_buoyant_id, is_buoyant_fld, st_prv_id
 
 double precision xxp0, xyp0, xzp0
 double precision relaxk, relaxe, relaxw, relaxn
 double precision hdls(6)
 
-double precision, save :: tmet
+double precision, save :: tpar, tmet
 
 integer          ipass
 data             ipass /0/
@@ -142,8 +144,8 @@ double precision, pointer, dimension(:,:) :: frcxt => null()
 double precision, pointer, dimension(:,:) :: trava
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:,:), pointer :: cvar_vec
-double precision, dimension(:), pointer :: cvar_sca
-double precision, dimension(:), pointer :: cvar_pr
+double precision, dimension(:), pointer :: cvar_sca, tempa, tempk
+double precision, dimension(:), pointer :: cvar_pr, cvar_pra
 double precision, dimension(:), pointer :: cvar_k, cvara_k, cvar_ep, cvara_ep
 double precision, dimension(:), pointer :: cvar_omg, cvara_omg
 double precision, dimension(:), pointer :: cvar_nusa, cvara_nusa
@@ -161,7 +163,7 @@ double precision, dimension(:), pointer :: coefap, cofafp, cofbfp
 double precision, dimension(:), pointer :: cpro_scal_st, cproa_scal_st
 
 double precision, dimension(:), pointer :: htot_cond
-
+double precision coef_
 type(gwf_soilwater_partition) :: sorption_scal
 
 type(var_cal_opt) :: vcopt, vcopt_u, vcopt_p
@@ -400,6 +402,9 @@ if (ippmod(iatmos).ne.-1) then
   call cs_atmo_z_ground_compute()
 endif
 
+if (itherm.eq.1.or.itherm.eq.4.or.unstd_multiplicator.eq.2) then
+ call cs_thermal_model_ini()
+endif
 !===============================================================================
 ! 2.  AU DEBUT DU CALCUL ON REINITIALISE LA PRESSION
 !===============================================================================
@@ -548,7 +553,7 @@ if (nbrcpl.gt.0) call cscloc
 if (vcopt_u%iwarni.ge.1) then
   write(nfecra,1010)
 endif
-
+call field_get_val_s(icrom, crom)
 ! Disable solid cells in fluid_solid mode
 if (fluid_solid) call cs_porous_model_set_has_disable_flag(1)
 iterns = -1
@@ -683,9 +688,11 @@ do f_id = 0, nfld - 1
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
     ! Is this field not managed by CDO ?
     if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
-
-      call field_current_to_previous(f_id)
-
+      ! not saving pressure
+      if (f_id.eq.ivarfl(ipr).and.idilat.eq.2) then
+      else
+        call field_current_to_previous(f_id)
+      endif
       ! For buoyant scalar with source termes, current to previous for them
       call field_get_key_id("is_buoyant", key_buoyant_id)
       call field_get_key_int(f_id, key_buoyant_id, is_buoyant_fld)
@@ -1106,7 +1113,8 @@ do while (iterns.le.nterup)
       call field_get_key_id("is_buoyant", key_buoyant_id)
       call field_get_val_s(icrom,crom)
       call field_get_id_try("density_mass",f_id)
-      if (f_id.ge.0) then
+      ! Correction only made for the collocated time-scheme (Li Ma phd)
+      if ((f_id.ge.0).and.(itpcol.eq.1)) then
         call field_get_val_s(f_id, cpro_rho_mass)
         do iscal = 1, nscal
           ivar = isca(iscal)
@@ -1140,7 +1148,6 @@ do while (iterns.le.nterup)
       if (iturbo.eq.2) then
         call field_get_val_s(ivarfl(ipr), cvar_pr)
       endif
-
     else
 
       call richards (icvrge, dt)
@@ -1218,6 +1225,37 @@ enddo
 if (associated(htot_cond)) deallocate(htot_cond)
 
 100 continue
+
+! Save of the pressure and temperature (if itherm.eq.4)
+if (idilat.eq.2) then
+  call field_get_val_s(ivarfl(ipr), cvar_pr)
+  call field_get_val_prev_s(ivarfl(ipr), cvar_pra)
+  if (ischtp .eq. 2) then
+    coef_ = 2
+  else
+    coef_ = 1
+  endif
+  ! Saving pressure corrected in resopv as ancient pressure
+  call field_current_to_previous(ivarfl(ipr))
+
+  if (itherm.eq.4) then
+    call field_get_id_try("temperature", f_id_temp)
+    if (f_id_temp.ge.0) then
+      call field_get_val_s(f_id_temp, tempk)
+      call field_get_val_prev_s(f_id_temp, tempa)
+    endif
+    do iel = 1, ncel
+      tempa(iel) = tempk(iel)
+    enddo
+  endif
+  call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+
+  ! Saving the thermodynamic pressure at time n+1
+  ! coherent with the equation of state
+  do iel = 1, ncel
+    cvar_pr(iel) = coef_ * cvar_pr(iel) - (coef_ - 1) * cvar_pra(iel)
+  enddo
+endif
 
 !===============================================================================
 ! Compute Courant and Fourier number for log

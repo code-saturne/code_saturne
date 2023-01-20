@@ -360,7 +360,7 @@ if (itsqdm.ne.0) then
      c_k_value, vela, vela, coefau, coefbu, cofafu, cofbfu,   &
      flumas, flumab, viscf, viscb, secvif, secvib,            &
      rvoid, rvoid, rvoid,                                     &
-     icvflb, icvfli, tsexp)
+     icvflb, icvfli, c_null_ptr, c_null_ptr, tsexp)
 
 endif
 

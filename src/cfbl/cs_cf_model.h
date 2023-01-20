@@ -68,13 +68,12 @@ typedef struct {
 
 typedef enum {
 
+  CS_EOS_NONE                  = -1,
   CS_EOS_IDEAL_GAS             = 1,
-
   CS_EOS_STIFFENED_GAS         = 2,
-
   CS_EOS_GAS_MIX               = 3,
-
-  CS_EOS_HOMOGENEOUS_TWO_PHASE = 4
+  CS_EOS_HOMOGENEOUS_TWO_PHASE = 4,
+  CS_EOS_MOIST_AIR             = 5
 
 } cs_cf_model_eos_t;
 

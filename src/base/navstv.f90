@@ -144,13 +144,14 @@ double precision, allocatable, dimension(:,:,:), target :: wvisfi
 double precision, allocatable, dimension(:,:), target :: uvwk
 double precision, dimension(:,:), pointer :: velk
 double precision, allocatable, dimension(:), target :: wvisbi
-double precision, allocatable, dimension(:), target :: cpro_rho_tc, bpro_rho_tc
+double precision, allocatable, dimension(:), target :: cpro_rho_tc, bpro_rho_tc, cpro_rho_tc_new, crom_
 double precision, allocatable, dimension(:) :: esflum, esflub
 double precision, allocatable, dimension(:) :: intflx, bouflx
 double precision, allocatable, dimension(:) :: secvif, secvib
-
+double precision, dimension(:,:), allocatable :: iuaf_, buaf_, rhs_temp
+double precision rvoid(1)
 double precision, allocatable, dimension(:,:), target :: gradp
-double precision, dimension(:,:), pointer :: cpro_gradp
+double precision, dimension(:,:), pointer :: cpro_gradp, iuaf, buaf
 double precision, dimension(:), pointer :: coefa_dp, coefb_dp
 double precision, dimension(:,:), pointer :: grdphd
 double precision, dimension(:,:), pointer :: da_uu
@@ -164,13 +165,13 @@ double precision, dimension(:,:,:), pointer :: coefbu, cofbfu, clbale
 double precision, dimension(:), pointer :: coefa_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: ivolfl, bvolfl
-double precision, dimension(:), pointer :: brom, broma, crom, croma, viscl, visct
+double precision, dimension(:), pointer :: brom, broma, crom, croma,cromaa, viscl, visct
 double precision, dimension(:,:), pointer :: trav
 double precision, dimension(:,:), pointer :: mshvel
 double precision, dimension(:,:), pointer :: disale
 double precision, dimension(:,:), pointer :: xyzno0
 double precision, dimension(:), pointer :: porosi
-double precision, dimension(:), pointer :: cvar_pr
+double precision, dimension(:), pointer :: cvar_pr, cvar_pra, cvar_pr_temp
 double precision, dimension(:), pointer :: cpro_prtot, c_estim
 double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
 double precision, dimension(:), pointer :: cpro_rho_mass
@@ -389,6 +390,7 @@ if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3)) then
   ! Time interpolated density
   if (vcopt_u%thetav .lt. 1.d0 .and. itpcol .eq. 0) then
     call field_get_val_prev_s(icrom, croma)
+    call field_get_val_prev2_s(icrom, cromaa)
     call field_get_val_prev_s(ibrom, broma)
     allocate(cpro_rho_tc(ncelet))
     allocate(bpro_rho_tc(nfabor))
@@ -911,7 +913,35 @@ endif
 
 ! Bad cells regularisation
 call cs_bad_cells_regularisation_scalar(cvar_pr)
+! Update local pointers on "cells" fields
 
+call field_get_val_s(icrom, crom)
+call field_get_val_s(icrom, crom_eos)
+
+if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3)) then
+  ! If iterns = 1: this is density at time n
+  call field_get_id("density_mass", f_id)
+  call field_get_val_s(f_id, cpro_rho_mass)
+
+  ! Time interpolated density
+  if (vcopt_u%thetav .lt. 1.d0 .and. itpcol .eq. 0) then
+
+    call field_get_val_prev_s(icrom, croma)
+
+    if (allocated(cpro_rho_tc)) deallocate(cpro_rho_tc)
+    allocate(cpro_rho_tc(ncelet))
+
+    do iel = 1, ncelet
+      cpro_rho_tc(iel) =  vcopt_u%thetav * cpro_rho_mass(iel) &
+        + (1.d0 - vcopt_u%thetav) * croma(iel)
+    enddo
+
+    crom => cpro_rho_tc
+
+  else
+    crom => cpro_rho_mass
+  endif
+endif
 !===============================================================================
 ! 8. Mesh velocity solving (ALE)
 !===============================================================================
@@ -1051,6 +1081,7 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
         !$omp parallel do private(dtsrom, isou)
         do iel = 1, ncel
           dtsrom = thetap*dt(iel)/crom(iel)
+          ! Updating velocity
           do isou = 1, 3
             vel(isou,iel) = vel(isou,iel) - dtsrom*cpro_gradp(isou,iel)
           enddo
@@ -1429,6 +1460,7 @@ endif
 if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3)) then
   do iel = 1, ncelet
     cpro_rho_mass(iel) = crom_eos(iel)
+    crom(iel) = crom_eos(iel)
   enddo
 
   do ifac = 1, nfabor

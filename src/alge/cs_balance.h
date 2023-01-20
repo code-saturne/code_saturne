@@ -249,6 +249,8 @@ cs_balance_vector(int                  idtvar,
                   const cs_real_t      weighb[],
                   int                  icvflb,
                   const int            icvfli[],
+                  cs_real_3_t          i_pvar[],
+                  cs_real_3_t          b_pvar[],
                   cs_real_3_t          smbr[]);
 
 /*----------------------------------------------------------------------------*/

@@ -81,6 +81,8 @@ BEGIN_C_DECLS
         -  CS_EOS_GAS_MIX: mix of ideal gas
         -  CS_EOS_HOMOGENEOUS_TWO_PHASE: two-phase homogeneous model only,
            each phase follows a stiffened gas law.
+        -  CS_EOS_MOIST_AIR: moist air equation of state with condensable
+           (mixture of two ideal gas)
 
   \var  cs_cf_model_t::ithvar
         indicator for thermodynamic variables initialization

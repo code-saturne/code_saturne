@@ -80,9 +80,14 @@ typedef struct {
   double        t0;           /* reference temperature */
   double        cp0;          /* reference specific heat at constant pressure */
   double        cv0;          /* reference specific heat at constant volume */
+  double        cpv0;         /* reference specific heat at constant volume
+                                 for water vapor*/
+  double        cvl;          /* reference specific for liquid water */
+  double        l00;          /* Latent heat  */
   double        lambda0;      /* reference heat conductivity */
 
   double        r_pg_cnst;    /* perfect gas specific constant in J/kg/K */
+  double        r_v_cnst;     /* water vapor specific constant in J/kg/K */
   double        rvsra;        /* ratio gas constant h2o / dry air */
   double        clatev;       /* latent heat of evaporation */
   double        xmasmr;       /* molar mass of the perfect gas in kg/mol

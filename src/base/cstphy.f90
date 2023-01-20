@@ -56,6 +56,10 @@ module cstphy
   !> Perfect gas constant for air (mixture)
   real(c_double), pointer, save :: rair
 
+  !> Moist air gas constant (mixture)
+  real(c_double), pointer, save :: rvapor
+
+
   !> ratio gaz constant h2o/ dry air
   real(c_double), pointer, save :: rvsra
 
@@ -235,6 +239,21 @@ module cstphy
   !>
   !> Useful for the compressible module (J/kg/K)
   real(c_double), pointer, save :: cv0
+
+  !> Reference isobaric specific heat for water vapor.
+  !>
+  !> Useful for the moist air module (J/kg/K)
+  real(c_double), pointer, save :: cpv0
+
+  !> Latent heat.
+  !>
+  !> Useful for the moist air module (J/kg)
+  real(c_double), pointer, save :: l00
+
+  !> Reference specific heat for liquid water.
+  !>
+  !> Useful for the moist air module (J/kg/K)
+  real(c_double), pointer, save :: cvl
 
   !> Reference thermal conductivity.
   !>
@@ -522,8 +541,12 @@ module cstphy
                                                   t0,      &
                                                   cp0,     &
                                                   cv0,     &
+                                                  cpv0,    &
+                                                  cvl,     &
+                                                  l00,     &
                                                   lambda0, &
                                                   rair,    &
+                                                  rvapor,  &
                                                   rvsra,   &
                                                   clatev,  &
                                                   xmasmr,  &
@@ -539,8 +562,8 @@ module cstphy
       implicit none
       type(c_ptr), intent(out) :: ixyzp0, icp, icv, irovar, ivivar, ivsuth
       type(c_ptr), intent(out) :: ro0, viscl0, p0, pred0
-      type(c_ptr), intent(out) :: xyzp0, t0, cp0, cv0, lambda0
-      type(c_ptr), intent(out) :: rair, rvsra, clatev, xmasmr
+      type(c_ptr), intent(out) :: xyzp0, t0, cp0, cv0, cpv0, cvl, l00, lambda0
+      type(c_ptr), intent(out) :: rair, rvapor, rvsra, clatev, xmasmr
       type(c_ptr), intent(out) :: ipthrm
       type(c_ptr), intent(out) :: pther, pthera, pthermax
       type(c_ptr), intent(out) :: sleak, kleak, roref
@@ -640,18 +663,22 @@ contains
 
     type(c_ptr) :: c_ixyzp0, c_icp, c_icv, c_irovar, c_ivivar
     type(c_ptr) :: c_ivsuth, c_ro0, c_viscl0, c_p0
-    type(c_ptr) :: c_pred0, c_xyzp0, c_t0, c_cp0, c_cv0, c_lambda0
-    type(c_ptr) :: c_rair,c_rvsra,c_clatev, c_xmasmr
+    type(c_ptr) :: c_pred0, c_xyzp0, c_t0, c_cp0, c_cv0
+    type(c_ptr) :: c_cpv0, c_cvl, c_l00, c_lambda0
+    type(c_ptr) :: c_rair,c_rvapor, c_rvsra, c_clatev, c_xmasmr
     type(c_ptr) :: c_ipthrm
     type(c_ptr) :: c_pther, c_pthera, c_pthermax
     type(c_ptr) :: c_sleak, c_kleak, c_roref
+
 
     call cs_f_fluid_properties_get_pointers(c_ixyzp0, c_icp, c_icv,         &
                                             c_irovar, c_ivivar, c_ivsuth,   &
                                             c_ro0, c_viscl0, c_p0, c_pred0, &
                                             c_xyzp0, c_t0, c_cp0, c_cv0,    &
+                                            c_cpv0, c_cvl, c_l00,           &
                                             c_lambda0,                      &
-                                            c_rair,c_rvsra,c_clatev,        &
+                                            c_rair,c_rvapor, c_rvsra,       &
+                                            c_clatev,                       &
                                             c_xmasmr,                       &
                                             c_ipthrm, c_pther, c_pthera,    &
                                             c_pthermax, c_sleak, c_kleak,   &
@@ -672,8 +699,12 @@ contains
     call c_f_pointer(c_t0, t0)
     call c_f_pointer(c_cp0, cp0)
     call c_f_pointer(c_cv0, cv0)
+    call c_f_pointer(c_cpv0, cpv0)
+    call c_f_pointer(c_cvl, cvl)
+    call c_f_pointer(c_l00, l00)
     call c_f_pointer(c_lambda0, lambda0)
     call c_f_pointer(c_rair, rair)
+    call c_f_pointer(c_rvapor, rvapor)
     call c_f_pointer(c_rvsra, rvsra)
     call c_f_pointer(c_clatev, clatev)
     call c_f_pointer(c_xmasmr, xmasmr)

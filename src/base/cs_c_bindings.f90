@@ -2307,7 +2307,7 @@ module cs_c_bindings
                                  cofbfv, i_massflux, b_massflux, i_visc,     &
                                  b_visc, secvif, secvib, viscel,             &
                                  weighf, weighb, icvflb, icvfli,             &
-                                 smbrp)                                      &
+                                 i_pvar, b_pvar,smbrp)                       &
       bind(C, name='cs_balance_vector')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -2322,10 +2322,153 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(in) :: weighf, weighb
       integer(c_int), value :: icvflb
       integer(c_int), dimension(*), intent(in) :: icvfli
+      type(c_ptr), value :: i_pvar, b_pvar
+      !real(kind=c_double), dimension(*), intent(inout) :: i_pvar, b_pvar
       real(kind=c_double), dimension(*), intent(inout) :: smbrp
     end subroutine cs_balance_vector
 
     !---------------------------------------------------------------------------
+
+    ! Interface to C function computing the sound velocity square
+
+    subroutine cs_thermal_model_c_square(cp, temp,                  &
+                                         fracv, fracm, frace,       &
+                                         dc2, l_size)               &
+      bind(C, name='cs_thermal_model_c_square')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: l_size
+      real(kind=c_double), dimension(*) :: cp, temp, dc2
+      real(kind=c_double), dimension(*) :: fracv, fracm, frace
+    end subroutine cs_thermal_model_c_square
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function that adds the kinetic source term into the RHS
+    ! of the thermal equation
+    subroutine cs_thermal_model_add_kst(smbrs) &
+      bind(C, name='cs_thermal_model_add_kst')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*) :: smbrs
+    end subroutine cs_thermal_model_add_kst
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function that adds the kinetic source term into the RHS
+    ! of the thermal equation
+    subroutine cs_thermal_model_pdivu(temp_, tempa_, cvar_var,  &
+                                      cvara_var, thetv, vel,    &
+                                      xcvv, cpro_yw, cpro_ywa,  &
+                                      cpro_yv, cpro_yva, gradp, &
+                                      gradphi, smbrs)           &
+      bind(C, name='cs_thermal_model_pdivu')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(3,*)   :: gradp, gradphi, vel
+      real(kind=c_double), dimension(*)     :: temp_, tempa_, cvar_var, xcvv
+      real(kind=c_double), dimension(*)     :: cvara_var, cpro_yw, cpro_ywa
+      real(kind=c_double), dimension(*)     :: cpro_yv, cpro_yva, smbrs
+      real(kind=c_double)                   :: thetv
+    end subroutine cs_thermal_model_pdivu
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function that computes the thermal equation related CFL
+    subroutine cs_thermal_model_cflt(croma, tempk, tempka,      &
+                                          xcvv, vel, imasfl, cflt)   &
+      bind(C, name='cs_thermal_model_cflt')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(3,*)   :: vel
+      real(kind=c_double), dimension(*)     :: tempk, tempka, croma, xcvv
+      real(kind=c_double), dimension(*)     :: imasfl, cflt
+    end subroutine cs_thermal_model_cflt
+
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function that adds the kinetic source term into the RHS
+    ! of the thermal equation
+    subroutine cs_thermal_model_dissipation(vistot, gradv, smbrs) &
+      bind(C, name='cs_thermal_model_dissipation')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(3,3,*) :: gradv
+      real(kind=c_double), dimension(*)     :: vistot, smbrs
+    end subroutine cs_thermal_model_dissipation
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function that computes the isobaric heat capacity
+    subroutine cs_thermal_model_cv(xcvv) &
+      bind(C, name='cs_thermal_model_cv')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*)     :: xcvv
+    end subroutine cs_thermal_model_cv
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function that computes the isobaric heat capacity
+    subroutine cs_thermal_model_ini() &
+      bind(C, name='cs_thermal_model_ini')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_thermal_model_ini
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function computing the internal energy derivative related
+    ! to T
+
+    function cs_compute_demdt(pres, temp,                    &
+                              yw) result (demdt)  &
+      bind(C, name='cs_compute_demdt')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), value :: pres, temp, yw
+      real(kind=c_double) :: demdt
+    end function cs_compute_demdt
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function computing the internal energy derivative related
+    ! to T
+
+    function cs_thermal_model_demdt_ecsnt(pres, temp,                   &
+                                          yw, cpa,                      &
+                                          cpv, cpl, l00) result (demdt) &
+      bind(C, name='cs_thermal_model_demdt_ecsnt')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), value :: pres, temp, yw
+      real(kind=c_double), value :: cpa, cpv, cpl, l00
+      real(kind=c_double) :: demdt
+    end function cs_thermal_model_demdt_ecsnt
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function that performs the Newton method to compute
+    ! the temperature following the solved internal energy
+
+    subroutine cs_thermal_model_newton_t(yw,                   &
+                                         yv,                   &
+                                         temp,                 &
+                                         scalt,                &
+                                         pk1,                  &
+                                         cvar_pr,              &
+                                         cvara_pr,             &
+                                         method)               &
+      bind(C, name='cs_thermal_model_newton_t')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*), intent(inout) :: yw, yv, temp, scalt
+      real(kind=c_double), dimension(*), intent(inout) ::  cvar_pr, cvara_pr
+      type(c_ptr), value :: pk1
+      integer(c_int), value :: method
+    end subroutine cs_thermal_model_newton_t
+
 
     !> \brief Read lagrangian moments checkpoint information.
 

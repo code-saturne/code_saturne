@@ -652,9 +652,9 @@ integer          icodcl(nfabor,nvar)
 
 ! Local variables
 
-integer          ivar, f_id
+integer          ivar, f_id, f_id_cv
 integer          ifac, iel, isou, jsou
-integer          iscacp, ifcvsl
+integer          ifcvsl
 integer          kturt, turb_flux_model, turb_flux_model_type
 
 double precision cpp, rkl, visclc, visls_0
@@ -671,7 +671,7 @@ double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut, visten
 double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
 double precision, dimension(:), pointer :: a_al, b_al, af_al, bf_al
 
-double precision, dimension(:), pointer :: viscl, viscls, cpro_cp
+double precision, dimension(:), pointer :: viscl, viscls, cpro_cp, cpro_cv
 
 !===============================================================================
 
@@ -700,7 +700,10 @@ call field_get_val_s(icrom, crom)
 if (icp.ge.0) then
   call field_get_val_s(icp, cpro_cp)
 endif
-
+call field_get_id_try("isobaric_heat_capacity", f_id_cv)
+if (f_id_cv.gt.0) then
+ call field_get_val_s(f_id_cv, cpro_cv)
+endif
 ! Reference diffusivity of the primal scalar
 call field_get_key_double(f_id, kvisl0, visls_0)
 
@@ -708,9 +711,6 @@ call field_get_key_int (f_id, kivisl, ifcvsl)
 if (ifcvsl .ge. 0) then
   call field_get_val_s(ifcvsl, viscls)
 endif
-
-! Does the scalar behave as a temperature ?
-call field_get_key_int(f_id, kscacp, iscacp)
 
 ! Turbulent diffusive flux of the scalar T
 ! (blending factor so that the component v'T' have only
@@ -754,12 +754,14 @@ do ifac = 1, nfabor
     ! --- Physical Properties
     visclc = viscl(iel)
     cpp = 1.d0
-    if (iscacp.eq.1) then
+    if (unstd_multiplicator.eq.1) then
       if (icp.ge.0) then
         cpp = cpro_cp(iel)
       else
         cpp = cp0
       endif
+    elseif (unstd_multiplicator.eq.2) then
+        cpp = cpro_cv(iel)
     endif
 
     ! --- Geometrical quantities

@@ -498,7 +498,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
      c_k_value                , vel    , vel    , coefav , coefbv , cofafv , &
      cofbfv , imasfl_mix      , bmasfl_mix      , viscf  , viscb  , rvoid  , &
      rvoid  , rvoid  , rvoid  , rvoid  ,                                     &
-     icvflb , ivoid  , dudt   )
+     icvflb , ivoid  , c_null_ptr, c_null_ptr,dudt   )
 
     do iel = 1, ncel
       cpro_drift(1, iel) = cpro_drift(1, iel)                       &

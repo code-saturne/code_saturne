@@ -4333,9 +4333,10 @@ cs_b_imposed_conv_flux_vector(int              iconvp,
                               const cs_real_t  coface[restrict 3],
                               const cs_real_t  cofbce[restrict 3][3],
                               cs_real_t        b_massflux,
+                              cs_real_t        pfac[3],
                               cs_real_t        flux[restrict 3])
 {
-  cs_real_t flui, fluj, pfac;
+  cs_real_t flui, fluj;
 
   /* Computed convective flux */
 
@@ -4350,11 +4351,11 @@ cs_b_imposed_conv_flux_vector(int              iconvp,
       fluj = 0.5*(b_massflux -fabs(b_massflux));
     }
     for (int isou = 0; isou < 3; isou++) {
-      pfac  = inc*coefap[isou];
+      pfac[isou]  = inc*coefap[isou];
       for (int jsou = 0; jsou < 3; jsou++) {
-        pfac += coefbp[isou][jsou]*pipr[jsou];
+        pfac[isou] += coefbp[isou][jsou]*pipr[jsou];
       }
-      flux[isou] += iconvp*( thetap*(flui*pir[isou] + fluj*pfac)
+      flux[isou] += iconvp*( thetap*(flui*pir[isou] + fluj*pfac[isou])
                            - imasac*b_massflux*pi[isou]);
     }
 
@@ -4363,11 +4364,11 @@ cs_b_imposed_conv_flux_vector(int              iconvp,
   } else {
 
     for (int isou = 0; isou < 3; isou++) {
-      pfac  = inc*coface[isou];
+      pfac[isou]  = inc*coface[isou];
       for (int jsou = 0; jsou < 3; jsou++) {
-        pfac += cofbce[isou][jsou]*pipr[jsou];
+        pfac[isou] += cofbce[isou][jsou]*pipr[jsou];
       }
-      flux[isou] += iconvp*( thetap*pfac
+      flux[isou] += iconvp*( thetap*pfac[isou]
                            - imasac*b_massflux*pi[isou]);
     }
 
@@ -4460,9 +4461,10 @@ cs_b_upwind_flux_vector(const int          iconvp,
                         const cs_real_3_t  coefa,
                         const cs_real_33_t coefb,
                         const cs_real_t    b_massflux,
+                        cs_real_t          pfac[3],
                         cs_real_t          flux[3])
 {
-  cs_real_t flui, fluj, pfac;
+  cs_real_t flui, fluj;
 
   /* Remove decentering for coupled faces */
   if (bc_type == CS_COUPLED_FD) {
@@ -4473,11 +4475,11 @@ cs_b_upwind_flux_vector(const int          iconvp,
     fluj = 0.5*(b_massflux -fabs(b_massflux));
   }
   for (int isou = 0; isou < 3; isou++) {
-    pfac  = inc*coefa[isou];
+    pfac[isou]  = inc*coefa[isou];
     for (int jsou = 0; jsou < 3; jsou++) {
-      pfac += coefb[isou][jsou]*pipr[jsou];
+      pfac[isou] += coefb[isou][jsou]*pipr[jsou];
     }
-    flux[isou] += iconvp*( thetap*(flui*pir[isou] + fluj*pfac)
+    flux[isou] += iconvp*( thetap*(flui*pir[isou] + fluj*pfac[isou])
                          - imasac*b_massflux*pi[isou]);
   }
 }
@@ -5388,6 +5390,8 @@ cs_face_convection_scalar(int                       idtvar,
  *                               at border faces for the r.h.s.
  * \param[in]     i_secvis      secondary viscosity at interior faces
  * \param[in]     b_secvis      secondary viscosity at boundary faces
+ * \param[in]     i_pvar        velocity at interior faces
+ * \param[in]     b_pvar        velocity at boundary faces
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
@@ -5413,6 +5417,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                const cs_real_t             b_visc[],
                                const cs_real_t             i_secvis[],
                                const cs_real_t             b_secvis[],
+                               cs_real_3_t       *restrict i_pvar,
+                               cs_real_3_t       *restrict b_pvar,
                                cs_real_3_t       *restrict rhs);
 
 /*----------------------------------------------------------------------------*/

@@ -207,10 +207,10 @@ integer          ihcp  , iscal
 integer          inc   , iprev
 integer          isoent, isorti, ncpt,   isocpt(2)
 integer          iclsym, ipatur, ipatrg, isvhbl
-integer          iscacp, ifcvsl
+integer          ifcvsl
 integer          itplus, itstar
 integer          f_id, iut, ivt, iwt, ialt, iflmab
-integer          kbfid, b_f_id
+integer          kbfid, b_f_id, f_id_cv
 integer          keyvar
 integer          dimrij, f_dim
 integer          kturt, turb_flux_model, turb_flux_model_type
@@ -2326,6 +2326,12 @@ if (nscal.ge.1) then
     call field_get_val_s(icp, cpro_cp)
   endif
 
+  call field_get_id_try("isobaric_heat_capacity", f_id_cv)
+  if (f_id_cv.gt.0) then
+    call field_get_val_s(f_id_cv, cpro_cv)
+  endif
+
+
   if (ippmod(icompf).ge.0.and.icv.ge.0) then
     call field_get_val_s(icv, cpro_cv)
   endif
@@ -2345,9 +2351,6 @@ if (nscal.ge.1) then
     if (ifcvsl .ge. 0) then
       call field_get_val_s(ifcvsl, viscls)
     endif
-
-    call field_get_key_int(ivarfl(ivar), kscacp, iscacp)
-
 
     ! Get the turbulent flux model for the scalar
     call field_get_key_int(ivarfl(isca(ii)), kturt, turb_flux_model)
@@ -2369,7 +2372,7 @@ if (nscal.ge.1) then
     ! Reference diffusivity
     call field_get_key_double(ivarfl(isca(iscal)), kvisl0, visls_0)
 
-    if (iscacp.eq.1) then
+    if (unstd_multiplicator.ge.0) then
       if(icp.ge.0) then
         ihcp = 2
       else
@@ -2427,12 +2430,21 @@ if (nscal.ge.1) then
         !      (dans le Cas compressible ihcp=0)
 
         cpp = 1.d0
+        ! TODO : air humide
         if (ihcp.eq.0) then
           cpp = 1.d0
         elseif (ihcp.eq.2) then
-          cpp = cpro_cp(iel)
+          if (unstd_multiplicator.eq.1) then
+            cpp = cpro_cp(iel)
+          elseif(unstd_multiplicator.eq.2) then
+            cpp = cpro_cv(iel)
+          endif
         elseif (ihcp.eq.1) then
-          cpp = cp0
+          if (unstd_multiplicator.eq.1) then
+            cpp = cp0
+          elseif(unstd_multiplicator.eq.2) then
+            cpp = cpro_cv(iel)
+          endif
         endif
 
         ! --- Viscosite variable ou non
@@ -2616,7 +2628,7 @@ if (nscal.ge.1) then
               endif
 
             ! Temperature
-            elseif (iscacp.eq.1) then
+            elseif (unstd_multiplicator.gt.0) then
               exchange_coef = hint
             endif
           endif
@@ -2779,13 +2791,23 @@ if (nscal.ge.1) then
         !      (dans le Cas compressible ihcp=0)
 
         cpp = 1.d0
+        ! TODO : air humide
         if (ihcp.eq.0) then
           cpp = 1.d0
         elseif (ihcp.eq.2) then
-          cpp = cpro_cp(iel)
+          if (unstd_multiplicator.eq.1) then
+            cpp = cpro_cp(iel)
+          elseif(unstd_multiplicator.eq.2) then
+            cpp = cpro_cp(iel) - rair
+          endif
         elseif (ihcp.eq.1) then
-          cpp = cp0
+          if (unstd_multiplicator.eq.1) then
+            cpp = cp0
+          elseif(unstd_multiplicator.eq.2) then
+            cpp = cp0 - rair !TODO: air humide
+          endif
         endif
+
 
         ! --- Viscosite variable ou non
         if (ifcvsl.lt.0) then

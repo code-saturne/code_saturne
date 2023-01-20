@@ -103,6 +103,14 @@ interface
     implicit none
   end subroutine cs_parameters_create_added_properties
 
+  ! Interface to C function building properties
+
+  subroutine cs_create_added_properties() &
+    bind(C, name='cs_create_added_properties')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_create_added_properties
+
   !=============================================================================
 
 end interface
@@ -144,6 +152,10 @@ call field_get_key_id("parent_field_id", keypid)
 !       ceci permet ensuite de ne pas se fatiguer lors de la
 !       construction de IPPPRO plus bas.
 !      Cependant, pour les physiques particulieres, ce n'est pas le cas.
+
+! Properties definied in C
+
+call cs_create_added_properties
 
 ! Base properties, always present
 
@@ -382,6 +394,11 @@ call cs_parameters_create_added_properties
 ! Set itemp if temperature is present as a property
 
 if (itherm.eq.2 .and. itemp.eq.0) then
+  call field_get_id_try('temperature', iflid)
+  if (iflid.ge.0) itemp = iflid
+endif
+
+if (itherm.eq.4 .and. itemp.eq.0) then
   call field_get_id_try('temperature', iflid)
   if (iflid.ge.0) itemp = iflid
 endif

@@ -38,7 +38,6 @@ subroutine ppiniv0
 !===============================================================================
 ! Module files
 !===============================================================================
-
 use paramx
 use numvar
 use optcal
@@ -52,6 +51,7 @@ use coincl
 use cpincl
 use ppincl
 use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -151,6 +151,7 @@ subroutine ppiniv1
 !===============================================================================
 ! Module files
 !===============================================================================
+use, intrinsic :: iso_c_binding
 
 use paramx
 use numvar
@@ -198,6 +199,9 @@ if (ippmod(icompf).ge.0) then
   call cfiniv
 endif
 
+!if (itherm.eq.1.or.itherm.eq.4.or.unstd_multiplicator.eq.2) then
+! call cs_thermal_model_ini()
+!endif
 !----
 ! Formats
 !----

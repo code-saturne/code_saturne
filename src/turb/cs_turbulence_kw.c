@@ -511,6 +511,8 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
                       NULL,
                       icvflb,
                       NULL,
+                      NULL,
+                      NULL,
                       vel_laplacian);
 
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)

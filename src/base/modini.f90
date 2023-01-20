@@ -64,7 +64,7 @@ integer          ii, jj, iok, ikw
 integer          nbccou
 integer          nscacp, iscal, ivar
 integer          imrgrp, iclvfl, kclvfl
-integer          iscacp, kcpsyr, icpsyr
+integer          kcpsyr, icpsyr
 integer          nfld, f_type
 integer          key_t_ext_id, icpext, kscmin, kscmax
 integer          iviext, isso2t, kisso2t, kthetss, kthetvs, kcdtvar
@@ -259,7 +259,10 @@ do f_id = 0, nfld - 1
       call field_get_name(f_id, name)
       write(nfecra,1131) trim(name),'THETAV'
     else
-      if (vcopt%istat.eq.0) then
+      ! For the pressure, no theta-scheme
+      if (f_id.eq.ivarfl(ipr)) then
+        vcopt%thetav = 1.d0
+      else if (vcopt%istat.eq.0) then
         vcopt%thetav = 1.d0
       else if (ischtp.eq.1) then
         vcopt%thetav = 1.d0
@@ -651,26 +654,27 @@ if (nscal.gt.0) then
 
 endif
 
-! ---> "is_temperature"
-!      If the user has not modified "is_temperature", we take by default:
-!        passive scalar of scalars other than iscalt
-!         = 0 : passive, enthalpy, or energy
-!         = 1 : temperature
+! Temperature scale
 
+if (itherm.ge.1 .and. itpscl.le.0) then
+  itpscl = 1
+endif
+
+! Unsteady multiplicator in the thermal equation
+! unstd_multiplicator = 1 : multiply the left hand side by cp
+! unstd_multiplicator = 0 : multiply the left hand side by 1
 if (nscal.gt.0) then
   do ii = 1, nscal
-    call field_get_key_int(ivarfl(isca(ii)), kscacp, iscacp)
-    if (iscacp.eq.-1) then
-      if (ii.eq.iscalt .and. itherm.eq.1) then
-        iscacp = 1
+    ! if unstd_multiplicator not modified
+    if (unstd_multiplicator.eq.-1) then
+      if ((ii.eq.iscalt).and.(itherm.eq.1)) then
+        unstd_multiplicator = 1
       else
-        iscacp = 0
+        unstd_multiplicator = 0
       endif
-      call field_set_key_int(ivarfl(isca(ii)), kscacp, iscacp)
     endif
   enddo
 endif
-
 ! ---> ICALHY
 !      Calcul de la pression hydrostatique en sortie pour les conditions de
 !        Dirichlet sur la pression. Se deduit de IPHYDR et de la valeur de
@@ -803,8 +807,7 @@ do ii = 1, nscal
 
   ! For scalars which are not variances, define the reference diffusivity
   if (iscavr(ii).le.0 .and. visls_0.lt.-grand) then
-    call field_get_key_int(f_id, kscacp, iscacp)
-    if (iscacp.gt.0) then
+    if (unstd_multiplicator.gt.0) then
       ! For temperature, the diffusivity factor is directly the thermal conductivity
       ! lambda = Cp * mu / Pr
       ! where Pr is the (molecular) Prandtl number

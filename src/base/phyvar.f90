@@ -98,7 +98,7 @@ character(len=80) :: chaine
 integer          ivar, iel, ifac, iscal, f_id
 integer          ii, jj, iok, iok1, iok2, iisct, idfm, iggafm, iebdfm
 integer          nn, isou, iz
-integer          mbrom, ifcvsl, iscacp
+integer          mbrom, ifcvsl
 integer          idftnp
 integer          iprev , inc
 integer          kturt, turb_flux_model, turb_flux_model_type
@@ -838,8 +838,7 @@ if (icp.ge.0) then
     iisct = 0
     if (itherm.ne.0) iisct = 1
     do iscal = 1, nscal
-      call field_get_key_int(ivarfl(isca(iscal)), kscacp, iscacp)
-      if (iscacp.ne.0) then
+      if (unstd_multiplicator.ne.0) then
         iisct = 1
       endif
     enddo

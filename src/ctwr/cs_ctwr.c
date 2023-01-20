@@ -977,9 +977,10 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
     cs_real_t reynolds_old = 0.;
     cs_real_t reynolds = rho_h[cell_id] * v_lim * droplet_diam / visc;
 
+// FIXME make it global for the zone as restart...
     for (int sweep = 0; sweep < 100 && CS_ABS(reynolds - reynolds_old) > 0.001; sweep++) {
       reynolds_old = reynolds;
-      v_lim = pow(droplet_diam, 2.) * rho_l / (18. * visc * (1 + 0.15 * pow(reynolds, 0.687)))
+      v_lim = pow(droplet_diam, 2.) * rho_l / (18. * visc * (1. + 0.15 * pow(reynolds, 0.687)))
             * cs_math_3_norm(gravity);
       reynolds = rho_h[cell_id] * v_lim * droplet_diam / visc;
     }

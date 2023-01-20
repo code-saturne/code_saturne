@@ -265,6 +265,17 @@ BEGIN_C_DECLS
 
         Useful for the compressible module.
 
+  \var  cs_fluid_properties_t::cpv0
+        reference isobaric specific heat of water vapor (J/kg/K)
+
+        Useful for the moist air scheme
+
+  \var  cs_fluid_properties_t::cvl
+        reference specific heat for of liquid water (J/kg/K)
+
+  \var  cs_fluid_properties_t::l00
+        latent heat referenced at 273.15K (J/kg)
+
   \var  cs_fluid_properties_t::lambda0
         reference heat conductivity (W/m/K)
 
@@ -276,6 +287,11 @@ BEGIN_C_DECLS
 
         This value depends on the gas since it is equal to R/M where R is the
         universal gas constant and M is the molar mass
+
+  \var  cs_fluid_properties_t::r_v_cnst
+        Water vapor gas constant in J/kg/K
+
+        Useful when performing humid air simulations
 
   \var  cs_fluid_properties_t::rvsra
         ratio gas constant h2o / dry air
@@ -355,8 +371,12 @@ static cs_fluid_properties_t  _fluid_properties = {
   .t0       = 293.15,
   .cp0      = 1017.24,
   .cv0      = 0.,
+  .cpv0     = 1877.196,
+  .cvl      = 4185.0,
+  .l00      = 3118235.0,
   .lambda0  = 1.,
   .r_pg_cnst = 287.058, /* dry air perfect gas constant J/kg/K */
+  .r_v_cnst = 461.52272377, /* Water vapor gas constant J/kg/K */
   .rvsra    = 1.607768, /* Note: Rv = 461.52272377 J/mol/K */
   .clatev   = 2.501e6,
   .xmasmr   = 0.028966, /* air molar mass */
@@ -431,8 +451,12 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    double  **t0,
                                    double  **cp0,
                                    double  **cv0,
+                                   double  **cpv0,
+                                   double  **cvl,
+                                   double  **l00,
                                    double  **lambda0,
                                    double  **rair,
+                                   double  **rvapor,
                                    double  **rvsra,
                                    double  **clatev,
                                    double  **xmasmr,
@@ -501,8 +525,12 @@ cs_f_physical_constants_get_pointers(double  **gx,
  *   t0       --> pointer to cs_glob_fluid_properties->t0
  *   cp0      --> pointer to cs_glob_fluid_properties->cp0
  *   cv0      --> pointer to cs_glob_fluid_properties->cv0
+ *   cpv0     --> pointer to cs_glob_fluid_properties->cpv0
+ *   cvl      --> pointer to cs_glob_fluid_properties->cvl
+ *   l00      --> pointer to cs_glob_fluid_properties->l00
  *   lambda0  --> pointer to cs_glob_fluid_properties->lambda0
  *   rair     --> pointer to cs_glob_fluid_properties->r_pg_cnst
+ *   rvapor   --> pointer to cs_glob_fluid_properties->r_v_cnst
  *   rvsra    --> pointer to cs_glob_fluid_properties->rvsra
  *   clatev   --> pointer to cs_glob_fluid_properties->clatev
  *   xmasmr   --> pointer to cs_glob_fluid_properties->xmasmr
@@ -530,8 +558,12 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    double  **t0,
                                    double  **cp0,
                                    double  **cv0,
+                                   double  **cpv0,
+                                   double  **cvl,
+                                   double  **l00,
                                    double  **lambda0,
                                    double  **rair,
+                                   double  **rvapor,
                                    double  **rvsra,
                                    double  **clatev,
                                    double  **xmasmr,
@@ -557,8 +589,12 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
   *t0       = &(_fluid_properties.t0);
   *cp0      = &(_fluid_properties.cp0);
   *cv0      = &(_fluid_properties.cv0);
+  *cpv0     = &(_fluid_properties.cpv0);
+  *cvl      = &(_fluid_properties.cvl);
+  *l00      = &(_fluid_properties.l00);
   *lambda0  = &(_fluid_properties.lambda0);
   *rair     = &(_fluid_properties.r_pg_cnst);
+  *rvapor   = &(_fluid_properties.r_v_cnst);
   *rvsra    = &(_fluid_properties.rvsra);
   *clatev   = &(_fluid_properties.clatev);
   *xmasmr   = &(_fluid_properties.xmasmr);

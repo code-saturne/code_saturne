@@ -121,6 +121,7 @@ use darcy_module
 use cs_c_bindings
 use pointe, only: itypfb, pmapper_double_r1
 use atincl
+use cfpoin, only:ieos
 
 !===============================================================================
 
@@ -149,10 +150,10 @@ double precision viscf(nfac), viscb(nfabor)
 logical          lprev
 character(len=80) :: chaine, fname
 integer          ivar
-integer          ii, ifac , iel, isou
+integer          ii, jj, ifac , iel, isou
 integer          iprev , inc   , ibcl
 integer          ivarsc
-integer          iiscav, iscacp
+integer          iiscav
 integer          ifcvsl, iflmas, iflmab, f_oi_id
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, imvisp
@@ -160,7 +161,10 @@ integer          imrgrp, iescap
 integer          imucpp
 integer          idifftp
 integer          iflid , f_id, st_prv_id, st_id,  keydri, iscdri
-integer          f_id_al
+integer          f_id_al, f_id_pr, f_id_sk
+integer          f_id_cflt, f_id_gradp, f_id_alpha, f_id_gradphi
+integer          f_id_temp, f_id_cv
+integer          f_id_yw, f_id_yv
 integer          icvflb, f_dim, iflwgr
 integer          icla
 integer          icrom_scal
@@ -168,6 +172,7 @@ integer          key_buoyant_id, is_buoyant_fld
 integer          key_t_ext_id, krvarfl, kthetss
 integer          iviext
 integer          key_turb_schmidt, key_turb_diff
+integer          pdivu_conv_scheme
 integer          t_scd_id, t_dif_id
 integer          kturt, variance_turb_flux_model, scalar_turb_flux_model
 integer          scalar_turb_flux_model_type, variance_turb_flux_model_type
@@ -178,39 +183,53 @@ double precision epsrgp, climgp
 double precision rhovst, xk    , xe    , sclnor
 double precision thetv , thets , thetap, thetp1
 double precision smbexp, dvar, cprovol, prod
-double precision temp
+double precision temp, errort, pdrho, pdrhoa, cvma
 double precision turb_schmidt, visls_0
 double precision xR, prdtl, alpha_theta
 double precision normp
 double precision l2norm, l2errork, dl2norm
+double precision s11, s22, s33
+double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
+double precision mu, vecfac
+double precision muSdeux, pprev, norm_dv, epsy
 double precision dum
 double precision qliqmax, ctheta, rvarfl
 
 double precision rvoid(1)
+double precision gammagp, cpv
+double precision pres, ysat, yv_, em_
+double precision demdt
+double precision rv
 
-double precision, allocatable, dimension(:) :: w1, smbrs, rovsdt, sgdh_diff
+double precision, allocatable, dimension(:) :: w1,temp_, tempa_, smbrs, rovsdt, sgdh_diff
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: coefa_p, coefb_p
 double precision, allocatable, dimension(:) :: dpvar
-double precision, allocatable, dimension(:) :: xcpp
+double precision, allocatable, dimension(:) :: xcpp, xcvv
 double precision, allocatable, dimension(:) :: srcmas
 double precision, allocatable, dimension(:) :: srccond
 double precision, allocatable, dimension(:) :: srcmst
+double precision, allocatable, dimension(:) :: vistot
+double precision, allocatable, dimension(:,:,:) :: gradv
 
 double precision, dimension(:,:), pointer :: xut, visten
-double precision, dimension(:,:), pointer :: vistet
+double precision, dimension(:,:), pointer :: vistet, vel, vela, cpro_pred_vel
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
+double precision, dimension(:,:), pointer :: gradp, gradphi
 double precision, dimension(:), pointer :: cpro_wgrec_s
+double precision, dimension(:), pointer :: sk, sk_a, cflt
 double precision, dimension(:), pointer :: imasfl, bmasfl
-double precision, dimension(:), pointer :: crom, croma, pcrom
+double precision, dimension(:), pointer :: cpro_yw, cpro_yv, cpro_yva, cpro_ywa
+double precision, dimension(:), pointer :: crom, croma, pcrom, brom, broma, tempk, tempa
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
+double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: cvar_al
-double precision, dimension(:), pointer :: visct, viscl, cpro_cp, cproa_scal_st
+double precision, dimension(:), pointer :: visct, viscl, cpro_cp, cpro_cv, cproa_scal_st
 double precision, dimension(:), pointer :: cpro_scal_st, cpro_st
 double precision, dimension(:), pointer :: cpro_turb_schmidt, cpro_turb_diff
 double precision, dimension(:), pointer :: cpro_viscls, cpro_visct
@@ -221,6 +240,8 @@ double precision, dimension(:), pointer :: cvark_var
 double precision, allocatable, dimension(:), target :: wcvark_var
 double precision, allocatable, dimension(:) :: errork
 double precision, allocatable, dimension(:) :: divflu
+double precision, allocatable, dimension(:) :: yw, yv
+double precision, dimension(:), pointer :: cvar_pr, cvar_pra, cvar_praa, predicted_imasfl
 double precision, dimension(:), allocatable :: pphy
 double precision, dimension(:), pointer :: cpro_rad_cool
 double precision, dimension(:), pointer :: cpro_liqwt
@@ -228,7 +249,7 @@ double precision, dimension(:), pointer :: cpro_tempc
 double precision, dimension(:), pointer :: cvar_ntdrp
 double precision, dimension(:), pointer :: cpro_met_p
 ! Darcy arrays
-double precision, allocatable, dimension(:) :: diverg
+double precision, allocatable, dimension(:) :: pdivu, diverg
 double precision, dimension(:), pointer :: cpro_delay, cpro_sat
 double precision, dimension(:), pointer :: cproa_delay, cproa_sat
 ! Radiat arrays
@@ -389,7 +410,8 @@ call field_get_key_double(iflid, krvarfl, rvarfl)
 allocate(w1(ncelet))
 allocate(dpvar(ncelet))
 allocate(smbrs(ncelet), rovsdt(ncelet))
-
+allocate(temp_(ncelet))
+allocate(tempa_(ncelet))
 if (ippmod(idarcy).eq.1) then
   allocate(diverg(ncelet))
 endif
@@ -468,34 +490,88 @@ endif
 !  rho*cp*Vol*dT/dt + ...
 
 imucpp = 0
-if (iscavr(iscal).gt.0) then
-  call field_get_key_int(ivarfl(isca(iscavr(iscal))), kscacp, iscacp)
-else
-  call field_get_key_int(iflid, kscacp, iscacp)
-endif
-if (iscacp.eq.1) then
+if (unstd_multiplicator.ge.0) then
   imucpp = 1
 endif
 
 allocate(xcpp(ncelet))
+allocate(xcvv(ncelet))
+allocate(yv(ncelet))
+allocate(yw(ncelet))
 
-if (imucpp.eq.0) then
-  do iel = 1, ncel
-    xcpp(iel) = 1.d0
+! Mixture:
+!
+! eosd = -1 (Default), no particular mixture
+! eosd = 1 (Perfect gas law)
+! eosd = 2 (Moist air)
+! Definition of gamma for a perfect gas
+gammagp = cp0/(cp0  - rair)
+! gamma is defined so cp - cv = rair
+if (ieos.eq.5) then
+  cpv = cpv0
+  rv = rvapor
+  ! Get the arrays needed
+  call field_get_id_try("yw", f_id_yw)
+  if (f_id_yw.ge.0) then
+    call field_get_val_s(f_id_yw, cpro_yw)
+    call field_get_val_prev_s(f_id_yw, cpro_ywa)
+  endif
+  call field_get_id_try("yv", f_id_yv)
+  if (f_id_yv.ge.0) then
+    call field_get_val_s(f_id_yv, cpro_yv)
+  endif
+  do iel =1, ncel
+    yw(iel) = cpro_yw(iel)
+    yv(iel) = cpro_yv(iel)
   enddo
+else ! If the water is not accounted for
+  do iel =1, ncel
+    yw(iel) = 0.d0
+    yv(iel) = 0.d0
+  enddo
+endif
+if (imucpp.eq.0) then
+      if (itherm.eq.4.and.idilat.eq.2) then
+        do iel = 1, ncel
+          xcpp(iel) = 1.d0
+        enddo
+      endif
 elseif (imucpp.eq.1) then
   if (icp.ge.0) then
     call field_get_val_s(icp, cpro_cp)
-    do iel = 1, ncel
-      xcpp(iel) = cpro_cp(iel)
-    enddo
+    !call field_get_val_s(icv, cpro_cv)
+    if (unstd_multiplicator.eq.1) then
+      do iel = 1, ncel
+        xcpp(iel) = cpro_cp(iel)
+      enddo
+    elseif (unstd_multiplicator.eq.2) then
+      do iel = 1, ncel
+        xcpp(iel) = cpro_cp(iel) - rair
+      enddo
+    endif
   else
     do iel = 1, ncel
-      xcpp(iel) = cp0
+      if (unstd_multiplicator.eq.1) then
+        xcpp(iel) = cp0
+      elseif (unstd_multiplicator.eq.2) then
+        xcpp(iel) = cp0 - rair
+      endif
     enddo
   endif
 endif
-
+! Compute cv
+call field_get_id_try("isobaric_heat_capacity", f_id_cv)
+call field_get_val_s(f_id_cv, cpro_cv)
+if (f_id_cv.gt.0) then
+  call cs_thermal_model_cv(cpro_cv);
+  do iel = 1, ncel
+    xcvv(iel) = cpro_cv(iel)
+  enddo
+else
+  do iel = 1, ncel
+    xcvv(iel) = 1.d0
+  enddo
+endif
 ! Handle parallelism and periodicity
 if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(xcpp)
@@ -668,7 +744,123 @@ if ((idilat.eq.3.or.ipthrm.eq.1).and.iscal.eq.iscalt) then
     smbrs(iel) = smbrs(iel) + (pther - pthera)/dt(iel)*cell_f_vol(iel)
   enddo
 endif
+! In case of solving the internal energy equation:
+! Add to the RHS -pdiv(u) + tau:u
+! In case of no specific EOS, skip
+if (ieos.ne.-1.and.((itherm.eq.1).or.(itherm.eq.4)).and.(iscal.eq.iscalt)) then
+  ! Get needed arrays
+  allocate(vistot(ncelet))
+  allocate(gradv(3,3,ncelet))
+  call field_get_coefa_s(ivarfl(ipr), coefap)
+  call field_get_coefb_s(ivarfl(ipr), coefbp)
+  call field_get_val_s(ibrom, brom)
+  call field_get_val_prev_s(ibrom, broma)
+  call field_get_val_v(ivarfl(iu), vel)
+  call synvin(vel)
+  call field_get_val_prev_v(ivarfl(iu), vela)
+  ! Note that the temperature is a postprocessing field when itherm=4
+  if (itherm.eq.4) then
+    call field_get_id_try("temperature", f_id_temp)
+    if (f_id_temp.ge.0) then
+      call field_get_val_s(f_id_temp, tempk)
+    endif
+    if (f_id_temp.ge.0) then
+      call field_get_val_prev_s(f_id_temp, tempa)
+    endif
+    if (f_id_yv.ge.0) then
+      call field_get_val_s(f_id_yv, cpro_yva)
+    endif
+    do iel = 1, ncel
+      temp_(iel) = tempk(iel)
+      tempa_(iel) = tempa(iel)
+    enddo
+  elseif (itherm.eq.1) then
+    do iel = 1, ncel
+      temp_(iel) = cvar_var(iel)
+      tempa_(iel) = cvara_var(iel)
+    enddo
+  endif
+  ! Total viscosity
+  if (itytur.eq.3 ) then
+    do iel = 1, ncel
+      vistot(iel) = viscl(iel)
+    enddo
+  else
+    do iel = 1, ncel
+      vistot(iel) = viscl(iel) + visct(iel)
+    enddo
+  endif
+  iprev = 0
+  inc = 1
+  call field_gradient_vector(ivarfl(iu), iprev, inc, gradv)
+  ! Compute p.div(u)
+  call field_get_val_s(ivarfl(ipr), cvar_pr)
+  call field_get_val_prev_s(ivarfl(ipr), cvar_pra)
 
+  ! Paralelism
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(vistot)
+    call synsca(cvar_pr)
+    call synsca(crom)
+    call synsca(cvar_pra)
+  endif
+  ! Get pressure gradient, including the pressure increment gradient
+  call field_get_id_try("pressure_gradient", f_id_gradp)
+  if (f_id_gradp.ge.0) then
+    call field_get_val_v(f_id_gradp, gradp)
+    call synvin(gradp)
+  endif
+  call field_get_id_try("pressure_increment_gradient", f_id_gradphi)
+  if (f_id_gradphi.ge.0) then
+    call field_get_val_v(f_id_gradphi, gradphi)
+    call synvin(gradphi)
+  endif
+
+  call cs_thermal_model_pdivu(temp_,    &
+                              tempa_,   &
+                              cvar_var, &
+                              cvara_var,&
+                              thetv,    &
+                              vel,      &
+                              xcvv,     &
+                              cpro_yw,  &
+                              cpro_ywa, &
+                              cpro_yv,  &
+                              cpro_yva, &
+                              gradp,    &
+                              gradphi,  &
+                              smbrs)
+
+  call cs_thermal_model_dissipation(vistot, &
+                                    gradv,  &
+                                    smbrs)
+endif
+if ((itherm.eq.4.or.itherm.eq.1).and.ippmod(icompf).lt.0) then
+  ! Kinetic source term when needed
+  call field_get_id_try("kinetic_energy_thermal_st", f_id_sk)
+  if (iterns.ge.1.and.f_id_sk.ge.0) then
+    call cs_thermal_model_add_kst(smbrs)
+  endif
+endif
+! CFL related to the internal energy equation
+call field_get_id_try("cfl_t", f_id_cflt)
+! Only implemented for the ideal gas equation of state
+if (f_id_cflt.ge.0..and.(itherm.eq.1.or.itherm.eq.4).and.iscal.eq.iscalt) then
+  call field_get_val_s(f_id_cflt, cflt)
+  do iel=1,ncel
+    cflt(iel) = 0.d0
+  enddo
+  if (ieos.eq.1) then
+    call cs_thermal_model_cflt(croma,   &
+                               temp_,   &
+                               tempa_,  &
+                               xcvv,    &
+                               vel,     &
+                               imasfl,  &
+                               cflt)
+    call synsca(cflt)
+  endif
+endif
 ! --> Couplage volumique avec Syrthes
 !     Ordre 2 non pris en compte
 
@@ -874,7 +1066,6 @@ if (itspdv.eq.1) then
       call csexit(1)
     endif
 
-    iprev = 1
     inc = 1
 
     ! Homogeneous Neumann on convective inlet on the production term for the
@@ -1042,8 +1233,8 @@ if (itspdv.eq.1) then
         xk = cvara_k(iel)
         xe = cvara_ep(iel)
       elseif (itytur.eq.3) then
-         xk = 0.5d0*(cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))
-         xe = cvara_ep(iel)
+        xk = 0.5d0*(cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))
+        xe = cvara_ep(iel)
       elseif(iturb.eq.60) then
         xk = cvara_k(iel)
         xe = cmu*xk*cvara_omg(iel)
@@ -1171,7 +1362,7 @@ if (vcopt%idiff.ge.1) then
       enddo
       call synsca(cpro_wgrec_s)
       if (irangp.ge.0.or.iperio.eq.1) then
-         call synsca(cpro_wgrec_s)
+        call synsca(cpro_wgrec_s)
       endif
     endif
 
@@ -1420,6 +1611,28 @@ call cs_equation_iterative_solve_scalar          &
    rovsdt , smbrs  , cvar_var        , dpvar  ,  &
    xcpp   , rvoid  )
 
+! In case of internal energy solving, compute the temperature
+if (itherm.eq.4.and.iscal.eq.iscalt) then
+  ! Perfect gas, compute temperature from the internal energy
+  if (ieos.eq.1) then
+    do iel=1, ncel
+      tempk(iel) =  cvar_var(iel) /xcvv(iel)
+    enddo
+  ! Humid air module
+  else if (ieos.eq.5) then !TODO Other Antoine law coefficients
+    ! Case of no saturation in previous iteration
+    ! Newton method
+    ! Last argument is the method used
+    call cs_thermal_model_newton_t(yw,          &
+                                   yv,          &
+                                   tempk,       &
+                                   cvar_var,    &
+                                   c_null_ptr,  &
+                                   cvar_pr,     &
+                                   cvar_pra,    &
+                                   1)
+  endif
+endif
 !===============================================================================
 ! 4. clipping, finalization of the computation of some terms and log
 !===============================================================================
@@ -1452,7 +1665,7 @@ if (ippmod(iatmos).eq.2.and.modsedi.eq.1.and.iscal.eq.intdrp &
     allocate(pphy(ncelet))
 
     if (imeteo.eq.0) then
-        ! calculate pressure from standard atm
+      ! calculate pressure from standard atm
       do iel = 1, ncel
         call atmstd(xyzcen(3,iel),pphy(iel),dum,dum)
       enddo
@@ -1504,8 +1717,8 @@ if (idilat.ge.4.and.itspdv.eq.1) then
       xk = cvara_k(iel)
       xe = cvara_ep(iel)
     elseif (itytur.eq.3) then
-        xk = 0.5d0*(cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))
-        xe = cvara_ep(iel)
+      xk = 0.5d0*(cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))
+      xe = cvara_ep(iel)
     elseif(iturb.eq.60) then
       xk = cvara_k(iel)
       xe = cmu*xk*cvara_omg(iel)
@@ -1573,13 +1786,20 @@ endif
 if (allocated(wcvark_var)) deallocate(wcvark_var)
 deallocate(w1)
 deallocate(smbrs, rovsdt)
+deallocate(temp_)
+deallocate(tempa_)
 if (allocated(viscce)) deallocate(viscce)
 if (allocated(weighf)) deallocate(weighf, weighb)
 deallocate(dpvar)
 deallocate(sgdh_diff)
 deallocate(xcpp)
+if (allocated(xcvv)) deallocate(xcvv)
+if (allocated(yw)) deallocate(yw)
+if (allocated(yv)) deallocate(yv)
 if (allocated(diverg)) deallocate(diverg)
-
+if (allocated(pdivu)) deallocate(pdivu)
+if (allocated(vistot)) deallocate(vistot)
+if (allocated(gradv)) deallocate(gradv)
 !--------
 ! Formats
 !--------

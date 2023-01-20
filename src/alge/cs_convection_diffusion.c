@@ -4276,6 +4276,8 @@ cs_face_convection_scalar(int                       idtvar,
  *                               at border faces for the r.h.s.
  * \param[in]     i_secvis      secondary viscosity at interior faces
  * \param[in]     b_secvis      secondary viscosity at boundary faces
+ * \param[in]     i_pvar        velocity at interior faces
+ * \param[in]     b_pvar        velocity at boundary faces
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
@@ -4301,6 +4303,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                const cs_real_t             b_visc[],
                                const cs_real_t             i_secvis[],
                                const cs_real_t             b_secvis[],
+                               cs_real_3_t       *restrict i_pvar,
+                               cs_real_3_t       *restrict b_pvar,
                                cs_real_3_t       *restrict rhs)
 {
   const int iconvp = var_cal_opt.iconv;
@@ -4706,13 +4710,15 @@ cs_convection_diffusion_vector(int                         idtvar,
               fluxi[i] = 0;
               fluxj[i] = 0;
             }
-            cs_real_3_t pip, pjp;
-            cs_real_3_t pif, pjf;
-            cs_real_3_t _pi, _pj;
+            cs_real_3_t pip, pjp, pipa, pjpa;
+            cs_real_3_t pif, pjf, pifa, pjfa;
+            cs_real_3_t _pi, _pj,_pia, _pja;
 
             for (int i = 0; i < 3; i++) {
               _pi[i]  = _pvar[ii][i];
               _pj[i]  = _pvar[jj][i];
+              _pia[i] = pvara[ii][i];
+              _pja[i] = pvara[jj][i];
             }
 
             /* Scaling due to mass balance in porous modelling */
@@ -4765,6 +4771,30 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   fluxi,
                                   fluxj);
 
+            /* Saving velocity at internal faces, if needed */
+            if (i_pvar != NULL) {
+              cs_i_cd_unsteady_upwind_vector(bldfrp,
+                  diipf[face_id],
+                  djjpf[face_id],
+                  (const cs_real_3_t *)grad[ii],
+                  (const cs_real_3_t *)grad[jj],
+                  _pia,
+                  _pja,
+                  pifa,
+                  pjfa,
+                  pipa,
+                  pjpa);
+              cs_real_t flui, fluj;
+              if (i_massflux[face_id] >= 0) {
+                for (int isou = 0; isou < 3; isou++) {
+                  i_pvar[face_id][isou] = pif[isou];
+                }
+              } else {
+                for (int isou = 0; isou < 3; isou++) {
+                  i_pvar[face_id][isou] = pjf[isou];
+                }
+              }
+            }
             for (int isou = 0; isou < 3; isou++) {
               rhs[ii][isou] -= fluxi[isou];
               rhs[jj][isou] += fluxj[isou];
@@ -4911,13 +4941,15 @@ cs_convection_diffusion_vector(int                         idtvar,
               fluxj[isou] = 0;
             }
 
-            cs_real_3_t pip, pjp;
-            cs_real_3_t pif, pjf;
-            cs_real_3_t _pi, _pj;
+            cs_real_3_t pip, pjp, pipa, pjpa;
+            cs_real_3_t pif, pjf, pifa, pjfa;
+            cs_real_3_t _pi, _pj,_pia, _pja;
 
             for (int i = 0; i < 3; i++) {
               _pi[i]  = _pvar[ii][i];
               _pj[i]  = _pvar[jj][i];
+              _pia[i] = pvara[ii][i];
+              _pja[i] = pvara[jj][i];
             }
 
             /* Scaling due to mass balance in porous modelling */
@@ -4988,7 +5020,39 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   i_visc[face_id],
                                   fluxi,
                                   fluxj);
+            /* Saving velocity at internal faces, if needed */
+            if (i_pvar != NULL) {
+              cs_i_cd_unsteady_vector(bldfrp,
+                                    ischcp,
+                                    blencp,
+                                    weight[face_id],
+                                    cell_cen[ii],
+                                    cell_cen[jj],
+                                    i_face_cog[face_id],
+                                    hybrid_coef_ii,
+                                    hybrid_coef_jj,
+                                    diipf[face_id],
+                                    djjpf[face_id],
+                                    (const cs_real_3_t *)grad[ii],
+                                    (const cs_real_3_t *)grad[jj],
+                                    _pia,
+                                    _pja,
+                                    pifa,
+                                    pjfa,
+                                    pipa,
+                                    pjpa);
 
+              cs_real_t flui, fluj;
+              if (i_massflux[face_id] >= 0) {
+                for (int isou = 0; isou < 3; isou++) {
+                  i_pvar[face_id][isou] = pif[isou];
+                }
+              } else {
+                for (int isou = 0; isou < 3; isou++) {
+                  i_pvar[face_id][isou] = pjf[isou];
+                }
+              }
+            }
             for (int isou = 0; isou < 3; isou++) {
               rhs[ii][isou] -= fluxi[isou];
               rhs[jj][isou] += fluxj[isou];
@@ -5144,14 +5208,16 @@ cs_convection_diffusion_vector(int                         idtvar,
               fluxi[isou] = 0;
               fluxj[isou] = 0;
             }
-            cs_real_3_t pip, pjp;
-            cs_real_3_t pif, pjf;
+            cs_real_3_t pip, pjp, pipa, pjpa;
+            cs_real_3_t pif, pjf, pifa, pjfa;
             bool upwind_switch = false;
-            cs_real_3_t _pi, _pj;
+            cs_real_3_t _pi, _pj, _pia, _pja;
 
             for (int i = 0; i < 3; i++) {
               _pi[i]  = _pvar[ii][i];
               _pj[i]  = _pvar[jj][i];
+              _pia[i] = pvara[ii][i];
+              _pja[i] = pvara[jj][i];
             }
 
             /* Scaling due to mass balance in porous modelling */
@@ -5231,6 +5297,45 @@ cs_convection_diffusion_vector(int                         idtvar,
                 v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
               }
             }
+            /* Saving velocity at internal faces, if needed */
+            if (i_pvar != NULL) {
+              cs_i_cd_unsteady_slope_test_vector(&upwind_switch,
+                                                 iconvp,
+                                                 bldfrp,
+                                                 ischcp,
+                                                 blencp,
+                                                 blend_st,
+                                                 weight[face_id],
+                                                 i_dist[face_id],
+                                                 i_face_surf[face_id],
+                                                 cell_cen[ii],
+                                                 cell_cen[jj],
+                                                 i_face_normal[face_id],
+                                                 i_face_cog[face_id],
+                                                 diipf[face_id],
+                                                 djjpf[face_id],
+                                                 i_massflux[face_id],
+                                                 (const cs_real_3_t *)grad[ii],
+                                                 (const cs_real_3_t *)grad[jj],
+                                                 (const cs_real_3_t *)grdpa[ii],
+                                                 (const cs_real_3_t *)grdpa[jj],
+                                                 _pia,
+                                                 _pja,
+                                                 pifa,
+                                                 pjfa,
+                                                 pipa,
+                                                 pjpa);
+              cs_real_t flui, fluj;
+              if (i_massflux[face_id] >= 0) {
+                for (int isou = 0; isou < 3; isou++) {
+                  i_pvar[face_id][isou] = pif[isou];
+                }
+              } else {
+                for (int isou = 0; isou < 3; isou++) {
+                  i_pvar[face_id][isou] = pjf[isou];
+                }
+              }
+            }
 
             for (int isou = 0; isou < 3; isou++) {
 
@@ -5281,7 +5386,7 @@ cs_convection_diffusion_vector(int                         idtvar,
           }
           cs_real_3_t pir, pipr;
           cs_real_3_t _pi, _pia;
-
+          cs_real_t   pfac[3];
           for (int i = 0; i < 3; i++) {
             _pi[i]  = _pvar[ii][i];
             _pia[i] = pvara[ii][i];
@@ -5321,6 +5426,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   coefav[face_id],
                                   coefbv[face_id],
                                   b_massflux[face_id],
+                                  pfac,
                                   fluxi);
 
           cs_b_diff_flux_vector(idiffp,
@@ -5475,15 +5581,18 @@ cs_convection_diffusion_vector(int                         idtvar,
 
           cs_lnum_t ii = b_face_cells[face_id];
 
-          cs_real_t fluxi[3] ;
+          cs_real_t fluxi[3], _flx[3] ;
           for (int isou =  0; isou < 3; isou++) {
             fluxi[isou] = 0;
+            _flx[isou] = 0;
           }
-          cs_real_3_t pip;
-          cs_real_3_t _pi;
+          cs_real_3_t pip, pipa;
+          cs_real_3_t _pi, _pia;
+          cs_real_t pfac[3], pfaca[3];
 
           for (int i = 0; i < 3; i++) {
             _pi[i]  = _pvar[ii][i];
+            _pia[i]  = pvara[ii][i];
           }
 
           /* Scaling due to mass balance in porous modelling */
@@ -5504,7 +5613,6 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   (const cs_real_3_t *)grad[ii],
                                   _pi,
                                   pip);
-
           cs_b_upwind_flux_vector(iconvp,
                                   thetap,
                                   imasac,
@@ -5516,7 +5624,41 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   coefav[face_id],
                                   coefbv[face_id],
                                   b_massflux[face_id],
+                                  pfac,
                                   fluxi);
+
+          /* Saving velocity on boundary faces */
+          if (b_pvar != NULL) {
+            cs_b_cd_unsteady_vector(bldfrp,
+                                    diipb[face_id],
+                                    (const cs_real_3_t *)grad[ii],
+                                    _pia,
+                                    pipa);
+
+            cs_b_upwind_flux_vector(iconvp,
+                                    thetap,
+                                    imasac,
+                                    inc,
+                                    bc_type[face_id],
+                                    _pia,
+                                    _pia, /* no relaxation */
+                                    pipa,
+                                    coefav[face_id],
+                                    coefbv[face_id],
+                                    b_massflux[face_id],
+                                    pfaca,
+                                    _flx);
+
+            if (b_massflux[face_id] >= 0) {
+              for (int isou = 0; isou < 3; isou++) {
+                b_pvar[face_id][isou] = _pi[isou];
+              }
+            } else {
+              for (int isou = 0; isou < 3; isou++) {
+                b_pvar[face_id][isou] = pfac[isou];
+              }
+            }
+          }
 
           cs_b_diff_flux_vector(idiffp,
                                 thetap,
@@ -5684,6 +5826,7 @@ cs_convection_diffusion_vector(int                         idtvar,
             fluxi[isou] = 0;
           }
           cs_real_3_t _pi, _pia;
+          cs_real_t pfac[3];
 
           for (int i = 0; i < 3; i++) {
             _pi[i]  = _pvar[ii][i];
@@ -5727,6 +5870,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                                         coface[face_id],
                                         cofbce[face_id],
                                         b_massflux[face_id],
+                                        pfac,
                                         fluxi);
 
           cs_b_diff_flux_vector(idiffp,
@@ -5763,7 +5907,7 @@ cs_convection_diffusion_vector(int                         idtvar,
           }
           cs_real_3_t pip;
           cs_real_3_t _pi;
-
+          cs_real_t   pfac[3];;
           for (int i = 0; i < 3; i++) {
             _pi[i]  = _pvar[ii][i];
           }
@@ -5801,6 +5945,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                                         coface[face_id],
                                         cofbce[face_id],
                                         b_massflux[face_id],
+                                        pfac,
                                         fluxi);
 
           cs_b_diff_flux_vector(idiffp,
@@ -5811,6 +5956,20 @@ cs_convection_diffusion_vector(int                         idtvar,
                                 cofbfv[face_id],
                                 b_visc[face_id],
                                 fluxi);
+
+          /* Saving velocity on boundary faces if needed */
+          if (b_pvar != NULL) {
+            if (b_massflux[face_id] >= 0){
+              for (int isou = 0; isou < 3; isou++) {
+                b_pvar[face_id][isou] = _pi[isou];
+              }
+            } else {
+
+              for (int isou = 0; isou < 3; isou++) {
+                b_pvar[face_id][isou] = pfac[isou];
+              }
+            }
+          }
 
           for (int isou = 0; isou < 3; isou++) {
             rhs[ii][isou] -= fluxi[isou];

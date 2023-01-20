@@ -1204,6 +1204,44 @@ cs_equation_iterative_solve_vector(int                   idtvar,
     BFT_MALLOC(dpvarm1, n_cells_ext, cs_real_3_t);
     BFT_MALLOC(rhs0, n_cells_ext, cs_real_3_t);
   }
+  cs_real_3_t *i_pvar = NULL;
+  cs_real_3_t *b_pvar = NULL;
+  cs_field_t *i_vf = NULL;
+  cs_field_t *b_vf = NULL;
+  cs_real_3_t *i_pvara = NULL;
+  cs_real_3_t *b_pvara = NULL;
+  cs_field_t *i_vfa = NULL;
+  cs_field_t *b_vfa = NULL;
+
+  /* Storing interest values */
+  if (CS_F_(vel)->id == f_id) {
+    i_vf = cs_field_by_name_try("inner_face_velocity");
+    b_vf = cs_field_by_name_try("boundary_face_velocity");
+    i_vfa = cs_field_by_name_try("inner_face_velocity");
+    b_vfa = cs_field_by_name_try("boundary_face_velocity");
+
+    if (i_vf != NULL && b_vf != NULL) {
+/*#     pragma omp parallel for  if(n_cells > CS_THR_MIN)*/
+      i_pvar = (cs_real_3_t *)i_vf->val;
+      b_pvar = (cs_real_3_t *)b_vf->val;
+      i_pvara = (cs_real_3_t *)i_vfa->val_pre;
+      b_pvara = (cs_real_3_t *)b_vfa->val_pre;
+
+      for (cs_lnum_t face_id = 0; face_id < cs_glob_mesh->n_i_faces; face_id++) {
+        for (cs_lnum_t isou = 0; isou < 3; isou++){
+          i_pvar[face_id][isou] = 0.0;
+          i_pvara[face_id][isou] = 0.0;
+        }
+      }
+      for (cs_lnum_t face_id = 0; face_id < cs_glob_mesh->n_b_faces; face_id++) {
+        for (cs_lnum_t isou = 0; isou < 3; isou++){
+          b_pvar[face_id][isou] = 0.0;
+          b_pvara[face_id][isou] = 0.0;
+        }
+      }
+    }
+  }
+
 
   /* solving info */
   key_sinfo_id = cs_field_key_id("solving_info");
@@ -1322,6 +1360,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                       weighb,
                       icvflb,
                       icvfli,
+                      i_pvara,
+                      b_pvara,
                       smbrp);
 
     var_cal_opt->thetav = thetap;
@@ -1392,6 +1432,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                     weighb,
                     icvflb,
                     icvfli,
+                    NULL,
+                    NULL,
                     smbrp);
 
   if (CS_F_(vel)->id == f_id) {
@@ -1590,6 +1632,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                         weighb,
                         icvflb,
                         icvfli,
+                        NULL,
+                        NULL,
                         adxk);
 
       /* ||E.dx^(k-1)-E.0||^2 */
@@ -1749,6 +1793,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                       weighb,
                       icvflb,
                       icvfli,
+                      i_pvar,
+                      b_pvar,
                       smbrp);
 
     /* --- Convergence test */
@@ -1839,6 +1885,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                       weighb,
                       icvflb,
                       icvfli,
+                      NULL,
+                      NULL,
                       smbrp);
 
     /* Contribution of the current component to the L2 norm stored in eswork */
