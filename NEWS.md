@@ -1,6 +1,10 @@
 Master (not on release branches yet)
 ------------------------------------
 
+
+Release 8.0.0 (unreleased)
+--------------------------
+
 ### User changes:
 
 - Cartesian mesher can now handle multiple blocks
