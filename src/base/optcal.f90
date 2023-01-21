@@ -49,40 +49,13 @@ module optcal
   !> \addtogroup time_stepping
   !> \{
 
-  !> time order of time stepping
-  !>    - 2: 2nd order
-  !>    - 1: 1st order (default)
+  !> Time order of time stepping
+  !> (see \ref cs_time_scheme_t::time_order).
   integer(c_int), pointer, save :: ischtp
 
-  !> time order of the mass flux scheme
-  !> The chosen value for \ref istmpf will automatically
-  !> determine the value given to the variable \ref thetfl.
-  !> - 2: theta scheme with theta > 0 (theta=0.5 means 2nd order)
-  !> the mass flow used in the momentum equations is extrapolated at
-  !> n+ \ref thetfl (= n+1/2) from the values at the two former time
-  !> steps (Adams Bashforth); the mass flow used in the equations for
-  !> turbulence and scalars is interpolated at time n+ \ref thetfl
-  !> (= n+1/2) from the values at the former time step and at the
-  !> newly calculated \f$n+1\f$ time step.
-  !> - 0: theta scheme with theta = 0 (explicit): the mass flow
-  !> calculated at the previous time step is used in the convective
-  !> terms of all the equations (momentum, turbulence and scalars)
-  !> - 1: implicit scheme (default) : the mass flow calculated
-  !> at the previous time step is used in the convective terms of the
-  !> momentum equation, and the updated mass flow is used in the
-  !> equations of turbulence and scalars. By default, \ref istmpf=2
-  !> is used in the case of a second-order time scheme (if \ref ischtp=2)
-  !> and \ref istmpf = 1 otherwise.
-  integer, save ::          istmpf
-
-  !> Time scheme option:
-  !>    - 0: staggered time scheme. On the time grids, the velocity is
-  !>         half a time step behind the density and the buoyant scalar.
-  !>         (See the thesis of \cite Pierce:2004)
-  !>    - 1: collocated time scheme. On the time grids, the velocity is
-  !>         at the same location as the density and the buoyant scalar.
-  !>         (See \cite Ma:2019)
-  integer(c_int), pointer, save :: itpcol
+  !> Time order of the mass flux scheme.
+  !> (see \ref cs_time_scheme_t::istmpf).
+  integer(c_int), pointer, save :: istmpf
 
   !> number of iterations on the velocity-pressure coupling on Navier-Stokes
   !> (for the U/P inner iterations scheme)
@@ -105,34 +78,17 @@ module optcal
   !> initcp : =1 if specific heat read from checkpoint file
   integer, save ::          initcp
 
-  !> The value of \f$theta_S\f$ (see \ref cs_time_scheme_t::thetsn).
+  !> Value of \f$theta_S\f$ (see \ref cs_time_scheme_t::thetsn).
   real(c_double), pointer, save :: thetsn
 
-  !> The value of \f$theta\f$ (see \ref cs_time_scheme_t::thetst).
+  !> Value of \f$theta\f$ (see \ref cs_time_scheme_t::thetst).
   real(c_double), pointer, save :: thetst
 
-  !> \f$ \theta \f$-scheme for the extrapolation of the physical
-  !> property \f$\phi\f$ "total viscosity" when the extrapolation
-  !> has been activated (see \ref time_extrapolated key word), according to the
-  !> formula \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
-  !> The value of \f$\theta\f$ = \ref thetvi is deduced from the value
-  !> chosen for \ref time_extrapolated key word for the viscosity.
-  !> Generally, only the value 0.5 is used.
-  !>    -  0 : explicit
-  !>    - 1/2: extrapolated in n+1/2
-  !>    -  1 : extrapolated in n+1
-  double precision, save :: thetvi
+  !> Value of \f$theta\f$ for total viscoity (see \ref cs_time_scheme_t::thetvi).
+  real(c_double), pointer, save :: thetvi
 
-  !> \f$ \theta \f$-scheme for the extrapolation of the physical
-  !> property \f$\phi\f$ "specific heat" when the extrapolation
-  !> has been activated (see \ref time_extrapolated field key int), according to
-  !> the formula \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
-  !> The value of \f$\theta\f$ = \ref thetcp is deduced from the value chosen
-  !> for the specific heat. Generally, only the value 0.5 is used.
-  !>    -  0 : explicit
-  !>    - 1/2: extrapolated in n+1/2
-  !>    -  1 : extrapolated in n+1
-  double precision, save :: thetcp
+  !> Value of \f$theta\f$ for specific heat (see \ref cs_time_scheme_t::thetcp).
+  real(c_double), pointer, save :: thetcp
 
   !> relative precision for the convergence test of the iterative process on
   !> velocity-pressure coupling (inner iterations)
@@ -695,6 +651,15 @@ module optcal
   !>    - 1: staggered
   integer(c_int), pointer, save :: staggered
 
+  !> Time scheme option:
+  !>    - 0: staggered time scheme. On the time grids, the velocity is
+  !>         half a time step behind the density and the buoyant scalar.
+  !>         (See the thesis of \cite Pierce:2004)
+  !>    - 1: collocated time scheme. On the time grids, the velocity is
+  !>         at the same location as the density and the buoyant scalar.
+  !>         (See \cite Ma:2019)
+  integer(c_int), pointer, save :: itpcol
+
   !> indicates the algorithm for velocity-pressure coupling:
   !> - 0: standard algorithm,
   !> - 1: reinforced coupling in case calculation with long time steps\n
@@ -1249,13 +1214,14 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! global time schemeoptions structure
 
-    subroutine cs_f_time_scheme_get_pointers(ischtp, isno2t, isto2t, &
-                                             thetsn, thetst, iccvfg)  &
+    subroutine cs_f_time_scheme_get_pointers(ischtp, istmpf, isno2t, isto2t, &
+                                             thetsn, thetst, thetvi, thetcp, &
+                                             iccvfg)                         &
       bind(C, name='cs_f_time_scheme_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ischtp, isno2t, isto2t
-      type(c_ptr), intent(out) :: thetsn, thetst, iccvfg
+      type(c_ptr), intent(out) :: ischtp, istmpf, isno2t, isto2t
+      type(c_ptr), intent(out) :: thetsn, thetst, thetvi, thetcp, iccvfg
     end subroutine cs_f_time_scheme_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1649,17 +1615,21 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_ischtp, c_isno2t, c_isto2t
-    type(c_ptr) :: c_thetsn, c_thetst, c_iccvfg
+    type(c_ptr) :: c_ischtp, c_istmpf, c_isno2t, c_isto2t
+    type(c_ptr) :: c_thetsn, c_thetst, c_thetvi, c_thetcp, c_iccvfg
 
-    call cs_f_time_scheme_get_pointers(c_ischtp, c_isno2t, c_isto2t, &
-                                       c_thetsn, c_thetst, c_iccvfg)
+    call cs_f_time_scheme_get_pointers(c_ischtp, c_istmpf, c_isno2t, c_isto2t, &
+                                       c_thetsn, c_thetst, c_thetvi, c_thetcp, &
+                                       c_iccvfg)
 
     call c_f_pointer(c_ischtp, ischtp)
+    call c_f_pointer(c_istmpf, istmpf)
     call c_f_pointer(c_isno2t, isno2t)
     call c_f_pointer(c_isto2t, isto2t)
     call c_f_pointer(c_thetst, thetst)
     call c_f_pointer(c_thetsn, thetsn)
+    call c_f_pointer(c_thetvi, thetvi)
+    call c_f_pointer(c_thetcp, thetcp)
     call c_f_pointer(c_iccvfg, iccvfg)
 
   end subroutine time_scheme_options_init

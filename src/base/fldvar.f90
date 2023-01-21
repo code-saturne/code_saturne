@@ -1207,4 +1207,37 @@ function cs_c_add_model_field_indexes(f_id) result(iscal) &
 
 end function cs_c_add_model_field_indexes
 
+!-------------------------------------------------------------------------------
+!> \brief add field indexes associated with a new solved thermal variable,
+!>        with default options
+!
+!> \param[in]  f_id    field id
+!-------------------------------------------------------------------------------
+
+subroutine cs_c_add_model_thermal_field_indexes(f_id) &
+  bind(C, name='cs_add_model_thermal_field_indexes')
+
+  use, intrinsic :: iso_c_binding
+  use optcal
+  use cs_c_bindings
+
+  implicit none
+
+  ! Arguments
+
+  integer(c_int), value :: f_id
+  integer(c_int) :: iscal
+
+  ! Local variables
+
+  integer f_id0, iscal0
+
+  f_id0 = f_id
+
+  call add_model_field_indexes(f_id0, iscal0)
+
+  iscalt = iscal0
+
+end subroutine cs_c_add_model_thermal_field_indexes
+
 !---------------------------------------------------------------------------

@@ -347,12 +347,6 @@ itempb = -1
 !       Elles ne sont pas completees directement par l'utilisateur
 !       Les tests dans l'algo portent sur ces indicateurs
 
-!   -- Flux de masse (-999 = non initialise)
-!     = 1 Standard d'ordre 1
-!     = 0 Explicite
-!     = 2 Ordre deux
-istmpf = -999
-
 !    -- Proprietes physiques
 !     I..EXT definit l'extrapolation -theta ancien + (1+theta) nouveau
 !     = 0 explicite
@@ -367,10 +361,8 @@ istmpf = -999
 !     Masse volumique
 initro = 0
 !     Viscosite totale
-thetvi = -999.d0
 initvi = 0
 !     Chaleur specifique
-thetcp = -999.d0
 initcp = 0
 
 !   -- Convergence point fixe vitesse pression
@@ -466,10 +458,10 @@ nctsmt = 0
 
 nftcdt= 0
 
-!     Non utilisateur
+!     Non user
 
-! --- Calcul de la distance a la paroi
-!     Seules variables utilisateur : ICDPAR
+! --- Compute distance to wall
+!     Only user-definable value: icdpar
 
 ineedy = 0
 imajdy = 0
@@ -478,10 +470,10 @@ icdpar = -999
 ! --- LES balance
 i_les_balance = 0
 
-! --- Ici tout optcal.f90 est initialise
+! Here, all of optcal.f90 is initialized
 
 !===============================================================================
-! TABLEAUX DE cstphy.f90
+! Arrays of cstphy.f90
 !===============================================================================
 
 ! --- Physical constants initialized in C (cs_physical_constants.c)
@@ -668,13 +660,13 @@ betnmk = -grand
 gamnmk = -grand
 
 !===============================================================================
-! INITIALISATION DES PARAMETRES DE COUPLAGE CS/CS
+! code_saturne/code_saturne coupling parameters
 !===============================================================================
 
-! --- Nombre de couplage
+! Number of couplings
 nbrcpl = 0
 
-! --- Couplage uniquement par les faces
+! Coupling only through faces
 ifaccp = 0
 
 !===============================================================================
