@@ -161,7 +161,9 @@ typedef struct {
 
 typedef struct {
 
-  int           time_order;   /* Global time order of the time stepping */
+  int           time_order;   /* global time order of the time stepping */
+
+  int           istmpf;       /* time order of the mass flux scheme */
 
   int           isno2t;       /* time scheme activated for the source
                                  terms of the momentum, apart from
@@ -173,6 +175,10 @@ typedef struct {
   double        thetsn;       /* value of \f$theta_S\f$ for turbulence */
 
   double        thetst;       /* value of \f$theta\f$ for turbulence */
+
+  double        thetvi;       /* value of \f$theta\f$ for total viscosity */
+
+  double        thetcp;       /* value of \f$theta\f$ for specific heat */
 
   int           iccvfg;       /* calculation with a fixed velocity field
                                  - 1: true (default)

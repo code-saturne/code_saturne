@@ -153,6 +153,17 @@ cs_atmo_get_auto_flag(void);
 int
 cs_add_model_field_indexes(int  f_id);
 
+/*----------------------------------------------------------------------------
+ * Add field indexes associated with a new solved thermal variable,
+ * with default options
+ *
+ * parameters:
+ *   f_id <--   field id
+ *----------------------------------------------------------------------------*/
+
+void
+cs_add_model_thermal_field_indexes(int  f_id);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Convert temperature to enthalpy at boundary for coal combustion.

@@ -153,6 +153,28 @@ BEGIN_C_DECLS
         - 2: 2nd order
         - 1: 1st order (default)
 
+  \var  cs_time_scheme_t::istmpf
+        \anchor istmpf
+        Time order of the mass flux scheme
+        The chosen value for \ref istmpf will automatically
+        determine the value given to the variable \ref thetfl.
+        - 2: theta scheme with theta > 0 (theta=0.5 means 2nd order)
+             the mass flow used in the momentum equations is extrapolated at
+             n+ \ref thetfl (= n+1/2) from the values at the two former time
+             steps (Adams Bashforth); the mass flow used in the equations for
+             turbulence and scalars is interpolated at time n+ \ref thetfl
+             (= n+1/2) from the values at the former time step and at the
+             newly calculated \f$n+1\f$ time step.
+        - 0: theta scheme with theta = 0 (explicit): the mass flow
+             calculated at the previous time step is used in the convective
+             terms of all the equations (momentum, turbulence and scalars)
+        - 1: implicit scheme (default) : the mass flow calculated
+             at the previous time step is used in the convective terms of the
+             momentum equation, and the updated mass flow is used in the
+             equations of turbulence and scalars. By default, \ref istmpf=2
+             is used in the case of a second-order time scheme (if \ref ischtp=2)
+             and \ref istmpf = 1 otherwise.
+
   \var  cs_time_scheme_t::isno2t
         \anchor isno2t
         Specifies the time scheme activated for the source
@@ -227,6 +249,31 @@ BEGIN_C_DECLS
         \f$(S_e)^{n+\theta}=(1+\theta)S_e^n-\theta S_e^{n-1}\f$.\n
         The value of \f$theta\f$ is deduced from the value chosen for
         \ref isto2t. Generally, only the value 0.5 is used.
+        -  0 : explicit
+        - 1/2: extrapolated in n+1/2
+        -  1 : extrapolated in n+1
+
+  \var  cs_time_scheme_t::thetvi
+        \anchor thetvi
+        \f$ \theta \f$-scheme for the extrapolation of the physical
+        property \f$\phi\f$ "total viscosity" when the extrapolation
+        has been activated (see \ref time_extrapolated key word), according to
+        the formula \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
+        The value of \f$\theta\f$ = \ref thetvi is deduced from the value
+        chosen for \ref time_extrapolated key word for the viscosity.
+        Generally, only the value 0.5 is used.
+        -  0 : explicit
+        - 1/2: extrapolated in n+1/2
+        -  1 : extrapolated in n+1
+
+  \var  cs_time_scheme_t::thetcp
+        \anchor thetcp
+        \f$ \theta \f$-scheme for the extrapolation of the physical
+        property \f$\phi\f$ "specific heat" when the extrapolation has
+        been activated (see \ref time_extrapolated field key int), according to
+        the formula \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
+        The value of \f$\theta\f$ = \ref thetcp is deduced from the value chosen
+        for the specific heat. Generally, only the value 0.5 is used.
         -  0 : explicit
         - 1/2: extrapolated in n+1/2
         -  1 : extrapolated in n+1
@@ -455,10 +502,13 @@ const cs_space_disc_t  *cs_glob_space_disc = &_space_disc;
 static cs_time_scheme_t  _time_scheme =
 {
   .time_order = -1,
+  .istmpf = -999,
   .isno2t = -999,
   .isto2t = -999,
   .thetsn = -999.0,
   .thetst = -999.0,
+  .thetvi = -999.0,
+  .thetcp = -999.0,
   .iccvfg = 0
 };
 
@@ -511,10 +561,13 @@ cs_f_space_disc_get_pointers(int     **imvisf,
 
 void
 cs_f_time_scheme_get_pointers(int     **ischtp,
+                              int     **istmpf,
                               int     **isno2t,
                               int     **isto2t,
                               double  **thetsn,
                               double  **thetst,
+                              double  **thetvi,
+                              double  **thetcp,
                               int     **iccvfg);
 
 void
@@ -730,17 +783,23 @@ cs_f_space_disc_get_pointers(int     **imvisf,
 
 void
 cs_f_time_scheme_get_pointers(int     **ischtp,
+                              int     **istmpf,
                               int     **isno2t,
                               int     **isto2t,
                               double  **thetsn,
                               double  **thetst,
+                              double  **thetvi,
+                              double  **thetcp,
                               int     **iccvfg)
 {
   *ischtp = &(_time_scheme.time_order);
+  *istmpf = &(_time_scheme.istmpf);
   *isno2t = &(_time_scheme.isno2t);
   *isto2t = &(_time_scheme.isto2t);
   *thetsn = &(_time_scheme.thetsn);
   *thetst = &(_time_scheme.thetst);
+  *thetvi = &(_time_scheme.thetvi);
+  *thetcp = &(_time_scheme.thetcp);
   *iccvfg = &(_time_scheme.iccvfg);
 }
 
