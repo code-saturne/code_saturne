@@ -34,9 +34,7 @@
 #include <string.h>
 #include <time.h>
 
-#if defined(__linux__)
 #include <stdio.h>
-#endif
 
 #if defined(HAVE_UNISTD_H)
 #include <unistd.h>

@@ -1143,6 +1143,13 @@ if test "x$cs_linker_set" != "xyes" ; then
       fi
       ;;
 
+    darwin*)
+      ldflags_default=""
+      ldflags_default_opt="-O"
+      ldflags_default_dbg="-g"
+      ldflags_rpath="-Wl,-rpath -Wl,"
+      ;;
+
     *)
       ldflags_default_opt="-O"
       ldflags_default_dbg="-g"
