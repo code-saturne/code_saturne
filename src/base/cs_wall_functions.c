@@ -620,9 +620,10 @@ cs_immersed_boundary_wall_functions(int         f_id,
       = (const cs_real_3_t *restrict)mq->c_w_face_normal;
   const cs_real_t *c_w_dist_inv
       = (const cs_real_t *restrict)mq->c_w_dist_inv;
-  //TODO create a field for immersed solid roughness
-  //if (cs_field_by_name_try("boundary_roughness") != NULL)
-  //  bpro_roughness = cs_field_by_name_try("boundary_roughness")->val;
+
+  cs_real_t *cpro_roughness = NULL;
+  if (cs_field_by_name_try("immersed_boundary_roughness") != NULL)
+    cpro_roughness = cs_field_by_name_try("immersed_boundary_roughness")->val;
 
   /* Dynamic viscosity */
   const cs_real_t  *cpro_mu = CS_F_(mu)->val;
@@ -696,8 +697,10 @@ cs_immersed_boundary_wall_functions(int         f_id,
           ek = 0.5*(cvar_rij[c_id][0]+cvar_rij[c_id][1]+cvar_rij[c_id][2]);
           rnnb = cs_math_3_sym_33_3_dot_product(nw, cvar_rij[c_id], nw);
         }
-        //TODO create a cell wall roughness
+        /* Cell wall roughness for immersed boundary */
         cs_real_t w_roughness = 0;
+        if (cpro_roughness != NULL)
+          w_roughness = cpro_roughness[c_id];
 
         int iuntur;
         cs_real_t ustar;
