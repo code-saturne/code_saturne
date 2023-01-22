@@ -22,6 +22,12 @@ User changes:
 
 Architectural changes:
 
+- Build improvements:
+  * Fixes for compilation on Mac OSX.
+  * Allow whitespace in compiler names, so as for example to allow setting
+    CC='mpicc -cc=icx' CXX='mpicxx -cxx=icpx' to select Intel OneAPI
+    compilers.
+
 - Update ParaView/Catalyst compilation for ParaView 5.11 compatibility.
   * Also fix ParaView/Catalyst detection with for CMake 3.23 or above.
 
