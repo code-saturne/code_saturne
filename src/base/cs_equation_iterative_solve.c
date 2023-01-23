@@ -1050,61 +1050,61 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *
  * Be careful, it is forbidden to modify \f$ \tens{f_s}^{imp} \f$ here!
  *
- * \param[in]     idtvar        indicator of the temporal scheme
- * \param[in]     iterns        external sub-iteration number
- * \param[in]     f_id          field id (or -1)
- * \param[in]     name          associated name if f_id < 0, or NULL
- * \param[in]     ivisep        indicator to take \f$ \divv
+ * \param[in]      idtvar        indicator of the temporal scheme
+ * \param[in]      iterns        external sub-iteration number
+ * \param[in]      f_id          field id (or -1)
+ * \param[in]      name          associated name if f_id < 0, or NULL
+ * \param[in]      ivisep        indicator to take \f$ \divv
  *                               \left(\mu \gradt \transpose{\vect{a}} \right)
  *                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
  *                               - 1 take into account,
  *                               - 0 otherwise
- * \param[in]     iescap        compute the predictor indicator if 1
- * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
+ * \param[in]      iescap        compute the predictor indicator if 1
+ * \param[in]      var_cal_opt   pointer to a cs_var_cal_opt_t structure which
  *                              contains variable calculation options
- * \param[in]     pvara         variable at the previous time step
+ * \param[in]      pvara         variable at the previous time step
  *                               \f$ \vect{a}^n \f$
- * \param[in]     pvark         variable at the previous sub-iteration
+ * \param[in]      pvark         variable at the previous sub-iteration
  *                               \f$ \vect{a}^k \f$.
  *                               If you sub-iter on Navier-Stokes, then
  *                               it allows to initialize by something else than
  *                               \c pvara (usually \c pvar= \c pvara)
- * \param[in]     coefav        boundary condition array for the variable
+ * \param[in]      coefav        boundary condition array for the variable
  *                               (explicit part)
- * \param[in]     coefbv        boundary condition array for the variable
+ * \param[in]      coefbv        boundary condition array for the variable
  *                               (implicit part)
- * \param[in]     cofafv        boundary condition array for the diffusion
+ * \param[in]      cofafv        boundary condition array for the diffusion
  *                               of the variable (Explicit part)
- * \param[in]     cofbfv        boundary condition array for the diffusion
+ * \param[in]      cofbfv        boundary condition array for the diffusion
  *                               of the variable (Implicit part)
- * \param[in]     i_massflux    mass flux at interior faces
- * \param[in]     b_massflux    mass flux at boundary faces
- * \param[in]     i_viscm       \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ * \param[in]      i_massflux    mass flux at interior faces
+ * \param[in]      b_massflux    mass flux at boundary faces
+ * \param[in]      i_viscm       \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the matrix
- * \param[in]     b_viscm       \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ * \param[in]      b_viscm       \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at boundary faces for the matrix
- * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ * \param[in]      i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
- * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ * \param[in]      b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at boundary faces for the r.h.s.
- * \param[in]     i_secvis      secondary viscosity at interior faces
- * \param[in]     b_secvis      secondary viscosity at boundary faces
- * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
- * \param[in]     weighf        internal face weight between cells i j in case
+ * \param[in]      i_secvis      secondary viscosity at interior faces
+ * \param[in]      b_secvis      secondary viscosity at boundary faces
+ * \param[in]      viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+ * \param[in]      weighf        internal face weight between cells i j in case
  *                               of tensor diffusion
- * \param[in]     weighb        boundary face weight for cells i in case
+ * \param[in]      weighb        boundary face weight for cells i in case
  *                               of tensor diffusion
- * \param[in]     icvflb        global indicator of boundary convection flux
+ * \param[in]      icvflb        global indicator of boundary convection flux
  *                               - 0 upwind scheme at all boundary faces
  *                               - 1 imposed flux at some boundary faces
- * \param[in]     icvfli        boundary face indicator array of convection flux
+ * \param[in]      icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in]     fimp          \f$ \tens{f_s}^{imp} \f$
- * \param[in]     smbrp         Right hand side \f$ \vect{Rhs}^k \f$
- * \param[in,out] pvar          current variable
- * \param[out]    eswork        prediction-stage error estimator
- *                              (if iescap > 0)
+ * \param[in, out] fimp          \f$ \tens{f_s}^{imp} \f$
+ * \param[in]      smbrp         Right hand side \f$ \vect{Rhs}^k \f$
+ * \param[in, out] pvar          current variable
+ * \param[out]     eswork        prediction-stage error estimator
+ *                               (if iescap > 0)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1244,7 +1244,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                            thetap,
                            coefbv,
                            cofbfv,
-                           fimp,
+                           (const cs_real_33_t *)fimp,
                            i_massflux,
                            b_massflux,
                            i_viscm,

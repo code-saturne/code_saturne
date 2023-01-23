@@ -1660,6 +1660,8 @@ cs_function_q_criterion(int               location_id,
                         void             *input,
                         void             *vals)
 {
+  CS_UNUSED(input);
+
   cs_assert(location_id == CS_MESH_LOCATION_CELLS);
 
   cs_real_t  *q_crit = vals;
