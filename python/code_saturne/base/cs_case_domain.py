@@ -1053,7 +1053,17 @@ class domain(base_domain):
         if self.restart_input:
             restart_input_mesh = os.path.join(self.exec_dir, 'restart', 'mesh_input.csm')
             if not os.path.exists(restart_input_mesh):
-                restart_input_mesh = None
+                # If mesh is not present in restart:
+                # - Either restart directory is nonempty, in which case we
+                #   can consider that the mesh was not saved in the restart
+                #   and needs to be rebuilt
+                # - Either restart directory is empty, in which case we can
+                #   consider that the upstream case had not run yet, and that
+                #   file will be present when we actually run. We may need to
+                #   check this hypothesis at the preprocessing stage in case
+                #   the checkpoint does not contain the mesh at that point.
+                if not upstream_pending:
+                    restart_input_mesh = None
 
         if restart_input_mesh is None or self.preprocess_on_restart \
            or self.restart_mesh_input:
@@ -1128,6 +1138,8 @@ class domain(base_domain):
         """
 
         if self.mesh_input:
+            if not os.path.exists(self.mesh_input):
+                self.mesh_input = None
             return
 
         # Check if cartesian mesh is to be used
