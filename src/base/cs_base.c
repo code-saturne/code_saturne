@@ -1661,11 +1661,11 @@ void
 cs_base_mem_finalize(void)
 {
   int    ind_bil, itot;
-  double valreal[4];
+  double valreal[5];
 
 #if defined(HAVE_MPI)
   int  imax = 0, imin = 0;
-  double val_sum[4];
+  double val_sum[5];
   int  ind_min[4];
   _cs_base_mpi_double_int_t  val_in[4], val_min[4], val_max[4];
 #endif
@@ -1687,6 +1687,7 @@ cs_base_mem_finalize(void)
   valreal[1] = (double)bft_mem_size_max();
   valreal[2] = (double)bft_mem_usage_max_vm_size();
   valreal[3] = (double)bft_mem_usage_shared_lib_size();
+  valreal[4] = 0;
 
   /* Ignore inconsistent measurements */
 
@@ -1696,11 +1697,37 @@ cs_base_mem_finalize(void)
   }
 
 #if defined(HAVE_MPI)
+
+#if (MPI_VERSION >= 3)
+  /* Determine max of shared memory on node */
+
+  if (cs_glob_n_ranks > 1) {
+    MPI_Comm sh_comm;
+    int l_rank_id;
+    double shared_max_l[1] = {valreal[3]};
+    double shared_max[1] = {valreal[3]};
+
+    MPI_Comm_split_type(cs_glob_mpi_comm, MPI_COMM_TYPE_SHARED, 0,
+                        MPI_INFO_NULL, &sh_comm);
+
+    MPI_Reduce(shared_max_l, shared_max, 1, MPI_DOUBLE, MPI_MAX,
+               0, sh_comm);
+    MPI_Comm_rank(sh_comm, &l_rank_id);
+    if (l_rank_id == 0)
+      valreal[4] = shared_max[0];
+
+    MPI_Comm_free(&sh_comm);
+  }
+#endif
+
   if (cs_glob_n_ranks > 1) {
     MPI_Reduce(ind_val, ind_min, 4, MPI_INT, MPI_MIN,
                0, cs_glob_mpi_comm);
-    MPI_Reduce(valreal, val_sum, 4, MPI_DOUBLE, MPI_SUM,
+    double pr_size_save = valreal[0];
+    valreal[0] -= valreal[3]; /* Avoid multiple counts of shared memory */
+    MPI_Reduce(valreal, val_sum, 5, MPI_DOUBLE, MPI_SUM,
                0, cs_glob_mpi_comm);
+    valreal[0] = pr_size_save;
     for (ind_bil = 0; ind_bil < 4; ind_bil++) {
       val_in[ind_bil].val = valreal[ind_bil];
       val_in[ind_bil].rank = cs_glob_rank_id;
@@ -1716,7 +1743,15 @@ cs_base_mem_finalize(void)
       }
     }
   }
+
 #endif
+
+  /* Restore contribution of shared memory */
+
+  if (valreal[4] > 0)
+    valreal[0] += valreal[4];
+  else
+    valreal[0] += valreal[3];
 
   /* Similar handling of several instrumentation methods */
 
