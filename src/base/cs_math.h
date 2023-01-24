@@ -187,6 +187,29 @@ cs_math_fmax(cs_real_t  x,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Clamp function for a given scalar value.
+ *
+ * \param[in] x    initial value
+ * \param[in] xmin min value for clamping
+ * \param[in] xmax max value for clamping
+ *
+ * \return clamped value which is 'x' if xmin < x < xmax or lower/upper bound
+ * otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_clamp(cs_real_t x,
+              cs_real_t xmin,
+              cs_real_t xmax)
+{
+  cs_real_t ret = cs_math_fmin(xmax, cs_math_fmax(xmin, x));
+
+  return ret;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the square of a real value.
  *
  * \param[in]  x  value
