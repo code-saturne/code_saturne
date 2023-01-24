@@ -173,6 +173,27 @@ type(c_ptr) :: c_k_value
 type(gwf_soilwater_partition) :: sorption_scal
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine driflu                                &
+   (iflid,                                         &
+    dt,                                            &
+    imasfl, bmasfl,                                &
+    divflu)                                        &
+    bind(C, name='cs_drift_convective_flux')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: iflid
+    real(kind=c_double), dimension(*), intent(inout) :: dt
+    real(kind=c_double), dimension(*), intent(inout) :: imasfl, bmasfl, divflu
+  end subroutine driflu
+
+  !=============================================================================
+
+end interface
 
 !===============================================================================
 ! 1. Initialization

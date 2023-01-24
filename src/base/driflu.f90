@@ -46,7 +46,8 @@ subroutine driflu &
 ( iflid  ,                                                       &
   dt     ,                                                       &
   imasfl , bmasfl ,                                              &
-  divflu  )
+  divflu  )                                                      &
+  bind(C, name='cs_drift_convective_flux')
 
 !===============================================================================
 ! Module files
@@ -77,7 +78,7 @@ implicit none
 
 ! Arguments
 
-integer          iflid
+integer(c_int), value :: iflid
 
 double precision dt(ncelet)
 double precision imasfl(nfac), bmasfl(nfabor)

@@ -62,24 +62,6 @@ extern void CS_PROCF (caltri, CALTRI)
 );
 
 /*----------------------------------------------------------------------------
- * Poisson equation resolution for hydrostatic pressure.
- *----------------------------------------------------------------------------*/
-
-extern void cs_hydrostatic_pressure_compute(int              *indhyd,
-                                            int               iterns,
-                                            cs_real_t         fext[][3],
-                                            cs_real_t         dfext[][3],
-                                            cs_real_t         phydr[],
-                                            cs_real_t         flumas[],
-                                            cs_real_t         flumab[],
-                                            cs_real_t         viscf[],
-                                            cs_real_t         viscb[],
-                                            cs_real_t         dam[],
-                                            cs_real_t         xam[],
-                                            cs_real_t         dpvar[],
-                                            cs_real_t         rhs[]);
-
-/*----------------------------------------------------------------------------
  * Convert gas temperature to and from enthalpy based on concentrations
  *----------------------------------------------------------------------------*/
 
@@ -209,38 +191,16 @@ cs_coal_thfieldconv1(int              location_id,
                      const cs_real_t  eh[],
                      cs_real_t        tp[]);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return pointer to boundary head losses array.
- *
- * \return  b_head_loss  pointer to boundary head losses array
- */
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------
+ * Compute the modified convective flux for scalars with a drift.
+ *----------------------------------------------------------------------------*/
 
-cs_real_t *
-cs_get_b_head_loss(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return pointer to cavitation "dgdpca" array.
- *
- * \return  pointer to "dgdpca" array.
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_get_cavitation_dgdp_st(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return pointer to cavitation "gamcav" array.
- *
- * \return  pointer to "gamcav" array.
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_get_cavitation_gam(void);
+void
+cs_drift_convective_flux(int        f_id,
+                         cs_real_t  dt[],
+                         cs_real_t  imasfl[],
+                         cs_real_t  bmasf[],
+                         cs_real_t  divflu[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -310,6 +270,58 @@ void
 cs_fuel_thfieldconv1(int              location_id,
                      const cs_real_t  eh[],
                      cs_real_t        tp[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to boundary head losses array.
+ *
+ * \return  b_head_loss  pointer to boundary head losses array
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_get_b_head_loss(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to cavitation "dgdpca" array.
+ *
+ * \return  pointer to "dgdpca" array.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_get_cavitation_dgdp_st(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to cavitation "gamcav" array.
+ *
+ * \return  pointer to "gamcav" array.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_get_cavitation_gam(void);
+
+/*----------------------------------------------------------------------------
+ * Poisson equation resolution for hydrostatic pressure.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_hydrostatic_pressure_compute(int        *indhyd,
+                                int         iterns,
+                                cs_real_t   fext[][3],
+                                cs_real_t   dfext[][3],
+                                cs_real_t   phydr[],
+                                cs_real_t   flumas[],
+                                cs_real_t   flumab[],
+                                cs_real_t   viscf[],
+                                cs_real_t   viscb[],
+                                cs_real_t   dam[],
+                                cs_real_t   xam[],
+                                cs_real_t   dpvar[],
+                                cs_real_t   rhs[]);
 
 /*----------------------------------------------------------------------------
  * Return Lagrangian model status.

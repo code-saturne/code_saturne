@@ -312,6 +312,21 @@ interface
    real(kind=c_double), dimension(*), intent(in) :: gam_ms, fluxv_ms, pvara
  end subroutine wall_condensation_source_terms
 
+ subroutine driflu                                 &
+   (iflid,                                         &
+    dt,                                            &
+    imasfl, bmasfl,                                &
+    divflu)                                        &
+    bind(C, name='cs_drift_convective_flux')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: iflid
+    real(kind=c_double), dimension(*), intent(inout) :: dt
+    real(kind=c_double), dimension(*), intent(inout) :: imasfl, bmasfl, divflu
+  end subroutine driflu
+
+  !=============================================================================
+
  end interface
 
 !===============================================================================
@@ -1312,12 +1327,7 @@ call field_get_key_int(iflid, keydri, iscdri)
 if (iscdri.ge.1) then
   allocate(divflu(ncelet))
 
-  call driflu &
-  !=========
-  ( iflid  ,                                                       &
-    dt     ,                                                       &
-    imasfl , bmasfl ,                                              &
-    divflu )
+  call driflu(iflid, dt, imasfl, bmasfl, divflu)
 
   iconvp = vcopt%iconv
   thetap = vcopt%thetav
