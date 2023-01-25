@@ -76,15 +76,20 @@ cs_restart_map_set_mesh_input(const char  *mesh_path);
 /*!
  * \brief  Set options relative to restart file mapping to a given mesh input.
  *
- * \param[in]  tolerance_base      associated base tolerance (used for bounding
- *                                 box check only, not for location test)
- * \param[in]  tolerance_fraction  associated fraction of element bounding
- *                                 boxes added to tolerance
+ * \param[in]  apply_mesh_deformation  apply mesh deformation from upstream
+ *                                     computation (if present) so as to map
+ *                                     to final, and not initial mesh shape.
+ * \param[in]  tolerance_base          associated base tolerance (used for
+ *                                     bounding box check only, not for
+ *                                     location test)
+ * \param[in]  tolerance_fraction      associated fraction of element bounding
+ *                                     boxes added to tolerance
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_restart_map_set_options(float  tolerance_base,
+cs_restart_map_set_options(bool   apply_mesh_deformation,
+                           float  tolerance_base,
                            float  tolerance_fraction);
 
 /*----------------------------------------------------------------------------*/
