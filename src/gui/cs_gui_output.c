@@ -50,6 +50,7 @@
 
 #include "cs_base.h"
 #include "cs_boundary_zone.h"
+#include "cs_domain.h"
 #include "cs_gui.h"
 #include "cs_gui_util.h"
 #include "cs_log.h"
@@ -729,32 +730,40 @@ cs_gui_output_boundary(void)
   /* Surfacic variables output */
 
   if (cs_glob_physical_model_flag[CS_GROUNDWATER] == -1) {
-    if (_surfacic_variable_post("stress", true))
-      cs_function_define_boundary_stress();
-    if (_surfacic_variable_post("stress_tangential", false))
-      cs_function_define_boundary_stress_tangential();
-    if (_surfacic_variable_post("stress_normal", false))
-      cs_function_define_boundary_stress_normal();
+
+    int k_vis = cs_field_key_id("post_vis");
+
+    if (cs_domain_get_cdo_mode(cs_glob_domain) != CS_DOMAIN_CDO_MODE_ONLY) {
+
+      if (_surfacic_variable_post("stress", true))
+        cs_function_define_boundary_stress();
+      if (_surfacic_variable_post("stress_tangential", false))
+        cs_function_define_boundary_stress_tangential();
+      if (_surfacic_variable_post("stress_normal", false))
+        cs_function_define_boundary_stress_normal();
+
+      if (_surfacic_variable_post("yplus", true)) {
+
+        cs_field_t *bf = cs_field_by_name_try("yplus");
+
+        if (bf == NULL) {
+          bf = cs_field_create("yplus",
+                               CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                               CS_MESH_LOCATION_BOUNDARY_FACES,
+                               1,
+                               false);
+          cs_field_set_key_int(bf, cs_field_key_id("log"), 1);
+          cs_field_set_key_str(bf, cs_field_key_id("label"), "Yplus");
+        }
+        cs_field_set_key_int(bf, k_vis, 1);
+
+      }
+
+    } /* Not CDO-only mode */
 
     /* TODO: move this following field an function definitions earlier
        (with thermal model), and only handle "post_vis" option here,
        to also allow for logging */
-
-    int k_vis = cs_field_key_id("post_vis");
-
-    if (_surfacic_variable_post("yplus", true)) {
-      cs_field_t *bf = cs_field_by_name_try("yplus");
-      if (bf == NULL) {
-        bf = cs_field_create("yplus",
-                             CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
-                             CS_MESH_LOCATION_BOUNDARY_FACES,
-                             1,
-                             false);
-        cs_field_set_key_int(bf, cs_field_key_id("log"), 1);
-        cs_field_set_key_str(bf, cs_field_key_id("label"), "Yplus");
-      }
-      cs_field_set_key_int(bf, k_vis, 1);
-    }
 
     if (_surfacic_variable_post("thermal_flux", true)) {
       cs_function_define_boundary_thermal_flux();
@@ -791,21 +800,25 @@ cs_gui_output_boundary(void)
     }
 
     bool post_b_temp = _surfacic_variable_post("boundary_temperature", true);
-    /* Activate by default using GUI; ignore for non-temperature variable
-       when properties not present in GUI, or the thermal model is not
-       set in the GUI, as this implies the GUI was probably not used
-       and we cannot determine easily whether enthalpy to temperature
-       conversion is available */
+
+    /* Activated by default when using GUI; ignore for non-temperature variable
+       when properties are not present in the GUI, or the thermal model is not
+       set in the GUI, as this implies the GUI was probably not used and we
+       cannot determine easily whether enthalpy to temperature conversion is
+       available */
+
     if (cs_glob_thermal_model->itherm != CS_THERMAL_MODEL_TEMPERATURE) {
       if (   cs_tree_find_node_simple(cs_glob_tree, "property") == NULL
           || cs_gui_thermal_model_code() <= 0)
         post_b_temp = false;
     }
+
     if (post_b_temp) {
       cs_field_t *bf = cs_parameters_add_boundary_temperature();
       if (bf != NULL)
         cs_field_set_key_int(bf, k_vis, 1);
     }
+
   }
 }
 
