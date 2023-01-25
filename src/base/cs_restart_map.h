@@ -89,6 +89,20 @@ cs_restart_map_set_options(float  tolerance_base,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set options relative to restart file mapping to a given mesh input
+ *         specific to ALE.
+ *
+ * \param[in]  apply_mesh_deformation  apply mesh deformation from upstream
+ *                                     computation (if present) so as to map
+ *                                     to final, and not initial mesh shape.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_map_set_ale_options(bool  apply_mesh_deformation);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Indicate whether location for restart file mapping is needed at
  *         cells or vertices.
  *

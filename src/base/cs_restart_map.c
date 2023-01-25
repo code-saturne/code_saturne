@@ -48,6 +48,7 @@
 #include "bft_mem.h"
 #include "bft_error.h"
 #include "bft_printf.h"
+#include "cs_array.h"
 #include "cs_assert.h"
 #include "cs_base.h"
 #include "cs_coupling.h"
@@ -87,6 +88,10 @@ BEGIN_C_DECLS
 /*============================================================================
  * Static global variables
  *============================================================================*/
+
+/* Apply mesh deformation to previous mesh for mapping if present ? */
+
+static bool _apply_mesh_deformation = false;
 
 /* Variables to be saved between definition of mapping and
    build of that mapping */
@@ -326,12 +331,23 @@ _read_section_interpolate(cs_restart_t           *restart,
                         val_type,
                         read_buffer,
                         val);
-      else if (location_id == CS_MESH_LOCATION_VERTICES)
-        _interpolate_vtx(locator,
-                         n_location_vals,
-                         val_type,
-                         read_buffer,
-                         val);
+      else if (location_id == CS_MESH_LOCATION_VERTICES) {
+        if (   _apply_mesh_deformation
+            && strcmp(sec_name, "mesh_displacement::vals::0") == 0) {
+          /* New mesh located relative to deformed mesh, so displacement
+             reset to zero in this case. */
+          cs_real_t v_0[] = {0, 0, 0};
+          cs_array_real_set_vector(cs_glob_mesh->n_vertices,
+                                   v_0,
+                                   val);
+        }
+        else
+          _interpolate_vtx(locator,
+                           n_location_vals,
+                           val_type,
+                           read_buffer,
+                           val);
+      }
 
     }
 
@@ -339,6 +355,45 @@ _read_section_interpolate(cs_restart_t           *restart,
   }
 
   return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read mesh deformation
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_read_mesh_deformation(cs_mesh_t  *m)
+{
+  cs_restart_t *r
+    = cs_restart_create("auxiliary.csc", "restart", CS_RESTART_MODE_READ);
+
+  if (r == NULL)
+    return;
+
+  cs_real_3_t *v_disp;
+  BFT_MALLOC(v_disp, m->n_vertices, cs_real_3_t);
+
+  int retcode = cs_restart_read_section(r,
+                                        "mesh_displacement::vals::0",
+                                        CS_MESH_LOCATION_VERTICES,
+                                        3,
+                                        CS_TYPE_cs_real_t,
+                                        v_disp);
+
+  if (retcode == CS_RESTART_SUCCESS) {
+
+    for (cs_lnum_t i = 0; i < m->n_vertices; i++) {
+      for (cs_lnum_t j= 0; j < 3; j++)
+        m->vtx_coord[i*3 + j] += v_disp[i][j];
+    }
+
+  }
+
+  BFT_FREE(v_disp);
+
+  cs_restart_destroy(&r);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -382,6 +437,23 @@ cs_restart_map_set_options(float  tolerance_base,
 {
   _tolerance[0] = tolerance_base;
   _tolerance[1] = tolerance_fraction;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set options relative to restart file mapping to a given mesh input
+ *         specific to ALE.
+ *
+ * \param[in]  apply_mesh_deformation  apply mesh deformation from upstream
+ *                                     computation (if present) so as to map
+ *                                     to final, and not initial mesh shape.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_map_set_ale_options(bool  apply_mesh_deformation)
+{
+  _apply_mesh_deformation = apply_mesh_deformation;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -481,6 +553,11 @@ cs_restart_map_build(void)
                                 m->n_g_vertices, m->n_vertices,
                                 m->global_vtx_num);
 
+    cs_glob_mesh = m;
+
+    if (_apply_mesh_deformation)
+      _read_mesh_deformation(m);
+
     /* Build FVM mesh from previous mesh */
 
     nm = cs_mesh_connect_cells_to_nodal(m,
@@ -493,7 +570,6 @@ cs_restart_map_build(void)
 
     /* Destroy temporary mesh structures */
 
-    cs_glob_mesh = m;
     m = cs_mesh_destroy(m);
   }
 

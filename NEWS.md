@@ -1,6 +1,14 @@
 Release 7.3.1 (not released yet)
 --------------------------------
 
+### User changes:
+
+- Handle restart on a different mesh with ALE.
+  * Read deformation field (at vertices) from auxiliary restart file.
+  * Add `cs_restart_map_set_ale_options` function to choose whether
+    the new mesh's initial position matches the final or initial
+    position of the previous computation.
+
 ### Bug fixes:
 
 - Fix possible crash in cartesian mesh creation in user function.
