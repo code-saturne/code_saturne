@@ -50,7 +50,6 @@
 
 #include "cs_base.h"
 #include "cs_boundary_zone.h"
-#include "cs_domain.h"
 #include "cs_gui.h"
 #include "cs_gui_util.h"
 #include "cs_log.h"
@@ -727,43 +726,61 @@ cs_gui_output(void)
 void
 cs_gui_output_boundary(void)
 {
+  int k_vis = cs_field_key_id("post_vis");
+
   /* Surfacic variables output */
 
-  if (cs_glob_physical_model_flag[CS_GROUNDWATER] == -1) {
+  bool ignore_stresses = false;
+  bool ignore_yplus = false;
 
-    int k_vis = cs_field_key_id("post_vis");
+  if (   cs_glob_physical_model_flag[CS_GROUNDWATER] != -1
+      || cs_glob_physical_model_flag[CS_SOLIDIFICATION] != -1) {
+    ignore_stresses = true;
+    ignore_yplus = true;
+  }
 
-    if (cs_domain_get_cdo_mode(cs_glob_domain) != CS_DOMAIN_CDO_MODE_ONLY) {
+  /* CDO-based velocity-pressure does not currently involve
+     yplus and stresses computation. */
 
-      if (_surfacic_variable_post("stress", true))
-        cs_function_define_boundary_stress();
-      if (_surfacic_variable_post("stress_tangential", false))
-        cs_function_define_boundary_stress_tangential();
-      if (_surfacic_variable_post("stress_normal", false))
-        cs_function_define_boundary_stress_normal();
+  cs_field_t  *f_vel = cs_field_by_name_try("velocity");
+  if (f_vel != NULL) {
+    if (f_vel->type & CS_FIELD_CDO) {
+      ignore_stresses = true;
+      ignore_yplus = true;
+    }
+  }
+  else {
+    ignore_stresses = true;
+    ignore_yplus = true;
+  }
 
-      if (_surfacic_variable_post("yplus", true)) {
+  if (ignore_stresses == false) {
+    if (_surfacic_variable_post("stress", true))
+      cs_function_define_boundary_stress();
+    if (_surfacic_variable_post("stress_tangential", false))
+      cs_function_define_boundary_stress_tangential();
+    if (_surfacic_variable_post("stress_normal", false))
+      cs_function_define_boundary_stress_normal();
+  }
 
-        cs_field_t *bf = cs_field_by_name_try("yplus");
-
-        if (bf == NULL) {
-          bf = cs_field_create("yplus",
-                               CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
-                               CS_MESH_LOCATION_BOUNDARY_FACES,
-                               1,
-                               false);
-          cs_field_set_key_int(bf, cs_field_key_id("log"), 1);
-          cs_field_set_key_str(bf, cs_field_key_id("label"), "Yplus");
-        }
-        cs_field_set_key_int(bf, k_vis, 1);
-
-      }
-
-    } /* Not CDO-only mode */
-
-    /* TODO: move this following field an function definitions earlier
+    /* TODO: move this following field and function definitions earlier
        (with thermal model), and only handle "post_vis" option here,
        to also allow for logging */
+
+  if (ignore_yplus == false) {
+    if (_surfacic_variable_post("yplus", true)) {
+      cs_field_t *bf = cs_field_by_name_try("yplus");
+      if (bf == NULL) {
+        bf = cs_field_create("yplus",
+                             CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                             CS_MESH_LOCATION_BOUNDARY_FACES,
+                             1,
+                             false);
+        cs_field_set_key_int(bf, cs_field_key_id("log"), 1);
+        cs_field_set_key_str(bf, cs_field_key_id("label"), "Yplus");
+      }
+      cs_field_set_key_int(bf, k_vis, 1);
+    }
 
     if (_surfacic_variable_post("thermal_flux", true)) {
       cs_function_define_boundary_thermal_flux();
@@ -772,6 +789,8 @@ cs_gui_output_boundary(void)
     if (_surfacic_variable_post("boundary_layer_nusselt", false)) {
       cs_function_define_boundary_nusselt();
     }
+
+    /* Boundary T+/H+/E+ */
 
     if (cs_glob_thermal_model->itherm != CS_THERMAL_MODEL_NONE) {
       int post_vis = _surfacic_variable_post("tplus", true) ? 1 : 0;
@@ -799,9 +818,11 @@ cs_gui_output_boundary(void)
       }
     }
 
+    /* Boundary temperature */
+
     bool post_b_temp = _surfacic_variable_post("boundary_temperature", true);
 
-    /* Activated by default when using GUI; ignore for non-temperature variable
+    /* Activate by default when using GUI; ignore for non-temperature variable
        when properties are not present in the GUI, or the thermal model is not
        set in the GUI, as this implies the GUI was probably not used and we
        cannot determine easily whether enthalpy to temperature conversion is
