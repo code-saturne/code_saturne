@@ -634,9 +634,9 @@ cs_navsto_system_extra_op(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined post-processing output for the Navier-Stokes system.
- *         The prototype of this function is fixed since it is a function
- *         pointer defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
+ * \brief Predefined post-processing output for the Navier-Stokes system.
+ *        The prototype of this function is fixed since it is a function
+ *        pointer defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
  *
  * \param[in, out] input        pointer to a optional structure (here a
  *                              cs_navsto_system_t structure)
