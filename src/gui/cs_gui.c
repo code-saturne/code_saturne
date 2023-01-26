@@ -2767,16 +2767,7 @@ cs_gui_equation_parameters(void)
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
       cs_equation_param_t *eqp_eq = NULL;
 
-      const char *ref_name = f->name;
-      if (   cs_gui_strcmp(f->name, "r11")
-          || cs_gui_strcmp(f->name, "r22")
-          || cs_gui_strcmp(f->name, "r33")
-          || cs_gui_strcmp(f->name, "r12")
-          || cs_gui_strcmp(f->name, "r23")
-          || cs_gui_strcmp(f->name, "r13"))
-        ref_name = "rij";
-
-      cs_tree_node_t *tn_v = _find_node_variable(ref_name);
+      cs_tree_node_t *tn_v = _find_node_variable(f->name);
 
       cs_gui_node_get_child_real(tn_v, "solver_precision", &(eqp->epsilo));
       cs_gui_node_get_child_status_int(tn_v, "flux_reconstruction",
@@ -3432,17 +3423,7 @@ cs_gui_linear_solvers(void)
     cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
 
-      const char *ref_name = f->name;
-
-      if (   cs_gui_strcmp(f->name, "r11")
-          || cs_gui_strcmp(f->name, "r22")
-          || cs_gui_strcmp(f->name, "r33")
-          || cs_gui_strcmp(f->name, "r12")
-          || cs_gui_strcmp(f->name, "r23")
-          || cs_gui_strcmp(f->name, "r13"))
-        ref_name = "rij";
-
-      cs_tree_node_t *tn_v = _find_node_variable(ref_name);
+      cs_tree_node_t *tn_v = _find_node_variable(f->name);
 
       int n_max_iter = n_max_iter_default;
       cs_gui_node_get_child_int(tn_v, "max_iter_number", &n_max_iter);
@@ -3483,6 +3464,35 @@ cs_gui_linear_solvers(void)
         sles_it_type = CS_SLES_P_SYM_GAUSS_SEIDEL;
       else if (cs_gui_strcmp(algo_choice, "PCR3"))
         sles_it_type = CS_SLES_PCR3;
+
+      /* If preconditioning choice is set, we need to define a solver
+         (otherwise, we would need to pass at least this partial
+         information to cs_sles_default) */
+
+      if (sles_it_type >= CS_SLES_N_IT_TYPES) {
+        if (   precond_choice != NULL
+            && !cs_gui_strcmp(precond_choice, "automatic")) {
+
+          bool symmetric = false;
+          cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+          if (eqp != NULL) {
+            if (eqp->iconv == 0)
+              symmetric = true;
+          }
+
+          if (symmetric)
+            sles_it_type = CS_SLES_FCG;
+          else {
+            int coupling_id
+              = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
+            if (coupling_id < 0 && cs_gui_strcmp(precond_choice, "none"))
+              sles_it_type = CS_SLES_P_SYM_GAUSS_SEIDEL;
+            else
+              sles_it_type = CS_SLES_BICGSTAB;
+          }
+
+        }
+      }
 
       /* If choice is "automatic" or unspecified, delay
          choice to cs_sles_default, so do nothing here */
