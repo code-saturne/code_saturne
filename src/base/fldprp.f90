@@ -364,6 +364,8 @@ if (iale.ge.1) then
   call field_create(f_name, type_flag, location_id, idim3, &
                     has_previous, iflid)
 
+  call hide_property(iflid)
+
 endif
 
 
