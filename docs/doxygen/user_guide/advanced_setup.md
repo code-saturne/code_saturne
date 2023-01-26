@@ -326,16 +326,16 @@ filled as follows:
   It reads \f$ \dfrac{\partial \varia }{\partial t} + C \dfrac{\partial \varia}{\partial n} = 0 \f$,
   where <em>C</em> is a to be defined celerity of radiation.
 
-  - `f->bc_coeffs->rcodcl3[face_id]` is not used.
-
-  - `f->bc_coeffs->rcodcl1[face_id]` is the flux value of the variable
+  - `f->bc_coeffs->rcodcl1[face_id]` is the value of the variable
     at *I'*, projection of the center of the adjacent cell
     on the straight line perpendicular to the boundary face and crossing its
     center, at the previous time step.
 
-  - `f->bc_coeffs->rcodcl[face_id]` is CFL number based on the parameter
+  - `f->bc_coeffs->rcodcl2[face_id]` is CFL number based on the parameter
     <em>C</em>, the distance to the boundary *I'F* and the
     time step: \f$ CFL = \dfrac{C dt }{\centip \centf} \f$.<br><br>
+
+  - `f->bc_coeffs->rcodcl3[face_id]` is not used.
 
 - If `f->bc_coeffs->icodcl[face_id] == 3`: flux condition.
 
