@@ -39,6 +39,7 @@
 
 #include "cs_array.h"
 #include "cs_base.h"
+#include "cs_boundary.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
 #include "cs_cell_to_vertex.h"
@@ -132,15 +133,6 @@ static cs_real_3_t  *_vtx_coord0 = NULL;
 static cs_ale_cdo_bc_t  *_cdo_bc = NULL;
 
 static bool cs_ale_active = false;
-
-/*----------------------------------------------------------------------------
- * Deprecated ALE boundary condition types
- *----------------------------------------------------------------------------*/
- enum {
-   CS_ALE_FIXED = 1,
-   CS_ALE_SLIDING = 2,
-   CS_ALE_IMPOSED_VEL = 3
- };
 
 /*============================================================================
  * Private function definitions
@@ -654,7 +646,7 @@ _update_bcs(const cs_domain_t  *domain,
           const cs_lnum_t face_id = z->elt_ids[elt_id];
 
           /* fluid velocity BC */
-          ale_bc_type[face_id] = CS_ALE_IMPOSED_VEL;
+          ale_bc_type[face_id] = CS_BOUNDARY_ALE_IMPOSED_VEL;
           for (int d = 0; d < 3; d++)
             b_fluid_vel[face_id][d] = bc_vals[elt_id + d * z->n_elts];
         }
@@ -695,7 +687,7 @@ _update_bcs(const cs_domain_t  *domain,
         for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
           const cs_lnum_t face_id = z->elt_ids[elt_id];
 
-          ale_bc_type[face_id] = CS_ALE_IMPOSED_VEL;
+          ale_bc_type[face_id] = CS_BOUNDARY_ALE_IMPOSED_VEL;
 
           cs_real_3_t normal;
           /* Normal direction is given by the gravity */
@@ -1214,7 +1206,7 @@ cs_ale_project_displacement(const int           ale_bc_type[],
 
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
-    if (ale_bc_type[face_id] != CS_ALE_SLIDING) {
+    if (ale_bc_type[face_id] != CS_BOUNDARY_ALE_SLIDING) {
 
       for (cs_lnum_t j = m->b_face_vtx_idx[face_id];
            j < m->b_face_vtx_idx[face_id+1];
@@ -1290,7 +1282,7 @@ cs_ale_project_displacement(const int           ale_bc_type[],
 
     for (cs_lnum_t j = m->b_face_vtx_idx[face_id];
          j < m->b_face_vtx_idx[face_id+1]
-         && ale_bc_type[face_id] != CS_ALE_SLIDING; j++) {
+         && ale_bc_type[face_id] != CS_BOUNDARY_ALE_SLIDING; j++) {
 
       const cs_lnum_t  vtx_id = m->b_face_vtx_lst[j];
 
@@ -1358,7 +1350,7 @@ cs_ale_project_displacement(const int           ale_bc_type[],
 
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
-    if (ale_bc_type[face_id] == CS_ALE_SLIDING) {
+    if (ale_bc_type[face_id] == CS_BOUNDARY_ALE_SLIDING) {
 
       for (cs_lnum_t j = m->b_face_vtx_idx[face_id];
            j < m->b_face_vtx_idx[face_id+1]; j++) {
