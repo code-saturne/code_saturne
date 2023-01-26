@@ -112,11 +112,11 @@ static cs_navsto_system_t  *cs_navsto_system = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if one has to handle non-linearities
+ * \brief Check if one has to handle non-linearities
  *
- * \param[in]  nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]  mom_eqp   pointer to a \ref cs_equation_param_t structure related
- *                       to the momentum equation
+ * \param[in] nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in] mom_eqp   pointer to a \ref cs_equation_param_t structure related
+ *                      to the momentum equation
  *
  * \return true or false
  */
@@ -153,7 +153,7 @@ _handle_non_linearities(const cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate an empty Navier-Stokes system
+ * \brief Allocate an empty Navier-Stokes system
  *
  * \return a pointer to a new allocated groundwater flow structure
  */
@@ -250,7 +250,7 @@ cs_navsto_system_is_activated(void)
 /*!
  * \brief Update the flag associated to the modelling options
  *
- * \param[in]   with_thermal     true or false
+ * \param[in] with_thermal     true or false
  */
 /*----------------------------------------------------------------------------*/
 
@@ -283,7 +283,7 @@ cs_navsto_system_update_model(bool   with_thermal)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and initialize the Navier-Stokes (NS) system
+ * \brief Allocate and initialize the Navier-Stokes (NS) system
  *
  * \param[in] boundaries     pointer to the domain boundaries
  * \param[in] model          type of model related to the NS system
@@ -489,8 +489,8 @@ cs_navsto_system_destroy(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the structure storing the parameters for the Navier--Stokes
- *         system
+ * \brief Retrieve the structure storing the parameters for the Navier--Stokes
+ *        system
  *
  * \return NULL or the pointer to a \ref cs_navsto_param_t structure
  */
@@ -509,7 +509,7 @@ cs_navsto_system_get_param(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve a pointer to the equation related to the momentum equation
+ * \brief Retrieve a pointer to the equation related to the momentum equation
  *
  * \return NULL or the pointer
  */
@@ -549,8 +549,8 @@ cs_navsto_system_get_momentum_eq(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the advection field structure (the mass flux) related to
- *         the Navier-Stokes system.
+ * \brief Retrieve the advection field structure (the mass flux) related to
+ *        the Navier-Stokes system.
  *
  * \return a pointer to the advection field structure
  */
@@ -568,10 +568,10 @@ cs_navsto_get_adv_field(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the mass flux array related to the Navier-Stokes system.
+ * \brief Retrieve the mass flux array related to the Navier-Stokes system.
  *
- * \param[in]  previous    if true return the previous state otherwise the
- *                         current state.
+ * \param[in] previous    if true return the previous state otherwise the
+ *                        current state.
  *
  * \return a pointer to an array of cs_real_t
  */
@@ -593,9 +593,9 @@ cs_navsto_get_mass_flux(bool   previous)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Start setting-up the Navier-Stokes system
- *         At this stage, numerical settings should be completely determined
- *         but connectivity and geometrical information is not yet available.
+ * \brief Start setting-up the Navier-Stokes system
+ *        At this stage, numerical settings should be completely determined
+ *        but connectivity and geometrical information is not yet available.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -896,7 +896,7 @@ cs_navsto_system_init_setup(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the settings for SLES related to the Navier-Stokes system
+ * \brief Define the settings for SLES related to the Navier-Stokes system
  */
 /*----------------------------------------------------------------------------*/
 
@@ -947,6 +947,7 @@ cs_navsto_system_set_sles(void)
 
     /* Equation related to Navier-Stokes do not follow the classical setup
        stage */
+
     cs_equation_param_set_sles(eqp);
 
   }
@@ -954,12 +955,12 @@ cs_navsto_system_set_sles(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Last step of the setup of the Navier-Stokes system
+ * \brief Last step of the setup of the Navier-Stokes system
  *
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  time_step  pointer to a cs_time_step_t structure
+ * \param[in] mesh        pointer to a cs_mesh_t structure
+ * \param[in] connect     pointer to a cs_cdo_connect_t structure
+ * \param[in] quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in] time_step   pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1229,7 +1230,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
     assert(eqp != NULL);
     cs_field_t  *w = cs_field_by_name("vorticity");
 
-    /* Add a laplacian term: -div.grad */
+    /* Add a Laplacian term: -div.grad */
 
     cs_equation_add_diffusion(eqp, cs_property_by_name("unity"));
 
@@ -1251,10 +1252,10 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the scheme context structure used to build the algebraic
- *         system. This is done after the setup step.
+ * \brief Initialize the scheme context structure used to build the algebraic
+ *        system. This is done after the setup step.
  *
- * \param[in]  mesh        pointer to a cs_mesh_t structure
+ * \param[in] mesh        pointer to a cs_mesh_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1288,13 +1289,13 @@ cs_navsto_system_define_context(const cs_mesh_t             *mesh)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set an initial value for the velocity and pressure fields as well
- *         as mass fluxes and tubulent quantities if needed
+ * \brief Set an initial value for the velocity and pressure fields as well
+ *        as mass fluxes and tubulent quantities if needed
  *
- * \param[in]  mesh        pointer to a cs_mesh_t structure
- * \param[in]  connect     pointer to a cs_cdo_connect_t structure
- * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
- * \param[in]  time_step   pointer to a cs_time_step_t structure
+ * \param[in] mesh        pointer to a cs_mesh_t structure
+ * \param[in] connect     pointer to a cs_cdo_connect_t structure
+ * \param[in] quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in] time_step   pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1356,7 +1357,7 @@ cs_navsto_system_init_values(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a solid zone related to the Navier-Stokes equations
+ * \brief Set a solid zone related to the Navier-Stokes equations
  *
  * \param[in] n_solid_cells    number of solid cells
  * \param[in] solid_cell_ids   list of cell ids (local numbering)
@@ -1393,8 +1394,8 @@ cs_navsto_system_set_solid_cells(cs_lnum_t          n_solid_cells,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update variables and related quantities when a new state of the
- *         Navier-Stokes system has been computed
+ * \brief Update variables and related quantities when a new state of the
+ *        Navier-Stokes system has been computed
  *
  * \param[in] mesh       pointer to a cs_mesh_t structure
  * \param[in] connect    pointer to a cs_cdo_connect_t structure
@@ -1409,7 +1410,7 @@ cs_navsto_system_update(const cs_mesh_t             *mesh,
                         const cs_cdo_quantities_t   *quant,
                         const cs_time_step_t        *time_step)
 {
-  CS_UNUSED(mesh);
+  CS_NO_WARN_IF_UNUSED(mesh);
 
   cs_navsto_system_t  *ns = cs_navsto_system;
 
@@ -1433,8 +1434,8 @@ cs_navsto_system_update(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build, solve and update the Navier-Stokes system in case of a
- *         steady-state approach
+ * \brief Build, solve and update the Navier-Stokes system in case of a
+ *        steady-state approach
  *
  * \param[in] mesh       pointer to a cs_mesh_t structure
  * \param[in] connect    pointer to a cs_cdo_connect_t structure
@@ -1598,7 +1599,7 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build, solve and update the Navier-Stokes system
+ * \brief Build, solve and update the Navier-Stokes system
  *
  * \param[in] mesh       pointer to a cs_mesh_t structure
  * \param[in] connect    pointer to a cs_cdo_connect_t structure
@@ -1724,12 +1725,12 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined extra-operations for the Navier-Stokes system
+ * \brief Predefined extra-operations for the Navier-Stokes system
  *
- * \param[in]  mesh        pointer to a cs_mesh_t structure
- * \param[in]  connect     pointer to a cs_cdo_connect_t structure
- * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
- * \param[in]  time_step   pointer to a cs_time_step_t structure
+ * \param[in] mesh        pointer to a cs_mesh_t structure
+ * \param[in] connect     pointer to a cs_cdo_connect_t structure
+ * \param[in] quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in] time_step   pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1785,9 +1786,9 @@ cs_navsto_system_extra_op(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined post-processing output for the Navier-Stokes system.
- *         The prototype of this function is fixed since it is a function
- *         pointer defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
+ * \brief Predefined post-processing output for the Navier-Stokes system.
+ *        The prototype of this function is fixed since it is a function
+ *        pointer defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
  *
  * \param[in, out] input        pointer to a optional structure (here a
  *                              cs_navsto_system_t structure)
@@ -1820,12 +1821,12 @@ cs_navsto_system_extra_post(void                      *input,
                             const cs_lnum_t            b_face_ids[],
                             const cs_time_step_t      *time_step)
 {
-  CS_UNUSED(n_cells);
-  CS_UNUSED(n_i_faces);
-  CS_UNUSED(n_b_faces);
-  CS_UNUSED(cell_ids);
-  CS_UNUSED(i_face_ids);
-  CS_UNUSED(b_face_ids);
+  CS_NO_WARN_IF_UNUSED(n_cells);
+  CS_NO_WARN_IF_UNUSED(n_i_faces);
+  CS_NO_WARN_IF_UNUSED(n_b_faces);
+  CS_NO_WARN_IF_UNUSED(cell_ids);
+  CS_NO_WARN_IF_UNUSED(i_face_ids);
+  CS_NO_WARN_IF_UNUSED(b_face_ids);
 
   cs_navsto_system_t  *ns = (cs_navsto_system_t *)input;
   if (ns == NULL)
@@ -1834,6 +1835,7 @@ cs_navsto_system_extra_post(void                      *input,
   const cs_navsto_param_t  *nsp = ns->param;
 
   /* Post-processing of the boundary mass flux */
+
   if (cat_id == CS_POST_MESH_BOUNDARY && ent_flag[2] > 0) {
 
     switch (nsp->space_scheme) {
@@ -1855,6 +1857,7 @@ cs_navsto_system_extra_post(void                      *input,
 
         /* Mass flux is a scalar associated to each face (first interior faces
            then border faces */
+
         const cs_real_t  *mass_flux = cs_navsto_get_mass_flux(need_prev);
         const cs_real_t  *mass_bflux = mass_flux + cs_glob_mesh->n_i_faces;
 
@@ -1883,7 +1886,9 @@ cs_navsto_system_extra_post(void                      *input,
   } /* Boundary mesh type */
 
   if (cat_id == CS_POST_MESH_VOLUME && ent_flag[0] > 0) {
+
     /* Velocity-Pressure coupling algorithm */
+
     switch (nsp->coupling) {
 
     case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
@@ -1899,6 +1904,7 @@ cs_navsto_system_extra_post(void                      *input,
         const cs_field_t  *velp = cc->predicted_velocity;
 
         /* Post-process the predicted velocity */
+
         cs_post_write_var(mesh_id,
                           CS_POST_WRITER_DEFAULT,
                           velp->name,
@@ -1913,6 +1919,7 @@ cs_navsto_system_extra_post(void                      *input,
 
         /* Post-process the source term of the correction equation on the
            pressure increment (-div(velp_f) */
+
         cs_post_write_var(mesh_id,
                           CS_POST_WRITER_DEFAULT,
                           "-DivVelPred",
@@ -1933,12 +1940,11 @@ cs_navsto_system_extra_post(void                      *input,
     }
 
   } /* cat_id == CS_POST_MESH_VOLUME */
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Summary of the main cs_navsto_system_t structure
+ * \brief Summary of the main cs_navsto_system_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1956,8 +1962,8 @@ cs_navsto_system_log_setup(void)
   cs_log_printf(CS_LOG_SETUP, "%s", cs_sep_h1);
 
   /* Main set of numerical parameters */
-  cs_navsto_param_log(ns->param);
 
+  cs_navsto_param_log(ns->param);
 }
 
 /*----------------------------------------------------------------------------*/

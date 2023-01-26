@@ -246,9 +246,9 @@ static cs_cdofb_monolithic_petsc_context_t   *_petsc_hook_context = NULL;
  * \brief Define the relative tolerance used to compute the transformation of
  *        the linear system in algorithm like ALU or GKB.
  *
- * \param[in]  init_slesp_rtol   relative tol. of the inner linear solver
- * \param[in]  algo_rtol         relative tol. of the main algorithm
- * \param[in]  algo_atol         absolute tol. of the main algorithm
+ * \param[in] init_slesp_rtol   relative tol. of the inner linear solver
+ * \param[in] algo_rtol         relative tol. of the main algorithm
+ * \param[in] algo_atol         absolute tol. of the main algorithm
  *
  * \return the computed relative tolerance
  */
@@ -278,7 +278,7 @@ _set_transfo_tol(double   init_slesp_rtol,
  * \brief Compute a norm for a scalar-valued cell-based array "a"
  *        The parallel synchronization is performed inside this function
  *
- * \param[in]    a    array of size n_cells
+ * \param[in] a    an array of size n_cells
  *
  * \return the computed norm
  */
@@ -300,7 +300,7 @@ _get_cbscal_norm(cs_real_t  *a)
  * \brief Compute a norm for a face-based "a" v with 3*n_faces elements
  *        The parallel synchronization is performed inside this function
  *
- * \param[in]    a    array of size 3*n_faces
+ * \param[in] a    an array of size 3*n_faces
  *
  * \return the computed norm
  */
@@ -323,9 +323,9 @@ _get_fbvect_norm(cs_real_t  *a)
  * start an past-the-end indexes for the array range assigned to that thread.
  * In other cases, the start index is 1, and the past-the-end index is n;
  *
- * \param[in]   n     size of array
- * \param[out]  s_id  start index for the current thread
- * \param[out]  e_id  past-the-end index for the current thread
+ * \param[in]  n      size of an array
+ * \param[out] s_id   start index for the current thread
+ * \param[out] e_id   past-the-end index for the current thread
  */
 /*----------------------------------------------------------------------------*/
 
@@ -351,14 +351,14 @@ _thread_range(cs_lnum_t   n,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Dot product between two arrays on face unknowns.
- *         One assumes that input arrays are in a "scattered" distribution
- *         So the size should be 3*n_faces.
+ * \brief Dot product between two arrays on face unknowns.
+ *        One assumes that input arrays are in a "scattered" distribution
+ *        So the size should be 3*n_faces.
  *
- * \param[in]       rset   pointer to a range_set structure (synchro. op.)
- * \param[in]       size   size of arrays
- * \param[in, out]  x      first array
- * \param[in, out]  y      second array
+ * \param[in]      rset   pointer to a range_set structure (synchro. op.)
+ * \param[in]      size   size of arrays
+ * \param[in, out] x      first array
+ * \param[in, out] y      second array
  *
  * \return the computed value
  */
@@ -370,7 +370,8 @@ _face_gdot(const cs_range_set_t   *rset,
            cs_real_t               x[],
            cs_real_t               y[])
 {
-  CS_UNUSED(size); /* Avoid a compilation warning in during compilation */
+  CS_NO_WARN_IF_UNUSED(size); /* Avoid a compilation warning in during
+                                 compilation */
   assert(size == rset->n_elts[1]);
   assert(size == 3*cs_shared_quant->n_faces);
 
@@ -408,10 +409,10 @@ _face_gdot(const cs_range_set_t   *rset,
 #if defined(HAVE_PETSC)
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and initialize the cs_cdofb_monolithic_petsc_context_t
+ * \brief Allocate and initialize the cs_cdofb_monolithic_petsc_context_t
  *
- * \param[in]  nsp      pointer to the set of parameters related to NavSto
- * \param[in]  sc       scheme context related to CDO-Fb monolithic schemes
+ * \param[in] nsp      pointer to the set of parameters related to NavSto
+ * \param[in] sc       scheme context related to CDO-Fb monolithic schemes
  */
 /*----------------------------------------------------------------------------*/
 
@@ -432,13 +433,13 @@ _initialize_petsc_hook_context(cs_navsto_param_t      *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the default options for a PCGAMG type in PETSc
+ * \brief Set the default options for a PCGAMG type in PETSc
  *
- * \param[in]  prefix        optional prefix
- * \param[in]  system_size   size of the linear system
- * \param[in]  amg_type      type of AMG preconditioner
- * \param[in]  is_sym        system to solve is symmetric ?
- * \param[in]  smooth_lvl    level of smoothing (0: light)
+ * \param[in] prefix        optional prefix
+ * \param[in] system_size   size of the linear system
+ * \param[in] amg_type      type of AMG preconditioner
+ * \param[in] is_sym        system to solve is symmetric ?
+ * \param[in] smooth_lvl    level of smoothing (0: light)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -636,10 +637,10 @@ _set_gamg_pc(const char            prefix[],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the way to normalize the residual vector
+ * \brief Set the way to normalize the residual vector
  *
- * \param[in]       norm_type   type of normalization
- * \param[in, out]  ksp         pointer to a PETSc KSP structure
+ * \param[in]      norm_type   type of normalization
+ * \param[in, out] ksp         pointer to a PETSc KSP structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -665,8 +666,8 @@ _set_residual_normalization(cs_param_resnorm_type_t    norm_type,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the matrix for an approximation of the Schur complement based
- *         on the inverse of the diagonal of the velocity block
+ * \brief Define the matrix for an approximation of the Schur complement based
+ *        on the inverse of the diagonal of the velocity block
  *
  * \param[in]      nsp          pointer to a cs_navsto_param_t structure
  * \param[in]      a            (MSR) matrix for the velocity block
@@ -687,7 +688,7 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
                           cs_real_t                **p_diag_smat,
                           cs_real_t                **p_xtra_smat)
 {
-  CS_UNUSED(uza);
+  CS_NO_WARN_IF_UNUSED(uza);
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_mesh_t  *mesh = cs_shared_mesh;
@@ -817,9 +818,9 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the matrix for an approximation of the Schur complement based
- *         on the inverse of the sum of the absolute values of the velocity
- *         block
+ * \brief Define the matrix for an approximation of the Schur complement based
+ *        on the inverse of the sum of the absolute values of the velocity
+ *        block
  *
  * \param[in]      nsp          pointer to a cs_navsto_param_t structure
  * \param[in]      eqp          pointer to the set of equation parameters
@@ -1012,7 +1013,7 @@ _diag_schur_sbp(const cs_navsto_param_t       *nsp,
                 const cs_saddle_system_t      *ssys,
                 cs_saddle_block_precond_t     *sbp)
 {
-  CS_UNUSED(nsp);
+  CS_NO_WARN_IF_UNUSED(nsp);
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_mesh_t  *mesh = cs_shared_mesh;
@@ -1147,8 +1148,8 @@ _scaled_mass_sbp(const cs_navsto_param_t       *nsp,
                  const cs_saddle_system_t      *ssys,
                  cs_saddle_block_precond_t     *sbp)
 {
-  CS_UNUSED(sbp);
-  CS_UNUSED(ssys);
+  CS_NO_WARN_IF_UNUSED(sbp);
+  CS_NO_WARN_IF_UNUSED(ssys);
 
   const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
   const cs_time_step_t  *ts = cs_glob_time_step;
@@ -1393,7 +1394,7 @@ _schur_approximation(const cs_navsto_param_t       *nsp,
 #if defined(HAVE_PETSC)
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Setup the main iterative solver for the velocity block
+ * \brief Setup the main iterative solver for the velocity block
  *
  * \param[in]      model    type of model related to the Navsto system
  * \param[in]      nslesp   set of parameter for the monolithic SLES
@@ -1439,8 +1440,8 @@ _set_petsc_main_solver(const cs_navsto_param_model_t   model,
 #if defined(PETSC_HAVE_HYPRE)
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Setup advanced parameters for the AMG related to the velocity field
- *         when BoomerAMG from the HYPRE library is used
+ * \brief Setup advanced parameters for the AMG related to the velocity field
+ *        when BoomerAMG from the HYPRE library is used
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1473,8 +1474,8 @@ _setup_velocity_boomeramg(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Setup advanced parameters for the AMG related to the velocity field
- *         when GAMG from the PETSc library is used
+ * \brief Setup advanced parameters for the AMG related to the velocity field
+ *        when GAMG from the PETSc library is used
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1500,11 +1501,11 @@ _setup_velocity_gamg(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Generate IndexSet for the PETSc FieldSplit preconditioner
+ * \brief Generate IndexSet for the PETSc FieldSplit preconditioner
  *
- * \param[in]       rset    pointer to a range set structure
- * \param[in, out]  isp     IndexSet for the pressure DoFs
- * \param[in, out]  isv     IndexSet for the velocity DoFs
+ * \param[in]      rset    pointer to a range set structure
+ * \param[in, out] isp     IndexSet for the pressure DoFs
+ * \param[in, out] isv     IndexSet for the velocity DoFs
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1571,7 +1572,7 @@ _build_is_for_fieldsplit(const cs_range_set_t   *rset,
  * \brief Set command line options for PC according to the kind of
  *        preconditionner
  *
- * \param[in]   slesp      set of parameters for the linear algebra
+ * \param[in] slesp      set of parameters for the linear algebra
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1648,16 +1649,18 @@ _petsc_get_pc_type(const cs_param_sles_t    *slesp)
   return pc_type;
 }
 
-/*----------------------------------------------------------------------------
- * \brief  Function pointer: setup hook for setting PETSc solver and
- *         preconditioner.
- *         Case of additive block preconditioner for a GMRES
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer: setup hook for setting PETSc solver and
+ *        preconditioner.
+ *        Case of additive block preconditioner for a GMRES
  *
  * \param[in]      slesp     pointer to a set of SLES settings
  * \param[in]      rtol      relative tolerance to set
  * \param[in]      max_it    max number of iterations
  * \param[in, out] u_ksp     pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _set_velocity_ksp(const cs_param_sles_t   *slesp,
@@ -1665,7 +1668,7 @@ _set_velocity_ksp(const cs_param_sles_t   *slesp,
                   PetscInt                 max_it,
                   KSP                      u_ksp)
 {
-  PC u_pc;
+  PC  u_pc;
   KSPGetPC(u_ksp, &u_pc);
   PCType  pc_type = _petsc_get_pc_type(slesp);
 
@@ -1805,14 +1808,16 @@ _set_velocity_ksp(const cs_param_sles_t   *slesp,
   KSPSetUp(u_ksp);
 }
 
-/*----------------------------------------------------------------------------
- * \brief  Function pointer: setup hook for setting PETSc solver and
- *         preconditioner.
- *         Case of additive block preconditioner
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer: setup hook for setting PETSc solver and
+ *        preconditioner.
+ *        Case of additive block preconditioner
  *
  * \param[in, out] context     pointer to optional (untyped) value or structure
  * \param[in, out] ksp_struct  pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _additive_amg_hook(void     *context,
@@ -1910,14 +1915,16 @@ _additive_amg_hook(void     *context,
                                      SIGFPE detection */
 }
 
-/*----------------------------------------------------------------------------
- * \brief  Function pointer: setup hook for setting PETSc solver and
- *         preconditioner.
- *         Case of multiplicative block preconditioner
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer: setup hook for setting PETSc solver and
+ *        preconditioner.
+ *        Case of multiplicative block preconditioner
  *
  * \param[in, out] context    pointer to optional (untyped) value or structure
  * \param[in, out] ksp_struct pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _multiplicative_hook(void     *context,
@@ -2011,14 +2018,16 @@ _multiplicative_hook(void     *context,
                                      SIGFPE detection */
 }
 
-/*----------------------------------------------------------------------------
- * \brief  Function pointer: setup hook for setting PETSc solver and
- *         preconditioner.
- *         Case of diagonal Schur preconditioner by block
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer: setup hook for setting PETSc solver and
+ *        preconditioner.
+ *        Case of diagonal Schur preconditioner by block
  *
  * \param[in, out] context    pointer to optional (untyped) value or structure
  * \param[in, out] ksp_struct pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _diag_schur_hook(void     *context,
@@ -2121,17 +2130,17 @@ _diag_schur_hook(void     *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the solver options and its preconditioner in case of Notay's
- *         strategy. Solver is a flexible GMRES by default.
+ * \brief Set the solver options and its preconditioner in case of Notay's
+ *        strategy. Solver is a flexible GMRES by default.
  *
- * \param[in]      slesp   pointer to a cs_sles_param_t structure
+ * \param[in, out] slesp   pointer to a cs_sles_param_t structure
  * \param[in, out] ksp     KSP structure to set
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_notay_solver(const cs_param_sles_t         *slesp,
-              KSP                            ksp)
+_notay_solver(cs_param_sles_t         *slesp,
+              KSP                      ksp)
 {
   PC  up_pc;
   KSPGetPC(ksp, &up_pc);
@@ -2143,6 +2152,7 @@ _notay_solver(const cs_param_sles_t         *slesp,
   cs_gnum_t  system_size = 3*quant->n_g_faces + quant->n_cells;
 
   /* Additional settings for the preconditioner */
+
   switch (slesp->precond) {
 
   case CS_PARAM_PRECOND_AMG:
@@ -2184,13 +2194,13 @@ _notay_solver(const cs_param_sles_t         *slesp,
   default:
     break; /* Nothing else to do */
 
-  } /* Switch on preconditioner */
+  } /* Switch on the preconditioner type */
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the solver options with a 2x2 block preconditioner in case of
- *         Notay's strategy
+ * \brief Set the solver options with a 2x2 block preconditioner in case of
+ *        Notay's strategy
  *
  * \param[in]      rset    pointer to a range set structure
  * \param[in]      slesp   pointer to a cs_sles_param_t structure
@@ -2332,8 +2342,8 @@ _notay_block_precond(const cs_range_set_t       *rset,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the solver options with a 4x4 block preconditioner in case of
- *         Notay's strategy
+ * \brief Set the solver options with a 4x4 block preconditioner in case of
+ *        Notay's strategy
  *
  * \param[in]      rset    pointer to a range set structure
  * \param[in]      slesp   pointer to a cs_sles_param_t structure
@@ -2519,17 +2529,19 @@ _notay_full_block_precond(const cs_range_set_t          *rset,
     ISDestroy(&(is[k]));
 }
 
-/*----------------------------------------------------------------------------
- * \brief  Function pointer: setup hook for setting PETSc solver and
- *         preconditioner.
- *         Case of Notay's transformation.
- *         This relies on the following article.
- *         "Algebraic multigrid for Stokes equations", Y. Notay (2017)
- *         SIAM J. Sci. Comput., Vol. 39 (5), pp 88-111
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer: setup hook for setting PETSc solver and
+ *        preconditioner.
+ *        Case of Notay's transformation.
+ *        This relies on the following article:
+ *        "Algebraic multigrid for Stokes equations", Y. Notay (2017)
+ *        SIAM J. Sci. Comput., Vol. 39 (5), pp 88-111
  *
  * \param[in, out] context    pointer to optional (untyped) value or structure
  * \param[in, out] ksp_struct pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _notay_hook(void     *context,
@@ -2757,14 +2769,16 @@ _notay_hook(void     *context,
                                      SIGFPE detection */
 }
 
-/*----------------------------------------------------------------------------
- * \brief  Function pointer: setup hook for setting PETSc solver and
- *         preconditioner.
- *         Case of upper Schur preconditioner by block
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer: setup hook for setting PETSc solver and
+ *        preconditioner.
+ *        Case of upper Schur preconditioner by block
  *
  * \param[in, out] context    pointer to optional (untyped) value or structure
  * \param[in, out] ksp_struct pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _upper_schur_hook(void     *context,
@@ -2864,14 +2878,16 @@ _upper_schur_hook(void     *context,
 }
 
 #if PETSC_VERSION_GE(3,11,0)
-/*----------------------------------------------------------------------------
- * \brief  Function pointer: setup hook for setting PETSc solver and
- *         preconditioner.
- *         Case of GKB as a solver.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer: setup hook for setting PETSc solver and
+ *        preconditioner.
+ *        Case of GKB as a solver.
  *
  * \param[in, out] context    pointer to optional (untyped) value or structure
  * \param[in, out] ksp_struct pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _gkb_hook(void     *context,
@@ -2960,14 +2976,16 @@ _gkb_hook(void     *context,
                                      SIGFPE detection */
 }
 
-/*----------------------------------------------------------------------------
- * \brief  Function pointer: setup hook for setting PETSc solver and
- *         preconditioner.
- *         Case of GKB as a preconditioner.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer: setup hook for setting PETSc solver and
+ *        preconditioner.
+ *        Case of GKB as a preconditioner.
  *
  * \param[in, out] context    pointer to optional (untyped) value or structure
  * \param[in, out] ksp_struct pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _gkb_precond_hook(void     *context,
@@ -3064,14 +3082,16 @@ _gkb_precond_hook(void     *context,
 #endif  /* GKB available only if version >= 3.11 */
 
 #if defined(PETSC_HAVE_MUMPS)
-/*----------------------------------------------------------------------------
- * \brief  Function pointer: setup hook for setting PETSc solver and
- *         preconditioner.
- *         Case of MUMPS via PETSc
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer: setup hook for setting PETSc solver and
+ *        preconditioner.
+ *        Case of MUMPS via PETSc
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
  * \param[in, out] ksp      pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _mumps_hook(void     *context,
@@ -3117,12 +3137,12 @@ _mumps_hook(void     *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and initialize a GKB builder structure
+ * \brief Create and initialize a GKB builder structure
  *
- * \param[in]  nsp        pointer to a cs_navsto_param_t structure
- * \param[in]  gamma      value of the grad-div coefficient
- * \param[in]  n_u_dofs   number of velocity DoFs (degrees of freedom)
- * \param[in]  n_p_dofs   number of pressure DoFs
+ * \param[in] nsp        pointer to a cs_navsto_param_t structure
+ * \param[in] gamma      value of the grad-div coefficient
+ * \param[in] n_u_dofs   number of velocity DoFs (degrees of freedom)
+ * \param[in] n_p_dofs   number of pressure DoFs
  *
  * \return a pointer to a new allocated GKB builder
  */
@@ -3195,9 +3215,9 @@ _init_gkb_builder(const cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a GKB builder structure
+ * \brief Free a GKB builder structure
  *
- * \param[in, out]  p_gkb   double pointer to a GKB builder structure
+ * \param[in, out] p_gkb   double pointer to a GKB builder structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3333,9 +3353,9 @@ _init_uzawa_builder(const cs_navsto_param_t      *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a Uzawa builder structure
+ * \brief Free a Uzawa builder structure
  *
- * \param[in, out]  p_uza   double pointer to a Uzawa builder structure
+ * \param[in, out] p_uza   double pointer to a Uzawa builder structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3364,7 +3384,7 @@ _free_uza_builder(cs_uza_builder_t   **p_uza)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Apply the divergence operator and store the result in div_v
+ * \brief Apply the divergence operator and store the result in div_v
  *
  * \param[in]      div_op  pointer to the values of divergence operator
  * \param[in]      v       vector to apply in velocity space
@@ -3393,8 +3413,8 @@ _apply_div_op(const cs_real_t   *div_op,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Apply the gradient operator (which is the transpose of the
- *         divergence operator) and store the result in dt_q
+ * \brief Apply the gradient operator (which is the transpose of the
+ *        divergence operator) and store the result in dt_q
  *
  * \param[in]      div_op   pointer to the values of divergence operator
  * \param[in]      q        vector to apply in pressure space
@@ -3435,9 +3455,9 @@ _apply_div_op_transpose(const cs_real_t   *div_op,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Transform the initial saddle-point problem. The velocity unknown
- *         is modified and is stored in u_tilda as well as the RHS related to
- *         the mass equation and stored in b_tilda
+ * \brief Transform the initial saddle-point problem. The velocity unknown
+ *        is modified and is stored in u_tilda as well as the RHS related to
+ *        the mass equation and stored in b_tilda
  *
  * \param[in]      matrix   pointer to a cs_matrix_t structure
  * \param[in]      rset     pointer to a range set structure
@@ -3543,7 +3563,7 @@ _transform_gkb_system(const cs_matrix_t              *matrix,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the GKB algorithm
+ * \brief Initialize the GKB algorithm
  *
  * \param[in]      matrix   pointer to a cs_matrix_t structure
  * \param[in]      rset     pointer to a range set structure
@@ -3694,7 +3714,7 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Test if one needs one more GKB iteration
+ * \brief Test if one needs one more GKB iteration
  *
  * \param[in, out] gkb     pointer to a GKB builder structure
  */
@@ -3769,9 +3789,9 @@ _gkb_cvg_test(cs_gkb_builder_t           *gkb)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Test if one needs one more Uzawa iteration in case of an Uzawa
- *         CG (conjugate gradient variant). The residual criterion has to be
- *         computed before calling this function.
+ * \brief Test if one needs one more Uzawa iteration in case of an Uzawa
+ *        CG (conjugate gradient variant). The residual criterion has to be
+ *        computed before calling this function.
  *
  * \param[in, out] uza     pointer to a Uzawa builder structure
  *
@@ -3804,7 +3824,7 @@ _uza_cg_cvg_test(cs_uza_builder_t         *uza)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Test if one needs one more Uzawa iteration
+ * \brief Test if one needs one more Uzawa iteration
  *
  * \param[in, out] uza     pointer to a Uzawa builder structure
  */
@@ -3842,8 +3862,8 @@ _uza_cvg_test(cs_uza_builder_t           *uza)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Test if one needs one more Uzawa iteration in case of an incremental
- *         formulation
+ * \brief Test if one needs one more Uzawa iteration in case of an incremental
+ *        formulation
  *
  * \param[in]      delta_u_l2   value of the weighted L2 norm of delta_u
  * \param[in, out] uza          pointer to a Uzawa builder structure
@@ -3901,8 +3921,8 @@ _uza_incr_cvg_test(cs_real_t                   delta_u_l2,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check and possibly fix the settings related to the Schur complement
- *         in case of AMG preconditioner
+ * \brief Check and possibly fix the settings related to the Schur complement
+ *        in case of AMG preconditioner
  *
  * \param[in, out] schur_slesp   pointer to the SLES parameters for the Schur
  */
@@ -3958,7 +3978,7 @@ _set_schur_sles(cs_param_sles_t   *schur_slesp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create an empty cs_cdofb_monolithic_sles_t structure
+ * \brief Create an empty cs_cdofb_monolithic_sles_t structure
  *
  * \param[in] n_faces     number of faces (interior + border)
  * \param[in] n_cells     number of cells
@@ -3993,9 +4013,9 @@ cs_cdofb_monolithic_sles_create(cs_lnum_t    n_faces,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a part of the structure
+ * \brief Free a part of the structure
  *
- * \param[in, out]  msles   pointer to the structure to clean
+ * \param[in, out] msles   pointer to the structure to clean
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4011,9 +4031,9 @@ cs_cdofb_monolithic_sles_clean(cs_cdofb_monolithic_sles_t   *msles)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free memory related to cs_cdofb_monolithic_sles_t structure
+ * \brief Free memory related to cs_cdofb_monolithic_sles_t structure
  *
- * \param[in, out]  p_msles  double pointer to the structure to free
+ * \param[in, out] p_msles  double pointer to the structure to free
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4059,8 +4079,8 @@ cs_cdofb_monolithic_sles_init_sharing(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free if needed structure(s) associated CDO face-based schemes with
- *         a monolithic velocity-pressure coupling
+ * \brief Free if needed structure(s) associated CDO face-based schemes with
+ *        a monolithic velocity-pressure coupling
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4073,11 +4093,11 @@ cs_cdofb_monolithic_sles_finalize(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Start setting-up the Navier-Stokes equations when a monolithic
- *         algorithm is used to couple the system.
- *         No mesh information is available at this stage.
- *         nsp is not declared as const to avoid compilation warnings but
- *         it should be modified at this stage.
+ * \brief Start setting-up the Navier-Stokes equations when a monolithic
+ *        algorithm is used to couple the system.
+ *        No mesh information is available at this stage.
+ *        nsp is not declared as const to avoid compilation warnings but
+ *        it should be modified at this stage.
  *
  * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
  * \param[in, out] context  pointer to a context structure cast on-the-fly
@@ -4246,7 +4266,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
   case CS_NAVSTO_SLES_GKB_PETSC:
   case CS_NAVSTO_SLES_GKB_GMRES:
     bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid strategy for solving the linear system %s\n"
+              "%s: Invalid strategy for solving the linear system \"%s\"\n"
               " PETSc 3.11.x or greater is required with this option.\n",
               __func__, mom_eqp->name);
     break;
@@ -4262,7 +4282,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
   case CS_NAVSTO_SLES_NOTAY_TRANSFORM:
   case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
     bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid strategy for solving the linear system %s\n"
+              "%s: Invalid strategy for solving the linear system \"%s\"\n"
               " PETSc is required with this option.\n"
               " Please use a version of code_saturne built with PETSc.",
               __func__, mom_eqp->name);
@@ -4291,12 +4311,12 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
                          (void *)mom_eqp);
 #else
     bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid strategy for solving the linear system %s\n"
+              "%s: Invalid strategy for solving the linear system \"%s\"\n"
               " PETSc with MUMPS is required with this option.\n",
               __func__, mom_eqp->name);
 #endif  /* PETSC_HAVE_MUMPS */
     bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid strategy for solving the linear system %s\n"
+              "%s: Invalid strategy for solving the linear system \"%s\"\n"
               " Neither PETSc nor MUMPS is available.\n",
               __func__, mom_eqp->name);
 #endif  /* HAVE_PETSC */
@@ -4324,10 +4344,10 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve a linear system arising from the discretization of the
- *         Navier-Stokes equation with a CDO face-based approach.
- *         The full system is treated as one block and solved as it is.
- *         In this situation, PETSc or MUMPS are usually considered.
+ * \brief Solve a linear system arising from the discretization of the
+ *        Navier-Stokes equation with a CDO face-based approach.
+ *        The full system is treated as one block and solved as it is.
+ *        In this situation, PETSc or MUMPS are usually considered.
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
@@ -4555,7 +4575,7 @@ cs_cdofb_monolithic_block_krylov(const cs_navsto_param_t       *nsp,
                                  cs_param_sles_t               *slesp,
                                  cs_cdofb_monolithic_sles_t    *msles)
 {
-  CS_UNUSED(eqp);
+  CS_NO_WARN_IF_UNUSED(eqp);
 
   if (msles == NULL)
     return 0;
@@ -4718,7 +4738,7 @@ cs_cdofb_monolithic_block_krylov(const cs_navsto_param_t       *nsp,
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid strategy to solve the system.\n"
+              "%s: Invalid strategy to solve the Navier-Stokes system.\n"
               "Please used a Krylov-based iterative solver.", __func__);
     break;
   }
@@ -4745,9 +4765,9 @@ cs_cdofb_monolithic_block_krylov(const cs_navsto_param_t       *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Use the GKB algorithm to solve the saddle-point problem arising
- *         from CDO-Fb schemes for Stokes and Navier-Stokes with a monolithic
- *         coupling
+ * \brief Use the GKB algorithm to solve the saddle-point problem arising
+ *        from CDO-Fb schemes for Stokes and Navier-Stokes with a monolithic
+ *        coupling
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
@@ -4913,12 +4933,12 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Use the preconditioned Uzawa-CG algorithm to solve the saddle-point
- *         problem arising from CDO-Fb schemes for Stokes, Oseen and
- *         Navier-Stokes with a monolithic coupling
- *         This algorithm is based on Koko's paper "Uzawa conjugate gradient
- *         method for the Stokes problem: Matlab implementation with P1-iso-P2/
- *         P1 finite element"
+ * \brief Use the preconditioned Uzawa-CG algorithm to solve the saddle-point
+ *        problem arising from CDO-Fb schemes for Stokes, Oseen and
+ *        Navier-Stokes with a monolithic coupling
+ *        This algorithm is based on Koko's paper "Uzawa conjugate gradient
+ *        method for the Stokes problem: Matlab implementation with P1-iso-P2/
+ *        P1 finite element"
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
@@ -5258,10 +5278,10 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Use the Uzawa algorithm with an Augmented Lagrangian (ALU) technique
- *         in an incremental way to solve the saddle-point problem arising from
- *         CDO-Fb schemes for Stokes, Oseen and Navier-Stokes with a monolithic
- *         coupling
+ * \brief Use the Uzawa algorithm with an Augmented Lagrangian (ALU) technique
+ *        in an incremental way to solve the saddle-point problem arising from
+ *        CDO-Fb schemes for Stokes, Oseen and Navier-Stokes with a monolithic
+ *        coupling
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure

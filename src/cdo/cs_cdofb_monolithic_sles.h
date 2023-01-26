@@ -58,7 +58,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create an empty cs_cdofb_monolithic_sles_t structure
+ * \brief Create an empty cs_cdofb_monolithic_sles_t structure
  *
  * \param[in] n_faces     number of faces (interior + border)
  * \param[in] n_cells     number of cells
@@ -73,9 +73,9 @@ cs_cdofb_monolithic_sles_create(cs_lnum_t    n_faces,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a part of the structure
+ * \brief Free a part of the structure
  *
- * \param[in, out]  msles   pointer to the structure to clean
+ * \param[in, out] msles   pointer to the structure to clean
  */
 /*----------------------------------------------------------------------------*/
 
@@ -84,9 +84,9 @@ cs_cdofb_monolithic_sles_clean(cs_cdofb_monolithic_sles_t   *msles);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free memory related to cs_cdofb_monolithic_sles_t structure
+ * \brief Free memory related to cs_cdofb_monolithic_sles_t structure
  *
- * \param[in, out]  p_msles  double pointer to the structure to free
+ * \param[in, out] p_msles  double pointer to the structure to free
  */
 /*----------------------------------------------------------------------------*/
 
@@ -110,8 +110,8 @@ cs_cdofb_monolithic_sles_init_sharing(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free if needed structure(s) associated CDO face-based schemes with
- *         a monolithic velocity-pressure coupling
+ * \brief Free if needed structure(s) associated CDO face-based schemes with
+ *        a monolithic velocity-pressure coupling
  */
 /*----------------------------------------------------------------------------*/
 
@@ -120,11 +120,11 @@ cs_cdofb_monolithic_sles_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Start setting-up the Navier-Stokes equations when a monolithic
- *         algorithm is used to couple the system.
- *         No mesh information is available at this stage.
- *         nsp is not declared as const to avoid compilation warnings but
- *         it should be modified at this stage.
+ * \brief Start setting-up the Navier-Stokes equations when a monolithic
+ *        algorithm is used to couple the system.
+ *        No mesh information is available at this stage.
+ *        nsp is not declared as const to avoid compilation warnings but
+ *        it should be modified at this stage.
  *
  * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
  * \param[in, out] context  pointer to a context structure cast on-the-fly
@@ -137,10 +137,10 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve a linear system arising from the discretization of the
- *         Navier-Stokes equation with a CDO face-based approach.
- *         The full system is treated as one block and solved as it is.
- *         In this situation, PETSc or MUMPS are usually considered.
+ * \brief Solve a linear system arising from the discretization of the
+ *        Navier-Stokes equation with a CDO face-based approach.
+ *        The full system is treated as one block and solved as it is.
+ *        In this situation, PETSc or MUMPS are usually considered.
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
@@ -186,9 +186,9 @@ cs_cdofb_monolithic_block_krylov(const cs_navsto_param_t       *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Use the GKB algorithm to solve the saddle-point problem arising
- *         from CDO-Fb schemes for Stokes and Navier-Stokes with a monolithic
- *         coupling
+ * \brief Use the GKB algorithm to solve the saddle-point problem arising
+ *        from CDO-Fb schemes for Stokes and Navier-Stokes with a monolithic
+ *        coupling
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
@@ -209,12 +209,12 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Use the preconditioned Uzawa-CG algorithm to solve the saddle-point
- *         problem arising from CDO-Fb schemes for Stokes, Oseen and
- *         Navier-Stokes with a monolithic coupling
- *         This algorithm is based on Koko's paper "Uzawa conjugate gradient
- *         method for the Stokes problem: Matlab implementation with P1-iso-P2/
- *         P1 finite element"
+ * \brief Use the preconditioned Uzawa-CG algorithm to solve the saddle-point
+ *        problem arising from CDO-Fb schemes for Stokes, Oseen and
+ *        Navier-Stokes with a monolithic coupling.
+ *        This algorithm is based on Koko's paper "Uzawa conjugate gradient
+ *        method for the Stokes problem: Matlab implementation with P1-iso-P2/
+ *        P1 finite element"
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
@@ -235,10 +235,10 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Use the Uzawa algorithm with an Augmented Lagrangian (ALU) technique
- *         in an incremental way to solve the saddle-point problem arising from
- *         CDO-Fb schemes for Stokes, Oseen and Navier-Stokes with a monolithic
- *         coupling
+ * \brief Use the Uzawa algorithm with an Augmented Lagrangian (ALU) technique
+ *        in an incremental way to solve the saddle-point problem arising from
+ *        CDO-Fb schemes for Stokes, Oseen and Navier-Stokes with a monolithic
+ *        coupling
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
