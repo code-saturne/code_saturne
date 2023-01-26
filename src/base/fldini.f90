@@ -263,6 +263,7 @@ if (istmpf.ne.1 .or. staggered.eq.1) then
 else
   call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
 endif
+call field_set_key_int(f_id, keyvis, 0)
 
 ! The same mass flux for every variable, an other mass flux
 ! might be defined hereafterwards
