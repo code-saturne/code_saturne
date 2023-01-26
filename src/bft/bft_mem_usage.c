@@ -36,34 +36,27 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(HAVE_UNISTD_H)
+#include <unistd.h>
+#endif
+
 #if defined (__linux__) && defined(HAVE_SYS_STAT_H) \
                         && defined(HAVE_SYS_TYPES_H)
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#elif defined(__osf__) && defined(_OSF_SOURCE) && defined(HAVE_UNISTD_H)
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/signal.h>
-#include <sys/fault.h>
-#include <sys/syscall.h>
-#include <sys/procfs.h>
-#include <unistd.h>
-
 #elif defined(HAVE_GETRUSAGE)
 #include <sys/time.h>
 #include <sys/resource.h>
-#include <unistd.h>
 #endif
 
-#if defined(HAVE_UNISTD_H) && defined(HAVE_SBRK)
-#if 0
+#if defined(HAVE_SBRK)
+#if g0
 #define USE_SBRK 1
 #elif defined (__linux__)
 #define __USE_MISC 1
 #endif
-#include <unistd.h>
 #endif
 
 #if defined(HAVE_MALLOC_HOOKS)
