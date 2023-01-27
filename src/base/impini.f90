@@ -80,12 +80,9 @@ integer          kscmin, kscmax, keyvar
 integer          f_id, n_fields
 integer          igg, ige
 integer          kturt, turb_flux_model
-double precision scmaxp, scminp
 
 character(len=3), dimension(3) :: nomext3
 character(len=4), dimension(3) :: nomext63
-
-type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
@@ -330,12 +327,6 @@ write(nfecra,3000)
 ! Instationnaire
 if (idtvar.ge.0) then
 
-!   - Coef multiplicatif du pas de temps
-
-  write(nfecra,3040)
-  write(nfecra,3042)
-
-
 !   - Coefficient de relaxation de la masse volumique
 
   if (ippmod(iphpar).ge.2.and.ippmod(ieljou).lt.0.and.ippmod(ielarc).lt.0) then
@@ -357,17 +348,6 @@ write(nfecra,9900)
                                                                 /,&
 ' ** TIME STEPPING',                                            /,&
 '    -------------',                                            /)
- 3040 format(                                                     &
-' --- Per-variable properties',                                 /,&
-                                                                /,&
-'------------------------------------',                         /,&
-' Variable          ISTAT      '                                /,&
-'------------------------------------'                            )
- 3042 format(                                                     &
-'----------------------------',                                 /,&
-                                                                /,&
-'       ISTAT  =  0 ou  1       (1 for unsteady              )',/)
-
  3050 format(                                                     &
 '--- Relaxation coefficient',                                   /,&
 '    RHO(n+1)=SRROM*RHO(n)+(1-SRROM)*RHO(n+1)',                 /,&

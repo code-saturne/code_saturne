@@ -172,9 +172,11 @@ typedef struct {
   int           isto2t;       /* time scheme activated for the source
                                  terms of turbulent equations */
 
-  double        thetsn;       /* value of \f$theta_S\f$ for turbulence */
+  double        thetsn;       /* value of \f$theta_S\f$ for Navier-Stokes
+                                 source terms */
 
-  double        thetst;       /* value of \f$theta\f$ for turbulence */
+  double        thetst;       /* value of \f$theta\f$ for turbulence
+                                 explicit source terms */
 
   double        thetvi;       /* value of \f$theta\f$ for total viscosity */
 

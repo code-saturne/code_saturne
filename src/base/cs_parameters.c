@@ -177,7 +177,7 @@ BEGIN_C_DECLS
 
   \var  cs_time_scheme_t::isno2t
         \anchor isno2t
-        Specifies the time scheme activated for the source
+        Specifies the time scheme for the source
         terms of the momentum equation, apart from convection and
         diffusion (for instance: head loss, transposed gradient, ...).
         - 0: "standard" first-order: the terms which are linear
@@ -201,7 +201,7 @@ BEGIN_C_DECLS
 
   \var  cs_time_scheme_t::isto2t
         \anchor isto2t
-        Specifies the time scheme activated for
+        Specifies the time scheme for
         the source terms of the turbulence equations i.e. related to
         \f$k\f$, \f$R_{ij}\f$, \f$\varepsilon\f$, \f$\omega\f$, \f$\varphi\f$,
         \f$\overline{f}\f$), apart from convection and diffusion.
@@ -634,7 +634,8 @@ _log_func_default_var_cal_opt(const void *t)
 {
   const char fmt_i[] = "      %-19s  %-12d %s\n";
   const char fmt_r[] = "      %-19s  %-12.3g %s\n";
-  const cs_var_cal_opt_t *_t = (const void *)t;
+  const char fmt_c[] = "      %-19s  %-12s %s\n";
+  const cs_equation_param_t *_t = (const void *)t;
   cs_log_printf(CS_LOG_SETUP,"  var_cal_opt\n");
 
   cs_log_printf(CS_LOG_SETUP,_("    Printing\n"));
@@ -654,14 +655,21 @@ _log_func_default_var_cal_opt(const void *t)
   cs_log_printf(CS_LOG_SETUP, fmt_i, "idifft", _t->idifft,
                 _("Take turbulent diffusion into account."));
   cs_log_printf(CS_LOG_SETUP, fmt_i, "idften", _t->idften,
-                _("Type of diffusivity: scalar (1), orthotropic (3) or symmetric "
-                  "tensor (6)"));
+                _("Type of diffusivity: scalar (1), orthotropic (3) "
+                  "or symmetric tensor (6)"));
   cs_log_printf(CS_LOG_SETUP, fmt_i, "ischcv", _t->ischcv,
-                _("Type of convective scheme: 2nd order with centered-gradient "
-                  "upwind reconstruction (0), centered (1), "
-                  "2nd order with upwind-gradient upwind-reconstruction (SOLU) (2) "
-                  "continuous blending between upwind and another scheme (3) "
-                  "and NVD/TVD scheme (4)"));
+                _("Type of convective scheme:"));
+  cs_log_printf(CS_LOG_SETUP, fmt_c, " ", " ",
+                _("  0: 2nd order with centered-gradient upwind reconstruction,"));
+  cs_log_printf(CS_LOG_SETUP, fmt_c, " ", " ",
+                _("  1: centered,"));
+  cs_log_printf(CS_LOG_SETUP, fmt_c, " ", " ",
+                _("  2: 2nd order with upwind-gradient upwind-reconstruction "
+                  "(SOLU)"));
+  cs_log_printf(CS_LOG_SETUP, fmt_c, " ", " ",
+                _("  3: continuous blending between upwind and another scheme"));
+  cs_log_printf(CS_LOG_SETUP, fmt_c, " ", " ",
+                _("  4: NVD/TVD scheme"));
   cs_log_printf(CS_LOG_SETUP, fmt_i, "isstpc", _t->isstpc,
                 _("0 for slope test, 1 for no slope test, 2 for min/max limiter "));
   cs_log_printf(CS_LOG_SETUP, fmt_r, "blencv", _t->blencv,
@@ -1757,21 +1765,69 @@ cs_parameters_var_cal_opt_default(void)
 void
 cs_time_scheme_log_setup(void)
 {
-  if (cs_glob_time_scheme->iccvfg == 0)
-    return;
-
-  /* TODO handle other terms */
-
   cs_log_printf(CS_LOG_SETUP,
                 ("\n"
                  "Time discretization options\n"
                  "----------------------------\n\n"));
 
   /* Frozen velocity field */
-  if (cs_glob_time_scheme->iccvfg)
+  if (cs_glob_time_scheme->iccvfg) {
     cs_log_printf
       (CS_LOG_SETUP,
        _("  Frozen velocity field\n\n"));
+    return;
+  }
+
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("  Time scheme:\n\n"
+       "    time_order:  %d (order of base time stepping scheme)\n"
+       "    istmpf:      %d (time order of the mass flux scheme)\n"
+       "    isno2t:      %d (time scheme for the momentum source terms,\n"
+       "                     apart from convection and diffusion)\n"
+       "    isto2t:      %d (time scheme for the turbulence source terms)\n"),
+     cs_glob_time_scheme->time_order,
+     cs_glob_time_scheme->istmpf,
+     cs_glob_time_scheme->isno2t,
+     cs_glob_time_scheme->isto2t);
+
+  if (cs_glob_time_scheme->isno2t > 0)
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("    thetsn:      %g (theta_S for Navier-Stokes source terms)\n"),
+       cs_glob_time_scheme->thetsn);
+
+  if (cs_glob_time_scheme->isto2t > 0)
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("    thetst:      %g (theta for turbulence explicit source terms)\n"),
+       cs_glob_time_scheme->thetst);
+
+  int key_t_ext_id = cs_field_key_id("time_extrapolated");
+
+  {
+    int iviext = 0;
+    const cs_field_t *f = cs_field_by_name_try("molecular_viscosity");
+    if (f != NULL)
+      iviext = cs_field_get_key_int(f, key_t_ext_id);
+    if (iviext > 0)
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("    thetvi:      %g (theta for total viscosity)\n"),
+         cs_glob_time_scheme->thetvi);
+  }
+
+  {
+    int icpext = 0;
+    const cs_field_t *f = cs_field_by_name_try("specific_heat");
+    if (f != NULL)
+      icpext = cs_field_get_key_int(f, key_t_ext_id);
+    if (icpext > 0)
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("    thetvi:      %g (theta for specific heat)\n"),
+         cs_glob_time_scheme->thetcp);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1783,7 +1839,6 @@ cs_time_scheme_log_setup(void)
 void
 cs_space_disc_log_setup(void)
 {
-
   cs_log_printf(CS_LOG_SETUP,
                 ("\n"
                  "Space discretization options\n"

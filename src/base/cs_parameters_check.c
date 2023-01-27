@@ -1098,6 +1098,12 @@ cs_parameters_check(void)
                                 cs_glob_time_step_options->idtvar,
                                 -1, 3);
 
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("while reading input data"),
+                                "cs_glob_time_step_options->itpcol",
+                                vp_param->itpcol,
+                                -1, 2);
+
   if (cs_glob_time_scheme->iccvfg == 1) {
     cs_parameters_is_equal_int(CS_WARNING,
                               _("while reading input data,\n"

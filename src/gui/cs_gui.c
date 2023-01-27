@@ -1729,15 +1729,13 @@ void CS_PROCF (cscfgp, CSCFGP) (int *icfgrp)
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSISUI (NTSUIT, ILEAUX, ICCVFG)
+ * subroutine csisui (ntsuit, ileaux)
  * *****************
  *
  * INTEGER          NTSUIT  -->   checkpoint frequency
- * INTEGER          ICCFVG  -->   restart with frozen field
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csisui, CSISUI) (int *ntsuit,
-                                int *iccvfg)
+void CS_PROCF (csisui, CSISUI) (int  *ntsuit)
 {
   cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree,
                                         "calculation_management/start_restart");
@@ -1748,13 +1746,15 @@ void CS_PROCF (csisui, CSISUI) (int *ntsuit,
     (tn, "restart_with_auxiliary",
      &(cs_glob_restart_auxiliary->read_auxiliary));
 
-  cs_gui_node_get_child_status_int(tn, "frozen_field", iccvfg);
+  cs_time_scheme_t *t_sch = cs_get_glob_time_scheme();
+
+  cs_gui_node_get_child_status_int(tn, "frozen_field", &(t_sch->iccvfg));
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
-  bft_printf("--ntsuit = %i\n", *ntsuit);
-  bft_printf("--ileaux = %i\n", cs_glob_restart_auxiliary->read_auxiliary);
-  bft_printf("--iccvfg = %i\n", *iccvfg);
+  bft_printf("--ntsuit = %d\n", *ntsuit);
+  bft_printf("--ileaux = %d\n", cs_glob_restart_auxiliary->read_auxiliary);
+  bft_printf("--iccvfg = %d\n", t_sch->iccvfg);
 #endif
 }
 

@@ -1802,12 +1802,10 @@ cs_turb_model_log_setup(void)
 
     cs_log_printf
       (CS_LOG_SETUP,
-       _("    almax:       %14.5e (Characteristic length)\n"
-         "    uref:        %14.5e (Characteristic velocity)\n"
+       _("    uref:        %14.5e (Characteristic velocity)\n"
          "    iclkep:      %14d (k-epsilon clipping model)\n"
          "    ikecou:      %14d (k-epsilon coupling mode)\n"
          "    igrake:      %14d (Account for gravity)\n"),
-       cs_glob_turb_ref_values->almax,
        cs_glob_turb_ref_values->uref,
        cs_glob_turb_rans_model->iclkep,
        cs_glob_turb_rans_model->ikecou,
@@ -1834,15 +1832,13 @@ cs_turb_model_log_setup(void)
            || turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
 
     cs_log_printf(CS_LOG_SETUP,
-                  _("    almax:       %14.5e (Characteristic length)\n"
-                    "    uref:        %14.5e (Characteristic velocity)\n"
+                  _("    uref:        %14.5e (Characteristic velocity)\n"
                     "    irijco:      %14d (Coupled resolution)\n"
                     "    irijnu:      %14d (Matrix stabilization)\n"
                     "    irijrb:      %14d (Reconstruct at boundaries)\n"
                     "    igrari:      %14d (Account for gravity)\n"
                     "    iclsyr:      %14d (Symmetry implicitation)\n"
                     "    iclptr:      %14d (Wall implicitation)\n"),
-                  cs_glob_turb_ref_values->almax,
                   cs_glob_turb_ref_values->uref,
                   cs_glob_turb_rans_model->irijco,
                   cs_glob_turb_rans_model->irijnu,
@@ -1900,12 +1896,10 @@ cs_turb_model_log_setup(void)
   else if (turb_model->iturb == CS_TURB_V2F_PHI) {
 
     cs_log_printf(CS_LOG_SETUP,
-       _("    almax:       %14.5e (Characteristic length)\n"
-         "    uref:        %14.5e (Characteristic velocity)\n"
+       _("    uref:        %14.5e (Characteristic velocity)\n"
          "    iclkep:      %14d (k-epsilon clipping model)\n"
          "    ikecou:      %14d (k-epsilon coupling mode)\n"
          "    igrake:      %14d (Account for gravity)\n"),
-         cs_glob_turb_ref_values->almax,
          cs_glob_turb_ref_values->uref,
          cs_glob_turb_rans_model->iclkep,
          cs_glob_turb_rans_model->ikecou,
@@ -1940,13 +1934,11 @@ cs_turb_model_log_setup(void)
          N_("CS_HYBRID_HTLES (Hybrid Temporal LES)")};
 
     cs_log_printf(CS_LOG_SETUP,
-       _("    almax:       %14.5e (Characteristic length)\n"
-         "    uref:        %14.5e (Characteristic velocity)\n"
+       _("    uref:        %14.5e (Characteristic velocity)\n"
          "    iclkep:      %14d (k-epsilon clipping model)\n"
          "    ikecou:      %14d (k-epsilon coupling mode)\n"
          "    hybrid_turb: %s\n"
          "    igrake:      %14d (Account for gravity)\n"),
-         cs_glob_turb_ref_values->almax,
          cs_glob_turb_ref_values->uref,
          cs_glob_turb_rans_model->iclkep,
          cs_glob_turb_rans_model->ikecou,
@@ -1982,12 +1974,10 @@ cs_turb_model_log_setup(void)
          N_("CS_HYBRID_HTLES (Hybrid Temporal LES)")};
 
     cs_log_printf(CS_LOG_SETUP,
-       _("    almax:       %14.5e (Characteristic length)\n"
-         "    uref:        %14.5e (Characteristic velocity)\n"
+       _("    uref:        %14.5e (Characteristic velocity)\n"
          "    ikecou:      %14d (k-epsilon coupling mode)\n"
          "    hybrid_turb: %s\n"
          "    igrake:      %14d (Account for gravity)\n"),
-         cs_glob_turb_ref_values->almax,
          cs_glob_turb_ref_values->uref,
          cs_glob_turb_rans_model->ikecou,
          hybrid_turb_value_str[turb_model->hybrid_turb],
@@ -2013,10 +2003,8 @@ cs_turb_model_log_setup(void)
 
     cs_field_get_key_struct(CS_F_(nusa), key_cal_opt_id, &var_cal_opt);
     cs_log_printf(CS_LOG_SETUP,
-       _("    almax:       %14.5e (Characteristic length)\n"
-         "    uref:        %14.5e (Characteristic velocity)\n"
+       _("    uref:        %14.5e (Characteristic velocity)\n"
          "    relaxv:      %14.5e for nu (Relaxation)\n"),
-         cs_glob_turb_ref_values->almax,
          cs_glob_turb_ref_values->uref,
          var_cal_opt.relaxv);
 
@@ -2049,7 +2037,8 @@ cs_turb_constants_log_setup(void)
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
 
   cs_log_printf(CS_LOG_SETUP,
-     _("\nConstants:\n\n"
+     _("\n"
+       "  Constants:\n\n"
        "    xkappa:      %14.5e (Von Karman constant)\n"
        "    cstlog:      %14.5e (U+=Log(y+)/kappa +cstlog)\n"
        "    apow:        %14.5e (U+=apow (y+)**bpow (W&W law))\n"
@@ -2274,17 +2263,13 @@ cs_turb_init_ref_quantities(void)
 
   if (   _turb_model.type == CS_TURB_RANS
       || _turb_model.type == CS_TURB_HYBRID) {
-
     cs_log_printf
       (CS_LOG_DEFAULT,
        _("\n"
-         " Reference quantities for turbulence:\n"
-         " ------------------------------------\n\n"
-         "   almax: %11.3g (caracteristic length for initialization)\n"
-         "   uref:  %11.3g (reference velocity))\n"),
-       _turb_ref_values.almax,
-       _turb_ref_values.uref);
-
+         " Characteristic values for turbulence:\n"
+         " -------------------------------------\n\n"
+         "   almax: %11.3g (caracteristic length for initialization)\n"),
+       _turb_ref_values.almax);
   }
 }
 

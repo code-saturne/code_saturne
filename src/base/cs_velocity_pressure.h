@@ -139,7 +139,7 @@ typedef struct {
 
   int         itpcol;         /* time scheme option:
                                   - 0: staggered.
-                                  - 1: collocated time scheme. */
+                                  - 1: colocated time scheme. */
 
   double      arak;           /* Arakawa multiplier for the Rhie and Chow
                                  filter (1 by default) */
