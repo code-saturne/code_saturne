@@ -85,7 +85,7 @@ implicit none
 
 integer          nmodpp
 integer          nscmax
-integer          l_size, f_id, ii
+integer          l_size, f_id
 integer          error, n_elts
 double precision l_cp(1), l_xmasm(1), l_cv(1)
 integer, dimension(:), pointer :: elt_ids
@@ -394,7 +394,7 @@ endif
 
 ! Restart, read auxiliary file, frozen velocity field
 
-call csisui(ntsuit, iccvfg)
+call csisui(ntsuit)
 
 ! Time step (only ntmabs, dtref)
 call cstime()

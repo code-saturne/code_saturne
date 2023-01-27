@@ -725,6 +725,14 @@ cs_velocity_pressure_param_log_setup(void)
      _("    irevmc:     %5d (Velocity reconstruction mode)\n"),
      vp_param->irevmc);
 
+  const char *itpcol_type_str[] = {N_("staggered time scheme"),
+                                   N_("colocated time scheme")};
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("      itpcol:        %d (%s)\n"),
+                vp_param->itpcol,
+                _(itpcol_type_str[vp_param->itpcol]));
+
   const cs_equation_param_t *eqp = NULL;
 
   if (cs_glob_time_step_options->idtvar >= 0) {

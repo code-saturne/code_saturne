@@ -652,7 +652,7 @@ cs_time_step_log_setup(void)
            "    dtref:      %17.5g (Reference time step)\n\n"
            "  When the value of coumax or foumax is negative\n"
            "  or zero, the associated time step limitation\n"
-           "  (for CFL and Fourier respectively) is ignored.\n\n"),
+           "  (for CFL and Fourier respectively) is ignored.\n"),
          cs_time_step_type_enum_name[ts_id],
          cs_time_step_type_name[ts_id],
          cs_glob_time_step_options->iptlro,

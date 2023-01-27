@@ -138,12 +138,10 @@ void CS_PROCF (cscfgp, CSCFGP) (int *icfgrp);
  * *****************
  *
  * INTEGER          NTSUIT  -->   checkpoint frequency
- * INTEGER          ICCFVG  -->   restart with frozen field
  *----------------------------------------------------------------------------*/
 
 
-void CS_PROCF (csisui, CSISUI) (int *ntsuit,
-                                int *iccvfg);
+void CS_PROCF (csisui, CSISUI) (int *ntsuit);
 
 /*----------------------------------------------------------------------------
  * Time passing parameters.
