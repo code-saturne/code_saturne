@@ -4259,6 +4259,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
   case CS_NAVSTO_SLES_GKB_PETSC:
   case CS_NAVSTO_SLES_GKB_GMRES:
   case CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK:
+  case CS_NAVSTO_SLES_NOTAY_TRANSFORM:
   case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid strategy for solving the linear system %s\n"
@@ -4304,7 +4305,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid strategy for solving the linear system %s\n",
+              "%s: Invalid strategy for solving the linear system \"%s\"\n",
               __func__, mom_eqp->name);
   }
 
