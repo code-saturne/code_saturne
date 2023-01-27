@@ -485,9 +485,11 @@ _writer_info(void)
 {
   if (cs_glob_rank_id < 1) {
 
-    bft_printf(_("\n"
-                 "Postprocessing output writers:\n"
-                 "------------------------------\n\n"));
+    cs_log_t log = CS_LOG_SETUP;
+
+    cs_log_printf(log, _("\n"
+                         "Postprocessing output writers:\n"
+                         "------------------------------\n\n"));
 
     for (int i = 0; i < _cs_post_n_writers; i++) {
 
@@ -527,14 +529,15 @@ _writer_info(void)
 
       cs_time_control_get_description(&(writer->tc), interval_s, 128);
 
-      bft_printf(_("  %2d: name: %s\n"
-                   "      directory: %s\n"
-                   "      format: %s\n"
-                   "      options: %s\n"
-                   "      time dependency: %s\n"
-                   "      output: %s\n\n"),
-                 writer->id, case_name, dir_name, fmt_name, fmt_opts,
-                 _(fvm_writer_time_dep_name[time_dep]), interval_s);
+      cs_log_printf(log,
+                    _("  %2d: name: %s\n"
+                      "      directory: %s\n"
+                      "      format: %s\n"
+                      "      options: %s\n"
+                      "      time dependency: %s\n"
+                      "      output: %s\n\n"),
+                    writer->id, case_name, dir_name, fmt_name, fmt_opts,
+                    _(fvm_writer_time_dep_name[time_dep]), interval_s);
     }
   }
 }
