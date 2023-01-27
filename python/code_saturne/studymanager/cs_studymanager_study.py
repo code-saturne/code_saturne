@@ -2319,6 +2319,28 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
+    def copy_input(self, i_nodes, s_label, c_label):
+        """
+        Copy input in POST for later description report generation 
+        """
+        for i_node in i_nodes:
+            fig_name, run_id, repo, tex = self.__parser.getInput(i_node)
+            fig = os.path.join(self.__dest, s_label, c_label, 'RESU', run_id,
+                               fig_name)
+
+            # Figure copied in POST/"CURRENT"/CASE/run_id folder
+            dest_folder = os.path.join(self.__dest, s_label, 'POST', 'CURRENT',
+                                       c_label, run_id)
+            fig_dest = os.path.join(dest_folder, fig_name)
+
+            if os.path.isfile(fig):
+                if fig[-4:] in ('.png', '.jpg', '.pdf') or fig[-5:] == '.jpeg':
+                    if not os.path.exists(dest_folder):
+                        os.makedirs(dest_folder)
+                    shutil.copyfile(fig, fig_dest)
+
+    #---------------------------------------------------------------------------
+
     def build_reports(self, report_fig):
         """
         @type report_fig: C{String}
@@ -2355,6 +2377,8 @@ class Studies(object):
                         doc.appendLine("\\subsection{Results for "
                                        "case %s}" % case.label)
                         self.report_input(doc, nodes, l, case.label)
+                        # copy input in POST
+                        self.copy_input(nodes, l, case.label)
 
             # handle the input nodes that are inside postpro nodes
 
