@@ -189,6 +189,14 @@ interface
 
   !=============================================================================
 
+  subroutine cs_turb_init_ref_quantities()  &
+    bind(C, name='cs_turb_init_ref_quantities')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_turb_init_ref_quantities
+
+  !=============================================================================
+
   subroutine cs_les_inflow_initialize()  &
     bind(C, name='cs_les_inflow_initialize')
     use, intrinsic :: iso_c_binding
@@ -307,7 +315,7 @@ endif
 ! End of modules initialization
 !===============================================================================
 
-call initi2
+call cs_turb_init_ref_quantities();
 
 ! First pass for every subroutine requiring pass count
 iappel = 1

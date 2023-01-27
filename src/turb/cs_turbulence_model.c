@@ -2037,8 +2037,8 @@ cs_turb_model_log_setup(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Print the turbulent constants to setup.log.
- *
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_turb_constants_log_setup(void)
@@ -2256,6 +2256,36 @@ cs_turb_constants_log_setup(void)
                   cs_turb_c1trit, cs_turb_c2trit, cs_turb_c3trit,
                   cs_turb_c4trit);
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute characteristic length for turbulence if not already done.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turb_init_ref_quantities(void)
+{
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  if (_turb_ref_values.almax < 999)
+    _turb_ref_values.almax = pow(mq->tot_vol, 1./3.);
+
+  if (   _turb_model.type == CS_TURB_RANS
+      || _turb_model.type == CS_TURB_HYBRID) {
+
+    cs_log_printf
+      (CS_LOG_DEFAULT,
+       _("\n"
+         " Reference quantities for turbulence:\n"
+         " ------------------------------------\n\n"
+         "   almax: %11.3g (caracteristic length for initialization)\n"
+         "   uref:  %11.3g (reference velocity))\n"),
+       _turb_ref_values.almax,
+       _turb_ref_values.uref);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
