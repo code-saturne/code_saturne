@@ -1298,7 +1298,7 @@ class Case(Dico, XMLDocument):
         return d.toString()
 
 
-    def xmlSaveDocument(self, prettyString=True):
+    def xmlSaveDocument(self, prettyString=True, saveLink=False):
         """
         This method writes the associated xml file.
         See saveCase and saveCaseAs methods in the Main module.
@@ -1315,7 +1315,8 @@ class Case(Dico, XMLDocument):
             file.close()
             self.xml_saved = s
             self['saved'] = "yes"
-            d.doc.unlink()
+            if not saveLink:
+                d.doc.unlink()
         except IOError as e:
             msg = "Error: unable to save the XML document file."
             print(msg)

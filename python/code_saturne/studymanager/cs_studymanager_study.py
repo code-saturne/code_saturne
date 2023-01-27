@@ -1205,7 +1205,7 @@ class Studies(object):
             # minimal modification of xml for now
             smgr_xml_init(smgr).initialize()
             if self.__update_smgr:
-                smgr.xmlSaveDocument(prettyString=False)
+                smgr.xmlSaveDocument(prettyString=False,saveLink=True)
 
                 self.reporting(" ", report=False)
                 self.reporting(" SMGR parameter file was updated succesfully",
