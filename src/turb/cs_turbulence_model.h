@@ -496,6 +496,15 @@ cs_turb_model_log_setup(void);
 void
 cs_turb_constants_log_setup(void);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute characteristic length for turbulence if not already done.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turb_init_ref_quantities(void);
+
 /*----------------------------------------------------------------------------*
  * Clip turbulent fluxes
  *----------------------------------------------------------------------------*/

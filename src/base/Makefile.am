@@ -388,7 +388,6 @@ idrbla.f90 \
 impini.f90 \
 iniini.f90 \
 initi1.f90 \
-initi2.f90 \
 iniusi.f90 \
 iniva0.f90 \
 inivar.f90 \
