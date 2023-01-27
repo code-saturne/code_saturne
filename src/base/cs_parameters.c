@@ -1124,6 +1124,9 @@ cs_parameters_define_field_keys(void)
 
   /* Restart options */
   cs_field_define_key_int("restart_file", CS_RESTART_DISABLED, 0);
+
+  /* field units */
+  cs_field_define_key_str("units", "", 0);
 }
 
 /*----------------------------------------------------------------------------*/
