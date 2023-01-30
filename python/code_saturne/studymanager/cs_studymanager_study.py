@@ -1515,7 +1515,7 @@ class Studies(object):
                 if os.path.isdir(ref):
                     des = os.path.join(dest_study, "POST")
                     shutil.rmtree(des)
-                    shutil.copytree(ref, des, symlinks=True)
+                    shutil.copytree(ref, des)
 
             else:
                 if self.__sheet and not self.__postpro:
@@ -1534,7 +1534,7 @@ class Studies(object):
                                    " use option --dow to disable overwrite"
                                    %study)
                     shutil.rmtree(des)
-                shutil.copytree(ref, des, symlinks=True)
+                shutil.copytree(ref, des)
             else:
                 if self.__sheet:
                     self.reporting("    /!\ REPORT folder is mandatory in STUDY"
@@ -1547,7 +1547,7 @@ class Studies(object):
                 des = os.path.join(self.__dest, "STYLE")
                 if os.path.isdir(des):
                     shutil.rmtree(des)
-                shutil.copytree(ref, des, symlinks=True)
+                shutil.copytree(ref, des)
             else:
                 if self.__sheet:
                     self.reporting("    /!\ STYLE folder is mandatory in"
