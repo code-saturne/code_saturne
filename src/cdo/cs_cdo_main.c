@@ -110,9 +110,9 @@ cs_f_cdo_solve_unsteady_state_domain(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if this is the last iteration
+ * \brief Check if this is the last iteration
  *
- * \param[in]  ts    pointer to a cs_time_step_t structure
+ * \param[in] ts    pointer to a cs_time_step_t structure
  *
  * \return true or false
  */
@@ -134,7 +134,7 @@ _is_last_iter(const cs_time_step_t   *ts)
 
 /*----------------------------------------------------------------------------*/
 /*!
- *  \brief Check if one needs to solve the steady-state thermal equation
+ * \brief Check if one needs to solve the steady-state thermal equation
  *
  * \return true or false
  */
@@ -157,7 +157,7 @@ _needs_solving_steady_state_thermal(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- *  \brief Check if one needs to solve the thermal equation
+ * \brief Check if one needs to solve the thermal equation
  *
  * \return true or false
  */
@@ -182,9 +182,9 @@ _needs_solving_thermal(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute equations which user-defined and steady-state
+ * \brief Compute equations which user-defined and steady-state
  *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
+ * \param[in, out] domain     pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -233,10 +233,10 @@ _compute_steady_user_equations(cs_domain_t   *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute user-defined equation which are time-dependent
+ * \brief Compute user-defined equation which are time-dependent
  *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
- * \param[in]       nt_cur     current number of iteration done
+ * \param[in, out] domain     pointer to a cs_domain_t structure
+ * \param[in]      nt_cur     current number of iteration done
  */
 /*----------------------------------------------------------------------------*/
 
@@ -264,8 +264,7 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
 
             if (cs_equation_uses_new_mechanism(eq))
 
-              /* By default, a current to previous operation is
-                 performed */
+              /* By default, a current to previous operation is performed */
 
               cs_equation_solve(true, domain->mesh, eq);
 
@@ -294,9 +293,9 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve only steady-state equations
+ * \brief Solve only steady-state equations
  *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
+ * \param[in, out] domain     pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -410,10 +409,10 @@ _solve_steady_state_domain(cs_domain_t  *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the current time step for this new time iteration
+ * \brief Set the current time step for this new time iteration
  *
- * \param[in, out]  ts      pointer to a cs_time_step_t structure
- * \param[in, out]  ts_opt  pointer to a cs_time_step_options_t structure
+ * \param[in, out] ts      pointer to a cs_time_step_t structure
+ * \param[in, out] ts_opt  pointer to a cs_time_step_options_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -451,9 +450,9 @@ _define_current_time_step(cs_time_step_t           *ts,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve all the equations of a computational domain for one time step
+ * \brief Solve all the equations of a computational domain for one time step
  *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
+ * \param[in, out] domain     pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -546,10 +545,10 @@ _solve_domain(cs_domain_t  *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Summary the setup of all major structures:
- *          cs_domain_t structure, all equations and all properties
+ * \brief Summary of the setup of all major structures:
+ *        cs_domain_t structure, all equations and all properties
  *
- * \param[in]   domain    pointer to the cs_domain_t structure to summarize
+ * \param[in] domain    pointer to the cs_domain_t structure to summarize
  */
 /*----------------------------------------------------------------------------*/
 
@@ -616,14 +615,14 @@ _log_setup(const cs_domain_t   *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Summary of the performance monitoring for the major steps
+ * \brief Summary of the performance monitoring for the major steps
  *
- * \param[in]   domain    pointer to the cs_domain_t structure to summarize
+ * \param[in] domain    pointer to the cs_domain_t structure to summarize
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_log_monitoring(const cs_domain_t   *domain)
+_performance_log_monitoring(const cs_domain_t   *domain)
 {
   if (domain == NULL)
     return;
@@ -911,7 +910,7 @@ cs_cdo_finalize(cs_domain_t    *domain)
 
   /* Print monitoring information */
 
-  _log_monitoring(domain);
+  _performance_log_monitoring(domain);
 
   /* Free common structures relatated to equations */
 
