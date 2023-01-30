@@ -124,6 +124,26 @@ cs_f_set_cdo_mode(int  mode);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set a new string with the name equal to "Unknown"
+ *
+ * \return a newly allocated string
+ */
+/*----------------------------------------------------------------------------*/
+
+static char *
+_set_to_unknown(void)
+{
+  char *name = NULL;
+  int len = strlen("Unknown");
+
+  BFT_MALLOC(name, len + 1, char);
+  sprintf(name, "%s", "Unknown");
+
+  return name;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create the context for CDO/HHO schemes
  *
  * \param[in] cdo_mode         type of activation for the CDO/HHO module
@@ -195,6 +215,26 @@ cs_domain_create(void)
 
   BFT_MALLOC(domain, 1, cs_domain_t);
 
+  /* Working directory names */
+
+  domain->run_id = NULL;
+  domain->case_name = NULL;
+  domain->study_name = NULL;
+
+  cs_base_get_run_identity(&(domain->run_id),
+                           &(domain->case_name),
+                           &(domain->study_name));
+
+  if (domain->run_id == NULL)
+    domain->run_id = _set_to_unknown();
+  if (domain->case_name == NULL)
+    domain->case_name = _set_to_unknown();
+  if (domain->study_name == NULL)
+    domain->study_name = _set_to_unknown();
+
+  /* Quantitities and connectivities associated to the mesh and a numerical
+     scheme */
+
   domain->mesh = NULL;
   domain->mesh_quantities = NULL;
   domain->connect = NULL;
@@ -262,6 +302,12 @@ cs_domain_free(cs_domain_t   **p_domain)
     return;
 
   cs_domain_t  *domain = *p_domain;
+
+  /* Working directory names */
+
+  BFT_FREE(domain->run_id);
+  BFT_FREE(domain->case_name);
+  BFT_FREE(domain->study_name);
 
   /* cs_mesh_t and cs_mesh_quantities_t structure are not freed since they
      are only shared */
