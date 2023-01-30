@@ -1033,7 +1033,8 @@ _update_mesh(bool     restart_mode,
     cs_preprocessor_data_add_file("restart/mesh", 0, NULL, NULL);
 
     cs_preprocessor_data_read_headers(cs_glob_mesh,
-                                      cs_glob_mesh_builder);
+                                      cs_glob_mesh_builder,
+                                      false);
 
     if (tbm->reference_mesh->n_g_cells != cs_glob_mesh->n_g_cells)
       bft_error
@@ -1045,7 +1046,8 @@ _update_mesh(bool     restart_mode,
          (unsigned long long)cs_glob_mesh->n_g_cells);
 
     cs_preprocessor_data_read_mesh(cs_glob_mesh,
-                                   cs_glob_mesh_builder);
+                                   cs_glob_mesh_builder,
+                                   false);
   }
 
   cs_glob_mesh->n_b_faces_all = cs_glob_mesh->n_b_faces;

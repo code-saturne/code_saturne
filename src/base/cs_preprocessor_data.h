@@ -117,13 +117,15 @@ cs_preprocessor_data_is_restart(void);
  * Read mesh meta-data.
  *
  * parameters:
- *   mesh         <-- pointer to mesh structure
- *   mesh_builder <-- pointer to mesh builder structure
+ *   mesh             <-- pointer to mesh structure
+ *   mesh_builder     <-- pointer to mesh builder structure
+ *   ignore_cartesian <-- option to ignore cartesian blocks
  *----------------------------------------------------------------------------*/
 
 void
 cs_preprocessor_data_read_headers(cs_mesh_t          *mesh,
-                                  cs_mesh_builder_t  *mesh_builder);
+                                  cs_mesh_builder_t  *mesh_builder,
+                                  bool                ignore_cartesian);
 
 /*----------------------------------------------------------------------------
  * Read pre-processor mesh data and finalize input.
@@ -137,13 +139,15 @@ cs_preprocessor_data_read_headers(cs_mesh_t          *mesh,
  * the mesh structure.
  *
  * parameters:
- *   mesh         <-- pointer to mesh structure
- *   mesh_builder <-- pointer to mesh builder structure
+ *   mesh             <-- pointer to mesh structure
+ *   mesh_builder     <-- pointer to mesh builder structure
+ *   ignore_cartesian <-- option to ignore cartesian blocks
  *----------------------------------------------------------------------------*/
 
 void
 cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
-                               cs_mesh_builder_t  *mesh_builder);
+                               cs_mesh_builder_t  *mesh_builder,
+                               bool                ignore_cartesian);
 
 /*----------------------------------------------------------------------------*/
 

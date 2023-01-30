@@ -519,8 +519,10 @@ cs_restart_map_build(void)
     cs_mesh_builder_t *mb = cs_mesh_builder_create();
 
     cs_preprocessor_data_add_file(_mesh_input_path, 0, NULL, NULL);
-    cs_preprocessor_data_read_headers(m, mb);
-    cs_preprocessor_data_read_mesh(m, mb);
+    /* As currently we restart from an existing file, we set the
+     * "ignore_cartesian" option to true. */
+    cs_preprocessor_data_read_headers(m, mb, true);
+    cs_preprocessor_data_read_mesh(m, mb, true);
 
     m->n_b_faces_all = m->n_b_faces;
     m->n_g_b_faces_all = m->n_g_b_faces;
