@@ -882,6 +882,13 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
 void
 cs_domain_setup_log(const cs_domain_t   *domain)
 {
+  cs_log_printf(CS_LOG_SETUP, "\n Working directory names\n");
+  cs_log_printf(CS_LOG_SETUP, "%s\n", cs_sep_h1);
+
+  cs_log_printf(CS_LOG_SETUP, " %10s: %s\n", "Study", domain->study_name);
+  cs_log_printf(CS_LOG_SETUP, " %10s: %s\n", "Case", domain->case_name);
+  cs_log_printf(CS_LOG_SETUP, " %10s: %s\n", "Run_id", domain->run_id);
+
   cs_log_printf(CS_LOG_SETUP, "\nSummary of the CDO domain settings\n");
   cs_log_printf(CS_LOG_SETUP, "%s\n", cs_sep_h1);
 

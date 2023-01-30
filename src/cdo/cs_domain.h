@@ -140,6 +140,12 @@ typedef struct {
 
 typedef struct {
 
+  /* Working directory names */
+
+  char                     *run_id;
+  char                     *case_name;
+  char                     *study_name;
+
   /* code_saturne mesh and mesh quantities structures already computed */
 
   cs_mesh_t                *mesh;
