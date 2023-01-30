@@ -1526,6 +1526,10 @@ void
 cs_turb_compute_constants(void)
 {
   cs_turb_dpow   = 1./(1.+cs_turb_bpow);
+
+  if (cs_glob_turb_model->itytur == 5)
+    cs_turb_cmu = 0.22;
+
   cs_turb_cmu025 = pow(cs_turb_cmu, 0.25);
   cs_turb_cstlog_alpha = exp(-cs_turb_xkappa
                              * (cs_turb_cstlog_rough - cs_turb_cstlog));
@@ -1543,8 +1547,10 @@ cs_turb_compute_constants(void)
   if (   cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR
       || cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG)
     cs_field_set_key_double(CS_F_(eps), k_turb_schmidt, 1.22);
-  else if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
+  else if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
     cs_field_set_key_double(CS_F_(eps), k_turb_schmidt, 1.15);
+    cs_turb_crij3 = 0.6;
+  }
   else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K)
     cs_field_set_key_double(CS_F_(eps), k_turb_schmidt, 1.5);
   else
