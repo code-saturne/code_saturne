@@ -124,9 +124,9 @@ cs_f_set_cdo_mode(int  mode);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create the context for CDO/HHO schemes
+ * \brief Create the context for CDO/HHO schemes
  *
- * \param[in]  cdo_mode         type of activation for the CDO/HHO module
+ * \param[in] cdo_mode         type of activation for the CDO/HHO module
  *
  * \return a pointer to a new allocated cs_domain_cdo_context_t structure
  */
@@ -142,6 +142,7 @@ _create_cdo_context(int     cdo_mode)
   cc->mode = cdo_mode;
 
   /* Metadata related to each family of schemes */
+
   cc->vb_scheme_flag = 0;
   cc->vcb_scheme_flag = 0;
   cc->eb_scheme_flag = 0;
@@ -160,7 +161,7 @@ _create_cdo_context(int     cdo_mode)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and initialize by default a cs_domain_t structure
+ * \brief Create and initialize by default a cs_domain_t structure
  *
  * \return a pointer to a cs_domain_t structure
  */
@@ -248,9 +249,9 @@ cs_domain_create(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a cs_domain_t structure
+ * \brief Free a cs_domain_t structure
  *
- * \param[in, out]   p_domain    pointer of pointer to a cs_domain_t structure
+ * \param[in, out] p_domain    pointer of pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -284,11 +285,11 @@ cs_domain_free(cs_domain_t   **p_domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Set the global variable storing the mode of activation to apply
- *          to CDO/HHO schemes
+ * \brief Set the global variable storing the mode of activation to apply to
+ *        CDO/HHO schemes
  *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- * \param[in]        mode      type of activation for the CDO/HHO module
+ * \param[in, out] domain    pointer to a cs_domain_t structure
+ * \param[in]      mode      type of activation for the CDO/HHO module
  */
 /*----------------------------------------------------------------------------*/
 
@@ -310,9 +311,9 @@ cs_domain_set_cdo_mode(cs_domain_t    *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Get the mode of activation for the CDO/HHO schemes
+ * \brief Get the mode of activation for the CDO/HHO schemes
  *
- * \param[in]   domain       pointer to a cs_domain_t structure
+ * \param[in] domain       pointer to a cs_domain_t structure
  *
  * \return the mode of activation for the CDO/HHO module
  */
@@ -331,7 +332,7 @@ cs_domain_get_cdo_mode(const cs_domain_t   *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the computation stage in the domain structure
+ * \brief Set the computation stage in the domain structure
  *
  * \param[in, out] domain    pointer to a cs_domain_t structure
  * \param[in]      stage     stage in the computation run
@@ -351,7 +352,7 @@ cs_domain_set_stage(cs_domain_t         *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the computation stage from the domain structure
+ * \brief Retrieve the computation stage from the domain structure
  *
  * \param[in] domain    pointer to a cs_domain_t structure
  *
@@ -386,7 +387,7 @@ cs_domain_needs_iteration(cs_domain_t  *domain)
 
   cs_time_step_t  *ts = domain->time_step;
 
-  cs_coupling_sync_apps(0,                /* flags */
+  cs_coupling_sync_apps(0,      /* flags */
                         ts->nt_cur,
                         &(ts->nt_max),
                         &(ts->dt_ref));
@@ -437,6 +438,7 @@ cs_domain_needs_log(const cs_domain_t      *domain,
 
     /* Steady-state computation in an unsteady computation or
      * force the output for the first iteration */
+
     if (nt_cur < 2)
       return true;
 
@@ -453,9 +455,9 @@ cs_domain_needs_log(const cs_domain_t      *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the simulated time after one temporal iteration
+ * \brief Update the simulated time after one temporal iteration
  *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
+ * \param[in, out] domain     pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -465,6 +467,7 @@ cs_domain_increment_time(cs_domain_t  *domain)
   cs_time_step_t  *ts = domain->time_step;
 
   /* Use Kahan's trick to limit the truncation error */
+
   double  z = ts->dt[0] - cs_domain_kahan_time_compensation;
   double  t = ts->t_cur + z;
 
@@ -474,9 +477,9 @@ cs_domain_increment_time(cs_domain_t  *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Print a welcome message indicating which mode of CDO is activated
+ * \brief Print a welcome message indicating which mode of CDO is activated
  *
- * \param[in]  domain    pointer to a cs_domain_t structure
+ * \param[in] domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 

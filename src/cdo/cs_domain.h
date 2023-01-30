@@ -166,7 +166,7 @@ typedef struct {
   cs_time_step_t           *time_step;        /* time step descriptor */
   cs_time_step_options_t    time_options;     /* time step options */
 
-  cs_domain_stage_t         stage;   /* store the stage of the computation */
+  cs_domain_stage_t         stage;   /* Store the stage of the computation */
 
   /* Output options */
 
@@ -198,9 +198,9 @@ extern cs_domain_t  *cs_glob_domain; /* Pointer to main computational domain */
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the time step after one temporal iteration
+ * \brief Update the time step after one temporal iteration
  *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
+ * \param[in, out] domain     pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -209,7 +209,8 @@ cs_domain_increment_time_step(cs_domain_t  *domain)
 {
   cs_time_step_t  *ts = domain->time_step;
 
-  /* Increment time iteration */
+  /* Increment the time iteration counter */
+
   ts->nt_cur++;
 }
 
@@ -219,7 +220,7 @@ cs_domain_increment_time_step(cs_domain_t  *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and initialize by default a cs_domain_t structure
+ * \brief Create and initialize by default a cs_domain_t structure
  *
  * \return a pointer to a cs_domain_t structure
  */
@@ -230,9 +231,9 @@ cs_domain_create(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a cs_domain_t structure
+ * \brief Free a cs_domain_t structure
  *
- * \param[in, out]   p_domain    pointer of pointer to a cs_domain_t structure
+ * \param[in, out] p_domain    pointer of pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -241,11 +242,11 @@ cs_domain_free(cs_domain_t   **p_domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Set the global variable storing the mode of activation to apply
- *          to CDO/HHO schemes
+ * \brief Set the global variable storing the mode of activation to apply to
+ *        CDO/HHO schemes
  *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- * \param[in]        mode      type of activation for the CDO/HHO module
+ * \param[in, out] domain    pointer to a cs_domain_t structure
+ * \param[in]      mode      type of activation for the CDO/HHO module
  */
 /*----------------------------------------------------------------------------*/
 
@@ -255,9 +256,9 @@ cs_domain_set_cdo_mode(cs_domain_t    *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Get the mode of activation for the CDO/HHO schemes
+ * \brief Get the mode of activation for the CDO/HHO schemes
  *
- * \param[in]   domain       pointer to a cs_domain_t structure
+ * \param[in] domain       pointer to a cs_domain_t structure
  *
  * \return the mode of activation for the CDO/HHO module
  */
@@ -268,7 +269,7 @@ cs_domain_get_cdo_mode(const cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the computation stage in the domain structure
+ * \brief Set the computation stage in the domain structure
  *
  * \param[in, out] domain    pointer to a cs_domain_t structure
  * \param[in]      stage     stage in the computation run
@@ -281,7 +282,7 @@ cs_domain_set_stage(cs_domain_t         *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the computation stage from the domain structure
+ * \brief Retrieve the computation stage from the domain structure
  *
  * \param[in] domain    pointer to a cs_domain_t structure
  *
@@ -294,9 +295,9 @@ cs_domain_get_stage(const cs_domain_t    *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if one needs to continue iterations in time
+ * \brief Check if one needs to continue iterations in time
  *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
+ * \param[in, out] domain     pointer to a cs_domain_t structure
  *
  * \return  true or false
  */
@@ -307,10 +308,10 @@ cs_domain_needs_iteration(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if an output is requested according to the domain setting
+ * \brief Check if an output is requested according to the domain setting
  *
- * \param[in]   domain    pointer to a cs_domain_t structure
- * \param[in]   oneplus   add or not plus one to the current time step
+ * \param[in] domain    pointer to a cs_domain_t structure
+ * \param[in] oneplus   add or not plus one to the current time step
  *
  * \return true or false
  */
@@ -322,9 +323,9 @@ cs_domain_needs_log(const cs_domain_t      *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update time step after one temporal iteration
+ * \brief Update time step after one temporal iteration
  *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
+ * \param[in, out] domain     pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -333,9 +334,9 @@ cs_domain_increment_time(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Print a welcome message indicating which mode of CDO is activated
+ * \brief Print a welcome message indicating which mode of CDO is activated
  *
- * \param[in]  domain    pointer to a cs_domain_t structure
+ * \param[in] domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 

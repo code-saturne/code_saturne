@@ -634,7 +634,7 @@ cs_equation_system_define(void)
       cs_equation_core_t  *block_ii = eqsys->block_factories[ii];
       assert(block_ii != NULL);
 
-      cs_equation_define_core(eq, &block_ii);
+      cs_equation_define_core_structure(eq, &block_ii);
 
     } /* Loop on equations (Diagonal blocks) */
 
@@ -729,7 +729,7 @@ cs_equation_system_assign_equation(int                       row_id,
   /* Set what is already available as structure pointers */
 
   cs_equation_core_t  *block_ii = NULL;
-  cs_equation_define_core(eq, &block_ii);
+  cs_equation_define_core_structure(eq, &block_ii);
   eqsys->block_factories[row_id*n_eqs + row_id] = block_ii;
 
   block_ii->param->flag |= CS_EQUATION_INSIDE_SYSTEM;
@@ -742,8 +742,8 @@ cs_equation_system_assign_equation(int                       row_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assign the given equation parameters to the block with ids
- *         (row_id, col_id) in the block matrix
+ * \brief Assign the given equation parameters to the block with ids
+ *        (row_id, col_id) in the block matrix
  *
  * \param[in]      row_id   row position id
  * \param[in]      col_id   column position id
