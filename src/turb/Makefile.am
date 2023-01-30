@@ -59,6 +59,7 @@ cs_les_inflow.h \
 cs_les_mu_t.h \
 cs_turbulence_bc.h \
 cs_turbulence_inflow.h \
+cs_turbulence_init.h \
 cs_turbulence_ke.h \
 cs_turbulence_kw.h \
 cs_turbulence_ml.h \
@@ -81,6 +82,7 @@ cs_les_inflow.c \
 cs_les_mu_t.c \
 cs_turbulence_bc.c \
 cs_turbulence_inflow.c \
+cs_turbulence_init.c \
 cs_turbulence_ke.c \
 cs_turbulence_kw.c \
 cs_turbulence_ml.c \

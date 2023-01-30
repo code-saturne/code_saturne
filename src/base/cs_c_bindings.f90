@@ -3472,18 +3472,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function clipping of the turbulent kinetic energy
-    ! and the turbulent dissipation.
-
-    subroutine clipke(ncel, iclip)   &
-      bind(C, name='cs_turbulence_ke_clip')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), intent(in), value :: ncel, iclip
-    end subroutine clipke
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function solving the quadratic k-epsilon model.
 
     subroutine cs_turbulence_ke_q(rij) &
@@ -3504,6 +3492,17 @@ module cs_c_bindings
       integer(c_int), intent(in), value :: f_id
       real(c_double), intent(in), value :: c_durbin_l
     end subroutine cs_turbulence_rij_solve_alpha
+
+    !---------------------------------------------------------------------------
+    ! Interface to C function initializing turbulence variables based
+    ! on reference quantities.
+
+    subroutine cs_turbulence_init_by_ref_quantities(uref, almax) &
+      bind(C, name='cs_turbulence_init_by_ref_quantities')
+     use, intrinsic :: iso_c_binding
+      implicit none
+      real(c_double), intent(in), value :: uref, almax
+    end subroutine cs_turbulence_init_by_ref_quantities
 
     !---------------------------------------------------------------------------
     ! Interface to C function initializing Rij-epsilon variables based

@@ -320,7 +320,7 @@ _inlet_bc(cs_lnum_t   face_id,
           double      shear_dir[])
 {
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
+  const cs_turb_model_t  *turb_model = cs_glob_turb_model;
   assert(turb_model != NULL);
 
   if (turb_model->itytur == 2) {

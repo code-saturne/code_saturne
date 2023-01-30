@@ -374,26 +374,6 @@ module cstphy
   !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
   double precision, save :: ckwbt2 = 0.0828d0
 
-  !> \f$\frac{\beta_1}{C_\mu}-\frac{\kappa^2}{\sqrt{C_\mu}\sigma_{\omega 1}}\f$
-  !> constant \f$\gamma_1\f$ for the \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb=60
-  !> (\f$k-\omega\f$ SST)
-  !> \warning: \f$\gamma_1\f$ is calculated before the call to
-  !> \ref usipsu. Hence, if \f$\beta_1\f$, \f$C_\mu\f$, \f$\kappa\f$
-  !> or \f$\sigma_{\omega 1}\f$ is modified in \ref usipsu,
-  !> \ref ckwgm1 must also be modified in accordance.
-  double precision, save :: ckwgm1
-
-  !> \f$\frac{\beta_2}{C_\mu}-\frac{\kappa^2}{\sqrt{C_\mu}\sigma_{\omega 2}}\f$
-  !> constant \f$\gamma_2\f$ for the \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb=60
-  !> (\f$k-\omega\f$ SST)
-  !> \warning: \f$\gamma_2\f$ is calculated before the call to
-  !> \ref usipsu. Hence, if \f$\beta_2\f$, \f$C_\mu\f$, \f$\kappa\f$
-  !> or \f$\sigma_{\omega 2}\f$ is modified in \ref usipsu,
-  !> \ref ckwgm2 must also be modified in accordance.
-  double precision, save :: ckwgm2
-
   !> specific constant of k-omega SST
   !> constant \f$a_1\f$ for the \f$k-\omega\f$ SST model.
   !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
@@ -414,12 +394,6 @@ module cstphy
 
   !> specific constant of Spalart-Allmaras
   double precision, save :: csav1 = 7.1d0
-  !> specific constant of Spalart-Allmaras
-  double precision, save :: csaw1
-  !> specific constant of Spalart-Allmaras
-  double precision, save :: csaw2 = 0.3d0
-  !> specific constant of Spalart-Allmaras
-  double precision, save :: csaw3 = 2.d0
 
   !> is a characteristic macroscopic
   !> length of the domain, used for the initialization of the turbulence and

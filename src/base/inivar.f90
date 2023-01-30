@@ -80,7 +80,7 @@ integer          nvar   , nscal
 character(len=80) :: chaine
 integer          ivar  , iscal
 integer          iel
-integer          iclip , iok   , ii, iclvfl
+integer          iok   , ii, iclvfl
 integer          kscmin, kscmax, keyvar, n_fields, kclvfl
 integer          f_id, f_dim
 integer          iflid, iflidp
@@ -88,11 +88,8 @@ integer          idimf
 integer          ivoid, uprtot
 
 double precision valmax, valmin, vfmin , vfmax
-double precision xekmin, xepmin, xomgmn, xphmin, xphmax
-double precision xnumin, gravn, gnx, gny, gnz
-double precision x11min, x22min, x33min
+double precision gravn, gnx, gny, gnz
 double precision xxp0, xyp0, xzp0
-double precision xalmin, xalmax
 double precision scmaxp, scminp
 
 double precision rvoid(1)
@@ -102,9 +99,6 @@ double precision, dimension(:), pointer :: dt
 double precision, dimension(:), pointer :: field_s_v
 double precision, dimension(:,:), pointer :: field_v_v
 double precision, dimension(:), pointer :: cvar_pr
-double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_al
-double precision, dimension(:), pointer :: cvar_phi, cvar_omg, cvar_nusa
-double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: cvar_var
 double precision, dimension(:), pointer :: cpro_prtot
 
@@ -119,6 +113,13 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_gui_initial_conditions
+
+  function cs_turbulence_init_clip_and_verify() result(n_errors) &
+      bind(C, name='cs_turbulence_init_clip_and_verify')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int) :: n_errors
+  end function cs_turbulence_init_clip_and_verify
 
 end interface
 
@@ -301,209 +302,10 @@ endif
 
 !===============================================================================
 ! 3.  CLIPPING DES GRANDEURS TURBULENTES (UTILISATEUR OU SUITE)
-!     (pour ITYTUR=2, 3, 5 ou 6)
-!     Si l'utilisateur est intervenu dans USINIV, PPINIV ou via l'interface
-!         et a impose des valeurs "correctes" (au sens k, eps, Rii > 0)
-!         on considere qu'il s'agit d'une initialisation admissible,
-!         on la clippe pour la rendre coherente avec le clipping du code
-!         et on continue le calcul
-!     Si l'utilisateur est intervenu dans USINIV, PPINIV ou via l'interface
-!         et a impose des valeurs visiblement erronees
-!         (k, eps ou Rii < 0), on s'arrete (il s'est sans doute trompe).
-!     On adopte le meme traitement en suite de calcul
-!       pour assurer un comportement identique en suite entre un calcul
-!       ou l'utilisateur modifie une variable avec usiniv (mais pas la
-!       turbulence) et un calcul ou l'utilisateur ne modifie pas usiniv.
-!     S'il n'y a ni suite ni intervention dans USINIV ou PPINIV ou via l'interface,
-!       les grandeurs ont deja ete clippees par defaut, sauf si UREF n'a pas
-!       (ou a mal) ete initialise. Dans ce cas on avertit aussi l'utilisateur et on
-!       stoppe le calcul.
-
-!     Pour resumer :
-!      -en   suite  avec des valeurs positives pour k, eps, Rii : on clippe
-!      -avec usiniv ou ppiniv ou interface
-!                   avec des valeurs positives pour k, eps, Rii : on clippe
-!      -non suite sans usiniv ni ppiniv ni interface avec UREF positif :
-!                                      grandeurs par defaut (deja clippees)
-!      -non suite sans usiniv ni ppiniv ni interface avec UREF negatif : stop
-!      -suite ou usiniv ou ppiniv ou interface
-!                   avec une valeur negative de k, eps ou Rii : stop
-!                   avec une valeur hors de [0;2] pour phi : stop
-!         (on souhaite indiquer a l'utilisateur que son fichier suite est
-!          bizarre ou que son initialisation est fausse et qu'il a donc
-!          fait au moins une erreur qui peut en cacher d'autres)
 !===============================================================================
 
-if (.true.) then
-
-  if (itytur.eq.2 .or. itytur.eq.5) then
-
-    call field_get_val_s(ivarfl(ik), cvar_k)
-    call field_get_val_s(ivarfl(iep), cvar_ep)
-
-    xekmin = cvar_k(1)
-    xepmin = cvar_ep(1)
-    do iel = 1, ncel
-      xekmin = min(xekmin,cvar_k(iel) )
-      xepmin = min(xepmin,cvar_ep(iel))
-    enddo
-    if (irangp.ge.0) then
-      call parmin (xekmin)
-      call parmin (xepmin)
-    endif
-
-    if (xekmin.ge.0.d0.and.xepmin.ge.0.d0) then
-      call clipke(ncel, 1)
-    else
-      write(nfecra,3020) xekmin,xepmin
-      iok = iok + 1
-    endif
-
-    ! For v2-f, phi-fbar or BL-v2/k, check that phi is between 0 and 2.
-    if (itytur.eq.5) then
-
-      call field_get_val_s(ivarfl(iphi), cvar_phi)
-
-      xphmin = cvar_phi(1)
-      xphmax = cvar_phi(1)
-      do iel = 1, ncel
-        xphmin = min(xphmin,cvar_phi(iel) )
-        xphmax = max(xphmax,cvar_phi(iel) )
-      enddo
-      if (irangp.ge.0) then
-        call parmin (xphmin)
-        call parmax (xphmax)
-      endif
-
-      ! For consistency with cs_turbulence_v2f.c:_clip_v2f,
-      ! we clip only to 0 and not to 2
-      if (xphmin.lt.0.d0) then
-        write(nfecra,3021) xphmin,xphmax
-        iok = iok + 1
-      endif
-
-      ! For v2-f, BL-v2/k, also check that alpha is between 0 and 1.
-      if (iturb.eq.51) then
-        call field_get_val_s(ivarfl(ial), cvar_al)
-        xalmin = cvar_al(1)
-        xalmax = cvar_al(1)
-        do iel = 1, ncel
-          xalmin = min(xalmin,cvar_al(iel) )
-          xalmax = max(xalmax,cvar_al(iel) )
-        enddo
-        if (irangp.ge.0) then
-          call parmin (xalmin)
-          call parmax (xalmax)
-        endif
-
-        if(xalmin.lt.0.d0 .or. xalmax.gt.1.d0) then
-          write(nfecra,3022) xalmin,xalmax
-          iok = iok + 1
-        endif
-
-      endif
-
-    endif
-
-  elseif(itytur.eq.3) then
-
-    call field_get_val_s(ivarfl(iep), cvar_ep)
-    call field_get_val_v(ivarfl(irij), cvar_rij)
-    x11min = cvar_rij(1,1)
-    x22min = cvar_rij(2,1)
-    x33min = cvar_rij(3,1)
-    xepmin = cvar_ep(1)
-    do iel = 1, ncel
-      x11min = min(x11min,cvar_rij(1,iel))
-      x22min = min(x22min,cvar_rij(2,iel))
-      x33min = min(x33min,cvar_rij(3,iel))
-      xepmin = min(xepmin,cvar_ep(iel) )
-    enddo
-    if (irangp.ge.0) then
-      call parmin (x11min)
-      call parmin (x22min)
-      call parmin (x33min)
-      call parmin (xepmin)
-    endif
-    if (x11min.ge.0.d0.and.x22min.ge.0.d0.and.                  &
-        x33min.ge.0.d0.and.xepmin.ge.0.d0 ) then
-      iclip = 1
-      if (irijco.eq.0) then
-        call cs_turbulence_rij_clip_sg(ncel, iclip)
-      endif
-    else
-      write(nfecra,3030) x11min,x22min,x33min,xepmin
-      iok = iok + 1
-    endif
-    if (iturb.eq.32) then
-      call field_get_val_s(ivarfl(ial), cvar_al)
-      xalmin = cvar_al(1)
-      xalmax = cvar_al(1)
-      do iel = 1, ncel
-        xalmin = min(xalmin, cvar_al(iel))
-        xalmax = max(xalmax, cvar_al(iel))
-      enddo
-      if (irangp.ge.0) then
-        call parmin (xalmin)
-        call parmax (xalmax)
-      endif
-      if (xalmin.lt.0.or.xalmax.gt.1.d0) then
-        write(nfecra,3033) xalmin, xalmax
-        iok = iok + 1
-      endif
-    endif
-
-  elseif(iturb.eq.60) then
-
-    call field_get_val_s(ivarfl(ik), cvar_k)
-    call field_get_val_s(ivarfl(iomg), cvar_omg)
-
-    xekmin = cvar_k(1)
-    xomgmn = cvar_omg(1)
-    do iel = 1, ncel
-      xekmin = min(xekmin,cvar_k(iel))
-      xomgmn = min(xomgmn,cvar_omg(iel))
-    enddo
-    if (irangp.ge.0) then
-      call parmin (xekmin)
-      call parmin (xomgmn)
-    endif
-
-    !     En k-omega on clippe seulement a 0
-    if(xekmin.lt.0.d0 .or. xomgmn.le.0.d0) then
-      write(nfecra,3031) xekmin,xomgmn
-      iok = iok + 1
-    endif
-
-  elseif(iturb.eq.70) then
-
-    call field_get_val_s(ivarfl(inusa), cvar_nusa)
-
-    xnumin = cvar_nusa(1)
-    do iel = 1, ncel
-      xnumin = min(xnumin,cvar_nusa(iel))
-    enddo
-    if (irangp.ge.0) then
-      call parmin (xnumin)
-    endif
-
-    !     En Spalart-Allmaras on clippe seulement a 0
-    if(xnumin.lt.0.d0 ) then
-      write(nfecra,3032) xnumin
-      iok = iok + 1
-    endif
-
-  endif
-
-else
-
-  if (iturb.ne.0 .and. iturb.ne.10 .and. itytur.ne.4) then
-    if (uref.lt.0.d0) then
-      write(nfecra,3039) uref
-      iok = iok + 1
-    endif
-  endif
-
+if (cs_turbulence_init_clip_and_verify() .gt. 0) then
+  iok = iok + 1
 endif
 
 !===============================================================================
@@ -704,170 +506,6 @@ endif
 '    ------------------------',                                 /,&
 ''                                                             )
 
- 3020 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
-'@    ========',                                                /,&
-'@     NEGATIVE OR NULL TURBULENCE',                            /,&
-'@',                                                            /,&
-'@  The calculation will not be run.',                          /,&
-'@',                                                            /,&
-'@   Minimum value of k       = ',e14.5,                        /,&
-'@   Minimum value of epsilon = ',e14.5,                        /,&
-'@',                                                            /,&
-'@  Verify the initialization, the restart file,',              /,&
-'@    and the value of UREF.',                                  /,&
-'@  In the case where the values read in the restart file',     /,&
-'@    are incorrect, they may be modified with',                /,&
-'@    cs_user_initialization.f90 or with the interface.',       /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 3021 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
-'@    ========',                                                /,&
-'@     PHI VARIABLE OF V2F (PHI_FBAR or BL-V2/K)',              /,&
-'@     OUT OF BOUNDS [0;2]',                                    /,&
-'@',                                                            /,&
-'@  The calculation will not be run.',                          /,&
-'@',                                                            /,&
-'@   Minimum value of phi = ',e14.5,                            /,&
-'@   Maximum value of phi = ',e14.5,                            /,&
-'@',                                                            /,&
-'@  Verify the initialization or the restart file.',            /,&
-'@  In the case where the values read in the restart file',     /,&
-'@    are incorrect, they may be modified with',                /,&
-'@    cs_user_initialization.f90 or with the interface.',       /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 3022 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
-'@    ========',                                                /,&
-'@     ALPHA VARIABLE OF V2F (BL-V2/K)',                        /,&
-'@     OUT OF BOUNDS [0;1]',                                    /,&
-'@',                                                            /,&
-'@  The calculation will not be run.',                          /,&
-'@',                                                            /,&
-'@   Minimum value of alpha = ',e14.5,                          /,&
-'@   Maximum value of alpha = ',e14.5,                          /,&
-'@',                                                            /,&
-'@  Verify the initialization or the restart file.',            /,&
-'@  In the case where the values read in the restart file',     /,&
-'@    are incorrect, they may be modified with',                /,&
-'@    cs_user_initialization.f90 or with the interface.',       /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 3030 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
-'@    ========',                                                /,&
-'@     NEGATIVE OR NULL TURBULENCE',                            /,&
-'@',                                                            /,&
-'@  The calculation will not be run.',                          /,&
-'@',                                                            /,&
-'@   Minimum value of R11     = ',e14.5,                        /,&
-'@   Minimum value of R22     = ',e14.5,                        /,&
-'@   Minimum value of R33     = ',e14.5,                        /,&
-'@   Minimum value of epsilon = ',e14.5,                        /,&
-'@',                                                            /,&
-'@  Verify the initialization, the restart file,',              /,&
-'@    and the value of UREF.',                                  /,&
-'@  In the case where the values read in the restart file',     /,&
-'@    are incorrect, they may be modified with',                /,&
-'@    cs_user_initialization.f90 or with the interface.',       /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 3031 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
-'@    ========',                                                /,&
-'@     NEGATIVE OR NULL TURBULENCE',                            /,&
-'@',                                                            /,&
-'@  The calculation will not be run.',                          /,&
-'@',                                                            /,&
-'@   Minimum value of k       = ',e14.5,                        /,&
-'@   Minimum value of omega   = ',e14.5,                        /,&
-'@',                                                            /,&
-'@  Verify the initialization, the restart file,',              /,&
-'@    and the value of UREF.',                                  /,&
-'@  In the case where the values read in the restart file',     /,&
-'@    are incorrect, they may be modified with',                /,&
-'@    cs_user_initialization.f90 or with the interface.',       /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 3032 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
-'@    ========',                                                /,&
-'@     NEGATIVE OR NULL TURBULENCE',                            /,&
-'@',                                                            /,&
-'@  The calculation will not be run.',                          /,&
-'@',                                                            /,&
-'@   Minimum value of nu      = ',e14.5,                        /,&
-'@',                                                            /,&
-'@  Verify the initialization, the restart file,',              /,&
-'@    and the value of UREF.',                                  /,&
-'@  In the case where the values read in the restart file',     /,&
-'@    are incorrect, they may be modified with',                /,&
-'@    cs_user_initialization.f90 or with the interface.',       /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 3039 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
-'@    ========',                                                /,&
-'@    THE REFERENCE VELOCITY UREF HAS NOT BEEN INITIALIZED',    /,&
-'@    OR HAS NOT BEEN CORRECTLY INITIALIZED (NEGATIVE VALUE)',  /,&
-'@    ITS VALUE IS ',e14.5,                                     /,&
-'@',                                                            /,&
-'@  The turbulence cannot be initialized',                      /,&
-'@  Correct the value of UREF or initialize the turbulence',    /,&
-'@    directly with cs_user_initialization.f90',                /,&
-'@    or with the interface.',                                  /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 3033 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
-'@    ========',                                                /,&
-'@     EBRSM ALPHA<0 OU ALPHA>1',                               /,&
-'@',                                                            /,&
-'@  The calculation will not be run.',                          /,&
-'@',                                                            /,&
-'@   Minimum value of alpha   = ',e14.5,                        /,&
-'@   Maximum value of alpha   = ',e14.5,                        /,&
-'@',                                                            /,&
-'@  Verify the initialization or the restart file',             /,&
-'@  In the case where the values read in the restart file',     /,&
-'@    are incorrect, they may be modified with',                /,&
-'@    cs_user_initialization.f90 or with the interface.',       /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  3040 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

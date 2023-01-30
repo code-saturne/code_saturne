@@ -246,24 +246,8 @@ enddo
 ! Arrays of cstphy.f90
 !===============================================================================
 
-! --- Physical constants initialized in C (cs_physical_constants.c)
-
 ! Reset pther to p0
 pther = p0
-
-!   pour le modele k-omega sst
-ckwgm1 = ckwbt1/cmu - xkappa**2/(ckwsw1*sqrt(cmu))
-ckwgm2 = ckwbt2/cmu - xkappa**2/(ckwsw2*sqrt(cmu))
-
-!   pour le modele de Spalart Allmaras
-csaw1    = csab1/xkappa**2 + 1.d0/csasig*(1.d0 + csab2)
-
-! Scalars
-!  Set default values.
-!  Especially, assume there is no variance
-!    (field first_moment_id < 0) and that variances are clipped to 0 only.
-
-! Here all of cstphy has been initialized.
 
 !===============================================================================
 ! INITIALISATION DES PARAMETRES ALE de albase.f90 et alstru.f90

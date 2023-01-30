@@ -35,6 +35,7 @@
 #include "cs_les_mu_t.h"
 #include "cs_turbulence_bc.h"
 #include "cs_turbulence_inflow.h"
+#include "cs_turbulence_init.h"
 #include "cs_turbulence_ke.h"
 #include "cs_turbulence_kw.h"
 #include "cs_turbulence_ml.h"

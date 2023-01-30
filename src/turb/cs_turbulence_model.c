@@ -52,6 +52,8 @@
 #include "cs_function.h"
 #include "cs_gradient.h"
 #include "cs_log.h"
+#include "cs_log_iteration.h"
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_parall.h"
 #include "cs_mesh_location.h"
@@ -63,8 +65,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_turbulence_model.h"
-#include "cs_math.h"
-#include "cs_log_iteration.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -2345,7 +2345,6 @@ cs_clip_turbulent_fluxes(int  flux_id,
                                   rit_max_prcoord,
                                   iclip_tab_min,
                                   iclip_tab_max);
-  return;
 }
 
 /*----------------------------------------------------------------------------*/

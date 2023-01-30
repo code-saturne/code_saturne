@@ -359,104 +359,10 @@ if (ivofmt.gt.0) then
 
 endif
 
-!===============================================================================
-! 5. INITIALISATION DE K, RIJ ET EPS
-!===============================================================================
-
-!  Si UREF n'a pas ete donnee par l'utilisateur ou a ete mal initialisee
-!    (valeur negative), on met les valeurs de k, Rij, eps et omega a
-!    -10*GRAND. On testera ensuite si l'utilisateur les a modifiees dans
-!    usiniv ou en lisant un fichier suite.
-
-if (itytur.eq.2 .or. itytur.eq.5) then
-
-  call field_get_val_s(ivarfl(ik), cvar_k)
-  call field_get_val_s(ivarfl(iep), cvar_ep)
-
-  if (uref.ge.0.d0) then
-    do iel = 1, ncelet
-      cvar_k(iel) = 1.5d0*(0.02d0*uref)**2
-      cvar_ep(iel) = cvar_k(iel)**1.5d0*cmu/almax
-    enddo
-
-    call clipke(ncel, 1)
-
-  else
-    do iel = 1, ncelet
-      cvar_k(iel) = -grand
-      cvar_ep(iel) = -grand
-    enddo
-  endif
-
-  if (iturb.eq.50) then
-    call field_get_val_s(ivarfl(iphi), cvar_phi)
-    call field_get_val_s(ivarfl(ifb), cvar_fb)
-    do iel = 1, ncelet
-      cvar_phi(iel) = 2.d0/3.d0
-      cvar_fb(iel) = 0.d0
-    enddo
-  endif
-  if (iturb.eq.51) then
-    call field_get_val_s(ivarfl(ial), cvar_al)
-    call field_get_val_s(ivarfl(iphi), cvar_phi)
-    do iel = 1, ncelet
-      cvar_phi(iel) = 2.d0/3.d0
-      cvar_al(iel) = 1.d0
-    enddo
-  endif
-
-elseif (itytur.eq.3) then
-
-  call cs_turbulence_rij_init_by_ref_quantities(uref, almax)
-
-elseif(iturb.eq.60) then
-
-  call field_get_val_s(ivarfl(ik), cvar_k)
-  call field_get_val_s(ivarfl(iomg), cvar_omg)
-
-  if (uref.ge.0.d0) then
-
-    do iel = 1, ncelet
-      cvar_k(iel) = 1.5d0*(0.02d0*uref)**2
-      !     on utilise la formule classique eps=k**1.5/Cmu/ALMAX et omega=eps/Cmu/k
-      cvar_omg(iel) = cvar_k(iel)**0.5d0/almax
-    enddo
-    !     pas la peine de clipper, les valeurs sont forcement positives
-
-  else
-
-    do iel = 1, ncelet
-      cvar_k(iel) = -grand
-      cvar_omg(iel) = -grand
-    enddo
-
-  endif
-
-elseif(iturb.eq.70) then
-
-  call field_get_val_s(ivarfl(inusa), cvar_nusa)
-
-  if (uref.ge.0.d0) then
-
-    do iel = 1, ncelet
-      cvar_nusa(iel) = sqrt(1.5d0)*(0.02d0*uref)*almax
-      !     on utilise la formule classique eps=k**1.5/Cmu/ALMAX
-      !     et nusa=Cmu*k**2/eps
-    enddo
-    !     pas la peine de clipper, les valeurs sont forcement positives
-
-  else
-
-    do iel = 1, ncelet
-      cvar_nusa(iel) = -grand
-    enddo
-
-  endif
-
-endif
+call cs_turbulence_init_by_ref_quantities(uref, almax)
 
 !===============================================================================
-! 6.  CLIPPING DES GRANDEURS SCALAIRES (SF K-EPS VOIR CI DESSUS)
+! 5.  CLIPPING DES GRANDEURS SCALAIRES (SF K-EPS VOIR CI DESSUS)
 !===============================================================================
 
 if (nscal.gt.0) then
@@ -467,7 +373,6 @@ if (nscal.gt.0) then
     if(iscavr(iis).eq.0.and.f_dim.eq.1) then
       iscal = iis
       call clpsca(iscal)
-      !==========
     endif
   enddo
 
@@ -479,7 +384,6 @@ if (nscal.gt.0) then
       if (iclvfl.ne.1) then
         iscal = iis
         call clpsca(iscal)
-        !==========
       endif
     endif
   enddo
@@ -492,7 +396,6 @@ if (nscal.gt.0) then
       if (iclvfl.ne.1) then
         iscal = iis
         call clpsca(iscal)
-        !==========
       endif
     endif
   enddo
@@ -500,7 +403,7 @@ if (nscal.gt.0) then
 endif
 
 !===============================================================================
-! 7.  INITIALISATION DE CONDITIONS AUX LIMITES ET FLUX DE MASSE
+! 6.  INITIALISATION DE CONDITIONS AUX LIMITES ET FLUX DE MASSE
 !      NOTER QUE LES CONDITIONS AUX LIMITES PEUVENT ETRE UTILISEES DANS
 !      PHYVAR, PRECLI
 !===============================================================================
@@ -554,7 +457,7 @@ do iflid = 0, nfld - 1
 enddo
 
 !===============================================================================
-! 8.  INITIALISATIONS EN ALE
+! 7.  INITIALISATIONS EN ALE
 !===============================================================================
 
 if (iale.ge.1) then
@@ -573,7 +476,7 @@ if (iale.ge.1) then
 endif
 
 !===============================================================================
-! 9 Current to previous for variables
+! 8 Current to previous for variables
 !===============================================================================
 
 do iflid = 0, nfld - 1
