@@ -382,7 +382,7 @@ _read_mesh_deformation(cs_mesh_t  *m)
                                         CS_TYPE_cs_real_t,
                                         v_disp);
 
-  if (retcode != 0) {
+  if (retcode == CS_RESTART_SUCCESS) {
 
     for (cs_lnum_t i = 0; i < m->n_vertices; i++) {
       for (cs_lnum_t j= 0; j < 3; j++)
