@@ -3738,7 +3738,6 @@ _renum_cells_metis_order(const cs_mesh_t  *mesh,
 
   if (sizeof(idx_t) == sizeof(cs_lnum_t))
     perm = (idx_t *)new_to_old;
-
   else
     BFT_MALLOC(perm, n_cells, idx_t);
 
@@ -3768,7 +3767,7 @@ _renum_cells_metis_order(const cs_mesh_t  *mesh,
 
   BFT_FREE(iperm);
 
-  if (perm != new_to_old) {
+  if (sizeof(idx_t) != sizeof(cs_lnum_t)) {
     for (idx_t i = 0; i < n_cells; i++)
       new_to_old[i] = perm[i];
     BFT_FREE(perm);
