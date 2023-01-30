@@ -192,29 +192,6 @@ typedef void
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Indicate if a restart directory is present.
- *
- * Fortran interface
- *
- * subroutine dflsui (ntsuit, ttsuit, wtsuit)
- * *****************
- *
- * integer          ntsuit      : <-- : > 0: checkpoint time step interval
- *                              :     : 0: default interval
- *                              :     : -1: checkpoint at end
- *                              :     : -2: no checkpoint
- * double precision ttsuit      : <-- : if> 0, checkpoint time interval
- * double precision wtsuit      : <-- : if> 0, checkpoint wall time interval
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (dflsui, DFLSUI)
-(
- int        *ntsuit,
- cs_real_t  *ttsuit,
- cs_real_t  *wtsuit
-);
-
-/*----------------------------------------------------------------------------
  * Check if checkpointing is recommended at a given time.
  *
  * Fortran interface
@@ -283,6 +260,27 @@ void CS_PROCF (indsui, INDSUI)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Query checkpoint intervals.
+ *
+ * \param[out]  nt_interval  if non-NULL, time-step interval for checkpoint
+ *                             if > 0 time step interval for checkpoint
+ *                             if 0, default of 4 checkpoints per run
+ *                             if -1, checkpoint at end
+ *                             if -2, no checkpointing
+ * \param[out]  t_interval   if non NULL, time value checkpoint interval;
+ *                           has priority over nt_interval if > -1
+ * \param[out]  wt_interval  if non NULL, wall-clock interval for checkpoints;
+ *                           has priority over nt_interval if > -1
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_get_intervals(int     *nt_interval,
+                                    double  *t_interval,
+                                    double  *wt_interval);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define default checkpoint interval.
  *
  * \param[in]  nt_interval  if > 0 time step interval for checkpoint
@@ -295,7 +293,7 @@ void CS_PROCF (indsui, INDSUI)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_restart_checkpoint_set_defaults(int     nt_interval,
+cs_restart_checkpoint_set_interval(int     nt_interval,
                                    double  t_interval,
                                    double  wt_interval);
 
@@ -932,6 +930,15 @@ cs_restart_read_real_66_t_compat(cs_restart_t  *restart,
                                  const char    *old_name_xz,
                                  int            location_id,
                                  cs_real_66_t  *val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Log checkpoint/restart setup.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

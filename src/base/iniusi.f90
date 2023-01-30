@@ -106,6 +106,12 @@ interface
     implicit none
   end subroutine cs_gui_ale_diffusion_type
 
+  subroutine cs_gui_checkpoint_parameters()  &
+       bind(C, name='cs_gui_checkpoint_parameters')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_checkpoint_parameters
+
   subroutine cs_gui_physical_constants()  &
        bind(C, name='cs_gui_physical_constants')
     use, intrinsic :: iso_c_binding
@@ -388,13 +394,12 @@ endif
 ! --- Options du calcul (optcal.h)
 ! --- Constantes physiques (cstphy.h)
 
-
 !   - Interface code_saturne
 !     ======================
 
 ! Restart, read auxiliary file, frozen velocity field
 
-call csisui(ntsuit)
+call cs_gui_checkpoint_parameters()
 
 ! Time step (only ntmabs, dtref)
 call cstime()

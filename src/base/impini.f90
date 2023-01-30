@@ -595,8 +595,6 @@ write(nfecra,7500)
 
 !   - Fichier suite
 
-write(nfecra,7510) ntsuit
-
 !   - Fichiers historiques
 write(nfecra,7530) nthist,frhist
 write(nfecra,7532)
@@ -615,9 +613,6 @@ write(nfecra,9900)
                                                                 /,&
 ' ** INPUT-OUTPUT',                                             /,&
 '    ------------',                                             /)
- 7510 format(                                                     &
-' --- Restart file',                                            /,&
-'       NTSUIT = ',4x,i10,    ' (Checkpoint frequency )',       /)
  7530 format(                                                     &
 ' --- Probe history files',                                     /,&
 '       NTHIST = ',4x,i10,    ' (Output frequency     )',       /,&

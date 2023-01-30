@@ -209,11 +209,11 @@ static int ipdirtens3[3][3][3];
 static int nscal = 0;
 
 /* Global static structure _les_balance */
-static cs_les_balance_t  _les_balance = {NULL,
-                                         NULL,
-                                         0,
-                                         0,
-                                         -1};
+static cs_les_balance_t  _les_balance = {.brij = NULL,
+                                         .btui = NULL,
+                                         .i_les_balance = 0,
+                                         .type = 0,
+                                         .frequency_n = -1};
 
 static cs_field_t *_gradv   = NULL;
 static cs_field_t *_gradnut = NULL;

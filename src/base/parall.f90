@@ -43,21 +43,21 @@ module parall
   !> process rank
   !> - -1 in sequential mode
   !> - r (0 < r < n_processes) in distributed parallel run
-  integer, save ::  irangp
+  integer, save ::  irangp = -1
 
   !> number of processes (=1 if sequental)
-  integer, save ::  nrangp
+  integer, save ::  nrangp = 1
 
   ! Global dimensions (i.e. independent of parallel partitioning)
 
   !> global number of cells
-  integer(kind=8), save :: ncelgb
+  integer(kind=8), save :: ncelgb = 0
   !> global number of interior faces
-  integer(kind=8), save :: nfacgb
+  integer(kind=8), save :: nfacgb = 0
   !> global number of boundary faces
-  integer(kind=8), save :: nfbrgb
+  integer(kind=8), save :: nfbrgb = 0
   !> global number of vertices
-  integer(kind=8), save :: nsomgb
+  integer(kind=8), save :: nsomgb = 0
 
   !> \}
 

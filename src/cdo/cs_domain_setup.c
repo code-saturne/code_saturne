@@ -622,7 +622,7 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
    * Use the same default values for t_interval and wt_interval as the FV */
 
   double  t_interval = -1.0, wt_interval = -1.0;
-  cs_restart_checkpoint_set_defaults(domain->restart_nt,
+  cs_restart_checkpoint_set_interval(domain->restart_nt,
                                      t_interval,
                                      wt_interval);
 

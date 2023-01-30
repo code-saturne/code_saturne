@@ -104,7 +104,7 @@ base/turbomachinery.f90
 base/albase.$(OBJEXT): base/cplsat.$(OBJEXT) base/optcal.$(OBJEXT) \
  base/cs_c_bindings.$(OBJEXT)
 
-base/alstru.$(OBJEXT): base/paramx.$(OBJEXT)
+base/alstru.$(OBJEXT): base/paramx.$(OBJEXT) base/cstnum.$(OBJEXT)
 
 base/cavitation.$(OBJEXT): base/cstphy.$(OBJEXT) base/field.$(OBJEXT) \
  base/numvar.$(OBJEXT) base/optcal.$(OBJEXT) base/pointe.$(OBJEXT) \

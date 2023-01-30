@@ -1448,6 +1448,21 @@ cs_user_parameters(cs_domain_t *domain)
   cavit_param->icvevm = 1;
   /*! [reboud_activ] */
 
+  /* Example: deactivate output of auxiliary checkpoint */
+  /*----------------------------------------------------*/
+
+  /* By default, this file is read, but it may be useful to deactivate
+     its use when restarting after a preprocessing stage possibly leading
+     to a different number of faces (such as simply joining meshes on
+     a different architecture or optimization level or with different options).
+
+     Writing of auxiliary restart files may also be deactivated using
+  */
+
+  /*! [deactivate_aux_checkpoint_write] */
+  cs_glob_restart_auxiliary->read_auxiliary = 0;
+  /*! [deactivate_aux_checkpoint_write] */
+
   /* Example: Change the number of checkpoint files which are saved. */
   /*-----------------------------------------------------------------*/
 

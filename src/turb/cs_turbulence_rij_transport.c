@@ -61,7 +61,6 @@
 #include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
-#include "cs_parameters.h"
 #include "cs_physical_constants.h"
 #include "cs_prototypes.h"
 #include "cs_thermal_model.h"

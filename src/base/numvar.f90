@@ -52,79 +52,79 @@ module numvar
 
   !> \anchor ipr
   !> pressure
-  integer, save :: ipr
+  integer, save :: ipr = 0
 
   !> \anchor iu
   !> velocity component \f$ u_x \f$
-  integer, save :: iu
+  integer, save :: iu = 0
 
   !> \anchor iv
   !> velocity component \f$ u_y \f$
-  integer, save :: iv
+  integer, save :: iv = 0
 
   !> \anchor iw
   !> velocity component \f$ u_z \f$
-  integer, save :: iw
+  integer, save :: iw = 0
 
   !> \anchor ivolf2
   !> void fraction for VOF method
-  integer, save :: ivolf2
+  integer, save :: ivolf2 = 0
 
   !> \anchor ik
   !> turbulent kinetic energy \f$ k \f$
-  integer, save :: ik
+  integer, save :: ik = 0
 
   !> \anchor iep
   !> turbulent dissipation \f$ \varepsilon \f$
-  integer, save :: iep
+  integer, save :: iep = 0
 
   !> \anchor ir11
   !> Reynolds stress component \f$ R_{xx} \f$
-  integer, save :: ir11
+  integer, save :: ir11 = 0
 
   !> \anchor ir22
   !> Reynolds stress component \f$ R_{yy} \f$
-  integer, save :: ir22
+  integer, save :: ir22 = 0
 
   !> \anchor ir33
   !> Reynolds stress component \f$ R_{zz} \f$
-  integer, save :: ir33
+  integer, save :: ir33 = 0
 
   !> \anchor ir12
   !> Reynolds stress component \f$ R_{xy} \f$
-  integer, save :: ir12
+  integer, save :: ir12 = 0
 
   !> \anchor ir23
   !> Reynolds stress component \f$ R_{yz} \f$
-  integer, save :: ir23
+  integer, save :: ir23 = 0
 
   !> \anchor ir13
   !> Reynolds stress component \f$ R_{zz} \f$
-  integer, save :: ir13
+  integer, save :: ir13 = 0
 
   !> \anchor irij
   !> Reynolds stress tenso \f$ R_{ij} \f$
-  integer, save :: irij
+  integer, save :: irij = 0
 
   !> \anchor iphi
   !> variable \f$ \phi \f$ of the \f$ \phi-f_b \f$ model
-  integer, save :: iphi
+  integer, save :: iphi = 0
 
   !> \anchor ifb
   !> variable \f$ f_b \f$ of the \f$ \phi-f_b \f$ model
-  integer, save :: ifb
+  integer, save :: ifb = 0
 
   !> \anchor ial
   !> variable \f$ \alpha \f$ of the \f$ Bl-v^2-k \f$ model
-  integer, save :: ial
+  integer, save :: ial = 0
 
   !> \anchor iomg
   !> variable \f$ \omega \f$ of the \f$ k-\omega \f$ SST
-  integer, save :: iomg
+  integer, save :: iomg = 0
 
   !> \anchor inusa
   !> variable \f$ \widetilde{\nu}_T \f$ of the Spalart Allmaras
-  integer, save :: inusa
+  integer, save :: inusa = 0
 
   !> \anchor isca
   !> isca(i) is the index of the scalar i
@@ -136,11 +136,11 @@ module numvar
 
   !> \anchor nscaus
   !> number of user scalars solutions of an advection equation
-  integer, save :: nscaus
+  integer, save :: nscaus = 0
 
   !> \anchor nscapp
   !> number of specific physics scalars
-  integer, save :: nscapp
+  integer, save :: nscapp = 0
 
   !> \anchor nscasp
   !> number of species scalars
@@ -148,15 +148,15 @@ module numvar
 
   !> \anchor iuma
   !> mesh velocity component \f$ w_x \f$
-  integer, save :: iuma
+  integer, save :: iuma = 0
 
   !> \anchor ivma
   !> mesh velocity component \f$ w_y \f$
-  integer, save :: ivma
+  integer, save :: ivma = 0
 
   !> \anchor iwma
   !> mesh velocity component \f$ w_z \f$
-  integer, save :: iwma
+  integer, save :: iwma = 0
 
   !> \}
 
@@ -172,116 +172,100 @@ module numvar
   !> \{
 
   !> Density at the current time step (equal to icrom, kept for compatibility)
-  integer, save :: irom
+  integer, save :: irom = -1
 
   !> dynamic molecular viscosity (in kg/(m.s))
-  integer, save :: iviscl
+  integer, save :: iviscl = -1
 
   !> dynamic turbulent viscosity
-  integer, save :: ivisct
+  integer, save :: ivisct = -1
 
   !> error estimator for Navier-Stokes
   integer, save :: iestim(nestmx)
 
   !> interior and boundary convective mass flux key ids of the variables
-  integer, save :: kimasf, kbmasf
+  integer, save :: kimasf = -1, kbmasf = -1
 
   !> constant diffusivity field id key for scalars
-  integer, save :: kvisl0
+  integer, save :: kvisl0 = -1
 
   !> variable diffusivity field id key for scalars
-  integer, save :: kivisl
+  integer, save :: kivisl = -1
 
   !> do scalars behave as a temperature (regarding multiplication by Cp) ?
-  integer, save :: kscacp
+  integer, save :: kscacp = -1
 
   !> variable density field id key for scalars
-  integer, save :: kromsl
+  integer, save :: kromsl = -1
 
   !> source terms at previous time step for 2nd order
-  integer, save :: kstprv
+  integer, save :: kstprv = -1
 
   !> source terms at the current time step (used for limiters)
-  integer, save :: kst
+  integer, save :: kst = -1
 
   !> turbulent schmidt key for scalars
-  integer, save :: ksigmas
+  integer, save :: ksigmas = -1
 
   !> turbulent flow models GGDH and AFM key for scalar
-  integer, save :: kctheta
+  integer, save :: kctheta = -1
 
   !> convective mass flux of the variables at the previous time-step
   integer, save :: ifluaa(nvarmx)
 
   !> cell density field ids of the variables
-  integer, save :: icrom
+  integer, save :: icrom = -1
 
   !> boundary density field ids of the variables
-  integer, save :: ibrom
+  integer, save :: ibrom = -1
 
   !> field ids of the cell porosity
-  integer, save :: ipori, iporf
+  integer, save :: ipori = -1, iporf = -1
 
   !> dynamic constant of Smagorinsky
-  integer, save :: ismago
+  integer, save :: ismago = -1
 
   !> field ids of the anisotropic viscosity
   !> \remark turbulent or Darcy module anisotropic diffusion
-  integer, save :: ivsten, ivstes
+  integer, save :: ivsten = -1, ivstes = -1
 
   !> Courant number
-  integer, save :: icour
+  integer, save :: icour = -1
 
   !> Fourier number
-  integer, save :: ifour
+  integer, save :: ifour = -1
 
   !> Total pressure at cell centers
   !> \f$ P_{tot} = P^\star +\rho \vect{g} \cdot (\vect{x}-\vect{x}_0) \f$
-  integer, save :: iprtot
+  integer, save :: iprtot = -1
 
   !> Mesh velocity viscosity for the ALE module
   !> \remark might be orthotropic
-  integer, save :: ivisma
+  integer, save :: ivisma = -1
 
   !> pointer for dilatation source terms
   integer, save :: iustdy(nscamx)
 
   !> pointer for global dilatation source terms
-  integer, save :: itsrho
+  integer, save :: itsrho = -1
 
   !> pointer for thermal expansion coefficient
-  integer, save :: ibeta
+  integer, save :: ibeta = -1
 
   !> pointer for deduced mass fraction in case of gas mix
-  integer, save :: iddgas
+  integer, save :: iddgas = -1
 
   !> pointer for gas mix molar mass
-  integer, save :: igmxml
+  integer, save :: igmxml = -1
 
   !> field id of the stresses at boundary  (if post-processed)
-  integer, save :: iforbr
+  integer, save :: iforbr = -1
 
   !>  field id of \f$y^+\f$ at boundary (if post-processed)
-  integer, save :: iyplbr
+  integer, save :: iyplbr = -1
 
   !>  field id of temperature at boundary
-  integer, save ::  itempb
-
-  !> field id of the square of the norm of the deviatoric
-  !> part of the deformation rate tensor (\f$S^2=2S_{ij}^D S_{ij}^D\f$).
-  !> Field defined only with the \f$k-\omega\f$ (SST) turbulence model
-  integer, save :: is2kw
-
-  !> field id of the divergence of the velocity. More precisely,
-  !> it is the trace of the velocity gradient (and not a finite volume
-  !> divergence term). In the cell \c iel,  \f$div(\vect{u})\f$ is given
-  !> by \c divukw(iel1). This array is defined only with the \f$k-\omega\f$ SST
-  !> turbulence model (because in this case it may be calculated at the same
-  !> time as \f$S^2\f$)
-  integer, save :: idivukw
-
-  !> field id of the strain rate tensor at the previous time step
-  integer, save :: istraio
+  integer, save ::  itempb = -1
 
   !> \}
   !----------------------------------------------------------------------------
@@ -294,7 +278,7 @@ module numvar
   !> \{
 
   !> Weighting for gradient calculation on variables
-  integer, save :: kwgrec
+  integer, save :: kwgrec = -1
 
   !> \}
   !----------------------------------------------------------------------------
@@ -310,7 +294,7 @@ module numvar
   integer, save :: ivarfl(nvarmx)
 
   !> Field id for the dttens tensor
-  integer, save :: idtten
+  integer, save :: idtten = -1
 
   !> \}
 

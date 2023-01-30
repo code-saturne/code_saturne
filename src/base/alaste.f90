@@ -40,8 +40,8 @@ module alaste
   ! nbaste : nombre de structures mobiles
   ! nbfast : nombre de faces couplees
 
-  integer, save ::  ntcast
-  integer, save ::  nbaste, nbfast
+  integer, save ::  ntcast = 0
+  integer, save ::  nbaste = -999, nbfast = 0
 
   !=============================================================================
 
