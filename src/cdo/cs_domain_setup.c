@@ -918,17 +918,17 @@ cs_domain_setup_log(const cs_domain_t   *domain)
 
   int  n_systems = cs_equation_system_get_n_systems();
 
-  cs_log_printf(CS_LOG_SETUP, " * Number of systems of equations  %3d\n",
+  cs_log_printf(CS_LOG_SETUP, " * Number of systems of equations       %3d\n",
                 n_systems);
-  cs_log_printf(CS_LOG_SETUP, " * Number of equations             %3d\n",
+  cs_log_printf(CS_LOG_SETUP, " * Number of equations                  %3d\n",
                 n_equations);
-  cs_log_printf(CS_LOG_SETUP, " * Number of predefined equations  %3d\n",
+  cs_log_printf(CS_LOG_SETUP, "  - with number of predefined equations %3d\n",
                 n_predef_equations);
-  cs_log_printf(CS_LOG_SETUP, " * Number of user equations        %3d\n",
+  cs_log_printf(CS_LOG_SETUP, "  - with number of user equations       %3d\n",
                 n_user_equations);
-  cs_log_printf(CS_LOG_SETUP, " * Number of properties            %3d\n",
+  cs_log_printf(CS_LOG_SETUP, " * Number of properties                 %3d\n",
                 cs_property_get_n_properties());
-  cs_log_printf(CS_LOG_SETUP, " * Number of advection fields      %3d\n",
+  cs_log_printf(CS_LOG_SETUP, " * Number of advection fields           %3d\n",
                 cs_advection_field_get_n_fields());
 
   cs_domain_cdo_context_t  *cc = domain->cdo_context;
