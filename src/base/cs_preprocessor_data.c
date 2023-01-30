@@ -2310,19 +2310,22 @@ cs_preprocessor_data_is_restart(void)
  * Read mesh meta-data.
  *
  * parameters:
- *   mesh         <-- pointer to mesh structure
- *   mesh_builder <-- pointer to mesh builder structure
+ *   mesh             <-- pointer to mesh structure
+ *   mesh_builder     <-- pointer to mesh builder structure
+ *   ignore_cartesian <-- option to ignore cartesian blocks
  *----------------------------------------------------------------------------*/
 
 void
 cs_preprocessor_data_read_headers(cs_mesh_t          *mesh,
-                                  cs_mesh_builder_t  *mesh_builder)
+                                  cs_mesh_builder_t  *mesh_builder,
+                                  bool                ignore_cartesian)
 {
   int file_id;
 
   /* Initialize reading of Preprocessor output */
 
-  if (_n_mesh_files == 0 && cs_mesh_cartesian_need_build()) {
+  if (_n_mesh_files == 0 && cs_mesh_cartesian_need_build() &&
+      !(ignore_cartesian)) {
 
     int _n_cartesian_meshes = cs_mesh_cartesian_get_number_of_meshes();
     for (int m_id = 0; m_id < _n_cartesian_meshes; m_id++)
@@ -2378,13 +2381,15 @@ cs_preprocessor_data_read_headers(cs_mesh_t          *mesh,
  * the mesh structure (for example, just before building ghost cells).
  *
  * parameters:
- *   mesh         <-- pointer to mesh structure
- *   mesh_builder <-- pointer to mesh builder structure
+ *   mesh             <-- pointer to mesh structure
+ *   mesh_builder     <-- pointer to mesh builder structure
+ *   ignore_cartesian <-- option to ignore cartesian blocks
  *----------------------------------------------------------------------------*/
 
 void
 cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
-                               cs_mesh_builder_t  *mesh_builder)
+                               cs_mesh_builder_t  *mesh_builder,
+                               bool                ignore_cartesian)
 {
   int file_id;
 
@@ -2431,7 +2436,7 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
   else
     _set_block_ranges(mesh, mesh_builder);
 
-  if (cs_mesh_cartesian_need_build()) {
+  if (cs_mesh_cartesian_need_build() && !(ignore_cartesian) ) {
     for (int m_id = 0; m_id < cs_mesh_cartesian_get_number_of_meshes(); m_id++)
       cs_mesh_cartesian_block_connectivity(m_id, mesh, mesh_builder, echo);
     mesh->modified |= CS_MESH_MODIFIED;

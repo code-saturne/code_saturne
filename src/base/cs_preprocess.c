@@ -275,7 +275,8 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   /* Read Preprocessor output */
 
   cs_preprocessor_data_read_mesh(m,
-                                 cs_glob_mesh_builder);
+                                 cs_glob_mesh_builder,
+                                 false);
 
   if (allow_modify) {
 
