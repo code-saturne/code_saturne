@@ -1677,31 +1677,6 @@ cs_parameters_need_extended_neighborhood(void)
 void
 cs_parameters_global_complete(void)
 {
-  /* Model constants */
-
-  cs_turb_dpow = 1. / (1.+cs_turb_bpow);
-
-  /*  Modified value of Cmu for V2f and Bl-v2k */
-  if (cs_glob_turb_model->itytur == 5)
-    cs_turb_cmu = 0.22;
-
-  cs_turb_cmu025 = pow(cs_turb_cmu, 0.25);
-
-  if (cs_glob_turb_rans_model->idirsm == 0)
-    cs_turb_csrij = 0.11;
-  else {
-    if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
-      cs_turb_csrij = 0.21;
-    else
-      cs_turb_csrij = 0.22;
-  }
-
-  /* Constant for the Buoyant production term of Rij-EBRSM */
-
-  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
-    cs_turb_crij3 = 0.6;
-  else
-    cs_turb_crij3 = 0.55;
 }
 
 /*----------------------------------------------------------------------------*/
