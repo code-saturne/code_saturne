@@ -85,6 +85,7 @@ cs_param_space_scheme_name[CS_SPACE_N_SCHEMES][CS_BASE_STRING_LEN] =
     N_("CDO vertex+cell-based"),
     N_("CDO edge-based"),
     N_("CDO face-based"),
+    N_("CDO cell-based"),
     N_("HHO-P0"),
     N_("HHO-P1"),
     N_("HHO-P2")
@@ -248,6 +249,7 @@ cs_param_get_space_scheme_name(cs_param_space_scheme_t    scheme)
   case CS_SPACE_SCHEME_CDOVCB:
   case CS_SPACE_SCHEME_CDOEB:
   case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_CDOCB:
   case CS_SPACE_SCHEME_HHO_P0:
   case CS_SPACE_SCHEME_HHO_P1:
   case CS_SPACE_SCHEME_HHO_P2:
