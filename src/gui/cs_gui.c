@@ -1979,171 +1979,6 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
 }
 
 /*----------------------------------------------------------------------------
- * User scalar source terms.
- *
- * Fortran Interface:
- *
- * subroutine uitssc (f_id, pvar, tsexp, tsimp)
- * *****************
- *
- * integer          idarcy   <--  groundwater module activation
- * integer          f_id     <--  field id
- * double precision pvar     <--  scalar
- * double precision tsexp    -->  explicit source terms
- * double precision tsimp    -->  implicit source terms
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
-                              const int                  *f_id,
-                              const cs_real_t   *restrict pvar,
-                              cs_real_t         *restrict tsexp,
-                              cs_real_t         *restrict tsimp)
-{
-  const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
-
-  const char *formula = NULL;
-
-  cs_field_t *f = cs_field_by_id(*f_id);
-
-#if _XML_DEBUG_
-  bft_printf("==> %s\n", __func__);
-#endif
-
-  int n_zones = cs_volume_zone_n_zones();
-
-  for (int z_id = 0; z_id < n_zones; z_id++) {
-    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
-
-    if (! (z->type & CS_VOLUME_ZONE_SOURCE_TERM))
-      continue;
-
-    /* species source term */
-    if (_zone_id_is_type(z->id, "scalar_source_term")) {
-      const cs_lnum_t n_cells = z->n_elts;
-      const cs_lnum_t *cell_ids = z->elt_ids;
-
-      cs_tree_node_t *tn
-        = cs_tree_get_node(cs_glob_tree,
-                           "thermophysical_models/source_terms/scalar_formula");
-      char z_id_str[32];
-      snprintf(z_id_str, 31, "%d", z->id);
-      while (tn != NULL){
-        const char *name = cs_gui_node_get_tag(tn, "name");
-        const char *zone_id = cs_gui_node_get_tag(tn, "zone_id");
-        if (cs_gui_strcmp(name, f->name) && cs_gui_strcmp(zone_id, z_id_str))
-          break;
-        tn = cs_tree_node_get_next_of_name(tn);
-      }
-      formula = cs_tree_node_get_value_str(tn);
-
-      if (formula != NULL) {
-        cs_real_t *st_vals = cs_meg_source_terms(z,
-                                                 f->name,
-                                                 "scalar_source_term");
-
-        cs_real_t sign = 1.0;
-        cs_real_t non_linear = 1.0;
-        /* for groundwater flow, the user filled in the positive radioactive
-           decay rate (lambda) - this source term is always linear:
-           -lambda Y^{n+1} */
-        if (*idarcy > -1) {
-          sign = -1.0;
-          non_linear = 0.;
-        }
-
-        for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-          cs_lnum_t c_id = cell_ids[e_id];
-          tsimp[c_id] = cell_f_vol[c_id] * sign * st_vals[2 * e_id + 1];
-          tsexp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id]
-                        - non_linear * tsimp[c_id] * pvar[c_id];
-        }
-        if (st_vals != NULL)
-          BFT_FREE(st_vals);
-      }
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Thermal scalar source terms.
- *
- * Fortran Interface:
- *
- * subroutine uitsth (f_id, pvar, tsexp, tsimp)
- * *****************
- *
- * integer          f_id     <--  field id
- * double precision pvar     <--  scalar
- * double precision tsexp    -->  explicit source terms
- * double precision tsimp    -->  implicit source terms
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
-                              const cs_real_t   *restrict pvar,
-                              cs_real_t         *restrict tsexp,
-                              cs_real_t         *restrict tsimp)
-{
-  const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
-
-  const char *formula = NULL;
-
-  cs_field_t *f = cs_field_by_id(*f_id);
-
-  /* number of volumic zone */
-
-#if _XML_DEBUG_
-  bft_printf("==> %s\n", __func__);
-#endif
-
-  int n_zones = cs_volume_zone_n_zones();
-
-  for (int z_id = 0; z_id < n_zones; z_id++) {
-    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
-
-    if (!(z->type & CS_VOLUME_ZONE_SOURCE_TERM))
-      continue;
-
-    /* species source term */
-    if (_zone_id_is_type(z->id, "thermal_source_term")) {
-      const cs_lnum_t n_cells = z->n_elts;
-      const cs_lnum_t *cell_ids = z->elt_ids;
-
-      cs_tree_node_t *tn
-        = cs_tree_get_node(cs_glob_tree,
-                           "thermophysical_models/source_terms/thermal_formula");
-      char z_id_str[32];
-      snprintf(z_id_str, 31, "%d", z->id);
-      while (tn != NULL) {
-
-        const char *name = cs_gui_node_get_tag(tn, "name");
-        const char *zone_id = cs_gui_node_get_tag(tn, "zone_id");
-        if (cs_gui_strcmp(name, f->name) && cs_gui_strcmp(zone_id, z_id_str))
-          break;
-        tn = cs_tree_node_get_next_of_name(tn);
-      }
-      formula = cs_tree_node_get_value_str(tn);
-
-      if (formula != NULL) {
-
-        cs_real_t *st_vals = cs_meg_source_terms(z,
-                                                 f->name,
-                                                 "thermal_source_term");
-
-        for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-          cs_lnum_t c_id = cell_ids[e_id];
-
-          tsimp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id + 1];
-          tsexp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id]
-                      - tsimp[c_id] * pvar[c_id];
-        }
-        if (st_vals != NULL)
-          BFT_FREE(st_vals);
-      }
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------
  * User law for material properties
  *
  * Fortran Interface:
@@ -5245,6 +5080,150 @@ cs_gui_add_volume_meg_context(const  cs_zone_t   *zone,
   _n_v_meg_contexts += 1;
 
   return meg_context;
+}
+
+/*----------------------------------------------------------------------------
+ * Define user scalar source terms.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_scalar_source_terms(cs_field_t        *f,
+                           const cs_real_t   *restrict pvar,
+                           cs_real_t         *restrict tsexp,
+                           cs_real_t         *restrict tsimp)
+{
+  const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+
+  const char *formula = NULL;
+
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+#endif
+
+  const int idarcy = cs_glob_physical_model_flag[CS_GROUNDWATER];
+
+  const int n_zones = cs_volume_zone_n_zones();
+
+  for (int z_id = 0; z_id < n_zones; z_id++) {
+    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+
+    if (! (z->type & CS_VOLUME_ZONE_SOURCE_TERM))
+      continue;
+
+    /* species source term */
+    if (_zone_id_is_type(z->id, "scalar_source_term")) {
+      const cs_lnum_t n_cells = z->n_elts;
+      const cs_lnum_t *cell_ids = z->elt_ids;
+
+      cs_tree_node_t *tn
+        = cs_tree_get_node(cs_glob_tree,
+                           "thermophysical_models/source_terms/scalar_formula");
+      char z_id_str[32];
+      snprintf(z_id_str, 31, "%d", z->id);
+      while (tn != NULL){
+        const char *name = cs_gui_node_get_tag(tn, "name");
+        const char *zone_id = cs_gui_node_get_tag(tn, "zone_id");
+        if (cs_gui_strcmp(name, f->name) && cs_gui_strcmp(zone_id, z_id_str))
+          break;
+        tn = cs_tree_node_get_next_of_name(tn);
+      }
+      formula = cs_tree_node_get_value_str(tn);
+
+      if (formula != NULL) {
+        cs_real_t *st_vals = cs_meg_source_terms(z,
+                                                 f->name,
+                                                 "scalar_source_term");
+
+        cs_real_t sign = 1.0;
+        cs_real_t non_linear = 1.0;
+        /* for groundwater flow, the user filled in the positive radioactive
+           decay rate (lambda) - this source term is always linear:
+           -lambda Y^{n+1} */
+        if (idarcy > -1) {
+          sign = -1.0;
+          non_linear = 0.;
+        }
+
+        for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+          cs_lnum_t c_id = cell_ids[e_id];
+          tsimp[c_id] = cell_f_vol[c_id] * sign * st_vals[2 * e_id + 1];
+          tsexp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id]
+                        - non_linear * tsimp[c_id] * pvar[c_id];
+        }
+        if (st_vals != NULL)
+          BFT_FREE(st_vals);
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Define user thermal scalar source terms
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_thermal_source_terms(cs_field_t                 *f,
+                            const cs_real_t   *restrict pvar,
+                            cs_real_t         *restrict tsexp,
+                            cs_real_t         *restrict tsimp)
+{
+
+  const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+
+  const char *formula = NULL;
+
+  /* number of volumic zone */
+
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+#endif
+
+  int n_zones = cs_volume_zone_n_zones();
+
+  for (int z_id = 0; z_id < n_zones; z_id++) {
+    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+
+    if (!(z->type & CS_VOLUME_ZONE_SOURCE_TERM))
+      continue;
+
+    /* species source term */
+    if (_zone_id_is_type(z->id, "thermal_source_term")) {
+      const cs_lnum_t n_cells = z->n_elts;
+      const cs_lnum_t *cell_ids = z->elt_ids;
+
+      cs_tree_node_t *tn
+        = cs_tree_get_node(cs_glob_tree,
+                           "thermophysical_models/source_terms/thermal_formula");
+      char z_id_str[32];
+      snprintf(z_id_str, 31, "%d", z->id);
+      while (tn != NULL) {
+
+        const char *name = cs_gui_node_get_tag(tn, "name");
+        const char *zone_id = cs_gui_node_get_tag(tn, "zone_id");
+        if (cs_gui_strcmp(name, f->name) && cs_gui_strcmp(zone_id, z_id_str))
+          break;
+        tn = cs_tree_node_get_next_of_name(tn);
+      }
+      formula = cs_tree_node_get_value_str(tn);
+
+      if (formula != NULL) {
+
+        cs_real_t *st_vals = cs_meg_source_terms(z,
+                                                 f->name,
+                                                 "thermal_source_term");
+
+        for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+          cs_lnum_t c_id = cell_ids[e_id];
+
+          tsimp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id + 1];
+          tsexp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id]
+                      - tsimp[c_id] * pvar[c_id];
+        }
+        if (st_vals != NULL)
+          BFT_FREE(st_vals);
+      }
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/

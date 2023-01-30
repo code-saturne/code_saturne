@@ -68,8 +68,6 @@ implicit none
 
 ! Local variables
 
-integer :: ii
-
 !===============================================================================
 
 if (itherm .eq. 1) then

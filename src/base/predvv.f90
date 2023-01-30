@@ -198,7 +198,6 @@ double precision tensor(6)
 double precision rscp, tref
 
 double precision rvoid(1)
-double precision, dimension(1,1),   target :: rvoid2
 
 ! Working arrays
 double precision, allocatable, dimension(:,:) :: eswork
@@ -232,7 +231,7 @@ double precision, dimension(:), pointer :: cvar_pr, cvara_k
 double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: viscl, visct, c_estim
 double precision, dimension(:,:), pointer :: lapla, lagr_st_vel
-double precision, dimension(:,:), pointer :: cpro_gradp, gradp
+double precision, dimension(:,:), pointer :: cpro_gradp
 double precision, dimension(:,:), pointer :: cpro_divr
 double precision, dimension(:,:), pointer :: cpro_pred_vel
 double precision, dimension(:), pointer :: cpro_wgrec_s, wgrec_crom

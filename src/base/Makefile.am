@@ -48,6 +48,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/rayt \
 -I$(top_srcdir)/src/turb \
 -I$(top_srcdir)/src/atmo \
+-I$(top_srcdir)/src/darc \
 $(CPPFLAGS_PLE) \
 $(FREESTEAM_CPPFLAGS) \
 $(MPI_CPPFLAGS)
@@ -172,6 +173,7 @@ cs_sat_coupling.h \
 cs_scalar_clipping.h \
 cs_search.h \
 cs_selector.h \
+cs_solve_equation.h \
 cs_sort.h \
 cs_sort_partition.h \
 cs_syr_coupling.h \
@@ -268,7 +270,6 @@ clsyvt.f90 \
 condli.f90 \
 cou1di.f90 \
 cou1do.f90 \
-covofi.f90 \
 covofv.f90 \
 cs_wall_condensation.c \
 cs_wall_condensation_1d_thermal.c \
@@ -352,6 +353,7 @@ cs_scalar_clipping.c\
 cs_search.c \
 cs_selector.c \
 cs_selector_f2c.f90 \
+cs_solve_equation.c \
 cs_sort.c \
 cs_sort_partition.c \
 cs_syr_coupling.c \

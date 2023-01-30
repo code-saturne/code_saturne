@@ -197,46 +197,6 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
                               cs_real_33_t      *restrict tsimp);
 
 /*----------------------------------------------------------------------------
- * User scalar source terms.
- *
- * Fortran Interface:
- *
- * subroutine uitssc (f_id, pvar, tsexp, tsimp)
- * *****************
- *
- * integer          idarcy   <--  groundwater module activation
- * integer          f_id     <--  field id
- * double precision pvar     <--  scalar
- * double precision tsexp    -->  explicit source terms
- * double precision tsimp    -->  implicit source terms
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
-                              const int                  *f_id,
-                              const cs_real_t   *restrict pvar,
-                              cs_real_t         *restrict tsexp,
-                              cs_real_t         *restrict tsimp);
-
-/*----------------------------------------------------------------------------
- * Thermal scalar source terms.
- *
- * Fortran Interface:
- *
- * subroutine uitsth (f_id, pvar, tsexp, tsimp)
- * *****************
- *
- * integer          f_id     <--  field id
- * double precision pvar     <--  scalar
- * double precision tsexp    -->  explicit source terms
- * double precision tsimp    -->  implicit source terms
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
-                              const cs_real_t   *restrict pvar,
-                              cs_real_t         *restrict tsexp,
-                              cs_real_t         *restrict tsimp);
-
-/*----------------------------------------------------------------------------
  * User law for material Properties
  *
  * Fortran Interface:
@@ -601,6 +561,26 @@ const cs_gui_volume_meg_context_t *
 cs_gui_add_volume_meg_context(const  cs_zone_t   *zone,
                               const  cs_field_t  *fields[],
                               const  int          n_fields);
+
+/*----------------------------------------------------------------------------
+ * Define user scalar source terms.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_scalar_source_terms(cs_field_t        *f,
+                           const cs_real_t   *restrict pvar,
+                           cs_real_t         *restrict tsexp,
+                           cs_real_t         *restrict tsimp);
+
+/*----------------------------------------------------------------------------
+ * Define user thermal scalar source terms
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_thermal_source_terms(cs_field_t        *f,
+                            const cs_real_t   *restrict pvar,
+                            cs_real_t         *restrict tsexp,
+                            cs_real_t         *restrict tsimp);
 
 /*----------------------------------------------------------------------------*/
 

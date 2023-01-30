@@ -1,8 +1,8 @@
-#ifndef __CS_BAD_CELLS_REGULARISATION_H__
-#define __CS_BAD_CELLS_REGULARISATION_H__
+#ifndef __CS_BW_TIME_DIFF_H__
+#define __CS_BW_TIME_DIFF_H__
 
 /*============================================================================
- * Divergence operators.
+ * Time operators.
  *============================================================================*/
 
 /*
@@ -32,7 +32,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_halo.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -54,59 +53,11 @@ BEGIN_C_DECLS
  * Public function prototypes for Fortran API
  *============================================================================*/
 
-/*=============================================================================
- * Public function prototypes
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Regularisation on bad cells for scalars
- *
- * \param[in, out]  var  variable to regularize.
- */
-/*----------------------------------------------------------------------------*/
-
 void
-cs_bad_cells_regularisation_scalar(cs_real_t *var);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Regularisation on bad cells for vectors
- *
- * \param[in, out]  var  variable to regularize.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_bad_cells_regularisation_vector(cs_real_3_t *var,
-                                   int          boundary_projection);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Regularisation on bad cells for symmetric tensors.
- *
- * \param[in, out]  var  variable to regularize.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_bad_cells_regularisation_sym_tensor(cs_real_6_t *var,
-                                       int          boundary_projection);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Regularisation on bad cells for tensors
- *
- * \param[in, out]  var  variable to regularize.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_bad_cells_regularisation_tensor(cs_real_9_t *var,
-                                   int          boundary_projection);
-
-/*----------------------------------------------------------------------------*/
+cs_backward_differentiation_in_time(const cs_field_t    *f,
+                                    cs_real_t           *exp_part,
+                                    cs_real_t           *imp_part);
 
 END_C_DECLS
 
-#endif /* __CS_BAD_CELLS_REGULARISATION_H__ */
+#endif /* __CS_BW_TIME_DIFF_H__ */

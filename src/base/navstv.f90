@@ -149,9 +149,8 @@ double precision, allocatable, dimension(:) :: esflum, esflub
 double precision, allocatable, dimension(:) :: intflx, bouflx
 double precision, allocatable, dimension(:) :: secvif, secvib
 double precision, dimension(:,:), allocatable :: rhs_temp
-double precision rvoid(1)
 double precision, allocatable, dimension(:,:), target :: gradp
-double precision, dimension(:,:), pointer :: cpro_gradp, iuaf, buaf
+double precision, dimension(:,:), pointer :: cpro_gradp
 double precision, dimension(:), pointer :: coefa_dp, coefb_dp
 double precision, dimension(:,:), pointer :: grdphd
 double precision, dimension(:,:), pointer :: da_uu
@@ -171,7 +170,7 @@ double precision, dimension(:,:), pointer :: mshvel
 double precision, dimension(:,:), pointer :: disale
 double precision, dimension(:,:), pointer :: xyzno0
 double precision, dimension(:), pointer :: porosi
-double precision, dimension(:), pointer :: cvar_pr, cvar_pra, cvar_pr_temp
+double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cpro_prtot, c_estim
 double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
 double precision, dimension(:), pointer :: cpro_rho_mass
@@ -1244,9 +1243,9 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
 
     endif
 
-    call synvin(vel)
-
   endif
+
+  call synvin(vel)
 
   if (iphydr.eq.1) then
 
@@ -1489,9 +1488,7 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
 
   ! --- Vitesse
 
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synvin(vel)
-  endif
+  call synvin(vel)
 
   !  -- Pression
 

@@ -1023,10 +1023,10 @@ cs_parameters_define_field_keys(void)
 
   cs_field_define_key_int("density_id", -1, CS_FIELD_VARIABLE);
 
-  /* is the field buoyant? 0 if not, 1 if yes */
+  /* Is the field buoyant? 0 if not, 1 if yes */
   cs_field_define_key_int("is_buoyant", 0, CS_FIELD_VARIABLE);
 
-  /* does the field behave like a temperature ? (iscacp) */
+  /* Does the field behave like a temperature ? (iscacp) */
   cs_field_define_key_int("is_temperature", -1, CS_FIELD_VARIABLE);
 
   cs_field_define_key_int("turbulent_flux_model", 0, CS_FIELD_VARIABLE);

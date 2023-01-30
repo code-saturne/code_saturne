@@ -58,6 +58,8 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
+#include "cs_bw_time_diff.h"
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -86,24 +88,40 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 void
-cs_backward_differentiation_in_time(const int     field_id,
-                                    cs_real_t    *exp_part,
-                                    cs_real_t    *imp_part);
+cs_f_backward_differentiation_in_time(const int     field_id,
+                                      cs_real_t    *exp_part,
+                                      cs_real_t    *imp_part);
 
 /*============================================================================
  * Private function definitions
  *============================================================================*/
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Public function definitions for Fortran API
+ * Fortran wrapper function definitions
  *============================================================================*/
 
 void
-cs_backward_differentiation_in_time(const int     field_id,
-                                    cs_real_t    *exp_part,
-                                    cs_real_t    *imp_part)
+cs_f_backward_differentiation_in_time(const int     field_id,
+                                      cs_real_t    *exp_part,
+                                      cs_real_t    *imp_part)
+{
+  const cs_field_t *f = cs_field_by_id(field_id);
+
+  cs_backward_differentiation_in_time(f, exp_part, imp_part);
+
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+void
+cs_backward_differentiation_in_time(const cs_field_t     *f,
+                                    cs_real_t            *exp_part,
+                                    cs_real_t            *imp_part)
 {
   cs_lnum_t iel;
   const cs_mesh_t  *m = cs_glob_mesh;
@@ -114,7 +132,6 @@ cs_backward_differentiation_in_time(const int     field_id,
   const cs_real_t *dt = CS_F_(dt)->val;
   const cs_real_t *rho = CS_F_(rho)->val;
 
-  const cs_field_t *f = cs_field_by_id(field_id);
   const int dim = f->dim;
 
   if (dim == 3) {

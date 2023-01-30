@@ -1944,7 +1944,7 @@ module cs_c_bindings
 
     subroutine cs_backward_differentiation_in_time(field_id,                  &
                                                    exp_part, imp_part)        &
-      bind(C, name='cs_backward_differentiation_in_time')
+      bind(C, name='cs_f_backward_differentiation_in_time')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: field_id

@@ -265,6 +265,56 @@ cs_thermal_model_cflp(const cs_real_t  croma[],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the CFL number related to the thermal equation
+ *
+ * \param[in]     croma     array of density values at the last time iteration
+ * \param[in]     tempk     array of the temperature
+ * \param[in]     tempka    array of the temperature at the previous time step
+ * \param[in]     xcvv      array of the isochoric heat capacity
+ * \param[in]     vel       array of the velocity
+ * \param[in]     imasfl    array of the faces mass fluxes
+ * \param[in]     cflt      CFL condition related to thermal equation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_thermal_model_cflt(const cs_real_t  croma[],
+                      const cs_real_t  tempk[],
+                      const cs_real_t  tempka[],
+                      const cs_real_t  xcvv[],
+                      const cs_real_t  vel[][3],
+                      const cs_real_t  imasfl[],
+                      cs_real_t        cflt[restrict]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the isobaric heat capacity
+ *
+ * \param[in]     xcvv      isobaric heat capacity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_thermal_model_cv(cs_real_t  *xcvv);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute and add the dissipation term of the thermal equation to
+ *        its right hand side.
+ *
+ * \param[in]      vistot  array for the total viscosity
+ * \param[in]      gradv   tensor for the velocity gradient
+ * \param[in,out]  smbrs   array of equation right hand side
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_thermal_model_dissipation(const cs_real_t  vistot[],
+                             const cs_real_t  gradv[][3][3],
+                             cs_real_t        smbrs[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Perform the Newton method to compute the temperature from the
  *        internal energy
  *
@@ -291,23 +341,25 @@ cs_thermal_model_newton_t(int               method,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add the term pdivu to the thermal equation rhs
+ * \brief Add the term pdivu to the thermal equation rhs.
  *
- * \param[in]       temp_     array of temperature
- * \param[in]       tempa_    array of temperature at the previous time step
+ * The cpro_yv, cpro_yva, cpro_yw, and cpro_ywa arrays are optional
+ * (and used for humid air).
+ *
+ * \param[in]       thetv     theta parameter
+ * \param[in]       temp      array of temperature
+ * \param[in]       tempa     array of temperature at the previous time step
  * \param[in]       cvar_var  array of the internal energy
  * \param[in]       cvara_var array of the internal energy at the previous
  *                            time step
- * \param[in]       tempa_    array of temperature at the previous time step
- * \param[in]       thetv     theta parameter
  * \param[in]       vel       array of the velocity
  * \param[in]       xcvv      array of the isobaric heat capacity
- * \param[in]       cpro_yw   array of the total water mass fraction
+ * \param[in]       cpro_yw   array of the total water mass fraction, or NULL
  * \param[in]       cpro_ywa  array of the total water mass fraction at the
- *                            previous time step
- * \param[in]       cpro_yv   array of the vapor of water mass fraction
+ *                            previous time step, or NULL
+ * \param[in]       cpro_yv   array of the vapor of water mass fraction, or NULL
  * \param[in]       cpro_yva  array of the vapor of water mass fraction at the
- *                            previous time step
+ *                            previous time step, or NULL
  * \param[in]       gradp     array of the pressure gradient
  * \param[in]       gradphi   array of the pressure increment gradient
  * \param[in, out]  smbrs     array of the right hand side
@@ -315,70 +367,20 @@ cs_thermal_model_newton_t(int               method,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_model_pdivu(cs_real_t  *temp_,
-                       cs_real_t  *tempa_,
-                       cs_real_t  *cvar_var,
-                       cs_real_t  *cvara_var,
-                       cs_real_t   thetv,
-                       cs_real_t  *vel[3],
-                       cs_real_t  *xcvv,
-                       cs_real_t  *cpro_yw,
-                       cs_real_t  *cpro_ywa,
-                       cs_real_t  *cpro_yv,
-                       cs_real_t  *cpro_yva,
-                       cs_real_t  *gradp[3],
-                       cs_real_t  *gradphi[3],
-                       cs_real_t  *smbrs);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute and add the dissipation term of the thermal equation to
- *        its right hand side.
- *
- * \param[in]      vistot  array for the total viscosity
- * \param[in]      gradv   tensor for the velocity gradient
- * \param[in,out]  smbrs   array of equation right hand side
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_thermal_model_dissipation(cs_real_t  *vistot,
-                             cs_real_t  *gradv[3][3],
-                             cs_real_t  *smbrs);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the CFL number related to the thermal equation
- *
- * \param[in]     croma     array of density values at the last time iteration
- * \param[in]     tempk     array of the temperature
- * \param[in]     tempka    array of the temperature at the previous time step
- * \param[in]     xcvv      array of the isochoric heat capacity
- * \param[in]     vel       array of the velocity
- * \param[in]     imasfl    array of the faces mass fluxes
- * \param[in]     cflt      CFL condition related to thermal equation
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_thermal_model_cflt (cs_real_t  *croma,
-                       cs_real_t  *tempk,
-                       cs_real_t  *tempka,
-                       cs_real_t  *xcvv,
-                       cs_real_t  *vel[3],
-                       cs_real_t  *imasfl,
-                       cs_real_t  *cflt);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the isobaric heat capacity
- *
- * \param[in]     xcvv      isobaric heat capacity
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_thermal_model_cv(cs_real_t  *xcvv);
+cs_thermal_model_pdivu(cs_real_t         thetv,
+                       const cs_real_t   temp[],
+                       const cs_real_t   tempa[],
+                       const cs_real_t   cvar_var[],
+                       const cs_real_t   cvara_var[],
+                       const cs_real_t   vel[][3],
+                       const cs_real_t   xcvv[],
+                       const cs_real_t  *cpro_yw,
+                       const cs_real_t  *cpro_ywa,
+                       const cs_real_t  *cpro_yv,
+                       const cs_real_t  *cpro_yva,
+                       const cs_real_t   gradp[][3],
+                       const cs_real_t   gradphi[][3],
+                       cs_real_t         smbrs[restrict]);
 
 /*----------------------------------------------------------------------------*/
 

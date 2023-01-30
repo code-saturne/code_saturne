@@ -34,6 +34,7 @@
 #include "cs_balance.h"
 #include "cs_benchmark.h"
 #include "cs_blas.h"
+#include "cs_bw_time_diff.h"
 #include "cs_cell_to_vertex.h"
 #include "cs_convection_diffusion.h"
 #include "cs_divergence.h"

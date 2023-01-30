@@ -88,6 +88,7 @@ cs_balance_by_zone.h \
 cs_benchmark.h \
 cs_benchmark_matrix.h \
 cs_blas.h \
+cs_bw_time_diff.h \
 cs_cell_to_vertex.h \
 cs_convection_diffusion.h \
 cs_divergence.h \

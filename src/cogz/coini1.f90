@@ -74,7 +74,8 @@ implicit none
 
 integer          jj, iok
 integer          isc, iclvfl, kclvfl, krvarfl
-double precision wmolme, turb_schmidt, rvarfl
+double precision wmolme, turb_schmidt
+
 !===============================================================================
 ! 1. VARIABLES TRANSPORTEES
 !===============================================================================

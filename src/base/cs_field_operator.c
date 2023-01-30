@@ -606,6 +606,73 @@ cs_field_gradient_scalar(const cs_field_t          *f,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute cell gradient of scalar array using parameters associated
+ *         with a given field.
+ *
+ * \param[in]       f_id           associated field id
+ * \param[in]       inc            if 0, solve on increment; 1 otherwise
+ * \param[in]       bc_coeff_a     boundary condition term a
+ * \param[in]       bc_coeff_b     boundary condition term b
+ * \param[in, out]  var            gradient's base variable
+ * \param[out]      grad           gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_gradient_scalar_array(int               f_id,
+                               int               inc,
+                               const cs_real_t   bc_coeff_a[],
+                               const cs_real_t   bc_coeff_b[],
+                               cs_real_t         var[],
+                               cs_real_3_t       grad[])
+{
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_LSQ;
+
+  const cs_field_t *f = cs_field_by_id(f_id);
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
+
+  /* Choose gradient type */
+
+  cs_gradient_type_by_imrgra(eqp->imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  /* Check if given field has internal coupling  */
+  cs_internal_coupling_t  *cpl = NULL;
+  if (f_id > -1) {
+    const int key_id = cs_field_key_id_try("coupling_entity");
+    if (key_id > -1) {
+      int coupl_id = cs_field_get_key_int(f, key_id);
+      if (coupl_id > -1)
+        cpl = cs_internal_coupling_by_id(coupl_id);
+    }
+  }
+
+  /* Compute gradient */
+
+  cs_gradient_scalar(f->name,
+                     gradient_type,
+                     halo_type,
+                     inc,
+                     eqp->nswrgr,
+                     0,             /* iphydp */
+                     1,             /* w_stride */
+                     eqp->verbosity,
+                     (cs_gradient_limit_t)(eqp->imligr),
+                     eqp->epsrgr,
+                     eqp->climgr,
+                     NULL,          /* f_ext */
+                     bc_coeff_a,
+                     bc_coeff_b,
+                     var,
+                     NULL,          /* c_weight */
+                     cpl,
+                     grad);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute cell gradient of scalar field or component of vector or
  * tensor field.
  *

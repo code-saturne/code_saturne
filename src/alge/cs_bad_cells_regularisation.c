@@ -70,6 +70,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Regularisation on bad cells for scalars
+ *
+ * \param[in, out]  var  variable to regularize.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -194,6 +196,7 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
 /*!
  * \brief Regularisation on bad cells for vectors
  *
+ * \param[in, out]  var  variable to regularize.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -225,6 +228,7 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
   cs_real_33_t *dam;
   cs_real_3_t *rhs;
   cs_real_t *xam;
+
 #if 1
   double varmin[3] = {1.e20, 1.e20, 1.e20};
   double varmax[3] = {-1.e20, -1.e20,-1.e20};
@@ -296,7 +300,7 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
     }
   }
 
-  /* Boudanry projection... should be consistent with BCs... */
+  /* Boundary projection... should be consistent with BCs... */
   if (boundary_projection == 1) {
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (cs_glob_bc_type[face_id] == CS_SMOOTHWALL ||
@@ -354,9 +358,15 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
   }
 #endif
 
-  //FIXME periodicity of rotation
-  if (mesh->halo != NULL)
+  if (mesh->halo != NULL) {
     cs_halo_sync_var_strided(mesh->halo, CS_HALO_STANDARD, (cs_real_t *)var, 3);
+
+    if (mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_vect(mesh->halo,
+                                  CS_HALO_STANDARD,
+                                  (cs_real_t *)var,
+                                  3);
+  }
 
   /* Free solver setup */
   cs_sles_free_native(-1, /* f_id*/
@@ -371,6 +381,8 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Regularisation on bad cells for symmetric tensors.
+ *
+ * \param[in, out]  var  variable to regularize.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -550,6 +562,7 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
 /*!
  * \brief Regularisation on bad cells for tensors
  *
+ * \param[in, out]  var  variable to regularize.
  */
 /*----------------------------------------------------------------------------*/
 

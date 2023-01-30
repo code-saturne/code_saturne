@@ -125,7 +125,7 @@ BEGIN_C_DECLS
         - CS_TURB_HYBRID: Hybrid RANS-LES
   \var  cs_turb_model_t::order
         Order of the turbulence model:
-        - CS_TURB_ALGEBRAIC: 0th order algebraik model
+        - CS_TURB_ALGEBRAIC: 0th order algebraic model
         - CS_TURB_FIRST_ORDER: 1st order Eddy Viscosity
                                type models
         - CS_TURB_SECOND_ORDER: 2nd order Differential
