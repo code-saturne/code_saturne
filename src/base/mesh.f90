@@ -43,33 +43,33 @@ module mesh
 
   !> \anchor ncelet
   !> number of extended (real + ghost of the 'halo') cells. See \ref note_1
-  integer, save :: ncelet
+  integer, save :: ncelet = 0
 
   !> \anchor ncel
   !> number of real cells in the mesh
-  integer, save :: ncel
+  integer, save :: ncel = 0
 
   !> \anchor nfac
   !> number of internal faces  (see \ref note_2)
-  integer, save :: nfac
+  integer, save :: nfac = 0
 
   !> \anchor nfabor
   !> number of boundary faces (see \ref note_2)
-  integer, save :: nfabor
+  integer, save :: nfabor = 0
 
   !> \anchor nnod
   !> number of vertices in the mesh
-  integer, save :: nnod
+  integer, save :: nnod = 0
 
   !> \anchor lndfac
   !> size of the array \c nodfac of internal faces - nodes connectivity
   !> (see \ref note_3)
-  integer, save :: lndfac
+  integer, save :: lndfac = 0
 
   !> \anchor lndfbr
   !> size of the array \c nodfbr of boundary faces - nodes connectivity
   !> (see \ref note_3)
-  integer, save :: lndfbr
+  integer, save :: lndfbr = 0
 
   ! pointer to C array used by ifacel (0 to n-1 numbering)
   integer, dimension(:,:), pointer :: ifacel_0

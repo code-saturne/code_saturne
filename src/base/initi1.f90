@@ -55,8 +55,6 @@ implicit none
 
 integer          iok, ipp, nmodpp, have_thermal_model
 
-double precision ttsuit, wtsuit
-
 !===============================================================================
 
 interface
@@ -79,6 +77,12 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_lagr_add_fields
+
+  subroutine cs_parameters_global_complete()  &
+      bind(C, name='cs_parameters_global_complete')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_parameters_global_complete
 
   subroutine cs_parameters_eqp_complete()  &
       bind(C, name='cs_parameters_eqp_complete')
@@ -160,13 +164,6 @@ if (icdo.lt.2) then
   call addfld
 endif
 
-! Restart
-
-ttsuit = -1.d0
-wtsuit = -1.d0
-
-call dflsui(ntsuit, ttsuit, wtsuit);
-
 !===============================================================================
 ! Changes after user initialization and additional fields dependent on
 ! main fields and options.
@@ -175,6 +172,7 @@ call dflsui(ntsuit, ttsuit, wtsuit);
 ! Do not call this routine if CDO mode only (default variables and properties
 ! are not defined anymore)
 if (icdo.lt.2) then
+  call cs_parameters_global_complete
   call modini
   call fldini
 endif

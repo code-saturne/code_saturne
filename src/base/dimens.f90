@@ -39,7 +39,7 @@ implicit none
   !> \{
 
   !> number of solved variables (must be lower than \ref paramx::nvarmx "nvarmx")
-  integer, save :: nvar
+  integer, save :: nvar = 0
 
   !> number of solved user scalars
   !> effective number of scalars solutions of an
@@ -52,7 +52,7 @@ implicit none
   !> user-defined scalars and \ref nscapp scalars related to a
   !> "specific physics". \ref nscal=nscaus+nscapp, and \ref nscal
   !> must be inferior or equal to \ref paramx::nscamx "nscamx".
-  integer, save :: nscal
+  integer, save :: nscal = 0
 
   !> fake dimension for some boundary face arrays
   !> where \ref nfabor = 0 (to avoid issues with array bounds when

@@ -77,7 +77,7 @@ integer          nscal
 
 integer          iis   , iscal
 integer          iel   , ifac
-integer          iclip , ii    , jj    , idim, f_dim
+integer          ii    , jj    , idim, f_dim
 integer          ifcvsl, iclvfl, kclvfl
 integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
 integer          kscmin

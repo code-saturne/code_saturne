@@ -1245,7 +1245,7 @@ _control_checkpoint(const char   *cur_line,
   else if (strncmp(*s, "time_step_interval ", 19) == 0) {
     int nt;
     if (_read_next_int(cur_line, s, &nt) > 0) {
-      cs_restart_checkpoint_set_defaults(nt, -1., -1.);
+      cs_restart_checkpoint_set_interval(nt, -1., -1.);
       bft_printf("  %-32s %12d\n",
                  "checkpoint_time_step_interval", nt);
     }
@@ -1254,7 +1254,7 @@ _control_checkpoint(const char   *cur_line,
     double t;
     if (_read_next_double(true, cur_line, s, &t) > 0) {
       if (t > 0) {
-        cs_restart_checkpoint_set_defaults(-1, t, -1.);
+        cs_restart_checkpoint_set_interval(-1, t, -1.);
         bft_printf("  %-32s %12.5g\n",
                    "checkpoint_time_value_interval", t);
       }
@@ -1267,7 +1267,7 @@ _control_checkpoint(const char   *cur_line,
     double wt;
     if (_read_next_double(true, cur_line, s, &wt) > 0) {
       if (wt > 0) {
-        cs_restart_checkpoint_set_defaults(-1, -1., wt);
+        cs_restart_checkpoint_set_interval(-1, -1., wt);
         bft_printf("  %-32s %12.5g\n",
                    "checkpoint_wall_time_interval", wt);
       }

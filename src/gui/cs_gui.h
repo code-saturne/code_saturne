@@ -130,20 +130,6 @@ void CS_PROCF (csiphy, CSIPHY) (void);
 void CS_PROCF (cscfgp, CSCFGP) (int *icfgrp);
 
 /*----------------------------------------------------------------------------
- * Restart parameters.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSISUI
- * *****************
- *
- * INTEGER          NTSUIT  -->   checkpoint frequency
- *----------------------------------------------------------------------------*/
-
-
-void CS_PROCF (csisui, CSISUI) (int *ntsuit);
-
-/*----------------------------------------------------------------------------
  * Time passing parameters.
  *
  * Fortran Interface:
@@ -310,6 +296,15 @@ void CS_PROCF (uieres, UIERES) (int *iescal,
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read GUi-defined Checkpoint parameters.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_checkpoint_parameters(void);
 
 /*----------------------------------------------------------------------------
  * Space scheme options, linear solver precision and time step factor

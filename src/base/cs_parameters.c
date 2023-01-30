@@ -59,6 +59,7 @@
 #include "cs_physical_model.h"
 #include "cs_restart.h"
 #include "cs_restart_default.h"
+#include "cs_turbulence_model.h"
 #include "cs_time_moment.h"
 #include "cs_tree.h"
 
@@ -1669,6 +1670,42 @@ cs_parameters_need_extended_neighborhood(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Complete global parameters.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_global_complete(void)
+{
+  /* Model constants */
+
+  cs_turb_dpow = 1. / (1.+cs_turb_bpow);
+
+  /*  Modified value of Cmu for V2f and Bl-v2k */
+  if (cs_glob_turb_model->itytur == 5)
+    cs_turb_cmu = 0.22;
+
+  cs_turb_cmu025 = pow(cs_turb_cmu, 0.25);
+
+  if (cs_glob_turb_rans_model->idirsm == 0)
+    cs_turb_csrij = 0.11;
+  else {
+    if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
+      cs_turb_csrij = 0.21;
+    else
+      cs_turb_csrij = 0.22;
+  }
+
+  /* Constant for the Buoyant production term of Rij-EBRSM */
+
+  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
+    cs_turb_crij3 = 0.6;
+  else
+    cs_turb_crij3 = 0.55;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Complete general equation parameter definitions.
  */
 /*----------------------------------------------------------------------------*/
@@ -1678,19 +1715,78 @@ cs_parameters_eqp_complete(void)
 {
   /* Complete settings for variable fields. */
 
-  int k_id = cs_field_key_id_try("var_cal_opt");
-  if (k_id >= 0) {
-    const int n_fields = cs_field_n_fields();
-    for (int f_id = 0; f_id < n_fields; f_id++) {
-      cs_field_t *f = cs_field_by_id(f_id);
-      if (f->type & CS_FIELD_VARIABLE) {
-        cs_equation_param_t *eqp = cs_field_get_key_struct_ptr(f, k_id);
-        if (eqp != NULL) {
-          if (eqp->dim != f->dim)
-            eqp->dim = f->dim;
+  const int ks = cs_field_key_id_try("scalar_id");
+  const int kturt = cs_field_key_id_try("turbulent_flux_model");
+  const int kctheta = cs_field_key_id_try("turbulent_flux_ctheta");
+
+  const int n_fields = cs_field_n_fields();
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+
+    if (f->type & CS_FIELD_VARIABLE) {
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      if (eqp != NULL) {
+        if (eqp->dim != f->dim)
+          eqp->dim = f->dim;
+
+        /* Additional settings for scalars */
+
+        int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+        if (scalar_id > -1) {
+
+          /* Turbulent flux constants for GGDH, AFM and DFM */
+
+          int turb_flux_model
+            = (kturt > -1) ? cs_field_get_key_int(f, kturt) : 0;
+          int turb_flux_model_type = turb_flux_model / 10;
+
+          /* AFM and GGDH on the scalar */
+          if (   turb_flux_model_type == 1
+              || turb_flux_model_type == 2) {
+            eqp->idften = CS_ANISOTROPIC_RIGHT_DIFFUSION;
+            cs_field_set_key_double(f, kctheta, cs_turb_cthafm);
+          }
+
+          /* DFM on the scalar */
+          else if (turb_flux_model_type == 3) {
+            eqp->idifft = 0;
+            eqp->idften = CS_ISOTROPIC_DIFFUSION;
+            if (turb_flux_model == 31) {
+              cs_field_set_key_double(f, kctheta, cs_turb_cthebdfm);
+              cs_turb_c2trit = 0.3;
+            }
+            else
+              cs_field_set_key_double(f, kctheta, cs_turb_cthdfm);
+
+            /* GGDH on the thermal fluxes is automatic.
+               GGDH on the variance of the thermal scalar set here. */
+
+            cs_field_t *f_v = cs_field_get_variance(f);
+            if (f_v != NULL) {
+              cs_equation_param_t *eqp_v = cs_field_get_equation_param(f_v);
+              eqp_v->idften = CS_ANISOTROPIC_RIGHT_DIFFUSION;
+              cs_field_set_key_double(f_v, kctheta, cs_turb_csrij);
+            }
+          }
+
+          /* Non-GGDH, AFM or DFM cases */
+          else
+            cs_field_set_key_double(f, kctheta, cs_turb_csrij);
         }
       }
-    }
+
+      /* Harmonic face viscosity interpolation */
+
+      if (cs_glob_space_disc->imvisf) {
+        eqp->imvisf = 1;
+      }
+
+      /* Set iswdyn to 2 by default if not modified for pure
+         diffusion equations */
+      if (eqp->iswdyn == -1 && eqp->iconv == 0)
+        eqp->iswdyn = 2;
+
+    }  /* end if (f->type & CS_FIELD_VARIABLE) */
   }
 }
 

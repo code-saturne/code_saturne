@@ -430,31 +430,13 @@ if (iirayo.gt.0) then
     call field_get_key_int(ivarfl(isca(iscalt)), kisso2t, isso2t)
     call field_get_key_double(ivarfl(isca(iscalt)), kthetss, thetss)
     if (thetss.gt.0.d0 .or. isso2t.gt.0) then
-      write(nfecra,2148)                                           &
-        'rayonnement',iscal,thetss,'usray1'
+      write(nfecra,2148) 'rayonnement',iscal,thetss,'usray1'
       iok = iok + 1
     endif
   endif
 endif
 
-! --- Suite de calcul
-
-if (ileaux.ne.0.and.ileaux.ne.1) then
-  write(nfecra,2200) 'ILEAUX',ileaux
-  iok = iok + 1
-endif
-if (iecaux.ne.0.and.iecaux.ne.1) then
-  write(nfecra,2200) 'IECAUX',iecaux
-  iok = iok + 1
-endif
-! En LES, on previent que ce n'est pas malin de ne pas relire le fichier
-!   auxiliaire
-if (iecaux.eq.0.or.ileaux.eq.0) then
-  if (itytur.eq.4) then
-    write(nfecra,2420) iturb,ileaux,iecaux
-  endif
-endif
-
+! Time step multiplier
 
 do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyvar, ii)
@@ -1180,43 +1162,6 @@ endif
 '@',                                                            /,&
 '@  Verify   the parameters given by the interface,',           /,&
 '@  cs_user_parameters.f90, and', a6,                           /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2200 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',    a6,' MUST BE AN INTEGER EQUAL  0  OR 1',                /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data.',                                      /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2420 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   WARNING :      WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    RISQUE DE PERTE D''INFORMATION EN CALCUL SUITE',          /,&
-'@',                                                            /,&
-'@  The calculation will run.',                                  /&
-'@',                                                            /,&
-'@ A turbulence model was activated by ITURB = ', i10,          /,&
-'@    but writing to auxiliary restart file was de-activated',  /,&
-'@',                                                            /,&
-'@    ILEAUX = ', i10,   '    IECAUX = ', i10,                  /,&
-'@  Although this file is not necessary to restart',            /,&
-'@  a computation, it does contain information that avoid',     /,&
-'@   numerical perturbations when restarting a computation',    /,&
-'@',                                                            /,&
-'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

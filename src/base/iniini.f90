@@ -56,7 +56,7 @@ use cavitation
 use darcy_module
 use radiat
 use turbomachinery
-use cs_nz_condensation, only: nzones, init_sizes_pcond
+use cs_nz_condensation, only: init_sizes_pcond
 use ctincl
 use cfpoin
 use vof
@@ -163,16 +163,6 @@ call init_sizes_pcond()
 
 ! ---> NFECRA vaut 6 par defaut ou 9 en parallele (CSINIT)
 
-! ---> Fichier aval
-
-!     NTSUIT : Periode de sauvegarde du fichier suite
-!            (il est de toutes facons ecrit en fin de calcul)
-!              -1   : a la fin seulement
-!              0    : par defaut (4 fois par calcul)
-!              > 0  : periode
-
-ntsuit = 0
-
 ! ---> Fichier thermochinie
 !        FPP : utilisateur
 !        JNF : Janaf
@@ -183,37 +173,16 @@ ntsuit = 0
 impfpp = 25
 ficfpp = 'define_ficfpp_in_usppmo'
 
-indjon = 1
-
 ! ---> Fichiers module atmospherique
 call atmo_set_meteo_file_name('meteo')
 
 ! ---> Fichiers historiques
 
-!     EMPHIS : EMPlacement
-!     PREHIS : PREfixe
-!     EXTHIS : EXTension
-!     IMPSTH : fichier stock + unite d'ecriture des variables
-!              des structures mobiles
+! impsth : fichier stock + unite d'ecriture des variables
+!          des structures mobiles
 
 impsth(1) = 30
 impsth(2) = 31
-
-emphis = 'monitoring/'
-prehis = 'probes_'
-
-! tplfmt : time plot format (1: .dat, 2: .csv, 3: both)
-! nthist : periode de sortie (> 0 ou -1 (jamais))
-! frhist : frequence de sortie, en secondes (prioritaire sur nthist si > 0)
-! ihistr : indicateur d'ecriture des historiques des structures
-!          mobiles internes (=0 ou 1)
-
-tplfmt = 1
-
-nthist = 1
-frhist = -1.d0
-
-ihistr = 0
 
 ! ---> Fichiers utilisateurs
 
@@ -221,90 +190,27 @@ do ii = 1, nusrmx
   impusr(ii) = 69+ii
 enddo
 
-! ---> Sorties log
-
-ntlist = 1
-
 ! Ici entsor.f90 est completement initialise
 
 !===============================================================================
-! 3. DIMENSIONS DE dimens.f90 (GEOMETRIE, sauf NCELBR)
-!===============================================================================
-
-! Geometry
-
-ncel   = 0
-ncelet = 0
-nfac   = 0
-nfabor = 0
-nnod   = 0
-lndfac = 0
-lndfbr = 0
-
-ncelgb = 0
-nfacgb = 0
-nfbrgb = 0
-nsomgb = 0
-
-! By default, assume no periodicity
-iperio = 0
-iperot = 0
-
 ! Get mesh metadata.
+!===============================================================================
 
 call ledevi(iperio, iperot)
-!==========
 
 call tstjpe(iperio, iperot)
-!==========
 
 !===============================================================================
-! 4. DIMENSIONS de dimens.f90 (PHYSIQUE)
+! Position of variables in numvar.f90
 !===============================================================================
 
-! --- Nombre de scalaires, de scalaires a diffusivite
-!            variable, de variables, de proprietes
-
-nscal  = 0
-nscaus = 0
-nscapp = 0
-nvar   = 0
-
-!===============================================================================
-! 5. POSITION DES VARIABLES DE numvar.f90
-!===============================================================================
-
-! --- Initialize mappings of field ids
+! Initialize mappings of field ids
 
 do ii = 1, nvarmx
   ivarfl(ii) = -1
 enddo
 
-idtten = -1
-
-! Solved varible ids (for Fortran boundary conditions access)
-
-ipr    = 0
-iu     = 0
-iv     = 0
-iw     = 0
-ik     = 0
-iep    = 0
-ir11   = 0
-ir22   = 0
-ir33   = 0
-ir12   = 0
-ir13   = 0
-ir23   = 0
-irij   = 0
-iphi   = 0
-ifb    = 0
-ial    = 0
-inusa  = 0
-
-iuma = 0
-ivma = 0
-iwma = 0
+! Scalar to variable mappings
 
 do iscal = 1, nscamx
   isca  (iscal) = 0
@@ -312,163 +218,27 @@ do iscal = 1, nscamx
   iscasp(iscal) = 0
 enddo
 
-! --- Initialisation par defaut des commons pour la physique particuliere
+! Default initialization for specific physical models
 
 call ppinii
-!==========
-
-! --- Proprietes physiques au sens large
-irom   = -1
-iviscl = -1
-ivisct = -1
-icour  = -1
-ifour  = -1
-icp    = -1
-iprtot = -1
-
-itemp  = -1
-ibeta  = -1
-
-iforbr = -1
-iyplbr = -1
-itempb = -1
-
-! --- Ici tout numvar est initialise.
 
 !===============================================================================
 ! 6. OPTIONS DU CALCUL : TABLEAUX DE optcal.f90
 !===============================================================================
 
-! --- Schema en temps
-
-!     NOTER BIEN que les valeurs de THETA pour
-!       rho, visc, cp, flux de masse, termes sources
-!       sont renseignees a partir des indicateurs I..EXT et ISTMPF
-!       Elles ne sont pas completees directement par l'utilisateur
-!       Les tests dans l'algo portent sur ces indicateurs
-
-!    -- Proprietes physiques
-!     I..EXT definit l'extrapolation -theta ancien + (1+theta) nouveau
-!     = 0 explicite
-!     = 1 extrapolation avec theta = 1/2
-!     = 2 extrapolation avec theta = 1
-!       0 implique pas de reservation de tableaux
-!       1 et 2 sont deux options equivalentes, la difference etant faite
-!       uniquement au moment de fixer theta
-!     INIT.. =1 indique que la variable a ete proprement initialisee (dans un
-!       fichier suite portant les valeurs adaptees)
-
-!     Masse volumique
-initro = 0
-!     Viscosite totale
-initvi = 0
-!     Chaleur specifique
-initcp = 0
-
-!   -- Convergence point fixe vitesse pression
-epsup  = 1.d-5
-
-!   -- Tab de travail pour normes de navsto
-xnrmu0 = 0.d0
-xnrmu  = 0.d0
-
-! Method to compute interior mass flux due to ALE mesh velocity
-! default: based on cell center mesh velocity
-iflxmw = 0
-
-! Restarted calculation
-!   The restart indicator of the 1D wall thermal model is initialized by default
-!   to -1, to force the user to set it in uspt1d.
-!   The same goes for the synthetic turbulence method restart indicator.
-
-isuite = 0
-isuit1 = -1
-
-! Time stepping (value not already in C)
-
-ttpmob = 0.d0
-ttcmob = ttpmob
-
-! Thermal model
-
-! No thermal scalar by default
-itherm = 0
-itpscl = 0
-iscalt =-1
-
-! No enthalpy for the gas (combustion) by default
-ihgas = -1
-
-! --- Algorithm to take into account the thermodynamic pressure variation in time
-!     (not used by default except if idilat = 3)
-
-ipthrm = 0
-
-!     by default:
-!     ----------
-!      - the thermodynamic pressure (pther) is initialized with p0 = p_atmos
-!      - the maximum thermodynamic pressure (pthermax) is initialized with -1
-!        (no maximum by default, this term is used to model a venting effect when
-!         a positive value is given by the user)
-!      - a global leak can be set through a leakage surface sleak with a head
-!      loss kleak of 2.9 (Idelcick)
-
-pther  = -1.d0
-pthermax= -1.d0
-
-sleak = 0.d0
-kleak = 2.9d0
-
-! --- Initialize the zones number for the condensation modelling
-nzones = -1
-
-! ---  Choice the way to compute to compute the wall temperature at
-!      the solid/fluid interface coupled with condensation to the
-!      metalli mass strucutres wall
-!      ( not activated by default itagms =0)
-
-itagms = 0
-
-! --- Type des CL, tables de tri
-!       Sera calcule apres cs_user_boundary_conditions.
+! Type des CL, tables de tri
+! Sera calcule apres cs_user_boundary_conditions.
 
 do ii = 1, ntypmx
   idebty(ii) = 0
   ifinty(ii) = 0
 enddo
 
-ifrslb = 0
-itbslb = 0
-
 ! --- Estimateurs d'erreur pour Navier-Stokes
 
 do iest = 1, nestmx
   iescal(iest) = 0
 enddo
-
-! --- Somme de NCEPDC (pour les calculs paralleles)
-
-ncpdct = 0
-
-! --- Somme de NCETSM (pour les calculs paralleles)
-
-nctsmt = 0
-
-! --- Somme de nfbpcd (pour les calculs paralleles)
-
-nftcdt= 0
-
-!     Non user
-
-! --- Compute distance to wall
-!     Only user-definable value: icdpar
-
-ineedy = 0
-imajdy = 0
-icdpar = -999
-
-! --- LES balance
-i_les_balance = 0
 
 ! Here, all of optcal.f90 is initialized
 
@@ -481,150 +251,23 @@ i_les_balance = 0
 ! Reset pther to p0
 pther = p0
 
-! Turbulence
-! ypluli is set to -grand*10. If the user has not changed this value,
-! its value is modified in  modini (10.88 with invariant wall laws,
-! 1/kappa otherwise)
-ypluli = -grand*10.d0
-xkappa  = 0.42d0
-cstlog  = 5.2d0
-
-apow    = 8.3d0
-bpow    = 1.d0/7.d0
-cpow    = apow**(2.d0/(1.d0-bpow))
-dpow    = 1.d0/(1.d0+bpow)
-
-!   pour le k-epsilon
-ce4     = 1.20d0
-
-!   pour le k-epsilon quadratic (Baglietto)
-cnl1  = 0.8d0
-cnl2  = 11.d0
-cnl3  = 4.5d0
-cnl4  = 1.d3
-cnl5  = 1.d0
-
-!   pour le Rij-epsilon LRR (et SSG pour crij3)
-crij1  = 1.80d0
-crij2  = 0.60d0
-crij3  = 0.55d0
-crijp1 = 0.50d0
-crijp2 = 0.30d0
-
-!   pour le Rij-epsilon SSG
-cssgs1  = 1.70d0
-cssgs2  =-1.05d0
-cssgr1  = 0.90d0
-cssgr2  = 0.80d0
-cssgr3  = 0.65d0
-cssgr4  = 0.625d0
-cssgr5  = 0.20d0
-cssge2  = 1.83d0
-
-!   Rij EB-RSM
-cebms1  = 1.70d0
-cebms2  = 0.d0
-cebmr1  = 0.90d0
-cebmr2  = 0.80d0
-cebmr3  = 0.65d0
-cebmr4  = 0.625d0
-cebmr5  = 0.20d0
-cebme2  = 1.83d0
-cebmmu  = 0.22d0
-xcl     = 0.122d0
-xa1     = 0.1d0
-xceta   = 80.d0
-xct     = 6.d0
-
-!   pour le v2f phi-model
-cv2fa1 = 0.05d0
-cv2fe2 = 1.85d0
-cv2fc1 = 1.4d0
-cv2fc2 = 0.3d0
-cv2fct = 6.d0
-cv2fcl = 0.25d0
-cv2fet = 110.d0
-
-!   pour le v2f BL-v2/k (previously known as v2-f phi-alpha, hence the cpal**)
-cpale1 = 1.44d0
-cpale2 = 1.83d0
-cpale3 = 2.3d0
-cpale4 = 0.4d0
-cpalct = 4.d0
-cpalcl = 0.164d0
-cpalet = 75.d0
-cpalc1 = 1.7d0
-cpalc2 = 0.9d0
-
 !   pour le modele k-omega sst
-ckwsk1 = 1.d0/0.85d0
-ckwsk2 = 1.d0
-ckwsw1 = 2.d0
-ckwsw2 = 1.d0/0.856d0
-ckwbt1 = 0.075d0
-ckwbt2 = 0.0828d0
 ckwgm1 = ckwbt1/cmu - xkappa**2/(ckwsw1*sqrt(cmu))
 ckwgm2 = ckwbt2/cmu - xkappa**2/(ckwsw2*sqrt(cmu))
-ckwa1  = 0.31d0
-ckwc1  = 10.d0
 
 !   pour le modele de Spalart Allmaras
-csab1    = 0.1355d0
-csab2    = 0.622d0
-csav1    = 7.1d0
-csasig   = 2.d0/3.d0
 csaw1    = csab1/xkappa**2 + 1.d0/csasig*(1.d0 + csab2)
-csaw2    = 0.3d0
-csaw3    = 2.d0
-
-! for the Spalart-Shur rotation/curvature correction
-cssr1 = 1.d0
-cssr2 = 2.d0
-cssr3 = 1.d0
 
 ! Scalars
 !  Set default values.
 !  Especially, assume there is no variance
 !    (field first_moment_id < 0) and that variances are clipped to 0 only.
 
-! For the AFM model (Algebraic flux model)
-xiafm  = 0.7d0
-etaafm = 0.4d0
-cthafm = 0.236d0
-
-! For the DFM (tranport equation on the turbulent flux)
-cthdfm = 0.31d0
-! For the EB-DFM model (0.122*2.5d0, See F. Dehoux thesis)
-cthebdfm = 0.22d0
-xclt   = 0.305d0
-rhebdfm = 0.5d0
-
 ! Here all of cstphy has been initialized.
 
 !===============================================================================
 ! INITIALISATION DES PARAMETRES ALE de albase.f90 et alstru.f90
 !===============================================================================
-
-! --- Iterations d'initialisation fluide seul
-nalinf = 0
-
-! --- Nombre de structures internes
-!     (sera relu ou recalcule)
-nbstru = -999
-
-! --- Nombre de structures externes
-!     (sera relu ou recalcule)
-nbaste = -999
-
-! --- Numero d'iteration de couplage externe
-ntcast = 0
-
-! --- Parametres du couplage implicite
-nalimx = 1
-epalim = 1.d-5
-
-! --- Iteration d'initialisation de l'ALE
-italin = -999
 
 ! --- Tableaux des structures
 do istr = 1, nstrmx
@@ -648,26 +291,6 @@ do istr = 1, nstrmx
     enddo
   enddo
 enddo
-
-! --- Schema de couplage des structures
-aexxst = -grand
-bexxst = -grand
-cfopre = -grand
-
-! --- Methode de Newmark HHT
-alpnmk = 0.d0
-betnmk = -grand
-gamnmk = -grand
-
-!===============================================================================
-! code_saturne/code_saturne coupling parameters
-!===============================================================================
-
-! Number of couplings
-nbrcpl = 0
-
-! Coupling only through faces
-ifaccp = 0
 
 !===============================================================================
 ! Lagrangian arrays

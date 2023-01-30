@@ -137,6 +137,19 @@ cs_field_get_equation_param_const(const cs_field_t  *f);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief For a given field, returns field defined as its variance, if present.
+ *
+ * \param[in]  f  field
+ *
+ * \return  pointer to matching variance (variable) field, or NULL.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_field_get_variance(const cs_field_t  *f);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Allocate and map boundary condition coefficients for all
  *        variable fields.
  */

@@ -281,7 +281,7 @@ module cstphy
   !> Useful if and only if \ref iturb >= 10.
   !> (mixing length, \f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$,
   !> LES, v2f or \f$k-\omega\f$)
-  double precision, save :: xkappa
+  double precision, save :: xkappa = 0.42d0
 
   !> constant of logarithmic law function:
   !> \f$ \dfrac{1}{\kappa} \ln(y^+) + cstlog \f$
@@ -290,11 +290,12 @@ module cstphy
   !> Useful if and only if \ref iturb >= 10
   !> (mixing length, \f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$,
   !> LES, v2f or \f$k-\omega\f$)
-  double precision, save :: cstlog
+  double precision, save :: cstlog = 5.2d0
 
   !> limit value of \f$y^+\f$ for the viscous sublayer.
   !> \ref ypluli depends on the chosen wall function: it is
-  !> initialized to 10.88 for the scalable wall function (\ref optcal::iwallf "iwallf"=4),
+  !> initialized to 10.88 for the scalable wall function
+  !> (\ref optcal::iwallf "iwallf"=4),
   !> otherwise it is initialized to \f$1/\kappa\approx 2,38\f$.
   !> In LES, \ref ypluli is taken by default to be 10.88.
   !>
@@ -302,16 +303,10 @@ module cstphy
   real(c_double), pointer, save :: ypluli
 
   !> Werner and Wengle coefficient
-  double precision, save :: apow
+  double precision, pointer, save :: apow
 
   !> Werner and Wengle coefficient
-  double precision, save :: bpow
-
-  !> Werner and Wengle coefficient
-  double precision, save :: cpow
-
-  !> Werner and Wengle coefficient
-  double precision, save :: dpow
+  double precision, pointer, save :: bpow
 
   !> constant \f$C_\mu\f$ for all the RANS turbulence models
   !> Warning, different values for the v2f model
@@ -322,52 +317,9 @@ module cstphy
   !> \f$ C_\mu^\frac{1}{4} \f$
   real(c_double), pointer, save :: cmu025
 
-  !> constant \f$C_{\varepsilon 1}\f$ for all the RANS turbulence models except
-  !> for the v2f and the \f$k-\omega\f$ models.
-  !> Useful if and only if \ref iturb= 20,
-  !> 21, 30 or 31 (\f$k-\varepsilon\f$ or \f$R_{ij}-\varepsilon\f$)
-  real(c_double), pointer, save :: ce1
-
-  !> constant \f$C_{\varepsilon 2}\f$ for the \f$k-\varepsilon\f$ and
-  !> \f$R_{ij}-\varepsilon\f$ LRR models.
-  !> Useful if and only if \ref optcal::iturb "iturb"= 20, 21 or 30
-  !> (\f$k-\varepsilon\f$ or \f$R_{ij}-\varepsilon\f$ LRR)
-  real(c_double), pointer, save :: ce2
-
-  !> constant \f$C_{NL1}\f$ for the \f$k-\varepsilon\f$
-  !> model from Baglietto et al. (quadratric)
-  !> Useful if and only if \ref optcal::iturb "iturb"= 23
-  double precision, save :: cnl1
-
-  !> constant \f$C_{NL2}\f$ for the \f$k-\varepsilon\f$
-  !> model from Baglietto et al. (quadratric)
-  !> Useful if and only if \ref optcal::iturb "iturb"= 23
-  double precision, save :: cnl2
-
-  !> constant \f$C_{NL3}\f$ for the \f$k-\varepsilon\f$
-  !> model from Baglietto et al. (quadratric)
-  !> Useful if and only if \ref optcal::iturb "iturb"= 23
-  double precision, save :: cnl3
-
-  !> constant \f$C_{NL4}\f$ for the \f$k-\varepsilon\f$
-  !> model from Baglietto et al. (quadratric)
-  !> Useful if and only if \ref optcal::iturb "iturb"= 23
-  double precision, save :: cnl4
-
-  !> constant \f$C_{NL5}\f$ for the \f$k-\varepsilon\f$
-  !> model from Baglietto et al. (quadratric)
-  !> Useful if and only if \ref optcal::iturb "iturb"= 23
-  double precision, save :: cnl5
-
   !> Coefficient of interfacial coefficient in k-eps,
   !> used in Lagrange treatment
   !>
-
-  !> constant \f$C_{\varepsilon 4}\f$ for the interfacial term
-  !> (Lagrangian module) in case of two-way coupling.
-  !> Useful in case of Lagrangian modelling,
-  !> in \f$k-\varepsilon\f$ and \f$R_{ij}-\varepsilon\f$ with two-way coupling.
-  double precision, save :: ce4
 
   !> constant \f$C_1\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
   !> Useful if and only if \ref iturb=30
@@ -383,155 +335,44 @@ module cstphy
   !>  models.
   real(c_double), pointer, save :: crij3
 
-  !> constant \f$C_1^\prime\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model,
-  !> corresponding to the wall echo terms.
-  !> Useful if and only if \ref iturb=30 and \ref optcal::irijec "irijec"=1
-  !> (\f$R_{ij}-\varepsilon\f$ LRR)
-  double precision, save :: crijp1
-
-  !> constant \f$C_2^\prime\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model,
-  !> corresponding to the wall echo terms.
-  !> Useful if and only if \ref iturb=30 and \ref optcal::irijec "irijec"=1
-  !> (\f$R_{ij}-\varepsilon\f$ LRR)
-  double precision, save :: crijp2
-
-  !> constant \f$C_{\varepsilon 2}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
-  !> Useful if and only if \ref iturb=31
-  !> (\f$R_{ij}-\varepsilon\f$ SSG)
-  double precision, save :: cssge2
-
-  !> constant \f$C_{s1}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
-  !> Useful if and only if \ref iturb=31
-  !> (\f$R_{ij}-\varepsilon\f$ SSG)
-  double precision, save :: cssgs1
-
-  !> constant \f$C_{s2}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
-  !> Useful if and only if \ref iturb=31
-  !> (\f$R_{ij}-\varepsilon\f$ SSG)
-  double precision, save :: cssgs2
-
-  !> constant \f$C_{r1}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
-  !> Useful if and only if \ref iturb=31
-  !> (\f$R_{ij}-\varepsilon\f$ SSG)
-  double precision, save :: cssgr1
-
-  !> constant \f$C_{r2}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
-  !> Useful if and only if \ref iturb=31
-  !> (\f$R_{ij}-\varepsilon\f$ SSG)
-  double precision, save :: cssgr2
-
-  !> constant \f$C_{r3}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
-  !> Useful if and only if \ref iturb=31
-  !> (\f$R_{ij}-\varepsilon\f$ SSG)
-  double precision, save :: cssgr3
-
-  !> constant \f$C_{r4}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
-  !> Useful if and only if \ref iturb=31
-  !> (\f$R_{ij}-\varepsilon\f$ SSG)
-  double precision, save :: cssgr4
-
-  !> constant \f$C_{r1}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
-  !> Useful if and only if \ref iturb=31
-  !> (\f$R_{ij}-\varepsilon\f$ SSG)
-  double precision, save :: cssgr5
-
-  !> constant of the Rij-epsilon EBRSM
-  double precision, save :: cebms1
-
-  !> constant of the Rij-epsilon EBRSM
-  double precision, save :: cebms2
-
-  double precision, save :: cebmr1, cebmr2, cebmr3, cebmr4, cebmr5
-
   !> constant \f$C_s\f$ for the \f$R_{ij}-\varepsilon\f$ models.
   real(c_double), pointer, save :: csrij
 
   !> constant of the Rij-epsilon EBRSM
-  double precision, save :: cebme2
-
-  !> constant of the Rij-epsilon EBRSM
-  double precision, save :: cebmmu
-
-  !> constant of the Rij-epsilon EBRSM
-  double precision, save :: xcl
+  double precision, save :: xcl = 0.122d0
 
   !> constant in the expression of Ce1' for the Rij-epsilon EBRSM
-  double precision, save :: xa1
+  double precision, save :: xa1 = 0.1d0
 
   !> constant of the Rij-epsilon EBRSM
-  double precision, save :: xct
+  double precision, save :: xct = 6.d0
 
   !> constant of the Rij-epsilon EBRSM
-  double precision, save :: xceta
-
-  !> specific constant of v2f "BL-v2k" (or phi-alpha)
-  double precision, save :: cpale1
-
-  !> specific constant of v2f "BL-v2k" (or phi-alpha)
-  double precision, save :: cpale2
-
-  !> specific constant of v2f "BL-v2k" (or phi-alpha)
-  double precision, save :: cpale3
-
-  !> specific constant of v2f "BL-v2k" (or phi-alpha)
-  double precision, save :: cpale4
-
-  !> specific constant of v2f "BL-v2k" (or phi-alpha)
-  double precision, save :: cpalc1
-
-  !> specific constant of v2f "BL-v2k" (or phi-alpha)
-  double precision, save :: cpalc2
-
-  !> specific constant of v2f "BL-v2k" (or phi-alpha)
-  double precision, save :: cpalct
-
-  !> specific constant of v2f "BL-v2k" (or phi-alpha)
-  double precision, save :: cpalcl
-
-  !> specific constant of v2f "BL-v2k" (or phi-alpha)
-  double precision, save :: cpalet
+  double precision, save :: xceta = 80.d0
 
   !> constant \f$\sigma_{k1}\f$ for the \f$k-\omega\f$ SST model.
   !> Useful if and only if \ref iturb=60
-  double precision, save :: ckwsk1
+  double precision, save :: ckwsk1 = 1.d0/0.85d0
 
   !> constant \f$\sigma_{k2}\f$ for the \f$k-\omega\f$ SST model.
   !> Useful if and only if \ref iturb=60
-  double precision, save :: ckwsk2
+  double precision, save :: ckwsk2 = 1.d0
 
   !> constant \f$\sigma_{\omega 1}\f$ for the \f$k-\omega\f$ SST model.
   !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
-  double precision, save :: ckwsw1
+  double precision, save :: ckwsw1 = 2.d0
 
   !> constant \f$\sigma_{\omega 2}\f$ for the \f$k-\omega\f$ SST model.
   !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
-  double precision, save :: ckwsw2
+  double precision, save :: ckwsw2 = 1.d0/0.856d0
 
   !> constant \f$\beta_1\f$ for the \f$k-\omega\f$ SST model.
   !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
-  double precision, save :: ckwbt1
+  double precision, save :: ckwbt1 = 0.075d0
 
   !> constant \f$\beta_2\f$ for the \f$k-\omega\f$ SST model.
   !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
-  double precision, save :: ckwbt2
-
-  !> constant \f$ C_{DDES}\f$ for the hybrid \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST) and hybrid_turb=1
-  real(c_double), pointer, save :: cddes
-
-  !> constant \f$ C_{SAS}\f$ for the hybrid \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST) and hybrid_turb=3
-  real(c_double), pointer, save :: csas
-
-  !> constant \f$ C_{DDES}\f$ for the hybrid \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST) and hybrid_turb=3
-  real(c_double), pointer, save :: csas_eta2
-
-  !> constant \f$ beta_0\f$ for the HTLES model.
-  !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
-  !> or if \ref iturb=51 (\f$BL-v^2-k\f$),
-  !> and hybrid_turb=4
-  real(c_double), pointer, save :: chtles_bt0
+  double precision, save :: ckwbt2 = 0.0828d0
 
   !> \f$\frac{\beta_1}{C_\mu}-\frac{\kappa^2}{\sqrt{C_\mu}\sigma_{\omega 1}}\f$
   !> constant \f$\gamma_1\f$ for the \f$k-\omega\f$ SST model.
@@ -556,36 +397,29 @@ module cstphy
   !> specific constant of k-omega SST
   !> constant \f$a_1\f$ for the \f$k-\omega\f$ SST model.
   !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
-  double precision, save :: ckwa1
+  double precision, save :: ckwa1 = 0.31d0
 
   !> constant \f$ c_1 \f$ for the \f$k-\omega\f$ SST model.
   !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
   !> specific constant of k-omega SST
-  double precision, save :: ckwc1
+  double precision, save :: ckwc1 = 10.d0
 
   !> specific constant of Spalart-Allmaras
-  double precision, save :: csab1
+  double precision, save :: csab1 = 0.1355d0
   !> specific constant of Spalart-Allmaras
-  double precision, save :: csab2
+  double precision, save :: csab2 = 0.622d0
 
   !> specific constant of Spalart-Allmaras
-  double precision, save :: csasig
+  double precision, save :: csasig = 2.d0/3.d0
 
   !> specific constant of Spalart-Allmaras
-  double precision, save :: csav1
+  double precision, save :: csav1 = 7.1d0
   !> specific constant of Spalart-Allmaras
   double precision, save :: csaw1
   !> specific constant of Spalart-Allmaras
-  double precision, save :: csaw2
+  double precision, save :: csaw2 = 0.3d0
   !> specific constant of Spalart-Allmaras
-  double precision, save :: csaw3
-
-  !> constant of the Spalart-Shur rotation/curvature correction
-  double precision, save :: cssr1
-  !> constant of the Spalart-Shur rotation/curvature correction
-  double precision, save :: cssr2
-  !> constant of the Spalart-Shur rotation/curvature correction
-  double precision, save :: cssr3
+  double precision, save :: csaw3 = 2.d0
 
   !> is a characteristic macroscopic
   !> length of the domain, used for the initialization of the turbulence and
@@ -655,22 +489,6 @@ module cstphy
   !> Useful if and only if \ref iturb = 41
   real(c_double), pointer, save :: xlesfd
 
-  !> maximum allowed value for the variable \f$C\f$ appearing in the LES dynamic
-  !> model.
-  !> Any larger value yielded by the calculation
-  !> procedure of the dynamic model will be clipped to \f$ smagmx\f$.
-  !>
-  !> Useful if and only if \ref iturb = 41
-  real(c_double), pointer, save :: smagmx
-
-  !> minimum allowed value for the variable \f$C\f$ appearing in the LES dynamic
-  !> model.
-  !> Any smaller value yielded by the calculation
-  !> procedure of the dynamic model will be clipped to \f$ smagmn\f$.
-  !>
-  !> Useful if and only if \ref iturb = 41
-  real(c_double), pointer, save :: smagmn
-
   !> van Driest constant appearing in the van Driest damping function
   !> applied to the Smagorinsky constant:
   !>  - \f$ (1-\exp^{(-y^+/cdries}) \f$.
@@ -685,64 +503,8 @@ module cstphy
   !> total domain volume
   double precision, save :: voltot
 
-  !> constant \f$a_1\f$ for the v2f \f$\varphi\f$-model.
-  !> Useful if and only if \ref iturb=50
-  !> (v2f \f$\varphi\f$-model)
-  double precision, save :: cv2fa1
-
-  !> constant \f$C_{\varepsilon 2}\f$ for the v2f \f$\varphi\f$-model.
-  !> Useful if and only if \ref iturb=50
-  !> (v2f \f$\varphi\f$-model)
-  double precision, save :: cv2fe2
-
-  !> constant \f$C_1\f$ for the v2f \f$\varphi\f$-model.
-  !> Useful if and only if \ref iturb=50
-  !> (v2f \f$\varphi\f$-model)
-  double precision, save :: cv2fc1
-
-  !> constant \f$C_2\f$ for the v2f \f$\varphi\f$-model.
-  !> Useful if and only if \ref iturb=50
-  !> (v2f \f$\varphi\f$-model)
-  double precision, save :: cv2fc2
-
-  !> constant \f$C_T\f$ for the v2f \f$\varphi\f$-model.
-  !> Useful if and only if \ref iturb=50
-  !> (v2f \f$\varphi\f$-model)
-  double precision, save :: cv2fct
-
-  !> constant \f$C_L\f$ for the v2f \f$\varphi\f$-model.
-  !> Useful if and only if \ref iturb=50
-  !> (v2f \f$\varphi\f$-model)
-  double precision, save :: cv2fcl
-
-  !> constant \f$C_\eta\f$ for the v2f \f$\varphi\f$-model.
-  !> Useful if and only if \ref iturb=50
-  !> (v2f \f$\varphi\f$-model)
-  double precision, save :: cv2fet
-
-  !> constant of the WALE LES method
-  real(c_double), pointer, save :: cwale
-  !> coefficient of turbulent AFM flow model
-  double precision, save :: xiafm
-  !> coefficient of turbulent AFM flow model
-  double precision, save :: etaafm
-  !> coefficient of turbulent DFM flow model
-  real(c_double), pointer, save :: c1trit
-  !> coefficient of turbulent DFM flow model
-  real(c_double), pointer, save :: c2trit
-  !> coefficient of turbulent DFM flow model
-  real(c_double), pointer, save :: c3trit
-  !> coefficient of turbulent DFM flow model
-  real(c_double), pointer, save :: c4trit
-  !> constant of GGDH and AFM on the thermal scalar
-  double precision, save :: cthafm
-  !> constant of GGDH and AFM on the thermal scalar
-  double precision, save :: cthdfm
-  !> constant of EB-AFM and EB-DFM
-  double precision, save :: xclt
-  !> constant of EB-DFM
-  double precision, save :: rhebdfm
-  double precision, save :: cthebdfm
+  !> constant of EB-AFM and EB-DFM (0.122*2.5d0, See F. Dehoux thesis)
+  double precision, save :: xclt = 0.305d0
 
   !> \}
 
@@ -845,18 +607,16 @@ module cstphy
     ! Interface to C function retrieving pointers to constants of the
     ! turbulence model
 
-    subroutine cs_f_turb_model_constants_get_pointers(cmu, cmu025, crij1, crij2, &
-        crij3, csmago, smagmx, smagmn, cwale, xlesfd, xlesfl, ales, bles, cdries, &
-        ce1, ce2, csrij, c1trit, c2trit, c3trit, c4trit, cddes, csas, csas_eta2, &
-        chtles_bt0) &
+    subroutine cs_f_turb_model_constants_get_pointers(apow, bpow, cmu, cmu025, &
+        crij1, crij2, crij3, csmago, xlesfd, xlesfl,                           &
+        ales, bles, cdries, csrij) &
       bind(C, name='cs_f_turb_model_constants_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: cmu  , cmu025 , crij1 , crij2, crij3
-      type(c_ptr), intent(out) :: csmago, smagmx, smagmn
-      type(c_ptr), intent(out) :: cwale, xlesfd, xlesfl, ales, bles, cdries
-      type(c_ptr), intent(out) :: ce1, ce2, csrij, c1trit, c2trit, c3trit, c4trit
-      type(c_ptr), intent(out) :: cddes, csas, csas_eta2, chtles_bt0
+      type(c_ptr), intent(out) :: apow, bpow, cmu  , cmu025 , crij1 , crij2, crij3
+      type(c_ptr), intent(out) :: csmago
+      type(c_ptr), intent(out) :: xlesfd, xlesfl, cdries
+      type(c_ptr), intent(out) :: ales, bles, csrij
     end subroutine cs_f_turb_model_constants_get_pointers
 
     !---------------------------------------------------------------------------
@@ -983,50 +743,31 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_cmu, c_cmu025, c_crij1, c_crij2, c_crij3
-    type(c_ptr) :: c_csmago, c_smagmx, c_smagmn, c_cwale
-    type(c_ptr) :: c_xlesfd, c_xlesfl, c_ales, c_bles, c_cdries
-    type(c_ptr) :: c_ce1, c_ce2, c_csrij
-    type(c_ptr) :: c_c1trit, c_c2trit, c_c3trit, c_c4trit
-    type(c_ptr) :: c_cddes, c_csas, c_csas_eta2, c_chtles_bt0
+    type(c_ptr) :: c_apow, c_bpow, c_cmu, c_cmu025, c_crij1, c_crij2, c_crij3
+    type(c_ptr) :: c_csmago
+    type(c_ptr) :: c_xlesfd, c_xlesfl, c_ales, c_bles, c_cdries, c_csrij
 
-    call cs_f_turb_model_constants_get_pointers(c_cmu, c_cmu025,               &
+    call cs_f_turb_model_constants_get_pointers(c_apow, c_bpow,                &
+                                                c_cmu, c_cmu025,               &
                                                 c_crij1, c_crij2, c_crij3,     &
-                                                c_csmago, c_smagmx, c_smagmn,  &
-                                                c_cwale, c_xlesfd, c_xlesfl,   &
+                                                c_csmago, c_xlesfd, c_xlesfl,  &
                                                 c_ales, c_bles,                &
-                                                c_cdries,                      &
-                                                c_ce1, c_ce2, c_csrij,         &
-                                                c_c1trit, c_c2trit,            &
-                                                c_c3trit, c_c4trit,            &
-                                                c_cddes, c_csas, c_csas_eta2,  &
-                                                c_chtles_bt0)
+                                                c_cdries, c_csrij)
 
-    call c_f_pointer(c_cmu    , cmu   )
+    call c_f_pointer(c_apow, apow)
+    call c_f_pointer(c_bpow, bpow)
+    call c_f_pointer(c_cmu    , cmu)
     call c_f_pointer(c_cmu025 , cmu025)
     call c_f_pointer(c_crij1 , crij1)
     call c_f_pointer(c_crij2 , crij2)
     call c_f_pointer(c_crij3 , crij3)
     call c_f_pointer(c_csmago, csmago)
-    call c_f_pointer(c_smagmx, smagmx)
-    call c_f_pointer(c_smagmn, smagmn)
-    call c_f_pointer(c_cwale, cwale)
     call c_f_pointer(c_xlesfd, xlesfd)
     call c_f_pointer(c_xlesfl, xlesfl)
     call c_f_pointer(c_ales  , ales  )
     call c_f_pointer(c_bles  , bles  )
     call c_f_pointer(c_cdries, cdries)
-    call c_f_pointer(c_ce1   , ce1   )
-    call c_f_pointer(c_ce2   , ce2   )
     call c_f_pointer(c_csrij , csrij )
-    call c_f_pointer(c_c1trit, c1trit)
-    call c_f_pointer(c_c2trit, c2trit)
-    call c_f_pointer(c_c3trit, c3trit)
-    call c_f_pointer(c_c4trit, c4trit)
-    call c_f_pointer(c_cddes,  cddes)
-    call c_f_pointer(c_csas,   csas)
-    call c_f_pointer(c_csas_eta2, csas_eta2)
-    call c_f_pointer(c_chtles_bt0, chtles_bt0)
 
   end subroutine turb_model_constants_init
 

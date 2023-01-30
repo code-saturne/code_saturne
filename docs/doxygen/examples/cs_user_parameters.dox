@@ -258,6 +258,16 @@
 
   \snippet cs_user_parameters-base.c param_density_id
 
+  By default, the auxiliary restart file is read if present, but it may be
+  useful to deactivate its use when restarting after a preprocessing stage
+  possibly leading to a different number of faces (such as simply joining meshes
+  on a different architecture or optimization level or with different options).
+
+  Writing of auxiliary restart files may also be deactivated setting
+  \ref cs_glob_restart_auxiliary::write_auxiliary to 0,
+
+  \snippet cs_user_parameters-base.c deactivate_aux_checkpoint_write
+
   \subsection cs_user_parameters_h_cs_user_parameters_fields Special fields and activate some automatic post-processings
 
   For example, to force the presence of a boundary temperature field, which
@@ -335,7 +345,6 @@
   Probes for Radiative Transfer (Luminance and radiative density flux vector).
 
   \snippet cs_user_parameters-base.c setup_post_lum
-
 
   \section cs_user_parameters_h_cs_user_model_cdo Base model for CDO/HHO schemes
 

@@ -206,10 +206,16 @@ if (hybrid_turb.eq.4) then
 endif
 
 if  (iturb.eq.60) then
-  call add_property_field_1d('s2', 'S2', is2kw)
-  call hide_property(is2kw)
-  call add_property_field_1d('vel_gradient_trace', 'Vel. Gradient Trace', idivukw)
-  call hide_property(idivukw)
+  ! Square of the norm of the deviatoric part of the deformation rate
+  ! tensor (\f$S^2=2S_{ij}^D S_{ij}^D\f$).
+  call add_property_field_1d('s2', 'S2', iflid)
+  call hide_property(iflid)
+
+  ! Divergence of the velocity. More precisely, trace of the velocity gradient
+  ! (and not a finite volume divergence term). Defined only for k-omega SST
+  ! (because in this case it may be calculated at the same time as \f$S^2\f$)
+  call add_property_field_1d('vel_gradient_trace', 'Vel. Gradient Trace', iflid)
+  call hide_property(iflid)
 endif
 
 call add_property_field_1d('courant_number', 'CFL', icour)

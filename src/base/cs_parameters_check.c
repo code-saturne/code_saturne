@@ -820,7 +820,6 @@ cs_parameters_check(void)
   const int restart_file_key_id = cs_field_key_id("restart_file");
   const int key_limiter = cs_field_key_id("limiter_choice");
 
-
   const cs_domain_t  *domain = cs_glob_domain;
   if (cs_domain_get_cdo_mode(domain) == CS_DOMAIN_CDO_MODE_ONLY)
     return; /* Avoid the detection of false setting errors when using
@@ -847,8 +846,10 @@ cs_parameters_check(void)
 
   char *f_desc = NULL;
 
+  int list_01[2] = {0, 1};
+
   /*--------------------------------------------------------------------------
-   * log frequency
+   * log frequency and checkpoint options
    *--------------------------------------------------------------------------*/
 
   cs_parameters_is_greater_int(CS_ABORT_DELAYED,
@@ -856,6 +857,22 @@ cs_parameters_check(void)
                                "cs_glob_log_frequency",
                                cs_glob_log_frequency,
                                -1);
+
+  cs_parameters_is_in_list_int(CS_ABORT_DELAYED,
+                               _("while reading input data"),
+                               "cs_glob_restart_auxiliary->read_auxiliary",
+                               cs_glob_restart_auxiliary->read_auxiliary,
+                               2,
+                               list_01,
+                               NULL);
+
+  cs_parameters_is_in_list_int(CS_ABORT_DELAYED,
+                               _("while reading input data"),
+                               "cs_glob_restart_auxiliary->write_auxiliary",
+                               cs_glob_restart_auxiliary->write_auxiliary,
+                               2,
+                               list_01,
+                               NULL);
 
   /*--------------------------------------------------------------------------
    * Computation parameters
@@ -1079,6 +1096,18 @@ cs_parameters_check(void)
         BFT_FREE(f_desc);
       }
     }
+
+    cs_parameters_is_equal_int(CS_WARNING,
+                               _("Checkpoint settings with LES computation."),
+                               "cs_glob_restart_auxiliary->read_auxiliary",
+                               cs_glob_restart_auxiliary->read_auxiliary,
+                               1);
+
+    cs_parameters_is_equal_int(CS_WARNING,
+                               _("Checkpoint settings with LES computation."),
+                               "cs_glob_restart_auxiliary->write_auxiliary",
+                               cs_glob_restart_auxiliary->write_auxiliary,
+                               1);
   }
 
   /* navsto sub-iterations
@@ -1203,8 +1232,8 @@ cs_parameters_check(void)
                                cs_glob_lagr_time_scheme->iilagr,
                                CS_LAGR_OFF);
 
-    int les_iturb[3] =
-    {CS_TURB_LES_SMAGO_CONST, CS_TURB_LES_SMAGO_DYN, CS_TURB_LES_WALE};
+    int les_iturb[3]
+      = {CS_TURB_LES_SMAGO_CONST, CS_TURB_LES_SMAGO_DYN, CS_TURB_LES_WALE};
     cs_parameters_is_not_in_list_int(CS_ABORT_DELAYED,
                                      _("The steady algorithm is not compatible "
                                        "with L.E.S. turbulence modelling "

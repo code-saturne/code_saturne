@@ -70,13 +70,13 @@ module optcal
   integer(c_int), pointer, save :: isto2t
 
   !> initvi : =1 if total viscosity read from checkpoint file
-  integer, save ::          initvi
+  integer, save :: initvi = 0
 
   !> initro : =1 if density read from checkpoint file
-  integer, save ::          initro
+  integer, save :: initro = 0
 
   !> initcp : =1 if specific heat read from checkpoint file
-  integer, save ::          initcp
+  integer, save :: initcp = 0
 
   !> Value of \f$theta_S\f$ (see \ref cs_time_scheme_t::thetsn).
   real(c_double), pointer, save :: thetsn
@@ -155,7 +155,7 @@ module optcal
   !> This value is set automatically by the code; depending on
   !> whether a restart directory is present, and should not be modified by
   !> the user (no need for C mapping).
-  integer, save :: isuite
+  integer, save :: isuite = 0
 
   !> Indicates the reading (=1) or not (=0) of the auxiliary
   !> calculation restart file\n
@@ -171,7 +171,7 @@ module optcal
   !> of the reading of the mesh and of the wall temperature
   !> from the restart file
   !> Useful if nfpt1d > 0
-  integer, save :: isuit1
+  integer, save :: isuit1 = -1
 
   !----------------------------------------------------------------------------
   ! Time stepping options
@@ -348,7 +348,7 @@ module optcal
   !> case of the compressible module, \ref iscalt does not correspond to
   !> the temperature nor enthalpy but to the total energy}.\n Useful if
   !> and only if \ref dimens::nscal "nscal" \f$\geqslant\f$ 1.
-  integer, save :: iscalt
+  integer, save :: iscalt = -1
 
   !> \}
 
@@ -729,10 +729,10 @@ module optcal
   integer(c_int), pointer, save :: iifren
 
   !> number of the closest free standard outlet (or free inlet) face to xyzp0
-  integer, save :: ifrslb
+  integer, save :: ifrslb = 0
 
   !> max of ifrslb on all ranks, standard outlet face presence indicator
-  integer, save :: itbslb
+  integer, save :: itbslb = 0
 
   !> compute the hydrostatic pressure in order to compute the Dirichlet
   !> conditions on the pressure at outlets
@@ -758,7 +758,7 @@ module optcal
   !>    - 0: the wall temperature is imposed as constant by the user (default)
   !>         and past to the copain correlation to evaluate the exchange
   !>         coefficient
-  integer, save :: itagms
+  integer, save :: itagms = 0
 
   !> \ref iescal indicates the calculation mode for the error estimator
   !> \ref paramx::iespre "iespre", \ref paramx::iesder "iesder",
@@ -835,15 +835,15 @@ module optcal
   !> \{
 
   !> Global head losses indicator (ie number of head loss zones)
-  integer, save :: ncpdct
+  integer, save :: ncpdct = 0
 
   !> Indicateur termes sources de masse global (ie somme sur les processeurs
   !>   de ncetsm)
-  integer, save :: nctsmt
+  integer, save :: nctsmt = 0
 
   !> Global indicator of condensation source terms (ie. sum on the processors
   !> of nfbpcd) cells associated to the face with condensation phenomenon
-  integer, save :: nftcdt
+  integer, save :: nftcdt = 0
 
   !> \anchor iporos
   !> take the porosity fomulation into account
@@ -865,11 +865,11 @@ module optcal
 
   !> - 1, the wall distance must be computed,
   !> - 0, the wall distance computation is not necessary.
-  integer, save :: ineedy
+  integer, save :: ineedy = 0
 
   !> - 1, the wall distance is up to date,
   !> - 0, the wall distance has not been updated.
-  integer, save :: imajdy
+  integer, save :: imajdy = 0
 
   !> Specifies the method used to calculate the distance to the wall y
   !> and the non-dimensional distance \f$ y+ \f$ for all the cells of
@@ -910,7 +910,7 @@ module optcal
   !> is made at the most> once for all at the beginning of the calculation; it
   !> is therefore not compatible with moving walls. Please contact the
   !> development team if you need to override this limitation.
-  integer, save :: icdpar
+  integer, save :: icdpar = -999
 
   !> \}
 

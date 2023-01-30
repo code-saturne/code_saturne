@@ -325,6 +325,40 @@ cs_field_get_equation_param_const(const cs_field_t  *f)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief For a given field, returns field defined as its variance, if present.
+ *
+ * \param[in]  f  field
+ *
+ * \return  pointer to matching variance (variable) field, or NULL.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_field_get_variance(const cs_field_t  *f)
+{
+  static int kscavr = -1;
+  if (kscavr < 0)
+    kscavr = cs_field_key_id("first_moment_id");
+
+  if (kscavr >= 0) {
+    const int n_fields = cs_field_n_fields();
+
+    for (int i = 0; i < n_fields; i++) {
+      cs_field_t *f_c = cs_field_by_id(i);
+
+      if (f_c->type & CS_FIELD_VARIABLE) {
+        int parent_id = cs_field_get_key_int(f, kscavr);
+        if (parent_id == f->id)
+          return f_c;
+      }
+    }
+  }
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Allocate and map boundary condition coefficients for all
  *        variable fields.
  */

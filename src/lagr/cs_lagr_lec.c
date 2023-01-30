@@ -703,7 +703,7 @@ void
 cs_lagr_restart_read_p(void)
 {
   /* counters */
-  cs_lnum_t ierror = 0, iok = 0;
+  cs_lnum_t ierror = 0;
 
   /* read variables */
   int  mvls, jphyla, jtpvar, jdpvar, jmpvar;

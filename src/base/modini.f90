@@ -140,16 +140,7 @@ if (idtvar.lt.0) then
 endif
 
 !===============================================================================
-! 2. POSITION DES VARIABLES DE numvar
-!===============================================================================
-
-! ---> Reperage des variables qui disposeront de deux types de CL
-
-!     Fait dans varpos.
-!     Si l'utilisateur y a touche ensuite, on risque l'incident.
-
-!===============================================================================
-! 3. OPTIONS DU CALCUL : TABLEAUX DE optcal
+! 2. OPTIONS DU CALCUL : TABLEAUX DE optcal
 !===============================================================================
 
 ! time scheme
@@ -660,12 +651,6 @@ if (nscal.gt.0) then
 
 endif
 
-! Temperature scale
-
-if (itherm.ge.1 .and. itpscl.le.0) then
-  itpscl = 1
-endif
-
 ! ---> "is_temperature"
 !      If the user has not modified "is_temperature", we take by default:
 !        passive scalar of scalars other than iscalt
@@ -694,10 +679,9 @@ endif
 !        0 ou 1 et dans ce cas, on ne retouche pas)
 
 if (icalhy.ne.-1.and.icalhy.ne.0.and.icalhy.ne.1) then
-  write(nfecra,1061)icalhy
+  write(nfecra,1061) icalhy
   iok = iok + 1
 endif
-
 
 ! ---> ICDPAR
 !      Calcul de la distance a la paroi. En standard, on met ICDPAR a -1, au cas
@@ -712,7 +696,7 @@ if (icdpar.eq.-999) then
   if (isuite.eq.1 .and. ikw.eq.1) write(nfecra,2000)
 endif
 if (icdpar.eq.-1 .and. ikw.eq.1 .and. isuite.eq.1)                &
-     write(nfecra,2001)
+  write(nfecra,2001)
 
 ! ---> IKECOU
 !      If the fluid_solid option is enabled, we force ikecou to 0.
@@ -722,7 +706,6 @@ if (fluid_solid) then
     write(nfecra,5000)
   endif
 endif
-
 
 ! ---> RELAXV
 if (idtvar.lt.0) then
@@ -745,7 +728,6 @@ if (idtvar.lt.0) then
     endif
   enddo
 else
-
   do f_id = 0, nfld - 1
     call field_get_type(f_id, f_type)
     ! Is the field of type FIELD_VARIABLE?
@@ -784,38 +766,8 @@ if (staggered.eq.1) then
 endif
 
 !===============================================================================
-! 4. TABLEAUX DE cstphy
+! 3. TABLEAUX DE cstphy
 !===============================================================================
-
-! ---> Constantes
-!    Ca fait un calcul en double, mais si qqn a bouge cmu, apow, bpow,
-!     ca servira.
-
-cpow    = apow**(2.d0/(1.d0-bpow))
-dpow    = 1.d0/(1.d0+bpow)
-
-! Modified value of Cmu for V2f and Bl-v2k
-if (iturb.eq.50.or.iturb.eq.51) cmu = 0.22d0
-
-cmu025 = cmu**0.25d0
-
-if (idirsm.eq.0) then
-  csrij = 0.11d0
-else
-  if (iturb.eq.32) then
-    csrij = 0.21d0
-  else
-    csrij = 0.22d0
-  endif
-endif
-
-! Constant for the Buoyant production term of Rij
-! EBRSM
-if (iturb.eq.32) then
-  crij3 = 0.6d0
-else
-  crij3 = 0.55d0
-endif
 
 ! ---> ICLVFL
 !      Si l'utilisateur n'a pas modifie ICLVFL, on prend par defaut :
@@ -889,57 +841,6 @@ else
   enddo
 endif
 
-! Turbulent fluxes constant for GGDH, AFM and DFM
-if (nscal.gt.0) then
-  do iscal = 1, nscal
-
-    call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
-    turb_flux_model_type = turb_flux_model / 10
-
-    ! AFM and GGDH on the scalar
-    if (turb_flux_model_type.eq.1.or.turb_flux_model_type.eq.2) then
-      call field_get_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
-      vcopt%idften = ANISOTROPIC_RIGHT_DIFFUSION
-      call field_set_key_double(ivarfl(isca(iscal)), kctheta, cthafm)
-      call field_set_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
-    ! DFM on the scalar
-    elseif (turb_flux_model_type.eq.3) then
-      call field_get_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
-      vcopt%idifft = 0
-      vcopt%idften = ISOTROPIC_DIFFUSION
-      if (turb_flux_model.eq.31) then
-        call field_set_key_double(ivarfl(isca(iscal)), kctheta, cthebdfm)
-        c2trit = 0.3d0
-      else
-        call field_set_key_double(ivarfl(isca(iscal)), kctheta, cthdfm)
-      end if
-      call field_set_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
-      ! GGDH on the thermal fluxes is automatically done
-
-      ! GGDH on the variance of the thermal scalar
-      do ii = 1, nscal
-        if (iscavr(ii).eq.iscal) then
-          call field_get_key_struct_var_cal_opt(ivarfl(isca(ii)), vcopt)
-          vcopt%idften = ANISOTROPIC_RIGHT_DIFFUSION
-          call field_set_key_double(ivarfl(isca(ii)), kctheta, csrij)
-          call field_set_key_struct_var_cal_opt(ivarfl(isca(ii)), vcopt)
-        endif
-      enddo
-    else
-      call field_set_key_double(ivarfl(isca(iscal)), kctheta, csrij)
-    endif
-  enddo
-endif
-
-! harmonic face viscosity interpolation
-if (imvisf.eq.1) then
-  do ivar = 1, nvar
-    call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-    vcopt%imvisf = 1
-    call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-  enddo
-endif
-
 ! VoF model enabled
 if (ivofmt.gt.0) then
   if (rho2.gt.rho1) then
@@ -992,21 +893,8 @@ if (ippmod(idarcy).eq.1) then
 
 endif
 
-! Set iswdyn to 2 by default if not modified for pure diffusion equations
-do f_id = 0, nfld - 1
-  call field_get_type(f_id, f_type)
-  ! Is the field of type FIELD_VARIABLE?
-  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-    call field_get_key_struct_var_cal_opt(f_id, vcopt)
-    if (vcopt%iswdyn.eq.-1.and. vcopt%iconv.eq.0) then
-      vcopt%iswdyn = 2
-      call field_set_key_struct_var_cal_opt(f_id, vcopt)
-    endif
-  endif
-enddo
-
 !===============================================================================
-! 5. ELEMENTS DE albase
+! 4. ELEMENTS DE albase
 !===============================================================================
 
 if (iale.ge.1) then
@@ -1016,7 +904,7 @@ else
 endif
 
 !===============================================================================
-! 6. COEFFICIENTS DE alstru
+! 4. COEFFICIENTS DE alstru
 !===============================================================================
 
 if (betnmk.lt.-0.5d0*grand) betnmk = (1.d0-alpnmk)**2/4.d0
@@ -1026,20 +914,19 @@ if (bexxst.lt.-0.5d0*grand) bexxst = 0.0d0
 if (cfopre.lt.-0.5d0*grand) cfopre = 2.0d0
 
 !===============================================================================
-! 7. PARAMETRES DE cplsat
+! 5. PARAMETRES DE cplsat
 !===============================================================================
 
 ! Get number of couplings
 
 call nbccpl(nbrcpl)
-!==========
 
 if (nbrcpl.ge.1.and.iturbo.ne.0) then
   ifaccp = 1
 endif
 
 !===============================================================================
-! 8. Define Min/Max clipping values of void fraction of VOF model
+! 6. Define Min/Max clipping values of void fraction of VOF model
 !===============================================================================
 
 if (ivofmt.gt.0) then
@@ -1060,11 +947,11 @@ if (ivofmt.gt.0) then
 endif
 
 !===============================================================================
-! 9. STOP SI PB
+! 7. STOP SI PB
 !===============================================================================
 
 if (iok.ne.0) then
-  call csexit (1)
+  call csexit(1)
 endif
 
  1011 format(                                                     &

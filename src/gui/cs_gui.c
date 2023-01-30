@@ -1725,40 +1725,6 @@ void CS_PROCF (cscfgp, CSCFGP) (int *icfgrp)
 }
 
 /*----------------------------------------------------------------------------
- * Restart parameters.
- *
- * Fortran Interface:
- *
- * subroutine csisui (ntsuit, ileaux)
- * *****************
- *
- * INTEGER          NTSUIT  -->   checkpoint frequency
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csisui, CSISUI) (int  *ntsuit)
-{
-  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree,
-                                        "calculation_management/start_restart");
-
-  cs_gui_node_get_child_int(tn, "restart_rescue", ntsuit);
-
-  cs_gui_node_get_child_status_int
-    (tn, "restart_with_auxiliary",
-     &(cs_glob_restart_auxiliary->read_auxiliary));
-
-  cs_time_scheme_t *t_sch = cs_get_glob_time_scheme();
-
-  cs_gui_node_get_child_status_int(tn, "frozen_field", &(t_sch->iccvfg));
-
-#if _XML_DEBUG_
-  bft_printf("==> %s\n", __func__);
-  bft_printf("--ntsuit = %d\n", *ntsuit);
-  bft_printf("--ileaux = %d\n", cs_glob_restart_auxiliary->read_auxiliary);
-  bft_printf("--iccvfg = %d\n", t_sch->iccvfg);
-#endif
-}
-
-/*----------------------------------------------------------------------------
  * Time passing parameters.
  *
  * Fortran Interface:
@@ -2749,6 +2715,44 @@ void CS_PROCF (uieres, UIERES) (int *iescal,
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read GUi-defined Checkpoint parameters.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_checkpoint_parameters(void)
+{
+  int   nt_interval = 0;
+  double  t_interval, wt_interval = -1;
+
+  cs_restart_checkpoint_get_intervals(&nt_interval, &t_interval, &wt_interval);
+
+  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree,
+                                        "calculation_management/start_restart");
+
+  cs_gui_node_get_child_int(tn, "restart_rescue", &nt_interval);
+
+  cs_restart_checkpoint_set_interval(nt_interval, t_interval, wt_interval);
+
+  cs_gui_node_get_child_status_int
+    (tn, "restart_with_auxiliary",
+     &(cs_glob_restart_auxiliary->read_auxiliary));
+
+  cs_time_scheme_t *t_sch = cs_get_glob_time_scheme();
+
+  cs_gui_node_get_child_status_int(tn, "frozen_field", &(t_sch->iccvfg));
+
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+  bft_printf("--nt_interval = %d\n", nt_interval);
+  bft_printf("--read_auxiliary = %d\n",
+             cs_glob_restart_auxiliary->read_auxiliary);
+  bft_printf("--iccvfg = %d\n", t_sch->iccvfg);
+#endif
+}
 
 /*----------------------------------------------------------------------------
  * Space scheme options, linear solver precision and time step factor

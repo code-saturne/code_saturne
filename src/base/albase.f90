@@ -44,13 +44,13 @@ module albase
   !>  - 2: CDO solver
   integer(c_int), pointer, save :: iale
   !> the number of sub-iterations of initialization of the fluid
-  integer, save :: nalinf
+  integer, save :: nalinf = 0
   !> maximum number of implicitation iterations of the structure displacement
-  integer, save :: nalimx
+  integer, save :: nalimx = 1
   !> relative precision of implicitation of the structure displacement
-  double precision, save :: epalim
+  double precision, save :: epalim = 1.d-5
   !> iteration (yes=1, no=0) to initialize ALE
-  integer, save :: italin
+  integer, save :: italin = -999
 
   !> indicator of imposed displacement
   integer, allocatable, dimension(:) :: impale

@@ -29,6 +29,7 @@ module alstru
   !=============================================================================
 
   use paramx
+  use cstnum
 
   implicit none
 
@@ -40,7 +41,7 @@ module alstru
   !> \{
 
   !> number of structures, automatically computed
-  integer, save :: nbstru
+  integer, save :: nbstru = -999
 
   !> \anchor xmstru mass matrix of the structure (kg)
   !> (for \ref xmstru "xmstru"(i,j,k), i and j are the array of mass structure
@@ -92,22 +93,22 @@ module alstru
   double precision, save :: dtstr(nstrmx)
 
   !> coefficient for the predicted displacement
-  double precision, save :: aexxst
+  double precision, save :: aexxst = -grand
 
   !> coefficient for the predicted displacement
-  double precision, save :: bexxst
+  double precision, save :: bexxst = -grand
 
   !> coefficient for the predicted force
-  double precision, save :: cfopre
+  double precision, save :: cfopre = -grand
 
   !> alpha coefficient for the Newmark hht methode
-  double precision, save :: alpnmk
+  double precision, save :: alpnmk = 0.d0
 
   !> beta coefficient for the Newmark hht methode
-  double precision, save :: betnmk
+  double precision, save :: betnmk = -grand
 
   !> gamma coefficient for the Newmark hht methode
-  double precision, save :: gamnmk
+  double precision, save :: gamnmk = -grand
 
   !> \}
 

@@ -138,9 +138,10 @@ endif
 
 if (irccor.eq.1) then
   if (idtvar.ge.0) then
-     call add_property_field('strain_rate_tensor', 'Strain Rate Tensor', 6, &
-                             .false., istraio)
-     call hide_property(istraio)
+    !> Strain rate tensor at the previous time step
+    call add_property_field('strain_rate_tensor', 'Strain Rate Tensor', 6, &
+                            .false., f_id)
+    call hide_property(f_id)
   endif
 endif
 

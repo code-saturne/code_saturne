@@ -378,17 +378,6 @@ integer nmodpp
 ! Calculation options (optcal)
 ! ============================
 
-! In case of restart, read auxiliary restart file ileaux (= 1) or not (0).
-
-! By default, this file is read, but it may be useful to deactivate
-! its use when restarting after a preprocessing stage possibly leading
-! to a different number of faces (such as simply joining meshes on
-! a different architecture or optimization level or with different options).
-
-! Writing of auxiliary restart files may also be deactivated using: iecaux = 0
-
-ileaux = 0
-
 ! Error estimators for Navier-Stokes (non-frozen velocity field)
 
 ! We recommend running a calculation restart on a few time steps

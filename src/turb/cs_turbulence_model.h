@@ -405,6 +405,7 @@ extern double cs_turb_c3trit;
 extern double cs_turb_c4trit;
 extern double cs_turb_cthafm;
 extern double cs_turb_cthdfm;
+extern double cs_turb_cthebdfm;
 
 /*=============================================================================
  * Public function prototypes

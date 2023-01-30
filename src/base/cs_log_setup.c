@@ -55,6 +55,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
+#include "cs_restart.h"
 #include "cs_sles.h"
 #include "cs_sles_default.h"
 #include "cs_thermal_model.h"
@@ -225,6 +226,14 @@ cs_log_setup(void)
   cs_function_log_all_settings();
 
   cs_sles_default_setup();
+
+  cs_restart_log_setup();
+  cs_log_printf(CS_LOG_SETUP,
+                _("  read auxiliary:       %d"),
+                cs_glob_restart_auxiliary->read_auxiliary);
+  cs_log_printf(CS_LOG_SETUP,
+                _("  write auxiliary:      %d"),
+                cs_glob_restart_auxiliary->write_auxiliary);
 
   _log_global_model_options();
 
