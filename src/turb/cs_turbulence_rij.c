@@ -2886,8 +2886,9 @@ cs_turbulence_rij(cs_lnum_t    ncesmp,
 
   } /* End of test on igrari */
 
-  /* Prepare to solve Rij, in a manner similar to that of covofi.
-   * ==================== */
+  /* Prepare to solve Rij, in a manner similar
+     to that of cs_solve_equation_scalar.
+   * ========================================= */
 
   /* Source terms for Rij
    * -------------------- */

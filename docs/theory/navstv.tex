@@ -156,7 +156,7 @@ is designated as the pressure correction or velocity projection step.
 \subsubsection*{Velocity prediction step}
 The discretization in time is achieved by applying a $\theta$-scheme
 at time $n+\theta$ to the resolved variable, following the approach used
-for the transport equation of a scalar\footnote{cf. \fort{covofi}}.
+for the transport equation of a scalar\footnote{cf. \fort{cs\_solve\_equation\_scalar}}.
 
 The velocity at time $n+1$ not being available until after the projection
 step, a predicted velocity at time $n+1$ is used herein to interpolate:

@@ -315,7 +315,7 @@ $\,T_s^{\,imp}$ is added to $f_s^{\,imp}$ whatever its sign. In effect, the intu
 leads to inconsistency (loss of coherence) in the numerical treatment of the problem should $T_s^{imp}$ changes sign between two time steps.\\
 {\tiny$\blacksquare$} The diagonal part $\tens{K}_{\,d}$ of the head loss tensor term is used in $f_s^{\,imp}$. Strictly speaking, only the positive contributions should in fact be retained (as pointed out in the associated user subroutine \fort{uskpdc}). The  approach currently in use requires improvement.\\
 {\tiny$\blacksquare$} The term $\theta\,\Gamma^{n}-\theta\,\dive
-(\rho\,\vect {u})$ is not problematic for the diagonal dominance of the matrix as it is exactly counterbalanced by the convection term (cf. \fort{covofi}).
+(\rho\,\vect {u})$ is not problematic for the diagonal dominance of the matrix as it is exactly counterbalanced by the convection term (cf. \fort{cs\_solve\_equation\_scalar}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

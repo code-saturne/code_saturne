@@ -1099,10 +1099,10 @@ positionnement des variables}
 \fort{scalai}*         &                  &                &
         & R\'esolution des \'equations portant sur les scalaires associ\'es aux
                 physiques particuli\`eres et des scalaires ``utilisateur''  \\
-                & \fort{covofi}         &                &
+                & \fort{cs\_solve\_equation\_scalar}         &                &
         & R\'esolution successive de l'enthalpie, du potentiel scalaire
                 r\'eel et, si \var{IPPMOD(IELJOU)=2}, de la partie imaginaire du
-                potentiel scalaire (appels successifs \`a \fort{covofi} qui appelle
+                potentiel scalaire (appels successifs \`a \fort{cs\_solve\_equation\_scalar} qui appelle
                 \fort{cs\_elec\_source\_terms} pour le calcul du terme d'effet Joule au second
                 membre de l'\'equation de l'enthalpie)\\
                 & \fort{cs\_compute\_electric\_field}* &                &
@@ -1116,22 +1116,22 @@ positionnement des variables}
                 Ce recalage, s'il a \'et\'e demand\'e
                 par l'utilisateur (\var{IELCOR}=1), est effectu\'e \`a partir
                 du deuxi\`eme pas de temps. \\
-                & \fort{covofi}         &                &
+                & \fort{cs\_solve\_equation\_scalar}         &                &
         & R\'esolution successive, si \var{IPPMOD(IELARC)=2}, des trois
                 composantes du potentiel vecteur. On proc\`ede par
-                appels successifs \`a \fort{covofi} qui appelle
+                appels successifs \`a \fort{cs\_solve\_equation\_scalar} qui appelle
                 \fort{cs\_elec\_source\_terms} pour le calcul du second membre de l'\'equation de
                 Poisson portant sur chaque composante du potentiel. \\
-                & \fort{covofi}         &                &
+                & \fort{cs\_solve\_equation\_scalar}         &                &
         & R\'esolution successive des \var{NGAZG-1} fractions massiques
                 caract\'erisant la composition du fluide, s'il est
                 multiconstituant.
-                On proc\`ede par appels successifs \`a \fort{covofi}. \\
+                On proc\`ede par appels successifs \`a \fort{cs\_solve\_equation\_scalar}. \\
                 & \fort{cs\_compute\_electric\_field}* &                &
         & En arc \'electrique, calcul du champ magn\'etique et
                 des trois composantes des forces de
                 Laplace (deuxi\`eme et dernier appel au cours du pas de temps courant)\\
-                & \fort{covofi}         &                &
+                & \fort{cs\_solve\_equation\_scalar}         &                &
         & R\'esolution des scalaires ``utilisateur''\\
 \end{tabular}
 \caption{Sous-programme \fort{tridim}~: partie 2 (conditions aux limites,
@@ -1228,7 +1228,7 @@ r\'ealiser les op\'erations qui permettent d'assurer le recalage automatique
 des potentiels, lorsqu'il est requis par l'utilisateur ({\it i.e.} si \var{IELCOR=1}).
 
 Les \var{NSCAPP} scalaires ``physique particuli\`ere'' sont calcul\'es successivement par un
-appel \`a \fort{covofi} plac\'e dans une boucle portant sur les \var{NSCAPP}
+appel \`a \fort{cs\_solve\_equation\_scalar} plac\'e dans une boucle portant sur les \var{NSCAPP}
 scalaires. L'algorithme tire profit de l'ordre sp\'ecifique dans lequel ils sont d\'efinis et donc
 r\'esolus (dans l'ordre~: enthalpie, potentiel scalaire, potentiel vecteur, fractions massiques).
 
@@ -1296,7 +1296,7 @@ La r\'esolution s\'equentielle des inconnues scalaires sp\'ecifiques au module s
 de d\'efinir la composition du fluide.
 
 Pour terminer, \fort{scalai} permet la r\'esolution des scalaires
-``utilisateurs'' (appel \`a \fort{covofi} dans une boucle portant sur les
+``utilisateurs'' (appel \`a \fort{cs\_solve\_equation\_scalar} dans une boucle portant sur les
 \var{NSCAUS} scalaires utilisateur).
 
 On peut remarquer pour finir que les termes sources des \'equations de la quantit\'e de

@@ -28,7 +28,7 @@
 Each sub-section of this document is associated with an important
 subroutine. The full list of the subroutines described here is the
 following: \fort{bilsc2} \fort{clptur} \fort{clsyvt} \fort{codits} %
-\fort{condli} \fort{covofi} \fort{gradrc} \fort{inimas} %
+\fort{condli} \fort{cs\_solve\_equation\_scalar} \fort{gradrc} \fort{inimas} %
 \fort{itrmas} \fort{matrix} \fort{navstv} \fort{predvv} %
 \fort{resopv} \fort{cs\_turbulence\_ke} \fort{turrij} \fort{viscfa} \fort{visort} %
 \fort{visecv}.
@@ -64,7 +64,7 @@ below:\newline
 
 Finally, for the reader wishing to become more familiar with the methods
 implemented in \CS, it is recommended to begin with the study of the
-advection equation for a scalar (\fort{covofi}) which is solved iteratively
+advection equation for a scalar (\fort{cs\_solve\_equation\_scalar}) which is solved iteratively
 using an incremental method (\fort{codits}). It will then be useful to look
 at \fort{navstv} which briefly presents the solution of the system made up
 of the mass and momentum equations.
@@ -117,7 +117,7 @@ the faces\newline
 \hspace*{1,5cm}\fort{codits} \hspace*{1cm}iterative solution of the systems
 using an incremental method\newline
 \underline{\textbf{Equations for the scalars}}\newline
-\hspace*{1cm}\fort{covofi}\newline
+\hspace*{1cm}\fort{cs\_solve\_equation\_scalar}\newline
 \hspace*{1,5cm}\fort{viscfa} \hspace*{1cm}calculation of the viscosity at
 the faces\newline
 \hspace*{1,5cm}\fort{codits} \hspace*{1cm}iterative solution of the systems

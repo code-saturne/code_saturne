@@ -537,7 +537,8 @@ _thermal_flux_and_diff(cs_field_t         *f,
     cs_real_t coeff_imp;
 
     for (cs_lnum_t ii = 0; ii < 3; ii++) {
-      /* Add the term in "grad T" which is implicited by the GGDH part in covofi.
+      /* Add the term in "grad T" which is implicited by the GGDH part in
+         cs_solve_equation_scalar.
        *  "-C_theta*k/eps* R.grad T"
        * The resulting XUT array is only use for post processing purpose in
        * (EB)GGDH & (EB)AFM */
@@ -559,7 +560,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
         xut[c_id][ii] = xut[c_id][ii]/coeff_imp;
         temp[ii] = temp[ii]/coeff_imp;
         /* Calculation of the diffusion tensor for the implicited part
-         * of the model computed in covofi.f90 */
+         * of the model computed in cs_convection_diffusion_solve.c */
         vistet[c_id][ii] = crom[c_id]*ctheta*xtt*xrij[ii][ii]/coeff_imp;
 
       }
@@ -573,7 +574,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
         xut[c_id][ii] = xut[c_id][ii]/coeff_imp;
         temp[ii] = temp[ii] / coeff_imp;
         /* Calculation of the diffusion tensor for the implicited part
-         * of the model computed in covofi.f90 */
+         * of the model computed in cs_convection_diffusion_solve.c */
         vistet[c_id][ii] = crom[c_id]*ctheta*xtt*xrij[ii][ii]/coeff_imp;
 
       }
@@ -585,7 +586,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
         xut[c_id][ii] = xut[c_id][ii]/coeff_imp;
         temp[ii] = temp[ii]/coeff_imp;
         /* Calculation of the diffusion tensor for the implicited part
-         * of the model computed in covofi.f90 */
+         * of the model computed in cs_convection_diffusion_solve.c */
         vistet[c_id][ii] = crom[c_id]*ctheta*xtt*xrij[ii][ii]/coeff_imp;
       }
 
@@ -595,7 +596,8 @@ _thermal_flux_and_diff(cs_field_t         *f,
       w1[c_id][ii] = xcpp[c_id]*temp[ii];
     }
 
-    /*  Extra diag part of the diffusion tensor for covofi */
+    /*  Extra diag part of the diffusion tensor
+        for cs_convection_diffusion_solve.c */
     if (   (turb_flux_model == 11)
         || (turb_flux_model == 20)
         || (turb_flux_model == 21)) {

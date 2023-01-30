@@ -32,9 +32,9 @@ has evolved over the years, but unless you are ready to update a whole
 file to a more current style (in which case the other guidelines should be
 followed), try to remain consistent with the style in the current file.
 
-For new files, use recently recently updated or reference examples, such as
-`src/base/cs_field.c` and  `src/base/cs_field.h` for C, `src/base/field.f90`
-for Fortran modules, or `src/base/covofi.f90` for other Fortran files.
+For new files, use recently updated or reference examples, such as
+`src/base/cs_field.c` and  `src/base/cs_field.h` for C, `src/base/field.f90`,
+or `src/base/tridim.f90` for Fortran modules.
 
 If you consider your preferred coding style is better than the one used is
 superior in some manner to the one used, suggestions are welcome, and

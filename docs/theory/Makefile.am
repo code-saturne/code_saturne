@@ -52,7 +52,7 @@ combustion_intro.tex \
 combustion_thermo.tex \
 comprs.tex \
 condli.tex \
-covofi.tex \
+cs_solve_equation.tex \
 elbase.tex \
 ext_neighborhood.tex \
 goveqn.tex \
