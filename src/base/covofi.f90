@@ -289,6 +289,14 @@ interface
    real(kind=c_double), dimension(*), intent(inout) :: smbrs, rovsdt
  end subroutine coal_radst
 
+ subroutine fuel_radst(f_id, smbrs, rovsdt) &
+   bind(C, name='cs_f_fuel_radst')
+   use, intrinsic :: iso_c_binding
+   implicit none
+   integer(c_int), intent(in), value :: f_id
+   real(kind=c_double), dimension(*), intent(inout) :: smbrs, rovsdt
+ end subroutine fuel_radst
+
  subroutine wall_condensation_source_terms(id, ncmast, ltmast,    &
                                            itypst, spcondp,       &
                                            gam_s, svcondp,        &
@@ -718,7 +726,7 @@ if (iirayo.ge.1) then
     if (isca(iscal).ge.isca(ih2(1)) .and.       &
         isca(iscal).le.isca(ih2(nclafu))) then
 
-      call cs_fuel_radst(ivar, ncelet, ncel, cell_f_vol, smbrs, rovsdt)
+      call fuel_radst(ivarfl(ivar), smbrs, rovsdt)
 
     endif
   endif

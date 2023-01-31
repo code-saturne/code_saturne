@@ -68,15 +68,14 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
-cs_coal_radst.h \
+cs_coal.h \
+cs_fuel.h \
 cs_comb_headers.h
 
 # Library source files
 
 noinst_LIBRARIES = libcscomb.a
 libcscomb_a_SOURCES = \
-cs_coal_bcond.f90 \
-cs_coal_radst.c \
 cplin1.f90 \
 cplini.f90 \
 cplph1.f90 \
@@ -92,6 +91,8 @@ cpltsv.f90 \
 cplym1.f90 \
 cppdfr.f90 \
 cpteh1.f90 \
+cs_coal.c \
+cs_coal_bcond.f90 \
 cs_coal_bt2h.f90 \
 cs_coal_fp2st.f90 \
 cs_coal_htconvers1.f90 \
@@ -110,6 +111,7 @@ cs_coal_thfieldconv2.f90 \
 cs_coal_varini.f90 \
 cs_coal_varpos.f90 \
 cs_coal_verify.f90 \
+cs_fuel.c \
 cs_fuel_bcond.f90 \
 cs_fuel_bt2h.f90 \
 cs_fuel_fp2st.f90 \
@@ -122,7 +124,6 @@ cs_fuel_physprop1.f90 \
 cs_fuel_physprop2.f90 \
 cs_fuel_physprop.f90 \
 cs_fuel_prop.f90 \
-cs_fuel_radst.f90 \
 cs_fuel_readata.f90 \
 cs_fuel_scast.f90 \
 cs_fuel_thfieldconv1.f90 \

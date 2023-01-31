@@ -1,5 +1,5 @@
 /*============================================================================
- * Fuel and coal combustion radiative source terms.
+ * Coal combustion model.
  *============================================================================*/
 
 /*
@@ -52,7 +52,7 @@
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_coal_radst.h"
+#include "cs_coal.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -63,9 +63,9 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_comb_radst.c
+  \file cs_coal.c
 
-  \brief Fuel and coal combustion radiative.
+  \brief Coal combustion model.
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -98,7 +98,7 @@ cs_f_coal_radst(int         id,
 
 /*----------------------------------------------------------------------------
  * Take in account the radiative source terms in the particle equation
- * of a given class  for pulverized coal flame.
+ * of a given class for pulverized coal flame.
  *
  * This function is intended for use by Fortran wrappers.
  *
@@ -115,7 +115,7 @@ cs_f_coal_radst(int         id,
 {
   const cs_field_t *f = cs_field_by_id(id);
 
-  cs_coal_radst(f, smbrs, rovsdt);
+  cs_coal_rad_transfer_st(f, smbrs, rovsdt);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -127,7 +127,7 @@ cs_f_coal_radst(int         id,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Take in account the radiative source terms in the particle equation
- *        of a given class  for pulverized coal flame.
+ *        of a given class for pulverized coal flame.
  *
  * \param[in]      f       pointer to scalar field
  * \param[in, out] smbrs   right and side (explicit ST contribution)
@@ -136,9 +136,9 @@ cs_f_coal_radst(int         id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_coal_radst(const cs_field_t  *f,
-              cs_real_t         *smbrs,
-              cs_real_t         *rovsdt)
+cs_coal_rad_transfer_st(const cs_field_t  *f,
+                        cs_real_t         *smbrs,
+                        cs_real_t         *rovsdt)
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
@@ -150,8 +150,8 @@ cs_coal_radst(const cs_field_t  *f,
   const int numcla = cs_field_get_key_int(f, keyccl);
   const int ipcl   = 1 + numcla;
 
-  /* radiative terms sources take in account
-   * --------------------------------------- */
+  /* Radiative source terms
+   * ---------------------- */
 
   char f_name[64];
 
@@ -162,15 +162,15 @@ cs_coal_radst(const cs_field_t  *f,
   cs_real_t *cpro_tsre = cs_field_by_name(f_name)->val;
 
   snprintf(f_name, 63, "x_p_%02d", numcla);
-  cs_real_t *cpro_x2 = cs_field_by_name(f_name)->val;
+  const cs_real_t *cval_x_p = cs_field_by_name(f_name)->val;
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
     cpro_tsri[c_id] = cs_math_fmax(-cpro_tsri[c_id], 0.);
 
-    if (cpro_x2[c_id] > cs_math_epzero) {
+    if (cval_x_p[c_id] > cs_math_epzero) {
       /* Explicit part */
-      smbrs[c_id] += cpro_tsre[c_id]*cell_f_vol[c_id]*cpro_x2[c_id];
+      smbrs[c_id] += cpro_tsre[c_id]*cell_f_vol[c_id]*cval_x_p[c_id];
 
       /* Implicit part */
       rovsdt[c_id] += cpro_tsri[c_id]*cell_f_vol[c_id];

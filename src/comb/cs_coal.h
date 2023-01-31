@@ -1,8 +1,8 @@
-#ifndef __CS_COMB_RADST_H__
-#define __CS_COMB_RADST_H__
+#ifndef __CS_COMB_H__
+#define __CS_COMB_H__
 
 /*============================================================================
- * Fuel and coal combustion radiative source terms.
+ * Coal combustion model.
  *============================================================================*/
 
 /*
@@ -60,7 +60,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Take in account the radiative source terms in the particle equation
- *        of a given class  for pulverized coal flame.
+ *        of a given class for pulverized coal flame.
  *
  * \param[in]      f       pointer to scalar field
  * \param[in, out] smbrs   right and side (explicit ST contribution)
@@ -69,9 +69,9 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_coal_radst(const cs_field_t  *f,
-              cs_real_t         *smbrs,
-              cs_real_t         *rovsdt);
+cs_coal_rad_transfer_st(const cs_field_t  *f,
+                        cs_real_t         *smbrs,
+                        cs_real_t         *rovsdt);
 
 /*----------------------------------------------------------------------------*/
 
