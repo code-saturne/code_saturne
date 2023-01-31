@@ -2321,7 +2321,7 @@ class Studies(object):
 
     def copy_input(self, i_nodes, s_label, c_label):
         """
-        Copy input in POST for later description report generation 
+        Copy input in POST for later description report generation
         """
         for i_node in i_nodes:
             fig_name, run_id, repo, tex = self.__parser.getInput(i_node)
