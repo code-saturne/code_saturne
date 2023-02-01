@@ -345,7 +345,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
    * are disabled
    * If a whole line of the matrix is 0, the diagonal is set to 1 */
   if (mq->has_disable_flag == 1) {
-# pragma omp parallel for
+#   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       if (CS_ABS(dam[cell_id]) < DBL_MIN) {
         dam[cell_id] += 1.;
@@ -660,8 +660,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
         /* < E.dx^(k-1)-E.0; E.dx^k-E.0 > */
         paxm1ax = cs_gdot(n_cells, adxk, adxkm1);
 
-        if (nadxkm1 > 1e-30*rnorm2 && (nadxk*nadxkm1-pow(paxm1ax,2)) > 1e-30*rnorm2)
-          beta = (paxkrk*paxm1ax - nadxk*paxm1rk)/(nadxk*nadxkm1-pow(paxm1ax,2));
+        if (   nadxkm1 > 1e-30*rnorm2
+            && (nadxk*nadxkm1-pow(paxm1ax,2)) > 1e-30*rnorm2)
+          beta =   (paxkrk*paxm1ax - nadxk*paxm1rk)
+                 / (nadxk*nadxkm1-cs_math_pow2(paxm1ax));
         else
           beta = 0.;
 
@@ -1204,6 +1206,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
     BFT_MALLOC(dpvarm1, n_cells_ext, cs_real_3_t);
     BFT_MALLOC(rhs0, n_cells_ext, cs_real_3_t);
   }
+
   cs_real_3_t *i_pvar = NULL;
   cs_real_3_t *b_pvar = NULL;
   cs_field_t *i_vf = NULL;
@@ -1221,27 +1224,25 @@ cs_equation_iterative_solve_vector(int                   idtvar,
     b_vfa = cs_field_by_name_try("boundary_face_velocity");
 
     if (i_vf != NULL && b_vf != NULL) {
-/*#     pragma omp parallel for  if(n_cells > CS_THR_MIN)*/
       i_pvar = (cs_real_3_t *)i_vf->val;
       b_pvar = (cs_real_3_t *)b_vf->val;
       i_pvara = (cs_real_3_t *)i_vfa->val_pre;
       b_pvara = (cs_real_3_t *)b_vfa->val_pre;
 
       for (cs_lnum_t face_id = 0; face_id < cs_glob_mesh->n_i_faces; face_id++) {
-        for (cs_lnum_t isou = 0; isou < 3; isou++){
+        for (cs_lnum_t isou = 0; isou < 3; isou++) {
           i_pvar[face_id][isou] = 0.0;
           i_pvara[face_id][isou] = 0.0;
         }
       }
       for (cs_lnum_t face_id = 0; face_id < cs_glob_mesh->n_b_faces; face_id++) {
-        for (cs_lnum_t isou = 0; isou < 3; isou++){
+        for (cs_lnum_t isou = 0; isou < 3; isou++) {
           b_pvar[face_id][isou] = 0.0;
           b_pvara[face_id][isou] = 0.0;
         }
       }
     }
   }
-
 
   /* solving info */
   key_sinfo_id = cs_field_key_id("solving_info");
@@ -1264,7 +1265,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   cs_lnum_t eb_stride = eb_size*eb_size;
   BFT_MALLOC(xam, eb_stride*isym*n_faces, cs_real_t);
 
-  /*============================================================================
+  /*==========================================================================
    * 1.  Building of the "simplified" matrix
    *==========================================================================*/
 
@@ -1294,7 +1295,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
    * are disabled
    * If a whole line of the matrix is 0, the diagonal is set to 1 */
   if (mq->has_disable_flag == 1) {
-# pragma omp parallel for
+#   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (cs_lnum_t i = 0; i < 3; i++) {
         if (CS_ABS(dam[cell_id][i][i]) < DBL_MIN) {
@@ -1315,10 +1316,10 @@ cs_equation_iterative_solve_vector(int                   idtvar,
     }
   }
 
-  /*============================================================================
+  /*===========================================================================
    * 2. Iterative process to handle non orthogonlaities (starting from the
    * second iteration).
-  *===========================================================================*/
+   *===========================================================================*/
 
   /* Application du theta schema */
 
@@ -1527,7 +1528,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   if (iwarnp >= 2) {
     const cs_real_t *_w1 = (cs_real_t *)w1, *_smbrp = (cs_real_t *)smbrp;
     bft_printf("L2 norm ||AX^n|| = %f\n", sqrt(cs_gdot(3*n_cells, _w1, _w1)));
-    bft_printf("L2 norm ||B^n|| = %f\n", sqrt(cs_gdot(3*n_cells, _smbrp, _smbrp)));
+    bft_printf("L2 norm ||B^n|| = %f\n",
+               sqrt(cs_gdot(3*n_cells, _smbrp, _smbrp)));
   }
 
 # pragma omp parallel for
@@ -1839,7 +1841,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
     cs_field_set_key_struct(f, key_sinfo_id, &sinfo);
   }
 
-  /*============================================================================
+  /*==========================================================================
    * 3. After having computed the new value, an estimator is computed for the
    * prediction step of the velocity.
    *==========================================================================*/
@@ -2078,7 +2080,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
   cs_real_6_t  *dpvar = NULL, *smbini = NULL, *w1 = NULL, *w2 = NULL;
   cs_real_6_t  *adxk = NULL, *adxkm1 = NULL, *dpvarm1 = NULL, *rhs0 = NULL;
 
-  /*============================================================================
+  /*==========================================================================
    * 0.  Initialization
    *==========================================================================*/
 
@@ -2120,7 +2122,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
   cs_lnum_t eb_stride = eb_size*eb_size;
   BFT_MALLOC(xam, eb_stride*isym*n_faces, cs_real_t);
 
-  /*============================================================================
+  /*==========================================================================
    * 1.  Building of the "simplified" matrix
    *==========================================================================*/
 
@@ -2169,10 +2171,10 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
     }
   }
 
-  /*============================================================================
+  /*===========================================================================
    * 2. Iterative process to handle non orthogonlaities (starting from the
    * second iteration).
-  *===========================================================================*/
+   *===========================================================================*/
 
   /* Application du theta schema */
 

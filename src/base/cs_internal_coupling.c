@@ -300,7 +300,7 @@ _create_locator(cs_internal_coupling_t  *cpl)
     /* Default tag is 0 */
     tag_nm[ii] = 0;
     for (cs_lnum_t jj = 0; jj < n_local; jj++) {
-      if (faces_in_nm[ii] == cpl->faces_local[jj] + 1){
+      if (faces_in_nm[ii] == cpl->faces_local[jj] + 1) {
         tag_nm[ii] = c_tag[jj];
         break;
       }

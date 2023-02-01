@@ -150,7 +150,7 @@ double precision viscf(nfac), viscb(nfabor)
 logical          lprev
 character(len=80) :: chaine, fname
 integer          ivar
-integer          ii, jj, ifac , iel, isou
+integer          ii, ifac , iel, isou
 integer          iprev , inc   , ibcl
 integer          ivarsc
 integer          iiscav
@@ -161,8 +161,8 @@ integer          imrgrp, iescap
 integer          imucpp
 integer          idifftp
 integer          iflid , f_id, st_prv_id, st_id,  keydri, iscdri
-integer          f_id_al, f_id_pr, f_id_sk
-integer          f_id_cflt, f_id_gradp, f_id_alpha, f_id_gradphi
+integer          f_id_al, f_id_sk
+integer          f_id_cflt, f_id_gradp, f_id_gradphi
 integer          f_id_temp, f_id_cv
 integer          f_id_yw, f_id_yv
 integer          icvflb, f_dim, iflwgr
@@ -172,7 +172,6 @@ integer          key_buoyant_id, is_buoyant_fld
 integer          key_t_ext_id, krvarfl, kthetss
 integer          iviext
 integer          key_turb_schmidt, key_turb_diff
-integer          pdivu_conv_scheme
 integer          t_scd_id, t_dif_id
 integer          kturt, variance_turb_flux_model, scalar_turb_flux_model
 integer          scalar_turb_flux_model_type, variance_turb_flux_model_type
@@ -183,22 +182,16 @@ double precision epsrgp, climgp
 double precision rhovst, xk    , xe    , sclnor
 double precision thetv , thets , thetap, thetp1
 double precision smbexp, dvar, cprovol, prod
-double precision temp, errort, pdrho, pdrhoa, cvma
+double precision temp
 double precision turb_schmidt, visls_0
 double precision xR, prdtl, alpha_theta
 double precision normp
 double precision l2norm, l2errork, dl2norm
-double precision s11, s22, s33
-double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
-double precision mu, vecfac
-double precision muSdeux, pprev, norm_dv, epsy
 double precision dum
 double precision qliqmax, ctheta, rvarfl
 
 double precision rvoid(1)
 double precision gammagp, cpv
-double precision pres, ysat, yv_, em_
-double precision demdt
 double precision rv
 
 double precision, allocatable, dimension(:) :: w1,temp_, tempa_, smbrs, rovsdt, sgdh_diff
@@ -216,17 +209,16 @@ double precision, allocatable, dimension(:) :: vistot
 double precision, allocatable, dimension(:,:,:) :: gradv
 
 double precision, dimension(:,:), pointer :: xut, visten
-double precision, dimension(:,:), pointer :: vistet, vel, vela, cpro_pred_vel
+double precision, dimension(:,:), pointer :: vistet, vel, vela
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:,:), pointer :: gradp, gradphi
 double precision, dimension(:), pointer :: cpro_wgrec_s
-double precision, dimension(:), pointer :: sk, sk_a, cflt
+double precision, dimension(:), pointer :: cflt
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: cpro_yw, cpro_yv, cpro_yva, cpro_ywa
 double precision, dimension(:), pointer :: crom, croma, pcrom, brom, broma, tempk, tempa
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
-double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: cvar_al
 double precision, dimension(:), pointer :: visct, viscl, cpro_cp, cpro_cv, cproa_scal_st
@@ -241,7 +233,7 @@ double precision, allocatable, dimension(:), target :: wcvark_var
 double precision, allocatable, dimension(:) :: errork
 double precision, allocatable, dimension(:) :: divflu
 double precision, allocatable, dimension(:) :: yw, yv
-double precision, dimension(:), pointer :: cvar_pr, cvar_pra, cvar_praa, predicted_imasfl
+double precision, dimension(:), pointer :: cvar_pr, cvar_pra
 double precision, dimension(:), allocatable :: pphy
 double precision, dimension(:), pointer :: cpro_rad_cool
 double precision, dimension(:), pointer :: cpro_liqwt

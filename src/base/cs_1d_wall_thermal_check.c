@@ -135,7 +135,7 @@ cs_1d_wall_thermal_check(int iappel,
     }
 
   } else if (iappel == 2) {
-      for (ii = 0 ; ii < nfpt1d ; ii++) {
+      for (ii = 0; ii < nfpt1d; ii++) {
         cs_lnum_t ifpt1d = cs_glob_1d_wall_thermal->ifpt1d[ii] - 1;
         if (ifpt1d < 0 || ifpt1d > n_b_faces) {
           bft_printf("@\n"
@@ -160,7 +160,7 @@ cs_1d_wall_thermal_check(int iappel,
         }
       }
 
-      for (ii = 0 ; ii < nfpt1d ; ii++) {
+      for (ii = 0; ii < nfpt1d; ii++) {
         ifac = cs_glob_1d_wall_thermal->ifpt1d[ii] - 1;
         if (cs_glob_1d_wall_thermal->local_models[ii].nppt1d <= 0)  {
           bft_printf("@\n"
@@ -235,7 +235,7 @@ cs_1d_wall_thermal_check(int iappel,
       }
 
   } else if (iappel == 3) {
-    for (ii = 0 ; ii < nfpt1d ; ii++) {
+    for (ii = 0; ii < nfpt1d; ii++) {
       ifac = cs_glob_1d_wall_thermal->ifpt1d[ii] - 1;
       int iclt1d = cs_glob_1d_wall_thermal->local_models[ii].iclt1d;
       if (iclt1d != 1 && iclt1d != 3)  {

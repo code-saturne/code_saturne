@@ -32,7 +32,6 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-
 #include <assert.h>
 
 /*----------------------------------------------------------------------------
@@ -42,6 +41,8 @@
 #include "bft_mem.h"
 #include "bft_error.h"
 
+#include "cs_air_props.h"
+#include "cs_cdo_headers.h"
 #include "cs_ale.h"
 #include "cs_array.h"
 #include "cs_atmo.h"
@@ -68,17 +69,16 @@
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
 #include "cs_porous_model.h"
+#include "cs_post.h"
 #include "cs_prototypes.h"
 #include "cs_sat_coupling.h"
 #include "cs_sles_default.h"
+#include "cs_thermal_model.h"
 #include "cs_time_step.h"
 #include "cs_velocity_pressure.h"
-#include "cs_volume_mass_injection.h"
 #include "cs_vof.h"
-#include "cs_post.h"
-#include "cs_cdo_headers.h"
-#include "cs_thermal_model.h"
-#include "cs_air_props.h"
+#include "cs_volume_mass_injection.h"
+
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cs_dbg.h"
 #endif
@@ -292,7 +292,6 @@ _pressure_correction_fv(int        iterns,
   BFT_MALLOC(trav, n_cells_ext, cs_real_3_t);
   cs_real_3_t *trav2;
   BFT_MALLOC(trav2, n_cells_ext, cs_real_3_t);
-
 
   cs_real_t *adxk = NULL, *adxkm1 = NULL, *dphim1 = NULL, *rhs0 = NULL;
   if (eqp_p->iswdyn > 0) {
@@ -542,7 +541,7 @@ _pressure_correction_fv(int        iterns,
                                       frcxt, dfrcxt, cvar_hydro_pres,
                                       iflux, bflux, i_visc, b_visc,
                                       dam, xam,
-                                      dphi, rhs);  /* FIXME remove work arrays. */
+                                      dphi, rhs); /* FIXME remove work arrays. */
 
   }
 
@@ -659,8 +658,8 @@ _pressure_correction_fv(int        iterns,
                                                              dfrcxt[c_id]);
           }
 
-          /* Free entrance boundary face (Bernoulli condition to link the pressure
-             increment and the predicted velocity) */
+          /* Free entrance boundary face (Bernoulli condition to link the
+             pressure increment and the predicted velocity) */
 
           if (bc_type[f_id] == CS_FREE_INLET) {
 
@@ -718,8 +717,9 @@ _pressure_correction_fv(int        iterns,
 
   cs_array_real_fill_zero(n_cells, rovsdt);
 
-  /* compressible scheme implicit part */
-  /* Getting the thermal parameters */
+  /* Compressible scheme implicit part;
+     Getting the thermal parameters */
+
   int ieos = cs_glob_cf_model->ieos;
   int thermal_variable = cs_glob_thermal_model->thermal_variable;
   int kinetic_st = cs_glob_thermal_model->has_kinetic_st;
@@ -928,7 +928,6 @@ _pressure_correction_fv(int        iterns,
                               vp_param->iphydr,
                               frcxt,
                               gradp);
-
 
   if (vp_param->iphydr == 1) {
 
@@ -2176,12 +2175,12 @@ _pressure_correction_fv(int        iterns,
       cs_face_anisotropic_diffusion_potential(-1,
                                               m,
                                               fvq,
-                                              0,  /* init */
-                                              0,  /* inc */
+                                              0, /* init */
+                                              0, /* inc */
                                               eqp_p->imrgra,
-                                              0,  /* nswrgr (no reconstruction) */
+                                              0, /* nswrgr (no reconstruction) */
                                               eqp_p->imligr,
-                                              0,  /* ircflu */
+                                              0, /* ircflu */
                                               vp_param->iphydr,
                                               eqp_p->iwgrec,
                                               eqp_p->verbosity,
@@ -2573,12 +2572,12 @@ _pressure_correction_fv(int        iterns,
       cs_face_anisotropic_diffusion_potential(-1,
                                               m,
                                               fvq,
-                                              0,  /* init */
-                                              0,  /* inc */
+                                              0, /* init */
+                                              0, /* inc */
                                               eqp_p->imrgra,
-                                              0,  /* nswrgr (no reconstruction) */
+                                              0, /* nswrgr (no reconstruction) */
                                               eqp_p->imligr,
-                                              0,  /* ircflu */
+                                              0, /* ircflu */
                                               vp_param->iphydr,
                                               eqp_p->iwgrec,
                                               eqp_p->verbosity,
@@ -2870,7 +2869,7 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
   if (   ts->nt_cur <= ts->nt_ini
       && iphydr == 0 && idilat <= 1
       && compressible_flag < 0
-      && cs_restart_present() == false){
+      && cs_restart_present() == false) {
 
     cs_array_real_fill_zero(3*n_cells, prcdo->pressure_gradient->val);
     cs_array_real_fill_zero(n_i_faces, ipotfl);

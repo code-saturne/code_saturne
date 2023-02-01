@@ -97,7 +97,6 @@ BEGIN_C_DECLS
        Abort when \ref cs_parameters_error_barrier is called.
   \var CS_FILE_MODE_APPEND
        Abort immediately
-
 */
 
 /*----------------------------------------------------------------------------*/
@@ -1394,137 +1393,133 @@ cs_create_added_properties(void)
   cs_cf_model_t *th_cf_model = cs_get_glob_cf_model();
 
   if (th_model->has_kinetic_st == 1) {
-    cs_field_t *fld =
-      cs_field_create("kinetic_energy_thermal_st",
-                      CS_FIELD_PROPERTY,
-                      CS_MESH_LOCATION_CELLS,
-                      1,
-                      false);
+    cs_field_t *fld
+      = cs_field_create("kinetic_energy_thermal_st",
+                        CS_FIELD_PROPERTY,
+                        CS_MESH_LOCATION_CELLS,
+                        1,
+                        false);
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
     cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
     cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
-
   }
+
   /* Fields used to model the aforcepresented source term */
+
   if (th_model->has_kinetic_st == 1) {
-    cs_field_t *fld =
-      cs_field_create("rho_k_prev",
-                      CS_FIELD_PROPERTY,
-                      CS_MESH_LOCATION_CELLS,
-                      1,
-                      false);
+    cs_field_t *fld
+      = cs_field_create("rho_k_prev",
+                        CS_FIELD_PROPERTY,
+                        CS_MESH_LOCATION_CELLS,
+                        1,
+                        false);
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
     cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
     cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
-
   }
+
   if (th_model->has_kinetic_st == 1) {
-    cs_field_t *fld =
-      cs_field_create("inner_face_velocity",
-                      CS_FIELD_PROPERTY,
-                      CS_MESH_LOCATION_INTERIOR_FACES,
-                      3,
-                      true);
+    cs_field_t *fld
+      = cs_field_create("inner_face_velocity",
+                        CS_FIELD_PROPERTY,
+                        CS_MESH_LOCATION_INTERIOR_FACES,
+                        3,
+                        true);
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
     cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
     cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
-
   }
 
   if (th_model->has_kinetic_st == 1) {
-    cs_field_t *fld =
-      cs_field_create("boundary_face_velocity",
-          CS_FIELD_PROPERTY,
-          CS_MESH_LOCATION_BOUNDARY_FACES,
-          3,
-          true);
+    cs_field_t *fld
+      = cs_field_create("boundary_face_velocity",
+                        CS_FIELD_PROPERTY,
+                        CS_MESH_LOCATION_BOUNDARY_FACES,
+                        3,
+                        true);
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
     cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
     cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
-
   }
 
+  /* If humid air equation of state, define yv,
+     the mass fraction of water vapor*/
 
-  /* If humid air equation of state, define yv, the mass fraction of water
-   * vapor*/
   if (th_cf_model->ieos == 5) {
-    cs_field_t *fld =
-      cs_field_create("yv",
-                      CS_FIELD_PROPERTY,
-                      CS_MESH_LOCATION_CELLS,
-                      1,
-                      true);
+    cs_field_t *fld = cs_field_create("yv",
+                                      CS_FIELD_PROPERTY,
+                                      CS_MESH_LOCATION_CELLS,
+                                      1,
+                                      true);
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
     cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
     cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
-
   }
 
   /* Pressure gradient */
+  if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
+      || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
+
+    cs_field_t *fld = cs_field_create("pressure_gradient",
+                                      CS_FIELD_PROPERTY,
+                                      CS_MESH_LOCATION_CELLS,
+                                      3,
+                                      false);
+
+    const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+
+    cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
+    cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
+  }
+
   if ( th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
     || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
 
-    cs_field_t *fld =
-      cs_field_create("pressure_gradient",
-                      CS_FIELD_PROPERTY,
-                      CS_MESH_LOCATION_CELLS,
-                      3,
-                      false);
+    cs_field_t *fld = cs_field_create("pressure_increment_gradient",
+                                      CS_FIELD_PROPERTY,
+                                      CS_MESH_LOCATION_CELLS,
+                                      3,
+                                      false);
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
     cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
     cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
   }
-  if ( th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
-    || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
 
-    cs_field_t *fld =
-      cs_field_create("pressure_increment_gradient",
-                      CS_FIELD_PROPERTY,
-                      CS_MESH_LOCATION_CELLS,
-                      3,
-                      false);
+  if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
+      || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY
+      || th_model->unstd_multiplicator == 2) {
 
-    const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-
-    cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-    cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
-  }
-  if ( th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
-    || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY
-    || th_model->unstd_multiplicator == 2) {
-
-    cs_field_t *fld =
-      cs_field_create("isobaric_heat_capacity",
-                      CS_FIELD_PROPERTY,
-                      CS_MESH_LOCATION_CELLS,
-                      1,
-                      false);
+    cs_field_t *fld = cs_field_create("isobaric_heat_capacity",
+                                      CS_FIELD_PROPERTY,
+                                      CS_MESH_LOCATION_CELLS,
+                                      1,
+                                      false);
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
     cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
     cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
   }
+
   /* Temperature in case of solving the internal energy equation */
-  if (th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY){
-    cs_field_t *fld =
-      cs_field_create("temperature",
-                      CS_FIELD_PROPERTY,
-                      CS_MESH_LOCATION_CELLS,
-                      1,
-                      true);
+  if (th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
+    cs_field_t *fld = cs_field_create("temperature",
+                                      CS_FIELD_PROPERTY,
+                                      CS_MESH_LOCATION_CELLS,
+                                      1,
+                                      true);
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
@@ -1533,26 +1528,25 @@ cs_create_added_properties(void)
   }
 
   /* CFL conditions */
-  if (th_model->cflt){
-    cs_field_t *fld =
-      cs_field_create("cfl_t",
-                      CS_FIELD_PROPERTY,
-                      CS_MESH_LOCATION_CELLS,
-                      1,
-                      false);
+  if (th_model->cflt) {
+    cs_field_t *fld = cs_field_create("cfl_t",
+                                      CS_FIELD_PROPERTY,
+                                      CS_MESH_LOCATION_CELLS,
+                                      1,
+                                      false);
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
     cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
     cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
   }
-  if (th_model->cflp){
-    cs_field_t *fld =
-      cs_field_create("cfl_p",
-                      CS_FIELD_PROPERTY,
-                      CS_MESH_LOCATION_CELLS,
-                      1,
-                      false);
+
+  if (th_model->cflp) {
+    cs_field_t *fld = cs_field_create("cfl_p",
+                                      CS_FIELD_PROPERTY,
+                                      CS_MESH_LOCATION_CELLS,
+                                      1,
+                                      false);
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
@@ -1560,6 +1554,7 @@ cs_create_added_properties(void)
     cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
   }
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Create previously added user properties.
@@ -1781,13 +1776,14 @@ cs_parameters_add_boundary_temperature(void)
 
         if (   1 != bf->dim
             || bf->location_id != CS_MESH_LOCATION_BOUNDARY_FACES)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Error defining variable \"boundary_temperature\" field:\n"
-                      "An incompatible field with matching name already exists:\n"
-                      "  id:          %d\n"
-                      "  location_id: %d\n"
-                      "  dimension:   %d"),
-                    bf->id, bf->location_id, bf->dim);
+          bft_error
+            (__FILE__, __LINE__, 0,
+             _("Error defining variable \"boundary_temperature\" field:\n"
+               "An incompatible field with matching name already exists:\n"
+               "  id:          %d\n"
+               "  location_id: %d\n"
+               "  dimension:   %d"),
+             bf->id, bf->location_id, bf->dim);
 
       }
 

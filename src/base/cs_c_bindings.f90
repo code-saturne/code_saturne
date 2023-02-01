@@ -2411,11 +2411,11 @@ module cs_c_bindings
     !---------------------------------------------------------------------------
 
     ! Interface to C function that computes the isobaric heat capacity
-    subroutine cs_thermal_model_ini() &
-      bind(C, name='cs_thermal_model_ini')
+    subroutine cs_thermal_model_init() &
+      bind(C, name='cs_thermal_model_init')
       use, intrinsic :: iso_c_binding
       implicit none
-    end subroutine cs_thermal_model_ini
+    end subroutine cs_thermal_model_init
 
     !---------------------------------------------------------------------------
 

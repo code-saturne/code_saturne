@@ -203,7 +203,8 @@ call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 ! elliptic equation
 vcopt%iconv = 0
 
-if ((ippmod(icompf).ge.0).or.(idilat.eq.2.and.ieos.gt.-1)) then ! compressible algorithm
+! compressible algorithm
+if ((ippmod(icompf).ge.0).or.(idilat.eq.2.and.ieos.gt.-1)) then
   vcopt%istat = 1
 else
   vcopt%istat = 0

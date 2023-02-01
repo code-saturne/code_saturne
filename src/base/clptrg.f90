@@ -161,7 +161,7 @@ integer          modntl
 integer          iuntur, f_id, iustar
 integer          nlogla, nsubla, iuiptn
 integer          kdflim
-integer          f_id_uk, f_id_cv
+integer          f_id_uk
 integer          f_id_rough
 integer          f_id_tlag
 
@@ -201,7 +201,7 @@ double precision coef_mom,coef_momm
 double precision one_minus_ri
 double precision dlmo,dt,theta0,flux
 
-double precision, dimension(:), pointer :: crom, cpro_cv
+double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, ustar
 double precision, dimension(:), pointer :: buk
 double precision, dimension(:), allocatable :: byplus

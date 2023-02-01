@@ -212,7 +212,7 @@ _1d_wall_thermal_local_models_init(void)
   cs_lnum_t ii;
 
   /* Computation of nmxt1d */
-  for (ii = 0; ii < _1d_wall_thermal.nfpt1d ; ii++) {
+  for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
     _1d_wall_thermal.nmxt1d = CS_MAX(_1d_wall_thermal.local_models[ii].nppt1d,
                                      _1d_wall_thermal.nmxt1d);
   }
@@ -224,7 +224,7 @@ _1d_wall_thermal_local_models_init(void)
      Computation of the total number of discretization points */
   cs_lnum_t nb_pts_tot = 0;
 
-  for (ii = 0; ii < _1d_wall_thermal.nfpt1d ; ii++)
+  for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++)
     nb_pts_tot += _1d_wall_thermal.local_models[ii].nppt1d;
 
   /* Allocate the "t" arrays: Temperature in each point of discretization
@@ -236,7 +236,7 @@ _1d_wall_thermal_local_models_init(void)
                                        + nb_pts_tot;
   }
 
-  for (ii = 1 ; ii < _1d_wall_thermal.nfpt1d ; ii++) {
+  for (ii = 1; ii < _1d_wall_thermal.nfpt1d; ii++) {
     _1d_wall_thermal.local_models[ii].z
       =   _1d_wall_thermal.local_models[ii-1].z
         + _1d_wall_thermal.local_models[ii-1].nppt1d;
@@ -318,7 +318,7 @@ cs_1d_wall_thermal_create(void)
   /* Allocate the izft1d array */
   BFT_MALLOC(_1d_wall_thermal.izft1d, n_b_faces, cs_lnum_t);
 
-  for (cs_lnum_t ifac = 0 ; ifac < n_b_faces ; ifac++) {
+  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
     _1d_wall_thermal.izft1d[ifac] = 0;
   }
 }
@@ -346,7 +346,7 @@ cs_1d_wall_thermal_local_models_create(void)
              _1d_wall_thermal.nfpt1d,
              cs_1d_wall_thermal_local_model_t);
 
-  for (ii = 0; ii < _1d_wall_thermal.nfpt1d ; ii++) {
+  for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
     _1d_wall_thermal.local_models[ii].nppt1d = -999;
     _1d_wall_thermal.local_models[ii].iclt1d = 3;
     _1d_wall_thermal.ifpt1d[ii] = -999;
@@ -397,7 +397,7 @@ cs_1d_wall_thermal_mesh_create(void)
     /* Regular */
     if (fabs(rr-1.0) <= 1.e-6) {
       zz[0] = e/n/2.;
-      for (kk = 1 ; kk < n ; kk++) {
+      for (kk = 1; kk < n; kk++) {
         zz[kk] = zz[kk-1] + e/n;
       }
     }
@@ -406,7 +406,7 @@ cs_1d_wall_thermal_mesh_create(void)
     else {
       m = e*(1.-rr)/(1.-pow(rr,n));
       *zz = m/2.;
-      for (kk = 1 ; kk < n ; kk++) {
+      for (kk = 1; kk < n; kk++) {
         zz[kk] = zz[kk-1]+m/2.;
         m = m*rr;
         zz[kk] = zz[kk]+m/2.;
@@ -524,12 +524,12 @@ cs_1d_wall_thermal_solve(cs_lnum_t ii,
   }
 
   /* Mesh interior points */
-  for (kk = 1 ; kk <= n-1; kk++) {
+  for (kk = 1; kk <= n-1; kk++) {
     al[kk] = -xlmbt1/(zz[kk]-zz[kk-1]);
   }
 
   m = 2*zz[0];
-  for (kk = 1 ; kk <= n-2 ; kk++) {
+  for (kk = 1; kk <= n-2; kk++) {
     m = 2*(zz[kk]-zz[kk-1])-m;
     bl[kk] = rcp/dtpt1d*m + xlmbt1/(zz[kk+1]-zz[kk]) + xlmbt1/(zz[kk]-zz[kk-1]);
   }
@@ -562,7 +562,7 @@ cs_1d_wall_thermal_solve(cs_lnum_t ii,
   dl[n-1] += f6;
 
   /* System resolution by a Cholesky method ("dual-scan") */
-  for (kk = 1 ; kk <= n-1 ; kk++) {
+  for (kk = 1; kk <= n-1; kk++) {
     bl[kk] -= al[kk]*cl[kk-1]/bl[kk-1];
     dl[kk] -= al[kk]*dl[kk-1]/bl[kk-1];
   }
@@ -609,7 +609,7 @@ cs_1d_wall_thermal_read(void)
   ierror = CS_RESTART_SUCCESS;
 
   /* Computation of nmxt1d */
-  for (ii = 0; ii < _1d_wall_thermal.nfpt1d ; ii++) {
+  for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
     _1d_wall_thermal.nmxt1d = CS_MAX(_1d_wall_thermal.local_models[ii].nppt1d,
                                      _1d_wall_thermal.nmxt1d);
   }
@@ -739,7 +739,7 @@ cs_1d_wall_thermal_read(void)
        enough to check that all selected faces in USPT1D were also
        selected in the previous calculation */
     iok = 0;
-    for (ii = 0 ; ii < _1d_wall_thermal.nfpt1d; ii++){
+    for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
         ifac = _1d_wall_thermal.ifpt1d[ii] - 1;
         if (tabvar[ifac] != _1d_wall_thermal.local_models[ii].nppt1d)
           iok++;
@@ -797,7 +797,7 @@ cs_1d_wall_thermal_read(void)
 
     /* Coherence check between the read EPPT1D and the one from USPT1D */
     iok = 0;
-    for (ii = 0 ; ii < _1d_wall_thermal.nfpt1d ; ii++) {
+    for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
       eppt1d = _1d_wall_thermal.local_models[ii].eppt1d;
       ifac = _1d_wall_thermal.ifpt1d[ii] - 1;
       if (fabs(tabvar[ifac] - eppt1d)/eppt1d > 1.e-10) iok++;
@@ -851,7 +851,7 @@ cs_1d_wall_thermal_read(void)
                   "<%s>\n"
                   "The calculation will not be run.\n"), nomrub);
 
-    for (ii = 0 ; ii < _1d_wall_thermal.nfpt1d ; ii++) {
+    for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
       ifac = _1d_wall_thermal.ifpt1d[ii] - 1;
       _1d_wall_thermal.tppt1d[ii] = tabvar[ifac];
     }
@@ -889,7 +889,7 @@ cs_1d_wall_thermal_read(void)
 
     /* Now one have the cell centers, RGPT1D can be tested */
     iok = 0;
-    for (ii = 0 ; ii < _1d_wall_thermal.nfpt1d ; ii++) {
+    for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
       ifac = _1d_wall_thermal.ifpt1d[ii] - 1;
       if (_1d_wall_thermal.local_models[ii].nppt1d > 1) {
         zz1 = tabvar[0 + _1d_wall_thermal.nmxt1d*ifac];
@@ -916,11 +916,11 @@ cs_1d_wall_thermal_read(void)
                   "the present study\n"
                   "Verify uspt1d\n"));
 
-    for (ii = 0 ; ii < _1d_wall_thermal.nfpt1d ; ii++) {
+    for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
       ifac = _1d_wall_thermal.ifpt1d[ii] - 1;
       /* The array is filled until the number of discretization points of
          the given face is reached */
-      for (jj = 0; jj < _1d_wall_thermal.local_models[ii].nppt1d ; jj++)
+      for (jj = 0; jj < _1d_wall_thermal.local_models[ii].nppt1d; jj++)
         _1d_wall_thermal.local_models[ii].z[jj]
           = tabvar[jj + _1d_wall_thermal.nmxt1d*ifac];
     }
@@ -954,12 +954,12 @@ cs_1d_wall_thermal_read(void)
                    "<%s>\n"), nomrub);
     }
 
-    for (ii = 0; ii < _1d_wall_thermal.nfpt1d ; ii++) {
+    for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
       ifac = _1d_wall_thermal.ifpt1d[ii] - 1;
 
       /* The array is filled until the number of discretization points of
          the given face is reached */
-      for (jj = 0 ; jj < _1d_wall_thermal.local_models[ii].nppt1d ; jj++)
+      for (jj = 0; jj < _1d_wall_thermal.local_models[ii].nppt1d; jj++)
         _1d_wall_thermal.local_models[ii].t[jj]
           = tabvar[jj + _1d_wall_thermal.nmxt1d*ifac];
 
@@ -1031,14 +1031,14 @@ cs_1d_wall_thermal_write(void)
 
     BFT_MALLOC(tabvar, n_b_faces, cs_lnum_t);
 
-    for (ii = 0 ; ii < n_b_faces ; ii++)
+    for (ii = 0; ii < n_b_faces; ii++)
       tabvar[ii] = 0;
 
     nbvent  = 1;
     support = CS_MESH_LOCATION_BOUNDARY_FACES;
     typ_val = CS_TYPE_int;
 
-    for (ii = 0 ; ii < _1d_wall_thermal.nfpt1d ; ii++) {
+    for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
       ifac = _1d_wall_thermal.ifpt1d[ii] - 1;
       tabvar[ifac] =_1d_wall_thermal.local_models[ii].nppt1d;
     }
@@ -1059,14 +1059,14 @@ cs_1d_wall_thermal_write(void)
 
     BFT_MALLOC(tabvar, n_b_faces, cs_real_t);
 
-    for (ii = 0 ; ii < n_b_faces ; ii++)
+    for (ii = 0; ii < n_b_faces; ii++)
       tabvar[ii] = 0.;
 
     nbvent  = 1;
     support = CS_MESH_LOCATION_BOUNDARY_FACES;
     typ_val = CS_TYPE_cs_real_t;
 
-    for (ii = 0 ; ii < _1d_wall_thermal.nfpt1d ; ii++) {
+    for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
       ifac = _1d_wall_thermal.ifpt1d[ii] - 1;
       tabvar[ifac] = _1d_wall_thermal.local_models[ii].eppt1d;
     }
@@ -1087,14 +1087,14 @@ cs_1d_wall_thermal_write(void)
 
     BFT_MALLOC(tabvar, n_b_faces, cs_real_t);
 
-    for (ii = 0 ; ii < n_b_faces ; ii++)
+    for (ii = 0; ii < n_b_faces; ii++)
       tabvar[ii] = 0.0;
 
     nbvent  = 1;
     support = CS_MESH_LOCATION_BOUNDARY_FACES;
     typ_val = CS_TYPE_cs_real_t;
 
-    for (ii = 0 ; ii < _1d_wall_thermal.nfpt1d; ii++) {
+    for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
       ifac = _1d_wall_thermal.ifpt1d[ii] - 1;
       tabvar[ifac] = _1d_wall_thermal.tppt1d[ii];
     }
@@ -1117,20 +1117,20 @@ cs_1d_wall_thermal_write(void)
     nptmx = n_b_faces * _1d_wall_thermal.nmxt1d;
     BFT_MALLOC(tabvar, nptmx, cs_real_t);
 
-    for (ii = 0 ; ii < nptmx ; ii++)
+    for (ii = 0; ii < nptmx; ii++)
       tabvar[ii] = 0.;
 
     nbvent  = _1d_wall_thermal.nmxt1d;
     support = CS_MESH_LOCATION_BOUNDARY_FACES;
     typ_val = CS_TYPE_cs_real_t;
 
-    for (ii = 0 ; ii < _1d_wall_thermal.nfpt1d ; ii++) {
+    for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
       ifac = _1d_wall_thermal.ifpt1d[ii] - 1;
 
       /* The array is filled until the number of discretization points of
          the given face is reached (the following cases, up to nmxt1d, are
          already set to 0 during the initalization of tabvar */
-      for (jj = 0 ; jj < _1d_wall_thermal.local_models[ii].nppt1d ; jj++)
+      for (jj = 0; jj < _1d_wall_thermal.local_models[ii].nppt1d; jj++)
         tabvar[jj + _1d_wall_thermal.nmxt1d*ifac]
           = _1d_wall_thermal.local_models[ii].z[jj];
     }
@@ -1153,16 +1153,16 @@ cs_1d_wall_thermal_write(void)
     nptmx = n_b_faces * _1d_wall_thermal.nmxt1d;
     BFT_MALLOC(tabvar, nptmx, cs_real_t);
 
-    for (ii = 0 ; ii < nptmx ; ii++)
+    for (ii = 0; ii < nptmx; ii++)
       tabvar[ii] = 0.;
 
-    for (ii = 0 ; ii < _1d_wall_thermal.nfpt1d ; ii++) {
+    for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
       ifac = _1d_wall_thermal.ifpt1d[ii] - 1;
 
       /* The array is filled until the number of discretization points of
          the given face is reached (the following cases, up to nmxt1d, are
          already set to 0 during the initalization of tabvar */
-      for (jj = 0 ; jj < _1d_wall_thermal.local_models[ii].nppt1d ; jj++)
+      for (jj = 0; jj < _1d_wall_thermal.local_models[ii].nppt1d; jj++)
         tabvar[jj + _1d_wall_thermal.nmxt1d*ifac]
           = _1d_wall_thermal.local_models[ii].t[jj];
 

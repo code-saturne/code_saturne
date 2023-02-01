@@ -202,8 +202,8 @@ _allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
   BFT_MALLOC(mi->boundary_coords, n_b_vtx, cs_coord_3_t);
   BFT_MALLOC(mi->init_boundary_coords, n_b_vtx, cs_coord_3_t);
 
-  for (cs_lnum_t i = 0; i < n_b_vtx; i++){
-    for (cs_lnum_t j = 0; j < dim; j++){
+  for (cs_lnum_t i = 0; i < n_b_vtx; i++) {
+    for (cs_lnum_t j = 0; j < dim; j++) {
       mi->boundary_coords[i][j] = b_coords->getIJ(i,j);
       mi->init_boundary_coords[i][j] = b_coords->getIJ(i,j);
     }
@@ -236,11 +236,11 @@ _allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
     BFT_MALLOC(vertex_num  , n_elt_lst , cs_lnum_t);
     BFT_MALLOC(vertex_gnum , n_b_vtx , cs_gnum_t);
 
-    for (cs_lnum_t i = 0; i < _n_b_faces ; i++){
+    for (cs_lnum_t i = 0; i < _n_b_faces ; i++) {
       vertex_idx[i] = vtx_idx->getIJ(i,0) - i;
       cs_lnum_t s_id = vtx_idx->getIJ(i,0);
       cs_lnum_t e_id = vtx_idx->getIJ(i+1,0);
-      for(cs_lnum_t v_id = s_id +1 ; v_id < e_id; v_id ++){
+      for(cs_lnum_t v_id = s_id +1 ; v_id < e_id; v_id ++) {
         vertex_num[elem]  = vtx_lst->getIJ(v_id,0) + 1;
         elem ++;
       }
@@ -1238,7 +1238,7 @@ cs_medcoupling_intersector_rotate(cs_medcoupling_intersector_t  *mi,
   /* only available for volume intersector */
   if (mi->type == CS_MEDCPL_INTERSECT_VOL) {
     const cs_lnum_t n_b_vtx = mi->n_b_vertices;
-    for (cs_lnum_t i = 0; i < n_b_vtx; i++){
+    for (cs_lnum_t i = 0; i < n_b_vtx; i++) {
       _transform_coord(matrix, mi->boundary_coords[i]);
       _transform_coord(matrix, mi->init_boundary_coords[i]);
     }

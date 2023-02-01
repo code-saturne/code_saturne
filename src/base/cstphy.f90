@@ -59,8 +59,7 @@ module cstphy
   !> Moist air gas constant (mixture)
   real(c_double), pointer, save :: rvapor
 
-
-  !> ratio gaz constant h2o/ dry air
+  !> ratio gas constant h2o/ dry air
   real(c_double), pointer, save :: rvsra
 
   !> latent heat of evaporation
@@ -670,7 +669,6 @@ contains
     type(c_ptr) :: c_pther, c_pthera, c_pthermax
     type(c_ptr) :: c_sleak, c_kleak, c_roref
 
-
     call cs_f_fluid_properties_get_pointers(c_ixyzp0, c_icp, c_icv,         &
                                             c_irovar, c_ivivar, c_ivsuth,   &
                                             c_ro0, c_viscl0, c_p0, c_pred0, &
@@ -683,7 +681,6 @@ contains
                                             c_ipthrm, c_pther, c_pthera,    &
                                             c_pthermax, c_sleak, c_kleak,   &
                                             c_roref)
-
 
     call c_f_pointer(c_ixyzp0, ixyzp0)
     call c_f_pointer(c_icp, icp)

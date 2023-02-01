@@ -1108,7 +1108,7 @@ _create_cell_cells_connect(cs_mesh_t  *mesh,
 
           /* For ghost cells, get vertex -> ghost cells connect. */
 
-          for (j = vtx_gcells_idx[vtx_id]; j < vtx_gcells_idx[vtx_id+1]; j++){
+          for (j = vtx_gcells_idx[vtx_id]; j < vtx_gcells_idx[vtx_id+1]; j++) {
 
             cell_id = vtx_gcells_lst[j] + n_cells;
 

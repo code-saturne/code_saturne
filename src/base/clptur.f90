@@ -162,7 +162,7 @@ integer          iuntur, f_dim
 integer          nlogla, nsubla, iuiptn
 integer          f_id_rough, f_id_rough_t,f_id, iustar
 integer          f_id_uet, f_id_uk
-integer          f_id_tlag, f_id_cv
+integer          f_id_tlag
 
 double precision rnx, rny, rnz
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
@@ -199,7 +199,7 @@ double precision coef_mom, coef_momm
 double precision one_minus_ri
 double precision dlmo,dt,theta0,flux
 
-double precision, dimension(:), pointer :: crom, cpro_cv
+double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, ustar
 double precision, dimension(:), pointer :: bpro_rough_d
 double precision, dimension(:), pointer :: bpro_rough_t

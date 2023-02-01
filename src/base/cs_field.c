@@ -2078,7 +2078,7 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
         }
       }
 
-      if (f->bc_coeffs->ad != NULL){
+      if (f->bc_coeffs->ad != NULL) {
         for (ifac = 0; ifac < n_elts[0]; ifac++) {
           for (int isou = 0; isou < dim ; isou++) {
             f->bc_coeffs->ad[ifac*dim + isou] = 0.;

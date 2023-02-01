@@ -403,8 +403,9 @@ if (ippmod(iatmos).ne.-1) then
 endif
 
 if (itherm.eq.1.or.itherm.eq.4.or.unstd_multiplicator.eq.2) then
- call cs_thermal_model_ini()
+ call cs_thermal_model_init()
 endif
+
 !===============================================================================
 ! 2.  AU DEBUT DU CALCUL ON REINITIALISE LA PRESSION
 !===============================================================================

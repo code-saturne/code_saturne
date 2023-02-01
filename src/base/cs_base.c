@@ -1149,32 +1149,32 @@ cs_base_logfile_head(int    argc,
 
   for (ii = 0; ii < 12; ii++) {
     if (strncmp(date_str, mon_name[ii], 3) == 0) {
-      time_cnv.tm_mon = ii ;
+      time_cnv.tm_mon = ii;
       break;
     }
   }
 
-  sscanf(date_str + 3, "%d", &(time_cnv.tm_mday)) ;
-  sscanf(date_str + 6, "%d", &(time_cnv.tm_year)) ;
+  sscanf(date_str + 3, "%d", &(time_cnv.tm_mday));
+  sscanf(date_str + 6, "%d", &(time_cnv.tm_year));
 
-  time_cnv.tm_year -= 1900 ;
+  time_cnv.tm_year -= 1900;
 
-  sscanf(time_str    , "%d", &(time_cnv.tm_hour)) ;
-  sscanf(time_str + 3, "%d", &(time_cnv.tm_min)) ;
-  sscanf(time_str + 6, "%d", &(time_cnv.tm_sec)) ;
+  sscanf(time_str    , "%d", &(time_cnv.tm_hour));
+  sscanf(time_str + 3, "%d", &(time_cnv.tm_min));
+  sscanf(time_str + 6, "%d", &(time_cnv.tm_sec));
 
-  time_cnv.tm_isdst = -1 ;
+  time_cnv.tm_isdst = -1;
 
   /* Re-compute and internationalize build date */
 
-  mktime(&time_cnv) ;
-  strftime(str, 80, "%c", &time_cnv) ;
+  mktime(&time_cnv);
+  strftime(str, 80, "%c", &time_cnv);
 
   /* Now print info */
 
   bft_printf(_("command: \n"));
 
-  for (ii = 0 ; ii < argc ; ii++)
+  for (ii = 0; ii < argc; ii++)
     bft_printf(" %s", argv[ii]);
 
   bft_printf("\n");
@@ -2246,7 +2246,7 @@ cs_base_option_string_clean(char  *s)
 
     int l = strlen(s);
 
-    for (i = 0, j = 0 ; i < l ; i++) {
+    for (i = 0, j = 0; i < l; i++) {
       s[j] = tolower(s[i]);
       if (s[j] == ',' || s[j] == ';' || s[j] == '\t')
         s[j] = ' ';

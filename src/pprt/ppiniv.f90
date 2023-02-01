@@ -200,8 +200,9 @@ if (ippmod(icompf).ge.0) then
 endif
 
 !if (itherm.eq.1.or.itherm.eq.4.or.unstd_multiplicator.eq.2) then
-! call cs_thermal_model_ini()
+! call cs_thermal_model_init()
 !endif
+
 !----
 ! Formats
 !----
