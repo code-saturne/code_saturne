@@ -420,7 +420,6 @@ class Case(object):
                             self.kw_args += " "  # workaround for arg-parser issue
                         cmd += " --kw-args " + '"' + self.kw_args + '"'
 
-
                     node_retval, t = run_studymanager_command(cmd, log_run)
 
                     # negative retcode is kept
