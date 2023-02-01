@@ -1078,7 +1078,6 @@ cs_f_turb_model_constants_get_pointers(double  **apow,
                                        double  **crij2,
                                        double  **crij3,
                                        double  **csmago,
-                                       double  **cwale,
                                        double  **xlesfd,
                                        double  **xlesfl,
                                        double  **ales,
@@ -1251,7 +1250,6 @@ cs_f_turb_model_constants_get_pointers(double  **apow,
                                        double  **crij2,
                                        double  **crij3,
                                        double  **csmago,
-                                       double  **cwale,
                                        double  **xlesfd,
                                        double  **xlesfl,
                                        double  **ales,
@@ -1268,7 +1266,6 @@ cs_f_turb_model_constants_get_pointers(double  **apow,
   *crij3 = &cs_turb_crij3;
   *csmago= &cs_turb_csmago;
   *csmago= &cs_turb_csmago;
-  *cwale = &cs_turb_cwale;
   *xlesfd= &cs_turb_xlesfd;
   *xlesfl= &cs_turb_xlesfl;
   *ales  = &cs_turb_ales;
