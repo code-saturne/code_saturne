@@ -2516,11 +2516,12 @@ class dependency_graph(object):
         """ extracts a sub_graph based on level and n_procs criteria"""
         sub_graph = dependency_graph()
         for node in self.graph_dict:
-            keep_node = True
+            keep_node_l = True
+            keep_node_p = True
             if filter_level is not None:
-                keep_node_l = node.level is int(filter_level)
+                keep_node_l = int(node.level) is int(filter_level)
             if filter_n_procs is not None:
-                keep_node_p = node.n_procs is int(filter_n_procs)
+                keep_node_p = int(node.n_procs) is int(filter_n_procs)
             if keep_node_l and keep_node_p:
                 sub_graph.add_node(node)
         return sub_graph
