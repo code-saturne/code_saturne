@@ -963,12 +963,17 @@ class case:
         """
 
         src = sys.argv[0]
+        if not src:
+            src = self.package.name
 
         if os.path.basename(src) == self.package.name:
             src = self.parent_script
+            if not src:
+                src = self.package.name
 
-        if not src:
-            src = self.package.name
+        cs_pkg_dir = self.package.get_dir('bindir')
+        if src.startswith(cs_pkg_dir):
+            return
 
         # Copy single file
 
