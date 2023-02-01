@@ -859,6 +859,11 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
   if (cs_navsto_system_is_activated())
     cs_navsto_system_set_sles();
 
+  /* Setup linear solvers (second call since the first call can have no
+     effect) */
+
+  cs_user_linear_solvers();
+
   /* Summary of the settings */
 
   _log_setup(domain);

@@ -511,17 +511,19 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
 void
 cs_domain_initialize_setup(cs_domain_t    *domain)
 {
-  /* Setup predefined equations which are activated. At this stage,
-   * no equation is added. Space discretization scheme and the related
-   * numerical parameters are set.
+  /* Setup predefined equations which are activated. At this stage, no equation
+   * is added. Space discretization scheme and the related numerical parameters
+   * are set.
    */
 
-  /*  Add variable field related to user-defined equations.
-   *
-   *  Adding a variable field related to a predefined equation is done inside
-   *  each setup function of the module */
+  /* User equations:
+   *  Add a variable field related to each user-defined equation.
+   */
 
   cs_equation_user_create_fields();
+
+  /* For predefined equations (equations associated to a module), adding a
+   * variable field is done inside each setup function of the module */
 
   /* Wall distance */
 
@@ -557,9 +559,9 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
 
   if (cs_navsto_system_is_activated()) {
 
-    /* To make more easy the settings for the end-user, one may have to
-     * ensure that the Navier-Stokes system has the sufficient knowledge of
-     * what is requested */
+    /* To make more easy the settings for the end-user, one may have to ensure
+     * that the Navier-Stokes system has the sufficient knowledge of what is
+     * requested */
 
     if (cs_thermal_system_needs_navsto())
       cs_navsto_system_update_model(true); /* true = with thermal */

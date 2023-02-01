@@ -1369,7 +1369,7 @@ _set_saturne_sles(bool                 use_field_id,
 {
   assert(slesp != NULL);  /* Sanity checks */
 
-  const  char  *sles_name = use_field_id ? NULL : slesp->name;
+  const char  *sles_name = use_field_id ? NULL : slesp->name;
   assert(slesp->field_id > -1 || sles_name != NULL);
 
   /* Retrieve the sles structure for this equation */
@@ -1380,7 +1380,7 @@ _set_saturne_sles(bool                 use_field_id,
   /* Retrieve associated context structures */
 
   cs_sles_it_t  *itsol = cs_sles_get_context(sles);
-  cs_sles_pc_t *pc = cs_sles_it_get_pc(itsol);
+  cs_sles_pc_t  *pc = cs_sles_it_get_pc(itsol);
   cs_multigrid_t  *mg = NULL;
 
   /* 1- Define the iterative solver

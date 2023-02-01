@@ -317,6 +317,13 @@ _run(void)
         cs_glob_mesh->time_dep = CS_MESH_TRANSIENT_COORDS;
     }
 
+    /* Initialization step for the setup of CDO schemes
+     * - Perform the initialization for each activated module
+     * - Create predefined properties and advection fields
+     * - Create fields associated to equations or modules
+     * - Create fields associated to user-defined equations
+     */
+
     cs_cdo_initialize_setup(cs_glob_domain);
 
     /* Setup linear solvers */
