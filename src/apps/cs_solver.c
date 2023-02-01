@@ -48,7 +48,11 @@
 #include "cs_all_to_all.h"
 #include "cs_ast_coupling.h"
 #include "cs_base.h"
+
+#if defined(HAVE_CUDA)
 #include "cs_base_cuda.h"
+#endif
+
 #include "cs_base_fortran.h"
 #include "cs_benchmark.h"
 #include "cs_boundary_zone.h"
