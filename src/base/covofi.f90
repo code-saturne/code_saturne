@@ -572,8 +572,8 @@ elseif (imucpp.eq.1) then
 endif
 ! Compute cv
 call field_get_id_try("isobaric_heat_capacity", f_id_cv)
-call field_get_val_s(f_id_cv, cpro_cv)
 if (f_id_cv.gt.0) then
+  call field_get_val_s(f_id_cv, cpro_cv)
   call cs_thermal_model_cv(cpro_cv);
   do iel = 1, ncel
     xcvv(iel) = cpro_cv(iel)
