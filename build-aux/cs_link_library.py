@@ -196,7 +196,8 @@ def build_shared_library(linker,
                          objects,
                          other=[],
                          echo=False,
-                         stdlib='yes'):
+                         stdlib='yes',
+                         ignore_deps=("-lptscotch", "-lscotch")):
     """
     Build an archive given the archives and objects list.
     """
@@ -246,7 +247,7 @@ def build_shared_library(linker,
     # Convert libtool-like "-R' syntax to rpath.
 
     for o in other:
-        if o in ("-lptscotch", "-lscotch"):
+        if o in ignore_deps:
             continue
         if o[:2] == '-R':
             cmd += ["-Wl,-rpath", "-Wl,"+o[2:]]
