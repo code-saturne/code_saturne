@@ -1070,6 +1070,7 @@ cs_thermal_model_pdivu(cs_real_t  *temp_,
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
@@ -1086,87 +1087,77 @@ cs_thermal_model_pdivu(cs_real_t  *temp_,
 
   const cs_fluid_properties_t *phys_pro = cs_glob_fluid_properties;
   cs_real_t rvsra = phys_pro->rvsra;
-  cs_field_t *fimasfl = cs_field_by_name_try("imasfl");
-  cs_field_t *fbmasfl = cs_field_by_name_try("bmasfl");
+  cs_real_t *imasfl =
+    cs_field_by_id(cs_field_get_key_int("inner_mass_flux_id"))->val;
+  cs_real_t *bmasfl =
+    cs_field_by_id(cs_field_get_key_int("boundary_mass_flux_id"))->val;
 
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
-  if (has_pdivu == 1 && fimasfl != NULL && fbmasfl != NULL) {
+  if (has_pdivu == 1) {
     cs_real_t *pdivu;
-    cs_real_t *imasfl = cs_field_by_name("imasfl")->val;
-    cs_real_t *bmasfl = cs_field_by_name("bmasfl")->val;
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      pdivu[c_id] = 0.;
-    }
+    BFT_MALLOC(pdivu, n_cells_ext, cs_real_t);
+    cs_array_set_value_real(n_cells_ext, 1, 0., pdivu);
+
     if (itherm == CS_THERMAL_MODEL_TEMPERATURE) {
       // Interior faces contribution
       for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
         cs_lnum_t ii = i_face_cells[f_id][0];
         cs_lnum_t jj = i_face_cells[f_id][1];
-        if (imasfl>=0) {
-          // Left cell, imasfl +
-          pdivu[ii] = pdivu[ii] + thetv *rair *imasfl[f_id] *temp_[ii]
-            + (1-thetv) *imasfl[f_id] *rair *tempa_[ii];
-          // Right cell, imasfl -
-          pdivu[jj] = pdivu[jj] - thetv *imasfl[f_id] *rair *temp_[ii]
-            - (1-thetv) *imasfl[f_id] *rair *tempa_[ii];
+        if (imasfl[f_id] >= 0.) {
+          pdivu[ii] += thetv *rair *imasfl[f_id] *temp_[ii]
+                     + (1-thetv) *imasfl[f_id] *rair *tempa_[ii];
+          pdivu[jj] -=  thetv *imasfl[f_id] *rair *temp_[ii]
+                     + (1-thetv) *imasfl[f_id] *rair *tempa_[ii];
 
         }
         else {
-          // Right cell, imasfl +
-          pdivu[jj] = pdivu[jj] - imasfl[f_id] *rair
-            *(thetv *temp_[jj] + (1-thetv) *tempa_[jj]);
-          // Left cell, imasfl -
-          pdivu[ii] = pdivu[ii] + imasfl[f_id] *rair
-            *(thetv *temp_[jj] + (1-thetv) *tempa_[jj]);
+          pdivu[ii] += imasfl[f_id] *rair
+                     * (thetv *temp_[jj] + (1-thetv) *tempa_[jj]);
+          pdivu[jj] -= imasfl[f_id] *rair
+                     * (thetv *temp_[jj] + (1-thetv) *tempa_[jj]);
         }
       }
-      // Boundary faces contribution
+      /* Boundary faces contribution */
       for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
         cs_lnum_t ii = b_face_cells[f_id];
-        pdivu[ii] = pdivu[ii] + bmasfl[f_id] *rair
-          *(thetv *temp_[ii] + (1-thetv) *tempa_[ii]);
+        pdivu[ii] += bmasfl[f_id] *rair
+                   * (thetv *temp_[ii] + (1-thetv) *tempa_[ii]);
       }
     }
     else if (itherm == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
       cs_real_t pdrho, pdrhoa, cvma;
-      // Interior faces contribution
+      /* Interior faces contribution */
       for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
         cs_lnum_t ii = i_face_cells[f_id][0];
         cs_lnum_t jj = i_face_cells[f_id][1];
-        if (imasfl >= 0) {
+        if (imasfl[f_id] >= 0.) {
           pdrho = (cvar_var[ii] - cpro_yv[ii] *l00) *rair
             *(1 - cpro_yw[ii] + cpro_yv[ii] *rvsra) /(xcvv[ii]);
           cvma = (cp0 - rair) * (1 - cpro_ywa[ii]) + (cpv - rvapor)
             * cpro_yva[ii] + (cpro_ywa[ii] - cpro_yva[ii]) * cvl;
           pdrhoa = (cvara_var[ii] - cpro_yva[ii] *l00) *rair
             *(1 - cpro_ywa[ii] + cpro_yva[ii] *rvsra) / cvma;
-          // Left cell, imasfl +
-          pdivu[ii] = pdivu[ii] + thetv *pdrho *imasfl[f_id]
-            + (1-thetv) *imasfl[f_id] *pdrhoa;
-          // Right cell, imasfl -
-          pdivu[jj] = pdivu[jj] - thetv *imasfl[f_id] *pdrho
-            - (1-thetv) *imasfl[f_id] *pdrhoa;
+          pdivu[ii] +=     thetv  * imasfl[f_id] * pdrho
+                     + (1.-thetv) * imasfl[f_id] * pdrhoa;
+          pdivu[jj] -=      thetv *imasfl[f_id] * pdrho
+                     + (1.-thetv) *imasfl[f_id] * pdrhoa;
         }
         else {
           pdrho = (cvar_var[jj] - cpro_yv[jj] *l00) *rair
-            *(1 - cpro_yw[jj] + cpro_yv[jj] *rvsra) /(xcvv[jj]);
-          cvma = (cp0 - rair) * (1 - cpro_ywa[jj]) + (cpv - rvapor)
+            *(1. - cpro_yw[jj] + cpro_yv[jj] *rvsra) /(xcvv[jj]);
+          cvma = (cp0 - rair) * (1. - cpro_ywa[jj]) + (cpv - rvapor)
             * cpro_yva[jj] + (cpro_ywa[jj] - cpro_yva[jj]) * cvl;
           pdrhoa = (cvara_var[jj] - cpro_yva[jj] *l00) *rair
-            *(1 - cpro_ywa[jj] + cpro_yva[jj] *rvsra) / cvma;
-          // Right cell, imasfl +
-          pdivu[jj] = pdivu[jj] - imasfl[f_id]
-            *(thetv *pdrho + (1-thetv) *pdrhoa);
-          // Left cell, imasfl -
-          pdivu[ii] = pdivu[ii] + imasfl[f_id]
-            *(thetv *pdrhoa + (1-thetv) *pdrhoa);
+            *(1. - cpro_ywa[jj] + cpro_yva[jj] *rvsra) / cvma;
+          pdivu[ii] += imasfl[f_id] *(thetv *pdrhoa + (1.-thetv) *pdrhoa);
+          pdivu[jj] -= imasfl[f_id] *(thetv *pdrho + (1.-thetv) *pdrhoa);
         }
       }
-      // Boundary faces contribution
+      /* Boundary faces contribution */
       for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
         cs_lnum_t ii = b_face_cells[f_id];
         pdrho = (cvar_var[ii] - cpro_yv[ii] *l00) *rair
@@ -1175,16 +1166,18 @@ cs_thermal_model_pdivu(cs_real_t  *temp_,
           * cpro_yva[ii] + (cpro_ywa[ii] - cpro_yva[ii]) * cvl;
         pdrhoa = (cvara_var[ii] - cpro_yva[ii] *l00) *rair
           *(1 - cpro_ywa[ii] + cpro_yva[ii] *rvsra) / cvma;
-        pdivu[ii] = pdivu[ii] + bmasfl[f_id] *
-          (thetv *pdrho + (1-thetv) *pdrhoa);
+        pdivu[ii] += bmasfl[f_id] * (thetv *pdrho + (1-thetv) *pdrhoa);
       }
     }
-    // pdiv(u) = div(pu) - u.grad p
+
+    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, pdivu);
+
+    /* pdiv(u) = div(pu) - u.grad p */
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      pdivu[c_id] = pdivu[c_id] - cell_f_vol[c_id]
-        *(vel[c_id][0] *(gradp[c_id][0] + gradphi[c_id][0])
-        + vel[c_id][1] *(gradp[c_id][1] + gradphi[c_id][1])
-        + vel[c_id][2] *(gradp[c_id][2] + gradphi[c_id][2]));
+      pdivu[c_id] -= cell_f_vol[c_id]
+                   *(vel[c_id][0] *(gradp[c_id][0] + gradphi[c_id][0])
+                   + vel[c_id][1] *(gradp[c_id][1] + gradphi[c_id][1])
+                   + vel[c_id][2] *(gradp[c_id][2] + gradphi[c_id][2]));
       smbrs[c_id] -= pdivu[c_id];
     }
   }
