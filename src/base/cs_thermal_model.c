@@ -46,6 +46,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_array.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_log.h"
@@ -56,6 +57,7 @@
 #include "cs_air_props.h"
 #include "cs_mesh_location.h"
 
+#include "cs_field.h"
 #include "cs_field_operator.h"
 #include "cs_field_pointer.h"
 #include "cs_field_default.h"
@@ -1087,9 +1089,11 @@ cs_thermal_model_pdivu(cs_real_t  *temp_,
   const cs_fluid_properties_t *phys_pro = cs_glob_fluid_properties;
   cs_real_t rvsra = phys_pro->rvsra;
   cs_real_t *imasfl =
-    cs_field_by_id(cs_field_get_key_int("inner_mass_flux_id"))->val;
+    cs_field_by_id(cs_field_get_key_int(CS_F_(vel),
+                                        "inner_mass_flux_id"))->val;
   cs_real_t *bmasfl =
-    cs_field_by_id(cs_field_get_key_int("boundary_mass_flux_id"))->val;
+    cs_field_by_id(cs_field_get_key_int(CS_F_(vel),
+                                        "boundary_mass_flux_id"))->val;
 
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
