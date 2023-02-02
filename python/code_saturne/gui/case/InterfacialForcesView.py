@@ -238,8 +238,8 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
         self.modelInterfaceSharpening.addItemList(
             [[self.tr('None'), 'none'],
              [self.tr('Olsson Interface Sharpening'), 'Olsson_Interface_Sharpening'],
-             [self.tr('Olsson Partial Interface Sharpening'), "Olsson_Partial_Interface_Sharpening"],
-             [self.tr('Conservative Interface Sharpening (Lavieville)'), 'Conservative_Interface_Sharpening']]
+             [self.tr('Olsson Partial Interface Sharpening'), "Olsson_Partial_Interface_Sharpening"]
+             ]
         )
         self.modelSurfaceTension.addItemList(
             [[self.tr('None'), 'none'],
