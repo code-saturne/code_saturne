@@ -55,12 +55,12 @@ BEGIN_C_DECLS
 /*!
  * \file cs_meg_boundary_function.c
  *
- * \brief This function is used to compute user defined values for fields over a
- * given boundary zone
+ * \brief This function is used to compute user defined values for fields over
+ *        a given boundary zone
  *
- * \param[in]  zone         pointer to cs_zone_t structure related to boundary
- * \param[in]  field_name   name of the field (const char *)
- * \param[in]  condition    condition type (const char *)
+ * \param[in] zone         pointer to cs_zone_t structure related to boundary
+ * \param[in] field_name   name of the field (const char *)
+ * \param[in] condition    condition type (const char *)
  *
  * \return a pointer to an array of cs_real_t values
  */
@@ -76,7 +76,7 @@ cs_meg_boundary_function(const cs_zone_t  *zone,
   CS_UNUSED(condition);
   CS_UNUSED(zone);
 
-  return NULL; /* avoid a compilation warning */
+  return NULL; /* avoid a compiler warning */
 }
 
 /*----------------------------------------------------------------------------*/

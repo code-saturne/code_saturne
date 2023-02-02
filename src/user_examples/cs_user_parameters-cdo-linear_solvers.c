@@ -456,13 +456,13 @@ cs_user_sles_mumps_hook(const cs_param_sles_t   *slesp,
 
   /*! [sles_mumps_advanced_hook] */
 
-  /* If MUMPS in single-precision is used, one has to modify the declaration as
+  /* If MUMPS is used in single-precision, one has to modify the declaration as
      follows:
 
      SMUMPS_STRUC_C  *mumps = pmumps;
 
-     All the remaining settings apply to the mumps variable in the single or
-     double-precision case.
+     All the remaining settings are identical in the single or double-precision
+     case.
    */
 
   DMUMPS_STRUC_C  *mumps = pmumps;

@@ -2,7 +2,7 @@
 #define __CS_PARAM_TYPES_H__
 
 /*============================================================================
- * Manage the definition/setting of a computation
+ * Set of definitions of structures and types used for setting a case
  *============================================================================*/
 
 /*
