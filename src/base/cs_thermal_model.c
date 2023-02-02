@@ -349,6 +349,9 @@ cs_thermal_model_c_square(cs_real_t  *cp,
                           cs_real_t  *dc2,
                           cs_lnum_t   l_size)
 {
+  CS_NO_WARN_IF_UNUSED(cp);
+  CS_NO_WARN_IF_UNUSED(fracm);
+
   /*  Local variables */
   int ieos = cs_glob_cf_model->ieos;
   cs_real_t rair = cs_glob_fluid_properties->r_pg_cnst;
@@ -516,26 +519,26 @@ cs_thermal_model_demdt_ecsnt(cs_real_t  pres,
 /*!
  * \brief Compute the kinetic energy based source term
  *
- * \param[in]     croma     array of density values at the last time iteration
- * \param[in]     cromaa    array of density values at the n-2 time iteration
- * \param[in]     crom_eos  density value
- * \param[in]     vel       array of velocity
- * \param[in]     vela      array of ancient velocity
- * \param[in]     sk        kinetic source term
+ * \param[in]       croma     density values at the last time iteration
+ * \param[in]       cromaa    density values at the n-2 time iteration
+ * \param[in]       crom_eos  density value
+ * \param[in]       vel       velocity
+ * \param[in]       vela      velocity at previous time step
+ * \param[in, out]  sk        kinetic source term
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_thermal_model_compute_kinetic_st(cs_real_t  *croma,
-                                    cs_real_t  *cromaa,
-                                    cs_real_t  *crom_eos,
-                                    cs_real_t  *vel[3],
-                                    cs_real_t  *vela[3],
-                                    cs_real_t  *sk)
+void
+cs_thermal_model_compute_kinetic_st(const cs_real_t  croma[],
+                                    const cs_real_t  cromaa[],
+                                    const cs_real_t  crom_eos[],
+                                    const cs_real_t  vel[][3],
+                                    const cs_real_t  vela[][3],
+                                    cs_real_t        sk[])
 {
-  cs_real_t *restrict dt = CS_F_(dt)->val;
+  const cs_real_t *restrict dt = CS_F_(dt)->val;
   const cs_mesh_t *m = cs_glob_mesh;
-  cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
@@ -580,7 +583,7 @@ cs_thermal_model_compute_kinetic_st(cs_real_t  *croma,
         + pow(thetv *utildeif[f_id][2] + (1-thetv) *utildeifa[f_id][2], 2);
 
     sk[ii] -= 0.5 * imasfl_prev[f_id] * norm_dv * (1 - rhoka_theta
-        /rhok_theta);
+                                                   / rhok_theta);
 
     norm_dv =   pow(thetv *utildeif[f_id][0] + (1-thetv) *utildeifa[f_id][0]
                     - vel[ii][0], 2)
@@ -658,12 +661,12 @@ cs_thermal_model_compute_kinetic_st(cs_real_t  *croma,
 /*!
  * \brief Add the kinetic source term if needed
  *
- * \param[in]     smbrs     RHS of the thermal equation
+ * \param[in, out]  smbrs  RHS of the thermal equation
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_thermal_model_add_kst(cs_real_t      *smbrs)
+void
+cs_thermal_model_add_kst(cs_real_t  smbrs[])
 {
   if (cs_glob_thermal_model->has_kinetic_st == 1) {
 
@@ -681,20 +684,20 @@ cs_thermal_model_add_kst(cs_real_t      *smbrs)
 /*!
  * \brief Compute the CFL number related to the pressure equation.
  *
- * \param[in]  croma     array of density values at the last time iteration
- * \param[in]  trav2     array of the predicted velocity
- * \param[in]  cvara_pr  array of pressure values at the last time iteration
- * \param[in]  imasfl    array of the faces mass fluxes
- * \param[in]  cflp      CFL condition related to the pressure equation
+ * \param[in]       croma     density values at the last time iteration
+ * \param[in]       trav2     predicted velocity
+ * \param[in]       cvara_pr  pressure values at the last time iteration
+ * \param[in]       imasfl    face mass fluxes
+ * \param[in, out]  cflp      CFL condition related to the pressure equation
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_thermal_model_cflp(cs_real_t  *croma,
-                      cs_real_t  *trav2[3],
-                      cs_real_t  *cvara_pr,
-                      cs_real_t  *imasfl,
-                      cs_real_t  *cflp)
+void
+cs_thermal_model_cflp(const cs_real_t  croma[],
+                      const cs_real_t  trav2[][3],
+                      const cs_real_t  cvara_pr[],
+                      const cs_real_t  imasfl[],
+                      cs_real_t        cflp[])
 {
   /* Get global data */
   const cs_mesh_t *m = cs_glob_mesh;
@@ -820,33 +823,32 @@ cs_thermal_model_cflp(cs_real_t  *croma,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Perform the Newton method to compute the temperature from the
- * internal energy
+ *        internal energy
  *
- * \param[in]  yw        array of total water mass fraction
- * \param[in]  yv        array of vapor of water mass fraction
- * \param[in]  temp      array of temperature values
- * \param[in]  th_scal   array of internal energy values
- * \param[in]  pk1       array of pressure values at the last
- *                       inner iteration
- * \param[in]  cvar_pr   array of pressure values
- * \param[in]  cvara_pr  array of pressure values at the last time iteration
- * \param[in]  method    method used to compute the temperature
+ * \param[in]       method    method used to compute the temperature
+ * \param[in]       pk1       pressure values at the last inner iteration
+ * \param[in]       th_scal   internal energy values
+ * \param[in]       cvar_pr   pressure values
+ * \param[in]       cvara_pr  pressure values at the last time iteration
+ * \param[in]       yw        total water mass fraction
+ * \param[in, out]  yv        vapor of water mass fraction
+ * \param[in, out]  temp      temperature values
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_thermal_model_newton_t(cs_real_t  *yw,
-                          cs_real_t  *yv,
-                          cs_real_t  *temp,
-                          cs_real_t  *th_scal,
-                          cs_real_t  *pk1,
-                          cs_real_t  *cvar_pr,
-                          cs_real_t  *cvara_pr,
-                          int         method)
+void
+cs_thermal_model_newton_t(int               method,
+                          const cs_real_t  *pk1,
+                          const cs_real_t   th_scal[],
+                          const cs_real_t   cvar_pr[],
+                          const cs_real_t   cvara_pr[],
+                          const cs_real_t   yw[],
+                          cs_real_t         yv[],
+                          cs_real_t         temp[])
 {
   /* Get global data */
   const cs_mesh_t *m = cs_glob_mesh;
-  cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_field_t *f_vel = CS_F_(vel);
 
@@ -857,7 +859,7 @@ cs_thermal_model_newton_t(cs_real_t  *yw,
     = (const cs_real_3_t *restrict)fvq->cell_cen;
 
   const cs_fluid_properties_t *phys_pro = cs_glob_fluid_properties;
-  cs_physical_constants_t *pc = cs_get_glob_physical_constants();
+  const cs_physical_constants_t *pc = cs_glob_physical_constants;
 
   /* Newton method error threshold */
   cs_real_t epsy = 1e-7;

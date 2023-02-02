@@ -216,79 +216,78 @@ cs_thermal_model_demdt_ecsnt(cs_real_t  pres,
 /*!
  * \brief Compute the kinetic energy based source term
  *
- * \param[in]     croma     array of density values at the last time iteration
- * \param[in]     cromaa    array of density values at the n-2 time iteration
- * \param[in]     crom_eos  density value
- * \param[in]     vel       array of velocity
- * \param[in]     vela      array of ancient velocity
- * \param[in]     sk        kinetic source term
+ * \param[in]       croma     density values at the last time iteration
+ * \param[in]       cromaa    density values at the n-2 time iteration
+ * \param[in]       crom_eos  density value
+ * \param[in]       vel       velocity
+ * \param[in]       vela      velocity at previous time step
+ * \param[in, out]  sk        kinetic source term
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_thermal_model_compute_kinetic_st(cs_real_t  *croma,
-                                    cs_real_t  *cromaa,
-                                    cs_real_t  *crom_eos,
-                                    cs_real_t  *vel[3],
-                                    cs_real_t  *vela[3],
-                                    cs_real_t  *sk);
+void
+cs_thermal_model_compute_kinetic_st(const cs_real_t  croma[],
+                                    const cs_real_t  cromaa[],
+                                    const cs_real_t  crom_eos[],
+                                    const cs_real_t  vel[][3],
+                                    const cs_real_t  vela[][3],
+                                    cs_real_t        sk[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add the kinetic energy related source term in the thermal equation
+ * \brief Add the kinetic source term if needed
  *
- * \param[in]     croma     array of density values at the last time iteration
+ * \param[in, out]  smbrs  RHS of the thermal equation
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_thermal_model_add_kst(cs_real_t  *smbrs);
+void
+cs_thermal_model_add_kst(cs_real_t  smbrs[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the CFL number related to the pressure equation.
  *
- * \param[in]  croma     array of density values at the last time iteration
- * \param[in]  trav2     array of the predicted velocity
- * \param[in]  cvara_pr  array of pressure values at the last time iteration
- * \param[in]  imasfl    array of the faces mass fluxes
- * \param[in]  cflp      CFL condition related to the pressure equation
+ * \param[in]       croma     density values at the last time iteration
+ * \param[in]       trav2     predicted velocity
+ * \param[in]       cvara_pr  pressure values at the last time iteration
+ * \param[in]       imasfl    face mass fluxes
+ * \param[in, out]  cflp      CFL condition related to the pressure equation
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_thermal_model_cflp(cs_real_t  *croma,
-                      cs_real_t  *trav2[3],
-                      cs_real_t  *cvara_pr,
-                      cs_real_t  *imasfl,
-                      cs_real_t  *cflp);
+void
+cs_thermal_model_cflp(const cs_real_t  croma[],
+                      const cs_real_t  trav2[][3],
+                      const cs_real_t  cvara_pr[],
+                      const cs_real_t  imasfl[],
+                      cs_real_t        cflp[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Perform the Newton method to compute the temperature from the
- * internal energy
+ *        internal energy
  *
- * \param[in]  yw        array of total water mass fraction
- * \param[in]  yv        array of vapor of water mass fraction
- * \param[in]  temp      array of temperature values
- * \param[in]  th_scal   array of internal energy values
- * \param[in]  pk1       array of pressure values at the last
- *                       inner iteration
- * \param[in]  cvar_pr   array of pressure values
- * \param[in]  cvara_pr  array of pressure values at the last time iteration
- * \param[in]  method    method used to compute the temperature
+ * \param[in]       method    method used to compute the temperature
+ * \param[in]       th_scal   internal energy values
+ * \param[in]       pk1       pressure values at the last inner iteration
+ * \param[in]       cvar_pr   pressure values
+ * \param[in]       cvara_pr  pressure values at the last time iteration
+ * \param[in]       yw        total water mass fraction
+ * \param[in, out]  yv        vapor of water mass fraction
+ * \param[in, out]  temp      temperature values
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_thermal_model_newton_t(cs_real_t  *yw,
-                          cs_real_t  *yv,
-                          cs_real_t  *temp,
-                          cs_real_t  *th_scal,
-                          cs_real_t  *pk1,
-                          cs_real_t  *cvar_pr,
-                          cs_real_t  *cvara_pr,
-                          int         method);
+void
+cs_thermal_model_newton_t(int               method,
+                          const cs_real_t  *pk1,
+                          const cs_real_t   th_scal[],
+                          const cs_real_t   cvar_pr[],
+                          const cs_real_t   cvara_pr[],
+                          const cs_real_t   yw[],
+                          cs_real_t         yv[],
+                          cs_real_t         temp[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

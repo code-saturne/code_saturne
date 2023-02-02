@@ -338,6 +338,25 @@ interface
     real(kind=c_double), dimension(*), intent(inout) :: imasfl, bmasfl, divflu
   end subroutine driflu
 
+  subroutine cs_thermal_model_newton_t              &
+    (method,                                        &
+     pk1,                                           &
+     scalt,                                         &
+     cvar_pr,                                       &
+     cvara_pr,                                      &
+     yw,                                            &
+     yv,                                            &
+     temp)                                          &
+     bind(C, name='cs_thermal_model_newton_t')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: method
+    type(c_ptr), value :: pk1
+    real(kind=c_double), dimension(*), intent(in) :: scalt
+    real(kind=c_double), dimension(*), intent(in) :: cvar_pr, cvara_pr, yw
+    real(kind=c_double), dimension(*), intent(inout) :: yv, temp
+  end subroutine cs_thermal_model_newton_t
+
   !=============================================================================
 
  end interface
@@ -1615,16 +1634,17 @@ if (itherm.eq.4.and.iscal.eq.iscalt) then
     ! Case of no saturation in previous iteration
     ! Newton method
     ! Last argument is the method used
-    call cs_thermal_model_newton_t(yw,          &
-                                   yv,          &
-                                   tempk,       &
-                                   cvar_var,    &
+    call cs_thermal_model_newton_t(1,           &
                                    c_null_ptr,  &
+                                   cvar_var,    &
                                    cvar_pr,     &
                                    cvar_pra,    &
-                                   1)
+                                   yw,          &
+                                   yv,          &
+                                   tempk)
   endif
 endif
+
 !===============================================================================
 ! 4. clipping, finalization of the computation of some terms and log
 !===============================================================================

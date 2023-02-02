@@ -2449,27 +2449,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function that performs the Newton method to compute
-    ! the temperature following the solved internal energy
-
-    subroutine cs_thermal_model_newton_t(yw,                   &
-                                         yv,                   &
-                                         temp,                 &
-                                         scalt,                &
-                                         pk1,                  &
-                                         cvar_pr,              &
-                                         cvara_pr,             &
-                                         method)               &
-      bind(C, name='cs_thermal_model_newton_t')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*), intent(inout) :: yw, yv, temp, scalt
-      real(kind=c_double), dimension(*), intent(inout) ::  cvar_pr, cvara_pr
-      type(c_ptr), value :: pk1
-      integer(c_int), value :: method
-    end subroutine cs_thermal_model_newton_t
-
-
     !> \brief Read lagrangian moments checkpoint information.
 
     subroutine lagr_moment_restart_read(r)  &
