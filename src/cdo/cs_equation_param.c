@@ -475,21 +475,35 @@ _set_key(cs_equation_param_t   *eqp,
     break;
 
   case CS_EQKEY_HODGE_DIFF_COEF:
-    if (strcmp(keyval, "dga") == 0)
+    if (strcmp(keyval, "dga") == 0) {
       eqp->diffusion_hodgep.coef = 1./3.;
-    else if (strcmp(keyval, "sushi") == 0)
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
+    }
+    else if (strcmp(keyval, "sushi") == 0) {
       eqp->diffusion_hodgep.coef = 1./sqrt(3.);
-    else if (strcmp(keyval, "gcr") == 0)
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
+    }
+    else if (strcmp(keyval, "gcr") == 0) {
       eqp->diffusion_hodgep.coef = 1.0;
-    else if (strcmp(keyval, "frac23") == 0 || strcmp(keyval, "2/3") == 0)
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
+    }
+    else if (strcmp(keyval, "frac23") == 0 || strcmp(keyval, "2/3") == 0) {
       eqp->diffusion_hodgep.coef = 2./3.;
-    else
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
+    }
+    else {
       eqp->diffusion_hodgep.coef = atof(keyval);
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
+    }
     break;
 
   case CS_EQKEY_HODGE_TIME_ALGO:
     if (strcmp(keyval, "voronoi") == 0)
       eqp->time_hodgep.algo = CS_HODGE_ALGO_VORONOI;
+    else if (strcmp(keyval,"bubble") == 0) {
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_BUBBLE;
+      eqp->diffusion_hodgep.coef = 2./3.;
+    }
     else if (strcmp(keyval,"cost") == 0 || strcmp(keyval,"ocs") == 0)
       eqp->time_hodgep.algo = CS_HODGE_ALGO_COST;
     else if (strcmp(keyval, "wbs") == 0)
@@ -504,6 +518,12 @@ _set_key(cs_equation_param_t   *eqp,
   case CS_EQKEY_HODGE_REAC_ALGO:
     if (strcmp(keyval, "voronoi") == 0)
       eqp->reaction_hodgep.algo = CS_HODGE_ALGO_VORONOI;
+    else if (strcmp(keyval,"bubble") == 0) {
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_BUBBLE;
+      eqp->diffusion_hodgep.coef = 2./3.;
+    }
+    else if (strcmp(keyval,"cost") == 0 || strcmp(keyval,"ocs") == 0)
+      eqp->time_hodgep.algo = CS_HODGE_ALGO_COST;
     else if (strcmp(keyval, "wbs") == 0)
       eqp->reaction_hodgep.algo = CS_HODGE_ALGO_WBS;
     else {
