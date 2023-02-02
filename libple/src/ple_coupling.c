@@ -910,19 +910,17 @@ ple_coupling_mpi_set_compute_timestep(const ple_coupling_mpi_set_t  *s)
   int leader_id = -1;
   double ts_min = -1.;
 
-  /* Check if we should use the smallest time step */
+  /* Check for leader and minimum time step;
+     unsynced and follower apps do not influence the result. */
 
-  if (self_status & PLE_COUPLING_TS_MIN)
-    ts_min = s->app_timestep[s->app_id];
-
-  /* Check for leader and minimum time step */
+  const int ignore_bits = PLE_COUPLING_NO_SYNC | PLE_COUPLING_TS_FOLLOWER;
 
   for (int i = 0; i < s->n_apps; i++) {
 
-    if (s->app_status[i] & PLE_COUPLING_NO_SYNC)
+    if (s->app_status[i] & ignore_bits)
       continue;
 
-    /* Handle leader or minimum time step update */
+    /* Handle leader */
 
     if (s->app_status[i] & PLE_COUPLING_TS_LEADER) {
       if (leader_id > -1) {
@@ -942,16 +940,27 @@ ple_coupling_mpi_set_compute_timestep(const ple_coupling_mpi_set_t  *s)
       }
     }
 
-    else if (s->app_status[i] & PLE_COUPLING_TS_MIN) {
-      if (ts_min > 0) {
-        if (s->app_timestep[i] < ts_min)
-          ts_min = s->app_timestep[i];
-      }
+    /* Update minimum time in all coupled and non-follower cases. */
+
+    if (ts_min > 0) {
+      if (s->app_timestep[i] < ts_min)
+        ts_min = s->app_timestep[i];
     }
+    else
+      ts_min = s->app_timestep[i];
   }
 
-  if (ts_min > 0)
-    retval = ts_min;
+  /* If aligning with minimal time step, update return value */
+
+  if (self_status & PLE_COUPLING_TS_MIN) {
+    if (ts_min > 0)
+      retval = ts_min;
+    else if (s->n_apps >1)
+      ple_error
+        (__FILE__, __LINE__, 0,
+         _("\nCoupling parameters require following minimal time step,\n"
+           "but all other synchronized applications are also followers."));
+  }
 
   return retval;
 }
