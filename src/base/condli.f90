@@ -376,7 +376,7 @@ rijipb => null()
 
 call cs_boundary_conditions_reset
 
-call precli(nvar, icodcl, rcodcl)
+call precli(nvar, rcodcl)
 
 ! Base definitions from the GUI
 ! =============================
@@ -4958,7 +4958,7 @@ double precision, dimension(:,:), pointer :: xyzno0
 ! 0. User calls
 !===============================================================================
 
-call precli(nvar, icodcl, rcodcl)
+call precli(nvar, rcodcl)
 
 !     - Interface code_saturne
 !       ======================

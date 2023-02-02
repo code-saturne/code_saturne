@@ -97,8 +97,6 @@ double precision, dimension(:,:), pointer :: porosf
 double precision, dimension(:), pointer :: field_s_v
 double precision, dimension(:), pointer :: cpro_diff_lim
 double precision, dimension(:), pointer :: cvar_pr
-double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_al
-double precision, dimension(:), pointer :: cvar_phi, cvar_fb, cvar_omg, cvar_nusa
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cpro_prtot
 double precision, dimension(:), pointer :: cpro_viscls, cproa_viscls, cvar_tempk
 double precision, dimension(:), pointer :: cpro_visma_s

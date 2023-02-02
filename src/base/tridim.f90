@@ -114,14 +114,13 @@ integer          iterns, inslst, icvrge
 integer          italim, itrfin, itrfup, ineefl
 integer          ielpdc, iflmas, iflmab
 integer          kcpsyr, icpsyr
-integer          order_buoyant_scalar
 integer          key_buoyant_id, is_buoyant_fld, st_prv_id
 
 double precision xxp0, xyp0, xzp0
 double precision relaxk, relaxe, relaxw, relaxn
 double precision hdls(6)
 
-double precision, save :: tpar, tmet
+double precision, save :: tmet
 
 integer          ipass
 data             ipass /0/

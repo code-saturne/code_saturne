@@ -34,20 +34,6 @@
 !   mode          name          role
 !------------------------------------------------------------------------------
 !> \param[in]     nvar          total number of variables
-!> \param[out]    icodcl        face boundary condition code:
-!>                               - 1 Dirichlet
-!>                               - 2 Radiative outlet
-!>                               - 3 Neumann
-!>                               - 4 sliding and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 5 smooth wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 6 rough wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 9 free inlet/outlet
-!>                                 (input mass flux blocked to 0)
-!>                               - 13 Dirichlet for the advection operator and
-!>                                    Neumann for the diffusion operator
 !> \param[out]    rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -66,7 +52,6 @@
 
 subroutine precli &
  ( nvar   ,                                                       &
-   icodcl ,                                                       &
    rcodcl )
 
 !===============================================================================
@@ -94,19 +79,17 @@ implicit none
 
 integer          nvar
 
-integer          icodcl(nfabor,nvar)
-
 double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-integer          ifac, ivar
+integer          ifac
 
 !===============================================================================
 
 ! itypfb has already been initialized with default value, do not modify it here.
 
-! icodcl and rcodcl have also been intialized.
+! rcodcl has also been intialized.
 
 ! En ALE, on initialise aussi le tableau IALTYB
 if (iale.ge.1) then
