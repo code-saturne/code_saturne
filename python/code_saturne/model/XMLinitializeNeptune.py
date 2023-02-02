@@ -831,6 +831,15 @@ class XMLinitNeptune(BaseXmlInit):
             legacy_node.xmlRemoveNode()
 
 
+    def __backwardCompatibilityFrom_7_3(self):
+        """
+        Change XML in order to ensure backward compatibility following
+        changes between v7.3 and v8.0.
+        """
+
+        for n in self.case.xmlGetNodeList('continuous_field_momentum_transfer'):
+            if n.xmlGetString('InterfaceSharpening') == 'Conservative_Interface_Sharpening':
+                n.xmlSetData('InterfaceSharpening', 'Olsson_Interface_Sharpening')
 
     def _backwardCompatibilityCurrentVersion(self):
         """
@@ -838,6 +847,8 @@ class XMLinitNeptune(BaseXmlInit):
         """
         self.__backwardCompatibilityFrom_7_1()
         self.__backwardCompatibilityFrom_7_2()
+        self.__backwardCompatibilityFrom_7_3()
+
 #-------------------------------------------------------------------------------
 # XMLinit test case
 #-------------------------------------------------------------------------------
