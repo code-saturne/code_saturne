@@ -437,7 +437,6 @@ cs_coupling_sync_apps(int      flags,
                          PLE_COUPLING_REDO_ITERATION};
 
     const int *app_status = NULL;
-    const double *app_ts = NULL;
 
     ple_coupling_mpi_set_info_t ai;
 
@@ -476,13 +475,6 @@ cs_coupling_sync_apps(int      flags,
 
     app_status
       = ple_coupling_mpi_set_get_status(_cs_glob_coupling_mpi_app_world);
-    app_ts
-      = ple_coupling_mpi_set_get_timestep(_cs_glob_coupling_mpi_app_world);
-
-    /* Check if we should use the smallest time step */
-
-    if (app_status[app_id] & PLE_COUPLING_TS_MIN)
-      ts_min = _ts;
 
     /* Loop on applications */
 
@@ -490,30 +482,6 @@ cs_coupling_sync_apps(int      flags,
 
       if (app_status[i] & PLE_COUPLING_NO_SYNC)
         continue;
-
-      /* Handle leader or minimum time step update */
-
-      if (app_status[i] & PLE_COUPLING_TS_LEADER) {
-        if (leader_id > -1) {
-          ple_coupling_mpi_set_info_t ai_prev
-            = ple_coupling_mpi_set_get_info(_cs_glob_coupling_mpi_app_world,
-                                            ts_min);
-          ai = ple_coupling_mpi_set_get_info(_cs_glob_coupling_mpi_app_world, i);
-          bft_error
-            (__FILE__, __LINE__, 0,
-             _("\nApplication \"%s\" (%s) tried to set the group time step, but\n"
-               "application \"%s\" (%s) has already done so."),
-             ai.app_name, ai.app_type, ai_prev.app_name, ai_prev.app_type);
-        }
-        else {
-          leader_id = i;
-          *ts = app_ts[i] / _cs_coupling_ts_multiplier;
-        }
-      }
-      else if (app_status[i] & PLE_COUPLING_TS_MIN) {
-        if (ts_min > 0)
-          ts_min = CS_MIN(ts_min, app_ts[i]);
-      }
 
       /* Handle time stepping behavior */
 
@@ -555,8 +523,11 @@ cs_coupling_sync_apps(int      flags,
 
     } /* end of loop on applications */
 
-    if (ts_min > 0)
-      *ts = ts_min / _cs_coupling_ts_multiplier;
+    /* Compute new time step */
+
+    *ts = ple_coupling_mpi_set_compute_timestep(_cs_glob_coupling_mpi_app_world)
+        / _cs_coupling_ts_multiplier;
+
   }
 
 #else
