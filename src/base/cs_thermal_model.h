@@ -360,7 +360,7 @@ cs_thermal_model_dissipation(cs_real_t  *vistot,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
+void
 cs_thermal_model_cflt (cs_real_t  *croma,
                        cs_real_t  *tempk,
                        cs_real_t  *tempka,
@@ -377,7 +377,7 @@ cs_thermal_model_cflt (cs_real_t  *croma,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
+void
 cs_thermal_model_cv(cs_real_t  *xcvv);
 
 /*----------------------------------------------------------------------------*/

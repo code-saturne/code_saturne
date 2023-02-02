@@ -129,11 +129,10 @@ BEGIN_C_DECLS
   \var  cs_thermal_model_t::has_dissipation
         Add to the right hand side the thermal dissipation term
   \var  cs_thermal_model_t::unstd_multiplicator
-        Multiply the unsteady thermal equation term by :
+        Multiply the unsteady thermal equation term by:
         - 0 : multiplication by 1
         - 1 : multiplication by cp
         - 2 : multiplication by cv
-
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -1238,7 +1237,7 @@ cs_thermal_model_dissipation(cs_real_t  *vistot,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
+void
 cs_thermal_model_cflt (cs_real_t  *croma,
                        cs_real_t  *tempk,
                        cs_real_t  *tempka,
@@ -1316,7 +1315,7 @@ cs_thermal_model_cflt (cs_real_t  *croma,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
+void
 cs_thermal_model_cv(cs_real_t  *xcvv)
 {
   /* Get global data */
