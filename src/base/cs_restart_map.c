@@ -333,7 +333,7 @@ _read_section_interpolate(cs_restart_t           *restart,
                         val);
       else if (location_id == CS_MESH_LOCATION_VERTICES) {
         if (   _apply_mesh_deformation
-            && strcmp(sec_name, "mesh_displacement::vals::0") == 0) {
+            && strncmp(sec_name, "mesh_displacement::vals::", 25) == 0) {
           /* New mesh located relative to deformed mesh, so displacement
              reset to zero in this case. */
           cs_real_t v_0[] = {0, 0, 0};
