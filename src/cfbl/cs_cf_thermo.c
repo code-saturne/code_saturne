@@ -188,18 +188,16 @@ cs_cf_check_pressure(cs_real_t *pres,
   cs_real_t psginf = cs_glob_cf_model->psginf;
 
   /* Local variables */
-  cs_gnum_t ierr;
+  cs_gnum_t ierr = 0;
 
   /* If the pressure is lower or equal to zero, stop the computation.
      Indeed, if this is the case, the thermodynamic computations will most
      probably fail. This call is done at the end of the density calculation */
-  ierr = 0;
   for (cs_lnum_t ii = 0; ii < l_size; ii++)
     if (pres[ii] <= -psginf+cs_math_epzero)
       ierr = ierr + 1;
 
-  if (cs_glob_rank_id >= 0)
-    cs_parall_counter(&ierr, 1);
+  cs_parall_counter(&ierr, 1);
 
   /* TODO check if message is OK in stiffened gas ("real p" = p+psginf??) */
   /* Which pressure should be post-processed ? */
@@ -242,8 +240,7 @@ cs_cf_check_internal_energy(cs_real_t   *ener,
       ierr++;
   }
 
-  if (cs_glob_rank_id >= 0)
-    cs_parall_counter(&ierr, 1);
+  cs_parall_counter(&ierr, 1);
 
   if (ierr > 0)
     bft_error(__FILE__, __LINE__, 0,
@@ -278,8 +275,7 @@ cs_cf_check_density(cs_real_t *dens,
     if (dens[ii] <= cs_math_epzero)
       ierr = ierr + 1;
 
-  if (cs_glob_rank_id >= 0)
-    cs_parall_counter(&ierr, 1);
+  cs_parall_counter(&ierr, 1);
 
   if (ierr > 0)
     bft_error(__FILE__, __LINE__, 0,
@@ -314,8 +310,7 @@ cs_cf_check_temperature(cs_real_t *temp,
     if (temp[ii] <= cs_math_epzero)
       ierr++;
 
-  if (cs_glob_rank_id >= 0)
-    cs_parall_counter(&ierr, 1);
+  cs_parall_counter(&ierr, 1);
 
   if (ierr > 0)
     bft_error(__FILE__, __LINE__, 0,
