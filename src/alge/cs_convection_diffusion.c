@@ -4784,7 +4784,6 @@ cs_convection_diffusion_vector(int                         idtvar,
                   pjfa,
                   pipa,
                   pjpa);
-              cs_real_t flui, fluj;
               if (i_massflux[face_id] >= 0) {
                 for (int isou = 0; isou < 3; isou++) {
                   i_pvar[face_id][isou] = pif[isou];
@@ -5042,7 +5041,6 @@ cs_convection_diffusion_vector(int                         idtvar,
                                     pipa,
                                     pjpa);
 
-              cs_real_t flui, fluj;
               if (i_massflux[face_id] >= 0) {
                 for (int isou = 0; isou < 3; isou++) {
                   i_pvar[face_id][isou] = pif[isou];
@@ -5325,7 +5323,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                                                  pjfa,
                                                  pipa,
                                                  pjpa);
-              cs_real_t flui, fluj;
+
               if (i_massflux[face_id] >= 0) {
                 for (int isou = 0; isou < 3; isou++) {
                   i_pvar[face_id][isou] = pif[isou];

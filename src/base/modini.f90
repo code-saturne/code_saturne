@@ -62,13 +62,13 @@ implicit none
 integer          f_id, f_id_d
 integer          ii, jj, iok, ikw
 integer          nbccou
-integer          nscacp, iscal, ivar
+integer          nscacp, iscal
 integer          imrgrp, iclvfl, kclvfl
 integer          kcpsyr, icpsyr
 integer          nfld, f_type
 integer          key_t_ext_id, icpext, kscmin, kscmax
 integer          iviext, isso2t, kisso2t, kthetss, kthetvs, kcdtvar
-integer          kturt, turb_flux_model, turb_flux_model_type
+integer          kturt, turb_flux_model_type
 
 double precision relxsp, clvfmn, clvfmx, visls_0, visls_cmp
 double precision scminp, thetss, thetvs, cdtvar

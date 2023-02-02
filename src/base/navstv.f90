@@ -144,11 +144,11 @@ double precision, allocatable, dimension(:,:,:), target :: wvisfi
 double precision, allocatable, dimension(:,:), target :: uvwk
 double precision, dimension(:,:), pointer :: velk
 double precision, allocatable, dimension(:), target :: wvisbi
-double precision, allocatable, dimension(:), target :: cpro_rho_tc, bpro_rho_tc, cpro_rho_tc_new, crom_
+double precision, allocatable, dimension(:), target :: cpro_rho_tc, bpro_rho_tc
 double precision, allocatable, dimension(:) :: esflum, esflub
 double precision, allocatable, dimension(:) :: intflx, bouflx
 double precision, allocatable, dimension(:) :: secvif, secvib
-double precision, dimension(:,:), allocatable :: iuaf_, buaf_, rhs_temp
+double precision, dimension(:,:), allocatable :: rhs_temp
 double precision rvoid(1)
 double precision, allocatable, dimension(:,:), target :: gradp
 double precision, dimension(:,:), pointer :: cpro_gradp, iuaf, buaf

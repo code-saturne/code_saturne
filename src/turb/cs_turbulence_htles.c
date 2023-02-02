@@ -233,10 +233,6 @@ cs_turbulence_htles(void)
     cs_real_t xkm   = mean_km[c_id];
     cs_real_t xkr   = mean_kr[c_id];
     cs_real_t xepsm = mean_eps[c_id];
-    cs_real_t xomgm;
-    if (turb_model->iturb == CS_TURB_K_OMEGA) {
-      xomgm = mean_omg[c_id];
-    }
 
     /* Shielding function */
     cs_real_t xfs = 1.0;
@@ -301,7 +297,7 @@ cs_turbulence_htles(void)
     /* Modeled time scale T */
     cs_real_t xt;
     if (turb_model->iturb == CS_TURB_K_OMEGA) {
-      xt = xr/xpsi*(xkm+xicc*xkr)/(xcmu*xomgm*xkm);
+      xt = xr/xpsi*(xkm+xicc*xkr)/(xcmu * mean_omg[c_id] * xkm);
     }
     else if (turb_model->iturb == CS_TURB_V2F_BL_V2K) {
       xt = xr/xpsi*(xkm+xicc*xkr)/(xepsm);

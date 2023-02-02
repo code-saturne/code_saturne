@@ -1229,7 +1229,6 @@ subroutine cs_c_add_model_thermal_field_indexes(f_id) &
   ! Arguments
 
   integer(c_int), value :: f_id
-  integer(c_int) :: iscal
 
   ! Local variables
 

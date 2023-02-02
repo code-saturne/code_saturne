@@ -553,8 +553,7 @@ cs_thermal_model_compute_kinetic_st(const cs_real_t  croma[],
 
   const cs_equation_param_t *eqp_u
     = cs_field_get_equation_param_const(f_vel);
-  cs_real_t *rho_k_prev;
-  rho_k_prev = cs_field_by_name("rho_k_prev")->val;
+  cs_real_t *rho_k_prev = cs_field_by_name("rho_k_prev")->val;
   cs_real_t thetv = eqp_u -> thetav;
 
   /* Get useful arrays */
@@ -604,7 +603,7 @@ cs_thermal_model_compute_kinetic_st(const cs_real_t  croma[],
       + pow(thetv*utildeif[f_id][2] + (1-thetv)*utildeifa[f_id][2], 2);
 
     sk[jj] += 0.5 * imasfl_prev[f_id] * norm_dv
-      * (1 - rhoka_theta/rhok_theta);
+                  * (1 - rhoka_theta/rhok_theta);
 
     norm_dv = pow(thetv*utildeif[f_id][0] + (1-thetv)*utildeifa[f_id][0]
                   - vel[jj][0], 2)
