@@ -58,8 +58,8 @@ BEGIN_C_DECLS
  * \brief This function is used to compute user defined values for fields over a
  *        given volume zone
  *
- * \param[in]       zone   pointer to volume zone structure
- * \param[in, out]  f[]    array of pointers to cs_field_t
+ * \param[in]      zone   pointer to volume zone structure
+ * \param[in, out] f      array of pointers to a cs_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 

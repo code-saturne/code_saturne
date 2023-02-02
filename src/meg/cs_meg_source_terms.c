@@ -57,12 +57,13 @@ BEGIN_C_DECLS
  *
  * \brief This function is used to compute source terms over a volume zone
  *
- * \param[in]       zone         pointer to cs_volume_zone_t
- * \param[in]       name         char pointer: variable name
- * \param[in]       source_type  char pointer: source term type
+ * The caller is responsible for freeing the returned array.
  *
- * \returns new_vals: a cs_real_t pointer containing the values
+ * \param[in] zone          pointer to cs_volume_zone_t
+ * \param[in] field_name    variable field name
+ * \param[in] source_type   source term type
  *
+ * \returns a cs_real_t pointer containing the computed values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -75,7 +76,6 @@ cs_meg_source_terms(const char       *zone_name,
                     const char       *name,
                     const char       *source_type)
 {
-
   CS_UNUSED(elt_ids);
   CS_UNUSED(n_elts);
   CS_UNUSED(name);
@@ -85,5 +85,7 @@ cs_meg_source_terms(const char       *zone_name,
 
   return NULL; /* avoid a compilation warning */
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

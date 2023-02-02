@@ -404,7 +404,7 @@ typedef struct {
    *
    * \var epsilo
    * Relative precision for the solution of the linear system.  The default is
-   * \ref epsilo = \f$ 10^-8 \f$ . When there are enough iterations on the
+   * \ref epsilo = \f$ 10^-8 \f$. When there are enough iterations on the
    * reconstruction of the right-hand side of the equation, the value may be
    * increased (by default, in case of second-order in time, with \ref nswrsm =
    * 5 or 10, \ref epsilo is increased to \f$ 10^-5 \f$.

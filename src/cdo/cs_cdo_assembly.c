@@ -1317,8 +1317,8 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t                   *m,
     cs_matrix_assembler_values_add_g(mav, bufsize, r_gids, c_gids, m->val);
 
   }
-  else {  /* Buffer size is too small for this matrix. One needs several calls
-             to *_values_add_g() */
+  else { /* Buffer size is too small for this matrix. One needs several calls
+            to *_values_add_g() */
 
     int  bufsize = 0;
     for (int r = 0; r < m->n_rows; r++) {
@@ -1492,8 +1492,8 @@ cs_cdo_assembly_matrix_mpit(const cs_sdm_t                   *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Scalar-valued case. Parallel without openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix
+ *        Scalar-valued case. Parallel without openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -1517,10 +1517,12 @@ cs_cdo_assembly_matrix_mpis(const cs_sdm_t                   *m,
   row->n_cols = m->n_rows;
 
   /* Switch to the global numbering */
+
   for (int i = 0; i < row->n_cols; i++)
     row->col_g_id[i] = rset->g_id[dof_ids[i]];
 
   /* Push each row of the cellwise matrix into the assembler */
+
   for (int i = 0; i < row->n_cols; i++) {
 
     row->i = i;                               /* cellwise numbering */

@@ -156,7 +156,7 @@ static const int _ensight_c_order_6[6] = {0, 1, 2, 3, 5, 4};
  * parameters:
  *   this_writer <-- pointer to Ensight Gold writer structure.
  *   filename    <-- name of file to open.
- *   apend       <-- if true, append to file instead of overwriting
+ *   append      <-- if true, append to file instead of overwriting
  *----------------------------------------------------------------------------*/
 
 static _ensight_file_t

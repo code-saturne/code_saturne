@@ -292,8 +292,8 @@ cs_user_sles_petsc_hook(void  *context,
  *   solver    <->  handle to HYPRE solver
  *----------------------------------------------------------------------------*/
 
-/* Conjugate gradient with Jacobi preconditioning */
-/*------------------------------------------------*/
+/* Conjugate gradient with BoomerAMG preconditioning */
+/*---------------------------------------------------*/
 
 /*! [sles_hypre_hook_1] */
 static void
@@ -372,7 +372,7 @@ cs_user_linear_solvers(void)
     cs_sles_it_define(cvar_user_1->id,
                       NULL,   /* name passed is NULL if field_id > -1 */
                       CS_SLES_BICGSTAB2,
-                      1,      /*  polynomial precond. degree (default 0) */
+                      1,      /* polynomial precond. degree (default 0) */
                       10000); /* n_max_iter */
   }
   /*! [sles_user_1] */
