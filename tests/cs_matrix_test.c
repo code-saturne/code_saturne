@@ -710,8 +710,18 @@ main (int argc, char *argv[])
     for (cs_lnum_t i = 0; i < n_rows; i++)
       x[i] = (i+1)*0.5;
 
-    cs_matrix_vector_multiply(m_0, x, y_0);
-    cs_matrix_vector_multiply(m_1, x, y_1);
+    if (m_0->vector_multiply[m_0->fill_type][0] != NULL)
+      cs_matrix_vector_multiply(m_0, x, y_0);
+    else {
+      for (cs_lnum_t i = 0; i < n_rows; i++)
+        y_0[i] = 0;
+    }
+    if (m_1->vector_multiply[m_0->fill_type][0] != NULL)
+      cs_matrix_vector_multiply(m_1, x, y_1);
+    else {
+      for (cs_lnum_t i = 0; i < n_rows; i++)
+        y_1[i] = 0;
+    }
 
     bft_printf("\nSpMV pass %d\n", id_ie);
     for (cs_lnum_t i = 0; i < n_rows; i++)
