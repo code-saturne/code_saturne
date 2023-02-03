@@ -697,6 +697,9 @@ cs_field_gradient_potential(const cs_field_t          *f,
     bc_coeff_b = f->bc_coeffs->b;
   }
 
+  if (hyd_p_flag == 2)
+    hyd_p_flag = 0;
+
   cs_gradient_scalar(f->name,
                      gradient_type,
                      halo_type,
