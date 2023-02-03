@@ -643,9 +643,9 @@ main (int argc, char *argv[])
       cs_matrix_assembler_values_t *mav = NULL;
 
       if (mav_id == 0)
-        mav = cs_matrix_assembler_values_init(m_0, NULL, NULL);
+        mav = cs_matrix_assembler_values_init(m_0, 1, 1);
       else
-        mav = cs_matrix_assembler_values_init(m_1, NULL, NULL);
+        mav = cs_matrix_assembler_values_init(m_1, 1, 1);
 
       /* Same ids required as for assembler (at least, no additional ids),
          so loop in a similar manner for safety, but with different
@@ -710,18 +710,8 @@ main (int argc, char *argv[])
     for (cs_lnum_t i = 0; i < n_rows; i++)
       x[i] = (i+1)*0.5;
 
-    if (m_0->vector_multiply[m_0->fill_type][0] != NULL)
-      cs_matrix_vector_multiply(m_0, x, y_0);
-    else {
-      for (cs_lnum_t i = 0; i < n_rows; i++)
-        y_0[i] = 0;
-    }
-    if (m_1->vector_multiply[m_0->fill_type][0] != NULL)
-      cs_matrix_vector_multiply(m_1, x, y_1);
-    else {
-      for (cs_lnum_t i = 0; i < n_rows; i++)
-        y_1[i] = 0;
-    }
+    cs_matrix_vector_multiply(m_0, x, y_0);
+    cs_matrix_vector_multiply(m_1, x, y_1);
 
     bft_printf("\nSpMV pass %d\n", id_ie);
     for (cs_lnum_t i = 0; i < n_rows; i++)
