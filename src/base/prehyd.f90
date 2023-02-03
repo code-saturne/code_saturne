@@ -110,7 +110,7 @@ integer          iel   , ifac
 integer          nswrgp, iwarnp
 integer          iflmas, iflmab
 integer          ibsize
-integer          iescap, f_id0
+integer          iescap, f_id0, f_id_post
 integer          imucpp
 integer          iharmo
 integer          icvflb, hyd_p_flag
@@ -131,7 +131,7 @@ double precision, allocatable, dimension(:) :: xinvro
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, dimension(:), pointer :: imasfl, bmasfl, prhyd
-double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: crom, post_phydr
 
 type(var_cal_opt) :: vcopt
 type(var_cal_opt), target   :: vcopt_loc
@@ -251,7 +251,7 @@ vcopt_loc%iwgrec = 0      ! Warning, may be overwritten if a field
 vcopt_loc%blend_st = 0    ! Warning, may be overwritten if a field
 
 p_k_value => vcopt_loc
-c_k_value = c_loc(p_k_value)
+c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
 
 call cs_equation_iterative_solve_scalar      &
  ( idtvar , iterns ,                         &
@@ -265,6 +265,15 @@ call cs_equation_iterative_solve_scalar      &
    icvflb , ivoid  ,                         &
    rovsdt , smbr  , prhyd        , dpvar  ,  &
    rvoid  , rvoid  )
+
+! Save hydrostatic pressure for postprocessing if requested
+call field_get_id_try("phydr", f_id_post)
+if (f_id_post.ge.0) then
+  call field_get_val_s(f_id_post,post_phydr)
+  do iel=1, ncel
+    post_phydr(iel) = prhyd(iel)
+  enddo
+endif
 
 ! Free memory
 deallocate(dpvar)
