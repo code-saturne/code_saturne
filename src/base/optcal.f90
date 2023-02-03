@@ -350,9 +350,6 @@ module optcal
   !> and only if \ref dimens::nscal "nscal" \f$\geqslant\f$ 1.
   integer, save :: iscalt = -1
 
-  !> Multiplicator used for the unsteady term in the thermal equation
-  integer(c_int), pointer, save :: unstd_multiplicator
-
   !> \}
 
   !----------------------------------------------------------------------------
@@ -1091,12 +1088,12 @@ module optcal
 
     ! Interface to C function retrieving pointers to members of the
     ! global thermal model structure
-    subroutine cs_f_thermal_model_get_pointers(itherm, itpscl, &
-                                               unstd_multiplicator) &
+
+    subroutine cs_f_thermal_model_get_pointers(itherm, itpscl) &
       bind(C, name='cs_f_thermal_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: itherm, itpscl, unstd_multiplicator
+      type(c_ptr), intent(out) :: itherm, itpscl
     end subroutine cs_f_thermal_model_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1393,14 +1390,12 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_itherm, c_itpscl, c_unstd_multiplicator
+    type(c_ptr) :: c_itherm, c_itpscl
 
-    call cs_f_thermal_model_get_pointers(c_itherm, c_itpscl, &
-                                         c_unstd_multiplicator)
+    call cs_f_thermal_model_get_pointers(c_itherm, c_itpscl)
 
     call c_f_pointer(c_itherm, itherm)
     call c_f_pointer(c_itpscl, itpscl)
-    call c_f_pointer(c_unstd_multiplicator, unstd_multiplicator)
 
   end subroutine thermal_model_init
 

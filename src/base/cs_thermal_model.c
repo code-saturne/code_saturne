@@ -128,11 +128,6 @@ BEGIN_C_DECLS
         Add to the right hand side the term equal to -p div(u)
   \var  cs_thermal_model_t::has_dissipation
         Add to the right hand side the thermal dissipation term
-  \var  cs_thermal_model_t::unstd_multiplicator
-        Multiply the unsteady thermal equation term by:
-        - 0 : multiplication by 1
-        - 1 : multiplication by cp
-        - 2 : multiplication by cv
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -158,9 +153,8 @@ static cs_thermal_model_t  _thermal_model = {
   .cflt = false,
   .cflp = false,
   .has_pdivu = 0,
-  .has_dissipation = 0,
-  .unstd_multiplicator = -1,
-  };
+  .has_dissipation = 0
+};
 
 const cs_thermal_model_t  *cs_glob_thermal_model = &_thermal_model;
 
@@ -171,8 +165,7 @@ const cs_thermal_model_t  *cs_glob_thermal_model = &_thermal_model;
 
 void
 cs_f_thermal_model_get_pointers(int     **itherm,
-                                int     **itpscl,
-                                int     **unstd_multiplicator);
+                                int     **itpscl);
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -195,18 +188,14 @@ cs_f_thermal_model_get_pointers(int     **itherm,
  * parameters:
  *   itherm              --> pointer to cs_glob_thermal_model->thermal_variable
  *   itpscl              --> pointer to cs_glob_thermal_model->temperature_scale
- *   unstd_multiplicator --> pointer
- *                           to cs_glob_thermal_model->unstd_multiplicator
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_thermal_model_get_pointers(int     **itherm,
-                                int     **itpscl,
-                                int     **unstd_multiplicator)
+cs_f_thermal_model_get_pointers(int  **itherm,
+                                int  **itpscl)
 {
   *itherm = &(_thermal_model.thermal_variable);
   *itpscl = &(_thermal_model.temperature_scale);
-  *unstd_multiplicator = &(_thermal_model.unstd_multiplicator);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1075,6 +1064,9 @@ cs_thermal_model_pdivu(cs_real_t  *temp_,
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
 
+  const int kimasf = cs_field_key_id("inner_mass_flux_id");
+  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
+
   /*  Local variables */
   int itherm = cs_glob_thermal_model->thermal_variable;
   int has_pdivu = cs_glob_thermal_model->has_pdivu;
@@ -1087,12 +1079,10 @@ cs_thermal_model_pdivu(cs_real_t  *temp_,
 
   const cs_fluid_properties_t *phys_pro = cs_glob_fluid_properties;
   cs_real_t rvsra = phys_pro->rvsra;
-  cs_real_t *imasfl =
-    cs_field_by_id(cs_field_get_key_int(CS_F_(vel),
-                                        "inner_mass_flux_id"))->val;
-  cs_real_t *bmasfl =
-    cs_field_by_id(cs_field_get_key_int(CS_F_(vel),
-                                        "boundary_mass_flux_id"))->val;
+  cs_real_t *imasfl
+    = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kimasf))->val;
+  cs_real_t *bmasfl
+    =  cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf))->val;
 
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;

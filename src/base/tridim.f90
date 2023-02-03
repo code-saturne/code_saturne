@@ -401,7 +401,7 @@ if (ippmod(iatmos).ne.-1) then
   call cs_atmo_z_ground_compute()
 endif
 
-if (itherm.eq.1.or.itherm.eq.4.or.unstd_multiplicator.eq.2) then
+if (itherm.eq.1.or.itherm.eq.4) then
  call cs_thermal_model_init()
 endif
 
@@ -553,7 +553,7 @@ if (nbrcpl.gt.0) call cscloc
 if (vcopt_u%iwarni.ge.1) then
   write(nfecra,1010)
 endif
-call field_get_val_s(icrom, crom)
+
 ! Disable solid cells in fluid_solid mode
 if (fluid_solid) call cs_porous_model_set_has_disable_flag(1)
 iterns = -1
@@ -689,8 +689,7 @@ do f_id = 0, nfld - 1
     ! Is this field not managed by CDO ?
     if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
       ! not saving pressure
-      if (f_id.eq.ivarfl(ipr).and.idilat.eq.2) then
-      else
+      if (.not. (f_id.eq.ivarfl(ipr).and.idilat.eq.2)) then
         call field_current_to_previous(f_id)
       endif
       ! For buoyant scalar with source termes, current to previous for them
@@ -1148,6 +1147,7 @@ do while (iterns.le.nterup)
       if (iturbo.eq.2) then
         call field_get_val_s(ivarfl(ipr), cvar_pr)
       endif
+
     else
 
       call richards (icvrge, dt)

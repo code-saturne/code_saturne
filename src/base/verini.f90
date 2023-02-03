@@ -82,7 +82,7 @@ integer          indest, iiidef, istop, iclvfl
 integer          kscmin, kscmax, kclvfl
 integer          keyvar, keysca
 integer          key_t_ext_id, icpext
-integer          iviext, kcdtvar
+integer          iviext, iscacp, kcdtvar
 integer          iroext, isso2t
 integer          ivisext, krvarfl, kisso2t
 integer          kturt, turb_flux_model, kthetss, kthetvs
@@ -579,9 +579,10 @@ if (nscal.gt.0) then
 
 !     Scalaire passif, temperature, enthalpie, energie
   do ii = 1, nscal
-    if (unstd_multiplicator.lt.0.or.unstd_multiplicator.gt.2) then
+    call field_get_key_int(ivarfl(isca(ii)), kscacp, iscacp)
+    if (iscacp.lt.0.or.iscacp.gt.2) then
       call field_get_label(ivarfl(isca(ii)), chaine)
-      write(nfecra,4300)chaine(1:16),unstd_multiplicator
+      write(nfecra,4300)chaine(1:16),iscacp
       iok = iok + 1
     endif
   enddo
@@ -629,7 +630,8 @@ if (nscal.gt.0) then
     if (cp0.lt.0.d0) then
       iisct = 0
       do iis = 1, nscal
-        if (unstd_multiplicator.ge.0) then
+        call field_get_key_int(ivarfl(isca(iis)), kscacp, iscacp)
+        if (iscacp.gt.0) then
           iisct = 1
         endif
       enddo

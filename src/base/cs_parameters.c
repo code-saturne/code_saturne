@@ -1498,8 +1498,7 @@ cs_create_added_properties(void)
   }
 
   if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
-      || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY
-      || th_model->unstd_multiplicator == 2) {
+      || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
 
     cs_field_t *fld = cs_field_create("isobaric_heat_capacity",
                                       CS_FIELD_PROPERTY,

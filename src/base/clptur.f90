@@ -2301,7 +2301,7 @@ double precision tetmax, tetmin, tplumx, tplumn
 integer          ivar, f_id, b_f_id, isvhbl
 integer          f_id_ut, f_id_al, f_id_cv
 integer          ifac, iel, isou, jsou
-integer          ifcvsl, itplus, itstar
+integer          iscacp, ifcvsl, itplus, itstar
 integer          f_id_rough, f_id_rough_t
 integer          kturt, turb_flux_model, turb_flux_model_type
 
@@ -2517,6 +2517,9 @@ else
   bval_s => null()
 endif
 
+! Does the scalar behave as a temperature ?
+call field_get_key_int(f_id, kscacp, iscacp)
+
 ! Retrieve turbulent Schmidt value for current scalar
 call field_get_key_double(f_id, ksigmas, turb_schmidt)
 
@@ -2526,6 +2529,7 @@ call field_get_id_try("isobaric_heat_capacity", f_id_cv)
 if (f_id_cv.gt.0) then
  call field_get_val_s(f_id_cv, cpro_cv)
 endif
+
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
 
@@ -2550,19 +2554,17 @@ do ifac = 1, nfabor
     distbf = distb(ifac)
 
     cpp = 1.d0
-    if (unstd_multiplicator.ge.0) then
+    if (iscacp.eq.1) then
       if (icp.ge.0) then
-        if (unstd_multiplicator.eq.1) then
-          cpp = cpro_cp(iel)
-        elseif (unstd_multiplicator.eq.2) then
-          cpp = cpro_cv(iel)
-        endif
+        cpp = cpro_cp(iel)
       else
-        if (unstd_multiplicator.eq.1) then
-          cpp = cp0
-        elseif (unstd_multiplicator.eq.2) then
-          cpp = cpro_cv(iel)
-        endif
+        cpp = cp0
+      endif
+    else if (iscacp.eq.2) then
+      if (icp.ge.0) then
+        cpp = cpro_cv(iel)
+      else
+        cpp = cp0
       endif
     endif
 
@@ -2752,19 +2754,17 @@ do ifac = 1, nfabor
     distbf = distb(ifac)
 
     cpp = 1.d0
-    if (unstd_multiplicator.ge.0) then
+    if (iscacp.eq.1) then
       if (icp.ge.0) then
-        if (unstd_multiplicator.eq.1) then
-          cpp = cpro_cp(iel)
-        elseif (unstd_multiplicator.eq.2) then
-          cpp = cpro_cp(iel) - rair
-        endif
+        cpp = cpro_cp(iel)
       else
-        if (unstd_multiplicator.eq.1) then
-          cpp = cp0
-        elseif (unstd_multiplicator.eq.2) then
-          cpp = cp0 - rair
-        endif
+        cpp = cp0
+      endif
+    else if (iscacp.eq.2) then
+      if (icp.ge.0) then
+        cpp = cpro_cp(iel) - rair
+      else
+        cpp = cp0 - rair
       endif
     endif
 
@@ -2872,7 +2872,7 @@ do ifac = 1, nfabor
           endif
 
         ! Temperature
-        elseif (unstd_multiplicator.ge.0) then
+        elseif (iscacp.gt.0) then
           exchange_coef = hflui
         endif
       endif
@@ -3139,7 +3139,7 @@ double precision, dimension(:) :: byplus, bdplus, buk
 
 integer          ivar, f_id, isvhbl
 integer          ifac, iel
-integer          ifcvsl
+integer          iscacp, ifcvsl
 integer          f_id_rough, f_id_rough_t
 integer          kturt, turb_flux_model, turb_flux_model_type
 
@@ -3193,6 +3193,8 @@ if (icp.ge.0) then
   call field_get_val_s(icp, cpro_cp)
 endif
 
+! Does the vector behave as a temperature ?
+call field_get_key_int(f_id, kscacp, iscacp)
 
 ! retrieve turbulent Schmidt value for current vector
 call field_get_key_double(f_id, ksigmas, turb_schmidt)
@@ -3255,19 +3257,17 @@ do ifac = 1, nfabor
     xnuii = visclc / romc
 
     cpp = 1.d0
-    if (unstd_multiplicator.ge.0) then
+    if (iscacp.eq.1) then
       if (icp.ge.0) then
-        if (unstd_multiplicator.eq.1) then
-          cpp = cpro_cp(iel)
-        elseif (unstd_multiplicator.eq.2) then
-          cpp = cpro_cp(iel) - rair
-        endif
+        cpp = cpro_cp(iel)
       else
-        if (unstd_multiplicator.eq.1) then
-          cpp = cp0
-        elseif (unstd_multiplicator.eq.2) then
-          cpp = cp0 - rair
-        endif
+        cpp = cp0
+      endif
+    else if (iscacp.eq.1) then
+      if (icp.ge.0) then
+        cpp = cpro_cp(iel) - rair
+      else
+        cpp = cp0 - rair
       endif
     endif
 

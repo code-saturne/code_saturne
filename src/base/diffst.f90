@@ -80,7 +80,7 @@ integer          ivar  , iel   , ifac  , iscal, f_id0
 integer          inc
 integer          iconvp, idiffp, imvisp
 integer          ischcp, isstpp
-integer          ifcvsl, iflmas, iflmab
+integer          iscacp, ifcvsl, iflmas, iflmab
 integer          imucpp, idftnp, imasac
 integer          key_buoyant_id, is_buoyant_fld
 double precision blencp, thetex
@@ -131,11 +131,13 @@ do iscal = 1, nscal
 
   imucpp = 0
   if (iscavr(iscal).gt.0) then
-    if (unstd_multiplicator.ge.0) then
+    call field_get_key_int(ivarfl(isca(iscavr(iscal))), kscacp, iscacp)
+    if (iscacp.eq.1) then
       imucpp = 1
     endif
   else
-    if (unstd_multiplicator.ge.0) then
+    call field_get_key_int(ivarfl(ivar), kscacp, iscacp)
+    if (iscacp.eq.1) then
       imucpp = 1
     endif
   endif
@@ -144,23 +146,23 @@ do iscal = 1, nscal
     do iel = 1, ncel
       xcpp(iel) = 1.d0
     enddo
-  elseif (imucpp.eq.1) then !TODO : air humide
+  elseif (imucpp.eq.1) then !TODO: humid air
     if (icp.ge.0) then
-      if (unstd_multiplicator.eq.1) then
+      if (iscacp.eq.1) then
         do iel = 1, ncel
           xcpp(iel) = cpro_cp(iel)
         enddo
-      elseif (unstd_multiplicator.eq.2) then
+      elseif (iscacp.eq.2) then
         do iel = 1, ncel
           xcpp(iel) = cpro_cp(iel) - rair
         enddo
       endif
     else
-      if (unstd_multiplicator.eq.1) then
+      if (iscacp.eq.1) then
         do iel = 1, ncel
           xcpp(iel) = cp0
         enddo
-      elseif (unstd_multiplicator.eq.2) then
+      elseif (iscacp.eq.2) then
         do iel = 1, ncel
           xcpp(iel) = cp0 - rair
         enddo

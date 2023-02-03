@@ -153,7 +153,7 @@ integer          ivar
 integer          ii, ifac , iel, isou
 integer          iprev , inc   , ibcl
 integer          ivarsc
-integer          iiscav
+integer          iiscav, iscacp
 integer          ifcvsl, iflmas, iflmab, f_oi_id
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, imvisp
@@ -501,7 +501,12 @@ endif
 !  rho*cp*Vol*dT/dt + ...
 
 imucpp = 0
-if (unstd_multiplicator.ge.0) then
+if (iscavr(iscal).gt.0) then
+  call field_get_key_int(ivarfl(isca(iscavr(iscal))), kscacp, iscacp)
+else
+  call field_get_key_int(iflid, kscacp, iscacp)
+endif
+if (iscacp.eq.1) then
   imucpp = 1
 endif
 
@@ -541,35 +546,35 @@ else ! If the water is not accounted for
     yv(iel) = 0.d0
   enddo
 endif
+
 if (imucpp.eq.0) then
-      if (itherm.eq.4.and.idilat.eq.2) then
-        do iel = 1, ncel
-          xcpp(iel) = 1.d0
-        enddo
-      endif
+  do iel = 1, ncel
+    xcpp(iel) = 1.d0
+  enddo
 elseif (imucpp.eq.1) then
   if (icp.ge.0) then
     call field_get_val_s(icp, cpro_cp)
-    !call field_get_val_s(icv, cpro_cv)
-    if (unstd_multiplicator.eq.1) then
+    if (iscacp.eq.1) then
       do iel = 1, ncel
         xcpp(iel) = cpro_cp(iel)
       enddo
-    elseif (unstd_multiplicator.eq.2) then
+    elseif (iscacp.eq.2) then
+      !call field_get_val_s(icv, cpro_cv)
       do iel = 1, ncel
         xcpp(iel) = cpro_cp(iel) - rair
       enddo
     endif
   else
     do iel = 1, ncel
-      if (unstd_multiplicator.eq.1) then
+      if (iscacp.eq.1) then
         xcpp(iel) = cp0
-      elseif (unstd_multiplicator.eq.2) then
+      elseif (iscacp.eq.2) then
         xcpp(iel) = cp0 - rair
       endif
     enddo
   endif
 endif
+
 ! Compute cv
 call field_get_id_try("isobaric_heat_capacity", f_id_cv)
 if (f_id_cv.gt.0) then
@@ -583,6 +588,7 @@ else
     xcvv(iel) = 1.d0
   enddo
 endif
+
 ! Handle parallelism and periodicity
 if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(xcpp)
@@ -622,6 +628,7 @@ else
     sgdh_diff(iel) = max(visct(iel),zero)/turb_schmidt
   enddo
 endif
+
 !===============================================================================
 ! 2. Source terms
 !===============================================================================
@@ -755,6 +762,7 @@ if ((idilat.eq.3.or.ipthrm.eq.1).and.iscal.eq.iscalt) then
     smbrs(iel) = smbrs(iel) + (pther - pthera)/dt(iel)*cell_f_vol(iel)
   enddo
 endif
+
 ! In case of solving the internal energy equation:
 ! Add to the RHS -pdiv(u) + tau:u
 ! In case of no specific EOS, skip
@@ -846,6 +854,7 @@ if (ieos.ne.-1.and.((itherm.eq.1).or.(itherm.eq.4)).and.(iscal.eq.iscalt)) then
                                     gradv,  &
                                     smbrs)
 endif
+
 if ((itherm.eq.4.or.itherm.eq.1).and.ippmod(icompf).lt.0) then
   ! Kinetic source term when needed
   call field_get_id_try("kinetic_energy_thermal_st", f_id_sk)
@@ -853,6 +862,7 @@ if ((itherm.eq.4.or.itherm.eq.1).and.ippmod(icompf).lt.0) then
     call cs_thermal_model_add_kst(smbrs)
   endif
 endif
+
 ! CFL related to the internal energy equation
 call field_get_id_try("cfl_t", f_id_cflt)
 ! Only implemented for the ideal gas equation of state
@@ -872,6 +882,7 @@ if (f_id_cflt.ge.0..and.(itherm.eq.1.or.itherm.eq.4).and.iscal.eq.iscalt) then
     call synsca(cflt)
   endif
 endif
+
 ! --> Couplage volumique avec Syrthes
 !     Ordre 2 non pris en compte
 
@@ -1812,6 +1823,7 @@ if (allocated(diverg)) deallocate(diverg)
 if (allocated(pdivu)) deallocate(pdivu)
 if (allocated(vistot)) deallocate(vistot)
 if (allocated(gradv)) deallocate(gradv)
+
 !--------
 ! Formats
 !--------

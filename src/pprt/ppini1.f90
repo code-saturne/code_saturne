@@ -72,18 +72,6 @@ integer :: ii
 
 !===============================================================================
 
-!===============================================================================
-! Check unstd_multiplicator
-!===============================================================================
-! TODO : discuter avec Martin sur ce warning, qui pour moi n'a pas lieu d'être
-! L'utilisateur ne doit pas y avoir touche.
-do ii = 1, nscapp
-  if (unstd_multiplicator.lt.-1.or.unstd_multiplicator.gt.2) then
-    write(nfecra,1001) iscapp(ii), iscapp(ii), unstd_multiplicator
-    call csexit(1)
-  endif
-enddo
-
 if (itherm .eq. 1) then
   call field_set_key_int(ivarfl(isca(iscalt)), kscacp, 1)
 endif
@@ -148,29 +136,6 @@ endif
 !--------
 ! Formats
 !--------
-
- 1001 format(                                                     &
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/,&
-'@ @@ WARNING: STOP WHILE READING INPUT DATA'                  ,/,&
-'@    ======='                                                 ,/,&
-'@'                                                            ,/,&
-'@  The values of "unstd_multiplicator" are set'               ,/,&
-'@  to be between -1 and 2'                                    ,/,&
-'@  model (i.e. non-user) scalars.'                            ,/,&
-'@'                                                            ,/,&
-'@  The user should not set a value for them, however'         ,/,&
-'@    for the scalar ', i10,' corresponding to the model'      ,/,&
-'@    scalar ', i10,' we have'                                 ,/,&
-'@    "unstd_multiplicator" = ', i11                           ,/,&
-'@'                                                            ,/,&
-'@  The calculation could NOT run.'                            ,/,&
-'@'                                                            ,/,&
-'@  Check parameters.'                                         ,/,&
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/)
 
 return
 end subroutine

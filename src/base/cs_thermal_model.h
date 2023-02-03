@@ -85,12 +85,12 @@ typedef struct {
   };
 
   /* Has kinetic source terme correction */
-  int                   has_kinetic_st;
-  int           cflt;         /* compute the thermal cfl condition */
-  int           cflp;         /* compute the pressure cfl condition */
+  int           has_kinetic_st;
+  int           cflt;           /* compute the thermal cfl condition */
+  int           cflp;           /* compute the pressure cfl condition */
   bool          has_pdivu;
   bool          has_dissipation;
-  int           unstd_multiplicator;
+
 } cs_thermal_model_t;
 
 /*============================================================================
