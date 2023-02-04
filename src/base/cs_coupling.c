@@ -423,8 +423,6 @@ cs_coupling_sync_apps(int      flags,
 
     int sync_flags = 0;
     int stop_mask = _cs_coupling_sync_flag & PLE_COUPLING_STOP;
-    int leader_id = -1;
-    double ts_min = -1.;
 
     double _ts = *ts * _cs_coupling_ts_multiplier;
 

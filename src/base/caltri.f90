@@ -96,7 +96,7 @@ integer          itrale , ntmsav
 integer          iterns
 integer          stats_id, restart_stats_id, lagr_stats_id, post_stats_id
 
-double precision titer1, titer2
+double precision titer1, titer2, dtcpl
 
 integer          ivoid(1)
 
@@ -177,15 +177,6 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_post_default_write_variables
-
-  !=============================================================================
-
-  subroutine cs_time_step_increment(dt) &
-    bind(C, name='cs_time_step_increment')
-    use, intrinsic :: iso_c_binding
-    implicit none
-    real(kind=c_double), value :: dt
-  end subroutine cs_time_step_increment
 
   !=============================================================================
 
@@ -795,8 +786,6 @@ write(nfecra,2000)
 ntcabs = ntpabs
 ttcabs = ttpabs
 
-if (iturbo.eq.2)  ttcmob = ttpmob
-
 write(nfecra,3000)
 
 !     Nb d'iter ALE (nb relatif a l'execution en cours)
@@ -815,10 +804,18 @@ endif
 
 if (itrale.gt.0) then
 
-  if (idtvar.eq.0) then
-    call cplsyn (ntmabs, ntcabs, dt(1))
-  else if (idtvar.ne.1) then ! synchronization in dttvar if idtvar = 1
-    call cplsyn (ntmabs, ntcabs, dtref)
+  ! Synchronization in dttvar if idtvar = 1
+  ! (i.e. keep coupled codes waiting until time step is computed
+  ! only when needed).
+  ! In case the coupling modifies the reference time step, make sure
+  ! the matching field is updated. Do not do this after initialization.
+  ! except for the adaptive time step (idtvar = 1), handled in dttvar.
+
+  if (idtvar.ne.1) then
+    call cplsyn(ntmabs, ntcabs, dtref)
+    do iel = 1, ncelet
+      dt(iel) = dtref
+    end do
   endif
 
   if (ntmabs .eq. ntcabs .and. ntmabs.gt.ntpabs) then
@@ -848,17 +845,9 @@ endif
 
 if (itrale.gt.0 .and. ntmabs.gt.ntpabs) then
   call timer_stats_increment_time_step
-  if (idtvar.eq.0.or.idtvar.eq.1) then
-    call cs_time_step_increment(dt(1))
-  else
+  ! Time step computed in dttvar if idtvar = 1.
+  if (idtvar.ne.1) then
     call cs_time_step_increment(dtref)
-  endif
-  if (iturbo.eq.2) then
-    if(idtvar.eq.0.or.idtvar.eq.1) then
-      ttcmob = ttcmob + dt(1)
-    else
-      ttcmob = ttcmob + dtref
-    endif
   endif
 endif
 
@@ -990,10 +979,9 @@ call armtps(ntcabs,ntmabs)
 
 ! Stop test for couplings
 
-if (idtvar.eq.0) then
-  call cplsyn (ntmabs, ntcabs, dt(1))
-else if (idtvar.ne.1) then ! synchronization in dttvar if idtvar = 1
-  call cplsyn (ntmabs, ntcabs, dtref)
+if (idtvar.ne.1) then ! synchronization in dttvar if idtvar = 1
+  dtcpl = dtref
+  call cplsyn (ntmabs, ntcabs, dtcpl)
 endif
 
 !===============================================================================
@@ -1131,11 +1119,11 @@ itrale = itrale + 1
 
 if (ntcabs.lt.ntmabs) goto 100
 
-! Final synchronization for variable time step
+! Final synchronization for time step.
+! This is done after exiting the main time loop, hence telling other codes
+! that code_saturne is finished.
 
-if (idtvar.eq.1) then
-  call cplsyn (ntmabs, ntcabs, dtref)
-endif
+call cplsyn (ntmabs, ntcabs, dtcpl)
 
 ! LIBERATION DES TABLEAUX INTERMEDIAIRES (PDC+TSM)
 

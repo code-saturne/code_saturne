@@ -278,25 +278,6 @@ endif
 
 nberro = 0
 
-rubriq = 'instant_mobile_precedent'
-itysup = 0
-nbval  = 1
-call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
-ttpmob = rval(1) ! no direct read to avoid pointer issue
-nberro=nberro+ierror
-
-! Message si erreur (pas de stop pour compatibilite avec fichiers anterieurs)
-! -> on n'affiche le message que si iturbo=2 (sinon RAS)
-if (nberro.ne.0) then
-  if (iturbo.eq.2) write(nfecra,9403) ttpabs
-  ttpmob = ttpabs
-endif
-
-! Information (uniquement si iturbo=2 et pas d affichage precedent)
-if (iturbo.eq.2) then
-  if (nberro.eq.0)  write(nfecra,2412) ttpmob
-endif
-
 if (iturbo.ne.0) then
   call turbomachinery_restart_read(rp)
 endif
@@ -382,9 +363,6 @@ return
  2411 format                                                            &
  ('  Reading the previous time step number ',                    &
                       '(restarting computation)  TTPABS = ',E12.4)
- 2412 format                                                            &
- ('  Reading the previous moving mesh moment ',                  &
-                      '(restarting computation)  TTPMOB = ',E12.4)
 
 ! --- ERREURS
 
@@ -476,26 +454,6 @@ return
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@    Please check the value of ILEAUX.                       ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9403 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING : ERROR AT THE MAIN RESTART FILE READING        ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@      ERROR AT READING THE PREVIOUS MOVING MESH MOMENT      ',/,&
-'@                                                            ',/,&
-'@    The read restart file might come from a previous        ',/,&
-'@      version of Code Saturne, without unsteady             ',/,&
-'@      rotor/stator coupling method.                         ',/,&
-'@    The calculation will be executed with the previous      ',/,&
-'@      moving mesh moment initialized to TTCMOB = ',E12.4     ,/,&
-'@    Please check the integrity of the file used as          ',/,&
-'@        restart file, however.                              ',/,&
-'@                                                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

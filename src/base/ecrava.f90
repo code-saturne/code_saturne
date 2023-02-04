@@ -239,12 +239,6 @@ nbval  = 1
 ival(1) = ivofmt
 call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
-rubriq = 'instant_mobile_precedent'
-itysup = 0
-nbval  = 1
-rval(1) = ttcmob
-call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
-
 call turbomachinery_restart_write(rp)
 
 if (ichemistry.gt.0.or.iaerosol.ne.CS_ATMO_AEROSOL_OFF) then

@@ -685,7 +685,7 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
   ! Update mesh
 
-  call turbomachinery_update_mesh (ttcmob, rs_ell(1))
+  call turbomachinery_update_mesh(rs_ell(1))
 
   call dmtmps(t1)
 

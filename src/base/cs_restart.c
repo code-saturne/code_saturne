@@ -1812,7 +1812,7 @@ void CS_PROCF (trbsui, TRBSUI)
  void
 )
 {
-  cs_mesh_save(cs_glob_mesh, NULL, "checkpoint", "mesh");
+  cs_mesh_save(cs_glob_mesh, NULL, "checkpoint", "mesh.csm");
 }
 
 /*----------------------------------------------------------------------------

@@ -111,11 +111,14 @@ typedef struct {
   char                     **rotor_cells_c;     /* rotor cells selection
                                                    criteria (for each rotor) */
 
+  int                        nt_cur;            /* current time step */
   int                        n_max_join_tries;  /* maximum number of tries
                                                    for joining differences */
   double                     dt_retry;          /* time shift multiplier for
                                                    retry position */
   double                     t_cur;             /* current time for update */
+  double                     t_cur_kc;          /* Kahan compensation for
+                                                   current time for update */
 
   cs_mesh_t                 *reference_mesh;    /* reference mesh (before
                                                    rotation and joining) */
@@ -148,6 +151,29 @@ void cs_f_map_turbomachinery_rotor(int  **irotce);
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update Kahan compensation.
+ *
+ * Called as a function to help avoid compiler optimizating Kahan
+ * summation out (though aggressive or LTO optimizations might).
+ *
+ * new compensation term is (a - b) - c
+ *
+ * \param[in]  a  a
+ * \param[in]  b  b
+ * \param[in]  c  c
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_kahan_compensation(double  *a,
+                           double  *b,
+                           double  *c)
+{
+  _turbomachinery->t_cur_kc = (*a - *b) - *c;
+}
 
 /*----------------------------------------------------------------------------
  * Function for selection of faces with joining changes.
@@ -275,8 +301,10 @@ _turbomachinery_create(void)
     r->invariant[i] = 0;
   }
 
+  tbm->nt_cur = 0;
   tbm->n_max_join_tries = 5;
   tbm->t_cur = 0;
+  tbm->t_cur_kc = 0;
   tbm->dt_retry = 1e-2;
 
   tbm->reference_mesh = cs_mesh_create();
@@ -613,20 +641,36 @@ _copy_mesh(const cs_mesh_t  *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_update_angle(cs_real_t  t)
+_update_angle(const cs_time_step_t  *ts)
 {
   cs_turbomachinery_t *tbm = _turbomachinery;
 
   /* Now update coordinates */
 
-  double dt = t - tbm->t_cur;
+  if (tbm->nt_cur < ts->nt_cur) {
 
-  if (dt > 0) {
-    for (int j = 0; j < tbm->n_rotors+1; j++) {
-      cs_rotation_t *r = tbm->rotation + j;
-      r->angle += r->omega * dt;
+    tbm->nt_cur = ts->nt_cur;
+
+    if (ts->nt_cur > ts->nt_prev) {
+
+      double dt = ts->dt[0];
+
+      for (int j = 0; j < tbm->n_rotors+1; j++) {
+        cs_rotation_t *r = tbm->rotation + j;
+        r->angle += r->omega * dt;
+        /* To avoid degrading numerical precision after many rotations,
+           keep angle value in [0, 2pi] range since it is periodic. */
+        r->angle = fmod(r->angle, atan(1.)*8.);
+      }
+
+      double z = dt - tbm->t_cur_kc;
+      double t = tbm->t_cur + z;
+
+      _update_kahan_compensation(&t, &(tbm->t_cur), &z);
+
+      tbm->t_cur = t;
     }
-    tbm->t_cur = t;
+
   }
 }
 
@@ -807,14 +851,12 @@ _select_rotor_cells(cs_turbomachinery_t  *tbm)
  *
  * parameters:
  *   restart_mode  true for restart, false otherwise
- *   t_cur_mob     current rotor time
  *   t_elapsed     elapsed computation time
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_mesh_coupling(double   t_cur_mob,
-                      double  *t_elapsed)
+_update_mesh_coupling(double  *t_elapsed)
 {
   double  t_start, t_end;
 
@@ -836,7 +878,7 @@ _update_mesh_coupling(double   t_cur_mob,
 
   /* Update geometry, if necessary */
 
-  _update_angle(t_cur_mob);
+  _update_angle(cs_glob_time_step);
 
   if (tbm->n_rotors > 0)
     _update_geometry(cs_glob_mesh, 0);
@@ -859,14 +901,12 @@ _update_mesh_coupling(double   t_cur_mob,
  *
  * parameters:
  *   restart_mode  true for restart, false otherwise
- *   t_cur_mob     current rotor time
  *   t_elapsed     elapsed computation time
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _update_mesh(bool     restart_mode,
-             double   t_cur_mob,
              double  *t_elapsed)
 {
   double  t_start, t_end;
@@ -886,8 +926,7 @@ _update_mesh(bool     restart_mode,
   /* In case of simple coupling, use simpler update */
 
   if (cs_glob_n_joinings < 1) {
-    _update_mesh_coupling(t_cur_mob,
-                          t_elapsed);
+    _update_mesh_coupling(t_elapsed);
     return;
   }
 
@@ -912,7 +951,7 @@ _update_mesh(bool     restart_mode,
   cs_glob_mesh->verbosity = 0;
   cs_glob_mesh_builder = cs_mesh_builder_create();
 
-  _update_angle(t_cur_mob);
+  _update_angle(cs_glob_time_step);
 
   if (restart_mode == false) {
 
@@ -1030,7 +1069,10 @@ _update_mesh(bool     restart_mode,
     cs_mesh_to_builder_partition(tbm->reference_mesh,
                                  cs_glob_mesh_builder);
 
-    cs_preprocessor_data_add_file("restart/mesh", 0, NULL, NULL);
+    if (cs_file_isreg("restart/mesh.csm"))
+      cs_preprocessor_data_add_file("restart/mesh.csm", 0, NULL, NULL);
+    else
+      cs_preprocessor_data_add_file("restart/mesh", 0, NULL, NULL);
 
     cs_preprocessor_data_read_headers(cs_glob_mesh,
                                       cs_glob_mesh_builder,
@@ -1500,16 +1542,14 @@ cs_turbomachinery_coupling_add(const char  *sel_criteria,
 /*!
  * \brief Update mesh for unsteady rotor/stator computation.
  *
- * \param[in]   t_cur_mob     current rotor time
  * \param[out]  t_elapsed     elapsed computation time
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbomachinery_update_mesh(double   t_cur_mob,
-                              double  *t_elapsed)
+cs_turbomachinery_update_mesh(double  *t_elapsed)
 {
-  _update_mesh(false, t_cur_mob, t_elapsed);
+  _update_mesh(false, t_elapsed);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1528,10 +1568,10 @@ cs_turbomachinery_restart_mesh(void)
 
   if (cs_glob_time_step->nt_prev > 0) {
     double t_elapsed;
-    if (cs_file_isreg("restart/mesh"))
-      _update_mesh(true, cs_glob_time_step->t_cur, &t_elapsed);
+    if (cs_file_isreg("restart/mesh") || cs_file_isreg("restart/mesh.csm"))
+      _update_mesh(true, &t_elapsed);
     else
-      _update_mesh(false, cs_glob_time_step->t_cur, &t_elapsed);
+      _update_mesh(false, &t_elapsed);
   }
 }
 
@@ -1608,7 +1648,7 @@ cs_turbomachinery_initialize(void)
 
   if (cs_glob_n_joinings > 0) {
     cs_real_t t_elapsed;
-    cs_turbomachinery_update_mesh(0.0, &t_elapsed);
+    cs_turbomachinery_update_mesh(&t_elapsed);
   }
 
   /* Adapt postprocessing options if required;
@@ -2017,6 +2057,7 @@ cs_turbomachinery_restart_read(cs_restart_t  *r)
                                         t_angle);
 
   if (retcode == CS_RESTART_SUCCESS) {
+    tbm->nt_cur = cs_glob_time_step->nt_prev;
     tbm->t_cur = t_angle[0];
     for (int i = 0; i < tbm->n_rotors+1; i++) {
       cs_rotation_t *rot = tbm->rotation + i;
