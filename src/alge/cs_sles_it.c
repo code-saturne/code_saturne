@@ -251,7 +251,8 @@ _convergence_test(cs_sles_it_t              *c,
           bft_printf(_("  n_iter : %5d, res_abs : %11.4e\n"),
                      n_iter, residue);
       }
-      if (convergence->precision > 0.)
+      if (   convergence->precision > 0.
+          && c->fallback_cvg <= CS_SLES_MAX_ITERATION)
         bft_printf(_(" @@ Warning: non convergence\n"));
     }
     return CS_SLES_MAX_ITERATION;
