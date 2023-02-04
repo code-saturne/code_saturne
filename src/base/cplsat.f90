@@ -56,12 +56,6 @@ module cplsat
   integer, save :: nvarcp(nbcpmx)
   !> size of exchange tables
   integer, save :: nvarto(nbcpmx)
-  !> Absolute time value after the mesh starts to rotate (if it does),
-  !> for previous calculation
-  double precision, save :: ttpmob = 0.d0
-  !> Current absolute time after the mesh starts to rotate (if it does).
-  !> In case of restart, this is equal to ttpmob + additional computed time.
-  double precision, save :: ttcmob = 0.d0
   !> \}
 
   !=============================================================================

@@ -27,7 +27,11 @@
 
 !> \file dttvar.f90
 !> \brief Compute the local time step and add the Courant and Fourier number to
-!the log.
+!>        the log.
+!>
+!> When using an adaptive time step (idtvar = 1), coupling syncronization and
+!> update (incrementation) of the time step is done in the function (rather
+!> than earlier) as soon as the required information is available.
 !>
 !> This function has access to the boundary face type, except for the first time
 !> step.
@@ -207,7 +211,6 @@ call field_get_val_s(ibrom, brom)
 if (ippmod(icompf).ge.0) then
 
   call cfdttv                                                   &
-  !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                          &
    icepdc , icetsm , itypsm ,                                   &
    dt     ,                                                     &
@@ -221,21 +224,23 @@ endif
 !===============================================================================
 
 if (vcopt_u%idiff.ge.1) then
+
   do iel = 1, ncel
     w1(iel) = viscl(iel) + vcopt_u%idifft*visct(iel)
   enddo
-
   imvisp = vcopt_u%imvisf
 
   call viscfa(imvisp, w1, viscf, viscb)
 
 else
+
   do ifac = 1, nfac
     viscf(ifac) = 0.d0
   enddo
   do ifac = 1, nfabor
     viscb(ifac) = 0.d0
   enddo
+
 endif
 
 !===============================================================================
@@ -248,8 +253,8 @@ if (idtvar.ge.0) then
 
     if (bmasfl(ifac).lt.0.d0) then
       iel = ifabor(ifac)
-      hint = vcopt_u%idiff*(  viscl(iel)                         &
-                        + vcopt_u%idifft*visct(iel))/distb(ifac)
+      hint = vcopt_u%idiff*(  viscl(iel)                              &
+                            + vcopt_u%idifft*visct(iel))/distb(ifac)
       coefbt(ifac) = 0.d0
       cofbft(ifac) = hint
     else
@@ -349,9 +354,8 @@ if (idtvar.ge.0) then
       ! Matrice a priori non symetrique
       isym = 2
 
-      call matrdt &
-        ( vcopt_u%iconv, idiff0, isym, coefbt, cofbft, imasfl, bmasfl, viscf, &
-        viscb, dam)
+      call matrdt(vcopt_u%iconv, idiff0, isym, coefbt, cofbft,   &
+                  imasfl, bmasfl, viscf, viscb, dam)
 
       if (ivofmt.eq.0) then
         do iel = 1, ncel
@@ -401,15 +405,12 @@ if (idtvar.ge.0) then
       ! Matrice a priori symetrique
       isym = 1
 
-      call matrdt &
-      !==========
- (iconv0, vcopt_u%idiff, isym, coefbt, cofbft, imasfl, bmasfl, &
-  viscf, viscb, dam)
+      call matrdt(iconv0, vcopt_u%idiff, isym, coefbt, cofbft,   &
+                  imasfl, bmasfl, viscf, viscb, dam)
 
       do iel = 1, ncel
         w2(iel) = dam(iel)/(crom(iel)*volume(iel))
       enddo
-
 
       ! ---> CALCUL DE W2     = PAS DE TEMPS VARIABLE VERIFIANT
       !       LE NOMBRE DE         FOURIER MAXIMUM PRESCRIT PAR L'UTILISATEUR
@@ -427,7 +428,6 @@ if (idtvar.ge.0) then
         enddo
         if (irangp.ge.0) then
           call parmin (w2min)
-          !==========
         endif
         do iel = 1, ncel
           w2(iel) = w2min
@@ -509,7 +509,6 @@ if (idtvar.ge.0) then
       endif
     enddo
 
-
     ! 4.1.6 ON LIMITE PAR LE PAS DE TEMPS "THERMIQUE" MAX
     ! =================================================
     !     DTTMAX = W3 = 1/SQRT(MAX(0+,gradRO.g/RO)
@@ -545,7 +544,6 @@ if (idtvar.ge.0) then
         enddo
         if (irangp.ge.0) then
           call parmin (w3min)
-          !==========
         endif
 
         do iel = 1, ncel
@@ -556,7 +554,7 @@ if (idtvar.ge.0) then
     endif
 
     ! 4.1.7 ON CLIPPE LE PAS DE TEMPS PAR RAPPORT A DTMIN ET DTMAX
-    ! ==========================================================
+    ! ============================================================
 
     icfmin(1) = 0
     icfmax(1) = 0
@@ -576,16 +574,12 @@ if (idtvar.ge.0) then
       endif
 
       ntcam1 = ntcabs - 1
-      call cplsyn (ntmabs, ntcam1, dtloc)
+      call cplsyn(ntmabs, ntcam1, dtloc)
 
       call log_iteration_clipping_field(flid, icfmin(1), icfmax(1),    &
                                         dt, dt, icfmin(1), icfmax(1))
 
-      ttcabs = ttcabs + (dtloc - dt(1))
-      if (iturbo.eq.2) then
-        ttcmob = ttcmob + (dtloc - dt(1))
-      endif
-
+      call cs_time_step_increment(dtloc)
       do iel = 1, ncel
         dt(iel) = dtloc
       enddo
@@ -620,9 +614,7 @@ if (idtvar.ge.0) then
     if (iwarnp.ge.2) then
       if (irangp.ge.0) then
         call parcpt (icfmin(1))
-        !==========
         call parcpt (icfmax(1))
-        !==========
       endif
       write (nfecra,1003) icfmin(1),dtmin,icfmax(1),dtmax
     endif
@@ -715,17 +707,15 @@ if (idtvar.ge.0) then
 !===============================================================================
 ! 5.   ALGORITHME STATIONNAIRE
 !===============================================================================
-else
+
+else ! if idtvar < 0
 
   isym = 1
   if (vcopt_u%iconv.gt.0) isym = 2
 
-  call matrdt &
-  !==========
- ( vcopt_u%iconv, vcopt_u%idiff, isym,                          &
-   coefbt, cofbft,                                              &
-   imasfl, bmasfl,                                              &
-   viscf, viscb, dt )
+  call matrdt(vcopt_u%iconv, vcopt_u%idiff, isym,               &
+              coefbt, cofbft, imasfl, bmasfl,                   &
+              viscf, viscb, dt)
 
   do iel = 1, ncel
     dt(iel) =  vcopt_u%relaxv*crom(iel)*volume(iel)/max(dt(iel),epzero)
@@ -960,9 +950,8 @@ if (vcopt_u%iconv.ge.1 .and. icour.ge.1) then
   ! Non symmetric matrix
   isym = 2
 
-  call matrdt &
-    (vcopt_u%iconv, idiff0, isym, coefbt, cofbft, imasfl, bmasfl, &
-    viscf, viscb, dam)
+  call matrdt(vcopt_u%iconv, idiff0, isym, coefbt, cofbft, imasfl, bmasfl, &
+              viscf, viscb, dam)
 
   ! Compute min and max Courant numbers
   cfmax = -grand
@@ -1024,15 +1013,13 @@ if (vcopt_u%idiff.ge.1 .and. ifour.ge.1) then
   iconv0 = 0
   cnom = ' FOURIER'
 
-  !                      2
   ! Build matrix +2.NU/DX (Fourier)=w1
 
   ! Symmetric matrix
   isym = 1
 
-  call matrdt &
-    (iconv0, vcopt_u%idiff, isym, coefbt, cofbft, imasfl, bmasfl, &
-    viscf, viscb, dam)
+  call matrdt(iconv0, vcopt_u%idiff, isym, coefbt, cofbft, imasfl, bmasfl, &
+              viscf, viscb, dam)
 
   ! Compute min/max of Fourier number
   cfmax  = -grand
@@ -1096,9 +1083,8 @@ if ((vcopt_u%idiff.ge.1.or.vcopt_u%iconv.ge.1) &
   isym = 1
   if (vcopt_u%iconv.gt.0) isym = 2
 
-  call matrdt &
-    (vcopt_u%iconv, vcopt_u%idiff, isym, coefbt, cofbft, imasfl, bmasfl, &
-    viscf, viscb, dam)
+  call matrdt(vcopt_u%iconv, vcopt_u%idiff, isym, coefbt, cofbft,   &
+              imasfl, bmasfl, viscf, viscb, dam)
 
   ! Compute Courant/Fourier min and max
   cfmax  = -grand

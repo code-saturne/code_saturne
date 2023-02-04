@@ -61,7 +61,7 @@ module turbomachinery
 
     ! Interface to C function mapping some data for turbomachinery
 
-    subroutine map_turbomachinery_model (iturbo2, ityint2) &
+    subroutine map_turbomachinery_model(iturbo2, ityint2) &
       bind(C, name='cs_f_map_turbomachinery_model')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -72,7 +72,7 @@ module turbomachinery
 
     ! Interface to C function mapping some data for turbomachinery
 
-    subroutine map_turbomachinery_rotor (irotce2) &
+    subroutine map_turbomachinery_rotor(irotce2) &
       bind(C, name='cs_f_map_turbomachinery_rotor')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -83,11 +83,10 @@ module turbomachinery
 
     ! Interface to C function updating mesh for turbomachinery
 
-    subroutine turbomachinery_update_mesh(t_cur_mob, t_elapsed)            &
+    subroutine turbomachinery_update_mesh(t_elapsed)            &
       bind(C, name='cs_turbomachinery_update_mesh')
       use, intrinsic :: iso_c_binding
       implicit none
-      real(kind=c_double), value :: t_cur_mob
       real(kind=c_double), intent(out) :: t_elapsed
     end subroutine turbomachinery_update_mesh
 
