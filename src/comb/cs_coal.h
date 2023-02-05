@@ -1,5 +1,5 @@
-#ifndef __CS_COMB_H__
-#define __CS_COMB_H__
+#ifndef __CS_COAL_H__
+#define __CS_COAL_H__
 
 /*============================================================================
  * Coal combustion model.
@@ -77,4 +77,4 @@ cs_coal_rad_transfer_st(const cs_field_t  *f,
 
 END_C_DECLS
 
-#endif /* __CS_COMB_RADST_H__ */
+#endif /* __CS_COAL__ */
