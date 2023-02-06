@@ -1801,7 +1801,7 @@ class Studies(object):
                                 # add exclusive option to batch template for
                                 # computation with at least 6 processors
                                 if nproc+1 > 5:
-                                    cmd += "#SBATCH --exclusive"
+                                    cmd += "#SBATCH --exclusive\n"
 
                                 # add user defined options if needed
                                 if self.__slurm_batch_args:
@@ -1809,7 +1809,6 @@ class Studies(object):
                                         cmd += "#SBATCH " + _p + "\n"
 
                                 cmd += "\n"
-
                                 slurm_batch_file.write(cmd)
 
                                 # fill file with batch command for several cases
@@ -1854,7 +1853,13 @@ class Studies(object):
                     # add exclusive option to batch template for
                     # computation with at least 6 processors
                     if nproc+1 > 5:
-                        cmd += "#SBATCH --exclusive"
+                        cmd += "#SBATCH --exclusive\n"
+
+                    # add user defined options if needed
+                    if self.__slurm_batch_args:
+                        for _p in self.__slurm_batch_args:
+                            cmd += "#SBATCH " + _p + "\n"
+
                     cmd += "\n"
                     slurm_batch_file.write(cmd)
 
