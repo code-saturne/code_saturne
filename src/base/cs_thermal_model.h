@@ -147,30 +147,23 @@ cs_thermal_model_init(void);
  *        by gamma.
  *
  * \param[in]      cp      array of isobaric specific heat values for dry air
- * \param[in]      cpv     array of isobaric specific heat values for moist air
- * \param[in]      l00     latent heat
  * \param[in]      temp    array of temperature values
  * \param[in]      pres    array of pressure values
  * \param[in,out]  fracv   array of volume fraction values
  * \param[in,out]  fracm   array of mass fraction values
  * \param[in,out]  frace   array of energy fraction values
- * \param[out]     dc2      array of the values of the square of sound velocity
- * \param[in]      l_size  l_size of the array
+ * \param[out]     dc2     array of the values of the square of sound velocity
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_model_c_square(cs_real_t  *cp,
-                          cs_real_t   cpv,
-                          cs_real_t   cpl,
-                          cs_real_t   l00,
-                          cs_real_t  *temp,
-                          cs_real_t  *pres,
-                          cs_real_t  *fracv,
-                          cs_real_t  *fracm,
-                          cs_real_t  *frace,
-                          cs_real_t  *c2,
-                          cs_lnum_t   l_size);
+cs_thermal_model_c_square(const cs_real_t  cp[],
+                          const cs_real_t  temp[],
+                          const cs_real_t  pres[],
+                          const cs_real_t  fracv[],
+                          const cs_real_t  fracm[],
+                          const cs_real_t  frace[],
+                          cs_real_t        dc2[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -476,39 +476,39 @@ cs_thermal_model_init(void)
  *        by gamma.
  *
  * \param[in]      cp      array of isobaric specific heat values for dry air
- * \param[in]      cpv     array of isobaric specific heat values for moist air
- * \param[in]      l00     latent heat
  * \param[in]      temp    array of temperature values
  * \param[in]      pres    array of pressure values
  * \param[in,out]  fracv   array of volume fraction values
  * \param[in,out]  fracm   array of mass fraction values
  * \param[in,out]  frace   array of energy fraction values
- * \param[out]     dc2      array of the values of the square of sound velocity
- * \param[in]      l_size  l_size of the array
+ * \param[out]     dc2     array of the values of the square of sound velocity
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_model_c_square(cs_real_t  *cp,
-                          cs_real_t   cpv,
-                          cs_real_t   cpl,
-                          cs_real_t   l00,
-                          cs_real_t  *temp,
-                          cs_real_t  *pres,
-                          cs_real_t  *fracv,
-                          cs_real_t  *fracm,
-                          cs_real_t  *frace,
-                          cs_real_t  *dc2,
-                          cs_lnum_t   l_size)
+cs_thermal_model_c_square(const cs_real_t  cp[],
+                          const cs_real_t  temp[],
+                          const cs_real_t  pres[],
+                          const cs_real_t  fracv[],
+                          const cs_real_t  fracm[],
+                          const cs_real_t  frace[],
+                          cs_real_t        dc2[])
 {
   CS_NO_WARN_IF_UNUSED(cp);
   CS_NO_WARN_IF_UNUSED(fracm);
 
   /*  Local variables */
-  int ieos = cs_glob_cf_model->ieos;
-  cs_real_t rair = cs_glob_fluid_properties->r_pg_cnst;
-  const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
-  cs_real_t rvsra = phys_pro->rvsra;
+
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const int ieos = cs_glob_cf_model->ieos;
+  const cs_real_t rair = cs_glob_fluid_properties->r_pg_cnst;
+  const cs_fluid_properties_t *phys_prop = cs_glob_fluid_properties;
+
+  const cs_real_t cvl = phys_prop->cvl;
+  const cs_real_t cpv0 = phys_prop->cpv0;
+  const cs_real_t l00 =  phys_prop->l00;
+  const cs_real_t rvsra = phys_prop->rvsra;
+
   /* no specific eos : the pressure equation is a Poisson equation */
   cs_field_t *fhyd = cs_field_by_name_try("H2");
 
@@ -517,11 +517,11 @@ cs_thermal_model_c_square(cs_real_t  *cp,
     /* WIP : only available in this function for hydrogen and air */
     cs_real_t rh = 4157.; /* R/MH2 */
     cs_real_t *yhyd = cs_field_by_name("H2")->val;
-    for (cs_lnum_t ii = 0; ii < l_size; ii++)
+    for (cs_lnum_t ii = 0; ii < n_cells; ii++)
       dc2[ii] = 1. / (temp[ii]*((1. - yhyd[ii])*rair) + yhyd[ii]*rh);
   }
   else if (ieos == CS_EOS_IDEAL_GAS) {
-     for (cs_lnum_t ii = 0; ii < l_size; ii++)
+     for (cs_lnum_t ii = 0; ii < n_cells; ii++)
       dc2[ii] = 1. / (rair * temp[ii]);
   }
 
@@ -531,10 +531,10 @@ cs_thermal_model_c_square(cs_real_t  *cp,
     /* B, C are the Antoine's law constants */
     cs_real_t B = 17.438;
     cs_real_t C = 239.78;
-    cs_real_t cvv = cpv - 461.914;
-    for (cs_lnum_t ii = 0; ii < l_size; ii++) {
+    cs_real_t cvv = cpv0 - 461.914;
+    for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
       if (fracv[ii] < frace[ii]) {
-        prest = pres[ii] + phys_pro ->p0;
+        prest = pres[ii] + phys_prop->p0;
         // Saturation pressure
         ps  = cs_air_pwv_sat(temp[ii]
             - cs_physical_constants_celsius_to_kelvin);
@@ -548,7 +548,7 @@ cs_thermal_model_c_square(cs_real_t  *cp,
               *pow(C + temp[ii]
                 - cs_physical_constants_celsius_to_kelvin, 2));
         // partial e / partial p
-        dedp = -(1. /ps)*(1. /rvsra)*(l00+temp[ii]*(cvv - cpl))
+        dedp = -(1. /ps)*(1. /rvsra)*(l00+temp[ii]*(cvv - cvl))
           /pow(prest*(1. /ps) - (1. - 1. /rvsra), 2);
         // partial rho / partial T
         drhodt = rair*((1. - frace[ii] + fracv[ii] *rvsra)
@@ -569,7 +569,7 @@ cs_thermal_model_c_square(cs_real_t  *cp,
     }
   }
   else {
-    for (cs_lnum_t ii = 0; ii < l_size; ii++)
+    for (cs_lnum_t ii = 0; ii < n_cells; ii++)
       dc2[ii] = 0.;
   }
 }

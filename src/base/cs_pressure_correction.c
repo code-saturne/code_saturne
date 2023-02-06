@@ -725,68 +725,64 @@ _pressure_correction_fv(int        iterns,
   int kinetic_st = cs_glob_thermal_model->has_kinetic_st;
   const cs_fluid_properties_t *phys_pro = cs_glob_fluid_properties;
 
-  cs_real_t *xcpp = NULL, *temp = NULL, *dc2 = NULL;
+  const cs_real_t *temp = NULL;
+  cs_real_t *xcpp = NULL, *dc2 = NULL;
   cs_real_t *cvar_th = NULL, *tempk = NULL;
   cs_real_t _coef = 0;
-  cs_real_t cvl = phys_pro->cvl;
-  cs_real_t cpv = phys_pro->cpv0;
-  cs_real_t l00 =  phys_pro->l00;
   cs_real_t *yw = NULL, *yv = NULL;
 
   if (idilat == 2) {
 
-    cvar_th = CS_F_(t)->val;
-
-    /* Allocation */
-    BFT_MALLOC(dc2, n_cells_ext, cs_real_t);
-    BFT_MALLOC(xcpp, n_cells_ext, cs_real_t);
-    BFT_MALLOC(temp, n_cells_ext, cs_real_t);
-
-    /* Theta scheme related term */
-    _coef = 1. + 2. * (1. - eqp_u->thetav);
-
     /* Get the temperature */
-    if (thermal_variable == CS_THERMAL_MODEL_TEMPERATURE) {
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        temp[c_id] = cvar_th[c_id];
-    }
+    if (thermal_variable == CS_THERMAL_MODEL_TEMPERATURE)
+      temp = CS_F_(t);
     else {
-      tempk = cs_field_by_name("temperature")->val;
+      const cs_field_t *f_t = cs_field_by_name_try("temperature");
+      if (f_t != NULL) {
+        tempk = f_t->val;
+        temp = f_t->val;
+      }
+    }
+
+    if (temp != NULL) {
+
+      cvar_th = CS_F_(t)->val;
+
+      /* Allocation */
+      BFT_MALLOC(dc2, n_cells_ext, cs_real_t);
+      BFT_MALLOC(xcpp, n_cells_ext, cs_real_t);
+
+      /* Theta scheme related term */
+      _coef = 1. + 2. * (1. - eqp_u->thetav);
+
+      /* Get cp */
+      if (fluid_props->icp > 0) {
+        cs_real_t *cpro_cp = CS_F_(cp)->val;
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+          xcpp[c_id] = cpro_cp[c_id];
+      }
+      else
+        cs_array_set_value_real(n_cells, 1, 1., xcpp);
+
+      /* Get mass fractions if needed */
+      if (ieos == CS_EOS_MOIST_AIR) {
+        yw = cs_field_by_name("yw")->val;
+        yv = cs_field_by_name("yv")->val;
+      }
+      cs_real_t *cvar_fracm = NULL;
+
+      /* Compute dc2 */
+      cs_thermal_model_c_square(xcpp,
+                                temp,
+                                cvar_pr,
+                                yv,
+                                cvar_fracm,
+                                yw,
+                                dc2);
+
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        temp[c_id] = tempk[c_id];
+        rovsdt[c_id] += cell_f_vol[c_id] * _coef * dc2[c_id] / dt[c_id];
     }
-
-    /* Get cp */
-    if (fluid_props->icp > 0) {
-      cs_real_t *cpro_cp = CS_F_(cp)->val;
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        xcpp[c_id] = cpro_cp[c_id];
-    }
-    else
-      cs_array_set_value_real(n_cells, 1, 1., xcpp);
-
-    /* Get mass fractions if needed */
-    if (ieos == CS_EOS_MOIST_AIR) {
-      yw = cs_field_by_name("yw")->val;
-      yv = cs_field_by_name("yv")->val;
-    }
-    cs_real_t *cvar_fracm = NULL;
-
-    /* Compute dc2 */
-    cs_thermal_model_c_square(xcpp,
-                              cpv,
-                              cvl,
-                              l00,
-                              temp,
-                              cvar_pr,
-                              yv,
-                              cvar_fracm,
-                              yw,
-                              dc2,
-                              n_cells);
-
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      rovsdt[c_id] += cell_f_vol[c_id] * _coef * dc2[c_id] / dt[c_id];
   }
 
   /* Implicit part of the cavitation source */

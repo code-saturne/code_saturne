@@ -402,7 +402,7 @@ if (ippmod(iatmos).ne.-1) then
 endif
 
 if (itherm.eq.1.or.itherm.eq.4) then
- call cs_thermal_model_init()
+  call cs_thermal_model_init()
 endif
 
 !===============================================================================
@@ -928,17 +928,16 @@ do while (iterns.le.nterup)
 
   endif
 
-!     ==============================================
-!     Appel de l'interface sol-atmosphere
-!     ==============================================
+  !     ==============================================
+  !     Call ground-atmosphere interface
+  !     ==============================================
 
-  if (ippmod(iatmos).eq.2.and.iatsoil.eq.1.and.nfmodsol.gt.0) then !FIXME why only iatmos =2 ?
+  ! FIXME why only iatmos =2 ?
+  if (ippmod(iatmos).eq.2.and.iatsoil.eq.1.and.nfmodsol.gt.0) then
     call field_get_val_s(icrom, crom)
     call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
     call field_get_val_s(ivarfl(isca(iymw)), cvar_totwt)
-    call solvar(cvar_scalt , cvar_totwt ,                &
-                crom   , dt ,                            &
-                rcodcl )
+    call solvar(cvar_scalt, cvar_totwt, crom, dt, rcodcl )
   endif
 
   !     UNE FOIS LES COEFFICIENTS CALCULES, ON PEUT EN DEDUIRE PLUS
@@ -1248,7 +1247,6 @@ if (idilat.eq.2) then
       tempa(iel) = tempk(iel)
     enddo
   endif
-  call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
 
   ! Saving the thermodynamic pressure at time n+1
   ! coherent with the equation of state

@@ -1458,7 +1458,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
                      eqp);
   }
   else {
-    cs_array_real_fill_zero(n_b_faces, viscf);
+    cs_array_real_fill_zero(m->n_i_faces, viscf);
     cs_array_real_fill_zero(n_b_faces, viscb);
   }
 
