@@ -2333,9 +2333,10 @@ class Studies(object):
                                fig_name)
 
             # Figure copied in POST/"CURRENT"/CASE/run_id folder
-            dest_folder = os.path.join(self.__dest, s_label, 'POST', 'CURRENT',
-                                       c_label, run_id)
-            fig_dest = os.path.join(dest_folder, fig_name)
+            # fig_name can include another folder (ex: datasets/fig.png)
+            fig_dest = os.path.join(self.__dest, s_label, 'POST', 'CURRENT',
+                                    c_label, run_id, fig_name)
+            dest_folder = os.path.dirname(fig_dest)
 
             if os.path.isfile(fig):
                 if fig[-4:] in ('.png', '.jpg', '.pdf') or fig[-5:] == '.jpeg':
