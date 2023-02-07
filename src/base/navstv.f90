@@ -136,7 +136,7 @@ double precision distbf, srfbnf, hint
 double precision rnx, rny, rnz
 double precision vr(3), vr1(3), vr2(3), vrn
 double precision disp_fac(3), xnr_mu(1)
-double precision vol_fl_drhovol1, vol_fl_drhovol2
+double precision vol_fl_drhovol1, vol_fl_drhovol2, rhok1drhok
 
 double precision, allocatable, dimension(:,:,:), target :: viscf
 double precision, allocatable, dimension(:), target :: viscb
@@ -145,6 +145,7 @@ double precision, allocatable, dimension(:,:), target :: uvwk
 double precision, dimension(:,:), pointer :: velk
 double precision, allocatable, dimension(:), target :: wvisbi
 double precision, allocatable, dimension(:), target :: cpro_rho_tc, bpro_rho_tc
+double precision, allocatable, dimension(:), target :: cpro_rho_k1
 double precision, allocatable, dimension(:) :: esflum, esflub
 double precision, allocatable, dimension(:) :: intflx, bouflx
 double precision, allocatable, dimension(:) :: secvif, secvib
@@ -164,6 +165,7 @@ double precision, dimension(:), pointer :: coefa_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: ivolfl, bvolfl
 double precision, dimension(:), pointer :: brom, broma, crom, croma,cromaa, viscl, visct
+double precision, dimension(:), pointer :: cromk1
 double precision, dimension(:,:), pointer :: trav
 double precision, dimension(:,:), pointer :: mshvel
 double precision, dimension(:,:), pointer :: disale
@@ -234,6 +236,15 @@ interface
     implicit none
     real(kind=c_double), dimension(*), intent(inout) :: dt
   end subroutine cs_mass_flux_prediction
+
+  !=============================================================================
+
+  subroutine cs_thermal_model_kinetic_st_finalize(cromk1, cromk) &
+      bind(C, name='cs_thermal_model_kinetic_st_finalize')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    real(kind=c_double), dimension(*) :: cromk1, cromk
+  end subroutine cs_thermal_model_kinetic_st_finalize
 
   !=============================================================================
 
@@ -412,6 +423,8 @@ if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3)) then
     enddo
 
     crom => cpro_rho_tc
+    ! rho at time n+1/2,k-1
+    cromk1 => cpro_rho_tc
 
     do ifac = 1, nfabor
       bpro_rho_tc(ifac) = vcopt_u%thetav * bpro_rho_mass(ifac) &
@@ -422,12 +435,21 @@ if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3)) then
 
   else
     crom => cpro_rho_mass
+    ! rho at time n+1,k-1
+    allocate(cpro_rho_k1(ncelet))
+    do iel = 1, ncelet
+      cpro_rho_k1(iel) = cpro_rho_mass(iel)
+    enddo
+    cromk1 => cpro_rho_k1
+
     brom => bpro_rho_mass
   endif
 
 ! Weakly variable density algo. (idilat <=1) or constant density
 else
   crom => crom_eos
+  ! rho at time n+1,k-1
+  cromk1 => crom_eos
   brom => brom_eos
 endif
 
@@ -804,9 +826,18 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
           enddo
 
           crom => cpro_rho_tc
+          cromk1 => cpro_rho_tc
 
         else
           crom => cpro_rho_mass
+          ! rho at time n+1,k-1
+          if (allocated(cpro_rho_k1)) deallocate(cpro_rho_k1)
+          allocate(cpro_rho_k1(ncelet))
+          do iel = 1, ncelet
+            cpro_rho_k1(iel) = cpro_rho_mass(iel)
+          enddo
+          cromk1 => cpro_rho_k1
+
         endif
       endif
 
@@ -921,6 +952,7 @@ call cs_bad_cells_regularisation_scalar(cvar_pr)
 call field_get_val_s(icrom, crom)
 call field_get_val_s(icrom, crom_eos)
 
+! Update density which may be computed in the pressure step
 if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3)) then
   ! If iterns = 1: this is density at time n
   call field_get_id("density_mass", f_id)
@@ -934,10 +966,12 @@ if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3)) then
     if (allocated(cpro_rho_tc)) deallocate(cpro_rho_tc)
     allocate(cpro_rho_tc(ncelet))
 
-    do iel = 1, ncelet
+    do iel = 1, ncel
       cpro_rho_tc(iel) =  vcopt_u%thetav * cpro_rho_mass(iel) &
         + (1.d0 - vcopt_u%thetav) * croma(iel)
     enddo
+
+    call synsca(cpro_rho_tc)
 
     crom => cpro_rho_tc
 
@@ -945,6 +979,7 @@ if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3)) then
     crom => cpro_rho_mass
   endif
 endif
+
 !===============================================================================
 ! 8. Mesh velocity solving (ALE)
 !===============================================================================
@@ -1024,8 +1059,9 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
         !$omp parallel do private(dtsrom, isou)
         do iel = 1, ncel
           dtsrom = thetap*dt(iel)/crom(iel)
+          rhok1drhok = cromk1(iel)/crom(iel)
           do isou = 1, 3
-            vel(isou,iel) = vel(isou,iel)                            &
+            vel(isou,iel) = vel(isou,iel) * rhok1drhok                &
                  + dtsrom*(dfrcxt(isou, iel)-cpro_gradp(isou,iel))
           enddo
         enddo
@@ -1035,20 +1071,21 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
         !$omp parallel do private(unsrom)
         do iel = 1, ncel
           unsrom = thetap/crom(iel)
+          rhok1drhok = cromk1(iel)/crom(iel)
 
-          vel(1, iel) = vel(1, iel)                              &
+          vel(1, iel) = vel(1, iel) * rhok1drhok                      &
                + unsrom*(                                        &
                  dttens(1,iel)*(dfrcxt(1, iel)-cpro_gradp(1,iel))     &
                + dttens(4,iel)*(dfrcxt(2, iel)-cpro_gradp(2,iel))     &
                + dttens(6,iel)*(dfrcxt(3, iel)-cpro_gradp(3,iel))     &
                )
-          vel(2, iel) = vel(2, iel)                              &
+          vel(2, iel) = vel(2, iel) * rhok1drhok                      &
                + unsrom*(                                        &
                  dttens(4,iel)*(dfrcxt(1, iel)-cpro_gradp(1,iel))     &
                + dttens(2,iel)*(dfrcxt(2, iel)-cpro_gradp(2,iel))     &
                + dttens(5,iel)*(dfrcxt(3, iel)-cpro_gradp(3,iel))     &
                )
-          vel(3, iel) = vel(3, iel)                              &
+          vel(3, iel) = vel(3, iel) * rhok1drhok                      &
                + unsrom*(                                        &
                  dttens(6,iel)*(dfrcxt(1 ,iel)-cpro_gradp(1,iel))     &
                + dttens(5,iel)*(dfrcxt(2 ,iel)-cpro_gradp(2,iel))     &
@@ -1084,9 +1121,11 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
         !$omp parallel do private(dtsrom, isou)
         do iel = 1, ncel
           dtsrom = thetap*dt(iel)/crom(iel)
+          rhok1drhok = cromk1(iel)/crom(iel)
           ! Updating velocity
           do isou = 1, 3
-            vel(isou,iel) = vel(isou,iel) - dtsrom*cpro_gradp(isou,iel)
+            vel(isou,iel) = vel(isou,iel) * rhok1drhok &
+                          - dtsrom*cpro_gradp(isou,iel)
           enddo
         enddo
 
@@ -1096,20 +1135,21 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
         !$omp parallel do private(unsrom)
         do iel = 1, ncel
           unsrom = thetap/crom(iel)
+          rhok1drhok = cromk1(iel)/crom(iel)
 
-          vel(1, iel) = vel(1, iel)                              &
+          vel(1, iel) = vel(1, iel) * rhok1drhok                      &
                       - unsrom*(                                 &
                                  dttens(1,iel)*(cpro_gradp(1,iel))    &
                                + dttens(4,iel)*(cpro_gradp(2,iel))    &
                                + dttens(6,iel)*(cpro_gradp(3,iel))    &
                                )
-          vel(2, iel) = vel(2, iel)                              &
+          vel(2, iel) = vel(2, iel) * rhok1drhok                      &
                       - unsrom*(                                 &
                                  dttens(4,iel)*(cpro_gradp(1,iel))    &
                                + dttens(2,iel)*(cpro_gradp(2,iel))    &
                                + dttens(5,iel)*(cpro_gradp(3,iel))    &
                                )
-          vel(3, iel) = vel(3, iel)                              &
+          vel(3, iel) = vel(3, iel) * rhok1drhok                      &
                       - unsrom*(                                 &
                                  dttens(6,iel)*(cpro_gradp(1,iel))    &
                                + dttens(5,iel)*(cpro_gradp(2,iel))    &
@@ -1839,6 +1879,7 @@ if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
 if (allocated(uvwk)) deallocate(uvwk)
 if (allocated(secvif)) deallocate(secvif, secvib)
 if (allocated(cpro_rho_tc)) deallocate(cpro_rho_tc)
+if (allocated(cpro_rho_k1)) deallocate(cpro_rho_k1)
 if (allocated(bpro_rho_tc)) deallocate(bpro_rho_tc)
 if (iphydr.eq.2) deallocate(grdphd)
 
@@ -2008,3 +2049,4 @@ endif
 return
 
 end subroutine navstv_total_pressure
+

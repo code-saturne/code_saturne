@@ -2672,23 +2672,6 @@ _pressure_correction_fv(int        iterns,
                               tempk);
   }
 
-  BFT_FREE(pk1);
-
-  /* Kinetic source term
-   * Compute the kinetic energy related source term.
-   * This source term is injected in the thermal equation */
-  /* Density at the last inner iteration */
-  if (kinetic_st == 1) {
-    cs_real_t *sk = cs_field_by_name("kinetic_energy_thermal_st")->val;
-    cs_array_set_value_real(n_cells, 1, 0., sk);
-    cs_thermal_model_compute_kinetic_st(croma,
-                                        cromaa,
-                                        crom_eos,
-                                        vel,
-                                        vela,
-                                        sk);
-  }
-
   /* Save some information */
   if (idilat == 2 && ieos != CS_EOS_NONE) {
     /* CFL conditions related to the pressure equation */
@@ -2711,6 +2694,8 @@ _pressure_correction_fv(int        iterns,
     if (kinetic_st == 1) {
       /* Save rho k-1 , est ce le bon endroit ?*/
       cs_real_t *rho_k_prev = cs_field_by_name("rho_k_prev")->val;
+      // Test compute kinetic energy st
+      cs_thermal_model_kinetic_st_finalize(rho_k_prev, crom_eos);
       for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
         rho_k_prev[c_id] =  crom_eos[c_id];
       }

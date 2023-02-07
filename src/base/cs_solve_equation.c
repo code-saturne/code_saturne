@@ -1209,7 +1209,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   const cs_real_t *temp = NULL, *tempa = NULL, *cpro_yw = NULL;
   cs_real_t *cpro_yv = NULL, *xcvv = NULL;
-
   if (   th_cf_model->ieos != CS_EOS_NONE
       && is_thermal_model_field
       && (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
@@ -1304,27 +1303,13 @@ cs_solve_equation_scalar(cs_field_t        *f,
     if (f_pig != NULL)
       gradphi = (const cs_real_3_t *)f_pig->val;
 
-    cs_thermal_model_pdivu(thetv,
-                           temp,
-                           tempa,
-                           cvar_var,
-                           cvara_var,
-                           vel,
-                           xcvv,
-                           cpro_yw,
-                           cpro_ywa,
-                           cpro_yv,
-                           cpro_yva,
-                           gradp,
-                           gradphi,
-                           smbrs);
+    cs_thermal_model_pdivu(smbrs);
 
     cs_thermal_model_dissipation(vistot, gradv, smbrs);
 
     BFT_FREE(vistot);
     BFT_FREE(gradv);
   }
-
   if (is_thermal_model_field) {
 
     /* Kinetic source term when needed */
@@ -1469,7 +1454,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   /* Multiplier fro thermal fields (Cp/Cv) */
 
-  if (iscacp == 1)
+  if (iscacp == 1 || iscacp == 2)
     imucpp = 1;
 
   if (imucpp == 0) {
@@ -1486,7 +1471,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
         xcpp[c_id] -= rair;
     }
   }
-
   cs_halo_sync_var(m->halo, CS_HALO_STANDARD, xcpp);
 
   /* Lagrangien (couplage retour thermique)
@@ -1740,14 +1724,12 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   const cs_real_t *cpro_sat = NULL, *cproa_sat = NULL;
   const cs_real_t *cpro_delay = NULL, *cproa_delay = NULL;
-
   if (cs_glob_physical_model_flag[CS_GROUNDWATER] == -1) {
     if (eqp->istat == 1) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
         rovsdt[c_id] += xcpp[c_id]*pcrom[c_id]*cell_f_vol[c_id]/dt[c_id];
     }
   }
-
   /* Darcy : we take into account the porosity and delay for underground transport */
   else {
 
@@ -1865,6 +1847,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
   }
 
   int iescap = 0, icvflb = 0;
+
+
   /* all boundary convective flux with upwind */
   cs_real_t normp = -1.0;
 
@@ -1912,7 +1896,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                      NULL);
 
   BFT_FREE(dpvar);
-
   if (weighb != NULL) {
     BFT_FREE(weighb);
     BFT_FREE(weighf);

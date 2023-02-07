@@ -1393,11 +1393,17 @@ cs_parameters_define_auxiliary_fields(void)
   cs_cf_model_t *th_cf_model = cs_get_glob_cf_model();
 
   if (th_model->has_kinetic_st == 1) {
-    cs_field_create("kinetic_energy_thermal_st",
-                    0,
-                    CS_MESH_LOCATION_CELLS,
-                    1,
-                    false);
+    cs_field_t *fld
+      = cs_field_create("kinetic_energy_thermal_st",
+                        CS_FIELD_PROPERTY,
+                        CS_MESH_LOCATION_CELLS,
+                        1,
+                        true);
+
+    const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+
+    cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
+    cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
   }
 
   /* Fields used to model the aforepresented source term */

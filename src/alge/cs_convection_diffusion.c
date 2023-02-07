@@ -4775,27 +4775,15 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   fluxi,
                                   fluxj);
 
-            /* Saving velocity at internal faces, if needed */
+            /* Saving velocity at faces, if needed */
             if (i_pvar != NULL) {
-              cs_i_cd_unsteady_upwind_vector(bldfrp,
-                  diipf[face_id],
-                  djjpf[face_id],
-                  (const cs_real_3_t *)grad[ii],
-                  (const cs_real_3_t *)grad[jj],
-                  _pia,
-                  _pja,
-                  pifa,
-                  pjfa,
-                  pipa,
-                  pjpa);
-              if (i_massflux[face_id] >= 0) {
-                for (int isou = 0; isou < 3; isou++) {
-                  i_pvar[face_id][isou] = pif[isou];
-                }
-              } else {
-                for (int isou = 0; isou < 3; isou++) {
-                  i_pvar[face_id][isou] = pjf[isou];
-                }
+              if (i_massflux[face_id] >= 0.) {
+                for (cs_lnum_t i = 0; i < 3; i++)
+                  i_pvar[face_id][i] += thetap * pif[i];
+              }
+              else {
+                for (cs_lnum_t i = 0; i < 3; i++)
+                  i_pvar[face_id][i] += thetap * pjf[i];
               }
             }
             for (int isou = 0; isou < 3; isou++) {
@@ -5025,34 +5013,14 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   fluxj);
             /* Saving velocity at internal faces, if needed */
             if (i_pvar != NULL) {
-              cs_i_cd_unsteady_vector(bldfrp,
-                                    ischcp,
-                                    blencp,
-                                    weight[face_id],
-                                    cell_cen[ii],
-                                    cell_cen[jj],
-                                    i_face_cog[face_id],
-                                    hybrid_coef_ii,
-                                    hybrid_coef_jj,
-                                    diipf[face_id],
-                                    djjpf[face_id],
-                                    (const cs_real_3_t *)grad[ii],
-                                    (const cs_real_3_t *)grad[jj],
-                                    _pia,
-                                    _pja,
-                                    pifa,
-                                    pjfa,
-                                    pipa,
-                                    pjpa);
+              if (i_massflux[face_id] >= 0.) {
+                for (cs_lnum_t i = 0; i < 3; i++)
+                  i_pvar[face_id][i] += thetap * pif[i];
 
-              if (i_massflux[face_id] >= 0) {
-                for (int isou = 0; isou < 3; isou++) {
-                  i_pvar[face_id][isou] = pif[isou];
-                }
-              } else {
-                for (int isou = 0; isou < 3; isou++) {
-                  i_pvar[face_id][isou] = pjf[isou];
-                }
+              }
+              else {
+                for (cs_lnum_t i = 0; i < 3; i++)
+                  i_pvar[face_id][i] += thetap * pjf[i];
               }
             }
             for (int isou = 0; isou < 3; isou++) {
@@ -5301,41 +5269,13 @@ cs_convection_diffusion_vector(int                         idtvar,
             }
             /* Saving velocity at internal faces, if needed */
             if (i_pvar != NULL) {
-              cs_i_cd_unsteady_slope_test_vector(&upwind_switch,
-                                                 iconvp,
-                                                 bldfrp,
-                                                 ischcp,
-                                                 blencp,
-                                                 blend_st,
-                                                 weight[face_id],
-                                                 i_dist[face_id],
-                                                 i_face_surf[face_id],
-                                                 cell_cen[ii],
-                                                 cell_cen[jj],
-                                                 i_face_normal[face_id],
-                                                 i_face_cog[face_id],
-                                                 diipf[face_id],
-                                                 djjpf[face_id],
-                                                 i_massflux[face_id],
-                                                 (const cs_real_3_t *)grad[ii],
-                                                 (const cs_real_3_t *)grad[jj],
-                                                 (const cs_real_3_t *)grdpa[ii],
-                                                 (const cs_real_3_t *)grdpa[jj],
-                                                 _pia,
-                                                 _pja,
-                                                 pifa,
-                                                 pjfa,
-                                                 pipa,
-                                                 pjpa);
-
-              if (i_massflux[face_id] >= 0) {
-                for (int isou = 0; isou < 3; isou++) {
-                  i_pvar[face_id][isou] = pif[isou];
-                }
-              } else {
-                for (int isou = 0; isou < 3; isou++) {
-                  i_pvar[face_id][isou] = pjf[isou];
-                }
+              if (i_massflux[face_id] >= 0.) {
+                for (cs_lnum_t i = 0; i < 3; i++)
+                  i_pvar[face_id][i] += thetap * pif[i];
+              }
+              else {
+                for (cs_lnum_t i = 0; i < 3; i++)
+                  i_pvar[face_id][i] += thetap * pjf[i];
               }
             }
 
@@ -5632,33 +5572,13 @@ cs_convection_diffusion_vector(int                         idtvar,
 
           /* Saving velocity on boundary faces */
           if (b_pvar != NULL) {
-            cs_b_cd_unsteady_vector(bldfrp,
-                                    diipb[face_id],
-                                    (const cs_real_3_t *)grad[ii],
-                                    _pia,
-                                    pipa);
-
-            cs_b_upwind_flux_vector(iconvp,
-                                    thetap,
-                                    imasac,
-                                    inc,
-                                    bc_type[face_id],
-                                    _pia,
-                                    _pia, /* no relaxation */
-                                    pipa,
-                                    coefav[face_id],
-                                    coefbv[face_id],
-                                    b_massflux[face_id],
-                                    pfaca,
-                                    _flx);
-
-            if (b_massflux[face_id] >= 0) {
-              for (int isou = 0; isou < 3; isou++) {
-                b_pvar[face_id][isou] = _pi[isou];
-              }
-            } else {
-              for (int isou = 0; isou < 3; isou++) {
-                b_pvar[face_id][isou] = pfac[isou];
+            if (b_massflux[face_id] >= 0.) {
+              for (cs_lnum_t i = 0; i < 3; i++)
+                b_pvar[face_id][i] += thetap * _pi[i];
+            }
+            else {
+              for (cs_lnum_t i = 0; i < 3; i++) {
+                b_pvar[face_id][i] += thetap * pfac[i];
               }
             }
           }
@@ -5963,15 +5883,13 @@ cs_convection_diffusion_vector(int                         idtvar,
 
           /* Saving velocity on boundary faces if needed */
           if (b_pvar != NULL) {
-            if (b_massflux[face_id] >= 0){
-              for (int isou = 0; isou < 3; isou++) {
-                b_pvar[face_id][isou] = _pi[isou];
-              }
-            } else {
-
-              for (int isou = 0; isou < 3; isou++) {
-                b_pvar[face_id][isou] = pfac[isou];
-              }
+            if (b_massflux[face_id] >= 0.) {
+              for (cs_lnum_t i = 0; i < 3; i++)
+                b_pvar[face_id][i] += thetap * _pi[i];
+            }
+            else {
+              for (cs_lnum_t i = 0; i < 3; i++)
+                b_pvar[face_id][i] += thetap * pfac[i];
             }
           }
 

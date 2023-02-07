@@ -2387,23 +2387,27 @@ module cs_c_bindings
       real(kind=c_double), dimension(*) :: smbrs
     end subroutine cs_thermal_model_add_kst
 
+   !---------------------------------------------------------------------------
+
+    ! Interface to C function
+    subroutine cs_thermal_model_kinetic_st_prepare(imasfl, bmasfl, pcrom, &
+                                                   vela, vel ) &
+      bind(C, name='cs_thermal_model_kinetic_st_prepare')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*) :: imasfl, bmasfl, pcrom
+      real(kind=c_double), dimension(3,*) :: vela, vel
+    end subroutine cs_thermal_model_kinetic_st_prepare
+
     !---------------------------------------------------------------------------
 
     ! Interface to C function that adds the kinetic source term into the RHS
     ! of the thermal equation
-    subroutine cs_thermal_model_pdivu(temp_, tempa_, cvar_var,  &
-                                      cvara_var, thetv, vel,    &
-                                      xcvv, cpro_yw, cpro_ywa,  &
-                                      cpro_yv, cpro_yva, gradp, &
-                                      gradphi, smbrs)           &
+    subroutine cs_thermal_model_pdivu(smbrs)           &
       bind(C, name='cs_thermal_model_pdivu')
       use, intrinsic :: iso_c_binding
       implicit none
-      real(kind=c_double), dimension(3,*)   :: gradp, gradphi, vel
-      real(kind=c_double), dimension(*)     :: temp_, tempa_, cvar_var, xcvv
-      real(kind=c_double), dimension(*)     :: cvara_var, cpro_yw, cpro_ywa
-      real(kind=c_double), dimension(*)     :: cpro_yv, cpro_yva, smbrs
-      real(kind=c_double)                   :: thetv
+      real(kind=c_double), dimension(*)     :: smbrs
     end subroutine cs_thermal_model_pdivu
 
     !---------------------------------------------------------------------------

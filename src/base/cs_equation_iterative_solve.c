@@ -52,6 +52,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_array.h"
 #include "cs_balance.h"
 #include "cs_blas.h"
 #include "cs_convection_diffusion.h"
@@ -1160,6 +1161,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_lnum_t n_faces = cs_glob_mesh->n_i_faces;
+  const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
   int isym, inc, isweep, niterf, nswmod;
@@ -1211,36 +1214,20 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   cs_real_3_t *b_pvar = NULL;
   cs_field_t *i_vf = NULL;
   cs_field_t *b_vf = NULL;
-  cs_real_3_t *i_pvara = NULL;
-  cs_real_3_t *b_pvara = NULL;
-  cs_field_t *i_vfa = NULL;
-  cs_field_t *b_vfa = NULL;
 
-  /* Storing interest values */
+  /* Storing face values for kinetic energy balance
+   * and initialize them */
   if (CS_F_(vel)->id == f_id) {
     i_vf = cs_field_by_name_try("inner_face_velocity");
     b_vf = cs_field_by_name_try("boundary_face_velocity");
-    i_vfa = cs_field_by_name_try("inner_face_velocity");
-    b_vfa = cs_field_by_name_try("boundary_face_velocity");
 
     if (i_vf != NULL && b_vf != NULL) {
       i_pvar = (cs_real_3_t *)i_vf->val;
       b_pvar = (cs_real_3_t *)b_vf->val;
-      i_pvara = (cs_real_3_t *)i_vfa->val_pre;
-      b_pvara = (cs_real_3_t *)b_vfa->val_pre;
 
-      for (cs_lnum_t face_id = 0; face_id < cs_glob_mesh->n_i_faces; face_id++) {
-        for (cs_lnum_t isou = 0; isou < 3; isou++) {
-          i_pvar[face_id][isou] = 0.0;
-          i_pvara[face_id][isou] = 0.0;
-        }
-      }
-      for (cs_lnum_t face_id = 0; face_id < cs_glob_mesh->n_b_faces; face_id++) {
-        for (cs_lnum_t isou = 0; isou < 3; isou++) {
-          b_pvar[face_id][isou] = 0.0;
-          b_pvara[face_id][isou] = 0.0;
-        }
-      }
+      cs_array_set_value_real(n_i_faces, 3, 0., i_pvar);
+
+      cs_array_set_value_real(n_b_faces, 3, 0., b_pvar);
     }
   }
 
@@ -1361,9 +1348,15 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                       weighb,
                       icvflb,
                       icvfli,
-                      i_pvara,
-                      b_pvara,
+                      i_pvar,
+                      b_pvar,
                       smbrp);
+
+    /* Save (1-theta)* face_value at previous time step if needed */
+    if (i_vf != NULL && b_vf != NULL) {
+      cs_field_current_to_previous(i_vf);
+      cs_field_current_to_previous(b_vf);
+    }
 
     var_cal_opt->thetav = thetap;
   }
@@ -1764,6 +1757,14 @@ cs_equation_iterative_solve_vector(int                   idtvar,
           smbrp[iel][isou] = smbini[iel][isou];
         }
       }
+    }
+
+    /* Increment face value with theta * face_value at current time step
+     * if needed
+     * Reinit the previous value before */
+    if (i_vf != NULL && b_vf != NULL) {
+      cs_array_real_copy(3 * n_i_faces, i_vf->val_pre, i_pvar);
+      cs_array_real_copy(3 * n_b_faces, b_vf->val_pre, b_pvar);
     }
 
     /* The added convective scalar mass flux is:

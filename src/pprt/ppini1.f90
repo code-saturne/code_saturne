@@ -67,13 +67,22 @@ use field
 implicit none
 
 ! Local variables
-
+integer ii
+integer iscacp
 !===============================================================================
-
-if (itherm .eq. 1) then
-  call field_set_key_int(ivarfl(isca(iscalt)), kscacp, 1)
+if (nscal.gt.0) then
+  do ii = 1, nscal
+    call field_get_key_int(ivarfl(isca(ii)), kscacp, iscacp)
+    if (iscacp.eq.-1) then
+      if (ii.eq.iscalt .and. itherm.eq.1) then
+        iscacp = 1
+      else
+        iscacp = 0
+      endif
+      call field_set_key_int(ivarfl(isca(ii)), kscacp, iscacp)
+    endif
+  enddo
 endif
-
 !===============================================================================
 ! 1. VARIABLES TRANSPORTEES
 !===============================================================================

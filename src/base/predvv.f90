@@ -1698,6 +1698,12 @@ if (iappel.eq.1) then
      icvflb , icvfli ,                                        &
      fimp   , smbr   , vel    , eswork )
 
+
+  ! Compute kinetic energy balance for compressible algorithme
+  ! See H. Amino thesis
+  call cs_thermal_model_kinetic_st_prepare &
+    ( imasfl, bmasfl, pcrom, vela, vel)
+
   ! Store inverse of the velocity matrix for the correction step
   !  if needed (otherwise vitenp is used in cs_pressure_correction)
   if (rcfact.eq.1) then

@@ -207,24 +207,36 @@ cs_thermal_model_demdt_ecsnt(cs_real_t  pres,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the kinetic energy based source term
+ * \brief First pass to compute the contribution of the kinetic energy based
+ *        source term from the prediction step
  *
- * \param[in]       croma     density values at the last time iteration
- * \param[in]       cromaa    density values at the n-2 time iteration
- * \param[in]       crom_eos  density value
- * \param[in]       vel       velocity
+ * \param[in]       imasfl    inner mass flux used in the momentum equation
+ * \param[in]       bmasfl    boundary mass flux used in the momentum equation
+ * \param[in]       crom      density values at n-1/2,k-1
  * \param[in]       vela      velocity at previous time step
- * \param[in, out]  sk        kinetic source term
+ * \param[in]       vel       velocity at iteration k
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_model_compute_kinetic_st(const cs_real_t  croma[],
-                                    const cs_real_t  cromaa[],
-                                    const cs_real_t  crom_eos[],
-                                    const cs_real_t  vel[][3],
+cs_thermal_model_kinetic_st_prepare(const cs_real_t  imasfl[],
+                                    const cs_real_t  bmasfl[],
+                                    const cs_real_t  crom[],
                                     const cs_real_t  vela[][3],
-                                    cs_real_t        sk[]);
+                                    const cs_real_t  vel[][3]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize the computation of the kinetic energy based source term
+ *
+ * \param[in]       cromk1    density values at time n+1/2,k-1
+ * \param[in]       cromk     density values at time n+1/2,k
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_thermal_model_kinetic_st_finalize(const cs_real_t  cromk1[],
+                                     const cs_real_t  cromk[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -336,44 +348,12 @@ cs_thermal_model_newton_t(int               method,
 /*!
  * \brief Add the term pdivu to the thermal equation rhs.
  *
- * The cpro_yv, cpro_yva, cpro_yw, and cpro_ywa arrays are optional
- * (and used for humid air).
- *
- * \param[in]       thetv     theta parameter
- * \param[in]       temp      array of temperature
- * \param[in]       tempa     array of temperature at the previous time step
- * \param[in]       cvar_var  array of the internal energy
- * \param[in]       cvara_var array of the internal energy at the previous
- *                            time step
- * \param[in]       vel       array of the velocity
- * \param[in]       xcvv      array of the isobaric heat capacity
- * \param[in]       cpro_yw   array of the total water mass fraction, or NULL
- * \param[in]       cpro_ywa  array of the total water mass fraction at the
- *                            previous time step, or NULL
- * \param[in]       cpro_yv   array of the vapor of water mass fraction, or NULL
- * \param[in]       cpro_yva  array of the vapor of water mass fraction at the
- *                            previous time step, or NULL
- * \param[in]       gradp     array of the pressure gradient
- * \param[in]       gradphi   array of the pressure increment gradient
  * \param[in, out]  smbrs     array of the right hand side
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_model_pdivu(cs_real_t         thetv,
-                       const cs_real_t   temp[],
-                       const cs_real_t   tempa[],
-                       const cs_real_t   cvar_var[],
-                       const cs_real_t   cvara_var[],
-                       const cs_real_t   vel[][3],
-                       const cs_real_t   xcvv[],
-                       const cs_real_t  *cpro_yw,
-                       const cs_real_t  *cpro_ywa,
-                       const cs_real_t  *cpro_yv,
-                       const cs_real_t  *cpro_yva,
-                       const cs_real_t   gradp[][3],
-                       const cs_real_t   gradphi[][3],
-                       cs_real_t         smbrs[restrict]);
+cs_thermal_model_pdivu(cs_real_t         smbrs[restrict]);
 
 /*----------------------------------------------------------------------------*/
 
