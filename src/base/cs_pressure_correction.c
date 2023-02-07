@@ -723,7 +723,6 @@ _pressure_correction_fv(int        iterns,
   int ieos = cs_glob_cf_model->ieos;
   int thermal_variable = cs_glob_thermal_model->thermal_variable;
   int kinetic_st = cs_glob_thermal_model->has_kinetic_st;
-  const cs_fluid_properties_t *phys_pro = cs_glob_fluid_properties;
 
   const cs_real_t *temp = NULL;
   cs_real_t *xcpp = NULL, *dc2 = NULL;
@@ -735,7 +734,7 @@ _pressure_correction_fv(int        iterns,
 
     /* Get the temperature */
     if (thermal_variable == CS_THERMAL_MODEL_TEMPERATURE)
-      temp = CS_F_(t);
+      temp = CS_F_(t)->val;
     else {
       const cs_field_t *f_t = cs_field_by_name_try("temperature");
       if (f_t != NULL) {
