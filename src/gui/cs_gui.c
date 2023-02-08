@@ -428,7 +428,15 @@ _physical_property_th_diffusivity(cs_field_t          *c_prop,
       cs_field_t _c_prop = *c_prop;
       _c_prop.name = prop_name;
       cs_field_t *fmeg[1] = {&_c_prop};
-      cs_meg_volume_function(z, fmeg);
+
+      const cs_real_3_t *restrict cell_cen =
+        (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+
+      cs_meg_volume_function(z->name,
+                             n_cells,
+                             cell_ids,
+                             cell_cen,
+                             fmeg);
     }
 
   }
@@ -515,8 +523,14 @@ _physical_property(cs_field_t          *c_prop,
     const char *law = _property_formula(c_prop->name, z->name);
 
     if (law != NULL) {
+      const cs_real_3_t *restrict cell_cen =
+        (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
       cs_field_t *fmeg[1] = {c_prop};
-      cs_meg_volume_function(z, fmeg);
+      cs_meg_volume_function(z->name,
+                             z->n_elts,
+                             z->elt_ids,
+                             cell_cen,
+                             fmeg);
     }
 
   }
@@ -1852,13 +1866,24 @@ void CS_PROCF(uiporo, UIPORO)(void)
       const char *formula = cs_tree_node_get_child_value_str(tn_zp, "formula");
 
       if (formula != NULL) {
+        const cs_real_3_t *restrict cell_cen =
+          (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+
         if (cs_gui_strcmp(mdl, "anisotropic")) {
           cs_field_t *fmeg[2] = {fporo, ftporo};
-          cs_meg_volume_function(z, fmeg);
+          cs_meg_volume_function(z->name,
+                                 z->n_elts,
+                                 z->elt_ids,
+                                 cell_cen,
+                                 fmeg);
 
         } else {
           cs_field_t *fmeg[1] = {fporo};
-          cs_meg_volume_function(z, fmeg);
+          cs_meg_volume_function(z->name,
+                                 z->n_elts,
+                                 z->elt_ids,
+                                 cell_cen,
+                                 fmeg);
         }
 
       }
@@ -1917,7 +1942,12 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
 
       if (formula != NULL) {
 
-        cs_real_t *st_vals = cs_meg_source_terms(z,
+        const cs_real_3_t *restrict cell_cen =
+          (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+        cs_real_t *st_vals = cs_meg_source_terms(z->name,
+                                                 z->n_elts,
+                                                 z->elt_ids,
+                                                 cell_cen,
                                                  "momentum",
                                                  "momentum_source_term");
 
@@ -2346,7 +2376,11 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
 
         if (formula != NULL) {
           cs_field_t *fmeg[3] = {fcapacity, fsaturation, fpermeability};
-          cs_meg_volume_function(z, fmeg);
+          cs_meg_volume_function(z->name,
+                                 n_cells,
+                                 cell_ids,
+                                 cell_cen,
+                                 fmeg);
         }
       }
 
@@ -2825,6 +2859,9 @@ void cs_gui_initial_conditions(void)
 
   const int n_zones = cs_volume_zone_n_zones();
 
+  const cs_real_3_t *restrict cell_cen =
+    (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+
   for (int z_id = 0; z_id < n_zones; z_id++) {
     const cs_zone_t *z = cs_volume_zone_by_id(z_id);
 
@@ -2847,7 +2884,11 @@ void cs_gui_initial_conditions(void)
         cs_field_t *c_vel = cs_field_by_name("velocity");
 
         if (formula_uvw != NULL) {
-          cs_real_t *ini_vals = cs_meg_initialization(z, "velocity");
+          cs_real_t *ini_vals = cs_meg_initialization(z->name,
+                                                      n_cells,
+                                                      cell_ids,
+                                                      cell_cen,
+                                                      "velocity");
           if (ini_vals != NULL) {
             for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
               cs_lnum_t c_id = cell_ids[e_id];
@@ -2877,7 +2918,11 @@ void cs_gui_initial_conditions(void)
           cs_field_t *c = cs_field_by_name_try("hydraulic_head");
 
           if (formula != NULL) {
-            cs_real_t *ini_vals = cs_meg_initialization(z, "hydraulic_head");
+            cs_real_t *ini_vals = cs_meg_initialization(z,
+                                                        n_cells,
+                                                        cell_ids,
+                                                        cell_cen,
+                                                        "hydraulic_head");
             if (ini_vals != NULL) {
               for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
                 cs_lnum_t c_id = cell_ids[e_id];
@@ -2910,7 +2955,11 @@ void cs_gui_initial_conditions(void)
             if (cs_gui_strcmp(model, "off"))
               break;
 
-            cs_real_t *ini_vals = cs_meg_initialization(z, "turbulence");
+            cs_real_t *ini_vals = cs_meg_initialization(z,
+                                                        n_cells,
+                                                        cell_ids,
+                                                        cell_cen,
+                                                        "turbulence");
 
             if (ini_vals != NULL) {
 
@@ -3021,7 +3070,11 @@ void cs_gui_initial_conditions(void)
           assert(c != NULL);
 
           if (formula_sca != NULL) {
-            cs_real_t *ini_vals = cs_meg_initialization(z, "thermal");
+            cs_real_t *ini_vals = cs_meg_initialization(z->name,
+                                                        n_cells,
+                                                        cell_ids,
+                                                        cell_cen,
+                                                        "thermal");
             if (ini_vals != NULL) {
               for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
                 cs_lnum_t c_id = cell_ids[e_id];
@@ -3055,7 +3108,11 @@ void cs_gui_initial_conditions(void)
             formula_sca = cs_tree_node_get_value_str(tn_sca);
 
             if (formula_sca != NULL) {
-              cs_real_t *ini_vals = cs_meg_initialization(z, f->name);
+              cs_real_t *ini_vals = cs_meg_initialization(z->name,
+                                                          n_cells,
+                                                          cell_ids,
+                                                          cell_cen,
+                                                          f->name);
               if (ini_vals != NULL) {
                 for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
                   cs_lnum_t c_id = cell_ids[e_id];
@@ -3104,7 +3161,11 @@ void cs_gui_initial_conditions(void)
             formula_meteo = cs_tree_node_get_value_str(tn_meteo2);
 
             if (formula_meteo != NULL) {
-              cs_real_t *ini_vals = cs_meg_initialization(z, c->name);
+              cs_real_t *ini_vals = cs_meg_initialization(z->name,
+                                                          n_cells,
+                                                          cell_ids,
+                                                          cell_cen,
+                                                          c->name);
               if (ini_vals != NULL) {
                 for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
                   cs_lnum_t c_id = cell_ids[e_id];
@@ -3155,7 +3216,11 @@ void cs_gui_initial_conditions(void)
             formula_comb = cs_tree_node_get_value_str(tn_combustion2);
 
             if (formula_comb != NULL) {
-              cs_real_t *ini_vals = cs_meg_initialization(z, c_comb->name);
+              cs_real_t *ini_vals = cs_meg_initialization(z->name,
+                                                          n_cells,
+                                                          cell_ids,
+                                                          cell_cen,
+                                                          c_comb->name);
               if (ini_vals != NULL) {
                 for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
                   cs_lnum_t c_id = cell_ids[e_id];
@@ -3219,7 +3284,11 @@ void cs_gui_initial_conditions(void)
               formula = cs_tree_node_get_value_str(tn);
 
               if (formula != NULL) {
-                cs_real_t *ini_vals = cs_meg_initialization(z, c->name);
+                cs_real_t *ini_vals = cs_meg_initialization(z->name,
+                                                            n_cells,
+                                                            cell_ids,
+                                                            cell_cen,
+                                                            c->name);
                 if (ini_vals != NULL) {
                   for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
                     cs_lnum_t c_id = cell_ids[e_id];
@@ -5093,6 +5162,8 @@ cs_gui_scalar_source_terms(cs_field_t        *f,
                            cs_real_t         *restrict tsimp)
 {
   const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_3_t *restrict cell_cen =
+    (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
   const char *formula = NULL;
 
@@ -5130,7 +5201,10 @@ cs_gui_scalar_source_terms(cs_field_t        *f,
       formula = cs_tree_node_get_value_str(tn);
 
       if (formula != NULL) {
-        cs_real_t *st_vals = cs_meg_source_terms(z,
+        cs_real_t *st_vals = cs_meg_source_terms(z->name,
+                                                 n_cells,
+                                                 cell_ids,
+                                                 cell_cen,
                                                  f->name,
                                                  "scalar_source_term");
 
@@ -5170,6 +5244,9 @@ cs_gui_thermal_source_terms(cs_field_t                 *f,
 
   const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
 
+  const cs_real_3_t *restrict cell_cen =
+    (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+
   const char *formula = NULL;
 
   /* number of volumic zone */
@@ -5208,7 +5285,10 @@ cs_gui_thermal_source_terms(cs_field_t                 *f,
 
       if (formula != NULL) {
 
-        cs_real_t *st_vals = cs_meg_source_terms(z,
+        cs_real_t *st_vals = cs_meg_source_terms(z->name,
+                                                 n_cells,
+                                                 cell_ids,
+                                                 cell_cen,
                                                  f->name,
                                                  "thermal_source_term");
 

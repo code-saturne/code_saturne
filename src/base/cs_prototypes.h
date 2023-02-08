@@ -1081,7 +1081,10 @@ cs_user_hgn_thermo_relax_time(const cs_mesh_t *mesh,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_meg_boundary_function(const cs_zone_t  *zone,
+cs_meg_boundary_function(const char       *zone_name,
+                         const cs_lnum_t   n_elts,
+                         const cs_lnum_t  *elt_ids,
+                         const cs_real_t   xyz[][3],
                          const char       *field_name,
                          const char       *condition);
 
@@ -1096,7 +1099,10 @@ cs_meg_boundary_function(const cs_zone_t  *zone,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_meg_volume_function(const cs_zone_t  *zone,
+cs_meg_volume_function(const char      *zone_name,
+                       const cs_lnum_t  n_elts,
+                       const cs_lnum_t *elt_ids,
+                       const cs_real_t  xyz[][3],
                        cs_field_t       *f[]);
 
 /*----------------------------------------------------------------------------*/
@@ -1110,7 +1116,10 @@ cs_meg_volume_function(const cs_zone_t  *zone,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_meg_initialization(const cs_zone_t *zone,
+cs_meg_initialization(const char      *zone_name,
+                      const cs_lnum_t  n_elts,
+                      const cs_lnum_t *elt_ids,
+                      const cs_real_t  xyz[][3],
                       const char      *field_name);
 
 /*----------------------------------------------------------------------------*/
@@ -1128,7 +1137,10 @@ cs_meg_initialization(const cs_zone_t *zone,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_meg_source_terms(const cs_zone_t  *zone,
+cs_meg_source_terms(const char       *zone_name,
+                    const cs_lnum_t   n_elts,
+                    const cs_lnum_t  *elt_ids,
+                    const cs_real_t   xyz[][3],
                     const char       *name,
                     const char       *source_type);
 

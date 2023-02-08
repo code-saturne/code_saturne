@@ -527,6 +527,7 @@ _dof_meg_vel_profile(cs_lnum_t         n_elts,
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_f_face_normal;
   const cs_real_t *f_s = mq->b_face_surf;
+  const cs_real_3_t *face_cen = (const cs_real_3_t *)mq->b_face_cog;
 
   cs_gui_boundary_vel_context_t  *c
     = (cs_gui_boundary_vel_context_t *)input;
@@ -541,14 +542,22 @@ _dof_meg_vel_profile(cs_lnum_t         n_elts,
   cs_real_t *v_dir = NULL;
 
   if (c->dir_type == 2)
-    v_dir = cs_meg_boundary_function(c->zone, "direction", "formula");
+    v_dir = cs_meg_boundary_function(c->zone->name,
+                                     n_elts,
+                                     elt_ids,
+                                     face_cen,
+                                     "direction",
+                                     "formula");
 
   /* Local velocity norm */
 
   if (c->norm_type == 10) {
 
     cs_real_t *v_loc
-      = cs_meg_boundary_function(c->zone,
+      = cs_meg_boundary_function(c->zone->name,
+                                 n_elts,
+                                 elt_ids,
+                                 face_cen,
                                  "velocity",
                                  _vel_norm_meg_condition[normalization]);
 
@@ -603,7 +612,10 @@ _dof_meg_vel_profile(cs_lnum_t         n_elts,
 
     if (c->norm_type > 10) {
       cs_real_t *flow
-        = cs_meg_boundary_function(c->zone,
+        = cs_meg_boundary_function(c->zone->name,
+                                   n_elts,
+                                   elt_ids,
+                                   face_cen,
                                    "velocity",
                                    _vel_norm_meg_condition[normalization]);
       v = flow[0];
@@ -957,7 +969,11 @@ _dof_meg_t2h(cs_lnum_t         n_elts,
 
   assert(n_elts == c->zone->n_elts && elt_ids == c->zone->elt_ids);
 
-  cs_real_t *t_loc = cs_meg_boundary_function(c->zone,
+  const cs_real_3_t *face_cen = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+  cs_real_t *t_loc = cs_meg_boundary_function(c->zone->name,
+                                              n_elts,
+                                              elt_ids,
+                                              face_cen,
                                               "temperature",
                                               c->condition);
 
@@ -1068,7 +1084,12 @@ _dof_meg_elec_rescaled(cs_lnum_t         n_elts,
 
   const cs_real_t joule_coef = cs_glob_elec_option->coejou;
 
-  cs_real_t *v_loc = cs_meg_boundary_function(c->zone,
+  const cs_real_3_t *face_cen = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+
+  cs_real_t *v_loc = cs_meg_boundary_function(c->zone->name,
+                                              n_elts,
+                                              elt_ids,
+                                              face_cen,
                                               c->name,
                                               c->condition);
 
@@ -1289,13 +1310,18 @@ _dof_meg_exchange_coefficient_profile(cs_lnum_t         n_elts,
   const cs_lnum_t dim = c->dim;
   const cs_lnum_t stride = 1 + dim + dim*dim;
 
+  const cs_real_3_t *face_cen = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+
   if (dim > 3)
     bft_error(__FILE__, __LINE__, 0,
               _("In %s, variable dimension > 3 (%s) not handled yet\n"
                 "for exchange coefficient boundary coefficients."),
                 __func__, c->name);
 
-  cs_real_t *v_loc = cs_meg_boundary_function(c->zone,
+  cs_real_t *v_loc = cs_meg_boundary_function(c->zone->name,
+                                              n_elts,
+                                              elt_ids,
+                                              face_cen,
                                               c->name,
                                               c->condition);
 
@@ -2736,6 +2762,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
   const int ncharm = CS_COMBUSTION_MAX_COALS;
 
+  const cs_real_3_t *face_cen = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+
   bool solid_fuels = false;
   if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
       || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1)
@@ -2904,7 +2932,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
           if (   cs_gui_strcmp(model, "k-epsilon")
               || cs_gui_strcmp(model, "k-epsilon-PL")) {
 
-            cs_real_t *new_vals = cs_meg_boundary_function(bz,
+            cs_real_t *new_vals = cs_meg_boundary_function(bz->name,
+                                                           bz->n_elts,
+                                                           bz->elt_ids,
+                                                           face_cen,
                                                            "turbulence_ke",
                                                            "formula");
 
@@ -2927,7 +2958,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
           else if (   cs_gui_strcmp(model, "Rij-epsilon")
                    || cs_gui_strcmp(model, "Rij-SSG")) {
 
-            cs_real_t *new_vals = cs_meg_boundary_function(bz,
+            cs_real_t *new_vals = cs_meg_boundary_function(bz->name,
+                                                           bz->n_elts,
+                                                           bz->elt_ids,
+                                                           face_cen,
                                                            "turbulence_rije",
                                                            "formula");
 
@@ -2954,7 +2988,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
           }
           else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
 
-            cs_real_t *new_vals = cs_meg_boundary_function(bz,
+            cs_real_t *new_vals = cs_meg_boundary_function(bz->name,
+                                                           bz->n_elts,
+                                                           bz->elt_ids,
+                                                           face_cen,
                                                            "turbulence_rij_ebrsm",
                                                            "formula");
 
@@ -2986,7 +3023,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
             BFT_FREE(new_vals);
           }
           else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
-            cs_real_t *new_vals = cs_meg_boundary_function(bz,
+            cs_real_t *new_vals = cs_meg_boundary_function(bz->name,
+                                                           bz->n_elts,
+                                                           bz->elt_ids,
+                                                           face_cen,
                                                            "turbulence_v2f",
                                                            "formula");
 
@@ -3014,7 +3054,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
             BFT_FREE(new_vals);
           }
           else if (cs_gui_strcmp(model, "k-omega-SST")) {
-            cs_real_t *new_vals = cs_meg_boundary_function(bz,
+            cs_real_t *new_vals = cs_meg_boundary_function(bz->name,
+                                                           bz->n_elts,
+                                                           bz->elt_ids,
+                                                           face_cen,
                                                            "turbulence_kw",
                                                            "formula");
 
@@ -3035,7 +3078,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
             BFT_FREE(new_vals);
           }
           else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
-            cs_real_t *new_vals = cs_meg_boundary_function(bz,
+            cs_real_t *new_vals = cs_meg_boundary_function(bz->name,
+                                                           bz->n_elts,
+                                                           bz->elt_ids,
+                                                           face_cen,
                                                            "turbulence_spalart",
                                                            "formula");
 
@@ -3185,7 +3231,12 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
       if (boundaries->head_loss_e[izone]) {
         cs_real_t *new_vals =
-          cs_meg_boundary_function(bz, "head_loss", "formula");
+          cs_meg_boundary_function(bz->name,
+                                   bz->n_elts,
+                                   bz->elt_ids,
+                                   face_cen,
+                                   "head_loss",
+                                   "formula");
 
         const cs_field_t  *fp = cs_field_by_name("pressure");
         if (fp->bc_coeffs != NULL) {
@@ -3716,7 +3767,12 @@ cs_gui_boundary_conditions_dof_func_meg(cs_lnum_t         n_elts,
   cs_gui_boundary_meg_context_t  *c
     = (cs_gui_boundary_meg_context_t *)input;
 
-  cs_real_t *v_loc = cs_meg_boundary_function(c->zone,
+  const cs_real_3_t *face_cen = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+
+  cs_real_t *v_loc = cs_meg_boundary_function(c->zone->name,
+                                              n_elts,
+                                              elt_ids,
+                                              face_cen,
                                               c->name,
                                               c->condition);
 

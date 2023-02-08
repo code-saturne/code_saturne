@@ -65,10 +65,16 @@ BEGIN_C_DECLS
 
 #pragma weak cs_meg_volume_function
 void
-cs_meg_volume_function(const cs_zone_t  *zone,
+cs_meg_volume_function(const char      *zone_name,
+                       const cs_lnum_t  n_elts,
+                       const cs_lnum_t *elt_ids,
+                       const cs_real_t  xyz[][3],
                        cs_field_t       *f[])
 {
-  CS_UNUSED(zone);
+  CS_UNUSED(zone_name);
+  CS_UNUSED(n_elts);
+  CS_UNUSED(elt_ids);
+  CS_UNUSED(xyz);
   CS_UNUSED(f);
 }
 

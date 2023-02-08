@@ -68,14 +68,20 @@ BEGIN_C_DECLS
 
 #pragma weak cs_meg_source_terms
 cs_real_t *
-cs_meg_source_terms(const cs_zone_t  *zone,
+cs_meg_source_terms(const char       *zone_name,
+                    const cs_lnum_t   n_elts,
+                    const cs_lnum_t  *elt_ids,
+                    const cs_real_t   xyz[][3],
                     const char       *name,
                     const char       *source_type)
 {
 
-  CS_UNUSED(zone);
+  CS_UNUSED(elt_ids);
+  CS_UNUSED(n_elts);
   CS_UNUSED(name);
   CS_UNUSED(source_type);
+  CS_UNUSED(xyz);
+  CS_UNUSED(zone_name);
 
   return NULL; /* avoid a compilation warning */
 }
