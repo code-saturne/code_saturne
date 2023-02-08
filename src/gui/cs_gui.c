@@ -2918,7 +2918,7 @@ void cs_gui_initial_conditions(void)
           cs_field_t *c = cs_field_by_name_try("hydraulic_head");
 
           if (formula != NULL) {
-            cs_real_t *ini_vals = cs_meg_initialization(z,
+            cs_real_t *ini_vals = cs_meg_initialization(z->name,
                                                         n_cells,
                                                         cell_ids,
                                                         cell_cen,
@@ -2955,7 +2955,7 @@ void cs_gui_initial_conditions(void)
             if (cs_gui_strcmp(model, "off"))
               break;
 
-            cs_real_t *ini_vals = cs_meg_initialization(z,
+            cs_real_t *ini_vals = cs_meg_initialization(z->name,
                                                         n_cells,
                                                         cell_ids,
                                                         cell_cen,
