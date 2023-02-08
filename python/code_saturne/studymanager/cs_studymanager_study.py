@@ -1514,8 +1514,11 @@ class Studies(object):
                 if os.path.isdir(ref):
                     des = os.path.join(dest_study, "POST")
                     shutil.rmtree(des)
-                    shutil.copytree(ref, des)
-
+                    try:
+                        shutil.copytree(ref, des)
+                    except:
+                        self.reporting("    /!\ ERROR while copying POST folder"
+                                       " in %s" %study)
             else:
                 if self.__sheet and not self.__postpro:
                     self.reporting("    /!\ POST folder is not overwritten in %s"
@@ -1533,7 +1536,12 @@ class Studies(object):
                                    " use option --dow to disable overwrite"
                                    %study)
                     shutil.rmtree(des)
-                shutil.copytree(ref, des)
+                try:
+                    shutil.copytree(ref, des)
+                except:
+                    self.reporting("    /!\ ERROR while copying REPORT folder"
+                                   " in %s" %study)
+                
             else:
                 if self.__sheet:
                     self.reporting("    /!\ REPORT folder is mandatory in STUDY"
@@ -1546,7 +1554,10 @@ class Studies(object):
                 des = os.path.join(self.__dest, "STYLE")
                 if os.path.isdir(des):
                     shutil.rmtree(des)
-                shutil.copytree(ref, des)
+                try:
+                    shutil.copytree(ref, des)
+                except:
+                    self.reporting("    /!\ ERROR while copying STYLE folder")
             else:
                 if self.__sheet:
                     self.reporting("    /!\ STYLE folder is mandatory in"
