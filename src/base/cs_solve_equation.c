@@ -1774,8 +1774,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
   }
 
   if ((idilat > 3) && (itspdv == 1)) {
+    
     cs_real_t xe = 0, xk = 0;
-    const cs_real_6_t *cvara_rij = (const cs_real_6_t*)CS_F_(rij)->val_pre;
+    
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       if (   turb_model->itytur == 2
           || turb_model->itytur == 5) {
@@ -1783,6 +1784,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
         xe = CS_F_(eps)->val_pre[c_id];
       }
       else if (turb_model->itytur == 3) {
+        const cs_real_6_t *cvara_rij = (const cs_real_6_t*)CS_F_(rij)->val_pre;
         xe = CS_F_(eps)->val_pre[c_id];
         xk = 0.5*(cvara_rij[c_id][0] + cvara_rij[c_id][1] + cvara_rij[c_id][2]);
       }
