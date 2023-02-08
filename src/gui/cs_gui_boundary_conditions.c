@@ -62,6 +62,7 @@
 #include "cs_gui.h"
 #include "cs_gui_specific_physics.h"
 #include "cs_ht_convert.h"
+#include "cs_meg_prototypes.h"
 #include "cs_mesh.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
@@ -76,7 +77,6 @@
 #include "cs_parall.h"
 #include "cs_elec_model.h"
 #include "cs_physical_model.h"
-#include "cs_prototypes.h"
 #include "cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------

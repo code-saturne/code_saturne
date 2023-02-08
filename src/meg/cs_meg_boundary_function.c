@@ -56,11 +56,15 @@ BEGIN_C_DECLS
  * \file cs_meg_boundary_function.c
  *
  * \brief This function is used to compute user defined values for fields over
- *        a given boundary zone
+ *        a given boundary zone. The mathematical expression is defined in the
+ *        GUI.
  *
- * \param[in] zone         pointer to cs_zone_t structure related to boundary
- * \param[in] field_name   name of the field (const char *)
- * \param[in] condition    condition type (const char *)
+ * \param[in] zone_name    name of a boundary zone
+ * \param[in] n_elts       number of elements related to the zone
+ * \param[in] elt_ids      list of element ids related to the zone
+ * \param[in] xyz          list of coordinates related to the zone
+ * \param[in] field_name   name of the variable field
+ * \param[in] condition    condition type defined as a string
  *
  * \return a pointer to an array of cs_real_t values
  */
@@ -75,12 +79,12 @@ cs_meg_boundary_function(const char       *zone_name,
                          const char       *field_name,
                          const char       *condition)
 {
-  CS_UNUSED(field_name);
-  CS_UNUSED(condition);
-  CS_UNUSED(zone_name);
-  CS_UNUSED(elt_ids);
-  CS_UNUSED(n_elts);
-  CS_UNUSED(xyz);
+  CS_NO_WARN_IF_UNUSED(zone_name);
+  CS_NO_WARN_IF_UNUSED(elt_ids);
+  CS_NO_WARN_IF_UNUSED(n_elts);
+  CS_NO_WARN_IF_UNUSED(xyz);
+  CS_NO_WARN_IF_UNUSED(field_name);
+  CS_NO_WARN_IF_UNUSED(condition);
 
   return NULL; /* avoid a compiler warning */
 }

@@ -55,11 +55,15 @@ BEGIN_C_DECLS
 /*!
  * \file cs_meg_source_terms.c
  *
- * \brief This function is used to compute source terms over a volume zone
+ * \brief This function is used to compute source terms over a volume zone. The
+ *        mathematical expression is defined in the GUI.
  *
  * The caller is responsible for freeing the returned array.
  *
- * \param[in] zone          pointer to cs_volume_zone_t
+ * \param[in] zone_name     name of a volume zone
+ * \param[in] n_elts        number of elements related to the zone
+ * \param[in] elt_ids       list of element ids related to the zone
+ * \param[in] xyz           list of coordinates related to the zone
  * \param[in] field_name    variable field name
  * \param[in] source_type   source term type
  *
@@ -73,17 +77,19 @@ cs_meg_source_terms(const char       *zone_name,
                     const cs_lnum_t   n_elts,
                     const cs_lnum_t  *elt_ids,
                     const cs_real_t   xyz[][3],
-                    const char       *name,
+                    const char       *field_name,
                     const char       *source_type)
-{
-  CS_UNUSED(elt_ids);
-  CS_UNUSED(n_elts);
-  CS_UNUSED(name);
-  CS_UNUSED(source_type);
-  CS_UNUSED(xyz);
-  CS_UNUSED(zone_name);
 
-  return NULL; /* avoid a compilation warning */
+
+{
+  CS_NO_WARN_IF_UNUSED(zone_name);
+  CS_NO_WARN_IF_UNUSED(n_elts);
+  CS_NO_WARN_IF_UNUSED(elt_ids);
+  CS_NO_WARN_IF_UNUSED(xyz);
+  CS_NO_WARN_IF_UNUSED(field_name);
+  CS_NO_WARN_IF_UNUSED(source_type);
+
+  return NULL; /* avoid a compiler warning */
 }
 
 /*----------------------------------------------------------------------------*/

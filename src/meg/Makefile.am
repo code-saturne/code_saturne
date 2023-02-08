@@ -62,6 +62,12 @@ AM_LDFLAGS =
 # for by automake
 EXTRA_DIST =
 
+# Public header files (to be installed)
+
+pkginclude_HEADERS = \
+cs_meg_prototypes.h \
+cs_meg_headers.h
+
 # Library source files
 
 megfiles = \

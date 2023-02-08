@@ -55,27 +55,31 @@ BEGIN_C_DECLS
 /*!
  * \file cs_meg_volume_function.c
  *
- * \brief This function is used to compute user defined values for fields over a
- *        given volume zone
+ * \brief This function is used to compute user defined values for fields over
+ *        a given volume zone. The mathematical expression is defined in the
+ *        GUI.
  *
- * \param[in]      zone   pointer to volume zone structure
- * \param[in, out] f      array of pointers to a cs_field_t structure
+ * \param[in]      zone_name  name of a volume zone
+ * \param[in]      n_elts     number of elements related to the zone
+ * \param[in]      elt_ids    list of element ids related to the zone
+ * \param[in]      xyz        list of coordinates related to the zone
+ * \param[in, out] f          array of pointers to cs_field_t structures
  */
 /*----------------------------------------------------------------------------*/
 
 #pragma weak cs_meg_volume_function
 void
-cs_meg_volume_function(const char      *zone_name,
-                       const cs_lnum_t  n_elts,
-                       const cs_lnum_t *elt_ids,
-                       const cs_real_t  xyz[][3],
-                       cs_field_t       *f[])
+cs_meg_volume_function(const char        *zone_name,
+                       const cs_lnum_t    n_elts,
+                       const cs_lnum_t   *elt_ids,
+                       const cs_real_t    xyz[][3],
+                       cs_field_t        *f[])
 {
-  CS_UNUSED(zone_name);
-  CS_UNUSED(n_elts);
-  CS_UNUSED(elt_ids);
-  CS_UNUSED(xyz);
-  CS_UNUSED(f);
+  CS_NO_WARN_IF_UNUSED(zone_name);
+  CS_NO_WARN_IF_UNUSED(n_elts);
+  CS_NO_WARN_IF_UNUSED(elt_ids);
+  CS_NO_WARN_IF_UNUSED(xyz);
+  CS_NO_WARN_IF_UNUSED(f);
 }
 
 /*----------------------------------------------------------------------------*/

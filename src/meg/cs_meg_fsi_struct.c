@@ -58,10 +58,10 @@ BEGIN_C_DECLS
  * \brief This function is used to query FSI internal coupling structure values
  *        for a given boundary and structure.
  *
- * \param[in]      object_type   name of object type
- * \param[in]      name          name of matching boundary
- * \param[in]      fluid_f       array of fluid forces on the object
- * \param[in,out]  val[]         matrix or vector coefficients
+ * \param[in]     object_type   name of object type
+ * \param[in]     name          name of matching boundary
+ * \param[in]     fluid_f       array of fluid forces on the object
+ * \param[in,out] val[]         matrix or vector coefficients
  */
 /*----------------------------------------------------------------------------*/
 
@@ -72,10 +72,10 @@ cs_meg_fsi_struct(const char       *object_type,
                   const cs_real_t   fluid_f[],
                   cs_real_t         val[])
 {
-  CS_UNUSED(object_type);
-  CS_UNUSED(name);
-  CS_UNUSED(fluid_f);
-  CS_UNUSED(val);
+  CS_NO_WARN_IF_UNUSED(object_type);
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(fluid_f);
+  CS_NO_WARN_IF_UNUSED(val);
 }
 
 /*----------------------------------------------------------------------------*/

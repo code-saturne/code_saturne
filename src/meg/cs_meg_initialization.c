@@ -53,13 +53,18 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function is used for initalization of fields over a given volume
- *        zone.
+ * \file cs_meg_initialization.c
+ *
+ * \brief This function is used for the initalization of fields over a given
+ *        volume zone. The mathematical expression is defined in the GUI.
  *
  * The caller is responsible for freeing the associated array.
  *
- * \param[in]      zone        pointer to associated volume zone
- * \param[in, out] field_name  associated field name
+ * \param[in] zone_name    name of a volume zone
+ * \param[in] n_elts       number of elements related to the zone
+ * \param[in] elt_ids      list of element ids related to the zone
+ * \param[in] xyz          list of coordinates related to the zone
+ * \param[in] field_name   associated variable field name
  *
  * \return a pointer to allocated initialization values.
  */
@@ -67,17 +72,17 @@ BEGIN_C_DECLS
 
 #pragma weak cs_meg_initialization
 cs_real_t *
-cs_meg_initialization(const char      *zone_name,
-                      const cs_lnum_t  n_elts,
-                      const cs_lnum_t *elt_ids,
-                      const cs_real_t  xyz[][3],
+cs_meg_initialization(const char       *zone_name,
+                      const cs_lnum_t   n_elts,
+                      const cs_lnum_t  *elt_ids,
+                      const cs_real_t   xyz[][3],
                       const char       *field_name)
 {
-  CS_UNUSED(elt_ids);
-  CS_UNUSED(field_name);
-  CS_UNUSED(n_elts);
-  CS_UNUSED(xyz);
-  CS_UNUSED(zone_name);
+  CS_NO_WARN_IF_UNUSED(zone_name);
+  CS_NO_WARN_IF_UNUSED(elt_ids);
+  CS_NO_WARN_IF_UNUSED(n_elts);
+  CS_NO_WARN_IF_UNUSED(xyz);
+  CS_NO_WARN_IF_UNUSED(field_name);
 
   return NULL; /* avoid a compiler warning */
 }
