@@ -579,7 +579,6 @@ _find_or_add_key(const char  *name)
   /* Reallocate key definitions if necessary */
 
   if (_n_keys > _n_keys_max) {
-    int field_id, _key_id;
     int _n_keys_max_prev = _n_keys_max;
     if (_n_keys_max == 0)
       _n_keys_max = 8;
@@ -587,18 +586,19 @@ _find_or_add_key(const char  *name)
       _n_keys_max *= 2;
     BFT_REALLOC(_key_defs, _n_keys_max, cs_field_key_def_t);
     BFT_REALLOC(_key_vals, _n_keys_max*_n_fields_max, cs_field_key_val_t);
-    for (field_id = _n_fields - 1; field_id >= 0; field_id--) {
-      for (_key_id = _n_keys - 2; _key_id >= 0; _key_id--)
+    for (int field_id = _n_fields - 1; field_id >= 0; field_id--) {
+      for (int _key_id = _n_keys - 2; _key_id >= 0; _key_id--)
         _key_vals[field_id*_n_keys_max + _key_id]
           = _key_vals[field_id*_n_keys_max_prev + _key_id];
     }
-    for (field_id = 0; field_id < _n_fields; field_id++) {
-      memset((&(_key_vals + (field_id*_n_keys_max + key_id))->val),
-             0,
-             sizeof(union _key_val_t));
-      (_key_vals + (field_id*_n_keys_max + key_id))->is_set = 0;
-      (_key_vals + (field_id*_n_keys_max + key_id))->is_locked = 0;
-    }
+  }
+
+  for (int field_id = 0; field_id < _n_fields; field_id++) {
+    memset((&(_key_vals + (field_id*_n_keys_max + key_id))->val),
+           0,
+           sizeof(union _key_val_t));
+    (_key_vals + (field_id*_n_keys_max + key_id))->is_set = 0;
+    (_key_vals + (field_id*_n_keys_max + key_id))->is_locked = 0;
   }
 
   return key_id;
