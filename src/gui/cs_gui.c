@@ -2518,7 +2518,6 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
       const int kivisl = cs_field_key_id("diffusivity_id");
       int n_fields = cs_field_n_fields();
 
-
       /* get diffusivity and Kd for each scalar defined by the user on
          current zone (and kplus and kminus only for scalars
          with kinetic model) */
@@ -2592,30 +2591,31 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
 
         cs_field_t *fturbvisco
           = cs_field_by_name_try("anisotropic_turbulent_viscosity");
-        cs_real_6_t  *visten_v = (cs_real_6_t *)fturbvisco->val;
 
-        cs_real_t long_diffus;
-        double trans_diffus;
+        if (fturbvisco != NULL) {
+          cs_real_6_t  *visten_v = (cs_real_6_t *)fturbvisco->val;
 
-        cs_tree_node_t *tn
-          = cs_tree_node_get_child(tn_zl, "diffusion_coefficient");
-        cs_gui_node_get_child_real(tn, "longitudinal", &long_diffus);
-        cs_gui_node_get_child_real(tn, "transverse", &trans_diffus);
+          double long_diffus = 0, trans_diffus = 0;
 
-        for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-          cs_lnum_t iel = cell_ids[icel];
-          double norm = sqrt(vel[iel][0] * vel[iel][0] +
-                             vel[iel][1] * vel[iel][1] +
-                             vel[iel][2] * vel[iel][2]);
-          double tmp = trans_diffus * norm;
-          double diff = long_diffus - trans_diffus;
-          double denom = norm + 1.e-15;
-          visten_v[iel][0] = tmp + diff * vel[iel][0] * vel[iel][0] / denom;
-          visten_v[iel][1] = tmp + diff * vel[iel][1] * vel[iel][1] / denom;
-          visten_v[iel][2] = tmp + diff * vel[iel][2] * vel[iel][2] / denom;
-          visten_v[iel][3] =       diff * vel[iel][1] * vel[iel][0] / denom;
-          visten_v[iel][4] =       diff * vel[iel][1] * vel[iel][2] / denom;
-          visten_v[iel][5] =       diff * vel[iel][2] * vel[iel][0] / denom;
+          cs_tree_node_t *tn
+            = cs_tree_node_get_child(tn_zl, "diffusion_coefficient");
+          cs_gui_node_get_child_real(tn, "longitudinal", &long_diffus);
+          cs_gui_node_get_child_real(tn, "transverse", &trans_diffus);
+
+          const double diff = long_diffus - trans_diffus;
+
+          for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
+            cs_lnum_t iel = cell_ids[icel];
+            double norm = cs_math_3_square_norm(vel[iel]);
+            double tmp = trans_diffus * norm;
+            double denom = norm + 1.e-15;
+            visten_v[iel][0] = tmp + diff * vel[iel][0] * vel[iel][0] / denom;
+            visten_v[iel][1] = tmp + diff * vel[iel][1] * vel[iel][1] / denom;
+            visten_v[iel][2] = tmp + diff * vel[iel][2] * vel[iel][2] / denom;
+            visten_v[iel][3] =       diff * vel[iel][1] * vel[iel][0] / denom;
+            visten_v[iel][4] =       diff * vel[iel][1] * vel[iel][2] / denom;
+            visten_v[iel][5] =       diff * vel[iel][2] * vel[iel][0] / denom;
+          }
         }
 
       }
