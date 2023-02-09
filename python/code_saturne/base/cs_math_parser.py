@@ -738,12 +738,6 @@ class cs_math_parser:
                     if tk not in known_symbols:
                         known_symbols.append(tk)
 
-                    # If a local coordinate is used, we need to define the
-                    # global coordinates pointer
-                    if tk in ['x', 'y', 'z'] and 'xyz' not in known_symbols:
-                        known_symbols.append('xyz')
-                        usr_defs.append(glob_tokens['xyz']+'\n')
-
                     # For momentum source terms, check for velocity
                     if func_type == "src" and tk in ['u','v','w']:
                         if 'velocity' not in known_symbols:
