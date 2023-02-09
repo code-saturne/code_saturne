@@ -362,6 +362,14 @@ _physical_property_thermal_law(cs_field_t           *c_prop,
   const cs_real_t *thermodynamic_pressure = &_p0;
   const cs_real_t *_thermal_f_val = NULL;
 
+  // For thermodynamic tables total pressure should be used if available.
+  // Hence if it exists we use it as default. Otherwise we use p0 as default.
+  cs_field_t *p_tot_field = cs_field_by_name_try("total_pressure");
+  if (p_tot_field != NULL) {
+    thermodynamic_pressure = p_tot_field->val;
+    thermodynamic_pressure_stride = 1;
+  }
+
   if (CS_F_(t) != NULL) {
     if (CS_F_(t)->type & CS_FIELD_VARIABLE)
       _thermal_f_val = CS_F_(t)->val;
