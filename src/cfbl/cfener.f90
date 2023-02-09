@@ -117,7 +117,6 @@ double precision turb_schmidt, visls_0
 integer          inc    , imucpp , idftnp , iswdyp
 integer          f_id0  , ii, jj
 integer          iel1  , iel2
-integer          iterns
 
 double precision flux, yip, yjp, gradnb, tip
 double precision dijpfx, dijpfy, dijpfz, pnd  , pip   , pjp
@@ -281,9 +280,8 @@ enddo
 ! Explicit term : GAMMA*VOLUME*e   - GAMMA*VOLUME*e
 !                                     inj
 if (ncesmp.gt.0) then
-  iterns = 1
   allocate(gapinj(ncelet))
-  call catsma(ncesmp, iterns, icetsm, itypsm(:,ivar),                          &
+  call catsma(ncesmp, 1, icetsm, itypsm(:,ivar),                               &
               cell_f_vol, cvara_energ, smacel(:,ivar),                         &
               smacel(:,ipr), smbrs, rovsdt, gapinj)
   deallocate(gapinj)
@@ -412,12 +410,7 @@ if (vcopt_e%idiff.ge. 1) then
 
   imvisp = vcopt_u%imvisf
 
-  call viscfa                                                     &
-  !==========
- ( imvisp ,                                                       &
-   w1     ,                                                       &
-   viscf  , viscb  )
-
+  call viscfa(imvisp, w1, viscf, viscb)
 
 !     COMPLEMENTARY DIFFUSIVE TERM : - div( K grad ( epsilon - Cv.T ) )
 !     ============================                   1  2
@@ -430,11 +423,9 @@ if (vcopt_e%idiff.ge. 1) then
 
   ! At cell centers
   call cs_cf_thermo_eps_sup(crom, w9, ncel)
-  !========================
 
   ! At boundary faces centers
   call cs_cf_thermo_eps_sup(brom, wb, nfabor)
-  !========================
 
 ! Divergence computation with reconstruction
 
@@ -834,11 +825,8 @@ endif
 
 if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(cvar_pr)
-  !==========
   call synsca(cvar_energ)
-  !==========
   call synsca(cvar_tempk)
-  !==========
 endif
 
 ! Free memory

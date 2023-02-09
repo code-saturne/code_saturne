@@ -655,19 +655,19 @@ cs_convection_diffusion_solve_scal(const int             id,
   cs_field_t *f = cs_field_by_id(id);
 
   cs_solve_equation_scalar(f,
-                                       ncesmp,
-                                       ncmast,
-                                       iterns,
-                                       itspdv,
-                                       icetsm,
-                                       ltmast,
-                                       itypsm,
-                                       itypst,
-                                       smacel,
-                                       svcond,
-                                       flxmst,
-                                       viscf,
-                                       viscb);
+                           ncesmp,
+                           ncmast,
+                           iterns,
+                           itspdv,
+                           icetsm,
+                           ltmast,
+                           itypsm,
+                           itypst,
+                           smacel,
+                           svcond,
+                           flxmst,
+                           viscf,
+                           viscb);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1245,7 +1245,14 @@ cs_solve_equation_scalar(cs_field_t        *f,
     }
   }
 
-  /* Mass source term */
+  /* Mass source term.
+
+     TODO this section could be replaced by lower-level code from
+     cs_volume_mass_injection.c for the specific field being handled
+     (i.e. using the direct xdef-based evaluation).
+     This would allow removing the itypsm and smacel arrays and
+     associated dimensions. */
+
   cs_real_t *w1;
   BFT_MALLOC(w1, n_cells_ext, cs_real_t);
 
@@ -1269,7 +1276,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
       }
     }
 
-    /* On incremente SMBRS par -Gamma RTPA et ROVSDT par Gamma */
+    /* Increment smbrs by -Gamma.cvara_var and rovsdt by Gamma */
     cs_mass_source_terms(1,
                          1,
                          ncesmp,
@@ -1774,9 +1781,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
   }
 
   if ((idilat > 3) && (itspdv == 1)) {
-    
+
     cs_real_t xe = 0, xk = 0;
-    
+
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       if (   turb_model->itytur == 2
           || turb_model->itytur == 5) {

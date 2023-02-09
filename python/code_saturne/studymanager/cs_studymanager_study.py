@@ -1541,7 +1541,7 @@ class Studies(object):
                 except:
                     self.reporting("    /!\ ERROR while copying REPORT folder"
                                    " in %s" %study)
-                
+
             else:
                 if self.__sheet:
                     self.reporting("    /!\ REPORT folder is mandatory in STUDY"
