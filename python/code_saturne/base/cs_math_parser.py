@@ -787,7 +787,7 @@ class cs_math_parser:
                 elif func_type == 'bnd':
                     ir = req.index(tk)
                     if need_for_loop:
-                        new_v = 'new_vals[%d * zone->n_elts + e_id]' % (ir)
+                        new_v = 'new_vals[%d * n_elts + e_id]' % (ir)
                     else:
                         new_v = 'new_vals[%d]' % (ir)
 
