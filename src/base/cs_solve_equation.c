@@ -502,6 +502,21 @@ _diffusion_terms(cs_real_t                   w1[],
   /* Scalar diffusivity */
   cs_real_t *cpro_wgrec_s = NULL;
   cs_real_6_t *cpro_wgrec_v = NULL;
+
+  /* weighting field for gradient */
+  if (eqp->iwgrec == 1) {
+    const int kwgrec = cs_field_key_id_try("gradient_weighting_id");
+    const int iflwgr = cs_field_get_key_int(f, kwgrec);
+    cs_field_t *f_g = cs_field_by_id(iflwgr);
+    if (f_g->dim > 1)
+      cpro_wgrec_v = (cs_real_6_t *)f_g->val;
+    else
+      cpro_wgrec_s = f_g->val;
+    if (cpro_wgrec_s != NULL)
+      cs_array_real_copy(n_cells, w1, cpro_wgrec_s);
+    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, cpro_wgrec_s);
+  }
+
   if (eqp->idften & CS_ISOTROPIC_DIFFUSION) {
     int idifftp = eqp->idifft;
     if (scalar_turb_flux_model_type == 3)
@@ -516,19 +531,6 @@ _diffusion_terms(cs_real_t                   w1[],
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         w1[c_id] += idifftp*xcpp[c_id]*sgdh_diff[c_id];
       }
-    }
-    /* weighting field for gradient */
-    if (eqp->iwgrec == 1) {
-      const int kwgrec = cs_field_key_id_try("gradient_weighting_id");
-      const int iflwgr = cs_field_get_key_int(f, kwgrec);
-      cs_field_t *f_g = cs_field_by_id(iflwgr);
-      if (f_g->dim > 1)
-        cpro_wgrec_v = (cs_real_6_t *)f_g->val;
-      else
-        cpro_wgrec_s = f_g->val;
-      if (cpro_wgrec_s != NULL)
-        cs_array_real_copy(n_cells, w1, cpro_wgrec_s);
-      cs_halo_sync_var(m->halo, CS_HALO_STANDARD, cpro_wgrec_s);
     }
 
     cs_face_viscosity(m,
