@@ -585,6 +585,9 @@ call cs_physical_property_define_from_field(c_name, c_type_flag, &
 
 f_id = cs_physical_property_field_id_by_name(c_name)
 
+call field_set_key_int(f_id, keyvis, 0)
+call field_set_key_int(f_id, keylog, 1)
+
 if (len(trim(label)).gt.0) then
   call field_set_key_str(f_id, keylbl, trim(label))
 endif
