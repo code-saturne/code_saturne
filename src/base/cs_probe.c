@@ -1642,24 +1642,44 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
       distance[i] = HUGE_VAL;
   }
 
-  /* Warning if points have not beeen located */
+  /* Warning if points have not been located */
+
+  bool  filter_unlocated = true;
   cs_gnum_t  n_unlocated_probes = 0;
 
   int n_loc_probes = 0;
 
   if (cs_glob_n_ranks == 1 || pset->p_define_func != NULL) {
+
     for (int i = 0; i < pset->n_probes; i++) {
       if (distance[i] >= 0.5*HUGE_VAL) {
         pset->located[i] = 0;
-        n_unlocated_probes++;
+        n_unlocated_probes += 1;
       }
-      else {
-        pset->loc_id[n_loc_probes] = i;
-        pset->elt_id[n_loc_probes] = pset->elt_id[i];
+      else
         pset->located[i] = 1;
-        n_loc_probes += 1;
+    }
+
+    /* Filter probes only in non-transient case (i.e. located on fixed position
+       relative to mesh, whether on fixed mesh or moving with mesh) */
+
+    if (pset->flags & CS_PROBE_TRANSIENT) {
+      for (int i = 0; i < pset->n_probes; i++)
+        pset->loc_id[i] = i;
+
+      n_loc_probes = pset->n_probes;
+      filter_unlocated = false;
+    }
+    else {
+      for (int i = 0; i < pset->n_probes; i++) {
+        if (pset->located[i] == 1) {
+          pset->loc_id[n_loc_probes] = i;
+          pset->elt_id[n_loc_probes] = pset->elt_id[i];
+          n_loc_probes += 1;
+        }
       }
     }
+
   }
 
 #if defined(HAVE_MPI)
@@ -1730,10 +1750,11 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
 
     /* For a transient mesh, non-located probes may vary, so we need to maintain
        them in the structure to avoid having a varying number of columns in a
-       plot. We add those locations to the last rank */
+       plot. We add those locations to the last rank in the case where
+       they were filtered. */
 
     if (pset->flags & CS_PROBE_TRANSIENT) {
-      if (cs_glob_rank_id == cs_glob_n_ranks - 1 || cs_glob_n_ranks == 1)
+      if (filter_unlocated && cs_glob_rank_id == cs_glob_n_ranks - 1)
         pset->n_loc_probes += n_unlocated_probes;
     }
 
