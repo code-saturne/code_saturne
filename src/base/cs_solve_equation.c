@@ -790,7 +790,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   if (eqp->verbosity > 0)
     bft_printf(" ** SOLVING VARIABLE %s\n"
-               "    ----------------", f->name);
+               "    ----------------\n", f->name);
 
   /* Source terms
      ============ */
@@ -1833,7 +1833,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
         *cell_f_vol[c_id]*(cvar_var[c_id]-cvara_var[c_id])*ibcl;
     const cs_real_t sclnor = sqrt(cs_gdot(n_cells,smbrs,smbrs));
 
-    bft_printf("%s: EXPLICIT BALANCE = %e14.5\n",f->name, sclnor);
+    bft_printf("%s: EXPLICIT BALANCE = %14.5e\n",f->name, sclnor);
   }
 
   /* Log in case of velocity/pressure inner iterations */
@@ -1851,7 +1851,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
     if (l2norm > 0.)
       dl2norm = 1.0/l2norm;
 
-    bft_printf("Inner iteration scalar %10d iter=%10d L2 error = %e12.4\n"
+    bft_printf("Inner iteration scalar %10d iter=%10d L2 error = %12.4e\n"
                "L2 normalized error %e12.4 nomr %e12.4\n",f->id, iterns,
                l2errork, l2errork*dl2norm, l2norm);
   }
