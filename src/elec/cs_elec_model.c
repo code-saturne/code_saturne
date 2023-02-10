@@ -1275,8 +1275,8 @@ cs_elec_physical_properties(cs_domain_t  *domain)
   int nt_cur = cs_glob_time_step->nt_cur;
   int isrrom = 0;
   const cs_lnum_t  n_cells = domain->mesh->n_cells;
-  const int keysca = cs_field_key_id("diffusivity_id");
-  int diff_id = cs_field_get_key_int(CS_F_(potr), keysca);
+  const int kivisl = cs_field_key_id("diffusivity_id");
+  int diff_id = cs_field_get_key_int(CS_F_(potr), kivisl);
   cs_field_t *c_prop = NULL;
   if (diff_id > -1)
     c_prop = cs_field_by_id(diff_id);
@@ -1289,7 +1289,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
 
   /* Joule effect (law must be specified by user) */
 
-  int ifcvsl = cs_field_get_key_int(CS_F_(h), keysca);
+  int ifcvsl = cs_field_get_key_int(CS_F_(h), kivisl);
   cs_field_t *diff_th = NULL;
   if (ifcvsl >= 0)
     diff_th = cs_field_by_id(ifcvsl);
@@ -1318,7 +1318,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
     BFT_MALLOC(xkabes, ngaz, cs_real_t);
     BFT_MALLOC(coef,   ngaz * ngaz, cs_real_t);
 
-    int ifcsig = cs_field_get_key_int(CS_F_(potr), keysca);
+    int ifcsig = cs_field_get_key_int(CS_F_(potr), kivisl);
 
     if (ngaz == 1) {
       ym[0] = 1.;
@@ -1600,7 +1600,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 {
   cs_lnum_t  n_cells   = mesh->n_cells;
   cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
-  const int keysca  = cs_field_key_id("diffusivity_id");
+  const int kivisl  = cs_field_key_id("diffusivity_id");
 
   int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
@@ -1634,7 +1634,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
     }
 
     /* compute current density j = sig E */
-    int diff_id = cs_field_get_key_int(CS_F_(potr), keysca);
+    int diff_id = cs_field_get_key_int(CS_F_(potr), kivisl);
     cs_field_t *c_prop = NULL;
     if (diff_id > -1)
       c_prop = cs_field_by_id(diff_id);
@@ -1721,7 +1721,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
       /* compute electric field E = - grad (potI) */
 
       /* compute current density j = sig E */
-      int diff_id_i = cs_field_get_key_int(CS_F_(poti), keysca);
+      int diff_id_i = cs_field_get_key_int(CS_F_(poti), kivisl);
       cs_field_t *c_propi = NULL;
       if (diff_id_i > -1)
         c_propi = cs_field_by_id(diff_id_i);
