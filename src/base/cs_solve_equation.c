@@ -512,7 +512,7 @@ _diffusion_terms(cs_real_t                   w1[],
       cpro_wgrec_v = (cs_real_6_t *)f_g->val;
     else
       cpro_wgrec_s = f_g->val;
-    if (cpro_wgrec_s != NULL){
+    if (cpro_wgrec_s != NULL) {
       cs_array_real_copy(n_cells, w1, cpro_wgrec_s);
       cs_halo_sync_var(m->halo, CS_HALO_STANDARD, cpro_wgrec_s);
     }
