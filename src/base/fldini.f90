@@ -231,7 +231,7 @@ endif
 ! Interior mass flux field
 !-------------------------
 
-itycat = FIELD_EXTENSIVE + FIELD_PROPERTY
+itycat = FIELD_EXTENSIVE
 ityloc = 2 ! inner faces
 
 ! Mass flux for the class on interior faces
@@ -253,7 +253,7 @@ enddo
 ! Boundary Mass flux field
 !-------------------------
 
-itycat = FIELD_EXTENSIVE + FIELD_PROPERTY
+itycat = FIELD_EXTENSIVE
 ityloc = 3 ! boundary faces
 
 ! Mass flux for the class on interior faces
@@ -411,7 +411,7 @@ do f_id = 0, nfld - 1
             call csexit(1)
           endif
         else
-          call field_create(f_name, itycat, ityloc, idimf, inoprv, iflid)
+          call field_create(f_name, 0, ityloc, idimf, inoprv, iflid)
           call field_set_key_int(f_id, kwgrec, iflid)
         endif
 
