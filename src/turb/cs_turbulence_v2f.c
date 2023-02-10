@@ -66,9 +66,11 @@
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_physical_constants.h"
+#include "cs_porous_model.h"
 #include "cs_prototypes.h"
 #include "cs_time_step.h"
 #include "cs_turbulence_model.h"
+#include "cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -372,6 +374,9 @@ _solve_eq_fbr_al(const int         istprv,
                        f->id,
                        rhs,
                        rovsdt);
+
+  if (cs_glob_porous_model == 3)
+    cs_immersed_boundary_wall_functions(f->id, rhs, rovsdt);
 
   /* If we extrapolate the source terms */
   if (istprv >= 0) {
@@ -750,6 +755,9 @@ _solve_eq_phi(const int           istprv,
                        f_phi->id,
                        rhs,
                        rovsdt);
+
+  if (cs_glob_porous_model == 3)
+    cs_immersed_boundary_wall_functions(f_phi->id, rhs, rovsdt);
 
   /* If we extrapolate the source terms */
   if (istprv >= 0) {

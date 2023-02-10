@@ -594,7 +594,9 @@ cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
 
 /*----------------------------------------------------------------------------*/
 /*!
- *  \brief Compute boundary contributions for all immersed boundaries.
+ * \brief Compute boundary contributions for all immersed boundaries.
+ *
+ * This is similar to clptur.
  *
  * \param[in]       f_id     field id of the variable
  * \param[out]      st_exp   explicit source term
@@ -616,12 +618,16 @@ cs_immersed_boundary_wall_functions(int         f_id,
   cs_mesh_quantities_t *mq = domain->mesh_quantities;
   const cs_lnum_t  n_cells = m->n_cells;
   const cs_real_t  *cell_f_vol = mq->cell_f_vol;
+  const cs_real_3_t *cell_f_cen
+      = (const cs_real_3_t *restrict)mq->cell_f_cen;
 
   /*  Wall */
   const cs_real_t *c_w_face_surf
       = (const cs_real_t *restrict)mq->c_w_face_surf;
   const cs_real_3_t *c_w_face_normal
       = (const cs_real_3_t *restrict)mq->c_w_face_normal;
+  const cs_real_3_t *c_w_face_cog
+      = (const cs_real_3_t *restrict)mq->c_w_face_cog;
   const cs_real_t *c_w_dist_inv
       = (const cs_real_t *restrict)mq->c_w_dist_inv;
 
@@ -632,6 +638,10 @@ cs_immersed_boundary_wall_functions(int         f_id,
   /* Dynamic viscosity */
   const cs_real_t  *cpro_mu = CS_F_(mu)->val;
   const cs_real_t  *cpro_mut = CS_F_(mu_t)->val;
+
+  cs_field_t *ib_uk = cs_field_by_name_try("immersed_boundary_uk");
+  cs_field_t *ib_yplus = cs_field_by_name_try("immersed_boundary_yplus");
+  cs_field_t *ib_dplus = cs_field_by_name_try("immersed_boundary_dplus");
 
   /* Density */
   const cs_real_t *rho = (cs_real_t *)CS_F_(rho)->val;
@@ -648,7 +658,8 @@ cs_immersed_boundary_wall_functions(int         f_id,
 
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
-  if (f == CS_F_(vel) && eqp->idiff == 1) { /* velocity */
+  /* velocity */
+  if (f == CS_F_(vel) && eqp->idiff > 0) {
     /* cast to 3D vectors for readability */
     cs_real_3_t   *_st_exp = (cs_real_3_t *)st_exp;
     cs_real_33_t  *_st_imp = (cs_real_33_t *)st_imp;
@@ -740,6 +751,12 @@ cs_immersed_boundary_wall_functions(int         f_id,
                                    &cofimp,
                                    &dplus);
 
+        if (ib_uk != NULL)
+          ib_uk->val[c_id] = uk;
+        if (ib_yplus != NULL)
+          ib_yplus->val[c_id] = yplus;
+        if (ib_dplus != NULL)
+          ib_dplus->val[c_id] = dplus;
 
         cs_real_t hint = (   turb_model->order == CS_TURB_SECOND_ORDER
                           && turb_model->type  == CS_TURB_RANS) ?
@@ -747,7 +764,6 @@ cs_immersed_boundary_wall_functions(int         f_id,
                          (cpro_mu[c_id]+cpro_mut[c_id])*c_w_dist_inv[c_id];
 
         cs_real_t hflui = cpro_mu[c_id]*c_w_dist_inv[c_id]*ypup;
-        cs_real_t surf = c_w_face_surf[c_id];
 
         for (cs_lnum_t i = 0; i < 3; i++) {
           //TODO moving walls
@@ -755,7 +771,7 @@ cs_immersed_boundary_wall_functions(int         f_id,
           for (cs_lnum_t j = 0; j < 3; j++) {
             _st_imp[c_id][i][j] = - ( hflui * cs_math_33_identity[i][j]
                                     + (hint - hflui) * nw[i] * nw[j] )
-                                    * surf;
+                                    * solid_surf;
           }
         }
       }
@@ -763,6 +779,65 @@ cs_immersed_boundary_wall_functions(int         f_id,
     cs_parall_counter(&nsubla, 1);
     cs_parall_counter(&nlogla, 1);
   }
+  /* Turbulent kinetic energy dissipation */
+  if (f == CS_F_(eps)) {
+
+    cs_real_t sigmae =
+      cs_field_get_key_double(f, cs_field_key_id("turbulent_schmidt"));
+
+    /* If turbulent Schmidt is variable, id of the corresponding field */
+    int sigmae_id =
+      cs_field_get_key_int(f, cs_field_key_id("turbulent_schmidt_id"));
+
+    cs_real_t *cpro_sigmae = NULL;
+    int sigmae_step = 0;
+    if (sigmae_id >= 0) {
+      cpro_sigmae = cs_field_by_id(sigmae_id)->val;
+      sigmae_step = 1;
+    }
+    else {
+      cpro_sigmae = &sigmae;
+    }
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      //Geometric quantities
+      cs_real_t solid_surf = c_w_face_surf[c_id];
+
+      /* TODO loop over selection only */
+      if (solid_surf > cs_math_epzero*pow(cell_f_vol[c_id], 2./3.) || true) {
+
+
+        cs_real_t hint = ( cpro_mu[c_id]
+                         + cpro_mut[c_id]/cpro_sigmae[c_id*sigmae_step])
+                         * c_w_dist_inv[c_id];
+
+        cs_real_t wall_dist  = (c_w_dist_inv[c_id] < DBL_MIN) ?
+                                0.:
+                                1. / c_w_dist_inv[c_id];
+
+        /* Target imposed value at the wall */
+        cs_real_t pimp = 0.;
+
+        cs_real_t uk = ib_uk->val[c_id];
+        cs_real_t yplus = ib_yplus->val[c_id];
+        cs_real_t dplus = ib_dplus->val[c_id];
+
+        /* If not in the viscous sublayer */
+        const double ypluli = cs_glob_wall_functions->ypluli;
+        if (yplus > ypluli) {
+          cs_real_t l_visc = cpro_mu[c_id]/rho[c_id];
+          pimp = 4. * wall_dist * cs_math_pow5(uk) /
+              (cs_turb_xkappa * cs_math_pow2(l_visc * (yplus + 2.*dplus)));
+        }
+
+        st_exp[c_id] = hint * solid_surf * pimp;
+        st_imp[c_id] = - hint * solid_surf;
+
+      }
+    }
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

@@ -66,6 +66,7 @@
 #include "cs_parall.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
+#include "cs_porous_model.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
 #include "cs_thermal_model.h"
@@ -74,6 +75,7 @@
 #include "cs_turbulence_bc.h"
 #include "cs_turbulence_model.h"
 #include "cs_velocity_pressure.h"
+#include "cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -2101,6 +2103,9 @@ _solve_epsilon(cs_lnum_t        ncesmp,
                        rhs,
                        rovsdt);
 
+  if (cs_glob_porous_model == 3)
+    cs_immersed_boundary_wall_functions(CS_F_(eps)->id, rhs, rovsdt);
+
   /* If we extrapolate the source terms */
   if (st_prv_id > -1) {
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
@@ -2900,6 +2905,11 @@ cs_turbulence_rij(cs_lnum_t    ncesmp,
                        CS_F_(rij)->id,
                        (cs_real_t*)smbrts,
                        (cs_real_t*)rovsdtts);
+
+  if (cs_glob_porous_model == 3)
+    cs_immersed_boundary_wall_functions(CS_F_(rij)->id,
+                                        (cs_real_t*)smbrts,
+                                        (cs_real_t*)rovsdtts);
 
   if (c_st_prv != NULL) {
 

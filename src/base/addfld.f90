@@ -723,7 +723,16 @@ endif
 if (iporos.eq.3) then
   itycat = FIELD_EXTENSIVE + FIELD_POSTPROCESS
   call field_create('immersed_pressure_force', itycat, ityloc, idim3, inoprv, &
-                    iforbr)
+                    iflid )
+
+  if (iturb.ne.0) then
+    call field_create('immersed_boundary_uk', itycat, ityloc, idim1, inoprv, &
+                      iflid)
+    call field_create('immersed_boundary_yplus', itycat, ityloc, idim1, inoprv, &
+                      iflid)
+    call field_create('immersed_boundary_dplus', itycat, ityloc, idim1, inoprv, &
+                      iflid)
+  endif
 endif
 
 itycat = FIELD_INTENSIVE + FIELD_PROPERTY

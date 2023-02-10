@@ -67,6 +67,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_physical_constants.h"
+#include "cs_porous_model.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
 #include "cs_thermal_model.h"
@@ -74,6 +75,7 @@
 #include "cs_turbulence_model.h"
 #include "cs_turbulence_rotation.h"
 #include "cs_velocity_pressure.h"
+#include "cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -336,6 +338,11 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
                        f_omg->id,
                        smbrw,
                        usimpw);
+
+  if (cs_glob_porous_model == 3) {
+    cs_immersed_boundary_wall_functions(f_k->id, smbrk, usimpk);
+    cs_immersed_boundary_wall_functions(f_omg->id, smbrw, usimpw);
+  }
 
   /* If source terms are extrapolated over time */
 

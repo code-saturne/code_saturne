@@ -65,10 +65,12 @@
 #include "cs_parall.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
+#include "cs_porous_model.h"
 #include "cs_prototypes.h"
 #include "cs_time_step.h"
 #include "cs_turbulence_model.h"
 #include "cs_turbulence_rotation.h"
+#include "cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -515,6 +517,11 @@ cs_turbulence_sa(cs_lnum_t        ncesmp,
                        CS_F_(nusa)->id,
                        st_exp,
                        st_imp);
+
+  if (cs_glob_porous_model == 3)
+    cs_immersed_boundary_wall_functions(CS_F_(nusa)->id,
+                                        st_exp,
+                                        st_imp);
 
   /* User source terms and d/dt(rho) and div(rho u) are taken into account
      stored in ext_term */

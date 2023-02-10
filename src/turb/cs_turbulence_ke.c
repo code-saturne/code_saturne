@@ -69,6 +69,7 @@
 #include "cs_parall.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
+#include "cs_porous_model.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
 #include "cs_thermal_model.h"
@@ -76,6 +77,7 @@
 #include "cs_turbulence_model.h"
 #include "cs_turbulence_rotation.h"
 #include "cs_velocity_pressure.h"
+#include "cs_wall_functions.h"
 
 /* Atmospheric model headers
    (we should not need to call them here, we should be more modular */
@@ -1428,6 +1430,11 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                        f_eps->id,
                        w8,
                        usimpe);
+
+  if (cs_glob_porous_model == 3) {
+    cs_immersed_boundary_wall_functions(f_k->id, w7, usimpk);
+    cs_immersed_boundary_wall_functions(f_eps->id, w8, usimpe);
+  }
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
 

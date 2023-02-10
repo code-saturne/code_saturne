@@ -274,6 +274,22 @@ cs_math_pow4(cs_real_t  x)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the 5-th power of a real value.
+ *
+ * \param[in]  x  value
+ *
+ * \return the 5th power of the given value
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_pow5(cs_real_t  x)
+{
+  return x*(x*x)*(x*x);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the (euclidean) distance between two points xa and xb in
  *         a Cartesian coordinate system of dimension 3.
  *
