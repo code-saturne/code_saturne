@@ -89,10 +89,10 @@ BEGIN_C_DECLS
 
 void
 cs_solve_equation_scalar(cs_field_t        *f,
-                         const cs_lnum_t    ncesmp,
-                         const cs_lnum_t    ncmast,
-                         const int          iterns,
-                         const int          itspdv,
+                         cs_lnum_t          ncesmp,
+                         cs_lnum_t          ncmast,
+                         int                iterns,
+                         int                itspdv,
                          const cs_lnum_t    icetsm[],
                          const cs_lnum_t    ltmast[],
                          int                itypsm[],

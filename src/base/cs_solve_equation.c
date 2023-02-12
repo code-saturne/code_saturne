@@ -142,20 +142,20 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 void
-cs_convection_diffusion_solve_scal(const int             id,
-                                   const cs_lnum_t       ncesmp,
-                                   const cs_lnum_t       ncmast,
-                                   const int             iterns,
-                                   const int             itspdv,
-                                   const cs_lnum_t       icetsm[],
-                                   const cs_lnum_t       ltmast[],
-                                   int                   itypsm[],
-                                   int                   itypst[],
-                                   cs_real_t             smacel[],
-                                   cs_real_t             svcond[],
-                                   const cs_real_t       flxmst[],
-                                   cs_real_t             viscf[],
-                                   cs_real_t             viscb[]);
+cs_f_solve_equation_scalar(int                   f_id,
+                           cs_lnum_t             ncesmp,
+                           cs_lnum_t             ncmast,
+                           int                   iterns,
+                           int                   itspdv,
+                           const cs_lnum_t       icetsm[],
+                           const cs_lnum_t       ltmast[],
+                           int                   itypsm[],
+                           int                   itypst[],
+                           cs_real_t             smacel[],
+                           cs_real_t             svcond[],
+                           const cs_real_t       flxmst[],
+                           cs_real_t             viscf[],
+                           cs_real_t             viscb[]);
 
 /*============================================================================
  * Private function definitions
@@ -640,22 +640,22 @@ _diffusion_terms(cs_real_t                   w1[],
  *============================================================================*/
 
 void
-cs_convection_diffusion_solve_scal(const int             id,
-                                   const cs_lnum_t       ncesmp,
-                                   const cs_lnum_t       ncmast,
-                                   const int             iterns,
-                                   const int             itspdv,
-                                   const cs_lnum_t       icetsm[],
-                                   const cs_lnum_t       ltmast[],
-                                   int                   itypsm[],
-                                   int                   itypst[],
-                                   cs_real_t             smacel[],
-                                   cs_real_t             svcond[],
-                                   const cs_real_t       flxmst[],
-                                   cs_real_t             viscf[],
-                                   cs_real_t             viscb[])
+cs_f_solve_equation_scalar(int                   f_id,
+                           cs_lnum_t             ncesmp,
+                           cs_lnum_t             ncmast,
+                           int                   iterns,
+                           int                   itspdv,
+                           const cs_lnum_t       icetsm[],
+                           const cs_lnum_t       ltmast[],
+                           int                   itypsm[],
+                           int                   itypst[],
+                           cs_real_t             smacel[],
+                           cs_real_t             svcond[],
+                           const cs_real_t       flxmst[],
+                           cs_real_t             viscf[],
+                           cs_real_t             viscb[])
 {
-  cs_field_t *f = cs_field_by_id(id);
+  cs_field_t *f = cs_field_by_id(f_id);
 
   cs_solve_equation_scalar(f,
                            ncesmp,
@@ -711,10 +711,10 @@ cs_convection_diffusion_solve_scal(const int             id,
 
 void
 cs_solve_equation_scalar(cs_field_t        *f,
-                         const cs_lnum_t    ncesmp,
-                         const cs_lnum_t    ncmast,
-                         const int          iterns,
-                         const int          itspdv,
+                         cs_lnum_t          ncesmp,
+                         cs_lnum_t          ncmast,
+                         int                iterns,
+                         int                itspdv,
                          const cs_lnum_t    icetsm[],
                          const cs_lnum_t    ltmast[],
                          int                itypsm[],

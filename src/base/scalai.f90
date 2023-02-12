@@ -104,20 +104,20 @@ save             ipass
 
 interface
 
-   subroutine cs_convection_diffusion_solve_scal    &
-     (id, ncesmp, ncmast,                             &
+   subroutine solve_equation_scalar                   &
+     (f_id, ncesmp, ncmast,                           &
      iterns, itspdv, icetsm,                          &
      ltmast, itypsm, itypst,                          &
      smacel, svcond, flxmst,                          &
      viscf,  viscb)                                   &
-    bind(C, name='cs_convection_diffusion_solve_scal')
+    bind(C, name='cs_f_solve_equation_scalar')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: id, ncesmp, ncmast, iterns, itspdv
+    integer(c_int), value :: f_id, ncesmp, ncmast, iterns, itspdv
     integer(c_int), dimension(*) :: icetsm, ltmast, itypsm, itypst
     real(kind=c_double), dimension(*) :: smacel, svcond, flxmst
     real(kind=c_double), dimension(*), intent(inout) :: viscf, viscb
-  end subroutine cs_convection_diffusion_solve_scal
+  end subroutine solve_equation_scalar
 
 end interface
 
@@ -234,7 +234,7 @@ if (nscapp.gt.0) then
 ! ---> Traitement special pour la masse volumique,
 !                     la temperature et l'energie
 !     L'indicateur ISPECF sera non nul si l'on ne doit pas resoudre
-!       le scalaire plus bas avec cs_convection_diffusion_solve_scal.
+!       le scalaire plus bas avec solve_equation_scalar.
 
     ispecf = 0
 
@@ -290,7 +290,7 @@ if (nscapp.gt.0) then
 !             a terme, les combustionnistes pourront donner leur propre
 !               grandeur scalaire associee a la variance et
 !               eventuellement reconstruite en dehors
-!               de cs_convection_diffusion_solve_scal.
+!               de solve_equation_scalar.
 !               il faudra alors peut etre declarer des tableaux
 !               de travail suppl
 !           fin si
@@ -360,19 +360,14 @@ if (nscapp.gt.0) then
 
       if (f_dim.eq.1) then
 
-! ---> Appel a cs_convection_diffusion_solve_scal pour la resolution
-
-       call cs_convection_diffusion_solve_scal            &
+       call solve_equation_scalar                           &
            (ivarfl(isca(iisc)), ncetsm, ncmast,             &
             iterns, itspdv, icetsm, ltmast, itypsm,         &
             itypst, smacel, svcond, flxmst, viscf, viscb)
 
       else
 
-! ---> Appel a covofv pour la resolution
-
         call covofv                                                 &
-        !==========
    ( nvar   , nscal  ,                                              &
      ncepdc , ncetsm ,                                              &
      iterns , iisc   ,                                              &
@@ -514,7 +509,7 @@ if (nscaus.gt.0) then
 !             a terme, les combustionnistes pourront donner leur propre
 !               grandeur scalaire associee a la variance et
 !               eventuellement reconstruite en dehors de
-!               cs_convection_diffusion_solve_scal il faudra alors
+!               solve_equation_scalar il faudra alors
 !               peut etre declarer des tableaux de travail suppl
 !           fin si
 !         fin si
@@ -533,18 +528,15 @@ if (nscaus.gt.0) then
 
     if (f_dim.eq.1) then
 
-! ---> Appel a cs_convection_diffusion_solve_scal pour la resolution
-
-      call cs_convection_diffusion_solve_scal               &
+      call solve_equation_scalar                            &
            (ivarfl(isca(iisc)), ncetsm, ncmast,             &
-           iterns, itspdv, icetsm, ltmast, ltmast,          &
+           iterns, itspdv, icetsm, ltmast, itypsm,          &
            itypst, smacel, svcond, flxmst, viscf, viscb)
     else
 
 ! ---> Appel a covofv pour la resolution
 
         call covofv                                                 &
-        !==========
    ( nvar   , nscal  ,                                              &
      ncepdc , ncetsm ,                                              &
      iterns , iisc   ,                                              &
