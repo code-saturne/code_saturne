@@ -105,11 +105,11 @@ interface
 
   ! Interface to C function building properties
 
-  subroutine cs_create_added_properties() &
-    bind(C, name='cs_create_added_properties')
+  subroutine cs_parameters_define_auxiliary_fields() &
+    bind(C, name='cs_parameters_define_auxiliary_fields')
     use, intrinsic :: iso_c_binding
     implicit none
-  end subroutine cs_create_added_properties
+  end subroutine cs_parameters_define_auxiliary_fields
 
   !=============================================================================
 
@@ -152,10 +152,6 @@ call field_get_key_id("parent_field_id", keypid)
 !       ceci permet ensuite de ne pas se fatiguer lors de la
 !       construction de IPPPRO plus bas.
 !      Cependant, pour les physiques particulieres, ce n'est pas le cas.
-
-! Properties definied in C
-
-call cs_create_added_properties
 
 ! Base properties, always present
 
@@ -386,6 +382,9 @@ if (iale.ge.1) then
 
 endif
 
+! Properties and other fields defined in C
+
+call cs_parameters_define_auxiliary_fields
 
 ! User-defined properties
 

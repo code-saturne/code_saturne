@@ -393,7 +393,7 @@ cs_parameters_create_added_variables(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_create_added_properties(void);
+cs_parameters_define_auxiliary_fields(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

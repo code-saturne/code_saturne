@@ -498,8 +498,7 @@ endif
 ! 2. Potential forces (pressure gradient and gravity)
 !===============================================================================
 
-!-------------------------------------------------------------------------------
-! ---> Pressure gradient
+! Pressure gradient
 
 call field_get_id_try("pressure_gradient", f_id)
 if (f_id.ge.0) then
