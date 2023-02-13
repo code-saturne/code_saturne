@@ -33,13 +33,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Dans ce sous-programme est calcul\'e le coefficient de diffusion isotrope aux
 faces. Ce coefficient fait intervenir la valeur de la viscosité aux faces
-multipliée par le rapport surface de la face sur la distance alg\'ebrique $\overline{I'J'}$ ou $\overline{I'F}$({\it cf.} figure \ref{Base_Viscfa_fig_geom}),
-rapport résultant de l'intégration du terme de diffusion.
- Par analogie du terme calculé, ce sous-programme est aussi appelé par le
-sous-programme \fort{resopv} pour calculer le coefficient ``diffusif'' de la pression faisant intervenir le pas de temps.\\
+multipliée par le rapport surface de la face sur la distance alg\'ebrique
+$\overline{I'J'}$ ou $\overline{I'F}$({\it cf.} figure
+\ref{Base_Viscfa_fig_geom}), rapport résultant de l'intégration du terme de
+diffusion.  Par analogie du terme calculé, ce sous-programme est aussi appelé
+par le sous-programme \fort{resopv} pour calculer le coefficient ``diffusif''
+de la pression faisant intervenir le pas de temps.\\
 La valeur de la viscosité aux faces est déterminée soit par une moyenne
 arithmétique, soit par une moyenne harmonique de la viscosité au centre des
-cellules, suivant le choix de l'utilisateur. Par défaut, cette valeur est calculée par une moyenne arithmétique.
+cellules, suivant le choix de l'utilisateur. Par défaut, cette valeur est
+calculée par une moyenne arithmétique.
 
 See the \doxygenanchor{cs__face__viscosity_8c.html\#viscfa}{programmers reference of the dedicated subroutine}
 for further details.
@@ -106,11 +109,12 @@ soit :
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 La valeur de la viscosité au centre des cellules est entrée en argument {\it
-via} la variable \var{VISTOT}. On calcule sa valeur moyenne aux faces et on la
-multiplie par le rapport surface \var{SURFN} sur la distance alg\'ebrique
+  via} la variable \var{VISTOT}. On calcule sa valeur moyenne aux faces et on
+la multiplie par le rapport surface \var{SURFN} sur la distance alg\'ebrique
 \var{DIST} pour une face interne (\var{SURFBN} et \var{DISTBR} respectivement
-pour une face de bord). La valeur du terme de diffusion résultant est mise dans le vecteur \var{VISCF} pour une face interne et \var{VISCB} pour une face de bord.\\
-La variable \var{IMVISF} détermine quel type de moyenne est utilisé pour
+pour une face de bord). La valeur du terme de diffusion résultant est mise dans
+le vecteur \var{VISCF} pour une face interne et \var{VISCB} pour une face de
+bord.  La variable \var{IMVISF} détermine quel type de moyenne est utilisé pour
 calculer la viscosité aux faces.\\
 Si \var{IMVISF}$=0$, la moyenne est arithmétique, sinon la moyenne est harmonique.\\
 
@@ -119,17 +123,23 @@ Si \var{IMVISF}$=0$, la moyenne est arithmétique, sinon la moyenne est harmoniqu
 \section*{Points \`a traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-L'obtention des interpolations utilisées dans le code \CS  du paragraphe \ref{Base_Viscfa_paragraphe2} est résumée dans le rapport de Davroux et
-al\footnote{Davroux A., Archambeau F. et Hérard J.M., Tests numériques sur
-quelques méthodes de résolution d'une équation de diffusion en volumes finis,
-HI-83/00/027/A.}.
-Les auteurs de ce rapport ont montré que, pour un maillage monodimensionnel irrégulier et avec une
-viscosité non constante, la convergence mesurée est d'ordre 2 en espace avec
-l'interpolation harmonique et d'ordre 1 en espace avec l'interpolation
-linéaire (pour des solution régulières).\\
+L'obtention des interpolations utilisées dans \CS et synthétisées dans
+l'annexe~\ref{Base_Viscfa_paragraphe2} est détaillée dans le rapport de Davroux
+et \textit{al.}\footnote{%
+  Davroux A., Archambeau F. et Hérard J.M., Tests numériques sur quelques
+  méthodes de résolution d'une équation de diffusion en volumes finis,
+  HI-83/00/027/A.}.
+%
+Les auteurs de ce rapport ont montré que, pour des solutions régulières et sur
+un maillage monodimensionnel irrégulier avec une viscosité non constante, la
+convergence mesurée est d'ordre 2 en espace avec l'interpolation harmonique et
+d'ordre 1 en espace avec l'interpolation linéaire.
+
 Par conséquent, il serait préférable d'utiliser l'interpolation harmonique pour
-calculer la valeur de la viscosité aux faces. Des tests de stabilité seront nécessaires au préalable.
+calculer la valeur de la viscosité aux faces. Des tests de stabilité seront
+nécessaires au préalable.
 \\
 De même, on envisage d'extrapoler la viscosité sur les faces de bord plutôt que
 de prendre la valeur de la viscosité au centre de la cellule jouxtant cette face.\\
-Dans le cas de la moyenne arithm\'etique, l'utilisation de la valeur $0.5$ pour les coefficients $\alpha_{\,ij}$ serait \`a revoir.
+Dans le cas de la moyenne arithm\'etique, l'utilisation de la valeur $0.5$ pour
+les coefficients $\alpha_{\,ij}$ serait \`a revoir.

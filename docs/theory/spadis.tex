@@ -1200,68 +1200,83 @@ Note that the $3\times3$ $\tens{C}_\celli$ tensor is  slightly different from \e
 
 \subsection{Introduction }
 
-Compatible Discrete Operator schemes have been recently introduced in \CS to handle
-distorted and/or polyhedral meshes in a robust way. CDO schemes gather several space discretization
-schemes according to the localization of the degrees of freedom (DoFs). Namely, \emph{vertex-based}
-schemes when DoFs are located at mesh vertices, \emph{vertex+cell-based} schemes when DoFs are both
-located at mesh cells and mesh vertices, \emph{face-based} schemes when DoFs are located at mesh
-faces, \emph{edge-based} schemes when DoFs are located at mesh edges (one scalar by edge in the case
-of a vector-valued unknows since the circulation of vector field is the DoF) and \emph{cell-based}
-schemes when DoFs are located at mesh cells (for the potential) and mesh faces (for the flux). The
-latter corresponds to a mixed formulation and is only available up to now for scalar-valued steady
-diffusion equation.  All these schemes belong to the broad family of \emph{compatible} or
-\emph{mimetic} or \emph{structure-preserving} schemes.
+Compatible Discrete Operator schemes have been recently introduced in \CS to
+handle distorted and/or polyhedral meshes in a robust way. CDO schemes gather
+several space discretization schemes according to the localization of the
+degrees of freedom (DoFs). Namely, \emph{vertex-based} schemes when DoFs are
+located at mesh vertices, \emph{vertex+cell-based} schemes when DoFs are both
+located at mesh cells and mesh vertices, \emph{face-based} schemes when DoFs
+are located at mesh faces, \emph{edge-based} schemes when DoFs are located at
+mesh edges (one scalar by edge in the case of a vector-valued unknows since the
+circulation of vector field is the DoF) and \emph{cell-based} schemes when DoFs
+are located at mesh cells (for the potential) and mesh faces (for the
+flux). The latter corresponds to a mixed formulation and is only available up
+to now for scalar-valued steady diffusion equation.  All these schemes belong
+to the broad family of \emph{compatible} or \emph{mimetic} or
+\emph{structure-preserving} schemes.
 
-CDO schemes have been devised and mathematically analyzed during three PhD thesis. Part of these
-works is available in \CS:
+CDO schemes have been devised and mathematically analyzed during three PhD
+thesis. Part of these works is available in \CS:
 \begin{itemize}
-\item Bonelle's Phd~\cite{Bonel14} for vertex-based, face-based and cell-based schemes in the case
-  of steady anisotropic diffusion equation and an edge-based scheme for a \emph{curl-curl} equation;
-\item Cantin's Phd~\cite{Cant16} for the scalar-valued unsteady convection/diffusion/reaction
-  equation with vertex-based schemes and vertex+cell-based schemes;
-\item Milani's PhD~\cite{Mila20} for the discretization of the steady/unsteady Stokes and
-  Navier--Stokes equations using face-based schemes. Several velocity/pressure coupling algorithms
-  are investigated and analyzed.
+\item Bonelle's Phd~\cite{Bonel14} for vertex-based, face-based and cell-based
+  schemes in the case of steady anisotropic diffusion equation and an
+  edge-based scheme for a steady \emph{curl-curl} equation;
+\item Cantin's Phd~\cite{Cant16} for the scalar-valued unsteady
+  convection/diffusion/reaction equation with vertex-based schemes and
+  vertex+cell-based schemes;
+\item Milani's PhD~\cite{Mila20} for the discretization of the steady/unsteady
+  Stokes and Navier--Stokes equations using face-based schemes. Two
+  velocity-pressure coupling algorithms are investigated and analyzed: (1) a
+  fully coupled (or \textit{monolithic}) algorithm and (2) an
+  \textit{artificial compressibility} algorithm.
 \end{itemize}
 
 \subsection{Diffusion operator}
 
-The discretization of the diffusion is detailed in several reports and articles. The EDF's
-report~\cite{Bonel12} (in French) is a good introduction. The link with other space discretizations
-and the mathematical analysis (stability, convergence proof and \emph{a priori} error estimates) is
-available in~\cite{BonEr14}. The key operator is the discrete Hodge operator. This operator can be
-built in several ways. An example of the influence of the choice of the discrete Hodge operator on
-the quality of the solution is available in~\cite{BDPE15}.
+The discretization of the diffusion is detailed in several reports and
+articles. The EDF's report~\cite{Bonel12} (in French) is a good
+introduction. The link with other space discretizations and the mathematical
+analysis (stability, convergence proof and \emph{a priori} error estimates) is
+available in~\cite{BonEr14}. The key operator is the discrete Hodge
+operator. This operator can be built in several ways. An example of the
+influence of the choice of the discrete Hodge operator on the quality of the
+solution is available in~\cite{BDPE15}.
 
-An detailed explanation on the way to enforce Dirichlet boundary conditions in vertex-based scheme
-along with the description of vertex+cell-based schemes for scalar-valued diffusion equation is
-available in~\cite{Cant16}.
+An detailed explanation on the way to enforce Dirichlet boundary conditions in
+vertex-based scheme along with the description of vertex+cell-based schemes for
+scalar-valued diffusion equation is available in~\cite{Cant16}.
 
 \subsection{Convection operator}
 
-Several advection schemes are detailed in~\cite{Cant16} for scalar-valued vertex-based schemes. The
-classical upwind and centered discretizations are discussed along with a \emph{P\'eclet-robust}
-scheme which automatically applies an upwind weighting according to the value of the local P\'eclet
+Several advection schemes are detailed in~\cite{Cant16} for scalar-valued
+vertex-based schemes. The classical upwind and centered discretizations are
+discussed along with a \emph{P\'eclet-robust} scheme which automatically
+applies an upwind weighting according to the value of the local P\'eclet
 number.
 
-An upwind and centered schemes are detailed in~\cite{Mila20} in the case of scalar- and
-vector-valued face-based schemes.
+An upwind and centered schemes are detailed in~\cite{Mila20} in the case of
+scalar- and vector-valued face-based schemes.
 
 \subsection{Stokes and Navier--Stokes equations}
 
-The discretization of the Stokes or Navier--Stokes equations in the case of a laminar flow with a
-constant mass density and viscosity is detailed in~\cite{Mila20}. With these assumptions, the
-viscous term is simply a vector-valued Laplacian operator.
+The discretization of the Stokes or Navier--Stokes equations in the case of a
+laminar flow with a constant mass density and viscosity is detailed
+in~\cite{Mila20}. With these assumptions, the viscous term is simply a
+vector-valued Laplacian operator.
 
 Two types of velocity/pressure coupling algorithms are available:
 \begin{itemize}
-\item A \emph{monolithic} algorithm: a fully coupled algorithm between the velocity components and
-  the pressure DoFs. This yields to a linear system which is a saddle-point problem;
-\item An \emph{artificial compressibility} algorithm~\cite{GuMi15} up to a second-order accuracy.
+\item A \emph{monolithic} algorithm: a fully coupled algorithm between the
+  velocity components and the pressure DoFs. This yields to a linear system
+  which is a saddle-point problem. A specific algorithm to solve steady-state
+  problem is also available.
+\item An \emph{artificial compressibility} algorithm~\cite{GuMi15} up to a
+  second-order accuracy~\cite{MiBoE22}. Only unsteady problems are tackled with this
+  algorithm. This is an experimental feature.
 \end{itemize}
 
-An short introduction to this discretization in the steady case with the monolithic approach is
-available in~\cite{BoErM20}.
+A short introduction to this discretization describing the main operators in
+the steady case with the monolithic approach is available in~\cite{BoErM20}.
 
 %-------------------------------------------------------------------------------
 \section{Advanced topic}
