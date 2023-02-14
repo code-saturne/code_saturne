@@ -382,7 +382,7 @@ _set_predefined_property(cs_field_t  *f)
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   nscasp --> pointer to cs_glob_gas_mix->n_species
+ *   nscasp --> pointer to cs_glob_gas_mix->n_species_solved
  *----------------------------------------------------------------------------*/
 
 void

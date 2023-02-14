@@ -1995,7 +1995,7 @@ void CS_PROCF(synvin, SYNVIN)
  *
  * Fortran interface:
  *
- * subroutine synvin(var)
+ * subroutine synvie(var)
  * *****************
  *
  * var   : <-> : interleaved vector (of dimension 3)
