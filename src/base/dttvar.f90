@@ -43,6 +43,7 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
+!> \param[in]     itrale        ALE iteration number
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     ncepdp        number of cells with head loss terms
@@ -60,7 +61,8 @@
 !_______________________________________________________________________________
 
 subroutine dttvar &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( itrale ,                                                       &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    iwarnp ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
@@ -94,6 +96,7 @@ implicit none
 
 ! Arguments
 
+integer          itrale
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iwarnp
@@ -579,7 +582,10 @@ if (idtvar.ge.0) then
       call log_iteration_clipping_field(flid, icfmin(1), icfmax(1),    &
                                         dt, dt, icfmin(1), icfmax(1))
 
-      call cs_time_step_increment(dtloc)
+      if (itrale.gt.0 .and. ntmabs.gt.ntpabs) then
+        call cs_time_step_increment(dtloc)
+      endif
+
       do iel = 1, ncel
         dt(iel) = dtloc
       enddo
