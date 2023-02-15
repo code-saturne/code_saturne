@@ -474,8 +474,8 @@ _spf_compute(const cs_mesh_t                    *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and initialize the modelling context for the model of
- *         saturated single-phase flows
+ * \brief Allocate and initialize the modelling context for the model of
+ *        saturated single-phase flows
  *
  * \return a pointer to a new allocated cs_gwf_saturated_single_phase_t struct
  */
@@ -597,6 +597,11 @@ _sspf_init_model_context(cs_gwf_saturated_single_phase_t   *mc)
      absolute permeability to the diffusion property of the Richards eq. */
 
   cs_equation_add_diffusion(eqp, gw->abs_permeability);
+
+  /* Default treatment of the Dirichlet BCs (algebraic since this is a pure
+     diffusion equation) */
+
+  cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");
 
   /* Add the variable field */
 
@@ -4096,9 +4101,9 @@ cs_gwf_add_decay_chain(int                       n_tracers,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the context of the model after the activation of the
- *         module and a first settings of the model parameters (physical and
- *         numerical). At this stage, cs_user_parameters() has not been called
+ * \brief Initialize the context of the model after the activation of the
+ *        module and make first settings of the model parameters (physical and
+ *        numerical). At this stage, cs_user_parameters() has not been called
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4152,11 +4157,11 @@ cs_gwf_init_model_context(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined settings for the groundwater flow model and its related
- *         equations.
- *         At this stage, all soils have been defined and equation parameters
- *         are set (cs_user_parameters() has been called).
- *         Create new cs_field_t structures according to the setting.
+ * \brief Predefined settings for the groundwater flow model and its related
+ *        equations.
+ *        At this stage, all soils have been defined and equation parameters
+ *        are set (cs_user_parameters() has been called).
+ *        Create new cs_field_t structures according to the setting.
  */
 /*----------------------------------------------------------------------------*/
 
