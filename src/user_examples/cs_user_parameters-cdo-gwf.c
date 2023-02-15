@@ -454,8 +454,30 @@ cs_user_model(void)
     cs_gwf_tracer_t *tr = cs_gwf_tracer_by_name("Tracer_01");
   }
   /*! [param_cdo_gwf_get_tracer] */
+}
 
-  /*! [param_cdo_gwf_get_decay_chain] */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define or modify general numerical and physical user parameters.
+ *
+ * At the calling point of this function, most model-related most variables
+ * and other fields have been defined, so specific settings related to those
+ * fields may be set here.
+ *
+ * At this stage, the mesh is not built or read yet, so associated data
+ * such as field values are not accessible yet, though pending mesh
+ * operations and some fields may have been defined.
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_parameters(cs_domain_t *domain)
+{
+  CS_NO_WARN_IF_UNUSED(domain);
+
+  /*! [param_cdo_gwf_get_equation_param_from_decay_chain] */
   {
     /* If the decay chain structure has been added and one wants to access
      * members of this structure, one can retrieve it thanks to
@@ -463,9 +485,23 @@ cs_user_model(void)
      */
 
     cs_gwf_tracer_decay_chain_t  *tdc =
-      cs_gwf_tracer_decay_chain_by_name("my_chain");
+      cs_gwf_tracer_decay_chain_by_name("my_decay_chain");
+    assert(tdc != NULL);
+
+    /* Set the same numerical option for all the tracer equations related to a
+       decay chain */
+
+    for (int it = 0; it < tdc->n_tracers; it++) {
+
+      cs_equation_param_t  *tr_eqp =
+        cs_gwf_tracer_decay_chain_get_equation_param(tdc, it);
+
+      cs_equation_set_param(tr_eqp, CS_EQKEY_SLES_VERBOSITY, "2");
+
+    }
+
   }
-  /*! [param_cdo_gwf_get_decay_chain] */
+  /*! [param_cdo_gwf_get_equation_param_from_decay_chain] */
 }
 
 /*----------------------------------------------------------------------------*/

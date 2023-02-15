@@ -338,16 +338,17 @@ decay chain
 
 \snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_add_decay_chain
 
-It is possible to retrieve the structure associated to a decay chain thanks to
-its name as follows:
+It is possible to retrieve the structure associated to a decay chain
+in another user-defined function such as \ref cs_user_parameters
+thanks to its name and perform additional settings as follows:
 
-\snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_get_decay_chain
+\snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_get_equation_param_from_decay_chain
 
 
 User-defined tracers
 --------------------
 
-TODO
+To be done.
 
 
 
