@@ -1793,9 +1793,13 @@ please refer to [the dedicated doxygen documentation.](@ref cavit)
 
 \page advanced_solidification Solidification module
 
-The solidification module is available either in the Finite Volume
-(FV) framework or in the Compatible Discrete Operators (CDO)
-framework. In the case of FV schemes, it relies on the eloboration of
-several user files (See the validation test case "Voller" for more
-details). In the case of CDO schemes, details are given
-[here](@ref cs_solidification_cdo).
+The solidification module is available in two discretization framework.
+
+1. The Finite Volume (FV) framework
+2. The Compatible Discrete Operators (CDO) framework.
+
+In the case of FV schemes, it relies on the coding of several user
+files (See the validation test case "Voller" for more details).
+
+In the case of CDO schemes, details on the way to setup a problem of
+solidification or melting can be found [here](@ref cs_solidification_cdo).
