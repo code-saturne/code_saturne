@@ -466,8 +466,9 @@ cs_thermal_model_log_setup(void)
 void
 cs_thermal_model_init(void)
 {
-  cs_real_t *xcvv = cs_field_by_name("isobaric_heat_capacity")->val;
-  cs_thermal_model_cv(xcvv);
+  cs_field_t *f_cv = cs_field_by_name_try("isochoric_heat_capacity");
+  if (f_cv != NULL)
+    cs_thermal_model_cv(f_cv->val);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -977,7 +978,7 @@ cs_thermal_model_cflp(const cs_real_t  croma[],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the isobaric heat capacity
+ * \brief Compute the isochoric heat capacity
  *
  * \param[in]     xcvv      isobaric heat capacity
  */
@@ -1018,7 +1019,7 @@ cs_thermal_model_cv(cs_real_t  *xcvv)
       }
     }
   }
-  else { /* quid when ieos = -1 */
+  else { /* quid when ieos = CS_EOS_MOIST_AIR */
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       xcvv[c_id] = 1.;
     }

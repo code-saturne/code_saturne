@@ -281,7 +281,7 @@ cs_thermal_model_cflt(const cs_real_t  croma[],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the isobaric heat capacity
+ * \brief Compute the isochoric heat capacity
  *
  * \param[in]     xcvv      isobaric heat capacity
  */

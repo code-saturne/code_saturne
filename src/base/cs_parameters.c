@@ -1430,7 +1430,7 @@ cs_parameters_define_auxiliary_fields(void)
   /* If humid air equation of state, define yv,
      the mass fraction of water vapor*/
 
-  if (th_cf_model->ieos == 5) {
+  if (th_cf_model->ieos == CS_EOS_MOIST_AIR) {
     cs_field_t *fld = cs_field_create("yv",
                                       CS_FIELD_PROPERTY | CS_FIELD_INTENSIVE,
                                       CS_MESH_LOCATION_CELLS,
@@ -1443,38 +1443,44 @@ cs_parameters_define_auxiliary_fields(void)
     cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
   }
 
-  /* Pressure gradient */
-  if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
-      || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
+  if (th_cf_model->ieos != CS_EOS_NONE) {
 
-    cs_field_create("pressure_gradient",
-                    0,
-                    CS_MESH_LOCATION_CELLS,
-                    3,
-                    false);
-  }
+    /* Pressure gradient */
+    if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
+        || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
 
-  if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
-      || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
+      cs_field_create("pressure_gradient",
+                      0,
+                      CS_MESH_LOCATION_CELLS,
+                      3,
+                      false);
+    }
 
-    cs_field_create("pressure_increment_gradient",
-                    0,
-                    CS_MESH_LOCATION_CELLS,
-                    3,
-                    false);
-  }
+    if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
+        || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
 
-  if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
-      || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
+      cs_field_create("pressure_increment_gradient",
+                      0,
+                      CS_MESH_LOCATION_CELLS,
+                      3,
+                      false);
+    }
 
-    cs_field_t *fld = cs_field_create("isobaric_heat_capacity",
-                                      CS_FIELD_PROPERTY | CS_FIELD_INTENSIVE,
-                                      CS_MESH_LOCATION_CELLS,
-                                      1,
-                                      false);
+    if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
+        || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
 
-    cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-    cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 0);
+      /* FIXME: check relation between this and "specific_heat" field */
+
+      cs_field_t *fld = cs_field_create("isobaric_heat_capacity",
+                                        CS_FIELD_PROPERTY | CS_FIELD_INTENSIVE,
+                                        CS_MESH_LOCATION_CELLS,
+                                        1,
+                                        false);
+
+      cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
+      cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 0);
+    }
+
   }
 
   /* Temperature in case of solving the internal energy equation */
