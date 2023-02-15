@@ -186,12 +186,12 @@ _init_sgdh_diff(const cs_field_t *f,
   cs_real_t *cpro_turb_diff = NULL;
   const int key_turb_diff = cs_field_key_id("turbulent_diffusivity_id");
   const int t_dif_id = cs_field_get_key_int(f, key_turb_diff);
-  if (t_dif_id > -1)
-    cpro_turb_diff = cs_field_by_id(t_dif_id)->val;
 
   /* Variable turbulent diffusivity */
-  if (cpro_turb_diff != NULL)
+  if (t_dif_id > -1) {
+    cpro_turb_diff = cs_field_by_id(t_dif_id)->val;
     cs_array_real_copy(cs_glob_mesh->n_cells, cpro_turb_diff, sgdh_diff);
+  }
   /* Variable Schmidt number */
   else if (cpro_turb_schmidt != NULL)
     for (cs_lnum_t c_id = 0; c_id < cs_glob_mesh->n_cells; c_id++)
@@ -229,7 +229,10 @@ _production_and_dissipation_terms(const cs_field_t  *f,
 {
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
 
-  if (turb_model->type != CS_TURB_RANS)
+  if (! (   turb_model->itytur == 2
+         || turb_model->itytur == 3
+         || turb_model->itytur == 5
+         || turb_model->iturb == CS_TURB_K_OMEGA))
     return;
 
   const cs_field_t *f_fm = NULL;  /* First moment field of
@@ -431,8 +434,8 @@ _production_and_dissipation_terms(const cs_field_t  *f,
     else
       prdtl /= visls_0;
 
-    const cs_real_t xR = (1.0 - alpha_theta)*prdtl + alpha_theta*rvarfl;
-    const cs_real_t rhovst = xcpp[c_id]*crom[c_id]*xe/(xk*xR)*cell_f_vol[c_id];
+    const cs_real_t xr = (1.0 - alpha_theta)*prdtl + alpha_theta*rvarfl;
+    const cs_real_t rhovst = xcpp[c_id]*crom[c_id]*xe/(xk*xr)*cell_f_vol[c_id];
     /* The diagonal receives eps/Rk, (*theta possibly) */
     rovsdt[c_id] += rhovst*thetap;
     /* The right hand side receives the dissipation */
@@ -792,7 +795,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   if (eqp->verbosity > 0)
     bft_printf(" ** SOLVING VARIABLE %s\n"
-               "    ----------------\n", f->name);
+               "    ----------------\n\n", f->name);
 
   /* Source terms
      ============ */
@@ -937,7 +940,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
       /* User source term */
       smbrs[c_id] += rovsdt[c_id] * cvara_var[c_id];
       /* Diagonal */
-      rovsdt[c_id] = cs_math_fmax(-rovsdt[c_id], cs_math_zero_threshold);
+      rovsdt[c_id] = cs_math_fmax(-rovsdt[c_id], 0.0);
     }
   }
 
@@ -974,7 +977,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
     cs_field_t *f_cv = cs_field_by_name_try("isobaric_heat_capacity");
     if (f_cv != NULL) {
       cs_thermal_model_cv(f_cv->val);
-      cs_array_real_copy(n_cells, xcvv, f_cv->val);
+      cs_array_real_copy(n_cells, f_cv->val, xcvv);
     }
     else
       cs_array_set_value_real(n_cells, 1, 1., xcvv);
@@ -1087,14 +1090,12 @@ cs_solve_equation_scalar(cs_field_t        *f,
             || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY)) {
 
       cs_thermal_model_add_kst(smbrs);
-
     }
 
     /* CFL related to the internal energy equation */
 
     if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
         || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
-
       cs_field_t *f_cflt = cs_field_by_name_try("cfl_t");
 
       if (f_cflt != NULL) {
@@ -1244,8 +1245,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
       cs_real_t *sti = cs_glob_lagr_source_terms->st_val + itsti*n_cells_ext;
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         smbrs[c_id] += ste[c_id];
-        rovsdt[c_id] += xcpp[c_id]*cs_math_fmax(sti[c_id],
-                                                cs_math_zero_threshold);
+        rovsdt[c_id] += xcpp[c_id]*cs_math_fmax(sti[c_id], 0.0);
       }
     }
   }
@@ -1296,11 +1296,11 @@ cs_solve_equation_scalar(cs_field_t        *f,
                          w1);
     BFT_FREE(srcmas);
 
-    /* Si on extrapole les TS on met Gamma Pinj dans cpro_st */
+    /* If we extrapolate STs we put Gamma Pinj in cpro_st */
     if (st_prv_id >= 0)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
         cpro_st[c_id] += w1[c_id];
-    /* Sinon on le met directement dans SMBRS */
+    /* Otherwise, we put it directly in smbrs */
     else
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
         smbrs[c_id] += w1[c_id];
@@ -1826,8 +1826,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
     }
   }
 
-  /* BILAN EXPLICITE (VOIR CODITS : ON ENLEVE L'INCREMENT)
-   * Ceci devrait etre valable avec le theta schema sur les Termes source */
+  /* Explicit balance
+   * (See cs_equation_iterative_solve_scalar: remove the increment)
+   * This should be valid with thr theta scheme on source terms. */
   if (eqp->verbosity > 1) {
     int ibcl = 0;
     if (eqp->nswrsm > 1)
