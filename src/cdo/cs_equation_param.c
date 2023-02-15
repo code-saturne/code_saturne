@@ -1332,7 +1332,7 @@ cs_equation_param_create(const char            *name,
 
   /* Other default settings */
 
-  eqp->verbosity = 2;
+  eqp->verbosity = 1;
   eqp->flag = 0;
   eqp->post_flag = 0;
 
