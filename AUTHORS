@@ -4,7 +4,7 @@ in the project, and does not necessarily correspond to his or her
 present affiliation.
 
 
-code_saturne is copyright (C) 1998-2022 EDF S.A., France
+code_saturne is copyright (C) 1998-2023 EDF S.A., France
 
 
 Major contributions to code_saturne have been provided by
@@ -27,6 +27,7 @@ Mathieu Guingo           (EDF, Chatou, France)
 Chaï Koren               (EDF, Chatou, France)
 Jérôme Lavieville        (EDF, Chatou, France)
 Erwan Le Coupanec        (EDF, Chatou, France)
+Li Ma                    (EDF, Chatou, France)
 Namane Mechitoua         (EDF, Chatou, France)
 David Monfort            (EDF, Chatou, France)
 Mehdi Ouraou             (INCKA, Boulogne-Billancourt, France)
@@ -59,6 +60,7 @@ Clarisse Delalondre      (EDF, Chatou, France)
 Frédéric Dehoux          (EDF, Chatou, France)
 Josselin Demont          (EDF, Chatou, France)
 Bruno Delhom             (INCKA, Boulogne-Billancourt, France)
+Qingqing Feng            (EDF, Chatou, France)
 Brigitte Gest            (EDF, Chatou, France)
 Richard Howard           (EDF, Chatou, France)
 Fabien Huvelin           (EDF, Chatou, France)
@@ -104,6 +106,7 @@ with the code_saturne development team by providing fresh
 ideas on theoretical or programming topics or major feedback on
 the code.
 
+Ophélie Angelini         (EDF, Chatou, France)
 Samuel Antao             (IBM, Daresbury, UK)
 Loïc Balestre            (Xanth Informatique, Issy les Moulineaux, France)
 Sophie Bournaud          (EDF, Chatou, France)
@@ -120,6 +123,7 @@ Jean-Marc Hérard         (EDF, Chatou, France)
 Frank Hülsemann          (EDF, Saclay, France)
 Nicolas Jamet            (INCKA, Boulogne-Billancourt, France)
 Nicolas Jarrin           (University of Manchester, United Kingdom)
+Carola Kruse             (CERFACS, Toulouse, France)
 Raphaël Lamouroux        (EDF, Chatou, France)
 Dominique Laurence       (EDF, Chatou, France)
 Matthieu Leclair         (EDF, Chatou, France)
