@@ -358,9 +358,9 @@ cs_gwf_add_decay_chain(int                       n_tracers,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the context of the model after the activation of the
- *         module and a first settings of the model parameters (physical and
- *         numerical). At this stage, cs_user_parameters() has not been called
+ * \brief Initialize the context of the model after the activation of the
+ *        module and make first settings of the model parameters (physical and
+ *        numerical). At this stage, cs_user_parameters() has not been called
  */
 /*----------------------------------------------------------------------------*/
 
@@ -369,11 +369,11 @@ cs_gwf_init_model_context(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined settings for the groundwater flow model and its related
- *         equations.
- *         At this stage, all soils have been defined and equation parameters
- *         are set (cs_user_parameters() has been called).
- *         Create new cs_field_t structures according to the setting.
+ * \brief Predefined settings for the groundwater flow model and its related
+ *        equations.
+ *        At this stage, all soils have been defined and equation parameters
+ *        are set (cs_user_parameters() has been called).
+ *        Create new cs_field_t structures according to the setting.
  */
 /*----------------------------------------------------------------------------*/
 

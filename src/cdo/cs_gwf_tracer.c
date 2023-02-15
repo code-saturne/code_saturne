@@ -1366,6 +1366,11 @@ _create_tracer(cs_gwf_tracer_model_t    tr_model,
   cs_equation_param_set(tr_eqp, CS_EQKEY_HODGE_TIME_ALGO, "voronoi");
   cs_equation_param_set(tr_eqp, CS_EQKEY_HODGE_REAC_ALGO, "voronoi");
 
+  /* Default treatment of the Dirichlet BCs (weak since there is an advection
+     term) */
+
+  cs_equation_param_set(tr_eqp, CS_EQKEY_BC_ENFORCEMENT, "weak");
+
   /* Default advection scheme: centered scheme with 20/100 of upwinding */
 
   cs_equation_param_set(tr_eqp, CS_EQKEY_ADV_SCHEME, "mix_centered_upwind");
