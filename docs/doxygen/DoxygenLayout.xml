@@ -31,6 +31,8 @@
       <tab type="user" visible="yes" url="@ref advanced_atmospheric" title="Atmospheric flows module"/>
       <tab type="user" visible="yes" url="@ref advanced_turbomachinery" title="Turbomachinery module"/>
       <tab type="user" visible="yes" url="@ref advanced_cavitation" title="Cavitation module"/>
+      <tab type="user" visible="yes" url="@ref cs_gwf_cdo" title="Groundwater flows module"/>
+      <tab type="user" visible="yes" url="@ref advanced_solidification" title="Solidification module"/>
     </tab>
     </tab>
     <tab type="user" visible="yes" url="@ref cs_ug_studymanager" title="The STUDYMANAGER tool"/>
