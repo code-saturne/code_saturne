@@ -195,13 +195,12 @@ _init_sgdh_diff(const cs_field_t *f,
   /* Variable Schmidt number */
   else if (cpro_turb_schmidt != NULL)
     for (cs_lnum_t c_id = 0; c_id < cs_glob_mesh->n_cells; c_id++)
-      sgdh_diff[c_id]
-        = cs_math_fmax(visct[c_id],
-                       cs_math_zero_threshold)/cpro_turb_schmidt[c_id];
+      sgdh_diff[c_id] =   cs_math_fmax(visct[c_id], 0.)
+                        / cpro_turb_schmidt[c_id];
   else
     for (cs_lnum_t c_id = 0; c_id < cs_glob_mesh->n_cells; c_id++)
-      sgdh_diff[c_id] = cs_math_fmax(visct[c_id],
-                                     cs_math_zero_threshold)/turb_schmidt;
+      sgdh_diff[c_id] =   cs_math_fmax(visct[c_id], 0.)
+                        / turb_schmidt;
 }
 
 /*----------------------------------------------------------------------------
@@ -512,10 +511,6 @@ _diffusion_terms(cs_real_t                   w1[],
       cpro_wgrec_v = (cs_real_6_t *)f_g->val;
     else
       cpro_wgrec_s = f_g->val;
-    if (cpro_wgrec_s != NULL) {
-      cs_array_real_copy(n_cells, w1, cpro_wgrec_s);
-      cs_halo_sync_var(m->halo, CS_HALO_STANDARD, cpro_wgrec_s);
-    }
   }
 
   if (eqp->idften & CS_ISOTROPIC_DIFFUSION) {
@@ -527,11 +522,17 @@ _diffusion_terms(cs_real_t                   w1[],
       cs_array_set_value_real(n_cells, 1, visls_0, w1);
     else
       cs_array_real_copy(n_cells, cpro_viscls, w1);
+
     if (idifftp > 0) {
 #     pragma omp parallel for if(n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        w1[c_id] += idifftp*xcpp[c_id]*sgdh_diff[c_id];
+        w1[c_id] += xcpp[c_id]*sgdh_diff[c_id];
       }
+    }
+
+    if (cpro_wgrec_s != NULL) {
+      cs_array_real_copy(n_cells, w1, cpro_wgrec_s);
+      cs_halo_sync_var(m->halo, CS_HALO_STANDARD, cpro_wgrec_s);
     }
 
     cs_face_viscosity(m,
@@ -541,6 +542,7 @@ _diffusion_terms(cs_real_t                   w1[],
                       viscf,
                       viscb);
   }
+
   /* Symmetric tensor diffusivity (GGDH) */
   else if (eqp->idften & CS_ANISOTROPIC_DIFFUSION) {
     BFT_MALLOC(_weighb, n_b_faces, cs_real_t);
@@ -608,8 +610,8 @@ _diffusion_terms(cs_real_t                   w1[],
       }
     }
 
-    if (eqp->iwgrec == 1) {
-      /* Weighting for gradient */
+    /* Weighting for gradient */
+    if (cpro_wgrec_v != NULL) {
 #     pragma omp parallel for if(n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         for (cs_lnum_t ii = 0; ii < 6; ii++)
@@ -1482,8 +1484,10 @@ cs_solve_equation_scalar(cs_field_t        *f,
   const cs_real_t *cpro_delay = NULL, *cproa_delay = NULL;
 
   if (cs_glob_physical_model_flag[CS_GROUNDWATER] == -1) {
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      rovsdt[c_id] += eqp->istat*xcpp[c_id]*pcrom[c_id]*cell_f_vol[c_id]/dt[c_id];
+    if (eqp->istat == 1) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        rovsdt[c_id] += xcpp[c_id]*pcrom[c_id]*cell_f_vol[c_id]/dt[c_id];
+    }
   }
 
   /* Darcy : we take into account the porosity and delay for underground transport */
@@ -1833,7 +1837,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
         *cell_f_vol[c_id]*(cvar_var[c_id]-cvara_var[c_id])*ibcl;
     const cs_real_t sclnor = sqrt(cs_gdot(n_cells,smbrs,smbrs));
 
-    bft_printf("%s: EXPLICIT BALANCE = %14.5e\n",f->name, sclnor);
+    bft_printf("%s: EXPLICIT BALANCE = %14.5e\n\n",f->name, sclnor);
   }
 
   /* Log in case of velocity/pressure inner iterations */
