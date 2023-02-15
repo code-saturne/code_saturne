@@ -1380,7 +1380,7 @@ _create_tracer(cs_gwf_tracer_model_t    tr_model,
 
   cs_equation_param_set(tr_eqp, CS_EQKEY_ITSOL, "gcr");
   cs_equation_param_set(tr_eqp, CS_EQKEY_PRECOND, "jacobi");
-  cs_equation_param_set(tr_eqp, CS_EQKEY_ITSOL_EPS, "1e-8");
+  cs_equation_param_set(tr_eqp, CS_EQKEY_ITSOL_RTOL, "1e-8");
 
   /* Function pointers */
 

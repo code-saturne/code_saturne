@@ -394,7 +394,7 @@ cs_user_parameters(cs_domain_t   *domain)
     cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
 #endif
     cs_equation_param_set(eqp, CS_EQKEY_ITSOL_MAX_ITER, "2500");
-    cs_equation_param_set(eqp, CS_EQKEY_ITSOL_EPS, "1e-12");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RTOL, "1e-12");
     cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "false");
 
   }

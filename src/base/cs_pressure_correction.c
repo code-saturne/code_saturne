@@ -3154,7 +3154,7 @@ cs_pressure_correction_cdo_activate(void)
   cs_equation_param_set(eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
 
   cs_equation_param_set(eqp, CS_EQKEY_ITSOL_MAX_ITER, "2500");
-  cs_equation_param_set(eqp, CS_EQKEY_ITSOL_EPS, "1e-5");
+  cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RTOL, "1e-5");
   cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "filtered");
 
   prcdo->pressure_incr = eq;

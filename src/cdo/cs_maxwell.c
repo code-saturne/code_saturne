@@ -401,7 +401,7 @@ cs_maxwell_activate(cs_flag_t     model,
     cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");
     cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
     cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
-    cs_equation_param_set(eqp, CS_EQKEY_ITSOL_EPS, "1e-6");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RTOL, "1e-6");
     cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "filtered");
 
   }
@@ -434,7 +434,7 @@ cs_maxwell_activate(cs_flag_t     model,
     cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");
     cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
     cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
-    cs_equation_param_set(eqp, CS_EQKEY_ITSOL_EPS, "1e-6");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RTOL, "1e-6");
     cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "filtered");
 
   }

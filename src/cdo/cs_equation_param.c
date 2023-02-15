@@ -675,11 +675,19 @@ _set_key(cs_equation_param_t   *eqp,
     }
     break;
 
+  case CS_EQKEY_ITSOL_ATOL:
+    eqp->sles_param->cvg_param.atol = atof(keyval);
+    break;
+
+  case CS_EQKEY_ITSOL_DTOL:
+    eqp->sles_param->cvg_param.dtol = atof(keyval);
+    break;
+
   case CS_EQKEY_ITSOL_MAX_ITER:
     eqp->sles_param->cvg_param.n_max_iter = atoi(keyval);
     break;
 
-  case CS_EQKEY_ITSOL_EPS:  /* keep for backward compatibility */
+  case CS_EQKEY_ITSOL_EPS:  /* kept for backward compatibility */
   case CS_EQKEY_ITSOL_RTOL:
     eqp->sles_param->cvg_param.rtol = atof(keyval);
     break;

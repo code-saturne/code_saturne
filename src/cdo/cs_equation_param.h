@@ -1022,10 +1022,22 @@ typedef struct {
  *                       cs_user_sles_it_solver())
  * - "none"          --> No solver.
  *
- * \var CS_EQKEY_ITSOL_EPS
- * Tolerance factor for stopping the iterative process for solving the
- * linear system related to an equation\n
- * - Example: "1e-10"
+ * \var CS_EQKEY_ITSOL_ATOL
+
+ * Absolute tolerance factor for stopping the iterative process during the
+ * iterative resolution of a linear system related to an equation. Most
+ * iterative solver are not using this tolerance (the relative tolerance is
+ * always used). PETSc solvers use this information for instance.Please refer
+ * to \ref CS_EQKEY_ITSOL_RTOL\n
+ * - Example: "1e-14"
+ *
+ * \var CS_EQKEY_ITSOL_DTOL
+ * Divergence tolerance factor for stopping the iterative process during the
+ * iterative resolution of a linear system related to an equation. Most
+ * iterative solver are not using this tolerance (the relative tolerance is
+ * always used). PETSc solvers use this information for instance.Please refer
+ * to \ref CS_EQKEY_ITSOL_RTOL\n
+ * - Example: "1e3"
  *
  * \var CS_EQKEY_ITSOL_MAX_ITER
  * Maximum number of iterations for solving the linear system
@@ -1052,8 +1064,9 @@ typedef struct {
  * - Example: "20"
  *
  * \var CS_EQKEY_ITSOL_RTOL
- * Relative tolerance factor for stopping the iterative process for solving the
- * linear system related to an equation\n
+ * \var CS_EQKEY_ITSOL_EPS (deprecated)
+ * Relative tolerance factor for stopping the iterative process during the
+ * iterative resolution of a linear system related to an equation.\n
  * - Example: "1e-10"
  *
  * \var CS_EQKEY_OMP_ASSEMBLY_STRATEGY
@@ -1222,6 +1235,8 @@ typedef enum {
   CS_EQKEY_HODGE_TIME_ALGO,
   CS_EQKEY_HODGE_REAC_ALGO,
   CS_EQKEY_ITSOL,
+  CS_EQKEY_ITSOL_ATOL,
+  CS_EQKEY_ITSOL_DTOL,
   CS_EQKEY_ITSOL_EPS,
   CS_EQKEY_ITSOL_MAX_ITER,
   CS_EQKEY_ITSOL_RESNORM_TYPE,

@@ -395,7 +395,7 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
      * a restrictive convergence tolerance on the resolution of the linear
      * system */
 
-    cs_equation_param_set(eqp, CS_EQKEY_ITSOL_EPS, "1e-6");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RTOL, "1e-6");
 
   }
 

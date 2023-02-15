@@ -202,7 +202,7 @@ cs_user_parameters(cs_domain_t    *domain)
 
     /* Tolerance for the inner solver */
 
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_EPS, "1e-5");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_RTOL, "1e-5");
   }
   /*! [cdo_sles_navsto_gkb_kcycle] */
 
@@ -228,12 +228,12 @@ cs_user_parameters(cs_domain_t    *domain)
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "fgmres");
     cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
     cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "boomer");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_EPS, "1e-1");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_RTOL, "1e-1");
 #else
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "fcg");
     cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
     cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_EPS, "1e-4");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_RTOL, "1e-4");
 #endif
 
   /*===============================
@@ -276,7 +276,7 @@ cs_user_parameters(cs_domain_t    *domain)
 #if defined(HAVE_PETSC)
     cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND_BLOCK_TYPE, "diag");
     cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "boomer");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_EPS, "1e-1");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_RTOL, "1e-1");
 
     /* Must be set after the previous line to switch to PETSC in order to be
        able to use a block preconditioning for the velocity block */
@@ -285,7 +285,7 @@ cs_user_parameters(cs_domain_t    *domain)
 
 #else  /* PETSc not installed */
     cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_EPS, "1e-4");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_RTOL, "1e-4");
 #endif
 
   /*===============================
