@@ -855,16 +855,6 @@ CS_PROCF (eltssc, ELTSSC) (const int       *isca,
 }
 
 void
-CS_PROCF (eltsvv, ELTSVV) (const int       *f_id,
-                           cs_real_t       *smbrv)
-{
-  const cs_mesh_t *mesh = cs_glob_mesh;
-  const cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
-
-  cs_elec_source_terms_v(mesh, mesh_quantities, *f_id, (cs_real_3_t *)smbrv);
-}
-
-void
 CS_PROCF (eliniv, ELINIV) (int       *isuite)
 {
   cs_elec_fields_initialize(cs_glob_mesh,  *isuite);

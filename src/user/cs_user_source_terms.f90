@@ -110,24 +110,14 @@ double precision crvexp(3,ncelet), crvimp(3,3,ncelet)
 
 ! Local variables
 
-integer, allocatable, dimension(:) :: lstelt
-
-!===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+!integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
 
 ! Allocate a temporary array for cells selection
-allocate(lstelt(ncel))
+!allocate(lstelt(ncel))
 
 !--------
 ! Formats
@@ -140,7 +130,7 @@ allocate(lstelt(ncel))
 !----
 
 ! Deallocate the temporary array
-deallocate(lstelt)
+!deallocate(lstelt)
 
 return
 end subroutine ustsnv
@@ -220,22 +210,11 @@ double precision crvexp(ncelet), crvimp(ncelet)
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-
-!===============================================================================
 ! 1. Initialization
 !===============================================================================
 
 ! Allocate a temporary array for cells selection
-allocate(lstelt(ncel))
+!allocate(lstelt(ncel))
 
 !--------
 ! Formats
@@ -248,115 +227,7 @@ allocate(lstelt(ncel))
 !----
 
 ! Deallocate the temporary array
-deallocate(lstelt)
+!deallocate(lstelt)
 
 return
 end subroutine ustssc
-
-!===============================================================================
-
-!===============================================================================
-!> \brief    Additional right-hand side source terms for vectorial equations
-!>           (user vectors and specific physics vectors).
-!>
-!> \deprecated Use \ref cs_user_source_terms instead.
-!-------------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role
-!______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
-!> \param[in]     ncepdp        number of cells with head loss terms
-!> \param[in]     ncesmp        number of cells with mass source terms
-!> \param[in]     iscal         index number of the current scalar
-!> \param[in]     icepdc        index number of cells with head loss terms
-!> \param[in]     icetsm        index number of cells with mass source terms
-!> \param[in]     itypsm        type of mass source term for each variable
-!> \param[in]     dt            time step (per cell)
-!> \param[in]     ckupdc        head loss coefficient
-!> \param[in]     smacel        value associated to each variable in the mass
-!> \param[in]                   source terms or mass rate
-!> \param[out]    crvexp        explicit part of the source term
-!> \param[out]    crvimp        implicit part of the source term
-!______________________________________________________________________________!
-
-
-subroutine ustsvv &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     ,                                                       &
-   ckupdc , smacel ,                                              &
-   crvexp , crvimp )
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use numvar
-use entsor
-use optcal
-use cstphy
-use parall
-use period
-use mesh
-use field
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
-integer          iscal
-
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-
-double precision dt(ncelet)
-double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
-double precision crvexp(3,ncelet), crvimp(3,3,ncelet)
-
-! Local variables
-
-integer, allocatable, dimension(:) :: lstelt
-
-!===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-
-!===============================================================================
-! 1. Initialization
-!===============================================================================
-
-! Allocate a temporary array for cells selection
-allocate(lstelt(ncel))
-
-!--------
-! Formats
-!--------
-
- 1000 format(' User source terms for variable ',A8,/)
-
-!----
-! End
-!----
-
-! Deallocate the temporary array
-deallocate(lstelt)
-
-return
-end subroutine ustsvv

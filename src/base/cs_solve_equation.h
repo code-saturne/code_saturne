@@ -82,8 +82,8 @@ BEGIN_C_DECLS
  *                           \f$ \Gamma_{v, cond}^n \f$)
  * \param[in]     flxmst     variable value associated to heat transfer flux
  *                           associated to the metal mass condensation
- * \param[in]     viscf      visc*surface/dist at internal faces
- * \param[in]     viscb      visc*surface/dist at boundary faces
+ * \param         viscf      visc*surface/dist at internal faces (work array)
+ * \param         viscb      visc*surface/dist at boundary faces (work array)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -102,6 +102,34 @@ cs_solve_equation_scalar(cs_field_t        *f,
                          const cs_real_t    flxmst[],
                          cs_real_t          viscf[],
                          cs_real_t          viscb[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Solve the convection/diffusion equation (with optional source
+ *        terms and/or drift) for a vectorial quantity over a time step..
+ *
+ * \param[in]     f          pointer to field structure
+ * \param[in]     ncesmp     number of cells with mass source term
+ * \param[in]     iterns     Navier-Stokes iteration number
+ * \param[in]     icetsm     index of cells with mass source term
+ * \param[in]     itypsm     type of mass source term for the variables
+ * \param[in]     smacel     variable value associated to the mass source
+ *                           term (for ivar=ipr, smacel is the mass flux
+ *                           \f$ \Gamma^n \f$)
+ * \param         viscf      visc*surface/dist at internal faces (work array)
+ * \param         viscb      visc*surface/dist at boundary faces (work array)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solve_equation_vector(cs_field_t       *f,
+                         const cs_lnum_t   ncesmp,
+                         int               iterns,
+                         const cs_lnum_t   icetsm[],
+                         int               itypsm[],
+                         cs_real_t         smacel[],
+                         cs_real_t         viscf[],
+                         cs_real_t         viscb[]);
 
 /*----------------------------------------------------------------------------*/
 

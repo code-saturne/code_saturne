@@ -79,11 +79,9 @@ double precision dt(ncelet)
 
 integer          iscal, ivar, iel, isou, ifac
 integer          ii, iisc, itspdv, icalc, iappel, ifcvsl
-integer          ispecf, scal_id, f_id, f_dim, kcdtvar
+integer          ispecf, scal_id, f_id, f_dim
 
 double precision fmb, hint, pimp, hext, cmax, cmid, cmin
-double precision cdtvar
-double precision, allocatable, dimension(:) :: dtr
 double precision, allocatable, dimension(:) :: viscf, viscb
 
 double precision, dimension(:), pointer :: cvar_var, cvara_var
@@ -119,6 +117,20 @@ interface
     real(kind=c_double), dimension(*), intent(inout) :: viscf, viscb
   end subroutine solve_equation_scalar
 
+  subroutine solve_equation_vector                   &
+    (id,     ncesmp,                                 &
+     iterns, icetsm,                                 &
+     itypsm, smacel,                                 &
+     viscf, viscb)                                   &
+    bind(C, name='cs_f_solve_equation_vector')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: id, ncesmp, iterns
+    integer(c_int), dimension(*) :: icetsm, itypsm
+    real(kind=c_double), dimension(*) :: smacel
+    real(kind=c_double), dimension(*), intent(inout) :: viscf, viscb
+  end subroutine solve_equation_vector
+
 end interface
 
 !===============================================================================
@@ -126,10 +138,8 @@ end interface
 !===============================================================================
 
 call field_get_key_id("scalar_id", keyvar)
-call field_get_key_id("time_step_factor", kcdtvar)
 
 ! Allocate temporary arrays for the species resolution
-allocate(dtr(ncelet))
 allocate(viscf(nfac), viscb(nfabor))
 
 ipass = ipass + 1
@@ -218,18 +228,6 @@ if (nscapp.gt.0) then
     iscal = iscapp(ii)
     ivar  = isca(iscal)
 
-    ! ---> Pas de temps (avec facteur multiplicatif eventuel)
-    call field_get_key_double(ivarfl(ivar), kcdtvar, cdtvar)
-    if (cdtvar.ne.1.d0) then
-      do iel = 1, ncel
-        dtr(iel) = dt(iel)*cdtvar
-      enddo
-    else
-      do iel = 1, ncel
-        dtr(iel) = dt(iel)
-      enddo
-    endif
-
 !     Schema compressible sans choc :
 ! ---> Traitement special pour la masse volumique,
 !                     la temperature et l'energie
@@ -252,14 +250,9 @@ if (nscapp.gt.0) then
 
       if (ispecf.eq.2) then
 
-        call cfener &
-        !==========
- ( nvar   , nscal  ,                                              &
-   ncepdc , ncetsm ,                                              &
-   iscal  ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     ,                                                       &
-   ckupdc , smacel )
+        call cfener(nvar, nscal, ncepdc, ncetsm, iscal,           &
+                    icepdc, icetsm, itypsm, dt,                   &
+                    ckupdc, smacel)
 
       endif
 
@@ -306,7 +299,7 @@ if (nscapp.gt.0) then
         call csexit (1)
       endif
 
-      ! ---> Specific treatment BC for gaz combustion: steady laminar flamelet
+      ! Specific treatment BC for gas combustion: steady laminar flamelet
       if (ippmod(islfm).ge.0) then
         call field_get_coefa_s(ivarfl(isca(ifm)), coefa_fm)
         call field_get_coefb_s(ivarfl(isca(ifm)), coefb_fm)
@@ -360,22 +353,16 @@ if (nscapp.gt.0) then
 
       if (f_dim.eq.1) then
 
-       call solve_equation_scalar                           &
-           (ivarfl(isca(iisc)), ncetsm, ncmast,             &
-            iterns, itspdv, icetsm, ltmast, itypsm,         &
-            itypst, smacel, svcond, flxmst, viscf, viscb)
+        call solve_equation_scalar                          &
+             (ivarfl(isca(iisc)), ncetsm, ncmast,           &
+             iterns, itspdv, icetsm, ltmast, itypsm,        &
+             itypst, smacel, svcond, flxmst, viscf, viscb)
 
-      else
+     else
 
-        call covofv                                                 &
-   ( nvar   , nscal  ,                                              &
-     ncepdc , ncetsm ,                                              &
-     iterns , iisc   ,                                              &
-     icepdc , icetsm ,                                              &
-     itypsm ,                                                       &
-     dtr    ,                                                       &
-     ckupdc , smacel ,                                              &
-     viscf  , viscb  )
+       call solve_equation_vector                           &
+            (ivarfl(isca(iisc)), ncetsm, iterns, icetsm,    &
+            itypsm, smacel, viscf, viscb)
 
       endif
 
@@ -388,7 +375,6 @@ if (nscapp.gt.0) then
 
       if ((ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1)  &
         .and. iterns.eq.-1) then
-
 
 !     On utilise le  fait que les scalaires sont dans l'ordre
 !       H, PotR, [PotI], [A] pour faire le calcul de j, E et j.E
@@ -406,7 +392,8 @@ if (nscapp.gt.0) then
             icalc = 1
           endif
         endif
-!     On y va apres PotI si on est en Joule avec PotI
+
+        !  On y va apres PotI si on est en Joule avec PotI
         if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
           call field_get_id('elec_pot_i', f_id)
           call field_get_key_int(f_id, keyvar, scal_id)
@@ -417,20 +404,15 @@ if (nscapp.gt.0) then
 
         if (icalc.eq.1) then
 
-!     Calcul de j, E et j.E
+          ! Compute j, E and j.E
           iappel = 1
 
           call elflux(iappel)
-          !==========
 
+          ! Readjust electric variables j, j.E (and Pot, E)
 
-!     Recalage des variables electriques j, j.E (et Pot, E)
-
-          if ( ielcor .eq.1  .and. ntcabs .gt. 1 ) then
-
+          if (ielcor .eq.1  .and. ntcabs .gt. 1) then
             call elreca(dt)
-            !==========
-
           endif
 
         endif
@@ -439,9 +421,7 @@ if (nscapp.gt.0) then
 
     endif
 
-
-! ---> Fin de la Boucle sur les scalaires physiques particulieres.
-  enddo
+  enddo  ! End of loop on specific physical models
 endif
 
 ! Electric arcs:
@@ -460,7 +440,6 @@ if (ippmod(icompf).eq.1.and.hgn_relax_eq_st.ge.0) then
   call cs_cf_hgn_source_terms_step
 endif
 
-
 !===============================================================================
 ! 3. TRAITEMENT DES SCALAIRES UTILISATEURS STANDARD
 !     On voit que meme s'ils sont numerotes en premier, on peut les
@@ -477,19 +456,6 @@ if (nscaus.gt.0) then
 
     iscal = ii
     ivar  = isca(iscal)
-
-! ---> Pas de temps (avec facteur multiplicatif eventuel)
-    call field_get_key_double(ivarfl(ivar), kcdtvar, cdtvar)
-    if (cdtvar.ne.1.d0) then
-      do iel = 1, ncel
-        dtr(iel) = dt(iel)*cdtvar
-      enddo
-    else
-      do iel = 1, ncel
-        dtr(iel) = dt(iel)
-      enddo
-    endif
-
 
 ! ---> Variances et scalaires
 
@@ -521,7 +487,7 @@ if (nscaus.gt.0) then
       itspdv = 1
     else
       write(nfecra,9000)iisc,iisc,nscal,iscavr(iisc)
-      call csexit (1)
+      call csexit(1)
     endif
 
     call field_get_dim(ivarfl(isca(iscal)), f_dim)
@@ -534,23 +500,13 @@ if (nscaus.gt.0) then
            itypst, smacel, svcond, flxmst, viscf, viscb)
     else
 
-! ---> Appel a covofv pour la resolution
+      call solve_equation_vector                            &
+           (ivarfl(isca(iisc)), ncetsm, iterns, icetsm,     &
+            itypsm, smacel, viscf, viscb)
 
-        call covofv                                                 &
-   ( nvar   , nscal  ,                                              &
-     ncepdc , ncetsm ,                                              &
-     iterns , iisc   ,                                              &
-     icepdc , icetsm ,                                              &
-     itypsm ,                                                       &
-     dtr    ,                                                       &
-     ckupdc , smacel ,                                              &
-     viscf  , viscb  )
+    endif
 
-      endif
-
-
-! ---> Fin de la Boucle sur les scalaires utilisateurs.
-  enddo
+  enddo ! End of loop on user-defined scalars.
 
 endif
 
@@ -566,7 +522,6 @@ if (ichemistry.ge.1 .and. iaerosol.ne.CS_ATMO_AEROSOL_OFF .and. iterns.eq.-1) th
 endif
 
 ! Free memory
-deallocate(dtr)
 deallocate(viscf, viscb)
 
 !===============================================================================

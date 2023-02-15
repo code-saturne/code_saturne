@@ -93,7 +93,6 @@ ppprcl.f90 \
 ppprop.f90 \
 pptbht.f90 \
 pptssc.f90 \
-pptsvv.f90 \
 pptycl.f90 \
 ppvarp.f90
 

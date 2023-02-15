@@ -57,6 +57,7 @@
 #include "cs_coal.h"
 #include "cs_combustion_model.h"
 #include "cs_divergence.h"
+#include "cs_elec_model.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_face_viscosity.h"
 #include "cs_field.h"
@@ -128,6 +129,33 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
+ * Prototypes for Fortran functions and variables.
+ *============================================================================*/
+
+extern int cs_glob_darcy_unsteady;
+
+void
+cs_f_get_dimens(int  *nvar,
+                int  *nscal);
+
+/* Use legacy macro type to maintain compatibility with legacy user files */
+
+void
+CS_PROCF(ustssc, USTSSC)(const int        *nvar,
+                         const int        *nscal,
+                         const cs_lnum_t  *ncepdp,
+                         const cs_lnum_t  *ncesmp,
+                         const int        *iscal,
+                         const cs_lnum_t  *icepdc,
+                         const cs_lnum_t  *icetsm,
+                         cs_lnum_t        *itypsm,
+                         const cs_real_t   dt[],
+                         const cs_real_t  *ckupdc,
+                         const cs_real_t  *smacel,
+                         cs_real_t         crvexp[],
+                         cs_real_t         crvimp[]);
+
+/*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
  *============================================================================*/
@@ -142,20 +170,30 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 void
-cs_f_solve_equation_scalar(int                   f_id,
-                           cs_lnum_t             ncesmp,
-                           cs_lnum_t             ncmast,
-                           int                   iterns,
-                           int                   itspdv,
-                           const cs_lnum_t       icetsm[],
-                           const cs_lnum_t       ltmast[],
-                           int                   itypsm[],
-                           int                   itypst[],
-                           cs_real_t             smacel[],
-                           cs_real_t             svcond[],
-                           const cs_real_t       flxmst[],
-                           cs_real_t             viscf[],
-                           cs_real_t             viscb[]);
+cs_f_solve_equation_scalar(int              f_id,
+                           cs_lnum_t        ncesmp,
+                           cs_lnum_t        ncmast,
+                           int              iterns,
+                           int              itspdv,
+                           const cs_lnum_t  icetsm[],
+                           const cs_lnum_t  ltmast[],
+                           int              itypsm[],
+                           int              itypst[],
+                           cs_real_t        smacel[],
+                           cs_real_t        svcond[],
+                           const cs_real_t  flxmst[],
+                           cs_real_t        viscf[],
+                           cs_real_t        viscb[]);
+
+void
+cs_f_solve_equation_vector(int              f_id,
+                           cs_lnum_t        ncesmp,
+                           int              iterns,
+                           const cs_lnum_t  icetsm[],
+                           int              itypsm[],
+                           cs_real_t        smacel[],
+                           cs_real_t        viscf[],
+                           cs_real_t        viscb[]);
 
 /*============================================================================
  * Private function definitions
@@ -216,6 +254,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
                                   const cs_real_t    rvarfl,
                                   const cs_real_t    visls_0,
                                   const cs_real_t    thetv,
+                                  const cs_real_t    dt[],
                                   const cs_real_t   *xcpp,
                                   const cs_real_t   *crom,
                                   const cs_real_t   *viscl,
@@ -337,8 +376,6 @@ _production_and_dissipation_terms(const cs_field_t  *f,
   /* Without time extrapolation... */
   else {
 
-    cs_real_t *dt = CS_F_(dt)->val;
-
     if (variance_turb_flux_model_type >= 1) {
       const cs_real_3_t *xut
         = (const cs_real_3_t *)cs_field_by_composite_name(f_fm->name,
@@ -452,20 +489,19 @@ _production_and_dissipation_terms(const cs_field_t  *f,
  *----------------------------------------------------------------------------*/
 
 static void
-_diffusion_terms(cs_real_t                   w1[],
-                 cs_real_t                   viscf[],
-                 cs_real_t                   viscb[],
-                 cs_real_t                   smbrs[],
-                 cs_real_t                 **weighb,
-                 cs_real_2_t               **weighf,
-                 cs_real_6_t               **viscce,
-                 const int                   ifcvsl,
-                 const cs_real_t             visls_0,
-                 const cs_real_t             xcpp[],
-                 const cs_real_t             sgdh_diff[],
-                 const cs_real_t             cpro_viscls[],
-                 const cs_field_t           *f,
-                 const cs_equation_param_t  *eqp)
+_diffusion_terms_scalar(const cs_field_t           *f,
+                        const cs_equation_param_t  *eqp,
+                        cs_real_t                   visls_0,
+                        const cs_real_t             xcpp[],
+                        const cs_real_t             sgdh_diff[],
+                        const cs_real_t            *cpro_viscls,
+                        cs_real_t                   w1[],
+                        cs_real_t                   viscf[],
+                        cs_real_t                   viscb[],
+                        cs_real_t                   smbrs[],
+                        cs_real_t                 **weighb,
+                        cs_real_2_t               **weighf,
+                        cs_real_6_t               **viscce)
 {
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
 
@@ -521,7 +557,7 @@ _diffusion_terms(cs_real_t                   w1[],
     if (scalar_turb_flux_model_type == 3)
       idifftp = 0;
 
-    if (ifcvsl < 0)
+    if (cpro_viscls == NULL)
       cs_array_set_value_real(n_cells, 1, visls_0, w1);
     else
       cs_array_real_copy(n_cells, cpro_viscls, w1);
@@ -566,10 +602,10 @@ _diffusion_terms(cs_real_t                   w1[],
       visten = (cs_real_6_t *)f_vis->val;
     }
 
-    if ((scalar_turb_flux_model == 11) ||
-        (scalar_turb_flux_model == 21) ||
-        (scalar_turb_flux_model == 20)) {
-      if (ifcvsl < 0) {
+    if (   (scalar_turb_flux_model == 11)
+        || (scalar_turb_flux_model == 21)
+        || (scalar_turb_flux_model == 20)) {
+      if (cpro_viscls == NULL) {
 #       pragma omp parallel for if(n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           const cs_real_t tmp = eqp->idifft*xcpp[c_id];
@@ -591,7 +627,7 @@ _diffusion_terms(cs_real_t                   w1[],
       }
     }
     else {
-      if (ifcvsl < 0) {
+      if (cpro_viscls == NULL) {
 #       pragma omp parallel for if(n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           const cs_real_t temp = eqp->idifft*xcpp[c_id]*ctheta/cs_turb_csrij;
@@ -615,11 +651,9 @@ _diffusion_terms(cs_real_t                   w1[],
 
     /* Weighting for gradient */
     if (cpro_wgrec_v != NULL) {
-#     pragma omp parallel for if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        for (cs_lnum_t ii = 0; ii < 6; ii++)
-           cpro_wgrec_v[c_id][ii] = _viscce[c_id][ii];
-      }
+      cs_array_real_copy(n_cells*6,
+                         (const cs_real_t *)_viscce,
+                         (cs_real_t *)cpro_wgrec_v);
       cs_mesh_sync_var_sym_tens(cpro_wgrec_v);
     }
 
@@ -640,25 +674,184 @@ _diffusion_terms(cs_real_t                   w1[],
   *viscce = (cs_real_6_t *)_viscce;
 }
 
+/*----------------------------------------------------------------------------
+ * Compute velocity of diffusion facet for vector.
+ *
+ * The caller is responsible for freeing the returned weighb, weighf, and
+ * viscce arrays.
+ *----------------------------------------------------------------------------*/
+
+static void
+_diffusion_terms_vector(const cs_field_t            *f,
+                        const cs_equation_param_t   *eqp,
+                        cs_real_t                    viscf[],
+                        cs_real_t                    viscb[],
+                        cs_real_t                  **weighb,
+                        cs_real_2_t                **weighf,
+                        cs_real_6_t                **viscce)
+{
+  const cs_turb_model_t *turb_model = cs_glob_turb_model;
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  cs_real_t *_weighb = NULL;
+  cs_real_2_t *_weighf = NULL;
+  cs_real_6_t *_viscce = NULL;
+
+  const cs_real_t *visct = CS_F_(mu_t)->val;
+
+  /* Viscosity and diffusivity*/
+  const cs_real_t *cpro_viscls = NULL;
+  const int kivisl = cs_field_key_id("diffusivity_id");
+  const int kvisl0 = cs_field_key_id("diffusivity_ref");
+  const int ifcvsl = cs_field_get_key_int(f, kivisl);
+  const cs_real_t visls_0 = cs_field_get_key_double(f, kvisl0);
+  if (ifcvsl > -1)
+    cpro_viscls = cs_field_by_id(ifcvsl)->val;
+
+  /* Weighting field for gradient */
+  cs_real_t *cpro_wgrec_s = NULL;
+  cs_real_6_t *cpro_wgrec_v = NULL;
+
+  if (eqp->iwgrec == 1) {
+    const int kwgrec = cs_field_key_id_try("gradient_weighting_id");
+    const int iflwgr = cs_field_get_key_int(f, kwgrec);
+    cs_field_t *f_g = cs_field_by_id(iflwgr);
+    if (f_g->dim > 1)
+      cpro_wgrec_v = (cs_real_6_t *)f_g->val;
+    else
+      cpro_wgrec_s = f_g->val;
+  }
+
+  /* Scalar diffusivity */
+  if (eqp->idften & CS_ISOTROPIC_DIFFUSION) {
+
+    const int ksigmas = cs_field_key_id("turbulent_schmidt");
+    const cs_real_t turb_schmidt = cs_field_get_key_double(f, ksigmas);
+
+    const int idifftp = eqp->idifft;
+    cs_real_t *w1;
+    BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+
+    if (cpro_viscls == NULL) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        w1[c_id] =   visls_0
+                   + idifftp * fmax(visct[c_id], 0) / turb_schmidt;
+      }
+    }
+    else {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        w1[c_id] =   cpro_viscls[c_id]
+                   + idifftp * fmax(visct[c_id], 0) / turb_schmidt;
+      }
+    }
+
+    /* Weighting for gradient */
+    if (cpro_wgrec_s != NULL) {
+      cs_array_real_copy(n_cells, w1, cpro_wgrec_s);
+      cs_halo_sync_var(m->halo, CS_HALO_STANDARD, cpro_wgrec_s);
+    }
+
+    cs_face_viscosity(m,
+                      fvq,
+                      eqp->imvisf,
+                      w1,
+                      viscf,
+                      viscb);
+
+    BFT_FREE(w1);
+  }
+
+  /* Symmetric tensor diffusivity (GGDH) */
+  else if (eqp->idften & CS_ANISOTROPIC_DIFFUSION) {
+
+    BFT_MALLOC(_weighb, n_b_faces, cs_real_t);
+    BFT_MALLOC(_weighf, n_i_faces, cs_real_2_t);
+    BFT_MALLOC(_viscce, n_cells_ext, cs_real_6_t);
+
+    const cs_real_6_t *visten = NULL;
+    const int kctheta = cs_field_key_id("turbulent_flux_ctheta");
+    const cs_real_t ctheta = cs_field_get_key_double(f, kctheta);
+
+    if (turb_model->iturb != CS_TURB_RIJ_EPSILON_EBRSM) {
+      cs_field_t * f_vis = cs_field_by_name("anisotropic_turbulent_viscosity");
+      visten = (cs_real_6_t *)f_vis->val;
+    }
+
+    /* EBRSM and (GGDH or AFM) */
+    else {
+      cs_field_t * f_vis
+        = cs_field_by_name("anisotropic_turbulent_viscosity_scalar");
+      visten = (cs_real_6_t *)f_vis->val;
+    }
+
+    if (cpro_viscls == NULL) {
+      const cs_real_t tmp = eqp->idifft*ctheta/cs_turb_csrij;
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          _viscce[c_id][ii] = tmp*visten[c_id][ii] + visls_0;
+        for (cs_lnum_t ii = 3; ii < 6; ii++)
+          _viscce[c_id][ii] = tmp*visten[c_id][ii];
+      }
+    }
+    else {
+      const cs_real_t tmp = eqp->idifft*ctheta/cs_turb_csrij;
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          _viscce[c_id][ii] = tmp*visten[c_id][ii] + cpro_viscls[c_id];
+        for (cs_lnum_t ii = 3; ii < 6; ii++)
+          _viscce[c_id][ii] = tmp*visten[c_id][ii];
+      }
+    }
+
+    /* Weighting for gradient */
+    if (cpro_wgrec_v != NULL) {
+      cs_array_real_copy(6*n_cells,
+                         (cs_real_t *)_viscce,
+                         (cs_real_t *)cpro_wgrec_v);
+      cs_mesh_sync_var_sym_tens(cpro_wgrec_v);
+    }
+
+    cs_face_anisotropic_viscosity_scalar(m,
+                                         fvq,
+                                         _viscce,
+                                         eqp->verbosity,
+                                         _weighf,
+                                         _weighb,
+                                         viscf,
+                                         viscb);
+  }
+
+  *weighb = (cs_real_t *)_weighb;
+  *weighf = (cs_real_2_t *)_weighf;
+  *viscce = (cs_real_6_t *)_viscce;
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
 
 void
-cs_f_solve_equation_scalar(int                   f_id,
-                           cs_lnum_t             ncesmp,
-                           cs_lnum_t             ncmast,
-                           int                   iterns,
-                           int                   itspdv,
-                           const cs_lnum_t       icetsm[],
-                           const cs_lnum_t       ltmast[],
-                           int                   itypsm[],
-                           int                   itypst[],
-                           cs_real_t             smacel[],
-                           cs_real_t             svcond[],
-                           const cs_real_t       flxmst[],
-                           cs_real_t             viscf[],
-                           cs_real_t             viscb[])
+cs_f_solve_equation_scalar(int              f_id,
+                           cs_lnum_t        ncesmp,
+                           cs_lnum_t        ncmast,
+                           int              iterns,
+                           int              itspdv,
+                           const cs_lnum_t  icetsm[],
+                           const cs_lnum_t  ltmast[],
+                           int              itypsm[],
+                           int              itypst[],
+                           cs_real_t        smacel[],
+                           cs_real_t        svcond[],
+                           const cs_real_t  flxmst[],
+                           cs_real_t        viscf[],
+                           cs_real_t        viscb[])
 {
   cs_field_t *f = cs_field_by_id(f_id);
 
@@ -674,6 +867,28 @@ cs_f_solve_equation_scalar(int                   f_id,
                            smacel,
                            svcond,
                            flxmst,
+                           viscf,
+                           viscb);
+}
+
+void
+cs_f_solve_equation_vector(int              f_id,
+                           cs_lnum_t        ncesmp,
+                           int              iterns,
+                           const cs_lnum_t  icetsm[],
+                           int              itypsm[],
+                           cs_real_t        smacel[],
+                           cs_real_t        viscf[],
+                           cs_real_t        viscb[])
+{
+  cs_field_t *f = cs_field_by_id(f_id);
+
+  cs_solve_equation_vector(f,
+                           ncesmp,
+                           iterns,
+                           icetsm,
+                           itypsm,
+                           smacel,
                            viscf,
                            viscb);
 }
@@ -709,8 +924,8 @@ cs_f_solve_equation_scalar(int                   f_id,
  *                           \f$ \Gamma_{v, cond}^n \f$)
  * \param[in]     flxmst     variable value associated to heat transfer flux
  *                           associated to the metal mass condensation
- * \param[in]     viscf      visc*surface/dist at internal faces
- * \param[in]     viscb      visc*surface/dist at boundary faces
+ * \param         viscf      visc*surface/dist at internal faces (work array)
+ * \param         viscb      visc*surface/dist at boundary faces (work array)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -751,7 +966,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   const cs_lnum_t *ifbpcd = wall_cond->ifbpcd;
   const cs_lnum_t *itypcd = wall_cond->itypcd;
 
-  cs_real_t *dt = CS_F_(dt)->val;
+  const cs_real_t *dt = CS_F_(dt)->val;
 
   /* Initialization
      -------------- */
@@ -761,8 +976,25 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   const int keysca = cs_field_key_id("scalar_id");
   const int keyvar = cs_field_key_id("variable_id");
+
   const int ivar = cs_field_get_key_int(f, keyvar);
   const int iscal = cs_field_get_key_int(f, keysca);
+
+  /* We might have a time step multiplier */
+
+  cs_real_t *dtr = NULL;
+  {
+    const int keycdt = cs_field_key_id("time_step_factor");
+    const cs_real_t cdtvar = cs_field_get_key_double(f, keycdt);
+
+    if (fabs(cdtvar - 1.0) > cs_math_epzero) {
+      BFT_MALLOC(dtr, n_cells_ext, cs_real_t);
+#     pragma omp parallel for if(n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+        dtr[c_id] = dt[c_id] * cdtvar;
+      dt = dtr;
+    }
+  }
 
   bool is_thermal_model_field = (f == cs_thermal_model_field());
 
@@ -818,6 +1050,19 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                rovsdt);
   else
     cs_gui_thermal_source_terms(f, cvar_var, smbrs, rovsdt);
+
+  {
+    int nvar = 0, nscal = 0;
+    cs_lnum_t ncepdp = 0;
+    cs_lnum_t *icepdc = NULL;
+    cs_real_t *ckupdc = NULL;
+
+    cs_f_get_dimens(&nvar, & nscal);
+
+    CS_PROCF(ustssc, USTSSC)(&nvar, &nscal, &ncepdp, &ncesmp, &iscal,
+                             icepdc, icetsm, itypsm, dt,
+                             ckupdc, smacel, smbrs, rovsdt);
+  }
 
   cs_user_source_terms(cs_glob_domain,
                        f->id,
@@ -1402,6 +1647,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                       rvarfl,
                                       visls_0,
                                       thetv,
+                                      dt,
                                       xcpp,
                                       crom,
                                       viscl,
@@ -1454,20 +1700,19 @@ cs_solve_equation_scalar(cs_field_t        *f,
   cs_real_6_t *viscce = NULL;
 
   if (eqp->idiff >= 1) {
-    _diffusion_terms(w1,
-                     viscf,
-                     viscb,
-                     smbrs,
-                     &weighb,
-                     &weighf,
-                     &viscce,
-                     ifcvsl,
-                     visls_0,
-                     xcpp,
-                     sgdh_diff,
-                     cpro_viscls,
-                     f,
-                     eqp);
+    _diffusion_terms_scalar(f,
+                            eqp,
+                            visls_0,
+                            xcpp,
+                            sgdh_diff,
+                            cpro_viscls,
+                            w1,
+                            viscf,
+                            viscb,
+                            smbrs,
+                            &weighb,
+                            &weighf,
+                            &viscce);
   }
   else {
     cs_array_real_fill_zero(m->n_i_faces, viscf);
@@ -1492,19 +1737,21 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   /* Darcy : we take into account the porosity and delay for underground transport */
   else {
+
     /* Retrieve sorption options for current scalar for ground water flow module */
     const int key_part = cs_field_key_id("gwf_soilwater_partition");
     cs_field_get_key_struct(f, key_part, &sorption_scal);
+
     cpro_sat = cs_field_by_name("saturation")->val;
     cproa_sat = cs_field_by_name("saturation")->val_pre;
     cpro_delay = cs_field_by_id(sorption_scal.idel)->val;
     cproa_delay = cs_field_by_id(sorption_scal.idel)->val_pre;
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      smbrs[c_id] = smbrs[c_id]*cpro_delay[c_id]*cpro_sat[c_id];
-      rovsdt[c_id] = (rovsdt[c_id] + eqp->istat*xcpp[c_id]*pcrom[c_id]
-                                  *volume[c_id]/dt[c_id])
-                                  *cpro_delay[c_id]*cpro_sat[c_id];
+      smbrs[c_id] *= cpro_delay[c_id] * cpro_sat[c_id];
+      rovsdt[c_id] =  (  rovsdt[c_id] + eqp->istat*xcpp[c_id]*pcrom[c_id]
+                       * volume[c_id] / dt[c_id])
+                     * cpro_delay[c_id] * cpro_sat[c_id];
     }
 
     /* treatment of kinetic sorption */
@@ -1515,6 +1762,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   /* Scalar with a Drift:
    * compute the convective flux
    *---------------------------- */
+
   const int keydri = cs_field_key_id_try("drift_scalar_model");
   const int iscdri = cs_field_get_key_int(f, keydri);
 
@@ -1570,15 +1818,11 @@ cs_solve_equation_scalar(cs_field_t        *f,
    * conservation of the mass of tracer. */
 
   if (cs_glob_physical_model_flag[CS_GROUNDWATER] == 1) {
-    if (eqp->flag & CS_EQUATION_UNSTEADY) {
+    if (cs_glob_darcy_unsteady) {
       cs_real_t *diverg;
       BFT_MALLOC(diverg, n_cells_ext, cs_real_t);
 
-      cs_divergence(m,
-                    1,
-                    imasfl,
-                    bmasfl,
-                    diverg);
+      cs_divergence(m, 1, imasfl, bmasfl, diverg);
 
 #     pragma omp parallel for if(n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -1611,12 +1855,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
   /* all boundary convective flux with upwind */
   cs_real_t normp = -1.0;
 
-  /* Translate coefa into cofaf and coefb into cofbf */
-  cs_real_t *coefap = f->bc_coeffs->a;
-  cs_real_t *coefbp = f->bc_coeffs->b;
-  cs_real_t *cofafp = f->bc_coeffs->af;
-  cs_real_t *cofbfp = f->bc_coeffs->bf;
-
   cs_equation_param_t eqp_loc = *eqp;
 
   eqp_loc.istat  = -1;
@@ -1638,10 +1876,10 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                      &eqp_loc,
                                      cvara_var,
                                      cvark_var,
-                                     coefap,
-                                     coefbp,
-                                     cofafp,
-                                     cofbfp,
+                                     f->bc_coeffs->a,
+                                     f->bc_coeffs->b,
+                                     f->bc_coeffs->af,
+                                     f->bc_coeffs->bf,
                                      imasfl,
                                      bmasfl,
                                      viscf,
@@ -1861,12 +2099,491 @@ cs_solve_equation_scalar(cs_field_t        *f,
                l2errork, l2errork*dl2norm, l2norm);
   }
 
-  if (wcvark_var != NULL)
-    BFT_FREE(wcvark_var);
-
+  BFT_FREE(wcvark_var);
   BFT_FREE(xcpp);
   BFT_FREE(smbrs);
   BFT_FREE(rovsdt);
+  BFT_FREE(dtr);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Solve the convection/diffusion equation (with optional source
+ *        terms and/or drift) for a vectorial quantity over a time step..
+ *
+ * \param[in]     f          pointer to field structure
+ * \param[in]     ncesmp     number of cells with mass source term
+ * \param[in]     iterns     Navier-Stokes iteration number
+ * \param[in]     icetsm     index of cells with mass source term
+ * \param[in]     itypsm     type of mass source term for the variables
+ * \param[in]     smacel     variable value associated to the mass source
+ *                           term (for ivar=ipr, smacel is the mass flux
+ *                           \f$ \Gamma^n \f$)
+ * \param         viscf      visc*surface/dist at internal faces (work array)
+ * \param         viscb      visc*surface/dist at boundary faces (work array)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solve_equation_vector(cs_field_t       *f,
+                         const cs_lnum_t   ncesmp,
+                         int               iterns,
+                         const cs_lnum_t   icetsm[],
+                         int               itypsm[],
+                         cs_real_t         smacel[],
+                         cs_real_t         viscf[],
+                         cs_real_t         viscb[])
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  const cs_real_t *volume = fvq->cell_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+
+  const cs_real_t *dt = CS_F_(dt)->val;
+
+  /* Initialization
+     -------------- */
+
+  cs_real_3_t *cvar_var = (cs_real_3_t *)f->val;
+  cs_real_3_t *cvara_var = (cs_real_3_t *)f->val_pre;
+
+  const int keyvar = cs_field_key_id("variable_id");
+  const int ivar = cs_field_get_key_int(f, keyvar);
+
+  /* If the vector is buoyant, it is inside the Navier Stokes loop, and
+     so iterns >=1; otherwise it is outside of the loop and iterns = -1. */
+
+  const int key_is_buoyant = cs_field_key_id_try("is_buoyant");
+  const int is_buoyant_fld = cs_field_get_key_int(f, key_is_buoyant);
+
+  if (   (is_buoyant_fld == 1 && iterns == -1)
+      || (is_buoyant_fld == 0 && iterns != -1)) {
+    return;
+  }
+
+  /* We might have a time step multiplier */
+
+  cs_real_t *dtr = NULL;
+  {
+    const int keycdt = cs_field_key_id("time_step_factor");
+    const cs_real_t cdtvar = cs_field_get_key_double(f, keycdt);
+
+    if (fabs(cdtvar - 1.0) > cs_math_epzero) {
+      BFT_MALLOC(dtr, n_cells_ext, cs_real_t);
+#     pragma omp parallel for if(n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+        dtr[c_id] = dt[c_id] * cdtvar;
+      dt = dtr;
+    }
+  }
+
+  /* Physical quantities */
+
+  const cs_real_t *croma = CS_F_(rho)->val;
+  if (CS_F_(rho)->val_pre != NULL)
+    croma = CS_F_(rho)->val_pre;
+
+  cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+
+  if (eqp->verbosity > 0)
+    bft_printf(" ** SOLVING VARIABLE %s\n"
+               "    ----------------\n\n", f->name);
+
+  /* Source terms
+     ============ */
+
+  cs_real_3_t *smbrv;
+  cs_real_33_t *fimp;
+
+  BFT_MALLOC(fimp, n_cells_ext, cs_real_33_t);
+  BFT_MALLOC(smbrv, n_cells_ext, cs_real_3_t);
+
+  cs_array_real_fill_zero(9*n_cells, (cs_real_t *)fimp);
+  cs_array_real_fill_zero(3*n_cells, (cs_real_t *)smbrv);
+
+  /* User source terms
+   * ----------------- */
+
+  cs_user_source_terms(cs_glob_domain,
+                       f->id,
+                       (cs_real_t *)smbrv,
+                       (cs_real_t *)fimp);
+
+  /* Store the source terms for convective limiter */
+  cs_real_3_t *cpro_vect_st = NULL;
+
+  const int kst = cs_field_key_id_try("source_term_id");
+  const int kstprv = cs_field_key_id_try("source_term_prev_id");
+  const int st_id = cs_field_get_key_int(f, kst);
+  const int st_prv_id = cs_field_get_key_int(f, kstprv);
+
+  if (st_id > -1) {
+    cs_field_t *f_st = cs_field_by_id(st_id);
+    if (f_st->dim != 3)
+      bft_error(__FILE__, __LINE__, 0,
+                _("%s: source term field %s\n"
+                  "for field %s should be dimension 3."),
+                __func__, f_st->name, f->name);
+    cpro_vect_st = (cs_real_3_t *)f_st->val;
+    cs_array_real_copy(3*n_cells,
+                       (const cs_real_t *)smbrv,
+                       (cs_real_t *)cpro_vect_st);
+    /* Handle parallelism and periodicity */
+    cs_mesh_sync_var_vect((cs_real_t *)cpro_vect_st);
+  }
+
+  /* If we extrapolate source terms:
+   *   smbrv receives -theta TS from previous time step.
+   *   smbrv receives the part of the source term which depends on the variable.
+   *   At order 2, we assume that fimp provided by the user is < 0, so
+   *     we implicit the term (so fimp*cvar_prev goes in smbrs).
+   *   In standard case, adapt to sign of fimp, but fimp*cvar_prev still
+   *     goes in smbrv (no other choice). */
+
+  cs_real_3_t *cproa_vect_st = NULL;
+  const cs_real_t thetv = eqp->thetav;
+  const int kthetss = cs_field_key_id_try("st_exp_extrapolated");
+  const cs_real_t thets = cs_field_get_key_double(f, kthetss);
+
+  if (st_prv_id > -1) {
+    cproa_vect_st = (cs_real_3_t *)cs_field_by_id(st_prv_id)->val;
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      cs_real_t smbexp[3];
+      for (cs_lnum_t j = 0; j < 3; ++j) {
+        smbexp[j] = cproa_vect_st[c_id][j];
+        /* User explicit source terms */
+        cproa_vect_st[c_id][j] = smbrv[c_id][j];
+        smbrv[c_id][j] =   fimp[c_id][j][j] * cvara_var[c_id][j]
+                         - thets*smbexp[j];
+        /* Diagonal */
+        fimp[c_id][j][j] = -thetv*fimp[c_id][j][j];
+      }
+    }
+  }
+
+  /* If we do not extrapolate the ST: */
+  else {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        /* User explicit source terms */
+        smbrv[c_id][j] += fimp[c_id][j][j] * cvara_var[c_id][j];
+        /* Diagonal */
+        fimp[c_id][j][j] = cs_math_fmax(-fimp[c_id][j][j], 0);
+      }
+    }
+  }
+
+  /* Specific physical models; order 2 not handled */
+
+  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0) {
+
+    if (   cs_glob_physical_model_flag[CS_JOULE_EFFECT] > 0
+        || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > 0)
+      cs_elec_source_terms_v(m, fvq, f->id, smbrv);
+
+  }
+
+  /* Mass source term */
+
+  if (ncesmp > 0) {
+    cs_real_3_t *gavinj;
+    BFT_MALLOC(gavinj, n_cells_ext, cs_real_3_t);
+
+    const int ipr = cs_field_get_key_int(CS_F_(p), keyvar);
+
+    int *_itypsm = itypsm + (ivar-1)*ncesmp;
+    cs_real_t *_smacel_ipr = smacel + (ipr-1)*ncesmp;
+    cs_real_t *_smacel_ivar = smacel + (ivar-1)*ncesmp;
+
+    /* We increment SMBRV by -Gamma RTPA and FIMP by Gamma */
+    cs_mass_source_terms(1,
+                         3,
+                         ncesmp,
+                         icetsm,
+                         _itypsm,
+                         cell_f_vol,
+                         (const cs_real_t *)cvara_var,
+                         _smacel_ivar,
+                         _smacel_ipr,
+                         (cs_real_t *)smbrv,
+                         (cs_real_t *)fimp,
+                         (cs_real_t *)gavinj);
+
+    /* If we extrapolate source terms we put -Gamma Pinj in cproa_vect_st */
+    if (st_prv_id > -1) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          cproa_vect_st[c_id][j] += gavinj[c_id][j];
+      }
+    }
+    /* If we do not extrapolate we put directly in SMBRV */
+    else {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          smbrv[c_id][j] += gavinj[c_id][j];
+      }
+    }
+    BFT_FREE(gavinj);
+  }
+
+  if (st_prv_id > -1) {
+    const cs_real_t thetp1 = 1.0 + thets;
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t j = 0; j < 3; j++)
+        smbrv[c_id][j] += thetp1 * cproa_vect_st[c_id][j];
+    }
+  }
+
+  /* Compressible algorithm
+   * or Low Mach compressible algos with mass flux prediction */
+
+  const cs_real_t *pcrom = NULL;
+
+  if (   cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1
+      || (   cs_glob_velocity_pressure_model->idilat > 1
+          && cs_glob_velocity_pressure_param->ipredfl == 1
+          && fluid_props->irovar == 1)) {
+    pcrom = croma;
+  }
+
+  /* Low Mach compressible algos (conservative in time).
+   * Same algo. for Volume of Fluid method */
+  else if (   (   cs_glob_velocity_pressure_model->idilat > 1
+               || cs_glob_vof_parameters->vof_model > 0)
+           && fluid_props->irovar == 1) {
+    if (iterns == 1)
+      pcrom = CS_F_(rho)->vals[2];
+    else
+      pcrom = CS_F_(rho)->val_pre;
+  }
+  /* Deprecated algo or constant density */
+  else {
+    pcrom = CS_F_(rho)->val;
+  }
+
+  /* Face diffusion "speed"
+
+   * We take max(mu_t, 0) as in dynamic LES mu_t can be negative
+   * (clipping over (mu + mu_t)). We could have taken max(K + K_t, 0)
+   * but this would allow negative K_t negatif, which is considered
+   * non-physical. */
+
+  cs_real_t *weighb = NULL;
+  cs_real_2_t *weighf = NULL;
+  cs_real_6_t *viscce = NULL;
+
+  if (eqp->idiff >= 1) {
+    _diffusion_terms_vector(f,
+                            eqp,
+                            viscf,
+                            viscb,
+                            &weighb,
+                            &weighf,
+                            &viscce);
+  }
+  else {
+    cs_array_real_fill_zero(m->n_i_faces, viscf);
+    cs_array_real_fill_zero(n_b_faces, viscb);
+  }
+
+  cs_gwf_soilwater_partition_t sorption_scal;
+
+  const cs_real_t *cpro_sat = NULL, *cproa_sat = NULL;
+  const cs_real_t *cpro_delay = NULL, *cproa_delay = NULL;
+
+  if (cs_glob_physical_model_flag[CS_GROUNDWATER] == -1) {
+    if (eqp->istat == 1) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          fimp[c_id][j][j] += pcrom[c_id] * cell_f_vol[c_id] / dt[c_id];
+      }
+    }
+  }
+
+  /* Groundwater flows:
+     we take into account the porosity and delay for underground transport */
+  else {
+
+    /* Retrieve sorption options for current scalar for ground water flow module */
+    const int key_part = cs_field_key_id("gwf_soilwater_partition");
+    cs_field_get_key_struct(f, key_part, &sorption_scal);
+
+    cpro_sat = cs_field_by_name("saturation")->val;
+    cproa_sat = cs_field_by_name("saturation")->val_pre;
+
+    cpro_delay = cs_field_by_id(sorption_scal.idel)->val;
+    cproa_delay = cs_field_by_id(sorption_scal.idel)->val_pre;
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        smbrv[c_id][j] = smbrv[c_id][j]*cpro_delay[c_id]*cpro_sat[c_id];
+        fimp[c_id][j][j] =  (  fimp[c_id][j][j]
+                             + eqp->istat*pcrom[c_id]*volume[c_id]/dt[c_id])
+                           * cpro_delay[c_id]*cpro_sat[c_id];
+      }
+    }
+  }
+
+  /* Scalar with a Drift: compute the convective flux
+   * ------------------------------------------------ */
+
+  const int keydri = cs_field_key_id_try("drift_scalar_model");
+  const int iscdri = cs_field_get_key_int(f, keydri);
+
+  /* Interior mass flux */
+  const int kimasf = cs_field_key_id_try("inner_mass_flux_id");
+  const int iflmas = cs_field_get_key_int(f, kimasf);
+  cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
+
+  /* Boundary mass flux */
+  const int kbmasf = cs_field_key_id_try("boundary_mass_flux_id");
+  const int iflmab = cs_field_get_key_int(f, kbmasf);
+  cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
+
+  if (iscdri > 0) {
+    cs_real_t *divflu;
+    BFT_MALLOC(divflu, n_cells_ext, cs_real_t);
+
+    cs_drift_convective_flux(f->id,
+                             dt,
+                             imasfl,
+                             bmasfl,
+                             divflu);
+
+    const int iconvp = eqp->iconv;
+    const cs_real_t thetap = eqp->thetav;
+
+    /* NB: if the porosity module is swiched on, the the porosity is already
+     * taken into account in divflu */
+
+    /* mass aggregation term */
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        fimp[c_id][j][j] += iconvp * thetap * divflu[c_id];
+        smbrv[c_id][j] -= iconvp * divflu[c_id] * cvara_var[c_id][j];
+      }
+    }
+
+    BFT_FREE(divflu);
+  }
+
+  /* Groundwater flow.
+   *
+   * This step is necessary because the divergence of the
+   * hydraulic head (or pressure), which is taken into account as the
+   * 'aggregation term' via
+   * cs_equation_iterative_solve_vector -> cs_balance_vector,
+   * is not exactly equal to the loss of mass of water in the unsteady case
+   * (just as far as the precision of the Newton scheme is good),
+   * and does not take into account the sorption of the tracer
+   * (represented by the 'delay' coefficient).
+   * We choose to 'cancel' the aggregation term here, and to add to smbr
+   * (right hand side of the transport equation)
+   * the necessary correction to take sorption into account and get the exact
+   * conservation of the mass of tracer. */
+
+  if (cs_glob_physical_model_flag[CS_GROUNDWATER] == 1) {
+    if (cs_glob_darcy_unsteady) {
+      cs_real_t *diverg;
+      BFT_MALLOC(diverg, n_cells_ext, cs_real_t);
+
+      cs_divergence(m, 1, imasfl, bmasfl, diverg);
+
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          smbrv[c_id][j] -= diverg[c_id]*cvar_var[c_id][j]
+                             + cell_f_vol[c_id]/dt[c_id]*cvar_var[c_id][j]
+                             *(  cproa_delay[c_id]*cproa_sat[c_id]
+                               - cpro_delay[c_id]*cpro_sat[c_id] );
+
+          fimp[c_id][j][j] += thetv*diverg[c_id];
+        }
+      }
+
+      BFT_FREE(diverg);
+    }
+  }
+
+  /* Solve
+     ===== */
+
+  int iescap = 0, icvflb = 0, ivissv = 0;
+
+  cs_equation_param_t eqp_loc = *eqp;
+
+  eqp_loc.istat  = -1;
+  eqp_loc.idifft = -1;
+  eqp_loc.iwgrec = 0;
+  eqp_loc.thetav = thetv;
+  eqp_loc.blend_st = 0; // Warning, may be overwritten if a field
+
+  cs_equation_iterative_solve_vector(cs_glob_time_step_options->idtvar,
+                                     iterns,
+                                     f->id,
+                                     NULL,
+                                     ivissv,
+                                     iescap,
+                                     &eqp_loc,
+                                     cvara_var,
+                                     cvara_var,
+                                     (const cs_real_3_t *)f->bc_coeffs->a,
+                                     (const cs_real_33_t *)f->bc_coeffs->b,
+                                     (const cs_real_3_t *)f->bc_coeffs->af,
+                                     (const cs_real_33_t *)f->bc_coeffs->bf,
+                                     imasfl,
+                                     bmasfl,
+                                     viscf,
+                                     viscb,
+                                     viscf,
+                                     viscb,
+                                     NULL,
+                                     NULL,
+                                     viscce,
+                                     weighf,
+                                     weighb,
+                                     icvflb,
+                                     NULL,
+                                     fimp,
+                                     smbrv,
+                                     cvar_var,
+                                     NULL);
+
+  if (weighb != NULL) {
+    BFT_FREE(weighb);
+    BFT_FREE(weighf);
+    BFT_FREE(viscce);
+  }
+
+  BFT_FREE(fimp);
+
+  if (eqp->verbosity > 1) {
+    cs_real_t ibcl = 0;
+    if (eqp->nswrsm > 1)
+      ibcl = 1;
+
+    if (eqp->istat == 1) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          smbrv[c_id][j] -=   (pcrom[c_id] / dt[c_id]) * cell_f_vol[c_id]
+                            * (cvar_var[c_id][j] - cvara_var[c_id][j]) * ibcl;
+        }
+      }
+    }
+    const cs_real_t sclnor = sqrt(cs_gdot(3*n_cells,
+                                          (const cs_real_t *)smbrv,
+                                          (const cs_real_t *)smbrv));
+
+    bft_printf("%s: EXPLICIT BALANCE = %14.5e\n\n",f->name, sclnor);
+  }
+
+  BFT_FREE(smbrv);
+  BFT_FREE(dtr);
 }
 
 /*----------------------------------------------------------------------------*/

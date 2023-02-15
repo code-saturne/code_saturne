@@ -55,7 +55,8 @@ module darcy_module
   !> \anchor darcy_unsteady
   !> Set if the transport part is based on a steady (0) or unsteady (1)
   !> flow field
-  integer :: darcy_unsteady
+  integer(c_int) :: darcy_unsteady
+  bind(C, name='cs_glob_darcy_unsteady') :: darcy_unsteady
 
   !> \anchor darcy_convergence_criterion
   !> Set convergence criteron of the Newton scheme

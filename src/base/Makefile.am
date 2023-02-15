@@ -271,7 +271,6 @@ clsyvt.f90 \
 condli.f90 \
 cou1di.f90 \
 cou1do.f90 \
-covofv.f90 \
 cs_wall_condensation.c \
 cs_wall_condensation_1d_thermal.c \
 cs_1d_wall_thermal.c \
