@@ -288,10 +288,10 @@ _pressure_correction_fv(int        iterns,
   BFT_MALLOC(bflux, m->n_b_faces, cs_real_t);
   BFT_MALLOC(dphi, n_cells_ext, cs_real_t);
 
-  cs_real_3_t *trav;
-  BFT_MALLOC(trav, n_cells_ext, cs_real_3_t);
-  cs_real_3_t *trav2;
-  BFT_MALLOC(trav2, n_cells_ext, cs_real_3_t);
+  cs_real_3_t *wrk;
+  BFT_MALLOC(wrk, n_cells_ext, cs_real_3_t);
+  cs_real_3_t *wrk2;
+  BFT_MALLOC(wrk2, n_cells_ext, cs_real_3_t);
 
   cs_real_t *adxk = NULL, *adxkm1 = NULL, *dphim1 = NULL, *rhs0 = NULL;
   if (eqp_p->iswdyn > 0) {
@@ -938,7 +938,7 @@ _pressure_correction_fv(int        iterns,
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
         for (cs_lnum_t j = 0; j < 3; j++) {
-          trav[c_id][j] =   gradp[c_id][j] - frcxt[c_id][j]
+          wrk[c_id][j] =   gradp[c_id][j] - frcxt[c_id][j]
                           - cpro_poro_div_duq[c_id][j];
         }
     }
@@ -946,14 +946,14 @@ _pressure_correction_fv(int        iterns,
     else {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
         for (cs_lnum_t j = 0; j < 3; j++) {
-          trav[c_id][j] = gradp[c_id][j] - frcxt[c_id][j];
+          wrk[c_id][j] = gradp[c_id][j] - frcxt[c_id][j];
         }
     }
 
   }
   else {
 
-    cs_array_real_copy(3*n_cells, (const cs_real_t *)gradp, (cs_real_t *)trav);
+    cs_array_real_copy(3*n_cells, (const cs_real_t *)gradp, (cs_real_t *)wrk);
 
   }
 
@@ -969,7 +969,7 @@ _pressure_correction_fv(int        iterns,
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         cs_real_t arsrdt = (arak/crom[c_id]) * dt[c_id];
         for (cs_lnum_t j = 0; j < 3; j++)
-          trav[c_id][j] *= arsrdt;
+          wrk[c_id][j] *= arsrdt;
       }
 
     }
@@ -979,21 +979,21 @@ _pressure_correction_fv(int        iterns,
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         cs_real_t arsr = arak/crom[c_id];
-        cs_real_t travn[3];
+        cs_real_t wrkn[3];
 
-        travn[0] = arsr * (  da_uu[c_id][0]*trav[c_id][0]
-                           + da_uu[c_id][3]*trav[c_id][1]
-                           + da_uu[c_id][5]*trav[c_id][2]);
-        travn[1] = arsr * (  da_uu[c_id][3]*trav[c_id][0]
-                           + da_uu[c_id][1]*trav[c_id][1]
-                           + da_uu[c_id][4]*trav[c_id][2]);
-        travn[2] = arsr * (  da_uu[c_id][5]*trav[c_id][0]
-                           + da_uu[c_id][4]*trav[c_id][1]
-                           + da_uu[c_id][2]*trav[c_id][2]);
+        wrkn[0] = arsr * (  da_uu[c_id][0]*wrk[c_id][0]
+                           + da_uu[c_id][3]*wrk[c_id][1]
+                           + da_uu[c_id][5]*wrk[c_id][2]);
+        wrkn[1] = arsr * (  da_uu[c_id][3]*wrk[c_id][0]
+                           + da_uu[c_id][1]*wrk[c_id][1]
+                           + da_uu[c_id][4]*wrk[c_id][2]);
+        wrkn[2] = arsr * (  da_uu[c_id][5]*wrk[c_id][0]
+                           + da_uu[c_id][4]*wrk[c_id][1]
+                           + da_uu[c_id][2]*wrk[c_id][2]);
 
-        trav[c_id][0] = travn[0];
-        trav[c_id][1] = travn[1];
-        trav[c_id][2] = travn[2];
+        wrk[c_id][0] = wrkn[0];
+        wrk[c_id][1] = wrkn[1];
+        wrk[c_id][2] = wrkn[2];
       }
 
     }
@@ -1001,21 +1001,21 @@ _pressure_correction_fv(int        iterns,
   }
 
   else {
-    cs_array_real_fill_zero(3*n_cells, (cs_real_t *)trav);
+    cs_array_real_fill_zero(3*n_cells, (cs_real_t *)wrk);
   }
 
   if (idilat < 4) {
 #   pragma omp parallel for if (n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
-        trav[c_id][j] += vel[c_id][j];
-        trav2[c_id][j] = trav[c_id][j];
+        wrk[c_id][j] += vel[c_id][j];
+        wrk2[c_id][j] = wrk[c_id][j];
       }
     }
   }
 
   /* Sync for parallelism and periodicity */
-  cs_mesh_sync_var_vect((cs_real_t *)trav);
+  cs_mesh_sync_var_vect((cs_real_t *)wrk);
 
   {
     /* BCs will be taken into account later if idilat >= 4 */
@@ -1037,7 +1037,7 @@ _pressure_correction_fv(int        iterns,
                  eqp_u->epsrgr,
                  eqp_u->climgr,
                  crom, brom,
-                 trav,
+                 wrk,
                  coefav, coefbv,
                  imasfl, bmasfl);
   }
@@ -1580,12 +1580,12 @@ _pressure_correction_fv(int        iterns,
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     for (cs_lnum_t j = 0; j < 3; j++) {
-      trav[c_id][j] = (dt[c_id] / crom[c_id]) * gradp[c_id][j];
+      wrk[c_id][j] = (dt[c_id] / crom[c_id]) * gradp[c_id][j];
     }
   }
 
   /* Parallelism and periodicity */
-  cs_mesh_sync_var_vect((cs_real_t *)trav);
+  cs_mesh_sync_var_vect((cs_real_t *)wrk);
 
   {
     int iflmb0 = (cs_glob_ale >= 1) ? 0 : 1;
@@ -1609,7 +1609,7 @@ _pressure_correction_fv(int        iterns,
                  eqp_u->epsrgr,
                  eqp_u->climgr,
                  crom, brom,
-                 trav,
+                 wrk,
                  coefav, coefbv,
                  iflux, bflux);
 
@@ -2274,7 +2274,7 @@ _pressure_correction_fv(int        iterns,
     /* dt/rho * grad rho */
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
-        trav[c_id][j] = gradp[c_id][j] * dt[c_id] / crom[c_id];
+        wrk[c_id][j] = gradp[c_id][j] * dt[c_id] / crom[c_id];
       }
     }
 
@@ -2377,7 +2377,7 @@ _pressure_correction_fv(int        iterns,
                  eqp_u->epsrgr,
                  eqp_u->climgr,
                  crom, brom,
-                 trav,
+                 wrk,
                  coefar, coefbr,
                  velflx, velflb);
 
@@ -2628,7 +2628,7 @@ _pressure_correction_fv(int        iterns,
       }
     }
     else {
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         pk1[c_id] = cvar_pr[c_id];
         cvar_pr[c_id] = phi[c_id];
       }
@@ -2648,6 +2648,7 @@ _pressure_correction_fv(int        iterns,
       cpro_rho_mass[c_id] = crom_eos[c_id];
     }
   }
+
   /* Compute the isobaric heat capacity if needed */
   cs_field_t  *f_cv = cs_field_by_name_try("isobaric_heat_capacity");
   if (f_cv != NULL) {
@@ -2669,6 +2670,8 @@ _pressure_correction_fv(int        iterns,
                               yv,
                               tempk);
   }
+
+  BFT_FREE(pk1);
 
   /* Kinetic source term
    * Compute the kinetic energy related source term.
@@ -2699,7 +2702,7 @@ _pressure_correction_fv(int        iterns,
       /* Call the function to compute the cfl condition related to the pressure
        * equation */
       cs_thermal_model_cflp(croma,
-                            trav2,
+                            wrk2,
                             cvara_pr,
                             imasfl,
                             cflp);
@@ -2735,7 +2738,8 @@ _pressure_correction_fv(int        iterns,
   /*  Free memory */
   BFT_FREE(taui);
   BFT_FREE(taub);
-  BFT_FREE(trav);
+  BFT_FREE(wrk2);
+  BFT_FREE(wrk);
   BFT_FREE(res);
   BFT_FREE(phia);
   BFT_FREE(dphi);
@@ -2825,8 +2829,8 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
 
   /* Allocate temporary arrays */
 
-  cs_real_3_t *trav;
-  BFT_MALLOC(trav, n_cells_ext, cs_real_3_t);
+  cs_real_3_t *wrk;
+  BFT_MALLOC(wrk, n_cells_ext, cs_real_3_t);
 
   cs_field_t *f_iddp = cs_field_by_id(eq_dp->field_id);
   cs_real_t *phi = f_iddp->val;
@@ -2888,11 +2892,11 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     for (cs_lnum_t j = 0; j < 3; j++)
-      trav[c_id][j] = vel[c_id][j] + arak*gradp[c_id][j]*dt[c_id]/crom[c_id];
+      wrk[c_id][j] = vel[c_id][j] + arak*gradp[c_id][j]*dt[c_id]/crom[c_id];
   }
 
   /* Sync for parallelism and periodicity */
-  cs_mesh_sync_var_vect((cs_real_t *)trav);
+  cs_mesh_sync_var_vect((cs_real_t *)wrk);
 
   {
     int inc = 1;
@@ -2913,7 +2917,7 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
                  eqp_u->epsrgr,
                  eqp_u->climgr,
                  crom, brom,
-                 trav,
+                 wrk,
                  coefav, coefbv,
                  imasfl, bmasfl);
   }
@@ -3039,7 +3043,7 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
     cvar_pr[c_id] += phi[c_id];
 
   /*  Free memory */
-  BFT_FREE(trav);
+  BFT_FREE(wrk);
 }
 
 /*----------------------------------------------------------------------------*/
