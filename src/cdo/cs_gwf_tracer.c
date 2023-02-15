@@ -3162,5 +3162,35 @@ cs_gwf_tracer_decay_chain_by_name(const char      *chain_name)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the equation parameters for the tracer at the position "id"
+ *        in the decay chain structure. If "id" is not valid, then a NULL
+ *        pointer is returned.
+ *
+ * \param[in] tdc   pointer to a decay chain structure
+ * \param[in] id    position of the tracer in the decay chain
+ *
+ * \return a pointer to a cs_equation_param_t structure or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_param_t *
+cs_gwf_tracer_decay_chain_get_equation_param(cs_gwf_tracer_decay_chain_t  *tdc,
+                                             int                           id)
+{
+  if (tdc == NULL)
+    return NULL;
+
+  if (id < 0 || id >= tdc->n_tracers)
+    return NULL;
+
+  cs_gwf_tracer_t  *tracer = tdc->tracers[id];
+  assert(tracer != NULL);
+  assert(tracer->chain_position_id == id);
+
+  return cs_equation_get_param(tracer->equation);
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
