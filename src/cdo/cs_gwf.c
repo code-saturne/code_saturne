@@ -603,6 +603,27 @@ _sspf_init_model_context(cs_gwf_saturated_single_phase_t   *mc)
 
   cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");
 
+  /* The steady diffusion eq. is solved once at the beginning and then the
+     hydraulic head is used to compute the advective flux for the tracer
+     equations. A good accuracy is thus required knowing that strong
+     heterogeneities may be taken into account. Moreover, the system is SPD by
+     construction. One can thus use a AMG + FCG as the default solver. */
+
+  cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RTOL, "1e-8");
+  cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "fcg");
+  cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
+  cs_equation_param_set(eqp, CS_EQKEY_ITSOL_MAX_ITER, "5000");
+
+  /* The default value of the relative tolerance is 1e-6 (please refer to
+     cs_param_sles_create() to know all the default settings related to linear
+     algebra).
+
+     The default value of the max. number of iteration is 10000. The AMG/FCG
+     solver is more efficient but each iteration is more costly. Thus, one
+     reduces this max. number of iterations if one encounters a convergence
+     issue.
+  */
+
   /* Add the variable field */
 
   if (gw->flag & CS_GWF_FORCE_RICHARDS_ITERATIONS)
