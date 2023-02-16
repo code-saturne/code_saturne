@@ -671,7 +671,7 @@ cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id)
 
   if (   location_id != CS_MESH_LOCATION_CELLS
       && location_id != CS_MESH_LOCATION_BOUNDARY_FACES)
-      f->post_vis = CS_POST_ON_LOCATION;
+    f->post_vis = CS_POST_ON_LOCATION;
 
   return f;
 }

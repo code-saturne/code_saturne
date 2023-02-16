@@ -2826,7 +2826,7 @@ cs_field_destroy_all_keys(void)
   int key_id;
   for (key_id = 0; key_id < _n_keys; key_id++) {
     cs_field_key_def_t *kd = _key_defs + key_id;
-    if (kd->type_id == 't') {
+    if (kd->type_id == 's' || kd->type_id == 't') {
       BFT_FREE(kd->def_val.v_p);
     }
   }
