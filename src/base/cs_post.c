@@ -309,9 +309,10 @@ typedef struct {
 
   int                     n_writers;     /* Number of associated writers */
   int                    *writer_id;     /* Array of associated writer ids */
-  int                     nt_last;       /* Time step number for the last
+  int                    *nt_last;       /* Time step number for the last
                                             output (-2 before first output,
-                                            -1 for time-indepedent output) */
+                                            -1 for time-indepedent output)
+                                            for each associated writer */
 
   cs_lnum_t               n_i_faces;     /* N. associated interior faces */
   cs_lnum_t               n_b_faces;     /* N. associated boundary faces */
@@ -980,8 +981,6 @@ _lagrangian_needed(const cs_time_step_t  *ts)
 static void
 _update_mesh_writer_associations(cs_post_mesh_t  *post_mesh)
 {
-  int i, j;
-
   /* Minimum and maximum time dependency flags initially inverted,
      will be recalculated after mesh - writer associations */
 
@@ -995,7 +994,7 @@ _update_mesh_writer_associations(cs_post_mesh_t  *post_mesh)
 
   if (post_mesh->ent_flag[3] == 0) { /* Non-Lagrangian mesh */
 
-    for (i = 0; i < n_writers; i++) {
+    for (int i = 0; i < n_writers; i++) {
 
       fvm_writer_time_dep_t mod_flag;
       const int _writer_id = post_mesh->writer_id[i];
@@ -1023,6 +1022,7 @@ _update_mesh_writer_associations(cs_post_mesh_t  *post_mesh)
     post_mesh->mod_flag_min = FVM_WRITER_TRANSIENT_CONNECT;
     post_mesh->mod_flag_max = FVM_WRITER_TRANSIENT_CONNECT;
 
+    int i, j;
     for (i = 0, j = 0; i < n_writers; i++) {
 
       fvm_writer_time_dep_t mod_flag;
@@ -1034,14 +1034,18 @@ _update_mesh_writer_associations(cs_post_mesh_t  *post_mesh)
       else
         mod_flag = fvm_writer_get_time_dep(writer->writer);
 
-      if (mod_flag == mod_type)
-        post_mesh->writer_id[j++] = _writer_id;
+      if (mod_flag == mod_type) {
+        post_mesh->writer_id[j] = _writer_id;
+        post_mesh->nt_last[j] = post_mesh->nt_last[i];
+        j++;
+      }
 
     }
 
     if (j < n_writers) {
       post_mesh->n_writers = j;
       BFT_REALLOC(post_mesh->writer_id, j, int);
+      BFT_REALLOC(post_mesh->nt_last, j, int);
     }
 
   }
@@ -1093,6 +1097,7 @@ _predefine_mesh(int        mesh_id,
       for (j = 0; j < 5; j++)
         BFT_FREE(post_mesh->criteria[j]);
       BFT_FREE(post_mesh->writer_id);
+      BFT_FREE(post_mesh->nt_last);
 
       post_mesh->exp_mesh = NULL;
       if (post_mesh->_exp_mesh != NULL)
@@ -1136,8 +1141,7 @@ _predefine_mesh(int        mesh_id,
 
   post_mesh->n_writers = 0;
   post_mesh->writer_id = NULL;
-
-  post_mesh->nt_last = -2;
+  post_mesh->nt_last = NULL;
 
   post_mesh->add_groups = false;
   post_mesh->post_domain = false;
@@ -1172,9 +1176,12 @@ _predefine_mesh(int        mesh_id,
 
   post_mesh->n_writers = n_writers;
   BFT_MALLOC(post_mesh->writer_id, n_writers, int);
+  BFT_MALLOC(post_mesh->nt_last, n_writers, int);
 
-  for (i = 0; i < n_writers; i++)
+  for (i = 0; i < n_writers; i++) {
     post_mesh->writer_id[i] = _cs_post_writer_id(writer_ids[i]);
+    post_mesh->nt_last[i] = -2;
+  }
 
   if (mode == 1 || mode == 2)          /* Lagrangian mesh */
     post_mesh->ent_flag[3] = mode;
@@ -1210,6 +1217,7 @@ _free_mesh(int _mesh_id)
     post_mesh->_exp_mesh = fvm_nodal_destroy(post_mesh->_exp_mesh);
 
   BFT_FREE(post_mesh->writer_id);
+  BFT_FREE(post_mesh->nt_last);
   post_mesh->n_writers = 0;
 
   for (i = 0; i < 5; i++)
@@ -1459,8 +1467,10 @@ _define_particle_export_mesh(cs_post_mesh_t        *post_mesh,
 
       fvm_nodal_transfer_vertices(exp_mesh, (cs_coord_t *)coords);
 
-      if (post_mesh->nt_last < ts->nt_cur)
-        post_mesh->nt_last = -2;
+      for (int j = 0; j < post_mesh->n_writers; j++) {
+        if (post_mesh->nt_last[j] < ts->nt_cur)
+          post_mesh->nt_last[j] = -2;
+      }
     }
 
     /* Build global numbering if required */
@@ -2133,12 +2143,6 @@ static void
 _cs_post_write_mesh(cs_post_mesh_t        *post_mesh,
                     const cs_time_step_t  *ts)
 {
-  int  j;
-  fvm_writer_time_dep_t  time_dep;
-  bool  write_mesh = false;
-
-  cs_post_writer_t *writer = NULL;
-
   const int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
   const double t_cur = (ts != NULL) ? ts->t_cur : 0.;
 
@@ -2150,25 +2154,26 @@ _cs_post_write_mesh(cs_post_mesh_t        *post_mesh,
 
   /* Loop on writers */
 
-  for (j = 0; j < post_mesh->n_writers; j++) {
+  for (int j = 0; j < post_mesh->n_writers; j++) {
 
-    writer = _cs_post_writers + post_mesh->writer_id[j];
+    cs_post_writer_t *writer = _cs_post_writers + post_mesh->writer_id[j];
 
+    fvm_writer_time_dep_t  time_dep;
     if (writer->wd != NULL)
       time_dep = writer->wd->time_dep;
     else
       time_dep = fvm_writer_get_time_dep(writer->writer);
 
-    write_mesh = false;
+    bool  write_mesh = false;
 
     if (   time_dep == FVM_WRITER_FIXED_MESH
         && writer->active > -1
         && post_mesh->ent_flag[3] != 2) {
-      if (post_mesh->nt_last < -1)
+      if (post_mesh->nt_last[j] < -1)
         write_mesh = true;
     }
     else {
-      if (post_mesh->nt_last < nt_cur && writer->active == 1)
+      if (post_mesh->nt_last[j] < nt_cur && writer->active == 1)
         write_mesh = true;
     }
 
@@ -2208,10 +2213,9 @@ _cs_post_write_mesh(cs_post_mesh_t        *post_mesh,
 
     }
 
+    if (write_mesh == true)
+      post_mesh->nt_last[j] = nt_cur;
   }
-
-  if (write_mesh == true)
-    post_mesh->nt_last = nt_cur;
 }
 
 /*----------------------------------------------------------------------------
@@ -2825,7 +2829,7 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
 /*----------------------------------------------------------------------------*/
 
 static bool
-_post_mesh_have_active_non_transient(const cs_post_mesh_t  *post_mesh)
+_post_mesh_have_active_transient(const cs_post_mesh_t  *post_mesh)
 {
   bool have_transient_connect = false;
 
@@ -3012,11 +3016,6 @@ _cs_post_output_profile_coords(cs_post_mesh_t        *post_mesh,
                                 nt_cur,
                                 t_cur,
                                 (const void **)var_ptr);
-
-        if (nt_cur >= 0) {
-          writer->tc.last_nt = nt_cur;
-          writer->tc.last_t = t_cur;
-        }
       }
 
     } /* End of loop on writers */
@@ -3079,7 +3078,7 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
         continue;
 
       const cs_mesh_location_type_t field_loc_type
-         = cs_mesh_location_get_type(f->location_id);
+        = cs_mesh_location_get_type(f->location_id);
 
       if (_cs_post_match_post_write_var(post_mesh, field_loc_type) == false)
         continue;
@@ -3548,7 +3547,7 @@ _output_function_data(cs_post_mesh_t        *post_mesh,
                       const cs_time_step_t  *ts)
 {
   const int n_functions = cs_function_n_functions();
-  if (n_functions == 0)
+  if (n_functions == 0 || post_mesh->n_writers < 1)
     return;
 
   int  pset_interpolation = 0;
@@ -3569,7 +3568,12 @@ _output_function_data(cs_post_mesh_t        *post_mesh,
       pset_interpolation = 1;
   }
 
-  bool have_non_transient = _post_mesh_have_active_non_transient(post_mesh);
+  bool have_transient = _post_mesh_have_active_transient(post_mesh);
+  bool may_have_time_independent = false;
+  for (int i = 1; i < post_mesh->n_writers; i++) {
+    if (post_mesh->nt_last[i] <= 0)
+      may_have_time_independent = true;
+  }
 
   /* Base output for cell and boundary meshes */
   /*------------------------------------------*/
@@ -3589,10 +3593,10 @@ _output_function_data(cs_post_mesh_t        *post_mesh,
         continue;
 
       if (f->type & CS_FUNCTION_TIME_INDEPENDENT) {
-        if (post_mesh->nt_last == -1)
-          _ts = NULL;
-        else if (have_non_transient == false)
+        if (   may_have_time_independent == false
+            && have_transient == false)
           continue;
+        _ts = NULL;
       }
 
       const cs_mesh_location_type_t f_loc_type
@@ -3667,9 +3671,9 @@ _output_function_data(cs_post_mesh_t        *post_mesh,
         continue;
 
       if (f->type & CS_FUNCTION_TIME_INDEPENDENT) {
-        if (post_mesh->nt_last == -1)
+        if (may_have_time_independent)
           _ts = NULL;
-        else
+        else if (have_transient == false)
           continue;
       }
 
@@ -4852,15 +4856,6 @@ cs_post_mesh_attach_writer(int  mesh_id,
 
   cs_post_mesh_t *post_mesh = _cs_post_meshes + _mesh_id;
 
-  /* Check we have not output this mesh yet */
-
-  if (post_mesh->nt_last > -2)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error associating writer %d with mesh %d:"
-                "output has already been done for this mesh, "
-                "so mesh-writer association is locked."),
-              writer_id, mesh_id);
-
   /* Ignore if writer id already associated */
 
   for (int i = 0; i < post_mesh->n_writers; i++) {
@@ -4904,14 +4899,18 @@ cs_post_mesh_detach_writer(int  mesh_id,
 
   cs_post_mesh_t *post_mesh = _cs_post_meshes + _mesh_id;
 
-  /* Check we have not output this mesh yet */
+  /* Check we have not output this mesh yet for this writer */
 
-  if (post_mesh->nt_last > -2)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error unassociating writer %d from mesh %d:"
-                "output has already been done for this mesh, "
-                "so mesh-writer association is locked."),
-              writer_id, mesh_id);
+  for (int i = 0; i < post_mesh->n_writers; i++) {
+    if (post_mesh->writer_id[i] == _writer_id) {
+      if (post_mesh->nt_last[i] > -2)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error unassociating writer %d from mesh %d:"
+                    "output has already been done for this mesh, "
+                    "so mesh-writer association is locked."),
+                  writer_id, mesh_id);
+    }
+  }
 
   /* Ignore if writer id already associated */
 
@@ -5321,7 +5320,6 @@ cs_post_mesh_set_post_domain(int   mesh_id,
 void
 cs_post_free_mesh(int  mesh_id)
 {
-  int i;
   cs_post_mesh_t  *post_mesh = NULL;
 
   /* Search for requested mesh */
@@ -5330,8 +5328,7 @@ cs_post_free_mesh(int  mesh_id)
 
   /* Check if mesh was referenced for probe location */
 
-  for (i = 0; i < _cs_post_n_meshes; i++) {
-
+  for (int i = 0; i < _cs_post_n_meshes; i++) {
     post_mesh = _cs_post_meshes + i;
     if (post_mesh->locate_ref == _mesh_id)
       bft_error(__FILE__, __LINE__, 0,
@@ -5344,18 +5341,19 @@ cs_post_free_mesh(int  mesh_id)
 
   post_mesh = _cs_post_meshes + _mesh_id;
 
-  for (i = 0; i < post_mesh->n_writers; i++) {
+  for (int i = 0; i < post_mesh->n_writers; i++) {
 
     cs_post_writer_t *writer = _cs_post_writers + post_mesh->writer_id[i];
 
     fvm_writer_time_dep_t time_dep = fvm_writer_get_time_dep(writer->writer);
 
-    if (post_mesh->nt_last > -2 && time_dep != FVM_WRITER_FIXED_MESH)
+    if (post_mesh->nt_last[i] > -2 && time_dep != FVM_WRITER_FIXED_MESH)
       bft_error(__FILE__, __LINE__, 0,
                 _("Post-processing mesh number %d has been associated\n"
                   "to writer %d which allows time-varying meshes, so\n"
                   "it may not be freed.\n"),
                 mesh_id, writer->id);
+
   }
 
   /* Remove mesh if allowed */
@@ -5365,7 +5363,7 @@ cs_post_free_mesh(int  mesh_id)
   /* Finally, update free mesh ids */
 
   int min_id = _MIN_RESERVED_MESH_ID;
-  for (i = 0; i < _cs_post_n_meshes; i++) {
+  for (int i = 0; i < _cs_post_n_meshes; i++) {
     post_mesh = _cs_post_meshes + i;
     if (post_mesh->id < min_id)
       min_id = post_mesh->id;
@@ -6120,6 +6118,9 @@ cs_post_write_var(int                    mesh_id,
 
       _check_non_transient(writer, &nt_cur, &t_cur);
 
+      if (nt_cur < 0 && writer->tc.last_nt > 0)
+        continue;
+
       fvm_writer_export_field(writer->writer,
                               post_mesh->exp_mesh,
                               var_name,
@@ -6132,11 +6133,6 @@ cs_post_write_var(int                    mesh_id,
                               nt_cur,
                               t_cur,
                               (const void * *)var_ptr);
-
-      if (nt_cur >= 0) {
-        writer->tc.last_nt = nt_cur;
-        writer->tc.last_t = t_cur;
-      }
 
     }
 
@@ -6336,6 +6332,9 @@ cs_post_write_function(int                    mesh_id,
 
       _check_non_transient(writer, &nt_cur, &t_cur);
 
+      if (nt_cur < 0 && writer->tc.last_nt > 0)
+        continue;
+
       fvm_writer_export_field(writer->writer,
                               post_mesh->exp_mesh,
                               var_name,
@@ -6348,11 +6347,6 @@ cs_post_write_function(int                    mesh_id,
                               nt_cur,
                               t_cur,
                               (const void * *)var_ptr);
-
-      if (nt_cur >= 0) {
-        writer->tc.last_nt = nt_cur;
-        writer->tc.last_t = t_cur;
-      }
 
     }
 
@@ -6462,6 +6456,9 @@ cs_post_write_vertex_var(int                    mesh_id,
 
       _check_non_transient(writer, &nt_cur, &t_cur);
 
+      if (nt_cur < 0 && writer->tc.last_nt > 0)
+        continue;
+
       fvm_writer_export_field(writer->writer,
                               post_mesh->exp_mesh,
                               var_name,
@@ -6474,11 +6471,6 @@ cs_post_write_vertex_var(int                    mesh_id,
                               nt_cur,
                               t_cur,
                               (const void * *)var_ptr);
-
-      if (nt_cur >= 0) {
-        writer->tc.last_t = nt_cur;
-        writer->tc.last_t = t_cur;
-      }
 
     }
 
@@ -6573,6 +6565,9 @@ cs_post_write_vertex_function(int                    mesh_id,
 
       _check_non_transient(writer, &nt_cur, &t_cur);
 
+      if (nt_cur < 0 && writer->tc.last_nt > 0)
+        continue;
+
       fvm_writer_export_field(writer->writer,
                               post_mesh->exp_mesh,
                               var_name,
@@ -6585,11 +6580,6 @@ cs_post_write_vertex_function(int                    mesh_id,
                               nt_cur,
                               t_cur,
                               (const void * *)var_ptr);
-
-      if (nt_cur >= 0) {
-        writer->tc.last_nt = nt_cur;
-        writer->tc.last_t = t_cur;
-      }
 
     }
 
@@ -6750,11 +6740,6 @@ cs_post_write_particle_values(int                    mesh_id,
                               t_cur,
                               (const void * *)var_ptr);
 
-      if (nt_cur >= 0) {
-        writer->tc.last_nt = nt_cur;
-        writer->tc.last_t = t_cur;
-      }
-
     }
 
   }
@@ -6878,11 +6863,6 @@ cs_post_write_probe_values(int                              mesh_id,
                               nt_cur,
                               t_cur,
                               (const void **)var_ptr);
-
-      if (nt_cur >= 0) {
-        writer->tc.last_nt = nt_cur;
-        writer->tc.last_t = t_cur;
-      }
 
     }
 
@@ -7045,6 +7025,14 @@ cs_post_write_probe_function(int                              mesh_id,
 
     if (writer->active == 1) {
 
+      int nt_cur_w = nt_cur;
+      double t_cur_w = t_cur;
+
+      _check_non_transient(writer, &nt_cur, &t_cur);
+
+      if (nt_cur < 0 && writer->tc.last_nt > 0)
+        continue;
+
       cs_lnum_t  parent_num_shift[1] = {0};
 
       fvm_writer_export_field(writer->writer,
@@ -7056,14 +7044,9 @@ cs_post_write_probe_function(int                              mesh_id,
                               0, /* n_parent_lists */
                               parent_num_shift,
                               f->datatype,
-                              nt_cur,
-                              t_cur,
+                              nt_cur_w,
+                              t_cur_w,
                               (const void **)var_ptr);
-
-      if (nt_cur >= 0) {
-        writer->tc.last_nt = nt_cur;
-        writer->tc.last_t = t_cur;
-      }
 
     }
 
@@ -7596,6 +7579,23 @@ cs_post_time_step_output(const cs_time_step_t  *ts)
 
   int t_top_id = cs_timer_stats_switch(_post_out_stat_id);
 
+  /* Update time control of this writer
+     (before any actual output, to allow filtering such
+     as avoiding multiple writes of time-independent values) */
+
+  {
+    int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
+    double t_cur = (ts != NULL) ? ts->t_cur : 0.;
+
+    for (j = 0; j < _cs_post_n_writers; j++) {
+      cs_post_writer_t  *writer = _cs_post_writers + j;
+      if (writer->active == 1 && nt_cur > writer->tc.last_nt) {
+        writer->tc.last_nt = nt_cur;
+        writer->tc.last_t = t_cur;
+      }
+    }
+  }
+
   /* Output of variables by registered function instances */
   /*------------------------------------------------------*/
 
@@ -7963,6 +7963,7 @@ cs_post_finalize(void)
     for (j = 0; j < 4; j++)
       BFT_FREE(post_mesh->criteria[j]);
     BFT_FREE(post_mesh->writer_id);
+    BFT_FREE(post_mesh->nt_last);
     BFT_FREE(post_mesh->a_field_info);
   }
 
