@@ -4863,7 +4863,9 @@ cs_post_mesh_attach_writer(int  mesh_id,
   }
 
   BFT_REALLOC(post_mesh->writer_id, post_mesh->n_writers + 1, int);
+  BFT_REALLOC(post_mesh->nt_last, post_mesh->n_writers + 1, int);
   post_mesh->writer_id[post_mesh->n_writers] = _writer_id;
+  post_mesh->nt_last[post_mesh->n_writers] = -2;
   post_mesh->n_writers += 1;
 
   _update_mesh_writer_associations(post_mesh);
@@ -4917,6 +4919,7 @@ cs_post_mesh_detach_writer(int  mesh_id,
   for (i = 0, j = 0; i < post_mesh->n_writers; i++) {
     if (post_mesh->writer_id[i] != _writer_id) {
       post_mesh->writer_id[j] = post_mesh->writer_id[i];
+      post_mesh->nt_last[j] = post_mesh->nt_last[i];
       j++;
     }
   }
@@ -4925,6 +4928,7 @@ cs_post_mesh_detach_writer(int  mesh_id,
 
     post_mesh->n_writers = j;
     BFT_REALLOC(post_mesh->writer_id, post_mesh->n_writers, int);
+    BFT_REALLOC(post_mesh->nt_last, post_mesh->n_writers, int);
 
     _update_mesh_writer_associations(post_mesh);
   }
