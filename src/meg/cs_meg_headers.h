@@ -1,8 +1,8 @@
-#ifndef __CS_HEADERS_H__
-#define __CS_HEADERS_H__
+#ifndef __CS_MEG_HEADERS_H__
+#define __CS_MEG_HEADERS_H__
 
 /*============================================================================
- * Global code_saturne headers file for easier include
+ * All MEG-related header files for easier include
  *============================================================================*/
 
 /*
@@ -29,40 +29,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-/* Disable some compiler warnings */
-
-#if defined __INTEL_COMPILER
-#pragma warning disable 2259
-#endif
-
-/* Include headers by groups */
-
-#include "cs_bft_headers.h"
-#include "cs_base_headers.h"
-#include "fvm_headers.h"
-#include "cs_mesh_headers.h"
-#include "cs_alge_headers.h"
-#include "cs_atmo_headers.h"
-#include "cs_cfbl_headers.h"
-#include "cs_cdo_headers.h"
-#include "cs_cogz_headers.h"
-#include "cs_comb_headers.h"
-#include "cs_ctwr_headers.h"
-#include "cs_darc_headers.h"
-#include "cs_elec_headers.h"
-#include "cs_gui_headers.h"
-#include "cs_lagr_headers.h"
-#include "cs_meg_headers.h"
-#include "cs_pprt_headers.h"
-#include "cs_rad_headers.h"
-#include "cs_turbulence_headers.h"
+#include "cs_meg_prototypes.h"
 
 /*----------------------------------------------------------------------------*/
 
-#if defined(USE_NEPTUNE_CFD)
-#include "nc_c_headers.h"
-#endif
-
-/*----------------------------------------------------------------------------*/
-
-#endif /* __CS_HEADERS_H__ */
+#endif /* __CS_MEG_HEADERS_H__ */

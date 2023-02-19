@@ -57,9 +57,9 @@ BEGIN_C_DECLS
 /*!
  * \brief This function is used to define profile coordinates.
  *
- * \param[in]       name          name of matching profile
- * \param[in]       n_coords      number of point coordinates
- * \param[in, out]  coords        point coordinates
+ * \param[in]      name          name of matching profile
+ * \param[in]      n_coords      number of point coordinates
+ * \param[in, out] coords        point coordinates
  */
 /*----------------------------------------------------------------------------*/
 
@@ -69,10 +69,9 @@ cs_meg_post_profiles(const char       *name,
                      int               n_coords,
                      cs_real_t         coords[][3])
 {
-  /* Avoid compilation warnings */
-  CS_UNUSED(name);
-  CS_UNUSED(n_coords);
-  CS_UNUSED(coords);
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(n_coords);
+  CS_NO_WARN_IF_UNUSED(coords);   /* Avoid compiler warnings */
 }
 
 /*----------------------------------------------------------------------------*/

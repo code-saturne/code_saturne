@@ -90,28 +90,40 @@ END_C_DECLS
 
 _function_header = { \
 'vol':"""void
-cs_meg_volume_function(const cs_zone_t  *zone,
+cs_meg_volume_function(const char      *zone_name,
+                       const cs_lnum_t  n_elts,
+                       const cs_lnum_t *elt_ids,
+                       const cs_real_t  xyz[][3],
                        cs_field_t       *f[])
 {
 """,
 'bnd':"""cs_real_t *
-cs_meg_boundary_function(const cs_zone_t *zone,
-                         const char      *field_name,
-                         const char      *condition)
+cs_meg_boundary_function(const char       *zone_name,
+                         const cs_lnum_t   n_elts,
+                         const cs_lnum_t  *elt_ids,
+                         const cs_real_t   xyz[][3],
+                         const char       *field_name,
+                         const char       *condition)
 {
   cs_real_t *new_vals = NULL;
 
 """,
 'src':"""cs_real_t *
-cs_meg_source_terms(const cs_zone_t *zone,
-                    const char      *name,
-                    const char      *source_type)
+cs_meg_source_terms(const char       *zone_name,
+                    const cs_lnum_t   n_elts,
+                    const cs_lnum_t  *elt_ids,
+                    const cs_real_t   xyz[][3],
+                    const char       *name,
+                    const char       *source_type)
 {
   cs_real_t *new_vals = NULL;
 
 """,
 'ini':"""cs_real_t *
-cs_meg_initialization(const cs_zone_t *zone,
+cs_meg_initialization(const char      *zone_name,
+                      const cs_lnum_t  n_elts,
+                      const cs_lnum_t *elt_ids,
+                      const cs_real_t  xyz[][3],
                       const char      *field_name)
 {
   cs_real_t *new_vals = NULL;
@@ -194,10 +206,10 @@ _pkg_glob_struct = {'code_saturne':'cs_glob_fluid_properties',
 _base_tokens = {'dt':'const cs_real_t dt = cs_glob_time_step->dt[0];',
                 't':'const cs_real_t t = cs_glob_time_step->t_cur;',
                 'iter':'const int iter = cs_glob_time_step->nt_cur;',
-                'volume':'const cs_real_t volume = zone->measure;',
-                'fluid_volume':'const cs_real_t fluid_volume = zone->f_measure;',
-                'surface':'const cs_real_t surface = zone->measure;',
-                'fluid_surface':'const cs_real_t fluid_surface = zone->f_measure;',
+                'volume':'const cs_real_t volume = cs_volume_zone_by_name(zone_name)->measure;',
+                'fluid_volume':'const cs_real_t fluid_volume = cs_volume_zone_by_name(zone_name)->f_measure;',
+                'surface':'const cs_real_t surface = cs_boundary_zone_by_name(zone_name)->measure;',
+                'fluid_surface':'const cs_real_t fluid_surface = cs_boundary_zone_by_name(zone_name)->f_measure;',
                 'pi':'const cs_real_t pi = cs_math_pi;',
                 'uref':'const cs_real_t uref = cs_glob_turb_ref_values->uref;',
                 'almax':'const cs_real_t almax = cs_glob_turb_ref_values->almax;',
@@ -433,9 +445,6 @@ class meg_to_c_interpreter:
             ic = coords.index(kc)
             loop_tokens[kc] = 'const cs_real_t %s = xyz[c_id][%s];' % (kc, str(ic))
 
-        glob_tokens['xyz'] = \
-        'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;'
-
         # Notebook variables
         for kn in self.notebook.keys():
             glob_tokens[kn] = \
@@ -517,12 +526,12 @@ class meg_to_c_interpreter:
         for i in range(1,len(nsplit)):
             usr_blck += tab + '    strcmp(f[%d]->name, "%s") == 0 &&\n' % (i, nsplit[i])
 
-        usr_blck += tab + '    strcmp(zone->name, "%s") == 0) {\n' % (zone)
+        usr_blck += tab + '    strcmp(zone_name, "%s") == 0) {\n' % (zone)
 
         usr_blck += usr_defs
 
-        usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < zone->n_elts; e_id++) {\n'
-        usr_blck += 3*tab + 'cs_lnum_t c_id = zone->elt_ids[e_id];\n'
+        usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {\n'
+        usr_blck += 3*tab + 'cs_lnum_t c_id = elt_ids[e_id];\n'
 
         usr_blck += usr_code
 
@@ -577,34 +586,32 @@ class meg_to_c_interpreter:
 
         # allocate the new array
 
-        val_str    = 'zone->n_elts'
-        ids_str    = 'zone->elt_ids'
-        elt_id_str = 'f_id'
-        if element_type == 'vertex':
-            val_str    = 'n_vtx'
-            ids_str    = 'vtx_ids'
-            elt_id_str = 'v_id'
+#        ids_str    = 'zone->elt_ids'
+#        elt_id_str = 'f_id'
+#        if element_type == 'vertex':
+#           ids_str    = 'vtx_ids'
+#            elt_id_str = 'v_id'
 
         if need_for_loop:
             # If values are stored for vertices, change selectors.
-            if element_type == 'vertex':
+#            if element_type == 'vertex':
+#
+#                usr_defs += ntabs*tab + 'cs_lnum_t  %s;\n' % (val_str)
+#                usr_defs += ntabs*tab + 'cs_lnum_t *%s;\n' % (ids_str)
+#                usr_defs += ntabs*tab
+#                usr_defs += 'BFT_MALLOC(%s, cs_glob_mesh->n_vertices, cs_lnum_t);\n\n' % (ids_str)
 
-                usr_defs += ntabs*tab + 'cs_lnum_t  %s;\n' % (val_str)
-                usr_defs += ntabs*tab + 'cs_lnum_t *%s;\n' % (ids_str)
-                usr_defs += ntabs*tab
-                usr_defs += 'BFT_MALLOC(%s, cs_glob_mesh->n_vertices, cs_lnum_t);\n\n' % (ids_str)
-
-                # Vertices selector function
-                b_f_vtx_sel_fct = 'cs_selector_get_b_face_vertices_list_by_ids'
-                b_f_vtx_sel_tab = ' '*(len(b_f_vtx_sel_fct)+1)
-
-                usr_defs += ntabs*tab + '%s(zone->n_elts,\n' % (b_f_vtx_sel_fct)
-                usr_defs += ntabs*tab + '%szone->elt_ids,\n' % (b_f_vtx_sel_tab)
-                usr_defs += ntabs*tab + '%s&%s,\n' % (b_f_vtx_sel_tab, val_str)
-                usr_defs += ntabs*tab + '%s%s);\n' % (b_f_vtx_sel_tab, ids_str)
-
-            usr_defs += ntabs*tab + 'const cs_lnum_t vals_size = %s * %d;\n' \
-                    % (val_str, len(required))
+#                # Vertices selector function
+#                b_f_vtx_sel_fct = 'cs_selector_get_b_face_vertices_list_by_ids'
+#                b_f_vtx_sel_tab = ' '*(len(b_f_vtx_sel_fct)+1)
+#
+#                usr_defs += ntabs*tab + '%s(zone->n_elts,\n' % (b_f_vtx_sel_fct)
+#                usr_defs += ntabs*tab + '%szone->elt_ids,\n' % (b_f_vtx_sel_tab)
+#                usr_defs += ntabs*tab + '%s&%s,\n' % (b_f_vtx_sel_tab, val_str)
+#                usr_defs += ntabs*tab + '%s%s);\n' % (b_f_vtx_sel_tab, ids_str)
+#
+            usr_defs += ntabs*tab + 'const cs_lnum_t vals_size = n_elts * %d;\n' \
+                    % (len(required))
         else:
             usr_defs += ntabs*tab + 'const cs_lnum_t vals_size = %d;\n' % (len(required))
 
@@ -621,15 +628,8 @@ class meg_to_c_interpreter:
         # Coordinates
         for kc in coords:
             ic = coords.index(kc)
-            loop_tokens[kc] = 'const cs_real_t %s = xyz[%s][%s];' \
-                    % (kc, elt_id_str, str(ic))
-
-        if element_type == 'vertex':
-            glob_tokens['xyz'] = \
-            'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh->vtx_coord;'
-        else:
-            glob_tokens['xyz'] = \
-            'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;'
+            loop_tokens[kc] = 'const cs_real_t %s = xyz[b_e_id][%s];' \
+                    % (kc, str(ic))
 
         # Notebook variables
         for kn in self.notebook.keys():
@@ -641,7 +641,7 @@ class meg_to_c_interpreter:
             glob_tokens[f[0]] = \
             'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;' % (f[0], f[1])
             loop_tokens[f[0]] = \
-            'const cs_real_t %s = %s_vals[%s];' % (f[0], f[0], elt_id_str)
+            'const cs_real_t %s = %s_vals[b_e_id];' % (f[0], f[0])
         # ------------------------
 
         if need_for_loop:
@@ -663,22 +663,19 @@ class meg_to_c_interpreter:
         # Write the block
         block_cond  = tab + 'if (strcmp(field_name, "%s") == 0 &&\n' % (field_name)
         block_cond += tab + '    strcmp(condition, "%s") == 0 &&\n' % (cname)
-        block_cond += tab + '    strcmp(zone->name, "%s") == 0) {\n' % (zone)
+        block_cond += tab + '    strcmp(zone_name, "%s") == 0) {\n' % (zone)
         usr_blck = block_cond + '\n'
 
         usr_blck += usr_defs
 
         if need_for_loop:
-            usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < %s; e_id++) {\n' % (val_str)
-            usr_blck += 3*tab + 'cs_lnum_t %s = %s[e_id];\n' % (elt_id_str, ids_str)
+            usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {\n'
+            usr_blck += 3*tab + 'cs_lnum_t b_e_id = elt_ids[e_id];\n'
 
         usr_blck += usr_code
 
         if need_for_loop:
             usr_blck += 2*tab + '}\n'
-
-        if element_type == 'vertex':
-            usr_blck += 2*tab + 'BFT_FREE(%s);\n' % ids_str
 
         usr_blck += tab + '}\n'
 
@@ -717,7 +714,7 @@ class meg_to_c_interpreter:
         tab   = '  '
         ntabs = 2
 
-        usr_defs += ntabs*tab + 'const cs_lnum_t vals_size = zone->n_elts * %d;\n' % (len(required))
+        usr_defs += ntabs*tab + 'const cs_lnum_t vals_size = n_elts * %d;\n' % (len(required))
         usr_defs += ntabs*tab + 'BFT_MALLOC(new_vals, vals_size, cs_real_t);\n'
         usr_defs += '\n'
 
@@ -735,9 +732,6 @@ class meg_to_c_interpreter:
         for kc in coords:
             ic = coords.index(kc)
             loop_tokens[kc] = 'const cs_real_t %s = xyz[c_id][%s];' % (kc, str(ic))
-
-        glob_tokens['xyz'] = \
-        'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;'
 
         # For momentum also define u,v and w:
         if source_type == "momentum_source_term":
@@ -780,15 +774,15 @@ class meg_to_c_interpreter:
             usr_defs += parsed_exp[1]
 
         # Write the block
-        block_cond  = tab + 'if (strcmp(zone->name, "%s") == 0 &&\n' % (zone)
+        block_cond  = tab + 'if (strcmp(zone_name, "%s") == 0 &&\n' % (zone)
         block_cond += tab + '    strcmp(name, "%s") == 0 && \n' % (name)
         block_cond += tab + '    strcmp(source_type, "%s") == 0) {\n' % (source_type)
         usr_blck = block_cond + '\n'
 
         usr_blck += usr_defs
 
-        usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < zone->n_elts; e_id++) {\n'
-        usr_blck += 3*tab + 'cs_lnum_t c_id = zone->elt_ids[e_id];\n'
+        usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {\n'
+        usr_blck += 3*tab + 'cs_lnum_t c_id = elt_ids[e_id];\n'
 
         usr_blck += usr_code
 
@@ -826,7 +820,7 @@ class meg_to_c_interpreter:
         tab   = '  '
         ntabs = 2
 
-        usr_defs += ntabs*tab + 'const cs_lnum_t vals_size = zone->n_elts * %d;\n' % (len(required))
+        usr_defs += ntabs*tab + 'const cs_lnum_t vals_size = n_elts * %d;\n' % (len(required))
         usr_defs += ntabs*tab + 'BFT_MALLOC(new_vals, vals_size, cs_real_t);\n'
         usr_defs += '\n'
 
@@ -844,9 +838,6 @@ class meg_to_c_interpreter:
         for kc in coords:
             ic = coords.index(kc)
             loop_tokens[kc] = 'const cs_real_t %s = xyz[c_id][%s];' % (kc, str(ic))
-
-        glob_tokens['xyz'] = \
-        'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;'
 
         # Notebook variables
         for kn in self.notebook.keys():
@@ -895,14 +886,14 @@ class meg_to_c_interpreter:
             usr_defs += parsed_exp[1]
 
         # Write the block
-        block_cond  = tab + 'if (strcmp(zone->name, "%s") == 0 &&\n' % (zone)
+        block_cond  = tab + 'if (strcmp(zone_name, "%s") == 0 &&\n' % (zone)
         block_cond += tab + '    strcmp(field_name, "%s") == 0) {\n' % (name)
         usr_blck = block_cond + '\n'
 
         usr_blck += usr_defs
 
-        usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < zone->n_elts; e_id++) {\n'
-        usr_blck += 3*tab + 'cs_lnum_t c_id = zone->elt_ids[e_id];\n'
+        usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {\n'
+        usr_blck += 3*tab + 'cs_lnum_t c_id = elt_ids[e_id];\n'
 
         usr_blck += usr_code
 

@@ -738,12 +738,6 @@ class cs_math_parser:
                     if tk not in known_symbols:
                         known_symbols.append(tk)
 
-                    # If a local coordinate is used, we need to define the
-                    # global coordinates pointer
-                    if tk in ['x', 'y', 'z'] and 'xyz' not in known_symbols:
-                        known_symbols.append('xyz')
-                        usr_defs.append(glob_tokens['xyz']+'\n')
-
                     # For momentum source terms, check for velocity
                     if func_type == "src" and tk in ['u','v','w']:
                         if 'velocity' not in known_symbols:
@@ -787,7 +781,7 @@ class cs_math_parser:
                 elif func_type == 'bnd':
                     ir = req.index(tk)
                     if need_for_loop:
-                        new_v = 'new_vals[%d * zone->n_elts + e_id]' % (ir)
+                        new_v = 'new_vals[%d * n_elts + e_id]' % (ir)
                     else:
                         new_v = 'new_vals[%d]' % (ir)
 

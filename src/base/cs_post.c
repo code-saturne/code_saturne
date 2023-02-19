@@ -56,6 +56,7 @@
 #include "cs_lagr_extract.h"
 #include "cs_log.h"
 #include "cs_lagr_query.h"
+#include "cs_meg_prototypes.h"
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
 #include "cs_mesh_location.h"
