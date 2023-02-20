@@ -11,6 +11,8 @@ Release 7.3.1 (not released yet)
 
 ### Bug fixes:
 
+- Rij-epsilon turbulence model: fix clipping (coupled components).
+
 - Fix possible crash in cartesian mesh creation in user function.
   Bug introduced in commit 45202bee (02/11/22)
 

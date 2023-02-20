@@ -3631,11 +3631,11 @@ cs_turbulence_rij_clip(cs_lnum_t  n_cells)
           cvar_var2 = cvar_rij[c_id][1];
         }
         else if (ii == 4) {
-          cvar_var1 = cvar_rij[c_id][0];
+          cvar_var1 = cvar_rij[c_id][1];
           cvar_var2 = cvar_rij[c_id][2];
         }
         else if (ii == 5) {
-          cvar_var1 = cvar_rij[c_id][1];
+          cvar_var1 = cvar_rij[c_id][0];
           cvar_var2 = cvar_rij[c_id][2];
         }
 
