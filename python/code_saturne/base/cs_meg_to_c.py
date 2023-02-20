@@ -741,7 +741,6 @@ class meg_to_c_interpreter:
                 loop_tokens[key] = \
                 'const cs_real_t %s = vel[c_id][%d];' % (key, i)
 
-
         # Notebook variables
         for kn in self.notebook.keys():
             glob_tokens[kn] = \
@@ -1850,9 +1849,10 @@ class meg_to_c_interpreter:
                     zone_name = zone.getLabel()
 
                     # Velocity
-                    exp, req, sym = im.getVelocityFormulaComponents(z_id)
-                    self.init_block('ini', zone_name, 'velocity',
-                                    exp, req, sym, [])
+                    if im.getVelocityFormula(z_id):
+                        exp, req, sym = im.getVelocityFormulaComponents(z_id)
+                        self.init_block('ini', zone_name, 'velocity',
+                                        exp, req, sym, [])
 
                     # Turbulence
                     tin = im.node_turb.xmlGetNode('initialization', zone_id=z_id)
