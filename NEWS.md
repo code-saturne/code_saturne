@@ -15,6 +15,8 @@ Release 8.0.0 (unreleased)
   for instance when defininig a property, a boundary condition or a
   source term by array. This mainly occurs when using CDO schemes.
 
+- The user can now specify a custom thermodynamic pressure.
+
 ### Architectural changes:
 
 - Update and improve build configuration automation, especially
