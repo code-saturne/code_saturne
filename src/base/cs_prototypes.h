@@ -616,6 +616,34 @@ cs_user_physical_properties_t_to_h(cs_domain_t      *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief User function to define a custom law for the thermodynamic pressure.
+ *
+ * Allows to define a custom law for the constant uniform thermodynamic
+ * pressure (whenn \ref cs_velocity_pressure_model_t::idilat = 3 or
+ * \ref cs_fluid_properties_t::ipthrm = 1).
+ *
+ * The density is then updated (in \ref pthrbm.f90) as:
+ * \f[\rho^{n+1} =\rho^{n} \cdot \frac{P_{th}^{n+1}}{P_{th}^{n}}\f].
+ *
+ * \section Usage
+ *
+ * Here is an extremely basic example where the thermodynamic pressure
+ * increases by 10.0 at every iteration.
+ * \code{.c}
+ * const cs_real_t delta_p = 10.0;
+ *
+ * td_p = cs_glob_physical_properties->pther + delta_p;
+ * \endcode
+ *
+ * \param[in, out]  td_p  Updated value of the thermodynamic pressure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_physical_properties_td_pressure(cs_real_t  *td_p);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief User modification of the Smagorinsky constant for the
  *        dynamic Smagorinsky model.
  *

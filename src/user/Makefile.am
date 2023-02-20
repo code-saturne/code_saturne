@@ -90,7 +90,6 @@ userfiles = \
 cs_user_1d_wall_thermal.c \
 cs_user_atmospheric_model.f90 \
 cs_user_boundary_conditions.c \
-cs_user_wall_condensation.c \
 cs_user_coupling.c \
 cs_user_electric_scaling.c \
 cs_user_extra_operations.c \
@@ -116,6 +115,7 @@ cs_user_radiative_transfer_bcs.c \
 cs_user_solver.c \
 cs_user_source_terms.c \
 cs_user_turbomachinery.c \
+cs_user_wall_condensation.c \
 cs_user_zones.c \
 cs_user_boundary_conditions_ale.f90 \
 usatch.f90

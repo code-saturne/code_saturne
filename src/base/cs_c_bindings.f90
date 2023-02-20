@@ -2080,6 +2080,17 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C user function for custom uniform thermodynamic pressure
+
+    subroutine cs_user_physical_properties_td_pressure(new_pther)  &
+      bind(C, name='cs_user_physical_properties_td_pressure')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), intent(out) :: new_pther
+    end subroutine cs_user_physical_properties_td_pressure
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C user function for extra operations
 
     subroutine user_extra_operations_initialize()  &
