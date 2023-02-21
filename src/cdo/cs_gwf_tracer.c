@@ -897,7 +897,7 @@ _integrate_sat_precip_tracer(const cs_cdo_connect_t         *connect,
         }
 
         /* results[0] => quantity of tracer in the liquid phase
-         * results[1] => quantity of tracer in the precipate state */
+         * results[1] => quantity of tracer in the precipitate state */
 
         results[0] += (sat_moisture + tc->rho_kd[s]) * _integral;
         results[1] += precip;
@@ -925,7 +925,8 @@ _integrate_sat_precip_tracer(const cs_cdo_connect_t         *connect,
 
         double  _integral = 0.25*cdoq->cell_vol[c_id]*c_vals[c_id];
         double  precip = tc->precip_mass[c_id];
-        cs_real_t  *precip_mass_shifted = tc->precip_mass + cdoq->n_cells;
+
+        const cs_real_t  *precip_mass_shifted = tc->precip_mass + cdoq->n_cells;
 
         for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
           _integral += 0.75 * cdoq->pvol_vc[j] * v_vals[c2v->ids[j]];
@@ -933,7 +934,7 @@ _integrate_sat_precip_tracer(const cs_cdo_connect_t         *connect,
         }
 
         /* results[0] => quantity of tracer in the liquid phase
-         * results[1] => quantity of tracer in the precipate state */
+         * results[1] => quantity of tracer in the precipitate state */
 
         results[0] += (sat_moisture + tc->rho_kd[s]) * _integral;
         results[1] += precip;
@@ -959,6 +960,7 @@ _integrate_sat_precip_tracer(const cs_cdo_connect_t         *connect,
  *        over a given set of cells. This integral turns out to be exact for
  *        linear functions.
  *        Case of a fully saturated hydraulic model.
+ *        Parallel synchronized is done inside this function.
  *
  * \param[in]      connect   pointer to a \ref cs_cdo_connect_t structure
  * \param[in]      cdoq      pointer to a \ref cs_cdo_quantities_t structure
@@ -1054,7 +1056,9 @@ _integrate_sat_tracer(const cs_cdo_connect_t           *connect,
  * \brief Compute the integral of the molar concentration of a tracer field
  *        over a given set of cells. This integral turns out to be exact for
  *        linear functions.
- *        General case.
+ *        Case of a single-phase unsaturated hydraulic model without
+ *        precipitation.
+ *        Parallel synchronized is done inside this function.
  *
  * \param[in]      connect   pointer to a \ref cs_cdo_connect_t structure
  * \param[in]      cdoq      pointer to a \ref cs_cdo_quantities_t structure
@@ -1130,6 +1134,114 @@ _integrate_tracer(const cs_cdo_connect_t          *connect,
          * results[1] => quantity of tracer in the precipate state */
 
         results[0] += (moisture_val[c_id] + tc->rho_kd[c2s[c_id]]) * _integral;
+
+      } /* Loop on the selected cells */
+    }
+    break; /* CS_SPACE_SCHEME_CDOVCB */
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, " %s: Invalid space scheme", __func__);
+    break;
+
+  } /* End of switch on the space discretization */
+
+  /* Parallel synchronization (sum over all ranks) */
+
+  cs_parall_sum(1, CS_DOUBLE, results);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the integral of the molar concentration of a tracer field
+ *        over a given set of cells. This integral turns out to be exact for
+ *        linear functions.
+ *        Case of a single-phase unsaturated hydraulic model with precipitation.
+ *        Parallel synchronized is done inside this function.
+ *
+ * \param[in]      connect   pointer to a \ref cs_cdo_connect_t structure
+ * \param[in]      cdoq      pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]      eq        equation related to a tracer
+ * \param[in]      z         pointer to a volume zone structure
+ * \param[in]      context   pointer to a context structure for a tracer
+ * \param[in, out] results   resulting array of values
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_integrate_precip_tracer(const cs_cdo_connect_t          *connect,
+                         const cs_cdo_quantities_t       *cdoq,
+                         const cs_equation_t             *eq,
+                         const cs_zone_t                 *z,
+                         void                            *context,
+                         double                           results[])
+{
+  cs_gwf_tracer_default_context_t  *tc = context;
+  assert(tc != NULL);
+
+  const short int  *c2s = cs_gwf_soil_get_cell2soil();
+  const cs_real_t  *moisture_val = cs_shared_liquid_saturation;
+
+  if (moisture_val == NULL)
+    bft_error(__FILE__, __LINE__, 0, " %s: \"moisture_content\" not defined",
+              __func__);
+
+  switch (cs_equation_get_space_scheme(eq)) {
+
+  case CS_SPACE_SCHEME_CDOVB:
+    {
+      const cs_real_t  *v_vals = cs_equation_get_vertex_values(eq, false);
+      const cs_adjacency_t  *c2v = connect->c2v;
+
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+
+        const cs_lnum_t  c_id = (z->elt_ids == NULL) ? i : z->elt_ids[i];
+
+        double  _integral = 0., precip = 0.;
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+          _integral += cdoq->pvol_vc[j] * v_vals[c2v->ids[j]];
+          precip += tc->precip_mass[j];
+        }
+
+        /* results[0] => quantity of tracer in the liquid phase
+         * results[1] => quantity of tracer in the precipitate state */
+
+        results[0] += (moisture_val[c_id] + tc->rho_kd[c2s[c_id]]) * _integral;
+        results[1] += precip;
+
+      } /* Loop on the selected cells */
+    }
+    break; /* CS_SPACE_SCHEME_CDOVB */
+
+  case CS_SPACE_SCHEME_CDOVCB:
+    {
+      const cs_real_t  *v_vals = cs_equation_get_vertex_values(eq, false);
+      const cs_real_t  *c_vals = cs_equation_get_cell_values(eq, false);
+      const cs_adjacency_t  *c2v = connect->c2v;
+
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+
+        const cs_lnum_t  c_id = (z->elt_ids == NULL) ? i : z->elt_ids[i];
+
+        /* Shares between cell and vertex unknowns:
+           - the cell unknown stands for 1/4 of the cell volume
+           - the vertex unknown stands for 3/4 of the dual cell volume
+        */
+
+        double  _integral = 0.25*cdoq->cell_vol[c_id]*c_vals[c_id];
+        double  precip = tc->precip_mass[c_id];
+
+        const cs_real_t  *precip_mass_shifted = tc->precip_mass + cdoq->n_cells;
+
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+          _integral += 0.75 * cdoq->pvol_vc[j] * v_vals[c2v->ids[j]];
+          precip += precip_mass_shifted[j];
+        }
+
+        /* results[0] => quantity of tracer in the liquid phase
+         * results[1] => quantity of tracer in the precipitate state */
+
+        results[0] += (moisture_val[c_id] + tc->rho_kd[c2s[c_id]]) * _integral;
+        results[1] += precip;
 
       } /* Loop on the selected cells */
     }
@@ -1269,22 +1381,17 @@ _create_default_tracer_context(cs_gwf_tracer_t    *tracer,
     }
     else
       tracer->integrate = _integrate_sat_tracer;
-
     break;
 
   case CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE:
     if (tracer->model & CS_GWF_TRACER_PRECIPITATION) {
 
       tracer->update_precipitation = _update_precipitation_vb;
+      tracer->integrate = _integrate_precip_tracer;
 
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf("%s: Precipitation effect are taken into account"
-                 " for tracer \"%s\" but no tracer integration.\n",
-                 __func__, cs_equation_get_name(tracer->equation));
     }
     else
       tracer->integrate = _integrate_tracer;
-
     break;
 
   default:
@@ -2996,6 +3103,12 @@ cs_gwf_tracer_integrate(const cs_cdo_connect_t     *connect,
 
   double  results[2] = {0, 0};
 
+  if (tracer->integrate == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: No function is set to integrate the tracer \"%s\"\n",
+              __func__, (tracer->equation == NULL) ?
+              "" : cs_equation_get_name(tracer->equation));
+
   tracer->integrate(connect, cdoq, tracer->equation, zone, tracer->context,
                     results);
 
@@ -3043,6 +3156,12 @@ cs_gwf_tracer_integrate_by_terms(const cs_cdo_connect_t     *connect,
 
   const int  z_id = cs_volume_zone_id_by_name(z_name);
   const cs_zone_t  *zone = cs_volume_zone_by_id(z_id);
+
+  if (tracer->integrate == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: No function is set to integrate the tracer \"%s\"\n",
+              __func__, (tracer->equation == NULL) ?
+              "" : cs_equation_get_name(tracer->equation));
 
   tracer->integrate(connect, cdoq, tracer->equation, zone, tracer->context,
                     results);
