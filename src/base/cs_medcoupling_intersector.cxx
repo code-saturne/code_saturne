@@ -553,7 +553,7 @@ _assign_vertex_coords(MEDCouplingUMesh   *med_mesh,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _destroy_intersector(cs_medcoupling_intersector_t *mi)
 {
   BFT_FREE(mi->name);
@@ -579,7 +579,7 @@ _destroy_intersector(cs_medcoupling_intersector_t *mi)
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _compute_intersection_surfaces(cs_medcoupling_intersector_t *mi)
 {
   /* If local mesh is empty, nothing to do... */
@@ -633,7 +633,7 @@ _compute_intersection_surfaces(cs_medcoupling_intersector_t *mi)
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _compute_intersection_volumes(cs_medcoupling_intersector_t *mi)
 {
   /* If local mesh is empty, nothing to do... */
@@ -697,7 +697,7 @@ _compute_intersection_volumes(cs_medcoupling_intersector_t *mi)
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _compute_intersection_volume_surfaces(cs_medcoupling_intersector_t *mi)
 {
   /* If local mesh is empty, nothing to do... */
@@ -755,7 +755,7 @@ _compute_intersection_volume_surfaces(cs_medcoupling_intersector_t *mi)
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _dump_medcoupling_mesh(MEDCouplingUMesh *m,
                        const char       *prefix,
                        const char       *filename)
