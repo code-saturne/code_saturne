@@ -157,9 +157,9 @@ _set_key(cs_equation_param_t   *eqp,
     if (strcmp(keyval, "none") == 0)
       eqp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_NONE;
     else if (strcmp(keyval, "taylor") == 0)
-      eqp->adv_formulation = CS_PARAM_ADVECTION_EXTRAPOL_TAYLOR_2;
+      eqp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_TAYLOR_2;
     else if (strcmp(keyval, "adams_bashforth") == 0)
-      eqp->adv_formulation = CS_PARAM_ADVECTION_EXTRAPOL_ADAMS_BASHFORTH_2;
+      eqp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_ADAMS_BASHFORTH_2;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
