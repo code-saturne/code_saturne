@@ -3300,12 +3300,12 @@ cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain)
   /* Affect source term for the equation
      ----------------------------------- */
 
-  cs_real_t *pred_divu = prcdo->div_st;
+  cs_array_real_fill_zero(n_cells_ext, prcdo->div_st);
 
   cs_equation_add_source_term_by_array(eqp,
                                        NULL,  /* all cells */
                                        cs_flag_primal_cell,
-                                       pred_divu,
+                                       prcdo->div_st,
                                        false, /* is owner */
                                        true); /* full length */
 
@@ -3337,8 +3337,7 @@ cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain)
 
     }
 
-  cs_real_t ic_value = 0.;
-  cs_equation_add_ic_by_value(eqp, NULL, &ic_value);
+  } /* Loop on pressure definitions */
 }
 
 /*----------------------------------------------------------------------------*/
