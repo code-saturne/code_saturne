@@ -2776,11 +2776,10 @@ _pressure_correction_fv(int        iterns,
  *  \dot{m}^{n+1} = \dot{m}^{n}
  *                 - Hodge \cdot GRAD \left(\delta p \right)
  * \f]
- * \param[in]       vel       velocity
- * \param[in]       coefav    boundary condition array for the variable
- *                            (explicit part)
- * \param[in]       coefbv    boundary condition array for the variable
- *                            (implicit part)
+ *
+ * \param[in] vel     velocity
+ * \param[in] coefav  boundary condition array for the variable (explicit part)
+ * \param[in] coefbv  boundary condition array for the variable (implicit part)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2789,24 +2788,22 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
                          cs_real_t  coefav[restrict][3],
                          cs_real_t  coefbv[restrict][3][3])
 {
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
-
-  const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_t n_i_faces = m->n_i_faces;
-  const cs_lnum_t n_b_faces = m->n_b_faces;
-
+  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
   const cs_cdo_quantities_t  *quant = cs_glob_domain->cdo_quantities;
   const cs_cdo_connect_t  *connect = cs_glob_domain->connect;
 
-  cs_field_t *f_p = CS_F_(p);
-  const cs_field_t *f_vel = CS_F_(vel);
+  const cs_lnum_t  n_cells = m->n_cells;
+  const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t  n_i_faces = m->n_i_faces;
+  const cs_lnum_t  n_b_faces = m->n_b_faces;
 
+  cs_field_t  *f_p = CS_F_(p);
+  const cs_field_t  *f_vel = CS_F_(vel);
   assert((cs_real_t *)vel == f_vel->val);
 
-  const cs_equation_param_t *eqp_u = cs_field_get_equation_param_const(f_vel);
-  const cs_equation_param_t *eqp_p = cs_field_get_equation_param_const(f_p);
+  const cs_equation_param_t  *eqp_u = cs_field_get_equation_param_const(f_vel);
+  const cs_equation_param_t  *eqp_p = cs_field_get_equation_param_const(f_p);
 
   const cs_velocity_pressure_model_t  *vp_model
     = cs_glob_velocity_pressure_model;
@@ -2815,63 +2812,57 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
 
   const int idilat = vp_model->idilat;
   const int iphydr = vp_param->iphydr;
-
   const int compressible_flag
     = cs_glob_physical_model_flag[CS_COMPRESSIBLE];
 
   cs_pressure_correction_cdo_t *prcdo = cs_pressure_correction_cdo;
   if (prcdo == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_prcdo));
+
   cs_equation_t  *eq_dp = prcdo->pressure_incr;
-
-  cs_real_t *restrict dt = CS_F_(dt)->val;
-
-  cs_real_t *c_visc = NULL;
 
   /* Allocate temporary arrays */
 
-  cs_real_3_t *wrk;
+  cs_real_3_t  *wrk = NULL;
   BFT_MALLOC(wrk, n_cells_ext, cs_real_3_t);
 
-  cs_field_t *f_iddp = cs_field_by_id(eq_dp->field_id);
-  cs_real_t *phi = f_iddp->val;
-
-  cs_real_t *divu = prcdo->div_st;
+  cs_field_t  *f_dp = cs_field_by_id(eq_dp->field_id);
+  cs_real_t  *phi = f_dp->val;
+  cs_real_t  *divu = prcdo->div_st;
 
   /* Associate pointers to pressure diffusion coefficients */
-  c_visc = dt;
+
+  cs_real_t  *restrict dt = CS_F_(dt)->val;
+  cs_real_t  *c_visc = dt;
 
   /* Index of the field */
-  cs_solving_info_t *sinfo
+
+  cs_solving_info_t  *sinfo
     = cs_field_get_key_struct_ptr(f_p,
                                   cs_field_key_id("solving_info"));
 
   /* Physical quantities */
 
-  cs_real_t *crom = NULL;
-  cs_real_t *brom = NULL;
+  cs_real_t  *crom_eos = CS_F_(rho)->val;
+  cs_real_t  *brom_eos = CS_F_(rho_b)->val;
+  cs_real_t  *crom = crom_eos;
+  cs_real_t  *brom = brom_eos;
 
-  cs_real_t *crom_eos = CS_F_(rho)->val;
-  cs_real_t *brom_eos = CS_F_(rho_b)->val;
+  cs_real_t  *cvar_pr = f_p->vals[0];
 
-  crom = crom_eos;
-  brom = brom_eos;
+  const int  kimasf = cs_field_key_id("inner_mass_flux_id");
+  const int  kbmasf = cs_field_key_id("boundary_mass_flux_id");
 
-  cs_real_t *cvar_pr = f_p->vals[0];
+  cs_real_t  *imasfl = cs_field_by_id(cs_field_get_key_int(f_p, kimasf))->val;
+  cs_real_t  *bmasfl = cs_field_by_id(cs_field_get_key_int(f_p, kbmasf))->val;
 
-  const int kimasf = cs_field_key_id("inner_mass_flux_id");
-  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-
-  cs_real_t *imasfl = cs_field_by_id(cs_field_get_key_int(f_p, kimasf))->val;
-  cs_real_t *bmasfl = cs_field_by_id(cs_field_get_key_int(f_p, kbmasf))->val;
-
-  cs_real_t *ipotfl = prcdo->inner_potential_flux;
-  cs_real_t *bpotfl = prcdo->bdy_potential_flux;
+  cs_real_t  *ipotfl = prcdo->inner_potential_flux;
+  cs_real_t  *bpotfl = prcdo->bdy_potential_flux;
 
   /* Solving options */
 
-  const cs_time_step_t *ts = cs_glob_time_step;
+  const cs_time_step_t  *ts = cs_glob_time_step;
 
-  cs_real_3_t *gradp = (cs_real_3_t*) prcdo->pressure_gradient->val;
+  cs_real_3_t  *gradp = (cs_real_3_t*) prcdo->pressure_gradient->val;
 
   if (   ts->nt_cur <= ts->nt_ini
       && iphydr == 0 && idilat <= 1
@@ -2896,6 +2887,7 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
   }
 
   /* Sync for parallelism and periodicity */
+
   cs_mesh_sync_var_vect((cs_real_t *)wrk);
 
   {
@@ -2905,10 +2897,10 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
 
     cs_mass_flux(m,
                  fvq,
-                 -1, /* f_id */
-                 itypfl,
+                 -1,            /* f_id */
+                 itypfl,        /* =1 --> multiply by rho */
                  iflmb0,
-                 1, /* init */
+                 1,             /* init */
                  inc,
                  eqp_u->imrgra,
                  eqp_u->nswrgr,
@@ -2936,10 +2928,9 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
    *   phi  is the increment of the pressure
    *   divu is the initial divergence of the predicted mass flux */
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    phi[c_id] = 0.;
+  cs_array_real_fill_zero(n_cells, phi);
 
-  /* Initial divergence */
+  /* Initial divergence (= rhs of the system to solve) */
 
   cs_divergence(m,
                 1,  /* init */
@@ -2947,18 +2938,17 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
                 bmasfl,
                 divu);
 
-  /* Right hand side residual */
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    divu[c_id] *= -1;
+
+  /* Compute and set the right-hand side residual */
+
   cs_real_t residual = sqrt(cs_gdot(n_cells, divu, divu));
 
   sinfo->rhs_norm = residual;
 
-  /* Use CDO methode to resolve pressure increment */
-
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    divu[c_id] = - divu[c_id];
-
-  /* Solve the pressure increment
-     ---------------------------- */
+  /* Solve the pressure increment with CDO
+     ------------------------------------- */
 
   cs_equation_solve_steady_state(m, eq_dp);
 
@@ -2985,7 +2975,8 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
 
   /* Reconstruct the cell gradient
      ----------------------------- */
-  cs_real_3_t *grddp_c = (cs_real_3_t*) prcdo->pressure_incr_gradient->val;
+
+  cs_real_3_t  *grddp_c = (cs_real_3_t*) prcdo->pressure_incr_gradient->val;
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
@@ -2993,34 +2984,39 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
     const cs_lnum_t  *c2f_ids = connect->c2f->ids + s;
     const short int  *c2f_sgn = connect->c2f->sgn + s;
 
-    const cs_lnum_t n_fc = e - s;
-    const cs_real_t vol_c = quant->cell_vol[c_id];
-    const cs_real_t *cell_center = quant->cell_centers + 3*c_id;
-    cs_real_3_t grddp_reco = {0.0, 0.0, 0.0};
+    const cs_lnum_t  n_fc = e - s;
+    const cs_real_t  *cell_center = quant->cell_centers + 3*c_id;
+    cs_real_3_t  grddp_reco = {0.0, 0.0, 0.0};
 
-    for (short int f_id = 0; f_id < n_fc; f_id++) {
+    for (short int j = 0; j < n_fc; j++) {
 
-      cs_lnum_t ff = c2f_ids[f_id];
+      cs_lnum_t  f_id = c2f_ids[j];
 
-      const cs_real_t *face_center  = (ff < quant->n_i_faces) ?
-        quant->i_face_center + 3*ff:
-        quant->b_face_center + 3*(ff - quant->n_i_faces);
+      const cs_real_t *face_center  = (f_id < quant->n_i_faces) ?
+        quant->i_face_center + 3*f_id :
+        quant->b_face_center + 3*(f_id - quant->n_i_faces);
 
-      for (short int j = 0; j < 3; j++)
-        grddp_reco[j] += - c2f_sgn[f_id]/vol_c/c_visc[c_id]
-          *diff_flux[ff]*(face_center[j] - cell_center[j]);
+      for (short int k = 0; k < 3; k++)
+        grddp_reco[k] +=
+          - c2f_sgn[j] * diff_flux[f_id] * (face_center[k] - cell_center[k]);
+
+    } /* Loop on cell faces */
+
+    const cs_real_t  ccoef = 1./(c_visc[c_id]*quant->cell_vol[c_id]);
+    for (short int k = 0; k < 3; k++) {
+      const cs_real_t  incr_k = ccoef*grddp_reco[k];
+      grddp_c[c_id][k] = incr_k;
+      gradp[c_id][k] += incr_k;
     }
 
-    for (short int j = 0; j < 3; j++) {
-      grddp_c[c_id][j] = grddp_reco[j];
-      gradp[c_id][j] += grddp_reco[j];
-    }
-  }
+  } /* Loop on cells */
 
+  /*  Free memory */
+
+  BFT_FREE(wrk);
   BFT_FREE(diff_flux);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_PRESSURE_CORRECTION_CDO_DBG > 0
-
   cs_real_t *res = NULL;
   BFT_MALLOC(res, n_cells_ext, cs_real_t);
 
@@ -3033,7 +3029,6 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
                 rnormp);
 
   BFT_FREE(res);
-
 #endif
 
   /* Update the pressure field
@@ -3041,16 +3036,14 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     cvar_pr[c_id] += phi[c_id];
-
-  /*  Free memory */
-  BFT_FREE(wrk);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and initialize a cs_pressure_correction_cdo_t structure
+ * \brief Create and initialize a cs_pressure_correction_cdo_t structure
  *
- * \return a pointer to a newly allocated \ref cs_pressure_correction_cdo_t structure
+ * \return a pointer to a newly allocated
+ *         \ref cs_pressure_correction_cdo_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3063,10 +3056,12 @@ _pressure_correction_cdo_create(void)
 
   /* Equation
      -------- */
+
   prcdo->pressure_incr = NULL;
 
   /* Fields
      ------ */
+
   prcdo->pressure_incr_gradient = NULL;
   prcdo->pressure_gradient = NULL;
 
@@ -3087,7 +3082,7 @@ _pressure_correction_cdo_create(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Activate the pressure increment solving with Legacy FV
+ * \brief Activate the pressure increment solving with Legacy FV
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3113,7 +3108,7 @@ cs_pressure_correction_fv_activate(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Activate the pressure increment solving with CDO
+ * \brief Activate the pressure increment solving with CDO
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3128,11 +3123,17 @@ cs_pressure_correction_cdo_activate(void)
   cs_pressure_correction_cdo_t *prcdo = NULL;
 
   if (cs_pressure_correction_cdo == NULL)
-    prcdo = _pressure_correction_cdo_create();
-  else
-    prcdo = cs_pressure_correction_cdo;
+    cs_pressure_correction_cdo = _pressure_correction_cdo_create();
+
+  prcdo = cs_pressure_correction_cdo;
+  assert(prcdo != NULL);
+
+  /* Activate the CDO module along with the FV framework */
 
   cs_domain_set_cdo_mode(cs_glob_domain, CS_DOMAIN_CDO_MODE_WITH_FV);
+
+  /* Add a new equation related to the pressure correction with a variable
+   * field named "pressure_increment" */
 
   cs_equation_t  *eq =
     cs_equation_add("pressure_increment", /* equation name */
@@ -3153,7 +3154,7 @@ cs_pressure_correction_cdo_activate(void)
 
   /* System to solve is SPD by construction */
 
-  cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
+  cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "fcg");
   cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
   cs_equation_param_set(eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
 
@@ -3161,9 +3162,7 @@ cs_pressure_correction_cdo_activate(void)
   cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RTOL, "1e-5");
   cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "filtered");
 
-  prcdo->pressure_incr = eq;
-
-  cs_pressure_correction_cdo = prcdo;
+  prcdo->pressure_incr = eq;    /* Keep a link the equation pointer */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3221,11 +3220,15 @@ cs_pressure_correction_cdo_init_setup(void)
 
   /* Add the variable field */
 
-  cs_equation_predefined_create_field(1, eq);
+  cs_equation_predefined_create_field(1, eq); /* 1 = keep two states */
+
+  /* Associate the pressure increment variable field to the pressure field */
 
   cs_field_set_key_int(cs_field_by_id(eq->field_id),
                        cs_field_key_id("parent_field_id"),
                        CS_F_(p)->id);
+
+  /* Additional fields */
 
   const int  log_key = cs_field_key_id("log");
   const int  post_key = cs_field_key_id("post_vis");
@@ -3237,12 +3240,9 @@ cs_pressure_correction_cdo_init_setup(void)
                             CS_MESH_LOCATION_CELLS,
                             3,
                             false);
-  cs_field_set_key_int(prcdo->pressure_gradient,
-                       post_key,
-                       1);
-  cs_field_set_key_int(prcdo->pressure_gradient,
-                       log_key,
-                       field_post_flag);
+
+  cs_field_set_key_int(prcdo->pressure_gradient, post_key, 1);
+  cs_field_set_key_int(prcdo->pressure_gradient, log_key, field_post_flag);
 
   prcdo->pressure_incr_gradient =
     cs_field_find_or_create("pressure_increment_gradient",
@@ -3250,19 +3250,15 @@ cs_pressure_correction_cdo_init_setup(void)
                             CS_MESH_LOCATION_CELLS,
                             3,
                             false);
-  cs_field_set_key_int(prcdo->pressure_incr_gradient,
-                       post_key,
-                       1);
-  cs_field_set_key_int(prcdo->pressure_incr_gradient,
-                       log_key,
-                       field_post_flag);
+
+  cs_field_set_key_int(prcdo->pressure_incr_gradient, post_key, 1);
+  cs_field_set_key_int(prcdo->pressure_incr_gradient, log_key, field_post_flag);
 
  /* Activate the diffusion term
-     ---------------------------
-   * Diffusivity coefficent for pressure correction
-   * equation is represented by time step.
-   * Thus the diffusion is added after the field dt
-   * is created. */
+  * ---------------------------
+  * Diffusivity coefficent for pressure correction equation is represented by
+  * time step.Thus the diffusion is added after the field dt is created.
+  */
 
   cs_property_t *pty = cs_property_by_name("time_step");
   cs_property_def_by_field(pty, cs_field_by_name("dt"));
@@ -3313,6 +3309,9 @@ cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain)
                                        false, /* is owner */
                                        true); /* full length */
 
+  /* Handle the boundary conditions for the correction step
+     ------------------------------------------------------ */
+
   for (int i = 0; i < domain->boundaries->n_boundaries; i++) {
 
     const int z_id = domain->boundaries->zone_ids[i];
@@ -3337,9 +3336,6 @@ cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain)
                                   true); /* full length */
 
     }
-  } /* Loop on pressure definitions */
-
-  /* Definition for the initialization */
 
   cs_real_t ic_value = 0.;
   cs_equation_add_ic_by_value(eqp, NULL, &ic_value);
@@ -3472,7 +3468,6 @@ cs_pressure_correction(int        iterns,
    _pressure_correction_cdo(vel,
                             coefav,
                             coefbv);
-
 }
 
 /*----------------------------------------------------------------------------*/

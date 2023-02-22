@@ -525,6 +525,11 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
   /* For predefined equations (equations associated to a module), adding a
    * variable field is done inside each setup function of the module */
 
+  /* Hybrid velcoity/pressure coupling between FV and CDO */
+
+  if (cs_pressure_correction_cdo_is_activated())
+    cs_pressure_correction_cdo_init_setup();
+
   /* Wall distance */
 
   if (cs_walldistance_is_activated())
@@ -590,9 +595,6 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
 
   if (cs_solidification_is_activated())
     cs_solidification_init_setup();
-
-  if (cs_pressure_correction_cdo_is_activated())
-    cs_pressure_correction_cdo_init_setup();
 
   /* Add fields associated to advection fields */
 

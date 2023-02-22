@@ -2770,9 +2770,9 @@ cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *c_values,
       compute_flux(cm, pot, diff_hodge, cb, flx);
 
       /* Store the fluxes (the flux for the face f seen from the cell c_id is
-       * equal to minus the flux from the same face but from the adjacent cell.
-       * So, one only keeps the flux whose the face normal is aligned with the
-       * arbitrary direction chosen for this face */
+       * equal to minus the flux from the same face but from the adjacent
+       * cell). So, one only keeps the flux whose the face normal is aligned
+       * with the arbitrary direction chosen for this face */
 
       for (short int f = 0; f < cm->n_fc; f++)
         diff_flux[cm->f_ids[f]] = flx[f];
