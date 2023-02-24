@@ -2521,10 +2521,11 @@ _pressure_correction_fv(int        iterns,
     BFT_FREE(coefbr);
     BFT_FREE(cofafr);
     BFT_FREE(cofbfr);
-    BFT_FREE(velflx);
-    BFT_FREE(velflb);
 
   } /* End if weaky compressible algorithm (idilat = 5) */
+
+  BFT_FREE(velflx);
+  BFT_FREE(velflb);
 
   /* Update the pressure field
      ========================= */
