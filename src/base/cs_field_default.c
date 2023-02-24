@@ -470,9 +470,6 @@ cs_field_build_bc_codes_all(void)
 void
 cs_field_free_bc_codes_all(void)
 {
-  _n_vars_bc = 0;
-  _n_b_faces = 0;
-
   const int kv = cs_field_key_id("variable_id");
   const int n_fields = cs_field_n_fields();
 
@@ -486,7 +483,13 @@ cs_field_free_bc_codes_all(void)
     if (var_id > -1 && f->bc_coeffs != NULL) {
       f->bc_coeffs->icodcl = NULL;
       f->bc_coeffs->rcodcl1 = NULL;
-      f->bc_coeffs->rcodcl2 = NULL;
+      if (f->bc_coeffs->_hext != NULL) {
+        const cs_real_t *rcodcl2 = f->bc_coeffs->rcodcl2;
+        cs_real_t *_hext = f->bc_coeffs->_hext;
+        for (cs_lnum_t i = 0; i < _n_b_faces; i++)
+          _hext[i] = rcodcl2[i];
+      }
+      f->bc_coeffs->rcodcl2 = f->bc_coeffs->_hext;
       f->bc_coeffs->rcodcl3 = NULL;
     }
 
@@ -494,6 +497,9 @@ cs_field_free_bc_codes_all(void)
 
   BFT_FREE(_icodcl);
   BFT_FREE(_rcodcl);
+
+  _n_vars_bc = 0;
+  _n_b_faces = 0;
 }
 
 /*----------------------------------------------------------------------------*/

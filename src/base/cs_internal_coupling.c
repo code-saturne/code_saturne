@@ -2522,6 +2522,7 @@ cs_internal_coupling_spmv_contribution(bool               exclude_diag,
                                        const cs_real_t   *restrict x,
                                        cs_real_t         *restrict y)
 {
+  const cs_real_t* b_face_surf = cs_glob_mesh_quantities->b_face_surf;
   cs_lnum_t face_id, cell_id;
 
   const cs_lnum_t *restrict b_face_cells
@@ -2558,20 +2559,21 @@ cs_internal_coupling_spmv_contribution(bool               exclude_diag,
   /* Compute heq and update y */
 
   cs_real_t *hintp = f->bc_coeffs->hint;
-  cs_real_t *hextp = f->bc_coeffs->hext;
+  cs_real_t *rcodcl2p = f->bc_coeffs->rcodcl2;
 
   if (f->dim == 1) {
     for (cs_lnum_t ii = 0; ii < n_local; ii++) {
       face_id = faces_local[ii];
       cell_id = b_face_cells[face_id];
+      cs_real_t surf = b_face_surf[face_id];
 
       cs_real_t pi = exclude_diag ?
         0. : x[cell_id]; /* If exclude_diag, no diagonal term */
       cs_real_t pj = x_j[ii];
 
       cs_real_t hint = hintp[face_id];
-      cs_real_t hext = hextp[face_id];
-      cs_real_t heq = _calc_heq(hint, hext);
+      cs_real_t rcodcl2 = rcodcl2p[face_id];
+      cs_real_t heq = _calc_heq(hint, rcodcl2)*surf;
 
       y[cell_id] += thetap * idiffp * heq * (pi - pj);
     }
@@ -2583,7 +2585,7 @@ cs_internal_coupling_spmv_contribution(bool               exclude_diag,
     for (cs_lnum_t ii = 0; ii < n_local; ii++) {
       face_id = faces_local[ii];
       cell_id = b_face_cells[face_id];
-
+      cs_real_t surf = b_face_surf[face_id];
       cs_real_t pi[3];
       /* If exclude_diag, no diagonal term */
       if (exclude_diag) {
@@ -2596,8 +2598,8 @@ cs_internal_coupling_spmv_contribution(bool               exclude_diag,
       cs_real_t pj[3] = {x_j[ii], x_j[ii+1], x_j[ii+2]};
 
       cs_real_t hint = hintp[face_id];
-      cs_real_t hext = hextp[face_id];
-      cs_real_t heq = _calc_heq(hint, hext);
+      cs_real_t rcodcl2 = rcodcl2p[face_id];
+      cs_real_t heq = _calc_heq(hint, rcodcl2) * surf;
 
       for (cs_lnum_t k = 0; k < 3; k++)
         _y[cell_id][k] += thetap * idiffp * heq * (pi[k] - pj[k]);
@@ -2698,6 +2700,7 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
                                        const cs_gnum_t                r_g_id[],
                                        cs_matrix_assembler_values_t  *mav)
 {
+  const cs_real_t* b_face_surf = cs_glob_mesh_quantities->b_face_surf;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)cs_glob_mesh->b_face_cells;
 
@@ -2722,7 +2725,7 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
   /* Compute global ids and exchange coefficient */
 
   cs_real_t *hintp = f->bc_coeffs->hint;
-  cs_real_t *hextp = f->bc_coeffs->hext;
+  cs_real_t *rcodcl2p = f->bc_coeffs->rcodcl2;
 
   /* local to global preparation and exchange */
 
@@ -2770,9 +2773,10 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
     cs_lnum_t face_id = cpl->faces_local[ii];
 
+    cs_real_t surf = b_face_surf[face_id];
     cs_real_t hint = hintp[face_id];
-    cs_real_t hext = hextp[face_id];
-    cs_real_t heq = _calc_heq(hint, hext);
+    cs_real_t rcodcl2 = rcodcl2p[face_id];
+    cs_real_t heq = _calc_heq(hint, rcodcl2) * surf;
     cs_real_t c = thetap * idiffp * heq;
 
     d_g_row_id[jj] = g_id_l[ii];
@@ -3055,7 +3059,7 @@ cs_ic_field_set_exchcoeff(const int         field_id,
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t *faces_local = cpl->faces_local;
   cs_real_t *hint = f->bc_coeffs->hint;
-  cs_real_t *hext = f->bc_coeffs->hext;
+  cs_real_t *rcodcl2 = f->bc_coeffs->rcodcl2;
 
   cs_real_t *hextloc = NULL;
   BFT_MALLOC(hextloc, n_local, cs_real_t);
@@ -3070,8 +3074,8 @@ cs_ic_field_set_exchcoeff(const int         field_id,
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
     cs_lnum_t face_id = faces_local[ii];
     cs_real_t surf = b_face_surf[face_id];
-    hint[face_id] = hbnd[face_id] * surf;
-    hext[face_id] = hextloc[ii] * surf;
+    hint[face_id] = hbnd[face_id];
+    rcodcl2[face_id] = hextloc[ii];
   }
 
   BFT_FREE(hextloc);

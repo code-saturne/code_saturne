@@ -1481,7 +1481,7 @@ cs_function_boundary_nusselt(int               location_id,
 
     /* Boundary condition pointers for diffusion with coupling */
 
-    cs_real_t *hext = f_t->bc_coeffs->hext;
+    cs_real_t *rcodcl2 = f_t->bc_coeffs->rcodcl2;
     cs_real_t *hint = f_t->bc_coeffs->hint;
 
     /* Compute variable values at boundary faces */
@@ -1599,8 +1599,8 @@ cs_function_boundary_nusselt(int               location_id,
 
       if (have_coupled) {
         if (is_coupled[face_id]) {
-          cs_real_t heq =   hext[face_id] * hint[face_id]
-                          / ((hext[face_id] + hint[face_id]) * srfbn[face_id]);
+          cs_real_t heq =   rcodcl2[face_id] * hint[face_id]
+                          / (rcodcl2[face_id] + hint[face_id]);
           numer = heq*(theipb[i]-dist_theipb[face_id]) * b_dist[face_id];
         }
       }

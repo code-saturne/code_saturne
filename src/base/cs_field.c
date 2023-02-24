@@ -1110,7 +1110,6 @@ cs_f_field_var_ptr_by_id(int          id,
  *                    3: bc_coeffs->af;    4: bc_coeffs->bf
  *                    5: bc_coeffs->ad;    6: bc_coeffs->bd
  *                    7: bc_coeffs->ac;    8: bc_coeffs->bc
- *                    9: bc_coeffs->hext; 10: bc_coeffs->hint
  *   pointer_rank <-- expected rank (1 for scalar, 2 for vector)
  *   dim          <-- dimensions (indexes in Fortran order,
  *                    dim[i] = 0 if i unused)
@@ -1165,10 +1164,6 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
       *p = f->bc_coeffs->ac;
     else if (pointer_type == 8)
       *p = f->bc_coeffs->bc;
-    else if (pointer_type == 9)
-      *p = f->bc_coeffs->hext;
-    else if (pointer_type == 10)
-      *p = f->bc_coeffs->hint;
 
     if (*p == NULL) /* Adjust dimensions to assist Fortran bounds-checking */
       _n_elts = 0;
@@ -1859,11 +1854,11 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
 
       if (have_exch_bc) {
         BFT_MALLOC(f->bc_coeffs->hint, n_elts[0], cs_real_t);
-        BFT_MALLOC(f->bc_coeffs->hext, n_elts[0], cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->_hext, n_elts[0], cs_real_t);
       }
       else {
         f->bc_coeffs->hint = NULL;
-        f->bc_coeffs->hext = NULL;
+        f->bc_coeffs->_hext = NULL;
       }
 
     }
@@ -1902,11 +1897,11 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
 
       if (have_exch_bc) {
         BFT_MALLOC(f->bc_coeffs->hint, n_elts[0], cs_real_t);
-        BFT_MALLOC(f->bc_coeffs->hext, n_elts[0], cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->_hext, n_elts[0], cs_real_t);
       }
       else {
         BFT_FREE(f->bc_coeffs->hint);
-        BFT_FREE(f->bc_coeffs->hext);
+        BFT_FREE(f->bc_coeffs->_hext);
       }
 
     }
@@ -2107,13 +2102,12 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
     if (f->bc_coeffs->hint != NULL) {
       for (ifac = 0; ifac < n_elts[0]; ifac++) {
         f->bc_coeffs->hint[ifac] = 0.;
-        f->bc_coeffs->hext[ifac] = 0.;
       }
     }
 
-    if (f->bc_coeffs->hext != NULL) {
+    if (f->bc_coeffs->_hext != NULL) {
       for (ifac = 0; ifac < n_elts[0]; ifac++) {
-        f->bc_coeffs->hext[ifac] = 0.;
+        f->bc_coeffs->_hext[ifac] = 0.;
       }
     }
 
@@ -2241,7 +2235,7 @@ cs_field_destroy_all(void)
       BFT_FREE(f->bc_coeffs->ac);
       BFT_FREE(f->bc_coeffs->bc);
       BFT_FREE(f->bc_coeffs->hint);
-      BFT_FREE(f->bc_coeffs->hext);
+      BFT_FREE(f->bc_coeffs->_hext);
       BFT_FREE(f->bc_coeffs);
     }
   }

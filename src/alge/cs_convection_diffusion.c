@@ -1777,6 +1777,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
@@ -2795,10 +2796,11 @@ cs_convection_diffusion_scalar(int                       idtvar,
         /* Flux contribution */
         assert(f != NULL);
         cs_real_t *hintp = f->bc_coeffs->hint;
-        cs_real_t *hextp = f->bc_coeffs->hext;
+        cs_real_t *hextp = f->bc_coeffs->rcodcl2;
         for (cs_lnum_t ii = 0; ii < n_local; ii++) {
           cs_lnum_t face_id = faces_local[ii];
           cs_lnum_t jj = b_face_cells[face_id];
+          cs_real_t surf = b_face_surf[face_id];
           cs_real_t pip, pipr, pjpr;
           cs_real_t fluxi = 0.;
 
@@ -2822,7 +2824,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
           cs_real_t hint = hintp[face_id];
           cs_real_t hext = hextp[face_id];
-          cs_real_t heq = _calc_heq(hint, hext);
+          cs_real_t heq = _calc_heq(hint, hext)*surf;
 
           cs_b_diff_flux_coupling(idiffp,
                                   pipr,
@@ -2937,10 +2939,11 @@ cs_convection_diffusion_scalar(int                       idtvar,
         /* Flux contribution */
         assert(f != NULL);
         cs_real_t *hintp = f->bc_coeffs->hint;
-        cs_real_t *hextp = f->bc_coeffs->hext;
+        cs_real_t *hextp = f->bc_coeffs->rcodcl2;
         for (cs_lnum_t ii = 0; ii < n_local; ii++) {
           cs_lnum_t face_id = faces_local[ii];
           cs_lnum_t jj = b_face_cells[face_id];
+          cs_real_t surf = b_face_surf[face_id];
           cs_real_t pip, pjp;
           cs_real_t fluxi = 0.;
 
@@ -2961,7 +2964,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
           cs_real_t hint = hintp[face_id];
           cs_real_t hext = hextp[face_id];
-          cs_real_t heq = _calc_heq(hint, hext);
+          cs_real_t heq = _calc_heq(hint, hext)*surf;
 
           cs_b_diff_flux_coupling(idiffp,
                                   pip,
@@ -4344,6 +4347,7 @@ cs_convection_diffusion_vector(int                         idtvar,
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict i_face_normal
@@ -5505,10 +5509,11 @@ cs_convection_diffusion_vector(int                         idtvar,
         /* Flux contribution */
         assert(f != NULL);
         cs_real_t *hintp = f->bc_coeffs->hint;
-        cs_real_t *hextp = f->bc_coeffs->hext;
+        cs_real_t *hextp = f->bc_coeffs->rcodcl2;
         for (cs_lnum_t ii = 0; ii < n_local; ii++) {
           cs_lnum_t face_id = faces_local[ii];
           cs_lnum_t jj = b_face_cells[face_id];
+          cs_real_t surf = b_face_surf[face_id];
           cs_real_t pip[3], pipr[3], pjpr[3];
           cs_real_t fluxi[3] = {0., 0., 0.};
           cs_real_3_t _pj, _pja;
@@ -5547,7 +5552,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
           cs_real_t hint = hintp[face_id];
           cs_real_t hext = hextp[face_id];
-          cs_real_t heq = _calc_heq(hint, hext);
+          cs_real_t heq = _calc_heq(hint, hext)*surf;
 
           cs_b_diff_flux_coupling_vector(idiffp,
                                          pipr,
@@ -5734,10 +5739,11 @@ cs_convection_diffusion_vector(int                         idtvar,
         /* Flux contribution */
         assert(f != NULL);
         cs_real_t *hintp = f->bc_coeffs->hint;
-        cs_real_t *hextp = f->bc_coeffs->hext;
+        cs_real_t *hextp = f->bc_coeffs->rcodcl2;
         for (cs_lnum_t ii = 0; ii < n_local; ii++) {
           cs_lnum_t face_id = faces_local[ii];
           cs_lnum_t jj = b_face_cells[face_id];
+          cs_real_t surf = b_face_surf[face_id];
           cs_real_t pip[3], pjp[3];
           cs_real_t fluxi[3] = {0., 0., 0.};
           cs_real_3_t _pj;
@@ -5772,7 +5778,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
           cs_real_t hint = hintp[face_id];
           cs_real_t hext = hextp[face_id];
-          cs_real_t heq = _calc_heq(hint, hext);
+          cs_real_t heq = _calc_heq(hint, hext)*surf;
 
           cs_b_diff_flux_coupling_vector(idiffp,
                                          pip,
@@ -7161,6 +7167,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict i_face_normal
@@ -8205,10 +8212,11 @@ cs_convection_diffusion_thermal(int                       idtvar,
       /* Flux contribution */
       assert(f_id!=-1); // Otherwise the "f" can't be used
       cs_real_t *hintp = f->bc_coeffs->hint;
-      cs_real_t *hextp = f->bc_coeffs->hext;
+      cs_real_t *hextp = f->bc_coeffs->rcodcl2;
       for (cs_lnum_t ii = 0; ii < n_local; ii++) {
         cs_lnum_t face_id = faces_local[ii];
         cs_lnum_t jj = b_face_cells[face_id];
+        cs_real_t surf = b_face_surf[face_id];
         cs_real_t pip, pipr, pjpr;
         cs_real_t fluxi = 0.;
 
@@ -8232,7 +8240,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
         cs_real_t hint = hintp[face_id];
         cs_real_t hext = hextp[face_id];
-        cs_real_t heq = _calc_heq(hint, hext);
+        cs_real_t heq  = _calc_heq(hint, hext)*surf;
 
         cs_b_diff_flux_coupling(idiffp,
                                 pipr,
@@ -8348,10 +8356,11 @@ cs_convection_diffusion_thermal(int                       idtvar,
       /* Flux contribution */
       assert(f_id!=-1); // Otherwise the "f" can't be used
       cs_real_t *hintp = f->bc_coeffs->hint;
-      cs_real_t *hextp = f->bc_coeffs->hext;
+      cs_real_t *hextp = f->bc_coeffs->rcodcl2;
       for (cs_lnum_t ii = 0; ii < n_local; ii++) {
         cs_lnum_t face_id = faces_local[ii];
         cs_lnum_t jj = b_face_cells[face_id];
+        cs_real_t surf = b_face_surf[face_id];
         cs_real_t pip, pjp;
         cs_real_t fluxi = 0.;
 
@@ -8372,7 +8381,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
         cs_real_t hint = hintp[face_id];
         cs_real_t hext = hextp[face_id];
-        cs_real_t heq = _calc_heq(hint, hext);
+        cs_real_t heq = _calc_heq(hint, hext)*surf;
 
         cs_b_diff_flux_coupling(idiffp,
                                 pip,

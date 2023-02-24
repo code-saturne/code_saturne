@@ -120,7 +120,8 @@ typedef struct {
   cs_real_t         *bc;           /* Implicit coefficient for convection */
 
   cs_real_t         *hint;         /* coefficient for internal coupling */
-  cs_real_t         *hext;         /* coefficient for internal coupling */
+  cs_real_t         *_hext;        /* coefficient for internal coupling
+                                      (maps to rcodcl2 when present) */
 
 } cs_field_bc_coeffs_t;
 

@@ -2323,7 +2323,7 @@ double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cpro_cv
 double precision, dimension(:), pointer :: bpro_rough_t
 double precision, dimension(:), pointer :: bfconv, bhconv
 double precision, dimension(:), pointer :: tplusp, tstarp, dist_theipb
-double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp, hextp
+double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: a_al, b_al, af_al, bf_al
 double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut, visten
 double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
@@ -2726,8 +2726,6 @@ enddo
 if (vcopt%icoupl.gt.0) then
   ! Update exchange coef. in coupling entity of current scalar
   call cs_ic_field_set_exchcoeff(f_id, hbnd)
-  ! Get external exchange coef.
-  call field_get_hext(f_id, hextp)
 endif
 
 ! --- Loop on boundary faces
@@ -2776,13 +2774,6 @@ do ifac = 1, nfabor
 
     hext = rcodcl(ifac,ivar,2)
     pimp = rcodcl(ifac,ivar,1)
-
-    if (vcopt%icoupl.gt.0) then
-      if (cpl_faces(ifac)) then
-        hext = hextp(ifac)/surfbn(ifac)
-      endif
-    endif
-
     hflui = hbnd(ifac)
 
     if (abs(hext).gt.rinfin*0.5d0.or.icodcl(ifac,ivar).eq.15) then
@@ -3154,7 +3145,7 @@ double precision rough_t
 double precision, dimension(:), pointer :: bpro_rough_t
 double precision, dimension(:), pointer :: crom, viscls
 double precision, dimension(:,:), pointer :: val_p_v
-double precision, dimension(:), pointer :: viscl, visct, cpro_cp, hextp
+double precision, dimension(:), pointer :: viscl, visct, cpro_cp
 
 double precision, dimension(:,:), pointer :: coefav, cofafv
 double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
@@ -3325,8 +3316,6 @@ enddo
 if (vcopt%icoupl.gt.0) then
   ! Update exchange coef. in coupling entity of current scalar
   call cs_ic_field_set_exchcoeff(f_id, hbnd)
-  ! Get external exchange coef.
-  call field_get_hext(f_id, hextp)
 endif
 
 ! --- Loop on boundary faces
@@ -3369,19 +3358,12 @@ do ifac = 1, nfabor
     visctc = visct(iel)
 
     hext = rcodcl(ifac,ivar,2)
-
-    if (vcopt%icoupl.gt.0) then
-      if (cpl_faces(ifac)) then
-        hext = hextp(ifac)/surfbn(ifac)
-      endif
-    endif
-
     hflui = hbnd(ifac)
 
     if (abs(hext).gt.rinfin*0.5d0.or.icodcl(ifac,ivar).eq.15) then
-      heq = hflui
+       heq = hflui
     else
-      heq = hflui*hext/(hflui+hext)
+       heq = hflui*hext/(hflui+hext)
     endif
 
     ! ---> Dirichlet Boundary condition with a wall function correction

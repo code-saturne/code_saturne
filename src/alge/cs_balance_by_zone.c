@@ -794,6 +794,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
@@ -840,7 +841,8 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   cs_real_t *pvar_local = NULL;
   cs_real_t *pvar_distant = NULL;
-  cs_real_t  hint, hext, heq;
+  cs_real_t  hint, rcodcl2, heq;
+
   const cs_lnum_t *faces_local = NULL;
   cs_lnum_t  n_local = 0;
   cs_lnum_t  n_distant = 0;
@@ -1440,6 +1442,8 @@ cs_balance_by_zone_compute(const char      *scalar_name,
     for (cs_lnum_t ii = 0; ii < n_local; ii++) {
       cs_lnum_t f_id = faces_local[ii];
       cs_lnum_t c_id = b_face_cells[f_id];
+      cs_real_t surf = b_face_surf[f_id];
+
       if (cells_tag_ids[c_id] == 1) {
         cs_real_t pip, pjp;
         cs_real_t term_balance = 0.;
@@ -1453,8 +1457,8 @@ cs_balance_by_zone_compute(const char      *scalar_name,
         pjp = pvar_local[ii];
 
         hint = f->bc_coeffs->hint[f_id];
-        hext = f->bc_coeffs->hext[f_id];
-        heq = hint * hext / (hint + hext);
+        rcodcl2 = f->bc_coeffs->rcodcl2[f_id];
+        heq = surf * hint * rcodcl2 / (hint + rcodcl2);
 
         cs_b_diff_flux_coupling(idiffp,
                                 pip,
@@ -2562,6 +2566,7 @@ cs_flux_through_surface(const char         *scalar_name,
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict i_face_normal
@@ -2971,6 +2976,7 @@ cs_flux_through_surface(const char         *scalar_name,
         continue;
 
       cs_lnum_t c_id = b_face_cells[f_id];
+      cs_real_t surf = b_face_surf[f_id];
 
       cs_real_t pip, pjp;
       cs_real_t term_balance = 0.;
@@ -2984,10 +2990,10 @@ cs_flux_through_surface(const char         *scalar_name,
       pjp = pvar_local[ii];
 
       cs_real_t hint = f->bc_coeffs->hint[f_id];
-      cs_real_t hext = f->bc_coeffs->hext[f_id];
+      cs_real_t rcodcl2 = f->bc_coeffs->rcodcl2[f_id];
       cs_real_t heq = 0;
-      if (fabs(hint + hext) > 0)
-        heq = hint * hext / (hint + hext);
+      if (fabs(hint + rcodcl2) > 0)
+        heq = surf * hint * rcodcl2 / (hint + rcodcl2);
 
       cs_b_diff_flux_coupling(idiffp,
                               pip,
