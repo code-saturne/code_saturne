@@ -1857,7 +1857,7 @@ class meg_to_c_interpreter:
                     # Turbulence
                     tin = im.node_turb.xmlGetNode('initialization', zone_id=z_id)
                     if tin:
-                        if tin['choice'] == 'formula' and turb_model != 'none':
+                        if tin['choice'] == 'formula':
                             tmodel = im.node_turb['model']
                             exp, req, sym = im.getTurbFormulaComponents(z_id, tmodel)
                             self.init_block('ini', zone_name, 'turbulence',
