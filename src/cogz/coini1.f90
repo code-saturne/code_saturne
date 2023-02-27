@@ -184,10 +184,6 @@ lref  =-grand
 ta    =-grand
 tstar =-grand
 
-! --> Coefficient de relaxation de la masse volumique
-!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
-srrom =-grand
-
 ! --> Viscosite laminaire associee au scalaire enthalpie
 !       DIFTL0 (diffusivite dynamique en kg/(m s))
 diftl0      =-grand

@@ -246,7 +246,7 @@ ieqco2 = 1
 
 ! ---> Coefficient de relation de la masse volumique
 !      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
-srrom = 1.d0
+srrom = 0.95d0 ! GUI default
 
 ! Initialization for compressible module
 

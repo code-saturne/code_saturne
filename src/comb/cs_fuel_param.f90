@@ -166,10 +166,6 @@ ro0 = p0*wmolme / (cs_physical_constants_r*t0)
 !    Maintenant c'est fait dans FULECD
 !     RHOKF = RHO0FL
 
-! ---> Coefficient de relaxation de la masse volumique
-!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
-srrom = 0.90d0
-
 ! ---> Viscosite laminaire associee au scalaire enthalpie
 !       DIFTL0 (diffusivite dynamique en kg/(m s))
 !     C'est cette valeur par defaut qui est TOUJOURS utilisee dans les

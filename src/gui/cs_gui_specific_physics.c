@@ -656,7 +656,7 @@ void CS_PROCF (uicpi1, UICPI1) (double *const srrom,
   cs_tree_node_t *tn
     = cs_tree_get_node(cs_glob_tree, "numerical_parameters/density_relaxation");
 
-  cs_gui_node_get_real(tn, srrom);
+  cs_gui_node_get_real(tn, srrom); // inactive line if tn does not exist
 
   bool gas_combustion = false;
   for (cs_physical_model_type_t m_type = CS_COMBUSTION_3PT;

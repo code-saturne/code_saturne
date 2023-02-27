@@ -157,12 +157,6 @@ do icha = 1, ncharb
   rhock(icha) = rho0ch(icha)
 enddo
 
-! On met SRROM et DIFTL0 a -GRAND pour forcer l'utilisateur a les
-! definir dans cs_user_combustion
-! ---> Coefficient de relaxation de la masse volumique
-!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
-srrom = -grand
-
 ! ---> Viscosite laminaire associee au scalaire enthalpie
 !       DIFTL0 (diffusivite dynamique en kg/(m s))
 !     C'est cette valeur par defaut qui est TOUJOURS utilisee dans les
