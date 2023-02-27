@@ -84,9 +84,9 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-integer           iel    , ifac   , f_id0
+integer           iel    , ifac
 integer           icla   , krvarfl
-integer           inc    , imrgrp , nswrgp , imligp , iwarnp
+integer           imrgrp , nswrgp , imligp , iwarnp
 
 double precision xk     , xe     , rhovst
 double precision epsrgp , climgp
@@ -153,7 +153,6 @@ endif
 !===============================================================================
 if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
      itytur.eq.3 .or. iturb.eq.60      ) then
-  inc = 1
 
   call field_get_key_double(ivarfl(isca(iscal)), krvarfl, rvarfl)
   call field_get_key_struct_var_cal_opt(ivarfl(isca(ifvap)), vcopt)
@@ -163,7 +162,6 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
   iwarnp = vcopt%iwarni
   epsrgp = vcopt%epsrgr
   climgp = vcopt%climgr
-  call field_set_key_struct_var_cal_opt(ivarfl(isca(ifvap)), vcopt)
 
 ! --> calcul de X1
 
@@ -197,18 +195,12 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
 
   do ifac = 1, nfabor
     ! Homogenous Neumann on the gradient
-    coefap(ifac) = zero
+    coefap(ifac) = 0.d0
     coefbp(ifac) = 1.d0
   enddo
 
-!  f_id0 = -1 (indique pour la periodicite de rotation que la variable
-!              n'est pas Rij)
-  f_id0  = -1
-  call gradient_s                                                 &
- ( f_id0  , imrgrp , inc    , nswrgp , imligp ,                   &
-   iwarnp , epsrgp , climgp ,                                     &
-   f1f2   , coefap , coefbp ,                                     &
-   grad   )
+  call gradient_s(-1, imrgrp, 1, nswrgp, imligp, iwarnp,        &
+                  epsrgp, climgp, f1f2, coefap, coefbp, grad)
 
   call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
 

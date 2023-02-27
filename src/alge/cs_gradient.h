@@ -104,28 +104,6 @@ void CS_PROCF (grdpor, GRDPOR)
  const int   *const inc          /* <-- 0 or 1: increment or not         */
 );
 
-/*----------------------------------------------------------------------------
- * Compute cell gradient of vector field.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (cgdvec, CGDVEC)
-(
- const int              *const f_id,      /* <-- field id, or -1              */
- const int              *const imrgra,    /* <-- gradient computation mode    */
- const int              *const inc,       /* <-- 0 or 1: increment or not     */
- const int              *const n_r_sweeps,/* <-- >1: with reconstruction      */
- const int              *const iwarnp,    /* <-- verbosity level              */
- const int              *const imligp,    /* <-- type of clipping             */
- const cs_real_t        *const epsrgp,    /* <-- precision for iterative
-                                                 gradient calculation         */
- const cs_real_t        *const climgp,    /* <-- clipping coefficient         */
- const cs_real_3_t             coefav[],  /* <-- boundary condition term      */
- const cs_real_33_t            coefbv[],  /* <-- boundary condition term      */
-       cs_real_3_t             pvar[],    /* <-- gradient's base variable     */
-       cs_real_33_t            grad[]     /* <-> gradient of the variable
-                                                 (du_i/dx_j : gradv[][i][j])  */
-);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
