@@ -125,7 +125,7 @@ module mesh
   double precision, dimension(:,:), pointer :: suffac
 
   !> \anchor suffbo
-  !> surface vector of the boundary faces. Its norm is the surface of the face
+  !> fluid surface vector of the boundary faces. Its norm is the surface of the face
   !> and it is oriented outwards
   double precision, dimension(:,:), pointer :: suffbo
 
