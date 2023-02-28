@@ -1102,7 +1102,7 @@ do while (iterns.le.nterup)
       call field_get_key_id("is_buoyant", key_buoyant_id)
       call field_get_val_s(icrom,crom)
       call field_get_id_try("density_mass",f_id)
-      if (f_id.ge.0) then
+      if ((f_id.ge.0).and.(itpcol.eq.1)) then
         call field_get_val_s(f_id, cpro_rho_mass)
         do iscal = 1, nscal
           ivar = isca(iscal)
