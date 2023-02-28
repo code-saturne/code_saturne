@@ -100,6 +100,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         validatorDiam = DoubleValidator(self.lineEditDiameter, min=0.)
         validatorDiam.setExclusiveMin(True)
         validatorIntensity = DoubleValidator(self.lineEditIntensity, min=0.)
+        validatorIntensity.setExclusiveMin(True)
 
         self.lineEditDiameter.setValidator(validatorDiam)
         self.lineEditDiameterIntens.setValidator(validatorDiam)
