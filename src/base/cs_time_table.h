@@ -192,15 +192,17 @@ cs_time_table_reset_position(cs_time_table_t *table);
 /*!
  * \brief Update time coefficients used for data interpolation.
  *
- * \param[in] table  Pointer to time table structure
- * \param[in] t      Time value
+ * \param[in] table            Pointer to time table structure
+ * \param[in] time             Time value
+ * \param[in] reset_time_value Reset current time value (bool)
  *
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_time_table_update_position(cs_time_table_t *table,
-                              cs_real_t        t);
+                              cs_real_t        time,
+                              bool             reset_time_value);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -223,6 +225,25 @@ cs_time_table_compute_time_value(const char *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute value using a given abscissa and a label
+ *
+ * \param[in] name            Name of the used time table
+ * \param[in] t               Time for which we seek values
+ * \param[in] label           Label of column used for computation
+ * \param[in] overwrite_prev  Start search of value using first value
+ *
+ * \returns Interpolated value
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_time_table_compute_time_value_by_label(const char *name,
+                                          cs_real_t   t,
+                                          const char *label,
+                                          bool        overwrite_prev);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute values for several columns of a time table for a given abscissa
  *
  * \param[in]  name            Name of the time table to use
@@ -242,6 +263,28 @@ cs_time_table_compute_n_time_values(const char *name,
                                     const int   cols[],
                                     bool        overwrite_prev,
                                     cs_real_t  *retvals);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute values for several columns of a time table for a given abscissa
+ *
+ * \param[in]  name            Name of the time table to use
+ * \param[in]  t               Time for which we seek values
+ * \param[in]  n_cols          Number of values to compute
+ * \param[in]  labels          Array containing the labels of columns used for computation
+ * \param[in]  overwrite_prev  Start search of value using first value
+ * \param[out] retvals         Array of output values
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_table_compute_n_time_values_by_label(const char *name,
+                                             cs_real_t   t,
+                                             const int   n_cols,
+                                             const char *labels[],
+                                             bool        overwrite_prev,
+                                             cs_real_t  *retvals);
 
 /*----------------------------------------------------------------------------*/
 /*!

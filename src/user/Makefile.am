@@ -114,6 +114,7 @@ cs_user_radiative_transfer.c \
 cs_user_radiative_transfer_bcs.c \
 cs_user_solver.c \
 cs_user_source_terms.c \
+cs_user_time_table.c \
 cs_user_turbomachinery.c \
 cs_user_wall_condensation.c \
 cs_user_zones.c \

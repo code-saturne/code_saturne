@@ -761,6 +761,9 @@ main(int    argc,
     cs_notebook_load_from_file();
   }
 
+  /* Load user time tables */
+  cs_user_time_table();
+
   /* Call main run() method */
 
   _run();

@@ -552,37 +552,43 @@ cs_time_table_reset_position(cs_time_table_t *table)
 /*!
  * \brief Update time coefficients used for data interpolation.
  *
- * \param[in] table  Pointer to time table structure
- * \param[in] t      Time value
+ * \param[in] table            Pointer to time table structure
+ * \param[in] time             Time value
+ * \param[in] reset_time_value Reset current time value (bool)
  *
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_time_table_update_position(cs_time_table_t *table,
-                              cs_real_t        t)
+                              cs_real_t        time,
+                              bool             reset_time_value)
 {
+  // Reset time
+  if (reset_time_value)
+    cs_time_table_reset_position(table);
+
   const cs_real_t *time_vals = table->columns[table->time_col_id];
   const int n_rows = table->n_rows;
   cs_double_int_t *coeffs = table->coeffs;
 
   const int t0_id = coeffs[0].id;
 
-  if (t < time_vals[0]) {
+  if (time < time_vals[0]) {
     coeffs[0].id  = 0;
     coeffs[1].id  = 0;
     coeffs[0].val = 1.;
     coeffs[1].val = 0.;
-  } else if (t > time_vals[n_rows - 1]) {
+  } else if (time > time_vals[n_rows - 1]) {
     coeffs[0].id = n_rows - 1;
     coeffs[1].id = n_rows - 1;
     coeffs[0].val = 1.;
     coeffs[1].val = 0.;
   } else {
     for (int i = t0_id; i < n_rows - 1; i++) {
-      if (t >= time_vals[i] && t < time_vals[i+1]) {
+      if (time >= time_vals[i] && time < time_vals[i+1]) {
         coeffs[1].id = i + 1;
-        coeffs[1].val = (t - time_vals[i]) / (time_vals[i+1] - time_vals[i]);
+        coeffs[1].val = (time - time_vals[i]) / (time_vals[i+1] - time_vals[i]);
 
         coeffs[0].id = i;
         coeffs[0].val = 1. - coeffs[1].val;
@@ -614,12 +620,41 @@ cs_time_table_compute_time_value(const char *name,
 {
   cs_time_table_t *table = cs_time_table_by_name(name);
 
-  if (overwrite_prev)
-    cs_time_table_reset_position(table);
-
-  cs_time_table_update_position(table, t);
+  cs_time_table_update_position(table, t, overwrite_prev);
 
   return _time_table_compute_value(table, col);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute value using a given abscissa and a label
+ *
+ * \param[in] name            Name of the used time table
+ * \param[in] t               Time for which we seek values
+ * \param[in] label           Label of column used for computation
+ * \param[in] overwrite_prev  Start search of value using first value
+ *
+ * \returns Interpolated value
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_time_table_compute_time_value_by_label(const char *name,
+                                          cs_real_t   t,
+                                          const char *label,
+                                          bool        overwrite_prev)
+{
+  assert(name != NULL);
+  assert(label != NULL);
+
+  cs_time_table_t *table = cs_time_table_by_name(name);
+
+  int _id = _time_table_column_id_by_name(table, label);
+
+  cs_time_table_update_position(table, t, overwrite_prev);
+
+  return _time_table_compute_value(table, _id);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -646,14 +681,42 @@ cs_time_table_compute_n_time_values(const char *name,
 {
   cs_time_table_t *table = cs_time_table_by_name(name);
 
-  if (overwrite_prev)
-    cs_time_table_reset_position(table);
-
-  cs_time_table_update_position(table, t);
+  cs_time_table_update_position(table, t, overwrite_prev);
 
   for (int i = 0; i < n_cols; i++)
     retvals[i] = _time_table_compute_value(table, cols[i]);
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute values for several columns of a time table for a given abscissa
+ *
+ * \param[in]  name            Name of the time table to use
+ * \param[in]  t               Time for which we seek values
+ * \param[in]  n_cols          Number of values to compute
+ * \param[in]  labels          Array containing the labels of columns used for computation
+ * \param[in]  overwrite_prev  Start search of value using first value
+ * \param[out] retvals         Array of output values
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_table_compute_n_time_values_by_label(const char *name,
+                                             cs_real_t   t,
+                                             const int   n_cols,
+                                             const char *labels[],
+                                             bool        overwrite_prev,
+                                             cs_real_t  *retvals)
+{
+  cs_time_table_t *table = cs_time_table_by_name(name);
+  cs_time_table_update_position(table, t, overwrite_prev);
+
+  for (int i = 0; i < n_cols; i++) {
+    int _id = _time_table_column_id_by_name(table, labels[i]);
+    retvals[i] = _time_table_compute_value(table, _id);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
