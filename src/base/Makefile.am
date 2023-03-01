@@ -118,6 +118,7 @@ cs_field_default.h \
 cs_field_pointer.h \
 cs_field_operator.h \
 cs_file.h \
+cs_file_csv_parser.h \
 cs_flag_check.h \
 cs_fp_exception.h \
 cs_function.h \
@@ -182,6 +183,7 @@ cs_time_moment.h \
 cs_time_control.h \
 cs_time_plot.h \
 cs_time_step.h \
+cs_time_table.h \
 cs_timer.h \
 cs_timer_stats.h \
 cs_tree.h \
@@ -233,6 +235,7 @@ cs_block_to_part.c \
 cs_crystal_router.c \
 cs_defs.c \
 cs_file.c \
+cs_file_csv_parser.c \
 cs_fp_exception.c \
 cs_ht_convert.c \
 cs_interface.c \
@@ -357,6 +360,7 @@ cs_sort.c \
 cs_sort_partition.c \
 cs_syr_coupling.c \
 cs_thermal_model.c \
+cs_time_table.c \
 cs_tagmri.f90 \
 cs_tagmro.f90 \
 cs_time_control.c \

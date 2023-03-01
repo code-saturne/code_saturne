@@ -217,7 +217,7 @@
 
   \snippet cs_user_boundary_conditions-notebook.c notebook_dof_func
 
-  Note that accessing the notebook value in the function aboe is done through
+  Note that accessing the notebook value in the function above is done through
   the call to \ref cs_notebook_parameter_value_by_name.
 
   The callback function can then be assigned to the zone named "inlet"
@@ -225,6 +225,29 @@
   (in \ref cs_user_boundary_conditions_setup):
 
   \snippet cs_user_boundary_conditions-notebook.c notebook_dof_inlet
+*/
+
+/*-----------------------------------------------------------------------------*/
+/*!
+  \page time_table Boundary conditions using time table
+
+  Compute a time dependent parameter value from a time table defined by the
+  user.
+
+  To access a time table defined variable when defining boundary conditions,
+  a callback function of the type  of type \ref cs_dof_func_t can be defined,
+  such as the following (for a time table named "inlet_temperature"):
+
+  \snippet cs_user_boundary_conditions-time_table.c timetabe_dof_func
+
+  Note that accessing the time table value in the function above is done
+  through the call to \ref cs_time_table_compute_time_value.
+
+  The callback function can then be assigned to the zone named "inlet"
+  for variable "scalar1" in the usual way
+  (in \ref cs_user_boundary_conditions_setup):
+
+  \snippet cs_boundary_conditions-time_table.c time_table_dof_inlet
 */
 
 /*-----------------------------------------------------------------------------*/

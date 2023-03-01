@@ -118,6 +118,7 @@
 #include "cs_syr_coupling.h"
 #include "cs_system_info.h"
 #include "cs_time_moment.h"
+#include "cs_time_table.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
 #include "cs_tree.h"
@@ -622,6 +623,7 @@ _run(void)
   cs_gui_finalize();
 
   cs_notebook_destroy_all();
+  cs_time_table_destroy_all();
 
   cs_field_pointer_destroy_all();
   cs_field_destroy_all();
@@ -758,6 +760,9 @@ main(int    argc,
     cs_gui_load_file(s_param);
     cs_notebook_load_from_file();
   }
+
+  /* Load user time tables */
+  cs_user_time_table();
 
   /* Call main run() method */
 
