@@ -51,7 +51,6 @@ from code_saturne.gui.base.QtWidgets import *
 from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import ComboModel, DoubleValidator, from_qvariant
 from code_saturne.gui.case.TurbulenceForm import Ui_TurbulenceForm
-from code_saturne.gui.case.TurbulenceAdvancedOptionsDialogForm import Ui_TurbulenceAdvancedOptionsDialogForm
 from code_saturne.model.TurbulenceModel import TurbulenceModel
 
 #-------------------------------------------------------------------------------
@@ -61,136 +60,6 @@ from code_saturne.model.TurbulenceModel import TurbulenceModel
 logging.basicConfig()
 log = logging.getLogger("TurbulenceView")
 log.setLevel(GuiParam.DEBUG)
-
-#-------------------------------------------------------------------------------
-# Advanced dialog
-#-------------------------------------------------------------------------------
-
-class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsDialogForm):
-    """
-    Advanced dialog
-    """
-    def __init__(self, parent, case, default):
-        """
-        Constructor
-        """
-        QDialog.__init__(self, parent)
-
-        Ui_TurbulenceAdvancedOptionsDialogForm.__init__(self)
-        self.setupUi(self)
-
-        self.case = case
-        self.case.undoStopGlobal()
-
-        self.labelTurbDiff.hide()
-        self.comboBoxTurbDiff.hide()
-        self.turbDiff = None
-
-        self.default = default
-        self.result  = self.default.copy()
-
-        if default['model'] in ('k-epsilon', 'k-epsilon-PL'):
-            title = self.tr("Options for k-epsilon model")
-        elif default['model'] in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
-            title = self.tr("Options for Rij-epsilon model")
-
-            self.labelTurbDiff.show()
-            self.comboBoxTurbDiff.show()
-            self.turbDiff = ComboModel(self.comboBoxTurbDiff, 2, 1)
-            self.turbDiff.addItem(self.tr("Scalar diffusivity (Shir model)"), 'shir')
-            self.turbDiff.addItem(self.tr("Tensorial diffusivity (Daly and Harlow model)"), 'daly_harlow')
-
-            # Initialization of turb diff model
-            self.turbDiff.setItem(str_model=str(self.result['turb_diff']))
-
-        elif default['model'] == 'k-omega-SST':
-            title = self.tr("Options for k-omega-SST model")
-        elif default['model'] == 'v2f-BL-v2/k':
-            title = self.tr("Options for v2f-BL-v2/k model")
-        elif default['model'] == 'Spalart-Allmaras':
-            title = self.tr("Options for Spalart-Allmaras model")
-
-        self.setWindowTitle(title)
-
-        self.checkBoxGravity.setEnabled(True)
-        self.comboBoxWallFunctions.setEnabled(True)
-
-        if default['model'] == 'Rij-EBRSM':
-            # Combo - piecewise laws (iwallf=2,3) unavailable through the GUI
-            self.wallFunctions = ComboModel(self.comboBoxWallFunctions, 2, 1)
-            self.wallFunctions.addItem(self.tr("No wall function"), '0')
-            self.wallFunctions.addItem(self.tr("2-scale model (all y+)"), '7')
-
-            # Initialization of wall function model
-            self.wallFunctions.setItem(str_model=str(self.result['wall_function']))
-
-        elif default['model'] == 'v2f-BL-v2/k':
-            self.wallFunctions = ComboModel(self.comboBoxWallFunctions, 1, 1)
-            self.wallFunctions.addItem(self.tr("No wall function"), '0')
-            self.comboBoxWallFunctions.setEnabled(False)
-        elif default['model'] == 'Spalart-Allmaras':
-            self.wallFunctions = ComboModel(self.comboBoxWallFunctions, 1, 1)
-            self.wallFunctions.addItem(self.tr("One scale model (log law)"), '2')
-            self.comboBoxWallFunctions.setEnabled(False)
-        elif default['model'] == 'k-omega-SST':
-            # Combo - power law (iwallf=1) unavailable through the GUI
-            self.wallFunctions = ComboModel(self.comboBoxWallFunctions, 5, 1)
-            self.wallFunctions.addItem(self.tr("No wall function"), '0')
-            self.wallFunctions.addItem(self.tr("1-scale model (log law)"), '2')
-            self.wallFunctions.addItem(self.tr("2-scale model (log law)"), '3')
-            self.wallFunctions.addItem(self.tr("2-scale model (all y+)"), '7')
-            self.wallFunctions.addItem(self.tr("Scalable 2-scale model (log law)"), '4')
-
-            # Initialization of wall function model
-            self.wallFunctions.setItem(str_model=str(self.result['wall_function']))
-        else:
-            # Combo - power law (iwallf=1) unavailable through the GUI
-            self.wallFunctions = ComboModel(self.comboBoxWallFunctions, 4, 1)
-            self.wallFunctions.addItem(self.tr("No wall function"), '0')
-            self.wallFunctions.addItem(self.tr("1-scale model (log law)"), '2')
-            self.wallFunctions.addItem(self.tr("2-scale model (log law)"), '3')
-            self.wallFunctions.addItem(self.tr("Scalable 2-scale model (log law)"), '4')
-
-            # Initialization of wall function model
-            self.wallFunctions.setItem(str_model=str(self.result['wall_function']))
-
-        # Initialization gravity terms
-        if self.result['gravity_terms'] == 'on':
-            self.checkBoxGravity.setChecked(True)
-        else:
-            self.checkBoxGravity.setChecked(False)
-
-        self.case.undoStartGlobal()
-
-
-    def get_result(self):
-        """
-        Method to get the result
-        """
-        return self.result
-
-
-    def accept(self):
-        """
-        Method called when user clicks 'OK'
-        """
-        if self.checkBoxGravity.isChecked():
-            self.result['gravity_terms'] = "on"
-        else:
-            self.result['gravity_terms'] = "off"
-        self.result['wall_function'] = \
-          int(self.wallFunctions.dicoV2M[str(self.comboBoxWallFunctions.currentText())])
-        if self.turbDiff:
-            self.result['turb_diff'] = self.turbDiff.dicoV2M[str(self.comboBoxTurbDiff.currentText())]
-
-        QDialog.accept(self)
-
-
-    def reject(self):
-        """
-        Method called when user clicks 'Cancel'
-        """
-        QDialog.reject(self)
 
 
 #-------------------------------------------------------------------------------
@@ -289,10 +158,17 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         self.modelLength.addItem(self.tr("Prescribed"), 'prescribed')
         self.comboBoxLength.setSizeAdjustPolicy(QComboBox.AdjustToContents)
 
+        self.labelTurbDiff.hide()
+        self.comboBoxTurbDiff.hide()
+        self.turbDiff = None
+
         # Connections
 
         self.comboBoxTurbModel.activated[str].connect(self.slotTurbulenceModel)
-        self.pushButtonAdvanced.clicked.connect(self.slotAdvancedOptions)
+        self.comboBoxWallFunctions.activated[str].connect(self.slotWallFunction)
+        self.comboBoxTurbDiff.activated[str].connect(self.slotTurbDiff)
+        self.checkBoxGravity.clicked.connect(self.slotGravity)
+        self.checkBoxRijCoupled.clicked.connect(self.slotRijCoupled)
         self.lineEditLength.textChanged[str].connect(self.slotLengthScale)
 
         self.lineEditV0.textChanged[str].connect(self.slotVelocity)
@@ -301,7 +177,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
 
         # Frames display
 
-        self.frameAdvanced.hide()
+        self.groupBoxAdvanced.hide()
         self.frameLength.hide()
 
         # Validators
@@ -358,27 +234,83 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         Private Method.
         initalize view for a turbulence model
         """
-        model = self.model.getTurbulenceModel()
+        turb_model = self.model.getTurbulenceModel()
 
-        self.frameAdvanced.hide()
+        self.groupBoxAdvanced.hide()
         self.frameLength.hide()
         self.groupBoxReferenceValues.hide()
 
-        if model not in ('off', 'mixing_length', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
+        if turb_model not in ('off', 'mixing_length',
+                              'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
             self.groupBoxReferenceValues.show()
 
-        if model == 'mixing_length':
+        if turb_model == 'mixing_length':
             self.frameLength.show()
-            self.frameAdvanced.hide()
             self.model.getLengthScale()
-        elif model not in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE', 'Spalart-Allmaras'):
-            self.frameLength.hide()
-            self.frameAdvanced.show()
 
-        if model in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE', 'Spalart-Allmaras'):
-            self.line.hide()
+        elif turb_model not in ('off',
+                                'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE',
+                                'Spalart-Allmaras'):
+            self.frameLength.hide()
+            self.__init_advanced__(turb_model)
+            self.groupBoxAdvanced.show()
+
+
+    def __init_advanced__(self, turb_model):
+        """
+        Update advanced options, rebuilding combobox widgets.
+        """
+
+        self.labelTurbDiff.hide()
+        self.labelWallFunctionsDesc.hide()
+        self.comboBoxTurbDiff.hide()
+        self.checkBoxRijCoupled.hide()
+
+        if turb_model in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
+            turb_diff = self.model.getTurbDiffModel()
+            self.labelTurbDiff.show()
+            self.comboBoxTurbDiff.show()
+            self.turbDiff = ComboModel(self.comboBoxTurbDiff, 2, 1)
+            self.turbDiff.addItem(self.tr("Scalar diffusivity (Shir model)"), 'shir')
+            self.turbDiff.addItem(self.tr("Tensorial diffusivity (Daly and Harlow model)"), 'daly_harlow')
+            self.turbDiff.setItem(str_model=str(turb_diff))
+
+            self.checkBoxRijCoupled.show()
+
+        self.checkBoxGravity.setEnabled(True)
+        self.comboBoxWallFunctions.setEnabled(True)
+
+        wall_f_types, wall_f_default = self.model.wall_function_types()
+        self.default_desc = wall_f_types[wall_f_default]
+
+        # Initialization of wall function model
+
+        n_wfo = len(wall_f_types)
+
+        self.wallFunctions = ComboModel(self.comboBoxWallFunctions, n_wfo, 1)
+
+        for o in wall_f_types:
+            descr = wall_f_types[o]
+            self.wallFunctions.addItem(self.tr(descr), o)
+
+        wall_function = self.model.getWallFunction()
+        self.wallFunctions.setItem(str_model=str(wall_function))
+
+        if wall_function == -1:
+            self.labelWallFunctionsDesc.setText(self.default_desc)
+            self.labelWallFunctionsDesc.show()
+
+        # Initialization of gravity terms
+        if self.model.getGravity() == 'on':
+            self.checkBoxGravity.setChecked(True)
         else:
-            self.line.show()
+            self.checkBoxGravity.setChecked(False)
+
+        # Initialization of coupled component option
+        if self.model.getRijCoupled() == 'on':
+            self.checkBoxRijCoupled.setChecked(True)
+        else:
+            self.checkBoxRijCoupled.setChecked(False)
 
 
     @pyqtSlot(str)
@@ -401,6 +333,31 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         model = self.modelTurbModel.dicoV2M[str(text)]
         self.model.setTurbulenceModel(model)
         self.__initializeView()
+
+
+    @pyqtSlot(str)
+    def slotWallFunction(self, text):
+        """
+        Private slot.
+        Input iwallf.
+        """
+        m = self.wallFunctions.dicoV2M[str(self.comboBoxWallFunctions.currentText())]
+        self.model.setWallFunction(m)
+        if m == '-1':
+            self.labelWallFunctionsDesc.show()
+        else:
+            self.labelWallFunctionsDesc.hide()
+
+
+    @pyqtSlot(str)
+    def slotTurbDiff(self, text):
+        """
+        Private slot.
+        Input iwallf.
+        """
+        m = self.turbDiff.dicoV2M[str(self.comboBoxTurbDiff.currentText())]
+        self.model.setTurbDiffModel(m)
+
 
     @pyqtSlot(str)
     def slotVelocity(self,  text):
@@ -445,26 +402,25 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
 
 
     @pyqtSlot()
-    def slotAdvancedOptions(self):
+    def slotGravity(self):
         """
-        Private slot.
-        Ask one popup for advanced specifications
+        Activate or deactivate gravity source terms
         """
-        default = {}
-        default['model']         = self.model.getTurbulenceModel()
-        default['wall_function'] = self.model.getWallFunction()
-        default['turb_diff']     = self.model.getTurbDiffModel()
-        default['gravity_terms'] = self.model.getGravity()
-        log.debug("slotAdvancedOptions -> %s" % str(default))
+        if self.checkBoxGravity.isChecked():
+            self.model.setGravity('on')
+        else:
+            self.model.setGravity('off')
 
-        dialog = TurbulenceAdvancedOptionsDialogView(self, self.case, default)
-        if dialog.exec_():
-            result = dialog.get_result()
-            log.debug("slotAdvancedOptions -> %s" % str(result))
-            self.model.setTurbulenceModel(result['model'])
-            self.model.setWallFunction(result['wall_function'])
-            self.model.setTurbDiffModel(result['turb_diff'])
-            self.model.setGravity(result['gravity_terms'])
+
+    @pyqtSlot()
+    def slotRijCoupled(self):
+        """
+        Activate or deactivate Rij component coupling
+        """
+        if self.checkBoxRijCoupled.isChecked():
+            self.model.setRijCoupled('on')
+        else:
+            self.model.setRijCoupled('off')
 
 
 #-------------------------------------------------------------------------------

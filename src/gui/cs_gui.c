@@ -4637,11 +4637,13 @@ cs_gui_turb_model(void)
     turb_mdl->iturb = CS_TURB_RIJ_EPSILON_SSG;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
     cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrari));
+    cs_gui_node_get_child_status_int(tn_t, "coupled_rij", &(rans_mdl->irijco));
   }
   else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
     turb_mdl->iturb = CS_TURB_RIJ_EPSILON_EBRSM;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
     cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrari));
+    cs_gui_node_get_child_status_int(tn_t, "coupled_rij", &(rans_mdl->irijco));
   }
   else if (cs_gui_strcmp(model, "LES_Smagorinsky")) {
     turb_mdl->iturb = CS_TURB_LES_SMAGO_CONST;

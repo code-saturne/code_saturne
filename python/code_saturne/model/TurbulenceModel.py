@@ -62,10 +62,14 @@ class TurbulenceModel(Variables, Model):
 
         self.node_models = self.case.xmlGetNode('thermophysical_models')
         self.node_lagr   = self.case.xmlGetNode('lagrangian')
-        self.node_coal   = self.node_models.xmlGetChildNode('solid_fuels',    'model')
-        self.node_joule  = self.node_models.xmlGetChildNode('joule_effect',   'model')
-        self.node_gas    = self.node_models.xmlGetChildNode('gas_combustion', 'model')
-        self.node_turb   = self.node_models.xmlInitChildNode('turbulence',    'model')
+        self.node_coal   = self.node_models.xmlGetChildNode('solid_fuels',
+                                                            'model')
+        self.node_joule  = self.node_models.xmlGetChildNode('joule_effect',
+                                                            'model')
+        self.node_gas    = self.node_models.xmlGetChildNode('gas_combustion',
+                                                            'model')
+        self.node_turb   = self.node_models.xmlInitChildNode('turbulence',
+                                                             'model')
         self.node_bc     = self.case.xmlGetNode('boundary_conditions')
         self.node_ana    = self.case.xmlInitNode('analysis_control')
         self.node_prof   = self.node_ana.xmlInitNode('profiles')
@@ -150,7 +154,6 @@ class TurbulenceModel(Variables, Model):
         default['turbulence_model']          = "k-epsilon-PL"
         default['length_scale']              = 1.0
         default['turbulent_diffusion_model'] = 'shir'
-        default['wall_function']             = 3
         default['gravity_terms']             = "on"
         default['reference_velocity']        = 1.0
         default['reference_length_choice']   = 'automatic'
@@ -180,6 +183,60 @@ class TurbulenceModel(Variables, Model):
             turbList = ('off', 'k-epsilon', 'k-epsilon-PL')
 
         return turbList
+
+    def wall_function_types(self):
+        """
+        Return dictionary of wall function types.
+        """
+        # TODO: switch keys to explicit names (needs to be done in C also).
+
+        turb_model = self.node_turb['model']
+
+        all_types = {'0': "No wall function",
+                     '1': "One scale power law",
+                     '2': "One scale log law",
+                     '3': "Two scales log law",
+                     '4': "Scalable wall function",
+                     '5': "Two scales Van Driest",
+                     '6': "Two scales smooth/rough)",
+                     '7': "All y+ (2-scale model)"}
+
+        wall_f_default = ''
+        wall_f_types = {'-1': "Default"}
+
+        wall_f_list = []
+
+        if turb_model in ('off', 'v2f-BL-v2/k'):
+            wall_f_list = ['0']
+            wall_f_default = '0'
+
+        elif turb_model == 'mixing_length':
+            wall_f_list = ['2']
+            wall_f_default = '2'
+
+        elif turb_model == 'Rij-EBRSM':
+            # Combo - piecewise laws (iwallf=2,3) unavailable through the GUI
+            wall_f_list = ['0', '7']
+            wall_f_default = '7'
+
+        elif turb_model == 'k-omega-SST':
+            # Combo - power law (iwallf=1) unavailable through the GUI
+            wall_f_list = ['0', '2', '3', '7', '4']
+            wall_f_default = '2'
+
+        elif turb_model == 'Spalart-Allmaras':
+            wall_f_list = ['2']
+            wall_f_default = '2'
+
+        else:
+            # Combo - power law (iwallf=1) unavailable through the GUI
+            wall_f_list = ['0', '2', '3', '4']
+            wall_f_default = '3'
+
+        for o in wall_f_list:
+            wall_f_types[o] = all_types[o]
+
+        return wall_f_types, wall_f_default
 
 
     def __removeVariablesAndProperties(self, varList, propName):
@@ -427,24 +484,15 @@ class TurbulenceModel(Variables, Model):
         Return wall function from advanced options.
         """
         wall_function = self.node_turb.xmlGetInt('wall_function')
-        model_turb    = self.getTurbulenceModel()
         if wall_function is None:
-            wall_function = -1 # for next test
-        if model_turb == 'Rij-EBRSM' :
-          if wall_function not in (0,7) :
-            # Force default wall function to iwallf = 7
-            # for Rij EB-RSM model
-            wall_function = 7
+            wall_function = '-1' # default
+
+        wall_f_types, wall_f_default = self.wall_function_types()
+        if wall_function not in wall_f_types:
+            wall_function = '-1'
             self.setWallFunction(wall_function)
-        elif model_turb == 'k-omega-SST' :
-          if wall_function < 0 or wall_function > 7 :
-            wall_function = self.defaultTurbulenceValues()['wall_function']
-            self.setWallFunction(wall_function)
-        else :
-          if wall_function < 0 or wall_function > 5 :
-            wall_function = self.defaultTurbulenceValues()['wall_function']
-            self.setWallFunction(wall_function)
-        return wall_function
+
+        return int(wall_function)
 
 
     @Variables.undoLocal
@@ -452,8 +500,12 @@ class TurbulenceModel(Variables, Model):
         """
         Input wall function for advanced options.
         """
-        self.isIntInList(wall_function, [0, 1, 2, 3, 4, 5, 7])
-        self.node_turb.xmlSetData('wall_function', wall_function)
+        k = int(wall_function)
+        self.isIntInList(k, [-1, 0, 1, 2, 3, 4, 5, 7])
+        if wall_function != -1:
+            self.node_turb.xmlSetData('wall_function', wall_function)
+        else:
+            self.node_turb.xmlRemoveChild('wall_function')
 
 
     @Variables.noUndo
@@ -476,6 +528,32 @@ class TurbulenceModel(Variables, Model):
             self.node_turb.xmlRemoveChild('turbulent_diffusion_model')
         else:
             self.node_turb.xmlSetData('turbulent_diffusion_model', turb_diff_model)
+
+
+    @Variables.noUndo
+    def getRijCoupled(self):
+        """
+        Return Rij component coupling
+        """
+        status = 'on'
+        node_c = self.node_turb.xmlGetNode('coupled_rij', 'status')
+        if node_c:
+            status = node_c['status']
+
+        return status
+
+
+    @Variables.undoLocal
+    def setRijCoupled(self, status):
+        """
+        Set Rij component coupling
+        """
+        self.isOnOff(status)
+        if status == 'off':
+            node_c = self.node_turb.xmlInitNode('coupled_rij', 'status')
+            node_c ['status'] = status
+        else:
+            self.node_turb.xmlRemoveChild('coupled_rij')
 
 
     @Variables.noUndo

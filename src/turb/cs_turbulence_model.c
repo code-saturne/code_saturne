@@ -1706,13 +1706,13 @@ cs_turb_model_log_setup(void)
 
   const char *iwallf_value_str[]
     = {N_("Disabled"),
-      N_("One scale power law, forbidden for k-epsilon"),
-      N_("One scale log law"),
-      N_("Two scales log law"),
-      N_("Scalable wall function"),
-      N_("Two scales Van Driest"),
-      N_("Two scales smooth/rough"),
-      N_("All y+")};
+       N_("One scale power law, forbidden for k-epsilon"),
+       N_("One scale log law"),
+       N_("Two scales log law"),
+       N_("Scalable wall function"),
+       N_("Two scales Van Driest"),
+       N_("Two scales smooth/rough"),
+       N_("All y+")};
 
   if (wall_fns->iwallf >= 0)
     cs_log_printf
@@ -1723,10 +1723,10 @@ cs_turb_model_log_setup(void)
 
   const char *iwalfs_value_str[]
     = {N_("Arparci and Larsen"),
-      N_("Van Driest"),
-      N_("Louis (atmo flows)"),
-      N_("Monin Obukhov (atmo flows)"),
-      N_("smooth/rough")};
+       N_("Van Driest"),
+       N_("Louis (atmo flows)"),
+       N_("Monin Obukhov (atmo flows)"),
+       N_("smooth/rough")};
 
   if (wall_fns->iwalfs >= 0)
     cs_log_printf
