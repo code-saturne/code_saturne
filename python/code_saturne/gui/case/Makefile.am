@@ -206,7 +206,6 @@ ThermalForm.ui \
 TimeAveragesForm.ui \
 TimeStepForm.ui \
 TurboMachineryForm.ui \
-TurbulenceAdvancedOptionsDialogForm.ui \
 TurbulenceForm.ui \
 TurbulenceNeptune.ui \
 VerifyExistenceLabelDialogForm.ui \
