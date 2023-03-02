@@ -84,6 +84,19 @@ cs_user_time_table()
   const char *_headers[] = {"time", "flowrate"};
   cs_time_table_set_headers(table, 2, _headers);
   /*!< [define_time_table1] */
+
+  /*!< [define_time_table2] */
+  // Define Table and skip 2 first lines of file
+  cs_time_table_t *table =
+    cs_time_table_from_csv_file_simple_headers("table2",    /* table name */
+                                               "file2.csv", /* data file */
+                                               ";",         /* Separator */
+                                               2);          /* Number of header lines to skip */
+
+  // Optionnal: add headers
+  const char *_headers[] = {"time", "temperature"};
+  cs_time_table_set_headers(table, 2, _headers);
+  /*!< [define_time_table2] */
 }
 
 /*----------------------------------------------------------------------------*/

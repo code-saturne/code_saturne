@@ -102,6 +102,7 @@ cs_user_boundary_conditions-mapped_inlet.c \
 cs_user_boundary_conditions-medcoupling_remapper_2d.c \
 cs_user_boundary_conditions-notebook.c \
 cs_user_boundary_conditions-richards.c \
+cs_user_boundary_conditions-time_table.c \
 cs_user_coupling-saturne.c \
 cs_user_coupling-syrthes.c \
 cs_user_electric_scaling.c \
