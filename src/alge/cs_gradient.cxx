@@ -1512,6 +1512,8 @@ _renormalize_scalar_gradient(const cs_mesh_t               *m,
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
     cell_f_vol = fvq->cell_vol;
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict cell_f_cen
     = (const cs_real_3_t *restrict)fvq->cell_f_cen;
   const cs_real_3_t *restrict i_face_normal
@@ -1613,15 +1615,11 @@ _renormalize_scalar_gradient(const cs_mesh_t               *m,
         /* Special treatment for outlets */
         cs_real_t xi[3], nn[3];
         for (int k = 0; k < 3; k++) {
-          xi[k] = cell_f_cen[ii][k];
+          xi[k] = cell_cen[ii][k];
           nn[k] = b_face_normal[face_id][k];
         }
-        cs_real_t psca1 =    (xij[0]-xip[0])*nn[0]
-                           + (xij[1]-xip[1])*nn[1]
-                           + (xij[2]-xip[2])*nn[2];
-        cs_real_t psca2 =    (xij[0]-xi[0])*nn[0]
-                           + (xij[1]-xi[1])*nn[1]
-                           + (xij[2]-xi[2])*nn[2];
+        cs_real_t psca1 = cs_math_3_distance_dot_product(xip, xij, nn);
+        cs_real_t psca2 = cs_math_3_distance_dot_product(xi,  xij, nn);
         cs_real_t lambda = psca1 / psca2;
         for (int k = 0; k < 3; k++) {
           xij[k] = xip[k] + lambda * (xij[k]-xi[k]);
@@ -1848,7 +1846,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
-  const cs_real_3_t *restrict b_face_cog
+  const cs_real_3_t *restrict b_f_face_cog
     = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
@@ -2070,9 +2068,9 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                  * (  diipb[f_id][0] * (grad[c_id][0] - f_ext[c_id][0])
                     + diipb[f_id][1] * (grad[c_id][1] - f_ext[c_id][1])
                     + diipb[f_id][2] * (grad[c_id][2] - f_ext[c_id][2])
-                    + (b_face_cog[f_id][0]-cell_f_cen[c_id][0]) * f_ext[c_id][0]
-                    + (b_face_cog[f_id][1]-cell_f_cen[c_id][1]) * f_ext[c_id][1]
-                    + (b_face_cog[f_id][2]-cell_f_cen[c_id][2]) * f_ext[c_id][2]
+                    + (b_f_face_cog[f_id][0]-cell_f_cen[c_id][0]) * f_ext[c_id][0]
+                    + (b_f_face_cog[f_id][1]-cell_f_cen[c_id][1]) * f_ext[c_id][1]
+                    + (b_f_face_cog[f_id][2]-cell_f_cen[c_id][2]) * f_ext[c_id][2]
                     + poro);
 
           pfac += (coefbp[f_id] -1.0) * pvar[c_id];
@@ -3123,8 +3121,8 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
     = (const cs_real_t *restrict)fvq->b_dist;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_face_cog;
+  const cs_real_3_t *restrict b_f_face_cog
+    = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
@@ -3589,10 +3587,11 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
 
       cs_real_t pfac
         =   (coefap[f_id]*inc
-            + (  (coefbp[f_id] -1.)
+            + (  (coefbp[f_id] -1.)//FIXME ? (B-1) *(var_i + fext) or (B-1)*  var_i + B fext
                * (  rhsv[ii][3]
-                  + cs_math_3_distance_dot_product(b_face_cog[f_id],
-                                                   cell_f_cen[ii],
+                   /* (b_f_face_cog - cell_f_cen).f_ext, or IF.F_i */
+                  + cs_math_3_distance_dot_product(cell_f_cen[ii],
+                                                   b_f_face_cog[f_id],
                                                    f_ext[ii])
                   + poro)))
             * unddij;
@@ -3935,8 +3934,8 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_face_cog;
+  const cs_real_3_t *restrict b_f_face_cog
+    = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
 
   const cs_real_3_t *restrict dofij
     = (const cs_real_3_t *restrict)fvq->dofij;
@@ -4120,9 +4119,10 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
         cs_real_t pfac
           = coefap[f_id] * inc
             + coefbp[f_id]
-              * ( (b_face_cog[f_id][0] - cell_f_cen[c_id][0])*f_ext[c_id][0]
-                + (b_face_cog[f_id][1] - cell_f_cen[c_id][1])*f_ext[c_id][1]
-                + (b_face_cog[f_id][2] - cell_f_cen[c_id][2])*f_ext[c_id][2]
+                /* (b_f_face_cog - cell_f_cen).f_ext, or IF.F_i */
+              * ( cs_math_3_distance_dot_product(cell_f_cen[c_id],
+                                                 b_f_face_cog[f_id],
+                                                 f_ext[c_id])
                 + poro);
 
         pfac += (coefbp[f_id] - 1.0) * c_var[c_id];
@@ -4429,8 +4429,8 @@ _lsq_scalar_b_face_val_phyd(const cs_mesh_t             *m,
 
   const cs_real_3_t *restrict cell_f_cen
     = (const cs_real_3_t *restrict)fvq->cell_f_cen;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_face_cog;
+  const cs_real_3_t *restrict b_f_face_cog
+    = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
   const cs_real_3_t *restrict b_face_normal
     = (const cs_real_3_t *restrict)fvq->b_face_normal;
   const cs_real_t *restrict b_dist
@@ -4577,14 +4577,14 @@ _lsq_scalar_b_face_val_phyd(const cs_mesh_t             *m,
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         dsij[ll] = normal[ll] + umcbdd*diipb[f_id][ll];
 
-      /* (b_face_cog - cell_f_cen).f_ext, or IF.F_I */
+      /* (b_f_face_cog - cell_f_cen).f_ext, or IF.F_i */
       cs_real_t c_f_ext
-        = cs_math_3_distance_dot_product(b_face_cog[f_id],
-                                         cell_f_cen[c_id],
+        = cs_math_3_distance_dot_product(cell_f_cen[c_id],
+                                         b_f_face_cog[f_id],
                                          f_ext[c_id]);
 
       cs_real_t pfac =  (  bc_coeff_a[f_id]*inc + (bc_coeff_b[f_id] -1.)
-                         * (c_var[c_id] + c_f_ext + poro))
+                         * (c_var[c_id] + c_f_ext + poro))//FIXME (B-1) pvar + B fext or (B-1)(pvar+fext)
                        * unddij;
 
       for (cs_lnum_t ll = 0; ll < 3; ll++)
@@ -4706,8 +4706,6 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_face_cog;
 
   cs_lnum_t   cpl_stride = 0;
   const bool _coupled_faces[1] = {false};
@@ -4958,9 +4956,9 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
           cs_real_t pfac = b_f_var[f_id] - c_var[c_id];
 
           pfac +=  bc_coeff_b[f_id]
-                  * (  (b_face_cog[f_id][0] - cell_f_cen[c_id][0])*f_ext[c_id][0]
-                     + (b_face_cog[f_id][1] - cell_f_cen[c_id][1])*f_ext[c_id][1]
-                     + (b_face_cog[f_id][2] - cell_f_cen[c_id][2])*f_ext[c_id][2]
+                  * (  cs_math_3_distance_dot_product(cell_f_cen[c_id],
+                                                      b_f_face_cog[f_id],
+                                                      f_ext[c_id])
                      + poro);
 
           for (cs_lnum_t j = 0; j < 3; j++)
@@ -9941,12 +9939,12 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
     }
     else if (bc_coeff_a != NULL) { /* Known face values */
 
-      const cs_real_3_t *restrict b_face_cog
-        = (const cs_real_3_t *restrict)fvq->b_face_cog;
+      const cs_real_3_t *restrict b_f_face_cog
+        = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
 
       cs_real_t dc[3];
       for (cs_lnum_t ii = 0; ii < 3; ii++)
-        dc[ii] = b_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
+        dc[ii] = b_f_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
 
       cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
@@ -9967,12 +9965,12 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
     else { /* Assign cell values as face values (homogeneous Neumann);
               as above, pfac cancels out, so does contribution to RHS */
 
-      const cs_real_3_t *restrict b_face_cog
-        = (const cs_real_3_t *restrict)fvq->b_face_cog;
+      const cs_real_3_t *restrict b_f_face_cog
+        = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
 
       cs_real_t dc[3];
       for (cs_lnum_t ii = 0; ii < 3; ii++)
-        dc[ii] = b_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
+        dc[ii] = b_f_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
 
       cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
@@ -10266,14 +10264,14 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
 
       for (cs_lnum_t i = s_id; i < e_id; i++) {
 
-        const cs_real_3_t *restrict b_face_cog
-          = (const cs_real_3_t *restrict)fvq->b_face_cog;
+        const cs_real_3_t *restrict b_f_face_cog
+          = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
 
         cs_lnum_t f_id = cell_b_faces[i];
 
         cs_real_t dc[3];
         for (cs_lnum_t ii = 0; ii < 3; ii++)
-          dc[ii] = b_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
+          dc[ii] = b_f_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
 
         cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
@@ -10298,14 +10296,14 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
 
       for (cs_lnum_t i = s_id; i < e_id; i++) {
 
-        const cs_real_3_t *restrict b_face_cog
-          = (const cs_real_3_t *restrict)fvq->b_face_cog;
+        const cs_real_3_t *restrict b_f_face_cog
+          = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
 
         cs_lnum_t f_id = cell_b_faces[i];
 
         cs_real_t dc[3];
         for (cs_lnum_t ii = 0; ii < 3; ii++)
-          dc[ii] = b_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
+          dc[ii] = b_f_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
 
         cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
@@ -10590,14 +10588,14 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
 
       for (cs_lnum_t i = s_id; i < e_id; i++) {
 
-        const cs_real_3_t *restrict b_face_cog
-          = (const cs_real_3_t *restrict)fvq->b_face_cog;
+        const cs_real_3_t *restrict b_f_face_cog
+          = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
 
         cs_lnum_t f_id = cell_b_faces[i];
 
         cs_real_t dc[3];
         for (cs_lnum_t ii = 0; ii < 3; ii++)
-          dc[ii] = b_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
+          dc[ii] = b_f_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
 
         cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
@@ -10621,14 +10619,14 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
 
       for (cs_lnum_t i = s_id; i < e_id; i++) {
 
-        const cs_real_3_t *restrict b_face_cog
-          = (const cs_real_3_t *restrict)fvq->b_face_cog;
+        const cs_real_3_t *restrict b_f_face_cog
+          = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
 
         cs_lnum_t f_id = cell_b_faces[i];
 
         cs_real_t dc[3];
         for (cs_lnum_t ii = 0; ii < 3; ii++)
-          dc[ii] = b_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
+          dc[ii] = b_f_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
 
         cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
