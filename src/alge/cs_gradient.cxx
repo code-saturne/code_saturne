@@ -4704,8 +4704,12 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
     = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+  const cs_real_3_t *restrict i_f_face_cog_0
+    = (const cs_real_3_t *restrict)fvq->i_f_face_cog_0;
+  const cs_real_3_t *restrict i_f_face_cog_1
+    = (const cs_real_3_t *restrict)fvq->i_f_face_cog_1;
+  const cs_real_3_t *restrict b_f_face_cog
+    = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
 
   cs_lnum_t   cpl_stride = 0;
   const bool _coupled_faces[1] = {false};
@@ -4900,14 +4904,14 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
 
           cs_real_t pfaci
             =  ktpond
-                 * (  (i_face_cog[f_id][0] - cell_f_cen[ii][0])*f_ext[ii][0]
-                    + (i_face_cog[f_id][1] - cell_f_cen[ii][1])*f_ext[ii][1]
-                    + (i_face_cog[f_id][2] - cell_f_cen[ii][2])*f_ext[ii][2]
+                 * (  (i_f_face_cog_0[f_id][0] - cell_f_cen[ii][0])*f_ext[ii][0]
+                    + (i_f_face_cog_0[f_id][1] - cell_f_cen[ii][1])*f_ext[ii][1]
+                    + (i_f_face_cog_0[f_id][2] - cell_f_cen[ii][2])*f_ext[ii][2]
                     + poro[0])
             +  (1.0 - ktpond)
-                 * (  (i_face_cog[f_id][0] - cell_f_cen[jj][0])*f_ext[jj][0]
-                    + (i_face_cog[f_id][1] - cell_f_cen[jj][1])*f_ext[jj][1]
-                    + (i_face_cog[f_id][2] - cell_f_cen[jj][2])*f_ext[jj][2]
+                 * (  (i_f_face_cog_1[f_id][0] - cell_f_cen[jj][0])*f_ext[jj][0]
+                    + (i_f_face_cog_1[f_id][1] - cell_f_cen[jj][1])*f_ext[jj][1]
+                    + (i_f_face_cog_1[f_id][2] - cell_f_cen[jj][2])*f_ext[jj][2]
                     + poro[1]);
           cs_real_t pfacj = pfaci;
 
