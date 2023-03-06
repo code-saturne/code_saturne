@@ -46,8 +46,10 @@ BEGIN_C_DECLS
  * \param[in] file_name              Name of the file to read
  * \param[in] separator              Separator (int)
  * \param[in] n_headers              Number of headers (to ignore during import)
- * \param[in] n_columns              Number of columns to read. -1 if all columns are to be read
- * \param[in] col_idx                Array of indices of columns to read (if n_columns != -1)
+ * \param[in] n_columns              Number of columns to read.
+ *                                   -1 if all columns are to be read
+ * \param[in] col_idx                Array of indices of columns to read
+ *                                   (if n_columns != -1)
  * \param[in] ignore_missing_tokens  Ignore missing tokens (NULL)
  * \param[in] n_rows                 Pointer to number of rows in file
  * \param[in] n_cols                 Pointer to number of columns in file
@@ -55,6 +57,7 @@ BEGIN_C_DECLS
  * \returns Pointer to newly created dataseti. Needs to be deallocated by caller
  */
 /*----------------------------------------------------------------------------*/
+
 char ***
 cs_file_csv_parse(const char  *file_name,
                   const char  *separator,

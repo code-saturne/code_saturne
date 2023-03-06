@@ -106,7 +106,6 @@ _print_time_table(cs_time_table_t *t)
   bft_printf("[NAME]  \"%s\"\n", t->name);
   bft_printf("[NROWS] \"%d\"\n", t->n_rows);
   bft_printf("[NCOLS] \"%d\"\n", t->n_cols);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -122,7 +121,6 @@ _print_time_table(cs_time_table_t *t)
 static cs_time_table_t *
 _time_table_by_name_try(const char *name)
 {
-
   if (name == NULL || strcmp(name, "") == 0)
     bft_error(__FILE__, __LINE__, 0,
               "Error: Empty time table name.\n");
@@ -181,6 +179,7 @@ _time_table_column_id_by_name(const cs_time_table_t *table,
  * \return pointer to newly created time table
  */
 /*----------------------------------------------------------------------------*/
+
 static cs_time_table_t *
 _time_table_create(const char *name)
 {
@@ -255,6 +254,7 @@ _free_time_table(cs_time_table_t *t)
  * \return time value (cs_real_t)
  */
 /*----------------------------------------------------------------------------*/
+
 static inline cs_real_t
 _time_table_compute_value(cs_time_table_t *table,
                           const int        col_id)
@@ -347,7 +347,6 @@ cs_time_table_set_headers(cs_time_table_t *table,
 
     table->headers[i] = _h;
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -485,7 +484,6 @@ cs_time_table_from_csv_file_simple_headers(const char *name,
   return retval;
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define the column id for time based on an index
@@ -494,6 +492,7 @@ cs_time_table_from_csv_file_simple_headers(const char *name,
  * \param[in] col_id  Index of column which is to be used as time
  */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_time_table_set_time_col_id(cs_time_table_t *table,
                               const int        col_id)
@@ -511,6 +510,7 @@ cs_time_table_set_time_col_id(cs_time_table_t *table,
  * \param[in] time_label Label to identify index of column which is to be used as time
  */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_time_table_set_time_from_label(cs_time_table_t *table,
                                   const char      *time_label)
@@ -546,7 +546,6 @@ cs_time_table_reset_position(cs_time_table_t *table)
     table->coeffs[i].val = 0.;
   }
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -654,20 +653,19 @@ cs_time_table_compute_time_value_by_label(const char *name,
   cs_time_table_update_position(table, t, overwrite_prev);
 
   return _time_table_compute_value(table, _id);
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute values for several columns of a time table for a given abscissa
+ * \brief Compute values for several columns of a time table for a given
+ *        abscissa
  *
  * \param[in]  name            Name of the time table to use
  * \param[in]  t               Time for which we seek values
  * \param[in]  n_cols          Number of values to compute
- * \param[in]  cols            Array containing the indices of columns used for computation
+ * \param[in]  cols            Array with the indices of columns for computation
  * \param[in]  overwrite_prev  Start search of value using first value
  * \param[out] retvals         Array of output values
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -685,20 +683,19 @@ cs_time_table_compute_n_time_values(const char *name,
 
   for (int i = 0; i < n_cols; i++)
     retvals[i] = _time_table_compute_value(table, cols[i]);
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute values for several columns of a time table for a given abscissa
+ * \brief Compute values for several columns of a time table for a given
+ *        abscissa
  *
  * \param[in]  name            Name of the time table to use
  * \param[in]  t               Time for which we seek values
  * \param[in]  n_cols          Number of values to compute
- * \param[in]  labels          Array containing the labels of columns used for computation
+ * \param[in]  labels          Array with the labels of columns for computation
  * \param[in]  overwrite_prev  Start search of value using first value
  * \param[out] retvals         Array of output values
- *
  */
 /*----------------------------------------------------------------------------*/
 

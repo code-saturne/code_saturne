@@ -93,21 +93,21 @@ _get_token(const char *str1,
 /*!
  * \brief Parse a line using a given separator and returns the tokens.
  *
- * \param[in] line       line to parse (char *)
- * \param[in] separator  separator (int)
- * \param[in] tokens     array of strings, each string corresponding to a token
- * \param[in] n_tokens   number of tokens
+ * \param[in]      line                  line to parse (char *)
+ * \param[in]      separator             separator (int)
+ * \param[in, out] n_tokens              number of tokens
+ * \param[in]      keep_missing_tokens   true or false
  *
+ * \return array of strings, each string corresponding to a token
  */
 /*----------------------------------------------------------------------------*/
 
 static char **
-_parse_line(char   *line,
-            char    *separator,
-            int    *n_tokens,
-            bool    keep_missing_tokens)
+_parse_line(char          *line,
+            const char    *separator,
+            int           *n_tokens,
+            bool           keep_missing_tokens)
 {
-
   char **tokens = NULL;
 
   int _nt = 0;
@@ -121,8 +121,6 @@ _parse_line(char   *line,
     n = strchr(c, isep);
 
     if (n != NULL) {
-      size_t l_c = strlen(c);
-      size_t l_n = strlen(n);
 
       char *_t = _get_token(c, n);
       if (keep_missing_tokens || (_t != NULL && strlen(_t) > 0) ) {
@@ -131,9 +129,13 @@ _parse_line(char   *line,
         _nt += 1;
       }
       c = n + 1;
+
     }
     else if (c != NULL && strlen(c) > 0 && strcmp(c, "\n")) {
-      // Check if there is still a token left (line not ending with the separator)
+
+      /* Check if there is still a token left (line not ending with the
+         separator) */
+
       char *_t = _get_token(c, n);
       if (keep_missing_tokens || (_t != NULL && strlen(_t) > 0) ) {
         BFT_REALLOC(tokens, _nt + 1, char *);
@@ -141,9 +143,11 @@ _parse_line(char   *line,
         _nt += 1;
       }
       break;
+
     }
     else
       break;
+
   }
 
   *n_tokens = _nt;
@@ -164,11 +168,10 @@ _parse_line(char   *line,
 /*----------------------------------------------------------------------------*/
 
 static char *
-_get_token_from_line(char *line,
-                     int   separator,
-                     int   position)
+_get_token_from_line(char    *line,
+                     int      separator,
+                     int      position)
 {
-
   int _nt = 0;
 
   char *n = NULL;
@@ -240,8 +243,10 @@ _count_lines_in_file(const char *file_name)
  * \param[in] file_name              Name of the file to read
  * \param[in] separator              Separator (int)
  * \param[in] n_headers              Number of headers (to ignore during import)
- * \param[in] n_columns              Number of columns to read. -1 if all columns are to be read
- * \param[in] col_idx                Array of indices of columns to read (if n_columns != -1)
+ * \param[in] n_columns              Number of columns to read.
+ *                                   -1 if all columns are to be read
+ * \param[in] col_idx                Array of indices of columns to read
+ *                                   (if n_columns != -1)
  * \param[in] ignore_missing_tokens  Ignore missing tokens (NULL)
  * \param[in] n_rows                 Pointer to number of rows in file
  * \param[in] n_cols                 Pointer to number of columns in file
@@ -249,6 +254,7 @@ _count_lines_in_file(const char *file_name)
  * \returns Pointer to newly created dataseti. Needs to be deallocated by caller
  */
 /*----------------------------------------------------------------------------*/
+
 char ***
 cs_file_csv_parse(const char  *file_name,
                   const char  *separator,
@@ -259,7 +265,6 @@ cs_file_csv_parse(const char  *file_name,
                   int         *n_rows,
                   int         *n_cols)
 {
-
   if (cs_file_isreg(file_name) == 0)
     bft_error(__FILE__, __LINE__, 0,
               "Error: file \"%s\" does not exist.\n", file_name);
@@ -272,9 +277,6 @@ cs_file_csv_parse(const char  *file_name,
   if (separator == NULL || strcmp(separator, "") == 0)
     bft_error(__FILE__, __LINE__, 0,
               "Error: empty separator provided.\n");
-
-  int sep = (int)separator[0];
-
 
   bool keep_missing_tokens = !(ignore_missing_tokens);
   int _n_pts_max = _count_lines_in_file(file_name);
@@ -331,7 +333,6 @@ cs_file_csv_parse(const char  *file_name,
   }
 
   return retval;
-
 }
 
 /*----------------------------------------------------------------------------*/
