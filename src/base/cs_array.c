@@ -178,6 +178,35 @@ cs_array_lnum_set_value(cs_lnum_t  size,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Assign the value "num" to an array on a selected subset of elemtns.
+ *        if elt_ids = NULL, then one recovers the function
+ *        cs_array_lnum_set_value
+ *
+ * \param[in]      n_elts   number of elements
+ * \param[in]      elt_ids  list of ids in the subset or NULL (size: n_elts)
+ * \param[in]      num      value to set
+ * \param[in, out] a        array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_lnum_set_value_on_subset(cs_lnum_t        n_elts,
+                                  const cs_lnum_t  elt_ids[],
+                                  cs_lnum_t        num,
+                                  cs_lnum_t        a[restrict])
+{
+  if (elt_ids == NULL)
+    cs_array_lnum_set_value(n_elts, num, a);
+
+  else {
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_elts; ii++)
+      a[elt_ids[ii]] = num;
+
+  }
+}
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Copy an array ("ref") into another array ("dest") on possibly only a
  *        part of the array(s). Array with stride > 1 are assumed to be
  *        interlaced.  The subset of elements on which working is defined by

@@ -129,9 +129,10 @@ cs_array_lnum_fill_zero(cs_lnum_t  size,
  * \brief Assign the value "num" to all elements of an array. Case of a
  *        cs_lnum_t array.
  *
- * \param[in]      size    total number of elements to set
- * \param[in]      num     value to set
- * \param[in, out] a       array to set
+ * \param[in]      n_elts   number of elements
+ * \param[in]      elt_ids  list of ids in the subset or NULL (size: n_elts)
+ * \param[in]      num      value to set
+ * \param[in, out] a        array to set
  */
 /*----------------------------------------------------------------------------*/
 
@@ -139,6 +140,24 @@ void
 cs_array_lnum_set_value(cs_lnum_t  size,
                         cs_lnum_t  num,
                         cs_lnum_t  a[restrict]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign the value "num" to an array on a selected subset of elemtns.
+ *        if elt_ids = NULL, then one recovers the function
+ *        cs_array_lnum_set_value
+ *
+ * \param[in]      size    total number of elements to set
+ * \param[in]      num     value to set
+ * \param[in, out] a       array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_lnum_set_value_on_subset(cs_lnum_t        n_elts,
+                                  const cs_lnum_t  elt_ids[],
+                                  cs_lnum_t        num,
+                                  cs_lnum_t        a[restrict]);
 
 /*----------------------------------------------------------------------------*/
 /*!
