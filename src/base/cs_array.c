@@ -178,7 +178,7 @@ cs_array_lnum_set_value(cs_lnum_t  size,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Assign the value "num" to an array on a selected subset of elemtns.
+ * \brief Assign the value "num" to an array on a selected subset of elements.
  *        if elt_ids = NULL, then one recovers the function
  *        cs_array_lnum_set_value
  *
@@ -202,14 +202,13 @@ cs_array_lnum_set_value_on_subset(cs_lnum_t        n_elts,
 #   pragma omp parallel for if (n_elts > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_elts; ii++)
       a[elt_ids[ii]] = num;
-
   }
 }
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Copy an array ("ref") into another array ("dest") on possibly only a
  *        part of the array(s). Array with stride > 1 are assumed to be
- *        interlaced.  The subset of elements on which working is defined by
+ *        interlaced. The subset of elements on which working is defined by
  *        "elt_ids". The way to apply the subset is defined with the parameter
  *        "mode" as follows:
  *        - Only the "ref" array if mode = 0 (CS_ARRAY_SUBSET_IN)
