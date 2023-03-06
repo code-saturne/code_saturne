@@ -3587,7 +3587,7 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
 
       cs_real_t pfac
         =   (coefap[f_id]*inc
-            + (  (coefbp[f_id] -1.)//FIXME ? (B-1) *(var_i + fext) or (B-1)*  var_i + B fext
+            + (  (coefbp[f_id] -1.)
                * (  rhsv[ii][3]
                    /* (b_f_face_cog - cell_f_cen).f_ext, or IF.F_i */
                   + cs_math_3_distance_dot_product(cell_f_cen[ii],
@@ -4584,7 +4584,7 @@ _lsq_scalar_b_face_val_phyd(const cs_mesh_t             *m,
                                          f_ext[c_id]);
 
       cs_real_t pfac =  (  bc_coeff_a[f_id]*inc + (bc_coeff_b[f_id] -1.)
-                         * (c_var[c_id] + c_f_ext + poro))//FIXME (B-1) pvar + B fext or (B-1)(pvar+fext)
+                         * (c_var[c_id] + c_f_ext + poro))
                        * unddij;
 
       for (cs_lnum_t ll = 0; ll < 3; ll++)
