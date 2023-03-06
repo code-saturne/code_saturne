@@ -87,8 +87,8 @@ if test "x$with_eos" != "xno" ; then
 
   eosversion=`${with_eos}/bin/eos --version`
 
-  AC_MSG_CHECKING([if EOS version >= 1.8.0])
-  AS_VERSION_COMPARE(${eosversion}, 1.8.0, [EOS_PRE_V1_8=-1], [EOS_PRE_V1_8=0], [EOS_PRE_V1_8=1])
+  AC_MSG_CHECKING([if EOS version >= 1.11.0])
+  AS_VERSION_COMPARE(${eosversion}, 1.11.0, [EOS_PRE_V1_11=-1], [EOS_PRE_V1_11=0], [EOS_PRE_V1_11=1])
 
   CXXFLAGS="${CXXFLAGS} -std=c++11"
   CPPFLAGS="${CPPFLAGS}  ${EOS_CPPFLAGS}"

@@ -627,7 +627,7 @@ The list of third-party software usable with code_saturne is provided here:
 * [Melissa](https://melissa-sa.github.io) may be used for in-situ
   statistical analysis and post-processing of ensemble runs.
 
-* `EOS` 1.8 or above may be used for thermodynamic properties of fluids.
+* `EOS` 1.11 or above may be used for thermodynamic properties of fluids.
    it is not currently free, so usually available only to users at EDF,
    CEA, or organisms participating in projects with those entities.
 
@@ -1253,10 +1253,10 @@ ${SRC_PATH}/configure \
 --with-blas=/opt/mkl-2019.0.045/mkl \
 --with-hdf5=${CS_OPT}/hdf5-1.10/arch/gaia \
 --with-med=${CS_OPT}/med-4.1/arch/gaia \
---with-cgns=${CS_OPT}/cgns-3.4/arch/gaia \
---with-scotch=${CS_OPT}/scotch-6.0/arch/gaia_ompi \
+--with-cgns=${CS_OPT}/cgns-4.2/arch/gaia \
+--with-scotch=${CS_OPT}/scotch-7.0/arch/gaia_ompi \
 --with-metis=${CS_OPT}/parmetis-4.0/arch/gaia_ompi \
---with-eos/${CS_OPT}/eos-1.9.0/arch/gaia_ompi \
+--with-eos/${CS_OPT}/eos-1.11.0/arch/gaia_ompi \
 CC=mpicc FC=ifort CXX=mpicxx
 ```
 
@@ -1328,8 +1328,8 @@ options such as in the following example are recommended:
 --prefix=${INSTALL_PATH}/arch/xc30 \
 --with-hdf5=${CS_OPT}/hdf5-1.10/arch/xc30 \
 --with-med}=${CS_OPT}/med-4.1/arch/xc30 \
---with-cgns}=${CS_OPT}/cgns-3.4/arch/xc30 \
---with-scotch}=${CS_OPT}/scotch-6.0/arch/xc30 \
+--with-cgns}=${CS_OPT}/cgns-4.2/arch/xc30 \
+--with-scotch}=${CS_OPT}/scotch-7.0/arch/xc30 \
 --disable-sockets \
 --disable-shared \
 --host=x86_64-unknown-linux-gnu \

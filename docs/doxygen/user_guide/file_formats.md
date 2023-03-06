@@ -64,7 +64,7 @@ Mesh formats supported for input {#sec_formats_in}
 ### Gmsh {#sec_fmtdesc_gmsh}
 <!-- -->
 
-This format is used by the free [Gmsh](http://www.geuz.org/gmsh)
+This format is used by the free [Gmsh](https://gmsh.info)
 tool. This tool has both meshing and post-processing functionality,
 but code_saturne only imports the meshes, allowing
 MSH formats up to 4.1 (the latest revision as of March 2020).
@@ -97,7 +97,7 @@ entities could lead to a high number of groups.
 <tr><td> Zone selection    <td> physical entities interpreted as groups
 <tr><td> Compatibility     <td> all files of this type (current revision: 4.1)
 <tr><td> Documentation     <td> included documentation, also available at:
-                                [http://www.geuz.org/gmsh](http://www.geuz.org/gmsh)
+                                [gmsh.info/#Documentation](gmsh.info/#Documentation)
 </table>
 
 ### NOPO/Simail (INRIA/Distene) {#sec_fmtdesc_des}
@@ -255,17 +255,15 @@ The current MED 4.x versions are based on HDF5 1.10.
 <table>
 <tr><td> Default extension <td> `.med`
 <tr><td> File type            <td> portable binary, based on the
-                                   [HDF5](http://www.hdfgroup.org/HDF5/index.html) library
+                                   [HDF5](https://www.hdfgroup.org/solutions/hdf5/) library
 <tr><td> Surface elements     <td> triangles, quadrangles, simple polygons
 <tr><td> Volume elements      <td> tetrahedra, pyramids, prisms, hexahedra, simple polyhedra
 <tr><td> Zone selection       <td> element groups (stored as families)
 <tr><td> Input compatibility  <td> MED 2.3 to 4.1 (assuming up to date MED library);
                                    only unstructured nodal connectivity is supported
 <tr><td> Output compatibility <td> MED 3.0 and above (based on MED library version)
-<tr><td> Documentation        <td> on-line documentation; descripyion at
-                                   https://www.salome-platform.org/user-section/about/med,
-                                   download link at
-                                   http://files.salome-platform.org/Salome/other/med-4.0.0.tar.gz
+<tr><td> Documentation        <td> on-line documentation; download link at
+                                   https://files.salome-platform.org/Salome/other/med-4.1.1.tar.gz
 <tr><td> Parallel IO       <td> supported (using HDF5 parallel IO); still has unresolved bug.
 </table>
 
