@@ -98,14 +98,10 @@ class InterfacialEnthalpyModel(Variables, Model):
         """
         return self.__liquidVaporCouples
 
-    def getAvailableModels(self, fieldId):
+    def getAvailableModels(self, fieldaId, fieldbId, fieldId):
         """
         Return available models for fieldId depending on the nature of field a and b
         """
-        field_id_list = self.getEnthalpyCoupleFieldId()
-        if field_id_list is None:
-            return []
-        fieldaId, fieldbId = field_id_list
         field_a = self.mainFieldsModel.getFieldFromId(fieldaId)
         field_b = self.mainFieldsModel.getFieldFromId(fieldbId)
         if field_a.phase == "liquid":
@@ -193,17 +189,22 @@ class InterfacialEnthalpyModel(Variables, Model):
         if node_pool is not None:
             node_pool.xmlRemoveNode()
 
-    def getEnthalpyCoupleFieldId(self):
+    def getEnthalpyCoupleDefault(self):
         XMLNodesEnthal = self.XMLInterfEnthalpyNode.xmlGetNodeList('enthalpy')
-        if len(XMLNodesEnthal) > 1:
-            raise Exception("XML file contains more than one enthalpy transfer couple. "
-                            "Correct your XML data before relaunching the GUI.")
-        elif len(XMLNodesEnthal) == 1:
-            fieldaId = XMLNodesEnthal[0]['field_id_a']
-            fieldbId = XMLNodesEnthal[0]['field_id_b']
-            return fieldaId, fieldbId
+        if len(XMLNodesEnthal) > 0:
+            return XMLNodesEnthal[0]['field_id_a'], XMLNodesEnthal[0]['field_id_b']
         else:
             return None
+
+    def getEnthalpyCoupleFieldId(self, field_a, field_b):
+        XMLNodesEnthal = self.XMLInterfEnthalpyNode.xmlGetNodeList('enthalpy')
+
+        retval = None
+        for n in XMLNodesEnthal:
+            if n['field_id_a'] == field_a and n['field_id_b'] == field_b:
+                retval = n
+
+        return retval
 
     def setEnthalpyCoupleFieldId(self, field_id_a=None, field_id_b=None):
         node = self.XMLInterfEnthalpyNode.xmlInitNode('enthalpy')
@@ -250,15 +251,15 @@ class InterfacialEnthalpyModel(Variables, Model):
         self.setFieldModel(fieldbId, modelb)
 
     @Variables.undoGlobal
-    def setFieldModel(self, fieldId, choice):
+    def setFieldModel(self, field_a, field_b, fieldId, choice):
         """
         """
-        if self.getEnthalpyCoupleFieldId() is not None:
-            fieldaId, fieldbId = self.getEnthalpyCoupleFieldId()
-        self.isInList(str(fieldId), (fieldaId, fieldbId))
-        self.isInList(choice, self.getAvailableModels(fieldId))
+        self.isInList(str(fieldId), (field_a, field_b))
+        self.isInList(choice, self.getAvailableModels(field_a, field_b, fieldId))
 
-        node = self.XMLInterfEnthalpyNode.xmlInitNode('enthalpy')
+        node = self.XMLInterfEnthalpyNode.xmlInitNode('enthalpy',
+                                                      field_id_a=field_a,
+                                                      field_id_b=field_b)
         childNode = node.xmlInitNode('enthalpy_model', field_id=fieldId)
         oldchoice = childNode['model']
 
@@ -277,60 +278,78 @@ class InterfacialEnthalpyModel(Variables, Model):
                 childNode.xmlRemoveNode()
 
     @Variables.noUndo
-    def getFieldModel(self, fieldId):
+    def getFieldModel_Id_a(self, field_a, field_b):
         """
         """
-        node = self.XMLInterfEnthalpyNode.xmlGetNode('enthalpy')
+        node = self.XMLInterfEnthalpyNode.xmlGetNode('enthalpy',
+                                                    field_id_a=field_a,
+                                                    field_id_b=field_b)
         if node:
-            return node.xmlGetNode('enthalpy_model', field_id=fieldId)["model"]
+            return node.xmlGetNode('enthalpy_model', field_id=field_a)["model"]
+        return None
+
+    @Variables.noUndo
+    def getFieldModel_Id_b(self, field_a, field_b):
+        """
+        """
+        node = self.XMLInterfEnthalpyNode.xmlGetNode('enthalpy',
+                                                    field_id_a=field_a,
+                                                    field_id_b=field_b)
+        if node:
+            return node.xmlGetNode('enthalpy_model', field_id=field_b)["model"]
         return None
 
     @Variables.undoLocal
-    def setRelaxationTime(self, fieldId, value):
+    def setRelaxationTime(self, field_a, field_b, fieldId, value):
         """
         set relaxation time for fieldId
         """
         self.isFloat(value)
-        if self.getEnthalpyCoupleFieldId() is not None:
-            fieldaId, fieldbId = self.getEnthalpyCoupleFieldId()
-        self.isInList(str(fieldId), (fieldaId, fieldbId))
+        self.isInList(str(fieldId), (field_a, field_b))
 
-        node = self.XMLInterfEnthalpyNode.xmlGetNode('enthalpy')
+        node = self.XMLInterfEnthalpyNode.xmlGetNode('enthalpy',
+                                                     field_id_a=field_a,
+                                                     field_id_b=field_b)
         childNode = node.xmlGetNode('ponderation', field_id=fieldId)
 
         childNode['relaxation'] = value
 
     @Variables.noUndo
-    def getRelaxationTime(self, fieldId):
+    def getRelaxationTime(self, field_a, field_b, fieldId):
         """
         return relaxation time for fieldId
         """
 
-        node = self.XMLInterfEnthalpyNode.xmlGetNode('enthalpy')
+        node = self.XMLInterfEnthalpyNode.xmlGetNode('enthalpy',
+                                                     field_id_a=field_a,
+                                                     field_id_b=field_b)
+
         childNode = node.xmlGetNode('ponderation', field_id=fieldId)
 
         return childNode['relaxation']
 
     @Variables.undoLocal
-    def setPonderationCoef(self, fieldId, choice):
+    def setPonderationCoef(self, field_a, field_b, fieldId, choice):
         """
         """
         self.isInList(choice, ('alp1', 'alp2', 'alp1_alp2'))
-        if self.getEnthalpyCoupleFieldId() is not None:
-            fieldaId, fieldbId = self.getEnthalpyCoupleFieldId()
-        self.isInList(str(fieldId), (fieldaId, fieldbId))
+        self.isInList(str(fieldId), (field_a, field_b))
 
-        node = self.XMLInterfEnthalpyNode.xmlGetNode('enthalpy')
+        node = self.XMLInterfEnthalpyNode.xmlGetNode('enthalpy',
+                                                     field_id_a=field_a,
+                                                     field_id_b=field_b)
         childNode = node.xmlGetNode('ponderation', field_id=fieldId)
 
         childNode['ponderation'] = choice
 
     @Variables.noUndo
-    def getPonderationCoef(self, fieldId):
+    def getPonderationCoef(self, field_a, field_b, fieldId):
         """
         """
 
-        node = self.XMLInterfEnthalpyNode.xmlGetNode('enthalpy')
+        node = self.XMLInterfEnthalpyNode.xmlGetNode('enthalpy',
+                                                     field_id_a=field_a,
+                                                     field_id_b=field_b)
         childNode = node.xmlGetNode('ponderation', field_id=fieldId)
 
         return childNode['ponderation']
