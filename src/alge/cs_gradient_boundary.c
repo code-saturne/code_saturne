@@ -518,7 +518,7 @@ _gradient_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
          necessary.
 
          We do not know whether the value at I or F (not reconstructed)
-         is the largest, so we take thev average if the 2 matching norms. */
+         is the largest, so we take the average if the 2 matching norms. */
 
       cs_real_t ref_norm2 = 0;
 
@@ -786,7 +786,7 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
     = (const cs_lnum_t *restrict) ma->cell_b_faces;
 
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)fvq->cell_cen;
+    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
 
   const cs_real_3_t *restrict b_face_normal
     = (const cs_real_3_t *restrict)fvq->b_face_normal;
@@ -936,8 +936,8 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
 
       cs_real_t a, b;
       if (hn_faces[c_f_id * hn_stride]) {
-        a = var_i;
-        b = 0;
+        a = 0;
+        b = 1;
       }
       else {
         a = bc_coeff_a[c_f_id];
