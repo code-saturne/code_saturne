@@ -222,7 +222,7 @@ class TurbulenceModel(Variables, Model):
         elif turb_model == 'k-omega-SST':
             # Combo - power law (iwallf=1) unavailable through the GUI
             wall_f_list = ['0', '2', '3', '7', '4']
-            wall_f_default = '2'
+            wall_f_default = '3'
 
         elif turb_model == 'Spalart-Allmaras':
             wall_f_list = ['2']
@@ -488,7 +488,7 @@ class TurbulenceModel(Variables, Model):
             wall_function = '-1' # default
 
         wall_f_types, wall_f_default = self.wall_function_types()
-        if wall_function not in wall_f_types:
+        if str(wall_function) not in wall_f_types:
             wall_function = '-1'
             self.setWallFunction(wall_function)
 
