@@ -197,9 +197,12 @@ def build_shared_library(linker,
                          other=[],
                          echo=False,
                          stdlib='yes',
-                         ignore_deps=("-lptscotch", "-lscotch")):
+                         ignore_deps=[]):
     """
     Build an archive given the archives and objects list.
+    To avoid linking some static libraries, they can be added in
+    ignore_deps. For example,
+    ignore_deps=("-lptscotch", "-lscotch").
     """
 
     if not linker:

@@ -635,9 +635,9 @@ class Setup:
             Package(name="scotch",
                     description="PT-Scotch",
                     package="scotch",
-                    version="7.0.1",
-                    archive="scotch_7.0.1.tar.gz",
-                    url="https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.1/%s")
+                    version="7.0.3",
+                    archive="scotch_7.0.3.tar.gz",
+                    url="https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.3/%s")
 
     #---------------------------------------------------------------------------
 
