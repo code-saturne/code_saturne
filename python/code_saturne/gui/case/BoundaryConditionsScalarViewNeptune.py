@@ -51,6 +51,8 @@ from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import DoubleValidator, ComboModel, from_qvariant
 
 from code_saturne.model.SpeciesModel import SpeciesModel
+from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.gui.case.QMegEditorView import QMegEditorView
 
 #-------------------------------------------------------------------------------
 # log config
@@ -85,13 +87,18 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
         self.comboBoxScalarChoice.activated[str].connect(self.slotScalarTypeChoice)
         self.scalarChoiceModel = ComboModel(self.comboBoxScalarChoice, 1, 1)
         self.scalarChoiceModel.addItem(self.tr("Value"), 'dirichlet')
+        self.scalarChoiceModel.addItem(self.tr("Value (user law)"), 'dirichlet_formula')
         self.scalarChoiceModel.addItem(self.tr("Flux"), 'flux')
+        self.scalarChoiceModel.addItem(self.tr("Flux (user law)"), 'flux_formula')
 
         self.lineEditScalar.textChanged[str].connect(self.__slotScalar)
 
         validatorScalar = DoubleValidator(self.lineEditScalar)
 
         self.lineEditScalar.setValidator(validatorScalar)
+
+        # MEG formula
+        self.pushButtonScalar.clicked.connect(self.slotScalarFormula)
 
 
     def setup(self, case, fieldId):
@@ -101,6 +108,8 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
         self.case = case
         self.__boundary = None
         self.__currentField = fieldId
+        self.spm = SpeciesModel(self.case)
+        self.notebook = NotebookModel(self.case)
 
 
     def showWidget(self, boundary):
@@ -111,13 +120,13 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
 
         # For walls, current field is set to -1, hence the need for the list
         if boundary.getNature() == 'wall':
-            fieldList = SpeciesModel(self.case).mainFieldsModel.getFieldIdList(include_none=True)
+            fieldList = self.spm.mainFieldsModel.getFieldIdList(include_none=True)
         else:
             fieldList = [str(self.__currentField)]
 
         self.__scalarsList = []
         for f_id in fieldList:
-            for species in SpeciesModel(self.case).getScalarByFieldId(f_id):
+            for species in self.spm.getScalarByFieldId(f_id):
                 self.__scalarsList.append((f_id, species))
 
         if len(self.__scalarsList) > 0 :
@@ -125,7 +134,7 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
                 self.__Scalarmodel.delItem(0)
 
             for var in self.__scalarsList :
-                name = SpeciesModel(self.case).getScalarLabelByName(var[1])
+                name = self.spm.getScalarLabelByName(var[1])
                 self.__Scalarmodel.addItem(self.tr(name), var[1])
 
             self.__currentScalar = self.__scalarsList[0]
@@ -137,12 +146,32 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
             choice0 = self.__boundary.getScalarChoice(_f0, _s0)
             self.scalarChoiceModel.setItem(str_model=choice0)
 
-            val = self.__boundary.getScalarValue(_f0, _s0)
-            self.lineEditScalar.setText(str(val))
+            self.updateWidget()
+
             self.show()
         else :
             self.hideWidget()
 
+    def updateWidget(self):
+        """
+        """
+        _f0, _s0 = self.__currentScalar
+        choice0 = self.__boundary.getScalarChoice(_f0, _s0)
+
+        _user_law = choice0[-7:] == 'formula'
+        self.lineEditScalar.setEnabled(not _user_law)
+        self.pushButtonScalar.setEnabled(_user_law)
+
+        val = self.__boundary.getScalarValue(_f0, _s0)
+        if _user_law:
+            if val not in ["", None]:
+                self.pushButtonScalar.setToolTip(val)
+                self.pushButtonScalar.setStyleSheet("background-color: green")
+            else:
+                self.pushButtonScalar.setStyleSheet("background-color: red")
+        else:
+            self.lineEditScalar.setText(str(val))
+            self.pushButtonScalar.setStyleSheet("background-color: grey")
 
     def hideWidget(self):
         """
@@ -168,8 +197,7 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
         self.scalarChoiceModel.setItem(str_model=scalarModel)
 
         # Update value
-        val = self.__boundary.getScalarValue(_f_id, _sname)
-        self.lineEditScalar.setText(str(val))
+        self.updateWidget()
 
 
     @pyqtSlot(str)
@@ -183,6 +211,8 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
 
         self.__boundary.setScalarChoice(_f_id, _sname, choice)
 
+        self.updateWidget()
+
     @pyqtSlot(str)
     def __slotScalar(self, text):
         """
@@ -195,6 +225,35 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
             self.__boundary.setScalarValue(_f_id, _sname, value)
 
 
+    @pyqtSlot()
+    def slotScalarFormula(self):
+        """
+        """
+        _fid, _s = self.__currentScalar
+
+        choice = self.__boundary.getScalarChoice(_fid, _s)
+        scalar_name = self.spm.getScalarLabelByName(_s)
+
+        exa = self.__boundary.getDefaultScalarFormula(choice, scalar_name)
+
+        exp, req, sym = self.__boundary.getScalarFormulaComponents(_fid, _s)
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "bnd",
+                                zone_name     = self.__boundary._label,
+                                variable_name = self.spm.getScalarLabelByName(_s),
+                                expression    = str(exp),
+                                required      = req,
+                                symbols       = sym,
+                                condition     = choice,
+                                examples      = exa)
+
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotScalarFormula -> %s" % str(result))
+            self.__boundary.setScalarValue(_fid, _s, result)
+            self.pushButtonScalar.setToolTip(result)
+            self.pushButtonScalar.setStyleSheet("background-color: green")
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------
