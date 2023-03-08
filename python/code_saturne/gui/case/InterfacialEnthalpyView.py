@@ -145,10 +145,10 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         # Initialize pair of fields
         predefined_flow = self.mdl.mainFieldsModel.getPredefinedFlow()
         if predefined_flow == "None":
-            if self.mdl.getEnthalpyCoupleFieldId() is None:
+            if self.mdl.getEnthalpyCoupleDefault() is None:
                 self.modelLiquidVaporFields.setItem(str_model="none")
             else:
-                field_id_a, field_id_b = self.mdl.getEnthalpyCoupleFieldId()
+                field_id_a, field_id_b = self.mdl.getEnthalpyCoupleDefault()
                 model = "{0}_{1}".format(field_id_a, field_id_b)
                 self.modelLiquidVaporFields.setItem(str_model=model)
         elif predefined_flow == "free_surface":
@@ -229,10 +229,12 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
             self.groupBoxLiquidVaporModel.hide()
             self.mdl.deleteLiquidVaporEnthalpyTransfer()
             return
-        fieldaId, fieldbId = selection.split("_")
-        if self.mdl.getEnthalpyCoupleFieldId() is None:
-            self.mdl.addLiquidVaporEnthalpyTransfer(fieldaId, fieldbId)
-        self.mdl.setEnthalpyCoupleFieldId(fieldaId, fieldbId)
+
+        # Update current couple and add a definition if needed
+        self.field_a, self.field_b = selection.split("_")
+        if self.mdl.getEnthalpyCoupleFieldId(self.field_a, self.field_b) is None:
+            self.mdl.addLiquidVaporEnthalpyTransfer(self.field_a, self.field_b)
+
         self.updateLiquidVaporModel()
         self.groupBoxLiquidVaporModel.show()
         ifm = InterfacialForcesModel(self.case)
@@ -249,18 +251,17 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         update if necessary
         """
         selection = self.modelLiquidVaporFields.dicoV2M[self.comboBoxLiquidVaporFields.currentText()]
-        fieldIda, fieldIdb = selection.split("_")
-        self.fillLiquidVaporModels(fieldIda, fieldIdb)
+        self.fillLiquidVaporModels(self.field_a, self.field_b)
 
-        model = self.mdl.getFieldModel(fieldIda)
+        model = self.mdl.getFieldModel_Id_a(self.field_a, self.field_b)
         if model is None:
             model = "no_source_term"
         self.modelFieldaModel.setItem(str_model=model)
 
         if model == 'relaxation_time':
-            model = self.mdl.getPonderationCoef(fieldIda)
+            model = self.mdl.getPonderationCoef(self.field_a, self.field_b, self.field_a)
             self.modelPonderationCoefFielda.setItem(str_model=model)
-            value = self.mdl.getRelaxationTime(fieldIda)
+            value = self.mdl.getRelaxationTime(self.field_a, self.field_b, self.field_a)
             self.lineEditRelaxationTimeFielda.setText(str(value))
 
             self.comboBoxPonderationCoefFielda.show()
@@ -273,13 +274,13 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
             self.lineEditRelaxationTimeFielda.hide()
             self.labelRelaxationTimeFielda.hide()
 
-        model = self.mdl.getFieldModel(fieldIdb)
+        model = self.mdl.getFieldModel_Id_b(self.field_a, self.field_b)
         self.modelFieldbModel.setItem(str_model = model)
 
         if model == 'relaxation_time' :
-            model = self.mdl.getPonderationCoef(fieldIdb)
+            model = self.mdl.getPonderationCoef(self.field_a, self.field_b, self.field_b)
             self.modelPonderationCoefFieldb.setItem(str_model = model)
-            value = self.mdl.getRelaxationTime(fieldIdb)
+            value = self.mdl.getRelaxationTime(self.field_a, self.field_b, self.field_b)
             self.lineEditRelaxationTimeFieldb.setText(str(value))
 
             self.comboBoxPonderationCoefFieldb.show()
@@ -334,9 +335,8 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         set model for field a
         """
         selection = self.modelLiquidVaporFields.dicoV2M[self.comboBoxLiquidVaporFields.currentText()]
-        fieldIda, fieldIdb = selection.split("_")
         choice = self.modelFieldaModel.dicoV2M[text]
-        self.mdl.setFieldModel(fieldIda, choice)
+        self.mdl.setFieldModel(self.field_a, self.field_b, self.field_a, choice)
         self.updateLiquidVaporModel()
 
 
@@ -346,9 +346,8 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         set ponderation coefficient for field a
         """
         selection = self.modelLiquidVaporFields.dicoV2M[self.comboBoxLiquidVaporFields.currentText()]
-        fieldIda, fieldIdb = selection.split("_")
         choice = self.modelPonderationCoefFielda.dicoV2M[text]
-        self.mdl.setPonderationCoef(fieldIda, choice)
+        self.mdl.setPonderationCoef(self.field_a, self.field_b, self.field_a, choice)
 
 
     @pyqtSlot(str)
@@ -357,9 +356,8 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         set model for field b
         """
         selection = self.modelLiquidVaporFields.dicoV2M[self.comboBoxLiquidVaporFields.currentText()]
-        fieldIda, fieldIdb = selection.split("_")
         choice = self.modelFieldbModel.dicoV2M[text]
-        self.mdl.setFieldModel(fieldIdb, choice)
+        self.mdl.setFieldModel(self.field_a, self.field_b, self.field_b, choice)
         self.updateLiquidVaporModel()
 
 
@@ -371,7 +369,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         selection = self.modelLiquidVaporFields.dicoV2M[self.comboBoxLiquidVaporFields.currentText()]
         fieldIda, fieldIdb = selection.split("_")
         choice = self.modelPonderationCoefFieldb.dicoV2M[text]
-        self.mdl.setPonderationCoef(fieldIdb, choice)
+        self.mdl.setPonderationCoef(self.field_a, self.field_b, self.field_b, choice)
 
 
     @pyqtSlot(str)
@@ -380,10 +378,9 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         Update the relaxation time for field a
         """
         selection = self.modelLiquidVaporFields.dicoV2M[self.comboBoxLiquidVaporFields.currentText()]
-        fieldIda, fieldIdb = selection.split("_")
         if self.lineEditRelaxationTimeFielda.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
-            self.mdl.setRelaxationTime(fieldIda, value)
+            self.mdl.setRelaxationTime(self.field_a, self.field_b, self.field_a, value)
 
 
     @pyqtSlot(str)
@@ -392,10 +389,9 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         Update the relaxation time for field b
         """
         selection = self.modelLiquidVaporFields.dicoV2M[self.comboBoxLiquidVaporFields.currentText()]
-        fieldIda, fieldIdb = selection.split("_")
         if self.lineEditRelaxationTimeFieldb.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
-            self.mdl.setRelaxationTime(fieldIdb, value)
+            self.mdl.setRelaxationTime(self.field_a, self.field_b, self.field_b, value)
 
     @pyqtSlot()
     def slotPoolBoilingModel(self):
