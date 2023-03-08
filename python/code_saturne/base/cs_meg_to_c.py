@@ -1652,10 +1652,12 @@ class meg_to_c_interpreter:
             from code_saturne.model.BoundaryNeptune import Boundary
             from code_saturne.model.MainFieldsModel import MainFieldsModel
             from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModel
+            from code_saturne.model.SpeciesModel import SpeciesModel
 
             blm = LocalizationModel("BoundaryZone", self.case)
             mfm = MainFieldsModel(self.case)
             tm  = TurbulenceModel(self.case)
+            spm = SpeciesModel(self.case)
 
             for zone in blm.getZones():
                 if "inlet" in zone.getNature():
@@ -1796,6 +1798,21 @@ class meg_to_c_interpreter:
                                         sym,
                                         [],
                                         condition=c)
+
+                # Scalars
+                for sp_id in mfm.getFieldIdList(include_none=True):
+                    for _s in spm.getScalarByFieldId(sp_id):
+                        c = boundary.getScalarChoice(sp_id, _s)
+                        if 'formula' == c[-7:]:
+                            exp, req, sym = boundary.getScalarFormulaComponents(sp_id, _s)
+                            self.init_block('bnd',
+                                            zone.getLabel(),
+                                            spm.getScalarLabelByName(_s),
+                                            exp,
+                                            req,
+                                            sym,
+                                            [],
+                                            condition=c)
 
 
     #---------------------------------------------------------------------------

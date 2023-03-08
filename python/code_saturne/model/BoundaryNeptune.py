@@ -32,6 +32,7 @@ from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
 from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModel
 from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModelsDescription
 from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.SpeciesModel import SpeciesModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -76,6 +77,7 @@ class Boundary(Model) :
         self.mainFieldsModel = MainFieldsModel(case)
         self._fieldId = fieldId
         self.boundNode = None
+        self.spm = SpeciesModel(self.case)
 
         # Create nodes
         if nature == "inlet" :
@@ -140,6 +142,52 @@ class Boundary(Model) :
 
         return formula
 
+
+    @Variables.noUndo
+    def getDefaultScalarFormula(self, choice, scalar_name):
+        """
+        Get default scalar formula.
+        """
+
+        if choice == 'dirichlet_formula':
+            formula = "%s = 1.0;" % str(scalar_name)
+        elif choice == 'flux_formula':
+            formula = "flux = 0.;"
+        else:
+            formula = None
+
+        return formula
+
+
+    @Variables.noUndo
+    def getScalarFormulaComponents(self, fieldId, Scalar):
+        """
+        Get scalar formula components
+        """
+        choice = self.getScalarChoice(fieldId, Scalar)
+        if choice[-7:] != 'formula':
+            raise Exception("Error: Not a formula")
+
+        sname = self.spm.getScalarLabelByName(Scalar)
+        if choice == 'dirichlet_formula':
+            req = [(sname, sname)]
+        elif choice == 'flux_formula':
+            req = [('flux', 'Surface flux for scalar \"%s\"' % str(sname))]
+
+        exp = self.getScalarValue(fieldId, Scalar)
+
+        sym = [('x', "X face's gravity center"),
+               ('y', "Y face's gravity center"),
+               ('z', "Z face's gravity center"),
+               ('dt', 'time step'),
+               ('t', 'current time'),
+               ('iter', 'number of iteration'),
+               ('surface', 'Boundary zone surface')]
+
+        for (name, val) in NotebookModel(self.case).getNotebookList():
+            sym.append((name, 'value (notebook) = ' + str(val)))
+
+        return exp, req, sym
 
 
 #-------------------------------------------------------------------------------
@@ -835,15 +883,27 @@ R12-23 = 5e-05;"""
         Get non condensable variable for field
         """
         self.mainFieldsModel.isFieldIdValid(fieldId, strict_check=False)
-        node = self._XMLBoundaryConditionsNode.xmlInitNode("inlet", field_id = fieldId, label = self._label)
+        node = self._XMLBoundaryConditionsNode.xmlInitNode("inlet",
+                                                           field_id = fieldId,
+                                                           label = self._label)
         XMLScalarNode = node.xmlInitNode('variable', 'choice', name=Scalar)
 
-        Childnode = XMLScalarNode.xmlGetChildNode('value')
-        if Childnode is None :
-            value = self.__defaultValues(fieldId)['scalar']
+        choice = self.getScalarChoice(fieldId, Scalar)
+
+        if choice[-7:] == 'formula':
+            value = XMLScalarNode.xmlGetChildString(choice)
+        else:
+            value = XMLScalarNode.xmlGetChildDouble('value')
+
+        if value in ['', None]:
+            if choice[-7:] == 'formula':
+                value = self.getDefaultScalarFormula(choice,
+                                                     self.spm.getScalarLabelByName(Scalar))
+            else:
+                value = self.__defaultValues()['scalar']
+
             self.setScalarValue(fieldId, Scalar, value)
 
-        value = XMLScalarNode.xmlGetChildDouble('value')
         return value
 
 
@@ -1177,15 +1237,27 @@ class OutletBoundary(Boundary) :
         Get non condensable variable for field
         """
         self.mainFieldsModel.isFieldIdValid(fieldId, strict_check=False)
-        node = self._XMLBoundaryConditionsNode.xmlInitNode("outlet", field_id = fieldId, label = self._label)
+        node = self._XMLBoundaryConditionsNode.xmlInitNode("outlet",
+                                                           field_id = fieldId,
+                                                           label = self._label)
         XMLScalarNode = node.xmlInitNode('variable', 'choice', name=Scalar)
 
-        Childnode = XMLScalarNode.xmlGetChildNode('value')
-        if Childnode is None :
-            value = self.__defaultValues()['scalar']
+        choice = self.getScalarChoice(fieldId, Scalar)
+
+        if choice[-7:] == 'formula':
+            value = XMLScalarNode.xmlGetChildString(choice)
+        else:
+            value = XMLScalarNode.xmlGetChildDouble('value')
+
+        if value in ['', None]:
+            if choice[-7:] == 'formula':
+                value = self.getDefaultScalarFormula(choice,
+                                                     self.spm.getScalarLabelByName(Scalar))
+            else:
+                value = self.__defaultValues()['scalar']
+
             self.setScalarValue(fieldId, Scalar, value)
 
-        value = XMLScalarNode.xmlGetChildDouble('value')
         return value
 
 
@@ -1369,12 +1441,21 @@ class WallBoundary(Boundary) :
                                                    'choice',
                                                    name=Scalar)
 
-        ChildNode = XMLScalarNode.xmlGetChildNode('value')
-        if ChildNode is None:
-            value = self.__defaultValues()['scalar']
-            self.setScalarValue(fieldId, Scalar, value)
+        choice = self.getScalarChoice(fieldId, Scalar)
 
-        value = XMLScalarNode.xmlGetChildDouble('value')
+        if choice[-7:] == 'formula':
+            value = XMLScalarNode.xmlGetChildString(choice)
+        else:
+            value = XMLScalarNode.xmlGetChildDouble('value')
+
+        if value in ['', None]:
+            if choice[-7:] == 'formula':
+                value = self.getDefaultScalarFormula(choice,
+                                                     self.spm.getScalarLabelByName(Scalar))
+            else:
+                value = self.__defaultValues()['scalar']
+
+            self.setScalarValue(fieldId, Scalar, value)
 
         return value
 
