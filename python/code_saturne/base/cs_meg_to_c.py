@@ -1420,13 +1420,14 @@ class meg_to_c_interpreter:
 
             # User properties for Water/Steam kind flows
             if tm:
-                cpl_field_ids = iem.getEnthalpyCoupleFieldId()
-                if cpl_field_ids:
+                for cpl_field_ids in iem.getLiquidVaporCouples():
                     id_a = cpl_field_ids[0]
                     id_b = cpl_field_ids[1]
-                    if tm.getMethod(id_a) == "user_properties" and \
-                            tm.getMethod(id_b) == "user_properties":
-                        user_gas_liq_fields = True
+                    # If interfacial enthalpy model, check for user materials
+                    if iem.getEnthalpyCoupleFieldId(id_a, id_b) != None:
+                        if tm.getMethod(id_a) == "user_properties" and \
+                                tm.getMethod(id_b) == "user_properties":
+                            user_gas_liq_fields = True
 
 
             if user_gas_liq_fields:
