@@ -5,7 +5,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2022 EDF S.A.
+# Copyright (C) 1998-2023 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -196,9 +196,13 @@ def build_shared_library(linker,
                          objects,
                          other=[],
                          echo=False,
-                         stdlib='yes'):
+                         stdlib='yes',
+                         ignore_deps=[]):
     """
     Build an archive given the archives and objects list.
+    To avoid linking some static libraries, they can be added in
+    ignore_deps. For example,
+    ignore_deps=("-lptscotch", "-lscotch").
     """
 
     if not linker:
@@ -246,7 +250,7 @@ def build_shared_library(linker,
     # Convert libtool-like "-R' syntax to rpath.
 
     for o in other:
-        if o in ("-lptscotch", "-lscotch"):
+        if o in ignore_deps:
             continue
         if o[:2] == '-R':
             cmd += ["-Wl,-rpath", "-Wl,"+o[2:]]
