@@ -382,7 +382,7 @@ contains
       enddo
 
       call field_get_val_s_by_name('non_neutral_scalar_correction', bcfnns)
-      call field_get_val_s_by_name('ustar', ustar)
+      call field_get_val_s_by_name('boundary_ustar', ustar)
       call field_get_val_s_by_name('boundary_roughness', rugd)
       call field_get_val_s_by_name('boundary_thermal_roughness', rugt)
 
