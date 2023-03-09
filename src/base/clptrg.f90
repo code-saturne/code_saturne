@@ -772,7 +772,7 @@ do ifac = 1, nfabor
 
         rough_t = bpro_rough_t(ifac)
         yplus_t = distbf/rough_t
-        ! 1/T+
+        ! 1/T+ for neutral
         dtplus = xkappa/log((distbf+rough_t)/rough_t)
 
         call atmcls &
