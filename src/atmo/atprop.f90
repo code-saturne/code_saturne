@@ -88,7 +88,7 @@ if (ippmod(iatmos).eq.2) then
     ityloc = 3 ! boundary faces
 
     ! wall friction velocity if not already created
-    call field_find_or_create('ustar', itycat, ityloc, idim1, f_id)
+    call field_find_or_create('boundary_ustar', itycat, ityloc, idim1, f_id)
 
   endif
 
