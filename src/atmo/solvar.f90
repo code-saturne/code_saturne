@@ -36,7 +36,7 @@
 !> \param[in]   temp    temperature
 !> \param[in]   qv      specific humidity
 !> \param[in]   rom     Density
-!> \param[in]   dt      ratio of the local time step to the reference one
+!> \param[in]   dt      (local) time step
 !> \param[in]   rcodcl  Boundary conditions type
 !-------------------------------------------------------------------------------
 
