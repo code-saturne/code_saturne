@@ -303,7 +303,7 @@ do isol = 1, nfmodsol
     tpotv1 = tpot1*(1.d0 + (rvsra - 1.d0)*qvsol)
     tpotv2 = tpot2*(1.d0 + (rvsra - 1.d0)*qv(iel))
 
-    if (abs(vtmod).le.epzero) then
+    if (vtmod.ge.epzero) then
       rib = 2.d0*abs(gz)*distb(ifac)*(tpotv2 - tpotv1)/(tpotv1 + tpotv2)      &
         /vtmod/vtmod
     else
