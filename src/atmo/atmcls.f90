@@ -222,8 +222,8 @@ uet = duplus * utau * sqrt(fm)
 
 ! Compute surface sensible heat flux q0
 ! Note: non-consistent with two velocity scales
-q0 = (tpot1-tpot2) * uet * dtplus * fh / sqrt(fm) !FIXME it is cfnns factor
 cfnns = fh / sqrt(fm)
+q0 = (tpot1-tpot2) * uet * dtplus * cfnns
 !FIXME tet should be output as uet is...
 
 ! Compute local Monin-Obukhov inverse length for log
