@@ -162,7 +162,7 @@ _thermal_flux_st(const char          *name,
     cvara_tt = f_tv->val_pre;
   }
 
-  if (turb_flux_model == CS_TURB_RIJ_EPSILON_SSG) {
+  if (turb_flux_model == 31) {
     char fname[128];
     snprintf(fname, 128, "%s_alpha", f->name); fname[127] = '\0';
     cvar_al = cs_field_by_name_try(fname)->val;
@@ -201,7 +201,7 @@ _thermal_flux_st(const char          *name,
     cs_real_t xxc1 = 0, xxc2 = 0, xxc3 = 0;
     cs_real_t xnal[3] = {0, 0, 0};
 
-    if (turb_flux_model == CS_TURB_RIJ_EPSILON_SSG) {
+    if (turb_flux_model == 31) {
       alpha = cvar_al[c_id];
       /* FIXME Warning / rhebdfm**0.5 compared to F Dehoux
        * And so multiplied by (R/Prandt)^0.5 */
@@ -768,19 +768,8 @@ _solve_rit(const cs_field_t     *f,
 
   const cs_field_t *f_tv = NULL;
 
-  if (cs_math_3_norm(grav) > cs_math_epzero) {
-    const int kscavr = cs_field_key_id("first_moment_id");
-
-    const int n_fields = cs_field_n_fields();
-    for (int f_id = 0; f_id < n_fields; f_id++) {
-      cs_field_t *fld = cs_field_by_id(f_id);
-      int iscavr = cs_field_get_key_int(fld, kscavr);
-      if (iscavr == f->id) {
-        f_tv = cs_field_by_id(iscavr);
-        break;
-      }
-    }
-  }
+  if (cs_math_3_norm(grav) > cs_math_epzero)
+    f_tv = cs_field_get_variance(f);
   else
     grav = NULL;
 
@@ -1053,23 +1042,11 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
       && ((irovar > 0) || (idilat == 0))
       && ((turb_flux_model_type == 2) || (turb_flux_model_type == 3))) {
 
-    const cs_field_t *tf = cs_thermal_model_field();
-    if (tf != NULL) {
-      const int kscavr = cs_field_key_id("first_moment_id");
-
-      const int n_fields = cs_field_n_fields();
-      for (int f_id = 0; f_id < n_fields; f_id++) {
-        cs_field_t *fld = cs_field_by_id(f_id);
-        int iscavr = cs_field_get_key_int(fld, kscavr);
-        if (iscavr == tf->id) {
-          f_tv = cs_field_by_id(iscavr);
-          break;
-        }
-      }
-    }
+    f_tv = cs_field_get_variance(f);
+   
     if (f_tv == NULL)
       bft_error(__FILE__, __LINE__, 0,
-                _("%s: the thermal variance field required for\n"
+                _("%s: the variance field required for\n"
                   "the turbulent transport of \"%s\" is not available."),
                 __func__, f->name);
 
@@ -1169,8 +1146,8 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
    *===============================================================================*/
 
   if (   turb_flux_model == 11
-      || turb_flux_model == 20
-      || turb_flux_model == 30) {
+      || turb_flux_model_type == 2
+      || turb_flux_model_type == 3) {
     cs_real_t *divut;
     BFT_MALLOC(divut, n_cells_ext, cs_real_t);
 

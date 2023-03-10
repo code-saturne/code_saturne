@@ -347,7 +347,7 @@ cs_field_get_variance(const cs_field_t  *f)
       cs_field_t *f_c = cs_field_by_id(i);
 
       if (f_c->type & CS_FIELD_VARIABLE) {
-        int parent_id = cs_field_get_key_int(f, kscavr);
+        int parent_id = cs_field_get_key_int(f_c, kscavr);
         if (parent_id == f->id)
           return f_c;
       }
