@@ -152,7 +152,7 @@ class CouplingDelegate(QItemDelegate):
                self.modelCombo.disableItem(str_model="none")
         else :
                self.modelCombo.addItem(self.tr(self.dicoM2V["none"]), "none")
-               cbrrier = field.carrier_id
+               carrier = field.carrier_id
                if self.mdl.getTurbulenceModel(carrier) == "k-epsilon" or \
                   self.mdl.getTurbulenceModel(carrier) == "k-epsilon_linear_production" or \
                   self.mdl.getTurbulenceModel(carrier) == "rij-epsilon_ssg" or \
