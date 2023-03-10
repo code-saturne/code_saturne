@@ -1085,7 +1085,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
 
   const cs_halo_t *halo = cs_glob_mesh->halo;
   cs_real_t norm_g;
-  cs_lnum_t *packing_cell;
+  int *packing_cell;
 
   /* Normalised gravity vector */
 
@@ -1105,7 +1105,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
 
   /* Tag and initialise the ct values in the packing zone cells */
 
-  BFT_MALLOC(packing_cell, n_cells_with_ghosts, cs_lnum_t);
+  BFT_MALLOC(packing_cell, n_cells_with_ghosts, int);
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++)
     packing_cell[cell_id] = -1;
