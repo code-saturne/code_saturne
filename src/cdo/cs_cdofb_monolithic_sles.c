@@ -1356,30 +1356,48 @@ _schur_approximation(const cs_navsto_param_t       *nsp,
   cs_param_sles_t  *schur_slesp = nslesp->schur_sles_param;
 
   sbp->schur_slesp = schur_slesp;
-  if (schur_sles == NULL)
-    /* This sles structure should have been defined by name */
-    sbp->schur_sles = cs_sles_find_or_add(-1, schur_slesp->name);
 
   /* Compute the schur approximation matrix */
 
   switch (nslesp->schur_approximation) {
 
   case CS_PARAM_SCHUR_DIAG_INVERSE:
+    if (schur_sles == NULL)
+      /* This SLES structure should have been defined by name */
+      sbp->schur_sles = cs_sles_find_or_add(-1, schur_slesp->name);
+
     _diag_schur_sbp(nsp, ssys, sbp);
     break;
+
   case CS_PARAM_SCHUR_IDENTITY:
     break; /* Nothing to do */
+
   case CS_PARAM_SCHUR_LUMPED_INVERSE:
+    if (schur_sles == NULL)
+      /* This SLES structure should have been defined by name */
+      sbp->schur_sles = cs_sles_find_or_add(-1, schur_slesp->name);
+
     _invlumped_schur_sbp(nsp, ssys, sbp);
     break;
+
   case CS_PARAM_SCHUR_MASS_SCALED:
     _scaled_mass_sbp(nsp, ssys, sbp);
     break; /* Nothing to do */
+
   case CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE:
+    if (schur_sles == NULL)
+      /* This SLES structure should have been defined by name */
+      sbp->schur_sles = cs_sles_find_or_add(-1, schur_slesp->name);
+
     _scaled_mass_sbp(nsp, ssys, sbp);
     _diag_schur_sbp(nsp, ssys, sbp);
     break;
+
   case CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE:
+    if (schur_sles == NULL)
+      /* This SLES structure should have been defined by name */
+      sbp->schur_sles = cs_sles_find_or_add(-1, schur_slesp->name);
+
     _scaled_mass_sbp(nsp, ssys, sbp);
     _invlumped_schur_sbp(nsp, ssys, sbp);
     break;
@@ -3917,6 +3935,9 @@ _uza_incr_cvg_test(cs_real_t                   delta_u_l2,
 static void
 _set_schur_sles(cs_param_sles_t   *schur_slesp)
 {
+  if (schur_slesp == NULL)
+    return;
+
   if (schur_slesp->precond == CS_PARAM_PRECOND_AMG) {
 
     if (schur_slesp->amg_type == CS_PARAM_AMG_NONE) {

@@ -242,50 +242,18 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
   /* Set the default solver options for the main linear algorithm */
 
   nslesp->il_algo_cvg.n_max_iter = 100;
-  nslesp->il_algo_cvg.rtol = 1e-08;
-  nslesp->il_algo_cvg.atol = 1e-08;
+  nslesp->il_algo_cvg.rtol = 1e-07;
+  nslesp->il_algo_cvg.atol = 1e-12;
   nslesp->il_algo_cvg.dtol = 1e3;
 
   nslesp->il_algo_restart = 10;
 
-  switch (algo_coupling) {
+  nslesp->strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
+  nslesp->schur_approximation = CS_PARAM_SCHUR_NONE;
+  nslesp->schur_sles_param = NULL;
 
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    nslesp->strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
-    break;
-
-  case CS_NAVSTO_COUPLING_MONOLITHIC:
-    if (model == CS_NAVSTO_MODEL_STOKES)
-      nslesp->strategy = CS_NAVSTO_SLES_UZAWA_CG;
-    else
-      nslesp->strategy = CS_NAVSTO_SLES_UZAWA_AL;
-    break;
-
-  case CS_NAVSTO_COUPLING_PROJECTION:
-    nslesp->strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
-    break;
-
-  default:
-    /* Nothing done */
-    break;
-
-  }
-
-  nslesp->schur_approximation = CS_PARAM_SCHUR_LUMPED_INVERSE;
-
-  /* Settings for driving the linear algebra related to the Schur complement
-     approximation */
-
-  cs_param_sles_t *schur_slesp
-    = cs_param_sles_create(-1, "schur_approximation");
-
-  schur_slesp->precond = CS_PARAM_PRECOND_AMG;   /* preconditioner */
-  schur_slesp->solver = CS_PARAM_ITSOL_FCG;      /* iterative solver */
-  schur_slesp->amg_type = CS_PARAM_AMG_HOUSE_K;  /* no predefined AMG type */
-  schur_slesp->cvg_param.rtol = 1e-4;            /* relative tolerance to stop
-                                                    an iterative solver */
-
-  nslesp->schur_sles_param = schur_slesp;
+  /* This first settings can be modified when initializing a coupling
+     context (cf. cs_navsto_coupling.c) */
 
   return nslesp;
 }
@@ -308,12 +276,16 @@ _navsto_param_sles_free(cs_navsto_param_sles_t    **p_nslesp)
   if (nslesp == NULL)
     return;
 
-  cs_param_sles_t  *schur_slesp = nslesp->schur_sles_param;
+  if (nslesp->schur_sles_param != NULL) {
 
-  cs_sles_t  *schur_sles = cs_sles_find(-1, schur_slesp->name);
-  cs_sles_free(schur_sles);
+    cs_param_sles_t  *schur_slesp = nslesp->schur_sles_param;
 
-  cs_param_sles_free(&schur_slesp);
+    cs_sles_t  *schur_sles = cs_sles_find(-1, schur_slesp->name);
+    cs_sles_free(schur_sles);
+
+    cs_param_sles_free(&schur_slesp);
+
+  }
 
   BFT_FREE(nslesp);
 

@@ -180,6 +180,7 @@ cs_navsto_ac_create_context(cs_param_bc_type_t    bc,
                                   bc);
 
   /* Additional property */
+
   nsc->zeta = cs_property_add("graddiv_coef", CS_PROPERTY_ISO);
 
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
@@ -348,7 +349,7 @@ cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
   /* Space scheme settings (default) */
 
   cs_equation_param_set(mom_eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
-  cs_equation_param_set(mom_eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
+  cs_equation_param_set(mom_eqp, CS_EQKEY_HODGE_DIFF_COEF, "gcr");
 
   /* Forcing steady state in order to avoid inconsistencies */
 
@@ -359,11 +360,72 @@ cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
   *  equation.  The strategy is set in _navsto_param_sles_create() */
 
   if (nsp->model ==  CS_NAVSTO_MODEL_STOKES) {
+
+    /* The linear system to solve should be symmetric */
+
+    cs_navsto_param_set(nsp, CS_NSKEY_SLES_STRATEGY, "sgs_schur_gcr");
+
+    cs_navsto_param_set(nsp, CS_NSKEY_IL_ALGO_RESTART, "40");
+    cs_navsto_param_set(nsp, CS_NSKEY_MAX_IL_ALGO_ITER, "100");
+
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_MAX_ITER, "50");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_EPS, "1e-1");
+
+#if defined(HAVE_PETSC)
+    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "block_amg");
+
+    if (cs_param_sles_hypre_from_petsc())
+      cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "boomer");
+    else
+      cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "gamg");
+#else   /* Not HAVE_PETSC */
+#if defined(HAVE_HYPRE)
+    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "boomer");
+#else  /* Neither HYPRE or PETSc */
+    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
+#endif  /* HAVE_HYPRE */
+#endif  /* HAVE_PETSC */
+
+    /* Set the way to approximate the Schur complement */
+
+    nsp->sles_param->schur_approximation = CS_PARAM_SCHUR_MASS_SCALED;
+
   }
   else {
-    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "poly1");
+
+#if defined(HAVE_MUMPS)
+    cs_navsto_param_set(nsp, CS_NSKEY_SLES_STRATEGY, "alu");
+    cs_navsto_param_set(nsp, CS_NSKEY_GD_SCALE_COEF, "100");
+
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "mumps");
+#else
+    cs_navsto_param_set(nsp, CS_NSKEY_SLES_STRATEGY, "sgs_schur_gcr");
+
+    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "jacobi");
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "gcr");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_MAX_ITER, "50");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_EPS, "1e-1");
+
+    /* Settings for driving the linear algebra related to the Schur complement
+       approximation */
+
+    nsp->sles_param->schur_approximation = CS_PARAM_SCHUR_LUMPED_INVERSE;
+
+    cs_param_sles_t *schur_slesp = cs_param_sles_create(-1,
+                                                        "schur_approximation");
+
+    schur_slesp->precond = CS_PARAM_PRECOND_AMG;   /* preconditioner */
+    schur_slesp->solver = CS_PARAM_ITSOL_FCG;      /* iterative solver */
+    schur_slesp->amg_type = CS_PARAM_AMG_HOUSE_K;  /* no predefined AMG type */
+    schur_slesp->cvg_param.rtol = 1e-4;            /* relative tolerance to stop
+                                                      an iterative solver */
+
+    nsp->sles_param->schur_sles_param = schur_slesp;
+#endif
+
   }
 
   return nsc;

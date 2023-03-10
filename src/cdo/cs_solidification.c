@@ -3931,10 +3931,8 @@ cs_solidification_set_binary_alloy_model(const char     *name,
   /* Set the default numerical options that should be used */
 
   cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
-  cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "cost");
-  cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
   cs_equation_param_set(eqp, CS_EQKEY_ADV_SCHEME, "upwind");
-  cs_equation_param_set(eqp, CS_EQKEY_ADV_FORMULATION, "conservative");
+  cs_equation_param_set(eqp, CS_EQKEY_ADV_FORMULATION, "non_conservative");
 
   alloy->solute_equation = eq;
   alloy->c_bulk = NULL;  /* Variable field related to this equation. This will
