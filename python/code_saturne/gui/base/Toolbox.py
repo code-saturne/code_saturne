@@ -125,18 +125,6 @@ def displayStaticPage(case, page_name, root, stbar, tree):
         import code_saturne.gui.case.MobileMeshView as Page
         thisPage = Page.MobileMeshView(root, case, tree)
 
-    elif page_name == tr("Turbulence models"):
-        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
-            import code_saturne.gui.case.TurbulenceNeptuneView as Page
-            thisPage = Page.TurbulenceView(root, case)
-        else:
-            import code_saturne.gui.case.TurbulenceView as Page
-            thisPage = Page.TurbulenceView(root, case)
-
-    elif page_name == tr("Thermal model"):
-        import code_saturne.gui.case.ThermalView as Page
-        thisPage = Page.ThermalView(root, case, tree)
-
     elif page_name == tr("Gas combustion"):
         import code_saturne.gui.case.GasCombustionView as Page
         thisPage = Page.GasCombustionView(root, case)
@@ -148,6 +136,22 @@ def displayStaticPage(case, page_name, root, stbar, tree):
     elif page_name == tr("Electrical models"):
         import code_saturne.gui.case.ElectricalView as Page
         thisPage = Page.ElectricalView(root, case, stbar)
+
+    elif page_name == tr("Groundwater flows"):
+        import code_saturne.gui.case.GroundwaterView as Page
+        thisPage = Page.GroundwaterView(root, case)
+
+    elif page_name == tr("Thermal model"):
+        import code_saturne.gui.case.ThermalView as Page
+        thisPage = Page.ThermalView(root, case, tree)
+
+    elif page_name == tr("Turbulence models"):
+        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+            import code_saturne.gui.case.TurbulenceNeptuneView as Page
+            thisPage = Page.TurbulenceView(root, case)
+        else:
+            import code_saturne.gui.case.TurbulenceView as Page
+            thisPage = Page.TurbulenceView(root, case)
 
     elif page_name == tr("Body forces"):
         import code_saturne.gui.case.BodyForcesView as Page
@@ -168,10 +172,6 @@ def displayStaticPage(case, page_name, root, stbar, tree):
     elif page_name == tr("Fans"):
         import code_saturne.gui.case.FansView as Page
         thisPage = Page.FansView(root, case)
-
-    elif page_name == tr("Groundwater flows"):
-        import code_saturne.gui.case.GroundwaterView as Page
-        thisPage = Page.GroundwaterView(root, case)
 
     elif page_name == tr("Particles and droplets tracking"):
         import code_saturne.gui.case.LagrangianView as Page

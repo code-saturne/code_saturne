@@ -23,7 +23,7 @@
 #-------------------------------------------------------------------------------
 
 """
-This module defines the 'Species transport' page.
+This module defines the 'Transported Variables' page.
 
 This module contains the following classes:
 - LabelDelegate

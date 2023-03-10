@@ -485,11 +485,11 @@ class BrowserView(QWidget, Ui_BrowserForm):
         elif section == 'Mesh':
             return ['Preprocessing', "Volume zones", "Boundary zones"]
         elif section == 'Calculation features':
-            return ['Main fields', 'Deformable mesh', 'Turbulence models',
-                    'Gas combustion', 'Thermal model', 'Body forces',
+            return ['Main fields', 'Deformable mesh', 'Gas combustion',
                     'Pulverized fuel combustion', 'Electrical models',
-                    'Atmospheric flows',
-                    'Species transport', 'Turbomachinery', 'Groundwater flows',
+                    'Atmospheric flows', 'Thermal model', 'Body forces',
+                    'Turbulence models', 'Species transport',
+                    'Groundwater flows', 'Turbomachinery',
                     'Fans', 'Non condensable gases']
         elif section == 'Closure modeling':
             return ['Interfacial area',
@@ -747,14 +747,13 @@ class BrowserView(QWidget, Ui_BrowserForm):
         """
         self.setRowClose(self.tr('Main fields'))
         self.setRowClose(self.tr('Deformable mesh'))
-        self.setRowClose(self.tr('Turbulence models'))
-        self.setRowClose(self.tr('Thermal model'))
         self.setRowClose(self.tr('Gas combustion'))
         self.setRowClose(self.tr('Pulverized fuel combustion'))
         self.setRowClose(self.tr('Electrical models'))
-        self.setRowClose(self.tr('Conjugate heat transfer'))
         self.setRowClose(self.tr('Atmospheric flows'))
-        self.setRowClose(self.tr('Species transport'))
+        self.setRowClose(self.tr('Thermal model'))
+        self.setRowClose(self.tr('Turbulence models'))
+        self.setRowClose(self.tr('Transported Variables'))
         self.setRowClose(self.tr('Turbomachinery'))
         self.setRowClose(self.tr('Groundwater flows'))
         self.setRowClose(self.tr('Fans'))
@@ -967,16 +966,16 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.setRowShow(self.tr('Calculation features'), True)
         self.setRowShow(self.tr('Main fields'), (p_module == 'neptune_cfd'))
         self.setRowShow(self.tr('Deformable mesh'), m_ale)
-        self.setRowShow(self.tr('Turbulence models'))
-        self.setRowShow(self.tr('Thermal model'), (m_thermal > -1))
-        self.setRowShow(self.tr('Body forces'), True)
         self.setRowShow(self.tr('Gas combustion'), m_gas_comb)
         self.setRowShow(self.tr('Pulverized fuel combustion'), m_sf_comb)
         self.setRowShow(self.tr('Electrical models'), m_elec)
         self.setRowShow(self.tr('Atmospheric flows'), m_atmo)
-        self.setRowShow(self.tr('Species transport'))
-        self.setRowShow(self.tr('Turbomachinery'), m_tbm)
+        self.setRowShow(self.tr('Thermal model'), (m_thermal > -1))
+        self.setRowShow(self.tr('Body forces'), True)
+        self.setRowShow(self.tr('Turbulence models'), not m_gwf)
+        self.setRowShow(self.tr('Transported Variables'))
         self.setRowShow(self.tr('Groundwater flows'), m_gwf)
+        self.setRowShow(self.tr('Turbomachinery'), m_tbm)
         self.setRowShow(self.tr('Fans'), m_fans)
 
         self.setRowShow(self.tr('Non condensable gases'), m_ncfd['non_condens'])
