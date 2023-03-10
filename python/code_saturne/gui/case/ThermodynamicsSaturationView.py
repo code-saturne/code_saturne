@@ -119,7 +119,7 @@ class ThermodynamicsSaturationView(QWidget, Ui_ThermodynamicsSaturation):
         self.mfm      = MainFieldsModel(self.case)
 
         # Set fields string:
-        field_ids = self.interf.getEnthalpyCoupleFieldId()
+        field_ids = self.interf.getEnthalpyCoupleDefault()
         couple_str = ""
         if field_ids:
             field_1 = self.mfm.getFieldFromId(field_ids[0])
