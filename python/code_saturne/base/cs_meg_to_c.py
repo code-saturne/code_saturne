@@ -1802,6 +1802,10 @@ class meg_to_c_interpreter:
 
                 # Scalars
                 for sp_id in mfm.getFieldIdList(include_none=True):
+                    boundary = Boundary(zone.getNature(),
+                                        zone.getLabel(),
+                                        self.case,
+                                        sp_id)
                     for _s in spm.getScalarByFieldId(sp_id):
                         c = boundary.getScalarChoice(sp_id, _s)
                         if 'formula' == c[-7:]:
