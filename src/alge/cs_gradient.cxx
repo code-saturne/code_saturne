@@ -6969,57 +6969,65 @@ _update_bc_coeff_for_ic_s(cs_field_bc_coeffs_t          *bc_coeffs,
   BFT_MALLOC(var_ext, n_local, cs_real_t);
   BFT_MALLOC(var_distant, n_distant, cs_real_t);
 
-  /* FIXME: for cases with a stronger gradient normal to the
-     coupling than tangential to the coupling, using the reconstruction
-     at I' rather than the value at I on non-orthogonal meshes (such as
-     tetrahedral meshes) can actually degrade performance, because the only
-     adjacent mesh locations contributing information are not in the plane
-     tangential to the face and containing II', and contribute lower quality
-     information. Using another form of gradient computation might be helpful
-     here. */
+  /* For cases with a stronger gradient normal to the coupling than tangential
+     to the coupling, assuming a homogeneous Neuman boundary condition at the
+     coupled faces for the reconstruction at I' rather than the value at I on
+     non-orthogonal meshes (such as tetrahedral meshes) can actually degrade
+     performance, because the only adjacent mesh locations contributing
+     information are not in the plane tangential to the face and containing II'.
+     So we use an iterative process here to initialize BC coefficients with
+     a non-reconstructed value and refine them with a reconstructed value.
+     This is actually only necessary whan combining a gradient tangential to the
+     coupled surface and a non-orthogonal mesh at the wall (not recommended for
+     wall law modeling), so we limit this to a single iteration and do not
+     provide user setting for this now. */
 
-#if 0
-  cs_gradient_boundary_iprime_lsq_s(mesh,
-                                    cs_glob_mesh_quantities,
-                                    cpl,
-                                    n_distant,
-                                    faces_distant,
-                                    halo_type,
-                                    clip_coeff,
-                                    bc_coeff_a,
-                                    bc_coeff_b,
-                                    c_weight,
-                                    var,
-                                    var_distant);
+  int n_iter_max = 2;
+  for (int iter = 0; iter < n_iter_max; iter++) {
 
-#else
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)mesh->b_face_cells;
-  for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
-    cs_lnum_t face_id = faces_distant[ii];
-    cs_lnum_t cell_id = b_face_cells[face_id];
-    var_distant[ii] = var[cell_id];
+    if (iter > 0)
+      cs_gradient_boundary_iprime_lsq_s(mesh,
+                                        cs_glob_mesh_quantities,
+                                        NULL, /* handled in current loop */
+                                        n_distant,
+                                        faces_distant,
+                                        halo_type,
+                                        clip_coeff,
+                                        bc_coeff_a,
+                                        bc_coeff_b,
+                                        c_weight,
+                                        var,
+                                        var_distant);
+
+    else {
+      const cs_lnum_t *restrict b_face_cells
+        = (const cs_lnum_t *restrict)mesh->b_face_cells;
+      for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+        cs_lnum_t face_id = faces_distant[ii];
+        cs_lnum_t cell_id = b_face_cells[face_id];
+        var_distant[ii] = var[cell_id];
+      }
+    }
+
+    cs_internal_coupling_exchange_var(cpl,
+                                      1,
+                                      (cs_real_t *)var_distant,
+                                      (cs_real_t *)var_ext);
+
+    /* For internal coupling, update BC coeffs */
+
+    for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+      cs_lnum_t face_id = faces_local[ii];
+
+      cs_real_t hint = hintp[face_id];
+      cs_real_t hext = rcodcl2p[face_id];
+
+      bc_coeff_a[face_id] = hext * var_ext[ii] / (hint + hext);
+      bc_coeff_b[face_id] = hint               / (hint + hext);
+    }
   }
-#endif
-
-  cs_internal_coupling_exchange_var(cpl,
-                                    1,
-                                    (cs_real_t *)var_distant,
-                                    (cs_real_t *)var_ext);
 
   BFT_FREE(var_distant);
-
-  /* For internal coupling, update BC coeffs */
-
-  for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-    cs_lnum_t face_id = faces_local[ii];
-
-    cs_real_t hint = hintp[face_id];
-    cs_real_t hext = rcodcl2p[face_id];
-
-    bc_coeff_a[face_id] = hext * var_ext[ii] / (hint + hext);
-    bc_coeff_b[face_id] = hint               / (hint + hext);
-  }
 }
 
 /*----------------------------------------------------------------------------

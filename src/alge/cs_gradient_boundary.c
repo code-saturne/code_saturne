@@ -726,12 +726,13 @@ _gradient_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
  * segments joining coupled cell centers and the matching boundary face
  * do not currently account for the non-linearity associated with wall laws.
  *
- * A more precise computation for cells with multiple coupled boundary faces
- * would be possible by using multiple passes, first estimating boundary face
- * values without recontruction, then using that information for faces which
- * are not tangential to II' in a second pass. Note though that as the mesh
- * is refined, the portion of the boundary adjacent to cells with
- * multiple coupled faces (i.e. at corners and ridges) diminishes.
+ * This assumption can actually degrade performance when the only adjacent
+ * mesh locations contributing information are not in the plane tangential
+ * to the face and containing II' (such as with tetrahedral meshes), so passing
+ * no coupling information (NULL cpl argument) and updating BC coefficients
+ * either with non-reconstructed values or using an iterative process above:
+ * this function's call is recommended (at the expense of additional
+ * communication in the caller).
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
