@@ -936,9 +936,6 @@ cs_mesh_intersect_polyline_map(cs_lnum_t          n_points,
 
       double t_intersect = -1;
 
-      int n_in = 0;
-      int n_out = 0;
-
       /* Loop on faces to see if the segment crosses it */
       for (cs_lnum_t i = cell_face_idx[cur_cell_id];
            i < cell_face_idx[cur_cell_id+1];
@@ -1002,9 +999,6 @@ cs_mesh_intersect_polyline_map(cs_lnum_t          n_points,
                       s_end,
                       n_crossings,
                       NULL);
-
-        n_in += n_crossings[0];
-        n_out += n_crossings[1];
 
         /* Store the nearest intesection from the O point...*/
         if (t < adist_min && t >= 0) {

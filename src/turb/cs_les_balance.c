@@ -1043,14 +1043,12 @@ _les_balance_compute_tdjtauij(const void   *input,
   const int keysca = cs_field_key_id("scalar_id");
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  int isca = 0;
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (cs_field_get_key_int(f, keysca) > 0) {
       if (f_id == sca->id)
         break;
-      isca++;
     }
   }
 
@@ -1095,14 +1093,12 @@ _les_balance_compute_uidivturflux(const void   *input,
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const int keysca = cs_field_key_id("scalar_id");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
-  int isca = 0;
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (cs_field_get_key_int(f, keysca) > 0) {
       if (f_id == sca->id)
         break;
-      isca++;
     }
   }
 
@@ -1150,14 +1146,12 @@ _les_balance_compute_tdivturflux(const void   *input,
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const int keysca = cs_field_key_id("scalar_id");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
-  int isca = 0;
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (cs_field_get_key_int(f, keysca) > 0) {
       if (f_id == sca->id)
         break;
-      isca++;
     }
   }
 

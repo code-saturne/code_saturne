@@ -96,6 +96,8 @@ static cs_time_table_t **_time_tables = NULL;
  */
 /*----------------------------------------------------------------------------*/
 
+#if 0
+
 static void
 _print_time_table(cs_time_table_t *t)
 {
@@ -107,6 +109,8 @@ _print_time_table(cs_time_table_t *t)
   bft_printf("[NROWS] \"%d\"\n", t->n_rows);
   bft_printf("[NCOLS] \"%d\"\n", t->n_cols);
 }
+
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!

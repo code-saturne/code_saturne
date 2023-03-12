@@ -148,7 +148,6 @@ double precision, allocatable, dimension(:), target :: cpro_rho_tc, bpro_rho_tc
 double precision, allocatable, dimension(:) :: esflum, esflub
 double precision, allocatable, dimension(:) :: intflx, bouflx
 double precision, allocatable, dimension(:) :: secvif, secvib
-double precision, dimension(:,:), allocatable :: rhs_temp
 double precision, allocatable, dimension(:,:), target :: gradp
 double precision, dimension(:,:), pointer :: cpro_gradp
 double precision, dimension(:), pointer :: coefa_dp, coefb_dp

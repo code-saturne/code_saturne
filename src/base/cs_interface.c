@@ -4226,7 +4226,7 @@ cs_interface_set_copy_indexed(const cs_interface_set_t  *ifs,
   cs_lnum_t j;
   int local_rank = 0;
   int type_size = cs_datatype_size[datatype];
-  cs_lnum_t send_size = 0, itf_index_size = 0;
+  cs_lnum_t send_size = 0;
   cs_lnum_t *itf_index = NULL, *itf_s_index = NULL, *itf_r_index = NULL;
   unsigned char *send_buf = NULL;
   unsigned char *_dest = dest;
@@ -4250,10 +4250,6 @@ cs_interface_set_copy_indexed(const cs_interface_set_t  *ifs,
   assert(ifs != NULL);
 
   /* Count number of elements to send or receive */
-
-  itf_index_size = ifs->size + 1;
-  if (dest_index != NULL)
-    itf_index_size *= 2;
 
   BFT_MALLOC(itf_index, 2*(ifs->size + 1), cs_lnum_t);
   itf_s_index = itf_index;

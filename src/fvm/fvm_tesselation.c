@@ -1827,7 +1827,7 @@ _decode_polyhedra_tesselation_l(const fvm_tesselation_t  *this_tesselation,
 {
   int orient;
   cs_lnum_t n_vertices;
-  cs_lnum_t i, j, k, l, m, base_dest_id, face_id, vertex_id, encoding_id;
+  cs_lnum_t j, k, l, m, base_dest_id, face_id, vertex_id, encoding_id;
   cs_lnum_t tv[3];
   fvm_tesselation_encoding_t decoding_mask[3] = {0, 0, 0};
 
@@ -1840,9 +1840,9 @@ _decode_polyhedra_tesselation_l(const fvm_tesselation_t  *this_tesselation,
   /* Main loop on polyhedra */
   /*------------------------*/
 
-  for (i = 0, j = start_id ;
+  for (j = start_id ;
        j < this_tesselation->n_elements;
-       i++, j++) {
+       j++) {
 
     for (k = ts->face_index[j];     /* Loop on element faces */
          k < ts->face_index[j+1];

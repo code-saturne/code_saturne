@@ -2112,7 +2112,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv)
   }
 
   /* law for scalar diffusivity */
-  int user_id = -1;
   int n_fields = cs_field_n_fields();
   const int kivisl = cs_field_key_id("diffusivity_id");
   const int kscavr = cs_field_key_id("first_moment_id");
@@ -2123,7 +2122,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv)
 
     if (   (f->type & CS_FIELD_VARIABLE)
         && (f->type & CS_FIELD_USER)) {
-      user_id++;
 
       if (   cs_field_get_key_int(f, kscavr) < 0
           && cs_field_get_key_int(f, kivisl) >= 0) {

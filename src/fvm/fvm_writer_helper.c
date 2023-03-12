@@ -684,7 +684,6 @@ _field_helper_output_el(fvm_writer_field_helper_t          *helper,
 {
   fvm_writer_field_helper_t *h = helper;
 
-  int         n_sections = 0;
   cs_lnum_t   sub_size = 0;
   cs_lnum_t   n_elements = 0;
 
@@ -701,7 +700,6 @@ _field_helper_output_el(fvm_writer_field_helper_t          *helper,
 
     const fvm_nodal_section_t  *section = current_section->section;
 
-    n_sections += 1;
     n_elements += section->n_elements;
     if (current_section->type != section->type)
       sub_size += fvm_tesselation_n_sub_elements(section->tesselation,
@@ -803,13 +801,6 @@ _field_helper_output_el(fvm_writer_field_helper_t          *helper,
 
     /* Write block values */
 
-    {
-      int eo = 0;
-      for (cs_lnum_t ii = 0; ii < convert_dim*sub_size; ii++) {
-        if (values[ii] != 0)
-          eo++;
-      }
-    }
     output_func(context,
                 h->datatype,
                 h->field_dim,
