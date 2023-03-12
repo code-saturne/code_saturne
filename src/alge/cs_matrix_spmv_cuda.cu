@@ -959,6 +959,12 @@ _update_cusparse_map(cs_matrix_cusparse_map_t  *csm,
 
 #if defined(HAVE_CUSPARSE_GENERIC_API)
 
+#if CUSPARSE_VER_MAJOR >= 12
+  cusparseSpMVAlg_t spmv_alg_type = CUSPARSE_SPMV_ALG_DEFAULT;
+#else
+  cusparseSpMVAlg_t spmv_alg_type = CUSPARSE_MV_ALG_DEFAULT;
+#endif
+
   cusparseStatus_t status = CUSPARSE_STATUS_SUCCESS;
   cudaDataType_t val_dtype
     = (sizeof(cs_real_t) == 8) ? CUDA_R_64F : CUDA_R_32F;
@@ -1011,7 +1017,7 @@ _update_cusparse_map(cs_matrix_cusparse_map_t  *csm,
                                      &beta,
                                      csm->vecY,
                                      val_dtype,
-                                     CUSPARSE_MV_ALG_DEFAULT,
+                                     spmv_alg_type,
                                      &bufferSize);
 
     CS_CUDA_CHECK(cudaMalloc(&(csm->dBuffer), bufferSize));
@@ -1390,6 +1396,12 @@ cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
 
 #if defined(HAVE_CUSPARSE_GENERIC_API)
 
+#if CUSPARSE_VER_MAJOR >= 12
+  cusparseSpMVAlg_t spmv_alg_type = CUSPARSE_SPMV_ALG_DEFAULT;
+#else
+  cusparseSpMVAlg_t spmv_alg_type = CUSPARSE_MV_ALG_DEFAULT;
+#endif
+
   cudaDataType_t val_dtype
     = (sizeof(cs_real_t) == 8) ? CUDA_R_64F : CUDA_R_32F;
 
@@ -1401,7 +1413,7 @@ cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
                         &beta,
                         csm->vecY,
                         val_dtype,
-                        CUSPARSE_MV_ALG_DEFAULT,
+                        spmv_alg_type,
                         csm->dBuffer);
 
   if (CUSPARSE_STATUS_SUCCESS != status)
@@ -1622,6 +1634,12 @@ cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
 
 #if defined(HAVE_CUSPARSE_GENERIC_API)
 
+#if CUSPARSE_VER_MAJOR >= 12
+  cusparseSpMVAlg_t spmv_alg_type = CUSPARSE_SPMV_ALG_DEFAULT;
+#else
+  cusparseSpMVAlg_t spmv_alg_type = CUSPARSE_MV_ALG_DEFAULT;
+#endif
+
   cudaDataType_t val_dtype
     = (sizeof(cs_real_t) == 8) ? CUDA_R_64F : CUDA_R_32F;
 
@@ -1633,7 +1651,7 @@ cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
                         &beta,
                         csm->vecY,
                         val_dtype,
-                        CUSPARSE_MV_ALG_DEFAULT,
+                        spmv_alg_type,
                         csm->dBuffer);
 
   if (CUSPARSE_STATUS_SUCCESS != status)
