@@ -1806,18 +1806,20 @@ class meg_to_c_interpreter:
                                         zone.getLabel(),
                                         self.case,
                                         sp_id)
-                    for _s in spm.getScalarByFieldId(sp_id):
-                        c = boundary.getScalarChoice(sp_id, _s)
-                        if 'formula' == c[-7:]:
-                            exp, req, sym = boundary.getScalarFormulaComponents(sp_id, _s)
-                            self.init_block('bnd',
-                                            zone.getLabel(),
-                                            spm.getScalarLabelByName(_s),
-                                            exp,
-                                            req,
-                                            sym,
-                                            [],
-                                            condition=c)
+                    if boundary.getNature() != "symmetry":
+                        for _s in spm.getScalarByFieldId(sp_id):
+                            c = boundary.getScalarChoice(sp_id, _s)
+                            if 'formula' == c[-7:]:
+                                exp, req, sym =
+                                boundary.getScalarFormulaComponents(sp_id, _s)
+                                self.init_block('bnd',
+                                                zone.getLabel(),
+                                                spm.getScalarLabelByName(_s),
+                                                exp,
+                                                req,
+                                                sym,
+                                                [],
+                                                condition=c)
 
 
     #---------------------------------------------------------------------------
