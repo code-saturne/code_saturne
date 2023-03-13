@@ -1810,8 +1810,8 @@ class meg_to_c_interpreter:
                         for _s in spm.getScalarByFieldId(sp_id):
                             c = boundary.getScalarChoice(sp_id, _s)
                             if 'formula' == c[-7:]:
-                                exp, req, sym =
-                                boundary.getScalarFormulaComponents(sp_id, _s)
+                                exp, req, sym = \
+                                    boundary.getScalarFormulaComponents(sp_id, _s)
                                 self.init_block('bnd',
                                                 zone.getLabel(),
                                                 spm.getScalarLabelByName(_s),
@@ -1820,7 +1820,6 @@ class meg_to_c_interpreter:
                                                 sym,
                                                 [],
                                                 condition=c)
-
 
     #---------------------------------------------------------------------------
 
