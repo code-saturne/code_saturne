@@ -1370,7 +1370,7 @@ class WallBoundary(Boundary) :
             self.setEnthalpy(fieldId, value)
 
         choice = self.getEnthalpyChoice("none")
-        value = XMLEnergyNode.xmlGetChildString(choice)
+        value = XMLEnergyNode.xmlGetChildString("value")
         if value in [None, ""]:
             if choice[-7:] == 'formula':
                 value = self.getDefaultEnthalpyFormula(choice)
