@@ -836,6 +836,12 @@ class XMLinitNeptune(BaseXmlInit):
             main_xml_model.setPhaseChangeTransferStatus(legacy_node.xmlGetAttribute("status"))
             legacy_node.xmlRemoveNode()
 
+        # Rename "Tchen" turbulence model for solid particles into"Q2-Q12-Tchen"
+        cm_node = self.case.xmlGetNode("closure_modeling")
+        turbulence_node = cm_node.xmlGetNode("turbulence")
+        for node in turbulence_node.xmlGetChildNodeList("field"):
+            if node["model"] == "tchen":
+                node["model"] = "q2-q12-tchen"
 
 
     def _backwardCompatibilityCurrentVersion(self):
