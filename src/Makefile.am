@@ -61,7 +61,6 @@ base/cstphy.f90 \
 base/cstnum.f90 \
 base/dimens.f90 \
 base/entsor.f90 \
-base/ihmpre.f90 \
 base/cs_nz_condensation.f90 \
 base/cs_nz_tagmr.f90 \
 base/cs_tagms.f90 \
