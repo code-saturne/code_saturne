@@ -794,10 +794,7 @@ endif
 !===============================================================================
 
 if (idilat.eq.3.or.ipthrm.eq.1) then
-  call pthrbm &
- ( nvar   , ncetsm , nfbpcd , ncmast,                             &
-   dt     , smacel , spcond , svcond )
-
+  call pthrbm(nvar, nfbpcd, ncmast, dt, spcond, svcond)
 endif
 
 !===============================================================================

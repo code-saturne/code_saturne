@@ -48,14 +48,9 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     iappel        call number (1 or 2)
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     iterns        index of the iteration on Navier-Stokes
 !> \param[in]     ncepdp        number of cells with head loss
-!> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     icepdc        index of cells with head loss
-!> \param[in]     icetsm        index of cells with mass source term
-!> \param[in]     itypsm        type of mass source term for the variables
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     vel           velocity
 !> \param[in]     vela          velocity at the previous time step
@@ -71,9 +66,6 @@
 !> \param[in]     cofbfv        boundary condition array for the diffusion
 !>                               of the variable (implicit part)
 !> \param[in]     ckupdc        work array for the head loss
-!> \param[in]     smacel        variable value associated to the mass source
-!>                               term (for ivar=ipr, smacel is the mass flux
-!>                               \f$ \Gamma^n \f$)
 !> \param[in]     frcxt         external forces making hydrostatic pressure
 !> \param[in]     trava         working array for the velocity-pressure coupling
 !> \param[out]    dfrcxt        variation of the external forces
@@ -94,13 +86,11 @@
 !_______________________________________________________________________________
 
 subroutine predvv &
- ( iappel ,                                                       &
-   nvar   , nscal  , iterns ,                                     &
-   ncepdp , ncesmp ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
+ ( iappel , iterns ,                                              &
+   ncepdp , icepdc ,                                              &
    dt     , vel    , vela   , velk   , da_uu  ,                   &
    tslagr , coefav , coefbv , cofafv , cofbfv ,                   &
-   ckupdc , smacel , frcxt  , grdphd ,                            &
+   ckupdc , frcxt  , grdphd ,                                     &
    trava  ,                   dfrcxt , tpucou , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib )
 
@@ -136,6 +126,7 @@ use field_operator
 use cavitation
 use vof
 use atincl, only: kopint, iatmst, ps
+use pointe, only: ncetsm, icetsm, itypsm, smacel
 
 !===============================================================================
 
@@ -144,15 +135,14 @@ implicit none
 ! Arguments
 
 integer          iappel
-integer          nvar   , nscal  , iterns
-integer          ncepdp , ncesmp
+integer          iterns
+integer          ncepdp
 
 integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
 double precision tslagr(ncelet,*)
-double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
+double precision ckupdc(6,ncepdp)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision grdphd(3, ncelet)
 double precision trava(ndim,ncelet)
@@ -439,13 +429,6 @@ enddo
 ! at the first iteration only.
 ! If iphydr=1 or if we have buoyant scalars then we need to update source terms
 call uitsnv (vel, tsexp, tsimp)
-
-call ustsnv &
-  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-  iu   ,                                                         &
-  icepdc , icetsm , itypsm ,                                     &
-  dt     ,                                                       &
-  ckupdc , smacel , tsexp  , tsimp  )
 
 ! C version
 call user_source_terms(ivarfl(iu), tsexp, tsimp)
@@ -1530,7 +1513,7 @@ endif
 !-------------------------------------------------------------------------------
 ! --->  Mass source terms
 
-if (ncesmp.gt.0) then
+if (ncetsm.gt.0) then
 
 !     On calcule les termes Gamma (uinj - u)
 !       -Gamma u a la premiere iteration est mis dans
@@ -1539,11 +1522,11 @@ if (ncesmp.gt.0) then
 !       ROVSDT a chaque iteration recoit Gamma
   allocate(gavinj(3,ncelet))
   if (nterup.eq.1) then
-    call catsmv(ncesmp, iterns, icetsm, itypsm(1,iu),               &
+    call catsmv(ncetsm, iterns, icetsm, itypsm(1,iu),               &
                 cell_f_vol, vela, smacel(:,iu), smacel(:,ipr),      &
                 trav, fimp, gavinj)
   else
-    call catsmv(ncesmp, iterns, icetsm, itypsm(1,iu),               &
+    call catsmv(ncetsm, iterns, icetsm, itypsm(1,iu),               &
                 cell_f_vol, vela, smacel(:,iu), smacel(:,ipr),      &
                 trava, fimp, gavinj)
   endif
@@ -1626,7 +1609,7 @@ endif
 
 !     L'ordre 2 sur les termes issus du lagrangien necessiterait de
 !       decomposer TSLAGR(IEL,ISOU) en partie implicite et
-!       explicite, comme c'est fait dans ustsnv.
+!       explicite, comme c'est fait dans cs_user_source_terms.
 !     Pour le moment, on n'y touche pas.
 
 if (iilagr.eq.2 .and. ltsdyn.eq.1)  then

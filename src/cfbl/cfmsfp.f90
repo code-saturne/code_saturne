@@ -21,12 +21,8 @@
 !-------------------------------------------------------------------------------
 
 subroutine cfmsfp &
-!================
-
- ( nvar   , nscal  , iterns , ncepdp , ncesmp ,          &
-   icepdc , icetsm , itypsm ,                            &
+ ( iterns ,                                              &
    dt     , vela   ,                                     &
-   ckupdc , smacel ,                                     &
    flumas , flumab )
 
 !===============================================================================
@@ -41,21 +37,10 @@ subroutine cfmsfp &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iterns           ! i  ! <-- ! Navier-Stokes iteration number                 !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! icepdc(ncelet)   ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp)   ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! vela             ! ra ! <-- ! variable value at time step beginning          !
-! ckupdc           ! tr ! <-- ! work array for the head loss                   !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! variable value associated to the mass source   !
-! (ncesmp,*)       !    !     ! term (for ivar=ipr, smacel is the mass flux    !
-!                  !    !     ! \f$ \Gamma^n \f$)                              !
 ! flumas(nfac)     ! tr ! --> ! flux de masse aux faces internes               !
 ! flumab(nfabor)   ! tr ! --> ! flux de masse aux faces de bord                !
 !__________________!____!_____!________________________________________________!
@@ -83,6 +68,7 @@ use ppthch
 use ppincl
 use mesh
 use field
+use pointe, only: ncetsm, icetsm, itypsm, smacel
 use cs_f_interfaces
 use cs_c_bindings
 
@@ -92,16 +78,11 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal, iterns
-integer          ncepdp , ncesmp
-
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
+integer          iterns
 
 double precision dt(ncelet)
-double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
 double precision flumas(nfac), flumab(nfabor)
-double precision vela  (3  ,ncelet)
+double precision vela(3, ncelet)
 
 ! Local variables
 
@@ -218,20 +199,8 @@ itsqdm = 0
 if (itsqdm.ne.0) then
 
   if (ivisse.eq.1) then
-
-    call visecv &
- ( secvif , secvib )
-
+    call visecv(secvif, secvib)
   endif
-
-
-  ! --- User source term
-  call ustsnv &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iu  ,                                                          &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     ,                                                       &
-   ckupdc , smacel , tsexp  , tsimp )
 
   ! C version
   call user_source_terms(ivarfl(iu), tsexp, tsimp)
@@ -287,11 +256,7 @@ if (itsqdm.ne.0) then
      ! Scalar diffusivity (Default)
      if (iand(vcopt_u%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
-        call viscfa &
-        !==========
-     ( imvisf ,                                                       &
-       w1     ,                                                       &
-       viscf  , viscb  )
+        call viscfa(imvisf, w1, viscf, viscb)
 
      ! Tensorial diffusion of the velocity (in case of tensorial porosity)
      else if (iand(vcopt_u%idften, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
@@ -367,7 +332,7 @@ endif
 ! End of the test on momentum source terms
 
 ! Mass source term
-if (ncesmp.gt.0) then
+if (ncetsm.gt.0) then
 
   ! The momentum balance is used in its conservative form here
   ! so the mass source term is only composed of gamma*uinj
@@ -379,7 +344,7 @@ if (ncesmp.gt.0) then
     enddo
   enddo
 
-  call catsmv(ncesmp, iterns, icetsm, itypsm(:,iu),                      &
+  call catsmv(ncetsm, iterns, icetsm, itypsm(:,iu),                      &
               cell_f_vol, vel0, smacel(:,iu), smacel(:,ipr),             &
               tsexp, tsimp, gavinj)
 

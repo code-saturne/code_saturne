@@ -48,20 +48,11 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     ncesmp        number of cells with mass source term
-!> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     smacel        variable value associated to the mass source
-!>                               term (for ivar=ipr, smacel is the mass flux
-!>                               \f$ \Gamma^n \f$)
 !_______________________________________________________________________________
 
-subroutine predfl &
- ( nvar   , ncesmp ,                                              &
-   icetsm ,                                                       &
-   dt     ,                                                       &
-   smacel )
+subroutine predfl(dt)  &
+  bind(C, name='cs_mass_flux_prediction')
 
 !===============================================================================
 
@@ -81,6 +72,7 @@ use period
 use cplsat
 use mesh
 use field
+use pointe, only : ncetsm, icetsm, smacel
 use cs_c_bindings
 
 !===============================================================================
@@ -89,13 +81,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar
-integer          ncesmp
-
-integer          icetsm(ncesmp)
-
 double precision dt(ncelet)
-double precision smacel(ncesmp,nvar)
 
 ! Local variables
 
@@ -195,8 +181,8 @@ init = 1
 call divmas(init, imasfl , bmasfl , divu)
 
 ! --- Mass source terms
-if (ncesmp.gt.0) then
-  do ii = 1, ncesmp
+if (ncetsm.gt.0) then
+  do ii = 1, ncetsm
     iel = icetsm(ii)
     !FIXME It should be scmacel at time n-1
     divu(iel) = divu(iel) - volume(iel)*smacel(ii,ipr)
@@ -236,10 +222,7 @@ if (vcopt%idiff.ge.1) then
 
   imvisp = vcopt%imvisf
 
-    call viscfa &
-  ( imvisp ,                                                       &
-    dt     ,                                                       &
-    viscf  , viscb  )
+  call viscfa(imvisp, dt, viscf, viscb)
 
 else
 
@@ -261,7 +244,6 @@ thetap = 1.d0
 imucpp = 0
 
 call matrix &
-!==========
  ( iconvp , idiffp , ndircp , isym   ,                            &
    thetap , imucpp ,                                              &
    clbpot , cfbpot , pot    ,                                     &
@@ -348,7 +330,6 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
     iphydp = 0
 
     call itrgrp &
-    !==========
    ( f_id0  , init   , inc    , imrgrp , nswrgp , imligp , iphydp ,            &
      iwgrp  , iwarnp ,                                                         &
      epsrgp , climgp , extrap ,                                                &

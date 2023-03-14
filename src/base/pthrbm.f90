@@ -39,13 +39,9 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
-!> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     nfbpcd        number of faces with condensation source terms
 !> \param[in]     ncmast        number of cells with condensation source terms
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     smacel        variable value associated to the mass source
-!>                               term (for ivar=ipr, smacel is the mass flux
-!>                               \f$ \Gamma^n \f$)
 !> \param[in]     spcond        variable value associated to the condensation
 !>                              source term (for ivar=ipr, spcond is the flow rate
 !>                              \f$ \Gamma_{s, cond}^n \f$)
@@ -55,8 +51,8 @@
 !_______________________________________________________________________________
 
 subroutine pthrbm &
- ( nvar   , ncesmp , nfbpcd, ncmast,                                    &
-   dt     , smacel , spcond, svcond)
+ ( nvar   , nfbpcd, ncmast,                                    &
+   dt     , spcond, svcond)
 
 !===============================================================================
 
@@ -80,10 +76,9 @@ implicit none
 
 ! Arguments
 
-integer          nvar , ncesmp , nfbpcd , ncmast
+integer          nvar , nfbpcd , ncmast
 
 double precision dt(ncelet)
-double precision smacel(ncesmp,nvar)
 double precision spcond(nfbpcd,nvar), svcond(ncelet,nvar)
 
 ! Local variables
@@ -122,8 +117,8 @@ call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
 pthera = pther
 
-call compute_td_pressure_perfect_gas(nvar, ncesmp, nfbpcd, ncmast,    &
-                                     dt, smacel, spcond, svcond,      &
+call compute_td_pressure_perfect_gas(nvar, nfbpcd, ncmast,    &
+                                     dt, spcond, svcond,      &
                                      new_pther)
 
 call cs_user_physical_properties_td_pressure(new_pther)
@@ -223,13 +218,9 @@ end subroutine
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
-!> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     nfbpcd        number of faces with condensation source terms
 !> \param[in]     ncmast        number of cells with condensation source terms
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     smacel        variable value associated to the mass source
-!>                               term (for ivar=ipr, smacel is the mass flux
-!>                               \f$ \Gamma^n \f$)
 !> \param[in]     spcond        variable value associated to the condensation
 !>                              source term (for ivar=ipr, spcond is the flow rate
 !>                              \f$ \Gamma_{s, cond}^n \f$)
@@ -239,8 +230,8 @@ end subroutine
 !_______________________________________________________________________________
 
 subroutine compute_td_pressure_perfect_gas &
-  (nvar   , ncesmp , nfbpcd, ncmast, &
-   dt     , smacel , spcond, svcond, &
+  (nvar   , nfbpcd, ncmast, &
+   dt     , spcond, svcond, &
    new_pther)
 
 !===============================================================================
@@ -254,7 +245,7 @@ use entsor
 use parall
 use optcal, only: isuite, ntcabs, idilat
 use mesh, only: nfabor, volume, surfbn, ifabor, ncelet, ncel
-use pointe, only: itypfb, icetsm, ltmast
+use pointe, only: itypfb, ncetsm, icetsm, ltmast, smacel
 use ppincl, only: icondv
 use numvar, only: ivarfl, ipr, icrom, kbmasf
 use paramx, only: ientre, i_convective_inlet, isolib, ifrent
@@ -265,9 +256,8 @@ use cs_c_bindings
 
 use, intrinsic :: iso_c_binding
 
-integer, intent(in) :: nvar, ncesmp, nfbpcd, ncmast
+integer, intent(in) :: nvar, nfbpcd, ncmast
 double precision, intent(in) :: dt(ncelet)
-double precision, intent(in) :: smacel(ncesmp,nvar)
 double precision, intent(in) :: spcond(nfbpcd,nvar), svcond(ncelet,nvar)
 double precision, intent(out) :: new_pther
 
@@ -319,8 +309,8 @@ enddo
 debtot = debin + debout
 
 ! Computation of the inlet mass flux imposed on the cells volume
-if (ncesmp.gt.0) then
-  do ieltsm = 1, ncesmp
+if (ncetsm.gt.0) then
+  do ieltsm = 1, ncetsm
     iel = icetsm(ieltsm)
     debtot = debtot + smacel(ieltsm,ipr)*volume(iel)
   enddo

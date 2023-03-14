@@ -281,6 +281,34 @@ cs_fuel_thfieldconv1(int              location_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+  * \brief Update the convective mass flux before the Navier Stokes equations
+  * (prediction and correction steps).
+  *
+  * This function computes a potential \f$ \varia \f$ solving the equation:
+  * \f[
+  * D \left( \Delta t, \varia \right) = \divs \left( \rho \vect{u}^n\right)
+  *                                   - \Gamma^n
+  *                                   + \dfrac{\rho^n - \rho^{n-1}}{\Delta t}
+  * \f]
+  * This potential is then used to update the mass flux as follows:
+  * \f[
+  *  \dot{m}^{n+\frac{1}{2}}_\ij = \dot{m}^{n}_\ij
+  *                               - \Delta t \grad_\fij \varia \cdot \vect{S}_\ij
+  * \f]
+  *
+  *  \param[in]     ncesmp        number of cells with mass source term
+  *  \param[in]     icetsm        index of cells with mass source term
+  *  \param[in]     dt            time step (per cell)
+  */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_prediction_mass_flux(cs_lnum_t  ncesmp,
+                        cs_lnum_t  icetsm[],
+                        cs_real_t  dt[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return pointer to boundary head losses array.
  *
  * \return  b_head_loss  pointer to boundary head losses array

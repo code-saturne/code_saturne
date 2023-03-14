@@ -35,27 +35,13 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     iterns        Navier-Stokes iteration number
-!> \param[in]     ncepdp        number of cells with head loss
-!> \param[in]     ncesmp        number of cells with mass source term
-!> \param[in]     icepdc        index of cells with head loss
-!> \param[in]     icetsm        index of cells with mass source term
-!> \param[in]     itypsm        type of mass source term for each variable
-!>                               (see uttsma.f90)
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     vela          velocity value at time step beginning
-!> \param[in]     ckupdc        work array for the head loss
-!> \param[in]     smacel        variable value associated to the mass source
-!>                               term (for ivar=ipr, smacel is the mass flux
-!>                               \f$ \Gamma^n \f$)
 !_______________________________________________________________________________
 
 subroutine cfmspr &
- ( nvar   , nscal  , iterns , ncepdp , ncesmp ,                   &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , vela   ,                                              &
-   ckupdc , smacel )
+ (iterns, dt, vela)
 
 !===============================================================================
 ! Module files
@@ -64,7 +50,7 @@ subroutine cfmspr &
 use, intrinsic :: iso_c_binding
 
 use paramx
-use pointe, only:rvoid1
+use pointe, only: rvoid1, ncetsm, icetsm, smacel
 use numvar
 use entsor
 use optcal
@@ -86,15 +72,10 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal, iterns
-integer          ncepdp , ncesmp
-
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
+integer          iterns
 
 double precision dt(ncelet)
-double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
-double precision vela  (3  ,ncelet)
+double precision vela(3, ncelet)
 
 ! Local variables
 
@@ -247,8 +228,8 @@ enddo
 !     MASS SOURCE TERM
 !     ================
 
-if (ncesmp.gt.0) then
-  do ii = 1, ncesmp
+if (ncetsm.gt.0) then
+  do ii = 1, ncetsm
     iel = icetsm(ii)
     smbrs(iel) = smbrs(iel) + smacel(ii,ipr)*cell_f_vol(iel)
   enddo
@@ -278,12 +259,7 @@ enddo
 ! computation of the "convective flux" for the density
 
 ! volumic flux (u + dt f)
-call cfmsfp                                                                    &
-( nvar   , nscal  , iterns , ncepdp , ncesmp ,                                 &
-  icepdc , icetsm , itypsm ,                                                   &
-  dt     , vela   ,                                                            &
-  ckupdc , smacel ,                                                            &
-  ivolfl , bvolfl )
+call cfmsfp(iterns, dt, vela, ivolfl, bvolfl)
 
 ! mass flux at internal faces (upwind scheme for the density)
 ! (negative because added to RHS)

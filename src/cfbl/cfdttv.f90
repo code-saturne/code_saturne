@@ -166,14 +166,7 @@ do ifac = 1, nfabor
 enddo
 
 iterns = 1
-call cfmsfp                                                       &
-!==========
- ( nvar   , nscal  , iterns , ncepdp , ncesmp ,                   &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , vela   ,                                              &
-   ckupdc , smacel ,                                              &
-   wflmas , wflmab )
-
+call cfmsfp(iterns, dt, vela, wflmas, wflmab)
 
 ! Summation at each cell taking only outward flux
 

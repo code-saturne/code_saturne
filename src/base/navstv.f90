@@ -120,7 +120,7 @@ integer          iflmas, iflmab
 integer          ivolfl_id, bvolfl_id
 integer          iflmb0
 integer          imrgrp, nswrgp, imligp, iwarnp
-integer          nbrval, iappel
+integer          nbrval
 integer          ndircp, icpt
 integer          numcpl
 integer          f_dim , iflwgr
@@ -222,6 +222,18 @@ interface
     double precision coefb_dp(ndimfb)
 
   end subroutine cs_pressure_correction
+
+  !-----------------------------------------------------------------------------
+
+  ! Interface to C function.
+  ! Update the convective mass flux before the Navier Stokes equations
+
+  subroutine cs_mass_flux_prediction(dt) &
+    bind(C, name='cs_mass_flux_prediction')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    real(kind=c_double), dimension(*), intent(inout) :: dt
+  end subroutine cs_mass_flux_prediction
 
   !=============================================================================
 
@@ -431,7 +443,7 @@ call field_get_coefbf_v(ivarfl(iu), cofbfu)
 if ((idilat.eq.2.or.idilat.eq.3).and. &
     (ntcabs.gt.1.or.isuite.gt.0).and.ipredfl.ne.0) then
 
-  call predfl(nvar, ncetsm, icetsm, dt, smacel)
+  call cs_mass_flux_prediction(dt)
 
 endif
 
@@ -456,11 +468,7 @@ if (ippmod(icompf).ge.0.and.ippmod(icompf).ne.3) then
     write(nfecra,1080)
   endif
 
-  call cfmspr &
-  ( nvar   , nscal  , iterns ,                                     &
-    ncepdc , ncetsm , icepdc , icetsm , itypsm ,                   &
-    dt     , vela   ,                                              &
-    ckupdc , smacel )
+  call cfmspr(iterns, dt, vela)
 
 endif
 
@@ -483,18 +491,14 @@ if (vcopt_u%iwarni.ge.1) then
   write(nfecra,1000)
 endif
 
-iappel = 1
-
 allocate(da_uu(6,ncelet))
 
 call predvv &
-( iappel ,                                                       &
-  nvar   , nscal  , iterns ,                                     &
-  ncepdc , ncetsm ,                                              &
-  icepdc , icetsm , itypsm ,                                     &
+( 1      , iterns ,                                              &
+  ncepdc , icepdc ,                                              &
   dt     , vel    , vela   , velk   , da_uu  ,                   &
   tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
-  ckupdc , smacel , frcxt  , grdphd ,                            &
+  ckupdc , frcxt  , grdphd ,                                     &
   trava  ,                   dfrcxt , dttens ,  trav  ,          &
   viscf  , viscb  , viscfi , viscbi , secvif , secvib )
 
@@ -1570,15 +1574,11 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
     enddo
 
     !   APPEL A PREDVV AVEC VALEURS AU PAS DE TEMPS COURANT
-    iappel = 2
     call predvv &
- ( iappel ,                                                       &
-   nvar   , nscal  , iterns ,                                     &
-   ncepdc , ncetsm ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
+ ( 2      , iterns , ncepdc , icepdc ,                            &
    dt     , vel    , vel    , velk   , da_uu  ,                   &
    tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
-   ckupdc , smacel , frcxt  , grdphd ,                            &
+   ckupdc , frcxt  , grdphd ,                                     &
    trava  ,                   dfrcxt , dttens , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib )
 

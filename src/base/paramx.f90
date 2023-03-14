@@ -349,7 +349,7 @@ module paramx
 
   !> \}
 
-  ! Temporary former Fortan subroutine names so that the user soubroutines
+  ! Temporary former Fortan subroutine names so that the user subroutines
   ! do not compile if the deprecated name (now used for the C routine) is used.
   integer cs_user_boundary_conditions, cs_user_parameters,         &
           cs_user_initialization, cs_user_physical_properties,     &
@@ -357,7 +357,7 @@ module paramx
           cs_user_mass_source_terms,                               &
           cs_user_turbulence_source_terms,                         &
           cs_user_turbulence_source_terms2,                        &
-          usatph, ussmag, ustsvv, usvosy, usvpst, usati1, usthht,  &
-          usatsoil
+          usatph, ussmag, ustsnv, ustsvv, usvosy, usvpst, usati1,  &
+          usthht, usatsoil
 
 end module paramx
