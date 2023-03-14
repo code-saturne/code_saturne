@@ -38,6 +38,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_bad_cells.h"
 #include "cs_probe.h"
+#include "cs_time_control.h"
 #include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------*/
@@ -418,22 +419,88 @@ cs_user_extra_operations_finalize(cs_domain_t     *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define external structure ids for faces associated with external
- *        (code_aster) structures.
+ * \brief Definition of internal mobile structures and corresponding initial
+ *        conditions (initial displacement and velocity ).
  *
- * Structure ids associated to a given face have the following values:
+ * \param[in]       is_restart         indicate if computation is restarted
+ * \param[in]       n_structs          number of mobile structures
+ * \param[in, out]  plot;              monitoring format mask
+ *                                       0: no plot
+ *                                       1: plot to text (.dat) format
+ *                                       2: plot to .csv format
+ *                                       3: plot to both formats
+ * \param[in, out]  plot_time_control  plot time output frequency control
+ * \param[in, out]  aexxst             coefficient for predicted displacement
+ * \param[in, out]  bexxst             coefficient for predicted displacement
+ * \param[in, out]  cfopre             coefficient for predicted force
+ * \param[in, out]  xstr0              initial displacement per structure
+ * \param[in, out]  vstr0              initial velocity per structure
+ * \param[in, out]  xstreq             displacement of initial mesh relative to
+ *                                     structures position at equilibrium
+ *
+ * \param[in, out]  plot_time_control  time control associated to plotting
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_fsi_structure_define(int                 is_restart,
+                             int                 n_structs,
+                             int                *plot,
+                             cs_time_control_t  *plot_time_control,
+                             cs_real_t          *aexxst,
+                             cs_real_t          *bexxst,
+                             cs_real_t          *cfopre,
+                             cs_real_t           xstr0[][3],
+                             cs_real_t           vstr0[][3],
+                             cs_real_t           xstreq[][3]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Time-based settings for internal mobile structures.
+ *
+ * \param[in]       n_structs  number of mobile structures
+ * \param[in]       ts         time step structure
+ * \param[in]       xstreq     displacement of initial mesh rel. to equilibrium
+ * \param[in]       xstr       structural displacement
+ * \param[in]       vstr       structural velocity
+ * \param[in, out]  xmstru     matrix of structural mass
+ * \param[in, out]  xcstru     matrix of structural friction
+ * \param[in, out]  xkstru     matrix of structural stiffness
+ * \param[in, out]  forstr     forces acting on structures (take forces)
+ * \param[in, out]  dtstr      structural time step
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_fsi_structure_values(int                    n_structs,
+                             const cs_time_step_t  *ts,
+                             const cs_real_t        xstreq[][3],
+                             const cs_real_t        xstr[][3],
+                             const cs_real_t        vstr[][3],
+                             cs_real_t              xmstru[][3][3],
+                             cs_real_t              xcstru[][3][3],
+                             cs_real_t              xkstru[][3][3],
+                             cs_real_t              forstr[][3],
+                             cs_real_t              dtstr[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define structure numbers for faces associated with internal
+ *        or external (code_aster) structures.
+ *
+ * Structure numbers associated to a given face have the following values:
  * - -i where coupled to  i-th (1-to n) external (code_aster) structure.
  * - 0 where not coupled with an internal or external structure.
  * - i  where coupled to  i-th (1-to n) internal (mass-spring) structure.
  *
  * \param[in, out]  domain         pointer to a cs_domain_t structure
- * \param[in, out]  structure_id   structure id associated to each face
+ * \param[in, out]  structure_num  structure id associated to each face
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_fsi_external_structure_id(cs_domain_t  *domain,
-                                  int           structure_id[]);
+cs_user_fsi_structure_num(cs_domain_t  *domain,
+                          int           structure_num[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

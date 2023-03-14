@@ -83,6 +83,14 @@ BEGIN_C_DECLS
 int cs_glob_ale = 0;
 
 /*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+void
+cs_f_ale_get_pointers(int  **iale);
+
+/*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
 
@@ -1357,15 +1365,15 @@ cs_ale_project_displacement(const int           ale_bc_type[],
 
         const cs_lnum_t  vtx_id = m->b_face_vtx_lst[j];
 
-        disp_proj[vtx_id][0] = clbale[face_id][0][0]*disp_proj[vtx_id][0]
-                             + clbale[face_id][0][1]*disp_proj[vtx_id][1]
-                             + clbale[face_id][0][2]*disp_proj[vtx_id][2];
-        disp_proj[vtx_id][1] = clbale[face_id][1][0]*disp_proj[vtx_id][0]
-                             + clbale[face_id][1][1]*disp_proj[vtx_id][1]
-                             + clbale[face_id][1][2]*disp_proj[vtx_id][2];
-        disp_proj[vtx_id][2] = clbale[face_id][2][0]*disp_proj[vtx_id][0]
-                             + clbale[face_id][2][1]*disp_proj[vtx_id][1]
-                             + clbale[face_id][2][2]*disp_proj[vtx_id][2];
+        disp_proj[vtx_id][0] =   clbale[face_id][0][0]*disp_proj[vtx_id][0]
+                               + clbale[face_id][0][1]*disp_proj[vtx_id][1]
+                               + clbale[face_id][0][2]*disp_proj[vtx_id][2];
+        disp_proj[vtx_id][1] =   clbale[face_id][1][0]*disp_proj[vtx_id][0]
+                               + clbale[face_id][1][1]*disp_proj[vtx_id][1]
+                               + clbale[face_id][1][2]*disp_proj[vtx_id][2];
+        disp_proj[vtx_id][2] =   clbale[face_id][2][0]*disp_proj[vtx_id][0]
+                               + clbale[face_id][2][1]*disp_proj[vtx_id][1]
+                               + clbale[face_id][2][2]*disp_proj[vtx_id][2];
 
       } /* End of loop on vertices of the face */
 
@@ -1386,7 +1394,7 @@ cs_ale_project_displacement(const int           ale_bc_type[],
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_update_mesh(const int           itrale)
+cs_ale_update_mesh(int  itrale)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const int  ndim = m->dim;
@@ -1489,7 +1497,7 @@ cs_ale_update_bcs(int         *ale_bc_type,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_solve_mesh_velocity(const int   iterns,
+cs_ale_solve_mesh_velocity(int         iterns,
                            const int  *impale,
                            const int  *ale_bc_type)
 {

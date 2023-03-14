@@ -53,7 +53,6 @@ use cstphy
 use cstnum
 use pointe
 use albase
-use alstru
 use alaste
 use parall
 use period
@@ -128,8 +127,6 @@ save             ipass
 integer, pointer, dimension(:,:) :: icodcl
 integer, allocatable, dimension(:) :: isostd
 
-double precision, pointer, dimension(:) :: xprale
-double precision, pointer, dimension(:,:) :: cofale
 double precision, pointer, dimension(:,:) :: dttens
 double precision, pointer, dimension(:,:,:) :: rcodcl
 double precision, pointer, dimension(:) :: hbord, theipb
@@ -176,7 +173,6 @@ interface
   ( nvar   , nscal  , iterns ,                                     &
     isvhb  ,                                                       &
     itrale , italim , itrfin , ineefl , itrfup ,                   &
-    cofale , xprale ,                                              &
     icodcl , isostd ,                                              &
     dt     , rcodcl ,                                              &
     visvdr , hbord  , theipb )
@@ -188,8 +184,6 @@ interface
     integer          nvar, nscal, iterns, isvhb
     integer          itrale , italim , itrfin , ineefl , itrfup
 
-    double precision, pointer, dimension(:) :: xprale
-    double precision, pointer, dimension(:,:) :: cofale
     integer, pointer, dimension(:,:) :: icodcl
     integer, dimension(nfabor+1) :: isostd
     double precision, pointer, dimension(:) :: dt
@@ -228,16 +222,13 @@ interface
 
   end subroutine richards
 
-  subroutine strdep(itrale , italim , itrfin, nvar, dt, cofale, xprale)
-
+  subroutine cs_mobile_structures_displacement(itrale, italim, itrfin)  &
+    bind(C, name='cs_mobile_structures_displacement')
+    use, intrinsic :: iso_c_binding
     implicit none
-
-    integer :: itrale , italim , itrfin, nvar
-    double precision, dimension(:) :: dt
-    double precision, pointer, dimension(:) :: xprale
-    double precision, pointer, dimension(:,:) :: cofale
-
-  end subroutine strdep
+    integer(c_int), value :: itrale, italim
+    integer(c_int) :: itrfin
+  end subroutine cs_mobile_structures_displacement
 
   subroutine cs_ast_coupling_exchange_time_step(c_dt) &
     bind(C, name='cs_ast_coupling_exchange_time_step')
@@ -809,24 +800,11 @@ italim = 1
 itrfin = 1
 ineefl = 0
 if (iale.ge.1 .and. nalimx.gt.1 .and. itrale.gt.nalinf) then
-!     On reserve certains tableaux pour permettre le retour a l'etat
-!       initial en fin d'iteration ALE
-!       - mass flux: save at the first call of schtmp
-!       - conditions aux limites de gradient de P et U (car on a un appel
-!         a GDRCEL pour les non orthogonalites pour calculer les CL reelles)
-!         -> n'est peut-etre pas reellement necessaire
-!       - la pression initiale (car RTPA est aussi ecrase dans le cas
-!         ou NTERUP>1) -> on pourrait optimiser en ne reservant que si
-!         necessaire ...
-  allocate(cofale(nfabor,11))
-  allocate(xprale(ncelet))
+  ! Indicate if we need to return to the initial state at the end
+  ! of an  ALE iteration.
   ineefl = 1
 
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfin = 0
-
-else
-  cofale => null()
-  xprale => null()
 endif
 
 icodcl => null()
@@ -886,7 +864,6 @@ do while (iterns.le.nterup)
     (nvar   , nscal  , iterns ,                                    &
      isvhb  ,                                                      &
      itrale , italim , itrfin , ineefl , itrfup ,                  &
-     cofale , xprale ,                                             &
      icodcl , isostd ,                                             &
      dt     , rcodcl ,                                             &
      visvdr , hbord  , theipb )
@@ -1241,7 +1218,6 @@ if (ippmod(idarcy).eq.1) then
     (nvar   , nscal  , iterns ,                                    &
      isvhb  ,                                                      &
      itrale , italim , itrfin , ineefl , itrfup ,                  &
-     cofale , xprale ,                                             &
      icodcl , isostd ,                                             &
      dt     , rcodcl ,                                             &
      visvdr , hbord  , theipb )
@@ -1265,20 +1241,14 @@ if (iccvfg.eq.0) then
 ! 13.  DEPLACEMENT DES STRUCTURES EN ALE ET TEST DE BOUCLAGE IMPLICITE
 !===============================================================================
 
-  if (nbstru.gt.0.or.nbaste.gt.0) then
+  if (iale.ge.1) then
 
-    call strdep(itrale, italim, itrfin, nvar, dt, cofale, xprale)
+    call cs_mobile_structures_displacement(itrale, italim, itrfin)
 
     !     On boucle eventuellement sur de deplacement des structures
     if (itrfin.ne.-1) then
       italim = italim + 1
       goto 300
-    endif
-
-    ! Free memory
-    if (associated(cofale)) then
-      deallocate(cofale)
-      deallocate(xprale)
     endif
 
   endif

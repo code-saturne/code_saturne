@@ -705,7 +705,6 @@ the user specific boundary conditions are activated for inlets
 \anchor gui_coal_bc
 \image html gui_coal_bc.png "Boundary conditions for the pulverized coal module"
 
-
 **For gas combustion** it is also possible to manage the boundary conditions for the inlet in the Graphical User Interface (GUI). The user can choose between the **burned gas** or the **Unburned gas**,
 impose the the mass flow and velocity
 
@@ -1240,13 +1239,6 @@ see [Ini-ale](@ref gui_ale_mei).
 \anchor gui_ale_mei
 \image html gui_ale_mei.png "Thermophysical models - mobile mesh (ALE method)"
 
-The options may also be set and completed with the \ref usstr1 function
-found in \ref cs_user_fluid_structure_interaction.f90. It is possible to
-specify informations for the structure module, such as the index of the
-structure (\ref idfstr), and the initial displacement, velocity and acceleration
-values (\ref xstr0, \ref xstreq and \ref vstr0). For examples,
-see [examples](@ref cs_user_fluid_structure_interaction_h_usstr1).
-
 Mesh velocity boundary conditions
 =================================
 
@@ -1292,32 +1284,49 @@ Note that for more complex settings, the mesh viscosity could be modified in
 \ref cs_user_initialization or \ref cs_user_extra_operations.
 The matching field's name is **mesh_viscosity**.
 
+Fluid - structure interaction {#cs_ug_as_fsi}
+=============================
+
+Fluid structure interaction may use either *internal* structures using a
+simplified "mass-spring" model, or *external* coupling with the code_aster
+structural mechanics code.
+
+When using the GUI, boundary condition definitions allow associating an internal
+or external coupling to each boundary zone when ALE mesh deformation is activated.
+For each (per-zone) boundary condition with an internal coupling definition,
+a new internal structure is created. Structure ids are numbered from *0* to *n*,
+in order of boundary condition appearance. Zones may also be associated with
+an external structure, based on coupling with code_aster. In this case, a
+single coupling is handled, so whether a single zone or multiple zones are
+defined as being coupled with this external code has no incidence (the mapping
+between coupled fluid and structure surfaces is based on geometrical proximity).
+
+Without the GUI, see the code [examples](@ref cs_user_model_h_coupling_add).
+
+Note that adjacent zones (i.e. zones sharing vertices) should not be coupled to
+different structures, as movement of those structures is independent, and
+may conflict at shared vertex positions.
+
+Whether coupled structures are defined using the GUI or in a user-defined
+function, their association with boundary zones may be completed or
+modified in the \ref cs_user_fsi_structure_num function
+(see [examples](@ref cs_user_model_h_coupling_zone)).
+
+In theory, it should be possible to combine internal and external
+mobile structures.
+
 Fluid - structure internal coupling
-===================================
+-----------------------------------
 
-In the file \ref cs_user_fluid_structure_interaction.f90 the user provides the parameters of two functions.
+Using the GUI, initial structure positions and structure characteristics
+can be defined with the associated boundary condition entries, while
+general settings can be defined in the **Coupling parameters** page's
+**Fluid structure interaction** tab.
 
-- \ref usstr1 is called at the beginning of the calculation. It is used to
-  define and initialize the internal structures where fluid-Structure coupling
-  occurs. For each boundary face, **idfstr** is the index of the structure the
-  face belongs to (if idfstr(ifac) = 0, the face ifac doesn't belong to any
-  structure). When using internal coupling, the structure index must be strictly
-  positive and smaller than the number of structures.
-  The number of *internal* structures is automatically defined with the maximum
-  value of the **idfstr** table, meaning that internal structure numbers must
-  be defined sequentially with positive values, beginning with integer value
-  **1**
-  [see here for more details](@ref cs_user_fluid_structure_interaction_h_usstr1).
-
-- The second function, \ref usstr2, is called at each iteration. It is used to
-  define structural parameters (considered as potentially time dependent):
-  mass m \ref xmstru, friction coefficients  \ref xcstru, and stiffness
-  k \ref xkstru.
-  The \ref forstr array defines fluid stresses acting on each internal
-  structure
-  [see here for more details](@ref cs_user_fluid_structure_interaction_h_usstr2).
-  Moreover it is also possible to take external forces (gravity for example)
-  into account.
+Slightly finer control over these settings is also possible using the
+\ref cs_user_fsi_structure_define function from
+the \ref cs_user_fluid_structure_interaction.c file, as shown in the
+[examples](@ref cs_user_fluid_structure_interaction_h_internal) section.
 
 <!-- ----------------------------------------------------------------------- -->
 

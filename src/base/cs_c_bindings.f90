@@ -3269,17 +3269,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function to get the cs_glob_ale option
-
-    subroutine cs_f_ale_get_pointers(iale) &
-      bind(C, name='cs_f_ale_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: iale
-    end subroutine cs_f_ale_get_pointers
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function for scalar gradient
 
     subroutine cs_f_gradient_s(f_id, imrgra, inc, n_r_sweeps,                  &

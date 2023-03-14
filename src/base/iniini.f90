@@ -42,7 +42,6 @@ use rotation
 use entsor
 use pointe
 use albase
-use alstru
 use alaste
 use parall
 use period
@@ -124,7 +123,7 @@ ipori = -1
 iporf = -1
 
 !===============================================================================
-! 1. Map Fortran pointers to C global data
+! Map Fortran pointers to C global data
 !===============================================================================
 
 call atmo_init
@@ -158,7 +157,7 @@ call map_turbomachinery_model(iturbo, ityint)
 call init_sizes_pcond()
 
 !===============================================================================
-! 2. ENTREES SORTIES entsor.f90
+! I/O: entsor.f90
 !===============================================================================
 
 ! ---> NFECRA vaut 6 par defaut ou 9 en parallele (CSINIT)
@@ -176,21 +175,13 @@ ficfpp = 'define_ficfpp_in_usppmo'
 ! ---> Fichiers module atmospherique
 call atmo_set_meteo_file_name('meteo')
 
-! ---> Fichiers historiques
-
-! impsth : fichier stock + unite d'ecriture des variables
-!          des structures mobiles
-
-impsth(1) = 30
-impsth(2) = 31
-
 ! ---> Fichiers utilisateurs
 
 do ii = 1, nusrmx
   impusr(ii) = 69+ii
 enddo
 
-! Ici entsor.f90 est completement initialise
+! Here entsor.f90 is completely initialized
 
 !===============================================================================
 ! Get mesh metadata.
@@ -223,18 +214,17 @@ enddo
 call ppinii
 
 !===============================================================================
-! 6. OPTIONS DU CALCUL : TABLEAUX DE optcal.f90
+! Arrays of optcal.f90
 !===============================================================================
 
-! Type des CL, tables de tri
-! Sera calcule apres cs_user_boundary_conditions.
+! Ordering of BC's will be computed after cs_user_boundary_conditions.
 
 do ii = 1, ntypmx
   idebty(ii) = 0
   ifinty(ii) = 0
 enddo
 
-! --- Estimateurs d'erreur pour Navier-Stokes
+! Error estimators for Navier-Stokes
 
 do iest = 1, nestmx
   iescal(iest) = 0
@@ -264,33 +254,6 @@ csaw1    = csab1/xkappa**2 + 1.d0/csasig*(1.d0 + csab2)
 !    (field first_moment_id < 0) and that variances are clipped to 0 only.
 
 ! Here all of cstphy has been initialized.
-
-!===============================================================================
-! INITIALISATION DES PARAMETRES ALE de albase.f90 et alstru.f90
-!===============================================================================
-
-! --- Tableaux des structures
-do istr = 1, nstrmx
-  dtstr(istr) = dtref
-  do ii = 1, 3
-    xstr(ii,istr)   = 0.d0
-    xpstr(ii,istr)  = 0.d0
-    xppstr(ii,istr) = 0.d0
-    xsta(ii,istr)   = 0.d0
-    xpsta(ii,istr)  = 0.d0
-    xppsta(ii,istr) = 0.d0
-    xstp(ii,istr)   = 0.d0
-    forstr(ii,istr) = 0.d0
-    forsta(ii,istr) = 0.d0
-    forstp(ii,istr) = 0.d0
-    xstreq(ii,istr) = 0.d0
-    do jj = 1, 3
-      xmstru(ii,jj,istr) = 0.d0
-      xcstru(ii,jj,istr) = 0.d0
-      xkstru(ii,jj,istr) = 0.d0
-    enddo
-  enddo
-enddo
 
 !===============================================================================
 ! Lagrangian arrays

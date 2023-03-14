@@ -119,6 +119,7 @@ cs_user_extra_operations-stopping_criterion.c \
 cs_user_extra_operations-turbomachinery.c \
 cs_user_extra_operations-verif_cdo_diffusion.c \
 cs_user_extra_operations-vorticity_field.c \
+cs_user_fluid_structure_interaction.c \
 cs_user_fluid_structure_interaction-code_aster.c \
 cs_user_head_losses.c \
 cs_user_hgn-relax_time_scale.c \
@@ -194,7 +195,6 @@ cs_user_boundary_conditions-gas_3ptchem.f90 \
 cs_user_boundary_conditions-gas_ebu.f90 \
 cs_user_boundary_conditions-gas_libby_williams.f90 \
 cs_user_boundary_conditions-pulverized_coal.f90 \
-cs_user_fluid_structure_interaction.f90 \
 cs_user_initialization-gas_ebu.f90 \
 cs_user_initialization-gas_libby_williams.f90 \
 cs_user_initialization-pulverized_coal.f90 \

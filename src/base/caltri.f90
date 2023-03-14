@@ -89,7 +89,7 @@ implicit none
 logical(kind=c_bool) :: mesh_modified, log_active, post_active
 integer(c_int) :: ierr
 
-integer          modhis, iappel, iisuit
+integer          iappel, iisuit
 integer          iel
 integer          inod   , idim, ifac
 integer          itrale , ntmsav
@@ -125,7 +125,6 @@ interface
 
     integer          nvar, nscal, itrale
 
-    double precision, pointer, dimension(:) :: xprale
     integer, pointer, dimension(:,:) :: icodcl
     integer, dimension(nfabor+1) :: isostd
     double precision, pointer, dimension(:) :: dt
@@ -135,13 +134,26 @@ interface
 
   !=============================================================================
 
-  subroutine tridim(itrale, nvar, nscal, dt)
-
+  subroutine cs_mobile_structures_initialize()  &
+    bind(C, name='cs_mobile_structures_initialize')
+    use, intrinsic :: iso_c_binding
     implicit none
+  end subroutine cs_mobile_structures_initialize
 
+  !=============================================================================
+
+  subroutine cs_mobile_structures_finalize()  &
+    bind(C, name='cs_mobile_structures_finalize')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_mobile_structures_finalize
+
+  !=============================================================================
+
+  subroutine tridim(itrale, nvar, nscal, dt)
+    implicit none
     integer                                   :: itrale, nvar, nscal
     double precision, pointer, dimension(:)   :: dt
-
   end subroutine tridim
 
   !=============================================================================
@@ -745,13 +757,11 @@ if (nctsmt.gt.0) then
   call cs_volume_mass_injection_build_lists(ncetsm, icetsm, izctsm)
 endif
 
-! -- Structures mobiles en ALE
+! ALE mobile structures
 
 if (iale.ge.1) then
-  call strini(dt)
+  call cs_mobile_structures_initialize
 endif
-
-! -- Fin de zone Structures mobiles en ALE
 
 ! Lagrangian initialization
 
@@ -1064,32 +1074,6 @@ if (icdo.eq.1) then
 endif
 
 !===============================================================================
-! Structures
-!===============================================================================
-
-if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then
-
-  modhis = -1
-  if (frhist.gt.0.d0) then
-    if ((ttcabs - ttchis) .gt. frhist*(1-1.0d-6)) then
-      modhis = 1
-    endif
-  else if (nthist.gt.0 .and. mod(ntcabs, nthist).eq.0) then
-    modhis = 1
-  endif
-
-  if (modhis.eq.1) then
-
-    ttchis = ttcabs
-    if (ihistr.eq.1) then
-      call strhis(modhis)
-    endif
-
-  endif
-
-endif
-
-!===============================================================================
 ! Write to "run_solver.log" every ntlist iterations
 !===============================================================================
 
@@ -1139,16 +1123,6 @@ endif
 
 write(nfecra,4000)
 
-call timer_stats_start(post_stats_id)
-
-modhis = 2
-
-if (ihistr.eq.1) then
-  call strhis(modhis)
-endif
-
-call timer_stats_stop(post_stats_id)
-
 if (nfpt1d.gt.0) then
   call cs_1d_wall_thermal_free
 endif
@@ -1193,6 +1167,7 @@ if (ippmod(igmix).ge.0) then
 endif
 
 if (iale.ge.1) then
+  call cs_mobile_structures_finalize
   call finalize_ale
 endif
 

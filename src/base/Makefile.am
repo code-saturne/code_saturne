@@ -139,6 +139,7 @@ cs_map.h \
 cs_mass_source_terms.h \
 cs_math.h \
 cs_measures_util.h \
+cs_mobile_structures.h \
 cs_rank_neighbors.h \
 cs_notebook.h \
 cs_numbering.h \
@@ -313,6 +314,8 @@ cs_flag_check.c \
 cs_function.c \
 cs_function_default.c \
 cs_gas_mix.c \
+cs_gas_mix_initialization.f90 \
+cs_gas_mix_physical_properties.f90 \
 cs_halo.c \
 cs_halo_perio.c \
 cs_head_losses.c \
@@ -320,13 +323,12 @@ cs_internal_coupling.c \
 cs_interpolate.c \
 cs_log_iteration.c \
 cs_log_setup.c \
-cs_notebook.c \
-cs_numbering.c \
+cs_mobile_structures.c \
 cs_measures_util.c \
 cs_mesh_tagmr.f90 \
 cs_metal_structures_tag.f90 \
-cs_gas_mix_initialization.f90 \
-cs_gas_mix_physical_properties.f90 \
+cs_notebook.c \
+cs_numbering.c \
 cs_opts.c \
 cs_parall.c \
 cs_param_types.c \
@@ -405,7 +407,6 @@ metal_structures_copain_model.f90 \
 modini.f90 \
 mmtycl.f90 \
 navstv.f90 \
-newmrk.f90 \
 phyvar.f90 \
 precli.f90 \
 predfl.f90 \
@@ -415,10 +416,6 @@ pthrbm.f90 \
 resvoi.f90 \
 scalai.f90 \
 schtmp.f90 \
-strdep.f90 \
-strhis.f90 \
-strini.f90 \
-strpre.f90 \
 tdesi1.f90 \
 tridim.f90 \
 tspdcv.f90 \

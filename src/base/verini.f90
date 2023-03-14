@@ -49,7 +49,6 @@ use optcal
 use cstphy
 use entsor
 use albase
-use alstru
 use parall
 use period
 use ppthch
@@ -133,18 +132,7 @@ call field_get_key_int(iviscl, key_t_ext_id, iviext)
 call field_get_key_int(icrom, key_t_ext_id, iroext)
 
 !===============================================================================
-! 1. ENTREES SORTIES entsor : formats 1000
-!===============================================================================
-
-! --- Suite, Historiques, Listing
-
-if (nthist.le.0.and.nthist.ne.-1) then
-  write(nfecra,1210) 'NTHIST (Periode   Sortie Histo. )',nthist
-  iok = iok + 1
-endif
-
-!===============================================================================
-! 2. OPTIONS DU CALCUL : TABLEAUX DE optcal : formats 2000
+! 1. OPTIONS DU CALCUL : TABLEAUX DE optcal : formats 2000
 !===============================================================================
 
 ! --- Dimensions
@@ -570,7 +558,7 @@ if (ineedy.eq.1) then
 endif
 
 !===============================================================================
-! 3. TABLEAUX DE cstphy : formats 4000
+! 2. TABLEAUX DE cstphy : formats 4000
 !===============================================================================
 
 ! --- Scalaires
@@ -645,7 +633,7 @@ if (nscal.gt.0) then
 endif
 
 !===============================================================================
-! 4. TABLEAUX DE period : formats 5000
+! 3. TABLEAUX DE period : formats 5000
 !===============================================================================
 
 ! --- periodicite de rotation incompatible avec couplage
@@ -673,7 +661,7 @@ if (iperot.gt.0.and.iirayo.gt.0) then
 endif
 
 !===============================================================================
-! 5. TABLEAUX DE parall : formats 6000 (limitations)
+! 4. TABLEAUX DE parall : formats 6000 (limitations)
 !===============================================================================
 
 ! --- parallelisme incompatible avec le mode de calcul
@@ -684,20 +672,13 @@ if (irangp.ge.0.and.ineedy.eq.1.and.abs(icdpar).eq.2) then
 endif
 
 !===============================================================================
-! 6. METHODE ALE (albase, alstru)
+! 5. METHODE ALE (albase)
 !===============================================================================
 
 if (iale.ge.1) then
 
   if (nalinf.lt.0) then
     write(nfecra,7010)nalinf
-    iok = iok + 1
-  endif
-
-  if (alpnmk.lt.0.d0 .or. alpnmk.gt.1.d0  .or.                   &
-      gamnmk.lt.0.d0 .or. gamnmk.gt.1.d0  .or.                   &
-      betnmk.lt.0.d0 .or. betnmk.gt.0.5d0) then
-    write(nfecra,7020)alpnmk,betnmk,gamnmk
     iok = iok + 1
   endif
 
@@ -718,7 +699,7 @@ if (iale.ge.1) then
 endif
 
 !===============================================================================
-! 7. COMPRESSIBLE : formats 8000
+! 6. COMPRESSIBLE : formats 8000
 !===============================================================================
 
 if (ippmod(icompf).ge.0) then
@@ -754,7 +735,7 @@ if (ippmod(icompf).ge.0) then
 endif
 
 !===============================================================================
-! 8. Unsteady rotor/stator coupling: 9000 formats
+! 7. Unsteady rotor/stator coupling: 9000 formats
 !===============================================================================
 
 if (iturbo.eq.2) then
@@ -773,7 +754,7 @@ if (iturbo.eq.2) then
 endif
 
 !===============================================================================
-! 10. Cavitation modelling: 9100 formats
+! 8. Cavitation modelling: 9100 formats
 !===============================================================================
 
 if (ivofmt.gt.0) then
@@ -788,20 +769,6 @@ endif
 ! 9. FORMATS VERIFICATION
 !===============================================================================
 
- 1210 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  ERROR:   STOP WHILE READING INPUT DATA',                 /,&
-'@     =====',                                                  /,&
-'@',  a33, ' must be an integer',                               /,&
-'@    larger than 0 or equal to  -1',                           /,&
-'@    it has value', i10,                                       /,&
-'@',                                                            /,&
-'@ Check the input data.',                                      /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2000 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1487,28 +1454,6 @@ endif
 '@   IT HAS VALUE', i10,                                        /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  Verify the parameters.',                                    /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 7020 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    NON VALID COEFFICIENTS IN  NEWMARK METHOD',               /,&
-'@',                                                            /,&
-'@  Computation CAN NOT run',                                   /,&
-'@',                                                            /,&
-'@  ALPNMK MUST BE   between  0 and  1',                        /,&
-'@  BETNMK MUST BE   between  0 and 1/2',                       /,&
-'@  GAMNMK MUST BE   between  0 and 1',                         /,&
-'@  We have here:',                                             /,&
-'@',                                                            /,&
-'@       ALPNMK      BETNMK      GAMNMK',                       /,&
-'@',      e12.4,      e12.4,      e12.4,                        /,&
 '@',                                                            /,&
 '@  Verify the parameters.',                                    /,&
 '@',                                                            /,&

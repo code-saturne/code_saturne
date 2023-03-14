@@ -592,36 +592,16 @@ write(nfecra,9900)
 !===============================================================================
 
 write(nfecra,7500)
-
-!   - Fichier suite
-
-!   - Fichiers historiques
-write(nfecra,7530) nthist,frhist
-write(nfecra,7532)
-
-!   - Fichiers log
-
 write(nfecra,7540) ntlist
-
-write(nfecra,7532)
-
-!   - Post-traitement automatique (bord)
-
 write(nfecra,9900)
 
  7500 format(                                                     &
                                                                 /,&
 ' ** INPUT-OUTPUT',                                             /,&
 '    ------------',                                             /)
- 7530 format(                                                     &
-' --- Probe history files',                                     /,&
-'       NTHIST = ',4x,i10,    ' (Output frequency     )',       /,&
-'       FRHIST = ',4x,e11.5,  ' (Output frequency (s) )')
- 7532 format(                                                     &
-'         --           --                --',                   /)
  7540 format(                                                     &
 ' --- run_solver.log files',                                    /,&
-'       NTLIST = ',4x,i10,    ' (Output frequency     )',       /)
+'       NTLIST = ', 4x,i10, ' (Output frequency)',              /)
 
 !===============================================================================
 ! 8. COUPLAGES

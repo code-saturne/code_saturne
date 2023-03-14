@@ -54,7 +54,6 @@ use entsor
 use pointe
 use optcal
 use albase
-use alstru
 use alaste
 use ppppar
 use ppthch
@@ -83,7 +82,6 @@ implicit none
 
 character        rubriq*64,car2*2,car4*4,car54*54
 character        cindfc*2,cindfl*4
-character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
 integer          f_id, t_id, ivar, iscal
 integer          idecal, iclapc, icha  , icla
@@ -91,15 +89,13 @@ integer          ii    , ivers
 integer          itysup, nbval
 integer          ipcefj, ipcla
 integer          nfmtsc, nfmtfl, nfmtch, nfmtcl
-integer          nfmtst
 integer          ilecec, iecr
-integer          ngbstr(2)
-integer          ifac, istr
+integer          ifac
 integer          iz, kk
 integer          ival(1)
 integer          key_t_ext_id, icpext
 integer          iviext
-double precision rval(1), tmpstr(27)
+double precision rval(1)
 
 type(c_ptr) :: rp
 
@@ -108,6 +104,21 @@ double precision, allocatable, dimension(:) :: tparbf
 double precision, pointer, dimension(:) :: dt_s
 
 type(var_cal_opt) :: vcopt
+
+!===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_mobile_structures_restart_write(r)  &
+    bind(C, name='cs_mobile_structures_restart_write')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr), value :: r
+  end subroutine cs_mobile_structures_restart_write
+
+end interface
 
 !===============================================================================
 !     A noter :
@@ -563,55 +574,12 @@ if (iecaux.eq.1) then
     call restart_write_field_vals(rp, fdiale, 0)
     call restart_write_field_vals(rp, fdiale, 1)
 
+    call cs_mobile_structures_restart_write(rp)
+
     car54=' End writing the ALE data              '
     write(nfecra,1110)car54
 
-    ngbstr(1) = nbstru
-    ngbstr(2) = nbaste
-
-    rubriq = 'nombre_structures'
-    itysup = 0
-    nbval  = 2
-    call restart_write_section_int_t(rp,rubriq,itysup,nbval,ngbstr)
-
-    if (nbstru.gt.0) then
-
-      nfmtst = 99
-      cindst = 'XX'
-!     Codage en chaine de caracteres du numero de la structure
-      do istr = 1, min(nbstru ,nfmtst)
-        write(cstruc(istr),'(I2.2)') istr
-      enddo
-      do istr = min(nbstru ,nfmtst)+1,nbstru
-        cstruc(istr) = cindst
-      enddo
-
-      do istr = 1, nbstru
-        rubriq = 'donnees_structure_'//cstruc(istr)
-        itysup = 0
-        nbval  = 27
-
-        do ii = 1, 3
-          tmpstr(   ii) = xstr  (ii,istr)
-          tmpstr(3 +ii) = xpstr (ii,istr)
-          tmpstr(6 +ii) = xppstr(ii,istr)
-          tmpstr(9 +ii) = xsta  (ii,istr)
-          tmpstr(12+ii) = xpsta (ii,istr)
-          tmpstr(15+ii) = xppsta(ii,istr)
-          tmpstr(18+ii) = xstp  (ii,istr)
-          tmpstr(21+ii) = forstr(ii,istr)
-          tmpstr(24+ii) = forsta(ii,istr)
-        enddo
-
-        call restart_write_section_real_t(rp,rubriq,itysup,nbval,tmpstr)
-      enddo
-
-      car54=' End writing the structures data (ALE)              '
-      write(nfecra,1110)car54
-
-    endif
   endif
-
 
 ! ---> Grandeurs complementaires pour la combustion gaz
 

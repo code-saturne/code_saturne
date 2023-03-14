@@ -30,42 +30,64 @@
   \section cs_user_fluid_structure_interaction_h_intro Introduction
 
   This page provides code blocks of several examples that may be used
-  to perform fluid structure interaction computations.
+  to perform [Fluid-Structure Interaction (FSI)](@ref cs_ug_as_fsi) computations.
 
-  \section cs_user_fluid_structure_interaction_h_usstr1  Internal structures and corresponding initial conditions
+  \section cs_user_model_h_coupling_add Declaring mobile structures.
 
-  Internal structures and their behavior can be specified through the user subroutines
-  from the \ref cs_user_fluid_structure_interaction.f90 file.
+  In addition to implicit declarations with boundary conditions in the GUI,
+  internal structures may be declared in the \ref cs_user_model
+  or \ref cs_user_parameters function. For example, to declare 3 coupled
+  structures:
 
-  \subsection cs_user_fluid_structure_interaction_h_usstr1_init Initialization
+  \code{.c}
+  cs_mobile_structures_add_n_structures(3);
+  \endcode
 
-  The \c lstelt array is allocated.
+  Coupling with code_aster can be declared in a similar manner, using:
 
-  \snippet cs_user_fluid_structure_interaction.f90 usstr1_init
+  \code{.c}
+  cs_ast_coupling_add();
+  \endcode
 
-  \subsection cs_user_fluid_structure_interaction_h_usstr1_example Example
+  \section cs_user_model_h_coupling_zone Selecting coupled faces.
 
-  The following code block provides an example of definition of two internal
-  structures.
+  Whether coupled structures are defined using the GUI or as above
+  function, their association with boundary zones may be completed or
+  modified in the \ref cs_user_fsi_structure_num function from
+  the \ref cs_user_fluid_structure_interaction.c file.
 
-  Here one fills array \c idfstr(\ref nfabor). For each boundary face \c ifac,
-  \c idfstr(ifac) is the number of the structure the face belongs to
-  (if \c idfstr(ifac) = 0, the face ifac doesn't belong to any structure.
-  When using internal coupling, structure number necessarily needs to be positive
-  (as shown in following examples).
+  In the following example, 2 different structures are each associated to
+  a boundary group:
 
-  The number of "internal" structures is automatically defined with the
-  maximum value of \c idfstr, meaning that internal structure numbers must
-  be defined sequentially with positive values, beginning with integer value 1.
+  \snippet cs_user_fluid_structure_interaction.c fsi_i_str_num
 
-  In the following example, boundary faces with color 4 belong to internal structure 1.
-  Boundary faces with color 2 belong to internal structure 2.
-  The total number of internal structures equals 2.
-  The boundary faces are identified using the \ref getfbr subroutine.
+  This type of association is not necessary using the GUI in simple cases,
+  but could be used to associate multiple boundary zones to a common structure
+  for example, or conversely, associated different structures to different
+  portions of a given zone (for example, if a single zone contains multiple
+  tubes, so as to simplify fluid BC definitions, separate structures could
+  be associated to each tube using sub-selections).
 
-  \snippet cs_user_fluid_structure_interaction.f90 usstr1_example_a
+  In the next example, the same face groups are coupled with an external
+  (code_aster) structure.
 
-  For each internal structure one can here define :
+  \snippet cs_user_fluid_structure_interaction-code_aster.c fsi_ext_struct_example
+
+  Note that in this case, only the (negative) sign of the structure number is
+  used, not the actual number, so both groups of faces are coupled to the
+  same code_aster instance.
+
+  \section cs_user_fluid_structure_interaction_h_internal  Internal structure parameters
+
+  Various global and individual parameters associated to internal structures can
+  be controlled with functions from \ref cs_user_fluid_structure_interaction.c.
+
+  \subsection cs_user_fluid_structure_interaction_h_usstr1_example Initial positions and parameters
+
+  Initial positions and other parameters associated with internal structure coupling
+  may be defined using the \ref cs_user_fsi_structure_define function.
+
+  For each internal structure one can here define:
   - an initial velocity \c vstr0
   - an initial displacement \c xstr0 (i.e. \c xstr0 is the value of the
     displacement \ref xstr compared to the initial mesh at time t=0)
@@ -77,31 +99,31 @@
        -k (xstr(t)+xstreq).
     \f]
 
-  Note that \c xstr0, \c xstreq and \c vstr0 arrays are initialized at the beginning
-  of the calculations to the value of 0.
-
   When starting a calculation using ALE, or re-starting a calculation with
   ALE basing on a first calculation without ALE, an initial iteration 0 is
   automatically calculated in order to take initial arrays \c xstr0, \c vstr0 and
   \c xstreq into account. In another case, set the following option
-  \code{.f90}
-  italin=1
+  \code{.c}
+  cs_glob_ale_need_init = 1;
   \endcode
-  in subroutine \ref usipsu, so that the code can deal with arrays
+  in the \ref cs_user_parameters function, so that the code can deal with arrays
   \c xstr0, \c vstr0 or \c xstreq.
 
-  In the following example :
-  - internal structure 1 has got an initial displacement \c xstr0 of 2 meters in
+  Note that \c xstr0, \c xstreq and \c vstr0 arrays are initialized at the beginning
+  of the calculations to the value of 0.
+
+  In the following example:
+  - internal structure 0 has got an initial displacement \c xstr0 of 2 meters in
     the y direction and a displacement compared to equilibrium \c xstreq of
     1 meter in the y direction.
-  - Initial velocity \c vstr0 in the z direction of structure 2 equals -0.5 m/s.
+  - Initial velocity \c vstr0 in the z direction of structure 1 equals -0.5 m/s.
 
-  \snippet cs_user_fluid_structure_interaction.f90 usstr1_example_b
+  \snippet cs_user_fluid_structure_interaction.c fsi_i_ex_a
 
   Here one can modify the values of the prediction coefficients for
-  displacements anf fluid forces in internal FSI coupled algorithm.
+  displacements and fluid forces in internal FSI coupled algorithm.
 
-  The use of these coefficients is reminded here :
+  The use of these coefficients is reminded here:
   - predicted displacement
     \f[
     \vect{X_{n+1}} = \vect{X_n} + aexxst \Delta t \vect{X^{\prime}_n} +
@@ -117,109 +139,89 @@
     \f$ \vect{F_n} \f$ and \f$ \vect{F_{n-1}} \f$ standing for the fluid force acting on the
     structure respectively at iteration \f$ n \f$ and \f$ n-1 \f$.
 
-  \snippet cs_user_fluid_structure_interaction.f90 usstr1_example_c
+  The following code snippet redefines theses advanced coefficients for predicted
+  displacements and predicted force:
 
-  Activation of structural history output (i.e. displacement, structural
-  velocity, structural acceleration and fluid force)
-  (\c ihistr=0, disabled ; \c ihistr=1, enabled)
-  The value of structural history output step is the same as the one for
-  standard variables (\ref entsor::nthist "nthist").
+  \snippet cs_user_fluid_structure_interaction.c fsi_i_ex_b
 
-  \snippet cs_user_fluid_structure_interaction.f90 usstr1_example_d
+  The time plotting behavior of internal structures may also be modified
+  in this same function.
+  The following example shows how the default output format and interval
+  may be modified:
 
-  \section cs_user_fluid_structure_interaction_h_usstr2  Structural parameters in case of Fluid Structure internal coupling
+  \snippet cs_user_fluid_structure_interaction.c fsi_i_ex_c
 
-  Note that the subroutine \ref usstr2 is called at each time step of the calculation.
+  The output interval is based on a standard \ref cs_time_control_t logic,
+  so time-based or more advanced user-defined behavior may de used here.
+  It is recommended not to use a too large interval, so that sampling does
+  not miss important signal characteristics.
 
-  For each internal structure one defines here :
+  Note also that the movement of the internal fluid structure is computed using
+  a Newmark method, whose parameters can also be modified by calling the
+  \ref cs_mobile_structures_set_newmark_coefficients function.
+
+  \subsection cs_user_fluid_structure_interaction_h_usstr1_example Structural parameters
+
+  Some internal structure parameters, although usually fixed, may be time-varying
+  in complex models, so they may be defined and changed using the
+  \ref cs_user_fsi_structure_values function, which is called at each time
+  step when internal mobile structures are present.
+
+  For each internal structure one defines here:
   - its mass \f$ \tens{M} \f$ (\c xmstru)
   - its friction coefficient \f$ \tens{C} \f$ (\c xcstru)
   - its stiffness \f$ \tens{K} \f$ (\c xkstru)
 
-  \c forstr array gives fluid stresses acting on each internal structure.
-  Moreover it's possible to take external forces (gravity for example) into
+  The \c forstr array stores fluid stresses acting on each internal structure.
+  Moreover it is possible to take external forces (gravity for example) into
   account, too.
 
-  \c xstr array indicates the displacement of the structure compared to its
+  The \c xstr array indicates the displacement of each structure compared to its
   position in the initial mesh.
 
-  \c xstr0 array gives the displacement of the structures in initial mesh
-  compared to structural equilibrium.
+  The \c xstr0 array gives the displacement of the structures in initial mesh
+  compared to structure equilibrium.
 
-  \c vstr array stands for structural velocity.
+  The \c vstr array contains the structure velocities.
 
-  \c xstr, \c xstr0, and \c vstr arrays are data tables that can be used to define
+  The \c xstr, \c xstr0, and \c vstr arrays are data tables that can be used to define
   arrays mass, friction and stiffness. THOSE ARE NOT TO BE MODIFIED.
 
-  The 3D structural equation that is solved is the following one :
+  The 3D structure equation that is solved is:
   \f[
     \tens{M} \vect{X^{\prime\prime}} + \tens{C} \vect{X^{\prime}} + \tens{K} (\vect{X}+\vect{X_0}) = \vect{F}
   \f]
-  where \f$\vect{X}\f$ stands for the structural displacement compared to initial mesh
-      position (\c xstr) and \f$\vect{X_0}\f$ represents the displacement of the structure in initial mesh compared to equilibrium.
+  where \f$\vect{X}\f$ stands for the structural displacement compared to initial mesh position (\c xstr) and \f$\vect{X_0}\f$ represents the displacement of the structure in the initial mesh compared to equilibrium.
 
-    Note that \f$\tens{M}\f$, \f$\tens{C}\f$ and \f$\tens{K}\f$ are 3x3 matrices.
+  Note that \f$\tens{M}\f$, \f$\tens{C}\f$ and \f$\tens{K}\f$ are 3x3 matrices.
 
-    This equation is solved using a Newmark HHT algorithm.
-    Note that the time step used to solve this equation (\c dtstr) can be
-    different from the one of fluid calculations. user is free to define
-    \c dtstr array. At the beginning of the calculation \c dtstr is
-    initialized to the value of \c dt (fluid time step).
+  This equation is solved using a Newmark HHT algorithm.
+  Note that the time step used to solve this equation (\c dtstr) can be
+  different from the one of fluid calculations. user is free to define
+  \c dtstr array. At the beginning of the calculation \c dtstr is
+  initialized to the value of \c dt (fluid time step).
 
-  \subsection cs_user_fluid_structure_interaction_h_usstr2_init Initialization
-
-  The matrices \c xmstru, \c xcstru and \c xkstru are set to zero.
-
-  \snippet cs_user_fluid_structure_interaction.f90 usstr2_init
-
-  \subsection cs_user_fluid_structure_interaction_h_usstr2_example_1 Example 1
+  \subsubsection cs_user_fluid_structure_interaction_h_usstr2_example_1 Example 1
 
   Two examples of definition of the mass, the friction coefficient and the stiffness
   of an internal structure are provided hereafter.
 
-  \snippet cs_user_fluid_structure_interaction.f90 usstr2_example_1
+  \snippet cs_user_fluid_structure_interaction.c fsi_i_ex_d
 
-  \subsection cs_user_fluid_structure_interaction_h_usstr2_example_2 Example 2
+  \subsubsection cs_user_fluid_structure_interaction_h_usstr2_example_2 Example 2
 
-  \snippet cs_user_fluid_structure_interaction.f90 usstr2_example_2
+  \snippet cs_user_fluid_structure_interaction.c fsi_i_ex_e
 
   \section cs_user_fluid_structure_interaction_h_usaste Fluid Structure external coupling with code_aster
 
-  External structures (simulated with code_aster) can be specified through the
-  cs_user_fsi_external_structure_id user-defined function in
-  \ref cs_user_fluid_structure_interaction.c.
-
-  \subsection cs_user_fluid_structure_interaction_h_usaste_example Example
-
-  In the following example, two sets of boundary faces that will be coupled with
-  code_aster are defined.
-
-  Here one fills array \c idfstr[]
-  For each boundary face \c face_id, \c idfstr[face_id]) is the number of the structure
-  the face belongs to (if \c idfstr[face_id] = 0, the face \c face_id doesn't
-  belong to any structure.)
-  When using external coupling with code_aster, the structure number
-  necessarily needs to be negative (as shown in following examples).
-
-  The number of "external" structures with code_aster is automatically
-  defined with the maximum absolute value of \c idfstr table, meaning that
-  external structure numbers must be defined sequentially with negative
-  values beginning with integer value -1.
-
-  In following example, boundary faces in zone "wall_1" are associated
-  to external structure -1, while those in zone "wall_2" are associated
-  to external structure -2.
-
-  \snippet cs_user_fluid_structure_interaction-code_aster.c fsi_ext_struct_example
-
-  Note that we could also use the lower-level face selections such as
-  \ref cs_selector_get_b_face_list to extract subsets and assign them
-  to different structures.
+  For code_aster coupling, it is sufficient to declare a coupling as described in
+  the earlier \ref cs_user_model_h_coupling_add "section"
+  and possibly \ref cs_user_model_h_coupling_zone "select associated faces".
 
   Currently, multiple structures associated to faces associated with
   code_aster are handled in a grouped manner,so the structure number
   has no importance, as long as it is negative. In the future, in case
   of coupling with multiple instances of code_aster, we could assign
-  different structures to different solvers for example.
+  different structures to different coupling instances.
 
 */

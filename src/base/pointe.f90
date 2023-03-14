@@ -107,10 +107,6 @@ module pointe
   !> (specific physics models)
   integer, dimension(:), pointer :: izfppp
 
-  !> the index of the structure, (\c idfstr(ifac) where \c ifac is the index
-  !> of the face), 0 if the face is not coupled to any structure.
-  integer, allocatable, dimension(:) :: idfstr
-
   !> \}
 
   !=============================================================================
@@ -285,19 +281,11 @@ contains
 
     allocate(itrifb(nfabor))
 
-    ! ALE array for structure definition
-
-    if (iale.ge.1) then
-      allocate(idfstr(nfabor))
-    endif
-
     ! liquid-vapor mass transfer term for cavitating flows
     ! and its part implicit in pressure
     if (iand(ivofmt,VOF_MERKLE_MASS_TRANSFER).ne.0) then
       allocate(gamcav(ncelet), dgdpca(ncelet))
     endif
-
-    return
 
   end subroutine init_aux_arrays
 
@@ -349,8 +337,6 @@ contains
 
     deallocate(buffer)
 
-    return
-
   end subroutine resize_aux_arrays
 
   !=============================================================================
@@ -360,12 +346,9 @@ contains
   subroutine finalize_aux_arrays
 
     deallocate(itrifb)
-    if (allocated(idfstr)) deallocate(idfstr)
     if (allocated(izctsm)) deallocate(izctsm)
     if (allocated(b_head_loss)) deallocate(b_head_loss)
     if (allocated(gamcav)) deallocate(gamcav, dgdpca)
-
-    return
 
   end subroutine finalize_aux_arrays
 
@@ -495,8 +478,6 @@ contains
     call c_f_pointer(c_nfpt1d, nfpt1d)
     call c_f_pointer(c_nfpt1t, nfpt1t)
 
-    return
-
   end subroutine init_1d_wall_thermal
 
   !=============================================================================
@@ -516,8 +497,6 @@ contains
     call cs_f_porosity_from_scan_get_pointer(c_compute_from_scan)
 
     call c_f_pointer(c_compute_from_scan, compute_porosity_from_scan)
-
-    return
 
   end subroutine porosity_from_scan_init
 

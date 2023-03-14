@@ -88,8 +88,6 @@
 !> \param[in]     itrfin        for ALE
 !> \param[in]     ineefl        for ALE
 !> \param[in]     itrfup        for ALE
-!> \param[in]     cofale        work array for FSI
-!> \param[in]     xprale        work array for FSI
 !> \param[in,out] icodcl        face boundary condition code:
 !>                               - 1 Dirichlet
 !>                               - 2 Radiative outlet
@@ -145,7 +143,6 @@ subroutine condli &
  ( nvar   , nscal  , iterns ,                                     &
    isvhb  ,                                                       &
    itrale , italim , itrfin , ineefl , itrfup ,                   &
-   cofale , xprale ,                                              &
    icodcl , isostd ,                                              &
    dt     , rcodcl ,                                              &
    visvdr , hbord  , theipb )
@@ -158,7 +155,6 @@ use paramx
 use numvar
 use optcal
 use alaste
-use alstru
 use atincl, only: iautom, iprofm
 use coincl, only: fment, ientfu, ientgb, ientgf, ientox, tkent, qimp
 use ppcpfu, only: inmoxy
@@ -191,8 +187,6 @@ implicit none
 integer          nvar   , nscal , iterns, isvhb
 integer          itrale , italim , itrfin , ineefl , itrfup, nbt2h
 
-double precision, pointer, dimension(:) :: xprale
-double precision, pointer, dimension(:,:) :: cofale
 integer, pointer, dimension(:,:) :: icodcl
 integer, dimension(nfabor+1) :: isostd
 double precision, pointer, dimension(:) :: dt
@@ -356,15 +350,15 @@ interface
 
   end subroutine cs_syr_coupling_exchange_volume
 
-  subroutine strpre(itrale, italim, ineefl, impale, xprale, cofale)
+  subroutine cs_mobile_structures_prediction(itrale, italim, ineefl, impale)  &
+    bind(C, name = 'cs_mobile_structures_prediction')
 
+    use, intrinsic :: iso_c_binding
     implicit none
-    integer :: itrale, italim, ineefl
-    integer, dimension(:) :: impale
-    double precision, pointer, dimension(:) :: xprale
-    double precision, pointer, dimension(:,:) :: cofale
+    integer(kind=c_int), value :: itrale, italim, ineefl
+    integer(kind=c_int), dimension(*) :: impale
 
-  end subroutine strpre
+  end subroutine cs_mobile_structures_prediction
 
  end interface
 
@@ -448,9 +442,7 @@ if (iale.ge.1) then
   enddo
 
   ! En cas de couplage de structures, on calcule un deplacement predit
-  if (nbstru.gt.0.or.nbaste.gt.0) then
-    call strpre(itrale, italim, ineefl, impale, xprale, cofale)
-  endif
+  call cs_mobile_structures_prediction(itrale, italim, ineefl, impale)
 
 endif
 
@@ -4887,7 +4879,6 @@ use paramx
 use numvar
 use optcal
 use alaste
-use alstru
 use atincl, only: iautom, iprofm
 use coincl, only: fment, ientfu, ientgb, ientgf, ientox, tkent, qimp
 use ppcpfu, only: inmoxy

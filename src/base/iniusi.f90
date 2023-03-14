@@ -112,6 +112,12 @@ interface
     implicit none
   end subroutine cs_gui_checkpoint_parameters
 
+  subroutine cs_gui_mobile_mesh_structures_add()  &
+       bind(C, name='cs_gui_mobile_mesh_structures_add')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_mobile_mesh_structures_add
+
   subroutine cs_gui_physical_constants()  &
        bind(C, name='cs_gui_physical_constants')
     use, intrinsic :: iso_c_binding
@@ -171,6 +177,12 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_gui_scalar_model_settings
+
+  subroutine cs_mobile_structures_setup()  &
+       bind(C, name='cs_mobile_structures_setup')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_mobile_structures_setup
 
   subroutine cs_velocity_pressure_set_solid()  &
        bind(C, name='cs_velocity_pressure_set_solid')
@@ -263,6 +275,10 @@ endif
 ! Activate CDO for ALE
 if (iale.eq.2) then
   call cs_ale_activate
+endif
+
+if (iale.ge.1) then
+  call cs_gui_mobile_mesh_structures_add
 endif
 
 ! Other model parameters, including user-defined scalars
@@ -489,6 +505,13 @@ call cs_gui_internal_coupling
 call cs_user_internal_coupling
 
 call cs_internal_coupling_setup
+
+! Mobile structures
+! (after call to cs_gui_mobile_mesh_structures_add and possible
+! call by user to cs_mobile_structures_add_n_structures)
+if (iale.ge.1) then
+  call cs_mobile_structures_setup
+endif
 
 !----
 ! Formats
