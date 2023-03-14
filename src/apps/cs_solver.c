@@ -116,6 +116,7 @@
 #include "cs_sles_default.h"
 #include "cs_sat_coupling.h"
 #include "cs_syr_coupling.h"
+#include "cs_sys_coupling.h"
 #include "cs_system_info.h"
 #include "cs_time_moment.h"
 #include "cs_time_table.h"
@@ -354,6 +355,7 @@ _run(void)
 
   cs_syr_coupling_all_init();
   cs_sat_coupling_all_init();
+  cs_sys_coupling_all_init();
 
   cs_paramedmem_coupling_all_init();
 
@@ -565,6 +567,7 @@ _run(void)
   cs_ast_coupling_finalize();
   cs_syr_coupling_all_finalize();
   cs_sat_coupling_all_finalize();
+  cs_sys_coupling_all_finalize();
   cs_paramedmem_coupling_all_finalize();
   cs_coupling_finalize();
 #endif

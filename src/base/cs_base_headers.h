@@ -100,6 +100,7 @@
 #include "cs_scalar_clipping.h"
 #include "cs_selector.h"
 #include "cs_syr_coupling.h"
+#include "cs_sys_coupling.h"
 #include "cs_thermal_model.h"
 #include "cs_time_moment.h"
 #include "cs_time_plot.h"
