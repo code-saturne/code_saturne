@@ -240,7 +240,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         ifm = InterfacialForcesModel(self.case)
 
         if len(NonCondensableModel(self.case).getNonCondensableLabelList()) > 0 \
-                and ifm.getContinuousCouplingModel(fieldaId, fieldbId) in \
+                and ifm.getContinuousCouplingModel(self.field_a, self.field_b) in \
                 ifm.getAvailableContinuousDragModelList():
             self.checkBoxActivatePool.show()
         else:
