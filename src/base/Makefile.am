@@ -178,6 +178,7 @@ cs_selector.h \
 cs_sort.h \
 cs_sort_partition.h \
 cs_syr_coupling.h \
+cs_sys_coupling.h \
 cs_system_info.h \
 cs_thermal_model.h \
 cs_time_moment.h \
@@ -361,6 +362,7 @@ cs_selector_f2c.f90 \
 cs_sort.c \
 cs_sort_partition.c \
 cs_syr_coupling.c \
+cs_sys_coupling.c \
 cs_thermal_model.c \
 cs_time_table.c \
 cs_tagmri.f90 \

@@ -67,22 +67,6 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define couplings with other instances of code_saturne.
- *
- * This is done by calling the \ref cs_sat_coupling_define function for each
- * coupling to add.
- */
-/*----------------------------------------------------------------------------*/
-
-#pragma weak cs_user_saturne_coupling
-void
-cs_user_saturne_coupling(void)
-{
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Define couplings with SYRTHES code.
  *
  * This is done by calling the \ref cs_syr_coupling_define function for each
@@ -90,54 +74,30 @@ cs_user_saturne_coupling(void)
  */
 /*----------------------------------------------------------------------------*/
 
-#pragma weak cs_user_syrthes_coupling
-void
-cs_user_syrthes_coupling(void)
-{
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute a volume exchange coefficient for SYRTHES couplings.
- *
- * \param[in]   coupling_id   Syrthes coupling id
- * \param[in]   syrthes_name  name of associated Syrthes instance
- * \param[in]   n_elts        number of associated cells
- * \param[in]   elt_ids       associated cell ids
- * \param[out]  h_vol         associated exchange coefficient (size: n_elts)
- */
-/*----------------------------------------------------------------------------*/
-
-#pragma weak cs_user_syrthes_coupling_volume_h
-void
-cs_user_syrthes_coupling_volume_h(int               coupling_id,
-                                  const char       *syrthes_name,
-                                  cs_lnum_t         n_elts,
-                                  const cs_lnum_t   elt_ids[],
-                                  cs_real_t         h_vol[])
-{
-  CS_UNUSED(coupling_id);
-  CS_UNUSED(syrthes_name);
-  CS_UNUSED(n_elts);
-  CS_UNUSED(elt_ids);
-  CS_UNUSED(h_vol);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define couplings with SYRTHES code.
- *
- * This is done by calling the \ref cs_syr_coupling_define function for each
- * coupling to add.
- */
-/*----------------------------------------------------------------------------*/
-
-#pragma weak cs_user_cathare_coupling
 void
 cs_user_cathare_coupling(void)
 {
 
+  /*! [coupling_cathare_1] */
+  {
+    /* Adda coupling with cathare using only one phase */
+    cs_sys_coupling_add("CAT-PIPE", // Name of cathare instance
+                        1);         // Number of coupled phases
+
+    /* Couple the inlet zone only */
+    cs_sys_cpl_t *catcpl = cs_sys_coupling_by_name("CAT-PIPE");
+    cs_zone_t *zone = cs_boundary_zone_by_name("inlet");
+
+    cs_sys_coupling_add_cplbc(catcpl,               // pointer to coupling structure
+                              CS_SYS_CPL_BC_INLET,  // Type of BC
+                              zone,                 // coupled zone
+                              "z < 0.1",            // homogenized 1D volume selection criteria
+                              "TUBE1",              // name of cathare element
+                              3,                    // Scalar cell just outside boundary
+                              4,                    // Scalar cell just after the boundary
+                              1);                   // Number of elements, 1 for inlet/outlet
+  }
+  /*! [coupling_cathare_1] */
 }
 
 /*----------------------------------------------------------------------------*/

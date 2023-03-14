@@ -2039,7 +2039,6 @@ class cathare_domain(domain):
 
         wd, exec_path, args \
             = super(cathare_domain, self).solver_command(need_abs_path)
-        args += " --c2-wrapper"
 
         return wd, exec_path, args
 
