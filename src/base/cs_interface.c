@@ -5032,21 +5032,21 @@ cs_interface_set_sum_tr(const cs_interface_set_t  *ifs,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Update to minimum value for elements associated with an
- * interface set.
+ * \brief Update the minimum value of elements associated with an interface
+ *        set.
  *
  * On input, the variable array should contain local contributions. On output,
  * contributions from matching elements on parallel or periodic boundaries
- * have been added.
+ * have been updated.
  *
  * Only the values of elements belonging to the interfaces are modified.
  *
- * \param[in]       ifs        pointer to a fvm_interface_set_t structure
- * \param[in]       n_elts     number of elements in var buffer
- * \param[in]       stride     number of values (non interlaced) by entity
- * \param[in]       interlace  true if variable is interlaced (for stride > 1)
- * \param[in]       datatype   type of data considered
- * \param[in, out]  var        variable buffer
+ * \param[in]      ifs        pointer to a cs_interface_set_t structure
+ * \param[in]      n_elts     number of elements in var buffer
+ * \param[in]      stride     number of values (non interlaced) by entity
+ * \param[in]      interlace  true if variable is interlaced (for stride > 1)
+ * \param[in]      datatype   type of data considered
+ * \param[in, out] var        variable buffer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -5296,21 +5296,21 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Update to maximum value for elements associated with an
- * interface set.
+ * \brief Update the maximum value of elements associated with an interface
+ *        set.
  *
  * On input, the variable array should contain local contributions. On output,
  * contributions from matching elements on parallel or periodic boundaries
- * have been added.
+ * have been updated.
  *
  * Only the values of elements belonging to the interfaces are modified.
  *
- * \param[in]       ifs        pointer to a fvm_interface_set_t structure
- * \param[in]       n_elts     number of elements in var buffer
- * \param[in]       stride     number of values (non interlaced) by entity
- * \param[in]       interlace  true if variable is interlaced (for stride > 1)
- * \param[in]       datatype   type of data considered
- * \param[in, out]  var        variable buffer
+ * \param[in]      ifs        pointer to a cs_interface_set_t structure
+ * \param[in]      n_elts     number of elements in var buffer
+ * \param[in]      stride     number of values (non interlaced) by entity
+ * \param[in]      interlace  true if variable is interlaced (for stride > 1)
+ * \param[in]      datatype   type of data considered
+ * \param[in, out] var        variable buffer
  */
 /*----------------------------------------------------------------------------*/
 

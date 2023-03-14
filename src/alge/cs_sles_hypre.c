@@ -1020,11 +1020,11 @@ cs_sles_hypre_solve(void                *context,
   else {
     CS_MALLOC_HD(_t, n_rows, HYPRE_Real, amode);
     for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
-      _t[ii] = vx[ii];;
+      _t[ii] = vx[ii];
     }
     HYPRE_IJVectorSetValues(sd->coeffs->hx, n_rows, NULL, _t);
     for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
-      _t[ii] = rhs[ii];;
+      _t[ii] = rhs[ii];
     }
     HYPRE_IJVectorSetValues(sd->coeffs->hy, n_rows, NULL, _t);
   }
