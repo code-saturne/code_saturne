@@ -1953,12 +1953,14 @@ _hypre_boomeramg_hook(int     verbosity,
                       void   *context,
                       void   *solver_p)
 {
-  CS_NO_WARN_IF_UNUSED(verbosity);
-
   cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
   HYPRE_Solver  hs = solver_p;
   HYPRE_Solver  amg = _set_hypre_solver(slesp, hs);
   bool  amg_as_precond = (slesp->solver == CS_PARAM_ITSOL_AMG) ? false : true;
+
+  /* Set the verbosity level */
+
+  HYPRE_BoomerAMGSetPrintLevel(amg, (verbosity > 3 ? 3 : verbosity));
 
   /* Set the type of cycle */
 
