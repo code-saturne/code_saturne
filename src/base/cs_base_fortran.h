@@ -239,9 +239,6 @@ void
 cs_user_extra_operations_wrapper(void);
 
 void
-cs_user_fsi_external_structure_id_wrapper(int  structure_id[]);
-
-void
 cs_user_initialization_wrapper(void);
 
 void

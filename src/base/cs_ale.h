@@ -64,16 +64,11 @@ enum {
 
 extern int cs_glob_ale;
 
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
+extern int cs_glob_ale_n_ini_f; /*!< Number of sub-iterations for fluid
+                                  flow initialization */
 
-/*----------------------------------------------------------------------------
- * Get pointer to cs_glob_ale
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_ale_get_pointers(int **iale);
+extern int cs_glob_ale_need_init; /*!< Indicate whether an iteration to
+                                    initialize ALE is required */
 
 /*============================================================================
  * Public function prototypes
@@ -128,7 +123,7 @@ cs_ale_project_displacement(const int           ale_bc_type[],
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_update_mesh(const int           itrale);
+cs_ale_update_mesh(int  itrale);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -157,7 +152,7 @@ cs_ale_update_bcs(int         *ale_bc_type,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_solve_mesh_velocity(const int   iterns,
+cs_ale_solve_mesh_velocity(int         iterns,
                            const int  *impale,
                            const int  *ale_bc_type);
 

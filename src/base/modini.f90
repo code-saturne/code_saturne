@@ -40,7 +40,6 @@ use optcal
 use cstphy
 use entsor
 use albase
-use alstru
 use cplsat
 use post
 use ppincl
@@ -105,22 +104,6 @@ call field_get_key_id("time_step_factor", kcdtvar)
 if (idtvar.lt.0) then
   call hide_property(icour)
   call hide_property(ifour)
-endif
-
-!---> sorties historiques ?
-!      Si une valeur non modifiee par l'utilisateur (=-999)
-!        on la met a sa valeur par defaut
-!      On sort toutes les variables a tous les pas de temps par defaut
-!      NTHIST = -1 : on ne sort pas d'historiques
-!      NTHIST =  n : on sort des historiques tous les n pas de temps
-
-! Adapt the output frequency parameters according to the time scheme.
-if (idtvar.lt.0.or.idtvar.eq.2) then
-  frhist = -1.d0
-else
-  if (frhist > 0.d0) then
-    nthist = -1
-  endif
 endif
 
 ! Logging and postprocessing output
@@ -907,17 +890,7 @@ else
 endif
 
 !===============================================================================
-! 4. COEFFICIENTS DE alstru
-!===============================================================================
-
-if (betnmk.lt.-0.5d0*grand) betnmk = (1.d0-alpnmk)**2/4.d0
-if (gamnmk.lt.-0.5d0*grand) gamnmk = (1.d0-2.d0*alpnmk)/2.d0
-if (aexxst.lt.-0.5d0*grand) aexxst = 0.5d0
-if (bexxst.lt.-0.5d0*grand) bexxst = 0.0d0
-if (cfopre.lt.-0.5d0*grand) cfopre = 2.0d0
-
-!===============================================================================
-! 5. PARAMETRES DE cplsat
+! 4. PARAMETRES DE cplsat
 !===============================================================================
 
 ! Get number of couplings
@@ -929,7 +902,7 @@ if (nbrcpl.ge.1.and.iturbo.ne.0) then
 endif
 
 !===============================================================================
-! 6. Define Min/Max clipping values of void fraction of VOF model
+! 5. Define Min/Max clipping values of void fraction of VOF model
 !===============================================================================
 
 if (ivofmt.gt.0) then
@@ -950,7 +923,7 @@ if (ivofmt.gt.0) then
 endif
 
 !===============================================================================
-! 7. STOP SI PB
+! 6. STOP SI PB
 !===============================================================================
 
 if (iok.ne.0) then

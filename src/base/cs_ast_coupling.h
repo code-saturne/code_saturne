@@ -61,7 +61,31 @@ typedef struct _cs_ast_coupling_t  cs_ast_coupling_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initial exchange with code_aster
+ * \brief Query number of couplings with code_aster.
+ *
+ * Currently, a single coupling with code_aster is possible.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_ast_coupling_n_couplings(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define coupling with code_aster.
+ *
+ * Currently, a single coupling with code_aster is handled.
+ * In case of multiple calls to the function, subsequent calls are ignored,
+ * unless cs_ast_coupling_finalize has been called.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_add(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initial exchange with code_aster.
  *
  * \param[in]  nalimx  maximum number of implicitation iterations of
  *                     the structure displacement
@@ -76,7 +100,7 @@ cs_ast_coupling_initialize(int        nalimx,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Finalize exchange with code_aster
+ * \brief Finalize exchange with code_aster.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -112,15 +136,25 @@ cs_ast_coupling_exchange_time_step(cs_real_t  c_dt[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return pointer to array of fluid forces at faces coupled with
+ *        code_aster.
+ *
+ * \return  array of forces from fluid at coupled faces
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_3_t *
+cs_ast_coupling_get_fluid_forces_pointer(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Send stresses acting on the fluid/structure interface
  *        and receive displacements.
- *
- * \param[in]  fluid_forces  forces from fluid at coupled faces
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_exchange_fields(const cs_real_t  fluid_forces[]);
+cs_ast_coupling_exchange_fields(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

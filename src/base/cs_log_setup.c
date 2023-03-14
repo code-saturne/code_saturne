@@ -53,6 +53,8 @@
 #include "cs_function.h"
 #include "cs_log.h"
 #include "cs_mesh_quantities.h"
+#include "cs_mobile_structures.h"
+#include "cs_mobile_structures.h"
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
 #include "cs_restart.h"
@@ -165,6 +167,10 @@ _log_global_model_options(void)
   /* Face viscosity */
 
   cs_space_disc_log_setup();
+
+  /* ALE */
+
+  cs_mobile_structures_log_setup();
 
   /* Rotation info */
 

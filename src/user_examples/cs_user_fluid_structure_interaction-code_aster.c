@@ -64,8 +64,8 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define external structure ids for faces associated with external
- *        (code_aster) structures.
+ * \brief Define structure numbers for faces associated with internal
+ *        or external (code_aster) structures.
  *
  * Structure ids associated to a given face have the following values:
  * - -i where coupled to  i-th (1-to n) external (code_aster) structure.
@@ -78,8 +78,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_fsi_external_structure_id(cs_domain_t  *domain,
-                                  int           structure_id[])
+cs_user_fsi_structure_num(cs_domain_t  *domain,
+                          int           structure_num[])
 {
   CS_UNUSED(domain);
 
@@ -94,7 +94,7 @@ cs_user_fsi_external_structure_id(cs_domain_t  *domain,
     for (cs_lnum_t e_idx = 0; e_idx < zn->n_elts; e_idx++) {
 
       const cs_lnum_t face_id = zn->elt_ids[e_idx];
-      structure_id[face_id] = - (st_id + 1);
+      structure_num[face_id] = - (st_id + 1);
 
     }
 

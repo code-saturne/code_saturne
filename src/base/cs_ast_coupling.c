@@ -564,23 +564,38 @@ _cs_ast_coupling_post_function(void                  *coupling,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initial exchange with code_aster
+ * \brief Query number of couplings with code_aster.
  *
- * \param[in]  nalimx  maximum number of implicitation iterations of
- *                     the structure displacement
- * \param[in]  epalim  relative precision of implicitation of
- *                     the structure displacement
+ * Currently, a single coupling with code_aster is possible.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_ast_coupling_n_couplings(void)
+{
+  int retval = 0;
+
+  if (cs_glob_ast_coupling != NULL)
+    retval = 1;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define coupling with code_aster.
+ *
+ * Currently, a single coupling with code_aster is handled.
+ * In case of multiple calls to the function, subsequent calls are ignored,
+ * unless cs_ast_coupling_finalize has been called.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_initialize(int        nalimx,
-                           cs_real_t  epalim)
+cs_ast_coupling_add(void)
 {
-  const cs_time_step_t *ts = cs_glob_time_step;
-
-  int     nbpdtm = ts->nt_max;
-  double  ttinit = ts->t_prev;
+  if (cs_glob_ast_coupling != NULL)
+    return;
 
   /* Allocate global coupling structure */
 
@@ -611,11 +626,11 @@ cs_ast_coupling_initialize(int        nalimx,
 
   cpl->iteration = 0; /* < 0 for disconnect */
 
-  cpl->nbssit = nalimx; /* number of sub-iterations */
+  cpl->nbssit = 1;    /* number of sub-iterations (set later) */
 
   cpl->dt = 0.;
-  cpl->dtref = ts->dt_ref;  /* reference time step */
-  cpl->epsilo = epalim;     /* scheme convergence threshold */
+  cpl->dtref = 0;         /* reference time step (set later) */
+  cpl->epsilo = 1e-5;     /* scheme convergence threshold */
 
   cpl->icv1 = 0;
   cpl->icv2 = 0;
@@ -687,6 +702,52 @@ cs_ast_coupling_initialize(int        nalimx,
             "code_aster coupling requires MEDCoupling with MPI support.");
 
 #endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initial exchange with code_aster.
+ *
+ * \param[in]  nalimx  maximum number of implicitation iterations of
+ *                     the structure displacement
+ * \param[in]  epalim  relative precision of implicitation of
+ *                     the structure displacement
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_initialize(int        nalimx,
+                           cs_real_t  epalim)
+{
+  const cs_time_step_t *ts = cs_glob_time_step;
+
+  int     nbpdtm = ts->nt_max;
+  double  ttinit = ts->t_prev;
+
+  /* Allocate global coupling structure */
+
+  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+
+  assert(cpl != NULL);
+
+  cpl->verbosity = _verbosity;
+  cpl->visualization = _visualization;
+
+  cpl->iteration = 0; /* < 0 for disconnect */
+
+  cpl->nbssit = nalimx; /* number of sub-iterations */
+
+  cpl->dt = 0.;
+  cpl->dtref = ts->dt_ref;  /* reference time step */
+  cpl->epsilo = epalim;     /* scheme convergence threshold */
+
+  cpl->icv1 = 0;
+  cpl->icv2 = 0;
+  cpl->lref = 0.;
+
+  cpl->s_it_id = 0; /* Sub-iteration id */
+
+  cs_calcium_set_verbosity(cpl->verbosity);
 
   /* Calcium  (communication) initialization */
 
@@ -712,7 +773,7 @@ cs_ast_coupling_initialize(int        nalimx,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Finalize exchange with code_aster
+ * \brief Finalize exchange with code_aster.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -998,15 +1059,35 @@ cs_ast_coupling_exchange_time_step(cs_real_t  c_dt[])
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return pointer to array of fluid forces at faces coupled with
+ *        code_aster.
+ *
+ * \return  array of forces from fluid at coupled faces
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_3_t *
+cs_ast_coupling_get_fluid_forces_pointer(void)
+{
+  cs_real_3_t  *f_forces = NULL;
+
+  cs_ast_coupling_t  *cpl = cs_glob_ast_coupling;
+
+  if (cpl != NULL)
+    f_forces = (cs_real_3_t *)cpl->foras;
+
+  return f_forces;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Send stresses acting on the fluid/structure interface
  *        and receive displacements.
- *
- * \param[in]  fluid_forces  forces from fluid at coupled faces
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_exchange_fields(const cs_real_t  fluid_forces[])
+cs_ast_coupling_exchange_fields(void)
 {
   cs_ast_coupling_t  *cpl = cs_glob_ast_coupling;
 
@@ -1016,9 +1097,6 @@ cs_ast_coupling_exchange_fields(const cs_real_t  fluid_forces[])
   int verbosity = (cs_log_default_is_active()) ? cpl->verbosity : 0;
 
   const cs_lnum_t n_faces = cpl->n_faces;
-
-  for (cs_lnum_t i = 0; i < 3*n_faces; i++)
-    cpl->foras[i] = fluid_forces[i];
 
   /* Send prediction
      (no difference between explicit and implicit cases for forces) */

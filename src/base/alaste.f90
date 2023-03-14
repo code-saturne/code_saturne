@@ -27,6 +27,8 @@ module alaste
 
   !=============================================================================
 
+  use, intrinsic :: iso_c_binding
+
   implicit none
 
   ! Nombre de structures max en ALE et couplage code_aster
@@ -36,12 +38,13 @@ module alaste
 
   !  Methode ALE - mouvement de structures en couplage avec code_aster
 
-  ! ntcast : numero d'iteration de couplage avec code_aster
   ! nbaste : nombre de structures mobiles
   ! nbfast : nombre de faces couplees
 
-  integer, save ::  ntcast = 0
-  integer, save ::  nbaste = -999, nbfast = 0
+  integer(c_int), save ::  nbaste = -999, nbfast = 0
+
+  bind(C, name='cs_glob_ast_coupling_n_couplings') :: nbaste
+  bind(C, name='cs_glob_ast_coupling_n_faces') :: nbfast
 
   !=============================================================================
 

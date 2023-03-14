@@ -67,7 +67,6 @@ use optcal
 use pointe
 use numvar
 use albase
-use alstru
 use alaste
 use parall
 use ppppar
@@ -99,10 +98,9 @@ character        rubriq*64,car4*4,car2*2
 character        car54*54
 character        cindfp*2,cindfs*4,cindff*4,cindfm*4
 character        cindfc*2,cindfl*4
-character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
 logical          lprev
-integer          iel   , ifac, ii, istr, nlfld, iscal
+integer          iel   , ifac, ii, nlfld, iscal
 integer          iz, kk
 integer          idecal, iclapc, icha  , icla
 integer          jdtvar
@@ -110,13 +108,12 @@ integer          ierror, itysup, nbval
 integer          nberro, inierr, ivers(1)
 integer          ilu   , ierrch
 integer          nfmtsc, nfmtfl, nfmtch, nfmtcl
-integer          nfmtst
 integer          jale, jvolfl
 integer          f_id, iflmas, iflmab, iflvoi, iflvob
 integer          key_t_ext_id, icpext
 integer          iviext
-integer          ival(1), ngbstr(2)
-double precision rval(1), tmpstr(27)
+integer          ival(1)
+double precision rval(1)
 
 logical(kind=c_bool) :: ncelok, nfaiok, nfabok, nsomok
 
@@ -130,6 +127,19 @@ double precision, allocatable, dimension(:,:) :: tmurbf
 double precision, allocatable, dimension(:) :: tparbf
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_mobile_structures_restart_read(r)  &
+    bind(C, name='cs_mobile_structures_restart_read')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr), value :: r
+  end subroutine cs_mobile_structures_restart_read
+
+end interface
 
 !===============================================================================
 ! 0. Initialisation
@@ -813,66 +823,10 @@ if (iale.ge.1 .and. jale.ge.1) then
     call csexit(1)
   endif
 
+  call cs_mobile_structures_restart_read(rp)
+
   car54 =' Finished reading ALE information.                    '
-  write(nfecra,1110)car54
-
-  nberro=0
-  rubriq = 'nombre_structures'
-  itysup = 0
-  nbval  = 2
-  call restart_read_section_int_t(rp,rubriq,itysup,nbval,ngbstr,ierror)
-  nberro=nberro+ierror
-
-  nbstru = ngbstr(1)
-  nbaste = ngbstr(2)
-
-  if (nbstru.gt.0) then
-
-    nfmtst = 99
-    cindst= 'YY'
-    do istr = 1, min(nbstru,nstrmx)
-      write(cstruc(istr),'(i2.2)') istr
-    enddo
-    do istr = min(nbstru,nfmtst)+1,nbstru
-      cstruc(istr) = cindst
-    enddo
-    if (nstrmx.gt.nfmtst) then
-      write(nfecra,8004)nfmtst,nstrmx
-    endif
-
-    do istr = 1, nbstru
-
-      rubriq = 'donnees_structure_'//cstruc(istr)
-      itysup = 0
-      nbval  = 27
-
-      call restart_read_section_real_t(rp,rubriq,itysup,nbval,   &
-                                       tmpstr,ierror)
-      nberro=nberro+ierror
-
-      do ii = 1, 3
-        xstr  (ii,istr) = tmpstr(   ii)
-        xpstr (ii,istr) = tmpstr(3 +ii)
-        xppstr(ii,istr) = tmpstr(6 +ii)
-        xsta  (ii,istr) = tmpstr(9 +ii)
-        xpsta (ii,istr) = tmpstr(12+ii)
-        xppsta(ii,istr) = tmpstr(15+ii)
-        xstp  (ii,istr) = tmpstr(18+ii)
-        forstr(ii,istr) = tmpstr(21+ii)
-        forsta(ii,istr) = tmpstr(24+ii)
-      enddo
-
-    enddo
-
-    car54 =' Finished reading ALE structures information        '
-    write(nfecra,1110)car54
-
-  endif
-
-  if (nberro.ne.0) then
-    write(nfecra,9321)
-    call csexit(1)
-  endif
+  write(nfecra,1110) car54
 
 endif
 
@@ -1601,27 +1555,6 @@ return
 
 ! --- MISES EN GARDE
 
- 8004 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING:       WHEN READING THE AUXILIARY RESTART FILE  ',/,&
-'@    =======                                                 ',/,&
-'@                                                            ',/,&
-'@      The max number of structures NBMOMX supported by      ',/,&
-'@        the writing format of the suite file is             ',/,&
-'@        NFMTST = ',I10                                       ,/,&
-'@      There is here a greater number of structures          ',/,&
-'@        NSTRMX = ',I10                                       ,/,&
-'@       If the effective number of structures is greater,    ',/,&
-'@        these will not be reread.                           ',/,&
-'@                                                            ',/,&
-'@    The run will continue.                                  ',/,&
-'@                                                            ',/,&
-'@    Check the subroutine lecamx.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  8200 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1826,22 +1759,6 @@ return
 '@    =======                                                 ',/,&
 '@                                                            ',/,&
 '@      ERROR WHILE READING MESH VERTICES MOVEMENT DATA       ',/,&
-'@        (ALE METHOD)                                        ',/,&
-'@                                                            ',/,&
-'@    The run can not be executed.                            ',/,&
-'@                                                            ',/,&
-'@    Verify that the restart file used has not been damaged  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9321 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: STOP WHILE READING THE AUXILIARY RESTART FILE  ',/,&
-'@    =======                                                 ',/,&
-'@                                                            ',/,&
-'@      ERROR WHILE READING MOVING STRUCTURES DATA            ',/,&
 '@        (ALE METHOD)                                        ',/,&
 '@                                                            ',/,&
 '@    The run can not be executed.                            ',/,&

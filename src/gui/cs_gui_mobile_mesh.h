@@ -85,55 +85,6 @@ void CS_PROCF (uialcl, UIALCL) (int         *const  ialtyb,
                                 int         *const  impale,
                                 cs_real_3_t        *disale);
 
-/*-----------------------------------------------------------------------------
- * Retrieve data for internal coupling. Called once at initialization
- *
- * Fortran Interface:
- *
- * subroutine uistr1
- * *****************
- *
- * parameters:
- *   idfstr   --> Structure definition
- *   mbstru   <-- number of previous structures (-999 or by restart)
- *   aexxst   --> Displacement prediction alpha
- *   bexxst   --> Displacement prediction beta
- *   cfopre   --> Stress prediction alpha
- *   ihistr   --> Monitor point synchronisation
- *   xstr0    <-> Values of the initial displacement
- *   xstreq   <-> Values of the equilibrium displacement
- *   vstr0    <-> Values of the initial velocity
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uistr1, UISTR1) (cs_lnum_t        *idfstr,
-                                const int        *mbstru,
-                                double           *aexxst,
-                                double           *bexxst,
-                                double           *cfopre,
-                                int              *ihistr,
-                                double           *xstr0,
-                                double           *xstreq,
-                                double           *vstr0);
-
-/*-----------------------------------------------------------------------------
- * Retrieve data for internal coupling. Called at each step
- *
- * Fortran Interface:
- *
- * SUBROUTINE UISTR2
- * *****************
- *
- * parameters:
- * xmstru       --> Mass matrix
- * xcstr        --> Damping matrix
- * xkstru       --> Stiffness matrix
- * forstr       --> Fluid force matrix
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uistr2, UISTR2) ( double *const  xmstru,
-                                 double *const  xcstru,
-                                 double *const  xkstru,
-                                 double *const  forstr);
 
 /*-----------------------------------------------------------------------------
  * Retrieve data for external coupling
@@ -199,15 +150,64 @@ cs_gui_mobile_mesh_get_boundaries(cs_domain_t  *domain);
 cs_real_t *
 cs_gui_mobile_mesh_get_fixed_velocity(const char  *label);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add mobile structures based on GUI BC definitions.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_structures_add(void);
+
 /*-----------------------------------------------------------------------------
- * Retrieve structure id associated to faces for external coupling
+ * Retrieve data for internal coupling. Called once at initialization
  *
  * parameters:
- *   idfstr    <-- Structure definition
+ *   mbstru   <-- number of previous structures (-999 or by restart)
+ *   aexxst   --> Displacement prediction alpha
+ *   bexxst   --> Displacement prediction beta
+ *   cfopre   --> Stress prediction alpha
+ *   ihistr   --> Monitor point synchronisation
+ *   xstr0    <-> Values of the initial displacement
+ *   xstreq   <-> Values of the equilibrium displacement
+ *   vstr0    <-> Values of the initial velocity
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_mobile_mesh_bc_external_structures(int  *idfstr);
+cs_gui_mobile_mesh_init_structures(int         mbstru,
+                                   double     *aexxst,
+                                   double     *bexxst,
+                                   double     *cfopre,
+                                   int        *ihistr,
+                                   double     *xstr0,
+                                   double     *xstreq,
+                                   double     *vstr0);
+
+/*-----------------------------------------------------------------------------
+ * Retrieve data for internal coupling. Called at each step
+ *
+ * parameters:
+ *   xmstru       --> Mass matrix
+ *   xcstr        --> Damping matrix
+ *   xkstru       --> Stiffness matrix
+ *   forstr       --> Fluid force matrix
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_internal_structures(cs_real_t  xmstru[][3][3],
+                                       cs_real_t  xcstru[][3][3],
+                                       cs_real_t  xkstru[][3][3],
+                                       cs_real_t  forstr[][3]);
+
+/*-----------------------------------------------------------------------------
+ * Retrieve structure id associated to faces for structure coupling
+ *
+ * parameters:
+ *   idfstr    <-- structure number associated to each boundary face.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_bc_structures(int  *idfstr);
 
 /*----------------------------------------------------------------------------*/
 

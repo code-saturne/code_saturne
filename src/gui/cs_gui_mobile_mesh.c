@@ -59,6 +59,7 @@
 #include "cs_gui_boundary_conditions.h"
 #include "cs_meg_prototypes.h"
 #include "cs_mesh.h"
+#include "cs_mobile_structures.h"
 #include "cs_timer.h"
 #include "cs_time_step.h"
 #include "cs_volume_zone.h"
@@ -394,30 +395,30 @@ _get_internal_coupling_xyz_values(cs_tree_node_t  *tn_ic,
  *----------------------------------------------------------------------------*/
 
 static void
-_get_uistr2_data(const char      *label,
-                 double          *xmstru,
-                 double          *xcstru,
-                 double          *xkstru,
-                 double          *forstr,
-                 int              istruc)
+_get_uistr2_data(const char   *label,
+                 cs_real_t     xmstru[][3][3],
+                 cs_real_t     xcstru[][3][3],
+                 cs_real_t     xkstru[][3][3],
+                 cs_real_t     forstr[][3],
+                 int           istruc)
 {
   /* Get mass matrix, damping matrix and stiffness matrix */
 
   cs_meg_fsi_struct("mass_matrix", label, NULL,
-                    &xmstru[istruc * 9]);
+                    (cs_real_t *)xmstru[istruc]);
   cs_meg_fsi_struct("damping_matrix", label, NULL,
-                    &xcstru[istruc * 9]);
+                    (cs_real_t *)xcstru[istruc]);
   cs_meg_fsi_struct("stiffness_matrix", label, NULL,
-                    &xkstru[istruc * 9]);
+                    (cs_real_t *)xkstru[istruc]);
 
   /* Set variable for fluid force vector */
-  const cs_real_t fluid_f[3] = {forstr[istruc*3],
-                                forstr[istruc*3 + 1],
-                                forstr[istruc*3 + 2]};
+  const cs_real_t fluid_f[3] = {forstr[istruc][0],
+                                forstr[istruc][1],
+                                forstr[istruc][2]};
 
   /* Get fluid force matrix */
   cs_meg_fsi_struct("fluid_force", label, fluid_f,
-                    &forstr[istruc * 3]);
+                    forstr[istruc]);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -552,149 +553,6 @@ void CS_PROCF (uialcl, UIALCL) (int         *const  ialtyb,
     }
     else if (nature == ale_boundary_nature_fixed_velocity) {
       _uialcl_fixed_velocity(tn_bc, z, ialtyb);
-    }
-  }
-}
-
-/*-----------------------------------------------------------------------------
- * Retrieve data for internal coupling. Called once at initialization
- *
- * parameters:
- *   idfstr   --> Structure definition
- *   mbstru   <-- number of previous structures (-999 or by restart)
- *   aexxst   --> Displacement prediction alpha
- *   bexxst   --> Displacement prediction beta
- *   cfopre   --> Stress prediction alpha
- *   ihistr   --> Monitor point synchronisation
- *   xstr0    <-> Values of the initial displacement
- *   xstreq   <-> Values of the equilibrium displacement
- *   vstr0    <-> Values of the initial velocity
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uistr1, UISTR1) (cs_lnum_t        *idfstr,
-                                const int        *mbstru,
-                                double           *aexxst,
-                                double           *bexxst,
-                                double           *cfopre,
-                                int              *ihistr,
-                                double           *xstr0,
-                                double           *xstreq,
-                                double           *vstr0)
-{
-  int  istruct = 0;
-
-  cs_tree_node_t *tn0
-    = cs_tree_get_node(cs_glob_tree, "thermophysical_models/ale_method");
-
-  /* Get advanced data */
-  cs_gui_node_get_child_real(tn0, "displacement_prediction_alpha", aexxst);
-  cs_gui_node_get_child_real(tn0, "displacement_prediction_beta", bexxst);
-  cs_gui_node_get_child_real(tn0, "stress_prediction_alpha", cfopre);
-  cs_gui_node_get_child_status_int(tn0, "monitor_point_synchronisation", ihistr);
-
-  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
-
-  cs_tree_node_t *tn_b0 = cs_tree_node_get_child(tn, "boundary");
-  cs_tree_node_t *tn_w0 = cs_tree_node_get_child(tn, "boundary");//FIXME
-
-  /* At each time-step, loop on boundary faces */
-
-  int izone = 0;
-
-  for (tn = tn_b0;
-       tn != NULL;
-       tn = cs_tree_node_get_next_of_name(tn), izone++) {
-
-    const char *label = cs_tree_node_get_tag(tn, "label");
-
-    cs_tree_node_t *tn_w
-      = cs_tree_node_get_sibling_with_tag(tn_w0, "label", label);
-
-    /* Keep only internal coupling */
-    if (  _get_ale_boundary_nature(tn_w)
-        == ale_boundary_nature_internal_coupling) {
-
-      if (istruct+1 > *mbstru) { /* Do not overwrite restart data */
-        /* Read initial_displacement, equilibrium_displacement
-           and initial_velocity */
-        cs_tree_node_t *tn_ic = cs_tree_get_node(tn_w, "ale");
-        tn_ic = cs_tree_node_get_sibling_with_tag(tn_ic,
-                                                  "choice",
-                                                  "internal_coupling");
-        _get_internal_coupling_xyz_values(tn_ic, "initial_displacement",
-                                          &xstr0[3 * istruct]);
-        _get_internal_coupling_xyz_values(tn_ic, "equilibrium_displacement",
-                                          &xstreq[3 * istruct]);
-        _get_internal_coupling_xyz_values(tn_ic, "initial_velocity",
-                                          &vstr0[3 * istruct]);
-      }
-
-      const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
-      if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
-        continue;
-
-      cs_lnum_t n_faces = z->n_elts;
-      const cs_lnum_t *faces_list = z->elt_ids;
-
-      /* Set idfstr to positive index starting at 1 */
-      for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
-        cs_lnum_t ifbr = faces_list[ifac];
-        idfstr[ifbr] = istruct + 1;
-      }
-      istruct++;
-    }
-  }
-}
-
-/*-----------------------------------------------------------------------------
- * Retrieve data for internal coupling. Called at each step
- *
- * parameters:
- *   xmstru       --> Mass matrix
- *   xcstr        --> Damping matrix
- *   xkstru       --> Stiffness matrix
- *   forstr       --> Fluid force matrix
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uistr2, UISTR2) (double *const  xmstru,
-                                double *const  xcstru,
-                                double *const  xkstru,
-                                double *const  forstr)
-{
-  int istru = 0;
-
-  cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
-
-  /* At each time-step, loop on boundary faces */
-
-  for (cs_tree_node_t *tn_bndy = cs_tree_node_get_child(tn_b0, "boundary");
-       tn_bndy != NULL;
-       tn_bndy = cs_tree_node_get_next_of_name(tn_bndy)) {
-
-    const char *label = cs_tree_node_get_tag(tn_bndy, "label");
-
-    enum ale_boundary_nature nature =_get_ale_boundary_nature(tn_bndy);
-
-    /* Keep only internal coupling */
-    if (nature == ale_boundary_nature_internal_coupling) {
-
-      /* get the matching BC node */
-      const char *nat_bndy = cs_tree_node_get_tag(tn_bndy, "nature");
-      cs_tree_node_t *tn_bc = cs_tree_node_get_child(tn_bndy->parent, nat_bndy);
-      tn_bc = cs_tree_node_get_sibling_with_tag(tn_bc, "label", label);
-
-      cs_tree_node_t *tn_ic = cs_tree_get_node(tn_bc, "ale");
-      tn_ic = cs_tree_node_get_sibling_with_tag(tn_ic,
-                                                "choice",
-                                                "internal_coupling");
-
-      _get_uistr2_data(label,
-                       xmstru,
-                       xcstru,
-                       xkstru,
-                       forstr,
-                       istru);
-      istru++;
     }
   }
 }
@@ -921,17 +779,193 @@ cs_gui_mobile_mesh_get_fixed_velocity(const char  *label)
   return NULL; /* avoid a compilation warning */
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add mobile structures based on GUI BC definitions.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_structures_add(void)
+{
+  int n_i_struct = 0, n_e_struct = 0;
+
+  cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
+
+  for (cs_tree_node_t *tn_bndy = cs_tree_node_get_child(tn_b0, "boundary");
+       tn_bndy != NULL;
+       tn_bndy = cs_tree_node_get_next_of_name(tn_bndy)) {
+
+    const char *label = cs_tree_node_get_tag(tn_bndy, "label");
+
+    const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
+    if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
+      continue;
+
+    enum ale_boundary_nature nature = _get_ale_boundary_nature(tn_bndy);
+
+    if (nature == ale_boundary_nature_internal_coupling)
+      n_i_struct++;
+
+    else if (nature == ale_boundary_nature_external_coupling)
+      n_e_struct++;
+
+  }
+
+  if (n_i_struct > 0)
+    cs_mobile_structures_add_n_structures(n_i_struct);
+
+  if  (n_e_struct > 0)
+    cs_ast_coupling_add();
+}
+
 /*-----------------------------------------------------------------------------
- * Retrieve structure id associated to faces for external coupling
+ * Retrieve data for internal coupling. Called once at initialization
  *
  * parameters:
- *   idfstr    <-- Structure definition
+ *   mbstru   <-- number of previous structures (-999 or by restart)
+ *   aexxst   --> Displacement prediction alpha
+ *   bexxst   --> Displacement prediction beta
+ *   cfopre   --> Stress prediction alpha
+ *   ihistr   --> Monitor point synchronisation
+ *   xstr0    <-> Values of the initial displacement
+ *   xstreq   <-> Values of the equilibrium displacement
+ *   vstr0    <-> Values of the initial velocity
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_mobile_mesh_bc_external_structures(int  *idfstr)
+cs_gui_mobile_mesh_init_structures(int         mbstru,
+                                   double     *aexxst,
+                                   double     *bexxst,
+                                   double     *cfopre,
+                                   int        *ihistr,
+                                   double     *xstr0,
+                                   double     *xstreq,
+                                   double     *vstr0)
 {
-  int istruct = 0;
+  int  istruct = 0;
+
+  cs_tree_node_t *tn0
+    = cs_tree_get_node(cs_glob_tree, "thermophysical_models/ale_method");
+
+  /* Get advanced data */
+  cs_gui_node_get_child_real(tn0, "displacement_prediction_alpha", aexxst);
+  cs_gui_node_get_child_real(tn0, "displacement_prediction_beta", bexxst);
+  cs_gui_node_get_child_real(tn0, "stress_prediction_alpha", cfopre);
+  cs_gui_node_get_child_status_int(tn0, "monitor_point_synchronisation", ihistr);
+
+  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
+
+  cs_tree_node_t *tn_b0 = cs_tree_node_get_child(tn, "boundary");
+  cs_tree_node_t *tn_w0 = cs_tree_node_get_child(tn, "boundary");//FIXME
+
+  /* At each time-step, loop on boundary faces */
+
+  int izone = 0;
+
+  for (tn = tn_b0;
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn), izone++) {
+
+    const char *label = cs_tree_node_get_tag(tn, "label");
+
+    cs_tree_node_t *tn_w
+      = cs_tree_node_get_sibling_with_tag(tn_w0, "label", label);
+
+    /* Keep only internal coupling */
+    if (  _get_ale_boundary_nature(tn_w)
+        == ale_boundary_nature_internal_coupling) {
+
+      if (istruct+1 > mbstru) { /* Do not overwrite restart data */
+        /* Read initial_displacement, equilibrium_displacement
+           and initial_velocity */
+        cs_tree_node_t *tn_ic = cs_tree_get_node(tn_w, "ale");
+        tn_ic = cs_tree_node_get_sibling_with_tag(tn_ic,
+                                                  "choice",
+                                                  "internal_coupling");
+        _get_internal_coupling_xyz_values(tn_ic, "initial_displacement",
+                                          &xstr0[3 * istruct]);
+        _get_internal_coupling_xyz_values(tn_ic, "equilibrium_displacement",
+                                          &xstreq[3 * istruct]);
+        _get_internal_coupling_xyz_values(tn_ic, "initial_velocity",
+                                          &vstr0[3 * istruct]);
+      }
+
+      const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
+      if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
+        continue;
+
+      istruct++;
+    }
+  }
+}
+
+/*-----------------------------------------------------------------------------
+ * Retrieve data for internal coupling. Called at each step
+ *
+ * parameters:
+ *   xmstru       --> Mass matrix
+ *   xcstr        --> Damping matrix
+ *   xkstru       --> Stiffness matrix
+ *   forstr       --> Fluid force matrix
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_internal_structures(cs_real_t  xmstru[][3][3],
+                                       cs_real_t  xcstru[][3][3],
+                                       cs_real_t  xkstru[][3][3],
+                                       cs_real_t  forstr[][3])
+{
+  int istru = 0;
+
+  cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
+
+  /* At each time-step, loop on boundary faces */
+
+  for (cs_tree_node_t *tn_bndy = cs_tree_node_get_child(tn_b0, "boundary");
+       tn_bndy != NULL;
+       tn_bndy = cs_tree_node_get_next_of_name(tn_bndy)) {
+
+    const char *label = cs_tree_node_get_tag(tn_bndy, "label");
+
+    enum ale_boundary_nature nature = _get_ale_boundary_nature(tn_bndy);
+
+    /* Keep only internal coupling */
+    if (nature == ale_boundary_nature_internal_coupling) {
+
+      /* get the matching BC node */
+      const char *nat_bndy = cs_tree_node_get_tag(tn_bndy, "nature");
+      cs_tree_node_t *tn_bc = cs_tree_node_get_child(tn_bndy->parent, nat_bndy);
+      tn_bc = cs_tree_node_get_sibling_with_tag(tn_bc, "label", label);
+
+      cs_tree_node_t *tn_ic = cs_tree_get_node(tn_bc, "ale");
+      tn_ic = cs_tree_node_get_sibling_with_tag(tn_ic,
+                                                "choice",
+                                                "internal_coupling");
+
+      _get_uistr2_data(label,
+                       xmstru,
+                       xcstru,
+                       xkstru,
+                       forstr,
+                       istru);
+      istru++;
+    }
+  }
+}
+
+/*-----------------------------------------------------------------------------
+ * Retrieve structure id associated to faces for structure coupling
+ *
+ * parameters:
+ *   idfstr    <-- structure number associated to each boundary face.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_bc_structures(int  *idfstr)
+{
+  int i_struct = 0;
+  int e_struct = 0;
 
   cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
 
@@ -949,7 +983,23 @@ cs_gui_mobile_mesh_bc_external_structures(int  *idfstr)
 
     enum ale_boundary_nature nature =_get_ale_boundary_nature(tn_w);
 
-    if (nature == ale_boundary_nature_external_coupling) {
+    if (  _get_ale_boundary_nature(tn_w)
+        == ale_boundary_nature_internal_coupling) {
+      const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
+      if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
+        continue;
+
+      cs_lnum_t n_faces = z->n_elts;
+      const cs_lnum_t *faces_list = z->elt_ids;
+
+      /* Set idfstr to positive index starting at 1 */
+      for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
+        cs_lnum_t ifbr = faces_list[ifac];
+        idfstr[ifbr] = i_struct + 1;
+      }
+      i_struct++;
+    }
+    else if (nature == ale_boundary_nature_external_coupling) {
 
       const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
       if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
@@ -966,9 +1016,9 @@ cs_gui_mobile_mesh_bc_external_structures(int  *idfstr)
       /* Set idfstr with negative value starting from -1 */
       for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
         cs_lnum_t ifbr = faces_list[ifac];
-        idfstr[ifbr]  = -istruct - 1;
+        idfstr[ifbr]  = -e_struct - 1;
       }
-      istruct++;
+      e_struct++;
     }
 
   }

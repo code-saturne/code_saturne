@@ -44,13 +44,18 @@ module albase
   !>  - 2: CDO solver
   integer(c_int), pointer, save :: iale
   !> the number of sub-iterations of initialization of the fluid
-  integer, save :: nalinf = 0
+  integer(c_int), save :: nalinf = 0
   !> maximum number of implicitation iterations of the structure displacement
-  integer, save :: nalimx = 1
+  integer(c_int), save :: nalimx = 1
   !> relative precision of implicitation of the structure displacement
-  double precision, save :: epalim = 1.d-5
+  real(c_double), save :: epalim = 1.d-5
   !> iteration (yes=1, no=0) to initialize ALE
-  integer, save :: italin = -999
+  integer(c_int), save :: italin = -999
+
+  bind(C, name='cs_glob_mobile_structures_i_max') :: nalimx
+  bind(C, name='cs_glob_mobile_structures_i_eps') :: epalim
+  bind(C, name='cs_glob_ale_n_ini_f') :: nalinf
+  bind(C, name='cs_glob_ale_need_init') :: italin
 
   !> indicator of imposed displacement
   integer, allocatable, dimension(:) :: impale
@@ -101,7 +106,19 @@ contains
   subroutine map_ale
 
     use, intrinsic :: iso_c_binding
-    use cs_c_bindings
+
+    !---------------------------------------------------------------------------
+
+    interface
+
+      subroutine cs_f_ale_get_pointers(iale) &
+        bind(C, name='cs_f_ale_get_pointers')
+        use, intrinsic :: iso_c_binding
+        implicit none
+        type(c_ptr), intent(out) :: iale
+      end subroutine cs_f_ale_get_pointers
+
+    end interface
 
     ! Local variables
 

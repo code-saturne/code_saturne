@@ -488,74 +488,6 @@ return
 end subroutine usipsu
 
 !===============================================================================
-
-!> \brief User subroutine for the input of additional user parameters for
-!>        input/output.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]     nmodpp       number of active specific physics models
-!______________________________________________________________________________!
-
-subroutine usipes &
- ( nmodpp )
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use cstnum
-use dimens
-use numvar
-use optcal
-use cstphy
-use entsor
-use field
-use parall
-use period
-use post
-use ppppar
-use ppthch
-use ppincl
-use cs_c_bindings
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-integer nmodpp
-
-! Local variables
-
-!===============================================================================
-
-!>     This subroutine allows setting parameters
-!>     which do not already appear in the other subroutines of this file.
-!>
-!>     It is possible to add or remove parameters.
-!>     The number of physical properties and variables is known here.
-
-!===============================================================================
-
-!< [usipes]
-! Definition of deformable structure time plots
-
-nthist = 1
-frhist = -1.d0
-
-tplfmt = 1 ! time plot format (1: .dat, 2: .csv, 3: both)
-!< [usipes]
-
-return
-end subroutine usipes
-
-!===============================================================================
 ! Purpose:
 ! -------
 !
@@ -671,7 +603,6 @@ tstar= 0.12d4
 
 return
 end subroutine cs_user_combustion
-
 
 !===============================================================================
 
@@ -959,6 +890,5 @@ darcy_convergence_criterion = 0 ! convergence criterion of Newton scheme:
 return
 
 end subroutine user_darcy_ini1
-
 
 !===============================================================================
