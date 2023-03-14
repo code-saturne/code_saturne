@@ -768,6 +768,12 @@ class XMLinitNeptune(BaseXmlInit):
                 else:
                     node['physical_properties'] = 'off'
 
+        # Rename "inclusions" drag model into "Gobin"
+        cm_node = self.case.xmlGetNode("closure_modeling")
+        if_node = cm_node.xmlGetNode("interfacial_forces")
+        for node in if_node.xmlGetChildNodeList("force"):
+            if (node.xmlGetNode("drag_model")["model"] == "inclusions"):
+                node.xmlGetNode("drag_model")["model"] = "Gobin"
 
     def __backwardCompatibilityFrom_7_1(self):
         """
