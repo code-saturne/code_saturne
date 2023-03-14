@@ -360,33 +360,6 @@ void CS_PROCF (tbicpl, TBICPL)
 );
 
 /*----------------------------------------------------------------------------
- * Array of reals exchange, associated to a given coupling.
- *
- * It is assumed that the arrays have the same size and the same values on
- * each group of processus (local and distant).
- *
- * Fortran interface:
- *
- * SUBROUTINE TBRCPL
- * *****************
- *
- * INTEGER          NUMCPL         : --> : coupling number
- * INTEGER          NBRDIS         : --> : number of values to send
- * INTEGER          NBRLOC         : --> : number of values to receive
- * DOUBLE PRECISION TABDIS(*)      : --> : distant values (to send)
- * DOUBLE PRECISION TABLOC(*)      : <-- : local values (to receive)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (tbrcpl, TBRCPL)
-(
- const int        *numcpl,
- const cs_lnum_t  *nbrdis,
- const cs_lnum_t  *nbrloc,
-       cs_real_t  *vardis,
-       cs_real_t  *varloc
-);
-
-/*----------------------------------------------------------------------------
  * Compute the maximum value of an integer variable associated to a coupling.
  *
  * It is assumed that the integer value is the same for each group of
@@ -517,6 +490,26 @@ cs_sat_coupling_add_internal(cs_sat_coupling_tag_t  *tag_func,
 
 void
 cs_sat_coupling_all_init(void);
+
+/*----------------------------------------------------------------------------
+ * Array of reals exchange, associated to a given coupling.
+ *
+ * It is assumed that the arrays have the same size and the same values on
+ * each group of processes (local and distant).
+ *
+ * int          numcpl      : --> : coupling number (1-based)
+ * int          nbrdis      : --> : number of values to send
+ * int          nbrloc      : --> : number of values to receive
+ * cs_real_t    vardis      : --> : distant values (to send)
+ * cs_real_t    varloc      : <-- : local values (to receive)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sat_coupling_array_exchange(int         numcpl,
+                               cs_lnum_t   nbrdis,
+                               cs_lnum_t   nbrloc,
+                               cs_real_t  *vardis,
+                               cs_real_t  *varloc);
 
 /*----------------------------------------------------------------------------
  * Destroy all couplings

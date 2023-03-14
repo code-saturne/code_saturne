@@ -129,13 +129,13 @@ double precision dtsrom, unsrom, rhom, rovolsdt
 double precision epsrgp, climgp, xyzmax(3), xyzmin(3)
 double precision thetap, xdu, xdv, xdw
 double precision rhofac, dtfac
-double precision xnrdis, xnrtmp
+double precision xnrdis(1), xnrtmp
 double precision t1, t2, t3, t4
 double precision visclc, visctc
 double precision distbf, srfbnf, hint
 double precision rnx, rny, rnz
 double precision vr(3), vr1(3), vr2(3), vrn
-double precision disp_fac(3)
+double precision disp_fac(3), xnr_mu(1)
 double precision vol_fl_drhovol1, vol_fl_drhovol2
 
 double precision, allocatable, dimension(:,:,:), target :: viscf
@@ -345,15 +345,16 @@ if (nterup.gt.1) then
     if (irangp.ge.0) then
       call parsom (xnrmu0)
     endif
+    xnr_mu(1) = xnrmu0
     ! En cas de couplage entre deux instances de code_saturne, on calcule
     ! la norme totale de la vitesse
     ! Necessaire pour que l'une des instances ne stoppe pas plus tot que les autres
     ! (il faudrait quand meme verifier les options numeriques, ...)
     do numcpl = 1, nbrcpl
-      call tbrcpl ( numcpl, 1, 1, xnrmu0, xnrdis )
-      xnrmu0 = xnrmu0 + xnrdis
+      call cs_sat_coupling_array_exchange(numcpl, 1, 1, xnr_mu, xnrdis)
+      xnr_mu(1) = xnr_mu(1) + xnrdis(1)
     enddo
-    xnrmu0 = sqrt(xnrmu0)
+    xnrmu0 = sqrt(xnr_mu(1))
   endif
 
   ! On assure la periodicite ou le parallelisme de uvwk et la pression
@@ -1609,12 +1610,13 @@ if (nterup.gt.1) then
   ! parallelism
   if (irangp.ge.0) call parsom (xnrmu)
 
+  xnr_mu(1) = xnrmu
   ! code-code coupling
   do numcpl = 1, nbrcpl
-    call tbrcpl(numcpl, 1, 1, xnrmu, xnrdis)
-    xnrmu = xnrmu + xnrdis
+    call cs_sat_coupling_array_exchange(numcpl, 1, 1, xnr_mu, xnrdis)
+    xnr_mu(1) = xnr_mu(1) + xnrdis(1)
   enddo
-  xnrmu = sqrt(xnrmu)
+  xnrmu = sqrt(xnr_mu(1))
 
   ! Indicateur de convergence du point fixe
   if (xnrmu.ge.epsup*xnrmu0) icvrge = 0

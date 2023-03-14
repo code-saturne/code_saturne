@@ -637,6 +637,18 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function.
+    ! Exchange of array of reals exchange, associated to a given coupling.
+    subroutine cs_sat_coupling_array_exchange(numcpl, nbrdis, nbrloc,   &
+                                              vardis, varloc)           &
+     bind(C, name='cs_sat_coupling_array_exchange')
+     use, intrinsic :: iso_c_binding
+     implicit none
+     integer(c_int), value :: numcpl, nbrdis, nbrloc
+     real(kind=c_double), dimension(*), intent(inout) :: vardis, varloc
+    end subroutine
+
+    !---------------------------------------------------------------------------
     !> \brief  Return the number of temporal moments.
 
     !> \return number of defined moments

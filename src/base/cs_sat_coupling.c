@@ -1725,81 +1725,6 @@ void CS_PROCF (tbicpl, TBICPL)
 }
 
 /*----------------------------------------------------------------------------
- * Array of reals exchange, associated to a given coupling.
- *
- * It is assumed that the arrays have the same size and the same values on
- * each group of processus (local and distant).
- *
- * Fortran interface:
- *
- * SUBROUTINE TBRCPL
- * *****************
- *
- * INTEGER          NUMCPL         : --> : coupling number
- * INTEGER          NBRDIS         : --> : number of values to send
- * INTEGER          NBRLOC         : --> : number of values to receive
- * DOUBLE PRECISION TABDIS(*)      : --> : distant values (to send)
- * DOUBLE PRECISION TABLOC(*)      : <-- : local values (to receive)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (tbrcpl, TBRCPL)
-(
- const int        *numcpl,
- const cs_lnum_t  *nbrdis,
- const cs_lnum_t  *nbrloc,
-       cs_real_t  *vardis,
-       cs_real_t  *varloc
-)
-{
-  cs_lnum_t  nbr = 0;
-  bool  distant = false;
-
-#if defined(HAVE_MPI)
-
-  MPI_Status  status;
-
-  cs_sat_coupling_t  *coupl = NULL;
-
-  /* Initializations and verifications */
-
-  if (*numcpl < 1 || *numcpl > cs_glob_sat_n_couplings)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Impossible coupling number %d; there are %d couplings"),
-              *numcpl, cs_glob_sat_n_couplings);
-  else
-    coupl = cs_glob_sat_couplings[*numcpl - 1];
-
-  if (coupl->comm != MPI_COMM_NULL) {
-
-    distant = true;
-
-    /* Exchange between the groups master node */
-
-    if (cs_glob_rank_id < 1)
-      MPI_Sendrecv(vardis, *nbrdis, CS_MPI_REAL, coupl->sat_root_rank, 0,
-                   varloc, *nbrloc, CS_MPI_REAL, coupl->sat_root_rank, 0,
-                   coupl->comm, &status);
-
-    /* Synchronization inside a group */
-
-    if (cs_glob_n_ranks > 1)
-      MPI_Bcast(varloc, *nbrloc, CS_MPI_REAL, 0, cs_glob_mpi_comm);
-
-  }
-
-#endif /* defined(HAVE_MPI) */
-
-  if (distant == false) {
-
-    nbr = CS_MIN(*nbrdis, *nbrloc);
-
-    for (cs_lnum_t ind = 0; ind < nbr; ind++)
-      varloc[ind] = vardis[ind];
-
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Compute the maximum value of an integer variable associated to a coupling.
  *
  * It is assumed that the integer value is the same for each group of
@@ -2146,6 +2071,74 @@ cs_sat_coupling_add_internal(cs_sat_coupling_tag_t  *tag_func,
   sat_coupling->n_sat_ranks = cs_glob_n_ranks;
 
 #endif
+}
+
+/*----------------------------------------------------------------------------
+ * Array of reals exchange, associated to a given coupling.
+ *
+ * It is assumed that the arrays have the same size and the same values on
+ * each group of processes (local and distant).
+ *
+ * int          numcpl      : --> : coupling number (1-based)
+ * int          nbrdis      : --> : number of values to send
+ * int          nbrloc      : --> : number of values to receive
+ * cs_real_t    vardis      : --> : distant values (to send)
+ * cs_real_t    varloc      : <-- : local values (to receive)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sat_coupling_array_exchange(int         numcpl,
+                               cs_lnum_t   nbrdis,
+                               cs_lnum_t   nbrloc,
+                               cs_real_t  *vardis,
+                               cs_real_t  *varloc)
+{
+  cs_lnum_t  nbr = 0;
+  bool  distant = false;
+
+#if defined(HAVE_MPI)
+
+  MPI_Status  status;
+
+  cs_sat_coupling_t  *coupl = NULL;
+
+  /* Initializations and verifications */
+
+  if (numcpl < 1 || numcpl > cs_glob_sat_n_couplings)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Impossible coupling number %d; there are %d couplings"),
+              numcpl, cs_glob_sat_n_couplings);
+  else
+    coupl = cs_glob_sat_couplings[numcpl - 1];
+
+  if (coupl->comm != MPI_COMM_NULL) {
+
+    distant = true;
+
+    /* Exchange between the groups master node */
+
+    if (cs_glob_rank_id < 1)
+      MPI_Sendrecv(vardis, nbrdis, CS_MPI_REAL, coupl->sat_root_rank, 0,
+                   varloc, nbrloc, CS_MPI_REAL, coupl->sat_root_rank, 0,
+                   coupl->comm, &status);
+
+    /* Synchronization inside a group */
+
+    if (cs_glob_n_ranks > 1)
+      MPI_Bcast(varloc, nbrloc, CS_MPI_REAL, 0, cs_glob_mpi_comm);
+
+  }
+
+#endif /* defined(HAVE_MPI) */
+
+  if (distant == false) {
+
+    nbr = CS_MIN(nbrdis, nbrloc);
+
+    for (cs_lnum_t ind = 0; ind < nbr; ind++)
+      varloc[ind] = vardis[ind];
+
+  }
 }
 
 /*----------------------------------------------------------------------------
