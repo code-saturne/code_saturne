@@ -2375,12 +2375,14 @@ _init_boundaries(void)
       }
 
       /* Inlet: velocity */
-      if (cs_glob_physical_model_flag[CS_GROUNDWATER] < 0) {
-        if (read_inlet_data == false)
-          _set_vel_profile(tn_vp, z);
+      if (CS_F_(vel) != NULL) {
+        if (cs_glob_physical_model_flag[CS_GROUNDWATER] < 0) {
+          if (read_inlet_data == false)
+            _set_vel_profile(tn_vp, z);
+        }
+        else
+          _boundary_darcy(tn, z);
       }
-      else
-        _boundary_darcy(tn, z);
 
       /* Inlet: data for coal combustion */
       if (solid_fuels) {
