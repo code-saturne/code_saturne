@@ -157,7 +157,7 @@ class CouplingDelegate(QItemDelegate):
                   self.mdl.getTurbulenceModel(carrier) == "k-epsilon_linear_production" or \
                   self.mdl.getTurbulenceModel(carrier) == "rij-epsilon_ssg" or \
                   self.mdl.getTurbulenceModel(carrier) == "rij-epsilon_ebrsm":
-                   if field.nature == "gas" :
+                   if field.phase == "gas" :
                        # bulles
                        self.modelCombo.addItem(self.tr(self.dicoM2V["large_inclusions"]), "large_inclusions")
                    else :
