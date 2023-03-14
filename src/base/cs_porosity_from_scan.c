@@ -1088,7 +1088,7 @@ cs_compute_porosity_from_scan(void)
   cs_real_3_t *restrict c_w_face_normal
     = (cs_real_3_t *restrict)mq->c_w_face_normal;
 
-  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++) {
 
     if (cs_math_3_dot_product(grdporo[cell_id], c_w_face_normal[cell_id]) >
         0.0) {
