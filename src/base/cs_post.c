@@ -5958,6 +5958,11 @@ cs_post_write_var(int                    mesh_id,
                                NULL, NULL, NULL,
                                NULL, NULL, NULL};
 
+  /* Avoid a SIGSEV in lower-level functions */
+
+  if (var_name == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: var_name is not set.\n", __func__);
+
   /* Initializations */
 
   _mesh_id = _cs_post_mesh_id_try(mesh_id);
@@ -6408,6 +6413,11 @@ cs_post_write_vertex_var(int                    mesh_id,
                              NULL, NULL, NULL,
                              NULL, NULL, NULL};
 
+  /* Avoid a SIGSEV in lower-level functions */
+
+  if (var_name == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: var_name is not set.\n", __func__);
+
   /* Initializations */
 
   _mesh_id = _cs_post_mesh_id_try(mesh_id);
@@ -6479,7 +6489,6 @@ cs_post_write_vertex_var(int                    mesh_id,
     }
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
