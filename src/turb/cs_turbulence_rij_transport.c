@@ -1021,9 +1021,12 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
       || (turb_flux_model == 21)
       || (turb_flux_model == 31)) {
 
+    char fname_al[128];
+    snprintf(fname_al, 128, "%s_alpha", f->name); fname_al[127] = '\0';
+
     BFT_MALLOC(grad_al, n_cells_ext, cs_real_3_t);
 
-    cs_field_gradient_scalar(cs_field_by_name(fname),
+    cs_field_gradient_scalar(cs_field_by_name(fname_al),
                              false,       /* use previous t */
                              1,           /* not on increment */
                              grad_al);
