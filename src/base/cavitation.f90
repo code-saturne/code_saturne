@@ -186,8 +186,14 @@ contains
   !> \param[in]  pressure  Pressure array
   !> \param[in]  voidf     Void fraction array
 
-  subroutine cavitation_compute_source_term(pressure, voidf)
+  subroutine cavitation_compute_source_term(pressure, voidf) &
+   bind(C, name='cs_cavitation_compute_source_term')
 
+    !===============================================================================
+    ! Module files
+    !===============================================================================
+
+    use, intrinsic :: iso_c_binding
     use optcal
     use pointe, only: gamcav, dgdpca
     use mesh, only: ncel, ncelet

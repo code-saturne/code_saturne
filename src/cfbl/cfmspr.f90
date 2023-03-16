@@ -34,14 +34,14 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
 !> \param[in]     iterns        Navier-Stokes iteration number
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     vela          velocity value at time step beginning
 !_______________________________________________________________________________
 
 subroutine cfmspr &
- (iterns, dt, vela)
+  (iterns, dt, vela) &
+  bind(C, name='cs_compressible_convective_mass_flux')
 
 !===============================================================================
 ! Module files

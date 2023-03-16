@@ -188,6 +188,39 @@ type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 
 interface
 
+  subroutine cfmspr(iterns, dt, vela) &
+    bind(C, name='cs_compressible_convective_mass_flux')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: iterns
+    real(kind=c_double), dimension(*), intent(inout) :: dt
+    real(kind=c_double), dimension(3,*), intent(inout) :: vela
+  end subroutine cfmspr
+
+  !-----------------------------------------------------------------------------
+
+  subroutine predvv(iappel, iterns ,                                &
+                    dt, vel, vela, velk, da_uu,                     &
+                    coefav, coefbv, cofafv, cofbfv,                 &
+                    frcxt, grdphd,                                  &
+                    trava, dfrcxt, tpucou, trav,                    &
+                    viscf, viscb, viscfi, viscbi, secvif, secvib)   &
+    bind(C, name='cs_velocity_prediction')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: iappel, iterns
+    real(kind=c_double), dimension(*), intent(inout) :: dt, viscf, viscb, viscfi
+    real(kind=c_double), dimension(*), intent(inout) :: viscbi, secvif, secvib
+    real(kind=c_double), dimension(3,*), intent(inout) :: vel, vela, velk
+    real(kind=c_double), dimension(3,*), intent(inout) :: grdphd, trava, trav
+    real(kind=c_double), dimension(3,*), intent(inout) :: frcxt, dfrcxt
+    real(kind=c_double), dimension(3,*), intent(inout) :: coefav, cofafv
+    real(kind=c_double), dimension(6,*), intent(inout) :: da_uu, tpucou
+    real(kind=c_double), dimension(3,3,*), intent(inout) :: coefbv, cofbfv
+  end subroutine predvv
+
+  !-----------------------------------------------------------------------------
+
   subroutine cs_pressure_correction &
    ( iterns , nfbpcd , ncmast ,                                   &
      ifbpcd , ltmast , isostd ,                                   &
@@ -224,6 +257,16 @@ interface
     double precision coefb_dp(ndimfb)
 
   end subroutine cs_pressure_correction
+
+  !-----------------------------------------------------------------------------
+
+  subroutine prehyd(grdphd, iterns) &
+    bind(C, name='cs_hydrostatic_pressure_prediction')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: iterns
+    real(kind=c_double), dimension(3,*), intent(inout) :: grdphd
+  end subroutine prehyd
 
   !-----------------------------------------------------------------------------
 
@@ -516,15 +559,12 @@ endif
 
 allocate(da_uu(6,ncelet))
 
-call predvv &
-( 1      , iterns ,                                              &
-  ncepdc , icepdc ,                                              &
-  dt     , vel    , vela   , velk   , da_uu  ,                   &
-  tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
-  ckupdc , frcxt  , grdphd ,                                     &
-  trava  ,                   dfrcxt , dttens ,  trav  ,          &
-  viscf  , viscb  , viscfi , viscbi , secvif , secvib )
-
+call predvv(1, iterns ,                                    &
+            dt, vel, vela, velk, da_uu,                    &
+            coefau, coefbu, cofafu, cofbfu,                &
+            frcxt, grdphd,                                 &
+            trava, dfrcxt, dttens, trav,                   &
+            viscf, viscb, viscfi, viscbi, secvif, secvib)
 
 ! Bad cells regularisation
 call cs_bad_cells_regularisation_vector(vel, 1)
@@ -1621,13 +1661,12 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
     enddo
 
     !   APPEL A PREDVV AVEC VALEURS AU PAS DE TEMPS COURANT
-    call predvv &
- ( 2      , iterns , ncepdc , icepdc ,                            &
-   dt     , vel    , vel    , velk   , da_uu  ,                   &
-   tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
-   ckupdc , frcxt  , grdphd ,                                     &
-   trava  ,                   dfrcxt , dttens , trav   ,          &
-   viscf  , viscb  , viscfi , viscbi , secvif , secvib )
+    call predvv(2, iterns,                                     &
+                dt, vel, vel, velk, da_uu,                     &
+                coefau, coefbu, cofafu, cofbfu,                &
+                frcxt, grdphd,                                 &
+                trava, dfrcxt, dttens, trav,                   &
+                viscf, viscb, viscfi, viscbi, secvif, secvib)
 
   endif
 

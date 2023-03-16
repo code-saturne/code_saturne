@@ -158,6 +158,51 @@ cs_atmo_chem_source_terms(int         iscal,
                           cs_real_t   st_imp[]);
 
 /*----------------------------------------------------------------------------*/
+/*! \brief Compute the vaporization source term
+  * \f$ \Gamma_V \left(\alpha, p\right) = m^+ + m^- \f$ using the
+  * Merkle model:
+  * \f[
+  * m^+ = -\dfrac{C_{prod} \rho_l \min \left( p-p_V,0 \right)\alpha(1-\alpha)}
+  *              {0.5\rho_lu_\infty^2t_\infty},
+  * \f]
+  * \f[
+  * m^- = -\dfrac{C_{dest} \rho_v \max \left( p-p_V,0 \right)\alpha(1-\alpha)}
+  *              {0.5\rho_lu_\infty^2t_\infty},
+  * \f]
+  * with \f$ C_{prod}, C_{dest} \f$ empirical constants,
+  * \f$ t_\infty=l_\infty/u_\infty \f$ a reference time scale and \f$p_V\f$
+  * the reference saturation pressure.
+  * \f$ l_\infty \f$, \f$ u_\infty \f$ and \f$p_V\f$ may be provided by
+  * the user (user function).
+  * Note that the r.h.s. of the void fraction transport equation is
+  * \f$ \Gamma_V/\rho_v \f$.
+  *
+  * \param[in]  pressure  pressure array
+  * \param[in]  voidf     void fraction array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cavitation_compute_source_term(cs_real_t  pressure[],
+                                  cs_real_t  voidf[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+  * \brief Solves the continuity equation in pressure formulation and then
+  *        updates the density and the mass flux
+  *
+  * \param[in]     iterns        Navier-Stokes iteration number
+  * \param[in]     dt            time step (per cell)
+  * \param[in]     vela          velocity value at time step beginning
+  */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_compressible_convective_mass_flux(int         iterns,
+                                     cs_real_t   dt[],
+                                     cs_real_t   vela[][3]);
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Convert temperature to enthalpy at boundary for coal combustion.
  *
@@ -282,34 +327,6 @@ cs_fuel_thfieldconv1(int              location_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
-  * \brief Update the convective mass flux before the Navier Stokes equations
-  * (prediction and correction steps).
-  *
-  * This function computes a potential \f$ \varia \f$ solving the equation:
-  * \f[
-  * D \left( \Delta t, \varia \right) = \divs \left( \rho \vect{u}^n\right)
-  *                                   - \Gamma^n
-  *                                   + \dfrac{\rho^n - \rho^{n-1}}{\Delta t}
-  * \f]
-  * This potential is then used to update the mass flux as follows:
-  * \f[
-  *  \dot{m}^{n+\frac{1}{2}}_\ij = \dot{m}^{n}_\ij
-  *                               - \Delta t \grad_\fij \varia \cdot \vect{S}_\ij
-  * \f]
-  *
-  *  \param[in]     ncesmp        number of cells with mass source term
-  *  \param[in]     icetsm        index of cells with mass source term
-  *  \param[in]     dt            time step (per cell)
-  */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_prediction_mass_flux(cs_lnum_t  ncesmp,
-                        cs_lnum_t  icetsm[],
-                        cs_real_t  dt[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Return pointer to boundary head losses array.
  *
  * \return  b_head_loss  pointer to boundary head losses array
@@ -360,6 +377,21 @@ cs_hydrostatic_pressure_compute(int        *indhyd,
                                 cs_real_t   dpvar[],
                                 cs_real_t   rhs[]);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Computes a hydrostatic pressure \f$ P_{hydro} \f$ solving an
+ *        a priori simplified momentum equation:
+ *
+ * \param[out]    grdphd         the a priori hydrostatic pressure gradient
+ *                              \f$ \partial _x (P_{hydro}) \f$
+ * \param[in]     iterns        Navier-Stokes iteration number
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hydrostatic_pressure_prediction(cs_real_t  grdphd[][3],
+                                   int        iterns);
+
 /*----------------------------------------------------------------------------
  * Return Lagrangian model status.
  *
@@ -374,6 +406,30 @@ cs_lagr_status(int  *model_flag,
                int  *restart_flag,
                int  *frozen_flag);
 
+/*----------------------------------------------------------------------------*/
+/*!
+  * \brief Update the convective mass flux before the Navier Stokes equations
+  *        (prediction and correction steps).
+  *
+  * This function computes a potential \f$ \varia \f$ solving the equation:
+  * \f[
+  * D \left( \Delta t, \varia \right) = \divs \left( \rho \vect{u}^n\right)
+  *                                   - \Gamma^n
+  *                                   + \dfrac{\rho^n - \rho^{n-1}}{\Delta t}
+  * \f]
+  * This potential is then used to update the mass flux as follows:
+  * \f[
+  *  \dot{m}^{n+\frac{1}{2}}_\ij = \dot{m}^{n}_\ij
+  *                               - \Delta t \grad_\fij \varia \cdot \vect{S}_\ij
+  * \f]
+  *
+  *  \param[in]  dt time step (per cell)
+  */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mass_flux_prediction(cs_real_t  dt[]);
+
 /*----------------------------------------------------------------------------
  * Compute source terms for specific physical model scalars.
  *----------------------------------------------------------------------------*/
@@ -382,6 +438,34 @@ void
 cs_physical_model_scalar_source_terms(int         iscal,
                                       cs_real_t   st_imp[],
                                       cs_real_t   st_exp[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+  * \brief Update the convective mass flux before the Navier Stokes equations
+  * (prediction and correction steps).
+  *
+  * This function computes a potential \f$ \varia \f$ solving the equation:
+  * \f[
+  * D \left( \Delta t, \varia \right) = \divs \left( \rho \vect{u}^n\right)
+  *                                   - \Gamma^n
+  *                                   + \dfrac{\rho^n - \rho^{n-1}}{\Delta t}
+  * \f]
+  * This potential is then used to update the mass flux as follows:
+  * \f[
+  *  \dot{m}^{n+\frac{1}{2}}_\ij = \dot{m}^{n}_\ij
+  *                               - \Delta t \grad_\fij \varia \cdot \vect{S}_\ij
+  * \f]
+  *
+  *  \param[in]     ncesmp        number of cells with mass source term
+  *  \param[in]     icetsm        index of cells with mass source term
+  *  \param[in]     dt            time step (per cell)
+  */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_prediction_mass_flux(cs_lnum_t  ncesmp,
+                        cs_lnum_t  icetsm[],
+                        cs_real_t  dt[]);
 
 /*----------------------------------------------------------------------------
  * Exchange of coupling variables between tow instances
@@ -400,7 +484,50 @@ cs_sat_coupling_exchange_at_cells(int         f_id,
  *----------------------------------------------------------------------------*/
 
 double
-cs_tagms_s_metal(void);
+cs_tagms_s_metal(void);;
+
+/*----------------------------------------------------------------------------*/
+/*!
+  * \brief Velocity prediction step of the Navier-Stokes equations for
+  *        incompressible or slightly compressible flows.
+  *
+  * - At the first call, the predicted velocities are computed as well
+  *   as an estimator on the predicted velocity.
+  *
+  * - At the second call, a global estimator on Navier Stokes is computed.
+  *   This second call is done after the correction step
+  *   (\ref cs_pressure_correction).
+  *
+  * Please refer to the
+  * <a href="../../theory.pdf#predvv"><b>predvv</b></b></a> section
+  * of the theory guide for more informations.
+  */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_velocity_prediction(int        iappel,
+                       int        iterns,
+                       cs_real_t  dt[],
+                       cs_real_t  vel[][3],
+                       cs_real_t  vela[][3],
+                       cs_real_t  velk[][3],
+                       cs_real_t  da_uu[][6],
+                       cs_real_t  coefav[][3],
+                       cs_real_t  coefbv[][3][3],
+                       cs_real_t  cofafv[][3],
+                       cs_real_t  cofbfv[][3][3],
+                       cs_real_t  frcxt[][3],
+                       cs_real_t  grdphd[][3],
+                       cs_real_t  trava[][3],
+                       cs_real_t  dfrcxt[][3],
+                       cs_real_t  tpucou[][6],
+                       cs_real_t  trav[][3],
+                       cs_real_t  viscf[],
+                       cs_real_t  viscb[],
+                       cs_real_t  viscfi[],
+                       cs_real_t  viscbi[],
+                       cs_real_t  secvif[],
+                       cs_real_t  secvib[]);
 
 /*============================================================================
  *  User function prototypes

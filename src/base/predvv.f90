@@ -49,14 +49,11 @@
 !______________________________________________________________________________!
 !> \param[in]     iappel        call number (1 or 2)
 !> \param[in]     iterns        index of the iteration on Navier-Stokes
-!> \param[in]     ncepdp        number of cells with head loss
-!> \param[in]     icepdc        index of cells with head loss
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     vel           velocity
 !> \param[in]     vela          velocity at the previous time step
 !> \param[in]     velk          velocity at the previous sub iteration (or vela)
 !> \param[in,out] da_uu         velocity matrix
-!> \param[in]     tslagr        coupling term for the Lagrangian module
 !> \param[in]     coefav        boundary condition array for the variable
 !>                               (explicit part)
 !> \param[in]     coefbv        boundary condition array for the variable
@@ -65,7 +62,6 @@
 !>                               of the variable (explicit part)
 !> \param[in]     cofbfv        boundary condition array for the diffusion
 !>                               of the variable (implicit part)
-!> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     frcxt         external forces making hydrostatic pressure
 !> \param[in]     trava         working array for the velocity-pressure coupling
 !> \param[out]    dfrcxt        variation of the external forces
@@ -87,12 +83,12 @@
 
 subroutine predvv &
  ( iappel , iterns ,                                              &
-   ncepdp , icepdc ,                                              &
    dt     , vel    , vela   , velk   , da_uu  ,                   &
-   tslagr , coefav , coefbv , cofafv , cofbfv ,                   &
-   ckupdc , frcxt  , grdphd ,                                     &
+   coefav , coefbv , cofafv , cofbfv ,                            &
+   frcxt  , grdphd ,                                              &
    trava  ,                   dfrcxt , tpucou , trav   ,          &
-   viscf  , viscb  , viscfi , viscbi , secvif , secvib )
+   viscf  , viscb  , viscfi , viscbi , secvif , secvib )          &
+  bind(C, name='cs_velocity_prediction')
 
 !===============================================================================
 
@@ -126,7 +122,7 @@ use field_operator
 use cavitation
 use vof
 use atincl, only: kopint, iatmst, ps
-use pointe, only: ncetsm, icetsm, itypsm, smacel
+use pointe
 
 !===============================================================================
 
@@ -134,15 +130,9 @@ implicit none
 
 ! Arguments
 
-integer          iappel
-integer          iterns
-integer          ncepdp
-
-integer          icepdc(ncepdp)
+integer, value :: iappel, iterns
 
 double precision dt(ncelet)
-double precision tslagr(ncelet,*)
-double precision ckupdc(6,ncepdp)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision grdphd(3, ncelet)
 double precision trava(ndim,ncelet)
@@ -153,8 +143,8 @@ double precision viscfi(*), viscbi(nfabor)
 double precision secvif(nfac), secvib(nfabor)
 double precision coefav(3  ,nfabor)
 double precision cofafv(3  ,nfabor)
-double precision coefbv(3,3,nfabor)
-double precision cofbfv(3,3,nfabor)
+double precision coefbv(3, 3, nfabor)
+double precision cofbfv(3, 3, nfabor)
 
 double precision vel   (3, ncelet)
 double precision velk  (3, ncelet)
@@ -237,8 +227,6 @@ type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 type(var_cal_opt), target :: vcopt_loc
 type(var_cal_opt), pointer :: p_k_value
 type(c_ptr) :: c_k_value
-
-!===============================================================================
 
 !===============================================================================
 ! 1. Initialization
@@ -673,7 +661,6 @@ if (allocated(grad)) deallocate(grad)
 !       P est suppose pris a n+1/2
 !       rho est eventuellement interpole a n+1/2
 
-
 !-------------------------------------------------------------------------------
 ! ---> Initialize trava array and source terms at the first call (iterns=1)
 
@@ -831,7 +818,6 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
 
 endif
 
-
 !-------------------------------------------------------------------------------
 ! ---> Transpose of velocity gradient in the diffusion term
 
@@ -849,27 +835,27 @@ endif
 !      (if iphydr=1 this term has already been taken into account)
 
 ! ---> Explicit part
-if ((ncepdp.gt.0).and.(iphydr.ne.1)) then
+if ((ncepdc.gt.0).and.(iphydr.ne.1)) then
 
   ! Les termes diagonaux sont places dans TRAV ou TRAVA,
   !   La prise en compte de velk a partir de la seconde iteration
   !   est faite directement dans cs_equation_iterative_solve_vector.
   if (iterns.eq.1) then
 
-    allocate(hl_exp(3, ncepdp))
+    allocate(hl_exp(3, ncepdc))
 
-    call tspdcv(ncepdp, icepdc, vela, ckupdc, hl_exp)
+    call tspdcv(ncepdc, icepdc, vela, ckupdc, hl_exp)
 
     ! If we have inner iterations, we use trava, otherwise trav
     if(nterup.gt.1) then
-      do ielpdc = 1, ncepdp
+      do ielpdc = 1, ncepdc
         iel    = icepdc(ielpdc)
         trava(1,iel) = trava(1,iel) + hl_exp(1,ielpdc)
         trava(2,iel) = trava(2,iel) + hl_exp(2,ielpdc)
         trava(3,iel) = trava(3,iel) + hl_exp(3,ielpdc)
       enddo
     else
-      do ielpdc = 1, ncepdp
+      do ielpdc = 1, ncepdc
         iel    = icepdc(ielpdc)
         trav(1,iel) = trav(1,iel) + hl_exp(1,ielpdc)
         trav(2,iel) = trav(2,iel) + hl_exp(2,ielpdc)
@@ -886,10 +872,10 @@ endif
 
 !  At the second call, fimp is not needed anymore
 if (iappel.eq.1) then
-  if (ncepdp.gt.0) then
+  if (ncepdc.gt.0) then
     ! The theta-scheme for the head loss is the same as the other terms
     thetap = vcopt_u%thetav
-    do ielpdc = 1, ncepdp
+    do ielpdc = 1, ncepdc
       iel = icepdc(ielpdc)
       romvom = crom(iel)*cell_f_vol(iel)*thetap
 
@@ -1299,8 +1285,8 @@ if (iappel.eq.1.and.iphydr.eq.1) then
   endif
 
   ! Add head losses
-  if (ncepdp.gt.0) then
-    do ielpdc = 1, ncepdp
+  if (ncepdc.gt.0) then
+    do ielpdc = 1, ncepdc
       iel=icepdc(ielpdc)
       vit1   = vela(1,iel) * cell_is_active(iel)
       vit2   = vela(2,iel) * cell_is_active(iel)
@@ -1383,10 +1369,10 @@ if (iappel.eq.1.and.iphydr.eq.1) then
   endif
 
 endif
+
 !===============================================================================
 ! 3. Solving of the 3x3xNcel coupled system
 !===============================================================================
-
 
 ! ---> AU PREMIER APPEL,
 !      MISE A ZERO DE L'ESTIMATEUR POUR LA VITESSE PREDITE
@@ -1728,7 +1714,6 @@ if (iappel.eq.1) then
     call syntis(da_uu)
 
   endif
-
 
   ! Velocity-pression coupling: compute the vector T, stored in tpucou,
   ! cs_equation_iterative_solve_vector is called, only one sweep is done,

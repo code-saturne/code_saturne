@@ -60,7 +60,6 @@
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-!-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
 !  mode           name          role                                           !
@@ -70,8 +69,9 @@
 !> \param[in]     iterns        Navier-Stokes iteration number
 !_______________________________________________________________________________
 
-subroutine prehyd &
- ( grdphd  , iterns )
+subroutine prehyd  &
+  (grdphd, iterns) &
+  bind(C, name='cs_hydrostatic_pressure_prediction')
 
 !===============================================================================
 
@@ -101,7 +101,7 @@ implicit none
 ! Arguments
 
 double precision grdphd(ndim, ncelet)
-integer          iterns
+integer(c_int), value :: iterns
 
 ! Local variables
 
