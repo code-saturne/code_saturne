@@ -511,7 +511,7 @@ cs_array_real_fill_zero(cs_lnum_t  size,
  * \param[in]   n_elts  number of associated elements
  * \param[in]   dim     associated dimension
  * \param[in]   v       value to assign
- * \param[out]  a       array values (size: n_elts*dim]
+ * \param[out]  a       array values (size: n_elts*dim)
  */
 /*----------------------------------------------------------------------------*/
 
