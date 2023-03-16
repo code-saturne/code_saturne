@@ -1433,24 +1433,6 @@ cs_nvec3(const cs_real_3_t    v,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value related to the machine precision
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_math_set_machine_epsilon(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the value related to the machine precision
- */
-/*----------------------------------------------------------------------------*/
-
-double
-cs_math_get_machine_epsilon(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Compute the length (Euclidean norm) between two points xa and xb in
  *         a Cartesian coordinate system of dimension 3
  *
