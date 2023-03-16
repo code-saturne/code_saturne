@@ -194,7 +194,6 @@ cs_domain_create(void)
 
   /* Initialization of several modules */
 
-  cs_math_set_machine_epsilon(); /* Compute and set machine epsilon */
   cs_quadrature_setup();         /* Compute constant used in quadrature rules */
 
   /* Add two predefined properties which can be called from everywhere:

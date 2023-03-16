@@ -76,8 +76,6 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
-static cs_real_t  _machine_epsilon = 1.11e-16;
-
 /* Numerical constants */
 
 const cs_real_t cs_math_zero_threshold = FLT_MIN;
@@ -213,39 +211,6 @@ cs_f_math_3_normalize(const cs_real_t vin[3],
 /*============================================================================
  * Public function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the value related to the machine precision
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_math_set_machine_epsilon(void)
-{
-  double  eps = 5e-16;
-  double  y = 1.0 + eps;
-
-  while (y > 1.0) {
-    eps /= 2.0;
-    y = 1.0 + eps;
-  }
-  eps *= 2.0;
-
-  _machine_epsilon = eps;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the value related to the machine precision
- */
-/*----------------------------------------------------------------------------*/
-
-double
-cs_math_get_machine_epsilon(void)
-{
-  return _machine_epsilon;
-}
 
 /*----------------------------------------------------------------------------*/
 /*!

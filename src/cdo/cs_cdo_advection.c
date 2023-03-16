@@ -34,7 +34,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
-#include <limits.h>
 #include <assert.h>
 
 /*----------------------------------------------------------------------------
@@ -2493,7 +2492,7 @@ cs_cdo_advection_vcb_cw_cst(const cs_equation_param_t   *eqp,
   cs_nvec3_t  adv_cell;
   cs_advection_field_get_cell_vector(cm->c_id, eqp->adv_field, &adv_cell);
 
-  if (adv_cell.meas < cs_math_get_machine_epsilon())
+  if (adv_cell.meas < DBL_EPSILON)
     return;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 2
@@ -2633,7 +2632,7 @@ cs_cdo_advection_vcb(const cs_equation_param_t   *eqp,
   cs_nvec3_t  adv_cell;
   cs_advection_field_get_cell_vector(cm->c_id, eqp->adv_field, &adv_cell);
 
-  if (adv_cell.meas < cs_math_get_machine_epsilon())
+  if (adv_cell.meas < DBL_EPSILON)
     return;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 2
