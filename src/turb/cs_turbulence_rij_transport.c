@@ -1048,7 +1048,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
       && ((turb_flux_model_type == 2) || (turb_flux_model_type == 3))) {
 
     f_tv = cs_field_get_variance(f);
-   
+
     if (f_tv == NULL)
       bft_error(__FILE__, __LINE__, 0,
                 _("%s: the variance field required for\n"
