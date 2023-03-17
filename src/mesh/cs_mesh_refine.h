@@ -87,6 +87,22 @@ cs_mesh_refine_simple_selected(cs_mesh_t        *m,
                                const cs_lnum_t   cells[]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set refinement options, using key/value pairs.
+ *
+ * Accepted keys and values:
+ *
+ * - "triangle_subdivision"
+ *   - "triangle" (default)
+ *   - "quadrangle"
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_refine_set_option(const char  *key,
+                          const char  *value);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

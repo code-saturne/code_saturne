@@ -128,6 +128,8 @@ typedef enum {
 
   CS_REFINE_TRIA,        /*!< simple triangle subdivision into 4 triangles
                            using mid-edge vertices, no added face vertex */
+  CS_REFINE_TRIA_Q,      /*!< simple triangle subdivision into 3 quadrangles
+                           using mid-edge vertices and a face center */
   CS_REFINE_QUAD,        /*!< simple quadrangle subdivision into 4 quadrangles
                            using mid-edge vertices and a face center */
 
@@ -138,6 +140,7 @@ typedef enum {
                            center vertex */
 
   CS_REFINE_TETRA,       /*!< simple tetrahedron subdivision scheme */
+  CS_REFINE_TETRA_H,     /*!< simple tetrahedron to hexahedron scheme */
   CS_REFINE_PYRAM,       /*!< simple pyramid subdivision scheme */
   CS_REFINE_PRISM,       /*!< simple prism subdivision scheme */
   CS_REFINE_HEXA,        /*!< simple hexahedron subdivision scheme */
@@ -182,6 +185,12 @@ typedef void
                    cs_lnum_t                     c2f2v_start[],
                    const cs_lnum_t               c_v_idx[],
                    const cs_lnum_t               c_f_n_idx[]);
+
+/*============================================================================
+ * Static global variables.
+ *============================================================================*/
+
+static cs_mesh_refine_type_t _refine_tria_type = CS_REFINE_TRIA;
 
 /*============================================================================
  * Private function definitions
@@ -935,6 +944,12 @@ _cell_r_type(const cs_mesh_t              *m,
       if (_f_r_flag[0] == CS_REFINE_TRIA) {
         c_r_flag[cell_id] = CS_REFINE_TETRA;
       }
+      else if (_f_r_flag[0] == CS_REFINE_TRIA_Q) {
+        c_r_flag[cell_id] = CS_REFINE_TETRA_H;
+      }
+      else if (_f_r_flag[0] == CS_REFINE_POLYGON_Q) {
+        c_r_flag[cell_id] = CS_REFINE_POLYHEDRON;
+      }
     }
     break;
 
@@ -1200,6 +1215,10 @@ _new_cells_i_faces_count(const cs_mesh_t             *m,
   n_type_faces[CS_REFINE_TETRA] = 8;
   n_type_size[CS_REFINE_TETRA] = 8*3;
 
+  n_sub_cells[CS_REFINE_TETRA_H] = 4;   /* tetrahedra to hexahedra */
+  n_type_faces[CS_REFINE_TETRA_H] = 6;
+  n_type_size[CS_REFINE_TETRA_H] = 6*4;
+
   n_sub_cells[CS_REFINE_PYRAM] = 6 + 4; /* pyramids + tetrahedra */
   n_type_faces[CS_REFINE_PYRAM] = 1 + 12;
   n_type_size[CS_REFINE_PYRAM] = 4 + 12*3;
@@ -1462,7 +1481,7 @@ _flag_faces_and_edges(cs_lnum_t               f_id,
   if (_f_flag == CS_REFINE_DEFAULT) {
     switch(n_fv) {
     case 3:
-      _f_flag = CS_REFINE_TRIA;
+      _f_flag = _refine_tria_type;
       break;
     case 4:
       _f_flag = CS_REFINE_QUAD;
@@ -1499,6 +1518,7 @@ _flag_faces_and_edges(cs_lnum_t               f_id,
       }
     }
     break;
+  case CS_REFINE_TRIA_Q:
   case CS_REFINE_QUAD:
   case CS_REFINE_POLYGON_T:
   case CS_REFINE_POLYGON_Q:
@@ -1707,7 +1727,8 @@ _new_cell_vertex_ids(cs_mesh_t                    *m,
   for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
 
     if (   c_r_flag[c_id] == CS_REFINE_HEXA
-        || c_r_flag[c_id] == CS_REFINE_POLYHEDRON)
+        || c_r_flag[c_id] == CS_REFINE_POLYHEDRON
+        || c_r_flag[c_id] == CS_REFINE_TETRA_H)
       c_v_idx[c_id+1] = 1;
     else
       c_v_idx[c_id+1] = 0;
@@ -2048,6 +2069,7 @@ _build_cell_vertices(cs_mesh_t                    *m,
         case CS_REFINE_HEXA:
         case CS_REFINE_PRISM:
         case CS_REFINE_POLYHEDRON:
+        case CS_REFINE_TETRA_H:
           {
             const cs_lnum_t v_id = c_v_idx[c_id];
             for (cs_lnum_t i = 0; i < 3; i++)
@@ -2224,6 +2246,10 @@ _subdivided_face_sizes(const cs_lnum_t          n_fv,
     *n_sub = 4;
     *connect_size = 12;
     break;
+  case CS_REFINE_TRIA_Q:
+    *n_sub =3;
+    *connect_size = 12;
+    break;
   case CS_REFINE_QUAD:
     *n_sub = 4;
     *connect_size = 16;
@@ -2338,6 +2364,32 @@ _subdivide_face(cs_lnum_t                 f_id,
       f2v_lst_n[9]  = _v2v_mid_vtx_id(v0, v1, v2v, e_v_idx);
       f2v_lst_n[10] = _v2v_mid_vtx_id(v1, v2, v2v, e_v_idx);
       f2v_lst_n[11] = _v2v_mid_vtx_id(v0, v2, v2v, e_v_idx);
+    }
+    break;
+
+  case CS_REFINE_TRIA_Q:
+    {
+      cs_lnum_t v0 = f2v_lst_o[0];
+      cs_lnum_t v1 = f2v_lst_o[1];
+      cs_lnum_t v2 = f2v_lst_o[2];
+
+      f2v_idx_n[1] = f2v_idx_n[0] + 4;
+      f2v_idx_n[2] = f2v_idx_n[0] + 8;
+
+      f2v_lst_n[0] = v0;
+      f2v_lst_n[1] = _v2v_mid_vtx_id(v0, v1, v2v, e_v_idx);
+      f2v_lst_n[2] = f_v_idx[f_id];
+      f2v_lst_n[3] = _v2v_mid_vtx_id(v0, v2, v2v, e_v_idx);
+
+      f2v_lst_n[4] = v1;
+      f2v_lst_n[5] = _v2v_mid_vtx_id(v1, v2, v2v, e_v_idx);
+      f2v_lst_n[6] = f_v_idx[f_id];
+      f2v_lst_n[7] = _v2v_mid_vtx_id(v0, v1, v2v, e_v_idx);
+
+      f2v_lst_n[8]  = v2;
+      f2v_lst_n[9]  = _v2v_mid_vtx_id(v0, v2, v2v, e_v_idx);
+      f2v_lst_n[10] = f_v_idx[f_id];
+      f2v_lst_n[11] = _v2v_mid_vtx_id(v1, v2, v2v, e_v_idx);
     }
     break;
 
@@ -2581,6 +2633,74 @@ _subdivided_tria(cs_lnum_t        s_id,
     s_id_f = f_vtx_idx[s_id];
     tria_vtx[(l+2)%3]     = f_vtx[s_id_f];
     tria_vtx[(l+2)%3 + 3] = f_vtx[s_id_f + 2];
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build subdivided triangle face lookup.
+ *
+ *       2
+ *      / \
+ *     5-6-4
+ *    /  |  \
+ *   0---3---1
+ *
+ * Numberings are based on the sub-face numbering relation based on
+ * CS_REFINE_TRIA_H in _subdivide_face
+ *
+ * \param[in]   s_id          start id of first face in subset
+ *                            (3 subfaces are adjacent)
+ * \param[in]   start_vertex  vertex position (0-3) of first vertex
+ *                            matching reference (for permutation)
+ * \param[in]   sgn           parent face orientation (-1 if inverted)
+ * \param[in]   f_vtx_idx     face->vertices connectivity index
+ * \param[out]  quad_vtx      lookup face->vertices connectivity
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_subdivided_tria_h(cs_lnum_t        s_id,
+                   cs_lnum_t        start_vertex,
+                   int              sgn,
+                   const cs_lnum_t  f_vtx_idx[],
+                   const cs_lnum_t  f_vtx[],
+                   cs_lnum_t        tria_vtx[7])
+{
+  cs_lnum_t s_id_f;
+  cs_lnum_t l = (3 - start_vertex)%3;
+
+  if (sgn > 0) {
+
+    s_id_f = f_vtx_idx[s_id];
+    tria_vtx[6] = f_vtx[s_id_f + 2];
+    tria_vtx[l%3]     = f_vtx[s_id_f];
+    tria_vtx[l%3 + 3] = f_vtx[s_id_f + 1];
+
+    s_id_f = f_vtx_idx[s_id + 1];
+    tria_vtx[(l+1)%3]     = f_vtx[s_id_f];
+    tria_vtx[(l+1)%3 + 3] = f_vtx[s_id_f + 1];
+
+    s_id_f = f_vtx_idx[s_id + 2];
+    tria_vtx[(l+2)%3]     = f_vtx[s_id_f];
+    tria_vtx[(l+2)%3 + 3] = f_vtx[s_id_f + 1];
+
+  }
+  else {
+
+    s_id_f = f_vtx_idx[s_id + 2];
+    tria_vtx[6] = f_vtx[s_id_f + 2];
+    tria_vtx[l%3]     = f_vtx[s_id_f];
+    tria_vtx[l%3 + 3] = f_vtx[s_id_f + 3];
+
+    s_id_f = f_vtx_idx[s_id + 1];
+    tria_vtx[(l+1)%3]     = f_vtx[s_id_f];
+    tria_vtx[(l+1)%3 + 3] = f_vtx[s_id_f + 3];
+
+    s_id_f = f_vtx_idx[s_id];
+    tria_vtx[(l+2)%3]     = f_vtx[s_id_f];
+    tria_vtx[(l+2)%3 + 3] = f_vtx[s_id_f + 3];
 
   }
 }
@@ -2840,6 +2960,116 @@ _subdivide_cell_tria_faces(const cs_mesh_t    *m,
   }
 }
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Match a cell's triangle faces subdivision and partially update
+ *        face->cell connectivity.
+ *
+ * The connectivity of exisiting (subdivided) boundary of interior
+ * faces (on the exterior of the cell, not added interior faces)
+ * is updated, assuming a mapping defined by the c_id_shift argument.
+ *
+ * The cells->faces adjacency is updated as faces are locally renumbered
+ * in canonical order for known cell types.
+ *
+ * \param[in, out]  m             pointer to mesh structure
+ * \param[in]       c_f_id_s      start id of cell's local faces to handle
+ * \param[in]       c_f_id_e      past-end id of cell's local faces to handle
+ * \param[in]       n_b_f_ini     old number of boundary faces
+ * \param[in]       c_o2n_idx     old to new cells index
+ * \param[in]       i_face_o2n_idx  old to new interior faces index
+ * \param[in]       b_face_o2n_idx  old to new boundary faces index
+ * \param[in]       c2f           cells->faces adjacency (boundary faces first)
+ * \param[in]       c2f2v_start   start id for adjacent face vertices
+ *                                definitions (initialized to 0)
+ * \param[in]       c_v_idx       for each cell, start index of added vertices
+ * \param[in]       c_f_n_idx     cells to new faces index
+ * \param[in]       c_id_shift    subface to subcell mapping
+ * \param[out]      tria_vtx      subdivided triangle connectivity
+ *                                (see \ref _subdivided_tria)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_subdivide_cell_tria_q_faces(const cs_mesh_t  *m,
+                           cs_lnum_t           c_f_id_s,
+                           cs_lnum_t           c_f_id_e,
+                           cs_lnum_t           cell_id,
+                           cs_lnum_t           n_b_f_ini,
+                           const cs_lnum_t     c_o2n_idx[],
+                           const cs_lnum_t     i_face_o2n_idx[],
+                           const cs_lnum_t     b_face_o2n_idx[],
+                           cs_adjacency_t     *c2f,
+                           cs_lnum_t           c2f2v_start[],
+                           const cs_lnum_t     c_id_shift[][3],
+                           cs_lnum_t           tria_vtx[][7])
+{
+  const cs_lnum_t s_id_c = c2f->idx[cell_id];
+
+  /* Loop on faces; face->sub-face numbering relations based
+     on CS_REFINE_TRIA in _subdivide_face */
+
+  for (cs_lnum_t i = c_f_id_s; i < c_f_id_e; i++) {
+
+    cs_lnum_t s_id, e_id;
+    cs_lnum_t f_id_o = c2f->ids[s_id_c + i];
+    cs_lnum_t sgn = c2f->sgn[s_id_c + i];
+
+    cs_lnum_t *_tria_vtx = tria_vtx[i-c_f_id_s];
+
+    const cs_lnum_t *f_vtx_idx, *f_vtx;
+
+    cs_lnum_t s_f_id_shift = (3 - c2f2v_start[s_id_c + i])%3;
+
+    if (f_id_o < n_b_f_ini) {
+      s_id = b_face_o2n_idx[f_id_o];
+      e_id = b_face_o2n_idx[f_id_o + 1];
+      assert(e_id - s_id == 3);
+      f_vtx_idx = m->b_face_vtx_idx;
+      f_vtx = m->b_face_vtx_lst;
+      assert(sgn > 0);
+      for (cs_lnum_t k = 0; k < 3; k++) {
+        cs_lnum_t f_id = s_id + k;
+        assert(m->b_face_cells[f_id] == c_o2n_idx[cell_id]);
+        m->b_face_cells[f_id] += c_id_shift[i][(s_f_id_shift+k)%3];
+      }
+
+    }
+    else {
+      s_id = i_face_o2n_idx[f_id_o - n_b_f_ini];
+      e_id = i_face_o2n_idx[f_id_o - n_b_f_ini + 1];
+      assert(e_id - s_id == 3);
+      f_vtx_idx = m->i_face_vtx_idx;
+      f_vtx = m->i_face_vtx_lst;
+      if (sgn > 0) {
+        for (cs_lnum_t k = 0; k < 3; k++) {
+          cs_lnum_t f_id = s_id + k;
+          assert(m->i_face_cells[f_id][0] == c_o2n_idx[cell_id]);
+          m->i_face_cells[f_id][0] += c_id_shift[i][(s_f_id_shift+k)%3];
+        }
+
+      }
+      else {
+        for (cs_lnum_t k = 0; k < 3; k++) {
+          cs_lnum_t f_id = s_id + 2 - k;
+          assert(m->i_face_cells[f_id][1] == c_o2n_idx[cell_id]);
+          m->i_face_cells[f_id][1] += c_id_shift[i][(s_f_id_shift+k)%3];
+        }
+
+      }
+    }
+
+    _subdivided_tria_h(s_id,
+                     c2f2v_start[s_id_c + i],
+                     sgn,
+                     f_vtx_idx,
+                     f_vtx,
+                     _tria_vtx);
+
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Match a cell's quadrangle faces subdivision and partially update
@@ -3090,6 +3320,139 @@ _subdivide_cell_tetra(const cs_mesh_t              *m,
                           c_f_n_idx[cell_id] + 7,
                           v_ids,
                           c_f_n_idx + cell_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Subdivide a given tetrahedron to hexahedra, updating faces.
+ *
+ * The cells->faces adjacency is updated as faces are locally renumbered
+ * in canonical order for known cell types.
+ *
+ * \param[in, out]  m             pointer to mesh structure
+ * \param[in]       cell_id       (old) cell id (0 to n-1)
+ * \param[in]       n_b_f_ini     old number of boundary faces
+ * \param[in]       c_o2n_idx     old to new cells index
+ * \param[in]       i_face_o2n_idx  old to new interior faces index
+ * \param[in]       b_face_o2n_idx  old to new boundary faces index
+ * \param[in]       c2f           cells->faces adjacency (boundary faces first)
+ * \param[in]       c2f2v_start   start id for adjacent face vertices
+ *                                definitions (initialized to 0)
+ * \param[in]       c_v_idx       for each cell, start index of added vertices
+ * \param[in]       c_f_n_idx     cells to new faces index
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_subdivide_cell_tetra_h(const cs_mesh_t              *m,
+                        cs_lnum_t                     cell_id,
+                        cs_lnum_t                     n_b_f_ini,
+                        const cs_lnum_t               c_o2n_idx[],
+                        const cs_lnum_t               i_face_o2n_idx[],
+                        const cs_lnum_t               b_face_o2n_idx[],
+                        cs_adjacency_t               *c2f,
+                        cs_lnum_t                     c2f2v_start[],
+                        const cs_lnum_t               c_v_idx[],
+                        const cs_lnum_t               c_f_n_idx[])
+{
+  assert(c2f->idx[cell_id+1] - c2f->idx[cell_id] == 4);
+
+  static const cs_lnum_t c_id_shift[4][3] = {{0, 2, 1},
+                                             {0, 1, 3},
+                                             {1, 2, 3},
+                                             {2, 0, 3}};
+
+  /* Case of tetrahedron split into 4 hexahedra */
+
+  const cs_lnum_t c_vtx_id = c_v_idx[cell_id];
+
+  cs_lnum_t new_cell_id = c_o2n_idx[cell_id];
+
+  cs_lnum_t tria_vtx[4][7];
+
+  /* Loop on faces; face->sub-face numbering relations based
+     on CS_REFINE_TRIA in _subdivide_face */
+
+  _subdivide_cell_tria_q_faces(m,
+                             0, 4, /* tria range */
+                             cell_id,
+                             n_b_f_ini,
+                             c_o2n_idx,
+                             i_face_o2n_idx,
+                             b_face_o2n_idx,
+                             c2f,
+                             c2f2v_start,
+                             c_id_shift,
+                             tria_vtx);
+
+  cs_lnum_t v_ids[4];
+
+  v_ids[0] = tria_vtx[0][5];
+  v_ids[1] = tria_vtx[0][6];
+  v_ids[2] = c_vtx_id;
+  v_ids[3] = tria_vtx[1][6];
+  _add_interior_face_quad(m,
+                          new_cell_id,
+                          new_cell_id+1,
+                          c_f_n_idx[cell_id],
+                          v_ids,
+                          c_f_n_idx + cell_id);
+
+  v_ids[0] = tria_vtx[2][3];
+  v_ids[1] = tria_vtx[0][6];
+  v_ids[2] = c_vtx_id;
+  v_ids[3] = tria_vtx[2][6];
+  _add_interior_face_quad(m,
+                          new_cell_id+1,
+                          new_cell_id+2,
+                          c_f_n_idx[cell_id] + 1,
+                          v_ids,
+                          c_f_n_idx + cell_id);
+
+  v_ids[0] = tria_vtx[3][3];
+  v_ids[1] = tria_vtx[3][6];
+  v_ids[2] = c_vtx_id;
+  v_ids[3] = tria_vtx[0][6];
+  _add_interior_face_quad(m,
+                          new_cell_id+2,
+                          new_cell_id,
+                          c_f_n_idx[cell_id] + 2,
+                          v_ids,
+                          c_f_n_idx + cell_id);
+
+  v_ids[0] = tria_vtx[1][5];
+  v_ids[1] = tria_vtx[1][6];
+  v_ids[2] = c_vtx_id;
+  v_ids[3] = tria_vtx[3][6];
+  _add_interior_face_quad(m,
+                          new_cell_id,
+                          new_cell_id+3,
+                          c_f_n_idx[cell_id] + 3,
+                          v_ids,
+                          c_f_n_idx + cell_id);
+
+  v_ids[0] = tria_vtx[2][5];
+  v_ids[1] = tria_vtx[2][6];
+  v_ids[2] = c_vtx_id;
+  v_ids[3] = tria_vtx[1][6];
+  _add_interior_face_quad(m,
+                          new_cell_id+1,
+                          new_cell_id+3,
+                          c_f_n_idx[cell_id] + 4,
+                          v_ids,
+                          c_f_n_idx + cell_id);
+
+  v_ids[0] = tria_vtx[3][5];
+  v_ids[1] = tria_vtx[3][6];
+  v_ids[2] = c_vtx_id;
+  v_ids[3] = tria_vtx[2][6];
+  _add_interior_face_quad(m,
+                          new_cell_id+2,
+                          new_cell_id+3,
+                          c_f_n_idx[cell_id] + 5,
+                          v_ids,
+                          c_f_n_idx + cell_id);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3792,6 +4155,7 @@ _subdivide_cells(const cs_mesh_t              *m,
     c_r_func[i] = NULL;
 
   c_r_func[CS_REFINE_TETRA] = _subdivide_cell_tetra;
+  c_r_func[CS_REFINE_TETRA_H] = _subdivide_cell_tetra_h;
   c_r_func[CS_REFINE_PYRAM] = _subdivide_cell_pyram;
   c_r_func[CS_REFINE_PRISM] = _subdivide_cell_prism;
   c_r_func[CS_REFINE_HEXA] = _subdivide_cell_hexa;
@@ -4807,6 +5171,46 @@ cs_mesh_refine_simple_selected(cs_mesh_t        *m,
   cs_mesh_refine_simple(m, conforming, cell_flag);
 
   BFT_FREE(cell_flag);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set refinement options, using key/value pairs.
+ *
+ * Accepted keys and values:
+ *
+ * - "triangle_subdivision"
+ *   - "triangle" (default)
+ *   - "quadrangle"
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_refine_set_option(const char  *key,
+                          const char  *value)
+{
+  bool wrong_value = false;
+
+  if (key == NULL || value == NULL)
+    return;
+
+  if (strcmp(key, "triangle_subdivision") == 0) {
+    if (strcmp(value, "triangle") == 0)
+      _refine_tria_type = CS_REFINE_TRIA;
+    else if (strcmp(value, "quadrangle") == 0)
+      _refine_tria_type = CS_REFINE_TRIA_Q;
+    else
+      wrong_value = true;
+  }
+
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: unknown key \"%s\"."), __func__, key);
+
+  if (wrong_value)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: unknown value \"%s\" for key \"%s\"."),
+              __func__, value, key);
 }
 
 /*----------------------------------------------------------------------------*/
