@@ -1795,7 +1795,7 @@ if (iappel.eq.1) then
 
 
 ! ---> End of the construction of the total estimator:
-!       RHS resiudal of (U^{n+1}, P^{n+1}) + rho*volume*(U^{n+1} - U^n)/dt
+!       RHS residual of (U^{n+1}, P^{n+1}) + rho*volume*(U^{n+1} - U^n)/dt
 else if (iappel.eq.2) then
 
   inc = 1

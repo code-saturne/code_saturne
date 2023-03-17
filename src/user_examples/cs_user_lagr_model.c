@@ -250,8 +250,8 @@ cs_user_lagr_model(void)
    *----------------------------------------------------------------------- */
 
   if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
-    /* iencra = 0 no fouling (default)
-       = 1 fouling
+    /* fouling = 0 no fouling (default)
+               = 1 fouling
        The boundary on which the fouling can occur must be specified with
        boundary condition definitions.
 
@@ -323,10 +323,10 @@ cs_user_lagr_model(void)
     /* * number of absolute time step (i.e. with restart)
        from which a time average for two-way coupling source terms is
        computed (steady source terms)
-       * if the time step is lower than NSTITS, source terms are
+       * if the time step is lower than "nstits", source terms are
        unsteady: they are reset at each time step
-       * useful only if ISTTIO = 1.
-       * the min value for NSTITS is 1 */
+       * useful only if "isttio" = 1.
+       * the min value for "nstits" is 1 */
 
     cs_glob_lagr_source_terms->nstits = 1;
 
@@ -386,14 +386,14 @@ cs_user_lagr_model(void)
   cs_glob_lagr_stat_options->idstnt = 1;
 
   /* Steady calculation from the absolute time step nstist
-   *   * nstist is a absolute number of time steps
+   *   - nstist is a absolute number of time steps
    *     (i.e. including calculation restarts) from which the statistics
    *     are averaged in time.
-   *   * useful if the calculation is steady (isttio=1)
-   *   * if the number of time steps is lower than nstits,
+   *   - useful if the calculation is steady (isttio=1)
+   *   - if the number of time steps is lower than nstits,
    *     the transmitted source terms are unsteady (i.e. they are reset to
    *     zero at each time step)
-   *   * the minimal value acceptable for nstist is 1.    */
+   *   - the minimal value acceptable for nstist is 1.    */
 
   cs_glob_lagr_stat_options->nstist = cs_glob_lagr_stat_options->idstnt;
 
@@ -470,8 +470,8 @@ cs_user_lagr_model(void)
     /* Retardation wavelength for the particle/fluid/substrate system:*/
     cs_glob_lagr_physico_chemical->lambda_vdw = 1000.0;
 
-    /* Constants for the elecstrostatic forces
-       ---------------------------------------
+    /* Constants for the electrostatic forces
+       --------------------------------------
        Dielectric constant of the fluid (example: water at 293 K)*/
     cs_glob_lagr_physico_chemical->epseau = 80.1;
 
