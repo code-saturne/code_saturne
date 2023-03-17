@@ -2053,7 +2053,7 @@ cs_atmo_compute_meteo_profiles(void)
     = (const cs_real_3_t *restrict)mq->cell_cen;
 
   /* In the log */
-  bft_printf(" Computing meteo profiles from CS\n\n");
+  bft_printf(" Computing meteo profiles from large scale meteo data\n\n");
 
   /* Get fields */
   cs_real_t *cpro_met_potemp = cs_field_by_name("meteo_pot_temperature")->val;
@@ -3110,7 +3110,7 @@ cs_atmo_log_setup(void)
        "    latitude:  %6f\n"
        "    longitude: %6f\n"
        "    x center (in Lambert-93) : %6f\n"
-       "    y center (in Lmabert-93) : %6f\n\n"),
+       "    y center (in Lambert-93) : %6f\n\n"),
      cs_glob_atmo_option->latitude,
      cs_glob_atmo_option->longitude,
      cs_glob_atmo_option->x_l93,
