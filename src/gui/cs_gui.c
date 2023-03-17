@@ -3073,13 +3073,6 @@ void cs_gui_initial_conditions(void)
             BFT_FREE(ini_vals);
           }
         }
-        else {
-          for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-            cs_lnum_t iel = cell_ids[icel];
-            for (cs_lnum_t j = 0; j < 3; j++)
-              c_vel->val[3 * iel + j] = 0.0;
-          }
-        }
 
         /* Pressure initialization for groundwater model */
         if (cs_glob_physical_model_flag[CS_GROUNDWATER] > 0) {
