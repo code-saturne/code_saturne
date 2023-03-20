@@ -1139,7 +1139,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
    * for solving the linear system */
 
   cs_cdo_system_matrix_class_t  matclass;
-  bool is_unrolled = false;
+  bool is_unrolled = true;
 
   switch (eqp->sles_param->solver_class) {
 
@@ -1156,7 +1156,6 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   default:
-    is_unrolled = true;
     matclass = CS_CDO_SYSTEM_MATRIX_CS;
     break;
 
