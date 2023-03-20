@@ -36,7 +36,7 @@
 
 #if defined(HAVE_PETSC)
 #include <petsc.h>
-#include <petscconf.h>
+#include <petscconf.h> /* Useful to know if HYPRE is accessible through PETSc */
 #include <petscversion.h>
 #endif
 
@@ -1501,6 +1501,10 @@ _set_saturne_sles(bool                 use_field_id,
                                 slesp->cvg_param.n_max_iter);
       break;
 
+    case CS_PARAM_ITSOL_FGMRES:  /* Not available --> close to GCR */
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(" Switch to the GCR implementation of code_saturne\n");
+      /* No break */
     case CS_PARAM_ITSOL_GKB_GMRES:
     case CS_PARAM_ITSOL_GCR:
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
