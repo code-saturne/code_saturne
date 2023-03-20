@@ -638,20 +638,23 @@ _log_add_type_flag(int type)
 static void
 _cs_field_free_str(void)
 {
-  int key_id, f_id;
-
-  for (key_id = 0; key_id < _n_keys; key_id++) {
+  for (int key_id = 0; key_id < _n_keys; key_id++) {
 
     cs_field_key_def_t *kd = _key_defs + key_id;
 
     if (kd->type_id == 's') {
-      for (f_id = 0; f_id < _n_fields; f_id++) {
+
+      for (int f_id = 0; f_id < _n_fields; f_id++) {
         cs_field_key_val_t *kv = _key_vals + (f_id*_n_keys_max + key_id);
         BFT_FREE(kv->val.v_p);
       }
-    }
 
-  }
+      if (kd->def_val.v_p != NULL)
+        BFT_FREE(kd->def_val.v_p);
+
+    } /* If the key is a "string" key */
+
+  } /* Loop on keys */
 }
 
 /*----------------------------------------------------------------------------
@@ -661,22 +664,25 @@ _cs_field_free_str(void)
 static void
 _cs_field_free_struct(void)
 {
-  int key_id, f_id;
-
-  for (key_id = 0; key_id < _n_keys; key_id++) {
+  for (int key_id = 0; key_id < _n_keys; key_id++) {
 
     cs_field_key_def_t *kd = _key_defs + key_id;
 
     if (kd->type_id == 't') {
-      for (f_id = 0; f_id < _n_fields; f_id++) {
+
+      for (int f_id = 0; f_id < _n_fields; f_id++) {
         cs_field_key_val_t *kv = _key_vals + (f_id*_n_keys_max + key_id);
         if (kd->clear_func != NULL)
           kd->clear_func(kv->val.v_p);
         BFT_FREE(kv->val.v_p);
       }
-    }
 
-  }
+      if (kd->def_val.v_p != NULL)
+        BFT_FREE(kd->def_val.v_p);
+
+    } /* If the key is a "structure" key */
+
+  } /* Loop on keys */
 }
 
 /*----------------------------------------------------------------------------
