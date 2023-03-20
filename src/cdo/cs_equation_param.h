@@ -48,7 +48,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * @name Flags specifying which term is needed for an equation.
+ * @name Flags specifying the behavior of an equation (activated terms like the
+ *       convection, diffusion, etc.).
  * @{
  *
  * \def CS_EQUATION_LOCKED
@@ -81,14 +82,15 @@ BEGIN_C_DECLS
  * \brief The current equation settings belong to a system of equation
  *
  * \def CS_EQUATION_BUILD_HOOK
- * \brief Activate a build hook to get a fine control of the discretization
- *        process during the cellwise building of the linear system
- *        Need to match the cs_equation_build_hook_t prototype
+ * \brief Activate a build hook function to get a fine control of the
+ *        discretization process during the cellwise building of the linear
+ *        system.
+ *        Need a function matching the cs_equation_build_hook_t prototype
  *
  * \def CS_EQUATION_USER_TRIGGERED
- * \brief The resolution of the current equation is driven by the user
- *        and so this user-defined equation is not solved with the other
- *        user-defined equations
+ * \brief The stage at which the equation is solved is driven by the user.  So,
+ *        this user-defined equation is not solved at the same time as the
+ *        other user-defined equations.
  */
 
 #define CS_EQUATION_LOCKED         (1 <<  0)  /*    1 */
@@ -106,7 +108,8 @@ BEGIN_C_DECLS
 
 /*!
  * @}
- * @name Flags specifying which extra operation is needed for an equation.
+ * @name Flags specifying which extra operation related to an equation is
+ *       needed.
  * @{
  *
  * \def CS_EQUATION_POST_BALANCE
@@ -116,7 +119,10 @@ BEGIN_C_DECLS
  * \brief Compute and postprocess the Peclet number
  *
  * \def CS_EQUATION_POST_UPWIND_COEF
- * \brief Postprocess the value of the upwinding coefficient
+ * \brief Postprocess the value of the upwinding coefficient. Only useful if
+ *        variable coefficient controls the amount of upwinding. For instant,
+ *        in schemes such as Schaffeter-Gummel, the upwind portion is driven by
+ *        the local Peclet number.
  *
  * \def CS_EQUATION_POST_NORMAL_FLUX
  * \brief Postprocess the value of the normal flux across the boundary faces
