@@ -262,24 +262,15 @@ _set_key(cs_equation_param_t   *eqp,
     }
     else if (strcmp(keyval, "boomer") == 0 || strcmp(keyval, "boomer_v") == 0) {
 
-      cs_param_sles_class_t  ret_class =
-        cs_param_sles_check_class(CS_PARAM_SLES_CLASS_HYPRE);
+      cs_param_sles_class_t  wanted_class = CS_PARAM_SLES_CLASS_HYPRE;
+      if (eqp->sles_param->pcd_block_type != CS_PARAM_PRECOND_BLOCK_NONE)
+        wanted_class = CS_PARAM_SLES_CLASS_PETSC;
+
+      cs_param_sles_class_t ret_class = cs_param_sles_check_class(wanted_class);
 
       eqp->sles_param->flexible = true;
-
-      if (ret_class == CS_PARAM_SLES_CLASS_HYPRE) {
-        eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
-        eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_HYPRE;
-      }
-      else if (ret_class == CS_PARAM_SLES_CLASS_PETSC) {
-        eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
-        eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Eq. %s\n Invalid choice of AMG type.\n"
-                  " HYPRE/PETSc are not available."
-                  " Please check your settings.", __func__, eqname);
+      eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
+      eqp->sles_param->solver_class = ret_class;
 
     }
     else if (strcmp(keyval, "boomer_w") == 0) {
