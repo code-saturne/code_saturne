@@ -1995,7 +1995,7 @@ cs_matrix_log_info(const cs_matrix_t  *matrix,
     double fnorm = _frobenius_norm(matrix);
     if (fnorm > -1)
       cs_log_printf(l,
-                    _("   Frobenius norm: %11.4e\n"), fnorm);
+                    _("   Frobenius norm: %15.9e\n"), fnorm);
   }
 
   cs_log_printf(l, "\n");
