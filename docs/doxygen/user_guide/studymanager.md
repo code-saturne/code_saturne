@@ -254,8 +254,34 @@ Only the attributes `label`, `status`, `compute`, and `post` are mandatory.
 Run case options {#sec_smgr_run}
 -------------------------------
 
-Note that it is possible to run several times the same case in a given study.
-The case has to be repeated in the parameters file:
+Note that it is possible to run several times the same case in a given study
+with some variations thanks to the study manager tool. This can be a very
+powerful tool to launch parametric studies.
+
+There are three ways to modify a setting on-the-fly corresponding to the
+following nodes:
+- `<notebook>`
+- `<parametric>`
+- `<kw_args>`
+
+These nodes can be used together inside the same case. In order to modify the
+setup between two runs of the same case, `<notebook>`, `<parametric>` and
+`<kw_args>` nodes can be added as children of the considered `<case>` node. All
+of them use the attribute `args` to pass additional arguments.
+
+```{.xml}
+<study label='STUDY' status='on'>
+    <case label='CASE1' status='on' compute="on" post="on">
+        <notebook args="u_inlet_1=0.1 u_inlet_2=0.2"/>
+        <parametric args="-m grid2.med --iter-dt 0.005"/>
+        <kw_args args="--my-gradient=lsq --my-restart-100-iter"/>
+    </case>
+</study>
+```
+
+In order to define different runs relying on the same case settings but with a
+variation of some parameters, the `<case>` node has to be repeated in the xml
+file:
 
 ```{.xml}
     <study label="MyStudy1" status="on">
@@ -268,54 +294,65 @@ The case has to be repeated in the parameters file:
     </study>
 ```
 
-If nothing is done, the case is repeated without modifications. In order to
-modify the setup between two runs of the same case, `<notebook>`, `<parametric>`
-and `<kw_args>` nodes can be added as children of the considered case. All of
-them use the attribute `args` to pass additional arguments.
+If nothing is done, the case is repeated without modifications.
 
-```{.xml}
-<study label='STUDY' status='on'>
-    <case label='CASE1' status='on' compute="on" post="on">
-        <notebook args="u_inlet_1=0.1 u_inlet_2=0.2"/>
-        <parametric args="-m grid2.med --iter-dt 0.005"/>
-        <kw_args args="--my-gradient=lsq --my-restart-100-iter"/>
-    </case>
-</study>
-```
 
-These different nodes all apply a specific filter type during the __stage__
-(__initialize__) step of a case's execution (i.e. when copying data), just before
-the \ref define_domain_parameters (and \ref domain_copy_results_add) function in
-the \ref cs_user_scripts.py user scripts. They only modify the copied files in
-the __destination__ `RESU/<run_id>` directory.
+All these nodes apply a specific filter type during the __stage__
+(__initialize__) step of a case's execution (i.e. when copying data), just
+before the \ref define_domain_parameters (and \ref domain_copy_results_add)
+function in the \ref cs_user_scripts.py user scripts. They only modify the
+copied files in the __destination__ `RESU/<run_id>` directory.
 
-- `<notebook>` allows passing key-value pairs (with real-values) matching \ref
-  notebook variables already defined in the case, overriding the values in the
-  case's `setup.xml` with the provided values.
-  * They are passed to the underlying `code_saturne run` command using the
-   `--notebook-args` option.
-  * These pairs also appear as a Python dictionnary in the `domain.notebook`
-    member of the `domain` object passed to these functions.
+### Notebook variables
 
-- `<parametric>` allows passing options handled by \ref cs_parametric_setup.py
-  filter to modify the case setup.
-  * They are passed to the underlying `code_saturne run` command using the
-   `--parametric-args` option.
-  * These options also appear as a Python list in the `domain.parametric_args`
-    member of the `domain` object passed to these functions.
+`<notebook>` allows passing key-value pairs (with real-values) matching \ref
+notebook variables already defined in the case thanks to the GUI. This will
+override the values in the case's `setup.xml` with the provided values.
+* Key-values pairs are passed to the underlying `code_saturne run` command using
+  the `--notebook-args` option.
+* These key-values pairs also appear as a Python dictionnary in the
+  `domain.notebook` member of the `domain` object passed to these functions.
 
-- `<kw_args>` allows passing additional user options to
-  \ref define_domain_parameters and \ref domain_copy_results_add in
-  \ref cs_user_scripts.py.
-  * They are passed to the underlying `code_saturne run` command using the
+### Parametric options
+
+The `<parametric>` node allows passing options handled by \ref
+cs_parametric_setup.py filter to modify the case setup.
+* These options are passed to the underlying `code_saturne run` command using
+  the `--parametric-args` option.
+* These options also appear as a Python list in the `domain.parametric_args`
+  member of the `domain` object passed to these functions.
+
+Here are listed the main options available through the `<parametric>` node
+
+<table>
+<tr><th> Key                        <th> Usage
+<tr><td> `-m`, `--mesh`             <td> set the mesh name (a string) to use
+<tr><td> `--mi`, `--mesh_input`     <td> set the mesh input file (a string). This file results from a previous preprocessing stage
+<tr><td> `-a`, `--perio-angle`      <td> set the angle of rotation (a float) in case of periodicity
+<tr><td> `-r`, `--restart`          <td> set the restart directory (a string) to consider
+<tr><td> `--different-restart-mesh` <td> if set then one specifies that the restart directory corresponds to a run with a different mesh
+<tr><td> `-n`, `--iter-num`         <td> set the max. number of time iterations (an integer) to be done
+<tr><td> `--tmax`                   <td> set the final time (a float) of the simulation
+<tr><td> `--iter-dt`                <td> set the value of time step (a float)
+<tr><td> `--imrgra`                 <td> set the algorithm for the gradient reconstruction
+<tr><td> `--blencv`                 <td> between 0 and 1. Set the portion of centered scheme (0: yields to an upwind scheme. This is done variable by variable `<var>:<val>`
+</table>
+
+
+### Keywords arguments (cs_user_scripts.py)
+
+`<kw_args>` allows passing additional user options to \ref
+define_domain_parameters and \ref domain_copy_results_add in \ref
+cs_user_scripts.py.
+* They are passed to the underlying `code_saturne run` command using the
    `--kw-args` option.
-  * These options appear as a Python list in the `domain.kw_args` member of the
-    `domain` object passed to these functions.
-  * When modifying mesh or restart file selections in these functions, the
-    matching `domain.meshes`, `domain.restart`, and similar members of the
-    `domain` argument should be modified directly, rather than modifying the
-    `setup.xml` file, as the matching values have already been read and assigned
-    to `domain` at this point.
+* These options appear as a Python list in the `domain.kw_args` member of the
+  `domain` object passed to these functions.
+* When modifying mesh or restart file selections in these functions, the
+  matching `domain.meshes`, `domain.restart`, and similar members of the
+  `domain` argument should be modified directly, rather than modifying the
+  `setup.xml` file, as the matching values have already been read and assigned
+  to `domain` at this point.
 
 Submission on cluster using SLURM
 ---------------------------------
