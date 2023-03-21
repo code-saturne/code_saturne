@@ -139,9 +139,9 @@ cs_cdo_assembly_set_shift(cs_cdo_assembly_t    *asb,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Rely on the generic cs_matrix_assembler_values_add_g() function
- *         Case of scalar-valued matrices.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Rely on the generic cs_matrix_assembler_values_add_g() function.
+ *        Case of scalar-valued matrices.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -160,9 +160,9 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t                   *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Rely on the generic cs_matrix_assembler_values_add_g() function
- *         Case of vector-valued matrices with an expanded 33 block
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Rely on the generic cs_matrix_assembler_values_add_g() function.
+ *        Case of vector-valued matrices with an expanded 3x3 block.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -182,8 +182,8 @@ cs_cdo_assembly_matrix_e33_generic(const cs_sdm_t                  *m,
 #if defined(HAVE_MPI)
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Scalar-valued case. Parallel and with openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Scalar-valued case. Parallel and with openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -223,8 +223,8 @@ cs_cdo_assembly_matrix_mpis(const cs_sdm_t                   *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Scalar-valued case. Sequential and with openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Scalar-valued case. Sequential and with openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -243,9 +243,9 @@ cs_cdo_assembly_matrix_seqt(const cs_sdm_t                  *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Scalar-valued case.
- *         Sequential and without openMP.
+ * \brief Assemble a cellwise matrix into the global matrix
+ *        Scalar-valued case.
+ *        Sequential and without openMP (single thread).
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -264,11 +264,10 @@ cs_cdo_assembly_matrix_seqs(const cs_sdm_t                  *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise (no-block) matrix into the global matrix
- *         corresponding to a system of coupled equations.
- *         Scalar-valued case.
- *         Sequential and without openMP.
- *         Block matrices assembled from cellwise scalar-valued matrices
+ * \brief Assemble a cellwise (no-block) matrix into the global matrix
+ *        corresponding to a system of coupled equations.
+ *        Scalar-valued case. Sequential and without openMP.
+ *        Block matrices assembled from cellwise scalar-valued matrices
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -287,11 +286,10 @@ cs_cdo_assembly_matrix_sys_seqs(const cs_sdm_t                  *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise (no-block) matrix into the global matrix
- *         corresponding to a system of coupled equations.
- *         Scalar-valued case.
- *         Sequential and with openMP.
- *         Block matrices assembled from cellwise scalar-valued matrices
+ * \brief Assemble a cellwise (no-block) matrix into the global matrix
+ *        corresponding to a system of coupled equations.
+ *        Scalar-valued case. Sequential and with openMP.
+ *        Block matrices assembled from cellwise scalar-valued matrices
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -311,8 +309,8 @@ cs_cdo_assembly_matrix_sys_seqt(const cs_sdm_t                  *m,
 #if defined(HAVE_MPI)
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Scalar-valued case. Parallel without openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Scalar-valued case. Parallel without openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -353,9 +351,9 @@ cs_cdo_assembly_eblock33_matrix_seqs(const cs_sdm_t               *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Case of a block 3x3 entries. Expand each row.
- *         Sequential run with openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Case of a block 3x3 entries. Expand each row.
+ *        Sequential run with openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -366,18 +364,18 @@ cs_cdo_assembly_eblock33_matrix_seqs(const cs_sdm_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_assembly_eblock33_matrix_seqt(const cs_sdm_t               *m,
-                                     const cs_lnum_t              *dof_ids,
-                                     const cs_range_set_t         *rset,
-                                     cs_cdo_assembly_t            *asb,
-                                     cs_matrix_assembler_values_t *mav);
+cs_cdo_assembly_eblock33_matrix_seqt(const cs_sdm_t                *m,
+                                     const cs_lnum_t               *dof_ids,
+                                     const cs_range_set_t          *rset,
+                                     cs_cdo_assembly_t             *asb,
+                                     cs_matrix_assembler_values_t  *mav);
 
 #if defined(HAVE_MPI)
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Case of a block 3x3 entries. Expand each row.
- *         Parallel run without openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Case of a block 3x3 entries. Expand each row.
+ *        Parallel run without openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -388,11 +386,11 @@ cs_cdo_assembly_eblock33_matrix_seqt(const cs_sdm_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_assembly_eblock33_matrix_mpis(const cs_sdm_t               *m,
-                                     const cs_lnum_t              *dof_ids,
-                                     const cs_range_set_t         *rset,
-                                     cs_cdo_assembly_t            *asb,
-                                     cs_matrix_assembler_values_t *mav);
+cs_cdo_assembly_eblock33_matrix_mpis(const cs_sdm_t                *m,
+                                     const cs_lnum_t               *dof_ids,
+                                     const cs_range_set_t          *rset,
+                                     cs_cdo_assembly_t             *asb,
+                                     cs_matrix_assembler_values_t  *mav);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -418,9 +416,9 @@ cs_cdo_assembly_eblock33_matrix_mpit(const cs_sdm_t               *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Case of a block 3x3 entries. Expand each row.
- *         Sequential run without openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Case of a block 3x3 entries. Expand each row.
+ *        Sequential run without openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -431,17 +429,17 @@ cs_cdo_assembly_eblock33_matrix_mpit(const cs_sdm_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_assembly_block33_matrix_seqs(const cs_sdm_t               *m,
-                                    const cs_lnum_t              *dof_ids,
-                                    const cs_range_set_t         *rset,
-                                    cs_cdo_assembly_t            *asb,
-                                    cs_matrix_assembler_values_t *mav);
+cs_cdo_assembly_block33_matrix_seqs(const cs_sdm_t                *m,
+                                    const cs_lnum_t               *dof_ids,
+                                    const cs_range_set_t          *rset,
+                                    cs_cdo_assembly_t             *asb,
+                                    cs_matrix_assembler_values_t  *mav);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Case of a block 3x3 entries. Expand each row.
- *         Sequential run with openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Case of a block 3x3 entries. Expand each row.
+ *        Sequential run with openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -452,18 +450,18 @@ cs_cdo_assembly_block33_matrix_seqs(const cs_sdm_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_assembly_block33_matrix_seqt(const cs_sdm_t               *m,
-                                    const cs_lnum_t              *dof_ids,
-                                    const cs_range_set_t         *rset,
-                                    cs_cdo_assembly_t            *asb,
-                                    cs_matrix_assembler_values_t *mav);
+cs_cdo_assembly_block33_matrix_seqt(const cs_sdm_t                *m,
+                                    const cs_lnum_t               *dof_ids,
+                                    const cs_range_set_t          *rset,
+                                    cs_cdo_assembly_t             *asb,
+                                    cs_matrix_assembler_values_t  *mav);
 
 #if defined(HAVE_MPI)
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Case of a block 3x3 entries. Expand each row.
- *         Parallel run without openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Case of a block 3x3 entries. Expand each row.
+ *        Parallel run without openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -474,17 +472,17 @@ cs_cdo_assembly_block33_matrix_seqt(const cs_sdm_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_assembly_block33_matrix_mpis(const cs_sdm_t               *m,
-                                    const cs_lnum_t              *dof_ids,
-                                    const cs_range_set_t         *rset,
-                                    cs_cdo_assembly_t            *asb,
-                                    cs_matrix_assembler_values_t *mav);
+cs_cdo_assembly_block33_matrix_mpis(const cs_sdm_t                *m,
+                                    const cs_lnum_t               *dof_ids,
+                                    const cs_range_set_t          *rset,
+                                    cs_cdo_assembly_t             *asb,
+                                    cs_matrix_assembler_values_t  *mav);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Case of a block 3x3 entries. Expand each row.
- *         Parallel run with openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Case of a block 3x3 entries. Expand each row.
+ *        Sequential run without openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -495,11 +493,11 @@ cs_cdo_assembly_block33_matrix_mpis(const cs_sdm_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_assembly_block33_matrix_mpit(const cs_sdm_t               *m,
-                                    const cs_lnum_t              *dof_ids,
-                                    const cs_range_set_t         *rset,
-                                    cs_cdo_assembly_t            *asb,
-                                    cs_matrix_assembler_values_t *mav);
+cs_cdo_assembly_block33_matrix_mpit(const cs_sdm_t                *m,
+                                    const cs_lnum_t               *dof_ids,
+                                    const cs_range_set_t          *rset,
+                                    cs_cdo_assembly_t             *asb,
+                                    cs_matrix_assembler_values_t  *mav);
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
