@@ -3994,7 +3994,7 @@ cs_restart_log_setup(void)
                   "Checkpoint / restart:\n"
                   "--------------------\n"
                   "\n"
-                  "  Checkpoint frequency: %s"), cf_str);
+                  "  Checkpoint frequency: %s\n"), cf_str);
 
   if (_checkpoint_t_interval > 0)
     cs_log_printf(CS_LOG_SETUP,
@@ -4004,7 +4004,6 @@ cs_restart_log_setup(void)
     cs_log_printf(CS_LOG_SETUP,
                   _("                      : every %g s (wall-clock time)\n"),
                   _checkpoint_wt_interval);
-
 }
 
 /*----------------------------------------------------------------------------*/

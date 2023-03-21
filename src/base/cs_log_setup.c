@@ -229,10 +229,10 @@ cs_log_setup(void)
 
   cs_restart_log_setup();
   cs_log_printf(CS_LOG_SETUP,
-                _("  read auxiliary:       %d"),
+                _("  read auxiliary:       %d\n"),
                 cs_glob_restart_auxiliary->read_auxiliary);
   cs_log_printf(CS_LOG_SETUP,
-                _("  write auxiliary:      %d"),
+                _("  write auxiliary:      %d\n"),
                 cs_glob_restart_auxiliary->write_auxiliary);
 
   _log_global_model_options();
