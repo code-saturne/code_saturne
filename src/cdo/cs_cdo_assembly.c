@@ -2201,7 +2201,7 @@ cs_cdo_assembly_eblock33_matrix_mpit(const cs_sdm_t               *m,
       row->val = _vxyz[k];
 
       if (row->l_id < 0 || row->l_id >= rset->n_elts[0])
-        _assemble_row_scal_ds(mav, ma, row);
+        _assemble_row_scal_dt(mav, ma, row);
 
       else {
 
@@ -2889,7 +2889,7 @@ cs_cdo_assembly_eblock_matrix_mpit(const cs_sdm_t                *m,
       row->val = _vpointer[ki];
 
       if (row->l_id < 0 || row->l_id >= rset->n_elts[0])
-        _assemble_row_scal_ds(mav, ma, row);
+        _assemble_row_scal_dt(mav, ma, row);
 
       else {
 
