@@ -34,11 +34,11 @@
 !> \f$ \centf \f$ of the variable \f$ P \f$ and its diffusive flux \f$ Q \f$
 !> are written as:
 !> \f[
-!> P_\centf = A_P^g + B_P^g P_\centi
+!> P_{\face} = A_P^g + B_P^g P_{\centi}
 !> \f]
 !> and
 !> \f[
-!> Q_\centf = A_P^f + B_P^f P_\centi
+!> Q_{\face} = A_P^f + B_P^f P_{\centi}
 !> \f]
 !> where \f$ P_\centi \f$ is the value of the variable \f$ P \f$ at the
 !> neighboring cell.
@@ -48,14 +48,14 @@
 !> - for a vector field such as the velocity \f$ \vect{u} \f$ the boundary
 !>   conditions may read:
 !>   \f[
-!>   \vect{u}_\centf = \vect{A}_u^g + \tens{B}_u^g \vect{u}_\centi
+!>   \vect{u}_{\face} = \vect{A}_u^g + \tens{B}_u^g \vect{u}_{\centi}
 !>   \f]
 !>   and
 !>   \f[
-!>   \vect{Q}_\centf = \vect{A}_u^f + \tens{B}_u^f \vect{u}_\centi
+!>   \vect{Q}_{\face} = \vect{A}_u^f + \tens{B}_u^f \vect{u}_{\centi}
 !>   \f]
 !>   where \f$ \tens{B}_u^g \f$ and \f$ \tens{B}_u^f \f$ are 3x3 tensor matrix
-!>   which coupled veclocity components next to a boundary.
+!>   which coupled velocity components next to a boundary.
 !>
 !> Please refer to the <a href="../../theory.pdf#cpltrg"><b>clptrg</b></a> section
 !> of the theory guide for more informations.
@@ -84,8 +84,7 @@
 !>                               - rcodcl(2) value of the exterior exchange
 !>                                 coefficient (infinite if no exchange)
 !>                               - rcodcl(3) value flux density
-!>                                 (negative if gain) in w/m2 or roughness
-!>                                 in m if icodcl=6
+!>                                 (negative if gain) in w/m2
 !>                                 -# for the velocity \f$ (\mu+\mu_T)
 !>                                    \gradv \vect{u} \cdot \vect{n}  \f$
 !>                                 -# for the pressure \f$ \Delta t
@@ -97,12 +96,11 @@
 !>                               of boundary cells
 !> \param[in]     rijipb        value of \f$ R_{ij} \f$ at \f$ \centip \f$
 !>                               of boundary cells
-!> \param[out]    visvdr        viscosite dynamique ds les cellules
-!>                               de bord apres amortisst de v driest
-!> \param[out]    hbord         coefficients d'echange aux bords
-!>
-!> \param[in]     theipb        boundary temperature in \f$ \centip \f$
-!>                               (more exaclty the energetic variable)
+!> \param[out]    visvdr        dynamic viscosity after V. Driest damping in
+!>                               boundary cells
+!> \param[out]    hbord         exchange coefficient at boundary
+!> \param[in]     theipb        value of thermal scalar at \f$ \centip \f$
+!>                               of boundary cells
 !_______________________________________________________________________________
 
 subroutine clptrg &

@@ -34,28 +34,28 @@
 !> \f$ \centf \f$ of the variable \f$ P \f$ and its diffusive flux \f$ Q \f$
 !> are written as:
 !> \f[
-!> P_\centf = A_P^g + B_P^g P_\centi
+!> P_{\face} = A_P^g + B_P^g P_{\centi}
 !> \f]
 !> and
 !> \f[
-!> Q_\centf = A_P^f + B_P^f P_\centi
+!> Q_{\face} = A_P^f + B_P^f P_{\centi}
 !> \f]
 !> where \f$ P_\centi \f$ is the value of the variable \f$ P \f$ at the
 !> neighboring cell.
 !>
 !> Warning:
 !>
-!> - for a vector field such as the veclocity \f$ \vect{u} \f$ the boundary
+!> - for a vector field such as the velocity \f$ \vect{u} \f$ the boundary
 !>   conditions may read:
 !>   \f[
-!>   \vect{u}_\centf = \vect{A}_u^g + \tens{B}_u^g \vect{u}_\centi
+!>   \vect{u}_{\face} = \vect{A}_u^g + \tens{B}_u^g \vect{u}_{\centi}
 !>   \f]
 !>   and
 !>   \f[
-!>   \vect{Q}_\centf = \vect{A}_u^f + \tens{B}_u^f \vect{u}_\centi
+!>   \vect{Q}_{\face} = \vect{A}_u^f + \tens{B}_u^f \vect{u}_{\centi}
 !>   \f]
 !>   where \f$ \tens{B}_u^g \f$ and \f$ \tens{B}_u^f \f$ are 3x3 tensor matrix
-!>   which coupled veclocity components next to a boundary.
+!>   which coupled velocity components next to a boundary.
 !>
 !> Please refer to the
 !> <a href="../../theory.pdf#wallboundary"><b>wall boundary conditions</b></a>

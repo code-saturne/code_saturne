@@ -78,14 +78,14 @@ entering the linear system of equations that the code will solve. For any variab
 The value at the boundary face $\fib$ of the variable $\varia$ is
 then defined as:
 \begin{equation}\label{eq:bndcnd:coef_g_def}
-\varia_\fib \equiv A^g_\fib + B^g_\fib \varia_\centip.
+\varia_\fib \equiv A^g_\fib + B^g_\fib \varia(\centip).
 \end{equation}
 %
 \item $\left( A^f_\ib , \, B^f_\ib\right)$ used by the diffusion operator.
 The value at the boundary face $\fib$ of the diffusive flux $q_\ib$ of the variable $\varia$
 is then defined as (see Equation \eqref{eq:spadis:boundary_flux}):
 \begin{equation}\label{eq:bndcnd:coef_f_def}
-q_\ib \equiv \dfrac{D_\ib \left( K_\fib , \, \varia \right)}{\norm{\vect{S}}_\fib} = -\left(A^f_\ib + B^f_\ib  \varia_\centip\right).
+q_\ib \equiv \dfrac{D_\ib \left( K_\fib , \, \varia \right)}{\norm{\vect{S}}_\fib} = -\left(A^f_\ib + B^f_\ib  \varia(\centip)\right).
 \end{equation}
 Note that the diffusive boundary coefficients are oriented, which means that they are such that if $D_\ib \left( K_\fib , \, \varia \right) $ is positive,
 this flux is gained by $\varia_\celli$.
@@ -102,12 +102,12 @@ The definitions are recalled on \figurename~\ref{fig:bndcnd:boundary_flux}.
 \begin{example}\label{sec:bndcnd:intro}
 The heat flux $q_w$ from a solid wall to a laminar flow is defined and discretised as
 \begin{equation}
-q_w = \lambda \grad T \cdot n_\ib = - \lambda \dfrac{T_\centip -T_\centf}{ \overline{\centip \centf}} = -h_{int} \left(T_\centip - T_\centf \right),
+q_w = \lambda \grad T \cdot n_\ib = - \lambda \dfrac{T(\centip) -T(\centf)}{ \norm{\centf - \centip}} = -h_{int} \left(T(\centip) - T(\centf) \right),
 \end{equation}
-where $h_{int} / \overline{\centip \centf}$ is the exchange coefficient between the wall and the fluid point $\centip$.
+where $h_{int} / \norm{\centf - \centip}$ is the exchange coefficient between the wall and the fluid point $\centip$.
 
 \begin{itemize}
-\item If the wall temperature $T_w$ is known, $T_\centf =T_w$ is set as Dirichlet condition, $q_w$
+\item If the wall temperature $T_w$ is known, $T(\centf) =T_w$ is set as Dirichlet condition, $q_w$
 will be a result of the simulation, and the gradient and diffusive flux coefficients
 are as follows:
 \begin{equation}
@@ -128,7 +128,7 @@ B^f_\ib & = & h_{int}.
 \end{array}
 \end{equation}
 
-\item If the wall heat flux $q_w$ is known, this is a Neumann condition and $T_\centf = T_w$
+\item If the wall heat flux $q_w$ is known, this is a Neumann condition and $T(\centf) = T_w$
 will be a result of the simulation and the gradient and diffusive flux coefficients
 are as follows:
 \begin{equation}
@@ -308,11 +308,11 @@ $D^{imp}_\ib$ must be specified by the user. The boundary type code is $3$ (see 
 
 %-------------------------------------------------------------------------------
 \subsection{Mixed or Robin boundary conditions}
-As explained in the introduction \ref{sec:bndcnd:intro}, the simple case of a heat flux $q_w$ from a solid wall reads: $q_w = \lambda \grad T \cdot \vect{n}_\ib = - \lambda \dfrac{T_\centip - T_\centf}{\overline{\centip \centf}} = -h_{int} \left( T_\centip - T_\centf \right)$ where $h_{int} = \dfrac{\lambda}{\overline{\centip \centf}}$ is displayed in \tablename~ \ref{tab:bndcnd:hint_phi_condli}.
-As presented in \S~ \ref{sec:bndcnd:dirichlet_bc}, Dirichlet condition $T_\centf = T_w$ simply leads to $A^f = - h_{int} T_w$ and $B^f = h_{int}$.
+As explained in the introduction \ref{sec:bndcnd:intro}, the simple case of a heat flux $q_w$ from a solid wall reads: $q_w = \lambda \grad T \cdot \vect{n}_\ib = - \lambda \dfrac{T(\centip) - T(\centf)}{\norm{\centf - \centip}} = -h_{int} \left( T(\centip) - T(\centf) \right)$ where $h_{int} = \dfrac{\lambda}{\norm{\centf - \centip}}$ is displayed in \tablename~ \ref{tab:bndcnd:hint_phi_condli}.
+As presented in \S~ \ref{sec:bndcnd:dirichlet_bc}, Dirichlet condition $T(\centf) = T_w$ simply leads to $A^f = - h_{int} T_w$ and $B^f = h_{int}$.
 In some cases, heat transfer outside the flow domain is described by a one-dimensional conduction equation $q = -h_{ext} \left(T_{REF} - T_w \right)$
 in which some reference temperature $T_{REF}$ is given and the coefficient $h_{ext}$ is known from an analytical or experimental correlation.
-Equaling this to the heat flux computed in the first fluid cell at the boundary gives $ h_{ext} \left(T_{REF} - T_w \right) = h_{int} \left( T_\centip - T_\centf \right)$. This relation between the variable and its gradient at the boundary is called a Robin or mixed boundary condition.
+Equaling this to the heat flux computed in the first fluid cell at the boundary gives $ h_{ext} \left(T_{REF} - T_w \right) = h_{int} \left( T(\centip) - T(\centf) \right)$. This relation between the variable and its gradient at the boundary is called a Robin or mixed boundary condition.
 
 More generally, to impose an external Dirichlet $\varia^{imp, \, ext}$ at some distance outside the boundary face,
 this is done by a user prescribed external coefficient $h_{ext}$
@@ -369,7 +369,7 @@ B^f_\ib & = &  \dfrac{h_{int}}{1+ CFL},
 \right.
 \end{array}
 \end{equation}
-where $CFL \equiv \dfrac{C \Delta t}{\overline{\centip \centf} }$.
+where $CFL \equiv \dfrac{C \Delta t}{\norm{\centf - \centip} }$.
 
 \begin{remark}
 Both $C$ and $\varia^n_\fib$ must be specified by the user, the boundary code is $2$ (see \tablename~\ref{tab:ICODCLadm_condli}).
@@ -437,7 +437,7 @@ thermal wall flux to the temperature within the first cell.
 \subsection{Velocity boundary condition for smooth walls and rough walls}
 We assume it is projected onto the tangent plane to the wall (if it is not, then the code projects it).
 The fluid velocity in the reference frame attached to the wall ("relative" velocity) projected to the wall writes
-$\vect{u}^r _\centip \equiv \left(\tens{1} - \vect{n} \otimes \vect{n} \right)\cdot \left( \vect{u}_\centip - \vect{v}_{wall} \right)$.
+$\vect{u}^r (\centip) \equiv \left(\tens{1} - \vect{n} \otimes \vect{n} \right)\cdot \left( \vect{u}(\centip) - \vect{v}_{wall} \right)$.
 
 The orthonormal coordinate system attached to the wall writes
 $\hat {\mathcal R}=(\vect{t}, \, -\vect{n}, \, \vect{b})$:
@@ -448,7 +448,7 @@ $\hat {\mathcal R}=(\vect{t}, \, -\vect{n}, \, \vect{b})$:
 \item [$\bullet$] $-\vect{n}$ is the unit vector orthogonal to the wall and directed towards the interior of the computational domain,
 \item[$\bullet$] $\vect{b}$ is the unit vector which completes the positively oriented coordinate system.
 \end{itemize}
-In this reference-frame the wall distance of the cell centre to the wall $\overline{\centip \centf}$ is denoted by $y$.
+In this reference-frame the wall distance of the cell centre to the wall $\norm{\centf - \centip}$ is denoted by $y$.
 
 The objective of wall functions
 is to increase the exchange coefficient
@@ -614,7 +614,7 @@ When specifying a rough wall function with $z_0$ as roughness, the value of $\fr
 The previous sections can be summarized as follows:
 
 \begin{equation}
-\tens{\tau} \cdot \vect{n} = \dfrac{\mu}{\overline{\centip \centf} } \dfrac{y^+}{u^+} \left(\tens{1} - \vect{n} \otimes \vect{n} \right) \cdot \left(\vect{u}_\centip - \vect{u}_{wall} \right)
+  \tens{\tau} \cdot \vect{n} = \dfrac{\mu}{\norm{\centf - \centip} } \dfrac{y^+}{u^+} \left(\tens{1} - \vect{n} \otimes \vect{n} \right) \cdot \left(\vect{u}(\centip) - \vect{u}_{wall} \right)
 \end{equation}
 %
 where the rescaling factor $\frac{y^+}{u^+}$ depends on the wall function and is given in \eqref{eq:bndcnd:ypup_1scale} or \eqref{eq:bndcnd:ypup_2scale}. Note that the wall shear stress is therefore parallel to the wall and fully implicit if the $\theta$-scheme on the velocity is implicit.
@@ -634,7 +634,7 @@ The internal pair of boundary condition coefficients for the diffusive term for 
 \end{equation}
 where
 \begin{equation}
-h_{fluid} = \dfrac{\mu}{\overline{\centip \centf} } \dfrac{y^+}{u^+}.
+h_{fluid} = \dfrac{\mu}{\norm{\centf - \centip} } \dfrac{y^+}{u^+}.
 \end{equation}
 
 %-------------------------------------------------------------------------------
@@ -915,7 +915,7 @@ is then integrated under the same hypothesis, and the law of
 The previous sections can be summarized as follows:
 
 \begin{equation}
-q_\ib = -\dfrac{C \mu}{\overline{\centip \centf} } \dfrac{y^+}{\varia^+} \left(\varia_\centip - \varia_{wall} \right)
+q_\ib = -\dfrac{C \mu}{\norm{\centf - \centip} } \dfrac{y^+}{\varia^+} \left(\varia(\centip) - \varia_{wall} \right)
 \end{equation}
 %
 where the rescaling factor $\frac{y^+}{\varia^+}$ depends on the wall function and is given in \eqref{eq:bndcnd:wallfunctions_t_3layers} if $\sigma >0.1$ or \eqref{eq:bndcnd:wallfunctions_t_2layers} if $\sigma \leq 0.1$.
@@ -929,7 +929,7 @@ B^f_\ib & = & h_{fluid},
 \end{array}
 \right.
 \end{equation}
-where $h_{fluid} = \dfrac{C \mu}{\overline{\centip \centf} } \dfrac{y^+}{\varia^+} $.
+where $h_{fluid} = \dfrac{C \mu}{\norm{\centf - \centip} } \dfrac{y^+}{\varia^+} $.
 
 %-------------------------------------------------------------------------------
 \subsection{Outlet boundary condition on the pressure}\label{sec:bndcnd:outlet_pressure}
@@ -1029,7 +1029,7 @@ Neglecting the tangential velocity component at the entering faces ($\left(\rho 
 \left( \widetilde{\vect{u}} \cdot \vect{n}
 - \dfrac{\Delta t}{\rho} \der{\delta P }{n} \right)_\face.
 \end{equation}
-Noting that $  \left. \der{\delta P }{n} \right|_{\face} = \dfrac{\delta P_\face -  \delta P_\celli }{\overline{\centip \centf}}$,  \eqref{eq:bndcnd:pressure_increment_simple} is rewritten as:
+Noting that $  \left. \der{\delta P }{n} \right|_{\face} = \dfrac{\delta P_\face -  \delta P_\celli }{\norm{\centf - \centip}}$,  \eqref{eq:bndcnd:pressure_increment_simple} is rewritten as:
 \begin{equation}\label{eq:bndcnd:pressure_increment_coefs_bernoulli}
 \delta P_\face = A^g_{\delta P} + B^g_{\delta P} \delta P_\celli,
 \end{equation}
