@@ -2996,8 +2996,12 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                            mq->cell_vol);
 
   /* If no points belonging to the plane are given, stop here */
-  if (cen_points == NULL)
+  if (cen_points == NULL) {
+    cs_array_real_copy(3*m->n_i_faces, mq->i_face_cog, mq->i_f_face_cog_0);
+    cs_array_real_copy(3*m->n_i_faces, mq->i_face_cog, mq->i_f_face_cog_1);
+    cs_array_real_copy(3*m->n_b_faces, mq->b_face_cog, mq->b_f_face_cog);
     return;
+  }
 
   cs_real_23_t *i_f_face_cell_normal;
   BFT_MALLOC(i_f_face_cell_normal, m->n_i_faces, cs_real_23_t);
