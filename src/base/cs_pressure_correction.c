@@ -2672,6 +2672,8 @@ _pressure_correction_fv(int        iterns,
                               tempk);
   }
 
+  BFT_FREE(pk1);
+
   /* Save some information */
   if (idilat == 2 && ieos != CS_EOS_NONE) {
     /* CFL conditions related to the pressure equation */
