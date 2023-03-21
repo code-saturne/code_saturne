@@ -139,6 +139,52 @@ struct _cs_cdo_assembly_t {
 
 };
 
+/*============================================================================
+ * Inlined private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Expand small 3x3 matrices into rows which are sent to assembler
+ *
+ * \param[in]      bi         id of the "i" block
+ * \param[in]      bj         id of the "j" block
+ * \param[in]      m          pointer to the matrix structure
+ * \param[in, out] xyz_row    rows gathering expanded matrix values
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_fill_e33_rows(int                 bi,
+               int                 bj,
+               const cs_sdm_t     *m,
+               cs_real_t          *xyz_row[3])
+{
+  /* m(bi,bj) is a small square matrices of size 3 */
+
+  const cs_sdm_t *const  mIJ = cs_sdm_get_block(m, bi, bj);
+  const cs_real_t *const  mIJ_vals = mIJ->val;
+  const int  s = 3*bj;
+
+  /* First row (related to xx, xy and xz values) */
+
+  xyz_row[0][s  ] = mIJ_vals[0];
+  xyz_row[0][s+1] = mIJ_vals[1];
+  xyz_row[0][s+2] = mIJ_vals[2];
+
+  /* Second row (related to yx, yy and yz values) */
+
+  xyz_row[1][s  ] = mIJ_vals[3];
+  xyz_row[1][s+1] = mIJ_vals[4];
+  xyz_row[1][s+2] = mIJ_vals[5];
+
+  /* Third row (related to zx, zy and zz values) */
+
+  xyz_row[2][s  ] = mIJ_vals[6];
+  xyz_row[2][s+1] = mIJ_vals[7];
+  xyz_row[2][s+2] = mIJ_vals[8];
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Binary search for a given local id in a given array of
@@ -318,17 +364,17 @@ _add_scal_values_atomic(const cs_cdo_assembly_row_t    *row,
 /*!
  * \brief Function pointer for adding values to a MSR matrix.
  *
- *  Specific case:
- *        CDO schemes with openMP critical section and scalar-valued quantities
+ * Specific case:
+ *  CDO schemes with openMP critical section and scalar-valued quantities
  *
- * \warning  The matrix pointer must point to valid data when the selection
- *           function is called, so the life cycle of the data pointed to
- *           should be at least as long as that of the assembler values
- *           structure.
+ * \warning The matrix pointer must point to valid data when the selection
+ *          function is called. Be careful to the life cycle of the data. This
+ *          should be at least as long as that of the assembler values
+ *          structure.
  *
- * \remark  Note that we pass column indexes (not ids) here; as the
- *          caller is already assumed to have identified the index
- *          matching a given column id.
+ * \remark Note that we pass column indexes (not ids) here; as the caller is
+ *         already assumed to have identified the index matching a given column
+ *         id.
  *
  * \param[in]      row         pointer to a cs_cdo_assembly_row_t type
  * \param[in, out] matrix_p    untyped pointer to matrix description structure
@@ -346,10 +392,10 @@ _add_scal_values_critical(const cs_cdo_assembly_row_t    *row,
 
   const cs_matrix_struct_dist_t  *ms = matrix->structure;
 
-  /* Update the diagonal value */
-
 # pragma omp critical
   {
+    /* Update the diagonal value */
+
     mc->_d_val[row->l_id] += row->val[row->i];
 
     /* Update the extra-diagonal values */
@@ -370,14 +416,14 @@ _add_scal_values_critical(const cs_cdo_assembly_row_t    *row,
  * In the specific case of CDO system, one assumes predefined choices in
  * order to get a more optimized version of this function
  *
- * \param[in, out]  ma     pointer to matrix assembler values structure
- * \param[in, out]  row    pointer to a cs_cdo_assembly_row_t structure
+ * \param[in, out] ma     pointer to matrix assembler values structure
+ * \param[in, out] row    pointer to a cs_cdo_assembly_row_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
-_set_col_idx_scal_l(const cs_matrix_assembler_t     *ma,
-                    cs_cdo_assembly_row_t           *row)
+_set_col_idx_scal_loc(const cs_matrix_assembler_t     *ma,
+                      cs_cdo_assembly_row_t           *row)
 {
   const cs_lnum_t  l_r_id = row->l_id; /* g_r_id - ma->l_range[0]; */
   const cs_lnum_t  l_start = ma->r_idx[l_r_id], l_end = ma->r_idx[l_r_id+1];
@@ -409,7 +455,7 @@ _set_col_idx_scal_l(const cs_matrix_assembler_t     *ma,
 /*!
  * \brief Set the column index for each entry of a row
  *        Case where the row belong to the local rank but a part of the columns
- *        belong to a distant rank. Hence the naming *_ld
+ *        belong to a distant rank. Hence the naming *_locdist
  *
  * See \ref cs_matrix_assembler_values_add_g which performs the same operations
  * In the specific case of CDO system, one assumes predefined choices in
@@ -421,8 +467,8 @@ _set_col_idx_scal_l(const cs_matrix_assembler_t     *ma,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-_set_col_idx_scal_ld(const cs_matrix_assembler_t    *ma,
-                     cs_cdo_assembly_row_t          *row)
+_set_col_idx_scal_locdist(const cs_matrix_assembler_t    *ma,
+                          cs_cdo_assembly_row_t          *row)
 {
   assert(ma->d_r_idx != NULL); /* local-id-based function, need to adapt */
 
@@ -434,7 +480,7 @@ _set_col_idx_scal_ld(const cs_matrix_assembler_t    *ma,
 
   /* Loop on columns to fill col_idx for extra-diag entries */
 
-  for (int j = 0; j < row->i; j++) {
+  for (int j = 0; j < row->i; j++) { /* Before the diag. */
 
     const cs_gnum_t g_c_id = row->col_g_id[j];
 
@@ -459,7 +505,7 @@ _set_col_idx_scal_ld(const cs_matrix_assembler_t    *ma,
 
   } /* Loop on columns of the row */
 
-  for (int j = row->i + 1; j < row->n_cols; j++) {
+  for (int j = row->i + 1; j < row->n_cols; j++) { /* After the diag. */
 
     const cs_gnum_t g_c_id = row->col_g_id[j];
 
@@ -484,166 +530,22 @@ _set_col_idx_scal_ld(const cs_matrix_assembler_t    *ma,
 
   } /* Loop on columns of the row */
 }
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Add values to a matrix assembler values structure using global
- *        row and column ids.
- *        Case where the row does not belong to the local rank.
- *
- * See \ref cs_matrix_assembler_values_add_g which performs the same operations
- * In the specific case of CDO system, one assumes predefined choices in
- * order to get a more optimized version of this function
- *
- * \param[in, out]  mav    pointer to matrix assembler values structure
- * \param[in]       ma     pointer to matrix assembler values structure
- * \param[in]       row    pointer to a cs_cdo_assembly_row_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-_assemble_row_scal_dt(cs_matrix_assembler_values_t       *mav,
-                      const cs_matrix_assembler_t        *ma,
-                      const cs_cdo_assembly_row_t        *row)
-{
-  /* Case where coefficient is handled by other rank. No need to call
-     add_values() function in this case */
-
-  assert(row->g_id < ma->l_range[0] || row->g_id >= ma->l_range[1]);
-
-  const cs_lnum_t  e_r_id = _g_binary_search(ma->coeff_send_n_rows,
-                                             row->g_id,
-                                             ma->coeff_send_row_g_id);
-  const cs_lnum_t  r_start = ma->coeff_send_index[e_r_id];
-  const int  n_e_rows = ma->coeff_send_index[e_r_id+1] - r_start;
-  const cs_gnum_t  *coeff_send_g_id = ma->coeff_send_col_g_id + r_start;
-
-  /* Diagonal term */
-
-  const cs_lnum_t  e_diag_id = r_start + _g_binary_search(n_e_rows,
-                                                          row->g_id,
-                                                          coeff_send_g_id);
-
-  /* Now add values to send coefficients */
-
-# pragma omp atomic
-  mav->coeff_send[e_diag_id] += row->val[row->i];
-
-  /* Loop on extra-diagonal entries */
-
-  for (int j = 0; j < row->i; j++) { /* Lower-part */
-
-    const cs_lnum_t e_id = r_start + _g_binary_search(n_e_rows,
-                                                      row->col_g_id[j],
-                                                      coeff_send_g_id);
-
-    /* Now add values to send coefficients */
-
-#   pragma omp atomic
-    mav->coeff_send[e_id] += row->val[j];
-
-  }
-
-  for (int j = row->i + 1; j < row->n_cols; j++) { /* Upper-part */
-
-    const cs_lnum_t e_id = r_start + _g_binary_search(n_e_rows,
-                                                      row->col_g_id[j],
-                                                      coeff_send_g_id);
-
-    /* Now add values to send coefficients */
-
-#   pragma omp atomic
-    mav->coeff_send[e_id] += row->val[j];
-
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Add values to a matrix assembler values structure using global
- *        row and column ids.
- *        Case where the row does not belong to the local rank. No openMP.
- *
- * See \ref cs_matrix_assembler_values_add_g which performs the same operations
- * In the specific case of CDO system, one assumes predefined choices in
- * order to get a more optimized version of this function
- *
- * \param[in, out]  mav    pointer to matrix assembler values structure
- * \param[in]       ma     pointer to matrix assembler values structure
- * \param[in]       row    pointer to a cs_cdo_assembly_row_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-_assemble_row_scal_ds(cs_matrix_assembler_values_t       *mav,
-                      const cs_matrix_assembler_t        *ma,
-                      const cs_cdo_assembly_row_t        *row)
-{
-  /* Case where coefficient is handled by other rank. No need to call
-     add_values() function in this case */
-
-  assert(row->g_id < ma->l_range[0] || row->g_id >= ma->l_range[1]);
-
-  const cs_lnum_t  e_r_id = _g_binary_search(ma->coeff_send_n_rows,
-                                             row->g_id,
-                                             ma->coeff_send_row_g_id);
-  const cs_lnum_t  r_start = ma->coeff_send_index[e_r_id];
-  const int  n_e_rows = ma->coeff_send_index[e_r_id+1] - r_start;
-  const cs_gnum_t  *coeff_send_g_id = ma->coeff_send_col_g_id + r_start;
-
-  /* Diagonal term */
-
-  const cs_lnum_t  e_diag_id = r_start + _g_binary_search(n_e_rows,
-                                                          row->g_id,
-                                                          coeff_send_g_id);
-
-  /* Now add values to send coefficients */
-
-  mav->coeff_send[e_diag_id] += row->val[row->i];
-
-  /* Loop on extra-diagonal entries */
-
-  for (int j = 0; j < row->i; j++) { /* Lower-part */
-
-    const cs_lnum_t e_id = r_start + _g_binary_search(n_e_rows,
-                                                      row->col_g_id[j],
-                                                      coeff_send_g_id);
-
-    /* Now add values to send coefficients */
-
-    mav->coeff_send[e_id] += row->val[j];
-
-  }
-
-  for (int j = row->i + 1; j < row->n_cols; j++) { /* Upper-part */
-
-    const cs_lnum_t e_id = r_start + _g_binary_search(n_e_rows,
-                                                      row->col_g_id[j],
-                                                      coeff_send_g_id);
-
-    /* Now add values to send coefficients */
-
-    mav->coeff_send[e_id] += row->val[j];
-
-  }
-}
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Function pointer for adding values to a MSR matrix.
  *
- *  Specific case:
- *        CDO schemes with no openMP and vector-valued quantities
+ * Specific case:
+ *  CDO schemes with no openMP and vector-valued quantities
  *
- * \warning  The matrix pointer must point to valid data when the selection
- *           function is called, so the life cycle of the data pointed to
- *           should be at least as long as that of the assembler values
- *           structure.
+ * \warning The matrix pointer must point to valid data when the selection
+ *          function is called, so the life cycle of the data pointed to should
+ *          be at least as long as that of the assembler values structure.
  *
- * \remark  Note that we pass column indexes (not ids) here; as the
- *          caller is already assumed to have identified the index
- *          matching a given column id.
+ * \remark Note that we pass column indexes (not ids) here; as the caller is
+ *         already assumed to have identified the index matching a given column
+ *         id.
  *
  * \param[in]      row         pointer to a cs_cdo_assembly_row_t type
  * \param[in, out] matrix_p    untyped pointer to matrix description structure
@@ -660,10 +562,10 @@ _add_vect_values_single(const cs_cdo_assembly_row_t    *row,
   cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
   const cs_matrix_struct_dist_t  *ms = matrix->structure;
-  const cs_lnum_t db_size = matrix->db_size;
-  const cs_lnum_t eb_size = matrix->eb_size;
+  const cs_lnum_t  db_size = matrix->db_size;
+  const cs_lnum_t  eb_size = matrix->eb_size;
 
-  cs_lnum_t stride;
+  cs_lnum_t  stride;
 
   /* db_size != ebsize has not been handled by
    * cs_matrix_assembler_t in mpi case yet */
@@ -696,17 +598,16 @@ _add_vect_values_single(const cs_cdo_assembly_row_t    *row,
 /*!
  * \brief Function pointer for adding values to a MSR matrix.
  *
- *  Specific case:
- *        CDO schemes with openMP atomic section and vector-valued quantities
+ * Specific case:
+ *  CDO schemes with openMP atomic section and vector-valued quantities
  *
- * \warning  The matrix pointer must point to valid data when the selection
- *           function is called, so the life cycle of the data pointed to
- *           should be at least as long as that of the assembler values
- *           structure.
+ * \warning The matrix pointer must point to valid data when the selection
+ *          function is called, so the life cycle of the data pointed to should
+ *          be at least as long as that of the assembler values structure.
  *
- * \remark  Note that we pass column indexes (not ids) here; as the
- *          caller is already assumed to have identified the index
- *          matching a given column id.
+ * \remark Note that we pass column indexes (not ids) here; as the caller is
+ *         already assumed to have identified the index matching a given column
+ *         id.
  *
  * \param[in]      row         pointer to a cs_cdo_assembly_row_t type
  * \param[in, out] matrix_p    untyped pointer to matrix description structure
@@ -762,17 +663,16 @@ _add_vect_values_atomic(const cs_cdo_assembly_row_t    *row,
 /*!
  * \brief Function pointer for adding values to a MSR matrix.
  *
- *  Specific case:
- *        CDO schemes with openMP critical section and vector-valued quantities
+ * Specific case:
+ *  CDO schemes with openMP critical section and vector-valued quantities
  *
- * \warning  The matrix pointer must point to valid data when the selection
- *           function is called, so the life cycle of the data pointed to
- *           should be at least as long as that of the assembler values
- *           structure.
+ * \warning The matrix pointer must point to valid data when the selection
+ *          function is called, so the life cycle of the data pointed to should
+ *          be at least as long as that of the assembler values structure.
  *
- * \remark  Note that we pass column indexes (not ids) here; as the
- *          caller is already assumed to have identified the index
- *          matching a given column id.
+ * \remark Note that we pass column indexes (not ids) here; as the caller is
+ *         already assumed to have identified the index matching a given column
+ *         id.
  *
  * \param[in]      row         pointer to a cs_cdo_assembly_row_t type
  * \param[in, out] matrix_p    untyped pointer to matrix description structure
@@ -821,7 +721,156 @@ _add_vect_values_critical(const cs_cdo_assembly_row_t    *row,
     }
 }
 
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
 #if defined(HAVE_MPI)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add values to a matrix assembler values structure using global
+ *        row and column ids.
+ *        Case of scalar-valued row which does not belong to the local rank.
+ *        Variant with openMP threading.
+ *
+ * See \ref cs_matrix_assembler_values_add_g which performs the same operations
+ * In the specific case of CDO system, one assumes predefined choices in
+ * order to get a more optimized version of this function
+ *
+ * \param[in, out] mav    pointer to matrix assembler values structure
+ * \param[in]      ma     pointer to matrix assembler values structure
+ * \param[in]      row    pointer to a cs_cdo_assembly_row_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+_assemble_scal_dist_row_threaded(cs_matrix_assembler_values_t     *mav,
+                                 const cs_matrix_assembler_t      *ma,
+                                 const cs_cdo_assembly_row_t      *row)
+{
+  /* Case where coefficient is handled by other rank. No need to call
+     add_values() function in this case */
+
+  assert(row->g_id < ma->l_range[0] || row->g_id >= ma->l_range[1]);
+
+  const cs_lnum_t  e_r_id = _g_binary_search(ma->coeff_send_n_rows,
+                                             row->g_id,
+                                             ma->coeff_send_row_g_id);
+  const cs_lnum_t  r_start = ma->coeff_send_index[e_r_id];
+  const int  n_e_rows = ma->coeff_send_index[e_r_id+1] - r_start;
+  const cs_gnum_t  *coeff_send_g_id = ma->coeff_send_col_g_id + r_start;
+
+  /* Diagonal term */
+
+  const cs_lnum_t  e_diag_id = r_start + _g_binary_search(n_e_rows,
+                                                          row->g_id,
+                                                          coeff_send_g_id);
+
+  /* Now add values to send coefficients */
+
+# pragma omp atomic
+  mav->coeff_send[e_diag_id] += row->val[row->i];
+
+  /* Loop on extra-diagonal entries */
+
+  for (int j = 0; j < row->i; j++) { /* Lower-part */
+
+    const cs_lnum_t e_id = r_start + _g_binary_search(n_e_rows,
+                                                      row->col_g_id[j],
+                                                      coeff_send_g_id);
+
+    /* Now add values to send coefficients */
+
+#   pragma omp atomic
+    mav->coeff_send[e_id] += row->val[j];
+
+  }
+
+  for (int j = row->i + 1; j < row->n_cols; j++) { /* Upper-part */
+
+    const cs_lnum_t e_id = r_start + _g_binary_search(n_e_rows,
+                                                      row->col_g_id[j],
+                                                      coeff_send_g_id);
+
+    /* Now add values to send coefficients */
+
+#   pragma omp atomic
+    mav->coeff_send[e_id] += row->val[j];
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add values to a matrix assembler values structure using global
+ *        row and column ids.
+ *        Case of a scalar-valued row which does not belong to the local rank.
+ *        Single-threaded variant (i.e. without openMP).
+ *
+ * See \ref cs_matrix_assembler_values_add_g which performs the same operations
+ * In the specific case of CDO system, one assumes predefined choices in
+ * order to get a more optimized version of this function
+ *
+ * \param[in, out] mav    pointer to matrix assembler values structure
+ * \param[in]      ma     pointer to matrix assembler values structure
+ * \param[in]      row    pointer to a cs_cdo_assembly_row_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+_assemble_scal_dist_row_single(cs_matrix_assembler_values_t     *mav,
+                               const cs_matrix_assembler_t      *ma,
+                               const cs_cdo_assembly_row_t      *row)
+{
+  /* Case where coefficient is handled by other rank. No need to call
+     add_values() function in this case */
+
+  assert(row->g_id < ma->l_range[0] || row->g_id >= ma->l_range[1]);
+
+  const cs_lnum_t  e_r_id = _g_binary_search(ma->coeff_send_n_rows,
+                                             row->g_id,
+                                             ma->coeff_send_row_g_id);
+  const cs_lnum_t  r_start = ma->coeff_send_index[e_r_id];
+  const int  n_e_rows = ma->coeff_send_index[e_r_id+1] - r_start;
+  const cs_gnum_t  *coeff_send_g_id = ma->coeff_send_col_g_id + r_start;
+
+  /* Diagonal term */
+
+  const cs_lnum_t  e_diag_id = r_start + _g_binary_search(n_e_rows,
+                                                          row->g_id,
+                                                          coeff_send_g_id);
+
+  /* Now add values to send coefficients */
+
+  mav->coeff_send[e_diag_id] += row->val[row->i];
+
+  /* Loop on extra-diagonal entries */
+
+  for (int j = 0; j < row->i; j++) { /* Lower-part */
+
+    const cs_lnum_t e_id = r_start + _g_binary_search(n_e_rows,
+                                                      row->col_g_id[j],
+                                                      coeff_send_g_id);
+
+    /* Now add values to send coefficients */
+
+    mav->coeff_send[e_id] += row->val[j];
+
+  }
+
+  for (int j = row->i + 1; j < row->n_cols; j++) { /* Upper-part */
+
+    const cs_lnum_t e_id = r_start + _g_binary_search(n_e_rows,
+                                                      row->col_g_id[j],
+                                                      coeff_send_g_id);
+
+    /* Now add values to send coefficients */
+
+    mav->coeff_send[e_id] += row->val[j];
+
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add values to a matrix assembler values structure using global
@@ -832,16 +881,16 @@ _add_vect_values_critical(const cs_cdo_assembly_row_t    *row,
  * In the specific case of CDO system, one assumes predefined choices in
  * order to get a more optimized version of this function
  *
- * \param[in, out]  mav    pointer to matrix assembler values structure
- * \param[in]       ma     pointer to matrix assembler values structure
- * \param[in]       row    pointer to a cs_cdo_assembly_row_t structure
+ * \param[in, out] mav    pointer to matrix assembler values structure
+ * \param[in]      ma     pointer to matrix assembler values structure
+ * \param[in]      row    pointer to a cs_cdo_assembly_row_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
-_assemble_row_vect_dt(cs_matrix_assembler_values_t       *mav,
-                      const cs_matrix_assembler_t        *ma,
-                      const cs_cdo_assembly_row_t        *row)
+static void
+_assemble_vect_dist_row_threaded(cs_matrix_assembler_values_t      *mav,
+                                 const cs_matrix_assembler_t       *ma,
+                                 const cs_cdo_assembly_row_t       *row)
 {
   /* Case where coefficient is handled by other rank. No need to call
      add_values() function in this case */
@@ -861,8 +910,8 @@ _assemble_row_vect_dt(cs_matrix_assembler_values_t       *mav,
 
   cs_lnum_t stride;
 
-  /* db_size != ebsize has not been handled by
-   * cs_matrix_assembler_t in mpi case yet */
+  /* db_size != ebsize has not been handled by cs_matrix_assembler_t in mpi
+   * case yet */
 
   assert(db_size == 3);
   assert(eb_size == 3);
@@ -898,6 +947,7 @@ _assemble_row_vect_dt(cs_matrix_assembler_values_t       *mav,
 #   pragma omp atomic
       mav->coeff_send[e_id*stride + k] += row->val[9*row->i + k];
     }
+
   }
 
   for (int j = row->i + 1; j < row->n_cols; j++) { /* Upper-part */
@@ -926,16 +976,16 @@ _assemble_row_vect_dt(cs_matrix_assembler_values_t       *mav,
  * In the specific case of CDO system, one assumes predefined choices in
  * order to get a more optimized version of this function
  *
- * \param[in, out]  mav    pointer to matrix assembler values structure
- * \param[in]       ma     pointer to matrix assembler values structure
- * \param[in]       row    pointer to a cs_cdo_assembly_row_t structure
+ * \param[in, out] mav    pointer to matrix assembler values structure
+ * \param[in]      ma     pointer to matrix assembler values structure
+ * \param[in]      row    pointer to a cs_cdo_assembly_row_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
-_assemble_row_vect_ds(cs_matrix_assembler_values_t       *mav,
-                      const cs_matrix_assembler_t        *ma,
-                      const cs_cdo_assembly_row_t        *row)
+static void
+_assemble_vect_dist_row_single(cs_matrix_assembler_values_t       *mav,
+                               const cs_matrix_assembler_t        *ma,
+                               const cs_cdo_assembly_row_t        *row)
 {
   /* Case where coefficient is handled by other rank. No need to call
      add_values() function in this case */
@@ -955,8 +1005,8 @@ _assemble_row_vect_ds(cs_matrix_assembler_values_t       *mav,
 
   cs_lnum_t stride;
 
-  /* db_size != ebsize has not been handled by
-   * cs_matrix_assembler_t in mpi case yet */
+  /* db_size != ebsize has not been handled by cs_matrix_assembler_t in mpi
+   * case yet */
 
   assert(db_size == 3);
   assert(eb_size == 3);
@@ -985,6 +1035,7 @@ _assemble_row_vect_ds(cs_matrix_assembler_values_t       *mav,
                                                       coeff_send_g_id);
 
     /* Now add values to send coefficients */
+
     for (int k = 0; k < stride; k++)
       mav->coeff_send[e_id*stride + k] += row->val[9*j + k];
 
@@ -997,16 +1048,13 @@ _assemble_row_vect_ds(cs_matrix_assembler_values_t       *mav,
                                                       coeff_send_g_id);
 
     /* Now add values to send coefficients */
+
     for (int k = 0; k < stride; k++)
       mav->coeff_send[e_id*stride + k] += row->val[9*j + k];
-  }
 
+  }
 }
 #endif /* defined(HAVE_MPI) */
-
-/*============================================================================
- * Private function definitions
- *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1265,9 +1313,9 @@ cs_cdo_assembly_set_shift(cs_cdo_assembly_t    *asb,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Rely on the generic cs_matrix_assembler_values_add_g() function
- *         Case of scalar-valued matrices.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Rely on the generic cs_matrix_assembler_values_add_g() function.
+ *        Case of scalar-valued matrices.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -1353,9 +1401,9 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t                   *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Rely on the generic cs_matrix_assembler_values_add_g() function
- *         Case of vector-valued matrices with an expanded 33 block
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Rely on the generic cs_matrix_assembler_values_add_g() function.
+ *        Case of vector-valued matrices with an expanded 3x3 block.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -1374,22 +1422,23 @@ cs_cdo_assembly_matrix_e33_generic(const cs_sdm_t                  *m,
 {
   const cs_sdm_block_t  *bd = m->block_desc;
 
+  cs_cdo_assembly_row_t  *row = asb->row;
+
+  row->n_cols = m->n_rows;
+
   assert(m->n_rows == m->n_cols);
   assert(m->n_rows == 3*bd->n_row_blocks);
   assert(m->n_cols == 3*bd->n_col_blocks);
 
   cs_gnum_t  r_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
-  cs_cdo_assembly_row_t  *row = asb->row;
-  cs_real_t  *row_vals[3] = {row->expval,
-                             row->expval + m->n_rows,
-                             row->expval + 2*m->n_rows };
+  cs_real_t  *xyz_row[3] = {row->expval,
+                            row->expval + m->n_rows,
+                            row->expval + 2*m->n_rows };
 
   if (CS_CDO_ASSEMBLE_BUF_SIZE < m->n_rows)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Increase the size of CS_CDO_ASSEMBLE_BUF_SIZE\n",
               __func__);
-
-  row->n_cols = m->n_rows;
 
   /* Switch to the global numbering */
 
@@ -1399,32 +1448,23 @@ cs_cdo_assembly_matrix_e33_generic(const cs_sdm_t                  *m,
   /* Fill rows 3 by 3 */
 
   for (int bi = 0; bi < bd->n_row_blocks; bi++) {
-    for (int bj = 0; bj < bd->n_col_blocks; bj++) {
 
-      /* mIJ matrices are small square matrices of size 3 */
+    for (int bj = 0; bj < bd->n_col_blocks; bj++)
+      _fill_e33_rows(bi, bj, m, xyz_row);
 
-      const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
-      const cs_real_t  *const mvals = mIJ->val;
-
-      for (int k = 0; k < 3; k++) {
-        row_vals[0][3*bj+k] = mvals[  k];
-        row_vals[1][3*bj+k] = mvals[3+k];
-        row_vals[2][3*bj+k] = mvals[6+k];
-      }
-
-    } /* Loop on column blocks */
+    /* dof_ids is an interlaced array (get access to the next 3 values) */
 
     for (int k = 0; k < 3; k++) {
 
-      row->g_id = row->col_g_id[3*bi+k]; /* global row id is constant for
-                                            all columns */
+      row->g_id = row->col_g_id[3*bi+k]; /* global row id is constant for all
+                                            columns */
       for (int i = 0; i < m->n_cols; i++)
         r_gids[i] = row->g_id;
 
 #     pragma omp critical
       cs_matrix_assembler_values_add_g(mav,
                                        m->n_cols, r_gids, row->col_g_id,
-                                       row_vals[k]);
+                                       xyz_row[k]);
 
     } /* Loop on the three rows in a block */
 
@@ -1434,8 +1474,8 @@ cs_cdo_assembly_matrix_e33_generic(const cs_sdm_t                  *m,
 #if defined(HAVE_MPI)
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Scalar-valued case. Parallel and with openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Scalar-valued case. Parallel and with openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -1473,11 +1513,11 @@ cs_cdo_assembly_matrix_mpit(const cs_sdm_t                   *m,
     row->val = m->val + i*row->n_cols;
 
     if (row->l_id < 0 || row->l_id >= rset->n_elts[0])
-      _assemble_row_scal_dt(mav, ma, row);
+      _assemble_scal_dist_row_threaded(mav, ma, row);
 
     else {
 
-      _set_col_idx_scal_ld(ma, row);
+      _set_col_idx_scal_locdist(ma, row);
 
 #if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
       _add_scal_values_critical(row, mav->matrix);
@@ -1531,11 +1571,11 @@ cs_cdo_assembly_matrix_mpis(const cs_sdm_t                   *m,
     row->val = m->val + i*row->n_cols;
 
     if (row->l_id < 0 || row->l_id >= rset->n_elts[0])
-      _assemble_row_scal_ds(mav, ma, row);
+      _assemble_scal_dist_row_single(mav, ma, row);
 
     else {
 
-      _set_col_idx_scal_ld(ma, row);
+      _set_col_idx_scal_locdist(ma, row);
       _add_scal_values_single(row, mav->matrix);
 
     }
@@ -1546,8 +1586,8 @@ cs_cdo_assembly_matrix_mpis(const cs_sdm_t                   *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Scalar-valued case. Sequential and with openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Scalar-valued case. Sequential and with openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -1584,7 +1624,7 @@ cs_cdo_assembly_matrix_seqt(const cs_sdm_t                  *m,
     row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
     row->val = m->val + i*row->n_cols;
 
-    _set_col_idx_scal_l(ma, row);
+    _set_col_idx_scal_loc(ma, row);
 
 #if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
     _add_scal_values_critical(row, mav->matrix);
@@ -1597,9 +1637,9 @@ cs_cdo_assembly_matrix_seqt(const cs_sdm_t                  *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Scalar-valued case.
- *         Sequential and without openMP.
+ * \brief Assemble a cellwise matrix into the global matrix
+ *        Scalar-valued case.
+ *        Sequential and without openMP (single thread).
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -1636,7 +1676,7 @@ cs_cdo_assembly_matrix_seqs(const cs_sdm_t                  *m,
     row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
     row->val = m->val + i*row->n_cols;
 
-    _set_col_idx_scal_l(ma, row);
+    _set_col_idx_scal_loc(ma, row);
     _add_scal_values_single(row, mav->matrix);
 
   } /* Loop on rows */
@@ -1644,11 +1684,10 @@ cs_cdo_assembly_matrix_seqs(const cs_sdm_t                  *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise (no-block) matrix into the global matrix
- *         corresponding to a system of coupled equations.
- *         Scalar-valued case.
- *         Sequential and without openMP.
- *         Block matrices assembled from cellwise scalar-valued matrices
+ * \brief Assemble a cellwise (no-block) matrix into the global matrix
+ *        corresponding to a system of coupled equations.
+ *        Scalar-valued case. Sequential and without openMP.
+ *        Block matrices assembled from cellwise scalar-valued matrices
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -1688,7 +1727,7 @@ cs_cdo_assembly_matrix_sys_seqs(const cs_sdm_t                  *m,
       row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
       row->val = m->val + i*row->n_cols;
 
-      _set_col_idx_scal_l(ma, row);
+      _set_col_idx_scal_loc(ma, row);
       _add_scal_values_single(row, mav->matrix);
 
     } /* Loop on rows */
@@ -1703,7 +1742,7 @@ cs_cdo_assembly_matrix_sys_seqs(const cs_sdm_t                  *m,
       row->l_id = row->g_id - rset->l_range[0];      /* range set numbering */
       row->val = m->val + i*row->n_cols;
 
-      _set_col_idx_scal_l(ma, row);
+      _set_col_idx_scal_loc(ma, row);
       _add_scal_values_single(row, mav->matrix);
 
     } /* Loop on rows */
@@ -1713,11 +1752,10 @@ cs_cdo_assembly_matrix_sys_seqs(const cs_sdm_t                  *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise (no-block) matrix into the global matrix
- *         corresponding to a system of coupled equations.
- *         Scalar-valued case.
- *         Sequential and with openMP.
- *         Block matrices assembled from cellwise scalar-valued matrices
+ * \brief Assemble a cellwise (no-block) matrix into the global matrix
+ *        corresponding to a system of coupled equations.
+ *        Scalar-valued case. Sequential and with openMP.
+ *        Block matrices assembled from cellwise scalar-valued matrices
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -1757,7 +1795,7 @@ cs_cdo_assembly_matrix_sys_seqt(const cs_sdm_t                  *m,
       row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
       row->val = m->val + i*row->n_cols;
 
-      _set_col_idx_scal_l(ma, row);
+      _set_col_idx_scal_loc(ma, row);
 
 #if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
       _add_scal_values_critical(row, mav->matrix);
@@ -1777,7 +1815,7 @@ cs_cdo_assembly_matrix_sys_seqt(const cs_sdm_t                  *m,
       row->l_id = row->g_id - rset->l_range[0];      /* range set numbering */
       row->val = m->val + i*row->n_cols;
 
-      _set_col_idx_scal_l(ma, row);
+      _set_col_idx_scal_loc(ma, row);
 
 #if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
       _add_scal_values_critical(row, mav->matrix);
@@ -1793,8 +1831,8 @@ cs_cdo_assembly_matrix_sys_seqt(const cs_sdm_t                  *m,
 #if defined(HAVE_MPI)
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Scalar-valued case. Parallel without openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Scalar-valued case. Parallel without openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -1835,11 +1873,11 @@ cs_cdo_assembly_matrix_sys_mpis(const cs_sdm_t                   *m,
       row->val = m->val + i*row->n_cols;
 
       if (row->l_id < 0 || row->l_id >= rset->n_elts[0])
-        _assemble_row_scal_ds(mav, ma, row);
+        _assemble_scal_dist_row_single(mav, ma, row);
 
       else {
 
-        _set_col_idx_scal_ld(ma, row);
+        _set_col_idx_scal_locdist(ma, row);
         _add_scal_values_single(row, mav->matrix);
 
       }
@@ -1859,11 +1897,11 @@ cs_cdo_assembly_matrix_sys_mpis(const cs_sdm_t                   *m,
       row->val = m->val + i*row->n_cols;
 
       if (row->l_id < 0 || row->l_id >= rset->n_elts[0])
-        _assemble_row_scal_ds(mav, ma, row);
+        _assemble_scal_dist_row_single(mav, ma, row);
 
       else {
 
-        _set_col_idx_scal_ld(ma, row);
+        _set_col_idx_scal_locdist(ma, row);
         _add_scal_values_single(row, mav->matrix);
 
       }
@@ -1871,15 +1909,14 @@ cs_cdo_assembly_matrix_sys_mpis(const cs_sdm_t                   *m,
     } /* Loop on rows */
 
   } /* col_shift != row_shift */
-
 }
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Case of a block 3x3 entries. Expand each row.
- *         Sequential run without openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Case of a block 3x3 entries. Expand each row.
+ *        Sequential run without openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -1909,7 +1946,7 @@ cs_cdo_assembly_eblock33_matrix_seqs(const cs_sdm_t               *m,
 
   /* Expand the values for a bundle of rows */
 
-  cs_real_t  *_vxyz[3] = {row->expval,
+  cs_real_t  *xyz_row[3] = {row->expval,
                           row->expval + m->n_rows,
                           row->expval + 2*m->n_rows };
 
@@ -1925,29 +1962,19 @@ cs_cdo_assembly_eblock33_matrix_seqs(const cs_sdm_t               *m,
 
     /* Expand all the blocks for this row */
 
-    for (int bj = 0; bj < bd->n_col_blocks; bj++) {
-
-      /* mIJ matrices are small square matrices of size 3 */
-
-      const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
-      const cs_real_t  *const mvals = mIJ->val;
-      for (int k = 0; k < 3; k++) {
-        _vxyz[0][3*bj+k] = mvals[  k];
-        _vxyz[1][3*bj+k] = mvals[3+k];
-        _vxyz[2][3*bj+k] = mvals[6+k];
-      }
-
-    } /* Loop on column-wise blocks */
+    for (int bj = 0; bj < bd->n_col_blocks; bj++)
+      _fill_e33_rows(bi, bj, m, xyz_row);
 
     /* dof_ids is an interlaced array (get access to the next 3 values) */
 
     for (int k = 0; k < 3; k++) {
-      row->i = 3*bi+k;                          /* cellwise numbering */
-      row->g_id = row->col_g_id[3*bi+k];        /* global numbering */
-      row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
-      row->val = _vxyz[k];
 
-      _set_col_idx_scal_l(ma, row);
+      row->i = 3*bi+k;                          /* cellwise numbering */
+      row->g_id = row->col_g_id[row->i];        /* global numbering */
+      row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
+      row->val = xyz_row[k];
+
+      _set_col_idx_scal_loc(ma, row);
       _add_scal_values_single(row, mav->matrix);
 
     } /* Push each row of the block */
@@ -1957,9 +1984,9 @@ cs_cdo_assembly_eblock33_matrix_seqs(const cs_sdm_t               *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Case of a block 3x3 entries. Expand each row.
- *         Sequential run with openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Case of a block 3x3 entries. Expand each row.
+ *        Sequential run with openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -1970,11 +1997,11 @@ cs_cdo_assembly_eblock33_matrix_seqs(const cs_sdm_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_assembly_eblock33_matrix_seqt(const cs_sdm_t               *m,
-                                     const cs_lnum_t              *dof_ids,
-                                     const cs_range_set_t         *rset,
-                                     cs_cdo_assembly_t            *asb,
-                                     cs_matrix_assembler_values_t *mav)
+cs_cdo_assembly_eblock33_matrix_seqt(const cs_sdm_t                *m,
+                                     const cs_lnum_t               *dof_ids,
+                                     const cs_range_set_t          *rset,
+                                     cs_cdo_assembly_t             *asb,
+                                     cs_matrix_assembler_values_t  *mav)
 {
   const cs_sdm_block_t  *bd = m->block_desc;
   const cs_matrix_assembler_t  *ma = mav->ma;
@@ -1989,7 +2016,7 @@ cs_cdo_assembly_eblock33_matrix_seqt(const cs_sdm_t               *m,
 
   /* Expand the values for a bundle of rows */
 
-  cs_real_t  *_vxyz[3] = {row->expval,
+  cs_real_t  *xyz_row[3] = {row->expval,
                           row->expval + m->n_rows,
                           row->expval + 2*m->n_rows };
 
@@ -2005,29 +2032,19 @@ cs_cdo_assembly_eblock33_matrix_seqt(const cs_sdm_t               *m,
 
     /* Expand all the blocks for this row */
 
-    for (int bj = 0; bj < bd->n_col_blocks; bj++) {
-
-      /* mIJ matrices are small square matrices of size 3 */
-
-      const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
-      const cs_real_t  *const mvals = mIJ->val;
-      for (int k = 0; k < 3; k++) {
-        _vxyz[0][3*bj+k] = mvals[  k];
-        _vxyz[1][3*bj+k] = mvals[3+k];
-        _vxyz[2][3*bj+k] = mvals[6+k];
-      }
-
-    } /* Loop on column-wise blocks */
+    for (int bj = 0; bj < bd->n_col_blocks; bj++)
+      _fill_e33_rows(bi, bj, m, xyz_row);
 
     /* dof_ids is an interlaced array (get access to the next 3 values */
 
     for (int k = 0; k < 3; k++) {
-      row->i = 3*bi+k;                          /* cellwise numbering */
-      row->g_id = row->col_g_id[3*bi+k];        /* global numbering */
-      row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
-      row->val = _vxyz[k];
 
-      _set_col_idx_scal_l(ma, row);
+      row->i = 3*bi+k;                          /* cellwise numbering */
+      row->g_id = row->col_g_id[row->i];        /* global numbering */
+      row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
+      row->val = xyz_row[k];
+
+      _set_col_idx_scal_loc(ma, row);
 
 #if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
       _add_scal_values_critical(row, mav->matrix);
@@ -2043,9 +2060,9 @@ cs_cdo_assembly_eblock33_matrix_seqt(const cs_sdm_t               *m,
 #if defined(HAVE_MPI)
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Case of a block 3x3 entries. Expand each row.
- *         Parallel run without openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Case of a block 3x3 entries. Expand each row.
+ *        Parallel run without openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -2056,11 +2073,11 @@ cs_cdo_assembly_eblock33_matrix_seqt(const cs_sdm_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_assembly_eblock33_matrix_mpis(const cs_sdm_t               *m,
-                                     const cs_lnum_t              *dof_ids,
-                                     const cs_range_set_t         *rset,
-                                     cs_cdo_assembly_t            *asb,
-                                     cs_matrix_assembler_values_t *mav)
+cs_cdo_assembly_eblock33_matrix_mpis(const cs_sdm_t                *m,
+                                     const cs_lnum_t               *dof_ids,
+                                     const cs_range_set_t          *rset,
+                                     cs_cdo_assembly_t             *asb,
+                                     cs_matrix_assembler_values_t  *mav)
 {
   const cs_sdm_block_t  *bd = m->block_desc;
   const cs_matrix_assembler_t  *ma = mav->ma;
@@ -2075,7 +2092,7 @@ cs_cdo_assembly_eblock33_matrix_mpis(const cs_sdm_t               *m,
 
   /* Expand the values for a bundle of rows */
 
-  cs_real_t  *_vxyz[3] = {row->expval,
+  cs_real_t  *xyz_row[3] = {row->expval,
                           row->expval + m->n_rows,
                           row->expval + 2*m->n_rows };
 
@@ -2090,35 +2107,24 @@ cs_cdo_assembly_eblock33_matrix_mpis(const cs_sdm_t               *m,
 
     /* Expand all the blocks for this row */
 
-    for (int bj = 0; bj < bd->n_col_blocks; bj++) {
-
-      /* mIJ matrices are small square matrices of size 3 */
-
-      const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
-      const cs_real_t  *const mvals = mIJ->val;
-      for (int k = 0; k < 3; k++) {
-        _vxyz[0][3*bj+k] = mvals[  k];
-        _vxyz[1][3*bj+k] = mvals[3+k];
-        _vxyz[2][3*bj+k] = mvals[6+k];
-      }
-
-    } /* Loop on column-wise blocks */
+    for (int bj = 0; bj < bd->n_col_blocks; bj++)
+      _fill_e33_rows(bi, bj, m, xyz_row);
 
     /* dof_ids is an interlaced array (get access to the next 3 values */
 
     for (int k = 0; k < 3; k++) {
 
       row->i = 3*bi+k;                          /* cellwise numbering */
-      row->g_id = row->col_g_id[3*bi+k];        /* global numbering */
+      row->g_id = row->col_g_id[row->i];        /* global numbering */
       row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
-      row->val = _vxyz[k];
+      row->val = xyz_row[k];
 
       if (row->l_id < 0 || row->l_id >= rset->n_elts[0])
-        _assemble_row_scal_ds(mav, ma, row);
+        _assemble_scal_dist_row_single(mav, ma, row);
 
       else {
 
-        _set_col_idx_scal_ld(ma, row);
+        _set_col_idx_scal_locdist(ma, row);
         _add_scal_values_single(row, mav->matrix);
 
       }
@@ -2130,9 +2136,9 @@ cs_cdo_assembly_eblock33_matrix_mpis(const cs_sdm_t               *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Case of a block 3x3 entries. Expand each row.
- *         Parallel run with openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix
+ *        Case of a block 3x3 entries. Expand each row.
+ *        Parallel run with openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -2143,30 +2149,31 @@ cs_cdo_assembly_eblock33_matrix_mpis(const cs_sdm_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_assembly_eblock33_matrix_mpit(const cs_sdm_t               *m,
-                                     const cs_lnum_t              *dof_ids,
-                                     const cs_range_set_t         *rset,
-                                     cs_cdo_assembly_t            *asb,
-                                     cs_matrix_assembler_values_t *mav)
+cs_cdo_assembly_eblock33_matrix_mpit(const cs_sdm_t                *m,
+                                     const cs_lnum_t               *dof_ids,
+                                     const cs_range_set_t          *rset,
+                                     cs_cdo_assembly_t             *asb,
+                                     cs_matrix_assembler_values_t  *mav)
 {
-  const cs_sdm_block_t  *bd = m->block_desc;
   const cs_matrix_assembler_t  *ma = mav->ma;
 
   cs_cdo_assembly_row_t  *row = asb->row;
 
+  row->n_cols = m->n_rows;
+
+  assert(row->expval != NULL);
+  assert(asb->ddim >= 3); /* ddim = diag. dim */
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
+
+  const cs_sdm_block_t  *bd = m->block_desc;
   assert(bd->n_row_blocks == bd->n_col_blocks);
-  assert(asb->ddim >= 3);
-  assert(row->expval != NULL);
 
   /* Expand the values for a bundle of rows */
 
-  cs_real_t  *_vxyz[3] = {row->expval,
-                          row->expval + m->n_rows,
-                          row->expval + 2*m->n_rows};
-
-  row->n_cols = m->n_rows;
+  cs_real_t  *xyz_row[3] = {row->expval,
+                            row->expval +   m->n_rows,
+                            row->expval + 2*m->n_rows};
 
   /* Switch to the global numbering */
 
@@ -2177,35 +2184,24 @@ cs_cdo_assembly_eblock33_matrix_mpit(const cs_sdm_t               *m,
 
     /* Expand all the blocks for this row */
 
-    for (int bj = 0; bj < bd->n_col_blocks; bj++) {
+    for (int bj = 0; bj < bd->n_col_blocks; bj++)
+      _fill_e33_rows(bi, bj, m, xyz_row);
 
-      /* mIJ matrices are small square matrices of size 3 */
-
-      const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
-      const cs_real_t  *const mvals = mIJ->val;
-      for (int k = 0; k < 3; k++) {
-        _vxyz[0][3*bj+k] = mvals[  k];
-        _vxyz[1][3*bj+k] = mvals[3+k];
-        _vxyz[2][3*bj+k] = mvals[6+k];
-      }
-
-    } /* Loop on column-wise blocks */
-
-    /* dof_ids is an interlaced array (get access to the next 3 values */
+    /* dof_ids is an interlaced array (get access to the next 3 values) */
 
     for (int k = 0; k < 3; k++) {
 
       row->i = 3*bi+k;                          /* cellwise numbering */
-      row->g_id = row->col_g_id[3*bi+k];        /* global numbering */
+      row->g_id = row->col_g_id[row->i];        /* global numbering */
       row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
-      row->val = _vxyz[k];
+      row->val = xyz_row[k];
 
       if (row->l_id < 0 || row->l_id >= rset->n_elts[0])
-        _assemble_row_scal_dt(mav, ma, row);
+        _assemble_scal_dist_row_threaded(mav, ma, row);
 
       else {
 
-        _set_col_idx_scal_ld(ma, row);
+        _set_col_idx_scal_locdist(ma, row);
 
 #if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
         _add_scal_values_critical(row, mav->matrix);
@@ -2223,9 +2219,9 @@ cs_cdo_assembly_eblock33_matrix_mpit(const cs_sdm_t               *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Case of a block 3x3 entries. Expand each row.
- *         Sequential run without openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Case of a block 3x3 entries. Expand each row.
+ *        Sequential run without openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -2236,11 +2232,11 @@ cs_cdo_assembly_eblock33_matrix_mpit(const cs_sdm_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_assembly_block33_matrix_seqs(const cs_sdm_t               *m,
-                                    const cs_lnum_t              *dof_ids,
-                                    const cs_range_set_t         *rset,
-                                    cs_cdo_assembly_t            *asb,
-                                    cs_matrix_assembler_values_t *mav)
+cs_cdo_assembly_block33_matrix_seqs(const cs_sdm_t                *m,
+                                    const cs_lnum_t               *dof_ids,
+                                    const cs_range_set_t          *rset,
+                                    cs_cdo_assembly_t             *asb,
+                                    cs_matrix_assembler_values_t  *mav)
 {
   const cs_sdm_block_t  *bd = m->block_desc;
   const cs_matrix_assembler_t  *ma = mav->ma;
@@ -2257,7 +2253,7 @@ cs_cdo_assembly_block33_matrix_seqs(const cs_sdm_t               *m,
 
   /* Expand the values for a bundle of rows */
 
-  cs_real_t  *_vxyz = row->expval;
+  cs_real_t  *xyz_row = row->expval;
 
   assert(m->n_rows == m->n_cols);
 
@@ -2277,20 +2273,21 @@ cs_cdo_assembly_block33_matrix_seqs(const cs_sdm_t               *m,
       /* mIJ matrices are small square matrices of size 3 */
 
       const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
-      const cs_real_t  *const mvals = mIJ->val;
+      const cs_real_t  *const mIJ_vals = mIJ->val;
 
-      for (int k = 0; k < 9; k++) {
-        _vxyz[9*bj+k] = mvals[k];
-      }
+      for (int k = 0; k < 9; k++)
+        xyz_row[9*bj+k] = mIJ_vals[k];
+
     } /* Loop on column-wise blocks */
 
     row->i = bi;                              /* cellwise numbering */
     row->g_id = row->col_g_id[bi];            /* global numbering */
     row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
-    row->val = _vxyz;
+    row->val = xyz_row;
 
-    /*All entries within one block share the same row and column */
-    _set_col_idx_scal_l(ma, row);
+    /* All entries within one block share the same row and column */
+
+    _set_col_idx_scal_loc(ma, row);
     _add_vect_values_single(row, mav->matrix);
 
   } /* Loop on row-wise blocks */
@@ -2298,9 +2295,9 @@ cs_cdo_assembly_block33_matrix_seqs(const cs_sdm_t               *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Case of a block 3x3 entries. Expand each row.
- *         Sequential run with openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Case of a block 3x3 entries. Expand each row.
+ *        Sequential run with openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -2311,11 +2308,11 @@ cs_cdo_assembly_block33_matrix_seqs(const cs_sdm_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_assembly_block33_matrix_seqt(const cs_sdm_t               *m,
-                                    const cs_lnum_t              *dof_ids,
-                                    const cs_range_set_t         *rset,
-                                    cs_cdo_assembly_t            *asb,
-                                    cs_matrix_assembler_values_t *mav)
+cs_cdo_assembly_block33_matrix_seqt(const cs_sdm_t                *m,
+                                    const cs_lnum_t               *dof_ids,
+                                    const cs_range_set_t          *rset,
+                                    cs_cdo_assembly_t             *asb,
+                                    cs_matrix_assembler_values_t  *mav)
 {
   const cs_sdm_block_t  *bd = m->block_desc;
   const cs_matrix_assembler_t  *ma = mav->ma;
@@ -2332,7 +2329,7 @@ cs_cdo_assembly_block33_matrix_seqt(const cs_sdm_t               *m,
 
   /* Expand the values for a bundle of rows */
 
-  cs_real_t  *_vxyz = row->expval;
+  cs_real_t  *xyz_row = row->expval;
 
   assert(m->n_rows == m->n_cols);
 
@@ -2352,20 +2349,21 @@ cs_cdo_assembly_block33_matrix_seqt(const cs_sdm_t               *m,
       /* mIJ matrices are small square matrices of size 3 */
 
       const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
-      const cs_real_t  *const mvals = mIJ->val;
+      const cs_real_t  *const mIJ_vals = mIJ->val;
 
-      for (int k = 0; k < 9; k++) {
-        _vxyz[9*bj+k] = mvals[k];
-      }
+      for (int k = 0; k < 9; k++)
+        xyz_row[9*bj+k] = mIJ_vals[k];
+
     } /* Loop on column-wise blocks */
 
     row->i = bi;                              /* cellwise numbering */
     row->g_id = row->col_g_id[bi];            /* global numbering */
     row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
-    row->val = _vxyz;
+    row->val = xyz_row;
 
-    /*All entries within one block share the same row and column */
-    _set_col_idx_scal_l(ma, row);
+    /* All entries within one block share the same row and column */
+
+    _set_col_idx_scal_loc(ma, row);
 
 #if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
     _add_vect_values_critical(row, mav->matrix);
@@ -2379,9 +2377,9 @@ cs_cdo_assembly_block33_matrix_seqt(const cs_sdm_t               *m,
 #if defined(HAVE_MPI)
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Case of a block 3x3 entries. Expand each row.
- *         Parallel run without openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Case of a block 3x3 entries. Expand each row.
+ *        Parallel run without openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -2392,11 +2390,11 @@ cs_cdo_assembly_block33_matrix_seqt(const cs_sdm_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_assembly_block33_matrix_mpis(const cs_sdm_t               *m,
-                                    const cs_lnum_t              *dof_ids,
-                                    const cs_range_set_t         *rset,
-                                    cs_cdo_assembly_t            *asb,
-                                    cs_matrix_assembler_values_t *mav)
+cs_cdo_assembly_block33_matrix_mpis(const cs_sdm_t                *m,
+                                    const cs_lnum_t               *dof_ids,
+                                    const cs_range_set_t          *rset,
+                                    cs_cdo_assembly_t             *asb,
+                                    cs_matrix_assembler_values_t  *mav)
 {
   const cs_sdm_block_t  *bd = m->block_desc;
   const cs_matrix_assembler_t  *ma = mav->ma;
@@ -2413,7 +2411,7 @@ cs_cdo_assembly_block33_matrix_mpis(const cs_sdm_t               *m,
 
   /* Expand the values for a bundle of rows */
 
-  cs_real_t  *_vxyz = row->expval;
+  cs_real_t  *xyz_row = row->expval;
 
   assert(m->n_rows == m->n_cols);
 
@@ -2433,25 +2431,26 @@ cs_cdo_assembly_block33_matrix_mpis(const cs_sdm_t               *m,
       /* mIJ matrices are small square matrices of size 3 */
 
       const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
-      const cs_real_t  *const mvals = mIJ->val;
+      const cs_real_t  *const mIJ_vals = mIJ->val;
 
-      for (int k = 0; k < 9; k++) {
-        _vxyz[9*bj+k] = mvals[k];
-      }
+      for (int k = 0; k < 9; k++)
+        xyz_row[9*bj+k] = mIJ_vals[k];
+
     } /* Loop on column-wise blocks */
 
     row->i = bi;                              /* cellwise numbering */
     row->g_id = row->col_g_id[bi];            /* global numbering */
     row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
-    row->val = _vxyz;
+    row->val = xyz_row;
 
     if (row->l_id < 0 || row->l_id >= rset->n_elts[0])
-      _assemble_row_vect_ds(mav, ma, row);
+      _assemble_vect_dist_row_single(mav, ma, row);
 
     else {
 
-      /*All entries within one block share the same row and column */
-      _set_col_idx_scal_ld(ma, row);
+      /* All entries within one block share the same row and column */
+
+      _set_col_idx_scal_locdist(ma, row);
       _add_vect_values_single(row, mav->matrix);
 
     }
@@ -2461,9 +2460,9 @@ cs_cdo_assembly_block33_matrix_mpis(const cs_sdm_t               *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assemble a cellwise matrix into the global matrix
- *         Case of a block 3x3 entries. Expand each row.
- *         Sequential run without openMP threading.
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Case of a block 3x3 entries. Expand each row.
+ *        Sequential run without openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -2474,11 +2473,11 @@ cs_cdo_assembly_block33_matrix_mpis(const cs_sdm_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_assembly_block33_matrix_mpit(const cs_sdm_t               *m,
-                                    const cs_lnum_t              *dof_ids,
-                                    const cs_range_set_t         *rset,
-                                    cs_cdo_assembly_t            *asb,
-                                    cs_matrix_assembler_values_t *mav)
+cs_cdo_assembly_block33_matrix_mpit(const cs_sdm_t                *m,
+                                    const cs_lnum_t               *dof_ids,
+                                    const cs_range_set_t          *rset,
+                                    cs_cdo_assembly_t             *asb,
+                                    cs_matrix_assembler_values_t  *mav)
 {
   const cs_sdm_block_t  *bd = m->block_desc;
   const cs_matrix_assembler_t  *ma = mav->ma;
@@ -2495,7 +2494,7 @@ cs_cdo_assembly_block33_matrix_mpit(const cs_sdm_t               *m,
 
   /* Expand the values for a bundle of rows */
 
-  cs_real_t  *_vxyz = row->expval;
+  cs_real_t  *xyz_row = row->expval;
 
   assert(m->n_rows == m->n_cols);
 
@@ -2514,26 +2513,27 @@ cs_cdo_assembly_block33_matrix_mpit(const cs_sdm_t               *m,
 
       /* mIJ matrices are small square matrices of size 3 */
 
-      const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
-      const cs_real_t  *const mvals = mIJ->val;
+      const cs_sdm_t *const  mIJ = cs_sdm_get_block(m, bi, bj);
+      const cs_real_t *const  mIJ_vals = mIJ->val;
 
-      for (int k = 0; k < 9; k++) {
-        _vxyz[9*bj+k] = mvals[k];
-      }
+      for (int k = 0; k < 9; k++)
+        xyz_row[9*bj+k] = mIJ_vals[k];
+
     } /* Loop on column-wise blocks */
 
     row->i = bi;                              /* cellwise numbering */
     row->g_id = row->col_g_id[bi];            /* global numbering */
     row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
-    row->val = _vxyz;
+    row->val = xyz_row;
 
     /*All entries within one block share the same row and column */
+
     if (row->l_id < 0 || row->l_id >= rset->n_elts[0])
-      _assemble_row_vect_dt(mav, ma, row);
+      _assemble_vect_dist_row_threaded(mav, ma, row);
 
     else {
 
-      _set_col_idx_scal_ld(ma, row);
+      _set_col_idx_scal_locdist(ma, row);
 
 #if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
       _add_vect_values_critical(row, mav->matrix);
@@ -2607,10 +2607,10 @@ cs_cdo_assembly_eblock_matrix_seqs(const cs_sdm_t                *m,
       const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
 
       for (int ki = 0; ki < dim; ki++) {
-        const cs_real_t  *const mvals = mIJ->val + ki*dim;
+        const cs_real_t  *const mIJ_vals = mIJ->val + ki*dim;
         cs_real_t  *buf = _vpointer[ki] + dim*bj;
         for (int kj = 0; kj < dim; kj++)
-          buf[kj] = mvals[kj];
+          buf[kj] = mIJ_vals[kj];
       }
 
     } /* Loop on column blocks */
@@ -2623,7 +2623,7 @@ cs_cdo_assembly_eblock_matrix_seqs(const cs_sdm_t                *m,
       row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
       row->val = _vpointer[ki];
 
-      _set_col_idx_scal_l(ma, row);
+      _set_col_idx_scal_loc(ma, row);
       _add_scal_values_single(row, mav->matrix);
     }
 
@@ -2690,10 +2690,10 @@ cs_cdo_assembly_eblock_matrix_seqt(const cs_sdm_t                *m,
       const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
 
       for (int ki = 0; ki < dim; ki++) {
-        const cs_real_t  *const mvals = mIJ->val + ki*dim;
+        const cs_real_t  *const mIJ_vals = mIJ->val + ki*dim;
         cs_real_t  *buf = _vpointer[ki] + dim*bj;
         for (int kj = 0; kj < dim; kj++)
-          buf[kj] = mvals[kj];
+          buf[kj] = mIJ_vals[kj];
       }
 
     } /* Loop on column blocks */
@@ -2706,7 +2706,7 @@ cs_cdo_assembly_eblock_matrix_seqt(const cs_sdm_t                *m,
       row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
       row->val = _vpointer[ki];
 
-      _set_col_idx_scal_l(ma, row);
+      _set_col_idx_scal_loc(ma, row);
 
 #if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
       _add_scal_values_critical(row, mav->matrix);
@@ -2779,10 +2779,10 @@ cs_cdo_assembly_eblock_matrix_mpis(const cs_sdm_t                *m,
       const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
 
       for (int ki = 0; ki < dim; ki++) {
-        const cs_real_t  *const mvals = mIJ->val + ki*dim;
+        const cs_real_t  *const mIJ_vals = mIJ->val + ki*dim;
         cs_real_t  *buf = _vpointer[ki] + dim*bj;
         for (int kj = 0; kj < dim; kj++)
-          buf[kj] = mvals[kj];
+          buf[kj] = mIJ_vals[kj];
       }
 
     } /* Loop on column blocks */
@@ -2797,11 +2797,11 @@ cs_cdo_assembly_eblock_matrix_mpis(const cs_sdm_t                *m,
       row->val = _vpointer[ki];
 
       if (row->l_id < 0 || row->l_id >= rset->n_elts[0])
-        _assemble_row_scal_ds(mav, ma, row);
+        _assemble_scal_dist_row_single(mav, ma, row);
 
       else {
 
-        _set_col_idx_scal_ld(ma, row);
+        _set_col_idx_scal_locdist(ma, row);
         _add_scal_values_single(row, mav->matrix);
 
       }
@@ -2868,13 +2868,13 @@ cs_cdo_assembly_eblock_matrix_mpit(const cs_sdm_t                *m,
 
       /* mIJ matrices are small square matrices of size "dim" */
 
-      const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
+      const cs_sdm_t *const  mIJ = cs_sdm_get_block(m, bi, bj);
 
       for (int ki = 0; ki < dim; ki++) {
-        const cs_real_t  *const mvals = mIJ->val + ki*dim;
+        const cs_real_t  *const mIJ_vals = mIJ->val + ki*dim;
         cs_real_t  *buf = _vpointer[ki] + dim*bj;
         for (int kj = 0; kj < dim; kj++)
-          buf[kj] = mvals[kj];
+          buf[kj] = mIJ_vals[kj];
       }
 
     } /* Loop on column blocks */
@@ -2889,11 +2889,11 @@ cs_cdo_assembly_eblock_matrix_mpit(const cs_sdm_t                *m,
       row->val = _vpointer[ki];
 
       if (row->l_id < 0 || row->l_id >= rset->n_elts[0])
-        _assemble_row_scal_dt(mav, ma, row);
+        _assemble_scal_dist_row_threaded(mav, ma, row);
 
       else {
 
-        _set_col_idx_scal_ld(ma, row);
+        _set_col_idx_scal_locdist(ma, row);
 
 #if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
         _add_scal_values_critical(row, mav->matrix);
