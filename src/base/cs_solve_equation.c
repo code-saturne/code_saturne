@@ -1852,14 +1852,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
   /* all boundary convective flux with upwind */
   cs_real_t normp = -1.0;
 
-  cs_equation_param_t eqp_loc = *eqp;
-
-  eqp_loc.istat  = -1;
-  eqp_loc.icoupl = -1;
-  eqp_loc.idifft = -1;
-  eqp_loc.iwgrec = 0; // Warning, may be overwritten if a field
-  eqp_loc.blend_st = 0; // Warning, may be overwritten if a field
-
   cs_real_t *dpvar;
   BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
 
@@ -1870,7 +1862,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                      iescap,
                                      imucpp,
                                      normp,
-                                     &eqp_loc,
+                                     eqp,
                                      cvara_var,
                                      cvark_var,
                                      f->bc_coeffs->a,
@@ -2511,21 +2503,13 @@ cs_solve_equation_vector(cs_field_t       *f,
 
   int iescap = 0, icvflb = 0, ivissv = 0;
 
-  cs_equation_param_t eqp_loc = *eqp;
-
-  eqp_loc.istat  = -1;
-  eqp_loc.idifft = -1;
-  eqp_loc.iwgrec = 0;
-  eqp_loc.thetav = thetv;
-  eqp_loc.blend_st = 0; // Warning, may be overwritten if a field
-
   cs_equation_iterative_solve_vector(cs_glob_time_step_options->idtvar,
                                      iterns,
                                      f->id,
                                      NULL,
                                      ivissv,
                                      iescap,
-                                     &eqp_loc,
+                                     eqp,
                                      cvara_var,
                                      cvara_var,
                                      (const cs_real_3_t *)f->bc_coeffs->a,
