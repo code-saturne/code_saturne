@@ -32,20 +32,21 @@
 %
 % Mathematical operators (and other useful related macros)
 %
+\newcommand{\vect}[1]{\underline{#1}}
+\newcommand{\tens}[1]{\vect{\vect{#1}}}
 \newcommand{\dive}{\text{div}\,}
 \newcommand{\divs}{\text{div}\,}
-\newcommand{\divv}{\underline{\text{div}}\,}
-\newcommand{\divt}{\underline{\underline{\text{div}}}\,}
-\newcommand{\grad}{\underline{\nabla}}
-\newcommand{\ggrad}{\text{g}\underline{\underline{\text{rad}}}\,}
-\newcommand{\gradv}{\underline{\nabla}}
-\newcommand{\gradt}{\underline{\underline{\nabla}}}
-\newcommand{\gradtt}{\underline{\underline{\underline{\nabla}}}}
+\newcommand{\divv}{\vect{\text{div}}\,}
+\newcommand{\divt}{\tens{{\text{div}}}\,}
+\newcommand{\grad}{\vect{\nabla}}
+\newcommand{\ggrad}{\text{g}\tens{{\text{rad}}}\,}
+\newcommand{\gradv}{\vect{\nabla}}
+\newcommand{\gradt}{\tens{{\nabla}}}
+\newcommand{\gradtt}{\vect{\tens{{\nabla}}}}
 \newcommand{\mat}[1]{\underline{\textrm{#1}}}
 \newcommand{\matt}[1]{\underline{\underline{\textrm{#1}}}}
-\newcommand{\rot}{\underline{\text{rot}}\ }
-\newcommand{\vect}[1]{\underline{#1}}
-\newcommand{\tens}[1]{\underline{\underline{#1}}}
+\newcommand{\rot}{\vect{\text{curl}}\ }
+\newcommand{\tensor}[1]{\tens{#1}}
 \newcommand{\transpose}[1]{#1^T}
 \newcommand{\symmetric}[1]{#1^S}
 \newcommand{\trace}{tr}
@@ -54,6 +55,7 @@
 \newcommand{\rans}[1]{{\overline{#1}}}
 \newcommand{\ints}[2]{{\overline{#1}_{#2}}}
 \newcommand{\fluct}[1]{{{#1}^\prime}}
+\newcommand{\tinterval}[3]{\left.{#1}\right|_{#2}^{#3}}
 \newcommand{\favre}[1]{{\widetilde{#1}}}
 \newcommand{\intss}[2]{{\widetilde{#1}_{#2}}}
 \newcommand{\fluctt}[1]{{{#1}^{\prime \prime}}}
@@ -68,30 +70,45 @@
 \newcommand{\face}{{f}} % face
 \newcommand{\fij}{{f_{ij}}} % internal face
 \newcommand{\fib}{{f_{b}}} % boundary face
-\newcommand{\iface}{{f_\celli}} % oriented face
+%deprecated
 \renewcommand{\ij}{{ij}} % oriented internal face value ("K, sigma" in sushi)
+\newcommand{\bij}{{\celli > \cellj}} % oriented internal face value ("K, sigma" in sushi)
+%deprecated
 \newcommand{\ji}{{ji}} % oriented internal face value ("L, sigma" in sushi)
-\newcommand{\ib}{{ib}} % oriented internal face value ("K, sigma" in sushi)
-\newcommand{\celli}{i} % name of the current cell
-\newcommand{\centi}{I} % center of the current cell
-\newcommand{\centip}{{I^\prime}} % orthogonal center of the current cell
+\newcommand{\bji}{{\cellj>\celli}} % oriented internal face value ("L, sigma" in sushi)
+\newcommand{\ib}{{\celli>\fib}} % oriented internal face value ("K, sigma" in sushi)
+\newcommand{\celli}{c} % name of the current cell
+\newcommand{\centi}{{\vect{x}_{\celli}}} % center of the current cell
+\newcommand{\centip}{\vect{x}_{\celli}^\prime} % orthogonal center of the current cell
+\newcommand{\centipp}{\vect{x}_{\celli}^{\prime\prime}} % orthogonal center of the current cell
+%deprecated
 \newcommand{\ipf}{{I^\prime}} % orthogonal center index of the current cell
-\newcommand{\vol}[1]{\Omega_{#1}} % Volume of the cell #1 (K itself in sushi)
-\newcommand{\cellj}{j} % name of the neighbouring face
-\newcommand{\centj}{J} % center of the neighbouring face
-\newcommand{\centjp}{{J^\prime}} % orthogonal center of the neighbouring cell
+\newcommand{\iface}{{\celli>f}} % oriented face
+\newcommand{\jface}{{\cellj>f}} % oriented face
+\newcommand{\vol}[1]{V_{#1}} % Volume of the cell #1 (K itself in sushi)
+\newcommand{\cellj}{{\overline{c}}} % name of the neighbouring face
+\newcommand{\centj}{\vect{x}_{\cellj}} % center of the neighbouring face
+\newcommand{\centjp}{\vect{x}_{\cellj}^\prime} % orthogonal center of the current cell
+\newcommand{\centjpp}{\vect{x}_{\cellj}^{\prime\prime}} % orthogonal center of the current cell
+%deprecated
 \newcommand{\jpf}{{J^\prime}} % orthogonal center index of the neighbouring cell
-\newcommand{\centf}{F} % center of the face
-\newcommand{\cento}{O} % intersection between the cell centers and the face
+\newcommand{\centf}{\vect{x}_{\face}} % center of the face
+\newcommand{\cento}{\vect{x}_o} % intersection between the cell centers and the face
+%
+\newcommand{\vertex}{{v}} % vertex
+\newcommand{\centv}{\vect{x}_{\vertex}} % vertex position
+\newcommand{\dotvol}[1]{\dot{V}_{#1}} % Volume of the cell #1 (K itself in sushi)
 %
 \newcommand{\dd}{\mathrm{d}} % total derivative
 \newcommand{\der}[2]{\dfrac{\partial #1}{\partial #2}}
+\newcommand{\dern}[3]{\dfrac{\partial^{#3} #1}{\partial {#2}^{#3}}}
 \newcommand{\DP}[1]{\dfrac{\dd #1}{\dd t}} % lagrangian derivative
 %
 \newcommand{\varia}{Y} % variable name
 \newcommand{\variav}{\vect{v}} % vectorial variable name
 \newcommand{\variat}{\tens{t}} % vectorial variable name
 \newcommand{\ncell}{{N_{cell}}} % number of cells
+\newcommand{\nsys}{{\mathtt{n_{sys}}}} % number of cells
 %
 \newcommand{\Neigh}[1]{Neigh\left(#1\right)}
 \newcommand{\Bound}[1]{Bound\left(#1\right)}

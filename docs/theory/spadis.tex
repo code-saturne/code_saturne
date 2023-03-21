@@ -49,7 +49,7 @@ which are denoted by $\varia_\celli$, $\celli \in \left[ 1 , \, \cdots , \, \nce
 As each discretized field $\varia$ is supposed to be linear in every single cell, $\varia_\celli$ can be identified
 by the value of the field in $\centi$, the cell center of $\vol{\celli}$:
 \begin{equation}\label{eq:spadis:variai_id}
-\varia_\centi = \varia_\celli.
+\varia(\centi) = \varia_\celli.
 \end{equation}
 
 %-------------------------
@@ -75,7 +75,7 @@ in the momentum equation.
 
 %\footnote{%
 %If the cell $\celli$ is at the domain boundary, the sum becomes
-%$\sum\limits_{\fij \in \Facei{\celli}} P_{\fij} \vect{S}_{\ij}+\sum\limits_{\fib \in \Faceb{\celli}} P_{\fib} \vect{S}_{\ib}$,
+%$\sum\limits_{\fij \in \Facei{\celli}} P_{\fij} \vect{S}_{\bij}+\sum\limits_{\fib \in \Faceb{\celli}} P_{\fib} \vect{S}_{\ib}$,
 %with $\fib$ referring to the faces
 %of the cell $\celli$ which are at the domain boundary.
 %} %
@@ -95,15 +95,15 @@ In expression \eqref{eq:spadis:green_relation}, face values of the field $\varia
 so that the relationship \eqref{eq:spadis:green_relation} is exact. As the field $\varia$ is linear over the face $\face$,
 $\varia_\face$ can be associated to the face centre $\centf$:
 \begin{equation}\label{eq:spadis:variaf_id}
-\varia_\centf = \varia_\face.
+  \varia(\centf) = \varia_\face.
 \end{equation}
 
 In the following sections, faces $\Face{\celli}$ are usually split into two categories: the interior faces $\fij \in \Facei{\celli}$ separating
 two neighbouring cells $\celli$ and $\cellj$; and the boundary faces $\fib \in \Faceb{\celli}$.
-Outward (with respect to the cell $\celli$) normals are respectively denoted  $\vect{S}_\ij$ and $\vect{S}_\ib$,
-which means that $\vect{S}_\ij$ is oriented from $\celli$ toward $\cellj$.
+Outward (with respect to the cell $\celli$) normals are respectively denoted  $\vect{S}_\bij$ and $\vect{S}_\ib$,
+which means that $\vect{S}_\bij$ is oriented from $\celli$ toward $\cellj$.
 
-Then $\varia_{\centf}$ is expressed as an average of the degree of freedom, which are for the interface $\fij$ the value of $\varia_\celli$
+Then $\varia({\centf})$ is expressed as an average of the degree of freedom, which are for the interface $\fij$ the value of $\varia_\celli$
 and $\varia_\cellj$ but also the gradients in these cells. The use of gradients to reach an higher order in space is called \emph{reconstruction}
 in the following sections. The detailed computation of $\int_{\vol{\celli}} \divv \left( \varia \tens{1}\right) \dd \Omega $ is given in
  \S~\ref{sec:spadis:iteratif_gradient}.
@@ -184,10 +184,10 @@ Let us discretize the diffusive term $\dive \left(  K \grad \varia  \right) $:
  \begin{equation}\label{eq:spadis:diffusion_flux}
 D_\iface \left( K_\face , \, \varia\right) \equiv   K_\face \grad_\face \varia \cdot \vect{S}_{\iface}.
  \end{equation}
- Note that the diffusive flux $D_\ij \left( K_\fij , \, \varia\right) $ over the interior face $\fij$ lost by the cell $\celli$
+ Note that the diffusive flux $D_\bij \left( K_\fij , \, \varia\right) $ over the interior face $\fij$ lost by the cell $\celli$
  is gained by $\cellj$, in other words:
  \begin{equation}\label{eq:spadis:diffusion_flux_symmetry}
-D_\ij \left( K_\fij , \, \varia\right) = - D_\ji \left( K_\fij , \, \varia\right) .
+D_\bij \left( K_\fij , \, \varia\right) = - D_\bji \left( K_\fij , \, \varia\right) .
  \end{equation}
 
  \begin{remark}
@@ -213,35 +213,35 @@ in the respective cells, one can write for any field $\varia$:
 \begin{equation}\label{eq:spadis:reconstruction_ip_jp}
 \left\lbrace
 \begin{array}{r c l c l}
-\varia_\centip &\simeq & \varia_\centi + \grad_\celli \varia \cdot \vect{\centi \centip} &=& \varia_\celli + \grad_\celli \varia \cdot \vect{\centi \centip},  \\
-\varia_\centjp &\simeq & \varia_\centj + \grad_\cellj \varia \cdot \vect{\centj \centjp} & =& \varia_\cellj + \grad_\cellj \varia \cdot \vect{\centj \centjp}.
+  \varia(\centip) &\simeq & \varia(\centi) + \grad_\celli \varia \cdot (\centip - \centi) &=& \varia_\celli + \grad_\celli \varia \cdot (\centip - \centi),  \\
+  \varia(\centjp) &\simeq & \varia(\centj) + \grad_\cellj \varia \cdot (\centjp - \centj) & =& \varia_\cellj + \grad_\cellj \varia \cdot (\centjp - \centj).
 \end{array}
 \right.
 \end{equation}
 Note that for orthogonal meshes (where $\centip = \centi$ for all faces of all cells),
 no \emph{reconstruction} \eqref{eq:spadis:reconstruction_ip_jp} is needed,
-and therefore the distance $\norm{\vect{\centi \centip}}$ measures the \emph{non-orthogonality} of the mesh.
+and therefore the distance $\norm{(\centip - \centi)}$ measures the \emph{non-orthogonality} of the mesh.
 The computation of $\grad_\celli \varia$ is presented in  \S~\ref{sec:spadis:iteratif_gradient} and \S~\ref{ap:gradrc}.
 
-Furthermore, the intersection between \vect{\centi \centj} and the corresponding interior face $\fij$ is denoted by $\cento$.
-The distance $\norm{\vect{\cento \centf}}$ measures the \emph{offset} of the mesh.
+Furthermore, the intersection between $(\centj - \centi)$ and the corresponding interior face $\fij$ is denoted by $\cento$.
+The distance $\norm{\centf - \cento}$ measures the \emph{offset} of the mesh.
 
-Eventually, a weighting factor $\alpha_\ij$ is defined to measure the distance of the cell center $\centi$ to the face $\fij$ relatively
+Eventually, a weighting factor $\alpha_\bij$ is defined to measure the distance of the cell center $\centi$ to the face $\fij$ relatively
 to the other cell center $\centj$:
 \begin{equation}\label{eq:spadis:pond_def}
-\alpha_{\ij}=\dfrac{\overline{\centf \centjp}}{\overline{\centip \centjp}}.
+\alpha_{\bij}=\dfrac{\norm{{\centjp}- \centf}}{\norm{{\centj- \centi}}}
 \end{equation}
-Note that the distances  $\overline{\centip \centjp}$ and $\overline{\centf \centjp}$ are defined algebraically, that is:
+Note that the distances  $\norm{\centjp - \centip}$ and $\norm{\centjp - \centf}$ are defined algebraically, that is:
 \begin{equation}
 \begin{array}{r c l}
-\overline{\centip \centjp} & \equiv & \dfrac{\vect{\centip \centjp} \cdot \vect{S}_\ij}{\norm{\vect{S}_\ij}}, \\
-\overline{\centf \centjp} & \equiv & \dfrac{\vect{\centf \centjp} \cdot \vect{S}_\ij}{\norm{\vect{S}_\ij}},
+\norm{\centjp - \centip} & \equiv & \dfrac{(\centjp - \centip) \cdot \vect{S}_\bij}{\norm{\vect{S}_\bij}}, \\
+\norm{\centjp - \centf} & \equiv & \dfrac{(\centjp - \centf) \cdot \vect{S}_\bij}{\norm{\vect{S}_\bij}},
 \end{array}
 \end{equation}
-and are supposed to be positive if the mesh is \emph{star-shaped}. Note also that $\alpha_\ij$ is oriented from $\celli$ to $\cellj$ and
+and are supposed to be positive if the mesh is \emph{star-shaped}. Note also that $\alpha_\bij$ is oriented from $\celli$ to $\cellj$ and
 %
 \begin{equation}
-\alpha_\ij + \alpha_\ji = 1.
+\alpha_\bij + \alpha_\bji = 1.
 \end{equation}
 
 \begin{figure}[t]
@@ -269,7 +269,7 @@ Using the notations adopted in \S~\ref{sec:spadis:notations},
 the explicit budget corresponding to the integration over a cell
 $\vol{\celli}$ of the convective part $\grad_\celli \varia \cdot \left(\rho \vect{u} \right) $
 has been written as a sum of the
-numerical fluxes $C_\ij \left( \dot{m}_\ij , \, \varia \right)$ calculated at the interior faces,
+numerical fluxes $C_\bij \left( \dot{m}_\bij , \, \varia \right)$ calculated at the interior faces,
  and the numerical fluxes $C_\ib \left( \dot{m}_\ib , \, \varia \right)$ calculated at the
 boundary faces of the computational domain $\Omega$ defined by Equation~\eqref{eq:spadis:convection_flux}.
 
@@ -277,24 +277,24 @@ Note that $C_\ib \left( \dot{m}_\ib , \, \varia \right)$ involves the boundary c
  and are described in detail in \chaptername~\ref{chapter:bndcnd}. The value of $\varia_\fib$ is expressed as follows:
  %
 \begin{equation}%TODO use recall
-\varia_\fib \equiv A_\fib^g + B_\fib^g \varia_\centip.
+  \varia_\fib \equiv A_\fib^g + B_\fib^g \varia(\centip).
 \end{equation}
 
-The value of the convective flux $ C_\ij \left(\dot{m}_\fij , \, \varia \right) $ depends on the numerical scheme. Three different types of convection schemes are available in \CS.
+The value of the convective flux $ C_\bij \left(\dot{m}_\fij , \, \varia \right) $ depends on the numerical scheme. Three different types of convection schemes are available in \CS.
 
 %-------------------------------------------------------------------------------
 \subsection{Upwind}
 For a $1^{st}$-order upwind scheme, the convective flux reads:
 
 \begin{equation}
-C_\ij^{upwind} \left( \dot{m}_\ij , \, \varia \right)  \equiv \left(\varia_\fij^{upwind} - \varia_\celli \right) \dot{m}_\ij,
+C_\bij^{upwind} \left( \dot{m}_\bij , \, \varia \right)  \equiv \left(\varia_\fij^{upwind} - \varia_\celli \right) \dot{m}_\bij,
 \end{equation}
 with
 \begin{equation}
 \varia_\fij^{upwind} =
 \left\lbrace\begin{array}{l}
-\varia_\celli \text{ if } \dot{m}_\ij  \geqslant 0,\\
-\varia_\cellj \text{ if } \dot{m}_\ij < 0.
+\varia_\celli \text{ if } \dot{m}_\bij  \geqslant 0,\\
+\varia_\cellj \text{ if } \dot{m}_\bij < 0.
 \end{array}\right.
 \end{equation}
 
@@ -304,11 +304,11 @@ with
 For a centred scheme, the convective flux reads:
 
 \begin{equation}
-C_\ij^{centred} \left( \dot{m}_\ij , \, \varia \right)  \equiv \left(\varia_\fij^{centred} - \varia_\celli \right) \dot{m}_\ij ,
+C_\bij^{centred} \left( \dot{m}_\bij , \, \varia \right)  \equiv \left(\varia_\fij^{centred} - \varia_\celli \right) \dot{m}_\bij ,
 \end{equation}
 with
 \begin{equation}
-\varia_\fij^{centred} = \alpha_\ij \varia_\centip + \left( 1 - \alpha_\ij \right) \varia_\centjp.
+  \varia_\fij^{centred} = \alpha_\bij \varia(\centip) + \left( 1 - \alpha_\bij \right) \varia(\centjp).
 \end{equation}
 
 \begin{remark}
@@ -316,7 +316,7 @@ with
 We actually write
 %
 \begin{equation}
-\varia_\fij^{centred} = \alpha_\ij \varia_\celli + \left( 1 - \alpha_\ij \right) \varia_\cellj
+\varia_\fij^{centred} = \alpha_\bij \varia_\celli + \left( 1 - \alpha_\bij \right) \varia_\cellj
 +
 \dfrac{1}{2} \left[ \grad_\celli \varia + \grad_\cellj \varia \right] \cdot \vect{OF},
 \end{equation}
@@ -332,14 +332,14 @@ Extrapolation  of the upwind value at the faces centre.}%
 , the convective flux reads:
 
 \begin{equation}
-C_\ij^{SOLU} \left( \dot{m}_\ij , \, \varia \right)  \equiv \left(\varia_\fij^{SOLU} - \varia_\celli \right) \dot{m}_\ij ,
+C_\bij^{SOLU} \left( \dot{m}_\bij , \, \varia \right)  \equiv \left(\varia_\fij^{SOLU} - \varia_\celli \right) \dot{m}_\bij ,
 \end{equation}
 with
 \begin{equation}
 \varia_\fij^{SOLU} =
 \left\lbrace\begin{array}{l l}
-\varia_\celli +\grad_\celli \varia \cdot \vect{IF}  & \text{ if } \dot{m}_\ij  \geqslant 0,\\
-\varia_\cellj +\grad_\cellj \varia \cdot\vect{JF}   & \text{ if } \dot{m}_\ij < 0 .
+\varia_\celli +\grad_\celli \varia \cdot \vect{IF}  & \text{ if } \dot{m}_\bij  \geqslant 0,\\
+\varia_\cellj +\grad_\cellj \varia \cdot\vect{JF}   & \text{ if } \dot{m}_\bij < 0 .
 \end{array}\right.
 \end{equation}
 
@@ -349,7 +349,7 @@ The boundary value of $C_\ib^{SOLU}$ is calculated as:
 \varia_\fib^{SOLU} =
 \left\lbrace\begin{array}{l l}
 \varia_\celli +\grad_\celli \varia \cdot \vect{IF}  & \text{ if } \dot{m}_\ib  \geqslant 0,\\
-A^g_\fib  + B^g_\fib \varia_\centip  & \text{ if } \dot{m}_\ib < 0.
+  A^g_\fib  + B^g_\fib \varia(\centip)  & \text{ if } \dot{m}_\ib < 0.
 \end{array}\right.
 \end{equation}
 
@@ -366,7 +366,7 @@ Using the notations adopted in \S~\ref{sec:spadis:notations},
 the explicit budget corresponding to the integration over a cell
 $\vol{\celli}$ of the diffusive term $\dive \left( K \grad \varia \right) $
 has been written as a sum of the
-numerical fluxes $D_\ij \left( K_\fij , \, \varia \right)$ calculated at the internal faces,
+numerical fluxes $D_\bij \left( K_\fij , \, \varia \right)$ calculated at the internal faces,
  and the numerical fluxes $D_\ib \left( K_\fib , \, \varia \right)$ calculated at the
 boundary faces of the computational domain $\Omega$ defined by Equation~\eqref{eq:spadis:diffusion_flux}.
 
@@ -374,15 +374,15 @@ Note that $D_\ib \left( K_\fib , \, \varia \right)$ includes the \textbf{diffusi
  and are described in detail in \chaptername~\ref{chapter:bndcnd}. The value of the flux $D_\ib $ of $\varia_\fib$ is expressed as follows:
  %
 \begin{equation}\label{eq:spadis:boundary_flux}%TODO use recall
-\dfrac{D_\ib}{\norm{\vect{S}}_\fib}  \equiv -\left(A_\ib^f + B_\ib^f \varia_\centip\right).
+  \dfrac{D_\ib}{\norm{\vect{S}}_\fib}  \equiv -\left(A_\ib^f + B_\ib^f \varia(\centip)\right).
 \end{equation}
 
-The value of the diffusive flux $D_\ij $ depends on the \emph{reconstruction} of the field $\varia$ and also on the interpolation at the face  of the diffusivity $K$ from the cell values. Two interpolations are available:
+The value of the diffusive flux $D_\bij $ depends on the \emph{reconstruction} of the field $\varia$ and also on the interpolation at the face  of the diffusivity $K$ from the cell values. Two interpolations are available:
 %
 \begin{enumerate}[ label=\roman{*}/, ref=(\roman{*})]
 \item a \emph{harmonic} interpolation which reads:
 \begin{equation}\label{eq:spadis:harmonic_viscosity}
-K_\fij^{harmonic} \equiv  \dfrac{K_\celli K_\cellj}{\alpha_\ij K_\celli + \left( 1 - \alpha_\ij\right)K_\cellj}
+K_\fij^{harmonic} \equiv  \dfrac{K_\celli K_\cellj}{\alpha_\bij K_\celli + \left( 1 - \alpha_\bij\right)K_\cellj}
 \end{equation}
 \item an \emph{arithmetic} interpolation which reads:
 \begin{equation}
@@ -397,7 +397,7 @@ whereas the \emph{arithmetic} mean is set as the default option because it has b
 For a \emph{non-reconstructed} field, the diffusive flux reads:
 
 \begin{equation}
-D_\ij^{NRec} \left( K_\fij , \, \varia \right)  =  - \dfrac{K_\fij \norm{\vect{S}_\ij}}{\overline{\centip \centjp} } \left( \varia_\celli - \varia_\cellj\right).
+D_\bij^{NRec} \left( K_\fij , \, \varia \right)  =  - \dfrac{K_\fij \norm{\vect{S}_\bij}}{\norm{\centjp - \centip} } \left( \varia_\celli - \varia_\cellj\right).
 \end{equation}
 
 
@@ -406,7 +406,7 @@ D_\ij^{NRec} \left( K_\fij , \, \varia \right)  =  - \dfrac{K_\fij \norm{\vect{S
 For a \emph{reconstructed} field, the diffusive flux reads:
 
 \begin{equation}
-D_\ij^{Rec} \left( K_\fij , \, \varia \right)  =  - \dfrac{K_\fij \norm{\vect{S}_\ij}}{\overline{\centip \centjp} } \left( \varia_\centip - \varia_\centjp \right).
+  D_\bij^{Rec} \left( K_\fij , \, \varia \right)  =  - \dfrac{K_\fij \norm{\vect{S}_\bij}}{\norm{\centjp - \centip} } \left( \varia(\centip) - \varia(\centjp) \right).
 \end{equation}
 
 \begin{remark}
@@ -414,8 +414,8 @@ In fact, it is actually written as
 %
 \begin{equation}
 \begin{array}{r c l}
-D_\ij^{Rec} \left( K_\fij , \, \varia \right)  &=&  - \dfrac{K_\fij \norm{\vect{S}_\ij}}{\overline{\centip \centjp} } \left( \varia_\celli - \varia_\cellj \right) \\
-&-& \dfrac{K_\fij \norm{\vect{S}_\ij}}{\overline{\centip \centjp} }  \dfrac{1}{2}\left( \grad_\celli \varia + \grad_\cellj \varia \right) \cdot \left( \vect{\centi \centip} - \vect{\centj \centjp} \right),
+D_\bij^{Rec} \left( K_\fij , \, \varia \right)  &=&  - \dfrac{K_\fij \norm{\vect{S}_\bij}}{\norm{\centjp - \centip} } \left( \varia_\celli - \varia_\cellj \right) \\
+&-& \dfrac{K_\fij \norm{\vect{S}_\bij}}{\norm{\centjp - \centip} }  \dfrac{1}{2}\left( \grad_\celli \varia + \grad_\cellj \varia \right) \cdot \left( (\centip - \centi) - (\centjp - \centj) \right),
 \end{array}
 \end{equation}
 %
@@ -477,24 +477,24 @@ In order to take the mesh non-orthogonality into account, a Taylor series ($1^{s
 \equiv & \displaystyle
 \int_{\vol{\celli}}{\grad \varia \, \dd \vol{} }
 = \sum\limits_{ \fij \in \Facei{\celli}}
-\varia_{\fij}\,{\vect S_{\ij }}
+\varia_{\fij}\,{\vect S_{\bij }}
 +\sum\limits_{ \fib \in \Faceb{\celli}}
 \varia_{\fib}\,{\vect S_{\ib }}, \\
 &=& \displaystyle
  \sum\limits_{ \fij \in \Facei{\celli}}
-\varia_{\centf}\,{\vect S_{\ij }}
+\varia_{\centf}\,{\vect S_{\bij }}
 +\sum\limits_{ \fib \in \Faceb{\celli}}
 \varia_{\centf}\,{\vect S_{\ib }}, \\
 &\simeq &  \displaystyle
-\sum\limits_{ \fij \in \Facei{\celli}} \left[ \varia_{\cento}+ \grad_{\cento} \varia \cdot \vect{\cento \centf} \right] \vect{S}_{\ij}+
+\sum\limits_{ \fij \in \Facei{\celli}} \left[ \varia_{\cento}+ \grad_{\cento} \varia \cdot (\centf - \cento) \right] \vect{S}_{\bij}+
 \sum\limits_{ \fib \in \Faceb{\celli}} \left[ \epsilon_{\delta \varia} A_{\fib} + B_{\fib} \varia_{\ipf} \right] \vect{S}_{\ib} ,\\
  & = &\displaystyle
 \sum\limits_{ \fij \in \Facei{\celli}}
 \left[
-\left( \alpha_{\ij} \varia_\centi +
-(1 - \alpha_{\ij}) \varia_\centj \right) \right] \vect{S}_{\ij} +
+  \left( \alpha_{\bij} \varia(\centi) +
+  (1 - \alpha_{\bij}) \varia(\centj) \right) \right] \vect{S}_{\bij} +
 \sum\limits_{ \fij \in \Facei{i}} \left[
-\grad_{\fij} \varia  \cdot  \vect{\cento \centf} \right] \vect{S}_{\ij} \\
+\grad_{\fij} \varia  \cdot  (\centf - \cento) \right] \vect{S}_{\bij} \\
 &+&\displaystyle
 \sum\limits_{ \fib \in \Faceb{\celli}} \left[ \epsilon_{\delta \varia} A_{\fib} + B_{\fib} \varia_{\ipf} \right] \vect{S}_{\ib} .
 \end{array}
@@ -520,13 +520,13 @@ Equation \eqref{eq:compute_gradrc1} becomes:
 \norm{\vol{\celli}} \grad_{\celli} \varia &=&
 \displaystyle
 \sum\limits_{\fij \in \Facei{\celli}}
-\left[\alpha_{\ij} \varia_\celli
-+ (1 - \alpha_{\ij}) \varia_\cellj  + \frac{1}{2}
-\left( \grad_\celli \varia +\grad_\cellj \varia\right) \cdot \vect{\cento \centf }  \right] {\vect S_{\ij}}\\
+\left[\alpha_{\bij} \varia_\celli
++ (1 - \alpha_{\bij}) \varia_\cellj  + \frac{1}{2}
+\left( \grad_\celli \varia +\grad_\cellj \varia\right) \cdot \vect{\cento \centf }  \right] {\vect S_{\bij}}\\
 &+& \displaystyle
 \sum\limits_{\fib \in \Faceb{\celli}}
 \left[ \epsilon_{\delta \varia}A_{\fib} +
-B_{\fib} \varia_{\celli} + B_{\fib} \grad_{\celli} \varia \cdot \vect{\centi \centip}
+B_{\fib} \varia_{\celli} + B_{\fib} \grad_{\celli} \varia \cdot (\centip - \centi)
 \right] \vect{S}_{\ib}.
 \end{array}
 \end{equation*}
@@ -537,15 +537,15 @@ Bringing $\grad_\celli \varia$ terms all together on the left hand side, we have
 \begin{array}{r c l}
 \displaystyle
 \norm{\vol{\celli}} \grad_{\celli} \varia -
-\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2} \grad_\celli \varia \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right)-
-\sum\limits_{ \fib \in \Faceb{\celli}} B_{\fib} \grad_\celli \varia \cdot \left( \vect{\centi \centip}  \otimes \vect{S}_{\ib} \right)
+\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2} \grad_\celli \varia \cdot \left( (\centf - \cento) \otimes \vect{S}_{\bij} \right)-
+\sum\limits_{ \fib \in \Faceb{\celli}} B_{\fib} \grad_\celli \varia \cdot \left( (\centip - \centi)  \otimes \vect{S}_{\ib} \right)
 &=&
 \displaystyle
 \sum\limits_{\fij \in \Facei{\celli}}\left[
-(\alpha_{\ij} \varia_\celli + (1 - \alpha_{\ij}) \varia_\cellj)\right] \vect{S}_{\ij} \\
+(\alpha_{\bij} \varia_\celli + (1 - \alpha_{\bij}) \varia_\cellj)\right] \vect{S}_{\bij} \\
 &+&
 \displaystyle
-\sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2} \grad_\cellj \varia \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right) \\
+\sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2} \grad_\cellj \varia \cdot \left( (\centf - \cento) \otimes \vect{S}_{\bij} \right) \\
 &+&
 \displaystyle
 \sum\limits_{\fib \in \Faceb{\celli}}\left[ \epsilon_{\delta \varia} A_{\fib} + B_{\fib} \varia_\celli \right] \vect{S}_{\ib}.
@@ -555,23 +555,23 @@ Bringing $\grad_\celli \varia$ terms all together on the left hand side, we have
 \subsubsection{Without reconstruction}
 On an orthogonal mesh, or if this option is chosen, only $0^{th}$-order contributions are considered.
 Everything is as if
-$\vect{\centi \centip} = \vect{0}$ and $\vect{\cento \centf} = \vect{0}$ in the previous calculation:
+$(\centip - \centi) = \vect{0}$ and $(\centf - \cento) = \vect{0}$ in the previous calculation:
 \begin{equation}\notag
 \begin{array}{r c l}
 \norm{\vol{\celli}} \grad_\celli \varia &\equiv & \displaystyle
-\int_{\vol{\celli}} \grad \varia\, \dd \vol{} =\sum\limits_{\fij \in \Facei{\celli}} \varia_{\fij} \vect S_{\ij} + \sum\limits_{\fib \in \Faceb{\celli}} \varia_{\fib} \vect{S}_{\ib}, \\
+\int_{\vol{\celli}} \grad \varia\, \dd \vol{} =\sum\limits_{\fij \in \Facei{\celli}} \varia_{\fij} \vect S_{\bij} + \sum\limits_{\fib \in \Faceb{\celli}} \varia_{\fib} \vect{S}_{\ib}, \\
  &=& \displaystyle
  \sum\limits_{ \fij \in \Facei{\celli}}
- \left[ \alpha_{\ij} \varia_\centi +
-(1 - \alpha_{\ij}) \varia_\centj \right] \vect S_{\ij}
-+ \sum\limits_{ \fib \in \Faceb{\celli}} \left[ \epsilon_{\delta \varia} A_{\fib} + B_{\fib}\varia_\centi \right] \vect{S}_{\ib},
+  \left[ \alpha_{\bij} \varia(\centi) +
+  (1 - \alpha_{\bij}) \varia(\centj) \right] \vect S_{\bij}
+  + \sum\limits_{ \fib \in \Faceb{\celli}} \left[ \epsilon_{\delta \varia} A_{\fib} + B_{\fib}\varia(\centi) \right] \vect{S}_{\ib},
 \end{array}
 \end{equation}
 hence
 \begin{equation}\label{eq:spadis:gradrc_nonrecontruit}
 \grad_\celli^{NRec} \varia= \dfrac{1}{\norm{\vol{\celli}}} \left[
-  \sum\limits_{\fij \in \Facei{\celli}} \left[\alpha_{\ij} \varia_\centi + (1 - \alpha_{\ij}) \varia_\centj) \right] \vect S_{\ij}
-+\sum\limits_{\fib \in \Faceb{\celli}}(\epsilon_{\delta \varia} A_{\fib} + B_{\fib} \varia_\centi
+  \sum\limits_{\fij \in \Facei{\celli}} \left[\alpha_{\bij} \varia(\centi) + (1 - \alpha_{\bij}) \varia(\centj)) \right] \vect S_{\bij}
++\sum\limits_{\fib \in \Faceb{\celli}}(\epsilon_{\delta \varia} A_{\fib} + B_{\fib} \varia(\centi)
 ) \vect{S}_{\ib} \right].
 \end{equation}
 
@@ -599,15 +599,15 @@ and the associated system is:
 \begin{array}{r c l}
 \displaystyle
 \grad_{\celli}^{k+1} \varia \cdot \left[\norm{\vol{\celli}} \tens{1} -
-\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2}  \vect{\cento \centf} \otimes \vect{S}_{\ij} -
-\sum\limits_{ \fib \in \Faceb{\celli}} B_{\fib} \vect{\centi \centip}  \otimes \vect{S}_{\ib}  \right]
+\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2}  (\centf - \cento) \otimes \vect{S}_{\bij} -
+\sum\limits_{ \fib \in \Faceb{\celli}} B_{\fib} (\centip - \centi)  \otimes \vect{S}_{\ib}  \right]
 &=&
 \displaystyle
 \sum\limits_{\fij \in \Facei{\celli}}\left[
-(\alpha_{\ij} \varia_\celli + (1 - \alpha_{\ij}) \varia_\cellj)\right] \vect{S}_{\ij} \\
+(\alpha_{\bij} \varia_\celli + (1 - \alpha_{\bij}) \varia_\cellj)\right] \vect{S}_{\bij} \\
 &+&
 \displaystyle
-\sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2} \grad_\cellj^k \varia \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right) \\
+\sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2} \grad_\cellj^k \varia \cdot \left( (\centf - \cento) \otimes \vect{S}_{\bij} \right) \\
 &+&
 \displaystyle
 \sum\limits_{\fib \in \Faceb{\celli}}\left[ \epsilon_{\delta \varia} A_{\fib} + B_{\fib} \varia_\celli \right] \vect{S}_{\ib},
@@ -623,21 +623,21 @@ or, as the following relationship stands:
 \begin{array}{r c l}
 \displaystyle
 \delta \grad_{\celli}^{k+1} \varia \cdot \left[\norm{\vol{\celli}} \tens{1} -
-\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2}  \vect{\cento \centf} \otimes \vect{S}_{\ij} -
-\sum\limits_{ \fib \in \Faceb{\celli}} B_{\fib}  \vect{\centi \centip}  \otimes \vect{S}_{\ib}  \right]
+\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2}  (\centf - \cento) \otimes \vect{S}_{\bij} -
+\sum\limits_{ \fib \in \Faceb{\celli}} B_{\fib}  (\centip - \centi)  \otimes \vect{S}_{\ib}  \right]
 &=&
 \displaystyle
  -\norm{\vol{\celli}}  \grad_{\celli}^{k} \varia +
 \sum\limits_{\fij \in \Facei{\celli}}\left[
-(\alpha_{\ij} \varia_\celli + (1 - \alpha_{\ij}) \varia_\cellj)\right] \vect{S}_{\ij} \\
+(\alpha_{\bij} \varia_\celli + (1 - \alpha_{\bij}) \varia_\cellj)\right] \vect{S}_{\bij} \\
 &+&
 \displaystyle
 \sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2}
-\left(\grad_\celli^k \varia + \grad_\cellj^k \varia \right) \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right) \\
+\left(\grad_\celli^k \varia + \grad_\cellj^k \varia \right) \cdot \left( (\centf - \cento) \otimes \vect{S}_{\bij} \right) \\
 &+&
 \displaystyle
 \sum\limits_{\fib \in \Faceb{\celli}}\left[ \epsilon_{\delta \varia} A_{\fib}
-            + B_{\fib} \left( \varia_\celli + \grad_\celli^k \varia \cdot \vect{\centi \centip} \right) \right] \vect{S}_{\ib}.
+            + B_{\fib} \left( \varia_\celli + \grad_\celli^k \varia \cdot (\centip - \centi) \right) \right] \vect{S}_{\ib}.
 \end{array}
 \end{equation}
 
@@ -689,19 +689,19 @@ with:
 \tens{C}_\celli  &=&
 \displaystyle
 \norm{\vol{\celli}} \tens{1} -
-\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2}  \vect{\cento \centf} \otimes \vect{S}_{\ij} -
-\sum\limits_{ \fib \in \Faceb{\celli}} B_{\fib} \vect{\centi \centip}  \otimes \vect{S}_{\ib} ,\\
+\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2}  (\centf - \cento) \otimes \vect{S}_{\bij} -
+\sum\limits_{ \fib \in \Faceb{\celli}} B_{\fib} (\centip - \centi)  \otimes \vect{S}_{\ib} ,\\
 \vect{R}^{k+1}_{\celli} &=&
 \displaystyle
  -\norm{\vol{\celli}}  \grad_{\celli}^{k} \varia +
 \sum\limits_{\fij \in \Facei{\celli}}\left[
-(\alpha_{\ij} \varia_\celli + (1 - \alpha_{\ij}) \varia_\cellj)\right] \vect{S}_{\ij} \\
+(\alpha_{\bij} \varia_\celli + (1 - \alpha_{\bij}) \varia_\cellj)\right] \vect{S}_{\bij} \\
 &+& \displaystyle
 \sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2}
-\left(\grad_\celli^k \varia + \grad_\cellj^k \varia \right) \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right) \\
+\left(\grad_\celli^k \varia + \grad_\cellj^k \varia \right) \cdot \left( (\centf - \cento) \otimes \vect{S}_{\bij} \right) \\
 &+& \displaystyle
 \sum\limits_{\fib \in \Faceb{\celli}}\left[ \epsilon_{\delta \varia} A_{\fib}
-+ B_{\fib} \left( \varia_\celli + \grad_\celli^k \varia \cdot \vect{\centi \centip} \right)  \right] \vect{S}_{\ib} .
++ B_{\fib} \left( \varia_\celli + \grad_\celli^k \varia \cdot (\centip - \centi) \right)  \right] \vect{S}_{\ib} .
 \end{array}\right.
 \end{equation}
 
@@ -728,24 +728,24 @@ The same Taylor series as \eqref{eq:compute_gradrc1} of $\gradt_{\celli} \variav
 \equiv & \displaystyle
 \int_{\vol{\celli}}{\gradt \, \variav \, \dd \vol{} }
 = \sum\limits_{ \fij \in \Facei{\celli}}
-\variav_{\fij} \otimes {\vect S_{\ij }}
+\variav_{\fij} \otimes {\vect S_{\bij }}
 +\sum\limits_{ \fib \in \Faceb{\celli}}
 \variav_{\fib} \otimes {\vect S_{\ib }}, \\
 &=& \displaystyle
  \sum\limits_{ \fij \in \Facei{\celli}}
-\variav_{\centf} \otimes {\vect S_{\ij }}
+\variav_{\centf} \otimes {\vect S_{\bij }}
 +\sum\limits_{ \fib \in \Faceb{\celli}}
 \variav_{\centf} \otimes {\vect S_{\ib }}, \\
 &\simeq &  \displaystyle
-\sum\limits_{ \fij \in \Facei{\celli}} \left[ \variav_{\cento}+ \gradt_{\cento} \variav \cdot \vect{\cento \centf} \right] \otimes \vect{S}_{\ij}+
+\sum\limits_{ \fij \in \Facei{\celli}} \left[ \variav_{\cento}+ \gradt_{\cento} \variav \cdot (\centf - \cento) \right] \otimes \vect{S}_{\bij}+
 \sum\limits_{ \fib \in \Faceb{\celli}} \left[ \epsilon_{\delta \variav} \vect{A}_{\fib} + \tens{B}_{\fib} \cdot \variav_{\ipf} \right] \otimes\vect{S}_{\ib} ,\\
  & = &\displaystyle
 \sum\limits_{ \fij \in \Facei{\celli}}
 \left[
-\left( \alpha_{\ij} \variav_\centi +
-(1 - \alpha_{\ij}) \variav_\centj \right) \right] \otimes \vect{S}_{\ij} +
+\left( \alpha_{\bij} \variav(\centi) +
+(1 - \alpha_{\bij}) \variav(\centj) \right) \right] \otimes \vect{S}_{\bij} +
 \sum\limits_{ \fij \in \Facei{i}} \left[
-\gradt_{\fij} \variav  \cdot  \vect{\cento \centf} \right] \otimes \vect{S}_{\ij} \\
+\gradt_{\fij} \variav  \cdot  (\centf - \cento) \right] \otimes \vect{S}_{\bij} \\
 &+&\displaystyle
 \sum\limits_{ \fib \in \Faceb{\celli}} \left[ \epsilon_{\delta \variav} \vect{A}_{\fib} + \tens{B}_{\fib} \cdot \variav_{\ipf} \right] \otimes \vect{S}_{\ib} .
 \end{array}
@@ -768,39 +768,39 @@ Equation \eqref{eq:compute_gradrv1} becomes:
 \norm{\vol{\celli}} \gradt_{\celli} \variav &=&
 \displaystyle
 \sum\limits_{\fij \in \Facei{\celli}}
-\left[\alpha_{\ij} \variav_\celli
-+ (1 - \alpha_{\ij}) \variav_\cellj  + \frac{1}{2}
-\left( \gradt_\celli \variav +\gradt_\cellj \variav \right) \cdot \vect{\cento \centf }  \right] \otimes {\vect S_{\ij}}\\
+\left[\alpha_{\bij} \variav_\celli
++ (1 - \alpha_{\bij}) \variav_\cellj  + \frac{1}{2}
+\left( \gradt_\celli \variav +\gradt_\cellj \variav \right) \cdot \vect{\cento \centf }  \right] \otimes {\vect S_{\bij}}\\
 &+& \displaystyle
 \sum\limits_{\fib \in \Faceb{\celli}}
 \left[ \epsilon_{\delta \variav}\vect{A}_{\fib} +
-\tens{B}_{\fib} \cdot \variav_{\celli} + \tens{B}_{\fib} \cdot \left( \gradt_{\celli} \variav \cdot \vect{\centi \centip} \right)
+\tens{B}_{\fib} \cdot \variav_{\celli} + \tens{B}_{\fib} \cdot \left( \gradt_{\celli} \variav \cdot (\centip - \centi) \right)
 \right] \otimes \vect{S}_{\ib}.
 \end{array}
 \end{equation*}
 
 Note that, there is no simple possibility here to bring
  $\gradt_\celli \variav$ terms all together on the left hand side, because the term
- $ \tens{B}_{\fib} \cdot \left( \gradt_{\celli} \variav \right) \cdot \left( \vect{\centi \centip}
+ $ \tens{B}_{\fib} \cdot \left( \gradt_{\celli} \variav \right) \cdot \left( (\centip - \centi)
 \otimes \vect{S}_{\ib} \right)$ cannot be factorised easily, and thus will be explicit:
 %
 \begin{equation}\label{eq:gradrv_recontruit}
 \begin{array}{r c l}
 \displaystyle
 \norm{\vol{\celli}} \gradt_{\celli} \variav -
-\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2} \gradt_\celli \variav \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right)
+\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2} \gradt_\celli \variav \cdot \left( (\centf - \cento) \otimes \vect{S}_{\bij} \right)
 &=&
 \displaystyle
 \sum\limits_{\fij \in \Facei{\celli}}\left[
-(\alpha_{\ij} \variav_\celli + (1 - \alpha_{\ij}) \variav_\cellj)\right] \otimes \vect{S}_{\ij} \\
+(\alpha_{\bij} \variav_\celli + (1 - \alpha_{\bij}) \variav_\cellj)\right] \otimes \vect{S}_{\bij} \\
 &+&
 \displaystyle
-\sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2} \gradt_\cellj \variav \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right) \\
+\sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2} \gradt_\cellj \variav \cdot \left( (\centf - \cento) \otimes \vect{S}_{\bij} \right) \\
 &+&
 \displaystyle
 \sum\limits_{\fib \in \Faceb{\celli}}\left[ \epsilon_{\delta \variav} \vect{A}_{\fib} + \tens{B}_{\fib} \cdot \variav_\celli \right] \otimes \vect{S}_{\ib}
 +
-\sum\limits_{ \fib \in \Faceb{\celli}} \tens{B}_{\fib} \gradt_\celli \variav \cdot \left( \vect{\centi \centip}  \otimes \vect{S}_{\ib} \right)
+\sum\limits_{ \fib \in \Faceb{\celli}} \tens{B}_{\fib} \gradt_\celli \variav \cdot \left( (\centip - \centi)  \otimes \vect{S}_{\ib} \right)
 .
 \end{array}
 \end{equation}
@@ -809,8 +809,8 @@ Note that, there is no simple possibility here to bring
 Without reconstruction, the vectorial gradient reads:
 \begin{equation}\label{eq:spadis:gradrv_nonrecontruit}
 \gradt_\celli^{NRec} \variav= \dfrac{1}{\norm{\vol{\celli}}} \left[
-  \sum\limits_{\fij \in \Facei{\celli}} \left[\alpha_{\ij} \variav_\centi + (1 - \alpha_{\ij}) \variav_\centj) \right] \otimes \vect S_{\ij}
-+\sum\limits_{\fib \in \Faceb{\celli}}(\epsilon_{\delta \variav} \vect{A}_{\fib} + \tens{B}_{\fib} \cdot \variav_\centi
+  \sum\limits_{\fij \in \Facei{\celli}} \left[\alpha_{\bij} \variav(\centi) + (1 - \alpha_{\bij}) \variav(\centj)) \right] \otimes \vect S_{\bij}
++\sum\limits_{\fib \in \Faceb{\celli}}(\epsilon_{\delta \variav} \vect{A}_{\fib} + \tens{B}_{\fib} \cdot \variav(\centi)
 )\otimes  \vect{S}_{\ib} \right].
 \end{equation}
 
@@ -843,22 +843,22 @@ with:
 \tens{C}_\celli  &=&
 \displaystyle
  \tens{1} -
-\dfrac{1}{\norm{\vol{\celli}}}\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2}  \vect{\cento \centf} \otimes \vect{S}_{\ij}
+\dfrac{1}{\norm{\vol{\celli}}}\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2}  (\centf - \cento) \otimes \vect{S}_{\bij}
 ,\\
 \tens{R}^{k+1}_{\celli} &=&
 \displaystyle
  -  \gradt_{\celli}^{k} \variav
  + \dfrac{1}{\norm{\vol{\celli}}}
 \sum\limits_{\fij \in \Facei{\celli}}\left[
-(\alpha_{\ij} \variav_\celli + (1 - \alpha_{\ij}) \variav_\cellj)\right] \otimes \vect{S}_{\ij} \\
+(\alpha_{\bij} \variav_\celli + (1 - \alpha_{\bij}) \variav_\cellj)\right] \otimes \vect{S}_{\bij} \\
 &+& \displaystyle
  \dfrac{1}{\norm{\vol{\celli}}}
 \sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2}
-\left(\gradt_\celli^k \variav + \gradt_\cellj^k \variav \right) \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right) \\
+\left(\gradt_\celli^k \variav + \gradt_\cellj^k \variav \right) \cdot \left( \centf - \cento \right) \otimes \vect{S}_{\bij} \\
 &+& \displaystyle
  \dfrac{1}{\norm{\vol{\celli}}}
 \sum\limits_{\fib \in \Faceb{\celli}}\left[ \epsilon_{\delta \variav} \vect{A}_{\fib}
-+ \tens{B}_{\fib} \left( \variav_\celli + \gradt_\celli^k \variav \cdot \vect{\centi \centip} \right)  \right] \otimes \vect{S}_{\ib} .
++ \tens{B}_{\fib} \left( \variav_\celli + \gradt_\celli^k \variav \cdot (\centip - \centi) \right)  \right] \otimes \vect{S}_{\ib} .
 \end{array}\right.
 \end{equation}
 
@@ -880,8 +880,8 @@ The idea is to evaluate the gradient of the variable at the cell faces using the
 The method is not expected to be as robust as the \emph{iterative} process presented in \S~\ref{sec:spadis:iteratif_gradient},
 but much more efficient.
 
-Let us introduce $\grad_\fij \varia \cdot \vect{d}_\ij$  an estimation at the internal face $\fij$
-of the gradient projected in the direction $\vect{d}_{ij}$ (which will be chosen afterwards).
+Let us introduce $\grad_\fij \varia \cdot \vect{d}_\bij$  an estimation at the internal face $\fij$
+of the gradient projected in the direction $\vect{d}_{bij}$ (which will be chosen afterwards).
 Let us also define the analogous quantity for boundary faces $\fib$: $\grad_\fib \varia \cdot \vect{d}_\ib$
  ($\vect{d}_\ib$ will also be chosen afterwards).
 
@@ -889,7 +889,7 @@ The goal would be to find $\grad_{\celli} \varia $ such that, for all faces
 the following relationships hold:
 \begin{equation}
 \left\{\begin{array}{r c l}
-\grad_{\celli} \varia  \cdot \vect{d}_\ij &=& \grad_\fij \varia \cdot \vect{d}_\ij , \\
+\grad_{\celli} \varia  \cdot \vect{d}_\bij &=& \grad_\fij \varia \cdot \vect{d}_\bij , \\
 \grad_{\celli} \varia  \cdot \vect{d}_\ib &=& \grad_\fib \varia \cdot \vect{d}_\ib .
 \end{array}\right.
 \end{equation}
@@ -901,7 +901,7 @@ problem is reformulated as the minimisation of the $\mathcal{F}_\celli$ function
 \mathcal{F}_\celli
 \left( \variav \right) =
 \dfrac{1}{2}\sum\limits_{\cellj \in \Neigh{\celli}  }\left[
- \variav   \cdot \vect{d}_\ij  -  \grad_{\fij} \varia   \cdot \vect{d}_\ij
+ \variav   \cdot \vect{d}_\bij  -  \grad_{\fij} \varia   \cdot \vect{d}_\bij
 \right]^2+
 \dfrac{1}{2}\sum\limits_{ \fib \in \Faceb{\celli}}\left[
  \variav   \cdot \vect{d}_\ib  -  \grad_{\fib} \varia   \cdot \vect{d}_\ib
@@ -915,35 +915,35 @@ vector $\variav  $ are computed, the resulting system is solved and $\grad_\cell
 as $\variav_{\min}$ such that $\mathcal{F}_\celli \left( \variav_{\min}\right)$ is minimum.
 
 In order to solve the systems for each cell $\celli$ separately from one to an other,
-vectors $\vect{d}_\ij$ and $\vect{d}_\ib$ are chosen so that the quantities
-$\grad_{\fij} \varia   \cdot \vect{d}_\ij $ and $\grad_{\fib} \varia   \cdot \vect{d}_\ib $
+vectors $\vect{d}_\bij$ and $\vect{d}_\ib$ are chosen so that the quantities
+$\grad_{\fij} \varia   \cdot \vect{d}_\bij $ and $\grad_{\fib} \varia   \cdot \vect{d}_\ib $
 do not depend on neighbour cell gradients  $\grad_{\cellj} \varia $.
 The following choice makes it possible:
 \begin{equation}\label{eq:spadis:gradmc_scalar_d_choice}
 \begin{array}{r c l}
-\vect{d}_\ij &=& \dfrac{\vect{\centi \centj}}{\norm{\vect{\centi \centj}}}, \\
-\vect{d}_\ib &=& \dfrac{\vect{\centip \centf}}{\norm{\vect{\centip \centf}}}= \vect{n}_\ib .
+\vect{d}_\bij &=& \dfrac{(\centj - \centi)}{\norm{(\centj - \centi)}}, \\
+\vect{d}_\ib &=& \dfrac{(\centf - \centip)}{\norm{(\centf - \centip)}}= \vect{n}_\ib .
 \end{array}
 \end{equation}
 
-Thus, for internal faces $\fij$, $\vect{d}_\ij$ is the normalized vector joining
+Thus, for internal faces $\fij$, $\vect{d}_\bij$ is the normalized vector joining
 the centres $\centi$ and $\centj$ oriented from cell $\celli$ to $\cellj$.
-The quantity  $\grad_{\fij} \varia   \cdot \vect{d}_\ij$ is given by:
+The quantity  $\grad_{\fij} \varia   \cdot \vect{d}_\bij$ is given by:
 \begin{equation}
-\grad_{\fij} \varia   \cdot \vect{d}_\ij =\dfrac{\varia_\cellj - \varia_\celli }{\norm{\vect{\centi \centj}}}.
+\grad_{\fij} \varia   \cdot \vect{d}_\bij =\dfrac{\varia_\cellj - \varia_\celli }{\norm{(\centj - \centi)}}.
 \end{equation}
 
 For boundary faces, the choice $\vect{d}_\ib$ to be the outward normal implies:
 \begin{equation}
-\grad_{\fib} \varia   \cdot \vect{d}_\ib =\dfrac{\varia_\fib - \varia_\centip }{\norm{\vect{\centip \centf}}},
+\grad_{\fib} \varia   \cdot \vect{d}_\ib =\dfrac{\varia_\fib - \varia(\centip) }{\norm{(\centf - \centip)}},
 \end{equation}
 where $\varia_\fib$ is expressed thanks to the boundary conditions (see \chaptername~\ref{chapter:bndcnd}) and
-the value $\varia_\centip $ is given by formula \eqref{eq:spadis:reconstruction_ip_jp} recalled hereafter:
+the value $\varia(\centip) $ is given by formula \eqref{eq:spadis:reconstruction_ip_jp} recalled hereafter:
 %
 \begin{equation}\label{eq:spadis:gradmc_bound_value}
 \left\{\begin{array}{r c l}
-\varia_\centip &=&\varia_\celli +\grad_\celli \varia \cdot \vect{\centi \centip}\\
-\varia_\fib &=& A^g_\fib +B^g_\fib \varia_\centip = A^g_\fib +B^g_\fib \left( \varia_\celli +  \grad_\celli \varia \cdot \vect{\centi \centip} \right)
+\varia(\centip) &=&\varia_\celli +\grad_\celli \varia \cdot (\centip - \centi)\\
+\varia_\fib &=& A^g_\fib +B^g_\fib \varia(\centip) = A^g_\fib +B^g_\fib \left( \varia_\celli +  \grad_\celli \varia \cdot (\centip - \centi) \right)
 \end{array}\right.
 \end{equation}
 
@@ -951,9 +951,9 @@ Eventually we get:
 \begin{equation}\label{eq:spadis:gradmc_bound_gradient}
 \grad_{\fib} \varia   \cdot \vect{d}_\ib =
 \dfrac{
-A^g_\fib +\left(B^g_\fib -1 \right) \left( \varia_\celli +  \grad_\celli \varia \cdot \vect{\centi \centip} \right)
+A^g_\fib +\left(B^g_\fib -1 \right) \left( \varia_\celli +  \grad_\celli \varia \cdot (\centip - \centi) \right)
 }{
-\norm{\vect{\centip \centf}}
+\norm{(\centf - \centip)}
 },
 \end{equation}
 
@@ -966,18 +966,18 @@ and thus should be injected into Equation
 \left( \variav \right)& =&
 \displaystyle
 \dfrac{1}{2}\sum\limits_{ \cellj \in \Neigh{\celli} }\left[
-\variav   \cdot \vect{d}_\ij  -  \grad_{\fij} \varia   \cdot \vect{d}_\ij
+\variav   \cdot \vect{d}_\bij  -  \grad_{\fij} \varia   \cdot \vect{d}_\bij
 \right]^2 \\
 &+&
 \displaystyle
 \dfrac{1}{2}\sum\limits_{ \fib \in \Faceb{\celli}}\left[
   \variav   \cdot
-  \left( \vect{d}_\ib -  \dfrac{B^g_\fib -1 }{\norm{\vect{\centip \centf}}} \vect{\centi \centip} \right)
+  \left( \vect{d}_\ib -  \dfrac{B^g_\fib -1 }{\norm{(\centf - \centip)}} (\centip - \centi) \right)
 -
 \dfrac{
 A^g_\fib +\left(B^g_\fib -1 \right) \varia_\celli
 }{
-\norm{\vect{\centip \centf}}
+\norm{(\centf - \centip)}
 }
 \right]^2.
 \end{array}
@@ -993,22 +993,22 @@ $\mathcal{F}_\celli \left( \variav \right)$ with respect to the $ \variav$ compo
 \left( \variav \right)& =&
 \displaystyle
 \sum\limits_{ \cellj \in \Neigh{\celli} }\left[
-\left(\variav   \cdot \vect{d}_\ij \right) \vect{d}_\ij
--  \left(\grad_{\fij} \varia   \cdot \vect{d}_\ij \right)  \vect{d}_\ij
+\left(\variav   \cdot \vect{d}_\bij \right) \vect{d}_\bij
+-  \left(\grad_{\fij} \varia   \cdot \vect{d}_\bij \right)  \vect{d}_\bij
 \right] \\
 &+&
 \displaystyle
 \sum\limits_{ \fib \in \Faceb{\celli}}\left[
   \left( \variav   \cdot
-  \left( \vect{d}_\ib -  \dfrac{B^g_\fib -1 }{\norm{\vect{\centip \centf}}} \vect{\centi \centip} \right) \right)
-  \left( \vect{d}_\ib -  \dfrac{B^g_\fib -1 }{\norm{\vect{\centip \centf}}} \vect{\centi \centip} \right)
+  \left( \vect{d}_\ib -  \dfrac{B^g_\fib -1 }{\norm{(\centf - \centip)}} (\centip - \centi) \right) \right)
+  \left( \vect{d}_\ib -  \dfrac{B^g_\fib -1 }{\norm{(\centf - \centip)}} (\centip - \centi) \right)
 -
 \dfrac{
 A^g_\fib +\left(B^g_\fib -1 \right) \varia_\celli
 }{
-\norm{\vect{\centip \centf}}
+\norm{(\centf - \centip)}
 }
-\left( \vect{d}_\ib -  \dfrac{B^g_\fib -1 }{\norm{\vect{\centip \centf}}} \vect{\centi \centip} \right)
+\left( \vect{d}_\ib -  \dfrac{B^g_\fib -1 }{\norm{(\centf - \centip)}} (\centip - \centi) \right)
 \right].
 \end{array}
 \end{equation}
@@ -1029,25 +1029,25 @@ with
 \tens{C}_\celli &=&
 \displaystyle
  \sum\limits_{\cellj \in \Neigh{\celli} }
- \vect{d}_\ij \otimes \vect{d}_\ij
+ \vect{d}_\bij \otimes \vect{d}_\bij
 +
 \sum\limits_{\fib \in \Faceb{\celli}}
-\left( \vect{d}_\ib -\dfrac{ B^g_\fib -1}{\norm{\vect{\centip \centf}}}  \vect{\centi \centip } \right)
+\left( \vect{d}_\ib -\dfrac{ B^g_\fib -1}{\norm{(\centf - \centip)}}  \vect{\centi \centip } \right)
 \otimes
-\left( \vect{d}_\ib -\dfrac{ B^g_\fib -1}{\norm{\vect{\centip \centf}}}  \vect{\centi \centip } \right),
+\left( \vect{d}_\ib -\dfrac{ B^g_\fib -1}{\norm{(\centf - \centip)}}  \vect{\centi \centip } \right),
 \\
 \vect{R}_\celli &=&
 \displaystyle
 \sum\limits_{ \cellj \in \Neigh{\celli} }
-\left( \grad_{\fij} \varia   \cdot \vect{d}_\ij \right) \vect{d}_\ij
+\left( \grad_{\fij} \varia   \cdot \vect{d}_\bij \right) \vect{d}_\bij
 +
 \sum\limits_{ \fib \in \Faceb{\celli}}
 \dfrac{
 A^g_\fib +\left(B^g_\fib -1 \right) \varia_\celli
 }{
-\norm{\vect{\centip \centf}}
+\norm{(\centf - \centip)}
 }
-\left( \vect{d}_\ib -  \dfrac{B^g_\fib -1 }{\norm{\vect{\centip \centf}}} \vect{\centi \centip} \right),
+\left( \vect{d}_\ib -  \dfrac{B^g_\fib -1 }{\norm{(\centf - \centip)}} (\centip - \centi) \right),
 \end{array}\right.
 \end{equation}
 %
@@ -1058,25 +1058,25 @@ using \eqref{eq:spadis:gradmc_scalar_d_choice} this gives:
 \tens{C}_\celli &=&
 \displaystyle
  \sum\limits_{\cellj \in \Neigh{\celli} }
- \dfrac{\vect{\centi \centj} \otimes \vect{\centi \centj}}{\norm{\vect{\centi \centj}}^2}
+ \dfrac{(\centj - \centi) \otimes (\centj - \centi)}{\norm{(\centj - \centi)}^2}
  +
 \sum\limits_{\fib \in \Faceb{\celli}}
-\left( \vect{n}_\ib -\dfrac{ B^g_\fib -1}{\norm{\vect{\centip \centf}}}  \vect{\centi \centip } \right)
+\left( \vect{n}_\ib -\dfrac{ B^g_\fib -1}{\norm{(\centf - \centip)}}  \vect{\centi \centip } \right)
 \otimes
-\left( \vect{n}_\ib -\dfrac{ B^g_\fib -1}{\norm{\vect{\centip \centf}}}  \vect{\centi \centip } \right),
+\left( \vect{n}_\ib -\dfrac{ B^g_\fib -1}{\norm{(\centf - \centip)}}  \vect{\centi \centip } \right),
 \\
 \vect{R}_\celli &=&
 \displaystyle
 \sum\limits_{ \cellj \in \Neigh{\celli} }
-\left( \varia_\cellj - \varia_\celli  \right) \dfrac{ \vect{\centi \centj}}{\norm{\vect{\centi \centj}}^2}
+\left( \varia_\cellj - \varia_\celli  \right) \dfrac{ (\centj - \centi)}{\norm{(\centj - \centi)}^2}
 +
 \sum\limits_{ \fib \in \Faceb{\celli}}
 \dfrac{
 A^g_\fib +\left(B^g_\fib -1 \right) \varia_\celli
 }{
-\norm{\vect{\centip \centf}}
+\norm{(\centf - \centip)}
 }
-\left( \vect{n}_\ib -  \dfrac{B^g_\fib -1 }{\norm{\vect{\centip \centf}}} \vect{\centi \centip} \right).
+\left( \vect{n}_\ib -  \dfrac{B^g_\fib -1 }{\norm{(\centf - \centip)}} (\centip - \centi) \right).
 \end{array}\right.
 \end{equation}
 
@@ -1113,7 +1113,7 @@ The functional to be minimized is defined by
 \left( \variat \right) =
 \dfrac{1}{2}\sum\limits_{\cellj \in \Neigh{\celli}  }
 \norm{
- \variat   \cdot \vect{d}_\ij  -  \gradt_{\fij} \variav   \cdot \vect{d}_\ij
+ \variat   \cdot \vect{d}_\bij  -  \gradt_{\fij} \variav   \cdot \vect{d}_\bij
 }^2+
 \dfrac{1}{2}\sum\limits_{ \fib \in \Faceb{\celli}}
 \norm{
@@ -1125,27 +1125,27 @@ To minimize $\mathcal{F}_\celli$, derivatives with respect to the components of 
 vector $\variat  $ are computed, the resulting system is solved and $\gradt_\celli \variav$ is defined
 as $\variat_{\min}$ such that $\mathcal{F}_\celli \left( \variat_{\min}\right)$ is minimum.
 
-In order to obtain a simple system, the same choice as in \eqref{eq:spadis:gradmc_scalar_d_choice} is made on $\vect{d}_\ij$.
+In order to obtain a simple system, the same choice as in \eqref{eq:spadis:gradmc_scalar_d_choice} is made on $\vect{d}_\bij$.
 Concerning $\vect{d}_\ib$, an other choice ensuring that $\grad_{\fib} \varia   \cdot \vect{d}_\ib $ does not
 depend on $\grad_{\celli} \varia $ is made:
 %
 \begin{equation}\label{eq:spadis:gradmv_scalar_d_choice}
 \begin{array}{r c l}
-\vect{d}_\ij &=& \dfrac{\vect{\centi \centj}}{\norm{\vect{\centi \centj}}}, \\
-\vect{d}_\ib &=& \dfrac{\vect{\centi \centf}}{\norm{\vect{\centi \centf}}} .
+\vect{d}_\bij &=& \dfrac{(\centj - \centi)}{\norm{(\centj - \centi)}}, \\
+\vect{d}_\ib &=& \dfrac{(\centf - \centi)}{\norm{(\centf - \centi)}} .
 \end{array}
 \end{equation}
 
-Thus, for internal faces $\fij$, $\vect{d}_\ij$ is still the normalized vector joining
+Thus, for internal faces $\fij$, $\vect{d}_\bij$ is still the normalized vector joining
 the centres $\centi$ and $\centj$ oriented from cell $\celli$ to $\cellj$.
-The quantity  $\gradt_{\fij} \variav   \cdot \vect{d}_\ij$ is given by:
+The quantity  $\gradt_{\fij} \variav   \cdot \vect{d}_\bij$ is given by:
 \begin{equation}
-\gradt_{\fij} \variav   \cdot \vect{d}_\ij =\dfrac{\variav_\cellj - \variav_\celli }{\norm{\vect{\centi \centj}}}.
+\gradt_{\fij} \variav   \cdot \vect{d}_\bij =\dfrac{\variav_\cellj - \variav_\celli }{\norm{(\centj - \centi)}}.
 \end{equation}
 
 For boundary faces, the choice $\vect{d}_\ib$ implies:
 \begin{equation}
-\gradt_{\fib} \variav   \cdot \vect{d}_\ib =\dfrac{\variav_\fib - \variav_\celli }{\norm{\vect{\centi \centf}}},
+\gradt_{\fib} \variav   \cdot \vect{d}_\ib =\dfrac{\variav_\fib - \variav_\celli }{\norm{(\centf - \centi)}},
 \end{equation}
 where $\variav_\fib$ is expressed thanks to the boundary conditions (see \chaptername~\ref{chapter:bndcnd}).
 
@@ -1168,7 +1168,7 @@ with
 \tens{C}_\celli &=&
 \displaystyle
  \sum\limits_{\cellj \in \Neigh{\celli} }
- \vect{d}_\ij \otimes \vect{d}_\ij
+ \vect{d}_\bij \otimes \vect{d}_\bij
 +
 \sum\limits_{\fib \in \Faceb{\celli}}
 \vect{d}_\ib \otimes  \vect{d}_\ib ,
@@ -1176,13 +1176,13 @@ with
 \tens{R}_\celli &=&
 \displaystyle
 \sum\limits_{ \cellj \in \Neigh{\celli} }
- \gradt_{\fij} \variav   \cdot \left( \vect{d}_\ij \otimes \vect{d}_\ij \right)
+ \gradt_{\fij} \variav   \cdot \left( \vect{d}_\bij \otimes \vect{d}_\bij \right)
 +
 \sum\limits_{ \fib \in \Faceb{\celli}}
 \dfrac{
 \vect{A}^g_\fib +\left(\tens{B}^g_\fib -\tens{1} \right) \cdot \variav_\celli
 }{
-\norm{\vect{\centi \centf}}
+\norm{\centf - \centi}
 }
 \otimes
 \vect{d}_\ib .

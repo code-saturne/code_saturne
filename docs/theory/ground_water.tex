@@ -251,23 +251,23 @@ The variables are known at centers of the cells, \emph{i.e.} at points $\centi$ 
 the center of the face $\fij$, we need values at points $\centip$ and $\centjp$:
 \begin{equation}
  \label{eq:groundwater:101}
-\grad_{\fij}\varia \cdot \vect{S}_{\ij} = \frac{\varia_{\centjp}-\varia_{\centip}}{\centip\centjp}.
+  \grad_{\fij}\varia \cdot \vect{S}_{\ij} = \frac{\varia_{\centjp}-\varia_{\centip}}{\norm{\centjp - \centip}}.
 \end{equation}
 The face gradient without reconstruction is calculated by the approximation:
 \begin{equation}
  \label{eq:groundwater:102}
-\grad_{\fij}\varia \cdot \vect{S}_{\ij} = \frac{\varia_{\centj}-\varia_{\centi}}{\centip\centjp}.
+  \grad_{\fij}\varia \cdot \vect{S}_{\ij} = \frac{\varia_{\centj}-\varia_{\centi}}{\norm{\centjp - \centip}}.
 \end{equation}
 The less the vector $\vect{\centi\centj}$ is orthogonal to the face $\fij$, the more this approximation is wrong. But it has the advantage to be easy and quick
 to deduce from the variables at cell centers, with a linear relation, and to depend only on the variables of the adjacent cells.
 The face gradient with reconstruction is calculated following the relation \eqref{eq:groundwater:101}, thanks to the relations:
 \begin{equation}
  \label{eq:groundwater:103}
-\varia_{\centip} = \varia_{\centi} + \grad \varia_\centi  \cdot \vect{\centi\centip}.
+  \varia_{\centip} = \varia_{\centi} + \grad \varia_{\centi}  \cdot (\centip - \centi).
 \end{equation}
 \begin{equation}
  \label{eq:groundwater:104}
-\varia_{\centjp} = \varia_{\centj} + \grad \varia_\centj \cdot \vect{\centj\centjp}.
+  \varia_{\centjp} = \varia_{\centj} + \grad \varia_{\centj} \cdot (\centjp - \centj).
 \end{equation}
 Thus, the calculation of the face gradient with reconstruction requires a calculation of the gradients of $\varia$ at cell centers, which can be done
 by several methods. Depending on the choosen method, the relation between the values of $\varia$ at cell centers and the gradient at cell centers can
