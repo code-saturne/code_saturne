@@ -31,20 +31,13 @@ module alaste
 
   implicit none
 
-  ! Nombre de structures max en ALE et couplage code_aster
-
-  integer nastmx
-  parameter (nastmx=200)
-
   !  Methode ALE - mouvement de structures en couplage avec code_aster
 
   ! nbaste : nombre de structures mobiles
-  ! nbfast : nombre de faces couplees
 
-  integer(c_int), save ::  nbaste = -999, nbfast = 0
+  integer(c_int), save :: nbaste = 0
 
   bind(C, name='cs_glob_ast_coupling_n_couplings') :: nbaste
-  bind(C, name='cs_glob_ast_coupling_n_faces') :: nbfast
 
   !=============================================================================
 

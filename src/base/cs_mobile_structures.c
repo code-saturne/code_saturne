@@ -175,8 +175,7 @@ typedef struct {
 
 static cs_mobile_structures_t  *_mobile_structures = NULL;
 
-extern int        cs_glob_ast_coupling_n_couplings;  /* n_ast_structs */
-extern cs_lnum_t  cs_glob_ast_coupling_n_faces;      /* nbfast */
+extern int cs_glob_ast_coupling_n_couplings;         /* n_ast_structs */
 
 /* Arrays allowing return to initial state at end of ALE iteration.
  * - Mass flux: save at the first call of schtmp.
