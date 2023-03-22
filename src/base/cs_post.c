@@ -51,6 +51,7 @@
 #include "cs_base.h"
 #include "cs_boundary_zone.h"
 #include "cs_field.h"
+#include "cs_field_operator.h"
 #include "cs_file.h"
 #include "cs_function.h"
 #include "cs_lagr_extract.h"
@@ -387,6 +388,10 @@ static void                            **_cs_post_i_output_mtp = NULL;
 /* Default directory name */
 
 static const char  _cs_post_dirname[] = "postprocessing";
+
+/* Local flag for field synchronization */
+
+static char *_field_sync = NULL;
 
 /* Timer statistics */
 
@@ -3247,8 +3252,15 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
       cs_interpolate_from_location_t
         *interpolate_func = cs_interpolate_from_location_p0;
       if (   field_loc_type == CS_MESH_LOCATION_CELLS
-          && pset_interpolation == 1)
+          && pset_interpolation == 1) {
         interpolate_func = cs_interpolate_from_location_p1;
+        if (_field_sync != NULL) {
+          if (_field_sync[f->id] == 0) {
+            cs_field_synchronize(f, CS_HALO_EXTENDED);
+            _field_sync[f->id] = 1;
+          }
+        }
+      }
 
       char interpolate_input[96];
       strncpy(interpolate_input, f->name, 95); interpolate_input[95] = '\0';
@@ -7609,6 +7621,13 @@ cs_post_time_step_output(const cs_time_step_t  *ts)
     }
   }
 
+  /* Prepare flag to avoid multiple field synchronizations */
+
+  const int n_fields = cs_field_n_fields();
+  BFT_MALLOC(_field_sync, n_fields, char);
+  for (int f_id = 0; f_id < n_fields; f_id++)
+    _field_sync[f_id] = 0;
+
   /* Output of variables by registered function instances */
   /*------------------------------------------------------*/
 
@@ -7853,6 +7872,7 @@ cs_post_time_step_output(const cs_time_step_t  *ts)
 
   /* Free memory */
 
+  BFT_FREE(_field_sync);
   BFT_FREE(parent_ids);
 
   cs_timer_stats_switch(t_top_id);
