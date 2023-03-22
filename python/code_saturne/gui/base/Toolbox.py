@@ -113,6 +113,10 @@ def displayStaticPage(case, page_name, root, stbar, tree):
         import code_saturne.gui.case.NotebookView as Page
         thisPage = Page.NotebookView(root, case)
 
+    elif page_name == tr("Time tables"):
+        import code_saturne.gui.case.TimeTablesView as Page
+        thisPage = Page.TimeTablesView(root, case, stbar, tree)
+
     elif page_name == tr("Volume conditions"):
         import code_saturne.gui.case.VolumicNatureView as Page
         thisPage = Page.VolumicNatureView(root, case, tree)

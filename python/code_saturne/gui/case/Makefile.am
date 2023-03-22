@@ -113,6 +113,7 @@ StartRestartView.py \
 ThermalView.py \
 TimeAveragesView.py \
 TimeStepView.py \
+TimeTablesView.py \
 TurboMachineryView.py \
 TurbulenceView.py \
 TurbulenceNeptuneView.py \
@@ -205,6 +206,7 @@ ThermalRadiationAdvancedDialogForm.ui \
 ThermalForm.ui \
 TimeAveragesForm.ui \
 TimeStepForm.ui \
+TimeTablesForm.ui \
 TurboMachineryForm.ui \
 TurbulenceForm.ui \
 TurbulenceNeptune.ui \

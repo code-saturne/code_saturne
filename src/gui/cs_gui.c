@@ -86,6 +86,7 @@
 #include "cs_selector.h"
 #include "cs_timer.h"
 #include "cs_time_moment.h"
+#include "cs_time_table.h"
 #include "cs_thermal_model.h"
 #include "cs_physical_properties.h"
 #include "cs_time_step.h"
@@ -5335,6 +5336,99 @@ cs_gui_thermal_source_terms(cs_field_t                 *f,
       }
     }
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read GUI defined time tables
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_time_tables(void)
+{
+
+  cs_tree_node_t *tt_n = cs_tree_get_node(cs_glob_tree,
+                                          "physical_properties/time_tables");
+
+  for (cs_tree_node_t *n = cs_tree_find_node(tt_n, "table");
+       n != NULL;
+       n = cs_tree_node_get_next_of_name(n)) {
+
+    const char *name  = cs_tree_node_get_tag(n, "name");
+    const char *fpath = cs_tree_node_get_tag(n, "file_name");
+    const char *delim = cs_tree_node_get_tag(n, "delimiter");
+
+    /* Get number of rows to skip if needed */
+    int n_rows_to_skip = 0;
+    cs_tree_node_t *node = cs_tree_node_get_child(n, "skip_rows");
+    cs_gui_node_get_int(node, &n_rows_to_skip);
+
+    /* Columns */
+    int  n_columns = -1; /* Default mode = all */
+    int *col_ids   = NULL; /* Defaukt mode : NULL (all columns) */
+    node = cs_tree_node_get_child(n, "cols2import");
+
+    if (node != NULL) {
+      const char *mode = cs_tree_node_get_value_str(node);
+      if (mode != NULL && cs_gui_strcmp(mode, "subset")) {
+        n_columns = 0;
+
+        node = cs_tree_node_get_child(n, "col_ids");
+        const char *ids = cs_tree_node_get_value_str(node);
+
+        /* Parse line and count number of columns */
+        char *token = strtok(ids, ",");
+        while (token != NULL) {
+          n_columns += 1;
+          BFT_REALLOC(col_ids, n_columns, int);
+          sscanf(token, "%d", col_ids + (n_columns - 1));
+
+          token = strtok(NULL, ",");
+        }
+
+      }
+    }
+
+    cs_time_table_t *new_table = cs_time_table_from_csv_file(name,
+                                                             fpath,
+                                                             delim,
+                                                             n_rows_to_skip,
+                                                             n_columns,
+                                                             col_ids,
+                                                             true);
+
+    BFT_FREE(col_ids);
+
+    /* Set headers */
+    node = cs_tree_node_get_child(n, "headers_list");
+    if (node != NULL) {
+      const char *hl = cs_tree_node_get_value_str(node);
+
+      int n_headers = 0;
+      char **headers = NULL;
+
+      /* Parse line */
+      char *token = strtok(hl, ",");
+      while (token != NULL) {
+        n_headers += 1;
+        BFT_REALLOC(headers, n_headers, char *);
+        BFT_MALLOC(headers[n_headers - 1], strlen(token) + 1, char);
+        strcpy(headers[n_headers - 1], token);
+
+        token = strtok(NULL, ",");
+      }
+
+      cs_time_table_set_headers(new_table, n_headers, headers);
+
+      /* Free */
+      for (int i = 0; i < n_headers; i++)
+        BFT_FREE(headers[i]);
+      BFT_FREE(headers);
+
+    }
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

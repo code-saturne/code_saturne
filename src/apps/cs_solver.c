@@ -758,6 +758,7 @@ main(int    argc,
   }
 
   /* Load user time tables */
+  cs_gui_time_tables();
   cs_user_time_table();
 
   /* Call main run() method */
