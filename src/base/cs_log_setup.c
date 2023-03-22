@@ -41,6 +41,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_ale.h"
 #include "cs_atmo.h"
 #include "cs_base.h"
 #include "cs_boundary.h"
@@ -53,7 +54,6 @@
 #include "cs_function.h"
 #include "cs_log.h"
 #include "cs_mesh_quantities.h"
-#include "cs_mobile_structures.h"
 #include "cs_mobile_structures.h"
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
@@ -170,7 +170,8 @@ _log_global_model_options(void)
 
   /* ALE */
 
-  cs_mobile_structures_log_setup();
+  if (cs_glob_ale > 0)
+    cs_mobile_structures_log_setup();
 
   /* Rotation info */
 
