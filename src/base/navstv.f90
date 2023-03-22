@@ -839,6 +839,10 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
           cromk1 => cpro_rho_k1
 
         endif
+      else
+        crom => crom_eos
+        ! rho at time n+1,k-1
+        cromk1 => crom_eos
       endif
 
       call field_get_val_s(iviscl, viscl)
