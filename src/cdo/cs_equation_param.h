@@ -347,7 +347,7 @@ typedef struct {
    * - 5, 6: Green-Gauss based using the least squares method with
    *      and extended neighborhood to compute face values\n
    * If the computation fails due to mesh quality aspects,
-   * it is usually effective to use \ref imrgra = 3, 5, or 6.
+   * it is usually effective to use imrgra = 3, 5, or 6.
    *
    * \var imligr
    * Type of gradient limiter

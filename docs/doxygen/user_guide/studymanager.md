@@ -334,8 +334,8 @@ Here are listed the main options available through the `<parametric>` node
 <tr><td> `-n`, `--iter-num`         <td> set the max. number of time iterations (an integer) to be done
 <tr><td> `--tmax`                   <td> set the final time (a float) of the simulation
 <tr><td> `--iter-dt`                <td> set the value of time step (a float)
-<tr><td> `--imrgra`                 <td> set the algorithm for the gradient reconstruction
-<tr><td> `--blencv`                 <td> between 0 and 1. Set the portion of centered scheme (0: yields to an upwind scheme. This is done variable by variable `<var>:<val>`
+<tr><td> `--imrgra`                 <td> set the algorithm (an integer) for the gradient reconstruction. See the imrgra documentation in \ref cs_equation_param_t (part related to the legacy settings) for more details or the [theory guide](../../theory.pdf).
+<tr><td> `--blencv`                 <td> value (a float) between 0 and 1. Set the portion of centered scheme (0: induces an upwind scheme). This is done variable by variable `<var>:<val>`. See the blencv documentation in \ref cs_equation_param_t (part related to the legacy settings) or the [theory guide](../../theory.pdf).
 </table>
 
 
