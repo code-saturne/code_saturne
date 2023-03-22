@@ -1,0 +1,44 @@
+\documentclass{standalone}
+\usepackage{tikz}
+
+\usepackage{../../style/csmacros}
+
+\usepackage{color}
+\definecolor{blueedf}{RGB}{0,91,187}
+\definecolor{orangededf}{RGB}{254,88,21}
+
+\newcommand{\orange}[1]{
+\textcolor{orangededf}{#1}}
+\newcommand{\blue}[1]{
+\textcolor{blueedf}{#1}}
+
+\begin{document}
+\begin{tikzpicture}[scale=0.3, transform shape]
+      % Fluid Region
+      %   Cell i
+      \draw (3,4)  -- (4,6) -- (7,4) -- (9,0) -- (6,-3) -- (3,-1) [white,fill=blue!10];
+      % Mesh
+      % Cell i
+      \draw[orange] (3,4)  -- (4,6) -- (7,4) -- (9,0) -- (6,-3) -- (3,-1) -- cycle ;
+      \draw[orange] (5,3.5) node[above]{\Huge $\orange{\Omega_{\celli}}$};
+      %contour cells
+      \draw[blueedf,line width=1.] (3,4) -- (3,-1);
+      %   Line IJ
+      \draw (5.5,0.5) node[black,below]{\Huge $\centi$} ;
+      \node[circle,draw=black, fill=black, inner sep=0pt,minimum size=7pt, line width=0.5] (b) at (5.5,0.8) {};
+      \draw [-,black](3,1.5) -- (5.5,0.8);
+      %   Line I'J'
+      \draw [-,dashed,black](3,1.5) -- (5.5,1.5) ;
+      \draw [-,dashed,black](5.5,0.8) -- (5.5,1.5) ;
+      \draw (5.5,1.5) node[black,above]{\Huge $\centip$} ;
+      % Angles
+      \draw (3,1.5) -- (3.2,1.5) -- (3.2,1.3) -- (3,1.3) -- cycle;
+      \draw (5.5,1.5) -- (5.3,1.5) -- (5.3,1.3) -- (5.5,1.3) -- cycle;
+      %   Points at the face
+      \draw [-stealth,blueedf,line width=1.](3,1.5) -- (4.5,1.5);
+      \draw (3.75,1.5) node[blueedf,above]{\Huge $\vect{S}_{\fib}$};
+      \draw (3,1.5) node[black,left]{\Huge $\centfb$};
+      \node[circle,draw=black, fill=black, inner sep=0pt,minimum size=7pt, line width=0.5] (b) at (3,1.5) {};
+
+\end{tikzpicture}
+\end{document}

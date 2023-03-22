@@ -1,0 +1,62 @@
+\documentclass{standalone}
+\usepackage{tikz}
+
+\usepackage{../../style/csmacros}
+
+\usepackage{color}
+\definecolor{blueedf}{RGB}{0,91,187}
+\definecolor{orangededf}{RGB}{254,88,21}
+
+\newcommand{\orange}[1]{
+\textcolor{orangededf}{#1}}
+\newcommand{\blue}[1]{
+\textcolor{blueedf}{#1}}
+
+\begin{document}
+\begin{tikzpicture}[scale=0.3, transform shape]
+      % Fluid Region 
+      %   Cell i
+      \draw (3,4)  -- (6,6) -- (10,4) -- (12,0) -- (9,-3) -- (5,-1) [white,fill=blue!10];
+      %   Cell j
+      \draw (10,4) -- (14,8) -- (21,6) -- (21,2) -- (17,0) -- (12,0) [white,fill=blue!10];
+      % Mesh 
+      % Cell i
+      \draw[orange] (3,4)  -- (6,6) -- (10,4) -- (12,0) -- (9,-3) -- (5,-1) -- cycle ;
+      \draw[orange] (5,1.5) node[above]{\Huge $\orange{\Omega_{\celli}}$};
+      % Cell j
+      \draw[orange] (10,4) -- (14,8) -- (21,6) -- (21,2) -- (17,0) -- (12,0) -- cycle ;
+      \draw[orange] (16,6) node[above]{\Huge $\orange{\Omega_{\cellj}}$};
+      %contour cells
+      \draw[orange] (3,4)  -- (2,4) ;
+      \draw[orange] (5,-1) -- (2,-5) ;
+      \draw[orange] (6,6)  -- (5,8) ;
+      \draw[orange] (9,-3) -- (10,-5) ;
+      \draw[orange] (10,4) -- (12,6) ;
+      \draw[orange] (12,0)  -- (14,0) ;
+      \draw[blueedf,line width=1.] (10,4) -- (12,0);
+      %   Line IJ
+      \draw (7.8,2) node[black,left]{\Huge $\centi$} ;
+      \node[circle,draw=black, fill=black, inner sep=0pt,minimum size=7pt, line width=0.5] (b) at (8,2) {};
+      \draw [-,black](8,2) -- (16,3.5);
+      \draw (16.2,3.5) node[black,right]{\Huge $\centj$} ;
+      \node[circle,draw=black, fill=black, inner sep=0pt,minimum size=7pt, line width=0.5] (b) at (16,3.5) {};
+      %   Line I'J'
+      \draw [-,dashed,black](8.5,1) -- (15.65,4.2);
+      \draw [-,dashed,black](8.5,1) -- (8,2) ;
+      \draw [-,dashed,black](15.65,4.2) -- (16,3.5) ;
+      \draw (8.5,1) node[black,below]{\Huge $\centip$} ;
+      \draw (15.65,4.2) node[black,above]{\Huge $\centjp$} ;
+      % Angles
+      \draw (8.5,1) -- (8.7,1.1) -- (8.6,1.3) -- (8.4,1.2) -- cycle;
+      \draw (15.65,4.2) -- (15.75,4) -- (15.55,3.9) -- (15.45,4.1) -- cycle;
+      \draw (10.97,2.05) -- (11.17,2.15) -- (11.07,2.35) -- (10.87,2.25) -- cycle;
+      %   Points at the face
+      \draw [-stealth,blueedf,line width=1.](10.9,2.05) -- (13.5,3.2);
+      \draw (13.5,2.7) node[blueedf,below]{\Huge $\vect{S}_{\iface}$};
+      \draw (11.1,1.2) node[black,left]{\Huge $\centf$};
+      \node[circle,draw=black, fill=black, inner sep=0pt,minimum size=7pt, line width=0.5] (b) at (10.97,2.05) {};
+      \node[circle,draw=black, fill=black, inner sep=0pt,minimum size=7pt, line width=0.5] (b) at (10.75,2.5) {};
+      \draw (10.75,2.7) node[black,above right]{\Huge $\cento$};
+
+\end{tikzpicture}
+\end{document}
