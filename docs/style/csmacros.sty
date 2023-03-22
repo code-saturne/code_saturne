@@ -60,6 +60,7 @@
 \newcommand{\intss}[2]{{\widetilde{#1}_{#2}}}
 \newcommand{\fluctt}[1]{{{#1}^{\prime \prime}}}
 \newcommand{\intt}[2]{{{#1}^{#2}}}
+\newcommand{\finter}[1]{\left\langle{#1} \right\rangle}
 
 %
 % Discretization
@@ -68,8 +69,8 @@
 \newcommand{\Faceb}[1]{\mathcal{F}^{ext}_{#1}} %set of boundary faces
 \newcommand{\Face}[1]{\mathcal{F}_{#1}} % set of faces
 \newcommand{\face}{{f}} % face
-\newcommand{\fij}{{f_{ij}}} % internal face
-\newcommand{\fib}{{f_{b}}} % boundary face
+\newcommand{\fij}{{\face_{\celli|\cellj}}} % internal face
+\newcommand{\fib}{{\face_{b}}} % boundary face
 %deprecated
 \renewcommand{\ij}{{ij}} % oriented internal face value ("K, sigma" in sushi)
 \newcommand{\bij}{{\celli > \cellj}} % oriented internal face value ("K, sigma" in sushi)
@@ -78,6 +79,7 @@
 \newcommand{\bji}{{\cellj>\celli}} % oriented internal face value ("L, sigma" in sushi)
 \newcommand{\ib}{{\celli>\fib}} % oriented internal face value ("K, sigma" in sushi)
 \newcommand{\celli}{c} % name of the current cell
+\newcommand{\cellip}{\celli^\prime} % name of the current cell
 \newcommand{\centi}{{\vect{x}_{\celli}}} % center of the current cell
 \newcommand{\centip}{\vect{x}_{\celli}^\prime} % orthogonal center of the current cell
 \newcommand{\centipp}{\vect{x}_{\celli}^{\prime\prime}} % orthogonal center of the current cell
@@ -93,6 +95,7 @@
 %deprecated
 \newcommand{\jpf}{{J^\prime}} % orthogonal center index of the neighbouring cell
 \newcommand{\centf}{\vect{x}_{\face}} % center of the face
+\newcommand{\centfb}{\vect{x}_{\fib}} % center of the face
 \newcommand{\cento}{\vect{x}_o} % intersection between the cell centers and the face
 %
 \newcommand{\vertex}{{v}} % vertex
