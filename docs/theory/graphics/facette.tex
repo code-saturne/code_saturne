@@ -14,12 +14,12 @@
 
 \begin{document}
 \begin{tikzpicture}[scale=0.3, transform shape]
-      % Fluid Region 
+      % Fluid Region
       %   Cell i
       \draw (3,4)  -- (6,6) -- (10,4) -- (12,0) -- (9,-3) -- (5,-1) [white,fill=blue!10];
       %   Cell j
       \draw (10,4) -- (14,8) -- (21,6) -- (21,2) -- (17,0) -- (12,0) [white,fill=blue!10];
-      % Mesh 
+      % Mesh
       % Cell i
       \draw[orange] (3,4)  -- (6,6) -- (10,4) -- (12,0) -- (9,-3) -- (5,-1) -- cycle ;
       \draw[orange] (5,1.5) node[above]{\Huge $\orange{\Omega_{\celli}}$};
@@ -52,7 +52,7 @@
       \draw (10.97,2.05) -- (11.17,2.15) -- (11.07,2.35) -- (10.87,2.25) -- cycle;
       %   Points at the face
       \draw [-stealth,blueedf,line width=1.](10.9,2.05) -- (13.5,3.2);
-      \draw (13.5,2.7) node[blueedf,below]{\Huge $\vect{S}_{\iface}$};
+      \draw (13.5,2.7) node[blueedf,below]{\Huge $\vect{S}_{\bij}$};
       \draw (11.1,1.2) node[black,left]{\Huge $\centf$};
       \node[circle,draw=black, fill=black, inner sep=0pt,minimum size=7pt, line width=0.5] (b) at (10.97,2.05) {};
       \node[circle,draw=black, fill=black, inner sep=0pt,minimum size=7pt, line width=0.5] (b) at (10.75,2.5) {};
