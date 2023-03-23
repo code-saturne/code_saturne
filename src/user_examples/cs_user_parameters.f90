@@ -387,28 +387,6 @@ integer nmodpp
 iescal(iescor) = 2   ! div(rho u) -Gamma
 iescal(iestot) = 2   ! resolution precision for the momentum
 
-! ALE (Arbitrary Lagrangian Eulerian) related options
-!====================================================
-
-! Number of iterations for fluid initialization. Contrary to ntmabs,
-! nalinf is not an absolute iteration number, meaning that in case of
-! restart calculation nalinf corresponds to the number of iterations
-! for fuid initialization beginning from the first current iteration of
-! the calculation restart. In general nalinf = 0 in that case.
-
-nalinf = 75
-
-! Maximum number of iterations in case of implicit Fluid Structure Coupling
-! with structural calculations (internal and/or external
-! (i.e. using code_aster)).
-! nalimx = 1, in case of explicit FSI algorithm.
-
-nalimx = 15
-
-! Relative precision of sub-cycling Fluid Structure Coupling algorithm.
-
-epalim = 1.d-5
-
 !< [usipsu]
 
 !===============================================================================

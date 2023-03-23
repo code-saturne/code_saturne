@@ -471,6 +471,25 @@ cs_user_model(void)
 
   cs_glob_ale = CS_ALE_LEGACY;
 
+  /* Number of iterations for fluid initialization.
+     cs_glob_ale_n_ini_f is not an absolute iteration number, so for a
+     restarted calculation, it corresponds to the number of iterations
+     for fuid initialization relative to the first restart iteration.
+     In general it should be set to 0 in that case. */
+
+  cs_glob_ale_n_ini_f = 75;
+
+  /* Maximum number of iterations in case of implicit Fluid Structure Coupling
+     with structural calculations (internal and/or external
+     (i.e. using code_aster).
+     For an explicit FSI scheme, set cs_glob_mobile_structures_i_max = 1; */
+
+  cs_glob_mobile_structures_i_max = 15;
+
+  /* Relative precision of sub-cycling Fluid Structure Coupling algorithm */
+
+  cs_glob_mobile_structures_i_eps = 1.e-5;
+
   /*! [ALE_activation] */
 
   /*--------------------------------------------------------------------------*/
