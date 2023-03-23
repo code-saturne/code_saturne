@@ -37,13 +37,13 @@
   It is \b forbidden to modify turbulent viscosity \c visct here
   (a specific subroutine is dedicated to that: \ref usvist)
 
-  - icp = 1 must <b> have been specified </b>
-     in \ref usipsu if we wish to define a variable specific heat
+  - cs_glob_fluid_properties->icp = 1 must <b> have been specified </b>
+     in \ref cs_user_parameters if we wish to define a variable specific heat
      cpro_cp (otherwise: memory overwrite).
 
-  - the kivisl field integer key (diffusivity_id)
+  - the field's \ref diffusivity_id integer key
     must <b> have been specified </b>
-    in \ref usipsu if we wish to define a variable viscosity
+    in \ref cs_user_parameters  if we wish to define a variable viscosity
     \c viscls.
 
   \remarks

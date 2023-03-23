@@ -52,6 +52,12 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
+/*! maximum number of implicitation iterations of the structure displacement */
+extern int cs_glob_mobile_structures_i_max;          /* nalimx */
+
+/*! Relative precision of implicitation of the structure displacement */
+extern double cs_glob_mobile_structures_i_eps;       /* epalim */
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
