@@ -177,12 +177,6 @@ static cs_mobile_structures_t  *_mobile_structures = NULL;
 
 extern int cs_glob_ast_coupling_n_couplings;         /* n_ast_structs */
 
-/*! maximum number of implicitation iterations of the structure displacement */
-extern int cs_glob_mobile_structures_i_max;          /* nalimx */
-
-/*! Relative precision of implicitation of the structure displacement */
-extern double cs_glob_mobile_structures_i_eps;       /* epalim */
-
 /* Arrays allowing return to initial state at end of ALE iteration.
  * - Mass flux: save at the first call of schtmp.
  * - Gradient BC's for P and U (since we use a reconstruction to compute
