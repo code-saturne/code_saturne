@@ -1517,6 +1517,9 @@ _order_i_faces_by_cell_adjacency(const cs_mesh_t         *mesh,
 
   BFT_FREE(faces_keys);
 
+  if (mesh->halo == NULL)
+    n_no_adj_halo = n_cells;
+
   return n_no_adj_halo;
 }
 
