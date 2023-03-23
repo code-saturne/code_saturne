@@ -1752,7 +1752,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
      or current values are provided */
 
   if (pvar != NULL)
-    cs_sync_scalar_halo(m, tr_dim, pvar);
+    cs_sync_scalar_halo(m, halo_type, tr_dim, pvar);
   if (pvara == NULL)
     pvara = (const cs_real_t *restrict)pvar;
 
@@ -3179,7 +3179,7 @@ cs_face_convection_scalar(int                       idtvar,
      or current values are provided */
 
   if (pvar != NULL)
-    cs_sync_scalar_halo(m, tr_dim, pvar);
+    cs_sync_scalar_halo(m, halo_type, tr_dim, pvar);
   if (pvara == NULL)
     pvara = (const cs_real_t *restrict)pvar;
 
@@ -6956,7 +6956,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
      or current values are provided */
 
   if (pvar != NULL)
-    cs_sync_scalar_halo(m, tr_dim, pvar);
+    cs_sync_scalar_halo(m, halo_type, tr_dim, pvar);
   if (pvara == NULL)
     pvara = (const cs_real_t *restrict)pvar;
 
@@ -8272,7 +8272,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
      or current values are provided */
 
   if (pvar != NULL)
-    cs_sync_scalar_halo(m, tr_dim, pvar);
+    cs_sync_scalar_halo(m, halo_type, tr_dim, pvar);
   if (pvara == NULL)
     pvara = (const cs_real_t *restrict)pvar;
 

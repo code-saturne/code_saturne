@@ -3,6 +3,9 @@ Release 7.0.6 (not released yet)
 
 Bug fixes:
 
+- Fix least-squares scalar gradient reconstructions with extended ghost
+  cells in parallel (due to incomplete synchronization).
+
 - Wall laws: fix handling wall roughness when no separate thermal roughness
   is present (rougness was incorrectly taken as 0 in this case).
 
