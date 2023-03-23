@@ -191,7 +191,7 @@ cs_base_get_rank_step_comm(int  rank_step);
 
 MPI_Comm
 cs_base_get_rank_step_comm_recursive(MPI_Comm  parent_comm,
-				     int       rank_step);
+                                     int       rank_step);
 
 #endif /* defined(HAVE_MPI) */
 

@@ -933,7 +933,6 @@ class case:
 
         return e_path
 
-    
     #---------------------------------------------------------------------------
 
     def generate_solver_mpmd_script(self, n_procs, mpi_env):

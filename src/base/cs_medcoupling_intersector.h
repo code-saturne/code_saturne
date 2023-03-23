@@ -159,7 +159,7 @@ cs_medcoupling_intersector_rotate(cs_medcoupling_intersector_t  *mi,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Transform a mesh, but takes as input the initial position of the mesh  
+ * \brief  Transform a mesh, but takes as input the initial position of the mesh
  *
  * \param[in] mi         pointer to the cs_medcoupling_intersector_t struct
  * \param[in] matrix     transformation matrix
@@ -186,7 +186,7 @@ cs_medcoupling_intersector_dump_mesh(cs_medcoupling_intersector_t  *mi,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create a new writer that will contains the boundary MED mesh added 
+ * \brief Create a new writer that will contains the boundary MED mesh added
  * \brief by the user. The writer_id is stored locally..
  *
  * \param[in]  time_dep > 1 if the writer is transient, else writer is fixed

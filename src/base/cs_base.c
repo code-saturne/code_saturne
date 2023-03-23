@@ -1405,7 +1405,7 @@ cs_base_get_rank_step_comm(int  rank_step)
 
 MPI_Comm
 cs_base_get_rank_step_comm_recursive(MPI_Comm  parent_comm,
-				     int       rank_step)
+                                     int       rank_step)
 {
   if (rank_step <= 1 || parent_comm == MPI_COMM_NULL)
     return parent_comm;
@@ -1428,7 +1428,7 @@ cs_base_get_rank_step_comm_recursive(MPI_Comm  parent_comm,
   }
 
   printf("get_rank_step_comm_recursive: %d glob id, %d parent, step %d -> id %d\n",
-	 cs_glob_rank_id, parent_n_ranks, rank_step, comm_id);
+         cs_glob_rank_id, parent_n_ranks, rank_step, comm_id);
 
   /* Add communicator if required */
 

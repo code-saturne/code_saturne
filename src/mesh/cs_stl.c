@@ -1250,13 +1250,13 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
 
     /* Re-allocation*/
     BFT_REALLOC(stl_mesh->coords    , 3*n_tria, cs_real_3_t);
-    
+
     /* Copy coordinates to a work aray that
      * will contain all the init coordinates */
     BFT_MALLOC(stl_mesh->coords_ini , 3*n_tria, cs_real_3_t);
     for (int i = 0; i < 3*n_tria; i++)
       for (int j = 0; j < 3; j++)
-        stl_mesh->coords_ini[i][j] = stl_mesh->coords[i][j]; 
+        stl_mesh->coords_ini[i][j] = stl_mesh->coords[i][j];
 
     BFT_FREE(loc_coords);
     fclose(fp);
