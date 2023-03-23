@@ -2545,9 +2545,9 @@ class dependency_graph(object):
             keep_node_l = True
             keep_node_p = True
             if filter_level is not None:
-                keep_node_l = int(node.level) is int(filter_level)
+                keep_node_l = int(node.level) == int(filter_level)
             if filter_n_procs is not None:
-                keep_node_p = int(node.n_procs) is int(filter_n_procs)
+                keep_node_p = int(node.n_procs) == int(filter_n_procs)
             if keep_node_l and keep_node_p:
                 msg = sub_graph.add_node(node)
                 if msg:
