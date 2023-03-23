@@ -87,16 +87,18 @@ typedef enum {
  * Synchronize halos for scalar variables.
  *
  * parameters:
- *   m              <-- pointer to associated mesh structure
- *   pvar           <-> variable
+ *   m          <-- pointer to associated mesh structure
+ *   halo_type  <-> halo type
+ *   pvar       <-> variable
  *----------------------------------------------------------------------------*/
 
 inline static void
 cs_sync_scalar_halo(const cs_mesh_t  *m,
+                    cs_halo_type_t    halo_type,
                     cs_real_t         pvar[])
 {
   if (m->halo != NULL)
-    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, pvar);
+    cs_halo_sync_var(m->halo, halo_type, pvar);
 }
 
 /*----------------------------------------------------------------------------*/
