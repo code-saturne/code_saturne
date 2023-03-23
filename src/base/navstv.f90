@@ -978,6 +978,8 @@ if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3)) then
     call synsca(cpro_rho_tc)
 
     crom => cpro_rho_tc
+    ! rho at time n+1/2,k-1
+    cromk1 => cpro_rho_tc
 
   else
     crom => cpro_rho_mass
