@@ -72,6 +72,7 @@
 #include "cs_mass_source_terms.h"
 #include "cs_math.h"
 #include "cs_measures_util.h"
+#include "cs_mobile_structures.h"
 #include "cs_notebook.h"
 #include "cs_numbering.h"
 #include "cs_order.h"
