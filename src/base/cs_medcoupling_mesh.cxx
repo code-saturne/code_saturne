@@ -646,6 +646,9 @@ _get_mesh_from_name(const char  *name,
   cs_medcoupling_mesh_t *m = NULL;
 
 #if !defined(HAVE_MEDCOUPLING)
+  CS_UNUSED(name);
+  CS_UNUSED(elt_dim);
+
   bft_error(__FILE__, __LINE__, 0,
             _("Error: this funnction cannot be called without "
               "MEDCoupling support\n"));
@@ -686,6 +689,9 @@ _add_medcoupling_mesh(const char  *name,
   cs_medcoupling_mesh_t *m = NULL;
 
 #if !defined(HAVE_MEDCOUPLING)
+  CS_UNUSED(name);
+  CS_UNUSED(elt_dim);
+
   bft_error(__FILE__, __LINE__, 0,
             _("Error: this funnction cannot be called without "
               "MEDCoupling support\n"));
@@ -776,6 +782,10 @@ _copy_mesh_from_base(cs_mesh_t              *csmesh,
                      int                     use_bbox)
 {
 #if !defined(HAVE_MEDCOUPLING)
+  CS_UNUSED(csmesh);
+  CS_UNUSED(pmmesh);
+  CS_UNUSED(use_bbox);
+
   bft_error(__FILE__, __LINE__, 0,
             _("Error: this funnction cannot be called without "
               "MEDCoupling support\n"));
@@ -853,6 +863,12 @@ cs_medcoupling_mesh_from_base(cs_mesh_t   *csmesh,
   cs_medcoupling_mesh_t *m = NULL;
 
 #if !defined(HAVE_MEDCOUPLING)
+  CS_UNUSED(csmesh);
+  CS_UNUSED(name);
+  CS_UNUSED(selection_criteria);
+  CS_UNUSED(elt_dim);
+  CS_UNUSED(use_bbox);
+
   bft_error(__FILE__, __LINE__, 0,
             _("Error: this funnction cannot be called without "
               "MEDCoupling support\n"));
@@ -907,6 +923,12 @@ cs_medcoupling_mesh_from_ids(cs_mesh_t       *csmesh,
   cs_medcoupling_mesh_t *m = NULL;
 
 #if !defined(HAVE_MEDCOUPLING)
+  CS_UNUSED(csmesh);
+  CS_UNUSED(name);
+  CS_UNUSED(n_elts);
+  CS_UNUSED(elt_ids);
+  CS_UNUSED(elt_dim);
+  CS_UNUSED(use_bbox);
   bft_error(__FILE__, __LINE__, 0,
             _("Error: this funnction cannot be called without "
               "MEDCoupling support\n"));
