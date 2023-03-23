@@ -3,6 +3,9 @@ Release 6.0.9 (Unreleased)
 
 Bug fixes:
 
+- Fix least-squares scalar gradient reconstructions with extended ghost
+  cells in parallel (due to incomplete synchronization).
+
 - Fix errors with Python >= 3.10 due to non-robust version tests.
 
 - Fix mpmd command generation and launch when using ccc_mprun (CCRT).
