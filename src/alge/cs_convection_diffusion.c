@@ -1849,7 +1849,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
      or current values are provided */
 
   if (pvar != NULL)
-    cs_sync_scalar_halo(m, gradient_type, pvar);
+    cs_sync_scalar_halo(m, halo_type, pvar);
   if (pvara == NULL)
     pvara = (const cs_real_t *restrict)pvar;
 
