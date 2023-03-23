@@ -1452,7 +1452,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   else
     iscacp = cs_field_get_key_int(f, kscacp);
 
-  /* Multiplier fro thermal fields (Cp/Cv) */
+  /* Multiplier for thermal fields (Cp/Cv) */
 
   if (iscacp == 1 || iscacp == 2)
     imucpp = 1;

@@ -80,7 +80,7 @@ BEGIN_C_DECLS
  * Currently supported locations are CS_MESH_LOCATION_CELLS and
  * CS_MESH_LOCATION_BOUNDARY_FACES.
  *
- * \param[in]  err_elt_descr    description fro first element with error
+ * \param[in]  err_elt_descr    description for the first element with error
  * \param[in]  flag_descr       flag type description
  * \param[in]  flag_label       field label for flag postprocessing
  * \param[in]  error_mesh_name  postprocessing mesh name for elements with error
@@ -125,7 +125,7 @@ cs_flag_check(const char   *err_elt_descr,
  * Currently supported locations are CS_MESH_LOCATION_CELLS and
  * CS_MESH_LOCATION_BOUNDARY_FACES.
  *
- * \param[in]  err_elt_descr    description fro first element with error
+ * \param[in]  err_elt_descr    description for the first element with error
  * \param[in]  flag_descr       flag type description
  * \param[in]  flag_label       field label for flag postprocessing
  * \param[in]  error_mesh_name  postprocessing mesh name for elements with error
