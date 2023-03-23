@@ -1099,5 +1099,266 @@ cs_medcoupling_mesh_get_connectivity(cs_medcoupling_mesh_t  *m)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Returns a pointer to a MEDCouplingUMesh of a plane.
+ *
+ * \param[in] origin   Plane origin coordinates
+ * \param[in] normal   Plane normal vector
+ * \param[in] length1  Plane's edge length along first axis
+ * \param[in] length2  Plane's edge length along second axis
+ *
+ * \return pointer to the MEDCouplingUMesh structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MEDCOUPLING)
+MEDCouplingUMesh *
+#else
+void *
+#endif
+cs_medcoupling_create_plane_mesh(const cs_real_t origin[],
+                                 const cs_real_t normal[],
+                                 const cs_real_t length1,
+                                 const cs_real_t length2)
+{
+#if defined(HAVE_MEDCOUPLING)
+  /* Compute plane orthonormal basis */
+  cs_real_t basis[3][3] = {{0.}, {0.}, {0.}};
+  cs_math_3_orthonormal_basis(normal, basis);
+
+  /* Compute plane coordinates */
+  cs_real_t coords[12] = {0.};
+  double dx[4] = {-0.5, -0.5, 0.5, 0.5};
+  double dy[4] = {-0.5, 0.5, 0.5, -0.5};
+
+  for (int j = 0; j < 4; j++) {
+    for (int i = 0; i < 3; i++)
+      coords[j*3 + i] = origin[i]
+                      + dx[j] * length1 * basis[0][i]
+                      + dy[j] * length2 * basis[1][i];
+  }
+
+  /* Generate mesh */
+  mcIdType conn[4] = {0, 1, 2, 3};
+
+  MEDCouplingUMesh *m = MEDCouplingUMesh::New();
+
+  m->setMeshDimension(2);
+  m->allocateCells(1);
+  m->insertNextCell(INTERP_KERNEL::NORM_QUAD4, 4, conn);
+  m->finishInsertingCells();
+
+  DataArrayDouble *localCoords=DataArrayDouble::New();
+  localCoords->alloc(4,3);
+
+  std::copy(coords, coords+12, localCoords->getPointer());
+  m->setCoords(localCoords);
+  localCoords->decrRef();
+
+  return m;
+#else
+  CS_UNUSED(origin);
+  CS_UNUSED(normal);
+  CS_UNUSED(length1);
+  CS_UNUSED(length2);
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: this funnction cannot be called without "
+              "MEDCoupling support\n"));
+
+  return NULL;
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Returns a pointer to a MEDCouplingUMesh of a disc.
+ *
+ * \param[in] origin     Disc origin coordinates
+ * \param[in] normal     Disc normal vector
+ * \param[in] radius     Disc radius
+ * \param[in] n_sectors  Number of sectors for discretization. If negative,
+ *                       default value of 36 is taken.
+ *
+ * \return pointer to the MEDCouplingUMesh structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MEDCOUPLING)
+MEDCouplingUMesh *
+#else
+void *
+#endif
+cs_medcoupling_create_disc_mesh(const cs_real_t origin[],
+                                const cs_real_t normal[],
+                                const cs_real_t radius,
+                                const int       n_sectors)
+{
+#if defined(HAVE_MEDCOUPLING)
+  /* Compute number of sectors. Default is 36 if user does not provide one */
+  const int _n_sectors = (n_sectors > 0) ? n_sectors : 36;
+
+  /* Compute plane orthonormal basis */
+  cs_real_t basis[3][3] = {{0.}, {0.}, {0.}};
+  cs_math_3_orthonormal_basis(normal, basis);
+
+  /* Compute coordinates for disc nodes.
+   * There n_sectors+1 nodes, one for center, and one per sector.
+   */
+  std::vector<cs_real_t> coords(3*(_n_sectors+1), 0.);
+  std::copy(origin, origin+3, coords.begin());
+
+  const cs_real_t theta = 2. * cs_math_pi / _n_sectors;
+
+  for (int j = 0; j < _n_sectors; j++) {
+    cs_real_t cos_j = (j == 0) ? 1. : cos(theta * j);
+    cs_real_t sin_j = (j == 0) ? 0. : sin(theta * j);
+    for (int i = 0; i < 3; i++) {
+      coords[(j+1)*3 + i] = origin[i]
+                          + cos_j * radius * basis[0][i]
+                          + sin_j * radius * basis[1][i];
+    }
+  }
+
+  /* Generate mesh */
+  MEDCouplingUMesh *m = MEDCouplingUMesh::New();
+  m->setMeshDimension(2);
+  m->allocateCells(_n_sectors);
+
+  for (int i = 0; i < _n_sectors; i++) {
+    /*
+     * N3       N2
+     * .-------.
+     *  \     /
+     *   \   /
+     *    \./
+     *     N1
+     *
+     * A sector has 3 nodes (TRI3).
+     * N1 is the center of the disc (origin), hence node #0
+     * N2 value is in [1, N_SECTORS]
+     * N3 value is in [2,..., N_SECTORS, 1] -> Hence the modulo call
+     */
+    mcIdType conn[3] = {0, 1 + i, 1 + (1+i % _n_sectors)};
+    m->insertNextCell(INTERP_KERNEL::NORM_TRI3, 3, conn);
+  }
+  m->finishInsertingCells();
+
+  DataArrayDouble *localCoords=DataArrayDouble::New();
+  localCoords->alloc(_n_sectors + 1, 3);
+  std::copy(coords.begin(), coords.end(), localCoords->getPointer());
+  m->setCoords(localCoords);
+  localCoords->decrRef();
+
+  return m;
+#else
+  CS_UNUSED(origin);
+  CS_UNUSED(normal);
+  CS_UNUSED(radius);
+  CS_UNUSED(n_sectors);
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: this funnction cannot be called without "
+              "MEDCoupling support\n"));
+
+
+  return NULL;
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Returns a pointer to a MEDCouplingUMesh of an annulus
+ *
+ * \param[in] origin     Annulus origin coordinates
+ * \param[in] normal     Annulus normal vector
+ * \param[in] radius1    Annulus inner radius
+ * \param[in] radius2    Annulus outer radius
+ * \param[in] n_sectors  Number of sectors for discretization. If negative,
+ *                       default value of 36 is taken.
+ *
+ * \return pointer to the MEDCouplingUMesh structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MEDCOUPLING)
+MEDCouplingUMesh *
+#else
+void *
+#endif
+cs_medcoupling_create_annulus_mesh(const cs_real_t origin[],
+                                   const cs_real_t normal[],
+                                   const cs_real_t radius1,
+                                   const cs_real_t radius2,
+                                   const int       n_sectors)
+{
+#if defined(HAVE_MEDCOUPLING)
+  /* Compute number of sectors. Default is 36 if user does not provide one */
+  const int _n_sectors = (n_sectors > 0) ? n_sectors : 36;
+
+  /* Compute plane orthonormal basis */
+  cs_real_t basis[3][3] = {{0.}, {0.}, {0.}};
+  cs_math_3_orthonormal_basis(normal, basis);
+
+  /* Compute coordinates for disc nodes.
+   * There n_sectors*2 nodes, n_sectors for each radius.
+   */
+  std::vector<cs_real_t> coords(3*2*_n_sectors, 0.);
+
+  const cs_real_t theta = 2. * cs_math_pi / _n_sectors;
+
+  for (int j = 0; j < _n_sectors; j++) {
+    cs_real_t cos_j = (j == 0) ? 1. : cos(theta * j);
+    cs_real_t sin_j = (j == 0) ? 0. : sin(theta * j);
+    for (int i = 0; i < 3; i++) {
+      /* Inner circle, radius1 */
+      coords[j*3 + i] = origin[i]
+                        + cos_j * radius1 * basis[0][i]
+                        + sin_j * radius1 * basis[1][i];
+
+      /* Outer circle, radius2 */
+      coords[(j+_n_sectors)*3 + i] = origin[i]
+                                   + cos_j * radius2 * basis[0][i]
+                                   + sin_j * radius2 * basis[1][i];
+    }
+  }
+
+  /* Generate mesh */
+  MEDCouplingUMesh *m = MEDCouplingUMesh::New();
+  m->setMeshDimension(2);
+  m->allocateCells(_n_sectors);
+
+  for (int i = 0; i < _n_sectors; i++) {
+    int ii = i;
+    int jj = i+1 % _n_sectors;
+
+    mcIdType conn[4] = {jj, jj+_n_sectors, ii+_n_sectors, ii};
+    m->insertNextCell(INTERP_KERNEL::NORM_QUAD4, 4, conn);
+  }
+  m->finishInsertingCells();
+
+  DataArrayDouble *localCoords=DataArrayDouble::New();
+  localCoords->alloc(2*_n_sectors, 3);
+  std::copy(coords.begin(), coords.end(), localCoords->getPointer());
+  m->setCoords(localCoords);
+  localCoords->decrRef();
+
+  return m;
+#else
+  CS_UNUSED(origin);
+  CS_UNUSED(normal);
+  CS_UNUSED(radius1);
+  CS_UNUSED(radius2);
+  CS_UNUSED(n_sectors);
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: this funnction cannot be called without "
+              "MEDCoupling support\n"));
+
+  return NULL;
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

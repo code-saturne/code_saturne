@@ -234,6 +234,79 @@ const cs_lnum_t *
 cs_medcoupling_mesh_get_connectivity(cs_medcoupling_mesh_t  *m);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Returns a pointer to a MEDCouplingUMesh of a plane.
+ *
+ * \param[in] origin   Plane origin coordinates
+ * \param[in] normal   Plane normal vector
+ * \param[in] length1  Plane's edge length along first axis
+ * \param[in] length2  Plane's edge length along second axis
+ *
+ * \return pointer to the MEDCouplingUMesh structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MEDCOUPLING)
+MEDCouplingUMesh *
+#else
+void *
+#endif
+cs_medcoupling_create_plane_mesh(const cs_real_t origin[],
+                                 const cs_real_t normal[],
+                                 const cs_real_t length1,
+                                 const cs_real_t length2);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Returns a pointer to a MEDCouplingUMesh of a disc.
+ *
+ * \param[in] origin     Disc origin coordinates
+ * \param[in] normal     Disc normal vector
+ * \param[in] radius     Disc radius
+ * \param[in] n_sectors  Number of sectors for discretization. If negative,
+ *                       default value of 36 is taken.
+ *
+ * \return pointer to the MEDCouplingUMesh structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MEDCOUPLING)
+MEDCouplingUMesh *
+#else
+void *
+#endif
+cs_medcoupling_create_disc_mesh(const cs_real_t origin[],
+                                const cs_real_t normal[],
+                                const cs_real_t radius,
+                                const int       n_sectors);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Returns a pointer to a MEDCouplingUMesh of an annulus
+ *
+ * \param[in] origin     Annulus origin coordinates
+ * \param[in] normal     Annulus normal vector
+ * \param[in] radius1    Annulus inner radius
+ * \param[in] radius2    Annulus outer radius
+ * \param[in] n_sectors  Number of sectors for discretization. If negative,
+ *                       default value of 36 is taken.
+ *
+ * \return pointer to the MEDCouplingUMesh structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MEDCOUPLING)
+MEDCouplingUMesh *
+#else
+void *
+#endif
+cs_medcoupling_create_annulus_mesh(const cs_real_t origin[],
+                                   const cs_real_t normal[],
+                                   const cs_real_t radius1,
+                                   const cs_real_t radius2,
+                                   const int       n_sectors);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
