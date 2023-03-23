@@ -1,6 +1,11 @@
 Release 7.2.2 (not released yet)
 --------------------------------
 
+### Bug fixes:
+
+- Fix least-squares scalar gradient reconstructions with extended ghost
+  cells in parallel (due to incomplete syncronization).
+
 ### Architectural changes:
 
 - Update ParaView/Catalyst compilation for ParaView 5.11 compatibility.

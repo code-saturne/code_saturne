@@ -1277,8 +1277,16 @@ cs_vof_drift_term(int                        imrgra,
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
-  if (pvar != NULL)
-    cs_sync_scalar_halo(m, pvar);
+  if (pvar != NULL) {
+    if (m->halo != NULL) {
+      cs_halo_type_t halo_type = CS_HALO_STANDARD;
+      cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+      cs_gradient_type_by_imrgra(imrgra,
+                                 &gradient_type,
+                                 &halo_type);
+      cs_halo_sync_var(m->halo, halo_type, pvar);
+    }
+  }
   else if (pvara == NULL)
     pvara = (const cs_real_t *restrict)pvar;
 
