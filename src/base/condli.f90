@@ -119,7 +119,7 @@
 !>                               and reference face index
 !> \param[in]     dt            time step (per cell)
 !> \param[in,out] rcodcl        boundary condition values:
-!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(1) value of the Dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
 !>                                 coefficient (infinite if no exchange)
 !>                               - rcodcl(3) value flux density
@@ -1091,13 +1091,13 @@ if (mod(ntcabs,ntlist).eq.0 .or. vcopt%iwarni.ge. 0) then
   endif
 endif
 
-! ---> dirichlet and neumann
+! ---> Dirichlet and Neumann
 
 do ifac = 1, nfabor
 
   iel = ifabor(ifac)
 
-  ! --- physical propreties
+  ! --- physical properties
   visclc = viscl(iel)
   visctc = visct(iel)
 
@@ -1110,7 +1110,7 @@ do ifac = 1, nfabor
     hint = ( visclc+visctc )/distbf
   endif
 
-  ! dirichlet boundary conditions
+  ! Dirichlet boundary conditions
   !------------------------------
 
   if (icodcl(ifac,iu).eq.1) then
@@ -1129,7 +1129,7 @@ do ifac = 1, nfabor
          pimpv           , hint            , hextv )
 
 
-  ! neumann boundary conditions
+  ! Neumann boundary conditions
   !----------------------------
 
   elseif (icodcl(ifac,iu).eq.3) then
@@ -1330,12 +1330,12 @@ do ifac = 1, nfabor
 
   endif
 
-  ! on doit remodifier la valeur du  dirichlet de pression de maniere
+  ! on doit remodifier la valeur du  Dirichlet de pression de maniere
   !  a retrouver p*. car dans typecl.f90 on a travaille avec la pression
   !  totale fournie par l'utilisateur :  ptotale= p*+ rho.g.r
   ! en compressible, on laisse rcodcl tel quel
 
-  ! dirichlet boundary condition
+  ! Dirichlet boundary condition
   !-----------------------------
 
   if (icodcl(ifac,ipr).eq.1) then
@@ -1350,7 +1350,7 @@ do ifac = 1, nfabor
 
   endif
 
-  ! neumann boundary conditions
+  ! Neumann boundary conditions
   !----------------------------
 
   if (icodcl(ifac,ipr).eq.3) then
@@ -1433,7 +1433,7 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 11. void fraction (VOF): dirichlet and neumann and convective outlet
+! 11. void fraction (VOF): Dirichlet and Neumann and convective outlet
 !===============================================================================
 
 if (ivofmt.gt.0) then
@@ -1448,7 +1448,7 @@ if (ivofmt.gt.0) then
     ! hint is unused since there is no diffusion for the void fraction
     hint = 1.d0
 
-    ! dirichlet boundary condition
+    ! Dirichlet boundary condition
     !-----------------------------
 
     if (icodcl(ifac,ivolf2).eq.1) then
@@ -1463,7 +1463,7 @@ if (ivofmt.gt.0) then
 
     endif
 
-    ! neumann boundary conditions
+    ! Neumann boundary conditions
     !----------------------------
 
     if (icodcl(ifac,ivolf2).eq.3) then
@@ -1495,7 +1495,7 @@ if (ivofmt.gt.0) then
 endif
 
 !===============================================================================
-! 12. turbulent quantities: dirichlet and neumann and convective outlet
+! 12. turbulent quantities: Dirichlet and Neumann and convective outlet
 !===============================================================================
 
 ! ---> k-epsilon and k-omega
@@ -1539,7 +1539,7 @@ if (itytur.eq.2.or.iturb.eq.60) then
 
       hint = (visclc+visctc/sigma)/distbf
 
-      ! dirichlet boundary condition
+      ! Dirichlet boundary condition
       !-----------------------------
 
       if (icodcl(ifac,ivar).eq.1) then
@@ -1554,7 +1554,7 @@ if (itytur.eq.2.or.iturb.eq.60) then
 
       endif
 
-      ! neumann boundary conditions
+      ! Neumann boundary conditions
       !----------------------------
 
       if (icodcl(ifac,ivar).eq.3) then
@@ -4862,7 +4862,7 @@ end subroutine
 !>                               and reference face index
 !> \param[in]     dt            time step (per cell)
 !> \param[in,out] rcodcl        boundary condition values:
-!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(1) value of the Dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
 !>                                 coefficient (infinite if no exchange)
 !>                               - rcodcl(3) value flux density
