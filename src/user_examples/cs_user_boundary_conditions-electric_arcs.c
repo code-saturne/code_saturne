@@ -87,7 +87,7 @@ BEGIN_C_DECLS
  *   f->bc_coeffs->rcodcl3[face_id]
  *
  * For vector or tensor fields, these arrays are not interleaved,
- * so for a given face "face_id" and field component "comp_id", acess
+ * so for a given face "face_id" and field component "comp_id", access
  * is as follows (where n_b_faces is domain->mesh->n_b_faces):
  *
  *   f->bc_coeffs->rcodcl1[n_b_faces*comp_id + face_id]
@@ -177,7 +177,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
          * useful to take the law from 'cs_user_physical_properties'.
          * Here, we use by default the 'viscl0" value.
 
-         * Regarding the density, we have acess to its value at boundary
+         * Regarding the density, we have access to its value at boundary
          * faces (romb) so this value is the one used here (specifically,
          * it is consistent with the processing in 'cs_user_physical_properties',
          * in case of variable density)

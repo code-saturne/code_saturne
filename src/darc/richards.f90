@@ -315,7 +315,7 @@ iconvp = 0 ! no convection
 idiffp = 1 ! diffusion
 ndircp = vcopt_p%ndircl ! no diagonal stepped aside
 thetap = 1.d0 ! implicit scheme
-imucpp = 0 ! do not multiply the convectiv term by anything
+imucpp = 0 ! do not multiply the convective term by anything
 
 ! Note that the computed matrix is always the same in the loop over iterns
 ! (loop of the Newton scheme, handled by tridim)

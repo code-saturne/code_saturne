@@ -125,7 +125,7 @@ Functions called during the computation setup
 ---------------------------------------------
 
 The following functions are called before the resolution stage,
-and before even the mesh is read. As a consequence, acess to mesh
+and before even the mesh is read. As a consequence, access to mesh
 elements and counts, and any field or other array value defined
 on the mesh, is not available in these functions
 (though some settings may involve setting pointers to
