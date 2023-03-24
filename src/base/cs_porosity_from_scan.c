@@ -105,7 +105,7 @@ BEGIN_C_DECLS
 
 static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .compute_porosity_from_scan = false,
-  .file_name = NULL,
+  .file_names = NULL,
   .output_name = NULL,
   .postprocess_points = true,
   .transformation_matrix = {{1., 0., 0., 0.},
@@ -304,7 +304,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   /* Open file */
   bft_printf(_("\n\n  Compute the porosity from a scan points file:\n"
                "    %s\n\n"),
-             _porosity_from_scan_opt.file_name);
+             _porosity_from_scan_opt.file_names);
 
   bft_printf(_("  Transformation       %12.5g %12.5g %12.5g %12.5g\n"
                "  matrix:              %12.5g %12.5g %12.5g %12.5g\n"
@@ -323,300 +323,328 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
              _porosity_from_scan_opt.transformation_matrix[2][2],
              _porosity_from_scan_opt.transformation_matrix[2][3]);
 
-  FILE *file = fopen(_porosity_from_scan_opt.file_name, "rt");
-  if (file == NULL)
-    bft_error(__FILE__,__LINE__, 0,
-              _("Porosity from scan: Could not open file."));
 
-  long int n_read_points = 0;
-  long int n_points = 0;
+  /* Bounding box */
   cs_real_t min_vec_tot[3] = {HUGE_VAL, HUGE_VAL, HUGE_VAL};
   cs_real_t max_vec_tot[3] = {-HUGE_VAL, -HUGE_VAL, -HUGE_VAL};
-
-  if (fscanf(file, "%ld\n", &n_read_points) != 1)
-    bft_error(__FILE__,__LINE__, 0,
-              _("Porosity from scan: Could not read the number of lines."));
-
-  bft_printf(_("  Porosity from scan: %ld points to be read.\n\n"),
-             n_read_points);
-
-  /* Pointer to field */
-  cs_field_t *f_nb_scan = cs_field_by_name_try("nb_scan_points");
-
-  /* Location mesh where points will be localized */
-  fvm_nodal_t *location_mesh =
-    cs_mesh_connect_cells_to_nodal(m,
-                                   "pts_location_mesh",
-                                   false, // no family info
-                                   m->n_cells,
-                                   NULL);
-
-  fvm_nodal_make_vertices_private(location_mesh);
-
-  /* Read multiple scan files
-   * ------------------------ */
 
   /* Points local centre of gravity */
   cs_real_t *cen_points =
     (cs_real_t *)cs_field_by_name("cell_scan_points_cog")->val;
 
-  for (int n_scan = 0; n_read_points > 0; n_scan++) {
-    n_points = n_read_points;
-    cs_real_3_t *point_coords;
-    float *colors;
-    BFT_MALLOC(point_coords, n_points, cs_real_3_t);
-    BFT_MALLOC(colors, 3*n_points, float);
+  /* Loop on file_names */
+  char *tok;
+  const char sep[4] = ";";
+  // parse names
+  tok = strtok(_porosity_from_scan_opt.file_names, sep);
 
-    cs_real_3_t min_vec = { HUGE_VAL,  HUGE_VAL,  HUGE_VAL};
-    cs_real_3_t max_vec = {-HUGE_VAL, -HUGE_VAL, -HUGE_VAL};
+  while (tok != NULL) {
+    char *f_name;
+    BFT_MALLOC(f_name,
+        strlen(tok) + 1,
+        char);
+    strcpy(f_name, tok);
 
-    /* Read points */
-    for (int i = 0; i < n_points; i++ ) {
-      int num, green, red, blue;
-      cs_real_4_t xyz;
-      for (int j = 0; j < 3; j++)
-        point_coords[i][j] = 0.;
+    bft_printf(_("\n\n  Open file:\n"
+          "    %s\n\n"),
+        f_name);
+    FILE *file = fopen(f_name, "rt");
+    if (file == NULL)
+      bft_error(__FILE__,__LINE__, 0,
+          _("Porosity from scan: Could not open file."));
 
-      if (fscanf(file, "%lf", &(xyz[0])) != 1)
-        bft_error
-          (__FILE__,__LINE__, 0,
-           _("Porosity from scan: Error while reading dataset. Line %d\n"), i);
-      if (fscanf(file, "%lf", &(xyz[1])) != 1)
-        bft_error
-          (__FILE__,__LINE__, 0,
-           _("Porosity from scan: Error while reading dataset."));
-      if (fscanf(file, "%lf", &(xyz[2])) != 1)
-        bft_error(__FILE__,__LINE__, 0,
-                  _("Porosity from scan: Error while reading dataset."));
+    /* next file to be read */
+    tok = strtok(NULL, sep);
+    long int n_read_points = 0;
+    long int n_points = 0;
+    if (fscanf(file, "%ld\n", &n_read_points) != 1)
+      bft_error(__FILE__,__LINE__, 0,
+                _("Porosity from scan: Could not read the number of lines."));
 
-      /* Translation and rotation */
-      xyz[3] = 1.;
+    bft_printf(_("  Porosity from scan: %ld points to be read.\n\n"),
+               n_read_points);
+
+    /* Pointer to field */
+    cs_field_t *f_nb_scan = cs_field_by_name_try("nb_scan_points");
+
+    /* Location mesh where points will be localized */
+    fvm_nodal_t *location_mesh =
+      cs_mesh_connect_cells_to_nodal(m,
+                                     "pts_location_mesh",
+                                     false, // no family info
+                                     m->n_cells,
+                                     NULL);
+
+    fvm_nodal_make_vertices_private(location_mesh);
+
+    /* Read multiple scan files
+     * ------------------------ */
+
+    for (int n_scan = 0; n_read_points > 0; n_scan++) {
+      n_points = n_read_points;
+      bft_printf(_("  Immersed boundary from scan: scan %d.\n"
+                   "                               %ld points to be read.\n\n"),
+                 n_scan, n_points);
+
+
+      cs_real_3_t *point_coords;
+      float *colors;
+      BFT_MALLOC(point_coords, n_points, cs_real_3_t);
+      BFT_MALLOC(colors, 3*n_points, float);
+
+      cs_real_3_t min_vec = { HUGE_VAL,  HUGE_VAL,  HUGE_VAL};
+      cs_real_3_t max_vec = {-HUGE_VAL, -HUGE_VAL, -HUGE_VAL};
+
+      /* Read points */
+      for (int i = 0; i < n_points; i++ ) {
+        int num, green, red, blue;
+        cs_real_4_t xyz;
+        for (int j = 0; j < 3; j++)
+          point_coords[i][j] = 0.;
+
+        if (fscanf(file, "%lf", &(xyz[0])) != 1)
+          bft_error
+            (__FILE__,__LINE__, 0,
+             _("Porosity from scan: Error while reading dataset. Line %d\n"), i);
+        if (fscanf(file, "%lf", &(xyz[1])) != 1)
+          bft_error
+            (__FILE__,__LINE__, 0,
+             _("Porosity from scan: Error while reading dataset."));
+        if (fscanf(file, "%lf", &(xyz[2])) != 1)
+          bft_error(__FILE__,__LINE__, 0,
+                    _("Porosity from scan: Error while reading dataset."));
+
+        /* Translation and rotation */
+        xyz[3] = 1.;
+        for (int j = 0; j < 3; j++) {
+          for (int k = 0; k < 4; k++)
+            point_coords[i][j]
+              += _porosity_from_scan_opt.transformation_matrix[j][k] * xyz[k];
+
+          /* Compute bounding box*/
+          min_vec[j] = CS_MIN(min_vec[j], point_coords[i][j]);
+          max_vec[j] = CS_MAX(max_vec[j], point_coords[i][j]);
+        }
+
+        /* Intensities */
+        if (fscanf(file, "%d", &num) != 1)
+          bft_error(__FILE__,__LINE__, 0,
+                    _("Porosity from scan: Error while reading dataset."));
+
+        /* Red */
+        if (fscanf(file, "%d", &red) != 1)
+          bft_error(__FILE__,__LINE__, 0,
+                    _("Porosity from scan: Error while reading dataset (red). npoints read %d\n"), i);
+        /* Green */
+        if (fscanf(file, "%d", &green) != 1)
+          bft_error(__FILE__,__LINE__, 0,
+                    _("Porosity from scan: Error while reading dataset (green). npoints read %d\n"), i);
+        /* Blue */
+        if (fscanf(file, "%d\n", &blue) != 1)
+          bft_error(__FILE__,__LINE__, 0,
+                    _("Porosity from scan: Error while reading dataset (blue). npoints read %d\n"), i);
+
+        /* When colors are written as int, Paraview interprets them in [0, 255]
+         * when they are written as float, Paraview interprets them in [0., 1.]
+         * */
+        colors[3*i + 0] = red/255.;
+        colors[3*i + 1] = green/255.;
+        colors[3*i + 2] = blue/255.;
+      }
+
+      /* Check EOF was correctly reached */
+      if (fgets(line, sizeof(line), file) != NULL)
+        n_read_points = strtol(line, NULL, 10);
+      else
+        n_read_points = 0;
+
+      /* Bounding box*/
+      bft_printf(_("  Bounding box [%f, %f, %f], [%f, %f, %f].\n\n"),
+                 min_vec[0], min_vec[1], min_vec[2],
+                 max_vec[0], max_vec[1], max_vec[2]);
+
+      /* Update global bounding box */
       for (int j = 0; j < 3; j++) {
-        for (int k = 0; k < 4; k++)
-          point_coords[i][j]
-            += _porosity_from_scan_opt.transformation_matrix[j][k] * xyz[k];
-
-        /* Compute bounding box*/
-        min_vec[j] = CS_MIN(min_vec[j], point_coords[i][j]);
-        max_vec[j] = CS_MAX(max_vec[j], point_coords[i][j]);
+        min_vec_tot[j] = CS_MIN(min_vec[j], min_vec_tot[j]);
+        max_vec_tot[j] = CS_MAX(max_vec[j], max_vec_tot[j]);
       }
 
-      /* Intensities */
-      if (fscanf(file, "%d", &num) != 1)
-        bft_error(__FILE__,__LINE__, 0,
-                  _("Porosity from scan: Error while reading dataset."));
+      if (n_read_points > 0)
+        bft_printf
+          (_("  Porosity from scan: %ld additional points to be read.\n\n"),
+           n_read_points);
 
-      /* Red */
-      if (fscanf(file, "%d", &red) != 1)
-        bft_error(__FILE__,__LINE__, 0,
-                  _("Porosity from scan: Error while reading dataset."));
-      /* Green */
-      if (fscanf(file, "%d", &green) != 1)
-        bft_error(__FILE__,__LINE__, 0,
-                  _("Porosity from scan: Error while reading dataset."));
-      /* Blue */
-      if (fscanf(file, "%d\n", &blue) != 1)
-        bft_error(__FILE__,__LINE__, 0,
-                  _("Porosity from scan: Error while reading dataset."));
+      /* FVM meshes for writers */
+      if (_porosity_from_scan_opt.postprocess_points) {
+        char *fvm_name;
+        if (_porosity_from_scan_opt.output_name == NULL) {
+          BFT_MALLOC(fvm_name,
+                     strlen(f_name) + 3 + 1,
+                     char);
+          strcpy(fvm_name, f_name);
+        }
+        else {
+          BFT_MALLOC(fvm_name,
+                     strlen(_porosity_from_scan_opt.output_name) + 3 + 1,
+                     char);
+          strcpy(fvm_name, _porosity_from_scan_opt.output_name);
+        }
+        char suffix[13];
+        sprintf(suffix, "_%02d", n_scan);
+        strcat(fvm_name, suffix);
 
-      /* When colors are written as int, Paraview interprets them in [0, 255]
-       * when they are written as float, Paraview interprets them in [0., 1.]
-       * */
-      colors[3*i + 0] = red/255.;
-      colors[3*i + 1] = green/255.;
-      colors[3*i + 2] = blue/255.;
-    }
+        /* Build FVM mesh from scanned points */
+        fvm_nodal_t *pts_mesh = fvm_nodal_create(fvm_name, 3);
 
-    /* Check EOF was correctly reached */
-    if (fgets(line, sizeof(line), file) != NULL)
-      n_read_points = strtol(line, NULL, 10);
-    else
-      n_read_points = 0;
+        /* Only the first rank writes points for now */
+        cs_gnum_t *vtx_gnum = NULL;
 
-    /* Bounding box*/
-    bft_printf(_("  Bounding box [%f, %f, %f], [%f, %f, %f].\n\n"),
-               min_vec[0], min_vec[1], min_vec[2],
-               max_vec[0], max_vec[1], max_vec[2]);
+        if (cs_glob_rank_id < 1) {
+          /* Update the points set structure */
+          fvm_nodal_define_vertex_list(pts_mesh, n_points, NULL);
+          fvm_nodal_set_shared_vertices(pts_mesh, (cs_coord_t *)point_coords);
 
-    /* Update global bounding box */
-    for (int j = 0; j < 3; j++) {
-      min_vec_tot[j] = CS_MIN(min_vec[j], min_vec_tot[j]);
-      max_vec_tot[j] = CS_MAX(max_vec[j], max_vec_tot[j]);
-    }
+          BFT_MALLOC(vtx_gnum, n_points, cs_gnum_t);
+          for (cs_lnum_t i = 0; i < n_points; i++)
+            vtx_gnum[i] = i + 1;
 
-    if (n_read_points > 0)
-      bft_printf
-        (_("  Porosity from scan: %ld additional points to be read.\n\n"),
-         n_read_points);
+        }
+        fvm_nodal_init_io_num(pts_mesh, vtx_gnum, 0);
 
-    /* FVM meshes for writers */
-    if (_porosity_from_scan_opt.postprocess_points) {
-      char *fvm_name;
-      if (_porosity_from_scan_opt.output_name == NULL) {
-        BFT_MALLOC(fvm_name,
-                   strlen(_porosity_from_scan_opt.file_name) + 3 + 1,
-                   char);
-        strcpy(fvm_name, _porosity_from_scan_opt.file_name);
+        /* Free if allocated */
+        BFT_FREE(vtx_gnum);
+
+        /* Create default writer */
+        fvm_writer_t *writer
+          = fvm_writer_init(fvm_name,
+                            "postprocessing",
+                            cs_post_get_default_format(),
+                            cs_post_get_default_format_options(),
+                            FVM_WRITER_FIXED_MESH);
+
+        fvm_writer_export_nodal(writer, pts_mesh);
+
+        const void *var_ptr[1] = {NULL};
+
+        var_ptr[0] = colors;
+
+        fvm_writer_export_field(writer,
+                                pts_mesh,
+                                "color",
+                                FVM_WRITER_PER_NODE,
+                                3,
+                                CS_INTERLACE,
+                                0,
+                                0,
+                                CS_FLOAT,
+                                -1,
+                                0.0,
+                                (const void * *)var_ptr);
+
+        /* Free and destroy */
+        fvm_writer_finalize(writer);
+        pts_mesh = fvm_nodal_destroy(pts_mesh);
+        BFT_FREE(fvm_name);
       }
-      else {
-        BFT_MALLOC(fvm_name,
-                   strlen(_porosity_from_scan_opt.output_name) + 3 + 1,
-                   char);
-        strcpy(fvm_name, _porosity_from_scan_opt.output_name);
-      }
-      char suffix[13];
-      sprintf(suffix, "_%02d", n_scan);
-      strcat(fvm_name, suffix);
 
-      /* Build FVM mesh from scanned points */
-      fvm_nodal_t *pts_mesh = fvm_nodal_create(fvm_name, 3);
+      /* Now build locator
+       * Locate points on this location mesh */
+      /*-------------------------------------*/
 
-      /* Only the first rank writes points for now */
-      cs_gnum_t *vtx_gnum = NULL;
-
-      if (cs_glob_rank_id < 1) {
-        /* Update the points set structure */
-        fvm_nodal_define_vertex_list(pts_mesh, n_points, NULL);
-        fvm_nodal_set_shared_vertices(pts_mesh, (cs_coord_t *)point_coords);
-
-        BFT_MALLOC(vtx_gnum, n_points, cs_gnum_t);
-        for (cs_lnum_t i = 0; i < n_points; i++)
-          vtx_gnum[i] = i + 1;
-
-      }
-      fvm_nodal_init_io_num(pts_mesh, vtx_gnum, 0);
-
-      /* Free if allocated */
-      BFT_FREE(vtx_gnum);
-
-      /* Create default writer */
-      fvm_writer_t *writer
-        = fvm_writer_init(fvm_name,
-                          "postprocessing",
-                          cs_post_get_default_format(),
-                          cs_post_get_default_format_options(),
-                          FVM_WRITER_FIXED_MESH);
-
-      fvm_writer_export_nodal(writer, pts_mesh);
-
-      const void *var_ptr[1] = {NULL};
-
-      var_ptr[0] = colors;
-
-      fvm_writer_export_field(writer,
-                              pts_mesh,
-                              "color",
-                              FVM_WRITER_PER_NODE,
-                              3,
-                              CS_INTERLACE,
-                              0,
-                              0,
-                              CS_FLOAT,
-                              -1,
-                              0.0,
-                              (const void * *)var_ptr);
-
-      /* Free and destroy */
-      fvm_writer_finalize(writer);
-      pts_mesh = fvm_nodal_destroy(pts_mesh);
-      BFT_FREE(fvm_name);
-    }
-
-    /* Now build locator
-     * Locate points on this location mesh */
-    /*-------------------------------------*/
-
-    int options[PLE_LOCATOR_N_OPTIONS];
-    for (int i = 0; i < PLE_LOCATOR_N_OPTIONS; i++)
-      options[i] = 0;
-    options[PLE_LOCATOR_NUMBERING] = 0; /* base 0 numbering */
+      int options[PLE_LOCATOR_N_OPTIONS];
+      for (int i = 0; i < PLE_LOCATOR_N_OPTIONS; i++)
+        options[i] = 0;
+      options[PLE_LOCATOR_NUMBERING] = 0; /* base 0 numbering */
 
 #if defined(PLE_HAVE_MPI)
-    _locator = ple_locator_create(cs_glob_mpi_comm,
-                                  cs_glob_n_ranks,
-                                  0);
+      _locator = ple_locator_create(cs_glob_mpi_comm,
+                                    cs_glob_n_ranks,
+                                    0);
 #else
-    _locator = ple_locator_create();
+      _locator = ple_locator_create();
 #endif
 
-    cs_lnum_t _n_points = (cs_glob_rank_id < 1) ? n_points : 0;
-    cs_real_t *_point_coords = (cs_glob_rank_id < 1) ? (cs_real_t *)point_coords : NULL;
+      cs_lnum_t _n_points = (cs_glob_rank_id < 1) ? n_points : 0;
+      cs_real_t *_point_coords = (cs_glob_rank_id < 1) ? (cs_real_t *)point_coords : NULL;
 
-    ple_locator_set_mesh(_locator,
-                         location_mesh,
-                         options,
-                         0., /* tolerance_base */
-                         0.1, /* tolerance */
-                         3, /* dim */
-                         _n_points,
-                         NULL,
-                         NULL, /* point_tag */
-                         _point_coords,
-                         NULL, /* distance */
-                         cs_coupling_mesh_extents,
-                         cs_coupling_point_in_mesh_p);
+      ple_locator_set_mesh(_locator,
+                           location_mesh,
+                           options,
+                           0., /* tolerance_base */
+                           0.1, /* tolerance */
+                           3, /* dim */
+                           _n_points,
+                           NULL,
+                           NULL, /* point_tag */
+                           _point_coords,
+                           NULL, /* distance */
+                           cs_coupling_mesh_extents,
+                           cs_coupling_point_in_mesh_p);
 
-    /* Shift from 1-base to 0-based locations */
-    ple_locator_shift_locations(_locator, -1);
+      /* Shift from 1-base to 0-based locations */
+      ple_locator_shift_locations(_locator, -1);
+
+      /* dump locator */
+#if 0
+      ple_locator_dump(_locator);
+#endif
+
+      /* Number of distant points located on local mesh. */
+      cs_lnum_t n_points_dist = ple_locator_get_n_dist_points(_locator);
 
 #if 0
-    ple_locator_dump(_locator);
+      bft_printf("ple_locator_get_n_dist_points = %d, n_points = %d\n",
+                 n_points_dist, n_points);
 #endif
 
-    /* Number of distant points located on local mesh. */
-    cs_lnum_t n_points_dist = ple_locator_get_n_dist_points(_locator);
+      const cs_lnum_t *dist_loc = ple_locator_get_dist_locations(_locator);
+      const ple_coord_t *dist_coords = ple_locator_get_dist_coords(_locator);
 
-#if 0
-    bft_printf("ple_locator_get_n_dist_points = %d, n_points = %d\n",
-               n_points_dist, n_points);
-#endif
-
-    const cs_lnum_t *dist_loc = ple_locator_get_dist_locations(_locator);
-    const ple_coord_t *dist_coords = ple_locator_get_dist_coords(_locator);
-
-    for (cs_lnum_t i = 0; i < n_points_dist; i++) {
-      cs_lnum_t c_id = dist_loc[i];
-      f_nb_scan->val[c_id] += 1.;
-      for (cs_lnum_t idim = 0; idim < 3; idim++)
-        cen_points[c_id*3+idim] += dist_coords[i*3 + idim];
-    }
-    for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
-      if (f_nb_scan->val[c_id] > 0) {
+      for (cs_lnum_t i = 0; i < n_points_dist; i++) {
+        cs_lnum_t c_id = dist_loc[i];
+        f_nb_scan->val[c_id] += 1.;
         for (cs_lnum_t idim = 0; idim < 3; idim++)
-          cen_points[c_id*3+idim] /= f_nb_scan->val[c_id];
+          cen_points[c_id*3+idim] += dist_coords[i*3 + idim];
       }
-    }
+      for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
+        if (f_nb_scan->val[c_id] > 0) {
+          for (cs_lnum_t idim = 0; idim < 3; idim++)
+            cen_points[c_id*3+idim] /= f_nb_scan->val[c_id];
+        }
+      }
 
-    // Normal vector to the solid plane
-    cs_real_3_t *restrict c_w_face_normal
-      = (cs_real_3_t *restrict)mq->c_w_face_normal;
-    // TODO do it incrementally and finalize it outside of the loop
-    _solid_plane_from_points(m,
-                             n_points_dist,
-                             dist_loc,
-                             (const cs_real_t   *)f_nb_scan->val,
-                             (const cs_real_3_t *)cen_points,
-                             (const cs_real_3_t *)dist_coords,
-                             c_w_face_normal);
+      // Normal vector to the solid plane
+      cs_real_3_t *restrict c_w_face_normal
+        = (cs_real_3_t *restrict)mq->c_w_face_normal;
+      // TODO do it incrementally and finalize it outside of the loop
+      _solid_plane_from_points(m,
+                               n_points_dist,
+                               dist_loc,
+                               (const cs_real_t   *)f_nb_scan->val,
+                               (const cs_real_3_t *)cen_points,
+                               (const cs_real_3_t *)dist_coords,
+                               c_w_face_normal);
 
-    /* Free memory */
-    _locator = ple_locator_destroy(_locator);
-    BFT_FREE(point_coords);
-    BFT_FREE(colors);
+      /* Free memory */
+      _locator = ple_locator_destroy(_locator);
+      BFT_FREE(point_coords);
+      BFT_FREE(colors);
 
-  } // End loop on multiple scans
+    } /* End loop on multiple scans */
+
+    if (fclose(file) != 0)
+      bft_error(__FILE__,__LINE__, 0,
+                _("Porosity from scan: Could not close the file."));
+
+    /* Nodal mesh is not needed anymore */
+    location_mesh = fvm_nodal_destroy(location_mesh);
+
+  } /* End of multiple files */
 
   /* Bounding box */
   bft_printf(_("  Global bounding box [%f, %f, %f], [%f, %f, %f].\n\n"),
              min_vec_tot[0], min_vec_tot[1], min_vec_tot[2],
              max_vec_tot[0], max_vec_tot[1], max_vec_tot[2]);
-
-  if (fclose(file) != 0)
-    bft_error(__FILE__,__LINE__, 0,
-              _("Porosity from scan: Could not close the file."));
-
-  /* Nodal mesh is not needed anymore */
-  location_mesh = fvm_nodal_destroy(location_mesh);
 
   /* Parallel synchronisation */
   cs_real_3_t *restrict c_w_face_normal
@@ -640,6 +668,9 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
       mq->c_disable_flag[cell_id] = 1;
     }
   }
+
+  /* Parallel synchronisation */
+  cs_mesh_sync_var_scal(cell_f_vol);
 
   cs_real_3_t *restrict i_face_normal
     =  (cs_real_3_t *restrict)mq->i_face_normal;
@@ -733,11 +764,25 @@ cs_porosity_from_scan_set_file_name(const char  *file_name)
   /* Force porous model */
   cs_glob_porous_model = 3;
 
-  BFT_MALLOC(_porosity_from_scan_opt.file_name,
-             strlen(file_name) + 1,
-             char);
+  if (_porosity_from_scan_opt.file_names == NULL) {
+    BFT_MALLOC(_porosity_from_scan_opt.file_names,
+               strlen(file_name) + 1 + 1,
+               char);
+    sprintf(_porosity_from_scan_opt.file_names, "%s;", file_name);
+  }
+  else {
+    int length = strlen(_porosity_from_scan_opt.file_names);
+    BFT_REALLOC(_porosity_from_scan_opt.file_names,
+               length + strlen(file_name) + 1 + 1,
+               char);
+    sprintf(_porosity_from_scan_opt.file_names, "%s%s;",
+		    _porosity_from_scan_opt.file_names,
+		    file_name);
+  }
 
-  sprintf(_porosity_from_scan_opt.file_name, "%s", file_name);
+  bft_printf("Add file %s to the list %s\n",
+		  file_name, _porosity_from_scan_opt.file_names);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1207,7 +1252,7 @@ cs_compute_porosity_from_scan(void)
 
   BFT_FREE(grdporo);
   BFT_FREE(_porosity_from_scan_opt.output_name);
-  BFT_FREE(_porosity_from_scan_opt.file_name);
+  BFT_FREE(_porosity_from_scan_opt.file_names);
   BFT_FREE(_porosity_from_scan_opt.sources);
   BFT_FREE(_porosity_from_scan_opt.source_c_ids);
 

@@ -70,7 +70,7 @@ BEGIN_C_DECLS
 
 typedef struct {
   bool  compute_porosity_from_scan;
-  char *file_name;
+  char *file_names;
   char *output_name;
   bool  postprocess_points;
   /*! Matrix of associated transformation
