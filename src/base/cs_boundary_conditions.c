@@ -309,8 +309,13 @@ _compute_hmg_dirichlet_bc(const cs_mesh_t            *mesh,
   const cs_zone_t *bz = cs_boundary_zone_by_id(def->z_id);
   const cs_lnum_t *face_ids = bz->elt_ids;
 
-  cs_boundary_type_t boundary_type
-    = boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
+  cs_boundary_type_t boundary_type = boundaries->default_type;
+
+  if (boundaries->types != NULL) {
+    assert(boundaries->n_boundaries > 0);
+    boundary_type =
+      boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
+  }
 
   int bc_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
   if (boundary_type & CS_BOUNDARY_ROUGH_WALL)
@@ -363,7 +368,7 @@ _compute_dirichlet_bc(const cs_mesh_t            *mesh,
                       double                     *rcodcl1,
                       cs_real_t                   eval_buf[])
 {
-  CS_UNUSED(t_eval);
+  CS_NO_WARN_IF_UNUSED(t_eval);
 
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_zone_t *bz = cs_boundary_zone_by_id(def->z_id);
@@ -373,8 +378,13 @@ _compute_dirichlet_bc(const cs_mesh_t            *mesh,
 
   assert(eqp->dim == def->dim);
 
-  cs_boundary_type_t boundary_type
-    = boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
+  cs_boundary_type_t boundary_type = boundaries->default_type;
+
+  if (boundaries->types != NULL) {
+    assert(boundaries->n_boundaries > 0);
+    boundary_type =
+      boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
+  }
 
   int bc_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
   if (boundary_type & CS_BOUNDARY_ROUGH_WALL)
@@ -390,14 +400,13 @@ _compute_dirichlet_bc(const cs_mesh_t            *mesh,
       bc_type = 1;
   }
 
-  if (f->dim != def_dim) {
+  if (f->dim != def_dim)
     bft_error(__FILE__, __LINE__, 0,
               _(" %s: Boundary condition definition:\n"
                 " field %s, zone %s, type %s;\n"
                 " dimension %d does not match field dimension (%d)."),
               __func__, f->name, bz->name, cs_xdef_type_get_name(def->type),
               def_dim, f->dim);
-  }
 
   switch(def->type) {
 
@@ -447,7 +456,8 @@ _compute_dirichlet_bc(const cs_mesh_t            *mesh,
       }
     }
     break;
-  }
+
+  } /* Switch on the type of definition */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -570,7 +580,8 @@ _compute_neumann_bc(const cs_mesh_t            *mesh,
       }
     }
     break;
-  }
+
+  } /* Switch on the type of definition */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -614,10 +625,13 @@ _compute_robin_bc(const cs_mesh_t            *mesh,
 
   const cs_lnum_t stride = 1 + eqp->dim + eqp->dim*eqp->dim;
 
-  assert(stride == def->dim);
+  cs_boundary_type_t boundary_type = boundaries->default_type;
 
-  cs_boundary_type_t boundary_type
-    = boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
+  if (boundaries->types != NULL) {
+    assert(boundaries->n_boundaries > 0);
+    boundary_type =
+      boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
+  }
 
   int bc_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
   if (boundary_type & CS_BOUNDARY_ROUGH_WALL)
@@ -685,7 +699,8 @@ _compute_robin_bc(const cs_mesh_t            *mesh,
       }
     }
     break;
-  }
+
+  } /* Switch on the type of definition */
 }
 
 /*============================================================================
