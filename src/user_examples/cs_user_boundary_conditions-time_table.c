@@ -86,7 +86,7 @@ _time_table_t_inlet(cs_lnum_t         n_elts,
     cs_time_table_compute_time_value("inlet_temperature",
                                      time,
                                      1,      /* 2nd column */
-                                     false); /* Dont overwrite last position */
+                                     false); /* Don't overwrite last position */
 
   /* Apply values at selected locations */
 

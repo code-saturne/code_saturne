@@ -107,7 +107,7 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
  *   f->bc_coeffs->rcodcl3[face_id]
  *
  * For vector or tensor fields, these arrays are not interleaved,
- * so for a given face "face_id" and field component "comp_id", acess
+ * so for a given face "face_id" and field component "comp_id", access
  * is as follows (where n_b_faces is domain->mesh->n_b_faces):
  *
  *   f->bc_coeffs->rcodcl1[n_b_faces*comp_id + face_id]\n
@@ -161,7 +161,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
  *   f->bc_coeffs->rcodcl3[face_id]
  *
  * For vector or tensor fields, these arrays are not interleaved,
- * so for a given face "face_id" and field component "comp_id", acess
+ * so for a given face "face_id" and field component "comp_id", access
  * is as follows (where n_b_faces is domain->mesh->n_b_faces):
  *
  *   f->bc_coeffs->rcodcl1[n_b_faces*comp_id + face_id]\n

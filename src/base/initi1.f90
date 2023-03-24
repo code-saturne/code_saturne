@@ -221,7 +221,7 @@ call cs_parameters_output_complete
 
 iok = 0
 
-! No verification in CDO mode only. This done elsewhere
+! No verification in CDO mode only. This is done elsewhere
 if (icdo.lt.2) then
    call verini (iok)
    call parameters_check

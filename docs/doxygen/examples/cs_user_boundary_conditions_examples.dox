@@ -91,9 +91,9 @@
   and exterior value are provided, a Robin boundary condition can be used.
   In this case, a boundary condition of the form:
   \f$ K du/dn + alpha*(u - u0) = g \f$
-  can be used by providing the values \emph (alpha, u0, g), where \empf alpha is
-  is the exchange coefficient mulitiplied by -1 (contribution fro mboundary to
-  domain sign convention), and u0 is the external value.
+  can be used by providing the values \f$ (alpha, u0, g)\f$, where \f$ alpha \f$
+  is the exchange coefficient mulitiplied by -1 (contribution from boundary to
+  domain sign convention), and \f$ u0 \f$ is the external value.
 
   In the following example, and exchange coefficient of value 10.5 and an external
   value of 0.1 is appplied to a scalar (named "scalar1") on a zone named

@@ -695,7 +695,7 @@ User changes:
   * Added output of boundary condition sections (on by default)
   * Allow discarding steady data (to avoid isues with ParaView when both
     steady and unsteady data s present)
-  * Use single precision by defaul fro variables (leads to smaller files).
+  * Use single precision by default for variables (leads to smaller files).
 
 - Add example for computing porosity values from a CAD shape.
 

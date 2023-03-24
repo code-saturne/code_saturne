@@ -213,7 +213,7 @@ end subroutine
 
 !===============================================================================
 
-!> \brief Compute the thermodynamic pressure fro a perfect gas.
+!> \brief Compute the thermodynamic pressure for a perfect gas.
 !>
 !------------------------------------------------------------------------------
 
