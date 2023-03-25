@@ -101,7 +101,7 @@ logical          must_return
 
 integer          iel   , ifac  , ivar  , iscal , n_fans
 integer          iok   , nfld  , f_id  , f_dim  , f_type
-integer          nbccou
+integer          nbccou, n_structs
 integer          ntrela
 integer          icmst
 integer          st_id
@@ -221,6 +221,13 @@ interface
     double precision, pointer, dimension(:)   :: dt
 
   end subroutine richards
+
+  function cs_mobile_structures_get_n_structures() result(n_structs)  &
+    bind(C, name='cs_mobile_structures_get_n_structures')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int) :: n_structs
+  end function cs_mobile_structures_get_n_structures
 
   subroutine cs_mobile_structures_displacement(itrale, italim, itrfin)  &
     bind(C, name='cs_mobile_structures_displacement')
@@ -1243,13 +1250,19 @@ if (iccvfg.eq.0) then
 
   if (iale.ge.1) then
 
-    call cs_mobile_structures_displacement(itrale, italim, itrfin)
+    n_structs = cs_mobile_structures_get_n_structures()
 
-    !     On boucle eventuellement sur de deplacement des structures
-    if (itrfin.ne.-1) then
-      italim = italim + 1
-      goto 300
-    endif
+    if (n_structs.gt.0 .or. nbaste.gt.0) then
+
+      call cs_mobile_structures_displacement(itrale, italim, itrfin)
+
+      ! On boucle eventuellement sur de deplacement des structures
+      if (itrfin.ne.-1) then
+        italim = italim + 1
+        goto 300
+      endif
+
+    end if
 
   endif
 
