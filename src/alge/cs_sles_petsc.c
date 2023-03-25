@@ -1146,6 +1146,9 @@ cs_sles_petsc_solve(void                *context,
                     size_t               aux_size,
                     void                *aux_vectors)
 {
+  CS_UNUSED(aux_size);
+  CS_UNUSED(aux_vectors);
+
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 
   cs_timer_t t0;

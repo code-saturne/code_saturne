@@ -71,7 +71,7 @@ implicit none
 integer          ii , jj , iok , icla
 integer          isc
 integer          kscmin, krvarfl, kcdtvar
-double precision wmolme, turb_schmidt, rvarfl, cdtvar
+double precision wmolme, turb_schmidt, cdtvar
 
 type(var_cal_opt) :: vcopt
 

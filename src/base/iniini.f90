@@ -67,8 +67,7 @@ implicit none
 
 ! Local variables
 
-integer          ii, jj, iscal, iest
-integer          istr
+integer          ii, iscal, iest
 
 !===============================================================================
 

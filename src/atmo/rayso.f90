@@ -1499,7 +1499,6 @@ contains
 
     double precision, intent(in):: x, dx
 
-    double precision:: num,denum
     double precision:: num1,denum1,num2,denum2,num3,denum3
     double precision:: dzxaoz
 

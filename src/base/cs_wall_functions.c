@@ -618,18 +618,14 @@ cs_immersed_boundary_wall_functions(int         f_id,
   cs_mesh_quantities_t *mq = domain->mesh_quantities;
   const cs_lnum_t  n_cells = m->n_cells;
   const cs_real_t  *cell_f_vol = mq->cell_f_vol;
-  const cs_real_3_t *cell_f_cen
-      = (const cs_real_3_t *restrict)mq->cell_f_cen;
 
   /*  Wall */
   const cs_real_t *c_w_face_surf
-      = (const cs_real_t *restrict)mq->c_w_face_surf;
+    = (const cs_real_t *restrict)mq->c_w_face_surf;
   const cs_real_3_t *c_w_face_normal
-      = (const cs_real_3_t *restrict)mq->c_w_face_normal;
-  const cs_real_3_t *c_w_face_cog
-      = (const cs_real_3_t *restrict)mq->c_w_face_cog;
+    = (const cs_real_3_t *restrict)mq->c_w_face_normal;
   const cs_real_t *c_w_dist_inv
-      = (const cs_real_t *restrict)mq->c_w_dist_inv;
+    = (const cs_real_t *restrict)mq->c_w_dist_inv;
 
   cs_real_t *cpro_roughness = NULL;
   if (cs_field_by_name_try("immersed_boundary_roughness") != NULL)

@@ -2390,12 +2390,12 @@ module cs_c_bindings
    !---------------------------------------------------------------------------
 
     ! Interface to C function
-    subroutine cs_thermal_model_kinetic_st_prepare(imasfl, bmasfl, pcrom, &
+    subroutine cs_thermal_model_kinetic_st_prepare(imasfl, bmasfl, &
                                                    vela, vel ) &
       bind(C, name='cs_thermal_model_kinetic_st_prepare')
       use, intrinsic :: iso_c_binding
       implicit none
-      real(kind=c_double), dimension(*) :: imasfl, bmasfl, pcrom
+      real(kind=c_double), dimension(*) :: imasfl, bmasfl
       real(kind=c_double), dimension(3,*) :: vela, vel
     end subroutine cs_thermal_model_kinetic_st_prepare
 

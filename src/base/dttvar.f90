@@ -44,29 +44,13 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     itrale        ALE iteration number
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
-!> \param[in]     ncepdp        number of cells with head loss terms
-!> \param[in]     ncesmp        number of cells with mass source terms
 !> \param[in]     iwarnp        verbosity
-!> \param[in]     icepdc        index number of cells with head loss terms
-!> \param[in]     icetsm        index number of cells with mass source terms
-!> \param[in]     itypsm        type of mass source term for each variable
-!>                               (see \ref cs_user_mass_source_terms)
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     ckupdc        head loss coefficient
-!> \param[in]     smacel        value associated to each variable in the mass
-!>                               source terms or mass rate (see
-!>                               \ref cs_user_mass_source_terms)
 !_______________________________________________________________________________
 
 subroutine dttvar &
- ( itrale ,                                                       &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iwarnp ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     ,                                                       &
-   ckupdc , smacel )
+ ( itrale , iwarnp ,                                              &
+   dt     )
 
 !===============================================================================
 
@@ -97,15 +81,9 @@ implicit none
 ! Arguments
 
 integer          itrale
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
 integer          iwarnp
 
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-
 double precision dt(ncelet)
-double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
 
 ! Local variables
 
@@ -212,14 +190,7 @@ call field_get_val_s(ibrom, brom)
 !===============================================================================
 
 if (ippmod(icompf).ge.0) then
-
-  call cfdttv                                                   &
- ( nvar   , nscal  , ncepdp , ncesmp ,                          &
-   icepdc , icetsm , itypsm ,                                   &
-   dt     ,                                                     &
-   ckupdc , smacel ,                                            &
-   wcf    )
-
+  call cfdttv(dt, wcf)
 endif
 
 !===============================================================================

@@ -212,7 +212,6 @@ cs_thermal_model_demdt_ecsnt(cs_real_t  pres,
  *
  * \param[in]       imasfl    inner mass flux used in the momentum equation
  * \param[in]       bmasfl    boundary mass flux used in the momentum equation
- * \param[in]       crom      density values at n-1/2,k-1
  * \param[in]       vela      velocity at previous time step
  * \param[in]       vel       velocity at iteration k
  */
@@ -221,7 +220,6 @@ cs_thermal_model_demdt_ecsnt(cs_real_t  pres,
 void
 cs_thermal_model_kinetic_st_prepare(const cs_real_t  imasfl[],
                                     const cs_real_t  bmasfl[],
-                                    const cs_real_t  crom[],
                                     const cs_real_t  vela[][3],
                                     const cs_real_t  vel[][3]);
 

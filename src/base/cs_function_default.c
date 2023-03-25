@@ -1580,7 +1580,6 @@ cs_function_boundary_nusselt(int               location_id,
     /* Compute using reconstructed temperature value in boundary cells */
 
     const cs_real_t *b_dist = fvq->b_dist;
-    const cs_real_t *srfbn = fvq->b_f_face_surf;
 
     bool have_coupled = (   eqp->icoupl > 0
                          && (  cs_glob_time_step->nt_cur

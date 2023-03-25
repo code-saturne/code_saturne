@@ -1688,7 +1688,7 @@ if (iappel.eq.1) then
   ! Compute kinetic energy balance for compressible algorithme
   ! See H. Amino thesis
   call cs_thermal_model_kinetic_st_prepare &
-    ( imasfl, bmasfl, pcrom, vela, vel)
+    ( imasfl, bmasfl, vela, vel)
 
   ! Store inverse of the velocity matrix for the correction step
   !  if needed (otherwise vitenp is used in cs_pressure_correction)

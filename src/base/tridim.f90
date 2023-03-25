@@ -742,8 +742,7 @@ if (vcopt_u%iwarni.ge.1) then
   write(nfecra,1020)
 endif
 
-call dttvar(itrale, nvar, nscal, ncepdc, ncetsm, vcopt_u%iwarni,  &
-            icepdc, icetsm, itypsm, dt, ckupdc, smacel)
+call dttvar(itrale, vcopt_u%iwarni, dt)
 
 if (nbaste.gt.0.and.itrale.gt.nalinf) then
   ntrela = ntcabs - ntpabs

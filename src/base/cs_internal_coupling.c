@@ -3046,9 +3046,7 @@ void
 cs_ic_field_set_exchcoeff(const int         field_id,
                           const cs_real_t  *hbnd)
 {
-  const cs_real_t* b_face_surf = cs_glob_mesh_quantities->b_face_surf;
-
-  const cs_field_t* f = cs_field_by_id(field_id);
+  const cs_field_t *f = cs_field_by_id(field_id);
 
   const int coupling_key_id = cs_field_key_id("coupling_entity");
   int coupling_id = cs_field_get_key_int(f,
@@ -3073,7 +3071,6 @@ cs_ic_field_set_exchcoeff(const int         field_id,
   /* Compute hint and hext */
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
     cs_lnum_t face_id = faces_local[ii];
-    cs_real_t surf = b_face_surf[face_id];
     hint[face_id] = hbnd[face_id];
     rcodcl2[face_id] = hextloc[ii];
   }

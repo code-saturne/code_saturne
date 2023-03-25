@@ -235,7 +235,6 @@ _pressure_correction_fv(int        iterns,
 
   cs_field_t *f_p = CS_F_(p);
   const cs_field_t *f_vel = CS_F_(vel);
-  const cs_real_3_t *vela = (const cs_real_3_t *)CS_F_(vel)->val_pre;
 
   assert((cs_real_t *)vel == f_vel->val);
 
@@ -348,10 +347,8 @@ _pressure_correction_fv(int        iterns,
 
   cs_real_t *crom_eos = CS_F_(rho)->val;
   const cs_real_t *croma = NULL;
-  const cs_real_t *cromaa = NULL;
   if (vp_param->icalhy == 1 || idilat > 1 || fluid_props->irovar) {
     croma = CS_F_(rho)->val_pre;
-    cromaa = CS_F_(rho)->vals[2];
   }
   const cs_real_t *brom_eos = CS_F_(rho_b)->val;
   const cs_real_t *broma = NULL;

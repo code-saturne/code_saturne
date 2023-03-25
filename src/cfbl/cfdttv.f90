@@ -21,13 +21,7 @@
 !-------------------------------------------------------------------------------
 
 subroutine cfdttv &
-!================
-
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     ,                                                       &
-   ckupdc , smacel ,                                              &
-   wcf    )
+ (dt, wcf)
 
 !===============================================================================
 ! FUNCTION :
@@ -40,20 +34,7 @@ subroutine cfdttv &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! mass source term type                          !
-! (ncesmp,nvar)    !    !     !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,nvar)    !    !     !  source de masse                               !
-!                  !    !     ! pour ivar=ipr, smacel=flux de masse            !
 ! wcf(ncelet)      ! tr ! --> ! contrainte compressible                        !
 !__________________!____!_____!________________________________________________!
 
@@ -84,14 +65,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
-
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-
 double precision dt(ncelet)
-double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
 double precision wcf(ncelet)
 
 ! Local variables

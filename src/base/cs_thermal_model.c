@@ -173,168 +173,6 @@ cs_f_thermal_model_get_pointers(int     **itherm,
  * Private function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Add the term pdivu to the thermal equation rhs for humid air.
- *
- * \param[in]       thetv     theta parameter
- * \param[in]       temp      array of temperature
- * \param[in]       tempa     array of temperature at the previous time step
- * \param[in]       cvar_var  array of the internal energy
- * \param[in]       cvara_var array of the internal energy at the previous
- *                            time step
- * \param[in]       vel       array of the velocity
- * \param[in]       xcvv      array of the isobaric heat capacity
- * \param[in]       cpro_yw   array of the total water mass fraction
- * \param[in]       cpro_ywa  array of the total water mass fraction at the
- *                            previous time step
- * \param[in]       cpro_yv   array of the vapor of water mass fraction
- * \param[in]       cpro_yva  array of the vapor of water mass fraction at the
- *                            previous time step
- * \param[in]       gradp     array of the pressure gradient
- * \param[in]       gradphi   array of the pressure increment gradient
- * \param[in, out]  smbrs     array of the right hand side
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_pdivu_humid(cs_real_t        thetv,
-             const cs_real_t  temp[],
-             const cs_real_t  tempa[],
-             const cs_real_t  cvar_var[],
-             const cs_real_t  cvara_var[],
-             const cs_real_t  vel[][3],
-             const cs_real_t  xcvv[],
-             const cs_real_t  cpro_yw[],
-             const cs_real_t  cpro_ywa[],
-             const cs_real_t  cpro_yv[],
-             const cs_real_t  cpro_yva[],
-             const cs_real_t  gradp[][3],
-             const cs_real_t  gradphi[][3],
-             cs_real_t        smbrs[restrict])
-{
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
-  const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_t n_i_faces = m->n_i_faces;
-  const cs_lnum_t n_b_faces = m->n_b_faces;
-  const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
-
-  const int kimasf = cs_field_key_id("inner_mass_flux_id");
-  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-
-  /*  Local variables */
-  int itherm = cs_glob_thermal_model->thermal_variable;
-  int has_pdivu = cs_glob_thermal_model->has_pdivu;
-  cs_real_t rair = cs_glob_fluid_properties->r_pg_cnst;
-  cs_real_t rvapor = cs_glob_fluid_properties->r_v_cnst;
-  cs_real_t l00 = cs_glob_fluid_properties->l00;
-  cs_real_t cpv = cs_glob_fluid_properties->cv0;
-  cs_real_t cvl = cs_glob_fluid_properties->cvl;
-  cs_real_t cp0 = cs_glob_fluid_properties->cp0;
-
-  const cs_fluid_properties_t *phys_pro = cs_glob_fluid_properties;
-  cs_real_t rvsra = phys_pro->rvsra;
-  cs_real_t *imasfl
-    = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kimasf))->val;
-  cs_real_t *bmasfl
-    =  cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf))->val;
-
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
-
-  if (has_pdivu == 1) {
-    cs_real_t *pdivu;
-    BFT_MALLOC(pdivu, n_cells_ext, cs_real_t);
-    cs_array_set_value_real(n_cells_ext, 1, 0., pdivu);
-
-    if (itherm == CS_THERMAL_MODEL_TEMPERATURE) {
-      // Interior faces contribution
-      for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-        cs_lnum_t ii = i_face_cells[f_id][0];
-        cs_lnum_t jj = i_face_cells[f_id][1];
-        if (imasfl[f_id] >= 0.) {
-          pdivu[ii] += thetv *rair *imasfl[f_id] *temp[ii]
-                     + (1-thetv) *imasfl[f_id] *rair *tempa[ii];
-          pdivu[jj] -=  thetv *imasfl[f_id] *rair *temp[ii]
-                     + (1-thetv) *imasfl[f_id] *rair *tempa[ii];
-
-        }
-        else {
-          pdivu[ii] += imasfl[f_id] *rair
-                     * (thetv *temp[jj] + (1-thetv) *tempa[jj]);
-          pdivu[jj] -= imasfl[f_id] *rair
-                     * (thetv *temp[jj] + (1-thetv) *tempa[jj]);
-        }
-      }
-      /* Boundary faces contribution */
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-        cs_lnum_t ii = b_face_cells[f_id];
-        pdivu[ii] += bmasfl[f_id] *rair
-                   * (thetv *temp[ii] + (1-thetv) *tempa[ii]);
-      }
-    }
-    else if (itherm == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
-      cs_real_t pdrho, pdrhoa, cvma;
-      /* Interior faces contribution */
-      for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-        cs_lnum_t ii = i_face_cells[f_id][0];
-        cs_lnum_t jj = i_face_cells[f_id][1];
-        if (imasfl[f_id] >= 0.) {
-          pdrho =   (cvar_var[ii] - cpro_yv[ii]*l00)
-                  * rair * (1 - cpro_yw[ii] + cpro_yv[ii]*rvsra) / (xcvv[ii]);
-          cvma =  (cp0 - rair) * (1 - cpro_ywa[ii])
-                 + (cpv - rvapor) * cpro_yva[ii]
-                 + (cpro_ywa[ii] - cpro_yva[ii]) * cvl;
-          pdrhoa = (cvara_var[ii]
-                    -   cpro_yva[ii]*l00) * rair
-                      * (1 - cpro_ywa[ii] + cpro_yva[ii] *rvsra) / cvma;
-          pdivu[ii] +=     thetv  * imasfl[f_id] * pdrho
-                     + (1.-thetv) * imasfl[f_id] * pdrhoa;
-          pdivu[jj] -=      thetv *imasfl[f_id] * pdrho
-                     + (1.-thetv) *imasfl[f_id] * pdrhoa;
-        }
-        else {
-          pdrho = (cvar_var[jj] - cpro_yv[jj]*l00) *rair
-            *(1. - cpro_yw[jj] + cpro_yv[jj]*rvsra) /(xcvv[jj]);
-          cvma =   (cp0 - rair) * (1. - cpro_ywa[jj])
-                 + (cpv - rvapor) * cpro_yva[jj]
-                 + (cpro_ywa[jj] - cpro_yva[jj]) * cvl;
-          pdrhoa =    (cvara_var[jj] - cpro_yva[jj] *l00) * rair
-                    * (1. - cpro_ywa[jj] + cpro_yva[jj] *rvsra) / cvma;
-          pdivu[ii] += imasfl[f_id] *(thetv *pdrhoa + (1.-thetv) *pdrhoa);
-          pdivu[jj] -= imasfl[f_id] *(thetv *pdrho + (1.-thetv) *pdrhoa);
-        }
-      }
-      /* Boundary faces contribution */
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-        cs_lnum_t ii = b_face_cells[f_id];
-        pdrho = (cvar_var[ii] - cpro_yv[ii]*l00) *rair
-          *(1 - cpro_yw[ii] + cpro_yv[ii]*rvsra) /(xcvv[ii]);
-        cvma = (cp0 - rair) * (1 - cpro_ywa[ii]) + (cpv - rvapor)
-          * cpro_yva[ii] + (cpro_ywa[ii] - cpro_yva[ii]) * cvl;
-        pdrhoa = (cvara_var[ii] - cpro_yva[ii]*l00) *rair
-          *(1 - cpro_ywa[ii] + cpro_yva[ii]*rvsra) / cvma;
-        pdivu[ii] += bmasfl[f_id] * (thetv *pdrho + (1-thetv) *pdrhoa);
-      }
-    }
-
-    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, pdivu);
-
-    /* pdiv(u) = div(pu) - u.grad p */
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      pdivu[c_id] -= cell_f_vol[c_id]
-                     * (  vel[c_id][0] *(gradp[c_id][0] + gradphi[c_id][0])
-                        + vel[c_id][1] *(gradp[c_id][1] + gradphi[c_id][1])
-                        + vel[c_id][2] *(gradp[c_id][2] + gradphi[c_id][2]));
-      smbrs[c_id] -= pdivu[c_id];
-    }
-  }
-}
-
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -675,7 +513,6 @@ cs_thermal_model_demdt_ecsnt(cs_real_t  pres,
  *
  * \param[in]       imasfl    inner mass flux used in the momentum equation
  * \param[in]       bmasfl    boundary mass flux used in the momentum equation
- * \param[in]       crom      density values at n-1/2,k-1
  * \param[in]       vela      velocity at previous time step
  * \param[in]       vel       velocity at iteration k
  */
@@ -684,7 +521,6 @@ cs_thermal_model_demdt_ecsnt(cs_real_t  pres,
 void
 cs_thermal_model_kinetic_st_prepare(const cs_real_t  imasfl[],
                                     const cs_real_t  bmasfl[],
-                                    const cs_real_t  crom[],
                                     const cs_real_t  vela[][3],
                                     const cs_real_t  vel[][3])
 {
@@ -696,7 +532,6 @@ cs_thermal_model_kinetic_st_prepare(const cs_real_t  imasfl[],
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
@@ -1299,7 +1134,6 @@ cs_thermal_model_pdivu(cs_real_t         smbrs[restrict])
   int itherm = cs_glob_thermal_model->thermal_variable;
   int has_pdivu = cs_glob_thermal_model->has_pdivu;
   cs_real_t rair = cs_glob_fluid_properties->r_pg_cnst;
-  cs_real_t cp0 = cs_glob_fluid_properties->cp0;
   cs_real_t p0 = cs_glob_fluid_properties->p0;
 
   if (has_pdivu == 1) {
@@ -1327,7 +1161,7 @@ cs_thermal_model_pdivu(cs_real_t         smbrs[restrict])
     const cs_real_t *cvar_pr = CS_F_(p)->val;
     const cs_real_t *cvara_pr = CS_F_(p)->val_pre;
     const cs_real_t *cvar_rho = CS_F_(rho)->val;
-    const cs_real_3_t *vel = CS_F_(vel)->val;
+    const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(vel)->val;
     const cs_real_t *temp = CS_F_(t)->val;
     const cs_real_t *tempa = CS_F_(t)->val_pre;
 

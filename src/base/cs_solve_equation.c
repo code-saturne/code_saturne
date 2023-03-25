@@ -1226,10 +1226,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
     else
       cs_array_set_value_real(n_cells, 1, 1., xcvv);
 
-    /* Get required arrays */
-
-    const cs_real_t *cpro_yva = NULL, *cpro_ywa = NULL;
-
     /* Note that the temperature is a postprocessing field when the thermal model
        is based on the internal energy. */
 
@@ -1248,12 +1244,10 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
         if (f_yv != NULL) {
           cpro_yv = f_yv->val;
-          cpro_yva = f_yv->val;  /* FIXME check this */
         }
 
         if (f_yw != NULL) {
           cpro_yw = f_yw->val;
-          cpro_ywa = f_yw->val_pre;
         }
       }
 
@@ -1285,23 +1279,12 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     /* Compute p.div(u) */
 
-    const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(vel)->val;
-
     /* Parallelism and periodicity: vel already synchronized;
        gradient (below) is always synchronized. */
 
     cs_halo_sync_var(m->halo, CS_HALO_STANDARD, vistot);
 
     /* Get pressure gradient, including the pressure increment gradient */
-
-    const cs_real_3_t *gradp = NULL, *gradphi = NULL;
-
-    cs_field_t *f_pg = cs_field_by_name_try("pressure_gradient");
-    if (f_pg != NULL)
-      gradp = (const cs_real_3_t *)f_pg->val;
-    cs_field_t *f_pig = cs_field_by_name_try("pressure_increment_gradient");
-    if (f_pig != NULL)
-      gradphi = (const cs_real_3_t *)f_pig->val;
 
     cs_thermal_model_pdivu(smbrs);
 
