@@ -776,12 +776,12 @@ cs_porosity_from_scan_set_file_name(const char  *file_name)
                length + strlen(file_name) + 1 + 1,
                char);
     sprintf(_porosity_from_scan_opt.file_names, "%s%s;",
-		    _porosity_from_scan_opt.file_names,
-		    file_name);
+                    _porosity_from_scan_opt.file_names,
+                    file_name);
   }
 
   bft_printf("Add file %s to the list %s\n",
-		  file_name, _porosity_from_scan_opt.file_names);
+                  file_name, _porosity_from_scan_opt.file_names);
 
 }
 
