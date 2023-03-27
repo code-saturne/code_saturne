@@ -160,9 +160,6 @@
 
     Scalars may be divided into two groups: **user-defined** scalars
     and **model-defined** (sometimes referred to as “specific physics”) scalars.
-    In Fortran, there are \c nscaus user-defined scalars and \c nscapp
-    “specific physics” (i.e. model-defined) scalars, with
-    <tt>nscal = nscaus + nscapp</tt>.
 
   - Depending on the thermal model used; the solved thermal scalar variable may be
     the temperature, the enthalpy, or in the case of the compressible module,
@@ -172,14 +169,59 @@
   - When a user scalar represents the mean of the
       square of the fluctuations of another scalar (<em>i.e.</em> the average
       \f$ \overline{\varphi^\prime\varphi^\prime} \f$ for a fluctuating scalar
-      <em>ϕ</em>). This can be made either {\em via} the
+      <em>ϕ</em>). This can be made either <em>via</em> the
       interface or by declaring that scalar using
       `cs_parameters_add_variable_variance` in
-      \ref cs_user_parameters.f90 (if the scalar in question is not a ``user''
-      scalar, the selection is made automatically). For instance, if `j`
-      and `k` are ``user'' scalars, the variable \f$\varphi\f$ corresponding
-      to `k` is the variable number
-      `isca(k) = isca(iscavr(j))`.
+      \ref cs_user_parameters.c.
+
+ \par Accessing variables and properties in C:
+
+    - The most general way of accessing a field is to use its name: \n\n
+
+      <tt>cs_real_t *cvar_pr = \ref cs_field_by_name "field_get_val_s_by_name"("pressure")->val; </tt>\n
+      then: \n
+      <tt> cvar_pr[cell_id] </tt> \n\n
+
+    - The main \ref cs_var_dico_vars "variables" and \ref cs_var_dico_props "properties" can be accessed using the \ref CS_F_ macro:\n\n
+
+     - For one-dimensional arrays:\n
+      <tt>pressure = CS_F_(p)->val[cell_id]</tt>, \n
+      <tt>cp = CS_F_(cp)->val[cell_id]</tt> \n
+      <tt>temp = CS_F_(t)->val[cell_id]</tt> \n\n
+
+     - For multidimensional arrays:\n
+      <tt>uz = CS_F_(vel)->val[3*cell_id + 2]</tt>\n\n
+      These arrays can also be cast as follows (for a 3-D array):\n
+      <tt>\ref cs_real_3_t *cvar_vel = (\ref cs_real_3_t *)CS_F_(vel)->val</tt> \n\n
+      The cell value can then be accessed as \n
+      <tt>ux = cvar_vel[cell_id][0]</tt>\n\n
+
+      <b>\c vel, \c p, or \c cp </b> are defined in \ref cs_field_pointer.h. \n\n
+
+    - Indexed variables (such as user scalars) and indexed properties
+      are accessed as: \n
+      <tt>\ref CS_FI_(name,ii-1)->val[cell_id]</tt>. \n\n
+
+    - The thermal scalar can be accessed using the \ref cs_thermal_model_field
+      function: \n
+      <tt>field_t *tf = cs_thermal_model_field();</tt>\n
+      then: \n
+      <tt>tf->val[cell_id]</tt>. \n
+      if there is no thermal scalar, cs_thermal_model_field returns NULL. \n\n
+
+    - In any case, all variables can be accessed using the function \ref cs_field_by_name: \n
+      <tt>\ref cs_real_t *cvar_pr = \ref cs_field_by_name("pressure")->val</tt> \n\n
+
+    - A field's \ref scalar_id key-word should be ≥ 0 if it is a scalar. \n\n
+
+    - When a field is user-defined (rather than model-defined),
+      its \ref cs_field_t::type "type" flag
+      should also match the \ref CS_FIELD_USER mask: \n
+      <tt> if (f->type & CS_FIELD_USER) ... </tt>
+
+  \remark Note that indexes in C begin at 0, while indexes in Fortran begin at 1.
+          Thus, Fortran and C loop counters are related in the following as:\n
+          <tt>cell_id = iel-1</tt>.
 
   \par Accessing variables and properties in Fortran:
 
@@ -222,54 +264,6 @@
       scalars. It's variable number is thus <tt> isca(iscalt) </tt>.\n
       if there is no thermal scalar, <tt>iscalt</tt> is equal to -1. \n\n
 
-  \par Accessing variables and properties in C:
-
-    - The most general way of accessing a field is to use its name: \n\n
-
-      <tt>cs_real_t *cvar_pr = cs_field_by_name "field_get_val_s_by_name"("pressure")->val; </tt>\n
-      then: \n
-      <tt> cvar_pr(cell_id) </tt> \n\n
-
-    - The main \ref cs_var_dico_vars "variables" and \ref cs_var_dico_props "properties" can be accessed using the \ref CS_F_ macro:\n\n
-
-     - For one-dimensional arrays:\n
-      <tt>press = CS_F_(p)->val[cell_id]</tt>, \n
-      <tt>cp = CS_F_(cp)->val[cell_id]</tt> \n
-      <tt>temp = CS_F_(t)->val[cell_id]</tt> \n\n
-
-     - For multidimensional arrays:\n
-      <tt>uz = CS_F_(vel)->val[3*cell_id + 2]</tt>\n\n
-      These arrays can also be cast as follows (for a 3-D array):\n
-      <tt>\ref cs_real_3_t *cvar_vel = (\ref cs_real_3_t *)CS_F_(vel)->val</tt> \n\n
-      The cell value can then be accessed as \n
-      <tt>ux = cvar_vel[cell_id][0]</tt>\n\n
-
-      <b>\c vel, \c p, or \c cp </b> are defined in \ref cs_field_pointer.h. \n\n
-
-    - Indexed variables (such as user scalars) and indexed properties
-      are accessed as: \n
-      <tt>\ref CS_FI_(name,ii-1)->val[cell_id]</tt>. \n\n
-
-    - The thermal scalar can be accessed using the \ref cs_thermal_model_field
-      function: \n
-      <tt>field_t *tf = cs_thermal_model_field();</tt>\n
-      then: \n
-      <tt>tf->val[cell_id]</tt>. \n
-      if there is no thermal scalar, cs_thermal_model_field returns NULL. \n\n
-
-    - In any case, all variables can be accessed using the function \ref cs_field_by_name: \n
-      <tt>\ref cs_real_t *cvar_pr = \ref cs_field_by_name("pressure")->val</tt> \n\n
-
-    - A field's \ref scalar_id key-word should be ≥ 0 if it is a scalar. \n\n
-
-    - When a field is user-defined (rather than model-defined),
-      its \ref cs_field_t::type "type" flag
-      should also match the \ref CS_FIELD_USER mask: \n
-      <tt> if (f->type & CS_FIELD_USER) ... </tt>
-
-  \remark Note that indexes in C begin at 0, while indexes in Fortran begin at 1.
-          Thus, Fortran and C loop counters are related in the following as:\n
-          <tt>cell_id = iel-1</tt>.
 
   Cross-reference tables are available for the variables and properties of the
   standard solver and the specific physics features:
