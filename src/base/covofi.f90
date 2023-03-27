@@ -778,56 +778,51 @@ if (ncesmp.gt.0) then
 endif
 
 ! Condensation source terms for the scalars
-! associated to a surface zone (icondb=0)
-if (nfbpcd.gt.0) then
+! associated to a surface zone (icondb=0) and
+! condensation source terms for the scalars
+! associated to a volumic zone (icondv=0)
+
+if (icondb.eq.0 .or. icondv.eq.0) then
 
   allocate(srccond(nfbpcd))
+  srccond(:) = 0.d0
 
-  ! When treating the Temperature, the equation is multiplied by Cp
-  do ii = 1, nfbpcd
-    ifac= ifbpcd(ii) + 1 ! C numbering
-    iel = ifabor(ifac)
-
-    if (spcond(ii,ipr).lt.0.d0 .and.itypcd(ii,ivar).eq.1) then
-      srccond(ii) = spcond(ii,ipr)*xcpp(iel)
-    else
-      srccond(ii) = 0.d0
-    endif
-  enddo
-
-  call wall_condensation_source_terms(ivarfl(isca(iscal)), 0,        &
-                                      ivoid, ivoid, spcond(1,ivar),  &
-                                      srccond, rvoid, rvoid, rvoid,  &
-                                      cvara_var, smbrs, rovsdt)
-
-  deallocate(srccond)
-
-endif
-
-! Condensation source terms for the scalars
-! associated to a volumic zone (icondv=0)
-! taking into account the metal mass
-! structures condensation modelling
-if (icondv.eq.0) then
   allocate(srcmst(ncelet))
+  srcmst(:) = 0.d0
 
-  ! When treating the Temperature, the equation is multiplied by Cp
-  do ii = 1, ncmast
-    iel = ltmast(ii)
+  if (icondb .eq. 0) then
+    ! When treating the Temperature, the equation is multiplied by Cp
+    do ii = 1, nfbpcd
+      ifac= ifbpcd(ii) + 1 ! C numbering
+      iel = ifabor(ifac)
 
-    if (svcond(iel,ipr).lt.0.d0 .and.itypst(ii,ivar).eq.1) then
-      srcmst(iel) = svcond(iel,ipr)*xcpp(iel)
-    else
-      srcmst(iel) = 0.d0
-    endif
-  enddo
+      if (spcond(ii,ipr).lt.0.d0 .and.itypcd(ii,ivar).eq.1) then
+        srccond(ii) = spcond(ii,ipr)*xcpp(iel)
+      else
+        srccond(ii) = 0.d0
+      endif
+    enddo
+  endif
 
-  call wall_condensation_source_terms(ivarfl(isca(iscal)),             &
-                                      ncmast, ltmast, itypst(1,ivar),  &
-                                      rvoid, rvoid, svcond(1,ivar),    &
-                                      srcmst, flxmst, cvara_var,       &
+  if (icondv .eq. 0) then
+    ! When treating the Temperature, the equation is multiplied by Cp
+    do ii = 1, ncmast
+      iel = ltmast(ii)
+
+      if (svcond(iel,ipr).lt.0.d0 .and.itypst(ii,ivar).eq.1) then
+        srcmst(iel) = svcond(iel,ipr)*xcpp(iel)
+      else
+        srcmst(iel) = 0.d0
+      endif
+    enddo
+  endif
+
+  call wall_condensation_source_terms(ivarfl(isca(iscal)),                    &
+                                      ncmast, ltmast, itypst(1,ivar),         &
+                                      spcond(1,ivar), srccond, svcond(1,ivar),&
+                                      srcmst, flxmst, cvara_var,              &
                                       smbrs, rovsdt )
-
+  deallocate(srccond)
   deallocate(srcmst)
 
 endif

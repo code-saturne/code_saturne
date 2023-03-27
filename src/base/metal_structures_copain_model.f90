@@ -161,6 +161,7 @@ lcond = 2278.0d+3
 
 ! Define the global metal structures volume
 ! -----------------------------------------
+volm = 0.d0
 do icmet = 1, ncmast
   iel =  ltmast(icmet)
   volm = volm + volume(iel)
@@ -330,8 +331,15 @@ do icmet = 1, ncmast
   !-- the wall temperature is in unit (Celsius °C)
   !---------------------------------------------------
   if(itagms.eq.1) then
-    if(isuite.eq.0.and.ntcabs.eq.1) then
+    if(isuite.eq.0.and.ntcabs.eq.0) then
       t_wall = tmet0
+
+      ! array initialization if the metal structures
+      ! condensation model is coupled with
+      ! a 0-D thermal model
+      ! FIXME add restart file later
+      t_metal(iel,1) = tmet0
+      t_metal(iel,2) = tmet0
     else
       t_wall = t_metal(iel,1)
     endif
@@ -453,7 +461,7 @@ do icmet = 1, ncmast
   !===================================================
   !== Computation of the thermal flux to the face   ==
   !===================================================
-  flux =lambda*Nu_z*(tinf-t_wall)*surfbm
+  flux =lambda*Nu_z*(tinf-t_wall)/lcar*surfbm
 
   flmin = min(flmin,flux)
   flmax = max(flmax,flux)
@@ -480,7 +488,8 @@ deallocate(x_h2o_g, diff_m)
 gamma_cond = 0.d0
 do icmet = 1, ncmast
   iel =  ltmast(icmet)
-  gamma_cond = gamma_cond + gam_ms(iel)
+  surfbm = s_metal*volume(iel)/volm
+  gamma_cond = gamma_cond + gam_ms(iel)*surfbm
 enddo
 
 if (irangp.ge.0) then
