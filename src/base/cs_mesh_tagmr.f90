@@ -105,7 +105,7 @@ do ii = 1, nfbpcd
     ! Compute the geometric ratio with a iterative method
     iter = 0
     r1   = 2.d0
-    delta = 0.0
+    delta = 1.d5
     epsi = 0.0001d0
 
     do while (delta .gt. epsi .and. iter .lt. 100)
@@ -136,7 +136,6 @@ do ii = 1, nfbpcd
       r0 = r0 + zdxp(iz,kk)
       write(nfecra,2001) kk,zdxp(iz,kk),r0
     enddo
-    write(nfecra,2002) (zdxmin(iz)**2)/(2.d0*(zcondb(iz)/(zrob(iz)*zcpb(iz))))
   endif
 
 enddo
@@ -166,8 +165,6 @@ endif
   4x,' geometric ratio : ',g15.7,/,                                &
   4x,' cell id ',3x,' cell size ',5x,'distance to the wall'   )
  2001 format( 8x,i4,8x,g15.7,6x,g15.7)
- 2002 format( /,                                                   &
-  4x,'Minimum characteristic time of heat transfer : ',g15.7,/)
   !================================================================
 
 !----
