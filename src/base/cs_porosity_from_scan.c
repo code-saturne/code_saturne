@@ -114,7 +114,7 @@ static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .nb_sources = 0,
   .sources = NULL,
   .source_c_ids = NULL,
-  .threshold = 3
+  .threshold = 4
 };
 
 /*============================================================================
@@ -1149,25 +1149,6 @@ cs_compute_porosity_from_scan(void)
       for (cs_lnum_t i = 0; i < 3; i++)
         c_w_face_normal[cell_id][i] = -c_w_face_normal[cell_id][i];
     }
-  }
-
-  // Add plane in cells with not enough points to construct a plan
-  cs_field_t *f_nb_scan = cs_field_by_name_try("nb_scan_points");
-  for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
-    cs_lnum_t ii = i_face_cells[face_id][0];
-    cs_lnum_t jj = i_face_cells[face_id][1];
-
-    if (cs_math_3_norm(c_w_face_normal[ii]) < cs_math_epzero &&
-        f_nb_scan->val[ii] > 0. &&
-        cs_math_3_norm(c_w_face_normal[jj]) > 0.)
-      for (cs_lnum_t i = 0; i < 3; i++)
-        c_w_face_normal[ii][i] = c_w_face_normal[jj][i];
-
-    if (cs_math_3_norm(c_w_face_normal[jj]) < cs_math_epzero &&
-        f_nb_scan->val[jj] > 0. &&
-        cs_math_3_norm(c_w_face_normal[ii]) > 0.)
-      for (cs_lnum_t i = 0; i < 3; i++)
-        c_w_face_normal[jj][i] = c_w_face_normal[ii][i];
   }
 
   // Porosity

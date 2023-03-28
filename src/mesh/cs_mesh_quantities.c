@@ -2477,8 +2477,6 @@ _compute_fluid_solid_cell_quantities(const cs_mesh_t     *m,
     }
   }
 
-  BFT_FREE(a_cell_cen);
-
   /* Loop on cells to finalize the computation
      ----------------------------------------- */
 
@@ -2497,6 +2495,7 @@ _compute_fluid_solid_cell_quantities(const cs_mesh_t     *m,
   }
 
   /* Free memory */
+  BFT_FREE(a_cell_cen);
   BFT_FREE(_cell_f_vol);
   BFT_FREE(_cell_f_cen);
 
@@ -3081,9 +3080,13 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
         /* Evaluating if the face vertex is solid or fluid */
         /* Vertex seen from cell c_id is solid */
-        if (cs_math_3_dot_product(vc[j][ic], c_w_face_normal[c_id]) > 0.
-              && cs_math_3_norm(c_w_face_normal[c_id]) > 0.)
+        cs_real_3_t vn, nw;
+        cs_math_3_normalize(vc[j][ic],vn);
+        cs_math_3_normalize(c_w_face_normal[c_id], nw);
+        if (cs_math_3_dot_product(vn, nw) > -sqrt(cs_math_epzero)
+              && cs_math_3_norm(c_w_face_normal[c_id]) > 0.) {
           n_s_face_vertices[ic]++;
+        }
       }
     }
 
@@ -3573,7 +3576,6 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                                        mq->cell_f_vol);
 
 
-  BFT_FREE(i_f_face_cell_normal);
 
   /* Correction of small or negative volumes
      (doesn't conserve the total volume) */
@@ -3642,27 +3644,122 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                             (cs_real_3_t *)(mq->diipf),
                             (cs_real_3_t *)(mq->djjpf));
 
-  /*wall distance*/
+  /* Compute solid normal from fluid normals */
+
+  cs_real_33_t *xpsn;
+  BFT_MALLOC(xpsn      , m->n_cells_with_ghosts, cs_real_33_t);
+  memset(xpsn      , 0., m->n_cells_with_ghosts * sizeof(cs_real_33_t));
+
+  // Reinitializing the wall normal before correcting
+  memset(c_w_face_normal, 0., m->n_cells_with_ghosts * sizeof(cs_real_3_t));
+
+  /* Interior faces */
+
+  for (cs_lnum_t f_id = 0; f_id < m->n_i_faces; f_id++) {
+
+    cs_lnum_t cell_id0 = i_face_cells[f_id][0];
+    cs_lnum_t cell_id1 = i_face_cells[f_id][1];
+    cs_real_t xfmxc0, xfmxc1;
+
+    for (cs_lnum_t i = 0; i < 3; i++) {
+
+      c_w_face_normal[cell_id0][i] -= i_f_face_normal[f_id][i];
+      c_w_face_normal[cell_id1][i] += i_f_face_normal[f_id][i];
+
+      xfmxc0 = (mq->i_face_cog[3*f_id+i] - mq->cell_f_cen[3*cell_id0+i]);
+      xfmxc1 = (mq->i_face_cog[3*f_id+i] - mq->cell_f_cen[3*cell_id1+i]);
+
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        xpsn[cell_id0][i][j] += xfmxc0*i_f_face_normal[f_id][j];
+        xpsn[cell_id1][i][j] -= xfmxc1*i_f_face_normal[f_id][j];
+      }
+    }
+
+  }
+
+  /* Boundary faces */
+
+  for (cs_lnum_t f_id = 0; f_id < m->n_b_faces; f_id++) {
+
+    cs_lnum_t cell_id0 = b_face_cells[f_id];
+    cs_real_t xfmxc0;
+
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      c_w_face_normal[cell_id0][i] -= b_f_face_normal[f_id][i];
+
+      xfmxc0 = (mq->b_f_face_cog[3*f_id+i] - mq->cell_f_cen[3*cell_id0+i]);
+
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        xpsn[cell_id0][i][j] += xfmxc0*b_f_face_normal[f_id][j];
+      }
+    }
+  }
+
+  /* Correction of solid face centre and distance to the immersed wall */
 
   cs_real_t *c_w_dist_inv = mq->c_w_dist_inv;
 
   for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
 
-    cs_real_t surf = cs_math_3_norm(c_w_face_normal[c_id]);
+    cs_real_3_t xc = {mq->cell_f_cen[3*c_id],
+                      mq->cell_f_cen[3*c_id + 1],
+                      mq->cell_f_cen[3*c_id + 2]};
+    cs_real_t pyr_vol = cs_math_3_distance_dot_product(xc,
+                                                       c_w_face_cog[c_id],
+                                                       c_w_face_normal[c_id]);
+    cs_real_t vol_min = cs_math_epzero*mq->cell_f_vol[c_id];
 
-    //TODO change it compare to total surf
-    if (surf > cs_math_epzero*pow(mq->cell_f_vol[c_id],2./3.)) {
+    /* Compare the volume of the pyramid (xw - xc) \dot Sw to the fluid
+     *  volume */
+    if (pyr_vol > vol_min) {
 
+      c_w_face_surf[c_id] = cs_math_3_norm(c_w_face_normal[c_id]);
       cs_real_3_t vc_w_f_cen;
       cs_real_3_t c_w_normal_unit;
       cs_math_3_normalize(c_w_face_normal[c_id], c_w_normal_unit);
 
-      for (cs_lnum_t i = 0; i < 3; i++)
-        vc_w_f_cen[i] = c_w_face_cog[c_id][i] - mq->cell_f_cen[c_id*3+i];
+      /* Correction of solid plane centre xw-xc */
 
-      c_w_dist_inv[c_id] = 1./cs_math_3_dot_product(vc_w_f_cen,c_w_normal_unit);
+      cs_real_t mat[3][3];
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          mat[i][j] = mq->cell_f_vol[c_id]*cs_math_33_identity[i][j]
+                    - xpsn[c_id][i][j];
+      }
+      cs_math_33_3_product(mat, c_w_face_normal[c_id], vc_w_f_cen);
+      cs_real_t d_w = cs_math_3_square_norm(c_w_face_normal[c_id]);
+      if (d_w > DBL_MIN)
+        d_w = 1./d_w;
+
+      for (cs_lnum_t i = 0; i < 3; i++)
+        vc_w_f_cen[i] *= d_w;
+
+      for (cs_lnum_t i = 0; i < 3; i++)
+          c_w_face_cog[c_id][i] = vc_w_f_cen[i] + mq->cell_f_cen[c_id*3+i];
+
+      /* Distance to the immersed wall */
+
+      cs_real_t d_dist = cs_math_3_dot_product(vc_w_f_cen,c_w_normal_unit);
+      if (d_dist > DBL_MIN)
+        d_dist = 1./d_dist;
+
+      c_w_dist_inv[c_id] = d_dist;
     }
   }
+
+  /* Synchronization */
+  if (m->halo != NULL) {
+    cs_halo_sync_var_strided(m->halo, CS_HALO_EXTENDED,
+                             (cs_real_t *)c_w_face_normal, 3);
+
+    cs_halo_sync_var(m->halo, CS_HALO_EXTENDED, mq->c_w_dist_inv);
+    cs_halo_sync_var(m->halo, CS_HALO_EXTENDED, mq->c_w_face_surf);
+
+  }
+
+  /* Free memory */
+  BFT_FREE(i_f_face_cell_normal);
+  BFT_FREE(xpsn);
 
 }
 
