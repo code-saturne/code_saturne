@@ -238,6 +238,24 @@ source code.
 
 \image html dg/emacs_gud_screen.png "GDB under Emacs" width=55%
 
+### GDB base commands
+
+Checking the gdb documentation or tutorials is recommended.
+The most important gdb command is:
+```
+help
+```
+The most commonly used commands are:
+- `b`: set a breakpoint.
+- `c`: continue.
+- `p`: print a variable's value (using the current programming language syntax).
+- `up`: move up the stack.
+- `down`: move down the stack.
+
+A running program may be paused using `CTRL+C`.
+
+Variables may not only be printed, but also modified interactively, and functions may be called, making it easy to test some hypothesis without restarting the whole program.
+
 ### Graphical front-end recommendations
 
 Many graphical front-ends are available for gdb. When evaluating
@@ -592,41 +610,88 @@ Parallel Debugging: MPI
 -----------------------
 
 Debugging parallel code_saturne runs is not very different from
-debugging serial runs.
+debugging serial runs, though stepping through a program may be
+more cumbersome unless a parallel debugger is used.
 
-- If a true parallel debugger such as
-  <span style="color: rgb(48,119,16)">TotalView</span> or
-  <span style="color: rgb(48,119,16)">Arm DDT</span>
-  is available, do not hesitate to use it (by adapting the
-  <span style="color: rgb(48,119,16)">`run_solver`</span> script in the
-  exection directory), and ignore the rest of this slide.
+### Using a parallel debugger
 
-- When no true parallel debugger is available, serial debuggers may be
-  used.
+If a true parallel debugger such as <span style="color: rgb(48,119,16)">TotalView</span> or <span style="color: rgb(48,119,16)">Arm DDT</span> is available, the following procedure may be used:
 
-  * Usually one for each process, though using multiple program
-    features allows running only selected ranks under a debugger.
+- First, initialize the execution directory, using one of the following methods:
+  * From the GUI, in the advanced run/job submission options, check "initialize only", then submit the computation.
+  * Outside the GUI, run `code_saturne submit --initialize`
+  In either case, the code will prepare the execution directory,
+  and preprocess the mesh if needed, but not remove the executable and temporary script.:
 
-    - For example:
-      <span style="color: rgb(48,119,16)">`mpiexec -n 2 <program> : - n 1 <debug_wrapper> <program> : -n 3 <program>`</span>
-      to debug rank 2 of 6
+- Once the stage has finished, `cd` to the execution directory, and edit the <span style="color: rgb(48,119,16)">`run_solver`</span> script script:
+  - Add commands necessary to load the debugger's environment.
+    For example, on the EDF Cronos cluster, this requires adding
+    ```
+    module load arm-forge
+    ```
+    in the section where other modules are added.
+  - Search for the line actually launching the solver, near the end of the script;
+    before the `cs_solver` command, insert the debugger command.
+    For example, for the DDT debugger, replace
+    ```
+    mpiexec <options> ./cs_solver
+    ```
+    with:
+    ```
+    mpiexec ddt <options> ./cs_solver
+    ```
 
-  * The execution may not be restarted from the debugger; the whole
-    parallel run must be restarted.
+- If using a batch system, request an interactive allocation (for example, using `salloc` with SLURM).
+  ** This step is important: without this, you may be trying to run a large job on a front-end node, and your cluster administrators will not be happy.**
 
-    - Very painful if not automated.
+- You can then run:
+  ```
+  $ ./run_solver
+  ```
+  which will launch the code under the interactive debugger.
 
-    - This is where the
-      <span style="color: rgb(0,91,187)">`cs_debug_wrapper.py`</span> script
-      really becomes useful.
+Debuggers such as DDT allows to easily switch between global and local stepping through the program and exploring its data, using a single window, as illustrated in this screenshot:
 
-      + This script also includes a `--ranks` filter option so as to call the
-        debugger only on selected ranks. For example, using `--ranks=2,5`
-        will launch MPI ranks 2 and 5 under a debugger, while other ranks will
-        be run normally.
+\image html dg/ddt_pause.png "Global DDT pause" width=80%
 
-- For code_saturne under GDB, to determine a given process's rank, type:
-  <span style="color: rgb(48,119,16)">`print cs_glob_rank_id`</span>
+**Remarks**:
+
+- On some clusters using `srun` as the configured `mpiexec` command, the `srun` command configuration may not be compatible with DDT. In this case, switch to another appropriate `mpiexec` command.
+
+- In case launching the debugger fails, an alternative option is to simply replace the whole launch command (the line containing `cs_solver`) with the command launching the debugger's GUI, for example
+  ```
+  ddt
+  ```
+  And then simply follow the debugger prompts for command launch options, as shown in the example below.
+  \image html dg/ddt_launch.png "Example DDT launch options" width=80%
+
+### Without a parallel debugger
+
+When no true parallel debugger is available, serial debuggers may be used.
+
+- Usually one for each process, though using multiple program
+  features allows running only selected ranks under a debugger.
+
+  * For example:
+    <span style="color: rgb(48,119,16)">`mpiexec -n 2 <program> : - n 1 <debug_wrapper> <program> : -n 3 <program>`</span>
+    to debug rank 2 of 6
+
+- The execution may not be restarted from the debugger; the whole
+  parallel run must be restarted.
+
+  * Very painful if not automated.
+
+  * This is where the
+    <span style="color: rgb(0,91,187)">`cs_debug_wrapper.py`</span> script
+    really becomes useful.
+
+    + This script also includes a `--ranks` filter option so as to call the
+      debugger only on selected ranks. For example, using `--ranks=2,5`
+      will launch MPI ranks 2 and 5 under a debugger, while other ranks will
+      be run normally.
+
+For code_saturne under GDB, to determine a given process's rank, type:
+<span style="color: rgb(48,119,16)">`print cs_glob_rank_id`</span>
 
 Parallel Debugging: OpenMP
 --------------------------
@@ -674,4 +739,3 @@ program, for example:
 ```
 LD_DEBUG=help cat
 ```
-
