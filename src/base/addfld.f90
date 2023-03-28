@@ -691,6 +691,13 @@ if (compute_porosity_from_scan) then
   call field_set_key_int(iflid, keyvis, POST_ON_LOCATION)
   call field_set_key_int(iflid, keylog, 1)
 
+  f_name  = 'solid_roughness'
+  f_label = 'Solid roughness'
+  call add_property_field(f_name, f_label, 1, .false., iflid)
+
+  call field_set_key_int(iflid, keyvis, POST_ON_LOCATION)
+  call field_set_key_int(iflid, keylog, 1)
+
   itycat = FIELD_INTENSIVE + FIELD_PROPERTY
   f_name  = 'cell_scan_points_cog'
   f_label = 'Point centers'

@@ -331,6 +331,10 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   cs_real_t *cen_points =
     (cs_real_t *)cs_field_by_name("cell_scan_points_cog")->val;
 
+  /* Immersed solid roughness */
+  cs_real_t *c_w_face_rough =
+    (cs_real_t *)cs_field_by_name("solid_roughness")->val;
+
   /* Loop on file_names */
   char *tok;
   const char sep[4] = ";";
@@ -631,6 +635,27 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
                                (const cs_real_3_t *)cen_points,
                                (const cs_real_3_t *)dist_coords,
                                c_w_face_normal);
+
+      /* Solid face roughness from point cloud is computed as the RMS of points
+       *  distance to the reconstructed plane */
+      cs_real_3_t vec_w_point  = {0., 0., 0.};
+      cs_real_t   w_point_dist =  0.;
+
+      for (cs_lnum_t i = 0; i < n_points_dist; i++) {
+        cs_lnum_t c_id = dist_loc[i];
+
+        if (f_nb_scan->val[c_id] > 1.)  {// at least 2 points to compute distance
+
+          for (cs_lnum_t idim = 0; idim < 3; idim++)
+            vec_w_point[idim] = dist_coords[i*3 + idim] - cen_points[c_id*3+idim];
+
+          w_point_dist = cs_math_3_dot_product(vec_w_point, c_w_face_normal[c_id]);
+
+          c_w_face_rough[c_id] += 2 * sqrt(w_point_dist * w_point_dist)
+            / f_nb_scan->val[c_id];
+        }
+      }
+      //TODO compute the minimum distance between point to suggest a minimum resolution
 
       /* Free memory */
       _locator = ple_locator_destroy(_locator);
