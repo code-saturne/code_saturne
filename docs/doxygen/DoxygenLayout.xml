@@ -44,6 +44,7 @@
       <tab type="user" visible="yes" url="@ref cs_dg_writing_theory" title="Writing the theory documentation"/>
       <tab type="user" visible="yes" url="@ref cs_dg_further_reading" title="Further reading"/>
       <tab type="user" visible="yes" url="@ref cs_dg_debugging" title="Debugging"/>
+      <tab type="user" visible="yes" url="@ref cs_dg_profiling" title="Profiling"/>
     </tab>
     <tab type="pages" visible="no" title=""/>
     <tab type="modules" visible="yes" title=""/>

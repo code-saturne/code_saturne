@@ -615,7 +615,7 @@ more cumbersome unless a parallel debugger is used.
 
 ### Using a parallel debugger
 
-If a true parallel debugger such as <span style="color: rgb(48,119,16)">TotalView</span> or <span style="color: rgb(48,119,16)">Arm DDT</span> is available, the following procedure may be used:
+If a true parallel debugger such as <span style="color: rgb(48,119,16)">TotalView</span> or <span style="color: rgb(48,119,16)">Arm </span> is available, the following procedure may be used:
 
 - First, initialize the execution directory, using one of the following methods:
   * From the GUI, in the advanced run/job submission options, check "initialize only", then submit the computation.
@@ -626,28 +626,28 @@ If a true parallel debugger such as <span style="color: rgb(48,119,16)">TotalVie
 - Once the stage has finished, `cd` to the execution directory, and edit the <span style="color: rgb(48,119,16)">`run_solver`</span> script script:
   - Add commands necessary to load the debugger's environment.
     For example, on the EDF Cronos cluster, this requires adding
-    ```
-    module load arm-forge
-    ```
+```{.sh}
+module load arm-forge
+```
     in the section where other modules are added.
   - Search for the line actually launching the solver, near the end of the script;
     before the `cs_solver` command, insert the debugger command.
     For example, for the DDT debugger, replace
-    ```
-    mpiexec <options> ./cs_solver
-    ```
+```{.sh}
+mpiexec <options> ./cs_solver
+```
     with:
-    ```
-    mpiexec ddt <options> ./cs_solver
-    ```
+```{.sh}
+mpiexec ddt <options> ./cs_solver
+```
 
 - If using a batch system, request an interactive allocation (for example, using `salloc` with SLURM).
   ** This step is important: without this, you may be trying to run a large job on a front-end node, and your cluster administrators will not be happy.**
 
 - You can then run:
-  ```
-  $ ./run_solver
-  ```
+```{.sh}
+./run_solver
+```
   which will launch the code under the interactive debugger.
 
 Debuggers such as DDT allows to easily switch between global and local stepping through the program and exploring its data, using a single window, as illustrated in this screenshot:

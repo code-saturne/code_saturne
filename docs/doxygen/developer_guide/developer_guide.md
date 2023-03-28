@@ -38,3 +38,5 @@ itself and for writing user-defined functions.
 \subpage cs_dg_further_reading
 
 \subpage cs_dg_debugging
+
+\subpage cs_dg_profiling
