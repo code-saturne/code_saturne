@@ -417,15 +417,17 @@ class Figure(object):
 
         # Store the list of subplot objects associated to the current figure
         self.subplots = []
-        for id in [int(s) for s in node.attributes["idlist"].value.split()]:
-            found = False
-            for p in subplots:
-                if p.id == id:
-                    self.subplots.append(p)
-                    found = True
-            if not found:
-                print("    ERROR: figure '" + self.file_name + "': subplot " \
-                      + str(id) + " not defined.")
+        idlist = parser.getAttribute(node, "idlist", [])
+        if idlist != []:
+            for id in [int(s) for s in node.attributes["idlist"].value.split()]:
+                found = False
+                for p in subplots:
+                    if p.id == id:
+                        self.subplots.append(p)
+                        found = True
+                if not found:
+                    print("    ERROR: figure '" + self.file_name + "': subplot " \
+                          + str(id) + " not defined.")
 
     #---------------------------------------------------------------------------
 
