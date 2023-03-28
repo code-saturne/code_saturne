@@ -417,7 +417,7 @@ class Figure(object):
 
         # Store the list of subplot objects associated to the current figure
         self.subplots = []
-        for id in [int(s) for s in node.attributes["idlist"].value.split()]:
+        for id in [int(s) for s in parser.getAttribute(node, "idlist", "").split()]:
             found = False
             for p in subplots:
                 if p.id == id:
