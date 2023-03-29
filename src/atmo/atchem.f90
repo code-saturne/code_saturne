@@ -99,8 +99,6 @@ module atchem
   double precision, allocatable, dimension(:) :: xchem
   !> Y coordinates of concentration profiles
   double precision, allocatable, dimension(:) :: ychem
-  !> read zone boundary conditions from profile
-  integer, save :: iprofc(nozppm)
 
   !> \}
 
