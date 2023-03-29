@@ -178,7 +178,7 @@
 
     - The most general way of accessing a field is to use its name: \n\n
 
-      <tt>cs_real_t *cvar_pr = \ref cs_field_by_name "field_get_val_s_by_name"("pressure")->val; </tt>\n
+      <tt>cs_real_t *cvar_pr = \ref cs_field_by_name "cs_field_by_name"("pressure")->val; </tt>\n
       then: \n
       <tt> cvar_pr[cell_id] </tt> \n\n
 
