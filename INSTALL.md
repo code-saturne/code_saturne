@@ -95,10 +95,10 @@ debugging version. In this case, choose a consistent naming scheme, using an add
 level of sub-directories, for example:
 
 ```
-$ mkdir code_saturne_build
-$ cd code_saturne_build
-$ mkdir prod
-$ cd prod
+mkdir code_saturne_build
+cd code_saturne_build
+mkdir prod
+cd prod
 ```
 
 Also, as installing to a default system directory requires administrator-level write
@@ -258,7 +258,7 @@ This is useful for example for:
 
 * Assign a name to the current build or system, so that the run configurations
   defined for each case (number of processors, batch template, ...) are saved
-  specfically for that system. When using different systems on a same network,
+  specifically for that system. When using different systems on a same network,
   this allows keeping track of configurations specific to each system
   while moving or copying cases from one system to another.
 
@@ -301,9 +301,9 @@ When the prerequisites are available, and a build directory
 created, building and installing code_saturne may be as simple as running:
 
 ```
-$ ../../code_saturne/configure
-$ make
-$ make install
+../../code_saturne/configure
+make
+make install
 ```
 
 The following sections give more details on code_saturne's recommended
@@ -332,7 +332,7 @@ Select configuration options, then run `configure`. For example,
 if the code's source tree is in /home/user/code_saturne/src/code_saturne:
 
 ```
-$ /home/user/code_saturne/src/code_saturne/configure \
+/home/user/code_saturne/src/code_saturne/configure \
 --prefix=/home/user/code_saturne/<version>/arch/prod \
 --with-med=/home/user/opt/med-4.1 \
 CC=/home/user/opt/mpich-3.3/bin/mpicc FC=gfortran
@@ -341,7 +341,7 @@ CC=/home/user/opt/mpich-3.3/bin/mpicc FC=gfortran
 Most available prerequisites are auto-detected, so to install the
 code to the default `/usr/local` sub-directory, a command such as:
 
-`$ ../../code_saturne-\verscs/configure`
+`../../code_saturne-\verscs/configure`
 
 should be sufficient.
 
@@ -374,11 +374,11 @@ Once the code is configured, it may be compiled and installed;
 for example, to compile the code (using 4 parallel threads),
 then install it:
 
-`$ make -j 4 && make install`
+`make -j4 && make install`
 
 To compile the documentation, add:
 
-`$ make doc && make install-doc`
+`make doc && make install-doc`
 
 To clean the build directory, keeping the configuration,
 use `make clean`;
@@ -887,18 +887,18 @@ To download and prepare CoolProp for build, using an out-of-tree build
 following commands are recommended:
 
 ```
-$ git clone https://github.com/CoolProp/CoolProp.git --recursive
-$ cd CoolProp
-$ git checkout release
-$ cd ..
-$ mkdir CoolProp_build
-$ cd CoolProp_build
+git clone https://github.com/CoolProp/CoolProp.git --recursive
+cd CoolProp
+git checkout release
+cd ..
+mkdir CoolProp_build
+cd CoolProp_build
 ```
 
 Then configure, build, and install, run:
 
 ```
-$ cmake \
+cmake \
 -DCOOLPROP_INSTALL_PREFIX=${INSTALL_PATH} \
 -DCOOLPROP_SHARED_LIBRARY=ON \
 ${COOLPROP_SRC_PATH}
@@ -907,9 +907,9 @@ ${COOLPROP_SRC_PATH}
 Followed by:
 
 ```
-$ make
-$ make install
-$ make clean
+make
+make install
+make clean
 ```
 
 CoolProp's installer only installs one C wrapper header, not the
@@ -917,16 +917,16 @@ C++ headers required for lower-level access, so the following commands
 must also be run:
 
 ```
-$ cp -rp ${COOLPROP_SRC_PATH}/include ${INSTALL_PATH}
-$ rm -f ${INSTALL_PATH}/CoolPropLib.h
+cp -rp ${COOLPROP_SRC_PATH}/include ${INSTALL_PATH}
+rm -f ${INSTALL_PATH}/CoolPropLib.h
 ```
 
 Alternatively, to copy less files and avoid changing the structure provided
 by CoolProp:
 
 ```
-$ cp -r ${COOLPROP_SRC_PATH}/include ${INSTALL_PATH}
-$ cp -r ${COOLPROP_SRC_PATH}/externals/fmtlib/fmt ${INSTALL_PATH}/include/
+cp -r ${COOLPROP_SRC_PATH}/include ${INSTALL_PATH}
+cp -r ${COOLPROP_SRC_PATH}/externals/fmtlib/fmt ${INSTALL_PATH}/include/
 ```
 
 To install CoolProp's Python bindings (used by the GUI when available),
@@ -934,8 +934,8 @@ the straigthforward method is to go into the CoolProp source directory,
 into the wrappers/Python subdirectory, then run:
 
 ```
-$ export PYTHONPATH=${COOLPROP_INSTALL_PREFIX}/lib64/${python_version}/site-packages:$PYTHONPATH
-$ python setup.py install --prefix=${COOLPROP_INSTALL_PREFIX}
+export PYTHONPATH=${COOLPROP_INSTALL_PREFIX}/lib64/${python_version}/site-packages:$PYTHONPATH
+python setup.py install --prefix=${COOLPROP_INSTALL_PREFIX}
 ```
 
 Although this is not really an out-of-tree build, the Python
@@ -957,7 +957,7 @@ This is the Version code_saturne will be linked to. A recommended cmake
 command for this build contains:
 
 ```
-$ cmake \
+cmake \
 -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH}_osmesa \
 -DPARAVIEW_USE_QT=OFF \
 -DPARAVIEW_USE_MPI=ON \
@@ -1023,10 +1023,10 @@ For a side-by-side debug build for the initial example, we simply replace `prod`
 `--enable-debug` to the configure command:
 
 ```
-$ cd ..
-$ mkdir dbg
-$ cd dbg
-$ ../../code_saturne/configure \
+cd ..
+mkdir dbg
+cd dbg
+../../code_saturne/configure \
 --prefix=/home/user/code_saturne/<version>/arch/dbg \
 --with-med}=/home/user/opt/med-4.1 \
 --enable-debug \
@@ -1228,9 +1228,9 @@ respectively reflecting the code_saturne source path, installation path,
 and a path where optional libraries are installed:
 
 ```
-$ SRC_PATH=/home/projects/code_saturne/<x.y>/src/code_saturne-<x.y.z>
-$ INSTALL_PATH=/home/projects/code_saturne/<x.y>
-$ CS_OPT=/home/projects/opt
+SRC_PATH=/home/projects/code_saturne/<x.y>/src/code_saturne-<x.y.z>
+INSTALL_PATH=/home/projects/code_saturne/<x.y>
+CS_OPT=/home/projects/opt
 ```
 
 Here, we have a general `/home/projects/code_saturne` directory for all
@@ -1324,7 +1324,7 @@ be similar to that on standard clusters. Using The Cray compilers,
 options such as in the following example are recommended:
 
 ```
-\$ ${SRC_PATH}/configure \
+${SRC_PATH}/configure \
 --prefix=${INSTALL_PATH}/arch/xc30 \
 --with-hdf5=${CS_OPT}/hdf5-1.10/arch/xc30 \
 --with-med}=${CS_OPT}/med-4.1/arch/xc30 \
