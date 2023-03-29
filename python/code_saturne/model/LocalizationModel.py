@@ -140,10 +140,7 @@ class Zone(object):
         return self._natureList
 
     def isNatureActivated(self, text):
-        if text in self._nature.keys():
-            return {"on": True, "off": False}[self._nature[text]]
-        else:
-            return False
+        return {"on": True, "off": False}[self._nature.get(text, "off")]
 
     def getModel2ViewDictionary(self):
         return self._natureDict

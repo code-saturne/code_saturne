@@ -160,11 +160,7 @@ class propertiesIdInfo(object):
         Returns the dictionnary related to a given property based on its name.
         """
 
-        prop = None
-        if name in self._info.keys():
-            prop = self._info[name]
-
-        return prop
+        return self._info.get(name, None)
 
     def get_property_list(self):
         """
