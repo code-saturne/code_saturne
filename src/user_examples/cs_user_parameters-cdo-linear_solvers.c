@@ -104,6 +104,8 @@ BEGIN_C_DECLS
 void
 cs_user_parameters(cs_domain_t    *domain)
 {
+  CS_NO_WARN_IF_UNUSED(domain);
+
   /*
      Example: Use MUMPS to solve the saddle-point problem arising from CDO
      -------  schemes for (Navier-)Stokes

@@ -136,20 +136,6 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
 
   switch (type) {
 
-  case CS_XDEF_BY_VALUE:
-    {
-      double  *_context = (double *)context;
-      BFT_MALLOC(d->context, dim, double);
-
-      double  *_context_cpy = (double *)d->context;
-      for (int i = 0; i < dim; i++) _context_cpy[i] = _context[i];
-
-      /* Update the state flag */
-
-      d->state |= CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
-    }
-    break;
-
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     {
       cs_xdef_analytic_context_t  *a = (cs_xdef_analytic_context_t *)context;
@@ -166,36 +152,6 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
     }
     break;
 
-  case CS_XDEF_BY_DOF_FUNCTION:
-    {
-      cs_xdef_dof_context_t  *a = (cs_xdef_dof_context_t *)context;
-      cs_xdef_dof_context_t  *b = NULL;
-
-      BFT_MALLOC(b, 1, cs_xdef_dof_context_t);
-      assert(a->z_id == z_id);
-      b->z_id = a->z_id;
-      b->func = a->func;
-      b->dof_location = a->dof_location;
-      b->input = a->input;
-      b->free_input = a->free_input;
-
-      d->context = b;
-    }
-    break;
-
-  case CS_XDEF_BY_TIME_FUNCTION:
-    {
-      cs_xdef_time_func_context_t  *a = (cs_xdef_time_func_context_t *)context;
-      cs_xdef_time_func_context_t  *b = NULL;
-
-      BFT_MALLOC(b, 1, cs_xdef_time_func_context_t);
-      b->func = a->func;
-      b->input = a->input;
-      b->free_input = a->free_input;
-
-      d->context = b;
-    }
-    break;
 
   case CS_XDEF_BY_ARRAY:
     {
@@ -213,13 +169,13 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
       b->is_owner = a->is_owner;
       b->full_length = a->full_length;
 
-      /* Optional list */
-
-      b->full2subset = NULL;
-
       /* Array values */
 
       b->values = a->values;
+
+      /* Optional list allocated if full_length is set to false */
+
+      b->full2subset = NULL;
 
       /* The other optional parameters are set if needed with a call to
        * - cs_xdef_array_set_adjacency()
@@ -231,6 +187,23 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
       if (cs_flag_test(b->value_location, cs_flag_primal_cell) ||
           cs_flag_test(b->value_location, cs_flag_dual_face_byc))
         d->state |= CS_FLAG_STATE_CELLWISE;
+
+      d->context = b;
+    }
+    break;
+
+  case CS_XDEF_BY_DOF_FUNCTION:
+    {
+      cs_xdef_dof_context_t  *a = (cs_xdef_dof_context_t *)context;
+      cs_xdef_dof_context_t  *b = NULL;
+
+      BFT_MALLOC(b, 1, cs_xdef_dof_context_t);
+      assert(a->z_id == z_id);
+      b->z_id = a->z_id;
+      b->func = a->func;
+      b->dof_location = a->dof_location;
+      b->input = a->input;
+      b->free_input = a->free_input;
 
       d->context = b;
     }
@@ -269,6 +242,34 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
 
       double *_context_cpy = (double *)d->context;
       _context_cpy[0] = _context[0];
+    }
+    break;
+
+  case CS_XDEF_BY_TIME_FUNCTION:
+    {
+      cs_xdef_time_func_context_t  *a = (cs_xdef_time_func_context_t *)context;
+      cs_xdef_time_func_context_t  *b = NULL;
+
+      BFT_MALLOC(b, 1, cs_xdef_time_func_context_t);
+      b->func = a->func;
+      b->input = a->input;
+      b->free_input = a->free_input;
+
+      d->context = b;
+    }
+    break;
+
+  case CS_XDEF_BY_VALUE:
+    {
+      double  *_context = (double *)context;
+      BFT_MALLOC(d->context, dim, double);
+
+      double  *_context_cpy = (double *)d->context;
+      for (int i = 0; i < dim; i++) _context_cpy[i] = _context[i];
+
+      /* Update the state flag */
+
+      d->state |= CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
     }
     break;
 
@@ -351,6 +352,44 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
     }
     break;
 
+  case CS_XDEF_BY_ARRAY:
+    {
+      cs_xdef_array_context_t  *a = (cs_xdef_array_context_t *)context;
+      cs_xdef_array_context_t  *b = NULL;
+
+      BFT_MALLOC(b, 1, cs_xdef_array_context_t);
+
+      /* Metadata */
+
+      b->z_id = a->z_id;
+      b->stride = a->stride;
+      b->value_location = a->value_location;
+      b->is_owner = a->is_owner;
+      b->full_length = a->full_length;
+
+      /* Array values */
+
+      b->values = a->values;
+
+      /* Optional list allocated if full_length is set to false */
+
+      b->full2subset = NULL;
+
+      /* The other optional parameters are set if needed with a call to
+       * - cs_xdef_array_set_adjacency()
+       * - cs_xdef_array_set_sublist()
+       */
+
+      /* Update the state flag */
+
+      if (cs_flag_test(b->value_location, cs_flag_primal_face) ||
+          cs_flag_test(b->value_location, cs_flag_boundary_face))
+        d->state |= CS_FLAG_STATE_FACEWISE;
+
+      d->context = b;
+    }
+    break;
+
   case CS_XDEF_BY_DOF_FUNCTION:
     {
       cs_xdef_dof_context_t  *a = (cs_xdef_dof_context_t *)context;
@@ -373,44 +412,6 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
 
       if (cs_flag_test(b->dof_location, cs_flag_primal_face))
         d->state |= CS_FLAG_STATE_FACEWISE;
-    }
-    break;
-
-  case CS_XDEF_BY_ARRAY:
-    {
-      cs_xdef_array_context_t  *a = (cs_xdef_array_context_t *)context;
-      cs_xdef_array_context_t  *b = NULL;
-
-      BFT_MALLOC(b, 1, cs_xdef_array_context_t);
-
-      /* Metadata */
-
-      b->z_id = a->z_id;
-      b->stride = a->stride;
-      b->value_location = a->value_location;
-      b->is_owner = a->is_owner;
-      b->full_length = a->full_length;
-
-      /* Optional list */
-
-      b->full2subset = NULL;
-
-      /* Array values */
-
-      b->values = a->values;
-
-      /* The other optional parameters are set if needed with a call to
-       * - cs_xdef_array_set_adjacency()
-       * - cs_xdef_array_set_sublist()
-       */
-
-      /* Update the state flag */
-
-      if (cs_flag_test(b->value_location, cs_flag_primal_face) ||
-          cs_flag_test(b->value_location, cs_flag_boundary_face))
-        d->state |= CS_FLAG_STATE_FACEWISE;
-
-      d->context = b;
     }
     break;
 
@@ -496,21 +497,6 @@ cs_xdef_timestep_create(cs_xdef_type_t       type,
 
   switch (type) {
 
-  case CS_XDEF_BY_VALUE:
-    {
-      double  *_context = (double *)context;
-
-      BFT_MALLOC(d->context, 1, double);
-
-      double  *_context_cpy = (double *)d->context;
-      _context_cpy[0] = _context[0];
-
-      /* Update state flag */
-
-      d->state |= CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_STEADY;
-    }
-    break;
-
   case CS_XDEF_BY_TIME_FUNCTION:
     {
       cs_xdef_time_func_context_t *a = (cs_xdef_time_func_context_t *)context;
@@ -523,6 +509,21 @@ cs_xdef_timestep_create(cs_xdef_type_t       type,
 
       d->state |= CS_FLAG_STATE_UNIFORM;
       d->context = b;
+    }
+    break;
+
+  case CS_XDEF_BY_VALUE:
+    {
+      double  *_context = (double *)context;
+
+      BFT_MALLOC(d->context, 1, double);
+
+      double  *_context_cpy = (double *)d->context;
+      _context_cpy[0] = _context[0];
+
+      /* Update state flag */
+
+      d->state |= CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_STEADY;
     }
     break;
 
