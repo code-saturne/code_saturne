@@ -46,10 +46,10 @@ $ ./sbin/bootstrap
 $ cd ..
 ```
 In this case, additional tools need to be available:
-• GNU Autotools: Autoconf, Automake.
-• PdfLaTeX
-• Doxygen (1.8.7 or more recent). The path to Doxygen can be specified during
-the configure phase with `configure DOXYGEN=PATH TO DOXYGEN`.
+* GNU Autotools: Autoconf, Automake.
+* PdfLaTeX
+* Doxygen (1.8.7 or more recent). The path to Doxygen can be specified during
+the configure phase with `configure DOXYGEN=PATH_TO_DOXYGEN`.
 
 These tools are not necessary for builds from tarballs; they are called when
 building the tarball (using `make dist`), so as to reduce the number of
@@ -78,12 +78,12 @@ Source, build, and install directories
   or unpacked
 * The *build* directory is the directory in which the configuration and compilation
   will take place
-* The *install* directory is the directry where the usable code will be installed.
+* The *install* directory is the directory where the usable code will be installed.
   If unspecified, it will usually be `/usr/local` or `usr`.
 
 In the following sections, we will assume a dedicated directory structure is used,
-for example: `/home/user/code_Saturne/src` for source trees,
-`/home/user/code_Saturne/src/build` for build trees, and `/home/user/code_Saturne/arch`
+for example: `/home/user/code_saturne/src` for source trees,
+`/home/user/code_saturne/src/build` for build trees, and `/home/user/code_saturne/arch`
 for installation (so as to keep directories both separate and easy to locate
 relative to each other). Any directory structure may be chosen, as long as it is
 easily comprehensible.
@@ -95,8 +95,8 @@ debugging version. In this case, choose a consistent naming scheme, using an add
 level of sub-directories, for example:
 
 ```
-$ mkdir saturne_build
-$ cd saturne_build
+$ mkdir code_saturne_build
+$ cd code_saturne_build
 $ mkdir prod
 $ cd prod
 ```
@@ -329,10 +329,10 @@ there is a matching option with `--disable-`. Similarly,
 for every `--with-`, `--without-` is also possible.
 
 Select configuration options, then run `configure`. For example,
-if the code's source tree is in /home/user/code_Saturne/src/code_saturne:
+if the code's source tree is in /home/user/code_saturne/src/code_saturne:
 
 ```
-$ /home/user/code_Saturne/src/code_saturne/configure \
+$ /home/user/code_saturne/src/code_saturne/configure \
 --prefix=/home/user/code_saturne/<version>/arch/prod \
 --with-med=/home/user/opt/med-4.1 \
 CC=/home/user/opt/mpich-3.3/bin/mpicc FC=gfortran
