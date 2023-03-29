@@ -567,43 +567,36 @@ enddo
 ! Atmospheric gaseous chemistry
 if (ifilechemistry.ge.1) then
 
- do ifac = 1, nfabor
+  do ifac = 1, nfabor
 
-  if (itypfb(ifac).eq.ientre) then
+    if (itypfb(ifac).eq.ientre) then
 
-   izone = izfppp(ifac)
+      zent = cdgfbo(3,ifac)
 
-   if (iprofc(izone).eq.1) then
+      ! For species present in the concentration profiles chemistry file,
+      ! profiles are used here as boundary conditions if boundary conditions have
+      ! not been treated earlier (eg, in cs_user_boundary_conditions)
+      do ii = 1, nespgi
+        if (rcodcl(ifac,isca(isca_chem(idespgi(ii))),1).gt.0.5d0*rinfin) then
+          call intprf &
+            (nbchmz, nbchim,                                               &
+            zproc, tchem, espnum(1+(ii-1)*nbchim*nbchmz), zent  , ttcabs, xcent )
+          ! The first nespg user scalars are supposed to be chemical species
+          rcodcl(ifac,isca(isca_chem(idespgi(ii))),1) = xcent
+        endif
+      enddo
 
-    zent = cdgfbo(3,ifac)
+      ! For other species zero Dirichlet conditions are imposed,
+      ! unless they have already been treated earlier (eg, in cs_user_boundary_conditions)
+      do ii =1 , nespg
+        if (rcodcl(ifac,isca(isca_chem(ii)),1).gt.0.5d0*rinfin) then
+          rcodcl(ifac,isca(isca_chem(ii)),1) = 0.0d0
+        endif
+      enddo
 
-    ! For species present in the concentration profiles file,
-    ! profiles are used here as boundary conditions if boundary conditions have
-    ! not been treated earlier (eg, in usatcl)
-    do ii = 1, nespgi
-      if (rcodcl(ifac,isca(isca_chem(idespgi(ii))),1).gt.0.5d0*rinfin) then
-        call intprf                                                    &
-        !==========
-        (nbchmz, nbchim,                                               &
-        zproc, tchem, espnum(1+(ii-1)*nbchim*nbchmz), zent  , ttcabs, xcent )
-        ! The first nespg user scalars are supposed to be chemical species
-        rcodcl(ifac,isca(isca_chem(idespgi(ii))),1) = xcent
-      endif
-    enddo
-
-   endif
-
-   ! For other species zero Dirichlet conditions are imposed,
-   ! unless they have already been treated earlier (eg, in usatcl)
-   do ii =1 , nespg
-    if (rcodcl(ifac,isca(isca_chem(ii)),1).gt.0.5d0*rinfin) then
-      rcodcl(ifac,isca(isca_chem(ii)),1) = 0.0d0
     endif
-   enddo
 
-  endif
-
- enddo
+  enddo
 
 endif
 

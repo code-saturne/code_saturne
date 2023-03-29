@@ -777,9 +777,6 @@ nbchim = 0
 nbchmz = 0
 nespgi = 0
 dtchemmax = 10.d0
-do izone = 1, nozppm
-  iprofc(izone) = 0
-enddo
 
 ! --> Initialisation for the aerosol chemistry model:
 
