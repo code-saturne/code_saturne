@@ -2537,9 +2537,11 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
  * \param[in]      array         pointer to an array
  * \param[in]      is_owner      transfer the lifecycle to the cs_xdef_t struct.
  *                               (true or false)
- * \param[in]      full_length   if true, array size is allocated and filled to
- *                               access the full-length array corresponding to
- *                               all locations where are defined the values
+ * \param[in]      full_length   if true, size of "array" should be allocated
+ *                               to the total numbers of entities related to the
+ *                               given location. If false, a new list is
+ *                               allocated and filled with the related subset
+ *                               indirection.
  *
  * \return a pointer to the new allocated \ref cs_xdef_t structure
  */
@@ -2611,6 +2613,11 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
                                           state_flag,
                                           meta_flag,
                                           (void *)&input);
+
+  /* Build the indirection array if only a subset is used */
+
+  if (!full_length)
+    cs_xdef_array_build_full2subset(d);
 
   int  new_id = eqp->n_bc_defs;
   eqp->n_bc_defs += 1;
@@ -3383,9 +3390,11 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
  * \param[in]      array        pointer to an array
  * \param[in]      is_owner     transfer the lifecycle to the cs_xdef_t struct.
  *                              (true or false)
- * \param[in]      full_length  if true, array size is allocated and filled to
- *                              access the full-length array corresponding to
- *                              all locations where are defined the values
+ * \param[in]      full_length  if true, the size of "array" should be allocated
+ *                              to the total numbers of entities related to the
+ *                              given location. If false, a new list is
+ *                              allocated and filled with the related subset
+ *                              indirection.
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -3437,6 +3446,11 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
                                         state_flag,
                                         meta_flag,
                                         (void *)&cx);
+
+  /* Build the indirection array if only a subset is used */
+
+  if (!full_length)
+    cs_xdef_array_build_full2subset(d);
 
   int  new_id = eqp->n_source_terms;
   eqp->n_source_terms += 1;

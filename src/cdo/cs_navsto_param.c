@@ -2214,9 +2214,10 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
  * \param[in]  array        pointer to an array
  * \param[in]  is_owner     transfer the lifecycle to the cs_xdef_t structure
  *                          (true or false)
- * \param[in]  full_length  if true, array size is allocated and filled to
- *                          access the full-length array corresponding to
- *                          all locations where are defined the values
+ * \param[in]  full_length  if true, the size of "array" should be allocated
+ *                          to the total numbers of entities related to the
+ *                          given location. If false, a new list is allocated
+ *                          and filled with the related subset indirection.
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -2265,6 +2266,11 @@ cs_navsto_set_velocity_inlet_by_array(cs_navsto_param_t    *nsp,
                                           CS_FLAG_STATE_FACEWISE,
                                           CS_CDO_BC_DIRICHLET,
                                           (void *)&context);
+
+  /* Build the indirection array if only a subset is used */
+
+  if (!full_length)
+    cs_xdef_array_build_full2subset(d);
 
   int  new_id = nsp->n_velocity_bc_defs;
 

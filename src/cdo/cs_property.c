@@ -2275,9 +2275,11 @@ cs_property_def_by_func(cs_property_t         *pty,
  * \param[in]      array         pointer to an array
  * \param[in]      is_owner      transfer the lifecycle to the cs_xdef_t struc.
  *                               (true or false)
- * \param[in]      full_length   if true, array size is allocated and filled to
- *                               access the full-length array corresponding to
- *                               all locations where are defined the values
+ * \param[in]      full_length   if true, the size of "array" is allocated to
+ *                               the total numbers of entities related to the
+ *                               given location. If false, a new list is
+ *                               allocated and filled with the related subset
+ *                               indirection.
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -2329,6 +2331,11 @@ cs_property_def_by_array(cs_property_t      *pty,
                                         meta_flag,
                                         &input);
 
+  /* Build the indirection array if only a subset is used */
+
+  if (!full_length)
+    cs_xdef_array_build_full2subset(d);
+
   /* Set pointers */
 
   pty->defs[id] = d;
@@ -2368,9 +2375,11 @@ cs_property_def_by_array(cs_property_t      *pty,
  * \param[in]      array        pointer to an array
  * \param[in]      is_owner     transfer the lifecycle to the cs_xdef_t struct.
  *                              (true or false)
- * \param[in]      full_length  if true, array size is allocated and filled to
- *                              access the full-length array corresponding to
- *                              all locations where are defined the values
+ * \param[in]      full_length  if true, the size of "array" should be allocated
+ *                              to the total numbers of entities related to the
+ *                              given location. If false, a new list is
+ *                              allocated and filled with the related subset
+ *                              indirection.
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -2421,6 +2430,11 @@ cs_property_boundary_def_by_array(cs_property_t      *pty,
                                           state_flag,
                                           meta_flag,
                                           &input);
+
+  /* Build the indirection array if only a subset is used */
+
+  if (!full_length)
+    cs_xdef_array_build_full2subset(d);
 
   pty->b_defs[new_id] = d;
 
