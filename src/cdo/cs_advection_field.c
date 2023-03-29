@@ -1021,9 +1021,11 @@ cs_advection_field_def_boundary_flux_by_analytic(cs_adv_field_t        *adv,
  * \param[in]      array        pointer to an array
  * \param[in]      is_owner     transfer the lifecycle to the cs_xdef_t struct.
  *                              (true or false)
- * \param[in]      full_length  if true, array size is allocated and filled to
- *                              access the full-length array corresponding to
- *                              all locations where are defined the values
+ * \param[in]      full_length  if true, the size of "array" should be allocated
+ *                              to the total numbers of entities related to the
+ *                              given location. If false, a new list is
+ *                              allocated and filled with the related subset
+ *                              indirection.
  *
  * \return a pointer to the resulting definition
  */
@@ -1079,6 +1081,11 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
                                           state_flag,
                                           meta_flag,
                                           (void *)&context);
+
+  /* Build the indirection array if only a subset is used */
+
+  if (!full_length)
+    cs_xdef_array_build_full2subset(d);
 
   int  def_id = adv->n_bdy_flux_defs;
   adv->n_bdy_flux_defs += 1;

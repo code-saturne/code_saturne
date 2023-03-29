@@ -1521,9 +1521,7 @@ cs_equation_compute_neumann_cb(cs_real_t                   t_eval,
 
       else {
 
-        if (ac->full2subset == NULL)
-          cs_xdef_array_build_full2subset(def);
-
+        assert(ac->full2subset != NULL);
         cs_lnum_t  id = ac->full2subset[bf_id];
         assert(id > -1);
 
@@ -1612,12 +1610,10 @@ cs_equation_compute_neumann_svb(cs_real_t                   t_eval,
       }
       else {
 
-        if (ac->full2subset == NULL)
-          cs_xdef_array_build_full2subset(def);
-
         if (cs_flag_test(ac->value_location, cs_flag_primal_face) ||
             cs_flag_test(ac->value_location, cs_flag_boundary_face)) {
 
+          assert(ac->full2subset != NULL);
           cs_lnum_t  id = ac->full2subset[bf_id];
           assert(id != -1);
 
@@ -1713,12 +1709,10 @@ cs_equation_compute_full_neumann_svb(cs_real_t                   t_eval,
       }
       else {
 
-        if (ac->full2subset == NULL)
-          cs_xdef_array_build_full2subset(def);
-
         if (cs_flag_test(ac->value_location, cs_flag_primal_face) ||
             cs_flag_test(ac->value_location, cs_flag_boundary_face)) {
 
+          assert(ac->full2subset != NULL);
           cs_lnum_t  id = ac->full2subset[bf_id];
           assert(id != -1);
 
@@ -1809,9 +1803,7 @@ cs_equation_compute_neumann_sfb(cs_real_t                    t_eval,
 
       else {
 
-        if (ac->full2subset == NULL)
-          cs_xdef_array_build_full2subset(def);
-
+        assert(ac->full2subset != NULL);
         cs_lnum_t  id = ac->full2subset[bf_id];
         assert(id > -1);
 
@@ -1894,9 +1886,7 @@ cs_equation_compute_full_neumann_sfb(cs_real_t                    t_eval,
 
       else {
 
-        if (ac->full2subset == NULL)
-          cs_xdef_array_build_full2subset(def);
-
+        assert(ac->full2subset != NULL);
         cs_lnum_t  id = ac->full2subset[bf_id];
         assert(id > -1);
 
@@ -1985,9 +1975,7 @@ cs_equation_compute_neumann_vfb(cs_real_t                    t_eval,
 
       else {
 
-        if (ac->full2subset == NULL)
-          cs_xdef_array_build_full2subset(def);
-
+        assert(ac->full2subset != NULL);
         cs_lnum_t  id = ac->full2subset[bf_id];
         assert(id > -1);
 
@@ -2088,9 +2076,7 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
 
       else {
 
-        if (cx->full2subset == NULL)
-          cs_xdef_array_build_full2subset(def);
-
+        assert(cx->full2subset != NULL);
         cs_lnum_t  id = cx->full2subset[bf_id];
         assert(id > -1);
         parameters = cx->values + 3*id;
