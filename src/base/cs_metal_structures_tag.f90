@@ -128,8 +128,8 @@ do icmst = 1,ncmast
   !-------------
 
   ! Explicit flux recovered at the fluid frontier
-  flux = ( flxmst(iel) - svcond(iel, ipr)*xlcond)    &
-         /( s_metal*volume(iel)/vol_metal )
+  flux = flxmst(iel) /( s_metal*volume(iel)/vol_metal ) &
+       - svcond(iel, ipr)*xlcond
 
   ! temperature at the metal structures wall and the symmetry
   ! on the middle of the metal structure cell

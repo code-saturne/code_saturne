@@ -1532,71 +1532,78 @@ cs_solve_equation_scalar(cs_field_t        *f,
   }
 
   /* Condensation source terms for the scalars
-   * associated to a surface zone (icondb=0) */
-  if (nfbpcd > 0) {
-    cs_real_t *srccond;
-    BFT_MALLOC(srccond, nfbpcd, cs_real_t);
-
-    const cs_lnum_t *_itypcd = itypcd + (ivar-1)*nfbpcd;
-    cs_real_t *_spcond = wall_cond->spcond + (ipr-1)*nfbpcd;
-    for (cs_lnum_t ii = 0; ii < nfbpcd; ii++) {
-      const cs_lnum_t f_id = ifbpcd[ii];
-      const cs_lnum_t c_id = b_face_cells[f_id];
-
-      if ((_spcond[ii] < 0) && (_itypcd[ii] == 1))
-        srccond[ii] = _spcond[ii]*xcpp[c_id];
-      else
-        srccond[ii] = 0;
-    }
-
-    cs_wall_condensation_source_terms(f,
-                                      0,
-                                      NULL,
-                                      NULL,
-                                      wall_cond->spcond + (ivar-1)*nfbpcd,
-                                      srccond,
-                                      NULL,
-                                      NULL,
-                                      NULL,
-                                      cvara_var,
-                                      smbrs,
-                                      rovsdt);
-    BFT_FREE(srccond);
-  }
-
-  /* Condensation source terms for the scalars
+   * associated to a surface zone (icondb=0) and
+   * condensation source terms for the scalars
    * associated to a volumic zone (icondv=0)
    * taking into account the metal mass
    * structures condensation modelling */
-  if (wall_cond->icondv == 0) {
-    cs_real_t *srcmst;
-    int *_itypst = itypst + (ivar-1)*n_cells_ext;
-    cs_real_t *_svcond_ipr = svcond + (ipr-1)*n_cells_ext;
-    cs_real_t *_svcond_ivar = svcond + (ivar-1)*n_cells_ext;
 
-    BFT_MALLOC(srcmst, n_cells_ext, cs_real_t);
+  if (wall_cond->icondb == 0 || wall_cond->icondv == 0) {
 
-    /* When treating the Temperature, the equation is multiplied by Cp */
-    for (cs_lnum_t ii = 0; ii < ncmast; ii ++) {
-      const cs_lnum_t c_id = ltmast[ii] - 1;
+    /* Wall condensation */
 
-      if ((_svcond_ipr[c_id] < 0) && (_itypst[ii] == 1))
-        srcmst[c_id] = _svcond_ipr[c_id]*xcpp[c_id];
-      else
-        srcmst[c_id] = 0.;
+    cs_real_t *srccond = NULL;
+    cs_lnum_t *_itypcd = NULL;
+    cs_real_t *_spcond_ipr = NULL, *_spcond_ivar = NULL;
+
+    if (wall_cond->icondb == 0) {
+
+      BFT_MALLOC(srccond, nfbpcd, cs_real_t);
+
+      _itypcd = itypcd + (ivar-1)*nfbpcd;
+      _spcond_ipr = wall_cond->spcond + (ipr-1)*nfbpcd;
+      _spcond_ivar = wall_cond->spcond + (ivar-1)*nfbpcd;
+
+      for (cs_lnum_t ii = 0; ii < nfbpcd; ii++) {
+        const cs_lnum_t f_id = ifbpcd[ii];
+        const cs_lnum_t c_id = b_face_cells[f_id];
+
+        if ((_spcond_ipr[ii] < 0) && (_itypcd[ii] == 1))
+          srccond[ii] = _spcond_ipr[ii]*xcpp[c_id];
+        else
+          srccond[ii] = 0;
+      }
     }
-    cs_wall_condensation_source_terms(f,
+
+    /* Metal structure condensation */
+
+     cs_real_t *srcmst = NULL;
+     cs_lnum_t *_itypst = NULL;
+     cs_real_t *_svcond_ipr = NULL, *_svcond_ivar = NULL;
+
+     if (wall_cond->icondv == 0) {
+
+       BFT_MALLOC(srcmst, n_cells_ext, cs_real_t);
+
+       _itypst = itypst + (ivar-1)*n_cells_ext;
+       _svcond_ipr = svcond + (ipr-1)*n_cells_ext;
+       _svcond_ivar = svcond + (ivar-1)*n_cells_ext;
+
+       /* When treating the Temperature, the equation is multiplied by Cp */
+       for (cs_lnum_t ii = 0; ii < ncmast; ii ++) {
+         const cs_lnum_t c_id = ltmast[ii] - 1;
+
+         if ((_svcond_ipr[c_id] < 0) && (_itypst[ii] == 1))
+           srcmst[c_id] = _svcond_ipr[c_id]*xcpp[c_id];
+         else
+           srcmst[c_id] = 0.;
+       }
+
+     }
+
+     cs_wall_condensation_source_terms(f,
                                       ncmast,
                                       ltmast,
                                       _itypst,
-                                      NULL,
-                                      NULL,
+                                      _spcond_ivar,
+                                      srccond,
                                       _svcond_ivar,
                                       srcmst,
                                       flxmst,
                                       cvara_var,
                                       smbrs,
                                       rovsdt);
+    BFT_FREE(srccond);
     BFT_FREE(srcmst);
   }
 

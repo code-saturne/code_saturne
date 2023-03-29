@@ -662,18 +662,6 @@ if (icondv.eq.0) then
   tmet   ,                                                   &
   svcond(:, ipr)  , flxmst )
 
-  ! array initialization if the metal structures
-  ! condensation model is coupled with
-  ! a 0-D thermal model
-  ! FIXME add restart file later
-  if (itagms.eq.1) then
-    do icmst = 1, ncmast
-      iel = ltmast(icmst)
-      t_metal(iel,1) = tmet0
-      t_metal(iel,2) = tmet0
-    enddo
-  endif
-
 endif
 
 !===============================================================================
