@@ -120,10 +120,16 @@ double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: cvar_enth, cvar_yk
 double precision, dimension(:), pointer :: y_h2o_g
 
+integer          ipass
+data             ipass /0/
+save             ipass
+
 !===============================================================================
 ! Allocate a temporary array for cells selection
 allocate(mix_mol_mas(ncelet), mol_mas_ncond(ncelet), x_ncond(ncelet))
 allocate(x_h2o_g(ncelet), diff_m(ncelet))
+
+ipass = ipass + 1
 
 !===============================================================================
 ! 0 - Initialization
@@ -331,7 +337,7 @@ do icmet = 1, ncmast
   !-- the wall temperature is in unit (Celsius °C)
   !---------------------------------------------------
   if(itagms.eq.1) then
-    if(isuite.eq.0.and.ntcabs.eq.0) then
+    if(isuite.eq.0.and.ipass.eq.1) then
       t_wall = tmet0
 
       ! array initialization if the metal structures
