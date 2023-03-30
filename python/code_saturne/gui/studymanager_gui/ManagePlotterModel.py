@@ -81,7 +81,8 @@ class ManagePlotterModel(Model):
         default['figure_figsize']    = ""
         default['figure_format']     = "pdf"
         default['color']             = "bedf"
-        default['ycol']              = "0"
+        default['xcol']              = "1"
+        default['ycol']              = "2"
 
         return default
 

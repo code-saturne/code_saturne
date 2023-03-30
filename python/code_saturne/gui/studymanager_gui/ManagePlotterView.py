@@ -337,6 +337,8 @@ class FigSizeDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
+                if value == "":
+                    model.setData(idx, value)
                 # Remove start and end (, )
                 t = value.strip()[1:-1].strip().split(",")
                 try:
@@ -345,7 +347,6 @@ class FigSizeDelegate(QItemDelegate):
                     model.setData(idx, value)
                 except Exception:
                     pass
-
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for text
@@ -374,6 +375,8 @@ class RangeAxisDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
+                if value == "":
+                    model.setData(idx, value)
                 t = value.strip().split(" ")
                 try:
                     s0 = float(t[0])
