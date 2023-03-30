@@ -42,7 +42,7 @@
         <item row="3" column="1">
          <widget class="QLineEdit" name="lineEditXcol">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Data column (0-based) in file where abscissa value is read.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Data column (1-based) in file where abscissa value is read.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
@@ -111,7 +111,7 @@
         <item row="4" column="1">
          <widget class="QLineEdit" name="lineEditYcol">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Data column (0-based) in file where ordinate value is read.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Data column (1-based) in file where ordinate value is read.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>

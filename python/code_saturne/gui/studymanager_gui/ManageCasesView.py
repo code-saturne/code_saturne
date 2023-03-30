@@ -456,11 +456,12 @@ class CaseStandardItemModel(QAbstractItemModel):
 
         elif index.column() == 4:
             run_id = str(from_qvariant(value, to_text_string))
-            item.item.run_id = run_id
             if item not in self.noderoot.values():
                 itm = item.parentItem
-                self.mdl.setRunId(itm.item.name, item.item.index,
-                                  item.item.run_id)
+                # Return False is name is already taken
+                if self.mdl.setRunId(itm.item.name, item.item.index,
+                                     run_id):
+                    item.item.run_id = run_id
 
         elif index.column() == 5:
             tags = str(from_qvariant(value, to_text_string))
@@ -795,7 +796,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
                 self.mdl.addStudy(dir_path)
 
                 title = self.tr("Loading study/case")
-                msg   = self.tr("Do you want to use automatic load ?")
+                msg   = self.tr("Do you want to use automatic load?")
 
                 reply = QMessageBox.question(self,
                                              title,
@@ -1041,64 +1042,36 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.mdl.setPostScriptArgs(study, idx, args)
 
 
-    def slotPostFile(self):
-        """
-        public slot
-        """
-        study, idx = self.__get_study_and_case_idx__()
-
-        cur_path = os.getcwd()
-        base_dir = os.path.abspath(os.path.join(self.mdl.repo, study))
-        rep = os.path.abspath(os.path.join(base_dir, "POST"))
-        if not os.path.isdir(rep):
-            rep = os.path.abspath(os.path.join(os.path.split(base_dir)[0], "POST"))
-        if not os.path.isdir(rep):
-            rep = base_dir
-        title = self.tr("postprocess script")
-        filetypes = self.tr("All Files (*)")
-        file = QFileDialog.getOpenFileName(self, title, rep, filetypes)[0]
-        file = str(file)
-
-        if not file:
-            return
-        file = os.path.basename(file)
-        if file not in os.listdir(rep):
-            title = self.tr("WARNING")
-            msg   = self.tr("This selected file is not in the POST directory of the study")
-            QMessageBox.information(self, title, msg)
-        else:
-            self.mdl.setPostScriptName(study, idx, file)
-        return
-
-
     def slotAddPostScriptFile(self):
         """
         public slot
         """
         study, idx = self.__get_study_and_case_idx__()
 
-        cur_path = os.getcwd()
-        base_dir = os.path.abspath(os.path.join(self.mdl.repo, study))
-        rep = os.path.abspath(os.path.join(base_dir, "POST"))
-        if not os.path.isdir(rep):
-            rep = os.path.abspath(os.path.join(os.path.split(base_dir)[0], "POST"))
-        if not os.path.isdir(rep):
-            rep = base_dir
+        path = os.getcwd()
+        studyPath = os.path.abspath(study)
+        # first try if opened from above the study
+        # Note: it is not robust because if a case has the same name as
+        # the study, we have problems...
+        if not(os.path.isdir(studyPath)):
+            studyPath = path
+        postPath = os.path.join(studyPath, "POST")
+
         title = self.tr("input file for postprocess script")
         filetypes = self.tr("All Files (*)")
-        fname = QFileDialog.getOpenFileName(self, title, rep, filetypes)[0]
-        fname = str(fname)
+        absfilename = QFileDialog.getOpenFileName(self, title, postPath, filetypes)[0]
+        absfilename = str(absfilename)
 
-        if not fname:
+        if not absfilename:
             return
 
-        if rep != os.path.commonprefix([fname, rep]):
+        if postPath != os.path.commonprefix([absfilename, postPath]):
             title = self.tr("WARNING")
             msg   = self.tr("The selected file is not in the POST directory of the study")
             QMessageBox.information(self, title, msg)
         else:
-            fname = os.path.relpath(fname, rep)
-            self.mdl.addPostScript(study, idx, fname)
+            absfilename = os.path.relpath(absfilename, postPath)
+            self.mdl.addPostScript(study, idx, absfilename)
             self.modelPostScripts.populateModel(study, idx)
             self.tablePostScript.setModel(self.modelPostScripts)
 
