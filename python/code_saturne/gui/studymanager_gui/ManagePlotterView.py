@@ -1622,14 +1622,17 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         public slot
         """
         # file open
-        cur_path = os.getcwd()
-        rep = os.path.abspath(os.path.join(self.mdl.repo, self.current_study, "POST"))
-        os.chdir(rep)
+        path = os.getcwd()
+        postPath = os.path.abspath(os.path.join(self.mdl.repo, self.current_study, "POST"))
+        if os.path.isdir(postPath):
+            os.chdir(postPath)
+        else:
+            postPath = path
         title = self.tr("measurement file")
         filetypes = self.tr("All Files (*)")
-        file = QFileDialog.getOpenFileName(self, title, rep, filetypes)[0]
+        file = QFileDialog.getOpenFileName(self, title, postPath, filetypes)[0]
         file = str(file)
-        os.chdir(cur_path)
+        os.chdir(path)
 
         if not file:
             return
