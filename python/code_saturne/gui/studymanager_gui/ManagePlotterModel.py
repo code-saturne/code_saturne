@@ -67,11 +67,19 @@ class ManagePlotterModel(Model):
         Return in a dictionnary which contains default values.
         """
         default = {}
-        default['subplot_name']      = ""
+        default['subplot_title']     = ""
+        default['subplot_xlabel']    = ""
+        default['subplot_ylabel']    = ""
+        default['subplot_xlim']      = ""
+        default['subplot_ylim']      = ""
+        default['subplot_legpos']    = ""
         default['subplot_legstatus'] = "on"
         default['figure_name']       = "Figure"
         default['figure_title']      = ""
-        default['figure_fmt']        = "pdf"
+        default['figure_nbrow']      = ""
+        default['figure_nbcol']      = ""
+        default['figure_figsize']    = ""
+        default['figure_format']     = "pdf"
         default['color']             = "bedf"
         default['ycol']              = "0"
 
@@ -233,17 +241,6 @@ class ManagePlotterModel(Model):
         return True
 
 
-    def getSubplotTitle(self, study, idx):
-        """
-        Return title for a subplot
-        """
-        study_node = self.case.xmlGetNode("study", label=study)
-        subplot = study_node.xmlGetNode("subplot", id=idx)
-        name = subplot['title']
-        if not name:
-            name = self.defaultInitialValues()['subplot_name']
-        return name
-
 
     def setSubplotTitle(self, study, idx, title):
         """
@@ -255,18 +252,6 @@ class ManagePlotterModel(Model):
             subplot['title'] = title
 
 
-    def getSubplotXLabel(self, study, idx):
-        """
-        Return X label for a subplot
-        """
-        study_node = self.case.xmlGetNode("study", label=study)
-        subplot = study_node.xmlGetNode("subplot", id=idx)
-        name = subplot['xlabel']
-        if not name:
-            name = ""
-        return name
-
-
     def setSubplotXLabel(self, study, idx, title):
         """
         Set X label for a subplot
@@ -276,18 +261,6 @@ class ManagePlotterModel(Model):
         subplot['xlabel'] = title
 
 
-    def getSubplotYLabel(self, study, idx):
-        """
-        Return Y label for a subplot
-        """
-        study_node = self.case.xmlGetNode("study", label=study)
-        subplot = study_node.xmlGetNode("subplot", id=idx)
-        name = subplot['ylabel']
-        if not name:
-            name = ""
-        return name
-
-
     def setSubplotYLabel(self, study, idx, title):
         """
         Set Y label for a subplot
@@ -295,18 +268,6 @@ class ManagePlotterModel(Model):
         study_node = self.case.xmlGetNode("study", label=study)
         subplot = study_node.xmlGetNode("subplot", id=idx)
         subplot['ylabel'] = title
-
-
-    def getSubplotLegPos(self, study, idx):
-        """
-        Return legend position for a subplot
-        """
-        study_node = self.case.xmlGetNode("study", label=study)
-        subplot = study_node.xmlGetNode("subplot", id=idx)
-        name = subplot['legpos']
-        if not name:
-            name = ""
-        return name
 
 
     def setSubplotLegPos(self, study, idx, title):
@@ -340,48 +301,48 @@ class ManagePlotterModel(Model):
         subplot['legstatus'] = status
 
 
-    def getSubplotXLim(self, study, idx):
+    def getNode(self, study, nodeName, key, idx):
         """
-        Return X limit for a subplot
+        Return value
         """
         study_node = self.case.xmlGetNode("study", label=study)
-        subplot = study_node.xmlGetNode("subplot", id=idx)
-        status = subplot['xlim']
-        if not status:
-            status = ""
-        return status
+        dico = study_node.xmlGetNode(nodeName, id=idx)
+        value = dico[key]
+        if not value:
+            value = self.defaultInitialValues()[nodeName+'_'+key]
+        return value
+
+    def getNodeByIdx(self, study, nodeName, key, idx):
+        """
+        Return value
+        """
+        study_node = self.case.xmlGetNode("study", label=study)
+        dico = study_node.xmlGetNodeByIdx(nodeName, idx)
+        value = dico[key]
+        if not value:
+            value = self.defaultInitialValues()[nodeName+'_'+key]
+        return value
 
 
-    def setSubplotXLim(self, study, idx, pos):
+
+    def setSubplotXLim(self, study, idx, min_max):
         """
         Set X limit for a subplot
         """
         study_node = self.case.xmlGetNode("study", label=study)
         subplot = study_node.xmlGetNode("subplot", id=idx)
-        if pos != "":
-            subplot['xlim'] = pos
+        if min_max != "":
+            subplot['xlim'] = min_max
 
 
-    def getSubplotYLim(self, study, idx):
-        """
-        Return Y limit for a subplot
-        """
-        study_node = self.case.xmlGetNode("study", label=study)
-        subplot = study_node.xmlGetNode("subplot", id=idx)
-        status = subplot['ylim']
-        if not status:
-            status = ""
-        return status
-
-
-    def setSubplotYLim(self, study, idx, pos):
+    def setSubplotYLim(self, study, idx, min_max):
         """
         Set Y limit for a subplot
         """
         study_node = self.case.xmlGetNode("study", label=study)
         subplot = study_node.xmlGetNode("subplot", id=idx)
-        if pos != "":
-            subplot['ylim'] = pos
+        if min_max != "":
+            subplot['ylim'] = min_max
 
 
 #-------------------------------------------------------------------------------
@@ -459,17 +420,6 @@ class ManagePlotterModel(Model):
             figure['title'] = name
 
 
-    def getFigureRows(self, study, idx):
-        """
-        Return number of row for a figure
-        """
-        study_node = self.case.xmlGetNode("study", label=study)
-        figure = study_node.xmlGetNodeByIdx("figure", idx)
-        row = figure['nbrow']
-        if not row:
-            row = ""
-        return row
-
 
     def setFigureRows(self, study, idx, row):
         """
@@ -479,18 +429,6 @@ class ManagePlotterModel(Model):
         figure = study_node.xmlGetNodeByIdx("figure", idx)
         if row != "":
             figure['nbrow'] = row
-
-
-    def getFigureColumns(self, study, idx):
-        """
-        Return number of column for a figure
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        figure = study_node.xmlGetNodeByIdx("figure", idx)
-        col = figure['nbcol']
-        if not col:
-            col = ""
-        return col
 
 
     def setFigureColumns(self, study, idx, col):
@@ -503,26 +441,14 @@ class ManagePlotterModel(Model):
             figure['nbcol'] = col
 
 
-    def getFigureSize(self, study, idx):
-        """
-        Return size for a figure
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        figure = study_node.xmlGetNodeByIdx("figure", idx)
-        col = figure['figsize']
-        if not col:
-            col = ""
-        return col
-
-
-    def setFigureSize(self, study, idx, col):
+    def setFigureSize(self, study, idx, figsize):
         """
         Set number of column for a figure
         """
         study_node = self.case.xmlGetNode("study", label=study)
         figure = study_node.xmlGetNodeByIdx("figure", idx)
-        if col != "":
-            figure['figsize'] = col
+        if figsize != "":
+            figure['figsize'] = figsize
 
 
     def getFigureFormat(self, study, idx):
@@ -533,7 +459,7 @@ class ManagePlotterModel(Model):
         figure = study_node.xmlGetNodeByIdx("figure", idx)
         name = figure['format']
         if not name:
-            name = self.defaultInitialValues()['figure_fmt']
+            name = self.defaultInitialValues()['figure_format']
             self.setFigureFormat(study, idx, name)
         return name
 

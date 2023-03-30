@@ -348,6 +348,43 @@ class FigSizeDelegate(QItemDelegate):
 
 
 #-------------------------------------------------------------------------------
+# Line edit delegate for text
+#-------------------------------------------------------------------------------
+
+class RangeAxisDelegate(QItemDelegate):
+    def __init__(self, parent=None):
+        super(RangeAxisDelegate, self).__init__(parent)
+        self.parent = parent
+
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        return editor
+
+
+    def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole),
+                              to_text_string)
+        editor.setText(value)
+
+
+    def setModelData(self, editor, model, index):
+        value = from_qvariant(editor.text(), str)
+        selectionModel = self.parent.selectionModel()
+        for idx in selectionModel.selectedIndexes():
+            if idx.column() == index.column():
+                t = value.strip().split(" ")
+                try:
+                    s0 = float(t[0])
+                    s1 = float(t[1])
+                    #TODO try s0 < s1
+                    model.setData(idx, value)
+                except Exception:
+                    pass
+
+
+#-------------------------------------------------------------------------------
 # Combo box delegate for the figure format
 #-------------------------------------------------------------------------------
 
@@ -471,13 +508,14 @@ class StandardItemModelSubplot(QStandardItemModel):
                         self.tr("legend position"),
                         self.tr("x axis\nrange"),
                         self.tr("y axis\nrange")]
-        self.keys = ['id', 'title', 'xlabel', 'ylabel',\
+        self.keys = ['id', 'title', 'xlabel', 'ylabel',
                      'legstatus', 'legpos', 'xaxis', 'yaxis']
         self.setColumnCount(len(self.headers))
 
         # Initialize the flags
         for row in range(self.rowCount()):
             for column in range(self.columnCount()):
+                # legend status
                 if column == 4:
                     role = Qt.CheckStateRole
                 else:
@@ -495,13 +533,13 @@ class StandardItemModelSubplot(QStandardItemModel):
     def addSubplot(self, idx):
         dico              = {}
         dico['id']        = idx
-        dico['title']     = self.mdl.getSubplotTitle(self.study, idx)
-        dico['xlabel']    = self.mdl.getSubplotXLabel(self.study, idx)
-        dico['ylabel']    = self.mdl.getSubplotYLabel(self.study, idx)
+        dico['title']     = self.mdl.getNode(self.study,"subplot",'title',idx)
+        dico['xlabel']    = self.mdl.getNode(self.study,"subplot",'xlabel',idx)
+        dico['ylabel']    = self.mdl.getNode(self.study,"subplot",'ylabel',idx)
         dico['legstatus'] = self.mdl.getSubplotLegStatus(self.study, idx)
-        dico['legpos']    = self.mdl.getSubplotLegPos(self.study, idx)
-        dico['xaxis']     = self.mdl.getSubplotXLim(self.study, idx)
-        dico['yaxis']     = self.mdl.getSubplotYLim(self.study, idx)
+        dico['legpos']    = self.mdl.getNode(self.study,"subplot",'legpos',idx)
+        dico['xaxis']     = self.mdl.getNode(self.study,"subplot",'xlim', idx)
+        dico['yaxis']     = self.mdl.getNode(self.study,"subplot",'ylim', idx)
         self.dataSubplot.append(dico)
         log.debug("populateModel-> dataSubplot = %s" % dico)
         row = self.rowCount()
@@ -587,17 +625,17 @@ class StandardItemModelSubplot(QStandardItemModel):
                 self.dataSubplot[row]['legstatus'] = "on"
             self.mdl.setSubplotLegStatus(self.study, idx, self.dataSubplot[row]['legstatus'])
 
-        # set ylabel
+        # set legend position
         elif column == 5:
             self.dataSubplot[row]['legpos'] = str(from_qvariant(value, to_text_string))
             self.mdl.setSubplotLegPos(self.study, idx, self.dataSubplot[row]['legpos'])
 
-        # set ylabel
+        # set x range
         elif column == 6:
             self.dataSubplot[row]['xaxis'] = str(from_qvariant(value, to_text_string))
             self.mdl.setSubplotXLim(self.study, idx, self.dataSubplot[row]['xaxis'])
 
-        # set ylabel
+        # set y range
         elif column == 7:
             self.dataSubplot[row]['yaxis'] = str(from_qvariant(value, to_text_string))
             self.mdl.setSubplotYLim(self.study, idx, self.dataSubplot[row]['yaxis'])
@@ -627,7 +665,7 @@ class StandardItemModelFigure(QStandardItemModel):
                         self.tr("columns"),
                         self.tr("size (in)"),
                         self.tr("format")]
-        self.keys = ['name', 'subplots', 'title', 'rows', 'columns',
+        self.keys = ['name', 'subplots', 'title', 'nbrow', 'nbcol',
                      'figsize', 'format']
         self.setColumnCount(len(self.headers))
 
@@ -650,9 +688,9 @@ class StandardItemModelFigure(QStandardItemModel):
         dico['name']    = self.mdl.getFigureName(self.study, idx)
         dico['subplots'] = self.mdl.getFigureIdList(self.study, idx)
         dico['title']   = self.mdl.getFigureTitle(self.study, idx)
-        dico['rows']    = self.mdl.getFigureRows(self.study, idx)
-        dico['columns'] = self.mdl.getFigureColumns(self.study, idx)
-        dico['figsize'] = self.mdl.getFigureSize(self.study, idx)
+        dico['nbrow']   = self.mdl.getNodeByIdx(self.study,"figure",'nbrow', idx)
+        dico['nbcol']   = self.mdl.getNodeByIdx(self.study,"figure",'nbcol',idx)
+        dico['figsize'] = self.mdl.getNodeByIdx(self.study,"figure",'figsize',idx)
         dico['format']  = self.mdl.getFigureFormat(self.study, idx)
         self.dataFigure.append(dico)
         log.debug("populateModel-> dataFigure = %s" % dico)
@@ -714,34 +752,34 @@ class StandardItemModelFigure(QStandardItemModel):
         column = index.column()
         idx = row
 
-        self.keys = ['name', 'subplots', 'title', 'rows', 'columns',
+        self.keys = ['name', 'subplots', 'title', 'nbrow', 'nbcol',
                      'figsize', 'format']
-        # set title
+        # set name
         if column == 0:
             self.dataFigure[row]['name'] = str(from_qvariant(value, to_text_string))
             self.mdl.setFigureName(self.study, idx, self.dataFigure[row]['name'])
 
-        # set ylabel
+        # set title
         elif column == 2:
             self.dataFigure[row]['title'] = str(from_qvariant(value, to_text_string))
             self.mdl.setFigureTitle(self.study, idx, self.dataFigure[row]['title'])
 
-        # set ylabel
+        # set nbrow
         elif column == 3:
-            self.dataFigure[row]['rows'] = str(from_qvariant(value, to_text_string))
-            self.mdl.setFigureRows(self.study, idx, self.dataFigure[row]['rows'])
+            self.dataFigure[row]['nbrow'] = str(from_qvariant(value, to_text_string))
+            self.mdl.setFigureRows(self.study, idx, self.dataFigure[row]['nbrow'])
 
-        # set ylabel
+        # set nbcol
         elif column == 4:
-            self.dataFigure[row]['columns'] = str(from_qvariant(value, to_text_string))
-            self.mdl.setFigureColumns(self.study, idx, self.dataFigure[row]['columns'])
+            self.dataFigure[row]['nbcol'] = str(from_qvariant(value, to_text_string))
+            self.mdl.setFigureColumns(self.study, idx, self.dataFigure[row]['nbcol'])
 
         # set size
         elif column == 5:
             self.dataFigure[row]['figsize'] = str(from_qvariant(value, to_text_string))
             self.mdl.setFigureSize(self.study, idx, self.dataFigure[row]['figsize'])
 
-        # set ylabel
+        # set format
         elif column == 6:
             self.dataFigure[row]['format'] = str(from_qvariant(value, to_text_string))
             self.mdl.setFigureFormat(self.study, idx, self.dataFigure[row]['format'])
@@ -1207,9 +1245,6 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
             self.tableViewSubplot.horizontalHeader().setResizeMode(QHeaderView.Stretch)
         elif QT_API == "PYQT5":
             self.tableViewSubplot.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        delegateFloat = FloatDelegate(self.tableViewSubplot)
-        self.tableViewSubplot.setItemDelegateForColumn(6, delegateFloat)
-        self.tableViewSubplot.setItemDelegateForColumn(7, delegateFloat)
 
         spidDelegate = SpidDelegate(self.tableViewSubplot, self.mdl)
         labelDelegate = LabelDelegate(self.tableViewSubplot)
@@ -1218,6 +1253,10 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         self.tableViewSubplot.setItemDelegateForColumn(2, labelDelegate)
         self.tableViewSubplot.setItemDelegateForColumn(3, labelDelegate)
         self.tableViewSubplot.setItemDelegateForColumn(5, labelDelegate)
+
+        delegateRange = RangeAxisDelegate(self.tableViewSubplot)
+        self.tableViewSubplot.setItemDelegateForColumn(6, delegateRange)
+        self.tableViewSubplot.setItemDelegateForColumn(7, delegateRange)
 
         # model for tableViewFigure
         self.modelFigure = StandardItemModelFigure(self.mdl, self.current_study)
