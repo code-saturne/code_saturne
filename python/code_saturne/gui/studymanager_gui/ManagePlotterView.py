@@ -95,7 +95,7 @@ class ManageSubplotDialogView(QDialog, Ui_ManagePlotterSubplotForm):
         model = QStandardItemModel(self.listViewSubplot)
         self.item_list = []
         for plotid in subplot_list:
-            name = str(plotid) + ": " + self.mdl.getSubplotTitle(self.study, plotid)
+            name = str(plotid) + ": " + self.mdl.getNode(self.study, "subplot",'title', plotid)
             item = QStandardItem(name)
             item.setCheckable(True)
             self.item_list.append(item)
