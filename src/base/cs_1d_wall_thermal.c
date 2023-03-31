@@ -332,8 +332,6 @@ cs_1d_wall_thermal_create(void)
 void
 cs_1d_wall_thermal_local_models_create(void)
 {
-  cs_lnum_t ii;
-
   /* Allocate the ifpt1d array */
   BFT_MALLOC(_1d_wall_thermal.ifpt1d, _1d_wall_thermal.nfpt1d, cs_lnum_t);
 
@@ -346,7 +344,7 @@ cs_1d_wall_thermal_local_models_create(void)
              _1d_wall_thermal.nfpt1d,
              cs_1d_wall_thermal_local_model_t);
 
-  for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
+  for (cs_lnum_t ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
     _1d_wall_thermal.local_models[ii].nppt1d = -999;
     _1d_wall_thermal.local_models[ii].iclt1d = 3;
     _1d_wall_thermal.ifpt1d[ii] = -999;
@@ -1234,6 +1232,12 @@ cs_get_glob_1d_wall_thermal(void)
 void
 cs_1d_wall_thermal_log(void)
 {
+  if (_1d_wall_thermal.nmxt1d < 1)
+    return;
+
+  if (! cs_log_default_is_active())
+    return;
+
   // TODO separate min and max search per zone
   cs_real_t Tp_f_min =  cs_math_big_r;
   cs_real_t Tp_f_max = -cs_math_big_r;
