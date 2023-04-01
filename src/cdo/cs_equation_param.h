@@ -429,7 +429,7 @@ typedef struct {
    * \var climgr
    * For least squares gradients, factor of gradient limitation
    * (high value means little limitation).\n
-   * Relevant for all the variables using least-squares gradientsfor which
+   * Relevant for all the variables using least-squares gradients for which
    * \ref imligr > CS_GRADIENT_LIMIT_NONE.
    *
    * \var relaxv
