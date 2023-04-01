@@ -1910,6 +1910,75 @@ _adjust_face_centers(cs_lnum_t                     n_faces,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute approximate tetrahedron center as the mean of its face
+ *         centers weighted by the associated surfaces.
+ *
+ *           n-1
+ *           Sum   G(Fi)
+ *           i=0
+ *  G(C) = -------------
+ *               n
+ *
+ * \param[in]   m            pointer to mesh structure
+ * \param[in]   n_b_f_ini    old number of boundary faces
+ * \param[in]   f_ids        ids of tetrahedral faces for this tetrahedron
+ * \param[out]  cell_cen     cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_cell_tetra_isocog(const cs_mesh_t  *m,
+                   cs_lnum_t         n_b_f_ini,
+                   const cs_lnum_t   f_ids[4],
+                   cs_real_t         cell_cen[3])
+{
+  assert(cell_cen != NULL);
+
+  const cs_real_3_t *vtx_coord = (const cs_real_3_t *)m->vtx_coord;
+
+  /* Initialization */
+
+  cs_real_t one_third = 1./3.;
+
+  for (cs_lnum_t i = 0; i < 3; i++)
+    cell_cen[i] = 0.;
+
+  /* Loop on faces */
+
+  const cs_lnum_t *f_vtx;
+
+  for (cs_lnum_t f_idx = 0; f_idx < 4; f_idx++) {
+
+    cs_lnum_t f_id = f_ids[f_idx];
+
+    if (f_id < n_b_f_ini) {
+      cs_lnum_t s_id = m->b_face_vtx_idx[f_id];
+      f_vtx = m->b_face_vtx_lst + s_id;
+    }
+    else {
+      cs_lnum_t s_id = m->i_face_vtx_idx[f_id - n_b_f_ini];
+      f_vtx = m->i_face_vtx_lst + s_id;
+    }
+
+    /* Computation of the area of the face */
+
+    const cs_lnum_t v0 = f_vtx[0];
+    const cs_lnum_t v1 = f_vtx[1];
+    const cs_lnum_t v2 = f_vtx[2];
+
+    for (cs_lnum_t i = 0; i < 3; i++)
+      cell_cen[i] += one_third * (  vtx_coord[v0][i]
+                                  + vtx_coord[v1][i]
+                                  + vtx_coord[v2][i]);
+
+  } /* End of loop on faces */
+
+  for (cs_lnum_t i = 0; i < 3; i++)
+    cell_cen[i] *= 0.25;
+}
+
 /*----------------------------------------------------------------------------
  * Compute cell and face centers adapted for refinement.
  *
@@ -2041,12 +2110,14 @@ _build_face_vertices(cs_mesh_t                    *m,
  * this function (to allow for vertices inserted on edges, faces, and possibly
  * cells with a single resize).
  *
- * \param[in, out]  m         mesh
- * \param[in]       n_cells   number of cells
- * \param[in]       c_r_flag  cell refinement flag
- * \param[in]       c_r_gen   cell refinement generation
- * \param[in]       c_v_idx   for each cell, start index of added vertices
- * \param[in]       c_center  cell centers
+ * \param[in, out]  m          mesh
+ * \param[in]       c2f        cells->faces adjacency (boundary faces first)
+ * \param[in]       n_b_f_ini  old number of boundary faces
+ * \param[in]       n_cells    number of cells
+ * \param[in]       c_r_flag   cell refinement flag
+ * \param[in]       c_r_gen    cell refinement generation
+ * \param[in]       c_v_idx    for each cell, start index of added vertices
+ * \param[in]       c_center   cell centers
  *
  * \return  local number of vertices added on mid edges
  */
@@ -2054,6 +2125,8 @@ _build_face_vertices(cs_mesh_t                    *m,
 
 static void
 _build_cell_vertices(cs_mesh_t                    *m,
+                     const cs_adjacency_t         *c2f,
+                     cs_lnum_t                     n_b_f_ini,
                      cs_lnum_t                     n_cells,
                      const cs_mesh_refine_type_t   c_r_flag[],
                      const char                    c_r_gen[],
@@ -2062,21 +2135,31 @@ _build_cell_vertices(cs_mesh_t                    *m,
 {
   /* Loop on cells */
 
+# pragma omp for schedule(dynamic, CS_CL_SIZE)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
     if (c_v_idx[c_id+1] - c_v_idx[c_id] > 0) {
       switch(c_r_flag[c_id]) {
-        case CS_REFINE_HEXA:
-        case CS_REFINE_PRISM:
-        case CS_REFINE_POLYHEDRON:
-        case CS_REFINE_TETRA_H:
-          {
-            const cs_lnum_t v_id = c_v_idx[c_id];
-            for (cs_lnum_t i = 0; i < 3; i++)
-              m->vtx_coord[v_id*3 + i] = c_center[c_id][i];
-            m->vtx_r_gen[v_id] = c_r_gen[c_id] + 1;
-          }
-          break;
+      case CS_REFINE_HEXA:
+      case CS_REFINE_PRISM:
+      case CS_REFINE_POLYHEDRON:
+        {
+          const cs_lnum_t v_id = c_v_idx[c_id];
+          for (cs_lnum_t i = 0; i < 3; i++)
+            m->vtx_coord[v_id*3 + i] = c_center[c_id][i];
+          m->vtx_r_gen[v_id] = c_r_gen[c_id] + 1;
+        }
+        break;
+      case CS_REFINE_TETRA_H:
+        {
+          const cs_lnum_t s_id_c = c2f->idx[c_id];
+          const cs_lnum_t v_id = c_v_idx[c_id];
+
+          _cell_tetra_isocog(m, n_b_f_ini, c2f->ids+s_id_c,
+                             m->vtx_coord + v_id*3);
+          m->vtx_r_gen[v_id] = c_r_gen[c_id] + 1;
+        }
+        break;
       default:
         assert(0);
         break;
@@ -3374,16 +3457,16 @@ _subdivide_cell_tetra_h(const cs_mesh_t              *m,
      on CS_REFINE_TRIA in _subdivide_face */
 
   _subdivide_cell_tria_q_faces(m,
-                             0, 4, /* tria range */
-                             cell_id,
-                             n_b_f_ini,
-                             c_o2n_idx,
-                             i_face_o2n_idx,
-                             b_face_o2n_idx,
-                             c2f,
-                             c2f2v_start,
-                             c_id_shift,
-                             tria_vtx);
+                               0, 4, /* tria range */
+                               cell_id,
+                               n_b_f_ini,
+                               c_o2n_idx,
+                               i_face_o2n_idx,
+                               b_face_o2n_idx,
+                               c2f,
+                               c2f2v_start,
+                               c_id_shift,
+                               tria_vtx);
 
   cs_lnum_t v_ids[4];
 
@@ -4909,6 +4992,8 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
                        f_v_idx + m->n_b_faces, m->global_i_face_num);
 
   _build_cell_vertices(m,
+                       c2f,
+                       n_b_f_ini,
                        m->n_cells,
                        c_r_flag,
                        c_r_level,
