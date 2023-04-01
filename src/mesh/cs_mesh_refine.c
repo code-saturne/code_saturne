@@ -2009,7 +2009,9 @@ _element_centers(const cs_mesh_t              *m,
 
   BFT_MALLOC(_cell_cen, n_cells_with_ghosts*3, cs_real_t);
 
-  /* Modify some cell centers and compute surfaces */
+  /* Modify some cell centers and compute surfaces;
+     Note that this could be delayed to cell center creation,
+     avoiding computations for non-refined elements.*/
 
   cs_real_t  *i_face_normal = NULL, *b_face_normal = NULL;
 
@@ -2077,6 +2079,7 @@ _build_face_vertices(cs_mesh_t                    *m,
 {
   /* Loop on faces */
 
+# pragma omp for schedule(dynamic, CS_CL_SIZE)
   for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++) {
 
     cs_lnum_t n_add = f_v_idx[f_id+1] - f_v_idx[f_id];
@@ -2088,8 +2091,15 @@ _build_face_vertices(cs_mesh_t                    *m,
                                            f_vtx_lst + s_id,
                                            m->vtx_r_gen);
 
-      for (cs_lnum_t i = 0; i < 3; i++)
-        m->vtx_coord[(f_v_idx[f_id]*3) + i] = f_center[f_id][i];
+      if (f_r_flag[f_id] == CS_REFINE_QUAD) {
+        _quad_face_center(f_vtx_lst + s_id,
+                          m->vtx_coord,
+                          m->vtx_coord + (f_v_idx[f_id]*3));
+      }
+      else {
+        for (cs_lnum_t i = 0; i < 3; i++)
+          m->vtx_coord[(f_v_idx[f_id]*3) + i] = f_center[f_id][i];
+      }
       m->vtx_r_gen[f_v_idx[f_id]] = r_level + 1;
 
     }
@@ -4920,7 +4930,9 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   cs_adjacency_t *c2f = cs_mesh_adjacency_c2f(m, 0);
 
-  /* Compute element centers (adjusted for subdivision) */
+  /* Compute element centers (adjusted for subdivision);
+     Note that for optimization, this could be done locally
+     when adding face and cell centers */
 
   cs_real_3_t *cell_cen_o, *i_face_cen_o, *b_face_cen_o;
 
