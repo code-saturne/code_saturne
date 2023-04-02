@@ -3119,6 +3119,14 @@ cs_partition(cs_mesh_t             *mesh,
   int n_part_ranks = cs_glob_n_ranks / _part_rank_step[stage];
   cs_partition_algorithm_t _algorithm = _select_algorithm(stage);
 
+  /* In quasi degenerate case, avoid using graph-based library, which
+     can deadlock */
+
+  if (mesh->n_cells < cs_glob_n_ranks
+      && (   _algorithm >= CS_PARTITION_SCOTCH
+          && _algorithm < CS_PARTITION_BLOCK))
+    _algorithm = CS_PARTITION_SFC_MORTON_BOX;
+
   bool write_output = false;
   int  n_extra_partitions = 0;
 
