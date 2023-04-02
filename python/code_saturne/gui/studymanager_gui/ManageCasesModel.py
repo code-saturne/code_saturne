@@ -50,7 +50,7 @@ class ManageCasesModel(Model):
 
     def __init__(self, case):
         """
-        Constuctor.
+        Constructor.
         """
         self.case = case
         self.list_study = self.case.xmlGetNodeList("study")
@@ -177,10 +177,21 @@ class ManageCasesModel(Model):
         duplicate case name from node with index
         """
         study_node = self.case.xmlGetNode('study', label = study)
-        ii = len(study_node.xmlGetNodeList("case"))
         node = study_node.xmlGetNodeByIdx("case", idx)
         name = node['label']
-        new_node = study_node.xmlInitChildNode("case", id = ii, label = name)
+        id_max = 0
+        # create a new run_id
+        new_run_id_found = False
+        new_run_id = 'run'+str(id_max)
+        while not(new_run_id_found):
+            id_max = id_max + 1
+            new_run_id = 'run'+str(id_max)
+            new_run_id_found = True
+            for nn in study_node.xmlGetNodeList("case"):
+                if nn['label'] == name and new_run_id == nn['run_id']:
+                    new_run_id_found = False
+
+        new_node = study_node.xmlInitChildNode("case", run_id = new_run_id, label = name)
 
         compute = node['compute']
         if compute:
@@ -194,9 +205,6 @@ class ManageCasesModel(Model):
         if status:
             new_node['status'] = status
 
-        run_id  = node['run_id']
-        if run_id:
-            new_node['run_id'] = run_id
 
         tags  = node['tags']
         if tags:
@@ -339,21 +347,26 @@ class ManageCasesModel(Model):
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
         node = study_node.xmlGetNodeByIdx("case", idx)
-        runid = node['run_id']
-        if not runid:
-            runid = self._defaultValues()['run_id']
-            self.setRunId(study_name, idx, runid)
-        return runid
+        run_id = node['run_id']
+        if not run_id:
+            run_id = self._defaultValues()['run_id']
+        return run_id
 
 
     def setRunId(self, study_name, idx, run_id):
         """
         Put run_id from node with index
+        Return False if the name is already taken
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
         node = study_node.xmlGetNodeByIdx("case", idx)
+        # Check that the run_id is not used for this case
+        for nn in study_node.xmlGetNodeList("case", label = node['label']):
+            if nn['label'] == node['label'] and nn['run_id'] == run_id:
+                return False
         node['run_id'] = run_id
+        return True
 
 
     def getTags(self, study_name, idx):

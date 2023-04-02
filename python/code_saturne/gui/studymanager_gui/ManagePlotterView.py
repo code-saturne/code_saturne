@@ -501,10 +501,9 @@ class StandardItemModelSubplot(QStandardItemModel):
         self.mdl = mdl
         self.study = study
         self.dataSubplot = []
-        self.populateModel()
 
         self.headers = [self.tr("id"),
-                        self.tr("title"),
+                        self.tr("title"),#TODO remove
                         self.tr("xlabel"),
                         self.tr("ylabel"),
                         self.tr("legend\nstatus"),
@@ -512,7 +511,9 @@ class StandardItemModelSubplot(QStandardItemModel):
                         self.tr("x axis\nrange"),
                         self.tr("y axis\nrange")]
         self.keys = ['id', 'title', 'xlabel', 'ylabel',
-                     'legstatus', 'legpos', 'xaxis', 'yaxis']
+                     'legstatus', 'legpos', 'xlim', 'ylim']
+
+        self.populateModel()
         self.setColumnCount(len(self.headers))
 
         # Initialize the flags
@@ -536,17 +537,29 @@ class StandardItemModelSubplot(QStandardItemModel):
     def addSubplot(self, idx):
         dico              = {}
         dico['id']        = idx
-        dico['title']     = self.mdl.getNode(self.study,"subplot",'title',idx)
-        dico['xlabel']    = self.mdl.getNode(self.study,"subplot",'xlabel',idx)
-        dico['ylabel']    = self.mdl.getNode(self.study,"subplot",'ylabel',idx)
-        dico['legstatus'] = self.mdl.getSubplotLegStatus(self.study, idx)
-        dico['legpos']    = self.mdl.getNode(self.study,"subplot",'legpos',idx)
-        dico['xaxis']     = self.mdl.getNode(self.study,"subplot",'xlim', idx)
-        dico['yaxis']     = self.mdl.getNode(self.study,"subplot",'ylim', idx)
+        for key in self.keys[1:]:
+            dico[key] = self.mdl.getNode(self.study,"subplot",key,idx)
         self.dataSubplot.append(dico)
         log.debug("populateModel-> dataSubplot = %s" % dico)
         row = self.rowCount()
         self.setRowCount(row + 1)
+        self.tooltip = []
+        # id
+        self.tooltip.append("index of the subplot")
+        # title FIXME rm, title is given to the figure
+        self.tooltip.append("optional title (LaTeX format)")
+        # xlabel
+        self.tooltip.append("optional label of the x axis (LaTeX format)")
+        # ylabel
+        self.tooltip.append("optional label of the y axis (LaTeX format)")
+        # legstatus
+        self.tooltip.append("activate or deactivate legend")
+        # legpos
+        self.tooltip.append("optional legend position, e.g. 0 1")
+        # xlim
+        self.tooltip.append("optional x axis range, e.g. 0. 1.")
+        # ylim
+        self.tooltip.append("optional y axis range, e.g. 0. 1.")
 
 
     def data(self, index, role):
@@ -560,6 +573,10 @@ class StandardItemModelSubplot(QStandardItemModel):
 
         if dico[key] is None:
             return None
+
+        # ToolTips
+        if role == Qt.ToolTipRole:
+            return self.tooltip[column]
 
         if role == Qt.DisplayRole and column != 4:
             return dico[key]
@@ -604,44 +621,23 @@ class StandardItemModelSubplot(QStandardItemModel):
             if self.mdl.setSubplotId(self.study, idx, new_idx):
                 self.dataSubplot[row]['id'] = new_idx
 
-        # set title
-        if column == 1:
-            self.dataSubplot[row]['title'] = str(from_qvariant(value, to_text_string))
-            self.mdl.setSubplotTitle(self.study, idx, self.dataSubplot[row]['title'])
-
-        # set xlabel
-        elif column == 2:
-            self.dataSubplot[row]['xlabel'] = str(from_qvariant(value, to_text_string))
-            self.mdl.setSubplotXLabel(self.study, idx, self.dataSubplot[row]['xlabel'])
-
-        # set ylabel
-        elif column == 3:
-            self.dataSubplot[row]['ylabel'] = str(from_qvariant(value, to_text_string))
-            self.mdl.setSubplotYLabel(self.study, idx, self.dataSubplot[row]['ylabel'])
-
         # set legstatus
         elif column == 4:
+            key = self.keys[column]
             v = from_qvariant(value, int)
             if v == Qt.Unchecked:
-                self.dataSubplot[row]['legstatus'] = "off"
+                self.dataSubplot[row][key] = "off"
             else:
-                self.dataSubplot[row]['legstatus'] = "on"
-            self.mdl.setSubplotLegStatus(self.study, idx, self.dataSubplot[row]['legstatus'])
+                self.dataSubplot[row][key] = "on"
+            self.mdl.setNode(self.study,"subplot",key,
+                             idx, self.dataSubplot[row][key])
 
-        # set legend position
-        elif column == 5:
-            self.dataSubplot[row]['legpos'] = str(from_qvariant(value, to_text_string))
-            self.mdl.setSubplotLegPos(self.study, idx, self.dataSubplot[row]['legpos'])
-
-        # set x range
-        elif column == 6:
-            self.dataSubplot[row]['xaxis'] = str(from_qvariant(value, to_text_string))
-            self.mdl.setSubplotXLim(self.study, idx, self.dataSubplot[row]['xaxis'])
-
-        # set y range
-        elif column == 7:
-            self.dataSubplot[row]['yaxis'] = str(from_qvariant(value, to_text_string))
-            self.mdl.setSubplotYLim(self.study, idx, self.dataSubplot[row]['yaxis'])
+        # set title, xlabel, ylabel, legpos, xlim, ylim
+        else:
+            key = self.keys[column]
+            self.dataSubplot[row][key] = str(from_qvariant(value, to_text_string))
+            self.mdl.setNode(self.study,"subplot",key,
+                             idx, self.dataSubplot[row][key])
 
         self.dataChanged.emit(index, index)
         return True
@@ -659,7 +655,6 @@ class StandardItemModelFigure(QStandardItemModel):
         self.mdl = mdl
         self.study = study
         self.dataFigure = []
-        self.populateModel()
 
         self.headers = [self.tr("name"),
                         self.tr("subplot\nids"),
@@ -670,6 +665,8 @@ class StandardItemModelFigure(QStandardItemModel):
                         self.tr("format")]
         self.keys = ['name', 'subplots', 'title', 'nbrow', 'nbcol',
                      'figsize', 'format']
+
+        self.populateModel()
         self.setColumnCount(len(self.headers))
 
         # Initialize the flags
@@ -688,24 +685,30 @@ class StandardItemModelFigure(QStandardItemModel):
 
     def addFigure(self, idx):
         dico            = {}
-        dico['name']    = self.mdl.getFigureName(self.study, idx)
+        # set 'name' 'title' 'nbrow' 'nbcol' 'figsize' 'format'
+        for i in [0,2,3,4,5,6]:
+            key = self.keys[i]
+            dico[key] = self.mdl.getNodeByIdx(self.study,"figure",key, idx)
+
         dico['subplots'] = self.mdl.getFigureIdList(self.study, idx)
-        dico['title']   = self.mdl.getFigureTitle(self.study, idx)
-        dico['nbrow']   = self.mdl.getNodeByIdx(self.study,"figure",'nbrow', idx)
-        dico['nbcol']   = self.mdl.getNodeByIdx(self.study,"figure",'nbcol',idx)
-        dico['figsize'] = self.mdl.getNodeByIdx(self.study,"figure",'figsize',idx)
-        dico['format']  = self.mdl.getFigureFormat(self.study, idx)
         self.dataFigure.append(dico)
         log.debug("populateModel-> dataFigure = %s" % dico)
         row = self.rowCount()
         self.setRowCount(row + 1)
         self.tooltip = []
+        # name
         self.tooltip.append("name of output file")
+        # subplots
         self.tooltip.append("list of subplots to be displayed in the figure")
-        self.tooltip.append("figure title")
-        self.tooltip.append("number of rows for subplots layout")
-        self.tooltip.append("number of columns for subplots layout")
+        # title
+        self.tooltip.append("figure title (LaTeX format)")
+        # nbrow
+        self.tooltip.append("number of rows for subplots layout (>0)")
+        # nbcol
+        self.tooltip.append("number of columns for subplots layout (>0)")
+        # figsize
         self.tooltip.append("(width x, height y) in inches; defaults to (4,4)")
+        # format
         self.tooltip.append("output file format: pdf (default) or png\n"
                             "Other formats could be chosen (eps, ps, svg,...),\n"
                             "but the pdf generation with pdflatex will\n"
@@ -723,8 +726,9 @@ class StandardItemModelFigure(QStandardItemModel):
         if dico[key] is None:
             return None
 
+        # ToolTips
         if role == Qt.ToolTipRole:
-            return self.tooltip[index.column()]
+            return self.tooltip[column]
 
         if role == Qt.DisplayRole:
             return dico[key]
@@ -757,15 +761,12 @@ class StandardItemModelFigure(QStandardItemModel):
 
         self.keys = ['name', 'subplots', 'title', 'nbrow', 'nbcol',
                      'figsize', 'format']
-        # set name
-        if column == 0:
-            self.dataFigure[row]['name'] = str(from_qvariant(value, to_text_string))
-            self.mdl.setFigureName(self.study, idx, self.dataFigure[row]['name'])
-
-        # set title
-        elif column == 2:
-            self.dataFigure[row]['title'] = str(from_qvariant(value, to_text_string))
-            self.mdl.setFigureTitle(self.study, idx, self.dataFigure[row]['title'])
+        # set name title figsize
+        if column == 0 or column == 2 or column == 5:
+            key = self.keys[column]
+            self.dataFigure[row][key] = str(from_qvariant(value, to_text_string))
+            self.mdl.setNodeByIdx(self.study,"figure",key,
+                                  idx, self.dataFigure[row][key])
 
         # set nbrow
         elif column == 3:
@@ -776,11 +777,6 @@ class StandardItemModelFigure(QStandardItemModel):
         elif column == 4:
             self.dataFigure[row]['nbcol'] = str(from_qvariant(value, to_text_string))
             self.mdl.setFigureColumns(self.study, idx, self.dataFigure[row]['nbcol'])
-
-        # set size
-        elif column == 5:
-            self.dataFigure[row]['figsize'] = str(from_qvariant(value, to_text_string))
-            self.mdl.setFigureSize(self.study, idx, self.dataFigure[row]['figsize'])
 
         # set format
         elif column == 6:
@@ -1401,7 +1397,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
     def slotTabSelector(self, selected_index):
         """
         Update when tab selection changed, in case sub-plot ids have
-        benn removed or renamed.
+        been removed or renamed.
         """
 
         if selected_index == 1:
@@ -1626,22 +1622,31 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         """
         # file open
         path = os.getcwd()
-        postPath = os.path.abspath(os.path.join(self.mdl.repo, self.current_study, "POST"))
-        if os.path.isdir(postPath):
-            os.chdir(postPath)
-        else:
-            postPath = path
+        studyPath = os.path.abspath(self.current_study)
+        # first try if opened from above the study
+        # Note: it is not robust because if a case has the same name as
+        # the study, we have problems...
+        if not(os.path.isdir(studyPath)):
+            studyPath = path
+        postPath = os.path.join(studyPath, "POST")
+        # if POST dir does not exist, create it
+        if not(os.path.isdir(postPath)):
+            os.mkdir(postPath)
+
+        os.chdir(postPath)
         title = self.tr("measurement file")
         filetypes = self.tr("All Files (*)")
-        file = QFileDialog.getOpenFileName(self, title, postPath, filetypes)[0]
-        file = str(file)
+        absfilename = QFileDialog.getOpenFileName(self, title, postPath, filetypes)[0]
+        absfilename = str(absfilename)
         os.chdir(path)
 
-        if not file:
+        if not absfilename:
             return
-        file = os.path.basename(file)
-
-        self.mdl.addMeasurementFile(self.current_study, file)
+        # Also get the relative path, ie path so that POST/relPath/filename
+        # so the diff between filename and postPath
+        relPath = os.path.relpath(absfilename, postPath)
+        prefix, filename = os.path.split(relPath)
+        self.mdl.addMeasurementFile(self.current_study, prefix, filename)
         self.modelMeasurement = StandardItemModelMeasurement(self.mdl,
                                                              self.current_study)
         self.treeViewMeasurement.setModel(self.modelMeasurement)

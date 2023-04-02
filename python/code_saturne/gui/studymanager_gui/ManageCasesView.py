@@ -456,11 +456,12 @@ class CaseStandardItemModel(QAbstractItemModel):
 
         elif index.column() == 4:
             run_id = str(from_qvariant(value, to_text_string))
-            item.item.run_id = run_id
             if item not in self.noderoot.values():
                 itm = item.parentItem
-                self.mdl.setRunId(itm.item.name, item.item.index,
-                                  item.item.run_id)
+                # Return False is name is already taken
+                if self.mdl.setRunId(itm.item.name, item.item.index,
+                                     run_id):
+                    item.item.run_id = run_id
 
         elif index.column() == 5:
             tags = str(from_qvariant(value, to_text_string))
