@@ -1404,11 +1404,11 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
             self.modelFigure = StandardItemModelFigure(self.mdl,
                                                        self.current_study)
             self.tableViewFigure.setModel(self.modelFigure)
+            self.tableViewFigure.clearSelection()
 
         elif selected_index == 2:
             self.modelMeasurement = StandardItemModelMeasurement(self.mdl,
                                                                  self.current_study)
-            self.tableViewFigure.setModel(self.modelFigure)
             self.treeViewMeasurement.setModel(self.modelMeasurement)
             self.treeViewMeasurement.expandAll()
             self.treeViewMeasurement.clearSelection()
@@ -1586,6 +1586,8 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
 
         self.modelFigure = StandardItemModelFigure(self.mdl, self.current_study)
         self.tableViewFigure.setModel(self.modelFigure)
+        self.tableViewFigure.clearSelection()
+        self.slotChangeSelectionFigure()
 
 
     @pyqtSlot()

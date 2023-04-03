@@ -248,7 +248,11 @@ class ManagePlotterModel(Model):
         """
         study_node = self.case.xmlGetNode("study", label=study)
         dico = study_node.xmlGetNode(nodeName, id=idx)
-        dico[key] = value
+        # Remove default value
+        if value == self.defaultInitialValues()[nodeName+'_'+key]:
+            del dico[key]
+        else:
+            dico[key] = value
 
 
     def getNode(self, study, nodeName, key, idx):
@@ -269,7 +273,11 @@ class ManagePlotterModel(Model):
         """
         study_node = self.case.xmlGetNode("study", label=study)
         dico = study_node.xmlGetNodeByIdx(nodeName, idx)
-        dico[key] = value
+        # Remove default value
+        if value == self.defaultInitialValues()[nodeName+'_'+key]:
+            del dico[key]
+        else:
+            dico[key] = value
 
 
     def getNodeByIdx(self, study, nodeName, key, idx):
