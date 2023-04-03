@@ -315,6 +315,10 @@
 
   \snippet cs_user_parameters-base.c param_var_rij_clipping
 
+  Error indicators may be activated by creating one of the \ref est_error_pre_2,
+  \ref est_error_der_2, \ref est_error_cor_2, or est_error_tot_2 fields.
+
+  \snippet cs_user_parameters-basec error_indicators
 
   \section cs_user_parameters_h_finalize_setup Input-output related examples
 

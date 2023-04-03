@@ -1062,7 +1062,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
  *                               - 1 take into account,
  *                               - 0 otherwise
- * \param[in]      iescap        compute the predictor indicator if 1
+ * \param[in]      iescap        compute the predictor indicator if >= 1
  * \param[in]      var_cal_opt   pointer to a cs_var_cal_opt_t structure which
  *                              contains variable calculation options
  * \param[in]      pvara         variable at the previous time step
@@ -1107,7 +1107,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  * \param[in]      smbrp         Right hand side \f$ \vect{Rhs}^k \f$
  * \param[in, out] pvar          current variable
  * \param[out]     eswork        prediction-stage error estimator
- *                               (if iescap > 0)
+ *                               (if iescap >= 0)
  */
 /*----------------------------------------------------------------------------*/
 

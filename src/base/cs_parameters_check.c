@@ -874,6 +874,53 @@ cs_parameters_check(void)
                                list_01,
                                NULL);
 
+  /*--------------------------------------------------------------
+   * Error estimators
+   *--------------------------------------------------------------*/
+
+  int n_ns_error_estimators = 0;
+
+  {
+    const char *name[] = {"est_error_pre_2",
+                          "est_error_der_2",
+                          "est_error_cor_2",
+                          "est_error_tot_2"};
+
+    for (int i = 0; i < 4; i++) {
+      const cs_field_t *f = cs_field_by_name_try(name[i]);
+      if (f != NULL)
+        n_ns_error_estimators += 1;
+    }
+
+    if (n_ns_error_estimators > 0) {
+      const char *ee_active
+        = N_("One or several error estimates are activated for Navier-Stokes");
+
+      if (cs_glob_time_scheme->iccvfg == 1)
+        cs_parameters_error
+          (CS_ABORT_DELAYED,
+           _("while reading input data"),
+           _("%s\n"
+             "with frozen velocity field."), _(ee_active));
+
+      if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > 0)
+        cs_parameters_error
+          (CS_ABORT_DELAYED,
+           _("while reading input data"),
+           _("%s\n"
+             "this is not compatible with the compressible flow model."),
+           _(ee_active));
+
+      if (vp_param->nterup > 1)
+        cs_parameters_error
+          (CS_ABORT_DELAYED,
+           _("%s\n"
+             "this is not compatible with sub-iterations\n"
+             "(here cs_glob_velocity_pressure_param->nterup = %d."),
+           _(ee_active), vp_param->nterup);
+    }
+  }
+
   /*--------------------------------------------------------------------------
    * Computation parameters
    *--------------------------------------------------------------------------*/
@@ -1003,9 +1050,83 @@ cs_parameters_check(void)
                                   "equation param thetav (theta-scheme)",
                                   eqp->thetav,
                                   1.);
+
+    BFT_FREE(f_desc);
   }
 
-  BFT_FREE(f_desc);
+  /* 2nd order in time (rho, visc, N.S source terms, velocity theta)
+     is assumed to be incompatible with:
+     - error estimateurs
+     - ipucou
+     - iphydr = 2
+     - local or variable time step */
+
+  if (CS_F_(vel) != NULL) {
+    int key_t_ext_id = cs_field_key_id("time_extrapolated");
+    cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(vel));
+    f_desc = _field_section_desc(f_pot, "while reading numerical "
+                                        "parameters for variable");
+
+    const char *tds_err_str
+      = N_("Some options are incompatible with the time discretization scheme\n"
+           "\n"
+           " A second order time-scheme was requested:\n"
+           "\n"
+           " Velocity:                    theta = %g\n"
+           " Navier-Stokes source terms:  isno2t = %d\n"
+           "                              thetsn = %g\n"
+           " Density:                     iroext = %d\n"
+           " Viscosity:                   iviext = %d\n"
+           "                              thetvi = %d\n"
+           "\n"
+           "This is not compatible with:\n"
+           "- error estimators (%d)\n"
+           "- reinforced U-P coupling (ipucou): %d\n"
+           "- non-constant time step (idtvar): %d.");
+
+    int iroext = 0, iviext = 0;
+    if (CS_F_(rho) != NULL)
+      iroext = cs_field_get_key_int(CS_F_(rho), key_t_ext_id);
+    if (CS_F_(mu) != NULL)
+      iviext = cs_field_get_key_int(CS_F_(mu), key_t_ext_id);
+
+    const cs_time_scheme_t *t_sch = cs_glob_time_scheme;
+
+    if (   fabs(eqp->thetav-1.0) > 1e-3
+        || t_sch->thetvi > 0
+        || t_sch->thetsn > 0
+        || t_sch->isno2t > 0
+        || iroext > 0
+        || iviext > 0) {
+
+      if (   n_ns_error_estimators > 0
+          || vp_param->ipucou == 1
+          || vp_param->iphydr == 2
+          || cs_glob_time_step_options->idtvar != 0)
+        cs_parameters_error(CS_ABORT_DELAYED,
+                            _("while reading input data"),
+                            _(tds_err_str),
+                            eqp->theta,
+                            t_sch->isno2t,
+                            t_sch->thetsn,
+                            iroext,
+                            iviext,
+                            t_sch->thetvi,
+                            n_ns_error_estimators,
+                            vp_param->ipucou,
+                            cs_glob_time_step_options->idtvar);
+    }
+
+    if (   cs_glob_physical_model_flag[CS_COMPRESSIBLE] > 0
+        && vp_param->nterup > 1)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("while reading input data"),
+         _("Pressure-Velocity coupling with sub-iterations\n"
+           "(cs_glob_velocity_pressure_param->nterup = %d.\n"
+           "is not compatible with the compressible flow model."),
+         vp_param->nterup);
+  }
 
   /* In LES, additional consistency checkings are needed *
    * Only a warning for non standard parameters, but stop if

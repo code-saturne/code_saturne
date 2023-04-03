@@ -536,25 +536,21 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
 
         elif self.case.xmlRootNode().tagName == "Code_Saturne_GUI":
 
-            self.correctionEstimator = ComboModel(self.comboBoxIescor, 3, 1)
-            self.correctionEstimator.addItem(self.tr("off"),                         '0')
-            self.correctionEstimator.addItem(self.tr("without volume contribution"), '1')
-            self.correctionEstimator.addItem(self.tr("with volume contribution"), '2')
+            self.correctionEstimator = ComboModel(self.comboBoxIescor, 2, 1)
+            self.correctionEstimator.addItem(self.tr("off"), '0')
+            self.correctionEstimator.addItem(self.tr("on"), '2')
 
-            self.driftEstimator = ComboModel(self.comboBoxIesder, 3, 1)
-            self.driftEstimator.addItem(self.tr("off"),                         '0')
-            self.driftEstimator.addItem(self.tr("without volume contribution"), '1')
-            self.driftEstimator.addItem(self.tr("with volume contribution"), '2')
+            self.driftEstimator = ComboModel(self.comboBoxIesder, 2, 1)
+            self.driftEstimator.addItem(self.tr("off"), '0')
+            self.driftEstimator.addItem(self.tr("on"), '2')
 
-            self.predictionEstimator = ComboModel(self.comboBoxIespre, 3, 1)
-            self.predictionEstimator.addItem(self.tr("off"),                         '0')
-            self.predictionEstimator.addItem(self.tr("without volume contribution"), '1')
-            self.predictionEstimator.addItem(self.tr("with volume contribution"), '2')
+            self.predictionEstimator = ComboModel(self.comboBoxIespre, 2, 1)
+            self.predictionEstimator.addItem(self.tr("off"), '0')
+            self.predictionEstimator.addItem(self.tr("on"), '2')
 
-            self.totalEstimator = ComboModel(self.comboBoxIestot, 3, 1)
-            self.totalEstimator.addItem(self.tr("off"),                         '0')
-            self.totalEstimator.addItem(self.tr("without volume contribution"), '1')
-            self.totalEstimator.addItem(self.tr("with volume contribution"), '2')
+            self.totalEstimator = ComboModel(self.comboBoxIestot, 2, 1)
+            self.totalEstimator.addItem(self.tr("off"), '0')
+            self.totalEstimator.addItem(self.tr("on"), '2')
 
             self.comboBoxIescor.activated[str].connect(self.slotCorrectionEstimator)
             self.comboBoxIesder.activated[str].connect(self.slotDriftEstimator)

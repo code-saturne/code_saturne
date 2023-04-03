@@ -237,22 +237,6 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
                                 const int       *diffusion,
                                 const int       *unsaturated);
 
-/*----------------------------------------------------------------------------
- * Define error estimators
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIERES
- * *****************
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uieres, UIERES) (int *iescal,
-                                int *iespre,
-                                int *iesder,
-                                int *iescor,
-                                int *iestot);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -525,11 +509,7 @@ cs_gui_define_fans(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_error_estimator(int *iescal,
-                       int *iespre,
-                       int *iesder,
-                       int *iescor,
-                       int *iestot);
+cs_gui_error_estimator(void);
 
 /*----------------------------------------------------------------------------
  * Define volume and boundary zones through the GUI.

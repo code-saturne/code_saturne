@@ -75,9 +75,9 @@ integer          iok
 
 character        chaine*80
 integer          ii    , iis   , jj    , iisct
-integer          iscal , iest  , iiesca, ivar
+integer          iscal , ivar
 integer          f_id, n_fields
-integer          indest, iiidef, istop, iclvfl
+integer          iiidef, istop, iclvfl
 integer          kscmin, kscmax, kclvfl
 integer          keyvar, keysca
 integer          key_t_ext_id, icpext
@@ -227,59 +227,6 @@ if (ischtp.eq.2.and.vcopt%ibdtso.gt.1) then
   ! isno2t, thetav, etc.
   write(nfecra,1135)
   iok = iok + 1
-endif
-
-!     Pour les tests suivants : Utilise-t-on un estimateur d'erreur ?
-indest = 0
-do iest = 1, nestmx
-  iiesca = iescal(iest)
-  if (iiesca.gt.0) then
-    indest = 1
-  endif
-enddo
-
-!     Estimateurs incompatibles avec calcul a champ de vitesse
-!       fige (on ne fait rien, sauf ecrire des betises dans le log)
-if (indest.eq.1.and.iccvfg.eq.1) then
-  write(nfecra,2137)
-  iok = iok + 1
-endif
-
-!     A priori, pour le moment, l'ordre 2 en temps
-!       (rho, visc, termes sources N.S, theta vitesse)
-!     est incompatible avec
-!       - estimateurs
-!       - ipucou
-!       - iphydr = 2
-!       - dt variable en espace ou en temps et stationnaire
-!     Ici on s'arrete si on n'est pas dans le cas du schema std
-
-call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
-
-if ( (abs(vcopt%thetav-1.0d0).gt.1.d-3).or.               &
-     (    thetsn       .gt.0.d0 ).or.                     &
-     (    isno2t       .gt.0    ).or.                     &
-     (    iroext       .gt.0    ).or.                     &
-     (    thetvi       .gt.0.d0 ).or.                     &
-     (    iviext       .gt.0    )    ) then
-  if (indest.eq.1.or.ipucou.eq.1.or.iphydr.eq.2.or.       &
-      idtvar.eq.1.or.idtvar.eq.2.or.idtvar.lt.0) then
-    write(nfecra,2140)                                    &
-         vcopt%thetav,                                    &
-         isno2t,thetsn,                                   &
-         iroext,                                          &
-         iviext,thetvi
-    iok = iok + 1
-  endif
-endif
-
-if (nterup.gt.1) then
-
-  if (indest.eq.1.or.ippmod(icompf).ge.0) then
-    write(nfecra,2141) nterup
-    iok = iok + 1
-  endif
-
 endif
 
 !     A priori, pour le moment, l'ordre 2 en temps
@@ -534,17 +481,6 @@ if (itytur.eq.3) then
     endif
   endif
 endif
-
-! --- Estimateurs  d'erreur pour Navier-Stokes
-
-do iest = 1, nestmx
-  iiesca = iescal(iest)
-  if (iiesca.ne.0.and.iiesca.ne.1.and.iiesca.ne.2) then
-    write(nfecra,2664) iest,iest,iiesca,            &
-         iespre,iesder,iescor,iestot
-    iok = iok + 1
-  endif
-enddo
 
 ! --- Distance a la paroi
 
@@ -896,74 +832,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2137 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   WARNING :      WHEN READING INPUT DATA',                /,&
-'@    =========',                                               /,&
-'@   CHOICE INCOMPATIBLE FOR ERROR ESTIMATES',                  /,&
-'@',                                                            /,&
-'@  One or several error estimates are activated for',          /,&
-'@    Navier-Stokes in simulation with frozen velocity field.', /,&
-'@    estimates will not be computed',                          /,&
-'@',                                                            /,&
-'@ Computation will  NOT  proceed',                             /,&
-'@',                                                            /,&
-'@  Verify   the parameters :',                                 /,&
-'@      desactivate  ERROR ESTIMATES  (ICCVFG)',                /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2140 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    OPTIONS NOT COMPATIBLE WITH TIME DISCRETISATION SCHEME',  /,&
-'@',                                                            /,&
-'@  Computation CAN NOT run',                                   /,&
-'@',                                                            /,&
-'@  A second ordre time-scheme was requested:',                 /,&
-'@      U,V,W : THETA = ', e12.4,                               /,&
-'@     Source terme in Navier-Stokes: ISNO2T = ', i10,          /,&
-'@                                    THETSN = ', e12.4,        /,&
-'@      Density                     : IROEXT = ', i10,          /,&
-'@      Viscosity                   : IVIEXT = ', i10,          /,&
-'@                                    THETVI = ', e12.4,        /,&
-'@  Current version does not allow this in combination with',   /,&
-'@  one of the following option (which has been activated ):',  /,&
-'@    - Error estimation (IESCAL)',                             /,&
-'@    - reinforced U-P coupling (IPUCOU)',                      /,&
-'@    - time-step variable with space or iteration or',         /,&
-'@      steady-state   algorithm(IDTVAR)',                      /,&
-'@',                                                            /,&
-'@ Check the input data.',                                      /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2141 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    OPTIONS NOT COMPATIBLE WITH TIME DISCRETISATION SCHEME',  /,&
-'@',                                                            /,&
-'@  Pressure-Velocity coupling by fixed-point method',          /,&
-'@    was selected  by setting   NTERUP = ', i10,               /,&
-'@  Current version does not allow this in combination with',   /,&
-'@  one of the following options (which has been activated ):', /,&
-'@    - Error estimation (IESCAL)',                             /,&
-'@    - compressible module (IPPMOD(ICOMPF)>=0)',               /,&
-'@  Computation CAN NOT run',                                   /,&
-'@',                                                            /,&
-'@ Check the input data.',                                      /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2142 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1236,31 +1104,6 @@ endif
 '@    Check that density is variable.',                         /,&
 '@     other than via temperature',                             /,&
 '@  this could be by user defined density.',                    /,&
-'@',                                                            /,&
-'@ Check the input data.',                                      /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2664 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    CHOIX DU CALCUL DES ESTIMATEURS D''ERREUR',               /,&
-'@',                                                            /,&
-'@  Computation CAN NOT run',                                   /,&
-'@',                                                            /,&
-'@   Flag IESCAL related to',                                   /,&
-'@   error estimate number IEST = ', i10,   ' for',             /,&
-'@    Navier-Stokes MUST BE AN INTEGER egal to 0, 1 or 2.',     /,&
-'@  It IS EQUAL : IESCAL(',i10,  ') = ', i10,                   /,&
-'@',                                                            /,&
-'@  Rq. : the possible values of IEST are    :',                /,&
-'@        IESPRE = ', i10,                                      /,&
-'@        IESDER = ', i10,                                      /,&
-'@        IESCOR = ', i10,                                      /,&
-'@        IESTOT = ', i10,                                      /,&
 '@',                                                            /,&
 '@ Check the input data.',                                      /,&
 '@',                                                            /,&

@@ -1415,6 +1415,33 @@ cs_user_parameters(cs_domain_t *domain)
 
   /*! [param_var_q_criterion] */
 
+  /* Example: post-process error estimators */
+  /*----------------------------------------*/
+
+  /*! [error_indicators] */
+
+  /* We recommend running a calculation restart on a few time steps
+     with the activation of the most interesting error indicators. */
+
+  {
+    const int field_type = CS_FIELD_INTENSIVE | CS_FIELD_POSTPROCESS;
+
+    const char *name[] = {"est_error_cor_2",
+                          "est_error_tot_2"};
+
+    for (int i = 0; i < 2; i++) {
+      cs_field_t *f = cs_field_create(name[i],
+                                      field_type,
+                                      CS_MESH_LOCATION_CELLS,
+                                      1,
+                                      false);
+      cs_field_set_key_int(f, cs_field_key_id("log"), 1);
+      cs_field_set_key_int(f, cs_field_key_id("post_vis"), 1);
+    }
+  }
+
+  /*! [error_indicators] */
+
   /* Example: homogeneous mixture physical properties */
   /*--------------------------------------------------*/
 

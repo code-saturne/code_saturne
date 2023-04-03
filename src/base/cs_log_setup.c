@@ -109,6 +109,43 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 static void
+_log_error_estimators(void)
+{
+  int ee_count = 0;
+
+  const char *name[] = {"est_error_pre_2",
+                        "est_error_der_2",
+                        "est_error_cor_2",
+                        "est_error_tot_2"};
+
+  const char *desc[] = {"prediction",
+                        "drift",
+                        "correction",
+                        "total"};
+
+  for (int i = 0; i < 4; i++) {
+
+    const cs_field_t *f = cs_field_by_name_try(name[i]);
+    if (f != NULL) {
+      if (ee_count == 0)
+        cs_log_printf(CS_LOG_SETUP,
+                      _("\n"
+                        "Error estimators for Navier-Stokes\n"
+                        "----------------------------------\n\n"));
+
+      cs_log_printf(CS_LOG_SETUP,
+                    _("  %s: %s\n"), name[i], desc[i]);
+
+      ee_count += 1;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Log various global model options.
+ *----------------------------------------------------------------------------*/
+
+static void
 _log_global_model_options(void)
 {
   /* Mesh quantity options */
@@ -145,6 +182,8 @@ _log_global_model_options(void)
 
   cs_velocity_pressure_model_log_setup();
   cs_velocity_pressure_param_log_setup();
+
+  _log_error_estimators();
 
   /* Atmospheric */
 

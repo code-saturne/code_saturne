@@ -75,7 +75,7 @@ implicit none
 ! Local variables
 
 character        chaine*80
-integer          ii    , iiesca, iest
+integer          ii
 integer          kscmin, kscmax, keyvar
 integer          f_id, n_fields
 integer          igg, ige
@@ -392,26 +392,6 @@ write(nfecra,9900)
 '       EPSUP  = ', e14.5,    ' (Velocity/pressure coupling',   /,&
 '                ',14x,       '  stop test                   )',/)
 
-! --- Estimateurs d'erreurs pour Navier-Stokes
-
-iiesca = 0
-do iest = 1, nestmx
-  if(iescal(iest).gt.0) then
-    iiesca = 1
-  endif
-enddo
-
-if(iiesca.gt.0) then
-  write(nfecra,4820)
-  write(nfecra,4821)
-  do iest = 1, nestmx
-    write(nfecra,4822)iest, iescal(iest)
-  enddo
-  write(nfecra,4823)
-  write(nfecra,4824)iespre,iesder,iescor,iestot
-  write(nfecra,9900)
-endif
-
 ! --- Calcul de la distance a la paroi
 
 if(ineedy.eq.1) then
@@ -420,62 +400,6 @@ if(ineedy.eq.1) then
   write(nfecra,9900)
 
 endif
-
-
- 4820 format(                                                     &
-                                                                /,&
-' ** ERROR ESTIMATORS FOR NAVIER-STOKES',                       /,&
-'    ----------------------------------',                       /)
- 4821 format(                                                     &
-'------------------------------------------',                   /,&
-' Estimateur      IESCAL (calculation mode)',                   /,&
-'------------------------------------------'                     )
- 4822 format(                                                     &
- 1x,     i10,2x,    i10                                          )
- 4823 format(                                                     &
-'----------------------------------------'                       )
- 4824 format(                                                     &
-                                                                /,&
-' Possible estimators:',                                        /,&
-' ',i2,' =IESPRE: prediction',                                  /,&
-'            The estimatore is based on the quantity',          /,&
-'            I = rho_n (u*-u_n)/dt + rho_n u_n grad u*',        /,&
-'              - rho_n div (mu+mu_t)_n grad u* + grad P_n',     /,&
-'              - remainder of rhs(u_n, P_n, other variables_n)',/,&
-' ',i2,' =IESDER: drift',                                       /,&
-'            The estimator is based on quantity',               /,&
-'            I = div (mass flow corrected after pressure step)',/,&
-'            Ideally zero when Poisson''s equation is',         /,&
-'              resolved exactly',                               /,&
-' ',i2,' =IESCOR: correction',                                  /,&
-'            The estimator is based on quantity',               /,&
-'            I = div (rho_n u_(n+1))',                          /,&
-'            Ideally zero when Poisson''s equation is',         /,&
-'              resolved exactly and the passage from mass flow',/,&
-'              at faces to velocity at cell centers is done',   /,&
-'              in a function space with zero divergence',       /,&
-' ',i2,' =IESTOT: total',                                       /,&
-'            Estimator is based on the quantity',               /,&
-'            I = rho_n (u_(n+1)-u_n)/dt',                       /,&
-'                                 + rho_n u_(n+1) grad u_(n+1)',/,&
-'              - rho_n div (mu+mu_t)_n grad u_(n+1)',           /,&
-'                                               + gradP_(n+1)', /,&
-'              - rmainder of rhs(u_(n+1), P_(n+1),',            /,&
-'                                          other variables_n)',/, &
-'             The convective term flow is calculated from',     /,&
-'               u_(n+1) taken at the cell centers (and not',    /,&
-'               from the updated mass flow at faces)',          /,&
-                                                                /,&
-' We evaluate the estimator based on values of IESCAL:',        /,&
-'   IESCAL = 0: the estimator is not calculated',               /,&
-'   IESCAL = 1: the estimator is calculated, with no',          /,&
-'               contribution from the volume (we take abs(I))', /,&
-'   IESCAL = 2: the estimator is calculated,',                  /,&
-'               with contribution from the volume ("L2 norm")', /,&
-'               that is abs(I)*SQRT(Cell_volume),',             /,&
-'               except for IESCOR: we calculate',               /,&
-'                 abs(I)*Cell_volume to measure',               /,&
-'                 a difference in kg/s',                        /)
 
  4950 format(                                                     &
                                                                 /,&

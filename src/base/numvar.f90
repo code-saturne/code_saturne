@@ -180,9 +180,6 @@ module numvar
   !> dynamic turbulent viscosity
   integer, save :: ivisct = -1
 
-  !> error estimator for Navier-Stokes
-  integer, save :: iestim(nestmx)
-
   !> interior and boundary convective mass flux key ids of the variables
   integer, save :: kimasf = -1, kbmasf = -1
 

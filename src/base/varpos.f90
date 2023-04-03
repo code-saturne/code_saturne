@@ -652,33 +652,6 @@ if (ipucou.ne.0 .or. ncpdct.gt.0 .or. iporos.eq.2) then
   endif
 endif
 
-! Error estimators
-
-do iest = 1, nestmx
-  iestim(iest) = -1
-enddo
-
-if (iescal(iespre).gt.0) then
-  write(f_name,  '(a14,i1)') 'est_error_pre_', iescal(iespre)
-  write(f_label, '(a5,i1)') 'EsPre', iescal(iespre)
-  call add_property_field(f_name, f_label, 1, .false., iestim(iespre))
-endif
-if (iescal(iesder).gt.0) then
-  write(f_name,  '(a14,i1)') 'est_error_der_', iescal(iesder)
-  write(f_label, '(a5,i1)') 'EsDer', iescal(iesder)
-  call add_property_field(f_name, f_label, 1, .false., iestim(iesder))
-endif
-if (iescal(iescor).gt.0) then
-  write(f_name,  '(a14,i1)') 'est_error_cor_', iescal(iescor)
-  write(f_label, '(a5,i1)') 'EsCor', iescal(iescor)
-  call add_property_field(f_name, f_label, 1, .false., iestim(iescor))
-endif
-if (iescal(iestot).gt.0) then
-  write(f_name,  '(a14,i1)') 'est_error_tot_', iescal(iestot)
-  write(f_label, '(a5,i1)') 'EsTot', iescal(iestot)
-  call add_property_field(f_name, f_label, 1, .false., iestim(iestot))
-endif
-
 ! Tensorial diffusivity
 
 if (iporos.eq.2) then

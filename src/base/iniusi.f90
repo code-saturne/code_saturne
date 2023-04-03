@@ -142,6 +142,12 @@ interface
     implicit none
   end subroutine cs_gui_equation_parameters
 
+  subroutine cs_gui_error_estimator()  &
+       bind(C, name='cs_gui_error_estimator')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_error_estimator
+
   subroutine cs_gui_numerical_options()  &
        bind(C, name='cs_gui_numerical_options')
     use, intrinsic :: iso_c_binding
@@ -458,7 +464,7 @@ call cs_gui_porous_model()
 call cs_gui_define_fans()
 
 ! Init error estimator
-call uieres(iescal, iespre, iesder, iescor, iestot)
+call cs_gui_error_estimator()
 
 ! Initialize base evaluation functions
 call cs_function_default_define()

@@ -123,7 +123,7 @@ integer          imrgrp, nswrgp, imligp, iwarnp
 integer          nbrval
 integer          ndircp, icpt
 integer          numcpl
-integer          f_dim , iflwgr
+integer          f_dim , iflwgr, iescor, iestot
 double precision rnorm , rnormt, rnorma, rnormi, vitnor
 double precision dtsrom, unsrom, rhom, rovolsdt
 double precision epsrgp, climgp, xyzmax(3), xyzmin(3)
@@ -1561,7 +1561,10 @@ endif
 ! 11. Compute error estimators for correction step and the global algo
 !===============================================================================
 
-if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
+call field_get_id_try("est_error_cor_2", iescor)
+call field_get_id_try("est_error_tot_2", iestot)
+
+if (iescor.ge.0 .or. iestot.ge.0) then
 
   ! Allocate temporary arrays
   allocate(esflum(nfac), esflub(nfabor))
@@ -1582,7 +1585,7 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
 
   !  -- Pression
 
-  if (iescal(iestot).gt.0) then
+  if (iestot.ge.0) then
 
     if (irangp.ge.0.or.iperio.eq.1) then
       call synsca(cvar_pr)
@@ -1618,8 +1621,8 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
   ! ---> CALCUL DE L'ESTIMATEUR CORRECTION : DIVERGENCE DE ROM * U (N + 1)
   !                                          - GAMMA
 
-  if (iestim(iescor).ge.0) then
-    call field_get_val_s(iestim(iescor), c_estim)
+  if (iescor.ge.0) then
+    call field_get_val_s(iescor, c_estim)
 
     init = 1
     call divmas(init, esflum, esflub, c_estim)
@@ -1632,23 +1635,16 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
       enddo
     endif
 
-    if (iescal(iescor).eq.2) then
-      !$omp parallel do
-      do iel = 1, ncel
-        c_estim(iel) = abs(c_estim(iel))
-      enddo
-    elseif (iescal(iescor).eq.1) then
-      !$omp parallel do
-      do iel = 1, ncel
-        c_estim(iel) = abs(c_estim(iel)) / volume(iel)
-      enddo
-    endif
+    !$omp parallel do
+    do iel = 1, ncel
+      c_estim(iel) = abs(c_estim(iel)) / cell_f_vol(iel)
+    enddo
 
   endif
 
   ! ---> CALCUL DE L'ESTIMATEUR TOTAL
 
-  if (iestim(iestot).ge.0) then
+  if (iestot.ge.0) then
 
     !   INITIALISATION DE TRAV AVEC LE TERME INSTATIONNAIRE
 

@@ -897,6 +897,8 @@ class OutputVolumicVariablesModel(Variables, Model):
             nn = self.node_error.xmlGetChildNode(name, 'model')
             if nn:
                 status = nn['model']
+                if status == "1":
+                    status = "2"
 
         return status
 
@@ -927,13 +929,13 @@ class OutputVolumicVariablesModel(Variables, Model):
         if model != status:
             nn = self.node_error.xmlGetNode(name)
             if name == "Correction":
-                self.setNewProperty(nn, "est_error_cor_" + model)
+                self.setNewProperty(nn, "est_error_cor_2")
             elif name == "Drift":
-                self.setNewProperty(nn, "est_error_der_" + model)
+                self.setNewProperty(nn, "est_error_der_2")
             elif name == "Prediction":
-                self.setNewProperty(nn, "est_error_pre_" + model)
+                self.setNewProperty(nn, "est_error_pre_2")
             elif name == "Total":
-                self.setNewProperty(nn, "est_error_tot_" + model)
+                self.setNewProperty(nn, "est_error_tot_2")
 
         self.updateList()
 

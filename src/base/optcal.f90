@@ -760,24 +760,6 @@ module optcal
   !>         coefficient
   integer, save :: itagms = 0
 
-  !> \ref iescal indicates the calculation mode for the error estimator
-  !> \ref paramx::iespre "iespre", \ref paramx::iesder "iesder",
-  !> \ref paramx::iescor "iescor" or \ref paramx::iestot "iestot"
-  !> for the Navier-Stokes equation:
-  !> - 0: estimator not calculated,
-  !> - 1: the estimator  \f$ \eta^{*}_{i,1}\f$ is calculated,
-  !> without contribution of the volume,
-  !> - 2: the estimator \f$ \eta^{*}_{i,2}\f$ is calculated,
-  !> with contribution of the volume (norm \f$L^2\f$),
-  !> except for \ref paramx::iescor "iescor", for which
-  !> \f$|\Omega_i|\ \eta^{corr}_{i,1}\ \f$
-  !> is calculated. The names of the estimators appearing
-  !> in the log and the post-processing are made up of
-  !> the default name (given before), followed by the value of
-  !> \ref iescal}. For instance, EsPre2 is the estimator
-  !> \ref paramx::iespre "iespre" calculated with \ref iescal = 2.
-  integer, save :: iescal(nestmx)
-
   !> \ref n_buoyant_scal is the number of buoyant scalar
   !> It will be zero if there is no buoyant scalar
   integer(c_int), pointer, save :: n_buoyant_scal

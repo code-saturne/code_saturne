@@ -2568,25 +2568,6 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
   }
 }
 
-/*----------------------------------------------------------------------------
- * Define error estimators
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIERES
- * *****************
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uieres, UIERES) (int *iescal,
-                                int *iespre,
-                                int *iesder,
-                                int *iescor,
-                                int *iestot)
-{
-  cs_gui_error_estimator(iescal, iespre, iesder, iescor, iestot);
-}
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -4974,58 +4955,51 @@ cs_gui_define_fans(void)
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_error_estimator(int *iescal,
-                       int *iespre,
-                       int *iesder,
-                       int *iescor,
-                       int *iestot)
+cs_gui_error_estimator(void)
 {
+  const char *name[] = {"est_error_pre_2",
+                        "est_error_der_2",
+                        "est_error_cor_2",
+                        "est_error_tot_2"};
+
+  const char *label[] = {"EsPre2",
+                         "EsDer2",
+                         "EsCor",
+                         "EsTot2"};
+
+  const char *node_name[] = {"Correction/model",
+                             "Drift/model",
+                             "Prediction/model",
+                             "Total/model"};
+
   cs_tree_node_t *tn_ee
     = cs_tree_get_node(cs_glob_tree, "analysis_control/error_estimator");
 
-  cs_tree_node_t *tn = cs_tree_get_node(tn_ee, "Correction/model");
+  for (int i = 0; i < 4; i++) {
 
-  const char *result = cs_tree_node_get_value_str(tn);
+    cs_tree_node_t *tn = cs_tree_get_node(tn_ee, node_name[i]);
 
-  if (cs_gui_strcmp(result, "1"))
-    iescal[*iescor -1] = 1;
-  else if (cs_gui_strcmp(result, "2"))
-    iescal[*iescor -1] = 2;
-  else
-    iescal[*iescor -1] = 0;
+    const char *result = cs_tree_node_get_value_str(tn);
 
-  tn = cs_tree_get_node(tn_ee, "Drift/model");
+    if (   cs_gui_strcmp(result, "1")
+        || cs_gui_strcmp(result, "2")) {
 
-  result = cs_tree_node_get_value_str(tn);
+      int field_type = CS_FIELD_INTENSIVE | CS_FIELD_POSTPROCESS;
 
-  if (cs_gui_strcmp(result, "1"))
-    iescal[*iesder -1] = 1;
-  else if (cs_gui_strcmp(result, "2"))
-    iescal[*iesder -1] = 2;
-  else
-    iescal[*iesder -1] = 0;
+      cs_field_t *f = cs_field_create(name[i],
+                                      field_type,
+                                      CS_MESH_LOCATION_CELLS,
+                                      1,
+                                      false);
 
-  tn = cs_tree_get_node(tn_ee, "Prediction/model");
+      cs_field_set_key_int(f, cs_field_key_id("log"), 1);
+      cs_field_set_key_int(f, cs_field_key_id("post_vis"), 1);
 
-  result = cs_tree_node_get_value_str(tn);
+      cs_field_set_key_str(f, cs_field_key_id("label"), label[i]);
 
-  if (cs_gui_strcmp(result, "1"))
-    iescal[*iespre -1] = 1;
-  else if (cs_gui_strcmp(result, "2"))
-    iescal[*iespre -1] = 2;
-  else
-    iescal[*iespre -1] = 0;
+    }
 
-  tn = cs_tree_get_node(tn_ee, "Total/model");
-
-  result = cs_tree_node_get_value_str(tn);
-
-  if (cs_gui_strcmp(result, "1"))
-    iescal[*iestot -1] = 1;
-  else if (cs_gui_strcmp(result, "2"))
-    iescal[*iestot -1] = 2;
-  else
-    iescal[*iestot -1] = 0;
+  }
 }
 
 /*----------------------------------------------------------------------------

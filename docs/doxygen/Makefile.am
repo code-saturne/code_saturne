@@ -24,7 +24,8 @@
 
 EXTRA_DIST = Doxyfile-pre Doxyfile-src Doxyfile-ui \
 DoxygenLayout.xml cs_dox_header.html cs_dox_style.css cs_math_macros.tex \
-cs_mathjax_macros.js doxypypy.py function_defaults.h keywords.h mainpage.dox \
+cs_mathjax_macros.js doxypypy.py field_names.h function_defaults.h keywords.h \
+mainpage.dox \
 images examples \
 user_guide developer_guide
 

@@ -158,7 +158,7 @@ integer          inc   , iprev , init  , ii    , jj
 integer          imrgrp, nswrgp, imligp, iwarnp
 integer          idftnp
 integer          nswrsp, imvisp
-integer          iescap
+integer          iescap, iespre, iescor, iestot
 integer          iflmb0
 integer          idtva0, icvflb, f_oi_id
 integer          jsou  , ivisep, imasac
@@ -345,8 +345,12 @@ imvisp = vcopt_u%imvisf
 
 if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) allocate(viscce(6,ncelet))
 
+call field_get_id_try("est_error_pre_2", iespre)
+call field_get_id_try("est_error_cor_2", iescor)
+call field_get_id_try("est_error_tot_2", iestot)
+
 ! Allocate a temporary array for the prediction-stage error estimator
-if (iescal(iespre).gt.0) then
+if (iespre.ge.0) then
   allocate(eswork(3,ncelet))
 endif
 
@@ -1379,8 +1383,8 @@ endif
 !      S'IL DOIT ETRE CALCULE
 
 if (iappel.eq.1) then
-  if (iestim(iespre).ge.0) then
-    call field_get_val_s(iestim(iespre), c_estim)
+  if (iespre.ge.0) then
+    call field_get_val_s(iespre, c_estim)
     do iel = 1, ncel
       c_estim(iel) =  0.d0
     enddo
@@ -1392,7 +1396,7 @@ endif
 !      (SI ON FAIT UN DEUXIEME APPEL, ALORS IL DOIT ETRE CALCULE)
 
 if (iappel.eq.2) then
-  call field_get_val_s(iestim(iestot), c_estim)
+  call field_get_val_s(iestot, c_estim)
   do iel = 1, ncel
     c_estim(iel) =  0.d0
   enddo
@@ -1658,7 +1662,8 @@ if (iappel.eq.1) then
     enddo
   enddo
 
-  iescap = iescal(iespre)
+  iescap = 0
+  if (iespre.ge.0) iescap = 1
 
   vcopt_loc = vcopt_u
 
@@ -1775,8 +1780,8 @@ if (iappel.eq.1) then
   endif
 
   ! ---> The estimator on the predicted velocity is summed up over the components
-  if (iestim(iespre).ge.0) then
-    call field_get_val_s(iestim(iespre), c_estim)
+  if (iespre.ge.0) then
+    call field_get_val_s(iespre, c_estim)
     do iel = 1, ncel
       do isou = 1, 3
         c_estim(iel) =  c_estim(iel) + eswork(isou,iel)
@@ -1815,7 +1820,7 @@ else if (iappel.eq.2) then
    secvib , rvoid  , rvoid  , rvoid  ,                                     &
    icvflb , icvfli ,c_null_ptr  ,c_null_ptr , smbr   )
 
-  call field_get_val_s(iestim(iestot), c_estim)
+  call field_get_val_s(iestot, c_estim)
   do iel = 1, ncel
     do isou = 1, 3
       c_estim(iel) = c_estim(iel) + (smbr(isou,iel)/volume(iel))**2
@@ -1839,17 +1844,11 @@ if (iappel.eq.1) then
 
   ! ---> Estimator on the predicted velocity:
   !      square root (norm) or square root of the sum times the volume (L2 norm)
-  if (iestim(iespre).ge.0) then
-    call field_get_val_s(iestim(iespre), c_estim)
-    if (iescal(iespre).eq.1) then
-      do iel = 1, ncel
-        c_estim(iel) = sqrt(c_estim(iel))
-      enddo
-    else if (iescal(iespre).eq.2) then
-      do iel = 1, ncel
-        c_estim(iel) = sqrt(c_estim(iel)*volume(iel))
-      enddo
-    endif
+  if (iespre.ge.0) then
+    call field_get_val_s(iespre, c_estim)
+    do iel = 1, ncel
+      c_estim(iel) = sqrt(c_estim(iel)*volume(iel))
+    enddo
   endif
 
   ! ---> Norm printings
@@ -1879,12 +1878,8 @@ if (iappel.eq.1) then
 !      square root (norm) or square root of the sum times the volume (L2 norm)
 else if (iappel.eq.2) then
 
-  call field_get_val_s(iestim(iestot), c_estim)
-  if (iescal(iestot).eq.1) then
-    do iel = 1, ncel
-      c_estim(iel) = sqrt(c_estim(iel))
-    enddo
-  else if (iescal(iestot).eq.2) then
+  call field_get_val_s(iestot, c_estim)
+  if (iestot.ge.0) then
     do iel = 1, ncel
       c_estim(iel) = sqrt(c_estim(iel)*volume(iel))
     enddo

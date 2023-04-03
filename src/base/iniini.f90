@@ -223,12 +223,6 @@ do ii = 1, ntypmx
   ifinty(ii) = 0
 enddo
 
-! Error estimators for Navier-Stokes
-
-do iest = 1, nestmx
-  iescal(iest) = 0
-enddo
-
 ! Here, all of optcal.f90 is initialized
 
 !===============================================================================

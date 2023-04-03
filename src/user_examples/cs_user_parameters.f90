@@ -372,24 +372,6 @@ integer nmodpp
 ! Local variables
 
 !===============================================================================
-
-!< [usipsu]
-
-! Calculation options (optcal)
-! ============================
-
-! Error estimators for Navier-Stokes (non-frozen velocity field)
-
-! We recommend running a calculation restart on a few time steps
-! with the activation of the most interesting of those.
-! (=2 to activate, =0 to deactivate).
-
-iescal(iescor) = 2   ! div(rho u) -Gamma
-iescal(iestot) = 2   ! resolution precision for the momentum
-
-!< [usipsu]
-
-!===============================================================================
 ! Initialize non-standard calculation options for the atmospheric version.
 !===============================================================================
 

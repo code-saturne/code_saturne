@@ -61,11 +61,6 @@
 
   \section cs_f_user_parameters_h_usipsu  General options (usipsu)
 
-  The following code block presents options available
-  in the \ref usipsu subroutine.
-
-  \snippet cs_user_parameters.f90 usipsu
-
   \section cs_f_user_parameters_h_usipes Postprocessing options (usipes)
 
   The \ref usipes routine can be found in the \ref cs_user_parameters.f90 file,

@@ -55,7 +55,7 @@ char *label:
 
   Logging flag for this field (0: off, 1: on)
 */
-int log:
+int log;
 
 /*!
   \var post_vis

@@ -104,18 +104,6 @@ if( ipucou.ne.0 ) then
   call csexit (1)
 endif
 
-! --- Estimateurs pour Navier-Stokes
-
-!     Interdits en compressible
-
-if( (iescal(iespre).ne.0) .or.                            &
-    (iescal(iesder).ne.0) .or.                            &
-    (iescal(iescor).ne.0) .or.                            &
-    (iescal(iestot).ne.0) ) then
-  write(nfecra,4000)
-  call csexit (1)
-endif
-
 !===============================================================================
 ! 3. OPTIONS DE CALCUL PAR DEFAUT
 !===============================================================================
@@ -189,23 +177,6 @@ endif
 '@  The calculation could NOT run.                            ',/,&
 '@                                                            ',/,&
 '@  Impose IPUCOU = 0.                                        ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 4000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING : STOP WHILE READING INPUT DATAS                ',/,&
-'@    =========                                               ',/,&
-'@    SPECIFIC PHYSICS MODULES (COMPRESSIBLE) SET             ',/,&
-'@                                                            ',/,&
-'@  The error estimators are not compatible with the          ',/,&
-'@    compressible module.                                    ',/,&
-'@                                                            ',/,&
-'@  The calculation could NOT run.                            ',/,&
-'@                                                            ',/,&
-'@  Impose IESCAL(.) = 0.                                     ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
