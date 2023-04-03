@@ -225,12 +225,6 @@ integer, save:: ihpm
 ! 2.4 Data specific to the 1D vertical grid:
 !-------------------------------------------
 
-!> flag for the definition of the vertical grid
-!> - -1 : no vertical grid (default)
-!> -  0 : automatic definition
-!> -  1 : definition by the user in cs_user_atmospheric_model.f90
-integer, save:: ivert
-
 !> number of vertical arrays
 integer, save:: nvert
 
