@@ -699,10 +699,6 @@ iatra1 = 0
 nfatr1 = 1
 iqv0 = 0
 
-! --> Initialisation for the 1d radiative model:
-nvert = 1
-kvert = 20
-
 !  -------------------------------------------------------------------------------
 !  Microphysics parameterization options
 !  -------------------------------------------------------------------------------

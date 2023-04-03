@@ -106,7 +106,7 @@ if (imode.eq.0) then
   nvert = 1
   kvert = 50
   kmx = kvert
-  zvmax = 1975.d0 ! for Wangara
+  zvmax = 1975.d0 ! for Wangara: TODO is it z_max ? compute it automatically...
 
   ! If 1D radiative model: complete the vertical array up to 11000
   if (iatra1.gt.0) then

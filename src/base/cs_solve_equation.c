@@ -1963,8 +1963,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
       }
       /* calculate pressure from meteo file */
       else if (cs_glob_atmo_option->meteo_profile == 1) {
-        int nbmett = cs_glob_atmo_option->nbmett;
-        int nbmetm = cs_glob_atmo_option->nbmetm;
+        int nbmett = cs_glob_atmo_option->met_1d_nlevels_t;
+        int nbmetm = cs_glob_atmo_option->met_1d_ntimes;
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           pphy[c_id] = cs_intprf(nbmett,
                                  nbmetm,

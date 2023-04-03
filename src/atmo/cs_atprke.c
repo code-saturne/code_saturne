@@ -406,8 +406,8 @@ _humid_atmosphere(const cs_real_t  cromo[],
       cs_atmo_profile_std(cell_cen[c_id][2], &pphy, &dum, &dum);
     }
     else if (cs_glob_atmo_option->meteo_profile == 1) {
-      int nbmett = cs_glob_atmo_option->nbmett;
-      int nbmetm = cs_glob_atmo_option->nbmetm;
+      int nbmett = cs_glob_atmo_option->met_1d_nlevels_t;
+      int nbmetm = cs_glob_atmo_option->met_1d_ntimes;
       pphy = cs_intprf(nbmett,
                        nbmetm,
                        cs_glob_atmo_option->z_temp_met,

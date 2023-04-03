@@ -68,7 +68,7 @@ double precision, dimension(:,:), pointer :: umet
 double precision, dimension(:,:), pointer :: vmet
 
 !> meteo w profiles - unused
-double precision, allocatable, dimension(:,:) :: wmet
+double precision, dimension(:,:), pointer :: wmet
 
 !> meteo turbulent kinetic energy profile (read in the input meteo file)
 double precision, dimension(:,:), pointer :: ekmet
@@ -215,37 +215,37 @@ real(c_double), pointer, save:: yl93
 !> Number of vertical levels (cf. 1-D radiative scheme)
 integer(c_int), pointer, save:: nbmaxt
 
-!> flag to compute the hydrostastic pressure by Laplace integration
+!> flag to compute the hydrostatic pressure by Laplace integration
 !> in the meteo profiles
 !> = 0 : bottom to top Laplace integration, based on P(sea level) (default)
 !> = 1 : top to bottom Laplace integration based on P computed for
 !>            the standard atmosphere at z(nbmaxt)
 integer, save:: ihpm
 
-! 2.4 Data specific to the 1D vertical grid:
+! 2.4 Data specific to the 1-D vertical grid:
 !-------------------------------------------
 
 !> number of vertical arrays
-integer, save:: nvert
+integer(c_int), pointer, save:: nvert
 
 !> number of levels (up to the top of the domain)
-integer, save:: kvert
+integer(c_int), pointer, save:: kvert
 
-!> Number of levels (up to 11000 m if ray1d used)
+!> Number of levels (up to 11000 m if 1-D radiative transfer used)
 !> (automatically computed)
-integer, save:: kmx
+integer(c_int), pointer, save:: kmx
 
 !> Height of the boundary layer
 real(c_double), pointer, save :: meteo_zi
 
-! 2.5 Data specific to the 1d atmospheric radiative module:
+! 2.5 Data specific to the 1-D atmospheric radiative module:
 !-------------------------------------------------------------------------------
-!> flag for the use of the 1d atmo radiative model
+!> flag for the use of the 1-D atmo radiative model
 !> - 0 no use (default)
 !> - 1 use
 integer(c_int), pointer, save :: iatra1
 
-!> 1d radiative model pass frequency
+!> 1D radiative model pass frequency
 integer, save:: nfatr1
 
 !> flag for the standard atmo humidity profile
@@ -263,52 +263,52 @@ integer, save:: idrayst
 integer, save:: igrid
 
 
-! 2.6 Arrays specific to the 1d atmospheric radiative module
+! 2.6 Arrays specific to the 1D atmospheric radiative module
 !-------------------------------------------------------------------------------
 
 !> horizontal coordinates of the vertical grid
-double precision, allocatable, dimension(:,:) :: xyvert
+double precision, dimension(:,:), pointer :: xyvert
 
 !> vertical grid for 1D radiative scheme initialize in
 !>       cs_user_atmospheric_model.f90
-double precision, allocatable, dimension(:) :: zvert
+double precision, dimension(:), pointer :: zvert
 
 !> absorption for CO2 + 03
-double precision, allocatable, dimension(:) :: acinfe
+double precision, dimension(:), pointer :: acinfe
 
 !> differential absorption for CO2 + 03
-double precision, allocatable, dimension(:) :: dacinfe
+double precision, dimension(:), pointer :: dacinfe
 
 !> absorption for CO2 only
-double precision, allocatable, dimension(:,:) :: aco2, aco2s
+double precision, dimension(:,:), pointer :: aco2, aco2s
 
 !> differential absorption for CO2 only
-double precision, allocatable, dimension(:,:) :: daco2, daco2s
+double precision, dimension(:,:), pointer :: daco2, daco2s
 
 !> idem acinfe, flux descendant
-double precision, allocatable, dimension(:) :: acsup, acsups
+double precision, dimension(:), pointer :: acsup, acsups
 
 !> internal variable for 1D radiative model
-double precision, allocatable, dimension(:) :: dacsup, dacsups
+double precision, dimension(:), pointer :: dacsup, dacsups
 
 !> internal variable for 1D radiative model
-double precision, allocatable, dimension(:) :: tauzq
+double precision, dimension(:), pointer :: tauzq
 
 !> internal variable for 1D radiative model
-double precision, allocatable, dimension(:) :: tauz
+double precision, dimension(:), pointer :: tauz
 
 !> internal variable for 1D radiative model
-double precision, allocatable, dimension(:) :: zq
+double precision, dimension(:), pointer :: zq
 
 !> internal variable for 1D radiative model
 double precision, save :: tausup
 
 !> internal variable for 1D radiative model
-double precision, allocatable, dimension(:) :: zray
-double precision, allocatable, dimension(:,:) :: rayi, rayst
+double precision, dimension(:), pointer  :: zray
+double precision, dimension(:,:), pointer  :: rayi, rayst
 
 !> Upward and downward radiative fluxes (infrared, solar) along each vertical
-double precision, allocatable, dimension(:,:) :: iru, ird, solu, sold
+double precision, dimension(:,:), pointer  :: iru, ird, solu, sold
 
 ! 3.0 Data specific to the soil model
 !-------------------------------------------------------------------------------
@@ -422,7 +422,8 @@ double precision, save:: zaero
         iaerosol, frozen_gas_chem, init_gas_with_lib,                   &
         init_aero_with_lib, n_aero, n_sizebin, imeteo,                  &
         nbmetd, nbmett, nbmetm, iatra1, nbmaxt,                         &
-        meteo_zi, iatsoil)                                              &
+        meteo_zi, iatsoil,                                              &
+        nvertv, kvert, kmx )                                            &
       bind(C, name='cs_f_atmo_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -442,6 +443,7 @@ double precision, save:: zaero
       type(c_ptr), intent(out) :: nbmetd, nbmett, nbmetm, iatra1, nbmaxt
       type(c_ptr), intent(out) :: meteo_zi
       type(c_ptr), intent(out) :: iatsoil
+      type(c_ptr), intent(out) :: nvertv, kvert, kmx
     end subroutine cs_f_atmo_get_pointers
 
     !---------------------------------------------------------------------------
@@ -449,15 +451,35 @@ double precision, save:: zaero
     !> \brief Return pointers to atmo arrays
 
     subroutine cs_f_atmo_arrays_get_pointers(p_zdmet, p_ztmet, p_umet, p_vmet, &
-         p_tmmet, p_phmet, p_tpmet, p_ekmet, p_epmet,dim_pumet, dim_phmet,     &
-         dim_tpmet, dim_ekmet, dim_epmet)                                      &
+         p_wmet  , p_tmmet, p_phmet, p_tpmet, p_ekmet, p_epmet,                &
+         p_xyvert, p_zvert, p_acinfe,                                          &
+         p_dacinfe, p_aco2, p_aco2s,                                           &
+         p_daco2, p_daco2s,                                                    &
+         p_acsup, p_acsups,                                                    &
+         p_dacsup, p_dacsups,                                                  &
+         p_tauzq, p_tauz, p_zq,                                                &
+         p_zray, p_rayi, p_rayst,                                              &
+         p_iru, p_ird, p_solu, p_sold,                                         &
+         dim_pumet, dim_phmet,                                                 &
+         dim_tpmet, dim_ekmet, dim_epmet,                                      &
+         dim_xyvert, dim_kmx2, dim_kmx_nvert )                                 &
          bind(C, name='cs_f_atmo_arrays_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), dimension(2) :: dim_phmet, dim_pumet, dim_tpmet
-       integer(c_int), dimension(2) ::  dim_ekmet,  dim_epmet
+      integer(c_int), dimension(2) ::  dim_ekmet,  dim_epmet
+      integer(c_int), dimension(2) ::  dim_xyvert, dim_kmx2, dim_kmx_nvert
       type(c_ptr), intent(out) :: p_zdmet, p_ztmet, p_umet, p_vmet, p_tmmet
+      type(c_ptr), intent(out) :: p_wmet
       type(c_ptr), intent(out) :: p_phmet, p_tpmet, p_ekmet, p_epmet
+      type(c_ptr), intent(out) :: p_xyvert, p_zvert, p_acinfe
+      type(c_ptr), intent(out) :: p_dacinfe, p_aco2, p_aco2s
+      type(c_ptr), intent(out) :: p_daco2, p_daco2s
+      type(c_ptr), intent(out) :: p_acsup, p_acsups
+      type(c_ptr), intent(out) :: p_dacsup, p_dacsups
+      type(c_ptr), intent(out) :: p_tauzq, p_tauz, p_zq
+      type(c_ptr), intent(out) :: p_zray, p_rayi, p_rayst
+      type(c_ptr), intent(out) :: p_iru, p_ird, p_solu, p_sold
     end subroutine cs_f_atmo_arrays_get_pointers
 
     !---------------------------------------------------------------------------
@@ -754,6 +776,7 @@ contains
     type(c_ptr) :: c_nbmetd, c_nbmett, c_nbmetm, c_iatra1, c_nbmaxt
     type(c_ptr) :: c_meteo_zi
     type(c_ptr) :: c_iatsoil, c_isepchemistry
+    type(c_ptr) :: c_nvert, c_kvert, c_kmx
 
     call cs_f_atmo_get_pointers(c_ps,             &
       c_syear, c_squant, c_shour, c_smin, c_ssec, &
@@ -769,7 +792,8 @@ contains
       c_init_aero_with_lib, c_nlayer,             &
       c_nsize, c_imeteo,                          &
       c_nbmetd, c_nbmett, c_nbmetm, c_iatra1, c_nbmaxt, &
-      c_meteo_zi, c_iatsoil)
+      c_meteo_zi, c_iatsoil,                      &
+      c_nvert, c_kvert, c_kmx )
 
     call c_f_pointer(c_ps, ps)
     call c_f_pointer(c_syear, syear)
@@ -812,6 +836,10 @@ contains
     call c_f_pointer(c_meteo_zi, meteo_zi)
     call c_f_pointer(c_iatsoil, iatsoil)
 
+    call c_f_pointer(c_nvert, nvert)
+    call c_f_pointer(c_kvert, kvert)
+    call c_f_pointer(c_kmx, kmx)
+
     return
 
   end subroutine atmo_init
@@ -830,10 +858,20 @@ implicit none
 integer :: imode, n_level, n_times, n_level_t
 
 type(c_ptr) :: c_z_dyn_met, c_z_temp_met, c_u_met, c_v_met, c_time_met
+type(c_ptr) :: c_w_met
 type(c_ptr) :: c_hyd_p_met, c_pot_t_met, c_ek_met, c_ep_met
+type(c_ptr) :: c_xyvert, c_zvert, c_acinfe
+type(c_ptr) :: c_dacinfe, c_aco2, c_aco2s
+type(c_ptr) :: c_daco2, c_daco2s
+type(c_ptr) :: c_acsup, c_acsups
+type(c_ptr) :: c_dacsup, c_dacsups
+type(c_ptr) :: c_tauzq, c_tauz, c_zq
+type(c_ptr) :: c_zray, c_rayi, c_rayst
+type(c_ptr) :: c_iru, c_ird, c_solu, c_sold
 
 integer(c_int), dimension(2) :: dim_hyd_p_met, dim_u_met, dim_pot_t_met
 integer(c_int), dimension(2) :: dim_ek_met, dim_ep_met
+integer(c_int), dimension(2) :: dim_xyvert, dim_kmx2, dim_kmx_nvert
 
 if (imeteo.eq.1) then
   call atlecm(0)
@@ -842,23 +880,65 @@ if (imeteo.eq.2) then
   call cs_atmo_init_meteo_profiles()
 endif
 
+! Allocate additional arrays for 1D radiative model
+if (iatra1.eq.1) then
+
+  imode = 0
+
+  call usatdv(imode) !TODO remove it and define it in cs_user_parameters.c
+endif
+
 call cs_f_atmo_arrays_get_pointers(c_z_dyn_met, c_z_temp_met,     &
-                                   c_u_met, c_v_met, c_time_met,  &
+                                   c_u_met, c_v_met, c_w_met,     &
+                                   c_time_met,                    &
                                    c_hyd_p_met, c_pot_t_met,      &
                                    c_ek_met, c_ep_met,            &
+                                   c_xyvert, c_zvert, c_acinfe,   &
+                                   c_dacinfe, c_aco2, c_aco2s,    &
+                                   c_daco2, c_daco2s,             &
+                                   c_acsup, c_acsups,             &
+                                   c_dacsup, c_dacsups,           &
+                                   c_tauzq, c_tauz, c_zq,         &
+                                   c_zray, c_rayi, c_rayst,       &
+                                   c_iru, c_ird, c_solu, c_sold,  &
                                    dim_u_met, dim_hyd_p_met,      &
                                    dim_pot_t_met, dim_ek_met,     &
-                                   dim_ep_met)
+                                   dim_ep_met,                    &
+                                   dim_xyvert, dim_kmx2, dim_kmx_nvert)
 
 call c_f_pointer(c_z_dyn_met, zdmet, [nbmetd])
 call c_f_pointer(c_z_temp_met, ztmet, [nbmaxt])
 call c_f_pointer(c_u_met, umet, [dim_u_met])
 call c_f_pointer(c_v_met, vmet, [dim_u_met])
+call c_f_pointer(c_w_met, wmet, [dim_u_met])
 call c_f_pointer(c_time_met, tmmet, [nbmetm])
 call c_f_pointer(c_hyd_p_met, phmet, [dim_hyd_p_met])
 call c_f_pointer(c_pot_t_met, tpmet, [dim_pot_t_met])
 call c_f_pointer(c_ek_met, ekmet, [dim_ek_met])
 call c_f_pointer(c_ep_met, epmet, [dim_ep_met])
+
+call c_f_pointer(c_xyvert , xyvert , [dim_xyvert])
+call c_f_pointer(c_zvert  , zvert  , [kmx])
+call c_f_pointer(c_acinfe , acinfe , [kmx])
+call c_f_pointer(c_dacinfe, dacinfe, [kmx])
+call c_f_pointer(c_aco2   , aco2   , [dim_kmx2])
+call c_f_pointer(c_aco2s  , aco2s  , [dim_kmx2])
+call c_f_pointer(c_daco2  , daco2  , [dim_kmx2])
+call c_f_pointer(c_daco2s , daco2s , [dim_kmx2])
+call c_f_pointer(c_acsup  , acsup  , [kmx])
+call c_f_pointer(c_acsups , acsups , [kmx])
+call c_f_pointer(c_dacsup , dacsup , [kmx])
+call c_f_pointer(c_dacsups, dacsups, [kmx])
+call c_f_pointer(c_tauzq  , tauzq  , [kmx+1])!TODO check +1 works???
+call c_f_pointer(c_tauz   , tauz   , [kmx+1])
+call c_f_pointer(c_zq     , zq     , [kmx+1])
+call c_f_pointer(c_rayi   , rayi   , [dim_kmx_nvert])
+call c_f_pointer(c_zray   , zray   , [kmx])
+call c_f_pointer(c_rayst  , rayst  , [dim_kmx_nvert])
+call c_f_pointer(c_iru    , iru    , [dim_kmx_nvert])
+call c_f_pointer(c_ird    , ird    , [dim_kmx_nvert])
+call c_f_pointer(c_solu   , solu   , [dim_kmx_nvert])
+call c_f_pointer(c_sold   , sold   , [dim_kmx_nvert])
 
 ! Allocate additional arrays for Water Microphysics
 
@@ -876,7 +956,6 @@ if (imeteo.gt.0) then
     allocate(mom_met(3, n_level))
   endif
 
-  allocate(wmet(n_level,n_times))
   allocate(ttmet(n_level_t,n_times), qvmet(n_level_t,n_times),  &
            ncmet(n_level_t,n_times))
   allocate(pmer(n_times))
@@ -884,28 +963,15 @@ if (imeteo.gt.0) then
   allocate(rmet(n_level_t,n_times))
 
   ! Allocate additional arrays for 1D radiative model
+  ! and prepare interpolation
 
   if (iatra1.eq.1) then
-
-    imode = 0
-
-    call usatdv(imode)
-
-    allocate(xyvert(nvert,3), zvert(kmx))
-    allocate(acinfe(kmx), dacinfe(kmx), aco2(kmx,kmx), aco2s(kmx,kmx))
-    allocate(daco2(kmx,kmx), daco2s(kmx,kmx), acsup(kmx), dacsup(kmx))
-    allocate(acsups(kmx), dacsups(kmx))
-    allocate(tauzq(kmx+1), tauz(kmx+1), zq(kmx+1))
-    allocate(rayi(kmx,nvert), rayst(kmx,nvert), zray(kmx))
 
     allocate(soilvert(nvert))
 
     call mestcr("rayi"//c_null_char, 1, 0, idrayi)
     call mestcr("rayst"//c_null_char, 1, 0, idrayst)
     call gridcr("int_grid"//c_null_char, igrid)
-
-    allocate(iru(kmx,nvert), ird(kmx,nvert))
-    allocate(sold(kmx,nvert), solu(kmx,nvert))
 
   endif
 
@@ -955,7 +1021,6 @@ if (imeteo.gt.0) then
   if (allocated(mom)) then
     deallocate(mom, mom_met, dpdt_met)
   endif
-  deallocate(wmet)
   deallocate(ttmet, qvmet, ncmet)
   deallocate(pmer)
   deallocate(xmet, ymet)
@@ -965,21 +1030,11 @@ if (imeteo.gt.0) then
 
   if (iatra1.eq.1) then
 
-    deallocate(xyvert, zvert)
-    deallocate(acinfe, dacinfe, aco2, aco2s)
-    deallocate(daco2, daco2s, acsup, dacsup)
-    deallocate(acsups, dacsups)
-    deallocate(tauzq, tauz, zq)
-    deallocate(rayi, rayst, zray)
-
     deallocate(soilvert)
 
     call mestde ()
 
     call grides ()
-
-    deallocate(iru, ird)
-    deallocate(solu, sold)
 
   endif
 

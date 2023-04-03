@@ -122,11 +122,36 @@ static cs_atmo_option_t  _atmo_option = {
   .latitude = 1e12,
   .x_l93= 1e12,
   .y_l93 = 1e12,
-  .nbmetd = 0,
-  .nbmett = 0,
-  .nbmetm = 0,
+  .met_1d_nlevels_d = 0,
+  .met_1d_nlevels_t = 0,
+  .met_1d_ntimes = 0,
+  .met_1d_nlevels_max_t = 0,
   .radiative_model_1d = 0,
-  .nbmaxt = 0,
+  .rad_1d_nvert = 1,
+  .rad_1d_nlevels = 20,
+  .rad_1d_nlevels_max = 0,
+  .rad_1d_xy = NULL,
+  .rad_1d_z = NULL,
+  .rad_1d_acinfe = NULL,
+  .rad_1d_dacinfe = NULL,
+  .rad_1d_aco2 = NULL,
+  .rad_1d_aco2s = NULL,
+  .rad_1d_daco2 = NULL,
+  .rad_1d_daco2s = NULL,
+  .rad_1d_acsup = NULL,
+  .rad_1d_acsups = NULL,
+  .rad_1d_dacsup = NULL,
+  .rad_1d_dacsups = NULL,
+  .rad_1d_tauzq = NULL,
+  .rad_1d_tauz = NULL,
+  .rad_1d_zq = NULL,
+  .rad_1d_zray = NULL,
+  .rad_1d_ir_div = NULL,
+  .rad_1d_sol_div = NULL,
+  .rad_1d_iru = NULL,
+  .rad_1d_ird = NULL,
+  .rad_1d_solu = NULL,
+  .rad_1d_sold = NULL,
   .domain_orientation = 0.,
   .compute_z_ground = false,
   .open_bcs_treatment = 0,
@@ -162,6 +187,7 @@ static cs_atmo_option_t  _atmo_option = {
   .meteo_phih_u = 1, /* Hogstrom 1988 by default */
   .u_met      = NULL,
   .v_met      = NULL,
+  .w_met      = NULL,
   .ek_met     = NULL,
   .ep_met     = NULL,
   .z_dyn_met  = NULL,
@@ -282,23 +308,52 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **radiative_model_1d,
                        int                    **nbmaxt,
                        cs_real_t              **meteo_zi,
-                       int                    **soil_model);
+                       int                    **soil_model,
+                       int                    **nvert,
+                       int                    **kvert,
+                       int                    **kmx);
 
 void
 cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
                               cs_real_t **z_temp_met,
                               cs_real_t **u_met,
                               cs_real_t **v_met,
+                              cs_real_t **w_met,
                               cs_real_t **time_met,
                               cs_real_t **hyd_p_met,
                               cs_real_t **pot_t_met,
                               cs_real_t **ek_met,
                               cs_real_t **ep_met,
+                              cs_real_t **xyvert,
+                              cs_real_t **zvert,
+                              cs_real_t **acinfe,
+                              cs_real_t **dacinfe,
+                              cs_real_t **aco2,
+                              cs_real_t **aco2s,
+                              cs_real_t **daco2,
+                              cs_real_t **daco2s,
+                              cs_real_t **acsup,
+                              cs_real_t **acsups,
+                              cs_real_t **dacsup,
+                              cs_real_t **dacsups,
+                              cs_real_t **tauzq,
+                              cs_real_t **tauz,
+                              cs_real_t **zq,
+                              cs_real_t **zray,
+                              cs_real_t **rayi,
+                              cs_real_t **rayst,
+                              cs_real_t **iru,
+                              cs_real_t **ird,
+                              cs_real_t **solu,
+                              cs_real_t **sold,
                               int         dim_u_met[2],
                               int         dim_hyd_p_met[2],
                               int         dim_pot_t_met[2],
                               int         dim_ek_met[2],
-                              int         dim_ep_met[2]);
+                              int         dim_ep_met[2],
+                              int         dim_xyvert[2],
+                              int         dim_kmx2[2],
+                              int         dim_kmx_nvert[2]);
 
 void
 cs_f_atmo_get_soil_zone(cs_lnum_t         *n_elts,
@@ -1478,7 +1533,10 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **radiative_model_1d,
                        int                    **nbmaxt,
                        cs_real_t              **meteo_zi,
-                       int                    **soil_model)
+                       int                    **soil_model,
+                       int                    **nvert,
+                       int                    **kvert,
+                       int                    **kmx)
 {
   *ps        = &(_atmo_constants.ps);
   *syear     = &(_atmo_option.syear);
@@ -1498,11 +1556,10 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *subgrid_model = &(_atmo_option.subgrid_model);
   *distribution_model = &(_atmo_option.distribution_model);
   *meteo_profile = &(_atmo_option.meteo_profile);
-  *nbmetd     = &(_atmo_option.nbmetd);
-  *nbmett     = &(_atmo_option.nbmett);
-  *nbmetm     = &(_atmo_option.nbmetm);
-  *radiative_model_1d = &(_atmo_option.radiative_model_1d);
-  *nbmaxt     = &(_atmo_option.nbmaxt);
+  *nbmetd     = &(_atmo_option.met_1d_nlevels_d);
+  *nbmett     = &(_atmo_option.met_1d_nlevels_t);
+  *nbmetm     = &(_atmo_option.met_1d_ntimes);
+  *nbmaxt     = &(_atmo_option.met_1d_nlevels_max_t);
   *meteo_zi   = &(_atmo_option.meteo_zi);
   *soil_model = &(_atmo_option.soil_model);
   *model = &(_atmo_chem.model);
@@ -1516,6 +1573,10 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *init_aero_with_lib = &(_atmo_chem.init_aero_with_lib);
   *n_layer = &(_atmo_chem.n_layer);
   *n_size = &(_atmo_chem.n_size);
+  *radiative_model_1d = &(_atmo_option.radiative_model_1d);
+  *nvert = &(_atmo_option.rad_1d_nvert);
+  *kvert = &(_atmo_option.rad_1d_nlevels);
+  *kmx = &(_atmo_option.rad_1d_nlevels_max);
 }
 
 void
@@ -1576,38 +1637,66 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
                               cs_real_t **z_temp_met,
                               cs_real_t **u_met,
                               cs_real_t **v_met,
+                              cs_real_t **w_met,
                               cs_real_t **time_met,
                               cs_real_t **hyd_p_met,
                               cs_real_t **pot_t_met,
                               cs_real_t **ek_met,
                               cs_real_t **ep_met,
+                              cs_real_t **xyvert,
+                              cs_real_t **zvert,
+                              cs_real_t **acinfe,
+                              cs_real_t **dacinfe,
+                              cs_real_t **aco2,
+                              cs_real_t **aco2s,
+                              cs_real_t **daco2,
+                              cs_real_t **daco2s,
+                              cs_real_t **acsup,
+                              cs_real_t **acsups,
+                              cs_real_t **dacsup,
+                              cs_real_t **dacsups,
+                              cs_real_t **tauzq,
+                              cs_real_t **tauz,
+                              cs_real_t **zq,
+                              cs_real_t **zray,
+                              cs_real_t **rayi,
+                              cs_real_t **rayst,
+                              cs_real_t **iru,
+                              cs_real_t **ird,
+                              cs_real_t **solu,
+                              cs_real_t **sold,
                               int         dim_u_met[2],
                               int         dim_hyd_p_met[2],
                               int         dim_pot_t_met[2],
                               int         dim_ek_met[2],
-                              int         dim_ep_met[2])
+                              int         dim_ep_met[2],
+                              int         dim_xyvert[2],
+                              int         dim_kmx2[2],
+                              int         dim_kmx_nvert[2])
 {
   int n_level = 0, n_level_t = 0;
   int n_times = 0;
   if (_atmo_option.meteo_profile) {
-    n_level = CS_MAX(1, _atmo_option.nbmetd);
-    n_level_t = CS_MAX(1, _atmo_option.nbmaxt);
-    n_times = CS_MAX(1, _atmo_option.nbmetm);
+    n_level = CS_MAX(1, _atmo_option.met_1d_nlevels_d);
+    n_level_t = CS_MAX(1, _atmo_option.met_1d_nlevels_max_t);
+    n_times = CS_MAX(1, _atmo_option.met_1d_ntimes);
   }
 
   if (_atmo_option.z_dyn_met == NULL)
     BFT_MALLOC(_atmo_option.z_dyn_met, n_level, cs_real_t);
   if (_atmo_option.z_temp_met == NULL)
-    BFT_MALLOC(_atmo_option.z_temp_met, _atmo_option.nbmaxt, cs_real_t);
+    BFT_MALLOC(_atmo_option.z_temp_met, n_level_t, cs_real_t);
   if (_atmo_option.u_met == NULL)
     BFT_MALLOC(_atmo_option.u_met, n_level*n_times, cs_real_t);
   if (_atmo_option.v_met == NULL)
     BFT_MALLOC(_atmo_option.v_met, n_level*n_times, cs_real_t);
+  if (_atmo_option.w_met == NULL)
+    BFT_MALLOC(_atmo_option.w_met, n_level*n_times, cs_real_t);
   if (_atmo_option.time_met == NULL)
-    BFT_MALLOC(_atmo_option.time_met, _atmo_option.nbmetm, cs_real_t);
+    BFT_MALLOC(_atmo_option.time_met, n_times, cs_real_t);
   if (_atmo_option.hyd_p_met == NULL)
     BFT_MALLOC(_atmo_option.hyd_p_met,
-               _atmo_option.nbmetm*_atmo_option.nbmaxt, cs_real_t);
+               n_times * n_level_t, cs_real_t);
   if (_atmo_option.pot_t_met == NULL)
     BFT_MALLOC(_atmo_option.pot_t_met, n_level_t*n_times, cs_real_t);
   if (_atmo_option.ek_met == NULL)
@@ -1617,24 +1706,108 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
 
   *u_met           = _atmo_option.u_met;
   *v_met           = _atmo_option.v_met;
+  *w_met           = _atmo_option.w_met;
   *hyd_p_met       = _atmo_option.hyd_p_met;
   *pot_t_met       = _atmo_option.pot_t_met;
   *ek_met          = _atmo_option.ek_met;
   *ep_met          = _atmo_option.ep_met;
-  dim_u_met[0]     = _atmo_option.nbmetd;
-  dim_u_met[1]     = _atmo_option.nbmetm;
-  dim_hyd_p_met[0] = _atmo_option.nbmaxt;
-  dim_hyd_p_met[1] = _atmo_option.nbmetm;
-  dim_pot_t_met[0] = _atmo_option.nbmaxt;
-  dim_pot_t_met[1] = _atmo_option.nbmetm;
-  dim_ek_met[0]    = _atmo_option.nbmetd;
-  dim_ek_met[1]    = _atmo_option.nbmetm;
-  dim_ep_met[0]    = _atmo_option.nbmetd;
-  dim_ep_met[1]    = _atmo_option.nbmetm;
 
   *z_dyn_met  = _atmo_option.z_dyn_met;
   *z_temp_met = _atmo_option.z_temp_met;
   *time_met   = _atmo_option.time_met;
+
+  n_level = 0;
+  int n_vert = 0;
+  if (_atmo_option.radiative_model_1d != 0) {
+    n_level = CS_MAX(1, _atmo_option.rad_1d_nlevels_max);
+    n_vert = CS_MAX(1, _atmo_option.rad_1d_nvert);
+  }
+
+  if (         _atmo_option.rad_1d_xy == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_xy , 3*n_vert, cs_real_t);
+  if (         _atmo_option.rad_1d_z == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_z , n_level, cs_real_t);
+  if (         _atmo_option.rad_1d_acinfe == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_acinfe , n_level, cs_real_t);
+  if (         _atmo_option.rad_1d_dacinfe == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_dacinfe , n_level, cs_real_t);
+  if (         _atmo_option.rad_1d_aco2 == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_aco2, n_level*n_level, cs_real_t);
+  if (         _atmo_option.rad_1d_aco2s == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_aco2s, n_level*n_level, cs_real_t);
+  if (         _atmo_option.rad_1d_daco2 == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_daco2, n_level*n_level, cs_real_t);
+  if (         _atmo_option.rad_1d_daco2s == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_daco2s, n_level*n_level, cs_real_t);
+  if (         _atmo_option.rad_1d_acsup == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_acsup, n_level, cs_real_t);
+  if (         _atmo_option.rad_1d_acsups == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_acsups, n_level, cs_real_t);
+  if (         _atmo_option.rad_1d_dacsup == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_dacsup, n_level, cs_real_t);
+  if (         _atmo_option.rad_1d_dacsups == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_dacsups, n_level, cs_real_t);
+  if (         _atmo_option.rad_1d_tauzq == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_tauzq, n_level+1, cs_real_t);
+  if (         _atmo_option.rad_1d_tauz == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_tauz, n_level+1, cs_real_t);
+  if (         _atmo_option.rad_1d_zq == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_zq, n_level+1, cs_real_t);
+  if (         _atmo_option.rad_1d_zray == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_zray, n_level, cs_real_t);
+  if (         _atmo_option.rad_1d_ir_div == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_ir_div, n_level * n_vert, cs_real_t);
+  if (         _atmo_option.rad_1d_sol_div == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_sol_div, n_level * n_vert, cs_real_t);
+  if (         _atmo_option.rad_1d_iru == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_iru, n_level * n_vert, cs_real_t);
+  if (         _atmo_option.rad_1d_ird == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_ird, n_level * n_vert, cs_real_t);
+  if (         _atmo_option.rad_1d_solu == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_solu, n_level * n_vert, cs_real_t);
+  if (         _atmo_option.rad_1d_sold == NULL)
+    BFT_MALLOC(_atmo_option.rad_1d_sold, n_level * n_vert, cs_real_t);
+
+  *xyvert = _atmo_option.rad_1d_xy;
+  *zvert  = _atmo_option.rad_1d_z;
+  *acinfe = _atmo_option.rad_1d_acinfe;
+  *dacinfe = _atmo_option.rad_1d_dacinfe;
+  *aco2   = _atmo_option.rad_1d_aco2  ;
+  *aco2s  = _atmo_option.rad_1d_aco2s ;
+  *daco2  = _atmo_option.rad_1d_daco2 ;
+  *daco2s = _atmo_option.rad_1d_daco2s;
+  *acsup  = _atmo_option.rad_1d_acsup ;
+  *acsups = _atmo_option.rad_1d_acsups;
+  *dacsup = _atmo_option.rad_1d_dacsup;
+  *dacsups = _atmo_option.rad_1d_dacsups;
+  *tauzq  = _atmo_option.rad_1d_tauzq ;
+  *tauz   = _atmo_option.rad_1d_tauz  ;
+  *zq     = _atmo_option.rad_1d_zq    ;
+  *zray   = _atmo_option.rad_1d_zray  ;
+  *rayi   = _atmo_option.rad_1d_ir_div  ;
+  *rayst  = _atmo_option.rad_1d_sol_div ;
+  *iru    = _atmo_option.rad_1d_iru   ;
+  *ird    = _atmo_option.rad_1d_ird   ;
+  *solu   = _atmo_option.rad_1d_solu  ;
+  *sold   = _atmo_option.rad_1d_sold  ;
+
+  dim_u_met[0]     = _atmo_option.met_1d_nlevels_d;
+  dim_u_met[1]     = _atmo_option.met_1d_ntimes;
+  dim_hyd_p_met[0] = _atmo_option.met_1d_nlevels_max_t;
+  dim_hyd_p_met[1] = _atmo_option.met_1d_ntimes;
+  dim_pot_t_met[0] = _atmo_option.met_1d_nlevels_max_t;
+  dim_pot_t_met[1] = _atmo_option.met_1d_ntimes;
+  dim_ek_met[0]    = _atmo_option.met_1d_nlevels_d;
+  dim_ek_met[1]    = _atmo_option.met_1d_ntimes;
+  dim_ep_met[0]    = _atmo_option.met_1d_nlevels_d;
+  dim_ep_met[1]    = _atmo_option.met_1d_ntimes;
+  dim_xyvert[0]    = _atmo_option.rad_1d_nvert;
+  dim_xyvert[1]    = 3;
+  dim_kmx2[0]    = _atmo_option.rad_1d_nlevels_max;
+  dim_kmx2[1]    = _atmo_option.rad_1d_nlevels_max;
+  dim_kmx_nvert[0] = _atmo_option.rad_1d_nlevels_max;
+  dim_kmx_nvert[1] = _atmo_option.rad_1d_nvert;
+
 }
 
 void
@@ -3286,11 +3459,36 @@ cs_atmo_finalize(void)
   BFT_FREE(_atmo_option.z_temp_met);
   BFT_FREE(_atmo_option.u_met);
   BFT_FREE(_atmo_option.v_met);
+  BFT_FREE(_atmo_option.w_met);
   BFT_FREE(_atmo_option.time_met);
   BFT_FREE(_atmo_option.hyd_p_met);
   BFT_FREE(_atmo_option.pot_t_met);
   BFT_FREE(_atmo_option.ek_met);
   BFT_FREE(_atmo_option.ep_met);
+
+  BFT_FREE(_atmo_option.rad_1d_xy);
+  BFT_FREE(_atmo_option.rad_1d_z);
+  BFT_FREE(_atmo_option.rad_1d_acinfe);
+  BFT_FREE(_atmo_option.rad_1d_dacinfe);
+  BFT_FREE(_atmo_option.rad_1d_aco2);
+  BFT_FREE(_atmo_option.rad_1d_aco2s);
+  BFT_FREE(_atmo_option.rad_1d_daco2);
+  BFT_FREE(_atmo_option.rad_1d_daco2s);
+  BFT_FREE(_atmo_option.rad_1d_acsup);
+  BFT_FREE(_atmo_option.rad_1d_acsups);
+  BFT_FREE(_atmo_option.rad_1d_dacsup);
+  BFT_FREE(_atmo_option.rad_1d_dacsups);
+  BFT_FREE(_atmo_option.rad_1d_tauzq);
+  BFT_FREE(_atmo_option.rad_1d_tauz);
+  BFT_FREE(_atmo_option.rad_1d_zq);
+  BFT_FREE(_atmo_option.rad_1d_zray);
+  BFT_FREE(_atmo_option.rad_1d_ir_div);
+  BFT_FREE(_atmo_option.rad_1d_sol_div);
+  BFT_FREE(_atmo_option.rad_1d_iru);
+  BFT_FREE(_atmo_option.rad_1d_ird);
+  BFT_FREE(_atmo_option.rad_1d_solu);
+  BFT_FREE(_atmo_option.rad_1d_sold);
+
 }
 
 /*----------------------------------------------------------------------------*/

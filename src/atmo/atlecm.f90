@@ -252,7 +252,7 @@ if (imode.eq.0) then
   enddo
 
   !-->  Computes nbmaxt:
-  !     if 1d radiative model (iatra1 = 1) altitudes are completed up to 11000m
+  !     if 1D radiative model (iatra1 = 1) altitudes are completed up to 11000m
   !     (i.e. nbmaxt > nbmett, used for dimensions of ttmet and qvmet array)
   !     if no radiative model nbmaxt = nbmett
   nbmaxt = nbmett

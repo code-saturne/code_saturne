@@ -146,16 +146,62 @@ typedef struct {
   /*! y coordinate of the domain origin in Lambert-93 */
   cs_real_t y_l93;
   /*! numbers of altitudes for the dynamics */
-  int nbmetd;
+  int met_1d_nlevels_d;
   /*! numbers of altitudes for the temperature and specific humidity */
-  int nbmett;
+  int met_1d_nlevels_t;
   /*! numbers of time steps for the meteo profiles */
-  /*! Number of vertical levels */
-  int nbmetm;
+  int met_1d_ntimes;
 
+  /*! Number of vertical levels */
+  int met_1d_nlevels_max_t;
   /*! 1-D radiative model (0 off, 1 on) */
   int radiative_model_1d;
-  int nbmaxt;
+  /*! 1-D radiative model: number of vertical arrays */
+  int rad_1d_nvert;
+  /*! 1-D radiative model: number of levels (up to the top of the domain) */
+  int rad_1d_nlevels;
+  /*! 1-D radiative model: number of levels (up to 11000 m)
+    (automatically computed) */
+  int rad_1d_nlevels_max;
+
+  /*! horizontal coordinates of the vertical grid */
+  cs_real_t *rad_1d_xy;
+
+  /*! vertical grid for 1D radiative scheme */
+  cs_real_t *rad_1d_z;
+  /*! absorption for CO2 + 03 */
+  cs_real_t *rad_1d_acinfe;
+  /*! differential absorption for CO2 + 03 */
+  cs_real_t *rad_1d_dacinfe;
+  /*! absorption for CO2 only */
+  cs_real_t *rad_1d_aco2;
+  cs_real_t *rad_1d_aco2s;
+  /*! differential absorption for CO2 only */
+  cs_real_t *rad_1d_daco2;
+  cs_real_t *rad_1d_daco2s;
+  /*! as acinfe, downwing flux */
+  cs_real_t *rad_1d_acsup;
+  cs_real_t *rad_1d_acsups;
+  cs_real_t *rad_1d_dacsup;
+  cs_real_t *rad_1d_dacsups;
+  /*! internal variable for 1D radiative model */
+  cs_real_t *rad_1d_tauzq;
+  /*! internal variable for 1D radiative model */
+  cs_real_t *rad_1d_tauz;
+  /*! internal variable for 1D radiative model */
+  cs_real_t *rad_1d_zq;
+  /*! internal variable for 1D radiative model */
+  cs_real_t *rad_1d_zray;
+  /*! flux divergence of IR radiation */
+  cs_real_t *rad_1d_ir_div;
+  /*! flux divergence of solar radiation */
+  cs_real_t *rad_1d_sol_div;
+  /*! Upward and downward radiative fluxes (infrared, solar) along each vertical */
+  cs_real_t *rad_1d_iru;
+  cs_real_t *rad_1d_ird;
+  cs_real_t *rad_1d_solu;
+  cs_real_t *rad_1d_sold;
+
   /*! Domain orientation (angle in degree between y direction and north),
    * 0 by default */
   cs_real_t domain_orientation;
@@ -255,6 +301,8 @@ typedef struct {
   cs_real_t *u_met;
   /*! meteo v profiles */
   cs_real_t *v_met;
+  /*! meteo w profiles */
+  cs_real_t *w_met;
   /*! meteo turbulent kinetic energy profile */
   cs_real_t *ek_met;
   /*! meteo turbulent dissipation profile */

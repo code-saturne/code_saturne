@@ -172,32 +172,32 @@ cs_user_initialization(cs_domain_t     *domain)
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-    const cs_real_t xuent = cs_intprf(cs_glob_atmo_option->nbmetd,
-                                      cs_glob_atmo_option->nbmetm,
+    const cs_real_t xuent = cs_intprf(cs_glob_atmo_option->met_1d_nlevels_d,
+                                      cs_glob_atmo_option->met_1d_ntimes,
                                       cs_glob_atmo_option->z_temp_met,
                                       cs_glob_atmo_option->time_met,
                                       cs_glob_atmo_option->u_met,
                                       cell_cen[c_id][2],
                                       cs_glob_time_step->t_cur);
 
-    const cs_real_t xvent = cs_intprf(cs_glob_atmo_option->nbmetd,
-                                      cs_glob_atmo_option->nbmetm,
+    const cs_real_t xvent = cs_intprf(cs_glob_atmo_option->met_1d_nlevels_d,
+                                      cs_glob_atmo_option->met_1d_ntimes,
                                       cs_glob_atmo_option->z_temp_met,
                                       cs_glob_atmo_option->time_met,
                                       cs_glob_atmo_option->v_met,
                                       cell_cen[c_id][2],
                                       cs_glob_time_step->t_cur);
 
-    const cs_real_t xkent = cs_intprf(cs_glob_atmo_option->nbmetd,
-                                      cs_glob_atmo_option->nbmetm,
+    const cs_real_t xkent = cs_intprf(cs_glob_atmo_option->met_1d_nlevels_d,
+                                      cs_glob_atmo_option->met_1d_ntimes,
                                       cs_glob_atmo_option->z_temp_met,
                                       cs_glob_atmo_option->time_met,
                                       cs_glob_atmo_option->ek_met,
                                       cell_cen[c_id][2],
                                       cs_glob_time_step->t_cur);
 
-    const cs_real_t xeent = cs_intprf(cs_glob_atmo_option->nbmetd,
-                                      cs_glob_atmo_option->nbmetm,
+    const cs_real_t xeent = cs_intprf(cs_glob_atmo_option->met_1d_nlevels_d,
+                                      cs_glob_atmo_option->met_1d_ntimes,
                                       cs_glob_atmo_option->z_temp_met,
                                       cs_glob_atmo_option->time_met,
                                       cs_glob_atmo_option->ep_met,
@@ -236,8 +236,8 @@ cs_user_initialization(cs_domain_t     *domain)
     if (th_f != NULL) {
 
       /* Assume the scalar is a potential temperature */
-      const cs_real_t tpent = cs_intprf(cs_glob_atmo_option->nbmaxt,
-                                        cs_glob_atmo_option->nbmetm,
+      const cs_real_t tpent = cs_intprf(cs_glob_atmo_option->met_1d_nlevels_max_t,
+                                        cs_glob_atmo_option->met_1d_ntimes,
                                         cs_glob_atmo_option->z_temp_met,
                                         cs_glob_atmo_option->time_met,
                                         cs_glob_atmo_option->pot_t_met,
