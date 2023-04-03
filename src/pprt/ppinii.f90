@@ -745,13 +745,6 @@ vertical_influence_radius = 100.d0
 
 call field_get_key_id("opt_interp_id", kopint)
 
-! -------------------------------------
-! flags for 1d radiative transfer model
-! -------------------------------------
-
-! no computation / storage of downward and upward infrared radiative fluxes
-irdu = 1
-
 ! initmeteo --> use meteo profile for variables initialization
 !               (0: not used; 1: used )
 ! NB : should eventually be set by interface and by zone (as BCs)

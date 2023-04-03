@@ -268,10 +268,6 @@ integer, save:: idrayst
 !> grid formed by 1D profiles
 integer, save:: igrid
 
-!> Flag for the computation of downward and upward infrared radiative fluxes
-!> 0: disabled
-!> 1: enabled
-integer, save:: irdu
 
 ! 2.6 Arrays specific to the 1d atmospheric radiative module
 !-------------------------------------------------------------------------------
@@ -914,10 +910,7 @@ if (imeteo.gt.0) then
     call mestcr("rayst"//c_null_char, 1, 0, idrayst)
     call gridcr("int_grid"//c_null_char, igrid)
 
-    if (irdu.eq.1) then
-      allocate(iru(kmx,nvert), ird(kmx,nvert))
-    endif
-
+    allocate(iru(kmx,nvert), ird(kmx,nvert))
     allocate(sold(kmx,nvert), solu(kmx,nvert))
 
   endif
@@ -991,10 +984,7 @@ if (imeteo.gt.0) then
 
     call grides ()
 
-    if (irdu.eq.1) then
-      deallocate(iru, ird)
-    endif
-
+    deallocate(iru, ird)
     deallocate(solu, sold)
 
   endif
