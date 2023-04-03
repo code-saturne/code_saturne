@@ -293,6 +293,7 @@ do iflid = 0, nfld-1
     f_name = 'inner_mass_flux_'//trim(name)
     call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
     call field_set_key_str(f_id, keylbl, f_name)
+    call field_set_key_int(f_id, keylog, 0)
 
     ! Set the inner mass flux index
     call field_set_key_int(iflid, kimasf, f_id)
@@ -314,6 +315,7 @@ do iflid = 0, nfld-1
     f_name = 'boundary_mass_flux_'//trim(name)
     call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
     call field_set_key_str(f_id, keylbl, f_name)
+    call field_set_key_int(f_id, keylog, 0)
 
     ! Set the boundary mass flux index
     call field_set_key_int(iflid, kbmasf, f_id)
@@ -356,7 +358,7 @@ do iflid = 0, nfld-1
 
       ! Set the same visualization options as the scalar
       call field_set_key_int(f_id, keyvis, iopchr)
-      call field_set_key_int(f_id, keyvis, ilog)
+      call field_set_key_int(f_id, keylog, ilog)
 
     endif
 
