@@ -693,15 +693,10 @@ ihpm = 0
 
 ! iatra1 -->  flag for the use of the 1d atmo radiative model
 ! nfatr1 --> 1d radiative model pass frequency
-! ivert  --> flag for the definition of the vertical grid
-!            -1: no vertical grid
-!            0 : automatic definition !!!!!!!!!MM 2do
-!            1 : definition by the user in usatdv
 ! iqv0   --> flag for humidity above the domain (0 : no humidity; 1 : decreasing)
 
 iatra1 = 0
 nfatr1 = 1
-ivert = 1  ! if iatra1=1 then ivert=1
 iqv0 = 0
 
 ! --> Initialisation for the 1d radiative model:
