@@ -26,7 +26,7 @@
 !> More precisely, compute atmospheric infrared (IR) radiation model quantities:
 !> - vertical profile of IR flux divergence,
 !> - downward IR flux at ground level
-!> - upward and downward fluxes at different vertical levels if \ref irdu = 1
+!> - upward and downward fluxes at different vertical levels
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
@@ -89,7 +89,7 @@ use ppincl
 use cs_c_bindings
 use mesh
 use field
-use atincl, only: kmx, sigc, irdu, iru, ird
+use atincl, only: kmx, sigc, iru, ird
 use ctincl, only: cp_a, cp_v
 use cstnum, only: epzero, pi
 use radiat
@@ -158,10 +158,8 @@ allocate(pspo(kmx), pspoqq(kmx), dt4dz(kmx), tqq(kmx))
 allocate(dz0(kmx))
 allocate(kliq(kmx+1))
 
-if (irdu.eq.1) then
-  allocate(dfir(kmx), ufir(kmx))
-  allocate(ckup(kmx), ckdown(kmx))
-endif
+allocate(dfir(kmx), ufir(kmx))
+allocate(ckup(kmx), ckdown(kmx))
 
 ! local initializations
 
@@ -394,69 +392,68 @@ if (inua.ne.1) then
   foir = sig*(fo + t4zt*(1.d0 - tauv + acsup(k1)))
 
   ! IR flux calculation in the vertical layers
-  if (irdu.eq.1) then
-    do i = k1, kmray
-      dfir(i) = 0.d0
-      ufir(i) = 0.d0
+  do i = k1, kmray
+    dfir(i) = 0.d0
+    ufir(i) = 0.d0
 
-      ! downward fluxes
-      do k=i+1,kmray
-        qqqqv = qqv(k)-qqqv(i)
-        qqqqc = qqc(k)-qqqc(i)
-        call rayive(tauv, dtauv, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
-
-        dfir(i) = dfir(i)-(1.d0-tauv+aco2(i,k))*dt4dz(k)*dz0(k-1)
-      enddo
-
-      qqqqv = xqqvinf-qqqv(i)
-      qqqqc = xqqcinf-qqqc(i)
+    ! downward fluxes
+    do k=i+1,kmray
+      qqqqv = qqv(k)-qqqv(i)
+      qqqqc = qqc(k)-qqqc(i)
       call rayive(tauv, dtauv, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
 
-      dfir(i) = sig*(dfir(i)+t4zt*(1.d0-tauv+acsup(i)))
-
-      ! upward fluxes
-      if (i.gt.k1) then
-        do k = k1+1, i
-          qqqqv = qqqv(i)-qqv(k)
-          qqqqc = qqqc(i)-qqc(k)
-          call rayive(tauv, dtauv, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
-
-          ufir(i) = ufir(i)+(1.d0-tauv+aco2(i,k))*dt4dz(k)*dz0(k-1)
-        enddo
-      endif
-
-      ! contribution of the upward flux reflected at the gound
-      ! The modification proposed by Ponnulakshmi and al. (2009) for the upward
-      ! flux reflected by the ground when emissivity is different from 1
-      ! requires to compute the integral below (a3).
-      a3 = 0.d0
-      do k = k1+1, kmray
-        qqqqv = qqqv(i)+qqv(k)
-        qqqqc = qqqc(i)+qqc(k)
-
-        call rayive(tauv, dtauv, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
-        a3 = a3-dt4dz(k)*(1.-tauv+aco2s(i,k))*dz0(k-1)
-      enddo
-
-      qqqqv = qqqv(i) + xqqvinf
-      qqqqc = qqqc(i) + xqqcinf
-
-      call rayive(tvsups, dtvsups, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
-
-      foirs1 = sig*a3
-      foirs2 = sig*t4zt*(1.-tvsups+acsups(i))
-      foirs = foirs1 + foirs2
-
-      ! upward fluxes estimation (sum of direct part and reflected part)
-      if(i.gt.k1) then
-        call rayive(tauv,dtauv,qqqv(i),qv0(k1),qqqc(i),qc(k1),romray(k1))
-
-        ufir(i) = sig*ufir(i)+emis*sig*t41+(1.-emis)*foirs
-      else
-        ufir(k1) = (1.-emis)*foir+emis*sig*t41
-      endif
+      dfir(i) = dfir(i)-(1.d0-tauv+aco2(i,k))*dt4dz(k)*dz0(k-1)
     enddo
-  endif ! irdu.eq.1
+
+    qqqqv = xqqvinf-qqqv(i)
+    qqqqc = xqqcinf-qqqc(i)
+    call rayive(tauv, dtauv, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
+
+    dfir(i) = sig*(dfir(i)+t4zt*(1.d0-tauv+acsup(i)))
+
+    ! upward fluxes
+    if (i.gt.k1) then
+      do k = k1+1, i
+        qqqqv = qqqv(i)-qqv(k)
+        qqqqc = qqqc(i)-qqc(k)
+        call rayive(tauv, dtauv, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
+
+        ufir(i) = ufir(i)+(1.d0-tauv+aco2(i,k))*dt4dz(k)*dz0(k-1)
+      enddo
+    endif
+
+    ! contribution of the upward flux reflected at the gound
+    ! The modification proposed by Ponnulakshmi and al. (2009) for the upward
+    ! flux reflected by the ground when emissivity is different from 1
+    ! requires to compute the integral below (a3).
+    a3 = 0.d0
+    do k = k1+1, kmray
+      qqqqv = qqqv(i)+qqv(k)
+      qqqqc = qqqc(i)+qqc(k)
+
+      call rayive(tauv, dtauv, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
+      a3 = a3-dt4dz(k)*(1.-tauv+aco2s(i,k))*dz0(k-1)
+    enddo
+
+    qqqqv = qqqv(i) + xqqvinf
+    qqqqc = qqqc(i) + xqqcinf
+
+    call rayive(tvsups, dtvsups, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
+
+    foirs1 = sig*a3
+    foirs2 = sig*t4zt*(1.-tvsups+acsups(i))
+    foirs = foirs1 + foirs2
+
+    ! upward fluxes estimation (sum of direct part and reflected part)
+    if(i.gt.k1) then
+      call rayive(tauv,dtauv,qqqv(i),qv0(k1),qqqc(i),qc(k1),romray(k1))
+
+      ufir(i) = sig*ufir(i)+emis*sig*t41+(1.-emis)*foirs
+    else
+      ufir(k1) = (1.-emis)*foir+emis*sig*t41
+    endif
+  enddo
+  ! End IR flux calculation in the vertical layers
 
 else
 
@@ -483,17 +480,44 @@ else
   foir = sig*(fo + t4zt*(1.d0 - (1.d0 + fn*(taul - 1.d0))*(tauv - acsup(k1))))
 
   ! IR flux calculation in the vertical layers
-  if (irdu.eq.1) then
-    do i = k1, kmray
-      dfir(i) = 0.d0
-      ufir(i) = 0.d0
-      fn = fnerir(i)
-      do k = i+1, kmray
+  do i = k1, kmray
+    dfir(i) = 0.d0
+    ufir(i) = 0.d0
+    fn = fnerir(i)
+    do k = i+1, kmray
+      ! cloud fraction estimation (we take the maximum)
+      fn = max(fn,fnerir(k))
+      qqqqv = qqv(k)-qqqv(i)
+      qqqqc = qqc(k)-qqqc(i)
+      qqqql = qql(k)-qqql(i)
+
+      if (fn.lt.1.d-3) then
+        fn = 0.d0
+        taul = 0.d0
+      else
+        taul = exp(-kliq(k)*qqqql/fn)
+      endif
+
+      ! downward fluxes
+      call rayive(tauv, dtauv, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
+      dfir(i) = dfir(i)-(1.d0-(1.d0+fn*(taul-1.d0))*(tauv-aco2(i,k)))      &
+               *dt4dz(k)*dz0(k-1)
+    enddo
+
+    qqqqv = xqqvinf-qqqv(i)
+    qqqqc = xqqcinf-qqqc(i)
+    call rayive(tauv, dtauv, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
+
+    dfir(i) = sig*(dfir(i)+t4zt*(1.d0-(1.d0+fn*(taul-1.d0))*(tauv-acsup(i))))
+
+    ! upward fluxes
+    if (i.gt.k1) then
+      do k = k1+1, i
         ! cloud fraction estimation (we take the maximum)
         fn = max(fn,fnerir(k))
-        qqqqv = qqv(k)-qqqv(i)
-        qqqqc = qqc(k)-qqqc(i)
-        qqqql = qql(k)-qqql(i)
+        qqqqv = qqqv(i)-qqv(k)
+        qqqqc = qqqc(i)-qqc(k)
+        qqqql = qqql(i)-qql(k)
 
         if (fn.lt.1.d-3) then
           fn = 0.d0
@@ -502,78 +526,49 @@ else
           taul = exp(-kliq(k)*qqqql/fn)
         endif
 
-        ! downward fluxes
         call rayive(tauv, dtauv, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
-        dfir(i) = dfir(i)-(1.d0-(1.d0+fn*(taul-1.d0))*(tauv-aco2(i,k)))      &
-                 *dt4dz(k)*dz0(k-1)
+        ufir(i) = ufir(i)+(1.d0-(1.d0+fn*(taul-1.d0))*(tauv-aco2(i,k)))    &
+                  *dt4dz(k)*dz0(k-1)
       enddo
+    endif
 
-      qqqqv = xqqvinf-qqqv(i)
-      qqqqc = xqqcinf-qqqc(i)
+    ! contribution of the upward flux reflected at the gound
+    ! Modification of Ponnulakshmi and al. (2009)
+    a3 = 0.d0
+    do k = k1+1, kmray
+      qqqqv = qqqv(i) + qqv(k)
+      qqqqc = qqqc(i) + qqc(k)
+      qqqql = qqql(i) + qql(k)
+
       call rayive(tauv, dtauv, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
 
-      dfir(i) = sig*(dfir(i)+t4zt*(1.d0-(1.d0+fn*(taul-1.d0))*(tauv-acsup(i))))
-
-      ! upward fluxes
-      if (i.gt.k1) then
-        do k = k1+1, i
-          ! cloud fraction estimation (we take the maximum)
-          fn = max(fn,fnerir(k))
-          qqqqv = qqqv(i)-qqv(k)
-          qqqqc = qqqc(i)-qqc(k)
-          qqqql = qqql(i)-qql(k)
-
-          if (fn.lt.1.d-3) then
-            fn = 0.d0
-            taul = 0.d0
-          else
-            taul = exp(-kliq(k)*qqqql/fn)
-          endif
-
-          call rayive(tauv, dtauv, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
-          ufir(i) = ufir(i)+(1.d0-(1.d0+fn*(taul-1.d0))*(tauv-aco2(i,k)))    &
-                    *dt4dz(k)*dz0(k-1)
-        enddo
-      endif
-
-      ! contribution of the upward flux reflected at the gound
-      ! Modification of Ponnulakshmi and al. (2009)
-      a3 = 0.d0
-      do k = k1+1, kmray
-        qqqqv = qqqv(i) + qqv(k)
-        qqqqc = qqqc(i) + qqc(k)
-        qqqql = qqql(i) + qql(k)
-
-        call rayive(tauv, dtauv, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
-
-        if(fn.lt.1.d-3) then
-          fn = 0.d0
-          taul = 0.d0
-        else
-          taul = exp(-kliq(k)*qqqql/fn)
-        endif
-        a3 = a3 - (1.d0-(1.d0+fn*(taul-1.d0))*(tauv-aco2s(i,k)))           &
-          *dt4dz(k)*dz0(k-1)
-      enddo
-
-      qqqqv = qqqv(i) + xqqvinf
-      qqqqc = qqqc(i) + xqqcinf
-
-      call rayive(tvsups, dtvsups, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
-      foirs = sig*(a3+(1.-(1.+fn*(taul-1.))*(tvsups-acsups(i)))*t4zt)
-
-      ! upward fluxes estimation (sum of direct part and reflected part)
-      if (i.gt.k1) then
-        call rayive(tauv, dtauv, qqqv(i), qv0(k1), qqqc(i), qc(k1), romray(k1))
-
-        ufir(i) = sig*ufir(i)+emis*sig*t41+(1.-emis)*foirs
+      if(fn.lt.1.d-3) then
+        fn = 0.d0
+        taul = 0.d0
       else
-        ufir(k1) = (1.-emis)*foir+emis*sig*t41
+        taul = exp(-kliq(k)*qqqql/fn)
       endif
-
+      a3 = a3 - (1.d0-(1.d0+fn*(taul-1.d0))*(tauv-aco2s(i,k)))           &
+        *dt4dz(k)*dz0(k-1)
     enddo
 
-  endif
+    qqqqv = qqqv(i) + xqqvinf
+    qqqqc = qqqc(i) + xqqcinf
+
+    call rayive(tvsups, dtvsups, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
+    foirs = sig*(a3+(1.-(1.+fn*(taul-1.))*(tvsups-acsups(i)))*t4zt)
+
+    ! upward fluxes estimation (sum of direct part and reflected part)
+    if (i.gt.k1) then
+      call rayive(tauv, dtauv, qqqv(i), qv0(k1), qqqc(i), qc(k1), romray(k1))
+
+      ufir(i) = sig*ufir(i)+emis*sig*t41+(1.-emis)*foirs
+    else
+      ufir(k1) = (1.-emis)*foir+emis*sig*t41
+    endif
+
+  enddo
+
 endif
 
 ! 6. Cooling in the vertical layers
@@ -783,25 +778,22 @@ else
   enddo
 endif
 
-if (irdu.eq.1) then
-  do k = 1, kmray
-    iru(k,ivertc) = ufir(k)
-    ird(k,ivertc) = dfir(k)
+do k = 1, kmray
+  iru(k,ivertc) = ufir(k)
+  ird(k,ivertc) = dfir(k)
 
-    ! Ck_up = depsg0 / (1 - epsg0)
-    ! With:
-    ! epsg0 = 1 - tv_infinity + acinfinity
-    ! depsg0 = - dtv_infinity + dacinfinity
-    ckup(k) = (dacinfe(k) - dtvinfe) / (tvinfe - acinfe(k))
+  ! Ck_up = depsg0 / (1 - epsg0)
+  ! With:
+  ! epsg0 = 1 - tv_infinity + acinfinity
+  ! depsg0 = - dtv_infinity + dacinfinity
+  ckup(k) = (dacinfe(k) - dtvinfe) / (tvinfe - acinfe(k))
 
-    ! Ck_down = -depsgz / (1 - epsgz)
-    ! With:
-    ! epsgz = 1 - tv_sup + acinfinity
-    ! depsgz = - dtv_infinity + dacinfinity
-    ckdown(k) = (dacsup(k) - dtvsup) / (tvsup - acsup(k))
-  enddo
-
-endif
+  ! Ck_down = -depsgz / (1 - epsgz)
+  ! With:
+  ! epsgz = 1 - tv_sup + acinfinity
+  ! depsgz = - dtv_infinity + dacinfinity
+  ckdown(k) = (dacsup(k) - dtvsup) / (tvsup - acsup(k))
+enddo
 
 ! Compute Boundary conditions for the 3D InfraRed radiance
 ! at the top of the CFD domain
@@ -879,10 +871,8 @@ if (f_id.ge.0) then
 
 endif
 
-if (irdu.eq.1) then
-  deallocate(ufir,dfir)
-  deallocate(ckup, ckdown)
-endif
+deallocate(ufir,dfir)
+deallocate(ckup, ckdown)
 
 deallocate(rov,roc,rol,qv0,qc)
 deallocate(qqc,qql)

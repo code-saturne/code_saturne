@@ -425,9 +425,6 @@ isepchemistry = 1
 ! dtchemmax: maximal time step (s) for chemistry resolution
 dtchemmax = 10.0d0
 
-! computation / storage of downward and upward infrared radiative fluxes
-irdu = 1
-
 !< [usati1]
 
 !< [usatsoil]
