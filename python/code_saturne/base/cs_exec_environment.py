@@ -931,7 +931,7 @@ def get_ld_library_path_additions(pkg):
 
 #-------------------------------------------------------------------------------
 
-def source_syrthes_env(pkg, verbose=True):
+def source_syrthes_env(pkg, verbose=True, force=False):
     """
     Source SYRTHES environment
     """
@@ -979,9 +979,9 @@ def source_syrthes_env(pkg, verbose=True):
                 # Ensure exit from the loop once syrthes is found
                 break
 
-    env_syrthes_home = os.getenv('SYRTHES4_HOME')
+    env_syrthes_home = os.getenv('SYRTHES_HOME')
     if not env_syrthes_home:
-        env_syrthes_home = os.getenv('SYRTHES_HOME')
+        env_syrthes_home = os.getenv('SYRTHES4_HOME')
 
     if not syrthes_home:
         if verbose:
@@ -1000,7 +1000,7 @@ def source_syrthes_env(pkg, verbose=True):
 
     # Now source environment if not done already or different
 
-    if syrthes_home != env_syrthes_home:
+    if syrthes_home != env_syrthes_home or force:
         syr_profile = os.path.join(config.get('install', 'syrthes'),
                                    'bin', 'syrthes.profile')
         if verbose:
