@@ -39,6 +39,7 @@ from code_saturne.base.cs_exec_environment import run_command
 from code_saturne.base.cs_exec_environment import enquote_arg, separate_args
 from code_saturne.base.cs_exec_environment import get_ld_library_path_additions
 from code_saturne.base.cs_exec_environment import source_syrthes_env
+from code_saturne.base.cs_exec_environment import write_shell_shebang
 
 from code_saturne.base.cs_meg_to_c import meg_to_c_interpreter
 
@@ -1506,7 +1507,7 @@ class syrthes_domain(base_domain):
 
         # Always requires local buildn so relative path always known.
 
-        self.solver_path = os.path.join('.', 'syrthes')
+        self.solver_path = os.path.join('.', 'syrthes.sh')
 
         # Generation of SYRTHES case deferred until we know how
         # many processors are really required
@@ -1516,25 +1517,36 @@ class syrthes_domain(base_domain):
         # Determine environment which should be used for Syrthes
         # operations
 
-        ld_library_path_save = os.getenv('LD_LIBRARY_PATH')
+        self.paths_top = self.__paths_save__()
 
-        source_syrthes_env(self.package, verbose)
+        source_syrthes_env(self.package, verbose, force=True)
 
-        self.ld_library_path = os.getenv('LD_LIBRARY_PATH')
-
-        self.__ld_library_path_restore__(ld_library_path_save)
+        self.paths_syr = self.__paths_save__()
+        self.__paths_restore__(self.paths_top)
 
     #---------------------------------------------------------------------------
 
-    def __ld_library_path_restore__(self, ld_library_path_save):
+    def __paths_save__(self):
 
-        if ld_library_path_save:
-            os.environ['LD_LIBRARY_PATH'] = ld_library_path_save
-        else:
-            try:
-                os.environ.pop('LD_LIBRARY_PATH')
-            except Exception:
-                pass
+        path_save = {}
+
+        for p in ('PATH', 'LD_LIBRARY_PATH'):
+            path_save[p] = os.getenv(p)
+
+        return path_save
+
+    #---------------------------------------------------------------------------
+
+    def __paths_restore__(self, path_save):
+
+        for p in ('PATH', 'LD_LIBRARY_PATH'):
+            if path_save[p]:
+                os.environ[p] = path_save[p]
+            else:
+                try:
+                    os.environ.pop(p)
+                except Exception:
+                    pass
 
     #---------------------------------------------------------------------------
 
@@ -1664,6 +1676,8 @@ class syrthes_domain(base_domain):
 
         # Define syrthes case structure
 
+        self.__paths_restore__(self.paths_syr)
+
         import syrthes
         self.syrthes_case = syrthes.process_cmd_line(args.split())
 
@@ -1675,6 +1689,8 @@ class syrthes_domain(base_domain):
         # Read data file and store parameters
 
         self.syrthes_case.read_data_file()
+
+        self.__paths_restore__(self.paths_top)
 
     #---------------------------------------------------------------------------
 
@@ -1691,9 +1707,6 @@ class syrthes_domain(base_domain):
         # determine whether compilation should use MPI, and this is
         # always true anyways in the coupled case.
 
-        ld_library_path_save = os.getenv('LD_LIBRARY_PATH')
-        os.environ['LD_LIBRARY_PATH'] = self.ld_library_path
-
         self.__init_syrthes_case__()
 
         # Build exec_srcdir
@@ -1705,7 +1718,19 @@ class syrthes_domain(base_domain):
 
         compile_logname = os.path.join(self.exec_dir, 'compile.log')
 
+        self.__paths_restore__(self.paths_syr)
+
         retval = self.syrthes_case.prepare_run(exec_srcdir, compile_logname)
+
+        self.__paths_restore__(self.paths_top)
+
+        # Remove duplicates in src and parent
+
+        for f in os.listdir(exec_srcdir):
+            try:
+                self.purge_result(f)
+            except Exception:
+                pass
 
         self.copy_result(compile_logname)
 
@@ -1722,9 +1747,29 @@ class syrthes_domain(base_domain):
 
         sys.stdout.write('\n')
 
-        # Restore environment
+        # Generate Syrthes wrapper script
 
-        self.__ld_library_path_restore__(ld_library_path_save)
+        s_path = os.path.join(self.exec_dir, 'syrthes.sh')
+        s = open(s_path, 'w')
+
+        write_shell_shebang(s)
+
+        env_syrthes_home = os.getenv('SYRTHES_HOME')
+        if not env_syrthes_home:
+            env_syrthes_home = os.getenv('SYRTHES4_HOME')
+
+        syr_profile = os.path.join(env_syrthes_home,
+                                   'bin', 'syrthes.profile')
+
+        s.write('source ' + syr_profile + ' > /dev/null 2>&1\n')
+
+        s.write(os.path.join('.', 'syrthes') + ' $@\n\n')
+
+        s.close()
+
+        oldmode = (os.stat(s_path)).st_mode
+        newmode = oldmode | (stat.S_IXUSR)
+        os.chmod(s_path, newmode)
 
     #---------------------------------------------------------------------------
 
@@ -1733,11 +1778,10 @@ class syrthes_domain(base_domain):
         Partition mesh for parallel run if required by user
         """
 
-        ld_library_path_save = os.getenv('LD_LIBRARY_PATH')
-        os.environ['LD_LIBRARY_PATH'] = self.ld_library_path
-
         # Rebuild Syrthes case now that number of processes is known
         self.__init_syrthes_case__()
+
+        self.__paths_restore__(self.paths_syr)
 
         # Sumary of the parameters
         self.syrthes_case.dump()
@@ -1748,11 +1792,12 @@ class syrthes_domain(base_domain):
         # Pre-processing (including partitioning only if SYRTHES
         # computation is done in parallel)
         retval = self.syrthes_case.preprocessing()
+
+        self.__paths_restore__(self.paths_top)
+
         if retval != 0:
             err_str = '\n  Error during the SYRTHES preprocessing step\n'
             raise RunCaseError(err_str)
-
-        self.__ld_library_path_restore__(ld_library_path_save)
 
     #---------------------------------------------------------------------------
 
@@ -1761,32 +1806,36 @@ class syrthes_domain(base_domain):
         Retrieve results from the execution directory
         """
 
-        ld_library_path_save = os.getenv('LD_LIBRARY_PATH')
-        os.environ['LD_LIBRARY_PATH'] = self.ld_library_path
-
         # Post-processing
         if self.syrthes_case.post_mode != None:
-          retval = self.syrthes_case.postprocessing(mode = \
-                   self.syrthes_case.post_mode)
+            self.__paths_restore__(self.paths_syr)
+
+            retval = self.syrthes_case.postprocessing(mode = \
+                                                      self.syrthes_case.post_mode)
+            self.__paths_restore__(self.paths_top)
         else:
-          retval = 0
+            retval = 0
 
         if retval != 0:
             err_str = '\n   Error during SYRTHES postprocessing\n'
             raise RunCaseError(err_str)
 
+        if self.error == '':
+            for f in ['syrthes', 'syrthes.sh']:
+                self.purge_result(f)
 
         if self.exec_dir == self.result_dir:
             return
 
+        self.__paths_restore__(self.paths_syr)
         retval = self.syrthes_case.save_results(save_dir = self.result_dir,
                                                 horodat = False,
                                                 overwrite = True)
+        self.__paths_restore__(self.paths_top)
+
         if retval != 0:
             err_str = '\n   Error saving SYRTHES results\n'
             raise RunCaseError(err_str)
-
-        self.__ld_library_path_restore__(ld_library_path_save)
 
     #---------------------------------------------------------------------------
 
