@@ -480,7 +480,6 @@ _set_key(cs_equation_param_t   *eqp,
     }
     else if (strcmp(keyval, "frac23") == 0 || strcmp(keyval, "2/3") == 0) {
       eqp->diffusion_hodgep.coef = 2./3.;
-      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
     }
     else {
       eqp->diffusion_hodgep.coef = atof(keyval);
