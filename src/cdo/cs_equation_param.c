@@ -1074,14 +1074,17 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
       eqp->space_poly_degree = 0;
 
+      /* Set the corresponding default settings */
+
       eqp->time_hodgep.type = CS_HODGE_TYPE_VPCD;
+      eqp->time_hodgep.algo = CS_HODGE_ALGO_VORONOI;
 
       eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EPFD;
       eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_BUBBLE;
       eqp->diffusion_hodgep.coef = 2*cs_math_1ov3;
 
       eqp->reaction_hodgep.type = CS_HODGE_TYPE_VPCD;
-      eqp->reaction_hodgep.algo = CS_HODGE_ALGO_WBS;
+      eqp->reaction_hodgep.algo = CS_HODGE_ALGO_VORONOI;
 
     }
     else if (strcmp(keyval, "cdo_vcb") == 0 ||
@@ -1091,6 +1094,7 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->space_poly_degree = 0;
 
       eqp->time_hodgep.type = CS_HODGE_TYPE_VPCD;
+      eqp->time_hodgep.algo = CS_HODGE_ALGO_WBS;
 
       eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_WBS;
       eqp->diffusion_hodgep.type = CS_HODGE_TYPE_VC;
@@ -1355,7 +1359,7 @@ cs_equation_param_create(const char            *name,
     .inv_pty = false,
     .algo = CS_HODGE_ALGO_COST,
     .type = CS_HODGE_TYPE_EPFD,
-    .coef = cs_math_1ov3,
+    .coef = 2*cs_math_1ov3,
   };
 
   /* Description of the discetization of the curl-curl term */
