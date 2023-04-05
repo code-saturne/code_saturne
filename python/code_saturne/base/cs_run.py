@@ -296,7 +296,10 @@ def process_options(options, pkg):
     run_id = options.id
     run_conf = None
 
-    run_config_path = os.path.join(os.getcwd(), 'run.cfg')
+    if options.case:
+        run_config_path = os.path.join(options.case, 'run.cfg')
+    else:
+        run_config_path = os.path.join(os.getcwd(), 'run.cfg')
     if os.path.isfile(run_config_path):
         run_conf = cs_run_conf.run_conf(run_config_path, package=pkg)
         if not run_id and not filter_stages:
