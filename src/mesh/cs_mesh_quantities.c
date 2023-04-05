@@ -2997,6 +2997,19 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
   /* If no points belonging to the plane are given, stop here */
   if (cen_points == NULL) {
+
+    if (m->halo != NULL) {
+
+      cs_halo_sync_var_strided(m->halo, CS_HALO_EXTENDED,
+                               mq->cell_f_cen, 3);
+      if (m->n_init_perio > 0)
+        cs_halo_perio_sync_coords(m->halo, CS_HALO_EXTENDED,
+                                  mq->cell_f_cen);
+
+      cs_halo_sync_var(m->halo, CS_HALO_EXTENDED, mq->cell_vol);
+
+    }
+
     cs_array_real_copy(3*m->n_i_faces, mq->i_face_cog, mq->i_f_face_cog_0);
     cs_array_real_copy(3*m->n_i_faces, mq->i_face_cog, mq->i_f_face_cog_1);
     cs_array_real_copy(3*m->n_b_faces, mq->b_face_cog, mq->b_f_face_cog);
