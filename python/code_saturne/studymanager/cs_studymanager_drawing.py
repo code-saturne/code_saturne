@@ -190,6 +190,7 @@ class Plot(object):
             if line and line[0] != '#':
                 j += 1
                 line = line.replace(", ", " ") # compatibility with CSV
+                line = line.replace(";", " ") # compatibility with CSV
                 line = line.lstrip()
 
                 # for CSV files, try to detect a header to skip it
@@ -230,6 +231,7 @@ class Plot(object):
                     if line and line[0] != '#':
                         j += 1
                         line = line.replace(", ", " ") # compatibility with CSV
+                        line = line.replace(";", " ")  # compatibility with CSV
                         line = line.lstrip()
                         # for CSV files, try to detect a header to skip it
                         if j == 1:
@@ -249,6 +251,7 @@ class Plot(object):
                     if line and line[0] != '#':
                         j += 1
                         line = line.replace(", ", " ") # compatibility with CSV
+                        line = line.replace(";", " ")  # compatibility with CSV
                         line = line.lstrip()
                         # for CSV files, try to detect a header to skip it
                         if j == 1:
@@ -271,6 +274,7 @@ class Plot(object):
                     if line and line[0] != '#':
                         j += 1
                         line = line.replace(", ", " ") # compatibility with CSV
+                        line = line.replace(";", " ")  # compatibility with CSV
                         line = line.lstrip()
                         # for CSV files, try to detect a header to skip it
                         if j == 1:
@@ -315,6 +319,7 @@ class Probes(object):
             if line and line[0] != '#':
                 j += 1
                 line = line.replace(", ", " ") # compatibility with CSV
+                line = line.replace(";", " ")  # compatibility with CSV
                 line = line.lstrip()
 
                 # for CSV files, try to detect a header to skip it
