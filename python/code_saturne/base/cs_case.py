@@ -1246,7 +1246,7 @@ class case:
                 mpi_cmd += ' '
 
         mpmd = mpi_env.mpmd
-        if use_srun:
+        if use_srun and mpmd != cs_exec_environment.MPI_MPMD_script:
             mpmd = cs_exec_environment.MPI_MPMD_configfile
 
         # Additional (rank local) tool-related arguments
@@ -1300,7 +1300,10 @@ class case:
                     e_path = self.generate_solver_mpmd_configfile_srun(n_procs,
                                                                        mpi_env,
                                                                        tool_args)
-                    mpi_cmd += '--multi-prog ' + e_path
+                    if n_procs:
+                        mpi_cmd += '-n '+ str(n_procs) + ' --multi-prog ' + e_path
+                    else:
+                        mpi_cmd += '--multi-prog ' + e_path
 
                 elif mpi_env.mpiexec == 'ccc_mprun':
                     e_path = self.generate_solver_mpmd_configfile_ccc_mprun(n_procs,
