@@ -479,7 +479,7 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
     }
     else if (strcmp(keyval, "frac23") == 0 || strcmp(keyval, "2/3") == 0) {
-      eqp->diffusion_hodgep.coef = 2./3.;
+      eqp->diffusion_hodgep.coef = 2.*cs_math_1ov3;
     }
     else {
       eqp->diffusion_hodgep.coef = atof(keyval);
@@ -1139,9 +1139,12 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->time_hodgep.type = CS_HODGE_TYPE_CPVD;
       eqp->time_hodgep.algo = CS_HODGE_ALGO_VORONOI;
 
+      eqp->reaction_hodgep.type = CS_HODGE_TYPE_CPVD;
       eqp->reaction_hodgep.algo = CS_HODGE_ALGO_VORONOI;
 
       eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EDFP;
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
+      eqp->diffusion_hodgep.coef = 2*cs_math_1ov3;
 
     }
     else if (strcmp(keyval, "cdo_cb") == 0 ||
