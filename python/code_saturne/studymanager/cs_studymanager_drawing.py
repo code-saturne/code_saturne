@@ -412,11 +412,14 @@ class Figure(object):
 
         self.figsize = None
         self.dpi = None
+        self.tight = False
 
         for k, v in parser.getAttributes(node).items():
             if k == "figsize":
                 v_spl = v.strip("() ").split(",")
                 self.figsize = tuple([float(co) for co in v_spl])
+            elif k == "tight":
+                self.tight = True
             elif k == "dpi":
                 self.dpi = int(v)
 
@@ -866,6 +869,9 @@ class Plotter(object):
                 dpi = figure.dpi
             plt.savefig(f, format=fmt, dpi=dpi)
         else:
-            plt.savefig(f, format=fmt)
+            if figure.tight:
+                plt.savefig(f, format=fmt, bbox_inches='tight')
+            else:
+                plt.savefig(f, format=fmt)
 
 #-------------------------------------------------------------------------------
