@@ -401,6 +401,16 @@ class base_domain:
 
     #---------------------------------------------------------------------------
 
+    def solver_set_env_command(self):
+        """
+        Returns a shell command that may be used to load the environment
+        required for a given executable, or None if not needed.
+        """
+
+        return None
+
+    #---------------------------------------------------------------------------
+
     def summary_info(self, s):
         """
         Output summary data into file s
@@ -1461,7 +1471,7 @@ class syrthes_domain(base_domain):
 
     def __init__(self,
                  package,
-                 cmd_line = None,     # Command line to define optional syrthes4 behavior
+                 cmd_line = None,     # Command line for optional syrthes operations
                  name = None,
                  param = 'syrthes.data',
                  log_file = None,
@@ -1505,9 +1515,9 @@ class syrthes_domain(base_domain):
 
         self.exec_solver = True
 
-        # Always requires local buildn so relative path always known.
+        # Always requires local build so relative path always known.
 
-        self.solver_path = os.path.join('.', 'syrthes.sh')
+        self.solver_path = os.path.join('.', 'syrthes')
 
         # Generation of SYRTHES case deferred until we know how
         # many processors are really required
@@ -1523,6 +1533,17 @@ class syrthes_domain(base_domain):
 
         self.paths_syr = self.__paths_save__()
         self.__paths_restore__(self.paths_top)
+
+        # Prepare wrapper command
+
+        env_syrthes_home = os.getenv('SYRTHES_HOME')
+        if not env_syrthes_home:
+            env_syrthes_home = os.getenv('SYRTHES4_HOME')
+
+        syr_profile = os.path.join(env_syrthes_home,
+                                   'bin', 'syrthes.profile')
+
+        self.env_sh_cmd = 'source ' + syr_profile + ' > /dev/null 2>&1\n'
 
     #---------------------------------------------------------------------------
 
@@ -1602,6 +1623,16 @@ class syrthes_domain(base_domain):
         args += ' --log ' + enquote_arg(self.logfile)
 
         return wd, exec_path, args
+
+    #---------------------------------------------------------------------------
+
+    def solver_set_env_command(self):
+        """
+        Returns a shell command that may be used to load the environment
+        required for a given executable, or None if not needed.
+        """
+
+        return self.env_sh_cmd
 
     #---------------------------------------------------------------------------
 
@@ -1747,30 +1778,6 @@ class syrthes_domain(base_domain):
 
         sys.stdout.write('\n')
 
-        # Generate Syrthes wrapper script
-
-        s_path = os.path.join(self.exec_dir, 'syrthes.sh')
-        s = open(s_path, 'w')
-
-        write_shell_shebang(s)
-
-        env_syrthes_home = os.getenv('SYRTHES_HOME')
-        if not env_syrthes_home:
-            env_syrthes_home = os.getenv('SYRTHES4_HOME')
-
-        syr_profile = os.path.join(env_syrthes_home,
-                                   'bin', 'syrthes.profile')
-
-        s.write('source ' + syr_profile + ' > /dev/null 2>&1\n')
-
-        s.write(os.path.join('.', 'syrthes') + ' $@\n\n')
-
-        s.close()
-
-        oldmode = (os.stat(s_path)).st_mode
-        newmode = oldmode | (stat.S_IXUSR)
-        os.chmod(s_path, newmode)
-
     #---------------------------------------------------------------------------
 
     def preprocess(self):
@@ -1821,7 +1828,7 @@ class syrthes_domain(base_domain):
             raise RunCaseError(err_str)
 
         if self.error == '':
-            for f in ['syrthes', 'syrthes.sh']:
+            for f in ['syrthes']:
                 self.purge_result(f)
 
         if self.exec_dir == self.result_dir:

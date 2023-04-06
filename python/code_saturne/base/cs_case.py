@@ -1173,6 +1173,9 @@ class case:
             e.write(test_pf + str(nr) + test_sf)
             s_args = d.solver_command()
             e.write('  cd ' + s_args[0] + '\n')
+            env_load_sh = d.solver_set_env_command()
+            if env_load_sh:
+                e.write('  ' + env_load_sh)
             e.write('  ' + tool_args + s_args[1] + s_args[2] + ' $@\n')
             if app_id == 0:
                 test_pf = 'el' + test_pf
@@ -1267,6 +1270,20 @@ class case:
                 mpmd = cs_exec_environment.MPI_MPMD_script
         if use_mps != True:
             use_mps = False
+
+        # Check if some domains need to source a specific environment;
+        # in that case, switch to script mode, to allow sourcing
+        # while still handling tooling options.
+
+        # TODO improve this to work with parallel debuggers
+        # (where is is better to use an mpiexec-like syntax but
+        # things need to be sourced. a wrapper binary or script
+        # based on execve (like our ancient Blue Gene/L MPMD
+        # adapter removed in commit e2b23f24) might do the trick.
+
+        for d in self.domains:
+            if d.solver_set_env_command():
+                mpmd = cs_exec_environment.MPI_MPMD_script
 
         # Case with only one cs_solver instance possibly under MPI
 
