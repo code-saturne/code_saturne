@@ -157,6 +157,8 @@ typedef struct {
                                               mapping beyond basic matching
                                               tolerance */
   float                   tolerance;       /* Tolerance */
+
+  char                    time_step_mode;  /* Time stepping mode */
   int                     verbosity;       /* Verbosity level */
   int                     visualization;   /* Visualization output flag */
 
@@ -1441,6 +1443,7 @@ _syr_coupling_define(int          dim,
 
   syr_coupling->allow_nearest = allow_nonmatching;
   syr_coupling->tolerance = tolerance;
+  syr_coupling->time_step_mode = '-';  /* not set yet */
   syr_coupling->verbosity = verbosity;
   syr_coupling->visualization = visualization;
 
@@ -1584,6 +1587,13 @@ _syr_coupling_init_comm(cs_syr_coupling_t  *syr_coupling,
 
   _init_comm(syr_coupling, coupling_id);
 
+  if (syr_coupling->time_step_mode == '-') {
+    if (cs_glob_time_step->is_variable)
+      syr_coupling->time_step_mode = 's';
+    else
+      syr_coupling->time_step_mode = ' ';
+  }
+
   /* Exchange coupling options */
 
   if (syr_coupling->n_b_locations > 0)
@@ -1595,8 +1605,9 @@ _syr_coupling_init_comm(cs_syr_coupling_t  *syr_coupling,
   if (syr_coupling->allow_nearest == false)
     allow_nearest_flag = '0';
 
-  snprintf(op_name_send, 32, "coupling:type:%c%c%c \2\2%c(%6.2g)",
+  snprintf(op_name_send, 32, "coupling:type:%c%c%c%c\2\2%c(%6.2g)",
            boundary_flag, volume_flag, conservativity_flag,
+           syr_coupling->time_step_mode,
            allow_nearest_flag, (double)syr_coupling->tolerance);
 
   _exchange_sync(syr_coupling, op_name_send, op_name_recv);
@@ -1952,7 +1963,7 @@ _init_all_mpi_syr(int  *n_unmatched,
 
     ple_coupling_mpi_set_info_t ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
 
-    if (strncmp(ai.app_type, "SYRTHES 4", 9) == 0) {
+    if (strncmp(ai.app_type, "SYRTHES", 7) == 0) {
 
       int  match_queue_id = -1;
       int  coupling_id = -1;
@@ -2057,7 +2068,7 @@ _mpi_syr_default_name(void)
   for (int i = 0; i < n_apps; i++) {
     const ple_coupling_mpi_set_info_t
       ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
-    if (strncmp(ai.app_type, "SYRTHES 4", 9) == 0) {
+    if (strncmp(ai.app_type, "SYRTHES", 7) == 0) {
       if (n_syr_apps == 0)
         retval = ai.app_name;
       else
@@ -2337,6 +2348,58 @@ void
 cs_syr_coupling_set_explicit_treatment(void)
 {
   _syr_coupling_implicit = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set time synchronization mode for a given SYRTHES coupling.
+ *
+ * This will suggest options on the SYRTHES side.
+ *
+ * \param[in] cpl_id   matching SYRTHES coupling id
+ * \param[in] flag     suggested synchronization flags for the SYRTHES side
+ *                     This should be a combination of
+ *                     - PLE_COUPLING_TS_MIN (use smallest time step)
+ *                     - PLE_COUPLING_TS_LEADER (prescribe time step for all)
+ *                     - PLE_COUPLING_TS_FOLLOWER (time step of this domain
+ *                       is ignored by coupled applications)
+ *                     - PLE_COUPLING_TS_INDEPENDENT (do not modify time
+ *                       step based on other applications)
+ *
+ * By default, no flags are set for constant and local (pseudo-steady) time
+ * stepping schemes. With a adaptive time step, the default is
+ *   PLE_COUPLING_TS_MIN | PLE_COUPLING_TS_FOLLOWER
+ * so that the smallest time step of code_saturne domains will be used, but
+ * the time step of the SYRTHES domains is ignored (as it does not recompute
+ * an adaptive time step, not making it a follower would let it provide the
+ * smallest time step encountered, preventing time steps from icnreasing
+ * again in the case of multiple fluid domains).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_set_time_sync_flag(int  cpl_id,
+                                   int  flag)
+{
+  /* Note that standard PLE flags are decoded into a single
+     "time_step_mode" character so as to be passed to SYRTHES along
+     with other options without requiring compatibility-breaking
+     communication scheme changes */
+
+  cs_syr_coupling_t *syr_coupling = _syr_coupling_by_id(cpl_id);
+
+  if (flag & PLE_COUPLING_TS_MIN) {
+    if (flag & PLE_COUPLING_TS_FOLLOWER)
+      syr_coupling->time_step_mode = 's';
+    else
+      syr_coupling->time_step_mode = 'm';
+  }
+  else if (flag & PLE_COUPLING_TS_FOLLOWER)
+    syr_coupling->time_step_mode = 's';
+  else if (flag & PLE_COUPLING_TS_INDEPENDENT)
+    syr_coupling->time_step_mode = 'i';
+  else
+    syr_coupling->time_step_mode = ' ';
 }
 
 /*----------------------------------------------------------------------------*/
