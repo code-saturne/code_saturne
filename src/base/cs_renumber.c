@@ -1518,7 +1518,7 @@ _order_i_faces_by_cell_adjacency(const cs_mesh_t         *mesh,
   BFT_FREE(faces_keys);
 
   if (mesh->halo == NULL)
-    n_no_adj_halo = n_cells;
+    n_no_adj_halo = n_i_faces;
 
   return n_no_adj_halo;
 }
@@ -5315,7 +5315,11 @@ _renumber_i_test(cs_mesh_t  *mesh)
 
       if (face_errors == 0) {
 
+        int n_no_adj_halo_groups = n_groups;
+
         for (g_id=0; g_id < n_groups; g_id++) {
+
+          bool adj_halo = false;
 
           for (c_id_0 = 0; c_id_0 < mesh->n_cells_with_ghosts; c_id_0++)
             accumulator[c_id_0] = -1;
@@ -5335,7 +5339,14 @@ _renumber_i_test(cs_mesh_t  *mesh)
               }
               accumulator[c_id_0] = t_id;
               accumulator[c_id_1] = t_id;
+              if (c_id_0 >= mesh->n_cells || c_id_1 >= mesh->n_cells)
+                adj_halo = true;
             }
+          }
+
+          if (adj_halo) {
+            mesh->i_face_numbering->n_no_adj_halo_groups
+              = CS_MIN(mesh->i_face_numbering->n_no_adj_halo_groups, g_id+1);
           }
 
         }
