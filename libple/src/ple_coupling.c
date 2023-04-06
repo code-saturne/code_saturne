@@ -797,6 +797,11 @@ ple_coupling_mpi_set_synchronize(ple_coupling_mpi_set_t  *s,
 
   /* Update synchronization flag first. */
 
+  if (s->app_status[s->app_id] & last_sync_mask)
+    sync_flag = sync_flag | PLE_COUPLING_NO_SYNC;
+  if (sync_flag & PLE_COUPLING_INIT)
+    sync_flag -= PLE_COUPLING_INIT;
+
   for (i = 0; i < s->n_apps; i++) {
     if (s->app_status[i] & last_sync_mask)
       s->app_status[i] = (s->app_status[i] | PLE_COUPLING_NO_SYNC);
@@ -955,7 +960,7 @@ ple_coupling_mpi_set_compute_timestep(const ple_coupling_mpi_set_t  *s)
   if (self_status & PLE_COUPLING_TS_MIN) {
     if (ts_min > 0)
       retval = ts_min;
-    else if (s->n_apps >1)
+    else if (s->n_apps > 1 && !(self_status & PLE_COUPLING_STOP))
       ple_error
         (__FILE__, __LINE__, 0,
          _("\nCoupling parameters require following minimal time step,\n"
