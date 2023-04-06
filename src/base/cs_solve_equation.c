@@ -1542,8 +1542,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     /* Wall condensation */
 
+    const cs_lnum_t *_itypcd = NULL;
     cs_real_t *srccond = NULL;
-    cs_lnum_t *_itypcd = NULL;
     cs_real_t *_spcond_ipr = NULL, *_spcond_ivar = NULL;
 
     if (wall_cond->icondb == 0) {
