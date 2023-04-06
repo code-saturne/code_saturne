@@ -5315,8 +5315,6 @@ _renumber_i_test(cs_mesh_t  *mesh)
 
       if (face_errors == 0) {
 
-        int n_no_adj_halo_groups = n_groups;
-
         for (g_id=0; g_id < n_groups; g_id++) {
 
           bool adj_halo = false;
