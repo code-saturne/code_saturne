@@ -154,6 +154,37 @@ cs_syr_coupling_set_explicit_treatment(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set time synchronization mode for a given SYRTHES coupling.
+ *
+ * This will suggest options on the SYRTHES side.
+ *
+ * \param[in] cpl_id   matching SYRTHES coupling id
+ * \param[in] flag     suggested synchronization flags for the SYRTHES side
+ *                     This should be a combination of
+ *                     - PLE_COUPLING_TS_MIN (use smallest time step)
+ *                     - PLE_COUPLING_TS_LEADER (prescribe time step for all)
+ *                     - PLE_COUPLING_TS_FOLLOWER (time step of this domain
+ *                       is ignored by coupled applications)
+ *                     - PLE_COUPLING_TS_INDEPENDENT (do not modify time
+ *                       step based on other applications)
+ *
+ * By default, no flags are set for constant and local (pseudo-steady) time
+ * stepping schemes. With a adaptive time step, the default is
+ *   PLE_COUPLING_TS_MIN | PLE_COUPLING_TS_FOLLOWER
+ * so that the smallest time step of code_saturne domains will be used, but
+ * the time step of the SYRTHES domains is ignored (as it does not recompute
+ * an adaptive time step, not making it a follower would let it provide the
+ * smallest time step encountered, preventing time steps from icnreasing
+ * again in the case of multiple fluid domains).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_set_time_sync_flag(int  cpl_id,
+                                   int  flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Log SYRTHES coupling setup information.
  */
 /*----------------------------------------------------------------------------*/
