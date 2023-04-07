@@ -57,7 +57,7 @@ class TexWriter(object):
 
     def addFigure(self, g):
         self.__doc.append("\\begin{center}\n")
-        self.__doc.append("\\includegraphics[width=0.99\\textwidth]{%s}\n" % g)
+        self.__doc.append("  \\includegraphics[width=0.99\\textwidth]{%s}\n" % g)
         self.__doc.append("\\end{center}\n")
 
 
@@ -150,10 +150,10 @@ class TexWriter(object):
         head.append("\\setlength{\\textwidth}{162mm}")
         head.append("\\setlength{\\parindent}{0mm}")
         head.append("\\setlength{\\parskip}{6pt}")
-        head.append("\\setlength{\\tabcolsep}{1mm}")
+        head.append("\\setlength{\\tabcolsep}{1mm}\n")
 
 
-        head.append("\\begin{document}\n")
+        head.append("\n\\begin{document}\n")
 
         # end
         tail = []

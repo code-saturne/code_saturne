@@ -2370,6 +2370,8 @@ class Studies(object):
         """
         attached_files = []
 
+        self.reporting('  o Generation of the automatic detailed report')
+
         # figures report
         doc = Report(self.__dest,
                      report_fig,
