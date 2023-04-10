@@ -371,6 +371,8 @@ integer nmodpp
 
 ! Local variables
 
+integer           iiv
+
 !===============================================================================
 ! Initialize non-standard calculation options for the atmospheric version.
 !===============================================================================
@@ -405,23 +407,6 @@ vertical_influence_radius = 100.d0
 
 ! --------------------------------------------------------------
 
-! ifilechemistry: choice to read (=1,2,3,4, according to the scheme)
-! or not (0) a concentration profile file
-! if ichemistry>0 ifilechemistry is automaticaly set to ichemistry
-ifilechemistry = 0
-
-! Change the name of the chemistry concentration profile
-call atmo_set_chem_conc_file_name('chem_01_01_2001')
-
-! Change the name of the aerosol concentration profile
-call atmo_set_aero_conc_file_name('aero_01_01_2001')
-
-! isepchemistry: split (=1) or semi-coupled (=2, pu-sun)
-! resolution of chemistry.
-! Split (=1) mandatory for aerosols.
-! Semi-coupled (=2) by default.
-isepchemistry = 1
-
 ! dtchemmax: maximal time step (s) for chemistry resolution
 dtchemmax = 10.0d0
 
@@ -435,6 +420,21 @@ if (iatsoil.eq.1) then
   tab_sol(4)%rugthe = 0.0012
   tab_sol(4)%rugdyn = 0.0012
 endif
+
+! Initializing the soil table of each vertical grid
+if (iatsoil.ne.0) then
+  do iiv = 1, nvert
+    soilvert(iiv)%albedo  = 0.25d0
+    soilvert(iiv)%emissi  = 0.965d0
+    soilvert(iiv)%ttsoil  = 14.77d0
+    soilvert(iiv)%totwat  = 0.0043d0
+    soilvert(iiv)%pressure = 1023.d0
+    soilvert(iiv)%density = 1.23d0
+    soilvert(iiv)%foir = 0.d0
+    soilvert(iiv)%fos  = 0.d0
+  enddo
+endif
+
 !< [usatsoil]
 
 !----

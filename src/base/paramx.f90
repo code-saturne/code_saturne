@@ -257,6 +257,6 @@ module paramx
           cs_user_turbulence_source_terms,                         &
           cs_user_turbulence_source_terms2,                        &
           usatph, ussmag, ustsnv, ustsvv, usvosy, usvpst, usati1,  &
-          usthht, usatsoil, usstr1, usstr2
+          usthht, usatsoil, usstr1, usstr2, usatdv
 
 end module paramx

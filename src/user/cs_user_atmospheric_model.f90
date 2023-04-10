@@ -35,56 +35,6 @@
 
 !===============================================================================
 
-!> \brief Atmospheric module subroutine
-
-!> User definition of the vertical 1D arrays
-!> User initialization of corresponding 1D ground model
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]     imode        number of calls of usatdv
-!______________________________________________________________________________!
-
-subroutine usatdv &
-  ( imode )
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use numvar
-use optcal
-use cstphy
-use cstnum
-use entsor
-use parall
-use period
-use ppppar
-use ppthch
-use ppincl
-use atincl
-use atsoil
-use mesh
-
-implicit none
-
-!===============================================================================
-
-! Arguments
-
-integer           imode
-
-! Local variables
-
-!===============================================================================
-
-return
-end subroutine usatdv
-
 !===============================================================================
 
 !> \brief Fill in vertical profiles of atmospheric properties prior to solve

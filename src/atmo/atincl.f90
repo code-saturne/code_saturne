@@ -750,7 +750,7 @@ contains
 
   !=============================================================================
 
-  !> \brief Map fortran to C variables
+  !> \brief Map Fortran to C variables
 
   subroutine atmo_init
 
@@ -846,8 +846,8 @@ contains
 
 !===============================================================================
 
-!> \brief Initialisation of meteo data
-subroutine init_meteo
+!> \brief Allocate and map to C meteo data
+subroutine allocate_map_atmo
 
 use cs_c_bindings
 use atsoil
@@ -883,9 +883,9 @@ endif
 ! Allocate additional arrays for 1D radiative model
 if (iatra1.eq.1) then
 
-  imode = 0
+  ! Allocate additional arrays for 1D radiative model
+  allocate(soilvert(nvert))
 
-  call usatdv(imode) !TODO remove it and define it in cs_user_parameters.c
 endif
 
 call cs_f_atmo_arrays_get_pointers(c_z_dyn_met, c_z_temp_met,     &
@@ -962,17 +962,26 @@ if (imeteo.gt.0) then
   allocate(xmet(n_times), ymet(n_times))
   allocate(rmet(n_level_t,n_times))
 
-  ! Allocate additional arrays for 1D radiative model
-  ! and prepare interpolation
+endif
+
+end subroutine allocate_map_atmo
+
+!==============================================================================
+
+!> \brief Initialisation of meteo data
+subroutine init_meteo
+
+use cs_c_bindings
+
+implicit none
+
+! Prepare interpolation for 1D radiative model
+if (imeteo.gt.0) then
 
   if (iatra1.eq.1) then
-
-    allocate(soilvert(nvert))
-
     call mestcr("rayi"//c_null_char, 1, 0, idrayi)
     call mestcr("rayst"//c_null_char, 1, 0, idrayst)
     call gridcr("int_grid"//c_null_char, igrid)
-
   endif
 
 endif

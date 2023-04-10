@@ -21,9 +21,8 @@
 !-------------------------------------------------------------------------------
 !> \file atini1.f90
 !> \brief Initialisation of variable options for the atmospheric module in
-!>      addition to what is done in usipsu function
+!>        before what is done in usipsu/cs_user_parameters functions
 !>
-!> Warning some initialisations are done twice ...
 
 subroutine atini1
 
@@ -104,6 +103,88 @@ endif
 if (itytur.eq.3) irijnu = 1
 
 !===============================================================================
+! 7. Some allocation and mapping for meteo...
+!===============================================================================
+
+if (ippmod(iatmos).ge.0) then
+
+  call allocate_map_atmo
+
+  if (ifilechemistry.ge.1) then
+    call init_chemistry
+  endif
+
+endif
+
+!--------
+! Formats
+!--------
+
+ 1003 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA'               ,/,&
+'@    ========='                                               ,/,&
+'@                ATMOSPHERIC  MODULE'                         ,/,&
+'@'                                                            ,/,&
+'@  Ground model (soil_model)'                                 ,/,&
+'@   and radiative model (radiative_model_1d)'                 ,/,&
+'@   are only available with humid atmosphere model'           ,/,&
+'@   or dry atmosphere model.'                                 ,/,&
+'@  Computation CAN NOT run.'                                  ,/,&
+'@'                                                            ,/,&
+'@  Check the input data given through the User Interface'     ,/,&
+'@   or in cs_user_model.'                                     ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+
+!----
+! End
+!----
+
+return
+end subroutine atini1
+
+!> \brief Finalize initialisation of variable options for the atmospheric module
+!>       after usipsu/cs_user_parameters functions
+
+subroutine atini2
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use numvar
+use optcal
+use cstphy
+use entsor
+use cstnum
+use ppppar
+use ppthch
+use ppincl
+use atincl
+use atsoil
+use atchem
+use atimbr
+use field
+use cs_c_bindings
+
+!===============================================================================
+
+implicit none
+
+! Local variables
+
+integer          ii
+double precision turb_schmidt
+
+!===============================================================================
+
+!===============================================================================
 ! 7. Some initialization for meteo...
 !===============================================================================
 
@@ -117,38 +198,15 @@ if (ippmod(iatmos).ge.0) then
 
   call cs_at_data_assim_build_ops
 
-  if (ifilechemistry.ge.1) then
-    call init_chemistry
-  endif
-
 endif
 
 !--------
 ! Formats
 !--------
 
- 1003 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
-'@    =========                                               ',/,&
-'@                ATMOSPHERIC  MODULE                         ',/,&
-'@                                                            ',/,&
-'@  Ground model (iatsoil) and radiative model (iatra1)       ',/,&
-'@   are only available with humid atmosphere module          ',/,&
-'@   (ippmod(iatmos) = 2).                                    ',/,&
-'@  Computation CAN NOT run.                                  ',/,&
-'@                                                            ',/,&
-'@  Check the input data given through the User Interface     ',/,&
-'@   or in cs_user_parameters.f90.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
 !----
 ! End
 !----
 
 return
-end subroutine atini1
+end subroutine atini2

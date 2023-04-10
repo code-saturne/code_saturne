@@ -144,6 +144,8 @@ cs_user_model(void)
 
   /*! [atmo_module] */
 
+  cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+
   /*  Microphysics parameterization options */
 
   /* Option for nucleation for humid atmosphere
@@ -154,13 +156,13 @@ cs_user_model(void)
    *  logarithmic standard deviation of the log-normal law of the droplet
    *  spectrum
    */
-  cs_glob_atmo_option->nucleation_model = 3;
+  at_opt->nucleation_model = 3;
 
   /* Option for liquid water content distribution models
    *  1: all or nothing
    *  2: Gaussian distribution
    */
-  cs_glob_atmo_option->distribution_model = 1;
+  at_opt->distribution_model = 1;
 
   /*  Option for subgrid models
    *   0: the simplest parameterization (for numerical verifications)
@@ -169,17 +171,17 @@ cs_user_model(void)
    *   3: Cuijpers and Duynkerke 1993, Deardorff 1976, Sommeria and
    *                 Deardorff 1977
    */
-  cs_glob_atmo_option->subgrid_model = 0;
+  at_opt->subgrid_model = 0;
 
   /* Sedimentation flag */
-  cs_glob_atmo_option->sedimentation_model = 1;
+  at_opt->sedimentation_model = 1;
 
   /* Deposition flag */
-  cs_glob_atmo_option->deposition_model = 1;
+  at_opt->deposition_model = 1;
 
   /* Read the meteo file (1) or impose directly the input values to compute it
    * in code_saturne (2) */
-  cs_glob_atmo_option->meteo_profile = 2;
+  at_opt->meteo_profile = 2;
 
   /* Advanced choice of universal functions among for stable
    *  - CS_ATMO_UNIV_FN_CHENG (default)
@@ -193,33 +195,33 @@ cs_user_model(void)
    * */
 
   /* Hartogensis for stable */
-  cs_glob_atmo_option->meteo_phim_s = CS_ATMO_UNIV_FN_HARTOGENSIS;
-  cs_glob_atmo_option->meteo_phih_s = CS_ATMO_UNIV_FN_HARTOGENSIS;
+  at_opt->meteo_phim_s = CS_ATMO_UNIV_FN_HARTOGENSIS;
+  at_opt->meteo_phih_s = CS_ATMO_UNIV_FN_HARTOGENSIS;
 
   /* Inverse LMO length (m^-1) */
-  cs_glob_atmo_option->meteo_dlmo = 0.;
+  at_opt->meteo_dlmo = 0.;
   /* Large scale roughness (m) */
-  cs_glob_atmo_option->meteo_z0 = 0.1;
+  at_opt->meteo_z0 = 0.1;
   /* Elevation for reference velocity (m) */
-  cs_glob_atmo_option->meteo_zref = 10.;
+  at_opt->meteo_zref = 10.;
   /* Friction velocity (m/s) */
-  cs_glob_atmo_option->meteo_ustar0 = 1.;
+  at_opt->meteo_ustar0 = 1.;
   /* Velocity direction (degrees from North) */
-  cs_glob_atmo_option->meteo_angle = 270.;
+  at_opt->meteo_angle = 270.;
   /* Temperature at 2m (K) */
-  cs_glob_atmo_option->meteo_t0 = 288.;
+  at_opt->meteo_t0 = 288.;
   /* Pressure at sea level (Pa) */
-  cs_glob_atmo_option->meteo_psea = 1.01325e5;
+  at_opt->meteo_psea = 1.01325e5;
 
   /* Option to compute ground elevation in the domain */
-  cs_glob_atmo_option->compute_z_ground = true;
+  at_opt->compute_z_ground = true;
 
   /* Automatic open boundary conditions
    *   1: meteo mass flow rate is imposed with a constant large scale
    *      pressure gradient
    *   2: same plus velocity profile imposed at ingoing faces
    */
-  cs_glob_atmo_option->open_bcs_treatment = 1;
+  at_opt->open_bcs_treatment = 1;
 
   /* Time of the simulation (for radiative model or chemistry)
    * syear:  starting year
@@ -228,18 +230,18 @@ cs_user_model(void)
    * smin:   starting minute
    * ssec:   starting second
    */
-  cs_glob_atmo_option->syear = 2020;
-  cs_glob_atmo_option->squant = 1;
-  cs_glob_atmo_option->shour = 1;
-  cs_glob_atmo_option->smin = 0;
-  cs_glob_atmo_option->ssec = 0.;
+  at_opt->syear = 2020;
+  at_opt->squant = 1;
+  at_opt->shour = 1;
+  at_opt->smin = 0;
+  at_opt->ssec = 0.;
 
   /* Geographic position
    *  longitude: longitude of the domain origin
    *  latitude: latitude of the domain origin
    */
-  cs_glob_atmo_option->longitude = 0.;
-  cs_glob_atmo_option->latitude = 45.0;
+  at_opt->longitude = 0.;
+  at_opt->latitude = 45.0;
 
   /* Chemistry:
    *   model: choice of chemistry resolution scheme
@@ -256,60 +258,92 @@ cs_user_model(void)
    *        kinetic.f90, fexchem.f90, jacdchemdc.f90, rates.f90, dratedc.f90
    *        dimensions.f90, LU_decompose.f90, LU_solve.f90
    */
-   cs_glob_atmo_chemistry->model = 0;
+  cs_glob_atmo_chemistry->model = 0;
 
-   /* Default file for the chemistry profile is "chemistry" */
-   cs_atmo_set_chem_conc_file_name("chem_01_01_2000");
+  /* Default file for the chemistry profile is "chemistry" */
+  cs_atmo_set_chem_conc_file_name("chem_01_01_2000");
 
-   /* Chemistry with photolysis: inclusion (true) or not (false) of photolysis
-    * reactions
-    * warning: photolysis is not compatible with space-variable time step
-    */
-   cs_glob_atmo_chemistry->chemistry_with_photolysis = true;
+  /* Chemistry with photolysis: inclusion (true) or not (false) of photolysis
+   * reactions
+   * warning: photolysis is not compatible with space-variable time step
+   */
+  cs_glob_atmo_chemistry->chemistry_with_photolysis = true;
 
-   /* Aerosol chemistry
-    * -----------------*/
+  /* chemistry_sep_mode: split (=1) or semi-coupled (=2, pu-sun)
+   * resolution of chemistry.
+   * Split (=1) mandatory for aerosols.
+   * Semi-coupled (=2) by default. */
+  cs_glob_atmo_chemistry->chemistry_sep_mode = 1;
 
-   /*   aerosol_model: flag to activate aerosol chemistry
-    *   CS_ATMO_AEROSOL_OFF: aerosol chemistry deactivated, default
-    *   CS_ATMO_AEROSOL_SSH: model automatically set to 4
-    *     External library SSH-aerosol is used
-    *     Corresponding SPACK files must be provided
-    *     The SSH namelist file can be specified using
-    *       call atmo_chemistry_set_aerosol_file_name("namelist_coag.ssh")
-    *       if no namelist file is specified, "namelist.ssh" is used
-    */
-   cs_glob_atmo_chemistry->aerosol_model = CS_ATMO_AEROSOL_SSH;
 
-   /* Default file for the aerosol profile is "aerosols" */
-   cs_atmo_set_aero_conc_file_name("aero_01_01_2001");
+  /* Aerosol chemistry
+   * -----------------*/
 
-   /* Frozen gaseous chemistry
-    *   false: gaseous chemistry is activated (default)
-    *   true: gaseous chemistry is frozen
-    */
-   cs_glob_atmo_chemistry->frozen_gas_chem = false;
+  /*   aerosol_model: flag to activate aerosol chemistry
+   *   CS_ATMO_AEROSOL_OFF: aerosol chemistry deactivated, default
+   *   CS_ATMO_AEROSOL_SSH: model automatically set to 4
+   *     External library SSH-aerosol is used
+   *     Corresponding SPACK files must be provided
+   *     The SSH namelist file can be specified using
+   *       call atmo_chemistry_set_aerosol_file_name("namelist_coag.ssh")
+   *       if no namelist file is specified, "namelist.ssh" is used
+   */
+  cs_glob_atmo_chemistry->aerosol_model = CS_ATMO_AEROSOL_SSH;
 
-   /* Soil Atmosphere model
-    * ---------------------*/
+  /* Default file for the aerosol profile is "aerosols" */
+  cs_atmo_set_aero_conc_file_name("aero_01_01_2001");
 
-   /*! [atmo_soil_set] */
-   cs_glob_atmo_option->soil_model = 1; /* Switch on soil model */
+  /* Frozen gaseous chemistry
+   *   false: gaseous chemistry is activated (default)
+   *   true: gaseous chemistry is frozen
+   */
+  cs_glob_atmo_chemistry->frozen_gas_chem = false;
 
-   /* Set the number of predefined categories (+1 which is the default one)
-    * among:
-    *  - CS_ATMO_SOIL_5_CAT
-    *  - CS_ATMO_SOIL_7_CAT
-    * */
-   cs_glob_atmo_option->soil_cat= CS_ATMO_SOIL_5_CAT; /* Switch on soil model */
+  /* Soil Atmosphere model
+   * ---------------------*/
 
-   /* Specify the boundary zone which is modeled */
-   cs_glob_atmo_option->soil_zone_id = cs_boundary_zone_by_name("Sol")->id;
-   /*! [atmo_soil_set] */
+  /*! [atmo_soil_set] */
+  at_opt->soil_model = 1; /* Switch on soil model */
 
-   /*! [atmo_module] */
+  /* Set the number of predefined categories (+1 which is the default one)
+   * among:
+   *  - CS_ATMO_SOIL_5_CAT
+   *  - CS_ATMO_SOIL_7_CAT
+   * */
+  at_opt->soil_cat= CS_ATMO_SOIL_5_CAT; /* Switch on soil model */
 
-   /*! [atmo_user_model_1] */
+  /* Specify the boundary zone which is modeled */
+  at_opt->soil_zone_id = cs_boundary_zone_by_name("Sol")->id;
+  /*! [atmo_soil_set] */
+
+  /* 1-D radiative transfer
+   * ---------------------*/
+
+  /* Activate 1-D radiative transfer model */
+  at_opt->radiative_model_1d = 1;
+
+  /* Specify the number of verticals and the number of levels.
+   * The mesh levels can be specified in cs_user_parameters function.
+   * */
+  at_opt->rad_1d_nvert = 1;
+  at_opt->rad_1d_nlevels = 50;
+  at_opt->rad_1d_nlevels_max = at_opt->rad_1d_nlevels;
+
+  /* Complete 1-D mesh to ztop in case of radiative transfer */
+  if (at_opt->rad_1d_nvert > 0) {
+    cs_real_t zvmax = 1975.;/* top of the domain */
+    cs_real_t ztop = 11000.;/* top of the troposphere */
+    for (cs_real_t zzmax = (((int) zvmax)/1000)*1000.;
+        zzmax <= (ztop -1000);
+        zzmax += 1000.) {
+      (at_opt->rad_1d_nlevels_max)++;
+    }
+
+  }
+
+  /*! [atmo_module] */
+
+  /*! [atmo_user_model_1] */
 
   /*--------------------------------------------------------------------------*/
 
@@ -1527,6 +1561,7 @@ cs_user_parameters(cs_domain_t *domain)
   /*! [change_nsave_checkpoint_files] */
   cs_restart_set_n_max_checkpoints(2);
   /*! [change_nsave_checkpoint_files] */
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1630,6 +1665,84 @@ cs_user_finalize_setup(cs_domain_t     *domain)
                                 CS_POST_ON_LOCATION | CS_POST_MONITOR);
   }
   /*! [setup_post_lum] */
+
+  /* Example: define 1-D radiative transfer mesh for
+   * the atmospheric module */
+  /*-----------------------------------------------------------------*/
+  cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+
+  at_opt->rad_1d_z[0 ] = 0.;
+  at_opt->rad_1d_z[1 ] = 5.;
+  at_opt->rad_1d_z[2 ] = 20.5;
+  at_opt->rad_1d_z[3 ] = 42.0;
+  at_opt->rad_1d_z[4 ] = 65.0;
+  at_opt->rad_1d_z[5 ] = 89.5;
+  at_opt->rad_1d_z[6 ] = 115.0;
+  at_opt->rad_1d_z[7 ] = 142.0;
+  at_opt->rad_1d_z[8 ] = 170.5;
+  at_opt->rad_1d_z[9 ] = 199.5;
+  at_opt->rad_1d_z[10] = 230.0;
+  at_opt->rad_1d_z[11] = 262.0;
+  at_opt->rad_1d_z[12] = 294.5;
+  at_opt->rad_1d_z[13] = 328.5;
+  at_opt->rad_1d_z[14] = 363.5;
+  at_opt->rad_1d_z[15] = 399.0;
+  at_opt->rad_1d_z[16] = 435.5;
+  at_opt->rad_1d_z[17] = 473.5;
+  at_opt->rad_1d_z[18] = 512.0;
+  at_opt->rad_1d_z[19] = 551.0;
+  at_opt->rad_1d_z[20] = 591.5;
+  at_opt->rad_1d_z[21] = 632.5;
+  at_opt->rad_1d_z[22] = 674.0;
+  at_opt->rad_1d_z[23] = 716.0;
+  at_opt->rad_1d_z[24] = 759.0;
+  at_opt->rad_1d_z[25] = 802.5;
+  at_opt->rad_1d_z[26] = 846.5;
+  at_opt->rad_1d_z[27] = 891.5;
+  at_opt->rad_1d_z[28] = 936.5;
+  at_opt->rad_1d_z[29] = 982.0;
+  at_opt->rad_1d_z[30] = 1028.0;
+  at_opt->rad_1d_z[31] = 1074.5;
+  at_opt->rad_1d_z[32] = 1122.0;
+  at_opt->rad_1d_z[33] = 1169.5;
+  at_opt->rad_1d_z[34] = 1217.0;
+  at_opt->rad_1d_z[35] = 1265.5;
+  at_opt->rad_1d_z[36] = 1314.5;
+  at_opt->rad_1d_z[37] = 1363.5;
+  at_opt->rad_1d_z[38] = 1413.0;
+  at_opt->rad_1d_z[39] = 1462.5;
+  at_opt->rad_1d_z[40] = 1512.5;
+  at_opt->rad_1d_z[41] = 1563.0;
+  at_opt->rad_1d_z[42] = 1613.5;
+  at_opt->rad_1d_z[43] = 1664.5;
+  at_opt->rad_1d_z[44] = 1715.5;
+  at_opt->rad_1d_z[45] = 1767.0;
+  at_opt->rad_1d_z[46] = 1818.5;
+  at_opt->rad_1d_z[47] = 1870.0;
+  at_opt->rad_1d_z[48] = 1922.5;
+  at_opt->rad_1d_z[49] = 1975.0;
+
+  /* Complete 1-D mesh to ztop in case of radiative transfer */
+  if (at_opt->rad_1d_nvert > 0) {
+    int i = at_opt->rad_1d_nlevels;
+    cs_real_t zvmax = 1975.;/* top of the domain */
+    cs_real_t ztop = 11000.;/* top of the troposphere */
+    for (cs_real_t zzmax = (((int) zvmax)/1000)*1000.;
+         zzmax <= (ztop -1000);
+         i++) {
+      zzmax += 1000.;
+      at_opt->rad_1d_z[i] = zzmax;
+    }
+  }
+
+  /* Initialize position of each vertical*/
+  for (int i = 0; i < at_opt->rad_1d_nvert; i++) {
+    at_opt->rad_1d_xy[0 * at_opt->rad_1d_nvert + i] = 50.; /* X coord */
+    at_opt->rad_1d_xy[1 * at_opt->rad_1d_nvert + i] = 50.; /* Y coord */
+    at_opt->rad_1d_xy[2 * at_opt->rad_1d_nvert + i] = 1.; /* kmin in case of
+                                                             relief */
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

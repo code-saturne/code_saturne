@@ -146,13 +146,6 @@ else if (imeteo.eq.2) then
   call cs_atmo_compute_meteo_profiles()
 endif
 
-if (iatra1.gt.0) then
-
-  imode = 1
-  call usatdv(imode)
-
-endif
-
 ! Atmospheric gaseous chemistry
 if (ifilechemistry.ge.1) then
 

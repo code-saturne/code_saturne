@@ -128,10 +128,9 @@ if (ippmod(ieljou).ge.1.or.ippmod(ielarc).ge.1) then
   call elini1(diftl0)
 endif
 
-! ---> Physique particuliere : Ecoulements atmospheriques
-
-if ( ippmod(iatmos).ge.0 ) then
-  call atini1
+! Atmospheric module, second pass
+if (ippmod(iatmos).ge.0) then
+  call atini2
 endif
 
 ! ---> Physique particuliere : Aerorefrigerants
