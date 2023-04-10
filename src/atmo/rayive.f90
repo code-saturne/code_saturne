@@ -74,7 +74,7 @@ if(u.ge.0.01d0) then
   dza = 0.24d0/(u + 0.01d0)/log(10.d0)
 else
   za = 0.846d0*(u + 3.59d-5)**0.243d0 - 6.9d-2
-  dza = 0.846d0*0.243d0*(u + 3.59d-5)**(0.243d0 - 1.d0)
+  dza = 0.846d0*0.243d0*(u + 3.59d-5)**(0.243d0 - 1.d0)!FIXME can do a NaN
 endif
 
 !  emissivite des dimeres
