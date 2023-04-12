@@ -1440,7 +1440,129 @@ with respect to the three components of the gradient and taking the
 results equal to zero, three equations can then be derived and solved as
 a system to get the pressure gradient.
 
-%TODO{Add missing}
-
 Please refer to the \doxygenanchor{structcs__stokes__model__t.html\#iphydr}{programmers
 reference of the dedicated keyword \texttt{iphydr}}.
+
+%TODO{Add missing}
+
+%-------------------------------------------------------------------------------
+\subsection{Staggered 1D scheme}
+
+Finite volume methods can use either staggered-grid or co-located-grid
+discretizations. If the former generally result in greater stability and
+robustness, it proves to be more difficult to implement for complex grid and be
+more resource-consuming. However, in a one-dimensional framework, it appears as
+a natural discretization to avoid handling drawbacks of co-localization such as
+checkerboard issues. We detail in the following a 1D staggered approach for
+\CS: while pressure remain located at cell centers, the velocities will be
+defined at cell faces.
+
+\subsubsection{Description}
+
+We consider a simplified 1D formulation of the Navier Stokes equations without
+diffusive nor convective effects. The physics one wants to model are taken into
+account through an isotropic head loss term. Therefore we do not need to solve
+the prediction step and we can perform the following resolution only:
+\begin{equation}
+    \left\lbrace\begin{array}{l}
+    \displaystyle{}\frac{\left(\rho\vect{u}\right)^{n+1}-\left(\rho\vect{u}\right)^{n}}{\Delta t}+\rho^{n+1}K\left(\vect{u}^{n}\right)\vect{u}^{n+1}+\gradv P^{n+1}=\rho^{n}\vect{g}+\vect{TS}^{n} \\
+    \displaystyle{}\divs\left(\left(\rho\vect{u}\right)^{n+1}\right)=0
+    \end{array}
+    \right.
+\end{equation}
+Where $\vect{TS}$ denotes a source term. We integrate the gravity contribution
+in the pressure gradient by writing $p=P-\rho_{0}\vect{g}\cdot\vect{x}$ and
+decomposing the density into $\rho^{n}=\rho_{0}+\delta\rho^{n}$. The first
+equation can be written:
+\begin{equation}
+    \left(\frac{1}{\Delta t}+K\left(\vect{u}^{n}\right)\right)\left(\rho\vect{u}\right)^{n+1}-\frac{1}{\Delta t}\left(\rho\vect{u}\right)^{n}=-\gradv p^{n+1}+\delta\rho^{n}\vect{g}+\vect{TS}^{n}
+\end{equation}
+Let us denote the term:
+\begin{equation}
+    \tau^{n}=\left(\frac{1}{\Delta t}+K\left(\vect{u}^{n}\right)\right)^{-1}
+\end{equation}
+The relation becomes:
+\begin{equation}
+    \left(\rho\vect{u}\right)_{\face}^{n+1}-\frac{\tau^{n}}{\Delta t}\left(\rho\vect{u}\right)_{\face}^{n}=-\tau^{n}\gradv_{\face} p^{n+1}+\tau^{n}\left(\delta\rho^{n}\vect{g}+\vect{TS}_{\face}^{n}\right)
+\end{equation}
+In the following we will consider that we are working at constant densities:
+\begin{equation}
+    \left(\rho\vect{u}\right)_{\face}^{n+1}-\frac{\tau^{n}}{\Delta t}\left(\rho\vect{u}\right)_{\face}^{n}=-\tau^{n}\gradv_{\face} p^{n+1}+\tau^{n}\vect{TS}_{\face}^{n}
+\end{equation}
+One can then take the divergence and use the divergence-free condition to
+write:
+\begin{equation}
+    \divs_{\celli}\left(\tau^{n}\gradv p^{n+1}\right)=\divs_{\celli}\left(\frac{\tau^{n}}{\Delta t}\left(\rho\vect{u}\right)^{n}\right)+\divs_{\celli}\left(\tau^{n}\vect{TS}_{\face}^{n}\right)
+\end{equation}
+At the inlet boundary with an imposed velocity (we assume there is no source
+term in this zone), one can set a Neumann condition on the pressure:
+\begin{equation}
+    \tau^{n}\frac{\partial p}{\partial n}=\frac{\tau^{n}}{\Delta t}\left(\rho\vect{u}\right)^{n}\cdot\vect{n}-\left(\rho\vect{u}\right)^{n+1}\cdot\vect{n}
+\end{equation}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.55 \textwidth]{staggered}
+    \caption{Pseudo-1D tee configuration and notations.}
+    \label{fig:geometry}
+\end{figure}
+
+\subsubsection{Implementation}
+
+\paragraph{Boundary condition} The inlet boundary condition has to be
+consistent with the particular handling of the pressure resolution. For an
+inlet with an imposed velocity, one can set a Neumann condition on the
+pressure:
+\begin{equation}
+\tau^{n}\frac{\partial p}{\partial n}=\frac{\tau^{n}}{\Delta t}\underbrace{\left(\rho\vect{u}\right)^{n}\cdot\vect{n}}_{mass\_flux\_prev}-\underbrace{\left(\rho\vect{u}\right)^{n+1}\cdot\vect{n}}_{mass\_flux\_new}
+\end{equation}
+
+\paragraph{Velocity} The new velocity, which is not used in the computation
+(can be seen as post-processing), is computed from mass fluxes
+(\texttt{irevmc=1} option):
+\begin{equation}
+    \vect{u}_{\celli}^{n+1}=\frac{1}{\rho_{\celli}\Omega_{\celli}}\sum_{\fij}\left(\vect{x}_{\fij}-\vect{x}_{\celli}\right)\left(\rho\vect{u}\right)_{\fij}^{n+1}\cdot\vect{S}_{\ij}
+\end{equation}
+
+\subsubsection{With porosity}
+
+One can include the porosity $\epsilon$ in the derivation:
+\begin{equation}
+    \left\lbrace\begin{array}{l}
+    \displaystyle{}\frac{\left(\epsilon\rho\vect{u}\right)^{n+1}-\left(\epsilon\rho\vect{u}\right)^{n}}{\Delta t}+\epsilon\rho^{n+1}K\left(\vect{u}^{n}\right)\vect{u}^{n+1}+\epsilon\gradv P^{n+1}=\epsilon\rho^{n}\vect{g}+\epsilon\vect{TS}^{n} \\
+    \displaystyle{}\divs\left(\left(\epsilon\rho\vect{u}\right)^{n+1}\right)=0
+    \end{array}
+    \right.
+\end{equation}
+We integrate the gravity contribution in the pressure gradient by writing
+$p=P-\rho_{0}\vect{g}\cdot\vect{x}$ and decomposing the density into
+$\rho^{n}=\rho_{0}+\delta\rho^{n}$. The first equation can be written:
+\begin{equation}
+    \left(\frac{1}{\Delta t}+K\left(\vect{u}^{n}\right)\right)\left(\epsilon\rho\vect{u}\right)^{n+1}-\frac{1}{\Delta t}\left(\epsilon\rho\vect{u}\right)^{n}=-\epsilon\gradv p^{n+1}+\epsilon\delta\rho^{n}\vect{g}+\epsilon\vect{TS}^{n}
+\end{equation}
+Let us denote the term:
+\begin{equation}
+    \tau^{n}=\left(\frac{1}{\Delta t}+K\left(\vect{u}^{n}\right)\right)^{-1}
+\end{equation}
+The relation becomes:
+\begin{equation}
+    \left(\epsilon\rho\vect{u}\right)_{\face}^{n+1}-\frac{\tau^{n}}{\Delta t}\left(\epsilon\rho\vect{u}\right)_{\face}^{n}=-\epsilon\tau^{n}\gradv_{\face} p^{n+1}+\tau^{n}\left(\epsilon\delta\rho^{n}\vect{g}+\epsilon\vect{TS}_{\face}^{n}\right)
+\end{equation}
+In the following we will consider that we are working at constant densities:
+\begin{equation}
+    \left(\epsilon\rho\vect{u}\right)_{\face}^{n+1}-\frac{\tau^{n}}{\Delta t}\left(\epsilon\rho\vect{u}\right)_{\face}^{n}=-\epsilon\tau^{n}\gradv_{\face} p^{n+1}+\epsilon\tau^{n}\vect{TS}_{\face}^{n}
+\end{equation}
+One can then take the divergence and use the divergence-free condition to
+write:
+\begin{equation}
+    \divs_{\celli}\left(\epsilon\tau^{n}\gradv p^{n+1}\right)=\divs_{\celli}\left(\epsilon\frac{\tau^{n}}{\Delta t}\left(\rho\vect{u}\right)^{n}\right)+\divs_{\celli}\left(\epsilon\tau^{n}\vect{TS}_{\face}^{n}\right)
+\end{equation}
+At the inlet boundary with an imposed velocity (we assume there is no
+source term in this zone), one can set a Neumann condition on the pressure:
+\begin{equation}
+    \epsilon\tau^{n}\frac{\partial p}{\partial n}=\frac{\tau^{n}}{\Delta t}\left(\epsilon\rho\vect{u}\right)^{n}\cdot\vect{n}-\left(\epsilon\rho\vect{u}\right)^{n+1}\cdot\vect{n}
+\end{equation}
+
+Please refer to the \doxygenanchor{structcs__velocity__pressure__param__t.html\#staggered}{programmers
+reference of the dedicated keyword \texttt{staggered}}.
+
