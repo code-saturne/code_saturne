@@ -853,6 +853,21 @@ class XMLinitNeptune(BaseXmlInit):
             if n.xmlGetString('InterfaceSharpening') == 'Conservative_Interface_Sharpening':
                 n.xmlSetData('InterfaceSharpening', 'Olsson_Interface_Sharpening')
 
+         # Rename variables related to solid turbulent models
+        for node in self.case.xmlGetNodeList("variable"):
+            if node["name"] == "TurbKineEner_q2":
+                node["name"] = "TurbKineEner_qp"
+            elif node["name"] == "Covariance_q12":
+                node["name"] = "covariance_qfp_1"
+
+        for node in self.case.xmlGetNodeList("profile"):
+            for vp_node in node.xmlGetNodeList("var_prop"):
+                if vp_node["name"] == "TurbKineEner_q2_2":
+                    vp_node["name"] = "TurbKineEner_qp_2"
+                elif vp_node["name"] == "Covariance_q12_2":
+                    vp_node["name"] = "covariance_qfp_1_2"
+
+
     def _backwardCompatibilityCurrentVersion(self):
         """
         Change XML in order to ensure backward compatibility.
