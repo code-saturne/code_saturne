@@ -138,7 +138,7 @@ cs_f_porosity_from_scan_get_pointer(bool  **compute_porosity_from_scan);
  * Private function definitions
  *============================================================================*/
 /*----------------------------------------------------------------------------
- * Compute local solid planes at cells from scan points file.
+ * Incremental local solid plane computation at cells from scan points.
  * So that the summed squared distance to all points is minimized.
  *
  * parameters:
@@ -146,43 +146,42 @@ cs_f_porosity_from_scan_get_pointer(bool  **compute_porosity_from_scan);
  *   n_points        <-- total number of points
  *   elt_ids         <-- point to cell id
  *   n_points_cell   <-- number of points in cell
- *   cen_points      <-- center of gravity of points in cell
- *   dvol            <-- volume of cell
- *   c_w_face_normal --> normal vector to the solid plane
+ *   cen_cell        <-- center of gravity of cell
+ *   cov_mat         --> incremental covariance matrix
  *----------------------------------------------------------------------------*/
 
 static void
-_solid_plane_from_points(const cs_mesh_t   *m,
-                         cs_lnum_t          n_points,
-                         const cs_lnum_t    elt_ids[],
-                         const cs_real_t    n_points_cell[],
-                         const cs_real_3_t  cen_points[],
-                         const cs_real_3_t  point_coords[],
-                         cs_real_3_t        c_w_face_normal[])
+_incremental_solid_plane_from_points(const cs_mesh_t   *m,
+                                     cs_lnum_t          n_points,
+                                     const cs_lnum_t    elt_ids[],
+                                     const cs_real_t    n_points_cell[],
+                                     const cs_real_3_t  cen_cell[],
+                                     const cs_real_3_t  point_coords[],
+                                     cs_real_33_t       cov_mat[])
 {
-  // TODO Compute as a cross product
-  cs_real_33_t cov_mat = {{0., 0., 0.},
-                          {0., 0., 0.},
-                          {0., 0., 0.}};
-  cs_real_6_t  *c, *d, *z, *t;
-  BFT_MALLOC(c, m->n_cells, cs_real_6_t);
-  BFT_MALLOC(d, m->n_cells, cs_real_6_t);
-  BFT_MALLOC(z, m->n_cells, cs_real_6_t);
-  BFT_MALLOC(t, m->n_cells, cs_real_6_t);
+  cs_real_33_t  *c, *d, *z, *t;
+  BFT_MALLOC(c, m->n_cells, cs_real_33_t);
+  BFT_MALLOC(d, m->n_cells, cs_real_33_t);
+  BFT_MALLOC(z, m->n_cells, cs_real_33_t);
+  BFT_MALLOC(t, m->n_cells, cs_real_33_t);
   const cs_real_t threshold = _porosity_from_scan_opt.threshold;
 
   // Initialization
 
   for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
-    for (cs_lnum_t k = 0; k < 6; k++) {
-      c[c_id][k] = 0.;
-      d[c_id][k] = 0.;
-      t[c_id][k] = 0.;
-      z[c_id][k] = 0.;
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        c[c_id][i][j] = 0.;
+        d[c_id][i][j] = 0.;
+        t[c_id][i][j] = 0.;
+        z[c_id][i][j] = 0.;
+      }
     }
   }
 
-  for (cs_lnum_t p_id = 0; p_id < n_points; p_id++) { // Loop over points
+  // Loop over points
+
+  for (cs_lnum_t p_id = 0; p_id < n_points; p_id++) {
 
     cs_lnum_t cell_id = elt_ids[p_id];
 
@@ -190,20 +189,17 @@ _solid_plane_from_points(const cs_mesh_t   *m,
 
       cs_real_t point_local[3];
       for (cs_lnum_t i = 0; i < 3; i++)
-        point_local[i] = point_coords[p_id][i] - cen_points[cell_id][i];
+        point_local[i] = point_coords[p_id][i] - cen_cell[cell_id][i];
 
       // Kahan summation
-      cs_lnum_t k = 0;
       for (cs_lnum_t i = 0; i < 3; i++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
-          if (i == j || j > i) {
-            z[cell_id][k] = point_local[i] * point_local[j]
-                            - c[cell_id][k];
-            t[cell_id][k] = d[cell_id][k] + z[cell_id][k];
-            c[cell_id][k] = (t[cell_id][k] - d[cell_id][k]) - z[cell_id][k];
-            d[cell_id][k] = t[cell_id][k];
-            k++;
-          }
+          z[cell_id][i][j] = point_local[i] * point_local[j]
+                            - c[cell_id][i][j];
+          t[cell_id][i][j] = d[cell_id][i][j] + z[cell_id][i][j];
+          c[cell_id][i][j] = (t[cell_id][i][j] - d[cell_id][i][j])
+                            - z[cell_id][i][j];
+          d[cell_id][i][j] = t[cell_id][i][j];
         }
       }
     }
@@ -215,48 +211,111 @@ _solid_plane_from_points(const cs_mesh_t   *m,
   BFT_FREE(c);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+    for (cs_lnum_t i = 0; i < 3; i++)
+      for (cs_lnum_t j = 0; j < 3; j++)
+          cov_mat[cell_id][i][j] += d[cell_id][i][j];
+
+  } // Loop over cells
+
+  BFT_FREE(d);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute local solid planes at cells from scan points file.
+ * So that the summed squared distance to all points is minimized.
+ *
+ * parameters:
+ *   m               <-- pointer to mesh
+ *   n_points_cell   <-- number of points in cell
+ *   cen_points      <-- center of gravity of points relative to cell centre
+ *   cov_mat         <-- Covariance matrix of points in cell
+ *   c_w_face_normal --> normal vector to the solid plane
+ *----------------------------------------------------------------------------*/
+
+static void
+_solid_plane_from_points(const cs_mesh_t   *m,
+                         const cs_real_t    n_points_cell[],
+                         const cs_real_3_t  cen_points[],
+                         const cs_real_33_t cov_mat[],
+                         cs_real_3_t        c_w_face_normal[])
+{
+  const cs_real_t threshold = _porosity_from_scan_opt.threshold;
+
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
 
     /* At least three points required */
     if (n_points_cell[cell_id] > threshold) {
 
-      cov_mat[0][0] = d[cell_id][0];
-      cov_mat[0][1] = d[cell_id][1];
-      cov_mat[0][2] = d[cell_id][2];
-      cov_mat[1][1] = d[cell_id][3];
-      cov_mat[1][2] = d[cell_id][4];
-      cov_mat[2][2] = d[cell_id][5];
+      cs_real_33_t cv;
+      cs_real_3_t sx;
 
-      cs_real_t det_x =   cov_mat[1][1]*cov_mat[2][2]
-                        - cov_mat[1][2]*cov_mat[1][2];
-      cs_real_t det_y =   cov_mat[0][0]*cov_mat[2][2]
-                        - cov_mat[0][2]*cov_mat[0][2];
-      cs_real_t det_z =   cov_mat[0][0]*cov_mat[1][1]
-                        - cov_mat[0][1]*cov_mat[0][1];
+      cs_real_33_t a_x, a_y, a_z;
+      cs_real_33_t b;
 
-      cs_real_t det_xy =   cov_mat[0][2]*cov_mat[1][2]
-                         - cov_mat[0][1]*cov_mat[2][2];
-      cs_real_t det_xz =   cov_mat[0][1]*cov_mat[1][2]
-                         - cov_mat[0][2]*cov_mat[1][1];
-      cs_real_t det_zy =   cov_mat[0][1]*cov_mat[0][2]
-                         - cov_mat[1][2]*cov_mat[0][0];
+      // Initialization
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        sx[i] = cen_points[cell_id][i]/n_points_cell[cell_id];
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          cv[i][j] = cov_mat[cell_id][i][j]/n_points_cell[cell_id];
+        }
+      }
+
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          a_x[i][j] = cv[i][j];
+          a_y[i][j] = cv[i][j];
+          a_z[i][j] = cv[i][j];
+        }
+      }
+      a_x[0][0] = 1.;
+      a_x[0][1] = sx[1];
+      a_x[0][2] = sx[2];
+      a_x[1][0] = sx[1];
+      a_x[2][0] = sx[2];
+
+      a_y[0][1] = sx[0];
+      a_y[1][0] = sx[0];
+      a_y[1][1] = 1.;
+      a_y[1][2] = sx[2];
+      a_y[2][1] = sx[2];
+
+      a_z[0][2] = sx[0];
+      a_z[1][2] = sx[1];
+      a_z[2][0] = sx[0];
+      a_z[2][1] = sx[1];
+      a_z[2][2] = 1.;
+
+
+      cs_real_t det_x =  cs_math_33_determinant(a_x);
+      cs_real_t det_y =  cs_math_33_determinant(a_y);
+      cs_real_t det_z =  cs_math_33_determinant(a_z);
+
+      /* RHS of linear system */
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          b[i][j] = -cv[i][j];
+          if (i == j)
+            b[i][j] = -sx[i];
+        }
+      }
 
       cs_real_t det_max = fmax(fmax(det_x, det_y), det_z);
       if (det_max > 0.0) {
         // Pick path with best conditioning:
         if (CS_ABS(det_max - det_x) < cs_math_epzero*det_max) {
-          c_w_face_normal[cell_id][0] = det_x;
-          c_w_face_normal[cell_id][1] = det_xy;
-          c_w_face_normal[cell_id][2] = det_xz;
+          cs_math_33_inv_cramer_in_place(a_x);
+          cs_math_33_3_product(a_x, b[0], c_w_face_normal[cell_id]);
+          c_w_face_normal[cell_id][0] = 1.;
         }
         else if (CS_ABS(det_max - det_y) < cs_math_epzero*det_max) {
-          c_w_face_normal[cell_id][0] = det_xy;
-          c_w_face_normal[cell_id][1] = det_y;
-          c_w_face_normal[cell_id][2] = det_zy;
+          cs_math_33_inv_cramer_in_place(a_y);
+          cs_math_33_3_product(a_y, b[1], c_w_face_normal[cell_id]);
+          c_w_face_normal[cell_id][1] = 1.;
         }
         else {
-          c_w_face_normal[cell_id][0] = det_xz;
-          c_w_face_normal[cell_id][1] = det_zy;
-          c_w_face_normal[cell_id][2] = det_z;
+          cs_math_33_inv_cramer_in_place(a_z);
+          cs_math_33_3_product(a_z, b[2], c_w_face_normal[cell_id]);
+          c_w_face_normal[cell_id][2] = 1.;
         }
         cs_math_3_normalize(c_w_face_normal[cell_id],
                             c_w_face_normal[cell_id]);
@@ -279,9 +338,7 @@ _solid_plane_from_points(const cs_mesh_t   *m,
 
   } // Loop over cells
 
-  BFT_FREE(d);
 }
-
 /*----------------------------------------------------------------------------
  * Prepare computation of porosity from scan points file.
  *
@@ -331,9 +388,18 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   cs_real_t *cen_points =
     (cs_real_t *)cs_field_by_name("cell_scan_points_cog")->val;
 
+  /* Points local averaged color */
+  cs_real_t *cell_color =
+    (cs_real_t *)cs_field_by_name("cell_scan_points_color")->val;
+
   /* Immersed solid roughness */
   cs_real_t *c_w_face_rough =
     (cs_real_t *)cs_field_by_name("solid_roughness")->val;
+
+  /* Covariance matrix for solid plane computation */
+  cs_real_33_t *cov_mat;
+  BFT_MALLOC(cov_mat, m->n_cells, cs_real_33_t);
+  memset(cov_mat, 0., m->n_cells * sizeof(cs_real_33_t));
 
   /* Loop on file_names */
   char *tok;
@@ -614,27 +680,20 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
       for (cs_lnum_t i = 0; i < n_points_dist; i++) {
         cs_lnum_t c_id = dist_loc[i];
         f_nb_scan->val[c_id] += 1.;
-        for (cs_lnum_t idim = 0; idim < 3; idim++)
-          cen_points[c_id*3+idim] += dist_coords[i*3 + idim];
-      }
-      for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
-        if (f_nb_scan->val[c_id] > 0) {
-          for (cs_lnum_t idim = 0; idim < 3; idim++)
-            cen_points[c_id*3+idim] /= f_nb_scan->val[c_id];
+        for (cs_lnum_t idim = 0; idim < 3; idim++) {
+          cen_points[c_id*3+idim] += (dist_coords[i*3 + idim]
+                                    - mq->cell_cen[c_id*3+idim]);
+          cell_color[c_id*3+idim] += colors[i*3 + idim];
         }
       }
 
-      // Normal vector to the solid plane
-      cs_real_3_t *restrict c_w_face_normal
-        = (cs_real_3_t *restrict)mq->c_w_face_normal;
-      // TODO do it incrementally and finalize it outside of the loop
-      _solid_plane_from_points(m,
-                               n_points_dist,
-                               dist_loc,
-                               (const cs_real_t   *)f_nb_scan->val,
-                               (const cs_real_3_t *)cen_points,
-                               (const cs_real_3_t *)dist_coords,
-                               c_w_face_normal);
+      _incremental_solid_plane_from_points(m,
+                                           n_points_dist,
+                                           dist_loc,
+                                           (const cs_real_t   *)f_nb_scan->val,
+                                           (const cs_real_3_t *)mq->cell_cen,
+                                           (const cs_real_3_t *)dist_coords,
+                                           cov_mat);
 
       /* Solid face roughness from point cloud is computed as the RMS of points
        *  distance to the reconstructed plane */
@@ -647,12 +706,13 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
         if (f_nb_scan->val[c_id] > 1.)  {// at least 2 points to compute distance
 
           for (cs_lnum_t idim = 0; idim < 3; idim++)
-            vec_w_point[idim] = dist_coords[i*3 + idim] - cen_points[c_id*3+idim];
-
-          w_point_dist = cs_math_3_dot_product(vec_w_point, c_w_face_normal[c_id]);
+            vec_w_point[idim] = dist_coords[i*3 + idim]
+                              - cen_points[c_id*3+idim];
+          //TODO compute roughness incrementally
+          //w_point_dist = cs_math_3_dot_product(vec_w_point, c_w_face_normal[c_id]);
 
           c_w_face_rough[c_id] += 2 * sqrt(w_point_dist * w_point_dist)
-            / f_nb_scan->val[c_id];
+                                / f_nb_scan->val[c_id];
         }
       }
       //TODO compute the minimum distance between point to suggest a minimum resolution
@@ -673,6 +733,32 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
 
   } /* End of multiple files */
 
+  /* Finalization */
+
+  const cs_field_t *f_nb_scan = cs_field_by_name_try("nb_scan_points");
+
+  // Normal vector to the solid plane
+  cs_real_3_t *restrict c_w_face_normal
+    = (cs_real_3_t *restrict)mq->c_w_face_normal;
+
+  _solid_plane_from_points(m,
+                           (const cs_real_t   *)f_nb_scan->val,
+                           (const cs_real_3_t *)cen_points,
+                           cov_mat,
+                           c_w_face_normal);
+
+  for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
+    if (f_nb_scan->val[c_id] > 0) {
+      for (cs_lnum_t idim = 0; idim < 3; idim++) {
+        cen_points[c_id*3+idim] /= f_nb_scan->val[c_id];
+        cen_points[c_id*3+idim] += mq->cell_cen[c_id*3+idim];
+        cell_color[c_id*3+idim] /= f_nb_scan->val[c_id];
+      }
+    }
+  }
+
+  /* Free memory */
+  BFT_FREE(cov_mat);
   BFT_FREE(file_names);
 
   /* Bounding box */
@@ -681,12 +767,12 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
              max_vec_tot[0], max_vec_tot[1], max_vec_tot[2]);
 
   /* Parallel synchronisation */
-  cs_real_3_t *restrict c_w_face_normal
-    = (cs_real_3_t *restrict)mq->c_w_face_normal;
   cs_mesh_sync_var_scal(mq->cell_vol);
   if (m->halo != NULL) {
     cs_halo_sync_var_strided(m->halo, CS_HALO_EXTENDED,
                              (cs_real_t *)cen_points, 3);
+    cs_halo_sync_var_strided(m->halo, CS_HALO_EXTENDED,
+                             (cs_real_t *)cell_color, 3);
     cs_halo_sync_var_strided(m->halo, CS_HALO_EXTENDED,
                              (cs_real_t *)c_w_face_normal, 3);
     if (m->n_init_perio > 0)
