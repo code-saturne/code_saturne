@@ -1064,8 +1064,6 @@ cs_parameters_check(void)
   if (CS_F_(vel) != NULL) {
     int key_t_ext_id = cs_field_key_id("time_extrapolated");
     cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(vel));
-    f_desc = _field_section_desc(f_pot, "while reading numerical "
-                                        "parameters for variable");
 
     const char *tds_err_str
       = N_("Some options are incompatible with the time discretization scheme\n"
