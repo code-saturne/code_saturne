@@ -60,8 +60,8 @@ class TurbulenceModelsDescription:
     turbulenceVariables['les_smagorinsky'] = []
     turbulenceVariables['les_wale'] = []
     turbulenceVariables['q2-q12-tchen'] = []
-    turbulenceVariables['q2-q12'] = ['TurbKineEner_q2', 'Covariance_q12']
-    turbulenceVariables['r2-q12'] = ['reynolds_stress','Covariance_q12']
+    turbulenceVariables['q2-q12'] = ['TurbKineEner_qp', 'covariance_qfp_1']
+    turbulenceVariables['r2-q12'] = ['reynolds_stress','covariance_qfp_1']
     turbulenceVariables['r2-r12-tchen'] = ['reynolds_stress',
                                            'R12XX','R12XY','R12XZ','R12YY','R12YZ','R12ZZ']
 
@@ -84,7 +84,7 @@ class TurbulenceModelsDescription:
     turbulenceProperties['rij-epsilon_ebrsm'] = ["turb_viscosity"]
     turbulenceProperties['les_smagorinsky'] = ["turb_viscosity"]
     turbulenceProperties['les_wale'] = ["turb_viscosity"]
-    turbulenceProperties['q2-q12-tchen'] = ["TurbKineEner_q2", "Covariance_q12", "turb_viscosity"]
+    turbulenceProperties['q2-q12-tchen'] = ["TurbKineEner_qp", "covariance_qfp_1", "turb_viscosity"]
     turbulenceProperties['q2-q12'] = ["turb_viscosity"]
     turbulenceProperties['r2-q12'] = ["turb_viscosity"]
     turbulenceProperties['r2-r12-tchen'] = ["turb_viscosity"]
@@ -442,11 +442,11 @@ class TurbulenceTestCase(ModelTest):
         doc = '''<turbulence>
                          <variables/>
                          <properties>
-                                 <property choice="" field_id="2" label="TurbKineEner_q22" name="TurbKineEner_q2">
+                                 <property choice="" field_id="2" label="TurbKineEner_q22" name="TurbKineEner_qp">
                                          <listing_printing status="on"/>
                                          <postprocessing_recording status="on"/>
                                  </property>
-                                 <property choice="" field_id="2" label="Covariance_q122" name="Covariance_q12">
+                                 <property choice="" field_id="2" label="Covariance_q122" name="covariance_qfp_1">
                                          <listing_printing status="on"/>
                                          <postprocessing_recording status="on"/>
                                  </property>
