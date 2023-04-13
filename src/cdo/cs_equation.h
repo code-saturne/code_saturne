@@ -395,6 +395,21 @@ cs_equation_get_core_structure(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return a pointer to an array of values corresponding to the values of
+ *        the source terms (cumulated values if several source terms are
+ *        defined)
+ *
+ * \param[in] eq      pointer to a cs_equation_t structure
+ *
+ * \return a pointer to an array of cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_equation_get_source_term_array(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return true is the given equation is steady otherwise false
  *
  * \param[in] eq       pointer to a cs_equation_t structure

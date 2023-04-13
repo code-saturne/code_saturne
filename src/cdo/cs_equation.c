@@ -866,93 +866,6 @@ cs_equation_get_boundary_flux(const cs_equation_t    *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return the flag associated to an equation
- *
- * \param[in] eq       pointer to a cs_equation_t structure
- *
- * \return a flag (cs_flag_t type)
- */
-/*----------------------------------------------------------------------------*/
-
-cs_flag_t
-cs_equation_get_flag(const cs_equation_t    *eq)
-{
-  cs_flag_t  ret_flag = 0;
-
-  if (eq == NULL)
-    return ret_flag;
-
-  ret_flag = eq->param->flag;
-
-  return ret_flag;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Redefine the flag associated to an equation
- *
- * \param[in, out] eq       pointer to a cs_equation_t structure
- * \param[in]      flag     new flag to set
-*/
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_set_flag(cs_equation_t    *eq,
-                     cs_flag_t         flag)
-{
-  if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
-  assert(eq->param != NULL);
-
-  eq->param->flag = flag;;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Add a hook function to enable an advanced control during the
- *        cellwise system building.
- *        Only for an advanced usage. The context may be set to NULL if there
- *        is no need to get additional information.
- *
- * \param[in, out] eq        pointer to the cs_equation_t stucture to update
- * \param[in]      context   pointer to a structure for additional information
- * \param[in]      func      pointer to the user function
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_add_build_hook(cs_equation_t               *eq,
-                           void                        *context,
-                           cs_equation_build_hook_t    *func)
-{
-  if (eq == NULL)
-    return;
-
-  cs_equation_param_t  *eqp = eq->param;
-  assert(eqp != NULL);
-
-  if (eq->builder == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Initialization of equation %s has not been done yet.\n"
-              " Please call this operation later in"
-              " cs_user_extra_operations_initialize() for instance.",
-              __func__, eqp->name);
-
-  cs_equation_builder_t   *eqb = eq->builder;
-
-  eqb->hook_context = context;
-  eqb->hook_function = func;
-  eqp->flag |= CS_EQUATION_BUILD_HOOK;
-
-  /* Add an entry in the setup log file (this is done after the main setup
-   * log but one needs to initialize equations before calling this function) */
-
-  cs_log_printf(CS_LOG_SETUP, " Equation %s: Add a user hook function\n",
-                eqp->name);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Return the cs_equation_builder_t structure associated to a
  *        cs_equation_t structure. Only for an advanced usage.
  *
@@ -1017,6 +930,59 @@ cs_equation_get_core_structure(const cs_equation_t    *eq)
   }
 
   return core;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a pointer to an array of values corresponding to the values of
+ *        the source terms (cumulated values if several source terms are
+ *        defined)
+ *
+ * \param[in] eq      pointer to a cs_equation_t structure
+ *
+ * \return a pointer to an array of cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_equation_get_source_term_array(const cs_equation_t    *eq)
+{
+  cs_real_t  *source_term = NULL;
+
+  if (eq != NULL) {
+
+    const cs_equation_param_t  *eqp = eq->param;
+
+    assert(eq->scheme_context != NULL);
+    assert(eqp != NULL);
+
+    if (eqp->dim == 1) {        /* scalar-valued case */
+
+      switch(eqp->space_scheme) {
+
+      case CS_SPACE_SCHEME_CDOVB:
+        return cs_cdovb_scaleq_get_source_term_values(eq->scheme_context);
+
+      case CS_SPACE_SCHEME_CDOFB:
+        return cs_cdofb_scaleq_get_source_term_values(eq->scheme_context);
+
+      case CS_SPACE_SCHEME_CDOVCB:
+        return cs_cdovcb_scaleq_get_source_term_values(eq->scheme_context);
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: (Eq. %s). Not implemented.", __func__, eqp->name);
+
+      }
+
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Case not handled yet. Eq. \"%s\"\n", __func__, eqp->name);
+
+  }
+
+  return source_term;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1300,6 +1266,93 @@ cs_equation_get_time_eval(const cs_time_step_t     *ts,
   } /* End of switch on the time scheme of the equation */
 
   return time_eval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the flag associated to an equation
+ *
+ * \param[in] eq       pointer to a cs_equation_t structure
+ *
+ * \return a flag (cs_flag_t type)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_flag_t
+cs_equation_get_flag(const cs_equation_t    *eq)
+{
+  cs_flag_t  ret_flag = 0;
+
+  if (eq == NULL)
+    return ret_flag;
+
+  ret_flag = eq->param->flag;
+
+  return ret_flag;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Redefine the flag associated to an equation
+ *
+ * \param[in, out] eq       pointer to a cs_equation_t structure
+ * \param[in]      flag     new flag to set
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_flag(cs_equation_t    *eq,
+                     cs_flag_t         flag)
+{
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
+  assert(eq->param != NULL);
+
+  eq->param->flag = flag;;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a hook function to enable an advanced control during the
+ *        cellwise system building.
+ *        Only for an advanced usage. The context may be set to NULL if there
+ *        is no need to get additional information.
+ *
+ * \param[in, out] eq        pointer to the cs_equation_t stucture to update
+ * \param[in]      context   pointer to a structure for additional information
+ * \param[in]      func      pointer to the user function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_build_hook(cs_equation_t               *eq,
+                           void                        *context,
+                           cs_equation_build_hook_t    *func)
+{
+  if (eq == NULL)
+    return;
+
+  cs_equation_param_t  *eqp = eq->param;
+  assert(eqp != NULL);
+
+  if (eq->builder == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Initialization of equation %s has not been done yet.\n"
+              " Please call this operation later in"
+              " cs_user_extra_operations_initialize() for instance.",
+              __func__, eqp->name);
+
+  cs_equation_builder_t   *eqb = eq->builder;
+
+  eqb->hook_context = context;
+  eqb->hook_function = func;
+  eqp->flag |= CS_EQUATION_BUILD_HOOK;
+
+  /* Add an entry in the setup log file (this is done after the main setup
+   * log but one needs to initialize equations before calling this function) */
+
+  cs_log_printf(CS_LOG_SETUP, " Equation %s: Add a user hook function\n",
+                eqp->name);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -2726,6 +2726,29 @@ cs_cdovcb_scaleq_get_cell_values(void     *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the array storing the source term values associated to each
+ *        DoF. The lifecycle of this array is managed by the code. So one does
+ *        not have to free the return pointer.
+ *
+ * \param[in, out] context    pointer to a data structure cast on-the-fly
+ *
+ * \return a pointer to an array of cs_real_t (size n_vertices + n_cells)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdovcb_scaleq_get_source_term_values(void    *context)
+{
+  cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t *)context;
+
+  if (eqc == NULL)
+    return NULL;
+
+  return eqc->source_terms;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute for each vertex of a boundary face, the portion of diffusive
  *         flux across the boundary face. The surface attached to each vertex
  *         corresponds to the intersection of its dual cell (associated to
