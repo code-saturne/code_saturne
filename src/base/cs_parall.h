@@ -604,6 +604,59 @@ cs_parall_thread_range(cs_lnum_t    n,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute array index bounds for a local thread for upper triangular
+ *        matrix elements.
+ *
+ * When called inside an OpenMP parallel section, this will return the
+ * start an past-the-end indexes for the array range assigned to that
+ * thread. In other cases, the start index is 1, and the past-the-end
+ * index is n;
+ *
+ * Compared to \ref cs_parall_thread_range, this variant assumes work on
+ * the upper triangular part of a matrix, where the lower part is
+ * ignored.
+ *
+ * \param[in]       n          size of array
+ * \param[in]       type_size  element type size (or multiple)
+ * \param[in, out]  s_id       start index for the current thread
+ * \param[in, out]  e_id       past-the-end index for the current thread
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_parall_thread_range_upper(cs_lnum_t    n,
+                             size_t       type_size,
+                             cs_lnum_t   *s_id,
+                             cs_lnum_t   *e_id)
+{
+#if defined(HAVE_OPENMP)
+  const int t_id = omp_get_thread_num();
+  const double n_t = omp_get_num_threads();
+  const cs_lnum_t cl_m = CS_CL_SIZE / type_size;  /* Cache line multiple */
+
+  double r0 = (double)t_id / (double)n_t;
+  double r1 = (double)(t_id+1) / (double)n_t;
+
+  r0 = r0*r0;
+  r1 = r1*r1;
+
+  const cs_lnum_t t_0 = r0*n;
+  const cs_lnum_t t_1 = r1*n;
+
+  *s_id = t_0 * n;
+  *e_id = t_1 * n;
+  *s_id = cs_align(*s_id, cl_m);
+  *e_id = cs_align(*e_id, cl_m);
+  if (*e_id > n) *e_id = n;
+#else
+  CS_UNUSED(type_size);         /* avoid compiler warning */
+  *s_id = 0;
+  *e_id = n;
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
