@@ -1403,14 +1403,14 @@ is formulated as the minimization of the function:
 \paragraph{Boundary faces.} Considering only Dirichlet and Neumann conditions,
 the general condition writes:
 \begin{equation}
-	\grad_{\fib}{p^\star}\cdot\vect{d}_{\ib}=\frac{A^{g}_{\fib} +\left(B^{g}_{\fib}-1\right)p_{\celli}}{\norm{\centfb-\centip}}+\frac{B^{g}_{\fib}-1}{\norm{\centfb-\centip}}\left(\centip-\centi\right)\cdot\grad_{\celli}{p^\star}+\frac{B^{g}_{\fib}-1}{\norm{\centf-\centip}}\left(\centfb-\centi\right)\cdot\vect{f}_{\celli}
+	\grad_{\fib}{p^\star}\cdot\vect{d}_{\ib}=\frac{A^{g}_{\fib} +\left(B^{g}_{\fib}-1\right)p_{\celli}}{\norm{\centfb-\centip}}+\frac{B^{g}_{\fib}-1}{\norm{\centfb-\centip}}\left(\centip-\centi\right)\cdot\grad_{\celli}{p^\star}+\frac{B^{g}_{\fib}-1}{\norm{\centfb-\centip}}\left(\centfb-\centi\right)\cdot\vect{f}_{\celli}
 \end{equation}
 For an homogeneous Neumann condition $A^{g}_{\fib}=0$ and $B^{g}_{\fib}=0$ so that
 $\grad_{\fib}{p^\star}\cdot\vect{d}_{\ib}=0$. For a Dirichlet condition
 $B^{g}_{\fib}=0$ and one gets:
 \begin{align*}
 	&&\grad_{\fib}{p^\star}\cdot\vect{d}_{\ib} \\ &=&\frac{1}{\norm{\centfb-\centip}}\left(p_{\fib}^\star-p_{\cellip}^\star\right) \\
-	&=&\frac{1}{\norm{\centfb-\centip}}\left(p_{\fib}-p_{\celli'}-p_{\cellj}^{h}+p_{\celli'}^{h}\right) \\
+	&=&\frac{1}{\norm{\centfb-\centip}}\left(p_{\fib}-p_{\celli'}-p_{\fib}^{h}+p_{\celli'}^{h}\right) \\
 	&=&\frac{1}{\norm{\centfb-\centip}}\left(A^{g}_{\fib}-p_{\celli}-\left(\centip-\centi\right)\cdot\grad_{\celli}{p}-\left(\centfb-\centip\right)\cdot\vect{f}_{\celli}\right) \\
 	&=&\frac{1}{\norm{\centfb-\centip}}\left(A^{g}_{\fib}-p_{\celli}-\left(\centip-\centi\right)\grad_{\celli}{p^\star}-\left(\centip-\centi\right)\cdot\vect{f}_{\celli}-\left(\centfb-\centip\right)\cdot\vect{f}_{\celli}\right) \\
 	&=&\frac{1}{\norm{\centf-\centip}}\left(A^{g}_{\fib}-p_{\celli}-\left(\centip-\centi\right)\cdot\grad_{\celli}{p^\star}-\left(\centfb-\centi\right)\cdot\vect{f}_{\celli}\right)
