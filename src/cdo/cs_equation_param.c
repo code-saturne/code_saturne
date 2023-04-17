@@ -1109,10 +1109,10 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->space_scheme = CS_SPACE_SCHEME_CDOFB;
       eqp->space_poly_degree = 0;
 
-      eqp->time_hodgep.type = CS_HODGE_TYPE_CPVD;
+      eqp->time_hodgep.type = CS_HODGE_TYPE_FB;
       eqp->time_hodgep.algo = CS_HODGE_ALGO_VORONOI;
 
-      eqp->reaction_hodgep.type = CS_HODGE_TYPE_CPVD;
+      eqp->reaction_hodgep.type = CS_HODGE_TYPE_FB;
       eqp->reaction_hodgep.algo = CS_HODGE_ALGO_VORONOI;
 
       eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EDFP;
