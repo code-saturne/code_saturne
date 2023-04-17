@@ -146,14 +146,26 @@ typedef struct {
   /*! y coordinate of the domain origin in Lambert-93 */
   cs_real_t y_l93;
   /*! numbers of altitudes for the dynamics */
-  int met_1d_nlevels_d;
+  union {
+    int met_1d_nlevels_d;
+    int nbmetd; /* deprecated */
+  };
   /*! numbers of altitudes for the temperature and specific humidity */
-  int met_1d_nlevels_t;
+  union {
+    int met_1d_nlevels_t;
+    int nbmett; /* deprecated */
+  };
   /*! numbers of time steps for the meteo profiles */
-  int met_1d_ntimes;
+  union {
+    int met_1d_ntimes;
+    int nbmetm;
+  };
 
   /*! Number of vertical levels */
-  int met_1d_nlevels_max_t;
+  union {
+    int met_1d_nlevels_max_t;
+    int nbmaxt;
+  };
   /*! 1-D radiative model (0 off, 1 on) */
   int radiative_model_1d;
   /*! 1-D radiative model: number of vertical arrays */
