@@ -3,6 +3,9 @@ Release 7.0.6 (not released yet)
 
 Bug fixes:
 
+- Fix sliding wall BC with y or z components (due to missing update
+  of equation parameters dimension for vector and tensor fields).
+
 - Fix least-squares scalar gradient reconstructions with extended ghost
   cells in parallel (due to incomplete synchronization).
 

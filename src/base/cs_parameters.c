@@ -48,6 +48,7 @@
 
 #include "cs_convection_diffusion.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_gradient.h"
 #include "cs_log.h"
 #include "cs_map.h"
@@ -514,6 +515,9 @@ cs_f_field_set_key_struct_var_cal_opt(int                        f_id,
 void *
 cs_f_equation_param_from_var_cal_opt(const cs_f_var_cal_opt_t  *vcopt);
 
+void
+cs_f_equation_param_init_from_field(int  f_id);
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -905,6 +909,26 @@ cs_f_equation_param_from_var_cal_opt(const cs_f_var_cal_opt_t  *vcopt)
   _var_cal_opt_to_equation_params(vcopt, &eqp);
 
   return &eqp;
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize a field's equation parameters based on field info.
+ *
+ * Currently, this ensures that the dimension matches that of the field.
+ *
+ * parameters:
+ *   f_id <-- Field id
+ *
+ * returns:
+ *   pointer to matching cs_equation_params
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_equation_param_init_from_field(int  f_id)
+{
+  cs_field_t *f = cs_field_by_id(f_id);
+  cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+  eqp->dim = f->dim;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

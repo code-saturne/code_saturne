@@ -1098,8 +1098,27 @@ integer id
 ! Local variables
 type(var_cal_opt) :: vcopt
 
+!===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  ! Interface to C function returning number of user-defined variables
+
+  subroutine cs_f_equation_param_init_from_field(f_id) &
+    bind(C, name='cs_f_equation_param_init_from_field')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: f_id
+  end subroutine cs_f_equation_param_init_from_field
+
+end interface
+
 ! Most values set by default at in _var_cal_opt default;
 ! see cs_parameters.c
+
+call cs_f_equation_param_init_from_field(id)
 
 call field_get_key_struct_var_cal_opt(id, vcopt)
 
