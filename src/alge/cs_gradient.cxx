@@ -2816,8 +2816,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   cs_cocg_6_t  *restrict cocg = NULL;
 
 #if defined(HAVE_CUDA)
-  bool accel = (   cs_get_device_id() > -1
-                && cpl == NULL) ? true : false;
+  bool accel = (cs_get_device_id() > -1) ? true : false;
 #else
   bool accel = false;
 #endif
