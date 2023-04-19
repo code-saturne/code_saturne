@@ -1933,19 +1933,19 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
   for (n_sweeps = 1; n_sweeps < nswrgp; n_sweeps++) {
 
-    /* Compute right hand side */
-
-#   pragma omp parallel for
-    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-      rhs[c_id][0] = -grad[c_id][0] * cell_f_vol[c_id];
-      rhs[c_id][1] = -grad[c_id][1] * cell_f_vol[c_id];
-      rhs[c_id][2] = -grad[c_id][2] * cell_f_vol[c_id];
-    }
-
     /* Case with hydrostatic pressure */
     /*--------------------------------*/
 
     if (hyd_p_flag == 1) {
+
+    /* Compute right hand side */
+
+#     pragma omp parallel for
+      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+        rhs[c_id][0] = -(grad[c_id][0] - f_ext[c_id][0]) * cell_f_vol[c_id];
+        rhs[c_id][1] = -(grad[c_id][1] - f_ext[c_id][1]) * cell_f_vol[c_id];
+        rhs[c_id][2] = -(grad[c_id][2] - f_ext[c_id][2]) * cell_f_vol[c_id];
+      }
 
       /* Contribution from interior faces */
 
@@ -1992,45 +1992,43 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
               i_poro_duq_1[is_porous*f_id]
             };
 
-            // TODO add porous contribution
-            cs_real_t  fexd[3];
-            fexd[0] = 0.5 * (f_ext[c_id1][0] + f_ext[c_id2][0]);
-            fexd[1] = 0.5 * (f_ext[c_id1][1] + f_ext[c_id2][1]);
-            fexd[2] = 0.5 * (f_ext[c_id1][2] + f_ext[c_id2][2]);
-
             /*
                Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
                                         + (1-\alpha_\ij) \varia_\cellj\f$
-                       but for the cell \f$ \celli \f$ we remove
-                       \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-                       and for the cell \f$ \cellj \f$ we remove
-                       \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+                but for the cell \f$ \celli \f$ we remove
+                \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+                and for the cell \f$ \cellj \f$ we remove
+                \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+                We also use the property
+                \f$ \sum_\face \centf \otimes \vect{S}_\face = \vol \tens{I} \f$
+                to remove the contributions
+                \f$ ( \centi - \centf ) \cdot \vect{f}_\celli \f$
+                \f$ ( \centj - \centf ) \cdot \vect{f}_\cellj \f$
             */
 
             /* Reconstruction part */
-            cs_real_t pfaci =
-                     (i_face_cog[f_id][0]-cell_f_cen[c_id1][0])
-                    *(ktpond*f_ext[c_id1][0]-weight[f_id]*fexd[0])
-                   + (i_face_cog[f_id][1]-cell_f_cen[c_id1][1])
-                    *(ktpond*f_ext[c_id1][1]-weight[f_id]*fexd[1])
-                   + (i_face_cog[f_id][2]-cell_f_cen[c_id1][2])
-                    *(ktpond*f_ext[c_id1][2]-weight[f_id]*fexd[2])
-                   + ktpond*poro[0]
-               +     (i_face_cog[f_id][0]-cell_f_cen[c_id2][0])
-                    *((1.0 - ktpond)*f_ext[c_id2][0]-(1.-weight[f_id])*fexd[0])
-                   + (i_face_cog[f_id][1]-cell_f_cen[c_id2][1])
-                    *((1.0 - ktpond)*f_ext[c_id2][1]-(1.-weight[f_id])*fexd[1])
-                   + (i_face_cog[f_id][2]-cell_f_cen[c_id2][2])
-                    *((1.0 - ktpond)*f_ext[c_id2][2]-(1.-weight[f_id])*fexd[2])
-                   + (1.0 - ktpond)*poro[1]
-               + ( dofij[f_id][0] * (grad[c_id1][0]+grad[c_id2][0])
-                 + dofij[f_id][1] * (grad[c_id1][1]+grad[c_id2][1])
-                 + dofij[f_id][2] * (grad[c_id1][2]+grad[c_id2][2]))*0.5;
+            cs_real_t dpfaci = pvar[c_id1]
+                   + cs_math_3_distance_dot_product(cell_f_cen[c_id1],
+                                                    i_face_cog[f_id],
+                                                    f_ext[c_id1]);
+
+            cs_real_t dpfacj = pvar[c_id2]
+                   + cs_math_3_distance_dot_product(cell_f_cen[c_id2],
+                                                    i_face_cog[f_id],
+                                                    f_ext[c_id2]);
+
+            cs_real_t pfaci = ktpond*poro[0] + (1.0-ktpond)*poro[1]
+                 + 0.5*( cs_math_3_distance_dot_product(f_ext[c_id1],
+                                                        grad[c_id1],
+                                                        dofij[f_id])
+                       + cs_math_3_distance_dot_product(f_ext[c_id2],
+                                                        grad[c_id2],
+                                                        dofij[f_id]));
 
             cs_real_t pfacj = pfaci;
 
-            pfaci += (1.0-ktpond) * (pvar[c_id2] - pvar[c_id1]);
-            pfacj -= ktpond * (pvar[c_id2] - pvar[c_id1]);
+            pfaci += (1.0-ktpond) * (dpfacj - dpfaci);
+            pfacj -= ktpond * (dpfacj - dpfaci);
 
             for (cs_lnum_t j = 0; j < 3; j++) {
               rhs[c_id1][j] += pfaci * i_f_face_normal[f_id][j];
@@ -2065,15 +2063,17 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
           cs_real_t pfac
             =   coefap[f_id] * inc
               + coefbp[f_id]
-                 * (  diipb[f_id][0] * (grad[c_id][0] - f_ext[c_id][0])
-                    + diipb[f_id][1] * (grad[c_id][1] - f_ext[c_id][1])
-                    + diipb[f_id][2] * (grad[c_id][2] - f_ext[c_id][2])
-                    + (b_f_face_cog[f_id][0]-cell_f_cen[c_id][0]) * f_ext[c_id][0]
-                    + (b_f_face_cog[f_id][1]-cell_f_cen[c_id][1]) * f_ext[c_id][1]
-                    + (b_f_face_cog[f_id][2]-cell_f_cen[c_id][2]) * f_ext[c_id][2]
+                 * (  cs_math_3_distance_dot_product(f_ext[c_id],
+                                                     grad[c_id],
+                                                     diipb[f_id])
                     + poro);
 
-          pfac += (coefbp[f_id] -1.0) * pvar[c_id];
+          cs_real_t dpfac = pvar[c_id]
+                  + cs_math_3_distance_dot_product(cell_f_cen[c_id],
+                                                   b_f_face_cog[f_id],
+                                                   f_ext[c_id]);
+
+          pfac += (coefbp[f_id] - 1.0) * dpfac;
 
           rhs[c_id][0] += pfac * b_f_face_normal[f_id][0];
           rhs[c_id][1] += pfac * b_f_face_normal[f_id][1];
@@ -2089,6 +2089,15 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
     /*---------------------------------------------*/
 
     else {
+
+      /* Compute right hand side */
+
+#     pragma omp parallel for
+      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+        rhs[c_id][0] = -grad[c_id][0] * cell_f_vol[c_id];
+        rhs[c_id][1] = -grad[c_id][1] * cell_f_vol[c_id];
+        rhs[c_id][2] = -grad[c_id][2] * cell_f_vol[c_id];
+      }
 
       /* Contribution from interior faces */
 
