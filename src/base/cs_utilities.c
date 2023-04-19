@@ -49,6 +49,7 @@
 #include "bft_printf.h"
 
 #include "cs_medcoupling_intersector.h"
+#include "cs_medcoupling_postprocess.h"
 #include "cs_medcoupling_remapper.h"
 #include "cs_medcoupling_utils.h"
 #include "cs_stl.h"
@@ -79,6 +80,8 @@ cs_utilities_destroy_all_remapping(void)
 {
   cs_medcoupling_intersector_destroy_all();
   cs_medcoupling_remapper_destroy_all();
+  cs_medcoupling_slice_destroy_all();
+
   cs_medcoupling_free_meshes();
   cs_stl_mesh_destroy_all();
 }
