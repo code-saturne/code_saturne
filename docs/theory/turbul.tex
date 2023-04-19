@@ -459,7 +459,7 @@ is replaced by the following Neumann boundary condition:
 %
 A development in series in then written:
 \begin{equation}\label{eq:eq_neumann_nu_vf}
- \tilde{\nu}_\fib = \tilde{\nu}_{\centip} -   \grad_\fib \tilde{ \nu} \cdot \vect{\centip \centf}
+  \tilde{\nu}_\fib = \tilde{\nu}_{\centip} -   \grad_\fib \tilde{ \nu} \cdot (\centf -\centip)
 \end{equation}
 Finally, that is a Robin type boundary condition formulated as follows in \CS:
 \begin{equation}\label{eq:eq_neumann_nu_coef}
@@ -468,7 +468,7 @@ Finally, that is a Robin type boundary condition formulated as follows in \CS:
 with $A^g_\fib=0$ and
 %
 \begin{equation}\label{eq:eq_neumann_nu_coefb}
- B^g_\fib = \dfrac{d_0}{d_0 + \overline{\centip \centf} }
+  B^g_\fib = \dfrac{d_0}{d_0 + \norm{\centf - \centip} }
 \end{equation}
 
 \paragraph{Inlet:}
@@ -782,39 +782,44 @@ The variance transport equation is for a scalar $\varia$:
 \begin{equation}
   \rho\frac{\dd \rans{\fluct{\varia}^2}}{\dd t} =
   \underbrace{-2 \rho \grad{\rans{\varia}} \cdot \rans{\fluct{\varia} \fluct{\vect{u}}}
-  }_{P_{\theta \theta } }
-  + \dive{\left(\underbrace{ \dfrac{\mu}{Sc} \grad{\rans{\fluct{\varia}^2}}}_{D^{\nu}_{\theta \theta } } \underbrace{-\rho \rans{\fluct{\varia}^2 \fluct{\vect{u}} }}_{D^{t}_{\theta \theta } }\right)}
-  \underbrace{-2 \dfrac{\mu}{Sc} \rans{\grad{\fluct{\varia}}\cdot \grad{\fluct{\varia}}}}_{\varepsilon_{\theta \theta } }
+  }_{P_{\varia^2} }
+  + \dive{\left(\underbrace{ \dfrac{\mu}{Sc} \grad{\rans{\fluct{\varia}^2}}}_{D^{\nu}_{\varia^2 } } \underbrace{-\rho \rans{\fluct{\varia}^2 \fluct{\vect{u}} }}_{D^{t}_{\varia^2} }\right)}
+  \underbrace{-2 \dfrac{\mu}{Sc} \rans{\grad{\fluct{\varia}}\cdot \grad{\fluct{\varia}}}}_{\varepsilon_{\varia^2 } }
 \end{equation}
 
-where $P_{\theta \theta}$, $D^{\nu}_{\theta \theta }$, $D^{t}_{\theta \theta }$ et $\varepsilon_{\theta \theta}$ are respectively the terms of production, molecular diffusion, turbulent diffusion and variance dissipation.
+where $P_{\varia^2}$, $D^{\nu}_{\varia^2}$, $D^{t}_{\varia^2}$ et $\varepsilon_{\varia^2}$ are respectively the terms of production, molecular diffusion, turbulent diffusion and variance dissipation.
 The production and molecular diffusion terms are exact, only the turbulent diffusion and the dissipation need to be modelled.
-For the turbulent diffusion $D^{t}_{\theta \theta }$, a model GGDH can be used if the Reynolds stresses are solved.
+For the turbulent diffusion $D^{t}_{\varia^2 }$, a model GGDH can be used if the Reynolds stresses are solved.
 The variance transport equation becomes:
 
 \begin{equation}
-  \rho \frac{\dd \rans{\fluct{\varia}^2}}{\dd t} =\dive{ \left[ \left( \dfrac{\mu}{Sc} \tens{1}  + C_{\theta \theta}~ \rho \tens{R} \frac{k}{\varepsilon} \right)\cdot \grad{\rans{\fluct{\varia}^2}} \right]} + P_{\theta \theta}- \rho \varepsilon_{\theta \theta}
+  \rho \frac{\dd \rans{\fluct{\varia}^2}}{\dd t} =\dive{ \left[ \left( \dfrac{\mu}{Sc} \tens{1}  + C_{\theta \theta}~ \rho \tens{R} \frac{k}{\varepsilon} \right)\cdot \grad{\rans{\fluct{\varia}^2}} \right]} + P_{\varia^2}- \rho \varepsilon_{\varia^2}
  \label{eq:variance}
 \end{equation}
 
-Two methods exist to model $\varepsilon_{\theta \theta}$; one using a transport equation and one using the time scale ratio $R_f$, such as:
+Two methods exist to model $\varepsilon_{\varia^2}$; one using a transport equation and one using the time scale ratio $R_f$, such as:
 \[
-R_f=\frac{\tau_\theta}{\tau_u}=\frac{\rans{\fluct{\varia}^2}}{\varepsilon_{\theta \theta} } \frac{\varepsilon }{k}
+R_f=\frac{\tau_\varia}{\tau_u}=\frac{\rans{\fluct{\varia}^2}}{\varepsilon_{\varia^2} } \frac{\varepsilon }{k}
 \]
 thus,
 \begin{equation}
-\varepsilon_{\theta \theta}=\frac{\rans{\fluct{\varia}^2}}{R_f} \frac{\varepsilon }{k}
+\varepsilon_{\varia^2}=\frac{\rans{\fluct{\varia}^2}}{R_f} \frac{\varepsilon }{k}
 \label{eq:eptt}
 \end{equation}
 
 By default, a SGDH equation is solved:
 
 \begin{equation}
-  \rho \frac{\dd \rans{\fluct{\varia}^2}}{\dd t}=\dive{ \left[ \left(  \dfrac{\mu}{Sc}   +\dfrac{\mu_T}{Sc_T}  \right)\grad{\rans{\fluct{\varia}^2}} \right]} + \underbrace{2 \dfrac{\mu_T}{Sc_T} \left|\grad{\rans{\varia}}\right|^2}_{P_{\theta \theta}}- \underbrace{\rho \frac{\varepsilon \rans{\fluct{\varia}^2}}{k R_f}}_{\varepsilon_{\theta \theta}} \label{eq:variance_CS}
+  \rho \frac{\dd \rans{\fluct{\varia}^2}}{\dd t}=\dive{ \left[ \left(  \dfrac{\mu}{Sc}   +\dfrac{\mu_T}{Sc_T}  \right)\grad{\rans{\fluct{\varia}^2}} \right]}
+  +
+  P_{\varia^2}
+  - \underbrace{\rho \frac{\varepsilon \rans{\fluct{\varia}^2}}{k R_f}}_{\varepsilon_{\varia^2}} \label{eq:variance_CS}
 \end{equation}
 with $Sc_T=1$ and $R_f=0.8$, by default.
 
 With $R_{ij}$ models (SSG, LRR, EB-RSM), a Daly Harlow method is used for the turbulent diffusion term and $R_f=0.5$.
+
+The so called production term reads $ P_{\varia^2} = -2 \rans{\fluct{\varia} \fluct{\vect{u}}}\cdot \grad \rans{\varia} $, and rewrites with SGDH: $ P_{\varia^2} \simeq 2 \dfrac{\mu_T}{Sc_T} \left|\grad{\rans{\varia}}\right|^2$.
 
 %-------------------------------------------------------------------------------
 \subsection{Algebraic Flux Models (AFM)}
