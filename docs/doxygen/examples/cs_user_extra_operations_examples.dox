@@ -46,6 +46,7 @@
   - \subpage cs_user_extra_operations_examples_parallel_operations_p
   - \subpage cs_user_extra_operations_examples_stopping_criterion_p
   - \subpage cs_user_extra_operations_examples_mean_profiles
+  - \subpage cs_user_extra_operations_examples_medcoupling_slice_p
 
 */
 // __________________________________________________________________________________
@@ -456,3 +457,31 @@
   \section cs_user_extra_operations_examples_mean_profiles_finalize Free profiles
 
   \snippet cs_user_extra_operations-mean_profiles.c finalize
+
+*/
+// __________________________________________________________________________________
+/*!
+
+  \page cs_user_extra_operations_examples_medcoupling_slice_p Examples to use slice postprocessing functions based on medcoupling
+
+  \section cs_user_extra_operations_examples_medcoupling_slice_new Examples for the definition of a new slices
+
+  \snippet cs_user_extra_operations-medcoupling_slice.c medcpl_slice_init_1
+
+  \snippet cs_user_extra_operations-medcoupling_slice.c medcpl_slice_init_2
+
+  \snippet cs_user_extra_operations-medcoupling_slice.c medcpl_slice_init_3
+
+  \section cs_user_extra_operations_examples_medcoupling_slice_integral Compute the integral of a scalar
+
+  \snippet cs_user_extra_operations-medcoupling_slice.c medcpl_slice_integral
+
+  \section cs_user_extra_operations_examples_medcoupling_slice_mean Compute the mean value of a scalar
+
+  \snippet cs_user_extra_operations-medcoupling_slice.c medcpl_slice_mean
+
+  \section cs_user_extra_operations_examples_medcoupling_slice_Tbulk Example for the computation Tbulk over a given slice
+
+  \snippet cs_user_extra_operations-medcoupling_slice.c medcpl_slice_integral_weighted
+*/
+

@@ -110,6 +110,7 @@ cs_user_extra_operations-balance_by_zone.c \
 cs_user_extra_operations-boundary_forces.c \
 cs_user_extra_operations-force_temperature.c \
 cs_user_extra_operations-mean_profiles.c \
+cs_user_extra_operations-medcoupling_slice.c \
 cs_user_extra_operations-nusselt_and_friction_calculation.c \
 cs_user_extra_operations-nusselt_calculation.c \
 cs_user_extra_operations-parallel_operations.c \
