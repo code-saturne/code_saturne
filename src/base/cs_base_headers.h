@@ -121,6 +121,7 @@
 
 #include "cs_medcoupling_remapper.h"
 #include "cs_medcoupling_intersector.h"
+#include "cs_medcoupling_postprocess.h"
 #include "cs_paramedmem_remapper.h"
 #include "cs_paramedmem_coupling.h"
 

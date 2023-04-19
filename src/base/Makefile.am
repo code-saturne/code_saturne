@@ -446,6 +446,7 @@ cs_medcoupling_mesh.hxx \
 cs_medcoupling_utils.h \
 cs_medcoupling_remapper.h \
 cs_medcoupling_intersector.h \
+cs_medcoupling_postprocess.h \
 cs_paramedmem_coupling.h \
 cs_paramedmem_remapper.h
 
@@ -466,6 +467,7 @@ cs_medcoupling_utils.cxx \
 cs_medcoupling_mesh.cxx \
 cs_medcoupling_remapper.cxx \
 cs_medcoupling_intersector.cxx \
+cs_medcoupling_postprocess.cxx \
 cs_paramedmem_coupling.cxx \
 cs_paramedmem_remapper.cxx
 
@@ -490,6 +492,7 @@ else
 libcsbase_a_LIBADD += \
 libcs_medcoupling_a-cs_medcoupling_intersector.$(OBJEXT) \
 libcs_medcoupling_a-cs_medcoupling_mesh.$(OBJEXT) \
+libcs_medcoupling_a-cs_medcoupling_postprocess.$(OBJEXT) \
 libcs_medcoupling_a-cs_medcoupling_remapper.$(OBJEXT) \
 libcs_medcoupling_a-cs_medcoupling_utils.$(OBJEXT) \
 libcs_medcoupling_a-cs_paramedmem_coupling.$(OBJEXT) \
