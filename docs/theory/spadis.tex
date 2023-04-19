@@ -1338,14 +1338,18 @@ As
 	p_{\cellj}^{h}=p_{f}^{h}+\left(\centj-\centf\right)\cdot\vect{f}_{\cellj}
 \end{equation}
 One gets
-\begin{equation}
-	\alpha_{\face}\left(\centi-\centf\right)+\left(1-\alpha_{\face}\right)\left(\centj-\centf\right)=-\left(\centf-\cento\right)
-\end{equation}
-One gets
 \begin{align*}
-	p_{f}&=&\alpha_{\face}p_{\celli}+\left(1-\alpha_{\face}\right)p_{\cellj}+\frac{1}{2}\epsilon\left(\centf-\cento\right)\cdot\left(\grad_{\celli}{p}+\grad_{\cellj}{p}\right) \\ &&-\alpha_{\face}\left(\centi-\centf\right)\cdot\left(\vect{f}_{\celli}-\epsilon\vect{f}_{\face}\right)-\left(1-\alpha_{\face}\right)\left(\centj-\centf\right)\cdot\left(\vect{f}_{\cellj}-\epsilon\vect{f}_{\face}\right)
+  p_{f}&=&\alpha_{\face}p_{\celli}+\left(1-\alpha_{\face}\right)p_{\cellj}+\frac{1}{2}\epsilon\left(\centf-\cento\right)\cdot\left(\grad_{\celli}{p}-\vect{f}_{\celli}+\grad_{\cellj}{p}-\vect{f}_{\cellj}\right) \\ &&-\alpha_{\face}\left(\centi-\centf\right)\cdot\vect{f}_{\celli}-\left(1-\alpha_{\face}\right)\left(\centj-\centf\right)\cdot\vect{f}_{\cellj}
 \end{align*}
-With $\vect{f}_{\face}=\frac{1}{2}\left(\vect{f}_{\celli}+\vect{f}_{\cellj}\right)$.
+Hence
+\begin{align*}
+  p_{f}&=&\alpha_{\face}\left(p_{\celli}-\left(\centi-\centf\right)\cdot\vect{f}_{\celli}\right)+\left(1-\alpha_{\face}\right)\left(p_{\cellj}-\left(\centj-\centf\right)\cdot\vect{f}_{\cellj}\right) \\ &&+\frac{1}{2}\epsilon\left(\centf-\cento\right)\cdot\left(\grad_{\celli}{p}-\vect{f}_{\celli}+\grad_{\cellj}{p}-\vect{f}_{\cellj}\right)
+\end{align*}
+So that
+\begin{align*}
+  p_{f}-\left(p_{\celli}-\left(\centi-\centf\right)\cdot\vect{f}_{\celli}\right)&=&\left(1-\alpha_{\face}\right)\left(p_{\cellj}-\left(\centj-\centf\right)\cdot\vect{f}_{\cellj}-p_{\celli}+\left(\centi-\centf\right)\cdot\vect{f}_{\celli}\right) \\ &&+\frac{1}{2}\epsilon\left(\centf-\cento\right)\cdot\left(\grad_{\celli}{p}-\vect{f}_{\celli}+\grad_{\cellj}{p}-\vect{f}_{\cellj}\right)
+\end{align*}
+
 The classical formula corresponding to the first two lines is therefore incremented
 of additional terms.
 
@@ -1365,10 +1369,19 @@ Hence
 \end{equation}
 So for general boundary contributions, one gets
 \begin{equation}
-	p_{\fib}=inc\times A^{g}_{\fib}+B^{g}_{\fib}\left(p_{\cellip}-\left(\centip-\centfb\right)\cdot\vect{f}_{\celli}\right)
+  p_{\fib}=inc\times A^{g}_{\fib}+B^{g}_{\fib}\left(p_{\celli}+\left(\centip-\centi\right)\cdot\gradv_{\celli}p-\left(\centip-\centfb\right)\cdot\vect{f}_{\celli}\right)
 \end{equation}
 Where $A^{g}_{\fib}$ corresponds to the Dirichlet coefficient and $B^{g}_{\fib}$
 the Neumann coefficient.
+
+By summing over the faces and using the properties
+$\sum_{\face}\vect{S}_{\face}=\vect{0}$ and
+$\sum_{\face}\vect{x}_{\face}\otimes\vect{S}_{\face}=\vol{\celli}\tens{I}$,
+one gets:
+\begin{align*}
+  |\vol{\celli}|\gradv_{\celli}p&=&|\vol{\celli}|\vect{f}_{\celli}+\sum_{f}\left[\left(1-\alpha_{\face}\right)\left(p_{\cellj}-\left(\centj-\centf\right)\cdot\vect{f}_{\cellj}-p_{\celli}+\left(\centi-\centf\right)\cdot\vect{f}_{\celli}\right)\right. \\ &&\left.+\frac{1}{2}\epsilon\left(\centf-\cento\right)\cdot\left(\grad_{\celli}{p}-\vect{f}_{\celli}+\grad_{\cellj}{p}-\vect{f}_{\cellj}\right)\right]\vect{S}_{\face}
+  \\ &&+\sum_{\fib}\left[inc\times A^{g}_{\fib}+\left(B^{g}_{\fib}-1\right)\left(p_{\celli}-\left(\centi-\centfb\right)\cdot\vect{f}_{\celli}\right)+B^{g}_{\fib}\left(\centip-\centi\right)\cdot\left(\gradv_{\celli}p-\vect{f}_{\celli}\right)\right]\vect{S}_{\fib}
+\end{align*}
 
 \subsubsection{Gradient from least square method}
 
