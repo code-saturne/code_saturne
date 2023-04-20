@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2022 EDF S.A.
+  Copyright (C) 1998-2023 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -46,21 +46,20 @@
 #include "cs_medcoupling_utils.h"
 #include "cs_medcoupling_mesh.hxx"
 
-#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
+#if defined(HAVE_MEDCOUPLING)
 #include <MEDCoupling_version.h>
 #include <MEDCouplingUMesh.hxx>
 #include <MEDCouplingNormalizedUnstructuredMesh.txx>
 #include "Interpolation2D3D.hxx"
-#include <MEDFileMesh.hxx>
 
 using namespace MEDCoupling;
 #endif
 
 #include "cs_medcoupling_postprocess.h"
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /* Internal structures */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 /* Enum type to define integral/mean computations mode */
 typedef enum {
@@ -81,14 +80,15 @@ struct _medcoupling_slice_t {
   cs_real_t normal[3];         /* Normal vector of the surface */
   cs_real_t origin[3];         /* Origin point of the surface */
 
-  cs_lnum_t  n_elts;           /* Number of elements considered by the selection criteria */
+  cs_lnum_t  n_elts;           /* Number of elements considered by
+                                  the selection criteria */
   cs_lnum_t *elt_ids;          /* Ids of the selected elements */
   cs_real_t *surface;          /* Intersected surface for eacu element */
   cs_real_t  total_surface;    /* Total intersected surface */
 };
 
 /*============================================================================
- * Private global variables
+ * Static global variables
  *============================================================================*/
 
 static int _n_slices = 0; /* Number of defined intersections */
@@ -98,8 +98,10 @@ static cs_medcoupling_slice_t **_slices = NULL;
  * Private functions
  *============================================================================*/
 
-#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
-/* -------------------------------------------------------------------------- */
+//#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
+#if defined(HAVE_MEDCOUPLING)
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Get a slice by name. Returns NULL if not found.
  *
@@ -107,7 +109,7 @@ static cs_medcoupling_slice_t **_slices = NULL;
  *
  * \return pointer to slice structure. NULL if not found.
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 static inline cs_medcoupling_slice_t *
 _get_slice_try(const char *name)
@@ -126,13 +128,13 @@ _get_slice_try(const char *name)
   return retval;
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Allocate a new pointer for a slice.
  *
  * \return A newly allocated and initialised pointer.
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 static inline cs_medcoupling_slice_t *
 _allocate_new_slice()
@@ -157,7 +159,7 @@ _allocate_new_slice()
   return _si;
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Add a new slice.
  *
@@ -168,7 +170,7 @@ _allocate_new_slice()
  *
  * \return pointer to newly created slice
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 static inline cs_medcoupling_slice_t *
 _add_slice(const char      *name,
@@ -182,7 +184,7 @@ _add_slice(const char      *name,
 
   if (_si != NULL)
     bft_error(__FILE__, __LINE__, 0,
-              _("Error: a slice with name \"%s\" allready exists.\n"),
+              _("A slice with name \"%s\" allready exists."),
               name);
 
   _si = _allocate_new_slice();
@@ -214,21 +216,20 @@ _add_slice(const char      *name,
   return _si;
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute intersected surface
  *
  * \param[in] si Slice
  * \param[in] m  Pointer to MEDCouplingUMesh representing the slice
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 static inline void
 _compute_slice(cs_medcoupling_slice_t *si,
                MEDCouplingUMesh       *m)
 {
-
-  /* We can only intersect the elements which are inside the selection criteria */
+  /* We can only intersect the elements which match the selection criteria */
   si->n_elts = si->csm->n_elts;
   BFT_MALLOC(si->elt_ids, si->n_elts, cs_lnum_t);
   for (cs_lnum_t e_id = 0; e_id < si->n_elts; e_id++)
@@ -331,7 +332,7 @@ _compute_slice(cs_medcoupling_slice_t *si,
   return;
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the local integral contribution. Parallel sum needs to be done
  *        in another call.
@@ -340,18 +341,17 @@ _compute_slice(cs_medcoupling_slice_t *si,
  * \param[in] scalar    Scalar array (size on n_cells)
  * \param[in] weight_s  Scalar weight array (size n_cells)
  * \param[in] weight_v  Vector weight array (size n_cells) in cs_real_3_t *
- * \param[in] int_l     Local integral value
- * \param[in] w_l       Local integrated weight value (if normalization is used)
- *
+ * \param[out] int_l     Local integral value
+ * \param[out] w_l       Local integrated weight value (if normalization is used)
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 template <const cs_medcoupling_int_weight_t iw_type>
 void
 _compute_scalar_integral_l(cs_medcoupling_slice_t *si,
                            const cs_real_t        *scalar,
                            const cs_real_t        *weight_s,
-                           const cs_real_3_t      *weight_v,
+                           const cs_real_t        *weight_v[3],
                            cs_real_t              *int_l,
                            cs_real_t              *w_l)
 {
@@ -361,9 +361,10 @@ _compute_scalar_integral_l(cs_medcoupling_slice_t *si,
   cs_real_t _int_l = 0.;
   cs_real_t _w_l   = 0.;
 
-  /* --------------------------- */
-  /* Avoid warnings for template */
-  /* --------------------------- */
+  /* ---------------------------
+   * Avoid warnings for template
+   * --------------------------- */
+
   switch (iw_type) {
   case CS_MEDCPL_INT_WEIGHT_NONE:
     {
@@ -426,10 +427,10 @@ _compute_scalar_integral_l(cs_medcoupling_slice_t *si,
 BEGIN_C_DECLS
 
 /*============================================================================
- * Public functions
+ * Public function definitions
  *============================================================================*/
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Get pointer to a slice based on id
  *
@@ -438,20 +439,43 @@ BEGIN_C_DECLS
  * \return pointer to slice. Raises an error if index is out of
  * bounds.
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_medcoupling_slice_t *
-cs_medcoupling_slice_by_id(const int id)
+cs_medcoupling_slice_by_id(int  id)
 {
   if (id < 0 || id >= _n_slices)
     bft_error(__FILE__, __LINE__, 0,
-              _("Error: Requested id \"%d\" does not exist.\n"), id);
-
+              _("%s: requested id \"%d\" does not exist."), __func__, id);
 
   return _slices[id];
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get pointer to slice based on name, raises an error
+ * if not found.
+ *
+ * \param[in] name  Name of the slice structure
+ *
+ * \return pointer to slice, raises error if not found.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_medcoupling_slice_t *
+cs_medcoupling_slice_by_name(const char  *name)
+{
+  cs_medcoupling_slice_t *retval = cs_medcoupling_slice_by_name_try(name);
+
+  if (retval == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: intersection with name \"%s\" was not found."),
+              name, __func__);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Get pointer to slice based on name. Returns NULL if
  * not found.
@@ -460,14 +484,14 @@ cs_medcoupling_slice_by_id(const int id)
  *
  * \return pointer to slice, NULL if not found.
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_medcoupling_slice_t *
-cs_medcoupling_slice_by_name_try(const char *name)
+cs_medcoupling_slice_by_name_try(const char  *name)
 {
   if (name == NULL || strcmp(name, "") == 0)
     bft_error(__FILE__, __LINE__, 0,
-              _("Error: An empty name was provided.\n"));
+              _("Error: An empty name was provided."));
 
   cs_medcoupling_slice_t *retval = NULL;
 
@@ -481,32 +505,7 @@ cs_medcoupling_slice_by_name_try(const char *name)
   return retval;
 }
 
-/* -------------------------------------------------------------------------- */
-/*!
- * \brief Get pointer to slice based on name, raises an error
- * if not found.
- *
- * \param[in] name  Name of the slice structure
- *
- * \return pointer to slice, raises error if not found.
- */
-/* -------------------------------------------------------------------------- */
-
-cs_medcoupling_slice_t *
-cs_medcoupling_slice_by_name(const char *name)
-{
-  cs_medcoupling_slice_t *retval =
-    cs_medcoupling_slice_by_name_try(name);
-
-  if (retval == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error: intersection with name \"%s\" was not found.\n"),
-              name);
-
-  return retval;
-}
-
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Add a slice based on a plane.
  *
@@ -516,19 +515,18 @@ cs_medcoupling_slice_by_name(const char *name)
  * \param[in] normal              Normal vector of the slice
  * \param[in] length1             Length along the first axis of the plane
  * \param[in] length2             Length along the second axis of the plane
- *
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_postprocess_add_plane_slice(const char *name,
-                                           const char *selection_criteria,
-                                           const cs_real_t origin[],
-                                           const cs_real_t normal[],
-                                           const cs_real_t length1,
-                                           const cs_real_t length2)
+cs_medcoupling_postprocess_add_plane_slice(const char  *name,
+                                           const char  *selection_criteria,
+                                           const cs_real_t  origin[],
+                                           const cs_real_t  normal[],
+                                           const cs_real_t  length1,
+                                           const cs_real_t  length2)
 {
-#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
+#if !defined(HAVE_MEDCOUPLING)
   CS_NO_WARN_IF_UNUSED(name);
   CS_NO_WARN_IF_UNUSED(selection_criteria);
   CS_NO_WARN_IF_UNUSED(origin);
@@ -537,15 +535,15 @@ cs_medcoupling_postprocess_add_plane_slice(const char *name,
   CS_NO_WARN_IF_UNUSED(length2);
 
   bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without MEDCoupling support"));
+            _("%s: cannot be called without MEDCoupling support"), __func__);
 #else
   MEDCouplingUMesh *umesh = cs_medcoupling_create_plane_mesh(origin,
                                                              normal,
                                                              length1,
                                                              length2);
 
-  cs_medcoupling_slice_t *si =
-    _add_slice(name, selection_criteria, origin, normal);
+  cs_medcoupling_slice_t *si
+    = _add_slice(name, selection_criteria, origin, normal);
 
   _compute_slice(si, umesh);
 
@@ -553,7 +551,7 @@ cs_medcoupling_postprocess_add_plane_slice(const char *name,
 #endif
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Add a slice based on a disc
  *
@@ -565,17 +563,17 @@ cs_medcoupling_postprocess_add_plane_slice(const char *name,
  * \param[in] n_sectors           Number of sectors for discretization. If negative
  *                                default value (36) is used.
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_postprocess_add_disc_slice(const char *name,
-                                          const char *selection_criteria,
-                                          const cs_real_t origin[],
-                                          const cs_real_t normal[],
-                                          const cs_real_t radius,
-                                          const int       n_sectors)
+cs_medcoupling_postprocess_add_disc_slice(const char  *name,
+                                          const char  *selection_criteria,
+                                          const cs_real_t  origin[],
+                                          const cs_real_t  normal[],
+                                          const cs_real_t  radius,
+                                          const int        n_sectors)
 {
-#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
+#if !defined(HAVE_MEDCOUPLING)
   CS_NO_WARN_IF_UNUSED(name);
   CS_NO_WARN_IF_UNUSED(selection_criteria);
   CS_NO_WARN_IF_UNUSED(origin);
@@ -584,7 +582,7 @@ cs_medcoupling_postprocess_add_disc_slice(const char *name,
   CS_NO_WARN_IF_UNUSED(n_sectors);
 
   bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without MEDCoupling support"));
+            _("%s: cannot be called without MEDCoupling support"), __func__);
 #else
   MEDCouplingUMesh *umesh = cs_medcoupling_create_disc_mesh(origin,
                                                             normal,
@@ -600,7 +598,7 @@ cs_medcoupling_postprocess_add_disc_slice(const char *name,
 #endif
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Add a slice based on an annulus
  *
@@ -610,21 +608,21 @@ cs_medcoupling_postprocess_add_disc_slice(const char *name,
  * \param[in] normal              Normal vector of the slice
  * \param[in] radius1             Inner radius of the annulus (hole)
  * \param[in] radius2             Outer radius of the annulus
- * \param[in] n_sectors           Number of sectors for discretization. If negative
- *                                default value (36) is used.
+ * \param[in] n_sectors           Number of sectors for discretization.
+ *                                If negative, default value (36) is used.
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_postprocess_add_annulus_slice(const char *name,
-                                             const char *selection_criteria,
-                                             const cs_real_t origin[],
-                                             const cs_real_t normal[],
-                                             const cs_real_t radius1,
-                                             const cs_real_t radius2,
-                                             const int       n_sectors)
+cs_medcoupling_postprocess_add_annulus_slice(const char  *name,
+                                             const char  *selection_criteria,
+                                             const cs_real_t  origin[],
+                                             const cs_real_t  normal[],
+                                             const cs_real_t  radius1,
+                                             const cs_real_t  radius2,
+                                             const int        n_sectors)
 {
-#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
+#if !defined(HAVE_MEDCOUPLING)
   CS_NO_WARN_IF_UNUSED(name);
   CS_NO_WARN_IF_UNUSED(selection_criteria);
   CS_NO_WARN_IF_UNUSED(origin);
@@ -634,7 +632,7 @@ cs_medcoupling_postprocess_add_annulus_slice(const char *name,
   CS_NO_WARN_IF_UNUSED(n_sectors);
 
   bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without MEDCoupling support"));
+            _("%s: cannot be called without MEDCoupling support"), __func__);
 #else
   MEDCouplingUMesh *umesh = cs_medcoupling_create_annulus_mesh(origin,
                                                                normal,
@@ -651,7 +649,7 @@ cs_medcoupling_postprocess_add_annulus_slice(const char *name,
 #endif
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Get number cells that may be intersected by the slice.
  *
@@ -659,10 +657,10 @@ cs_medcoupling_postprocess_add_annulus_slice(const char *name,
  *
  * \return Number of elements
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_lnum_t
-cs_medcoupling_slice_get_n_elts(const char *name)
+cs_medcoupling_slice_get_n_elts(const char  *name)
 {
   cs_medcoupling_slice_t *si =
     cs_medcoupling_slice_by_name(name);
@@ -670,7 +668,7 @@ cs_medcoupling_slice_get_n_elts(const char *name)
   return si->n_elts;
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Get list of ids of the elements which may be intersected.
  *
@@ -678,10 +676,10 @@ cs_medcoupling_slice_get_n_elts(const char *name)
  *
  * \return Pointer to list of ids (cs_lnum_t *). Do not deallocate!
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_lnum_t *
-cs_medcoupling_slice_get_elt_ids(const char *name)
+cs_medcoupling_slice_get_elt_ids(const char  *name)
 {
   cs_medcoupling_slice_t *si =
     cs_medcoupling_slice_by_name(name);
@@ -689,7 +687,7 @@ cs_medcoupling_slice_get_elt_ids(const char *name)
   return si->elt_ids;
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Get list of intersection surfaces for each cell intersected.
  *
@@ -697,10 +695,10 @@ cs_medcoupling_slice_get_elt_ids(const char *name)
  *
  * \return Pointer to list of intersection surfaces (cs_real_t *)
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_medcoupling_slice_get_surfaces(const char *name)
+cs_medcoupling_slice_get_surfaces(const char  *name)
 {
   cs_medcoupling_slice_t *si =
     cs_medcoupling_slice_by_name(name);
@@ -708,7 +706,7 @@ cs_medcoupling_slice_get_surfaces(const char *name)
   return si->surface;
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Get total intersection surface between a slice and volume mesh
  *
@@ -716,10 +714,10 @@ cs_medcoupling_slice_get_surfaces(const char *name)
  *
  * \return Value of total intersection surface
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_medcoupling_slice_get_total_surface(const char *name)
+cs_medcoupling_slice_get_total_surface(const char  *name)
 {
   cs_medcoupling_slice_t *si =
     cs_medcoupling_slice_by_name(name);
@@ -728,7 +726,7 @@ cs_medcoupling_slice_get_total_surface(const char *name)
 }
 
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute integral of a scalar over a slice.
  *
@@ -737,25 +735,24 @@ cs_medcoupling_slice_get_total_surface(const char *name)
  *
  * \return Global integrated value. A cs_parall_sum is used.
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_medcoupling_slice_scalar_integral(const char *name,
-                                     cs_real_t  *scalar)
+cs_medcoupling_slice_scalar_integral(const char       *name,
+                                     const cs_real_t  *scalar)
 {
   cs_real_t retval = 0.;
-#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
+#if defined(HAVE_MEDCOUPLING)
   CS_NO_WARN_IF_UNUSED(name);
   CS_NO_WARN_IF_UNUSED(scalar);
 
   bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without MEDCoupling support"));
+            _("%s: cannot be called without MEDCoupling support"), __func__);
 #else
-  cs_medcoupling_slice_t * si =
-    cs_medcoupling_slice_by_name(name);
+  cs_medcoupling_slice_t *si = cs_medcoupling_slice_by_name(name);
 
   _compute_scalar_integral_l<CS_MEDCPL_INT_WEIGHT_NONE>
-    (si, scalar, NULL, NULL, &retval, NULL);
+    (si, scalar, nullptr, nullptr, &retval, nullptr);
 
   cs_parall_sum(1, CS_REAL_TYPE, &retval);
 #endif
@@ -763,7 +760,7 @@ cs_medcoupling_slice_scalar_integral(const char *name,
   return retval;
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute mean value of a scalar over a slice.
  *
@@ -772,11 +769,11 @@ cs_medcoupling_slice_scalar_integral(const char *name,
  *
  * \return Global integrated value. A cs_parall_sum is used.
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_medcoupling_slice_scalar_mean(const char *name,
-                                 cs_real_t  *scalar)
+cs_medcoupling_slice_scalar_mean(const char       *name,
+                                 const cs_real_t  *scalar)
 {
   cs_real_t _s   = cs_medcoupling_slice_get_total_surface(name);
   cs_real_t _int = cs_medcoupling_slice_scalar_integral(name, scalar);
@@ -786,37 +783,38 @@ cs_medcoupling_slice_scalar_mean(const char *name,
   return retval;
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute integral of a scalar over a slice using a scalar and/or vectorial
- *        weights. If NULL is provided for both weights, the non-weighted
- *        function is called.
+ * \brief Compute integral of a scalar over a slice using a scalar
+ *        and/or vectorial weights. If NULL is provided for both weights,
+ *        the non-weighted function is called.
  *
  * \param[in] name      Name of the slice
  * \param[in] scalar    Array of scalar values (size n_cells)
  * \param[in] weight_s  Scalar weight array (size n_cells)
- * \param[in] weight_v  Vectorial weight array (size n_cells), cs_real_3_t pointer
+ * \param[in] weight_v  Vectorial weight array (size n_cells)
  *
  * \return Computed integral value over entire slice (parallel)
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_medcoupling_slice_scalar_integral_weighted(const char  *name,
-                                              cs_real_t   *scalar,
-                                              cs_real_t   *weight_s,
-                                              cs_real_3_t *weight_v)
+cs_medcoupling_slice_scalar_integral_weighted(const char       *name,
+                                              const cs_real_t  *scalar,
+                                              const cs_real_t  *weight_s,
+                                              const cs_real_t  *weight_v[3])
 {
   cs_real_t retval = 0.;
 
-#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
+#if !defined(HAVE_MEDCOUPLING)
   CS_NO_WARN_IF_UNUSED(name);
   CS_NO_WARN_IF_UNUSED(scalar);
   CS_NO_WARN_IF_UNUSED(weight_s);
   CS_NO_WARN_IF_UNUSED(weight_v);
 
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without MEDCoupling support"));
+  bft_error
+    (__FILE__, __LINE__, 0,
+     _("Error: This function cannot be called without MEDCoupling support"));
 #else
   /* If no weight use simpler function */
   if (weight_v == NULL && weight_s == NULL) {
@@ -826,8 +824,7 @@ cs_medcoupling_slice_scalar_integral_weighted(const char  *name,
     cs_real_t _int_l;
     cs_real_t _weight_l;
 
-    cs_medcoupling_slice_t * si =
-      cs_medcoupling_slice_by_name(name);
+    cs_medcoupling_slice_t *si = cs_medcoupling_slice_by_name(name);
 
     if (weight_s != NULL && weight_v == NULL) {
       _compute_scalar_integral_l<CS_MEDCPL_INT_WEIGHT_SCALAR>
@@ -835,7 +832,8 @@ cs_medcoupling_slice_scalar_integral_weighted(const char  *name,
     }
     else if (weight_s == NULL && weight_v != NULL) {
       _compute_scalar_integral_l<CS_MEDCPL_INT_WEIGHT_VECTOR>
-        (si, scalar, weight_s, weight_v, &_int_l, &_weight_l);
+        (si, scalar, weight_s, weight_v,
+         &_int_l, &_weight_l);
     }
     else {
       _compute_scalar_integral_l<CS_MEDCPL_INT_WEIGHT_SCALAR_VECTOR>
@@ -851,7 +849,7 @@ cs_medcoupling_slice_scalar_integral_weighted(const char  *name,
   return retval;
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute mean of a scalar over a slice using a scalar and/or vectorial
  *        weights. If NULL is provided for both weights, the non-weighted
@@ -864,24 +862,25 @@ cs_medcoupling_slice_scalar_integral_weighted(const char  *name,
  *
  * \return Computed mean value over entire slice (parallel)
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_medcoupling_slice_scalar_mean_weighted(const char  *name,
-                                          cs_real_t   *scalar,
-                                          cs_real_t   *weight_s,
-                                          cs_real_3_t *weight_v)
+cs_medcoupling_slice_scalar_mean_weighted(const char       *name,
+                                          const cs_real_t  *scalar,
+                                          const cs_real_t  *weight_s,
+                                          const cs_real_t  *weight_v[3])
 {
   cs_real_t retval = 0.;
 
-#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
+#if !defined(HAVE_MEDCOUPLING)
   CS_NO_WARN_IF_UNUSED(name);
   CS_NO_WARN_IF_UNUSED(scalar);
   CS_NO_WARN_IF_UNUSED(weight_s);
   CS_NO_WARN_IF_UNUSED(weight_v);
 
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without MEDCoupling support"));
+  bft_error
+    (__FILE__, __LINE__, 0,
+     _("Error: This function cannot be called without MEDCoupling support"));
 #else
   /* If no weight use simpler function */
   if (weight_v == NULL && weight_s == NULL) {
@@ -891,8 +890,7 @@ cs_medcoupling_slice_scalar_mean_weighted(const char  *name,
     cs_real_t _int_l;
     cs_real_t _weight_l;
 
-    cs_medcoupling_slice_t * si =
-      cs_medcoupling_slice_by_name(name);
+    cs_medcoupling_slice_t *si = cs_medcoupling_slice_by_name(name);
 
     if (weight_s != NULL && weight_v == NULL) {
       _compute_scalar_integral_l<CS_MEDCPL_INT_WEIGHT_SCALAR>
@@ -928,7 +926,7 @@ cs_medcoupling_slice_scalar_mean_weighted(const char  *name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_slice_destroy_all()
+cs_medcoupling_slice_destroy_all(void)
 {
 
   for (int i = 0; i < _n_slices; i++) {
