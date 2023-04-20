@@ -98,6 +98,7 @@ static cs_medcoupling_slice_t **_slices = NULL;
  * Private functions
  *============================================================================*/
 
+#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
 /* -------------------------------------------------------------------------- */
 /*!
  * \brief Get a slice by name. Returns NULL if not found.
@@ -420,6 +421,8 @@ _compute_scalar_integral_l(cs_medcoupling_slice_t *si,
   return;
 }
 
+#endif
+
 BEGIN_C_DECLS
 
 /*============================================================================
@@ -741,7 +744,13 @@ cs_medcoupling_slice_scalar_integral(const char *name,
                                      cs_real_t  *scalar)
 {
   cs_real_t retval = 0.;
+#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(scalar);
 
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without MEDCoupling support"));
+#else
   cs_medcoupling_slice_t * si =
     cs_medcoupling_slice_by_name(name);
 
@@ -749,6 +758,7 @@ cs_medcoupling_slice_scalar_integral(const char *name,
     (si, scalar, NULL, NULL, &retval, NULL);
 
   cs_parall_sum(1, CS_REAL_TYPE, &retval);
+#endif
 
   return retval;
 }
@@ -799,6 +809,15 @@ cs_medcoupling_slice_scalar_integral_weighted(const char  *name,
 {
   cs_real_t retval = 0.;
 
+#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(scalar);
+  CS_NO_WARN_IF_UNUSED(weight_s);
+  CS_NO_WARN_IF_UNUSED(weight_v);
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without MEDCoupling support"));
+#else
   /* If no weight use simpler function */
   if (weight_v == NULL && weight_s == NULL) {
     retval = cs_medcoupling_slice_scalar_integral(name, scalar);
@@ -827,6 +846,7 @@ cs_medcoupling_slice_scalar_integral_weighted(const char  *name,
 
     retval = _int_l;
   }
+#endif
 
   return retval;
 }
@@ -854,6 +874,15 @@ cs_medcoupling_slice_scalar_mean_weighted(const char  *name,
 {
   cs_real_t retval = 0.;
 
+#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(scalar);
+  CS_NO_WARN_IF_UNUSED(weight_s);
+  CS_NO_WARN_IF_UNUSED(weight_v);
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without MEDCoupling support"));
+#else
   /* If no weight use simpler function */
   if (weight_v == NULL && weight_s == NULL) {
     retval = cs_medcoupling_slice_scalar_mean(name, scalar);
@@ -887,6 +916,7 @@ cs_medcoupling_slice_scalar_mean_weighted(const char  *name,
       retval = work[0] / work[1];
 
   }
+#endif
 
   return retval;
 }
