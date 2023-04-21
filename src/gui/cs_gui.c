@@ -668,6 +668,52 @@ _scalar_diffusion_value(const cs_field_t  *f,
   cs_gui_node_get_real(tn, value);
 }
 
+/*----------------------------------------------------------------------------
+ * Check if at least one user property is based on a thermal law.
+ *
+ * Fortran Interface:
+ *
+ * subroutine uiphyv
+ * *****************
+ *
+ * integer          iviscv   <--  pointer for volumic viscosity viscv
+ *----------------------------------------------------------------------------*/
+
+static int
+_count_thermal_laws(void)
+{
+  int n_thl = 0;
+
+  int n_zones = cs_volume_zone_n_zones();
+  for (int z_id = 0; z_id < n_zones; z_id++) {
+    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+    if (! (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES))
+      continue;
+    if (strcmp(z->name, "all_cells") != 0)
+      continue;
+
+    const *names[] = {
+      "density", "molecular_viscosity", "specific_heat",
+      "thermal_conductivity"
+    };
+
+    for (int i = 0; i < 4; i++) {
+      const char *prop_choice = _properties_choice(names[i], NULL);
+      if (cs_gui_strcmp(prop_choice, "thermal_law"))
+        n_thl += 1;
+    }
+
+    /* volumic viscosity (compressible model) */
+    if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
+      const char *prop_choice = _properties_choice("volume_viscosity", NULL);
+      if (cs_gui_strcmp(prop_choice, "thermal_law"))
+        n_thl += 1;
+    }
+  }
+
+  return n_thl;
+}
+
 /*-----------------------------------------------------------------------------
  * Find the node associated with a given variable.
  *
@@ -3848,9 +3894,19 @@ cs_gui_physical_properties(void)
       //  thermal_plane = CS_PHYS_PROP_PLANE_PS;
 
       const int itpscl = cs_glob_thermal_model->itpscl;
+      const char *method = _thermal_table_choice("method");
+
+      if (   strcmp(method, "CoolProp") == 0
+          && itherm > CS_THERMAL_MODEL_NONE) {
+        if (cs_physical_properties_get_coolprop_backend() == NULL) {
+          int n_th_laws = _count_thermal_laws();
+          if (n_th_laws > 0)
+            cs_physical_properties_set_coolprop_backend("TTSE&HEOS");
+        }
+      }
 
       cs_thermal_table_set(material,
-                           _thermal_table_choice("method"),
+                           method,
                            _thermal_table_option("reference"),
                            thermal_plane,
                            itpscl);

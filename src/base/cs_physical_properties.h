@@ -91,6 +91,19 @@ cs_thermal_table_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get backend set for CoolProp.
+ *
+ * Returns NULL if CoolProp is not used or backend not set yet.
+ *
+ * \return  pointer to CoolProp backend.
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_physical_properties_get_coolprop_backend(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set backend for CoolProp.
  *
  * Ignored if CoolProp is not used.

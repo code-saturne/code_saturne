@@ -912,23 +912,6 @@ make install
 make clean
 ```
 
-CoolProp's installer only installs one C wrapper header, not the
-C++ headers required for lower-level access, so the following commands
-must also be run:
-
-```
-cp -rp ${COOLPROP_SRC_PATH}/include ${INSTALL_PATH}
-rm -f ${INSTALL_PATH}/CoolPropLib.h
-```
-
-Alternatively, to copy less files and avoid changing the structure provided
-by CoolProp:
-
-```
-cp -r ${COOLPROP_SRC_PATH}/include ${INSTALL_PATH}
-cp -r ${COOLPROP_SRC_PATH}/externals/fmtlib/fmt ${INSTALL_PATH}/include/
-```
-
 To install CoolProp's Python bindings (used by the GUI when available),
 the straigthforward method is to go into the CoolProp source directory,
 into the wrappers/Python subdirectory, then run:
@@ -940,6 +923,10 @@ python setup.py install --prefix=${COOLPROP_INSTALL_PREFIX}
 
 Although this is not really an out-of-tree build, the Python
 setup also cleans the directory.
+
+Note that Python bindings will install the CoolProp libraries and headers in a slightly
+different structure, so this must be accounted for when specifying the CoolProp
+installation paths.
 
 ### Paraview Catalyst
 

@@ -439,6 +439,31 @@ a third-degree polynomial law may produce negative density values).
   of the square of the fluctuations of another scalar is based on the
   diffusivity of this parent scalar.
 
+Using physical property libraries
+---------------------------------
+
+### CoolProp
+
+When code_saturne has been built with [CoolProp](http://www.coolprop.org)
+support, that library may be used to compute fluid properties selected directly
+from the GUI.
+
+Note than when properties are variable, CoolProp will default to using
+[tabulated data](http://www.coolprop.org/coolprop/Tabular.html) properties
+for better performance. The choice of the backend may otherwise
+be forced by calling \ref cs_physical_properties_set_coolprop_backend
+from the \ref cs_user_model user-defined function.
+
+Note that when using tables, CoolProp stores tabulations in the
+`$HOME/.CoolProp/Tables` directory by default, though this can be modified
+by defining the `ALTERNATIVE_TABLES_DIRECTORY` environment variable.
+Each table requires about 20 Mb in size, and will be created the first time
+a given fluid is used in a computation. The initialization time for that
+run will reflect this, though subsequent runs will simply read the data.
+Tabulation data may be cleaned by removing or cleaning this directory, and its
+size may otherwise be limited by using the `MAXIMUM_TABLE_DIRECTORY_SIZE_IN_GB`
+environment variable.
+
 Turbulence model properties
 ===========================
 
