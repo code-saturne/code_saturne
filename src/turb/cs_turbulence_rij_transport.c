@@ -1125,7 +1125,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
 
     cs_mass_flux(m,
                  fvq,
-                 -1,
+                 -1, /*f_id */
                  1,
                  1,
                  1,
@@ -1154,7 +1154,10 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
       || turb_flux_model_type == 2
       || turb_flux_model_type == 3) {
     cs_real_t *divut;
-    BFT_MALLOC(divut, n_cells_ext, cs_real_t);
+    if (cs_field_by_name_try("turbulent_flux_divergence") != NULL)
+      divut = cs_field_by_name_try("turbulent_flux_divergence")->val;
+    else
+      BFT_MALLOC(divut, n_cells_ext, cs_real_t);
 
     cs_divergence(m, 1, thflxf, thflxb, divut);
 
@@ -1162,7 +1165,8 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       smbrs[c_id] -= divut[c_id];
 
-    BFT_FREE(divut);
+    if (cs_field_by_name_try("turbulent_flux_divergence") == NULL)
+      BFT_FREE(divut);
   }
 
   BFT_FREE(grad_al);

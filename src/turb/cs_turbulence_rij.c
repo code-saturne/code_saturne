@@ -726,7 +726,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
         cs_lnum_t _ij = _t2v[i][j];
-        implmat2add[i][j] =   (1.0 - crij2 ) * xrotac[i][j]
+        implmat2add[i][j] =   (1.0 - crij2) * xrotac[i][j]
                               + impl_lin_cst * deltij[_ij]
                               + impl_id_cst * d1s2 * oo_matrn[_ij]
                               + ceps_impl * oo_matrn[_ij];

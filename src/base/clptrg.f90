@@ -1081,7 +1081,7 @@ do ifac = 1, nfabor
         else
           ! Use of wall functions
           if (iuntur.eq.1) then
-              pimp = cfnnk / (cfnne * uk) * cl / sqrcmu * xkappa * rough_d
+            pimp = cfnnk / (cfnne * uk) * cl / sqrcmu * xkappa * rough_d
           else
             pimp = 0.d0
           endif

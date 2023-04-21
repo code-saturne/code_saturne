@@ -934,7 +934,7 @@ type_flag = FIELD_EXTENSIVE + FIELD_PROPERTY
 location_id = 1 ! variables defined on cells
 has_previous = .false.
 
-! Define asscociated field
+! Define associated field
 
 call field_get_dim(f_id, f_dim)
 call field_get_name (f_id, f_name)

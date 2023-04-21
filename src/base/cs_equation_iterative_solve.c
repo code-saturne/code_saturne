@@ -2344,7 +2344,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
     cs_real_t p_mean = cs_gmean(n_cells, mq->cell_vol, pvar_i);
 
     if (iwarnp >= 2)
-      bft_printf("Spatial average of X_%d^n = %f\n", i, p_mean);
+      bft_printf("Spatial average of X_%d^n = %e\n", i, p_mean);
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
       w2[cell_id][i] = (pvar[cell_id][i] - p_mean);
@@ -2365,8 +2365,8 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
   if (iwarnp >= 2) {
     const cs_real_t *_w1 = (cs_real_t *)w1, *_smbrp = (cs_real_t *)smbrp;
-    bft_printf("L2 norm ||AX^n|| = %f\n", sqrt(cs_gdot(6*n_cells, _w1, _w1)));
-    bft_printf("L2 norm ||B^n|| = %f\n",
+    bft_printf("L2 norm ||AX^n|| = %e\n", sqrt(cs_gdot(6*n_cells, _w1, _w1)));
+    bft_printf("L2 norm ||B^n|| = %e\n",
                sqrt(cs_gdot(6*n_cells, _smbrp, _smbrp)));
   }
 
