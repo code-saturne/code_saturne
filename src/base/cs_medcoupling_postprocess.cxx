@@ -742,7 +742,7 @@ cs_medcoupling_slice_scalar_integral(const char       *name,
                                      const cs_real_t  *scalar)
 {
   cs_real_t retval = 0.;
-#if defined(HAVE_MEDCOUPLING)
+#if !defined(HAVE_MEDCOUPLING)
   CS_NO_WARN_IF_UNUSED(name);
   CS_NO_WARN_IF_UNUSED(scalar);
 
