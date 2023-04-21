@@ -1504,8 +1504,7 @@ do ifac = 1, nfabor
       ! see turbkw.f90 (So the flux is not the one we impose!)
       hint = (visclc+visctc/ckwsw2)/distbf
 
-      pimp = distbf*4.d0*uk**3*romc**2/           &
-            (sqrcmu*xkappa*visclc**2*yplus**2)
+      pimp = distbf*uk/(sqrcmu*xkappa*(ydep)**2) * cfnne / cfnnk
       qimp = -pimp*hint !TODO transform it to use d eps / d y directly
 
       call set_neumann_scalar &
