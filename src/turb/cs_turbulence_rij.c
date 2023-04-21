@@ -3077,7 +3077,6 @@ cs_turbulence_rij(cs_lnum_t    ncesmp,
 
    cs_equation_param_t eqp_loc = *eqp;
    eqp_loc.istat  = -1;
-   eqp_loc.idifft = -1;
    eqp_loc.iwgrec = 0;     /* Warning, may be overwritten if a field */
    eqp_loc.thetav = thetv;
    eqp_loc.blend_st = 0;   /* Warning, may be overwritten if a field */
