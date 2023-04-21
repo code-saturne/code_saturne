@@ -41,7 +41,9 @@
  * CoolProp library headers
  *----------------------------------------------------------------------------*/
 
-#include "CoolProp.h"
+extern "C" {
+#include "CoolPropLib.h"
+}
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -60,18 +62,33 @@
 
 /*----------------------------------------------------------------------------*/
 
+/* Thermal table structure */
+
+typedef struct {
+
+  long         abstract_state_handle;  /* handle to abstract state */
+
+  char         backend[32];            /* backend name */
+  char         fluid_names[32];        /* fluid names */
+
+} cs_coolprop_state_t;
+
 /*=============================================================================
  *  Global variables
  *============================================================================*/
+
+static int  _n_states = 0;
+static cs_coolprop_state_t *_states = NULL;
 
 /*============================================================================
  * Private function definitions
  *============================================================================*/
 
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -91,9 +108,6 @@
  */
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C"
-#endif
 void
 cs_phys_prop_coolprop(char                              *coolprop_material,
                       const char                        *coolprop_backend,
@@ -104,21 +118,88 @@ cs_phys_prop_coolprop(char                              *coolprop_material,
                       const cs_real_t                    var2[],
                       cs_real_t                          val[])
 {
-  std::vector<std::string> fluids;
-  std::vector<std::string> outputs;
+  const int mb_size = 511;
+  char message_buffer[mb_size + 1];
 
-  fluids.push_back(coolprop_material);
-  std::string Name1 = "";
-  std::string Name2 = "P";
+  const char *fluid_names = coolprop_material;
 
-  std::string Backend = "HEOS";
-  if (coolprop_backend != NULL) Backend = coolprop_backend;
+  char name1[] = "P";
 
-  if (thermo_plane == CS_PHYS_PROP_PLANE_PH)
-    Name1 = "H";
-  else if (thermo_plane == CS_PHYS_PROP_PLANE_PT)
-    Name1 = "T";
+  char backend[32];
+  if (coolprop_backend != NULL)
+    strncpy(backend, coolprop_backend, 32);
+  else
+    strncpy(backend, "HEOS", 32);
+  backend[31] = '\0';
 
+  long errcode = 0;
+  long state_handle = -1;
+
+  /* API choice for easier testing:
+     - 0: high level interface.
+     - 1: low level interfaces with array data.
+     - 2: low level interface with individual calls per element.
+  */
+  int api_choice = 0;
+
+  /* The high level interface is not compatible with tabulated backends */
+  if (api_choice == 0) {
+    if (   strncmp(backend, "TTSE", 4) == 0
+        || strncmp(backend, "BICUBIC", 7) == 0)
+      api_choice = 1;
+  }
+
+  if (api_choice > 0) {
+
+    for (int i = 0; i < _n_states; i++) {
+      if (   strncmp(backend, _states[i].backend, 31) == 0
+             && strncmp(fluid_names, _states[i].fluid_names, 31) == 0) {
+        state_handle = _states[i].abstract_state_handle;
+        break;
+      }
+    }
+
+    if (state_handle < 0) {
+      state_handle = AbstractState_factory(backend, fluid_names,
+                                           &errcode, message_buffer, mb_size);
+      if (errcode != 0)
+        bft_error(__FILE__, __LINE__, 0, "%s", message_buffer);
+
+      double fractions[] = {1.0};
+      AbstractState_set_fractions(state_handle, fractions, 1,
+                                  &errcode, message_buffer, mb_size);
+      if (errcode != 0)
+        bft_error(__FILE__, __LINE__, 0, "%s", message_buffer);
+
+      AbstractState_specify_phase(state_handle, "phase_unknown",
+                                  &errcode, message_buffer, mb_size);
+      if (errcode != 0)
+        bft_error(__FILE__, __LINE__, 0, "%s", message_buffer);
+
+      BFT_REALLOC(_states, _n_states+1, cs_coolprop_state_t);
+
+      _states[_n_states].abstract_state_handle = state_handle;
+      memset(_states[_n_states].backend, 0, 32);
+      strncpy(_states[_n_states].backend, backend, 31);
+      memset(_states[_n_states].fluid_names, 0, 32);
+      strncpy(_states[_n_states].fluid_names, fluid_names, 31);
+      _n_states += 1;
+    }
+  }
+
+  char name2[2];
+  long input_pair = -1;
+  if (thermo_plane == CS_PHYS_PROP_PLANE_PH) {
+    input_pair = get_input_pair_index("PH_INPUTS");
+    strncpy(name2, "H", 2);
+  }
+  else if (thermo_plane == CS_PHYS_PROP_PLANE_PT) {
+    input_pair = get_input_pair_index("PT_INPUTS");
+    strncpy(name2, "T", 2);
+  }
+  name2[1] = '\0';
+
+  char outputs[32];
   switch (property) {
     case CS_PHYS_PROP_PRESSURE:
       bft_error(__FILE__, __LINE__, 0,
@@ -126,88 +207,171 @@ cs_phys_prop_coolprop(char                              *coolprop_material,
       break;
     case CS_PHYS_PROP_TEMPERATURE:
       /* temperature is in K */
-      outputs.push_back("T");
+      strncpy(outputs, "T", 31);
       break;
     case CS_PHYS_PROP_ENTHALPY:
-      outputs.push_back("H");
+      strncpy(outputs, "H", 31);
       break;
     case CS_PHYS_PROP_ENTROPY:
-      outputs.push_back("S");
+      strncpy(outputs, "S", 31);
       break;
     case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
-      outputs.push_back("CPMASS");
+      strncpy(outputs, "CPMASS", 31);
       break;
     case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
-      outputs.push_back("CVMASS");
+      strncpy(outputs, "CVMASS", 31);
       break;
     case CS_PHYS_PROP_SPECIFIC_VOLUME:
       bft_error(__FILE__, __LINE__, 0,
                 _("bad choice: specific volume not available yet"));
       break;
     case CS_PHYS_PROP_DENSITY:
-      outputs.push_back("D");
+      strncpy(outputs, "D", 31);
       break;
     case CS_PHYS_PROP_INTERNAL_ENERGY:
-      outputs.push_back("U");
+      strncpy(outputs, "U", 31);
       break;
     case CS_PHYS_PROP_QUALITY:
       bft_error(__FILE__, __LINE__, 0,
                 _("bad choice: quality not available yet"));
       break;
     case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
-      outputs.push_back("L");
+      strncpy(outputs, "L", 31);
       break;
     case CS_PHYS_PROP_DYNAMIC_VISCOSITY:
-      outputs.push_back("V");
+      strncpy(outputs, "V", 31);
       break;
     case CS_PHYS_PROP_SPEED_OF_SOUND:
-      outputs.push_back("SPEED_OF_SOUND");
+      strncpy(outputs, "SPEED_OF_SOUND", 31);
       break;
   }
+  outputs[31] = '\0';
+  long output_key = get_param_index(outputs);
 
-  //std::vector<double> T(1,298), p(1e5);
-  //std::cout << PropsSImulti(outputs,"T", T, "P", p, "", fluids, z)[0][0] << std::endl;
-  //std::cout << PropsSImulti(outputs,"T", T, "P", p, "HEOS", fluids, z)[0][0] << std::endl;
-  //std::cout << PropsSImulti(outputs,"T", T, "P", p, "REFPROP", fluids, z)[0][0] << std::endl;
+  double *prop1, *prop2, *result;
+  double *_prop1 = NULL, *_prop2 = NULL, *_result = NULL;
 
-  std::vector<double> val1;
-  std::vector<double> val2;
-  std::vector<double> fractions;
-
-  val1.reserve(n_vals);
-  val2.reserve(n_vals);
-  fractions.clear();
-
-  for (cs_lnum_t i = 0; i < n_vals; i++) {
-    val1.push_back(var2[i]);
-    val2.push_back(var1[i]);
+  if (sizeof(cs_real_t) != sizeof(double)) {
+    BFT_MALLOC(_prop1, n_vals, double);
+    BFT_MALLOC(_prop2, n_vals, double);
+    BFT_MALLOC(_result, n_vals, double);
+    for (cs_lnum_t i = 0; i < n_vals; i++) {
+      _prop1[i] = var1[i];
+      _prop2[i] = var1[i];
+    }
+    prop1 = _prop1;
+    prop2 = _prop2;
+    result = _result;
   }
-  fractions.push_back(1.0);
+  else {
+    prop1 = const_cast<double *>(var1);
+    prop2 = const_cast<double *>(var2);
+    result = val;
+  }
 
   cs_fp_exception_disable_trap();
 
-  std::vector<std::vector<double> > out = CoolProp::PropsSImulti(outputs,
-                                                                 Name1,
-                                                                 val1,
-                                                                 Name2,
-                                                                 val2,
-                                                                 Backend,
-                                                                 fluids,
-                                                                 fractions);
+  switch(api_choice) {
+  case 0:
+    {
+      long resdim1 = n_vals, resdim2 = 1;
+      double fractions[1] = {1.0};
+
+      PropsSImulti(outputs,
+                   name1, prop1, n_vals,
+                   name2, prop2, n_vals,
+                   backend,
+                   fluid_names,
+                   fractions, 1,
+                   result, &resdim1, &resdim2);
+
+      if (resdim1 != n_vals) {
+        get_global_param_string("errstring", message_buffer, mb_size);
+        bft_error(__FILE__, __LINE__, 0,
+                  _("CoolProp was unable to compute some fluid properties with\n"
+                    "input variable names: \"%s\", \"%s\" and backend \"%s\".\n\n"
+                    "Fluid(s) considered: \"%s\".\n\n"
+                    "%s."),
+                  name1, name2, backend, fluid_names, message_buffer);
+      }
+      assert(resdim2 == 1);
+    }
+    break;
+
+  case 1:
+    {
+      AbstractState_update_and_1_out(state_handle, input_pair,
+                                     prop1, prop2, n_vals, output_key,
+                                     result,
+                                     &errcode, message_buffer, mb_size);
+      if (errcode != 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("CoolProp was unable to compute property \"%s\" with\n"
+                    "input variable names: \"%s\", \"%s\" and backend \"%s\".\n\n"
+                    "Fluid(s) considered: \"%s\".\n\n"
+                    "%s."),
+                  outputs, name1, name2, backend, fluid_names, message_buffer);
+    }
+    break;
+
+  case 2:
+    {
+      for (int i = 0; i < n_vals; i++) {
+        AbstractState_update(state_handle, input_pair,
+                             prop1[i], prop2[i],
+                             &errcode, message_buffer, mb_size);
+        if (errcode == 0)
+          result[i] = AbstractState_keyed_output(state_handle, output_key,
+                                                 &errcode, message_buffer, mb_size);
+        if (errcode != 0)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("CoolProp was unable to compute property \"%s\" with\n"
+                      "input variable names: \"%s\", \"%s\" and backend \"%s\".\n\n"
+                      "Fluid(s) considered: \"%s\".\n\n"
+                      "%s."),
+                    outputs, name1, name2, backend, fluid_names, message_buffer);
+      }
+    }
+    break;
+
+  default:
+    assert(0);
+  }
 
   cs_fp_exception_restore_trap();
 
-  if ((cs_lnum_t)(out.size()) != n_vals)
-    bft_error(__FILE__, __LINE__, 0,
-              _("CoolProp was unable to compute some fluid properties with\n"
-                "input variable names: \"%s\", \"%s\" and backend \"%s\".\n\n"
-                "First of %d fluid(s) considered: \"%s\"."),
-              Name1.c_str(), Name2.c_str(), Backend.c_str(),
-              (int)n_vals, fluids[0].c_str());
+  if (_result != NULL) {
+    for (int i = 0; i < n_vals; i++)
+      val[i] = result[i];
+    BFT_FREE(_result);
+  }
 
-  for (int i = 0; i < n_vals; i++)
-    val[i] = out[i][0];
+  BFT_FREE(_prop1);
+  BFT_FREE(_prop2);
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free state for Coolprop plugin.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_coolprop_finalize(void)
+{
+  for (int i = 0; i < _n_states; i++) {
+    long errcode = 0;
+    char message_buffer[512];
+
+    AbstractState_free(_states[i].abstract_state_handle,
+                       &errcode, message_buffer, 511);
+  }
+
+  BFT_FREE(_states);
+  _n_states = 0;
+}
+
+END_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 

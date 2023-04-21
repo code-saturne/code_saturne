@@ -147,6 +147,9 @@ typedef void
                           const cs_real_t                    var2[],
                           cs_real_t                          val[]);
 
+typedef void
+(cs_finalize_t)(void);
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -424,6 +427,12 @@ cs_thermal_table_finalize(void)
 #endif
 #if defined(HAVE_COOLPROP) && defined(HAVE_PLUGINS)
     if (cs_glob_thermal_table->type == 3) {
+      cs_finalize_t *cs_coolprop_finalize
+        = (cs_finalize_t *)  (intptr_t)
+             cs_base_get_dl_function_pointer(_cs_coolprop_dl_lib,
+                                             "cs_coolprop_finalize",
+                                             true);
+      cs_coolprop_finalize();
       cs_base_dlclose("cs_coolprop", _cs_coolprop_dl_lib);
       _cs_phys_prop_coolprop = NULL;
     }
@@ -433,6 +442,27 @@ cs_thermal_table_finalize(void)
     BFT_FREE(cs_glob_thermal_table->method);
     BFT_FREE(cs_glob_thermal_table);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get backend set for CoolProp.
+ *
+ * Returns NULL if CoolProp is not used or backend not set yet.
+ *
+ * \return  pointer to CoolProp backend.
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_physical_properties_get_coolprop_backend(void)
+{
+#if defined(HAVE_COOLPROP)
+  return _cs_coolprop_backend;
+#else
+  CS_UNUSED(backend);
+  returne NULL;
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -538,7 +568,10 @@ cs_phys_prop_compute(cs_phys_prop_type_t          property,
     var1_c = _var1_c;
   }
 
-  if (cs_glob_thermal_table->temp_scale == 2) {
+  if (   cs_glob_thermal_table->temp_scale == 2
+      && (cs_glob_thermal_table->thermo_plane == CS_PHYS_PROP_PLANE_PT
+          || cs_glob_thermal_table->thermo_plane == CS_PHYS_PROP_PLANE_TS
+          || cs_glob_thermal_table->thermo_plane == CS_PHYS_PROP_PLANE_TX)) {
     if (_n_vals == 1) {
       _var2_c_single[0] = var2[0] + 273.15;
       var2_c = _var2_c_single;

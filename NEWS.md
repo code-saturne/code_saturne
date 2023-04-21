@@ -3,6 +3,8 @@ Release 8.0.0 (unreleased)
 
 ### User changes:
 
+- CoolProp support now actually works with tabular properties.
+
 - Cartesian mesher can now handle multiple blocks
   * This requires modification of basic API, specifically by adding
     an additional input argument for some functions (name of id).
