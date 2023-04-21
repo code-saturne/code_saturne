@@ -787,8 +787,10 @@ _solve_rit(const cs_field_t     *f,
 #   pragma omp parallel if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       for (cs_lnum_t i = 0; i < 3; i++) {
-        rhs_ut[c_id][i] = fimp[c_id][i][i]*xuta[c_id][i];
-        fimp[c_id][i][i] = -thetv*fimp[c_id][i][i];
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          rhs_ut[c_id][i] = fimp[c_id][i][j]*xuta[c_id][j];
+          fimp[c_id][i][j] = -thetv*fimp[c_id][i][j];
+        }
       }
     }
   }
@@ -798,8 +800,10 @@ _solve_rit(const cs_field_t     *f,
 #   pragma omp parallel if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       for (cs_lnum_t i = 0; i < 3; i++) {
-        /* User source term */
-        rhs_ut[c_id][i] += fimp[c_id][i][i]*xuta[c_id][i];
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          /* User source term */
+          rhs_ut[c_id][i] += fimp[c_id][i][j]*xuta[c_id][j];
+        }
         /* Diagonal */
         fimp[c_id][i][i] = cs_math_fmax(-fimp[c_id][i][i],
                                         cs_math_zero_threshold);
