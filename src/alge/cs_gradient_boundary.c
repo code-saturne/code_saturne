@@ -691,6 +691,107 @@ _gradient_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
   } /* End of loop on selected faces */
 }
 
+/*----------------------------------------------------------------------------
+ * Update R.H.S. for lsq gradient taking into account the weight coefficients.
+ *
+ * parameters:
+ *   wi     <-- Weight coefficient of cell i
+ *   wj     <-- Weight coefficient of cell j
+ *   p_diff <-- R.H.S.
+ *   d      <-- R.H.S.
+ *   a      <-- geometric weight J'F/I'J'
+ *   res    --> Updated R.H.S. for cell
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_compute_ani_weighting(const cs_real_t  wi[],
+                       const cs_real_t  wj[],
+                       const cs_real_t  p_diff,
+                       const cs_real_t  d[],
+                       const cs_real_t  a,
+                       cs_real_t        res[])
+{
+  cs_real_t ki_d[3] = {0., 0., 0.};
+  cs_real_t kj_d[3] = {0., 0., 0.};
+
+  cs_real_t sum[6];
+  cs_real_t inv_wi[6];
+  cs_real_t inv_wj[6];
+  cs_real_t _d[3];
+
+  for (cs_lnum_t ii = 0; ii < 6; ii++)
+    sum[ii] = a*wi[ii] + (1. - a)*wj[ii];
+
+  cs_math_sym_33_inv_cramer(wi, inv_wi);
+
+  cs_math_sym_33_inv_cramer(wj, inv_wj);
+
+  cs_math_sym_33_3_product(inv_wj, d,  _d);
+  cs_math_sym_33_3_product(sum, _d, ki_d);
+  cs_math_sym_33_3_product(inv_wi, d, _d);
+  cs_math_sym_33_3_product(sum, _d, kj_d);
+
+  /* 1 / ||Ki. K_f^-1. IJ||^2 */
+  cs_real_t normi = 1. / cs_math_3_dot_product(ki_d, ki_d);
+
+  for (cs_lnum_t ii = 0; ii < 3; ii++) {
+    res[ii] += p_diff * ki_d[ii] * normi;
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute the inverse of the face viscosity tensor and anisotropic vector
+ * taking into account the weight coefficients to update cocg for lsq gradient.
+ *
+ * parameters:
+ *   wi     <-- Weight coefficient of cell i
+ *   wj     <-- Weight coefficient of cell j
+ *   d      <-- IJ direction
+ *   a      <-- geometric weight J'F/I'J'
+ *   ki_d   --> Updated vector for cell i
+ *   kj_d   --> Updated vector for cell j
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_compute_ani_weighting_cocg(const cs_real_t  wi[],
+                            const cs_real_t  wj[],
+                            const cs_real_t  d[],
+                            const cs_real_t  a,
+                            cs_real_t        ki_d[],
+                            cs_real_t        kj_d[])
+{
+  int ii;
+  cs_real_6_t sum;
+  cs_real_6_t inv_wi;
+  cs_real_6_t inv_wj;
+  cs_real_t _d[3];
+
+  for (ii = 0; ii < 6; ii++)
+    sum[ii] = a*wi[ii] + (1. - a)*wj[ii];
+
+  cs_math_sym_33_inv_cramer(wi,
+                            inv_wi);
+  cs_math_sym_33_inv_cramer(wj,
+                            inv_wj);
+
+  /* Note: K_i.K_f^-1 = SUM.K_j^-1
+   *       K_j.K_f^-1 = SUM.K_i^-1
+   * So: K_i d = SUM.K_j^-1.IJ */
+
+  cs_math_sym_33_3_product(inv_wj,
+                           d,
+                           _d);
+  cs_math_sym_33_3_product(sum,
+                           _d,
+                           ki_d);
+  cs_math_sym_33_3_product(inv_wi,
+                           d,
+                           _d);
+  cs_math_sym_33_3_product(sum,
+                           _d,
+                           kj_d);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -925,6 +1026,278 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
 
     cs_lnum_t s_id = cell_b_faces_idx[c_id];
     cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
+
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+      cs_lnum_t c_f_id = cell_b_faces[i];
+
+      cs_real_t dddij[3];
+
+      /* For coupled faces, use pure Neumann condition,
+         for other faces, use regular BC's */
+
+      cs_real_t a, b;
+      if (hn_faces[c_f_id * hn_stride]) {
+        a = 0;
+        b = 1;
+      }
+      else {
+        a = bc_coeff_a[c_f_id];
+        b = bc_coeff_b[c_f_id];
+
+        /* Use unreconstructed value for limiter */
+        cs_real_t var_f = a + b*var_i;
+        var_min = CS_MIN(var_min, var_f);
+        var_max = CS_MAX(var_max, var_f);
+      }
+
+      cs_real_t unddij = 1. / b_dist[c_f_id];
+      cs_real_t udbfs = 1. / b_face_surf[c_f_id];
+      cs_real_t umcbdd = (1. - b) * unddij;
+
+      for (cs_lnum_t ll = 0; ll < 3; ll++) {
+        dddij[ll] =   udbfs * b_face_normal[c_f_id][ll]
+                    + umcbdd * diipb[c_f_id][ll];
+      }
+
+      cocg[0] += dddij[0]*dddij[0];
+      cocg[1] += dddij[1]*dddij[1];
+      cocg[2] += dddij[2]*dddij[2];
+      cocg[3] += dddij[0]*dddij[1];
+      cocg[4] += dddij[1]*dddij[2];
+      cocg[5] += dddij[0]*dddij[2];
+
+      cs_real_t pfac = (a + (b-1.)*var_i) * unddij;
+
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        rhs[ll] += dddij[ll] * pfac;
+
+    } /* End of contribution from boundary faces */
+
+    /* Invert local covariance matrix */
+
+    cs_real_t a00 = cocg[1]*cocg[2] - cocg[4]*cocg[4];
+    cs_real_t a01 = cocg[4]*cocg[5] - cocg[3]*cocg[2];
+    cs_real_t a02 = cocg[3]*cocg[4] - cocg[1]*cocg[5];
+    cs_real_t a11 = cocg[0]*cocg[2] - cocg[5]*cocg[5];
+    cs_real_t a12 = cocg[3]*cocg[5] - cocg[0]*cocg[4];
+    cs_real_t a22 = cocg[0]*cocg[1] - cocg[3]*cocg[3];
+
+    cs_real_t det_inv = 1. / (cocg[0]*a00 + cocg[3]*a01 + cocg[5]*a02);
+
+    cs_real_t grad[3];
+
+    grad[0] = (  a00 * rhs[0]
+               + a01 * rhs[1]
+               + a02 * rhs[2]) * det_inv;
+    grad[1] = (  a01 * rhs[0]
+               + a11 * rhs[1]
+               + a12 * rhs[2]) * det_inv;
+    grad[2] = (  a02 * rhs[0]
+               + a12 * rhs[1]
+               + a22 * rhs[2]) * det_inv;
+
+    /* Finally, reconstruct value at I' */
+
+    cs_real_t  var_ip = var_i + (  grad[0]*diipb[f_id][0]
+                                 + grad[1]*diipb[f_id][1]
+                                 + grad[2]*diipb[f_id][2]);
+
+    /* Apply simple limiter */
+
+    if (clip_coeff >= 0) {
+      cs_real_t d = var_max - var_min;
+      var_max += d*clip_coeff;
+      var_min -= d*clip_coeff;
+
+      if (var_ip < var_min)
+        var_ip = var_min;
+      if (var_ip > var_max)
+        var_ip = var_max;
+    }
+
+    var_iprime[f_idx] = var_ip;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the values of a scalar at boundary face I' positions
+ *         using least-squares interpolation with anisotropic weighting.
+ *
+ * This assumes ghost cell values for the variable (var) are up-to-date.
+ *
+ * A simple limiter is applied to ensure the maximum principle is preserved
+ * (using non-reconstructed values in case of non-homogeneous Neumann
+ * conditions).
+ *
+ * \remark The same remark applies as for \ref cs_gradient_boundary_iprime_lsq_s.
+ *
+ * \param[in]   m               pointer to associated mesh structure
+ * \param[in]   fvq             pointer to associated finite volume quantities
+ * \param[in]   cpl             structure associated with internal coupling,
+ *                              or NULL
+ * \param[in]   n_faces         number of faces at which to compute values
+ * \param[in]   face_ids        ids of boundary faces at which to compute
+ *                              values, or NULL for all
+ * \param[in]   clip_coeff      clipping (limiter) coefficient
+ *                              (no limiter if < 0)
+ * \param[in]   bc_coeff_a      boundary condition term a, or NULL
+ * \param[in]   bc_coeff_b      boundary condition term b, or NULL
+ * \param[in]   c_weight        cell variable weight, or NULL
+ * \param[in]   var             variable values et cell centers
+ * \param[out]  var_iprime      variable values et face iprime locations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
+                                      const cs_mesh_quantities_t    *fvq,
+                                      const cs_internal_coupling_t  *cpl,
+                                      cs_lnum_t                   n_faces,
+                                      const cs_lnum_t            *face_ids,
+                                      double                      clip_coeff,
+                                      const cs_real_t            *bc_coeff_a,
+                                      const cs_real_t            *bc_coeff_b,
+                                      const cs_real_t             c_weight[][6],
+                                      const cs_real_t             var[],
+                                      cs_real_t        *restrict  var_iprime)
+{
+  /* Initialization */
+
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const cs_lnum_t *restrict cell_cells_idx
+    = (const cs_lnum_t *restrict) ma->cell_cells_idx;
+  const cs_lnum_t *restrict cell_b_faces_idx
+    = (const cs_lnum_t *restrict) ma->cell_b_faces_idx;
+  const cs_lnum_t *restrict cell_cells
+    = (const cs_lnum_t *restrict) ma->cell_cells;
+
+  const cs_lnum_t *restrict cell_i_faces
+    = (const cs_lnum_t *restrict) ma->cell_i_faces;
+  const short int *restrict cell_i_faces_sgn
+    = (const short int *restrict) ma->cell_i_faces_sgn;
+  const cs_lnum_t *restrict cell_b_faces
+    = (const cs_lnum_t *restrict) ma->cell_b_faces;
+
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+  const cs_real_t *restrict b_face_surf
+    = (const cs_real_t *restrict)fvq->b_face_surf;
+  const cs_real_t *restrict b_dist
+    = (const cs_real_t *restrict)fvq->b_dist;
+  const cs_real_3_t *restrict diipb
+    = (const cs_real_3_t *restrict)fvq->diipb;
+  const cs_real_t *restrict weight = fvq->weight;
+
+  cs_lnum_t   hn_stride = 0;
+  bool _hn_faces[1] = {false};
+  const bool  *hn_faces = _hn_faces;
+  if (bc_coeff_a == NULL && bc_coeff_b == NULL) {
+    hn_stride = 0;
+    _hn_faces[0] = true;
+  }
+  else if (cpl != NULL) {
+    hn_stride = 1;
+    hn_faces = (const bool *)cpl->coupled_faces;
+  }
+
+  if (cell_i_faces == NULL) {
+    cs_mesh_adjacencies_update_cell_i_faces();
+    cell_i_faces
+      = (const cs_lnum_t *restrict) ma->cell_i_faces;
+    cell_i_faces_sgn
+      = (const short int *restrict) ma->cell_i_faces_sgn;
+  }
+
+  /* Loop on selected boundary faces */
+
+  #pragma omp parallel for schedule(dynamic, CS_THR_MIN)
+  for (cs_lnum_t f_idx = 0; f_idx < n_faces; f_idx++) {
+
+    cs_lnum_t f_id = (face_ids != NULL) ? face_ids[f_idx] : f_idx;
+    cs_lnum_t c_id = b_face_cells[f_id];
+
+    /* Reconstruct gradients using least squares for non-orthogonal meshes */
+
+    cs_real_t cocg[6] = {0., 0., 0., 0., 0., 0.};
+    cs_real_t rhs[3] = {0, 0, 0};
+
+    cs_real_t var_i = var[c_id];
+    cs_real_t var_min = var_i, var_max = var_i;
+
+    /* Contribution from adjacent cells */
+
+    cs_lnum_t s_id = cell_cells_idx[c_id];
+    cs_lnum_t e_id = cell_cells_idx[c_id+1];
+
+    assert (c_weight != NULL || e_id <= s_id);
+
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+      cs_real_t dc[3], dc_i[3], dc_j[3];
+      cs_lnum_t c_id1 = cell_cells[i];
+      cs_lnum_t f_id1 = cell_i_faces[i];
+
+      cs_real_t pond = weight[f_id1];
+      if (cell_i_faces_sgn[i] < 0)
+        pond = (1. - pond);
+
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        dc[ii] = cell_cen[c_id1][ii] - cell_cen[c_id][ii];
+
+      _compute_ani_weighting_cocg(c_weight[c_id],
+                                  c_weight[c_id1],
+                                  dc,
+                                  pond,
+                                  dc_i,
+                                  dc_j);
+
+      cs_real_t i_dci = 1. / cs_math_3_square_norm(dc_i);
+
+      cocg[0] += dc_i[0] * dc_i[0] * i_dci;
+      cocg[1] += dc_i[1] * dc_i[1] * i_dci;
+      cocg[2] += dc_i[2] * dc_i[2] * i_dci;
+      cocg[3] += dc_i[0] * dc_i[1] * i_dci;
+      cocg[4] += dc_i[1] * dc_i[2] * i_dci;
+      cocg[5] += dc_i[0] * dc_i[2] * i_dci;
+
+      /* RHS contribution */
+
+      /* (P_j - P_i)*/
+      cs_real_t p_diff = (var[c_id1] - var[c_id]);
+
+      _compute_ani_weighting(c_weight[c_id],
+                             c_weight[c_id1],
+                             p_diff,
+                             dc,
+                             pond,
+                             rhs);
+
+    }
+
+    /* Contribution from hidden boundary faces */
+
+    if (ma->cell_hb_faces_idx != NULL)
+      _add_hb_faces_cocg_lsq_cell(c_id,
+                                  ma->cell_hb_faces_idx,
+                                  ma->cell_hb_faces,
+                                  fvq->b_face_surf,
+                                  (const cs_real_3_t *)fvq->b_face_normal,
+                                  cocg);
+
+    /* Contribution from boundary faces. */
+
+    s_id = cell_b_faces_idx[c_id];
+    e_id = cell_b_faces_idx[c_id+1];
 
     for (cs_lnum_t i = s_id; i < e_id; i++) {
 

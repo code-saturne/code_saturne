@@ -289,21 +289,6 @@ cs_internal_coupling_lsq_cocg_contribution(const cs_internal_coupling_t  *cpl,
                                            cs_real_6_t                    cocg[]);
 
 /*----------------------------------------------------------------------------
- * Modify LSQ COCG matrix to include internal coupling
- * when diffusivity is a tensor
- *
- * parameters:
- *   cpl  <-- pointer to coupling entity
- *   c_weight  <-- weigthing coefficients
- *   cocg <-> cocg matrix modified
- *----------------------------------------------------------------------------*/
-
-void
-cs_internal_coupling_lsq_cocg_weighted(const cs_internal_coupling_t  *cpl,
-                                       const cs_real_t               *c_weight,
-                                       cs_real_6_t                   cocg[]);
-
-/*----------------------------------------------------------------------------
  * Modify iterative COCG matrix to include internal coupling
  *
  * parameters:
@@ -332,24 +317,6 @@ cs_internal_coupling_setup(void);
 
 void
 cs_internal_coupling_initialize(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Add internal coupling rhs contribution for LSQ gradient calculation
- *
- * \param[in]       cpl       pointer to coupling entity
- * \param[in]       c_weight  weighted gradient coefficient variable, or NULL
- * \param[in]       w_stride  stride of weighting coefficient
- * \param[in, out]  rhsv      pointer to rhs contribution
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_internal_coupling_lsq_scalar_gradient(
-    const cs_internal_coupling_t  *cpl,
-    const cs_real_t                c_weight[],
-    const int                      w_stride,
-    cs_real_4_t                    rhsv[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

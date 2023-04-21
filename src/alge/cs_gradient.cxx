@@ -3752,15 +3752,6 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
 
   } /* loop on thread groups */
 
-  /* Contribution from coupled faces */
-
-  if (cpl != NULL) {
-    cs_internal_coupling_lsq_cocg_weighted
-      (cpl, (const cs_real_t *)c_weight_t, cocg);
-    cs_internal_coupling_lsq_scalar_gradient
-      (cpl, (const cs_real_t *)c_weight_t, 6, rhsv);
-  }
-
   /* Contribution from boundary faces */
 
 # pragma omp parallel for
@@ -6957,11 +6948,6 @@ _update_bc_coeff_for_ic_s(cs_field_bc_coeffs_t          *bc_coeffs,
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
-  if (w_stride > 1)
-    bft_error(__FILE__, __LINE__, 0,
-              _("%s: case with weight stride %d not handled."),
-              __func__, w_stride);
-
   /* For internal coupling, exchange local variable
      with its associated distant value */
 
@@ -6993,20 +6979,35 @@ _update_bc_coeff_for_ic_s(cs_field_bc_coeffs_t          *bc_coeffs,
   int n_iter_max = 2;
   for (int iter = 0; iter < n_iter_max; iter++) {
 
-    if (iter > 0)
-      cs_gradient_boundary_iprime_lsq_s(mesh,
-                                        cs_glob_mesh_quantities,
-                                        NULL, /* handled in current loop */
-                                        n_distant,
-                                        faces_distant,
-                                        halo_type,
-                                        clip_coeff,
-                                        bc_coeff_a,
-                                        bc_coeff_b,
-                                        c_weight,
-                                        var,
-                                        var_distant);
-
+    if (iter > 0) {
+      if (w_stride <= 1)
+        cs_gradient_boundary_iprime_lsq_s(mesh,
+                                          cs_glob_mesh_quantities,
+                                          NULL, /* handled in current loop */
+                                          n_distant,
+                                          faces_distant,
+                                          halo_type,
+                                          clip_coeff,
+                                          bc_coeff_a,
+                                          bc_coeff_b,
+                                          c_weight,
+                                          var,
+                                          var_distant);
+      else {
+        assert(w_stride == 6);
+        cs_gradient_boundary_iprime_lsq_s_ani(mesh,
+                                              cs_glob_mesh_quantities,
+                                              NULL, /* handled in current loop */
+                                              n_distant,
+                                              faces_distant,
+                                              clip_coeff,
+                                              bc_coeff_a,
+                                              bc_coeff_b,
+                                              (const cs_real_6_t *)c_weight,
+                                              var,
+                                              var_distant);
+      }
+    }
     else {
       const cs_lnum_t *restrict b_face_cells
         = (const cs_lnum_t *restrict)mesh->b_face_cells;
@@ -7908,8 +7909,7 @@ _gradient_scalar(const char                    *var_name,
   /* Update of local BC. coefficients for internal coupling */
 
   if (   cpl != NULL
-      && gradient_type != CS_GRADIENT_GREEN_ITER
-      && w_stride <= 1) {
+      && gradient_type != CS_GRADIENT_GREEN_ITER) {
 
     if (_bc_coeff_a == NULL) { /* If not already initialized by default above */
       BFT_MALLOC(_bc_coeff_a, n_b_faces, cs_real_t);

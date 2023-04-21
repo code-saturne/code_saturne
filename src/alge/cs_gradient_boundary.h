@@ -128,6 +128,49 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the values of a scalar at boundary face I' positions
+ *         using least-squares interpolation with anisotropic weighting.
+ *
+ * This assumes ghost cell values for the variable (var) are up-to-date.
+ *
+ * A simple limiter is applied to ensure the maximum principle is preserved
+ * (using non-reconstructed values in case of non-homogeneous Neumann
+ * conditions).
+ *
+ * \remark The same remark applies as for \ref cs_gradient_boundary_iprime_lsq_s.
+ *
+ * \param[in]   m               pointer to associated mesh structure
+ * \param[in]   fvq             pointer to associated finite volume quantities
+ * \param[in]   cpl             structure associated with internal coupling,
+ *                              or NULL
+ * \param[in]   n_faces         number of faces at which to compute values
+ * \param[in]   face_ids        ids of boundary faces at which to compute
+ *                              values, or NULL for all
+ * \param[in]   clip_coeff      clipping (limiter) coefficient
+ *                              (no limiter if < 0)
+ * \param[in]   bc_coeff_a      boundary condition term a, or NULL
+ * \param[in]   bc_coeff_b      boundary condition term b, or NULL
+ * \param[in]   c_weight        cell variable weight, or NULL
+ * \param[in]   var             variable values et cell centers
+ * \param[out]  var_iprime      variable values et face iprime locations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
+                                      const cs_mesh_quantities_t    *fvq,
+                                      const cs_internal_coupling_t  *cpl,
+                                      cs_lnum_t                   n_faces,
+                                      const cs_lnum_t            *face_ids,
+                                      double                      clip_coeff,
+                                      const cs_real_t            *bc_coeff_a,
+                                      const cs_real_t            *bc_coeff_b,
+                                      const cs_real_t             c_weight[][6],
+                                      const cs_real_t             var[],
+                                      cs_real_t        *restrict  var_iprime);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the values of a vector at boundary face I' positions
  *         using least-squares interpolation.
  *
