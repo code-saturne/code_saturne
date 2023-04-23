@@ -443,7 +443,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                 t = self.mdl.getTemperature()
                 self.lineEditT0.setText(str(t))
 
-        elif mdl_thermal != "off" or mdl_gas == 'd3p':
+        else: # allow access to T0 even withtout thermal model for physical properties.
             t = self.mdl.getTemperature()
             self.lineEditT0.setText(str(t))
             if mdl_thermal == "temperature_celsius":
@@ -451,8 +451,6 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
             if self.mdl.getMaterials() != "user_material":
                 self.labelInfoT0.hide()
-        else:
-            self.groupBoxTemperature.hide()
 
         if mdl_gas == 'd3p':
             self.groupBoxTempd3p.setVisible(is_main_zone)
