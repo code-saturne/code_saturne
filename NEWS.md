@@ -7,6 +7,8 @@ Release 8.0.0 (unreleased)
 
 ### User changes:
 
+- CoolProp support now actually works with tabular properties.
+
 - Cartesian mesher can now handle multiple blocks
   * This requires modification of basic API, specifically by adding
     an additional input argument for some functions (name of id).
@@ -18,6 +20,8 @@ Release 8.0.0 (unreleased)
   complex cases. This induces a modification of some user settings,
   for instance when defininig a property, a boundary condition or a
   source term by array. This mainly occurs when using CDO schemes.
+
+- The user can now specify a custom thermodynamic pressure.
 
 ### Architectural changes:
 
