@@ -460,8 +460,7 @@ cs_physical_properties_get_coolprop_backend(void)
 #if defined(HAVE_COOLPROP)
   return _cs_coolprop_backend;
 #else
-  CS_UNUSED(backend);
-  returne NULL;
+  return NULL;
 #endif
 }
 
