@@ -494,6 +494,7 @@ endif
 ! for DRSM models, needed for inlets
 
 if ( iturb.eq.23.or.                                &
+     iturb.eq.24.or.                                &
     (itytur.eq.3).or.                               &
      (iturb.eq.30.and.irijec.eq.1).or.              &
      (itytur.eq.4.and.idries.eq.1).or.              &
@@ -531,7 +532,7 @@ if (ineedy.eq.1) then
   ! Dimensionless wall distance "y+"
   !> non-dimensional distance \f$y^+\f$ between a given volume and the closest
   !> wall, when it is necessary (LES with van Driest-wall damping).
-  if (itytur.eq.4.and.idries.eq.1) then
+  if ((itytur.eq.4.and.idries.eq.1).or.iturb.eq.24) then
     f_name  = 'wall_yplus'
     f_label = 'Wall Y+'
     call add_variable_field(f_name, f_label, 1, ivar)
