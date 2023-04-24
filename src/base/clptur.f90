@@ -163,6 +163,7 @@ integer          nlogla, nsubla, iuiptn
 integer          f_id_rough, f_id_rough_t,f_id, iustar
 integer          f_id_uet, f_id_uk
 integer          f_id_tlag
+integer          f_id_cmu
 
 double precision rnx, rny, rnz
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
@@ -174,6 +175,7 @@ double precision uk, uet, nusury, yplus, dplus, yk
 double precision gredu, temp
 double precision cfnns, cfnnk, cfnne
 double precision sqrcmu, ek
+double precision cmu_c
 double precision xnuii, xnuit, xmutlm, mut_lm_dmut
 double precision rcprod
 double precision hflui, hint, pimp, qimp
@@ -209,6 +211,7 @@ double precision, dimension(:), allocatable, target :: buet, bcfnns_loc
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, bcfnns
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: tlag
+double precision, dimension(:), pointer :: cvar_cmu
 
 double precision, dimension(:), pointer :: cvar_totwt, cvar_t, cpro_liqwt
 double precision, dimension(:,:), pointer :: coefau, cofafu, visten
@@ -1215,7 +1218,88 @@ do ifac = 1, nfabor
                coefb_tlag(ifac), coefbf_tlag(ifac),             &
                pimp         , hint          , rinfin )
         endif
+      ! =============================================
+      ! Cubic Baglietto k-epsilon model high Reynolds
+      ! =============================================
+      else if(iturb.eq.24) then
+        call field_get_id_try("cmu", f_id_cmu)
+        if (f_id_cmu.ge.0) then
+          call field_get_val_s(f_id_cmu, cvar_cmu)
+          sqrcmu = sqrt(cvar_cmu(iel))
+        endif
 
+        ! Dirichlet Boundary Condition on k
+        !----------------------------------
+        if (iwallf.eq.0) then
+          ! No wall functions forces by user
+          pimp = 0.d0
+        else
+          ! Use of wall functions
+          if (iuntur.eq.1) then
+            pimp = uk**2/sqrcmu
+          else
+            pimp = 0.d0
+          endif
+        endif
+
+        hint = (visclc+visctc/sigmak)/distbf
+        pimp = pimp * cfnnk
+        call set_dirichlet_scalar &
+             !====================
+           ( coefa_k(ifac), coefaf_k(ifac),             &
+             coefb_k(ifac), coefbf_k(ifac),             &
+             pimp         , hint          , rinfin )
+
+        ! Dirichlet Boundary Condition on epsilon
+        !---------------------------------------
+        if(iwallf.ne.0) then
+
+          pimp_lam = 2.0d0*visclc/romc*cvar_k(iel)/distbf**2
+
+          if (yplus.gt.epzero) then
+            pimp_turb = 5.d0*uk**4*romc/        &
+                        (xkappa*visclc*yplus)
+
+            ! Blending between wall and homogeneous layer
+            fep       = exp(-((yplus+dplus)/4.d0)**1.5d0)
+            dep       = 1.d0- exp(-((yplus+dplus)/9.d0)**2.1d0)
+            pimp      = fep*pimp_lam + (1.d0-fep)*dep*pimp_turb
+          else
+            pimp = pimp_lam
+          end if
+
+        else
+
+          pimp = 2.0d0*visclc/romc*cvar_k(iel)/distbf**2
+        end if
+        pimp = pimp * cfnne
+        call set_dirichlet_scalar &
+             !====================
+           ( coefa_ep(ifac), coefaf_ep(ifac),             &
+             coefb_ep(ifac), coefbf_ep(ifac),             &
+             pimp          , hint           , rinfin )
+
+        !if defined set Dirichlet condition for the Lagrangian time scale
+        if (f_id_tlag.ge.0) then
+          if (iwallf.eq.0) then
+            ! No wall functions forced by user
+            pimp = 0.d0
+          else
+            ! Use of wall functions
+            if (iuntur.eq.1) then
+              pimp = cfnnk / (cfnne * uk) * cl / sqrcmu * xkappa  &
+                   * (dplus * visclc / (romc * uk) + rough_d )
+            else
+              pimp = 0.d0
+            endif
+          endif
+
+          call set_dirichlet_scalar &
+                 !====================
+             ( coefa_tlag(ifac), coefaf_tlag(ifac),             &
+               coefb_tlag(ifac), coefbf_tlag(ifac),             &
+               pimp         , hint          , rinfin )
+        endif
       ! ==============================================
       ! k-epsilon and k-epsilon LP boundary conditions
       ! ==============================================

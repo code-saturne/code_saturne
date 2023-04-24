@@ -179,6 +179,12 @@ interface
     implicit none
   end subroutine cs_turbulence_ke_q_mu_t
 
+  subroutine cs_turbulence_ke_c_mu_t() &
+    bind(C, name='cs_turbulence_ke_c_mu_t')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_turbulence_ke_c_mu_t
+
   subroutine cs_turbulence_kw_mu_t() &
     bind(C, name='cs_turbulence_kw_mu_t')
     use, intrinsic :: iso_c_binding
@@ -395,6 +401,12 @@ elseif (itytur.eq.2) then
 
     call cs_turbulence_ke_q_mu_t
 
+  else if (iturb.eq.24) then
+
+    ! Non-linear cubic Baglietto
+    ! ------------------------------
+
+    call cs_turbulence_ke_c_mu_t
   else
 
     ! Standard and Linear Production

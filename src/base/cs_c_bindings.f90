@@ -3662,6 +3662,17 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function solving the cubic k-epsilon model.
+
+    subroutine cs_turbulence_ke_c(rij) &
+      bind(C, name='cs_turbulence_ke_c')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(6,*), intent(out) :: rij
+    end subroutine cs_turbulence_ke_c
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function solving the equation on alpha for Rij-EBRSM.
 
     subroutine cs_turbulence_rij_solve_alpha(f_id, c_durbin_l ) &

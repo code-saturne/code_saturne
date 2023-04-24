@@ -98,6 +98,7 @@ BEGIN_C_DECLS
         - CS_TURB_K_EPSILON_LS: Launder-Sharma \f$ k-\varepsilon \f$ model
         - CS_TURB_K_EPSILON_QUAD: Baglietto et al. quadratic
                                    \f$ k-\varepsilon \f$ model
+        - CS_TURB_K_EPSILON_CUBIC: NLEVM cubic model by Baglietto
         - CS_TURB_RIJ_EPSILON_LRR: \f$ R_{ij}-\epsilon \f$ (LRR)
         - CS_TURB_RIJ_EPSILON_SSG: \f$ R_{ij}-\epsilon \f$ (SSG)
         - CS_TURB_RIJ_EPSILON_EBRSM: \f$ R_{ij}-\epsilon \f$ (EBRSM)
@@ -971,13 +972,26 @@ double cs_turb_cv2fet = 110.0;
 
 /*!
  * Constants for the Baglietto et al. quadratic k-epsilon model.
- * Useful if and only if \ref iturb = CS_TURB_K_EPSILON_QUAD
+ * Useful if and only if \ref iturb = CS_TURB_K_EPSILON_QUAD or \ref iturb = CS_TURB_K_EPSILON_CUBIC
  */
 double cs_turb_cnl1 = 0.8;
 double cs_turb_cnl2 = 11.;
 double cs_turb_cnl3 = 4.5;
 double cs_turb_cnl6 = 1e3;
 double cs_turb_cnl7 = 1.;
+
+/*!
+ * Constants for the Baglietto cubic k-epsilon model.
+ * Useful if and only if \ref iturb = CS_TURB_K_EPSILON_CUBIC
+ */
+double cs_turb_cnl4 = -5.;
+double cs_turb_cnl5 = -4.5;
+double cs_turb_cnl8 = 15.;
+double cs_turb_cnl9 = 8.;
+double cs_turb_ca0 = 0.667;
+double cs_turb_ca1 = 3.9;
+double cs_turb_ca2 = 1.;
+double cs_turb_ca3 = 0.;
 
 /*!
  * Constant of the WALE LES method.
@@ -1317,6 +1331,9 @@ _turbulence_model_enum_name(cs_turb_model_type_t  id)
   case CS_TURB_K_EPSILON_QUAD:
     s = "CS_TURB_K_EPSILON_QUAD";
     break;
+  case CS_TURB_K_EPSILON_CUBIC:
+    s = "CS_TURB_K_EPSILON_CUBIC";
+    break;
   case CS_TURB_RIJ_EPSILON_LRR:
     s = "CS_TURB_RIJ_EPSILON_LRR";
     break;
@@ -1387,6 +1404,9 @@ _turbulence_model_name(cs_turb_model_type_t  id)
     break;
   case CS_TURB_K_EPSILON_QUAD:
     s = _("Baglietto et al. quadratic k-epsilon model");
+    break;
+  case CS_TURB_K_EPSILON_CUBIC:
+    s = _("Baglietto NLEVM Cubic k-epsilon model");
     break;
   case CS_TURB_RIJ_EPSILON_LRR:
     s = _("Rij-epsilon (LRR) model");
@@ -1464,6 +1484,7 @@ cs_set_type_order_turbulence_model(void)
            || _turb_model.iturb == CS_TURB_K_EPSILON_LIN_PROD
            || _turb_model.iturb == CS_TURB_K_EPSILON_LS
            || _turb_model.iturb == CS_TURB_K_EPSILON_QUAD
+           || _turb_model.iturb == CS_TURB_K_EPSILON_CUBIC
            || _turb_model.iturb == CS_TURB_V2F_PHI
            || _turb_model.iturb == CS_TURB_V2F_BL_V2K
            || _turb_model.iturb == CS_TURB_K_OMEGA
@@ -1763,7 +1784,8 @@ cs_turb_model_log_setup(void)
   else if (   turb_model->iturb == CS_TURB_K_EPSILON
            || turb_model->iturb == CS_TURB_K_EPSILON_LIN_PROD
            || turb_model->iturb == CS_TURB_K_EPSILON_LS
-           || turb_model->iturb == CS_TURB_K_EPSILON_QUAD) {
+           || turb_model->iturb == CS_TURB_K_EPSILON_QUAD
+           || turb_model->iturb == CS_TURB_K_EPSILON_CUBIC) {
 
     cs_log_printf
       (CS_LOG_SETUP,
@@ -2018,12 +2040,13 @@ cs_turb_constants_log_setup(void)
   if (   turb_model->iturb == CS_TURB_K_EPSILON
       || turb_model->iturb == CS_TURB_K_EPSILON_LIN_PROD
       || turb_model->iturb == CS_TURB_K_EPSILON_LS
-      || turb_model->iturb == CS_TURB_K_EPSILON_QUAD)
+      || turb_model->iturb == CS_TURB_K_EPSILON_QUAD
+      || turb_model->iturb == CS_TURB_K_EPSILON_CUBIC)
     cs_log_printf
       (CS_LOG_SETUP,
        _("    ce1:         %14.5e (Cepsilon 1: production coef.)\n"
          "    ce2:         %14.5e (Cepsilon 2: dissipat.  coef.)\n"
-         "    cmu:         %14.5e (Cmu constant)\n"),
+         "    cmu:         %14.5e (Cmu constant (not in the cubic model))\n"),
          cs_turb_ce1, cs_turb_ce2, cs_turb_cmu);
 
   else if (turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR)

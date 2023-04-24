@@ -107,6 +107,30 @@ void
 cs_turbulence_ke_q(cs_real_6_t  rij[]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of non linear terms of the cubic k-epsilon model
+ *        (Baglietto et al.)
+ *
+ * \param[out]  rij  non linear terms of cubic Boussinesq approximation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_ke_c(cs_real_6_t  rij[]);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of turbulent viscosity for
+ *        the non-linear cubic K-epsilon from
+ *        Baglietto et al. (2005)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_ke_c_mu_t(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
