@@ -873,11 +873,9 @@ be straightforward.
 
 ### CoolProp
 
-This library's build system is based on CMake, and building it is straightforward,
-though some versions seem to have build issues (the 5.1.0 release is missing a file,
-while 5.1.1 release builds fine). CoolProp uses submodules which are downloaded
-using `git clone https://github.com/CoolProp/CoolProp.git --recursive`,
-but may be missing when downloading a zip file.
+This library's build system is based on CMake, and building it is straightforward.
+CoolProp uses submodules which are downloaded using
+ `git clone https://github.com/CoolProp/CoolProp.git --recursive`.
 
 Its user documentation is good, but its installation documentation not so much,
 so recommendations are provided here
@@ -901,6 +899,7 @@ Then configure, build, and install, run:
 cmake \
 -DCOOLPROP_INSTALL_PREFIX=${INSTALL_PATH} \
 -DCOOLPROP_SHARED_LIBRARY=ON \
+-DCMAKE_BUILD_TYPE=Release \
 ${COOLPROP_SRC_PATH}
 ```
 
