@@ -99,7 +99,7 @@ enum {
   CS_COUPLED_FD = 13,        /*!< coupled face with decentered flux */
   CS_FREE_INLET = 14,        /*!< free outlet or inlet (based on Bernoulli
                                relationship) */
-  CS_FREE_SURFACE = 15,      /*!< free surface */
+  CS_FREE_SURFACE = 64,      /*!< free surface (CS_BOUNDARY_FREE_SURFACE) */
   CS_CONVECTIVE_INLET = 16   /*!< inlet with zero diffusive flux for all
                                transported variables (species and velocity) */
 
