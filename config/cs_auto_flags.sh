@@ -768,7 +768,7 @@ elif test "x$cs_gxx" = "xclang"; then
   cs_cxx_compiler_known=yes
 
   # Default compiler flags
-  cxxlags_default="-Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cxxflags_default="-Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
   cxxflags_default_dbg="-g -O0"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
