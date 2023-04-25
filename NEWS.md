@@ -11,6 +11,8 @@ Release 7.3.1 (not released yet)
 
 ### Bug fixes:
 
+- Fix for free surface with ALE (mesh was not moving).
+
 - Fix least-squares scalar gradient reconstructions with extended ghost
   cells in parallel (due to incomplete syncronization).
 
