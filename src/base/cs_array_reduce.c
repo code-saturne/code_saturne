@@ -220,6 +220,422 @@ _cs_real_sum_1d_iv(cs_lnum_t        n,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute weighted sum of a 1-dimensional array
+ *
+ * The algorithm here is similar to that used for blas.
+ *
+ * parameters:
+ *   n        <-- local number of elements
+ *   v        <-- pointer to values (size: n)
+ *   w        <-- pointer to weights (size: n)
+ *
+ * returns:
+ *   resulting weighted sum
+ *----------------------------------------------------------------------------*/
+
+static double
+_cs_real_wsum_1d(cs_lnum_t        n,
+                 const cs_real_t  v[],
+                 const cs_real_t  w[])
+{
+  double v_w_sum = 0.;
+
+#pragma omp parallel reduction(+:v_w_sum) if (n > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
+
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_real_t *_v = v + s_id;
+    const cs_real_t *_w = w + s_id;
+
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double s = 0.;
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+
+        if (end_id > _n)
+          end_id = _n;
+
+        double c = 0.;
+        for (cs_lnum_t i = start_id; i < end_id; i++)
+          c += _v[i] * _w[i];
+
+        s += c;
+      }
+
+      v_w_sum += s;
+    }
+  }
+
+  return v_w_sum;
+}
+
+/*----------------------------------------------------------------------------
+ * Compute weighted sum of a 1-dimensional array using an element list
+ * relative to weights
+ *
+ * The algorithm here is similar to that used for blas.
+ *
+ * parameters:
+ *   n        <-- local number of elements
+ *   wl       <-- pointer to elements weights list
+ *   v        <-- pointer to values (size: n)
+ *   w        <-- pointer to weights (size: n)
+ *
+ * returns:
+ *   resulting weighted sum
+ *----------------------------------------------------------------------------*/
+
+static double
+_cs_real_wsum_1d_iw(cs_lnum_t        n,
+                    const cs_lnum_t  wl[],
+                    const cs_real_t  v[],
+                    const cs_real_t  w[])
+{
+  double v_w_sum = 0.;
+
+#pragma omp parallel reduction(+:v_w_sum) if (n > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
+
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_lnum_t *_wl = wl + s_id;
+    const cs_real_t *_v = v + s_id;
+
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double s = 0.;
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+
+        if (end_id > _n)
+          end_id = _n;
+
+        double c = 0.;
+        for (cs_lnum_t i = start_id; i < end_id; i++)
+          c += _v[i] * w[_wl[i]];
+
+        s += c;
+      }
+
+      v_w_sum += s;
+    }
+  }
+
+  return v_w_sum;
+}
+/*----------------------------------------------------------------------------
+ * Compute weighted sum of a 1-dimensional array using an element list
+ *
+ * The algorithm here is similar to that used for blas.
+ *
+ * parameters:
+ *   n        <-- local number of elements
+ *   vl       <-- pointer to elements list
+ *   v        <-- pointer to values (size: n)
+ *   w        <-- pointer to weights (size: n)
+ *
+ * returns:
+ *   resulting weighted sum
+ *----------------------------------------------------------------------------*/
+
+static double
+_cs_real_wsum_1d_iv(cs_lnum_t        n,
+                    const cs_lnum_t  vl[],
+                    const cs_real_t  v[],
+                    const cs_real_t  w[])
+{
+  double v_w_sum = 0.;
+
+#pragma omp parallel reduction(+:v_w_sum) if (n > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
+
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_lnum_t *_vl = vl + s_id;
+
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double s = 0.;
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+
+        if (end_id > _n)
+          end_id = _n;
+
+        double c = 0.;
+        for (cs_lnum_t li = start_id; li < end_id; li++) {
+          cs_lnum_t i = _vl[li];
+          c += v[i] * w[i];
+        }
+
+        s += c;
+      }
+
+      v_w_sum += s;
+    }
+  }
+
+  return v_w_sum;
+}
+
+/*----------------------------------------------------------------------------
+ * Compute weighted sum and total weight (sum) of a 1-dimensional array
+ *
+ * The algorithm here is similar to that used for blas.
+ *
+ * parameters:
+ *   n        <-- local number of elements
+ *   v        <-- pointer to values (size: n)
+ *   w        <-- pointer to weights (size: n)
+ *   wsum     --> resulting weighted sum
+ *   wtot     --> resulting sum of weights
+ *
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_real_wsum_components_1d(cs_lnum_t        n,
+                            const cs_real_t  v[],
+                            const cs_real_t  w[],
+                            double          *wsum,
+                            double          *wtot)
+{
+  *wsum = 0.;
+  *wtot = 0.;
+
+#pragma omp parallel if (n > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
+
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_real_t *_v = v + s_id;
+    const cs_real_t *_w = w + s_id;
+
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    double lsum[2] = {0., 0.};
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double s[2] = {0., 0.};
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+
+        if (end_id > _n)
+          end_id = _n;
+
+        double c[2] = {0., 0.};
+        for (cs_lnum_t i = start_id; i < end_id; i++) {
+          c[0] += _v[i] * _w[i];
+          c[1] += _w[i];
+        }
+
+        s[0] += c[0];
+        s[1] += c[1];
+      }
+
+      lsum[0] += s[0];
+      lsum[1] += s[1];
+    }
+
+#   pragma omp critical
+    {
+      *wsum += lsum[0];
+      *wtot += lsum[1];
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute weighted sum and total weight (sum) of a 1-dimensional array
+ * using an element list
+ *
+ * The algorithm here is similar to that used for blas, but computes several
+ * quantities simultaneously for better cache behavior
+ *
+ * parameters:
+ *   n        <-- local number of elements
+ *   wl       <-- pointer to element weights list
+ *   v        <-- pointer to values (size: n)
+ *   w        <-- pointer to weights (size: n)
+ *   wsum     --> resulting weighted sum
+ *   wtot     --> resulting sum of weights
+ *
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_real_wsum_components_1d_iw(cs_lnum_t        n,
+                               const cs_lnum_t  wl[],
+                               const cs_real_t  v[],
+                               const cs_real_t  w[],
+                               double          *wsum,
+                               double          *wtot)
+{
+  *wsum = 0.;
+  *wtot = 0.;
+
+#pragma omp parallel if (n > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
+
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_lnum_t *_wl = wl + s_id;
+    const cs_real_t *_v = v + s_id;
+
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    double lsum[2] = {0., 0.};
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double s[2] = {0., 0.};
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+
+        if (end_id > _n)
+          end_id = _n;
+
+        double c[2] = {0., 0.};
+        for (cs_lnum_t li = start_id; li < end_id; li++) {
+          cs_lnum_t i = _wl[li];
+          c[0] += _v[li] * w[i];
+          c[1] += w[i];
+        }
+
+        s[0] += c[0];
+        s[1] += c[1];
+      }
+
+      lsum[0] += s[0];
+      lsum[1] += s[1];
+    }
+
+#   pragma omp critical
+    {
+      *wsum += lsum[0];
+      *wtot += lsum[1];
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute weighted sum and total weight (sum) of a 1-dimensional array
+ * using an element list
+ *
+ * The algorithm here is similar to that used for blas, but computes several
+ * quantities simultaneously for better cache behavior
+ *
+ * parameters:
+ *   n        <-- local number of elements
+ *   vl       <-- pointer to element list
+ *   v        <-- pointer to values (size: n)
+ *   w        <-- pointer to weights (size: n)
+ *   wsum     --> resulting weighted sum
+ *   wtot     --> resulting sum of weights
+ *
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_real_wsum_components_1d_iv(cs_lnum_t        n,
+                               const cs_lnum_t  vl[],
+                               const cs_real_t  v[],
+                               const cs_real_t  w[],
+                               double          *wsum,
+                               double          *wtot)
+{
+  *wsum = 0.;
+  *wtot = 0.;
+
+#pragma omp parallel if (n > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
+
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_lnum_t *_vl = vl + s_id;
+
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    double lsum[2] = {0., 0.};
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double s[2] = {0., 0.};
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+
+        if (end_id > _n)
+          end_id = _n;
+
+        double c[2] = {0., 0.};
+        for (cs_lnum_t li = start_id; li < end_id; li++) {
+          cs_lnum_t i = _vl[li];
+          c[0] += v[i] * w[i];
+          c[1] += w[i];
+        }
+
+        s[0] += c[0];
+        s[1] += c[1];
+      }
+
+      lsum[0] += s[0];
+      lsum[1] += s[1];
+    }
+
+#   pragma omp critical
+    {
+      *wsum += lsum[0];
+      *wtot += lsum[1];
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Compute the min./max. of a 1-dimensional array.
  *
  * The algorithm here is similar to that used for blas.
@@ -2878,6 +3294,166 @@ cs_array_reduce_sum_l(cs_lnum_t         n_elts,
     else
       bft_error(__FILE__, __LINE__, 0,
                 _("_cs_real_sum_nd_iv not implemented yet\n"));
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute weighted sums of an n-dimensional cs_real_t array's
+ * components.
+ *
+ * The maximum allowed dimension is 9 (allowing for a rank-2 tensor).
+ * The array is interleaved.
+ *
+ * For arrays of dimension 3, the statistics relative to the norm
+ * are also computed, and added at the end of the statistics arrays
+ * (which must be size dim+1).
+ *
+ * The algorithm here is similar to that used for BLAS.
+ *
+ * \param[in]   n_elts      number of local elements
+ * \param[in]   dim         local array dimension (max: 9)
+ * \param[in]   v_elt_list  optional list of parent elements on which values
+ *                          are defined, or NULL
+ * \param[in]   w_elt_list  optional list of parent elements on which weights
+ *                          are defined, or NULL; if v_elt_list is defined
+ *                          (ie. non-NULL),then w_elt_list = v_elt_list is
+ *                          assumed, so this parameter is ignored
+ * \param[in]   v           pointer to array values
+ * \param[in]   w           pointer to weights
+ * \param[out]  wsum        resulting weighted sum array
+ *                          (size: dim, or 4 if dim = 3)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_reduce_wsum_l(cs_lnum_t         n_elts,
+                       int               dim,
+                       const cs_lnum_t  *v_elt_list,
+                       const cs_lnum_t  *w_elt_list,
+                       const cs_real_t   v[],
+                       const cs_real_t   w[],
+                       double            wsum[])
+{
+  /* If all values are defined on same list */
+
+  if (v_elt_list == NULL && w_elt_list == NULL) {
+    if (dim == 1)
+      wsum[0] = _cs_real_wsum_1d(n_elts, v, w);
+    else if (dim == 3)
+      bft_error(__FILE__, __LINE__, 0,
+                _("_cs_real_wsum_3d not implemented yet\n"));
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("_cs_real_wsum_nd not implemented yet\n"));
+  }
+
+  /* If weights are defined on weights list only */
+
+  else if (v_elt_list == NULL) { /* w_elt_list != NULL */
+    if (dim == 1)
+      wsum[0] = _cs_real_wsum_1d_iw(n_elts, w_elt_list, v, w);
+    else if (dim == 3)
+      bft_error(__FILE__, __LINE__, 0,
+                _("_cs_real_wsum_3d_iw not implemented yet\n"));
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("_cs_real_wsum_nd_iw not implemented yet\n"));
+  }
+
+  /* If weights are defined on parent list */
+
+  else { /* v_elt_list != NULL */
+    if (dim == 1)
+      wsum[0] = _cs_real_wsum_1d_iv(n_elts, v_elt_list, v, w);
+    else if (dim == 3)
+      bft_error(__FILE__, __LINE__, 0,
+                _("_cs_real_wsum_3d_iv not implemented yet\n"));
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("_cs_real_wsum_nd_iv not implemented yet\n"));
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute weighted sums of an n-dimensional cs_real_t array's
+ * components. Output is both weighted sum and sum of weights, hence allowing
+ * for the computation of local, or global using parallel operations afterwards,
+ * mean of the array.
+ *
+ * The maximum allowed dimension is 9 (allowing for a rank-2 tensor).
+ * The array is interleaved.
+ *
+ * For arrays of dimension 3, the statistics relative to the norm
+ * are also computed, and added at the end of the statistics arrays
+ * (which must be size dim+1).
+ *
+ * The algorithm here is similar to that used for BLAS.
+ *
+ * \param[in]   n_elts      number of local elements
+ * \param[in]   dim         local array dimension (max: 9)
+ * \param[in]   v_elt_list  optional list of parent elements on which values
+ *                          are defined, or NULL
+ * \param[in]   w_elt_list  optional list of parent elements on which weights
+ *                          are defined, or NULL; if v_elt_list is defined
+ *                          (ie. non-NULL),then w_elt_list = v_elt_list is
+ *                          assumed, so this parameter is ignored
+ * \param[in]   v           pointer to array values
+ * \param[in]   w           pointer to weights
+ * \param[out]  wsum        resulting weighted sum array
+ *                          (size: dim, or 4 if dim = 3)
+ * \param[out]  wtot        resulting local sum of weights array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_reduce_wsum_components_l(cs_lnum_t         n_elts,
+                                  int               dim,
+                                  const cs_lnum_t  *v_elt_list,
+                                  const cs_lnum_t  *w_elt_list,
+                                  const cs_real_t   v[],
+                                  const cs_real_t   w[],
+                                  double            wsum[],
+                                  double            wtot[])
+{
+  /* If all values are defined on same list */
+
+  if (v_elt_list == NULL && w_elt_list == NULL) {
+    if (dim == 1)
+      _cs_real_wsum_components_1d(n_elts, v, w, wsum, wtot);
+    else if (dim == 3)
+      bft_error(__FILE__, __LINE__, 0,
+                _("_cs_real_wsum_3d not implemented yet\n"));
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("_cs_real_wsum_nd not implemented yet\n"));
+  }
+
+  /* If weights are defined on weights list only */
+
+  else if (v_elt_list == NULL) { /* w_elt_list != NULL */
+    if (dim == 1)
+      _cs_real_wsum_components_1d_iw(n_elts, w_elt_list, v, w, wsum, wtot);
+    else if (dim == 3)
+      bft_error(__FILE__, __LINE__, 0,
+                _("_cs_real_wsum_3d_iw not implemented yet\n"));
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("_cs_real_wsum_nd_iw not implemented yet\n"));
+  }
+
+  /* If weights are defined on parent list */
+
+  else { /* v_elt_list != NULL */
+    if (dim == 1)
+      _cs_real_wsum_components_1d_iv(n_elts, v_elt_list, v, w, wsum, wtot);
+    else if (dim == 3)
+      bft_error(__FILE__, __LINE__, 0,
+                _("_cs_real_wsum_3d_iv not implemented yet\n"));
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("_cs_real_wsum_nd_iv not implemented yet\n"));
   }
 }
 
