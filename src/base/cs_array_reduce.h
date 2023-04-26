@@ -85,6 +85,86 @@ cs_array_reduce_sum_l(cs_lnum_t         n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute weighted sums of an n-dimensional cs_real_t array's
+ * components.
+ *
+ * The maximum allowed dimension is 9 (allowing for a rank-2 tensor).
+ * The array is interleaved.
+ *
+ * For arrays of dimension 3, the statistics relative to the norm
+ * are also computed, and added at the end of the statistics arrays
+ * (which must be size dim+1).
+ *
+ * The algorithm here is similar to that used for BLAS.
+ *
+ * \param[in]   n_elts      number of local elements
+ * \param[in]   dim         local array dimension (max: 9)
+ * \param[in]   v_elt_list  optional list of parent elements on which values
+ *                          are defined, or NULL
+ * \param[in]   w_elt_list  optional list of parent elements on which weights
+ *                          are defined, or NULL; if v_elt_list is defined
+ *                          (ie. non-NULL),then w_elt_list = v_elt_list is
+ *                          assumed, so this parameter is ignored
+ * \param[in]   v           pointer to array values
+ * \param[in]   w           pointer to weights
+ * \param[out]  wsum        resulting weighted sum array
+ *                          (size: dim, or 4 if dim = 3)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_reduce_wsum_l(cs_lnum_t         n_elts,
+                       int               dim,
+                       const cs_lnum_t  *v_elt_list,
+                       const cs_lnum_t  *w_elt_list,
+                       const cs_real_t   v[],
+                       const cs_real_t   w[],
+                       double            wsum[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute weighted sums of an n-dimensional cs_real_t array's
+ * components. Output is both weighted sum and sum of weights, hence allowing
+ * for the computation of local, or global using parallel operations afterwards,
+ * mean of the array.
+ *
+ * The maximum allowed dimension is 9 (allowing for a rank-2 tensor).
+ * The array is interleaved.
+ *
+ * For arrays of dimension 3, the statistics relative to the norm
+ * are also computed, and added at the end of the statistics arrays
+ * (which must be size dim+1).
+ *
+ * The algorithm here is similar to that used for BLAS.
+ *
+ * \param[in]   n_elts      number of local elements
+ * \param[in]   dim         local array dimension (max: 9)
+ * \param[in]   v_elt_list  optional list of parent elements on which values
+ *                          are defined, or NULL
+ * \param[in]   w_elt_list  optional list of parent elements on which weights
+ *                          are defined, or NULL; if v_elt_list is defined
+ *                          (ie. non-NULL),then w_elt_list = v_elt_list is
+ *                          assumed, so this parameter is ignored
+ * \param[in]   v           pointer to array values
+ * \param[in]   w           pointer to weights
+ * \param[out]  wsum        resulting weighted sum array
+ *                          (size: dim, or 4 if dim = 3)
+ * \param[out]  wtot        resulting local sum of weights array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_reduce_wsum_components_l(cs_lnum_t         n_elts,
+                                  int               dim,
+                                  const cs_lnum_t  *v_elt_list,
+                                  const cs_lnum_t  *w_elt_list,
+                                  const cs_real_t   v[],
+                                  const cs_real_t   w[],
+                                  double            wsum[],
+                                  double            wtot[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute sums of an n-dimensional cs_real_t array's components.
  *
  * The maximum allowed dimension is 3. The array is interleaved.
