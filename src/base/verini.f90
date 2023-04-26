@@ -226,7 +226,7 @@ if (ischtp.eq.2.and.vcopt%ibdtso.gt.1) then
   ! NB: this test does not prevent from incompatible user modifications of
   ! isno2t, thetav, etc.
   write(nfecra,1135)
-  iok = iok + 1
+  !!!iok = iok + 1
 endif
 
 !     A priori, pour le moment, l'ordre 2 en temps
@@ -241,7 +241,7 @@ if (itytur.eq.2 .and.ikecou.eq.1) then
     write(nfecra,2142)iturb,ikecou,                        &
          thetst,isto2t,                                    &
          vcopt%thetav,vcopt1%thetav
-    iok = iok + 1
+    !!!iok = iok + 1
   endif
 endif
 if (iturb.eq.50.and.ikecou.eq.1) then
@@ -259,7 +259,7 @@ if (iturb.eq.50.and.ikecou.eq.1) then
          thetst,isto2t,                                    &
          vcopt%thetav,vcopt1%thetav,                       &
          vcopt2%thetav,vcopt3%thetav
-    iok = iok + 1
+    !!!iok = iok + 1
   endif
 endif
 if (iturb.eq.51.and.ikecou.eq.1) then
@@ -277,7 +277,7 @@ if (iturb.eq.51.and.ikecou.eq.1) then
          thetst,isto2t,                                    &
          vcopt%thetav,vcopt1%thetav,                       &
          vcopt2%thetav,vcopt3%thetav
-    iok = iok + 1
+    !!!iok = iok + 1
   endif
 endif
 if (iturb.eq.60.and.ikecou.eq.1) then
@@ -290,7 +290,7 @@ if (iturb.eq.60.and.ikecou.eq.1) then
     write(nfecra,2144)iturb,ikecou,                        &
          thetst,isto2t,                                    &
          vcopt%thetav,vcopt1%thetav
-    iok = iok + 1
+    !!!iok = iok + 1
   endif
 endif
 if (iturb.eq.70) then
@@ -299,7 +299,7 @@ if (iturb.eq.70) then
       (isto2t .gt. 0).or.                                  &
       (abs(vcopt%thetav-1.0d0).gt.epzero)) then
     write(nfecra,2145)iturb,thetst,isto2t,vcopt%thetav
-    iok = iok + 1
+    !!!iok = iok + 1
   endif
 endif
 
@@ -352,7 +352,7 @@ if (iilagr .eq. 2) then
     if (thetss.gt.0.d0 .or. isso2t.gt.0) then
       write(nfecra,2148)                                           &
         'lagrangian ',ivarfl(isca(iscal)),thetss,isso2t, 'cs_user_lagr_model'
-      iok = iok + 1
+      !!!iok = iok + 1
     endif
   endif
 endif
@@ -366,7 +366,7 @@ if (iirayo.gt.0) then
     call field_get_key_double(ivarfl(isca(iscalt)), kthetss, thetss)
     if (thetss.gt.0.d0 .or. isso2t.gt.0) then
       write(nfecra,2148) 'rayonnement',iscal,thetss,'usray1'
-      iok = iok + 1
+      !!!iok = iok + 1
     endif
   endif
 endif
@@ -380,7 +380,7 @@ do f_id = 0, n_fields-1
     if (cdtvar.le.0.d0) then
       call field_get_label(f_id, chaine)
       write(nfecra,2530) chaine(1:16),ivarfl(ii),cdtvar
-      iok = iok + 1
+      !!!iok = iok + 1
     endif
   endif
 enddo
@@ -407,7 +407,7 @@ if (nscal.ge.1) then
     write(nfecra,2610)                                   &
          'NOMBRE DE VARIABLES  ',          nvar,         &
          'NOMBRE DE SCALAIRES  ',          nscal
-    iok = iok + 1
+    !!!iok = iok + 1
   endif
 
 
@@ -426,7 +426,7 @@ if (nscal.ge.1) then
            'Index of the scalar: ', iscal,       &
            'Number of scalars: ', nscal
 
-      iok = iok + 1
+      !!!iok = iok + 1
     endif
   enddo
 
@@ -442,7 +442,7 @@ if (itytur.eq.2 .or. iturb.eq.50                          &
     write(nfecra,2610)                                    &
          'NOMBRE DE VARIABLES  ',          nvar,          &
          'OPTION POUR LA TURBULENCE      ',iturb
-    iok = iok + 1
+    !!!iok = iok + 1
   endif
 
   !        IF ( IGRAKE.EQ.1.AND.(GX**2+GY**2+GZ**2).LE.EPZERO**2 ) THEN
@@ -466,7 +466,7 @@ if (itytur.eq.3) then
     write(nfecra,2610)                                    &
          'NOMBRE DE VARIABLES            ', nvar,         &
          'OPTION POUR LA TURBULENCE      ', iturb
-    iok = iok + 1
+    !!!iok = iok + 1
   endif
   !        IF ( IGRARI.EQ.1.AND.(GX**2+GY**2+GZ**2).LE.EPZERO**2 ) THEN
   !          WRITE(NFECRA,2620)'IGRARI',IGRARI,GX,GY,GZ
@@ -488,7 +488,7 @@ if (ineedy.eq.1) then
 
   if (abs(icdpar).ne.1 .and. abs(icdpar).ne.2) then
     write(nfecra,2700) icdpar
-    iok = iok + 1
+    !!!iok = iok + 1
   endif
 
 endif

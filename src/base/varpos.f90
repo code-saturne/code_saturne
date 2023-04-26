@@ -232,7 +232,7 @@ if (isto2t.eq.-999) then
   endif
 else if (itytur.eq.2.or.iturb.eq.50.or.iturb.ne.60) then
   write(nfecra,8132) iturb,isto2t
-  iok = iok + 1
+  !!!iok = iok + 1
 endif
 
 do iscal = 1, nscal
@@ -270,51 +270,51 @@ enddo
 !     Schema en temps global.
 if (ischtp.ne. 1.and.ischtp.ne.2) then
   write(nfecra,8101) 'ISCHTP',ischtp
-  iok = iok + 1
+  !!!iok = iok + 1
 endif
 if (ischtp.eq. 2.and.idtvar.ne.0) then
   write(nfecra,8111) ischtp,idtvar
-  iok = iok + 1
+  !!!iok = iok + 1
 endif
 if (ischtp.eq. 2.and.itytur.eq.2) then
   write(nfecra,8112) ischtp,iturb
-  iok = iok + 1
+  !!!iok = iok + 1
 endif
 if (ischtp.eq.1.and.itytur.eq.4) then
   write(nfecra,8113) ischtp,iturb
 endif
 if (ischtp.eq. 2.and.iturb.eq.50) then
   write(nfecra,8114) ischtp,iturb
-  iok = iok + 1
+  !!!iok = iok + 1
 endif
 if (ischtp.eq. 2.and.iturb.eq.51.and.hybrid_turb.ne.4) then
   write(nfecra,8117) ischtp,iturb
-  iok = iok + 1
+  !!!iok = iok + 1
 endif
 if (ischtp.eq. 2.and.iturb.eq.60.and.hybrid_turb.ne.4) then
   write(nfecra,8115) ischtp,iturb
-  iok = iok + 1
+  !!!iok = iok + 1
 endif
 if (ischtp.eq. 2.and.iturb.eq.70) then
   write(nfecra,8116) ischtp,iturb
-  iok = iok + 1
+  !!!iok = iok + 1
 endif
 
 ! Schema en temps pour le flux de masse
 if (istmpf.ne. 2.and.istmpf.ne.0.and.istmpf.ne. 1) then
   write(nfecra,8121) 'ISTMPF',istmpf
-  iok = iok + 1
+  !!!iok = iok + 1
 endif
 
 ! Schema en temps pour les termes sources de NS
 if (isno2t.ne.0.and.isno2t.ne. 1.and.isno2t.ne.2) then
   write(nfecra,8131) 'ISNO2T',isno2t
-  iok = iok + 1
+  !!!iok = iok + 1
 endif
 ! Schema en temps pour les termes sources des grandeurs turbulentes
 if (isto2t.ne.0.and.isto2t.ne. 1.and.isto2t.ne.2) then
   write(nfecra,8131) 'ISTO2T',isto2t
-  iok = iok + 1
+  !!!iok = iok + 1
 endif
 
 do iscal = 1, nscal
@@ -322,7 +322,7 @@ do iscal = 1, nscal
   call field_get_key_int(ivarfl(isca(iscal)), kisso2t, isso2t)
   if (isso2t.ne.0.and.isso2t.ne. 1.and.isso2t.ne.2) then
     write(nfecra,8141) iscal,'ISSO2T',isso2t
-    iok = iok + 1
+    !!!iok = iok + 1
   endif
 enddo
 
