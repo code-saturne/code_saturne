@@ -310,7 +310,7 @@ _cs_real_wsum_1d_iw(cs_lnum_t        n,
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_lnum_t *_wl = wl + s_id;
-    const cs_lnum_t *_v = v + s_id;
+    const cs_real_t *_v = v + s_id;
 
     const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
     cs_lnum_t n_sblocks, blocks_in_sblocks;
@@ -330,7 +330,7 @@ _cs_real_wsum_1d_iw(cs_lnum_t        n,
 
         double c = 0.;
         for (cs_lnum_t i = start_id; i < end_id; i++)
-          c += v[i] * w[_wl[i]];
+          c += _v[i] * w[_wl[i]];
 
         s += c;
       }
@@ -513,7 +513,7 @@ _cs_real_wsum_components_1d_iw(cs_lnum_t        n,
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_lnum_t *_wl = wl + s_id;
-    const cs_lnum_t *_v = v + s_id;
+    const cs_real_t *_v = v + s_id;
 
     const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
     cs_lnum_t n_sblocks, blocks_in_sblocks;
