@@ -347,6 +347,146 @@ cs_post_field_cell_to_b_face_values(const cs_field_t  *f,
                                     cs_real_t         *b_val);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the surface integral of a scalar array of values located
+ *        on boundary faces over a selection of boundary faces
+ *
+ * \param[in]   scalar_vals    array of scalar values of size n_b_faces
+ * \param[in]   n_loc_b_faces  number of selected boundary faces
+ * \param[in]   b_face_ids     ids of selected boundary faces
+ *
+ * \return  Value of computed surface integral
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_post_scalar_boundary_integral(const cs_real_t *scalar_vals,
+                                 const cs_lnum_t  n_loc_b_faces,
+                                 const cs_lnum_t  b_face_ids[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the surface integral over a selection of boundary faces
+ *        for a scalar array of values located over the selection.
+ *
+ * \param[in]   scalar_vals    array of scalar values of size n_b_faces
+ * \param[in]   n_loc_b_faces  number of selected boundary faces
+ * \param[in]   b_face_ids     ids of selected boundary faces
+ *
+ * \return  Value of computed surface integral
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_post_bnd_scalar_boundary_integral(const cs_real_t *scalar_vals,
+                                     const cs_lnum_t  n_loc_b_faces,
+                                     const cs_lnum_t  b_face_ids[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the surface mean of a scalar array of values located
+ *        on boundary faces over a selection of boundary faces. Weighting
+ *        is done using total surface of boundary faces.
+ *
+ * \param[in]   scalar_vals    array of scalar values of size n_b_faces
+ * \param[in]   n_loc_b_faces  number of selected boundary faces
+ * \param[in]   b_face_ids     ids of selected boundary faces
+ *
+ * \return  Value of computed surface mean value
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_post_scalar_boundary_mean(const cs_real_t *scalar_vals,
+                             const cs_lnum_t  n_loc_b_faces,
+                             const cs_lnum_t  b_face_ids[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the surface mean over a selection of boundary faces
+ *        for a scalar array of values located over the selection.
+ *        Weighting is done using total surface of boundary faces.
+ *
+ * \param[in]   scalar_vals    array of scalar values of size n_b_faces
+ * \param[in]   n_loc_b_faces  number of selected boundary faces
+ * \param[in]   b_face_ids     ids of selected boundary faces
+ *
+ * \return  Value of computed surface mean value
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_post_bnd_scalar_boundary_mean(const cs_real_t *scalar_vals,
+                                 const cs_lnum_t  n_loc_b_faces,
+                                 const cs_lnum_t  b_face_ids[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the surface integral of a scalar array of values located
+ *        on boundary faces over a boundary zone.
+ *
+ * \param[in]   z              pointer to boundary zone
+ * \param[in]   scalar_vals    array of scalar values of size n_b_faces
+ *
+ * \return  Value of computed surface integral
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_post_scalar_b_zone_integral(const cs_zone_t *z,
+                               const cs_real_t *scalar_vals);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the surface integral of a scalar over a boundary zone faces,
+ *        for an array of values located on the zone's faces.
+ *
+ * \param[in]   z              pointer to boundary zone
+ * \param[in]   scalar_vals    array of scalar values of size n_b_faces
+ *
+ * \return  Value of computed surface integral
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_post_bnd_scalar_b_zone_integral(const cs_zone_t *z,
+                                   const cs_real_t *scalar_vals);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the surface mean of a scalar array of values located
+ *        on boundary faces over a boundary zone. Weighting
+ *        is done using total surface of boundary faces.
+ *
+ * \param[in]   z              pointer to boundary zone
+ * \param[in]   scalar_vals    array of scalar values of size n_b_faces
+ *
+ * \return  Value of computed surface mean value
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_post_scalar_b_zone_mean(const cs_zone_t *z,
+                           const cs_real_t *scalar_vals);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the surface mean of a scalar over a boundary zone faces,
+ *        for an array of values located on the zone's faces.
+ *        Weighting is done using total surface of boundary faces.
+ *
+ * \param[in]   z              pointer to boundary zone
+ * \param[in]   scalar_vals    array of scalar values of size n_b_faces
+ *
+ * \return  Value of computed surface mean value
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_post_bnd_scalar_b_zone_mean(const cs_zone_t *z,
+                               const cs_real_t *scalar_vals);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

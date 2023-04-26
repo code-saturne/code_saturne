@@ -40,6 +40,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_array_reduce.h"
 #include "cs_balance_by_zone.h"
 #include "cs_base.h"
 #include "cs_field.h"
@@ -973,6 +974,295 @@ cs_post_field_cell_to_b_face_values(const cs_field_t  *f,
               _("Postprocessing face boundary values for field %s"
                 " of dimension %d:\n not implemented."),
               f->name, f->dim);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the surface integral of a scalar array of values located
+ *        on boundary faces over a selection of boundary faces
+ *
+ * \param[in]   scalar_vals    array of scalar values of size n_b_faces
+ * \param[in]   n_loc_b_faces  number of selected boundary faces
+ * \param[in]   b_face_ids     ids of selected boundary faces
+ *
+ * \return  Value of computed surface integral
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_post_scalar_boundary_integral(const cs_real_t *scalar_vals,
+                                 const cs_lnum_t  n_loc_b_faces,
+                                 const cs_lnum_t  b_face_ids[])
+{
+  cs_real_t retval = 0.;
+
+  double _l_sum = 0.;
+
+  if (n_loc_b_faces > 0) {
+    const cs_real_t *restrict b_face_surf
+      = cs_glob_mesh_quantities->b_face_surf;
+
+    /* Compute sum on rank */
+    cs_array_reduce_wsum_l(n_loc_b_faces, /* Number of values */
+                           1,             /* Dimension - 1 for scalar */
+                           b_face_ids,    /* list of ids for values + weights */
+                           NULL,          /* No ids for weights only */
+                           scalar_vals,   /* Values to sum */
+                           b_face_surf,   /* Array of weights */
+                           &_l_sum);      /* local sum on rank */
+  }
+
+  /* Parallel sum */
+  cs_parall_sum(1, CS_DOUBLE, &_l_sum);
+  retval = _l_sum;
+
+  /* Return value */
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the surface integral over a selection of boundary faces
+ *        for a scalar array of values located over the selection.
+ *
+ * \param[in]   scalar_vals    array of scalar values of size n_b_faces
+ * \param[in]   n_loc_b_faces  number of selected boundary faces
+ * \param[in]   b_face_ids     ids of selected boundary faces
+ *
+ * \return  Value of computed surface integral
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_post_bnd_scalar_boundary_integral(const cs_real_t *scalar_vals,
+                                     const cs_lnum_t  n_loc_b_faces,
+                                     const cs_lnum_t  b_face_ids[])
+{
+  cs_real_t retval = 0.;
+
+  double _l_sum = 0.;
+
+  if (n_loc_b_faces > 0) {
+    const cs_real_t *restrict b_face_surf
+      = cs_glob_mesh_quantities->b_face_surf;
+
+    /* Compute sum on rank */
+    cs_array_reduce_wsum_l(n_loc_b_faces, /* Number of values */
+                           1,             /* Dimension - 1 for scalar */
+                           NULL,          /* no ids list for values */
+                           b_face_ids,    /* list of ids for weights */
+                           scalar_vals,   /* Values to sum */
+                           b_face_surf,   /* Array of weights */
+                           &_l_sum);      /* local sum on rank */
+  }
+
+  /* Parallel sum */
+  cs_parall_sum(1, CS_DOUBLE, &_l_sum);
+  retval = _l_sum;
+
+  /* Return value */
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the surface mean of a scalar array of values located
+ *        on boundary faces over a selection of boundary faces. Weighting
+ *        is done using total surface of boundary faces.
+ *
+ * \param[in]   scalar_vals    array of scalar values of size n_b_faces
+ * \param[in]   n_loc_b_faces  number of selected boundary faces
+ * \param[in]   b_face_ids     ids of selected boundary faces
+ *
+ * \return  Value of computed surface mean value
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_post_scalar_boundary_mean(const cs_real_t *scalar_vals,
+                             const cs_lnum_t  n_loc_b_faces,
+                             const cs_lnum_t  b_face_ids[])
+{
+  cs_real_t retval = 0.;
+
+  double _l_sum  = 0.;
+  double _l_wtot = 0.;
+
+  if (n_loc_b_faces > 0) {
+    const cs_real_t *restrict b_face_surf
+      = cs_glob_mesh_quantities->b_face_surf;
+
+    /* Compute sum on rank */
+    cs_array_reduce_wsum_components_l(n_loc_b_faces, /* number of values */
+                                      1,             /* dim. - 1 for scalar */
+                                      b_face_ids,    /* list of ids for values
+                                                        and weights */
+                                      NULL,          /* no ids for weight only */
+                                      scalar_vals,   /* values to sum */
+                                      b_face_surf,   /* weights */
+                                      &_l_sum,       /* local sum on rank */
+                                      &_l_wtot);     /* local total weight */
+  }
+
+  /* Parallel sum */
+  double _w[2] = {_l_sum, _l_wtot};
+  cs_parall_sum(2, CS_DOUBLE, _w);
+
+  retval = _w[0] / _w[1];
+
+  /* Return value */
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the surface mean over a selection of boundary faces
+ *        for a scalar array of values located over the selection.
+ *        Weighting is done using total surface of boundary faces.
+ *
+ * \param[in]   scalar_vals    array of scalar values of size n_b_faces
+ * \param[in]   n_loc_b_faces  number of selected boundary faces
+ * \param[in]   b_face_ids     ids of selected boundary faces
+ *
+ * \return  Value of computed surface mean value
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_post_bnd_scalar_boundary_mean(const cs_real_t *scalar_vals,
+                                 const cs_lnum_t  n_loc_b_faces,
+                                 const cs_lnum_t  b_face_ids[])
+{
+  cs_real_t retval = 0.;
+
+  double _l_sum  = 0.;
+  double _l_wtot = 0.;
+
+  if (n_loc_b_faces > 0) {
+    const cs_real_t *restrict b_face_surf
+      = cs_glob_mesh_quantities->b_face_surf;
+
+    /* Compute sum on rank */
+    cs_array_reduce_wsum_components_l(n_loc_b_faces, /* number of values */
+                                      1,             /* dim - 1 for scalar */
+                                      NULL,          /* no ids list for values */
+                                      b_face_ids,    /* ids for weights */
+                                      scalar_vals,   /* values to sum */
+                                      b_face_surf,   /* weights */
+                                      &_l_sum,       /* local sum on rank */
+                                      &_l_wtot);     /* local total weight */
+  }
+
+  /* Parallel sum */
+  double _w[2] = {_l_sum, _l_wtot};
+  cs_parall_sum(2, CS_DOUBLE, _w);
+
+  retval = _w[0] / _w[1];
+
+  /* Return value */
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the surface integral of a scalar array of values located
+ *        on boundary faces over a boundary zone.
+ *
+ * \param[in]   z              pointer to boundary zone
+ * \param[in]   scalar_vals    array of scalar values of size n_b_faces
+ *
+ * \return  Value of computed surface integral
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_post_scalar_b_zone_integral(const cs_zone_t *z,
+                               const cs_real_t *scalar_vals)
+{
+  return cs_post_scalar_boundary_integral(scalar_vals,
+                                          z->n_elts,
+                                          z->elt_ids);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the surface integral of a scalar over a boundary zone faces,
+ *        for an array of values located on the zone's faces.
+ *
+ * \param[in]   z              pointer to boundary zone
+ * \param[in]   scalar_vals    array of scalar values of size n_b_faces
+ *
+ * \return  Value of computed surface integral
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_post_bnd_scalar_b_zone_integral(const cs_zone_t *z,
+                                   const cs_real_t *scalar_vals)
+{
+  return cs_post_bnd_scalar_boundary_integral(scalar_vals,
+                                              z->n_elts,
+                                              z->elt_ids);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the surface mean of a scalar array of values located
+ *        on boundary faces over a boundary zone. Weighting
+ *        is done using total surface of boundary faces.
+ *
+ * \param[in]   z              pointer to boundary zone
+ * \param[in]   scalar_vals    array of scalar values of size n_b_faces
+ *
+ * \return  Value of computed surface mean value
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_post_scalar_b_zone_mean(const cs_zone_t *z,
+                           const cs_real_t *scalar_vals)
+{
+  /* Since a boundary zone surface is known, no need to recompute
+   * the total surface using the cs_array_reduce_wsum_components_l
+   * function. We can directly divide the integral by the zone
+   * surface (measure).
+   */
+  cs_real_t retval = cs_post_scalar_boundary_integral(scalar_vals,
+                                                      z->n_elts,
+                                                      z->elt_ids);
+  retval /= z->measure;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the surface mean of a scalar over a boundary zone faces,
+ *        for an array of values located on the zone's faces.
+ *        Weighting is done using total surface of boundary faces.
+ *
+ * \param[in]   z              pointer to boundary zone
+ * \param[in]   scalar_vals    array of scalar values of size n_b_faces
+ *
+ * \return  Value of computed surface mean value
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_post_bnd_scalar_b_zone_mean(const cs_zone_t *z,
+                               const cs_real_t *scalar_vals)
+{
+  /* Since a boundary zone surface is known, no need to recompute
+   * the total surface using the cs_array_reduce_wsum_components_l
+   * function. We can directly divide the integral by the zone
+   * surface (measure).
+   */
+  cs_real_t retval = cs_post_bnd_scalar_boundary_integral(scalar_vals,
+                                                          z->n_elts,
+                                                          z->elt_ids);
+  retval /= z->measure;
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/
