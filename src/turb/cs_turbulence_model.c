@@ -976,8 +976,8 @@ double cs_turb_cv2fet = 110.0;
 double cs_turb_cnl1 = 0.8;
 double cs_turb_cnl2 = 11.;
 double cs_turb_cnl3 = 4.5;
-double cs_turb_cnl4 = 1e3;
-double cs_turb_cnl5 = 1.;
+double cs_turb_cnl6 = 1e3;
+double cs_turb_cnl7 = 1.;
 
 /*!
  * Constant of the WALE LES method.

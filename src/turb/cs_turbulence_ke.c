@@ -737,12 +737,12 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
       cs_real_t xcmu = d2s3/(3.9 + xss);
 
       /* Evaluating "constants" */
-      cs_real_t xqc1 = cs_turb_cnl1/((  cs_turb_cnl4
-                                      + cs_turb_cnl5*cs_math_pow3(xss))*xcmu);
-      cs_real_t xqc2 = cs_turb_cnl2/((  cs_turb_cnl4
-                                      + cs_turb_cnl5*cs_math_pow3(xss))*xcmu);
-      cs_real_t xqc3 = cs_turb_cnl3/((  cs_turb_cnl4
-                                      + cs_turb_cnl5*cs_math_pow3(xss))*xcmu);
+      cs_real_t xqc1 = cs_turb_cnl1/((  cs_turb_cnl7
+                                      + cs_turb_cnl6*cs_math_pow3(xss))*xcmu);
+      cs_real_t xqc2 = cs_turb_cnl2/((  cs_turb_cnl6
+                                      + cs_turb_cnl7*cs_math_pow3(xss))*xcmu);
+      cs_real_t xqc3 = cs_turb_cnl3/((  cs_turb_cnl6
+                                      + cs_turb_cnl7*cs_math_pow3(xss))*xcmu);
 
       /* Evaluating the turbulent production */
       smbrk[c_id] =   visct*strain[c_id]
@@ -2460,11 +2460,11 @@ cs_turbulence_ke_q(cs_real_6_t  rij[])
 
     /* Evaluating "constants". */
     const cs_real_t xqc1
-      = cs_turb_cnl1/((cs_turb_cnl4+cs_turb_cnl5*cs_math_pow3(xss))*xcmu);
+      = cs_turb_cnl1/((cs_turb_cnl6+cs_turb_cnl7*cs_math_pow3(xss))*xcmu);
     const cs_real_t xqc2
-      = cs_turb_cnl2/((cs_turb_cnl4+cs_turb_cnl5*cs_math_pow3(xss))*xcmu);
+      = cs_turb_cnl2/((cs_turb_cnl6+cs_turb_cnl7*cs_math_pow3(xss))*xcmu);
     const cs_real_t xqc3
-      = cs_turb_cnl3/((cs_turb_cnl4+cs_turb_cnl5*cs_math_pow3(xss))*xcmu);
+      = cs_turb_cnl3/((cs_turb_cnl6+cs_turb_cnl7*cs_math_pow3(xss))*xcmu);
 
     for (cs_lnum_t ii = 0; ii < 3; ii++) {
       for (cs_lnum_t jj = 0; jj < 3; jj++) {
