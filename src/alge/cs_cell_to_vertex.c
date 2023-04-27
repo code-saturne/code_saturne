@@ -644,7 +644,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
           for (cs_lnum_t j = s_id; j < e_id; j++) {
             cs_lnum_t v_id = c2v_ids[j];
             v_var[v_id] += c_var[c_id] * w[j] * c_weight[c_id];
-            v_w[v_id] += c_weight[c_id];
+            v_w[v_id] += w[j] * c_weight[c_id];
           }
         }
       }
@@ -688,7 +688,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
             for (cs_lnum_t j = s_id; j < e_id; j++) {
               cs_lnum_t v_id = f2v_ids[j];
               v_var[v_id] += _b_var * wb[j] * c_weight[c_id];
-              v_w[v_id] += c_weight[c_id];
+              v_w[v_id] += wb[j] * c_weight[c_id];
             }
           }
         }
@@ -700,7 +700,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
             for (cs_lnum_t j = s_id; j < e_id; j++) {
               cs_lnum_t v_id = f2v_ids[j];
               v_var[v_id] += b_var[f_id] * wb[j] * c_weight[c_id];
-              v_w[v_id] += c_weight[c_id];
+              v_w[v_id] += wb[j] * c_weight[c_id];
             }
           }
         }
@@ -960,7 +960,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
       cs_real_t *v_w = NULL;
       if (c_weight != NULL) {
         BFT_MALLOC(v_w, n_vertices, cs_real_t);
-        for (cs_lnum_t v_id = 0; v_id < n_v_values; v_id++)
+        for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
           v_w[v_id] = 0;
       }
 
@@ -984,7 +984,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
             for (cs_lnum_t k = 0; k < var_dim; k++)
               v_var[v_id*var_dim + k] +=   c_var[c_id*var_dim + k] * w[j]
                                          * c_weight[c_id];
-            v_w[v_id] += c_weight[c_id];
+            v_w[v_id] += w[j] * c_weight[c_id];
           }
         }
       }
@@ -1031,7 +1031,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
               cs_lnum_t v_id = f2v_ids[j];
               for (cs_lnum_t k = 0; k < var_dim; k++)
                 v_var[v_id*var_dim + k] += _b_var[k] * wb[j] * c_weight[c_id];
-              v_w[v_id] += c_weight[c_id];
+              v_w[v_id] += wb[j] * c_weight[c_id];
             }
           }
         }
@@ -1045,7 +1045,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
               for (cs_lnum_t k = 0; k < var_dim; k++)
                 v_var[v_id*var_dim + k] +=   b_var[f_id*var_dim + k] * wb[j]
                                            * c_weight[c_id];
-              v_w[v_id] += c_weight[c_id];
+              v_w[v_id] += wb[j] * c_weight[c_id];
             }
           }
         }
