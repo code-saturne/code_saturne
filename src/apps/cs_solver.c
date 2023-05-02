@@ -125,6 +125,7 @@
 #include "cs_tree.h"
 #include "cs_turbomachinery.h"
 #include "cs_utilities.h"
+#include "cs_vertex_to_cell.h"
 #include "cs_volume_mass_injection.h"
 #include "cs_volume_zone.h"
 
@@ -638,6 +639,7 @@ _run(void)
   /* Free main mesh after printing some statistics */
 
   cs_cell_to_vertex_free();
+  cs_vertex_to_cell_free();
   cs_mesh_adjacencies_finalize();
 
   cs_boundary_zone_finalize();

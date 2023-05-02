@@ -1599,6 +1599,40 @@ cs_math_fw_and_bw_lu(const cs_real_t  a_lu[],
                      const cs_real_t  b[]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  LDL^T: Modified Cholesky decomposition of a 4x4 SPD matrix.
+ *         For more reference, see for instance
+ *   http://mathforcollege.com/nm/mws/gen/04sle/mws_gen_sle_txt_cholesky.pdf
+ *
+ * \param[in, out]  ldlt  pointer to matrix coefficients:
+ *                        (m00, m10, m11, m20, m21, m22, m30, m31, m32, m33) in
+ *                        (f00, l10, f11, l20, l21, f22, l30, l31, l32, f33) out
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_math_sym_44_factor_ldlt(cs_real_t  ldlt[10]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  LDL^T: Modified Cholesky decomposition of a 4x4 SPD matrix.
+ *         For more reference, see for instance
+ *   http://mathforcollege.com/nm/mws/gen/04sle/mws_gen_sle_txt_cholesky.pdf
+ *
+ * Here we only need to use the last element of the solution vector,
+ * so we return that value only and simplify the computation.
+ *
+ * \param[in, out]  ldlt  pointer to matrix coefficients:
+ *                        (f00, l10, f11, l20, l21, f22, l30, l31, l32, f33)
+ * \param[in]       rhs   right-hand side
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_math_sym_44_partial_solve_ldlt(const cs_real_t  ldlt[10],
+                                  const cs_real_t  rhs[4]);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
