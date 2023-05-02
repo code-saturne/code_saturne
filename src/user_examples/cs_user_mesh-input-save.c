@@ -88,12 +88,16 @@ cs_user_mesh_input(void)
 
   /*! [mesh_input_2] */
   {
-    /* Add same mesh with transformations */
+    /* Add same mesh with transformations:
+     * Here a translation in direction x,
+     * and a rotation of theta around axe z.
+     * */
     const char *renames[] = {"Inlet", "Injection_2",
                              "Group_to_remove", NULL};
-    const double transf_matrix[3][4] = {{1., 0., 0., 5.},
-                                        {0., 1., 0., 0.},
-                                        {0., 0., 1., 0.}};
+    const double  theta = 0.1; /* radians */
+    const double transf_matrix[3][4] = {{ cos(theta), sin(theta), 0., 5.},
+                                        {-sin(theta), cos(theta), 0., 0.},
+                                        {         0.,         0., 1., 0.}};
 
     cs_preprocessor_data_add_file("mesh_input/mesh_02",
                                   2, renames,

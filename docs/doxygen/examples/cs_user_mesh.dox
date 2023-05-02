@@ -47,10 +47,6 @@
 
   \snippet cs_user_mesh-modify.c mesh_modify_coords
 
-  Or, if one wants to rotate the mesh:
-
-  \snippet cs_user_mesh-modify.c mesh_modify_coords_rot
-
   \subsection cs_user_mesh_h_cs_user_mesh_modifiy_extrude_1 Boundary mesh patch extrusion
 
   It is possible to add cells by extruding selected boundary faces.
