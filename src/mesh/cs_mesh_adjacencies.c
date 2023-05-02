@@ -494,8 +494,10 @@ _update_cell_faces(cs_mesh_adjacencies_t  *ma,
   if (ma->_c2f == NULL && ma->c2f != NULL)   /* not owner */
     return;
 
-  if (ma->_c2f == NULL)
+  if (ma->_c2f == NULL) {
     ma->_c2f = cs_mesh_adjacency_c2f(m, 0);
+    ma->c2f = ma->_c2f;
+  }
 }
 
 /*----------------------------------------------------------------------------
