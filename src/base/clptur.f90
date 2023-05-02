@@ -2060,11 +2060,13 @@ if (vcopt_u%iwarni.ge.0) then
     if (iturb.eq. 0) write(nfecra,2020)  ntlast,ypluli
     if (itytur.eq.5) write(nfecra,2030)  ntlast,ypluli
     ! No warnings in EBRSM
-    if ((itytur.eq.2.and.iturb.ne.22).or.iturb.eq.30.or.iturb.eq.31)   &
+    if ((itytur.eq.2.and.iturb.ne.22.and.iturb.ne.23.and.iturb.ne.24).or. &
+        iturb.eq.30.or.iturb.eq.31)   &
       write(nfecra,2040)  ntlast,ypluli
-    if (vcopt_u%iwarni.lt.2.and.(iturb.ne.32.and.iturb.ne.22)) then
+    if (vcopt_u%iwarni.lt.2.and.(iturb.ne.32.and.iturb.ne.22.and.iturb.ne. &
+        23.and.iturb.ne.24)) then
       write(nfecra,2050)
-    elseif (iturb.ne.32.and.iturb.ne.22) then
+    elseif (iturb.ne.32.and.iturb.ne.22.and.iturb.ne.23.and.iturb.ne.24) then
       write(nfecra,2060)
     endif
 
