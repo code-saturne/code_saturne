@@ -91,10 +91,9 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
   /*! [mesh_modify_coords] */
   {
-    cs_lnum_t  vtx_id;
     const double  coo_mult = 1. / 1000.;
 
-    for (vtx_id = 0; vtx_id < mesh->n_vertices; vtx_id++) {
+    for (cs_lnum_t vtx_id = 0; vtx_id < mesh->n_vertices; vtx_id++) {
       mesh->vtx_coord[vtx_id*3]     *= coo_mult;
       mesh->vtx_coord[vtx_id*3 + 1] *= coo_mult;
       mesh->vtx_coord[vtx_id*3 + 2] *= coo_mult;
@@ -105,6 +104,34 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
     mesh->modified |= CS_MESH_MODIFIED;
   }
   /*! [mesh_modify_coords] */
+
+  /*! [mesh_modify_coords_rot] */
+  {
+    cs_real_3_t *vtx_coord = (cs_real_3_t *) mesh->vtx_coord;
+    const double  theta = 0.1; /* radians */
+    cs_real_33_t mat_rot =
+    {
+      { cos(theta), sin(theta), 0.},
+      {-sin(theta), cos(theta), 0.},
+      {         0.,         0., 1.},
+    };
+
+    for (cs_lnum_t vtx_id = 0; vtx_id < mesh->n_vertices; vtx_id++) {
+      cs_real_3_t vtx_old =
+      {
+        vtx_coord[vtx_id][0],
+        vtx_coord[vtx_id][1],
+        vtx_coord[vtx_id][2]
+      };
+      cs_math_33_3_product(mat_rot, vtx_old, vtx_coord[vtx_id]);
+    }
+
+    /* Set mesh modification flag if it should be saved for future re-use. */
+
+    mesh->modified |= CS_MESH_MODIFIED;
+  }
+  /*! [mesh_modify_coords_rot] */
+
 
   /* Extrude mesh at boundary faces of group "outlet".
      We use a regular extrusion here */
