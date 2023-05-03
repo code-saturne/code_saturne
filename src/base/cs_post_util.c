@@ -597,6 +597,44 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute total pressure on a specific boundary region.
+ *
+ * \param[in]   n_b_faces    number of faces
+ * \param[in]   b_face_ids   list of faces (0 to n-1)
+ * \param[out]  pres         total pressure on a specific boundary region
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_b_total_pressure(cs_lnum_t         n_b_faces,
+                         const cs_lnum_t   b_face_ids[],
+                         cs_real_t         pres[])
+{
+  /* Compute boundary values for resolved pressure */
+  cs_post_b_pressure(n_b_faces, b_face_ids, pres);
+
+  /* Add components related to referenece pressure and gravity */
+  const cs_real_t Pref = cs_glob_fluid_properties->p0
+                       - cs_glob_fluid_properties->pred0;
+
+  const cs_real_t rho0 = cs_glob_fluid_properties->ro0;
+
+  const cs_real_t *g = cs_glob_physical_constants->gravity;
+
+  const cs_real_t *xyzp0 = cs_glob_fluid_properties->xyzp0;
+
+  const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+
+  for (cs_lnum_t iloc = 0; iloc < n_b_faces; iloc++) {
+    cs_lnum_t face_id = b_face_ids[iloc];
+    pres[face_id] += Pref + rho0 * cs_math_3_distance_dot_product(xyzp0,
+                                                                  xyz[face_id],
+                                                                  g);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute Reynolds stresses in case of Eddy Viscosity Models
  *
  * \param[in]  interpolation_type interpolation type for turbulent kinetic
