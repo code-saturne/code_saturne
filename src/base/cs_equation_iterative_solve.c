@@ -818,7 +818,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     /* Writing: non-convergence */
     else if (isweep > nswmod)
       bft_printf("@\n@ @@ WARNING: %s CONVECTION-DIFFUSION-SOURCE-TERMS\n@"
-                 "=========\n@  Maximum number of iterations %d reached\n@",
+                 "=========\n@  Maximum number of iterations %d reached\n",
                  var_name,nswmod);
   }
 
@@ -1832,7 +1832,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
     /* Writing: non-convergence */
     else if (isweep > nswmod)
       bft_printf("@\n@ @@ WARNING: %s CONVECTION-DIFFUSION-SOURCE-TERMS\n@"
-                 "=========\n@  Maximum number of iterations %d reached\n@",
+                 "=========\n@  Maximum number of iterations %d reached\n",
                  var_name,nswmod);
   }
 
@@ -2669,7 +2669,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
     /* Writing: non-convergence */
     else if (isweep > nswmod)
       bft_printf("@\n@ @@ WARNING: %s CONVECTION-DIFFUSION-SOURCE-TERMS\n@"
-                 "=========\n@  Maximum number of iterations %d reached\n@",
+                 "=========\n@  Maximum number of iterations %d reached\n",
                  var_name,nswmod);
   }
 
