@@ -362,10 +362,10 @@ _physical_property_thermal_law(cs_field_t           *c_prop,
   const cs_real_t *thermodynamic_pressure = &_p0;
   const cs_real_t *_thermal_f_val = NULL;
 
-  // For thermodynamic tables total pressure should be used if available.
-  // Hence if it exists we use it as default. Otherwise we use p0 as default.
+  /* For variable density flows with pressure dependent density (idilat > 1)
+   * we use total pressure values insted of the reference pressue P0. */
   cs_field_t *p_tot_field = cs_field_by_name_try("total_pressure");
-  if (p_tot_field != NULL) {
+  if (p_tot_field != NULL && cs_glob_velocity_pressure_model->idilat > 1) {
     thermodynamic_pressure = p_tot_field->val;
     thermodynamic_pressure_stride = 1;
   }
