@@ -346,6 +346,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
     ! --- Smoothing the temperature and humidity profile in the damping zone
 
+    ktamp = 0
     if (imeteo.eq.1) then
       ktamp = 6
       do k = kvert - ktamp+1, kmray
