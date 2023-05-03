@@ -252,6 +252,21 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute total pressure on a specific boundary region.
+ *
+ * \param[in]   n_b_faces    number of faces
+ * \param[in]   b_face_ids   list of faces (0 to n-1)
+ * \param[out]  pres         total pressure on a specific boundary region
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_b_total_pressure(cs_lnum_t         n_b_faces,
+                         const cs_lnum_t   b_face_ids[],
+                         cs_real_t         pres[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute Reynolds stresses in case of Eddy Viscosity Models
  *
  * \param[in]  interpolation_type interpolation type for turbulent kinetic
