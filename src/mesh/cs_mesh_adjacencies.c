@@ -494,10 +494,9 @@ _update_cell_faces(cs_mesh_adjacencies_t  *ma,
   if (ma->_c2f == NULL && ma->c2f != NULL)   /* not owner */
     return;
 
-  if (ma->_c2f == NULL) {
-    ma->_c2f = cs_mesh_adjacency_c2f(m, 0);
-    ma->c2f = ma->_c2f;
-  }
+  cs_adjacency_destroy(&(ma->_c2f));
+  ma->_c2f = cs_mesh_adjacency_c2f(m, 0);
+  ma->c2f = ma->_c2f;
 }
 
 /*----------------------------------------------------------------------------
@@ -858,8 +857,10 @@ cs_mesh_adjacencies_cell_faces(void)
 
   cs_mesh_adjacencies_t *ma = &_cs_glob_mesh_adjacencies;
 
-  if (ma->c2f == NULL)
-    _update_cell_faces(ma, m);
+  if (ma->c2f == NULL) {
+    ma->_c2f = cs_mesh_adjacency_c2f(m, 0);
+    ma->c2f = ma->_c2f;
+  }
 
   return ma->c2f;
 }
