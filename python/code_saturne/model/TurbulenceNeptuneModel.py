@@ -60,8 +60,8 @@ class TurbulenceModelsDescription:
     turbulenceVariables['les_smagorinsky'] = []
     turbulenceVariables['les_wale'] = []
     turbulenceVariables['q2-q12-tchen'] = []
-    turbulenceVariables['q2-q12'] = ['TurbKineEner_qp', 'covariance_qfp_1']
-    turbulenceVariables['r2-q12'] = ['reynolds_stress','covariance_qfp_1']
+    turbulenceVariables['q2-q12'] = ['TurbKineEner_qp', 'covariance_qfp']
+    turbulenceVariables['r2-q12'] = ['reynolds_stress','covariance_qfp']
     turbulenceVariables['r2-r12-tchen'] = ['reynolds_stress',
                                            'R12XX','R12XY','R12XZ','R12YY','R12YZ','R12ZZ']
 
@@ -84,7 +84,7 @@ class TurbulenceModelsDescription:
     turbulenceProperties['rij-epsilon_ebrsm'] = ["turb_viscosity"]
     turbulenceProperties['les_smagorinsky'] = ["turb_viscosity"]
     turbulenceProperties['les_wale'] = ["turb_viscosity"]
-    turbulenceProperties['q2-q12-tchen'] = ["TurbKineEner_qp", "covariance_qfp_1", "turb_viscosity"]
+    turbulenceProperties['q2-q12-tchen'] = ["TurbKineEner_qp", "covariance_qfp", "turb_viscosity"]
     turbulenceProperties['q2-q12'] = ["turb_viscosity"]
     turbulenceProperties['r2-q12'] = ["turb_viscosity"]
     turbulenceProperties['r2-r12-tchen'] = ["turb_viscosity"]
@@ -177,7 +177,23 @@ class TurbulenceModel(Variables, Model):
                                                              var,
                                                              var+"_"+field_name,
                                                              dim=6)
+             elif var == 'covariance_qfp':
+                 if field.carrier_id == 'all':
+                     _carr_lst = self.mainFieldsModel.getContinuousFieldList()
+                 else:
+                     _carr_lst = [self.mainFieldsModel.getFieldFromId(field.carrier_id)]
+
+                 for _f in _carr_lst:
+                     _vname = "_".join([var, _f.f_id])
+                     _vlabel = "_".join([var, _f.label, field_name])
+                     self.setNewVariableProperty("variable", "",
+                                                 self.XMLNodeVariable,
+                                                 fieldId,
+                                                 _vname,
+                                                 _vlabel)
              else:
+                 if var == 'covariance_qfp':
+                     var += "_" + self.mainFieldsModel.getFieldLabelsList()[0]
                  self.setNewVariableProperty("variable", "",
                                                              self.XMLNodeVariable,
                                                              fieldId,
@@ -446,7 +462,7 @@ class TurbulenceTestCase(ModelTest):
                                          <listing_printing status="on"/>
                                          <postprocessing_recording status="on"/>
                                  </property>
-                                 <property choice="" field_id="2" label="Covariance_q122" name="covariance_qfp_1">
+                                 <property choice="" field_id="2" label="Covariance_q122" name="covariance_qfp">
                                          <listing_printing status="on"/>
                                          <postprocessing_recording status="on"/>
                                  </property>
