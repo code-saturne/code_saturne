@@ -1167,7 +1167,7 @@ if (f_id.ge.0) then
   call field_get_val_v_by_name("rad_absorption_coeff_down", cpro_ck_down)
 
   c_id = 0
-  ! Direct Solar (denoted by _r) (for Solar IR band absobed by H20)
+  ! Direct Solar (denoted by _r) (for Solar IR band absorbed by H20)
   if (iand(rad_atmo_model, 1).eq.1) then
 
     c_id = c_id + 1
@@ -1209,7 +1209,7 @@ if (f_id.ge.0) then
 
   endif
 
-  ! Direct Solar (denoted by _r) (for visble UV (SUV) band absobed by O3)
+  ! Direct Solar (denoted by _r) (for visble UV (SUV) band absorbed by O3)
   if (iand(rad_atmo_model, 2).eq.2) then
 
     c_id = c_id + 1

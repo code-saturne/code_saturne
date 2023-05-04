@@ -201,7 +201,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     call atmo_get_soil_zone(nfmodsol, nbrsol, elt_ids)
 
     ! Note: we use previous values of the soil to be coherent with
-    ! previsous datasetting and what have seen the fluid.
+    ! previous datasetting and what have seen the fluid.
     call field_get_val_prev_s_by_name("soil_pot_temperature", bvar_tempp)
     call field_get_val_prev_s_by_name("soil_total_water", bvar_total_water)
 
@@ -223,7 +223,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
       ! Density: property of the boundary face:
       soil_mean%density = soil_mean%density + surfbn(ifac) * crom(ifabor(ifac))
 
-      ! Potential temperature for consitency with the code before, TODO is it correct?
+      ! Potential temperature for consistency with the code before, TODO is it correct?
       soil_mean%ttsoil  = soil_mean%ttsoil  + surfbn(ifac) * (bvar_tempp(isol) - tkelvi)
       soil_mean%totwat  = soil_mean%totwat  + surfbn(ifac) * bvar_total_water(isol)
 

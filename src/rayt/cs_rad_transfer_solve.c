@@ -1207,7 +1207,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
   /* FSCK model parameters */
   if (wq == NULL) {
-    /* Weight of the i-the gaussian quadrature  */
+    /* Weight of the i-the Gaussian quadrature  */
     BFT_MALLOC(wq, nwsgg, cs_real_t);
     rt_params->wq = wq;
 
@@ -1232,7 +1232,7 @@ cs_rad_transfer_solve(int               bc_type[],
   /* Constants initialization */
   cs_real_t onedpi  = 1.0 / cs_math_pi;
 
-  /* Bulk absoption:
+  /* Bulk absorption:
    * Radiation absorbed by the gas phase and the solid phase
      (all particles classes) */
   cs_real_t *absom = CS_FI_(rad_abs, 0)->val;
@@ -1250,7 +1250,7 @@ cs_rad_transfer_solve(int               bc_type[],
   /* Medium (gas) Absorption coefficient */
   cs_real_t *ckg = CS_FI_(rad_cak, 0)->val;
 
-  /* Work arays */
+  /* Work arrays */
   cs_real_t *int_abso, *int_emi, *int_rad_ist;
   BFT_MALLOC(int_abso, n_cells_ext, cs_real_t);
   BFT_MALLOC(int_emi, n_cells_ext, cs_real_t);
@@ -1273,11 +1273,11 @@ cs_rad_transfer_solve(int               bc_type[],
     /* Explicit ST due to emission and absorption */
     rad_estm[cell_id] = 0.0;
 
-    /* Absortion: Sum, i((kg, i+kp) * Integral(Ii)dOmega):
+    /* Absorption: Sum, i((kg, i+kp) * Integral(Ii)dOmega):
      * for the gas phase and the solid/droplet phase (all classes) */
     absom[cell_id] = 0.0;
 
-    /* Emmitted radiation: Sum, i((kg, i+kp) * c_stefan * T^4 *agi):
+    /* Emitted radiation: Sum, i((kg, i+kp) * c_stefan * T^4 *agi):
      * for the gas phase and the solid/droplet phase (all classes) */
     emim[cell_id]  = 0.0;
 
@@ -1318,7 +1318,7 @@ cs_rad_transfer_solve(int               bc_type[],
       for (int i = 0; i < nwsgg; i++)
         w_gg[ifac + i * n_b_faces] = 0.0;
 
-  /* Absorbed and emmitted radiation of a single coal or fuel class
+  /* Absorbed and emitted radiation of a single coal or fuel class
    * (needed to compute the source terms of the particle enthalpy equation) */
   for (int class_id = 0; class_id < n_classes; class_id++) {
     int ipcla = class_id+1;
@@ -1673,7 +1673,7 @@ cs_rad_transfer_solve(int               bc_type[],
                           int_rad_domega,
                           int_abso);
 
-      /* Precomputed absoption and emission */
+      /* Precomputed absorption and emission */
       /* Absorption */
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
         int_abso[cell_id] = ckg[cell_id] * int_rad_domega[cell_id];
