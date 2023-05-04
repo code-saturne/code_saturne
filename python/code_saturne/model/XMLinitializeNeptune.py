@@ -855,17 +855,30 @@ class XMLinitNeptune(BaseXmlInit):
 
          # Rename variables related to solid turbulent models
         for node in self.case.xmlGetNodeList("variable"):
+            # Turbulent kinetic energy
             if node["name"] == "TurbKineEner_q2":
                 node["name"] = "TurbKineEner_qp"
-            elif node["name"] == "Covariance_q12":
-                node["name"] = "covariance_qfp_1"
+            # Covariance name
+            if 'Covariance_q12' in node['name']:
+                node['name'] = node['name'].replace('Covariance_q12',
+                                                    'covariance_qfp_1')
+
+            # Covariance label
+            if 'Covariance_q12' in node['label']:
+                # Rename label using correct convention
+                _f1_label = MainFieldsModel(self.case).getFieldLabelsList()[0]
+                _new_label = '_'.join(['covariance_qfp', _f1_label])
+                node['label'] = node['label'].replace('Covariance_q12', _new_label)
 
         for node in self.case.xmlGetNodeList("profile"):
             for vp_node in node.xmlGetNodeList("var_prop"):
+                # Turbulent kinetic energy
                 if vp_node["name"] == "TurbKineEner_q2_2":
                     vp_node["name"] = "TurbKineEner_qp_2"
-                elif vp_node["name"] == "Covariance_q12_2":
-                    vp_node["name"] = "covariance_qfp_1_2"
+                # Covariance
+                if 'Covariance_q12_2' in vp_node["name"]:
+                    vp_node["name"] = vp_node["name"].replace("Covariance_q12_2",
+                                                              "covariance_qfp_1_2")
 
 
     def _backwardCompatibilityCurrentVersion(self):
