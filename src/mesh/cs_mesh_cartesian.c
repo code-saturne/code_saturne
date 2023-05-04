@@ -96,7 +96,7 @@ struct _cs_mesh_cartesian_params_t {
   _cs_mesh_cartesian_direction_t **params;
 
   /* Index shifting for group id */
-  int                              gc_id_shift;
+  int                             gc_id_shift;
 
   /* global values */
   cs_gnum_t n_g_cells;
@@ -422,12 +422,11 @@ _add_nx_face(cs_mesh_cartesian_params_t *mp,
 
   if (i == 0) {
     c_id2 = c0 + 1;
-    mb->face_gc_id[f_id] = 1 + (mp->gc_id_shift + 1);
-
+    mb->face_gc_id[f_id] = 2 + mp->gc_id_shift;
   }
   else if (i == nx) {
     c_id1 = c0;
-    mb->face_gc_id[f_id] = 2 + (mp->gc_id_shift + 1);
+    mb->face_gc_id[f_id] = 3 + mp->gc_id_shift;
   }
   else {
     c_id1 = c0;
@@ -502,10 +501,10 @@ _add_ny_face(cs_mesh_cartesian_params_t *mp,
 
   if (j == 0) {
     c_id2 = c0 + i + j*nx + k*nx*ny;
-    mb->face_gc_id[f_id] = 3 + (mp->gc_id_shift + 1);
+    mb->face_gc_id[f_id] = 4 + mp->gc_id_shift;
   } else if (j == ny) {
     c_id1 = c0 + i + (j-1)*nx + k*nx*ny;
-    mb->face_gc_id[f_id] = 4 + (mp->gc_id_shift + 1);
+    mb->face_gc_id[f_id] = 5 + mp->gc_id_shift;
   } else {
     c_id1 = c0 + i + (j-1)*nx + k*nx*ny;
     c_id2 = c0 + i + j*nx     + k*nx*ny;
@@ -574,10 +573,10 @@ _add_nz_face(cs_mesh_cartesian_params_t *mp,
 
   if (k == 0) {
     c_id2 = c0 + i + j*nx + k*nx*ny;
-    mb->face_gc_id[f_id] = 5 + (mp->gc_id_shift + 1);
+    mb->face_gc_id[f_id] = 6 + mp->gc_id_shift;
   } else if (k == nz) {
     c_id1 = c0 + i + j*nx + (k-1)*nx*ny;
-    mb->face_gc_id[f_id] = 6 + (mp->gc_id_shift + 1);
+    mb->face_gc_id[f_id] = 7 + mp->gc_id_shift;
   } else {
     c_id1 = c0 + i + j*nx + (k-1)*nx*ny;
     c_id2 = c0 + i + j*nx + k*nx*ny;
@@ -1280,14 +1279,14 @@ cs_mesh_cartesian_block_connectivity(int                 id,
     BFT_MALLOC(mb->cell_gc_id, n_cells, int);
 
   for (cs_gnum_t i = 0; i < mp->n_cells_on_rank; i++)
-    mb->cell_gc_id[i + _rank_c_offset] = 1 + mp->gc_id_shift;
+    mb->cell_gc_id[i + _rank_c_offset] = mp->gc_id_shift + 1;
 
   if (mb->face_gc_id == NULL)
     BFT_MALLOC(mb->face_gc_id, n_faces, int);
 
   // Default face group is 8
   for (cs_gnum_t i = 0; i < mp->n_faces_on_rank; i++)
-    mb->face_gc_id[i + _rank_f_offset] = mp->gc_id_shift + 8;
+    mb->face_gc_id[i + _rank_f_offset] = 1;  /* default family */
 
   /* number of vertices per face array */
   if (mb->face_vertices_idx == NULL) {
