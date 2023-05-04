@@ -64,6 +64,7 @@
 #include "cs_halo_perio.h"
 #include "cs_head_losses.h"
 #include "cs_ht_convert.h"
+#include "cs_ibm.h"
 #include "cs_interface.h"
 #include "cs_interpolate.h"
 #include "cs_internal_coupling.h"

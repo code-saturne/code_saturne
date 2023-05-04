@@ -77,6 +77,7 @@
 #include "cs_gui_radiative_transfer.h"
 #include "cs_gui_util.h"
 #include "cs_io.h"
+#include "cs_ibm.h"
 #include "cs_join.h"
 #include "cs_lagr.h"
 #include "cs_lagr_tracking.h"
@@ -602,6 +603,10 @@ _run(void)
 
   cs_property_destroy_all();
   cs_thermal_table_finalize();
+
+  /* Free immersed boundaries related structures */
+
+  cs_ibm_finalize();
 
   /* Free turbomachinery related structures */
 

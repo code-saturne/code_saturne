@@ -57,7 +57,7 @@ use radiat
 use mesh
 use post
 use field
-use pointe, only:compute_porosity_from_scan
+use pointe, only:compute_porosity_from_scan, ibm_porosity_mode
 use cs_c_bindings
 
 !===============================================================================
@@ -422,7 +422,7 @@ itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 
 if (iporos.ge.1) then
   f_name = 'porosity'
-  if (compute_porosity_from_scan) then
+  if (compute_porosity_from_scan .or. ibm_porosity_mode.gt.0) then
     !TODO move it to fldvar?
     call add_variable_field(f_name, f_name, 1, ivar)
     ipori = ivarfl(ivar)
@@ -500,6 +500,7 @@ if (iporos.ge.1) then
                       1,& ! dimension
                       .false.,&
                       f_id)
+
     f_name = 'i_f_face_normal'
     call field_create(f_name,&
                       itycat,&
@@ -572,43 +573,84 @@ if (iporos.ge.1) then
                       .false.,&
                       f_id)
 
+    ! Interior faces weighting factor with new cell cog
+    f_name = 'i_f_weight'
+    call field_create(f_name,&
+                      itycat,&
+                      2,& ! location: inner faces
+                      2,& ! dimension: 2 per face
+                      .false.,&
+                      f_id)
+
+    ! Solid surface normal immersed in the cells
     f_name = 'c_w_face_normal'
     call field_create(f_name,&
                       itycat,&
-                      1,& ! location: boundary faces
+                      1,& ! location: cell
                       3,& ! dimension
                       .false.,&
                       f_id)
 
+    ! Center of gravity of solid face immersed in the cells
     f_name = 'c_w_face_cog'
     call field_create(f_name,&
                       itycat,&
-                      1,& ! location: boundary faces
+                      1,& ! location: cell
                       3,& ! dimension
                       .false.,&
                       f_id)
 
+    ! Solid surface of cells
     f_name = 'c_w_face_surf'
     call field_create(f_name,&
                       itycat,&
-                      1,& ! location: boundary faces
+                      1,& ! location: cell
                       1,& ! dimension
                       .false.,&
                       f_id)
 
+    ! Distance between the centers of the cell and the solid face
     f_name = 'c_w_dist_inv'
     call field_create(f_name,&
                       itycat,&
-                      1,& ! location: boundary faces
+                      1,& ! location: cell
                       1,& ! dimension
                       .false.,&
                       f_id)
 
+    ! Cell fluid center coordinates
     f_name = 'cell_f_cen'
     call field_create(f_name,&
                       itycat,&
-                      1,& ! location: boundary faces
+                      1,& ! location: cell
                       3,& ! dimension
+                      .false.,&
+                      f_id)
+
+    ! Cell solid center coordinates
+    f_name = 'cell_s_cen'
+    call field_create(f_name,&
+                      itycat,&
+                      1,& ! location: cell
+                      3,& ! dimension
+                      .false.,&
+                      f_id)
+
+    ! Porosity at internal faces
+    f_name = 'i_face_porosity'
+    call field_create(f_name,&
+                      itycat,&
+                      2,& ! location: inner faces
+                      1,& ! dimension
+                      .false.,&
+                      f_id)
+
+    ! Porosity at boundary faces
+    f_name = 'b_face_porosity'
+    call field_create(f_name,&
+                      itycat,&
+                      3,& ! location: boundary faces
+                      1,& ! dimension
                       .false.,&
                       f_id)
 

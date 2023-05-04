@@ -496,6 +496,9 @@ if (iporos.ge.1) then
     call cs_compute_porosity_from_scan()
 
     ! Note using porosity from scan: give the hand to the user
+  else if (ibm_porosity_mode.gt.0) then
+    write(nfecra, *) " Compute porosity field from immersed boundaries"
+    call cs_compute_porosity_ibm()
   else
 
     call uiporo

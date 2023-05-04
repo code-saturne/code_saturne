@@ -1163,8 +1163,8 @@ module optcal
       bind(C, name='cs_f_velocity_pressure_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ivisse, idilat, fluid_solid, n_buoyant_scal
-      type(c_ptr), intent(out) :: iprcdo
+      type(c_ptr), intent(out) :: ivisse, idilat, fluid_solid
+      type(c_ptr), intent(out) :: n_buoyant_scal, iprcdo
     end subroutine cs_f_velocity_pressure_model_get_pointers
 
     ! Interface to C function retrieving pointers to members of the

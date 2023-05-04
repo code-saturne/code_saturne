@@ -50,6 +50,7 @@
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_field_pointer.h"
+#include "cs_ibm.h"
 #include "cs_lagr.h"
 #include "cs_les_balance.h"
 #include "cs_log.h"
@@ -1931,6 +1932,16 @@ cs_parameters_check(void)
                                   _("while reading input data,\n"
                                     "Porosity from scan has been activated"
                                     "and cs_glob_porous_model changed\n"),
+                                  "cs_glob_porous_model",
+                                  cs_glob_porous_model,
+                                  3, 4);
+
+  if (cs_glob_porosity_ibm_opt->porosity_mode > 0)
+    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                  _("while reading input data,\n"
+                                    "Porosity from immersed boundaries has"
+                                    "been activated (experimental) and "
+                                    "cs_glob_porous_model changed\n"),
                                   "cs_glob_porous_model",
                                   cs_glob_porous_model,
                                   3, 4);

@@ -124,6 +124,8 @@ cs_user_fluid_structure_interaction.c \
 cs_user_fluid_structure_interaction-code_aster.c \
 cs_user_head_losses.c \
 cs_user_hgn-relax_time_scale.c \
+cs_user_ibm.c \
+cs_user_ibm_modify.c \
 cs_user_initialization-atmospheric.c \
 cs_user_initialization-base.c \
 cs_user_initialization-compressible.c \

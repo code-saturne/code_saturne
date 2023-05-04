@@ -129,6 +129,18 @@ module pointe
 
   !=============================================================================
 
+  !> \defgroup porosity_ibm Porosity from immersed boundaries parameters
+
+  !> \addtogroup porosity_ibm
+  !> \{
+
+  !> Activate the computation
+  integer(c_int), pointer, save :: ibm_porosity_mode
+
+  !> \}
+
+  !=============================================================================
+
   !> \defgroup porosity_from_scan Porosity from scan module parameters
 
   !> \addtogroup porosity_from_scan
@@ -479,6 +491,28 @@ contains
     call c_f_pointer(c_nfpt1t, nfpt1t)
 
   end subroutine init_1d_wall_thermal
+
+  !=============================================================================
+
+  !> \brief Allocate the cs_glob_porosity_ibm structure.
+
+  subroutine porosity_ibm_init
+
+    use, intrinsic :: iso_c_binding
+    use cs_c_bindings
+
+    implicit none
+
+    ! Local variables
+    type(c_ptr) :: c_ibm_porosity_mode
+
+    call cs_f_porosity_ibm_get_pointer(c_ibm_porosity_mode)
+
+    call c_f_pointer(c_ibm_porosity_mode, ibm_porosity_mode)
+
+    return
+
+  end subroutine porosity_ibm_init
 
   !=============================================================================
 

@@ -2398,11 +2398,8 @@ _compute_fluid_solid_cell_quantities(const cs_mesh_t     *m,
                                         a_cell_cen);
 
   /* Initialization */
-
-  for (cs_lnum_t j = 0; j < n_cells_ext; j++)
-    _cell_f_vol[j] = 0.;
-
   for (cs_lnum_t j = 0; j < n_cells_ext; j++) {
+    _cell_f_vol[j] = 0.;
     for (cs_lnum_t i = 0; i < 3; i++)
       _cell_f_cen[j][i] = 0.;
   }
@@ -2593,6 +2590,7 @@ cs_mesh_quantities_create(void)
 
   mesh_quantities->cell_cen = NULL;
   mesh_quantities->cell_f_cen = NULL;
+  mesh_quantities->cell_s_cen = NULL;
   mesh_quantities->cell_vol = NULL;
   mesh_quantities->cell_f_vol = NULL;
   mesh_quantities->i_face_normal = NULL;
@@ -2617,6 +2615,7 @@ cs_mesh_quantities_create(void)
   mesh_quantities->b_dist = NULL;
   mesh_quantities->c_w_dist_inv = NULL;
   mesh_quantities->weight = NULL;
+  mesh_quantities->i_f_weight = NULL;
   mesh_quantities->dijpf = NULL;
   mesh_quantities->diipb = NULL;
   mesh_quantities->dofij = NULL;
@@ -2665,6 +2664,7 @@ cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
 {
   CS_FREE_HD(mq->cell_cen);
   mq->cell_f_cen = NULL;
+  mq->cell_s_cen = NULL;
   BFT_FREE(mq->cell_vol);
   mq->cell_f_vol = NULL;
 
@@ -2692,6 +2692,7 @@ cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
   mq->c_w_dist_inv = NULL;
 
   CS_FREE_HD(mq->weight);
+  CS_FREE_HD(mq->i_f_weight);
 
   BFT_FREE(mq->dijpf);
   CS_FREE_HD(mq->diipb);
@@ -2704,6 +2705,7 @@ cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
   BFT_FREE(mq->b_sym_flag);
   BFT_FREE(mq->c_disable_flag);
   BFT_FREE(mq->bad_cell_flag);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3698,6 +3700,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
 
   mq->cell_f_vol = mq->cell_vol;
   mq->cell_f_cen = mq->cell_cen;
+  mq->cell_s_cen = NULL;
 
   /* Porous models */
   if (mq->c_disable_flag == NULL) {
@@ -3725,6 +3728,9 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
 
   if (mq->weight == NULL)
     CS_MALLOC_HD(mq->weight, n_i_faces, cs_real_t, cs_alloc_mode);
+
+  if (mq->i_f_weight == NULL)
+    CS_MALLOC_HD(mq->i_f_weight, n_i_faces, cs_real_t, cs_alloc_mode);
 
   if (mq->dijpf == NULL)
     BFT_MALLOC(mq->dijpf, n_i_faces*dim, cs_real_t);

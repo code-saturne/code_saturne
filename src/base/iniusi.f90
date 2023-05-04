@@ -62,6 +62,7 @@ use entsor
 use albase
 use parall
 use period
+use pointe, only:ibm_porosity_mode
 use ppppar
 use ppthch
 use coincl
@@ -510,6 +511,10 @@ if (ippmod(icompf).ge.0) then
   l_xmasm(1) = xmasmr ! dummy argument in stiffened gas
   call cs_cf_thermo_cv(l_cp, l_xmasm, l_cv, l_size)
   cv0 = l_cv(1)
+endif
+
+if (ibm_porosity_mode.gt.0) then
+  iporos = 3
 endif
 
 ! Choose the porous model
