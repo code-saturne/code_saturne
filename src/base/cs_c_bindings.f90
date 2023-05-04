@@ -3108,6 +3108,29 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Compute the porosity from immersed boundary module.
+
+    subroutine cs_compute_porosity_ibm() &
+      bind(C, name='cs_f_immersed_boundaries')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_compute_porosity_ibm
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Return pointers
+
+    !> \param[out]   ibm_porosity_mode  Pointer to ibm_porosity_mode
+
+    subroutine cs_f_porosity_ibm_get_pointer(ibm_porosity_mode) &
+      bind(C, name='cs_f_porosity_ibm_get_pointer')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: ibm_porosity_mode
+    end subroutine cs_f_porosity_ibm_get_pointer
+
+   !---------------------------------------------------------------------------
+
     !> \brief Compute the porosity from scan
     !>  module).
 

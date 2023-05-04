@@ -54,7 +54,7 @@ use ppppar
 use ppthch
 use ppincl
 use cfpoin
-use pointe, only:compute_porosity_from_scan
+use pointe, only:compute_porosity_from_scan, ibm_porosity_mode
 use lagran
 use cplsat
 use mesh
@@ -271,7 +271,7 @@ endif
 call field_get_id_try("porosity", f_id)
 
 if (f_id.ne.-1) then
-  if (ipass .eq. 1 .and. compute_porosity_from_scan) then
+  if (ipass .eq. 1 .and. (compute_porosity_from_scan .or. ibm_porosity_mode.gt.0)) then
     call field_allocate_bc_coeffs(f_id, .true., .false., .false., .false.)
     call field_init_bc_coeffs(f_id)
   endif

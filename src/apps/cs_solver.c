@@ -77,6 +77,7 @@
 #include "cs_gui_radiative_transfer.h"
 #include "cs_gui_util.h"
 #include "cs_io.h"
+#include "cs_ibm.h"
 #include "cs_join.h"
 #include "cs_lagr.h"
 #include "cs_lagr_tracking.h"
@@ -125,6 +126,7 @@
 #include "cs_tree.h"
 #include "cs_turbomachinery.h"
 #include "cs_utilities.h"
+#include "cs_vertex_to_cell.h"
 #include "cs_volume_mass_injection.h"
 #include "cs_volume_zone.h"
 
@@ -606,6 +608,10 @@ _run(void)
   cs_property_destroy_all();
   cs_thermal_table_finalize();
 
+  /* Free immersed boundaries related structures */
+
+  cs_ibm_finalize();
+
   /* Free turbomachinery related structures */
 
   cs_turbomachinery_finalize();
@@ -642,6 +648,7 @@ _run(void)
   /* Free main mesh after printing some statistics */
 
   cs_cell_to_vertex_free();
+  cs_vertex_to_cell_free();
   cs_mesh_adjacencies_finalize();
 
   cs_boundary_zone_finalize();

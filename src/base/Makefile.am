@@ -128,6 +128,7 @@ cs_halo.h \
 cs_halo_perio.h \
 cs_head_losses.h \
 cs_ht_convert.h \
+cs_ibm.h \
 cs_interface.h \
 cs_interpolate.h \
 cs_internal_coupling.h \
@@ -320,6 +321,7 @@ cs_gas_mix_physical_properties.f90 \
 cs_halo.c \
 cs_halo_perio.c \
 cs_head_losses.c \
+cs_ibm.c \
 cs_internal_coupling.c \
 cs_interpolate.c \
 cs_log_iteration.c \

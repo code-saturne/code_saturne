@@ -3,6 +3,9 @@ Release 8.0.0 (unreleased)
 
 ### User changes:
 
+- Add basic immersed boundary method features based on the
+  neptune_cfd approach.
+
 - CoolProp support now actually works with tabular properties.
 
 - Cartesian mesher can now handle multiple blocks

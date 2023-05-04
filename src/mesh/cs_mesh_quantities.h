@@ -93,6 +93,7 @@ typedef struct {
 
   cs_real_t     *cell_cen;       /* Cell center coordinates  */
   cs_real_t     *cell_f_cen;     /* Cell fluid center coordinates  */
+  cs_real_t     *cell_s_cen;     /* Cell solid center coordinates  */
   cs_real_t     *cell_vol;       /* Cell volume */
   cs_real_t     *cell_f_vol;     /* Cell fluid volume */
 
@@ -138,10 +139,12 @@ typedef struct {
                                     cells sharing an interior face */
   cs_real_t     *b_dist;         /* Distance between the cell center and
                                     the center of gravity of border faces */
-  cs_real_t     *c_w_dist_inv;       /* Distance between the centers of the cell
+  cs_real_t     *c_w_dist_inv;   /* Distance between the centers of the cell
                                     and the solid face */
 
   cs_real_t     *weight;         /* Interior faces weighting factor */
+  cs_real_t     *i_f_weight;     /* Interior faces weighting factor
+                                    with new cell center of gravity */
 
   cs_real_t      min_vol;        /* Minimum cell volume */
   cs_real_t      max_vol;        /* Maximum cell volume */

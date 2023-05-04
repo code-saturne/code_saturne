@@ -317,6 +317,21 @@ if (iporos.ge.1) then
     do iel = 1, ncelet
       porosi(iel) = 0.d0
     enddo
+  else if (ibm_porosity_mode.gt.0) then
+    call field_get_id_try('i_face_porosity', f_id)
+    if (f_id .ge. 0) then
+      call field_get_val_s(f_id, field_s_v)
+      do iel = 1, nfac
+        field_s_v(iel) = 1.d0
+      enddo
+    endif
+    call field_get_id_try('b_face_porosity', f_id)
+    if (f_id .ge. 0) then
+      call field_get_val_s(f_id, field_s_v)
+      do iel = 1, nfabor
+        field_s_v(iel) = 1.d0
+      enddo
+    endif
   else
     do iel = 1, ncelet
       porosi(iel) = 1.d0

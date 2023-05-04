@@ -240,6 +240,7 @@ cs_porous_model_set_has_disable_flag(int  flag)
         mq->i_f_face_factor = NULL;
         mq->b_f_face_factor = NULL;
         mq->cell_f_cen = mq->cell_cen;
+        mq->cell_s_cen = NULL;
         mq->c_w_face_normal = NULL;
         mq->c_w_face_surf = NULL;
         mq->c_w_face_cog = NULL;
@@ -261,6 +262,7 @@ cs_porous_model_set_has_disable_flag(int  flag)
         mq->i_f_face_cog_1  = cs_field_by_name("i_f_face_cog_1")->val;
         mq->b_f_face_cog    = cs_field_by_name("b_f_face_cog")->val;
         mq->cell_f_cen      = cs_field_by_name("cell_f_cen")->val;
+        mq->cell_s_cen      = cs_field_by_name("cell_s_cen")->val;
         mq->c_w_face_normal = cs_field_by_name("c_w_face_normal")->val;
         mq->c_w_face_surf   = cs_field_by_name("c_w_face_surf")->val;
         mq->c_w_face_cog    = cs_field_by_name("c_w_face_cog")->val;

@@ -46,7 +46,6 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
-#include "fvm_nodal.h"
 #include "fvm_writer.h"
 #include "cs_post.h"
 

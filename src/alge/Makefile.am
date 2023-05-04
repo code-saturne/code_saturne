@@ -113,7 +113,8 @@ cs_sles_default.h \
 cs_sles_it.h \
 cs_sles_it_priv.h \
 cs_sles_pc.h \
-cs_sles_pc_priv.h
+cs_sles_pc_priv.h \
+cs_vertex_to_cell.h
 
 if HAVE_CUDA
 pkginclude_HEADERS += \
@@ -182,7 +183,8 @@ cs_sles.c \
 cs_sles_default.c \
 cs_sles_it.c \
 cs_sles_it_priv.c \
-cs_sles_pc.c
+cs_sles_pc.c \
+cs_vertex_to_cell.c
 libcsalge_a_LIBADD =
 
 if HAVE_CUDA
