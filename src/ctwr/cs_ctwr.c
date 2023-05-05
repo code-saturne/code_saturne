@@ -120,7 +120,6 @@ struct _cs_ctwr_zone_t {
 
   cs_real_t  t_l_bc;             /* Water entry temperature */
   cs_real_t  q_l_bc;             /* Water flow */
-  cs_real_t  y_l_bc;             /* Mass fraction of water */
 
   cs_real_t  xap;                /* Exchange law a_0 coefficient */
   cs_real_t  xnp;                /* Exchange law n exponent */
@@ -412,9 +411,7 @@ cs_ctwr_define(const char           zone_criteria[],
   ct->relax   = relax;
   ct->t_l_bc  = t_l_bc;
   ct->q_l_bc  = q_l_bc;
-  ct->y_l_bc  = -1; /* Mass of liquid water divided by the mass of humid air
-                        in packing zones.
-                        Factice version, initialize after */
+
   ct->xap = xap;
   ct->xnp = xnp;
 
@@ -1028,11 +1025,11 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
       vel_l[cell_id] = cpro_taup[cell_id] * cs_math_3_norm(gravity);
 
       /* Note that rho_h * Y_l * vel_l * Stot = q_l_bc */
-      ct->y_l_bc = ct->q_l_bc / (rho_h[cell_id] * vel_l[cell_id] * ct->surface);
+      cs_real_t y_l_bc = ct->q_l_bc / (rho_h[cell_id] * vel_l[cell_id] * ct->surface);
 
       /* Initialise the liquid transported variables:
          liquid mass and enthalpy corrected by the density ratio */
-      y_l[cell_id] = ct->y_l_bc;
+      y_l[cell_id] = y_l_bc;
 
       /* The transported value is (y_l.h_l) and not (h_l) */
       h_l[cell_id] *= y_l[cell_id];
@@ -1075,6 +1072,10 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
   cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val;    /*liquid enthalpy */
   cs_real_t *t_l = (cs_real_t *)CS_F_(t_l)->val;    /*liquid temperature */
 
+  cs_real_t *rho_h = (cs_real_t *)CS_F_(rho)->val; /* humid air (bulk) density */
+  cs_real_t *vel_l = cs_field_by_name("vertvel_l")->val;
+  cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_y_p");
+
   const cs_real_3_t *restrict i_face_normal
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->i_face_normal;
   const cs_lnum_2_t *i_face_cells =
@@ -1084,8 +1085,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
   const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
 
   const cs_halo_t *halo = cs_glob_mesh->halo;
-  cs_real_t norm_g;
-  int *packing_cell;
+  cs_lnum_t *packing_cell;
 
   /* Normalised gravity vector */
 
@@ -1093,11 +1093,9 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
                          cs_glob_physical_constants->gravity[1],
                          cs_glob_physical_constants->gravity[2]};
 
-  norm_g = cs_math_3_norm(gravity);
-
-  gravity[0] /= norm_g;
-  gravity[1] /= norm_g;
-  gravity[2] /= norm_g;
+  cs_real_t norm_g = cs_math_3_norm(gravity);
+  cs_real_t g_dir[3];
+  cs_math_3_normalize(gravity, g_dir);
 
   /* Initialise the liquid mass flux to null */
   for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
@@ -1140,23 +1138,39 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
     cs_lnum_t cell_id_1 = i_face_cells[face_id][0];
     cs_lnum_t cell_id_2 = i_face_cells[face_id][1];
 
+    /* one of neigh. cells is in packing */
     if (packing_cell[cell_id_1] != -1 || packing_cell[cell_id_2] != -1) {
 
       int ct_id = CS_MAX(packing_cell[cell_id_1], packing_cell[cell_id_2]);
       cs_ctwr_zone_t *ct = _ct_zone[ct_id];
 
       // Vertical (align with gravity) component of the surface vector
-      cs_real_t liq_surf = cs_math_3_dot_product(gravity,
+      cs_real_t liq_surf = cs_math_3_dot_product(g_dir,
                                                  i_face_normal[face_id]);
 
       /* Face mass flux of the liquid */
-      liq_mass_flow[face_id] =   ct->q_l_bc / (ct->surface * ct->y_l_bc)
-                               * liq_surf;
+      cs_lnum_t cell_id;
+      if (liq_surf > 0.) { //cell_id_1 is upwind cell for liq. flow
+        if (packing_cell[cell_id_1] != -1) //cell_id_1 in the packing
+          cell_id = cell_id_1;
+        else //cell_id_1 in HALO of the packing and outside of it
+          cell_id = cell_id_2;
+      }
+      else { //cell_id_2 is upwind cell for liq. flow
+        if (packing_cell[cell_id_2] != -1) //cell_id_2 in the packing
+          cell_id = cell_id_2;
+        else //cell_id_2 in HALO of the packing and outside of it
+          cell_id = cell_id_1;
+      }
+
+      cs_real_t y_l_bc = ct->q_l_bc / (rho_h[cell_id] * vel_l[cell_id] * ct->surface);
+      liq_mass_flow[face_id] = rho_h[cell_id] * vel_l[cell_id] * liq_surf;
 
       /* Initialise a band of ghost cells on the top side of the
          packing zone in order to impose boundary values
          Take the upwinded value for initialisation */
 
+      /* cell_id_1 in packing and not cell_id_2 */
       if (packing_cell[cell_id_1] >= 0 && packing_cell[cell_id_2] == -1) {
 
         /* cell_id_2 is an inlet halo */
@@ -1166,11 +1180,12 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
 
           ct->n_inlet_faces ++;
           ct->surface_in += liq_surf;
-          y_l[cell_id_2] = ct->y_l_bc;
+          y_l[cell_id_2] = y_l_bc;
           t_l[cell_id_2] = ct->t_l_bc;
           h_l[cell_id_2] = cs_liq_t_to_h(ct->t_l_bc);
           /* The transported value is (y_l.h_l) and not (h_l) */
           h_l[cell_id_2] *= y_l[cell_id_2];
+
         }
         /* face_id is an outlet */
         else {
@@ -1194,7 +1209,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
 
           ct->n_inlet_faces ++;
           ct->surface_in += liq_surf;
-          y_l[cell_id_1] = ct->y_l_bc;
+          y_l[cell_id_1] = y_l_bc;
           t_l[cell_id_1] = ct->t_l_bc;
           h_l[cell_id_1] = cs_liq_t_to_h(ct->t_l_bc);
           /* The transported value is (y_l.h_l) and not (h_l) */
@@ -1278,6 +1293,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
   }
 
   BFT_FREE(packing_cell);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1475,23 +1491,6 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
       /* Initialise the liquid vertical velocity component
        * this is correct for dorplet and extended for other packing zones */
       vel_l[cell_id] = cpro_taup[cell_id] * cs_math_3_norm(gravity);
-
-      /* Note that rho_h * Y_l * vel_l * Stot = q_l_bc */
-      /* Use the same humid air density which was used at the beginning of the
-       * calculation being restarted, otherwise since rho_h changes during the
-       * calculation, reynolds, v_lim and cpro_taup will end up being different
-       * from the initial values used in the calculation being restarted */
-      //      ct->y_l_bc = ct->q_l_bc / (rho_h[cell_id] * vel_l[cell_id] * ct->surface);
-      ct->y_l_bc = ct->q_l_bc / (rho_h_ini * vel_l[cell_id] * ct->surface);
-
-      /* Initialise the liquid transported variables:
-         liquid mass and enthalpy corrected by the density ratio */
-      //FIXME y_l[cell_id] = ct->y_l_bc;
-
-      /* The transported value is (y_l.h_l) and not (h_l) */
-      /* No need for that, the value read from the restart file is already
-       * the value multiplied by the mass fraction of liquid */
-      //FIXME h_l[cell_id] *= y_l[cell_id];
 
     }
   }
