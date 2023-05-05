@@ -72,10 +72,10 @@ implicit none
 
 ! Arguments
 
-integer          iterns
+integer(c_int) ::  iterns
 
-double precision dt(ncelet)
-double precision vela(3, ncelet)
+real(c_double) :: dt(ncelet)
+real(c_double) :: vela(3, ncelet)
 
 ! Local variables
 

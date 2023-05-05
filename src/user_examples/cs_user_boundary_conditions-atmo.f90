@@ -52,10 +52,7 @@
 !_______________________________________________________________________________
 
 subroutine cs_f_user_boundary_conditions &
- ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     ,                                                       &
-   rcodcl )
+ (itrifb, itypfb, izfppp, dt)
 
 !===============================================================================
 
@@ -87,6 +84,7 @@ use field
 use turbomachinery
 use iso_c_binding
 use cs_c_bindings
+use dimens, only: nvar, nscal
 
 !===============================================================================
 
@@ -94,14 +92,9 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
-integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
-
 double precision dt(ncelet)
-double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
@@ -116,6 +109,9 @@ double precision ustar, rugd, rugt
 double precision zent, xuent, xvent
 double precision xkent, xeent
 
+integer, pointer, dimension(:,:) :: icodcl
+double precision, pointer, dimension(:,:,:) :: rcodcl
+
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer :: bpro_roughness
 double precision, dimension(:), pointer :: bpro_roughness_t
@@ -128,6 +124,8 @@ double precision, dimension(:), pointer :: bpro_roughness_t
 !===============================================================================
 
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
+
+call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
 
 d2s3 = 2.d0/3.d0
 

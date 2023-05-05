@@ -451,9 +451,11 @@ void CS_PROCF (uialin, UIALIN) (int     *nalinf,
   cs_tree_node_t *tn
     = cs_tree_get_node(cs_glob_tree, "thermophysical_models/ale_method");
 
-  cs_gui_node_get_status_int(tn, &cs_glob_ale);
+  int ale_status = cs_glob_ale;  /* use copy to avoid any int/enum issues */
+  cs_gui_node_get_status_int(tn, &ale_status);
+  cs_glob_ale = ale_status;
 
-  if (cs_glob_ale) {
+  if (cs_glob_ale > CS_ALE_NONE) {
     cs_gui_node_get_child_int(tn, "fluid_initialization_sub_iterations",
                               nalinf);
     cs_gui_node_get_child_int(tn, "max_iterations_implicitation",
@@ -472,13 +474,12 @@ void CS_PROCF (uialin, UIALIN) (int     *nalinf,
       cs_ast_coupling_set_verbosity(verbosity);
       cs_ast_coupling_set_visualization(visualization);
     }
-
   }
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
-  bft_printf("--cs_glob_ale = %i\n", cs_glob_ale);
-  if (cs_glob_ale > 0) {
+  bft_printf("--cs_glob_ale_info->type = %i\n", cs_glob_ale_info->type);
+  if (cs_glob_ale_info->type > 0) {
     bft_printf("--nalinf = %i\n", *nalinf);
     bft_printf("--nalimx = %i\n", *nalimx);
     bft_printf("--epalim = %g\n", *epalim);
@@ -494,10 +495,9 @@ void CS_PROCF (uialin, UIALIN) (int     *nalinf,
  *   impale       <-- uialcl_fixed_displacement
  *   disale       <-- See uialcl_fixed_displacement
  *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uialcl, UIALCL) (int         *const  ialtyb,
-                                int         *const  impale,
-                                cs_real_3_t        *disale)
+void cs_gui_mobile_mesh_boundary_conditions(int         *const  ialtyb,
+                                            int         *const  impale,
+                                            cs_real_3_t        *disale)
 {
   cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
 

@@ -55,11 +55,8 @@
 !_______________________________________________________________________________
 
 subroutine usalcl &
- ( itrale ,                                                       &
-   nvar   , nscal  ,                                              &
-   icodcl , itypfb , ialtyb , impale ,                            &
-   dt     ,                                                       &
-   rcodcl , xyzno0 , disale )
+ ( itrale , itypfb , ialtyb , impale ,                                         &
+   dt     , xyzno0 , disale )
 
 !===============================================================================
 
@@ -76,6 +73,9 @@ use entsor
 use parall
 use period
 use mesh
+use field
+use dimens, only: nvar, nscal
+use cs_c_bindings
 
 !===============================================================================
 
@@ -84,17 +84,21 @@ implicit none
 ! Arguments
 
 integer          itrale
-integer          nvar   , nscal
 
-integer          icodcl(nfabor,nvar)
 integer          itypfb(nfabor), ialtyb(nfabor)
 integer          impale(nnod)
 
 double precision dt(ncelet)
-double precision rcodcl(nfabor,nvar,3)
 double precision disale(3,nnod), xyzno0(3,nnod)
 
+! Local variables
+
+integer, pointer, dimension(:,:) :: icodcl
+double precision, pointer, dimension(:,:,:) :: rcodcl
+
 !===============================================================================
+
+call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
 
 !--------
 ! Formats

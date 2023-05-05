@@ -30,8 +30,6 @@
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     init          partial treatment (before time loop) if true
 !> \param[in,out] itypfb        boundary face types
 !> \param[out]    itrifb        tab d'indirection pour tri des faces
@@ -51,30 +49,17 @@
 !>                                    Neumann for the diffusion operator
 !> \param[out]    isostd        standard output indicator
 !>                              + reference face number
-!> \param[in,out] rcodcl        boundary condition values:
-!>                               - rcodcl(1) value of the dirichlet
-!>                               - rcodcl(2) value of the exterior exchange
-!>                                 coefficient (infinite if no exchange)
-!>                               - rcodcl(3) value flux density
-!>                                 (negative if gain) in w/m2 or roughness
-!>                                 in m if icodcl=6
-!>                                 -# for the velocity \f$ (\mu+\mu_T)
-!>                                    \gradv \vect{u} \cdot \vect{n}  \f$
-!>                                 -# for the pressure \f$ \Delta t
-!>                                    \grad P \cdot \vect{n}  \f$
-!>                                 -# for a scalar \f$ cp \left( K +
-!>                                     \dfrac{K_T}{\sigma_T} \right)
-!>                                     \grad T \cdot \vect{n} \f$
 !______________________________________________________________________________
 
-subroutine typecl &
- ( nvar   , nscal  , init   ,                                     &
-   itypfb , itrifb , icodcl , isostd ,                            &
-   rcodcl )
+subroutine typecl                      &
+ ( init , itypfb , itrifb , isostd )   &
+ bind(C, name='cs_f_typecl')
 
 !===============================================================================
 ! Module files
 !===============================================================================
+
+use, intrinsic :: iso_c_binding
 
 use paramx
 use atincl
@@ -82,7 +67,7 @@ use numvar
 use optcal
 use cstnum
 use cstphy
-use dimens, only: ndimfb
+use dimens, only: ndimfb, nvar, nscal
 use pointe, only: b_head_loss
 use lagran, only: iilagr
 use entsor
@@ -96,20 +81,18 @@ use field
 use field_operator
 use cs_c_bindings
 
+use, intrinsic :: iso_c_binding
+
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-logical          init
+logical(kind=c_bool), value :: init
 
-integer          icodcl(ndimfb,nvar)
-integer          itypfb(ndimfb) , itrifb(ndimfb)
-integer          isostd(ndimfb+1)
-
-double precision rcodcl(ndimfb,nvar,3)
+integer(c_int) :: itypfb(ndimfb) , itrifb(ndimfb)
+integer(c_int) :: isostd(ndimfb+1)
 
 ! Local variables
 
@@ -144,6 +127,9 @@ double precision, dimension(:), pointer :: cvara_pr
 double precision, dimension(:), pointer :: cpro_prtot
 double precision, dimension(1,1), target :: rvoid2
 
+integer, pointer, dimension(:,:) :: icodcl
+double precision, pointer, dimension(:,:,:) :: rcodcl
+
 integer, save :: irangd
 
 integer          ipass
@@ -157,6 +143,12 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 ! 1.  Initialization
 !===============================================================================
+
+!do ifac = 1, ndimfb+1
+!   print*, "ifac, isostd = ", ifac, isostd(ifac)
+!enddo
+
+call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
 
 ! Allocate temporary arrays
 allocate(pripb(ndimfb))
@@ -1107,7 +1099,6 @@ do iscal = 1, nscal
 ! End loop over scalars
 enddo
 
-
 ! 6.5 PAROI RUGUEUSE
 ! ==================
 
@@ -1398,7 +1389,6 @@ if (iok.gt.0) then
   endif
   call boundary_conditions_error(itypfb)
 endif
-
 
 ! 6.2.a SORTIE (entree sortie libre)
 ! ==================================
@@ -2080,7 +2070,6 @@ endif
 'Boundary faces with pressure Dirichlet condition detected'    ,/,&
 'Update of reference point for total pressure'                 ,/,&
 ' XYZP0 = ',E14.5,E14.5,E14.5                  ,/)
-
 
 return
 end subroutine

@@ -72,6 +72,8 @@ subroutine pptssc     &
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
+
 use paramx
 use numvar
 use entsor
@@ -97,7 +99,7 @@ implicit none
 
 integer(c_int), value :: iscal
 
-double precision smbrs(ncelet), rovsdt(ncelet)
+real(c_double) :: smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 

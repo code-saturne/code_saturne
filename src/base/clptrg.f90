@@ -68,30 +68,6 @@
 !______________________________________________________________________________!
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     isvhb         indicator to save exchange coeffient
-!> \param[in,out] icodcl        face boundary condition code:
-!>                               - 1 Dirichlet
-!>                               - 3 Neumann
-!>                               - 4 sliding and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 5 smooth wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 6 rough wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 9 free inlet/outlet
-!>                                 (input mass flux blocked to 0)
-!> \param[in,out] rcodcl        boundary condition values:
-!>                               - rcodcl(1) value of the Dirichlet
-!>                               - rcodcl(2) value of the exterior exchange
-!>                                 coefficient (infinite if no exchange)
-!>                               - rcodcl(3) value flux density
-!>                                 (negative if gain) in w/m2
-!>                                 -# for the velocity \f$ (\mu+\mu_T)
-!>                                    \gradv \vect{u} \cdot \vect{n}  \f$
-!>                                 -# for the pressure \f$ \Delta t
-!>                                    \grad P \cdot \vect{n}  \f$
-!>                                 -# for a scalar \f$ cp \left( K +
-!>                                     \dfrac{K_T}{\sigma_T} \right)
-!>                                     \grad T \cdot \vect{n} \f$
 !> \param[in]     velipb        value of the velocity at \f$ \centip \f$
 !>                               of boundary cells
 !> \param[in]     rijipb        value of \f$ R_{ij} \f$ at \f$ \centip \f$
@@ -103,11 +79,9 @@
 !>                               of boundary cells
 !_______________________________________________________________________________
 
-subroutine clptrg &
- ( nscal  , isvhb  , icodcl ,                                     &
-   rcodcl ,                                                       &
-   velipb , rijipb , visvdr ,                                     &
-   hbord  , theipb )
+subroutine clptrg                                       &
+ ( isvhb , velipb , rijipb , visvdr , hbord , theipb )  &
+ bind(C, name='cs_f_clptrg')
 
 !===============================================================================
 
@@ -135,6 +109,9 @@ use lagran
 use turbomachinery
 use cs_c_bindings
 use atincl
+use dimens, only: nscal
+
+use, intrinsic :: iso_c_binding
 
 !===============================================================================
 
@@ -142,14 +119,10 @@ implicit none
 
 ! Arguments
 
-integer          nscal, isvhb
-
-integer, pointer, dimension(:,:) :: icodcl
-
-double precision, pointer, dimension(:,:,:) :: rcodcl
-double precision, dimension(:,:) :: velipb
-double precision, pointer, dimension(:,:) :: rijipb
-double precision, pointer, dimension(:) :: visvdr, hbord, theipb
+integer(c_int) :: isvhb
+real(c_double) :: velipb(3,*)
+real(c_double) :: rijipb(6,*)
+real(c_double) :: visvdr(*), hbord(*), theipb(*)
 
 ! Local variables
 
@@ -239,6 +212,9 @@ double precision, dimension(:), pointer :: coefb_nu, coefbf_nu
 double precision, dimension(:), pointer :: coefa_tlag, coefaf_tlag
 double precision, dimension(:), pointer :: coefb_tlag, coefbf_tlag
 
+integer, pointer, dimension(:,:) :: icodcl
+double precision, pointer, dimension(:,:,:) :: rcodcl
+
 integer          ntlast , iaff
 data             ntlast , iaff /-1 , 0/
 save             ntlast , iaff
@@ -262,7 +238,7 @@ interface
     integer, pointer, dimension(:,:) :: icodcl
     double precision, pointer, dimension(:,:,:) :: rcodcl
     double precision, dimension(:) :: byplus, buk, buet, bcfnns
-    double precision, pointer, dimension(:) :: hbord, theipb
+    double precision hbord(*), theipb(*)
     double precision tetmax, tetmin, tplumx, tplumn
     double precision, dimension(:) :: bdlmo
 
@@ -273,6 +249,8 @@ interface
 !===============================================================================
 ! 1. Initializations
 !===============================================================================
+
+call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
 
 ! Initialize variables to avoid compiler warnings
 
@@ -632,9 +610,9 @@ do ifac = 1, nfabor
 
     ! Relative tangential velocity
 
-    upx = velipb(ifac,1) - rcodcx
-    upy = velipb(ifac,2) - rcodcy
-    upz = velipb(ifac,3) - rcodcz
+    upx = velipb(1,ifac) - rcodcx
+    upy = velipb(2,ifac) - rcodcy
+    upz = velipb(3,ifac) - rcodcz
 
     usn = upx*rnx+upy*rny+upz*rnz
     tx  = upx -usn*rnx
@@ -1208,13 +1186,13 @@ do ifac = 1, nfabor
         else if (iclptr.eq.1) then
           do ii = 1, 6
             if (ii.ne.isou) then
-              fcoefa(isou) = fcoefa(isou) + alpha(isou,ii) * rijipb(ifac,ii)
+              fcoefa(isou) = fcoefa(isou) + alpha(isou,ii) * rijipb(ii,ifac)
             endif
           enddo
           fcoefb(isou) = alpha(isou,isou)
         else
           do ii = 1, 6
-            fcoefa(isou) = fcoefa(isou) + alpha(isou,ii) * rijipb(ifac,ii)
+            fcoefa(isou) = fcoefa(isou) + alpha(isou,ii) * rijipb(ii,ifac)
           enddo
           fcoefb(isou) = 0.d0
         endif
@@ -1324,9 +1302,9 @@ do ifac = 1, nfabor
           ! Use of wall functions
           if (iuntur.eq.1) then
               pimp = 0.5 * cfnnk / (cfnne * uk**3 ) * cl * xkappa * rough_d      &
-                   * ( coefa_rij(1,ifac) + coefb_rij(1,1,ifac) * rijipb(ifac,1)  &
-                     + coefa_rij(2,ifac) + coefb_rij(2,2,ifac) * rijipb(ifac,2)  &
-                     + coefa_rij(3,ifac) + coefb_rij(3,3,ifac) * rijipb(ifac,3))
+                   * ( coefa_rij(1,ifac) + coefb_rij(1,1,ifac) * rijipb(1,ifac)  &
+                     + coefa_rij(2,ifac) + coefb_rij(2,2,ifac) * rijipb(2,ifac)  &
+                     + coefa_rij(3,ifac) + coefb_rij(3,3,ifac) * rijipb(3,ifac))
           else
             pimp = 0.d0
           endif
@@ -1569,7 +1547,7 @@ enddo
 !===========================================================================
 ! 8. Boundary conditions on the other scalars
 !    (Specific treatment for the variances of the scalars next to walls:
-!     see condli)
+!     see cs_boundary_condition_set_coeffs)
 !===========================================================================
 
 do iscal = 1, nscal
@@ -1810,7 +1788,10 @@ integer          iscal, isvhb
 integer, pointer, dimension(:,:) :: icodcl
 double precision, pointer, dimension(:,:,:) :: rcodcl
 double precision, dimension(:) :: byplus, buk, buet, bcfnns
-double precision, pointer, dimension(:) :: hbord, theipb
+!double precision, pointer, dimension(:) :: hbord, theipb
+
+double precision hbord(*), theipb(*)
+
 double precision tetmax, tetmin, tplumx, tplumn
 double precision, dimension(:) :: bdlmo
 
@@ -2196,7 +2177,8 @@ do ifac = 1, nfabor
     ! Dirichlet BC with wall function
     ! Gradients and flux BCs are imposed
     if (icodcl(ifac,ivar).eq.6) then
-      !FIXME this should also be done for Neumann, but overwritten in condli for now
+      ! FIXME this should also be done for Neumann, but overwritten in
+      ! cs_boundary_condition_set_coeffs for now
       ! Same remark for smooth wall...
       !if ((icodcl(ifac,ivar).eq.6).or.(icodcl(ifac,ivar).eq.3)) then
 

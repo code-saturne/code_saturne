@@ -20,54 +20,17 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cou1di &
-!================
+!> \brief Input data for 1D wall thermal coupling
 
- ( nfabor ,                                                       &
-   isvtb  , icodcl ,                                              &
-   rcodcl )
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!______________________________________________________________________________
 
-!===============================================================================
-
-! FONCTION :
-! ---------
-
-! LECTURE DE DONNEES RELATIVES A UN COUPLAGE PAROI 1D
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! isvtb            ! e  ! <-- ! numero du scalaire couple                      !
-! icodcl           ! te ! --> ! code de condition limites aux faces            !
-!  (nfabor,nvar)   !    !     !  de bord                                       !
-!                  !    !     ! = 1   -> dirichlet                             !
-!                  !    !     ! = 3   -> densite de flux                       !
-!                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 5   -> frottemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
-!                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
-!                  !    !     !  entrante eventuelle     bloquee               !
-! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvar)   !    !     !  aux faces de bord                             !
-!                  !    !     ! rcodcl(1) = valeur du dirichlet                !
-!                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
-!                  !    !     !  ext. (infinie si pas d'echange)               !
-!                  !    !     ! rcodcl(3) = valeur de la densite de            !
-!                  !    !     !  flux (negatif si gain) w/m2 ou                !
-!                  !    !     !  hauteur de rugosite (m) si icodcl=6           !
-!                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
-!                  !    !     ! pour la pression             dt*gradp          !
-!                  !    !     ! pour les scalaires                             !
-!                  !    !     !        cp*(viscls+visct/turb_schmidt)*gradt    !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
+subroutine cou1di()  &
+ bind(C, name='cs_f_cou1di')
 
 !===============================================================================
 ! Module files
@@ -78,7 +41,6 @@ use numvar
 use optcal
 use cstnum
 use cstphy
-use dimens, only: nvar
 use entsor
 use pointe
 use field
@@ -86,15 +48,13 @@ use radiat
 use cs_c_bindings
 use ppincl, only: icondb
 
+use, intrinsic :: iso_c_binding
+
 !===============================================================================
 
 implicit none
 
 ! Arguments
-
-integer          nfabor
-integer          isvtb  , icodcl(nfabor,nvar)
-double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
@@ -107,6 +67,9 @@ double precision, dimension(:), pointer :: b_temp
 
 integer, dimension(:), pointer :: ifpt1d
 double precision, dimension(:), pointer :: tppt1d
+
+integer, pointer, dimension(:,:) :: icodcl
+double precision, pointer, dimension(:,:,:) :: rcodcl
 
 !===============================================================================
 
@@ -142,7 +105,9 @@ endif
 
 icldef = 5
 
-ivar = isca(isvtb)
+ivar = isca(iscalt)
+
+call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
 
 do ii = 1, nfpt1d
 
@@ -162,7 +127,7 @@ enddo
 
 ! Conversion eventuelle temperature -> enthalpie
 
-if (isvtb.eq.iscalt .and. itherm.eq.2) then
+if (itherm.eq.2) then
 
   do ii = 1, nfpt1d
     ifac = ifpt1d(ii)

@@ -53,6 +53,8 @@ subroutine driflu &
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
+
 use paramx
 use dimens, only: nvar, ndimfb
 use numvar
@@ -80,9 +82,9 @@ implicit none
 
 integer(c_int), value :: iflid
 
-double precision dt(ncelet)
-double precision imasfl(nfac), bmasfl(nfabor)
-double precision divflu(ncelet)
+real(c_double) :: dt(ncelet)
+real(c_double) :: imasfl(nfac), bmasfl(nfabor)
+real(c_double) :: divflu(ncelet)
 
 ! Local variables
 

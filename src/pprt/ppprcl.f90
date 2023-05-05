@@ -20,12 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine ppprcl &
-!================
-
- ( nvar   ,                                                       &
-   izfppp ,                                                       &
-   rcodcl )
+subroutine ppprcl()  &
+ bind(C, name='cs_f_ppprcl')
 
 !===============================================================================
 ! FONCTION :
@@ -42,20 +38,6 @@ subroutine ppprcl &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
-! izfppp           ! te ! --> ! numero de zone de la face de bord              !
-! (nfabor)         !    !     !  pour le module phys. part.                    !
-! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvar    !    !     !  aux faces de bord                             !
-!                  !    !     ! rcodcl(1) = valeur du dirichlet                !
-!                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
-!                  !    !     !  ext. (infinie si pas d'echange)               !
-!                  !    !     ! rcodcl(3) = valeur de la densite de            !
-!                  !    !     !  flux (negatif si gain) w/m2 ou                !
-!                  !    !     !  hauteur de rugosite (m) si icodcl=6           !
-!                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
-!                  !    !     ! pour la pression             dt*gradp          !
-!                  !    !     ! pour les scalaires                             !
-!                  !    !     !        cp*(viscls+visct/turb_schmidt)*gradt    !
 !__________________!____!_____!________________________________________________!
 
 !===============================================================================
@@ -78,6 +60,9 @@ use cs_fuel_incl
 use ppincl
 use cfpoin
 use atincl
+use pointe, only: izfppp
+use dimens, only: nvar
+use cs_c_bindings
 use mesh
 
 !===============================================================================
@@ -86,24 +71,23 @@ implicit none
 
 ! Arguments
 
-integer          nvar
-
-integer          izfppp(nfabor)
-
-double precision rcodcl(nfabor,nvar,3)
-
 ! Local variables
 
 integer          ifac, izone, ivar
+
+integer, pointer, dimension(:,:) :: icodcl
+double precision, pointer, dimension(:,:,:) :: rcodcl
 
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
 
+call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
+
 ! ---> Combustion gaz USEBUC
 !      Flamme de diffusion : chimie 3 points
 
-if ( ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0) then
+if (ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0) then
 
   do izone = 1, nozppm
     qimp(izone)   = zero

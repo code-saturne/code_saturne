@@ -228,7 +228,8 @@ BEGIN_C_DECLS
         should be increased.\n Useful if and only if \ref iturb = 30
         or 31 (\f$R_{ij}-\epsilon\f$ model).
   \var  cs_turb_rans_model_t::irijrb
-        accurate treatment of \f$ \tens{R} \f$ at the boundary (see \ref condli)
+        accurate treatment of \f$ \tens{R} \f$ at the boundary
+        (see \ref cs_boundary_condition_set_coeffs)
         - 1: true
         - 0: false (default)
   \var  cs_turb_rans_model_t::irijec

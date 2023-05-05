@@ -324,8 +324,8 @@ implicit none
 
 ! Arguments
 
-double precision eh,tp
-double precision xesp(ngazem)
+real(c_double) :: eh,tp
+real(c_double) :: xesp(ngazem)
 
 ! Local variables
 
@@ -370,8 +370,8 @@ implicit none
 
 ! Arguments
 
-double precision eh,tp
-double precision xesp(ngazem)
+real(c_double) :: eh,tp
+real(c_double) :: xesp(ngazem)
 
 ! Local variables
 

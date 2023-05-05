@@ -518,7 +518,8 @@ module optcal
   !> (\f$R_{ij}-\epsilon\f$ model).
   integer(c_int), pointer, save :: irijnu
 
-  !> accurate treatment of \f$ \tens{R} \f$ at the boundary (see \ref condli)
+  !> accurate treatment of \f$ \tens{R} \f$ at the boundary
+  !> (see \ref cs_boundary_condition_set_coeffs)
   !>    - 1: true
   !>    - 0: false (default)
   integer(c_int), pointer, save :: irijrb
@@ -707,7 +708,8 @@ module optcal
   !> accurate treatment of the wall temperature
   !>    - 1: true
   !>    - 0: false (default)
-  !> (see \ref condli, useful in case of coupling with syrthes)
+  !> (see \ref cs_boundary_condition_set_coeffs,
+  !>  useful in case of coupling with syrthes)
   integer(c_int), pointer, save :: itbrrb
 
   !> Improved pressure interpolation scheme.

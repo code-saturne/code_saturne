@@ -786,6 +786,7 @@ do ifac = 1, nfabor
   varmx(ii) = max(varmx(ii),brom(ifac) )
   varmn(ii) = min(varmn(ii),brom(ifac) )
 enddo
+
 if (irangp.ge.0) then
   call parmax (varmx(ii))
   call parmin (varmn(ii))

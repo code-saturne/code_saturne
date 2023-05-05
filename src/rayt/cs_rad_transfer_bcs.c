@@ -230,14 +230,13 @@ _sync_rad_bc_err(cs_gnum_t  nerloc[],
  *   2) Update BCs for the energy computation
  *
  *   \param[in]     bc_type       face boundary condition type
- *   \param[in]     dt            time step (per cell)
- */
-/*----------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_bcs(int         bc_type[],
-                    cs_real_t   dt[])
+cs_rad_transfer_bcs(int bc_type[])
 {
+  cs_real_t *dt = CS_F_(dt)->val;
+
   cs_real_t stephn = cs_physical_constants_stephan;
 
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
@@ -940,8 +939,8 @@ cs_rad_transfer_bcs(int         bc_type[],
      (at first pass, it is zero)
      -> Compute convective flux, by which we mean:
      convective flux parallel to wall; we assume the wall is watertight
-     The flux is computed in condli/clptur, except at the first
-     pass with no restart, as cs_rad_transfer_bcs is called first.
+     The flux is computed in cs_boundary_condition_set_coeffs/clptur, except at
+     the first pass with no restart, as cs_rad_transfer_bcs is called first.
    */
 
   if (ideb == 1) {

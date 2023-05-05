@@ -83,14 +83,14 @@ implicit none
 integer(c_int) :: indhyd
 integer(c_int), value :: iterns
 
-double precision fext(3,ncelet)
-double precision dfext(3,ncelet)
-double precision phydr(ncelet)
-double precision flumas(nfac), flumab(nfabor)
-double precision viscf(nfac), viscb(nfabor)
-double precision dam(ncelet), xam(nfac)
-double precision dpvar(ncelet)
-double precision rhs(ncelet)
+real(c_double) :: fext(3,ncelet)
+real(c_double) :: dfext(3,ncelet)
+real(c_double) :: phydr(ncelet)
+real(c_double) :: flumas(nfac), flumab(nfabor)
+real(c_double) :: viscf(nfac), viscb(nfabor)
+real(c_double) :: dam(ncelet), xam(nfac)
+real(c_double) :: dpvar(ncelet)
+real(c_double) :: rhs(ncelet)
 
 ! Local variables
 

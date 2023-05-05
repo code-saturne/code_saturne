@@ -96,7 +96,8 @@ module pointe
 
   !> indirection array allowing to sort the boundary faces
   !> according to their boundary condition type \c itypfb
-  integer, allocatable, dimension(:) :: itrifb
+  !integer, allocatable, dimension(:) :: itrifb
+  integer, dimension(:), pointer, save :: itrifb
 
   !> to identify boundary zones associated with boundary faces
   !> (specific physics models)
@@ -383,14 +384,15 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_itypfb, c_izfppp
+    type(c_ptr) :: c_itypfb, c_izfppp, c_itrifb
 
     call cs_f_boundary_conditions_create
 
-    call cs_f_boundary_conditions_get_pointers(c_itypfb, c_izfppp)
+    call cs_f_boundary_conditions_get_pointers(c_itypfb, c_izfppp, c_itrifb)
 
     call c_f_pointer(c_itypfb, itypfb, [nfabor])
     call c_f_pointer(c_izfppp, izfppp, [nfabor])
+    call c_f_pointer(c_itrifb, itrifb, [nfabor])
 
   end subroutine boundary_conditions_init
 

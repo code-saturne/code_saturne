@@ -116,10 +116,11 @@ BEGIN_C_DECLS
   \var  cs_les_balance_rij_t::difftpij
   \var  cs_les_balance_rij_t::unstij
   \var  cs_les_balance_rij_t::convij
-  \var  cs_les_balance_rij_t::diffflamij
+  \var  cs_les_balance_rij_t::difflamij
   \var  cs_les_balance_rij_t::budsgsij
   \var  cs_les_balance_rij_t::budsgsfullij
 */
+
 /*----------------------------------------------------------------------------*/
 
 /*! \struct cs_les_balance_tui_t

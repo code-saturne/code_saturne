@@ -49,7 +49,7 @@ subroutine chem_source_terms &
 ! Module files
 !===============================================================================
 
-!use, intrinsic :: iso_c_binding
+use, intrinsic :: iso_c_binding
 use paramx
 use pointe
 use numvar
@@ -70,7 +70,7 @@ implicit none
 ! Arguments
 
 integer(c_int), value :: iscal
-double precision  crvexp(ncelet), crvimp(ncelet)
+real(c_double) ::  crvexp(ncelet), crvimp(ncelet)
 
 ! Local variables
 

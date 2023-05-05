@@ -2520,18 +2520,16 @@ cs_syr_coupling_is_surf(int  cpl_id)
 /*!
  * \brief  Read boundary field/variable values relative to a SYRTHES coupling.
  *
- * \param[in]       nvar     number of variables
- * \param[in]       bc_type  boundary condition type
- * \param[in, out]  icodcl   boundary condition codes
- * \param[in, out]  rcodcl   boundary condition values
+ * \param[in]   nvar     number of variables
+ * \param[in]   bc_type  boundary condition type
+ * \param[out]  icodcl   boundary condition codes
+ * \param[out]  rcodcl   boundary condition values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_syr_coupling_recv_boundary(int        nvar,
-                              int        bc_type[],
-                              int        icodcl[],
-                              cs_real_t  rcodcl[])
+cs_syr_coupling_recv_boundary(const int  nvar,
+                              int        bc_type[])
 {
   /* SYRTHES coupling: get wall temperature
      ====================================== */
@@ -2595,7 +2593,8 @@ cs_syr_coupling_recv_boundary(int        nvar,
           temperature separately, for BC's to be clearer. */
 
       const int k_var_id = cs_field_key_id("variable_id");
-      int var_id = cs_field_get_key_int(f, k_var_id) - 1;
+      //int var_id = cs_field_get_key_int(f, k_var_id) - 1;
+      int var_id = cs_field_get_key_int(f, k_var_id);
 
       if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0) {
         if (f == CS_F_(e_tot)) {
@@ -2611,10 +2610,15 @@ cs_syr_coupling_recv_boundary(int        nvar,
              f->name);
       }
 
-      int  *_icodcl = icodcl + (var_id*n_b_faces);
+      /*int  *_icodcl = icodcl + (var_id*n_b_faces);
       cs_real_t  *_rcodcl1 = rcodcl + (var_id*n_b_faces);
       cs_real_t  *_rcodcl2 = rcodcl + (n_b_faces*n_vars + var_id*n_b_faces);
-      cs_real_t  *_rcodcl3 = rcodcl + (2*n_b_faces*n_vars + var_id*n_b_faces);
+      cs_real_t  *_rcodcl3 = rcodcl + (2*n_b_faces*n_vars + var_id*n_b_faces);*/
+
+      int  *_icodcl = cs_field_by_id(var_id)->bc_coeffs->icodcl;
+      cs_real_t *_rcodcl1 = cs_field_by_id(var_id)->bc_coeffs->rcodcl1;
+      cs_real_t *_rcodcl2 = _rcodcl1 + n_b_faces*n_vars;
+      cs_real_t *_rcodcl3 = _rcodcl2 + n_b_faces*n_vars;
 
       for (cs_lnum_t i = 0; i < n_cpl_faces; i++) {
 

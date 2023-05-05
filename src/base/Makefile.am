@@ -102,6 +102,7 @@ cs_block_dist.h \
 cs_block_to_part.h \
 cs_boundary.h \
 cs_boundary_conditions.h \
+cs_boundary_conditions_set_coeffs.h \
 cs_boundary_zone.h \
 cs_calcium.h \
 cs_control.h \
@@ -287,6 +288,7 @@ cs_ast_coupling.c \
 cs_base_fortran.c \
 cs_boundary.c \
 cs_boundary_conditions.c \
+cs_boundary_conditions_set_coeffs.c \
 cs_boundary_zone.c \
 cs_calcium.c \
 csc2cl.f90 \
@@ -410,7 +412,6 @@ majgeo.f90 \
 modini.f90 \
 mmtycl.f90 \
 phyvar.f90 \
-precli.f90 \
 predfl.f90 \
 predvv.f90 \
 prehyd.f90 \

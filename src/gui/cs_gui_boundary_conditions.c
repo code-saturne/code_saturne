@@ -2738,19 +2738,7 @@ _standard_turbulence_bcs(void)
  * double precision fment    <-- Mean Mixture Fraction at Inlet (gas combustion)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclim, UICLIM)(int        *ientat,
-                               int        *ientcp,
-                               int        *inmoxy,
-                               int        *ientox,
-                               int        *ientfu,
-                               int        *ientgf,
-                               int        *ientgb,
-                               int        *iprofm,
-                               int        *iautom,
-                               int        *itypfb,
-                               int        *izfppp,
-                               double     *tkent,
-                               double     *fment)
+void cs_gui_boundary_conditions_processing(int *itypfb)
 {
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
@@ -2774,7 +2762,7 @@ void CS_PROCF (uiclim, UICLIM)(int        *ientat,
 
   static bool initialized = false;
   if (initialized == false) {
-    _init_zones(n_b_faces, izfppp);
+    _init_zones(n_b_faces, bc_pm_info->izfppp);
     initialized = true;
   }
 
@@ -2813,17 +2801,19 @@ void CS_PROCF (uiclim, UICLIM)(int        *ientat,
          in PRECLI and PPPRCL routines */
 
       /* data by zone */
-      bc_pm_info->iqimp[zone_nbr] = boundaries->iqimp[izone];
+      bc_pm_info->iqimp[zone_nbr]  = boundaries->iqimp[izone];
       bc_pm_info->icalke[zone_nbr] = boundaries->icalke[izone];
       bc_pm_info->dh[zone_nbr]     = boundaries->dh[izone];
       bc_pm_info->xintur[zone_nbr] = boundaries->xintur[izone];
 
-      if (solid_fuels) {
+      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1)
+        bc_pm_info->iprofm[zone_nbr] = boundaries->meteo[izone].read_data;
+      else if (solid_fuels) {
         const cs_combustion_model_t *cm = cs_glob_combustion_model;
 
-        ientat[zone_nbr-1] = boundaries->ientat[izone];
-        inmoxy[zone_nbr-1] = boundaries->inmoxy[izone];
-        ientcp[zone_nbr-1] = boundaries->ientcp[izone];
+        bc_pm_info->inmoxy[zone_nbr] = boundaries->inmoxy[izone];
+        bc_pm_info->ientat[zone_nbr] = boundaries->ientat[izone];
+        bc_pm_info->ientcp[zone_nbr] = boundaries->ientcp[izone];
         bc_pm_info->timpat[zone_nbr] = boundaries->timpat[izone];
 
         for (int icharb = 0; icharb < cm->coal.n_coals; icharb++) {
@@ -2841,12 +2831,12 @@ void CS_PROCF (uiclim, UICLIM)(int        *ientat,
         }
       }
       else if (gas_combustion) {
-        ientfu[zone_nbr-1] = boundaries->ientfu[izone];
-        ientox[zone_nbr-1] = boundaries->ientox[izone];
-        ientgb[zone_nbr-1] = boundaries->ientgb[izone];
-        ientgf[zone_nbr-1] = boundaries->ientgf[izone];
-        tkent[zone_nbr-1]  = boundaries->tkent[izone];
-        fment[zone_nbr-1]  = boundaries->fment[izone];
+        bc_pm_info->ientfu[zone_nbr] = boundaries->ientfu[izone];
+        bc_pm_info->ientox[zone_nbr] = boundaries->ientox[izone];
+        bc_pm_info->ientgb[zone_nbr] = boundaries->ientgb[izone];
+        bc_pm_info->ientgf[zone_nbr] = boundaries->ientgf[izone];
+        bc_pm_info->tkent [zone_nbr] = boundaries->tkent[izone];
+        bc_pm_info->fment [zone_nbr] = boundaries->fment[izone];
       }
       else if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
 
@@ -2896,16 +2886,16 @@ void CS_PROCF (uiclim, UICLIM)(int        *ientat,
         cs_lnum_t face_id = bz->elt_ids[elt_id];
 
         /* zone number and nature of boundary */
-        izfppp[face_id] = zone_nbr;
+        bc_pm_info->izfppp[face_id] = zone_nbr;
         itypfb[face_id] = inlet_type;
       }
 
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
-        iprofm[zone_nbr-1] = boundaries->meteo[izone].read_data;
+         bc_pm_info->iprofm[zone_nbr] = boundaries->meteo[izone].read_data;
         if (boundaries->meteo[izone].automatic) {
           for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
             cs_lnum_t face_id = bz->elt_ids[elt_id];
-            iautom[face_id] = 1;
+             bc_pm_info->iautom[face_id] = 1;
           }
         }
       }
@@ -3104,8 +3094,8 @@ void CS_PROCF (uiclim, UICLIM)(int        *ientat,
         const cs_combustion_model_t *cm = cs_glob_combustion_model;
 
         bft_printf("-----ientat=%i, ientcp=%i, timpat=%12.5e \n",
-                   ientat[zone_nbr-1],
-                   ientcp[zone_nbr-1],
+                   bc_pm_info->ientat[zone_nbr],
+                   bc_pm_info->ientcp[zone_nbr],
                    bc_pm_info->timpat[zone_nbr]);
 
         for (int icharb = 0; icharb < cm->coal.n_coals; icharb++) {
@@ -3122,10 +3112,12 @@ void CS_PROCF (uiclim, UICLIM)(int        *ientat,
       }
       else if (gas_combustion) {
         bft_printf("-----iqimp=%i \n",
-                   boundaries->iqimp[zone_nbr-1]);
+                   bc_pm_info->iqimp[zone_nbr]);
         bft_printf("-----ientox=%i, ientfu=%i, ientgf=%i, ientgb=%i \n",
-                   ientox[zone_nbr-1], ientfu[zone_nbr-1],
-                   ientgf[zone_nbr-1], ientgb[zone_nbr-1]);
+                   bc_pm_info->ientox[zone_nbr],
+                   bc_pm_info->ientfu[zone_nbr],
+                   bc_pm_info->ientgf[zone_nbr],
+                   bc_pm_info->ientgb[zone_nbr]);
       }
       else if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
         if (boundaries->itype[izone] == CS_ESICF) {
@@ -3141,13 +3133,14 @@ void CS_PROCF (uiclim, UICLIM)(int        *ientat,
       }
       else {
         bft_printf("-----iqimp=%i, qimp=%12.5e \n",
-                   boundaries->iqimp[zone_nbr-1],
-                   boundaries->qimp[zone_nbr-1]);
+                   bc_pm_info->iqimp[zone_nbr],
+                   bc_pm_info->qimp[zone_nbr]);
       }
 
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
         bft_printf("-----iprofm=%i, automatic=%i \n",
-                   iprofm[zone_nbr-1], boundaries->meteo[izone].automatic);
+                   bc_pm_info->iprofm[zone_nbr],
+                   boundaries->meteo[izone].automatic);
       }
 #endif
 
@@ -3178,7 +3171,7 @@ void CS_PROCF (uiclim, UICLIM)(int        *ientat,
 
       for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
         cs_lnum_t face_id = bz->elt_ids[elt_id];
-        izfppp[face_id] = zone_nbr;
+        bc_pm_info->izfppp[face_id] = zone_nbr;
         itypfb[face_id] = iwall;
       }
     }
@@ -3186,7 +3179,7 @@ void CS_PROCF (uiclim, UICLIM)(int        *ientat,
     else if (cs_gui_strcmp(boundaries->nature[izone], "outlet")) {
       for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
         cs_lnum_t face_id = bz->elt_ids[elt_id];
-        izfppp[face_id] = zone_nbr;
+        bc_pm_info->izfppp[face_id] = zone_nbr;
         if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1)
           itypfb[face_id] = boundaries->itype[izone];
         else
@@ -3194,11 +3187,11 @@ void CS_PROCF (uiclim, UICLIM)(int        *ientat,
       }
 
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
-        iprofm[zone_nbr-1] = boundaries->meteo[izone].read_data;
+         bc_pm_info->iprofm[zone_nbr] = boundaries->meteo[izone].read_data;
         if (boundaries->meteo[izone].automatic) {
           for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
             cs_lnum_t face_id = bz->elt_ids[elt_id];
-            iautom[face_id] = 1;
+             bc_pm_info->iautom[face_id] = 1;
           }
         }
       }
@@ -3207,7 +3200,7 @@ void CS_PROCF (uiclim, UICLIM)(int        *ientat,
     else if (cs_gui_strcmp(boundaries->nature[izone], "imposed_p_outlet")) {
       for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
         cs_lnum_t face_id = bz->elt_ids[elt_id];
-        izfppp[face_id] = zone_nbr;
+        bc_pm_info->izfppp[face_id] = zone_nbr;
         itypfb[face_id] = CS_OUTLET;
       }
     }
@@ -3215,7 +3208,7 @@ void CS_PROCF (uiclim, UICLIM)(int        *ientat,
     else if (cs_gui_strcmp(boundaries->nature[izone], "symmetry")) {
       for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
         cs_lnum_t face_id = bz->elt_ids[elt_id];
-        izfppp[face_id] = zone_nbr;
+        bc_pm_info->izfppp[face_id] = zone_nbr;
         itypfb[face_id] = CS_SYMMETRY;
       }
     }
@@ -3223,7 +3216,7 @@ void CS_PROCF (uiclim, UICLIM)(int        *ientat,
     else if (cs_gui_strcmp(boundaries->nature[izone], "free_inlet_outlet")) {
       for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
         cs_lnum_t face_id = bz->elt_ids[elt_id];
-        izfppp[face_id] = zone_nbr;
+        bc_pm_info->izfppp[face_id] = zone_nbr;
         itypfb[face_id] = CS_FREE_INLET;
       }
 
@@ -3252,7 +3245,7 @@ void CS_PROCF (uiclim, UICLIM)(int        *ientat,
     else if (cs_gui_strcmp(boundaries->nature[izone], "free_surface")) {
       for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
         cs_lnum_t face_id = bz->elt_ids[elt_id];
-        izfppp[face_id] = zone_nbr;
+        bc_pm_info->izfppp[face_id] = zone_nbr;
         itypfb[face_id] = CS_FREE_SURFACE;
       }
     }
@@ -3260,7 +3253,7 @@ void CS_PROCF (uiclim, UICLIM)(int        *ientat,
     else if (cs_gui_strcmp(boundaries->nature[izone], "groundwater")) {
       for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
         cs_lnum_t face_id = bz->elt_ids[elt_id];
-        izfppp[face_id] = zone_nbr;
+        bc_pm_info->izfppp[face_id] = zone_nbr;
         itypfb[face_id] = CS_INDEF;
       }
 
@@ -3286,7 +3279,7 @@ void CS_PROCF (uiclim, UICLIM)(int        *ientat,
     else if (cs_gui_strcmp(boundaries->nature[izone], "undefined")) {
       for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
         cs_lnum_t face_id = bz->elt_ids[elt_id];
-        izfppp[face_id] = zone_nbr;
+        bc_pm_info->izfppp[face_id] = zone_nbr;
         itypfb[face_id] = CS_INDEF;
       }
 
@@ -3362,7 +3355,9 @@ void CS_PROCF (uiclim, UICLIM)(int        *ientat,
  * *****************
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclve, UICLVE)(void)
+//void CS_PROCF (uiclve, UICLVE)(void)
+void
+cs_gui_boundary_conditions_verify(void)
 {
   int inature = -1;
 
@@ -3386,7 +3381,7 @@ void CS_PROCF (uiclve, UICLVE)(void)
       inature = CS_FREE_INLET;
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "free_surface")
-        && (cs_glob_ale != 0)) {
+             && cs_glob_ale != CS_ALE_NONE) {
       inature = CS_FREE_SURFACE;
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "undefined")) {

@@ -179,10 +179,6 @@ module ppcpfu
 
   real(c_double), pointer, save :: oxyo2(:), oxyn2(:), oxyh2o(:), oxyco2(:)
 
-  !--> Conditions aux limites
-
-  integer, save :: inmoxy(nozppm)
-
   ! The gas enthalpy is transported (x1 h1 to be correct)
   integer, save :: ihgas = -1
 

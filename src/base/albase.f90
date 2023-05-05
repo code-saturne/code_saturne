@@ -58,48 +58,17 @@ module albase
   bind(C, name='cs_glob_ale_need_init') :: italin
 
   !> indicator of imposed displacement
-  integer, allocatable, dimension(:) :: impale
+  integer(c_int), pointer :: impale(:)
   !> defines the mesh velocity from the color of the boundary faces,
   !> or more generally from their properties (colors, groups, ...),
   !> from the boundary conditions defined in cs user boundary conditions,
   !> or even from their coordinates.
-  integer, allocatable, dimension(:) :: ialtyb
+  integer(c_int), pointer :: ialtyb(:)
   !> Pointer to field over vertices: mesh displacement
   integer, save :: fdiale
   !> \}
 
 contains
-
-  !=============================================================================
-
-  subroutine init_ale(nfabor, nnod)
-
-    use cplsat
-    use optcal
-
-    ! Arguments
-
-    integer, intent(in) :: nfabor, nnod
-
-    if (iale.ge.1) then
-      allocate(impale(nnod))
-      allocate(ialtyb(nfabor))
-    endif
-
-  end subroutine init_ale
-
-  !=============================================================================
-
-  subroutine finalize_ale
-
-    use cplsat
-
-    if (iale.ge.1) then
-      deallocate(impale)
-      deallocate(ialtyb)
-    endif
-
-  end subroutine finalize_ale
 
   !=============================================================================
 
@@ -129,6 +98,40 @@ contains
     call c_f_pointer(c_iale, iale)
 
   end subroutine map_ale
+
+  !=============================================================================
+
+  !> \brief Map Fortran ALE boundary conditions info.
+
+  subroutine ale_models_bc_maps
+
+    use, intrinsic :: iso_c_binding
+    use mesh, only:nfabor, nnod
+
+    implicit none
+
+    interface
+
+      subroutine cs_f_ale_bc_get_pointers(p_impale, p_ale_bc_type) &
+        bind(C, name='cs_f_ale_bc_get_pointers')
+        use, intrinsic :: iso_c_binding
+        implicit none
+        type(c_ptr), intent(out) :: p_impale, p_ale_bc_type
+      end subroutine cs_f_ale_bc_get_pointers
+
+    end interface
+
+    ! Arguments
+
+    ! Local variables
+    type(c_ptr) :: p_impale, p_ale_bc_type
+
+    call cs_f_ale_bc_get_pointers(p_impale, p_ale_bc_type)
+
+    call c_f_pointer(p_impale, impale, [nnod])
+    call c_f_pointer(p_ale_bc_type, ialtyb, [nfabor])
+
+  end subroutine ale_models_bc_maps
 
   !=============================================================================
 

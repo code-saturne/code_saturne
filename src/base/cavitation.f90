@@ -201,7 +201,7 @@ contains
 
     ! Arguments
 
-    double precision pressure(ncelet), voidf(ncelet)
+    real(c_double) pressure(ncelet), voidf(ncelet)
 
     ! Local variables
 

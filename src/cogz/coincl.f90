@@ -80,7 +80,7 @@ module coincl
   integer    nmaxf, nmaxfm, nmaxh, nmaxhm
   parameter( nmaxfm = 15 , nmaxhm = 15)
 
-  integer, save ::         ientox(nozppm), ientfu(nozppm)
+  integer(c_int), pointer, save :: ientox(:), ientfu(:)
 
   double precision, save :: tinoxy, tinfue, hstoea
   double precision, save :: hh(nmaxhm), ff(nmaxfm), tfh(nmaxfm,nmaxhm)
@@ -153,9 +153,10 @@ module coincl
   !                        pour premelange frais et dilution
   !       TGBAD        --> Temperature adiabatique gaz brules en K
 
-  integer, save ::          ientgf(nozppm), ientgb(nozppm)
-  real(c_double), pointer, save :: qimp(:)
-  double precision, save :: fment(nozppm), tkent(nozppm)
+  !integer, save ::          ientgf(nozppm), ientgb(nozppm)
+  integer(c_int), pointer, save :: ientgf(:), ientgb(:)
+  real(c_double), pointer, save :: qimp(:), fment(:), tkent(:)
+  !double precision, save :: fment(nozppm), tkent(nozppm)
   double precision, save :: frmel, tgf, cebu, hgf, tgbad
 
   !--> MODELE DE FLAMME DE PREMELANGE LWC
@@ -219,11 +220,15 @@ module coincl
 
     ! Interface to C function retrieving BC zone array pointers
 
-    subroutine cs_f_boundary_conditions_get_coincl_pointers(p_qimp)   &
+    subroutine cs_f_boundary_conditions_get_coincl_pointers(p_ientfu, p_ientox, &
+                                                            p_ientgb, p_ientgf, &
+                                                            p_tkent,  p_fment,  &
+                                                            p_qimp) &
       bind(C, name='cs_f_boundary_conditions_get_coincl_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_qimp
+      type(c_ptr), intent(out) :: p_ientfu, p_ientox, p_ientgb, p_ientgf
+      type(c_ptr), intent(out) :: p_tkent,  p_fment, p_qimp
     end subroutine cs_f_boundary_conditions_get_coincl_pointers
 
     !---------------------------------------------------------------------------
@@ -276,11 +281,20 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: p_qimp
+    type(c_ptr) :: p_ientfu, p_ientox, p_ientgb, p_ientgf
+    type(c_ptr) :: p_tkent,  p_fment,  p_qimp
 
-    call cs_f_boundary_conditions_get_coincl_pointers(p_qimp)
-
-    call c_f_pointer(p_qimp, qimp, [nozppm])
+    call cs_f_boundary_conditions_get_coincl_pointers(p_ientfu, p_ientox, &
+                                                      p_ientgb, p_ientgf, &
+                                                      p_tkent,  p_fment,  &
+                                                      p_qimp)
+    call c_f_pointer(p_ientfu, ientfu, [nozppm])
+    call c_f_pointer(p_ientox, ientox, [nozppm])
+    call c_f_pointer(p_ientgb, ientgb, [nozppm])
+    call c_f_pointer(p_ientgf, ientgf, [nozppm])
+    call c_f_pointer(p_tkent,  tkent,  [nozppm])
+    call c_f_pointer(p_fment,  fment,  [nozppm])
+    call c_f_pointer(p_qimp,   qimp,   [nozppm])
 
   end subroutine co_models_bc_map
 

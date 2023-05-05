@@ -316,14 +316,19 @@ xh2o = zero
 
 ! ---> Modele de flamme de diffusion (chimie 3 points)
 
+!if (     ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0          &
+! .or. ippmod(icoebu).ge.0 .or. ippmod(icolwc).ge.0) then
+!  call co_models_bc_map !necessaire pour mapper ientox et ientfu en C mais il faut call cs_boundary_conditions_create en amont qui alloue ces tabs, or il est appelé après cette routine. Ainsi je commente l'init de ientox sachant qu'il est déja initialisé en C dans cs_bc_create
+  !endif
+
 nmaxh = 0
 nmaxf = 0
 tinoxy = zero
 tinfue = zero
-do izone = 1, nozppm
-  ientox(izone) = 0
-  ientfu(izone) = 0
-enddo
+!do izone = 1, nozppm
+!  ientox(izone) = 0
+!  ientfu(izone) = 0
+!enddo
 hinfue = -grand
 hinoxy = -grand
 hstoea = -grand
@@ -377,12 +382,12 @@ ta    = zero
 tstar = zero
 frmel = zero
 tgf   = 300.d0
-do izone = 1, nozppm
-  ientgf(izone) = 0
-  ientgb(izone) = 0
-  fment(izone)  = zero
-  tkent(izone)  = zero
-enddo
+!do izone = 1, nozppm
+!  ientgf(izone) = 0
+!  ientgb(izone) = 0
+!  fment(izone)  = zero
+!  tkent(izone)  = zero
+!enddo
 hgf   = zero
 tgbad = zero
 
@@ -590,8 +595,8 @@ enddo
 !      d'entree
 
 do izone = 1, nozppm
-  ientat(izone) = 0
-  ientcp(izone) = 0
+  !ientat(izone) = 0
+  !ientcp(izone) = 0
   do icla = 1, nclcpm
     x20(icla,izone) = zero
   enddo
@@ -664,7 +669,7 @@ b  = zero
 !      d'entree
 
 do izone = 1, nozppm
-  ientat(izone)  = 0
+  !ientat(izone)  = 0
   ientfl(izone) = 0
   timpfl(izone) = zero
 enddo
@@ -742,9 +747,9 @@ theo_interp = 0
 
 !--> Initialisation for the meteo profile
 
-do izone = 1, nozppm
-  iprofm(izone) = 0
-enddo
+!do izone = 1, nozppm
+!  iprofm(izone) = 0
+!enddo
 
 ! --> Initialisation for the chemistry models:
 

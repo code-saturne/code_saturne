@@ -116,32 +116,32 @@ implicit none
 
 ! Arguments
 
-integer, intent(in) :: ncel2, ncele2, nfac2, nfabo2, nsom2
-integer, intent(in) :: lndfa2, lndfb2
+integer(c_int), intent(in) :: ncel2, ncele2, nfac2, nfabo2, nsom2
+integer(c_int), intent(in) :: lndfa2, lndfb2
 integer(kind=8), intent(in) :: ncelg2, nfacg2 , nfbrg2, nsomg2
 
-integer, dimension(2,nfac2), target :: iface2
-integer, dimension(ncele2), target :: ifmce2
-integer, dimension(nfabo2), target :: ifabo2, ifmfb2
-integer, dimension(nfac2+1), target :: ipnfa2
-integer, dimension(lndfa2), target :: nodfa2
-integer, dimension(nfabo2+1), target :: ipnfb2
-integer, dimension(lndfb2), target :: nodfb2
-integer, dimension(nfabo2), target :: isymp2
-integer, dimension(*), target :: isoli2
+integer(c_int), dimension(2,nfac2), target :: iface2
+integer(c_int), dimension(ncele2), target :: ifmce2
+integer(c_int), dimension(nfabo2), target :: ifabo2, ifmfb2
+integer(c_int), dimension(nfac2+1), target :: ipnfa2
+integer(c_int), dimension(lndfa2), target :: nodfa2
+integer(c_int), dimension(nfabo2+1), target :: ipnfb2
+integer(c_int), dimension(lndfb2), target :: nodfb2
+integer(c_int), dimension(nfabo2), target :: isymp2
+integer(c_int), dimension(*), target :: isoli2
 
-double precision :: volmn2, volmx2, voltt2
+real(c_double) :: volmn2, volmx2, voltt2
 
-double precision, dimension(3,ncele2), target :: xyzce2
-double precision, dimension(3,nfac2), target :: surfa2, cdgfa2, dijpf2, dofij2
-double precision, dimension(3,nfac2), target :: suffa2
-double precision, dimension(3,nfabo2), target :: surfb2, cdgfb2, diipb2
-double precision, dimension(3,nfabo2), target :: suffb2
-double precision, dimension(3,nsom2), target :: xyzno2
-double precision, dimension(ncele2), target :: volum2
-double precision, dimension(ncele2), target :: volf2
-double precision, dimension(nfac2), target :: srfan2, sffan2, dist2, pond2
-double precision, dimension(nfabo2), target :: srfbn2, sffbn2, distb2
+real(c_double), dimension(3,ncele2), target :: xyzce2
+real(c_double), dimension(3,nfac2), target :: surfa2, cdgfa2, dijpf2, dofij2
+real(c_double), dimension(3,nfac2), target :: suffa2
+real(c_double), dimension(3,nfabo2), target :: surfb2, cdgfb2, diipb2
+real(c_double), dimension(3,nfabo2), target :: suffb2
+real(c_double), dimension(3,nsom2), target :: xyzno2
+real(c_double), dimension(ncele2), target :: volum2
+real(c_double), dimension(ncele2), target :: volf2
+real(c_double), dimension(nfac2), target :: srfan2, sffan2, dist2, pond2
+real(c_double), dimension(nfabo2), target :: srfbn2, sffbn2, distb2
 
 ! Local variables
 

@@ -81,9 +81,9 @@ void CS_PROCF (uialin, UIALIN) (int    *nalinf,
  *   disale       --> See uialcl_fixed_displacement
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uialcl, UIALCL) (int         *const  ialtyb,
-                                int         *const  impale,
-                                cs_real_3_t        *disale);
+void cs_gui_mobile_mesh_boundary_conditions(int         *const  ialtyb,
+                                            int         *const  impale,
+                                            cs_real_3_t        *disale);
 
 
 /*-----------------------------------------------------------------------------

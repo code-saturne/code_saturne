@@ -60,6 +60,8 @@ subroutine predfl(dt)  &
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
+
 use paramx
 use numvar
 use entsor
@@ -81,7 +83,7 @@ implicit none
 
 ! Arguments
 
-double precision dt(ncelet)
+real(c_double) :: dt(ncelet)
 
 ! Local variables
 

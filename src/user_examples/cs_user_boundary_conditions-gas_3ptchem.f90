@@ -50,10 +50,7 @@
 !_______________________________________________________________________________
 
 subroutine cs_f_user_boundary_conditions &
- ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     ,                                                       &
-   rcodcl )
+ (itrifb, itypfb, izfppp, dt)
 
 !===============================================================================
 
@@ -78,6 +75,7 @@ use ppcpfu
 use cs_fuel_incl
 use mesh
 use field
+use dimens, only: nvar, nscal
 
 !===============================================================================
 
@@ -85,20 +83,19 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
-integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 
 double precision dt(ncelet)
-double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
 !< [loc_var_dec]
 integer          iel, ifac, izone, ii
 integer          ilelt, nlelt
+
+integer, pointer, dimension(:,:) :: icodcl
+double precision, pointer, dimension(:,:,:) :: rcodcl
 
 double precision uref2, d2s3
 double precision xkent, xeent
@@ -115,6 +112,8 @@ integer, allocatable, dimension(:) :: lstelt
 !===============================================================================
 
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
+
+call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
 
 d2s3 = 2.d0/3.d0
 

@@ -35,47 +35,16 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
 !> \param[in]     init          partial treatment (before time loop) if true
-!> \param[in,out] icodcl        face boundary condition code:
-!>                               - 1 Dirichlet
-!>                               - 2 Radiative outlet
-!>                               - 3 Neumann
-!>                               - 4 sliding and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 5 smooth wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 6 rough wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 9 free inlet/outlet
-!>                                 (input mass flux blocked to 0)
-!>                               - 13 Dirichlet for the advection operator and
-!>                                    Neumann for the diffusion operator
 !> \param[in,out] itypfb        boundary face types
 !> \param[in,out] izfppp        index of the zone for the boundary faces
 !>                               (for the specific physics)
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rcodcl        boundary condition values:
-!>                               - rcodcl(1) value of the dirichlet
-!>                               - rcodcl(2) value of the exterior exchange
-!>                                 coefficient (infinite if no exchange)
-!>                               - rcodcl(3) value flux density
-!>                                 (negative if gain) in w/m2 or roughness
-!>                                 in m if icodcl=6
-!>                                 -# for the velocity \f$ (\mu+\mu_T)
-!>                                    \gradv \vect{u} \cdot \vect{n}  \f$
-!>                                 -# for the pressure \f$ \Delta t
-!>                                    \grad P \cdot \vect{n}  \f$
-!>                                 -# for a scalar \f$ cp \left( K +
-!>                                     \dfrac{K_T}{\sigma_T} \right)
-!>                                     \grad T \cdot \vect{n} \f$
 !_______________________________________________________________________________
 
-subroutine pptycl &
- ( nvar   , init   ,                                              &
-   icodcl , itypfb , izfppp ,                                     &
-   dt     ,                                                       &
-   rcodcl )
+subroutine pptycl                 &
+ ( init , itypfb , izfppp , dt )  &
+ bind(C, name='cs_f_pptycl')
 
 !===============================================================================
 
@@ -101,6 +70,8 @@ use atincl
 use mesh
 use field
 use cs_c_bindings
+use cs_c_bindings
+use dimens, only: nvar
 
 !===============================================================================
 
@@ -108,19 +79,18 @@ implicit none
 
 ! Arguments
 
-integer          nvar
-logical          init
+logical(c_bool), value :: init
 
-integer          icodcl(nfabor,nvar)
-integer          itypfb(nfabor)
-integer          izfppp(nfabor)
+integer(c_int) ::  itypfb(nfabor)
+integer(c_int) ::  izfppp(nfabor)
 
-double precision dt(ncelet)
-double precision rcodcl(nfabor,nvar,3)
+real(c_double) :: dt(ncelet)
 
 ! Local variables
 
 integer          ifac, iok, ifvu, ii, izone, izonem
+integer, pointer, dimension(:,:) :: icodcl
+double precision, pointer, dimension(:,:,:) :: rcodcl
 
 !===============================================================================
 ! Interfaces
@@ -198,6 +168,8 @@ endif
 !    Computations should not be called under initialization for most
 !    models; those for which it should be called are tested first.
 !===============================================================================
+
+call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
 
 ! Atmospheric flows
 if (ippmod(iatmos).ge.0) then

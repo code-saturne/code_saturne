@@ -23,20 +23,18 @@
   You should have received a copy of the GNU General Public License along with
   this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
 
-*----------------------------------------------------------------------------*/
-
-#include "cs_defs.h"
+/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_defs.h"
 #include "cs_parameters.h"
 
 BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------*/
 
 /*=============================================================================
  * Public function prototypes
@@ -47,7 +45,6 @@ BEGIN_C_DECLS
  *
  * \brief This file gathers functions that solve advection diffusion equations
  * with source terms for one time step for a scalar, vector or tensor variable.
- *
  */
 /*----------------------------------------------------------------------------*/
 

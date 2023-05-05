@@ -50,19 +50,34 @@ BEGIN_C_DECLS
  * ALE type
  *----------------------------------------------------------------------------*/
 
-enum {
+/*! ALE computation type */
 
-  CS_ALE_NONE = 0,
-  CS_ALE_LEGACY = 1,
-  CS_ALE_CDO = 2
+typedef enum {
 
-};
+  CS_ALE_NONE = 0,    /*!< no ALE */
+  CS_ALE_LEGACY = 1,  /*!< Mesh deformation computed with legacy operators */
+  CS_ALE_CDO = 2      /*!< Mesh deformation computed with CDO */
+
+} cs_ale_type_t;
+
+/*! ALE data */
+
+typedef struct {
+
+  int          *impale;    /*!< 1st component of low-level BC */
+  int          *bc_type;   /*!< ALE BC type code */
+
+} cs_ale_data_t;
 
 /*=============================================================================
  * Global variables
  *============================================================================*/
 
-extern int cs_glob_ale;
+extern cs_ale_type_t  cs_glob_ale;
+
+extern cs_ale_data_t  *cs_glob_ale_data;
+
+/* defined in albase.f90 (bind(C, name='') :: ...) */
 
 extern int cs_glob_ale_n_ini_f; /*!< Number of sub-iterations for fluid
                                   flow initialization */
@@ -73,6 +88,22 @@ extern int cs_glob_ale_need_init; /*!< Indicate whether an iteration to
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocation of ialtyb and impale for the ALE structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_ale_allocate(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free ALE boundary condition mappings.
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_ale_free(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

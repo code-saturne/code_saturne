@@ -58,8 +58,8 @@ described here (please refer to the documentation from previous versions if need
 
 For more details about the treatment of boundary conditions, the user
 may refer to the theoretical and computer documentation [@theory] of the
-function `condli` (for wall conditions, see `clptur`) (to access this
-document on a workstation, use `code_saturne info –guide theory`).
+function `cs_boundary_condition_set_coeffs` (for wall conditions, see `clptur`)
+(to access this document on a workstation, use `code_saturne info –guide theory`).
 
 From the user point of view, the boundary conditions are fully defined
 by the arrays specifying the boundary type and conditions

@@ -21,9 +21,8 @@
 !-------------------------------------------------------------------------------
 
 subroutine mmtycl &
-!================
-
- ( itypfb , rcodcl )
+ ( itypfb )       &
+ bind(C, name='cs_f_mmtycl')
 
 !===============================================================================
 ! FONCTION :
@@ -38,17 +37,6 @@ subroutine mmtycl &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-! rcodcl           ! tr ! <-- ! valeur des conditions aux limites              !
-!                  !    !     !  aux faces de bord                             !
-!                  !    !     ! rcodcl(1) = valeur du dirichlet                !
-!                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
-!                  !    !     !  ext. (infinie si pas d'echange)               !
-!                  !    !     ! rcodcl(3) = valeur de la densite de            !
-!                  !    !     !  flux (negatif si gain) w/m2                   !
-!                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
-!                  !    !     ! pour la pression             dt*gradp          !
-!                  !    !     ! pour les scalaires                             !
-!                  !    !     !        cp*(viscls+visct/turb_schmidt)*gradt    !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -65,13 +53,15 @@ use paramx
 use numvar
 use optcal
 use cstnum
-use dimens, only: nvar
 use rotation
 use turbomachinery
 use entsor
 use parall
 use mesh
 use field
+use cs_c_bindings
+
+use, intrinsic :: iso_c_binding
 
 !===============================================================================
 
@@ -79,9 +69,7 @@ implicit none
 
 ! Arguments
 
-integer          itypfb(nfabor)
-
-double precision rcodcl(nfabor,nvar,3)
+integer(c_int) :: itypfb(nfabor)
 
 ! Local variables
 
@@ -94,6 +82,8 @@ double precision vr(3)
 double precision visclc, visctc, distbf, hint
 
 double precision, dimension(:), pointer :: viscl, visct
+integer, pointer, dimension(:,:) :: icodcl
+double precision, pointer, dimension(:,:,:) :: rcodcl
 
 !===============================================================================
 
@@ -104,6 +94,8 @@ double precision, dimension(:), pointer :: viscl, visct
 ! --- Physical quantities
 call field_get_val_s(iviscl, viscl)
 call field_get_val_s(ivisct, visct)
+
+call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
 
 !===============================================================================
 ! VITESSE DE DEFILEMENT POUR LES PAROIS FLUIDES ET SYMETRIES

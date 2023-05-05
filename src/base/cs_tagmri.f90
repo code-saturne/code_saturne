@@ -21,9 +21,6 @@
 !-------------------------------------------------------------------------------
 
 !===============================================================================
-! Function:
-! ---------
-
 !> \file cs_tagmri.f90
 !>
 !> \brief The 1D thermal model to compute the temperature to impose
@@ -32,47 +29,10 @@
 !>
 !> This subroutine is used to compute at each face the
 !> \f$ \mbox{tmur} \f$ at cold wall.
-!>
 !-------------------------------------------------------------------------------
 
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]     nfabor        number of boundary faces
-!> \param[in]     isvtb         scalar number coupled
-!> \param[in,out] icodcl        boundary condition code:
-!>                               - 1 Dirichlet
-!>                               - 2 Radiative outlet
-!>                               - 3 Neumann
-!>                               - 4 sliding and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 5 smooth wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 6 rough wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 9 free inlet/outlet
-!>                                 (input mass flux blocked to 0)
-!> \param[in,out] rcodcl        boundary condition values:
-!>                               - rcodcl(1) value of the dirichlet
-!>                               - rcodcl(2) value of the exterior exchange
-!>                                 coefficient (infinite if no exchange)
-!>                               - rcodcl(3) value flux density
-!>                                 (negative if gain) in w/m2 or roughness
-!>                                 in m if icodcl=6
-!>                                 -# for the velocity \f$ (\mu+\mu_T)
-!>                                    \gradt \, \vect{u} \cdot \vect{n}  \f$
-!>                                 -# for the pressure \f$ \Delta t
-!>                                    \grad P \cdot \vect{n}  \f$
-!>                                 -# for a scalar \f$ cp \left( K +
-!>                                     \dfrac{K_T}{\sigma_T} \right) \f$
-!_______________________________________________________________________________
-
-subroutine cs_tagmri &
- ( nfabor ,                                                       &
-   isvtb  , icodcl ,                                              &
-   rcodcl )
+subroutine cs_tagmri()  &
+  bind(C, name='cs_f_tagmri')
 
 !===============================================================================
 
@@ -85,13 +45,15 @@ use numvar
 use optcal
 use cstnum
 use cstphy
-use dimens, only: nvar
 use entsor
 use pointe
 use field
 use mesh, only:ifabor
 use cs_nz_condensation, only: nfbpcd, izzftcd, iztag1d, ztpar, ifbpcd
 use cs_nz_tagmr, only: ztmur
+use cs_c_bindings
+
+use, intrinsic :: iso_c_binding
 
 !===============================================================================
 
@@ -99,9 +61,6 @@ implicit none
 
 ! Arguments
 
-integer          nfabor
-integer          isvtb  , icodcl(nfabor,nvar)
-double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
@@ -113,14 +72,18 @@ double precision temper, enthal
 
 double precision, dimension(:), pointer :: cpro_cp
 
-!===============================================================================
+integer, pointer, dimension(:,:) :: icodcl
+double precision, pointer, dimension(:,:,:) :: rcodcl
 
+!===============================================================================
 
 ! Sans specification, une face couplee est une face de type paroi
 
 icldef = 5
 
-ivar = isca(isvtb)
+ivar = isca(iscalt)
+
+call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
 
 do ii = 1, nfbpcd
 
@@ -141,16 +104,16 @@ enddo
 
 ! Conversion eventuelle temperature -> enthalpie
 
-if (isvtb.eq.iscalt .and. itherm.eq.2) then
+if (itherm.eq.2) then
 
-! --- Specific heat
-if (icp.ge.0) then
-  call field_get_val_s(icp, cpro_cp)
-! --- Stop if Cp is not variable
-else
-  write(nfecra,1000) icp
-  call csexit (1)
-endif
+  ! --- Specific heat
+  if (icp.ge.0) then
+    call field_get_val_s(icp, cpro_cp)
+    ! --- Stop if Cp is not variable
+  else
+    write(nfecra,1000) icp
+    call csexit (1)
+  endif
 
   do ii = 1, nfbpcd
 

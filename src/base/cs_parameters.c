@@ -122,7 +122,8 @@ BEGIN_C_DECLS
         (reconstruction of wall temperature)
         - 1: true
         - 0: false (default)
-        (see \ref condli, useful in case of coupling with syrthes)
+        (see \ref cs_boundary_condition_set_coeffs,
+        useful in case of coupling with syrthes)
 */
 
 /*----------------------------------------------------------------------------*/

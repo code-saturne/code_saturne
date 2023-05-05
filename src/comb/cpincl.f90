@@ -244,7 +244,7 @@ real(c_double), pointer, save :: xashch(:)
   !    x20(icla, ient) : Fraction massique dans le melange de charbon
   !                      de la classe icla relative a l'entree ient
 
-  integer, save ::          ientat(nozppm), ientcp(nozppm)
+  integer(c_int), pointer, save :: ientat(:), ientcp(:)
   double precision, save :: x20(nclcpm,nozppm)
 
   !--> Pointeurs dans le tableau tbmcr
@@ -270,6 +270,10 @@ real(c_double), pointer, save :: xashch(:)
   real(c_double), pointer, save :: qimpat(:), timpat(:)
   real(c_double), pointer, save :: qimpcp(:,:), timpcp(:,:)
   real(c_double), pointer, save :: distch(:,:,:)
+
+   !--> Conditions aux limites
+
+  integer(c_int), pointer, save :: inmoxy(:)
 
   ! Complement Table
 
@@ -310,14 +314,15 @@ real(c_double), pointer, save :: xashch(:)
 
     ! Interface to C function retrieving BC zone array pointers
 
-    subroutine cs_f_boundary_conditions_get_cpincl_pointers(p_qimpat, p_timpat, &
+    subroutine cs_f_boundary_conditions_get_cpincl_pointers(p_ientat, p_ientcp, &
+                                                            p_qimpat, p_timpat, &
                                                             p_qimpcp, p_timpcp, &
-                                                            p_distch)           &
+                                                            p_distch, p_inmoxy) &
       bind(C, name='cs_f_boundary_conditions_get_cpincl_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_qimpat, p_timpat
-      type(c_ptr), intent(out) :: p_qimpcp, p_timpcp, p_distch
+      type(c_ptr), intent(out) :: p_qimpat, p_timpat, p_ientat, p_ientcp
+      type(c_ptr), intent(out) :: p_qimpcp, p_timpcp, p_distch, p_inmoxy
     end subroutine cs_f_boundary_conditions_get_cpincl_pointers
 
     !---------------------------------------------------------------------------
@@ -391,13 +396,17 @@ contains
     ! Local variables
 
     type(c_ptr) :: p_qimpat, p_timpat, p_qimpcp, p_timpcp, p_distch
+    type(c_ptr) :: p_ientat, p_ientcp, p_inmoxy
 
-    call cs_f_boundary_conditions_get_cpincl_pointers(p_qimpat, p_timpat,  &
-                                                      p_qimpcp, p_timpcp,  &
-                                                      p_distch)
+    call cs_f_boundary_conditions_get_cpincl_pointers(p_ientat, p_ientcp, &
+                                                      p_qimpat, p_timpat, &
+                                                      p_qimpcp, p_timpcp, &
+                                                      p_distch, p_inmoxy)
 
+    call c_f_pointer(p_inmoxy, inmoxy, [nozppm])
+    call c_f_pointer(p_ientat, ientat, [nozppm])
+    call c_f_pointer(p_ientcp, ientcp, [nozppm])
     call c_f_pointer(p_qimpat, qimpat, [nozppm])
-
     call c_f_pointer(p_timpat, timpat, [nozppm])
     call c_f_pointer(p_qimpcp, qimpcp, [ncharm, nozppm])
     call c_f_pointer(p_timpcp, timpcp, [ncharm, nozppm])

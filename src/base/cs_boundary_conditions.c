@@ -51,6 +51,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_ale.h"
 #include "cs_base.h"
 #include "cs_boundary.h"
 #include "cs_coupling.h"
@@ -139,6 +140,12 @@ cs_boundary_condition_pm_info_t  *cs_glob_bc_pm_info = NULL;
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
+int *
+cs_f_boundary_conditions_get_bc_type(void)
+{
+  return _bc_type;
+}
+
 void
 cs_f_boundary_conditions_mapped_set(int                        field_id,
                                     ple_locator_t             *locator,
@@ -153,7 +160,8 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
 
 void
 cs_f_boundary_conditions_get_pointers(int  **itypfb,
-                                      int  **izfppp);
+                                      int  **izfppp,
+                                      int  **itrifb);
 
 void
 cs_f_boundary_conditions_get_ppincl_pointers(int     **iqimp,
@@ -162,14 +170,27 @@ cs_f_boundary_conditions_get_ppincl_pointers(int     **iqimp,
                                              double  **dh);
 
 void
-cs_f_boundary_conditions_get_coincl_pointers(double  **qimp);
+cs_f_boundary_conditions_get_coincl_pointers(int     **ientfu,
+                                             int     **ientox,
+                                             int     **ientgb,
+                                             int     **ientgf,
+                                             double  **tkent,
+                                             double  **fment,
+                                             double  **qimp);
 
 void
-cs_f_boundary_conditions_get_cpincl_pointers(cs_real_t       **qimpat,
+cs_f_boundary_conditions_get_cpincl_pointers(int             **ientat,
+                                             int             **ientcp,
+                                             cs_real_t       **qimpat,
                                              cs_real_t       **timpat,
                                              cs_real_5_t     **qimpcp,
                                              cs_real_5_t     **timpcp,
-                                             cs_real_5_20_t  **distch);
+                                             cs_real_5_20_t  **distch,
+                                             int             **inmoxy);
+
+void
+cs_f_boundary_conditions_get_atincl_pointers(int **iprofm,
+                                             int **iautom);
 
 /*============================================================================
  * Private function definitions
@@ -798,11 +819,14 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
 
 void
 cs_f_boundary_conditions_get_pointers(int **itypfb,
-                                      int **izfppp)
+                                      int **izfppp,
+                                      int **itrifb)
 {
   *itypfb = _bc_type;
 
   *izfppp = cs_glob_bc_pm_info->izfppp;
+
+  *itrifb = cs_glob_bc_pm_info->itrifb;
 }
 
 void
@@ -813,26 +837,41 @@ cs_f_boundary_conditions_get_ppincl_pointers(int     **iqimp,
 {
   /* Shift by 1 to compensate for Fortran 1-based access */
 
-  *iqimp = cs_glob_bc_pm_info->iqimp + 1;
+  *iqimp  = cs_glob_bc_pm_info->iqimp  + 1;
   *icalke = cs_glob_bc_pm_info->icalke + 1;
   *xintur = cs_glob_bc_pm_info->xintur + 1;
-  *dh = cs_glob_bc_pm_info->dh + 1;
+  *dh     = cs_glob_bc_pm_info->dh     + 1;
 }
 
 void
-cs_f_boundary_conditions_get_coincl_pointers(double  **qimp)
+cs_f_boundary_conditions_get_coincl_pointers(int     **ientfu,
+                                             int     **ientox,
+                                             int     **ientgb,
+                                             int     **ientgf,
+                                             double  **tkent,
+                                             double  **fment,
+                                             double  **qimp)
 {
   /* Shift 1d-arrays by 1 to compensate for Fortran 1-based access */
 
-  *qimp = cs_glob_bc_pm_info->qimp + 1;
+  *ientfu = cs_glob_bc_pm_info->ientfu + 1;
+  *ientox = cs_glob_bc_pm_info->ientox + 1;
+  *ientgb = cs_glob_bc_pm_info->ientgb + 1;
+  *ientgf = cs_glob_bc_pm_info->ientgf + 1;
+  *tkent  = cs_glob_bc_pm_info->tkent  + 1;
+  *fment  = cs_glob_bc_pm_info->fment  + 1;
+  *qimp   = cs_glob_bc_pm_info->qimp   + 1;
 }
 
 void
-cs_f_boundary_conditions_get_cpincl_pointers(cs_real_t       **qimpat,
+cs_f_boundary_conditions_get_cpincl_pointers(int             **ientat,
+                                             int             **ientcp,
+                                             cs_real_t       **qimpat,
                                              cs_real_t       **timpat,
                                              cs_real_5_t     **qimpcp,
                                              cs_real_5_t     **timpcp,
-                                             cs_real_5_20_t  **distch)
+                                             cs_real_5_20_t  **distch,
+                                             int             **inmoxy)
 {
   /* Shift 1d-arrays by 1 to compensate for Fortran 1-based access */
 
@@ -841,17 +880,37 @@ cs_f_boundary_conditions_get_cpincl_pointers(cs_real_t       **qimpat,
   if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
       || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1
       || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] > -1) {
+    *inmoxy = cs_glob_bc_pm_info->inmoxy + 1;
+    *ientat = cs_glob_bc_pm_info->ientat + 1;
+    *ientcp = cs_glob_bc_pm_info->ientcp + 1;
     *timpat = cs_glob_bc_pm_info->timpat + 1;
     *qimpcp = cs_glob_bc_pm_info->qimpcp + 1;
     *timpcp = cs_glob_bc_pm_info->timpcp + 1;
     *distch = cs_glob_bc_pm_info->distch + 1;
   }
   else {
+    *inmoxy = NULL;
+    *ientat = NULL;
+    *ientcp = NULL;
     *timpat = NULL;
     *qimpcp = NULL;
     *timpcp = NULL;
     *distch = NULL;
   }
+}
+
+void
+cs_f_boundary_conditions_get_atincl_pointers(int **iprofm,
+                                             int **iautom)
+{
+  /* Shift 1d-arrays by 1 to compensate for Fortran 1-based access */
+
+  *iprofm = cs_glob_bc_pm_info->iprofm + 1;
+
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1)
+    *iautom = cs_glob_bc_pm_info->iautom;
+  else
+    *iautom = NULL;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1334,7 +1393,7 @@ cs_boundary_conditions_create(void)
   /* boundary conditions type by boundary face */
 
   BFT_MALLOC(_bc_type, n_b_faces, int);
-  for (cs_lnum_t ii = 0 ; ii < n_b_faces ; ii++) {
+  for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
     _bc_type[ii] = default_type;
   }
   cs_glob_bc_type = _bc_type;
@@ -1344,35 +1403,66 @@ cs_boundary_conditions_create(void)
 
   BFT_MALLOC(cs_glob_bc_pm_info, 1, cs_boundary_condition_pm_info_t);
   BFT_MALLOC(cs_glob_bc_pm_info->izfppp, n_b_faces, int);
-  int *izfppp = cs_glob_bc_pm_info->izfppp;
-  for (cs_lnum_t ii = 0 ; ii < n_b_faces ; ii++) {
-    izfppp[ii] = 0;
+  BFT_MALLOC(cs_glob_bc_pm_info->itrifb, n_b_faces, int);
+  for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
+    cs_glob_bc_pm_info->izfppp[ii] = 0;
+    cs_glob_bc_pm_info->itrifb[ii] = 0;
   }
 
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
   for (int i = 0; i < CS_MAX_BC_PM_ZONE_NUM+1; i++) {
-    bc_pm_info->iqimp[i] = 0;
+    bc_pm_info->iqimp[i]  = 0;
     bc_pm_info->icalke[i] = 0;
-    bc_pm_info->qimp[i] = 0;
-    bc_pm_info->dh[i] = 0;
-    bc_pm_info->xintur[i] = 0;
+    bc_pm_info->qimp[i]   = 0.;
+    bc_pm_info->dh[i]     = 0.;
+    bc_pm_info->xintur[i] = 0.;
+
+    //gas combustion
+    bc_pm_info->ientfu[i] = 0;
+    bc_pm_info->ientox[i] = 0;
+    bc_pm_info->ientgb[i] = 0;
+    bc_pm_info->ientgf[i] = 0;
+    bc_pm_info->tkent[i]  = 0.;
+    bc_pm_info->fment[i]  = 0.;
+
+    //atmo
+    bc_pm_info->iprofm[i] = 0;
   }
 
+  bc_pm_info->inmoxy = NULL;
+  bc_pm_info->ientat = NULL;
+  bc_pm_info->ientcp = NULL;
   bc_pm_info->timpat = NULL;
   bc_pm_info->qimpcp = NULL;
   bc_pm_info->timpcp = NULL;
   bc_pm_info->distch = NULL;
+  bc_pm_info->iautom = NULL;
+
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
+    BFT_MALLOC(bc_pm_info->iautom, n_b_faces, int);
+    for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
+      bc_pm_info->iautom[ii] = 0;
+    }
+  }
 
   /* Arrays present only for coal combustion */
 
   if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
       || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1
       || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] > -1) {
+
+    BFT_REALLOC(bc_pm_info->inmoxy, CS_MAX_BC_PM_ZONE_NUM+1, cs_lnum_t);
+    BFT_REALLOC(bc_pm_info->ientat, CS_MAX_BC_PM_ZONE_NUM+1, cs_lnum_t);
+    BFT_REALLOC(bc_pm_info->ientcp, CS_MAX_BC_PM_ZONE_NUM+1, cs_lnum_t);
     BFT_REALLOC(bc_pm_info->timpat, CS_MAX_BC_PM_ZONE_NUM+1, cs_real_t);
     BFT_REALLOC(bc_pm_info->qimpcp, CS_MAX_BC_PM_ZONE_NUM+1, cs_real_5_t);
     BFT_REALLOC(bc_pm_info->timpcp, CS_MAX_BC_PM_ZONE_NUM+1, cs_real_5_t);
     BFT_REALLOC(bc_pm_info->distch, CS_MAX_BC_PM_ZONE_NUM+1, cs_real_5_20_t);
+
     for (int i = 0; i < CS_MAX_BC_PM_ZONE_NUM+1; i++) {
+      bc_pm_info->inmoxy[i] = 0;
+      bc_pm_info->ientat[i] = 0;
+      bc_pm_info->ientcp[i] = 0;
       bc_pm_info->timpat[i] = 0;
       for (int j = 0; j < 5; j++) {
         bc_pm_info->qimpcp[i][j] = 0;
@@ -1404,11 +1494,24 @@ cs_boundary_conditions_free(void)
   BFT_FREE(_bc_maps);
   _n_bc_maps = 0;
 
-  BFT_FREE(cs_glob_bc_pm_info->timpat);
-  BFT_FREE(cs_glob_bc_pm_info->qimpcp);
-  BFT_FREE(cs_glob_bc_pm_info->timpcp);
-  BFT_FREE(cs_glob_bc_pm_info->distch);
+  if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
+      || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1
+      || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] > -1) {
+
+    BFT_FREE(cs_glob_bc_pm_info->inmoxy);
+    BFT_FREE(cs_glob_bc_pm_info->ientat);
+    BFT_FREE(cs_glob_bc_pm_info->ientcp);
+    BFT_FREE(cs_glob_bc_pm_info->timpat);
+    BFT_FREE(cs_glob_bc_pm_info->qimpcp);
+    BFT_FREE(cs_glob_bc_pm_info->timpcp);
+    BFT_FREE(cs_glob_bc_pm_info->distch);
+  }
+
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1)
+    BFT_FREE(cs_glob_bc_pm_info->iautom);
+
   BFT_FREE(cs_glob_bc_pm_info->izfppp);
+  BFT_FREE(cs_glob_bc_pm_info->itrifb);
   BFT_FREE(cs_glob_bc_pm_info);
 }
 
@@ -1484,6 +1587,13 @@ cs_boundary_conditions_reset(void)
 
     }
 
+  }
+
+  if (cs_glob_ale > CS_ALE_NONE) {
+    int *ale_bc_type = cs_glob_ale_data->bc_type;
+
+    for (cs_lnum_t i = 0; i < n_b_faces; i++)
+      ale_bc_type[i] = 0;
   }
 }
 

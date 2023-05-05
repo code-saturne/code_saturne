@@ -68,15 +68,14 @@ use turbomachinery
 use cs_c_bindings
 use cs_f_interfaces
 use cdomod
+use cs_nz_condensation
+use cs_nz_tagmr
 
 use ppincl, only: pp_models_bc_map
 use coincl, only: co_models_bc_map
 use cpincl, only: cp_models_bc_map
 
 use, intrinsic :: iso_c_binding
-
-use cs_nz_condensation
-use cs_nz_tagmr
 
 !===============================================================================
 
@@ -109,6 +108,7 @@ double precision, pointer, dimension(:,:) :: disale => null()
 double precision, dimension(:,:), pointer :: xyzno0 => null()
 
 integer, allocatable, dimension(:) :: isostd
+
 integer, pointer, dimension(:,:) :: icodcl
 double precision, pointer, dimension(:,:,:) :: rcodcl
 
@@ -118,20 +118,15 @@ double precision, pointer, dimension(:,:,:) :: rcodcl
 
 interface
 
-  subroutine condli_ini(nvar, nscal, itrale, icodcl, isostd, dt, rcodcl)
+  !=============================================================================
 
-    use mesh, only: nfac, nfabor
-
+  subroutine cs_boundary_conditions_set_coeffs_init(itrale, isostd) &
+    bind(C, name='cs_boundary_conditions_set_coeffs_init')
+    use, intrinsic :: iso_c_binding
     implicit none
-
-    integer          nvar, nscal, itrale
-
-    integer, pointer, dimension(:,:) :: icodcl
-    integer, dimension(nfabor+1) :: isostd
-    double precision, pointer, dimension(:) :: dt
-    double precision, pointer, dimension(:,:,:) :: rcodcl
-
-  end subroutine condli_ini
+    integer(kind=c_int), value :: itrale
+    integer(kind=c_int), dimension(*), intent(inout) :: isostd
+  end subroutine cs_boundary_conditions_set_coeffs_init
 
   !=============================================================================
 
@@ -419,7 +414,6 @@ call init_aux_arrays(ncelet, nfabor)
 call turbomachinery_init
 
 if (ippmod(iatmos).ge.0) then
-  call init_atmo_autom(nfabor)
 
   if (ifilechemistry.ge.1) then
     call init_chemistry_reacnum
@@ -428,10 +422,6 @@ endif
 
 if (ippmod(icompf).ge.0) then
   call init_compf (nfabor)
-endif
-
-if (iale.ge.1) then
-  call init_ale (nfabor, nnod)
 endif
 
 if (iflow.eq.1) ncpdct = ncpdct + 1
@@ -482,6 +472,11 @@ call fldtri
 call field_allocate_or_map_all
 
 call field_get_val_s_by_name('dt', dt)
+
+! BC mappings for ALE array (impale and ialtyb)
+if (iale.ge.1) then
+  call ale_models_bc_maps
+endif
 
 call iniva0(nscal)
 
@@ -664,6 +659,22 @@ endif
 !    dt rom romb viscl visct viscls (tpucou with periodicity)
 !===============================================================================
 
+! BC mappings for specific physical models (deprecated)
+call pp_models_bc_map
+
+if (     ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0          &
+    .or. ippmod(icoebu).ge.0 .or. ippmod(icolwc).ge.0) then
+   call co_models_bc_map
+endif
+
+if (ippmod(icpl3c).ge.0.or. ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
+  call cp_models_bc_map
+endif
+
+if (ippmod(iatmos).ge.0) then
+  call at_models_bc_map(nfabor)
+endif
+
 call inivar(nvar, nscal)
 
 if (icdo.ge.1) then ! CDO mode
@@ -733,23 +744,16 @@ nvarcl = nvar
 call field_build_bc_codes_all(icodcl, rcodcl)
 allocate(isostd(nfabor+1))
 
-! BC mappings for specific physical models (deprecated)
-call pp_models_bc_map
-
-if (     ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0          &
-    .or. ippmod(icoebu).ge.0 .or. ippmod(icolwc).ge.0) then
-  call co_models_bc_map
-endif
-
-if (ippmod(icpl3c).ge.0.or. ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
-  call cp_models_bc_map
-endif
-
 ! First pass for initialization BC types
 ! -- Couplage code_saturne/code_saturne
-
 call cscini(nvar)
-call condli_ini(nvar, nscal, itrale, icodcl, isostd, dt, rcodcl)
+
+call cs_boundary_conditions_set_coeffs_init(itrale, isostd)
+
+!do ifac = 1, nfabor
+!   print*, "f90, ifac, icodcl(eps), rcodcl123(eps)", ifac, icodcl(ifac,iep)!, &
+!        rcodcl(ifac,iep,1), rcodcl(ifac,iep,2), rcodcl(ifac,iep,3)
+!enddo
 
 deallocate(isostd)
 call field_free_bc_codes_all(icodcl, rcodcl)
@@ -1184,7 +1188,6 @@ endif
 
 if (iale.ge.1) then
   call cs_mobile_structures_finalize
-  call finalize_ale
 endif
 
 if (ncpdct.gt.0) then

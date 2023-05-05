@@ -115,8 +115,6 @@ double precision xxp0, xyp0, xzp0
 double precision relaxk, relaxe, relaxw, relaxn
 double precision hdls(6)
 
-double precision, save :: tmet
-
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -160,28 +158,18 @@ type(var_cal_opt) :: vcopt, vcopt_u, vcopt_p
 
 interface
 
-  subroutine condli &
-  ( nvar   , nscal  , iterns ,                                     &
-    isvhb  ,                                                       &
-    itrale , italim , itrfin , ineefl , itrfup ,                   &
-    icodcl , isostd ,                                              &
-    dt     , rcodcl ,                                              &
-    visvdr , hbord  , theipb )
-
-    use mesh, only: nfac, nfabor
-
+  subroutine cs_boundary_conditions_set_coeffs(nvar, iterns, isvhb, itrale,    &
+                                               italim, itrfin, ineefl, itrfup, &
+                                               isostd, visvdr, hbord, theipb,  &
+                                               nftcdt)                         &
+    bind(C, name='cs_boundary_conditions_set_coeffs')
+    use, intrinsic :: iso_c_binding
     implicit none
-
-    integer          nvar, nscal, iterns, isvhb
-    integer          itrale , italim , itrfin , ineefl , itrfup
-
-    integer, pointer, dimension(:,:) :: icodcl
-    integer, dimension(nfabor+1) :: isostd
-    double precision, pointer, dimension(:) :: dt
-    double precision, pointer, dimension(:,:,:) :: rcodcl
-    double precision, pointer, dimension(:) :: visvdr, hbord, theipb
-
-  end subroutine condli
+    integer(kind=c_int), value :: nvar, iterns, itrale, italim, isvhb
+    integer(kind=c_int), value :: itrfin, itrfup, ineefl, nftcdt
+    integer(kind=c_int), dimension(*) :: isostd
+    real(kind=c_double), dimension(*) :: visvdr, hbord, theipb
+  end subroutine cs_boundary_conditions_set_coeffs
 
   function cs_mobile_structures_get_n_structures() result(n_structs)  &
     bind(C, name='cs_mobile_structures_get_n_structures')
@@ -305,6 +293,16 @@ interface
     integer(c_int), dimension(*) :: ale_bc_type
     integer(c_int), dimension(*) :: impale, isostd
   end subroutine cs_solve_navier_stokes
+
+  subroutine cou1di()  &
+    bind(C, name='cs_f_cou1di')
+    use, intrinsic :: iso_c_binding
+  end subroutine cou1di
+
+  subroutine cscloc()  &
+    bind(C, name='cs_f_cscloc')
+    use, intrinsic :: iso_c_binding
+  end subroutine cscloc
 
 end interface
 
@@ -757,13 +755,9 @@ inslst = 0
 iterns = 1
 do while (iterns.le.nterup)
   ! Calls user BCs and computes BC coefficients
-  call condli &
-    (nvar   , nscal  , iterns ,                                    &
-     isvhb  ,                                                      &
-     itrale , italim , itrfin , ineefl , itrfup ,                  &
-     icodcl , isostd ,                                             &
-     dt     , rcodcl ,                                             &
-     visvdr , hbord  , theipb )
+  call cs_boundary_conditions_set_coeffs(nvar, iterns, isvhb, itrale, italim,  &
+                                         itrfin, ineefl, itrfup, isostd,       &
+                                         visvdr, hbord, theipb, nftcdt)
 
   if (nftcdt.gt.0) then
     ! Coefficient exchange of the enthalpy scalar
@@ -819,7 +813,7 @@ do while (iterns.le.nterup)
       call cou1do(hbord, theipb)
 
       if ((iirayo.ge.1).or.(icondb.eq.0)) then
-        call cou1di(nfabor, iscalt, icodcl, rcodcl)
+        call cou1di
       endif
 
     endif
@@ -847,8 +841,9 @@ do while (iterns.le.nterup)
   ! TODO it has to be moved before phyvar, for that bc types have to be known
   ! (itypfb)
 
-  !       (Nouvel algorithme. L'ancien est dans condli)
+  ! (New algorithm. the old one is in cs_boundary_condition_set_coeffs)
   ! In ALE, this computation is done only for the first step.
+
   if (italim.eq.1) then
 
     ! Pour le moment, on suppose que l'on peut se contenter de faire

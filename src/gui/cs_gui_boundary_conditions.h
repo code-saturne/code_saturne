@@ -73,19 +73,7 @@ typedef struct {
  * *****************
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclim, UICLIM)(int        *ientat,
-                               int        *ientcp,
-                               int        *inmoxy,
-                               int        *ientox,
-                               int        *ientfu,
-                               int        *ientgf,
-                               int        *ientgb,
-                               int        *iprofm,
-                               int        *iautom,
-                               int        *itypfb,
-                               int        *izfppp,
-                               double     *tkent,
-                               double     *fment);
+void cs_gui_boundary_conditions_processing(int *itypfb);
 
 /*----------------------------------------------------------------------------
  * Boundary conditions input verification
@@ -98,7 +86,7 @@ void CS_PROCF (uiclim, UICLIM)(int        *ientat,
  * integer          nozppm  <-- max number of boundary conditions zone
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclve, UICLVE)(void);
+void cs_gui_boundary_conditions_verify(void);
 
 /*=============================================================================
  * Public function prototypes

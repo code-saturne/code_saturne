@@ -1017,7 +1017,7 @@ _pressure_correction_fv(int        iterns,
   {
     /* BCs will be taken into account later if idilat >= 4 */
     int inc = (idilat >= 4) ? 0 : 1;
-    int iflmb0 = (cs_glob_ale >= 1) ? 0 : 1;
+    int iflmb0 = (cs_glob_ale > CS_ALE_NONE) ? 0 : 1;
     int itypfl = (vof_parameters->vof_model > 0 || idilat == 4) ? 0 : 1;
 
     cs_mass_flux(m,
@@ -1386,7 +1386,7 @@ _pressure_correction_fv(int        iterns,
     /* 1. The RHS contains rho div(u*) and not div(rho u*) */
 
     int init = 1;
-    int iflmb0 = (cs_glob_ale >= 1) ? 0 : 1;
+    int iflmb0 = (cs_glob_ale > CS_ALE_NONE) ? 0 : 1;
 
     cs_mass_flux(m,
                  fvq,
@@ -1588,7 +1588,7 @@ _pressure_correction_fv(int        iterns,
   cs_mesh_sync_var_vect((cs_real_t *)wrk);
 
   {
-    int iflmb0 = (cs_glob_ale >= 1) ? 0 : 1;
+    int iflmb0 = (cs_glob_ale > CS_ALE_NONE) ? 0 : 1;
     int init = 1;
 
     /* VOF algorithm: the pressure step corresponds to the
@@ -2361,7 +2361,7 @@ _pressure_correction_fv(int        iterns,
 
     } /* end of boundary condition definitions */
 
-    int iflmb0 = (cs_glob_ale >= 1) ? 0 : 1;
+    int iflmb0 = (cs_glob_ale > CS_ALE_NONE) ? 0 : 1;
 
     cs_mass_flux(m,
                  fvq,
@@ -2880,7 +2880,7 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
 
   {
     int inc = 1;
-    int iflmb0 = (cs_glob_ale >= 1) ? 0 : 1;
+    int iflmb0 = (cs_glob_ale > CS_ALE_NONE) ? 0 : 1;
     int itypfl = 1;
 
     cs_mass_flux(m,

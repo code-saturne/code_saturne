@@ -3736,14 +3736,11 @@ cs_turbulence_rij_compute_rusanov(void)
   const cs_lnum_t *b_face_cells = m->b_face_cells;
   const int *bc_type = cs_glob_bc_type;
 
-  const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_i_faces = m->n_i_faces;
 
   cs_real_t *ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
   cs_real_t *bpro_rusanov = cs_field_by_name("b_rusanov_diff")->val;
-  cs_real_t *ipro_mass_fl = cs_field_by_name("inner_mass_flux")->val;
-  cs_real_t *bpro_mass_fl = cs_field_by_name("boundary_mass_flux")->val;
   cs_real_6_t *cvar_rij = (cs_real_6_t *)(CS_F_(rij)->val);
 
   /* TODO should depend on the model */

@@ -340,12 +340,12 @@ module cstphy
   !>
 
   !> constant \f$C_1\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
-  !> Useful if and only if \ref iturb=30
+  !> Useful if and only if \ref iturb = 30
   !> (\f$R_{ij}-\varepsilon\f$ LRR)
   real(c_double), pointer, save :: crij1
 
   !> constant \f$C_2\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
-  !> Useful if and only if \ref iturb=30
+  !> Useful if and only if \ref iturb = 30
   !> (\f$R_{ij}-\varepsilon\f$ LRR)
   real(c_double), pointer, save :: crij2
 
@@ -369,36 +369,36 @@ module cstphy
   double precision, save :: xceta = 80.d0
 
   !> constant \f$\sigma_{k1}\f$ for the \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb=60
+  !> Useful if and only if \ref iturb = 60
   double precision, save :: ckwsk1 = 1.d0/0.85d0
 
   !> constant \f$\sigma_{k2}\f$ for the \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb=60
+  !> Useful if and only if \ref iturb = 60
   double precision, save :: ckwsk2 = 1.d0
 
   !> constant \f$\sigma_{\omega 1}\f$ for the \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
+  !> Useful if and only if \ref iturb = 60 (\f$k-\omega\f$ SST)
   double precision, save :: ckwsw1 = 2.d0
 
   !> constant \f$\sigma_{\omega 2}\f$ for the \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
+  !> Useful if and only if \ref iturb = 60 (\f$k-\omega\f$ SST)
   double precision, save :: ckwsw2 = 1.d0/0.856d0
 
   !> constant \f$\beta_1\f$ for the \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
+  !> Useful if and only if \ref iturb = 60 (\f$k-\omega\f$ SST)
   double precision, save :: ckwbt1 = 0.075d0
 
   !> constant \f$\beta_2\f$ for the \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
+  !> Useful if and only if \ref iturb = 60 (\f$k-\omega\f$ SST)
   double precision, save :: ckwbt2 = 0.0828d0
 
   !> specific constant of k-omega SST
   !> constant \f$a_1\f$ for the \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
+  !> Useful if and only if \ref iturb = 60 (\f$k-\omega\f$ SST)
   double precision, save :: ckwa1 = 0.31d0
 
   !> constant \f$ c_1 \f$ for the \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
+  !> Useful if and only if \ref iturb = 60 (\f$k-\omega\f$ SST)
   !> specific constant of k-omega SST
   double precision, save :: ckwc1 = 10.d0
 
@@ -426,14 +426,14 @@ module cstphy
   !> used for the initialization of the turbulence.
   !> Negative value: not initialized.
   !>
-  !> Useful if and only if \ref iturb= 20, 21, 30, 31, 50 or 60 (RANS model)
+  !> Useful if and only if \ref iturb = 20, 21, 30, 31, 50 or 60 (RANS model)
   !> and the turbulence is not initialized somewhere
   !> else (restart file or subroutine \ref cs\_user\_initialization)
   real(c_double), pointer, save :: uref
 
   !> mixing length for the mixing length model
   !>
-  !> Useful if and only if \ref iturb= 10 (mixing length)
+  !> Useful if and only if \ref iturb = 10 (mixing length)
   real(c_double), pointer, save :: xlomlg
 
   !> constant used in the definition of LES filtering diameter:

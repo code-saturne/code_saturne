@@ -148,7 +148,7 @@ integer(c_int), pointer, save :: nbmett
 integer(c_int), pointer, save :: nbmetm
 
 !> read zone boundary conditions from profile
-integer, save :: iprofm(nozppm)
+integer(c_int), pointer, save :: iprofm(:)
 
 !> automatic inlet/outlet boundary condition flag
 !> (0: not auto (default); 1,2: auto)
@@ -156,7 +156,7 @@ integer, save :: iprofm(nozppm)
 !> iautom = 1 corresponds to a Dirichlet on the pressure and a
 !> Neumann on the velocity, whereas iautom = 2 imposes a Dirichlet
 !> on both pressure and velocity
-integer, allocatable, target, dimension(:) :: iautom
+integer(c_int), pointer, save :: iautom(:)
 
 !> use meteo profile for variables initialization
 !> (0: not used; 1: used (default))
@@ -673,9 +673,35 @@ double precision, save:: zaero
       type(c_ptr), intent(out) :: face_ids
     end subroutine cs_f_atmo_get_soil_zone
 
+    subroutine cs_f_boundary_conditions_get_atincl_pointers(p_iprofm, p_iautom) &
+      bind(C, name='cs_f_boundary_conditions_get_atincl_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: p_iprofm, p_iautom
+    end subroutine cs_f_boundary_conditions_get_atincl_pointers
+
   end interface
 
 contains
+
+  !=============================================================================
+
+  subroutine at_models_bc_map(nfabor)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+    integer :: nfabor
+
+    ! Local variables
+    type(c_ptr) :: p_iprofm, p_iautom
+
+    call cs_f_boundary_conditions_get_atincl_pointers(p_iprofm, p_iautom)
+    call c_f_pointer(p_iprofm, iprofm, [nozppm])
+    call c_f_pointer(p_iautom, iautom, [nfabor])
+
+  end subroutine at_models_bc_map
 
   !=============================================================================
 
@@ -990,33 +1016,6 @@ end subroutine init_meteo
 
 !===============================================================================
 
-!> \brief Initialisation of meteo data
-subroutine init_atmo_autom(nfabor)
-
-use cs_c_bindings
-
-implicit none
-
-integer nfabor
-
-! Local variables
-integer :: ifac
-
-! Allocate additional arrays for Water Microphysics
-if (imeteo.gt.0) then
-
-  ! Allocate and initialize auto inlet/outlet flag
-  allocate(iautom(nfabor))
-  do ifac = 1, nfabor
-    iautom(ifac) = 0
-  enddo
-
-endif
-
-end subroutine init_atmo_autom
-
-!=============================================================================
-
 !> \brief Final step for deallocation
 subroutine finalize_meteo
 
@@ -1034,8 +1033,6 @@ if (imeteo.gt.0) then
   deallocate(pmer)
   deallocate(xmet, ymet)
   deallocate(rmet)
-
-  deallocate(iautom)
 
   if (iatra1.eq.1) then
 

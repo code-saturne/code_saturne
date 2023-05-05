@@ -220,7 +220,7 @@ typedef struct {
                                  - 1: true
                                  - 2: Rusanov fluxes */
   int           irijrb;       /* accurate treatment of R at the boundary (see
-                                 \ref condli)
+                                 \ref cs_boundary_condition_set_coeffs)
                                  - 1: true
                                  - 0: false (default) */
   int           irijec;       /* wall echo term of R

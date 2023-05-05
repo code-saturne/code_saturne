@@ -87,7 +87,7 @@ implicit none
 ! Arguments
 
 real(kind=c_double), dimension(*) :: dt
-integer, value :: iterns
+integer(kind=c_int), value :: iterns
 
 ! Local variables
 

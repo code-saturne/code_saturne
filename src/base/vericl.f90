@@ -35,34 +35,20 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in,out] itypfb        face boundary condition type
-!> \param[in,out] icodcl        face boundary condition code:
-!>                               - 1 Dirichlet
-!>                               - 2 Radiative outlet
-!>                               - 3 Neumann
-!>                               - 4 sliding and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 5 smooth wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 6 rough wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 9 free inlet/outlet
-!>                                 (input mass flux blocked to 0)
-!>                               - 13 Dirichlet for the advection operator and
-!>                                    Neumann for the diffusion operator
 !_______________________________________________________________________________
 
-subroutine vericl &
- ( nvar   , nscal  ,                                              &
-   itypfb , icodcl )
+subroutine vericl             &
+ ( itypfb )                   &
+ bind(C, name='cs_f_vericl')
 
 !===============================================================================
 
 !===============================================================================
 ! Module files
 !===============================================================================
+
+use, intrinsic :: iso_c_binding
 
 use paramx
 use numvar
@@ -78,6 +64,7 @@ use parall
 use mesh
 use field
 use cs_c_bindings
+use dimens, only: nvar, nscal
 
 !===============================================================================
 
@@ -85,10 +72,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar, nscal
-
-integer          itypfb(nfabor)
-integer          icodcl(nfabor,nvar)
+integer(c_int) :: itypfb(nfabor)
 
 ! Local variables
 
@@ -115,11 +99,16 @@ integer          icodvf(2), icoduv(3), icodct(11), icodus(4)
 double precision, dimension(:), pointer :: bpro_roughness
 double precision, dimension(:), pointer :: bpro_roughness_t
 
+integer, pointer, dimension(:,:) :: icodcl
+double precision, pointer, dimension(:,:,:) :: rcodcl
+
 !===============================================================================
 
 !===============================================================================
 ! 1. Initialisations
 !===============================================================================
+
+call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
 
 ! Initialize variables to avoid compiler warnings
 

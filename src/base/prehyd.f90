@@ -79,6 +79,8 @@ subroutine prehyd  &
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
+
 use paramx
 use numvar
 use entsor
@@ -100,7 +102,7 @@ implicit none
 
 ! Arguments
 
-double precision grdphd(ndim, ncelet)
+real(c_double) :: grdphd(ndim, ncelet)
 integer(c_int), value :: iterns
 
 ! Local variables

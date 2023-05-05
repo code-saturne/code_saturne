@@ -242,7 +242,8 @@ do ifac = 1, nfabor
 
     endif
 
-    ! Velocity and turbulence are treated in a standard manner in condli.
+    ! Velocity and turbulence are treated in a standard manner
+    ! in cs_boundary_condition_set_coeffs.
 
     ! For thermal B.C., a pre-treatment has be done here since the solved
     ! variable is the total energy

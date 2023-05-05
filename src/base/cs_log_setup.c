@@ -209,7 +209,7 @@ _log_global_model_options(void)
 
   /* ALE */
 
-  if (cs_glob_ale > 0)
+  if (cs_glob_ale > CS_ALE_NONE)
     cs_mobile_structures_log_setup();
 
   /* Rotation info */

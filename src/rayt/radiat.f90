@@ -120,18 +120,6 @@ module radiat
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function handling source terms
-
-    subroutine cs_rad_transfer_bcs(bc_type, dt)  &
-      bind(C, name='cs_rad_transfer_bcs')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(kind=c_int), dimension(*) :: bc_type
-      real(kind=c_double), dimension(*) :: dt
-    end subroutine cs_rad_transfer_bcs
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function handling resolution
 
     subroutine cs_rad_transfer_solve(bc_type,     &

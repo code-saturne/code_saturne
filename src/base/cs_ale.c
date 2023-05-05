@@ -80,7 +80,12 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
-int cs_glob_ale = 0;
+static cs_ale_data_t  _cs_glob_ale_data = {.impale = NULL,
+                                           .bc_type = NULL};
+
+cs_ale_type_t cs_glob_ale = 0;
+
+cs_ale_data_t  *cs_glob_ale_data = &_cs_glob_ale_data;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -90,18 +95,34 @@ int cs_glob_ale = 0;
 void
 cs_f_ale_get_pointers(int  **iale);
 
+void
+cs_f_ale_bc_get_pointers(int **impale,
+                         int **bc_type);
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Get pointer to cs_glob_ale
+ * Get pointer to cs_glob_ale_info->type
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_ale_get_pointers(int **iale)
 {
-  *iale = &cs_glob_ale;
+  *iale = (int *)(&cs_glob_ale);
+}
+
+/*----------------------------------------------------------------------------
+ * Get pointer to cs_glob_ale_info->impale and cs_glob_ale_data->bc_type
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_ale_bc_get_pointers(int **impale,
+                         int **bc_type)
+{
+  *impale = cs_glob_ale_data->impale;
+  *bc_type = cs_glob_ale_data->bc_type;
 }
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -1124,6 +1145,38 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocation of ialtyb and impale for the ALE structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_allocate(void)
+{
+  if (cs_glob_ale > CS_ALE_NONE) {
+    BFT_MALLOC(cs_glob_ale_data->impale, cs_glob_mesh->n_vertices, int);
+    BFT_MALLOC(cs_glob_ale_data->bc_type, cs_glob_mesh->n_b_faces, int);
+    for (cs_lnum_t ii = 0; ii < cs_glob_mesh->n_b_faces; ii++)
+      cs_glob_ale_data->bc_type[ii] = 0;
+    for (cs_lnum_t ii = 0; ii < cs_glob_mesh->n_vertices; ii++)
+      cs_glob_ale_data->impale[ii] = 0;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free ALE boundary condition mappings.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_free(void)
+{
+  BFT_FREE(cs_glob_ale_data->impale);
+  BFT_FREE(cs_glob_ale_data->bc_type);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -64,13 +64,11 @@ BEGIN_C_DECLS
  *   2) Update BCs for the energy computation
  *
  *   \param[in]     bc_type       face boundary condition type
- *   \param[in]     dt            time step (per cell)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_bcs(int         bc_type[],
-                    cs_real_t   dt[]);
+cs_rad_transfer_bcs(int bc_type[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

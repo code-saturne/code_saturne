@@ -249,7 +249,7 @@ use pointe, only: itypfb, ncetsm, icetsm, smacel
 use ppincl, only: icondv
 use numvar, only: ivarfl, ipr, icrom, kbmasf
 use paramx, only: ientre, i_convective_inlet, isolib, ifrent
-use cstphy, only: pther, pthermax, sleak, kleak, roref, voltot, ro0, p0
+use cstphy, only: pther, pthermax, sleak, kleak, roref, ro0, p0
 use cs_nz_tagmr, only:s_metal, v_metal
 use cs_nz_condensation, only: ifbpcd, ltmast, izmast
 use cs_c_bindings

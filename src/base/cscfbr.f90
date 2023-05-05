@@ -31,44 +31,12 @@
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[in]     nscal         total number of scalars
-!> \param[in]     icodcl        face boundary condition code:
-!>                               - 1 Dirichlet
-!>                               - 2 Radiative outlet
-!>                               - 3 Neumann
-!>                               - 4 sliding and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 5 smooth wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 6 rough wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 9 free inlet/outlet
-!>                                 (input mass flux blocked to 0)
-!>                               - 13 Dirichlet for the advection operator and
-!>                                    Neumann for the diffusion operator
 !> \param[in]     itypfb        boundary face types
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rcodcl        boundary condition values:
-!>                               - rcodcl(1) value of the dirichlet
-!>                               - rcodcl(2) value of the exterior exchange
-!>                                 coefficient (infinite if no exchange)
-!>                               - rcodcl(3) value flux density
-!>                                 (negative if gain) in w/m2 or roughness
-!>                                 in m if icodcl=6
-!>                                 -# for the velocity \f$ (\mu+\mu_T)
-!>                                    \gradv \vect{u} \cdot \vect{n}  \f$
-!>                                 -# for the pressure \f$ \Delta t
-!>                                    \grad P \cdot \vect{n}  \f$
-!>                                 -# for a scalar \f$ cp \left( K +
-!>                                     \dfrac{K_T}{\sigma_T} \right)
-!>                                     \grad T \cdot \vect{n} \f$
 !______________________________________________________________________________
 
-subroutine cscfbr &
- ( nscal  ,                                                       &
-   icodcl , itypfb ,                                              &
-   dt     ,                                                       &
-   rcodcl )
+subroutine cscfbr(itypfb, dt)  &
+  bind(C, name='cs_f_cscfbr')
 
 !===============================================================================
 ! Module files
@@ -80,11 +48,13 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use dimens, only: nvar
 use parall
 use period
 use cplsat
 use mesh
+use field
+use cs_c_bindings
+use dimens, only: nscal
 
 !===============================================================================
 
@@ -92,13 +62,8 @@ implicit none
 
 ! Arguments
 
-integer          nscal
-
-integer          icodcl(nfabor,nvar)
-integer          itypfb(nfabor)
-
-double precision dt(ncelet)
-double precision rcodcl(nfabor,nvar,3)
+integer(c_int) ::  itypfb(nfabor)
+real(c_double) ::  dt(ncelet)
 
 ! Local variables
 
@@ -115,12 +80,14 @@ integer, allocatable, dimension(:) :: locpts
 
 double precision, allocatable, dimension(:,:) :: coopts , djppts , dofpts
 double precision, allocatable, dimension(:,:) :: dofcpl
-double precision, allocatable, dimension(:) :: pndpts
-double precision, allocatable, dimension(:) :: pndcpl
+double precision, allocatable, dimension(:)   :: pndpts
+double precision, allocatable, dimension(:)   :: pndcpl
 double precision, allocatable, dimension(:,:) :: rvdis , rvfbr
 
-!===============================================================================
+integer, pointer, dimension(:,:) :: icodcl
+double precision, pointer, dimension(:,:,:) :: rcodcl
 
+!===============================================================================
 
 do numcpl = 1, nbrcpl
 
@@ -129,7 +96,6 @@ do numcpl = 1, nbrcpl
 !===============================================================================
 
   call nbecpl                                                     &
-  !==========
  ( numcpl ,                                                       &
    ncesup , nfbsup ,                                              &
    ncecpl , nfbcpl , ncencp , nfbncp )
@@ -140,14 +106,12 @@ do numcpl = 1, nbrcpl
 
 !       Liste des cellules et faces de bord localisées
   call lelcpl                                                     &
-  !==========
  ( numcpl ,                                                       &
    ncecpl , nfbcpl ,                                              &
    lcecpl , lfbcpl )
 
 !       Liste des cellules et faces de bord non localisées
   call lencpl                                                     &
-  !==========
  ( numcpl ,                                                       &
    ncencp , nfbncp ,                                              &
    lcencp , lfbncp )
@@ -164,7 +128,6 @@ do numcpl = 1, nbrcpl
 ! --- Informations géométriques de localisation
 
   call npdcpl(numcpl, ncedis, nfbdis)
-  !==========
 
   ! Allocate temporary arrays for geometric quantities
   allocate(locpts(nfbdis))
@@ -184,7 +147,6 @@ do numcpl = 1, nbrcpl
   endif
 
   call coocpl &
-  !==========
 ( numcpl , nfbdis , ityvar , &
   ityloc , locpts , coopts , &
   djppts , dofpts , pndpts )
@@ -192,7 +154,6 @@ do numcpl = 1, nbrcpl
   if (ityloc.eq.2) then
     write(nfecra,1000)
     call csexit(1)
-    !==========
   endif
 
 !       On vérifie qu'il faut bien échanger quelque chose
@@ -201,18 +162,14 @@ do numcpl = 1, nbrcpl
   nfbdig = nfbdis
   if (irangp.ge.0) then
     call parcpt(nfbcpg)
-    !==========
     call parcpt(nfbdig)
-    !==========
   endif
-
 
 ! --- Transfert des variables proprement dit.
 
   if (nfbdig.gt.0) then
 
     call cscpfb                                                   &
-    !==========
   ( nscal  ,                                                      &
     nfbdis , numcpl , nvarto(numcpl) ,                            &
     locpts ,                                                      &
@@ -257,11 +214,11 @@ do numcpl = 1, nbrcpl
     allocate(pndcpl(nfbcpl))
 
     call pondcp &
-    !==========
   ( numcpl , nfbcpl , ityvar , pndcpl , dofcpl )
 
+    call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
+
     call csc2cl &
-    !==========
   ( nvarcp(numcpl), nvarto(numcpl) , nfbcpl , nfbncp ,            &
     icodcl , itypfb ,                                             &
     lfbcpl , lfbncp ,                                             &
@@ -279,8 +236,8 @@ do numcpl = 1, nbrcpl
   deallocate(lfbcpl, lfbncp)
 
 enddo
-!     Fin de la boucle sur les couplages
 
+!     Fin de la boucle sur les couplages
 
 !--------
 ! FORMATS
@@ -317,24 +274,11 @@ end subroutine
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[in]     icodcl        face boundary condition code:
-!>                               - 1 Dirichlet
-!>                               - 2 Radiative outlet
-!>                               - 3 Neumann
-!>                               - 4 sliding and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 5 smooth wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 6 rough wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 9 free inlet/outlet
-!>                                 (input mass flux blocked to 0)
-!>                               - 13 Dirichlet for the advection operator and
-!>                                    Neumann for the diffusion operator
 !> \param[in]     itypfb        boundary face types
 !______________________________________________________________________________
 
-subroutine cscfbr_init(icodcl, itypfb)
+subroutine cscfbr_init(itypfb)      &
+  bind(C, name='cs_f_cscfbr_init')
 
 !===============================================================================
 ! Module files
@@ -346,11 +290,13 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use dimens, only: nvar
 use parall
 use period
 use cplsat
 use mesh
+use field
+
+use, intrinsic :: iso_c_binding
 
 !===============================================================================
 
@@ -358,8 +304,7 @@ implicit none
 
 ! Arguments
 
-integer          icodcl(nfabor,nvar)
-integer          itypfb(nfabor)
+integer(c_int) :: itypfb(nfabor)
 
 ! Local variables
 
@@ -368,6 +313,9 @@ integer          ncesup , nfbsup
 integer          ncecpl , nfbcpl , ncencp , nfbncp
 
 integer, allocatable, dimension(:) :: lcecpl , lfbcpl , lcencp , lfbncp
+
+integer, pointer, dimension(:,:) :: icodcl
+double precision, pointer, dimension(:,:,:) :: rcodcl
 
 !===============================================================================
 
@@ -397,6 +345,7 @@ do numcpl = 1, nbrcpl
 !===============================================================================
 
   if (nfbcpl.gt.0) then
+    call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
     call csc2cl_init(nvarcp(numcpl), nfbcpl, nfbncp,              &
                      icodcl, itypfb, lfbcpl, lfbncp)
   endif

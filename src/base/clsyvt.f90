@@ -41,31 +41,6 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     nscal         total number of scalars
-!> \param[in,out] icodcl        face boundary condition code:
-!>                               - 1 Dirichlet
-!>                               - 3 Neumann
-!>                               - 4 sliding and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 5 smooth wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 6 rough wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 9 free inlet/outlet
-!>                                 (input mass flux blocked to 0)
-!> \param[in,out] rcodcl        boundary condition values:
-!>                               - rcodcl(1) value of the dirichlet
-!>                               - rcodcl(2) value of the exterior exchange
-!>                                 coefficient (infinite if no exchange)
-!>                               - rcodcl(3) value flux density
-!>                                 (negative if gain) in w/m2 or roughness
-!>                                 in m if icodcl=6
-!>                                 -# for the velocity \f$ (\mu+\mu_T)
-!>                                    \gradv \vect{u} \cdot \vect{n}  \f$
-!>                                 -# for the pressure \f$ \Delta t
-!>                                    \grad P \cdot \vect{n}  \f$
-!>                                 -# for a scalar \f$ cp \left( K +
-!>                                     \dfrac{K_T}{\sigma_T} \right)
-!>                                     \grad T \cdot \vect{n} \f$
 !> \param[in]     velipb        value of the velocity at \f$ \centip \f$
 !>                               of boundary cells
 !> \param[in]     rijipb        value of \f$ R_{ij} \f$ at \f$ \centip \f$
@@ -73,16 +48,17 @@
 !_______________________________________________________________________________
 
 
-subroutine clsyvt &
- ( nscal  , icodcl ,                                     &
-   rcodcl ,                                              &
-   velipb , rijipb )
+subroutine clsyvt            &
+ ( velipb , rijipb )         &
+ bind(C, name='cs_f_clsyvt')
 
 !===============================================================================
 
 !===============================================================================
 ! Module files
 !===============================================================================
+
+use, intrinsic :: iso_c_binding
 
 use paramx
 use numvar
@@ -95,6 +71,7 @@ use albase
 use field
 use mesh
 use cs_c_bindings
+use dimens, only: nscal
 
 !===============================================================================
 
@@ -102,13 +79,8 @@ implicit none
 
 ! Arguments
 
-integer          nscal
-
-integer, pointer, dimension(:,:) :: icodcl
-
-double precision, pointer, dimension(:,:,:) :: rcodcl
-double precision, dimension(:,:) :: velipb
-double precision, pointer, dimension(:,:) :: rijipb
+real(c_double) :: velipb(3,*)
+real(c_double) :: rijipb(6,*)
 
 ! Local variables
 
@@ -137,6 +109,9 @@ double precision, dimension(:), pointer :: viscl, visct
 double precision, dimension(:), pointer :: cpro_visma_s
 double precision, dimension(:,:), pointer :: cpro_visma_v
 
+integer, pointer, dimension(:,:) :: icodcl
+double precision, pointer, dimension(:,:,:) :: rcodcl
+
 type(var_cal_opt) :: vcopt_uma, vcopt_rij
 
 !===============================================================================
@@ -144,6 +119,8 @@ type(var_cal_opt) :: vcopt_uma, vcopt_rij
 !===============================================================================
 ! 1. Initializations
 !===============================================================================
+
+call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
 
 cpp = 0.d0
 
@@ -205,9 +182,9 @@ do ifac = 1, nfabor
              + rcodcl(ifac,iw,1)*rnz
     endif
 
-    upx = velipb(ifac,1)
-    upy = velipb(ifac,2)
-    upz = velipb(ifac,3)
+    upx = velipb(1,ifac)
+    upy = velipb(2,ifac)
+    upz = velipb(3,ifac)
 
     if (itytur.eq.3) then
 
@@ -424,13 +401,13 @@ do ifac = 1, nfabor
         else if (iclsyr.eq.1) then
           do ii = 1, 6
             if (ii.ne.isou) then
-              fcoefa(isou) = fcoefa(isou) + alpha(isou,ii) * rijipb(ifac,ii)
+              fcoefa(isou) = fcoefa(isou) + alpha(isou,ii) * rijipb(ii,ifac)
             endif
           enddo
           fcoefb(isou) = alpha(isou,isou)
         else
           do ii = 1, 6
-            fcoefa(isou) = fcoefa(isou) + alpha(isou,ii) * rijipb(ifac,ii)
+            fcoefa(isou) = fcoefa(isou) + alpha(isou,ii) * rijipb(ii,ifac)
           enddo
           fcoefb(isou) = 0.d0
         endif

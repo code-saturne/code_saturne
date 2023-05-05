@@ -132,24 +132,24 @@ implicit none
 
 integer, value :: iappel, iterns
 
-double precision dt(ncelet)
-double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
-double precision grdphd(3, ncelet)
-double precision trava(ndim,ncelet)
-double precision tpucou(6, ncelet)
-double precision trav(3,ncelet)
-double precision viscf(*), viscb(nfabor)
-double precision viscfi(*), viscbi(nfabor)
-double precision secvif(nfac), secvib(nfabor)
-double precision coefav(3  ,nfabor)
-double precision cofafv(3  ,nfabor)
-double precision coefbv(3, 3, nfabor)
-double precision cofbfv(3, 3, nfabor)
+real(c_double) :: dt(ncelet)
+real(c_double) :: frcxt(3,ncelet), dfrcxt(3,ncelet)
+real(c_double) :: grdphd(3, ncelet)
+real(c_double) :: trava(ndim,ncelet)
+real(c_double) :: tpucou(6, ncelet)
+real(c_double) :: trav(3,ncelet)
+real(c_double) :: viscf(*), viscb(nfabor)
+real(c_double) :: viscfi(*), viscbi(nfabor)
+real(c_double) :: secvif(nfac), secvib(nfabor)
+real(c_double) :: coefav(3  ,nfabor)
+real(c_double) :: cofafv(3  ,nfabor)
+real(c_double) :: coefbv(3, 3, nfabor)
+real(c_double) :: cofbfv(3, 3, nfabor)
 
-double precision vel   (3, ncelet)
-double precision velk  (3, ncelet)
-double precision vela  (3, ncelet)
-double precision da_uu (6, ncelet)
+real(c_double) :: vel   (3, ncelet)
+real(c_double) :: velk  (3, ncelet)
+real(c_double) :: vela  (3, ncelet)
+real(c_double) :: da_uu (6, ncelet)
 
 ! Local variables
 
@@ -564,7 +564,8 @@ endif
 !    La pression a la face est calculee comme dans gradrc/gradmc
 !    et on la transforme en pression totale
 !    On se limite a la premiere iteration (pour faire simple par
-!      rapport a la partie issue de condli, hors boucle)
+!      rapport a la partie issue de cs_boundary_condition_set_coeffs,
+!      hors boucle)
 if (iforbr.ge.0 .and. iterns.eq.1) then
   call field_get_coefa_s (ivarfl(ipr), coefa_p)
   call field_get_coefb_s (ivarfl(ipr), coefb_p)
