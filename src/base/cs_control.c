@@ -1557,9 +1557,13 @@ _parse_control_buffer(const char          *name,
         nt_max = CS_MAX(nt_max, 0);
     }
     else if (strncmp(s, "time_step_limit ", 16) == 0) {
-      if (_read_next_int(cur_line, (const char **)&s, &nt_max) > 0)
+      if (_read_next_int(cur_line, (const char **)&s, &nt_max) > 0) {
+        nt_max = CS_MAX(nt_max, 0);
         if (ts->nt_max > -1)
           nt_max = CS_MIN(nt_max + ts->nt_prev, ts->nt_max);
+        else
+          nt_max = nt_max + ts->nt_prev;
+      }
     }
 
     if (nt_max > -1) {
