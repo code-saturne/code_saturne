@@ -355,6 +355,7 @@ a fast memory error detector.
 
 - For the code_saturne configure options, this means
   <span style="color:rgb(48,119,16)">`CFLAGS=-fsanitize=address`</span>
+  <span style="color:rgb(48,119,16)">`CXXFLAGS=-fsanitize=address`</span>
   <span style="color:rgb(48,119,16)">`FCFLAGS=-fsanitize=address`</span>
   <span style="color:rgb(48,119,16)">`LDFLAGS=-fsanitize=address`</span>
 
@@ -377,9 +378,9 @@ a fast memory error detector.
   but may also report errors due to system libraries, so to allow a "clean"
   exit, we may use:
 
-    ```
-    export ASAN_OPTIONS=detect_leaks=0
-    ```
+  ```
+  export ASAN_OPTIONS=detect_leaks=0
+  ```
 
 UndefinedBehaviorSanitizer
 --------------------------
