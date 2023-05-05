@@ -59,7 +59,6 @@ class ThermalParticlesRadiationModel(Variables, Model):
 
         # Default values
         self._isActivated = "off"
-        self._elasticity = "0.9"
         self._emissivity = "1.0"
 
         tm_node = self.case.xmlGetNode('thermophysical_models')
@@ -69,8 +68,8 @@ class ThermalParticlesRadiationModel(Variables, Model):
         self.read_xml()
 
     def initialize_xml(self):
-        for childNode, value in zip(["status", "elasticity", "emissivity"],
-                [self._isActivated, self._elasticity, self._emissivity]):
+        for childNode, value in zip(["status", "emissivity"],
+                [self._isActivated, self._emissivity]):
             if self.xml_node.xmlGetChildNode(childNode) == None:
                 self.xml_node.xmlInitChildNode(childNode)
                 self.xml_node.xmlSetData(childNode, value)
@@ -79,16 +78,11 @@ class ThermalParticlesRadiationModel(Variables, Model):
     def read_xml(self):
         values = []
         self._isActivated = self.xml_node.xmlGetChildString("status")
-        self._elasticity= self.xml_node.xmlGetChildString("elasticity")
         self._emissivity= self.xml_node.xmlGetChildString("emissivity")
 
     @property
     def isActivated(self):
         return self._isActivated
-
-    @property
-    def elasticity(self):
-        return self._elasticity
 
     @property
     def emissivity(self):
@@ -98,11 +92,6 @@ class ThermalParticlesRadiationModel(Variables, Model):
     def isActivated(self, status):
         self.xml_node.xmlSetData("status", status)
         self._isActivated = status
-
-    @elasticity.setter
-    def elasticity(self, value):
-        self.xml_node.xmlSetData("elasticity", value)
-        self._elasticity = value
 
     @emissivity.setter
     def emissivity(self, value):
