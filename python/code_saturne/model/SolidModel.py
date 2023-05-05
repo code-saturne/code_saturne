@@ -52,6 +52,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         default = TurbulenceModel.defaultValues(self)
 
         default['compaction']    = 0.64
+        default['elasticity']    = 0.9
         default['friction']      = "none"
         default['granular']      = "none"
         default['kinetic']       = "none"
@@ -176,6 +177,28 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         if value is None :
            value = self.defaultValues()['compaction']
            self.setCompaction(value)
+        return value
+
+
+    @Variables.undoLocal
+    def setElastCoeff(self, value):
+        """
+        Set elasticity coefficient.
+        """
+        self.isPositiveFloat(value)
+        self.XMLThermo.xmlSetData('solid_elasticity_coefficient', value)
+
+
+    @Variables.noUndo
+    def getElastCoeff(self):
+        """
+        Get elasticity coefficient
+        """
+        value = self.XMLThermo.xmlGetDouble('solid_elasticity_coefficient')
+        if value is None:
+            value = self.defaultValues()['elasticity']
+            self.setElastCoeff(value)
+
         return value
 
 

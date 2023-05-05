@@ -889,6 +889,16 @@ class XMLinitNeptune(BaseXmlInit):
         self.__backwardCompatibilityFrom_7_2()
         self.__backwardCompatibilityFrom_7_3()
 
+        # Modify particles elasticity data storage in data model
+        tm_node = self.case.xmlGetNode("thermophysical_models")
+        particles_rad_node = tm_node.xmlGetNode("interparticles_radiative_transfer")
+        if particles_rad_node != None:
+            elasticity_val = particles_rad_node.xmlGetDouble('elasticity')
+            if elasticity_val:
+                tm_node.xmlSetData('solid_elasticity_coefficient',
+                                   elasticity_val)
+                particles_rad_node.xmlRemoveChild('elasticity')
+
 #-------------------------------------------------------------------------------
 # XMLinit test case
 #-------------------------------------------------------------------------------

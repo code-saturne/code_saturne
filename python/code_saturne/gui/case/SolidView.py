@@ -125,12 +125,17 @@ class SolidView(QWidget, Ui_Solid):
         validatorComp.setExclusiveMin(True)
         self.lineEditCompaction.setValidator(validatorComp)
 
+        validatorElast = DoubleValidator(self.lineEditElastCoef, min = 0.0)
+        validatorElast.setExclusiveMin(False)
+        self.lineEditElastCoef.setValidator(validatorElast)
+
         # Connect signals to slots
         self.comboBoxField.activated[str].connect(self.slotField)
         self.comboBoxFriction.activated[str].connect(self.slotFriction)
         self.comboBoxGranular.activated[str].connect(self.slotGranular)
         self.comboBoxKinetic.activated[str].connect(self.slotKinetic)
         self.lineEditCompaction.textChanged[str].connect(self.slotCompaction)
+        self.lineEditElastCoef.textChanged[str].connect(self.slotSetElasticity)
         self.checkBoxCoupling.clicked[bool].connect(self.slotCoupling)
 
         # Initialize widget
@@ -184,6 +189,16 @@ class SolidView(QWidget, Ui_Solid):
             self.mdl.setCompaction(value)
 
 
+    @pyqtSlot(str)
+    def slotSetElasticity(self, var):
+        """
+        Set elasiticity coefficient
+        """
+        if self.lineEditElastCoef.validator().state == QValidator.Acceptable:
+            value = from_qvariant(var, float)
+            self.mdl.setElastCoeff(value)
+
+
     def initializeVariables(self, fieldId):
         """
         Initialize variables when a new fieldId is choosen
@@ -192,6 +207,8 @@ class SolidView(QWidget, Ui_Solid):
 
         value = self.mdl.getCompaction()
         self.lineEditCompaction.setText(str(value))
+
+        self.lineEditElastCoef.setText(str(self.mdl.getElastCoeff()))
 
         model = self.mdl.getFrictionModel(fieldId)
         self.modelFriction.setItem(str_model=model)

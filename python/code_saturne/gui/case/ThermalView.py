@@ -283,16 +283,11 @@ class ThermalView(QWidget, Ui_ThermalForm):
         """
 
         # Validators
-        validator = DoubleValidator(self.lineEditElastCoef, min=0.0)
-        validator.setExclusiveMin(False)
-        self.lineEditElastCoef.setValidator(validator)
-
         validator = DoubleValidator(self.lineEditEmissivity, min=0.0)
         validator.setExclusiveMin(False)
         self.lineEditEmissivity.setValidator(validator)
 
         self.groupBoxParticlesRadiation.toggled[bool].connect(self.slotActivateParticlesRadiation)
-        self.lineEditElastCoef.textChanged[str].connect(self.slotSetElasticity)
         self.lineEditEmissivity.textChanged[str].connect(self.slotSetEmissivity)
 
         # Initialization from XML model
@@ -301,27 +296,19 @@ class ThermalView(QWidget, Ui_ThermalForm):
         else:
             self.groupBoxParticlesRadiation.setChecked(False)
             self.slotActivateParticlesRadiation(False)
-        self.lineEditElastCoef.setText(self.partRadiationModel.elasticity)
         self.lineEditEmissivity.setText(self.partRadiationModel.emissivity)
 
 
     def slotActivateParticlesRadiation(self, status):
         if status:
             self.partRadiationModel.isActivated = "on"
-            self.lineEditElastCoef.show()
             self.lineEditEmissivity.show()
-            self.labelElastCoef.show()
             self.labelEmissivity.show()
         else:
             self.partRadiationModel.isActivated = "off"
-            self.lineEditElastCoef.hide()
             self.lineEditEmissivity.hide()
-            self.labelElastCoef.hide()
             self.labelEmissivity.hide()
 
-    def slotSetElasticity(self, value):
-        if self.lineEditElastCoef.validator().state == QValidator.Acceptable:
-            self.partRadiationModel.elasticity = value
 
     def slotSetEmissivity(self, value):
         if self.lineEditEmissivity.validator().state == QValidator.Acceptable:
