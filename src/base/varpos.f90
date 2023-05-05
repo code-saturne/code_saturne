@@ -476,6 +476,7 @@ if (iporos.ge.1) then
                       3,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     f_name = 'i_poro_duq_0'
     call field_create(f_name,&
@@ -484,6 +485,7 @@ if (iporos.ge.1) then
                       1,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     f_name = 'i_poro_duq_1'
     call field_create(f_name,&
@@ -492,6 +494,7 @@ if (iporos.ge.1) then
                       1,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     f_name = 'b_poro_duq'
     call field_create(f_name,&
@@ -500,6 +503,7 @@ if (iporos.ge.1) then
                       1,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     f_name = 'i_f_face_normal'
     call field_create(f_name,&
@@ -508,6 +512,7 @@ if (iporos.ge.1) then
                       3,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     f_name = 'i_f_face_surf'
     call field_create(f_name,&
@@ -516,6 +521,7 @@ if (iporos.ge.1) then
                       1,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     f_name = 'i_f_face_cog_0'
     call field_create(f_name,&
@@ -524,6 +530,7 @@ if (iporos.ge.1) then
                       3,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     f_name = 'i_f_face_cog_1'
     call field_create(f_name,&
@@ -532,6 +539,7 @@ if (iporos.ge.1) then
                       3,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     f_name = 'b_f_face_normal'
     call field_create(f_name,&
@@ -540,6 +548,7 @@ if (iporos.ge.1) then
                       3,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     f_name = 'b_f_face_surf'
     call field_create(f_name,&
@@ -548,6 +557,7 @@ if (iporos.ge.1) then
                       1,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     f_name = 'b_f_face_cog'
     call field_create(f_name,&
@@ -556,6 +566,7 @@ if (iporos.ge.1) then
                       3,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     f_name = 'i_f_face_factor'
     call field_create(f_name,&
@@ -564,6 +575,7 @@ if (iporos.ge.1) then
                       2,& ! dimension: 2 per face
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     f_name = 'b_f_face_factor'
     call field_create(f_name,&
@@ -572,6 +584,7 @@ if (iporos.ge.1) then
                       1,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     ! Interior faces weighting factor with new cell cog
     f_name = 'i_f_weight'
@@ -590,6 +603,7 @@ if (iporos.ge.1) then
                       3,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     ! Center of gravity of solid face immersed in the cells
     f_name = 'c_w_face_cog'
@@ -599,6 +613,7 @@ if (iporos.ge.1) then
                       3,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     ! Solid surface of cells
     f_name = 'c_w_face_surf'
@@ -608,6 +623,7 @@ if (iporos.ge.1) then
                       1,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     ! Distance between the centers of the cell and the solid face
     f_name = 'c_w_dist_inv'
@@ -617,6 +633,7 @@ if (iporos.ge.1) then
                       1,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     ! Cell fluid center coordinates
     f_name = 'cell_f_cen'
@@ -626,6 +643,7 @@ if (iporos.ge.1) then
                       3,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     ! Cell solid center coordinates
     f_name = 'cell_s_cen'
@@ -635,6 +653,7 @@ if (iporos.ge.1) then
                       3,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     ! Porosity at internal faces
     f_name = 'i_face_porosity'
@@ -644,6 +663,7 @@ if (iporos.ge.1) then
                       1,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
     ! Porosity at boundary faces
     f_name = 'b_face_porosity'
@@ -653,6 +673,7 @@ if (iporos.ge.1) then
                       1,& ! dimension
                       .false.,&
                       f_id)
+    call hide_property(f_id)
 
   endif
 
