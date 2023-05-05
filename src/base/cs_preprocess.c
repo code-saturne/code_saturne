@@ -172,36 +172,6 @@ extern void cs_f_majgeo(const cs_lnum_t    *ncel,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Determine if preprocessing is needed.
- *
- * Preprocessing is ignored when a ./restart/mesh_input file is present but
- * no ./mesh_input file or directory is present. In this case, restart mesh
- * file is read, and all other preprocessing steps are skipped.
- *
- * \return  true if preprocessing is needed, false if only reading is needed.
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_preprocess_mesh_is_needed(void)
-{
-  bool retval = true;
-
-  int is_restart = (cs_preprocessor_data_is_restart()) ? 1 : 0;
-
-#if defined(HAVE_MPI)
-  if (cs_glob_rank_id >= 0)
-    MPI_Bcast(&is_restart,  1, MPI_INT,  0, cs_glob_mpi_comm);
-#endif
-
-  if (is_restart)
-    retval = false;
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Define all mesh preprocessing operations.
  */
 /*----------------------------------------------------------------------------*/
@@ -209,12 +179,26 @@ cs_preprocess_mesh_is_needed(void)
 void
 cs_preprocess_mesh_define(void)
 {
-  if (cs_preprocess_mesh_is_needed() == false)
+  cs_gui_mesh_restart_mode();
+  cs_user_mesh_restart_mode();
+
+  if (   cs_preprocessor_data_get_restart_mode()
+      == CS_PREPROCESSOR_DATA_RESTART_ONLY)
     return;
 
   /* Define meshes to read */
 
   cs_user_mesh_input();
+
+  /* Check if internally generated cartesian meshes are used. */
+
+  cs_gui_mesh_cartesian_define();
+  cs_user_mesh_cartesian_define();
+
+  /* Finalize definitions and compute global values if cartesian mesh
+     definitions are present. */
+
+  cs_mesh_cartesian_finalize_definition();
 
   /* Define joining and periodicity parameters if requested
      Must be done before initi1 for the sake of verification */
@@ -244,7 +228,10 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   int t_top_id = cs_timer_stats_switch(t_stat_id);
 
-  bool allow_modify = cs_preprocess_mesh_is_needed();
+  bool allow_modify = true;
+  if (   cs_preprocessor_data_get_restart_mode()
+      == CS_PREPROCESSOR_DATA_RESTART_ONLY)
+    allow_modify = false;
 
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;

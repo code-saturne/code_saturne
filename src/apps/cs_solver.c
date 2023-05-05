@@ -88,7 +88,6 @@
 #include "cs_matrix_default.h"
 #include "cs_mesh.h"
 #include "cs_mesh_adjacencies.h"
-#include "cs_mesh_cartesian.h"
 #include "cs_mesh_coherency.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quality.h"
@@ -252,18 +251,6 @@ _run(void)
   cs_preprocess_mesh_define();
 
   cs_turbomachinery_define();
-
-  /* Check if an internally generated cartesian mesh is used */
-
-  if (cs_gui_mesh_build_cartesian())
-    cs_gui_mesh_cartesian_define();
-
-  cs_user_mesh_cartesian_define();
-
-  /* Finalize definitions and compute global values. If no cartesian meshes,
-   * the function does nothing.
-   */
-  cs_mesh_cartesian_finalize_definition();
 
   /* Call main calculation initialization function or help */
 

@@ -180,7 +180,6 @@ class Parser:
                'msh':'gmsh',
                'neu':'gambit',
                'ccm':'ccm',
-               'ngeom':'ngeom',
                'unv':'ideas'}
 
         # first check if the mesh is compressed with gzip
@@ -218,7 +217,7 @@ class Parser:
         if sol_domain_node is None:
             return
 
-        # Check whether additionnal preprocessing is done upn restart
+        # Check whether additionnal preprocessing is done upon restart
 
         val = getDataFromNode(sol_domain_node, 'preprocess_on_restart')
         if val in ('yes', 'on'):

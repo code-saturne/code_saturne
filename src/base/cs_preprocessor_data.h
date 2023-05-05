@@ -45,6 +45,26 @@
 BEGIN_C_DECLS
 
 /*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+/*! Mesh preprocessing operations in case of restart. */
+
+typedef enum {
+
+  CS_PREPROCESSOR_DATA_RESTART_NONE,        /*!< do not use restart mesh
+                                              for computation, or restart
+                                              mesh not present */
+  CS_PREPROCESSOR_DATA_RESTART_AND_MODIFY,  /*!< read restart mesh and enable
+                                               further preprocessing */
+  CS_PREPROCESSOR_DATA_RESTART_ONLY,        /*!< use restart mesh as-is,
+                                              with no additional
+                                              preprocessing (default if
+                                              restart is present) */
+
+} cs_preprocessor_data_restart_mode_t;
+
+/*============================================================================
  *  Public function prototypes for Fortran API
  *============================================================================*/
 
@@ -103,15 +123,28 @@ cs_preprocessor_check_perio(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Check if the last preprocessing data defined or read is restart data.
+ * \brief Return restart behavior for preprocessing.
  *
- * \return true if preprocessing data is read from "restart" folder,
- *         false otherwise
+ * \return  preprocessing mode in case of restart.
  */
 /*----------------------------------------------------------------------------*/
 
-bool
-cs_preprocessor_data_is_restart(void);
+cs_preprocessor_data_restart_mode_t
+cs_preprocessor_data_get_restart_mode(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define restart behavior in case of restart.
+ *
+ * If no restart/mesh_input.csm (or restart/mesh_input) file is found,
+ * CS_PREPROCESSOR_DATA_RESTART_NONE will be used.
+ *
+ * \param[in]  mode  chosen preprocessing mode on restart
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_preprocessor_data_set_restart_mode(cs_preprocessor_data_restart_mode_t  mode);
 
 /*----------------------------------------------------------------------------
  * Read mesh meta-data.

@@ -58,6 +58,7 @@
 #include "cs_mesh_boundary.h"
 #include "cs_mesh_extrude.h"
 #include "cs_parameters.h"
+#include "cs_preprocessor_data.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -284,6 +285,40 @@ _get_cartesian_parameters(int        idim,
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*-----------------------------------------------------------------------------
+ * Determine the mesh restart mode.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mesh_restart_mode(void)
+{
+  const char path0[] = "calculation_management/start_restart/restart_mesh/path";
+  const char path1[] = "solution_domain/preprocess_on_restart";
+
+  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
+
+  if (tn != NULL) {
+    if (tn->value != NULL) {
+      cs_preprocessor_data_set_restart_mode(CS_PREPROCESSOR_DATA_RESTART_NONE);
+      return;
+    }
+  }
+
+  tn = cs_tree_get_node(cs_glob_tree, path1);
+  const bool *v = cs_tree_node_get_values_bool(tn);
+  if (v != NULL) {
+    if (v[0] == true) {
+      cs_preprocessor_data_set_restart_mode
+        (CS_PREPROCESSOR_DATA_RESTART_AND_MODIFY);
+    }
+    else if (v[0] == false) {
+      cs_preprocessor_data_set_restart_mode
+        (CS_PREPROCESSOR_DATA_RESTART_ONLY);
+    }
+    return;
+  }
+}
 
 /*-----------------------------------------------------------------------------
  * Determine whether warped faces should be cut.
@@ -652,32 +687,27 @@ cs_gui_mesh_save_if_modified(cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------
- * Define if cartesian mesh is to be built through GUI.
- *----------------------------------------------------------------------------*/
-
-int
-cs_gui_mesh_build_cartesian(void)
-{
-  int retval = 0;
-  cs_tree_node_t *tn =
-    cs_tree_get_node(cs_glob_tree,"solution_domain/mesh_origin");
-
-  const char *choice = cs_tree_node_get_child_value_str(tn, "choice");
-  if (choice != NULL) {
-    if (strcmp(choice, "mesh_cartesian") == 0)
-      retval = 1;
-  }
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------
- * Read cartesian mesh parameters defined with GUI.
+ * Read cartesian mesh parameters defined with GUI if present.
  *----------------------------------------------------------------------------*/
 
 void
 cs_gui_mesh_cartesian_define(void)
 {
+  int build_cartesian = 0;
+  cs_tree_node_t *tn
+    = cs_tree_get_node(cs_glob_tree,"solution_domain/mesh_origin");
+
+  const char *choice = cs_tree_node_get_child_value_str(tn, "choice");
+  if (choice != NULL) {
+    if (strcmp(choice, "mesh_cartesian") == 0)
+      build_cartesian = 1;
+  }
+
+  if (build_cartesian == 0)
+    return;
+
+  /* Now build Cartesian mesh if required */
+
   cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_create(NULL);
   for (int idim = 0; idim < 3; idim++) {
     int       iparams[2] = {0, 0};

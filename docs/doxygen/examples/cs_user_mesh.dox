@@ -35,6 +35,40 @@
   Several functions are present in the file, each specific to different
     modification types.
 
+  \subsection  cs_user_mesh_h_cs_user_mesh_restart_mode Mesh preprocessing and computation restart
+
+  By default, in case of restart, if a "restart/mesh_input.csm" file
+  is present, it will be read and proprocessing will be skipped.
+
+  This behavior may be changed in the GUI:
+
+  - In the *Mesh* section, unchecking
+    *Use unmodified checkpoint mesh in case of restart* sets the mode
+    to `CS_PREPROCESSOR_DATA_RESTART_AND_MODIFY`.
+    This implies that the preprocessing operations defined in the GUI
+     and user-defined functions will be called.
+
+  - In "Time Settings - Start/Restart", selecting "different mesh" sets the
+    mode to `CS_PREPROCESSOR_DATA_RESTART_NONE`.
+    In this case, the "restart/mesh_input.csm" will not be used for the
+    current computation, though it may be used as as an interpolation
+    mesh for the restart mapping.
+
+    Depending on the nature of preprocessing operations, calling them
+    on a computation restart may or may not actually modify the mesh.
+    For example, calling a mesh joining on an mesh where the operation
+    has already been done will usually not lead to any actual change,
+    while adding an extrusion or mesh refinement will always modify the selected
+    mesh regions.
+
+  The user function \ref cs_user_mesh_restart_mode allows forcing this
+  behavior regardless of GUI settings.
+
+  For example, to always ignore the mesh definitions in the restart folder,
+  we may use:
+
+  \snippet cs_user_mesh-input-save.c mesh_restart_1
+
   \section cs_user_mesh_h_cs_user_mesh_modifiy  General mesh modifications
 
   Mesh modifications not available through specialized functions

@@ -68,6 +68,30 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Force preprocessing behavior in case of restart.
+ *
+ * By default, in case of restart, if a "restart/mesh_input.csm" file
+ * is present, it will be read and proprocessing will be skipped.
+ *
+ * This behavior may be changed in the GUI:
+ * - In the "Mesh" section, unchecking
+ *   "Use unmodified checkpoint mesh in case of restart" sets the mode
+ *   to CS_PREPROCESSOR_DATA_RESTART_AND_MODIFY.
+ * - In "Time Settings - Start/Restart", selecting "different mesh" sets the
+ *   mode to CS_PREPROCESSOR_DATA_RESTART_NONE.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_mesh_restart_mode(void)
+{
+  /*! [mesh_restart_1] */
+  cs_preprocessor_data_set_restart_mode(CS_PREPROCESSOR_DATA_RESTART_NONE);
+  /*! [mesh_restart_1] */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define mesh files to read and optional associated transformations.
  */
 /*----------------------------------------------------------------------------*/

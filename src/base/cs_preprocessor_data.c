@@ -130,6 +130,12 @@ typedef struct {
  *  Global variables
  *============================================================================*/
 
+static const char _input_default[] = "mesh_input.csm";
+static const char _input_default_noext[] = "mesh_input";
+static const char _cp_input_default[] = "restart/mesh_input.csm";
+static const char _cp_input_default_noext[] = "restart/mesh_input";
+static const char _input_default_folder[] = "mesh_input";
+
 static _mesh_reader_t *_cs_glob_mesh_reader = NULL;
 
 #if defined(WIN32) || defined(_WIN32)
@@ -140,11 +146,16 @@ static const char _dir_separator = '/';
 
 /* Definitions of file to read */
 
-int _n_mesh_files = 0;
-int _n_max_mesh_files = 0;
-_mesh_file_info_t  *_mesh_file_info = NULL;
+static int _n_mesh_files = 0;
+static int _n_max_mesh_files = 0;
+static _mesh_file_info_t  *_mesh_file_info = NULL;
 
-bool _is_restart = false;
+static int _input_present = -1;  /* -1 if not set, >= 0 if present
+                                    (1 to 4 depending on input path,
+                                    + 10 if restart, +100 if directory) */
+
+static  cs_preprocessor_data_restart_mode_t _restart_mode
+  = CS_PREPROCESSOR_DATA_RESTART_ONLY;
 
 /*=============================================================================
  * Private function definitions
@@ -168,42 +179,111 @@ _align_size(size_t  min_size)
 }
 
 /*----------------------------------------------------------------------------
- * Define defaul input data in nothing has been specified by the user.
+ * Check which inputs are present
+ *
+ * Sets input_present if not yet set, updates _restart_mode if not a restart.
+ *----------------------------------------------------------------------------*/
+
+static void
+_check_input_presense(void)
+{
+  if (_input_present < 0) {
+
+    int input_present = 0;
+
+    if (cs_glob_rank_id <= 0) {
+
+      input_present = 0;
+
+      int restart_present = 0;
+      if (cs_file_isdir("restart")) {
+        restart_present = 1;
+        input_present = 10;
+      }
+
+      if (cs_file_isreg(_input_default))
+        input_present = 1;
+      else if (cs_file_isdir(_input_default_folder))
+        input_present = 101;
+      else if (cs_file_isreg(_input_default_noext))
+        input_present = 2;
+
+      else if (restart_present) {
+        if (cs_file_isreg(_cp_input_default))
+          input_present = 3;
+        else if (cs_file_isreg(_cp_input_default_noext))
+          input_present = 4;
+      }
+
+      if (restart_present)
+        input_present += 10;
+    }
+
+#if defined(HAVE_MPI)
+    if (cs_glob_rank_id >= 0)
+      MPI_Bcast(&input_present,  1, MPI_INT,  0, cs_glob_mpi_comm);
+#endif
+
+    _input_present = input_present;
+
+    if (input_present < 10)
+      _restart_mode = CS_PREPROCESSOR_DATA_RESTART_NONE;
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Define default input data in nothing has been specified by the user.
  *----------------------------------------------------------------------------*/
 
 static void
 _set_default_input_if_needed(void)
 {
-  const char input_default[] = "mesh_input.csm";
-  const char input_default_noext[] = "mesh_input";
+  _check_input_presense();
 
-  const char cp_input_default[] = "restart/mesh_input.csm";
-  const char cp_input_default_noext[] = "restart/mesh_input";
-
-  const char input_default_folder[] = "mesh_input";
-
-  _is_restart = false;
+  const char *input_path = NULL;
 
   if (_n_mesh_files == 0) {
 
-    /* First check for mesh_input.csm file */
-    if (cs_file_isreg(input_default))
-      cs_preprocessor_data_add_file(input_default, 0, NULL, NULL);
+    cs_preprocessor_data_restart_mode_t restart_mode
+      = cs_preprocessor_data_get_restart_mode();
 
-    /* If not present, check without extension */
-    else if (cs_file_isreg(input_default_noext))
-      cs_preprocessor_data_add_file(input_default_noext, 0, NULL, NULL);
+    switch(_input_present % 10) {
+    case 1:
+      input_path = _input_default;
+      break;
+    case 2:
+      input_path = _input_default_noext;
+      break;
+    case 3:
+      if (restart_mode != CS_PREPROCESSOR_DATA_RESTART_NONE)
+        input_path = _cp_input_default;
+      break;
+    case 4:
+      if (restart_mode != CS_PREPROCESSOR_DATA_RESTART_NONE)
+        input_path = _cp_input_default_noext;
+      break;
+    default:
+      break;
+    }
 
-    else if (cs_file_isdir(input_default_folder)) {
-      int i;
-      char **dir_files = cs_file_listdir(input_default_folder);
-      for (i = 0; dir_files[i] != NULL; i++) {
+  }
+
+  if (input_path != NULL) {
+
+    /* File */
+    if (_input_present/100 == 0)
+      cs_preprocessor_data_add_file(input_path, 0, NULL, NULL);
+
+    /* Directory */
+    else {
+      char **dir_files = cs_file_listdir(input_path);
+      for (int i = 0; dir_files[i] != NULL; i++) {
         char *tmp_name = NULL;
         BFT_MALLOC(tmp_name,
-                   strlen(input_default_noext) + 1 + strlen(dir_files[i]) + 1,
+                   strlen(input_path) + 1 + strlen(dir_files[i]) + 1,
                    char);
         sprintf(tmp_name, "%s%c%s",
-                input_default_folder, _dir_separator, dir_files[i]);
+                input_path, _dir_separator, dir_files[i]);
         if (cs_file_isreg(tmp_name))
           cs_preprocessor_data_add_file(tmp_name, 0, NULL, NULL);
         BFT_FREE(tmp_name);
@@ -212,21 +292,12 @@ _set_default_input_if_needed(void)
       BFT_FREE(dir_files);
     }
 
-    /* Now check for mesh_input in restart folder */
-    else if (cs_file_isreg(cp_input_default)) {
-      cs_preprocessor_data_add_file(cp_input_default, 0, NULL, NULL);
-      _is_restart = true;
-    }
-
-    else if (cs_file_isreg(cp_input_default_noext)) {
-      cs_preprocessor_data_add_file(cp_input_default_noext, 0, NULL, NULL);
-      _is_restart = true;
-    }
-
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _("No \"%s\" file or directory found."), input_default);
   }
+
+  if (   _n_mesh_files == 0
+      && cs_mesh_cartesian_need_build() == 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("No \"%s\" file or directory found."), _input_default);
 }
 
 /*----------------------------------------------------------------------------
@@ -2125,6 +2196,46 @@ CS_PROCF(ledevi, LEDEVI)(int  *iperio,
  * Public function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return restart behavior for preprocessing.
+ *
+ * \return  preprocessing mode in case of restart.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_preprocessor_data_restart_mode_t
+cs_preprocessor_data_get_restart_mode(void)
+{
+  if (_input_present < 0)
+    _check_input_presense();
+
+  return _restart_mode;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define restart behavior in case of restart.
+ *
+ * If no restart/mesh_input.csm (or restart/mesh_input) file is found,
+ * CS_PREPROCESSOR_DATA_RESTART_NONE will be used.
+ *
+ * \param[in]  mode  chosen preprocessing mode on restart
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_preprocessor_data_set_restart_mode(cs_preprocessor_data_restart_mode_t  mode)
+{
+  _restart_mode = mode;
+
+  if (_input_present < 0)
+    _check_input_presense();
+
+  if (_input_present < 10)
+    _restart_mode = CS_PREPROCESSOR_DATA_RESTART_NONE;
+}
+
 /*----------------------------------------------------------------------------
  * Define input mesh file to read.
  *
@@ -2253,10 +2364,7 @@ cs_preprocessor_data_add_file(const char     *file_name,
 int
 cs_preprocessor_check_perio(void)
 {
-  int retval;
-
-  if (cs_mesh_cartesian_need_build())
-    return 0;
+  int retval = 0;
 
   _mesh_reader_t *mr = NULL;
 
@@ -2285,21 +2393,6 @@ cs_preprocessor_check_perio(void)
   return perio_flag;
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Check if the last preprocessing data defined or read is restart data.
- *
- * \return true if preprocessing data is read from "restart" folder,
- *         false otherwise
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_preprocessor_data_is_restart(void)
-{
-  return _is_restart;
-}
-
 /*----------------------------------------------------------------------------
  * Read mesh meta-data.
  *
@@ -2318,14 +2411,15 @@ cs_preprocessor_data_read_headers(cs_mesh_t          *mesh,
 
   /* Initialize reading of Preprocessor output */
 
-  if (_n_mesh_files == 0 && cs_mesh_cartesian_need_build() &&
-      !(ignore_cartesian)) {
+  if (   _n_mesh_files == 0 && cs_mesh_cartesian_need_build()
+      && !(ignore_cartesian)) {
 
     int _n_cartesian_meshes = cs_mesh_cartesian_get_number_of_meshes();
     for (int m_id = 0; m_id < _n_cartesian_meshes; m_id++)
       _read_cartesian_dimensions(m_id, mesh, mesh_builder);
 
-  } else {
+  }
+  else {
     _mesh_reader_t *mr = NULL;
 
     _set_default_input_if_needed();

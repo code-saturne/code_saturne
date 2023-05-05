@@ -960,6 +960,13 @@ cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
                            cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------
+ * Define restart mode for mesh input and preprocessing.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_mesh_restart_mode(void);
+
+/*----------------------------------------------------------------------------
  * Define mesh files to read and optional associated transformations.
  *----------------------------------------------------------------------------*/
 

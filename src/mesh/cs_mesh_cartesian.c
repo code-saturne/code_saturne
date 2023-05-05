@@ -1411,7 +1411,6 @@ cs_mesh_cartesian_block_connectivity(int                 id,
 void
 cs_mesh_cartesian_finalize_definition(void)
 {
-
   for (int i = 0; i < _n_structured_meshes; i++) {
     cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(i);
     cs_real_t nxyz[3] = {0.};
@@ -1432,7 +1431,6 @@ cs_mesh_cartesian_finalize_definition(void)
       mp->n_g_vtx_offset   = mp_m1->n_g_vtx_offset   + mp_m1->n_g_vtx;
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
