@@ -209,7 +209,7 @@ void
 cs_pressure_correction(int        iterns,
                        cs_lnum_t  nfbpcd,
                        cs_lnum_t  ncmast,
-                       cs_lnum_t  ifbpcd[nfbpcd],
+                       cs_lnum_t  ifbpcd[],
                        cs_lnum_t  ltmast[],
                        int        isostd[],
                        cs_real_t  vel[restrict][3],
