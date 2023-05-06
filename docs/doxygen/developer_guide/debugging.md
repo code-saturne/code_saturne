@@ -591,10 +591,10 @@ many directories and waiting for pre-processing before each run.
   <span style="color: rgb(48,119,16)">`code_saturne compile -s src_saturne`</span>
   to update the <span style="color: rgb(0,91,187)">`cs_solver`</span> executable.
 
-### Running under Vim, Neovim, or Atom
+### Running under Vim or Neovim
 
-The code_saturne debug wrapper does not yet support launching GDB under Vim,
-Neovim, or Atom.
+The code_saturne debug wrapper does not yet support launching GDB under Vim
+or Neovim.
 
 Various examples of use of debugging with Vim are found on the web, explaining
 how [Termdebug](https://www.dannyadam.com/blog/2019/05/debugging-in-vim/)
