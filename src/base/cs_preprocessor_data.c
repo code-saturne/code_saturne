@@ -134,7 +134,6 @@ static const char _input_default[] = "mesh_input.csm";
 static const char _input_default_noext[] = "mesh_input";
 static const char _cp_input_default[] = "restart/mesh_input.csm";
 static const char _cp_input_default_noext[] = "restart/mesh_input";
-static const char _input_default_folder[] = "mesh_input";
 
 static _mesh_reader_t *_cs_glob_mesh_reader = NULL;
 
@@ -203,8 +202,8 @@ _check_input_presense(void)
 
       if (cs_file_isreg(_input_default))
         input_present = 1;
-      else if (cs_file_isdir(_input_default_folder))
-        input_present = 101;
+      else if (cs_file_isdir(_input_default_noext))
+        input_present = 102;
       else if (cs_file_isreg(_input_default_noext))
         input_present = 2;
 
