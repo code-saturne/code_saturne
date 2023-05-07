@@ -76,12 +76,12 @@ AC_ARG_WITH(hdf5-lib,
              fi
              HDF5_LDFLAGS="-L$with_hdf5_lib"
              cs_hdf5_libpath="$with_hdf5_lib"
-             # Add the libdir to the runpath as HDF5 might not be libtoolized
+             # Add the libdir to the runpath for the preprocessor build
              HDF5RUNPATH="${LDRPATH}${with_hdf5_lib}"],
             [if test "x$with_hdf5" != "xno" -a "x$with_hdf5" != "xyes" \
 	          -a "x$with_hdf5" != "xcheck"; then
                HDF5_LDFLAGS="-L$with_hdf5/lib"
-               # Add the libdir to the runpath as HDF5 might not be libtoolized
+               # Add the libdir to the runpath for the preprocessor build
                HDF5RUNPATH="${LDRPATH}${with_hdf5}/lib"
                cs_hdf5_libpath="$with_hdf5/lib"
              fi])

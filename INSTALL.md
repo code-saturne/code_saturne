@@ -638,7 +638,7 @@ The list of third-party software usable with code_saturne is provided here:
 
 * [CoolProp](http://www.coolprop.org) is a quite recent open source library,
   which provides pure and pseudo-pure fluid equations of state and transport properties
-  for 122 components (as of version 6.3), mixture properties using high-accuracy Helmholtz
+  for 122 components (as of version 6.4), mixture properties using high-accuracy Helmholtz
   energy formulations (or cubic EOS), correlations of properties
   of incompressible fluids and brines, fast IAPWS-IF97 (Industrial Formulation)
   for Water/Steam, and cubic equations of state (SRK, PR).
@@ -853,7 +853,7 @@ using non-debug builds, so adding that option is recommended.
 
 Finally, if using libCCMIO 2.6.1, remove the `libcgns*` files from the libCCMIO
 libraries directory if also building code_saturne with CGNS support, as those
-libraries are not required for CCMIO, and are are an obsolete version of
+libraries are not required for CCMIO, and are an obsolete version of
 CGNS, which may interfere with the version used by code_saturne.
 
 Note that libCCMIO uses a modified version of CGNS's ADF library, which may not

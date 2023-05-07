@@ -57,14 +57,10 @@ AC_ARG_WITH(hypre-lib,
                with_hypre=yes
              fi
              HYPRE_LDFLAGS="-L$with_hypre_lib"
-             cs_hypre_libpath="$with_hypre_lib"
-             # Add the libdir to the runpath as HYPRE might not be libtoolized
-             HYPRERUNPATH="${LDRPATH}${with_hypre_lib}"],
+             cs_hypre_libpath="$with_hypre_lib"],
             [if test "x$with_hypre" != "xno" -a "x$with_hypre" != "xyes" \
 	          -a "x$with_hypre" != "xcheck"; then
                HYPRE_LDFLAGS="-L$with_hypre/lib"
-               # Add the libdir to the runpath as HYPRE might not be libtoolized
-               HYPRERUNPATH="${LDRPATH}${with_hypre}/lib"
                cs_hypre_libpath="$with_hypre/lib"
              fi])
 
@@ -130,7 +126,6 @@ if test "x$with_hypre" != "xno" ; then
     HYPRE_CPPFLAGS=""
     HYPRE_LDFLAGS=""
     HYPRE_LIBS=""
-    HYPRE_RUNPATH=""
     if test "x$with_hypre" != "xcheck" ; then
       AC_MSG_FAILURE([HYPRE support is requested, but test for HYPRE failed!])
     else
@@ -156,6 +151,5 @@ AC_SUBST(cs_have_hypre)
 AC_SUBST(HYPRE_CPPFLAGS)
 AC_SUBST(HYPRE_LDFLAGS)
 AC_SUBST(HYPRE_LIBS)
-AC_SUBST(HYPRERUNPATH)
 
 ])dnl

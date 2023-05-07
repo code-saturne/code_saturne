@@ -57,14 +57,10 @@ AC_ARG_WITH(amgx-lib,
                with_amgx=yes
              fi
              AMGX_LDFLAGS="-L$with_amgx_lib"
-             cs_amgx_libpath="$with_amgx_lib"
-             # Add the libdir to the runpath as AMGX might not be libtoolized
-             AMGXRUNPATH="${LDRPATH}${with_amgx_lib}"],
+             cs_amgx_libpath="$with_amgx_lib"],
             [if test "x$with_amgx" != "xno" -a "x$with_amgx" != "xyes" \
 	          -a "x$with_amgx" != "xcheck"; then
                AMGX_LDFLAGS="-L$with_amgx/lib"
-               # Add the libdir to the runpath as AMGX might not be libtoolized
-               AMGXRUNPATH="${LDRPATH}${with_amgx}/lib"
                cs_amgx_libpath="$with_amgx/lib"
              fi])
 
@@ -125,7 +121,6 @@ if test "x$with_amgx" != "xno" ; then
     AMGX_CPPFLAGS=""
     AMGX_LDFLAGS=""
     AMGX_LIBS=""
-    AMGX_RUNPATH=""
     if test "x$with_amgx" != "xcheck" ; then
       AC_MSG_FAILURE([AMGX support is requested, but test for AMGX failed!])
     else
@@ -152,6 +147,5 @@ AC_SUBST(cs_have_amgx)
 AC_SUBST(AMGX_CPPFLAGS)
 AC_SUBST(AMGX_LDFLAGS)
 AC_SUBST(AMGX_LIBS)
-AC_SUBST(AMGXRUNPATH)
 
 ])dnl

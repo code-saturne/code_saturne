@@ -99,7 +99,7 @@ if test "x$with_medcoupling" != "xno" ; then
   if test "x$MEDCOUPLING" != "x" ; then
     MEDCOUPLING_CPPFLAGS="-I$MEDCOUPLING/include"
     MEDCOUPLING_LDFLAGS="-L$MEDCOUPLING/lib"
-    # Add the libdir to the runpath as libtool does not do this for modules
+    # Add the libdir to the runpath for the plugin build
     MEDCOUPLINGRUNPATH="${LDRPATH}${MEDCOUPLING}/lib"
   fi
 

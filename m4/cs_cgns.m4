@@ -74,12 +74,12 @@ AC_ARG_WITH(cgns-lib,
                with_cgns=yes
              fi
              CGNS_LDFLAGS="-L$with_cgns_lib"
-             # Add the libdir to the runpath as CGNS is not libtoolized
+             # Add the libdir to the runpath for the preprocessor build
              CGNSRUNPATH="${LDRPATH}${with_cgns_lib}"],
             [if test "x$with_cgns" != "xno" -a "x$with_cgns" != "xyes" \
 	          -a "x$with_cgns" != "xcheck"; then
                CGNS_LDFLAGS="-L$with_cgns/lib"
-               # Add the libdir to the runpath as CGNS is not libtoolized
+               # Add the libdir to the runpath for the preprocessor build
                CGNSRUNPATH="${LDRPATH}${with_cgns}/lib"
              fi])
 

@@ -88,7 +88,7 @@ AC_ARG_WITH(coolprop-lib,
                with_coolprop=yes
              fi
              COOLPROP_LDFLAGS="-L$with_coolprop_lib"
-             # Add the libdir to the runpath as CoolProp is not libtoolized
+             # Add the libdir to the runpath for the plugin build
              COOLPROPRUNPATH="${LDRPATH}${with_coolprop_lib}"],
             [if test "x$with_coolprop" != "xno" -a "x$with_coolprop" != "xyes" \
 	          -a "x$with_coolprop" != "xcheck"; then
@@ -104,12 +104,12 @@ AC_ARG_WITH(coolprop-lib,
                  cp_d_name=`dirname ${cp_l_name}`
                  unset cp_l_name
                  COOLPROP_LDFLAGS="-L$cp_d_name"
-                 # Add the libdir to the runpath as CoolProp is not libtoolized
+                 # Add the libdir to the runpath for the plugin build
                  COOLPROPRUNPATH="${LDRPATH}${cp_d_name}"
                  unset cp_d_name
                else
                  COOLPROP_LDFLAGS="-L$with_coolprop/lib"
-                 # Add the libdir to the runpath as CoolProp is not libtoolized
+                 # Add the libdir to the runpath for the plugin build
                  COOLPROPRUNPATH="${LDRPATH}${with_coolprop}/lib"
                fi
              fi])

@@ -79,12 +79,12 @@ AC_ARG_WITH(med-lib,
                with_med=yes
              fi
              MED_LDFLAGS="-L$with_med_lib"
-             # Add the libdir to the runpath as MED libtool .la files might not be present
+             # Add the libdir to the runpath for the preprocessor link
              MEDRUNPATH="${LDRPATH}${with_med_lib}"],
             [if test "x$with_med" != "xno" -a "x$with_med" != "xyes" \
 	          -a "x$with_med" != "xcheck"; then
                MED_LDFLAGS="-L$with_med/lib"
-               # Add the libdir to the runpath as MED libtool .la files might not be present
+               # Add the libdir to the runpath for the preprocessor link
                MEDRUNPATH="${LDRPATH}${with_med}/lib"
              fi])
 
@@ -147,8 +147,8 @@ Otherwise, you need to provide a MED 3.0 library and development headers.])
 
   fi # end of test on cs_have_med_headers
 
-  # Check for a MED 3.x library
-  #----------------------------
+  # Check for a MED 3.x or 4.x library
+  #-----------------------------------
 
   if test "x$cs_have_med_headers" = "xyes"; then
 

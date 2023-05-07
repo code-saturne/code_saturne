@@ -57,12 +57,12 @@ AC_ARG_WITH(ccm-lib,
                with_ccm=yes
              fi
              CCM_LDFLAGS="-L$with_ccm_lib"
-             # Add the libdir to the runpath as CCM is not libtoolized
+             # Add the libdir to the runpath for the preprocessor build
              CCMRUNPATH="${LDRPATH}$with_ccm_lib"],
             [if test "x$with_ccm" != "xno" -a "x$with_ccm" != "xyes" \
 	          -a "x$with_ccm" != "xcheck"; then
                CCM_LDFLAGS="-L$with_ccm/lib"
-               # Add the libdir to the runpath as CCM is not libtoolized
+               # Add the libdir to the runpath for the preprocessor build
                CCMRUNPATH="${LDRPATH}$with_ccm/lib"
              fi])
 

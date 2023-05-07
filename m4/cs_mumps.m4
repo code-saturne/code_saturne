@@ -63,12 +63,10 @@ if test "x$with_mumps" != "xno" ; then
   else
     MUMPS_LIBS="${MUMPS_LIBS} -lgfortran -lm"
   fi
-  MUMPSRUNPATH="${LDRPATH}${with_mumps}/lib"
 
   AC_MSG_NOTICE([MUMPS_CPP=${MUMPS_CPPFLAGS}])
   AC_MSG_NOTICE([MUMPS_LD=${MUMPS_LDFLAGS}])
   AC_MSG_NOTICE([MUMPS_LIBS=${MUMPS_LIBS}])
-  AC_MSG_NOTICE([MUMPSRUNPATH=${MUMPSRUNPATH}])
 
   saved_CPPFLAGS="$CPPFLAGS"
   saved_LDFLAGS="$LDFLAGS"
@@ -110,7 +108,6 @@ if test "x$with_mumps" != "xno" ; then
     MUMPS_CPPFLAGS=""
     MUMPS_LDFLAGS=""
     MUMPS_LIBS=""
-    MUMPSRUNPATH=""
   fi
 
   CPPFLAGS="$saved_CPPFLAGS"
@@ -129,6 +126,5 @@ AC_SUBST(cs_have_mumps)
 AC_SUBST(MUMPS_CPPFLAGS)
 AC_SUBST(MUMPS_LDFLAGS)
 AC_SUBST(MUMPS_LIBS)
-AC_SUBST(MUMPSRUNPATH)
 
 ])dnl
