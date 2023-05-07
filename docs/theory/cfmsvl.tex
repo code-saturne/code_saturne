@@ -65,7 +65,7 @@ et l'on actualise alors le flux de masse acoustique $\vect{Q}_{ac}^{n+1}$,
 qui servira pour la convection (en particulier pour la convection de
 l'enthalpie totale et de tous les scalaires transport\'es).
 
-Suivant la valeur de \var{IGRDPP}, on actualise éventuellement la pression, en
+Suivant la valeur de \var{IGRDPP}, on actualise Ã©ventuellement la pression, en
 utilisant la loi d'\'etat :
 $$
 \displaystyle P^{Pred}=P(\rho^{n+1},\varepsilon^{n})
@@ -108,12 +108,12 @@ e^*=e^n\\
 \end{array}
 \end{equation}
 
-Dans la pratique nous avons décidé de prendre $\vect{f}^n=\vect{g}$~:
+Dans la pratique nous avons dÃ©cidÃ© de prendre $\vect{f}^n=\vect{g}$~:
 \begin{itemize}
-  \item le terme $\vect{j}\wedge\vect{B}$ n'a pas été testé,
-  \item le terme $\divv(\tens{\Sigma}^v)$ \'etait négligeable sur les tests
-        réalisés,
-  \item le terme $\divs(\vect{u} \otimes \vect{Q})$ a paru déstabiliser les
+  \item le terme $\vect{j}\wedge\vect{B}$ n'a pas Ã©tÃ© testÃ©,
+  \item le terme $\divv(\tens{\Sigma}^v)$ \'etait nÃ©gligeable sur les tests
+        rÃ©alisÃ©s,
+  \item le terme $\divs(\vect{u} \otimes \vect{Q})$ a paru dÃ©stabiliser les
         calculs (mais au moins une partie des tests a \'et\'e r\'ealis\'ee
         avec une erreur de programmation et il faudrait donc les reprendre).
 \end{itemize}
@@ -123,11 +123,11 @@ Le terme $\vect{Q}^n$ dans la 2\textsuperscript{\`eme} \'equation
 de (\ref{Cfbl_Cfmsvl_eq_acoustique_discrete_cfmsvl}) est le vecteur ``quantit\'e de mouvement''
 qui provient de l'\'etape de r\'esolution de la quantit\'e de mouvement du pas
 de temps pr\'ec\'edent, $\vect{Q}^n = \rho^n \vect{u}^n$.
-On pourrait théoriquement utiliser un vecteur quantit\'e de mouvement issu
+On pourrait thÃ©oriquement utiliser un vecteur quantit\'e de mouvement issu
 de l'\'etape acoustique du pas de temps pr\'ec\'edent, mais il ne constitue
 qu'un ``pr\'edicteur'' plus ou moins satisfaisant (il n'a pas ``vu'' les termes
 sources qui ne sont pas dans  $\vect{f}^n$) et cette solution
-n'a pas été testée.
+n'a pas Ã©tÃ© testÃ©e.
 
 \bigskip
 On \'ecrit alors la pression sous la forme~:
@@ -185,7 +185,7 @@ avec le terme de convection implicite~:
 On int\`egre l'\'equation pr\'ec\'edente ( (\ref{Cfbl_Cfmsvl_eq_densite_cfmsvl})
 ou (\ref{Cfbl_Cfmsvl_eq_densite_bis_cfmsvl}) ) sur la cellule $i$ de volume $\Omega_i$.
 On transforme les int\'egrales de volume en int\'egrales surfaciques
-et l'on discr\'etise ces int\'egrales. Pour simplifier l'exposé, on se
+et l'on discr\'etise ces int\'egrales. Pour simplifier l'exposÃ©, on se
 place sur une cellule $i$ dont aucune face n'est sur le bord du domaine.
 
 On obtient alors l'\'equation discr\`ete
@@ -332,7 +332,7 @@ Le syst\`eme (\ref{Cfbl_Cfmsvl_eq_densite_finale_cfmsvl}) est r\'esolu par une m
 d'incr\'ement et r\'esidu en utilisant
 une m\'ethode de Jacobi pour inverser le syst\`eme si le terme convectif
 est implicite et en utilisant une m\'ethode de gradient conjugu\'e
-si le terme convectif est explicite (qui est le cas par défaut).
+si le terme convectif est explicite (qui est le cas par dÃ©faut).
 
 Attention, les valeurs du flux de masse $\rho\,\vect{w}\cdot\vect{S}$ et
 de la viscosit\'e $\Delta\,t\,c^2\frac{S}{d}$ aux faces de

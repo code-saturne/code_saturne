@@ -62,8 +62,8 @@ qui peuvent \^etre pr\'epond\'erantes et g\^enantes).
 
 \vspace{0.5cm}
 
-\`A la fin de cette \'etape, on actualise éventuellement
-(mais par défaut non)
+\`A la fin de cette \'etape, on actualise Ã©ventuellement
+(mais par dÃ©faut non)
 une deuxi\`eme et derni\`ere fois la pression
 en utilisant la loi d'\'etat pour obtenir la pression finale~:
 \begin{equation}
@@ -99,7 +99,7 @@ e = \varepsilon + \frac{1}{2} u^2
 
 En supposant $C_v$ constant\footnote{Pour $C_v$ non constant, les
 d\'eveloppements restent \`a faire~: on pourra se
-reporter \`a  P. Mathon, F. Archambeau, J.-M. Hérard : "Implantation d'un
+reporter \`a  P. Mathon, F. Archambeau, J.-M. HÃ©rard : "Implantation d'un
 algorithme compressible dans \CS", HI-83/03/016/A}, on a alors~:
 \begin{equation}\label{Cfbl_Cfener_eq_flux_thermique_cfener}
 -\divs(\,\vect{\Phi}_s)
@@ -123,10 +123,10 @@ indique que l'implicitation de ce terme est partielle (elle d\'epend de la forme
 de la loi d'\'etat).
 
 Par ailleurs, on implicite le terme de convection, le terme de puissance
-des forces volumiques, éventuellement le terme de puissance des forces de
+des forces volumiques, Ã©ventuellement le terme de puissance des forces de
 pression (suivant la valeur de \var{IGRDPP}, on utilise la pr\'ediction de
 pression obtenue apr\`es r\'esolution de l'\'equation portant sur la masse
-volumique ou bien la pression du pas de temps précédent)
+volumique ou bien la pression du pas de temps prÃ©cÃ©dent)
 et le terme de puissance des forces visqueuses. On implicite le terme de puissance
 volumique en utilisant $\rho^{n+1}$.
 
@@ -145,7 +145,7 @@ On obtient alors l'\'equation discr\`ete portant sur $e$~:
 \end{array}
 \end{equation}
 avec $\widetilde{P}=P^{Pred}\text{ ou }P^n$ suivant la valeur de \var{IGRDPP}
-($P^n$ par défaut).
+($P^n$ par dÃ©faut).
 
 En pratique, dans \CS, on r\'esout cette \'equation en faisant appara\^itre \`a
 gauche l'\'ecart $e^{n+1} - e^n$. Pour cela, on \'ecrit la d\'eriv\'ee
@@ -416,11 +416,11 @@ pression, \'energie et temp\'erature.
 
 \etape{Choix de $\widetilde{P}$}
 En standard, on utilise $\widetilde{P}=P^n$, mais ce n'est pas le seul choix
-possible. On pourrait étudier le comportement de l'algorithme avec $P^{Pred}$ et
+possible. On pourrait Ã©tudier le comportement de l'algorithme avec $P^{Pred}$ et
 $P^{n+1}$ (avec $P^{n+1}$, en particulier,
 $\displaystyle\frac{\widetilde{P}}{\rho^{n+1}}$
-est évalué avec la masse volumique et l'énergie prises au même instant).
+est Ã©valuÃ© avec la masse volumique et l'Ã©nergie prises au mÃªme instant).
 
-\etape{Terme source dans l'équation de l'énergie}
-La présence d'un terme source externe dans l'équation de l'énergie génère des
+\etape{Terme source dans l'Ã©quation de l'Ã©nergie}
+La prÃ©sence d'un terme source externe dans l'Ã©quation de l'Ã©nergie gÃ©nÃ¨re des
 oscillations de vitesse qu'il est important d'analyser et de comprendre.

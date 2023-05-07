@@ -47,7 +47,7 @@ La matrice ne s'applique qu'aux termes non reconstruits, les autres \'etant pris
 trait\'es dans le sous-programme \fort{bilsc2}. La partie
 convective, lorsqu'elle existe, est issue du sch\'ema upwind pur, quelque soit
 le type de sch\'ema convectif choisi par l'utilisateur. En effet, c'est, \`a
-l'heure actuelle, la seule fa\c con d'obtenir un op\'erateur lin\'eaire à
+l'heure actuelle, la seule fa\c con d'obtenir un op\'erateur lin\'eaire Ã 
 diagonale dominante.\\\\
 La matrice est donc associ\'ee \`a $\mathcal{EM_{\it{scal}}}$, op\'erateur
 agissant sur un scalaire $a$ (inspir\'e de celui vectoriel $\mathcal{EM}$
@@ -121,8 +121,8 @@ L'op\'erateur $\mathcal{EM_{\it{scal}}}$ s'\'ecrit, pour tout $I$ centre de cell
 \end{equation}
 o\`u
 $a_{\,f,ij} = a_{\,I} \text{ ou }  a_{\,J}$
-selon le signe de $(\rho \vect{u})_{\,ij}^n.\vect{S}_{\,ij}$ (schéma
-convectif upwind systématique),
+selon le signe de $(\rho \vect{u})_{\,ij}^n.\vect{S}_{\,ij}$ (schÃ©ma
+convectif upwind systÃ©matique),
 et avec $\overline{I'J'}$, mesure alg\'ebrique, orient\'ee comme la
 normale sortante \`a la face, {\it i.e.} allant de $I$ vers $J$ pour la cellule
 $\Omega_i$ de centre $I$. On la
@@ -130,8 +130,8 @@ notera ${\overline{I'J'}^{\tiny {\,I}}}$ lorsqu'on aura besoin d'expliciter
 clairement l'orientation.\\
 ${a_f}_{\,{b}_{ik}} = a_I \text{ ou  }
 a_{\ {b}_{ik}}$ selon le signe de
-${(\rho \vect{u})_{\,{b}_{ik}}^n}\text{.}\, \vect{S}_{\,{b}_{ik}}$ (schéma
-upwind systématique)
+${(\rho \vect{u})_{\,{b}_{ik}}^n}\text{.}\, \vect{S}_{\,{b}_{ik}}$ (schÃ©ma
+upwind systÃ©matique)
 et $a_{\ {b}_{ik}}$ valeur au bord est donn\'ee directement par les conditions
 aux limites (valeur non reconstruite). $\overline{I'F}$, mesure alg\'ebrique, orient\'ee relativement \`a la
 normale sortante \`a la face, {\it i.e.} allant de $I$ vers l'ext\'erieur du domaine.\\
@@ -232,7 +232,7 @@ de bord ne contribuant qu'\`a la diagonale.
 %$ij\ ( \var{IFAC} )$} \\
 Pour chaque face interne \var{IFAC}, les contributions extradiagonales relatives
 au terme $a_I$ et \`a son voisin  associ\'e $a_J$ sont calcul\'ees dans
-$\var{XA(IFAC,1)}$ et $\var{XA(IFAC,2)}$ respectivement (pour une face orientée
+$\var{XA(IFAC,1)}$ et $\var{XA(IFAC,2)}$ respectivement (pour une face orientÃ©e
 de I vers J).\\
 On a les relations suivantes :\\
 \begin{equation}\label{Base_Matrix_eq_extra}

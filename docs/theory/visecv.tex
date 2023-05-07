@@ -31,10 +31,10 @@
 \section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Dans ce sous-programme sont calcul\'es les termes de gradient transposé et de viscosité
-secondaire (fluide newtonien). Ils seront traités en explicite
+Dans ce sous-programme sont calcul\'es les termes de gradient transposÃ© et de viscositÃ©
+secondaire (fluide newtonien). Ils seront traitÃ©s en explicite
 pur. En effet, si on traitait ces termes en implicite, cela reviendrait
-à coupler les équations des différentes composantes de la vitesse, ce qui n'est
+Ã  coupler les Ã©quations des diffÃ©rentes composantes de la vitesse, ce qui n'est
 pas compatible avec le sch\'ema de r\'esolution actuel ({\it cf. } sous-programme \fort{navstv}).
 
 See the \doxygenfile{visecv_8f90.html}{programmers reference of the dedicated subroutine} for further details.
@@ -44,11 +44,11 @@ See the \doxygenfile{visecv_8f90.html}{programmers reference of the dedicated su
 \section*{Discr\'etisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-L'intégration des termes de gradient transposé
- $\dive\,(\mu_{\,tot}\,^t\,\ggrad(\underline{v}))$ et de viscosité
+L'intÃ©gration des termes de gradient transposÃ©
+ $\dive\,(\mu_{\,tot}\,^t\,\ggrad(\underline{v}))$ et de viscositÃ©
 secondaire \\
-$-\displaystyle \frac{2}{3}\,\grad (\mu_{\,tot}\,\dive(\underline{v}))$ est la suivante\footnote{la viscosité de volume
-$\kappa$ est supposée nulle, cf. \fort{navstv}} :
+$-\displaystyle \frac{2}{3}\,\grad (\mu_{\,tot}\,\dive(\underline{v}))$ est la suivante\footnote{la viscositÃ© de volume
+$\kappa$ est supposÃ©e nulle, cf. \fort{navstv}} :
 \begin{equation}\notag
 \begin{array}{llll}
 &\displaystyle \int_{\Omega_i}\dive (\mu_{\,tot}
@@ -69,43 +69,43 @@ l})_{\,moy,\,b_{ik}}\,n_{\,b_{ik}}^{\,z}) S_{\,b_{ik}}\right] \underline
 &= -\displaystyle \frac{2}{3}\,\sum\limits_{l=x,y,z}\left[\sum\limits_{j \in Vois(i)}(\mu_{\,tot}\,\dive(\underline{v}))_{\,ij} S_{\,ij}^{\,l} + \displaystyle \sum_{k \in \gamma_b(i)}(\mu_{\,tot}\,\dive(\underline{v}))_{\,b_{ik}} S_{\,b_{ik}}^{\,l}\right]\,\underline {e}_{\,l}
 \end{array}
 \end{equation}
-Le terme de viscosité $\mu_{\,tot}$ est calculé en fonction du modèle de turbulence utilisé :
+Le terme de viscositÃ© $\mu_{\,tot}$ est calculÃ© en fonction du modÃ¨le de turbulence utilisÃ© :
 \begin{equation}\notag
 \mu_{\,tot}=
 \begin{cases}
-\mu + \mu_t & \text{pour les modèles à viscosité turbulente ou en LES}, \\
-\mu& \text{pour les modèles au second ordre ou en laminaire}.
+\mu + \mu_t & \text{pour les modÃ¨les Ã  viscositÃ© turbulente ou en LES}, \\
+\mu& \text{pour les modÃ¨les au second ordre ou en laminaire}.
 \end{cases}
 \end{equation}
-où $\mu$ et $\mu_t$ repr\'esentent respectivement la viscosit\'e dynamique moléculaire et la viscosité dynamique turbulente.
+oÃ¹ $\mu$ et $\mu_t$ repr\'esentent respectivement la viscosit\'e dynamique molÃ©culaire et la viscositÃ© dynamique turbulente.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Terme de gradient transposé}
-Avant de calculer l'intégration des deux termes, on calcule dans un premier
-temps la viscosité totale en fonction du modèle de turbulence considéré.\\
-Les termes calculés dans ce sous-programme, appelé par \fort{predvv}, interviennent dans le second membre
-de l'équation de quantité de mouvement, et sont donc directement stockés dans le
+\subsection*{Terme de gradient transposÃ©}
+Avant de calculer l'intÃ©gration des deux termes, on calcule dans un premier
+temps la viscositÃ© totale en fonction du modÃ¨le de turbulence considÃ©rÃ©.\\
+Les termes calculÃ©s dans ce sous-programme, appelÃ© par \fort{predvv}, interviennent dans le second membre
+de l'Ã©quation de quantitÃ© de mouvement, et sont donc directement stockÃ©s dans le
 tableau correspondant  \var{TRAV}.\\
-Le terme $\dive\,(\mu_{\,tot}\,^t\ggrad(\underline{v}))$ est calculé en
-opérant comme suit.\\
-On effectue une boucle sur les composantes $v_\alpha$ où $\alpha=x,y,z$ de la
-vitesse ($\alpha$ correspond à \var{ISOU} dans le code) :
+Le terme $\dive\,(\mu_{\,tot}\,^t\ggrad(\underline{v}))$ est calculÃ© en
+opÃ©rant comme suit.\\
+On effectue une boucle sur les composantes $v_\alpha$ oÃ¹ $\alpha=x,y,z$ de la
+vitesse ($\alpha$ correspond Ã  \var{ISOU} dans le code) :
 \begin{itemize}
 \item on calcule le gradient cellule de $v_{\,\alpha}$ par un appel au
 sous-programme \fort{grdcel}.
-\item on initialise un tableau nommé $\var{W}_6$ à la valeur $1$ pour les cellules
-internes, et à la valeur $0$ pour les cellules de bord. Ce tableau sert par la suite à ne
-pas considérer la contribution du terme de gradient transposé sur les cellules
+\item on initialise un tableau nommÃ© $\var{W}_6$ Ã  la valeur $1$ pour les cellules
+internes, et Ã  la valeur $0$ pour les cellules de bord. Ce tableau sert par la suite Ã  ne
+pas considÃ©rer la contribution du terme de gradient transposÃ© sur les cellules
 de bord. En effet, on ne sait pas \'ecrire de conditions aux limites correctes
 pour le gradient transpos\'e. On pr\'ef\`ere donc tout simplement annuler son
 effet sur les cellules de bord (\emph{cf.} paragraphe \ref{Base_Visecv_paragraphe4}).
-\item pour chaque direction $l$ ($l=x,y,z$), $l$ correspondant à \var{IDIM}
+\item pour chaque direction $l$ ($l=x,y,z$), $l$ correspondant Ã  \var{IDIM}
 dans le code, on calcule pour chaque cellule $\Omega_i$ dont le centre
-correspond à la variable \var{II} ou
+correspond Ã  la variable \var{II} ou
 \var{JJ} (pour les centres voisins) dans le code :\\
 \begin{equation}\notag
 \begin{array}{ll}
@@ -124,21 +124,21 @@ l})_{\,moy,{b_{\,ik}}}\,S_{\,{b_{\,ik}}}^{\,\alpha}\ \right]\\
 \end{itemize}
 Fin de la boucle sur les composantes de la vitesse.\\
 \\
-\subsection*{Terme de viscosité secondaire}
-Le terme de seconde viscosité
+\subsection*{Terme de viscositÃ© secondaire}
+Le terme de seconde viscositÃ©
  $-\displaystyle \frac{2}{3}\grad (\mu_{\,tot} \dive\,(\underline{v}))$
- est calculé de la façon suivante :
+ est calculÃ© de la faÃ§on suivante :
 \begin{itemize}
 \item on calcule la valeur de la vitesse sur la face $ij$ en divisant le flux
-masse connu à la face par la densité moyenne $\rho_{\,moy,\,ij}$ de la face
+masse connu Ã  la face par la densitÃ© moyenne $\rho_{\,moy,\,ij}$ de la face
 ($\rho_{\,moy,\,ij}=\displaystyle \frac{\rho_{\,i}+\rho_{\,j}}{2}$).
-\item on calcule ensuite l'intégrale volumique de la divergence de la vitesse sur chaque cellule en appelant le sous-programme
+\item on calcule ensuite l'intÃ©grale volumique de la divergence de la vitesse sur chaque cellule en appelant le sous-programme
 \fort{divmas}.
 \item on calcule alors pour chaque cellule $\Omega_i$ le terme $-\displaystyle
 \frac{2}{3}(\mu_{\,tot}\,\dive(\underline{v}))_{\,i}$ que l'on met dans le
 tableau de travail $\var{W}_4$. La valeur de ce terme sur la face interne $ij$
- est obtenue en prenant la moyenne arithmétique des valeurs des deux cellules
-avoisinantes (tableau \var{VISCF}) et celle sur la face de bord est prise égale
+ est obtenue en prenant la moyenne arithmÃ©tique des valeurs des deux cellules
+avoisinantes (tableau \var{VISCF}) et celle sur la face de bord est prise Ã©gale
 la valeur de la cellule avoisinante (tableau \var{VISCB}).
 \item on calcule alors pour chaque direction $l$ le terme final,
 \emph{i.e.} :\\
@@ -150,44 +150,44 @@ la valeur de la cellule avoisinante (tableau \var{VISCB}).
 \end{itemize}
 
 \vspace{0.5cm}
-Le traitement est similaire pour le terme de viscosité de volume dans le module compressible.
+Le traitement est similaire pour le terme de viscositÃ© de volume dans le module compressible.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section*{Points \`a traiter} \label{Base_Visecv_paragraphe4}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-L'intégration du terme de gradient transposé pose un problème de compatibilité.
-En effet, le gradient transposé provient de l'écriture de la divergence
+L'intÃ©gration du terme de gradient transposÃ© pose un problÃ¨me de compatibilitÃ©.
+En effet, le gradient transposÃ© provient de l'Ã©criture de la divergence
 du tenseur des contraintes (\emph{cf.} \fort{predvv}), soit :
 \begin{equation}\notag
 \dive\,(\tens{\sigma}) = \dive\,(- p \tens{Id} + \tens{\tau })
 \end{equation}
-où :
+oÃ¹ :
 \begin{equation}\notag
 \tens{\tau} = 2 \mu\ [\underbrace{\displaystyle \frac{1}{2}\,(\ggrad \underline
 {v}\ +\ ^t\ggrad \underline {v})}_{\text{partie 1}} -\underbrace{\displaystyle \frac{2}{3}\,tr(\,\frac{1}{2}\,(\ggrad \underline
 {v}\ +\ ^t\ggrad \underline {v}))\ \tens {Id}\ }_{\text{partie 2}}]
 \end{equation}
-Or, lorsque l'on intègre la première partie de la divergence de
+Or, lorsque l'on intÃ¨gre la premiÃ¨re partie de la divergence de
 $\tens{\tau}$, on implicite le terme $\dive\,(\mu\,\ggrad \underline{v})$ et on
-explicite le gradient transposé $\dive\,(\mu ^t\ggrad \underline{v})$.
+explicite le gradient transposÃ© $\dive\,(\mu ^t\ggrad \underline{v})$.
  Ce traitement fait intervenir la vitesse au centre des cellules. Elle ne
-vérifie pas exactement la condition $\dive\,(\rho \underline{v})\,=\,0$. En
-effet, au cours de l'étape de correction, on utilise un filtre Rhie et Chow
-(\emph{cf.} \fort{resopv}) et la vitesse n'est mise à jour qu'à la fin de
-l'étape. Par contre, lorsque l'on intègre la deuxième partie de
-la divergence de $\tens{\tau}$ de façon explicite, on utilise
-la vitesse issue du flux masse aux faces qui vérifie la condition $\dive\,(\rho
-\underline{v})\,=\,0$ (du moins à $\rho$ constant, l'interpolation de $\rho$ à
-la face étant également un point à considérer). Ainsi, la discrétisation de ces
-deux parties n'est pas totalement cohérente. Il serait utile de baser la
-discrétisation de ces termes sur une vitesse vérifiant la contrainte
+vÃ©rifie pas exactement la condition $\dive\,(\rho \underline{v})\,=\,0$. En
+effet, au cours de l'Ã©tape de correction, on utilise un filtre Rhie et Chow
+(\emph{cf.} \fort{resopv}) et la vitesse n'est mise Ã  jour qu'Ã  la fin de
+l'Ã©tape. Par contre, lorsque l'on intÃ¨gre la deuxiÃ¨me partie de
+la divergence de $\tens{\tau}$ de faÃ§on explicite, on utilise
+la vitesse issue du flux masse aux faces qui vÃ©rifie la condition $\dive\,(\rho
+\underline{v})\,=\,0$ (du moins Ã  $\rho$ constant, l'interpolation de $\rho$ Ã 
+la face Ã©tant Ã©galement un point Ã  considÃ©rer). Ainsi, la discrÃ©tisation de ces
+deux parties n'est pas totalement cohÃ©rente. Il serait utile de baser la
+discrÃ©tisation de ces termes sur une vitesse vÃ©rifiant la contrainte
 $\dive\,(\rho \underline{v})\,=\,0$.\\
-Pour la même raison, il est difficile de connaître les conditions aux limites du
-terme en gradient transposé. Sur les cellules de bord, on sait uniquement que la
-contrainte totale normale doit équilibrer le frottement et toutes les autres
-forces. Or, le tenseur des contraintes est scindé en une partie explicite et une partie implicite, donc c'est un peu difficile d'utiliser cette condition physique.\\
-Actuellement, la contribution aux cellules de bord du terme de gradient transposé est
-annulée, ce qui élimine l'influence des conditions aux limites mais n'est naturellement pas satisfaisant. Quelques essais d'intégration des conditions aux limites pour ce terme n'ont pas été concluants jusqu'à présent. Cependant, des essais supplémentaires
+Pour la mÃªme raison, il est difficile de connaÃ®tre les conditions aux limites du
+terme en gradient transposÃ©. Sur les cellules de bord, on sait uniquement que la
+contrainte totale normale doit Ã©quilibrer le frottement et toutes les autres
+forces. Or, le tenseur des contraintes est scindÃ© en une partie explicite et une partie implicite, donc c'est un peu difficile d'utiliser cette condition physique.\\
+Actuellement, la contribution aux cellules de bord du terme de gradient transposÃ© est
+annulÃ©e, ce qui Ã©limine l'influence des conditions aux limites mais n'est naturellement pas satisfaisant. Quelques essais d'intÃ©gration des conditions aux limites pour ce terme n'ont pas Ã©tÃ© concluants jusqu'Ã  prÃ©sent. Cependant, des essais supplÃ©mentaires
 sont envisageables.

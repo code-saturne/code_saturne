@@ -29,10 +29,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-On s'intéresse à la résolution des équations de Navier-Stokes en compressible,
-en particulier pour des configurations sans choc. Le schéma global correspond à une
+On s'intÃ©resse Ã  la rÃ©solution des Ã©quations de Navier-Stokes en compressible,
+en particulier pour des configurations sans choc. Le schÃ©ma global correspond Ã  une
 extension des algorithmes volumes finis mis en \oe uvre pour simuler les
-équations de Navier-Stokes en incompressible.
+Ã©quations de Navier-Stokes en incompressible.
 
 Dans les grandes lignes, le sch\'ema est constitu\'e d'une \'etape
 ``acoustique'' fournissant la masse volumique (ainsi qu'une pr\'ediction de
@@ -46,9 +46,9 @@ La thermodynamique prise en compte \`a ce jour est celle des gaz parfaits, mais
 l'organisation du code \`a \'et\'e  pr\'evue pour permettre \`a l'utilisateur de
 fournir ses propres lois.
 
-Pour compléter la présentation, on pourra se reporter à la référence
+Pour complÃ©ter la prÃ©sentation, on pourra se reporter Ã  la rÃ©fÃ©rence
 suivante~: \\
-\textbf{[Mathon]} P. Mathon, F. Archambeau, J.-M. Hérard : "Implantation d'un
+\textbf{[Mathon]} P. Mathon, F. Archambeau, J.-M. HÃ©rard : "Implantation d'un
 algorithme compressible dans \CS", HI-83/03/016/A
 
 Le cas de validation "tube \`a choc" de la version 1.2 de \CS permettra
@@ -68,9 +68,9 @@ double choc sym\'etrique).
 
 \phantom{$C_v$, ${C_v}_i$} & \phantom{$\lbrack f\rbrack.\,kg/(m^3.\,s)$} & \\
 
-$C_p$, ${C_p}_i$ & $J/(kg.\,K)$        & capacité calorifique \`a pression constante
+$C_p$, ${C_p}_i$ & $J/(kg.\,K)$        & capacitÃ© calorifique \`a pression constante
         $C_p = \left.\frac{\partial h}{\partial T}\right)_P$\\
-$C_v$, ${C_v}_i$ & $J/(kg.\,K)$        & capacité calorifique \`a volume constant
+$C_v$, ${C_v}_i$ & $J/(kg.\,K)$        & capacitÃ© calorifique \`a volume constant
         $C_v = \left.\frac{\partial \varepsilon}{\partial T}\right)_\rho$\\
 $\mathcal{D}_{f/b}$ & $m^2/s$         & diffusivit\'e mol\'eculaire du composant $f$
                                         dans le bain\\
@@ -210,9 +210,9 @@ pour des \'ecoulements compressibles.
 \end{array}\right.
 \end{equation}
 
-Nous avons présenté ici le système d'équations laminaires, mais il faut préciser
-que la turbulence ne pose pas de problème particulier dans la mesure où les
-équations suppl\'ementaires sont découplées du syst\`eme~(\ref{Cfbl_Cfbase_eq_ref_laminaire_cfbase}).
+Nous avons prÃ©sentÃ© ici le systÃ¨me d'Ã©quations laminaires, mais il faut prÃ©ciser
+que la turbulence ne pose pas de problÃ¨me particulier dans la mesure oÃ¹ les
+Ã©quations suppl\'ementaires sont dÃ©couplÃ©es du syst\`eme~(\ref{Cfbl_Cfbase_eq_ref_laminaire_cfbase}).
 
 %=================================
 \subsection*{Expression des termes intervenant dans les \'equations}
@@ -402,7 +402,7 @@ $h = C_p T
 %---------------------------------
 
 Une intervention de l'utilisateur dans le sous-programme utilisateur
-\fort{uscfth} est nécessaire pour pouvoir utiliser ces lois.
+\fort{uscfth} est nÃ©cessaire pour pouvoir utiliser ces lois.
 
 %`````````````````````````````````
 \paragraph{Equation d'\'etat~:}
@@ -494,7 +494,7 @@ $h = {C_p}_{m\acute el}\  T
 \subsubsection*{Pour un gaz de Van der Waals}
 %---------------------------------
 
-Ces lois n'ont pas été programmées, mais l'utilisateur peut intervenir
+Ces lois n'ont pas Ã©tÃ© programmÃ©es, mais l'utilisateur peut intervenir
 dans le sous-programme utilisateur \fort{uscfth} s'il souhaite le faire.
 
 %`````````````````````````````````
@@ -591,24 +591,24 @@ r\'esout les \'etapes suivantes~:
 \begin{enumerate}
 
   \item {\bf Acoustique~: sous-programme \fort{cfmsvl}} \\
-     Résolution d'une équation de convection-diffusion portant sur $\rho^{n+1}$.\\
-     On obtient à la fin de l'étape $\rho^{n+1}$, $Q^{n+1}_{ac}$ et
-éventuellement une
+     RÃ©solution d'une Ã©quation de convection-diffusion portant sur $\rho^{n+1}$.\\
+     On obtient Ã  la fin de l'Ã©tape $\rho^{n+1}$, $Q^{n+1}_{ac}$ et
+Ã©ventuellement une
 pr\'ediction de la pression $P^{pred}(\rho^{n+1},e^{n})$.\\
 
   \item {\bf Quantit\'e de mouvement~: sous-programme \fort{cfqdmv}}\\
-     Résolution d'une équation de convection-diffusion portant sur $u^{n+1}$ qui
+     RÃ©solution d'une Ã©quation de convection-diffusion portant sur $u^{n+1}$ qui
      fait intervenir  $Q^{n+1}_{ac}$ et $P^{pred}$.\\
-     On obtient à la fin de l'étape $u^{n+1}$.\\
+     On obtient Ã  la fin de l'Ã©tape $u^{n+1}$.\\
 
   \item {\bf \'Energie totale~: sous-programme \fort{cfener}}\\
-     Résolution d'une équation de convection-diffusion portant sur $e^{n+1}$ qui
+     RÃ©solution d'une Ã©quation de convection-diffusion portant sur $e^{n+1}$ qui
      fait intervenir  $Q^{n+1}_{ac}$, $P^{pred}$ et  $u^{n+1}$.\\
-     On obtient \`a la fin de l'étape $e^{n+1}$ et une valeur actualisée de la
+     On obtient \`a la fin de l'Ã©tape $e^{n+1}$ et une valeur actualisÃ©e de la
 pression $P(\rho^{n+1},e^{n+1})$.\\
 
   \item {\bf Scalaires passifs}\\
-     Résolution d'une équation de convection-diffusion standard par
+     RÃ©solution d'une Ã©quation de convection-diffusion standard par
      scalaire, avec  $Q^{n+1}_{ac}$ pour flux convectif.
 \end{enumerate}
 
@@ -649,8 +649,8 @@ particuli\`ere sont d\'efinies dans \fort{cfvarp} dans l'ordre
 suivant~:
 \begin{itemize}
 \item la masse volumique \var{RTP(*,ISCA(IRHO))},
-\item l'énergie totale   \var{RTP(*,ISCA(IENERG))},
-\item la température     \var{RTP(*,ISCA(ITEMPK))}
+\item l'Ã©nergie totale   \var{RTP(*,ISCA(IENERG))},
+\item la tempÃ©rature     \var{RTP(*,ISCA(ITEMPK))}
 \end{itemize}
 
 On souligne que la temp\'erature est d\'efinie en tant que variable ``\var{RTP}'' et
@@ -671,11 +671,11 @@ Outre les propri\'et\'es associ\'ees en standard aux variables
 identifi\'ees ci-dessus, le
 tableau \var{PROPCE} contient \'egalement~:
  \begin{itemize}
-\item la chaleur massique à volume constant $C_v$, stock\'ee dans
+\item la chaleur massique Ã  volume constant $C_v$, stock\'ee dans
 \var{PROPCE(*,IPPROC(ICV))},
-      si  l'utilisateur a indiqué dans \fort{uscfth} qu'elle \'etait variable.
-\item la viscosité en volume \var{PROPCE(*,IPPROC(IVISCV))}
-      si  l'utilisateur a indiqué dans \fort{uscfx2} qu'elle \'etait variable.
+      si  l'utilisateur a indiquÃ© dans \fort{uscfth} qu'elle \'etait variable.
+\item la viscositÃ© en volume \var{PROPCE(*,IPPROC(IVISCV))}
+      si  l'utilisateur a indiquÃ© dans \fort{uscfx2} qu'elle \'etait variable.
 \end{itemize}
 
 
@@ -725,9 +725,9 @@ thermique impos\'e.
                 &                 &                 & \fort{cfvarp} &
         & Positionnement des inconnues sp\'ecifiques au module compressible \\
                 &                 &                 &               & \fort{uscfth}
-        & Appelé avec ICCFTH=-1, pour indiquer que $C_p$ et $C_v$ sont constants ou variables\\
+        & AppelÃ© avec ICCFTH=-1, pour indiquer que $C_p$ et $C_v$ sont constants ou variables\\
                 &                 &                 &               & \fort{uscfx2}
-        & Conductivité thermique mol\'eculaire constante ou variable et viscosité en volume
+        & ConductivitÃ© thermique mol\'eculaire constante ou variable et viscositÃ© en volume
            constante ou variable (ainsi que leur valeur, si elles sont constantes)\\
                 &                 & \fort{ppprop} &                &
         & Branchement des physiques particuli\`eres pour le positionnement des propri\'et\'es\\
@@ -759,7 +759,7 @@ positionnement des variables}
                  &                 & \fort{memcfv} &
         & R\'eservation de tableaux de travail locaux   \\
                  &                 & \fort{uscfth} &
-        & Initialisation des variables par défaut (en calcul suite~: seulement
+        & Initialisation des variables par dÃ©faut (en calcul suite~: seulement
 $C_v$~; si le calcul n'est pas une suite~: $C_v$, la masse volumique et l'\'energie) \\
                  &                 & \fort{uscfxi} &
         & Initialisation des variables par l'utilisateur (seulement si le calcul
@@ -799,7 +799,7 @@ n'est pas une suite)  \\
 \fort{dttvar}         &                &                &
         & Calcul du pas de temps variable  \\
                 & \fort{cfdttv} &                &
-        & Calcul de la contrainte liée au CFL en compressible \\
+        & Calcul de la contrainte liÃ©e au CFL en compressible \\
                 &                    &\fort{memcft}         &
         & Gestion de la m\'emoire pour le calcul de la contrainte en CFL \\
                 &                    &\fort{cfmsfl}         &
@@ -846,19 +846,19 @@ n'est pas une suite)  \\
 \fort{memcfm}        &                  &                &
         & Gestion de la m\'emoire pour la r\'esolution de l'\'etape ``acoustique'' \\
 \fort{cfmsvl}         &                  &                &
-        & R\'esolution de l'étape ``acoustique'' \\
+        & R\'esolution de l'Ã©tape ``acoustique'' \\
                  & \fort{cfmsfl}  &                &
         & Calcul du "flux de masse" aux faces
                 (not\'e $\rho\,\vect{w}\cdot\vect{n}\,S$ dans la documentation
                 du sous-programme \fort{cfmsvl}) \\
                  &                  & \fort{cfdivs}&
         & Calcul du terme en divergence du tenseur des contraintes visqueuses
-                  (trois appels), éventuellement \\
+                  (trois appels), Ã©ventuellement \\
                  &                  &                &
         & Apr\`es \fort{cfmsfl}, on impose le flux de masse aux faces de bord
                 \`a partir des conditions aux limites \\
                  & \fort{cfmsvs}  &                &
-        & Calcul de la "viscosité" aux faces
+        & Calcul de la "viscositÃ©" aux faces
                 (not\'ee $\Delta\,t\,c^2\frac{S}{d}$ dans la documentation
                 du sous-programme \fort{cfmsvl}) \\
                  &                  &                &
@@ -875,11 +875,11 @@ n'est pas une suite)  \\
                 (not\'e $\vect{Q}_{ac}\cdot\vect{n}$ dans la documentation
                 du sous-programme \fort{cfmsvl}) \\
                  & \fort{uscfth}  &                &
-        & Actualisation de la pression, éventuellement  \\
+        & Actualisation de la pression, Ã©ventuellement  \\
 \fort{cfqdmv}         &                  &                &
-        & R\'esolution de la quantité de mouvement\\
+        & R\'esolution de la quantitÃ© de mouvement\\
                 & \fort{cfcdts}         &                &
-        & Résolution du syst\`eme\\
+        & RÃ©solution du syst\`eme\\
                 &                  & \fort{cfbsc2}&
         & Calcul des termes de convection et de diffusion au second membre\\
 \end{tabular}
@@ -895,7 +895,7 @@ n'est pas une suite)  \\
 \fort{scalai}          &                  &                &
         & R\'esolution des \'equations sur les scalaires  \\
                 & \fort{cfener}         &                &
-        & R\'esolution de l'équation sur l'énergie totale\\
+        & R\'esolution de l'Ã©quation sur l'Ã©nergie totale\\
                 &                  & \fort{memcfe}&
         & Gestion de la m\'emoire locale\\
                 &                  & \fort{cfdivs}&
@@ -905,7 +905,7 @@ n'est pas une suite)  \\
         & Calcul de l'\'ecart  ``\'energie interne - $C_v\,T$''
                 ($\varepsilon_{sup}$)\\
                 &                  & \fort{cfcdts}&
-        & Résolution du syst\`eme\\
+        & RÃ©solution du syst\`eme\\
                 &                  &                  &\fort{cfbsc2}
         & Calcul des termes de convection et de diffusion au second membre\\
                  &                  & \fort{clpsca}&
@@ -1004,7 +1004,7 @@ acad\'emiques, en particulier~:
         quantit\'e de mouvement parasite),
         \item maillage non conforme (non conformit\'e dans la direction
         transverse d'un canal),
-      \item ``tube à choc'' avec terme source d'énergie.
+      \item ``tube Ã  choc'' avec terme source d'Ã©nergie.
         \end{itemize}
 \item Compl\'eter certains points de documentation, en particulier les
         conditions aux limites thermiques pour le couplage avec \syrthes.

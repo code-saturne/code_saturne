@@ -74,7 +74,7 @@ de pr\'ediction des vitesses du sch\'ema de base de \CS.
 \subsection*{Discr\'etisation en temps}
 %---------------------------------
 
-On implicite le terme de convection, éventuellement
+On implicite le terme de convection, Ã©ventuellement
 le gradient de pression (suivant la valeur de \var{IGRDPP}, en utilisant la
 pression pr\'edite lors de l'\'etape acoustique) et le terme en gradient
 du tenseur des contraintes visqueuses.
@@ -95,7 +95,7 @@ On obtient alors l'\'equation discr\`ete suivante~:
 \end{array}
 \end{equation}
 avec $\widetilde{P}=P^n\text{ ou }P^{Pred}$ suivant la valeur de \var{IGRDPP}
-($P^n$ par défaut).
+($P^n$ par dÃ©faut).
 
 En pratique, dans \CS, on r\'esout cette \'equation en faisant appara\^itre \`a
 gauche l'\'ecart $\vect{u}^{n+1} - \vect{u}^n$. Pour cela, on \'ecrit la
@@ -221,7 +221,7 @@ et un sch\'ema centr\'e pour le gradient normal aux faces~:
 %.................................
 
 On utilise \fort{grdcel} standard. Suivant la valeur de \var{IMRGRA},
-cela correspond à une reconstruction itérative ou par moindres carrés.
+cela correspond Ã  une reconstruction itÃ©rative ou par moindres carrÃ©s.
 
 %.................................
 \subsubsection*{Discr\'etisation du ``reste'' du tenseur des contraintes visqueuses}

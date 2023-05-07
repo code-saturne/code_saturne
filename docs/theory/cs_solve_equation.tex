@@ -259,7 +259,7 @@ de la diagonale de la matrice (\var{ROVSDT}).
 \item calcul des termes sources du scalaire d\'{e}finis par l'utilisateur en
 appelant le sous-programme \fort{ustssc}.
 \\\\
-$\star$ Si les termes sources sont extrapol\'{e}s, \var{SMBRS} reçoit $-\theta_S$
+$\star$ Si les termes sources sont extrapol\'{e}s, \var{SMBRS} reÃ§oit $-\theta_S$
 fois la contribution au temps $n-1$ des termes sources qui sont extrapol\'{e}s
 (stock\'{e}s dans \var{PROPCE}). La contribution des termes sources utilisateurs (au
 pas temps courant) est r\'{e}partie entre \var{PROPCE} (pour la partie $T_s^{exp}$
@@ -290,7 +290,7 @@ $\star$ Sinon, la partie implicte en $-\Gamma\,f$ va dans \var{ROVSDT}, et tout 
 \item calcul du terme d'accumulation de masse en $\dive(\rho \underline{u})$ par
 appel \`a \fort{divmas} et ajout de sa contribution dans \var{SMBRS}, et dans
 \var{ROVSDT} apr\`{e}s multiplication par $\theta$\footnote{cette op\'{e}ration est
-faite quel que soit le sch\'{e}ma en temps de façon \`{a} rester coh\'{e}rent avec ce qui
+faite quel que soit le sch\'{e}ma en temps de faÃ§on \`{a} rester coh\'{e}rent avec ce qui
 est fait dans \fort{bilsc2}}.
 
 \item ajout du terme instationnaire \`{a} \var{ROVSDT}.
@@ -306,7 +306,7 @@ le gradient du scalaire $f$ par appel au sous-programme \fort{grdcel}.
 $\star$ Si les termes sources sont extrapol\'{e}s, la production est mise dans
 \var{PROPCE} puis l'\'{e}nergie cin\'{e}tique $k$ et la dissipation turbulentes
 $\varepsilon$ sont calcul\'{e}es (\var{XK} et \var{XE}) en
-fonction du mod\`{e}le de turbulence utilis\'{e}. \var{SMBRS} reçoit
+fonction du mod\`{e}le de turbulence utilis\'{e}. \var{SMBRS} reÃ§oit
 $\displaystyle - \frac{\rho \varepsilon}{R_f k}\widetilde{{a"}^2}$ au temps $n$
 et \var{ROVSDT} le coefficient d'implicitation
 $\displaystyle \frac{\rho \varepsilon}{R_f k}$ apr\`{e}s multiplication par
@@ -387,7 +387,7 @@ T_s^{\,exp} + T_s^{\,imp}\,f^{n}+\dive(\,\rho
 \end{equation}
 %\underline{Remarque :}
 %\\
-%Le $\theta$ en facteur du terme de compressibilt\'{e} provient de la façon dont est compl\'{e}t\'{e} le second membre lors de l'appel au sous-programme \fort{bilcs2}.
+%Le $\theta$ en facteur du terme de compressibilt\'{e} provient de la faÃ§on dont est compl\'{e}t\'{e} le second membre lors de l'appel au sous-programme \fort{bilcs2}.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section*{Points \`{a} traiter}\label{Base_Covofi_section4}

@@ -34,12 +34,12 @@
 Dans ce sous-programme est calcul\'e le coefficient de diffusion ``orthotrope'' aux faces. Ce type de coefficient se rencontre pour la diffusion de $R_{\,ij}$ et
 $\varepsilon$ en $R_{\,ij}-\varepsilon$ ( {\it cf.} \fort{turrij}), ainsi que pour la
 correction de pression dans le cadre de l'algorithme avec couplage
-vitesse-pression renforcé (\fort{resopv}).\\
-Ce coefficient fait intervenir la valeur de la viscosité aux faces multipliée par
+vitesse-pression renforcÃ© (\fort{resopv}).\\
+Ce coefficient fait intervenir la valeur de la viscositÃ© aux faces multipliÃ©e par
 le rapport surface de la face sur la distance alg\'ebrique $\overline{I'J'}$,
-rapport résultant de l'intégration du terme de diffusion.
-La valeur de la viscosité aux faces est basée soit sur une moyenne
-arithmétique, soit sur une moyenne harmonique de la viscosité au centre des
+rapport rÃ©sultant de l'intÃ©gration du terme de diffusion.
+La valeur de la viscositÃ© aux faces est basÃ©e soit sur une moyenne
+arithmÃ©tique, soit sur une moyenne harmonique de la viscositÃ© au centre des
 cellules.
 
 See the \doxygenfile{visort_8f90.html}{programmers reference of the dedicated subroutine} for further details.
@@ -60,7 +60,7 @@ pour les faces internes et les faces de bord.
 \caption{\label{Base_Visort_fig_geom}D\'efinition des diff\'erentes entit\'es
 g\'eom\'etriques pour les faces internes (gauche) et de bord (droite).}
 \end{figure}
-L'intégration du terme de diffusion ``orthotrope'' sur une cellule est la
+L'intÃ©gration du terme de diffusion ``orthotrope'' sur une cellule est la
 suivante :
 \begin{equation}
 \int_{\Omega_i}\dive \,(\tens{\mu}\ \grad f)\,d\Omega =\sum\limits_{j \in
@@ -78,26 +78,26 @@ et :
 &\underline{S}_{\,b_{ik}} = S_{\,b_{ik}} \underline{n}_{\,b_{ik}}
 \end{array}
 \end{equation}
-Le terme $(\tens{\mu}\ \grad(f))_{\,ij}\underline{n}_{\,ij}$ est calculé à
-l'aide de la décomposition suivante :
+Le terme $(\tens{\mu}\ \grad(f))_{\,ij}\underline{n}_{\,ij}$ est calculÃ© Ã 
+l'aide de la dÃ©composition suivante :
 \begin{equation}
 (\tens{\mu}\ \grad f)_{\,ij} = (\grad f \,.\,\underline{n}_{\,ij})\ \tens{\mu}\
 \underline{n}_{\,ij}+
 (\grad f .\underline{\tau}_{ij})\ \tens{\mu}\ \underline{\tau}_{\,ij}
 \end{equation}
-o\`u $\underline{\tau}_{ij}$ représente un vecteur tangent (unitaire) à
-la face. Une décomposition similaire est utilisée aux faces de bord.\\
+o\`u $\underline{\tau}_{ij}$ reprÃ©sente un vecteur tangent (unitaire) Ã 
+la face. Une dÃ©composition similaire est utilisÃ©e aux faces de bord.\\
 Dans la matrice, seul le terme
 $(\grad f \,.\,\underline{n}_{\,ij})\ \tens{\mu}\ \underline{n}_{\,ij}$ est
 int\'egrable facilement en implicite. Par cons\'equent, la partie projet\'ee sur $\underline{\tau}_{\,ij}$
 est :
 \begin{itemize}
-\item n\'eglig\'ee dans le cas du calcul des échelles de temps relatives au
-couplage vitesse-pression renforcé,
+\item n\'eglig\'ee dans le cas du calcul des Ã©chelles de temps relatives au
+couplage vitesse-pression renforcÃ©,
 \item trait\'ee en explicite dans les termes de diffusion de
 $R_{\,ij}-\varepsilon$ (\emph{cf.} \fort{turrij}).\\
 \end{itemize}
-L'intégration implicite du terme de diffusion s'\'ecrit :
+L'intÃ©gration implicite du terme de diffusion s'\'ecrit :
 \begin{equation}
 \int_{\Omega_i}\dive\,(\tens{\mu}\ \grad f )\,d\Omega = \sum\limits_{j \in
 Vois(i)}(\tens{\mu}\ \underline{n}_{\,ij})\,.\,\underline{S}_{\,ij}\,
@@ -119,7 +119,7 @@ soit encore :
 (S_{\,ij}^{\,x})^2 + \mu_{\,ij}^{\,y} (S_{\,ij}^{\,y})^2 +
 \mu_{\,ij}^{\,z} (S_{\,ij}^{\,z})^2}{S_{\,ij}^2}
 \end{equation}
-Au bord, on calcule de même :
+Au bord, on calcule de mÃªme :
 \begin{equation}\notag
 \displaystyle \frac{(\tens{\mu}\
 \underline{n}_{\,b_{ik}})\,.\,\underline{S}_{\,b_{ik}}}{\overline{I'F}}
@@ -133,8 +133,8 @@ Au bord, on calcule de même :
 \mu_{I}^{\,z} (S_{\,b_{ik}}^{\,z})^2}{S_{\,b_{ik}}^2}
 \end{equation}
 
-La valeur de la viscosité dans une direction $l$ sur la face, $\mu_{\,ij}^{\,l}$,
-est calculée :
+La valeur de la viscositÃ© dans une direction $l$ sur la face, $\mu_{\,ij}^{\,l}$,
+est calculÃ©e :
 \begin{itemize}
 \item soit par interpolation lin\'eaire :
 \begin{equation}
@@ -147,7 +147,7 @@ interpolation soit d'ordre 1 en espace en convergence,
 \mu_{\,ij}^{\,l}=\displaystyle
 \frac{\mu_{i}^{\,l}\ \mu_{j}^{\,l}}{\alpha_{\,ij}\mu_{i}^{\,l}+(1-\alpha_{\,ij}) \mu_{j}^{\,l}}
 \end{equation}
-où :
+oÃ¹ :
 \begin{equation}\notag
 \displaystyle \alpha_{\,ij}=\frac{\overline{FJ'}}{\overline{I'J'}}
 \end{equation}
@@ -158,36 +158,36 @@ où :
 \section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-La viscosité orthotrope au centre des cellules est entrée en argument {\it via}
+La viscositÃ© orthotrope au centre des cellules est entrÃ©e en argument {\it via}
 les variables $\var{W}_1$, $\var{W}_2$ et $\var{W}_3$. On calcule la valeur
-moyenne de chaque viscosité aux faces de façon arithmétique ou
-harmonique. Ensuite, on calcule la viscosité équivalente correspondant à
+moyenne de chaque viscositÃ© aux faces de faÃ§on arithmÃ©tique ou
+harmonique. Ensuite, on calcule la viscositÃ© Ã©quivalente correspondant Ã 
 $\displaystyle (\tens{\mu}\ \underline{n}_{\,ij})\,.\,\frac{\underline{S}_{\,ij}}{\overline{I'J'}}$ pour les
-faces internes et à $\displaystyle (\tens{\mu}\ \underline{n}_{\,b_{ik}})\,.\,
+faces internes et Ã  $\displaystyle (\tens{\mu}\ \underline{n}_{\,b_{ik}})\,.\,
 \frac{\underline{S}_{\,b_{ik}}}{\overline{I'F}}$ pour les faces de bord.\\
 
 Cette \'ecriture fait intervenir les vecteurs surface stock\'es dans le tableau
 \var{SURFAC}, la norme de la surface \var{SURFN}
  et la distance alg\'ebrique \var{DIST} pour une face interne (\var{SURFBO},
 \var{SURFBN} et \var{DISTBR} respectivement pour une face de bord). La valeur du
-terme de diffusion résultant est mise dans le vecteur \var{VISCF} (\var{VISCB} aux faces de bord).\\
-La variable \var{IMVISF} détermine quel type de moyenne est utilisé pour
-calculer la viscosité dans une direction \`a la face. Si \var{IMVISF}$=0$, alors
-la moyenne est arithmétique, sinon la moyenne est harmonique).
+terme de diffusion rÃ©sultant est mise dans le vecteur \var{VISCF} (\var{VISCB} aux faces de bord).\\
+La variable \var{IMVISF} dÃ©termine quel type de moyenne est utilisÃ© pour
+calculer la viscositÃ© dans une direction \`a la face. Si \var{IMVISF}$=0$, alors
+la moyenne est arithmÃ©tique, sinon la moyenne est harmonique).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section*{Points \`a traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-L'obtention des interpolations utilisées dans le code \CS \ du paragraphe
-\ref{Base_Visort_paragraphe2} est résumée dans le rapport de Davroux et al\footnote{Davroux A., Archambeau F. et Hérard J.M., Tests numériques sur
-quelques méthodes de résolution d'une équation de diffusion en volumes finis,
+L'obtention des interpolations utilisÃ©es dans le code \CS \ du paragraphe
+\ref{Base_Visort_paragraphe2} est rÃ©sumÃ©e dans le rapport de Davroux et al\footnote{Davroux A., Archambeau F. et HÃ©rard J.M., Tests numÃ©riques sur
+quelques mÃ©thodes de rÃ©solution d'une Ã©quation de diffusion en volumes finis,
 HI-83/00/027/A.}.
-Les auteurs de ce rapport ont montré que, pour un maillage monodimensionnel irrégulier et avec une
-viscosité non constante, la convergence mesurée est d'ordre 2 en espace avec
+Les auteurs de ce rapport ont montrÃ© que, pour un maillage monodimensionnel irrÃ©gulier et avec une
+viscositÃ© non constante, la convergence mesurÃ©e est d'ordre 2 en espace avec
 l'interpolation harmonique et d'ordre 1 en espace avec l'interpolation
-linéaire (pour des solutions régulières). Par conséquent, il serait préférable d'utiliser l'interpolation
-harmonique pour calculer la valeur de la viscosité aux faces. Des tests de stabilité seront nécessaires au préalable.\\
-De même, on envisage d'extrapoler la viscosité sur les faces de bord plutôt que
-de prendre la valeur de la viscosité de la cellule jouxtant cette face.\\
+linÃ©aire (pour des solutions rÃ©guliÃ¨res). Par consÃ©quent, il serait prÃ©fÃ©rable d'utiliser l'interpolation
+harmonique pour calculer la valeur de la viscositÃ© aux faces. Des tests de stabilitÃ© seront nÃ©cessaires au prÃ©alable.\\
+De mÃªme, on envisage d'extrapoler la viscositÃ© sur les faces de bord plutÃ´t que
+de prendre la valeur de la viscositÃ© de la cellule jouxtant cette face.\\
 Dans le cas de la moyenne arithm\'etique, l'utilisation de la valeur $0.5$ pour les coefficients $\alpha_{\,ij}$ serait \`a revoir.
