@@ -733,7 +733,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
         }
       }
 
-      cs_real_t xss  = xttke*sqrt(.5*sijsij);
+      cs_real_t xss  = xttke*sqrt(2.*sijsij);
       cs_real_t xcmu = d2s3/(3.9 + xss);
 
       /* Evaluating "constants" */
@@ -746,9 +746,9 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 
       /* Evaluating the turbulent production */
       smbrk[c_id] =   visct*strain[c_id]
-                    - xqc1*visct*xttke* (skskjsji - d1s3*sijsij*divu[c_id])
-                    - xqc2*visct*xttke* (wkskjsji + skiwjksji)
-                    - xqc3*visct*xttke* (wkwjksji - d1s3*wijwij*divu[c_id]);
+                    - 4*xqc1*visct*xttke* (skskjsji - d1s3*sijsij*divu[c_id])
+                    - 4*xqc2*visct*xttke* (wkskjsji + skiwjksji)
+                    - 4*xqc3*visct*xttke* (wkwjksji - d1s3*wijwij*divu[c_id]);
       smbre[c_id] = smbrk[c_id];
     } /* End loop on cells */
 
@@ -2358,7 +2358,7 @@ cs_turbulence_ke_q_mu_t(void)
     const cs_real_t xmut = xrom*cs_math_pow2(xk)/xe;
     const cs_real_t xrey = xdist*sqrt(xk)*xrom/xmu;
     const cs_real_t xttke = xk/xe;
-    const cs_real_t xss = xttke*sqrt(0.5*s2[c_id]);
+    const cs_real_t xss = xttke*sqrt(2.0*s2[c_id]);
 
     const cs_real_t xfmu = 1.0 - exp(- 2.9e-2*sqrt(xrey)
                                      - 1.1e-4*cs_math_pow2(xrey));
@@ -2455,7 +2455,7 @@ cs_turbulence_ke_q(cs_real_6_t  rij[])
       }
     }
 
-    const cs_real_t xss = xttke*sqrt(0.5*sijsij);
+    const cs_real_t xss = xttke*sqrt(2.*sijsij);
     const cs_real_t xcmu = d2s3/(3.9 + xss);
 
     /* Evaluating "constants". */
@@ -2468,9 +2468,9 @@ cs_turbulence_ke_q(cs_real_6_t  rij[])
 
     for (cs_lnum_t ii = 0; ii < 3; ii++) {
       for (cs_lnum_t jj = 0; jj < 3; jj++) {
-        xrij[jj][ii] =   xqc1*xvisct*xttke*sikskj[jj][ii]
-                       + xqc2*xvisct*xttke*(wikskj[jj][ii]+skiwjk[jj][ii])
-                       + xqc3*xvisct*xttke*wikwjk[jj][ii];
+        xrij[jj][ii] = - 4*xqc1*xvisct*xttke*sikskj[jj][ii]
+                       - 4*xqc2*xvisct*xttke*(wikskj[jj][ii]+skiwjk[jj][ii])
+                       - 4*xqc3*xvisct*xttke*wikwjk[jj][ii];
       }
     }
 
