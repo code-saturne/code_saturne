@@ -1328,6 +1328,9 @@ _turbulence_model_enum_name(cs_turb_model_type_t  id)
   case CS_TURB_K_EPSILON_LS:
     s = "CS_TURB_K_EPSILON_LS";
     break;
+  case CS_TURB_K_EPSILON_LS_CUBIC:
+    s = "CS_TURB_K_EPSILON_LS_CUBIC";
+    break;
   case CS_TURB_K_EPSILON_QUAD:
     s = "CS_TURB_K_EPSILON_QUAD";
     break;
@@ -1401,6 +1404,9 @@ _turbulence_model_name(cs_turb_model_type_t  id)
     break;
   case CS_TURB_K_EPSILON_LS:
     s = _("Launder-Sharma k-epsilon model");
+    break;
+  case CS_TURB_K_EPSILON_LS_CUBIC:
+    s = _("Launder-Sharma k-epsilon model cubic baglietto");
     break;
   case CS_TURB_K_EPSILON_QUAD:
     s = _("Baglietto et al. quadratic k-epsilon model");
@@ -1483,6 +1489,7 @@ cs_set_type_order_turbulence_model(void)
   else if (   _turb_model.iturb == CS_TURB_K_EPSILON
            || _turb_model.iturb == CS_TURB_K_EPSILON_LIN_PROD
            || _turb_model.iturb == CS_TURB_K_EPSILON_LS
+           || _turb_model.iturb == CS_TURB_K_EPSILON_LS_CUBIC
            || _turb_model.iturb == CS_TURB_K_EPSILON_QUAD
            || _turb_model.iturb == CS_TURB_K_EPSILON_CUBIC
            || _turb_model.iturb == CS_TURB_V2F_PHI
@@ -1784,6 +1791,7 @@ cs_turb_model_log_setup(void)
   else if (   turb_model->iturb == CS_TURB_K_EPSILON
            || turb_model->iturb == CS_TURB_K_EPSILON_LIN_PROD
            || turb_model->iturb == CS_TURB_K_EPSILON_LS
+           || turb_model->iturb == CS_TURB_K_EPSILON_LS_CUBIC
            || turb_model->iturb == CS_TURB_K_EPSILON_QUAD
            || turb_model->iturb == CS_TURB_K_EPSILON_CUBIC) {
 
@@ -2040,6 +2048,7 @@ cs_turb_constants_log_setup(void)
   if (   turb_model->iturb == CS_TURB_K_EPSILON
       || turb_model->iturb == CS_TURB_K_EPSILON_LIN_PROD
       || turb_model->iturb == CS_TURB_K_EPSILON_LS
+      || turb_model->iturb == CS_TURB_K_EPSILON_LS_CUBIC
       || turb_model->iturb == CS_TURB_K_EPSILON_QUAD
       || turb_model->iturb == CS_TURB_K_EPSILON_CUBIC)
     cs_log_printf

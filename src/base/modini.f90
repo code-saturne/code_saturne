@@ -584,7 +584,7 @@ endif
 
 if (ypluli.lt.-grand) then
   if (iwallf.eq.4 .or. itytur.eq.4 .or. iturb.eq.70.or.iwallf.eq.6.or.iturb.eq.60 &
-      .or. iturb.eq.22 ) then
+      .or.iturb.eq.22.or.iturb.eq.25) then
     ypluli = 10.88d0
   else
     ypluli = 1.d0/xkappa

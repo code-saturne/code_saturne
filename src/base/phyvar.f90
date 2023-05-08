@@ -407,6 +407,13 @@ elseif (itytur.eq.2) then
     ! ------------------------------
 
     call cs_turbulence_ke_c_mu_t
+
+  else if (iturb.eq.25) then
+
+    ! Non-linear cubic Baglietto Launder Sharma
+    ! ------------------------------
+
+    call cs_turbulence_ke_c_mu_t
   else
 
     ! Standard and Linear Production

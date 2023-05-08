@@ -1486,11 +1486,12 @@ cs_parameters_check(void)
   /* Turbulence */
 
   /* Model */
-  const int iturb_vals[17] = {CS_TURB_NONE,   /* laminar */
+  const int iturb_vals[18] = {CS_TURB_NONE,   /* laminar */
                               CS_TURB_MIXING_LENGTH,
                               CS_TURB_K_EPSILON,
                               CS_TURB_K_EPSILON_LIN_PROD,
                               CS_TURB_K_EPSILON_LS,
+                              CS_TURB_K_EPSILON_LS_CUBIC,
                               CS_TURB_K_EPSILON_QUAD,
                               CS_TURB_K_EPSILON_CUBIC,
                               CS_TURB_RIJ_EPSILON_LRR,
@@ -1508,7 +1509,7 @@ cs_parameters_check(void)
                                _("while reading input data"),
                                "cs_glob_turb_model->iturb",
                                turb_model->iturb,
-                               17,
+                               18,
                                iturb_vals,
                                NULL);
 
@@ -1669,6 +1670,7 @@ cs_parameters_check(void)
     /* In k-eps with lin prod/LS/Quad and in v2f we force ikecou to 0 */
     if (   turb_model->iturb == CS_TURB_K_EPSILON_LIN_PROD
         || turb_model->iturb == CS_TURB_K_EPSILON_LS
+        || turb_model->iturb == CS_TURB_K_EPSILON_LS_CUBIC
         || turb_model->iturb == CS_TURB_K_EPSILON_QUAD
         || turb_model->iturb == CS_TURB_K_EPSILON_CUBIC
         || turb_model->itytur == 5) {
@@ -1677,6 +1679,7 @@ cs_parameters_check(void)
          _("while reading input data,\n"
            "with k-epsilon LP (iturb=CS_TURB_K_EPSILON_LIN_PROD),\n"
            "k-epsilon LS (iturb=CS_TURB_K_EPSILON_LS),\n"
+           "k-epsilon LS NLEVM (iturb=CS_TURB_K_EPSILON_LS_CUBIC),\n"
            "k-epislon quadratic (iturb=CS_TURB_K_EPSILON_QUAD),\n"
            "k-epislon cubic (iturb=CS_TURB_K_EPSILON_CUBIC),\n"
            "or v2f model (iturb=CS_TURB_V2F_PHI, CS_TURB_V2F_BL_V2K)."),

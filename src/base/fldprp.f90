@@ -213,7 +213,7 @@ if (hybrid_turb.eq.4) then
 
 endif
 
-if  (iturb.eq.24) then
+if  (iturb.eq.24.or.iturb.eq.25) then
   ! Variable Cmu in Baglietto cubic model
   call add_property_field_1d('cmu', 'C_mu', iflid)
 endif

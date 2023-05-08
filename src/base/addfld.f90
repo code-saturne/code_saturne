@@ -495,6 +495,7 @@ endif
 
 if ( iturb.eq.23.or.                                &
      iturb.eq.24.or.                                &
+     iturb.eq.25.or.                                &
     (itytur.eq.3).or.                               &
      (iturb.eq.30.and.irijec.eq.1).or.              &
      (itytur.eq.4.and.idries.eq.1).or.              &

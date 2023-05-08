@@ -1062,7 +1062,7 @@ do ifac = 1, nfabor
       ! ==================================
       ! Launder Sharma boundary conditions
       ! ==================================
-      if(iturb.eq.22) then
+      if(iturb.eq.22.or.iturb.eq.25) then
 
         ! Dirichlet Boundary Condition on k
         !----------------------------------

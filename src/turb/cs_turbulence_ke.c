@@ -379,7 +379,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
     BFT_MALLOC(prdtke, n_cells_ext, cs_real_t);
     BFT_MALLOC(prdeps, n_cells_ext, cs_real_t);
   }
-  else if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS) {
+  else if (   cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS
+           || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS_CUBIC) {
     BFT_MALLOC(sqrt_k, n_cells_ext, cs_real_t);
     BFT_MALLOC(sqrt_strain, n_cells_ext, cs_real_t);
     BFT_MALLOC(grad_sqk, n_cells_ext, cs_real_3_t);
@@ -393,7 +394,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
     BFT_MALLOC(w10, n_cells_ext, cs_real_t);
     BFT_MALLOC(w11, n_cells_ext, cs_real_t);
   }
-  else if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_CUBIC)  {
+  else if (   cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_CUBIC
+           || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS_CUBIC)  {
     BFT_MALLOC(varcmu, n_cells_ext, cs_real_t);
   }
 
@@ -425,7 +427,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   }
   const cs_real_t *w_dist = NULL;
   if (   cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_QUAD
-      || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_CUBIC) {
+      || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_CUBIC
+      || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS_CUBIC) {
     w_dist =  cs_field_by_name("wall_distance")->val;
   }
 
@@ -492,6 +495,12 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
       cs_log_printf(CS_LOG_DEFAULT,
                     "\n"
                     "  ** Solving k-epsilon, Launder-Sharma\n"
+                    "     -----------------\n");
+    }
+    else if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS_CUBIC) {
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "\n"
+                    "  ** Solving k-epsilon, Launder-Sharma Cubic terms\n"
                     "     -----------------\n");
     }
     else if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_QUAD) {
@@ -674,7 +683,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 
   /* Compute the square root of the strain and the turbulent
      kinetic energy for Launder-Sharma k-epsilon source terms */
-  if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS) {
+  if (   cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS
+      || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS_CUBIC) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       sqrt_strain[c_id] = pow(fabs(strain[c_id]), 0.5);
       sqrt_k[c_id]      = pow(fabs(cvar_k[c_id]), 0.5);
@@ -718,7 +728,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
     }
   }
   else if (   cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_QUAD
-           || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_CUBIC) {
+           || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_CUBIC
+           || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS_CUBIC) {
 
     /* Turbulent production for the quadratic & cubic Baglietto k-epsilon model  */
 
@@ -794,7 +805,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                     - 4*xqc3*visct*xttke* (wkwjksji - d1s3*wijwij*divu[c_id]);
       smbre[c_id] = smbrk[c_id];
       }
-      else if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_CUBIC) {
+      else if (   cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_CUBIC
+               || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS_CUBIC) {
         cs_real_t xss  = xttke*sqrt(2.*sijsij);
         cs_real_t xww  = xttke*sqrt(2.*wijwij);
         cs_real_t xcmu = cs_turb_ca0/(cs_turb_ca1 + xss*cs_turb_ca2 + xww*cs_turb_ca3);
@@ -889,7 +901,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
     if (cs_glob_turb_model->itytur == 2) {
 
       /* Launder-Sharma k-epsilon model */
-      if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS) {
+      if (   cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS
+          || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS_CUBIC) {
 #       pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           cs_real_t rho  = crom[c_id];
@@ -1067,7 +1080,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
       cs_real_t xcmu = cs_turb_cmu;
 
       /* Implicit Buoyant terms when negative */
-      if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_CUBIC)  {
+      if (   cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_CUBIC
+          || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS_CUBIC)  {
         xcmu = varcmu[c_id];
       }
       tinstk[c_id] += fmax(rho*cell_f_vol[c_id]*xcmu*ttke*grad_dot_g[c_id], 0.);
@@ -1220,7 +1234,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
    *      The terms are stored in          grad_sqk, grad_sqs
    * ================================================================*/
 
-  if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS) {
+  if (   cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS
+      || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS_CUBIC ) {
 
     /* Gradient of square root of k
      * -----------------------------*/
@@ -1335,7 +1350,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 
     }
 
-    if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS) {
+    if (   cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS
+        || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS_CUBIC) {
 #     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         cs_real_t rho   = cromo[c_id];
@@ -2138,7 +2154,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
     BFT_FREE(prdtke);
     BFT_FREE(prdeps);
   }
-  if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS) {
+  if (   cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS
+      || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS_CUBIC) {
     BFT_FREE(sqrt_k);
     BFT_FREE(sqrt_strain);
     BFT_FREE(grad_sqk);
@@ -2148,7 +2165,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
     BFT_FREE(coefa_sqs);
     BFT_FREE(coefb_sqs);
   }
-  if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_CUBIC)  {
+  if (   cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_CUBIC
+      || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS_CUBIC)  {
     BFT_FREE(varcmu);
   }
 }

@@ -999,7 +999,7 @@ endif
 ! ---> - Divergence of tensor Rij
 ! ---> - Non linear part of Rij for non-liear Eddy Viscosity Models
 
-if((itytur.eq.3.or.iturb.eq.23.or.iturb.eq.24).and.iterns.eq.1) then
+if((itytur.eq.3.or.iturb.eq.23.or.iturb.eq.24.or.iturb.eq.25).and.iterns.eq.1) then
 
   allocate(rij(6,ncelet))
   allocate(coefat(6,nfabor))
@@ -1046,7 +1046,7 @@ if((itytur.eq.3.or.iturb.eq.23.or.iturb.eq.24).and.iterns.eq.1) then
       enddo
     enddo
   ! Baglietto et al. cubic k-epsilon model
-  else if(iturb.eq.24) then
+  else if(iturb.eq.24.or.iturb.eq.25) then
 
     ! --- Compute the non linear part of Rij
     call cs_turbulence_ke_c(rij)

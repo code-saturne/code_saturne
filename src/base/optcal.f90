@@ -369,6 +369,7 @@ module optcal
   !>    - 21: \f$ k-\varepsilon \f$ model with Linear Production (LP) correction
   !>    - 23: \f$ k-\varepsilon \f$ quadratic model from Baglietto & al
   !>    - 24: \f$ k-\varepsilon \f$ cubic model from Baglietto & al
+  !>    - 25: \f$ k-\varepsilon \f$ cubic model from Baglietto & al based on Launder Sharma
   !>    - 30: \f$ R_{ij}-\epsilon \f$ (LRR)
   !>    - 31: \f$ R_{ij}-\epsilon \f$ (SSG)
   !>    - 32: \f$ R_{ij}-\epsilon \f$ (EBRSM)
