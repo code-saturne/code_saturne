@@ -693,7 +693,7 @@ _count_thermal_laws(void)
     if (strcmp(z->name, "all_cells") != 0)
       continue;
 
-    const *names[] = {
+    const char *names[] = {
       "density", "molecular_viscosity", "specific_heat",
       "thermal_conductivity"
     };
