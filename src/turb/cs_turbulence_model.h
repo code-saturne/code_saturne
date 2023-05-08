@@ -59,6 +59,7 @@ typedef enum {
   CS_TURB_K_EPSILON_QUAD = 23,
   CS_TURB_K_EPSILON_CUBIC = 24,
   CS_TURB_K_EPSILON_LS_CUBIC = 25,
+  CS_TURB_K_EPSILON_STAR_CUBIC = 26,
   CS_TURB_RIJ_EPSILON_LRR = 30,
   CS_TURB_RIJ_EPSILON_SSG = 31,
   CS_TURB_RIJ_EPSILON_EBRSM = 32,
@@ -378,6 +379,28 @@ extern double cs_turb_cnl6;
 extern double cs_turb_cnl7;
 extern double cs_turb_cnl8;
 extern double cs_turb_cnl9;
+extern double cs_turb_star_D ;
+extern double cs_turb_star_E;
+extern double cs_turb_star_cd0;
+extern double cs_turb_star_cd1;
+extern double cs_turb_star_cd2;
+extern double cs_turb_star_ct;
+extern double cs_turb_star_cT;
+extern double cs_turb_star_ca0;
+extern double cs_turb_star_ca1;
+extern double cs_turb_star_ca2;
+extern double cs_turb_star_ca3;
+extern double cs_turb_star_cnl1;
+extern double cs_turb_star_cnl2;
+extern double cs_turb_star_cnl3;
+extern double cs_turb_star_cnl4;
+extern double cs_turb_star_cnl5;
+extern double cs_turb_star_cnl6;
+extern double cs_turb_star_cnl7;
+extern double cs_turb_star_cnl8;
+extern double cs_turb_star_cnl9;
+extern double cs_turb_cl;
+extern double cs_turb_cw;
 extern double cs_turb_csab1;
 extern double cs_turb_csab2;
 extern double cs_turb_csasig;

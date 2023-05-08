@@ -516,6 +516,22 @@ double cs_turb_ce1 = 1.44;
 double cs_turb_ce2 = 1.92;
 
 /*!
+ * Constant \f$C_{w}\f$ for Yap correction in the \f$k-\varepsilon\f$ 
+ * cubic model.
+ * Useful if and only if \ref iturb = 23
+ * (\f$k-\varepsilon\f$).
+ */
+double cs_turb_cw = 0.83;
+
+/*!
+ * Constant \f$C_{l}\f$ for Yap correction in the \f$k-\varepsilon\f$ 
+ * cubic model.
+ * Useful if and only if \ref iturb = 23
+ * (\f$k-\varepsilon\f$).
+ */
+double cs_turb_cl = 2.55;
+
+/*!
  * Coefficient of interfacial coefficient in k-eps, used in Lagrange treatment.
  *
  * Constant \f$C_{\varepsilon 4}\f$ for the interfacial term (Lagrangian module)
@@ -994,6 +1010,31 @@ double cs_turb_ca2 = 1.;
 double cs_turb_ca3 = 0.;
 
 /*!
+ * Constants for the Baglietto cubic k-epsilon model.
+ * Useful if and only if \ref iturb = CS_TURB_K_EPSILON_STAR_CUBIC
+ */
+double cs_turb_star_cnl1 = 0.75;
+double cs_turb_star_cnl2 = 3.75;
+double cs_turb_star_cnl3 = 4.75;
+double cs_turb_star_cnl6 = 1e3;
+double cs_turb_star_cnl7 = 1.;
+double cs_turb_star_cnl4 = -10.;
+double cs_turb_star_cnl5 = -2.;
+double cs_turb_star_cnl8 = 15.;
+double cs_turb_star_cnl9 = 8.;
+double cs_turb_star_ca0 = 0.667;
+double cs_turb_star_ca1 = 1.25;
+double cs_turb_star_ca2 = 1.;
+double cs_turb_star_ca3 = 0.9;
+double cs_turb_star_D = 1.;
+double cs_turb_star_E = 0.00375;
+double cs_turb_star_cd0 = 0.091;
+double cs_turb_star_cd1 = 0.0042;
+double cs_turb_star_cd2 = 0.00011;
+double cs_turb_star_ct = 1.0;
+double cs_turb_star_cT = 0.6;
+
+/*!
  * Constant of the WALE LES method.
  */
 double cs_turb_cwale = 0.25;
@@ -1337,6 +1378,9 @@ _turbulence_model_enum_name(cs_turb_model_type_t  id)
   case CS_TURB_K_EPSILON_CUBIC:
     s = "CS_TURB_K_EPSILON_CUBIC";
     break;
+  case CS_TURB_K_EPSILON_STAR_CUBIC:
+    s = "CS_TURB_K_EPSILON_STAR_CUBIC";
+    break;
   case CS_TURB_RIJ_EPSILON_LRR:
     s = "CS_TURB_RIJ_EPSILON_LRR";
     break;
@@ -1413,6 +1457,9 @@ _turbulence_model_name(cs_turb_model_type_t  id)
     break;
   case CS_TURB_K_EPSILON_CUBIC:
     s = _("Baglietto NLEVM Cubic k-epsilon model");
+    break;
+  case CS_TURB_K_EPSILON_STAR_CUBIC:
+    s = _("Baglietto NLEVM Cubic Star LR k-epsilon model");
     break;
   case CS_TURB_RIJ_EPSILON_LRR:
     s = _("Rij-epsilon (LRR) model");
@@ -1492,6 +1539,7 @@ cs_set_type_order_turbulence_model(void)
            || _turb_model.iturb == CS_TURB_K_EPSILON_LS_CUBIC
            || _turb_model.iturb == CS_TURB_K_EPSILON_QUAD
            || _turb_model.iturb == CS_TURB_K_EPSILON_CUBIC
+           || _turb_model.iturb == CS_TURB_K_EPSILON_STAR_CUBIC
            || _turb_model.iturb == CS_TURB_V2F_PHI
            || _turb_model.iturb == CS_TURB_V2F_BL_V2K
            || _turb_model.iturb == CS_TURB_K_OMEGA
@@ -1793,7 +1841,8 @@ cs_turb_model_log_setup(void)
            || turb_model->iturb == CS_TURB_K_EPSILON_LS
            || turb_model->iturb == CS_TURB_K_EPSILON_LS_CUBIC
            || turb_model->iturb == CS_TURB_K_EPSILON_QUAD
-           || turb_model->iturb == CS_TURB_K_EPSILON_CUBIC) {
+           || _turb_model.iturb == CS_TURB_K_EPSILON_CUBIC
+           || _turb_model.iturb == CS_TURB_K_EPSILON_STAR_CUBIC) {
 
     cs_log_printf
       (CS_LOG_SETUP,
@@ -2050,7 +2099,8 @@ cs_turb_constants_log_setup(void)
       || turb_model->iturb == CS_TURB_K_EPSILON_LS
       || turb_model->iturb == CS_TURB_K_EPSILON_LS_CUBIC
       || turb_model->iturb == CS_TURB_K_EPSILON_QUAD
-      || turb_model->iturb == CS_TURB_K_EPSILON_CUBIC)
+      || turb_model->iturb == CS_TURB_K_EPSILON_CUBIC
+      || turb_model->iturb == CS_TURB_K_EPSILON_STAR_CUBIC)
     cs_log_printf
       (CS_LOG_SETUP,
        _("    ce1:         %14.5e (Cepsilon 1: production coef.)\n"

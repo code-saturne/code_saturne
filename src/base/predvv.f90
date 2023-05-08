@@ -999,7 +999,8 @@ endif
 ! ---> - Divergence of tensor Rij
 ! ---> - Non linear part of Rij for non-liear Eddy Viscosity Models
 
-if((itytur.eq.3.or.iturb.eq.23.or.iturb.eq.24.or.iturb.eq.25).and.iterns.eq.1) then
+if((itytur.eq.3.or.iturb.eq.23.or.iturb.eq.24.or.iturb.eq.25      &
+    .or.iturb.eq.26).and.iterns.eq.1) then
 
   allocate(rij(6,ncelet))
   allocate(coefat(6,nfabor))
@@ -1050,6 +1051,20 @@ if((itytur.eq.3.or.iturb.eq.23.or.iturb.eq.24.or.iturb.eq.25).and.iterns.eq.1) t
 
     ! --- Compute the non linear part of Rij
     call cs_turbulence_ke_c(rij)
+    ! --- Boundary conditions : Homogeneous Neumann
+    do ifac = 1, nfabor
+      do ii = 1, 6
+        coefat(ii,ifac) = 0.d0
+        do jj = 1, 6
+          coefbt(jj,ii,ifac) = 1.d0
+        enddo
+      enddo
+    enddo
+! Baglietto et al. cubic k-epsilon model
+  else if(iturb.eq.26) then
+
+    ! --- Compute the non linear part of Rij
+    call cs_turbulence_ke_c_star(rij)
     ! --- Boundary conditions : Homogeneous Neumann
     do ifac = 1, nfabor
       do ii = 1, 6

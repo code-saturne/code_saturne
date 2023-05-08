@@ -1301,6 +1301,87 @@ do ifac = 1, nfabor
                pimp         , hint          , rinfin )
         endif
       ! ==============================================
+      ! k-epsilon LR Cubic Star
+      ! ==============================================
+      else if(iturb.eq.26) then
+        call field_get_id_try("cmu", f_id_cmu)
+        if (f_id_cmu.ge.0) then
+          call field_get_val_s(f_id_cmu, cvar_cmu)
+          sqrcmu = sqrt(cvar_cmu(iel))
+        endif
+
+        ! Dirichlet Boundary Condition on k
+        !----------------------------------
+        if (iwallf.eq.0) then
+          ! No wall functions forces by user
+          pimp = 0.d0
+        else
+          ! Use of wall functions
+          if (iuntur.eq.1) then
+            pimp = uk**2/sqrcmu
+          else
+            pimp = 0.d0
+          endif
+        endif
+
+        hint = (visclc+visctc/sigmak)/distbf
+        pimp = pimp * cfnnk
+        call set_dirichlet_scalar &
+             !====================
+           ( coefa_k(ifac), coefaf_k(ifac),             &
+             coefb_k(ifac), coefbf_k(ifac),             &
+             pimp         , hint          , rinfin )
+
+        ! Dirichlet Boundary Condition on epsilon
+        !---------------------------------------
+        if(iwallf.ne.0) then
+          pimp_lam = 2.0d0*visclc/romc*cvar_k(iel)/distbf**2
+                    ! Use of wall functions
+          if (yplus .gt. epzero) then
+            pimp_turb = 5.d0*uk**4*romc/  &
+                        (xkappa*visclc*yplus)
+
+            ! Blending function, from JF Wald PhD (2016)
+            fct_bl    = exp(-0.674d-3*yplus**3.d0)
+            pimp      = pimp_lam*fct_bl + pimp_turb*(1.d0-fct_bl)
+            fep = exp(-((yplus+dplus)/4.d0)**1.5d0)
+            dep = 1.d0- exp(-((yplus+dplus)/9.d0)**2.1d0)
+            pimp      = fep*pimp_lam + (1.d0-fep)*dep*pimp_turb
+          else
+            pimp = pimp_lam
+          endif
+        else
+          pimp = 2.0d0*visclc/romc*cvar_k(iel)/distbf**2
+        end if
+        pimp = pimp * cfnne
+        call set_dirichlet_scalar &
+             !====================
+           ( coefa_ep(ifac), coefaf_ep(ifac),             &
+             coefb_ep(ifac), coefbf_ep(ifac),             &
+             pimp          , hint           , rinfin )
+
+        !if defined set Dirichlet condition for the Lagrangian time scale
+        if (f_id_tlag.ge.0) then
+          if (iwallf.eq.0) then
+            ! No wall functions forced by user
+            pimp = 0.d0
+          else
+            ! Use of wall functions
+            if (iuntur.eq.1) then
+              pimp = cfnnk / (cfnne * uk) * cl / sqrcmu * xkappa  &
+                   * (dplus * visclc / (romc * uk) + rough_d )
+            else
+              pimp = 0.d0
+            endif
+          endif
+
+          call set_dirichlet_scalar &
+                 !====================
+             ( coefa_tlag(ifac), coefaf_tlag(ifac),             &
+               coefb_tlag(ifac), coefbf_tlag(ifac),             &
+               pimp         , hint          , rinfin )
+        endif
+      ! ==============================================
       ! k-epsilon and k-epsilon LP boundary conditions
       ! ==============================================
       else
