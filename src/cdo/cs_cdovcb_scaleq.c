@@ -1144,11 +1144,10 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
   }
 
   /* A mass matrix can be requested either for the reaction term, the unsteady
-     term or for the source term  */
+     term or for the source term (primal load) */
 
   cs_hodge_algo_t  reac_hodge_algo = CS_HODGE_N_ALGOS;
   cs_hodge_algo_t  time_hodge_algo = CS_HODGE_N_ALGOS;
-  cs_hodge_algo_t  srct_hodge_algo = CS_HODGE_N_ALGOS;
 
   /* Reaction term */
 
@@ -1217,15 +1216,44 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   } /* Unsteady term requested */
 
+  /* Pre-defined a cs_hodge_param_t structure */
+
+  eqc->mass_hodgep.inv_pty  = false;
+  eqc->mass_hodgep.coef = 1.0; /* not useful in this case */
+  eqc->mass_hodgep.type = CS_HODGE_TYPE_VC;
+
+  eqc->mass_hodgep.algo = cs_hodge_set_mass_algo(eqp->name,
+                                                 reac_hodge_algo,
+                                                 time_hodge_algo);
+
+  if (eqc->mass_hodgep.algo == CS_HODGE_ALGO_WBS)
+    eqb->msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ
+      | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_PFC;
+
+  /* Initialize the hodge structure for the mass matrix */
+
+  eqc->mass_hodge = cs_hodge_init_context(connect,
+                                          NULL,
+                                          &(eqc->mass_hodgep),
+                                          false,  /* tensor ? */
+                                          false); /* eigen ? */
+
+  /* Set the function pointer */
+
+  eqc->get_mass_matrix = cs_hodge_get_func(__func__, eqc->mass_hodgep);
+
+  if (eqp->verbosity > 1 && eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX) {
+    cs_log_printf(CS_LOG_SETUP,
+                  "#### Parameters of the mass matrix of the equation %s\n",
+                  eqp->name);
+    cs_hodge_param_log("Mass matrix", NULL, eqc->mass_hodgep);
+  }
+
   /* Source term */
 
   eqc->source_terms = NULL;
 
   if (cs_equation_param_has_sourceterm(eqp)) {
-
-    /* This is a mandatory choice for this kind of scheme */
-
-    srct_hodge_algo = CS_HODGE_ALGO_WBS;
 
     if (cs_equation_param_has_time(eqp)) {
 
@@ -1241,39 +1269,6 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
     } /* Time-dependent equation */
 
   } /* There is at least one source term */
-
-  /* Pre-defined a cs_hodge_param_t structure */
-
-  eqc->mass_hodgep.inv_pty  = false;
-  eqc->mass_hodgep.coef = 1.0; /* not useful in this case */
-  eqc->mass_hodgep.type = CS_HODGE_TYPE_VC;
-  eqc->mass_hodgep.algo = cs_hodge_set_mass_algo(eqp->name,
-                                                 reac_hodge_algo,
-                                                 time_hodge_algo,
-                                                 srct_hodge_algo);
-
-  if (eqc->mass_hodgep.algo == CS_HODGE_ALGO_WBS)
-    eqb->msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ
-      | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_PFC;
-
-  /* Initialize the hodge structure for the mass matrix */
-
-  eqc->mass_hodge = cs_hodge_init_context(connect,
-                                          NULL,
-                                          &(eqc->mass_hodgep),
-                                          false,  /* tensor ? */
-                                          false); /* eigen ? */
-
-  if (eqp->verbosity > 1 && eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX) {
-    cs_log_printf(CS_LOG_SETUP,
-                  "#### Parameters of the mass matrix of the equation %s\n",
-                  eqp->name);
-    cs_hodge_param_log("Mass matrix", NULL, eqc->mass_hodgep);
-  }
-
-  /* Set the function pointer */
-
-  eqc->get_mass_matrix = cs_hodge_get_func(__func__, eqc->mass_hodgep);
 
   /* Helper structures (range set, interface set, matrix structure and all the
      assembly process) */
