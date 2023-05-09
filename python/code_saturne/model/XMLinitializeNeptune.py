@@ -859,12 +859,12 @@ class XMLinitNeptune(BaseXmlInit):
             if node["name"] == "TurbKineEner_q2":
                 node["name"] = "TurbKineEner_qp"
             # Covariance name
-            if 'Covariance_q12' in node['name']:
+            if node['name'] and 'Covariance_q12' in node['name']:
                 node['name'] = node['name'].replace('Covariance_q12',
                                                     'covariance_qfp_1')
 
             # Covariance label
-            if 'Covariance_q12' in node['label']:
+            if node['label'] and 'Covariance_q12' in node['label']:
                 # Rename label using correct convention
                 _f1_label = MainFieldsModel(self.case).getFieldLabelsList()[0]
                 _new_label = '_'.join(['covariance_qfp', _f1_label])
@@ -876,7 +876,7 @@ class XMLinitNeptune(BaseXmlInit):
                 if vp_node["name"] == "TurbKineEner_q2_2":
                     vp_node["name"] = "TurbKineEner_qp_2"
                 # Covariance
-                if 'Covariance_q12_2' in vp_node["name"]:
+                if vp_node['name'] and 'Covariance_q12_2' in vp_node["name"]:
                     vp_node["name"] = vp_node["name"].replace("Covariance_q12_2",
                                                               "covariance_qfp_1_2")
 
