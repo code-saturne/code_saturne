@@ -1450,7 +1450,6 @@ cs_hodge_get_func(const char               *calling_func,
  * \param[in] eqname     name of the equation to check
  * \param[in] reac_algo  optional algo. used for the reaction term
  * \param[in] time_algo  optional algo. used for the unsteady term
- * \param[in] srct_algo  optional algo. used for the source term
  *
  * \return the common algorithm to use
  */
@@ -1459,17 +1458,15 @@ cs_hodge_get_func(const char               *calling_func,
 cs_hodge_algo_t
 cs_hodge_set_mass_algo(const char         *eqname,
                        cs_hodge_algo_t     reac_algo,
-                       cs_hodge_algo_t     time_algo,
-                       cs_hodge_algo_t     srct_algo)
+                       cs_hodge_algo_t     time_algo)
 {
-  cs_hodge_algo_t  return_algo = CS_HODGE_ALGO_VORONOI;
+  cs_hodge_algo_t  return_algo = CS_HODGE_ALGO_WBS;
 
   if (reac_algo != CS_HODGE_N_ALGOS) { /* Hodge algo. is set for reaction */
 
     return_algo = reac_algo;
 
-    if (time_algo != CS_HODGE_N_ALGOS) {
-
+    if (time_algo != CS_HODGE_N_ALGOS)
       if (reac_algo != time_algo)
         bft_error(__FILE__, __LINE__, 0,
                   " %s: The configuration of the Hodge algorithm between the"
@@ -1477,49 +1474,11 @@ cs_hodge_set_mass_algo(const char         *eqname,
                   " Please check your settings for equation \"%s\"\n",
                   __func__, eqname);
 
-      if (srct_algo != CS_HODGE_N_ALGOS)
-        if (time_algo != srct_algo)
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: The configuration of the Hodge algorithm between the"
-                    " source term and unsteady term is not consistent.\n"
-                    " Please check your settings for equation \"%s\"\n",
-                    __func__, eqname);
-
-    }
-    else { /* Hodge algo not set for the unsteady term */
-
-      if (srct_algo != CS_HODGE_N_ALGOS)
-        if (reac_algo != srct_algo)
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: The configuration of the Hodge algorithm between the"
-                    " reaction and source term is not consistent.\n"
-                    " Please check your settings for equation \"%s\"\n",
-                    __func__, eqname);
-
-    }
-
   }
   else { /* Hodge algo not set for the reaction term */
 
-    if (time_algo != CS_HODGE_N_ALGOS) {
-
+    if (time_algo != CS_HODGE_N_ALGOS)
       return_algo = time_algo;
-
-      if (srct_algo != CS_HODGE_N_ALGOS)
-        if (time_algo != srct_algo)
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: The configuration of the Hodge algorithm between the"
-                    " source term and unsteady term is not consistent.\n"
-                    " Please check your settings for equation \"%s\"\n",
-                    __func__, eqname);
-
-    }
-    else { /* Neither time_algo nor reac_algo is set */
-
-      if (srct_algo != CS_HODGE_N_ALGOS)
-        return_algo = srct_algo;
-
-    }
 
   }
 
