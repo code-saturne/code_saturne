@@ -225,7 +225,7 @@ _check_input_presense(void)
 
     _input_present = input_present;
 
-    if (input_present < 10)
+    if ((input_present % 100) < 10)
       _restart_mode = CS_PREPROCESSOR_DATA_RESTART_NONE;
   }
 }
