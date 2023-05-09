@@ -213,10 +213,6 @@ module pointe
   !> reference point for wall condensation, used in forced and mixed convection regimes
   double precision, allocatable, dimension(:,:) :: xref_cond
 
-  !> number of the ncmast cells in which a condensation source terms is imposed.
-  !> See \c lstmast list and the subroutine \ref cs_user_metal_structures_source_terms
-  integer, save :: ncmast
-
   !> list on the ncmast cells in which a condensation source terms is imposed.
   !> See  the user subroutine \ref cs_user_metal_structures_source_terms.
   integer, allocatable, dimension(:) :: ltmast

@@ -54,6 +54,11 @@ module cs_nz_condensation
   !> See \c ifbpcd and the user subroutine \ref cs_user_wall_condensation
   integer(c_int), pointer, save :: nfbpcd
 
+  !> \anchor ncmast
+  !> number of the cells in which a condensation source terms is imposed.
+  !> See \c lstmast list and the subroutine \ref cs_user_wall_condensation
+  integer(c_int), pointer, save :: ncmast
+
   !> \anchor itypcd
   !> type of condensation source terms for each variable
   !> - 0 for an variable at ambient value,
@@ -183,11 +188,11 @@ interface
   !
   !> \param[out]   spcond   Pointer to spcond
   !---------------------------------------------------------------------------
-  subroutine cs_f_wall_condensation_get_size_pointers(nfbpcd, nzones) &
+  subroutine cs_f_wall_condensation_get_size_pointers(nfbpcd, nzones, ncmast) &
     bind(C, name='cs_f_wall_condensation_get_size_pointers')
     use, intrinsic :: iso_c_binding
     implicit none
-    type(c_ptr), intent(out) :: nfbpcd, nzones
+    type(c_ptr), intent(out) :: nfbpcd, nzones, ncmast
   end subroutine cs_f_wall_condensation_get_size_pointers
 
   !---------------------------------------------------------------------------
@@ -224,11 +229,12 @@ contains
   subroutine init_sizes_pcond()
     use, intrinsic :: iso_c_binding
     implicit none
-    type(c_ptr) :: c_nfbpcd, c_nzones
+    type(c_ptr) :: c_nfbpcd, c_nzones, c_ncmast
 
-    call cs_f_wall_condensation_get_size_pointers(c_nfbpcd, c_nzones)
+    call cs_f_wall_condensation_get_size_pointers(c_nfbpcd, c_nzones, c_ncmast)
     call c_f_pointer(c_nfbpcd, nfbpcd)
     call c_f_pointer(c_nzones, nzones)
+    call c_f_pointer(c_ncmast, ncmast)
   end subroutine init_sizes_pcond
 
   !=============================================================================

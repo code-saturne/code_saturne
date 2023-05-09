@@ -69,6 +69,7 @@ typedef struct {
 
   // Mesh-related information
   cs_lnum_t  nfbpcd;
+  cs_lnum_t  ncmast;
   cs_lnum_t *ifbpcd;
   cs_lnum_t *itypcd;
   cs_lnum_t *izzftcd;

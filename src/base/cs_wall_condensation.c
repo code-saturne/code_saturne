@@ -116,6 +116,7 @@ static cs_wall_cond_t _wall_cond
      // Mesh related quantities
      // TODO: clean unnecessary quantities
      .nfbpcd                    = 0,
+     .ncmast                    = 0,
      .ifbpcd                    = NULL,
      .itypcd                    = NULL,
      .izzftcd                   = NULL,
@@ -161,7 +162,8 @@ cs_f_wall_condensation_get_model_pointers
 
 void
 cs_f_wall_condensation_get_size_pointers(cs_lnum_t **nfbpcd,
-                                         cs_lnum_t **nzones);
+                                         cs_lnum_t **nzones,
+                                         cs_lnum_t **ncmast);
 
 void
 cs_f_wall_condensation_get_pointers(cs_lnum_t **ifbpcd,
@@ -699,10 +701,12 @@ cs_f_wall_condensation_get_model_pointers
 
 void
 cs_f_wall_condensation_get_size_pointers(cs_lnum_t **nfbpcd,
-                                         cs_lnum_t **nzones)
+                                         cs_lnum_t **nzones,
+                                         cs_lnum_t **ncmast)
 {
   *nfbpcd = &(_wall_cond.nfbpcd);
   *nzones = &(_wall_cond.nzones);
+  *ncmast = &(_wall_cond.ncmast);
 }
 
 void

@@ -65,6 +65,7 @@ use field
 use cs_c_bindings
 use cs_cf_bindings
 use cfpoin, only: hgn_relax_eq_st
+use cs_nz_condensation
 
 !===============================================================================
 
