@@ -3588,7 +3588,7 @@ cs_turbulence_rij_clip(cs_lnum_t  n_cells)
 
       int is_clipped = 0;
 
-      /* Check if R is positive and ill-conditionned (since the former
+      /* Check if R is positive and ill-conditioned (since the former
        * will induce the latter after clipping ...*/
 
       const cs_real_t trrij = cs_math_6_trace(cvar_rij[c_id]);
@@ -3666,7 +3666,7 @@ cs_turbulence_rij_clip(cs_lnum_t  n_cells)
                                      varrel*cs_math_fabs(cvara_ep[c_id]));
       }
 
-      /* Enforce Cauchy Schwarz inequality (only for x, y, z directions) */
+      /* Enforce Cauchy Schwartz inequality (only for x, y, z directions) */
 
       cs_real_t cvar_var1, cvar_var2;
       for (cs_lnum_t ii = 3; ii < 6; ii++) {
@@ -3805,7 +3805,7 @@ cs_turbulence_rij_clip_sg(cs_lnum_t  n_cells,
     }
   }
 
-  /* Enforce Cauchy Schwarz inequality (only for x, y, z directions) */
+  /* Enforce Cauchy Schwartz inequality (only for x, y, z directions) */
   for (cs_lnum_t ii = 3; ii < 6; ii++) {
     cs_lnum_t ii1, ii2;
     if (ii == 3) {
