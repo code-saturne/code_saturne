@@ -176,7 +176,7 @@ cs_user_wall_condensation(int  nvar,
   cs_lnum_t *ifabor = cs_glob_mesh->b_face_cells;
   cs_lnum_t  nfabor = cs_glob_mesh->n_b_faces;
 
-  cs_wall_cond_t *           wall_cond    = cs_get_glob_wall_cond();
+  cs_wall_cond_t            *wall_cond    = cs_get_glob_wall_cond();
   cs_wall_cond_1d_thermal_t *wall_thermal = cs_get_glob_wall_cond_1d_thermal();
 
   BFT_MALLOC(lstelt, nfabor, cs_lnum_t);
@@ -225,6 +225,23 @@ cs_user_wall_condensation(int  nvar,
   int iz = 0; // Monozone
 
   /*! [model_settings] */
+
+  /*! [cells_selection] */
+
+  /*
+    =======================================================================
+    Select the cells which are associated to the metal structures volume
+    with the cs_volume_zone_by_name
+    =======================================================================
+  */
+
+  const cs_zone_t *z = cs_volume_zone_by_name("z > -7.0d0 and z < 53.d0");
+  wall_cond->ncmast = z->n_elts;
+
+  for (ieltcd = 0; ieltcd < z->n_elts; ieltcd++)
+    wall_cond->ltmast[ieltcd] = z->elt_ids[ieltcd];
+
+  /*! [cells_selection] */
 
   /*
   ===============================================================================

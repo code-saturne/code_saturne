@@ -245,13 +245,13 @@ use entsor
 use parall
 use optcal, only: isuite, ntcabs, idilat
 use mesh, only: nfabor, volume, surfbn, ifabor, ncelet, ncel
-use pointe, only: itypfb, ncetsm, icetsm, ltmast, smacel
+use pointe, only: itypfb, ncetsm, icetsm, smacel
 use ppincl, only: icondv
 use numvar, only: ivarfl, ipr, icrom, kbmasf
 use paramx, only: ientre, i_convective_inlet, isolib, ifrent
 use cstphy, only: pther, pthermax, sleak, kleak, roref, voltot, ro0, p0
 use cs_tagms, only:s_metal
-use cs_nz_condensation, only: ifbpcd
+use cs_nz_condensation, only: ifbpcd, ltmast
 use cs_c_bindings
 
 use, intrinsic :: iso_c_binding

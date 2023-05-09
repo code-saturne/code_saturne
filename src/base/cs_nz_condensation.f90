@@ -71,6 +71,11 @@ module cs_nz_condensation
   !> See the user subroutine \ref cs_user_wall_condensation
   double precision, dimension(:), pointer, save :: thermal_condensation_flux
 
+  !> \anchor ltmast
+  !> list on the ncmast cells in which a condensation source terms is imposed.
+  !> See  the user subroutine \ref cs_user_wall_condensation.
+  integer, dimension(:), pointer, save :: ltmast
+
   !> \anchor flthr
   !> external heat flux used as flux conditions
   !> of the 1d thermal model (in unit \f$W.m^{-2}\f$).
@@ -176,11 +181,11 @@ interface
   !> \param[in]   nvar      Number of variables (?)
   !---------------------------------------------------------------------------
 
-  subroutine cs_f_wall_condensation_create(nfbpcd, nzones, nvar) &
+  subroutine cs_f_wall_condensation_create(nfbpcd, nzones, nvar, ncmast) &
     bind(C, name='cs_wall_condensation_create')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: nfbpcd, nzones, nvar
+    integer(c_int), value :: nfbpcd, nzones, nvar, ncmast
   end subroutine cs_f_wall_condensation_create
 
   !---------------------------------------------------------------------------
@@ -200,7 +205,7 @@ interface
   !
   !> \param[out]   spcond   Pointer to spcond
   !---------------------------------------------------------------------------
-  subroutine cs_f_wall_condensation_get_pointers(ifbpcd, itypcd, izzftcd, &
+  subroutine cs_f_wall_condensation_get_pointers(ifbpcd, itypcd, izzftcd, ltmast, &
                                                  spcond, hpcond, twall_cond, &
                                                  thermflux, flthr, dflthr, &
                                                  izcophc, izcophg, iztag1d, &
@@ -211,6 +216,7 @@ interface
     type(c_ptr), intent(out) :: spcond, hpcond, ifbpcd, twall_cond, itypcd
     type(c_ptr), intent(out) :: izzftcd, thermflux, flthr, dflthr, izcophc
     type(c_ptr), intent(out) :: izcophg, iztag1d, ztpar, zxrefcond, zprojcond
+    type(c_ptr), intent(out) :: ltmast
   end subroutine cs_f_wall_condensation_get_pointers
 
   !---------------------------------------------------------------------------
@@ -252,12 +258,12 @@ contains
     type(c_ptr) :: c_spcond, c_hpcond, c_ifbpcd, c_walltemp
     type(c_ptr) :: c_izzftcd, c_itypcd, c_thermflux, c_flthr, c_dflthr
     type(c_ptr) :: c_izcophc, c_izcophg, c_iztag1d, c_ztpar
-    type(c_ptr) :: c_zxrefcond, c_zprojcond
+    type(c_ptr) :: c_zxrefcond, c_zprojcond, c_ltmast
 
     if (nzones<1) nzones = 1
 
-    call cs_f_wall_condensation_create(nfbpcd, nzones, nvar)
-    call cs_f_wall_condensation_get_pointers(c_ifbpcd, c_itypcd, c_izzftcd, &
+    call cs_f_wall_condensation_create(nfbpcd, nzones, nvar, ncmast)
+    call cs_f_wall_condensation_get_pointers(c_ifbpcd, c_itypcd, c_izzftcd, c_ltmast, &
                                              c_spcond, c_hpcond, c_walltemp, &
                                              c_thermflux, c_flthr, c_dflthr, &
                                              c_izcophc, c_izcophg, c_iztag1d, &
@@ -277,6 +283,7 @@ contains
     call c_f_pointer(c_ztpar, ztpar, [nzones])
     call c_f_pointer(c_zxrefcond, zxrefcond, [3, nzones])
     call c_f_pointer(c_zprojcond, zprojcond, [3, nzones])
+    call c_f_pointer(c_ltmast,ltmast, [ncmast])
 
   end subroutine init_nz_pcond
 

@@ -82,6 +82,7 @@ typedef struct {
   cs_real_t *total_htc;
   cs_real_t *flthr;
   cs_real_t *dflthr;
+  cs_real_t *ltmast;
 
   // Zone related quantities
   cs_lnum_t  nzones;
@@ -153,7 +154,8 @@ cs_wall_condensation_set_onoff_state(int  icondb,
 void
 cs_wall_condensation_create(cs_lnum_t  nfbpcd,
                             cs_lnum_t  nzones,
-                            cs_lnum_t  nvar);
+                            cs_lnum_t  nvar,
+                            cs_lnum_t  ncmast);
 
 /*----------------------------------------------------------------------------*/
 /*!

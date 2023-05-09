@@ -44,6 +44,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_array.h"
 #include "cs_1d_wall_thermal.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -129,6 +130,7 @@ static cs_wall_cond_t _wall_cond
      .total_htc                 = NULL,
      .flthr                     = NULL,
      .dflthr                    = NULL,
+     .ltmast                    = NULL,
 
      // Zone related quantities
      .nzones    = -1,
@@ -169,6 +171,7 @@ void
 cs_f_wall_condensation_get_pointers(cs_lnum_t **ifbpcd,
                                     cs_lnum_t **itypcd,
                                     cs_lnum_t **izzftcd,
+                                    cs_lnum_t **ltmast,
                                     cs_real_t **spcond,
                                     cs_real_t **hpcond,
                                     cs_real_t **twall_cond,
@@ -713,6 +716,7 @@ void
 cs_f_wall_condensation_get_pointers(cs_lnum_t **ifbpcd,
                                     cs_lnum_t **itypcd,
                                     cs_lnum_t **izzftcd,
+                                    cs_lnum_t **ltmast,
                                     cs_real_t **spcond,
                                     cs_real_t **hpcond,
                                     cs_real_t **twall_cond,
@@ -729,6 +733,7 @@ cs_f_wall_condensation_get_pointers(cs_lnum_t **ifbpcd,
   *ifbpcd     = _wall_cond.ifbpcd;
   *itypcd     = _wall_cond.itypcd;
   *izzftcd    = _wall_cond.izzftcd;
+  *ltmast     = _wall_cond.ltmast;
   *spcond     = _wall_cond.spcond;
   *hpcond     = _wall_cond.hpcond;
   *twall_cond = _wall_cond.twall_cond;
@@ -863,7 +868,8 @@ cs_wall_condensation_set_onoff_state(int  icondb,
 void
 cs_wall_condensation_create(cs_lnum_t  nfbpcd,
                             cs_lnum_t  nzones,
-                            cs_lnum_t  nvar)
+                            cs_lnum_t  nvar,
+                            cs_lnum_t  ncmast)
 {
   _wall_cond.nfbpcd = nfbpcd;
   if (nzones < 1) {
@@ -877,6 +883,7 @@ cs_wall_condensation_create(cs_lnum_t  nfbpcd,
   BFT_MALLOC(_wall_cond.ifbpcd, nfbpcd, cs_lnum_t);
   BFT_MALLOC(_wall_cond.itypcd, nfbpcd * nvar, cs_lnum_t);
   BFT_MALLOC(_wall_cond.izzftcd, nfbpcd, cs_lnum_t);
+  BFT_MALLOC(_wall_cond.ltmast, ncmast, cs_lnum_t);
   BFT_MALLOC(_wall_cond.spcond, nfbpcd * nvar, cs_real_t);
   BFT_MALLOC(_wall_cond.hpcond, nfbpcd, cs_real_t);
   BFT_MALLOC(_wall_cond.twall_cond, nfbpcd, cs_real_t);
@@ -929,6 +936,8 @@ cs_wall_condensation_create(cs_lnum_t  nfbpcd,
     _wall_cond.zprojcond[3 * i + 1] = 0.0;
     _wall_cond.zprojcond[3 * i + 2] = 0.0;
   }
+
+  cs_array_lnum_fill_zero(ncmast, _wall_cond.ltmast);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -943,6 +952,7 @@ cs_wall_condensation_free(void)
   BFT_FREE(_wall_cond.ifbpcd);
   BFT_FREE(_wall_cond.itypcd);
   BFT_FREE(_wall_cond.izzftcd);
+  BFT_FREE(_wall_cond.ltmast);
   BFT_FREE(_wall_cond.spcond);
   BFT_FREE(_wall_cond.hpcond);
   BFT_FREE(_wall_cond.twall_cond);
