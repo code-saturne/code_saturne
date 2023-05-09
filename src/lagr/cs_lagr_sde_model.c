@@ -58,6 +58,7 @@
 
 #include "cs_mesh.h"
 #include "cs_thermal_model.h"
+#include "cs_turbulence_model.h"
 
 #include "cs_lagr.h"
 #include "cs_lagr_tracking.h"
@@ -924,9 +925,9 @@ _lagitf(cs_lagr_attribute_t  *iattr)
                                                   CS_LAGR_CELL_ID);
 
     if (   extra->itytur == 2 || extra->itytur == 4 || extra->itytur == 3
-        || extra->iturb == 50 || extra->iturb == 60) {
+        || extra->itytur == 5 || extra->iturb == CS_TURB_K_OMEGA) {
 
-      if (extra->itytur == 2 || extra->itytur == 4 || extra->iturb == 50) {
+      if (extra->itytur == 2 || extra->itytur == 4 || extra->itytur == 5) {
 
         energ    = extra->cvar_k->val[cell_id];
         dissip   = extra->cvar_ep->val[cell_id];
@@ -938,7 +939,7 @@ _lagitf(cs_lagr_attribute_t  *iattr)
                           + extra->cvar_rij->val[6*cell_id + 2]);
         dissip   = extra->cvar_ep->val[cell_id];
       }
-      else if (extra->iturb == 60) {
+      else if (extra->iturb == CS_TURB_K_OMEGA) {
 
         energ    = extra->cvar_k->val[cell_id];
         dissip   = extra->cmu * extra->cvar_k->val[cell_id]

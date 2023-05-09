@@ -288,7 +288,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
     BFT_MALLOC(energi, n_cells, cs_real_t);
     BFT_MALLOC(dissip, n_cells, cs_real_t);
 
-    if (extra->itytur == 2 || extra->itytur == 4 || extra->iturb == 50) {
+    if (extra->itytur == 2 || extra->itytur == 4 || extra->itytur == 5) {
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         energi[cell_id] = extra->cvar_k->val[cell_id];
@@ -308,7 +308,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
       }
 
     }
-    else if (extra->iturb == 60) {
+    else if (extra->iturb == CS_TURB_K_OMEGA) {
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         energi[cell_id] = extra->cvar_k->val[cell_id];

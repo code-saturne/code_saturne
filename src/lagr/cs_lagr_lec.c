@@ -61,6 +61,7 @@
 #include "cs_physical_model.h"
 #include "cs_restart.h"
 #include "cs_restart_default.h"
+#include "cs_turbulence_model.h"
 
 #include "cs_lagr.h"
 #include "cs_lagr_tracking.h"
@@ -508,9 +509,9 @@ cs_restart_lagrangian_checkpoint_read(void)
             sprintf(car8, "Rij-eps");
           if (jtytur == 4)
             sprintf(car8, "LES");
-          if (jturb == 50)
+          if (jtytur == 5)
             sprintf(car8, "v2f");
-          if (jturb == 60)
+          if (jturb == CS_TURB_K_OMEGA)
             sprintf(car8, "k-omega");
           if (extra->itytur == 2)
             sprintf(kar8, "k-eps");
@@ -518,9 +519,9 @@ cs_restart_lagrangian_checkpoint_read(void)
             sprintf(kar8, "Rij-eps");
           if (extra->itytur == 4)
             sprintf(kar8, "LES");
-          if (extra->iturb == 50)
+          if (extra->itytur == 5)
             sprintf(kar8, "v2f");
-          if (extra->iturb == 60)
+          if (extra->iturb == CS_TURB_K_OMEGA)
             sprintf(kar8, "k-omega");
 
           cs_parameters_error
@@ -583,7 +584,7 @@ cs_restart_lagrangian_checkpoint_read(void)
                   "terme_source_vitesse_implicite");
 
           if (extra->itytur == 2 || extra->itytur == 4 ||
-              extra->iturb == 50 || extra->iturb == 60)
+              extra->itytur == 5 || extra->iturb == CS_TURB_K_OMEGA)
             sprintf(nomtsl[cs_glob_lagr_source_terms->itske],
                     "terme_source_turbulence_keps");
 
@@ -1371,7 +1372,7 @@ cs_restart_lagrangian_checkpoint_write(void)
         sprintf(nomtsl[cs_glob_lagr_source_terms->itsli],
                 "terme_source_vitesse_implicite");
         if (extra->itytur == 2 || extra->itytur == 4 ||
-            extra->iturb == 50 || extra->iturb == 60) {
+            extra->itytur == 5 || extra->iturb == CS_TURB_K_OMEGA) {
           sprintf(nomtsl[cs_glob_lagr_source_terms->itske],
                   "terme_source_turbulence_keps");
         }

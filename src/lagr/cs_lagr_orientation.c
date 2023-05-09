@@ -57,6 +57,7 @@
 #include "cs_physical_model.h"
 #include "cs_prototypes.h"
 #include "cs_random.h"
+#include "cs_turbulence_model.h"
 
 #include "cs_lagr.h"
 #include "cs_lagr_particle.h"
@@ -590,8 +591,8 @@ cs_lagr_orientation_dyn_spheroids(int              iprev,
       extra->cvar_omg->vals[iprev] : extra->cvar_omg->val;
   }
 
-  if (! (   (extra->itytur >= 2 && extra->itytur <= 50)
-         || extra->iturb == 60))
+  if (! (   (extra->itytur >= 2 && extra->itytur <= 5)
+         || extra->iturb == CS_TURB_K_OMEGA))
     bft_error
       (__FILE__, __LINE__, 0,
        _("The lagrangian turbulent dispersion model is not compatible\n"
@@ -636,7 +637,7 @@ cs_lagr_orientation_dyn_spheroids(int              iprev,
     if (cvar_ep != NULL) {
       epsilon = cvar_ep[cell_id];
     }
-    else if (extra->iturb == 60) {
+    else if (extra->iturb == CS_TURB_K_OMEGA) {
       epsilon = extra->cmu * cvar_k[cell_id] * cvar_omg[cell_id];
     }
 

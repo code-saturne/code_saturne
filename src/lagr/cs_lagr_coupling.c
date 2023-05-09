@@ -25,7 +25,7 @@
 /*----------------------------------------------------------------------------*/
 
 /*============================================================================
- * Functions dealing with lagrangian coupling
+ * Functions dealing with Lagrangian coupling
  *============================================================================*/
 
 #include "cs_defs.h"
@@ -58,6 +58,7 @@
 
 #include "cs_physical_constants.h"
 #include "cs_time_step.h"
+#include "cs_turbulence_model.h"
 
 #include "cs_lagr.h"
 #include "cs_lagr_particle.h"
@@ -272,9 +273,9 @@ cs_lagr_coupling(const cs_real_t  taup[],
      ======================= */
 
     if (extra->itytur == 2 || extra->itytur == 4 ||
-        extra->iturb == 50 || extra->iturb == 60) {
+        extra->itytur == 5 || extra->iturb == CS_TURB_K_OMEGA) {
 
-      /* In v2f (ITURB=50) the Lagrangian STs only influence k and epsilon
+      /* In v2f the Lagrangian STs only influence k and epsilon
          (difficult to write something for v2, which loses its meaning as
          "Rij comonent") */
 

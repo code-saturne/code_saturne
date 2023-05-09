@@ -368,7 +368,7 @@ cs_lagr_car(int              iprev,
             /* cell_bbi[1] == cell_bbi[2] is used */
           }
           else if (   extra->itytur == 2 || extra->itytur == 4
-              || extra->iturb == 50 || extra->iturb == 60) {
+              || extra->itytur == 5 || extra->iturb == CS_TURB_K_OMEGA) {
             ktil  = energi[cell_id];
           }
           for (int i = 0; i <3; i++) {

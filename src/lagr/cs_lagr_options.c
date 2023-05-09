@@ -53,6 +53,7 @@
 #include "cs_parameters.h"
 #include "cs_parameters_check.h"
 #include "cs_physical_model.h"
+#include "cs_turbulence_model.h"
 
 #include "cs_lagr.h"
 #include "cs_lagr_event.h"
@@ -750,8 +751,8 @@ cs_lagr_options_definition(int         isuite,
       && extra->itytur != 2
       && extra->itytur != 3
       && extra->itytur != 4
-      && extra->iturb != 50
-      && extra->iturb != 60) {
+      && extra->itytur != 5
+      && extra->iturb != CS_TURB_K_OMEGA) {
     cs_parameters_error
       (CS_ABORT_DELAYED,
        _("in Lagrangian module"),
@@ -766,8 +767,8 @@ cs_lagr_options_definition(int         isuite,
            && extra->itytur!= 2
            && extra->itytur!= 3
            && extra->itytur!= 4
-           && extra->iturb != 50
-           && extra->iturb != 60) {
+           && extra->itytur!= 5
+           && extra->iturb != CS_TURB_K_OMEGA) {
     cs_parameters_error
       (CS_ABORT_DELAYED,
        _("in Lagrangian module"),
@@ -912,8 +913,8 @@ cs_lagr_options_definition(int         isuite,
 
     if (   extra->itytur == 2
         || extra->itytur == 4
-        || extra->iturb == 50
-        || extra->iturb == 60) {
+        || extra->itytur == 5
+        || extra->iturb == CS_TURB_K_OMEGA) {
 
       /* K-eps, LES, v2f and k-omega */
       lagdim->ntersl += 1;
