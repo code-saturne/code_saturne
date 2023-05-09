@@ -1382,7 +1382,7 @@ cs_equation_param_create(const char            *name,
     .coef = 1.,
   };
 
-  /* Description of the discetization of the diffusion term */
+  /* Description of the discretization of the diffusion term */
 
   eqp->diffusion_property = NULL;
   eqp->diffusion_hodgep = (cs_hodge_param_t) {
@@ -1392,7 +1392,7 @@ cs_equation_param_create(const char            *name,
     .coef = 2*cs_math_1ov3,
   };
 
-  /* Description of the discetization of the curl-curl term */
+  /* Description of the discretization of the curl-curl term */
 
   eqp->curlcurl_property = NULL;
   eqp->curlcurl_hodgep = (cs_hodge_param_t) {
@@ -1402,7 +1402,7 @@ cs_equation_param_create(const char            *name,
     .coef = cs_math_1ov3,
   };
 
-  /* Description of the discetization of the grad-div term */
+  /* Description of the discretization of the grad-div term */
 
   eqp->graddiv_property = NULL;
   eqp->graddiv_hodgep = (cs_hodge_param_t) {
