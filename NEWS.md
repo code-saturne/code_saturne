@@ -1,3 +1,11 @@
+Release 7.0.7 (not released yet)
+---------------------------------
+
+Bug fixes:
+
+- Fix electric arcs rescaling by plane computation issue in some parallel
+  partitioning configurations.
+
 Release 7.0.6 (May 10 2023)
 ---------------------------
 
