@@ -78,6 +78,9 @@ BEGIN_C_DECLS
     of using only the initial estimate based on the vertices center) */
 #define CS_FACE_CENTER_REFINE (1 << 7)
 
+/*! Regularization for faces if null surface value */
+#define CS_FACE_NULL_SURFACE (1 << 8)
+
 /*! @} */
 
 /*============================================================================

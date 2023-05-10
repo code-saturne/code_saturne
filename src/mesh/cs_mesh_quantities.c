@@ -1364,20 +1364,26 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
       cs_lnum_t cell_id2 = i_face_cells[face_id][1];
       double surfn = cs_math_3_norm(i_face_normal[face_id]);
 
-      for (int i = 0; i < 3; i++)
-        for (int j = 0; j < 3; j++) {
-          a[cell_id1][i][j] +=   i_face_normal[face_id][i]
-                               * i_face_normal[face_id][j] / surfn;
-          a[cell_id2][i][j] +=   i_face_normal[face_id][i]
-                               * i_face_normal[face_id][j] / surfn;
+      /* If the surface of the face is < 1.e-20 computation is not done,
+       * to avoid dividing by 0 and unnecessary operations.
+       */
+      if (!(cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE) ||
+          surfn  > 1.e-20) {
+        for (int i = 0; i < 3; i++)
+          for (int j = 0; j < 3; j++) {
+            a[cell_id1][i][j] +=   i_face_normal[face_id][i]
+                                 * i_face_normal[face_id][j] / surfn;
+            a[cell_id2][i][j] +=   i_face_normal[face_id][i]
+                                 * i_face_normal[face_id][j] / surfn;
+          }
+
+        double ps = cs_math_3_dot_product(i_face_normal[face_id],
+                                          i_face_cog[face_id]);
+
+        for (int i = 0; i < 3; i++) {
+          b[cell_id1][i] += ps * i_face_normal[face_id][i] / surfn;
+          b[cell_id2][i] += ps * i_face_normal[face_id][i] / surfn;
         }
-
-      double ps = cs_math_3_dot_product(i_face_normal[face_id],
-                                        i_face_cog[face_id]);
-
-      for (int i = 0; i < 3; i++) {
-        b[cell_id1][i] += ps * i_face_normal[face_id][i] / surfn;
-        b[cell_id2][i] += ps * i_face_normal[face_id][i] / surfn;
       }
 
     }
@@ -1388,17 +1394,23 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
       cs_lnum_t cell_id = b_face_cells[face_id];
       double surfn = cs_math_3_norm(b_face_normal[face_id]);
 
-      for (int i = 0; i < 3; i++)
-        for (int j = 0; j < 3; j++) {
-          a[cell_id][i][j] +=   b_face_normal[face_id][i]
-                              * b_face_normal[face_id][j] / surfn;
+      /* If the surface of the face is < 1.e-20 computation is not done,
+       * to avoid dividing by 0 and unnecessary operations.
+       */
+      if (!(cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE) ||
+          surfn > 1.e-20) {
+        for (int i = 0; i < 3; i++)
+          for (int j = 0; j < 3; j++) {
+            a[cell_id][i][j] +=   b_face_normal[face_id][i]
+                                * b_face_normal[face_id][j] / surfn;
+          }
+
+        double ps = cs_math_3_dot_product(b_face_normal[face_id],
+                                          b_face_cog[face_id]);
+
+        for (int i = 0; i < 3; i++) {
+          b[cell_id][i] += ps * b_face_normal[face_id][i] / surfn;
         }
-
-      double ps = cs_math_3_dot_product(b_face_normal[face_id],
-                                        b_face_cog[face_id]);
-
-      for (int i = 0; i < 3; i++) {
-        b[cell_id][i] += ps * b_face_normal[face_id][i] / surfn;
       }
 
     }
@@ -1759,11 +1771,20 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
 
       /* Min value between IJ and
        * (Omega_i+Omega_j)/S_ij which is exactly the distance for tetras */
-      cs_real_t distmax
+
+      cs_real_t face_nomal_norm = cs_math_3_norm(face_nomal);
+      cs_real_t distmax = -1;
+
+      /* If CS_FACE_NULL_SURFACE is used, only update distmax value
+       * if the face surface is not 0.
+       */
+      if(!(cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE) ||
+          face_nomal_norm > 1.e-20)
+        distmax
         = cs_math_fmin(cs_math_3_distance(cell_cen[cell_id1],
                                           cell_cen[cell_id2]),
                        (  (cell_vol[cell_id1] + cell_vol[cell_id2])
-                        / cs_math_3_norm(face_nomal)));
+                        / face_nomal_norm));
 
       /* Previous value of 0.2 sometimes leads to computation divergence */
       /* 0.01 seems better and safer for the moment */
@@ -1771,6 +1792,19 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
       if (i_dist[face_id] < critmin * distmax) {
         w_count[0] += 1;
         i_dist[face_id] = cs_math_fmax(i_dist[face_id], critmin * distmax);
+      }
+
+      /* Clippings due to null surface */
+      if (cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE) {
+        if(face_nomal_norm <= 1.e-20)
+          i_dist[face_id] = cs_math_3_distance(cell_cen[cell_id1],
+                                               cell_cen[cell_id2]);
+
+        /* i_dist is arbirary clipped to 1. in this case.
+         * FIXME: This value could be improved in future releases
+         */
+        if(i_dist[face_id] < 1.e-20)
+          i_dist[face_id] = 1.;
       }
 
       /* Clipping of weighting */
@@ -1799,14 +1833,35 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
 
       /* Min value between IF and
        * (Omega_i)/S which is exactly the distance for tetrahedra */
-      double distmax = fmin(cs_math_3_distance(cell_cen[cell_id],
-                                               b_face_cog[face_id]),
-                            cell_vol[cell_id]/cs_math_3_norm(face_nomal));
+      cs_real_t face_nomal_norm = cs_math_3_norm(face_nomal);
+      cs_real_t distmax = -1;
+
+      /* If CS_FACE_NULL_SURFACE is used, only update distmax value
+       * if the face surface is not 0.
+       */
+      if(!(cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE) ||
+          face_nomal_norm > 1.e-20)
+        distmax = fmin(cs_math_3_distance(cell_cen[cell_id],
+                                          b_face_cog[face_id]),
+                            cell_vol[cell_id]/face_nomal_norm);
 
       double critmin = 0.01;
       if (b_dist[face_id] < critmin * distmax) {
         w_count[1] += 1;
         b_dist[face_id] = fmax(b_dist[face_id], critmin * distmax);
+      }
+
+      /* Clippings due to null surface */
+      if (cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE) {
+        if(face_nomal_norm <= 1.e-20)
+          b_dist[face_id] = cs_math_3_distance(cell_cen[cell_id],
+                                               b_face_cog[face_id]);
+
+        /* b_dist is arbirary clipped to 1. in this case.
+         * FIXME: This value could be improved in future releases
+         */
+        if(b_dist[face_id] < 1.e-20)
+          b_dist[face_id] = 1.;
       }
 
     }
@@ -1900,9 +1955,18 @@ _compute_face_vectors(int              dim,
     cs_real_t surfn[3];
 
     /* Normalized normal */
-    surfn[0] = i_face_normal[face_id*dim]     / i_face_surf[face_id];
-    surfn[1] = i_face_normal[face_id*dim + 1] / i_face_surf[face_id];
-    surfn[2] = i_face_normal[face_id*dim + 2] / i_face_surf[face_id];
+    /* If CS_FACE_NULL_SURFACE is used, ensure that face surface is not 0 */
+    if (cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE) {
+      cs_real_t face_surf_clip = cs_math_fmax(i_face_surf[face_id], 1.e-20);
+      surfn[0] = i_face_normal[face_id*dim]     / face_surf_clip;
+      surfn[1] = i_face_normal[face_id*dim + 1] / face_surf_clip;
+      surfn[2] = i_face_normal[face_id*dim + 2] / face_surf_clip;
+    }
+    else {
+      surfn[0] = i_face_normal[face_id*dim]     / i_face_surf[face_id];
+      surfn[1] = i_face_normal[face_id*dim + 1] / i_face_surf[face_id];
+      surfn[2] = i_face_normal[face_id*dim + 2] / i_face_surf[face_id];
+    }
 
     /* ---> IJ */
     vecijx = cell_cen[cell_id2*dim]     - cell_cen[cell_id1*dim];
@@ -4149,15 +4213,18 @@ cs_mesh_quantities_cell_faces_cog(const cs_mesh_t  *mesh,
 
     cs_real_t area = cs_math_3_norm(i_face_norm + 3*f_id);
 
-    if (c_id1 > -1) {
-      cell_area[c_id1] += area;
-      for (cs_lnum_t i = 0; i < 3; i++)
-        cell_cen[3*c_id1 + i] += i_face_cog[3*f_id + i]*area;
-    }
-    if (c_id2 > -1) {
-      cell_area[c_id2] += area;
-      for (cs_lnum_t i = 0; i < 3; i++)
-        cell_cen[3*c_id2 + i] += i_face_cog[3*f_id + i]*area;
+    if (!(cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE) ||
+        area > 1.e-20) {
+      if (c_id1 > -1) {
+        cell_area[c_id1] += area;
+        for (cs_lnum_t i = 0; i < 3; i++)
+          cell_cen[3*c_id1 + i] += i_face_cog[3*f_id + i]*area;
+      }
+      if (c_id2 > -1) {
+        cell_area[c_id2] += area;
+        for (cs_lnum_t i = 0; i < 3; i++)
+          cell_cen[3*c_id2 + i] += i_face_cog[3*f_id + i]*area;
+      }
     }
 
   } /* End of loop on interior faces */
@@ -4180,12 +4247,15 @@ cs_mesh_quantities_cell_faces_cog(const cs_mesh_t  *mesh,
 
       cs_real_t area = cs_math_3_norm(b_face_norm + 3*f_id);
 
-      cell_area[c_id1] += area;
+      if (!(cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE) ||
+          area > 1.e-20) {
+        cell_area[c_id1] += area;
 
-      /* Computation of the numerator */
+        /* Computation of the numerator */
 
-      for (cs_lnum_t i = 0; i < 3; i++)
-        cell_cen[3*c_id1 + i] += b_face_cog[3*f_id + i]*area;
+        for (cs_lnum_t i = 0; i < 3; i++)
+          cell_cen[3*c_id1 + i] += b_face_cog[3*f_id + i]*area;
+      }
 
     }
 
