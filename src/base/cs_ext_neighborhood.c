@@ -1685,6 +1685,7 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
     } /* End of loop on cells */
 
     BFT_FREE(n_c_s);
+    BFT_FREE(i_c_selected);
     BFT_FREE(is_selected);
 
   } /* End of OpenMP block */
