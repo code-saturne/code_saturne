@@ -665,7 +665,7 @@ class case:
                and n_passes < 5):
 
             mult = (n_procs - n_fixed_procs) *1.0 \
-                // (n_procs_tot - n_fixed_procs)
+                 / (n_procs_tot - n_fixed_procs)
 
             n_procs_tot = 0
 
