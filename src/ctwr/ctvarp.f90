@@ -68,7 +68,7 @@ implicit none
 
 integer          keyccl, keydri
 integer          kscmin, kscmax
-integer          icla, ifcvsl, iscdri, f_id
+integer          icla, ifcvsl, iscdri, f_id, sc_id
 
 !===============================================================================
 
@@ -161,8 +161,8 @@ call field_set_key_int(f_id, kivisl, ifcvsl)
 ! Transport and solve for the temperature of the liquid - with the same drift
 ! as the mass fraction Y_l in rain zones
 ! NB: Temperature of the liquid must be transported after the bulk enthalpy
-call add_model_scalar_field('y_p_t_l', 'Tp liq', it_p_l)
-f_id = ivarfl(isca(it_p_l))
+call add_model_scalar_field('y_p_t_l', 'Tp liq', sc_id)
+f_id = ivarfl(isca(sc_id))
 
 call field_set_key_int(f_id, keyccl, icla)
 

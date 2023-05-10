@@ -107,7 +107,8 @@ double precision rcodcl(nfabor,nvar,3)
 integer          igg, ifac, izone, mode, iscal
 integer          ii, iel, ifue, ioxy
 integer          icke
-double precision qimabs, qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
+double precision qimabs, qimpl(1), qisqc
+double precision viscla, d2s3, uref2, rhomoy, dhy, xiturb
 double precision ustar2, xkent, xeent
 double precision qcalc(nozppm)
 double precision coefg(ngazgm)
@@ -142,15 +143,17 @@ enddo
 !    Si ce n'est pas le cas, c'est plus complique mais on pourrait
 !    s'en tirer avec un max quand meme, sauf qimp qui peut etre negatif.
 
-if(irangp.ge.0) then
+if (irangp.ge.0) then
   call parmax(tinfue)
   call parmax(tinoxy)
   ! qimabs  = |qimp|, or 0 if no boundary faces on the rank
   do ii = 1, nozapm
     qimabs = abs(qimp(ii))
+    qimpl(1) = qimp(ii)
     ! the rank owning the max of qimabs, meaning |qimp|, share
     ! qimp with the others
-    call parmxl(1,qimabs,qimp(ii))
+    call parmxl(1, qimabs, qimpl)
+    qimp(ii) = qimpl(1)
   enddo
   call parimx(nozapm,iqimp )
   call parimx(nozapm,ientox)

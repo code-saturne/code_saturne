@@ -125,14 +125,14 @@ typedef struct {
 
 static int *_bc_type;
 
-const int *cs_glob_bc_type = NULL;
-
-static int *_bc_face_zone;
-
-const int *cs_glob_bc_face_zone = NULL;
+static int *_bc_pm_face_zone;
 
 static int _n_bc_maps = 0;
 static cs_bc_map_t *_bc_maps = NULL;
+
+const int *cs_glob_bc_type = NULL;
+
+cs_boundary_condition_pm_info_t  *cs_glob_bc_pm_info = NULL;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -154,6 +154,18 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
 void
 cs_f_boundary_conditions_get_pointers(int  **itypfb,
                                       int  **izfppp);
+
+void
+cs_f_boundary_conditions_get_ppincl_pointers(int     **iqimp,
+                                             int     **icalke,
+                                             double  **xintur,
+                                             double  **dh);
+
+void
+cs_f_boundary_conditions_get_coincl_pointers(double  **qimp);
+
+void
+cs_f_boundary_conditions_get_cpincl_pointers(double  **qimpat);
 
 /*============================================================================
  * Private function definitions
@@ -777,7 +789,7 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
 }
 
 /*----------------------------------------------------------------------------
- * Get pointer to cs_glob_bc_type and cs_glob_bc_face_zone
+ * Get pointers for Fortran bindings
  *----------------------------------------------------------------------------*/
 
 void
@@ -785,7 +797,38 @@ cs_f_boundary_conditions_get_pointers(int **itypfb,
                                       int **izfppp)
 {
   *itypfb = _bc_type;
-  *izfppp = _bc_face_zone;
+
+  *izfppp = cs_glob_bc_pm_info->izfppp;
+}
+
+void
+cs_f_boundary_conditions_get_ppincl_pointers(int     **iqimp,
+                                             int     **icalke,
+                                             double  **xintur,
+                                             double  **dh)
+{
+  /* Shift by 1 to compensate for Fortran 1-based access */
+
+  *iqimp = cs_glob_bc_pm_info->iqimp + 1;
+  *icalke = cs_glob_bc_pm_info->icalke + 1;
+  *xintur = cs_glob_bc_pm_info->xintur + 1;
+  *dh = cs_glob_bc_pm_info->dh + 1;
+}
+
+void
+cs_f_boundary_conditions_get_coincl_pointers(double  **qimp)
+{
+  /* Shift 1d-arrays by 1 to compensate for Fortran 1-based access */
+
+  *qimp = cs_glob_bc_pm_info->qimp + 1;
+}
+
+void
+cs_f_boundary_conditions_get_cpincl_pointers(double  **qimpat)
+{
+  /* Shift 1d-arrays by 1 to compensate for Fortran 1-based access */
+
+  *qimpat = cs_glob_bc_pm_info->qimp + 1;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1273,14 +1316,24 @@ cs_boundary_conditions_create(void)
   }
   cs_glob_bc_type = _bc_type;
 
-  /* boundary conditions zone by boundary face */
-  /* only for specific physics */
+  /* Allocate legacy zone info
+     (deprecated, only for specific physics) */
 
-  BFT_MALLOC(_bc_face_zone, n_b_faces, int);
+  BFT_MALLOC(cs_glob_bc_pm_info, 1, cs_boundary_condition_pm_info_t);
+  BFT_MALLOC(cs_glob_bc_pm_info->izfppp, n_b_faces, int);
+  int *izfppp = cs_glob_bc_pm_info->izfppp;
   for (cs_lnum_t ii = 0 ; ii < n_b_faces ; ii++) {
-    _bc_face_zone[ii] = 0;
+    izfppp[ii] = 0;
   }
-  cs_glob_bc_face_zone = _bc_face_zone;
+
+  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
+  for (int i = 0; i < CS_MAX_BC_PM_ZONE_NUM+1; i++) {
+    bc_pm_info->iqimp[i] = 0;
+    bc_pm_info->icalke[i] = 0;
+    bc_pm_info->qimp[i] = 0;
+    bc_pm_info->dh[i] = 0;
+    bc_pm_info->xintur[i] = 0;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1295,13 +1348,16 @@ void
 cs_boundary_conditions_free(void)
 {
   BFT_FREE(_bc_type);
-  BFT_FREE(_bc_face_zone);
+  BFT_FREE(_bc_pm_face_zone);
 
   for (int i = 0; i < _n_bc_maps; i++)
     ple_locator_destroy((_bc_maps + i)->locator);
 
   BFT_FREE(_bc_maps);
   _n_bc_maps = 0;
+
+  BFT_FREE(cs_glob_bc_pm_info->izfppp);
+  BFT_FREE(cs_glob_bc_pm_info);
 }
 
 /*----------------------------------------------------------------------------*/

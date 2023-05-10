@@ -154,7 +154,8 @@ module coincl
   !       TGBAD        --> Temperature adiabatique gaz brules en K
 
   integer, save ::          ientgf(nozppm), ientgb(nozppm)
-  double precision, save :: fment(nozppm), tkent(nozppm), qimp(nozppm)
+  real(c_double), pointer, save :: qimp(:)
+  double precision, save :: fment(nozppm), tkent(nozppm)
   double precision, save :: frmel, tgf, cebu, hgf, tgbad
 
   !--> MODELE DE FLAMME DE PREMELANGE LWC
@@ -216,6 +217,17 @@ module coincl
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function retrieving BC zone array pointers
+
+    subroutine cs_f_boundary_conditions_get_coincl_pointers(p_qimp)   &
+      bind(C, name='cs_f_boundary_conditions_get_coincl_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: p_qimp
+    end subroutine cs_f_boundary_conditions_get_coincl_pointers
+
+    !---------------------------------------------------------------------------
+
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------
@@ -253,7 +265,27 @@ contains
 
   end subroutine co_models_init
 
+
+  !> \brief Map Fortran physical models boundary condition info.
+  !> This maps Fortran pointers to global C variables.
+
+  subroutine co_models_bc_map
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: p_qimp
+
+    call cs_f_boundary_conditions_get_coincl_pointers(p_qimp)
+
+    call c_f_pointer(p_qimp, qimp, [nozppm])
+
+  end subroutine co_models_bc_map
+
   !=============================================================================
+
   subroutine init_steady_laminar_flamelet_library
 
     use radiat
@@ -276,6 +308,7 @@ contains
   end subroutine init_steady_laminar_flamelet_library
 
   !=============================================================================
+
   ! Free related arrays
   subroutine finalize_steady_laminar_flamelet_library
 

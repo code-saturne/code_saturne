@@ -74,8 +74,6 @@ typedef struct {
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
-                               int        *iqimp,
-                               int        *icalke,
                                int        *ientat,
                                int        *ientcp,
                                int        *inmoxy,
@@ -87,11 +85,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                int        *iautom,
                                int        *itypfb,
                                int        *izfppp,
-                               double     *qimp,
-                               double     *qimpat,
                                double     *qimpcp,
-                               double     *dh,
-                               double     *xintur,
                                double     *timpat,
                                double     *timpcp,
                                double     *tkent,
@@ -109,7 +103,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
  * integer          nozppm  <-- max number of boundary conditions zone
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclve, UICLVE)(const int  *nozppm);
+void CS_PROCF (uiclve, UICLVE)(void);
 
 /*=============================================================================
  * Public function prototypes

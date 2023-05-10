@@ -377,9 +377,9 @@ call precli(nvar, rcodcl)
 
 call uiclim &
   ( nozppm,                                                        &
-    iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
+    ientat, ientcp, inmoxy, ientox,                                &
     ientfu, ientgb, ientgf, iprofm, iautom,                        &
-    itypfb, izfppp, qimp,   qimpat, qimpcp, dh,     xintur,        &
+    itypfb, izfppp, qimpcp,                                        &
     timpat, timpcp, tkent , fment,  distch)
 
 call cs_boundary_conditions_complete(itypfb)
@@ -394,7 +394,7 @@ call user_boundary_conditions(itypfb)
 
 ! Check consistency with GUI definitions
 
-call uiclve(nozppm)
+call uiclve
 
 ! BC'based coupling with other code_saturne instances.
 
@@ -4950,9 +4950,9 @@ call precli(nvar, rcodcl)
 
 call uiclim &
   ( nozppm,                                                        &
-    iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
+    ientat, ientcp, inmoxy, ientox,                                &
     ientfu, ientgb, ientgf, iprofm, iautom,                        &
-    itypfb, izfppp, qimp,   qimpat, qimpcp, dh,     xintur,        &
+    itypfb, izfppp, qimpcp,                                        &
     timpat, timpcp, tkent , fment,  distch)
 
 !     - Sous-programme utilisateur

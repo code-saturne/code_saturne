@@ -71,6 +71,10 @@ use cs_c_bindings
 use cs_f_interfaces
 use cdomod
 
+use ppincl, only: pp_models_bc_map
+use coincl, only: co_models_bc_map
+use cpincl, only: cp_models_bc_map
+
 use, intrinsic :: iso_c_binding
 
 use cs_tagms
@@ -735,6 +739,10 @@ nvarcl = nvar
 
 call field_build_bc_codes_all(icodcl, rcodcl)
 allocate(isostd(nfabor+1))
+
+! BC mappings for specific physical models (deprecated)
+call pp_models_bc_map
+call cp_models_bc_map
 
 ! First pass for initialization BC types
 ! -- Couplage code_saturne/code_saturne

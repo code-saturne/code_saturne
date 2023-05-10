@@ -37,11 +37,7 @@ module ppppar
   !> \addtogroup ppppar
   !> \{
 
-  !> maximum number of boundary zones
-  integer    nbzppm
-  parameter (nbzppm=2000)
-
-  !> maximum index of boundary zones
+  !> maximum number and index of boundary zones
   integer    nozppm
   parameter (nozppm=2000)
 

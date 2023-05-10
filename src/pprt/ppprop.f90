@@ -157,11 +157,11 @@ endif
 
 ! ---> Cooling towers model
 if (ippmod(iaeros).ge.0) then
-  call add_property_field_1d('humidity', 'Humidity', ihumid)
+  call add_property_field_1d('humidity', 'Humidity', f_id)
   call add_property_field_1d('x_s', 'Humidity sat', f_id)
   call add_property_field_1d('enthalpy', 'Enthalpy humid air', ihm)
   call add_property_field_1d('temperature_liquid', 'Temp liq', itml)
-  call add_property_field_1d('vertvel_l', 'Vertical vel liq', ivertvel)
+  call add_property_field_1d('vertvel_l', 'Vertical vel liq', f_id)
 
   ! Continuous phase properties
   !----------------------------

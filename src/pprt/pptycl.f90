@@ -156,13 +156,13 @@ if (ippmod(icompf).lt.0) then
         ifvu = 1
       endif
     enddo
-    if(ifvu.eq.0) then
+    if (ifvu.eq.0) then
       nzfppp = nzfppp + 1
-      if(nzfppp.le.nbzppm) then
+      if (nzfppp.le.nozppm) then
         ilzppp(nzfppp) = izfppp(ifac)
       else
-        write(nfecra,1001) nbzppm
-        write(nfecra,1002)(ilzppp(ii),ii=1,nbzppm)
+        write(nfecra,1001) nozppm
+        write(nfecra,1002)(ilzppp(ii),ii=1,nozppm)
         call csexit (1)
       endif
     endif
