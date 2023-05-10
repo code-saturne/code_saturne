@@ -269,7 +269,8 @@ real(c_double), pointer, save :: xashch(:)
   !       distch(ient,icha,icla) --> Distribution en %masse de la classe icla
   !                                  pour le charbon icha
 
-  double precision, save ::  qimpat(nozppm)
+  real(c_double), pointer, save :: qimpat(:)
+
   double precision, save ::  qimpcp(nozppm,ncharm), timpcp(nozppm,ncharm)
   double precision, save ::  distch(nozppm,ncharm,ncpcmx)
 
@@ -307,6 +308,17 @@ real(c_double), pointer, save :: xashch(:)
                                   p_rho20, p_rho2mn,                           &
                                   p_xmp0, p_xmash
     end subroutine cs_f_cpincl_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function retrieving BC zone array pointers
+
+    subroutine cs_f_boundary_conditions_get_cpincl_pointers(p_qimpat)   &
+      bind(C, name='cs_f_boundary_conditions_get_cpincl_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: p_qimpat
+    end subroutine cs_f_boundary_conditions_get_cpincl_pointers
 
     !---------------------------------------------------------------------------
 
@@ -365,6 +377,26 @@ contains
     call c_f_pointer(p_xmash,  xmash,  [nclcpm])
 
   end subroutine cp_models_init
+
+  !=============================================================================
+
+  !> \brief Map Fortran physical models boundary condition info.
+  !> This maps Fortran pointers to global C variables.
+
+  subroutine cp_models_bc_map
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: p_qimpat
+
+    call cs_f_boundary_conditions_get_cpincl_pointers(p_qimpat)
+
+    call c_f_pointer(p_qimpat, qimpat, [nozppm])
+
+  end subroutine cp_models_bc_map
 
   !=============================================================================
 

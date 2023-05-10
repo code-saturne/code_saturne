@@ -2723,8 +2723,6 @@ _standard_turbulence_bcs(void)
  * *****************
  *
  * integer          nozppm   <-- max number of boundary conditions zone
- * integer          iqimp    <-- 1 if mass flow rate is applied
- * integer          icalke   <-- turbulent inlet type
  * integer          ientat   <-- 1 for air temperature boundary conditions (coal)
  * integer          ientcp   <-- 1 for coal temperature boundary conditions (coal)
  * integer          inmoxy   <-- coal: number of oxydant for the current inlet
@@ -2737,8 +2735,6 @@ _standard_turbulence_bcs(void)
  * integer          itypfb   <-- type of boundary for each face
  * integer          izfppp   <-- zone number for each boundary face
  * double precision cgdfbo   <-- boundary faces center of gravity
- * double precision qimp     <-- inlet flow rate
- * double precision qimpat   <-- inlet air flow rate (coal)
  * double precision qimpcp   <-- inlet coal flow rate (coal)
  * double precision timpat   <-- air temperature boundary conditions (coal)
  * double precision timpcp   <-- inlet coal temperature (coal)
@@ -2748,8 +2744,6 @@ _standard_turbulence_bcs(void)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
-                               int        *iqimp,
-                               int        *icalke,
                                int        *ientat,
                                int        *ientcp,
                                int        *inmoxy,
@@ -2761,11 +2755,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                int        *iautom,
                                int        *itypfb,
                                int        *izfppp,
-                               double     *qimp,
-                               double     *qimpat,
                                double     *qimpcp,
-                               double     *dh,
-                               double     *xintur,
                                double     *timpat,
                                double     *timpcp,
                                double     *tkent,
@@ -2777,6 +2767,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
   const int ncharm = CS_COMBUSTION_MAX_COALS;
 
   const cs_real_3_t *face_cen = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+
+  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
 
   bool solid_fuels = false;
   if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
@@ -2833,10 +2825,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
          in PRECLI and PPPRCL routines */
 
       /* data by zone */
-      iqimp[zone_nbr-1]  = boundaries->iqimp[izone];
-      dh[zone_nbr-1]     = boundaries->dh[izone];
-      xintur[zone_nbr-1] = boundaries->xintur[izone];
-      icalke[zone_nbr-1] = boundaries->icalke[izone];
+      bc_pm_info->iqimp[zone_nbr] = boundaries->iqimp[izone];
+      bc_pm_info->icalke[zone_nbr] = boundaries->icalke[izone];
+      bc_pm_info->dh[zone_nbr]     = boundaries->dh[izone];
+      bc_pm_info->xintur[zone_nbr] = boundaries->xintur[izone];
 
       if (solid_fuels) {
         const cs_combustion_model_t *cm = cs_glob_combustion_model;
@@ -3139,7 +3131,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
       }
       else if (gas_combustion) {
         bft_printf("-----iqimp=%i \n",
-                   iqimp[zone_nbr-1]);
+                   boundaries->iqimp[zone_nbr-1]);
         bft_printf("-----ientox=%i, ientfu=%i, ientgf=%i, ientgb=%i \n",
                    ientox[zone_nbr-1], ientfu[zone_nbr-1],
                    ientgf[zone_nbr-1], ientgb[zone_nbr-1]);
@@ -3158,7 +3150,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
       }
       else {
         bft_printf("-----iqimp=%i, qimp=%12.5e \n",
-                   iqimp[zone_nbr-1], qimp[zone_nbr-1]);
+                   boundaries->iqimp[zone_nbr-1],
+                   boundaries->qimp[zone_nbr-1]);
       }
 
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
@@ -3362,12 +3355,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
   if (std_turbulence_bcs)
     _standard_turbulence_bcs();
 
-  /* Mass flow (TODO: merge qimp and qimpat) */
+  /* Mass flow */
 
   for (int izone = 0; izone < boundaries->n_zones; izone++) {
-    qimp[izone] = boundaries->qimp[izone];
-    if (solid_fuels)
-      qimpat[izone] = boundaries->qimp[izone];
+    bc_pm_info->qimp[izone + 1] = boundaries->qimp[izone];
   }
 }
 
@@ -3378,11 +3369,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
  *
  * SUBROUTINE UICLVE
  * *****************
- *
- * integer          nozppm  <-- max number of boundary conditions zone
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclve, UICLVE)(const int  *nozppm)
+void CS_PROCF (uiclve, UICLVE)(void)
 {
   int inature = -1;
 
@@ -3423,10 +3412,10 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm)
 
     int zone_nbr = boundaries->bc_num[izone];
 
-    if (nozppm && zone_nbr > *nozppm)
+    if (zone_nbr > CS_MAX_BC_PM_ZONE_NUM)
       bft_error(__FILE__, __LINE__, 0,
                 _("zone's label number %i is greater than %i,"
-                  " the maximum allowed \n"), zone_nbr, *nozppm);
+                  " the maximum allowed \n"), zone_nbr, CS_MAX_BC_PM_ZONE_NUM);
 
   } /*  for izone */
 }

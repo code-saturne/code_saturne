@@ -735,21 +735,12 @@ module ppincl
   !> Pointer to define mass fraction of liquid water which is injected in the rain zones
   integer, save :: iy_p_l
 
-  !> Pointer to define the temperature of liquide water in rain zone (in fact Y_l.T_l)
-  integer, save :: it_p_l
-
   !> Pointer to define the temperature (property, deduced from enthalpy)
   !> of liquid water which is injected in the packing
   integer, save :: itml
 
   !> Pointer to define the field enthalpy of liquid water
   integer, save :: ihml
-
-  !> Pointer to define the air humidity
-  integer, save :: ihumid
-
-  !> Pointer to define the vertical velocity of liquid water
-  integer, save :: ivertvel
 
   !> \}
   !> \}
@@ -796,19 +787,19 @@ module ppincl
   !> air temperature \ref cpincl::timpat "timpat"(izone) in Kelvin.
   !> If the velocity is imposed, he has to set  \ref rcodcl "rcodcl"(ifac,\ref iu),
   !> \ref rcodcl "rcodcl"(ifac,\ref iv), and \ref rcodcl "rcodcl"(ifac,\ref iw).
-  integer, save ::          iqimp(nozppm)
+  integer(c_int), pointer, save :: iqimp(:)
 
   !> condition type turbulence indicator
   !>  - 0 : given by the user
   !>  - 1 : automatic, from hydraulic diameter and input velocity performed.
   !>  - 2 : automatic, from turbulent intensity and input velocity performed.
-  integer, save ::          icalke(nozppm)
+  integer(c_int), pointer, save :: icalke(:)
 
   !> turbulent intensity (k=1.5(uref*xintur)**2)
-  double precision, save :: xintur(nozppm)
+  real(c_double), pointer, save :: xintur(:)
 
   !> hydraulic diameter
-  double precision, save :: dh(nozppm)
+  real(c_double), pointer, save :: dh(:)
 
   !> index of maximum reached boundary zone
   integer, save :: nozapm
@@ -817,7 +808,7 @@ module ppincl
   integer, save :: nzfppp
 
   !> list of boundary zones index
-  integer, save :: ilzppp(nbzppm)
+  integer, save :: ilzppp(nozppm)
 
   !> \}
 
@@ -883,6 +874,18 @@ module ppincl
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function retrieving BC zone array pointers
+
+    subroutine cs_f_boundary_conditions_get_ppincl_pointers(p_iqimp, p_icalke,  &
+                                                            p_xintur, p_dh)     &
+      bind(C, name='cs_f_boundary_conditions_get_ppincl_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: p_iqimp, p_icalke, p_xintur, p_dh
+    end subroutine cs_f_boundary_conditions_get_ppincl_pointers
+
+    !---------------------------------------------------------------------------
+
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------
@@ -924,6 +927,30 @@ contains
     call c_f_pointer(p_icondb_model, icondb_model)
 
   end subroutine pp_models_init
+
+  !=============================================================================
+
+  !> \brief Map Fortran physical models boundary condition info.
+  !> This maps Fortran pointers to global C variables.
+
+  subroutine pp_models_bc_map
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: p_iqimp, p_icalke, p_xintur, p_dh
+
+    call cs_f_boundary_conditions_get_ppincl_pointers(p_iqimp, p_icalke,  &
+                                                      p_xintur, p_dh)
+
+    call c_f_pointer(p_iqimp, iqimp, [nozppm])
+    call c_f_pointer(p_icalke, icalke, [nozppm])
+    call c_f_pointer(p_xintur, xintur, [nozppm])
+    call c_f_pointer(p_dh, dh, [nozppm])
+
+  end subroutine pp_models_bc_map
 
   !=============================================================================
 

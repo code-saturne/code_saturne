@@ -380,7 +380,6 @@ tgf   = 300.d0
 do izone = 1, nozppm
   ientgf(izone) = 0
   ientgb(izone) = 0
-  qimp(izone)   = zero
   fment(izone)  = zero
   tkent(izone)  = zero
 enddo

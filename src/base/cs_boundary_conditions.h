@@ -50,6 +50,15 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/*! Maximum number of physical model zones
+ *
+ * \deprecated This is used for Fortran compatibilty (and maps to the Fortran
+ * \ref ppppar:nozppm  "nozppm" parameter). In C, we should move to high
+ * level boundary condition definitions not requiring indexing by legacy
+ * zone numbers indexed by \ref.
+*/
+#define  CS_MAX_BC_PM_ZONE_NUM  2000
+
 /*============================================================================
  * Local type definitions
  *============================================================================*/
@@ -63,9 +72,63 @@ BEGIN_C_DECLS
 extern const int  *cs_glob_bc_type;
 
 /*! boundary zone number associated with each boundary face
-  (specific physical models)*/
+ *  (specific physical models)
+ *
+ * \deprecated This is used for \ref cs_boundary_condition_pm_info_t only.
+*/
 
-extern const int  *cs_glob_bc_face_zone;
+/*----------------------------------------------------------------------------*/
+
+/*! Legacy physical model boundary conditions.
+ *
+ * \remark The amppings of member arrays of this structure are shifted
+ * by 1 when mapped to Fortran, so that both in Fortran and C, we can use
+ * the natural indexing (1-based and 0-based respectively) without needing
+ * to shift the zone id/number.
+ *
+ * \deprecated This should be used for Fortran compatibilty and migration
+ * to C only. In C, we should then move to high level boundary condition
+ * definitions not requiring indexing by legacy zone numbers indexed by
+ * \ref cs_glob_bc_face_zone. */
+
+typedef struct {
+
+  /*! Legacy physical model zone id per boundary face */
+
+  int  *izfppp;
+
+  /*! Imposed flow zone indicator (for inlet zones).
+   * If the mass flow is imposed (\c iqimp(z_id) = 1), the matching
+   * \c qimp value must be set, and the defined velocity boundary condition
+   * will be rescaled so as to match the given mass flow (i.e. only its original
+   * direction is used. Otherwise, the given velocity boundary condition
+   * given by \c rcodcl1 is unchanged. */
+  int   iqimp[CS_MAX_BC_PM_ZONE_NUM+1];
+
+  /*! Turbulence inlet type:
+    * - 0: given by the user
+    * - 1: automatic, from hydraulic diameter and input velocity performed.
+    * - 2: automatic, from turbulent intensity and input velocity performed.
+    */
+  int   icalke[CS_MAX_BC_PM_ZONE_NUM+1];
+
+  /*! Imposed flow value (for inlet zones).
+   * If the mass flow is imposed (\c iqimp(z_num - 1) = 1), the matching \c qimpat
+   * value must be set, and the defined velocity boundary condition will be
+   * rescaled so as to match the given mass flow (i.e. only its original
+   * direction is used. Otherwise, the given velocity boundary condition
+   * given by \c rcodcl1 is unchanged. */
+  double  qimp[CS_MAX_BC_PM_ZONE_NUM+1];
+
+  /*! hydraulic diameter */
+  double  dh[CS_MAX_BC_PM_ZONE_NUM+1];
+
+  /*! turbulent intensity */
+  double  xintur[CS_MAX_BC_PM_ZONE_NUM+1];
+
+} cs_boundary_condition_pm_info_t;
+
+extern cs_boundary_condition_pm_info_t  *cs_glob_bc_pm_info;
 
 /*============================================================================
  * Public function prototypes

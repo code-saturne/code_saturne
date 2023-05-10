@@ -736,6 +736,10 @@ nvarcl = nvar
 call field_build_bc_codes_all(icodcl, rcodcl)
 allocate(isostd(nfabor+1))
 
+! BC mappings for specific physical models (deprecated)
+call pp_models_bc_map
+call cp_models_bc_map
+
 ! First pass for initialization BC types
 ! -- Couplage code_saturne/code_saturne
 
