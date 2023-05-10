@@ -2286,8 +2286,9 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
               ok = false;
           if (ok) {
             cs_lnum_t iel = mesh->i_face_cells[ifac][0];
-            elcou += cpro_curre[iel][cs_glob_elec_option->idreca - 1]
-                   * surfac[3 * ifac + cs_glob_elec_option->idreca - 1];
+            if (iel < mesh->n_cells)
+              elcou += cpro_curre[iel][cs_glob_elec_option->idreca - 1]
+                     * surfac[3 * ifac + cs_glob_elec_option->idreca - 1];
           }
         }
       }
