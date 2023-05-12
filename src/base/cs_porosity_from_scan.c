@@ -296,7 +296,6 @@ _solid_plane_from_points(const cs_mesh_t   *m,
 static void
 _prepare_porosity_from_scan(const cs_mesh_t             *m,
                             const cs_mesh_quantities_t  *mq) {
-
   char line[512];
 
   cs_real_t *restrict cell_f_vol = mq->cell_f_vol;
@@ -336,7 +335,12 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   char *tok;
   const char sep[4] = ";";
   // parse names
-  tok = strtok(_porosity_from_scan_opt.file_names, sep);
+
+  char *file_names;
+  BFT_MALLOC(file_names, strlen(_porosity_from_scan_opt.file_names)+1, char);
+  strcpy(file_names, _porosity_from_scan_opt.file_names);
+
+  tok = strtok(file_names, sep);
 
   while (tok != NULL) {
     char *f_name;
@@ -434,15 +438,18 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
         /* Red */
         if (fscanf(file, "%d", &red) != 1)
           bft_error(__FILE__,__LINE__, 0,
-                    _("Porosity from scan: Error while reading dataset (red). npoints read %d\n"), i);
+                    _("Porosity from scan: Error while reading dataset (red). "
+                      "npoints read %d\n"), i);
         /* Green */
         if (fscanf(file, "%d", &green) != 1)
           bft_error(__FILE__,__LINE__, 0,
-                    _("Porosity from scan: Error while reading dataset (green). npoints read %d\n"), i);
+                    _("Porosity from scan: Error while reading dataset (green). "
+                      "npoints read %d\n"), i);
         /* Blue */
         if (fscanf(file, "%d\n", &blue) != 1)
           bft_error(__FILE__,__LINE__, 0,
-                    _("Porosity from scan: Error while reading dataset (blue). npoints read %d\n"), i);
+                    _("Porosity from scan: Error while reading dataset (blue). "
+                      "npoints read %d\n"), i);
 
         /* When colors are written as int, Paraview interprets them in [0, 255]
          * when they are written as float, Paraview interprets them in [0., 1.]
@@ -640,6 +647,8 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
     location_mesh = fvm_nodal_destroy(location_mesh);
 
   } /* End of multiple files */
+
+  BFT_FREE(file_names);
 
   /* Bounding box */
   bft_printf(_("  Global bounding box [%f, %f, %f], [%f, %f, %f].\n\n"),

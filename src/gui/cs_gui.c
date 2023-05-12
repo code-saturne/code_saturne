@@ -5366,7 +5366,7 @@ cs_gui_time_tables(void)
 
     /* Columns */
     int  n_columns = -1; /* Default mode = all */
-    int *col_ids   = NULL; /* Defaukt mode : NULL (all columns) */
+    int *col_ids   = NULL; /* Default mode : NULL (all columns) */
     node = cs_tree_node_get_child(n, "cols2import");
 
     if (node != NULL) {
@@ -5375,7 +5375,10 @@ cs_gui_time_tables(void)
         n_columns = 0;
 
         node = cs_tree_node_get_child(n, "col_ids");
-        const char *ids = cs_tree_node_get_value_str(node);
+        const char *ids_r = cs_tree_node_get_value_str(node);
+        char *ids;
+        BFT_MALLOC(ids, strlen(ids_r) + 1, char);
+        strcpy(ids, ids_r);
 
         /* Parse line and count number of columns */
         char *token = strtok(ids, ",");
@@ -5386,6 +5389,8 @@ cs_gui_time_tables(void)
 
           token = strtok(NULL, ",");
         }
+
+        BFT_FREE(ids);
 
       }
     }
@@ -5403,7 +5408,11 @@ cs_gui_time_tables(void)
     /* Set headers */
     node = cs_tree_node_get_child(n, "headers_list");
     if (node != NULL) {
-      const char *hl = cs_tree_node_get_value_str(node);
+      const char *hl_r = cs_tree_node_get_value_str(node);
+
+      char *hl;
+      BFT_MALLOC(hl, strlen(hl_r)+1, char);
+      strcpy(hl, hl_r);
 
       int n_headers = 0;
       char **headers = NULL;
@@ -5419,12 +5428,14 @@ cs_gui_time_tables(void)
         token = strtok(NULL, ",");
       }
 
-      cs_time_table_set_headers(new_table, n_headers, headers);
+      cs_time_table_set_headers(new_table, n_headers, (const char **)headers);
 
       /* Free */
       for (int i = 0; i < n_headers; i++)
         BFT_FREE(headers[i]);
       BFT_FREE(headers);
+
+      BFT_FREE(hl);
 
     }
   }
