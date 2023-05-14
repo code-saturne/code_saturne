@@ -92,9 +92,7 @@ typedef struct {
 
 void CS_PROCF(synthe, SYNTHE)
 (
- const cs_real_t *const ttcabs,    /* --> current physical time               */
- const cs_real_t        dt[],      /* --> time step                           */
-       cs_real_t        rcodcl[]   /* <-> boundary conditions array           */
+ void
 );
 
 /*=============================================================================

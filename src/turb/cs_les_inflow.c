@@ -480,9 +480,7 @@ _rescale_flowrate(cs_lnum_t         n_points,
 
 void CS_PROCF(synthe, SYNTHE)
 (
- const cs_real_t *const ttcabs,    /* --> current physical time               */
- const cs_real_t        dt[],      /* --> time step                           */
-       cs_real_t        rcodcl[]   /* <-> boundary conditions array           */
+ void
 )
 {
   const cs_real_t two_third = 2./3.;
@@ -558,6 +556,8 @@ void CS_PROCF(synthe, SYNTHE)
     BFT_MALLOC(fluctuations, n_elts, cs_real_3_t);
     cs_array_real_fill_zero(3*n_elts, (cs_real_t *)fluctuations);
 
+    const cs_time_step_t *time_step = cs_glob_time_step;
+
     switch(inlet->type) {
 
     case CS_INFLOW_LAMINAR:
@@ -570,7 +570,7 @@ void CS_PROCF(synthe, SYNTHE)
                      inlet->face_center,
                      inlet->initialize,
                      (cs_inflow_batten_t *) inlet->inflow,
-                     *ttcabs,
+                     time_step->t_cur,
                      rij_l,
                      eps_r,
                      fluctuations);
@@ -583,7 +583,9 @@ void CS_PROCF(synthe, SYNTHE)
                        "SEM INFO, inlet \"%d\" \n\n"), inlet_id);
 
         cs_inflow_sem_t *inflowsem = (cs_inflow_sem_t *)inlet->inflow;
+
         if (inflowsem->volume_mode == 1){
+
           cs_real_t dissiprate = eps_r[0];
           cs_lnum_t n_points = cs_glob_mesh->n_cells;
           cs_real_t *point_weight = NULL;
@@ -619,7 +621,7 @@ void CS_PROCF(synthe, SYNTHE)
                                        inlet->initialize,
                                        inlet->verbosity,
                                        inlet->inflow,
-                                       dt[0],
+                                       time_step->dt[0],
                                        vel_m_l,
                                        rij_l,
                                        eps_r,
@@ -633,7 +635,7 @@ void CS_PROCF(synthe, SYNTHE)
                                        inlet->initialize,
                                        inlet->verbosity,
                                        inlet->inflow,
-                                       dt[0],
+                                       time_step->dt[0],
                                        vel_m_l,
                                        rij_l,
                                        eps_r,
@@ -696,19 +698,16 @@ void CS_PROCF(synthe, SYNTHE)
     /* Boundary conditions */
     /*---------------------*/
 
-    int var_id_key = cs_field_key_id("variable_id");
-    int var_id = cs_field_get_key_int(CS_F_(vel), var_id_key) - 1;
-
-    cs_real_t *rcodclu = rcodcl + var_id*n_b_faces;
-    cs_real_t *rcodclv = rcodclu + n_b_faces;
-    cs_real_t *rcodclw = rcodclv + n_b_faces;
+    cs_real_t *rcodcl1_u = CS_F_(vel)->bc_coeffs->rcodcl1;
+    cs_real_t *rcodcl1_v = rcodcl1_u + n_b_faces;
+    cs_real_t *rcodcl1_w = rcodcl1_v + n_b_faces;
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       cs_lnum_t face_id = elt_ids[i];
 
-      rcodclu[face_id] = vel_m_l[i][0] + fluctuations[i][0];
-      rcodclv[face_id] = vel_m_l[i][1] + fluctuations[i][1];
-      rcodclw[face_id] = vel_m_l[i][2] + fluctuations[i][2];
+      rcodcl1_u[face_id] = vel_m_l[i][0] + fluctuations[i][0];
+      rcodcl1_v[face_id] = vel_m_l[i][1] + fluctuations[i][1];
+      rcodcl1_w[face_id] = vel_m_l[i][2] + fluctuations[i][2];
     }
 
     BFT_FREE(vel_m_l);

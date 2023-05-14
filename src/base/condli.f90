@@ -402,7 +402,7 @@ endif
 
 ! Synthetic Eddy Method for L.E.S.
 
-call synthe(ttcabs, dt, rcodcl)
+call synthe
 
 ! ALE method (mesh velocity BC and vertices displacement)
 
