@@ -194,6 +194,9 @@ _mesh_interpol_create_connect(cs_interpol_grid_t   *ig)
 /*----------------------------------------------------------------------------
  * Interpolate mesh field on interpol grid structure.
  *
+ * This function is deprecated because it take 1 value of the 3D field to
+ * the 1D grid...
+ *
  * parameters:
  *   ig                   <-- pointer to the interpolation grid structure
  *   values_to_interpol   <-- field on mesh (size = n_cells)
@@ -202,9 +205,9 @@ _mesh_interpol_create_connect(cs_interpol_grid_t   *ig)
  *----------------------------------------------------------------------------*/
 
 void
-cs_interpol_field_on_grid(cs_interpol_grid_t         *ig,
-                          const cs_real_t            *values_to_interpol,
-                          cs_real_t                  *interpoled_values)
+cs_interpol_field_on_grid_deprecated(cs_interpol_grid_t *ig,
+                                     const cs_real_t    *values_to_interpol,
+                                     cs_real_t          *interpoled_values)
 {
   cs_lnum_t ii, jj;
   int ms_dim = 1;
@@ -228,6 +231,73 @@ cs_interpol_field_on_grid(cs_interpol_grid_t         *ig,
                   cs_glob_mpi_comm);
 
 #endif
+}
+
+/*----------------------------------------------------------------------------
+ * P0 interpolation of a 3D mesh field on a 1D grid structure.
+ *
+ * parameters:
+ *   ig                   <-- pointer to the interpolation grid structure
+ *   values_to_interpol   <-- field on mesh (size = n_cells)
+ *   interpolated_values  --> interpolated values on the interpolation grid
+ *                            structure (size = ig->nb_point)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_interpol_field_on_grid(cs_interpol_grid_t *ig,
+                          const cs_real_t    *values_to_interpol,
+                          cs_real_t          *interpolated_values)
+{
+  cs_lnum_t ii, jj;
+  int ms_dim = 1;
+  cs_lnum_t nb_points = ig->nb_points;
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
+  const cs_real_3_t *cell_cen = (cs_real_3_t *)(mesh_quantities->cell_cen);
+  const cs_real_t *cell_f_vol = mesh_quantities->cell_f_vol;
+  cs_lnum_t n_elts = mesh->n_cells;
+
+  const cs_real_3_t *g_coords = (cs_real_3_t *)(ig->coords);
+
+  /* Loop over cells */
+# pragma omp parallel for
+  for (cs_lnum_t g_id = 0; g_id < nb_points; g_id++) {
+    cs_real_t total_vol = 0.;
+    interpolated_values[g_id] = 0.;
+
+    /* get z_min and z_max of the level,
+     * Not, first and last levels are truncated */
+    cs_real_t z_min, z_max;
+    if (g_id == 0)
+      z_min = g_coords[g_id][2];
+    else
+      z_min = 0.5 * (g_coords[g_id-1][2] + g_coords[g_id][2]);
+    if (g_id == (nb_points-1))
+      z_max = g_coords[g_id][2];
+    else
+      z_max = 0.5 * (g_coords[g_id][2] + g_coords[g_id+1][2]);
+
+    /* Loop over cells */
+    for (cs_lnum_t c_id = 0; c_id < n_elts; c_id++) {
+      if (cell_cen[c_id][2] >= z_min && cell_cen[c_id][2] < z_max) {
+        cs_real_t vol = cell_f_vol[c_id];
+        total_vol += vol;
+        interpolated_values[g_id] += values_to_interpol[c_id] * vol;
+      }
+    }
+
+    cs_parall_sum(1, CS_REAL_TYPE, &total_vol);
+    cs_parall_sum(1, CS_REAL_TYPE, &interpolated_values[g_id]);
+
+    if (total_vol > 0.)
+      interpolated_values[g_id] /= total_vol;
+#if 0
+    else {
+      bft_printf("Warning: The grid level z[%d]=%f in [%f, %f] has no corresponding cells.\n",
+          g_id, g_coords[g_id][2], z_min, z_max);
+    }
+#endif
+  }
 }
 
 /*----------------------------------------------------------------------------
