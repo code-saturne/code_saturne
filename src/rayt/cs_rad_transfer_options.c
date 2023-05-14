@@ -408,9 +408,11 @@ cs_rad_transfer_log_setup(void)
        N_("1 (standard solver log)"),
        N_("2 (detailed solver logging)")};
 
+  int iimlum = CS_MIN(2, CS_MAX(cs_glob_rad_transfer_params->verbosity, 0));
+
   cs_log_printf(CS_LOG_SETUP,
-                  _("    iimlum:        %s\n"),
-                _(iimlum_value_str[cs_glob_rad_transfer_params->verbosity]));
+                  _("    verbosity:        %s\n"),
+                _(iimlum_value_str[iimlum]));
 
   cs_log_printf(CS_LOG_SETUP,
                   _("    imoadf:        %s\n"),
