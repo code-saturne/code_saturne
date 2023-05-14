@@ -1561,8 +1561,15 @@ cs_rad_transfer_solve(int               bc_type[],
              "medium %s for band %d\n"),
            _("for downward directions."), _(gg_id));
 
-      if (ckumax <= cs_math_epzero && ckdmax <= cs_math_epzero)
+      if (ckumax <= cs_math_epzero && ckdmax <= cs_math_epzero) {
+        cs_log_printf
+          (CS_LOG_DEFAULT,
+           _("      Warning: Atmospheric radiative transfer with transparent "
+             "medium %s for band %d\n"
+             "        Switch off flux renormalization (idiver=-1)!\n"),
+           _("for downward and upward directions."), _(gg_id));
         idiver = -1;
+      }
 
     }
 
