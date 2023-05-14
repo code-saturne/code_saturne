@@ -225,10 +225,10 @@ do ilelt = 1, nlelt
 
   !  Coal inlet, initialization
   do icha = 1, ncharm
-    qimpcp(izone,icha) = zero
-    timpcp(izone,icha) = zero
+    qimpcp(icha,izone) = zero
+    timpcp(icha,izone) = zero
     do iclapc = 1, ncpcmx
-      distch(izone,icha,iclapc) = zero
+      distch(iclapc,icha,izone) = zero
     enddo
   enddo
 
@@ -239,13 +239,13 @@ do ilelt = 1, nlelt
   ! Treatment for the first coal
   icha = 1
   ! Coal mass flow rate in kg/s
-  qimpcp(izone,icha) = 1.46d-4
+  qimpcp(icha,izone) = 1.46d-4
   ! Percentage mass fraction of each granulometric class
   do iclapc = 1, nclpch(icha)
-    distch(izone,icha,iclapc) = 100.d0/dble(nclpch(icha))
+    distch(iclapc,icha,izone) = 100.d0/dble(nclpch(icha))
   enddo
   ! Inlet temperature for coal & primary air
-  timpcp(izone,icha) = 800.d0 + tkelvi
+  timpcp(icha,izone) = 800.d0 + tkelvi
 
   ! Turbulence variables BC's calculated based on icalke(izone):
   ! - If 1: hydraulic diameter and reference velocity (similar to

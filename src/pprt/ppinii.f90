@@ -592,9 +592,8 @@ enddo
 do izone = 1, nozppm
   ientat(izone) = 0
   ientcp(izone) = 0
-  timpat(izone) = zero
   do icla = 1, nclcpm
-    x20(izone,icla) = zero
+    x20(icla,izone) = zero
   enddo
 enddo
 
@@ -661,14 +660,12 @@ fov  = zero
 a  = zero
 b  = zero
 
-
 ! ---> Donnees complementaires relatives au calcul de rho sur les facettes
 !      d'entree
 
 do izone = 1, nozppm
   ientat(izone)  = 0
   ientfl(izone) = 0
-  timpat(izone)  = zero
   timpfl(izone) = zero
 enddo
 

@@ -141,26 +141,21 @@ d2s3 = 2.d0/3.d0
 !    Si ce n'est pas le cas, c'est plus complique mais on peut s'en tirer
 !    avec un max quand meme.
 
-if(irangp.ge.0) then
+if (irangp.ge.0) then
   call parimx(nozapm,iqimp )
-  !==========
   call parimx(nozapm,ientat)
-  !==========
   call parimx(nozapm,ientcp)
-  !==========
   call parrmx(nozapm,qimpat)
-  !==========
   call parrmx(nozapm,timpat)
-  !==========
+
   nbrval = nozppm*ncharm
   call parrmx(nbrval,qimpcp)
-  !==========
+
   nbrval = nozppm*ncharm
   call parrmx(nbrval,timpcp)
-  !==========
+
   nbrval = nozppm*ncharm*nclcpm
   call parrmx(nbrval,distch)
-  !==========
 endif
 
 

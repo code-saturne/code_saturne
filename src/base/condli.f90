@@ -156,7 +156,7 @@ use numvar
 use optcal
 use alaste
 use atincl, only: iautom, iprofm
-use coincl, only: fment, ientfu, ientgb, ientgf, ientox, tkent, qimp
+use coincl, only: fment, ientfu, ientgb, ientgf, ientox, tkent
 use ppcpfu, only: inmoxy
 use cstphy
 use cstnum
@@ -376,11 +376,9 @@ call precli(nvar, rcodcl)
 ! =============================
 
 call uiclim &
-  ( nozppm,                                                        &
-    ientat, ientcp, inmoxy, ientox,                                &
+  ( ientat, ientcp, inmoxy, ientox,                                &
     ientfu, ientgb, ientgf, iprofm, iautom,                        &
-    itypfb, izfppp, qimpcp,                                        &
-    timpat, timpcp, tkent , fment,  distch)
+    itypfb, izfppp, tkent , fment)
 
 call cs_boundary_conditions_complete(itypfb)
 
@@ -4892,7 +4890,7 @@ use numvar
 use optcal
 use alaste
 use atincl, only: iautom, iprofm
-use coincl, only: fment, ientfu, ientgb, ientgf, ientox, tkent, qimp
+use coincl, only: fment, ientfu, ientgb, ientgf, ientox, tkent
 use ppcpfu, only: inmoxy
 use cstphy
 use cstnum
@@ -4949,11 +4947,9 @@ call precli(nvar, rcodcl)
 !    -> sera modifie lors de la restructuration des zones de bord
 
 call uiclim &
-  ( nozppm,                                                        &
-    ientat, ientcp, inmoxy, ientox,                                &
+  ( ientat, ientcp, inmoxy, ientox,                                &
     ientfu, ientgb, ientgf, iprofm, iautom,                        &
-    itypfb, izfppp, qimpcp,                                        &
-    timpat, timpcp, tkent , fment,  distch)
+    itypfb, izfppp, tkent , fment)
 
 !     - Sous-programme utilisateur
 !       ==========================

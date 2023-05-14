@@ -122,7 +122,7 @@ integer          f_id, keyvar
 
 double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
 double precision t1, t2, totcp , dmas
-double precision h1    (nozppm) , h2   (nozppm,nclcpm)
+double precision h1    (nozppm) , h2   (nclcpm,nozppm)
 double precision x2h20t(nozppm) , x20t (nozppm)
 double precision qimpc (nozppm) , qcalc(nozppm)
 double precision coefe (ngazem)
@@ -132,13 +132,14 @@ double precision wmh2o,wmco2,wmn2,wmo2
 double precision, dimension(:), pointer :: brom, b_x1
 integer, dimension (:), allocatable :: iagecp
 double precision, dimension(:), pointer :: viscl
+
 !===============================================================================
 ! 0. Initializations
 !===============================================================================
+
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(iviscl, viscl)
 call field_get_val_s_by_name("b_x_c", b_x1)
-
 
 d2s3 = 2.d0/3.d0
 
@@ -154,6 +155,7 @@ if (iage.ge.1) then
     call field_get_key_int(f_id, keyvar, iagecp(icla))
   enddo
 endif
+
 !===============================================================================
 ! 1.  Parallel exchanges for the user data
 !===============================================================================
@@ -228,7 +230,7 @@ if ( ntcabs .gt. 1 ) then
     if ( iqimp(izone).eq.1 ) then
       qimpc(izone) = qimpat(izone)
       do icha = 1, ncharb
-        qimpc(izone) = qimpc(izone) + qimpcp(izone,icha)
+        qimpc(izone) = qimpc(izone) + qimpcp(icha,izone)
       enddo
       qisqc = qimpc(izone)/qcalc(izone)
       rcodcl(ifac,iu,1) = rcodcl(ifac,iu,1)*qisqc
@@ -242,7 +244,7 @@ else
   do izone = 1, nozapm
     qimpc(izone) = qimpat(izone)
     do icha = 1, ncharb
-      qimpc(izone) = qimpc(izone) + qimpcp(izone,icha)
+      qimpc(izone) = qimpc(izone) + qimpcp(icha,izone)
     enddo
   enddo
 
@@ -291,13 +293,13 @@ do ii = 1, nzfppp
     do icha = 1, ncharb
       totcp = 0.d0
       do iclapc = 1, nclpch(icha)
-        totcp = totcp + distch(izone,icha,iclapc)
+        totcp = totcp + distch(iclapc,icha,izone)
       enddo
       if(abs(totcp-100.d0).gt.epzero) then
         write(nfecra,2010)
         do iclapc = 1, nclpch(icha)
           write(nfecra,2011)izone,icha,iclapc,                    &
-               distch(izone,icha,iclapc)
+               distch(iclapc,icha,izone)
         enddo
         write(nfecra,2012)izone,ientcp(izone),icha,               &
              totcp,totcp-100.d0
@@ -431,18 +433,18 @@ do ii = 1, nzfppp
         ! ------ Calculation of total X2 per zone
         !        Small correction in case of an closed inlet
         if(abs(qimpc(izone)).lt.epzero) then
-          x20(izone,icla) = 0.d0
+          x20(icla,izone) = 0.d0
         else
-          x20(izone,icla) = qimpcp(izone,icha)/qimpc(izone)       &
-                          * distch(izone,icha,iclapc)*1.d-2
+          x20(icla,izone) = qimpcp(icha,izone)/qimpc(izone)       &
+                          * distch(iclapc,icha,izone)*1.d-2
         endif
-        x20t(izone)     = x20t(izone) +  x20(izone,icla)
+        x20t(izone)     = x20t(izone) +  x20(icla,izone)
         ! ------ Calculating H2 of class icla
         do isol = 1, nsolim
           xsolid(isol) = zero
         enddo
         if ( ientcp(izone).eq.1 ) then
-          t2  = timpcp(izone,icha)
+          t2  = timpcp(icha,izone)
           xsolid(ich(icha)) = 1.d0-xashch(icha)
           xsolid(ick(icha)) = zero
           xsolid(iash(icha)) = xashch(icha)
@@ -465,8 +467,8 @@ do ii = 1, nzfppp
         endif
         mode = -1
         t1 = t2
-        call cs_coal_htconvers2(mode,icla,h2(izone,icla),xsolid,t2,t1)
-        x2h20t(izone) = x2h20t(izone)+x20(izone,icla)*h2(izone,icla)
+        call cs_coal_htconvers2(mode,icla,h2(icla,izone),xsolid,t2,t1)
+        x2h20t(izone) = x2h20t(izone)+x20(icla,izone)*h2(icla,izone)
 
       enddo
 
@@ -516,11 +518,11 @@ do ifac = 1, nfabor
         icla = iclapc + idecal
 
         ! ------ Boundary conditions for Xch of class icla
-        rcodcl(ifac,isca(ixch(icla)),1) = x20(izone,icla)         &
+        rcodcl(ifac,isca(ixch(icla)),1) = x20(icla,izone)         &
                                         * (1.d0-xashch(icha))
         !             Taking into account humidity
         if ( ippmod(iccoal) .eq. 1 ) then
-          rcodcl(ifac,isca(ixch(icla)),1) = x20(izone,icla)       &
+          rcodcl(ifac,isca(ixch(icla)),1) = x20(icla,izone)       &
                                           *(1.d0-xashch(icha)     &
                                                 -xwatch(icha))
         endif
@@ -529,20 +531,20 @@ do ifac = 1, nfabor
 
         ! ------ Boundary conditions for Np of class icla
 
-        rcodcl(ifac,isca(inp(icla)),1) = x20(izone,icla)          &
+        rcodcl(ifac,isca(inp(icla)),1) = x20(icla,izone)          &
                                         / xmp0(icla)
 
         ! ------ Boundary conditions for Xwater of class icla
 
-        if ( ippmod(iccoal) .eq. 1 ) then
-          rcodcl(ifac,isca(ixwt(icla)),1) = x20(izone,icla)       &
+        if (ippmod(iccoal) .eq. 1) then
+          rcodcl(ifac,isca(ixwt(icla)),1) = x20(icla,izone)       &
                                            *xwatch(icha)
         endif
 
         ! ------ Boundary conditions for H2 of class icla
 
-        rcodcl(ifac,isca(ih2(icla)),1) = x20(izone,icla)          &
-                                        *h2(izone,icla)
+        rcodcl(ifac,isca(ih2(icla)),1) = x20(icla,izone)          &
+                                        *h2(icla,izone)
 
         ! Boundary conditions for particle age
         if (i_comb_drift.ge.1) then

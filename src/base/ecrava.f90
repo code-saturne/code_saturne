@@ -95,7 +95,7 @@ integer          iz, kk
 integer          ival(1)
 integer          key_t_ext_id, icpext
 integer          iviext
-double precision rval(1)
+double precision rval(1), rvalcp(nozppm)
 
 type(c_ptr) :: rp
 
@@ -869,7 +869,10 @@ if (iecaux.eq.1) then
             car4 = cindfl
           endif
           rubriq = 'x20_zone_bord_charbon'//car2//'_classe'//car4
-          call restart_write_section_real_t(rp,rubriq,itysup,nbval,x20(:,icla))
+          do ii = 1, nbval
+            rvalcp(ii) = x20(icla,ii)
+          enddo
+          call restart_write_section_real_t(rp,rubriq,itysup,nbval,rvalcp)
         enddo
       enddo
 

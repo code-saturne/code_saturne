@@ -164,7 +164,7 @@ module cs_fuel_incl
   !       TIMPFL(IENT)      --> Temperature  FOL               en K
 
   double precision, save :: qimpfl(nozppm), timpfl(nozppm)
-  double precision, save :: distfu(nozppm,nclcpm)
+  double precision, save :: distfu(nclcpm,nozppm)
   double precision, save :: hlfm
 
   !--> POINTEURS DANS LE TABLEAU TBMCR

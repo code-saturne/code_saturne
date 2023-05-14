@@ -117,7 +117,7 @@ double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
 double precision t1, t2
 double precision h1(nozppm) , h2(nozppm)
 double precision x20t(nozppm)
-double precision xmg0(nozppm,nclcpm)
+double precision xmg0(nclcpm,nozppm)
 double precision x2h20t(nozppm)
 double precision qimpc(nozppm) , qcalc(nozppm)
 double precision coefe(ngazem)
@@ -278,13 +278,13 @@ do ii = 1, nzfppp
   if ( ientfl(izone).eq.1 ) then
     totfu = 0.d0
     do icla = 1, nclafu
-      totfu = totfu + distfu(izone,icla)
+      totfu = totfu + distfu(icla,izone)
     enddo
     if(abs(totfu-100.d0).gt.epzero) then
       write(nfecra,2010)
       do icla = 1, nclafu
         write(nfecra,2011)izone,icla,                             &
-               distfu(izone,icla)
+               distfu(icla,izone)
       enddo
       write(nfecra,2012)izone,ientfl(izone),                      &
              totfu,totfu-100.d0
@@ -418,12 +418,12 @@ do ii = 1, nzfppp
       ! ------ Calculation of total X2 per zone
       !        Small correction in case of an closed inlet
       if(abs(qimpc(izone)).le.epzero) then
-        x20(izone,icla) = 0.d0
+        x20(icla,izone) = 0.d0
       else
-        x20(izone,icla) = qimpfl(izone)/qimpc(izone)              &
-                         *distfu(izone,icla)*1.d-2
+        x20(icla,izone) = qimpfl(izone)/qimpc(izone)              &
+                         *distfu(icla,izone)*1.d-2
       endif
-      x20t(izone)     = x20t(izone) +  x20(izone,icla)
+      x20t(izone)     = x20t(izone) +  x20(icla,izone)
     enddo
     ! ------ Calculation of H2, XMG0
     if ( ientfl(izone) .eq. 1 ) then
@@ -432,15 +432,14 @@ do ii = 1, nzfppp
       xsolid(2) = fkc
       mode      = -1
       call cs_fuel_htconvers2 (mode, h2(izone) , xsolid , t2)
-!     =======================
 
       do icla = 1, nclafu
-        xmg0(izone,icla) = pi/6.d0*(dinifl(icla)**3)*rho0fl
+        xmg0(icla,izone) = pi/6.d0*(dinifl(icla)**3)*rho0fl
       enddo
     else
       h2(izone) = zero
       do icla = 1, nclafu
-        xmg0(izone,icla) = 1.d0
+        xmg0(icla,izone) = 1.d0
       enddo
     endif
     x2h20t(izone) = x20t(izone)*h2(izone)
@@ -464,7 +463,6 @@ do ii = 1, nzfppp
     t1   = timpat(izone)
     mode = -1
     call cs_fuel_htconvers1 (mode, h1(izone) , coefe , t1)
-!   =======================
 
   endif
 enddo
@@ -480,12 +478,12 @@ do ifac = 1, nfabor
 
     do icla = 1, nclafu
       ! ------ Boundary conditions for Xfol
-      rcodcl(ifac,isca(iyfol(icla)),1) = x20(izone,icla)
+      rcodcl(ifac,isca(iyfol(icla)),1) = x20(icla,izone)
       ! ------ Boundary conditions for Ng
-      rcodcl(ifac,isca(ing(icla)),1) = x20(izone,icla)            &
-                                      /xmg0(izone,icla)
+      rcodcl(ifac,isca(ing(icla)),1) = x20(icla,izone)            &
+                                      /xmg0(icla,izone)
       ! ------ Boundary conditions for X2HLF
-      rcodcl(ifac,isca(ih2(icla)),1) = x20(izone,icla)*h2(izone)
+      rcodcl(ifac,isca(ih2(icla)),1) = x20(icla,izone)*h2(izone)
 
       if (i_comb_drift.eq.1) then
         rcodcl(ifac, isca(iv_p_x(icla)), 1) = rcodcl(ifac,iu,1)

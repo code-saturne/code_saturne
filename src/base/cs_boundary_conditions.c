@@ -165,7 +165,11 @@ void
 cs_f_boundary_conditions_get_coincl_pointers(double  **qimp);
 
 void
-cs_f_boundary_conditions_get_cpincl_pointers(double  **qimpat);
+cs_f_boundary_conditions_get_cpincl_pointers(cs_real_t       **qimpat,
+                                             cs_real_t       **timpat,
+                                             cs_real_5_t     **qimpcp,
+                                             cs_real_5_t     **timpcp,
+                                             cs_real_5_20_t  **distch);
 
 /*============================================================================
  * Private function definitions
@@ -824,11 +828,28 @@ cs_f_boundary_conditions_get_coincl_pointers(double  **qimp)
 }
 
 void
-cs_f_boundary_conditions_get_cpincl_pointers(double  **qimpat)
+cs_f_boundary_conditions_get_cpincl_pointers(cs_real_t       **qimpat,
+                                             cs_real_t       **timpat,
+                                             cs_real_5_t     **qimpcp,
+                                             cs_real_5_t     **timpcp,
+                                             cs_real_5_20_t  **distch)
 {
   /* Shift 1d-arrays by 1 to compensate for Fortran 1-based access */
 
   *qimpat = cs_glob_bc_pm_info->qimp + 1;
+
+  if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1) {
+    *timpat = cs_glob_bc_pm_info->timpat + 1;
+    *qimpcp = cs_glob_bc_pm_info->qimpcp + 1;
+    *timpcp = cs_glob_bc_pm_info->timpcp + 1;
+    *distch = cs_glob_bc_pm_info->distch + 1;
+  }
+  else {
+    *timpat = NULL;
+    *qimpcp = NULL;
+    *timpcp = NULL;
+    *distch = NULL;
+  }
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1334,6 +1355,31 @@ cs_boundary_conditions_create(void)
     bc_pm_info->dh[i] = 0;
     bc_pm_info->xintur[i] = 0;
   }
+
+  bc_pm_info->timpat = NULL;
+  bc_pm_info->qimpcp = NULL;
+  bc_pm_info->timpcp = NULL;
+  bc_pm_info->distch = NULL;
+
+  /* Arrays present only for coal combustion */
+
+  if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] -1
+      || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1
+      || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] > -1) {
+    BFT_REALLOC(bc_pm_info->timpat, n_b_faces, cs_real_t);
+    BFT_REALLOC(bc_pm_info->qimpcp, n_b_faces, cs_real_5_t);
+    BFT_REALLOC(bc_pm_info->timpcp, n_b_faces, cs_real_5_t);
+    BFT_REALLOC(bc_pm_info->distch, n_b_faces, cs_real_5_20_t);
+    for (int i = 0; i < CS_MAX_BC_PM_ZONE_NUM+1; i++) {
+      bc_pm_info->timpat[i] = 0;
+      for (int j = 0; j < 5; j++) {
+        bc_pm_info->qimpcp[i][j] = 0;
+        bc_pm_info->timpcp[i][j] = 0;
+        for (int k = 0; k < 20; k++)
+          bc_pm_info->distch[i][j][k] = 0;
+      }
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1356,6 +1402,10 @@ cs_boundary_conditions_free(void)
   BFT_FREE(_bc_maps);
   _n_bc_maps = 0;
 
+  BFT_FREE(cs_glob_bc_pm_info->timpat);
+  BFT_FREE(cs_glob_bc_pm_info->qimpcp);
+  BFT_FREE(cs_glob_bc_pm_info->timpcp);
+  BFT_FREE(cs_glob_bc_pm_info->distch);
   BFT_FREE(cs_glob_bc_pm_info->izfppp);
   BFT_FREE(cs_glob_bc_pm_info);
 }

@@ -113,7 +113,7 @@ integer          f_id, iflmas, iflmab, iflvoi, iflvob
 integer          key_t_ext_id, icpext
 integer          iviext
 integer          ival(1)
-double precision rval(1)
+double precision rval(1), rvalcp(nozppm)
 
 logical(kind=c_bool) :: ncelok, nfaiok, nfabok, nsomok
 
@@ -1318,7 +1318,10 @@ if (ippmod(icpl3c).ge.0 .or.                                      &
           endif
           rubriq = 'x20_zone_bord_charbon'//car2//'_classe'//car4
           call restart_read_section_real_t(rp,rubriq,itysup,nbval,     &
-                                           x20(:,icla), ierror)
+                                           rvalcp, ierror)
+          do ii = 1, nbval
+            x20(icla,ii) = rvalcp(ii)
+          enddo
           ierrch = ierrch + ierror
           nberro = nberro + ierror
 

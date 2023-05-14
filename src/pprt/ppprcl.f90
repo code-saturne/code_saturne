@@ -94,14 +94,11 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-integer          ifac, izone, icha, iclapc
-integer          ivar
+integer          ifac, izone, ivar
 
-!===============================================================================
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
-
 
 ! ---> Combustion gaz USEBUC
 !      Flamme de diffusion : chimie 3 points
@@ -153,14 +150,6 @@ elseif ( ippmod(iccoal).ge.0 ) then
     dh(izone)     = zero
     xintur(izone) = zero
     qimpat(izone) = zero
-    timpat(izone) = zero
-    do icha = 1, ncharm
-      qimpcp(izone,icha) = zero
-      timpcp(izone,icha) = zero
-      do iclapc = 1, ncpcmx
-        distch(izone,icha,iclapc) = zero
-      enddo
-    enddo
   enddo
 
   do ifac = 1, nfabor
@@ -169,7 +158,7 @@ elseif ( ippmod(iccoal).ge.0 ) then
 
 ! ---> Combustion charbon pulverise couple Lagrangien USCPLC
 
-elseif ( ippmod(icpl3c).ge.0 ) then
+elseif (ippmod(icpl3c).ge.0) then
 
   do izone = 1, nozppm
     iqimp(izone)  = 0
@@ -178,10 +167,6 @@ elseif ( ippmod(icpl3c).ge.0 ) then
     dh(izone)     = zero
     xintur(izone) = zero
     qimpat(izone) = zero
-    timpat(izone) = zero
-    do icha = 1, ncharm
-      qimpcp(izone,icha) = zero
-    enddo
   enddo
 
   do ifac = 1, nfabor
@@ -190,7 +175,7 @@ elseif ( ippmod(icpl3c).ge.0 ) then
 
 ! ---> Combustion fuel  USFUCL
 
-elseif ( ippmod(icfuel).ge.0 ) then
+elseif (ippmod(icfuel).ge.0) then
 
   do izone = 1, nozppm
     iqimp(izone)  = 0
@@ -211,15 +196,14 @@ elseif ( ippmod(icfuel).ge.0 ) then
 
 ! ---> Compressible
 
-elseif ( ippmod(icompf).ge.0 ) then
+elseif (ippmod(icompf).ge.0) then
 
-!     Zones
   do ifac = 1, nfabor
     izfppp(ifac) = 0
   enddo
 
-!     Marqueur d'utilisation de Rusanov au bord (0 = non)
-!     Marqueur de flux conductif impose au bord (0 = non)
+  ! Marqueur d'utilisation de Rusanov au bord (0 = non)
+  ! Marqueur de flux conductif impose au bord (0 = non)
   do ifac = 1, nfabor
     icvfli(ifac) = 0
     ifbet(ifac) = 0
@@ -229,8 +213,7 @@ elseif ( ippmod(icompf).ge.0 ) then
 !      Effet Joule
 !      Conduction ionique
 
-elseif ( ippmod(ieljou).ge.1 .or.                                 &
-         ippmod(ielarc).ge.1       ) then
+elseif (ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1) then
 
   do ifac = 1, nfabor
     izfppp(ifac) = 0
@@ -258,7 +241,7 @@ elseif ( ippmod(iatmos).ge.0  ) then
 
 ! ---> Version aerorefrigerants
 
-elseif ( ippmod(iaeros).ge.0 ) then
+elseif (ippmod(iaeros).ge.0) then
 
   do ifac = 1, nfabor
     izfppp(ifac) = 0
@@ -269,7 +252,6 @@ endif
 !----
 ! FORMATS
 !----
-
 
 !----
 ! FIN

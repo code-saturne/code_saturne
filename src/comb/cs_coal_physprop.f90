@@ -423,8 +423,8 @@ if ( ipass.gt.1 .or. isuite.eq.1 ) then
         x2sro2 = 0.d0
         x2tot  = 0.d0
         do icla = 1, nclacp
-          x2sro2 = x2sro2 + x20(izone,icla)/rho20(icla)
-          x2tot  = x2tot  + x20(izone,icla)
+          x2sro2 = x2sro2 + x20(icla,izone)/rho20(icla)
+          x2tot  = x2tot  + x20(icla,izone)
         enddo
 
         ioxy = inmoxy(izone)

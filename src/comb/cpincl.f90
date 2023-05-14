@@ -239,15 +239,13 @@ real(c_double), pointer, save :: xashch(:)
   !--> Donnees complementaires relatives au calcul de rho
   !    sur les facettes de bord
 
-  !       ientat(ient) --> Indicateur air par type de facette d'entree
-  !       ientcp(ient) --> Indicateur Cp  par type de facette d'entree
-  !       timpat(ient) --> Temperature en K pour l'air relative
-  !                         a l'entree ient
-  !       x20(ient,    --> Fraction massique dans le melange de charbon
-  !           icla   )     de la classe icla relative a l'entree ient
+  !    ientat(ient)    : Indicateur air par type de facette d'entree
+  !    ientcp(ient)    : Indicateur Cp  par type de facette d'entree
+  !    x20(icla, ient) : Fraction massique dans le melange de charbon
+  !                      de la classe icla relative a l'entree ient
 
   integer, save ::          ientat(nozppm), ientcp(nozppm)
-  double precision, save :: timpat(nozppm), x20(nozppm,nclcpm)
+  double precision, save :: x20(nclcpm,nozppm)
 
   !--> Pointeurs dans le tableau tbmcr
 
@@ -264,15 +262,14 @@ real(c_double), pointer, save :: xashch(:)
 
   !       qimpat(ient)           --> Debit       air          en kg/s
   !       timpat(ient)           --> Temperature air          en K
-  !       qimpcp(ient,icha)      --> Debit       charbon icha en kg/s
-  !       timpcp(ient,icha)      --> Temperature charbon icha en K
-  !       distch(ient,icha,icla) --> Distribution en %masse de la classe icla
+  !       qimpcp(icha,ient)      --> Debit       charbon icha en kg/s
+  !       timpcp(icha,ient)      --> Temperature charbon icha en K
+  !       distch(icla,icha,ient) --> Distribution en %masse de la classe icla
   !                                  pour le charbon icha
 
-  real(c_double), pointer, save :: qimpat(:)
-
-  double precision, save ::  qimpcp(nozppm,ncharm), timpcp(nozppm,ncharm)
-  double precision, save ::  distch(nozppm,ncharm,ncpcmx)
+  real(c_double), pointer, save :: qimpat(:), timpat(:)
+  real(c_double), pointer, save :: qimpcp(:,:), timpcp(:,:)
+  real(c_double), pointer, save :: distch(:,:,:)
 
   ! Complement Table
 
@@ -313,11 +310,14 @@ real(c_double), pointer, save :: xashch(:)
 
     ! Interface to C function retrieving BC zone array pointers
 
-    subroutine cs_f_boundary_conditions_get_cpincl_pointers(p_qimpat)   &
+    subroutine cs_f_boundary_conditions_get_cpincl_pointers(p_qimpat, p_timpat, &
+                                                            p_qimpcp, p_timpcp, &
+                                                            p_distch)           &
       bind(C, name='cs_f_boundary_conditions_get_cpincl_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_qimpat
+      type(c_ptr), intent(out) :: p_qimpat, p_timpat
+      type(c_ptr), intent(out) :: p_qimpcp, p_timpcp, p_distch
     end subroutine cs_f_boundary_conditions_get_cpincl_pointers
 
     !---------------------------------------------------------------------------
@@ -390,11 +390,18 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: p_qimpat
+    type(c_ptr) :: p_qimpat, p_timpat, p_qimpcp, p_timpcp, p_distch
 
-    call cs_f_boundary_conditions_get_cpincl_pointers(p_qimpat)
+    call cs_f_boundary_conditions_get_cpincl_pointers(p_qimpat, p_timpat,  &
+                                                      p_qimpcp, p_timpcp,  &
+                                                      p_distch)
 
     call c_f_pointer(p_qimpat, qimpat, [nozppm])
+
+    call c_f_pointer(p_timpat, timpat, [nozppm])
+    call c_f_pointer(p_qimpcp, qimpcp, [ncharm, nozppm])
+    call c_f_pointer(p_timpcp, timpcp, [ncharm, nozppm])
+    call c_f_pointer(p_distch, distch, [ncpcmx, ncharm, nozppm])
 
   end subroutine cp_models_bc_map
 

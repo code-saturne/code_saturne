@@ -63,6 +63,10 @@ BEGIN_C_DECLS
  * Local type definitions
  *============================================================================*/
 
+typedef cs_real_t  cs_real_5_t[5];          /* Vector of 5 real values */
+
+typedef cs_real_t  cs_real_5_20_t[5][20];   /* Matrix of 5x20 real values */
+
 /*=============================================================================
  * Global variables
  *============================================================================*/
@@ -118,13 +122,32 @@ typedef struct {
    * rescaled so as to match the given mass flow (i.e. only its original
    * direction is used. Otherwise, the given velocity boundary condition
    * given by \c rcodcl1 is unchanged. */
-  double  qimp[CS_MAX_BC_PM_ZONE_NUM+1];
+  cs_real_t  qimp[CS_MAX_BC_PM_ZONE_NUM+1];
 
   /*! hydraulic diameter */
-  double  dh[CS_MAX_BC_PM_ZONE_NUM+1];
+  cs_real_t  dh[CS_MAX_BC_PM_ZONE_NUM+1];
 
   /*! turbulent intensity */
-  double  xintur[CS_MAX_BC_PM_ZONE_NUM+1];
+  cs_real_t  xintur[CS_MAX_BC_PM_ZONE_NUM+1];
+
+  /*! Air temperature in K (per zone) for pulverized coal combustion. */
+  cs_real_t  *timpat;
+
+  /*! Coal mass flow per coal for inlet zones
+    (qimpcp[zone_num][coal_id],  with 5 coals max) */
+
+  cs_real_5_t  *qimpcp;
+
+  /*! Coal temperature (in K) per coal for inlet zones
+    (timpcp[zone_num][coal_id], with 5 coals max) */
+
+  cs_real_5_t  *timpcp;
+
+  /*! Coal class mass distribution ratio (in percentage) for inlet zones
+   *  (distch[zone_num][coal_id][class_id], with 4 coals max and
+      20 coal classes par coal max) */
+
+  cs_real_5_20_t  *distch;
 
 } cs_boundary_condition_pm_info_t;
 

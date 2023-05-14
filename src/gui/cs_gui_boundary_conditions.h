@@ -73,8 +73,7 @@ typedef struct {
  * *****************
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
-                               int        *ientat,
+void CS_PROCF (uiclim, UICLIM)(int        *ientat,
                                int        *ientcp,
                                int        *inmoxy,
                                int        *ientox,
@@ -85,12 +84,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                int        *iautom,
                                int        *itypfb,
                                int        *izfppp,
-                               double     *qimpcp,
-                               double     *timpat,
-                               double     *timpcp,
                                double     *tkent,
-                               double     *fment,
-                               double     *distch);
+                               double     *fment);
 
 /*----------------------------------------------------------------------------
  * Boundary conditions input verification

@@ -118,7 +118,6 @@ integer, allocatable, dimension(:) :: lstelt
 
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 
-
 d2s3 = 2.d0/3.d0
 
 !===============================================================================
@@ -131,13 +130,12 @@ d2s3 = 2.d0/3.d0
 !===============================================================================
 
 !  Each kind of condition for extended physic is allocated with a number
-!  IZONE ( 0<IZONE<= NOZPPM ; NOZPPM allocated in ppppar.h)
+!  IZONE ( 0<IZONE<= NOZPPM ; NOZPPM allocated in ppppar.f90)
 
 ! ---- The 12 color is a pure air inlet
 
 !< [example_1]
 call getfbr('12', nlelt, lstelt)
-!==========
 
 do ilelt = 1, nlelt
 
@@ -152,7 +150,7 @@ do ilelt = 1, nlelt
 !   Zone number storage
   izfppp(ifac) = izone
 
-! ------ This inlet have a fixed mass flux
+! ------ This inlet has a fixed mass flux
 
   ientat(izone) = 1
   iqimp(izone)  = 1
@@ -242,7 +240,6 @@ enddo
 
 !< [example_2]
 call getfbr('11', nlelt, lstelt)
-!==========
 
 do ilelt = 1, nlelt
 
@@ -273,7 +270,7 @@ do ilelt = 1, nlelt
 !     - PERCENTAGE mass fraction of each granulometric class
 !       ICLAFU (1 < ICLAFU < NCLAFU )
   iclafu = 1
-  distfu(izone,iclafu) = 100.d0
+  distfu(iclafu,izone) = 100.d0
 
 !     - Fuel Temperature at inlet in K
   timpfl(izone) = 100.d0  + tkelvi
@@ -350,7 +347,6 @@ enddo
 
 !< [example_3]
 call getfbr('15', nlelt, lstelt)
-!==========
 
 do ilelt = 1, nlelt
 
@@ -377,7 +373,6 @@ enddo
 
 !< [example_4]
 call getfbr('19', nlelt, lstelt)
-!==========
 
 do ilelt = 1, nlelt
 
@@ -402,7 +397,6 @@ do ilelt = 1, nlelt
 
 !< [example_5]
 call getfbr('14 or 4', nlelt, lstelt)
-!==========
 
 do ilelt = 1, nlelt
 

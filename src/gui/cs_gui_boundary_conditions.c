@@ -2521,15 +2521,14 @@ _init_boundaries(void)
  *
  * parameters:
  *   n_b_faces            <-- number of boundary faces
- *   nozppm               <-- max number of boundary conditions zone
  *   izfppp               <-- zone number for each boundary face
  *----------------------------------------------------------------------------*/
 
 static void
 _init_zones(const cs_lnum_t   n_b_faces,
-            const int        *nozppm,
             int              *izfppp)
 {
+  const int nozppm = CS_MAX_BC_PM_ZONE_NUM;
 
   assert(boundaries != NULL);
 
@@ -2543,10 +2542,10 @@ _init_zones(const cs_lnum_t   n_b_faces,
 
     int zone_nbr = boundaries->bc_num[izone];
 
-    if (nozppm && zone_nbr > *nozppm)
+    if (zone_nbr > nozppm)
       bft_error(__FILE__, __LINE__, 0,
                 _("zone's label number %i is greater than %i,"
-                  " the maximum allowed \n"), zone_nbr, *nozppm);
+                  " the maximum allowed \n"), zone_nbr, nozppm);
 
     cs_lnum_t n_faces = 0;
     const cs_lnum_t *face_ids
@@ -2710,29 +2709,22 @@ _standard_turbulence_bcs(void)
  * subroutine uiclim
  * *****************
  *
- * integer          nozppm   <-- max number of boundary conditions zone
  * integer          ientat   <-- 1 for air temperature boundary conditions (coal)
  * integer          ientcp   <-- 1 for coal temperature boundary conditions (coal)
  * integer          inmoxy   <-- coal: number of oxydant for the current inlet
  * integer          ientox   <-- 1 for an air fow inlet (gas combustion)
  * integer          ientfu   <-- 1 for fuel flow inlet (gas combustion)
- * integer          ientgb   <-- 1 for burned gas inlet (gas combustion)
  * integer          ientgf   <-- 1 for unburned gas inlet (gas combustion)
+ * integer          ientgb   <-- 1 for burned gas inlet (gas combustion)
  * integer          iprofm   <-- atmospheric flows: on/off for profile from data
  * integer          iautom   <-- atmospheric flows: auto inlet/outlet flag
  * integer          itypfb   <-- type of boundary for each face
  * integer          izfppp   <-- zone number for each boundary face
- * double precision cgdfbo   <-- boundary faces center of gravity
- * double precision qimpcp   <-- inlet coal flow rate (coal)
- * double precision timpat   <-- air temperature boundary conditions (coal)
- * double precision timpcp   <-- inlet coal temperature (coal)
  * double precision tkent    <-- inlet temperature (gas combustion)
  * double precision fment    <-- Mean Mixture Fraction at Inlet (gas combustion)
- * double precision distch   <-- ratio for each coal
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
-                               int        *ientat,
+void CS_PROCF (uiclim, UICLIM)(int        *ientat,
                                int        *ientcp,
                                int        *inmoxy,
                                int        *ientox,
@@ -2743,16 +2735,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                int        *iautom,
                                int        *itypfb,
                                int        *izfppp,
-                               double     *qimpcp,
-                               double     *timpat,
-                               double     *timpcp,
                                double     *tkent,
-                               double     *fment,
-                               double     *distch)
+                               double     *fment)
 {
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-
-  const int ncharm = CS_COMBUSTION_MAX_COALS;
 
   const cs_real_3_t *face_cen = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
 
@@ -2774,7 +2760,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
   static bool initialized = false;
   if (initialized == false) {
-    _init_zones(n_b_faces, nozppm, izfppp);
+    _init_zones(n_b_faces, izfppp);
     initialized = true;
   }
 
@@ -2824,18 +2810,19 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
         ientat[zone_nbr-1] = boundaries->ientat[izone];
         inmoxy[zone_nbr-1] = boundaries->inmoxy[izone];
         ientcp[zone_nbr-1] = boundaries->ientcp[izone];
-        timpat[zone_nbr-1] = boundaries->timpat[izone];
+        bc_pm_info->timpat[zone_nbr] = boundaries->timpat[izone];
 
         for (int icharb = 0; icharb < cm->coal.n_coals; icharb++) {
-          int ich = icharb *(*nozppm)+zone_nbr-1;
-          qimpcp[ich] = boundaries->qimpcp[izone][icharb];
-          timpcp[ich] = boundaries->timpcp[izone][icharb];
+          bc_pm_info->qimpcp[zone_nbr][icharb]
+            = boundaries->qimpcp[izone][icharb];
+          bc_pm_info->timpcp[zone_nbr][icharb]
+            = boundaries->timpcp[izone][icharb];
 
           for (int iclass = 0;
                iclass < cm->coal.n_classes_per_coal[icharb];
                iclass++) {
-            int icl = iclass*(*nozppm) * ncharm + ich;
-            distch[icl] = boundaries->distch[izone][icharb][iclass];
+            bc_pm_info->distch[zone_nbr][icharb][iclass]
+              = boundaries->distch[izone][icharb][iclass];
           }
         }
       }
@@ -3103,18 +3090,20 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
         const cs_combustion_model_t *cm = cs_glob_combustion_model;
 
         bft_printf("-----ientat=%i, ientcp=%i, timpat=%12.5e \n",
-            ientat[zone_nbr-1], ientcp[zone_nbr-1], timpat[zone_nbr-1]);
+                   ientat[zone_nbr-1],
+                   ientcp[zone_nbr-1],
+                   bc_pm_info->timpat[zone_nbr]);
 
         for (int icharb = 0; icharb < cm->coal.n_coals; icharb++) {
           bft_printf("-----coal=%i, qimpcp=%12.5e, timpcp=%12.5e \n",
-                     icharb+1, qimpcp[icharb *(*nozppm)+zone_nbr-1],
-                     timpcp[icharb *(*nozppm)+zone_nbr-1]);
+                     icharb+1,
+                     bc_pm_info->qimpcp[zone_nbr][icharb],
+                     bc_pm_info->timpcp[zone_nbr][icharb]);
 
           for (int iclass = 0; iclass < cm->coal.n_coals; iclass++)
             bft_printf("-----coal=%i, class=%i, distch=%f \n",
                        icharb+1, iclass+1,
-                       distch[  iclass * (*nozppm) * ncharm
-                              + icharb * (*nozppm) +zone_nbr-1]);
+                       bc_pm_info->distch[zone_nbr][icharb][iclass]);
         }
       }
       else if (gas_combustion) {
