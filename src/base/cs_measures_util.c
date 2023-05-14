@@ -1018,7 +1018,7 @@ void CS_PROCF(mscrss, MSCRSS)
 }
 
 /*----------------------------------------------------------------------------
- * Interpolate calculed field on a grid.
+ * Interpolate computed field on a grid.
  *
  * Fortran interface
  *

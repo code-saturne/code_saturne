@@ -35,7 +35,7 @@
 !> \param[in]   ivertc      index of vertical profile
 !> \param[in]   k1          index corresponding to ground level
 !> \param[in]   kmray       number of vertical levels for radiation computation
-!> \param[in]   ico2        ico2=1 -> compute CO2 absorption
+!> \param[in]   ico2        if ico2=1, then compute CO2 absorption
 !> \param[in]   emis        ground surface emissivity
 !> \param[in]   qqv         water vapor + dimers optical depth (0,z)
 !> \param[in]   qqqv        idem qqv but for intermediates vertical levels
@@ -192,14 +192,14 @@ qqqv(kmx+1) = 0.d0
 
 foir = 0.d0
 
-! uppper layers contribution (11000-44000) to optical depth
+! upper layers contribution (11000-44000) to optical depth
 qqvinf = 0.005
 qqcinf = 3.28d-7
 qqlinf = 0.d0
 
 cetyp = rvsra / 1.134d0
 
-! diffusion coeficient integrated over all directions
+! diffusion coefficient integrated over all directions
 beta = 1.66d0
 
 ! calculation for the liquid water absorption coefficient
@@ -234,7 +234,7 @@ iaer = 0
 caero = 1.d-9
 
 do k = k1, kmray-1
- dz0(k) = zray(k+1) - zray(k)
+  dz0(k) = zray(k+1) - zray(k)
 enddo
 
 dz0(kmray) = 0.d0
@@ -422,7 +422,7 @@ if (inua.ne.1) then
       enddo
     endif
 
-    ! contribution of the upward flux reflected at the gound
+    ! contribution of the upward flux reflected at the ground
     ! The modification proposed by Ponnulakshmi and al. (2009) for the upward
     ! flux reflected by the ground when emissivity is different from 1
     ! requires to compute the integral below (a3).
@@ -432,7 +432,7 @@ if (inua.ne.1) then
       qqqqc = qqqc(i)+qqc(k)
 
       call rayive(tauv, dtauv, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
-      a3 = a3-dt4dz(k)*(1.-tauv+aco2s(i,k))*dz0(k-1)
+      a3 = a3-dt4dz(k)*(1.d0-tauv+aco2s(i,k))*dz0(k-1)
     enddo
 
     qqqqv = qqqv(i) + xqqvinf
@@ -441,7 +441,7 @@ if (inua.ne.1) then
     call rayive(tvsups, dtvsups, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
 
     foirs1 = sig*a3
-    foirs2 = sig*t4zt*(1.-tvsups+acsups(i))
+    foirs2 = sig*t4zt*(1.d0-tvsups+acsups(i))
     foirs = foirs1 + foirs2
 
     ! upward fluxes estimation (sum of direct part and reflected part)
@@ -450,7 +450,7 @@ if (inua.ne.1) then
 
       ufir(i) = sig*ufir(i)+emis*sig*t41+(1.-emis)*foirs
     else
-      ufir(k1) = (1.-emis)*foir+emis*sig*t41
+      ufir(k1) = (1.d0-emis)*foir+emis*sig*t41
     endif
   enddo
   ! End IR flux calculation in the vertical layers

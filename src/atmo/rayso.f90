@@ -1209,7 +1209,7 @@ if (f_id.ge.0) then
 
   endif
 
-  ! Direct Solar (denoted by _r) (for visble UV (SUV) band absorbed by O3)
+  ! Direct Solar (denoted by _r) (for visible UV (SUV) band absorbed by O3)
   if (iand(rad_atmo_model, 2).eq.2) then
 
     c_id = c_id + 1

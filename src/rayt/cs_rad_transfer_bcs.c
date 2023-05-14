@@ -358,7 +358,7 @@ cs_rad_transfer_bcs(int         nvar,
   /* If no restart info is available, then initialization at first pass,
    * for qincid:
    *   qincid <= stephn*tint**4
-   * (if qincid is et to zero, there will be a deficit on the luminance
+   * (if qincid is set to zero, there will be a deficit on the luminance
    *  BC at the first time step with DOM). */
 
   if (   ipacli == 1

@@ -364,7 +364,7 @@ do isol = 1, nfmodsol
     !  prise en compte du flux anthropogenique
     !  en-dessous de tseuil, ce flux depend de la temperature
     iseuil = 0
-    if(tssol.lt.tseuil) iseuil = 1
+    if (tssol.lt.tseuil) iseuil = 1
 
     ichal = 1
     !  si e0 < 0 pas de contribution du flux de chaleur latente dans le bilan

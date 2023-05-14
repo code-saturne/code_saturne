@@ -57,7 +57,7 @@ typedef struct _cs_measures_set_t {
   cs_lnum_t           nb_measures_max;     /* Dynamic reallocation parameter */
   bool                interleaved;         /* Is measures set interleaved ? */
   int                *is_cressman;         /* Is measure cressman interpolated?
-                                                0: no
+                                               0: no
                                                 1: yes */
   int                *is_interpol;         /* Is measure taken into account for
                                               interpolation ?
