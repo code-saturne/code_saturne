@@ -339,6 +339,8 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
       ! initialize with standard atmosphere
       call atmstd(zray(k), preray(k), temray(k), romray(k))
+      ! Conversion Kelvin to Celsius
+      temray(k) = temray(k) - tkelvi
     enddo
 
     call cs_user_atmo_1d_rad_prf(preray, temray, romray, qvray, qlray, &
