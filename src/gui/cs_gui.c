@@ -5406,11 +5406,15 @@ cs_gui_time_tables(void)
     BFT_FREE(col_ids);
 
     /* Time offset */
-    node = cs_tree_node_get_child(n, "time_offset");
-    cs_real_t _t_offset = 0.;
+    node = cs_tree_node_get_child(n, "time_offset_choice");
+    const char *toffset_choice = cs_tree_node_get_value_str(node);
+    if (cs_gui_strcmp(toffset_choice, "yes")) {
+      cs_real_t _t_offset = 0.;
 
-    cs_gui_node_get_real(node, &_t_offset);
-    cs_time_table_set_offset(new_table, _t_offset);
+      node = cs_tree_node_get_child(n, "time_offset_value");
+      cs_gui_node_get_real(node, &_t_offset);
+      cs_time_table_set_offset(new_table, _t_offset);
+    }
 
     /* Set headers */
     node = cs_tree_node_get_child(n, "headers_list");

@@ -279,7 +279,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self.spinBoxHeadersRow.valueChanged[int].connect(self.slotHeadLine)
 
         self.comboBoxTimeOffset.activated[str].connect(self.slotTimeOffsetMode)
-        self.lineEditTimeOffset.textEdited[str].connect(self.slotTimeOffsetVal)
+        self.lineEditTimeOffset.textChanged[str].connect(self.slotTimeOffsetVal)
         self.lineEditTimeOffset.setValidator(DoubleValidator(self.lineEditTimeOffset))
 
     def _update_page_view(self):
@@ -307,17 +307,10 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self.pushButtonImportheaders.setEnabled(import_headers)
 
         # Time offset
-        _t_offset = self.mdl.getTableProperty(self.table_id, 'time_offset')
-        use_offset = _t_offset != 'no'
+        use_offset = \
+                self.mdl.getTableProperty(self.table_id, 'time_offset_choice') != 'no'
+
         self.lineEditTimeOffset.setEnabled(use_offset)
-        if use_offset:
-            self.comboBoxTimeOffset.setCurrentText('yes')
-            if _t_offset == 'yes':
-                self.lineEditTimeOffset.setText('0.')
-            else:
-                self.lineEditTimeOffset.setText(_t_offset)
-        else:
-            self.lineEditTimeOffset.setText('')
 
 
     @pyqtSlot("QModelIndex")
@@ -334,6 +327,8 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
             self.comboBoxHeaders.setCurrentText(self._get_mdl_property('headers_def'))
             self.lineEditHeadersList.setText(self._get_mdl_property('headers_list'))
             self.spinBoxHeadersRow.setValue(int(self._get_mdl_property('headers_line')))
+            self.comboBoxTimeOffset.setCurrentText(self._get_mdl_property('time_offset_choice'))
+            self.lineEditTimeOffset.setText(str(self._get_mdl_property('time_offset_value')))
 
             self._update_page_view()
 
@@ -348,8 +343,12 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
 
         table_files = self.selectTableFile()
 
+        _datap = os.path.abspath(os.path.join(self.case['case_path'], 'DATA'))
         for _f in table_files:
-            self.tableModelTimeTables.addRow(_f)
+            if os.path.abspath(os.path.dirname(_f)) == _datap:
+                self.tableModelTimeTables.addRow(os.path.basename(_f))
+            else:
+                self.tableModelTimeTables.addRow(_f)
 
 
     @pyqtSlot()
@@ -434,16 +433,18 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         """
         Set Offset mode if needed.
         """
-        self.mdl.setTableProperty(self.table_id, 'time_offset', str(mode))
+        self.mdl.setTableProperty(self.table_id, 'time_offset_choice', str(mode))
+        if mode == "no":
+            self.lineEditTimeOffset.setText('0')
         self._update_page_view()
 
 
     @pyqtSlot(str)
-    def slotTimeOffsetVal(self, mode):
+    def slotTimeOffsetVal(self, val):
         """
         Set Offset mode if needed.
         """
-        self.mdl.setTableProperty(self.table_id, 'time_offset', str(mode))
+        self.mdl.setTableProperty(self.table_id, 'time_offset_value', val)
 
 
     def selectTableFile(self):
@@ -454,7 +455,8 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
 
         title = self.tr("Select input file for time table.")
 
-        default = os.path.split(self.case['case_path'])[0]
+        #default = os.path.split(self.case['case_path'])[0]
+        default = os.path.join(self.case['case_path'], "DATA")
 
         if hasattr(QFileDialog, 'ReadOnly'):
             options = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
