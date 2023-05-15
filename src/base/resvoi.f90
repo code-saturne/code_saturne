@@ -253,6 +253,23 @@ if (i_mass_transfer.ne.0) then
   if (dt(1).gt.dtmaxg)  write(nfecra,1000) dt(1), dtmaxg
 endif
 
+! Visualization of divu
+!   (only for advanced using purposed, not used in the source terms hereafter)
+
+init = 1
+call field_get_id_try("velocity_divergence", f_id)
+if (f_id.ge.0) then
+  call field_get_val_s(f_id, divu)
+else
+  !Allocation
+  allocate(t_divu(ncelet))
+  divu => t_divu
+endif
+
+call divmas (init, ivolfl, bvolfl, divu)
+
+if (allocated(t_divu)) deallocate(t_divu)
+
 !===============================================================================
 ! 3. Construct the system to solve
 !===============================================================================
@@ -280,31 +297,23 @@ endif
 
 ! Source term linked with the non-conservative form of convection term
 ! in cs_equation_iterative_solve_scalar (always implicited)
-! FIXME set imasac per variable? Here it could be set to 0 and divu not added
+! FIXME set imasac per variable? Here it could be set to 0
+! (or Gamma(1/rho2 - 1/rho1) for cavitation) and divu not used.
 ! Note: we prefer to be not perfectly conservative (up to the precision
 ! of the pressure solver, but that allows to fullfill the min/max principle
 ! on alpha
-init = 1
-call field_get_id_try("velocity_divergence", f_id)
-if (f_id.ge.0) then
-  call field_get_val_s(f_id, divu)
+
+if (i_mass_transfer.ne.0) then
+  do iel = 1, ncel
+    ! Should be for the conservative form:
+    smbrs(iel) = smbrs(iel) - cell_f_vol(iel)*gamcav(iel)*(1.d0/rho2 - 1.d0/rho1)*cvara_voidf(iel)
+    rovsdt(iel) = cell_f_vol(iel)*gamcav(iel)*(1.d0/rho2 - 1.d0/rho1)
+  enddo
 else
-  !Allocation
-  allocate(t_divu(ncelet))
-  divu => t_divu
+  do iel = 1, ncel
+    rovsdt(iel) = 0.d0
+  enddo
 endif
-
-
-call divmas (init,ivolfl,bvolfl,divu)
-
-do iel = 1, ncel
-  ! Should be for the consrvative form:
-  ! smbrs(iel) = smbrs(iel) - divu(iel)*cvara_voidf(iel)
-  ! rovsdt(iel) = divu(iel)
-  rovsdt(iel) = 0.d0
-enddo
-
-if (allocated(t_divu)) deallocate(t_divu)
 
 if (idrift.gt.0) then
   imrgrp = vcopt%imrgra
