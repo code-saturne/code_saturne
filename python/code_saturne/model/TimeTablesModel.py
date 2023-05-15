@@ -124,6 +124,15 @@ class TimeTablesModel(Model):
 
         return hl
 
+    @Variables.noUndo
+    def getTablesDataDict(self):
+        """
+        """
+        retval = {}
+        for i, n in enumerate(self.getTableNamesList()):
+            retval[n] = [h for h in self.getTableHeadersList(i)]
+
+        return retval
 
     @Variables.undoGlobal
     def addTable(self):

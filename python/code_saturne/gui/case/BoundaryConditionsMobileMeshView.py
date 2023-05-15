@@ -59,6 +59,7 @@ from code_saturne.model.Boundary import Boundary
 
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.TimeTablesModel import TimeTablesModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -341,6 +342,12 @@ class CouplingManager:
         for (nme, val) in self.notebook.getNotebookList():
             symbols.append((nme, 'value (notebook) = ' + str(val)))
 
+        self.time_tables = TimeTablesModel(self.case).getTablesDataDict()
+        for _k in self.time_tables.keys():
+            for _h in self.time_tables[_k]:
+                symbols.append(('{}[{}]'.format(_k,_h),
+                               'Variable "{}" of time table "{}"'.format(_h, _k)))
+
         m_default = default % {'t':'m'}
         c_default = default % {'t':'c'}
         k_default = default % {'t':'k'}
@@ -447,6 +454,7 @@ class BoundaryConditionsMobileMeshView(QWidget,
 
         self.__model = MobileMeshModel(self.case)
         self.notebook = NotebookModel(self.case)
+        self.time_tables = TimeTablesModel(self.case).getTablesDataDict()
 
         self.__comboModel = ComboModel(self.comboMobilBoundary, 6, 1)
         self.__comboModel.addItem(self.tr("Fixed boundary"), "fixed_boundary")
@@ -497,6 +505,11 @@ class BoundaryConditionsMobileMeshView(QWidget,
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        for _k in self.time_tables.keys():
+            for _h in self.time_tables[_k]:
+                sym.append('{}[{}]'.format(_k,_h),
+                           'Variable "{}" of time table "{}"'.format(_h, _k))
 
         dialog = QMegEditorView(parent = self,
                                 function_type = 'bnd',

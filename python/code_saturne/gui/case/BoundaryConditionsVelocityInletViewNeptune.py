@@ -52,6 +52,7 @@ from code_saturne.gui.base.QtPage import DoubleValidator, ComboModel, from_qvari
 from code_saturne.model.LocalizationModelNeptune import LocalizationModel, Zone
 from code_saturne.model.BoundaryNeptune import Boundary
 from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.TimeTablesModel import TimeTablesModel
 
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
 
@@ -117,6 +118,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.groupBoxCompressible.hide()
         self.groupBoxGasCombustion.hide()
         self.notebook = NotebookModel(self.case)
+        self.time_tables = TimeTablesModel(self.case).getTablesDataDict()
 
 
     def showWidget(self, boundary):
@@ -250,6 +252,11 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
 
         for (name, val) in self.notebook.getNotebookList():
             sym.append((name, 'value (notebook) = ' + str(val)))
+
+        for _k in self.time_tables.keys():
+            for _h in self.time_tables[_k]:
+                sym.append(('{}[{}]'.format(_k,_h),
+                           'Variable "{}" of time table "{}"'.format(_h, _k)))
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = "bnd",

@@ -53,6 +53,7 @@ from code_saturne.model.MainFieldsModel import MainFieldsModel
 from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
 from code_saturne.model.ConjugateHeatTransferModel import ConjugateHeatTransferModel
 from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.TimeTablesModel import TimeTablesModel
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
 
 #-------------------------------------------------------------------------------
@@ -118,6 +119,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
         self.__currentField = fieldId
         self.cht_model = ConjugateHeatTransferModel(self.case)
         self.notebook  = NotebookModel(self.case)
+        self.time_tables = TimeTablesModel(self.case).getTablesDataDict()
 
 
     def showWidget(self, boundary):
@@ -333,6 +335,11 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
 
         for (name, val) in self.notebook.getNotebookList():
             sym.append((name, 'value (notebook) = ' + str(val)))
+
+        for _k in self.time_tables.keys():
+            for _h in self.time_tables[_k]:
+                sym.append(('{}[{}]'.format(_k,_h),
+                           'Variable "{}" of time table "{}"'.format(_h, _k)))
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = "bnd",

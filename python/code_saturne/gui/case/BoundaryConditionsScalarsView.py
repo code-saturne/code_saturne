@@ -59,6 +59,7 @@ from code_saturne.model.CoalCombustionModel           import CoalCombustionModel
 from code_saturne.model.GasCombustionModel            import GasCombustionModel
 from code_saturne.model.AtmosphericFlowsModel         import AtmosphericFlowsModel
 from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.TimeTablesModel import TimeTablesModel
 from code_saturne.model.ConjugateHeatTransferModel import ConjugateHeatTransferModel
 
 # -------------------------------------------------------------------------------
@@ -107,6 +108,8 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
 
         self.case.undoStopGlobal()
         self.notebook = NotebookModel(self.case)
+        self.time_tables = TimeTablesModel(self.case).getTablesDataDict()
+
         self.cht_model = ConjugateHeatTransferModel(self.case)
 
         self.lineEditValueThermal.textChanged[str].connect(self.slotValueThermal)
@@ -572,6 +575,11 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
+        for _k in self.time_tables.keys():
+            for _h in self.time_tables[_k]:
+                sym.append(('{}[{}]'.format(_k,_h),
+                           'Variable "{}" of time table "{}"'.format(_h, _k)))
+
         c = self.__boundary.getScalarChoice(variable_name)
 
         dialog = QMegEditorView(parent      = self,
@@ -616,6 +624,11 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
+        for _k in self.time_tables.keys():
+            for _h in self.time_tables[_k]:
+                sym.append(('{}[{}]'.format(_k,_h),
+                           'Variable "{}" of time table "{}"'.format(_h, _k)))
+
         c = self.__boundary.getScalarChoice(self.species)
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'bnd',
@@ -659,6 +672,11 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        for _k in self.time_tables.keys():
+            for _h in self.time_tables[_k]:
+                sym.append(('{}[{}]'.format(_k,_h),
+                           'Variable "{}" of time table "{}"'.format(_h, _k)))
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'bnd',

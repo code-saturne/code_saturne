@@ -49,6 +49,7 @@ from code_saturne.model.LocalizationModel import LocalizationModel
 from code_saturne.model.ThermalScalarModel import ThermalScalarModel
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.TimeTablesModel import TimeTablesModel
 
 #-------------------------------------------------------------------------------
 # Variables and Scalar model initialization modelling class
@@ -74,6 +75,7 @@ class SourceTermsModel(Model):
         self.therm   = ThermalScalarModel(self.case)
         self.th_sca  = DefineUserScalarsModel(self.case)
         self.notebook = NotebookModel(self.case)
+        self.time_tables = TimeTablesModel(self.case).getTablesDataDict()
 
 
     def __verifyZone(self, zone):
@@ -119,6 +121,11 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        for _k in self.time_tables.keys():
+            for _h in self.time_tables[_k]:
+                sym.append('{}[{}]'.format(_k,_h),
+                           'Variable "{}" of time table "{}"'.format(_h, _k))
 
         return exp, req, sym
 
@@ -173,6 +180,11 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        for _k in self.time_tables.keys():
+            for _h in self.time_tables[_k]:
+                sym.append('{}[{}]'.format(_k,_h),
+                           'Variable "{}" of time table "{}"'.format(_h, _k))
 
         # Known fields
         knf = [(str(name), str(name)), ('rho', 'density')]
@@ -237,6 +249,11 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
+        for _k in self.time_tables.keys():
+            for _h in self.time_tables[_k]:
+                sym.append('{}[{}]'.format(_k,_h),
+                           'Variable "{}" of time table "{}"'.format(_h, _k))
+
         # Known fields
         knf = [(str(name), str(name))]
 
@@ -292,6 +309,11 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        for _k in self.time_tables.keys():
+            for _h in self.time_tables[_k]:
+                sym.append('{}[{}]'.format(_k,_h),
+                           'Variable "{}" of time table "{}"'.format(_h, _k))
 
         return exp, req, sym
 
@@ -360,6 +382,11 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        for _k in self.time_tables.keys():
+            for _h in self.time_tables[_k]:
+                sym.append('{}[{}]'.format(_k,_h),
+                           'Variable "{}" of time table "{}"'.format(_h, _k))
 
         # Known fields
         knf = [(str(name), str(name)), ('rho', 'density')]

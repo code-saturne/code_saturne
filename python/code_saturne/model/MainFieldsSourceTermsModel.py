@@ -46,6 +46,7 @@ from code_saturne.model.XMLvariables import Model, Variables
 from code_saturne.model.LocalizationModel import LocalizationModel
 from code_saturne.model.MainFieldsModel import MainFieldsModel
 from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.TimeTablesModel import TimeTablesModel
 
 #-------------------------------------------------------------------------------
 # Variables and Scalar model initialization modelling class
@@ -66,6 +67,7 @@ class MainFieldsSourceTermsModel(Variables, Model):
         self.mfm        = MainFieldsModel(self.case)
 
         self.notebook = NotebookModel(self.case)
+        self.time_tables = TimeTablesModel(self.case).getTablesDataDict()
 
 
     def __verifyZone(self, zone):
@@ -102,6 +104,11 @@ class MainFieldsSourceTermsModel(Variables, Model):
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        for _k in self.time_tables.keys():
+            for _h in self.time_tables[_k]:
+                sym.append('{}[{}]'.format(_k,_h),
+                           'Variable "{}" of time table "{}"'.format(_h, _k))
 
         knf = self.getKnownFields(fieldId)
 
