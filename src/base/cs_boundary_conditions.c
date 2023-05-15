@@ -838,7 +838,7 @@ cs_f_boundary_conditions_get_cpincl_pointers(cs_real_t       **qimpat,
 
   *qimpat = cs_glob_bc_pm_info->qimp + 1;
 
-  if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] -1
+  if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
       || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1
       || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] > -1) {
     *timpat = cs_glob_bc_pm_info->timpat + 1;
@@ -1365,7 +1365,7 @@ cs_boundary_conditions_create(void)
 
   /* Arrays present only for coal combustion */
 
-  if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] -1
+  if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
       || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1
       || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] > -1) {
     BFT_REALLOC(bc_pm_info->timpat, n_b_faces, cs_real_t);
