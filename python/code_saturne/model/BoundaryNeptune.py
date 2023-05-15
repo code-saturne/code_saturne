@@ -32,7 +32,7 @@ from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
 from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModel
 from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModelsDescription
 from code_saturne.model.NotebookModel import NotebookModel
-form code_saturne.model.TimeTablesModel import TimeTablesModel
+from code_saturne.model.TimeTablesModel import TimeTablesModel
 from code_saturne.model.SpeciesModel import SpeciesModel
 
 #-------------------------------------------------------------------------------
