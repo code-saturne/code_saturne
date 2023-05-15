@@ -76,6 +76,19 @@ cs_time_table_by_name(const char *name);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set time offset value for a time table
+ *
+ * \param[in] table        Pointer to time table structure
+ * \param[in] time_offset  Value of time offset for the table.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_table_set_offset(cs_time_table_t *table,
+                         cs_real_t        time_offset);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set headers labels for a time table. Number of headers needs to be
  * equal to the number of columns, otherwise an error is raised.
  *

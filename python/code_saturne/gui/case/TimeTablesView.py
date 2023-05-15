@@ -224,6 +224,10 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         for opt in ('import', 'user'):
             self.modelHeadersImport.addItem(self.tr(opt, opt))
 
+        self.modelTimeOffset = ComboModel(self.comboBoxTimeOffset, 2, 1)
+        for opt in ('no', 'yes'):
+            self.modelTimeOffset.addItem(self.tr(opt, opt))
+
 
         self.groupBoxTableParameters.hide()
 
@@ -274,6 +278,10 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self.pushButtonImportheaders.clicked.connect(self.slotImportHeadersFromFile)
         self.spinBoxHeadersRow.valueChanged[int].connect(self.slotHeadLine)
 
+        self.comboBoxTimeOffset.activated[str].connect(self.slotTimeOffsetMode)
+        self.lineEditTimeOffset.textEdited[str].connect(self.slotTimeOffsetVal)
+        self.lineEditTimeOffset.setValidator(DoubleValidator(self.lineEditTimeOffset))
+
     def _update_page_view(self):
         """
         Update state of widgets
@@ -297,6 +305,19 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self.spinBoxHeadersRow.setEnabled(import_headers)
 
         self.pushButtonImportheaders.setEnabled(import_headers)
+
+        # Time offset
+        _t_offset = self.mdl.getTableProperty(self.table_id, 'time_offset')
+        use_offset = _t_offset != 'no'
+        self.lineEditTimeOffset.setEnabled(use_offset)
+        if use_offset:
+            self.comboBoxTimeOffset.setCurrentText('yes')
+            if _t_offset == 'yes':
+                self.lineEditTimeOffset.setText('0.')
+            else:
+                self.lineEditTimeOffset.setText(_t_offset)
+        else:
+            self.lineEditTimeOffset.setText('')
 
 
     @pyqtSlot("QModelIndex")
@@ -406,6 +427,23 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         Define line from which to import headers
         """
         self.mdl.setTableProperty(self.table_id, 'headers_line', int(val))
+
+
+    @pyqtSlot(str)
+    def slotTimeOffsetMode(self, mode):
+        """
+        Set Offset mode if needed.
+        """
+        self.mdl.setTableProperty(self.table_id, 'time_offset', str(mode))
+        self._update_page_view()
+
+
+    @pyqtSlot(str)
+    def slotTimeOffsetVal(self, mode):
+        """
+        Set Offset mode if needed.
+        """
+        self.mdl.setTableProperty(self.table_id, 'time_offset', str(mode))
 
 
     def selectTableFile(self):

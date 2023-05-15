@@ -76,7 +76,8 @@ class TimeTablesModel(Model):
                     'col_ids':'',
                     'headers_def':'user',
                     'headers_list':'',
-                    'headers_line':1}
+                    'headers_line':1,
+                    'time_offset':'no'}
 
         return _default.get(k, '')
 
