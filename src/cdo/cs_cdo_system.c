@@ -795,9 +795,6 @@ _assign_ma_ms(bool                           forced,
 
       }
 
-      if (bi.matrix_class == CS_CDO_SYSTEM_MATRIX_HYPRE)
-        sep_diag = false;
-
       if (db->matrix_assembler == NULL) {
 
         assert(db->matrix_structure == NULL);
