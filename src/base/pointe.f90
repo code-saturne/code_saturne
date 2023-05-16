@@ -126,7 +126,6 @@ module pointe
   integer(c_int), pointer, save :: nfpt1t
 
   !> \}
-
   !=============================================================================
 
   !> \defgroup porosity_ibm Porosity from immersed boundaries parameters
@@ -268,8 +267,6 @@ contains
     use optcal
     use entsor
     use ppincl
-    use lagran
-    use albase
     use field
     use cs_c_bindings
 
@@ -297,7 +294,9 @@ contains
 
   ! Resize auxiliary arrays
 
-  subroutine resize_aux_arrays
+  subroutine resize_aux_arrays() &
+   bind(C, name='cs_fortran_resize_aux_arrays')
+   use, intrinsic :: iso_c_binding
 
     use mesh, only: ncel, ncelet
 

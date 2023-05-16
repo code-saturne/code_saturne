@@ -467,6 +467,15 @@ cs_prediction_mass_flux(cs_lnum_t  ncesmp,
                         cs_lnum_t  icetsm[],
                         cs_real_t  dt[]);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief resize some Fortran auxiliary arrays
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_fortran_resize_aux_arrays(void);
+
 /*----------------------------------------------------------------------------
  * Exchange of coupling variables between tow instances
  * of code_saturne thanks to cells.
