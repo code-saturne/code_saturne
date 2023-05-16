@@ -994,7 +994,8 @@ cs_sles_hypre_solve(void                *context,
   cs_sles_hypre_t  *c = context;
   cs_sles_hypre_setup_t  *sd = c->setup_data;
   cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
-  HYPRE_Int its;
+  HYPRE_Int its, max_its;
+  HYPRE_Int ierr;
   double res;
 
   if (sd == NULL) {
@@ -1043,7 +1044,7 @@ cs_sles_hypre_solve(void                *context,
       /* Finalize setup and solve; no absolute tolerance is available,
          so we use the available function. */
       HYPRE_BoomerAMGSetTol(sd->solver, precision*r_norm);
-      HYPRE_BoomerAMGSolve(sd->solver, par_a, p_rhs, p_x);
+      ierr = HYPRE_BoomerAMGSolve(sd->solver, par_a, p_rhs, p_x);
 
       /* Get solution and information */
       HYPRE_BoomerAMGGetFinalRelativeResidualNorm(sd->solver, &res);
@@ -1055,7 +1056,7 @@ cs_sles_hypre_solve(void                *context,
     {
       /* Finalize setup and solve */
       HYPRE_ParCSRHybridSetAbsoluteTol(sd->solver, precision*r_norm);
-      HYPRE_ParCSRHybridSolve(sd->solver, par_a, p_rhs, p_x);
+      ierr = HYPRE_ParCSRHybridSolve(sd->solver, par_a, p_rhs, p_x);
 
       /* Get solution and information */
       HYPRE_ParCSRHybridGetFinalRelativeResidualNorm(sd->solver, &res);
@@ -1067,11 +1068,15 @@ cs_sles_hypre_solve(void                *context,
     {
       /* Finalize setup and solve */
       HYPRE_ILUSetTol(sd->solver, precision*r_norm);
-      HYPRE_ILUSolve(sd->solver, par_a, p_rhs, p_x);
+      ierr = HYPRE_ILUSolve(sd->solver, par_a, p_rhs, p_x);
 
       /* Get solution and information */
       HYPRE_ILUGetFinalRelativeResidualNorm(sd->solver, &res);
       HYPRE_ILUGetNumIterations(sd->solver, &its);
+
+      /* Manage feedback */
+      if (ierr != 0 && HYPRE_CheckError(ierr, HYPRE_ERROR_CONV))
+        cvg = CS_SLES_DIVERGED;
     }
     break;
 
@@ -1079,7 +1084,7 @@ cs_sles_hypre_solve(void                *context,
     {
       /* Finalize setup and solve */
       HYPRE_BiCGSTABSetAbsoluteTol(sd->solver, precision*r_norm);
-      HYPRE_ParCSRBiCGSTABSolve(sd->solver, par_a, p_rhs, p_x);
+      ierr = HYPRE_ParCSRBiCGSTABSolve(sd->solver, par_a, p_rhs, p_x);
 
       /* Get solution and information */
       HYPRE_ParCSRBiCGSTABGetFinalRelativeResidualNorm(sd->solver, &res);
@@ -1091,11 +1096,20 @@ cs_sles_hypre_solve(void                *context,
     {
       /* Finalize setup and solve */
       HYPRE_GMRESSetAbsoluteTol(sd->solver, precision*r_norm);
-      HYPRE_ParCSRGMRESSolve(sd->solver, par_a, p_rhs, p_x);
+      ierr = HYPRE_ParCSRGMRESSolve(sd->solver, par_a, p_rhs, p_x);
 
       /* Get solution and information */
       HYPRE_ParCSRGMRESGetFinalRelativeResidualNorm(sd->solver, &res);
       HYPRE_ParCSRGMRESGetNumIterations(sd->solver, &its);
+
+      /* Manage feedback */
+      if (ierr != 0 && HYPRE_CheckError(ierr, HYPRE_ERROR_CONV)) {
+        HYPRE_GMRESGetMaxIter(sd->solver, &max_its);
+        if (its <= max_its)
+          cvg = CS_SLES_DIVERGED;
+        else
+          cvg = CS_SLES_MAX_ITERATION;
+      }
     }
     break;
 
@@ -1103,11 +1117,20 @@ cs_sles_hypre_solve(void                *context,
     {
       /* Finalize setup and solve */
       HYPRE_FlexGMRESSetAbsoluteTol(sd->solver, precision*r_norm);
-      HYPRE_ParCSRFlexGMRESSolve(sd->solver, par_a, p_rhs, p_x);
+      ierr = HYPRE_ParCSRFlexGMRESSolve(sd->solver, par_a, p_rhs, p_x);
 
       /* Get solution and information */
       HYPRE_ParCSRFlexGMRESGetFinalRelativeResidualNorm(sd->solver, &res);
       HYPRE_ParCSRFlexGMRESGetNumIterations(sd->solver, &its);
+
+      /* Manage feedback */
+      if (ierr != 0 && HYPRE_CheckError(ierr, HYPRE_ERROR_CONV)) {
+        HYPRE_FlexGMRESGetMaxIter(sd->solver, &max_its);
+        if (its <= max_its)
+          cvg = CS_SLES_DIVERGED;
+        else
+          cvg = CS_SLES_MAX_ITERATION;
+      }
     }
     break;
 
@@ -1115,11 +1138,20 @@ cs_sles_hypre_solve(void                *context,
     {
       /* Finalize setup and solve */
       HYPRE_LGMRESSetAbsoluteTol(sd->solver, precision*r_norm);
-      HYPRE_ParCSRLGMRESSolve(sd->solver, par_a, p_rhs, p_x);
+      ierr = HYPRE_ParCSRLGMRESSolve(sd->solver, par_a, p_rhs, p_x);
 
       /* Get solution and information */
       HYPRE_ParCSRLGMRESGetFinalRelativeResidualNorm(sd->solver, &res);
       HYPRE_ParCSRLGMRESGetNumIterations(sd->solver, &its);
+
+      /* Manage feedback */
+      if (ierr != 0 && HYPRE_CheckError(ierr, HYPRE_ERROR_CONV)) {
+        HYPRE_LGMRESGetMaxIter(sd->solver, &max_its);
+        if (its <= max_its)
+          cvg = CS_SLES_DIVERGED;
+        else
+          cvg = CS_SLES_MAX_ITERATION;
+      }
     }
     break;
 
@@ -1127,11 +1159,20 @@ cs_sles_hypre_solve(void                *context,
     {
       /* Finalize setup and solve */
       HYPRE_PCGSetAbsoluteTol(sd->solver, precision*r_norm);
-      HYPRE_ParCSRPCGSolve(sd->solver, par_a, p_rhs, p_x);
+      ierr = HYPRE_ParCSRPCGSolve(sd->solver, par_a, p_rhs, p_x);
 
       /* Get solution and information */
       HYPRE_ParCSRPCGGetFinalRelativeResidualNorm(sd->solver, &res);
       HYPRE_ParCSRPCGGetNumIterations(sd->solver, &its);
+
+      /* Manage feedback */
+      if (ierr != 0 && HYPRE_CheckError(ierr, HYPRE_ERROR_CONV)) {
+        HYPRE_PCGGetMaxIter(sd->solver, &max_its);
+        if (its <= max_its)
+          cvg = CS_SLES_DIVERGED;
+        else
+          cvg = CS_SLES_MAX_ITERATION;
+      }
     }
     break;
 
@@ -1150,6 +1191,17 @@ cs_sles_hypre_solve(void                *context,
       vx[ii] = _t[ii];
     }
     CS_FREE_HD(_t);
+  }
+
+  /* Set the convergence status. The feedback of HYPRE is quite minimal so that
+     this only captures the convergence and avoids to get CS_SLES_ITERATING
+     when an error has been raised. For some solvers, one can identify when the
+     max. number of iterations has been reached. */
+  if (ierr == 0)
+    cvg = CS_SLES_CONVERGED;
+  else {
+    if (cvg == CS_SLES_ITERATING)
+      cvg = CS_SLES_DIVERGED;
   }
 
   *residue = res;
