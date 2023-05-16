@@ -162,13 +162,13 @@ _faces_to_edges(int                         dim,
 
     /* Initialize the edge selection */
 
-    selected_edge[0] = base_section->vertex_num[vertex_id + n_vertices - 1];
-    selected_edge[1] = base_section->vertex_num[vertex_id];
+    selected_edge[0] = base_section->vertex_num[vertex_id + n_vertices - 1] - 1;
+    selected_edge[1] = base_section->vertex_num[vertex_id] - 1;
 
     if (parent_vertex_id == NULL)
       selected_edge_center = 0.5 *
-        ( vertex_coords[(selected_edge[0]-1)*dim + chosen_axis]
-        + vertex_coords[(selected_edge[1]-1)*dim + chosen_axis] );
+        (  vertex_coords[selected_edge[0]*dim + chosen_axis]
+         + vertex_coords[selected_edge[1]*dim + chosen_axis]);
 
     else {
 
@@ -176,8 +176,8 @@ _faces_to_edges(int                         dim,
       tmp_id[1] = parent_vertex_id[selected_edge[1]];
 
       selected_edge_center = 0.5 *
-        ( vertex_coords[(tmp_id[0]-1) * dim + chosen_axis]
-        + vertex_coords[(tmp_id[1]-1) * dim + chosen_axis] );
+        ( vertex_coords[tmp_id[0] * dim + chosen_axis]
+        + vertex_coords[tmp_id[1] * dim + chosen_axis] );
 
     }
 
@@ -185,13 +185,13 @@ _faces_to_edges(int                         dim,
 
     for (k = 1; k < n_vertices ; k++) {
 
-      tmp_selected_edge[0] = base_section->vertex_num[vertex_id + k - 1];
-      tmp_selected_edge[1] = base_section->vertex_num[vertex_id + k];
+      tmp_selected_edge[0] = base_section->vertex_num[vertex_id + k - 1] - 1;
+      tmp_selected_edge[1] = base_section->vertex_num[vertex_id + k] - 1;
 
       if (parent_vertex_id == NULL)
         tmp_edge_center = 0.5 *
-          (  vertex_coords[(tmp_selected_edge[0]-1)*dim + chosen_axis]
-           + vertex_coords[(tmp_selected_edge[1]-1)*dim + chosen_axis]);
+          (  vertex_coords[tmp_selected_edge[0]*dim + chosen_axis]
+           + vertex_coords[tmp_selected_edge[1]*dim + chosen_axis]);
 
       else {
 
@@ -199,8 +199,8 @@ _faces_to_edges(int                         dim,
         tmp_id[1] = parent_vertex_id[tmp_selected_edge[1]];
 
         tmp_edge_center
-          = 0.5 * (  vertex_coords[(tmp_id[0]-1)*dim + chosen_axis]
-                   + vertex_coords[(tmp_id[1]-1)*dim + chosen_axis]);
+          = 0.5 * (  vertex_coords[tmp_id[0]*dim + chosen_axis]
+                   + vertex_coords[tmp_id[1]*dim + chosen_axis]);
 
       }
 
@@ -215,13 +215,13 @@ _faces_to_edges(int                         dim,
 
     } /* End of loop on element's vertices */
 
-    selected_vertices[selected_edge[0]-1] = true;
-    selected_vertices[selected_edge[1]-1] = true;
+    selected_vertices[selected_edge[0]] = true;
+    selected_vertices[selected_edge[1]] = true;
 
     /* Define vertex_num */
 
     for (j = 0; j < 2; j++)
-      ret_section->_vertex_num[i*2 + j] = selected_edge[j];
+      ret_section->_vertex_num[i*2 + j] = selected_edge[j] + 1;
 
     if (base_section->parent_element_id != NULL)
       ret_section->_parent_element_id[i]
