@@ -257,7 +257,6 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
 
         self.case.undoStopGlobal()
         self.notebook = NotebookModel(self.case)
-        self.time_tables = TimeTablesModel(self.case).getTablesDataDict()
 
         # Connections
         self.comboBoxTypeInlet.activated[str].connect(self.__slotInletType)
@@ -538,10 +537,8 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        for _k in self.time_tables.keys():
-            for _h in self.time_tables[_k]:
-                sym.append(('{}[{}]'.format(_k,_h),
-                           'Variable "{}" of time table "{}"'.format(_h, _k)))
+        # Time Tables variables
+        sym += TimeTablesModel(self.case).getTableVariablesListAll()
 
         dialog = QMegEditorView(parent = self,
                                 function_type = 'bnd',

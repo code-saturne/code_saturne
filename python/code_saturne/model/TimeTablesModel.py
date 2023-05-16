@@ -126,6 +126,7 @@ class TimeTablesModel(Model):
 
         return hl
 
+
     @Variables.noUndo
     def getTablesDataDict(self):
         """
@@ -135,6 +136,23 @@ class TimeTablesModel(Model):
             retval[n] = [h for h in self.getTableHeadersList(i)]
 
         return retval
+
+
+    @Variables.noUndo
+    def getTableVariablesListAll(self):
+        """
+        Get a list of variables of a table (TABLE_NAME[COLUMN])
+        """
+
+        retval = []
+        for i in range(self.getNumberOfTables()):
+            _n = self.getTableName(i)
+            for _h in self.getTableHeadersList(i):
+                retval += [('{}[{}]'.format(_n, _h),
+                            'Variable "{}" of time table "{}"'.format(_n, _h))]
+
+        return retval
+
 
     @Variables.undoGlobal
     def addTable(self):

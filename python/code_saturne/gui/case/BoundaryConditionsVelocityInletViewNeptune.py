@@ -118,7 +118,6 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.groupBoxCompressible.hide()
         self.groupBoxGasCombustion.hide()
         self.notebook = NotebookModel(self.case)
-        self.time_tables = TimeTablesModel(self.case).getTablesDataDict()
 
 
     def showWidget(self, boundary):
@@ -253,10 +252,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         for (name, val) in self.notebook.getNotebookList():
             sym.append((name, 'value (notebook) = ' + str(val)))
 
-        for _k in self.time_tables.keys():
-            for _h in self.time_tables[_k]:
-                sym.append(('{}[{}]'.format(_k,_h),
-                           'Variable "{}" of time table "{}"'.format(_h, _k)))
+        # Time Tables variables
+        sym += TimeTablesModel(self.case).getTableVariablesListAll()
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = "bnd",

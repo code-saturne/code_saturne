@@ -97,7 +97,6 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.mdl = CompressibleModel(self.case)
         self.gas = GasCombustionModel(self.case)
         self.notebook = NotebookModel(self.case)
-        self.time_tables = TimeTablesModel(self.case).getTablesDataDict()
 
         # Connections
         self.comboBoxVelocity.activated[str].connect(self.__slotChoiceVelocity)
@@ -437,10 +436,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        for _k in self.time_tables.keys():
-            for _h in self.time_tables[_k]:
-                sym.append(('{}[{}]'.format(_k,_h),
-                           'Variable "{}" of time table "{}"'.format(_h, _k)))
+        # Time Tables variables
+        sym += TimeTablesModel(self.case).getTableVariablesListAll()
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = "bnd",
@@ -547,10 +544,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        for _k in self.time_tables.keys():
-            for _h in self.time_tables[_k]:
-                sym.append(('{}[{}]'.format(_k,_h),
-                           'Variable "{}" of time table "{}"'.format(_h, _k)))
+        # Time Tables variables
+        sym += TimeTablesModel(self.case).getTableVariablesListAll()
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = "bnd",

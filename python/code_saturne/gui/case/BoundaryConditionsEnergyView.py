@@ -119,7 +119,6 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
         self.__currentField = fieldId
         self.cht_model = ConjugateHeatTransferModel(self.case)
         self.notebook  = NotebookModel(self.case)
-        self.time_tables = TimeTablesModel(self.case).getTablesDataDict()
 
 
     def showWidget(self, boundary):
@@ -336,10 +335,8 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
         for (name, val) in self.notebook.getNotebookList():
             sym.append((name, 'value (notebook) = ' + str(val)))
 
-        for _k in self.time_tables.keys():
-            for _h in self.time_tables[_k]:
-                sym.append(('{}[{}]'.format(_k,_h),
-                           'Variable "{}" of time table "{}"'.format(_h, _k)))
+        # Time Tables variables
+        sym += TimeTablesModel(self.case).getTableVariablesListAll()
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = "bnd",

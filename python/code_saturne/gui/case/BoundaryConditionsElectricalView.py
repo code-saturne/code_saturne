@@ -92,7 +92,6 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.__model = ElectricalModel(self.case)
         self.species_list = []
         self.notebook = NotebookModel(self.case)
-        self.time_tables = TimeTablesModel(self.case).getTablesDataDict()
 
         self.lineEditValuePotElec.textChanged[str].connect(self.slotPotElec)
         self.lineEditValuePotElecIm.textChanged[str].connect(self.slotPotElecIm)
@@ -365,10 +364,8 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        for _k in self.time_tables.keys():
-            for _h in self.time_tables[_k]:
-                sym.append(('{}[{}]'.format(_k,_h),
-                           'Variable "{}" of time table "{}"'.format(_h, _k)))
+        # Time Tables variables
+        sym += TimeTablesModel(self.case).getTableVariablesListAll()
 
         c = self.__boundary.getScalarChoice(variable_name)
         dialog = QMegEditorView(parent        = self,
@@ -434,10 +431,8 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        for _k in self.time_tables.keys():
-            for _h in self.time_tables[_k]:
-                sym.append(('{}[{}]'.format(_k,_h),
-                           'Variable "{}" of time table "{}"'.format(_h, _k)))
+        # Time Tables variables
+        sym += TimeTablesModel(self.case).getTableVariablesListAll()
 
         c = self.__b.getElecScalarChoice(self.potVect)
 

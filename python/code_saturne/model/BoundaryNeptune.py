@@ -188,11 +188,8 @@ class Boundary(Model) :
         for (name, val) in NotebookModel(self.case).getNotebookList():
             sym.append((name, 'value (notebook) = ' + str(val)))
 
-        _time_tables = TimeTablesModel(self.case).getTablesDataDict()
-        for _k in _time_tables.keys():
-            for _h in _time_tables[_k]:
-                sym.append('{}[{}]'.format(_k,_h),
-                           'Variable "{}" of time table "{}"'.format(_h, _k))
+        # Time Tables variables
+        sym += TimeTablesModel(self.case).getTableVariablesListAll()
 
         return exp, req, sym
 
@@ -551,11 +548,8 @@ class InletBoundary(Boundary):
         for (name, val) in NotebookModel(self.case).getNotebookList():
             sym.append((name, 'value (notebook) = ' + str(val)))
 
-        _time_tables = TimeTablesModel(self.case).getTablesDataDict()
-        for _k in _time_tables.keys():
-            for _h in _time_tables[_k]:
-                sym.append('{}[{}]'.format(_k,_h),
-                           'Variable "{}" of time table "{}"'.format(_h, _k))
+        # Time Tables variables
+        sym += TimeTablesModel(self.case).getTableVariablesListAll()
 
         if turbModel in ('k-epsilon', 'k-epsilon_linear_production'):
             req = [('k', "turbulent energy"),

@@ -67,7 +67,6 @@ class MainFieldsSourceTermsModel(Variables, Model):
         self.mfm        = MainFieldsModel(self.case)
 
         self.notebook = NotebookModel(self.case)
-        self.time_tables = TimeTablesModel(self.case).getTablesDataDict()
 
 
     def __verifyZone(self, zone):
@@ -105,10 +104,8 @@ class MainFieldsSourceTermsModel(Variables, Model):
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        for _k in self.time_tables.keys():
-            for _h in self.time_tables[_k]:
-                sym.append('{}[{}]'.format(_k,_h),
-                           'Variable "{}" of time table "{}"'.format(_h, _k))
+        # Time Tables variables
+        sym += TimeTablesModel(self.case).getTableVariablesListAll()
 
         knf = self.getKnownFields(fieldId)
 
