@@ -1164,7 +1164,7 @@ _svb_assemble(const cs_cell_sys_t        *csys,
 
 #if CS_CDO_OMP_SYNC_SECTIONS > 0
   if (eqc->source_terms != NULL) {
-# pragma omp critical
+#   pragma omp critical
     {
       for (int v = 0; v < csys->n_dofs; v++) {
 
@@ -1177,7 +1177,7 @@ _svb_assemble(const cs_cell_sys_t        *csys,
   }
   else { /* No source term */
 
-# pragma omp critical
+#   pragma omp critical
     {
       for (int v = 0; v < csys->n_dofs; v++)
         rhs[csys->dof_ids[v]] += csys->rhs[v];

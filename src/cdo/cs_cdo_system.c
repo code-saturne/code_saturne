@@ -1157,8 +1157,8 @@ cs_cdo_system_helper_free(cs_cdo_system_helper_t   **p_helper)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add an unassembled block definition at position "block_id" in the
- *        helper structure Only metadata are set at this stage.
+ * \brief Add a default block definition at position "block_id" in the helper
+ *        structure Only metadata are set at this stage.
  *
  * \param[in, out] sh          pointer to the system helper to update
  * \param[in]      block_id    id in blocks array in a system helper
@@ -1970,7 +1970,7 @@ cs_cdo_system_helper_init_system(cs_cdo_system_helper_t    *sh,
 /*!
  * \brief Finalize the assembly after the cellwise building and assembly
  *
- * \param[in, out]      sh       pointer to a system helper structure
+ * \param[in, out] sh       pointer to a system helper structure
  */
 /*----------------------------------------------------------------------------*/
 

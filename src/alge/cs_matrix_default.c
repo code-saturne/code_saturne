@@ -389,6 +389,7 @@ _create_assembler(int  coupling_id)
     cs_internal_coupling_matrix_add_ids(coupling_id, r_g_id,  ma);
 
   /* Now compute structure */
+
   cs_matrix_assembler_compute(ma);
 
   return ma;

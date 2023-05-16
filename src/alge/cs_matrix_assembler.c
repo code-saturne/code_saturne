@@ -1146,11 +1146,11 @@ _rank_neighbors(cs_lnum_t          n_e_g_ids,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Process and exchange info relative to data that will
- *        be sent to neighboring ranks.
+ * \brief Process and exchange info relative to data that will be sent to
+ *        neighboring ranks.
  *
- * At this stage, ma->rank will contain the index of the rank in the
- * rank neighborhood structure, not the true MPI rank.
+ * At this stage, ma->rank will contain the index of the rank in the rank
+ * neighborhood structure, not the true MPI rank.
  *
  * \param[in, out]  ma           pointer to matrix assembler structure
  * \param[in]       e_g_ij_size  size of coefficient data to send
@@ -1376,10 +1376,9 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
     if (ma->coeff_recv_size > 0)
       _complete_distant(ma, ma->coeff_recv_size, recv_data);
 
-    /* Now we build the mapping from received terms to their positions
-       in the array. For indexing, we implicitly consider that each row
-       is built of 2 sub-rows, with the local columns first, and distant
-       columns second. */
+    /* Now we build the mapping from received terms to their positions in the
+       array. For indexing, we implicitly consider that each row is built of 2
+       sub-rows, with the local columns first, and distant columns second. */
 
     BFT_MALLOC(ma->coeff_recv_row_id, ma->coeff_recv_size, cs_lnum_t);
 
@@ -1391,8 +1390,8 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
       BFT_MALLOC(ma->coeff_recv_col_idx, ma->coeff_recv_size, cs_lnum_t);
 
       /* First pass: determine local row ids, and check if insertion of
-         previously unknown entries is required;
-         column ids are set for local entries */
+         previously unknown entries is required; column ids are set for local
+         entries */
 
       for (cs_lnum_t i = 0; i < ma->coeff_recv_size; i++) {
 
@@ -1487,6 +1486,7 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
           /* column ids start and end of local row, so add n_cols
              (local part only, matrices are not appened at this stage) */
           ma->coeff_recv_col_idx[i] = d_c_idx + n_cols;
+
         }
 
       }
@@ -1576,8 +1576,8 @@ _matrix_assembler_compute_halo(cs_matrix_assembler_t  *ma,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute internal structures required by a matrix assembler
- *        in parallel mode.
+ * \brief Compute internal structures required by a matrix assembler in
+ *        parallel mode.
  *
  * \param[in, out]  ma   pointer to matrix assembler structure
  *
@@ -2258,9 +2258,9 @@ _matrix_assembler_values_add_ll_g(cs_matrix_assembler_values_t  *mav,
  * \brief Add coefficient values based on local row ids and column indexes,
  *        using a global addition function.
  *
- * This function may be called by different threads if the caller
- * ensures different threads will not write to the same final parts of
- * the matrix coefficients.
+ * This function may be called by different threads if the caller ensures
+ * different threads will not write to the same final parts of the matrix
+ * coefficients.
  *
  * \param[in, out]  mav      pointer to matrix assembler values structure
  * \param[in]       n        number of values to add
@@ -2753,9 +2753,9 @@ cs_matrix_assembler_add_g_ids(cs_matrix_assembler_t  *ma,
 /*!
  * \brief Compute internal structures required by a matrix assembler.
  *
-  * The associated vector halo is also computed at this stage.
+ * The associated vector halo is also computed at this stage.
  *
-* \param[in, out]  ma    pointer to matrix assembler structure
+ * \param[in, out]  ma    pointer to matrix assembler structure
  *
  * This function should be called by a single thread for a given assembler.
  */

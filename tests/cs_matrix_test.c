@@ -509,13 +509,12 @@ _base_data(int rank_id,
 }
 
 /*----------------------------------------------------------------------------
- * build base data based on rabnk id.
+ * build base data based on rank id.
  *----------------------------------------------------------------------------*/
 
 static void
 _free_base_data(void)
 {
-
   BFT_FREE(_g_vtx_id);
   BFT_FREE(_edges);
 }
@@ -523,7 +522,7 @@ _free_base_data(void)
 /*----------------------------------------------------------------------------*/
 
 int
-main (int argc, char *argv[])
+main(int argc, char *argv[])
 {
   CS_UNUSED(argc);
   CS_UNUSED(argv);

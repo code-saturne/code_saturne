@@ -721,7 +721,7 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
     const cs_lnum_t se = 1;             /* for current fill types */
 
     /* Initialize arrays; we need to be careful here, so that
-       the array values are consisten across MPI ranks.
+       the array values are consistent across MPI ranks.
        This requires using a specific initialiation for each fill type. */
 
 #   pragma omp parallel for

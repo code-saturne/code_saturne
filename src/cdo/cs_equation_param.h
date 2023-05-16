@@ -345,7 +345,7 @@ typedef struct {
    * - 4: Green-Gauss based using the least squares method
    *      (first neighbors) to compute face values
    * - 5, 6: Green-Gauss based using the least squares method with
-   *      and extended neighborhood to compute face values\n
+   *      an extended neighborhood to compute face values\n
    * If the computation fails due to mesh quality aspects,
    * it is usually effective to use imrgra = 3, 5, or 6.
    *
