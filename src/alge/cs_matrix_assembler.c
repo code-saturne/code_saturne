@@ -2294,17 +2294,19 @@ _matrix_assembler_values_add_llx_g(cs_matrix_assembler_values_t  *mav,
     for (cs_lnum_t j = 0; j < b_size; j++) {
 
       cs_lnum_t k = i+j;
-
       cs_lnum_t l_r_id = row_id[k];
       cs_lnum_t l_c_id;
-      if (ma->c_id[k] != -1)
+
+      if (col_idx[k] > -1) {
         l_c_id = ma->c_id[ma->r_idx[l_r_id] + col_idx[k]];
+        assert(l_c_id > -1);
+      }
       else
         l_c_id = l_r_id;
 
-      row_g_id[j] = row_id[k] + ma->l_range[0];
+      row_g_id[j] = l_r_id + ma->l_range[0];
       if (l_c_id < ma->n_rows)
-        col_g_id[j] = row_id[k] + ma->l_range[0];
+        col_g_id[j] = l_c_id + ma->l_range[0];
       else
         col_g_id[j] = ma->e_g_id[l_c_id - ma->n_rows];
 
