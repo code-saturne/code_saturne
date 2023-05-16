@@ -83,6 +83,19 @@ cs_turbomachinery_set_model(cs_turbomachinery_model_t  model);
 cs_turbomachinery_model_t
 cs_turbomachinery_get_model(void);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return number of boundary couplings used for rotor/stator model.
+ *
+ * Joining-based definitions are not counted here.
+ *
+ * \return  number of boundary couplings used for rotor/stator model.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_turbomachinery_get_n_couplings(void);
+
 /*----------------------------------------------------------------------------
  * Define a rotor by its axis and cell selection criteria.
  *
@@ -237,6 +250,19 @@ cs_turbomachinery_n_rotors(void);
 
 const int *
 cs_turbomachinery_get_cell_rotor_num(void);
+
+/*!
+ * \brief Return arrayq associated to wall BC update.
+ *
+ * \param[out]   coftur  values of "cofimp" term before geometry update
+ * \param[out]   hfltur  local exchange coefficient before geometry update
+
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_turbomachinery_get_wall_bc_coeffs(cs_real_t  **coftur,
+                                     cs_real_t  **hfltur);
 
 /*----------------------------------------------------------------------------
  * Return rotation velocity

@@ -128,6 +128,14 @@ typedef struct {
 
   int                       *cell_rotor_num;    /* cell rotation axis number */
 
+  cs_real_t                 *coftur;            /* wall BC coefficient to update
+                                                   wall velocity after geometry
+                                                   update */
+
+  cs_real_t                 *hfltur;            /* wall exchange coefficient
+                                                   for update after that
+                                                   of geometry */
+
   bool active;
 
 } cs_turbomachinery_t;
@@ -147,6 +155,9 @@ void cs_f_map_turbomachinery_model(int  *iturbo,
                                    int  *ityint);
 
 void cs_f_map_turbomachinery_rotor(int  **irotce);
+
+void cs_f_map_turbomachinery_arrays(cs_real_t  **coftur,
+                                    cs_real_t  **hfltur);
 
 /*============================================================================
  * Private function definitions
@@ -309,6 +320,8 @@ _turbomachinery_create(void)
 
   tbm->reference_mesh = cs_mesh_create();
   tbm->n_b_faces_ref = -1;
+  tbm->coftur = NULL;
+  tbm->hfltur = NULL;
   tbm->cell_rotor_num = NULL;
   tbm->model = CS_TURBOMACHINERY_NONE;
   tbm->n_couplings = 0;
@@ -1367,6 +1380,25 @@ cs_f_map_turbomachinery_rotor(int  **irotce)
     *irotce = NULL;
 }
 
+/*----------------------------------------------------------------------------
+ * Map turbomachinery arrays associated to wall BC update
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_map_turbomachinery_arrays(cs_real_t  **coftur,
+                               cs_real_t  **hfltur)
+{
+  if (_turbomachinery != NULL) {
+    *coftur = _turbomachinery->coftur;
+    *hfltur = _turbomachinery->hfltur;
+  }
+  else {
+    *coftur = NULL;
+    *hfltur = NULL;
+  }
+
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1407,6 +1439,27 @@ cs_turbomachinery_get_model(void)
    return CS_TURBOMACHINERY_NONE;
   else
     return _turbomachinery->model;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return number of boundary couplings used for rotor/stator model.
+ *
+ * Joining-based definitions are not counted here.
+ *
+ * \return  number of boundary couplings used for rotor/stator model.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_turbomachinery_get_n_couplings(void)
+{
+  int retval = 0;
+
+  if (_turbomachinery != NULL)
+    retval = _turbomachinery->n_couplings;
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1654,8 +1707,12 @@ cs_turbomachinery_initialize(void)
   /* Adapt postprocessing options if required;
      must be called before cs_post_init_meshes(). */
 
-  if (tbm->model == CS_TURBOMACHINERY_TRANSIENT)
+  if (tbm->model == CS_TURBOMACHINERY_TRANSIENT) {
     cs_post_set_changing_connectivity();
+
+    BFT_MALLOC(tbm->coftur, cs_glob_mesh->n_b_faces, cs_real_t);
+    BFT_MALLOC(tbm->hfltur, cs_glob_mesh->n_b_faces, cs_real_t);
+  }
 
   /* Destroy the reference mesh, if required */
 
@@ -1692,6 +1749,9 @@ cs_turbomachinery_finalize(void)
 
     if (tbm->reference_mesh != NULL)
       cs_mesh_destroy(tbm->reference_mesh);
+
+    BFT_FREE(tbm->coftur);
+    BFT_FREE(tbm->hfltur);
 
     /* Unset global rotations pointer for safety */
     cs_glob_rotation = NULL;
@@ -1834,6 +1894,24 @@ const int *
 cs_turbomachinery_get_cell_rotor_num(void)
 {
   return _turbomachinery->cell_rotor_num;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return arrayq associated to wall BC update.
+ *
+ * \param[out]   coftur  values of "cofimp" term before geometry update
+ * \param[out]   hfltur  local exchange coefficient before geometry update
+
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_turbomachinery_get_wall_bc_coeffs(cs_real_t  **coftur,
+                                     cs_real_t  **hfltur)
+{
+  *coftur = _turbomachinery->coftur;
+  *hfltur = _turbomachinery->hfltur;
 }
 
 /*----------------------------------------------------------------------------*/

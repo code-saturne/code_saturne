@@ -51,7 +51,7 @@ module turbomachinery
 
   ! Arrays associated to wall BC update
 
-  double precision, dimension(:), allocatable :: coftur, hfltur
+  double precision, dimension(:), pointer :: coftur, hfltur
 
   !> \}
 
@@ -78,6 +78,17 @@ module turbomachinery
       implicit none
       type(c_ptr), intent(out) :: irotce2
     end subroutine map_turbomachinery_rotor
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function mapping some data for turbomachinery
+
+    subroutine map_turbomachinery_arrays(coftur2, hfltur2) &
+      bind(C, name='cs_f_map_turbomachinery_arrays')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: coftur2, hfltur2
+    end subroutine map_turbomachinery_arrays
 
     !---------------------------------------------------------------------------
 
@@ -127,7 +138,7 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_p
+    type(c_ptr) :: c_p, c_coftur, c_hfltur
 
     ! Map turbomachinery module components to global c turbomachinery structure
 
@@ -140,9 +151,13 @@ contains
     rs_ell(1) = 0.d0
     rs_ell(2) = 0.d0
 
-    ! Allocate arrays for wall velocity BC update
+    ! map turbomachinery arrays for wall velocity BC update
 
-    if (iturbo.eq.2)  allocate(coftur(nfabor), hfltur(nfabor))
+    if (iturbo.eq.2) then
+      call map_turbomachinery_arrays(c_coftur, c_hfltur)
+      call c_f_pointer(c_coftur, coftur, [nfabor])
+      call c_f_pointer(c_hfltur, hfltur, [nfabor])
+    end if
 
     return
 
@@ -172,18 +187,6 @@ contains
     return
 
   end subroutine turbomachinery_update
-
-  !=============================================================================
-
-  ! Finalization of turbomachinery module variables
-
-  subroutine turbomachinery_finalize
-
-    if (iturbo.eq.2)  deallocate(coftur, hfltur)
-
-    return
-
-  end subroutine turbomachinery_finalize
 
   !=============================================================================
 

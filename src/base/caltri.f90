@@ -1148,8 +1148,6 @@ endif
 
 ! Free main arrays
 
-call turbomachinery_finalize
-
 call radiat_finalize
 
 call turbulence_bc_free_pointers
