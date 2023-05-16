@@ -617,55 +617,60 @@ _build_no_interlaced_ma(int                      stride,
                         const cs_range_set_t    *rs,
                         bool                     sep_diag)
 {
-  cs_gnum_t  *grows = NULL, *gcols = NULL, *g_r_ids = NULL, *g_c_ids = NULL;
-
   /* The second parameter is set to "true" meaning that the diagonal is stored
      separately. This corresponds to a MSR matrix storage. This is always the
      case in CDO schemes */
+
+  assert(x2x != NULL);
+  assert(sep_diag == true);
 
   cs_matrix_assembler_t  *ma = cs_matrix_assembler_create(rs->l_range,
                                                           sep_diag);
 
   /* First loop to count the max. size of the temporary buffers */
 
-  cs_lnum_t  n_x = x2x->n_elts;
-  cs_lnum_t  max_size = 0;
-  for (cs_lnum_t i = 0; i < n_x; i++)
-    max_size = CS_MAX(max_size, x2x->idx[i+1] - x2x->idx[i]);
-
-  /* We increment the max. size to take into account the diagonal entry */
-
-  int  buf_size = stride * stride * (max_size + 1);
-
-  BFT_MALLOC(grows, buf_size, cs_gnum_t);
-  BFT_MALLOC(gcols, buf_size, cs_gnum_t);
+  const cs_lnum_t  n_x = x2x->n_elts;
+  const cs_lnum_t  max_size = 512;
+  cs_gnum_t  grows[512], gcols[512];
 
   if (stride == 1)  { /* Simplified version (equivalent to the interlaced
                          version) */
 
+    /* Diagonal terms are excluded in the x2x connectivity. Add them. */
+
+    cs_matrix_assembler_add_g_ids(ma, n_x, rs->g_id, rs->g_id);
+
+    cs_lnum_t  shift = 0;
     for (cs_lnum_t row_id = 0; row_id < n_x; row_id++) {
 
       const cs_gnum_t  grow_id = rs->g_id[row_id];
       const cs_lnum_t  start = x2x->idx[row_id];
       const cs_lnum_t  end = x2x->idx[row_id+1];
 
-      /* Diagonal term is excluded in the x2x connectivity. Add it. */
-
-      grows[0] = grow_id, gcols[0] = grow_id;
+      cs_lnum_t  _n = end - start;
+      assert(_n < max_size);
+      if (shift + _n >= max_size - 1) {
+        cs_matrix_assembler_add_g_ids(ma, shift, grows, gcols);
+        shift = 0;
+      }
 
       /* Extra diagonal couples */
 
-      for (cs_lnum_t j = start, i = 1; j < end; j++, i++) {
-        grows[i] = grow_id;
-        gcols[i] = rs->g_id[x2x->ids[j]];
+      for (cs_lnum_t j = start; j < end; j++) {
+        grows[shift]   = grow_id;
+        gcols[shift] = rs->g_id[x2x->ids[j]];
+        shift++;
       }
-
-      cs_matrix_assembler_add_g_ids(ma, end - start + 1, grows, gcols);
 
     } /* Loop on entities */
 
+    if (shift > 0)
+      cs_matrix_assembler_add_g_ids(ma, shift, grows, gcols);
+
   }
   else { /* stride > 1 */
+
+    cs_gnum_t  *g_r_ids = NULL, *g_c_ids = NULL;
 
     BFT_MALLOC(g_r_ids, 2*stride, cs_gnum_t);
     g_c_ids = g_r_ids + stride;
@@ -680,18 +685,24 @@ _build_no_interlaced_ma(int                      stride,
      *  Each block A_.. is n_x * n_x
      */
 
+    int  shift = 0;
     for (cs_lnum_t row_id = 0; row_id < n_x; row_id++) {
 
       const cs_lnum_t  start = x2x->idx[row_id];
       const cs_lnum_t  end = x2x->idx[row_id+1];
       const int  n_entries = (end - start + 1) * stride * stride;
 
+      assert(n_entries < max_size);
+      if (shift + n_entries >= max_size - 1) {
+        cs_matrix_assembler_add_g_ids(ma, shift, grows, gcols);
+        shift = 0;
+      }
+
       for (int k = 0; k < stride; k++)
         g_r_ids[k] = rs->g_id[row_id + k*n_x];
 
       /* Diagonal term is excluded in this connectivity. Add it "manually" */
 
-      int shift = 0;
       for (int ki = 0; ki < stride; ki++) {
 
         const cs_gnum_t  grow_id = g_r_ids[ki];
@@ -728,10 +739,10 @@ _build_no_interlaced_ma(int                      stride,
 
       } /* Loop on number of DoFs by entity */
 
-      assert(shift == n_entries);
-      cs_matrix_assembler_add_g_ids(ma, n_entries, grows, gcols);
-
     } /* Loop on entities */
+
+    if (shift > 0)
+      cs_matrix_assembler_add_g_ids(ma, shift, grows, gcols);
 
     BFT_FREE(g_r_ids);
 
@@ -740,11 +751,6 @@ _build_no_interlaced_ma(int                      stride,
   /* Now compute structure */
 
   cs_matrix_assembler_compute(ma);
-
-  /* Free temporary buffers */
-
-  BFT_FREE(grows);
-  BFT_FREE(gcols);
 
   return ma;
 }
@@ -1735,15 +1741,15 @@ cs_cdo_system_build_block(cs_cdo_system_helper_t  *sh,
               __func__, block_id, sh->n_blocks);
 
   cs_cdo_connect_t  *connect = cs_shared_connect;
-  int _n_blocks = (block_id == -1) ? sh->n_blocks : 1;
+  int start_id = 0, end_id = sh->n_blocks;
+  if (block_id > -1) {
+    start_id = block_id;
+    end_id = start_id + 1;
+  }
 
-  for (int i = 0; i < _n_blocks; i++) {
+  for (int i = start_id; i < end_id; i++) {
 
-    cs_cdo_system_block_t  *b = NULL;
-    if (i == 0 && block_id > -1)
-      b = sh->blocks[block_id];
-    else
-      b = sh->blocks[i];
+    cs_cdo_system_block_t  *b = sh->blocks[i];
     assert(b != NULL);
 
     if (b->type == CS_CDO_SYSTEM_BLOCK_EXT)
