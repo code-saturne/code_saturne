@@ -408,6 +408,15 @@ cs_lagr_status(int  *model_flag,
 
 /*----------------------------------------------------------------------------*/
 /*!
+  * \brief Initialize all field BC coefficients.
+  */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_init_bc_coeffs(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
   * \brief Update the convective mass flux before the Navier Stokes equations
   *        (prediction and correction steps).
   *

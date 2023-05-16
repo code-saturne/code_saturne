@@ -287,6 +287,14 @@ interface
 
   !=============================================================================
 
+  subroutine fldtri() &
+    bind(C, name='cs_boundary_conditions_init_bc_coeffs')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine fldtri
+
+  !=============================================================================
+
 end interface
 
 !===============================================================================
