@@ -1368,10 +1368,10 @@ cs_boundary_conditions_create(void)
   if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
       || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1
       || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] > -1) {
-    BFT_REALLOC(bc_pm_info->timpat, n_b_faces, cs_real_t);
-    BFT_REALLOC(bc_pm_info->qimpcp, n_b_faces, cs_real_5_t);
-    BFT_REALLOC(bc_pm_info->timpcp, n_b_faces, cs_real_5_t);
-    BFT_REALLOC(bc_pm_info->distch, n_b_faces, cs_real_5_20_t);
+    BFT_REALLOC(bc_pm_info->timpat, CS_MAX_BC_PM_ZONE_NUM+1, cs_real_t);
+    BFT_REALLOC(bc_pm_info->qimpcp, CS_MAX_BC_PM_ZONE_NUM+1, cs_real_5_t);
+    BFT_REALLOC(bc_pm_info->timpcp, CS_MAX_BC_PM_ZONE_NUM+1, cs_real_5_t);
+    BFT_REALLOC(bc_pm_info->distch, CS_MAX_BC_PM_ZONE_NUM+1, cs_real_5_20_t);
     for (int i = 0; i < CS_MAX_BC_PM_ZONE_NUM+1; i++) {
       bc_pm_info->timpat[i] = 0;
       for (int j = 0; j < 5; j++) {
