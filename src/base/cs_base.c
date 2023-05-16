@@ -302,7 +302,7 @@ _cs_base_err_vprintf(const char  *format,
          proceed normally after the wait.
          As sleep() may be interrupted by a signal, repeat as long as the wait
          time is not elapsed; */
-      int wait_time = (cs_glob_n_ranks < 64) ? 1: 10;
+      int wait_time = (cs_glob_n_ranks < 64) ? 5: 15;
       double stime = cs_timer_wtime();
       double etime = 0.0;
       do {
