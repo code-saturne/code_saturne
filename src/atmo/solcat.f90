@@ -307,7 +307,7 @@ endif
             ' Values of tabulated coefficients',/,   &
             ' --------------------------------',/)
 2001 format(' Name      z0 dyn   z0 th    albedo   emissi   ', &
-            'Cs(e+6)  vegeta   c1w      c2w      ',          &
+            'Cs(e-6)  vegeta   c1w      c2w      ',          &
             'r1       r2')
 2002 format(' ',a8,10(f8.4,' '))
 2012 format(' --------------------------------',//)
