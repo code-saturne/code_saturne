@@ -46,6 +46,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------
  * Project an extruded mesh to its base plane.
  *
+ * This is currently only possible for 2D element topologies.
+ *
  * parameters:
  *   this_nodal  <-> pointer to structure that should be cut in edges
  *   chosen_axis <-- indicate which axis is selected to extract edges

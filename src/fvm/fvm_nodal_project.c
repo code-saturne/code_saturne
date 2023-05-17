@@ -400,6 +400,8 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
 /*----------------------------------------------------------------------------
  * Project an extruded mesh to its base plane.
  *
+ * This is currently only possible for 2D element topologies.
+ *
  * parameters:
  *   this_nodal        <-> pointer to structure that should be cut in edges
  *   chosen_axis       <-- indicate which axis is selected to extract edges
@@ -458,6 +460,18 @@ fvm_nodal_project(fvm_nodal_t  *this_nodal,
       this_nodal->sections[i] = e_section;
 
       n_edges += e_section->n_elements;
+
+    }
+    else if (_section->entity_dim == 3) {
+
+      char _name[] = "-";
+      const char *name = this_nodal->name;
+      if (name == NULL)
+        name = _name;
+      bft_error(__FILE__, __LINE__, 0,
+                _("%s: not implemented for element sections with 3D topology\n"
+                  " here for mesh %s and element type %s."),
+                __func__, name, fvm_element_type_name[_section->type]);
 
     }
 
