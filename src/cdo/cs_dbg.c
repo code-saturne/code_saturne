@@ -334,6 +334,43 @@ cs_dbg_dump_local_scalar_msr_matrix(const char          *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Print a linear system. Case of scalar-valued entries.
+ *
+ * \param[in] name         name of the equation related to the current system
+ * \param[in] matrix       pointer to the matrix to dump
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_dbg_print_local_scalar_msr_matrix(const char          *name,
+                                     const cs_matrix_t   *matrix)
+{
+  if (cs_matrix_get_type(matrix) != CS_MATRIX_MSR)
+    return;
+
+  FILE *f = fopen(name, "w");
+
+  const cs_lnum_t  size = cs_matrix_get_n_rows(matrix);
+  const cs_lnum_t  *row_index, *col_id;
+  const cs_real_t  *d_val, *x_val;
+
+  fprintf(f, "%d, %d\n", size, size);
+
+  cs_matrix_get_msr_arrays(matrix, &row_index, &col_id, &d_val, &x_val);
+
+  for (cs_lnum_t i = 0; i < size; i++) {
+
+    const cs_lnum_t  *idx = row_index + i;
+
+    fprintf(f, "%d %d %16.14e\n", i, i, d_val[i]);
+    for (cs_lnum_t j = idx[0]; j < idx[1]; j++)
+      fprintf(f, "%d %d %16.14e\n", i, col_id[j], x_val[j]);
+
+  } /* Loop on rows */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  In debug mode, dump a linear system
  *
  * \param[in] eqname     name of the equation related to the current system

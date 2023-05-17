@@ -197,6 +197,19 @@ cs_dbg_dump_local_scalar_msr_matrix(const char          *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Print a linear system. Case of scalar-valued entries.
+ *
+ * \param[in] name         name of the equation related to the current system
+ * \param[in] matrix       pointer to the matrix to dump
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_dbg_print_local_scalar_msr_matrix(const char          *name,
+                                     const cs_matrix_t   *matrix);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  In debug mode, dump a linear system
  *
  * \param[in] eqname     name of the equation related to the current system
