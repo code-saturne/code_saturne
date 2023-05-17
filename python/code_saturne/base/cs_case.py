@@ -1343,6 +1343,9 @@ class case:
                 e_path = self.generate_solver_mpmd_script(n_procs, mpi_env,
                                                           tool_args, use_mps)
 
+                if n_procs:
+                    mpi_cmd += '-n '+ str(n_procs) + ' '
+
             else:
                 raise RunCaseError(' No allowed MPI MPMD mode defined.\n')
 
