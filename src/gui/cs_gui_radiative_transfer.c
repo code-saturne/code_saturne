@@ -59,6 +59,7 @@
 #include "cs_parameters.h"
 #include "cs_physical_model.h"
 #include "cs_restart.h"
+#include "cs_thermal_model.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 
@@ -433,14 +434,11 @@ cs_gui_radiative_transfer_postprocess(void)
 
 void
 cs_gui_radiative_transfer_bcs(const    int   itypfb[],
-                              int            nvar,
-                              int            ivart,
                               int           *isothp,
                               double        *epsp,
                               double        *epap,
                               double        *textp,
-                              double        *xlamp,
-                              double        *rcodcl)
+                              double        *xlamp)
 {
   const cs_lnum_t  n_b_faces = cs_glob_mesh->n_b_faces;
 
@@ -540,8 +538,11 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
 
     if (cs_gui_strcmp(_boundary->nature[izone], "wall")) {
 
-      cs_lnum_t _nvar = nvar; /* ensure lnum type for multiplication */
-      cs_lnum_t _ivart = ivart;
+      cs_field_t *fth = cs_thermal_model_field();
+      cs_real_t *th_rcodcl3 = fth->bc_coeffs->rcodcl3;
+
+
+
 
       for (cs_lnum_t i = 0; i < n_faces; i++) {
         cs_lnum_t ifbr = faces_list[i];
@@ -572,8 +573,7 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
             isothp[ifbr] = CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T;
         }
         else if (isothp[ifbr] == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX) {
-          rcodcl[2 * n_b_faces*_nvar + _ivart*n_b_faces + ifbr]
-            = _boundary->conduction_flux[izone];
+          th_rcodcl3[ifbr]  = _boundary->conduction_flux[izone];
           epsp[ifbr] = _boundary->emissivity[izone];
           if (cs_gui_is_equal_real(_boundary->emissivity[izone], 0.))
             isothp[ifbr] = CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX;

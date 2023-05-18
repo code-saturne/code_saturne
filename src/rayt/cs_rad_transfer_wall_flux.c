@@ -57,6 +57,7 @@
 #include "cs_parameters.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"
+#include "cs_thermal_model.h"
 #include "cs_timer.h"
 
 #include "cs_rad_transfer.h"
@@ -89,23 +90,10 @@ BEGIN_C_DECLS
 /*!
  * \brief Wall temperature computation with flux balance.
  *
- * \param[in]  nvar     number of variable BC's
- * \param[in]  ivart    variable id of thermal variable
  * \param[in]  isothp   list of isothermal boundaries
  * \param[in]  tmin     minimum allowed temperature (clip to this value)
  * \param[in]  tmax     maximum allowed temperature (clip to this value)
  * \param[in]  tx       temperature relaxtion parameter
- * \param[in]  rcodcl   boundary condition values
- *                        rcodcl[0] = Dirichlet value
- *                        rcodcl[1] = exchange coefficient value. (infinite
- *                                    if no exchange)
- *                        rcodcl[2] = flux density value (negative if gain)
- *                                    in w/m2 or rugosity height (m)
- *                                    if icodcl=6,
- *                                    - for velocities, (vistl+visct)*gradu
- *                                    - for pressure, dt*gradp,
- *                                    - for scalars,
- *                                      cp*(viscls+visct/turb_schmidt)*gradt
  * \param[out] tparop   wall temperature in Kelvin
  * \param[in]  qincip   radiative flux density at boundaries
  * \param[in]  textp    exterior boundary temperature in degrees C
@@ -119,13 +107,10 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_wall_flux(int         nvar,
-                          int         ivart,
-                          int         isothp[],
+cs_rad_transfer_wall_flux(int         isothp[],
                           cs_real_t   tmin,
                           cs_real_t   tmax,
                           cs_real_t   tx,
-                          cs_real_t  *rcodcl,
                           cs_real_t   tparop[],
                           cs_real_t   qincip[],
                           cs_real_t   textp[],
@@ -199,7 +184,11 @@ cs_rad_transfer_wall_flux(int         nvar,
   /* Wall temperature computation
      ---------------------------- */
 
-  cs_lnum_t  ircodcl = ivart * n_b_faces + 2 * n_b_faces * nvar;
+  cs_field_t *fth = cs_thermal_model_field();
+  int *th_icodcl = fth->bc_coeffs->icodcl;
+  int *th_rcodcl1 = fth->bc_coeffs->rcodcl1;
+  int *th_rcodcl2 = fth->bc_coeffs->rcodcl2;
+  int *th_rcodcl3 = fth->bc_coeffs->rcodcl3;
 
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
 
@@ -266,7 +255,7 @@ cs_rad_transfer_wall_flux(int         nvar,
         cs_real_t epp    = epsp[ifac];
         cs_real_t sigt3  = stephn * cs_math_pow3(tparop[ifac]);
         qrayt  = epp * (qinci - sigt3 * tparop[ifac]);
-        detep  =   (qconv + qrayt - rcodcl[ifac + ircodcl])
+        detep  =   (qconv + qrayt - th_rcodcl3[ifac])
                  / (4.0 * epp * sigt3 + hfconp[ifac]);
       }
 
@@ -309,7 +298,7 @@ cs_rad_transfer_wall_flux(int         nvar,
 
       /* Computation */
       cs_lnum_t iel = cs_glob_mesh->b_face_cells[ifac];
-      tparop[ifac] =  (hfconp[ifac] * tempkp[iel] - rcodcl[ifac + ircodcl])
+      tparop[ifac] =  (hfconp[ifac] * tempkp[iel] - th_rcodcl3[ifac])
                      / CS_MAX(hfconp[ifac], cs_math_epzero);
 
       qconv = flconp[ifac];
