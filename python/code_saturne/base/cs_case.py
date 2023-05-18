@@ -1520,15 +1520,9 @@ class case:
                 s.write('  source ' + rcfile + '\n')
             s.write('fi\n\n')
 
-        # Boot MPI daemons if necessary
-
         if mpi_env.gen_hostsfile != None:
             cs_exec_environment.write_script_comment(s, 'Generate hostsfile.\n')
             s.write(mpi_env.gen_hostsfile + ' || exit $?\n\n')
-
-        if n_procs > 1 and mpi_env.mpiboot != None:
-            cs_exec_environment.write_script_comment(s, 'Boot MPI daemons.\n')
-            s.write(mpi_env.mpiboot + ' || exit $?\n\n')
 
         # Ensure we are in the correct directory
 
@@ -1549,12 +1543,6 @@ class case:
 
         cs_exec_environment.write_export_env(s, 'CS_RET',
                                              cs_exec_environment.get_script_return_code())
-
-        # Halt MPI daemons if necessary
-
-        if n_procs > 1 and mpi_env.mpihalt != None:
-            cs_exec_environment.write_script_comment(s, 'Halt MPI daemons.\n')
-            s.write(mpi_env.mpihalt + '\n\n')
 
         if mpi_env.del_hostsfile != None:
             cs_exec_environment.write_script_comment(s, 'Remove hostsfile.\n')

@@ -102,10 +102,6 @@
 # gen_hostsfile =
 ### Shell command to delete hostsfile if required
 # del_hostsfile =
-### Command to start environment (e.g. mpdboot for some old MPICH2 builds)
-# mpiboot =
-### Command to halt environment (e.g. mpdallexit after mpdboot)
-# mpihalt =
 ### Multiple Program Multiple Data mode: 'mpiexec' (mpiexec ':'-separated syntax),
 ### 'configfile' (mpiexec -configfile syntax), or 'script'
 # mpmd = mpiexec

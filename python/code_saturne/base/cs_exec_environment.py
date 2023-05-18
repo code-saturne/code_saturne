@@ -1482,8 +1482,6 @@ class mpi_environment:
 
         self.gen_hostsfile = None
         self.del_hostsfile = None
-        self.mpiboot = None
-        self.mpihalt = None
         self.mpiexec = None
         self.mpiexec_opts = None
         self.mpiexec_n = None
@@ -1601,18 +1599,13 @@ class mpi_environment:
         Try to determine the program manager for MPICH.
         """
 
-        # Only smpd is supported on Windows.
-
-        if sys.platform.startswith('win'):
-            return 'smpd'
-
         # Check if we have a suffix which is self-explanatory
 
         i = mpiexec_path.rfind('.')
 
         if i > -1:
             suffix = mpiexec_path[i+1:]
-            if suffix in ['hydra', 'gforker', 'remshell', 'smpd', 'mpd']:
+            if suffix in ['hydra', 'gforker', 'remshell']:
                 return suffix
 
         # If command is an external wrapper, use its base name
@@ -1646,14 +1639,9 @@ class mpi_environment:
         # If MPICH info is not available, try
         # to determine this in another way
 
-        if os.path.islink(mpiexec_path):
-            if os.path.basename(os.path.realpath(mpiexec_path)) == 'mpiexec.py':
-                return 'mpd'
         info = get_command_outputs(mpiexec_path + ' -help')
         if info.find('Hydra') > -1:
             return 'hydra'
-        elif info.find(' smpd ') > -1:
-            return 'smpd'
         elif info.find('-usize') > -1:
             return 'gforker' # might also be remshell
 
@@ -1693,8 +1681,8 @@ class mpi_environment:
         # Determine base executable paths
 
         # Executables suffixes 'mpich' may occur in case
-        # of Linux distribution packaging, while 'hydra', 'smpd',
-        # 'gforker', and 'remshell' are defined by the standard MPICH
+        # of Linux distribution packaging, while 'hydra', 'gforker',
+        # and 'remshell' are defined by the standard MPICH
         # install and determine the associated launcher.
 
         # Caution: if srun is used, it is probably not in the same
@@ -1719,9 +1707,6 @@ class mpi_environment:
                     absname = os.path.join(d, name)
                     if os.path.isfile(absname):
                         pm = self.__get_mpich_default_pm__(absname)
-                        # MPD and SMPD are deprecated; avoid them
-                        if pm == 'mpd' or pm == 'smpd':
-                            continue
                         # Set launcher name
                         if d == self.bindir:
                             self.mpiexec = absname
@@ -1775,11 +1760,6 @@ class mpi_environment:
                 ppn = resource_info.n_procs_per_node()
                 if ppn:
                     self.mpiexec_n_per_node = ' -ppn ' + str(ppn)
-
-        elif pm == 'remshell':
-            hostsfile = resource_info.get_hosts_file(wdir)
-            if hostsfile != None:
-                self.mpiboot += ' --file=' + hostsfile
 
         elif pm == 'gforker':
             hosts = False
@@ -1941,10 +1921,6 @@ class mpi_environment:
         Initialize for MS-MPI environment.
 
         Microsoft MPI is based on standard MPICH distribution.
-
-        It allows only for the smpd process manager that consists
-        of independent daemons, so if a hostsfile is used, it must
-        be passed to mpiexec.
         """
 
         # On Windows, mpiexec.exe will be found through the PATH variable
