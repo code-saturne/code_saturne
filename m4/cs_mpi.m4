@@ -224,16 +224,6 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
                  [mpi_type=MPICH])
   fi
   if test "x$mpi_type" = "x"; then
-    AC_EGREP_CPP([cs_mpich2],
-                 [
-                  #include <mpi.h>
-                  #ifdef MPICH2
-                  cs_mpich2
-                  #endif
-                  ],
-                 [mpi_type=MPICH2])
-  fi
-  if test "x$mpi_type" = "x"; then
     AC_EGREP_CPP([cs_ompi],
                  [
                   #include <mpi.h>
@@ -242,16 +232,6 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
                   #endif
                   ],
                   [mpi_type=OpenMPI])
-  fi
-  if test "x$mpi_type" = "x"; then
-    AC_EGREP_CPP([cs_mpibull2],
-                 [
-                  #include <mpi.h>
-                  #ifdef MPIBULL2_NAME
-                  cs_mpibull2
-                  #endif
-                  ],
-                  [mpi_type=MPIBULL2])
   fi
   if test "x$mpi_type" = "x"; then
     AC_EGREP_CPP([cs_platform_mpi],
@@ -266,37 +246,23 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
 
   # Add a specific preprocessor directive to skip the MPI C++ bindings
   case $mpi_type in
-    OpenMPI)         MPI_CPPFLAGS="$MPI_CPPFLAGS -DOMPI_SKIP_MPICXX" ;;
-    MPICH | MPICH2)  MPI_CPPFLAGS="$MPI_CPPFLAGS -DMPICH_SKIP_MPICXX" ;;
+    OpenMPI) MPI_CPPFLAGS="$MPI_CPPFLAGS -DOMPI_SKIP_MPICXX" ;;
+    MPICH)   MPI_CPPFLAGS="$MPI_CPPFLAGS -DMPICH_SKIP_MPICXX" ;;
   esac
 
-  # Now try to determine if we are in fact using a variant MPI,
-  # which does not define its own version macros in mpi.h but still uses its
-  # own numbering (very ugly, but Intel and Bull do it).
+  # Now try to determine if we are in fact using a variant MPI.
 
   case $mpi_type in
-    OpenMPI)         if test -d "${mpi_libdir}/bullxmpi" ; then
-                       mpi_type=BullxMPI
-                       AC_DEFINE([MPI_VENDOR_NAME], "BullxMPI", [MPI vendor name])
-                     fi
-                     ;;
-    MPICH | MPICH2)  cs_mpisupport=""
-                     if test -f "${mpi_libdir}/../mpisupport.txt" ; then
-                       # mpi_libdir may point to lib sudirectory
-                       cs_mpisupport="${mpi_libdir}/../mpisupport.txt"
-                     elif test -f "${mpi_libdir}/../../mpisupport.txt" ; then
-                       # mpi_libdir may point to intel64/lib sudirectory
-                       cs_mpisupport="${mpi_libdir}/../../mpisupport.txt"
-                     fi
-                     if test "x$cs_mpisupport" != "x" ; then
-                       grep "Intel(R) MPI" "$cs_mpisupport" > /dev/null 2>&1
-                       if test $? = 0 ; then
-                         mpi_type=Intel_MPI
-                         AC_DEFINE([MPI_VENDOR_NAME], "Intel MPI", [MPI vendor name])
-                       fi
-                     fi
-                     unset cs_mpisupport
-                     ;;
+    MPICH)
+      AC_EGREP_CPP([cs_intel_mpi],
+                   [
+                    #include <mpi.h>
+                    #ifdef I_MPI_VERSION
+                    cs_intel_mpi
+                    #endif
+                    ],
+                   [mpi_type=Intel_MPI])
+      ;;
   esac
 
   # If only MPI headers have been detected so far (i.e. we are
@@ -308,8 +274,8 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
 
     case $mpi_type in
 
-      MPICH | MPICH2)
-        AC_MSG_CHECKING([for MPICH-3 or MPICH2])
+      MPICH)
+        AC_MSG_CHECKING([for MPICH])
         # First try (with ROMIO)
         case $host_os in
           mingw64)

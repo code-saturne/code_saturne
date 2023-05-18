@@ -83,7 +83,7 @@ _mpi_init(void)
   int flag = 0;
   bool use_mpi = false;
 
-#if   defined(__bg__) || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+#if defined(__CRAYXT_COMPUTE_LINUX_TARGET)
 
   use_mpi = true;
 

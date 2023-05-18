@@ -1245,7 +1245,7 @@ cs_base_mpi_init(int    *argc,
 
   use_mpi = true;
 
-#elif defined(MPICH) || defined(MPICH2) || defined(MSMPI_VER)
+#elif defined(MPICH) || defined(MSMPI_VER)
 
   /* Notes: Microsoft MPI is based on MPICH */
 

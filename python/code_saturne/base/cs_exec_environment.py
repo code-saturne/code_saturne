@@ -1530,11 +1530,9 @@ class mpi_environment:
 
         if len(self.type) > 0:
             mpi_env_by_type = {'MPICH':self.__init_mpich__,
-                               'MPICH2':self.__init_mpich__,
                                'Intel_MPI':self.__init_mpich__,
                                'MSMPI':self.__init_msmpi__,
                                'OpenMPI':self.__init_openmpi__,
-                               'BullxMPI':self.__init_openmpi__,
                                'Platform_MPI':self.__init_platform_mpi__}
             if self.type in mpi_env_by_type:
                 init_method = mpi_env_by_type[self.type]
@@ -1600,10 +1598,10 @@ class mpi_environment:
     def __get_mpich_default_pm__(self, mpiexec_path):
 
         """
-        Try to determine the program manager for MPICH2 or MPICH-3.
+        Try to determine the program manager for MPICH.
         """
 
-        # Only smpd is supported on Windows (or was in MPICH2).
+        # Only smpd is supported on Windows.
 
         if sys.platform.startswith('win'):
             return 'smpd'
@@ -1623,13 +1621,10 @@ class mpi_environment:
         if cmd not in ['mpiexec', 'mpirun']:
             return cmd
 
-        # Use mpichversion/mpich2version preferentially
+        # Use mpichversion preferentially
 
         infoname = os.path.join(os.path.split(mpiexec_path)[0],
                                 'mpichversion')
-        if not os.path.isfile(infoname):
-            infoname = os.path.join(os.path.split(mpiexec_path)[0],
-                                    'mpich2version')
 
         if os.path.isfile(infoname):
 
@@ -1644,17 +1639,11 @@ class mpi_environment:
                     if s[0:len(pm)] == pm:
                         return pm
 
-            # Otherwise, we know the default changed with MPICH2 1.3,
-            # from MPD to Hydra.
+            # Otherwise, default to Hydra.
 
-            info = get_command_outputs(infoname + ' -version')
-            v = info.rstrip().split('\t')[1].split('.')
-            if int(v[0]) == 1 and int(v[1]) < 3:
-                return 'mpd'
-            else:
-                return 'hydra'
+            return 'hydra'
 
-        # If MPICH2 / MPICH-3 info is not available, try
+        # If MPICH info is not available, try
         # to determine this in another way
 
         if os.path.islink(mpiexec_path):
@@ -1679,9 +1668,9 @@ class mpi_environment:
     def __init_mpich__(self, p, resource_info=None, wdir = None):
 
         """
-        Initialize for MPICH-3 environment.
+        Initialize for MPICH environment.
 
-        MPICH2, MPICH-3, and their derivatives allow for different process
+        MPICH, and its derivatives allow for different process
         managers, all or some of which may be built depending on
         installation options:
 
@@ -1699,17 +1688,11 @@ class mpi_environment:
           A hostsfile by name of machines should contain the list
           of machines on which to run, one machine name per line
           (machines may be listed multiple times if necessary).
-
-        For completeness, we may mention that MPICH2 also included
-        MPD, which was deprecated in MPICH2-1.3 (in October 2010), and
-        SMPD, which could be used both on Windows and Linux. They
-        are not supported anymore, though they can still be handled through
-        post-install settings.
         """
 
         # Determine base executable paths
 
-        # Executables suffixes 'mpich' or 'mpich2' may occur in case
+        # Executables suffixes 'mpich' may occur in case
         # of Linux distribution packaging, while 'hydra', 'smpd',
         # 'gforker', and 'remshell' are defined by the standard MPICH
         # install and determine the associated launcher.
@@ -1816,8 +1799,6 @@ class mpi_environment:
 
         if self.type == 'MPICH':
             self.info_cmds = ['mpichversion']
-        if self.type == 'MPICH2':
-            self.info_cmds = ['mpich2version']
 
     #---------------------------------------------------------------------------
 
@@ -1959,7 +1940,7 @@ class mpi_environment:
         """
         Initialize for MS-MPI environment.
 
-        Microsoft MPI is based on standard MPICH2 distribution.
+        Microsoft MPI is based on standard MPICH distribution.
 
         It allows only for the smpd process manager that consists
         of independent daemons, so if a hostsfile is used, it must

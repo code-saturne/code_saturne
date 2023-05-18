@@ -110,13 +110,9 @@ _mpi_init(void)
   int flag = 0;
   bool use_mpi = false;
 
-#if   defined(__bg__) || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+#if defined(__CRAYXT_COMPUTE_LINUX_TARGET)
 
   use_mpi = true;
-
-#elif defined(MPICH2)
-  if (getenv("PMI_RANK") != NULL)
-    use_mpi = true;
 
 #elif defined(MPICH_NAME)
 

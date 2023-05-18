@@ -38,7 +38,7 @@
 # Current systems
 # ---------------
 
-# For MPICH2 or MPICH-3 (which also provides the mpiexec command)
+# For MPICH (which also provides the mpiexec command)
 if [ "$PMI_RANK" != "" ] ; then
   MPI_RANK="$PMI_RANK"
 

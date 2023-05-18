@@ -633,8 +633,6 @@ _mpi_version_info(bool  log)
   snprintf(mpi_lib, 31, "%s %d.%d.%d",
            MPI_VENDOR_NAME,
            OMPI_MAJOR_VERSION, OMPI_MINOR_VERSION, OMPI_RELEASE_VERSION);
-#elif defined(MPICH2_VERSION)
-  snprintf(mpi_lib, 31, "%s %s", MPI_VENDOR_NAME, MPICH2_VERSION);
 #elif defined(MPICH_VERSION)
   snprintf(mpi_lib, 31, "%s %s", MPI_VENDOR_NAME, MPICH_VERSION);
 #else
@@ -649,12 +647,6 @@ _mpi_version_info(bool  log)
   snprintf(mpi_lib, 31, "Open MPI");
 #endif
 
-#elif defined(MPICH2)
-#if defined(MPICH2_VERSION)
-  snprintf(mpi_lib, 31, "MPICH2 %s", MPICH2_VERSION);
-#else
-  snprintf(mpi_lib, 31, "MPICH2");
-#endif
 #elif defined(MPICH_NAME)
 #if defined(MPICH_VERSION)
   snprintf(mpi_lib, 31, "MPICH %s", MPICH_VERSION);
@@ -667,7 +659,9 @@ _mpi_version_info(bool  log)
 
   /* Possible additional MPI vendor information */
 
-#if defined(MVAPICH2_VERSION)
+#if defined(I_MPI_VERSION)
+  snprintf(mpi_vendor_lib, 31, "Intel MPI %s", I_MPI_VERSION);
+#elif defined(MVAPICH2_VERSION)
   snprintf(mpi_vendor_lib, 31, "MVAPICH2 %s", MVAPICH2_VERSION);
 #elif defined(MSMPI_VER)
   snprintf(mpi_vendor_lib, 31, "MS-MPI");
