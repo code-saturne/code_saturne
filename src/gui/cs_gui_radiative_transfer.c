@@ -541,9 +541,6 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
       cs_field_t *fth = cs_thermal_model_field();
       cs_real_t *th_rcodcl3 = fth->bc_coeffs->rcodcl3;
 
-
-
-
       for (cs_lnum_t i = 0; i < n_faces; i++) {
         cs_lnum_t ifbr = faces_list[i];
 
