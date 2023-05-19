@@ -89,9 +89,9 @@ BEGIN_C_DECLS
  *
  * The following face characteristics must be set:
  *  - isothp(face_id) boundary face type
- *    * CS_BOUNDARY_RAD_GW:
+ *    * CS_BOUNDARY_RAD_WALL_GRAY:
  *      Gray wall with temperature based on fluid BCs
- *    * CS_BOUNDARY_RAD_GW_EXTERIOR_T:
+ *    * CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T:
  *      Gray wall with fixed outside temperature
  *    * CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T:
  *      Reflecting wall with fixed outside temperature
