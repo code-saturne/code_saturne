@@ -23,12 +23,12 @@ variations observed in the standard atmosphere:
 \hline
 
 altitude \newline
-(m)&
-Temperature (\textdegree C)&
+  (\si{m})&
+  Temperature (\si{C})&
 Pressure \newline
-(Pa)&
+  (\si{Pa})&
 Density \newline
-(kg/m$^{3})$ \\
+  ($\si{kg/m^{3}}$) \\
 
 \hline
 0.&
@@ -127,7 +127,7 @@ expression is (see \cite{Holton:1979} and \cite{Stull:1988}):
 \theta =T\left( {\frac{p_{s}}{p}} \right)^{\left( {\frac{R^{\star }}{C_{p}}} \right)}
 \end{equation}
 where $p_{s}$ is a constant pressure conventionally taken as 1000 mb
-and $R^{\star}$ is the gaz constant for dry air (=287 $Jkg^{-1}K^{-1}$).
+and $R^{\star}$ is the gas constant for dry air ($=\SI{287}{Jkg^{-1}K^{-1}}$).
 With this variable the thermal equation becomes:
 
 \begin{equation}
@@ -215,7 +215,7 @@ method.
 
 This method has a rather long history of use in meteorological
 modelisation: the first publication (see \cite{Cressman:1959}) appeared more than 50 years ago.
-Its formulation is simple: in order to estimate the value of a physical variable (\emph{e.g.} wind components, temperature)
+Its formulation is simple: in order to estimate the value of a physical variable ({e.g.} wind components, temperature)
 at a grid point from scattered data points one uses a weighted average of the values.
 The weights of the different data are function of the displacement between
 the data points and the estimation point, very often function of their
@@ -227,7 +227,7 @@ $(x_{i}y_{i}z_{i})$, by (x, y, z) the coordinates of the generic estimation
 point and by Vi the values of the variable of interest the estimate reads:
 \begin{equation}
 \tilde{V}\, =\frac{\sum\nolimits_i {V_{i\, }f(x-x_{i},y-y_{i},z-z_{i})}
-}{\sum\nolimits_i {f(x-x_{i},y-y_{i},z-z_{i})} }
+}{\sum\nolimits_i {f(x-x_{i},y-y_{i},z-z_{i})} }.
 \end{equation}
 This will be a well-defined weighted average as long as the weight function
 f is positive and the sum appearing as denominator strictly positive. For
@@ -235,7 +235,7 @@ application in \CS the following form of f has been chosen:
 
 \begin{equation}
 f\left( x,y,z \right)=
-\mathrm{exp}(-\frac{x^{2}+y^{2}}{4R_{H}^{2}}-\frac{z^{2}}{4R_{V}^{2}})
+\exp\left(-\dfrac{x^{2}+y^{2}}{4R_{H}^{2}}-\frac{z^{2}}{4R_{V}^{2}}\right)
 \end{equation}
 
 The radius $R_{H}$ ($R_{V})$ is the so called horizontal (vertical) range
@@ -251,8 +251,8 @@ interpolator, but a smoothing estimator.
 \section{Radiation parameterizations for atmosphere}
 
 For these parameterizations we distinguish two spectral domains: visible
-(0.2 $\mu$m -- 5 $\mu$m) for solar radiation and infrared (5 $\mu$m
--- 100 $\mu$m) for thermal radiation.
+($\SI{0.2}{ \mu m} -- \SI{5}{\mu m}$) for solar radiation and infrared
+($\SI{5}{\mu m} -- \SI{100}{ \mu m}$) for thermal radiation.
 
 \subsection{Thermal infrared radiation}
 The radiation transfer equation applied to a plan parallel atmosphere (1-D)
@@ -261,77 +261,77 @@ broadband emissivity approximation for spectral integration (see \cite{Liou:2002
 and \cite{Makke:2016}) leads to the expressions of the upward
 and downward fluxes:
 \begin{equation}
-F\uparrow =\sigma T_{g}^{4}\left( 1-\epsilon \left( z,0 \right)
-\right)-\int_0^z \sigma T^{4}\left( z' \right)\frac{d\epsilon
-}{dz'}\left( z,z' \right)dz'
+F^\uparrow =\sigma T_{g}^{4}\left( 1-\epsilon \left( z,0 \right)
+\right)-\int_0^z \sigma T^{4}\left( z' \right)\frac{\dd \epsilon
+}{\dd z'}\left( z,z' \right)\dd z'
 \end{equation}
 
 \begin{equation}
-F\downarrow =\int_z^\infty \sigma T^{4}\left( z' \right)\frac{d\epsilon
-}{dz'}\left( z,z' \right)dz'
+F^\downarrow =\int_z^\infty \sigma T^{4}\left( z' \right)\frac{\dd \epsilon
+}{\dd z'}\left( z,z' \right)\dd z'
 \end{equation}
-Where T is the fluid temperature in K, T$_{g}$ the ground surface temperature in K,
+Where $T$ is the fluid temperature in \si{K}, $T_{g}$ the ground surface temperature in \si{K},
 
-$\sigma $ the Stefan Boltzman constant and $\varepsilon$ the atmosphere
+$\sigma $ the Stefan Boltzman constant and $\epsilon$ the atmosphere
 emissivity defines by:
 \begin{equation}
-\varepsilon \left( z,z' \right)
+\epsilon \left( z,z' \right)
 =\frac{1}{\sigma T^{4}}\int_0^\infty {\left(1-I_{\lambda}\left(z,z'
-\right) \right)\pi I_{\lambda}^{0}} \left( z,z' \right)d\lambda
+\right) \right)\pi I_{\lambda}^{0}} \left( z,z' \right)\dd\lambda
 \end{equation}
 \newline
 Where
 $I_{\lambda }^{0}=
-{2hc^{2}\lambda^{-5}}
-{(e^{\frac{{hc}}{k_{B}\lambda T}}-1)}$ is the Planck function,
+{2 hc^{2}\lambda^{-5}}
+{\left(e^{\frac{{hc}}{k_{B} \lambda T}}-1\right)}$ is the Planck function,
 \newline
 $I_{\lambda}$ the transmittance and $k_{B}$ is the Boltzman constant.
 \newline
 \newline
 If the ground surface is not considered as a black body, with a ground
-emissivity $\varepsilon_{g}$ the upward flux can be written (see \cite{Ponnulakshmi:2012}):
+emissivity $\epsilon_{g}$ the upward flux can be written (see \cite{Ponnulakshmi:2012}):
 \newline
 \begin{equation}
-F\uparrow =\varepsilon_{g}\sigma T_{g}^{4}\left( 1-\varepsilon \left( z,0
-\right) \right)+\left( 1-\varepsilon_{g} \right)\int_0^\infty {\sigma
-T^{4}} \left( z' \right)\varepsilon \left( -z,z' \right)dz'-\int_0^z
-{\sigma T^{4}\left( z' \right)\frac{d\varepsilon }{dz'}\left(z',z
-\right)dz'}
+F^\uparrow =\epsilon_{g}\sigma T_{g}^{4}\left( 1-\epsilon \left( z,0
+\right) \right)+\left( 1-\epsilon_{g} \right)\int_0^\infty {\sigma
+T^{4}} \left( z' \right)\epsilon \left( -z,z' \right)\dd z'-\int_0^z
+{\sigma T^{4}\left( z' \right)\frac{\dd\epsilon }{\dd z'}\left(z',z
+\right)\dd z'}
 \end{equation}
 \newline
 In this expression, the second term can be considered as a downward
-radiation along --z and infinite. Integration by parts and supposing
-isothermal atmospheric layers above zt $=$ 11000 m leads to the following
+radiation along $-z$ and infinite. Integration by parts and supposing
+isothermal atmospheric layers above $z_t = \SI{11000}{m}$  leads to the following
 expressions for upward and downward fluxes:
 \newline
 \begin{equation}
-F\downarrow =\varepsilon \left( \infty ,0 \right)\sigma T^{4}\left( zt
-\right)\, -\, \int_z^{zt} {\varepsilon (z',z)\frac{d \sigma
-T^{4}(z')}{dz'}dz'}
+F^\downarrow =\epsilon \left( \infty ,0 \right)\sigma T^{4}\left( z_t
+\right)\, -\, \int_z^{z_t} {\epsilon (z',z)\frac{\dd \sigma
+T^{4}(z')}{\dd z'}\dd z'}
 \end{equation}
 
 \begin{equation}
-F\uparrow =\varepsilon_{g}T_{g}^{4}+\int_0^z {\frac{d\left( \sigma
-T^{4}\left( z' \right) \right)}{dz'}\, \varepsilon \left( z',z
-\right)dz'+\left( 1-\varepsilon_{g} \right)[\sigma T^{4}} \left( zt
-\right)\, \varepsilon \left( \infty ,-z \right)-\int_0^{zt} \frac{d\sigma
-T^{4}\left( z' \right)}{dz'} \, \varepsilon (-z,z')dz']
+F^\uparrow =\epsilon_{g}T_{g}^{4}+\int_0^z {\frac{\dd\left( \sigma
+T^{4}\left( z' \right) \right)}{\dd z'}\, \epsilon \left( z',z
+\right)\dd z'+\left( 1-\epsilon_{g} \right)[\sigma T^{4}} \left( z_t
+\right)\, \epsilon \left( \infty ,-z \right)-\int_0^{z_t} \frac{\dd\sigma
+T^{4}\left( z' \right)}{\dd z'} \, \epsilon (-z,z') \dd z']
 \end{equation}
 
 The heating/cooling for atmospheric layers is deduced from the divergence of
 the net Flux:
 \begin{equation}
-F_{n}=F\uparrow -F\downarrow .
+F_{n}=F^\uparrow -F^\downarrow .
 \end{equation}
 
 \begin{multline}
-\frac{dF_{n}}{dz}=\int_0^z {\frac{d\left( \sigma T^{4}\left( z' \right)
-\right)}{dz'}\, \frac{d\varepsilon \left( z',z
-\right)}{dz'}dz'
-+\left( 1-\varepsilon_{g} \right)[\sigma T^{4}} \left(zt \right)\frac{\, d\varepsilon \left( \infty ,-z \right)}{dz'}\\
--\int_0^{zt} \frac{d\sigma T^{4}\left( z' \right)}{dz'} \frac{\, d\varepsilon \left( -z,z' \right)}{dz'}dz']
--\, \frac{d\varepsilon \left( \infty ,0 \right)}{dz}\sigma T^{4}\left( zt \right)
-+\, \int_z^{zt} {\frac{d\varepsilon (z',z)}{dz'}\frac{d\sigma T^{4}(z')}{dz'}dz'}
+\frac{\dd F_{n}}{\dd z}=\int_0^z {\frac{\dd\left( \sigma T^{4}\left( z' \right)
+\right)}{\dd z'}\, \frac{\dd \epsilon \left( z',z
+\right)}{\dd z'}\dd z'
++\left( 1-\epsilon_{g} \right)[\sigma T^{4}} \left(z_t \right)\frac{\, \dd\epsilon \left( \infty ,-z \right)}{\dd z'}\\
+-\int_0^{z_t} \frac{\dd\sigma T^{4}\left( z' \right)}{\dd z'} \frac{\, \dd\epsilon \left( -z,z' \right)}{\dd z'}\dd z']
+-\, \frac{\dd\epsilon \left( \infty ,0 \right)}{\dd z}\sigma T^{4}\left( z_t \right)
++\, \int_z^{z_t} {\frac{\dd\epsilon (z',z)}{\dd z'}\frac{\dd\sigma T^{4}(z')}{\dd z'}\dd z'}
 \end{multline}
 
 \subsubsection{Clear sky}
@@ -340,33 +340,33 @@ $u_{g}(z,z')$ for major absorbing gases: water vapor, carbon dioxide and ozone.
 
 \begin{equation}
 u_{g}\left( z,z' \right)=\int_{z'}^{z} \rho_{g} \left( z"
-\right)\mathrm{\Psi }\left( T_{0},P_{0},T,P \right)\, dz"
+\right)\mathrm{\Psi }\left( T_{0},P_{0},T,P \right)\, \dd z"
 \end{equation}
 where $\mathrm{\Psi }$ is a scaling function eliminating the dependence of
 the absorption coefficient on pressure and temperature. These corrections,
 known as the one-parameter scaling approximation, are attributed to \cite{Chou:1980}.
-The emissivity $\varepsilon(z,z')$ for each gas is now a
-function of the scaled path $\varepsilon (u_{g}(z,z'))$. The total emissivity for
+The emissivity $\epsilon(z,z')$ for each gas is now a
+function of the scaled path $\epsilon (u_{g}(z,z'))$. The total emissivity for
 the three dominant atmospheric gases in the infrared domain is:
 
 \begin{multline}
-\varepsilon \left( z,z' \right)=
-\, \varepsilon_{H_{2}O}(u_{H_{2}O}\left(z,z' \right)
-+\varepsilon_{O_{3}}(u_{O_{3}}\left( z,z' \right)\\
-+\varepsilon_{CO_{2}}(u_{CO_{2}}\left( z,z' \right)T_{15\mu }\left( u_{H_{2}O}\left( z,z'
-\right) \right)+\varepsilon_{dim}(u_{dim}\left( z,z' \right)T_{w}\left(
+\epsilon \left( z,z' \right)=
+\, \epsilon_{H_{2}O}(u_{H_{2}O}\left(z,z' \right)
++\epsilon_{O_{3}}(u_{O_{3}}\left( z,z' \right)\\
++\epsilon_{CO_{2}}(u_{CO_{2}}\left( z,z' \right)T_{15\mu }\left( u_{H_{2}O}\left( z,z'
+\right) \right)+\epsilon_{dim}(u_{dim}\left( z,z' \right)T_{w}\left(
 u_{H_{2}O}\left( z,z' \right) \right)
 \end{multline}
 
 The optical thickness are:
 \begin{equation}
 u_{H_{2}O}\left( z,z' \right)=\int_{z'}^{z} \rho_{H_{2}O} \left( z" \right)\,
-\left( \frac{P(z")}{P_{0}}\sqrt \frac{T_{0}}{T(z")} \right)^{n}dz"
+\left( \frac{P(z")}{P_{0}}\sqrt \frac{T_{0}}{T(z")} \right)^{n}\dd z"
 \end{equation}
 
 \begin{equation}
 u_{CO_{2}}\left( z,z' \right)=\int_{z'}^{z} \rho_{CO_{2}} \left( z" \right)\,
-\left( \frac{P(z")}{P_{0}} \right)^{3/4}dz"
+\left( \frac{P(z")}{P_{0}} \right)^{3/4}\dd z"
 \end{equation}
 
 \begin{equation}
@@ -376,7 +376,7 @@ u_{O_{3}}\left( z,z' \right)=\left| f_{Green}\left( z
 
 \begin{equation}
 u_{dim}\left( z,z' \right)=\int_{z'}^{z} \rho_{H_{2}O} \left( z" \right)\,
-e(z")dz"f(T(z"),T_{0})dz"
+e(z")\dd z"f(T(z"),T_{0})\dd z"
 \end{equation}
 Where $f\left( T\left( z \right)\mathrm{,}T_{\mathrm{0}}
 \right)\mathrm{=exp}\left[ \mathrm{1800}\left(
@@ -384,59 +384,59 @@ Where $f\left( T\left( z \right)\mathrm{,}T_{\mathrm{0}}
 \right) \right]$ and $f_{Green}\left( z
 \right)\mathrm{=}a\frac{\mathrm{1+}e^{\mathrm{-}b\mathrm{/}c}}{\mathrm{1+}e^{\mathrm{(}z\mathrm{-}b\mathrm{)/}c}}$
 \newline
-with a$=$0.1 cm$/$STP (Standard Temperature and Pressure), b$=$ 20km,
+with $a=\SI{0.1}{cm}$/STP (Standard Temperature and Pressure), $b= \SI{20}{km}$,
 \newline
-c chosen as b/c$=$5 (see \cite{Green:1964})
+$c$ chosen as $b/c=5$ (see \cite{Green:1964})
 
 The associated emissivities are:
 
 \cite{Sasamori:1968} formula for water vapor, carbon dioxide and ozone:
 \begin{equation}
-\varepsilon_{H_{2}O}\left( u_{H_{2}O} \right)=\left\{ {\begin{array}{l}
- 0.846\ast \left( 3.59\times {10}^{-5}+\frac{u_{H_{2}O}}{10.} \right)^{0.243}\,
-\, for\, u_{H_{2}O}<0.1\, kg.m^{-2} \\
- 0.24\, {log}_{10}\left( 0.01+\frac{u_{H_{2}O}}{10.} \right)+0.622\, \, \,
-for\, u_{H_{2}O}\ge 0.1\, kg.m^{-2} \\
- \end{array}} \right.
+\epsilon_{H_{2}O}\left( u_{H_{2}O} \right)=\left\{
+{\begin{array}{l l}
+  0.846\ast \left( 3.59\times {10}^{-5}+\frac{u_{H_{2}O}}{10.} \right)^{0.243}
+  &\text{ for } u_{H_{2}O}< \SI{0.1}{kg.m^{-2}} \\
+  0.24\, {\log}_{10}\left( 0.01+\frac{u_{H_{2}O}}{10.} \right)+0.622
+  &\text{ for } u_{H_{2}O}\ge \SI{0.1}{ kg.m^{-2}}
+\end{array}} \right.
 \end{equation}
 
 \begin{equation}
-\varepsilon_{O_{3}}\left( u_{O_{3}} \right)=\left\{ {\begin{array}{l}
+\epsilon_{O_{3}}\left( u_{O_{3}} \right)=\left\{ {\begin{array}{l}
  0.209\ast \left( u_{O_{3}}+7.0\times {10}^{-5} \right)^{0.436}-3.21\times
-{10}^{-3}\, for\, u_{O_{3}}<0.01\, cm/STP \\
- 7.49\times {10}^{-2}+2.12\times {10}^{-2}\, {log}_{10}\left( u_{O_{3}}
-\right)\, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, for\,
-{u_{O_{3}}\ge 0.01\, cm/STP} \\
+  {10}^{-3}\, \text{ for } u_{O_{3}} < \SI{0.01}{cm}/STP \\
+ 7.49\times {10}^{-2}+2.12\times {10}^{-2}\, {\log}_{10}\left( u_{O_{3}}
+  \right)\, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \text{ for }
+  {u_{O_{3}}\ge \SI{0.01}{cm}/STP} \\
  \end{array}} \right.
 \end{equation}
 
 \begin{equation}
-\varepsilon_{CO_{2}}\left( u_{CO_{2}} \right)=\left\{ {\begin{array}{l}
- 0.0676\ast \left( 0.01022+u_{C02} \right)^{0.421}-0.00982\, \, for\,
-u_{CO_{2}}<1\, cm/STP \\
- 0.24\, {log}_{10}\left( 0.0676+u_{CO_{2}} \right)+0.622\, \, \, \, \, \, \, \,
-\, \, \, \, \, \, for\, u_{CO_{2}}\ge 1\, cm/STP \\
+\epsilon_{CO_{2}}\left( u_{CO_{2}} \right)=\left\{
+  {\begin{array}{l l}
+    0.0676\ast \left( 0.01022+u_{C02} \right)^{0.421}-0.00982 &\text{ for }
+  u_{CO_{2}} < \SI{1}{cm}/STP \\
+    0.24\, {log}_{10}\left( 0.0676+u_{CO_{2}} \right)+0.622 &\text{ for } u_{CO_{2}}\ge \SI{1}{cm}/STP
  \end{array}} \right.
 \end{equation}
 
 \begin{equation}
-T_{15\mu }\left( u_{H_{2}O} \right)=\left\{ {\begin{array}{l}
- 1.33-0.832\left( 0.0286+\frac{u_{H_{2}O}}{10.} \right)^{0.26}\, for\, {\,
-u}_{H_{2}O}<20\, kg.m^{-2} \\
+T_{15\mu }\left( u_{H_{2}O} \right)=\left\{
+  {\begin{array}{l l}
+    1.33-0.832\left( 0.0286+\frac{u_{H_{2}O}}{10.} \right)^{0.26} &\text{ for } {\,
+  u}_{H_{2}O} < \SI{20}{ kg.m^{-2}} \\
  0.33-0.2754\, \left( {log}_{10}\left( \frac{u_{H_{2}O}}{10.} \right)-0.3011
-\right)\, for\, {\, u}_{H_{2}O}\ge 20\, kg.m^{-2} \\
+    \right) &\text{ for } {\, u}_{H_{2}O}\ge \SI{20}{ kg.m^{-2}}
  \end{array}} \right.
 \end{equation}
 (see \cite{Veyre:1980}) for water vapor dimer:
 \newline%FIXME
-$\varepsilon_{dim}\left( u_{dim} \right)=\left\{ {\begin{array}{l}
+$\epsilon_{dim}\left( u_{dim} \right)=\left\{ {\begin{array}{l}
  0.4614\left[ 1-\left( \sum\limits_{i=0}^2 {a_{i}u_{dim}^{i}} \right)/\left(
-\sum\limits_{j=0}^3 {b_{j}u_{dim}^{j}} \right) \right]\, \, \, for{\,
-u}_{dim}\le 0.5\, g.{cm}^{-2} \\
- 0.4614\, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \,
-\, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \,
-\, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, \, for\, {\,
-u}_{dim}>0.5\, g.{cm}^{-2} \\
+  \sum\limits_{j=0}^3 {b_{j}u_{dim}^{j}} \right) \right] \text{ for } {\,
+  u}_{dim}\le \SI{0.5 }{ g.{cm}^{-2}} \\
+  0.4614 \text{ for } {\,
+  u}_{dim}> \SI{0.5}{ g.{cm}^{-2}} \\
  \end{array}} \right.$
 
 with
@@ -466,13 +466,13 @@ The transmittance by cloud droplets can be considered as grey body
 transmittance and overlapping by gas absorption is taken into account as
 in \cite{Sasamori:1972}.
 \begin{equation}
-\varepsilon \left( z',z \right)=1-\left( 1-\varepsilon_{gas}\left( z',z
+\epsilon \left( z',z \right)=1-\left( 1-\epsilon_{gas}\left( z',z
 \right) \right)\tau_{l}\left( z',z \right)
 \end{equation}
-with $\tau_{l}\mathrm{(}z^{\mathrm{'}}z\mathrm{)=1-}\varepsilon
-_{l}\mathrm{(z',z)=exp(-}K_{l}\int_{z\mathrm{'}}^z
-{\rho \mathrm{(}z^{\mathrm{''}}\mathrm{)}q_{l}\left( z^{\mathrm{''}}
-\right)dz\mathrm{''}} $ )
+with $\tau_{l}(z{'}z)=1-\epsilon
+_{l}(z',z)=\exp(-K_{l}\int_{z'}^z
+{\rho (z''})q_{l}\left( z''
+\right)\dd z'' $ )
 
 and K$_{l}=$1.66 3/4r$_{e}$ where r$_{e}$ is the
 effective radius of the cloud droplet.
@@ -481,8 +481,8 @@ In case of partial cloudiness N$_{max}$, the transmittance for liquid water
 can be modified following \cite{Bougeault:1985}.
 \begin{equation}
 \tau_{l}\left( z',z \right)=1-N_{max}\left( z',z
-\right)+N_{max}(z',z)\mathrm{exp}(-K_{l}\int_{z'}^z {\rho
-(z^{''})q_{l}\left( z^{''} \right)dz'')}
+\right)+N_{max}(z',z)\exp(-K_{l}\int_{z'}^z {\rho
+(z'')q_{l}\left( z'' \right)\dd z'')}
 \end{equation}
 
 
@@ -541,12 +541,12 @@ external radiation source term (the sun) for the global radiation (direct
 $+$ diffuse) leads to the expression of downward and upward fluxes for a
 spectral band $\Delta \nu $ (see \cite{Lacis:1974}):
 \begin{equation}
-S\downarrow =\mu_{0} F_{0} \tau_{\Delta \nu}\, u_{gas}\left( z,\infty
+S^\downarrow =\mu_{0} F_{0} \tau_{\Delta \nu}\, u_{gas}\left( z,\infty
 \right)\,
 \end{equation}
 
 \begin{equation}
-S\uparrow =\mu_{0} F_{0} R_{g}\tau_{\Delta \nu}\, (u_{gas}(
+S^\uparrow =\mu_{0} F_{0} R_{g}\tau_{\Delta \nu}\, (u_{gas}(
 0,\infty), u_{gas}(0,z))
 \end{equation}
 Where F$_{0}$ is the solar constant, $\mu_{0}$ is the corrected cosines of the
@@ -595,7 +595,7 @@ where x is in cm/STP.
 
 The global downward flux in the O3 band is (LH74):
 
-${F\downarrow}_{g}^{O_{3}}=\mu_{0}F(0.647-A_{O_{3}}\left( x
+${F^\downarrow}_{g}^{O_{3}}=\mu_{0}F(0.647-A_{O_{3}}\left( x
 \right)-\overline{R_{r}}\left( \mu_{0} \right))(1-
 \overline{\overline{R_{r}^{\star }}}
 R_{g})$
@@ -607,7 +607,7 @@ and $\overline{\overline{R_{r}^{\star }}}=0.0685$
 \newline
 The direct downward flux is (see \cite{Atwater:1978}):
 \begin{equation}
-{F\downarrow }_{d}^{O_{3}}=\mu_{0}F\left( 0.647-A_{d}^{O_{3}}\left( z \right)
+{F^\downarrow }_{d}^{O_{3}}=\mu_{0}F\left( 0.647-A_{d}^{O_{3}}\left( z \right)
 \right)with
 A_{d}^{O_{3}}\left( z \right)=1-(1.041-0.16\ast \sqrt {M\left( 0.949\,
 {10}^{-3}P\left( z \right)+0.051 \right)} )
@@ -627,7 +627,7 @@ With $y=Mu_{H_{2}O}\left( \infty ,z \right),\, \, \, \, y^{\star
 
 The direct downward flux is equal to the global downward flux:
 \begin{equation}
-{F\downarrow }_{d}^{H_{2}O}={F\downarrow }_{g}^{H_{2}O}=\mu_{0}F\left(
+{F^\downarrow }_{d}^{H_{2}O}={F^\downarrow }_{g}^{H_{2}O}=\mu_{0}F\left(
 0.353-A_{H_{2}O}\left( y_{l} \right) \right)
 \end{equation}
 The water vapor absorption is parameterized as in \cite{Yamamoto:1962}
@@ -664,8 +664,8 @@ particles phase function, \\
 g$_{c}=$0.85, g$_{a}=$ 0.66, $\tau_{a,c}$ is the total visual optical thickness
 for cloud liquid water and aerosol concentration:
 
-$\tau_{c}=1.5\int_0^{zt} \frac{\rho q_{l}}{r_{e}} dz$ and $\tau
-_{a}=1.5\int_0^{zt} \frac{\rho C_{aero}}{r_{aero}} dz$ (see \cite{Stephens:1984}).
+$\tau_{c}=1.5\int_0^{z_t} \frac{\rho q_{l}}{r_{e}} \dd z$ and $\tau
+_{a}=1.5\int_0^{z_t} \frac{\rho C_{aero}}{r_{aero}} \dd z$ (see \cite{Stephens:1984}).
 
 In case of partial cloudiness $N_{max}$, the heating rate and the downward
 flux can be weighted between clear and cloudy sky as follows:
@@ -679,20 +679,20 @@ case is $F_{abs}^{a,O3}$.
 
 The global downward and direct fluxes are:
 \begin{equation}
-{F\downarrow }_{g}^{c,a,O3}=\mu_{0}F(0.647-A_{O_{3}}\left( x
+{F^\downarrow }_{g}^{c,a,O3}=\mu_{0}F(0.647-A_{O_{3}}\left( x
 \right)-\overline{R_{r}}\left( \mu_{0} \right))(1-\overline{R_{c,a}}\left( \mu_{0}
 \right)/(1-\overline{R_{c,a}^{\star }}R_{g}),\quad
-{F\downarrow }_{d}^{c,a,O3}=0.
+{F^\downarrow }_{d}^{c,a,O3}=0.
 \end{equation}
 
 That gives if partial cloudiness is taken into account:
 \begin{equation}
-{F\downarrow }_{g}^{t,O3}={N_{max}F\downarrow
-}_{g}^{c,a,O3}+(1-N_{max}){F\downarrow }_{g}^{O_{3}}
+{F^\downarrow }_{g}^{t,O3}={N_{max}F^\downarrow
+}_{g}^{c,a,O3}+(1-N_{max}){F^\downarrow }_{g}^{O_{3}}
 \end{equation}
 
 \begin{equation}
-{F\downarrow }_{d}^{t,O3}=(1-N_{max}){F\downarrow }_{d}^{O_{3}}
+{F^\downarrow }_{d}^{t,O3}=(1-N_{max}){F^\downarrow }_{d}^{O_{3}}
 \end{equation}
 \subsubsection{Vapor water band}
 
@@ -810,7 +810,7 @@ $p\left( k_{n} \right)$&
 
 
 \begin{enumerate}
-\item $R_{l} $ and $T_{l}$ for l $=$ 1, L are computed for each layer
+\item $R_{l} $ and $T_{l}$ for $l = 1$, L are computed for each layer
 \item The layers are added, going down, to obtain $R_{1,l}$ and $T_{1,l}$ as follow:
 
 \begin{equation}
@@ -841,7 +841,7 @@ F_{abs}^{H_{2}O}=\mu_{0}F\sum\limits_{n=1}^{n=8} A_{l(n)}
 \end{equation}
 The downward flux for global radiation is:
 \begin{equation}
-{F\downarrow }_{g}^{H_{2}O}=\mu_{0}F\sum\limits_{n=1}^{n=8} {D_{l}\left( n
+{F^\downarrow }_{g}^{H_{2}O}=\mu_{0}F\sum\limits_{n=1}^{n=8} {D_{l}\left( n
 \right)p\left( k_{n} \right)}
 \end{equation}
 \end{enumerate}
@@ -849,7 +849,7 @@ For the downward direct radiation the layers are added as in the step 2) but
 only for the transmission function and with reflection equal to zero:
 $T_{1,l}=T_{1,l-1}T_{l}$ Since the downward direct radiation is:
 \begin{equation}
-{F\downarrow }_{d}^{H_{2}O}=\mu_{0}F\, \sum\limits_{n=1}^{n=8} T_{1,l} \left(
+{F^\downarrow }_{d}^{H_{2}O}=\mu_{0}F\, \sum\limits_{n=1}^{n=8} T_{1,l} \left(
 n \right)p(k_{n})
 \end{equation}
 
@@ -937,13 +937,13 @@ We assume a bivariate normal distribution function $\tilde{G}(\theta
 _{l}q_{w})$ in order to represent the subgrid-scale fluctuations of the
 variables $\theta_{l}$ and $q_{w}$:
 \begin{equation}
-R=\int_{-\infty}^{ +\infty}\int_{q_{s}}^{+\infty}\tilde{G}\left(\theta_{l},q_{w} \right)dq_{w}\, d\theta_{l}
+R=\int_{-\infty}^{ +\infty}\int_{q_{s}}^{+\infty}\tilde{G}\left(\theta_{l},q_{w} \right)dq_{w}\, \dd\theta_{l}
 \end{equation}
 \begin{equation}
 \overline {q_{w}}=
 \int_{-\infty}^{ +\infty}\int_{q_{s}}^{+\infty}
 (q_{w}-q_{s})\tilde{G}\left( \theta_{l},q_{w} \right)\, dq_{w\, \,
-}d\theta_{l}
+}\dd\theta_{l}
 \end{equation}
 We reduce the integration to a single variable $s=\bar{s}+s^{'}\, with\,
 s=\frac{A_{l}\left( \overline {q_{w}}-\overline{q_{sl}}
@@ -996,18 +996,18 @@ and $\overline{\theta_{l}^{'}q_{w}^{'}}$. This can be done by stationarising
 (balance between production and dissipation) the equation of evolution of
 the second order moments. That gives (see \cite{Musson-Genon:1995}):
 \begin{equation}
-\overline{q_{w}^{'2}}=\frac{2}{c_{2}}\frac{e}{\varepsilon }K_{\theta }\left(
+\overline{q_{w}^{'2}}=\frac{2}{c_{2}}\frac{k}{\varepsilon }K_{\theta }\left(
 \frac{\partial \overline {q_{w}}}{\partial z} \right)^{2}{,\quad
-\overline{{\theta'_{l}}^{2}}}=\frac{2}{c_{2}}\frac{e}{\varepsilon }K_{\theta }\left(
+\overline{{\theta'_{l}}^{2}}}=\frac{2}{c_{2}}\frac{k}{\varepsilon }K_{\theta }\left(
 \frac{\partial \overline{\theta_{l}}}{\partial z} \right)^{2},\quad
-\overline{\theta_{l}^{'}q_{w}^{'}}=-\frac{2}{c_{2}}\frac{e}{\varepsilon }K_{\theta }{\left(
+\overline{\theta_{l}^{'}q_{w}^{'}}=-\frac{2}{c_{2}}\frac{k}{\varepsilon }K_{\theta }{\left(
 \frac{\partial \overline {q_{w}}}{\partial z} \right)\left( \frac{\partial
 \overline{\theta_{l}}}{\partial z} \right)}
 \end{equation}
-With $c_{2\, }=$2.3 and $K_{\theta }=c_{\mu }\frac{e^{2}}{\varepsilon }$
-for the e-$\varepsilon $ turbulent closure
+With $c_{2\, }=$2.3 and $K_{\theta }=c_{\mu }\frac{k^{2}}{\varepsilon }$
+for the $k-\varepsilon $ turbulent closure
 
-In addition, the buoyancy term in the e-$\varepsilon $ turbulent closure has
+In addition, the buoyancy term in the $k-\varepsilon $ turbulent closure has
 to be expressed in terms of $\theta_{l\, }$ and $ q_{w}$ variables. This
 leads to the following expression (see \cite{Bouzereau:2007}).
 \begin{equation}
@@ -1023,14 +1023,14 @@ $E_{\theta }=\tau -NA_{l}\alpha_{l}D_{q\, }and\, E_{q}=0.608 \, \theta
 \right)$,
 $D_{q}=\frac{g}{T_{0}}-1.608 \, \bar{\theta }$ and
 $N=\overline{s^{'}q_{l}^{'}}/2\sigma_{s'}^{2}$
-T$_{0}$ being the mean temperature
+$T_{0}$ being the mean temperature
 of the atmospheric boundary-layer.
 
 \subsection{ Evolution of the droplet spectrum }
 For computing the evolution of the droplet spectrum, we have chosen a
 semi-spectral method for its simplicity and its low computational cost.
 
-The prognostic equation for the number of droplet $N_{d}$ is (here N$_{d}$ is
+The prognostic equation for the number of droplet $N_{d}$ is (here $N_{d}$ is
 the ensemble mean of droplet number):
 \begin{equation}
 \left( \frac{\partial }{\partial t}+\bar{u_{i}}\frac{\partial }{\partial
@@ -1043,21 +1043,21 @@ x_{i}} \right)N_{d}=\frac{1}{\rho }\frac{\partial }{x_{i}}\left[ \left(
 \end{equation}
 where the last three terms of the right-hand side are respectively the
 evaporation and condensation term, the nucleation term and the droplet
-settling term. Besides, this equation is associated with a lognormal
+settling term. Besides, this equation is associated with a log-normal
 distribution law defined as follows:
 
 $N_{d}\left( r \right)=\frac{N_{d}}{r\sigma_{c}\sqrt {2\pi } }exp\left[
 \frac{-1}{2\sigma_{c}^{2}}\left( ln\frac{r}{r_{0}} \right)^{2} \right]$
 
-where r is the droplet radius, r$_{0}$ is the distribution median value and
+where $r$ is the droplet radius, $r_{0}$ is the distribution median value and
 $\sigma_{c}$ the logarithmic standard deviation.
 
-With this law, the relationship between liquid water content q$_{l}$ and
-N$_{d}$ is:
+With this law, the relationship between liquid water content $q_{l}$ and
+$N_{d}$ is:
 \begin{equation}
 \rho \bar{q_{l}}=\frac{4}{3}\pi \bar{r_{3}}^{3}\rho_{w}N_{d}
 \end{equation}
-Where$\, \, \, \, \bar{r_{3}}=r_{0}exp\left( \frac{3}{2}\sigma_{c}^{2}
+Where $\bar{r_{3}}=r_{0}exp\left( \frac{3}{2}\sigma_{c}^{2}
 \right)$ is the mean volume (or mass) radius and $\rho
 _{w}=$1000kg.m$^{-3}$ the density of liquid water.
 
@@ -1079,32 +1079,32 @@ the numerical time step.
 The number of droplet formed through nucleation is strongly correlated to
 the super-saturation
 \newline
-s $=$ e/e$_{sat}$ -1
+$s = e/e_{sat} -1$
 
  Supersaturation is characterized by s\textgreater 0
-(e being the partial pressure of water vapour in moist
-air and e$_{sat}$ the saturation vapour pressure).
+($e$ being the partial pressure of water vapour in moist
+air and $e_{sat}$ the saturation vapour pressure).
 
 A simple expression taking into account all cooling processes for s is (see
 \cite{Zhang:2014}):
 \begin{equation}
 \frac{ds}{dt}=\left( \frac{\xi L_{v}g}{R_{a}T^{2}C_{p}}-\frac{g}{R_{a}T}
 \right)\bar{w}-\left( \frac{R_{a}T}{\xi e_{s}}+\frac{\xi L_{v}^{2}}{pTC_{p}}
-\right)\frac{d\bar{q_{l}}}{dt}+\frac{\xi L_{v}g}{{\rho
+\right)\frac{\dd\bar{q_{l}}}{dt}+\frac{\xi L_{v}g}{{\rho
 R}_{a}T^{2}C_{p}}\frac{\partial F_{rad}}{\partial z}
 \end{equation}
 \begin{center}
 lifting \quad	\quad \quad \quad \quad \quad \quad \quad \quad latent	\quad heat \quad	release \quad	radiation
 \end{center}
 \begin{equation}
-=A_{1}w-A_{2}\frac{d\bar{q_{l}}}{dt}+A_{4}\frac{\partial F_{rad}}{\partial
+=A_{1}w-A_{2}\frac{\dd\bar{q_{l}}}{dt}+A_{4}\frac{\partial F_{rad}}{\partial
 z}
 \end{equation}
 where $\xi =$ 0.622 (molecular weight of water/molecular
-weight of air), $g $(m s$^{-2})$ is the gravity, $R_{a}$ is the gas constant for
-dry air, $\bar{w}$ (m s$^{-1})$ is the vertical air velocity, $e_{s}$ (Pa) is
-the saturation vapor pressure water and $F_{rad}$ the net radiation flux (W
-m$^{-2})$.
+weight of air), $g (\si{m s^{-2}})$ is the gravity, $R_{a}$ is the gas constant for
+dry air, $\bar{w} (\si{m s^{-1}})$ is the vertical air velocity, $e_{s} (\si{Pa})$ is
+the saturation vapor pressure water and $F_{rad}$ the net radiation flux $(\si{W
+m^{-2}})$.
 
 \subsubsection{Abdul-Razzack nucleation scheme}
 
@@ -1113,7 +1113,7 @@ many factors including the characteristics (size and chemical composition)
 of the aerosols. In order to take into account size distribution and
 chemical composition if they are known, the Abdul-Razzak (AR) scheme
 for aerosol activation is used \cite{Abdul-Razzak:2000}. With the superposition of three
-lognormal aerosol distributions, as proposed by AR, the droplet number
+log-normal aerosol distributions, as proposed by AR, the droplet number
 concentration at the maximum super-saturation $s_{max}$, is given by:
 \begin{equation}
 N_{d}\left( s_{max} \right)=\frac{1}{2}\sum\limits_{i=1}^3 {N_{ai}\left(
@@ -1179,12 +1179,12 @@ The Cloud Condensation Nuclei (CCN) density is given by:
 $N_{ccn}\left( {cm}^{-3} \right)=\tilde{C}\tilde{s}^{k}=Cs^{k}\, \, \, \, \,
 $when s\textgreater 0
 \newline
-where the deviation from saturation s is defined by s $=$ e/e$_{sat}$ -1 and
+where the deviation from saturation $s$ is defined by $s = e/e_{sat} -1$ and
 \newline
-when s\textgreater 0 is called the supersaturation (e being the partial
-pressure of water vapour in moist air and e$_{sat}$ the saturation vapor
-pressure). Note that the nucleation is not possible for negative value of s.
-The parameters C and $\tilde{C}$ are constants of the nucleation
+when s\textgreater 0 is called the supersaturation ($e$ being the partial
+pressure of water vapour in moist air and $e_{sat}$ the saturation vapor
+pressure). Note that the nucleation is not possible for negative value of $s$.
+The parameters $C$ and $\tilde{C}$ are constants of the nucleation
 process.
 
 Due to different usage in the literature, it is important to be aware of the
@@ -1266,8 +1266,7 @@ $E_{imp}=\left( \frac{St}{St+1.5} \right)^{2}$ with $St=\frac{V_{g}u_{\star
 \newline
 \newline
 The collection by Brownian motion of fog droplet is neglected because its
-effect is only significant for very small particle diameter (\textless 0.1
-$\mu$m).
+effect is only significant for very small particle diameter (\textless $\SI{0.1}{\mu m}$).
 
 If a deposition process is taken into account in the model, the new bulk
 velocity that is estimated for liquid water will be calculated as the sum of
@@ -1328,9 +1327,9 @@ measurements with sonic anemometer.
 
 \subsection{Impose temperature and humidity from experimental estimation}
 In that option fluxes are computed from difference of temperature and
-humidity between their values at ground level (z$_{1}=$z$_{0}$ roughness
-height for the wind, z$_{1}=$z$_{ot}$ thermic roughness height for
-temperature and humidity) and at the first level z$_{2}$ in the air.
+humidity between their values at ground level ($z_{1}=z_{0}$ roughness
+height for the wind, $z_{1}=z_{ot}$ thermic roughness height for
+temperature and humidity) and at the first level $z_{2}$ in the air.
 It needs to determine turbulent fluxes from gradients (see \cite{Musson_Genon:2007}).
 
 Monin-Obukhov's similarity theory gives relations between the fluxes of
@@ -1372,8 +1371,8 @@ q_{\star} =-E_{0} \mbox{/u}_{\star}
 \end{equation}
 \newline
 Here, $\kappa$ denotes Von Karman's constant, $\phi_{m} \, \phi_{h} \,\,\mbox{and}\,\,\phi_{q} $
-are the universal functions for wind, temperature and humidity, z is the
-altitude and L is the Obukhov length:
+are the universal functions for wind, temperature and humidity, $z$ is the
+altitude and $L$ is the Obukhov length:
 \begin{equation}
 \label{eq:atmo:eq8}
 L = \dfrac{-u_{\star}^{3}}{
@@ -1661,24 +1660,24 @@ for the earth's surface after \cite{Deardorff:1978}.
 
 \begin{equation}
 \label{eq22}
-\frac{dT_{s}}{dt}\mathrm{=}\frac{\mathrm{2}\pi^{\mathrm{1/2}}}{\rho
+\frac{\dd T_{s}}{dt}\mathrm{=}\frac{\mathrm{2}\pi^{\mathrm{1/2}}}{\rho
 _{s}c_{s}\left( \nu_{s}\tau_{\mathrm{1}}
 \right)^{\mathrm{1/2}}}H_{at}\mathrm{-}\frac{\mathrm{2}\pi }{\tau
 _{\mathrm{1}}}\left( T_{s}\mathrm{-}T_{p} \right),
 \end{equation}
 \newline
-with $H_{at}=\left( 1-\alpha_{g} \right)S\downarrow +\varepsilon
-_{g}(F\downarrow -\sigma T_{s}^{4})-\rho_{0}C_{p}Q_{0}-\rho_{0}LE_{0}$,
+with $H_{at}=\left( 1-\alpha_{g} \right)S^\downarrow +\epsilon
+_{g}(F^\downarrow -\sigma T_{s}^{4})-\rho_{0}C_{p}Q_{0}-\rho_{0}LE_{0}$,
 \newline
 where $\rho_{0}\, $ is the air density at $z_{0}$, T$_{p}$ the deep soil temperature,
 \newline
-$S\downarrow $ the downward solar flux, $F\downarrow $ the downward infrared flux,
+$S^\downarrow $ the downward solar flux, $F^\downarrow $ the downward infrared flux,
 \newline
 $\rho_{s}c_{s}$ the ground calorific capacity, $\nu_{s}$ the soil thermal conductibility,
 \newline
 $\tau_{\mathrm{1}}=86400\, s$, the force restore time constant for T$_{p}$,
 \newline
-$\alpha_{g}$ is the soil albedo, $\varepsilon_{g}$ the soil emissivity,
+$\alpha_{g}$ is the soil albedo, $\epsilon_{g}$ the soil emissivity,
 \newline
 $C_{p}=$1005. J K$^{-1\, }$kg$^{-1}$ is the specific heat at constant pressure of air,
 \newline
@@ -1691,30 +1690,30 @@ The evolution of the soil liquid water content is deduced from the same
 principles as the surface temperature:
 \begin{equation}
 \label{eq23}
-\frac{dw_{1}}{dt}=\frac{P_{r}-\rho E_{0}}{C_{1}}-\frac{w_{1}-w_{2}}{\tau
+\frac{\dd w_{1}}{\dd t}=\frac{P_{r}-\rho E_{0}}{C_{1}}-\frac{w_{1}-w_{2}}{\tau
 _{1}},
 \end{equation}
 
 \begin{equation}
 \label{eq24}
-\frac{dw_{2}}{dt}=C_{2}\frac{w_{1}-w_{2}}{\tau_{1}},
+\frac{\dd w_{2}}{\dd t}=C_{2}\frac{w_{1}-w_{2}}{\tau_{1}},
 \end{equation}
 Where P$_{r}$ is the precipitation flux,
 \newline
-w$_{1\, }=$ w$_{s}$/w$_{smax}$ is a non-dimensional liquid water content with w$_{s}$ the liquid water content
-for the surface reservoir and w$_{smax}$ its maximum value and
+$w_{1\, }= w_{s}/w_{smax}$ is a non-dimensional liquid water content with $w_{s}$ the liquid water content
+for the surface reservoir and $w_{smax}$ its maximum value and
 \newline
-w$_{2\, }=$ w$_{p}$/w$_{pmax}$ is a non-dimensional liquid water content with w$_{p}$ the liquid water content
-for the deep reservoir (which does not contain the surface reservoir) and w$_{pmax}$ its maximum value.
+$w_{2\, }= w_{p}/w_{pmax}$ is a non-dimensional liquid water content with $w_{p}$ the liquid water content
+for the deep reservoir (which does not contain the surface reservoir) and $w_{pmax}$ its maximum value.
 
-The constants C$_{1}$ an C$_{2}$ are given by:
+The constants $C_{1}$ an $C_{2}$ are given by:
 \newline
-C$_{1}=$ w$_{smax}$/C$_{ws}$ and C$_{2}=$w$_{smax}$/w$_{pmax}$,
+$C_{1}= w_{smax}/C_{ws}$ and $C_{2}=w_{smax}/w_{pmax}$,
 \newline
-where C$_{ws}$ is a non-dimensional constant tuning
-the depth of the reservoirs and C$_{2}$ the ratio of these depth.
+where $C_{ws}$ is a non-dimensional constant tuning
+the depth of the reservoirs and $C_{2}$ the ratio of these depth.
 
-The surface specific humidity q$_{s}$ is computed as a function of w$_{1}$,
+The surface specific humidity $q_{s}$ is computed as a function of $w_{1}$,
 which varies according to the nature of the surface (bare soil or soil
 covered by vegetation characterized by veg, the percentage of vegetation in
 the mesh):
@@ -1726,9 +1725,9 @@ q_{s}=H_{u}q_{sat}\left( P_{s},T_{s} \right)+veg\, \left( 1-H_{u}
 \newline
 Where $H_{u}=0.5\left[ 1-cos\left( \pi w_{1} \right) \right]$,
 \newline
-q$_{sat}$ is the saturated value of q$_{s}$, $P_{s}$ is the surface pressure
+$q_{sat}$ is the saturated value of $q_{s}$, $P_{s}$ is the surface pressure
 \newline
-and q$_{a}$ the specific humidity in the first level in the air in \CS.
+and $q_{a}$ the specific humidity in the first level in the air in \CS.
 \newline
-Here H$_{u}$ will be equal to 1 when a dew flux is present.
+Here $H_{u}$ will be equal to 1 when a dew flux is present.
 
