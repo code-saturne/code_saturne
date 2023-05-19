@@ -2106,22 +2106,32 @@ cs_ctwr_source_term(int              f_id,
               cs_real_t coefh = vol_beta_x_ai * ( xlew * cp_h
                   + (x_s_tl - x[cell_id]) * cp_v
                   / (1. + x[cell_id]));
+              /* Note: Rain temperature is currently not treated as a
+               * temperature field -> division by cp_l needed for implicit and
+               * explicit source terms */
+              coefh /= cp_l;
               exp_st[cell_id] += coefh * (t_h[cell_id] - temp_rain[cell_id]);
             }
             else {
               cs_real_t coefh = xlew * cp_h;
-              exp_st[cell_id] += vol_beta_x_ai * ( coefh * t_h[cell_id]
-                  - coefh * temp_rain[cell_id]
+              /* Note: Rain temperature is currently not treated as a
+               * temperature field -> division by cp_l needed for implicit and
+               * explicit source terms */
+              coefh /= cp_l;
+              exp_st[cell_id] += vol_beta_x_ai * ( coefh * ( t_h[cell_id]
+                  - temp_rain[cell_id] )
                   + (x_s_tl - x_s_th) / (1. + x[cell_id])
                   * (  cp_l * t_h[cell_id]
                     - (cp_v * temp_rain[cell_id] + hv0)
-                    )
+                    ) / cp_l
                   );
             }
             /* Because we deal with an increment */
             exp_st[cell_id] -= l_imp_st * f_var[cell_id];
-            //          imp_st[cell_id] += CS_MAX(l_imp_st, 0.);
-            imp_st[cell_id] += cp_l*CS_MAX(l_imp_st, 0.);
+            imp_st[cell_id] += CS_MAX(l_imp_st, 0.);
+            /* Note: y_p_t_l not treated as temperature field
+             * so no multiplication by cp_l
+             * */
 
           }
 
@@ -2170,9 +2180,12 @@ cs_ctwr_source_term(int              f_id,
             cell_id_rain = i_face_cells[face_id][1];
           }
 
-          cs_real_t mass_source = ct->xleak_fac
+          /* Nowte: vol_mass_source must not be multiplied by
+           * cell_f_vol[cell_id_rain]
+           * because mass source computed from liq_mass_flow is
+           * already in kg/s associated to the facing rain cell */
+          cs_real_t vol_mass_source = ct->xleak_fac
             * liq_mass_frac[cell_id_leak] * sign * liq_mass_flow[face_id];
-          cs_real_t vol_mass_source = mass_source * cell_f_vol[cell_id_rain];
 
           /* Global bulk mass - continuity */
           //FIXME - Ignore for now because drops are not in the bulk
