@@ -200,13 +200,6 @@ cppflags: @EOS_CPPFLAGS@
 ldflags: @EOS_LDFLAGS@
 libs: @EOS_LIBS@
 
-[freesteam]
-have: @cs_have_freesteam@
-prefix: @freesteam_prefix@
-cppflags: @FREESTEAM_CPPFLAGS@
-ldflags: @FREESTEAM_LDFLAGS@
-libs: @FREESTEAM_LIBS@
-
 [coolprop]
 have: @cs_have_coolprop@
 prefix: @coolprop_prefix@

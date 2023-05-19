@@ -51,7 +51,6 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/atmo \
 -I$(top_srcdir)/src/darc \
 $(CPPFLAGS_PLE) \
-$(FREESTEAM_CPPFLAGS) \
 $(MPI_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)

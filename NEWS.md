@@ -25,6 +25,11 @@ Release 8.0.0 (unreleased)
 
 ### Architectural changes:
 
+- Remove support for freesteam (IAPWS-IF97 steam tables) library,
+  as this library has not been maintained since 2013, and its build
+  system is based on scons with Python 2 files, so is not usable
+  anymore. Use EOS (if available) or CoolProp instead.
+
 - Update and improve build configuration automation, especially
   when using the `--with-salome` option with SALOME 9.9 or 9.10 CAS builds.
   * For ParaView Catalyst, the `--enable-dlopen-rtld-global` option is no

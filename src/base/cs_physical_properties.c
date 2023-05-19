@@ -58,21 +58,6 @@
 #include "cs_eos.hxx"
 #endif
 
-#if defined(HAVE_FREESTEAM)
-#include <freesteam/steam_ph.h>
-#include <freesteam/steam_pT.h>
-#include <freesteam/steam_ps.h>
-#include <freesteam/steam_pu.h>
-#include <freesteam/steam_pv.h>
-#include <freesteam/steam_Ts.h>
-#include <freesteam/steam_Tx.h>
-
-#include <freesteam/region1.h>
-#include <freesteam/region2.h>
-#include <freesteam/region3.h>
-#include <freesteam/region4.h>
-#endif
-
 #if defined(HAVE_COOLPROP)
 #include "cs_coolprop.hxx"
 #endif
@@ -97,24 +82,30 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/* Data elements in crystal router */
+
+typedef enum {
+
+  CS_PHYS_PROP_TABLE_USER,
+  CS_PHYS_PROP_TABLE_EOS,
+  CS_PHYS_PROP_TABLE_COOLPROP
+
+} cs_phys_prop_table_type_t;
+
 /* Thermal table structure */
 
 typedef struct {
 
   char        *material;             /* material choice (water, ...) */
   char        *method;               /* method choice
-                                        (cathare, thetis, freesteam, ...) */
-  int          type;                 /* 0 for user
-                                      * 1 for freesteam
+                                        (cathare, thetis, CoolProp, ...) */
+  cs_phys_prop_table_type_t  type;   /* 0 for user
                                       * 2 for EOS
-                                      * 3 for CoolProp
-                                      */
+                                      * 3 for CoolProp  */
 
   cs_phys_prop_thermo_plane_type_t   thermo_plane;
 
-  int          temp_scale;           /* temperature scale if needed
-                                      * 1 for kelvin
-                                      * 2 for Celsius */
+  cs_temperature_scale_t             temp_scale;  /* temperature scale  */
 
 } cs_thermal_table_t;
 
@@ -195,8 +186,8 @@ _thermal_table_create(void)
 
   tt->material     = NULL;
   tt->method       = NULL;
-  tt->type         = 0;
-  tt->temp_scale   = 0;
+  tt->type         = CS_PHYS_PROP_TABLE_USER;
+  tt->temp_scale   = CS_TEMPERATURE_SCALE_NONE;
   tt->thermo_plane = CS_PHYS_PROP_PLANE_PH;
 
   return tt;
@@ -310,7 +301,7 @@ cs_thermal_table_set(const char                        *material,
                      const char                        *method,
                      const char                        *reference,
                      cs_phys_prop_thermo_plane_type_t   thermo_plane,
-                     int                                temp_scale)
+                     cs_temperature_scale_t             temp_scale)
 {
   if (cs_glob_thermal_table == NULL) {
     cs_glob_thermal_table = _thermal_table_create();
@@ -320,17 +311,13 @@ cs_thermal_table_set(const char                        *material,
   BFT_MALLOC(cs_glob_thermal_table->material, strlen(material) +1, char);
   strcpy(cs_glob_thermal_table->material,  material);
 
-  if (strcmp(method, "freesteam") == 0 ||
-      strcmp(material, "user_material") == 0) {
+  if (strcmp(material, "user_material") == 0) {
     BFT_MALLOC(cs_glob_thermal_table->method, strlen(method) +1, char);
     strcpy(cs_glob_thermal_table->method, method);
-    if (strcmp(method, "freesteam") == 0)
-      cs_glob_thermal_table->type = 1;
-    else
-      cs_glob_thermal_table->type = 0;
+    cs_glob_thermal_table->type = CS_PHYS_PROP_TABLE_USER;
   }
   else if (strcmp(method, "CoolProp") == 0) {
-    cs_glob_thermal_table->type = 3;
+    cs_glob_thermal_table->type = CS_PHYS_PROP_TABLE_COOLPROP;
 #if defined(HAVE_COOLPROP)
     cs_physical_properties_set_coolprop_backend(_cs_coolprop_backend);
 #if defined(HAVE_PLUGINS)
@@ -360,7 +347,7 @@ cs_thermal_table_set(const char                        *material,
     BFT_MALLOC(cs_glob_thermal_table->method, strlen(method) +5, char);
     strcpy(cs_glob_thermal_table->method, "EOS_");
     strcat(cs_glob_thermal_table->method, method);
-    cs_glob_thermal_table->type = 2;
+    cs_glob_thermal_table->type = CS_PHYS_PROP_TABLE_EOS;
 #if defined(HAVE_EOS)
 #if defined(HAVE_DLOPEN)
     {
@@ -417,7 +404,7 @@ cs_thermal_table_finalize(void)
                     _physprop_lib_t_tot.nsec*1e-9);
 
 #if defined(HAVE_EOS) /* always a plugin */
-    if (cs_glob_thermal_table->type == 2) {
+    if (cs_glob_thermal_table->type == CS_PHYS_PROP_TABLE_EOS) {
       _cs_eos_destroy();
       cs_base_dlclose("cs_eos", _cs_eos_dl_lib);
       _cs_eos_create = NULL;
@@ -426,7 +413,7 @@ cs_thermal_table_finalize(void)
     }
 #endif
 #if defined(HAVE_COOLPROP) && defined(HAVE_PLUGINS)
-    if (cs_glob_thermal_table->type == 3) {
+    if (cs_glob_thermal_table->type == CS_PHYS_PROP_TABLE_COOLPROP) {
       cs_finalize_t *cs_coolprop_finalize
         = (cs_finalize_t *)  (intptr_t)
              cs_base_get_dl_function_pointer(_cs_coolprop_dl_lib,
@@ -567,7 +554,7 @@ cs_phys_prop_compute(cs_phys_prop_type_t          property,
     var1_c = _var1_c;
   }
 
-  if (   cs_glob_thermal_table->temp_scale == 2
+  if (   cs_glob_thermal_table->temp_scale == CS_TEMPERATURE_SCALE_CELSIUS
       && (cs_glob_thermal_table->thermo_plane == CS_PHYS_PROP_PLANE_PT
           || cs_glob_thermal_table->thermo_plane == CS_PHYS_PROP_PLANE_TS
           || cs_glob_thermal_table->thermo_plane == CS_PHYS_PROP_PLANE_TX)) {
@@ -595,16 +582,8 @@ cs_phys_prop_compute(cs_phys_prop_type_t          property,
 
   /* Compute proper */
 
-  if (cs_glob_thermal_table->type == 1) {
-    cs_phys_prop_freesteam(cs_glob_thermal_table->thermo_plane,
-                           property,
-                           _n_vals,
-                           var1_c,
-                           var2_c,
-                           val);
-  }
 #if defined(HAVE_EOS) /* always a plugin */
-  else if (cs_glob_thermal_table->type == 2) {
+  if (cs_glob_thermal_table->type == CS_PHYS_PROP_TABLE_EOS) {
     _cs_phys_prop_eos(cs_glob_thermal_table->thermo_plane,
                       property,
                       _n_vals,
@@ -614,7 +593,7 @@ cs_phys_prop_compute(cs_phys_prop_type_t          property,
   }
 #endif
 #if defined(HAVE_COOLPROP)
-  else if (cs_glob_thermal_table->type == 3) {
+  if (cs_glob_thermal_table->type == CS_PHYS_PROP_TABLE_COOLPROP) {
     _cs_phys_prop_coolprop(cs_glob_thermal_table->material,
                            _cs_coolprop_backend,
                            cs_glob_thermal_table->thermo_plane,
@@ -643,334 +622,6 @@ cs_phys_prop_compute(cs_phys_prop_type_t          property,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute properties with Freesteam in a defined thermal plane.
- *
- * \param[in]   thermo_plane  thermodynamic plane
- * \param[in]   property      property queried
- * \param[in]   n_vals        number of values
- * \param[in]   var1          values on first plane axis
- * \param[in]   var2          values on second plane axis
- * \param[out]  val           resulting property values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
-                       cs_phys_prop_type_t                property,
-                       const cs_lnum_t                    n_vals,
-                       const cs_real_t                    var1[],
-                       const cs_real_t                    var2[],
-                       cs_real_t                          val[])
-{
-#if defined(HAVE_FREESTEAM)
-  if (thermo_plane == CS_PHYS_PROP_PLANE_PH) {
-    for (cs_lnum_t i = 0; i < n_vals; i++) {
-      SteamState S0 = freesteam_set_ph(var1[i], var2[i]);
-      switch (property) {
-      case CS_PHYS_PROP_PRESSURE:
-        bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in the %s plane."), "ph");
-        break;
-      case CS_PHYS_PROP_TEMPERATURE:
-        val[i] = freesteam_T(S0);
-        break;
-      case CS_PHYS_PROP_ENTHALPY:
-        bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in the %s plane."), "ph");
-        break;
-      case CS_PHYS_PROP_ENTROPY:
-        val[i] = freesteam_s(S0);
-        break;
-      case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
-        val[i] = freesteam_cp(S0);
-        break;
-      case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
-        val[i] = freesteam_cv(S0);
-        break;
-      case CS_PHYS_PROP_DENSITY:
-        val[i] = freesteam_rho(S0);
-        break;
-      case CS_PHYS_PROP_INTERNAL_ENERGY:
-        val[i] = freesteam_u(S0);
-        break;
-      case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
-        val[i] = freesteam_k(S0);
-        break;
-      case CS_PHYS_PROP_DYNAMIC_VISCOSITY:
-        val[i] = freesteam_mu(S0);
-        break;
-      case CS_PHYS_PROP_SPEED_OF_SOUND:
-        val[i] = freesteam_w(S0);
-        break;
-      }
-    }
-  }
-  else if (thermo_plane == CS_PHYS_PROP_PLANE_PT) {
-    for (cs_lnum_t i = 0; i < n_vals; i++) {
-      SteamState S0 = freesteam_set_pT(var1[i], var2[i]);
-      switch (property) {
-      case CS_PHYS_PROP_PRESSURE:
-        bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in the %s plane."), "pT");
-        break;
-      case CS_PHYS_PROP_TEMPERATURE:
-        bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in the %s plane."), "pT");
-        break;
-      case CS_PHYS_PROP_ENTHALPY:
-        val[i] = freesteam_h(S0);
-        break;
-      case CS_PHYS_PROP_ENTROPY:
-        val[i] = freesteam_s(S0);
-        break;
-      case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
-        val[i] = freesteam_cp(S0);
-        break;
-      case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
-        val[i] = freesteam_cv(S0);
-        break;
-      case CS_PHYS_PROP_DENSITY:
-        val[i] = freesteam_rho(S0);
-        break;
-      case CS_PHYS_PROP_INTERNAL_ENERGY:
-        val[i] = freesteam_u(S0);
-        break;
-      case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
-        val[i] = freesteam_k(S0);
-        break;
-      case CS_PHYS_PROP_DYNAMIC_VISCOSITY:
-        val[i] = freesteam_mu(S0);
-        break;
-      case CS_PHYS_PROP_SPEED_OF_SOUND:
-        val[i] = freesteam_w(S0);
-        break;
-      }
-    }
-  }
-  else if (thermo_plane == CS_PHYS_PROP_PLANE_PS) {
-    for (cs_lnum_t i = 0; i < n_vals; i++) {
-      SteamState S0 = freesteam_set_ps(var1[i], var2[i]);
-      switch (property) {
-      case CS_PHYS_PROP_PRESSURE:
-        bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in the %s plane."), "ps");
-        break;
-      case CS_PHYS_PROP_TEMPERATURE:
-        val[i] = freesteam_T(S0);
-        break;
-      case CS_PHYS_PROP_ENTHALPY:
-        val[i] = freesteam_h(S0);
-        break;
-      case CS_PHYS_PROP_ENTROPY:
-        bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in the %s plane."), "ps");
-        break;
-      case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
-        val[i] = freesteam_cp(S0);
-        break;
-      case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
-        val[i] = freesteam_cv(S0);
-        break;
-      case CS_PHYS_PROP_DENSITY:
-        val[i] = freesteam_rho(S0);
-        break;
-      case CS_PHYS_PROP_INTERNAL_ENERGY:
-        val[i] = freesteam_u(S0);
-        break;
-      case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
-        val[i] = freesteam_k(S0);
-        break;
-      case CS_PHYS_PROP_DYNAMIC_VISCOSITY:
-        val[i] = freesteam_mu(S0);
-        break;
-      case CS_PHYS_PROP_SPEED_OF_SOUND:
-        val[i] = freesteam_w(S0);
-        break;
-      }
-    }
-  }
-  else if (thermo_plane == CS_PHYS_PROP_PLANE_PU) {
-    for (cs_lnum_t i = 0; i < n_vals; i++) {
-      SteamState S0 = freesteam_set_pu(var1[i], var2[i]);
-      switch (property) {
-      case CS_PHYS_PROP_PRESSURE:
-        bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in the %s plane."), "pu");
-        break;
-      case CS_PHYS_PROP_TEMPERATURE:
-        val[i] = freesteam_T(S0);
-        break;
-      case CS_PHYS_PROP_ENTHALPY:
-        val[i] = freesteam_h(S0);
-        break;
-      case CS_PHYS_PROP_ENTROPY:
-        val[i] = freesteam_s(S0);
-        break;
-      case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
-        val[i] = freesteam_cp(S0);
-        break;
-      case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
-        val[i] = freesteam_cv(S0);
-        break;
-      case CS_PHYS_PROP_DENSITY:
-        val[i] = freesteam_rho(S0);
-        break;
-      case CS_PHYS_PROP_INTERNAL_ENERGY:
-        bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in the %s plane."), "pu");
-        break;
-      case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
-        val[i] = freesteam_k(S0);
-        break;
-      case CS_PHYS_PROP_DYNAMIC_VISCOSITY:
-        val[i] = freesteam_mu(S0);
-        break;
-      case CS_PHYS_PROP_SPEED_OF_SOUND:
-        val[i] = freesteam_w(S0);
-        break;
-      }
-    }
-  }
-  else if (thermo_plane == CS_PHYS_PROP_PLANE_PV) {
-    for (cs_lnum_t i = 0; i < n_vals; i++) {
-      SteamState S0 = freesteam_set_pv(var1[i], var2[i]);
-      switch (property) {
-      case CS_PHYS_PROP_PRESSURE:
-        bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in the %s plane."), "pv");
-        break;
-      case CS_PHYS_PROP_TEMPERATURE:
-        val[i] = freesteam_T(S0);
-        break;
-      case CS_PHYS_PROP_ENTHALPY:
-        val[i] = freesteam_h(S0);
-        break;
-      case CS_PHYS_PROP_ENTROPY:
-        val[i] = freesteam_s(S0);
-        break;
-      case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
-        val[i] = freesteam_cp(S0);
-        break;
-      case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
-        val[i] = freesteam_cv(S0);
-        break;
-      case CS_PHYS_PROP_DENSITY:
-        val[i] = freesteam_rho(S0);
-        break;
-      case CS_PHYS_PROP_INTERNAL_ENERGY:
-        val[i] = freesteam_u(S0);
-        break;
-      case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
-        val[i] = freesteam_k(S0);
-        break;
-      case CS_PHYS_PROP_DYNAMIC_VISCOSITY:
-        val[i] = freesteam_mu(S0);
-        break;
-      case CS_PHYS_PROP_SPEED_OF_SOUND:
-        val[i] = freesteam_w(S0);
-        break;
-      }
-    }
-  }
-  else if (thermo_plane == CS_PHYS_PROP_PLANE_TS) {
-    for (cs_lnum_t i = 0; i < n_vals; i++) {
-      SteamState S0 = freesteam_set_Ts(var1[i], var2[i]);
-      switch (property) {
-      case CS_PHYS_PROP_PRESSURE:
-        val[i] = freesteam_p(S0);
-        break;
-      case CS_PHYS_PROP_TEMPERATURE:
-        bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in the %s plane."), "Ts");
-        break;
-      case CS_PHYS_PROP_ENTHALPY:
-        val[i] = freesteam_h(S0);
-        break;
-      case CS_PHYS_PROP_ENTROPY:
-        bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in the %s plane."), "Ts");
-        break;
-      case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
-        val[i] = freesteam_cp(S0);
-        break;
-      case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
-        val[i] = freesteam_cv(S0);
-        break;
-      case CS_PHYS_PROP_DENSITY:
-        val[i] = freesteam_rho(S0);
-        break;
-      case CS_PHYS_PROP_INTERNAL_ENERGY:
-        val[i] = freesteam_u(S0);
-        break;
-      case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
-        val[i] = freesteam_k(S0);
-        break;
-      case CS_PHYS_PROP_DYNAMIC_VISCOSITY:
-        val[i] = freesteam_mu(S0);
-        break;
-      case CS_PHYS_PROP_SPEED_OF_SOUND:
-        val[i] = freesteam_w(S0);
-        break;
-      }
-    }
-  }
-  else if (thermo_plane == CS_PHYS_PROP_PLANE_TX) {
-    for (cs_lnum_t i = 0; i < n_vals; i++) {
-      SteamState S0 = freesteam_set_Tx(var1[i], var2[i]);
-      switch (property) {
-      case CS_PHYS_PROP_PRESSURE:
-        val[i] = freesteam_p(S0);
-        break;
-      case CS_PHYS_PROP_TEMPERATURE:
-        bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in the %s plane."), "Tx");
-        break;
-      case CS_PHYS_PROP_ENTHALPY:
-        val[i] = freesteam_h(S0);
-        break;
-      case CS_PHYS_PROP_ENTROPY:
-        val[i] = freesteam_s(S0);
-        break;
-      case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
-        val[i] = freesteam_cp(S0);
-        break;
-      case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
-        val[i] = freesteam_cv(S0);
-        break;
-      case CS_PHYS_PROP_DENSITY:
-        val[i] = freesteam_rho(S0);
-        break;
-      case CS_PHYS_PROP_INTERNAL_ENERGY:
-        val[i] = freesteam_u(S0);
-        break;
-      case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
-        val[i] = freesteam_k(S0);
-        break;
-      case CS_PHYS_PROP_DYNAMIC_VISCOSITY:
-        val[i] = freesteam_mu(S0);
-        break;
-      case CS_PHYS_PROP_SPEED_OF_SOUND:
-        val[i] = freesteam_w(S0);
-        break;
-      }
-    }
-  }
-#else
-  CS_UNUSED(thermo_plane);
-  CS_UNUSED(property);
-  CS_UNUSED(n_vals);
-  CS_UNUSED(var1);
-  CS_UNUSED(var2);
-  CS_UNUSED(val);
-
-  bft_error(__FILE__, __LINE__, 0,
-            _("Freesteam support not available in this build."));
-#endif
-}
-
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Get reference value of a physical property
  *
  * \param[in] name  property name
@@ -992,7 +643,6 @@ cs_physical_property_get_ref_value(const char  *name)
   return pty->ref_value;
 
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!

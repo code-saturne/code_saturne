@@ -765,7 +765,6 @@ CS_AC_TEST_CGNS
 CS_AC_TEST_MED
 CS_AC_TEST_CCM
 CS_AC_TEST_EOS
-CS_AC_TEST_FREESTEAM
 CS_AC_TEST_COOLPROP
 CS_AC_TEST_ZLIB
 CS_AC_TEST_MEDCOUPLING
@@ -1308,7 +1307,6 @@ if (test x$cs_have_melissa = xyes) ; then
   echo "   Melissa as plugin: "$cs_have_plugin_melissa""
 fi
 echo " EOS support: "$cs_have_eos""
-echo " freesteam support: "$cs_have_freesteam""
 echo " CoolProp support: "$cs_have_coolprop""
 echo " PETSc support: "$cs_have_petsc""
 echo " MUMPS support: "$cs_have_mumps""

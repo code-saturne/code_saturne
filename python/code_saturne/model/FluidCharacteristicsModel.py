@@ -193,7 +193,6 @@ class FluidCharacteristicsModel(Variables, Model):
         self.mask_builtin   = 1 << 0
         self.mask_CoolProp  = 1 << 1
         self.mask_EOS       = 1 << 2
-        self.mask_freesteam = 1 << 3
 
         self.tables = 0
 
@@ -244,14 +243,6 @@ class FluidCharacteristicsModel(Variables, Model):
 
         try:
             cfg = case.case['package'].config
-
-            if cfg.libs['freesteam'].have:
-                self.tables += self.mask_freesteam
-                fli = 'Water'
-                if fli not in self.lib_properties.keys():
-                    self.lib_properties[fli] = self.mask_freesteam
-                else:
-                    self.lib_properties[fli] += self.mask_freesteam
 
             if cfg.libs['coolprop']:
                 if not coolprop_fluids:
@@ -418,10 +409,6 @@ class FluidCharacteristicsModel(Variables, Model):
                 for fli in fls:
                     if fli != 'PerfectGas':
                         methods.append((fli, True))
-
-        if material_flags & self.mask_freesteam:
-            avail = self.tables & self.mask_freesteam != 0
-            methods.append(("freesteam", avail))
 
         if material_flags & self.mask_CoolProp:
             avail = self.tables & self.mask_CoolProp != 0
@@ -679,7 +666,7 @@ class FluidCharacteristicsModel(Variables, Model):
             nodem.xmlRemoveNode()
 
         # suppress reference choice if not EOS
-        if method in ("user_properties", "freesteam", "CoolProp"):
+        if method in ("user_properties", "CoolProp"):
             nodem = childNode.xmlGetNode('reference')
             if nodem:
                 nodem.xmlRemoveNode()
@@ -715,9 +702,6 @@ class FluidCharacteristicsModel(Variables, Model):
         if material_flags & self.mask_CoolProp:
             methods.append("CoolProp")
 
-        if material_flags & self.mask_freesteam:
-            methods.append("freesteam")
-
         if old_method not in methods and methods:
             methods.append("unknown")
             self.setMethod(methods[0])
@@ -730,7 +714,7 @@ class FluidCharacteristicsModel(Variables, Model):
         """
         return available reference value for EOS
         """
-        if method in ("user_properties", "freesteam", "CoolProp"):
+        if method in ("user_properties", "CoolProp"):
             return None
 
         references = self.eos.getFluidReferences(material, self.getMethod())
@@ -746,7 +730,7 @@ class FluidCharacteristicsModel(Variables, Model):
         reference = ""
         material = self.getMaterials()
         method = self.getMethod()
-        if method in ("user_properties", "freesteam", "CoolProp"):
+        if method in ("user_properties", "CoolProp"):
             return None
 
         nodem = self.node_fluid.xmlGetChildNode('method')

@@ -33,6 +33,8 @@
 
 #include "cs_defs.h"
 
+#include "cs_thermal_model.h"
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -80,7 +82,7 @@ cs_thermal_table_set(const char                        *material,
                      const char                        *method,
                      const char                        *reference,
                      cs_phys_prop_thermo_plane_type_t   thermo_plane,
-                     int                                temp_scale);
+                     cs_temperature_scale_t             temp_scale);
 
 /*----------------------------------------------------------------------------
  * Finalize thermal table
@@ -158,29 +160,6 @@ cs_phys_prop_compute(cs_phys_prop_type_t          property,
                      const cs_real_t              var1[],
                      const cs_real_t              var2[],
                      cs_real_t                    val[]);
-
-/*----------------------------------------------------------------------------
- * Compute properties with Freesteam in a defined thermal plane.
- *
- * parameters:
- *   thermo_plane <-- thermodynamic plane
- *   property     <-- property queried
- *   n_vals       <-- number of values
- *   var1         <-- values on first plane axis
- *   var2         <-- values on second plane axis
- *   val          --> resulting property values
- *
- * returns:
- *   floating point value associated with the key id for this field
- *----------------------------------------------------------------------------*/
-
-void
-cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
-                       cs_phys_prop_type_t                property,
-                       const cs_lnum_t                    n_vals,
-                       const cs_real_t                    var1[],
-                       const cs_real_t                    var2[],
-                       cs_real_t                          val[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

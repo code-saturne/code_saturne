@@ -3894,7 +3894,7 @@ cs_gui_physical_properties(void)
       //  // TODO compressible
       //  thermal_plane = CS_PHYS_PROP_PLANE_PS;
 
-      const int itpscl = cs_glob_thermal_model->itpscl;
+      const cs_temperature_scale_t itpscl = cs_glob_thermal_model->itpscl;
       const char *method = _thermal_table_choice("method");
 
       if (   strcmp(method, "CoolProp") == 0

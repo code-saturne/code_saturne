@@ -631,11 +631,6 @@ The list of third-party software usable with code_saturne is provided here:
    it is not currently free, so usually available only to users at EDF,
    CEA, or organisms participating in projects with those entities.
 
-* [freesteam](http://freesteam.sourceforge.net) is a free software thermodynamic
-  properties library, implementing the IAPWS-IF97 steam tables, from the
-  [International Association for the Properties of Water and Steam (IAPWS)](http://www.iapws.org).
-  Version 2.0 or above may be used.
-
 * [CoolProp](http://www.coolprop.org) is a quite recent open source library,
   which provides pure and pseudo-pure fluid equations of state and transport properties
   for 122 components (as of version 6.4), mixture properties using high-accuracy Helmholtz
@@ -863,13 +858,6 @@ For a static build with both libCCMIO and CGNS support, reading ADF-based
 CGNS files may fail. To work around this issue, CGNS files may be converted
 to HDF5 using the `adf2hdf` utility (from the CGNS tools). By default,
 CGNS post-processing output files use HDF5, so this issue is rare on output.
-
-### freesteam
-
-This library's build instructions mention bindings with ascend, but those are not
-necessary in the context of code_saturne, so building without them is simplest.
-Its build system is based on scons, and builds on relatively recent systems should
-be straightforward.
 
 ### CoolProp
 

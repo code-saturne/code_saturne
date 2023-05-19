@@ -44,7 +44,6 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/gui \
 -I$(top_srcdir)/src/turb \
 $(CPPFLAGS_PLE) \
-$(FREESTEAM_CPPFLAGS) \
 $(MPI_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)

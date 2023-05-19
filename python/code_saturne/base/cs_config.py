@@ -126,7 +126,7 @@ class config:
 
         self.deplibs = ['saturne',                      # Code_Saturne
                         'ple',                          # PLE
-                        'eos', 'freesteam', 'coolprop', # Equations of state
+                        'eos', 'coolprop',              # Equations of state
                         'ccm', 'cgns', 'med', 'hdf5',   # Mesh filters
                         'catalyst', 'melissa',          # co-processing libraries
                         'medcoupling',                  # MED coupling
@@ -267,7 +267,6 @@ class config:
                                                 'medcoupling', config_dict)
 
         self.libs['eos']       = prerequisite('EOS', 'eos', config_dict)
-        self.libs['freesteam'] = prerequisite('FREESTEAM', 'freesteam', config_dict)
         self.libs['coolprop']  = prerequisite('COOLPROP', 'coolprop', config_dict)
 
         self.libs['mpi'] = prerequisite('MPI', 'mpi', config_dict, add_rpath=False)

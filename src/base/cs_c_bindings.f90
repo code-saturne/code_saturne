@@ -1408,21 +1408,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function to compute properties with Freesteam in a
-    ! defined thermal plane.
-
-    subroutine phys_prop_freesteam(thermo_plane, property, n_vals,            &
-                                   var1, var2, val)                           &
-      bind(C, name='cs_phys_prop_freesteam')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), intent(in), value :: thermo_plane, property, n_vals
-      real(kind=c_double), dimension(*), intent(in) :: var1, var2
-      real(kind=c_double), dimension(*), intent(out) :: val
-    end subroutine phys_prop_freesteam
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function
     !> \brief Get reference value of a physical property
 
