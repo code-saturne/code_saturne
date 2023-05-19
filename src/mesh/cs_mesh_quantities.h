@@ -189,6 +189,24 @@ extern unsigned cs_glob_mesh_quantities_flag;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return 0 if cell is disabled, 1 otherwise.
+ *
+ * \param[in]  cell_id
+ *
+ * \return  1 if the cell is active, 0 if it is disabled.
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline int
+cs_mesh_quantities_cell_is_active(cs_lnum_t              cell_id,
+                                  cs_mesh_quantities_t  *mq)
+{
+  return (1 - (mq->has_disable_flag
+              *mq->c_disable_flag[mq->has_disable_flag * cell_id]));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Query or modification of the option for computing cell centers.
  *
  * \param[in]  algo_choice  < 0 : query
