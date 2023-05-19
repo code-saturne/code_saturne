@@ -305,10 +305,11 @@ cs_rad_transfer_bcs(int         nvar,
 
   /* Relaxation coefficient: 0 < tx <= 1
 
-   * To compute the wall temperature, compute a tmperature increment
+   * To compute the wall temperature, compute a temperature increment
    * DeltaT between the current step n et previous step n-1, then compute:
    *    n    n-1                                 n-1
-   *   T  = T    + DeltaT si le rapport DeltaT/T    =< tx, sinon
+   *   T  = T    + DeltaT if the ratio  DeltaT/T    =< tx,
+   *   otherwise:
    *    n    n-1                      n-1             n-1
    *   T  = T    * (1 + tx *((DeltaT/T   ) / |DeltaT/T   |))
    */
@@ -886,6 +887,8 @@ cs_rad_transfer_bcs(int         nvar,
     if (   rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY
         || rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_1D_T) {
       int t_bc_code = th_icodcl[face_id];
+      /* Negativ icodcl if no conversion is needed
+       * (BCs directly expressed in term of solved variable) */
       int sgn = (t_bc_code < 0) ? - 1 : 1;
       if (sgn*t_bc_code != icodw) {
         if (th_icodcl[face_id] == 15)
@@ -897,7 +900,7 @@ cs_rad_transfer_bcs(int         nvar,
         hg_icodcl[face_id] = icodw;
     }
 
-    else if (rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T){
+    else if (rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T) {
       th_icodcl[face_id]   = icodw;
       if (f_hgas != NULL)
         hg_icodcl[face_id] = icodw;
