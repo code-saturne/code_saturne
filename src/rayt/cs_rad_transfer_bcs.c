@@ -1142,9 +1142,8 @@ cs_rad_transfer_bcs(int         nvar,
 
     if (   bc_type[face_id] == CS_SMOOTHWALL
         || bc_type[face_id] == CS_ROUGHWALL) {
-
-      f_b_temp->val[face_id] = twall[face_id] - xmtk;//FIXME useless, update rcodcl rather
-
+      //FIXME check if this is useful; or simply updating rcodcl instead ?
+      f_b_temp->val[face_id] = twall[face_id] - xmtk;
     }
 
     else {
