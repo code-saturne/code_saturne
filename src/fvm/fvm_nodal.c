@@ -1587,8 +1587,8 @@ fvm_nodal_remove_tag(fvm_nodal_t  *this_nodal,
  * Preset number and list of vertices to assign to a nodal mesh.
  *
  * If the parent_vertex_id argument is NULL, the list is assumed to
- * be {1, 2, ..., n}. If parent_vertex_id is given, it specifies a
- * list of n vertices from a larger set (1 to n numbering).
+ * be {0, 1, ..., n-1}. If parent_vertex_id is given, it specifies a
+ * list of n vertices from a larger set (0 to n-1 numbering).
  *
  * Ownership of the given parent vertex numbering array is
  * transferred to the nodal mesh representation structure.
