@@ -858,6 +858,21 @@ cs_function_define_boundary_thermal_flux(void)
   if (f_t == NULL)
     return f;
 
+  const char *names[] = {"tplus", "tstar"};
+
+  for (int i = 0; i < 2; i++) {
+
+    cs_field_t *bf = cs_field_by_name_try(names[i]);
+    if (bf == NULL) {
+      int type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
+      int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
+
+      bf = cs_field_create(names[i], type, location_id, 1, false);
+      cs_field_set_key_int(bf, cs_field_key_id("log"), 0);
+      cs_field_set_key_int(bf, cs_field_key_id("post_vis"), 0);
+    }
+  }
+
   f = cs_function_define_by_func("boundary_thermal_flux",
                                  CS_MESH_LOCATION_BOUNDARY_FACES,
                                  1,
