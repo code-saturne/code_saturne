@@ -1526,7 +1526,7 @@ function drayuoz(zh)
   b = 20000.d0
   c = 5000.d0
 
-  drayuoz = -a / c *(1.d0 + dexp(-b/c))              &
+  drayuoz = a / c *(1.d0 + dexp(-b/c))              &
              * dexp((zh-b)/c)                        &
              / ((1.d0 + dexp((zh-b)/c))**(2.0d0))
 
