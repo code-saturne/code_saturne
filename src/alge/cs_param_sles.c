@@ -1784,19 +1784,19 @@ _set_saturne_sles(bool                 use_field_id,
 
         cs_multigrid_set_solver_options
           (mg,
-           CS_SLES_PCG,   /* descent smoother */
-           CS_SLES_PCG,   /* ascent smoother */
-           CS_SLES_PCG,   /* coarse solver */
-           1,             /* n_max_cycles */
-           2,             /* n_max_iter_descent, */
-           2,             /* n_max_iter_ascent */
-           500,           /* n_max_iter_coarse */
-           0,             /* poly_degree_descent */
-           0,             /* poly_degree_ascent */
-           0,             /* poly_degree_coarse */
-           -1.0,          /* precision_mult_descent */
-           -1.0,          /* precision_mult_ascent */
-           1.0);          /* precision_mult_coarse */
+           CS_SLES_P_SYM_GAUSS_SEIDEL, /* descent smoother */
+           CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoother */
+           CS_SLES_PCG,                /* coarse solver */
+           1,                          /* n_max_cycles */
+           1,                          /* n_max_iter_descent, */
+           4,                          /* n_max_iter_ascent */
+           500,                        /* n_max_iter_coarse */
+           0,                          /* poly_degree_descent */
+           0,                          /* poly_degree_ascent */
+           1,                          /* poly_degree_coarse */
+           -1.0,                       /* precision_mult_descent */
+           -1.0,                       /* precision_mult_ascent */
+           1.0);                       /* precision_mult_coarse */
 
         cs_multigrid_set_coarsening_options(mg,
                                             8,    /* aggregation_limit */
