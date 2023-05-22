@@ -815,7 +815,7 @@ if (muzero.gt.epzero) then
   enddo
   ! If there is no cloud
   if (itop .gt. 1) then
-    do i = k1, itop
+    do i = k1, itop - 1
       ! addition of ozone absorption for heating in the layers when adding method is used
       zqm1 = zqq(i)
       zq = zqq(i+1)
