@@ -299,6 +299,15 @@ interface
 
   !=============================================================================
 
+  subroutine resvoi(dt, iterns ) &
+    bind(C, name='cs_solve_void_fraction')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer, value :: iterns
+    real(kind=c_double), dimension(*) :: dt
+  end subroutine resvoi
+
+  !=============================================================================
 
 end interface
 

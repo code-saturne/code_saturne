@@ -26,10 +26,10 @@
 
 !> \file resvoi.f90
 !>
-!> \brief Solving the void fraction \f$ \alpha \f$ for the Volume of Fluid
+!> \brief Solve the void fraction \f$ \alpha \f$ for the Volume of Fluid
 !>        method (and hence for cavitating flows).
 !>
-!> This function solves the equation:
+!> This function solves:
 !> \f[
 !> \dfrac{\alpha^n - \alpha^{n-1}}{\Delta t}
 !>     + \divs \left( \alpha^n \vect{u}^n \right)
@@ -55,7 +55,8 @@
 !_______________________________________________________________________________
 
 subroutine resvoi &
- ( dt     , iterns )
+ ( dt     , iterns ) &
+ bind(C, name='cs_solve_void_fraction')
 
 !===============================================================================
 
