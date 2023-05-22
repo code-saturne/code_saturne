@@ -708,10 +708,10 @@ if (muzero.gt.epzero) then
     ! Calculation of absorption coefficient ckup and ckdown
     ! useful for 3D simulation
     dzx = m*drayuoz(zq)
-    dzxstar = -mbar*drayuoz(zq)
+    dzxstar = mbar*drayuoz(zq)
 
-    ckdown_suv_r(i)=-dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
-    ckdown_suv_f(i)= -dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
+    ckdown_suv_r(i)=dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
+    ckdown_suv_f(i)= dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
     ckup_suv_f(i)=dzxaoz(xstar,dzxstar)/(0.647d0-rrbar-raysoz(xstar))
 
   enddo
@@ -834,10 +834,10 @@ if (muzero.gt.epzero) then
       ufso3(i)=muzero*fo*(0.647d0-rrbar-raysoz(xstar))*upw(i+1,n)
 
       dzx = m*drayuoz(zq)
-      dzxstar = -mbar*drayuoz(zq)
+      dzxstar = mbar*drayuoz(zq)
       ! calculation of absorption coefficient ckup and ckdown useful for 3D simulation
-      ckdown_suv_r(i)=-dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
-      ckdown_suv_f(i)= -dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
+      ckdown_suv_r(i)= dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
+      ckdown_suv_f(i)= dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
       ckup_suv_f(i)=dzxaoz(xstar,dzxstar)/(0.647d0-rrbar-raysoz(xstar))
 
     enddo
@@ -1117,6 +1117,7 @@ if (muzero.gt.epzero) then
     cp_aero=(1.d0-piaero_o3)/piaero_o3
     ck_aero_o3=cp_aero*m*tauao3(k)/deltaz
 
+    !SUV band
     ckup_suv_f(k)=(ckup_suv_f(k)+ ck_aero_o3)*(1.d0-fneray(k))+&
       (ckup_suv_f(k)+ ck_aero_o3+ck_cloud)*(fneray(k))
     ckdown_suv_f(k)=(ckdown_suv_f(k)+ ck_aero_o3)*(1.d0-fneray(k))+&
@@ -1486,7 +1487,7 @@ contains
 
   !-----------------------------------------------------------------------------
 
-  !> \brief Aborption derivative-function of the solar radiation by ozone
+  !> \brief Absorption derivative-function of the solar radiation by ozone
 
   !> \param[in]       x
   !> \param[in]       dx
