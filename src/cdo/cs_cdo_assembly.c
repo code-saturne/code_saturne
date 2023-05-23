@@ -1,6 +1,7 @@
 /*============================================================================
- * Assembly of local cellwise system into a cs_matrix_t structure through
- * the cs_matrix_assembler_t and its related structures
+ * Set of functions and structures to handle the assembly of cellwise local CDO
+ * systems into a cs_matrix_t structure through the cs_matrix_assembler_t and
+ * its related structures
  *============================================================================*/
 
 /*
@@ -70,11 +71,12 @@ BEGIN_C_DECLS
 /*!
   \file cs_cdo_assembly.c
 
-  \brief Assembly of local cellwise system into a cs_matrix_t structure through
-  the cs_matrix_assembler_t and its related structures.
+  \brief Set of functions and structures to handle the assembly of cellwise
+  local CDO systems into a cs_matrix_t structure through the
+  cs_matrix_assembler_t and its related structures
 
   This function are specific to CDO schemes. Thus one can assume a more specific
-  behavior in order to get a more optimzed version of the standard assembly
+  behavior in order to get a more optimized version of the standard assembly
   process.
 */
 
@@ -113,11 +115,11 @@ typedef struct {
   int                 n_cols;    /* Number of columns (cellwise system) */
   cs_gnum_t          *col_g_id;  /* Global numbering of columns */
   int                *col_idx;   /* Array to build and to give as parameter
-                                    for add_vals() function */
+                                    for *add_vals() functions */
 
   const cs_real_t    *val;       /* Row values */
   cs_real_t          *expval;    /* Expanded row values (when unrolling non
-                                    scalar-valued block) */
+                                    scalar-valued blocks) */
 
 } cs_cdo_assembly_row_t;
 
@@ -125,11 +127,11 @@ struct _cs_cdo_assembly_t {
 
   int      n_cw_dofs;   /* Number of DoFs in a cell */
   int      ddim;        /* Number of real values related to each diagonal
-                            entry */
+                           entry */
   int      edim;        /* Number of real values related to each
                            extra-diagonal entry */
 
-  /* When working with matrix build by scalar-valued blocks, one may need to
+  /* When working with matrix building by scalar-valued blocks, one may need to
      shift the row and/or the column local ids */
 
   cs_lnum_t   l_col_shift;
@@ -145,7 +147,7 @@ struct _cs_cdo_assembly_t {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Expand small 3x3 matrices into rows which are sent to assembler
+ * \brief Expand small 3x3 matrices into rows which are sent to an assembler
  *
  * \param[in]      bi         id of the "i" block
  * \param[in]      bj         id of the "j" block
@@ -274,14 +276,13 @@ _g_binary_search(int              g_id_array_size,
  *  Specific case:
  *        CDO schemes with no openMP and scalar-valued quantities
  *
- * \warning  The matrix pointer must point to valid data when the selection
- *           function is called, so the life cycle of the data pointed to
- *           should be at least as long as that of the assembler values
- *           structure.
+ * \warning The matrix pointer must point to valid data when the selection
+ *          function is called, so the life cycle of the data pointed to should
+ *          be at least as long as that of the assembler values structure.
  *
- * \remark  Note that we pass column indexes (not ids) here; as the
- *          caller is already assumed to have identified the index
- *          matching a given column id.
+ * \remark Note that we pass column indexes (not ids) here; as the caller is
+ *         already assumed to have identified the index matching a given
+ *         column id.
  *
  * \param[in]      row         pointer to a cs_cdo_assembly_row_t type
  * \param[in, out] matrix_p    untyped pointer to matrix description structure
@@ -319,14 +320,13 @@ _add_scal_values_single(const cs_cdo_assembly_row_t    *row,
  *  Specific case:
  *        CDO schemes with openMP atomic section and scalar-valued quantities
  *
- * \warning  The matrix pointer must point to valid data when the selection
- *           function is called, so the life cycle of the data pointed to
- *           should be at least as long as that of the assembler values
- *           structure.
+ * \warning The matrix pointer must point to valid data when the selection
+ *          function is called, so the life cycle of the data pointed to should
+ *          be at least as long as that of the assembler values structure.
  *
- * \remark  Note that we pass column indexes (not ids) here; as the
- *          caller is already assumed to have identified the index
- *          matching a given column id.
+ * \remark Note that we pass column indexes (not ids) here; as the caller is
+ *         already assumed to have identified the index matching a given
+ *         column id.
  *
  * \param[in]      row         pointer to a cs_cdo_assembly_row_t type
  * \param[in, out] matrix_p    untyped pointer to matrix description structure
@@ -368,13 +368,12 @@ _add_scal_values_atomic(const cs_cdo_assembly_row_t    *row,
  *  CDO schemes with openMP critical section and scalar-valued quantities
  *
  * \warning The matrix pointer must point to valid data when the selection
- *          function is called. Be careful to the life cycle of the data. This
- *          should be at least as long as that of the assembler values
- *          structure.
+ *          function is called, so the life cycle of the data pointed to should
+ *          be at least as long as that of the assembler values structure.
  *
  * \remark Note that we pass column indexes (not ids) here; as the caller is
- *         already assumed to have identified the index matching a given column
- *         id.
+ *         already assumed to have identified the index matching a given
+ *         column id.
  *
  * \param[in]      row         pointer to a cs_cdo_assembly_row_t type
  * \param[in, out] matrix_p    untyped pointer to matrix description structure
@@ -413,8 +412,8 @@ _add_scal_values_critical(const cs_cdo_assembly_row_t    *row,
  *        Case where the row belong to the local rank and all its colums too.
  *
  * See \ref cs_matrix_assembler_values_add_g which performs the same operations
- * In the specific case of CDO system, one assumes predefined choices in
- * order to get a more optimized version of this function
+ * In the specific case of CDO system, one assumes predefined choices in order
+ * to get a more optimized version of this function
  *
  * \param[in, out] ma     pointer to matrix assembler values structure
  * \param[in, out] row    pointer to a cs_cdo_assembly_row_t structure
@@ -458,8 +457,8 @@ _set_col_idx_scal_loc(const cs_matrix_assembler_t     *ma,
  *        belong to a distant rank. Hence the naming *_locdist
  *
  * See \ref cs_matrix_assembler_values_add_g which performs the same operations
- * In the specific case of CDO system, one assumes predefined choices in
- * order to get a more optimized version of this function
+ * In the specific case of CDO system, one assumes predefined choices in order
+ * to get a more optimized version of this function
  *
  * \param[in, out]  ma     pointer to matrix assembler values structure
  * \param[in, out]  row    pointer to a cs_cdo_assembly_row_t structure
@@ -544,8 +543,8 @@ _set_col_idx_scal_locdist(const cs_matrix_assembler_t    *ma,
  *          be at least as long as that of the assembler values structure.
  *
  * \remark Note that we pass column indexes (not ids) here; as the caller is
- *         already assumed to have identified the index matching a given column
- *         id.
+ *         already assumed to have identified the index matching a given
+ *         column id.
  *
  * \param[in]      row         pointer to a cs_cdo_assembly_row_t type
  * \param[in, out] matrix_p    untyped pointer to matrix description structure
@@ -606,8 +605,8 @@ _add_vect_values_single(const cs_cdo_assembly_row_t    *row,
  *          be at least as long as that of the assembler values structure.
  *
  * \remark Note that we pass column indexes (not ids) here; as the caller is
- *         already assumed to have identified the index matching a given column
- *         id.
+ *         already assumed to have identified the index matching a given
+ *         column id.
  *
  * \param[in]      row         pointer to a cs_cdo_assembly_row_t type
  * \param[in, out] matrix_p    untyped pointer to matrix description structure
@@ -671,8 +670,8 @@ _add_vect_values_atomic(const cs_cdo_assembly_row_t    *row,
  *          be at least as long as that of the assembler values structure.
  *
  * \remark Note that we pass column indexes (not ids) here; as the caller is
- *         already assumed to have identified the index matching a given column
- *         id.
+ *         already assumed to have identified the index matching a given
+ *         column id.
  *
  * \param[in]      row         pointer to a cs_cdo_assembly_row_t type
  * \param[in, out] matrix_p    untyped pointer to matrix description structure
@@ -734,8 +733,8 @@ _add_vect_values_critical(const cs_cdo_assembly_row_t    *row,
  *        Variant with openMP threading.
  *
  * See \ref cs_matrix_assembler_values_add_g which performs the same operations
- * In the specific case of CDO system, one assumes predefined choices in
- * order to get a more optimized version of this function
+ * In the specific case of CDO system, one assumes predefined choices in order
+ * to get a more optimized version of this function
  *
  * \param[in, out] mav    pointer to matrix assembler values structure
  * \param[in]      ma     pointer to matrix assembler values structure
@@ -808,8 +807,8 @@ _assemble_scal_dist_row_threaded(cs_matrix_assembler_values_t     *mav,
  *        Single-threaded variant (i.e. without openMP).
  *
  * See \ref cs_matrix_assembler_values_add_g which performs the same operations
- * In the specific case of CDO system, one assumes predefined choices in
- * order to get a more optimized version of this function
+ * In the specific case of CDO system, one assumes predefined choices in order
+ * to get a more optimized version of this function
  *
  * \param[in, out] mav    pointer to matrix assembler values structure
  * \param[in]      ma     pointer to matrix assembler values structure
@@ -878,8 +877,8 @@ _assemble_scal_dist_row_single(cs_matrix_assembler_values_t     *mav,
  *        Case where the row does not belong to the local rank.
  *
  * See \ref cs_matrix_assembler_values_add_g which performs the same operations
- * In the specific case of CDO system, one assumes predefined choices in
- * order to get a more optimized version of this function
+ * In the specific case of CDO system, one assumes predefined choices in order
+ * to get a more optimized version of this function
  *
  * \param[in, out] mav    pointer to matrix assembler values structure
  * \param[in]      ma     pointer to matrix assembler values structure
@@ -973,8 +972,8 @@ _assemble_vect_dist_row_threaded(cs_matrix_assembler_values_t      *mav,
  *        Case where the row does not belong to the local rank. No openMP.
  *
  * See \ref cs_matrix_assembler_values_add_g which performs the same operations
- * In the specific case of CDO system, one assumes predefined choices in
- * order to get a more optimized version of this function
+ * In the specific case of CDO system, one assumes predefined choices in order
+ * to get a more optimized version of this function
  *
  * \param[in, out] mav    pointer to matrix assembler values structure
  * \param[in]      ma     pointer to matrix assembler values structure
@@ -1208,10 +1207,10 @@ _free_assembly_struct(cs_cdo_assembly_t  **p_asb)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get a pointer to a cs_cdo_assembly_t structure related
- *         to a given thread
+ * \brief Get a pointer to a cs_cdo_assembly_t structure related to a given
+ *        thread
  *
- * \param[in]  t_id    id in the array of pointer
+ * \param[in] t_id    id in the array of pointer
  *
  * \return a pointer to a cs_cdo_assembly_t structure
  */
@@ -1228,13 +1227,13 @@ cs_cdo_assembly_get(int    t_id)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate cs_cdo_assembly_t structure (shared among schemes). Each
- *         thread has its own copy of this structure to enable a multithreaded
- *         assembly process.
+ * \brief Allocate cs_cdo_assembly_t structure (shared among schemes). Each
+ *        thread has its own copy of this structure to enable a multithreaded
+ *        assembly process.
  *
- * \param[in]  ddim          max number of dof values on the diagonal part
- * \param[in]  edim          max number of dof values on the extra-diag. part
- * \param[in]  n_cw_dofs     max number of DoFs in a cell
+ * \param[in] ddim          max number of dof values on the diagonal part
+ * \param[in] edim          max number of dof values on the extra-diag. part
+ * \param[in] n_cw_dofs     max number of DoFs in a cell
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1243,7 +1242,7 @@ cs_cdo_assembly_init(int     ddim,
                      int     edim,
                      int     n_cw_dofs)
 {
-  /* Common buffers for assemble usage */
+  /* Common buffers for an "assembly" usage */
 
   if (cs_cdo_assembly == NULL) {
 
@@ -1269,15 +1268,15 @@ cs_cdo_assembly_init(int     ddim,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free matrix-related structures used during the simulation.
- *         Display overall statistic about the assembly stage for CDO schemes
+ * \brief Free matrix-related structures used during the simulation.
+ *        Display overall statistic about the assembly stage for CDO schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_assembly_finalize(void)
 {
-  /* Free shared buffers for the assembly process */
+  /* Free shared buffers related to the assembly process */
 
   for (int t_id = 0; t_id < cs_glob_n_threads; t_id++)
     _free_assembly_struct(&(cs_cdo_assembly[t_id]));
@@ -1287,7 +1286,7 @@ cs_cdo_assembly_finalize(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the current shift values to consider during the assembly stage
+ * \brief Set the current shift values to consider during the assembly stage
  *
  * \param[in, out] asb          pointer to a cs_cdo_assembly_t to update
  * \param[in]      l_row_shift  shift to apply to local row ids

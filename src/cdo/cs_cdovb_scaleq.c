@@ -2438,9 +2438,9 @@ cs_cdovb_scaleq_init_values(cs_real_t                     t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build and solve the linear system arising from a scalar steady-state
- *         convection/diffusion/reaction equation with a CDO-Vb scheme
- *         One works cellwise and then process to the assembly
+ * \brief Build and solve the linear system arising from a scalar steady-state
+ *        convection/diffusion/reaction equation with a CDO-Vb scheme
+ *        One works cellwise and then process to the assembly
  *
  * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
@@ -2655,14 +2655,14 @@ cs_cdovb_scaleq_solve_steady_state(bool                        cur2prev,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build and solve the linear system arising from a scalar steady-state
- *         convection/diffusion/reaction equation with a CDO-Vb scheme
- *         One works cellwise and then process to the assembly.
+ * \brief Build and solve the linear system arising from a scalar steady-state
+ *        convection/diffusion/reaction equation with a CDO-Vb scheme
+ *        One works cellwise and then process to the assembly.
  *
- *         Variant with an incremental approach. The system is modified to fit
- *         the incremental form (unknows are the increments and rhs corresponds
- *         to a residual). This is useful when the resolution is embedded into
- *         a non-linear process.
+ *        Variant with an incremental approach. The system is modified to fit
+ *        the incremental form (unknows are the increments and rhs corresponds
+ *        to a residual). This is useful when the resolution is embedded into
+ *        a non-linear process.
  *
  * \param[in]      cur2prev   Not used. Should be done before if needed.
  * \param[in]      mesh       pointer to a cs_mesh_t structure

@@ -2,8 +2,9 @@
 #define __CS_CDO_ASSEMBLY_H__
 
 /*============================================================================
- * Functions to handle the assembly process of equatino discretized with CDO
- * schemes
+ * Set of functions and structures to handle the assembly of cellwise local CDO
+ * systems into a cs_matrix_t structure through the cs_matrix_assembler_t and
+ * its related structures
  *============================================================================*/
 
 /*
@@ -81,10 +82,10 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get a pointer to a cs_cdo_assembly_t structure related
- *         to a given thread
+ * \brief Get a pointer to a cs_cdo_assembly_t structure related to a given
+ *        thread
  *
- * \param[in]  t_id    id in the array of pointer
+ * \param[in] t_id    id in the array of pointer
  *
  * \return a pointer to a cs_cdo_assembly_t structure
  */
@@ -95,13 +96,13 @@ cs_cdo_assembly_get(int    t_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate cs_cdo_assembly_t structure (shared among schemes). Each
- *         thread has its own copy this structure to enable a multithreaded
- *         assembly process.
+ * \brief Allocate cs_cdo_assembly_t structure (shared among schemes). Each
+ *        thread has its own copy this structure to enable a multithreaded
+ *        assembly process.
  *
- * \param[in]  ddim          max number of dof values on the diagonal part
- * \param[in]  edim          max number of dof values on the extra-diag. part
- * \param[in]  n_cw_dofs     max number of DoFs in a cell
+ * \param[in] ddim          max number of dof values on the diagonal part
+ * \param[in] edim          max number of dof values on the extra-diag. part
+ * \param[in] n_cw_dofs     max number of DoFs in a cell
  */
 /*----------------------------------------------------------------------------*/
 
@@ -112,8 +113,8 @@ cs_cdo_assembly_init(int     ddim,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free matrix-related structures used during the simulation.
- *         Display overall statistic about the assembly stage for CDO schemes
+ * \brief Free matrix-related structures used during the simulation.
+ *        Display overall statistic about the assembly stage for CDO schemes
  */
 /*----------------------------------------------------------------------------*/
 
@@ -122,7 +123,7 @@ cs_cdo_assembly_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the current shift values to consider during the assembly stage
+ * \brief Set the current shift values to consider during the assembly stage
  *
  * \param[in, out] asb          pointer to a cs_cdo_assembly_t to update
  * \param[in]      l_row_shift  shift to apply to local row ids

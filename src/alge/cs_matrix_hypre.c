@@ -1079,6 +1079,7 @@ _assembler_values_end(void  *matrix_p)
 
     HYPRE_IJVectorInitialize_v2(coeffs->hx, coeffs->memory_location);
     HYPRE_IJVectorInitialize_v2(coeffs->hy, coeffs->memory_location);
+
   }
 
   /* Set stat flag */
