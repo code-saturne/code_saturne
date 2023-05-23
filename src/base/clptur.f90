@@ -447,7 +447,7 @@ else
 endif
 
 tlag => null()
-! --- Save Lagragian time scale if defined
+! --- Save Lagrangian time scale if defined
 call field_get_id_try('lagr_time', f_id_tlag)
 
 if (f_id_tlag.ge.0) then

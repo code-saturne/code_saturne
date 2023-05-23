@@ -497,7 +497,7 @@ cs_gui_particles_model(void)
 }
 
 /*----------------------------------------------------------------------------
- * Define lagrangian model boundary conditions
+ * Define Lagrangian model boundary conditions
  *----------------------------------------------------------------------------*/
 
 void
