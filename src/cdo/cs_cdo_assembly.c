@@ -1341,59 +1341,157 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t                   *m,
   for (int i = 0; i < m->n_cols; i++)
     row->col_g_id[i] = rset->g_id[dof_ids[i]];
 
-  cs_gnum_t  r_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
-  cs_gnum_t  c_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
+  if (m->n_rows < CS_CDO_ASSEMBLE_BUF_SIZE) {
 
-  if (CS_CDO_ASSEMBLE_BUF_SIZE > m->n_rows*m->n_cols) {
+    cs_gnum_t  r_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
+    cs_gnum_t  c_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
+    cs_real_t  values[CS_CDO_ASSEMBLE_BUF_SIZE];
+
+#if defined(DEBUG) && !defined(NDEBUG)
+    memset(r_gids, 0, CS_CDO_ASSEMBLE_BUF_SIZE*sizeof(cs_gnum_t));
+    memset(c_gids, 0, CS_CDO_ASSEMBLE_BUF_SIZE*sizeof(cs_gnum_t));
+    memset(values, 0, CS_CDO_ASSEMBLE_BUF_SIZE*sizeof(cs_real_t));
+#endif
+
+    /* Diagonal entries */
 
     int  bufsize = 0;
     for (int r = 0; r < m->n_rows; r++) {
 
-      const cs_gnum_t r_gid = row->col_g_id[r];
+      r_gids[bufsize] = row->col_g_id[r];
+      c_gids[bufsize] = row->col_g_id[r];
+      values[bufsize] = m->val[(m->n_cols + 1)*r];
+      bufsize++;
 
-      for (int c = 0; c < m->n_cols; c++) {
-
-        r_gids[bufsize] = r_gid;
-        c_gids[bufsize] = row->col_g_id[c];
-        bufsize++;
-
-      } /* Loop on columns */
-    }   /* Loop on rows */
+    }
 
 #   pragma omp critical
-    cs_matrix_assembler_values_add_g(mav, bufsize, r_gids, c_gids, m->val);
+    cs_matrix_assembler_values_add_g(mav, bufsize, r_gids, c_gids, values);
+    bufsize = 0;
 
-  }
-  else { /* Buffer size is too small for this matrix. One needs several calls
-            to *_values_add_g() */
+#if defined(DEBUG) && !defined(NDEBUG)
+    memset(r_gids, 0, CS_CDO_ASSEMBLE_BUF_SIZE*sizeof(cs_gnum_t));
+    memset(c_gids, 0, CS_CDO_ASSEMBLE_BUF_SIZE*sizeof(cs_gnum_t));
+    memset(values, 0, CS_CDO_ASSEMBLE_BUF_SIZE*sizeof(cs_real_t));
+#endif
 
-    int  bufsize = 0;
+    /* Extra-diagonal entries */
+
     for (int r = 0; r < m->n_rows; r++) {
 
       const cs_gnum_t r_gid = row->col_g_id[r];
 
+      if (bufsize + m->n_cols - 1 > CS_CDO_ASSEMBLE_BUF_SIZE) {
+
+#       pragma omp critical
+        cs_matrix_assembler_values_add_g(mav, bufsize,
+                                         r_gids, c_gids, values);
+        bufsize = 0;
+
+#if defined(DEBUG) && !defined(NDEBUG)
+        memset(r_gids, 0, CS_CDO_ASSEMBLE_BUF_SIZE*sizeof(cs_gnum_t));
+        memset(c_gids, 0, CS_CDO_ASSEMBLE_BUF_SIZE*sizeof(cs_gnum_t));
+        memset(values, 0, CS_CDO_ASSEMBLE_BUF_SIZE*sizeof(cs_real_t));
+#endif
+
+      }
+
       for (int c = 0; c < m->n_cols; c++) {
+        if (r_gid != row->col_g_id[c]) {
 
-        r_gids[bufsize] = r_gid;
-        c_gids[bufsize] = row->col_g_id[c];
-        bufsize++;
+          r_gids[bufsize] = r_gid;
+          c_gids[bufsize] = row->col_g_id[c];
+          values[bufsize] = m->val[m->n_cols*r + c];
+          bufsize++;
 
-        if (bufsize == CS_CDO_ASSEMBLE_BUF_SIZE) {
-#         pragma omp critical
-          cs_matrix_assembler_values_add_g(mav,
-                                           bufsize, r_gids, c_gids, m->val);
-
-          bufsize = 0;
-        }
-
+        } /* Not the diagonal */
       } /* Loop on columns */
+
+    } /* Loop on rows */
+
+    if (bufsize > 0) {
+
+#     pragma omp critical
+      cs_matrix_assembler_values_add_g(mav, bufsize, r_gids, c_gids, values);
+
+    }
+
+  }
+  else { /* Buffer size is too small for this matrix. */
+
+    cs_gnum_t  *row_gids = NULL, *col_gids = NULL;
+    cs_real_t  *m_values = NULL;
+    int  max_buf_size = 2*m->n_rows, bufsize = 0;
+
+    BFT_MALLOC(row_gids, max_buf_size, cs_gnum_t);
+    BFT_MALLOC(col_gids, max_buf_size, cs_gnum_t);
+    BFT_MALLOC(m_values, max_buf_size, cs_real_t);
+
+    /* Diagonal entries */
+
+    for (int r = 0; r < m->n_rows; r++) {
+
+      row_gids[bufsize] = row->col_g_id[r];
+      col_gids[bufsize] = row->col_g_id[r];
+      m_values[bufsize] = m->val[(m->n_cols + 1)*r];
+      bufsize++;
+
+    }
+
+#   pragma omp critical
+    cs_matrix_assembler_values_add_g(mav, bufsize,
+                                     row_gids, col_gids, m_values);
+    bufsize = 0;
+
+#if defined(DEBUG) && !defined(NDEBUG)
+    memset(row_gids, 0, max_buf_size*sizeof(cs_gnum_t));
+    memset(col_gids, 0, max_buf_size*sizeof(cs_gnum_t));
+    memset(m_values, 0, max_buf_size*sizeof(cs_real_t));
+#endif
+
+    /* Extra-diagonal entries */
+
+    for (int r = 0; r < m->n_rows; r++) {
+
+      const cs_gnum_t r_gid = row->col_g_id[r];
+
+      if (bufsize + m->n_cols - 1 > max_buf_size) {
+
+#       pragma omp critical
+        cs_matrix_assembler_values_add_g(mav, bufsize,
+                                         row_gids, col_gids, m_values);
+        bufsize = 0;
+
+#if defined(DEBUG) && !defined(NDEBUG)
+        memset(row_gids, 0, max_buf_size*sizeof(cs_gnum_t));
+        memset(col_gids, 0, max_buf_size*sizeof(cs_gnum_t));
+        memset(m_values, 0, max_buf_size*sizeof(cs_real_t));
+#endif
+
+      }
+
+      for (int c = 0; c < m->n_cols; c++) {
+        if (r_gid != row->col_g_id[c]) {
+
+          row_gids[bufsize] = r_gid;
+          col_gids[bufsize] = row->col_g_id[c];
+          m_values[bufsize] = m->val[m->n_cols*r + c];
+          bufsize++;
+
+        } /* Not the diagonal */
+      } /* Loop on columns */
+
     } /* Loop on rows */
 
     if (bufsize > 0) {
 #     pragma omp critical
-      cs_matrix_assembler_values_add_g(mav, bufsize, r_gids, c_gids, m->val);
-      bufsize = 0;
+      cs_matrix_assembler_values_add_g(mav, bufsize,
+                                       row_gids, col_gids, m_values);
     }
+
+    BFT_FREE(row_gids);
+    BFT_FREE(col_gids);
+    BFT_FREE(m_values);
 
   } /* Test on the size of the local buffers */
 }
