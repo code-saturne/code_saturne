@@ -1084,6 +1084,7 @@ cs_sles_hypre_solve(void                *context,
     {
       /* Finalize setup and solve */
       HYPRE_BiCGSTABSetAbsoluteTol(sd->solver, precision*r_norm);
+      HYPRE_BiCGSTABSetTol(sd->solver, 0);
       ierr = HYPRE_ParCSRBiCGSTABSolve(sd->solver, par_a, p_rhs, p_x);
 
       /* Get solution and information */
@@ -1096,6 +1097,7 @@ cs_sles_hypre_solve(void                *context,
     {
       /* Finalize setup and solve */
       HYPRE_GMRESSetAbsoluteTol(sd->solver, precision*r_norm);
+      HYPRE_GMRESSetTol(sd->solver, 0);
       ierr = HYPRE_ParCSRGMRESSolve(sd->solver, par_a, p_rhs, p_x);
 
       /* Get solution and information */
@@ -1117,6 +1119,7 @@ cs_sles_hypre_solve(void                *context,
     {
       /* Finalize setup and solve */
       HYPRE_FlexGMRESSetAbsoluteTol(sd->solver, precision*r_norm);
+      HYPRE_FlexGMRESSetTol(sd->solver, 0);
       ierr = HYPRE_ParCSRFlexGMRESSolve(sd->solver, par_a, p_rhs, p_x);
 
       /* Get solution and information */
@@ -1138,6 +1141,7 @@ cs_sles_hypre_solve(void                *context,
     {
       /* Finalize setup and solve */
       HYPRE_LGMRESSetAbsoluteTol(sd->solver, precision*r_norm);
+      HYPRE_LGMRESSetTol(sd->solver, 0);
       ierr = HYPRE_ParCSRLGMRESSolve(sd->solver, par_a, p_rhs, p_x);
 
       /* Get solution and information */
@@ -1159,6 +1163,7 @@ cs_sles_hypre_solve(void                *context,
     {
       /* Finalize setup and solve */
       HYPRE_PCGSetAbsoluteTol(sd->solver, precision*r_norm);
+      HYPRE_PCGSetTol(sd->solver, 0);
       HYPRE_ParCSRPCGSolve(sd->solver, par_a, p_rhs, p_x);
       ierr = HYPRE_ParCSRPCGSolve(sd->solver, par_a, p_rhs, p_x);
 
