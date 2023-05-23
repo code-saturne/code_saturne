@@ -650,7 +650,9 @@ cs_atmo_declare_chem_from_spack(void);
  * \param[in]   heurtu      Universal time (hour)
  * \param[in]   imer        sea index
  * \param[out]  albe        albedo
+ * \param[out]  za          zenithal angle
  * \param[out]  muzero      cosin of zenithal angle
+ *                          (+ correction due to Earth curvature)
  * \param[out]  omega       solar azimut angle
  * \param[out]  fo          solar constant
  */
@@ -663,6 +665,7 @@ cs_atmo_compute_solar_angles(cs_real_t xlat,
                              cs_real_t heurtu,
                              int       imer,
                              cs_real_t *albe,
+                             cs_real_t *za,
                              cs_real_t *muzero,
                              cs_real_t *omega,
                              cs_real_t *fo);

@@ -2950,13 +2950,13 @@ module cs_c_bindings
 
     ! Interface to C function for atmo
 
-    subroutine raysze(xlat, xlong, jour, heurtu, imer, albe, muzero, omega, fo)           &
+    subroutine raysze(xlat, xlong, jour, heurtu, imer, albe, za, muzero, omega, fo) &
       bind(C, name='cs_atmo_compute_solar_angles')
       use, intrinsic :: iso_c_binding
       implicit none
       real(kind=c_double), value :: xlat, xlong, jour, heurtu
       integer(kind=c_int), value :: imer
-      real(kind=c_double), intent(inout) :: albe, muzero, omega, fo
+      real(kind=c_double), intent(inout) :: albe, za, muzero, omega, fo
     end subroutine raysze
 
     !---------------------------------------------------------------------------

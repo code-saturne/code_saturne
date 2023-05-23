@@ -3121,6 +3121,7 @@ cs_atmo_declare_chem_from_spack(void)
  * \param[in]   utc         Universal time (hour)
  * \param[in]   sea_id      sea index
  * \param[out]  albedo      albedo
+ * \param[out]  za          zenithal angle
  * \param[out]  muzero      cosin of zenithal angle
  * \param[out]  omega       solar azimut angle
  * \param[out]  fo          solar constant
@@ -3134,6 +3135,7 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
                              cs_real_t utc,
                              int       sea_id,
                              cs_real_t *albedo,
+                             cs_real_t *za,
                              cs_real_t *muzero,
                              cs_real_t *omega,
                              cs_real_t *fo)
@@ -3172,17 +3174,17 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
   if (local_time < 12.)
     hr = (local_time + 12.)*cs_math_pi/12.;
 
-  /* 4 - compute of cosinus of the zenitghal angle */
+  /* 4 - compute of cosinus of the zenithal angle */
 
   *muzero = sin(decl)*sin(flat) + cos(decl)*cos(flat)*cos(hr);
 
-  cs_real_t za = acos(*muzero);
+  *za = acos(*muzero);
 
   /* 5 - compute solar azimut */
   *omega = 0.;
-  if (CS_ABS(sin(za)) > cs_math_epzero) {
+  if (CS_ABS(sin(*za)) > cs_math_epzero) {
     /* Cosinus of the zimut angle */
-    cs_real_t co = (sin(decl)*cos(flat)-cos(decl)*sin(flat)*cos(hr))/sin(za);
+    cs_real_t co = (sin(decl)*cos(flat)-cos(decl)*sin(flat)*cos(hr))/sin(*za);
     *omega = acos(co);
     if (local_time > 12.)
       *omega = 2. * cs_math_pi - acos(co);
@@ -3211,6 +3213,17 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
       + 0.000719*cos(2.*t00) + 0.000077*sin(2.*t00);
   *fo *= corfo;
 
+   /* Correction for very low zenithal angle */
+   /* Optical air mass
+    * cf. Kasten, F., Young, A.T., 1989. Revised optical air mass tables and
+    * approximation formula.
+    *
+    * Note: old formula (LH74)
+    * m = 35.d0/sqrt(1224.d0*muzero*muzero + 1.d0) */
+#if 1
+   if (*muzero > 0)
+     *muzero += 0.50572 * pow(96.07995-180./cs_math_pi * *za, -1.6364);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

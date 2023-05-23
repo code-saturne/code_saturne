@@ -462,22 +462,25 @@ _cs_rad_transfer_sol(int                        gg_id,
         || cs_glob_time_step_options->idtvar == CS_TIME_STEP_ADAPTIVE)
       utc += cs_glob_time_step->t_cur / 3600.;
 
-    cs_real_t albedo, muzero, omega, fo;
+    cs_real_t albedo, muzero_cor, omega, fo, za;
     cs_atmo_compute_solar_angles(cs_glob_atmo_option->latitude,
                                  cs_glob_atmo_option->longitude,
                                  (cs_real_t)cs_glob_atmo_option->squant,
                                  utc,
                                  0, /* no Sea */
                                  &albedo,
-                                 &muzero,
+                                 &za,
+                                 &muzero_cor,
                                  &omega,
                                  &fo);
 
-    /* Zenital angle */
-    cs_real_t za = acos(muzero);
-    vect_s[0] = - sin(za) * sin(omega);
-    vect_s[1] = - sin(za) * cos(omega);
-    vect_s[2] = - muzero; /* cos(za) */
+    /* Zenithal angle:
+     * muzera is almost cos(za),
+     * but take earth curvature into account */
+    cs_real_t sinza = sqrt(1. - muzero_cor * muzero_cor);
+    vect_s[0] = - sinza * sin(omega);
+    vect_s[1] = - sinza * cos(omega);
+    vect_s[2] = - muzero_cor; /*  cos(za) */
 
     if (verbosity > 0)
       bft_printf("     Solar direction [%f, %f, %f] \n",

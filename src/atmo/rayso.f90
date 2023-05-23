@@ -196,7 +196,7 @@ double precision ncray(kmx)
 integer i,k,n,l,k1p1,iaer,iaero_top,iaero_topr
 integer itop,ibase,itopp1,itopp2,ibasem1
 integer          ifac, iz1, iz2, f_id, c_id, iel
-double precision muzero,fo,rr1,m,mbar,rabar,rabar2,rbar
+double precision za, muzero, muzero_cor,fo,rr1,m,mbar,rabar,rabar2,rbar
 double precision rabarc,rbarc, refx, trax, refx0, trax0
 double precision qqvtot,y,ystar
 double precision zqm1,zq,xm1,x,xstar,xstarm1
@@ -212,7 +212,7 @@ double precision tauca(kmx+1,8)
 double precision gama1,gama2,kt,gas,fas
 double precision omega, var, zent
 double precision cpvcpa
-double precision dzxstar, dzx, dy, dystar
+double precision dzx, dy
 double precision ck_aero_h2o, ck_aero_o3, ck_cloud
 ! For postprecessing
 double precision soil_direct_flux , soil_global_flux
@@ -417,6 +417,7 @@ enddo
 !  2 - calculation for muzero and solar constant fo
 !  ===================================================
 !        muzero = cosin of zenithal angle
+!  (corrected to take curvature of the Earth)
 !        fo = solar constant in watt/m2
 
 !
@@ -424,19 +425,17 @@ enddo
 !  ---------
 
 qureel = float(squant)
-call raysze(xlat, xlon, qureel, heuray, imer1, albe, muzero, omega, fo)
+call raysze(xlat, xlon, qureel, heuray, imer1, albe, za, muzero_cor, omega, fo)
 ! if muzero is negative, it is night and solar radiation is not
 ! computed
+muzero = dcos(za)
 
 if (muzero.gt.epzero) then
 
   ! Optical air mass
-  ! cf. Kasten, F., Young, A.T., 1989. Revised optical air mass tables and approximation formula.
-
-  ! Note: old formula (LH74)
-  ! m = 35.d0/sqrt(1224.d0*muzero*muzero + 1.d0)
   ! Corrected value for very low angle
-  m = 1.d0/(muzero+0.50572d0*(96.07995d0-180.d0/pi*acos(muzero))**(-1.6364d0))
+  ! cf. Kasten, F., Young, A.T., 1989. Revised optical air mass tables and approximation formula.
+  m = 1.d0/muzero_cor
 
   ! m coefficient for O3 (5/3 or 1.9 for LH74)
   ! TODO test 5/3 but not coherent with LH74...
@@ -707,12 +706,11 @@ if (muzero.gt.epzero) then
     ufso3(i) = fnebmax(k1p1)*ufso3c(i,1)+ (1.d0-fnebmax(k1p1))*ufso3c(i,2)
     ! Calculation of absorption coefficient ckup and ckdown
     ! useful for 3D simulation
-    dzx = m*drayuoz(zq)
-    dzxstar = mbar*drayuoz(zq)
+    dzx = drayuoz(zq)
 
     ckdown_suv_r(i)=dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
     ckdown_suv_f(i)= dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
-    ckup_suv_f(i)=dzxaoz(xstar,dzxstar)/(0.647d0-rrbar-raysoz(xstar))
+    ckup_suv_f(i)=dzxaoz(xstar,dzx)/(0.647d0-rrbar-raysoz(xstar))
 
   enddo
 
@@ -833,12 +831,11 @@ if (muzero.gt.epzero) then
       ddfso3(i)=muzero*fo*(0.647d0-rrbar-raysoz(x))*dowd(i+1,n)
       ufso3(i)=muzero*fo*(0.647d0-rrbar-raysoz(xstar))*upw(i+1,n)
 
-      dzx = m*drayuoz(zq)
-      dzxstar = mbar*drayuoz(zq)
+      dzx = drayuoz(zq)
       ! calculation of absorption coefficient ckup and ckdown useful for 3D simulation
       ckdown_suv_r(i)= dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
       ckdown_suv_f(i)= dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
-      ckup_suv_f(i)=dzxaoz(xstar,dzxstar)/(0.647d0-rrbar-raysoz(xstar))
+      ckup_suv_f(i)=dzxaoz(xstar,dzx)/(0.647d0-rrbar-raysoz(xstar))
 
     enddo
   endif
@@ -1033,13 +1030,13 @@ if (muzero.gt.epzero) then
     ystar = m*qqvtot + 5.d0/3.d0*qqv(i)
     if(i.eq.k1) ystar = m*qqvtot
 
-    corp = (preray(i) / preray(k1))* preray(k1) / 101300.d0!FIXME use /p0? Idem in rayir.f90
+    ! (p_i/p_k) * (p_k/p0) = p_i/p0
+    corp = preray(i) / 101300.d0!FIXME use /p0? Idem in rayir.f90
     rov = romray(i)*(qvray(i)*corp*sqrt(tkelvi/(temray(i) + tkelvi)))
     dy = rov
-    dystar=(5.d0/3.d0)*rov
     ! calculation of absorption coefficient ckup and ckdown useful for 3D calculations
     ckdown_sir_r(i) = dzyama(y,dy)/(0.353d0-raysve(y))
-    ckup_sir_f(i) = dzyama(ystar,dystar)/(0.353d0-raysve(ystar))
+    ckup_sir_f(i) = dzyama(ystar,dy)/(0.353d0-raysve(ystar))
     ckdown_sir_f(i) = dzyama(y,dy)/(0.353d0-raysve(y))
   enddo
 
@@ -1097,6 +1094,7 @@ if (muzero.gt.epzero) then
 
     ! Idem for aerosols
     cp_aero=(1.d0-piaero_h2o)/piaero_h2o
+    ! pure absorption
     ck_aero_h2o=cp_aero*m*tauah2o(k)/deltaz
 
     !SIR band
@@ -1188,7 +1186,7 @@ if (f_id.ge.0) then
 
         ! TODO do not multiply and divide by cos(zenital) = muzero
         if (muzero.gt.epzero) then
-          bpro_rad_inc(c_id, ifac) = var / muzero
+          bpro_rad_inc(c_id, ifac) = var / muzero_cor
         else
           bpro_rad_inc(c_id, ifac) = 0.d0
         endif
@@ -1230,7 +1228,7 @@ if (f_id.ge.0) then
 
         ! TODO do not multiply and divide by cos(zenital) = muzero
         if (muzero.gt.epzero) then
-          bpro_rad_inc(c_id, ifac) = var / muzero
+          bpro_rad_inc(c_id, ifac) = var / muzero_cor
         else
           bpro_rad_inc(c_id, ifac) = 0.d0
         endif
@@ -1284,13 +1282,13 @@ if (f_id.ge.0) then
         (kmray, zqq,                                               &
         ckdown_sir_f, zent, iz1, iz2, var )
 
-      cpro_ck_down(c_id, iel) = var * 3.d0 / 5.d0
+      cpro_ck_down(c_id, iel) = var
 
       call intprz &
         (kmray, zqq,                                               &
         ckup_sir_f, zent, iz1, iz2, var )
 
-      cpro_ck_up(c_id, iel) = var * 3.d0 / 5.d0
+      cpro_ck_up(c_id, iel) = var
 
     enddo
 
@@ -1327,13 +1325,13 @@ if (f_id.ge.0) then
         (kmray, zqq,                                               &
         ckdown_suv_f, zent, iz1, iz2, var )
 
-      cpro_ck_down(c_id, iel) = var * 3.d0 / 5.d0
+      cpro_ck_down(c_id, iel) = var
 
       call intprz &
         (kmray, zqq,                                               &
         ckup_suv_f, zent, iz1, iz2, var )
 
-      cpro_ck_up(c_id, iel) = var * 3.d0 / 5.d0
+      cpro_ck_up(c_id, iel) = var
 
     enddo
 

@@ -60,7 +60,8 @@ integer          met_qv_id
 double precision temp, dens          ! temperature, density
 double precision press, hspec        ! pressure, specific humidity (kg/kg)
 double precision rk(nrg)             ! kinetic rates
-double precision azi                 ! zenith angle
+double precision azi                 ! zenith angle (degree)
+double precision za                  ! zenith angle (rad)
 double precision dlmuzero            ! cos of zenith angle
 double precision zent                ! Z coordinate of a cell
 double precision qureel              ! julian day
@@ -115,8 +116,8 @@ endif
 qureel = float(squant)
 heurtu = float(shour) + float(smin)/60.d0+ssec/3600.d0
 if (idtvar.eq.0 .or. idtvar.eq.1) heurtu = heurtu + ttcabs/3600.d0
-call raysze(xlat,xlon,qureel,heurtu,0,albe,dlmuzero, omega, fo)
-azi = dabs(dacos(dlmuzero)*180.d0/pi)
+call raysze(xlat,xlon,qureel,heurtu,0,albe, za, dlmuzero, omega, fo)
+azi = dabs(za*180.d0/pi)
 
 ! Note: Photolysis should be cut in SPACK and not here even if the azimuthal angle is > 90
 
