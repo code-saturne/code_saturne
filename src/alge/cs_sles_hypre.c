@@ -1147,8 +1147,8 @@ cs_sles_hypre_solve(void                *context,
       /* Get solution and information */
       HYPRE_ParCSRLGMRESGetFinalRelativeResidualNorm(sd->solver, &res);
       HYPRE_ParCSRLGMRESGetNumIterations(sd->solver, &its);
-      /* Manage feedback */
 
+      /* Manage feedback */
       if (ierr != 0 && HYPRE_CheckError(ierr, HYPRE_ERROR_CONV)) {
         HYPRE_LGMRESGetMaxIter(sd->solver, &max_its);
         if (its <= max_its)
@@ -1164,7 +1164,6 @@ cs_sles_hypre_solve(void                *context,
       /* Finalize setup and solve */
       HYPRE_PCGSetAbsoluteTol(sd->solver, precision*r_norm);
       HYPRE_PCGSetTol(sd->solver, 0);
-      HYPRE_ParCSRPCGSolve(sd->solver, par_a, p_rhs, p_x);
       ierr = HYPRE_ParCSRPCGSolve(sd->solver, par_a, p_rhs, p_x);
 
       /* Get solution and information */
