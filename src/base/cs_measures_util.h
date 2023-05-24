@@ -84,6 +84,24 @@ typedef struct _cs_interpol_grid_t {
 /*----------------------------------------------------------------------------
  * Interpolate mesh field on interpol grid structure.
  *
+ * This function is deprecated because it take 1 value of the 3D field to
+ * the 1D grid...
+ *
+ * parameters:
+ *   ig                   <-- pointer to the interpolation grid structure
+ *   values_to_interpol   <-- field on mesh (size = n_cells)
+ *   interpolated_values  --> interpolated values on the interpolation grid
+ *                            structure (size = ig->nb_point)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_interpol_field_on_grid_deprecated(cs_interpol_grid_t *ig,
+                                     const cs_real_t    *values_to_interpol,
+                                     cs_real_t          *interpoled_values);
+
+/*----------------------------------------------------------------------------
+ * Interpolate mesh field on interpol grid structure.
+ *
  * parameters:
  *   ig                   <-- pointer to the interpolation grid structure
  *   values_to_interpol   <-- field on mesh (size = n_cells)
