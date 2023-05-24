@@ -97,7 +97,7 @@ static cs_sys_cpl_t **_sys_couplings   = NULL;
  * Private function definitions
  *============================================================================*/
 
-cs_cfd2sys_intersection_t *
+static cs_cfd2sys_intersection_t *
 _create_cfd2sys_intersection(void)
 {
   cs_cfd2sys_intersection_t *retval = NULL;
@@ -112,7 +112,7 @@ _create_cfd2sys_intersection(void)
   return retval;
 }
 
-cs_cfd_sys_cplbc_t *
+static cs_cfd_sys_cplbc_t *
 _create_cfd_sys_cplbc(cs_syscpl_bc_type_t type)
 {
   cs_cfd_sys_cplbc_t *retval = NULL;
@@ -143,7 +143,7 @@ _create_cfd_sys_cplbc(cs_syscpl_bc_type_t type)
   return retval;
 }
 
-cs_sys_cpl_t *
+static cs_sys_cpl_t *
 _create_cs_sys_coupling(const char *sys_name,
                         const int   n_cpl_phases)
 {
@@ -185,7 +185,7 @@ _create_cs_sys_coupling(const char *sys_name,
   return cpl;
 }
 
-void
+static void
 _compute_matrix_weights(cs_cfd2sys_intersection_t *m,
                         const cs_lnum_t            n_cfd_elts,
                         const int                  n_sys_elts)
