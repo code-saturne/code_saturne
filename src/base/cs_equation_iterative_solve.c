@@ -1215,20 +1215,21 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   cs_field_t *i_vf = NULL;
   cs_field_t *b_vf = NULL;
 
-  /* Storing face values for kinetic energy balance
-   * and initialize them */
+  /* Storing face values for kinetic energy balance and initialize them */
   if (CS_F_(vel)->id == f_id) {
+
     i_vf = cs_field_by_name_try("inner_face_velocity");
-    b_vf = cs_field_by_name_try("boundary_face_velocity");
-
-    if (i_vf != NULL && b_vf != NULL) {
+    if (i_vf != NULL) {
+      cs_array_real_fill_zero(3*n_i_faces, i_vf->val);
       i_pvar = (cs_real_3_t *)i_vf->val;
-      b_pvar = (cs_real_3_t *)b_vf->val;
-
-      cs_array_set_value_real(n_i_faces, 3, 0., i_pvar);
-
-      cs_array_set_value_real(n_b_faces, 3, 0., b_pvar);
     }
+
+    b_vf = cs_field_by_name_try("boundary_face_velocity");
+    if (b_vf != NULL) {
+      cs_array_real_fill_zero(3*n_b_faces, b_vf->val);
+      b_pvar = (cs_real_3_t *)b_vf->val;
+    }
+
   }
 
   /* solving info */
@@ -1763,8 +1764,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
      * if needed
      * Reinit the previous value before */
     if (i_vf != NULL && b_vf != NULL) {
-      cs_array_real_copy(3 * n_i_faces, i_vf->val_pre, i_pvar);
-      cs_array_real_copy(3 * n_b_faces, b_vf->val_pre, b_pvar);
+      cs_array_real_copy(3 * n_i_faces, i_vf->val_pre, i_vf->val);
+      cs_array_real_copy(3 * n_b_faces, b_vf->val_pre, b_vf->val);
     }
 
     /* The added convective scalar mass flux is:
