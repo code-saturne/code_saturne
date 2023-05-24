@@ -670,12 +670,23 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
       cs_lnum_t n_points_dist = ple_locator_get_n_dist_points(_locator);
 
 #if 0
-      bft_printf("ple_locator_get_n_dist_points = %d, n_points = %d\n",
+      bft_printf("ple_locator_get_n_dist_points = %d, n_points = %ld\n",
                  n_points_dist, n_points);
 #endif
 
       const cs_lnum_t *dist_loc = ple_locator_get_dist_locations(_locator);
       const ple_coord_t *dist_coords = ple_locator_get_dist_coords(_locator);
+
+      float *dist_colors = NULL;
+      BFT_MALLOC(dist_colors, 3*n_points_dist, float);
+
+      ple_locator_exchange_point_var(_locator,
+                                     dist_colors,
+                                     colors,
+                                     NULL,
+                                     sizeof(float),
+                                     3,
+                                     1);
 
       for (cs_lnum_t i = 0; i < n_points_dist; i++) {
         cs_lnum_t c_id = dist_loc[i];
@@ -683,7 +694,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
         for (cs_lnum_t idim = 0; idim < 3; idim++) {
           cen_points[c_id*3+idim] += (dist_coords[i*3 + idim]
                                     - mq->cell_cen[c_id*3+idim]);
-          cell_color[c_id*3+idim] += colors[i*3 + idim];
+          cell_color[c_id*3+idim] += dist_colors[i*3 + idim];
         }
       }
 
