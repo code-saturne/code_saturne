@@ -1898,15 +1898,14 @@ cs_turbomachinery_get_cell_rotor_num(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return arrayq associated to wall BC update.
+ * \brief Get arrays associated to wall BC update.
  *
- * \param[out]   coftur  values of "cofimp" term before geometry update
- * \param[out]   hfltur  local exchange coefficient before geometry update
-
+ * \param[out] coftur  values of "cofimp" term before geometry update
+ * \param[out] hfltur  local exchange coefficient before geometry update
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
+void
 cs_turbomachinery_get_wall_bc_coeffs(cs_real_t  **coftur,
                                      cs_real_t  **hfltur)
 {
