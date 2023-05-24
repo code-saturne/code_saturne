@@ -82,7 +82,7 @@ typedef struct {
   cs_real_t *total_htc;
   cs_real_t *flthr;
   cs_real_t *dflthr;
-  cs_real_t *ltmast;
+  cs_lnum_t *ltmast;
 
   // Zone related quantities
   cs_lnum_t  nzones;
