@@ -1,8 +1,5 @@
 /*============================================================================
- * Code couplings definition with SYRTHES and code_saturne.
- *
- * 1) Define conjuguate heat transfer couplings with the SYRTHES code
- * 2) Define couplings with other instances of code_saturne
+ * Code couplings definition with CATHARE and code_saturne.
  *============================================================================*/
 
 /* VERS */
@@ -67,9 +64,9 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define couplings with SYRTHES code.
+ * \brief Define couplings with CATHARE code.
  *
- * This is done by calling the \ref cs_syr_coupling_define function for each
+ * This is done by calling the \ref cs_sys_coupling_add function for each
  * coupling to add.
  */
 /*----------------------------------------------------------------------------*/
@@ -80,7 +77,7 @@ cs_user_cathare_coupling(void)
 
   /*! [coupling_cathare_1] */
   {
-    /* Adda coupling with cathare using only one phase */
+    /* Add a coupling with cathare using only one phase */
     cs_sys_coupling_add("CAT-PIPE", // Name of cathare instance
                         1);         // Number of coupled phases
 
