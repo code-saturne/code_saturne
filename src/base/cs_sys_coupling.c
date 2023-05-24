@@ -395,11 +395,11 @@ _init_all_mpi_sys(int  *n_unmatched,
         if (ai.app_name != NULL)
           distant_name = ai.app_name;
 
-        bft_printf(_(" CATHARE coupling           : %d\n"
-                     "   coupling id              : \"%s\"\n"
+        bft_printf(_(" CATHARE coupling           :\n"
+                     "   coupling id              : \"%d\"\n"
                      "   version                  : \"%s\"\n"
                      "   local name               : \"%s\"\n"
-                     "   distant application name : %d\n"
+                     "   distant application name : \"%s\"\n"
                      "   MPI application id       : %d\n"
                      "   MPI root rank            : %d\n"
                      "   number of MPI ranks      : %d\n\n"),
@@ -601,7 +601,8 @@ cs_sys_cplbc_add_exchanged_field(cs_cfd_sys_cplbc_t *cplbc,
   default:
     {
       bft_error(__FILE__, __LINE__, 0,
-                "Error: direction value \"%d\" is neither 0 nor 1.\n");
+                "Error: direction value \"%d\" is neither 0 nor 1.\n",
+                dir);
       break;
     }
   }
