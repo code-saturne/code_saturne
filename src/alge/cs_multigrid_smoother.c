@@ -743,6 +743,172 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------
+ * Solution of A.vx = Rhs using preconditioned 3-layer conjugate residual.
+ *
+ * Tuned version when used as smoother.
+ *
+ * On entry, vx is considered initialized.
+ *
+ * parameters:
+ *   c               <-- pointer to solver context info
+ *   a               <-- matrix
+ *   diag_block_size <-- block size of element ii, ii
+ *   convergence     <-- convergence information structure
+ *   rhs             <-- right hand side
+ *   vx              <-> system solution
+ *   aux_size        <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors     --- optional working area (allocation otherwise)
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
+_conjugate_residual_3(cs_sles_it_t              *c,
+                      const cs_matrix_t         *a,
+                      cs_lnum_t                  diag_block_size,
+                      cs_sles_it_convergence_t  *convergence,
+                      const cs_real_t           *rhs,
+                      cs_real_t                 *restrict vx,
+                      size_t                     aux_size,
+                      void                      *aux_vectors)
+{
+  cs_lnum_t  ii;
+  double  ak, bk, ck, dk, ek, denom, alpha, tau;
+  cs_real_t *_aux_vectors;
+  cs_real_t  *restrict vxm1;
+  cs_real_t  *restrict rk, *restrict rkm1;
+  cs_real_t  *restrict wk, *restrict zk;
+  cs_real_t  *restrict tmp;
+
+  unsigned n_iter = 0;
+
+  /* Allocate or map work arrays */
+  /*-----------------------------*/
+
+  assert(c->setup_data != NULL);
+
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
+
+  {
+    const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
+    const size_t n_wa = 6;
+    const size_t wa_size = CS_SIMD_SIZE(n_cols);
+
+    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+    else
+      _aux_vectors = aux_vectors;
+
+    vxm1 = _aux_vectors;
+    rk = _aux_vectors + wa_size;
+    rkm1 = _aux_vectors + wa_size*2;
+    tmp = _aux_vectors + wa_size*3;
+    wk = _aux_vectors + wa_size*4;
+    zk = _aux_vectors + wa_size*5;
+
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (ii = 0; ii < n_rows; ii++) {
+      vxm1[ii] = vx[ii];
+      rkm1[ii] = 0.0;
+    }
+  }
+
+  /* Initialize iterative calculation */
+  /*----------------------------------*/
+
+  /* Residue */
+
+  cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
+
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
+  for (ii = 0; ii < n_rows; ii++)
+    rk[ii] -= rhs[ii];
+
+  /* Current Iteration */
+  /*-------------------*/
+
+  for (n_iter = 0; n_iter < convergence->n_iterations_max; n_iter++) {
+
+    /* Preconditionning */
+
+    c->setup_data->pc_apply(c->setup_data->pc_context, rk, wk);
+
+    cs_matrix_vector_multiply(a, wk, zk);
+
+    _dot_products_xy_yz(c, rk, zk, rkm1, &ak, &bk);
+
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (ii = 0; ii < n_rows; ii++)
+      tmp[ii] = rk[ii] - rkm1[ii];
+
+    _dot_products_xy_yz(c, rk, tmp, rkm1, &ck, &dk);
+
+    ek = _dot_product_xx(c, zk);
+
+    denom = (ck-dk)*ek - ((ak-bk)*(ak-bk));
+
+    if (fabs(denom) < 1.e-30)
+      alpha = 1.0;
+    else
+      alpha = ((ak-bk)*bk - dk*ek)/denom;
+
+    if (fabs(alpha) < 1.e-30 || fabs(alpha - 1.) < 1.e-30) {
+      alpha = 1.0;
+      tau = ak/ek;
+    }
+    else
+      tau = ak/ek + ((1 - alpha)/alpha) * bk/ek;
+
+    cs_real_t c0 = (1 - alpha);
+    cs_real_t c1 = -alpha*tau;
+
+    if (n_iter + 1 < convergence->n_iterations_max) {
+
+#     pragma omp parallel firstprivate(alpha, tau, c0, c1) \
+  if (n_rows > CS_THR_MIN)
+      {
+#       pragma omp for nowait
+        for (ii = 0; ii < n_rows; ii++) {
+          cs_real_t trk = rk[ii];
+          rk[ii] = alpha*rk[ii] + c0*rkm1[ii] + c1*zk[ii];
+          rkm1[ii] = trk;
+        }
+#       pragma omp for nowait
+        for (ii = 0; ii < n_rows; ii++) {
+          cs_real_t tvx = vx[ii];
+          vx[ii] = alpha*vx[ii] + c0*vxm1[ii] + c1*wk[ii];
+          vxm1[ii] = tvx;
+        }
+      }
+
+    }
+    else {
+
+#     pragma omp parallel firstprivate(alpha, tau, c0, c1) \
+  if (n_rows > CS_THR_MIN)
+      {
+#       pragma omp for nowait
+        for (ii = 0; ii < n_rows; ii++) {
+          cs_real_t tvx = vx[ii];
+          vx[ii] = alpha*vx[ii] + c0*vxm1[ii] + c1*wk[ii];
+          vxm1[ii] = tvx;
+        }
+      }
+
+    }
+
+  } /* Loop on iterations */
+
+  if (_aux_vectors != aux_vectors)
+    BFT_FREE(_aux_vectors);
+
+  convergence->n_iterations = n_iter;
+
+  return CS_SLES_MAX_ITERATION;
+}
+
+/*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using Jacobi.
  *
  * On entry, vx is considered initialized.
@@ -1800,9 +1966,20 @@ cs_multigrid_smoother_create(cs_sles_it_type_t    smoother_type,
     else if (poly_degree == 0)
       c->_pc = cs_sles_pc_jacobi_create();
     else if (poly_degree == 1)
-      c->_pc =cs_sles_pc_poly_1_create();
+      c->_pc = cs_sles_pc_poly_1_create();
     else
-      c->_pc =cs_sles_pc_poly_2_create();
+      c->_pc = cs_sles_pc_poly_2_create();
+    break;
+
+  case CS_SLES_PCR3:
+    if (poly_degree < 0 && c->type != CS_SLES_PCR3)
+      c->_pc = cs_sles_pc_none_create();
+    else if (poly_degree == 0)
+      c->_pc = cs_sles_pc_jacobi_create();
+    else if (poly_degree == 1)
+      c->_pc = cs_sles_pc_poly_1_create();
+    else
+      c->_pc = cs_sles_pc_poly_2_create();
     break;
 
   default: /* Other iterative solvers are not tuned for smoothing */
@@ -1935,6 +2112,10 @@ cs_multigrid_smoother_setup(void               *context,
           c->solve = _conjugate_gradient_npc_sr;
       }
     }
+    break;
+
+  case CS_SLES_PCR3:
+    c->solve = _conjugate_residual_3;
     break;
 
   case CS_SLES_JACOBI:
