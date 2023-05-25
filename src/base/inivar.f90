@@ -119,6 +119,12 @@ interface
     integer(c_int) :: n_errors
   end function cs_turbulence_init_clip_and_verify
 
+  subroutine cs_navstv_total_pressure() &
+   bind(C, name='cs_f_navier_stokes_total_pressure')
+   use,intrinsic :: iso_c_binding
+   implicit none
+ end subroutine cs_navstv_total_pressure
+
 end interface
 
 !===============================================================================
@@ -274,7 +280,7 @@ if (ippmod(icompf).lt.0) then
                     + pred0 - p0
     enddo
   elseif (isuite.eq.0.or.ileaux.eq.0) then
-    call navstv_total_pressure
+    call cs_navstv_total_pressure
   endif
 
 endif

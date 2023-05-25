@@ -1,0 +1,85 @@
+#ifndef __CS_SOLVE_NAVIER_STOKES_H__
+#define __CS_SOLVE_NAVIER_STOKES_H__
+
+/*============================================================================
+ * Solve the Navier-Stokes equations.
+ *============================================================================*/
+
+/*
+  This file is part of code_saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2023 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "cs_defs.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
+/*============================================================================
+ * Macro definitions
+ *============================================================================*/
+
+/*============================================================================
+ * Local type definitions
+ *============================================================================*/
+
+/*=============================================================================
+ * Global variables
+ *============================================================================*/
+
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update total pressure (defined as a post-processed property).
+ *
+ * For the compressible module, the solved pressure is already
+ * the total pressure.
+ *
+ * Note: for Eddy Viscosity Models, the TKE may be included in the
+ * solved pressure.
+ *
+ * \param[in]     m   pointer to mesh structure
+ * \param[in]     mq  pointer to mesh quantities structure
+ * \param[in]     fp  pointer to fluid properties structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solve_navier_stokes_update_total_pressure(const cs_mesh_t              *m,
+                                             const cs_mesh_quantities_t   *mq,
+                                             const cs_fluid_properties_t  *fp);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
+
+#endif /* __CS_SOLVE_NAVIER_STOKES_H__ */
