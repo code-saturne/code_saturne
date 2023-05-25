@@ -206,6 +206,33 @@ _get_token_from_line(char    *line,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check if a line is empty
+ *
+ * \param[in] line  text line read from file to check
+ *
+ * \return 1 if line is empty, 0 otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+static int
+_check_if_line_is_empty(char *line)
+{
+  int retval = 0;
+
+  if (line == NULL)
+    retval = 1;
+  else if (strcmp(line, "\n") == 0 ||
+           strcmp(line, "\r\n") == 0 ||
+           strcmp(line, "\t") == 0)
+    retval = 1;
+  else if (strlen(line) <= 1)
+    retval = 1;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Count the number of lines in the file
  *
  * \param[in] file_name Name of the file to open
@@ -224,7 +251,8 @@ _count_lines_in_file(const char *file_name)
   int n_lines = 0;
 
   while (fgets(line, CS_MAX_STR_SIZE, f)) {
-    n_lines += 1;
+    if (_check_if_line_is_empty(line) == 0)
+      n_lines += 1;
   }
 
   fclose(f);
@@ -299,35 +327,43 @@ cs_file_csv_parse(const char  *file_name,
   while (fgets(line, CS_MAX_STR_SIZE, f)) {
 
     if (read_lines >= n_headers) {
-      char **tokens = NULL;
-      int    n_tokens = 0;
+      if (_check_if_line_is_empty(line)) {
+        bft_printf(_("Warning: line #%d of file \"%s\" is empty and "
+                     "will be ignored. Please consider removing it from the "
+                     "file.\n"),
+                   read_lines + 1, file_name);
+      }
+      else {
+        char **tokens = NULL;
+        int    n_tokens = 0;
 
-      tokens = _parse_line(line, separator, &n_tokens, keep_missing_tokens);
+        tokens = _parse_line(line, separator, &n_tokens, keep_missing_tokens);
 
-      assert(n_columns <= n_tokens);
+        assert(n_columns <= n_tokens);
 
-      int _n_col = (n_columns == -1) ? n_tokens : n_columns;
+        int _n_col = (n_columns == -1) ? n_tokens : n_columns;
 
-      if (retval[0] == NULL) {
-        *n_cols = _n_col;
-        for (int i = 0; i < _n_rows; i++) {
-          BFT_MALLOC(retval[i], _n_col, char *);
-          for (int j = 0; j < _n_col; j++)
-            BFT_MALLOC(retval[i][j], 120, char);
+        if (retval[0] == NULL) {
+          *n_cols = _n_col;
+          for (int i = 0; i < _n_rows; i++) {
+            BFT_MALLOC(retval[i], _n_col, char *);
+            for (int j = 0; j < _n_col; j++)
+              BFT_MALLOC(retval[i][j], 120, char);
+          }
         }
+
+        for (int col = 0; col < _n_col; col++) {
+          int tk_id = (n_columns == -1) ? col : col_idx[col];
+          strncpy(retval[row][col], tokens[tk_id], 120);
+        }
+
+        row += 1;
+
+        // Free tokens
+        for (int i = 0; i < n_tokens; i++)
+          BFT_FREE(tokens[i]);
+        BFT_FREE(tokens);
       }
-
-      for (int col = 0; col < _n_col; col++) {
-        int tk_id = (n_columns == -1) ? col : col_idx[col];
-        strncpy(retval[row][col], tokens[tk_id], 120);
-      }
-
-      row += 1;
-
-      // Free tokens
-      for (int i = 0; i < n_tokens; i++)
-        BFT_FREE(tokens[i]);
-      BFT_FREE(tokens);
     }
     read_lines += 1;
   }
