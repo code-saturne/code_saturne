@@ -1093,12 +1093,13 @@ cs_post_scalar_boundary_mean(const cs_real_t *scalar_vals,
       = cs_glob_mesh_quantities->b_face_surf;
 
     /* Compute sum on rank */
-    cs_array_reduce_wsum_components_l(n_loc_b_faces, /* Number of values */
-                                      1,             /* Dimension - 1 for scalar */
-                                      b_face_ids,    /* list of ids for values + weights */
-                                      NULL,          /* No ids for weights only */
-                                      scalar_vals,   /* Values to sum */
-                                      b_face_surf,   /* Array of weights */
+    cs_array_reduce_wsum_components_l(n_loc_b_faces, /* number of values */
+                                      1,             /* dim. - 1 for scalar */
+                                      b_face_ids,    /* list of ids for values
+                                                        and weights */
+                                      NULL,          /* no ids for weight only */
+                                      scalar_vals,   /* values to sum */
+                                      b_face_surf,   /* weights */
                                       &_l_sum,       /* local sum on rank */
                                       &_l_wtot);     /* local total weight */
   }
@@ -1142,12 +1143,12 @@ cs_post_bnd_scalar_boundary_mean(const cs_real_t *scalar_vals,
       = cs_glob_mesh_quantities->b_face_surf;
 
     /* Compute sum on rank */
-    cs_array_reduce_wsum_components_l(n_loc_b_faces, /* Number of values */
-                                      1,             /* Dimension - 1 for scalar */
+    cs_array_reduce_wsum_components_l(n_loc_b_faces, /* number of values */
+                                      1,             /* dim - 1 for scalar */
                                       NULL,          /* no ids list for values */
-                                      b_face_ids,    /* list of ids for weights */
-                                      scalar_vals,   /* Values to sum */
-                                      b_face_surf,   /* Array of weights */
+                                      b_face_ids,    /* ids for weights */
+                                      scalar_vals,   /* values to sum */
+                                      b_face_surf,   /* weights */
                                       &_l_sum,       /* local sum on rank */
                                       &_l_wtot);     /* local total weight */
   }
