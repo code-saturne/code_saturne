@@ -54,6 +54,7 @@ from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.model.Boundary import Boundary
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.TimeTablesModel import TimeTablesModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -139,6 +140,9 @@ class BoundaryConditionsExternalHeadLossesView(QWidget, Ui_BoundaryConditionsExt
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        # Time Tables variables
+        sym += TimeTablesModel(self.case).getTableVariablesListAll()
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'bnd',

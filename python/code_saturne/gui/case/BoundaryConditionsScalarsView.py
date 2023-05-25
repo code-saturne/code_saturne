@@ -59,6 +59,7 @@ from code_saturne.model.CoalCombustionModel           import CoalCombustionModel
 from code_saturne.model.GasCombustionModel            import GasCombustionModel
 from code_saturne.model.AtmosphericFlowsModel         import AtmosphericFlowsModel
 from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.TimeTablesModel import TimeTablesModel
 from code_saturne.model.ConjugateHeatTransferModel import ConjugateHeatTransferModel
 
 # -------------------------------------------------------------------------------
@@ -107,6 +108,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
 
         self.case.undoStopGlobal()
         self.notebook = NotebookModel(self.case)
+
         self.cht_model = ConjugateHeatTransferModel(self.case)
 
         self.lineEditValueThermal.textChanged[str].connect(self.slotValueThermal)
@@ -572,6 +574,9 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
+        # Time Tables variables
+        sym += TimeTablesModel(self.case).getTableVariablesListAll()
+
         c = self.__boundary.getScalarChoice(variable_name)
 
         dialog = QMegEditorView(parent      = self,
@@ -616,6 +621,9 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
+        # Time Tables variables
+        sym += TimeTablesModel(self.case).getTableVariablesListAll()
+
         c = self.__boundary.getScalarChoice(self.species)
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'bnd',
@@ -659,6 +667,9 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        # Time Tables variables
+        sym += TimeTablesModel(self.case).getTableVariablesListAll()
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'bnd',

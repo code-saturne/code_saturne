@@ -52,6 +52,7 @@ from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import DoubleValidator, ComboModel, from_qvariant
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.TimeTablesModel import TimeTablesModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -226,6 +227,9 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        # Time Tables variables
+        sym += TimeTablesModel(self.case).getTableVariablesListAll()
 
         exa_base = """#example:
 uref2 = 10.;

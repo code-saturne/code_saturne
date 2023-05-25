@@ -52,6 +52,7 @@ from code_saturne.gui.base.QtPage import DoubleValidator, ComboModel, from_qvari
 from code_saturne.model.LocalizationModelNeptune import LocalizationModel, Zone
 from code_saturne.model.BoundaryNeptune import Boundary
 from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.TimeTablesModel import TimeTablesModel
 
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
 
@@ -250,6 +251,9 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
 
         for (name, val) in self.notebook.getNotebookList():
             sym.append((name, 'value (notebook) = ' + str(val)))
+
+        # Time Tables variables
+        sym += TimeTablesModel(self.case).getTableVariablesListAll()
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = "bnd",

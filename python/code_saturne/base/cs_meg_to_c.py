@@ -29,6 +29,7 @@ import re
 from code_saturne.base.cs_math_parser import cs_math_parser
 
 from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.TimeTablesModel import TimeTablesModel
 from code_saturne.model.SolutionDomainModel import getRunType
 
 #===============================================================================
@@ -330,6 +331,15 @@ class meg_to_c_interpreter:
         self.notebook = {}
         for (nme, val) in nb.getNotebookList():
             self.notebook[nme] = str(val)
+
+        TTM = TimeTablesModel(self.case)
+        self.time_tables = {}
+        for i_t, tab_name in enumerate(TTM.getTableNamesList()):
+            for _h in TTM.getTableHeadersList(i_t):
+                _k = "{}[{}]".format(tab_name, _h)
+                self.time_tables[_k] = ['{}_{}'.format(tab_name,_h),
+                                        'CS_TIME_TABLE("{}","{}")'.format(tab_name, _h)]
+
 
         if create_functions and getRunType(self.case) == 'standard':
 
@@ -636,6 +646,13 @@ class meg_to_c_interpreter:
             glob_tokens[kn] = \
             'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");' % (kn, kn)
 
+        # Time table variables
+        for ktt in self.time_tables.keys():
+            _kvals = self.time_tables[ktt]
+            glob_tokens[ktt] = \
+                'const cs_real_t {var} = {func};'.format(var=_kvals[0], \
+                                                          func=_kvals[1])
+
         # Fields
         for f in known_fields:
             glob_tokens[f[0]] = \
@@ -678,6 +695,10 @@ class meg_to_c_interpreter:
             usr_blck += 2*tab + '}\n'
 
         usr_blck += tab + '}\n'
+
+        # Replace time table calls
+        for _tt in self.time_tables.keys():
+            usr_blck = usr_blck.replace(_tt, self.time_tables[_tt][0])
 
         return usr_blck
 
@@ -746,6 +767,13 @@ class meg_to_c_interpreter:
             glob_tokens[kn] = \
             'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");' % (kn, kn)
 
+        # Time table variables
+        for ktt in self.time_tables.keys():
+            _kvals = self.time_tables[ktt]
+            glob_tokens[ktt] = \
+                'const cs_real_t {var} = {func});'.format(var=_kvals[0], \
+                                                          func=_kvals[1])
+
         for f in known_fields.keys():
             knf_name = known_fields[f]
             glob_tokens[f] = \
@@ -787,6 +815,10 @@ class meg_to_c_interpreter:
 
         usr_blck += 2*tab + '}\n'
         usr_blck += tab + '}\n'
+
+        # Replace time table calls
+        for _tt in self.time_tables.keys():
+            usr_blck = usr_blck.replace(_tt, self.time_tables[_tt][0])
 
         return usr_blck
 

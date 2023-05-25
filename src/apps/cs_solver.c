@@ -229,6 +229,10 @@ _run(void)
 
   cs_gui_mpi_algorithms();
 
+  /* Load user time tables */
+  cs_gui_time_tables();
+  cs_user_time_table();
+
   bft_printf("\n");
 
   cs_base_update_status("initializing\n");
@@ -763,9 +767,6 @@ main(int    argc,
     cs_notebook_load_from_file();
   }
 
-  /* Load user time tables */
-  cs_user_time_table();
-
   /* Call main run() method */
 
   _run();
@@ -780,4 +781,3 @@ main(int    argc,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS

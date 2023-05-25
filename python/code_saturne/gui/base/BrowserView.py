@@ -481,7 +481,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
     def _getSubsectionList(self, section):
 
         if section == 'Calculation environment':
-            return ['Notebook']
+            return ['Notebook', 'Time tables']
         elif section == 'Mesh':
             return ['Preprocessing', "Volume zones", "Boundary zones"]
         elif section == 'Calculation features':

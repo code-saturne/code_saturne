@@ -32,6 +32,7 @@ from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
 from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModel
 from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModelsDescription
 from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.TimeTablesModel import TimeTablesModel
 from code_saturne.model.SpeciesModel import SpeciesModel
 
 #-------------------------------------------------------------------------------
@@ -186,6 +187,9 @@ class Boundary(Model) :
 
         for (name, val) in NotebookModel(self.case).getNotebookList():
             sym.append((name, 'value (notebook) = ' + str(val)))
+
+        # Time Tables variables
+        sym += TimeTablesModel(self.case).getTableVariablesListAll()
 
         return exp, req, sym
 
@@ -540,8 +544,12 @@ class InletBoundary(Boundary):
                ('dt','time step'),
                ('iter','number of time step'),
                ('surface', 'Boundary zone surface')]
+
         for (name, val) in NotebookModel(self.case).getNotebookList():
             sym.append((name, 'value (notebook) = ' + str(val)))
+
+        # Time Tables variables
+        sym += TimeTablesModel(self.case).getTableVariablesListAll()
 
         if turbModel in ('k-epsilon', 'k-epsilon_linear_production'):
             req = [('k', "turbulent energy"),

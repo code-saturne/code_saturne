@@ -102,6 +102,7 @@ dist_model_PYTHON = \
   TimeAveragesModel.py \
   TimeStepModelNeptune.py \
   TimeStepModel.py \
+	TimeTablesModel.py \
   TurboMachineryModel.py \
   TurbulenceModel.py \
   TurbulenceNeptuneModel.py \

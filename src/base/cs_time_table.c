@@ -67,7 +67,9 @@ struct _cs_time_table_t {
  char      **headers;       /* Column headers */
  cs_real_t **columns;       /* Data columns */
 
+ cs_real_t time_offset;     /* Offset for computation */
  int time_col_id;           /* Index of time column */
+
  int n_cols;                /* Number of columns */
  int n_rows;                /* Number of rows */
 
@@ -204,6 +206,7 @@ _time_table_create(const char *name)
   retval->n_rows      = 0;
   retval->n_cols      = 0;
   retval->time_col_id = 0;
+  retval->time_offset = 0.;
 
   for (int i = 0; i < 2; i++) {
     retval->coeffs[i].id  = 0;
@@ -311,6 +314,24 @@ cs_time_table_by_name(const char *name)
               name);
 
   return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set time offset value for a time table
+ *
+ * \param[in] table        Pointer to time table structure
+ * \param[in] time_offset  Value of time offset for the table.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_table_set_offset(cs_time_table_t *table,
+                         cs_real_t        time_offset)
+{
+  assert(table != NULL);
+
+  table->time_offset = time_offset;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -574,21 +595,24 @@ cs_time_table_update_position(cs_time_table_t *table,
 
   const int t0_id = coeffs[0].id;
 
-  if (time < time_vals[0]) {
+  /* Compute time for interpolation using the table defined offset value */
+  cs_real_t _time = time + table->time_offset;
+
+  if (_time < time_vals[0]) {
     coeffs[0].id  = 0;
     coeffs[1].id  = 0;
     coeffs[0].val = 1.;
     coeffs[1].val = 0.;
-  } else if (time > time_vals[n_rows - 1]) {
+  } else if (_time > time_vals[n_rows - 1]) {
     coeffs[0].id = n_rows - 1;
     coeffs[1].id = n_rows - 1;
     coeffs[0].val = 1.;
     coeffs[1].val = 0.;
   } else {
     for (int i = t0_id; i < n_rows - 1; i++) {
-      if (time >= time_vals[i] && time < time_vals[i+1]) {
+      if (_time >= time_vals[i] && _time < time_vals[i+1]) {
         coeffs[1].id = i + 1;
-        coeffs[1].val = (time - time_vals[i]) / (time_vals[i+1] - time_vals[i]);
+        coeffs[1].val = (_time - time_vals[i]) / (time_vals[i+1] - time_vals[i]);
 
         coeffs[0].id = i;
         coeffs[0].val = 1. - coeffs[1].val;

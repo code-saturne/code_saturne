@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
+#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -72,6 +73,19 @@ cs_time_table_by_name_try(const char *name);
 
 cs_time_table_t *
 cs_time_table_by_name(const char *name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set time offset value for a time table
+ *
+ * \param[in] table        Pointer to time table structure
+ * \param[in] time_offset  Value of time offset for the table.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_table_set_offset(cs_time_table_t *table,
+                         cs_real_t        time_offset);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -286,6 +300,27 @@ cs_time_table_compute_n_time_values_by_label(const char *name,
                                              bool        overwrite_prev,
                                              cs_real_t  *retvals);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute value from time table based on label and current time.
+ * Positions are not updated for the table.
+ *
+ * \param[in] name            Name of the used time table
+ * \param[in] label           Label of column used for computation
+ *
+ * \returns Interpolated value
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+CS_TIME_TABLE(const char *name,
+              const char *label)
+{
+  return cs_time_table_compute_time_value_by_label(name,
+                                                   cs_glob_time_step->t_cur,
+                                                   label,
+                                                   false);
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Free all data structures related to datasets
