@@ -2666,7 +2666,7 @@ _pairwise_msr(cs_lnum_t         f_n_rows,
   }
 
   for (cs_lnum_t ii = f_n_rows-1; ii >= 0; ii--) {
-    cs_lnum_t _m = a_m[ii];
+    short int _m = a_m[ii];
     if (_m >= 0) {
       cs_lnum_t prev_head = s.m_head[_m];
       s.m_head[_m] = ii;
@@ -2716,7 +2716,7 @@ _pairwise_msr(cs_lnum_t         f_n_rows,
         }
       }
 
-      /* keep jj only if within threshold */
+      /* Keep jj only if within threshold */
 
       if (_a_min >= -beta*a_max[ii])
         jj = -1;
@@ -2735,7 +2735,9 @@ _pairwise_msr(cs_lnum_t         f_n_rows,
       cs_lnum_t i = gg[ip];
       if (i > -1) {
         cs_lnum_t _m = a_m[i];
-        assert(_m > -1);
+        if (_m < 0)
+          continue;
+
         _graph_m_ptr_remove_m(&s, _m, i);
         a_m[i] = -1;
         cs_lnum_t _s_id = row_index[i];
@@ -2753,7 +2755,7 @@ _pairwise_msr(cs_lnum_t         f_n_rows,
           }
         }
         n_remain--;
-      }
+      } /* i > -1 */
     }
     if (s.m_min >= s.m_max) { /* check if list has become empty */
       if (s.m_head[s.m_min] < 0) {
