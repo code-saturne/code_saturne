@@ -2085,7 +2085,7 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
   cs_real_t *c_poro;
   BFT_MALLOC(c_poro, n_cells_ext, cs_real_t);
 
-  cs_vertex_to_cell(CS_CELL_TO_VERTEX_SHEPARD, 0, 1, NULL,
+  cs_vertex_to_cell(CS_VERTEX_TO_CELL_SHEPARD, 0, 1, NULL,
                     v_poro, c_poro);
 
   cs_real_t voltot = 0.;
@@ -3029,8 +3029,6 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
   }
 
   // TODO: Check
-  cs_real_t *weight = cs_glob_mesh_quantities->weight;
-  weight = i_f_weight;
 
   cs_real_33_t *cut = NULL;
   BFT_MALLOC(cut, n_cells_ext, cs_real_33_t);
@@ -3586,7 +3584,6 @@ _ibm_object_define_initial_val_def(cs_ibm_object_t             *obj,
                                    int                          n_vals,
                                    cs_real_t                   *vals)
 {
-
   assert(p_id >= 0 && p_id < CS_N_IBM_OBJ_INIT_TYPES);
 
   cs_xdef_t *def = obj->init_vals_defs[p_id];
@@ -4184,15 +4181,18 @@ cs_ibm_object_compute_cut_porosity(const cs_lnum_t    c_id,
  * \param[in] name          name of the object
  * \param[in] method        Porosity computation method
  * \param[in] file_name     file name
- * \param[in] solve_fsi     Is the object used in the FSI resolution
+ * \param[in] solve_fsi     Is the object used in the FSI resolution ?
+ *                          (currently ignored)
  */
 /*----------------------------------------------------------------------------*/
+
 void
-cs_ibm_add_object_from_file(const char              *name,
-                            cs_ibm_algo_type_t       method,
-                            const char              *file_name,
-                            bool                     solve_fsi)
+cs_ibm_add_object_from_file(const char          *name,
+                            cs_ibm_algo_type_t   method,
+                            const char          *file_name,
+                            bool                 solve_fsi)
 {
+  CS_UNUSED(solve_fsi);
 
   int obj_id = _add_ibm_object(name,
                                method);
@@ -4232,8 +4232,10 @@ cs_ibm_add_object_from_file(const char              *name,
  *
  * \param[in] name          name of the object
  * \param[in] cutcell_func  pointer to the cutcell function of the object
- * \param[in] solve_fsi     Is the object used in the FSI resolution
+ * \param[in] solve_fsi     Is the object used in the FSI resolution ?
+ *                          (currently ignored)
  * \param[in] n_nodes       Number of nodes if the object is deformable
+ *                          (currently ignored)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4243,6 +4245,8 @@ cs_ibm_add_object_from_func(const char        *name,
                             bool               solve_fsi,
                             int                n_nodes)
 {
+  CS_UNUSED(solve_fsi);
+  CS_UNUSED(n_nodes);
 
   int obj_id = _add_ibm_object(name,
                                CS_IBM_ALGO_CUT_CELLS);
@@ -4324,7 +4328,6 @@ cs_ibm_object_rotate(const char *name,
                      cs_real_t   axis[3],
                      cs_real_t   center[3])
 {
-
   cs_ibm_object_t *obj = cs_ibm_object_by_name(name);
 
   switch(obj->method) {
@@ -4355,7 +4358,6 @@ cs_ibm_object_rotate(const char *name,
     }
     break;
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4373,9 +4375,7 @@ cs_ibm_object_set_property_const(cs_ibm_object_t               *obj,
                                  cs_ibm_object_property_type_t  ppty_id,
                                  cs_real_t                      val)
 {
-
   _ibm_object_define_property_def(obj, ppty_id, 1, &val);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4391,7 +4391,6 @@ void
 cs_ibm_object_translate(const char *name,
                         cs_real_t   vector[3])
 {
-
   cs_ibm_object_t *obj = cs_ibm_object_by_name(name);
 
   switch(obj->method) {
@@ -4416,7 +4415,6 @@ cs_ibm_object_translate(const char *name,
     break;
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4432,7 +4430,6 @@ void
 cs_ibm_object_scale(const char *name,
                     cs_real_t   factor)
 {
-
   cs_ibm_object_t *obj = cs_ibm_object_by_name(name);
 
   switch(obj->method) {
@@ -4457,7 +4454,6 @@ cs_ibm_object_scale(const char *name,
     break;
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4476,7 +4472,6 @@ cs_ibm_user_parameters(void)
 
   // TODO: Add gui call
   cs_user_ibm_define_objects();
-
 }
 
 
@@ -4485,6 +4480,7 @@ cs_ibm_user_parameters(void)
  * \brief Init writers for STL or MED objects.
  */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_ibm_init_writer(void)
 {
@@ -4541,7 +4537,6 @@ cs_ibm_init_writer(void)
     else if (cs_ibm->objects[i]->method == CS_IBM_ALGO_MEDCOUPLING)
       cs_mi_post_add_mesh(cs_ibm->objects[i]->mi);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4558,7 +4553,6 @@ void
 cs_ibm_object_transform_from_init(cs_ibm_object_t *obj,
                                   cs_real_34_t     matrix)
 {
-
   switch(obj->method) {
 
   case CS_IBM_ALGO_STL:
@@ -4576,7 +4570,6 @@ cs_ibm_object_transform_from_init(cs_ibm_object_t *obj,
   default:
     break;
   }
-
 }
 
 
@@ -4588,7 +4581,7 @@ cs_ibm_object_transform_from_init(cs_ibm_object_t *obj,
  * \param[in]  m              pointer to mesh structure
  * \param[in]  cell_vol       pointer to cell volume array
  * \param[out] obj_frac_tot   array containing the total vol fraction of solids
- * \param[in]  indic          indicator array
+ * \param[in]  indic          indicator array (currently ignored)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4599,6 +4592,8 @@ cs_ibm_object_compute_intersect_vol(cs_ibm_object_t            *obj,
                                     cs_real_t                  *obj_frac_tot,
                                     int                        *indic)
 {
+  CS_UNUSED(indic);
+
   cs_real_t *wfrac = NULL;
   cs_lnum_t *windic = NULL;
   BFT_MALLOC(wfrac , m->n_cells_with_ghosts, cs_real_t);
@@ -4658,7 +4653,6 @@ cs_ibm_object_compute_intersect_vol(cs_ibm_object_t            *obj,
 
   BFT_FREE(wfrac);
   BFT_FREE(windic);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4672,7 +4666,6 @@ cs_ibm_object_compute_intersect_vol(cs_ibm_object_t            *obj,
 
 void cs_ibm_volumic_zone(const cs_mesh_quantities_t *mesh_quantities)
 {
-
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)mesh_quantities->cell_cen;
   int n_v_zones = cs_volume_zone_n_zones();
 

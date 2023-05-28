@@ -531,10 +531,12 @@ cs_user_model(void)
   /*! [wall_condensation] */
 
   /* Activated wall condensation model for natural convection
-   *   CS_WALL_COND_MODEL_COPAIN : Legacy implementation of COPAIN correlation
-   * (default) CS_WALL_COND_MODEL_COPAIN_BD : Update of COPAIN correlation from
-   * Benteboula and Dabbene CS_WALL_COND_MODEL_UCHIDA : Correlation of Uchida
-   *   CS_WALL_COND_MODEL_DEHBI  : Correlation of Dehbi
+   * - CS_WALL_COND_MODEL_COPAIN:     Legacy implementation of COPAIN
+   *                                  correlation (default)
+   * - CS_WALL_COND_MODEL_COPAIN_BD:  Update of COPAIN correlation from
+   *                                  Benteboula and Dabbene
+   * - CS_WALL_COND_MODEL_UCHIDA:     Uchida correlation
+   * - CS_WALL_COND_MODEL_DEHBI:      Dehbi correlation
    */
 
   cs_wall_cond_t *wall_cond = cs_get_glob_wall_cond();

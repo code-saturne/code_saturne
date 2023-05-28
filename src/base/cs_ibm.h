@@ -384,14 +384,16 @@ cs_ibm_object_compute_cut_porosity(const cs_lnum_t    c_id,
  * \param[in] name          name of the object
  * \param[in] method        Porosity computation method
  * \param[in] file_name     file name
- * \param[in] solve_fsi     Is the object used in the FSI resolution
+ * \param[in] solve_fsi     Is the object used in the FSI resolution ?
+ *                          (currently ignored)
  */
 /*----------------------------------------------------------------------------*/
+
 void
-cs_ibm_add_object_from_file(const char              *name,
-                            cs_ibm_algo_type_t  method,
-                            const char              *file_name,
-                            bool                     solve_fsi);
+cs_ibm_add_object_from_file(const char          *name,
+                            cs_ibm_algo_type_t   method,
+                            const char          *file_name,
+                            bool                 solve_fsi);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -399,8 +401,10 @@ cs_ibm_add_object_from_file(const char              *name,
  *
  * \param[in] name          name of the object
  * \param[in] cutcell_func  pointer to the cutcell function of the object
- * \param[in] solve_fsi     Is the object used in the FSI resolution
+ * \param[in] solve_fsi     Is the object used in the FSI resolution ?
+ *                          (currently ignored)
  * \param[in] n_nodes       Number of nodes if the object is deformable
+ *                          (currently ignored)
  */
 /*----------------------------------------------------------------------------*/
 

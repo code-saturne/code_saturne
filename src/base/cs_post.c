@@ -3225,7 +3225,7 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
 
     for (int f_id = 0; f_id < n_fields; f_id++) {
 
-      const cs_field_t  *f = cs_field_by_id(f_id);
+      cs_field_t  *f = cs_field_by_id(f_id);
 
       const cs_mesh_location_type_t field_loc_type
         = cs_mesh_location_get_type(f->location_id);

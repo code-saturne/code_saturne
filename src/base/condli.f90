@@ -478,7 +478,7 @@ call cs_internal_coupling_bcs(itypfb)
 
 ! Radiative transfer: add contribution to energy BCs.
 if (iirayo.gt.0 .and. itrfin.eq.1 .and. itrfup.eq.1) then
-  call cs_rad_transfer_bcs(nvar, itypfb, icodcl, dt, rcodcl)
+  call cs_rad_transfer_bcs(itypfb, dt)
 endif
 
 ! Convert temperature to enthalpy for Dirichlet conditions

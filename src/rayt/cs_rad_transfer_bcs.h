@@ -63,46 +63,14 @@ BEGIN_C_DECLS
  *
  *   2) Update BCs for the energy computation
  *
- *   \param[in]     nvar          total number of variable BC's
- *   \param[in,out] icodcl        face boundary condition code:
- *                                 - 1 Dirichlet
- *                                 - 2 Radiative outlet
- *                                 - 3 Neumann
- *                                 - 4 sliding and
- *                                   \f$ \vect{u} \cdot \vect{n} = 0 \f$
- *                                 - 5 smooth wall and
- *                                   \f$ \vect{u} \cdot \vect{n} = 0 \f$
- *                                 - 6 rough wall and
- *                                   \f$ \vect{u} \cdot \vect{n} = 0 \f$
- *                                 - 9 free inlet/outlet
- *                                   (input mass flux blocked to 0)
- *                                 - 13 Dirichlet for the advection operator and
- *                                      Neumann for the diffusion operator
  *   \param[in]     bc_type       face boundary condition type
  *   \param[in]     dt            time step (per cell)
- *   \param[in,out] rcodcl        boundary condition values:
- *                                 - rcodcl(1) value of the dirichlet
- *                                 - rcodcl(2) value of the exterior exchange
- *                                   coefficient (infinite if no exchange)
- *                                 - rcodcl(3) value flux density
- *                                   (negative if gain) in w/m2 or roughness
- *                                   in m if icodcl=6
- *                                   -# for the velocity \f$ (\mu+\mu_T)
- *                                      \gradv \vect{u} \cdot \vect{n}  \f$
- *                                   -# for the pressure \f$ \Delta t
- *                                      \grad P \cdot \vect{n}  \f$
- *                                   -# for a scalar \f$ cp \left( K +
- *                                       \dfrac{K_T}{\sigma_T} \right)
- *                                       \grad T \cdot \vect{n} \f$
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_bcs(int         nvar,
-                    int         bc_type[],
-                    int         icodcl[],
-                    cs_real_t   dt[],
-                    cs_real_t   rcodcl[]);
+cs_rad_transfer_bcs(int         bc_type[],
+                    cs_real_t   dt[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

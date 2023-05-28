@@ -357,7 +357,6 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Ui_BatchRunningDialogForm.__init__(self)
         self.setupUi(self)
 
-
         self.case = case
         self.parent = parent
 
@@ -403,7 +402,6 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
         self.have_mpi = self.jmdl.have_mpi
         self.have_openmp = self.jmdl.have_openmp
-
 
         # Batch info
 
