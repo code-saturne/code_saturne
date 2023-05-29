@@ -57,6 +57,7 @@
 #include "cs_mesh_connect.h"
 #include "cs_mesh_location.h"
 #include "cs_coupling.h"
+#include "cs_gradient_boundary.h"
 #include "cs_halo.h"
 #include "cs_matrix.h"
 #include "cs_mesh.h"
@@ -1930,180 +1931,6 @@ cs_internal_coupling_reconstruct_tensor_gradient(
   BFT_FREE(r_grad_local);
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Add internal coupling rhs contribution for LSQ gradient calculation
- *
- * \param[in]       cpl      pointer to coupling entity
- * \param[in]       c_weight weighted gradient coefficient variable, or NULL
- * \param[in]       w_stride stride of weighting coefficient
- * \param[in]       pvar     pointer to variable
- * \param[in, out]  rhs      pointer to rhs contribution
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_internal_coupling_lsq_vector_gradient(
-    const cs_internal_coupling_t  *cpl,
-    const cs_real_t                c_weight[],
-    const int                      w_stride,
-    const cs_real_3_t              pvar[],
-    cs_real_33_t                   rhs[])
-{
-  cs_real_t pfac;
-  cs_real_3_t dc, fctb;
-
-  const cs_lnum_t n_local = cpl->n_local;
-  const cs_lnum_t *faces_local = cpl->faces_local;
-  const cs_lnum_t n_distant = cpl->n_distant;
-  const cs_lnum_t *faces_distant = cpl->faces_distant;
-  const cs_real_t* g_weight = cpl->g_weight;
-  const cs_real_3_t *ci_cj_vect = (const cs_real_3_t *)cpl->ci_cj_vect;
-
-  const cs_mesh_t* m = cs_glob_mesh;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
-
-  /* Variables for cases w_stride = 1 or 6 */
-  const bool scalar_diff = (c_weight != NULL && w_stride == 1);
-  const bool tensor_diff = (c_weight != NULL && w_stride == 6);
-  cs_real_t *weight = NULL;
-
-  /* Exchange pvar */
-
-  cs_real_3_t *pvar_distant = NULL;
-  BFT_MALLOC(pvar_distant, n_distant, cs_real_3_t);
-  for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
-    cs_lnum_t face_id = faces_distant[ii];
-    cs_lnum_t cell_id = b_face_cells[face_id];
-    for (cs_lnum_t i = 0; i < 3; i++)
-      pvar_distant[ii][i] = pvar[cell_id][i];
-  }
-  cs_real_3_t *pvar_local = NULL;
-  BFT_MALLOC(pvar_local, n_local, cs_real_3_t);
-  cs_internal_coupling_exchange_var(cpl,
-                                    3,
-                                    (cs_real_t *)pvar_distant,
-                                    (cs_real_t *)pvar_local);
-  /* Free memory */
-  BFT_FREE(pvar_distant);
-
-  /* Preliminary step in case of heterogenous diffusivity */
-
-  if (c_weight != NULL) { /* Heterogenous diffusivity */
-    if (tensor_diff) {
-      BFT_MALLOC(weight, 6*n_local, cs_real_t);
-      cs_internal_coupling_exchange_by_cell_id(cpl,
-                                               6,
-                                               c_weight,
-                                               weight);
-    }
-    else {
-      BFT_MALLOC(weight, n_local, cs_real_t);
-      _compute_physical_face_weight(cpl,
-                                    c_weight, /* diffusivity */
-                                    weight); /* physical face weight */
-    }
-  }
-
-  /* Compute rhs */
-
-  for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-    cs_lnum_t face_id = faces_local[ii];
-    cs_lnum_t cell_id = b_face_cells[face_id];
-    for (cs_lnum_t ll = 0; ll < 3; ll++)
-      dc[ll] = ci_cj_vect[ii][ll];
-
-    if (tensor_diff) { //FIXME
-      /* (P_j - P_i)*/
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        cs_real_t p_diff = (pvar_local[ii][i] - pvar[cell_id][i]);
-
-        _compute_ani_weighting(&c_weight[6*cell_id],
-                               &weight[6*ii],
-                               p_diff,
-                               dc,
-                               g_weight[ii],
-                               rhs[cell_id][i]);
-      }
-    }
-    else if (scalar_diff) {
-
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        /* (P_j - P_i) / ||d||^2 */
-        pfac = (pvar_local[ii][i] - pvar[cell_id][i])
-             / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-        for (cs_lnum_t j = 0; j < 3; j++)
-          fctb[j] = dc[j] * pfac;
-
-        /* Compared with _lsq_scalar_gradient, weight from
-         * _compute_physical_face_weight already contains denom */
-        for (cs_lnum_t j = 0; j < 3; j++)
-          rhs[cell_id][i][j] +=  weight[ii] * fctb[j];
-      }
-    }
-    else {
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        /* (P_j - P_i) / ||d||^2 */
-        pfac = (pvar_local[ii][i] - pvar[cell_id][i])
-             / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-        for (cs_lnum_t j = 0; j < 3; j++)
-          fctb[j] = dc[j] * pfac;
-
-        /* Compared with _lsq_scalar_gradient, weight from
-         * _compute_physical_face_weight already contains denom */
-        for (cs_lnum_t j = 0; j < 3; j++)
-          rhs[cell_id][i][j] +=  fctb[j];
-      }
-    }
-
-  }
-
-  /* Free memory */
-  if (c_weight != NULL) BFT_FREE(weight);
-  BFT_FREE(pvar_local);
-}
-
-/*----------------------------------------------------------------------------
- * Modify LSQ COCG matrix to include internal coupling
- *
- * parameters:
- *   cpl  <-- pointer to coupling entity
- *   cocg <-> cocg matrix modified
- *----------------------------------------------------------------------------*/
-
-void
-cs_internal_coupling_lsq_cocg_contribution(const cs_internal_coupling_t  *cpl,
-                                           cs_real_6_t                    cocg[])
-{
-  const cs_lnum_t n_local = cpl->n_local;
-  const cs_lnum_t *faces_local = cpl->faces_local;
-  const cs_real_3_t *ci_cj_vect = (const cs_real_3_t *)cpl->ci_cj_vect;
-
-  const cs_mesh_t* m = cs_glob_mesh;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
-
-  for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-    cs_lnum_t face_id = faces_local[ii];
-    cs_lnum_t cell_id = b_face_cells[face_id];
-
-    cs_real_t dc[3];
-    for (cs_lnum_t ll = 0; ll < 3; ll++)
-      dc[ll] = ci_cj_vect[ii][ll];
-    cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-    cocg[cell_id][0] += dc[0]*dc[0]*ddc;
-    cocg[cell_id][1] += dc[1]*dc[1]*ddc;
-    cocg[cell_id][2] += dc[2]*dc[2]*ddc;
-    cocg[cell_id][3] += dc[0]*dc[1]*ddc;
-    cocg[cell_id][4] += dc[1]*dc[2]*ddc;
-    cocg[cell_id][5] += dc[0]*dc[2]*ddc;
-  }
-}
-
 /*----------------------------------------------------------------------------
  * Modify iterative COCG matrix to include internal coupling
  *
@@ -2322,6 +2149,247 @@ cs_internal_coupling_coupled_faces(const cs_internal_coupling_t  *cpl,
     *n_distant = cpl->n_distant;
   if (faces_distant != NULL)
     *faces_distant = cpl->faces_distant;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update scalar boundary condition coefficients for internal coupling.
+ *
+ * \param[in]     bc_coeffs        associated BC coefficients structure
+ * \param[in]     cpl              structure associated with internal coupling
+ * \param[in]     halo_type        halo type
+ * \param[in]     w_stride         stride for weighting coefficient
+ * \param[in]     clip_coeff       clipping coefficient
+ * \param[out]    bc_coeff_a       boundary condition term a
+ * \param[out]    bc_coeff_b       boundary condition term b
+ * \param[in]     var              gradient's base variable
+ * \param[in]     c_weight         weighted gradient coefficient variable,
+ *                                 or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_update_bc_coeff_s(cs_field_bc_coeffs_t          *bc_coeffs,
+                                       const cs_internal_coupling_t  *cpl,
+                                       cs_halo_type_t                 halo_type,
+                                       int                            w_stride,
+                                       double                         clip_coeff,
+                                       cs_real_t                     *bc_coeff_a,
+                                       cs_real_t                     *bc_coeff_b,
+                                       const cs_real_t               *var,
+                                       const cs_real_t               *c_weight)
+{
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+
+  /* For internal coupling, exchange local variable
+     with its associated distant value */
+
+  cs_real_t *hintp = bc_coeffs->hint;
+  cs_real_t *rcodcl2p = bc_coeffs->rcodcl2;
+
+  const cs_lnum_t n_local = cpl->n_local;
+  const cs_lnum_t n_distant = cpl->n_distant;
+  const cs_lnum_t *faces_distant = cpl->faces_distant;
+  const cs_lnum_t *faces_local = cpl->faces_local;
+
+  cs_real_t *var_ext = NULL, *var_distant = NULL;
+  BFT_MALLOC(var_ext, n_local, cs_real_t);
+  BFT_MALLOC(var_distant, n_distant, cs_real_t);
+
+  /* For cases with a stronger gradient normal to the coupling than tangential
+     to the coupling, assuming a homogeneous Neuman boundary condition at the
+     coupled faces for the reconstruction at I' rather than the value at I on
+     non-orthogonal meshes (such as tetrahedral meshes) can actually degrade
+     performance, because the only adjacent mesh locations contributing
+     information are not in the plane tangential to the face and containing II'.
+     So we use an iterative process here to initialize BC coefficients with
+     a non-reconstructed value and refine them with a reconstructed value.
+     This is actually only necessary whan combining a gradient tangential to the
+     coupled surface and a non-orthogonal mesh at the wall (not recommended for
+     wall law modeling), so we limit this to a single iteration and do not
+     provide user setting for this now. */
+
+  int n_iter_max = 2;
+  for (int iter = 0; iter < n_iter_max; iter++) {
+
+    if (iter > 0) {
+      if (w_stride <= 1)
+        cs_gradient_boundary_iprime_lsq_s(mesh,
+                                          cs_glob_mesh_quantities,
+                                          n_distant,
+                                          faces_distant,
+                                          halo_type,
+                                          clip_coeff,
+                                          bc_coeff_a,
+                                          bc_coeff_b,
+                                          c_weight,
+                                          var,
+                                          var_distant);
+      else {
+        assert(w_stride == 6);
+        cs_gradient_boundary_iprime_lsq_s_ani(mesh,
+                                              cs_glob_mesh_quantities,
+                                              n_distant,
+                                              faces_distant,
+                                              clip_coeff,
+                                              bc_coeff_a,
+                                              bc_coeff_b,
+                                              (const cs_real_6_t *)c_weight,
+                                              var,
+                                              var_distant);
+      }
+    }
+    else {
+      const cs_lnum_t *restrict b_face_cells
+        = (const cs_lnum_t *restrict)mesh->b_face_cells;
+      for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+        cs_lnum_t face_id = faces_distant[ii];
+        cs_lnum_t cell_id = b_face_cells[face_id];
+        var_distant[ii] = var[cell_id];
+      }
+    }
+
+    cs_internal_coupling_exchange_var(cpl,
+                                      1,
+                                      (cs_real_t *)var_distant,
+                                      (cs_real_t *)var_ext);
+
+    /* For internal coupling, update BC coeffs */
+
+    for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+      cs_lnum_t face_id = faces_local[ii];
+
+      cs_real_t hint = hintp[face_id];
+      cs_real_t hext = rcodcl2p[face_id];
+
+      bc_coeff_a[face_id] = hext * var_ext[ii] / (hint + hext);
+      bc_coeff_b[face_id] = hint               / (hint + hext);
+    }
+  }
+
+  BFT_FREE(var_ext);
+  BFT_FREE(var_distant);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update vector boundary condition coefficients for internal coupling.
+ *
+ * \param[in]     bc_coeffs        associated BC coefficients structure
+ * \param[in]     cpl              structure associated with internal coupling
+ * \param[in]     halo_type        halo type
+ * \param[in]     clip_coeff       clipping coefficient
+ * \param[out]    bc_coeff_a       boundary condition term a
+ * \param[out]    bc_coeff_b       boundary condition term b
+ * \param[in]     var              gradient's base variable
+ * \param[in]     c_weight         weighted gradient coefficient variable,
+ *                                 or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_update_bc_coeff_v(cs_field_bc_coeffs_t          *bc_coeffs,
+                                       const cs_internal_coupling_t  *cpl,
+                                       cs_halo_type_t                 halo_type,
+                                       double                         clip_coeff,
+                                       cs_real_t             bc_coeff_a[][3],
+                                       cs_real_t             bc_coeff_b[][3][3],
+                                       const cs_real_3_t    *var,
+                                       const cs_real_t      *c_weight)
+{
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+
+  /* For internal coupling, exchange local variable
+     with its associated distant value */
+
+  cs_real_t *hintp = bc_coeffs->hint;
+  cs_real_t *rcodcl2p = bc_coeffs->rcodcl2;
+
+  const cs_lnum_t n_local = cpl->n_local;
+  const cs_lnum_t n_distant = cpl->n_distant;
+  const cs_lnum_t *faces_distant = cpl->faces_distant;
+  const cs_lnum_t *faces_local = cpl->faces_local;
+
+  cs_real_3_t *var_ext = NULL, *var_distant = NULL;
+  BFT_MALLOC(var_ext, n_local, cs_real_3_t);
+  BFT_MALLOC(var_distant, n_distant, cs_real_3_t);
+
+  /* For cases with a stronger gradient normal to the coupling than tangential
+     to the coupling, assuming a homogeneous Neuman boundary condition at the
+     coupled faces for the reconstruction at I' rather than the value at I on
+     non-orthogonal meshes (such as tetrahedral meshes) can actually degrade
+     performance, because the only adjacent mesh locations contributing
+     information are not in the plane tangential to the face and containing II'.
+     So we use an iterative process here to initialize BC coefficients with
+     a non-reconstructed value and refine them with a reconstructed value.
+     This is actually only necessary whan combining a gradient tangential to the
+     coupled surface and a non-orthogonal mesh at the wall (not recommended for
+     wall law modeling), so we limit this to a single iteration and do not
+     provide user setting for this now. */
+
+  int n_iter_max = 2;
+  for (int iter = 0; iter < n_iter_max; iter++) {
+
+    if (iter > 0) {
+
+      cs_gradient_boundary_iprime_lsq_v(mesh,
+                                        cs_glob_mesh_quantities,
+                                        n_distant,
+                                        faces_distant,
+                                        halo_type,
+                                        clip_coeff,
+                                        (const cs_real_3_t *)bc_coeff_a,
+                                        (const cs_real_33_t *)bc_coeff_b,
+                                        c_weight,
+                                        var,
+                                        var_distant);
+    }
+    else {
+      const cs_lnum_t *restrict b_face_cells
+        = (const cs_lnum_t *restrict)mesh->b_face_cells;
+      for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+        cs_lnum_t face_id = faces_distant[ii];
+        cs_lnum_t cell_id = b_face_cells[face_id];
+        for (cs_lnum_t kk = 0; kk < 3; kk++)
+          var_distant[ii][kk] = var[cell_id][kk];
+      }
+    }
+
+    cs_internal_coupling_exchange_var(cpl,
+                                      3,
+                                      (cs_real_t *)var_distant,
+                                      (cs_real_t *)var_ext);
+
+    /* For internal coupling, update BC coeffs */
+
+    for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+      cs_lnum_t face_id = faces_local[ii];
+
+      cs_real_t hint = hintp[face_id];
+      cs_real_t hext = rcodcl2p[face_id];
+
+      cs_real_t  m_a = hext / (hint + hext);
+      cs_real_t  m_b = hint / (hint + hext);
+
+      for (cs_lnum_t kk = 0; kk < 3; kk++)
+        bc_coeff_a[face_id][kk] = m_a * var_ext[ii][kk];
+
+      bc_coeff_b[face_id][0][0] = m_b;
+      bc_coeff_b[face_id][0][1] = 0;
+      bc_coeff_b[face_id][0][2] = 0;
+
+      bc_coeff_b[face_id][1][0] = 0;
+      bc_coeff_b[face_id][1][1] = m_b;
+      bc_coeff_b[face_id][1][2] = 0;
+
+      bc_coeff_b[face_id][2][0] = 0;
+      bc_coeff_b[face_id][2][1] = 0;
+      bc_coeff_b[face_id][2][2] = m_b;
+    }
+  }
+
+  BFT_FREE(var_ext);
+  BFT_FREE(var_distant);
 }
 
 /*----------------------------------------------------------------------------

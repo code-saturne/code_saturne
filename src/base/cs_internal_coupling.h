@@ -277,18 +277,6 @@ cs_internal_coupling_exchange_by_face_id(const cs_internal_coupling_t  *cpl,
                                          cs_real_t                      local[]);
 
 /*----------------------------------------------------------------------------
- * Modify LSQ COCG matrix to include internal coupling
- *
- * parameters:
- *   cpl  <-- pointer to coupling entity
- *   cocg <-> cocg matrix modified
- *----------------------------------------------------------------------------*/
-
-void
-cs_internal_coupling_lsq_cocg_contribution(const cs_internal_coupling_t  *cpl,
-                                           cs_real_6_t                    cocg[]);
-
-/*----------------------------------------------------------------------------
  * Modify iterative COCG matrix to include internal coupling
  *
  * parameters:
@@ -317,46 +305,6 @@ cs_internal_coupling_setup(void);
 
 void
 cs_internal_coupling_initialize(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Add internal coupling rhs contribution for LSQ gradient calculation
- *
- * \param[in]       cpl      pointer to coupling entity
- * \param[in]       c_weight weighted gradient coefficient variable, or NULL
- * \param[in]       w_stride stride of weighting coefficient
- * \param[in]       pvar     pointer to variable
- * \param[in, out]  rhs      pointer to rhs contribution
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_internal_coupling_lsq_vector_gradient(
-    const cs_internal_coupling_t  *cpl,
-    const cs_real_t                c_weight[],
-    const int                      w_stride,
-    const cs_real_3_t              pvar[],
-    cs_real_33_t                   rhs[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Add internal coupling rhs contribution for LSQ gradient calculation
- *
- * \param[in]       cpl      pointer to coupling entity
- * \param[in]       c_weight weighted gradient coefficient variable, or NULL
- * \param[in]       w_stride stride of weighting coefficient
- * \param[in]       pvar     pointer to variable
- * \param[in, out]  rhs      pointer to rhs contribution
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_internal_coupling_lsq_tensor_gradient(
-    const cs_internal_coupling_t  *cpl,
-    const cs_real_t                c_weight[],
-    const int                      w_stride,
-    const cs_real_6_t              pvar[],
-    cs_real_63_t                   rhs[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -471,6 +419,60 @@ cs_internal_coupling_reconstruct_tensor_gradient(
     const cs_internal_coupling_t  *cpl,
     cs_real_63_t         *restrict r_grad,
     cs_real_63_t                   grad[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute scalar boundary condition coefficients for internal coupling.
+ *
+ * \param[in]     bc_coeffs        associated BC coefficients structure
+ * \param[in]     cpl              structure associated with internal coupling
+ * \param[in]     halo_type        halo type
+ * \param[in]     w_stride         stride for weighting coefficient
+ * \param[in]     clip_coeff       clipping coefficient
+ * \param[out]    bc_coeff_a       boundary condition term a
+ * \param[out]    bc_coeff_b       boundary condition term b
+ * \param[in]     var              gradient's base variable
+ * \param[in]     c_weight         weighted gradient coefficient variable,
+ *                                 or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_update_bc_coeff_s(cs_field_bc_coeffs_t          *bc_coeffs,
+                                       const cs_internal_coupling_t  *cpl,
+                                       cs_halo_type_t                 halo_type,
+                                       int                            w_stride,
+                                       double                         clip_coeff,
+                                       cs_real_t                     *bc_coeff_a,
+                                       cs_real_t                     *bc_coeff_b,
+                                       const cs_real_t               *var,
+                                       const cs_real_t               *c_weight);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update vector boundary condition coefficients for internal coupling.
+ *
+ * \param[in]     bc_coeffs        associated BC coefficients structure
+ * \param[in]     cpl              structure associated with internal coupling
+ * \param[in]     halo_type        halo type
+ * \param[in]     clip_coeff       clipping coefficient
+ * \param[out]    bc_coeff_a       boundary condition term a
+ * \param[out]    bc_coeff_b       boundary condition term b
+ * \param[in]     var              gradient's base variable
+ * \param[in]     c_weight         weighted gradient coefficient variable,
+ *                                 or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_update_bc_coeff_v(cs_field_bc_coeffs_t          *bc_coeffs,
+                                       const cs_internal_coupling_t  *cpl,
+                                       cs_halo_type_t                 halo_type,
+                                       double                         clip_coeff,
+                                       cs_real_t             bc_coeff_a[][3],
+                                       cs_real_t             bc_coeff_b[][3][3],
+                                       const cs_real_3_t    *var,
+                                       const cs_real_t      *c_weight);
 
 /*----------------------------------------------------------------------------
  * Addition to matrix-vector product in case of internal coupling.

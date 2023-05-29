@@ -53,7 +53,6 @@
 #include "cs_ext_neighborhood.h"
 #include "cs_field.h"
 #include "cs_halo.h"
-#include "cs_internal_coupling.h"
 #include "cs_gradient_priv.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
@@ -169,8 +168,6 @@ _add_hb_faces_cocg_lsq_cell(cs_lnum_t        c_id,
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
- * \param[in]   cpl             structure associated with internal coupling,
- *                              or NULL
  * \param[in]   n_faces         number of faces at which to compute values
  * \param[in]   face_ids        ids of boundary faces at which to compute
  *                              values, or NULL for all
@@ -189,7 +186,6 @@ _add_hb_faces_cocg_lsq_cell(cs_lnum_t        c_id,
 static void
 _gradient_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
                                      const cs_mesh_quantities_t    *fvq,
-                                     const cs_internal_coupling_t  *cpl,
                                      cs_lnum_t                      n_faces,
                                      const cs_lnum_t               *face_ids,
                                      cs_halo_type_t                 halo_type,
@@ -234,14 +230,6 @@ _gradient_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
-
-  cs_lnum_t   hn_stride = 0;
-  const bool _hn_faces[1] = {false};
-  const bool  *hn_faces = _hn_faces;
-  if (cpl != NULL) {
-    hn_stride = 1;
-    hn_faces = (const bool *)cpl->coupled_faces;
-  }
 
   assert(var_dim <= 9);  /* Local arrays with hard-coded dimensions follow. */
 
@@ -397,57 +385,42 @@ _gradient_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
       cs_real_t dif[3];
       cs_real_t ddif;
 
-      /* For coupled faces, use pure Neumann condition */
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        dif[ll] = b_face_cog[c_f_id][ll] - cell_cen[c_id][ll];
 
-      if (hn_faces[c_f_id * hn_stride]) {
+      ddif = 1. / cs_math_3_square_norm(dif);
 
-        cs_real_t udbfs = 1. / b_face_surf[c_f_id];
-        for (cs_lnum_t ll = 0; ll < 3; ll++)
-          dif[ll] = udbfs * b_face_normal[c_f_id][ll];
+      cs_real_t var_f[9];
 
-        ddif = 1. / cs_math_3_square_norm(dif);
+      const cs_real_t *a = bc_coeff_a + (c_f_id*var_dim);
+      const cs_real_t *b = bc_coeff_b + (c_f_id*var_dim*var_dim);
 
-      }
-      else {
-
-        for (cs_lnum_t ll = 0; ll < 3; ll++)
-          dif[ll] = b_face_cog[c_f_id][ll] - cell_cen[c_id][ll];
-
-        ddif = 1. / cs_math_3_square_norm(dif);
-
-        cs_real_t var_f[9];
-
-        const cs_real_t *a = bc_coeff_a + (c_f_id*var_dim);
-        const cs_real_t *b = bc_coeff_b + (c_f_id*var_dim*var_dim);
-
-        for (cs_lnum_t kk = 0; kk < var_dim; kk++) {
-          var_f[kk] = a[kk];
-          for (cs_lnum_t ll = 0; ll < var_dim; ll++) {
-            var_f[kk] += b[kk*var_dim + ll] * var_i[ll];
-          }
-        }
-
+      for (cs_lnum_t kk = 0; kk < var_dim; kk++) {
+        var_f[kk] = a[kk];
         for (cs_lnum_t ll = 0; ll < var_dim; ll++) {
-          var_min[ll] = CS_MIN(var_min[ll], var_f[ll]);
-          var_max[ll] = CS_MAX(var_max[ll], var_f[ll]);
-          if (fabs(var_f[ll] - a[ll]) > 1e-24)
-            coeff_b_contrib = true;
+          var_f[kk] += b[kk*var_dim + ll] * var_i[ll];
         }
-
-        for (cs_lnum_t kk = 0; kk < var_dim; kk++) {
-          cs_real_t pfac = (var_f[kk] - var_i[kk]) * ddif;
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhs[kk][ll] += dif[ll] * pfac;
-        }
-
-        cs_lnum_t i_rel = i - s_id;
-        if (i_rel < n_coeff_b_contrib_buf_max)
-          coeff_b_contrib_f[i_rel] = coeff_b_contrib;
-
-        if (coeff_b_contrib)
-          n_coeff_b_contrib += 1;
-
       }
+
+      for (cs_lnum_t ll = 0; ll < var_dim; ll++) {
+        var_min[ll] = CS_MIN(var_min[ll], var_f[ll]);
+        var_max[ll] = CS_MAX(var_max[ll], var_f[ll]);
+        if (fabs(var_f[ll] - a[ll]) > 1e-24)
+          coeff_b_contrib = true;
+      }
+
+      for (cs_lnum_t kk = 0; kk < var_dim; kk++) {
+        cs_real_t pfac = (var_f[kk] - var_i[kk]) * ddif;
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
+          rhs[kk][ll] += dif[ll] * pfac;
+      }
+
+      cs_lnum_t i_rel = i - s_id;
+      if (i_rel < n_coeff_b_contrib_buf_max)
+        coeff_b_contrib_f[i_rel] = coeff_b_contrib;
+
+      if (coeff_b_contrib)
+        n_coeff_b_contrib += 1;
 
       cocg[0] += dif[0]*dif[0]*ddif;
       cocg[1] += dif[1]*dif[1]*ddif;
@@ -822,23 +795,8 @@ _compute_ani_weighting_cocg(const cs_real_t  wi[],
  *   normals are not orthogonal to II' can also provide a significant
  *   contribution to the normal.
  *
- * For coupled faces (with internal coupling), we assume a Neumann BC,
- * as the values that could be computed at the intersections of the
- * segments joining coupled cell centers and the matching boundary face
- * do not currently account for the non-linearity associated with wall laws.
- *
- * This assumption can actually degrade performance when the only adjacent
- * mesh locations contributing information are not in the plane tangential
- * to the face and containing II' (such as with tetrahedral meshes), so passing
- * no coupling information (NULL cpl argument) and updating BC coefficients
- * either with non-reconstructed values or using an iterative process above:
- * this function's call is recommended (at the expense of additional
- * communication in the caller).
- *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
- * \param[in]   cpl             structure associated with internal coupling,
- *                              or NULL
  * \param[in]   n_faces         number of faces at which to compute values
  * \param[in]   face_ids        ids of boundary faces at which to compute
  *                              values, or NULL for all
@@ -856,7 +814,6 @@ _compute_ani_weighting_cocg(const cs_real_t  wi[],
 void
 cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
                                   const cs_mesh_quantities_t    *fvq,
-                                  const cs_internal_coupling_t  *cpl,
                                   cs_lnum_t                      n_faces,
                                   const cs_lnum_t               *face_ids,
                                   cs_halo_type_t                 halo_type,
@@ -898,18 +855,6 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
     = (const cs_real_t *restrict)fvq->b_dist;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
-
-  cs_lnum_t   hn_stride = 0;
-  bool _hn_faces[1] = {false};
-  const bool  *hn_faces = _hn_faces;
-  if (bc_coeff_a == NULL && bc_coeff_b == NULL) {
-    hn_stride = 0;
-    _hn_faces[0] = true;
-  }
-  else if (cpl != NULL) {
-    hn_stride = 1;
-    hn_faces = (const bool *)cpl->coupled_faces;
-  }
 
   /* Loop on selected boundary faces */
 
@@ -1033,23 +978,13 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
 
       cs_real_t dddij[3];
 
-      /* For coupled faces, use pure Neumann condition,
-         for other faces, use regular BC's */
+      cs_real_t a = bc_coeff_a[c_f_id];
+      cs_real_t b = bc_coeff_b[c_f_id];
 
-      cs_real_t a, b;
-      if (hn_faces[c_f_id * hn_stride]) {
-        a = 0;
-        b = 1;
-      }
-      else {
-        a = bc_coeff_a[c_f_id];
-        b = bc_coeff_b[c_f_id];
-
-        /* Use unreconstructed value for limiter */
-        cs_real_t var_f = a + b*var_i;
-        var_min = CS_MIN(var_min, var_f);
-        var_max = CS_MAX(var_max, var_f);
-      }
+      /* Use unreconstructed value for limiter */
+      cs_real_t var_f = a + b*var_i;
+      var_min = CS_MIN(var_min, var_f);
+      var_max = CS_MAX(var_max, var_f);
 
       cs_real_t unddij = 1. / b_dist[c_f_id];
       cs_real_t udbfs = 1. / b_face_surf[c_f_id];
@@ -1136,8 +1071,6 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
- * \param[in]   cpl             structure associated with internal coupling,
- *                              or NULL
  * \param[in]   n_faces         number of faces at which to compute values
  * \param[in]   face_ids        ids of boundary faces at which to compute
  *                              values, or NULL for all
@@ -1154,7 +1087,6 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
 void
 cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
                                       const cs_mesh_quantities_t    *fvq,
-                                      const cs_internal_coupling_t  *cpl,
                                       cs_lnum_t                   n_faces,
                                       const cs_lnum_t            *face_ids,
                                       double                      clip_coeff,
@@ -1197,18 +1129,6 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
-
-  cs_lnum_t   hn_stride = 0;
-  bool _hn_faces[1] = {false};
-  const bool  *hn_faces = _hn_faces;
-  if (bc_coeff_a == NULL && bc_coeff_b == NULL) {
-    hn_stride = 0;
-    _hn_faces[0] = true;
-  }
-  else if (cpl != NULL) {
-    hn_stride = 1;
-    hn_faces = (const bool *)cpl->coupled_faces;
-  }
 
   if (cell_i_faces == NULL) {
     cs_mesh_adjacencies_update_cell_i_faces();
@@ -1308,20 +1228,13 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
       /* For coupled faces, use pure Neumann condition,
          for other faces, use regular BC's */
 
-      cs_real_t a, b;
-      if (hn_faces[c_f_id * hn_stride]) {
-        a = 0;
-        b = 1;
-      }
-      else {
-        a = bc_coeff_a[c_f_id];
-        b = bc_coeff_b[c_f_id];
+      cs_real_t a = bc_coeff_a[c_f_id];
+      cs_real_t b = bc_coeff_b[c_f_id];
 
-        /* Use unreconstructed value for limiter */
-        cs_real_t var_f = a + b*var_i;
-        var_min = CS_MIN(var_min, var_f);
-        var_max = CS_MAX(var_max, var_f);
-      }
+      /* Use unreconstructed value for limiter */
+      cs_real_t var_f = a + b*var_i;
+      var_min = CS_MIN(var_min, var_f);
+      var_max = CS_MAX(var_max, var_f);
 
       cs_real_t unddij = 1. / b_dist[c_f_id];
       cs_real_t udbfs = 1. / b_face_surf[c_f_id];
@@ -1419,8 +1332,6 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
- * \param[in]   cpl             structure associated with internal coupling,
- *                              or NULL
  * \param[in]   n_faces         number of faces at which to compute values
  * \param[in]   face_ids        ids of boundary faces at which to compute
  *                              values, or NULL for all
@@ -1436,22 +1347,20 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gradient_boundary_iprime_lsq_v(const cs_mesh_t               *m,
+cs_gradient_boundary_iprime_lsq_v(const cs_mesh_t     *m,
                                   const cs_mesh_quantities_t    *fvq,
-                                  const cs_internal_coupling_t  *cpl,
-                                  cs_lnum_t                      n_faces,
-                                  const cs_lnum_t               *face_ids,
-                                  cs_halo_type_t                 halo_type,
-                                  double                         clip_coeff,
-                                  const cs_real_t               *bc_coeff_a[3],
-                                  const cs_real_t               *bc_coeff_b[3][3],
-                                  const cs_real_t                c_weight[],
-                                  const cs_real_t                var[][6],
-                                  cs_real_t            *restrict var_iprime[3])
+                                  cs_lnum_t            n_faces,
+                                  const cs_lnum_t     *face_ids,
+                                  cs_halo_type_t       halo_type,
+                                  double               clip_coeff,
+                                  const cs_real_t      bc_coeff_a[][3],
+                                  const cs_real_t      bc_coeff_b[][3][3],
+                                  const cs_real_t      c_weight[],
+                                  const cs_real_t      var[][3],
+                                  cs_real_t            var_iprime[restrict][3])
 {
   _gradient_b_faces_iprime_strided_lsq(m,
                                        fvq,
-                                       cpl,
                                        n_faces,
                                        face_ids,
                                        halo_type,
@@ -1461,7 +1370,7 @@ cs_gradient_boundary_iprime_lsq_v(const cs_mesh_t               *m,
                                        (const cs_real_t *)bc_coeff_b,
                                        c_weight,
                                        (const cs_real_t *)var,
-                                       (cs_real_t *) var_iprime);
+                                       (cs_real_t *restrict) var_iprime);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1490,8 +1399,6 @@ cs_gradient_boundary_iprime_lsq_v(const cs_mesh_t               *m,
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
- * \param[in]   cpl             structure associated with internal coupling,
- *                              or NULL
  * \param[in]   n_faces         number of faces at which to compute values
  * \param[in]   face_ids        ids of boundary faces at which to compute
  *                              values, or NULL for all
@@ -1507,22 +1414,20 @@ cs_gradient_boundary_iprime_lsq_v(const cs_mesh_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gradient_boundary_iprime_lsq_t(const cs_mesh_t               *m,
+cs_gradient_boundary_iprime_lsq_t(const cs_mesh_t     *m,
                                   const cs_mesh_quantities_t    *fvq,
-                                  const cs_internal_coupling_t  *cpl,
-                                  cs_lnum_t                      n_faces,
-                                  const cs_lnum_t               *face_ids,
-                                  cs_halo_type_t                 halo_type,
-                                  double                         clip_coeff,
-                                  const cs_real_t               *bc_coeff_a[6],
-                                  const cs_real_t               *bc_coeff_b[6][6],
-                                  const cs_real_t                c_weight[],
-                                  const cs_real_t                var[][6],
-                                  cs_real_t            *restrict var_iprime[6])
+                                  cs_lnum_t            n_faces,
+                                  const cs_lnum_t     *face_ids,
+                                  cs_halo_type_t       halo_type,
+                                  double               clip_coeff,
+                                  const cs_real_t      bc_coeff_a[][6],
+                                  const cs_real_t      bc_coeff_b[][6][6],
+                                  const cs_real_t      c_weight[],
+                                  const cs_real_t      var[][6],
+                                  cs_real_t            var_iprime[restrict][6])
 {
   _gradient_b_faces_iprime_strided_lsq(m,
                                        fvq,
-                                       cpl,
                                        n_faces,
                                        face_ids,
                                        halo_type,

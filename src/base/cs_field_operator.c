@@ -1057,7 +1057,6 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
 
     cs_gradient_boundary_iprime_lsq_s(m,
                                       fvq,
-                                      cpl,
                                       n_faces,
                                       face_ids,
                                       halo_type,

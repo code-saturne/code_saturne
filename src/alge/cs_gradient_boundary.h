@@ -33,7 +33,6 @@
 
 #include "cs_base.h"
 #include "cs_halo.h"
-#include "cs_internal_coupling.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 
@@ -81,23 +80,8 @@ BEGIN_C_DECLS
  *   normals are not orthogonal to II' can also provide a significant
  *   contribution to the normal.
  *
- * For coupled faces (with internal coupling), we assume a Neumann BC,
- * as the values that could be computed at the intersections of the
- * segments joining coupled cell centers and the matching boundary face
- * do not currently account for the non-linearity associated with wall laws.
- *
- * This assumption can actually degrade performance when the only adjacent
- * mesh locations contributing information are not in the plane tangential
- * to the face and containing II' (such as with tetrahedral meshes), so passing
- * no coupling information (NULL cpl argument) and updating BC coefficients
- * either with non-reconstructed values or using an iterative process above:
- * this function's call is recommended (at the expense of additional
- * communication in the caller).
- *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
- * \param[in]   cpl             structure associated with internal coupling,
- *                              or NULL
  * \param[in]   n_faces         number of faces at which to compute values
  * \param[in]   face_ids        ids of boundary faces at which to compute
  *                              values, or NULL for all
@@ -115,7 +99,6 @@ BEGIN_C_DECLS
 void
 cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
                                   const cs_mesh_quantities_t    *fvq,
-                                  const cs_internal_coupling_t  *cpl,
                                   cs_lnum_t                      n_faces,
                                   const cs_lnum_t               *face_ids,
                                   cs_halo_type_t                 halo_type,
@@ -141,8 +124,6 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
- * \param[in]   cpl             structure associated with internal coupling,
- *                              or NULL
  * \param[in]   n_faces         number of faces at which to compute values
  * \param[in]   face_ids        ids of boundary faces at which to compute
  *                              values, or NULL for all
@@ -159,7 +140,6 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
 void
 cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
                                       const cs_mesh_quantities_t    *fvq,
-                                      const cs_internal_coupling_t  *cpl,
                                       cs_lnum_t                   n_faces,
                                       const cs_lnum_t            *face_ids,
                                       double                      clip_coeff,
@@ -195,8 +175,6 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
- * \param[in]   cpl             structure associated with internal coupling,
- *                              or NULL
  * \param[in]   n_faces         number of faces at which to compute values
  * \param[in]   face_ids        ids of boundary faces at which to compute
  *                              values, or NULL for all
@@ -212,18 +190,17 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gradient_boundary_iprime_lsq_v(const cs_mesh_t               *m,
+cs_gradient_boundary_iprime_lsq_v(const cs_mesh_t     *m,
                                   const cs_mesh_quantities_t    *fvq,
-                                  const cs_internal_coupling_t  *cpl,
-                                  cs_lnum_t                      n_faces,
-                                  const cs_lnum_t               *face_ids,
-                                  cs_halo_type_t                 halo_type,
-                                  double                         clip_coeff,
-                                  const cs_real_t               *bc_coeff_a[3],
-                                  const cs_real_t               *bc_coeff_b[3][3],
-                                  const cs_real_t                c_weight[],
-                                  const cs_real_t                var[][6],
-                                  cs_real_t            *restrict var_iprime[3]);
+                                  cs_lnum_t            n_faces,
+                                  const cs_lnum_t     *face_ids,
+                                  cs_halo_type_t       halo_type,
+                                  double               clip_coeff,
+                                  const cs_real_t      bc_coeff_a[][3],
+                                  const cs_real_t      bc_coeff_b[][3][3],
+                                  const cs_real_t      c_weight[],
+                                  const cs_real_t      var[][3],
+                                  cs_real_t            var_iprime[restrict][3]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -251,8 +228,6 @@ cs_gradient_boundary_iprime_lsq_v(const cs_mesh_t               *m,
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
- * \param[in]   cpl             structure associated with internal coupling,
- *                              or NULL
  * \param[in]   n_faces         number of faces at which to compute values
  * \param[in]   face_ids        ids of boundary faces at which to compute
  *                              values, or NULL for all
@@ -268,18 +243,17 @@ cs_gradient_boundary_iprime_lsq_v(const cs_mesh_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gradient_boundary_iprime_lsq_t(const cs_mesh_t               *m,
+cs_gradient_boundary_iprime_lsq_t(const cs_mesh_t     *m,
                                   const cs_mesh_quantities_t    *fvq,
-                                  const cs_internal_coupling_t  *cpl,
-                                  cs_lnum_t                      n_faces,
-                                  const cs_lnum_t               *face_ids,
-                                  cs_halo_type_t                 halo_type,
-                                  double                         clip_coeff,
-                                  const cs_real_t               *bc_coeff_a[6],
-                                  const cs_real_t               *bc_coeff_b[6][6],
-                                  const cs_real_t                c_weight[],
-                                  const cs_real_t                var[][6],
-                                  cs_real_t            *restrict var_iprime[6]);
+                                  cs_lnum_t            n_faces,
+                                  const cs_lnum_t     *face_ids,
+                                  cs_halo_type_t       halo_type,
+                                  double               clip_coeff,
+                                  const cs_real_t      bc_coeff_a[][6],
+                                  const cs_real_t      bc_coeff_b[][6][6],
+                                  const cs_real_t      c_weight[],
+                                  const cs_real_t      var[][6],
+                                  cs_real_t            var_iprime[restrict][6]);
 
 /*----------------------------------------------------------------------------*/
 
