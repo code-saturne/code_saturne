@@ -83,6 +83,15 @@ void
 cs_atmo_aerosol_ssh_finalize(void);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief This function computes the number of aerosols using the given array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_aerosol_ssh_compute_numbers(cs_real_t*);
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief This function uses the given array to update the aerosol
  *        concentrations and numbers in SSH-aerosol.

@@ -243,14 +243,13 @@ if (init_gas_with_lib) then
     return
 
   else
-
-    zproc(1) = 0.
+    zproc(1) = 0.d0
 
     call sshaerosol_get_gas(espnum)
 
-    ! Conversion from microg / m^3 to ppm
+    ! Conversion from microg / m^3 to ppm (i.e.  mg/kg)
     do ii = 1, nespgi
-      espnum(ii) = espnum(ii) / (1.d-3 * ro0)
+      espnum(ii) = espnum(ii) / (1.d3 * ro0)
     enddo
 
   endif
