@@ -385,7 +385,6 @@ module cs_c_bindings
     end subroutine cs_intprz
 
     !---------------------------------------------------------------------------
-
     !> \brief Compute filters for dynamic models.
 
 
@@ -3693,6 +3692,26 @@ module cs_c_bindings
       implicit none
       integer(c_int), intent(in), value :: ncel, iclip
     end subroutine cs_turbulence_rij_clip_sg
+
+    !---------------------------------------------------------------------------
+    ! Interface to C function to compute the number of aerosols
+
+    subroutine cs_atmo_aerosol_ssh_compute_numbers(dlconc0) &
+       bind(C, name='cs_atmo_aerosol_ssh_compute_numbers')
+       use, intrinsic :: iso_c_binding
+       implicit none
+       real(kind=c_double), dimension(*), intent(inout) :: dlconc0
+    end subroutine cs_atmo_aerosol_ssh_compute_numbers
+
+    !---------------------------------------------------------------------------
+    ! Interface to C function to set the humidity in SSH
+
+    subroutine cs_atmo_aerosol_ssh_set_t_p_h(t, p, h) &
+       bind(C, name='cs_atmo_aerosol_ssh_set_t_p_h')
+       use, intrinsic :: iso_c_binding
+       implicit none
+       real(kind=c_double), intent(inout) :: t, p, h
+    end subroutine cs_atmo_aerosol_ssh_set_t_p_h
 
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 

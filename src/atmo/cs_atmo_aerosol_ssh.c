@@ -52,6 +52,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_air_props.h"
 #include "cs_base.h"
 #include "cs_domain.h"
 #include "cs_field.h"
@@ -366,19 +367,21 @@ cs_atmo_aerosol_ssh_initialize(void)
 
   /* Initialize SSH-aerosol (default file name is namelist.ssh) */
   {
-    const int _namelist_len = 401;
-    char namelist_ssh[_namelist_len];
-    for (int i = 0; i < _namelist_len; i++) namelist_ssh[i] = '\0';
-    if (at_chem->aero_file_name == NULL) {
-      strcpy(namelist_ssh, "namelist.ssh");
-    } else {
-      strcpy(namelist_ssh, at_chem->aero_file_name);
-    }
+    char namelist_ssh_default[] = "namelist.ssh";
+    char *namelist_ssh;
+
+    if (at_chem->aero_file_name == NULL)
+      namelist_ssh = namelist_ssh_default;
+    else
+      namelist_ssh = at_chem->aero_file_name;
+
     _exchange_char_array(_aerosol_so,
                          "api_sshaerosol_initialize_",
-                         &namelist_ssh[0]);
+                         namelist_ssh);
     _call(_aerosol_so, "api_sshaerosol_init_distributions_");
-    if (_verbose) bft_printf(" Shared library sshaerosol initialized.\n");
+
+    if (_verbose)
+      bft_printf(" Shared library sshaerosol initialized.\n");
   }
 
   /* Using this is not recommended */
@@ -547,6 +550,86 @@ cs_atmo_aerosol_ssh_finalize(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief This function computes the number of aerosols using the given array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_aerosol_ssh_compute_numbers(cs_real_t* dlconc0)
+{
+
+  assert(cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_SSH);
+
+#if defined(HAVE_DLOPEN)
+  const int _size = cs_glob_atmo_chemistry->n_layer
+                  * cs_glob_atmo_chemistry->n_size;
+
+  /* Set the aerosols concentrations */
+  _exchange_double_array(_aerosol_so,
+                         "api_sshaerosol_set_aero_",
+                         dlconc0);
+
+  /* Compute the aerosol numbers in SSH */
+  _call(_aerosol_so, "api_sshaerosol_compute_number_");
+
+  /* Get the aerosols numbers */
+  _exchange_double_array(_aerosol_so,
+                         "api_sshaerosol_get_aero_num_",
+                         &(dlconc0[_size]));
+#else
+  bft_error(__FILE__, __LINE__, 0,
+            _("Shared library support not available.\n"
+              "Unable to use %s\n"), _lib_path);
+#endif
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function takes as input
+ *    absolute temperature T
+ *    total pressure P
+ *    water mass fraction yw
+ * It computes
+ *    absolute temperature
+ *    relative humidity
+ * Then updates the humidity in SSH
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_aerosol_ssh_set_t_p_h(cs_real_t *T,
+                              cs_real_t *P,
+                              cs_real_t *yw)
+{
+
+  assert(cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_SSH);
+
+#if defined(HAVE_DLOPEN)
+  /* Set the temperature */
+  _send_double(_aerosol_so, "api_sshaerosol_set_temperature_", *T);
+
+  /* Set the pressure */
+  _send_double(_aerosol_so, "api_sshaerosol_set_pressure_", *P);
+
+  /* Compute and set the relative humidity */
+  double T_celcius = *T - cs_physical_constants_celsius_to_kelvin;
+  double rh = *yw / cs_air_yw_sat(T_celcius, (double)*P);
+  _send_double(_aerosol_so, "api_sshaerosol_set_relhumidity_", rh);
+
+  /* Update Psat and the specific humidity in SSH */
+  _call(_aerosol_so, "api_sshaerosol_update_humidity_");
+#else
+  bft_error(__FILE__, __LINE__, 0,
+            _("Shared library support not available.\n"
+              "Unable to use %s\n"), _lib_path);
+#endif
+
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This function uses the given array to update the aerosol
  *        concentrations and numbers in SSH-aerosol.
  */
@@ -705,17 +788,17 @@ cs_atmo_aerosol_ssh_time_advance(void)
     if (cs_glob_atmo_chemistry->chemistry_with_photolysis)
       _call(_aerosol_so, "api_sshaerosol_updatephoto_");
 
-  } else {
+  }
+  else {
     bft_error(__FILE__, __LINE__, 0,
               _("Time scheme currently incompatible with SSH-aerosol\n"));
   }
 
   /* Loop over cells, update chemistry and aerosols */
-  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
-  {
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
 
-    /* Conversion from ppm to microg / m^3 */
-    const cs_real_t ppm_to_microg = 1e-3 * CS_F_(rho)->val[cell_id];
+    /* Conversion from ppm (mg/kg) to microg / m^3 */
+    const cs_real_t ppm_to_microg = 1e3 * CS_F_(rho)->val[cell_id];
     const cs_real_t microg_to_ppm = 1. / ppm_to_microg;
 
     /* Set the Pressure */

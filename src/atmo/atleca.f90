@@ -87,7 +87,7 @@ if (init_aero_with_lib) then
 
   ! Conversion from microg / m^3 to ppm
   do jb = 1, n_aer * nlayer_aer
-    dlconc0(jb) = dlconc0(jb) / (1.d-3 * ro0)
+    dlconc0(jb) = dlconc0(jb) / (1.d3 * ro0)
   enddo
 
   ! Conversion from molecules / m^3 to molecules / kg
