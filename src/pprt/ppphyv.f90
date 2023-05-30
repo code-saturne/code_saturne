@@ -219,22 +219,6 @@ implicit none
 
 !===============================================================================
 
-interface
-
-  !---------------------------------------------------------------------------
-
-  ! Interface to C function defining groundwater flow physical properties.
-
-  subroutine cs_gwf_delay_update()  &
-    bind(C, name='cs_gwf_delay_update')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_gwf_delay_update
-
-  !---------------------------------------------------------------------------
-
-end interface
-
 !===============================================================================
 ! 1. Initializations
 !===============================================================================

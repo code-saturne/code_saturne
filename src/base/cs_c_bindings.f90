@@ -121,18 +121,6 @@ module cs_c_bindings
 
   !---------------------------------------------------------------------------
 
-  type, bind(c)  :: gwf_soilwater_partition
-    integer(c_int) :: kinetic
-    integer(c_int) :: ikd
-    integer(c_int) :: idel
-    integer(c_int) :: ikp
-    integer(c_int) :: ikm
-    integer(c_int) :: imxsol
-    integer(c_int) :: resol_method
-  end type gwf_soilwater_partition
-
-  !---------------------------------------------------------------------------
-
   type, bind(c)  :: gas_mix_species_prop
     real(c_double) :: mol_mas
     real(c_double) :: cp
@@ -3328,53 +3316,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function for sorbed concentration update.
-
-    subroutine cs_gwf_sorbed_concentration_update(f_id)  &
-      bind(C, name='cs_gwf_sorbed_concentration_update')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id
-    end subroutine cs_gwf_sorbed_concentration_update
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function for precipitation treatment.
-
-    subroutine cs_gwf_precipitation(f_id)   &
-      bind(C, name='cs_gwf_precipitation')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id
-    end subroutine cs_gwf_precipitation
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function for decay treatment.
-
-    subroutine cs_gwf_decay_rate(f_id, ts_imp)   &
-      bind(C, name='cs_gwf_decay_rate')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id
-      real(kind=c_double), dimension(*), intent(inout) :: ts_imp
-    end subroutine cs_gwf_decay_rate
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function for kinetic reaction.
-
-    subroutine cs_gwf_kinetic_reaction(f_id, ts_imp, ts_exp)   &
-      bind(C, name='cs_gwf_kinetic_reaction')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id
-      real(kind=c_double), dimension(*), intent(inout) :: ts_imp
-      real(kind=c_double), dimension(*), intent(inout) :: ts_exp
-    end subroutine cs_gwf_kinetic_reaction
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function to count number of buoyant scalars.
 
     subroutine cs_velocity_pressure_set_n_buoyant_scalars()   &
@@ -4074,51 +4015,6 @@ contains
 
   !=============================================================================
 
-  !> \brief Assign a gwf_soilwater_partition for a cs_gwf_soilwater_partition_t
-  !> key to a field.
-
-  !> If the field category is not compatible, a fatal error is provoked.
-
-  !> \param[in]   f_id     field id
-  !> \param[in]   k_value  structure associated with key
-
-  subroutine field_set_key_struct_gwf_soilwater_partition(f_id, k_value)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in)                          :: f_id
-    type(gwf_soilwater_partition), intent(in), target :: k_value
-
-    ! Local variables
-
-    integer(c_int)                        :: c_f_id
-    type(gwf_soilwater_partition),pointer      :: p_k_value
-    type(c_ptr)                           :: c_k_value
-    character(len=34+1, kind=c_char)      :: c_name
-
-    integer(c_int), save           :: c_k_id = -1
-
-    if (c_k_id .eq. -1) then
-      c_name = "gwf_soilwater_partition"//c_null_char
-      c_k_id = cs_f_field_key_id(c_name)
-    endif
-
-    c_f_id = f_id
-
-    p_k_value => k_value
-    c_k_value = c_loc(p_k_value)
-
-    call cs_f_field_set_key_struct(c_f_id, c_k_id, c_k_value)
-
-    return
-
-  end subroutine field_set_key_struct_gwf_soilwater_partition
-
-  !=============================================================================
-
   !> \brief Assign a gas_mix_species_prop for a cs_gas_mix_species_prop_t
   !> key to a field.
 
@@ -4239,47 +4135,6 @@ contains
     return
 
   end subroutine field_get_key_struct_solving_info
-
-  !=============================================================================
-
-  !> \brief Return a pointer to the gwf_soilwater_partition structure for
-  !>        cs_gwf_soilwater_partition_t key associated with a field.
-
-  !> If the field category is not compatible, a fatal error is provoked.
-
-  !> \param[in]   f_id     field id
-  !> \param[out]  k_value  integer value associated with key id for this field
-
-  subroutine field_get_key_struct_gwf_soilwater_partition(f_id, k_value)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in)                             :: f_id
-    type(gwf_soilwater_partition), intent(inout), target :: k_value
-
-    ! Local variables
-
-    integer(c_int)                        :: c_f_id, c_k_id
-    type(gwf_soilwater_partition),pointer      :: p_k_value
-    type(c_ptr)                           :: c_k_value
-    character(len=34+1, kind=c_char)      :: c_name
-
-    c_name = "gwf_soilwater_partition"//c_null_char
-
-    c_k_id = cs_f_field_key_id(c_name)
-    c_f_id = f_id
-
-    p_k_value => k_value
-    c_k_value = c_loc(p_k_value)
-
-    call cs_f_field_get_key_struct(c_f_id, c_k_id, c_k_value)
-
-    return
-
-  end subroutine field_get_key_struct_gwf_soilwater_partition
 
   !=============================================================================
 
