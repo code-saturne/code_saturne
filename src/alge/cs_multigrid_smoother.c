@@ -1961,7 +1961,7 @@ cs_multigrid_smoother_create(cs_sles_it_type_t    smoother_type,
     break;
 
   case CS_SLES_PCG:
-    if (poly_degree < 0 && c->type != CS_SLES_PCG)
+    if (poly_degree < 0)
       c->_pc = cs_sles_pc_none_create();
     else if (poly_degree == 0)
       c->_pc = cs_sles_pc_jacobi_create();
@@ -1972,7 +1972,7 @@ cs_multigrid_smoother_create(cs_sles_it_type_t    smoother_type,
     break;
 
   case CS_SLES_PCR3:
-    if (poly_degree < 0 && c->type != CS_SLES_PCR3)
+    if (poly_degree < 0)
       c->_pc = cs_sles_pc_none_create();
     else if (poly_degree == 0)
       c->_pc = cs_sles_pc_jacobi_create();
