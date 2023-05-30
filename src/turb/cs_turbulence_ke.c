@@ -2468,9 +2468,9 @@ cs_turbulence_ke_q(cs_real_6_t  rij[])
 
     for (cs_lnum_t ii = 0; ii < 3; ii++) {
       for (cs_lnum_t jj = 0; jj < 3; jj++) {
-        xrij[jj][ii] = - 4*xqc1*xvisct*xttke*sikskj[jj][ii]
-                       - 4*xqc2*xvisct*xttke*(wikskj[jj][ii]+skiwjk[jj][ii])
-                       - 4*xqc3*xvisct*xttke*wikwjk[jj][ii];
+        xrij[jj][ii] =   4*xqc1*xvisct*xttke*sikskj[jj][ii]
+                       + 4*xqc2*xvisct*xttke*(wikskj[jj][ii]+skiwjk[jj][ii])
+                       + 4*xqc3*xvisct*xttke*wikwjk[jj][ii];
       }
     }
 
