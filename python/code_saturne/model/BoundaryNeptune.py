@@ -908,7 +908,7 @@ R12-23 = 5e-05;"""
                 value = self.getDefaultScalarFormula(choice,
                                                      self.spm.getScalarLabelByName(Scalar))
             else:
-                value = self.__defaultValues()['scalar']
+                value = self.__defaultValues(fieldId)['scalar']
 
             self.setScalarValue(fieldId, Scalar, value)
 
