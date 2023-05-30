@@ -994,9 +994,9 @@ cs_sles_hypre_solve(void                *context,
   cs_sles_hypre_t  *c = context;
   cs_sles_hypre_setup_t  *sd = c->setup_data;
   cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
-  HYPRE_Int its, max_its;
-  HYPRE_Int ierr;
   double res;
+  HYPRE_Int its, max_its;
+  HYPRE_Int ierr = -1;
 
   if (sd == NULL) {
     cs_sles_hypre_setup(c, name, a, verbosity);
