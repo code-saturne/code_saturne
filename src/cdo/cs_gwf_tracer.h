@@ -207,7 +207,7 @@ struct _gwf_tracer_default_context_t {
   /* Precipitation members (set to NULL if not used) */
   /* ----------------------------------------------- */
 
-  double       *conc_l_star;    /* maximal value of the concentraction of
+  double       *conc_l_star;    /* maximal value of the concentration of
                                  * tracer in the liquid phase in mol/m^3. There
                                  * is one user-defined value for each soil. The
                                  * exceeded quantities are stored in the solid
@@ -221,7 +221,7 @@ struct _gwf_tracer_default_context_t {
                                  * w.r.t. to the discretization scheme.
                                  */
 
-  cs_field_t   *precip_field;   /* Field structure storing the (interpolated)
+  cs_field_t   *precip_field;   /* field structure storing the (interpolated)
                                  * values of the concentration of precipitate
                                  * in mol/kg in each cell.
                                  */
@@ -234,7 +234,8 @@ struct _gwf_tracer_default_context_t {
   double       *k0_minus;       /* kinetic coefficient from site 2 locations
                                    (s^-1) */
 
-  cs_real_t    *conc_site2;     /* array allocated to n_cells */
+  cs_real_t    *conc_site2;     /* array allocated to n_cells whatever the
+                                   space discretization is */
 
   /* Variables used for the update of physical properties (shared pointers) */
 
