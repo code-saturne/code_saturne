@@ -1700,12 +1700,12 @@ _set_saturne_sles(bool                 use_field_id,
            1.0);          /* precision_mult_coarse */
 
         cs_multigrid_set_coarsening_options(mg,
-                                            8,   /* aggregation_limit */
+                                            8,    /* aggregation_limit */
                                             CS_GRID_COARSENING_SPD_PW,
-                                            10,  /* n_max_levels */
-                                            50,  /* min_g_cells */
-                                            0.,  /* P0P1 relaxation */
-                                            0);  /* postprocess */
+                                            10,   /* n_max_levels */
+                                            150,  /* min_g_cells */
+                                            0.,   /* P0P1 relaxation */
+                                            0);   /* postprocess */
 
       }
       else
