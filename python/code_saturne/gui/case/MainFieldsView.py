@@ -519,9 +519,13 @@ class StandardItemModelMainFields(QStandardItemModel):
     def updateItem(self):
         # update carrier field and criterion
         for i, field in enumerate(self.mdl.list_of_fields) :
+            self._data[i][2] = field.flow_type
+            # If field is continuous, ensure that carrier option is updated
+            if field.flow_type == 'continuous':
+                field.carrier_id = 'off'
+
             carrier_id = field.carrier_id
             self._data[i][3] = self.mdl.getFieldFromId(carrier_id).label
-            self._data[i][2] = field.flow_type
 
 
     def deleteItem(self, row):
