@@ -364,7 +364,7 @@ permeability=1.;"""
         self.isInt(int(zoneid))
         self.isNotInList(scalar_name, self.sca_mo.getScalarsVarianceList())
         self.isInList(scalar_name, self.sca_mo.getUserScalarNameList())
-        self.isInList(prop, ['diffusivity','kd', 'kplus', 'kminus'])
+        self.isInList(prop, ['diffusivity','kd', 'clstar'])
 
         nodeZone = self.node_darcy.xmlGetNode('groundwater_law', zone_id=zoneid)
         nodeScalar = nodeZone.xmlInitChildNode('scalar', name=scalar_name)
@@ -384,7 +384,7 @@ permeability=1.;"""
         self.isInt(int(zoneid))
         self.isNotInList(scalar_name, self.sca_mo.getScalarsVarianceList())
         self.isInList(scalar_name, self.sca_mo.getUserScalarNameList())
-        self.isInList(prop, ['diffusivity','kd', 'kplus', 'kminus'])
+        self.isInList(prop, ['diffusivity','kd', 'clstar'])
 
         nodeZone = self.node_darcy.xmlGetNode('groundwater_law', zone_id=zoneid)
         nodeScalar = nodeZone.xmlInitChildNode('scalar', name=scalar_name)

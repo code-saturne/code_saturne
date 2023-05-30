@@ -158,8 +158,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.comboBoxNameDiff.activated[str].connect(self.slotNameDiff)
         self.lineEditDiffusivity.textChanged[str].connect(lambda x: self.slotSetScalarProperty(x, "diffusivity"))
         self.lineEditKd.textChanged[str].connect(lambda x: self.slotSetScalarProperty(x, "kd"))
-        self.lineEditkplus.textChanged[str].connect(lambda x: self.slotSetScalarProperty(x, "kplus"))
-        self.lineEditkminus.textChanged[str].connect(lambda x: self.slotSetScalarProperty(x, "kminus"))
+        self.lineEdit_clstar.textChanged[str].connect(lambda x: self.slotSetScalarProperty(x, "clstar"))
 
     def setValidators(self):
         self.lineEditKs.setValidator(DoubleValidator(self.lineEditKs))
@@ -187,8 +186,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.lineEditSoilDensity.setValidator(DoubleValidator(self.lineEditSoilDensity))
         self.lineEditDiffusivity.setValidator(DoubleValidator(self.lineEditDiffusivity))
         self.lineEditKd.setValidator(DoubleValidator(self.lineEditKd))
-        self.lineEditkplus.setValidator(DoubleValidator(self.lineEditkplus))
-        self.lineEditkminus.setValidator(DoubleValidator(self.lineEditkminus))
+        self.lineEdit_clstar.setValidator(DoubleValidator(self.lineEdit_clstar))
 
     @pyqtSlot("QModelIndex")
     def selectGroundwaterLawZones(self):
@@ -205,7 +203,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         value = self.mdl.getSoilDensity(name)
         self.lineEditSoilDensity.setText(str(value))
 
-        if GroundwaterModel(self.case).getUnsaturatedZone() == "true":
+        if GroundwaterModel(self.case).getGroundwaterModel() not in ("off", "saturated"):
             self.groupBoxType.show()
 
             choice = self.mdl.getGroundwaterLawModel(name)
@@ -272,20 +270,14 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             value = self.mdl.getGroundWaterScalarPropertyByZone(scal, name, 'kd')
             self.lineEditKd.setText(str(value))
             # chemistry model
-            if GroundwaterModel(self.case).getChemistryModel(scal) == "EK":
-                self.lineEditkplus.show()
-                self.label_kplus.show()
-                self.lineEditkminus.show()
-                self.label_kminus.show()
-                value = self.mdl.getGroundWaterScalarPropertyByZone(scal, name, 'kplus')
-                self.lineEditkplus.setText(str(value))
-                value = self.mdl.getGroundWaterScalarPropertyByZone(scal, name, 'kminus')
-                self.lineEditkminus.setText(str(value))
+            if GroundwaterModel(self.case).getChemistryModel(scal) == "kd_precipitation":
+                self.lineEdit_clstar.show()
+                self.label_clstar.show()
+                value = self.mdl.getGroundWaterScalarPropertyByZone(scal, name, 'clstar')
+                self.lineEdit_clstar.setText(str(value))
             else:
-                self.lineEditkplus.hide()
-                self.label_kplus.hide()
-                self.lineEditkminus.hide()
-                self.label_kminus.hide()
+                self.lineEdit_clstar.hide()
+                self.label_clstar.hide()
 
         value = self.mdl.getDispersionCoefficient(name, "longitudinal")
         self.lineEditLongitudinal.setText(str(value))
@@ -453,19 +445,13 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         value = self.mdl.getGroundWaterScalarPropertyByZone(scalar, name, 'kd')
         self.lineEditKd.setText(str(value))
         if GroundwaterModel(self.case).getChemistryModel(scalar) == "EK":
-            self.lineEditkplus.show()
-            self.label_kplus.show()
-            self.lineEditkminus.show()
-            self.label_kminus.show()
-            value = self.mdl.getGroundWaterScalarPropertyByZone(scalar, name, 'kplus')
-            self.lineEditkplus.setText(str(value))
-            value = self.mdl.getGroundWaterScalarPropertyByZone(scalar, name, 'kminus')
-            self.lineEditkminus.setText(str(value))
+            self.lineEdit_clstar.show()
+            self.label_clstar.show()
+            value = self.mdl.getGroundWaterScalarPropertyByZone(scalar, name, 'clstar')
+            self.lineEdit_clstar.setText(str(value))
         else:
-            self.lineEditkplus.hide()
-            self.label_kplus.hide()
-            self.lineEditkminus.hide()
-            self.label_kminus.hide()
+            self.lineEdit_clstar.hide()
+            self.label_clstar.hide()
 
 
 # -------------------------------------------------------------------------------

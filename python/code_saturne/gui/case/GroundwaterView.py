@@ -88,20 +88,15 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
             self.list_scalars.append((s, self.tr("Additional scalar")))
 
         # ComboBox
-        self.modelPermeability = ComboModel(self.comboBoxPermeability,2,1)
-        self.modelFlowType = ComboModel(self.comboBoxFlowType,2,1)
-        self.modelUnsaturated = ComboModel(self.comboBoxUnsaturated,2,1)
+        self.modelPermeability = ComboModel(self.comboBoxPermeability,3,1)
         self.modelChemistryModel = ComboModel(self.comboBoxChemistryModel,2,1)
         self.modelSpeciesName = ComboModel(self.comboBoxSpeciesName,1,1)
 
         self.modelPermeability.addItem(self.tr("isotropic"), 'isotropic')
+        self.modelPermeability.addItem(self.tr("orthotropic"), 'orthotropic')
         self.modelPermeability.addItem(self.tr("anisotropic"), 'anisotropic')
-        self.modelFlowType.addItem(self.tr("steady"), 'steady')
-        self.modelFlowType.addItem(self.tr("unsteady"), 'unsteady')
-        self.modelUnsaturated.addItem(self.tr("True"), 'true')
-        self.modelUnsaturated.addItem(self.tr("False"), 'false')
-        self.modelChemistryModel.addItem(self.tr("Kd"), 'Kd')
-        self.modelChemistryModel.addItem(self.tr("EK"), 'EK')
+        self.modelChemistryModel.addItem(self.tr("Kd"), 'kd')
+        self.modelChemistryModel.addItem(self.tr("Kd + precipitation"), 'kd_precipitation')
 
         self.scalar = ""
         scalar_list = self.m_sca.getUserScalarNameList()
@@ -120,8 +115,6 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
 
         # Connections
         self.comboBoxPermeability.activated[str].connect(self.slotPermeabilityType)
-        self.comboBoxFlowType.activated[str].connect(self.slotFlowType)
-        self.comboBoxUnsaturated.activated[str].connect(self.slotUnsaturated)
         self.comboBoxChemistryModel.activated[str].connect(self.slotChemistryModel)
         self.comboBoxSpeciesName.activated[str].connect(self.slotSpeciesName)
         self.lineEditDecayRate.textChanged[str].connect(self.slotDecayRate)
@@ -138,12 +131,6 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         value = self.mdl.getPermeabilityType()
         self.modelPermeability.setItem(str_model=value)
 
-        value = self.mdl.getFlowType()
-        self.modelFlowType.setItem(str_model=value)
-
-        value = self.mdl.getUnsaturatedZone()
-        self.modelUnsaturated.setItem(str_model=value)
-
         if scalar_list != []:
             value = self.mdl.getDecayRate(self.scalar)
             self.lineEditDecayRate.setText(str(value))
@@ -158,24 +145,6 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         """
         mdl = self.modelPermeability.dicoV2M[str(text)]
         self.mdl.setPermeabilityType(mdl)
-
-
-    @pyqtSlot(str)
-    def slotFlowType(self, text):
-        """
-        Input flow type : steady or unsteady.
-        """
-        mdl = self.modelFlowType.dicoV2M[str(text)]
-        self.mdl.setFlowType(mdl)
-
-
-    @pyqtSlot(str)
-    def slotUnsaturated(self, text):
-        """
-        Input flow type : steady or unsteady.
-        """
-        mdl = self.modelUnsaturated.dicoV2M[str(text)]
-        self.mdl.setUnsaturatedZone(mdl)
 
 
     @pyqtSlot(str)
@@ -195,7 +164,7 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
     @pyqtSlot(str)
     def slotChemistryModel(self, text):
         """
-        Input chemistry model for soil-water partition : Kd or EK.
+        Input chemistry model for soil-water partition : Kd or Kd + precipitation
         """
         choice = self.modelChemistryModel.dicoV2M[str(text)]
         scal = self.scalar

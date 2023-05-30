@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>882</width>
-    <height>2069</height>
+    <height>1674</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <item>
     <widget class="QGroupBox" name="darcyLawGroupBox">
      <property name="title">
-      <string>Darcy Law definition</string>
+      <string>Soil Law definition</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_4">
       <item>
@@ -207,9 +207,9 @@
                   <item>
                    <layout class="QHBoxLayout" name="horizontalLayout_8">
                     <item>
-                     <widget class="QLabel" name="label_kplus">
+                     <widget class="QLabel" name="label_clstar">
                       <property name="text">
-                       <string>k+</string>
+                       <string>C*</string>
                       </property>
                      </widget>
                     </item>
@@ -227,34 +227,7 @@
                      </spacer>
                     </item>
                     <item>
-                     <widget class="QLineEdit" name="lineEditkplus"/>
-                    </item>
-                   </layout>
-                  </item>
-                  <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_8">
-                    <item>
-                     <widget class="QLabel" name="label_kminus">
-                      <property name="text">
-                       <string>k-</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <spacer name="horizontalSpacer_47">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>40</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                    <item>
-                     <widget class="QLineEdit" name="lineEditkminus"/>
+                     <widget class="QLineEdit" name="lineEdit_clstar"/>
                     </item>
                    </layout>
                   </item>
@@ -284,7 +257,7 @@
         <item>
          <widget class="QGroupBox" name="groupBoxGroundProperties">
           <property name="title">
-           <string>Ground properties</string>
+           <string>Soil properties</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_14">
            <item row="10" column="0">
@@ -1008,19 +981,6 @@
          <size>
           <width>2</width>
           <height>88</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <spacer name="horizontalSpacer_25">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>2</width>
-          <height>20</height>
          </size>
         </property>
        </spacer>

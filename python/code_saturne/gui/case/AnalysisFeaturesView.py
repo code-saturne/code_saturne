@@ -120,7 +120,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelGasCombustion  = QtPage.ComboModel(self.comboBoxGasCombustion,3,1)
         self.modelCoalCombustion = QtPage.ComboModel(self.comboBoxCoalCombustion,2,1)
         self.modelJouleEffect    = QtPage.ComboModel(self.comboBoxJouleEffect,2,1)
-        self.modelGroundwater    = QtPage.ComboModel(self.comboBoxGroundwater,1,1)
+        self.modelGroundwater    = QtPage.ComboModel(self.comboBoxGroundwater,2,1)
 
         self.modelNeptuneCFD     = QtPage.ComboModel(self.comboBoxNeptuneCFD,2,1)
 
@@ -155,7 +155,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelJouleEffect.addItem(self.tr("Joule Effect"), "joule")
         self.modelJouleEffect.addItem(self.tr("Joule Effect and Laplace Forces"), "arc")
 
-        self.modelGroundwater.addItem(self.tr("Groundwater flows"), 'groundwater')
+        self.modelGroundwater.addItem(self.tr("Saturated"), 'saturated')
+        self.modelGroundwater.addItem(self.tr("Unsaturated, single-phase"), 'unsaturated_single_phase')
+        self.modelGroundwater.addItem(self.tr("Unsaturated, two-phase"), 'unsaturated_two_phase')
 
         self.modelHgn.addItem(self.tr("No mass transfer"),
                               'no_mass_transfer')
@@ -443,6 +445,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.modelLagrangian.disableItem(str_model='two_way')
         self.modelLagrangian.enableItem(str_model='frozen')
 
+        # Groundwater flows not handled yet
+
+        self.radioButtonGroundwater.setEnabled(False)
 
     def switch_case_to_neptune(self):
 

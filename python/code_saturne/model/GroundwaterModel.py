@@ -73,10 +73,8 @@ class GroundwaterModel(Variables, Model):
         """
         default = {}
         default['permeability' ]     = 'isotropic'
-        default['flow' ]             = 'steady'
         default['groundwater_model'] = 'off'
-        default['unsaturated']       = 'true'
-        default['chemistry_model']   = 'Kd'
+        default['chemistry_model']   = 'kd'
         default['fo_decay_rate']     = 0.0
         return default
 
@@ -98,7 +96,8 @@ class GroundwaterModel(Variables, Model):
         """
         Put the Groundwater model
         """
-        self.isInList(choice, ['off', 'groundwater'])
+        self.isInList(choice, ['off', 'saturated',
+                               'unsaturated_single_phase', 'unsaturated_two_phase'])
         old_choice = self.node_darcy['model']
         self.node_darcy['model'] = choice
 
@@ -180,7 +179,7 @@ class GroundwaterModel(Variables, Model):
         """
         Put the permeability model
         """
-        self.isInList(choice, ['isotropic', 'anisotropic'])
+        self.isInList(choice, ['isotropic', 'orthotropic', 'anisotropic'])
         node = self.node_darcy.xmlInitChildNode('permeability')
         oldchoice = node['model']
 
@@ -188,52 +187,6 @@ class GroundwaterModel(Variables, Model):
 
         if oldchoice != None and oldchoice != choice:
             node.xmlRemoveChild('formula')
-
-
-    @Variables.noUndo
-    def getFlowType(self):
-        """
-        Get flow type : steady or unsteady
-        """
-        node = self.node_darcy.xmlInitChildNode('flowType')
-        mdl = node['model']
-        if mdl is None:
-            mdl = self.__defaultValues()['flow']
-            self.setFlowType(mdl)
-        return mdl
-
-
-    @Variables.undoLocal
-    def setFlowType(self, choice):
-        """
-        Put flow type : steady or unsteady
-        """
-        self.isInList(choice, ['steady', 'unsteady'])
-        node = self.node_darcy.xmlInitChildNode('flowType')
-        node['model'] = choice
-
-
-    @Variables.noUndo
-    def getUnsaturatedZone(self):
-        """
-        Get unsaturated zone status : True or False
-        """
-        node = self.node_darcy.xmlInitChildNode('unsaturatedZone')
-        mdl = node['model']
-        if mdl is None:
-            mdl = self.__defaultValues()['unsaturated']
-            self.setUnsaturatedZone(mdl)
-        return mdl
-
-
-    @Variables.undoLocal
-    def setUnsaturatedZone(self, choice):
-        """
-        Get unsaturated zone status : True or False
-        """
-        self.isInList(choice, ['true', 'false'])
-        node = self.node_darcy.xmlInitChildNode('unsaturatedZone')
-        node['model'] = choice
 
 
     @Variables.noUndo
@@ -291,11 +244,11 @@ class GroundwaterModel(Variables, Model):
     @Variables.undoLocal
     def setChemistryModel(self, scalar_name, choice):
         """
-        Set choice of the chemistry model of one scalar: Kd or EK
+        Set choice of the chemistry model of one scalar: Kd or Kd + precipitation
         """
         self.isNotInList(scalar_name, self.sca_mo.getScalarsVarianceList())
         self.isInList(scalar_name, self.sca_mo.getUserScalarNameList())
-        self.isInList(choice, ['Kd', 'EK'])
+        self.isInList(choice, ['kd', 'kd_precipitation'])
 
         nodeScalar = self.node_darcy.xmlInitChildNode('scalar', name=scalar_name)
         nodeScalar['chemistry_model'] = choice
