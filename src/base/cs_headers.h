@@ -48,7 +48,6 @@
 #include "cs_cogz_headers.h"
 #include "cs_comb_headers.h"
 #include "cs_ctwr_headers.h"
-#include "cs_darc_headers.h"
 #include "cs_elec_headers.h"
 #include "cs_gui_headers.h"
 #include "cs_lagr_headers.h"

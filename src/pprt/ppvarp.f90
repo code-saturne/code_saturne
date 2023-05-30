@@ -261,13 +261,5 @@ if (ippmod(igmix).ge.0) then
   call cs_field_pointer_map_gas_mix
 endif
 
-! 9. Groundwater flows
-!---------------------
-
-if (ippmod(idarcy).ge.0) then
-  ! MAP to C API
-  call cs_field_pointer_map_groundwater
-endif
-
 return
 end subroutine

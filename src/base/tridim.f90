@@ -73,10 +73,8 @@ use mesh
 use field
 use rotation
 use turbomachinery
-use darcy_module
 use cs_f_interfaces
 use cs_c_bindings
-use cs_tagms, only: t_metal, tmet0
 use cs_nz_tagmr
 use cs_nz_condensation
 use turbomachinery
@@ -104,7 +102,6 @@ integer          iok   , nfld  , f_id  , f_dim  , f_type
 integer          f_id_temp
 integer          nbccou, n_structs
 integer          ntrela
-integer          icmst
 integer          st_id
 
 integer          isvhb
@@ -149,10 +146,6 @@ double precision, dimension(:), pointer :: cpro_prtot
 double precision, dimension(:), pointer :: cvar_scalt, cvar_totwt
 
 ! Darcy
-integer mbrom
-double precision, dimension(:), pointer :: cpro_delay, cpro_capacity, cpro_sat
-double precision, dimension(:), pointer :: cproa_delay, cproa_capacity
-double precision, dimension(:), pointer :: cproa_sat
 double precision, dimension(:), pointer :: i_mass_flux, b_mass_flux
 
 double precision, dimension(:), pointer :: coefap, cofafp, cofbfp
@@ -160,7 +153,6 @@ double precision, dimension(:), pointer :: cpro_scal_st, cproa_scal_st
 
 double precision, dimension(:), pointer :: htot_cond
 double precision coef_
-type(gwf_soilwater_partition) :: sorption_scal
 
 type(var_cal_opt) :: vcopt, vcopt_u, vcopt_p
 
@@ -407,8 +399,6 @@ endif
 ! 2.  AU DEBUT DU CALCUL ON REINITIALISE LA PRESSION
 !===============================================================================
 
-if (ippmod(idarcy).eq.-1) then
-
 ! On le fait sur ntinit pas de temps, car souvent, le champ de flux de masse
 !   initial n'est pas a divergence nulle (CL incluses) et l'obtention
 !   d'un flux a divergence nulle coherent avec la contrainte stationnaire
@@ -417,26 +407,24 @@ if (ippmod(idarcy).eq.-1) then
 ! On ne le fait pas dans le cas de la prise en compte de la pression
 !   hydrostatique, ni dans le cas du compressible
 
-  if (      ntcabs.le.ntinit .and. isuite.eq.0               &
-      .and. (iphydr.ne.1)                                    &
-      .and. ippmod(icompf).lt.0                              &
-      .and. idilat.le.1) then
+if (      ntcabs.le.ntinit .and. isuite.eq.0               &
+    .and. (iphydr.ne.1)                                    &
+    .and. ippmod(icompf).lt.0                              &
+    .and. idilat.le.1) then
 
-    if(vcopt_p%iwarni.ge.2) then
-      write(nfecra,2000) ntcabs
-    endif
-    call field_get_val_s(iprtot, cpro_prtot)
-    xxp0   = xyzp0(1)
-    xyp0   = xyzp0(2)
-    xzp0   = xyzp0(3)
-    do iel = 1, ncel
-      cvar_pr(iel) = pred0
-      cpro_prtot(iel) = p0 + ro0*(  gx*(xyzcen(1,iel)-xxp0)   &
-                                  + gy*(xyzcen(2,iel)-xyp0)   &
-                                  + gz*(xyzcen(3,iel)-xzp0))
-    enddo
+  if(vcopt_p%iwarni.ge.2) then
+    write(nfecra,2000) ntcabs
   endif
-
+  call field_get_val_s(iprtot, cpro_prtot)
+  xxp0   = xyzp0(1)
+  xyp0   = xyzp0(2)
+  xzp0   = xyzp0(3)
+  do iel = 1, ncel
+    cvar_pr(iel) = pred0
+    cpro_prtot(iel) = p0 + ro0*(  gx*(xyzcen(1,iel)-xxp0)   &
+                                + gy*(xyzcen(2,iel)-xyp0)   &
+                                + gz*(xyzcen(3,iel)-xzp0))
+  enddo
 endif
 
  2000 format(                                                           &
@@ -696,32 +684,6 @@ do f_id = 0, nfld - 1
   endif
 enddo
 
-if (ippmod(idarcy).eq.1) then
-
-  ! Index of the corresponding field
-  call field_get_val_prev_s_by_name('capacity', cproa_capacity)
-  call field_get_val_prev_s_by_name('saturation', cproa_sat)
-  call field_get_val_s_by_name('capacity', cpro_capacity)
-  call field_get_val_s_by_name('saturation', cpro_sat)
-
-  do iel = 1, ncel
-    cproa_capacity(iel) = cpro_capacity(iel)
-    cproa_sat(iel) = cpro_sat(iel)
-  enddo
-
-  do ii = 1, nscal
-    ivar = ivarfl(isca(ii))
-    call field_get_key_struct_gwf_soilwater_partition(ivarfl(isca(ii)), &
-                                                      sorption_scal)
-    call field_get_val_s(sorption_scal%idel, cpro_delay)
-    call field_get_val_prev_s(sorption_scal%idel, cproa_delay)
-    do iel = 1, ncel
-      cproa_delay(iel) = cpro_delay(iel)
-    enddo
-  enddo
-
-endif
-
 !===============================================================================
 ! 8. Compute time step if variable
 !===============================================================================
@@ -739,8 +701,7 @@ endif
 
 ! Compute the pseudo tensorial time step if needed for the pressure solving
 
-if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0               &
-    .and.(ippmod(idarcy).eq.-1)) then
+if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
   call field_get_val_v(idtten, dttens)
 
@@ -846,12 +807,6 @@ endif
 
 icvrge = 0
 inslst = 0
-
-! Darcy : in case of a steady flow, we resolve Richards only once,
-! at the first time step.
-if (ippmod(idarcy).eq.1) then
-  if ((darcy_unsteady.eq.0).and.(ntcabs.gt.1)) goto 100
-endif
 
 iterns = 1
 do while (iterns.le.nterup)
@@ -1097,55 +1052,16 @@ do while (iterns.le.nterup)
 
     ! Coupled solving of the velocity components
 
-    if (ippmod(idarcy).eq.-1) then
+    call navstv &
+    ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
+      isostd ,                                                       &
+      dt     ,                                                       &
+      frcxt  ,                                                       &
+      trava  )
 
-      call navstv &
-      ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
-        isostd ,                                                       &
-        dt     ,                                                       &
-        frcxt  ,                                                       &
-        trava  )
-
-      ! Update local pointer arrays for transient turbomachinery computations
-      if (iturbo.eq.2) then
-        call field_get_val_s(ivarfl(ipr), cvar_pr)
-      endif
-
-    else
-
-      call richards (icvrge, dt)
-
-      call uidapp                                                    &
-       ( darcy_anisotropic_permeability,                             &
-         darcy_anisotropic_dispersion,                               &
-         darcy_unsaturated)
-
-      ! Darcy : update data specific to underground flow
-      mbrom = 0
-      call usphyv(nvar, nscal, mbrom, dt)
-
-      ! C version
-      call user_physical_properties()
-
-      if (darcy_unsteady.eq.0) then
-
-        do iel = 1, ncel
-          cproa_capacity(iel) = cpro_capacity(iel)
-          cproa_sat(iel) = cpro_sat(iel)
-        enddo
-
-        do ii = 1, nscal
-          call field_get_key_struct_gwf_soilwater_partition(ivarfl(isca(ii)), &
-                                                            sorption_scal)
-          call field_get_val_s(sorption_scal%idel, cpro_delay)
-          call field_get_val_prev_s(sorption_scal%idel, cproa_delay)
-          do iel = 1, ncel
-            cproa_delay(iel) = cpro_delay(iel)
-          enddo
-        enddo
-
-      endif
-
+    ! Update local pointer arrays for transient turbomachinery computations
+    if (iturbo.eq.2) then
+      call field_get_val_s(ivarfl(ipr), cvar_pr)
     endif
 
     if (istmpf.eq.2.and.itpcol.eq.1) then
@@ -1228,28 +1144,6 @@ if (vcopt_u%iwarni.ge.1) then
 endif
 
 call cs_compute_courant_fourier()
-
-! DARCY : the hydraulic head, identified with the pressure,
-! has been updated by the call to Richards.
-! As diffusion of scalars depends on hydraulic head in the
-! general case, in order to compute the exact
-! values of the boundary faces coefficients, we have to
-! call boundary conditions routine again.
-! Moreover, we need an update of the boundary
-! conditions in the cases where they vary in time.
-
-if (ippmod(idarcy).eq.1) then
-
-  ! Calls user BCs and computes BC coefficients
-  call condli &
-    (nvar   , nscal  , iterns ,                                    &
-     isvhb  ,                                                      &
-     itrale , italim , itrfin , ineefl , itrfup ,                  &
-     icodcl , isostd ,                                             &
-     dt     , rcodcl ,                                             &
-     visvdr , hbord  , theipb )
-
-endif
 
 ! Free memory
 if (associated(hbord)) deallocate(hbord)

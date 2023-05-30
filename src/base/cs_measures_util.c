@@ -248,8 +248,6 @@ cs_interpol_field_on_grid(cs_interpol_grid_t *ig,
                           const cs_real_t    *values_to_interpol,
                           cs_real_t          *interpolated_values)
 {
-  cs_lnum_t ii, jj;
-  int ms_dim = 1;
   cs_lnum_t nb_points = ig->nb_points;
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;

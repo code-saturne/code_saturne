@@ -165,8 +165,6 @@ endif
 ippmod(iphpar) = 0
 if (nmodpp.gt.0) then
   ippmod(iphpar) = 1
-  ! Ground water flows model is not considered as a specific physic.
-  if (ippmod(idarcy).gt.-1) ippmod(iphpar) = 0
 endif
 
 ! Define main variables
@@ -185,11 +183,7 @@ iw = iv + 1
 
 ! Pressure or hydraulic head for groundwater flow module
 
-if (ippmod(idarcy).eq.-1) then
-  call add_variable_field('pressure', 'Pressure', 1, ipr)
-else
-  call add_variable_field('hydraulic_head', 'Hydraulic head', 1, ipr)
-endif
+call add_variable_field('pressure', 'Pressure', 1, ipr)
 
 ! Enabled VoF model if free surface or mass transfer modeling enabled
 vof_mask = ior(VOF_FREE_SURFACE, VOF_MERKLE_MASS_TRANSFER)

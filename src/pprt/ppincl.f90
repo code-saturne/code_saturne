@@ -258,17 +258,12 @@ module ppincl
 
   integer ::  igmix
 
-  !> pointer to specify richards model
-  !> - ippmod(iricha) =-1 module not activated
-  !> - ippmod(iricha) = 1 module activated
-  integer ::  idarcy
-
   parameter       (iphpar = 1 , icod3p = 2 , islfm = 3,             &
                    icoebu = 4 , icolwc = 5 ,                        &
                    icpl3c = 6 , iccoal = 7 , icfuel = 8 ,           &
                    ieljou = 9 , ielarc = 10, icompf = 11,           &
                    iatmos = 12, iaeros = 13,                        &
-                   igmix  = 14, idarcy = 15)
+                   igmix  = 14)
 
   !> \}
 

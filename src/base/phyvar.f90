@@ -78,7 +78,6 @@ use field
 use field_operator
 use cavitation
 use vof
-use darcy_module
 use cs_c_bindings
 use cs_nz_condensation, only: nfbpcd, ifbpcd, ztpar, izzftcd, iztag1d
 use cs_nz_tagmr, only: ztpar0
@@ -235,13 +234,6 @@ endif
 
 call uiphyv(iviscv)
 
-if (ippmod(idarcy).ge.0) then
-  call uidapp                                                           &
-  ( darcy_anisotropic_permeability,                                     &
-    darcy_anisotropic_dispersion,                                       &
-    darcy_unsaturated)
-endif
-
 call usphyv(nvar, nscal, mbrom, dt)
 
 ! C version
@@ -263,7 +255,7 @@ endif
 
 ! Finalization of physical properties for specific physics
 ! AFTER the user
-if (ippmod(iphpar).ge.1 .or. ippmod(idarcy).ge.1) then
+if (ippmod(iphpar).ge.1) then
   call cs_physical_properties2
 endif
 

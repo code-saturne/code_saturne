@@ -440,8 +440,6 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
                               double        *textp,
                               double        *xlamp)
 {
-  const cs_lnum_t  n_b_faces = cs_glob_mesh->n_b_faces;
-
   cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree,
                                            "boundary_conditions/boundary");
   cs_tree_node_t *tn_w0 = cs_tree_get_node(cs_glob_tree,

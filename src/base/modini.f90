@@ -44,7 +44,6 @@ use cplsat
 use post
 use ppincl
 use rotation
-use darcy_module
 use turbomachinery
 use vof
 use cs_c_bindings
@@ -843,42 +842,6 @@ if (ivofmt.gt.0) then
   call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 endif
 
-! Anisotropic diffusion/permeability for Darcy module
-if (ippmod(idarcy).eq.1) then
-
-  if (darcy_anisotropic_permeability.eq.1) then
-    call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
-    vcopt%idften = ANISOTROPIC_LEFT_DIFFUSION
-    call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
- endif
-
-  if (darcy_anisotropic_dispersion.eq.1) then
-    do iscal = 1, nscal
-      call field_get_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
-      vcopt%idften = ANISOTROPIC_LEFT_DIFFUSION
-      call field_set_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
-    enddo
-  endif
-
-  ! csrij = 1 and ctheta(iscal) = 1 for Darcy module
-  csrij = 1.d0
-  do iscal = 1, nscal
-    call field_set_key_double(ivarfl(isca(iscal)), kctheta, 1.d0)
-  enddo
-
-  ! reference values for pressure and density
-  p0 = 0.d0
-  ro0 = 1.d0
-
-  ! be careful: if iturb was not initialized iturb is set to 0 to pass verini
-  if (iturb.eq.-999) iturb = 0
-  if (iturb.gt.0) then
-    write(nfecra,4001)
-    call csexit (1)
-  endif
-
-endif
-
 !===============================================================================
 ! 4. ELEMENTS DE albase
 !===============================================================================
@@ -1058,20 +1021,6 @@ endif
 '@  The upwind scheme for the void fraction is forced.',        /,&
 '@',                                                            /,&
 '@  The calculation will be run.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 4001 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING:       IN THE DATA SPECIFICATION',                /,&
-'@    ========',                                                /,&
-'@',                                                            /,&
-'@  A turbulence model can not be used with the'                /,&
-'@    gound water flows modeling.',                             /,&
-'@',                                                            /,&
-'@  The calculation will not be run.',                          /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

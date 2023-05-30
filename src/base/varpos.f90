@@ -72,7 +72,6 @@ integer          iscal , id, ityloc, itycat, pflag
 integer          ii
 integer          iok
 integer          f_id, idftnp
-integer          iest
 integer          key_buoyant_id, is_buoyant_fld
 integer          keydri
 integer          kturt, turb_flux_model, kisso2t
@@ -80,7 +79,7 @@ integer          ivar, iscdri, isso2t
 
 double precision gravn2
 
-character(len=80) :: f_name, f_label, s_label, s_name
+character(len=80) :: f_name, s_label, s_name
 
 type(var_cal_opt) :: vcopt
 

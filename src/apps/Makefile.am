@@ -108,7 +108,6 @@ $(top_builddir)/src/cfbl/libcscfbl.a \
 $(top_builddir)/src/cogz/libcscogz.a \
 $(top_builddir)/src/comb/libcscomb.a \
 $(top_builddir)/src/ctwr/libcsctwr.a \
-$(top_builddir)/src/darc/libcsdarc.a \
 $(top_builddir)/src/elec/libcselec.a \
 $(top_builddir)/src/gui/libcsgui.a \
 $(top_builddir)/src/lagr/libcslagr.a \

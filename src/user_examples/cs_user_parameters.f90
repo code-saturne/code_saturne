@@ -245,14 +245,6 @@ ippmod(iaeros) = -1
 
 iirayo = 1
 
-! --- richards model
-! ==========
-
-!        if = -1   module not activated
-!        if =  1   module activated
-
-ippmod(idarcy) = -1
-
 !===============================================================================
 ! 2.  Specific options related to herebefore modules
 !===============================================================================
@@ -800,52 +792,5 @@ droplet_diam = 0.005d0
 
 return
 end subroutine cs_user_cooling_towers
-
-!===============================================================================
-
-!> \brief User routine for definition of computation parameters dealing
-!>        with Darcy module
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-
-subroutine user_darcy_ini1
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use entsor
-use darcy_module
-
-!===============================================================================
-
-implicit none
-
-!===============================================================================
-
-!< [user_darcy_ini1]
-
-darcy_anisotropic_permeability = 0 ! permeability : 0 isotrop, 1 anisotrop
-
-darcy_anisotropic_dispersion = 0 ! dispersion : 0 isotrop, 1 anisotrop
-
-darcy_unsteady = 0 ! 0 steady flow, 1 unsteady flow
-
-darcy_convergence_criterion = 0 ! convergence criterion of Newton scheme:
-                                ! 0, over pressure, 1, over velocity
-
-!< [user_darcy_ini1]
-
-!----
-! End
-!----
-
-return
-
-end subroutine user_darcy_ini1
 
 !===============================================================================

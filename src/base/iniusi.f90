@@ -346,12 +346,6 @@ nscmax = nscamx
 ! so that usipsu / cs_user_parameters can be used by the user to modify default
 ! settings
 
-! Ground water flow (Darcy)
-
-if (ippmod(idarcy).ge.0) then
-  call daini1
-endif
-
 ! Atmospheric flows
 if (ippmod(iatmos).ge.0) then
   call atini1

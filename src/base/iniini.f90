@@ -52,7 +52,6 @@ use mesh
 use field
 use vof
 use cavitation
-use darcy_module
 use radiat
 use turbomachinery
 use cs_nz_condensation, only: init_sizes_pcond

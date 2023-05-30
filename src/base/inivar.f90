@@ -65,8 +65,6 @@ use vof
 
 use, intrinsic :: iso_c_binding
 
-use darcy_module
-
 !===============================================================================
 
 implicit none
@@ -246,11 +244,7 @@ endif
 ! The total pressure field does not need to be defined. The solved pressure is
 ! the total pressure.
 
-! Ground water flow:
-! The field of index iprtot is the pressure head (h = H - z),
-! h is only used when gravity is taken into account.
-
-if (ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0) then
+if (ippmod(icompf).lt.0) then
 
   call field_get_val_s(ivarfl(ipr), cvar_pr)
   call field_get_val_s(iprtot, cpro_prtot)
@@ -282,21 +276,6 @@ if (ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0) then
   elseif (isuite.eq.0.or.ileaux.eq.0) then
     call navstv_total_pressure
   endif
-
-else if ((ippmod(idarcy).ge.0).and.(gravn.gt.epzero)) then
-
-  call field_get_val_s(ivarfl(ipr), cvar_pr)
-  call field_get_val_s(iprtot, cpro_prtot)
-
-  gnx = gx / gravn
-  gny = gy / gravn
-  gnz = gz / gravn
-
-  do iel = 1, ncel
-    cpro_prtot(iel) = cvar_pr(iel) - xyzcen(1,iel)*gnx &
-                                   - xyzcen(2,iel)*gny &
-                                   - xyzcen(3,iel)*gnz
-  enddo
 
 endif
 

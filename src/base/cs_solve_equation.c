@@ -67,8 +67,6 @@
 #include "cs_fuel.h"
 #include "cs_gradient.h"
 #include "cs_gui.h"
-#include "cs_gwf_parameters.h"
-#include "cs_gwf_physical_properties.h"
 #include "cs_intprf.h"
 #include "cs_lagr.h"
 #include "cs_lagr_precipitation_model.h"
@@ -1074,10 +1072,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
   if (nbrcpl > 0)
     cs_sat_coupling_exchange_at_cells(f->id, smbrs);
 
-  /* Take into account radioactive decay rate (implicit source term) */
-  if (cs_glob_physical_model_flag[CS_GROUNDWATER] == 1)
-    cs_gwf_decay_rate(f->id, rovsdt);
-
   /* Store the source terms for convective limiter
      or time extrapolation for buoyant scalar */
 
@@ -1718,39 +1712,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
   BFT_FREE(w1);
   BFT_FREE(sgdh_diff);
 
-  /* Not Darcy */
-  cs_gwf_soilwater_partition_t sorption_scal;
-
-  const cs_real_t *cpro_sat = NULL, *cproa_sat = NULL;
-  const cs_real_t *cpro_delay = NULL, *cproa_delay = NULL;
-  if (cs_glob_physical_model_flag[CS_GROUNDWATER] == -1) {
-    if (eqp->istat == 1) {
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        rovsdt[c_id] += xcpp[c_id]*pcrom[c_id]*cell_f_vol[c_id]/dt[c_id];
-    }
-  }
-  /* Darcy : we take into account the porosity and delay for underground transport */
-  else {
-
-    /* Retrieve sorption options for current scalar for ground water flow module */
-    const int key_part = cs_field_key_id("gwf_soilwater_partition");
-    cs_field_get_key_struct(f, key_part, &sorption_scal);
-
-    cpro_sat = cs_field_by_name("saturation")->val;
-    cproa_sat = cs_field_by_name("saturation")->val_pre;
-    cpro_delay = cs_field_by_id(sorption_scal.idel)->val;
-    cproa_delay = cs_field_by_id(sorption_scal.idel)->val_pre;
-
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      smbrs[c_id] *= cpro_delay[c_id] * cpro_sat[c_id];
-      rovsdt[c_id] =  (  rovsdt[c_id] + eqp->istat*xcpp[c_id]*pcrom[c_id]
-                       * volume[c_id] / dt[c_id])
-                     * cpro_delay[c_id] * cpro_sat[c_id];
-    }
-
-    /* treatment of kinetic sorption */
-    if (sorption_scal.kinetic == 1)
-      cs_gwf_kinetic_reaction(f->id, rovsdt, smbrs);
+  if (eqp->istat == 1) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      rovsdt[c_id] += xcpp[c_id]*pcrom[c_id]*cell_f_vol[c_id]/dt[c_id];
   }
 
   /* Scalar with a Drift:
@@ -1794,42 +1758,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
     }
 
     BFT_FREE(divflu);
-  }
-
-  /* Groundwater flow.
-   *
-   * This step is necessary because the divergence of the
-   * hydraulic head (or pressure), which is taken into account as the
-   * 'aggregation term' via
-   * cs_equation_iterative_solve_scalar -> cs_balance_scalar,
-   * is not exactly equal to the loss of mass of water in the unsteady case
-   * (just as far as the precision of the Newton scheme is good),
-   * and does not take into account the sorption of the tracer
-   * (represented by the 'delay' coefficient).
-   * We choose to 'cancel' the aggregation term here, and to add to smbr
-   * (right hand side of the transport equation)
-   * the necessary correction to take sorption into account and get the exact
-   * conservation of the mass of tracer. */
-
-  if (cs_glob_physical_model_flag[CS_GROUNDWATER] == 1) {
-    if (cs_glob_darcy_unsteady) {
-      cs_real_t *diverg;
-      BFT_MALLOC(diverg, n_cells_ext, cs_real_t);
-
-      cs_divergence(m, 1, imasfl, bmasfl, diverg);
-
-#     pragma omp parallel for if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        smbrs[c_id] -=    diverg[c_id] * cvar_var[c_id]
-                        +   cell_f_vol[c_id] / dt[c_id] * cvar_var[c_id]
-                          * (  cproa_delay[c_id] * cproa_sat[c_id]
-                             - cpro_delay[c_id] * cpro_sat[c_id]);
-
-        rovsdt[c_id] += thetv*diverg[c_id];
-      }
-
-      BFT_FREE(diverg);
-    }
   }
 
   /* Solve
@@ -2001,17 +1929,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
     } // qliqmax.gt.1.e-8
   } // for humid atmosphere physics only
 
-  /* Groundwater flow
-   * Update solid phase concentration for kinetic or precipitation models */
-  if (cs_glob_physical_model_flag[CS_GROUNDWATER] == 1) {
-    /* Update of sorbed concentration */
-    if (sorption_scal.kinetic == 1)
-      cs_gwf_sorbed_concentration_update(f->id);
-    /* Treatment of precipitation for groundwater flow module. */
-    if (sorption_scal.imxsol > -1)
-      cs_gwf_precipitation(f->id);
-  }
-
   if ((idilat > 3) && (itspdv == 1)) {
 
     cs_real_t xe = 0, xk = 0;
@@ -2129,7 +2046,6 @@ cs_solve_equation_vector(cs_field_t       *f,
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  const cs_real_t *volume = fvq->cell_vol;
   const cs_real_t *cell_f_vol = fvq->cell_f_vol;
 
   const cs_real_t *dt = CS_F_(dt)->val;
@@ -2389,9 +2305,9 @@ cs_solve_equation_vector(cs_field_t       *f,
     const cs_real_3_t *restrict b_face_normal
       = (const cs_real_3_t *restrict)fvq->b_face_normal;
     cs_real_t *bpro_rusanov = cs_field_by_name("b_rusanov_diff")->val;
-    cs_real_3_t  *coefap = (cs_real_3_t *)f->bc_coeffs->a;
-    cs_real_33_t *coefbp = (cs_real_33_t *)f->bc_coeffs->b;
-    cs_real_3_t  *cofafp = (cs_real_3_t *)f->bc_coeffs->af;
+    // cs_real_3_t  *coefap = (cs_real_3_t *)f->bc_coeffs->a;
+    // cs_real_33_t *coefbp = (cs_real_33_t *)f->bc_coeffs->b;
+    // cs_real_3_t  *cofafp = (cs_real_3_t *)f->bc_coeffs->af;
     cs_real_33_t *cofbfp = (cs_real_33_t *)f->bc_coeffs->bf;
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
@@ -2408,41 +2324,10 @@ cs_solve_equation_vector(cs_field_t       *f,
     }
   }
 
-  cs_gwf_soilwater_partition_t sorption_scal;
-
-  const cs_real_t *cpro_sat = NULL, *cproa_sat = NULL;
-  const cs_real_t *cpro_delay = NULL, *cproa_delay = NULL;
-
-  if (cs_glob_physical_model_flag[CS_GROUNDWATER] == -1) {
-    if (eqp->istat == 1) {
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        for (cs_lnum_t j = 0; j < 3; j++)
-          fimp[c_id][j][j] += pcrom[c_id] * cell_f_vol[c_id] / dt[c_id];
-      }
-    }
-  }
-
-  /* Groundwater flows:
-     we take into account the porosity and delay for underground transport */
-  else {
-
-    /* Retrieve sorption options for current scalar for ground water flow module */
-    const int key_part = cs_field_key_id("gwf_soilwater_partition");
-    cs_field_get_key_struct(f, key_part, &sorption_scal);
-
-    cpro_sat = cs_field_by_name("saturation")->val;
-    cproa_sat = cs_field_by_name("saturation")->val_pre;
-
-    cpro_delay = cs_field_by_id(sorption_scal.idel)->val;
-    cproa_delay = cs_field_by_id(sorption_scal.idel)->val_pre;
-
+  if (eqp->istat == 1) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      for (cs_lnum_t j = 0; j < 3; j++) {
-        smbrv[c_id][j] = smbrv[c_id][j]*cpro_delay[c_id]*cpro_sat[c_id];
-        fimp[c_id][j][j] =  (  fimp[c_id][j][j]
-                             + eqp->istat*pcrom[c_id]*volume[c_id]/dt[c_id])
-                           * cpro_delay[c_id]*cpro_sat[c_id];
-      }
+      for (cs_lnum_t j = 0; j < 3; j++)
+        fimp[c_id][j][j] += pcrom[c_id] * cell_f_vol[c_id] / dt[c_id];
     }
   }
 
@@ -2487,43 +2372,6 @@ cs_solve_equation_vector(cs_field_t       *f,
     }
 
     BFT_FREE(divflu);
-  }
-
-  /* Groundwater flow.
-   *
-   * This step is necessary because the divergence of the
-   * hydraulic head (or pressure), which is taken into account as the
-   * 'aggregation term' via
-   * cs_equation_iterative_solve_vector -> cs_balance_vector,
-   * is not exactly equal to the loss of mass of water in the unsteady case
-   * (just as far as the precision of the Newton scheme is good),
-   * and does not take into account the sorption of the tracer
-   * (represented by the 'delay' coefficient).
-   * We choose to 'cancel' the aggregation term here, and to add to smbr
-   * (right hand side of the transport equation)
-   * the necessary correction to take sorption into account and get the exact
-   * conservation of the mass of tracer. */
-
-  if (cs_glob_physical_model_flag[CS_GROUNDWATER] == 1) {
-    if (cs_glob_darcy_unsteady) {
-      cs_real_t *diverg;
-      BFT_MALLOC(diverg, n_cells_ext, cs_real_t);
-
-      cs_divergence(m, 1, imasfl, bmasfl, diverg);
-
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        for (cs_lnum_t j = 0; j < 3; j++) {
-          smbrv[c_id][j] -= diverg[c_id]*cvar_var[c_id][j]
-                             + cell_f_vol[c_id]/dt[c_id]*cvar_var[c_id][j]
-                             *(  cproa_delay[c_id]*cproa_sat[c_id]
-                               - cpro_delay[c_id]*cpro_sat[c_id] );
-
-          fimp[c_id][j][j] += thetv*diverg[c_id];
-        }
-      }
-
-      BFT_FREE(diverg);
-    }
   }
 
   /* Solve

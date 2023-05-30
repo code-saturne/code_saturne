@@ -175,7 +175,6 @@ use field
 use field_operator
 use radiat
 use turbomachinery
-use darcy_module
 use cs_c_bindings
 
 !===============================================================================
@@ -511,15 +510,6 @@ endif
 !===============================================================================
 ! 1. initializations
 !===============================================================================
-
-if (ippmod(idarcy).eq.1) then
-  if (darcy_anisotropic_permeability.eq.0) then
-    call field_get_val_s_by_name('permeability', permeability)
-  else
-    call field_get_id('permeability', f_id)
-    call field_get_val_v(f_id, tensor_permeability)
-  endif
-endif
 
 call field_get_key_id("variable_id", keyvar)
 
@@ -1261,7 +1251,6 @@ do ifac = 1, nfabor
   if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
     hint = dt(iel)/distbf
     if (ivofmt.gt.0)  hint = hint/crom(iel)
-    if (ippmod(idarcy).eq.1) hint = permeability(iel)/distbf
   else if (iand(vcopt%idften, ORTHOTROPIC_DIFFUSION).ne.0) then
     hint = ( dttens(1, iel)*surfbo(1,ifac)**2              &
            + dttens(2, iel)*surfbo(2,ifac)**2              &
@@ -1270,27 +1259,15 @@ do ifac = 1, nfabor
     if (ivofmt.gt.0)  hint = hint/crom(iel)
   ! symmetric tensor diffusivity
   else if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
-    if (ippmod(idarcy).eq.-1) then
-      visci(1,1) = dttens(1,iel)
-      visci(2,2) = dttens(2,iel)
-      visci(3,3) = dttens(3,iel)
-      visci(1,2) = dttens(4,iel)
-      visci(2,1) = dttens(4,iel)
-      visci(2,3) = dttens(5,iel)
-      visci(3,2) = dttens(5,iel)
-      visci(1,3) = dttens(6,iel)
-      visci(3,1) = dttens(6,iel)
-    else
-      visci(1,1) = tensor_permeability(1,iel)
-      visci(2,2) = tensor_permeability(2,iel)
-      visci(3,3) = tensor_permeability(3,iel)
-      visci(1,2) = tensor_permeability(4,iel)
-      visci(2,1) = tensor_permeability(4,iel)
-      visci(2,3) = tensor_permeability(5,iel)
-      visci(3,2) = tensor_permeability(5,iel)
-      visci(1,3) = tensor_permeability(6,iel)
-      visci(3,1) = tensor_permeability(6,iel)
-    endif
+    visci(1,1) = dttens(1,iel)
+    visci(2,2) = dttens(2,iel)
+    visci(3,3) = dttens(3,iel)
+    visci(1,2) = dttens(4,iel)
+    visci(2,1) = dttens(4,iel)
+    visci(2,3) = dttens(5,iel)
+    visci(3,2) = dttens(5,iel)
+    visci(1,3) = dttens(6,iel)
+    visci(3,1) = dttens(6,iel)
 
     ! ||ki.s||^2
     viscis = ( visci(1,1)*surfbo(1,ifac)       &
@@ -2444,11 +2421,8 @@ if (nscal.ge.1) then
 
         ! Scalar diffusivity
         if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
-          if (ippmod(idarcy).eq.-1) then !FIXME
-            hint = (rkl+vcopt%idifft*cpp*visctc/turb_schmidt)/distbf
-          else ! idarcy = 1
-            hint = rkl/distbf
-          endif
+          !FIXME
+          hint = (rkl+vcopt%idifft*cpp*visctc/turb_schmidt)/distbf
 
         ! Symmetric tensor diffusivity
         elseif (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
@@ -2798,11 +2772,8 @@ if (nscal.ge.1) then
 
         ! Scalar diffusivity
         if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
-          if (ippmod(idarcy).eq.-1) then !FIXME
-            hint = (rkl+vcopt%idifft*cpp*visctc/turb_schmidt)/distbf
-          else ! idarcy = 1
-            hint = rkl/distbf
-          endif
+          !FIXME
+          hint = (rkl+vcopt%idifft*cpp*visctc/turb_schmidt)/distbf
 
           hintt(1) = hint
           hintt(2) = hint
@@ -4909,7 +4880,6 @@ use field
 use field_operator
 use radiat
 use turbomachinery
-use darcy_module
 use cs_c_bindings
 
 !===============================================================================

@@ -640,7 +640,7 @@ endif
 
 if (ixyzp0.eq.2) then
   ixyzp0 = 1
-  if (ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0) then
+  if (ippmod(icompf).lt.0) then
     call field_get_val_s(iprtot, cpro_prtot)
     do iel = 1, ncelet
       cpro_prtot(iel) = cpro_prtot(iel) - ro0*( gx*(xyzref(1) - xyzp0(1)) &
@@ -766,7 +766,7 @@ endif
 ! no need of transformation from P_tot to P
 
 ivar = ipr
-if (ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0) then
+if (ippmod(icompf).lt.0) then
   do ifac = 1, nfabor
     if (icodcl(ifac,ivar).eq.-1) then
       icodcl(ifac,ivar) = 1

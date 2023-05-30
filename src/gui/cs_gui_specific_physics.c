@@ -62,7 +62,6 @@
 #include "cs_physical_properties.h"
 #include "cs_physical_constants.h"
 #include "cs_elec_model.h"
-#include "cs_gwf_physical_properties.h"
 #include "cs_vof.h"
 #include "cs_combustion_model.h"
 
@@ -1614,7 +1613,6 @@ cs_gui_gwf_model(int  *permeability,
   /* Get first-order decay rate and chemistry model */
 
   const int key_decay = cs_field_key_id("fo_decay_rate");
-  const int key_part = cs_field_key_id("gwf_soilwater_partition");
 
   for (cs_tree_node_t *tn = cs_tree_get_node(tn0, "scalar");
        tn != NULL;
@@ -1636,20 +1634,9 @@ cs_gui_gwf_model(int  *permeability,
 
       /* get chemistry model */
 
-      const char *cmodel = cs_tree_node_get_tag(tn, "chemistry_model");
+      // const char *cmodel = cs_tree_node_get_tag(tn, "chemistry_model");
 
-      if (cmodel != NULL) {
-        cs_gwf_soilwater_partition_t sorption_scal;
-        cs_field_get_key_struct(f, key_part, &sorption_scal);
-
-        if (! strcmp(cmodel, "EK"))
-          sorption_scal.kinetic = 1;
-        else
-          sorption_scal.kinetic = 0;
-
-        cs_field_set_key_struct(f, key_part, &sorption_scal);
-      }
-
+      /* TODO update for CDO-based GWF */
     }
   }
 

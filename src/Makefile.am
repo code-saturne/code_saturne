@@ -27,7 +27,7 @@ SUBDIRS = . bft
 if HAVE_BACKEND
 SUBDIRS += \
 fvm gui \
-base cdo pprt alge mesh turb darc \
+base cdo pprt alge mesh turb \
 atmo cfbl cogz comb ctwr elec lagr rayt \
 user user_examples meg apps
 endif
@@ -93,7 +93,6 @@ cogz/coincl.f90 \
 rayt/radiat.f90 \
 base/vof.f90 \
 base/ptrglo.f90 \
-darc/darcy_module.f90 \
 base/turbomachinery.f90
 
 # Module dependencies (handled manually, as Automake does
@@ -196,8 +195,6 @@ pprt/ppthch.$(OBJEXT): base/cstphy.$(OBJEXT)
 
 rayt/radiat.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppincl.$(OBJEXT) \
  base/optcal.$(OBJEXT) pprt/ppcpfu.$(OBJEXT) base/numvar.$(OBJEXT)
-
-darc/darcy_module.$(OBJEXT): base/paramx.$(OBJEXT)
 
 cfbl/cfpoin.$(OBJEXT): pprt/ppincl.$(OBJEXT)
 

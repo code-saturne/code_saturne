@@ -257,14 +257,6 @@ if (ippmod(icompf).ge.0) then
   call cfphyv
 endif
 
-! Groundwater flows
-! Has to be called after the definition of saturation and soil density in order
-! to update the sorbed concentration (in case the kinetic sorption model is
-! enabled) and delay.
-if (ippmod(idarcy).ge.1) then
-  call cs_gwf_delay_update
-endif
-
 !----
 ! End
 !----

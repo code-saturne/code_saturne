@@ -67,7 +67,6 @@
 #include "cs_gui_specific_physics.h"
 #include "cs_gui_mobile_mesh.h"
 #include "cs_geom.h"
-#include "cs_gwf_physical_properties.h"
 #include "cs_internal_coupling.h"
 #include "cs_math.h"
 #include "cs_meg_prototypes.h"
@@ -2441,7 +2440,7 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
       int n_fields = cs_field_n_fields();
 
       /* get diffusivity and Kd for each scalar defined by the user on
-         current zone (and kplus and kminus only for scalars
+         current zone (and clsat only for scalars
          with kinetic model) */
       for (int f_id = 0; f_id < n_fields; f_id++) {
 
@@ -2480,21 +2479,13 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
             fdiff->val[iel] = saturation_field[iel]*diff_val;
           }
 
-          /* get kplus and kminus for current scalar and current zone
-             (if EK model is chosen) */
-          cs_gwf_soilwater_partition_t sorption_scal;
-          int key_part = cs_field_key_id("gwf_soilwater_partition");
+          /* get clsat for current scalar and current zone */
           cs_field_t *kp, *km;
-          cs_field_get_key_struct(f, key_part, &sorption_scal);
 
-          if (sorption_scal.kinetic == 1) {
-
-            kp = cs_field_by_id(sorption_scal.ikp);
-            km = cs_field_by_id(sorption_scal.ikm);
+          if (false) {  /* TODO: kd + precipitation */
 
             cs_real_t kp_val = 0., km_val = 0.;
-            cs_gui_node_get_child_real(tn_s, "kplus", &kp_val);
-            cs_gui_node_get_child_real(tn_s, "kminus", &km_val);
+            cs_gui_node_get_child_real(tn_s, "clsat", &kp_val);
 
             for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
               cs_lnum_t iel = cell_ids[icel];

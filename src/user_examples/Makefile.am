@@ -101,7 +101,6 @@ cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c \
 cs_user_boundary_conditions-mapped_inlet.c \
 cs_user_boundary_conditions-medcoupling_remapper_2d.c \
 cs_user_boundary_conditions-notebook.c \
-cs_user_boundary_conditions-richards.c \
 cs_user_boundary_conditions-time_table.c \
 cs_user_coupling-saturne.c \
 cs_user_coupling-syrthes.c \
@@ -114,7 +113,6 @@ cs_user_extra_operations-medcoupling_slice.c \
 cs_user_extra_operations-nusselt_and_friction_calculation.c \
 cs_user_extra_operations-nusselt_calculation.c \
 cs_user_extra_operations-parallel_operations.c \
-cs_user_extra_operations-richards_flux.c \
 cs_user_extra_operations-scalar_balance.c \
 cs_user_extra_operations-stopping_criterion.c \
 cs_user_extra_operations-turbomachinery.c \
@@ -134,7 +132,6 @@ cs_user_initialization-electric_arcs.c \
 cs_user_initialization-fuel.c \
 cs_user_initialization-gas_3ptchem.c \
 cs_user_initialization-medcoupling_remapper_3d.c \
-cs_user_initialization-richards.c \
 cs_user_initialization-time_step.c \
 cs_user_lagr_boundary_conditions.c \
 cs_user_lagr_volume_conditions.c \
@@ -171,8 +168,6 @@ cs_user_performance_tuning-partition.c \
 cs_user_physical_properties.c \
 cs_user_physical_properties-compressible_flow.c \
 cs_user_physical_properties-coal_drift.c \
-cs_user_physical_properties-richards_sat.c \
-cs_user_physical_properties-richards_unsat.c \
 cs_user_physical_properties-scalar_drift.c \
 cs_user_porosity.c \
 cs_user_postprocess.c \
@@ -185,7 +180,6 @@ cs_user_radiative_transfer_bcs.c \
 cs_user_solver-heat-equation.c \
 cs_user_source_terms-base.c \
 cs_user_source_terms-momentum.c \
-cs_user_source_terms-richards.c \
 cs_user_source_terms-scalar_in_a_channel.c \
 cs_user_source_terms-turbulence.c \
 cs_user_time_table.c \
@@ -203,7 +197,6 @@ cs_user_initialization-gas_libby_williams.f90 \
 cs_user_initialization-pulverized_coal.f90 \
 cs_user_metal_structures_source_terms-condensation.f90 \
 cs_user_modules-user-arrays.f90 \
-cs_user_parameters-richards.f90 \
 cs_user_parameters.f90 \
 cs_user_profile.cxx \
 cs_user_profile.h \

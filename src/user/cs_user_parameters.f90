@@ -353,7 +353,6 @@ implicit none
 return
 end subroutine cs_user_combustion
 
-
 !===============================================================================
 
 !> \brief User subroutines for input of calculation parameters,
@@ -390,7 +389,6 @@ implicit none
 return
 
 end subroutine cs_f_user_radiative_transfer_param
-
 
 !===============================================================================
 
@@ -442,7 +440,6 @@ implicit none
 
 return
 end subroutine uscfx1
-
 
 !===============================================================================
 
@@ -498,7 +495,6 @@ implicit none
 return
 end subroutine uscfx2
 
-
 !===============================================================================
 
 !> \brief Definition of cooling tower model and exchange zones
@@ -541,40 +537,5 @@ implicit none
 
 return
 end subroutine cs_user_cooling_towers
-
-
-!===============================================================================
-
-!> \brief User routine for definition of computation parameters dealing
-!>        with Darcy module
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-
-subroutine user_darcy_ini1
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use entsor
-use darcy_module
-
-!===============================================================================
-
-implicit none
-
-!===============================================================================
-
-!----
-! End
-!----
-
-return
-
-end subroutine user_darcy_ini1
 
 !===============================================================================

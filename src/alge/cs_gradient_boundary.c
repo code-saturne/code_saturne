@@ -222,10 +222,6 @@ _gradient_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
 
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
-  const cs_real_t *restrict b_face_surf
-    = (const cs_real_t *restrict)fvq->b_face_surf;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
   const cs_real_3_t *restrict diipb

@@ -63,7 +63,6 @@ use cavitation
 use vof
 use cs_cf_bindings
 use cs_c_bindings
-use darcy_module
 
 !===============================================================================
 
@@ -226,8 +225,7 @@ endif
 
 gravn2 = gx**2+gy**2+gz**2
 
-if ((ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0).or.                          &
-    (ippmod(idarcy).ge.0.and.gravn2.gt.epzero**2)) then
+if (ippmod(icompf).lt.0) then
   call field_get_val_s(iprtot, cpro_prtot)
   do iel = 1, ncelet
     cpro_prtot(iel) = - rinfin

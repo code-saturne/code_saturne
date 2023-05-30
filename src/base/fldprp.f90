@@ -58,7 +58,6 @@ use mesh
 use post
 use field
 use cs_c_bindings
-use darcy_module
 
 !===============================================================================
 
@@ -68,16 +67,13 @@ implicit none
 
 ! Local variables
 
-character(len=80) :: f_label, f_name, s_name, s_label
-integer           :: ii, ivar, isorb, keysrb, igwfpr, keypre, ischcp
+character(len=80) :: f_label, f_name
+integer           :: ischcp
 integer           :: idim1, idim3, idim6, iflid, k_restart_id
 integer           :: type_flag, post_flag, location_id
 integer           :: keypid
 logical           :: has_previous
 
-double precision :: gravn2
-
-type(gwf_soilwater_partition) :: sorption_scal
 type(var_cal_opt) :: vcopt_u
 
 !===============================================================================
@@ -234,16 +230,11 @@ call add_property_field_1d('fourier_number', 'Fourier Number', ifour)
 ! For groundwater flows, this field is the pressure head (h = H - z),
 ! only used if the gravity is set.
 
-if (ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0) then
+if (ippmod(icompf).lt.0) then
   call add_property_field_1d('total_pressure', 'Total Pressure', iprtot)
   ! Save total pressure in auxiliary restart file
   call field_get_key_id("restart_file", k_restart_id)
   call field_set_key_int(iprtot, k_restart_id, RESTART_AUXILIARY)
-else if (ippmod(idarcy).ge.0) then
-  gravn2 = gx**2+gy**2+gz**2
-  if (gravn2.gt.epzero**2) then
-    call add_property_field_1d('total_pressure', 'Pressure head', iprtot)
-  endif
 endif
 
 ! Cs^2 si on est en LES dynamique
@@ -263,85 +254,6 @@ call ppprop
 idim1 = 1
 idim3 = 3
 idim6 = 6
-
-! --- Properties for Darcy module
-
-if (ippmod(idarcy).eq.1) then
-
-  has_previous = .true.
-  f_name = 'saturation'
-  f_label = 'Saturation'
-  call add_property_field(f_name, f_label, idim1, has_previous, iflid)
-  f_name = 'capacity'
-  f_label = 'Capacity'
-  call add_property_field(f_name, f_label, idim1, has_previous, iflid)
-  f_name = 'permeability'
-  f_label = 'Permeability'
-  if (darcy_anisotropic_permeability.eq.0) then
-    call add_property_field(f_name, f_label, idim1, has_previous, iflid)
-  else
-    call add_property_field(f_name, f_label, idim6, has_previous, iflid)
-  endif
-  f_name = 'soil_density'
-  f_label = 'Soil density'
-  call add_property_field(f_name, f_label, idim1, has_previous, iflid)
-
-  call field_get_key_id("gwf_sorbed_concentration_id", keysrb)
-  call field_get_key_id("gwf_precip_concentration_id", keypre)
-
-  do ii = 1, nscal
-    ivar = isca(ii)
-    call field_get_key_struct_gwf_soilwater_partition(ivarfl(ivar), &
-                                                      sorption_scal)
-    call field_get_name(ivarfl(ivar), s_name)
-    call field_get_name(ivarfl(ivar), s_label)
-
-    f_name = trim(s_name)//'_kd'
-    f_label = trim(s_label)//' Kd'
-    call add_property_field(f_name, f_label, idim1, has_previous, &
-                            sorption_scal%ikd)
-    call hide_property(sorption_scal%ikd)
-    f_name = trim(s_name)//'_delay'
-    f_label = trim(s_label)//' delay'
-    call add_property_field(f_name, f_label, idim1, has_previous, &
-                            sorption_scal%idel)
-
-    if (sorption_scal%kinetic.eq.1) then
-      f_name = trim(s_name)//'_sorb_conc'
-      f_label = trim(s_label)//' sorb conc'
-      call add_property_field(f_name, f_label, idim1, has_previous, isorb)
-      call field_set_key_int(ivarfl(ivar), keysrb, isorb)
-
-      f_name = trim(s_name)//'_kplus'
-      f_label = trim(s_label)//' kplus'
-      call add_property_field(f_name, f_label, idim1, has_previous, &
-                              sorption_scal%ikp)
-      call hide_property(sorption_scal%ikp)
-      f_name = trim(s_name)//'_kminus'
-      f_label = trim(s_label)//' kminus'
-      call add_property_field(f_name, f_label, idim1, has_previous, &
-                              sorption_scal%ikm)
-      call hide_property(sorption_scal%ikm)
-    endif
-
-    if (sorption_scal%imxsol.ge.0) then
-      f_name = trim(s_name)//'_precip_conc'
-      f_label = trim(s_label)//' precip conc'
-      call add_property_field(f_name, f_label, idim1, has_previous, igwfpr)
-      call field_set_key_int(ivarfl(ivar), keypre, igwfpr)
-
-      f_name = trim(s_name)//'_solubility_index'
-      f_label = trim(s_label)//' solubility index'
-      call add_property_field(f_name, f_label, idim1, has_previous, &
-                              sorption_scal%imxsol)
-      call hide_property(sorption_scal%imxsol)
-    endif
-
-    call field_set_key_struct_gwf_soilwater_partition(ivarfl(ivar), &
-                                                      sorption_scal)
-  enddo
-
-endif
 
 if (iand(ivofmt,VOF_FREE_SURFACE).ne.0) then
   idrift = 2
