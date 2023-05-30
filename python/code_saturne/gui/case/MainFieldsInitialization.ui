@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>685</width>
-    <height>480</height>
+    <width>1168</width>
+    <height>646</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBox_2">
      <property name="title">
-      <string/>
+      <string>Pressure initialization</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_8">
       <item row="0" column="0">
@@ -49,9 +49,7 @@
           </property>
           <property name="icon">
            <iconset resource="resources_pages.qrc">
-            <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-            :/new/prefix1/icons/22x22/edit-find-replace.png
-           </iconset>
+            <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -82,7 +80,7 @@
    <item row="1" column="0">
     <widget class="QGroupBox" name="groupBoxDefinition">
      <property name="title">
-      <string>Select field for initialization</string>
+      <string>Phases' initialization</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
       <item row="0" column="0">
@@ -160,9 +158,7 @@
              </property>
              <property name="icon">
               <iconset resource="resources_pages.qrc">
-               <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-               :/new/prefix1/icons/22x22/edit-find-replace.png
-              </iconset>
+               <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -199,9 +195,7 @@
              </property>
              <property name="icon">
               <iconset resource="resources_pages.qrc">
-               <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-               :/new/prefix1/icons/22x22/edit-find-replace.png
-              </iconset>
+               <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -254,9 +248,7 @@
              </property>
              <property name="icon">
               <iconset resource="resources_pages.qrc">
-               <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-               :/new/prefix1/icons/22x22/edit-find-replace.png
-              </iconset>
+               <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -296,9 +288,7 @@
              </property>
              <property name="icon">
               <iconset resource="resources_pages.qrc">
-               <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-               :/new/prefix1/icons/22x22/edit-find-replace.png
-              </iconset>
+               <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -351,9 +341,7 @@
              </property>
              <property name="icon">
               <iconset resource="resources_pages.qrc">
-               <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-               :/new/prefix1/icons/22x22/edit-find-replace.png
-              </iconset>
+               <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
              </property>
              <property name="iconSize">
               <size>
