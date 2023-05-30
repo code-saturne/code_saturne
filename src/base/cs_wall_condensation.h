@@ -59,6 +59,7 @@ typedef enum {
 } cs_wall_cond_mixed_conv_model_t;
 
 typedef struct {
+
   int icondb; // Switch used to activate wall condensation (0 : activated)
   int icondv; /* Switch used to activate wall condensation
                  with metal structures(0 : activated) */
@@ -73,6 +74,7 @@ typedef struct {
   cs_lnum_t *ifbpcd;
   cs_lnum_t *itypcd;
   cs_lnum_t *izzftcd;
+  cs_lnum_t *ltmast;
   cs_real_t *spcond;
   cs_real_t *hpcond;
   cs_real_t *twall_cond;
@@ -82,7 +84,6 @@ typedef struct {
   cs_real_t *total_htc;
   cs_real_t *flthr;
   cs_real_t *dflthr;
-  cs_lnum_t *ltmast;
 
   // Zone related quantities
   cs_lnum_t  nzones;
@@ -92,6 +93,7 @@ typedef struct {
   cs_real_t *ztpar;
   cs_real_t *zxrefcond;
   cs_real_t *zprojcond;
+
 } cs_wall_cond_t;
 
 /*============================================================================
