@@ -323,6 +323,8 @@ typedef double              cs_real_t;   /* Fortran double precision */
 typedef char                cs_byte_t;   /* Byte (untyped memory unit) */
 typedef unsigned short int  cs_flag_t;   /* Flag storing metadata */
 
+typedef double              cs_nreal_t;  /* Real number (normalized value) */
+
 /* Vector or array block types */
 
 typedef cs_lnum_t  cs_lnum_2_t[2];      /* Vector of 2 local numbers */
@@ -357,6 +359,9 @@ typedef cs_real_33_t  cs_real_332_t[2];     /* vector of 2 3x3 matrices
                                                of real values */
 typedef cs_real_66_t  cs_real_662_t[2];     /* vector of 2 6x6 matrices
                                                of real values */
+
+typedef cs_nreal_t  cs_nreal_3_t[3];        /* Vector of normalized real values
+                                               (i.e. unit vector) */
 
 typedef struct {
 

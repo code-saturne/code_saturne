@@ -126,6 +126,9 @@ typedef struct {
   cs_real_t     *b_f_face_surf;  /* Fluid surface of boundary faces. */
   cs_real_t     *c_w_face_surf;  /* Solid surface of cells. */
 
+  cs_nreal_3_t  *i_face_u_normal;  /* Unit normal of interior faces. */
+  cs_nreal_3_t  *b_face_u_normal;  /* Unit normal of boundary faces. */
+
   cs_real_2_t   *i_f_face_factor;/* Fluid surface factor of interior faces. */
   cs_real_t     *b_f_face_factor;/* Fluid surface factor of boundary faces. */
 
