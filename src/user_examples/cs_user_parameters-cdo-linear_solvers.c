@@ -331,7 +331,7 @@ cs_user_linear_solvers(void)
   cs_sles_set_epzero(1e-15);
   /*! [linear_solver_immediate_exit] */
 
-  /*! [linear_solver_kcycle] */
+  /*! [param_cdo_kcycle_momentum] */
   {
     /* Retrieve the set of SLES parameters for the "momentum equation */
 
@@ -408,15 +408,15 @@ cs_user_linear_solvers(void)
          * - type of relaxation (weighting between a P_0 and P_1). For K-cycle,
          *   this should be equal to 0.
          * - Activation of the postprocessing for the aggregation if > 0.
-         * Aggregation set is numbered by its coarse row number modulo this
-         * value
+         *   Aggregation set is numbered by its coarse row number modulo this
+         *   value
          */
 
         cs_multigrid_set_coarsening_options(mg,
                                             8,    /* aggregation_limit*/
                                             CS_GRID_COARSENING_SPD_PW,
                                             10,   /* n_max_levels */
-                                            500,  /* min_g_cells */
+                                            200,  /* min_g_cells */
                                             0.,   /* P0P1 relaxation */
                                             0);   /* postprocess */
 
@@ -424,7 +424,99 @@ cs_user_linear_solvers(void)
 
     } /* Multigrid as preconditioner */
   }
-  /*! [linear_solver_kcycle] */
+  /*! [param_cdo_kcycle_momentum] */
+
+  /*! [param_cdo_kcycle_convdiff] */
+  {
+    /* One assumes that an equation named "scalar_1" has previously been
+       created (this is a scalar-valued unsteady convection diffusion
+       equation. */
+
+    cs_equation_t  *eq = cs_equation_by_name("scalar_1");
+    cs_equation_param_t  *eqp = cs_equation_get_param(eq);
+    cs_param_sles_t  *slesp = eqp->sles_param;
+    assert(slesp->field_id > -1);
+
+    /* In case of a in-house K-cylcle multigrid as a preconditioner of a
+       linear iterative solver */
+
+    if (eqp->sles_param->precond == CS_PARAM_PRECOND_AMG) {
+
+      /* If multigrid is the chosen preconditioner */
+
+      if (eqp->sles_param->amg_type == CS_PARAM_AMG_HOUSE_K) {
+
+        /* If this is a K-cycle multigrid. One has to follow the same
+           principles for an in-house V-cycle algorithm. */
+
+        /* Retrieve the different context structures to modify/apply additional
+           settings */
+
+        cs_sles_t  *sles = cs_sles_find_or_add(slesp->field_id, NULL);
+        cs_sles_it_t  *itsol = cs_sles_get_context(sles);
+        cs_sles_pc_t  *pc = cs_sles_it_get_pc(itsol);
+        cs_multigrid_t  *mg = NULL;
+
+        if (itsol == NULL) /* Not defined yet. */
+          itsol =  cs_sles_it_define(slesp->field_id, NULL,
+                                     CS_SLES_GCR, -1,
+                                     slesp->cvg_param.n_max_iter);
+        assert(itsol != NULL);
+
+        if (pc == NULL) { /* Not defined yet */
+
+          pc = cs_multigrid_pc_create(CS_MULTIGRID_K_CYCLE);
+          mg = cs_sles_pc_get_context(pc);
+          cs_sles_it_transfer_pc(itsol, &pc);
+
+        }
+        else
+          mg = cs_sles_pc_get_context(pc);
+
+        assert(mg != NULL && pc != NULL);
+
+        cs_multigrid_set_solver_options
+          (mg,
+           CS_SLES_P_SYM_GAUSS_SEIDEL,
+           CS_SLES_P_SYM_GAUSS_SEIDEL,
+           CS_SLES_PCR3,          /* coarse solver */
+           1,                     /* n_max_cycles */
+           2,                     /* n_max_iter_descent, */
+           2,                     /* n_max_iter_ascent */
+           200,                   /* n_max_iter_coarse */
+           -1,                    /* poly_degree_descent */
+           -1,                    /* poly_degree_ascent */
+           0,                     /* poly_degree_coarse */
+           -1.0,                  /* precision_mult_descent */
+           -1.0,                  /* precision_mult_ascent */
+           1.0);                  /* precision_mult_coarse */
+
+        /* Available settings:
+         * - max. number of elements in an aggregation
+         * - type of algorithm to perform the aggregation
+         * - max. number of levels (i.e. grids)
+         * - max global number of rows at the coarsest level
+         * - type of relaxation (weighting between a P_0 and P_1). For K-cycle,
+         *   this should be equal to 0.
+         * - activation of the postprocessing for the aggregation if > 0.
+         *   Aggregation set is numbered by its coarse row number modulo this
+         *   value
+         */
+
+        cs_multigrid_set_coarsening_options(mg,
+                                            8,    /* aggregation_limit*/
+                                            CS_GRID_COARSENING_SPD_PW,
+                                            10,   /* n_max_levels */
+                                            100,  /* min_g_cells (default 30) */
+                                            0.,   /* P0P1 relaxation */
+                                            0);   /* postprocess (default 0) */
+
+      } /* K-cycle */
+
+    } /* Multigrid as preconditioner */
+
+  }
+  /*! [param_cdo_kcycle_convdiff] */
 }
 
 #if defined(HAVE_MUMPS)
@@ -478,8 +570,8 @@ cs_user_sles_mumps_hook(const cs_param_sles_t   *slesp,
 
   if (use_parmetis) {
 
-    mumps->ICNTL(28) = 2; // Analysis parallel
-    mumps->ICNTL(29) = 2; // Choix de parmetis comme renum parall
+    mumps->ICNTL(28) = 2; /* Parallel analysis */
+    mumps->ICNTL(29) = 2; /* parmetis for the parallel renumbering */
 
   }
   else {
@@ -500,15 +592,15 @@ cs_user_sles_mumps_hook(const cs_param_sles_t   *slesp,
 
   /* Clustering for the analysis (Only for vector-valued system) */
 
-  mumps->ICNTL(15) = -3; // Number of terms to be clustered
+  mumps->ICNTL(15) = -3; /* Number of terms to be clustered */
 
   /* Advanced settings for openMP */
 
   if (use_openmp && cs_glob_n_threads > 1) {
 
-    mumps->KEEP(401) = 1; // Activate agressive openMP (comment when omp=1)
-    mumps->KEEP(370) = 1; // Useful for hybrid MPI/openMP
-    mumps->KEEP(371) = 1; // Useful for hybrid MPI/openMP
+    mumps->KEEP(401) = 1; /* Activate agressive openMP (comment when omp=1) */
+    mumps->KEEP(370) = 1; /* Useful for hybrid MPI/openMP */
+    mumps->KEEP(371) = 1; /* Useful for hybrid MPI/openMP */
 
   }
 
@@ -521,11 +613,11 @@ cs_user_sles_mumps_hook(const cs_param_sles_t   *slesp,
 
   if (blr_rate > 0) {
 
-    mumps->ICNTL(35) = 2; // Activate BLR algo (facto + solve)
-    mumps->ICNTL(36) = 1; // Variante de BLR (0 is also a good choice)
-    mumps->ICNTL(37) = 0; // Memory compression (= 1) but time consumming
-    mumps->ICNTL(40) = 0; // Memory compression (= 1) mixed precision
-    mumps->CNTL(7) = blr_rate; // Compression rate
+    mumps->ICNTL(35) = 2; /* Activate BLR algo (facto + solve) */
+    mumps->ICNTL(36) = 1; /* Variante de BLR (0 is also a good choice) */
+    mumps->ICNTL(37) = 0; /* Memory compression (= 1) but time consumming */
+    mumps->ICNTL(40) = 0; /* Memory compression (= 1) mixed precision */
+    mumps->CNTL(7) = blr_rate; /* Compression rate */
 
   }
 
