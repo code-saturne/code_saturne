@@ -326,9 +326,11 @@ void
 cs_user_linear_solvers(void)
 {
   /*! [linear_solver_immediate_exit] */
-  /* Redefine the threshold under which an immediate exit occurs */
+  {
+    /* Redefine the threshold under which an immediate exit occurs */
 
-  cs_sles_set_epzero(1e-15);
+    cs_sles_set_epzero(1e-15);
+  }
   /*! [linear_solver_immediate_exit] */
 
   /*! [param_cdo_kcycle_momentum] */

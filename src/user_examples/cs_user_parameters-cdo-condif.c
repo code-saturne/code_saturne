@@ -92,8 +92,8 @@ _define_adv_field(cs_real_t           time,
                   void               *input,
                   cs_real_t          *res)
 {
-  CS_UNUSED(time);
-  CS_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(time);
+  CS_NO_WARN_IF_UNUSED(input);
 
   for (cs_lnum_t p = 0; p < n_pts; p++) {
 
@@ -137,8 +137,8 @@ _define_bcs(cs_real_t           time,
             void               *input,
             cs_real_t          *res)
 {
-  CS_UNUSED(time);
-  CS_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(time);
+  CS_NO_WARN_IF_UNUSED(input);
 
   const double  pi = cs_math_pi;
   for (cs_lnum_t p = 0; p < n_pts; p++) {
@@ -267,7 +267,7 @@ cs_user_model(void)
     /* Add a user-defined advection field named "adv_field"  */
     cs_adv_field_t  *adv = cs_advection_field_add_user("adv_field");
 
-    CS_UNUSED(adv); /* adv can be used to set options */
+    CS_NO_WARN_IF_UNUSED(adv); /* adv can be used to set options */
   }
   /*! [param_cdo_add_user_adv_field] */
 
@@ -282,7 +282,7 @@ cs_user_model(void)
 
     cs_adv_field_t  *adv = cs_advection_field_add("adv_field", adv_status);
 
-    CS_UNUSED(adv); /* adv can be used to set options */
+    CS_NO_WARN_IF_UNUSED(adv); /* adv can be used to set options */
   }
   /*! [param_cdo_add_adv_field] */
 
@@ -296,7 +296,6 @@ cs_user_model(void)
 
   }
   /*! [param_cdo_add_user_adv_field_post] */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -396,21 +395,6 @@ cs_user_parameters(cs_domain_t   *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Advanced user-defined settings for the linear algebra related
- *         to CDO equations
- *         This is closed to cs_user_linear_solvers() but called once the fields
- *         and equations have been created (this happens at a different stage
- *         in the CDO framework)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_linear_solvers(void)
-{
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Specify the elements such as properties, advection fields,
  *         user-defined equations and modules which have been previously
  *         added.
@@ -422,7 +406,7 @@ cs_user_linear_solvers(void)
 void
 cs_user_finalize_setup(cs_domain_t   *domain)
 {
-  CS_UNUSED(domain);
+  CS_NO_WARN_IF_UNUSED(domain);
 
   /* =======================
      User-defined properties
@@ -492,7 +476,6 @@ cs_user_finalize_setup(cs_domain_t   *domain)
                                    "boundary_faces",  // zone name
                                    _define_bcs,       // pointer to the function
                                    NULL);             // input structure
-
   }
   /*! [param_cdo_setup_bcs] */
 
@@ -520,8 +503,8 @@ cs_user_finalize_setup(cs_domain_t   *domain)
                                                         "cells",
                                                         &st_val);
 
-    CS_UNUSED(st); /* st can be used for advanced settings like quadrature
-                      rules */
+    CS_NO_WARN_IF_UNUSED(st); /* st can be used for advanced settings like
+                                 quadrature rules */
   }
   /*! [param_cdo_add_terms] */
 

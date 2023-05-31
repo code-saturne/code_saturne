@@ -165,7 +165,9 @@ cs_user_model(void)
 
   /*! [param_cdo_solidification_set_voller] */
   {
-    /* Physical data for the settings a binay alloy model */
+    /* Physical data for the settings a Voller & Prakash model (i.e. without
+       segregation, only solidification is taken into account). The main model
+       is set to CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87 */
 
     cs_real_t  T0 = 0.5, beta_t = 0.01;
     cs_real_t  t_solidus = -0.1, t_liquidus = 0.1;
@@ -176,18 +178,19 @@ cs_user_model(void)
     cs_solidification_set_voller_model(/* Boussinesq approximation */
                                        beta_t,
                                        T0,
-                                       /* Phase diagram */
+                                       /* Phase diagram settings */
                                        t_solidus,
                                        t_liquidus,
                                        /* Physical constants */
                                        latent_heat,
                                        s_das);
 
+    /* The main solidification model is
+       CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87 but the optional flag
+       CS_SOLIDIFICATION_NO_VELOCITY_FIELD has been set. Then, one uses a
+       simplified version of the previous function. */
 
-    /* If the flag options CS_SOLIDIFICATION_NO_VELOCITY_FIELD has been set,
-       then one can use a simplified version of the function */
-
-    cs_solidification_set_voller_model_no_velocity(/* Phase diagram */
+    cs_solidification_set_voller_model_no_velocity(/* Phase diagram settings*/
                                                    t_solidus,
                                                    t_liquidus,
                                                    /* Physical constants */
@@ -197,7 +200,8 @@ cs_user_model(void)
 
   /*! [param_cdo_solidification_set_binary_alloy] */
   {
-    /* Physical data for the settings a binay alloy model */
+    /* Physical data for the settings a binay alloy model. The main
+       solidification model is CS_SOLIDIFICATION_MODEL_BINARY_ALLOY */
 
     cs_real_t  T0 = 0.5, beta_t = 0.01;
     cs_real_t  conc0 = 1.0, beta_c = 0.01;
@@ -216,7 +220,7 @@ cs_user_model(void)
                                              T0,
                                              beta_c,
                                              conc0,
-                                             /* Phase diagram */
+                                             /* Phase diagram settings */
                                              kp,
                                              ml,
                                              t_eutec,
@@ -229,7 +233,6 @@ cs_user_model(void)
 
   }
   /*! [param_cdo_solidification_set_binary_alloy] */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -245,7 +248,7 @@ cs_user_model(void)
 void
 cs_user_parameters(cs_domain_t    *domain)
 {
-  CS_UNUSED(domain);
+  CS_NO_WARN_IF_UNUSED(domain);
 
   /*! [param_cdo_solidification_set_strategy] */
   {
@@ -300,7 +303,7 @@ cs_user_parameters(cs_domain_t    *domain)
 void
 cs_user_finalize_setup(cs_domain_t   *domain)
 {
-  CS_UNUSED(domain);
+  CS_NO_WARN_IF_UNUSED(domain);
 
   /*! [param_cdo_solidification_properties] */
   {
