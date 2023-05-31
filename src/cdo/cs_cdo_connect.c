@@ -1319,8 +1319,7 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect,
                                 connect->v_max_cell_range,
                                 connect->e_max_cell_range};
 
-  if (cs_glob_n_ranks > 1)
-    cs_parall_max(5, CS_LNUM_TYPE, n_max_entbyc);
+  cs_parall_max(5, CS_LNUM_TYPE, n_max_entbyc);
 
   /* Output */
 
@@ -1353,8 +1352,7 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect,
     }
 
     cs_gnum_t  v_counter = v_count;
-    if (cs_glob_n_ranks > 1)
-      cs_parall_counter(&v_counter, 1);
+    cs_parall_counter(&v_counter, 1);
 
     cs_log_printf(CS_LOG_DEFAULT,
                   " --dim-- number of boundary cells through a vertex only"
@@ -1375,8 +1373,7 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect,
     }
 
     cs_gnum_t  e_counter = e_count;
-    if (cs_glob_n_ranks > 1)
-      cs_parall_counter(&e_counter, 1);
+    cs_parall_counter(&e_counter, 1);
 
     cs_log_printf(CS_LOG_DEFAULT,
                   " --dim-- number of boundary cells through an edge only"
