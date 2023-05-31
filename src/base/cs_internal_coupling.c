@@ -2714,14 +2714,14 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
 void
 cs_internal_coupling_setup(void)
 {
+  if (_n_internal_couplings < 1)
+    return;
+
   /* Call deprecated functions first */
   cs_user_internal_coupling_add_volumes(cs_glob_mesh);
   cs_user_internal_coupling_from_disjoint_meshes(cs_glob_mesh);
 
   /* Now do setup proper */
-
-  if (_n_internal_couplings < 1)
-    return;
 
   int field_id;
   cs_field_t *f;

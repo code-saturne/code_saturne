@@ -5074,6 +5074,9 @@ cs_gui_internal_coupling(void)
 
   if (node_int_cpl != NULL) {
 
+    if (node_int_cpl->children == NULL)
+      return;
+
     int j = 0;
     int *z_ids;
     BFT_MALLOC(z_ids, n_solid_zones, int);
