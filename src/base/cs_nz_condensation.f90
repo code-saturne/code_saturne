@@ -95,10 +95,18 @@ module cs_nz_condensation
   !> \anchor twall_cond
   !> Temperature at condensing wall faces (for post-processing purposes)
   double precision, dimension(:), pointer, save :: twall_cond
+
   !> value of the thermal exchange coefficient associated to
   !> the condensation model used.
   !> See the user subroutine \ref cs_user_wall_condensation
   double precision, dimension(:), pointer, save:: hpcond
+
+  !> \anchor svcond
+  !> value of the condensation source terms for pressure
+  !> associated to the metal structures modelling.
+  !> For the other variables, eventual imposed specific value.
+  !> See the user subroutine \ref cs_user_wall_condensation.
+  double precision, dimension(:,:), pointer, save:: svcond
 
   !> list on the nfbpcd faces in which a condensation source terms is imposed.
   !> See \c ifbpcd and the user subroutine \ref cs_user_wall_condensation
@@ -193,6 +201,7 @@ interface
   !
   !> \param[out]   spcond   Pointer to spcond
   !---------------------------------------------------------------------------
+
   subroutine cs_f_wall_condensation_get_size_pointers(nfbpcd, nzones, ncmast) &
     bind(C, name='cs_f_wall_condensation_get_size_pointers')
     use, intrinsic :: iso_c_binding
@@ -205,23 +214,25 @@ interface
   !
   !> \param[out]   spcond   Pointer to spcond
   !---------------------------------------------------------------------------
+
   subroutine cs_f_wall_condensation_get_pointers(ifbpcd, itypcd, izzftcd, ltmast, &
-                                                 spcond, hpcond, twall_cond, &
+                                                 spcond, svcond, hpcond, twall_cond, &
                                                  thermflux, flthr, dflthr, &
                                                  izcophc, izcophg, iztag1d, &
                                                  ztpar, zxrefcond, zprojcond) &
     bind(C, name='cs_f_wall_condensation_get_pointers')
     use, intrinsic :: iso_c_binding
     implicit none
-    type(c_ptr), intent(out) :: spcond, hpcond, ifbpcd, twall_cond, itypcd
-    type(c_ptr), intent(out) :: izzftcd, thermflux, flthr, dflthr, izcophc
+    type(c_ptr), intent(out) :: ifbpcd, itypcd, izzftcd, ltmast 
+    type(c_ptr), intent(out) :: spcond, svcond, hpcond, twall_cond
+    type(c_ptr), intent(out) :: thermflux, flthr, dflthr, izcophc
     type(c_ptr), intent(out) :: izcophg, iztag1d, ztpar, zxrefcond, zprojcond
-    type(c_ptr), intent(out) :: ltmast
   end subroutine cs_f_wall_condensation_get_pointers
 
   !---------------------------------------------------------------------------
   !> \brief Deallocate wall condensation arrays
   !---------------------------------------------------------------------------
+
   subroutine cs_wall_condensation_free() &
     bind(C, name='cs_wall_condensation_free')
     use, intrinsic :: iso_c_binding
@@ -248,7 +259,7 @@ contains
   subroutine init_nz_pcond(nvar)
 
     use, intrinsic :: iso_c_binding
-
+    use mesh, only: ncelet
     implicit none
 
     integer, intent(in) :: nvar
@@ -258,20 +269,21 @@ contains
     type(c_ptr) :: c_spcond, c_hpcond, c_ifbpcd, c_walltemp
     type(c_ptr) :: c_izzftcd, c_itypcd, c_thermflux, c_flthr, c_dflthr
     type(c_ptr) :: c_izcophc, c_izcophg, c_iztag1d, c_ztpar
-    type(c_ptr) :: c_zxrefcond, c_zprojcond, c_ltmast
+    type(c_ptr) :: c_zxrefcond, c_zprojcond, c_ltmast, c_svcond
 
     if (nzones<1) nzones = 1
 
     call cs_f_wall_condensation_create(nfbpcd, nzones, nvar, ncmast)
     call cs_f_wall_condensation_get_pointers(c_ifbpcd, c_itypcd, c_izzftcd, c_ltmast, &
-                                             c_spcond, c_hpcond, c_walltemp, &
+                                             c_spcond, c_svcond, c_hpcond, c_walltemp, &
                                              c_thermflux, c_flthr, c_dflthr, &
                                              c_izcophc, c_izcophg, c_iztag1d, &
                                              c_ztpar, c_zxrefcond, c_zprojcond)
     call c_f_pointer(c_ifbpcd, ifbpcd, [nfbpcd])
     call c_f_pointer(c_itypcd, itypcd, [nfbpcd, nvar])
     call c_f_pointer(c_izzftcd, izzftcd, [nfbpcd])
-    call c_f_pointer(c_spcond, spcond, [nfbpcd,nvar])
+    call c_f_pointer(c_spcond, spcond, [nfbpcd, nvar])
+    call c_f_pointer(c_svcond, svcond, [ncelet, nvar])
     call c_f_pointer(c_hpcond, hpcond, [nfbpcd])
     call c_f_pointer(c_walltemp, twall_cond, [nfbpcd])
     call c_f_pointer(c_thermflux, thermal_condensation_flux, [nfbpcd])

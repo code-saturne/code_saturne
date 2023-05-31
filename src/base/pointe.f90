@@ -222,12 +222,6 @@ module pointe
   !> See the user subroutine \ref  cs_user_metal_structures_source_terms.
   integer, allocatable, dimension(:,:) :: itypst
 
-  !> value of the condensation source terms for pressure
-  !> associated to the metal structures modelling.
-  !> For the other variables, eventual imposed specific value.
-  !> See the user subroutine \ref cs_user_metal_structures_source_terms.
-  double precision, allocatable, dimension(:,:) :: svcond
-
   !> value of the thermal flux for the condensation model
   !> associated to the metal structures modelling.
   !> See the user subroutine \ref cs_user_metal_structures_source_terms.
@@ -408,7 +402,6 @@ contains
 
     allocate(izmast(ncelet))
     allocate(itypst(ncelet, nvar))
-    allocate(svcond(ncelet, nvar))
     allocate(flxmst(ncelet))
 
   end subroutine init_vcond
@@ -418,7 +411,6 @@ contains
   subroutine finalize_vcond
     deallocate(itypst)
     deallocate(izmast)
-    deallocate(svcond)
     deallocate(flxmst)
 
   end subroutine finalize_vcond

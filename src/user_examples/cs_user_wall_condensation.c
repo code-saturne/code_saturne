@@ -184,22 +184,22 @@ cs_user_wall_condensation(int  nvar,
   int ieltcd = 0;
   int izone  = 0;
 
-  /*==========================================================================
-   1. One or two calls
-   -------------------
-    - iappel = 1: nfbpcd: calculation of the number of faces with
-                               condensation source term
-    - iappel = 2: ifbpcd: index number of faces with condensation source terms
-
-   Remarks
-   =======
-    - Do not use spcond in this section (it is set on the third call, iappel=3)
-    - Do not use ifbpcd in this section on the first call (iappel=1)
-    - This section (iappel=1 or 2) is only accessed at the beginning of a
-       calculation. Should the localization of the condensation source terms
-       evolve in time, the user must identify at the beginning all cells that
-       can potentially become a condensation  source term.
-  ===========================================================================*/
+  /*--------------------------------------------------------------------------
+   * 1. First and second calls
+   * -------------------------
+   * - iappel = 1: nfbpcd: calculation of the number of faces with
+   *                            condensation source term
+   * - iappel = 2: ifbpcd: index number of faces with condensation source terms
+   *
+   * Remarks
+   * =======
+   * - Do not use spcond in this section (it is set on the third call, iappel=3)
+   * - Do not use ifbpcd in this section on the first call (iappel=1)
+   * - This section (iappel=1 or 2) is only accessed at the beginning of a
+   *    calculation. Should the localization of the condensation source terms
+   *    evolve in time, the user must identify at the beginning all cells that
+   *    can potentially become a condensation  source term.
+   *--------------------------------------------------------------------------*/
 
   /*! < [zones_definition] */
   if (iappel == 1 || iappel == 2) {
@@ -228,12 +228,10 @@ cs_user_wall_condensation(int  nvar,
 
   /*! [cells_selection] */
 
-  /*
-    =======================================================================
-    Select the cells which are associated to the metal structures volume
-    with the cs_volume_zone_by_name
-    =======================================================================
-  */
+  /*--------------------------------------------------------------------------
+   * Select the cells which are associated to the metal structures volume.
+   * with the cs_volume_zone_by_name
+   *--------------------------------------------------------------------------*/
 
   const cs_zone_t *z = cs_volume_zone_by_name("z > -7.0d0 and z < 53.d0");
   wall_cond->ncmast = z->n_elts;
@@ -243,107 +241,87 @@ cs_user_wall_condensation(int  nvar,
 
   /*! [cells_selection] */
 
-  /*
-  ===============================================================================
-   Parameters of the 1-D thermal model and condensation model
-   ------------------------------------------------------------------
-   Both models can be activated and coupled together or the condensation model
-   can be used with a constant wall temperature specified by the user
-   (at iappel=3 tpar=ztpar0(iz) in this case).
-  ===============================================================================
-  */
+  /*--------------------------------------------------------------------------
+   * Parameters of the 1-D thermal model and condensation model
+   * ----------------------------------------------------------
+   * Both models can be activated and coupled together or the condensation
+   * model can be used with a constant wall temperature specified by the user
+   * (at iappel=3 tpar=ztpar0(iz) in this case).
+   *--------------------------------------------------------------------------*/
 
   if (iappel == 2) {
     if (wall_cond->icondb == 0) {
 
-      /*
-       *    izcophc = model for the mass transfer (condensation) coefficient
-       *    ----------------------------------------------------------------
-       *    Integer.
-       *    1 : Turbulent wall law
-       *    2 : Natural convection correlation
-       *    3 : Maximum of the two previous (for mixed regime)
-       *    */
+      /* izcophc: model for the mass transfer (condensation) coefficient
+       * ---------------------------------------------------------------
+       * 1: Turbulent wall law
+       * 2: Natural convection correlation
+       * 3: Maximum of the two previous (for mixed regime)
+       */
       wall_cond->izcophc[iz] = 3;
 
-      /*
-       *    izcophg = model for the thermal exchange coefficient
-       *    ----------------------------------------------------------------
-       *    Integer.
-       *    1 : Turbulent wall law
-       *    2 : Natural convection correlation
-       *    3 : Maximum of the two previous (for mixed regime)
-       *    */
+      /* izcophg: model for the thermal exchange coefficient
+       * ---------------------------------------------------
+       * 1: Turbulent wall law
+       * 2: Natural convection correlation
+       * 3: Maximum of the two previous (for mixed regime)
+       */
       wall_cond->izcophg[iz] = 3;
 
-      /*
-       *    iztag1d = on/off switch for 1D thermal module
-       *    ----------------------------------------------------------------
-       *    Integer.
-       *    0 : Constant wall temperature (equal to ztpar0(iz))
-       *    1 : Variable wall temperature computed with a 1D model
-       *    */
+      /* iztag1d: on/off switch for 1D thermal module
+       * --------------------------------------------
+       * 0: Constant wall temperature (equal to ztpar0(iz))
+       * 1: Variable wall temperature computed with a 1D model
+       */
       wall_cond->iztag1d[iz] = 1;
 
       if (wall_cond->iztag1d[iz] == 1) {
 
-        /*
-         *      ztheta = proportion of implicitation in the space discretization
-         * scheme
-         *      ----------------------------------------------------------------
-         *      Float in the range [0, 1].
-         *      Special values:
-         *        0 : explicit scheme
-         *        1 : implicit scheme
-         *      */
+        /* ztheta: proportion of implicitation in the space discretization scheme
+         * ----------------------------------------------------------------------
+         * Float in the range [0, 1].
+         * Special values:
+         * 0: explicit scheme
+         * 1: implicit scheme
+         */
         wall_thermal->ztheta[iz] = 1.0;
 
-        /*
-         *      zdxmin = Wall cell size parameters
-         *      ----------------------------------------------------------------
-         *      Float
-         *      Special values:
-         *        <=0 : Constant cell size
-         *        > 0 : Variable cell size. In this case, the first cell size
-         * (fluid side) is set to zdxmin [meters].
-         *      */
+        /* zdxmin: Wall cell size parameters
+         * ---------------------------------
+         * Special values:
+         * <=0: Constant cell size
+         * > 0: Variable cell size. In this case, the first cell size
+         *      (fluid side) is set to zdxmin [meters].
+         */
         wall_thermal->zdxmin[iz] = 0.0;
 
-        /*
-         *      znmur = Number of cells in the wall mesh
-         *      ----------------------------------------------------------------
-         *      Positive integer
-         *      */
+        /* znmur: Number of cell layers in the wall mesh
+         * ---------------------------------------------
+         */
         wall_thermal->znmur[iz] = 10;
 
-        /*
-         *      zepais = Total thickness of the solid wall [meters]
-         *      ----------------------------------------------------------------
-         *      Positive float
-         *      */
+        /* zepais: Total thickness of the solid wall [meters]
+         * --------------------------------------------------
+         */
         wall_thermal->zepais[iz] = 0.024;
 
-        /*
-         *      ztpar0 = Initial temperature in the solid wall [celsius]
-         *      ----------------------------------------------------------------
-         *      Float.
-         *      */
+        /* ztpar0: Initial temperature in the solid wall [celsius]
+         * -------------------------------------------------------
+         */
         wall_thermal->ztpar0[iz] = 26.57;
       }
     }
   }
   /*! [model_settings] */
 
-  /*
-    ===============================================================================
-     2. For nfbpcd > 0 , third call
-        iappel = 3 : itypcd: type of condensation source term
-                      spcond: condensation source term
-     Remark
-     ======
-     If itypcd(ieltcd,ivar) is set to 1, spcond(ieltcd,ivar) must be set.
-    ===============================================================================
-  */
+  /*--------------------------------------------------------------------------
+   * 2. For nfbpcd > 0 , third call
+   * iappel = 3 : itypcd: type of condensation source term
+   *              spcond: condensation source term
+   * Remark
+   * ======
+   * If itypcd(ieltcd,ivar) is set to 1, spcond(ieltcd,ivar) must be set.
+   *--------------------------------------------------------------------------*/
 
   else if (iappel == 3) {
 
@@ -354,51 +332,36 @@ cs_user_wall_condensation(int  nvar,
     if (wall_cond->icondb == 0) {
       if (wall_cond->iztag1d[iz] == 1) {
 
-        /*
-         *      zhext = External exchange coefficient
-         * [watt.meter^(-2).kelvin^(-1)]
-         *      ----------------------------------------------------------------
-         *      Positive float.
-         *      */
+        /* zhext: External exchange coefficient [watt.meter^(-2).kelvin^(-1)]
+         * ------------------------------------
+         */
         wall_thermal->zhext[iz] = 1.e8;
 
-        /*
-         *      zhext = External temperature [celsius]
-         *      ----------------------------------------------------------------
-         *      Float.
-         *      */
+        /* zhext: External temperature [celsius]
+         * ---------------------------
+         */
         wall_thermal->ztext[iz] = 26.57;
 
-        /*
-         *      zrob = Solid wall density [kilogram.meter^(-3)]
-         *      ----------------------------------------------------------------
-         *      Positive float.
-         *      */
+        /* zrob: Solid wall density [kilogram.meter^(-3)]
+         * ------------------------
+         */
         wall_thermal->zrob[iz] = 8000.0;
 
-        /*
-         *      zcondb = Solid wall thermal conductivity
-         * [watt.meter^(-1).celsius^(-1)]
-         *      ----------------------------------------------------------------
-         *      Positive float.
-         *      */
+        /* zcondb: Solid wall thermal conductivity [watt.meter^(-1).celsius^(-1)]
+         * ---------------------------------------
+         */
         wall_thermal->zcondb[iz] = 12.8;
 
-        /*
-         *      zcpb = Solid wall specific heat
-         * [joule.kilogram^(-1).celsius^(-1)]
-         *      ----------------------------------------------------------------
-         *      Positive float.
-         *      */
+        /* zcpb: Solid wall specific heat [joule.kilogram^(-1).celsius^(-1)]
+         * ------------------------------
+         */
         wall_thermal->zcpb[iz] = 500.0;
       }
       else {
 
-        /*
-         *      ztpar = Constant wall temperature [celsius]
-         *      ----------------------------------------------------------------
-         *      Float.
-         *      */
+        /* ztpar: Constant wall temperature [celsius]
+         * --------------------------------
+         */
         wall_cond->ztpar[iz] = 26.57;
       }
     }
@@ -504,12 +467,54 @@ cs_user_wall_condensation(int  nvar,
           }
         }
       }
-      /*! [source_term_values] */
     }
+
+    /*--------------------------------------------------------------------------
+     * The user can specify here the values of the following arrays used by the
+     * modelling of the metal structures condensation:
+     *  svcond the scalar value to multiply by the sink term array
+     *  of the metal structures condensation model.
+     *  This array can be filled for each transported scalar.
+     *--------------------------------------------------------------------------*/
+
+    const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+    cs_gas_mix_species_prop_t s_h2o_g;
+    const int key_mix = cs_field_key_id("gas_mix_species_prop");
+    cs_field_get_key_struct(cs_field_by_name_try("y_h2o_g"),
+                            key_mix, &s_h2o_g);
+
+    /* Loop over the cells associated to the metal structure
+     * source terms zone */
+    for (cs_lnum_t icmst = 0; icmst < wall_cond->ncmast; icmst++) {
+      const cs_lnum_t c_id = wall_cond->ltmast[icmst];
+
+      /* Compute the enthalpy value of vapor gas */
+      cs_real_t tk = cvar_h[c_id]/cpro_cp[c_id];
+      if (cs_get_glob_time_step()->nt_cur < 2)
+        tk = cs_glob_fluid_properties->t0;
+      const cs_real_t hvap = s_h2o_g.cp*tk;
+
+      // Source term for scalars
+      for (int f_id = 0; f_id < n_fields; f_id++) {
+        f = cs_field_by_id(f_id);
+        if (!(f->type & CS_FIELD_VARIABLE))
+          continue;
+        int iscal = cs_field_get_key_int(f, keysca);
+        if (iscal > 0)
+          continue;
+        int ivar = cs_field_get_key_int(f, var_id_key) - 1;
+        wall_cond->svcond[ivar*n_cells_ext + icmst] = 0.0;
+        if (f == cs_thermal_model_field())
+          wall_cond->svcond[ivar*n_cells_ext + icmst] = hvap;
+      }
+    }
+
+    /*! [source_term_values] */
+
   }
 
   BFT_FREE(lstelt);
-};
+}
 
 /*----------------------------------------------------------------------------*/
 

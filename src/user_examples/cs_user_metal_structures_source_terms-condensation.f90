@@ -179,63 +179,6 @@ endif
 
 !< [model_settings]
 
-!< [source_terms_values]
-
-!===============================================================================
-! The user can specify here the values of the following arrays used by the
-! modelling of the metal structures condensation:
-!         - itypst(:,ivar) to specify the condensation source term type,
-!         - svcond(:,ivar) the scalar value to multiply by the sink term array
-!                          of the metal structures condensation model.
-! These two arrays can be filled for each transported scalar.
-!===============================================================================
-
-!-- pointer to the specific heat
-if (icp.ge.0) call field_get_val_s(icp, cpro_cp)
-
-!-- pointer to the enthalpy value
-ivarh = isca(iscalt)
-call field_get_val_s(ivarfl(ivarh), cvar_h)
-
-! loop over the cells associated to the metal structure
-! source terms zone
-do icmst = 1, ncmast
-  iel = ltmast(icmst)
-
-  ! Compute the enthalpy value of vapor gas
-  if (ntcabs.le.1) then
-    tk = t0
-  else
-    tk = cvar_h(iel)/cpro_cp(iel)
-  endif
-  hvap = s_h2o_g%cp*tk
-
-  ! Condensation source terms associated
-  ! to the metal structures imposed
-  ! for each scalar.
-  !----------------------------------------
-  if (nscal.gt.0) then
-    do iscal = 1, nscal
-      if (iscal.eq.iscalt) then
-
-        ! enthalpy value used for
-        ! the explicit condensation term
-        itypst(iel,isca(iscalt)) = 1
-        svcond(iel,isca(iscalt)) = hvap
-      else
-
-        ! scalar values used for
-        ! the explicit condensation term
-        itypst(iel,isca(iscal)) = 1
-        svcond(iel,isca(iscal)) = 0.d0
-      endif
-    enddo
-  endif
-
-enddo
-
-!< [source_terms_values]
-
 !--------
 ! Formats
 !--------

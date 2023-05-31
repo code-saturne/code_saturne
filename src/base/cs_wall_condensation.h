@@ -76,6 +76,7 @@ typedef struct {
   cs_lnum_t *izzftcd;
   cs_lnum_t *ltmast;
   cs_real_t *spcond;
+  cs_real_t *svcond;
   cs_real_t *hpcond;
   cs_real_t *twall_cond;
   cs_real_t *thermal_condensation_flux;

@@ -70,9 +70,10 @@
 
   \snippet cs_user_metal_structures_source_terms-condensation.f90 model_settings
 
-  Finally the source term type and values have to be set as follows:
+  Finally the source term type and values have to be set
+  (in cs_user_wallcondensation.c) as follows:
 
-  \snippet cs_user_metal_structures_source_terms-condensation.f90 source_terms_values
+  \snippet cs_user_metal_structures_source_terms-condensation.c source_term_values
 
 
   \section condens_h_boundary Boundary source terms for condensation

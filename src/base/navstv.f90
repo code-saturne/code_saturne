@@ -94,7 +94,7 @@ use cavitation
 use vof
 use cs_c_bindings
 use atincl, only: iatmst, iautom, imeteo
-use cs_nz_condensation, only: nfbpcd, spcond, ifbpcd, ncmast, ltmast
+use cs_nz_condensation, only: nfbpcd, spcond, ifbpcd, ncmast, ltmast, svcond
 
 !===============================================================================
 

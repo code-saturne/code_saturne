@@ -69,7 +69,8 @@ use radiat
 use parall
 use mesh
 use field
-use pointe, only:svcond, flxmst
+use pointe, only:flxmst
+use cs_nz_condensation, only: svcond
 use cs_tagms
 
 !===============================================================================
