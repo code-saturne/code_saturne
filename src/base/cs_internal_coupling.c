@@ -1155,7 +1155,7 @@ cs_internal_coupling_add_boundary_groups(cs_internal_coupling_t  *cpl,
 /*!
  * \brief Impose wall BCs to internal coupled faces if not yet defined.
  *
- *   \param[in, out]     bc_type       face boundary condition type
+ * \param[in, out] bc_type       face boundary condition type
  */
 /*----------------------------------------------------------------------------*/
 

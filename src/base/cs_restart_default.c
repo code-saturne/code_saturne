@@ -150,6 +150,7 @@ _cancel_in_solid_zones(cs_lnum_t   stride,
     }
   }
 }
+
 /*----------------------------------------------------------------------------
  * Read and rebuild partial field metadata from legacy checkpoint.
  *

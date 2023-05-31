@@ -5121,6 +5121,7 @@ cs_gui_internal_coupling(void)
         cs_internal_coupling_add_entity(f_id);
       }
     }
+
   }
 }
 
