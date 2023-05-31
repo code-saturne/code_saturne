@@ -572,6 +572,7 @@ class Explorer():
         """
         # Find file position (SRC, REFERENCE, EXAMPLES, other)
         path2file = ''
+        fname = ''
         for idx in self.explorer.selectedIndexes():
             fname = idx.data(QtCore.Qt.DisplayRole)
             c = idx
@@ -587,10 +588,11 @@ class Explorer():
                 c = p
                 p = c.parent()
 
-        self.parent._currentSelection = {'filename':fname,
-                                         'subpath' :path2file,
-                                         'filedir' :ps,
-                                         'origdir' :pe}
+        if len(fname) > 0:
+            self.parent._currentSelection = {'filename':fname,
+                                             'subpath' :path2file,
+                                             'filedir' :ps,
+                                             'origdir' :pe}
 
         return
     # ---------------------------------------------------------------
