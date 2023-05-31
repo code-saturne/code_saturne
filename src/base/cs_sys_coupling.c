@@ -100,7 +100,6 @@ static cs_sys_cpl_t **_sys_couplings   = NULL;
 cs_cfd2sys_intersection_t *
 _create_cfd2sys_intersection(void)
 {
-
   cs_cfd2sys_intersection_t *retval = NULL;
 
   BFT_MALLOC(retval, 1, cs_cfd2sys_intersection_t);
@@ -111,13 +110,11 @@ _create_cfd2sys_intersection(void)
   retval->sys_weight   = NULL;
 
   return retval;
-
 }
 
 cs_cfd_sys_cplbc_t *
 _create_cfd_sys_cplbc(cs_syscpl_bc_type_t type)
 {
-
   cs_cfd_sys_cplbc_t *retval = NULL;
 
   BFT_MALLOC(retval, 1, cs_cfd_sys_cplbc_t);
@@ -144,14 +141,12 @@ _create_cfd_sys_cplbc(cs_syscpl_bc_type_t type)
   retval->sys_elt_idx[1] = -1;
 
   return retval;
-
 }
 
 cs_sys_cpl_t *
 _create_cs_sys_coupling(const char *sys_name,
                         const int   n_cpl_phases)
 {
-
   assert(sys_name != NULL);
 
   if (n_cpl_phases < 1)
@@ -188,7 +183,6 @@ _create_cs_sys_coupling(const char *sys_name,
   cpl->sys_n_ranks = 0;
 
   return cpl;
-
 }
 
 void
@@ -196,7 +190,6 @@ _compute_matrix_weights(cs_cfd2sys_intersection_t *m,
                         const cs_lnum_t            n_cfd_elts,
                         const int                  n_sys_elts)
 {
-
   assert(m != NULL && n_cfd_elts > 0 && n_sys_elts > 0);
 
   for (cs_lnum_t e_id = 0; e_id < n_cfd_elts; e_id++)
@@ -214,7 +207,6 @@ _compute_matrix_weights(cs_cfd2sys_intersection_t *m,
       m->sys_weight[id_val[i].id] += id_val[i].val;
     }
   }
-
 }
 
 static void
@@ -262,7 +254,6 @@ _init_comm(cs_sys_cpl_t *sys_coupling,
   sys_coupling->cfd_root    = local_range[0];
 #endif
 }
-
 
 static void
 _finalize_comm(cs_sys_cpl_t *sys_coupling)
@@ -328,6 +319,8 @@ _sys_coupling_init_comm(cs_sys_cpl_t *sys_coupling,
 
 #endif
 }
+
+#if defined(HAVE_MPI)
 
 static void
 _init_all_mpi_sys(int  *n_unmatched,
@@ -415,9 +408,9 @@ _init_all_mpi_sys(int  *n_unmatched,
   /* Set return values */
   *n_unmatched   = _n_unmatched;
   *unmatched_ids = _unmatched_ids;
-
 }
 
+#endif /* defined(HAVE_MPI) */
 
 static void
 _sys_coupling_set_fields(cs_cfd_sys_cplbc_t *cplbc,
