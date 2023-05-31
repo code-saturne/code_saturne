@@ -447,7 +447,7 @@ _add_field(int               n_previous,
 /*!
  * \brief Retrieve the number of equations
  *
- * \return the current number of cs_equation_t structure allocated
+ * \return the current number of allocated cs_equation_t structures
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1328,7 +1328,8 @@ cs_equation_is_steady(const cs_equation_t    *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return true is the given equation is steady otherwise false
+ * \brief Return true is the given equation follows the new mechanism otherwise
+ *        false
  *
  * \param[in] eq       pointer to a cs_equation_t structure
  *
