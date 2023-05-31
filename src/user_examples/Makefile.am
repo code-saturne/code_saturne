@@ -151,6 +151,7 @@ cs_user_parameters-base.c \
 cs_user_parameters-cdo-condif.c \
 cs_user_parameters-cdo-gwf.c \
 cs_user_parameters-cdo-gwf_user_soil.c \
+cs_user_parameters-cdo-laplacian.c \
 cs_user_parameters-cdo-solidification.c \
 cs_user_parameters-ctwr.c \
 cs_user_parameters-coupling.c \
