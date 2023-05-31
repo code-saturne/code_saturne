@@ -49,7 +49,6 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/rayt \
 -I$(top_srcdir)/src/turb \
 -I$(top_srcdir)/src/atmo \
--I$(top_srcdir)/src/darc \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
@@ -64,7 +63,6 @@ $(FCMODINCLUDE)$(top_builddir)/src/cfbl \
 $(FCMODINCLUDE)$(top_builddir)/src/cogz \
 $(FCMODINCLUDE)$(top_builddir)/src/comb \
 $(FCMODINCLUDE)$(top_builddir)/src/ctwr \
-$(FCMODINCLUDE)$(top_builddir)/src/darc \
 $(FCMODINCLUDE)$(top_builddir)/src/elec \
 $(FCMODINCLUDE)$(top_builddir)/src/lagr \
 $(FCMODINCLUDE)$(top_builddir)/src/pprt \

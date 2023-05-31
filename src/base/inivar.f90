@@ -86,7 +86,7 @@ integer          idimf
 integer          ivoid, uprtot
 
 double precision valmax, valmin, vfmin , vfmax
-double precision gravn, gnx, gny, gnz
+double precision gravn
 double precision xxp0, xyp0, xzp0
 double precision scmaxp, scminp
 

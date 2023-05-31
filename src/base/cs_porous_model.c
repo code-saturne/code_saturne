@@ -311,7 +311,6 @@ cs_f_mesh_quantities_solid_compute(void)
 
   /* Update the cell porosity field value */
   cs_field_t *f_poro = cs_field_by_name("porosity");
-  cs_real_3_t *c_w_face_normal = (cs_real_3_t *)mq->c_w_face_normal;
 
   /* Reactivate cells at the interface between fluid and solid */
   for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
@@ -326,7 +325,6 @@ cs_f_mesh_quantities_solid_compute(void)
   }
   /* synchronize for use in fluid face factor calculation */
   cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_poro->val);
-
 }
 
 /*----------------------------------------------------------------------------*/

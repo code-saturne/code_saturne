@@ -259,10 +259,6 @@ double precision, dimension(:,:), pointer :: cvar_ts, cvara_ts, cpro_visma_v
 integer, allocatable, dimension(:) :: lbt2h
 double precision, allocatable, dimension(:) :: vbt2h
 
-! darcy arrays
-double precision, dimension(:), pointer :: permeability
-double precision, dimension(:,:), pointer :: tensor_permeability
-
 type(var_cal_opt) :: vcopt
 
 !===============================================================================

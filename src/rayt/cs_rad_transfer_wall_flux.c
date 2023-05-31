@@ -185,9 +185,6 @@ cs_rad_transfer_wall_flux(int         isothp[],
      ---------------------------- */
 
   cs_field_t *fth = cs_thermal_model_field();
-  int *th_icodcl = fth->bc_coeffs->icodcl;
-  cs_real_t *th_rcodcl1 = fth->bc_coeffs->rcodcl1;
-  cs_real_t *th_rcodcl2 = fth->bc_coeffs->rcodcl2;
   cs_real_t *th_rcodcl3 = fth->bc_coeffs->rcodcl3;
 
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {

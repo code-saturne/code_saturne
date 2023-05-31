@@ -47,7 +47,6 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/turb \
 -I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/rayt \
--I$(top_srcdir)/src/darc \
 -I$(top_srcdir)/src/meg \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)

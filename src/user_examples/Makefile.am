@@ -41,7 +41,6 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/cogz \
 -I$(top_srcdir)/src/comb \
 -I$(top_srcdir)/src/ctwr \
--I$(top_srcdir)/src/darc \
 -I$(top_srcdir)/src/elec \
 -I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/meg \

@@ -155,6 +155,8 @@ _parse_line(char          *line,
   return tokens;
 }
 
+#if 0
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Get the i-th token of a given line.
@@ -203,6 +205,8 @@ _get_token_from_line(char    *line,
 
   return retval;
 }
+
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!

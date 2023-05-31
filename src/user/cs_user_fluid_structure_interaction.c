@@ -169,7 +169,7 @@ cs_user_fsi_structure_values(int                    n_structs,
  */
 /*----------------------------------------------------------------------------*/
 
-#pragma weak cs_user_fsi_external_structure_num
+#pragma weak cs_user_fsi_structure_num
 void
 cs_user_fsi_structure_num(cs_domain_t  *domain,
                           int           structure_num[])

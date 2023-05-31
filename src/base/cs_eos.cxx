@@ -201,7 +201,7 @@ cs_phys_prop_eos(cs_phys_prop_thermo_plane_type_t   thermo_plane,
   }
 
   NEPTUNE::EOS_Fields output(1);
-  NEPTUNE::EOS_Field *eos_o;
+  NEPTUNE::EOS_Field *eos_o = nullptr;
 
   switch (property) {
     case CS_PHYS_PROP_PRESSURE:
