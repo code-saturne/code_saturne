@@ -302,7 +302,7 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
 static void
 _solve_steady_state_domain(cs_domain_t  *domain)
 {
-  if (domain->cdo_context->mode == CS_DOMAIN_CDO_MODE_ONLY) {
+  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY) {
 
     /* Otherwise log is called from the FORTRAN part */
 
@@ -683,20 +683,20 @@ cs_f_cdo_solve_unsteady_state_domain(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the computational domain when CDO/HHO schemes are
- *         activated and cs_user_model() has been called.
- *         At this stage of the settings, mesh quantities and adjacencies are
- *         not defined. Only the major moddeling options are set. The related
- *         equations and main properties have been added.
+ * \brief Initialize the computational domain when CDO/HHO schemes are
+ *        activated and cs_user_model() has been called.
+ *        At this stage of the settings, mesh quantities and adjacencies are
+ *        not defined. Only the major moddeling options are set. The related
+ *        equations and main properties have been added.
  *
- * \param[in, out]  domain    pointer to a cs_domain_t structure
+ * \param[in, out] domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_initialize_setup(cs_domain_t   *domain)
 {
-  if (cs_domain_get_cdo_mode(domain) == CS_DOMAIN_CDO_MODE_OFF)
+  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_OFF)
     return;
 
   /* Timer statistics */
@@ -708,7 +708,7 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
 
   /* Store the fact that the CDO/HHO module is activated */
 
-  cs_domain_cdo_log(domain);
+  cs_param_cdo_log();
 
   /* A property can be called easily from everywhere:
    * cs_property_by_name("time_step")
@@ -749,14 +749,14 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build additional connectivities and quantities when CDO/HHO schemes
- *         are activated.
- *         Finalize the setup and from the settings, define the structures
- *         related to equations and modules
+ * \brief Build additional connectivities and quantities when CDO/HHO schemes
+ *        are activated.
+ *        Finalize the setup and from the settings, define the structures
+ *        related to equations and modules
  *
- * \param[in, out]  domain   pointer to a cs_domain_t structure
- * \param[in, out]  m        pointer to a cs_mesh_t struct.
- * \param[in]       mq       pointer to a cs_quantities_t struct.
+ * \param[in, out] domain   pointer to a cs_domain_t structure
+ * \param[in, out] m        pointer to a cs_mesh_t struct.
+ * \param[in]      mq       pointer to a cs_quantities_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -772,7 +772,7 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
   domain->mesh = m;
   domain->mesh_quantities = mq;
 
-  if (cs_domain_get_cdo_mode(domain) == CS_DOMAIN_CDO_MODE_OFF)
+  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_OFF)
     return;
 
   cs_timer_t  t0 = cs_timer_time();
@@ -888,17 +888,17 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Free all structures allocated during the resolution of CDO/HHO
- *          schemes
+ * \brief Free all structures allocated during the resolution of CDO/HHO
+ *        schemes
  *
- * \param[in, out]  domain   pointer to a cs_domain_t structure
+ * \param[in, out] domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_finalize(cs_domain_t    *domain)
 {
-  if (cs_domain_get_cdo_mode(domain) == CS_DOMAIN_CDO_MODE_OFF)
+  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_OFF)
     return;
 
   /* Timer statistics */
@@ -984,7 +984,7 @@ cs_cdo_finalize(cs_domain_t    *domain)
 
   /* Set flag to OFF */
 
-  cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_OFF);
+  cs_param_cdo_mode_set(CS_PARAM_CDO_MODE_OFF);
 
   cs_log_printf(CS_LOG_DEFAULT,
                 "\n  Finalize and free CDO-related structures.\n");
@@ -1002,12 +1002,12 @@ cs_cdo_finalize(cs_domain_t    *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if CDO has been initialized.
+ * \brief Check if CDO has been initialized.
  *
- * \param[in, out]  setup       indicator if setup has been initialized,
- *                              or NULL if not queried
- * \param[in, out]  structures  indicator if structures have been initialized,
- *                              or NULL if not queried
+ * \param[in, out] setup       indicator if setup has been initialized,
+ *                             or NULL if not queried
+ * \param[in, out] structures  indicator if structures have been initialized,
+ *                             or NULL if not queried
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1024,20 +1024,19 @@ cs_cdo_is_initialized(bool  *setup,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Main program for running a simulation with CDO kernel
+ * \brief Main program for running a simulation with CDO kernel
  *
- * \param[in, out]  domain   pointer to a cs_domain_t structure
+ * \param[in, out] domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_main(cs_domain_t   *domain)
 {
-  if (cs_domain_get_cdo_mode(domain) == CS_DOMAIN_CDO_MODE_OFF)
+  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_OFF)
     return;
   if (cs_equation_get_n_equations() < 1) {
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "\n  No equation to solve. Immediate exit\n");
+    cs_log_printf(CS_LOG_DEFAULT, "\n  No equation to solve. Immediate exit\n");
     return;
   }
 

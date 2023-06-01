@@ -54,13 +54,13 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the computational domain when CDO/HHO schemes are
- *         activated and cs_user_model() has been called
- *         At this stage of the settings, mesh quantities and adjacencies are
- *         not defined. Only the major moddeling options are set. The related
- *         equations and main properties have been added.
+ * \brief Initialize the computational domain when CDO/HHO schemes are
+ *        activated and cs_user_model() has been called
+ *        At this stage of the settings, mesh quantities and adjacencies are
+ *        not defined. Only the major moddeling options are set. The related
+ *        equations and main properties have been added.
  *
- * \param[in, out]  domain    pointer to a cs_domain_t structure
+ * \param[in, out] domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -69,14 +69,14 @@ cs_cdo_initialize_setup(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build additional connectivities and quantities when CDO/HHO schemes
- *         are activated.
- *         Finalize the setup and from the settings, define the structures
- *         related to equations and modules
+ * \brief Build additional connectivities and quantities when CDO/HHO schemes
+ *        are activated.
+ *        Finalize the setup and from the settings, define the structures
+ *        related to equations and modules
  *
- * \param[in, out]  domain   pointer to a cs_domain_t structure
- * \param[in, out]  m        pointer to a cs_mesh_t struct.
- * \param[in]       mq       pointer to a cs_quantities_t struct.
+ * \param[in, out] domain   pointer to a cs_domain_t structure
+ * \param[in, out] m        pointer to a cs_mesh_t struct.
+ * \param[in]      mq       pointer to a cs_quantities_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -87,10 +87,10 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Free all structures allocated during the resolution of CDO/HHO
- *          schemes
+ * \brief Free all structures allocated during the resolution of CDO/HHO
+ *        schemes
  *
- * \param[in, out]  domain   pointer to a cs_domain_t structure
+ * \param[in, out] domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -99,12 +99,12 @@ cs_cdo_finalize(cs_domain_t    *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if CDO has been initialized.
+ * \brief Check if CDO has been initialized.
  *
- * \param[in, out]  setup       indicator if setup has been initialized,
- *                              or NULL if not queried
- * \param[in, out]  structures  indicator if structures have been initialized,
- *                              or NULL if not queried
+ * \param[in, out] setup       indicator if setup has been initialized,
+ *                             or NULL if not queried
+ * \param[in, out] structures  indicator if structures have been initialized,
+ *                             or NULL if not queried
  */
 /*----------------------------------------------------------------------------*/
 
@@ -114,9 +114,9 @@ cs_cdo_is_initialized(bool  *setup,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Main program for running a simulation with the CDO kernel
+ * \brief Main program for running a simulation with the CDO kernel
  *
- * \param[in, out]  domain   pointer to a cs_domain_t structure
+ * \param[in, out] domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 

@@ -1,5 +1,6 @@
 /*============================================================================
- * Manage a computational domain within the CDO framework
+ * Manage a computational domain
+ *  - Mesh quantities and connectivities
  *  - Properties and advection fields attached to this domain
  *  - Equations to solve on this domain
  *============================================================================*/
@@ -95,28 +96,9 @@ cs_domain_t  *cs_glob_domain = NULL; /* Pointer to the main computational
  * Local variables
  *============================================================================*/
 
-static const char _err_empty_domain[] =
-  " Stop setting an empty cs_domain_t structure.\n"
-  " Please check your settings.\n";
-
 static double  cs_domain_kahan_time_compensation = 0.0;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Set the CDO mode in the Fortran part
- *
- * parameters:
- *   mode <-- -1: no CDO, 1: with CDO, 2: CDO only
- *----------------------------------------------------------------------------*/
-
-extern void
-cs_f_set_cdo_mode(int  mode);
 
 /*============================================================================
  * Private function defintitions
@@ -146,28 +128,25 @@ _set_to_unknown(void)
 /*!
  * \brief Create the context for CDO/HHO schemes
  *
- * \param[in] cdo_mode         type of activation for the CDO/HHO module
- *
  * \return a pointer to a new allocated cs_domain_cdo_context_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_domain_cdo_context_t *
-_create_cdo_context(int     cdo_mode)
+_create_cdo_context(void)
 {
   cs_domain_cdo_context_t  *cc = NULL;
 
   BFT_MALLOC(cc, 1, cs_domain_cdo_context_t);
 
-  cc->mode = cdo_mode;
+  /* Metadata related to each family of schemes. By default, not used */
 
-  /* Metadata related to each family of schemes */
-
-  cc->vb_scheme_flag = 0;
+  cc->vb_scheme_flag  = 0;
   cc->vcb_scheme_flag = 0;
-  cc->eb_scheme_flag = 0;
-  cc->fb_scheme_flag = 0;
-  cc->cb_scheme_flag = 0;
+  cc->eb_scheme_flag  = 0;
+  cc->fb_scheme_flag  = 0;
+  cc->cb_scheme_flag  = 0;
+
   cc->hho_scheme_flag = 0;
 
   return cc;
@@ -273,10 +252,9 @@ cs_domain_create(void)
   domain->output_nt = -1;
   domain->verbosity = 1;
 
-  /* By default: CDO-HHO schemes are not activated */
+  /* By default: CDO/HHO schemes are not activated (see cs_param_cdo.c) */
 
-  domain->cdo_context = NULL;
-  cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_OFF);
+  domain->cdo_context = _create_cdo_context();
 
   /* Monitoring */
 
@@ -331,7 +309,7 @@ cs_domain_free(cs_domain_t   **p_domain)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set the global variable storing the mode of activation to apply to
- *        CDO/HHO schemes
+ *        CDO/HHO schemes. Deprecated way to set the CDO mode.
  *
  * \param[in, out] domain    pointer to a cs_domain_t structure
  * \param[in]      mode      type of activation for the CDO/HHO module
@@ -342,21 +320,14 @@ void
 cs_domain_set_cdo_mode(cs_domain_t    *domain,
                        int             mode)
 {
-  if (domain == NULL)
-    bft_error(__FILE__, __LINE__, 0, "%s: domain is not allocated.",
-              __func__);
-
-  if (domain->cdo_context == NULL)
-    domain->cdo_context = _create_cdo_context(mode);
-  else
-    domain->cdo_context->mode = mode;
-
-  cs_f_set_cdo_mode(mode);
+  CS_NO_WARN_IF_UNUSED(domain);
+  cs_param_cdo_mode_set(mode);  /* New way */
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Get the mode of activation for the CDO/HHO schemes
+ * \brief Get the mode of activation for the CDO/HHO schemes. Deprecated way
+ *        to retrieve the CDO mode.
  *
  * \param[in] domain       pointer to a cs_domain_t structure
  *
@@ -367,12 +338,8 @@ cs_domain_set_cdo_mode(cs_domain_t    *domain,
 int
 cs_domain_get_cdo_mode(const cs_domain_t   *domain)
 {
-  if (domain == NULL)
-    return CS_DOMAIN_CDO_MODE_OFF;
-  if (domain->cdo_context == NULL)
-    return CS_DOMAIN_CDO_MODE_OFF;
-
-  return domain->cdo_context->mode;
+  CS_NO_WARN_IF_UNUSED(domain);
+  return cs_param_cdo_mode_get();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -518,46 +485,6 @@ cs_domain_increment_time(cs_domain_t  *domain)
 
   cs_domain_kahan_time_compensation = (t - ts->t_cur) - z;
   ts->t_cur = t;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Print a welcome message indicating which mode of CDO is activated
- *
- * \param[in] domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_cdo_log(const cs_domain_t   *domain)
-{
-  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
-
-  int  cdo_mode = CS_DOMAIN_CDO_MODE_OFF;
-  if (domain->cdo_context != NULL)
-    cdo_mode = domain->cdo_context->mode;
-
-  switch (cdo_mode) {
-
-  case CS_DOMAIN_CDO_MODE_ONLY:
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "\n -msg- CDO/HHO module is activated *** Experimental ***"
-                  "\n -msg- CDO/HHO module is in a stand-alone mode\n");
-    break;
-
-  case CS_DOMAIN_CDO_MODE_WITH_FV:
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "\n -msg- CDO/HHO module is activated *** Experimental ***"
-                  "\n -msg- CDO/HHO module with FV schemes mode\n");
-    break;
-
-  default:
-  case CS_DOMAIN_CDO_MODE_OFF:
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "\n -msg- CDO/HHO module is not activated\n");
-    break;
-
-  } /* Switch on CDO mode */
 }
 
 /*----------------------------------------------------------------------------*/

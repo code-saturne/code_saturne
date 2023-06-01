@@ -452,8 +452,7 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
 
   /* Local activation of CDO module if required */
 
-  cs_domain_t  *domain = cs_glob_domain;
-  cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_WITH_FV);
+  cs_param_cdo_mode_set(CS_PARAM_CDO_MODE_WITH_FV);
 
   cs_mesh_deform_define_dirichlet_bc_zones(1, z_id);
 
@@ -471,6 +470,7 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
                                      fixed_vertex_ids,
                                      NULL);
 
+  cs_domain_t  *domain = cs_glob_domain;
   if (pre_init_setup == false)
     cs_cdo_initialize_setup(domain);
 

@@ -162,8 +162,7 @@ cs_user_model(void)
 
   /* Activate CDO/HHO module so that main additional structure are built */
 
-  cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_ONLY);
-
+  cs_param_cdo_mode_set(CS_PARAM_CDO_MODE_ONLY);
 
   /* =================================
      Define the groundwater flow model

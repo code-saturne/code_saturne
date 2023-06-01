@@ -571,11 +571,9 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
   }
   else {
 
-    cs_domain_cdo_context_t  *cdo = domain->cdo_context;
+    /* Switch off the turbulence modelling if in CDO mode only */
 
-    /* Switch off turbulence modelling if in CDO mode only */
-
-    if (cdo->mode == CS_DOMAIN_CDO_MODE_ONLY) {
+    if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY) {
 
       cs_turb_model_t  *turb = cs_get_glob_turb_model();
 
@@ -868,8 +866,7 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
 
   /* Last word for the user function */
 
-  int  cdo_mode = cs_domain_get_cdo_mode(domain);
-  if (cdo_mode == CS_DOMAIN_CDO_MODE_ONLY)
+  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY)
     cs_user_initialization(domain);
 }
 
@@ -894,21 +891,21 @@ cs_domain_setup_log(const cs_domain_t   *domain)
   cs_log_printf(CS_LOG_SETUP, "\nSummary of the CDO domain settings\n");
   cs_log_printf(CS_LOG_SETUP, "%s\n", cs_sep_h1);
 
-  int  cdo_mode = cs_domain_get_cdo_mode(domain);
-  switch (cdo_mode) {
+  switch (cs_glob_param_cdo_mode) {
 
-  case CS_DOMAIN_CDO_MODE_OFF:
+  case CS_PARAM_CDO_MODE_OFF:
     cs_log_printf(CS_LOG_SETUP, " * CDO mode: **off**\n");
     return;
-  case CS_DOMAIN_CDO_MODE_WITH_FV:
+  case CS_PARAM_CDO_MODE_WITH_FV:
     cs_log_printf(CS_LOG_SETUP, " * CDO mode: **on with legacy FV**\n");
     break;
-  case CS_DOMAIN_CDO_MODE_ONLY:
+  case CS_PARAM_CDO_MODE_ONLY:
     cs_log_printf(CS_LOG_SETUP, " * CDO mode: **on, stand-alone**\n");
     break;
 
   default:
     break; /* Do nothing */
+
   }
 
   /* CDO main structure count */
@@ -964,7 +961,7 @@ cs_domain_setup_log(const cs_domain_t   *domain)
     else if (domain->time_options.idtvar == 1)
       cs_log_printf(CS_LOG_SETUP, " * Time step *variable in time*\n\n");
     else {
-      if (cdo_mode != CS_DOMAIN_CDO_MODE_WITH_FV)
+      if (cs_glob_param_cdo_mode != CS_DOMAIN_CDO_MODE_WITH_FV)
         bft_error(__FILE__, __LINE__, 0,
                   _(" Invalid idtvar value for the CDO module.\n"));
     }

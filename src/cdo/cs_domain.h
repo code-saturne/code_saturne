@@ -53,7 +53,8 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-/* Flag related to the activation (or not) of the CDO schemes */
+/* Flag related to the activation (or not) of the CDO/HHO schemes.
+ * Deprecated way to activate CDO/HHO schemes. */
 
 #define CS_DOMAIN_CDO_MODE_OFF     -1  /* CDO schemes are not used */
 #define CS_DOMAIN_CDO_MODE_WITH_FV  1  /* CDO and legacy FV schemes are used */
@@ -116,10 +117,6 @@ typedef enum {
  */
 
 typedef struct {
-
-  /* Mode for CDO: activated, switched off... */
-
-  int                       mode;
 
   /* Flag to know if scalar or vector equations are requested and which kind
      of numerical schemes is requested to solve these equations */
@@ -249,7 +246,7 @@ cs_domain_free(cs_domain_t   **p_domain);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set the global variable storing the mode of activation to apply to
- *        CDO/HHO schemes
+ *        CDO/HHO schemes. Deprecated way to set the CDO mode.
  *
  * \param[in, out] domain    pointer to a cs_domain_t structure
  * \param[in]      mode      type of activation for the CDO/HHO module
@@ -262,7 +259,8 @@ cs_domain_set_cdo_mode(cs_domain_t    *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Get the mode of activation for the CDO/HHO schemes
+ * \brief Get the mode of activation for the CDO/HHO schemes. Deprecated way
+ *        to retrieve the CDO mode.
  *
  * \param[in] domain       pointer to a cs_domain_t structure
  *
@@ -337,17 +335,6 @@ cs_domain_needs_log(const cs_domain_t      *domain,
 
 void
 cs_domain_increment_time(cs_domain_t  *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Print a welcome message indicating which mode of CDO is activated
- *
- * \param[in] domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_cdo_log(const cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 
