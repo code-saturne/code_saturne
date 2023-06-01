@@ -483,8 +483,6 @@ static cs_equation_param_t _equation_param_default
    .enforcement_params = NULL,
 
    .sles_param = NULL,
-
-   .omp_assembly_choice = CS_PARAM_ASSEMBLE_OMP_CRITICAL
   };
 
 /* Space discretisation options structure and associated pointer */

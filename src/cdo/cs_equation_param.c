@@ -677,18 +677,6 @@ _set_key(cs_equation_param_t   *eqp,
     eqp->sles_param->restart = atoi(keyval);
     break;
 
-  case CS_EQKEY_OMP_ASSEMBLY_STRATEGY:
-    if (strcmp(keyval, "critical") == 0)
-      eqp->omp_assembly_choice = CS_PARAM_ASSEMBLE_OMP_CRITICAL;
-    else if (strcmp(keyval, "atomic") == 0)
-      eqp->omp_assembly_choice = CS_PARAM_ASSEMBLE_OMP_ATOMIC;
-    else {
-      const char *_val = keyval;
-      bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, eqname, _val, "CS_EQKEY_OMP_ASSEMBLY_STRATEGY");
-    }
-    break;
-
   case CS_EQKEY_PRECOND:
     if (strcmp(keyval, "none") == 0) {
       eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
@@ -1474,10 +1462,6 @@ cs_equation_param_create(const char            *name,
     .beta = 1.0,    /* No damping by default */
     .dp_type = CS_PARAM_DOTPROD_EUCLIDEAN };
 
-  /* Settings for the OpenMP strategy */
-
-  eqp->omp_assembly_choice = CS_PARAM_ASSEMBLE_OMP_CRITICAL;
-
   return eqp;
 }
 
@@ -1655,10 +1639,6 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   }
 
   cs_param_sles_saddle_copy(ref->saddle_param, dst->saddle_param);
-
-  /* Settings related to the performance */
-
-  dst->omp_assembly_choice = ref->omp_assembly_choice;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2010,15 +1990,6 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
                 eqname, eqp->space_poly_degree);
   cs_log_printf(CS_LOG_SETUP, "  * %s | Verbosity:          %d\n",
                 eqname, eqp->verbosity);
-
-  if (cs_glob_n_threads > 1) {
-    if (eqp->omp_assembly_choice == CS_PARAM_ASSEMBLE_OMP_CRITICAL)
-      cs_log_printf(CS_LOG_SETUP, "  * %s | OpenMP.Assembly.Choice:  %s\n",
-                    eqname, "critical");
-    else if (eqp->omp_assembly_choice == CS_PARAM_ASSEMBLE_OMP_ATOMIC)
-      cs_log_printf(CS_LOG_SETUP, "  * %s | OpenMP.Assembly.Choice:  %s\n",
-                    eqname, "atomic");
-  }
 
   /* Boundary conditions */
 

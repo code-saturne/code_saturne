@@ -788,17 +788,6 @@ typedef struct {
   cs_real_t                   incremental_relax_factor;
   cs_iter_algo_param_aa_t     incremental_anderson_param;
 
-  /*!
-   * @}
-   * @name Settings related to the optimization of the performance
-   * @{
-   *
-   * \var omp_assembly_choice
-   * When OpenMP is active, choice of parallel reduction for the assembly
-   */
-
-  cs_param_assemble_omp_strategy_t      omp_assembly_choice;
-
   /*! @} */
 
 } cs_equation_param_t;
@@ -1074,11 +1063,6 @@ typedef struct {
  * Relative tolerance factor for stopping the iterative process during the
  * iterative resolution of a linear system related to an equation.\n
  * - Example: "1e-10"
- *
- * \var CS_EQKEY_OMP_ASSEMBLY_STRATEGY
- * Choice of the way to perform the assembly when OpenMP is active
- * Available choices are:
- * - "atomic" or "critical"
  *
  * \var CS_EQKEY_PRECOND
  * Specify the preconditioner associated to an iterative solver. Be careful

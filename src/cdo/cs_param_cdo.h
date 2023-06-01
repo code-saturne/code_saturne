@@ -102,17 +102,6 @@ typedef enum {
 
 } cs_param_cdo_mode_t;
 
-/* OpenMP STRATEGY FOR THE ASSEMBLY STEP */
-/* ===================================== */
-
-typedef enum {
-
-  CS_PARAM_ASSEMBLE_OMP_ATOMIC,
-  CS_PARAM_ASSEMBLE_OMP_CRITICAL,
-  CS_PARAM_ASSEMBLE_OMP_N_STRATEGIES
-
-} cs_param_assemble_omp_strategy_t;
-
 /*============================================================================
  * Global variables
  *============================================================================*/
