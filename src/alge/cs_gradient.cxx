@@ -9602,6 +9602,9 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
 
   bool update_stats = true;
 
+  if (hyd_p_flag == 2)
+    hyd_p_flag = 0;
+
   if (hyd_p_flag == 1) {
     if (cs_glob_mesh->halo != NULL) {
       cs_halo_sync_var_strided(cs_glob_mesh->halo, halo_type,
