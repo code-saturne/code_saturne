@@ -82,9 +82,11 @@ cs_user_model(void)
 {
   /*! [param_cdo_laplacian_init] */
   {
-    cs_domain_t  *domain = cs_glob_domain;
+    /* Activate CDO/HHO mode */
 
-    cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_ONLY);
+    cs_param_cdo_mode_set(CS_PARAM_CDO_MODE_ONLY);
+
+    /* Add a user-defined equation */
 
     cs_equation_add_user("Laplacian", /* equation name */
                          "potential", /* associated variable field name */

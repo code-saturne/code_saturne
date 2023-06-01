@@ -173,9 +173,7 @@ cs_user_model(void)
 
   /*! [param_cdo_activation] */
   {
-    cs_domain_t  *domain = cs_glob_domain;
-
-    cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_ONLY);
+    cs_param_cdo_mode_set(CS_PARAM_CDO_MODE_ONLY);
   }
   /*! [param_cdo_activation] */
 

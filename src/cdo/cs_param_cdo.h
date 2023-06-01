@@ -2,7 +2,7 @@
 #define __CS_PARAM_CDO_H__
 
 /*============================================================================
- * Manage the definition/setting of a computation
+ * High-level metadata related to CDO/HHO schemes
  *============================================================================*/
 
 /*
@@ -77,7 +77,10 @@ BEGIN_C_DECLS
 #define CS_BND_FACES   1        /* Boundary faces */
 #define CS_INT_FACES   2        /* Interior faces */
 
-/* Number of DoFs on faces and cells according to the polynomial space */
+/* HHO specific part:
+ *
+ * Number of DoFs on faces and cells according to the polynomial space
+ */
 
 #define CS_N_DOFS_FACE_0TH  1
 #define CS_N_DOFS_FACE_1ST  3
@@ -90,6 +93,14 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
+
+typedef enum {
+
+  CS_PARAM_CDO_MODE_OFF     = -1,  /* CDO schemes are not used */
+  CS_PARAM_CDO_MODE_WITH_FV =  1,  /* CDO and legacy FV schemes are used */
+  CS_PARAM_CDO_MODE_ONLY    =  2   /* Only CDO schemes are used */
+
+} cs_param_cdo_mode_t;
 
 /* OpenMP STRATEGY FOR THE ASSEMBLY STEP */
 /* ===================================== */
@@ -106,10 +117,41 @@ typedef enum {
  * Global variables
  *============================================================================*/
 
+extern cs_param_cdo_mode_t  cs_glob_param_cdo_mode;
 
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the global variable storing the mode of activation to apply to
+ *        CDO/HHO schemes. Deprecated way to set the CDO mode.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_cdo_mode_set(cs_param_cdo_mode_t   mode);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the mode of activation for the CDO/HHO schemes.
+ *
+ * \return the mode of activation for the CDO/HHO module
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_cdo_mode_t
+cs_param_cdo_mode_get(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print a welcome message indicating what is the current CDO status
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_cdo_log(void);
 
 /*----------------------------------------------------------------------------*/
 

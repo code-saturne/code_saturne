@@ -207,6 +207,7 @@ cs_maxwell.c \
 cs_mesh_deform.c \
 cs_navsto_coupling.c \
 cs_navsto_system.c \
+cs_param_cdo.c \
 cs_property.c \
 cs_quadrature.c \
 cs_reco.c \

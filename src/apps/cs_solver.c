@@ -454,7 +454,7 @@ _run(void)
 
       if (cs_user_solver_set() == 0) {
 
-        if (cs_domain_get_cdo_mode(cs_glob_domain) == CS_DOMAIN_CDO_MODE_ONLY) {
+        if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY) {
 
           /* Only C language is called within CDO */
 
@@ -774,4 +774,3 @@ main(int    argc,
 }
 
 /*----------------------------------------------------------------------------*/
-

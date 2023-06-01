@@ -1522,7 +1522,7 @@ cs_ale_activate(void)
 
   cs_ale_active = true;
 
-  cs_domain_set_cdo_mode(cs_glob_domain, CS_DOMAIN_CDO_MODE_WITH_FV);
+  cs_param_cdo_mode_set(CS_PARAM_CDO_MODE_WITH_FV);
 
   cs_equation_t  *eq =
     cs_equation_add("mesh_velocity", /* equation name */

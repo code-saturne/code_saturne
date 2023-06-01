@@ -304,17 +304,17 @@ get_ic(cs_real_t           time,
 void
 cs_user_model(void)
 {
-  cs_domain_t  *domain = cs_glob_domain;
-
   /* ===================
      Activate CDO module
      =================== */
 
-  cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_ONLY);
+  cs_param_cdo_mode_set(CS_PARAM_CDO_MODE_ONLY);
 
   /* ======================================
      Boundaries of the computational domain
      ====================================== */
+
+  cs_domain_t  *domain = cs_glob_domain;
 
   /* Choice of the default type of boundary.
      A valid choice is either CS_BOUNDARY_WALL or CS_BOUNDARY_SYMMETRY */

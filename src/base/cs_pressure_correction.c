@@ -3115,7 +3115,7 @@ cs_pressure_correction_cdo_activate(void)
 
   /* Activate the CDO module along with the FV framework */
 
-  cs_domain_set_cdo_mode(cs_glob_domain, CS_DOMAIN_CDO_MODE_WITH_FV);
+  cs_param_cdo_mode_set(CS_PARAM_CDO_MODE_WITH_FV);
 
   /* Add a new equation related to the pressure correction with a variable
    * field named "pressure_increment" */
