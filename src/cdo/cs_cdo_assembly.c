@@ -1341,16 +1341,16 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t                   *m,
   for (int i = 0; i < m->n_cols; i++)
     row->col_g_id[i] = rset->g_id[dof_ids[i]];
 
-  if (m->n_rows < CS_CDO_ASSEMBLE_BUF_SIZE) {
+  if (m->n_rows < CS_CDO_ASSEMBLY_BUFSIZE) {
 
-    cs_gnum_t  r_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
-    cs_gnum_t  c_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
-    cs_real_t  values[CS_CDO_ASSEMBLE_BUF_SIZE];
+    cs_gnum_t  r_gids[CS_CDO_ASSEMBLY_BUFSIZE];
+    cs_gnum_t  c_gids[CS_CDO_ASSEMBLY_BUFSIZE];
+    cs_real_t  values[CS_CDO_ASSEMBLY_BUFSIZE];
 
 #if defined(DEBUG) && !defined(NDEBUG)
-    memset(r_gids, 0, CS_CDO_ASSEMBLE_BUF_SIZE*sizeof(cs_gnum_t));
-    memset(c_gids, 0, CS_CDO_ASSEMBLE_BUF_SIZE*sizeof(cs_gnum_t));
-    memset(values, 0, CS_CDO_ASSEMBLE_BUF_SIZE*sizeof(cs_real_t));
+    memset(r_gids, 0, CS_CDO_ASSEMBLY_BUFSIZE*sizeof(cs_gnum_t));
+    memset(c_gids, 0, CS_CDO_ASSEMBLY_BUFSIZE*sizeof(cs_gnum_t));
+    memset(values, 0, CS_CDO_ASSEMBLY_BUFSIZE*sizeof(cs_real_t));
 #endif
 
     /* Diagonal entries */
@@ -1370,9 +1370,9 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t                   *m,
     bufsize = 0;
 
 #if defined(DEBUG) && !defined(NDEBUG)
-    memset(r_gids, 0, CS_CDO_ASSEMBLE_BUF_SIZE*sizeof(cs_gnum_t));
-    memset(c_gids, 0, CS_CDO_ASSEMBLE_BUF_SIZE*sizeof(cs_gnum_t));
-    memset(values, 0, CS_CDO_ASSEMBLE_BUF_SIZE*sizeof(cs_real_t));
+    memset(r_gids, 0, CS_CDO_ASSEMBLY_BUFSIZE*sizeof(cs_gnum_t));
+    memset(c_gids, 0, CS_CDO_ASSEMBLY_BUFSIZE*sizeof(cs_gnum_t));
+    memset(values, 0, CS_CDO_ASSEMBLY_BUFSIZE*sizeof(cs_real_t));
 #endif
 
     /* Extra-diagonal entries */
@@ -1381,7 +1381,7 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t                   *m,
 
       const cs_gnum_t r_gid = row->col_g_id[r];
 
-      if (bufsize + m->n_cols - 1 > CS_CDO_ASSEMBLE_BUF_SIZE) {
+      if (bufsize + m->n_cols - 1 > CS_CDO_ASSEMBLY_BUFSIZE) {
 
 #       pragma omp critical
         cs_matrix_assembler_values_add_g(mav, bufsize,
@@ -1389,9 +1389,9 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t                   *m,
         bufsize = 0;
 
 #if defined(DEBUG) && !defined(NDEBUG)
-        memset(r_gids, 0, CS_CDO_ASSEMBLE_BUF_SIZE*sizeof(cs_gnum_t));
-        memset(c_gids, 0, CS_CDO_ASSEMBLE_BUF_SIZE*sizeof(cs_gnum_t));
-        memset(values, 0, CS_CDO_ASSEMBLE_BUF_SIZE*sizeof(cs_real_t));
+        memset(r_gids, 0, CS_CDO_ASSEMBLY_BUFSIZE*sizeof(cs_gnum_t));
+        memset(c_gids, 0, CS_CDO_ASSEMBLY_BUFSIZE*sizeof(cs_gnum_t));
+        memset(values, 0, CS_CDO_ASSEMBLY_BUFSIZE*sizeof(cs_real_t));
 #endif
 
       }
@@ -1527,14 +1527,14 @@ cs_cdo_assembly_matrix_e33_generic(const cs_sdm_t                  *m,
   assert(m->n_rows == 3*bd->n_row_blocks);
   assert(m->n_cols == 3*bd->n_col_blocks);
 
-  cs_gnum_t  r_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
+  cs_gnum_t  r_gids[CS_CDO_ASSEMBLY_BUFSIZE];
   cs_real_t  *xyz_row[3] = {row->expval,
                             row->expval + m->n_rows,
                             row->expval + 2*m->n_rows };
 
-  if (CS_CDO_ASSEMBLE_BUF_SIZE < m->n_rows)
+  if (CS_CDO_ASSEMBLY_BUFSIZE < m->n_rows)
     bft_error(__FILE__, __LINE__, 0,
-              "%s: Increase the size of CS_CDO_ASSEMBLE_BUF_SIZE\n",
+              "%s: Increase the size of CS_CDO_ASSEMBLY_BUFSIZE\n",
               __func__);
 
   /* Switch to the global numbering */

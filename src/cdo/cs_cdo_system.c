@@ -43,6 +43,7 @@
 #include "cs_array.h"
 #include "cs_flag.h"
 #include "cs_matrix_priv.h"
+#include "cs_param_cdo.h"
 
 #if defined(HAVE_HYPRE)
 #include "cs_matrix_hypre.h"

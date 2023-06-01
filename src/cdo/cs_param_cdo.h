@@ -60,12 +60,6 @@ BEGIN_C_DECLS
   #define CS_CDO_OMP_ASSERT(e)  assert(e)
 #endif
 
-/* Size of the buffer used to collect global ids for rows and columns
-   when assembling the values in the global matrix from the local cellwise
-   matrices */
-
-#define CS_CDO_ASSEMBLE_BUF_SIZE  200
-
 /* The following limitation only results from an optimization in the size of
    the bit mask (can be changed if needed by changing the definition of
    the type cs_mask_t)

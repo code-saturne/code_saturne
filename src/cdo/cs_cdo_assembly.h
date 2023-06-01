@@ -33,7 +33,6 @@
 
 #include "cs_matrix.h"
 #include "cs_matrix_assembler.h"
-#include "cs_param_cdo.h"
 #include "cs_param_types.h"
 #include "cs_range_set.h"
 #include "cs_sdm.h"
@@ -45,6 +44,12 @@ BEGIN_C_DECLS
 /*============================================================================
  * Macro definitions
  *============================================================================*/
+
+/* Size of the buffer used to collect global ids for rows and columns when
+ * assembling the values in the global matrix from the local cellwise matrices
+ */
+
+#define CS_CDO_ASSEMBLY_BUFSIZE  200
 
 /*============================================================================
  * Type definitions

@@ -843,9 +843,9 @@ _full_assembly(const cs_cell_sys_t              *csys,
   /* 1. Matrix assembly
    * ================== */
 
-  cs_gnum_t  r_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
-  cs_gnum_t  c_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
-  cs_real_t  values[CS_CDO_ASSEMBLE_BUF_SIZE];
+  cs_gnum_t  r_gids[CS_CDO_ASSEMBLY_BUFSIZE];
+  cs_gnum_t  c_gids[CS_CDO_ASSEMBLY_BUFSIZE];
+  cs_real_t  values[CS_CDO_ASSEMBLY_BUFSIZE];
 
   const cs_gnum_t  p_gid = rset->g_id[3*n_faces + cm->c_id];
 
@@ -888,7 +888,7 @@ _full_assembly(const cs_cell_sys_t              *csys,
           values[bufsize] = mIJ->val[3*ii + jj];
           bufsize += 1;
 
-          if (bufsize == CS_CDO_ASSEMBLE_BUF_SIZE) {
+          if (bufsize == CS_CDO_ASSEMBLY_BUFSIZE) {
 #           pragma omp critical
             cs_matrix_assembler_values_add_g(xb->mav, bufsize,
                                              r_gids, c_gids, values);
@@ -909,7 +909,7 @@ _full_assembly(const cs_cell_sys_t              *csys,
       values[bufsize] = nsb->div_op[3*bi+ii];
       bufsize += 1;
 
-      if (bufsize == CS_CDO_ASSEMBLE_BUF_SIZE) {
+      if (bufsize == CS_CDO_ASSEMBLY_BUFSIZE) {
 #       pragma omp critical
         cs_matrix_assembler_values_add_g(xb->mav, bufsize,
                                          r_gids, c_gids, values);
@@ -923,7 +923,7 @@ _full_assembly(const cs_cell_sys_t              *csys,
       values[bufsize] = nsb->div_op[3*bi+ii];
       bufsize += 1;
 
-      if (bufsize == CS_CDO_ASSEMBLE_BUF_SIZE) {
+      if (bufsize == CS_CDO_ASSEMBLY_BUFSIZE) {
 #       pragma omp critical
         cs_matrix_assembler_values_add_g(xb->mav, bufsize,
                                          r_gids, c_gids, values);
@@ -1016,9 +1016,9 @@ _solidification_full_assembly(const cs_cell_sys_t              *csys,
     const cs_lnum_t  n_faces = cs_shared_quant->n_faces;
     const cs_gnum_t  p_gid = rset->g_id[3*n_faces + cm->c_id];
 
-    cs_gnum_t  r_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
-    cs_gnum_t  c_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
-    cs_real_t  values[CS_CDO_ASSEMBLE_BUF_SIZE];
+    cs_gnum_t  r_gids[CS_CDO_ASSEMBLY_BUFSIZE];
+    cs_gnum_t  c_gids[CS_CDO_ASSEMBLY_BUFSIZE];
+    cs_real_t  values[CS_CDO_ASSEMBLY_BUFSIZE];
     int  bufsize = 0;
 
     for (int f = 0; f < cm->n_fc; f++) {
@@ -1050,7 +1050,7 @@ _solidification_full_assembly(const cs_cell_sys_t              *csys,
     values[bufsize] = 1;                  /* Set 1 on the diagonal */
     bufsize += 1;
 
-    assert(bufsize <= CS_CDO_ASSEMBLE_BUF_SIZE);
+    assert(bufsize <= CS_CDO_ASSEMBLY_BUFSIZE);
 
 #   pragma omp critical
     cs_matrix_assembler_values_add_g(xb->mav, bufsize, r_gids, c_gids, values);
