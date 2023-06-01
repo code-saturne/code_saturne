@@ -11076,7 +11076,7 @@ cs_face_diffusion_potential(const int                 f_id,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  if (imrgra < 0 || iphydp == 2)
+  if (imrgra < 0)
     imrgra = 0;
 
   cs_gradient_type_by_imrgra(imrgra,
