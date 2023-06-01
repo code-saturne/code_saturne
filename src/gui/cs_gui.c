@@ -5068,6 +5068,8 @@ cs_gui_internal_coupling(void)
 
   if (n_solid_zones < 1)
     return;
+  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY)
+    return;  /* The current rationale is not compatible with CDO up to now */
 
   cs_tree_node_t *node_int_cpl
     = cs_tree_get_node(cs_glob_tree, "thermophysical_models/internal_coupling");
