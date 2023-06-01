@@ -93,6 +93,24 @@ cs_atmo_aerosol_ssh_compute_numbers(cs_real_t*);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief This function takes as input
+ *    absolute temperature T
+ *    total pressure P
+ *    water mass fraction yw
+ * It computes
+ *    absolute temperature
+ *    relative humidity
+ * Then updates the humidity in SSH
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_aerosol_ssh_set_t_p_h(cs_real_t *T,
+                              cs_real_t *P,
+                              cs_real_t *yw);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This function uses the given array to update the aerosol
  *        concentrations and numbers in SSH-aerosol.
  */

@@ -627,7 +627,6 @@ cs_atmo_aerosol_ssh_set_t_p_h(cs_real_t *T,
 
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function uses the given array to update the aerosol
