@@ -41,12 +41,12 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-/* Specifications for OpenMP loops */
+/* Specifications for OpenMP loops/sections */
 
-#define CS_CDO_OMP_CHUNK_SIZE     128
-#define CS_CDO_OMP_SCHEDULE       schedule(static, CS_CDO_OMP_CHUNK_SIZE)
-#define CS_CDO_OMP_SYNC_SECTIONS  0 /* > 0 --> critical sections
-                                       otherwise atomic sections */
+#define CS_CDO_OMP_CHUNK_SIZE   128
+#define CS_CDO_OMP_SCHEDULE     schedule(static, CS_CDO_OMP_CHUNK_SIZE)
+#define CS_CDO_OMP_SYNC_MODE    0 /* > 0 --> critical sections otherwise
+                                   *         atomic sections is used */
 
 /* Avoid issues with assert in some OpenMp contructs using gcc 9 */
 

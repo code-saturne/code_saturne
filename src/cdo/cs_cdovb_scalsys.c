@@ -348,7 +348,7 @@ _svb_one_dblock_assemble(int                           row_id,
 
   cs_real_t  *rhs = sh->rhs + bi.n_elements * row_id;
 
-#if CS_CDO_OMP_SYNC_SECTIONS > 0
+#if CS_CDO_OMP_SYNC_MODE > 0
 # pragma omp critical
   {
     for (int v = 0; v < csys->n_dofs; v++)

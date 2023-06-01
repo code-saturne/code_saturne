@@ -731,7 +731,7 @@ _svcb_assemble(const cs_cell_sys_t        *csys,
 
   if (eqc->source_terms != NULL) {
 
-#if CS_CDO_OMP_SYNC_SECTIONS > 0
+#if CS_CDO_OMP_SYNC_MODE > 0
 #   pragma omp critical
     {
       for (int v = 0; v < csys->n_dofs; v++) {
@@ -752,12 +752,12 @@ _svcb_assemble(const cs_cell_sys_t        *csys,
       eqc->source_terms[v_id] += csys->source[v];
 
     } /* Loop on cell vertices */
-#endif  /* CS_CDO_OMP_SYNC_SECTIONS > 0 */
+#endif  /* CS_CDO_OMP_SYNC_MODE > 0 */
 
   }
   else { /* No source term */
 
-#if CS_CDO_OMP_SYNC_SECTIONS > 0
+#if CS_CDO_OMP_SYNC_MODE > 0
 #   pragma omp critical
     {
       for (int v = 0; v < csys->n_dofs; v++)
@@ -767,7 +767,7 @@ _svcb_assemble(const cs_cell_sys_t        *csys,
     for (int v = 0; v < csys->n_dofs; v++)
 #     pragma omp atomic
       rhs[csys->dof_ids[v]] += csys->rhs[v];
-#endif  /* CS_CDO_OMP_SYNC_SECTIONS > 0 */
+#endif  /* CS_CDO_OMP_SYNC_MODE > 0 */
 
   } /* No source term */
 

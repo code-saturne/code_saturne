@@ -427,7 +427,7 @@ _eb_assemble(const cs_cdoeb_vecteq_t      *eqc,
 
   /* RHS assembly */
 
-#if CS_CDO_OMP_SYNC_SECTIONS > 0
+#if CS_CDO_OMP_SYNC_MODE > 0
 # pragma omp critical
   {
     for (int e = 0; e < cm->n_ec; e++)

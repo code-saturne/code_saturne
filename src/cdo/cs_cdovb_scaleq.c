@@ -1162,7 +1162,7 @@ _svb_assemble(const cs_cell_sys_t        *csys,
 
   /* RHS assembly */
 
-#if CS_CDO_OMP_SYNC_SECTIONS > 0
+#if CS_CDO_OMP_SYNC_MODE > 0
   if (eqc->source_terms != NULL) {
 #   pragma omp critical
     {

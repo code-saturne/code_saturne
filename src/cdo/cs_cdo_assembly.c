@@ -1616,7 +1616,7 @@ cs_cdo_assembly_matrix_mpit(const cs_sdm_t                   *m,
 
       _set_col_idx_scal_locdist(ma, row);
 
-#if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
+#if CS_CDO_OMP_SYNC_MODE > 0 /* OpenMP with critical section */
       _add_scal_values_critical(row, mav->matrix);
 #else
       _add_scal_values_atomic(row, mav->matrix);
@@ -1723,7 +1723,7 @@ cs_cdo_assembly_matrix_seqt(const cs_sdm_t                  *m,
 
     _set_col_idx_scal_loc(ma, row);
 
-#if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
+#if CS_CDO_OMP_SYNC_MODE > 0 /* OpenMP with critical section */
     _add_scal_values_critical(row, mav->matrix);
 #else
     _add_scal_values_atomic(row, mav->matrix);
@@ -1894,7 +1894,7 @@ cs_cdo_assembly_matrix_sys_seqt(const cs_sdm_t                  *m,
 
       _set_col_idx_scal_loc(ma, row);
 
-#if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
+#if CS_CDO_OMP_SYNC_MODE > 0 /* OpenMP with critical section */
       _add_scal_values_critical(row, mav->matrix);
 #else
       _add_scal_values_atomic(row, mav->matrix);
@@ -1914,7 +1914,7 @@ cs_cdo_assembly_matrix_sys_seqt(const cs_sdm_t                  *m,
 
       _set_col_idx_scal_loc(ma, row);
 
-#if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
+#if CS_CDO_OMP_SYNC_MODE > 0 /* OpenMP with critical section */
       _add_scal_values_critical(row, mav->matrix);
 #else
       _add_scal_values_atomic(row, mav->matrix);
@@ -2143,7 +2143,7 @@ cs_cdo_assembly_eblock33_matrix_seqt(const cs_sdm_t                *m,
 
       _set_col_idx_scal_loc(ma, row);
 
-#if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
+#if CS_CDO_OMP_SYNC_MODE > 0 /* OpenMP with critical section */
       _add_scal_values_critical(row, mav->matrix);
 #else
       _add_scal_values_atomic(row, mav->matrix);
@@ -2300,7 +2300,7 @@ cs_cdo_assembly_eblock33_matrix_mpit(const cs_sdm_t                *m,
 
         _set_col_idx_scal_locdist(ma, row);
 
-#if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
+#if CS_CDO_OMP_SYNC_MODE > 0 /* OpenMP with critical section */
         _add_scal_values_critical(row, mav->matrix);
 #else
         _add_scal_values_atomic(row, mav->matrix);
@@ -2462,7 +2462,7 @@ cs_cdo_assembly_block33_matrix_seqt(const cs_sdm_t                *m,
 
     _set_col_idx_scal_loc(ma, row);
 
-#if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
+#if CS_CDO_OMP_SYNC_MODE > 0 /* OpenMP with critical section */
     _add_vect_values_critical(row, mav->matrix);
 #else
     _add_vect_values_atomic(row, mav->matrix);
@@ -2632,7 +2632,7 @@ cs_cdo_assembly_block33_matrix_mpit(const cs_sdm_t                *m,
 
       _set_col_idx_scal_locdist(ma, row);
 
-#if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
+#if CS_CDO_OMP_SYNC_MODE > 0 /* OpenMP with critical section */
       _add_vect_values_critical(row, mav->matrix);
 #else
       _add_vect_values_atomic(row, mav->matrix);
@@ -2805,7 +2805,7 @@ cs_cdo_assembly_eblock_matrix_seqt(const cs_sdm_t                *m,
 
       _set_col_idx_scal_loc(ma, row);
 
-#if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
+#if CS_CDO_OMP_SYNC_MODE > 0 /* OpenMP with critical section */
       _add_scal_values_critical(row, mav->matrix);
 #else
       _add_scal_values_atomic(row, mav->matrix);
@@ -2992,7 +2992,7 @@ cs_cdo_assembly_eblock_matrix_mpit(const cs_sdm_t                *m,
 
         _set_col_idx_scal_locdist(ma, row);
 
-#if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
+#if CS_CDO_OMP_SYNC_MODE > 0 /* OpenMP with critical section */
         _add_scal_values_critical(row, mav->matrix);
 #else
         _add_scal_values_atomic(row, mav->matrix);
