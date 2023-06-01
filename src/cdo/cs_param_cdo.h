@@ -106,30 +106,6 @@ typedef enum {
  * Global variables
  *============================================================================*/
 
-/*============================================================================
- * Inline public function prototypes
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the associated thread id (0 if no OpenMP)
- *
- * \return the id of the OpenMP thread
- */
-/*----------------------------------------------------------------------------*/
-
-static inline int
-cs_get_thread_id(void)
-{
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-  int t_id = omp_get_thread_num();
-  assert(t_id < cs_glob_n_threads);
-#else
-  int t_id = 0;
-#endif
-
-  return t_id;
-}
 
 /*============================================================================
  * Public function prototypes

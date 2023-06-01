@@ -603,6 +603,25 @@ cs_align(cs_lnum_t  i,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the associated thread id (0 if no OpenMP or if outside an
+ *        OpenMP region)
+ *
+ * \return the id of the OpenMP thread
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static int
+cs_get_thread_id(void)
+{
+#if defined(HAVE_OPENMP)
+  return omp_get_thread_num();
+#else
+  return 0;
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
 }
