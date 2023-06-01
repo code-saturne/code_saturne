@@ -125,7 +125,7 @@ integer          ndircp, icpt
 integer          numcpl
 integer          f_dim , iflwgr, iescor, iestot
 double precision rnorm , rnormt, rnorma, rnormi, vitnor
-double precision dtsrom, unsrom, rhom, rovolsdt
+double precision dtsrom, unsrom, rhom, rovolsdt, drom
 double precision epsrgp, climgp, xyzmax(3), xyzmin(3)
 double precision thetap, xdu, xdv, xdw
 double precision rhofac, dtfac
@@ -568,12 +568,30 @@ endif
 
 allocate(da_uu(6,ncelet))
 
-call predvv(1, iterns ,                                    &
-            dt, vel, vela, velk, da_uu,                    &
-            coefau, coefbu, cofafu, cofbfu,                &
-            frcxt, grdphd,                                 &
-            trava, dfrcxt, dttens, trav,                   &
-            viscf, viscb, viscfi, viscbi, secvif, secvib)
+if (staggered.eq.0) then
+  call predvv(1, iterns ,                                    &
+    dt, vel, vela, velk, da_uu,                    &
+    coefau, coefbu, cofafu, cofbfu,                &
+    frcxt, grdphd,                                 &
+    trava, dfrcxt, dttens, trav,                   &
+    viscf, viscb, viscfi, viscbi, secvif, secvib)
+else
+  ! ---> Take external forces partially equilibrated with the pressure gradient
+  !      into account (only for the first call, the second one is dedicated
+  !      to error estimators)
+  if (iphydr.eq.1) then
+    ! Boussinesq approximation
+    do iel = 1, ncel
+      drom = (crom(iel)-ro0) * cell_is_active(iel)
+      dfrcxt(1, iel) = drom*gx - frcxt(1, iel) * cell_is_active(iel)
+      dfrcxt(2, iel) = drom*gy - frcxt(2, iel) * cell_is_active(iel)
+      dfrcxt(3, iel) = drom*gz - frcxt(3, iel) * cell_is_active(iel)
+    enddo
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synvin(dfrcxt)
+    endif
+  endif
+endif
 
 ! Bad cells regularisation
 call cs_bad_cells_regularisation_vector(vel, 1)
@@ -1666,12 +1684,14 @@ if (iescor.ge.0 .or. iestot.ge.0) then
     enddo
 
     !   APPEL A PREDVV AVEC VALEURS AU PAS DE TEMPS COURANT
-    call predvv(2, iterns,                                     &
-                dt, vel, vel, velk, da_uu,                     &
-                coefau, coefbu, cofafu, cofbfu,                &
-                frcxt, grdphd,                                 &
-                trava, dfrcxt, dttens, trav,                   &
-                viscf, viscb, viscfi, viscbi, secvif, secvib)
+    if (staggered.eq.0) then
+      call predvv(2, iterns,                                     &
+                  dt, vel, vel, velk, da_uu,                     &
+                  coefau, coefbu, cofafu, cofbfu,                &
+                  frcxt, grdphd,                                 &
+                  trava, dfrcxt, dttens, trav,                   &
+                  viscf, viscb, viscfi, viscbi, secvif, secvib)
+    endif
 
   endif
 

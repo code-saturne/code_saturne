@@ -1674,14 +1674,6 @@ else
   icvflb = 0
 endif
 
-if (staggered.eq.1) then
-  do iel = 1, ncel
-    smbr(1,iel) = 0
-    smbr(2,iel) = 0
-    smbr(3,iel) = 0
-  enddo
-endif
-
 if (iappel.eq.1) then
 
   ! Store fimp as the velocity matrix is stored in it in codtiv call
