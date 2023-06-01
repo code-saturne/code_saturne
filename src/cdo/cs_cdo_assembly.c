@@ -1207,6 +1207,21 @@ _free_assembly_struct(cs_cdo_assembly_t  **p_asb)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Print information for the setup.log file
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_assembly_setup_log(void)
+{
+  cs_log_printf(CS_LOG_SETUP,
+                "\n## Assembly settings\n");
+  cs_log_printf(CS_LOG_SETUP, " * Default assembly buffer size:  %9d\n",
+                CS_CDO_ASSEMBLY_BUFSIZE);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Get a pointer to a cs_cdo_assembly_t structure related to a given
  *        thread
  *

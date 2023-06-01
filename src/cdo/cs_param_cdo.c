@@ -153,5 +153,50 @@ cs_param_cdo_log(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print generic parameters used with CDO/HHO schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_cdo_setup_log(void)
+{
+  switch (cs_glob_param_cdo_mode) {
+
+  case CS_PARAM_CDO_MODE_OFF:
+    cs_log_printf(CS_LOG_SETUP, " * CDO mode: **off**\n");
+    return;
+  case CS_PARAM_CDO_MODE_WITH_FV:
+    cs_log_printf(CS_LOG_SETUP, " * CDO mode: **on with legacy FV**\n");
+    break;
+  case CS_PARAM_CDO_MODE_ONLY:
+    cs_log_printf(CS_LOG_SETUP, " * CDO mode: **on, stand-alone**\n");
+    break;
+
+  default:
+    break; /* Do nothing */
+
+  }
+
+  if (cs_glob_n_threads > 1) {
+
+    cs_log_printf(CS_LOG_SETUP,
+                  "\n## OpenMP settings inside the CDO framework\n");
+
+#if CS_CDO_OMP_SYNC_MODE > 0
+    const char omp_mode[] = "critical section";
+#else
+    const char omp_mode[] = "atomic section";
+#endif
+
+    cs_log_printf(CS_LOG_SETUP, " * OpenMP synchronization mode: %20s\n",
+                  omp_mode);
+    cs_log_printf(CS_LOG_SETUP, " * OpenMP chunck size:          %20d\n",
+                  CS_CDO_OMP_CHUNK_SIZE);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

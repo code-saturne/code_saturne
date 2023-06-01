@@ -893,22 +893,9 @@ cs_domain_setup_log(const cs_domain_t   *domain)
   cs_log_printf(CS_LOG_SETUP, "\nSummary of the CDO domain settings\n");
   cs_log_printf(CS_LOG_SETUP, "%s\n", cs_sep_h1);
 
-  switch (cs_glob_param_cdo_mode) {
+  cs_param_cdo_setup_log();
 
-  case CS_PARAM_CDO_MODE_OFF:
-    cs_log_printf(CS_LOG_SETUP, " * CDO mode: **off**\n");
-    return;
-  case CS_PARAM_CDO_MODE_WITH_FV:
-    cs_log_printf(CS_LOG_SETUP, " * CDO mode: **on with legacy FV**\n");
-    break;
-  case CS_PARAM_CDO_MODE_ONLY:
-    cs_log_printf(CS_LOG_SETUP, " * CDO mode: **on, stand-alone**\n");
-    break;
-
-  default:
-    break; /* Do nothing */
-
-  }
+  cs_cdo_assembly_setup_log();
 
   /* CDO main structure count */
 
@@ -931,6 +918,9 @@ cs_domain_setup_log(const cs_domain_t   *domain)
                 cs_property_get_n_properties());
   cs_log_printf(CS_LOG_SETUP, " * Number of advection fields           %3d\n",
                 cs_advection_field_get_n_fields());
+
+  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_OFF)
+    return;
 
   cs_domain_cdo_context_t  *cc = domain->cdo_context;
 

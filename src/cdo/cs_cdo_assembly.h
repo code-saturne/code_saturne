@@ -87,6 +87,15 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Print information for the setup.log file
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_assembly_setup_log(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Get a pointer to a cs_cdo_assembly_t structure related to a given
  *        thread
  *
