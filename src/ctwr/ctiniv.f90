@@ -98,7 +98,7 @@ if (isuite.eq.0) then
   call synsca(cvar_yml)
 
   ! Diffusivities of the dry air and the injected liquid
-  ! Note: this comes after 'cs_user_cooling_towers' so it will overwrite
+  ! Note: this comes after 'usipsu/cs_user_parameters' so it will overwrite
   !       what users may have specified there
 
   call field_set_key_double(ivarfl(isca(iymw)), kvisl0, 1.d-12)

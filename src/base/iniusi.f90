@@ -351,6 +351,11 @@ if (ippmod(iatmos).ge.0) then
   call atini1
 endif
 
+! Cooling towers
+if (ippmod(iaeros).ge.0) then
+  call ctini1
+endif
+
 ! Compressible
 call field_get_id_try('velocity', f_id)
 if (f_id .ge. 0) then
