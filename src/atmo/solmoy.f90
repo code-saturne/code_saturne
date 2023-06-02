@@ -104,7 +104,7 @@ double precision, pointer, dimension(:,:) :: bpro_pourcent_sol ! only zone faces
 call field_get_val_s_by_name("boundary_roughness", bpro_rugdyn)
 call field_get_val_s_by_name("boundary_thermal_roughness", bpro_rugthe)
 call field_get_val_s_by_name("boundary_albedo", bpro_albedo)
-call field_get_val_s_by_name("boundary_emissivity", bpro_emissi)
+call field_get_val_s_by_name("emissivity", bpro_emissi)
 call field_get_val_s_by_name("boundary_vegetation", bpro_vegeta)
 call field_get_val_s_by_name("soil_water_capacity", bpro_c1w   )
 call field_get_val_s_by_name("soil_water_ratio", bpro_c2w   )

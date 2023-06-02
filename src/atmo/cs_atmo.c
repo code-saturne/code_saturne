@@ -1960,13 +1960,16 @@ cs_atmo_add_property_fields(void)
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Albedo");
 
-    f = cs_field_create("boundary_emissivity",
-                        field_type,
-                        /* Note: as for boundary_roughness,
-                         * location can be reduced in the future */
-                        CS_MESH_LOCATION_BOUNDARY_FACES,
-                        1, /* dim */
-                        false); /* has_previous */
+    f = cs_field_by_name_try("emissivity");
+    if (f == NULL)
+      f = cs_field_create("emissivity",
+                          field_type,
+                          /* Note: as for boundary_roughness,
+                           * location can be reduced in the future */
+                          CS_MESH_LOCATION_BOUNDARY_FACES,
+                          1, /* dim */
+                          false); /* has_previous */
+
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Emissivity");

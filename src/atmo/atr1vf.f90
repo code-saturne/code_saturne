@@ -206,7 +206,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     call field_get_val_prev_s_by_name("soil_total_water", bvar_total_water)
 
     call field_get_val_s_by_name("boundary_albedo", bpro_albedo)
-    call field_get_val_s_by_name("boundary_emissivity", bpro_emissi)
+    call field_get_val_s_by_name("emissivity", bpro_emissi)
 
     soil_mean%albedo = 0.d0
     soil_mean%emissi = 0.d0

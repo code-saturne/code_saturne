@@ -444,11 +444,11 @@ if (inua.ne.1) then
     foirs2 = sig*t4zt*(1.d0-tvsups+acsups(i))
     foirs = foirs1 + foirs2
 
-    ! upward fluxes estimation (sum of direct part and reflected part)
+    ! Upward fluxes estimation (sum of direct part and reflected part)
     if(i.gt.k1) then
       call rayive(tauv,dtauv,qqqv(i),qv0(k1),qqqc(i),qc(k1),romray(k1))
 
-      ufir(i) = sig*ufir(i)+emis*sig*t41+(1.-emis)*foirs
+      ufir(i) = sig*ufir(i)+emis*sig*t41+(1.d0-emis)*foirs
     else
       ufir(k1) = (1.d0-emis)*foir+emis*sig*t41
     endif

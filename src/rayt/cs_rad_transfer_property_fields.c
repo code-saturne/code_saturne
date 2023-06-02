@@ -480,11 +480,13 @@ cs_rad_transfer_prp(void)
   }
 
   {
-    f = cs_field_create("emissivity",
-                        field_type,
-                        location_id,
-                        1,
-                        false);
+    f = cs_field_by_name_try("emissivity");
+    if (f == NULL)
+      f = cs_field_create("emissivity",
+                          field_type,
+                          location_id,
+                          1,
+                          false);
     cs_field_set_key_str(f, keylbl, "Emissivity");
     cs_field_pointer_map(CS_ENUMF_(emissivity), f);
   }
