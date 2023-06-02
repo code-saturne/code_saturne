@@ -156,7 +156,7 @@ use numvar
 use optcal
 use alaste
 use atincl, only: iautom, iprofm
-use coincl, only: fment, ientfu, ientgb, ientgf, ientox, tkent, qimp
+use coincl, only: fment, ientfu, ientgb, ientgf, ientox, tkent
 use ppcpfu, only: inmoxy
 use cstphy
 use cstnum
@@ -4884,7 +4884,7 @@ use numvar
 use optcal
 use alaste
 use atincl, only: iautom, iprofm
-use coincl, only: fment, ientfu, ientgb, ientgf, ientox, tkent, qimp
+use coincl, only: fment, ientfu, ientgb, ientgf, ientox, tkent
 use ppcpfu, only: inmoxy
 use cstphy
 use cstnum

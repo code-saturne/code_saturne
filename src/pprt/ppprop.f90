@@ -97,6 +97,13 @@ interface
     implicit none
   end subroutine cs_atmo_add_property_fields
 
+  subroutine cs_ctwr_add_property_fields()  &
+    bind(C, name='cs_ctwr_add_property_fields')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_ctwr_add_property_fields
+
+
 end interface
 
 !===============================================================================
@@ -157,32 +164,7 @@ endif
 
 ! ---> Cooling towers model
 if (ippmod(iaeros).ge.0) then
-  call add_property_field_1d('humidity', 'Humidity', f_id)
-  call add_property_field_1d('x_s', 'Humidity sat', f_id)
-  call add_property_field_1d('enthalpy', 'Enthalpy humid air', ihm)
-  call add_property_field_1d('temperature_liquid', 'Temp liq', itml)
-  call add_property_field_1d('vertvel_l', 'Vertical vel liq', f_id)
-
-  ! Continuous phase properties
-  !----------------------------
-
-  ! NB: 'c' stands for continuous <> 'p' stands for particles
-
-  ! Mass fraction of the continuous phase (X1)
-  f_name= 'x_c'
-  call add_property_field_1d('x_c', 'Gas mass fraction', f_id)
-
-  ! Mass fraction of the continuous phase (X1) BOUNDARY VALUE
-  f_name= 'b_x_c'
-  itycat = FIELD_INTENSIVE + FIELD_PROPERTY
-  call field_create(f_name,  &
-                    itycat,  &
-                    3,       & ! location (boundary faces)
-                    1,       &! dimension
-                    .false., & ! Has previous ?
-                    f_id)
-  call field_set_key_str(f_id, keylbl, f_name)
-
+  call cs_ctwr_add_property_fields
 endif
 
 ! Add the mixture molar mass fraction field

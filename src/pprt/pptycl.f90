@@ -123,6 +123,18 @@ double precision rcodcl(nfabor,nvar,3)
 integer          ifac, iok, ifvu, ii, izone, izonem
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_ctwr_bcond()  &
+    bind(C, name='cs_ctwr_bcond')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_ctwr_bcond
+
+end interface
 
 !===============================================================================
 ! 1. Zones list (for some models)
@@ -193,7 +205,7 @@ if (ippmod(iatmos).ge.0) then
 
 ! Cooling towers
 elseif (ippmod(iaeros).ge.0) then
-  call cs_ctwr_bcond(itypfb, izfppp, icodcl, rcodcl)
+  call cs_ctwr_bcond()
 
 ! Compressible
 

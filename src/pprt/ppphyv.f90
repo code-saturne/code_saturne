@@ -81,6 +81,7 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
+use cs_c_bindings
 use mesh
 
 use field
@@ -166,7 +167,7 @@ endif
 ! ---> Aerorefrigerants
 
 if (ippmod(iaeros).ge.0) then
-  call ctphyv
+  call cs_ctwr_phyvar_update(ro0,t0,p0)
 endif
 
 ! ---> Atmospheric Flows (except constant density: ippmod(iatmos) = 0)

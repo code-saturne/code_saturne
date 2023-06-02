@@ -26,6 +26,14 @@ Release 8.0.2 (unreleased)
 
 ### User changes:
 
+- Migrate cooling tower user-defined functions to C.
+  * As an exception to the usual setup compatibility rules between
+    revisions of a same release series, this includes the
+    removal of specific Fortran user subroutines.
+    - This is allowed here because the cooling towers module was not
+      previously considered operational, so there is no risk of regression,
+      and we prefer that all future user setups directly use the new API.
+
 - Do not log `source_term_prev_field` type fields by default.
 
 Release 8.0.1 (2023-08-01)

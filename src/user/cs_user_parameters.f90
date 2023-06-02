@@ -501,48 +501,6 @@ end subroutine uscfx2
 
 !===============================================================================
 
-!> \brief Definition of cooling tower model and exchange zones
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-
-subroutine cs_user_cooling_towers
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use numvar
-use optcal
-use cstphy
-use entsor
-use cstnum
-use parall
-use period
-use ppppar
-use ppthch
-use ppincl
-use ctincl
-
-!===============================================================================
-
-implicit none
-
-!===============================================================================
-
-!----
-! End
-!----
-
-return
-end subroutine cs_user_cooling_towers
-
-
 !===============================================================================
 
 !> \brief User routine for definition of computation parameters dealing

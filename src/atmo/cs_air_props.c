@@ -73,7 +73,8 @@ static cs_air_fluid_props_t _props = {
   .rho_l = 0.,
   .lambda_h = 0.,
   .lambda_l = 0.,
-  .droplet_diam = 0.
+  .droplet_diam = 0.,
+  .molmass_rat = 0.621973644 /* 18.01528 / 28.9647 (usual value 0.622) */
 };
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -90,40 +91,19 @@ cs_air_fluid_props_t *cs_glob_air_props = &_props;
  *============================================================================*/
 
 void
-cs_air_glob_properties_get_pointer(double  **humidity0,
-                                   double  **cp_a,
-                                   double  **cp_v,
-                                   double  **cp_l,
-                                   double  **hv0,
-                                   double  **rho_l,
-                                   double  **lambda_h,
-                                   double  **lambda_l,
-                                   double  **droplet_diam);
+cs_air_glob_properties_get_pointers(double  **cp_a,
+                                    double  **cp_v);
 
 /*============================================================================
  *  Public functions for Fortran API
  *============================================================================*/
 
 void
-cs_air_glob_properties_get_pointer(double  **humidity0,
-                                   double  **cp_a,
-                                   double  **cp_v,
-                                   double  **cp_l,
-                                   double  **hv0,
-                                   double  **rho_l,
-                                   double  **lambda_h,
-                                   double  **lambda_l,
-                                   double  **droplet_diam)
+cs_air_glob_properties_get_pointers(double  **cp_a,
+                                    double  **cp_v)
 {
-  *humidity0    = &(_props.humidity0);
   *cp_a         = &(_props.cp_a);
   *cp_v         = &(_props.cp_v);
-  *cp_l         = &(_props.cp_l);
-  *hv0          = &(_props.hv0);
-  *rho_l        = &(_props.rho_l);
-  *lambda_h     = &(_props.lambda_h);
-  *lambda_l     = &(_props.lambda_l);
-  *droplet_diam = &(_props.droplet_diam );
 }
 
 /*============================================================================

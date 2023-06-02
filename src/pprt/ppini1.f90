@@ -141,12 +141,6 @@ if ( ippmod(iatmos).ge.0 ) then
   call atini1
 endif
 
-! ---> Physique particuliere : Aerorefrigerants
-
-if ( ippmod(iaeros).ge.0) then
-  call ctini1
-endif
-
 !--------
 ! Formats
 !--------

@@ -714,37 +714,6 @@ module ppincl
 
   !> \}
 
-
-  !> \defgroup cooling Cooling Towers Pointers
-
-  !> \addtogroup cooling
-  !> \{
-
-  !> Molar mass ratio = Ratio of the molar mass (H2O) over the molar mass (air)
-  double precision :: molmass_rat
-  parameter(molmass_rat = 0.622d0)
-
-  !> \defgroup cool_transported  Transported variables
-
-  !> \addtogroup cool_transported
-  !> \{
-
-  !> Pointer to define mass fraction of liquid water which is injected in the packing
-  integer, save :: iyml
-
-  !> Pointer to define mass fraction of liquid water which is injected in the rain zones
-  integer, save :: iy_p_l
-
-  !> Pointer to define the temperature (property, deduced from enthalpy)
-  !> of liquid water which is injected in the packing
-  integer, save :: itml
-
-  !> Pointer to define the field enthalpy of liquid water
-  integer, save :: ihml
-
-  !> \}
-  !> \}
-
   !> \defgroup enthalpy Enthalpic variables pointers
 
   !> \addtogroup enthalpy

@@ -75,8 +75,6 @@ use coincl
 use cpincl
 use ppincl
 use ppcpfu
-use atincl
-use ctincl
 use cs_fuel_incl
 use mesh
 use field

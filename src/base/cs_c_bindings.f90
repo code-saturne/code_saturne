@@ -2823,7 +2823,7 @@ module cs_c_bindings
 
     ! Interface to C function for atmo
 
-    subroutine raysze(xlat, xlong, jour, heurtu, imer, albe, muzero, omega, fo)           &
+    subroutine raysze(xlat, xlong, jour, heurtu, imer, albe, muzero, omega, fo) &
       bind(C, name='cs_atmo_compute_solar_angles')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -2892,11 +2892,11 @@ module cs_c_bindings
 
     ! Interface to C function for cooling towers
 
-    subroutine cs_ctwr_phyvar_update(rho0, t0, p0, molmassrat)             &
+    subroutine cs_ctwr_phyvar_update(rho0, t0, p0)             &
       bind(C, name='cs_ctwr_phyvar_update')
       use, intrinsic :: iso_c_binding
       implicit none
-      real(kind=c_double), value :: rho0, t0, p0, molmassrat
+      real(kind=c_double), value :: rho0, t0, p0
     end subroutine cs_ctwr_phyvar_update
 
     !---------------------------------------------------------------------------
@@ -2914,12 +2914,10 @@ module cs_c_bindings
 
     ! Interface to C function for cooling towers
 
-    subroutine cs_ctwr_bulk_mass_source_term(p0, molmassrat,                 &
-                                             mass_source)                    &
+    subroutine cs_ctwr_bulk_mass_source_term(mass_source)                    &
       bind(C, name='cs_ctwr_bulk_mass_source_term')
       use, intrinsic :: iso_c_binding
       implicit none
-      real(kind=c_double), value :: p0, molmassrat
       real(kind=c_double), dimension(*), intent(inout) :: mass_source
     end subroutine cs_ctwr_bulk_mass_source_term
 
@@ -2927,13 +2925,12 @@ module cs_c_bindings
 
     ! Interface to C function for cooling towers
 
-    subroutine cs_ctwr_source_term(f_id, p0, molmassrat,           &
+    subroutine cs_ctwr_source_term(f_id,                           &
                                    exp_st, imp_st)                 &
       bind(C, name='cs_ctwr_source_term')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: f_id
-      real(kind=c_double), value :: p0, molmassrat
       real(kind=c_double), dimension(*), intent(inout) :: exp_st
       real(kind=c_double), dimension(*), intent(inout) :: imp_st
     end subroutine cs_ctwr_source_term

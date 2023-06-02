@@ -1500,6 +1500,29 @@ cs_user_parameters(cs_domain_t *domain)
   /*! [change_nsave_checkpoint_files] */
   cs_restart_set_n_max_checkpoints(2);
   /*! [change_nsave_checkpoint_files] */
+
+  /*-----------------------------------------------------------------*/
+
+  /* Cooling tower:
+   * Definition of cooling tower model and exchange zones
+   * Air and liquid properties
+   */
+
+  /*! [cs_user_cooling_towers] */
+  cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+  fp->ro0    = 1.17862;
+  fp->viscl0 = 1.765e-5;
+
+  cs_air_fluid_props_t  *air_prop = cs_glob_air_props;
+  air_prop->cp_a    = 1006.0;
+  air_prop->cp_v    = 1831.0;
+  air_prop->cp_l    = 4179.0;
+  air_prop->hv0     = 2501600.0;
+  air_prop->rho_l   = 997.85615;
+  air_prop->lambda_l = 0.02493;
+  air_prop->humidity0 = 0.0;
+  air_prop->droplet_diam = 0.005;
+  /*! [cs_user_cooling_towers] */
 }
 
 /*----------------------------------------------------------------------------*/

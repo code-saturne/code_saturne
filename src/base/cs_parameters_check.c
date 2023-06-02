@@ -896,6 +896,14 @@ cs_parameters_check(void)
                                 cs_glob_fluid_properties->irovar,
                                 0, 2);
 
+  const int icp = cs_field_id_by_name("specific_heat");
+  if (   cs_glob_physical_model_flag[CS_COOLING_TOWERS] > 0
+        && icp == -1)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("while reading input data"),
+         _("Cooling towers model requires variable specific_heat field.\n"));
+
   /* Equations definition, time scheme, convective scheme */
   for (int f_id = 0 ; f_id < n_fields ; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);

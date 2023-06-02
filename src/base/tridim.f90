@@ -62,7 +62,6 @@ use ppincl
 use cpincl
 use coincl
 use atincl
-use ctincl
 use atsoil
 use lagran
 use radiat
@@ -583,7 +582,7 @@ if (nctsmt.gt.0) then
     allocate(mass_source(ncelet))
 
     ! Cooling tower model evaporation mass exchange term
-    call cs_ctwr_bulk_mass_source_term(p0, molmass_rat, mass_source)
+    call cs_ctwr_bulk_mass_source_term(mass_source)
 
     do ii = 1, ncetsm
       iel = icetsm(ii)

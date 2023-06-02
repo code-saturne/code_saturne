@@ -359,6 +359,7 @@ use atsoil
 use atchem
 use atimbr
 use sshaerosol
+use ctincl
 use cs_c_bindings
 
 !===============================================================================
@@ -758,66 +759,6 @@ icfgrp = 1
 
 return
 end subroutine uscfx2
-
-!===============================================================================
-
-!> \brief Definition of cooling tower model and exchange zones
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-
-subroutine cs_user_cooling_towers
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use numvar
-use optcal
-use cstphy
-use entsor
-use cstnum
-use parall
-use period
-use ppppar
-use ppthch
-use ppincl
-use ctincl
-
-!===============================================================================
-
-implicit none
-
-!===============================================================================
-
-!===============================================================================
-! 1. Parameters for prescibed temperature difference
-!===============================================================================
-
-! Air and liquid properties
-!< [cs_user_cooling_towers]
-cp_a    = 1006.0d0
-cp_v    = 1831.0d0
-cp_l    = 4179.0d0
-hv0    = 2501600.0d0
-rho_l   = 997.85615d0
-viscl0 = 1.765d-5
-lambda_l = 0.02493d0
-humidity0 = 0.d0
-droplet_diam = 0.005d0
-!< [cs_user_cooling_towers]
-
-!----
-! End
-!----
-
-return
-end subroutine cs_user_cooling_towers
 
 !===============================================================================
 

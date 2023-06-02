@@ -213,6 +213,14 @@ interface
     implicit none
   end subroutine cs_f_domain_setup_init_model_context
 
+  ! Interface to C function building properties
+
+  subroutine cs_create_added_properties() &
+    bind(C, name='cs_create_added_properties')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_create_added_properties
+
 end interface
 
 !===============================================================================
