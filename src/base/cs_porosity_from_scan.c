@@ -65,6 +65,7 @@
 #include "cs_field_pointer.h"
 #include "cs_field_default.h"
 #include "cs_field_operator.h"
+#include "cs_file_csv_parser.h"
 #include "cs_geom.h"
 #include "cs_halo.h"
 #include "cs_io.h"
@@ -984,6 +985,54 @@ cs_porosity_from_scan_add_source(const cs_real_t  source[3],
     for (int i = 0; i < 3; i++)
       _porosity_from_scan_opt.sources[s_id][i] = source[i];
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add the scanner sources from csv file to fill fluid space.
+ *
+ * \param[in] csv file containing the (x,y,z) coordinates of each scanner
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ibm_add_sources_by_file_name(const char *file_name)
+{
+  if (file_name == NULL) 
+    bft_error(__FILE__,__LINE__, 0, _("Could not read scanner sources file"));
+  
+  /* read the csv file */
+  const int s_col_idx[3] = {0, 1, 2}; /* columns to read */
+  int nb_scan = 0, nb_cols = 0;
+  char ***csv_data = cs_file_csv_parse(file_name,
+				       ",", /* separator */
+				       0, /* n_headers */
+				       3, /* 3 columns to read */
+				       s_col_idx,
+				       true, /* ignore_missing_tokens */
+				       &nb_scan,
+				       &nb_cols);
+
+  /* loop on the scanner sources */
+  for (int i = 0; i < nb_scan; i++) {
+    const char *origin_x = csv_data[i][0];
+    const char *origin_y = csv_data[i][1];
+    const char *origin_z = csv_data[i][2];
+
+    /* char to double conversion */
+    cs_real_3_t source = {atof(origin_x), atof(origin_y), atof(origin_z)};
+
+    /* Add source */
+    bool transform = true;
+    cs_porosity_from_scan_add_source(source, transform);
+  } 
+  // Free data which is no longer needed.
+  for (int i = 0; i < nb_scan; i++) {
+    for (int j = 0; j < nb_cols; j++)
+      BFT_FREE(csv_data[i][j]);
+    BFT_FREE(csv_data[i]);
+  }
+  BFT_FREE(csv_data);
 }
 
 /*----------------------------------------------------------------------------*/

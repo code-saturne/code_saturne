@@ -137,6 +137,17 @@ cs_porosity_from_scan_add_source(const cs_real_t  source[3],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Add the scanner sources from csv file to fill fluid space.
+ *
+ * \param[in] csv file containing the (x,y,z) coordinates of each scanner
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ibm_add_sources_by_file_name(const char *file_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the porosity which is equal to one from
  *        a source, radiating sphericaly, and is 0 when touching points
  *        of the scan.
