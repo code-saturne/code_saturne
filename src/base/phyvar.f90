@@ -668,8 +668,8 @@ endif
 
 if (itytur.eq.4 .and. iilagr.gt.0) then
 
-  call field_get_val_s_by_name("k", cvar_k)
-  call field_get_val_s_by_name("epsilon", cvar_ep)
+  call field_get_val_s_by_name("lagr_k", cvar_k)
+  call field_get_val_s_by_name("lagr_epsilon", cvar_ep)
 
   c_epsilon = 1.0
 
