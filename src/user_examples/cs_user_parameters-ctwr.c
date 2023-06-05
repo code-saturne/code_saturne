@@ -80,10 +80,11 @@ void
 cs_user_model(void)
 {
   /* Activate cooling tower model */
-
+  {
   /*! [ctwr_user_model_1] */
-  cs_glob_physical_model_flag[CS_COOLING_TOWERS] = 0;
+  cs_glob_physical_model_flag[CS_COOLING_TOWERS] = 1;
   /*! [ctwr_user_model_1] */
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -107,6 +108,18 @@ cs_user_parameters(cs_domain_t   *domain)
 {
   CS_UNUSED(domain);
 
+ /* Activate compressibility */
+ {
+   cs_velocity_pressure_model_t *vp_model =
+     cs_get_glob_velocity_pressure_model();
+   vp_model->idilat = 2;
+ }
+
+ /* Authorize variable density */
+ {
+   cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+   fp->irovar = 1;
+ }
   /*
    * We define a cooling tower zone
    */
@@ -126,7 +139,7 @@ cs_user_parameters(cs_domain_t   *domain)
     cs_real_t qw = surface *  2.64; /* Water flow rate (kg/s) */
 
     cs_ctwr_define(
-        "2 or 3", /* selction criterion */
+        "2 or 3", /* selection criterion */
         CS_CTWR_COUNTER_CURRENT, /*Type:
                                    CS_CTWR_COUNTER_CURRENT counter current,
                                    CS_CTWR_CROSS_CURRENT cross,
@@ -135,13 +148,45 @@ cs_user_parameters(cs_domain_t   *domain)
         0.1, /* Associated relaxation time */
         36., /* Liquid injected water temperature */
         qw,
-        0.2, /* Evaportaion law constant A */
-        0.5, /* Evaportaion law constant n */
+        0.2, /* Evaporation law constant A */
+        0.5, /* Evaporation law constant n */
         surface,
         -1.); /* Leaking factor, not taken into account if negative */
 
   }
   /*! [ctwr_user_1] */
+
+  /* Define humid air properties */
+  {
+    cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+    //Used to compute the humid air density as a function of (P,T,humidity)
+    fp->ro0 = 1.2; //1.293
+
+    //Humid air viscosity
+    fp->viscl0 = 1.765e-05;
+
+    cs_air_fluid_props_t *air_prop = cs_glob_air_props;
+    // Dry air and water vapour properties
+    air_prop->cp_a = 1006.0;
+    air_prop->cp_v = 1831.0;
+
+    // Initial absolute humidity
+    air_prop->humidity0 = 5.626e-03;//34.5% relative humidity
+
+    // Humid air conductivity - considered constant in the modelling
+    air_prop->lambda_h = 2.493;
+
+    // Liquid water properties
+    air_prop->rho_l = 997.85615;
+    air_prop->cp_l = 4179.0;
+    air_prop->lambda_l = 0.02493;
+
+    // Phase change properties
+    air_prop->hv0 = 2501600.0;
+
+    air_prop->droplet_diam = 0.005;
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
