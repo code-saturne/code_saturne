@@ -97,6 +97,12 @@ static cs_sys_cpl_t **_sys_couplings   = NULL;
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and return a new CFD<-->SYS intersection structre.
+ */
+/*----------------------------------------------------------------------------*/
+
 static cs_cfd2sys_intersection_t *
 _create_cfd2sys_intersection(void)
 {
@@ -111,6 +117,16 @@ _create_cfd2sys_intersection(void)
 
   return retval;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and return a new CFD<-->SYS coupled BC structre.
+ *
+ * \param[in] type  type of boundary condition.
+ *
+ * \return pointer to new cs_cfd_sys_cplbc_t structre.
+ */
+/*----------------------------------------------------------------------------*/
 
 static cs_cfd_sys_cplbc_t *
 _create_cfd_sys_cplbc(cs_syscpl_bc_type_t type)
@@ -142,6 +158,17 @@ _create_cfd_sys_cplbc(cs_syscpl_bc_type_t type)
 
   return retval;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and return new CFD<-->SYS coupling structure.
+ *
+ * \param[in] sys_name      Name of the coupled SYS instance
+ * \param[in] n_cpl_phases  Number of coupled fluid phases.
+ *
+ * \return pointer to newly create cs_sys_cpl_t structure.
+ */
+/*----------------------------------------------------------------------------*/
 
 static cs_sys_cpl_t *
 _create_cs_sys_coupling(const char *sys_name,
@@ -185,6 +212,12 @@ _create_cs_sys_coupling(const char *sys_name,
   return cpl;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute intersection matrix used for 1D surface CFD<->SYS coupling
+ */
+/*----------------------------------------------------------------------------*/
+
 static void
 _compute_matrix_weights(cs_cfd2sys_intersection_t *m,
                         const cs_lnum_t            n_cfd_elts,
@@ -208,6 +241,15 @@ _compute_matrix_weights(cs_cfd2sys_intersection_t *m,
     }
   }
 }
+
+/*----------------------------------------------------------------------------
+ * Initialize communicator for system coupling.
+ *
+ * parameters:
+ *   sys_coupling  <-> System coupling structure
+ *   coupling_id   <-- id of this coupling (for log messages)
+ *
+ *----------------------------------------------------------------------------*/
 
 static void
 _init_comm(cs_sys_cpl_t *sys_coupling,
@@ -255,6 +297,13 @@ _init_comm(cs_sys_cpl_t *sys_coupling,
 #endif
 }
 
+/*----------------------------------------------------------------------------
+ * Free communicator for System coupling
+ *
+ * parameters:
+ *   sys_coupling  <-> System coupling structure
+ *---------------------------------------------------------------------------*/
+
 static void
 _finalize_comm(cs_sys_cpl_t *sys_coupling)
 {
@@ -270,6 +319,16 @@ _finalize_comm(cs_sys_cpl_t *sys_coupling)
 
 #endif
 }
+
+/*----------------------------------------------------------------------------
+ * Initialize communicator for CFD<->SYSTEM coupling
+ *
+ * parameters:
+ *   sys_coupling  <-> System coupling structure
+ *   coupling_id   <-- id of this coupling (for log file message)
+ *   sys_root_rank <-- System code root rank
+ *   n_sys_ranks   <-- Number of ranks associated with System code
+ *---------------------------------------------------------------------------*/
 
 static void
 _sys_coupling_init_comm(cs_sys_cpl_t *sys_coupling,
@@ -321,6 +380,17 @@ _sys_coupling_init_comm(cs_sys_cpl_t *sys_coupling,
 }
 
 #if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Initialize MPI CFD<-->SYSTEM couplings using MPI.
+ *
+ * This function may be called once all couplings have been defined,
+ * and it will match defined couplings with available applications.
+ *
+ * parameters:
+ *   n_unmatched    <->  pointer to number of unmatched couplings
+ *   unmatched_ids  <->  pointer to array of unmatched couplings
+ *---------------------------------------------------------------------------*/
 
 static void
 _init_all_mpi_sys(int  *n_unmatched,
@@ -412,6 +482,14 @@ _init_all_mpi_sys(int  *n_unmatched,
 
 #endif /* defined(HAVE_MPI) */
 
+/*----------------------------------------------------------------------------
+ * Set coupled fields for a coupled condition depending on number of phases.
+ *
+ * parameters:
+ *   cplbc        <-- pointer to coupled condition
+ *   n_cpl_phases <-- number of coupled phases
+ *---------------------------------------------------------------------------*/
+
 static void
 _sys_coupling_set_fields(cs_cfd_sys_cplbc_t *cplbc,
                          const int           n_cpl_phases)
@@ -441,6 +519,13 @@ _sys_coupling_set_fields(cs_cfd_sys_cplbc_t *cplbc,
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Allocate arrays used for data exchange.
+ *
+ * parameters:
+ *   cpl <-- pointer to cfd<-->sys coupling structure
+ *---------------------------------------------------------------------------*/
+
 static void
 _sys_coupling_finish_initialization(cs_sys_cpl_t *cpl)
 {
@@ -464,8 +549,20 @@ _sys_coupling_finish_initialization(cs_sys_cpl_t *cpl)
 
 }
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
-/* Public functions */
+/*!
+ * \brief Get a cfd<-->sys coupling structure by its id
+ *
+ * \param[in] cpl_id  id of the requested coupling
+ *
+ * \return pointer to coupling structure if found, raises an error otherwise.
+ */
 /*----------------------------------------------------------------------------*/
 
 cs_sys_cpl_t *
@@ -484,6 +581,16 @@ cs_sys_coupling_by_id(const int cpl_id)
   return cpl;
 
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Try getting a cfd<-->sys coupling structure by its name
+ *
+ * \param[in] sys_name  name of the requested coupling
+ *
+ * \return pointer to coupling structure if found, NULL if not found.
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_sys_cpl_t *
 cs_sys_coupling_by_name_try(const char *sys_name)
@@ -504,6 +611,16 @@ cs_sys_coupling_by_name_try(const char *sys_name)
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a cfd<-->sys coupling structure by its name
+ *
+ * \param[in] sys_name  name of the requested coupling
+ *
+ * \return pointer to coupling structure if found, raises and error if not found.
+ */
+/*----------------------------------------------------------------------------*/
+
 cs_sys_cpl_t *
 cs_sys_coupling_by_name(const char *sys_name)
 {
@@ -516,6 +633,15 @@ cs_sys_coupling_by_name(const char *sys_name)
 
   return retval;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a field to send during coupling to a given coupled BC
+ *
+ * \param[in] cplbc     pointer to coupled condition
+ * \param[in] field_id  id of the field to send
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_sys_cplbc_add_field_to_send(cs_cfd_sys_cplbc_t *cplbc,
@@ -531,6 +657,15 @@ cs_sys_cplbc_add_field_to_send(cs_cfd_sys_cplbc_t *cplbc,
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a field to recieve during coupling to a given coupled BC
+ *
+ * \param[in] cplbc     pointer to coupled condition
+ * \param[in] field_id  id of the field to recieve
+ */
+/*----------------------------------------------------------------------------*/
+
 void
 cs_sys_cplbc_add_field_to_recv(cs_cfd_sys_cplbc_t *cplbc,
                                const int           field_id)
@@ -545,6 +680,15 @@ cs_sys_cplbc_add_field_to_recv(cs_cfd_sys_cplbc_t *cplbc,
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a surface coefficient to a given coupled BC
+ *
+ * \param[in] cplbc  pointer to coupled condition
+ * \param[in] coeff  surface coefficient to apply
+ */
+/*----------------------------------------------------------------------------*/
+
 void
 cs_sys_cplbc_define_surf_coeff(cs_cfd_sys_cplbc_t *cplbc,
                                const cs_real_t     coeff)
@@ -554,6 +698,15 @@ cs_sys_cplbc_define_surf_coeff(cs_cfd_sys_cplbc_t *cplbc,
   cplbc->surf_coeff = coeff;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a flowrate inversion between CFD and System codes if signs
+ * are inversed for a given coupled BC
+ *
+ * \param[in] cplbc     pointer to coupled condition
+ */
+/*----------------------------------------------------------------------------*/
+
 void
 cs_sys_cplbc_inverse_bnd_dir(cs_cfd_sys_cplbc_t *cplbc)
 {
@@ -561,6 +714,16 @@ cs_sys_cplbc_inverse_bnd_dir(cs_cfd_sys_cplbc_t *cplbc)
 
   cplbc->bnd_dir = -1;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a field to send/recv during coupling to a given coupled BC
+ *
+ * \param[in] cplbc     pointer to coupled condition
+ * \param[in] dir       0 send; 1 recv
+ * \param[in] field_id  id of the field to exchange
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_sys_cplbc_add_exchanged_field(cs_cfd_sys_cplbc_t *cplbc,
@@ -600,6 +763,21 @@ cs_sys_cplbc_add_exchanged_field(cs_cfd_sys_cplbc_t *cplbc,
     }
   }
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a coupled condition to a cfd<-->sys coupling
+ *
+ * \param[in] sys_coupling         pointer to cfd<->sys coupling
+ * \param[in] type                 type of coupled condition
+ * \param[in] z_input              coupled zone (boundary or volume)
+ * \param[in] sel_criteria_output  selection criteria for cfd->sys data selection
+ * \param[in] element_name         name of coupled sys element
+ * \param[in] c0                   first sys cell index
+ * \param[in] c1                   second sys cell index
+ * \param[in] n_sys_elts           number of coupled cells in the system code
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_sys_coupling_add_cplbc(cs_sys_cpl_t        *sys_coupling,
@@ -649,6 +827,17 @@ cs_sys_coupling_add_cplbc(cs_sys_cpl_t        *sys_coupling,
   sys_coupling->cplbc[cpl_id] = cplbc;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a cfd<->sys coupling
+ *
+ * \param[in] sys_name      name of the new coupling
+ * \param[in] n_cpl_phases  number of phases to coupled
+ *
+ * \return id of the newly created coupling
+ */
+/*----------------------------------------------------------------------------*/
+
 int
 cs_sys_coupling_add(const char *sys_name,
                     const int   n_cpl_phases)
@@ -675,6 +864,13 @@ cs_sys_coupling_add(const char *sys_name,
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief send data to system code
+ *
+ * \param[in] cpl pointer to coupling structure.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_sys_coupling_send_data(cs_sys_cpl_t *cpl)
@@ -691,6 +887,14 @@ cs_sys_coupling_send_data(cs_sys_cpl_t *cpl)
 #endif
 
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief recieve data from system code
+ *
+ * \param[in] cpl pointer to coupling structure.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_sys_coupling_recv_data(cs_sys_cpl_t *cpl)
@@ -718,6 +922,12 @@ cs_sys_coupling_recv_data(cs_sys_cpl_t *cpl)
 #endif
 
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize cfd<->system coupling once all couplings are defined.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_sys_coupling_all_init(void)
@@ -757,6 +967,12 @@ cs_sys_coupling_all_init(void)
   }
 
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize all cfd<->sys couplings
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_sys_coupling_all_finalize(void)
