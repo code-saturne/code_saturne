@@ -871,7 +871,7 @@ END_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set allocation mode for an already allocated pointer using
- *        pass by reference sema,tics for the pointer (C++ only).
+ *        pass by reference semantics for the pointer (C++ only).
  *
  * In C++, this function is preferred to direct use of cs_set_alloc_mode,
  * as it allows a more concise syntax and does not require additional casting.

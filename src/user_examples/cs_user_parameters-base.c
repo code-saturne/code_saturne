@@ -275,7 +275,6 @@ cs_user_model(void)
    * Semi-coupled (=2) by default. */
   cs_glob_atmo_chemistry->chemistry_sep_mode = 1;
 
-
   /* Aerosol chemistry
    * -----------------*/
 
