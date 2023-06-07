@@ -85,8 +85,6 @@ cs_version.h.in
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
-cs_wall_condensation.h \
-cs_wall_condensation_1d_thermal.h \
 cs_1d_wall_thermal.h \
 cs_1d_wall_thermal_check.h \
 cs_ale.h \
@@ -198,11 +196,16 @@ cs_velocity_pressure.h \
 cs_vof.h \
 cs_volume_zone.h \
 cs_volume_mass_injection.h \
+cs_wall_condensation.h \
+cs_wall_condensation_1d_thermal.h \
 cs_wall_functions.h \
 cs_xdef_eval_at_zone.h \
 cs_zone.h \
 cs_base_headers.h \
 cs_headers.h
+
+noinst_HEADERS = \
+cs_boundary_conditions_priv.h
 
 if HAVE_CUDA
 pkginclude_HEADERS += \

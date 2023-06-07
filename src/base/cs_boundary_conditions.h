@@ -39,8 +39,11 @@
 
 #include "cs_base.h"
 #include "cs_field.h"
+#include "cs_function.h"
 #include "cs_math.h"
 #include "cs_mesh_location.h"
+#include "cs_time_control.h"
+#include "cs_zone.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -102,7 +105,7 @@ typedef struct {
   int  *izfppp;
 
   /*! indirection array allowing to sort the boundary faces
-   *  according to their boundary condition type \c itypfb */
+   *  according to their boundary condition type \c bc_type */
   int  *itrifb;
 
   /*! Imposed flow zone indicator (for inlet zones).
@@ -121,7 +124,7 @@ typedef struct {
   int   icalke[CS_MAX_BC_PM_ZONE_NUM+1];
 
   /*! Imposed flow value (for inlet zones).
-   * If the mass flow is imposed (\c iqimp(z_num - 1) = 1), the matching \c qimpat
+   * If the mass flow is imposed (\c iqimp(z_num - 1) = 1), the matching \c qimp
    * value must be set, and the defined velocity boundary condition will be
    * rescaled so as to match the given mass flow (i.e. only its original
    * direction is used. Otherwise, the given velocity boundary condition
@@ -642,6 +645,21 @@ cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t  *a,
                                                     cs_real_t   pimp,
                                                     cs_real_t   cfl,
                                                     cs_real_t   hint);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Acess the time control structure of an inlet.
+ *
+ * This allows modifying that structure, for example updating the inlet
+ * velocity values only in a certain time range, and avoiding
+ * uneeded recomputations outside that range.
+ *
+ * \param[in]  zone  pointer to associated zone
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_time_control_t *
+cs_boundary_conditions_get_inlet_time_control(const  cs_zone_t  *zone);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1328,12 +1346,12 @@ cs_boundary_conditions_reset(void);
 /*!
  * \brief Update per variable boundary condition codes.
  *
- * \param[in]  itypfb  type of boundary for each face
+ * \param[in]  bc_type  type of boundary for each face
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_compute(int  itypfb[]);
+cs_boundary_conditions_compute(int  bc_type[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1343,17 +1361,198 @@ cs_boundary_conditions_compute(int  itypfb[]);
  * As portions of stdtcl are migrated to C, they should be called here,
  * before mapped inlets.
  *
- * \param[in]  itypfb  type of boundary for each face
+ * \param[in]  bc_type  type of boundary for each face
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_complete(int  itypfb[]);
+cs_boundary_conditions_complete(int  bc_type[]);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Assign a constant velocity to an open (inlet/outlet) boundary.
+ *
+ * This function may also be used to define the flow direction if called
+ * before one of the \c cs_boundary_conditions_open_set_mass_flow_rate
+ * or \c cs_boundary_conditions_set_volume_flow_rate functions.
+ *
+ * \param[in]  z       pointer to associated zone
+ * \param[in]  u_norm  associated constant normal
+ */
+/*----------------------------------------------------------------------------*/
 
-int *
-cs_f_boundary_conditions_get_bc_type(void);
+void
+cs_boundary_conditions_open_set_velocity_by_value(const cs_zone_t  *z,
+                                                  const cs_real_t   u[3]);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Assign a constant velocity normal to an inlet.
+ *
+ * \param[in]  z       pointer to associated zone
+ * \param[in]  u_norm  associated constant normal
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_open_set_velocity_by_normal_value(const  cs_zone_t  *z,
+                                                         cs_real_t     u_norm);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a normal velocity to an inlet using a provided function.
+ *
+ * Reminder: if the input pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - when a single integer identifier is needed, the input pointer can be
+ *   set to that value instead of an actual address;
+ *
+ * \param[in]  z      pointer to associated zone
+ * \param[in]  func   associated velocity vector evaluation function
+ *                    at zone faces
+ * \param[in]  input  optional function evaluation input, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_open_set_velocity_by_func(const  cs_zone_t       *z,
+                                                 cs_eval_at_location_t  *func,
+                                                 void                   *input);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Assign a constant mass flow rate to an inlet.
+ *
+ * By default, the flow direction is considered normal to the boundary.
+ * The flow direction may be specified by calling
+ * \ref cs_boundary_conditions_open_set_velocity_by_value,
+ * or \ref cs_boundary_conditions_open_set_velocity_by_func
+ * for the appropriate zone before calling this function.
+ * In that case, the velocity vector is rescaled so as to obtain the required
+ * mass flow rate.
+ *
+ * \param[in]  z  pointer to associated zone
+ * \param[in]  q  associated constant mass flow rate
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_open_set_mass_flow_rate_by_value(const  cs_zone_t  *z,
+                                                        cs_real_t          q);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Assign a mass flow rate to an inlet based on provided function.
+ *
+ * The flow direction may be specified by also calling
+ * \ref cs_boundary_conditions_open_set_velocity_by_value,
+ * \ref cs_boundary_conditions_open_set_velocity_by_normal_value,
+ * or \ref cs_boundary_conditions_open_set_velocity_by_func.
+ * In that case, the velocity vector is rescaled so as to obtain the required
+ * mass flow rate.
+ *
+ * Since the flow rate is a global value, the provided function should
+ * be associated with the CS_MESH_LOCATION_NONE location.
+ *
+ * Note also that during updates, this function will be called before
+ * the velocity vector update, so in complex cases where flow rate computation
+ * would require feedback from the velocity at this boundary, the user
+ * must be aware that values from the previous time step or update will
+ * be used, handle this in another manner.
+ *
+ * Reminder: if the input pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - when a single integer identifier is needed, the input pointer can be
+ *   set to that value instead of an actual address;
+ *
+ * \param[in]  z      pointer to associated zone
+ * \param[in]  func   associated scalar (mass flow rate) evaluation function
+ * \param[in]  input  optional function evaluation input, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_open_set_mass_flow_rate_by_func
+  (const  cs_zone_t       *z,
+   cs_eval_at_location_t  *func,
+   void                   *input);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Assign a constant volume flow rate to an inlet.
+ *
+ * The flow direction may be specified by also calling
+ * \ref cs_boundary_conditions_open_set_velocity_by_value,
+ * or \ref cs_boundary_conditions_open_set_velocity_by_func.
+ * In that case, the velocity vector is rescaled so as to obtain the required
+ * volume flow rate.
+ *
+ * \param[in]  z  pointer to associated zone
+ * \param[in]  q  associated constant volume flow rate
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_open_set_volume_flow_rate_by_value(const  cs_zone_t  *z,
+                                                          cs_real_t          q);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Assign a volume flow rate to an inlet based on provided function.
+ *
+ * The flow direction may be specified by also calling
+ * \ref cs_boundary_conditions_open_set_velocity_by_value,
+ * \ref cs_boundary_conditions_open_set_velocity_by_normal_value,
+ * or \ref cs_boundary_conditions_open_set_velocity_by_func.
+ * In that case, the velocity vector is rescaled so as to obtain the required
+ * volume flow rate.
+ *
+ * Since the flow rate is a global value, the provided function should
+ * be associated with the CS_MESH_LOCATION_NONE location.
+ *
+ * Note also that during updates, this function will be called before
+ * the velocity vector update, so in complex cases where flow rate computation
+ * would require feedback from the velocity at this boundary, the user
+ * must be aware that values from the previous time step or update will
+ * be used, handle this in another manner.
+ *
+ * Reminder: if the input pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - when a single integer identifier is needed, the input pointer can be
+ *   set to that value instead of an actual address;
+ *
+ * \param[in]  z      pointer to associated zone
+ * \param[in]  func   associated scalar (volume flow rate) evaluation function
+ * \param[in]  input  optional function evaluation input, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_open_set_volume_flow_rate_by_func
+  (const  cs_zone_t       *z,
+   cs_eval_at_location_t  *func,
+   void                   *input);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Assign a flow rate to an inlet based directly on the velocity.
+ *
+ * This is the default, so this function is useful only if need to restore
+ * that behavior if needed after calling one of the
+ * \c cs_boundary_conditions_set_volume_volume_flow_rate
+ * \c cs_boundary_conditions_open_set_volume_flow_rate functions.
+ *
+ * \param[in]  z      pointer to associated zone
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_open_set_flow_rate_by_velocity(const  cs_zone_t  *z);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

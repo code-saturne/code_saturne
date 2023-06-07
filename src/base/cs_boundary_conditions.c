@@ -53,8 +53,12 @@
 
 #include "cs_ale.h"
 #include "cs_base.h"
+#include "cs_blas.h"
 #include "cs_boundary.h"
+#include "cs_cf_thermo.h"
 #include "cs_coupling.h"
+#include "cs_equation.h"
+#include "cs_function.h"
 #include "cs_gradient.h"
 #include "cs_gui_util.h"
 #include "cs_field.h"
@@ -72,7 +76,9 @@
 #include "cs_physical_model.h"
 #include "cs_prototypes.h"
 #include "cs_post.h"
+#include "cs_time_control.h"
 #include "cs_xdef_eval_at_zone.h"
+
 #include "fvm_nodal.h"
 
 /*----------------------------------------------------------------------------
@@ -80,6 +86,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_boundary_conditions.h"
+#include "cs_boundary_conditions_priv.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -104,6 +111,9 @@ BEGIN_C_DECLS
  * Local Type Definitions
  *============================================================================*/
 
+/* Mapped inlet */
+/*--------------*/
+
 typedef struct {
 
   int             bc_location_id;      /* location id of boundary zone */
@@ -116,10 +126,6 @@ typedef struct {
 
 } cs_bc_map_t;
 
-/*----------------------------------------------------------------------------
- * Local Structure Definitions
- *----------------------------------------------------------------------------*/
-
 /*============================================================================
  *  Global variables
  *============================================================================*/
@@ -130,6 +136,9 @@ static int *_bc_pm_face_zone;
 
 static int _n_bc_maps = 0;
 static cs_bc_map_t *_bc_maps = NULL;
+
+static int _n_bc_open = 0;
+static cs_boundary_conditions_open_t **_bc_open = NULL;
 
 const int *cs_glob_bc_type = NULL;
 
@@ -192,6 +201,51 @@ cs_f_boundary_conditions_get_atincl_pointers(int **iprofm,
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Unset a bit from a flag set if present
+ *
+ * parameters:
+ *   flag <-- flag
+ *   mask <-- bit mast to unset
+ *
+ * return:
+ *   updated bit mask
+ *----------------------------------------------------------------------------*/
+
+static int
+_unset_flag(int  mask,
+            int  flag)
+{
+  int retval = (mask | flag) - flag;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Return a pointer to equation parameters based on a field or equation name.
+ *
+ * parameters:
+ *   name <-- field or equation name
+ *
+ * return:
+ *   pointer to matching child string
+ *----------------------------------------------------------------------------*/
+
+static cs_equation_param_t *
+_get_equation_param(const char  *name)
+{
+  cs_equation_param_t *eqp = NULL;
+
+  cs_field_t *f = cs_field_by_name_try(name);
+  if (f != NULL)
+    eqp = cs_field_get_equation_param(f);
+
+  else
+    eqp = cs_equation_param_by_name(name);
+
+  return eqp;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -409,7 +463,6 @@ _compute_dirichlet_bc(const cs_mesh_t            *mesh,
   const cs_lnum_t *elt_ids = bz->elt_ids;
   const cs_lnum_t  n_elts = bz->n_elts;
   const cs_lnum_t  def_dim = def->dim;
-
   assert(eqp->dim == def->dim);
 
   cs_boundary_type_t boundary_type = boundaries->default_type;
@@ -737,6 +790,592 @@ _compute_robin_bc(const cs_mesh_t            *mesh,
   } /* Switch on the type of definition */
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_dof_func_t function to compute the velocity at boundary faces
+ *        using a uniform norm.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
+ * In the current case, retval is allocated to mesh->n_b_faces * stride
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         pointer to cs_gui_boundary_vel_context_t
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_dof_vel_const_uniform_normal(cs_lnum_t         n_elts,
+                              const cs_lnum_t  *elt_ids,
+                              bool              dense_output,
+                              void             *input,
+                              cs_real_t        *retval)
+{
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_u_normal;
+
+  cs_boundary_conditions_open_t *c = (cs_boundary_conditions_open_t *)input;
+
+  cs_real_t u_norm = c->vel_values[3];
+
+  if (c->vel_rescale == CS_BC_VEL_RESCALE_VOLUME_FLOW_RATE)
+    u_norm /= c->zone->f_measure;
+
+  if (elt_ids != NULL) {
+    if (dense_output) {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t j = elt_ids[i];
+        for (cs_lnum_t k = 0; k < 3; k++)
+          retval[i*3 + k] = -f_n[j][k] * u_norm;
+      }
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t j = elt_ids[i];
+        for (cs_lnum_t k = 0; k < 3; k++)
+          retval[j*3 + k] = -f_n[j][k] * u_norm;
+      }
+    }
+  }
+  else {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      for (cs_lnum_t k = 0; k < 3; k++)
+        retval[i*3 + k] = -f_n[i][k] * u_norm;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_dof_func_t function to compute the velocity at boundary faces
+ *        using a vector per face.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
+ * In the current case, retval is allocated to mesh->n_b_faces * stride
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         pointer to cs_gui_boundary_vel_context_t
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_dof_vel_from_buffer(cs_lnum_t         n_elts,
+                     const cs_lnum_t  *elt_ids,
+                     bool              dense_output,
+                     void             *input,
+                     cs_real_t        *retval)
+{
+  cs_boundary_conditions_open_t *c = (cs_boundary_conditions_open_t *)input;
+
+  const cs_real_3_t *vel_b = (const cs_real_3_t *)c->vel_buffer;
+
+  if (elt_ids != NULL && dense_output == false) {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t j = elt_ids[i];
+      for (cs_lnum_t k = 0; k < 3; k++)
+        retval[j*3 + k] = vel_b[i][k];
+    }
+  }
+  else {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      for (cs_lnum_t k = 0; k < 3; k++)
+        retval[i*3 + k] = vel_b[i][k];
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_dof_func_t function to compute the velocity at boundary faces
+ *        using a vector per face.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
+ * In the current case, retval is allocated to mesh->n_b_faces * stride
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         pointer to cs_gui_boundary_vel_context_t
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_dof_vel_from_buffer_uniform(cs_lnum_t         n_elts,
+                             const cs_lnum_t  *elt_ids,
+                             bool              dense_output,
+                             void             *input,
+                             cs_real_t        *retval)
+{
+  cs_boundary_conditions_open_t *c = (cs_boundary_conditions_open_t *)input;
+
+  const cs_real_t *vel_b = c->vel_buffer;
+
+  if (elt_ids != NULL && dense_output == false) {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t j = elt_ids[i];
+      for (cs_lnum_t k = 0; k < 3; k++)
+        retval[j*3 + k] = vel_b[k];
+    }
+  }
+  else {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      for (cs_lnum_t k = 0; k < 3; k++)
+        retval[i*3 + k] = vel_b[k];
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a constant velocity to an inlet.
+ *
+ * \param[in]  z       pointer to associated zone
+ * \param[in]  u_norm  associated constant normal
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_clear_inlet_outlet_vel(cs_boundary_conditions_open_t *c)
+{
+  BFT_FREE(c->vel_buffer);
+
+  for (int i = 0; i < 4; i++)
+    c->vel_values[i] = 0;
+
+  c->vel_func = NULL;
+  c->vel_func_input = NULL;
+  c->flow_func = NULL;
+  c->flow_func_input = NULL;
+  c->scale_func = NULL;
+  c->scale_func_input = NULL;
+
+  c->dof_func = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_eval_at_location_t function to compute the velocity at
+ *        boundary faces using a constant uniform vector value.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection.
+ *
+ * \param[in]       location_id   base associated mesh location id
+ * \param[in]       n_elts        number of elements to consider
+ * \param[in]       elt_ids       list of elements ids
+ * \param[in]       input         pointer to cs_boundary_conditions_open_t
+ * \param[in, out]  vals          resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_vel_profile_constant_uniform(int               location_id,
+                              cs_lnum_t         n_elts,
+                              const cs_lnum_t  *elt_ids,
+                              void             *input,
+                              void             *vals_p)
+{
+  CS_UNUSED(elt_ids);
+
+  assert(   cs_mesh_location_get_type(location_id)
+         == CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  cs_real_3_t *vals = (cs_real_3_t *)vals_p;
+
+  cs_boundary_conditions_open_t  *c
+    = (cs_boundary_conditions_open_t *)input;
+
+  assert(c->vel_flags & CS_BC_OPEN_UNIFORM_DIRECTION);
+
+  const cs_real_t *v = c->vel_values;
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    for (cs_lnum_t k = 0; k < 3; k++)
+      vals[i][k] = v[k];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_eval_at_location_t function to compute the velocity at
+ *        boundary faces using a constant uniform normal value.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection.
+ *
+ * \param[in]       location_id   base associated mesh location id
+ * \param[in]       n_elts        number of elements to consider
+ * \param[in]       elt_ids       list of elements ids
+ * \param[in]       input         pointer to cs_boundary_conditions_open_t
+ * \param[in, out]  vals          resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_vel_profile_constant_uniform_normal(int               location_id,
+                                     cs_lnum_t         n_elts,
+                                     const cs_lnum_t  *elt_ids,
+                                     void             *input,
+                                     void             *vals_p)
+{
+  assert(   cs_mesh_location_get_type(location_id)
+         == CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  cs_real_3_t *vals = (cs_real_3_t *)vals_p;
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_u_normal;
+
+  cs_boundary_conditions_open_t  *c
+    = (cs_boundary_conditions_open_t *)input;
+
+  assert(c->vel_flags & CS_BC_OPEN_UNIFORM_QUANTITY);
+  assert(c->vel_flags & CS_BC_OPEN_NORMAL_DIRECTION);
+
+  const cs_real_t v
+    = (c->vel_rescale == CS_BC_VEL_RESCALE_NONE) ? c->vel_values[3] : 1.0;
+
+  if (elt_ids != NULL) {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      const cs_lnum_t j = elt_ids[i];
+      for (cs_lnum_t k = 0; k < 3; k++)
+        vals[i][k] = -f_n[j][k] * v;
+    }
+  }
+  else {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      for (cs_lnum_t k = 0; k < 3; k++)
+        vals[i][k] = -f_n[i][k] * v;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_eval_at_location_t function to scale the velocity at boundary
+ *        faces so as to obtain the requested mass flow rate.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection.
+ *
+ * \param[in]       location_id   base associated mesh location id
+ * \param[in]       n_elts        number of elements to consider
+ * \param[in]       elt_ids       list of elements ids
+ * \param[in]       input         pointer to cs_boundary_conditions_open_t
+ * \param[in, out]  vals          resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_scale_vel_mass_flow_rate(int               location_id,
+                          cs_lnum_t         n_elts,
+                          const cs_lnum_t  *elt_ids,
+                          void             *input,
+                          void             *vals_p)
+{
+  CS_UNUSED(elt_ids);
+
+  assert(   cs_mesh_location_get_type(location_id)
+         == CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  cs_real_3_t *vals = (cs_real_3_t *)vals_p;
+
+  cs_boundary_conditions_open_t  *c
+    = (cs_boundary_conditions_open_t *)input;
+
+  cs_real_t q_m = c->vel_values[3];
+  cs_real_t qf = 0.;
+
+  /* Return zero if mass flow is zero, compute ratio otherwise */
+
+  if (fabs(q_m) > 0) {
+
+    const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+    const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_f_face_normal;
+
+    cs_real_t *sf;
+    BFT_MALLOC(sf, n_elts, cs_real_t);
+
+    /* Compressible prescribed inlet with given pressure and temperature */
+
+    if (c->c_pr >= 0 && c->c_tk > 0) {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t j = (elt_ids != NULL) ? elt_ids[i] : i;
+        sf[i] = -   cs_math_3_dot_product(vals[i], f_n[j])
+                  * cs_cf_thermo_b_rho_from_pt(j, c->c_pr, c->c_tk);
+      }
+    }
+
+    /* Regular case */
+
+    else {
+
+      const cs_field_t *rho_b_f = CS_F_(rho_b);
+
+      if (rho_b_f == NULL) {
+        bft_error
+          (__FILE__, __LINE__, 0,
+           _("%s: no boundary density field for mass flow scaling\n"
+             " for zone \"%s\"."),
+           __func__, c->zone->name);
+      }
+
+      const cs_real_t *rho_b = rho_b_f->val;
+
+      if (elt_ids != NULL) {
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          cs_lnum_t j = elt_ids[i];
+          sf[i] = - cs_math_3_dot_product(vals[i], f_n[j]) * rho_b[j];
+        }
+      }
+      else {
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          sf[i] = - cs_math_3_dot_product(vals[i], f_n[i]) * rho_b[i];
+        }
+      }
+
+    }
+
+    cs_real_t q_ini = cs_sum(n_elts, sf);
+    cs_parall_sum(1, CS_REAL_TYPE, &q_ini);
+
+    BFT_FREE(sf);
+
+    if (fabs(q_ini) < 1e-30)
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("%s: cannot normalize for zone \"%s\"\n"
+           "  with zero or quasi-zero initial flow rate)."),
+         __func__, c->zone->name);
+
+    qf = c->vel_values[3] / q_ini;
+  }
+
+  cs_lnum_t n_vals = n_elts*3;
+
+  for (cs_lnum_t i = 0; i < n_vals; i++) {
+    c->vel_buffer[i] *= qf;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_eval_at_location_t function to scale the velocity at boundary
+ *        faces so as to obtain the requested volume flow rate.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection.
+ *
+ * \param[in]       location_id   base associated mesh location id
+ * \param[in]       n_elts        number of elements to consider
+ * \param[in]       elt_ids       list of elements ids
+ * \param[in]       input         pointer to cs_boundary_conditions_open_t
+ * \param[in, out]  vals          resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_scale_vel_volume_flow_rate(int               location_id,
+                            cs_lnum_t         n_elts,
+                            const cs_lnum_t  *elt_ids,
+                            void             *input,
+                            void             *vals_p)
+{
+  CS_UNUSED(elt_ids);
+
+  assert(   cs_mesh_location_get_type(location_id)
+         == CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  cs_real_t *vals = (cs_real_t *)vals_p;
+
+  cs_boundary_conditions_open_t  *c
+    = (cs_boundary_conditions_open_t *)input;
+
+  cs_lnum_t r_step = 3;
+  if (c->dof_func == _dof_vel_from_buffer_uniform)
+    r_step = 0;
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_f_face_normal;
+
+  cs_real_t *sf;
+  BFT_MALLOC(sf, n_elts, cs_real_t);
+
+  if (elt_ids != NULL) {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t j = elt_ids[i];
+      sf[i] = - cs_math_3_dot_product(vals + i*r_step, f_n[j]);
+    }
+  }
+  else {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      sf[i] = - cs_math_3_dot_product(vals + i*r_step, f_n[i]);
+    }
+  }
+
+  cs_real_t q_ini = cs_sum(n_elts, sf);
+  cs_parall_sum(1, CS_REAL_TYPE, &q_ini);
+
+  BFT_FREE(sf);
+
+  if (fabs(q_ini) < 1e-30)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("%s: cannot normalize for zone \"%s\"\n"
+         "  with zero or quasi-zero initial flow rate)."),
+       __func__, c->zone->name);
+
+  cs_real_t qf = c->vel_values[3] / q_ini;
+
+  cs_lnum_t n_vals = n_elts*3;
+  if (r_step == 0)
+    n_vals = 3;
+
+  for (cs_lnum_t i = 0; i < n_vals; i++) {
+    vals[i] *= qf;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update inlet quantities.
+ *
+ * This updates values associated with a given zone's inlet/outlet.
+ *
+ * Depending on the complexity of BC velocity definitions, xdef functions will
+ * us simpler contexts directly or use computed values from this context to
+ * assign BC values.
+ *
+ * For example, in most cases where rescaling is necessary, values will be
+ * updated here first.
+ *
+ * \param[in]  c  inlet/outlet structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_inlet_outlet(cs_boundary_conditions_open_t  *c)
+{
+  const cs_time_step_t *ts = cs_glob_time_step;
+
+  /* At the first time step, always update (we do not assume that in case
+     of a restarted computation, data is handled using restart data info
+     in general);
+
+     At subsequent time steps, update only if the boundary condition might
+     depend on time. */
+
+  if (   (ts->nt_cur > ts->nt_prev + 1)
+      && (cs_time_control_is_active(&(c->tc), ts) == false))
+    return;
+
+  /* Compute flow rate from function if needed */
+
+  if (c->flow_func != NULL) {
+    cs_real_t q[1] = {0};
+    c->flow_func(0, 1, NULL, c->flow_func_input, (void *)q);
+    c->vel_values[3] = q[0];
+  }
+
+  if (   c->dof_func == NULL
+      || c->dof_func == _dof_vel_const_uniform_normal)
+    return;
+
+  const cs_zone_t *z = c->zone;
+
+  if (z->f_measure <= 0. && c->vel_buffer[3] >= 0. && c->scale_func != NULL) {
+
+    if (   c->vel_rescale == CS_BC_VEL_RESCALE_MASS_FLOW_RATE
+        || c->vel_rescale == CS_BC_VEL_RESCALE_VOLUME_FLOW_RATE) {
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("%s: cannot normalize requested flow rate (%g) for zone \"%s\"\n"
+           "  with zero surface)."),
+         __func__, fabs(c->vel_values[3]), z->name);
+    }
+
+  }
+
+  /* For uniform direction with constant volume flow, use vel_buffer
+     rather than c_vals as dof_func input, so that if the mesh
+     is modified (such as with ALE or turbomachinery), the original
+     values can be used to recompute the scaling (without progressive
+     numerical loss). */
+
+  if (c->dof_func == _dof_vel_from_buffer_uniform) {
+
+    assert(c->scale_func == _scale_vel_volume_flow_rate);
+
+    c->scale_func(z->location_id,
+                  z->n_elts,
+                  z->elt_ids,
+                  c->scale_func_input,
+                  c->vel_buffer);
+
+    return;
+
+  }
+
+  assert(c->dof_func == _dof_vel_from_buffer);
+
+  if (   c->vel_buffer == NULL
+      || cs_glob_mesh->time_dep == CS_MESH_TRANSIENT_CONNECT)
+    BFT_REALLOC(c->vel_buffer, z->n_elts*3, cs_real_t);
+
+  /* Compute velocity buffer */
+
+  if (c->vel_func != NULL) {
+    c->vel_func(z->location_id,
+                z->n_elts,
+                z->elt_ids,
+                c->vel_func_input,
+                c->vel_buffer);
+  }
+  else {
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: Missing velocity evaluation function for zone %s."),
+              __func__, z->name);
+  }
+
+  /* Scale buffer if needed */
+
+  if (c->scale_func != NULL) {
+    c->scale_func(z->location_id,
+                  z->n_elts,
+                  z->elt_ids,
+                  c->scale_func_input,
+                  c->vel_buffer);
+  }
+
+  /* Also update legacy boundary condition structures */
+
+  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
+  if (bc_pm_info != NULL) {
+    int izone = z->id - 1;
+    if (c->vel_rescale == CS_BC_VEL_RESCALE_MASS_FLOW_RATE) {
+      bc_pm_info->iqimp[izone] = 1;
+      bc_pm_info->qimp[izone] = c->vel_values[3];
+    }
+    else {
+      bc_pm_info->iqimp[izone] = 0;
+      bc_pm_info->qimp[izone] = 0;
+    }
+  }
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -918,6 +1557,96 @@ cs_f_boundary_conditions_get_atincl_pointers(int **iprofm,
     *iautom = cs_glob_bc_pm_info->iautom;
   else
     *iautom = NULL;
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Semi-private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Find or add an inlet or outlet context structure for a given zone.
+ *
+ * \param[in]  zone  pointer to associated zone
+ *
+ * \return: pointer to structure associated with zone
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_boundary_conditions_open_t *
+cs_boundary_conditions_open_find_or_add(const  cs_zone_t   *zone)
+{
+  assert(zone != NULL);
+
+  for (int i = 0; i < _n_bc_open; i++) {
+    if (_bc_open[i]->zone->id == zone->id)
+      return _bc_open[i];
+  }
+
+  /* If we have not returned yet, we need to add an inlet/outlet structure;
+
+   We assume we do not have a very high number of open boundaries
+   in most cases, so we use a simple allocation scheme.
+   We could use more complex schemes to limit reallocation, but just
+   as for cs_map_t elements, it is important that the adress of
+   a given context does not change through reallocation, so as to
+   avoid issues where that context is passed as an input to function
+   pointers and its stored adress would be invalid. */
+
+  BFT_REALLOC(_bc_open, _n_bc_open+1, cs_boundary_conditions_open_t *);
+
+  cs_boundary_conditions_open_t *c;
+  BFT_MALLOC(c, 1, cs_boundary_conditions_open_t);
+
+  _bc_open[_n_bc_open] = c;
+  _n_bc_open += 1;
+
+  /* Now initialize structure */
+
+  memset(c, 0, sizeof(cs_boundary_conditions_open_t));
+
+  c->zone = zone;
+
+  cs_time_control_init_by_time_step(&(c->tc),
+                                    -1,
+                                    -1,
+                                    1,
+                                    true,
+                                    false);
+
+  /* Set some default values */
+
+  c->vel_rescale = CS_BC_VEL_RESCALE_NONE;
+  c->vel_flags = (  CS_BC_OPEN_CONSTANT
+                  | CS_BC_OPEN_NORMAL_DIRECTION
+                  | CS_BC_OPEN_UNIFORM_QUANTITY);
+
+  c->vel_values[0] = 0.;
+  c->vel_values[1] = 0.;
+  c->vel_values[2] = 0.;
+  c->vel_values[3] = 0.;
+
+  c->vel_buffer = NULL;
+
+  c->hyd_diameter = -1;
+  c->turb_intensity = -1;
+  c->c_pr = -1;
+  c->c_tk = -1;
+
+  c->vel_func = NULL;
+  c->vel_func_input = NULL;
+  c->flow_func = NULL;
+  c->flow_func_input = NULL;
+  c->scale_func = NULL;
+  c->scale_func_input = NULL;
+
+  c->dof_func = _dof_vel_const_uniform_normal;
+
+  c->model_inlet = NULL;
+
+  return c;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1501,6 +2230,15 @@ cs_boundary_conditions_free(void)
   BFT_FREE(_bc_maps);
   _n_bc_maps = 0;
 
+  for (int i = 0; i < _n_bc_open; i++) {
+    cs_boundary_conditions_open_t *c = _bc_open[i];
+    BFT_FREE(c->vel_buffer);
+    BFT_FREE(c);
+    _bc_open[i] = NULL;
+  }
+  BFT_FREE(_bc_open);
+  _n_bc_open = 0;
+
   if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
       || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1
       || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] > -1) {
@@ -1520,38 +2258,6 @@ cs_boundary_conditions_free(void)
   BFT_FREE(cs_glob_bc_pm_info->izfppp);
   BFT_FREE(cs_glob_bc_pm_info->itrifb);
   BFT_FREE(cs_glob_bc_pm_info);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set convective oulet boundary condition for a scalar.
- *
- * \param[out]    coefa         explicit BC coefficient for gradients
- * \param[out]    cofaf         explicit BC coefficient for diffusive flux
- * \param[out]    coefb         implicit BC coefficient for gradients
- * \param[out]    cofbf         implicit BC coefficient for diffusive flux
- * \param[in]     pimp          Flux value to impose
- * \param[in]     cfl           Local Courant number used to convect
- * \param[in]     hint          Internal exchange coefficient
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *coefa ,
-                                                    cs_real_t *cofaf,
-                                                    cs_real_t *coefb,
-                                                    cs_real_t *cofbf,
-                                                    cs_real_t  pimp,
-                                                    cs_real_t  cfl,
-                                                    cs_real_t  hint)
-{
-  /* Gradient BCs */
-  *coefb = cfl / (1.0 + cfl);
-  *coefa = (1.0 - *coefb) * pimp;
-
-  /* Flux BCs */
-  *cofaf = - hint * *coefa;
-  *cofbf =   hint * (1.0 - *coefb);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1633,6 +2339,11 @@ cs_boundary_conditions_compute(int  itypfb[])
 
   cs_lnum_t  eval_buf_size = 0;
   cs_real_t *eval_buf = NULL;
+
+  /* Loop on inlets */
+
+  for (int io_id = 0; io_id < _n_bc_open; io_id++)
+    _update_inlet_outlet(_bc_open[io_id]);
 
   /* Loop on fields */
 
@@ -1881,6 +2592,551 @@ cs_boundary_conditions_complete(int  itypfb[])
     }
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a constant velocity to an open (inlet/outlet) boundary.
+ *
+ * This function may also be used to define the flow direction if called
+ * before one of the \c cs_boundary_conditions_open_set_mass_flow_rate
+ * or \c cs_boundary_conditions_set_volume_flow_rate functions.
+ *
+ * \param[in]  z       pointer to associated zone
+ * \param[in]  u_norm  associated constant normal
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_open_set_velocity_by_value(const cs_zone_t  *z,
+                                                  const cs_real_t   u[3])
+{
+  cs_boundary_conditions_open_t *c
+    = cs_boundary_conditions_open_find_or_add(z);
+
+  /* Temporary copy before clear in case u points to c->vel_flags */
+  const cs_real_t u_c[] = {u[0], u[1], u[2]};
+
+  _clear_inlet_outlet_vel(c);
+
+  c->vel_rescale = CS_BC_VEL_RESCALE_NONE;
+
+  c->vel_flags = (  CS_BC_OPEN_CONSTANT
+                  | CS_BC_OPEN_UNIFORM_QUANTITY
+                  | CS_BC_OPEN_UNIFORM_DIRECTION);
+
+  for (int i = 0; i < 3; i++)
+    c->vel_values[i] = u_c[i];
+
+  cs_equation_param_t *eqp = _get_equation_param("velocity");
+  cs_equation_remove_bc(eqp, c->zone->name);  /* Replace if already set */
+
+  cs_equation_add_bc_by_value(eqp,
+                              CS_PARAM_BC_DIRICHLET,
+                              c->zone->name,
+                              c->vel_values);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a constant velocity normal to an inlet.
+ *
+ * \param[in]  z       pointer to associated zone
+ * \param[in]  u_norm  associated constant normal
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_open_set_velocity_by_normal_value(const  cs_zone_t  *z,
+                                                         cs_real_t     u_norm)
+{
+  cs_boundary_conditions_open_t *c
+    = cs_boundary_conditions_open_find_or_add(z);
+
+  _clear_inlet_outlet_vel(c);
+
+  c->vel_rescale = CS_BC_VEL_RESCALE_NONE;
+
+  c->vel_flags = (  CS_BC_OPEN_CONSTANT
+                  | CS_BC_OPEN_NORMAL_DIRECTION
+                  | CS_BC_OPEN_UNIFORM_QUANTITY);
+
+  c->vel_values[3] = u_norm;
+
+  c->dof_func = _dof_vel_const_uniform_normal;
+
+  cs_equation_param_t *eqp = _get_equation_param("velocity");
+  cs_equation_remove_bc(eqp, c->zone->name);  /* Replace if already set */
+
+  cs_equation_add_bc_by_dof_func(eqp,
+                                 CS_PARAM_BC_DIRICHLET,
+                                 z->name,
+                                 cs_flag_boundary_face,  // location flag
+                                 c->dof_func,
+                                 c);
+
+  /* Also update legacy boundary condition structures */
+
+  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
+  if (bc_pm_info != NULL) {
+    int izone = z->id - 1;
+    bc_pm_info->iqimp[izone] = 0;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a normal velocity to an inlet using a provided function.
+ *
+ * Reminder: if the input pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - when a single integer identifier is needed, the input pointer can be
+ *   set to that value instead of an actual address;
+ *
+ * \param[in]  z      pointer to associated zone
+ * \param[in]  func   associated velocity vector evaluation function
+ *                    at zone faces
+ * \param[in]  input  optional function evaluation input, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_open_set_velocity_by_func(const  cs_zone_t       *z,
+                                                 cs_eval_at_location_t  *func,
+                                                 void                   *input)
+{
+  cs_boundary_conditions_open_t *c
+    = cs_boundary_conditions_open_find_or_add(z);
+
+  _clear_inlet_outlet_vel(c);
+
+  c->vel_rescale = CS_BC_VEL_RESCALE_NONE;
+
+  c->vel_flags = 0;
+
+  c->vel_func = func;
+  c->vel_func_input = input;
+
+  c->dof_func = _dof_vel_from_buffer;
+
+  cs_equation_param_t *eqp = _get_equation_param("velocity");
+  cs_equation_remove_bc(eqp, z->name);  /* Replace if already set */
+
+  cs_equation_add_bc_by_dof_func(eqp,
+                                 CS_PARAM_BC_DIRICHLET,
+                                 z->name,
+                                 cs_flag_boundary_face,  // location flag
+                                 c->dof_func,
+                                 c);
+
+  /* Also update legacy boundary condition structures */
+
+  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
+  if (bc_pm_info != NULL) {
+    int izone = z->id - 1;
+    bc_pm_info->iqimp[izone] = 0;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a constant mass flow rate to an inlet.
+ *
+ * By default, the flow direction is considered normal to the boundary.
+ * The flow direction may be specified by calling
+ * \ref cs_boundary_conditions_open_set_velocity_by_value,
+ * or \ref cs_boundary_conditions_open_set_velocity_by_func
+ * for the appropriate zone before calling this function.
+ * In that case, the velocity vector is rescaled so as to obtain the required
+ * mass flow rate.
+ *
+ * \param[in]  z  pointer to associated zone
+ * \param[in]  q  associated constant mass flow rate
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_open_set_mass_flow_rate_by_value(const  cs_zone_t  *z,
+                                                        cs_real_t          q)
+{
+  cs_boundary_conditions_open_t *c
+    = cs_boundary_conditions_open_find_or_add(z);
+
+  c->vel_rescale = CS_BC_VEL_RESCALE_MASS_FLOW_RATE;
+
+  /* Velocity based on constant flow rate can be constant only if density is;
+     if we are not sure of this, remove the flag if present (or add test on
+     variable density).
+     The other flags (for direction and uniform quantities)
+     should remain valid */
+
+  c->vel_flags = _unset_flag(c->vel_flags, CS_BC_OPEN_CONSTANT);
+
+  c->flow_func = NULL;
+  c->flow_func_input = NULL;
+
+  c->vel_values[3] = q;
+
+  c->dof_func = _dof_vel_from_buffer;
+
+  if (c->vel_func == NULL) {
+    if (c->vel_flags & CS_BC_OPEN_UNIFORM_DIRECTION) {
+      c->vel_func = _vel_profile_constant_uniform;
+      c->vel_func_input = c;
+    }
+    else if (   (c->vel_flags & CS_BC_OPEN_UNIFORM_QUANTITY)
+             && (c->vel_flags & CS_BC_OPEN_NORMAL_DIRECTION)) {
+      c->vel_func = _vel_profile_constant_uniform_normal;
+      c->vel_func_input = c;
+    }
+  }
+
+  /* For most models, apply scaling to convert from mass flow
+     to velocity; For combustion models, scaling is done later. */
+
+  c->scale_func = _scale_vel_mass_flow_rate;
+  c->scale_func_input = c;
+
+  for (int i = CS_COMBUSTION_3PT; i <= CS_COMBUSTION_FUEL; i++) {
+    if (cs_glob_physical_model_flag[i] >= 0) {
+      c->scale_func = NULL;
+      c->scale_func_input = NULL;
+    }
+  }
+
+  /* Set equation parameters */
+
+  cs_equation_param_t *eqp = _get_equation_param("velocity");
+  cs_equation_remove_bc(eqp, z->name);  /* Replace if already set */
+
+  cs_equation_add_bc_by_dof_func(eqp,
+                                 CS_PARAM_BC_DIRICHLET,
+                                 z->name,
+                                 cs_flag_boundary_face,  // location flag
+                                 c->dof_func,
+                                 c);
+
+  /* Also update legacy boundary condition structures */
+
+  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
+  if (bc_pm_info != NULL) {
+    int izone = z->id - 1;
+    bc_pm_info->iqimp[izone] = 1;
+    bc_pm_info->qimp[izone] = c->vel_values[3];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a mass flow rate to an inlet based on provided function.
+ *
+ * The flow direction may be specified by also calling
+ * \ref cs_boundary_conditions_open_set_velocity_by_value,
+ * \ref cs_boundary_conditions_open_set_velocity_by_normal_value,
+ * or \ref cs_boundary_conditions_open_set_velocity_by_func.
+ * In that case, the velocity vector is rescaled so as to obtain the required
+ * mass flow rate.
+ *
+ * Since the flow rate is a global value, the provided function should
+ * be associated with the CS_MESH_LOCATION_NONE location.
+ *
+ * Note also that during updates, this function will be called before
+ * the velocity vector update, so in complex cases where flow rate computation
+ * would require feedback from the velocity at this boundary, the user
+ * must be aware that values from the previous time step or update will
+ * be used, handle this in another manner.
+ *
+ * Reminder: if the input pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - when a single integer identifier is needed, the input pointer can be
+ *   set to that value instead of an actual address;
+ *
+ * \param[in]  z      pointer to associated zone
+ * \param[in]  func   associated scalar (mass flow rate) evaluation function
+ * \param[in]  input  optional function evaluation input, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_open_set_mass_flow_rate_by_func
+  (const  cs_zone_t       *z,
+   cs_eval_at_location_t  *func,
+   void                   *input)
+{
+  cs_boundary_conditions_open_t *c
+    = cs_boundary_conditions_open_find_or_add(z);
+
+  c->vel_rescale = CS_BC_VEL_RESCALE_MASS_FLOW_RATE;
+
+  c->vel_flags = _unset_flag(c->vel_flags, CS_BC_OPEN_CONSTANT);
+
+  c->flow_func = func;
+  c->flow_func_input = input;
+
+  c->dof_func = _dof_vel_from_buffer;
+
+  if (c->vel_func == NULL) {
+    if (c->vel_flags & CS_BC_OPEN_UNIFORM_DIRECTION) {
+      c->vel_func = _vel_profile_constant_uniform;
+      c->vel_func_input = c;
+    }
+    else if (   (c->vel_flags & CS_BC_OPEN_UNIFORM_QUANTITY)
+             && (c->vel_flags & CS_BC_OPEN_NORMAL_DIRECTION)) {
+      c->vel_func = _vel_profile_constant_uniform_normal;
+      c->vel_func_input = c;
+    }
+  }
+
+  /* For most models, apply scaling to convert from mass flow
+     to velocity; For combustion models, scaling is done later. */
+
+  c->scale_func = _scale_vel_mass_flow_rate;
+  c->scale_func_input = c;
+
+  for (int i = CS_COMBUSTION_3PT; i <= CS_COMBUSTION_FUEL; i++) {
+    if (cs_glob_physical_model_flag[i] >= 0) {
+      c->scale_func = NULL;
+      c->scale_func_input = NULL;
+    }
+  }
+
+  /* Set equation parameters */
+
+  cs_equation_param_t *eqp = _get_equation_param("velocity");
+  cs_equation_remove_bc(eqp, z->name);  /* Replace if already set */
+
+  cs_equation_add_bc_by_dof_func(eqp,
+                                 CS_PARAM_BC_DIRICHLET,
+                                 z->name,
+                                 cs_flag_boundary_face,  // location flag
+                                 c->dof_func,
+                                 c);
+
+  /* Also update legacy boundary condition structures */
+
+  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
+  if (bc_pm_info != NULL) {
+    int izone = z->id - 1;
+    bc_pm_info->iqimp[izone] = 1;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a constant volume flow rate to an inlet.
+ *
+ * The flow direction may be specified by also calling
+ * \ref cs_boundary_conditions_open_set_velocity_by_value,
+ * or \ref cs_boundary_conditions_open_set_velocity_by_func.
+ * In that case, the velocity vector is rescaled so as to obtain the required
+ * volume flow rate.
+ *
+ * \param[in]  z  pointer to associated zone
+ * \param[in]  q  associated constant volume flow rate
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_open_set_volume_flow_rate_by_value(const  cs_zone_t  *z,
+                                                          cs_real_t          q)
+{
+  cs_boundary_conditions_open_t *c
+    = cs_boundary_conditions_open_find_or_add(z);
+
+  c->vel_rescale = CS_BC_VEL_RESCALE_VOLUME_FLOW_RATE;
+
+  c->flow_func = NULL;
+  c->flow_func_input = NULL;
+
+  c->vel_values[3] = q;
+
+  if (   c->vel_flags & CS_BC_OPEN_NORMAL_DIRECTION
+      && c->vel_flags & CS_BC_OPEN_UNIFORM_QUANTITY) {
+    if (c->dof_func == NULL)
+      c->dof_func = _dof_vel_const_uniform_normal;
+  }
+
+  else if (   c->vel_flags & CS_BC_OPEN_UNIFORM_QUANTITY
+           && c->vel_flags & CS_BC_OPEN_UNIFORM_DIRECTION) {
+    if (c->dof_func == NULL) {
+      BFT_REALLOC(c->vel_buffer, 3, cs_real_t);
+      for (int i = 0; i < 3; i++)
+        c->vel_buffer[i] = c->vel_values[i];
+
+      c->dof_func = _dof_vel_from_buffer_uniform;
+    }
+  }
+
+  if (c->dof_func == NULL)
+    c->dof_func = _dof_vel_from_buffer;
+
+  c->vel_flags = _unset_flag(c->vel_flags, CS_BC_OPEN_CONSTANT);
+
+  c->scale_func = _scale_vel_volume_flow_rate;
+  c->scale_func_input = c;
+
+  cs_equation_param_t *eqp = _get_equation_param("velocity");
+  cs_equation_remove_bc(eqp, z->name);  /* Replace if already set */
+
+  cs_equation_add_bc_by_dof_func(eqp,
+                                 CS_PARAM_BC_DIRICHLET,
+                                 z->name,
+                                 cs_flag_boundary_face,  // location flag
+                                 c->dof_func,
+                                 c);
+
+  /* Also update legacy boundary condition structures */
+
+  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
+  if (bc_pm_info != NULL) {
+    int izone = z->id - 1;
+    bc_pm_info->iqimp[izone] = 0;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a volume flow rate to an inlet based on provided function.
+ *
+ * The flow direction may be specified by also calling
+ * \ref cs_boundary_conditions_open_set_velocity_by_value,
+ * \ref cs_boundary_conditions_open_set_velocity_by_normal_value,
+ * or \ref cs_boundary_conditions_open_set_velocity_by_func.
+ * In that case, the velocity vector is rescaled so as to obtain the required
+ * volume flow rate.
+ *
+ * Since the flow rate is a global value, the provided function should
+ * be associated with the CS_MESH_LOCATION_NONE location.
+ *
+ * Note also that during updates, this function will be called before
+ * the velocity vector update, so in complex cases where flow rate computation
+ * would require feedback from the velocity at this boundary, the user
+ * must be aware that values from the previous time step or update will
+ * be used, handle this in another manner.
+ *
+ * Reminder: if the input pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - when a single integer identifier is needed, the input pointer can be
+ *   set to that value instead of an actual address;
+ *
+ * \param[in]  z      pointer to associated zone
+ * \param[in]  func   associated scalar (volume flow rate) evaluation function
+ * \param[in]  input  optional function evaluation input, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_open_set_volume_flow_rate_by_func
+  (const  cs_zone_t       *z,
+   cs_eval_at_location_t  *func,
+   void                   *input)
+{
+  cs_boundary_conditions_open_t *c
+    = cs_boundary_conditions_open_find_or_add(z);
+
+  c->vel_rescale = CS_BC_VEL_RESCALE_VOLUME_FLOW_RATE;
+
+  c->flow_func = func;
+  c->flow_func_input = input;
+
+  if (   c->vel_flags & CS_BC_OPEN_NORMAL_DIRECTION
+      && c->vel_flags & CS_BC_OPEN_UNIFORM_QUANTITY) {
+    if (c->dof_func == NULL)
+      c->dof_func = _dof_vel_const_uniform_normal;
+  }
+
+  else if (   c->vel_flags & CS_BC_OPEN_UNIFORM_QUANTITY
+           && c->vel_flags & CS_BC_OPEN_UNIFORM_DIRECTION) {
+    if (c->dof_func == NULL) {
+      BFT_REALLOC(c->vel_buffer, 3, cs_real_t);
+      for (int i = 0; i < 3; i++)
+        c->vel_buffer[i] = c->vel_values[i];
+
+      c->dof_func = _dof_vel_from_buffer_uniform;
+    }
+  }
+
+  if (c->dof_func == NULL)
+    c->dof_func = _dof_vel_from_buffer;
+
+  c->vel_flags = _unset_flag(c->vel_flags, CS_BC_OPEN_CONSTANT);
+
+  c->scale_func = _scale_vel_volume_flow_rate;
+  c->scale_func_input = c;
+
+  cs_equation_param_t *eqp = _get_equation_param("velocity");
+  cs_equation_remove_bc(eqp, z->name);  /* Replace if already set */
+
+  cs_equation_add_bc_by_dof_func(eqp,
+                                 CS_PARAM_BC_DIRICHLET,
+                                 z->name,
+                                 cs_flag_boundary_face,  // location flag
+                                 c->dof_func,
+                                 c);
+
+  /* Also update legacy boundary condition structures */
+
+  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
+  if (bc_pm_info != NULL) {
+    int izone = z->id - 1;
+    bc_pm_info->iqimp[izone] = 0;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Acess the time control structure of an inlet.
+ *
+ * This allows modifying that structure, for example updating the inlet
+ * velocity values only in a certain time range, and avoiding
+ * uneeded recomputations outside that range.
+ *
+ * \param[in]  zone  pointer to associated zone
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_time_control_t *
+cs_boundary_conditions_get_inlet_time_control(const  cs_zone_t  *zone)
+{
+  cs_boundary_conditions_open_t
+    *c = cs_boundary_conditions_open_find_or_add(zone);
+
+  return &(c->tc);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set convective oulet boundary condition for a scalar.
+ *
+ * \param[out]    coefa         explicit BC coefficient for gradients
+ * \param[out]    cofaf         explicit BC coefficient for diffusive flux
+ * \param[out]    coefb         implicit BC coefficient for gradients
+ * \param[out]    cofbf         implicit BC coefficient for diffusive flux
+ * \param[in]     pimp          Flux value to impose
+ * \param[in]     cfl           Local Courant number used to convect
+ * \param[in]     hint          Internal exchange coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *coefa ,
+                                                    cs_real_t *cofaf,
+                                                    cs_real_t *coefb,
+                                                    cs_real_t *cofbf,
+                                                    cs_real_t  pimp,
+                                                    cs_real_t  cfl,
+                                                    cs_real_t  hint)
+{
+  /* Gradient BCs */
+  *coefb = cfl / (1.0 + cfl);
+  *coefa = (1.0 - *coefb) * pimp;
+
+  /* Flux BCs */
+  *cofaf = - hint * *coefa;
+  *cofbf =   hint * (1.0 - *coefb);
 }
 
 /*----------------------------------------------------------------------------*/

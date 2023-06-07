@@ -2,6 +2,7 @@ Master (not on release branches yet)
 ------------------------------------
 
 ### Physical modeling
+
 - Cooling towers model: Adding rain drift velocity equation solving.
   New keyword solve_rain_velocity has been added to allow the solving of
   rain drops drift velocity equation. The model has been adapted from
@@ -9,9 +10,17 @@ Master (not on release branches yet)
 
 ### User changes:
 
-- run.cfg : User can now always use global sections to define entries, with
-  the syntax of [key] for key among run_prologue, run_epilogue,
-  compute_prologue and compute_epilogue.
+- Add high-level objects to handle open (inlet/outlet) boundary conditions
+  in the general boundary conditions mechanism.
+  * This is an evolution the the handling of BC's with the GUI, now
+    usable also with user-defined functions.
+  * This will allow sharing contexts wich may be used by CDO-type
+    functions such as cs_dof_function_t in a shared manner between
+    variables.
+
+- run.cfg: the user can now always use global sections to define entries,
+  with the syntax [key] for a key among "run_prologue", "run_epilogue",
+  "compute_prologue" and "compute_epilogue".
   By doing so the defined entries are either used if nothing is defined
   for the computation resource or are prepended to the resource based options.
   This allows defining case specific and resource independent entries.

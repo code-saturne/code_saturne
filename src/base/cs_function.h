@@ -70,6 +70,12 @@ BEGIN_C_DECLS
 /*! user-defined */
 #define CS_FUNCTION_USER                (1 << 3)
 
+/*! no internal MPI calls (may allow optimizations) */
+#define CS_FUNCTION_NO_MPI_CALL         (1 << 4)
+
+/*! no sub-tasking (may be called inside task with no sync issues) */
+#define CS_FUNCTION_NO_SUB_TASK         (1 << 5)
+
 /*! @} */
 
 /*============================================================================
@@ -139,7 +145,7 @@ typedef struct {
   int                     time_stamp;   /*!< Time stamp at last evaluation,
                                           or -1 if unused */
 
-  cs_restart_file_t       restart_file;   /*!< type of associated checkpoint
+  cs_restart_file_t       restart_file;   /*!< Type of associated checkpoint
                                             file if evaluation should be
                                             saved to checkpoint (for
                                             later postprocessing) */

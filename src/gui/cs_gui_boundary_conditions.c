@@ -53,6 +53,7 @@
 #include "cs_base.h"
 #include "cs_boundary.h"
 #include "cs_boundary_conditions.h"
+#include "cs_boundary_conditions_priv.h"
 #include "cs_boundary_zone.h"
 #include "cs_cf_thermo.h"
 #include "cs_combustion_model.h"
@@ -124,7 +125,6 @@ typedef struct {
   const char   **nature;   /* nature for each boundary zone */
   int           *bc_num;   /* associated number */
 
-  int           *iqimp;    /* 1 if a flow rate is applied */
   int           *ientfu;   /* 1 for a fuel flow inlet (gas combustion - D3P) */
   int           *ientox;   /* 1 for an air flow inlet (gas combustion - D3P) */
   int           *ientgb;   /* 1 for burned gas inlet (gas combustion) */
@@ -132,7 +132,6 @@ typedef struct {
   int           *ientat;   /* 1 if inlet for oxydant (coal combustion)  */
   int           *ientcp;   /* 1 if inlet for oxydant+coal (coal combustion) */
   int           *icalke;   /* automatic boundaries for turbulent variables */
-  double        *qimp;     /* oxydant flow rate (coal combustion) */
   int           *inmoxy;   /* oxydant number (coal combustion) */
   double        *timpat;   /* inlet temperature of oxydant (coal combustion) */
   double        *tkent;    /* inlet temperature (gas combustion) */
@@ -188,7 +187,7 @@ typedef struct {
                                       prescribed */
 
   cs_real_t            c_pr;        /*<! imposed pressure (compressible) */
-  cs_real_t            c_tk;        /*<! imposed temperature  (compressible) */
+  cs_real_t            c_tk;        /*<! imposed temperature (compressible) */
 
 
 } cs_gui_boundary_vel_context_t;
@@ -368,368 +367,289 @@ _check_and_add_mapped_inlet(const char       *label,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Convert mass flow to velocity.
+ * \brief cs_eval_at_location_t function to compute the flow rate awt
+ *        boundary faces using a MEG generated value.
  *
  * For the calling function, elt_ids is optional. If not NULL, array(s) should
- * be accessed with an indirection. The same indirection can be applied to fill
- * retval if dense_output is set to false.
+ * be accessed with an indirection.
  *
- * Note: this function is designed to be called on a "per zone" basis, and
- *       requires MPI collegtives for reduction. In case of many zones,
- *       groupping reductions should be more efficient, but would add
- *       constraints for call grouping. As we generally have many more
- *       MPI_Allreduce calls per time step, this is not expected to have a
- *       significant impact on performance. In the rare cases where tens or
- *       hundreds of zones are considered, using an optimized user-defined
- *       function would be preferable.
- *
- * \param[in]      z             pointer to zone
- * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      mass_flow     prescribed mass flow
- * \param[in]      bc_pr         prescribed pressure for this zone, or huge
- * \param[in]      bc_tk         prescribed temperature for this zone, or huge
- * \param[in, out] retval        resulting value(s). Must be allocated.
+ * \param[in]       location_id   base associated mesh location id
+ * \param[in]       n_elts        number of elements to consider
+ * \param[in]       elt_ids       list of elements ids
+ * \param[in]       input         pointer to cs_boundary_conditions_inlet_t
+ * \param[in, out]  vals          resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_b_mass_flow_to_vel(const cs_zone_t  *z,
-                    bool              dense_output,
-                    cs_real_t         mass_flow,
-                    cs_real_t         bc_pr,
-                    cs_real_t         bc_tk,
-                    cs_real_t        *retval)
+_meg_flow_rate(int               location_id,
+               cs_lnum_t         n_elts,
+               const cs_lnum_t  *elt_ids,
+               void             *input,
+               void             *vals_p)
 {
+  assert(location_id == CS_MESH_LOCATION_NONE);
+
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *f_f_n = (const cs_real_3_t *)mq->b_f_face_normal;
-  const cs_real_t *f_f_s = mq->b_f_face_surf;
+  const cs_real_3_t *face_cen = (const cs_real_3_t *)mq->b_face_cog;
 
-  cs_real_t s[2] = {0., 0.};
+  cs_boundary_conditions_open_t  *c
+    = (cs_boundary_conditions_open_t *)input;
 
-  const cs_field_t *rho_b_f = CS_F_(rho_b);
+  cs_real_t  *vals = (cs_real_t *)vals_p;
 
-  const cs_lnum_t n_elts = z->n_elts;
-  const cs_lnum_t *elt_ids = z->elt_ids;
+  /* Prescribed mass flow, depending on options */
 
-  /* Return zero if mass flow is zero */
-  if (fabs(mass_flow) <= 0) {
-    if (dense_output) {
-      cs_lnum_t _n_elts = n_elts*3;
-      for (cs_lnum_t i = 0; i < _n_elts; i++)
-        retval[i] *= 0.;
-    }
-    else {
+  const char *q_meg_formula_type[] = {"flow1_formula",
+                                      "flow2_formula"};
+
+  const char *formula_type = NULL;
+  if (c->vel_rescale == CS_BC_VEL_RESCALE_MASS_FLOW_RATE)
+    formula_type = q_meg_formula_type[0];
+  else if (c->vel_rescale == CS_BC_VEL_RESCALE_VOLUME_FLOW_RATE)
+    formula_type = q_meg_formula_type[1];
+
+  cs_real_t *v_loc
+    = cs_meg_boundary_function(c->zone->name,
+                               n_elts,
+                               elt_ids,
+                               face_cen,
+                               "velocity",
+                               formula_type);
+
+  vals[0] = v_loc[0];
+
+  BFT_FREE(v_loc);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_eval_at_location_t function to compute the velocity at
+ *        boundary faces using a MEG generated norm and direction.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection.
+ *
+ * \param[in]       location_id   base associated mesh location id
+ * \param[in]       n_elts        number of elements to consider
+ * \param[in]       elt_ids       list of elements ids
+ * \param[in]       input         pointer to cs_boundary_conditions_inlet_t
+ * \param[in, out]  vals          resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_vel_profile(int               location_id,
+             cs_lnum_t         n_elts,
+             const cs_lnum_t  *elt_ids,
+             void             *input,
+             void             *vals_p)
+{
+  assert(   cs_mesh_location_get_type(location_id)
+         == CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_u_normal;
+
+  cs_boundary_conditions_open_t  *c
+    = (cs_boundary_conditions_open_t *)input;
+
+  int  normalization = 0;
+  if (c->vel_rescale == CS_BC_VEL_RESCALE_MASS_FLOW_RATE)
+    normalization = 1;
+  else if (c->vel_rescale == CS_BC_VEL_RESCALE_VOLUME_FLOW_RATE)
+    normalization = 2;
+
+  int dir_type = 2;
+  if (c->vel_flags & CS_BC_OPEN_UNIFORM_DIRECTION)
+    dir_type = 1;
+  else if (c->vel_flags & CS_BC_OPEN_NORMAL_DIRECTION)
+    dir_type = 0;
+
+  assert(dir_type != 2);  /* Handled by other function */
+
+  cs_real_t  *vals = (cs_real_t *)vals_p;
+
+  cs_real_t v = c->vel_values[3];
+
+  if (normalization > 0)   /* For flow rates, rescaling is done later */
+    v = 1.0;
+
+  switch(dir_type) {
+  case 0:
+    {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
-        cs_lnum_t j = elt_ids[i];
+        cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
         for (cs_lnum_t k = 0; k < 3; k++)
-          retval[j*3 + k] *= 0.;
+          vals[i*3 + k] = -f_n[elt_id][k] * v;
       }
     }
-    return;
-  }
-
-  /* Compressible prescribed inlet with given pressure and temperature */
-
-  if (bc_pr < cs_math_infinite_r && bc_tk < cs_math_infinite_r) {
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-      cs_lnum_t elt_id = elt_ids[i];
-      cs_lnum_t j = dense_output ? i : elt_id;
-
-      cs_real_t rho_b = cs_cf_thermo_b_rho_from_pt(elt_id, bc_pr, bc_tk);
-
-      s[0] += f_f_s[elt_id];
-      s[1] -= rho_b * cs_math_3_dot_product(retval + 3*j, f_f_n[elt_id]);
-    }
-  }
-
-  /* Regular case */
-
-  else if (rho_b_f != NULL) {
-    const cs_real_t *rho_b = rho_b_f->val;
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-      cs_lnum_t elt_id = elt_ids[i];
-      cs_lnum_t j = dense_output ? i : elt_id;
-
-      s[0] += f_f_s[elt_id];
-      if (rho_b[elt_id] > 0)
-        s[1] -= rho_b[elt_id] * cs_math_3_dot_product(retval + 3*j,
-                                                      f_f_n[elt_id]);
-      else
-        s[1] -= cs_math_3_dot_product(retval + 3*j, f_f_n[elt_id]);
-    }
-  }
-
-  else
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("%s: no way to obtain boundary density for mass flow scaling\n"
-         " for zone \"%s\"."),
-       __func__, z->name);
-
-  cs_parall_sum(2, CS_REAL_TYPE, s);
-
-  /* Return to avoid division by zero if zone is empty */
-
-  if (s[0] <= 0.) {
-    bft_error
-        (__FILE__, __LINE__, 0,
-         _("%s: cannot normalize requested mass flow (%g) for zone \"%s\"\n"
-           "  with zero surface)."),
-         __func__, fabs(s[0]), z->name);
-
-    return;
-  }
-
-  /* Now apply normalization */
-
-  if (fabs(mass_flow) > 1e-30) {
-
-    if (fabs(s[1]) < 1e-30)
-      bft_error
-        (__FILE__, __LINE__, 0,
-         _("%s: cannot normalize for zone \"%s\"\n"
-           "  with zero or quasi-zero initial flow)."),
-         __func__, z->name);
-
-    cs_real_t sf = mass_flow / s[1];
-
-    if (dense_output) {
-      cs_lnum_t _n_elts = n_elts*3;
-      for (cs_lnum_t i = 0; i < _n_elts; i++)
-        retval[i] *= sf;
-    }
-    else {
+    break;
+  case 1:
+    {
+      cs_real_t dir_v[3];
+      cs_math_3_normalize(c->vel_values, dir_v);
       for (cs_lnum_t i = 0; i < n_elts; i++) {
-        cs_lnum_t j = elt_ids[i];
         for (cs_lnum_t k = 0; k < 3; k++)
-          retval[j*3 + k] *= sf;
+          vals[i*3 + k] = dir_v[k] * v;
       }
     }
-
+    break;
   }
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief cs_dof_func_t function to compute the velocity at boundary faces
- *        using a MEG generated norm and direction.
+ * \brief cs_eval_at_location_t function to compute the velocity at
+ *        boundary faces using a MEG generated norm and possibly direction.
  *
  * For the calling function, elt_ids is optional. If not NULL, array(s) should
- * be accessed with an indirection. The same indirection can be applied to fill
- * retval if dense_output is set to false.
- * In the current case, retval is allocated to mesh->n_b_faces * stride
+ * be accessed with an indirection.
  *
- * \param[in]      n_elts        number of elements to consider
- * \param[in]      elt_ids       list of elements ids
- * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         pointer to cs_gui_boundary_vel_context_t
- * \param[in, out] retval        resulting value(s). Must be allocated.
+ * \param[in]       location_id   base associated mesh location id
+ * \param[in]       n_elts        number of elements to consider
+ * \param[in]       elt_ids       list of elements ids
+ * \param[in]       input         pointer to cs_boundary_conditions_inlet_t
+ * \param[in, out]  vals          resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_dof_meg_vel_profile(cs_lnum_t         n_elts,
-                     const cs_lnum_t  *elt_ids,
-                     bool              dense_output,
-                     void             *input,
-                     cs_real_t        *retval)
+_vel_profile_by_meg_norm(int               location_id,
+                         cs_lnum_t         n_elts,
+                         const cs_lnum_t  *elt_ids,
+                         void             *input,
+                         void             *vals_p)
 {
-  static const char *_vel_norm_meg_condition[] = {"norm_formula",
-                                                  "flow1_formula",
-                                                  "flow2_formula"};
+  assert(   cs_mesh_location_get_type(location_id)
+         == CS_MESH_LOCATION_BOUNDARY_FACES);
 
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_f_face_normal;
-  const cs_real_t *f_s = mq->b_face_surf;
+  const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_u_normal;
   const cs_real_3_t *face_cen = (const cs_real_3_t *)mq->b_face_cog;
 
-  cs_gui_boundary_vel_context_t  *c
-    = (cs_gui_boundary_vel_context_t *)input;
+  cs_boundary_conditions_open_t  *c
+    = (cs_boundary_conditions_open_t *)input;
 
-  int  normalization = c->norm_type % 10;
+  int dir_type = 2;
+  if (c->vel_flags & CS_BC_OPEN_UNIFORM_DIRECTION)
+    dir_type = 1;
+  else if (c->vel_flags & CS_BC_OPEN_NORMAL_DIRECTION)
+    dir_type = 0;
 
-  assert(normalization < 3);
-
-  /* Prescribed mass flow, depending on options */
-  cs_real_t mass_flow = 0;
-
-  cs_real_t *v_dir = NULL;
-
-  if (c->dir_type == 2)
-    v_dir = cs_meg_boundary_function(c->zone->name,
-                                     n_elts,
-                                     elt_ids,
-                                     face_cen,
-                                     "direction",
-                                     "formula");
+  cs_real_t  *vals = (cs_real_t *)vals_p;
 
   /* Local velocity norm */
 
-  if (c->norm_type == 10) {
+  cs_real_t *v_loc
+    = cs_meg_boundary_function(c->zone->name,
+                               n_elts,
+                               elt_ids,
+                               face_cen,
+                               "velocity",
+                               "norm_formula");
 
-    cs_real_t *v_loc
-      = cs_meg_boundary_function(c->zone->name,
-                                 n_elts,
-                                 elt_ids,
-                                 face_cen,
-                                 "velocity",
-                                 _vel_norm_meg_condition[normalization]);
-
-    switch(c->dir_type) {
-    case 0:
-      {
-        for (cs_lnum_t i = 0; i < n_elts; i++) {
-          cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
-          cs_lnum_t j = dense_output ? i : elt_id;
-
-          for (cs_lnum_t k = 0; k < 3; k++)
-            retval[j*3 + k] = -f_n[elt_id][k]/f_s[elt_id] * v_loc[i];
-        }
+  switch(dir_type) {
+  case 0:
+    {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+        for (cs_lnum_t k = 0; k < 3; k++)
+          vals[i*3 + k] = -f_n[elt_id][k] * v_loc[i];
       }
-      break;
-    case 1:
-      {
-        cs_real_t dir_v[3];
-        cs_math_3_normalize(c->dir_v, dir_v);
-        for (cs_lnum_t i = 0; i < n_elts; i++) {
-          cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
-          cs_lnum_t j = dense_output ? i : elt_id;
-
-          for (cs_lnum_t k = 0; k < 3; k++)
-            retval[j*3 + k] = dir_v[k] * v_loc[i];
-        }
-      }
-      break;
-    case 2:
-      {
-        for (cs_lnum_t i = 0; i < n_elts; i++) {
-          cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
-          cs_lnum_t j = dense_output ? i : elt_id;
-
-          /* Note: cs_meg_boundary_function output is not interleaved */
-          for (cs_lnum_t k = 0; k < 3; k++)
-            retval[j*3 + k] = v_dir[k*n_elts + i] * v_loc[i];
-        }
-      }
-      break;
     }
-
-    BFT_FREE(v_loc);
-
+    break;
+  case 1:
+    {
+      cs_real_t dir_v[3];
+      cs_math_3_normalize(c->vel_values, dir_v);
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        for (cs_lnum_t k = 0; k < 3; k++)
+          vals[i*3 + k] = dir_v[k] * v_loc[i];
+      }
+    }
+    break;
+  case 2:
+    {
+      cs_real_t *v_dir = cs_meg_boundary_function(c->zone->name,
+                                                  n_elts,
+                                                  elt_ids,
+                                                  face_cen,
+                                                  "direction",
+                                                  "formula");
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        /* Note: cs_meg_boundary_function output is not interleaved */
+        for (cs_lnum_t k = 0; k < 3; k++)
+          vals[i*3 + k] = v_dir[k*n_elts + i] * v_loc[i];
+      }
+      BFT_FREE(v_dir);
+    }
+    break;
   }
 
-  /* Global velocity norm */
+  BFT_FREE(v_loc);
+}
 
-  else {
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_eval_at_location_t function to compute the velocity at
+ *        boundary faces using a MEG generated direction and uniform norm.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection.
+ *
+ * \param[in]       location_id   base associated mesh location id
+ * \param[in]       n_elts        number of elements to consider
+ * \param[in]       elt_ids       list of elements ids
+ * \param[in]       input         pointer to cs_boundary_conditions_inlet_t
+ * \param[in, out]  vals          resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
 
-    cs_real_t v = c->v;
+static void
+_vel_profile_by_meg_dir(int               location_id,
+                        cs_lnum_t         n_elts,
+                        const cs_lnum_t  *elt_ids,
+                        void             *input,
+                        void             *vals_p)
+{
+  assert(   cs_mesh_location_get_type(location_id)
+         == CS_MESH_LOCATION_BOUNDARY_FACES);
 
-    if (c->norm_type > 10) {
-      cs_real_t *flow
-        = cs_meg_boundary_function(c->zone->name,
-                                   n_elts,
-                                   elt_ids,
-                                   face_cen,
-                                   "velocity",
-                                   _vel_norm_meg_condition[normalization]);
-      v = flow[0];
-      BFT_FREE(flow);
-    }
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_3_t *face_cen = (const cs_real_3_t *)mq->b_face_cog;
 
-    if (normalization == 1) { /* For mass flow, rescaling is done later,
-                                 and some models assume an initial norm of 1. */
-      mass_flow = v;
-      v = 1.0;
-    }
+  cs_boundary_conditions_open_t  *c
+    = (cs_boundary_conditions_open_t *)input;
 
-    switch(c->dir_type) {
-    case 0:
-      {
-        for (cs_lnum_t i = 0; i < n_elts; i++) {
-          cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
-          cs_lnum_t j = dense_output ? i : elt_id;
+  int  normalization = 0;
+  if (c->vel_rescale == CS_BC_VEL_RESCALE_MASS_FLOW_RATE)
+    normalization = 1;
+  else if (c->vel_rescale == CS_BC_VEL_RESCALE_VOLUME_FLOW_RATE)
+    normalization = 2;
 
-          for (cs_lnum_t k = 0; k < 3; k++)
-            retval[j*3 + k] = -f_n[elt_id][k]/f_s[elt_id] * v;
-        }
-      }
-      break;
-    case 1:
-      {
-        cs_real_t dir_v[3];
-        cs_math_3_normalize(c->dir_v, dir_v);
-        for (cs_lnum_t i = 0; i < n_elts; i++) {
-          cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
-          cs_lnum_t j = dense_output ? i : elt_id;
+  cs_real_t  *vals = (cs_real_t *)vals_p;
 
-          for (cs_lnum_t k = 0; k < 3; k++)
-            retval[j*3 + k] = dir_v[k] * v;
-        }
-      }
-      break;
-    case 2:
-      {
-        for (cs_lnum_t i = 0; i < n_elts; i++) {
-          cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
-          cs_lnum_t j = dense_output ? i : elt_id;
+  cs_real_t *v_dir = cs_meg_boundary_function(c->zone->name,
+                                              n_elts,
+                                              elt_ids,
+                                              face_cen,
+                                              "direction",
+                                              "formula");
 
-          /* Note: cs_meg_boundary_function output is not interleaved */
-          for (cs_lnum_t k = 0; k < 3; k++)
-            retval[j*3 + k] = v_dir[k*n_elts + i] * v;
-        }
-      }
-      break;
-    }
+  cs_real_t v = c->vel_values[3];
 
+  if (normalization > 0) {   /* For flow rates, rescaling is done later */
+    v = 1.0;
+  }
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    /* Note: cs_meg_boundary_function output is not interleaved */
+    for (cs_lnum_t k = 0; k < 3; k++)
+      vals[i*3 + k] = v_dir[k*n_elts + i] * v;
   }
 
   BFT_FREE(v_dir);
-
-  /* Normalization */
-
-  if (normalization == 2) {
-    cs_real_t sf = 1. / c->zone->f_measure;
-    if (dense_output || elt_ids == NULL) {
-      cs_lnum_t _n_elts = n_elts*3;
-      for (cs_lnum_t i = 0; i < _n_elts; i++)
-        retval[i] *= sf;
-    }
-    else {
-      for (cs_lnum_t i = 0; i < n_elts; i++) {
-        cs_lnum_t j = elt_ids[i];
-        for (cs_lnum_t k = 0; k < 3; k++)
-          retval[j*3 + k] *= sf;
-      }
-    }
-  }
-
-  else if (normalization == 1) {
-
-    /* In all cases, update total mass flow if given by a MEG function
-       (not be needed by all models, but provided in a consistent manner) */
-
-    if (c->norm_type == 11)
-      boundaries->qimp[c->zone->id - 1] = mass_flow;
-
-    /* For most models, apply scaling to convert from mass flow
-       to velocity; For combustion models, scaling is done later. */
-
-    bool scale_velocity = true;
-
-    for (int i = CS_COMBUSTION_3PT; i <= CS_COMBUSTION_FUEL; i++) {
-      if (cs_glob_physical_model_flag[i] >= 0)
-        scale_velocity = false;
-    }
-
-    if (scale_velocity)
-      _b_mass_flow_to_vel(c->zone,
-                          dense_output,
-                          mass_flow,
-                          c->c_pr,
-                          c->c_tk,
-                          retval);
-
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -740,8 +660,6 @@ _dof_meg_vel_profile(cs_lnum_t         n_elts,
  *
  * \param[in]  tn_vp   tree node associated with BC velocity/pressure
  * \param[in]  z       pointer to associated zone
- *
- * \return associated iqimp(izone) value
  */
 /*----------------------------------------------------------------------------*/
 
@@ -754,30 +672,22 @@ _set_vel_profile(cs_tree_node_t    *tn_vp,
   if (cs_equation_find_bc(eqp, z->name) != NULL)   /* Ignore if already set */
     return;                                        /* (priority) */
 
-  /* Add new context in list */
+  /* Find or add associated context */
 
-  BFT_REALLOC(_b_contexts,
-              _n_b_contexts+1,
-              void *);
-
-  cs_gui_boundary_vel_context_t  *c = NULL;
-  BFT_MALLOC(c, 1, cs_gui_boundary_vel_context_t);
-
-  _b_contexts[_n_b_contexts] = c;
-  _n_b_contexts += 1;
+  cs_boundary_conditions_open_t *c
+    = cs_boundary_conditions_open_find_or_add(z);
 
   /* Initialize context values */
 
   c->zone = z;
-  c->norm_type = 0;
-  c->dir_type = 0;
-  c->v = 0;
 
-  for (int i = 0; i < 3; i++)
-    c->dir_v[i] = 0;
+  int norm_type = 0;
+  int dir_type = 0;
+  cs_real_t  v = 0;
+  cs_real_t  dir_v[] = {0, 0, 0};
 
-  c->c_pr = cs_math_infinite_r;
-  c->c_tk = cs_math_infinite_r;
+  c->c_pr = -1;
+  c->c_tk = -1;
 
   const char *choice_v = cs_gui_node_get_tag(tn_vp, "choice");
   const char *choice_d = cs_gui_node_get_tag(tn_vp, "direction");
@@ -785,28 +695,28 @@ _set_vel_profile(cs_tree_node_t    *tn_vp,
   /* Set norm from tree values */
 
   if (cs_gui_strcmp(choice_v, "norm")) {
-    c->norm_type = 0;
-    cs_gui_node_get_child_real(tn_vp, choice_v, &(c->v));
+    norm_type = 0;
+    cs_gui_node_get_child_real(tn_vp, choice_v, &v);
   }
   else if (cs_gui_strcmp(choice_v, "flow1")) {
-    c->norm_type = 1;
-    cs_gui_node_get_child_real(tn_vp, choice_v, &(c->v));
+    norm_type = 1;
+    cs_gui_node_get_child_real(tn_vp, choice_v, &v);
   }
   else if (cs_gui_strcmp(choice_v, "flow2")) {
-    c->norm_type = 2;
-    cs_gui_node_get_child_real(tn_vp, choice_v, &(c->v));
+    norm_type = 2;
+    cs_gui_node_get_child_real(tn_vp, choice_v, &v);
   }
   else if (cs_gui_strcmp(choice_v, "norm_formula")) {
     if (cs_tree_node_get_child_value_str(tn_vp, choice_v) != NULL)
-      c->norm_type = 10;
+      norm_type = 10;
   }
   else if (cs_gui_strcmp(choice_v, "flow1_formula")) {
     if (cs_tree_node_get_child_value_str(tn_vp, choice_v) != NULL)
-      c->norm_type = 11;
+      norm_type = 11;
   }
   else if (cs_gui_strcmp(choice_v, "flow2_formula")) {
     if (cs_tree_node_get_child_value_str(tn_vp, choice_v) != NULL)
-      c->norm_type = 12;
+      norm_type = 12;
   }
   else if (choice_v != NULL)
     bft_error
@@ -841,27 +751,29 @@ _set_vel_profile(cs_tree_node_t    *tn_vp,
     }
 
     /* For compressible "subsonic_inlet_PH" type BC, flow is recomputed,
-       so only direction counts */
+       so only direction counts
+       (In the future, assign specific normalization function upstream of
+       classical icodcl/rcodcl for this). */
 
     else if (cs_gui_strcmp(choice_c, "subsonic_inlet_PH")) {
-      c->norm_type = 0;
-      c->v = 1.;
+      norm_type = 0;
+      v = 1.;
     }
   }
 
   /* Set direction from tree values */
 
   else if (cs_gui_strcmp(choice_d, "normal"))
-    c->dir_type = 0;
+    dir_type = 0;
   else if (cs_gui_strcmp(choice_d, "coordinates")) {
-    c->dir_type = 1;
-    cs_gui_node_get_child_real(tn_vp, "direction_x", c->dir_v);
-    cs_gui_node_get_child_real(tn_vp, "direction_y", c->dir_v+1);
-    cs_gui_node_get_child_real(tn_vp, "direction_z", c->dir_v+2);
+    dir_type = 1;
+    cs_gui_node_get_child_real(tn_vp, "direction_x", dir_v);
+    cs_gui_node_get_child_real(tn_vp, "direction_y", dir_v+1);
+    cs_gui_node_get_child_real(tn_vp, "direction_z", dir_v+2);
   }
   else if (cs_gui_strcmp(choice_d, "formula")) {
     if (cs_tree_node_get_child_value_str(tn_vp, "direction_formula") != NULL)
-      c->dir_type = 2;
+      dir_type = 2;
   }
   else if (choice_d != NULL)
     bft_error
@@ -869,21 +781,85 @@ _set_vel_profile(cs_tree_node_t    *tn_vp,
        _("%s: unexpected \"direction\" type \"%s\" for zone \"%s\"."),
        __func__, choice_d, z->name);
 
-  /* Now associate cs_dof_funct_t function for velocity */
+  /* Now associate cs_dof_func_t function for velocity */
 
-  cs_equation_add_bc_by_dof_func(eqp,
-                                 CS_PARAM_BC_DIRICHLET,
-                                 z->name,
-                                 cs_flag_boundary_face,  // location flag
-                                 _dof_meg_vel_profile,
-                                 c);
+  bool eval_set = false;
 
-  /* Also update legacy boundary condition structures */
+  if (dir_type == 0) {
+    c->vel_values[3] = v;
+    if (norm_type == 0 || norm_type == 2) {
+      cs_boundary_conditions_open_set_velocity_by_normal_value(z, v);
+      eval_set = true;
+    }
+    else if (norm_type == 1) {
+      cs_boundary_conditions_open_set_mass_flow_rate_by_value(z, v);
+      eval_set = true;
+    }
+  }
 
-  if (c->norm_type%10 == 1) {
-    int izone = z->id - 1;
-    boundaries->iqimp[izone] = 1;
-    boundaries->qimp[izone] = c->v;
+  else if (dir_type == 1) {
+    /* Direction assigned to context in call cases */
+    cs_math_3_normalize(dir_v, dir_v);
+    if (norm_type == 0) {
+      for (int i = 0; i < 3; i++)
+        dir_v[i] *= v;
+    }
+
+    if (norm_type != 10) {
+      cs_boundary_conditions_open_set_velocity_by_value(z, dir_v);
+      eval_set = true;
+    }
+  }
+
+  if (eval_set == false) {
+    cs_eval_at_location_t *func = _vel_profile;
+    if (norm_type == 10)
+      func = _vel_profile_by_meg_norm;
+    else if (dir_type == 2)
+      func = _vel_profile_by_meg_dir;
+
+    cs_boundary_conditions_open_set_velocity_by_func(z, func, c);
+
+    if (norm_type == 0 && dir_type == 2) {
+      assert(func == _vel_profile_by_meg_dir);
+      c->vel_values[3] = v;  /* Needed by that function */
+    }
+
+    eval_set = true;
+
+    /* Force some flags in case they are not already set
+       (as they may be used by functions assigned here) */
+
+    if (dir_type == 0) {
+      c->vel_flags |= CS_BC_OPEN_NORMAL_DIRECTION;
+    }
+    else if (dir_type == 1) {
+      c->vel_flags |= CS_BC_OPEN_UNIFORM_DIRECTION;
+      for (int i = 0; i < 3; i++)
+        c->vel_values[i] = dir_v[i];
+    }
+
+  }
+
+  /* Rescaling for flow rate handled by standard mechanism */
+
+  if (norm_type == 1) {
+    c->vel_values[3] = v;
+    cs_boundary_conditions_open_set_mass_flow_rate_by_value(z, v);
+  }
+  else if (norm_type == 2) {
+    c->vel_values[3] = v;
+    cs_boundary_conditions_open_set_volume_flow_rate_by_value(z, v);
+  }
+  else if (norm_type == 11) {
+    cs_boundary_conditions_open_set_mass_flow_rate_by_func(z,
+                                                           _meg_flow_rate,
+                                                           c);
+  }
+  else if (norm_type == 12) {
+    cs_boundary_conditions_open_set_volume_flow_rate_by_func(z,
+                                                             _meg_flow_rate,
+                                                             c);
   }
 }
 
@@ -1098,7 +1074,8 @@ _dof_meg_elec_rescaled(cs_lnum_t         n_elts,
 
   const cs_real_t joule_coef = cs_glob_elec_option->coejou;
 
-  const cs_real_3_t *face_cen = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+  const cs_real_3_t *face_cen
+    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
 
   cs_real_t *v_loc = cs_meg_boundary_function(c->zone->name,
                                               n_elts,
@@ -1324,7 +1301,8 @@ _dof_meg_exchange_coefficient_profile(cs_lnum_t         n_elts,
   const cs_lnum_t dim = c->dim;
   const cs_lnum_t stride = 1 + dim + dim*dim;
 
-  const cs_real_3_t *face_cen = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+  const cs_real_3_t *face_cen
+    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
 
   if (dim > 3)
     bft_error(__FILE__, __LINE__, 0,
@@ -2147,8 +2125,6 @@ _init_boundaries(void)
   BFT_MALLOC(boundaries->nature,    n_zones,    const char *);
   BFT_MALLOC(boundaries->bc_num,    n_zones,    int);
 
-  BFT_MALLOC(boundaries->iqimp,     n_zones,    int);
-
   boundaries->ientfu = NULL;
   boundaries->ientox = NULL;
   boundaries->ientgb = NULL;
@@ -2157,7 +2133,6 @@ _init_boundaries(void)
   boundaries->ientcp = NULL;
 
   BFT_MALLOC(boundaries->icalke,    n_zones,    int);
-  BFT_MALLOC(boundaries->qimp,      n_zones,    double);
 
   boundaries->inmoxy = NULL;
   boundaries->timpat = NULL;
@@ -2235,8 +2210,6 @@ _init_boundaries(void)
 
   /* initialize for each zone */
   for (int izone = 0; izone < n_zones; izone++) {
-    boundaries->iqimp[izone]     = 0;
-    boundaries->qimp[izone]      = 0;
     boundaries->icalke[izone]    = 0;
     boundaries->dh[izone]        = 0;
     boundaries->xintur[izone]    = 0;
@@ -2801,7 +2774,6 @@ void cs_gui_boundary_conditions_processing(int *itypfb)
          in PRECLI and PPPRCL routines */
 
       /* data by zone */
-      bc_pm_info->iqimp[zone_nbr]  = boundaries->iqimp[izone];
       bc_pm_info->icalke[zone_nbr] = boundaries->icalke[izone];
       bc_pm_info->dh[zone_nbr]     = boundaries->dh[izone];
       bc_pm_info->xintur[zone_nbr] = boundaries->xintur[izone];
@@ -3338,12 +3310,6 @@ void cs_gui_boundary_conditions_processing(int *itypfb)
 
   if (std_turbulence_bcs)
     _standard_turbulence_bcs();
-
-  /* Mass flow */
-
-  for (int izone = 0; izone < boundaries->n_zones; izone++) {
-    bc_pm_info->qimp[izone + 1] = boundaries->qimp[izone];
-  }
 }
 
 /*----------------------------------------------------------------------------
@@ -3669,9 +3635,7 @@ cs_gui_boundary_conditions_free_memory(void)
     BFT_FREE(boundaries->nature);
     BFT_FREE(boundaries->bc_num);
 
-    BFT_FREE(boundaries->iqimp);
     BFT_FREE(boundaries->icalke);
-    BFT_FREE(boundaries->qimp);
     BFT_FREE(boundaries->dh);
     BFT_FREE(boundaries->xintur);
     BFT_FREE(boundaries->type_code);
