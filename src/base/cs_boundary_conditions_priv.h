@@ -67,6 +67,18 @@ typedef enum {
 
 } cs_bc_velocity_rescale_t;
 
+/*!< Turbulence computation modes */
+
+/* Enum for boundary conditions of multiple turbulence values */
+
+typedef enum {
+
+  CS_BC_TURB_NONE = 0,                /*!< no computation with this mechanism */
+  CS_BC_TURB_BY_HYDRAULIC_DIAMETER,   /*!< based on hydraulic diameter */
+  CS_BC_TURB_BY_TURBULENT_INTENSITY   /*!< based on turbulent intensity */
+
+} cs_bc_turbulence_compute_t;
+
 /*! the given value is constant in time */
 #define CS_BC_OPEN_CONSTANT           (1 << 1)
 
@@ -107,9 +119,10 @@ typedef struct {
 
   cs_time_control_t       tc;                 /*!< Time control sub-structure */
 
-  cs_bc_velocity_rescale_t   vel_rescale;     /*!< velocity rescaling type */
-
   int                     vel_flags;          /*!< input mode flags */
+
+  cs_bc_velocity_rescale_t    vel_rescale;    /*!< velocity rescaling type */
+  cs_bc_turbulence_compute_t  turb_compute;   /*!< turbulence computation mode */
 
   int                     bc_pm_zone_num;     /*!< matching zone number
                                                 in cs_glob_bc_pm_info;
@@ -165,7 +178,7 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Find or add an inlet or outlet context structure for a given zone.
+ * \brief Find or add an open boundary context for a given zone.
  *
  * \param[in]  zone  pointer to associated zone
  *
@@ -175,6 +188,19 @@ typedef struct {
 
 cs_boundary_conditions_open_t *
 cs_boundary_conditions_open_find_or_add(const  cs_zone_t   *zone);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get an open boundary context structure for a given zone.
+ *
+ * \param[in]  zone  pointer to associated zone
+ *
+ * \return: pointer to structure associated with zone, or NULL if not found.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_boundary_conditions_open_t *
+cs_boundary_conditions_open_find(const  cs_zone_t   *zone);
 
 /*----------------------------------------------------------------------------*/
 

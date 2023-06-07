@@ -121,7 +121,6 @@ elseif ( ippmod(icoebu).ge.0 ) then
     izfppp(ifac) = 0
   enddo
 
-
 ! ---> Combustion charbon pulverise USCPCL
 
 elseif ( ippmod(iccoal).ge.0 ) then

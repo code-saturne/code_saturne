@@ -182,11 +182,7 @@ elseif (ippmod(iaeros).ge.0) then
 ! Compressible
 
 elseif (ippmod(icompf).ge.0) then
-  call cfxtcl                                                     &
- ( nvar   ,                                                       &
-   icodcl , itypfb ,                                              &
-   dt     ,                                                       &
-   rcodcl )
+  call cfxtcl(nvar, icodcl, itypfb, dt, rcodcl)
 
 endif
 

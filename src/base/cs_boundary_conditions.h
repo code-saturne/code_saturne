@@ -327,6 +327,15 @@ cs_boundary_conditions_add_map(int         bc_location_id,
                                cs_real_t   coord_shift[3],
                                double      tolerance);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create the legacy boundary conditions zone data arrays
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_create_legacy_zone_data(void);
+
 /*----------------------------------------------------------------------------
  * Create the boundary conditions face type and face zone arrays
  *----------------------------------------------------------------------------*/
@@ -1551,6 +1560,34 @@ cs_boundary_conditions_open_set_volume_flow_rate_by_func
 
 void
 cs_boundary_conditions_open_set_flow_rate_by_velocity(const  cs_zone_t  *z);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Base the inlet turbulence values on a a circular duct with smooth
+ *        wall (see ref cs_turbulence_bc_ke_hyd_diam).
+ *
+ * \param[in]  zone  pointer to associated zone
+ * \param[in]  hd    associated hydraulic diameter
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_inlet_set_turbulence_hyd_diam(const  cs_zone_t  *zone,
+                                                     cs_real_t          hd);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Base the inlet turbulence values on a a circular duct with smooth
+ *        wall (see ref cs_turbulence_bc_ke_hyd_diam).
+ *
+ * \param[in]  zone  pointer to associated zone
+ * \param[in]  ti    associated turbulence intensity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_inlet_set_turbulence_intensity(const  cs_zone_t  *zone,
+                                                      cs_real_t          ti);
 
 /*----------------------------------------------------------------------------*/
 

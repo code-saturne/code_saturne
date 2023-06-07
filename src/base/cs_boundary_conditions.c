@@ -77,6 +77,8 @@
 #include "cs_prototypes.h"
 #include "cs_post.h"
 #include "cs_time_control.h"
+#include "cs_turbulence_bc.h"
+#include "cs_turbulence_model.h"
 #include "cs_xdef_eval_at_zone.h"
 
 #include "fvm_nodal.h"
@@ -1376,6 +1378,142 @@ _update_inlet_outlet(cs_boundary_conditions_open_t  *c)
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Define automatic turbulence values.
+ *----------------------------------------------------------------------------*/
+
+static void
+_standard_turbulence_bcs(void)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
+
+  const cs_real_t *b_rho = CS_F_(rho_b)->val;
+  const cs_real_t *c_mu = CS_F_(mu)->val;
+
+  const cs_real_t  *_rcodcl_v[3];
+  for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
+    _rcodcl_v[coo_id] = CS_F_(vel)->bc_coeffs->rcodcl1 + coo_id*n_b_faces;
+
+  /* Inlet BC's */
+
+  cs_field_t *w_dist = cs_field_by_name_try("wall_distance");
+  cs_real_3_t *grady;
+
+  /* Compute the wall direction */
+  if (w_dist != NULL) {
+    BFT_MALLOC(grady, n_cells_ext, cs_real_3_t);
+
+    cs_field_gradient_scalar(w_dist,
+                             false,  /* use_previous_t */
+                             1,      /* inc */
+                             grady);
+
+  }
+
+  /* Loop on open boundaries */
+
+  for (int io_id = 0; io_id < _n_bc_open; io_id++) {
+    cs_boundary_conditions_open_t *c = _bc_open[io_id];
+
+    if (c->turb_compute > CS_BC_TURB_NONE) {
+
+      const cs_zone_t *z = c->zone;
+      const cs_real_t dh = c->hyd_diameter;
+
+      if (c->turb_compute == CS_BC_TURB_BY_HYDRAULIC_DIAMETER) {
+
+        for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+          cs_lnum_t face_id = z->elt_ids[i];
+          cs_lnum_t cell_id = b_face_cells[face_id];
+
+          cs_real_t vel[3] = {_rcodcl_v[0][face_id],
+                              _rcodcl_v[1][face_id],
+                              _rcodcl_v[2][face_id]};
+          cs_real_t uref2 = fmax(cs_math_3_square_norm(vel),
+                                 cs_math_epzero);
+
+          /* Note: should be model dependant */
+          cs_real_t ant = -sqrt(cs_turb_cmu);
+
+          cs_real_t *vel_dir = NULL;
+          cs_real_t *shear_dir = NULL;
+          cs_real_t _shear_dir[3];
+          if (w_dist != NULL) {
+            vel_dir = vel;
+            shear_dir = _shear_dir;
+            cs_math_3_normalize(grady[cell_id], shear_dir);
+            for (int j = 0; j < 3; j++)
+              shear_dir[j] *= ant;
+          }
+
+          cs_turbulence_bc_set_uninit_inlet_hyd_diam(face_id,
+                                                     vel_dir,
+                                                     shear_dir,
+                                                     uref2, dh,
+                                                     b_rho[face_id],
+                                                     c_mu[cell_id]);
+        }
+
+      }
+      else if (c->turb_compute == CS_BC_TURB_BY_TURBULENT_INTENSITY) {
+
+        const cs_real_t t_intensity = c->turb_intensity;
+
+        for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+          cs_lnum_t face_id = z->elt_ids[i];
+
+          cs_real_t vel[3] = {_rcodcl_v[0][face_id],
+                              _rcodcl_v[1][face_id],
+                              _rcodcl_v[2][face_id]};
+          cs_real_t uref2 = fmax(cs_math_3_square_norm(vel),
+                                 cs_math_epzero);
+
+          cs_turbulence_bc_set_uninit_inlet_turb_intensity(face_id, uref2,
+                                                           t_intensity, dh);
+        }
+
+      }
+
+    } /* End for inlet */
+
+  }
+
+  if (w_dist != NULL)
+    BFT_FREE(grady);
+
+  /* Automatic wall condition for alpha */
+
+  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+
+    if (CS_F_(alp_bl)->bc_coeffs != NULL) {
+      cs_real_t *_rcodcl_alp = CS_F_(alp_bl)->bc_coeffs->rcodcl1;
+
+      const cs_boundary_t *boundaries = cs_glob_boundaries;
+
+      for (int b_id = 0; b_id < boundaries->n_boundaries; b_id++) {
+
+        cs_boundary_type_t type = boundaries->types[b_id];
+
+        if (type & CS_BOUNDARY_WALL) {
+          const cs_zone_t *z
+            = cs_boundary_zone_by_id(boundaries->zone_ids[b_id]);
+
+          for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+            cs_lnum_t face_id = z->elt_ids[i];
+            _rcodcl_alp[face_id] = 0.;
+          }
+
+        }
+      }
+    }
+
+  }
+
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -1567,7 +1705,7 @@ cs_f_boundary_conditions_get_atincl_pointers(int **iprofm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Find or add an inlet or outlet context structure for a given zone.
+ * \brief Find or add an open boundary context for a given zone.
  *
  * \param[in]  zone  pointer to associated zone
  *
@@ -1618,10 +1756,12 @@ cs_boundary_conditions_open_find_or_add(const  cs_zone_t   *zone)
 
   /* Set some default values */
 
-  c->vel_rescale = CS_BC_VEL_RESCALE_NONE;
   c->vel_flags = (  CS_BC_OPEN_CONSTANT
                   | CS_BC_OPEN_NORMAL_DIRECTION
                   | CS_BC_OPEN_UNIFORM_QUANTITY);
+
+  c->vel_rescale = CS_BC_VEL_RESCALE_NONE;
+  c->turb_compute = CS_BC_TURB_NONE;
 
   c->bc_pm_zone_num = 0;
 
@@ -1649,6 +1789,31 @@ cs_boundary_conditions_open_find_or_add(const  cs_zone_t   *zone)
   c->model_inlet = NULL;
 
   return c;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get an open boundary context structure for a given zone.
+ *
+ * \param[in]  zone  pointer to associated zone
+ *
+ * \return: pointer to structure associated with zone, or NULL if not found.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_boundary_conditions_open_t *
+cs_boundary_conditions_open_find(const  cs_zone_t   *zone)
+{
+  if (zone != NULL) {
+
+    for (int i = 0; i < _n_bc_open; i++) {
+      if (_bc_open[i]->zone->id == zone->id)
+        return _bc_open[i];
+    }
+
+  }
+
+  return NULL;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -2110,42 +2275,22 @@ cs_boundary_conditions_add_map(int         bc_location_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create the legacy boundary conditions face type and face zone arrays.
+ * \brief Create the legacy boundary conditions zone data arrays
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_create(void)
+cs_boundary_conditions_create_legacy_zone_data(void)
 {
-  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-
-  /* Get default boundary type (converting "current" to "legacy" codes) */
-
-  const cs_boundary_t  *boundaries = cs_glob_boundaries;
-  int default_type = 0;
-  if (boundaries->default_type & CS_BOUNDARY_WALL)
-    default_type = CS_SMOOTHWALL;
-  else if (boundaries->default_type & CS_BOUNDARY_SYMMETRY)
-    default_type = CS_SYMMETRY;
-
-  /* boundary conditions type by boundary face */
-
-  BFT_MALLOC(_bc_type, n_b_faces, int);
-  for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
-    _bc_type[ii] = default_type;
-  }
-  cs_glob_bc_type = _bc_type;
+  if (cs_glob_bc_pm_info != NULL)
+    return;
 
   /* Allocate legacy zone info
      (deprecated, only for specific physics) */
 
   BFT_MALLOC(cs_glob_bc_pm_info, 1, cs_boundary_condition_pm_info_t);
-  BFT_MALLOC(cs_glob_bc_pm_info->izfppp, n_b_faces, int);
-  BFT_MALLOC(cs_glob_bc_pm_info->itrifb, n_b_faces, int);
-  for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
-    cs_glob_bc_pm_info->izfppp[ii] = 0;
-    cs_glob_bc_pm_info->itrifb[ii] = 0;
-  }
+  cs_glob_bc_pm_info->izfppp = NULL;
+  cs_glob_bc_pm_info->itrifb = NULL;
 
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
   for (int i = 0; i < CS_MAX_BC_PM_ZONE_NUM+1; i++) {
@@ -2176,13 +2321,6 @@ cs_boundary_conditions_create(void)
   bc_pm_info->distch = NULL;
   bc_pm_info->iautom = NULL;
 
-  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
-    BFT_MALLOC(bc_pm_info->iautom, n_b_faces, int);
-    for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
-      bc_pm_info->iautom[ii] = 0;
-    }
-  }
-
   /* Arrays present only for coal combustion */
 
   if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
@@ -2208,6 +2346,58 @@ cs_boundary_conditions_create(void)
         for (int k = 0; k < 20; k++)
           bc_pm_info->distch[i][j][k] = 0;
       }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create the legacy boundary conditions face type and face zone arrays.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_create(void)
+{
+  if (cs_glob_bc_pm_info == NULL)
+    cs_boundary_conditions_create_legacy_zone_data();
+
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+
+  /* Get default boundary type (converting "current" to "legacy" codes) */
+
+  const cs_boundary_t  *boundaries = cs_glob_boundaries;
+  int default_type = 0;
+  if (boundaries->default_type & CS_BOUNDARY_WALL)
+    default_type = CS_SMOOTHWALL;
+  else if (boundaries->default_type & CS_BOUNDARY_SYMMETRY)
+    default_type = CS_SYMMETRY;
+
+  /* boundary conditions type by boundary face */
+
+  BFT_MALLOC(_bc_type, n_b_faces, int);
+  for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
+    _bc_type[ii] = default_type;
+  }
+  cs_glob_bc_type = _bc_type;
+
+  /* Allocate legacy zone info
+     (deprecated, only for specific physics) */
+
+  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
+  assert(bc_pm_info != NULL);
+
+  BFT_MALLOC(bc_pm_info->izfppp, n_b_faces, int);
+  BFT_MALLOC(bc_pm_info->itrifb, n_b_faces, int);
+  for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
+    cs_glob_bc_pm_info->izfppp[ii] = 0;
+    cs_glob_bc_pm_info->itrifb[ii] = 0;
+  }
+
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
+    BFT_MALLOC(bc_pm_info->iautom, n_b_faces, int);
+    for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
+      bc_pm_info->iautom[ii] = 0;
     }
   }
 }
@@ -2487,6 +2677,30 @@ cs_boundary_conditions_compute(int  itypfb[])
   }
 
   BFT_FREE(eval_buf);
+
+  /* Final adjustments */
+
+  /* Automatic turbulence values
+     TODO: specify which models do not need this instead of those who do.
+     In most cases, even if a model changes this, doing it in all cases
+     should be safe.
+
+     Also, we should compute those conditions using xdef evaluations,
+     once the velocity conditions are computed (which will required
+     looping in an at least partially specified order, and not just
+     field id order); This will allow user-defined xdefs to supercede
+     values defined here. */
+
+  bool std_turbulence_bcs = false;
+  if (   cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] == 0
+      || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 0
+      || cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0
+      || cs_glob_physical_model_flag[CS_COOLING_TOWERS] >= 0
+      || cs_glob_physical_model_flag[CS_GAS_MIX] >= 0)
+    std_turbulence_bcs = true;
+
+  if (std_turbulence_bcs)
+    _standard_turbulence_bcs();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3085,6 +3299,65 @@ cs_boundary_conditions_open_set_volume_flow_rate_by_func
   if (bc_pm_info != NULL) {
     int zone_num = z->id - 1;
     bc_pm_info->iqimp[zone_num] = 0;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Base the inlet turbulence values on a a circular duct with smooth
+ *        wall (see ref cs_turbulence_bc_ke_hyd_diam).
+ *
+ * \param[in]  zone  pointer to associated zone
+ * \param[in]  hd    associated hydraulic diameter
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_inlet_set_turbulence_hyd_diam(const  cs_zone_t  *zone,
+                                                     cs_real_t          hd)
+{
+  cs_boundary_conditions_open_t *c
+    = cs_boundary_conditions_open_find_or_add(zone);
+
+  c->turb_compute = CS_BC_TURB_BY_HYDRAULIC_DIAMETER;
+  c->hyd_diameter = hd;
+  c->turb_intensity = -1;
+
+  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
+  if (bc_pm_info != NULL && c->bc_pm_zone_num > 0) {
+    int zone_num = c->bc_pm_zone_num;
+    bc_pm_info->icalke[zone_num] = 1;
+    bc_pm_info->dh[zone_num] = c->hyd_diameter;
+    bc_pm_info->xintur[zone_num] = c->turb_intensity;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Base the inlet turbulence values on a a circular duct with smooth
+ *        wall (see ref cs_turbulence_bc_ke_hyd_diam).
+ *
+ * \param[in]  zone  pointer to associated zone
+ * \param[in]  ti    associated turbulence intensity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_inlet_set_turbulence_intensity(const  cs_zone_t  *zone,
+                                                      cs_real_t          ti)
+{
+  cs_boundary_conditions_open_t *c
+    = cs_boundary_conditions_open_find_or_add(zone);
+
+  c->turb_compute = CS_BC_TURB_BY_TURBULENT_INTENSITY;
+  c->turb_intensity = ti;
+
+  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
+  if (bc_pm_info != NULL && c->bc_pm_zone_num > 0) {
+    int zone_num = c->bc_pm_zone_num;
+    bc_pm_info->icalke[zone_num] = 2;
+    bc_pm_info->dh[zone_num] = c->hyd_diameter;
+    bc_pm_info->xintur[zone_num] = c->turb_intensity;
   }
 }
 

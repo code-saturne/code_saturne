@@ -81,9 +81,7 @@
 #include "cs_restart.h"
 #include "cs_selector.h"
 #include "cs_thermal_model.h"
-#include "cs_turbulence_bc.h"
 #include "cs_volume_zone.h"
-
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -285,7 +283,6 @@ _write_liquid_vars(void                  *input,
     BFT_FREE(val);
   }
 }
-
 
 /*----------------------------------------------------------------------------
  * Compute the Lewis factor used for the evaluation of the heat transfer
@@ -785,7 +782,7 @@ cs_ctwr_bcond(void)
 {
   /* Mesh-related data */
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  cs_lnum_t *ifabor = cs_glob_mesh->b_face_cells;
+  cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
   const int *bc_type = cs_glob_bc_type;
   const int *face_zone_id = cs_boundary_zone_face_zone_id();
 
@@ -807,43 +804,17 @@ cs_ctwr_bcond(void)
 
     cs_lnum_t zone_id = face_zone_id[face_id];
 
-    if (bc_type[face_id] == CS_INLET || bc_type[face_id] == CS_FREE_INLET){
+    if (bc_type[face_id] == CS_INLET || bc_type[face_id] == CS_FREE_INLET) {
 
-      /* The turbulence is calculated by default if icalke differs from 0
-       * - or from hydraulic diameter- and a reference velocity adapted for the
-       *   current input if icalke = 1
-       * - or from the hydraulic diameter, a reference velocity and a
-       *   turbulence itensity is icalke = 2 */
-      if (cs_glob_bc_pm_info->icalke[zone_id] != 0) {
-
-        /* Reference velocity*/
-        cs_real_t uref2 = cs_math_pow2(vel_rcodcl1[n_b_faces*0 + face_id])
-                        + cs_math_pow2(vel_rcodcl1[n_b_faces*1 + face_id])
-                        + cs_math_pow2(vel_rcodcl1[n_b_faces*2 + face_id]);
-        uref2 = cs_math_fmax(uref2, 1.e-12);
-
-        cs_lnum_t cell_id = ifabor[face_id];
-        const cs_real_t rhomoy = bfpro_rom[cell_id];
-        cs_real_t viscl0 = fp->viscl0;
-        cs_lnum_t icke = cs_glob_bc_pm_info->icalke[zone_id];
-        cs_real_t xdh = cs_glob_bc_pm_info->dh[zone_id];
-        cs_real_t xiturb = cs_glob_bc_pm_info->xintur[zone_id];
-
-        if (icke == 1){
-          cs_turbulence_bc_inlet_hyd_diam(face_id, uref2, xdh, rhomoy, viscl0);
-        }
-
-        else if (icke == 2){
-          cs_turbulence_bc_inlet_turb_intensity(face_id, uref2, xiturb, xdh);
-        }
-      }
+      /* The turbulence BC values are calculated upstream using the base
+         mechanism, so nothing specific is needed here. */
 
       /* Boundary conditions for the transported temperature of the humid air and
        * of the liquid water injected in the packing zones
        * --> Bulk values if not specified by the user
        * Assuming humid air is at conditions '0' */
 
-      cs_lnum_t cell_id = ifabor[face_id];
+      cs_lnum_t cell_id = b_face_cells[face_id];
       const cs_real_t xhum = air_prop->humidity0;
       const cs_real_t rhomoy = bfpro_rom[cell_id];
 
@@ -2692,7 +2663,8 @@ cs_ctwr_source_term(int              f_id,
 
         /* Water mass fraction equation except rain */
         else if (f_id == (CS_F_(ym_w)->id)) {
-          exp_st[cell_id] += vol_mass_source*(1. - f_var[cell_id]); //TODO add mass_from_rain
+          //TODO add mass_from_rain
+          exp_st[cell_id] += vol_mass_source*(1. - f_var[cell_id]);
           imp_st[cell_id] += vol_mass_source;
         }
 
@@ -2952,9 +2924,11 @@ cs_ctwr_source_term(int              f_id,
        ==================================================== */
 
     cs_real_t *liq_mass_frac = CS_F_(y_l_pack)->val;   /* liquid mass fraction */
+
+    /* Inner mass flux of liquids (in the packing) */
     cs_real_t *liq_mass_flow
-      = cs_field_by_name("inner_mass_flux_y_l_packing")->val; /* Inner mass flux of liquids
-                                                                 (in the packing) */
+      = cs_field_by_name("inner_mass_flux_y_l_packing")->val;
+
     for (int ict = 0; ict < _n_ct_zones; ict++) {
 
       cs_ctwr_zone_t *ct = _ct_zone[ict];
