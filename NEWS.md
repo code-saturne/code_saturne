@@ -3,6 +3,10 @@ Release 8.0.0 (unreleased)
 
 ### Bug fixes:
 
+- Fix boundary temperature postprocessing in case of imposed heat flux.
+  * The value computed in the wall law was spuriously overwritten with
+    a "laminar" value ignoring the wall law.
+
 - Fix handling of groups when concatenating or modifying Cartesian meshes.
 
 - Fix copy of restart (symbolic links) when using a separate scratch directory.

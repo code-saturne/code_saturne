@@ -2521,9 +2521,13 @@ if (nscal.ge.1) then
                coefbp(ifac), cofbfp(ifac),                         &
                dimp              , hint )
 
-          ! Store boundary value
-          if (b_f_id .ge. 0) then
-            bvar_s(ifac) = coefap(ifac) + coefbp(ifac) * bvar_s(ifac)
+          ! Store boundary value only for faces
+          ! for which it was not previously computed
+          ! in clptur.f90
+          if (icodcl(ifac,iu).ne.5) then
+            if (b_f_id .ge. 0) then
+              bvar_s(ifac) = coefap(ifac) + coefbp(ifac) * bvar_s(ifac)
+            endif
           endif
 
         ! Convective Boundary Conditions
