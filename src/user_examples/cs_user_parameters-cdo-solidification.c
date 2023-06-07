@@ -117,7 +117,7 @@ cs_user_model(void)
   /* 1. Activate the solidification module */
   /* ------------------------------------- */
 
-  /*! [param_cdo_activate_solidification] */
+  /*! [param_cdo_activate_solidification_binary] */
   {
     /* For the solidification module:
        cs_solidification_activate(solidification_model_type,
@@ -136,7 +136,9 @@ cs_user_model(void)
 
     cs_flag_t  solid_option_flag = 0;
 
-    cs_flag_t  solid_post_flag = CS_SOLIDIFICATION_POST_SOLIDIFICATION_RATE;
+    cs_flag_t  solid_post_flag = 0 |
+      CS_SOLIDIFICATION_POST_SOLIDIFICATION_RATE |
+      CS_SOLIDIFICATION_POST_SEGREGATION_INDEX;
 
     cs_flag_t  navsto_model_flag = 0;
 
@@ -161,42 +163,7 @@ cs_user_model(void)
                                navsto_post_flag);
 
   }
-  /*! [param_cdo_activate_solidification] */
-
-  /*! [param_cdo_solidification_set_voller] */
-  {
-    /* Physical data for the settings a Voller & Prakash model (i.e. without
-       segregation, only solidification is taken into account). The main model
-       is set to CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87 */
-
-    cs_real_t  T0 = 0.5, beta_t = 0.01;
-    cs_real_t  t_solidus = -0.1, t_liquidus = 0.1;
-    cs_real_t  latent_heat = 5, s_das = 0.33541;
-
-    /* Set the parameters for the Voller & Prakash model */
-
-    cs_solidification_set_voller_model(/* Boussinesq approximation */
-                                       beta_t,
-                                       T0,
-                                       /* Phase diagram settings */
-                                       t_solidus,
-                                       t_liquidus,
-                                       /* Physical constants */
-                                       latent_heat,
-                                       s_das);
-
-    /* The main solidification model is
-       CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87 but the optional flag
-       CS_SOLIDIFICATION_NO_VELOCITY_FIELD has been set. Then, one uses a
-       simplified version of the previous function. */
-
-    cs_solidification_set_voller_model_no_velocity(/* Phase diagram settings*/
-                                                   t_solidus,
-                                                   t_liquidus,
-                                                   /* Physical constants */
-                                                   latent_heat);
-  }
-  /*! [param_cdo_solidification_set_voller] */
+  /*! [param_cdo_activate_solidification_binary] */
 
   /*! [param_cdo_solidification_set_binary_alloy] */
   {
@@ -233,6 +200,103 @@ cs_user_model(void)
 
   }
   /*! [param_cdo_solidification_set_binary_alloy] */
+
+  /*! [param_cdo_activate_solidification_voller] */
+  {
+    cs_flag_t  solid_option_flag = 0;
+    cs_flag_t  solid_post_flag = CS_SOLIDIFICATION_POST_CELL_STATE;
+    cs_flag_t  navsto_model_flag = 0;
+    cs_flag_t  navsto_post_flag = CS_NAVSTO_POST_VELOCITY_DIVERGENCE;
+
+    /* Activate the solidification module with a binary alloy model (the
+       Navier-Stokes and the thermal modules are also activated in back-end) */
+
+    cs_solidification_activate(/* Main solidification model */
+                               CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87,
+                               /* Solidification options */
+                               solid_option_flag,
+                               /* Solidification automatic post options */
+                               solid_post_flag,
+                               /* NavSto parameters */
+                               domain->boundaries,
+                               CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES,
+                               navsto_model_flag,
+                               CS_NAVSTO_COUPLING_MONOLITHIC,
+                               navsto_post_flag);
+
+  }
+  /*! [param_cdo_activate_solidification_voller] */
+
+  /*! [param_cdo_solidification_set_voller] */
+  {
+    /* Physical data for the settings a Voller & Prakash model (i.e. without
+       segregation, only solidification is taken into account). The main model
+       is set to CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87 */
+
+    cs_real_t  T0 = 0.5, beta_t = 0.01;
+    cs_real_t  t_solidus = -0.1, t_liquidus = 0.1;
+    cs_real_t  latent_heat = 5, s_das = 0.33541;
+
+    /* Set the parameters for the Voller & Prakash model */
+
+    cs_solidification_set_voller_model(/* Boussinesq approximation */
+                                       beta_t,
+                                       T0,
+                                       /* Phase diagram settings */
+                                       t_solidus,
+                                       t_liquidus,
+                                       /* Physical constants */
+                                       latent_heat,
+                                       s_das);
+  }
+  /*! [param_cdo_solidification_set_voller] */
+
+  /*! [param_cdo_activate_solidification_voller_no_vel] */
+  {
+    cs_flag_t  solid_option_flag = CS_SOLIDIFICATION_NO_VELOCITY_FIELD;
+    cs_flag_t  solid_post_flag = CS_SOLIDIFICATION_POST_ENTHALPY;
+    cs_flag_t  navsto_model_flag = 0;
+    cs_flag_t  navsto_post_flag = 0;
+
+    /* Activate the solidification module with a binary alloy model (the
+       Navier-Stokes and the thermal modules are also activated in back-end) */
+
+    cs_solidification_activate(/* Main solidification model */
+                               CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87,
+                               /* Solidification options */
+                               solid_option_flag,
+                               /* Solidification automatic post options */
+                               solid_post_flag,
+                               /* NavSto parameters */
+                               domain->boundaries,
+                               CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES,
+                               navsto_model_flag,
+                               CS_NAVSTO_COUPLING_MONOLITHIC,
+                               navsto_post_flag);
+  }
+  /*! [param_cdo_activate_solidification_voller_no_vel] */
+
+  /*! [param_cdo_solidification_set_voller_no_vel] */
+  {
+    /* Physical data for the settings a Voller & Prakash model (i.e. without
+       segregation, only solidification is taken into account). The main model
+       is set to CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87 but the optional
+       flag CS_SOLIDIFICATION_NO_VELOCITY_FIELD has been set. Then, one uses a
+       simplified version of the previous function. */
+
+    cs_real_t  t_solidus = -0.1, t_liquidus = 0.1;
+    cs_real_t  latent_heat = 5;
+
+    /* Set the parameters for the Voller & Prakash model when there is no
+       resolution of the velocity */
+
+    cs_solidification_set_voller_model_no_velocity(/* Phase diagram settings*/
+                                                   t_solidus,
+                                                   t_liquidus,
+                                                   /* Physical constants */
+                                                   latent_heat);
+  }
+  /*! [param_cdo_solidification_set_voller_no_vel] */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -258,6 +322,8 @@ cs_user_parameters(cs_domain_t    *domain)
 
   /*! [param_cdo_solidification_nl_voller_advanced] */
   {
+    /* If a non-linear Voller model has been activated */
+
     cs_solidification_voller_t
       *model_struct = cs_solidification_get_voller_struct();
 
@@ -271,6 +337,8 @@ cs_user_parameters(cs_domain_t    *domain)
 
   /*! [param_cdo_solidification_binary_advanced] */
   {
+    /* If a "binary alloy" model has been activated */
+
     cs_solidification_binary_alloy_t
       *model_struct = cs_solidification_get_binary_alloy_struct();
 

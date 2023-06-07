@@ -1811,4 +1811,4 @@ In the case of FV schemes, it relies on the coding of several user
 files (See the validation test case "Voller" for more details).
 
 In the case of CDO schemes, details on the way to setup a problem of
-solidification or melting can be found [here](@ref cs_solidification_cdo).
+solidification or melting of solid can be found [here](@ref cs_solidification_cdo).
