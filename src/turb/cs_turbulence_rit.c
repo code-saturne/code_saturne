@@ -173,6 +173,36 @@ _thermal_flux_st(const char          *name,
   if (f_ut_prod != NULL)
       prod_ut = (cs_real_3_t *)f_ut_prod->val;
 
+  cs_real_3_t *phi_ut = NULL;
+  cs_field_t *f_phi_ut = cs_field_by_composite_name_try(
+      "algo:turbulent_flux_scrambling", f->name);
+  if (f_phi_ut != NULL)
+    phi_ut = (cs_real_3_t *)f_phi_ut->val;
+
+  cs_real_3_t *prod_by_vel_grad_ut = NULL;
+  cs_field_t *f_ut_prod_by_vel = cs_field_by_composite_name_try(
+      "algo:turbulent_flux_production_by_velocity_gradient", f->name);
+  if (f_ut_prod_by_vel != NULL)
+      prod_by_vel_grad_ut = (cs_real_3_t *)f_ut_prod_by_vel->val;
+
+  cs_real_3_t *prod_by_scal_grad_ut = NULL;
+  cs_field_t *f_ut_prod_by_scal = cs_field_by_composite_name_try(
+      "algo:turbulent_flux_production_by_scalar_gradient", f->name);
+  if (f_ut_prod_by_scal != NULL)
+      prod_by_scal_grad_ut = (cs_real_3_t *)f_ut_prod_by_scal->val;
+
+  cs_real_3_t *buo_ut = NULL;
+  cs_field_t *f_buo_ut = cs_field_by_composite_name_try(
+      "algo:turbulent_flux_buoyancy", f->name);
+  if (f_buo_ut != NULL)
+    buo_ut = (cs_real_3_t *)f_buo_ut->val;
+
+  cs_real_3_t *dissip_ut = NULL;
+  cs_field_t *f_dissip_ut_ut = cs_field_by_composite_name_try(
+      "algo:turbulent_flux_dissipation", f->name);
+  if (f_dissip_ut_ut != NULL)
+    dissip_ut = (cs_real_3_t *)f_buo_ut->val;
+
   if (turb_flux_model == 31) {
     char fname[128];
     snprintf(fname, 128, "%s_alpha", f->name); fname[127] = '\0';
@@ -266,10 +296,10 @@ _thermal_flux_st(const char          *name,
 
        /* Pressure/thermal fluctuation correlation term
         * --------------------------------------------- */
-
-       rhs_ut[c_id][i] +=   cell_f_vol[c_id] * crom[c_id]
-                          * (      alpha  * phiith[i]
-                             + (1.-alpha) * phiitw[i]);
+       const cs_real_t press_correl_i =       alpha  * phiith[i]
+                                        + (1.-alpha) * phiitw[i];
+       if (f_phi_ut != NULL) /* Save it if needed */
+         phi_ut[c_id][i] = press_correl_i;
 
        cs_real_t imp_term
          =   cell_f_vol[c_id] * crom[c_id]
@@ -281,34 +311,45 @@ _thermal_flux_st(const char          *name,
        /* Production terms
         *----------------- */
 
-       cs_real_t ept = 0;
-
-       /* Production term due to the mean velocity */
-       ept -= cs_math_3_dot_product(gradv[c_id][i],
-                                    xuta[c_id]);
+       /* Production term due to the mean velcoity */
+       const cs_real_t prod_by_vel_grad_i =
+         - cs_math_3_dot_product(gradv[c_id][i], xuta[c_id]);
+       if (prod_by_vel_grad_ut != NULL) /* Save it if needed */
+         prod_by_vel_grad_ut[c_id][i] = prod_by_vel_grad_i;
 
        /* Production term due to the mean temperature */
-       ept -= (  xrij[i][0]*gradt[c_id][0]
-               + xrij[i][1]*gradt[c_id][1]
-               + xrij[i][2]*gradt[c_id][2]);
+      const cs_real_t prod_by_scal_grad_i =  - (   xrij[i][0]*gradt[c_id][0]
+                                           + xrij[i][1]*gradt[c_id][1]
+                                           + xrij[i][2]*gradt[c_id][2]);
+       if (prod_by_scal_grad_ut != NULL) /* Save it if needed */
+         prod_by_scal_grad_ut[c_id][i] = prod_by_scal_grad_i;
 
        /* Production term due to the gravity */
+       cs_real_t buoyancy_i = 0.;
        if ((cvar_tt != NULL) && (cpro_beta != NULL)
            && rans_mdl->has_buoyant_term == 1)
-         ept -= grav[i] * cpro_beta[c_id] * cvara_tt[c_id];
+         buoyancy_i = -grav[i] * cpro_beta[c_id] * cvara_tt[c_id];
+
+       if (buo_ut != NULL) /* Save it if needed */
+         buo_ut[c_id][i] = buoyancy_i;
 
        /* Dissipation (Wall term only because "h" term is zero */
-       ept -=   (1.-alpha)/xttdrbw
-              * (  xxc2 * xuta[c_id][i]
-                 + xxc3 * (  xuta[c_id][0]*xnal[0]*xnal[i]
-                           + xuta[c_id][1]*xnal[1]*xnal[i]
-                           + xuta[c_id][2]*xnal[2]*xnal[i]));
-
-       rhs_ut[c_id][i] += ept * cell_f_vol[c_id]*crom[c_id];
+       const cs_real_t dissip_i =  (1.-alpha)/xttdrbw
+                                 * (  xxc2 * xuta[c_id][i]
+                                    + xxc3 * (  xuta[c_id][0]*xnal[0]*xnal[i]
+                                              + xuta[c_id][1]*xnal[1]*xnal[i]
+                                              + xuta[c_id][2]*xnal[2]*xnal[i]));
+       if (dissip_ut != NULL)/* Save it if needed */
+         dissip_ut[c_id][i] = dissip_i;
 
        /* Save production terms for post-processing */
        if (prod_ut != NULL)
-         prod_ut[c_id][i] = ept;
+         prod_ut[c_id][i] = prod_by_vel_grad_i + prod_by_scal_grad_i
+                          + buoyancy_i - dissip_i;
+
+       rhs_ut[c_id][i] += (  prod_by_vel_grad_i + prod_by_scal_grad_i
+                           + buoyancy_i - dissip_i)
+                         * cell_f_vol[c_id]*crom[c_id];
 
        /* TODO we can implicit more terms */
        imp_term =   cell_f_vol[c_id] * crom[c_id]

@@ -306,6 +306,9 @@ _production_and_dissipation_terms(const cs_field_t  *f,
   /* Production Term
      --------------- */
 
+  cs_field_t *f_produc = cs_field_by_composite_name_try("algo:production",
+                                                        f->name);
+
   /* NB: diffusivity is clipped to 0 because in LES, it might be negative.
    * Problematic
    * for the variance even if it is strange to use variance and LES...
@@ -319,15 +322,24 @@ _production_and_dissipation_terms(const cs_field_t  *f,
         = (const cs_real_3_t *)cs_field_by_composite_name(f_fm->name,
                                                           "turbulent_flux")->val;
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        cpro_st[c_id] -=   2 * xcpp[c_id] * cell_f_vol[c_id] * crom[c_id]
-                         * cs_math_3_dot_product(grad[c_id], xut[c_id]);
+        const cs_real_t prod = - 2 * cs_math_3_dot_product(grad[c_id],
+                                                           xut[c_id]);
+        if (f_produc != NULL )
+          f_produc->val[c_id] = prod;
+        cpro_st[c_id] += xcpp[c_id] * cell_f_vol[c_id] * crom[c_id]
+                         *  prod;
+
       }
     }
     /* SGDH model */
     else {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        cpro_st[c_id] +=   2 * xcpp[c_id] * sgdh_diff[c_id] * cell_f_vol[c_id]
+        const cs_real_t prod = 2 * sgdh_diff[c_id] / crom[c_id]
                          * cs_math_3_dot_product(grad[c_id], grad[c_id]);
+        if (f_produc != NULL )
+          f_produc->val[c_id] = prod;
+        cpro_st[c_id] += xcpp[c_id] * cell_f_vol[c_id] * crom[c_id]
+                         *  prod;
       }
     }
   }
@@ -343,7 +355,9 @@ _production_and_dissipation_terms(const cs_field_t  *f,
         const cs_real_t cprovol = xcpp[c_id] * cell_f_vol[c_id] * crom[c_id];
         /* Special time stepping to ensure positivity of the variance */
         const cs_real_t prod = -2*cs_math_3_dot_product(grad[c_id], xut[c_id]);
-        rhs[c_id] += cs_math_fmax(prod*cprovol, 0);
+        if (f_produc != NULL )
+          f_produc->val[c_id] = prod;
+        rhs[c_id] += cs_math_fmax(prod * cprovol, 0.);
 
         /* Implicit "production" term when negative, but check if the
          * variance is non-zero */
@@ -357,8 +371,12 @@ _production_and_dissipation_terms(const cs_field_t  *f,
     /* SGDH model */
     else {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        rhs[c_id] +=   2 * xcpp[c_id] * sgdh_diff[c_id] * cell_f_vol[c_id]
-                       * cs_math_3_dot_product(grad[c_id], grad[c_id]);
+        const cs_real_t prod =   2 * sgdh_diff[c_id] / crom[c_id]
+                            * cs_math_3_dot_product(grad[c_id], grad[c_id]);
+        if (f_produc != NULL )
+          f_produc->val[c_id] = prod;
+        rhs[c_id] +=   xcpp[c_id] * cell_f_vol[c_id] * crom[c_id]
+                       * prod;
       }
     }
 
@@ -374,6 +392,9 @@ _production_and_dissipation_terms(const cs_field_t  *f,
 
   /* Dissipation term
      ---------------- */
+
+  cs_field_t *f_dissip = cs_field_by_composite_name_try("algo:dissip",
+                                                        f->name);
 
   cs_real_6_t *cvara_rij = NULL;
   cs_real_t *cvara_k= NULL, *cvara_ep = NULL, *cvara_omg= NULL, *cvar_al = NULL;
@@ -431,11 +452,15 @@ _production_and_dissipation_terms(const cs_field_t  *f,
       prdtl /= visls_0;
 
     const cs_real_t xr = (1.0 - alpha_theta)*prdtl + alpha_theta*rvarfl;
-    const cs_real_t rhovst = xcpp[c_id]*crom[c_id]*xe/(xk*xr)*cell_f_vol[c_id];
+    const cs_real_t cprovol = xcpp[c_id] * crom[c_id] * cell_f_vol[c_id];
+    const cs_real_t dissip_freq = xe / (xk * xr);
+    const cs_real_t dissip = dissip_freq * cvara_var[c_id];
+    if (f_dissip != NULL)
+      f_dissip->val[c_id] = dissip;
     /* The diagonal receives eps/Rk, (*theta possibly) */
-    fimp[c_id] += rhovst*thetap;
+    fimp[c_id] += dissip_freq * cprovol * thetap;
     /* The right hand side receives the dissipation */
-    rhs[c_id] -= rhovst*cvara_var[c_id];
+    rhs[c_id] -= dissip * cprovol;
   }
 
 }
