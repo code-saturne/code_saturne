@@ -258,10 +258,10 @@ cs_medcoupling_slice_scalar_mean(const char       *name,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_medcoupling_slice_scalar_integral_weighted(const char       *name,
-                                              const cs_real_t  *scalar,
-                                              const cs_real_t  *weight_s,
-                                              const cs_real_t  *weight_v[3]);
+cs_medcoupling_slice_scalar_integral_weighted(const char        *name,
+                                              const cs_real_t   *scalar,
+                                              const cs_real_t   *weight_s,
+                                              const cs_real_3_t *weight_v);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -279,10 +279,10 @@ cs_medcoupling_slice_scalar_integral_weighted(const char       *name,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_medcoupling_slice_scalar_mean_weighted(const char       *name,
-                                          const cs_real_t  *scalar,
-                                          const cs_real_t  *weight_s,
-                                          const cs_real_t  *weight_v[3]);
+cs_medcoupling_slice_scalar_mean_weighted(const char        *name,
+                                          const cs_real_t   *scalar,
+                                          const cs_real_t   *weight_s,
+                                          const cs_real_3_t *weight_v);
 
 /*----------------------------------------------------------------------------*/
 /*!
