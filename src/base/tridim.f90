@@ -206,15 +206,6 @@ interface
 
   end subroutine navstv
 
-  subroutine richards(icvrge, dt)
-
-    implicit none
-
-    integer  icvrge
-    double precision, pointer, dimension(:)   :: dt
-
-  end subroutine richards
-
   function cs_mobile_structures_get_n_structures() result(n_structs)  &
     bind(C, name='cs_mobile_structures_get_n_structures')
     use, intrinsic :: iso_c_binding
