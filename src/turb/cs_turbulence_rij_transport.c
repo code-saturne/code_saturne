@@ -274,7 +274,7 @@ _thermal_flux_st(const char          *name,
 
        cs_real_t ept = 0;
 
-       /* Production term due to the mean velcoity */
+       /* Production term due to the mean velocity */
        ept -= cs_math_3_dot_product(gradv[c_id][i],
                                     xuta[c_id]);
 
