@@ -266,7 +266,8 @@ module paramx
                  cs_user_metal_structures_source_terms,                   &
                  cs_user_parameters, cs_user_physical_properties,         &
                  cs_user_turbulence_source_terms,                         &
-                 cs_user_turbulence_source_terms2
+                 cs_user_turbulence_source_terms2,                        &
+                 cs_user_atmo_soil
 
   procedure() :: usalcl, usatdv, usati1, usatph, usatsoil, ushist,        &
                  usporo, ussmag, usstr1, usstr2, ustsnv, ustsvv, usthht,  &

@@ -68,6 +68,7 @@ end type categorie_sol
 ! (filled in usispu/cs_user_parameters)
 
 !> initial soil surface temperature
+!> for Sea, it is also the surface temperature
 double precision :: tsini = 20.d0
 !> initial deep soil temperature
 double precision :: tprini = 20.d0
@@ -77,8 +78,6 @@ double precision :: qvsini = 0.d0
 double precision :: w1ini = 0.d0
 !> initial water content of the second reservoir
 double precision :: w2ini = 0.d0
-!> Sea surface temperature
-double precision :: tmer = 20.d0
 
 !> array of the different features of each soil category
 type(categorie_sol), dimension(:) , allocatable :: tab_sol

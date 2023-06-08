@@ -312,7 +312,11 @@ double precision, dimension(:,:), pointer  :: iru, ird, solu, sold
 
 ! 3.0 Data specific to the soil model
 !-------------------------------------------------------------------------------
-!> Flag to use the soil model (0 off, 1 on)
+!> Option for soil model
+!>  - iatsoil = 0 : Do not use soil model (soil structures are not created)
+!>  - iatsoil = 1 : Deardorff Force Restore model (Deardorff 1973)
+!>  - iatsoil = 2 : User inputs (soil structures are created)
+
 integer(c_int), pointer, save:: iatsoil
 
 !> Do we compute z ground every where?

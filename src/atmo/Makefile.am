@@ -109,8 +109,7 @@ rayive.f90 \
 rayso.f90 \
 solcat.f90 \
 soliva.f90 \
-solmoy.f90 \
-solvar.f90
+solmoy.f90 
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod

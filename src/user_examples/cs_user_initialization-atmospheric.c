@@ -112,7 +112,7 @@ cs_user_initialization(cs_domain_t     *domain)
    */
 
   /*! [atmo_soil_init] */
-  if (cs_glob_atmo_option->soil_model == 1) {
+  if (cs_glob_atmo_option->soil_zone_id > -1) {
     const cs_zone_t *z
       = cs_boundary_zone_by_id(cs_glob_atmo_option->soil_zone_id);
 

@@ -678,7 +678,7 @@ call phyvar(nvar, nscal, iterns, dt)
 ! Initialization for the atmospheric soil model
 !===============================================================================
 
-if (ippmod(iatmos).ge.2) then
+if (ippmod(iatmos).ge.0) then
   call atmsol()
 endif
 

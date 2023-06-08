@@ -314,7 +314,6 @@ typedef struct {
   cs_real_t meteo_qwstar;
   /*! Meteo reference sensible heat */
   cs_real_t meteo_sensi;
-
   /*! Universal function Phi_m for stable condition */
   int meteo_phim_s;
   /*! Universal function Phi_h for stable condition */
@@ -494,6 +493,7 @@ cs_atmo_compute_meteo_profiles(void);
 
 void
 cs_atmo_z_ground_compute(void);
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -720,6 +720,24 @@ cs_atmo_aerosol_log_setup(void);
 
 void
 cs_atmo_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allow call of cs_user fonctions during soil model computation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_soil_model(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute soil and interface values using Deardorff force restore method
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_soil_model(void);
 
 /*----------------------------------------------------------------------------*/
 

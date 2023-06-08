@@ -63,7 +63,7 @@ double precision turb_schmidt
 !===============================================================================
 
 if (ippmod(iatmos).le.1) then
-  if (iatra1.eq.1.or.iatsoil.eq.1) then
+  if (iatra1.eq.1.or.iatsoil.ge.1) then
     write(nfecra, 1003)
     call csexit(1)
   endif

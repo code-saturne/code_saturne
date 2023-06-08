@@ -91,7 +91,7 @@ if (n_g_soil_elts.gt.0) then
 
   ! Initialization of soil variables
   ! Only if soil is activated
-  if (iatsoil.eq.1) then
+  if (iatsoil.ge.0) then
     call soliva()
   endif
 

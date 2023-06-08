@@ -173,7 +173,7 @@ endif
 
 ! Soil atmosphere boundary conditions
 !------------------------------------
-if (iatsoil.eq.1) then
+if (iatsoil.ge.1) then
   call field_get_val_s_by_name("soil_temperature", bvar_temp_sol)
   call field_get_val_s_by_name("soil_pot_temperature", bvar_tempp)
   call field_get_val_s_by_name("soil_total_water", bvar_total_water)

@@ -139,7 +139,6 @@ double precision, dimension(:), pointer :: cvar_k, cvara_k, cvar_ep, cvara_ep
 double precision, dimension(:), pointer :: cvar_omg, cvara_omg
 double precision, dimension(:), pointer :: cvar_nusa, cvara_nusa
 double precision, dimension(:), pointer :: cpro_prtot
-double precision, dimension(:), pointer :: cvar_scalt, cvar_totwt
 
 double precision, dimension(:), pointer :: i_mass_flux, b_mass_flux
 
@@ -299,6 +298,13 @@ interface
     integer(c_int), dimension(*) :: ale_bc_type
     integer(c_int), dimension(*) :: impale, isostd
   end subroutine cs_solve_navier_stokes
+
+  subroutine cs_soil_model &
+       () &
+    bind(C, name='cs_soil_model')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_soil_model
 
   subroutine cou1di()  &
     bind(C, name='cs_f_cou1di')
@@ -810,11 +816,9 @@ do while (iterns.le.nterup)
   !     ==============================================
 
   ! FIXME why only iatmos =2 ?
-  if (ippmod(iatmos).eq.2.and.iatsoil.eq.1.and.nfmodsol.gt.0) then
-    call field_get_val_s(icrom, crom)
-    call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
-    call field_get_val_s(ivarfl(isca(iymw)), cvar_totwt)
-    call solvar(cvar_scalt, cvar_totwt, crom, dt, rcodcl )
+  ! Deardorff force-restore model
+  if (ippmod(iatmos).eq.2.and.iatsoil.eq.1) then
+    call cs_soil_model()
   endif
 
   !     UNE FOIS LES COEFFICIENTS CALCULES, ON PEUT EN DEDUIRE PLUS
@@ -840,7 +844,7 @@ do while (iterns.le.nterup)
     ! 1-D thermal model coupling with condensation
     ! on a surface region
     if (nftcdt.gt.0.and.nztag1d.eq.1) then
-     call cs_tagmro &
+      call cs_tagmro &
      ( nfbpcd , ifbpcd , izzftcd ,                  &
        dt     )
     endif

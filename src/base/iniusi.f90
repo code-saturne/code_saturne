@@ -385,10 +385,6 @@ if (ippmod(iatmos).ge.0) then
     ! of soil. Can be modified by the user
     call solcat(1)
 
-    if (error /= 0) then
-      write(nfecra,*) "Allocation error of atmodsol::tab_sol"
-      call csexit(1)
-    endif
   endif
 endif
 

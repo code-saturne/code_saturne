@@ -205,6 +205,29 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
     }
   }
   /*! [example_4] */
+
+  /*! [atmo_soil_temperature] */
+  /* Overwrite soil variables */
+  int z_id = cs_glob_atmo_option->soil_zone_id;
+  if (z_id > -1) {
+    const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
+    cs_field_t *soil_temperature = cs_field_by_name_try("soil_temperature");
+    cs_field_t *soil_pot_temperature = cs_field_by_name_try("soil_pot_temperature");
+    cs_field_t *soil_total_water = cs_field_by_name_try("soil_total_water");
+    cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
+
+    for (cs_lnum_t soil_id = 0; soil_id < z->n_elts; soil_id++) {
+      /* read external data to set potential temperature and specific humidity */
+      cs_real_t tetas = 16.504682364;
+      cs_real_t qvs = 0.00583966915;
+
+      soil_temperature->val[soil_id] = tetas - tkelvi;
+      soil_pot_temperature->val[soil_id] = tetas;
+      soil_total_water->val[soil_id] = qvs;
+    }
+  }
+  /*! [atmo_soil_temperature] */
+
 }
 
 /*----------------------------------------------------------------------------*/
