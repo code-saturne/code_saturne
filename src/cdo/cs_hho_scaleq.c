@@ -384,7 +384,16 @@ _shho_init_cell_system(const cs_cell_mesh_t         *cm,
 
         }
         else { /* TODO */
-          bft_error(__FILE__, __LINE__, 0, "%s: TODO", __func__);
+
+          /* Nothing to do for Homogeneous Neumann BC */
+
+          if (face_flag & CS_CDO_BC_NEUMANN      ||
+              face_flag & CS_CDO_BC_FULL_NEUMANN ||
+              face_flag & CS_CDO_BC_ROBIN)
+            bft_error(__FILE__, __LINE__, 0,
+                      "%s: Type of boundary conditions not handled yet.",
+                      __func__);
+
         }
 
       } /* Border face id */
