@@ -35,10 +35,12 @@ endif
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/atmo \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/cdo \
+-I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/turb \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
@@ -49,6 +51,7 @@ $(FCMODINCLUDE)$(top_builddir)/src \
 $(FCMODINCLUDE)$(top_builddir)/src/alge \
 $(FCMODINCLUDE)$(top_builddir)/src/atmo \
 $(FCMODINCLUDE)$(top_builddir)/src/base \
+$(FCMODINCLUDE)$(top_builddir)/src/cdo \
 $(FCMODINCLUDE)$(top_builddir)/src/cfbl \
 $(FCMODINCLUDE)$(top_builddir)/src/cogz \
 $(FCMODINCLUDE)$(top_builddir)/src/comb \
@@ -72,9 +75,7 @@ cs_ctwr_headers.h
 noinst_LIBRARIES = libcsctwr.a
 libcsctwr_a_SOURCES = \
 cs_ctwr.c \
-cs_ctwr_bcond.f90 \
 ctini1.f90 \
-ctiniv.f90 \
 ctphyv.f90 \
 ctvarp.f90
 

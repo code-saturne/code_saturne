@@ -60,6 +60,21 @@ implicit none
 ! Local variables
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_ctwr_fields_init0()  &
+    bind(C, name='cs_ctwr_fields_init0')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_ctwr_fields_init0
+
+end interface
+
+
+!===============================================================================
 
 ! ---> Combustion gaz
 !      Flamme de diffusion : chimie 3 points
@@ -110,7 +125,7 @@ endif
 ! ---> Cooling towers
 
 if (ippmod(iaeros).ge.0) then
-  call ctiniv0
+  call cs_ctwr_fields_init0
 endif
 
 ! Electric arcs, Joule effect or ionic conduction
@@ -171,6 +186,23 @@ use mesh
 
 implicit none
 
+!===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_ctwr_fields_init1()  &
+    bind(C, name='cs_ctwr_fields_init1')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_ctwr_fields_init1
+
+end interface
+
+
+!===============================================================================
+
 ! Local variables
 
 !===============================================================================
@@ -182,7 +214,7 @@ endif
 
 ! ---> Cooling towers
 if (ippmod(iaeros).ge.0) then
-  call ctiniv1
+  call cs_ctwr_fields_init1
 endif
 
 ! Gas mixture modelling in presence of noncondensable gases and

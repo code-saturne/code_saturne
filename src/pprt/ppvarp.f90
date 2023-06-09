@@ -109,6 +109,16 @@ interface
 
 end interface
 
+interface
+
+  subroutine cs_ctwr_add_variable_fields()  &
+    bind(C, name='cs_ctwr_add_variable_fields')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_ctwr_add_variable_fields
+
+end interface
+
 !===============================================================================
 
 ! Key ids for clipping
@@ -186,6 +196,7 @@ endif
 
 if (ippmod(iaeros).ge.0) then
   call ctvarp
+  call cs_ctwr_add_variable_fields
 endif
 
 ! 8. Gas mixtures modelling
