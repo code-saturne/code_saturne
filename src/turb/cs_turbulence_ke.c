@@ -2387,6 +2387,7 @@ cs_turbulence_ke_q(cs_real_6_t  rij[])
   const cs_real_t *visct =  CS_F_(mu_t)->val;
   const cs_real_t *cvar_k = CS_F_(k)->val;
   const cs_real_t *cvar_ep = CS_F_(eps)->val;
+  const cs_real_t *crom = CS_F_(rho)->val;
 
   /* Initialization
    * ============== */
@@ -2415,6 +2416,7 @@ cs_turbulence_ke_q(cs_real_6_t  rij[])
     const cs_real_t xeps   = cvar_ep[c_id];
     const cs_real_t xk     = cvar_k[c_id];
     const cs_real_t xttke  = xk/xeps;
+    const cs_real_t xrom   = crom[c_id];
 
     /* Sij */
     xstrai[0][0] = gradv[c_id][0][0];
@@ -2468,9 +2470,9 @@ cs_turbulence_ke_q(cs_real_6_t  rij[])
 
     for (cs_lnum_t ii = 0; ii < 3; ii++) {
       for (cs_lnum_t jj = 0; jj < 3; jj++) {
-        xrij[jj][ii] =   4*xqc1*xvisct*xttke*sikskj[jj][ii]
-                       + 4*xqc2*xvisct*xttke*(wikskj[jj][ii]+skiwjk[jj][ii])
-                       + 4*xqc3*xvisct*xttke*wikwjk[jj][ii];
+        xrij[jj][ii] =   4*xqc1*xvisct*xttke*sikskj[jj][ii]/xrom
+                       + 4*xqc2*xvisct*xttke*(wikskj[jj][ii]+skiwjk[jj][ii])/xrom
+                       + 4*xqc3*xvisct*xttke*wikwjk[jj][ii]/xrom;
       }
     }
 
