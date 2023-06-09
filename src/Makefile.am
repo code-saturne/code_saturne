@@ -124,6 +124,8 @@ base/cs_f_interfaces.$(OBJEXT): base/cs_c_bindings.$(OBJEXT) \
  base/paramx.$(OBJEXT) base/dimens.$(OBJEXT) base/mesh.$(OBJEXT) \
  base/optcal.$(OBJEXT) base/field.$(OBJEXT) lagr/lagran.$(OBJEXT)
 
+base/cs_nz_condensation.$(OBJEXT): base/mesh.$(OBJEXT)
+
 base/cs_nz_tagmr.$(OBJEXT): base/optcal.$(OBJEXT) base/pointe.$(OBJEXT) \
  base/parall.$(OBJEXT) base/cs_nz_condensation.$(OBJEXT)
 
