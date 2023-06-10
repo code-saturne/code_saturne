@@ -223,7 +223,7 @@ interface
     bind(C, name='cs_f_wall_condensation_get_pointers')
     use, intrinsic :: iso_c_binding
     implicit none
-    type(c_ptr), intent(out) :: ifbpcd, itypcd, izzftcd, ltmast 
+    type(c_ptr), intent(out) :: ifbpcd, itypcd, izzftcd, ltmast
     type(c_ptr), intent(out) :: spcond, svcond, hpcond, twall_cond
     type(c_ptr), intent(out) :: thermflux, flthr, dflthr, izcophc
     type(c_ptr), intent(out) :: izcophg, iztag1d, ztpar, zxrefcond, zprojcond
