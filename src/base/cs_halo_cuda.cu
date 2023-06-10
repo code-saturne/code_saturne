@@ -126,21 +126,25 @@ BEGIN_C_DECLS
  * and buffer will be used. If provided explicitely,
  * the buffer must be of sufficient size.
  *
- * \param[in]   halo         pointer to halo structure
- * \param[in]   sync_mode    synchronization mode (standard or extended)
- * \param[in]   stride       number of (interlaced) values by entity
- * \param[in]   var          pointer to value array (device)
- * \param[out]  send_buffer  pointer to send buffer, NULL for global buffer
+ * \param[in]   halo          pointer to halo structure
+ * \param[in]   sync_mode     synchronization mode (standard or extended)
+ * \param[in]   stride        number of (interlaced) values by entity
+ * \param[in]   var           pointer to value array (device)
+ * \param[out]  var_host_ptr  pointer to matching value array on host, or NULL
+ * \param[out]  send_buffer   pointer to send buffer, NULL for global buffer
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_halo_cuda_pack_send_buffer_real(const cs_halo_t  *halo,
-                                   cs_halo_type_t    sync_mode,
-                                   cs_lnum_t         stride,
-                                   const cs_real_t   var[],
-                                   cs_real_t         send_buffer[])
+cs_halo_cuda_pack_send_buffer_real(const cs_halo_t   *halo,
+                                   cs_halo_type_t     sync_mode,
+                                   cs_lnum_t          stride,
+                                   const cs_real_t    var[],
+                                   cs_real_t        **var_host_ptr,
+                                   cs_real_t          send_buffer[])
 {
+  *var_host_ptr = (cs_real_t *)cs_cuda_get_host_ptr(var);
+
   const cs_lnum_t end_shift = (sync_mode == CS_HALO_STANDARD) ? 1 : 2;
 
   const cs_lnum_t *send_list = (cs_lnum_t *)cs_get_device_ptr(halo->send_list);
