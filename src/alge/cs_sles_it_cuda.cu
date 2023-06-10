@@ -904,9 +904,7 @@ _dot_products_vr_vw_vq_rr(const cs_sles_it_t  *c,
 #if defined(HAVE_MPI)
 
     if (c->comm != MPI_COMM_NULL) {
-      double _sum[4];
       MPI_Allreduce(MPI_IN_PLACE, s, 4, MPI_DOUBLE, MPI_SUM, c->comm);
-      memcpy(s, _sum, 4*sizeof(double));
     }
 
 #endif /* defined(HAVE_MPI) */

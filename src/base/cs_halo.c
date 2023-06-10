@@ -117,6 +117,7 @@ struct _cs_halo_state_t {
   int             stride;         /* Number of values per location */
 
   cs_alloc_mode_t var_location;   /* Allocation info for exchanged variable */
+  cs_alloc_mode_t send_buffer_location;  /* Allocation mode for send buffer */
 
   void        *send_buffer_cur;   /* Send buffer used for current progress
                                      (either _send_buffer or passed by caller) */
@@ -1067,6 +1068,7 @@ cs_halo_state_create(void)
     .data_type = CS_DATATYPE_NULL,
     .stride = 0,
     .var_location = CS_ALLOC_HOST,
+    .send_buffer_location = CS_ALLOC_HOST,
     .send_buffer_cur = NULL,
     .n_requests = 0,
     .local_rank_id = -1,
@@ -1370,6 +1372,7 @@ cs_halo_sync_pack_init_state(const cs_halo_t  *halo,
                    _hs->send_buffer_size,
                    char,
                    alloc_mode);
+      _hs->send_buffer_location = alloc_mode;
 
 #if defined(HAVE_MPI)
 #if (MPI_VERSION >= 3)
@@ -1383,8 +1386,13 @@ cs_halo_sync_pack_init_state(const cs_halo_t  *halo,
 #endif
 #endif
     }
+    else
+      _hs->send_buffer_location = cs_check_device_ptr(_hs->send_buffer);
 
     _send_buffer = _hs->send_buffer;
+  }
+  else {
+    _hs->send_buffer_location = cs_check_device_ptr(_send_buffer);
   }
 
   _hs->var_location = CS_ALLOC_HOST;
@@ -1561,11 +1569,30 @@ cs_halo_sync_pack_d(const cs_halo_t  *halo,
 
 #if defined(HAVE_CUDA)
 
+  cs_real_t *val_host_ptr = NULL;
+
   cs_halo_cuda_pack_send_buffer_real(halo,
                                      sync_mode,
                                      stride,
                                      val,
+                                     &val_host_ptr,
                                      _send_buf_d);
+
+  /* We do not try to optimize for CS_ALLOC_HOST_DEVICE or
+     CS_ALLOC_HOST_DEVICE_PINNED here as this would require tracking
+     the host pointer in the halo state, would possibly lead to
+     lower performance when that memory is not pinned, and is not the
+     expected dominant future paradigm (using managed memory with
+     CS_ALLOC_HOST_DEVICE_SHARED being that one).
+     So when synchronizing halos for device arrays using separate host
+     and device memory (and when CUDA-aware MPI is not available),
+     we will use a local (pinned) memory buffer to receive halo
+     data, then copy it back to the device memory. */
+
+  _hs->var_location = CS_ALLOC_HOST_DEVICE_SHARED;
+
+  if (val_host_ptr != val && val != NULL)
+    _hs->var_location = CS_ALLOC_DEVICE;
 
 #else
 
@@ -1577,8 +1604,6 @@ cs_halo_sync_pack_d(const cs_halo_t  *halo,
                     send_buf,
                     _hs);
 
-#endif
-
   /* As device pointer is passed, cs_check_device_ptr will provide
      the correct result only in case of CS_ALLOC_HOST_DEVICE_SHARED
      (where the pointers are identical). */
@@ -1586,6 +1611,9 @@ cs_halo_sync_pack_d(const cs_halo_t  *halo,
   _hs->var_location = cs_check_device_ptr(val);
   if (_hs->var_location != CS_ALLOC_HOST_DEVICE_SHARED)
     _hs->var_location = CS_ALLOC_DEVICE;
+
+#endif
+
 }
 
 #endif /* defined(HAVE_ACCEL) */
@@ -1634,20 +1662,30 @@ cs_halo_sync_start(const cs_halo_t  *halo,
 
   unsigned char *buffer = (unsigned char *)(_hs->send_buffer_cur);
 
+#if defined(HAVE_ACCEL)
+
   if (_hs->var_location > CS_ALLOC_HOST) {
 #   if defined(_CS_MPI_DEVICE_SUPPORT)
     /* For CUDA-aware MPI, directly work with buffer on device */
     buffer = cs_get_device_ptr(buffer);
 # else
     /* For host-based MPI, copy or prefetch buffer */
-    cs_sync_d2h(buffer);
+    size_t pack_size = halo->n_send_elts[CS_HALO_EXTENDED] * elt_size;
+    size_t recv_size = halo->n_elts[_hs->sync_mode] * elt_size;
 
     /* When array passed is defined on device but is not shared, use separate
        (smaller) CPU buffer for receive (as we cannot know whether a matching
        host array is present without complexifying the API);
        this will be copied back to device at the next step */
+    if (_hs->send_buffer_location != CS_ALLOC_HOST_DEVICE_SHARED) {
+      void *d_buffer = cs_get_device_ptr(buffer);
+      cs_copy_d2h(buffer, d_buffer, pack_size);
+    }
+    else {
+      cs_prefetch_d2h(buffer, pack_size);
+    }
+
     if (_hs->var_location != CS_ALLOC_HOST_DEVICE_SHARED) {
-      size_t recv_size = halo->n_elts[_hs->sync_mode] * elt_size;
       if (_hs->recv_buffer_size < recv_size) {
         _hs->recv_buffer_size = recv_size;
         CS_FREE_HD(_hs->recv_buffer);
@@ -1658,6 +1696,8 @@ cs_halo_sync_start(const cs_halo_t  *halo,
     }
 #endif
   }
+
+#endif /* defined(HAVE_ACCEL) */
 
 #if defined(HAVE_MPI)
 
@@ -1778,13 +1818,15 @@ cs_halo_sync_wait(const cs_halo_t  *halo,
     size_t elt_size = cs_datatype_size[_hs->data_type] * _hs->stride;
     size_t n_bytes = n_elts*elt_size;
 
-    unsigned char *restrict _val = val;
-    unsigned char *restrict _val_dest = _val + n_loc_elts*elt_size;
+    if (n_elts > 0) {
+      unsigned char *restrict _val = val;
+      unsigned char *restrict _val_dest = _val + n_loc_elts*elt_size;
 
-    if (_hs->var_location == CS_ALLOC_HOST_DEVICE_SHARED)
-      cs_prefetch_h2d(_val_dest, n_bytes);
-    else
-      cs_copy_h2d(_val_dest, _hs->recv_buffer, n_bytes);
+      if (_hs->var_location == CS_ALLOC_HOST_DEVICE_SHARED)
+        cs_prefetch_h2d(_val_dest, n_bytes);
+      else
+        cs_copy_h2d(_val_dest, _hs->recv_buffer, n_bytes);
+    }
 
   }
 #endif

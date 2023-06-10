@@ -370,6 +370,27 @@ cs_cuda_copy_d2d(void        *dst,
                  const void  *src,
                  size_t       size);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get host pointer for a managed or device pointer.
+ *
+ * This function can be called with a pointer inside an allocated block of
+ * memory, so is not retricted to values returned by CS_ALLOC_HD.
+ *
+ * This makes it possible to check whether a pointer to an array inside
+ * a larger array is shared or accessible from the device only
+ * (for example when grouping allocations).
+ *
+ * \param [in]   ptr   pointer to device data
+ *
+ * \return  pointer to host data if shared or mapped at the CUDA level,
+ *          NULL otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_cuda_get_host_ptr(const void  *ptr);
+
 #endif
 
 /*=============================================================================

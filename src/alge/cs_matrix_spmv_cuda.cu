@@ -715,7 +715,7 @@ static cs_halo_state_t *
 _pre_vector_multiply_sync_x_start(const cs_matrix_t   *matrix,
                                   cs_real_t            d_x[restrict])
 {
- cs_halo_state_t *hs = NULL;
+  cs_halo_state_t *hs = NULL;
 
   if (matrix->halo != NULL) {
 
