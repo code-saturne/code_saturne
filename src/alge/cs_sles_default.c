@@ -209,8 +209,12 @@ _sles_default_native(int                f_id,
         multigrid = 1;
     }
     else {
-      if (coupling_id < 0)
-        sles_it_type = CS_SLES_P_SYM_GAUSS_SEIDEL;
+      if (coupling_id < 0) {
+        if (cs_get_device_id() > -1)
+          sles_it_type = CS_SLES_JACOBI;
+        else
+          sles_it_type = CS_SLES_P_SYM_GAUSS_SEIDEL;
+      }
       else
         sles_it_type = CS_SLES_BICGSTAB;
     }

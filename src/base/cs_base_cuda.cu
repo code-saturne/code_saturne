@@ -497,33 +497,33 @@ cs_base_cuda_device_info(cs_log_t  log_id)
     struct cudaDeviceProp prop;
     CS_CUDA_CHECK(cudaGetDeviceProperties(&prop, i));
     unsigned long long mem = prop.totalGlobalMem / 1000000;
-    char mode_name[32] = "";
-    if (prop.computeMode == cudaComputeModeDefault)
-      snprintf(mode_name, 31, "default");
-    else if (prop.computeMode == cudaComputeModeExclusive)
-      snprintf(mode_name, 31, "exclusive");
-    else if (prop.computeMode == cudaComputeModeProhibited)
-      snprintf(mode_name, 31, "prohibited");
 
     cs_log_printf
       (log_id,
        _("  CUDA device %d:       %s\n"),
        i, prop.name);
 
-    if (strncmp(prop.name, buffer, 255) != 0)
+    if (strncmp(prop.name, buffer, 255) != 0) {
       cs_log_printf
         (log_id,
          _("                       Compute capability: %d.%d\n"
            "                       Memory: %llu %s\n"
            "                       Multiprocessors: %d\n"
            "                       Integrated: %d\n"
-           "                       Can map host memory: %d\n"
-           "                       Compute mode: %s\n"),
+           "                       Unified addressing: %d\n"),
          prop.major, prop.minor,
          mem, _("MB"),
          prop.multiProcessorCount,
          prop.integrated,
-         prop.canMapHostMemory, mode_name);
+         prop.unifiedAddressing);
+
+#if (CUDART_VERSION >= 11000)
+      cs_log_printf
+        (log_id,
+         _("                       Use host's page tables: %d\n"),
+         prop.pageableMemoryAccessUsesHostPageTables);
+#endif
+    }
 
     strncpy(buffer, prop.name, 255);
     buffer[255] = '\0';

@@ -90,18 +90,6 @@ BEGIN_C_DECLS
  * Local macro definitions
  *============================================================================*/
 
-#if defined(OMPI_MAJOR_VERSION)
-  #include <mpi-ext.h>
-#endif
-
-#if defined(MPIX_CUDA_AWARE_SUPPORT) && MPIX_CUDA_AWARE_SUPPORT
-  #define _CS_MPI_DEVICE_SUPPORT 1
-#else
-  #if defined(_CS_MPI_DEVICE_SUPPORT)
-    #undef _CS_MPI_DEVICE_SUPPORT
-  #endif
-#endif
-
 /*=============================================================================
  * Local type definitions
  *============================================================================*/
@@ -154,11 +142,12 @@ struct _cs_halo_state_t {
 /* Number of defined halos */
 static int _n_halos = 0;
 
-/* Allocation mode for arrays which might be used on accelerator device
-   Note that an alternative option would be to use shared memory with
-   prefetching. We will need to do performance comparisons first, but
-   in the case of similar performance, going for the shared approach
-   would be preferred for its "more generic" aspect. */
+/* Allocation mode for arrays which might be used on accelerator device.
+   Best performance is expected either with page-locked (pinned) host memory
+   and separate device memory, or shared (managed) memory with prefetching.
+   We should run performance comparisons, but in the case of similar
+   performance, going for the shared approach would be preferred for its
+   other advantages (simplicity most of all, and pageable device memory). */
 static cs_alloc_mode_t _halo_buffer_alloc_mode = CS_ALLOC_HOST_DEVICE_PINNED;
 
 /* Should we use barriers after posting receives ? */
@@ -1665,36 +1654,40 @@ cs_halo_sync_start(const cs_halo_t  *halo,
 #if defined(HAVE_ACCEL)
 
   if (_hs->var_location > CS_ALLOC_HOST) {
-#   if defined(_CS_MPI_DEVICE_SUPPORT)
+
     /* For CUDA-aware MPI, directly work with buffer on device */
-    buffer = cs_get_device_ptr(buffer);
-# else
+
+    if (cs_mpi_device_support)
+      buffer = cs_get_device_ptr(buffer);
+
     /* For host-based MPI, copy or prefetch buffer */
-    size_t pack_size = halo->n_send_elts[CS_HALO_EXTENDED] * elt_size;
-    size_t recv_size = halo->n_elts[_hs->sync_mode] * elt_size;
 
-    /* When array passed is defined on device but is not shared, use separate
-       (smaller) CPU buffer for receive (as we cannot know whether a matching
-       host array is present without complexifying the API);
-       this will be copied back to device at the next step */
-    if (_hs->send_buffer_location != CS_ALLOC_HOST_DEVICE_SHARED) {
-      void *d_buffer = cs_get_device_ptr(buffer);
-      cs_copy_d2h(buffer, d_buffer, pack_size);
-    }
     else {
-      cs_prefetch_d2h(buffer, pack_size);
-    }
+      size_t pack_size = halo->n_send_elts[CS_HALO_EXTENDED] * elt_size;
+      size_t recv_size = halo->n_elts[_hs->sync_mode] * elt_size;
 
-    if (_hs->var_location != CS_ALLOC_HOST_DEVICE_SHARED) {
-      if (_hs->recv_buffer_size < recv_size) {
-        _hs->recv_buffer_size = recv_size;
-        CS_FREE_HD(_hs->recv_buffer);
-        CS_MALLOC_HD(_hs->recv_buffer, _hs->recv_buffer_size, unsigned char,
-                     CS_ALLOC_HOST_DEVICE_PINNED);
+      /* When array passed is defined on device but is not shared, use separate
+         (smaller) CPU buffer for receive (as we cannot know whether a matching
+         host array is present without complexifying the API);
+         this will be copied back to device at the next step */
+      if (_hs->send_buffer_location != CS_ALLOC_HOST_DEVICE_SHARED) {
+        void *d_buffer = cs_get_device_ptr(buffer);
+        cs_copy_d2h(buffer, d_buffer, pack_size);
       }
-      _val_dest = _hs->recv_buffer;
+      else {
+        cs_prefetch_d2h(buffer, pack_size);
+      }
+
+      if (_hs->var_location != CS_ALLOC_HOST_DEVICE_SHARED) {
+        if (_hs->recv_buffer_size < recv_size) {
+          _hs->recv_buffer_size = recv_size;
+          CS_FREE_HD(_hs->recv_buffer);
+          CS_MALLOC_HD(_hs->recv_buffer, _hs->recv_buffer_size, unsigned char,
+                       CS_ALLOC_HOST_DEVICE_PINNED);
+        }
+        _val_dest = _hs->recv_buffer;
+      }
     }
-#endif
   }
 
 #endif /* defined(HAVE_ACCEL) */
@@ -1809,8 +1802,9 @@ cs_halo_sync_wait(const cs_halo_t  *halo,
 #endif /* defined(HAVE_MPI) */
 
 #if defined(HAVE_ACCEL)
-#if !defined(_CS_MPI_DEVICE_SUPPORT)
-  if (_hs->var_location > CS_ALLOC_HOST) {
+
+  if (   cs_mpi_device_support == 0
+      && _hs->var_location > CS_ALLOC_HOST) {
 
     size_t n_loc_elts = halo->n_local_elts;
     size_t n_elts = (   _hs->sync_mode
@@ -1829,7 +1823,7 @@ cs_halo_sync_wait(const cs_halo_t  *halo,
     }
 
   }
-#endif
+
 #endif /* defined(HAVE_ACCEL) */
 
   /* Copy local values in case of periodicity */

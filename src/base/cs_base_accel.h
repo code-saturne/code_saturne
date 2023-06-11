@@ -160,9 +160,13 @@ typedef enum {
 
 extern cs_alloc_mode_t  cs_alloc_mode;
 
+extern int cs_mpi_device_support;
+
 #else
 
 #define cs_alloc_mode CS_ALLOC_HOST
+
+#define cs_mpi_device_support 0;
 
 #endif
 

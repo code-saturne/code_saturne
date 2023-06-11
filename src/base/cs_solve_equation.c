@@ -1031,7 +1031,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
      ============ */
 
   cs_real_t *rovsdt, *smbrs;
-  BFT_MALLOC(smbrs, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(smbrs, n_cells_ext, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
 
   cs_array_real_fill_zero(n_cells, smbrs);
@@ -1780,7 +1780,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   cs_real_t normp = -1.0;
 
   cs_real_t *dpvar;
-  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_equation_iterative_solve_scalar(cs_glob_time_step_options->idtvar,
                                      iterns,
@@ -1814,7 +1814,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                      xcpp,
                                      NULL);
 
-  BFT_FREE(dpvar);
+  CS_FREE_HD(dpvar);
   if (weighb != NULL) {
     BFT_FREE(weighb);
     BFT_FREE(weighf);
@@ -2005,7 +2005,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   BFT_FREE(wcvark_var);
   BFT_FREE(xcpp);
-  BFT_FREE(smbrs);
+  CS_FREE_HD(smbrs);
   BFT_FREE(rovsdt);
   BFT_FREE(dtr);
 }

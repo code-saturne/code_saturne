@@ -53,26 +53,6 @@ __device__ __forceinline__ int warpReduceSum<int>(unsigned int mask,
 }
 #endif
 
-#if (__CUDA_ARCH__ < 600)
-// Atomic double add for older GPUs.
-
-__device__  unsigned long long int atomicCAS(unsigned long long int *address,
-                                             unsigned long long int  compare,
-                                             unsigned long long int  val);
-
-__device__ double atomicAddDouble(double *address, double val) {
-  unsigned long long int *address_as_ull = (unsigned long long int *)address;
-  unsigned long long int old = *address_as_ull, assumed;
-  do {
-    assumed = old;
-    old = atomicCAS(address_as_ull, assumed,
-                    __double_as_longlong(val + __longlong_as_double(assumed)));
-  } while (assumed != old);
-  return __longlong_as_double(old);
-}
-
-#endif
-
 /*----------------------------------------------------------------------------*/
 
 #endif /* __CS_CUDA_CONTRIB_H__ */

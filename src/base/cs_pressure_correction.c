@@ -278,7 +278,7 @@ _pressure_correction_fv(int        iterns,
   cs_real_t *dam, *xam, *rhs, *res;
   BFT_MALLOC(dam, n_cells_ext, cs_real_t);
   BFT_MALLOC(xam, m->n_i_faces, cs_real_t);
-  BFT_MALLOC(rhs, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(res, n_cells_ext, cs_real_t);
 
   cs_real_t *phia, *iflux, *bflux, *dphi;
@@ -2221,7 +2221,7 @@ _pressure_correction_fv(int        iterns,
     cs_real_t *ddphi;
     cs_real_3_t *coefar, *cofafr;
     cs_real_33_t *coefbr, *cofbfr;
-    BFT_MALLOC(ddphi, n_cells_ext, cs_real_t);
+    CS_MALLOC_HD(ddphi, n_cells_ext, cs_real_t, cs_alloc_mode);
     BFT_MALLOC(coefar, n_b_faces, cs_real_3_t);
     BFT_MALLOC(cofafr, n_b_faces, cs_real_3_t);
     BFT_MALLOC(coefbr, n_b_faces, cs_real_33_t);
@@ -2590,7 +2590,7 @@ _pressure_correction_fv(int        iterns,
                                               imasfl, bmasfl);
 
     /* Free memory */
-    BFT_FREE(ddphi);
+    CS_FREE_HD(ddphi);
     BFT_FREE(coefa_dp2);
     BFT_FREE(coefaf_dp2);
     BFT_FREE(coefar);
@@ -2730,7 +2730,7 @@ _pressure_correction_fv(int        iterns,
   BFT_FREE(dphi);
   BFT_FREE(_cpro_divu);
   BFT_FREE(gradp);
-  BFT_FREE(rhs);
+  CS_FREE_HD(rhs);
   BFT_FREE(rovsdt);
   BFT_FREE(weighf);
   BFT_FREE(weighb);
