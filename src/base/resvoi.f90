@@ -86,8 +86,8 @@ implicit none
 
 ! Arguments
 
-double precision dt(ncelet)
-integer          iterns
+real(kind=c_double), dimension(*) :: dt
+integer, value :: iterns
 
 ! Local variables
 
