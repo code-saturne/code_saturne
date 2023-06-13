@@ -1261,7 +1261,7 @@ cs_medcoupling_create_disc_mesh(const cs_real_t origin[],
      * N2 value is in [1, N_SECTORS]
      * N3 value is in [2,..., N_SECTORS, 1] -> Hence the modulo call
      */
-    mcIdType conn[3] = {0, 1 + i, 1 + (1+i % _n_sectors)};
+    mcIdType conn[3] = {0, 1 + i, 1 + ((1+i) % _n_sectors)};
     m->insertNextCell(INTERP_KERNEL::NORM_TRI3, 3, conn);
   }
   m->finishInsertingCells();
@@ -1352,7 +1352,7 @@ cs_medcoupling_create_annulus_mesh(const cs_real_t origin[],
 
   for (int i = 0; i < _n_sectors; i++) {
     int ii = i;
-    int jj = i+1 % _n_sectors;
+    int jj = (i+1) % _n_sectors;
 
     mcIdType conn[4] = {jj, jj+_n_sectors, ii+_n_sectors, ii};
     m->insertNextCell(INTERP_KERNEL::NORM_QUAD4, 4, conn);
