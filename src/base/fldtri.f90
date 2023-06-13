@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 subroutine fldtri() &
-  bind(C, name='cs_boundary_conditions_init_bc_coeffs')
+  bind(C, name='cs_field_map_and_init_bcs')
 
 !===============================================================================
 
@@ -114,10 +114,9 @@ if (ipass .eq. 1) then
   call field_init_bc_coeffs(ivarfl(ivar))
 endif
 
-call field_get_id_try('pressure_increment', f_id)
-
-if (f_id.ge.0) then
-  if (ipass .eq. 1) then
+if (ipass .eq. 1) then
+  call field_get_id_try('pressure_increment', f_id)
+  if (f_id.ge.0) then
     call field_allocate_bc_coeffs(f_id, .true., .false., .false., .false.)
     call field_init_bc_coeffs(f_id)
   endif
@@ -137,9 +136,9 @@ endif
 ! Void fraction for VOF algo.
 !----------------------------
 
-if (ivofmt.gt.0) then
-  ivar = ivolf2
-  if (ipass .eq. 1) then
+if (ipass .eq. 1) then
+  if (ivofmt.gt.0) then
+    ivar = ivolf2
     call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false., .false.)
     call field_init_bc_coeffs(ivarfl(ivar))
   endif
@@ -198,9 +197,9 @@ endif
 
 ! Map fields
 
-do ii = 1, nfld
-  ivar = ifvar(ii)
-  if (ipass .eq. 1) then
+if (ipass .eq. 1) then
+  do ii = 1, nfld
+    ivar = ifvar(ii)
     if (itytur.eq.3 ) then
       if (ivar.eq.irij) then
         call field_allocate_bc_coeffs(ivarfl(ivar), .true., .true., .false., .false.)
@@ -211,8 +210,8 @@ do ii = 1, nfld
       call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false., .false.)
     endif
     call field_init_bc_coeffs(ivarfl(ivar))
-  endif
-enddo
+  enddo
+endif
 
 nfld = 0
 
@@ -231,67 +230,50 @@ endif
 ! Wall distance
 !--------------
 
-call field_get_id_try("wall_distance", f_id)
+if (ipass .eq. 1) then
 
-if (f_id.ne.-1) then
-  if (ipass .eq. 1) then
+  call field_get_id_try("wall_distance", f_id)
+  if (f_id.ne.-1) then
     call field_allocate_bc_coeffs(f_id, .true., .false., .false., .false.)
     call field_init_bc_coeffs(f_id)
   endif
-endif
 
-call field_get_id_try("wall_yplus", f_id)
-
-if (f_id.ne.-1) then
-  if (ipass .eq. 1) then
+  call field_get_id_try("wall_yplus", f_id)
+  if (f_id.ne.-1) then
     call field_allocate_bc_coeffs(f_id, .true., .false., .false., .false.)
     call field_init_bc_coeffs(f_id)
   endif
-endif
 
-call field_get_id_try("z_ground", f_id)
-
-if (f_id.ne.-1) then
-  if (ipass .eq. 1) then
+  call field_get_id_try("z_ground", f_id)
+  if (f_id.ne.-1) then
     call field_allocate_bc_coeffs(f_id, .true., .false., .false., .false.)
     call field_init_bc_coeffs(f_id)
   endif
-endif
 
-call field_get_id_try("porosity", f_id)
-
-if (f_id.ne.-1) then
-  if (ipass .eq. 1 .and. (compute_porosity_from_scan .or. ibm_porosity_mode.gt.0)) then
+  call field_get_id_try("porosity", f_id)
+  if (f_id.ne.-1 .and. (compute_porosity_from_scan .or. ibm_porosity_mode.gt.0)) then
     call field_allocate_bc_coeffs(f_id, .true., .false., .false., .false.)
     call field_init_bc_coeffs(f_id)
   endif
-endif
 
-call field_get_id_try("hydrostatic_pressure", f_id)
-
-if (f_id.ne.-1) then
-  if (ipass .eq. 1) then
+  call field_get_id_try("hydrostatic_pressure", f_id)
+  if (f_id.ne.-1) then
     call field_allocate_bc_coeffs(f_id, .true., .false., .false., .false.)
     call field_init_bc_coeffs(f_id)
   endif
-endif
 
-call field_get_id_try("meteo_pressure", f_id)
-
-if (f_id.ne.-1) then
-  if (ipass .eq. 1) then
+  call field_get_id_try("meteo_pressure", f_id)
+  if (f_id.ne.-1) then
     call field_allocate_bc_coeffs(f_id, .true., .false., .false., .false.)
     call field_init_bc_coeffs(f_id)
   endif
-endif
 
-call field_get_id_try("lagr_time", f_id)
-
-if (f_id.ne.-1) then
-  if (ipass .eq. 1) then
+  call field_get_id_try("lagr_time", f_id)
+  if (f_id.ne.-1) then
     call field_allocate_bc_coeffs(f_id, .true., .false., .false., .false.)
     call field_init_bc_coeffs(f_id)
   endif
+
 endif
 
 ! User variables
@@ -302,17 +284,18 @@ nscal = nscaus + nscapp
 ! Get the turbulent flux model
 call field_get_key_id('turbulent_flux_model', kturt)
 
-do ii = 1, nscal
-  if (isca(ii) .gt. 0) then
-    ivar = isca(ii)
-    has_exch_bc = .false.
-    call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-    if (vcopt%icoupl.gt.0) has_exch_bc = .true.
+if (ipass .eq. 1) then
 
-    call field_get_key_int(ivarfl(isca(ii)), kturt, turb_flux_model)
-    turb_flux_model_type = turb_flux_model / 10
+  do ii = 1, nscal
+    if (isca(ii) .gt. 0) then
+      ivar = isca(ii)
+      has_exch_bc = .false.
+      call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+      if (vcopt%icoupl.gt.0) has_exch_bc = .true.
 
-    if (ipass .eq. 1) then
+      call field_get_key_int(ivarfl(isca(ii)), kturt, turb_flux_model)
+      turb_flux_model_type = turb_flux_model / 10
+
       if (ippmod(icompf).ge.0 .and. ii.eq.ienerg) then
         call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .true., has_exch_bc)
       else
@@ -335,8 +318,9 @@ do ii = 1, nscal
         call field_init_bc_coeffs(f_id)
       endif
     endif
-  endif
-enddo
+  enddo
+
+endif
 
 ! Reserved fields whose ids are not saved (may be queried by name)
 !-----------------------------------------------------------------

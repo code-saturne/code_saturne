@@ -64,7 +64,6 @@ use field
 use post
 use atchem
 use atimbr
-use ptrglo
 use turbomachinery
 use cs_c_bindings
 use cs_f_interfaces
@@ -286,7 +285,7 @@ interface
   !=============================================================================
 
   subroutine fldtri() &
-    bind(C, name='cs_boundary_conditions_init_bc_coeffs')
+    bind(C, name='cs_field_map_and_init_bcs')
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine fldtri

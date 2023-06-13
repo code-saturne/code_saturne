@@ -183,8 +183,8 @@ cs_atmo_chem_source_terms(int         iscal,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cavitation_compute_source_term(cs_real_t  pressure[],
-                                  cs_real_t  voidf[]);
+cs_cavitation_compute_source_term(const cs_real_t  pressure[],
+                                  const cs_real_t  voidf[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -413,7 +413,7 @@ cs_lagr_status(int  *model_flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_init_bc_coeffs(void);
+cs_field_map_and_init_bcs(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -518,6 +518,16 @@ cs_sat_coupling_exchange_at_cells(int         f_id,
 void
 cs_solve_void_fraction(cs_real_t   dt[],
                        int         iterns);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Sync turbomachinery module components to
+ *        global c turbomachinery structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbomachinery_update(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

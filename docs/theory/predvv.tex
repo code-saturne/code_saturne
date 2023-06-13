@@ -62,7 +62,7 @@ $\tens{\sigma}$ represents the stress tensor, $\tens{\tau}$ the viscous stress t
 $\mu$ the dynamic viscosity (molecular and potentially turbulent),$\tens{D}$
 the rate of deformation tensor\footnote{Not to be confused, despite the same
 notation $D$, with the diffusive fluxes described in the subroutine
-\fort{navstv}}, $\tens{R}$ the Reynolds which appears when applying the
+\fort{cs\_solve\_navier\_stokes}}, $\tens{R}$ the Reynolds which appears when applying the
 average operator to the simultaneous equation, $\vect{S}$ the source
 terms.\\
 $\lambda$ is the second coefficient of viscosity. It is related to the volume viscosity
@@ -165,8 +165,8 @@ inversion of a potentially very large matrix. These two terms can
 nevertheless be taken into account in an approximate manner by explicit
 extrapolation of the mass flux in $n+\theta_F$ (for the linear coupling term
 arising from the convection of $\vect{u}^{n}$ by $\delta \vect{u}$) and by
-applying a fixed-point subiteration over the subroutine \fort{navstv} (for
-the nonlinear term) implemented by specifying  $\var{NTERUP}>1$.
+applying a fixed-point subiteration over the subroutine \fort{cs\_solve\_navier\_stokes}
+(for the nonlinear term) implemented by specifying  $\var{NTERUP}>1$.
 
 The equation (\ref{Base_Predvv_eqqdm}) is discretized at the time level
 $n+\theta$ using a $\theta$-scheme and the tensor of velocity head losses
@@ -370,20 +370,20 @@ This calculation is completed at the end of \fort{predvv}.\\
 
 To represent the second member corresponding to each component of the velocity, we use the arrays \var{TRAV}(\var{IEL},\var{DIR}), \var{TRAVA}(\var{IEL},\var{DIR}) and \var{PROPCE}, with \var{IEL} being the number of the cell and \var{DIR} the direction (x, y, z). Four cases need to be considered depending on whether or not the source terms are extrapolated at $n+\theta_S$ and whether or not a fixed-point iteration is implemented on the velocity-pressure system (\var{NTERUP}$>1$).
 \\
-$\bullet$ If the source terms are extrapolated and we iterate over \fort{navstv}\\
+$\bullet$ If the source terms are extrapolated and we iterate over \fort{cs\_solve\_navier\_stokes}\\
 \begin{itemize}
-\item [-]\var{TRAV} receives the source terms which are recomputed during each iteration over \fort{navstv} but are not extrapolated
+\item [-]\var{TRAV} receives the source terms which are recomputed during each iteration over \fort{cs\_solve\_navier\_stokes} but are not extrapolated
 ($\grad{P^{n-1+\theta}}$ and $(\rho -\rho_0) \vect {g}$\footnote{In reality, the value of
 $(\rho -\rho_0) \vect {g}$ doesn't change, however this is a computation and it avoids the need for additional treatment of this term.}).\\
-\item [-]\var{TRAVA} receives the source terms whose values do not change during the course of the iterations over \fort{navstv} nor are they extrapolated
+\item [-]\var{TRAVA} receives the source terms whose values do not change during the course of the iterations over \fort{cs\_solve\_navier\_stokes} nor are they extrapolated
 ($T_s^{imp}\,u^n\,,-\rho\,\tens{K}_{d}\,u^n\,,\,-\Gamma^n\,u^n,...$).\\
 \item [-]\var{PROPCE} receives the source terms that have to be extrapolated.\\
 \\
 \end{itemize}
-$\bullet$ When there is no iteration over \fort{navstv}, \var{TRAVA} has no use and its contents are directly stored in \var{TRAV}.\\
+$\bullet$ When there is no iteration over \fort{cs\_solve\_navier\_stokes}, \var{TRAVA} has no use and its contents are directly stored in \var{TRAV}.\\
 \\
 $\bullet$ If there is no source term extrapolation, \var{PROPCE} serves no purpose and its contents are directly stored in \var{TRAVA} (or in \var{TRAV} if \var{TRAVA} is also of no use).\\
-Therefore, when there is neither source term extrapolation nor iteration over \fort{navstv}, all the source terms go directly into \var{TRAV}.\\
+Therefore, when there is neither source term extrapolation nor iteration over \fort{cs\_solve\_navier\_stokes}, all the source terms go directly into \var{TRAV}.\\
 \\
 \begin{itemize}
 \item We already have a pressure gradient on the cells at the instant in time $n-1+\theta$. The gravity term is then added to the vector \var{TRAV} which already contains pressure gradient. This means we have, for example, for the direction x:
@@ -392,11 +392,11 @@ Therefore, when there is neither source term extrapolation nor iteration over \f
 {\partial x})_{\var{IEL}}+(\rho(\var{IEL})-\rho_0)g_x)
 \end{equation}
 
-\item If source term extrapolation is used, at the first iteration over \fort{navstv}, the vector \var{TRAV} (or \var{TRAVA}) receives $-\theta_S$ times the contribution at time $n-1$ of the source terms to be extrapolated\footnote{Because
+\item If source term extrapolation is used, at the first iteration over \fort{cs\_solve\_navier\_stokes}, the vector \var{TRAV} (or \var{TRAVA}) receives $-\theta_S$ times the contribution at time $n-1$ of the source terms to be extrapolated\footnote{Because
 $(\vect{T}_s^{exp})^{n+\theta_S}=(1+\theta_S)\,(\vect{T}_s^{exp})^n
 -\,\theta_S\, (\vect{T}_s^{exp})^{n-1}$} (stored in \var{PROPCE}). \var{PROPCE} is then reinitialised to zero so as to be able to receive afterwards the contribution at the current time step of the extrapolated source terms.
 
-\item The value of the term corresponding to the turbulence model is only calculated during the first iteration over \fort{navstv} then added to \var{TRAVA}, \var{TRAV} or \var{PROPCE} depending on whether the source terms are extrapolated, and/or whether we iterate over \fort{navstv}.\\
+\item The value of the term corresponding to the turbulence model is only calculated during the first iteration over \fort{cs\_solve\_navier\_stokes} then added to \var{TRAVA}, \var{TRAV} or \var{PROPCE} depending on whether the source terms are extrapolated, and/or whether we iterate over \fort{cs\_solve\_navier\_stokes}.\\
 
 {\tiny$\blacksquare$} Turbulent viscosity models:\\
 If $\var{IGRHOK}=1$, then we calculate $-\displaystyle \frac{2}{3}\ \rho\ \grad k$ (and not, as should be the case,
@@ -406,10 +406,10 @@ If $\var{IGRHOK}=0$, this term is expected to be implicitly taken into account i
 {\tiny$\blacksquare$} Second order models:\\
 Computation of the term $-\dive(\rho \tens{R})$ is implemented in two steps. A call is first made to the subroutine \fort{divrij}, which projects the vector $\tens{R}.\vect{e}_{\var{DIR}}$ onto the cell faces along the direction \var{DIR}, following which we then call the subroutine \fort{divmas} to compute the divergence.\\
 \linebreak
-\item The secondary viscosity $- \displaystyle \frac {2} {3}\grad (\mu_{\,tot} \dive \vect\,{u})$ and transposed gradient $ \dive (\mu_{\,tot} \,^t\ggrad \vect {u})$ terms, when these taken into account (\emph{i.e.} \var{IVISSE}\,(\var{IPHAS})\ = 1, where \var{IPHAS} is the number of the phase treated) are computed by the subroutine \fort{visecv}. They are only calculated at the first iteration over \fort{navstv}. During this step, the array \var{TRAV} serves as a working array when the subroutine  \fort{visecv} is being called. It reverts to its normal value at the end of the call during which its contents are stored temporarily in the vectors \var{W7} to \var{W9}.
+\item The secondary viscosity $- \displaystyle \frac {2} {3}\grad (\mu_{\,tot} \dive \vect\,{u})$ and transposed gradient $ \dive (\mu_{\,tot} \,^t\ggrad \vect {u})$ terms, when these taken into account (\emph{i.e.} \var{IVISSE}\,(\var{IPHAS})\ = 1, where \var{IPHAS} is the number of the phase treated) are computed by the subroutine \fort{visecv}. They are only calculated at the first iteration over \fort{cs\_solve\_navier\_stokes}. During this step, the array \var{TRAV} serves as a working array when the subroutine  \fort{visecv} is being called. It reverts to its normal value at the end of the call during which its contents are stored temporarily in the vectors \var{W7} to \var{W9}.
 \\
 \item The terms corresponding to the velocity head losses ($\rho \tens{K}
-{u}$), if there are any (\ $\var{NCEPDP}> 0$\ ), are calculated by the subroutine \fort{tspdcv} at the first iteration over \fort{navstv}. They are decomposed into two parts:\\
+{u}$), if there are any (\ $\var{NCEPDP}> 0$\ ), are calculated by the subroutine \fort{tspdcv} at the first iteration over \fort{cs\_solve\_navier\_stokes}. They are decomposed into two parts:\\
 {\tiny$\blacksquare$} The first part, corresponding to the contribution of the diagonal terms ($-\rho\,\tens{K}_{\,d}\vect{u}$), is not extrapolated.\\
 {\tiny$\blacksquare$} The second, which corresponds to the extra diagonal terms
 ($-\rho\,\tens{K}_{\,e}\vect{u}$), may or may not be extrapolated.\\
@@ -421,7 +421,7 @@ During this step, the array \var{TRAV} is used as a working array while the call
 $\displaystyle(\mu_{\,tot})_{ij}\frac{\var{SURFN}}{\var{DIST}}$}
 The calculation of the total viscosity term at the faces is performed by the subroutine \fort{viscfa} and the solutions stored in the arrays \var{VISCF} and \var{VISCB} for the internal and boundary faces respectively.\\
 During integration of the convection-diffusion terms in the subroutine \fort{codits}, the non-reconstructed terms, integrated in the matrix $\tens{EM}$, are singled out from the full set of terms (unreconstructed +
-reconstruction gradients) associated to the operator $\mathcal{E}$ (nonlinear)\footnote{ Ensuring coherence with the definition of the operators $\mathcal{EM}$ and $\mathcal{E}$ employed in \fort{navstv} }.
+reconstruction gradients) associated to the operator $\mathcal{E}$ (nonlinear)\footnote{ Ensuring coherence with the definition of the operators $\mathcal{EM}$ and $\mathcal{E}$ employed in \fort{cs\_solve\_navier\_stokes} }.
 Likewise, we differentiate between the total viscosity at the faces used in $\mathcal{E}$, arrays \var{VISCF} and \var{VISCB}, and the total viscosity at the faces employed in $\tens{EM}$, arrays \var{VISCFI} and \var{VISCBI}.\\
 For turbulent viscosity models and in LES, these two arrays are identical and contain $\mu_t+\mu$.
 For second order models, they normally contain $\mu$ however, for the simple reason of numerical stability, we can choose to put $\mu_t+\mu$ in the matrix (\textit{i.e.} in $\tens{EM}$) while keeping $\mu$ in the second member (\textit{i.e.} in $\mathcal{E}$). Because the solution is obtained by increments, this manipulation doesn't change the result. This option is activated by the indicator $\var{IRIJNU}\ =\ 1$\\
@@ -433,11 +433,11 @@ The evolution equations for the components of the momentum are solved in a coupl
 For each of these components:\\
 
 \begin{itemize}
-\item During the first iteration over the subroutine \fort{navstv}, the implicit and explicit parts of the user-prescribed source terms are computed by a call to the subroutine \fort{ustsns}.\\
+\item During the first iteration over the subroutine \fort{cs\_solve\_navier\_stokes}, the implicit and explicit parts of the user-prescribed source terms are computed by a call to the subroutine \fort{ustsns}.\\
 {\tiny$\blacksquare$} The implicit part ($T_s^{imp}$) is saved in the vector \var{XIMPA} for subsequent iterations if the fixed-point method is used on the velocity-pressure system, with the contribution resulting from the same implicit terms ($T_s^{imp}\,\vect{u}^n$) being added either to \var{TRAVA} or to \var{TRAV}.\\
-{\tiny$\blacksquare$} The explicit part ($T_s^{exp}$) is added to \var{TRAVA}, \var{TRAV} or \var{PROPCE} depending on whether the source terms are extrapolated or not, and whether we iterate over \fort{navstv}.\\
+{\tiny$\blacksquare$} The explicit part ($T_s^{exp}$) is added to \var{TRAVA}, \var{TRAV} or \var{PROPCE} depending on whether the source terms are extrapolated or not, and whether we iterate over \fort{cs\_solve\_navier\_stokes}.\\
 
-\item The mass accumulation term ($\dive(\rho \vect {u})$) is calculated by calling the subroutine \fort{divmas} with the mass flux as argument. During the first iteration of the subroutine \fort{navstv},
+\item The mass accumulation term ($\dive(\rho \vect {u})$) is calculated by calling the subroutine \fort{divmas} with the mass flux as argument. During the first iteration of the subroutine \fort{cs\_solve\_navier\_stokes},
 the term corresponding to the explicit contribution of the mass accumulation ($\vect{u}^{n}\ \dive(\rho \vect{u})$) is added to \var{TRAVA} or to \var{TRAV}. The vector \var{ROVSDT} is initialized by $\theta\,\dive(\rho \vect{u})$ (to remain coherent with the approach implemented in the subroutine
 \fort{bilsc2}) after which the contribution of the non-stationary term ($\displaystyle
 \frac{\rho}{\Delta t}$) is added to the latter.\\
@@ -446,7 +446,7 @@ the term corresponding to the explicit contribution of the mass accumulation ($\
 {\tiny$\blacksquare$} When there is no source term extrapolation, the implicit part of the user source terms is  only added to \var{ROVSDT} if it is negative so as not to weaken the diagonal of the system.\\
 {\tiny$\blacksquare$} When the source terms are extrapolated however, it is taken into account whatever its sign may be.\\
 
-\item The implicit and explicit mass source terms, if any (~$\var{NCESMP}>0$~), are computed at the first iteration by the subroutine  \fort{catsma} over \fort{navstv}. $\Gamma\,\vect{u}_i$ is added to \var{TRAV}, \var{TRAVA} or \var{PROPCE} for potential extrapolation. $\Gamma\,\vect{u}^n$ is added to \var{TRAV} or \var{TRAVA} and
+\item The implicit and explicit mass source terms, if any (~$\var{NCESMP}>0$~), are computed at the first iteration by the subroutine  \fort{catsma} over \fort{cs\_solve\_navier\_stokes}. $\Gamma\,\vect{u}_i$ is added to \var{TRAV}, \var{TRAVA} or \var{PROPCE} for potential extrapolation. $\Gamma\,\vect{u}^n$ is added to \var{TRAV} or \var{TRAVA} and
 $-\Gamma$ to \var{ROVSDT}.
 \\
 \item The second member is then assembled taking account of all of the
@@ -462,7 +462,7 @@ $$\var{SMBR}=\var{TRAVA}+\var{TRAV}$$
 \item The solution of the linear system is computed by the subroutine
 \fort{codits}, taking as argument \var{ROVSDT} and \var{SMBR}.\\
 
-\item When strengthened transient velocity-pressure coupling ($\ \var{IPUCOU} = 1\ $) (only available with a first-order scheme, where there is neither source term extrapolation nor iteration over \fort{navstv}) is implemented, \fort{codits} solves the following equation:
+\item When strengthened transient velocity-pressure coupling ($\ \var{IPUCOU} = 1\ $) (only available with a first-order scheme, where there is neither source term extrapolation nor iteration over \fort{cs\_solve\_navier\_stokes}) is implemented, \fort{codits} solves the following equation:
 \begin{equation}\label{Base_Predvv_Eq_Tdir}
 \tens{EM}_{\,\var{DIR}}\,.\, (\tens{RHO}^{\,n})^{-1}\,.\,\vect{T}_{\,\var{DIR}} =
 \tens{\Omega}\,.\,\vect{1}
@@ -501,7 +501,7 @@ Lastly, the normalized residual is determined and then stored in \var{RNORMP(IIP
 
 \newpage
 
-The different contributions (excluding convection-diffusion) assigned to each of the vectors \var{TRAV}, \var{TRAVA}, \var{PROPCE} and \var{ROVSDT} at iteration $n$ are summarized in tables (\ref{Base_Predvv_tab_ext0}), (\ref{Base_Predvv_tab_ext1}), (\ref{Base_Predvv_tab_exp0}) and (\ref{Base_Predvv_tab_exp1}). We differentiate two cases for each of the time-stepping schemes applied to the source terms, depending on whether or not a fixed-point algorithm is used to solve the velocity-pressure system (iteration over \fort{navstv} for
+The different contributions (excluding convection-diffusion) assigned to each of the vectors \var{TRAV}, \var{TRAVA}, \var{PROPCE} and \var{ROVSDT} at iteration $n$ are summarized in tables (\ref{Base_Predvv_tab_ext0}), (\ref{Base_Predvv_tab_ext1}), (\ref{Base_Predvv_tab_exp0}) and (\ref{Base_Predvv_tab_exp1}). We differentiate two cases for each of the time-stepping schemes applied to the source terms, depending on whether or not a fixed-point algorithm is used to solve the velocity-pressure system (iteration over \fort{cs\_solve\_navier\_stokes} for
 \var{NTERUP}$>1$). Unless otherwise specified, the physical properties $\Phi$
 ($\rho$,$\mu$,etc...) are assumed to be evaluated at the time level $n+\theta_\Phi$, and the mass flux
  $(\,\rho \vect{u})$ at $n+\theta_F$, where $\theta_\Phi$ and $\theta_F$ are dependent on the specific time-stepping schemes selected for these quantities (cf. \fort{introd}).

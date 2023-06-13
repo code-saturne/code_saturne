@@ -64,7 +64,7 @@ lagrangian.tex \
 matrix.tex \
 mesh_algo.tex \
 mesh_quality.tex \
-navstv.tex \
+cs_solve_navier_stokes.tex \
 operat.tex \
 predvv.tex \
 resopv.tex \

@@ -47,8 +47,6 @@ module turbomachinery
 
   ! Elapsed time for logging
 
-  double precision, save :: rs_ell(2)
-
   ! Arrays associated to wall BC update
 
   double precision, dimension(:), pointer :: coftur, hfltur
@@ -146,11 +144,6 @@ contains
 
     call c_f_pointer(c_p, irotce, [ncelet])
 
-    ! Initialization of elapsed times
-
-    rs_ell(1) = 0.d0
-    rs_ell(2) = 0.d0
-
     ! map turbomachinery arrays for wall velocity BC update
 
     if (iturbo.eq.2) then
@@ -167,7 +160,8 @@ contains
 
   ! Sync turbomachinery module components to global c turbomachinery structure
 
-  subroutine turbomachinery_update
+  subroutine turbomachinery_update () &
+    bind(C, name='cs_turbomachinery_update')
 
     use, intrinsic :: iso_c_binding
     use mesh
@@ -179,8 +173,6 @@ contains
     type(c_ptr) :: c_p
 
     call map_turbomachinery_rotor(c_p)
-
-    call turbomachinery_resize_cell_fields
 
     call c_f_pointer(c_p, irotce, [ncelet])
 

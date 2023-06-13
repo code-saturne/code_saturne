@@ -62,7 +62,7 @@ for further details.
 In order to explain the procedure employed to address the computational
 problems, owing to the use of reconstruction terms and the slope (or gradient)
 test, in treating the convection-diffusion terms, we denote by $\mathcal{E}_{n}$
-(similarly to the definition given in \fort{navstv} though without the associated spatial discretisation)
+(similarly to the definition given in \fort{cs\_solve\_navier\_stokes} though without the associated spatial discretisation)
 the operator:
 \begin{equation}\label{Base_Codits_Eq_ref_small}
 \begin{array}{c}
@@ -143,7 +143,7 @@ introduction of nonlinearities) and/or reconstruction terms. The user-specified 
 convection (which may be nonlinear should the slope test be activated) as
 well as the reconstruction terms will be evaluated at the iteration $k$ and treated on the right-hand side {\it via} the subroutine \fort{bilsc2}, while the non-reconstructed terms are taken at iteration $k+1$ and hence represent the unknowns
 of the linear system solved by \fort{codits}\footnote{cf. the subroutine
-\fort{navstv}.}.\\
+\fort{cs\_solve\_navier\_stokes}.}.\\
 
 We assume moreover that the sequence $(a^{n+1,\,k})_k$ converges to the solution
 $a^{n+1}$ of equation (\ref{Base_Codits_Eq_ref_small}), {\it i.e.}
@@ -163,7 +163,7 @@ priori} arbitrary, ($\mathcal{EM}_{n}$ has to be linear and the sequence
  $(a^{n+1,\,k})_{k\in\mathbb{N}}$ must converge for any given $n$), one of the options in the
 $R_{ij}-\varepsilon$ models ($\var{IRIJNU}=1$) consists in forcing the viscosity $\mu_{\,tot}^n$,
 that appears in the expression of $\mathcal{EM}_{n}$ to take the value
-$\mu_{\,laminar}^n + \mu_{\,turbulent}^n$ when \fort{codits} is called by the subroutine \fort{navstv} for the velocity prediction step.  There is no physical reason for doing so (only the laminar viscosity $\mu_{\,laminar}^n$ is supposed to appear), however this can have a stabilising effect in certain cases without there being any concomitant effect on the limit-values of the sequence $(a^{n+1,\,k})_k$.\\
+$\mu_{\,laminar}^n + \mu_{\,turbulent}^n$ when \fort{codits} is called by the subroutine \fort{cs\_solve\_navier\_stokes} for the velocity prediction step.  There is no physical reason for doing so (only the laminar viscosity $\mu_{\,laminar}^n$ is supposed to appear), however this can have a stabilising effect in certain cases without there being any concomitant effect on the limit-values of the sequence $(a^{n+1,\,k})_k$.\\
 
 \minititre{Remark 2}
 When \fort{codits} is used for strengthened transient velocity-pressure coupling

@@ -408,7 +408,6 @@ lecamx.f90 \
 majgeo.f90 \
 modini.f90 \
 mmtycl.f90 \
-navstv.f90 \
 phyvar.f90 \
 precli.f90 \
 predfl.f90 \

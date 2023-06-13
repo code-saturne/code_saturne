@@ -59,6 +59,30 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Solve Navier-Stokes equations for incompressible or slightly
+ *        compressible flows for one time step. Both convection-diffusion
+ *        and continuity steps are performed.
+ *
+ * \param[in]     iterns        index of the iteration on Navier-Stokes
+ * \param[in]     icvrge        convergence indicator
+ * \param[in]     itrale        number of the current ALE iteration
+ * \param[in]     impale        indicator of imposed displacement
+ * \param[in]     isostd        indicator of standard outlet
+ *                              + index of the reference face
+ * \param[in]     ale_bc_type   Type of boundary for ALE
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solve_navier_stokes(const int   iterns,
+                       int        *icvrge,
+                       const int   itrale,
+                       const int  *impale,
+                       const int   isostd[],
+                       int         ale_bc_type[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Update total pressure (defined as a post-processed property).
  *
  * For the compressible module, the solved pressure is already

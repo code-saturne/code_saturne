@@ -232,7 +232,7 @@ qui est ensuite r\'{e}solue par \fort{codits}.
 \end{equation}
 \\
 %Pour la discr\'{e}tisation spatiale de ce syst\`{e}me, on pourra se reporter au
-%sous-programme \fort{navstv}
+%sous-programme \fort{cs\_solve\_navier\_stokes}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1029,7 +1029,7 @@ aux faces internes et de bord issues du choix du sch\'{e}ma convectif.
 En reprenant les notations pr\'ec\'edentes, en imposant un sch\'ema d\'ecentr\'e
 amont au premier membre ({\it i.e.} en exprimant $\delta f_{\,ij}^{\,n+1,k+1}$ et
 $\delta f_{\,{b}_{ik}}^{\,n+1,k+1}$) et en raisonnant en incr\'ements
-(cf. sous-programme \fort{navstv}), on aboutit \`a :
+(cf. sous-programme \fort{cs\_solve\_navier\_stokes}), on aboutit \`a :
 \begin{equation}
 \begin{array}{lll}
 &\rho_I^n\,\displaystyle\ \frac{|\Omega_i|}{\Delta

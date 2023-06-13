@@ -133,7 +133,6 @@ double precision, allocatable, dimension(:) :: mass_source
 double precision, dimension(:), pointer :: brom, crom, cpro_rho_mass
 
 double precision, pointer, dimension(:,:) :: frcxt => null()
-double precision, pointer, dimension(:,:) :: trava
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:,:), pointer :: cvar_vec
 double precision, dimension(:), pointer :: cvar_sca, tempa, tempk
@@ -183,27 +182,6 @@ interface
     double precision, pointer, dimension(:) :: visvdr, hbord, theipb
 
   end subroutine condli
-
-  subroutine navstv &
-  ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
-    isostd ,                                                       &
-    dt     ,                                                       &
-    frcxt  ,                                                       &
-    trava  )
-
-    use mesh, only: nfabor
-
-    implicit none
-
-    integer          nvar   , nscal  , iterns , icvrge , itrale
-
-    integer          isostd(nfabor+1)
-
-    double precision, pointer, dimension(:)   :: dt
-    double precision, pointer, dimension(:,:) :: frcxt
-    double precision, pointer, dimension(:,:) :: trava
-
-  end subroutine navstv
 
   function cs_mobile_structures_get_n_structures() result(n_structs)  &
     bind(C, name='cs_mobile_structures_get_n_structures')
@@ -315,6 +293,18 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_turbulence_htles
+
+  subroutine cs_solve_navier_stokes  &
+       (iterns, icvrge, itrale,      &
+        impale, isostd, ale_bc_type) &
+   bind(C, name='cs_f_solve_navier_stokes')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int) :: icvrge
+    integer(c_int), value :: iterns, itrale
+    integer(c_int), dimension(*) :: ale_bc_type
+    integer(c_int), dimension(*) :: impale, isostd
+  end subroutine cs_solve_navier_stokes
 
 end interface
 
@@ -736,17 +726,11 @@ hbord => null()
 theipb => null()
 visvdr => null()
 
-! --- Boucle sur navstv pour couplage vitesse/pression
+! --- Boucle sur cs_solve_navier_stokes pour couplage vitesse/pression
 !     on s'arrete a NTERUP ou quand on a converge
 !     ITRFUP=0 indique qu'on a besoin de refaire une iteration
 !     pour Syrthes, T1D ou rayonnement.
 itrfup = 1
-
-if (nterup.gt.1) then
-  allocate(trava(ndim,ncelet))
-else
-  trava => rvoid2
-endif
 
 if (nterup.gt.1.or.isno2t.gt.0) then
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfup = 0
@@ -772,7 +756,6 @@ inslst = 0
 
 iterns = 1
 do while (iterns.le.nterup)
-
   ! Calls user BCs and computes BC coefficients
   call condli &
     (nvar   , nscal  , iterns ,                                    &
@@ -828,7 +811,6 @@ do while (iterns.le.nterup)
   ! On envoie le tout vers SYRTHES, en distinguant CP
   !  constant ou variable
   if (itrfin.eq.1 .and. itrfup.eq.1) then
-
     if (isvhb.gt.0) then
       call cs_syr_coupling_send_boundary(hbord, theipb)
     endif
@@ -845,7 +827,7 @@ do while (iterns.le.nterup)
     ! 1-D thermal model coupling with condensation
     ! on a surface region
     if (nftcdt.gt.0.and.nztag1d.eq.1) then
-      call cs_tagmro &
+     call cs_tagmro &
      ( nfbpcd , ifbpcd , izzftcd ,                  &
        dt     )
     endif
@@ -913,7 +895,7 @@ do while (iterns.le.nterup)
 
   if (iale.ge.1) then
 
-    ! Otherwise it is done in navstv.f90
+    ! Otherwise it is done in cs_solve_navier_stokes.c
     if (itrale.eq.0) then
 
       call cs_ale_solve_mesh_velocity(iterns, impale, ialtyb)
@@ -934,9 +916,6 @@ do while (iterns.le.nterup)
     if (associated(visvdr)) deallocate(visvdr)
     if (associated(htot_cond)) deallocate(htot_cond)
 
-    if (nterup.gt.1) then
-      deallocate(trava)
-    endif
 
     call field_free_bc_codes_all(icodcl, rcodcl)
 
@@ -1012,16 +991,16 @@ do while (iterns.le.nterup)
 
     ! Coupled solving of the velocity components
 
-    call navstv &
-    ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
-      isostd ,                                                       &
-      dt     ,                                                       &
-      frcxt  ,                                                       &
-      trava  )
+    call cs_solve_navier_stokes(iterns, icvrge, itrale, &
+                                impale, isostd, ialtyb)
 
     ! Update local pointer arrays for transient turbomachinery computations
+    call field_get_val_s_by_name('dt', dt)
     if (iturbo.eq.2) then
       call field_get_val_s(ivarfl(ipr), cvar_pr)
+      if (iphydr.eq.1) then
+        call field_get_val_v_by_name('volume_forces', frcxt)
+      end if
     endif
 
     if (istmpf.eq.2.and.itpcol.eq.1) then
@@ -1110,10 +1089,6 @@ if (associated(hbord)) deallocate(hbord)
 if (associated(theipb)) deallocate(theipb)
 if (associated(visvdr)) deallocate(visvdr)
 if (associated(htot_cond)) deallocate(htot_cond)
-
-if (nterup.gt.1) then
-  deallocate(trava)
-endif
 
 ! Calcul sur champ de vitesse NON fige SUITE (a cause de la boucle U/P)
 if (iccvfg.eq.0) then

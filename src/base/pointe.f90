@@ -44,11 +44,7 @@ module pointe
   !> technique is a classical workaround.
 
   ! Note also that Fortran bounds remapping could in theory be used to
-  ! handle different pointer shapes with a single type, but this feature
-  ! of Fortran 2003 (extended in 2008) is supported only by very recent
-  ! compilers (2010 or later), and even recent compilers such as Intel 12
-  ! reportedly have bugs using this feature, so we will need to avoid
-  ! depending on it for a few years.
+  ! handle different pointer shapes with a single type.
 
   !> \addtogroup fortran_pointer_containers
   !> \{
@@ -83,7 +79,6 @@ module pointe
   double precision, dimension(1),     target :: rvoid1
   double precision, dimension(1,1),   target :: rvoid2
   double precision, dimension(1,1,1), target :: rvoid3
-
 
   !> \}
 

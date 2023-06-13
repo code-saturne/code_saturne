@@ -91,7 +91,6 @@ pprt/ppthch.f90 \
 cogz/coincl.f90 \
 rayt/radiat.f90 \
 base/vof.f90 \
-base/ptrglo.f90 \
 base/turbomachinery.f90
 
 # Module dependencies (handled manually, as Automake does
@@ -146,11 +145,6 @@ base/pointe.$(OBJEXT): base/paramx.$(OBJEXT) base/numvar.$(OBJEXT) \
  base/optcal.$(OBJEXT) base/entsor.$(OBJEXT) lagr/lagran.$(OBJEXT) \
  rayt/radiat.$(OBJEXT) pprt/ppincl.$(OBJEXT) base/albase.$(OBJEXT) \
  base/cstnum.$(OBJEXT) base/cs_c_bindings.$(OBJEXT)
-
-base/ptrglo.$(OBJEXT): base/paramx.$(OBJEXT) base/dimens.$(OBJEXT) \
- base/mesh.$(OBJEXT) base/numvar.$(OBJEXT) base/optcal.$(OBJEXT) \
- base/parall.$(OBJEXT) base/period.$(OBJEXT) base/mesh.$(OBJEXT) \
- base/field.$(OBJEXT)
 
 base/rotation.$(OBJEXT): base/paramx.$(OBJEXT)
 

@@ -32,7 +32,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Le but du sous-programme \fort{itrmas} est de calculer un gradient de pression
 ``facette''. Il est utilis\'e dans la phase de correction de pression
-(deuxi\`eme phase de \fort{navstv}) o\`u le flux de masse est mis \`a jour \`a l'aide de termes en $-\Delta t_{\,ij}(\grad_f P)_{\,ij}.\vect{S}_{\,ij}$ et en $-\Delta t_{\,b_{ik}}(\grad_f P)_{\,b_{ik}}\,.\,\vect{S}_{\,b_{ik}}$.
+(deuxi\`eme phase de \fort{cs\_solve\_navier\_stokes}) o\`u le flux de masse est mis \`a jour \`a l'aide de termes en $-\Delta t_{\,ij}(\grad_f P)_{\,ij}.\vect{S}_{\,ij}$ et en $-\Delta t_{\,b_{ik}}(\grad_f P)_{\,b_{ik}}\,.\,\vect{S}_{\,b_{ik}}$.
 
 Le sous-programme \fort{itrgrp} calcule un gradient ``facette'' de pression et
 en prend la divergence, c'est-\`a-dire calcule le terme :

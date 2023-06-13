@@ -39,7 +39,7 @@ equation for a scalar $a$ are computed. These terms
 write \footnote{They appear on the right-hand side of the incremental
 system for cell $I$ of the momentum prediction step:
 $\mathcal{EM}(\delta\vect{u}^{k+1},I) =
-\mathcal{E}(\vect{u}^{n+1/2,k},I)$  (see \fort{navstv} for more details)}:
+\mathcal{E}(\vect{u}^{n+1/2,k},I)$  (see \fort{cs\_solve\_navier\_stokes} for more details)}:
 
 \begin{equation}\label{Base_Bilsc2_eq_continue}
 \begin{array}{ll}
@@ -60,7 +60,7 @@ reference of the dedicated reference} for further details.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection*{\bf Convective Part}
-Using the notations adopted in the subroutine \fort{navstv}, the
+Using the notations adopted in the subroutine \fort{cs\_solve\_navier\_stokes}, the
 explicit budget corresponding to the integration over a cell
 $\Omega_i$ of the convective part $-{\dive(\,(\rho\,\vect{u})^n a)}$
 of $\mathcal{B_{\mathcal{\beta}}}$ can be written as a sum of the

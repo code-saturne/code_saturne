@@ -30,7 +30,7 @@
 \section*{Function}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-The velocity projection (or pressure correction) step is effected in this subroutine, called from \fort{navstv}. The equation of motion (prediction) is solved in \fort{predvv} with a fully explicit treatment of the pressure term. The resulting velocity field does not satisfy the continuity equation. Two correction algorithms are proposed:
+The velocity projection (or pressure correction) step is effected in this subroutine, called from \fort{cs\_solve\_navier\_stokes}. The equation of motion (prediction) is solved in \fort{predvv} with a fully explicit treatment of the pressure term. The resulting velocity field does not satisfy the continuity equation. Two correction algorithms are proposed:
 \begin{enumerate}
 \item The algorithm that we will call "weak velocity-pressure coupling". This algorithm is implemented extensively in industrial source codes. It only couples the velocity and the pressure through the mass term (it is the algorithm proposed by default). It consists of a \textit{SIMPLEC}-type algorithm, similar to \textit{SIMPLE} although the latter  accounts for the simplified diagonals of the convection, diffusion and implicit source terms in addition to the mass term.
 \item The strengthened velocity-pressure coupling algorithm (option \var{IPUCOU  = 1}). This algorithm couples the velocity and pressure through all of the terms (convection, diffusion and implicit source terms) of the equation of motion, though it is still approximate. In practice, the advantage of this algorithm is that it allows large time steps without entirely decoupling the velocity and the pressure.
@@ -190,7 +190,7 @@ By combining the equations of continuity and motion and postulating that $ \delt
 \label{Base_Resopv_eqn5bis}
 \end{equation}
 
-We still need to invert the system (\ref{Base_Resopv_eqn5bis}) in order to determine $\delta p$ (and thus $p^{\,n+1}$) and correct the projected velocity field so as to obtain $\vect{u}^{\,n+1}$. The velocity correction is handled in \fort{navstv}, by incrementing the velocity by the calculated magnitude of the gradient of the pressure increment $\delta p$.
+We still need to invert the system (\ref{Base_Resopv_eqn5bis}) in order to determine $\delta p$ (and thus $p^{\,n+1}$) and correct the projected velocity field so as to obtain $\vect{u}^{\,n+1}$. The velocity correction is handled in \fort{cs\_solve\_navier\_stokes}, by incrementing the velocity by the calculated magnitude of the gradient of the pressure increment $\delta p$.
 
 The problem initially arises with the calculation of $\tens{B}^{-1}$. It has already been judged too expensive computationally to calculate the inverse of $\tens{B}$. The solutions computed by the "weak velocity-pressure coupling" and the "strengthened velocity-pressure coupling" algorithms correspond to an approximation of this operator.
 
@@ -402,7 +402,7 @@ $$ \var{TRAV}(I) = \widetilde{\vect{u}}_{\,I} + \frac{\var{ARAK}}{\rho_I} \ \ten
 
 \var{ARAK} represents the "Arakawa" coefficient, so-named within the code, whose default setting is $1$ although this value can be modified by the user in \fort{usini1}. To simplify the notations, we define $\var{ARAK} = \alpha_{\,Arak}$.
 
-\item Call to \fort{inimas} which calculates the mass flux in \var{TRAV}. The boundary conditions applied in this case are those of the velocity (\textit{cf.} subroutine \fort{navstv}). This is still just an approximation of the boundary conditions contained in \var{TRAV}. The mass flux (\textit{cf.} subroutine \fort{inimas} for further details concerning the calculation at the boundary faces) is thus equal to:
+\item Call to \fort{inimas} which calculates the mass flux in \var{TRAV}. The boundary conditions applied in this case are those of the velocity (\textit{cf.} subroutine \fort{cs\_solve\_navier\_stokes}). This is still just an approximation of the boundary conditions contained in \var{TRAV}. The mass flux (\textit{cf.} subroutine \fort{inimas} for further details concerning the calculation at the boundary faces) is thus equal to:
 
 $$m_{\,ij} = \left[\rho \widetilde{\vect{u}}+ \displaystyle \alpha_{\,Arak}\ \tens{T}^n\ \grad(p^n)\right]_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij}$$
 
@@ -447,7 +447,7 @@ $$ \var{SMBR}(I) = -\var{W7}(I) - \var{SMBR}(I) $$
 \item[$\star$] If the maximum number of sweeps is attained,
 \begin{itemize}
 \item[$\Rightarrow$] Call to \fort{itrmas} to increment the mass flux by the pressure gradient $(\delta p)^{k}$.
-\item[$\Rightarrow$] Second call to \fort{itrmas} for incrementation of the mass flux with the non-reconstructed gradient of $(\delta(\delta p))^{k+1}$ to ensure a final divergence-free field is obtained, thereby assuring consistency with the pressure matrix which does not take non orthogonalities into account\footnote{Reference can be made to the subroutine \fort{navstv} for further detail.}.
+\item[$\Rightarrow$] Second call to \fort{itrmas} for incrementation of the mass flux with the non-reconstructed gradient of $(\delta(\delta p))^{k+1}$ to ensure a final divergence-free field is obtained, thereby assuring consistency with the pressure matrix which does not take non orthogonalities into account\footnote{Reference can be made to the subroutine \fort{cs\_solve\_navier\_stokes} for further detail.}.
 \item[$\Rightarrow$] Update of the pressure increment $(\delta p)^{k+1} = (\delta p)^{k} + (\delta(\delta p))^{k+1}$.
 \end{itemize}
 \item[$\star$]  Otherwise,
@@ -491,7 +491,7 @@ There are a number of outstanding issues that still need to be resolved:
 \item When computing the mass flux of $\displaystyle \widetilde{u}+
 \frac{\alpha}{\rho}\ \tens{T}\ \grad{p^n}$ in \fort{inimas}, we use the boundary conditions of the velocity at the time level $n$. The validity of this approach remains to be clarified, particularly for the
 boundary conditions at the outlet. More generally, further analysis of the boundary conditions of the variables in
-\fort{navstv} is required. This issue is linked to the problem highlighted at the end of \fort{visecv}.
+\fort{cs\_solve\_navier\_stokes} is required. This issue is linked to the problem highlighted at the end of \fort{visecv}.
 
 \item During the convergence test for the loop over the non-orthogonal elements, we multiply the tolerance by a factor of 10. Is this really necessary?
 
