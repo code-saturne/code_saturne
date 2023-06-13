@@ -387,6 +387,7 @@ class Package:
             fdr = open('Make.inc/Makefile.inc.x86-64_pc_linux2')
         fd = open('Makefile.inc','w')
 
+        re_thread_mpi = re.compile('-DSCOTCH_PTHREAD_MPI')
         re_thread = re.compile('-DSCOTCH_PTHREAD')
         re_intsize32 = re.compile('-DINTSIZE32')
         re_intsize64 = re.compile('-DINTSIZE64')
@@ -397,6 +398,7 @@ class Package:
             if line[0:3] in ['CCS', 'CCP', 'CCD']:
                 i1 = line.find('=')
                 line = line[0:i1] + '= ' + self.cc + '\n'
+            line = re.sub(re_thread_mpi, '', line)
             line = re.sub(re_thread, '', line)
             line = re.sub(re_intsize32, '', line)
             line = re.sub(re_intsize64, '', line)
