@@ -62,7 +62,7 @@ def process_cmd_line(argv, pkg):
     if sys.argv[0][-3:] == '.py':
         usage = "usage: %prog [options]"
     else:
-        usage = "usage: %prog create [options]"
+        usage = "usage: %prog update [options]"
 
     parser = OptionParser(usage=usage)
 
