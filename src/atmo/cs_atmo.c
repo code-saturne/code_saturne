@@ -180,6 +180,12 @@ static cs_atmo_option_t  _atmo_option = {
   .meteo_t1 = 0.,
   .meteo_t2 = 0.,
   .meteo_tstar = 0.,
+  .meteo_qw0 = DBL_MAX,
+  .meteo_qwstar = DBL_MAX,
+  .meteo_qw1 = DBL_MAX,
+  .meteo_qw2 = DBL_MAX,
+  .meteo_evapor = DBL_MAX,
+  .meteo_sensi = DBL_MAX,
   .meteo_psea = 101325.,
   .meteo_phim_s = 0, /* Cheng 2005 by default */
   .meteo_phih_s = 0, /* Cheng 2005 by default */
@@ -1704,13 +1710,13 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
   if (_atmo_option.ep_met == NULL)
     BFT_MALLOC(_atmo_option.ep_met, n_level*n_times, cs_real_t);
 
-  *u_met           = _atmo_option.u_met;
-  *v_met           = _atmo_option.v_met;
-  *w_met           = _atmo_option.w_met;
-  *hyd_p_met       = _atmo_option.hyd_p_met;
-  *pot_t_met       = _atmo_option.pot_t_met;
-  *ek_met          = _atmo_option.ek_met;
-  *ep_met          = _atmo_option.ep_met;
+  *u_met     = _atmo_option.u_met;
+  *v_met     = _atmo_option.v_met;
+  *w_met     = _atmo_option.w_met;
+  *hyd_p_met = _atmo_option.hyd_p_met;
+  *pot_t_met = _atmo_option.pot_t_met;
+  *ek_met    = _atmo_option.ek_met;
+  *ep_met    = _atmo_option.ep_met;
 
   *z_dyn_met  = _atmo_option.z_dyn_met;
   *z_temp_met = _atmo_option.z_temp_met;
@@ -2080,12 +2086,17 @@ cs_atmo_init_meteo_profiles(void)
 
   cs_real_t z0 = aopt->meteo_z0;
   cs_real_t zref = aopt->meteo_zref;
-  if (aopt->meteo_ustar0 < 0. && aopt->meteo_uref < 0.)
-    bft_error(__FILE__,__LINE__, 0,
-              _("Atmo meteo profiles: meteo_ustar0 or meteo_uref.\n"));
+  bool is_humid = (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 2 );
+  if (aopt->meteo_ustar0 <= 0. && aopt->meteo_uref <= 0. && aopt->meteo_u1 <= 0.
+      && aopt->meteo_u2 <= 0.)
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              _("Meteo preprocessor: meteo_ustar0 or meteo_uref"
+                " or velocity measurements.\n"));
 
+  if (aopt->meteo_ustar0 > 0. && aopt->meteo_uref > 0.) {
   /* Recompute LMO inverse */
-  if (aopt->meteo_ustar0 >= 0. && aopt->meteo_uref >= 0.) {
 
     /* U+ */
     cs_real_t up = aopt->meteo_uref / aopt->meteo_ustar0;
@@ -2175,9 +2186,94 @@ cs_atmo_init_meteo_profiles(void)
   /* LMO inverse, ustar at ground */
   cs_real_t dlmo = aopt->meteo_dlmo;
   cs_real_t ustar0 = aopt->meteo_ustar0;
+  if (is_humid && (aopt->meteo_qwstar > 0.5*DBL_MAX)
+      && (aopt->meteo_evapor < 0.5*DBL_MAX)) {
+    aopt->meteo_qwstar = aopt->meteo_evapor / (ustar0 * phys_pro->ro0);
+  }
+  aopt->meteo_tstar = cs_math_pow2(ustar0) * theta0 * dlmo / (kappa * g)
+                      - 0.61 * theta0 * aopt->meteo_qwstar;
+    if ((aopt->meteo_zu1 < 0. && aopt->meteo_u1 > 0.)
+      || (aopt->meteo_zu2 < 0. && aopt->meteo_u2 > 0.))
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              _("When computing idealised atmospheric profiles,\n"
+                "No heights are provided for velocities u1 and u2.\n"));
+  if ((aopt->meteo_zu1 > 0. && aopt->meteo_t1 < 0.)
+      || (aopt->meteo_zu2 > 0. && aopt->meteo_t2 < 0.))
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              _("When computing idealised atmospheric profiles,\n"
+                "No temperature measurements are provided.\n"));
+  if ((aopt->meteo_zu1 > 0. && aopt->meteo_qw1 > 0.5*DBL_MAX && is_humid)
+      || (aopt->meteo_zu2 > 0. && aopt->meteo_qw2 > 0.5*DBL_MAX && is_humid))
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              _("When computing idealised atmospheric profiles,\n"
+                "No humidity measurements are provided, though humid "
+                "atmosphere is selected.\n"));
+  cs_real_t u1  = aopt->meteo_u1;
+  cs_real_t u2  = aopt->meteo_u2;
+  cs_real_t z1  = aopt->meteo_zu1;
+  cs_real_t z2  = aopt->meteo_zu2;
+  cs_real_t t1  = aopt->meteo_t1;
+  cs_real_t t2  = aopt->meteo_t2;
+  cs_real_t qw1 = aopt->meteo_qw1;
+  cs_real_t qw2 = aopt->meteo_qw2;
+  if ((u1 > 0.) || (u2 > 0.)) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Meteo preprocessor uses u1=%17.9e, u2=%17.9e\n"
+                 "collected at z1=%17.9e [m], z2=%17.9e [m]\n"),
+               u1,
+               u2,
+               z1,
+               z2);
 
-  /* Friction temperature */
-  aopt->meteo_tstar = cs_math_pow2(ustar0) * theta0 * dlmo / (kappa * g);
+    cs_real_t du1u2 = u2 - u1;
+    cs_real_t dt1t2 = t2 - t1; /* Should be negative for unstable case */
+    cs_real_t tmoy  = (t1 + t2) * 0.5; /* Proxy for Lmo */
+
+    cs_real_t dqw1qw2 = qw2 - qw1; /* is zero by default */
+
+    cs_real_t tol = 1e-12;
+    int it;
+    int it_max = 1000;
+
+    /* Neutral Assumption */
+    cs_real_t dlmos = 0.; /* dlmos = dlmo starts */
+    cs_real_t dlmou = 0.; /* dlmou = dlmo updated */
+    cs_real_t err   = 1.; /* in order to enter the loop */
+    for (it = 0; it < it_max && CS_ABS(err) > tol; it++) {
+      if (it != 0) {
+        dlmos = dlmou;
+      }
+      cs_real_t ustaru  = kappa * du1u2 / (cs_mo_psim(z2, z1, dlmos));
+      cs_real_t tstaru  = kappa * dt1t2 / (cs_mo_psih(z2, z1, dlmos));
+      cs_real_t qwstaru = kappa * dqw1qw2 / (cs_mo_psih(z2, z1, dlmos));
+      dlmou = kappa * (g / tmoy) * (tstaru + 0.61 * tmoy * qwstaru)
+              / (ustaru * ustaru);
+      err = dlmou - dlmos;
+    }
+    if (it == it_max) {
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("Meteo preprocessor did not converge to find inverse\n"
+                   "of LMO length, current value is %f.\n"),
+                 dlmou);
+    }
+
+    /* Update ustar and tstar */
+    aopt->meteo_dlmo   = dlmou;
+    aopt->meteo_ustar0 = kappa * du1u2 / (cs_mo_psim(z2, z1, dlmou));
+    aopt->meteo_tstar  = kappa * dt1t2 / (cs_mo_psih(z2, z1, dlmou));
+    aopt->meteo_qwstar = kappa * dqw1qw2 / (cs_mo_psih(z2, z1, dlmou));
+    aopt->meteo_qw0    = qw1
+      - aopt->meteo_qwstar * cs_mo_psih(z1 + z0, z0, dlmo) / kappa;
+    aopt->meteo_t0     = t1
+      - aopt->meteo_tstar * cs_mo_psih(z1 + z0, z0, dlmo) / kappa;
+
+  }
 
   /* Center of the domain */
   /* if neither latitude/longitude nor lambert coordinates are given */
@@ -2211,6 +2307,25 @@ cs_atmo_init_meteo_profiles(void)
 
   /* Force the computation of z_ground */
   aopt->compute_z_ground = true;
+
+  if (is_humid && aopt->meteo_qw0 <= 0. && aopt->meteo_qw1 < 0
+      && aopt->meteo_qw2 < 0)
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              _("Meteo preprocessor: at least one information is required"
+                " for humidity field preprocessing (qw0 || qw1 || qw2).\n"));
+
+
+  bft_printf("\n Meteo preprocessing values for computation: "
+             " dlmo=%17.9e, ustar=%17.9e, tstar=%17.9e, qwstar=%17.9e"
+             " t0=%17.9e, qw0=%17.9e \n",
+             aopt->meteo_dlmo,
+             aopt->meteo_ustar0,
+             aopt->meteo_tstar,
+             aopt->meteo_qwstar,
+             aopt->meteo_t0,
+             aopt->meteo_qw0);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2238,6 +2353,7 @@ cs_atmo_compute_meteo_profiles(void)
     = (cs_real_3_t *) (cs_field_by_name("meteo_velocity")->val);
   cs_real_t *cpro_met_k = cs_field_by_name("meteo_tke")->val;
   cs_real_t *cpro_met_eps = cs_field_by_name("meteo_eps")->val;
+  cs_field_t *f_met_qw = cs_field_by_name_try("meteo_humidity");
 
   /* Some turbulence constants */
   cs_real_t kappa = cs_turb_xkappa;
@@ -2261,6 +2377,11 @@ cs_atmo_compute_meteo_profiles(void)
 
   /* Friction temperature */
   cs_real_t tstar = aopt->meteo_tstar;
+
+  /* Humidity field */
+
+  cs_real_t qw0    = aopt->meteo_qw0;
+  cs_real_t qwstar = aopt->meteo_qwstar;
 
   /* Variables used for clipping */
   cs_real_t ri_max = cs_math_big_r;
@@ -2357,6 +2478,16 @@ cs_atmo_compute_meteo_profiles(void)
   cs_parall_min(1, CS_REAL_TYPE, &z_lim);
   cs_parall_min(1, CS_REAL_TYPE, &u_met_min);
   cs_parall_min(1, CS_REAL_TYPE, &theta_met_min);
+  if (f_met_qw != NULL) {
+    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+      cs_real_t z_grd = 0.;
+      if (z_ground != NULL)
+        z_grd = z_ground[cell_id];
+      cs_real_t z = cell_cen[cell_id][2] - z_grd;
+      f_met_qw->val[cell_id]
+        = qw0 + qwstar / kappa * cs_mo_psih(z + z0, z0, dlmo);
+    }
+  }
 
   /* Very stable cases, corresponding to mode 0 in the Python prepro */
   if (z_lim < 0.5*cs_math_big_r) {
