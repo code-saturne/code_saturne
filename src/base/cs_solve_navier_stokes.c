@@ -166,7 +166,7 @@ cs_solve_navier_stokes_update_total_pressure(const cs_mesh_t              *m,
 
   const cs_real_3_t *cpro_momst = NULL;
 
-  if (cs_glob_atmo_option->sedimentation_model != 0)
+  if (cs_glob_atmo_option->open_bcs_treatment != 0)
     cpro_momst
       = (const cs_real_3_t *)cs_field_by_name("momentum_source_terms")->val;
 
