@@ -613,8 +613,9 @@ cs_rho_humidair(cs_real_t   ywm, //TODO rename yw_h
   cs_real_t clatev = phys_pro->clatev;
   cs_real_t cp0 = phys_pro->cp0;
 
+  cs_real_t t_c = t_liq - cs_physical_constants_celsius_to_kelvin;
   /* Saturated vapor content */
-  cs_real_t yw_sat = cs_air_yw_sat(*t_h, p);
+  cs_real_t yw_sat = cs_air_yw_sat(t_c, p);
   cs_real_t delta_yw = ywm - yw_sat;
 
   /* Temperature of the mixture in Kelvin */
