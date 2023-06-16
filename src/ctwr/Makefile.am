@@ -75,8 +75,7 @@ cs_ctwr_headers.h
 
 noinst_LIBRARIES = libcsctwr.a
 libcsctwr_a_SOURCES = \
-cs_ctwr.c \
-ctphyv.f90
+cs_ctwr.c
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod
