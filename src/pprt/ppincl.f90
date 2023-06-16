@@ -724,18 +724,9 @@ module ppincl
   !> \addtogroup cool_transported
   !> \{
 
-  !> Pointer to define mass fraction of liquid water which is injected in the packing
-  integer, save :: iyml
-
-  !> Pointer to define mass fraction of liquid water which is injected in the rain zones
-  integer, save :: iy_p_l
-
   !> Pointer to define the temperature (property, deduced from enthalpy)
   !> of liquid water which is injected in the packing
   integer, save :: itml
-
-  !> Pointer to define the field enthalpy of liquid water
-  integer, save :: ihml
 
   !> \}
   !> \}

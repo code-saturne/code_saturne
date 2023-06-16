@@ -40,6 +40,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/pprt \
 -I$(top_srcdir)/src/turb \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
@@ -75,9 +76,7 @@ cs_ctwr_headers.h
 noinst_LIBRARIES = libcsctwr.a
 libcsctwr_a_SOURCES = \
 cs_ctwr.c \
-ctini1.f90 \
-ctphyv.f90 \
-ctvarp.f90
+ctphyv.f90
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod

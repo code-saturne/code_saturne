@@ -57,9 +57,14 @@
 
 #include "fvm_nodal_extract.h"
 
-#include "cs_base.h"
 #include "cs_air_props.h"
+#include "cs_atmo.h"
+#include "cs_base.h"
+#include "cs_boundary_conditions.h"
+#include "cs_boundary_zone.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
+#include "cs_field_operator.h"
 #include "cs_field_pointer.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
@@ -68,16 +73,17 @@
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
+#include "cs_parameters.h"
 #include "cs_parall.h"
 #include "cs_physical_constants.h"
+#include "cs_physical_model.h"
 #include "cs_post.h"
+#include "cs_prototypes.h"
 #include "cs_restart.h"
 #include "cs_selector.h"
-#include "cs_volume_zone.h"
-#include "cs_boundary_conditions.h"
-#include "cs_parameters.h"
-#include "cs_boundary_zone.h"
+#include "cs_thermal_model.h"
 #include "cs_turbulence_bc.h"
+#include "cs_volume_zone.h"
 
 
 /*----------------------------------------------------------------------------
@@ -324,19 +330,273 @@ _lewis_factor(const int        evap_model,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * add variables fields
+ * Add variables fields
  *----------------------------------------------------------------------------*/
 
 void
 cs_ctwr_add_variable_fields(void)
 {
-  //TODO translate from ctvarp here, take example of cs_elec_add_variable_fields
+
+  /* Key id of the scalar class */
+  const int keyccl = cs_field_key_id("scalar_class");
+
+  /* Key id for drift scalar */
+  const int keydri = cs_field_key_id("drift_scalar_model");
+
+  /* Key ids for clipping */
+  const int kscmin = cs_field_key_id("min_scalar_clipping");
+  const int kscmax = cs_field_key_id("max_scalar_clipping");
+
+  /* Key id for the diffusivity */
+  const int kivisl = cs_field_key_id("diffusivity_id");
+
+  /* Fluid properties and physical variables */
+  cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+  cs_air_fluid_props_t *air_prop = cs_glob_air_props;
+
+  /* 1. Definition of fields
+   * --------------------------------------------------------------------------
+   *  Bulk definition - For cooling towers, the bulk is the humid air.
+   *  By definition, humid air is composed of two species: dry air and water
+   *  vapor (whether in gas or condensate form)
+   *  -------------------------------------------------------------------------
+   */
+
+  cs_field_t *f;
+  int dim1 = 1;
+
+  {
+    /* Thermal model - Set parameters of calculations (module optcal) */
+
+    cs_thermal_model_t *thermal = cs_get_glob_thermal_model();
+
+    /* Solve for temperature of bulk humid air */
+    thermal->thermal_variable = CS_THERMAL_MODEL_TEMPERATURE;
+
+    /* Temperature treated in Celsius */
+    thermal->itpscl = CS_TEMPERATURE_SCALE_CELSIUS;
+
+    /* Variable cp (0 = variable, -1 = constant) since it changed with humidity
+     * Needs to be specified here because the automated creation and
+     * initialization of the cell array for cp in 'iniva0' depends on its value
+     * (unlike the cell arrays for the density and viscosity which are initialized
+     * irrespective of the values of irovar and ivivar) */
+    fp->icp = 0;
+
+    /* The thermal transported scalar is the temperature of the bulk.
+     * If the atmospheric module is switched off (i.e., iatmos!= 2)
+     * , we create the field. */
+    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] != CS_ATMO_HUMID){
+      int f_id = cs_variable_field_create("temperature",
+                                          "Temperature humid air",
+                                          CS_MESH_LOCATION_CELLS, dim1);
+
+      f = cs_field_by_id(f_id);
+
+      /* Set variable diffusivity for the humid air enthalpy.
+       * The diffusivity used in the transport equation will be the cell value
+       * of the viscls array for f_id.
+       * This value is updated at the top of each time step in 'ctphyv' along
+       * with the other variable properties */
+      int ifcvsl = 0;
+      cs_field_set_key_int(f, kivisl, ifcvsl);
+      cs_add_model_thermal_field_indexes(f->id);
+    }
+  }
+
+  {
+    /* Rain zone variables */
+
+    /* Associate liquid water rain with class 1 */
+    int icla = 1;
+
+    int f_id = cs_variable_field_create("y_p", "Yp liq",
+                                        CS_MESH_LOCATION_CELLS, dim1);
+    f = cs_field_by_id(f_id);
+
+    /* Clipping of rain mass fraction 0 < y_p < 1 */
+    cs_field_set_key_double(f, kscmin, 0.e0);
+    cs_field_set_key_double(f, kscmax,  1.e0);
+
+    /* Set the class index for the field */
+    cs_field_set_key_int(f, keyccl, icla);
+
+    /* Scalar with drift: create additional mass flux.
+     * This flux will then be reused for all scalars associated to this class
+     * (here : injected liquid water variables)
+     * We set the bit corresponding to drift flux computation to 1.
+     * TODO (from old .f90 file) : make it optional ?*/
+    int drift = CS_DRIFT_SCALAR_ON;
+    drift |= CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
+
+    cs_field_set_key_int(f, keydri, drift);
+
+    /* Set constant diffusivity for injected liquid mass fraction */
+    int ifcvsl = -1;
+    cs_field_set_key_int(f, kivisl, ifcvsl);
+    cs_add_model_field_indexes(f->id);
+
+    /* Equation parameters */
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    /* Set beta limiter to maintain y_p in the limits */
+    eqp->isstpc = 2;
+    eqp->blencv = 1.0;
+
+    /* Transport and solve for the temperature of the liquid - with the same
+     * drift as the mass fraction Y_l in the rain zones.
+     * NB : Temperature of the liquid must be transported after the bulk
+     * enthalpy. */
+
+    f_id = cs_variable_field_create("y_p_t_l", "Tp liq",
+                                    CS_MESH_LOCATION_CELLS, dim1);
+    f = cs_field_by_id(f_id);
+    cs_field_set_key_int(f, keyccl, icla);
+
+    /* Scalar with drift, but do not create an additional mass flux for the
+     * enthalpy (use ^= to reset the bit for drift flux calculation).
+     * It reuses the mass flux already identified with the mass fraction. */
+    drift ^= CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
+
+    cs_field_set_key_int(f, keydri, drift);
+
+    /* Set variable diffusivity for the injected liquid enthalpy transport.
+     * The diffusivity used in the transport equation will be the cell value
+     * of the viscls array for field f */
+
+    ifcvsl = 0;
+    cs_field_set_key_int(f, kivisl, ifcvsl);
+    cs_add_model_field_indexes(f->id);
+
+    /* Equation parameters */
+    eqp = cs_field_get_equation_param(f);
+    /* Set beta limiter to maintain y_p in the limits */
+    eqp->blencv = 1.0;
+  }
+
+  {
+    /* Packing zone variables */
+
+    /* Associate injected liquid water in packing with class  */
+    int icla = 2;
+
+    /* Mass fraction of liquid */
+    int f_id = cs_variable_field_create("y_l_packing", "Yl packing",
+                                        CS_MESH_LOCATION_CELLS, dim1);
+    f = cs_field_by_id(f_id);
+
+    /* Clipping of packing liquid mass fraction 0 < y_l_packing */
+    cs_field_set_key_double(f, kscmin, 0.e0);
+
+    /* Set the class index for the field */
+    cs_field_set_key_int(f, keyccl, icla);
+
+    /* Scalar with drift: create additional mass flux.
+     * This flux will then be reused for all scalars associated to this class
+     * (here : injected liquid water variables)
+     * We set the bit corresponding to drift flux computation to 1.
+     * TODO (from old .f90 file) : make it optional ?*/
+    int drift = CS_DRIFT_SCALAR_ON;
+    drift |= CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
+    drift |= CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX;
+
+    cs_field_set_key_int(f, keydri, drift);
+
+    /* Set constant diffusivity for injected liquid mass fraction */
+    int ifcvsl = -1;
+    cs_field_set_key_int(f, kivisl, ifcvsl);
+    cs_add_model_field_indexes(f->id);
+
+    /* Equation parameters */
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    /* Upwind schemes for scalars in packing zone */
+    eqp->blencv = 0.;
+    eqp->idiff  = 0;
+    eqp->idifft = 0;
+
+    /* Transport and solve for the temperature of the liquid - with the same
+     * drift as the mass fraction Y_l in the rain zones.
+     * NB : Temperature of the liquid must be transported after the bulk
+     * enthalpy. */
+
+    f_id = cs_variable_field_create("enthalpy_liquid", "Enthalpy liq",
+        CS_MESH_LOCATION_CELLS, dim1);
+    /* TODO (from ctvarp.f90) : x_p_h_l or y_p_h_2 */
+
+    f = cs_field_by_id(f_id);
+    cs_field_set_key_int(f, keyccl, icla);
+
+    /* Scalar with drift, but do not create an additional mass flux for the
+     * enthalpy (use ^= to reset the bit for drift flux calculation).
+     * It reuses the mass flux already identified with the mass fraction. */
+    drift ^= CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
+
+    cs_field_set_key_int(f, keydri, drift);
+
+    /* Set variable diffusivity for the injected liquid enthalpy transport.
+     * The diffusivity used in the transport equation will be the cell value
+     * of the viscls array for field f */
+
+    ifcvsl = 0;
+    cs_field_set_key_int(f, kivisl, ifcvsl);
+    cs_add_model_field_indexes(f->id);
+
+    /* Equation parameters */
+    eqp = cs_field_get_equation_param(f);
+    /* Upwind schemes for scalars in packing zone */
+    eqp->blencv = 0.;
+    eqp->idiff  = 0;
+    eqp->idifft = 0;
+  }
+
+  {
+    /* Continuous phase variables */
+
+    int icla = -1;
+
+    /* NB : 'c' stands for continuous and 'p' for particles */
+
+    /* If not using the atmospheric module, we create the fields */
+    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] != CS_ATMO_HUMID){
+      /* Total mass fraction of water in the bulk humid air */
+      int f_id = cs_variable_field_create("ym_water", "Ym water",
+                                          CS_MESH_LOCATION_CELLS, dim1);
+
+      f = cs_field_by_id(f_id);
+
+      /* Clipping : 0 < ym < 1 */
+      cs_field_set_key_double(f, kscmin, 0.e0);
+      cs_field_set_key_double(f, kscmax,  1.e0);
+
+      /* Set the class index for the field */
+      cs_field_set_key_int(f, keyccl, icla);
+
+      /* Set constant diffusivity for the dry air mass fraction.
+       * The diffusivity used in the transport equation will be the cell value
+       * of the" diffusivity_ref" for field f */
+      int ifcvsl = -1;
+      cs_field_set_key_int(f, kivisl, ifcvsl);
+
+      /* Activate the drift for all scalars with key "drift" > 0 */
+      int drift = CS_DRIFT_SCALAR_ON;
+
+      /* Activated drift. As it is the continuous phase class (icla = -1),
+       * the convective flux is deduced for classes > 0
+       * and bulk class (icla = 0) */
+      drift |= CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
+      cs_field_set_key_int(f, keydri, drift);
+
+      cs_add_model_field_indexes(f->id);
+
+      /* Equation parameters */
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      /* Upwind schemes for scalars in packing zone */
+      eqp->blencv = 1.0;
+    }
+  }
 
   //TODO add a model to compute particles (droplet) velocities (for rain zones)
   //take example to cs_coeal_varpos.f90 and i_comb_drift=1
   // Then add in cs_ctwr_source_term what is done in cs_coal_scast
-
-
 }
 
 /*----------------------------------------------------------------------------

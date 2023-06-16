@@ -195,7 +195,6 @@ endif
 !------------------------
 
 if (ippmod(iaeros).ge.0) then
-  call ctvarp
   call cs_ctwr_add_variable_fields
 endif
 

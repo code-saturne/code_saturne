@@ -353,7 +353,8 @@ endif
 
 ! Cooling towers
 if (ippmod(iaeros).ge.0) then
-  call ctini1
+  irovar = 1 ! Variable density
+  ivivar = 0 ! Constant molecular viscosity
 endif
 
 ! Compressible
