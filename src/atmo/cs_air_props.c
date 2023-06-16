@@ -73,7 +73,8 @@ static cs_air_fluid_props_t _props = {
   .rho_l = 0.,
   .lambda_h = 0.,
   .lambda_l = 0.,
-  .droplet_diam = 0.
+  .droplet_diam = 0.,
+  .molmass_rat = 0.622
 };
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

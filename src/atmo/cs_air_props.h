@@ -58,6 +58,8 @@ typedef struct {
   cs_real_t   lambda_h;        /* Humid air conductivity */
   cs_real_t   lambda_l;        /* Water conductivity */
   cs_real_t   droplet_diam;    /* Drop diameter for rain zones */
+  cs_real_t   molmass_rat;     /* Ratio of the molar mass (H2O) over the
+                                  molar mass (air) */
 
 } cs_air_fluid_props_t;
 
