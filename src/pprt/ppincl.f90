@@ -719,16 +719,6 @@ module ppincl
   double precision :: molmass_rat
   parameter(molmass_rat = 0.622d0)
 
-  !> \defgroup cool_transported  Transported variables
-
-  !> \addtogroup cool_transported
-  !> \{
-
-  !> Pointer to define the temperature (property, deduced from enthalpy)
-  !> of liquid water which is injected in the packing
-  integer, save :: itml
-
-  !> \}
   !> \}
 
   !> \defgroup enthalpy Enthalpic variables pointers

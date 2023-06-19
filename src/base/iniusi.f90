@@ -227,6 +227,13 @@ interface
     implicit none
   end subroutine cs_create_added_properties
 
+  ! Interface to C function for Cooling Towers equation parameters
+
+  subroutine cs_ctwr_set_equation_parameters() &
+    bind(C, name='cs_ctwr_set_equation_parameters')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_ctwr_set_equation_parameters
 
 end interface
 
@@ -353,8 +360,7 @@ endif
 
 ! Cooling towers
 if (ippmod(iaeros).ge.0) then
-  irovar = 1 ! Variable density
-  ivivar = 0 ! Constant molecular viscosity
+  call cs_ctwr_set_equation_parameters
 endif
 
 ! Compressible

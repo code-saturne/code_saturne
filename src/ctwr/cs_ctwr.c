@@ -436,12 +436,6 @@ cs_ctwr_add_variable_fields(void)
     cs_field_set_key_int(f, kivisl, ifcvsl);
     cs_add_model_field_indexes(f->id);
 
-    /* Equation parameters */
-    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-    /* Set beta limiter to maintain y_p in the limits */
-    eqp->isstpc = 2;
-    eqp->blencv = 1.0;
-
     /* Transport and solve for the temperature of the liquid - with the same
      * drift as the mass fraction Y_l in the rain zones.
      * NB : Temperature of the liquid must be transported after the bulk
@@ -466,11 +460,6 @@ cs_ctwr_add_variable_fields(void)
     ifcvsl = 0;
     cs_field_set_key_int(f, kivisl, ifcvsl);
     cs_add_model_field_indexes(f->id);
-
-    /* Equation parameters */
-    eqp = cs_field_get_equation_param(f);
-    /* Set beta limiter to maintain y_p in the limits */
-    eqp->blencv = 1.0;
   }
 
   {
@@ -506,13 +495,6 @@ cs_ctwr_add_variable_fields(void)
     cs_field_set_key_int(f, kivisl, ifcvsl);
     cs_add_model_field_indexes(f->id);
 
-    /* Equation parameters */
-    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-    /* Upwind schemes for scalars in packing zone */
-    eqp->blencv = 0.;
-    eqp->idiff  = 0;
-    eqp->idifft = 0;
-
     /* Transport and solve for the temperature of the liquid - with the same
      * drift as the mass fraction Y_l in the rain zones.
      * NB : Temperature of the liquid must be transported after the bulk
@@ -539,13 +521,6 @@ cs_ctwr_add_variable_fields(void)
     ifcvsl = 0;
     cs_field_set_key_int(f, kivisl, ifcvsl);
     cs_add_model_field_indexes(f->id);
-
-    /* Equation parameters */
-    eqp = cs_field_get_equation_param(f);
-    /* Upwind schemes for scalars in packing zone */
-    eqp->blencv = 0.;
-    eqp->idiff  = 0;
-    eqp->idifft = 0;
   }
 
   {
@@ -586,17 +561,189 @@ cs_ctwr_add_variable_fields(void)
       cs_field_set_key_int(f, keydri, drift);
 
       cs_add_model_field_indexes(f->id);
-
-      /* Equation parameters */
-      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-      /* Upwind schemes for scalars in packing zone */
-      eqp->blencv = 1.0;
     }
   }
 
   //TODO add a model to compute particles (droplet) velocities (for rain zones)
   //take example to cs_coeal_varpos.f90 and i_comb_drift=1
   // Then add in cs_ctwr_source_term what is done in cs_coal_scast
+}
+
+
+/*----------------------------------------------------------------------------
+ * Set equation parameters
+ *----------------------------------------------------------------------------*/
+
+
+void
+cs_ctwr_set_equation_parameters(void)
+{
+  cs_field_t *f;
+
+  {
+    /* Set fluid properties parameters */
+    cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+    /* Variable density */
+    fp->irovar = 1;
+    /* Constant molecular viscosity */
+    fp->ivivar = 0;
+  }
+
+  {
+    /* Rain zone variables */
+
+    /* Rain mass fraction*/
+    f = cs_field_by_name("y_p");
+    /* Equation parameters */
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    /* Set beta limiter to maintain y_p in the limits */
+    eqp->isstpc = 2;
+    eqp->blencv = 1.0;
+
+    /* Rain temperature */
+    f = cs_field_by_name("y_p_t_l");
+    /* Equation parameters */
+    eqp = cs_field_get_equation_param(f);
+    eqp->blencv = 1.0;
+  }
+
+  {
+    /* Packing zone variables */
+
+    /* Mass fraction of liquid */
+    f = cs_field_by_name("y_l_packing");
+    /* Equation parameters */
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    /* Upwind schemes for scalars in packing zone */
+    eqp->blencv = 0.;
+    eqp->idiff  = 0;
+    eqp->idifft = 0;
+
+    /* Liquid enthalpy */
+    f = cs_field_by_name("enthalpy_liquid");
+    /* Equation parameters */
+    eqp = cs_field_get_equation_param(f);
+    /* Upwind schemes for scalars in packing zone */
+    eqp->blencv = 0.;
+    eqp->idiff  = 0;
+    eqp->idifft = 0;
+  }
+
+  {
+    /* Continuous phase variables */
+
+    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] != CS_ATMO_HUMID){
+      /* Total mass fraction of water in the bulk humid air */
+      f = cs_field_by_name("ym_water");
+      /* Equation parameters */
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      eqp->blencv = 1.0;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Add property fields
+ *----------------------------------------------------------------------------*/
+
+void
+cs_ctwr_add_property_fields(void)
+{
+  cs_field_t *f;
+  int dim1 = 1;
+  int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
+  bool has_previous = false;
+  const int klbl   = cs_field_key_id("label");
+  const int keyvis = cs_field_key_id("post_vis");
+  const int keylog = cs_field_key_id("log");
+  const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+
+ {
+   /* Humidity field */
+   f = cs_field_create("humidity",
+                       field_type,
+                       CS_MESH_LOCATION_CELLS,
+                       dim1,
+                       has_previous);
+   cs_field_set_key_int(f, keyvis, post_flag);
+   cs_field_set_key_int(f, keylog, 1);
+   cs_field_set_key_int(f, klbl, "Humidity");
+ }
+
+ {
+   /* Saturated humidity field */
+   f = cs_field_create("x_s",
+                       field_type,
+                       CS_MESH_LOCATION_CELLS,
+                       dim1,
+                       has_previous);
+   cs_field_set_key_int(f, keyvis, post_flag);
+   cs_field_set_key_int(f, keylog, 1);
+   cs_field_set_key_int(f, klbl, "Humidity sat");
+ }
+
+ {
+   /* Humid air enthalpy field */
+   f = cs_field_create("enthalpy",
+                       field_type,
+                       CS_MESH_LOCATION_CELLS,
+                       dim1,
+                       has_previous);
+   cs_field_set_key_int(f, keyvis, post_flag);
+   cs_field_set_key_int(f, keylog, 1);
+   cs_field_set_key_int(f, klbl, "Enthalpy humid air");
+ }
+
+ {
+   /* Liquid temperature in packing */
+   f = cs_field_create("temperature_liquid",
+                       field_type,
+                       CS_MESH_LOCATION_CELLS,
+                       dim1,
+                       has_previous);
+   cs_field_set_key_int(f, keyvis, post_flag);
+   cs_field_set_key_int(f, keylog, 1);
+   cs_field_set_key_int(f, klbl, "Temp liq");
+ }
+
+ {
+   /* Liquid vertical velocity */
+   f = cs_field_create("vertvel_l",
+                       field_type,
+                       CS_MESH_LOCATION_CELLS,
+                       dim1,
+                       has_previous);
+   cs_field_set_key_int(f, keyvis, post_flag);
+   cs_field_set_key_int(f, keylog, 1);
+   cs_field_set_key_int(f, klbl, "Vertical vel liq");
+ }
+
+  /* Continuous phase properties */
+
+  /* NB: 'c' stands for continuous and 'p' for particles */
+ {
+   /* Mass fraction of the continuous phase (X1) */
+   f = cs_field_create("x_c",
+                       field_type,
+                       CS_MESH_LOCATION_CELLS,
+                       dim1,
+                       has_previous);
+   cs_field_set_key_int(f, keyvis, post_flag);
+   cs_field_set_key_int(f, keylog, 1);
+   cs_field_set_key_int(f, klbl, "Gas mass fraction");
+ }
+
+ {
+   /* Mass fraction of the continuous phase (X1) BOUNDARY VALUE */
+   f = cs_field_create("b_x_c",
+                       field_type,
+                       CS_MESH_LOCATION_BOUNDARY_FACES,
+                       dim1,
+                       has_previous);
+   cs_field_set_key_int(f, keyvis, post_flag);
+   cs_field_set_key_int(f, keylog, 1);
+   cs_field_set_key_int(f, klbl, "Boundary gas mass fraction");
+ }
 }
 
 /*----------------------------------------------------------------------------
@@ -780,11 +927,7 @@ cs_ctwr_fields_init0(void)
      * - the humidity, which users might have modified if they changed the
      *   mass fraction of the dry air in the humid air */
 
-    /* FIXME find how to call molmassrat defined as parameter
-     * in pprt/ppincl.f90
-     * It could be useful to add it in cs_glob_air_props*/
-    cs_real_t molmassrat = 0.622;
-    cs_ctwr_init_field_vars(fp->ro0, fp->t0, fp->p0, molmassrat);
+    cs_ctwr_init_field_vars(fp->ro0, fp->t0, fp->p0, air_prop->molmass_rat);
 
     if (air_prop->cp_l <= 0 || air_prop->lambda_l <= 0){
       bft_error(__FILE__,__LINE__, 0, _("Negative lambda or cp for liquid"));
@@ -806,9 +949,8 @@ cs_ctwr_fields_init0(void)
 
     /* Restarts - recompute the required properties based on the saved solution
      * variables. For example : the humidity, liquid vertical velocity, etc. */
-    cs_real_t molmassrat = 0.622;
     cs_ctwr_restart_field_vars(fp->ro0, fp->t0, fp->p0, air_prop->humidity0,
-                               molmassrat);
+                               air_prop->molmass_rat);
   }
 }
 

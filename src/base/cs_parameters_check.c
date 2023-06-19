@@ -949,7 +949,7 @@ cs_parameters_check(void)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("while reading input data"),
-         _("Cooling twoers modele requires variable specific_heat field.\n"));
+         _("Cooling towers model requires variable specific_heat field.\n"));
 
   /* Equations definition, time scheme, convective scheme */
   for (int f_id = 0 ; f_id < n_fields ; f_id++) {
