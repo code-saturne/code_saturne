@@ -153,16 +153,27 @@ class CouplingDelegate(QItemDelegate):
         else :
                self.modelCombo.addItem(self.tr(self.dicoM2V["none"]), "none")
                carrier = field.carrier_id
-               if self.mdl.getTurbulenceModel(carrier) == "k-epsilon" or \
-                  self.mdl.getTurbulenceModel(carrier) == "k-epsilon_linear_production" or \
-                  self.mdl.getTurbulenceModel(carrier) == "rij-epsilon_ssg" or \
-                  self.mdl.getTurbulenceModel(carrier) == "rij-epsilon_ebrsm":
-                   if field.phase == "gas" :
-                       # bulles
-                       self.modelCombo.addItem(self.tr(self.dicoM2V["large_inclusions"]), "large_inclusions")
-                   else :
-                       # gouttes et solide
-                       self.modelCombo.addItem(self.tr(self.dicoM2V["small_inclusions"]), "small_inclusions")
+
+               reverseCoupling = True
+               if carrier == "all" :
+                  # Dispersed phase carried by all the continuous phases
+                  # check if the turbulence of all the continuous phases is well defined :
+                  for continuous_field in self.mdl.mainFieldsModel.getContinuousFieldList():
+                      carrier = continuous_field.f_id
+                      _m = self.mdl.getTurbulenceModel(carrier)
+                      reverseCoupling = _m in TurbulenceModelsDescription.reverseCouplingModels
+               else :
+                  # Dispersed phase carried by one of the continuous phases
+                  _m = self.mdl.getTurbulenceModel(carrier)
+                  reverseCoupling = _m in TurbulenceModelsDescription.reverseCouplingModels
+
+               if reverseCoupling :
+                  if field.phase == "gas" :
+                      # bulles
+                      self.modelCombo.addItem(self.tr(self.dicoM2V["large_inclusions"]), "large_inclusions")
+                  else :
+                      # gouttes et solide
+                      self.modelCombo.addItem(self.tr(self.dicoM2V["small_inclusions"]), "small_inclusions")
 
         editor.setMinimumSize(editor.sizeHint())
         editor.installEventFilter(self)
