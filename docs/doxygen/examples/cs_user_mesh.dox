@@ -111,6 +111,11 @@
 
   \snippet cs_user_mesh-modify.c mesh_modify_refine_1
 
+  The following code shows an example of mesh refinement based on the
+  intersection with a CAD defined in an STL file.
+
+  \snippet cs_user_mesh-modify.c mesh_modify_refine_2
+
   \subsection  cs_user_mesh_h_cs_user_mesh_input Mesh reading and modification
 
   The user function \ref cs_user_mesh_input allows a detailed selection of imported

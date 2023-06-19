@@ -409,6 +409,25 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
   }
   /*! [mesh_modify_refine_1] */
 
+  /* Refine all cells which are intersected by a surface defined by an
+   * STL file.
+   */
+  /*! [mesh_modify_refine_2] */
+  {
+    /* Create the cs_stl_mesh structure with a name "STLMESH1" */
+    cs_stl_mesh_t *stl_mesh = cs_stl_mesh_add("STLMESH1");
+
+    /* Define the stl file to read */
+    cs_stl_file_read(stl_mesh,        /* pointer to cs_stl_mesh structure */
+                     "cad_file.stl"); /* Name of the stl file to read. */
+
+    /* Refine the mesh using the stl file */
+    cs_stl_refine(stl_mesh, /* pointer to cs_stl_mesh_t structure */
+                  3,        /* Number of refinement levels, here 3 */
+                  2);       /* Propagate refinement criteria over 2 more layers */
+  }
+  /*! [mesh_modify_refine_2] */
+
   /* Remove cells from a selection
    * Note: if present, remove periodicity info first */
   /*! [mesh_modify_remove_cells] */
