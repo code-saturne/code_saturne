@@ -3233,7 +3233,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
     }
 
     // neighbor cells loop
-    for (cs_lnum_t ic = 0; ic < 2 ; ic++)  {
+    for (cs_lnum_t ic = 0; ic < 2 ; ic++) {
 
       cs_lnum_t c_id = i_face_cells[face_id][ic];
 
