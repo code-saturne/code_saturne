@@ -167,7 +167,7 @@ endif
 ! ---> Aerorefrigerants
 
 if (ippmod(iaeros).ge.0) then
-  call cs_ctwr_phyvar_update(ro0,t0,p0,molmass_rat)
+  call cs_ctwr_phyvar_update(ro0,t0,p0)
 endif
 
 ! ---> Atmospheric Flows (except constant density: ippmod(iatmos) = 0)

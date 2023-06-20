@@ -354,6 +354,11 @@ cs_ctwr_add_variable_fields(void)
   cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
 
+  /* Set fluid properties parameters */
+  /* Variable density */
+  fp->irovar = 1;
+  /* Constant molecular viscosity */
+  fp->ivivar = 0;
   /* 1. Definition of fields
    * --------------------------------------------------------------------------
    *  Bulk definition - For cooling towers, the bulk is the humid air.
@@ -460,6 +465,10 @@ cs_ctwr_add_variable_fields(void)
     ifcvsl = 0;
     cs_field_set_key_int(f, kivisl, ifcvsl);
     cs_add_model_field_indexes(f->id);
+
+    /* Equation parameters */
+    eqp = cs_field_get_equation_param(f);
+    eqp->blencv = 1.0;
   }
 
   {
@@ -743,6 +752,110 @@ cs_ctwr_add_property_fields(void)
    cs_field_set_key_int(f, keyvis, post_flag);
    cs_field_set_key_int(f, keylog, 1);
    cs_field_set_key_int(f, klbl, "Boundary gas mass fraction");
+ }
+}
+
+/*----------------------------------------------------------------------------
+ * Add property fields
+ *----------------------------------------------------------------------------*/
+
+void
+cs_ctwr_add_property_fields(void)
+{
+  cs_field_t *f;
+  int dim1 = 1;
+  int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
+  bool has_previous = false;
+  const int klbl   = cs_field_key_id("label");
+  const int keyvis = cs_field_key_id("post_vis");
+  const int keylog = cs_field_key_id("log");
+  const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+
+ {
+   /* Humidity field */
+   f = cs_field_create("humidity",
+                       field_type,
+                       CS_MESH_LOCATION_CELLS,
+                       dim1,
+                       has_previous);
+   cs_field_set_key_int(f, keyvis, post_flag);
+   cs_field_set_key_int(f, keylog, 1);
+   cs_field_set_key_str(f, klbl, "Humidity");
+ }
+
+ {
+   /* Saturated humidity field */
+   f = cs_field_create("x_s",
+                       field_type,
+                       CS_MESH_LOCATION_CELLS,
+                       dim1,
+                       has_previous);
+   cs_field_set_key_int(f, keyvis, post_flag);
+   cs_field_set_key_int(f, keylog, 1);
+   cs_field_set_key_str(f, klbl, "Humidity sat");
+ }
+
+ {
+   /* Humid air enthalpy field */
+   f = cs_field_create("enthalpy",
+                       field_type,
+                       CS_MESH_LOCATION_CELLS,
+                       dim1,
+                       has_previous);
+   cs_field_set_key_int(f, keyvis, post_flag);
+   cs_field_set_key_int(f, keylog, 1);
+   cs_field_set_key_str(f, klbl, "Enthalpy humid air");
+ }
+
+ {
+   /* Liquid temperature in packing */
+   f = cs_field_create("temperature_liquid",
+                       field_type,
+                       CS_MESH_LOCATION_CELLS,
+                       dim1,
+                       has_previous);
+   cs_field_set_key_int(f, keyvis, post_flag);
+   cs_field_set_key_int(f, keylog, 1);
+   cs_field_set_key_str(f, klbl, "Temp liq");
+ }
+
+ {
+   /* Liquid vertical velocity */
+   f = cs_field_create("vertvel_l",
+                       field_type,
+                       CS_MESH_LOCATION_CELLS,
+                       dim1,
+                       has_previous);
+   cs_field_set_key_int(f, keyvis, post_flag);
+   cs_field_set_key_int(f, keylog, 1);
+   cs_field_set_key_str(f, klbl, "Vertical vel liq");
+ }
+
+  /* Continuous phase properties */
+
+  /* NB: 'c' stands for continuous and 'p' for particles */
+ {
+   /* Mass fraction of the continuous phase (X1) */
+   f = cs_field_create("x_c",
+                       field_type,
+                       CS_MESH_LOCATION_CELLS,
+                       dim1,
+                       has_previous);
+   cs_field_set_key_int(f, keyvis, post_flag);
+   cs_field_set_key_int(f, keylog, 1);
+   cs_field_set_key_str(f, klbl, "Gas mass fraction");
+ }
+
+ {
+   /* Mass fraction of the continuous phase (X1) BOUNDARY VALUE */
+   f = cs_field_create("b_x_c",
+                       field_type,
+                       CS_MESH_LOCATION_BOUNDARY_FACES,
+                       dim1,
+                       has_previous);
+   cs_field_set_key_int(f, keyvis, post_flag);
+   cs_field_set_key_int(f, keylog, 1);
+   cs_field_set_key_str(f, klbl, "Boundary gas mass fraction");
  }
 }
 
@@ -2208,21 +2321,23 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
  * \param[in]     rho0        Reference density of humid air
  * \param[in]     t0          Reference temperature of humid air
  * \param[in]     p0          Reference pressure
- * \param[in]     molmassrat  Dry air to water vapor molecular mass ratio
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_ctwr_phyvar_update(cs_real_t  rho0,
                       cs_real_t  t0,
-                      cs_real_t  p0,
-                      cs_real_t  molmassrat)
+                      cs_real_t  p0)
 {
   const cs_lnum_2_t *i_face_cells =
     (const cs_lnum_2_t *)(cs_glob_mesh->i_face_cells);
   const cs_lnum_t *b_face_cells
     = (const cs_lnum_t *)(cs_glob_mesh->b_face_cells);
   const cs_halo_t *halo = cs_glob_mesh->halo;
+
+  cs_air_fluid_props_t *air_prop = cs_glob_air_props;
+  /* Water / air molar mass ratio */
+  const cs_real_t molmassrat = air_prop->molmass_rat;
 
   cs_real_t *rho_h = (cs_real_t *)CS_F_(rho)->val;    /* humid air (bulk) density */
   cs_real_t *cp_h = (cs_real_t *)CS_F_(cp)->val;      /* humid air (bulk) Cp */
@@ -2405,7 +2520,6 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
  *
  * \param[in]     f_id          field id
  * \param[in]     p0            Reference pressure
- * \param[in]     molmassrat    dry air to water vapor molecular mass ratio
  * \param[in,out] exp_st        Explicit source term
  * \param[in,out] imp_st        Implicit source term
  */
@@ -2414,7 +2528,6 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 void
 cs_ctwr_source_term(int              f_id,
                     const cs_real_t  p0,
-                    const cs_real_t  molmassrat,
                     cs_real_t        exp_st[],
                     cs_real_t        imp_st[])
 {
@@ -2423,6 +2536,10 @@ cs_ctwr_source_term(int              f_id,
     = (const cs_lnum_2_t *)(m->i_face_cells);
 
   const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+
+  cs_air_fluid_props_t *air_prop = cs_glob_air_props;
+  /* Water / air molar mass ratio */
+  const cs_real_t molmassrat = air_prop->molmass_rat;
 
   cs_real_t  *rho_h = (cs_real_t *)CS_F_(rho)->val; /* humid air (bulk) density */
   cs_real_3_t *vel_h = (cs_real_3_t *)CS_F_(vel)->val;   /* humid air (bulk) */
@@ -2451,8 +2568,6 @@ cs_ctwr_source_term(int              f_id,
   /* Need to cook up the cell value of the liquid mass flux
      In the old code, it seems to be taken as the value of the
      face mass flux upstream of the cell */
-
-  cs_air_fluid_props_t *air_prop = cs_glob_air_props;
 
   cs_real_t v_air = 0.;
 
@@ -2909,14 +3024,12 @@ cs_ctwr_source_term(int              f_id,
  * normally be handled with a 'cs_equation_add_volume_mass_injection_' function.
  *
  * \param[in]   p0              Reference pressure
- * \param[in]   molmassrat      Dry air to water vapor molecular mass ratio
  * \param[out]  mass_source     Mass source term
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_ctwr_bulk_mass_source_term(const cs_real_t   p0,
-                              const cs_real_t   molmassrat,
                               cs_real_t         mass_source[])
 {
 
@@ -2935,7 +3048,6 @@ cs_ctwr_bulk_mass_source_term(const cs_real_t   p0,
 
   cs_ctwr_source_term(CS_F_(p)->id,
                       p0,
-                      molmassrat,
                       mass_source,
                       imp_st);
 

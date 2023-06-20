@@ -227,14 +227,6 @@ interface
     implicit none
   end subroutine cs_create_added_properties
 
-  ! Interface to C function for Cooling Towers equation parameters
-
-  subroutine cs_ctwr_set_equation_parameters() &
-    bind(C, name='cs_ctwr_set_equation_parameters')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_ctwr_set_equation_parameters
-
 end interface
 
 !===============================================================================
@@ -356,11 +348,6 @@ nscmax = nscamx
 ! Atmospheric flows
 if (ippmod(iatmos).ge.0) then
   call atini1
-endif
-
-! Cooling towers
-if (ippmod(iaeros).ge.0) then
-  call cs_ctwr_set_equation_parameters
 endif
 
 ! Compressible

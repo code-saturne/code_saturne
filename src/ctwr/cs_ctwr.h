@@ -113,14 +113,6 @@ void
 cs_ctwr_add_variable_fields(void);
 
 /*----------------------------------------------------------------------------
- * Set equation parameters
- *----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_set_equation_parameters(void);
-
-
-/*----------------------------------------------------------------------------
  * Add property fields
  *----------------------------------------------------------------------------*/
 
@@ -201,14 +193,12 @@ cs_ctwr_field_pointer_map(void);
  * normally be handled with a 'cs_equation_add_volume_mass_injection_' function.
  *
  * \param[in]   p0              Reference pressure
- * \param[in]   molmassrat      Dry air to water vapor molecular mass ratio
  * \param[out]  mass_source     Mass source term
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_ctwr_bulk_mass_source_term(const cs_real_t   p0,
-                              const cs_real_t   molmassrat,
                               cs_real_t         mass_source[]);
 
 /*----------------------------------------------------------------------------*/
@@ -314,15 +304,13 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[]);
  * \param[in]     rho0        Reference density of humid air
  * \param[in]     t0          Reference temperature of humid air
  * \param[in]     p0          Reference pressure
- * \param[in]     molmassrat  Dry air to water vapor molecular mass ratio
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_ctwr_phyvar_update(cs_real_t  rho0,
                       cs_real_t  t0,
-                      cs_real_t  p0,
-                      cs_real_t  molmassrat);
+                      cs_real_t  p0);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -331,7 +319,6 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
  *
  * \param[in]     f_id          field id
  * \param[in]     p0            Reference pressure
- * \param[in]     molmassrat    dry air to water vapor molecular mass ratio
  * \param[in,out] exp_st        Explicit source term
  * \param[in,out] imp_st        Implicit source term
  */
@@ -340,7 +327,6 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 void
 cs_ctwr_source_term(int              f_id,
                     const cs_real_t  p0,
-                    const cs_real_t  molmassrat,
                     cs_real_t        exp_st[],
                     cs_real_t        imp_st[]);
 

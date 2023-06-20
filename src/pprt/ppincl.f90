@@ -709,18 +709,6 @@ module ppincl
 
   !> \}
 
-
-  !> \defgroup cooling Cooling Towers Pointers
-
-  !> \addtogroup cooling
-  !> \{
-
-  !> Molar mass ratio = Ratio of the molar mass (H2O) over the molar mass (air)
-  double precision :: molmass_rat
-  parameter(molmass_rat = 0.622d0)
-
-  !> \}
-
   !> \defgroup enthalpy Enthalpic variables pointers
 
   !> \addtogroup enthalpy
