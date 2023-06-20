@@ -195,7 +195,6 @@ cs_user_boundary_conditions-pulverized_coal.f90 \
 cs_user_initialization-gas_ebu.f90 \
 cs_user_initialization-gas_libby_williams.f90 \
 cs_user_initialization-pulverized_coal.f90 \
-cs_user_metal_structures_source_terms-condensation.f90 \
 cs_user_modules-user-arrays.f90 \
 cs_user_parameters.f90 \
 cs_user_profile.cxx \

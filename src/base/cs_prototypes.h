@@ -519,15 +519,16 @@ void
 cs_solve_void_fraction(cs_real_t   dt[],
                        int         iterns);
 
-/*----------------------------------------------------------------------------
- * Return condensation model metal structures metal surface.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return condensing volume structures surface at each cell.
  *
- * return:
- *   metal structures surface
- *----------------------------------------------------------------------------*/
+ * \param[out]  surf  array of volume structures surface at each cell
+ */
+/*----------------------------------------------------------------------------*/
 
-double
-cs_tagms_s_metal(void);;
+void
+cs_wall_condensation_volume_exchange_surf_at_cells(cs_real_t    *surf);
 
 /*----------------------------------------------------------------------------*/
 /*!

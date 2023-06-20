@@ -212,22 +212,6 @@ module pointe
   !> reference point for wall condensation, used in forced and mixed convection regimes
   double precision, allocatable, dimension(:,:) :: xref_cond
 
-  !> zone type where a condensation source terms is imposed to model
-  !> the metal structures condensation on a volumic zone.
-  integer, allocatable, dimension(:) :: izmast
-
-  !> type of condensation source terms for each variable
-  !> - 0 for a variable at ambient value,
-  !> - 1 for a variable at imposed value.
-  !> See the user subroutine \ref  cs_user_metal_structures_source_terms.
-  integer, allocatable, dimension(:,:) :: itypst
-
-  !> value of the thermal flux for the condensation model
-  !> associated to the metal structures modelling.
-  !> See the user subroutine \ref cs_user_metal_structures_source_terms.
-  double precision, allocatable, dimension(:) :: flxmst
-
-
   !> \}
 
   !=============================================================================
@@ -391,29 +375,6 @@ contains
     deallocate(smacel)
 
   end subroutine finalize_tsma
-
-  !=============================================================================
-
-  subroutine init_vcond ( nvar , ncelet)
-
-    implicit none
-
-    integer :: nvar, ncelet
-
-    allocate(izmast(ncelet))
-    allocate(itypst(ncelet, nvar))
-    allocate(flxmst(ncelet))
-
-  end subroutine init_vcond
-
-  !=============================================================================
-
-  subroutine finalize_vcond
-    deallocate(itypst)
-    deallocate(izmast)
-    deallocate(flxmst)
-
-  end subroutine finalize_vcond
 
   !=============================================================================
 

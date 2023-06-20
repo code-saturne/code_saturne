@@ -586,7 +586,7 @@ endif
 
 htot_cond => null()
 
-if (nftcdt.gt.0) then
+if (icondb.eq.0 .or. icondv.eq.0) then
 
   ! Condensation source terms arrays initialized
   do ii = 1, nfbpcd
@@ -597,48 +597,20 @@ if (nftcdt.gt.0) then
     enddo
   enddo
 
+  !-- Condensation source terms arrays initialized
+  do ii = 1, ncmast
+    do ivar = 1, nvar
+      itypst(ii, ivar) = 0
+      svcond(ii, ivar) = 0.d0
+    enddo
+    flxmst(ii) = 0.d0
+  enddo
+
   call cs_user_wall_condensation(nvar, nscal, 3)
 
   ! Use empiric correlations to compute heat and mass transfer due to wall condensation
   allocate(htot_cond(nfbpcd))
   call cs_wall_condensation_compute(htot_cond)
-
-endif
-
-!----------------------------------------------------------
-!-- Fill the condensation arrays (svcond) for the sink term
-!-- of condensation and source term type (itypst) of each
-!-- variable solved associated to the metal structures
-!-- condensation modelling.
-!----------------------------------------------------------
-
-if (icondv.eq.0) then
-
-  !-- Condensation source terms arrays initialized
-  do iel = 1, ncelet
-    ltmast(iel) = 0
-    do ivar = 1, nvar
-      itypst(iel, ivar) = 0
-      svcond(iel, ivar) = 0.d0
-    enddo
-    flxmst(iel) = 0.d0
-  enddo
-
-  call cs_user_metal_structures_source_terms &
-( nvar   , nscal  ,                                              &
-  ncmast , ltmast,                                               &
-  itypst , izmast ,                                              &
-  svcond , tmet)
-
-  ! Condensation model to compute the sink source term
-  ! (svcond) and the  heat transfer flux (flxmst) imposed
-  ! in the cells associated to the metal  structures
-  ! volume where this phenomenon occurs.
-
-  call metal_structures_copain_model &
-( ncmast , ltmast ,                                          &
-  tmet   ,                                                   &
-  svcond(:, ipr)  , flxmst )
 
 endif
 
@@ -880,10 +852,8 @@ do while (iterns.le.nterup)
 
      ! 0-D thermal model coupling with condensation
      ! on a volume region associated to metal structures
-    if (icondv.eq.0.and.itagms.eq.1) then
-      call cs_metal_structures_tag &
-     ( ncmast , ltmast ,                          &
-       dt     )
+    if (icondv.eq.0) then
+      call cs_f_wall_condensation_0d_thermal_solve
     endif
 
   endif

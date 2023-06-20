@@ -94,7 +94,7 @@ use cavitation
 use vof
 use cs_c_bindings
 use atincl, only: iatmst, iautom, imeteo
-use cs_nz_condensation, only: nfbpcd, spcond, ifbpcd, ncmast, ltmast, svcond
+use cs_nz_condensation, only: nfbpcd, spcond, ifbpcd, ncmast, svcond, ltmast
 
 !===============================================================================
 
@@ -242,11 +242,11 @@ interface
     integer, value :: nfbpcd, ncmast
 
     integer          ifbpcd(nfbpcd)
-    integer          ltmast(ncelet)
+    integer          ltmast(ncmast)
     integer          isostd(nfabor+1)
 
     double precision spcond(nfbpcd,*)
-    double precision svcond(ncelet,*)
+    double precision svcond(ncmast,*)
     double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
     double precision viscf(nfac), viscb(ndimfb)
     double precision coefav(3,ndimfb)

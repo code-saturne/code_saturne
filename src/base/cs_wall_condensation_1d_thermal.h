@@ -58,6 +58,21 @@ typedef struct {
 
 } cs_wall_cond_1d_thermal_t;
 
+typedef struct {
+  cs_lnum_t    nvolumes;
+  cs_real_t   *volume_thickness;
+  cs_real_2_t *volume_t;
+
+  cs_real_t   *volume_rho;
+  cs_real_t   *volume_cp;
+  cs_real_t   *volume_lambda;
+  cs_real_t   *volume_mass;
+  cs_real_t   *volume_surf;
+  cs_real_t   *volume_t0;
+  cs_real_t   *volume_measure;
+
+} cs_wall_cond_0d_thermal_t;
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -65,6 +80,7 @@ typedef struct {
 /* Pointer to wall condensation descriptor structure */
 
 extern const cs_wall_cond_1d_thermal_t *cs_glob_wall_cond_1d_thermal;
+extern const cs_wall_cond_0d_thermal_t *cs_glob_wall_cond_0d_thermal;
 
 /*=============================================================================
  * Public function prototypes
@@ -100,6 +116,45 @@ void cs_wall_condensation_1d_thermal_free(void);
 /*----------------------------------------------------------------------------*/
 
 cs_wall_cond_1d_thermal_t *cs_get_glob_wall_cond_1d_thermal(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create the context for 0D wall condensation thermal models.
+ *
+ * \param[in] nvolumes number of volumes
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_wall_condensation_0d_thermal_create(cs_lnum_t nvolumes,
+                                            cs_lnum_t ncmast);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free structures related to 0D wall condensation models.
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_wall_condensation_0d_thermal_free(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide writeable access to cs_wall_cond_0d_thermal_t structure.
+ *
+ * \return pointer to global cs_glob_wall_cond_0d_thermal structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_wall_cond_0d_thermal_t *cs_get_glob_wall_cond_0d_thermal(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Use 0-D thermal model to solve the temperature and themal flux
+ *        at the volume structure walls
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_wall_condensation_0d_thermal_solve(void);
 
 /*----------------------------------------------------------------------------*/
 

@@ -76,7 +76,6 @@ use cpincl, only: cp_models_bc_map
 
 use, intrinsic :: iso_c_binding
 
-use cs_tagms
 use cs_nz_condensation
 use cs_nz_tagmr
 
@@ -458,12 +457,8 @@ if (nctsmt.gt.0) then
   call init_tsma (nvar)
 endif
 
-if (nftcdt.gt.0) then
+if (icondb.eq.0 .or. icondv.eq.0) then
   call init_nz_pcond(nvar)
-endif
-
-if (icondv.eq.0) then
-  call init_vcond ( nvar, ncelet )
 endif
 
 if (nfpt1t.gt.0) then
@@ -582,7 +577,7 @@ endif
 ! au cas ou l'utilisateur aurait mis en oeuvre des operations globales.
 !==============================================================================
 
-if (nftcdt.gt.0) then
+if (icondb.eq.0 .or. icondv.eq.0) then
 
   iappel = 2
 
@@ -592,15 +587,7 @@ if (nftcdt.gt.0) then
 
   call cs_wall_condensation_set_model(icondb_model)
 
-  call cs_user_wall_condensation(nvar, nscal, iappel)
-
   call init_nz_mesh_tagmr
-
-  ! the Condensation model coupled with a 0-D thermal model
-  ! to take into account the metal mass structures effects.
-  if (itagms.eq.1) then
-    call init_tagms
-  endif
 
 endif
 
@@ -1203,19 +1190,10 @@ if (nctsmt.gt.0) then
   call finalize_tsma
 endif
 
-if(nftcdt.gt.0) then
+if(icondb.gt.0 .or.icondv.eq.0) then
   call finalize_nz_pcond
-  if (nztag1d.eq.1) then
-    call finalize_nz_mesh_tagmr
-    call finalize_nz_tagmr
-  endif
-endif
-
-if (icondv.eq.0) then
-  call finalize_vcond
-  if (itagms.eq.1) then
-    call finalize_tagms
-  endif
+  call finalize_nz_mesh_tagmr
+  call finalize_nz_tagmr
 endif
 
 if (nfpt1d.gt.0) then

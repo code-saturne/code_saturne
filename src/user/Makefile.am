@@ -103,7 +103,6 @@ cs_user_lagr_boundary_conditions.c \
 cs_user_lagr_volume_conditions.c \
 cs_user_les_inflow.c \
 cs_user_mesh.c \
-cs_user_metal_structures_source_terms.f90 \
 cs_user_paramedmem_coupling.c \
 cs_user_parameters.c \
 cs_user_performance_tuning.c \

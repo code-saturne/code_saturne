@@ -250,8 +250,8 @@ use ppincl, only: icondv
 use numvar, only: ivarfl, ipr, icrom, kbmasf
 use paramx, only: ientre, i_convective_inlet, isolib, ifrent
 use cstphy, only: pther, pthermax, sleak, kleak, roref, voltot, ro0, p0
-use cs_tagms, only:s_metal
-use cs_nz_condensation, only: ifbpcd, ltmast
+use cs_nz_tagmr, only:s_metal, v_metal
+use cs_nz_condensation, only: ifbpcd, ltmast, izmast
 use cs_c_bindings
 
 use, intrinsic :: iso_c_binding
@@ -262,7 +262,7 @@ double precision, intent(in) :: spcond(nfbpcd,nvar), svcond(ncelet,nvar)
 double precision, intent(out) :: new_pther
 
 integer iflmab
-integer ifac, iel, ieltsm, ipcd, icmet
+integer ifac, iel, ieltsm, ipcd, icmet, vol_id
 logical lromo
 double precision rho
 double precision dp
@@ -333,13 +333,15 @@ endif
 ! Sink source term associated to
 ! the metal structures condensation modelling
 if (icondv.eq.0) then
-  allocate(surfbm(ncelet))
+  allocate(surfbm(ncmast))
   surfbm(:) = 0.d0
 
   do icmet = 1, ncmast
-    iel= ltmast(icmet)
-    surfbm(iel) = s_metal*volume(iel)/voltot
-    debtot = debtot + surfbm(iel)*svcond(iel,ipr)
+    iel= ltmast(icmet) + 1 ! C numbering
+    vol_id = izmast(icmet) + 1 ! C numbering
+
+    surfbm(icmet) = s_metal(vol_id)*volume(iel)/v_metal(vol_id)
+    debtot = debtot + surfbm(icmet)*svcond(icmet,ipr)
   enddo
 
   deallocate(surfbm)

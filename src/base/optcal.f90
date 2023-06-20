@@ -751,15 +751,6 @@ module optcal
   !>    - true
   logical(c_bool), pointer, save :: fluid_solid
 
-  !> choice the way to compute the wall temperature at the solid/fluid interface
-  !> coupled with condensation to the metal mass structures wall
-  !>    - 1: the wall temperature is computed with a 0-D thermal model
-  !>         with explicit numerical scheme
-  !>    - 0: the wall temperature is imposed as constant by the user (default)
-  !>         and past to the copain correlation to evaluate the exchange
-  !>         coefficient
-  integer, save :: itagms = 0
-
   !> \ref n_buoyant_scal is the number of buoyant scalar
   !> It will be zero if there is no buoyant scalar
   integer(c_int), pointer, save :: n_buoyant_scal

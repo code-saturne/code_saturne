@@ -1492,16 +1492,19 @@ _pressure_correction_fv(int        iterns,
   if (ncmast > 0) {
     const int var_id_key = cs_field_key_id("variable_id");
     const int ipr = cs_field_get_key_int(f_p, var_id_key);
-    const cs_real_t *restrict cell_vol = fvq->cell_vol;
 
     cs_real_t *_svcond = svcond + (ipr-1)*ncmast;
-    cs_real_t s_metal = cs_tagms_s_metal();
-    cs_real_t tot_vol = fvq->tot_vol;
+    cs_real_t *surfbm = NULL;
+    BFT_MALLOC(surfbm, ncmast, cs_real_t);
+
+    cs_wall_condensation_volume_exchange_surf_at_cells(surfbm);
 
     for (cs_lnum_t c_idx = 0; c_idx < ncmast; c_idx++) {
-      cs_lnum_t c_id = ltmast[c_idx] - 1;
-      cpro_divu[c_id] -= (s_metal*cell_vol[c_id]/tot_vol) * _svcond[c_id];
+      cs_lnum_t c_id = ltmast[c_idx];
+      cpro_divu[c_id] -= surfbm[c_idx]* _svcond[c_idx];
     }
+
+    BFT_FREE(surfbm);
   }
 
   /* Source term associated to the mass aggregation */

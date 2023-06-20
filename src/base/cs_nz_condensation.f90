@@ -54,11 +54,6 @@ module cs_nz_condensation
   !> See \c ifbpcd and the user subroutine \ref cs_user_wall_condensation
   integer(c_int), pointer, save :: nfbpcd
 
-  !> \anchor ncmast
-  !> number of the cells in which a condensation source terms is imposed.
-  !> See \c lstmast list and the subroutine \ref cs_user_wall_condensation
-  integer(c_int), pointer, save :: ncmast
-
   !> \anchor itypcd
   !> type of condensation source terms for each variable
   !> - 0 for an variable at ambient value,
@@ -70,11 +65,6 @@ module cs_nz_condensation
   !> value of the thermal flux for the condensation model.
   !> See the user subroutine \ref cs_user_wall_condensation
   double precision, dimension(:), pointer, save :: thermal_condensation_flux
-
-  !> \anchor ltmast
-  !> list on the ncmast cells in which a condensation source terms is imposed.
-  !> See  the user subroutine \ref cs_user_wall_condensation.
-  integer, dimension(:), pointer, save :: ltmast
 
   !> \anchor flthr
   !> external heat flux used as flux conditions
@@ -100,13 +90,6 @@ module cs_nz_condensation
   !> the condensation model used.
   !> See the user subroutine \ref cs_user_wall_condensation
   double precision, dimension(:), pointer, save:: hpcond
-
-  !> \anchor svcond
-  !> value of the condensation source terms for pressure
-  !> associated to the metal structures modelling.
-  !> For the other variables, eventual imposed specific value.
-  !> See the user subroutine \ref cs_user_wall_condensation.
-  double precision, dimension(:,:), pointer, save:: svcond
 
   !> list on the nfbpcd faces in which a condensation source terms is imposed.
   !> See \c ifbpcd and the user subroutine \ref cs_user_wall_condensation
@@ -177,6 +160,54 @@ module cs_nz_condensation
   double precision, dimension(:, :), pointer, save :: zxrefcond
   double precision, dimension(:, :), pointer, save :: zprojcond
 
+
+  !> \anchor ncmast
+  !> number of the cells in which a condensation source terms is imposed.
+  !> See \c lstmast list and the subroutine \ref cs_user_wall_condensation
+  integer(c_int), pointer, save :: ncmast
+
+  !> \anchor nvolumes
+  !> number of the volume strutures with a specific condensation source terms
+  !> depending on the wall temperature and material properties.
+  !> by default (nvolumes = 1) if the user does not specified different volumes
+  !> in the user subroutine \ref cs_user_wall_condensation.f90 .
+  integer(c_int), pointer, save :: nvolumes
+
+  !> \anchor ltmast
+  !> list on the ncmast cells in which a condensation source terms is imposed.
+  !> See  the user subroutine \ref cs_user_wall_condensation.
+  integer, dimension(:), pointer, save :: ltmast
+
+  !> zone type where a condensation source terms is imposed to model
+  !> the metal structures condensation on a volumic zone.
+  integer, dimension(:), pointer, save :: izmast
+
+  !> type of condensation source terms for each variable
+  !> - 0 for a variable at ambient value,
+  !> - 1 for a variable at imposed value.
+  !> See the user subroutine \ref  cs_user_metal_structures_source_terms.
+  integer, dimension(:,:), pointer, save :: itypst
+
+  !> value of the condensation source terms for pressure
+  !> associated to the metal structures modelling.
+  !> For the other variables, eventual imposed specific value.
+  !> See the user subroutine \ref cs_user_metal_structures_source_terms.
+  double precision, dimension(:, :), pointer, save :: svcond
+
+  !> value of the thermal flux for the condensation model
+  !> associated to the metal structures modelling.
+  !> See the user subroutine \ref cs_user_metal_structures_source_terms.
+  double precision, dimension(:), pointer, save :: flxmst
+
+  !> choice the way to compute the wall temperature at the solid/fluid interface
+  !> coupled with condensation to the metal mass structures wall
+  !>    - 1: the wall temperature is computed with a 0-D thermal model
+  !>         with explicit numerical scheme
+  !>    - 0: the wall temperature is imposed as constant by the user (default)
+  !>         and past to the copain correlation to evaluate the exchange
+  !>         coefficient
+  integer, dimension(:), pointer, save :: itagms
+
   !> \}
   !> \}
 
@@ -189,11 +220,12 @@ interface
   !> \param[in]   nvar      Number of variables (?)
   !---------------------------------------------------------------------------
 
-  subroutine cs_f_wall_condensation_create(nfbpcd, nzones, nvar, ncmast) &
+  subroutine cs_f_wall_condensation_create(nfbpcd, nzones, ncmast,  &
+                                           nvolumes, nvar) &
     bind(C, name='cs_wall_condensation_create')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: nfbpcd, nzones, nvar, ncmast
+    integer(c_int), value :: nfbpcd, nzones, ncmast, nvolumes,  nvar
   end subroutine cs_f_wall_condensation_create
 
   !---------------------------------------------------------------------------
@@ -202,11 +234,12 @@ interface
   !> \param[out]   spcond   Pointer to spcond
   !---------------------------------------------------------------------------
 
-  subroutine cs_f_wall_condensation_get_size_pointers(nfbpcd, nzones, ncmast) &
+  subroutine cs_f_wall_condensation_get_size_pointers(nfbpcd, nzones, &
+                                                      ncmast, nvolumes) &
     bind(C, name='cs_f_wall_condensation_get_size_pointers')
     use, intrinsic :: iso_c_binding
     implicit none
-    type(c_ptr), intent(out) :: nfbpcd, nzones, ncmast
+    type(c_ptr), intent(out) :: nfbpcd, nzones, ncmast, nvolumes
   end subroutine cs_f_wall_condensation_get_size_pointers
 
   !---------------------------------------------------------------------------
@@ -215,18 +248,21 @@ interface
   !> \param[out]   spcond   Pointer to spcond
   !---------------------------------------------------------------------------
 
-  subroutine cs_f_wall_condensation_get_pointers(ifbpcd, itypcd, izzftcd, ltmast, &
-                                                 spcond, svcond, hpcond, twall_cond, &
+  subroutine cs_f_wall_condensation_get_pointers(ifbpcd, itypcd, izzftcd, &
+                                                 spcond, hpcond, twall_cond, &
                                                  thermflux, flthr, dflthr, &
                                                  izcophc, izcophg, iztag1d, &
-                                                 ztpar, zxrefcond, zprojcond) &
+                                                 ztpar, zxrefcond, zprojcond, &
+                                                 ltmast, itypst, izmast, &
+                                                 svcond, flxmst, itagms) &
     bind(C, name='cs_f_wall_condensation_get_pointers')
     use, intrinsic :: iso_c_binding
     implicit none
-    type(c_ptr), intent(out) :: ifbpcd, itypcd, izzftcd, ltmast
-    type(c_ptr), intent(out) :: spcond, svcond, hpcond, twall_cond
+    type(c_ptr), intent(out) :: ifbpcd, itypcd, izzftcd
+    type(c_ptr), intent(out) :: spcond, hpcond, twall_cond
     type(c_ptr), intent(out) :: thermflux, flthr, dflthr, izcophc
     type(c_ptr), intent(out) :: izcophg, iztag1d, ztpar, zxrefcond, zprojcond
+    type(c_ptr), intent(out) :: ltmast, itypst, izmast, svcond, flxmst, itagms
   end subroutine cs_f_wall_condensation_get_pointers
 
   !---------------------------------------------------------------------------
@@ -246,12 +282,15 @@ contains
   subroutine init_sizes_pcond()
     use, intrinsic :: iso_c_binding
     implicit none
-    type(c_ptr) :: c_nfbpcd, c_nzones, c_ncmast
+    type(c_ptr) :: c_nfbpcd, c_nzones, c_ncmast, c_nvolumes
 
-    call cs_f_wall_condensation_get_size_pointers(c_nfbpcd, c_nzones, c_ncmast)
+    call cs_f_wall_condensation_get_size_pointers(c_nfbpcd, c_nzones, &
+                                                  c_ncmast, c_nvolumes)
     call c_f_pointer(c_nfbpcd, nfbpcd)
     call c_f_pointer(c_nzones, nzones)
     call c_f_pointer(c_ncmast, ncmast)
+    call c_f_pointer(c_nvolumes, nvolumes)
+
   end subroutine init_sizes_pcond
 
   !=============================================================================
@@ -259,7 +298,6 @@ contains
   subroutine init_nz_pcond(nvar)
 
     use, intrinsic :: iso_c_binding
-    use mesh, only: ncelet
     implicit none
 
     integer, intent(in) :: nvar
@@ -269,21 +307,24 @@ contains
     type(c_ptr) :: c_spcond, c_hpcond, c_ifbpcd, c_walltemp
     type(c_ptr) :: c_izzftcd, c_itypcd, c_thermflux, c_flthr, c_dflthr
     type(c_ptr) :: c_izcophc, c_izcophg, c_iztag1d, c_ztpar
-    type(c_ptr) :: c_zxrefcond, c_zprojcond, c_ltmast, c_svcond
+    type(c_ptr) :: c_zxrefcond, c_zprojcond
+    type(c_ptr) :: c_ltmast, c_itypst, c_izmast, c_svcond, c_flxmst, c_itagms
 
-    if (nzones<1) nzones = 1
+    if (nzones < 1) nzones = 1
+    if (nvolumes < 1) nvolumes = 1
 
-    call cs_f_wall_condensation_create(nfbpcd, nzones, nvar, ncmast)
-    call cs_f_wall_condensation_get_pointers(c_ifbpcd, c_itypcd, c_izzftcd, c_ltmast, &
-                                             c_spcond, c_svcond, c_hpcond, c_walltemp, &
+    call cs_f_wall_condensation_create(nfbpcd, nzones, ncmast, nvolumes, nvar)
+    call cs_f_wall_condensation_get_pointers(c_ifbpcd, c_itypcd, c_izzftcd,  &
+                                             c_spcond, c_hpcond, c_walltemp, &
                                              c_thermflux, c_flthr, c_dflthr, &
                                              c_izcophc, c_izcophg, c_iztag1d, &
-                                             c_ztpar, c_zxrefcond, c_zprojcond)
+                                             c_ztpar, c_zxrefcond, c_zprojcond, &
+                                             c_ltmast, c_itypst, c_izmast, &
+                                             c_svcond, c_flxmst, c_itagms)
     call c_f_pointer(c_ifbpcd, ifbpcd, [nfbpcd])
     call c_f_pointer(c_itypcd, itypcd, [nfbpcd, nvar])
     call c_f_pointer(c_izzftcd, izzftcd, [nfbpcd])
     call c_f_pointer(c_spcond, spcond, [nfbpcd, nvar])
-    call c_f_pointer(c_svcond, svcond, [ncelet, nvar])
     call c_f_pointer(c_hpcond, hpcond, [nfbpcd])
     call c_f_pointer(c_walltemp, twall_cond, [nfbpcd])
     call c_f_pointer(c_thermflux, thermal_condensation_flux, [nfbpcd])
@@ -295,7 +336,12 @@ contains
     call c_f_pointer(c_ztpar, ztpar, [nzones])
     call c_f_pointer(c_zxrefcond, zxrefcond, [3, nzones])
     call c_f_pointer(c_zprojcond, zprojcond, [3, nzones])
-    call c_f_pointer(c_ltmast,ltmast, [ncmast])
+    call c_f_pointer(c_ltmast, ltmast, [ncmast])
+    call c_f_pointer(c_itypst, itypst, [ncmast, nvar])
+    call c_f_pointer(c_izmast, izmast, [ncmast])
+    call c_f_pointer(c_svcond, svcond, [ncmast, nvar])
+    call c_f_pointer(c_flxmst, flxmst, [ncmast])
+    call c_f_pointer(c_itagms, itagms, [nvolumes])
 
   end subroutine init_nz_pcond
 

@@ -68,15 +68,14 @@ typedef struct {
   cs_wall_cond_forced_conv_model_t  forced_conv_model;
   cs_wall_cond_mixed_conv_model_t   mixed_conv_model;
 
-  // Mesh-related information
+  /* Surface wall condensation */
+
+  // Mesh related quantities
   cs_lnum_t  nfbpcd;
-  cs_lnum_t  ncmast;
   cs_lnum_t *ifbpcd;
   cs_lnum_t *itypcd;
   cs_lnum_t *izzftcd;
-  cs_lnum_t *ltmast;
   cs_real_t *spcond;
-  cs_real_t *svcond;
   cs_real_t *hpcond;
   cs_real_t *twall_cond;
   cs_real_t *thermal_condensation_flux;
@@ -94,6 +93,17 @@ typedef struct {
   cs_real_t *ztpar;
   cs_real_t *zxrefcond;
   cs_real_t *zprojcond;
+
+  /* Volume wall condensation */
+
+  cs_lnum_t  ncmast;
+  cs_lnum_t  nvolumes;
+  cs_lnum_t *ltmast;
+  cs_lnum_t *itypst;
+  cs_lnum_t *izmast;
+  cs_real_t *svcond;
+  cs_real_t *flxmst;
+  cs_lnum_t *itagms;
 
 } cs_wall_cond_t;
 
@@ -148,17 +158,20 @@ cs_wall_condensation_set_onoff_state(int  icondb,
 /*!
  * \brief  Create the context for wall condensation models.
  *
- * \param[in]  nfbpcd  number of faces with wall condensation
- * \param[in]  nzones  number of zones with wall condensation
- * \param[in]  nvar    number of variables (?)
+ * \param[in]  nfbpcd   number of faces with wall condensation
+ * \param[in]  nzones   number of zones with wall condensation
+ * \param[in]  ncmast   number of cells with wall condensation
+ * \param[in]  nvolumes number of volumes with condensation
+ * \param[in]  nvar     number of variables (?)
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_wall_condensation_create(cs_lnum_t  nfbpcd,
                             cs_lnum_t  nzones,
-                            cs_lnum_t  nvar,
-                            cs_lnum_t  ncmast);
+                            cs_lnum_t  ncmast,
+                            cs_lnum_t  nvolumes,
+                            cs_lnum_t  nvar);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -193,17 +206,7 @@ cs_wall_condensation_log(void);
  *        condensation computation.
  *
  * \param[in]      f         pointer to field structure
- * \param[in]      ncmast    number of cells with metal mass condensation
- * \param[in]      ltmast    list of cells with condensation source terms
- *                           (1 to n numbering)
- * \param[in]      itypst    type of metal mass condensation source terms
- * \param[in]      spcondp   value of the variable associated
- *                           to surface condensation source term
- * \param[in]      gam_s     surface condensation flow rate value
- * \param[in]      svcondp   value of the variable associated
- *                           to metal mass condensation source term
- * \param[in]      gam_ms    metal mass condensation flow rate value
- * \param[in]      fluxv_ms  metal mass condensation heat transfer flux
+ * \param[in]      xcpp      array of specific heat (Cp)
  * \param[in]      pvara     variable value at time step beginning
  * \param[in,out]  st_exp    explicit source term part linear in the variable
  * \param[in,out]  st_imp    associated value with \c tsexp
@@ -211,16 +214,10 @@ cs_wall_condensation_log(void);
  */
 /*----------------------------------------------------------------------------*/
 
+
 void
 cs_wall_condensation_source_terms(const cs_field_t  *f,
-                                  cs_lnum_t          ncmast,
-                                  const cs_lnum_t    ltmast[],
-                                  const cs_lnum_t    itypst[],
-                                  const cs_real_t    spcondp[],
-                                  const cs_real_t    gam_s[],
-                                  const cs_real_t    svcondp[],
-                                  const cs_real_t    gam_ms[],
-                                  const cs_real_t    fluxv_ms[],
+                                  const cs_real_t    xcpp[],
                                   const cs_real_t    pvara[],
                                   cs_real_t          st_exp[],
                                   cs_real_t          st_imp[]);

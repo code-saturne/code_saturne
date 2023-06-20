@@ -327,7 +327,6 @@ cs_log_setup.c \
 cs_mobile_structures.c \
 cs_measures_util.c \
 cs_mesh_tagmr.f90 \
-cs_metal_structures_tag.f90 \
 cs_notebook.c \
 cs_numbering.c \
 cs_opts.c \
@@ -407,7 +406,6 @@ lecamo.f90 \
 lecamp.f90 \
 lecamx.f90 \
 majgeo.f90 \
-metal_structures_copain_model.f90 \
 modini.f90 \
 mmtycl.f90 \
 navstv.f90 \

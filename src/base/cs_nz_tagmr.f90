@@ -123,6 +123,54 @@ module cs_nz_tagmr
 
   !> \}
 
+  !----------------------------------------------------------------------------
+  ! Physical parameters to solve the 0-D thermal model of the metal mass
+  !----------------------------------------------------------------------------
+
+  !> \defgroup cs_tagms_physical_properties Physical properties of 0-D thermal model
+
+  !> \addtogroup cs_tagms_physcial_properties
+  !> \{
+
+  !> \anchor  xem
+  !> the wall thickness of the metal mass structures used by the 0-D thermal model
+  double precision, dimension(:), pointer, save :: xem
+
+  !> \anchor xro
+  !> the density (kg.m-3) of the metal mass structures
+  double precision, dimension(:), pointer, save :: xro_m
+
+  !> \anchor xcond
+  !> the conductivity coefficient (W.m-1.C-1) of the metal mass structures
+  double precision, dimension(:), pointer, save :: xcond_m
+
+  !> \anchor xcp
+  !> the specific heat coefficient (J.kg-1.C-1) of the metal mass structures
+  double precision, dimension(:), pointer, save :: xcp_m
+
+  !> \anchor m_metal
+  !> the metal mass (kg) of the metal mass structures
+  double precision, dimension(:), pointer, save :: m_metal
+
+  !> \anchor s_metal
+  !> the exchange surface (m2) of the metal mass structures
+  double precision, dimension(:), pointer, save :: s_metal
+
+  !> \anchor v_metal
+  !> the volume mesaure (m3) of the metal mass structures
+  double precision, dimension(:), pointer, save :: v_metal
+
+  !> \anchor tmet0
+  !> the initial temperature of the metal mass structures
+  double precision, dimension(:), pointer, save :: tmet0
+
+  !> \anchor t_metal
+  !> the wall temperature computed with the 0-D thermal model
+  !> associated to the metal mass structure material
+  double precision, dimension(:,:), pointer, save :: t_metal
+
+  !> \}
+
   !> \}
 
 interface
@@ -152,6 +200,13 @@ interface
     integer(c_int), value, intent(in) :: nzones
   end subroutine cs_f_wall_condensation_1d_thermal_create
 
+  subroutine cs_f_wall_condensation_0d_thermal_create(nvolumes, ncmast) &
+    bind(C, name='cs_wall_condensation_0d_thermal_create')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value, intent(in) :: nvolumes, ncmast
+  end subroutine cs_f_wall_condensation_0d_thermal_create
+
   subroutine cs_f_wall_condensation_1d_thermal_mesh_create(znmurx, nfbpcd, nzones) &
     bind(C, name='cs_wall_condensation_1d_thermal_mesh_create')
     use, intrinsic :: iso_c_binding
@@ -165,6 +220,30 @@ interface
     implicit none
   end subroutine cs_f_wall_condensation_1d_thermal_free
 
+  subroutine cs_f_wall_condensation_0d_thermal_get_pointers(xem, t_metal,     &
+                                                            xro_m, xcp_m,     &
+                                                            xcond_m, m_metal, &
+                                                            s_metal, v_metal, &
+                                                            tmet0) &
+    bind(C, name='cs_f_wall_condensation_0d_thermal_get_pointers')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr), intent(out) :: xem, t_metal, xro_m, xcp_m, xcond_m
+    type(c_ptr), intent(out) :: m_metal, s_metal, v_metal, tmet0
+  end subroutine cs_f_wall_condensation_0d_thermal_get_pointers
+
+  subroutine cs_f_wall_condensation_0d_thermal_free() &
+    bind(C, name='cs_wall_condensation_0d_thermal_free')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_f_wall_condensation_0d_thermal_free
+
+  subroutine cs_f_wall_condensation_0d_thermal_solve() &
+    bind(C, name='cs_wall_condensation_0d_thermal_solve')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_f_wall_condensation_0d_thermal_solve
+
 end interface
 
 
@@ -175,14 +254,18 @@ contains
   subroutine init_nz_tagmr
 
     use, intrinsic :: iso_c_binding
-    use cs_nz_condensation, only:nzones
+    use cs_nz_condensation
 
     implicit none
     type(c_ptr) :: c_znmur, c_ztheta, c_zdxmin
     type(c_ptr) :: c_zepais, c_zrob, c_zcondb
     type(c_ptr) :: c_zcpb, c_zhext, c_ztext, c_ztpar0
+    type(c_ptr) :: c_xem, c_t_metal, c_xro_m, c_xcp_m, c_xcond_m
+    type(c_ptr) :: c_m_metal, c_s_metal, c_v_metal, c_tmet0
 
     if (nzones.lt.1) nzones = 1
+    if (nvolumes.lt.1) nvolumes = 1
+
     call cs_f_wall_condensation_1d_thermal_create(nzones)
     call cs_f_wall_condensation_1d_thermal_get_pointers(c_znmur, c_ztheta, c_zdxmin,&
                                                         c_zepais, c_zrob, c_zcondb,&
@@ -200,6 +283,23 @@ contains
     call c_f_pointer(c_ztext , ztext , [nzones])
     call c_f_pointer(c_ztpar0, ztpar0, [nzones])
 
+    call cs_f_wall_condensation_0d_thermal_create(nvolumes, ncmast)
+
+    call cs_f_wall_condensation_0d_thermal_get_pointers(c_xem, c_t_metal, c_xro_m, &
+                                                        c_xcp_m, c_xcond_m,  &
+                                                        c_m_metal, c_s_metal, &
+                                                        c_v_metal, c_tmet0)
+
+    call c_f_pointer(c_xem, xem, [nvolumes])
+    call c_f_pointer(c_t_metal, t_metal, [2,nvolumes])
+    call c_f_pointer(c_xro_m, xro_m, [nvolumes])
+    call c_f_pointer(c_xcp_m, xcp_m, [nvolumes])
+    call c_f_pointer(c_xcond_m, xcond_m, [nvolumes])
+    call c_f_pointer(c_m_metal, m_metal, [nvolumes])
+    call c_f_pointer(c_s_metal, s_metal, [nvolumes])
+    call c_f_pointer(c_v_metal, v_metal, [nvolumes])
+    call c_f_pointer(c_tmet0, tmet0, [nvolumes])
+
   end subroutine init_nz_tagmr
 
   !=============================================================================
@@ -207,6 +307,7 @@ contains
   subroutine finalize_nz_tagmr
 
     call cs_f_wall_condensation_1d_thermal_free()
+    call cs_f_wall_condensation_0d_thermal_free()
 
   end subroutine finalize_nz_tagmr
 
