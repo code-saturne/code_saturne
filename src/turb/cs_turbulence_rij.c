@@ -3127,14 +3127,7 @@ cs_turbulence_rij(cs_lnum_t    ncesmp,
    /* Clipping
     * -------- */
 
-   int iclip = 2;
-   if (turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
-     iclip = 1;
-
-   if (turb_rans_model->irijco == 1)
-     cs_turbulence_rij_clip(n_cells);
-   else
-     cs_turbulence_rij_clip_sg(n_cells, iclip);
+   cs_turbulence_rij_clip(n_cells);
 
    /* Free memory */
 
@@ -3432,10 +3425,7 @@ cs_turbulence_rij_init_by_ref_quantities(cs_real_t  uref,
       cvar_ep[c_id] = ep;
     }
 
-    if (cs_glob_turb_rans_model->irijco == 1)
-      cs_turbulence_rij_clip(n_cells);
-    else
-      cs_turbulence_rij_clip_sg(n_cells, 1);
+    cs_turbulence_rij_clip(n_cells);
   }
 
   /* Without reference velocity */
@@ -3658,129 +3648,6 @@ cs_turbulence_rij_clip(cs_lnum_t  n_cells)
   }
 
   /* Store number of clippings for logging */
-
-  cs_lnum_t iclrij_max[6] = {0, 0, 0, 0, 0, 0}, iclep_max[1] = {0};
-
-  cs_log_iteration_clipping_field(CS_F_(rij)->id, icltot, 0,
-                                  vmin, vmax, iclrij, iclrij_max);
-
-  cs_log_iteration_clipping_field(CS_F_(eps)->id, iclep[0], 0,
-                                  vmin+6, vmax+6, iclep, iclep_max);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Clip the turbulent Reynods stress tensor and the turbulent
- *        dissipation (segregated version)
- *
- * \param[in]  n_cells  number of cells
- * \param[in]  iclip    if 0, viscl0 is used; otherwise viscl is used.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_turbulence_rij_clip_sg(cs_lnum_t  n_cells,
-                          int        iclip)
-{
-  cs_real_t *cvar_ep = (cs_real_t *)CS_F_(eps)->val;
-  cs_real_6_t *cvar_rij = (cs_real_6_t *)CS_F_(rij)->val;
-
-  const cs_real_6_t *cvara_rij = (const cs_real_6_t *)CS_F_(rij)->val_pre;
-  const cs_real_t *cvara_ep = (const cs_real_t *)CS_F_(eps)->val_pre;
-
-  /* Store Min and Max for logging. */
-
-  cs_real_t vmin[7], vmax[7];
-  _rij_min_max(n_cells, cvar_rij, cvar_ep, vmin, vmax);
-
-  /* Clipping (modified to avoid exactly zero values). */
-
-  const cs_real_t epz2 = cs_math_pow2(cs_math_epzero);
-
-  cs_lnum_t iclrij[6] = {0, 0, 0, 0, 0, 0};
-  cs_lnum_t iclep[1] = {0};
-
-  if (iclip == 1) {
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        if (cvar_rij[c_id][ii] <= epz2) {
-          iclrij[ii]++;
-          cvar_rij[c_id][ii] = epz2;
-        }
-      }
-    }
-
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      if (cs_math_fabs(cvar_ep[c_id]) <= epz2) {
-        iclep[0]++;
-        cvar_ep[c_id] = cs_math_fmax(cvar_ep[c_id], epz2);
-      }
-      else if (cvar_ep[c_id] <= 0.0) {
-        iclep[0]++;
-        cvar_ep[c_id] = cs_math_fabs(cvar_ep[c_id]);
-      }
-    }
-  }
-  else {
-    const cs_real_t varrel = 1.1;
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        if (cs_math_fabs(cvar_rij[c_id][ii]) <= epz2) {
-          iclrij[ii]++;
-          cvar_rij[c_id][ii] = cs_math_fmax(cvar_rij[c_id][ii], epz2);
-        }
-        else if (cvar_rij[c_id][ii] <= 0) {
-          iclrij[ii]++;
-          cvar_rij[c_id][ii] = cs_math_fmin(cs_math_fabs(cvar_rij[c_id][ii]),
-                                            varrel*fabs(cvara_rij[c_id][ii]));
-        }
-      }
-    }
-
-    iclep[0] = 0;
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      if (cs_math_fabs(cvar_ep[c_id]) < epz2) {
-        iclep[0]++;
-        cvar_ep[c_id] = cs_math_fmax(cvar_ep[c_id], epz2);
-      }
-      else if(cvar_ep[c_id] <= 0) {
-        iclep[0]++;
-        cvar_ep[c_id] = cs_math_fmin(cs_math_fabs(cvar_ep[c_id]),
-                                     varrel*cs_math_fabs(cvara_ep[c_id]));
-      }
-    }
-  }
-
-  /* Enforce Cauchy Schwarz inequality (only for x, y, z directions) */
-  for (cs_lnum_t ii = 3; ii < 6; ii++) {
-    cs_lnum_t ii1, ii2;
-    if (ii == 3) {
-      ii1 = 0;
-      ii2 = 1;
-    }
-    else if (ii == 4) {
-      ii1 = 1;
-      ii2 = 2;
-    }
-    else if (ii == 5) {
-      ii1 = 0;
-      ii2 = 2;
-    }
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      const cs_real_t rijmin = sqrt(cvar_rij[c_id][ii1]*cvar_rij[c_id][ii2]);
-      if (rijmin < cs_math_fabs(cvar_rij[c_id][ii])) {
-        cvar_rij[c_id][ii] = _sign(1., cvar_rij[c_id][ii])*rijmin;
-        iclrij[ii]++;
-      }
-    }
-  }
-
-  /* Store number of clippings for logging */
-
-  cs_lnum_t icltot = 0;
-  for (cs_lnum_t ii = 0; ii < 6; ii++) {
-    icltot += iclrij[ii];
-  }
 
   cs_lnum_t iclrij_max[6] = {0, 0, 0, 0, 0, 0}, iclep_max[1] = {0};
 

@@ -3551,18 +3551,16 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
     !> \brief Clipping of the turbulent Reynods stress tensor and the turbulent
-    !> dissipation (segregated version).
+    !> dissipation (coupled version).
     !>
     !> \param[in]     ncel          number of cells
-    !> \param[in]     iclip         indicator = 0 if viscl0 is used
-    !>                              otherwise viscl is used.
 
-    subroutine cs_turbulence_rij_clip_sg(ncel, iclip) &
-      bind(C, name='cs_turbulence_rij_clip_sg')
+    subroutine cs_turbulence_rij_clip(ncel) &
+      bind(C, name='cs_turbulence_rij_clip')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), intent(in), value :: ncel, iclip
-    end subroutine cs_turbulence_rij_clip_sg
+      integer(c_int), intent(in), value :: ncel
+    end subroutine cs_turbulence_rij_clip
 
     !---------------------------------------------------------------------------
     ! Interface to C function to compute the number of aerosols

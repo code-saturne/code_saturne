@@ -429,7 +429,7 @@ if (.true.) then
         x33min.ge.0.d0.and.xepmin.ge.0.d0 ) then
       iclip = 1
       if (irijco.eq.0) then
-        call cs_turbulence_rij_clip_sg(ncel, iclip)
+        call cs_turbulence_rij_clip(ncel)
       endif
     else
       write(nfecra,3030) x11min,x22min,x33min,xepmin
