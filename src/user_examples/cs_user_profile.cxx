@@ -2842,7 +2842,7 @@ user_dump_histogram_csv(user_histogram_t  *histogram_t,
     /* Create a file and write header*/
     ptrResults = fopen(filename, "w+");
 
-    fprintf(ptrResults, histogram_header[0]);
+    fprintf(ptrResults, "%s", histogram_header[0]);
 
     for (int h_id = 1; h_id < n_l_header; h_id++)
       fprintf(ptrResults, ",%s", histogram_header[h_id]);
