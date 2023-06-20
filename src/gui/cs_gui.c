@@ -2678,7 +2678,7 @@ cs_gui_equation_parameters(void)
       if (eqp_eq == NULL)
         eqp_eq = cs_equation_param_by_name(f->name);
 
-      if (   eqp_eq != NULL && cs_gui_is_equal_real(eqp_eq->epsilo, -1) == 0
+      if (   eqp_eq != NULL && cs_gui_is_equal_real(eqp->epsilo, -1) == 0
           && eqp_eq->sles_param != NULL)
         eqp_eq->sles_param->cvg_param.rtol = eqp->epsilo;
 
