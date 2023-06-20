@@ -1374,7 +1374,17 @@ _set_saturne_sles(bool                 use_field_id,
 
   /* Retrieve the sles structure for this equation */
 
-  cs_sles_t  *sles = cs_sles_find_or_add(slesp->field_id, sles_name);
+  cs_sles_t  *sles = cs_sles_find(slesp->field_id, sles_name);
+
+  if (sles != NULL) {
+    if (slesp->field_id > -1) {
+      /* Solver settings already forced */
+      return;
+    }
+  }
+  else
+    sles = cs_sles_find_or_add(slesp->field_id, sles_name);
+
   int  poly_degree = _get_poly_degree(slesp);
 
   /* Retrieve associated context structures */
