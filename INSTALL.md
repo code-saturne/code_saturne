@@ -586,9 +586,9 @@ The list of third-party software usable with code_saturne is provided here:
   visualization files using the CGNS format, available as an export format with
   many third-party meshing tools. CGNS version 3.1 or above is required.
 
-* [MED](https://old.salome-platform.org/user-section/about/med) is necessary to
-  read or write mesh and visualization files using the MED format, mainly used by
-  the SALOME platform.
+* [MED-file library](https://old.salome-platform.org/user-section/about/med) is
+  necessary to read or write mesh and visualization files using the MED format,
+  mainly used by the SALOME platform.
 
 * libCCMIO is necessary to read or write mesh and visualization files
   generated or readable by STAR-CCM+ using its native format.
@@ -617,6 +617,16 @@ The list of third-party software usable with code_saturne is provided here:
   and Scotch libraries). METIS uses the Apache 2 licence since March 2013,
   but it seems that the ParMETIS licence has not been updated so far.
   METIS 5.0 or above and ParMETIS 4.0 or above are supported.
+
+* [MEDCoupling](https://docs.salome-platform.org/latest/dev/MEDCoupling/developer/library.html)
+  provides various coupling and mesh to mesh interpolation and intersection
+  operators, and can be used by code_saturne for various advanced
+  post-processing operations, such as averaging data over a slice, and for pre-processing
+  of immersed boundary definitions.
+  As its name implies, it is part of the MED constellation, and actually contains
+  several libraries, including *MEDLoader* (for reading and writing of MED files),
+  and the *Remapper* and *ParaMEDMEM* librairies for serial and parallel
+  intepolation and projection methods.
 
 * [ParaView Catalyst](https://www.paraview.org/in-situ) or full ParaView
   may be used for co-visualization or in-situ visualization.
@@ -799,28 +809,20 @@ run this executable manually using `mpiexec`}, then pursue the build process.
 Note that PT-Scotch may be installed by code_saturne's semi-automatic
 installer, which chooses settings that should work on most machines.
 
-### MED
+### MED-file
 
-MED can be built using either CMake or the GNU Autotools.
+The MED-file library can be built using either CMake or the GNU Autotools.
 The Autotools installation of MED is simple on most machines,
 but a few remarks may be useful for specific cases.
 
-Note that up to MED 3.3.1, HDF5 1.8 was required, while MED 4.x
-uses  HDF5 1.10. It does not accept HDF5 1.12 yet.
+Note that while MED 4.x uses HDF5 1.10 while MED 5.x requires HDF5 1.12.
 
 MED has a C API, is written in a mix of C and C++ code, and provides both
 a C (`libmedC`) and an Fortran API (`libmed`) by default (i.e. unless
 the `--disable-fortran` configure option is used. code_saturne only requires
 the C API.
 
-MED requires a C++ runtime library, which is usually transparent when shared
-libraries are used. When built with static libraries only, this is not sufficient,
-so when testing for a MED library, the code_saturne `configure` script also tries
-linking with a C++ compiler if linking with a C compiler fails. This must be the
-same compiler that was used for MED, to ensure the runtime matches. The choice of
-this C++ compiler may be defined passing the standard `CXX` variable to `configure`.
-
-Also, when building MED in a cross-compiling situation, `--med-int=int` or
+When building MED in a cross-compiling situation, `--med-int=int` or
 `--med-int=int64_t` (depending on whether 32 or 64 bit ids should be used) should
 be passed to its `configure` script to avoid a run-time test.
 
@@ -927,6 +929,62 @@ setup also cleans the directory.
 Note that Python bindings will install the CoolProp libraries and headers in a slightly
 different structure, so this must be accounted for when specifying the CoolProp
 installation paths.
+
+### MEDCoupling
+
+To download MEDCoupling, the following commands can be used.
+
+```
+git clone -b V9_10_0 https://git.salome-platform.org/gitpub/tools/configuration
+git clone -b V9_10_0 https://git.salome-platform.org/gitpub/tools/medcoupling
+```
+
+The `-b V9_10_0` option used here indicates we want to use version 9.10.0.
+It can be omitted for the development version, or another tag (such as the
+newer V9_11_0) may be used instead.
+
+Once these libraries are downloaded, a separate build directory should be created,
+as usual:
+
+```
+mkdir MEDCoupling_build
+cd MEDCoupling_build
+```
+
+Then a MEDCoupling may be built and installed with
+the following command:
+
+```
+cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
+-DCONFIGURATION_ROOT_DIR=${CONFIGURATION_SRC_PATH} \
+-DMEDCOUPLING_BUILD_DOC=OFF \
+-DMEDCOUPLING_BUILD_TESTS=OFF \
+-DMEDCOUPLING_ENABLE_PARTITIONER=OFF \
+-DMEDCOUPLING_ENABLE_RENUMBER=OFF \
+-DMEDCOUPLING_USE_MPI=ON \
+-DMEDFILE_ROOT_DIR=${MED_INSTALL_PATH} \
+-DHDF5_ROOT_DIR=${HDF5_INSTALL_PATH} \
+-DHDF5_INCLUDE_DIR=${HDF5_INSTALL_PATH}include \
+${MEDCOUPLING_SRC_PATH}
+make && make install && make clean
+```
+
+As an alternative, if reading and writing of MED files is not needed, and only the
+coupling and intersection features are desired, a lighweight install may be obtained
+with:
+
+```
+cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
+-DCONFIGURATION_ROOT_DIR=${CONFIGURATION_SRC_PATH} \
+-DMEDCOUPLING_BUILD_DOC=OFF \
+-DMEDCOUPLING_BUILD_TESTS=OFF \
+-DMEDCOUPLING_ENABLE_PARTITIONER=OFF \
+-DMEDCOUPLING_ENABLE_RENUMBER=OFF \
+-DMEDCOUPLING_USE_MPI=ON \
+-DMEDCOUPLING_MICROMED=ON \
+${MEDCOUPLING_SRC_PATH}
+make && make install && make clean
+```
 
 ### Paraview Catalyst
 
