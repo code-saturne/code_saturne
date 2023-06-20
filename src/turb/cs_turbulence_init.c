@@ -357,7 +357,7 @@ cs_turbulence_init_clip_and_verify(void)
     if (   v_min[0] >= 0 && v_min[1] >= 0
         && v_min[2] >= 0 && v_min[3] >= 0) {
       if (cs_glob_turb_rans_model->irijco == 0)
-        cs_turbulence_rij_clip_sg(n_cells, 1);
+        cs_turbulence_rij_clip(n_cells);
     }
     else {
       n_errors += 1;
