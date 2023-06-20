@@ -1564,77 +1564,77 @@ _set_saturne_sles(bool                 use_field_id,
        consistent with the sles parameters */
 
     cs_sles_it_type_t  itsol_type = cs_sles_it_get_type(itsol);
-    int  errno = -1;
+    int  ret_code = -1;
     switch (itsol_type) {
 
     case CS_SLES_PCG:
       if (slesp->solver != CS_PARAM_ITSOL_CG)
-        errno = 0;
+        ret_code = 0;
       break;
 
     case CS_SLES_FCG:
     case CS_SLES_IPCG:
       if (slesp->solver != CS_PARAM_ITSOL_FCG &&
           slesp->solver != CS_PARAM_ITSOL_GKB_CG)
-        errno = 1;
+        ret_code = 1;
       break;
 
     case CS_SLES_JACOBI:
       if (slesp->solver != CS_PARAM_ITSOL_JACOBI)
-        errno = 2;
+        ret_code = 2;
       break;
 
     case CS_SLES_BICGSTAB:
       if (slesp->solver != CS_PARAM_ITSOL_BICG)
-        errno = 3;
+        ret_code = 3;
       break;
 
     case CS_SLES_BICGSTAB2:
       if (slesp->solver != CS_PARAM_ITSOL_BICGSTAB2)
-        errno = 4;
+        ret_code = 4;
       break;
 
     case CS_SLES_GCR:
       if (slesp->solver != CS_PARAM_ITSOL_GCR &&
           slesp->solver != CS_PARAM_ITSOL_GKB_GMRES)
-        errno = 5;
+        ret_code = 5;
       break;
 
     case CS_SLES_GMRES:
       if (slesp->solver != CS_PARAM_ITSOL_GMRES)
-        errno = 6;
+        ret_code = 6;
       break;
 
     case CS_SLES_P_GAUSS_SEIDEL:
       if (slesp->solver != CS_PARAM_ITSOL_GAUSS_SEIDEL)
-        errno = 7;
+        ret_code = 7;
       break;
 
     case CS_SLES_P_SYM_GAUSS_SEIDEL:
       if (slesp->solver != CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL)
-        errno = 8;
+        ret_code = 8;
       break;
 
     case CS_SLES_PCR3:
       if (slesp->solver != CS_PARAM_ITSOL_CR3)
-        errno = 9;
+        ret_code = 9;
       break;
 
     case CS_SLES_USER_DEFINED:
       if (slesp->solver != CS_PARAM_ITSOL_USER_DEFINED)
-        errno = 10;
+        ret_code = 10;
       break;
 
     default:
-      errno = 11;
+      ret_code = 11;
       break;
 
     } /* End of switch on itsol_type */
 
-    if (errno > -1)
+    if (ret_code > -1)
       bft_error(__FILE__, __LINE__, 0,
-                "%s: Invalid solver w.r.t. settings (errno: %d)\n",
-                __func__, errno);
+                "%s: Invalid solver w.r.t. settings (code: %d)\n",
+                __func__, ret_code);
 
   } /* Iterative solver already defined */
 
