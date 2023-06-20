@@ -69,8 +69,6 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
-use atincl
-use ctincl
 use ppcpfu
 use cs_coal_incl
 use cs_fuel_incl

@@ -58,7 +58,6 @@ use lagran
 use radiat
 use cplsat
 use atincl
-use ctincl
 use cfpoin
 use mesh
 use field

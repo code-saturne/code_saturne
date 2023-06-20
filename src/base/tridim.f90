@@ -62,7 +62,6 @@ use ppincl
 use cpincl
 use coincl
 use atincl
-use ctincl
 use atsoil
 use lagran
 use radiat
