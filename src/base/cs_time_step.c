@@ -563,9 +563,10 @@ cs_time_step_increment(double  dt)
                           _time_step.nt_cur, _time_step.t_cur);
 
   /* With adaptive time step, since the nt_max may be reavaluated at each
-     time step, maje sure it has a consistent (i.e. possible) value. */
+     time step, make sure it has a consistent (i.e. possible) value. */
 
-  if (_time_step.nt_max < _time_step.nt_cur)
+  if (   _time_step.nt_max > -1
+      && _time_step.nt_max < _time_step.nt_cur)
     _time_step.nt_max = _time_step.nt_cur;
 }
 
