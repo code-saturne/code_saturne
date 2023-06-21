@@ -7433,7 +7433,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
   }
   else if (isstpp == 1 || isstpp == 2) {
 
-    if (ischcp < 0 || ischcp > 2) {
+    if (ischcp < 0 || ischcp > 4) {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of ischcv"));
     }

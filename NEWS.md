@@ -1,5 +1,14 @@
-Release 8.0.0 (2023-06-21)
+Release 8.0.0 (unreleased)
 --------------------------
+
+### Bug fixes:
+
+- Allow use of hybrid convection scheme (used for RANS / LES turbulence models)
+  and TVD/NVD convection schemes with no slope test or with the beta limiter
+  inside the thermal convection diffusion balance.
+
+Release 8.0.0-rc1 (2023-06-21)
+------------------------------
 
 ### User changes:
 
