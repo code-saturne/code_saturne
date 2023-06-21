@@ -181,7 +181,7 @@ _inlet2(cs_lagr_particle_set_t  *p_set,
  * \param[in]     vagaus   Gaussian random variables
  * \param[in]     gradpr   pressure gradient
  * \param[in]     gradvf   gradient of the flow velocity
- * \param[in,out] rho_p     particle density
+ * \param[in,out] rho_p    particle density
  * \param[out]    fextla   user external force field (m/s^2)$
  */
 /*----------------------------------------------------------------------------*/
