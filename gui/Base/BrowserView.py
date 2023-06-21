@@ -360,7 +360,7 @@ class TreeModel(QAbstractItemModel):
                 if value == v:
                     result.append(index)
             else:
-                raise ValueError("This flags is not implemented")
+                continue
 
             if self.hasChildren(index):
                 result += self.match(self.index(0, index.column(), index),

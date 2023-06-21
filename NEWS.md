@@ -3,6 +3,9 @@ Release 7.0.7 (not released yet)
 
 Bug fixes:
 
+- GUI: fix crash when key is pressed while an element of the left tree
+  is selected.
+
 - Fix occasional zone name corruption when number of zones/mesh locations
   is increased from 2^n to 2^n+1.
 
