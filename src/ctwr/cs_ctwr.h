@@ -2,7 +2,7 @@
 #define __CS_CTWR_H__
 
 /*============================================================================
- * Main for cooling towers related functions
+ * Cooling towers related functions
  *============================================================================*/
 
 /*
@@ -127,12 +127,15 @@ void
 cs_ctwr_bcond(void);
 
 /*----------------------------------------------------------------------------
- * initialize cooling towers fields
+ * Initialize cooling towers fields, stage 0
  *----------------------------------------------------------------------------*/
 
 void
 cs_ctwr_fields_init0(void);
 
+/*----------------------------------------------------------------------------
+ * Initialize cooling towers fields, stage 1
+ *----------------------------------------------------------------------------*/
 
 void
 cs_ctwr_fields_init1(void);

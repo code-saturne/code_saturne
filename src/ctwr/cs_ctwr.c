@@ -1,6 +1,5 @@
 /*============================================================================
- * Definitions, Global variables variables, and functions associated with the
- * exchange zones
+ * Cooling towers related functions
  *============================================================================*/
 
 /*
@@ -336,7 +335,6 @@ _lewis_factor(const int        evap_model,
 void
 cs_ctwr_add_variable_fields(void)
 {
-
   /* Key id of the scalar class */
   const int keyccl = cs_field_key_id("scalar_class");
 
@@ -355,10 +353,12 @@ cs_ctwr_add_variable_fields(void)
   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
 
   /* Set fluid properties parameters */
+
   /* Variable density */
   fp->irovar = 1;
   /* Constant molecular viscosity */
   fp->ivivar = 0;
+
   /* 1. Definition of fields
    * --------------------------------------------------------------------------
    *  Bulk definition - For cooling towers, the bulk is the humid air.
@@ -467,7 +467,7 @@ cs_ctwr_add_variable_fields(void)
     cs_add_model_field_indexes(f->id);
 
     /* Equation parameters */
-    eqp = cs_field_get_equation_param(f);
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
     eqp->blencv = 1.0;
   }
 
@@ -578,11 +578,9 @@ cs_ctwr_add_variable_fields(void)
   // Then add in cs_ctwr_source_term what is done in cs_coal_scast
 }
 
-
 /*----------------------------------------------------------------------------
  * Set equation parameters
  *----------------------------------------------------------------------------*/
-
 
 void
 cs_ctwr_set_equation_parameters(void)
@@ -649,110 +647,6 @@ cs_ctwr_set_equation_parameters(void)
       eqp->blencv = 1.0;
     }
   }
-}
-
-/*----------------------------------------------------------------------------
- * Add property fields
- *----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_add_property_fields(void)
-{
-  cs_field_t *f;
-  int dim1 = 1;
-  int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
-  bool has_previous = false;
-  const int klbl   = cs_field_key_id("label");
-  const int keyvis = cs_field_key_id("post_vis");
-  const int keylog = cs_field_key_id("log");
-  const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-
- {
-   /* Humidity field */
-   f = cs_field_create("humidity",
-                       field_type,
-                       CS_MESH_LOCATION_CELLS,
-                       dim1,
-                       has_previous);
-   cs_field_set_key_int(f, keyvis, post_flag);
-   cs_field_set_key_int(f, keylog, 1);
-   cs_field_set_key_int(f, klbl, "Humidity");
- }
-
- {
-   /* Saturated humidity field */
-   f = cs_field_create("x_s",
-                       field_type,
-                       CS_MESH_LOCATION_CELLS,
-                       dim1,
-                       has_previous);
-   cs_field_set_key_int(f, keyvis, post_flag);
-   cs_field_set_key_int(f, keylog, 1);
-   cs_field_set_key_int(f, klbl, "Humidity sat");
- }
-
- {
-   /* Humid air enthalpy field */
-   f = cs_field_create("enthalpy",
-                       field_type,
-                       CS_MESH_LOCATION_CELLS,
-                       dim1,
-                       has_previous);
-   cs_field_set_key_int(f, keyvis, post_flag);
-   cs_field_set_key_int(f, keylog, 1);
-   cs_field_set_key_int(f, klbl, "Enthalpy humid air");
- }
-
- {
-   /* Liquid temperature in packing */
-   f = cs_field_create("temperature_liquid",
-                       field_type,
-                       CS_MESH_LOCATION_CELLS,
-                       dim1,
-                       has_previous);
-   cs_field_set_key_int(f, keyvis, post_flag);
-   cs_field_set_key_int(f, keylog, 1);
-   cs_field_set_key_int(f, klbl, "Temp liq");
- }
-
- {
-   /* Liquid vertical velocity */
-   f = cs_field_create("vertvel_l",
-                       field_type,
-                       CS_MESH_LOCATION_CELLS,
-                       dim1,
-                       has_previous);
-   cs_field_set_key_int(f, keyvis, post_flag);
-   cs_field_set_key_int(f, keylog, 1);
-   cs_field_set_key_int(f, klbl, "Vertical vel liq");
- }
-
-  /* Continuous phase properties */
-
-  /* NB: 'c' stands for continuous and 'p' for particles */
- {
-   /* Mass fraction of the continuous phase (X1) */
-   f = cs_field_create("x_c",
-                       field_type,
-                       CS_MESH_LOCATION_CELLS,
-                       dim1,
-                       has_previous);
-   cs_field_set_key_int(f, keyvis, post_flag);
-   cs_field_set_key_int(f, keylog, 1);
-   cs_field_set_key_int(f, klbl, "Gas mass fraction");
- }
-
- {
-   /* Mass fraction of the continuous phase (X1) BOUNDARY VALUE */
-   f = cs_field_create("b_x_c",
-                       field_type,
-                       CS_MESH_LOCATION_BOUNDARY_FACES,
-                       dim1,
-                       has_previous);
-   cs_field_set_key_int(f, keyvis, post_flag);
-   cs_field_set_key_int(f, keylog, 1);
-   cs_field_set_key_int(f, klbl, "Boundary gas mass fraction");
- }
 }
 
 /*----------------------------------------------------------------------------
@@ -866,7 +760,6 @@ cs_ctwr_add_property_fields(void)
 void
 cs_ctwr_bcond(void)
 {
-
   /* Mesh-related data */
   const cs_lnum_t nfabor = cs_glob_mesh->n_b_faces;
   cs_lnum_t *ifabor = cs_glob_mesh->b_face_cells;
@@ -920,7 +813,6 @@ cs_ctwr_bcond(void)
           cs_turbulence_bc_inlet_turb_intensity(face_id, uref2, xiturb, xdh);
         }
       }
-
 
       /* Boundary conditions for the transported temperature of the humid air and
        * of the liquid water injected in the packing zones
@@ -982,15 +874,13 @@ cs_ctwr_bcond(void)
   }
 }
 
-
 /*----------------------------------------------------------------------------
- * initialize cooling towers fields
+ * Initialize cooling towers fields, stage 0
  *----------------------------------------------------------------------------*/
 
 void
 cs_ctwr_fields_init0(void)
 {
-
   int has_restart = cs_restart_present();
   cs_halo_t *halo = cs_glob_mesh->halo;
 
@@ -1026,7 +916,6 @@ cs_ctwr_fields_init0(void)
       cs_halo_sync_var(halo, CS_HALO_STANDARD, tlp->val);
       cs_halo_sync_var(halo, CS_HALO_STANDARD, ylp->val);
     }
-
 
     /* Diffusivities of the dry air and the injected liquid
      * TODO : check if overwrites what users have specified */
@@ -1067,7 +956,9 @@ cs_ctwr_fields_init0(void)
   }
 }
 
-
+/*----------------------------------------------------------------------------
+ * Initialize cooling towers fields, stage 1
+ *----------------------------------------------------------------------------*/
 
 void
 cs_ctwr_fields_init1(void)
@@ -1100,14 +991,10 @@ cs_ctwr_fields_init1(void)
       cs_halo_sync_var(halo, CS_HALO_STANDARD, ylp->val);
   }
 
-
   for (cs_lnum_t face_id = 0; face_id < cs_glob_mesh->n_b_faces; face_id++) {
     b_mass_flux[face_id] = 0.;
   }
 }
-
-
-
 
 /*----------------------------------------------------------------------------
  * Provide access to cs_ctwr_option
@@ -1273,8 +1160,6 @@ cs_ctwr_define(const char           zone_criteria[],
     fprintf(f, "\tFlow air in\tFlow air out\n");
     fclose(f);
   }
-
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1300,10 +1185,11 @@ cs_ctwr_field_pointer_map(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
 /*!
- * \brief  Define zones.
+ * \brief  Define cooling tower zones.
  *
+ * TODO rename this: definition (at setup stage) and build (instanciation on
+ *      actual mesh are not the same).
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1317,7 +1203,6 @@ cs_ctwr_build_zones(void)
     if (ct->xleak_fac > 0.0)
       ct_opt->has_rain = true;
   }
-
 
   /* Define the zones with source terms */
   if (ct_opt->has_rain) {
@@ -1375,7 +1260,6 @@ cs_ctwr_build_all(void)
     }
   }
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1773,7 +1657,7 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
     cs_real_t reynolds_old = 0.;
     cs_real_t reynolds = rho_h[cell_id] * v_lim * droplet_diam / visc;
 
-// FIXME make it global for the zone as restart...
+    // FIXME make it global for the zone as restart...
     for (int sweep = 0;
          sweep < 100 && CS_ABS(reynolds - reynolds_old) > 0.001;
          sweep++) {
@@ -2154,7 +2038,6 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
   cs_real_t gravity[] = {cs_glob_physical_constants->gravity[0],
                          cs_glob_physical_constants->gravity[1],
                          cs_glob_physical_constants->gravity[2]};
-
 
   /* Recompute the initial values which were used in the initialisation of
    * the calculation which is being restarted */
@@ -3012,7 +2895,6 @@ cs_ctwr_source_term(int              f_id,
     } /* End of loop through the packing zones */
 
   } /* End of test on whether to generate rain */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3032,7 +2914,6 @@ void
 cs_ctwr_bulk_mass_source_term(const cs_real_t   p0,
                               cs_real_t         mass_source[])
 {
-
   cs_lnum_t n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
   /* Compute the mass exchange term */
   cs_real_t *imp_st;
