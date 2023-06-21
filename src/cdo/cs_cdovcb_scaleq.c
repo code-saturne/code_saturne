@@ -3022,7 +3022,7 @@ cs_cdovcb_scaleq_flux_across_plane(const cs_real_t             normal[],
   cs_real_33_t  pty_tens;
   cs_nvec3_t  adv_c;
 
-  /* To be modified for an fully integration of openMP */
+  /* To be modified for a full openMP integration */
 
   cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t  *)context;
   cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(0);

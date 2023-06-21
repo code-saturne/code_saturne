@@ -1554,7 +1554,7 @@ cs_hho_vecteq_get_cell_values(void          *data,
     return NULL;
 
   if (previous)
-    bft_error(__FILE__, __LINE__, 0, "%s:Case not handle.", __func__);
+    bft_error(__FILE__, __LINE__, 0, "%s: Case not handle.", __func__);
 
   return eqc->cell_values;
 }
