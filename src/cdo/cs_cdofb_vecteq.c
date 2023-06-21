@@ -2167,9 +2167,9 @@ cs_cdofb_vecteq_get_cell_values(void      *context,
   cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
 
   if (previous)
-    return pot->val;
-  else
     return pot->val_pre;
+  else
+    return pot->val;
 }
 
 /*----------------------------------------------------------------------------*/
