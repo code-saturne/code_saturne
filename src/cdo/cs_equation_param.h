@@ -1729,15 +1729,39 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Last modification of the cs_equation_param_t structure before
- *         launching the computation
+ * \brief Lock settings to prevent from unwanted modifications.
  *
- * \param[in, out]  eqp      pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqp   pointer to a \ref cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_last_stage(cs_equation_param_t   *eqp);
+cs_equation_param_lock_settings(cs_equation_param_t   *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Unlock settings. Be sure that is really wanted (inconsistency between
+ *        the setup logging and what is used may appear)
+ *
+ * \param[in, out] eqp   pointer to a \ref cs_equation_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_param_unlock_settings(cs_equation_param_t   *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief At this stage, the numerical settings should not be modified anymore
+ *        by the user. One makes a last set of modifications if needed to
+ *        ensure a consistent numerical settings.
+ *
+ * \param[in, out] eqp      pointer to a \ref cs_equation_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_param_ensure_consistent_settings(cs_equation_param_t   *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!

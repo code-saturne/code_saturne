@@ -629,6 +629,16 @@ cs_equation_set_functions(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief After this call, parameters related to an equation are set once for
+ *        all
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_lock_settings(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create a field structure related to the predefined equation given as
  *        parameter. This includes an equation associated to all modules and
  *        also wall distance or mesh deformation for instance
