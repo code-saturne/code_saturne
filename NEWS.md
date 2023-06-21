@@ -3998,7 +3998,7 @@ Release 2.0.0-rc1 (2010-02-19)
 
 
 Release 2.0.0-beta1 (2009-07-29)
----------------------------------
+--------------------------------
 
 - Move loop on velocity/pressure system so that it includes
   the boundary conditions calculation.
