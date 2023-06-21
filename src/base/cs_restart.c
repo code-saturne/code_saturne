@@ -198,7 +198,7 @@ static int _restart_present = -1;
 
 static int    _checkpoint_mesh = 1;          /* checkpoint mesh if possible */
 /* time step interval */
-static int    _checkpoint_nt_interval = CS_RESTART_INTERVAL_ONLY_AT_END;
+static int    _checkpoint_nt_interval = CS_RESTART_INTERVAL_DEFAULT;
 static int    _checkpoint_nt_next = -1;      /* next forced time step */
 static int    _checkpoint_nt_last = -1;      /* last checkpoint time step */
 static double _checkpoint_t_interval = -1.;  /* physical time interval */
