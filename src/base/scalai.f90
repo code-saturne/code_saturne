@@ -104,17 +104,17 @@ save             ipass
 interface
 
    subroutine solve_equation_scalar                   &
-     (f_id, ncesmp, ncmast,                           &
-     iterns, itspdv, icetsm,                          &
-     ltmast, itypsm, itypst,                          &
-     smacel, svcond, flxmst,                          &
+     (f_id, ncesmp,                                   &
+     iterns, itspdv,                                  &
+     icetsm, itypsm,                                  &
+     smacel,                                          &
      viscf,  viscb)                                   &
     bind(C, name='cs_f_solve_equation_scalar')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: f_id, ncesmp, ncmast, iterns, itspdv
-    integer(c_int), dimension(*) :: icetsm, ltmast, itypsm, itypst
-    real(kind=c_double), dimension(*) :: smacel, svcond, flxmst
+    integer(c_int), value :: f_id, ncesmp, iterns, itspdv
+    integer(c_int), dimension(*) :: icetsm, itypsm
+    real(kind=c_double), dimension(*) :: smacel
     real(kind=c_double), dimension(*), intent(inout) :: viscf, viscb
   end subroutine solve_equation_scalar
 
@@ -355,9 +355,9 @@ if (nscapp.gt.0) then
       if (f_dim.eq.1) then
 
         call solve_equation_scalar                          &
-             (ivarfl(isca(iisc)), ncetsm, ncmast,           &
-             iterns, itspdv, icetsm, ltmast, itypsm,        &
-             itypst, smacel, svcond, flxmst, viscf, viscb)
+             (ivarfl(isca(iisc)), ncetsm, iterns,           &
+             itspdv, icetsm, itypsm, smacel,                &
+             viscf, viscb)
 
      else
 
@@ -496,9 +496,9 @@ if (nscaus.gt.0) then
     if (f_dim.eq.1) then
 
       call solve_equation_scalar                            &
-           (ivarfl(isca(iisc)), ncetsm, ncmast,             &
-           iterns, itspdv, icetsm, ltmast, itypsm,          &
-           itypst, smacel, svcond, flxmst, viscf, viscb)
+          (ivarfl(isca(iisc)), ncetsm, iterns,              &
+           itspdv, icetsm, itypsm, smacel,                  &
+           viscf, viscb)
     else
 
       call solve_equation_vector                            &

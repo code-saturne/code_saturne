@@ -64,24 +64,16 @@ BEGIN_C_DECLS
  *
  * \param[in]     f          pointer to field structure
  * \param[in]     ncesmp     number of cells with mass source term
- * \param[in]     ncmast     number of cells with condensation source terms
  * \param[in]     iterns     Navier-Stokes iteration number
  * \param[in]     itspdv     indicator to compute production/dissipation
  *                           terms for a variance:
  *                           - 0: no
  *                           - 1: yes
  * \param[in]     icetsm     index of cells with mass source term
- * \param[in]     ltmast     index of cells with condensation source terms
  * \param[in]     itypsm     type of mass source term for the variables
- * \param[in]     itypst     type of volume  condensation source term
  * \param[in]     smacel     variable value associated to the mass source
  *                           term (for ivar=ipr, smacel is the mass flux
  *                           \f$ \Gamma^n \f$)
- * \param[in]     svcond     variable value associated to the condensation
- *                           source term (for ivar=ipr, svcond is the flow rate
- *                           \f$ \Gamma_{v, cond}^n \f$)
- * \param[in]     flxmst     variable value associated to heat transfer flux
- *                           associated to the metal mass condensation
  * \param         viscf      visc*surface/dist at internal faces (work array)
  * \param         viscb      visc*surface/dist at boundary faces (work array)
  */
@@ -90,16 +82,11 @@ BEGIN_C_DECLS
 void
 cs_solve_equation_scalar(cs_field_t        *f,
                          cs_lnum_t          ncesmp,
-                         cs_lnum_t          ncmast,
                          int                iterns,
                          int                itspdv,
                          const cs_lnum_t    icetsm[],
-                         const cs_lnum_t    ltmast[],
                          int                itypsm[],
-                         int                itypst[],
                          cs_real_t          smacel[],
-                         cs_real_t          svcond[],
-                         const cs_real_t    flxmst[],
                          cs_real_t          viscf[],
                          cs_real_t          viscb[]);
 
