@@ -197,7 +197,7 @@ _sys_info_cpu(char      *cpu_str,
 }
 
 /*----------------------------------------------------------------------------
- * Return Linux info based on /etc/ros-release or /etc/issue.
+ * Return Linux info based on /etc/os-release or /etc/issue.
  *
  * Only the information prior to a first escape sequence is returned.
  *
