@@ -351,7 +351,7 @@ def install_exec_name(pkg, exec_name, destdir=None):
 
 #------------------------------------------------------------------------------
 
-def get_dynamic_lib_dep_flags(pkg, top_builddir=None):
+def get_dynamic_lib_dep_flags(pkg, top_builddir=None, destdir=None):
     """
     List dynamic library dependency flags.
     """
@@ -359,29 +359,40 @@ def get_dynamic_lib_dep_flags(pkg, top_builddir=None):
     cmd_line = ""
     rpath_list = []
 
+    libdir = None
+    if not top_builddir:
+        libdir = pkg.dirs['libdir']
+        if destdir:
+            libdir = dest_subdir(destdir, libdir)
+
     for lib in pkg.config.deplibs:
-        if lib == 'saturne':
-            # For code_saturne, no need to add self;
+        if pkg.config.libs[lib].have == False:
             continue
-        if (pkg.config.libs[lib].have == True
-            and (not pkg.config.libs[lib].dynamic_load)):
+        if pkg.config.libs[lib].dynamic_load:
+            continue
+
+        add_rpath = pkg.config.libs[lib].add_rpath
+        if lib == 'saturne':
+            # For libsaturne.so, no need to add self
+            continue
+        else:
             ldflags = pkg.config.libs[lib].flags['ldflags']
-            add_rpath = pkg.config.libs[lib].add_rpath
-            if lib == 'ple':
-                if top_builddir and pkg.config.libs['ple'].variant == 'internal':
+            if lib == 'ple' and pkg.config.libs['ple'].variant == 'internal':
+                if top_builddir:
                     ldflags = "-L" + enquote_arg(os.path.join(top_builddir,
                                                               'libple', 'src'))
-                    add_rpath = False
-            if ldflags:
-                cmd_line += ldflags + " "
-                if add_rpath:
-                    for o in separate_args(ldflags):
-                        if o[:2] == '-L':
-                            rpath_list.append(o[2:].strip())
+                elif libdir:
+                    ldflags = "-L" + enquote_arg(os.path.join(libdir))
+        if ldflags:
+            cmd_line += ldflags + " "
+            if add_rpath:
+                for o in separate_args(ldflags):
+                    if o[:2] == '-L':
+                        rpath_list.append(o[2:].strip())
 
-            libs = pkg.config.libs[lib].flags['libs']
-            if libs:
-                cmd_line += libs + " "
+        libs = pkg.config.libs[lib].flags['libs']
+        if libs:
+            cmd_line += libs + " "
 
     if rpath_list:
         cmd_line += "-Wl,-rpath -Wl," + ':'.join(rpath_list)
@@ -423,9 +434,9 @@ if __name__ == '__main__':
 
     if options.lib_flags_only:
         if options.mode == 'install':
-            print(get_dynamic_lib_dep_flags(pkg, ))
+            print(get_dynamic_lib_dep_flags(pkg, destdir=options.dest_dir))
         else:
-            print(get_dynamic_lib_dep_flags(pkg, top_builddir))
+            print(get_dynamic_lib_dep_flags(pkg, top_builddir=top_builddir))
         sys.exit(0)
 
     # Determine executable name

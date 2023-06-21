@@ -33,12 +33,9 @@ EXTRA_DIST = cs_solver.c
 
 if HAVE_INTERNAL_PLE
   CPPFLAGS_PLE = -I"$(top_srcdir)/libple/src" -I"$(top_builddir)/libple"
-  LDFLAGS_PLE = -L"$(top_builddir)/libple/src"
 else
   CPPFLAGS_PLE = $(PLE_CPPFLAGS)
-  LDFLAGS_PLE = $(PLE_LDFLAGS)
 endif
-LIBS_PLE = $(PLE_LIBS)
 
 # Relocatable installation
 
@@ -208,9 +205,17 @@ install-exec-hook: ${local_libraries_add}
 	  for p in $$list; do \
 	    echo " rm -f '$(DESTDIR)$(libdir)/$$p'"; \
 	    rm -f "$(DESTDIR)$(libdir)/$$p"; \
-	    echo " cp -fp $$p '$(DESTDIR)$(pkglibdir)'"; \
-	    cp -fpP $$p "$(DESTDIR)$(libdir)"; \
+	    if test -h $$p; then \
+	      echo " cp -fp $$p '$(DESTDIR)$(pkglibdir)'"; \
+	      cp -fpP $$p "$(DESTDIR)$(libdir)2"; \
+	    fi; \
 	  done; \
+	  ldadd_saturne=`PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
+	  CS_TOP_BUILDDIR=$(top_builddir) \
+	  $(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
+	  --lib-flags-only --mode=install --dest "$(DESTDIR)"` ; \
+	  $(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py -o "$(DESTDIR)$(libdir)/libsaturne.${SHARED_LIB_EXT}" --echo --linker ${CS_LD} --version ${cs_version_lib} --whole-archive-start ${libsaturne_a_libs} --whole-archive-end ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} ${LDFLAGS} ${AM_LDFLAGS} $${ldadd_saturne}; \
+	  $(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py -o "$(DESTDIR)$(libdir)/libcs_solver.${SHARED_LIB_EXT}" --echo --linker ${CS_LD} --version ${cs_version_lib} ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} cs_solver.$(OBJEXT) ${LDFLAGS} -L"$(DESTDIR)$(libdir)" -lsaturne-${cs_version_lib} ${AM_LDFLAGS} $${ldadd_saturne}; \
 	}; \
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	CS_TOP_BUILDDIR=$(top_builddir) \
