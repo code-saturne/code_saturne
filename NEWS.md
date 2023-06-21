@@ -1,11 +1,20 @@
 Master (not on release branches yet)
 ------------------------------------
 
+### Architectural changes:
+
+- Remove support for freesteam (IAPWS-IF97 steam tables) library,
+  as this library has not been maintained since 2013, and its build
+  system is based on scons with Python 2 files, so is not usable
+  anymore. Use EOS (if available) or CoolProp instead.
 
 Release 8.0.0 (unreleased)
 --------------------------
 
 ### User changes:
+
+- Add basic immersed boundary method features based on the
+  neptune_cfd approach.
 
 - CoolProp support now actually works with tabular properties.
 
@@ -25,11 +34,6 @@ Release 8.0.0 (unreleased)
 
 ### Architectural changes:
 
-- Remove support for freesteam (IAPWS-IF97 steam tables) library,
-  as this library has not been maintained since 2013, and its build
-  system is based on scons with Python 2 files, so is not usable
-  anymore. Use EOS (if available) or CoolProp instead.
-
 - Update and improve build configuration automation, especially
   when using the `--with-salome` option with SALOME 9.9 or 9.10 CAS builds.
   * For ParaView Catalyst, the `--enable-dlopen-rtld-global` option is no
@@ -42,8 +46,8 @@ Release 8.0.0 (unreleased)
   another one and so on). These operations take into acount OpenMP if
   available.
 
-Release 7.3.0 (December 20 2022)
---------------------------------
+Release 7.3.0 (2022-12-20)
+--------------------------
 
 ### User changes:
 
@@ -177,8 +181,8 @@ Release 7.3.0 (December 20 2022)
   files.
 
 
-Release 7.2.0 (June 30 2022)
-----------------------------
+Release 7.2.0 (2022-06-30)
+--------------------------
 
 User changes:
 
@@ -268,8 +272,8 @@ Physical modeling:
   segregated solver; different ways of treating the non-linearities). This
   functionality is still under development and may evolve in depth.
 
-Release 7.1.0 (December 21 2021)
---------------------------------
+Release 7.1.0 (2021-12-21)
+--------------------------
 
 User changes:
 
@@ -378,8 +382,8 @@ Architectural changes:
 
 - Simplify handling of timers, focusing on wall-time.
 
-Release 7.0.0 (June 15 2021)
-----------------------------
+Release 7.0.0 (2021-06-15)
+--------------------------
 
 User changes:
 
@@ -525,8 +529,8 @@ Architectural changes:
   It should allow both simplifying installation in some cases
   and improving  maintainability.
 
-Release 6.3.0 (December 21 2020)
---------------------------------
+Release 6.3.0 (2020-12-21)
+--------------------------
 
 User changes:
 
@@ -678,8 +682,8 @@ Architectural changes:
   one to add more generic/complex definitions at the user level or in existing
   modules.
 
-Release 6.2.0 (August 27 2020)
-------------------------------
+Release 6.2.0 (2020-08-27)
+--------------------------
 
 User changes:
 
@@ -839,8 +843,8 @@ Bug fixes:
   This could have an impact on calculations with either head losses,
   tensorial porosity or the pseudo-coupled velocity-pressure solver.
 
-Release 6.1.0 (April 15 2020)
------------------------------
+Release 6.1.0 (2020-04-15)
+--------------------------
 
 User changes:
 
@@ -1043,8 +1047,8 @@ Bug fixes:
 
 - Fix to set number of iterations to 0 by studymanager command line (option -n).
 
-Release 6.0.0 (September 26 2019)
----------------------------------
+Release 6.0.0 (2019-09-26)
+--------------------------
 
 User changes:
 
@@ -1268,8 +1272,8 @@ Architectural changes:
 
 - Remove VOFI (VoF initialization) library detection as it is not used anymore.
 
-Release 5.3.0 - October 26, 2018
---------------------------------
+Release 5.3.0 (2018-10-26)
+--------------------------
 
 User changes:
 
@@ -1462,8 +1466,8 @@ Bug fixes:
   * if the maximum number of sweeps is reached, the put the particle at the last
     cell center.
 
-Release 5.2.0 - March 30, 2018
-------------------------------
+Release 5.2.0 (2018-03-30)
+--------------------------
 
 Physical modelling:
 
@@ -1547,8 +1551,8 @@ Bug fixes:
 
 - Fix spurious mapping of previous mass flux with order 1 in time scheme.
 
-Release 5.1.0 - October 10, 2017
---------------------------------
+Release 5.1.0 (2017-10-10)
+--------------------------
 
 Physical modelling:
 
@@ -1670,8 +1674,8 @@ Bug fixes:
 
 - Fix for idilat>3 algo. and isstpp>1 (beta or NVD/TVD limiters) compatibility.
 
-Release 5.0.0 - June 2, 2017
-----------------------------
+Release 5.0.0 (2017-06-02)
+--------------------------
 
 User changes:
 
@@ -1855,8 +1859,8 @@ Bug fixes:
 - Fix initialisation of flux and divergence boundary coefficients for coupled
   vector variables (field with dim=3).
 
-Release 4.3.0 - July 29, 2016
------------------------------
+Release 4.3.0 (2016-07-29)
+--------------------------
 
 User changes:
 
@@ -1967,8 +1971,8 @@ Architectural changes:
   in this version, MEDCoupling is a full standalone library and may
   be used separately from the MED module.
 
-Release 4.2.0 - December 23, 2015
----------------------------------
+Release 4.2.0 (2015-12-23)
+--------------------------
 
 User changes:
 
@@ -2124,8 +2128,8 @@ Architectural changes:
   using it requires providing its path to "--with-blas" anyways.
 
 
-Release 4.1.0 - July 31, 2015
------------------------------
+Release 4.1.0 (2015-07-31)
+--------------------------
 
 User changes:
 
@@ -2219,8 +2223,8 @@ Architectural changes:
   for MED and CGNS should now be relatively straightforward.
 
 
-Release 4.0.0 - April 30, 2015
-------------------------------
+Release 4.0.0 (2015-04-30)
+--------------------------
 
 Changes:
 
@@ -2382,8 +2386,8 @@ Bug fixes:
 - Many more bug changes (see ChangeLog for details)
 
 
-Release 3.3.0 - May 16, 2014
-----------------------------
+Release 3.3.0 (2014-05-16)
+--------------------------
 
 Changes:
 
@@ -2471,8 +2475,8 @@ Bug fixes:
         (this model induces a GGDH on Rij and epsilon).
 
 
-Release 3.2.0 - December 4, 2013
---------------------------------
+Release 3.2.0 (2013-12-04)
+--------------------------
 
 Changes:
 
@@ -2586,8 +2590,8 @@ Bug fixes:
 - Many bug fixes (see ChangeLog for details).
 
 
-Release 3.1.0 - June 11 2013
-----------------------------
+Release 3.1.0 (2013-06-11)
+--------------------------
 
 Changes:
 
@@ -2714,8 +2718,8 @@ Bug fixes:
 - Many bug fixes (see ChangeLog for details).
 
 
-Release 3.0.0 - March 22, 2013
-------------------------------
+Release 3.0.0 (2013-03-22)
+--------------------------
 
 Changes:
 
@@ -3012,8 +3016,8 @@ Bug fixes:
 - Many bug fixes (see ChangeLog for details).
 
 
-Release 2.3.0 - July 23, 2012
------------------------------
+Release 2.3.0 (2012-07-23)
+--------------------------
 
 Changes:
 
@@ -3250,8 +3254,8 @@ Bug fixes:
 - Many bug fixes (see ChangeLog for details).
 
 
-Release 2.2.0 - March 30, 2012
-------------------------------
+Release 2.2.0 (2012-03-30)
+--------------------------
 
 Changes:
 
@@ -3458,8 +3462,8 @@ Bug fixes:
 - Many bug fixes (see ChangeLog for details).
 
 
-Release 2.1.0 - October 20, 2011
---------------------------------
+Release 2.1.0 (2011-10-20)
+--------------------------
 
 Changes:
 
@@ -3912,8 +3916,8 @@ Bug fixes:
 - Many bug fixes (see ChangeLog for details).
 
 
-Release 2.0.0 - August 20, 2010
--------------------------------
+Release 2.0.0 (2010-08-20)
+--------------------------
 
 Code_Saturne 2.0 is a major (fully validated) production release, replacing
 version 1.3 (which is to be maintained until the release of version 3.0).
@@ -3928,8 +3932,8 @@ version 1.3 (which is to be maintained until the release of version 3.0).
 - Several bug fixes and minor improvements (see ChangeLog for details).
 
 
-Release 2.0.0-rc2 - June 22, 2010
----------------------------------
+Release 2.0.0-rc2 (2010-06-22)
+------------------------------
 
 - By-pass a possible bug with the flush Fortran 2003 statement on BG systems.
 
@@ -3948,8 +3952,8 @@ Release 2.0.0-rc2 - June 22, 2010
 - Several bug fixes and minor improvements (see ChangeLog for details).
 
 
-Release 2.0.0-rc1 - February 19, 2010
--------------------------------------
+Release 2.0.0-rc1 (2010-02-19)
+------------------------------
 
 - English translation of more Fortran subroutines headers.
 
@@ -4003,8 +4007,8 @@ Release 2.0.0-rc1 - February 19, 2010
 - Several bug fixes and minor improvements (see ChangeLog for details).
 
 
-Release 2.0.0-beta1 - July 29, 2009
------------------------------------
+Release 2.0.0-beta1 (2009-07-29)
+--------------------------------
 
 - Move loop on velocity/pressure system so that it includes
   the boundary conditions calculation.
@@ -4068,8 +4072,8 @@ Release 2.0.0-beta1 - July 29, 2009
 - Several bug fixes and minor improvements (see ChangeLog for details).
 
 
-Release 2.0.0-beta1 - May 26, 2009
-----------------------------------
+Release 2.0.0-beta1 (2009-05-26)
+--------------------------------
 
 - Add a quick reference card documentation.
 
@@ -4105,8 +4109,8 @@ Release 2.0.0-beta1 - May 26, 2009
 - Several bug fixes and minor improvements (see ChangeLog for details).
 
 
-Release 1.4.0 - November 28, 2008
----------------------------------
+Release 1.4.0 (2008-11-28)
+--------------------------
 
 Code_Saturne 1.4 is an intermediate development release, very similar to
 version 1.3.3 except for the items below:
@@ -4157,8 +4161,8 @@ version 1.3.3 except for the items below:
 - Several bug fixes and minor improvements (see ChangeLog for details).
 
 
-Release 1.3.3 - November 27, 2008
----------------------------------
+Release 1.3.3 (2008-11-27)
+--------------------------
 
 - Upgrade dependencies to FVM 0.12.0 and BFT 1.0.8.
 
@@ -4185,8 +4189,8 @@ Release 1.3.3 - November 27, 2008
 - Several bug fixes (see ChangeLog for details).
 
 
-Release 1.3.2 - April 16, 2008
-------------------------------
+Release 1.3.2 (1008-04-16)
+--------------------------
 
 - Port to BlueGene/P and Cray XT
 
@@ -4231,8 +4235,8 @@ Release 1.3.2 - April 16, 2008
 - Several bug fixes (see ChangeLog for details).
 
 
-Release 1.3.1 - November 28, 2007
----------------------------------
+Release 1.3.1 (2007-11-28)
+--------------------------
 
 - Storage on preprocessor files in a subdirectory of
   the temporary execution directory.
@@ -4254,8 +4258,8 @@ Release 1.3.1 - November 28, 2007
 - Several bug fixes (see ChangeLog for details).
 
 
-Release 1.3.0 - August 2, 2007
-------------------------------
+Release 1.3.0 (2007-08-02)
+--------------------------
 
 Code_Saturne 1.3 is a major (fully validated) production release.
 Release 1.3.0 is the feature-freeze release, and versions 1.3.1
