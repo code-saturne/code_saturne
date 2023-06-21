@@ -65,7 +65,7 @@ cs_turbulence_kw.h \
 cs_turbulence_ml.h \
 cs_turbulence_model.h \
 cs_turbulence_rij.h \
-cs_turbulence_rij_transport.h \
+cs_turbulence_rit.h \
 cs_turbulence_sa.h \
 cs_turbulence_v2f.h \
 cs_turbulence_htles.h \
@@ -88,7 +88,7 @@ cs_turbulence_kw.c \
 cs_turbulence_ml.c \
 cs_turbulence_model.c \
 cs_turbulence_rij.c \
-cs_turbulence_rij_transport.c \
+cs_turbulence_rit.c \
 cs_turbulence_rotation.c \
 cs_turbulence_sa.c \
 cs_turbulence_v2f.c \

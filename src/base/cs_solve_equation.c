@@ -88,7 +88,7 @@
 #include "cs_time_step.h"
 #include "cs_turbulence_model.h"
 #include "cs_turbulence_rij.h"
-#include "cs_turbulence_rij_transport.h"
+#include "cs_turbulence_rit.h"
 #include "cs_velocity_pressure.h"
 #include "cs_vof.h"
 #include "cs_wall_condensation.h"
