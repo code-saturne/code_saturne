@@ -3122,7 +3122,7 @@ cs_partition(cs_mesh_t             *mesh,
   /* In quasi degenerate case, avoid using graph-based library, which
      can deadlock */
 
-  if (mesh->n_cells < cs_glob_n_ranks
+  if (mesh->n_g_cells < (cs_gnum_t)(cs_glob_n_ranks*2)
       && (   _algorithm >= CS_PARTITION_SCOTCH
           && _algorithm < CS_PARTITION_BLOCK))
     _algorithm = CS_PARTITION_SFC_MORTON_BOX;
