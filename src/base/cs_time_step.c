@@ -561,6 +561,12 @@ cs_time_step_increment(double  dt)
   else
     cs_base_update_status("time step: %d; t = %g\n",
                           _time_step.nt_cur, _time_step.t_cur);
+
+  /* With adaptive time step, since the nt_max may be reavaluated at each
+     time step, maje sure it has a consistent (i.e. possible) value. */
+
+  if (_time_step.nt_max < _time_step.nt_cur)
+    _time_step.nt_max = _time_step.nt_cur;
 }
 
 /*----------------------------------------------------------------------------*/
