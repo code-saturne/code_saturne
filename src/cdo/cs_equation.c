@@ -2002,8 +2002,6 @@ cs_equation_finalize_sharing(cs_flag_t    cb_scheme_flag,
 /*!
  * \brief Assign a set of pointer functions for managing the cs_equation_t
  *        structure during the computation
- *        After this call, parameters related to an equation are set once for
- *        all
  *
  * \return true if all equations are steady-state otherwise false
  */
@@ -2035,10 +2033,6 @@ cs_equation_set_functions(void)
       all_are_steady = false;
     else
       cs_equation_param_set(eqp, CS_EQKEY_TIME_SCHEME, "steady");
-
-    /* Apply the last modifications to the cs_equation_param_t structure */
-
-    cs_equation_param_last_stage(eqp);
 
     /* Set function pointers */
 
@@ -2540,16 +2534,46 @@ cs_equation_set_functions(void)
       break;
     }
 
-    /* Flag this equation such that parametrization is not modifiable anymore */
-
-    eqp->flag |= CS_EQUATION_LOCKED;
-
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
 
   } /* Loop on equations */
 
   return all_are_steady;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief After this call, parameters related to an equation are set once for
+ *        all
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_lock_settings(void)
+{
+  if (_n_equations == 0)
+    return;
+
+  for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
+
+    cs_equation_t  *eq = _equations[eq_id];
+    cs_equation_param_t  *eqp = eq->param;
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_start(eq->main_ts_id);
+
+    cs_equation_param_ensure_consistent_settings(eqp);
+
+    /* Flag this equation such that settings are not modifiable anymore unless
+       really wanted (cs_equation_param_lock()/unlock() functions) */
+
+    cs_equation_param_lock_settings(eqp);
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_stop(eq->main_ts_id);
+
+  } /* Loop on equations */
 }
 
 /*----------------------------------------------------------------------------*/

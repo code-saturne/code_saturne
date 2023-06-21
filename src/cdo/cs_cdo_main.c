@@ -859,10 +859,18 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
   if (cs_navsto_system_is_activated())
     cs_navsto_system_set_sles();
 
-  /* Setup linear solvers (second call since the first call can have no
-     effect) */
+  /* Setup linear solvers (second call since the first call can have no effect
+     on some low-level settings which require a call to *_set_sles() functions
+     to be realyy taken into account). */
 
   cs_user_linear_solvers();
+
+  /* Modification of the settings in cs_equation_param_t structure is not
+     allowed anymore. Lock settings to avoid inconsistency between the logging
+     and what is really used. Now, if one wants to modify the settings, one
+     should use cs_equation_param_unlock() and then cs_equation_param_lock() */
+
+  cs_equation_lock_settings();
 
   /* Summary of the settings */
 
