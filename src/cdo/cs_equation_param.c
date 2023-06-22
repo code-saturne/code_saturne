@@ -1923,8 +1923,46 @@ cs_equation_param_ensure_consistent_settings(cs_equation_param_t   *eqp)
               _(" %s: Equation %s is not modifiable anymore.\n"
                 " Please check your settings."), eqp->name, __func__);
 
-  if (eqp->do_lumping) { /* Activate a set of options in order to be consistent
-                            with the lumping */
+  /* Check the consistency of the settings related to the diffusion term */
+
+  switch (eqp->space_scheme) {
+  case CS_SPACE_SCHEME_CDOVCB:
+    if (eqp->diffusion_hodgep.algo == CS_HODGE_ALGO_COST   ||
+        eqp->diffusion_hodgep.algo == CS_HODGE_ALGO_BUBBLE ||
+        eqp->diffusion_hodgep.algo == CS_HODGE_ALGO_VORONOI) {
+
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "%s: Incompatible Hodge algo. for the diffusion term.\n"
+                    "%s: Equation \"%s\": Switch to a WBS algo.\n"
+                    "%s: Please check your settings.\n",
+                    __func__, __func__, eqp->name, __func__);
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_WBS;
+
+    }
+    break;
+
+  case CS_SPACE_SCHEME_CDOFB:
+    if (eqp->diffusion_hodgep.algo == CS_HODGE_ALGO_WBS) {
+
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "%s: Incompatible Hodge algo. for the diffusion term.\n"
+                    "%s: Equation \"%s\": Switch to a COST algo.\n"
+                    "%s: Please check your settings.\n",
+                    __func__, __func__, eqp->name, __func__);
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
+
+    }
+    break;
+
+  default:
+    break;  /* Do nothing */
+  }
+
+  /* Activate a set of options in order to be consistent with the lumping */
+
+  if (eqp->do_lumping) {
 
     eqp->reaction_hodgep.algo = CS_HODGE_ALGO_VORONOI;
     eqp->time_hodgep.algo = CS_HODGE_ALGO_VORONOI;
