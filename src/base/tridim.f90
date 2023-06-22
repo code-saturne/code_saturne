@@ -1385,7 +1385,7 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
   endif
 
   ! Call the 1D radiative model
-  ! Compute the divergence of the ir and solar radiative fluxes:
+  ! Compute the divergence of the IR and solar radiative fluxes:
   if (ippmod(iatmos).ge.1.and.iatra1.ge.1) then
     call atr1vf()
   endif
