@@ -189,7 +189,8 @@ typedef enum {
   CS_ENUMF_(fup),          /*!< Spectral upward radiative flux */
   CS_ENUMF_(fdown),        /*!< Spectral downward radiative flux */
   CS_ENUMF_(rad_ck_up),    /*!< Spectral upward Radiative absorption coefficient */
-  CS_ENUMF_(rad_ck_down),  /*!< Spectral downward Radiative absorption coefficient */
+  CS_ENUMF_(rad_ck_down),  /*!< Spectral downward Radiative absorption
+                             coefficient */
 
   CS_ENUMF_(mol_mass),     /*!< gas mix molar max */
 
