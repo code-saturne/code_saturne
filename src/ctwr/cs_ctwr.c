@@ -441,6 +441,12 @@ cs_ctwr_add_variable_fields(void)
     cs_field_set_key_int(f, kivisl, ifcvsl);
     cs_add_model_field_indexes(f->id);
 
+    /* Equation parameters */
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    /* Set beta limiter to maintain y_p in the limits */
+    eqp->isstpc = 2;
+    eqp->blencv = 1.0;
+
     /* Transport and solve for the temperature of the liquid - with the same
      * drift as the mass fraction Y_l in the rain zones.
      * NB : Temperature of the liquid must be transported after the bulk
@@ -467,7 +473,7 @@ cs_ctwr_add_variable_fields(void)
     cs_add_model_field_indexes(f->id);
 
     /* Equation parameters */
-    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    eqp = cs_field_get_equation_param(f);
     eqp->blencv = 1.0;
   }
 
@@ -504,6 +510,13 @@ cs_ctwr_add_variable_fields(void)
     cs_field_set_key_int(f, kivisl, ifcvsl);
     cs_add_model_field_indexes(f->id);
 
+    /* Equation parameters */
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    /* Upwind schemes for scalars in packing zone */
+    eqp->blencv = 0.;
+    eqp->idiff  = 0;
+    eqp->idifft = 0;
+
     /* Transport and solve for the temperature of the liquid - with the same
      * drift as the mass fraction Y_l in the rain zones.
      * NB : Temperature of the liquid must be transported after the bulk
@@ -530,6 +543,13 @@ cs_ctwr_add_variable_fields(void)
     ifcvsl = 0;
     cs_field_set_key_int(f, kivisl, ifcvsl);
     cs_add_model_field_indexes(f->id);
+
+    /* Equation parameters */
+    eqp = cs_field_get_equation_param(f);
+    /* Upwind schemes for scalars in packing zone */
+    eqp->blencv = 0.;
+    eqp->idiff  = 0;
+    eqp->idifft = 0;
   }
 
   {
@@ -570,83 +590,16 @@ cs_ctwr_add_variable_fields(void)
       cs_field_set_key_int(f, keydri, drift);
 
       cs_add_model_field_indexes(f->id);
+
+      /* Equation parameters */
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      eqp->blencv = 1.0;
     }
   }
 
   //TODO add a model to compute particles (droplet) velocities (for rain zones)
   //take example to cs_coeal_varpos.f90 and i_comb_drift=1
   // Then add in cs_ctwr_source_term what is done in cs_coal_scast
-}
-
-/*----------------------------------------------------------------------------
- * Set equation parameters
- *----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_set_equation_parameters(void)
-{
-  cs_field_t *f;
-
-  {
-    /* Set fluid properties parameters */
-    cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
-    /* Variable density */
-    fp->irovar = 1;
-    /* Constant molecular viscosity */
-    fp->ivivar = 0;
-  }
-
-  {
-    /* Rain zone variables */
-
-    /* Rain mass fraction*/
-    f = cs_field_by_name("y_p");
-    /* Equation parameters */
-    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-    /* Set beta limiter to maintain y_p in the limits */
-    eqp->isstpc = 2;
-    eqp->blencv = 1.0;
-
-    /* Rain temperature */
-    f = cs_field_by_name("y_p_t_l");
-    /* Equation parameters */
-    eqp = cs_field_get_equation_param(f);
-    eqp->blencv = 1.0;
-  }
-
-  {
-    /* Packing zone variables */
-
-    /* Mass fraction of liquid */
-    f = cs_field_by_name("y_l_packing");
-    /* Equation parameters */
-    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-    /* Upwind schemes for scalars in packing zone */
-    eqp->blencv = 0.;
-    eqp->idiff  = 0;
-    eqp->idifft = 0;
-
-    /* Liquid enthalpy */
-    f = cs_field_by_name("enthalpy_liquid");
-    /* Equation parameters */
-    eqp = cs_field_get_equation_param(f);
-    /* Upwind schemes for scalars in packing zone */
-    eqp->blencv = 0.;
-    eqp->idiff  = 0;
-    eqp->idifft = 0;
-  }
-
-  {
-    /* Continuous phase variables */
-
-    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] != CS_ATMO_HUMID){
-      /* Total mass fraction of water in the bulk humid air */
-      f = cs_field_by_name("ym_water");
-      /* Equation parameters */
-      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-      eqp->blencv = 1.0;
-    }
-  }
 }
 
 /*----------------------------------------------------------------------------
