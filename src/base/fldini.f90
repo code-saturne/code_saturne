@@ -715,10 +715,12 @@ if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3)) then
   itycat = FIELD_PROPERTY
   ityloc = 1 ! cells
   call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
+  call hide_property(f_id)
   f_name = 'boundary_density_mass'
   itycat = FIELD_PROPERTY
   ityloc = 3 ! boundary faces
   call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
+  call hide_property(f_id)
 endif
 
 ! Some C mappings
