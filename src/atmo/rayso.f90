@@ -1040,7 +1040,8 @@ if (muzero.gt.epzero) then
     if(i.eq.k1) ystar = m*qqvtot
 
     ! (p_i/p_k) * (p_k/p0) = p_i/p0
-    corp = preray(i) / 101300.d0!FIXME use /p0? Idem in rayir.f90
+    !We keep 1013.15 for standard atmosphere ref:LH74
+    corp = preray(i) / 101315.d0
     rov = romray(i)*(qvray(i)*corp*sqrt(tkelvi/(temray(i) + tkelvi)))
     dy = rov
     ! calculation of absorption coefficient ckup and ckdown useful for 3D calculations

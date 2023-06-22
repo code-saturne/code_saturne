@@ -247,8 +247,10 @@ do k = k1, kmray
 
   if(aeroso(k).gt.1.d-8) iaer = 1
 
-  pspo(k) = preray(k) / preray(k1)
-  corp = pspo(k) * preray(k1) / 101300.d0
+  ! Note, simplification:
+  ! pspo(k) = preray(k) / preray(k1)
+  ! so pspo(k) * preray(k1) = preray(k)
+  corp = preray(k) / 101315.d0
 
   qv0(k) = qvray(k)*corp*sqrt(tkelvi/(temray(k) + tkelvi))
   rov(k) = romray(k)*qv0(k)
