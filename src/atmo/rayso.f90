@@ -42,7 +42,7 @@
 
 subroutine reftra  &
     (pioc, piaero, gasym, gaero, tauc, taua, &
-    ref, tra, epsc,dqqv)
+    ref, tra, epsc,dqqv, mui)
 
   !===========================================================================
 
@@ -57,7 +57,7 @@ subroutine reftra  &
   ! Local
   double precision ::gas, fas, kt, gama1, gama2, tln
   double precision :: drt, extlnp, extlnm
-  double precision :: pic, tau
+  double precision :: pic, tau, mui
 
   !===========================================================================
 
@@ -70,7 +70,7 @@ subroutine reftra  &
 
     ! Pure diffusion atmosphere (pioc=1)
     if (pioc.ge.(1.d0-epsc)) then !TODO check .and. (taua .le. epsc))
-      gama1=(sqrt(3.d0)/2.d0)*(1.d0-gasym)
+      gama1=(1.d0-gasym)/(2.d0*mui)
       ref = gama1*tau/(1.d0+gama1*tau)
       tra = 1.d0/(1.d0+gama1*tau)
 
@@ -78,27 +78,33 @@ subroutine reftra  &
       pic =(pioc*tauc+piaero*taua)/tau
       ! Pure absorbing atmosphere (pioc=0)
       if (pic .lt. epsc) then
-        gama1=dsqrt(3.d0)
+        gama1=1.d0/mui
         ref = 0.d0
         tra = dexp(-gama1*tau)
       else
 
         gas=(pioc*tauc*gasym+piaero*taua*gaero)&
           /(pic*tau)
-
-        fas=gas*gas
-        tau=(1.d0-pic*fas)*tau
-        pic=pic*(1.d0-fas)/(1.d0-pic*fas)
-        gas=(gas-fas)/(1.d0-fas)
-        gama1=(dsqrt(3.d0)/2.d0)*(2.d0-pic*(1.d0+gas))
-        gama2=(dsqrt(3.d0)*pic/2.d0)*(1.d0-gas)
-        kt=dsqrt(gama1*gama1-gama2*gama2)
-        tln=kt*tau
-        extlnp=dexp(tln)
-        extlnm=dexp(-tln)
-        drt=(kt+gama1)*extlnp+(kt-gama1)*extlnm
-        ref=gama2*(extlnp-extlnm)/drt
-        tra=2.d0*kt/drt
+        ! Only forward diffusion
+        if(gas.ge.(1.d0-epsc)) then
+          gama1=(1.d0-pic)/mui
+          ref=0.d0
+          tra=dexp(-gama1*tau)
+        else
+          fas=gas*gas
+          tau=(1.d0-pic*fas)*tau
+          pic=pic*(1.d0-fas)/(1.d0-pic*fas)
+          gas=(gas-fas)/(1.d0-fas)
+          gama1=(1.d0-pic*(1.d0+gas)/2.d0)/mui
+          gama2=pic*(1.d0-gas)/(2.d0*mui)
+          kt=dsqrt(gama1*gama1-gama2*gama2)
+          tln=kt*tau
+          extlnp=dexp(tln)
+          extlnm=dexp(-tln)
+          drt=(kt+gama1)*extlnp+(kt-gama1)*extlnm
+          ref=gama2*(extlnp-extlnm)/drt
+          tra=2.d0*kt/drt
+        endif
       endif
 
     endif
@@ -258,7 +264,8 @@ double precision nu0, dm0, dm, coeff_E_o3(12), coeff_E_h2o(12)
 double precision pioco3C, pioch2oC
 double precision tauao3(kmx+1) , tauah2o(kmx+1)
 double precision corp, rov, cp_cloud, cp_aero
-
+double precision mui,tauapc,ckapcd,ckapcf,picapc
+double precision ck_aero_h2of,ck_aero_h2od,ck_aero_o3f,ck_aero_o3d
 ! data for pkn and kn distribution
 data kn/4.d-5,0.002,0.035,0.377,1.95,9.40,44.6,190./
 data pkn/0.6470,0.0698,0.1443,0.0584,0.0335,0.0225,0.0158,0.0087/
@@ -439,7 +446,11 @@ if (muzero.gt.epzero) then
 
   ! m coefficient for O3 (5/3 or 1.9 for LH74)
   ! TODO test 5/3 but not coherent with LH74...
+
+  ! as we suppressed m and mbar in dzx and dzy we can eventually keep 1.9 for O3 to tested
   mbar = 1.9d0
+  ! for LH74 quadrature method in two-stream
+  mui=1.d0/dsqrt(3.d0)
 
   !  3 -  albedos for O3 and Rayleigh diffusion
 
@@ -593,7 +604,6 @@ if (muzero.gt.epzero) then
 
       pioch2o=0.60d0*pioch2o_1+0.40d0*pioch2o_2
 
-
       pic_o3(i)=pioco3
       pic_h2o(i)=pioch2o
     endif
@@ -629,7 +639,7 @@ if (muzero.gt.epzero) then
   !Calculation for cloudy layers
   call reftra  &
     (pioc, 0.d0, gasym, 0.d0, tauctot, 0.d0, &
-    refx, trax, epsc, 0.d0)
+    refx, trax, epsc, 0.d0, mui)
 
   rabarc=refx
   tabarc=trax
@@ -637,7 +647,7 @@ if (muzero.gt.epzero) then
   !Calculation for aerosol layers
   call reftra  &
     (0.d0, piaero_o3, 0.d0, gaero_o3, 0.d0, aod_o3_tot, &
-    refx, trax, epsc,0.d0)
+    refx, trax, epsc,0.d0, mui)
   rabara=refx
   tabara=trax
 
@@ -689,7 +699,6 @@ if (muzero.gt.epzero) then
     fabso3c(i,2) = muzero*fo*(raysoz(xm1) - raysoz(x)) &
       +rbar*(raysoz(xstar) - raysoz(xstarm1))
 
-
     dfso3c(i,2) = muzero*fo*(0.647d0-rrbar-raysoz(x)) &
       /(1.d0-rrbar2s*albe)
 
@@ -699,7 +708,6 @@ if (muzero.gt.epzero) then
       / (1.d0-rrbar2s*albe)
     ! Summation depending on cloud fraction
     fabso3(i) = fnebmax(k1p1)*fabso3c(i,1) + (1.d0-fnebmax(k1p1))*fabso3c(i,2)
-
 
     dfso3(i) = fnebmax(k1p1)*dfso3c(i,1)+ (1.d0-fnebmax(k1p1))*dfso3c(i,2)
     ddfso3(i) = fnebmax(k1p1)*ddfso3c(i,1)+ (1.d0-fnebmax(k1p1))*ddfso3c(i,2)
@@ -726,7 +734,7 @@ if (muzero.gt.epzero) then
     if (tauc(l).gt.epsc) then
       call reftra  &
         (pioc, piaero_o3, gasym, gaero_o3, tauc(l), tauao3(l), &
-        refx, trax, epsc, 0.d0)
+        refx, trax, epsc, 0.d0, mui)
 
       ref(l,n)=fneray(l)*refx
       tra(l,n)=fneray(l)*trax
@@ -735,7 +743,7 @@ if (muzero.gt.epzero) then
     ! In the aerosol layers
     call reftra  &
       ( 0.d0, piaero_o3, 0.d0, gaero_o3, 0.d0, tauao3(l), &
-      refx, trax, epsc, 0.d0)
+      refx, trax, epsc, 0.d0, mui)
 
     ref(l,n)=ref(l,n)+(1.d0-fneray(l))*refx
     tra(l,n)=tra(l,n) + (1.d0 -fneray(l))*trax
@@ -866,7 +874,7 @@ if (muzero.gt.epzero) then
       if(qlray(l).ge.epsc) then
         call reftra &
           (pioc, piaero_h2o, gasym, gaero_h2o, tauc(l) , tauah2o(l), &
-          refx, trax, epsc, dqqv)
+          refx, trax, epsc, dqqv, mui)
 
         ref(l,n)=fneray(l)*refx
         tra(l,n)=fneray(l)*trax + (1.d0 - fneray(l))*dexp(-5.d0*dqqv/3.d0)
@@ -874,7 +882,7 @@ if (muzero.gt.epzero) then
         if (iaer.eq.1) then
           call reftra &
             (0.d0, piaero_h2o, 0.d0, gaero_h2o, 0.d0 , tauah2o(l), &
-            refx0, trax0, epsc, dqqv)
+            refx0, trax0, epsc, dqqv, mui)
 
           ref(l,n) = fneray(l)*refx + (1.d0 - fneray(l))*refx0
           tra(l,n) = fneray(l)*trax + (1.d0 - fneray(l))*trax0
@@ -897,12 +905,11 @@ if (muzero.gt.epzero) then
 
         trard(l,n)=dexp(-m*(dqqv+tauah2o(l)))
 
-
         if(l.ge.itopp1) tra(l,n) = dexp(-m*tau(l,n))
         if (iaer.eq.1) then
           call reftra  &
             (0.d0, piaero_h2o, 0.d0, gaero_h2o, 0.d0, tauah2o(l), &
-            refx, trax, epsc,dqqv)
+            refx, trax, epsc,dqqv, mui)
 
           ref(l,n)=fneba(l)*refx
           tra(l,n)=fneba(l)*trax+(1.d0-fneba(l))*dexp(-5.d0*dqqv/3.d0)
@@ -927,7 +934,6 @@ if (muzero.gt.epzero) then
     ref(k1,n) = albe
     tras(k1,n) = 0.d0
     refs(k1,n) = 0.d0
-
 
     trat(kmray+1,n) = tra(kmray+1,n)
     reft(kmray+1,n) = ref(kmray+1,n)
