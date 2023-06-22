@@ -473,6 +473,9 @@ if (muzero.gt.epzero) then
       ((1.d0+bmg(i)*m*umg(i))**cmg(i)+dmg(i)*m*umg(i)))
   enddo
 
+  ! introduction of absorption by minor gases
+  fo=fo*Tmg
+
   ! 5 - Solar radiation calculation for cloudy sky
   ! In order to take into account cloud fraction, multiple diffusion is achieved
   ! for both cloudy (index 1) and clear (index 2) sky
@@ -1062,12 +1065,10 @@ if (muzero.gt.epzero) then
     solu(k,ivertc) = ufs(k)
     sold(k,ivertc) = dfs(k)
   enddo
-  ! Mutiplication by transmission function for minor gases
-  do k=k1,kmray
-    dfs(k)=Tmg*dfs(k)
-    drfs(k)=Tmg*drfs(k)
-    ufs(k)=Tmg*ufs(k)
-  enddo
+
+  ! Note: Mutiplication by transmission function for minor gases
+  ! Tmg is now taking into account by fo=fo*Tmg
+
   ! solar heating of the ground surface by the downward global flux
   fos=dfs(k1)*(1.d0-albe)
 
