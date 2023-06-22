@@ -1086,51 +1086,58 @@ if (muzero.gt.epzero) then
   ! upward is only diffuse
 
   ! SIR band
-  ! The other coefficients are calculated before
-  do k = k1, kmray
-
-    ! cp_cloud is a coefficient which takes dropplet into account: they diffuse
-    ! but do not absorb a lot
-    ! It takes simple diffusion albedo of the cloud
-    cp_cloud =(1.d0-pic_h2o(k))/pic_h2o(k)
+  do k = k1p1, kmray
+    tauapc=tauah2o(k)+tauc(k)
     deltaz = zqq(k+1) - zqq(k)
     if(k.eq.k1p1) deltaz=zqq(k+1) - zray(k1)
+    if(tauapc.lt.epsc)then
+      ckapcd=0.d0
+      ckapcf=0.d0
+      ck_aero_h2of=0.d0
+      ck_aero_h2od=0.d0
+    else
+      picapc=(pic_h2o(k)*tauc(k)+piaero_h2o*tauah2o(k))/tauapc
+      ! absorption and forward diffusion
+      ckapcf=(1.d0-picapc)*tauapc/(deltaz*mui)
+      ckapcd=tauapc/(deltaz*muzero_cor)
+      ck_aero_h2of=(1.d0-piaero_h2o)*tauah2o(k)/(deltaz*mui)
+      ck_aero_h2od=tauah2o(k)/(deltaz*muzero_cor)
+    endif
 
-    ! Note: no need to compute it above the cloud layer because ck_cloud is 0
-    ! there.
-    ck_cloud=cp_cloud*m*tauc(k)/deltaz
-
-    ! Idem for aerosols
-    cp_aero=(1.d0-piaero_h2o)/piaero_h2o
-    ! pure absorption
-    ck_aero_h2o=cp_aero*m*tauah2o(k)/deltaz
-
-    !SIR band
-    ckup_sir_f(k) = (ckup_sir_f(k) +  ck_aero_h2o)*(1.d0-fneray(k))+&
-      (ckup_sir_f(k) +  ck_aero_h2o + ck_cloud)*(fneray(k))
-    ckdown_sir_r(k) = (ckdown_sir_r(k) +  ck_aero_h2o)*(1.d0-fneray(k))+&
-      (ckdown_sir_r(k) +  ck_aero_h2o+ ck_cloud)*(fneray(k))
-    ckdown_sir_f(k) = (ckdown_sir_f(k) +  ck_aero_h2o)*(1.d0-fneray(k))+&
-      (ckdown_sir_f(k) +  ck_aero_h2o+ ck_cloud)*(fneray(k))
+    ckup_sir_f(k) = (ckup_sir_f(k) + ck_aero_h2of)*(1.d0-fneray(k)) + &
+      (ckup_sir_f(k)+ckapcf)*(fneray(k))
+    ckdown_sir_r(k) = (ckdown_sir_r(k) + ck_aero_h2od)*(1.d0-fneray(k)) + &
+      (ckdown_sir_r(k)+ckapcd)*(fneray(k))
+    ckdown_sir_f(k) = (ckdown_sir_f(k) + ck_aero_h2of)*(1.d0-fneray(k)) + &
+      (ckdown_sir_f(k)+ckapcf)*(fneray(k))
   enddo
 
-  !SUV band
-  do k = k1p1,kmray
-    cp_cloud =(1.d0-pic_o3(k))/pic_o3(k)
+  ! SUV band
+  do k = k1p1, kmray
+    tauapc=tauao3(k)+tauc(k)
     deltaz = zqq(k+1) - zqq(k)
-    if(i.eq.k1p1) deltaz=zqq(k+1) - zray(k1)
-    ck_cloud=cp_cloud*m*tauc(k)/deltaz
-    cp_aero=(1.d0-piaero_o3)/piaero_o3
-    ck_aero_o3=cp_aero*m*tauao3(k)/deltaz
+    if(k.eq.k1p1) deltaz=zqq(k+1) - zray(k1)
+    if(tauapc.lt.epsc)then
+      ckapcd=0.d0
+      ckapcf=0.d0
+      ck_aero_o3f=0.d0
+      ck_aero_o3d=0.d0
+    else
+      picapc=(pic_o3(k)*tauc(k)+piaero_o3*tauao3(k))/tauapc
+      ! absorption and forward diffusion
+      ckapcf=(1.d0-picapc)*tauapc/(deltaz*mui)
+      ckapcd=tauapc/(deltaz*muzero_cor)
+      ck_aero_o3f=(1.d0-piaero_o3)*tauao3(k)/(deltaz*mui)
+      ck_aero_o3d=tauao3(k)/(deltaz*muzero_cor)
+    endif
 
-    !SUV band
-    ckup_suv_f(k)=(ckup_suv_f(k)+ ck_aero_o3)*(1.d0-fneray(k))+&
-      (ckup_suv_f(k)+ ck_aero_o3+ck_cloud)*(fneray(k))
-    ckdown_suv_f(k)=(ckdown_suv_f(k)+ ck_aero_o3)*(1.d0-fneray(k))+&
-      (ckdown_suv_f(k)+  ck_cloud +ck_aero_o3 )*(fneray(k))
+    ckup_suv_f(k) = (ckup_suv_f(k)+ck_aero_o3f)*(1.d0-fneray(k))+&
+      (ckup_suv_f(k)+ckapcf)*(fneray(k))
+    ckdown_suv_r(k) = (ckdown_suv_r(k) +  ck_aero_h2od)*(1.d0-fneray(k))+&
+      (ckdown_suv_r(k)+ckapcd)*(fneray(k))
 
-    ckdown_suv_r(k)=(ckdown_suv_r(k)+ ck_aero_o3)*(1.d0-fneray(k))+&
-      (ckdown_suv_r(k)+  ck_cloud +ck_aero_o3)*(fneray(k))
+    ckdown_suv_f(k) = (ckdown_suv_f(k) +  ck_aero_o3f)*(1.d0-fneray(k))+&
+      (ckdown_suv_f(k)+ckapcf)*(fneray(k))
   enddo
 ! if muzero < 0, it is night
 else
