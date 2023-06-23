@@ -401,7 +401,7 @@ _compute_face_quantities(cs_lnum_t        n_faces,
       for (cs_lnum_t i = 0; i < 3; i++)
         a_center[i] /= n_face_vertices;
 
-      cs_real_t sum_w = 0;
+      cs_real_t d_surf_d3 = 0.;
 
       /* In most cases, the following 2 loops can be merged into a single loop,
          but for very bad quality faces, some sub-triangles could be oriented
@@ -421,32 +421,31 @@ _compute_face_quantities(cs_lnum_t        n_faces,
           for (cs_lnum_t i = 0; i < 3; i++) {
             vc0[i] = vtx_coord[v0][i] - a_center[i];
             vc1[i] = vtx_coord[v1][i] - a_center[i];
-            vtc[tri_id][i] = vtx_coord[v1][i] + vtx_coord[v0][i] + a_center[i];
+            /* centre in the relative reference frame (shifted by a_center) */
+            vtc[tri_id][i] = vc0[i] + vc1[i];
           }
 
           cs_math_3_cross_product(vc0, vc1, vn[tri_id]);
 
           for (cs_lnum_t i = 0; i < 3; i++)
-            f_norm[i] += vn[tri_id][i];
+            f_norm[i] += 0.5 * vn[tri_id][i];
 
         }
 
-        for (cs_lnum_t i = 0; i < 3; i++)
-          f_norm[i] = 0.5*f_norm[i];
-
         /* Second pass (face center) */
+        cs_real_3_t n;
+        cs_math_3_normalize(f_norm, n);
+        cs_real_t sum_w = cs_math_3_norm(f_norm);
+        if (sum_w > s_epsilon)
+          d_surf_d3 = one_third / sum_w;
 
         for (cs_lnum_t tri_id = 0; tri_id < n_face_vertices; tri_id++) {
 
-          cs_real_t w = cs_math_3_norm(vn[tri_id]);
-
-          if (cs_math_3_dot_product(vn[tri_id], f_norm) < 0.0)
-            w *= -1.0;
+          /* Projected surface of the triangle in the normal direction */
+          cs_real_t w = 0.5 * cs_math_3_dot_product(vn[tri_id], n);
 
           for (cs_lnum_t i = 0; i < 3; i++)
             f_center[i] += w*vtc[tri_id][i];
-
-          sum_w += w;
 
         }
 
@@ -470,14 +469,16 @@ _compute_face_quantities(cs_lnum_t        n_faces,
           cs_math_3_cross_product(vc0, vc1, vn);
 
           for (cs_lnum_t i = 0; i < 3; i++)
-            f_norm[i] += vn[i];
+            f_norm[i] += 0.5 * vn[i];
 
         }
 
-        for (cs_lnum_t i = 0; i < 3; i++)
-          f_norm[i] = 0.5*f_norm[i];
-
         /* Second pass (face center) */
+        cs_real_3_t n;
+        cs_math_3_normalize(f_norm, n);
+        cs_real_t sum_w = cs_math_3_norm(f_norm);
+        if (sum_w > s_epsilon)
+          d_surf_d3 = one_third / sum_w;
 
         for (cs_lnum_t tri_id = 0; tri_id < n_face_vertices; tri_id++) {
 
@@ -487,20 +488,17 @@ _compute_face_quantities(cs_lnum_t        n_faces,
           for (cs_lnum_t i = 0; i < 3; i++) {
             vc0[i] = vtx_coord[v0][i] - a_center[i];
             vc1[i] = vtx_coord[v1][i] - a_center[i];
-            vtc[i] = vtx_coord[v1][i] + vtx_coord[v0][i] + a_center[i];
+            /* centre in the relative reference frame (shifted by a_center) */
+            vtc[i] = vc0[i] + vc1[i];
           }
 
           cs_math_3_cross_product(vc0, vc1, vn);
 
-          cs_real_t w = cs_math_3_norm(vn);
-
-          if (cs_math_3_dot_product(vn, f_norm) < 0.0)
-            w *= -1.0;
+          /* Projected surface of the triangle in the normal direction */
+          cs_real_t w = 0.5 * cs_math_3_dot_product(vn, n);
 
           for (cs_lnum_t i = 0; i < 3; i++)
             f_center[i] += w*vtc[i];
-
-          sum_w += w;
 
         }
 
@@ -509,14 +507,8 @@ _compute_face_quantities(cs_lnum_t        n_faces,
       for (cs_lnum_t i = 0; i < 3; i++)
         face_normal[f_id][i] = f_norm[i];
 
-      if (sum_w > s_epsilon) {
-        for (cs_lnum_t i = 0; i < 3; i++)
-          face_cog[f_id][i] = one_third * f_center[i]/sum_w;
-      }
-      else {
-        for (cs_lnum_t i = 0; i < 3; i++)
-          face_cog[f_id][i] = a_center[i];
-      }
+      for (cs_lnum_t i = 0; i < 3; i++)
+        face_cog[f_id][i] = a_center[i] + d_surf_d3 * f_center[i];
 
     } /* end of test on triangle */
 
