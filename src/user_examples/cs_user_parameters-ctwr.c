@@ -85,41 +85,7 @@ cs_user_model(void)
   cs_glob_physical_model_flag[CS_COOLING_TOWERS] = 1;
   /*! [ctwr_user_model_1] */
   }
-}
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define or modify general numerical and physical user parameters.
- *
- * At the calling point of this function, most model-related most variables
- * and other fields have been defined, so specific settings related to those
- * fields may be set here.
- *
- * At this stage, the mesh is not built or read yet, so associated data
- * such as field values are not accessible yet, though pending mesh
- * operations and some fields may have been defined.
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_parameters(cs_domain_t   *domain)
-{
-  CS_UNUSED(domain);
-
- /* Activate compressibility */
- {
-   cs_velocity_pressure_model_t *vp_model =
-     cs_get_glob_velocity_pressure_model();
-   vp_model->idilat = 2;
- }
-
- /* Authorize variable density */
- {
-   cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
-   fp->irovar = 1;
- }
   /*
    * We define a cooling tower zone
    */
@@ -156,36 +122,72 @@ cs_user_parameters(cs_domain_t   *domain)
   }
   /*! [ctwr_user_1] */
 
-  /* Define humid air properties */
-  {
-    cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
-    //Used to compute the humid air density as a function of (P,T,humidity)
-    fp->ro0 = 1.2; //1.293
+}
 
-    //Humid air viscosity
-    fp->viscl0 = 1.765e-05;
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define or modify general numerical and physical user parameters.
+ *
+ * At the calling point of this function, most model-related most variables
+ * and other fields have been defined, so specific settings related to those
+ * fields may be set here.
+ *
+ * At this stage, the mesh is not built or read yet, so associated data
+ * such as field values are not accessible yet, though pending mesh
+ * operations and some fields may have been defined.
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
-    cs_air_fluid_props_t *air_prop = cs_glob_air_props;
-    // Dry air and water vapour properties
-    air_prop->cp_a = 1006.0;
-    air_prop->cp_v = 1831.0;
+void
+cs_user_parameters(cs_domain_t   *domain)
+{
+  CS_UNUSED(domain);
 
-    // Initial absolute humidity
-    air_prop->humidity0 = 5.626e-03;//34.5% relative humidity
+ /* Activate compressibility */
+ {
+   cs_velocity_pressure_model_t *vp_model =
+     cs_get_glob_velocity_pressure_model();
+   vp_model->idilat = 2;
+ }
 
-    // Humid air conductivity - considered constant in the modelling
-    air_prop->lambda_h = 2.493;
+ /* Authorize variable density */
+ {
+   cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+   fp->irovar = 1;
+ }
 
-    // Liquid water properties
-    air_prop->rho_l = 997.85615;
-    air_prop->cp_l = 4179.0;
-    air_prop->lambda_l = 0.02493;
+ /* Define humid air properties */
+ {
+   cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+   //Used to compute the humid air density as a function of (P,T,humidity)
+   fp->ro0 = 1.2; //1.293
 
-    // Phase change properties
-    air_prop->hv0 = 2501600.0;
+   //Humid air viscosity
+   fp->viscl0 = 1.765e-05;
 
-    air_prop->droplet_diam = 0.005;
-  }
+   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
+   // Dry air and water vapour properties
+   air_prop->cp_a = 1006.0;
+   air_prop->cp_v = 1831.0;
+
+   // Initial absolute humidity
+   air_prop->humidity0 = 5.626e-03;//34.5% relative humidity
+
+   // Humid air conductivity - considered constant in the modelling
+   air_prop->lambda_h = 2.493;
+
+   // Liquid water properties
+   air_prop->rho_l = 997.85615;
+   air_prop->cp_l = 4179.0;
+   air_prop->lambda_l = 0.02493;
+
+   // Phase change properties
+   air_prop->hv0 = 2501600.0;
+
+   air_prop->droplet_diam = 0.005;
+ }
 
 }
 

@@ -255,6 +255,7 @@ _run(void)
   cs_preprocess_mesh_define();
 
   cs_turbomachinery_define();
+  cs_ctwr_define_zones();
 
   /* Call main calculation initialization function or help */
 
@@ -324,8 +325,6 @@ _run(void)
     cs_user_linear_solvers();
 
     cs_base_fortran_bft_printf_to_c();
-
-    cs_ctwr_define_zones();
 
     cs_timer_stats_set_start_time(cs_glob_time_step->nt_cur);
 
