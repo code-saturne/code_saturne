@@ -1159,10 +1159,9 @@ cs_ctwr_define_zones(void)
 
   /* Define the zones with source terms */
   if (ct_opt->has_rain) {
-    /* Phase change may take place in the entire computational domain */
-    cs_volume_zone_define("rain_zone",
-                          "all[]",
-                          CS_VOLUME_ZONE_MASS_SOURCE_TERM);
+    /* Phase change may take place in the entire computational domain
+     * so activate mass source term to zone 0 */
+    cs_volume_zone_set_type(0, CS_VOLUME_ZONE_MASS_SOURCE_TERM);
 
     /* Identify packing zones for cs_ctwr_build_all
        but don't redeclare the cells as mass_source_term to avoid double counting */
