@@ -3376,18 +3376,22 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         cs_lnum_2_t f_vtx_idx = {0, n_f_face_vertices[ic]};
         cs_real_3_t _i_f_face_cog[1]  = { {0., 0., 0.} };
         cs_real_3_t _i_f_face_nomal[1]= { {0., 0., 0.} };
-        cs_real_3_t f_vtx_coor[n_f_face_vertices[ic]];
+        cs_real_3_t *_f_vtx_coord;
+
+        BFT_MALLOC(_f_vtx_coord, n_f_face_vertices[ic], cs_real_3_t);
         for (int ffv = 0; ffv < n_f_face_vertices[ic]; ffv++) {
            for (cs_lnum_t i = 0; i < 3; i++)
-             f_vtx_coor[ffv][i] = f_vtx_coord[ffv][ic][i];
+             _f_vtx_coord[ffv][i] = f_vtx_coord[ffv][ic][i];
         }
 
         _compute_face_quantities(1,
-                                 f_vtx_coor,
+                                 _f_vtx_coord,
                                  f_vtx_idx,
                                  f_face_pos,
                                  _i_f_face_cog,
                                  _i_f_face_nomal);
+
+        BFT_FREE(_f_vtx_coord);
 
         /* Adjusting face porosity and COG
          * we take the smaller surface side and its COG
