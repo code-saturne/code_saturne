@@ -1147,7 +1147,7 @@ cs_ctwr_field_pointer_map(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_build_zones(void)
+cs_ctwr_define_zones(void)
 {
   /* Check if there are any leaking packing zones, if yes, there is rain */
   cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
