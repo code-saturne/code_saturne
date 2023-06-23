@@ -3248,6 +3248,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         /* Store the (two) vertices at the interface */
         cs_real_3_t *v_w_inteface;
         BFT_MALLOC(v_w_inteface, 2, cs_real_3_t);
+        cs_array_real_fill_zero(3 * 2, (cs_real_t *) v_w_inteface);
 
         /* 3 consecutive vertices */
         cs_lnum_3_t loc_id = {n_face_vertices - 1, 0, 1};
@@ -3502,6 +3503,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
       /* Store the (two) vertices at the interface */
       cs_real_3_t *v_w_inteface;
       BFT_MALLOC(v_w_inteface, 2, cs_real_3_t);
+      cs_array_real_fill_zero(3 * 2, (cs_real_t *) v_w_inteface);
 
       /* 3 consecutive vertices */
       cs_lnum_3_t loc_id = {n_face_vertices - 1, 0, 1};
