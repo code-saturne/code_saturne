@@ -2354,7 +2354,6 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
  *        liquid and the water vapor phase in the bulk, humid air
  *
  * \param[in]     f_id          field id
- * \param[in]     p0            Reference pressure
  * \param[in,out] exp_st        Explicit source term
  * \param[in,out] imp_st        Implicit source term
  */
@@ -2362,7 +2361,6 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
 void
 cs_ctwr_source_term(int              f_id,
-                    const cs_real_t  p0,
                     cs_real_t        exp_st[],
                     cs_real_t        imp_st[])
 {
@@ -2372,6 +2370,7 @@ cs_ctwr_source_term(int              f_id,
 
   const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
 
+  cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
   /* Water / air molar mass ratio */
   const cs_real_t molmassrat = air_prop->molmass_rat;
@@ -2420,7 +2419,8 @@ cs_ctwr_source_term(int              f_id,
   cs_real_t cp_l = air_prop->cp_l;
   cs_real_t hv0 = air_prop->hv0;
   cs_real_t rho_l = air_prop->rho_l;
-  cs_real_t visc = cs_glob_fluid_properties->viscl0;
+  cs_real_t visc = fp->viscl0;
+  cs_real_t  p0 = fp->p0;
   cs_real_t lambda_h = air_prop->lambda_h;
   cs_real_t droplet_diam  = air_prop->droplet_diam;
 
@@ -2857,14 +2857,12 @@ cs_ctwr_source_term(int              f_id,
  * Careful, this is different from an injection source term, which would
  * normally be handled with a 'cs_equation_add_volume_mass_injection_' function.
  *
- * \param[in]   p0              Reference pressure
  * \param[out]  mass_source     Mass source term
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_bulk_mass_source_term(const cs_real_t   p0,
-                              cs_real_t         mass_source[])
+cs_ctwr_bulk_mass_source_term(cs_real_t         mass_source[])
 {
   cs_lnum_t n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
   /* Compute the mass exchange term */
@@ -2880,7 +2878,6 @@ cs_ctwr_bulk_mass_source_term(const cs_real_t   p0,
   /* Bulk mass source term is stored for pressure */
 
   cs_ctwr_source_term(CS_F_(p)->id,
-                      p0,
                       mass_source,
                       imp_st);
 

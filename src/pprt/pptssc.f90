@@ -170,7 +170,7 @@ endif
 ! ---> Version aerorefrigerant :
 
 if (ippmod(iaeros).ge.0) then
-  call cs_ctwr_source_term(ivarfl(isca(iscal)), p0, smbrs, rovsdt)
+  call cs_ctwr_source_term(ivarfl(isca(iscal)), smbrs, rovsdt)
 endif
 
 !----

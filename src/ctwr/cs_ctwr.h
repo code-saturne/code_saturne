@@ -195,14 +195,12 @@ cs_ctwr_field_pointer_map(void);
  * Careful, this is different from an injection source term, which would
  * normally be handled with a 'cs_equation_add_volume_mass_injection_' function.
  *
- * \param[in]   p0              Reference pressure
  * \param[out]  mass_source     Mass source term
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_bulk_mass_source_term(const cs_real_t   p0,
-                              cs_real_t         mass_source[]);
+cs_ctwr_bulk_mass_source_term(cs_real_t         mass_source[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -321,7 +319,6 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
  *        liquid and the water vapor phase in the bulk, humid air
  *
  * \param[in]     f_id          field id
- * \param[in]     p0            Reference pressure
  * \param[in,out] exp_st        Explicit source term
  * \param[in,out] imp_st        Implicit source term
  */
@@ -329,7 +326,6 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
 void
 cs_ctwr_source_term(int              f_id,
-                    const cs_real_t  p0,
                     cs_real_t        exp_st[],
                     cs_real_t        imp_st[]);
 

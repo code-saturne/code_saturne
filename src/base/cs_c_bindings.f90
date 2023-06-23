@@ -3041,13 +3041,12 @@ module cs_c_bindings
 
     ! Interface to C function for cooling towers
 
-    subroutine cs_ctwr_source_term(f_id, p0,                       &
+    subroutine cs_ctwr_source_term(f_id,                           &
                                    exp_st, imp_st)                 &
       bind(C, name='cs_ctwr_source_term')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: f_id
-      real(kind=c_double), value :: p0
       real(kind=c_double), dimension(*), intent(inout) :: exp_st
       real(kind=c_double), dimension(*), intent(inout) :: imp_st
     end subroutine cs_ctwr_source_term
