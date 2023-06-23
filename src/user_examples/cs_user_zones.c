@@ -282,6 +282,32 @@ cs_user_zones(void)
   }
   /*! [user_zones_boundary_2] */
 
+  /*
+   * Define a cooling tower zones
+   */
+  /*! [ctwr_user_1] */
+  {
+    cs_real_t surface = 0.48 * 6540.; /* 48% of the total disc */
+    cs_real_t qw = surface *  2.64; /* Water flow rate (kg/s) */
+
+    cs_ctwr_define(
+        "2 or 3", /* selection criterion */
+        CS_CTWR_COUNTER_CURRENT, /*Type:
+                                   CS_CTWR_COUNTER_CURRENT counter current,
+                                   CS_CTWR_CROSS_CURRENT cross,
+                                   CS_CTWR_RAIN rain zone */
+        -1., /* Imposed delta temperature if positive */
+        0.1, /* Associated relaxation time */
+        36., /* Liquid injected water temperature */
+        qw,
+        0.2, /* Evaporation law constant A */
+        0.5, /* Evaporation law constant n */
+        surface,
+        -1.); /* Leaking factor, not taken into account if negative */
+
+  }
+  /*! [ctwr_user_1] */
+
 }
 
 /*----------------------------------------------------------------------------*/

@@ -43,6 +43,6 @@
   The following code block shows an example of definition of a cooling tower
   exchange zone.
 
-  \snippet cs_user_parameters-ctwr.c ctwr_user_1
+  \snippet cs_user_zones.c ctwr_user_1
 
 */

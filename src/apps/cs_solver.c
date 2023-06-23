@@ -255,7 +255,6 @@ _run(void)
   cs_preprocess_mesh_define();
 
   cs_turbomachinery_define();
-  cs_ctwr_define_zones();
 
   /* Call main calculation initialization function or help */
 
@@ -273,6 +272,8 @@ _run(void)
 
   cs_gui_zones();
   cs_user_zones();
+
+  cs_ctwr_define_zones();
 
   /* Create a new structure for the computational domain */
 

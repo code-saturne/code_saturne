@@ -79,19 +79,12 @@ BEGIN_C_DECLS
 void
 cs_user_model(void)
 {
-  /* Activate cooling tower model */
-  {
+  /* Activate cooling tower model
+   * Note: packing zones are defined in cs_user_zones.c
+   * */
   /*! [ctwr_user_model_1] */
-  cs_glob_physical_model_flag[CS_COOLING_TOWERS] = 1;
-  /*! [ctwr_user_model_1] */
-  }
-
-  /*
-   * We define a cooling tower zone
-   */
-
-  /*! [ctwr_user_1] */
   {
+    cs_glob_physical_model_flag[CS_COOLING_TOWERS] = 1;
 
     cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
 
@@ -100,28 +93,8 @@ cs_user_model(void)
        CS_CTWR_POPPE Poppe,
        CS_CTWR_MERKEL Merkel*/
     ct_opt->evap_model = CS_CTWR_POPPE;
-
-    cs_real_t surface = 0.48 * 6540.; /* 48% of the total disc */
-    cs_real_t qw = surface *  2.64; /* Water flow rate (kg/s) */
-
-    cs_ctwr_define(
-        "2 or 3", /* selection criterion */
-        CS_CTWR_COUNTER_CURRENT, /*Type:
-                                   CS_CTWR_COUNTER_CURRENT counter current,
-                                   CS_CTWR_CROSS_CURRENT cross,
-                                   CS_CTWR_RAIN rain zone */
-        -1., /* Imposed delta temperature if positive */
-        0.1, /* Associated relaxation time */
-        36., /* Liquid injected water temperature */
-        qw,
-        0.2, /* Evaporation law constant A */
-        0.5, /* Evaporation law constant n */
-        surface,
-        -1.); /* Leaking factor, not taken into account if negative */
-
   }
-  /*! [ctwr_user_1] */
-
+  /*! [ctwr_user_model_1] */
 }
 
 /*----------------------------------------------------------------------------*/
