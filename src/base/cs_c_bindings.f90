@@ -3028,12 +3028,10 @@ module cs_c_bindings
 
     ! Interface to C function for cooling towers
 
-    subroutine cs_ctwr_bulk_mass_source_term(p0,                             &
-                                             mass_source)                    &
+    subroutine cs_ctwr_bulk_mass_source_term(mass_source)                    &
       bind(C, name='cs_ctwr_bulk_mass_source_term')
       use, intrinsic :: iso_c_binding
       implicit none
-      real(kind=c_double), value :: p0
       real(kind=c_double), dimension(*), intent(inout) :: mass_source
     end subroutine cs_ctwr_bulk_mass_source_term
 
