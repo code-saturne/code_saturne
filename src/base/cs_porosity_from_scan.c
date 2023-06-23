@@ -772,11 +772,6 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   BFT_FREE(cov_mat);
   BFT_FREE(file_names);
 
-  /* Bounding box */
-  bft_printf(_("  Global bounding box [%f, %f, %f], [%f, %f, %f].\n\n"),
-             min_vec_tot[0], min_vec_tot[1], min_vec_tot[2],
-             max_vec_tot[0], max_vec_tot[1], max_vec_tot[2]);
-
   /* Parallel synchronisation */
   cs_mesh_sync_var_scal(mq->cell_vol);
   if (m->halo != NULL) {
@@ -789,7 +784,15 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
     if (m->n_init_perio > 0)
       cs_halo_perio_sync_coords(m->halo, CS_HALO_EXTENDED,
                                 (cs_real_t *)cen_points);
+    cs_parall_min(3, CS_REAL_TYPE, min_vec_tot);
+    cs_parall_max(3, CS_REAL_TYPE, max_vec_tot);
   }
+
+  /* Bounding box */
+  bft_printf(_("  Global bounding box [%f, %f, %f], [%f, %f, %f].\n\n"),
+             min_vec_tot[0], min_vec_tot[1], min_vec_tot[2],
+             max_vec_tot[0], max_vec_tot[1], max_vec_tot[2]);
+
 
   /* Solid cells should have enough points */
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++) {
