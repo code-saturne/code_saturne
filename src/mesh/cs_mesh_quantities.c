@@ -1764,19 +1764,19 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
       /* Min value between IJ and
        * (Omega_i+Omega_j)/S_ij which is exactly the distance for tetras */
 
-      cs_real_t face_nomal_norm = cs_math_3_norm(face_nomal);
+      cs_real_t face_normal_norm = cs_math_3_norm(face_nomal);
       cs_real_t distmax = -1;
 
       /* If CS_FACE_NULL_SURFACE is used, only update distmax value
        * if the face surface is not 0.
        */
       if(!(cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE) ||
-          face_nomal_norm > 1.e-20)
+          face_normal_norm > 1.e-20)
         distmax
         = cs_math_fmin(cs_math_3_distance(cell_cen[cell_id1],
                                           cell_cen[cell_id2]),
                        (  (cell_vol[cell_id1] + cell_vol[cell_id2])
-                        / face_nomal_norm));
+                        / face_normal_norm));
 
       /* Previous value of 0.2 sometimes leads to computation divergence */
       /* 0.01 seems better and safer for the moment */
@@ -1788,7 +1788,7 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
 
       /* Clippings due to null surface */
       if (cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE) {
-        if(face_nomal_norm <= 1.e-20)
+        if(face_normal_norm <= 1.e-20)
           i_dist[face_id] = cs_math_3_distance(cell_cen[cell_id1],
                                                cell_cen[cell_id2]);
 
@@ -1825,17 +1825,17 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
 
       /* Min value between IF and
        * (Omega_i)/S which is exactly the distance for tetrahedra */
-      cs_real_t face_nomal_norm = cs_math_3_norm(face_nomal);
+      cs_real_t face_normal_norm = cs_math_3_norm(face_nomal);
       cs_real_t distmax = -1;
 
       /* If CS_FACE_NULL_SURFACE is used, only update distmax value
        * if the face surface is not 0.
        */
       if(!(cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE) ||
-          face_nomal_norm > 1.e-20)
+          face_normal_norm > 1.e-20)
         distmax = fmin(cs_math_3_distance(cell_cen[cell_id],
                                           b_face_cog[face_id]),
-                            cell_vol[cell_id]/face_nomal_norm);
+                            cell_vol[cell_id]/face_normal_norm);
 
       double critmin = 0.01;
       if (b_dist[face_id] < critmin * distmax) {
@@ -1845,7 +1845,7 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
 
       /* Clippings due to null surface */
       if (cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE) {
-        if(face_nomal_norm <= 1.e-20)
+        if(face_normal_norm <= 1.e-20)
           b_dist[face_id] = cs_math_3_distance(cell_cen[cell_id],
                                                b_face_cog[face_id]);
 
@@ -3983,7 +3983,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
                         (const cs_lnum_2_t *)(m->i_face_cells),
                         m->b_face_cells,
                         mq->i_face_normal,
-                          mq->b_face_normal,
+                        mq->b_face_normal,
                         mq->i_face_cog,
                         mq->b_face_cog,
                         mq->i_face_surf,
