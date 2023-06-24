@@ -216,7 +216,7 @@ if (is_vploop .eqv. .false.) then ! Outside the rho(Y)-v-p coupling
     allocate(rad_work(2,nwsgg))
 
     do ig = 1, nwsgg
-      write(f_name, '(a, i2.2)') 'spectral_absorption_', ig
+      write(f_name, '(a, i2.2)') 'spectral_absorption_coeff_', ig
       call field_get_val_s_by_name(f_name,  cpro_kg(ig)%p)
 
       write(f_name, '(a, i2.2)') 'spectral_emission_', ig

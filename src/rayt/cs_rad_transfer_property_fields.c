@@ -244,12 +244,13 @@ cs_rad_transfer_prp(void)
 
       cs_field_pointer_map_indexed(CS_ENUMF_(rad_cak), irphas, f);
     }
+  }
 
-    // TODO LEA HERE for O3 and H20
-    /* Add a band for Direct Solar, diFUse solar and InfraRed
-     * and for solir: make the distinction between UV-visible (absorbed by O3)
-     * and Solar IR (SIR) absobed by H2O
-     * if activated */
+  /* Add bands for Direct Solar, diFUse solar and InfraRed
+   * and for solar: make the distinction between UV-visible (absorbed by O3)
+   * and Solar IR (SIR) absobed by H2O
+   * if activated */
+  {
     if (rt_params->atmo_model
         != CS_RAD_ATMO_3D_NONE)
       rt_params->nwsgg = 0;
@@ -292,21 +293,26 @@ cs_rad_transfer_prp(void)
       rt_params->atmo_ir_id = rt_params->nwsgg;
       rt_params->nwsgg++;
     }
-
   }
 
-  /* SLFM Gas combustion radiation: add cells fields */
+  /* SLFM gas combustion radiation or atmospheric:
+   * add cell fields per band */
   if (   cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] == 1
-      || cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] == 3) {
+      || cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] == 3
+      || rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
 
     for (int gg_id = 0; gg_id < rt_params->nwsgg; gg_id ++) {
 
+      char suffix[16];
+
+      snprintf(suffix,  15, "_%02d", gg_id + 1);
+
+      suffix[15] = '\0';
+
       char f_name[64], f_label[64];
 
-      snprintf(f_name, 63, "spectral_absorption_%.2d", gg_id + 1);
-      snprintf(f_label, 63, "Spectral Absorption %.2d", gg_id + 1);
-
-      f_name[63] = '\0'; f_label[63] = '\0';
+      snprintf(f_name, 63, "spectral_absorption%s", suffix); f_name[63] ='\0';
+      snprintf(f_label, 63, "Spectral Absorption%s", suffix); f_label[63] ='\0';
 
       f = cs_field_create(f_name,
                           field_type,
@@ -318,10 +324,12 @@ cs_rad_transfer_prp(void)
       cs_field_set_key_int(f, keyvis, 0);
       cs_field_set_key_int(f, keylog, 0);
 
-      snprintf(f_name, 63, "spectral_emission_%.2d", gg_id + 1);
-      snprintf(f_label, 63, "Spectral Emission %.2d", gg_id + 1);
+      //TODO map it as
+      // cs_field_pointer_map_indexed(CS_ENUMF_(rad_abs), gg_id, f);
+      // Note: would be in conflict with rad_abs
 
-      f_name[63] = '\0'; f_label[63] = '\0';
+      snprintf(f_name, 63, "spectral_absorption_coeff%s", suffix); f_name[63] ='\0';
+      snprintf(f_label, 63, "Spectral Abs coef%s", suffix); f_label[63] ='\0';
 
       f = cs_field_create(f_name,
                           field_type,
@@ -332,6 +340,23 @@ cs_rad_transfer_prp(void)
 
       cs_field_set_key_int(f, keyvis, 0);
       cs_field_set_key_int(f, keylog, 0);
+
+
+      snprintf(f_name, 63, "spectral_emission%s", suffix); f_name[63] ='\0';
+      snprintf(f_label, 63, "Spectral Emission%s", suffix); f_label[63] ='\0';
+
+      f = cs_field_create(f_name,
+                          field_type,
+                          location_id,
+                          1,
+                          false);
+      cs_field_set_key_str(f, keylbl, f_label);
+
+      cs_field_set_key_int(f, keyvis, 0);
+      cs_field_set_key_int(f, keylog, 0);
+      //TODO map it as
+      //cs_field_pointer_map_indexed(CS_ENUMF_(rad_emi), gg_id, f);
+      // Note: would be in conflict with rad_abs
     }
   }
 
@@ -394,7 +419,7 @@ cs_rad_transfer_prp(void)
 
   /* Albedo Fields for atmospheric diFfuse Solar (FS) model */
   if (rt_params->atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR) {
-    f = cs_field_by_name_try("boundary_temperature");
+    f = cs_field_by_name_try("boundary_albedo");
     if (f == NULL) {
       f = cs_field_create("boundary_albedo",
                           field_type,
@@ -429,24 +454,8 @@ cs_rad_transfer_prp(void)
     cs_field_pointer_map(CS_ENUMF_(qinci), f);
   }
 
-  if (rt_params->imoadf >= 1 || rt_params->imfsck >= 1) {
-    f = cs_field_create("spectral_rad_incident_flux",
-                        field_type,
-                        location_id,
-                        rt_params->nwsgg,
-                        false);
-    cs_field_set_key_str(f, keylbl, "Spectral_incident_flux");
-    cs_field_pointer_map(CS_ENUMF_(qinsp), f);
-
-    cs_field_set_key_int(f, keyvis, vis_gg);
-  }
-
-  /* For atmospheric 3D radiation,
-   * - first band is direct solar
-   * - second band is diffuse solar
-   * - third band is infrared
-   */
-  if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
+  if (rt_params->imoadf >= 1 || rt_params->imfsck >= 1
+      || rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
     f = cs_field_create("spectral_rad_incident_flux",
                         field_type,
                         location_id,

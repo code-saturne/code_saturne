@@ -1324,10 +1324,10 @@ cs_rad_transfer_solve(int               bc_type[],
   /* Absorbed and emitted radiation of a single coal or fuel class
    * (needed to compute the source terms of the particle enthalpy equation) */
   for (int class_id = 0; class_id < n_classes; class_id++) {
-    int ipcla = class_id+1;
-    cs_real_t *cpro_abso = CS_FI_(rad_abs, ipcla)->val;
-    cs_real_t *cpro_emi  = CS_FI_(rad_emi, ipcla)->val;
-    cs_real_t *cpro_stri = CS_FI_(rad_ist, ipcla)->val;
+    int class_num = class_id+1;
+    cs_real_t *cpro_abso = CS_FI_(rad_abs, class_num)->val;
+    cs_real_t *cpro_emi  = CS_FI_(rad_emi, class_num)->val;
+    cs_real_t *cpro_stri = CS_FI_(rad_ist, class_num)->val;
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       cpro_abso[cell_id] = 0.0;
       cpro_emi[cell_id]  = 0.0;
@@ -1378,9 +1378,9 @@ cs_rad_transfer_solve(int               bc_type[],
       else if (pm_flag[CS_COMBUSTION_FUEL] >= 0)
         snprintf(fname, 80, "t_fuel_%02d", class_id+1);
       cs_field_t *f_temp2 = cs_field_by_name(fname);
-      cs_lnum_t ipcla = class_id + 1;
+      cs_lnum_t class_num = class_id + 1;
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-        tempk[n_cells*ipcla + cell_id] = f_temp2->val[cell_id];
+        tempk[n_cells*class_num + cell_id] = f_temp2->val[cell_id];
       }
     }
 
@@ -1577,7 +1577,7 @@ cs_rad_transfer_solve(int               bc_type[],
     }
 
     char f_name[64];
-    snprintf(f_name, 63, "spectral_emission_%.2d", gg_id + 1);
+    snprintf(f_name, 63, "spectral_emission_%2d", gg_id + 1);
     cs_field_t *f_emi  = cs_field_by_name_try(f_name);
 
     /* P-1 radiation model
@@ -1601,10 +1601,10 @@ cs_rad_transfer_solve(int               bc_type[],
         snprintf(fname, 80, "x_p_%02d", class_id+1);
         cs_field_t *f_x2 = cs_field_by_name(fname);
 
-        cs_lnum_t ipcla = class_id + 1;
+        cs_lnum_t class_num = class_id + 1;
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           rhs[cell_id] +=  3.0 * f_x2->val[cell_id] * cpro_cak[cell_id]
-                               * cs_math_pow4(tempk[n_cells*ipcla + cell_id])
+                               * cs_math_pow4(tempk[n_cells*class_num + cell_id])
                                * agi[n_cells*gg_id + cell_id]
                                * cell_vol[cell_id];
       }
@@ -1753,13 +1753,13 @@ cs_rad_transfer_solve(int               bc_type[],
         snprintf(fname, 80, "x_p_%02d", class_id+1);
         cs_field_t *f_x2 = cs_field_by_name(fname);
 
-        cs_lnum_t ipcla = class_id + 1;
+        cs_lnum_t class_num = class_id + 1;
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           rhs[cell_id] +=   f_x2->val[cell_id]
                           * agi[n_cells*gg_id + cell_id]
                           * c_stefan
                           * cpro_cak[cell_id]
-                          * cs_math_pow4(tempk[n_cells*ipcla + cell_id])
+                          * cs_math_pow4(tempk[n_cells*class_num + cell_id])
                           * cell_vol[cell_id]
                           * onedpi;
       }
@@ -1864,14 +1864,14 @@ cs_rad_transfer_solve(int               bc_type[],
     /* Coal solid phase or fuel droplets */
     for (int class_id = 0; class_id < n_classes; class_id++) {
 
-      cs_lnum_t ipcla = class_id + 1;
-      cs_real_t *cpro_cak = CS_FI_(rad_cak, ipcla)->val;
+      cs_lnum_t class_num = class_id + 1;
+      cs_real_t *cpro_cak = CS_FI_(rad_cak, class_num)->val;
 
       /* Absorbed and emmitted radiation of a single size class */
-      cs_real_t *cpro_abso = CS_FI_(rad_abs, ipcla)->val;
-      cs_real_t *cpro_emi  = CS_FI_(rad_emi, ipcla)->val;
-      cs_real_t *cpro_stri = CS_FI_(rad_ist, ipcla)->val;
-      snprintf(fname, 80, "x_p_%02d", class_id+1);
+      cs_real_t *cpro_abso = CS_FI_(rad_abs, class_num)->val;
+      cs_real_t *cpro_emi  = CS_FI_(rad_emi, class_num)->val;
+      cs_real_t *cpro_stri = CS_FI_(rad_ist, class_num)->val;
+      snprintf(fname, 80, "x_p_%02d", class_num);
       cs_field_t *f_x2 = cs_field_by_name(fname);
 
       cs_real_t cp2 = 1.;
@@ -1884,13 +1884,13 @@ cs_rad_transfer_solve(int               bc_type[],
 
         cs_real_t sig_ck_t4
           = 4. * c_stefan * cpro_cak[cell_id]
-               * cs_math_pow4(tempk[n_cells*ipcla + cell_id])
+               * cs_math_pow4(tempk[n_cells*class_num + cell_id])
                * agi[n_cells*gg_id + cell_id]
                * wq[gg_id];
 
         cs_real_t sig_ck_t3dcp2
           = 16. * c_stefan * cpro_cak[cell_id]
-                * cs_math_pow3(tempk[n_cells*ipcla + cell_id])
+                * cs_math_pow3(tempk[n_cells*class_num + cell_id])
                 * agi[n_cells*gg_id + cell_id]
                 * wq[gg_id] / cp2;
 
@@ -2069,11 +2069,11 @@ cs_rad_transfer_solve(int               bc_type[],
 
     /* Coal solid phase or fuel droplets */
     for (int class_id = 0; class_id < n_classes; class_id++) {
-      int ipcla = 1 + class_id;
+      int class_num = 1 + class_id;
 
-      cs_real_t *cpro_tsre = CS_FI_(rad_est, ipcla)->val;
-      cs_real_t *cpro_abso = CS_FI_(rad_abs, ipcla)->val;
-      cs_real_t *cpro_emi  = CS_FI_(rad_emi, ipcla)->val;
+      cs_real_t *cpro_tsre = CS_FI_(rad_est, class_num)->val;
+      cs_real_t *cpro_abso = CS_FI_(rad_abs, class_num)->val;
+      cs_real_t *cpro_emi  = CS_FI_(rad_emi, class_num)->val;
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
         cpro_tsre[cell_id] = cpro_abso[cell_id] + cpro_emi[cell_id];
