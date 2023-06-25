@@ -138,7 +138,7 @@ end subroutine reftra
 !> \param[in]   qqvinf      idem qqv but for altitude above 11000m
 !> \param[in]   zqq         vertical levels
 !> \param[in]   zray        altitude (physical mesh)
-!> \param[in]   qvray       specific umidity for water vapor
+!> \param[in]   qvray       specific humidity for water vapor
 !> \param[in]   qlray       specific humidity for liquid water
 !> \param[in]   fneray      cloud fraction
 !> \param[in]   romray      air density

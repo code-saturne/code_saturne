@@ -1890,6 +1890,8 @@ cs_atmo_add_property_fields(void)
         break;
     }
 
+    /* Note the size is soil_num+1, first value is undef.
+     * */
     f = cs_field_create("atmo_soil_percentages",
                         field_type,
                         z->location_id,

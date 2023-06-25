@@ -402,6 +402,7 @@ _cs_rad_transfer_sol(int                        gg_id,
 
   /* Total incident radiative flux  */
   cs_field_t *f_qincid = cs_field_by_name("rad_incident_flux");
+
   cs_field_t *f_snplus = cs_field_by_name("rad_net_flux");
 
   /* Allocate work arrays */
@@ -535,9 +536,9 @@ _cs_rad_transfer_sol(int                        gg_id,
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
       f_snplus->val[face_id] = 0.0;
 
-    for (int ii = -1; ii <= 1; ii+=2) {
-      for (int jj = -1; jj <= 1; jj+=2) {
-        for (int kk = -1; kk <= 1; kk+=2) {
+    for (int kk = -1; kk <= 1; kk+=2) {
+      for (int ii = -1; ii <= 1; ii+=2) {
+        for (int jj = -1; jj <= 1; jj+=2) {
 
           for (int dir_id = 0; dir_id < rt_params->ndirs; dir_id++) {
             vect_s[0] = ii * rt_params->vect_s[dir_id][0];
@@ -595,9 +596,9 @@ _cs_rad_transfer_sol(int                        gg_id,
   /* When having only one direction, one pass is enough... */
   bool finished = false;
 
-  for (int ii = -1; ii <= 1 && !finished; ii+=2) {
-    for (int jj = -1; jj <= 1 && !finished; jj+=2) {
-      for (int kk = -1; kk <= 1 && !finished; kk+=2) {
+  for (int kk = -1; kk <= 1 && !finished; kk+=2) {
+    for (int ii = -1; ii <= 1 && !finished; ii+=2) {
+      for (int jj = -1; jj <= 1 && !finished; jj+=2) {
 
         for (int dir_id = 0;
              dir_id < rt_params->ndirs && !finished;
@@ -642,6 +643,8 @@ _cs_rad_transfer_sol(int                        gg_id,
           /* Spatial discretization */
 
           /* Explicit source term */
+          for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+            rhs[cell_id] = rhs0[cell_id];
 
           /* Upwards/Downwards atmospheric integration */
           if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
@@ -656,18 +659,11 @@ _cs_rad_transfer_sol(int                        gg_id,
 
               rovsdt[cell_id] =  ck_u_d[cell_id] * cell_vol[cell_id];
 
-              /* No emission in solar bands
-               * TODO: transfer from direct to diffuse solar? */
+              /* Emission in Infra red */
               if (gg_id == rt_params->atmo_ir_id)
                 rhs[cell_id] =   ck_u_d[cell_id] * cell_vol[cell_id]
                              * c_stefan * cs_math_pow4(tempk[cell_id]) * onedpi;
-              else
-                rhs[cell_id] = 0.;
             }
-          }
-          else {
-            for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-              rhs[cell_id] = rhs0[cell_id];
           }
 
           /* Implicit source term (rovsdt seen above) */
@@ -788,6 +784,7 @@ _cs_rad_transfer_sol(int                        gg_id,
 
           /* Flux incident to boundary */
 
+          cs_field_t *f_albedo = cs_field_by_name_try("boundary_albedo");
           for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
             cs_lnum_t cell_id = cs_glob_mesh->b_face_cells[face_id];
             aa = cs_math_3_dot_product(vect_s, b_face_normal[face_id]);
@@ -795,6 +792,11 @@ _cs_rad_transfer_sol(int                        gg_id,
             aa = 0.5 * (aa + CS_ABS(aa)) * domegat;
             f_snplus->val[face_id] += aa;
             f_qincid->val[face_id] += aa * radiance[cell_id];
+            /* Diffusion: downward reflect on upward */
+            if (   gg_id == rt_params->atmo_df_o3_id
+                || gg_id == rt_params->atmo_df_id)
+              f_qinspe->val[gg_id + face_id * stride] +=
+                f_albedo->val[face_id] * aa * radiance[cell_id];
           }
 
           /* Specific to Atmo (Direct Solar, diFfuse Solar, Infra Red) */
@@ -819,6 +821,7 @@ _cs_rad_transfer_sol(int                        gg_id,
   if (f_qinspe != NULL) {
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
       f_qinspe->val[gg_id + face_id * stride] = f_qincid->val[face_id];
+
     /* For atmospheric radiation, albedo times the incident
      * direct solar radiation is given to the diffuse solar */
     cs_field_t *f_albedo = cs_field_by_name_try("boundary_albedo");
@@ -1254,8 +1257,7 @@ cs_rad_transfer_solve(int               bc_type[],
   cs_real_t *ckg = CS_FI_(rad_cak, 0)->val;
 
   /* Work arrays */
-  cs_real_t *int_abso, *int_emi, *int_rad_ist;
-  BFT_MALLOC(int_abso, n_cells_ext, cs_real_t);
+  cs_real_t *int_abso = NULL, *int_emi, *int_rad_ist;
   BFT_MALLOC(int_emi, n_cells_ext, cs_real_t);
   BFT_MALLOC(int_rad_ist, n_cells_ext, cs_real_t);
 
@@ -1508,6 +1510,15 @@ cs_rad_transfer_solve(int               bc_type[],
 
   for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
 
+    /* Use absorption field if existing */
+    char f_name[64];
+    snprintf(f_name, 63, "spectral_absorption_%02d", gg_id + 1);
+    cs_field_t *f_abs  = cs_field_by_name_try(f_name);
+    if (f_abs != NULL)
+      int_abso = f_abs->val;
+    else if (int_abso == NULL)
+      BFT_MALLOC(int_abso, n_cells_ext, cs_real_t);
+
     if (rt_params->imoadf >= 1 || rt_params->imfsck >= 1) {
 
       /* assert(gg_id == 0);  TODO: merge ckg and kgi ? */
@@ -1576,8 +1587,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
     }
 
-    char f_name[64];
-    snprintf(f_name, 63, "spectral_emission_%2d", gg_id + 1);
+    snprintf(f_name, 63, "spectral_emission_%02d", gg_id + 1);
     cs_field_t *f_emi  = cs_field_by_name_try(f_name);
 
     /* P-1 radiation model
@@ -1721,7 +1731,28 @@ cs_rad_transfer_solve(int               bc_type[],
     else if (rt_params->type == CS_RAD_TRANSFER_DOM) {
 
       /* -> Gas phase: Explicit source term of the ETR */
-      if (pm_flag[CS_COMBUSTION_SLFM] >= 0 && f_emi != NULL) {
+      if (f_emi != NULL) {
+
+        /* For atmospheric flow, solar diffuse band has emission
+         * from direct solar absorption
+         * */
+        if (gg_id == rt_params->atmo_df_id) {
+
+          snprintf(f_name, 63, "spectral_absorption_%02d",
+              rt_params->atmo_dr_id + 1);
+          cs_field_t *f_abs_dr  = cs_field_by_name_try(f_name);
+          for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+            f_emi->val[cell_id] = 0.25 * onedpi * f_abs_dr->val[cell_id];
+        }
+        if (gg_id == rt_params->atmo_df_o3_id) {
+
+          snprintf(f_name, 63, "spectral_absorption_%02d",
+              rt_params->atmo_dr_o3_id + 1);
+          cs_field_t *f_abs_dr  = cs_field_by_name_try(f_name);
+          for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+            f_emi->val[cell_id] = 0.25 * onedpi * f_abs_dr->val[cell_id];
+        }
+
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           rhs[cell_id] = f_emi->val[cell_id] * cell_vol[cell_id];
 
@@ -1837,6 +1868,9 @@ cs_rad_transfer_solve(int               bc_type[],
                           * int_rad_domega[cell_id] * wq[gg_id];
       }
     }
+
+    if (f_abs == NULL && gg_id == nwsgg-1)
+      BFT_FREE(int_abso);
 
     /* Emission
      * -------- */
@@ -2242,7 +2276,6 @@ cs_rad_transfer_solve(int               bc_type[],
   BFT_FREE(cofbfp);
   BFT_FREE(flurds);
   BFT_FREE(flurdb);
-  BFT_FREE(int_abso);
   BFT_FREE(int_emi);
   BFT_FREE(int_rad_ist);
   BFT_FREE(ckmix);
