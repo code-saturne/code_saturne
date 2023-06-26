@@ -108,6 +108,15 @@ void
 cs_turbulence_rij_clip(cs_lnum_t  n_cells);
 
 /*----------------------------------------------------------------------------*/
+/*! \brief Compute Rusanov equivalent diffusivity of the model
+ *
+ !*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_compute_rusanov(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

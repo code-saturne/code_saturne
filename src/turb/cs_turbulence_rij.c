@@ -48,6 +48,7 @@
 #include "cs_array.h"
 #include "cs_base.h"
 #include "cs_blas.h"
+#include "cs_boundary_conditions.h"
 #include "cs_domain.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_equation_param.h"
@@ -3072,27 +3073,28 @@ cs_turbulence_rij(cs_lnum_t    ncesmp,
 
      const cs_real_3_t *restrict b_face_normal
        = (const cs_real_3_t *restrict)fvq->b_face_normal;
-     cs_real_t *bpro_rusanov = cs_field_by_name("b_rusanov_diff")->val;
+     cs_real_t *b_lam = cs_field_by_name("b_rusanov_diff")->val;
 
      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
        cs_real_t n[3];
        cs_math_3_normalize(b_face_normal[face_id], n);
        cs_real_66_t bf;
+       const cs_real_t kr_33[3][3] = {{1., 0., 0.},
+                                      {0., 1., 0.},
+                                      {0., 0., 1.}};
 
-       for (cs_lnum_t i = 0; i < 6; i++) {
-         for (cs_lnum_t j = 0; j < 6; j++) {
-           bf[i][j] = 0.0;
+       for (cs_lnum_t ij = 0; ij < 6; ij++) {
+         cs_lnum_t i = _iv2t[ij];
+         cs_lnum_t j = _jv2t[ij];
+         for (cs_lnum_t kl = 0; kl < 6; kl++) {
+           cs_lnum_t k = _iv2t[kl];
+           cs_lnum_t l = _jv2t[kl];
+           bf[ij][kl] = 2. * b_lam[face_id] * n[l] *(
+                 n[i] * (kr_33[j][k] - n[j] * n[k])
+               + n[j] * (kr_33[i][k] - n[i] * n[k])
+               );
          }
        }
-       bf[4-1][4-1] += 2. * bpro_rusanov[face_id] * (1. - n[3-1]*n[3-1]);
-       bf[5-1][4-1] += 2. * bpro_rusanov[face_id] * (   - n[1-1]*n[3-1]);
-       bf[4-1][5-1] += 2. * bpro_rusanov[face_id] * (   - n[1-1]*n[3-1]);
-       bf[5-1][5-1] += 2. * bpro_rusanov[face_id] * (1. - n[1-1]*n[1-1]);
-       bf[6-1][5-1] += 2. * bpro_rusanov[face_id] * (   - n[1-1]*n[2-1]);
-       bf[5-1][6-1] += 2. * bpro_rusanov[face_id] * (   - n[2-1]*n[1-1]);
-       bf[6-1][6-1] += 2. * bpro_rusanov[face_id] * (1. - n[2-1]*n[2-1]);
-       bf[6-1][4-1] += 2. * bpro_rusanov[face_id] * (   - n[2-1]*n[3-1]);
-       bf[4-1][6-1] += 2. * bpro_rusanov[face_id] * (   - n[2-1]*n[3-1]);
 
        for (cs_lnum_t i = 0; i < 6; i++) {
          for (cs_lnum_t j = 0; j < 6; j++) {
@@ -3710,6 +3712,82 @@ cs_turbulence_rij_clip(cs_lnum_t  n_cells)
 
   cs_log_iteration_clipping_field(CS_F_(eps)->id, iclep[0], 0,
                                   vmin+6, vmax+6, iclep, iclep_max);
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Compute Rusanov equivalent diffusivity of the model
+ *
+ !*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_compute_rusanov(void)
+{
+  if (cs_glob_turb_rans_model->irijnu != 2)
+    return;
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)mq->i_face_normal;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)mq->b_face_normal;
+  const cs_lnum_2_t *i_face_cells = m->i_face_cells;
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
+  const int *bc_type = cs_glob_bc_type;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+
+  cs_real_t *ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
+  cs_real_t *bpro_rusanov = cs_field_by_name("b_rusanov_diff")->val;
+  cs_real_t *ipro_mass_fl = cs_field_by_name("inner_mass_flux")->val;
+  cs_real_t *bpro_mass_fl = cs_field_by_name("boundary_mass_flux")->val;
+  cs_real_6_t *cvar_rij = (cs_real_6_t *)(CS_F_(rij)->val);
+
+  /* TODO should depend on the model */
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+    const cs_lnum_t c_id0 = i_face_cells[face_id][0];
+    const cs_lnum_t c_id1 = i_face_cells[face_id][1];
+
+    /* Note: warning the normal has the surface in it, it is done on purpose */
+    cs_real_t r_nn_0 = cs_math_3_sym_33_3_dot_product(i_face_normal[face_id],
+                                                      cvar_rij[c_id0],
+                                                      i_face_normal[face_id]);
+    r_nn_0 *= cs_math_pow2(CS_F_(rho)->val[c_id0]); // to have rho in it
+    cs_real_t r_nn_1 = cs_math_3_sym_33_3_dot_product(i_face_normal[face_id],
+                                                      cvar_rij[c_id1],
+                                                      i_face_normal[face_id]);
+    r_nn_1 *= cs_math_pow2(CS_F_(rho)->val[c_id1]); // to have rho in it
+
+    cs_real_t rnn = fmax(fabs(r_nn_0), fabs(r_nn_1));
+
+    /* The part of U.n is already in the material upwind scheme */
+    ipro_rusanov[face_id] = sqrt(2.0 * rnn);
+  }
+
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    const cs_lnum_t c_id0 = b_face_cells[face_id];
+    cs_real_3_t n;
+    /* Warning normalized */
+    cs_math_3_normalize(b_face_normal[face_id], n);
+
+    /* Note: warning the normal has the surface in it, it is done on purpose */
+    cs_real_t r_nn_0 = cs_math_3_sym_33_3_dot_product(b_face_normal[face_id],
+                                                      cvar_rij[c_id0],
+                                                      b_face_normal[face_id]);
+    r_nn_0 *= cs_math_pow2(CS_F_(rho)->val[c_id0]); // to have rho in it
+
+    /* The part of U.n is already in the material upwind scheme */
+    if (bc_type[face_id] == CS_SMOOTHWALL ||bc_type[face_id] == CS_ROUGHWALL
+        || bc_type[face_id] == CS_SYMMETRY)
+      bpro_rusanov[face_id] = sqrt(2.*fabs(r_nn_0));
+    else
+      bpro_rusanov[face_id] = 0.;
+
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
