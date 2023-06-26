@@ -35,7 +35,7 @@
  *   structure for matrix.vector products may vary).
  *
  * - Provide at least a CSR matrix structure in addition to the "native"
- *   matrix structure, as this may allow us to leverage existing librairies.
+ *   matrix structure, as this may allow us to leverage existing libraries.
  *
  * - Provide C interface functions required for interfacing with
  *   external libraries.
@@ -67,7 +67,7 @@
  * The specific access requirements of Gauss-Seidel solvers and smoothers
  * lead us to only consider the MSR format for their implementation.
  * When requesting a Gauss-Seidel solver or smoother for another storage
- * format, a Jacobi solver or smoother may be substituded.
+ * format, a Jacobi solver or smoother may be substituted.
  */
 
 #include "cs_defs.h"
@@ -247,7 +247,7 @@ _clear_fill_info(cs_matrix_t  *matrix)
  *
  * parameters:
  *   matrix        <-- pointer to matrix structure
- *   x             <-> multipliying vector values (ghost values updated)
+ *   x             <-> multiplying vector values (ghost values updated)
  *
  * returns:
  *   halo state to use for synchronisation finalisation.
@@ -285,7 +285,7 @@ _pre_vector_multiply_sync_x_start(const cs_matrix_t   *matrix,
  *
  * parameters:
  *   matrix        <-- pointer to matrix structure
- *   x             <-> multipliying vector values (ghost values updated)
+ *   x             <-> multiplying vector values (ghost values updated)
  *----------------------------------------------------------------------------*/
 
 static void
@@ -324,7 +324,7 @@ _pre_vector_multiply_sync_x_end(const cs_matrix_t   *matrix,
  *
  * parameters:
  *   matrix        <-- pointer to matrix structure
- *   x             <-> multipliying vector values (ghost values updated)
+ *   x             <-> multiplying vector values (ghost values updated)
  *----------------------------------------------------------------------------*/
 
 void
@@ -766,7 +766,7 @@ _init_struct_csr(cs_matrix_struct_csr_t  *ms,
  *   n_rows     <-- local number of rows
  *   n_cols_ext <-- local number of columns + ghosts
  *   row_index  <-- pointer to index on rows
- *   col_id     <-> pointer to array of colum ids related to the row index
+ *   col_id     <-> pointer to array of column ids related to the row index
  *
  * returns:
  *    a pointer to a created CSR matrix structure
@@ -829,7 +829,7 @@ _init_struct_csr_from_csr(cs_matrix_struct_csr_t  *ms,
  *   n_rows     <-- local number of rows
  *   n_cols_ext <-- local number of columns + ghosts
  *   row_index  <-- pointer to index on rows
- *   col_id     <-> pointer to array of colum ids related to the row index
+ *   col_id     <-> pointer to array of column ids related to the row index
  *
  * returns:
  *    a pointer to a created CSR matrix structure
@@ -1285,7 +1285,7 @@ _set_coeffs_csr(cs_matrix_t      *matrix,
  *   row_index        <-- MSR row index (0 to n-1)
  *   col_id           <-- MSR column id (0 to n-1)
  *   d_vals           <-- diagonal values (NULL if all zero)
- *   d_vals_transfer  <-- diagonal values whose ownership is trasferred
+ *   d_vals_transfer  <-- diagonal values whose ownership is transferred
  *                        (NULL or d_vals in, NULL out)
  *   x_vals           <-- extradiagonal values (NULL if all zero)
  *   x_vals_transfer  <-- extradiagonal values whose ownership is transferred
@@ -1593,7 +1593,7 @@ _csr_assembler_values_init(void        *matrix_p,
  *
  * Values whose associated row index is negative should be ignored;
  * Values whose column index is -1 are assumed to be assigned to a
- * separately stored diagonal. Other indexes shoudl be valid.
+ * separately stored diagonal. Other indexes should be valid.
  *
  * \warning  The matrix pointer must point to valid data when the selection
  *           function is called, so the life cycle of the data pointed to
@@ -2394,7 +2394,7 @@ _msr_assembler_values_init(void              *matrix_p,
  *
  * Values whose associated row index is negative should be ignored;
  * Values whose column index is -1 are assumed to be assigned to a
- * separately stored diagonal. Other indexes shoudl be valid.
+ * separately stored diagonal. Other indexes should be valid.
  *
  * \warning  The matrix pointer must point to valid data when the selection
  *           function is called, so the life cycle of the data pointed to
@@ -2626,7 +2626,7 @@ _dist_assembler_values_init(void        *matrix_p,
  *
  * Values whose associated row index is negative should be ignored;
  * Values whose column index is -1 are assumed to be assigned to a
- * separately stored diagonal. Other indexes shoudl be valid.
+ * separately stored diagonal. Other indexes should be valid.
  *
  * \warning  The matrix pointer must point to valid data when the selection
  *           function is called, so the life cycle of the data pointed to
@@ -2876,7 +2876,7 @@ _variant_add(const char                *name,
 }
 
 /*----------------------------------------------------------------------------
- * Create a distributed matrix structure from a native matrix stucture.
+ * Create a distributed matrix structure from a native matrix structure.
  *
  * Note that the structure created maps global cell numbers to the given
  * existing face -> cell connectivity array, so it must be destroyed before
@@ -2896,7 +2896,7 @@ _count_to_index(cs_lnum_t  n,
 }
 
 /*----------------------------------------------------------------------------
- * Create a distributed matrix structure from a native matrix stucture.
+ * Create a distributed matrix structure from a native matrix structure.
  *
  * Note that the structure created maps global cell numbers to the given
  * existing face -> cell connectivity array, so it must be destroyed before
@@ -3037,7 +3037,7 @@ _create_struct_dist(cs_alloc_mode_t     alloc_mode,
 }
 
 /*----------------------------------------------------------------------------
- * Create an MSR matrix structure from a native matrix stucture.
+ * Create an MSR matrix structure from a native matrix structure.
  *
  * Note that the structure created maps global cell numbers to the given
  * existing face -> cell connectivity array, so it must be destroyed before
@@ -3150,7 +3150,7 @@ _create_struct_msr(cs_alloc_mode_t     alloc_mode,
  *   n_rows          <- local number of rows
  *   n_cols_ext      <-- local number of columns + ghosts
  *   row_index       <-- index on rows
- *   col_id          <-> array of colum ids related to the row index
+ *   col_id          <-> array of column ids related to the row index
  *
  * returns:
  *    a pointer to a created distrubuted (MSR configured) matrix structure
@@ -3199,7 +3199,7 @@ _create_struct_msr_from_shared(bool              direct_assembly,
  *   n_rows     <-- local number of rows
  *   n_cols_ext <-- local number of columns + ghosts
  *   row_index  <-- pointer to index on rows
- *   col_id     <-> pointer to array of colum ids related to the row index
+ *   col_id     <-> pointer to array of column ids related to the row index
  *
  * returns:
  *    a pointer to a created CSR matrix structure
@@ -3247,7 +3247,7 @@ _create_struct_msr_from_msr(bool         transfer,
  *   n_rows          <- local number of rows
  *   n_cols_ext      <-- local number of columns + ghosts
  *   row_index       <-- index on rows
- *   col_id          <-> array of colum ids related to the row index
+ *   col_id          <-> array of column ids related to the row index
  *
  * returns:
  *    a pointer to a created distrubuted (MSR configured) matrix structure
@@ -3314,7 +3314,7 @@ _create_struct_msr_from_csr(bool              direct_assembly,
  *   n_rows          <- local number of rows
  *   n_cols_ext      <-- local number of columns + ghosts
  *   row_index       <-- index on rows
- *   col_id          <-> array of colum ids related to the row index
+ *   col_id          <-> array of column ids related to the row index
  *
  * returns:
  *    a pointer to a created CSR matrix structure
@@ -4302,7 +4302,7 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
  * \param[in]       n_rows      local number of rows
  * \param[in]       n_cols_ext  local number of columns + ghosts
  * \param[in]       row_index   pointer to index on rows
- * \param[in, out]  col_id      pointer to array of colum ids related to
+ * \param[in, out]  col_id      pointer to array of column ids related to
  *                              the row index
  * \param[in]       halo        halo structure for synchronization, or NULL
  * \param[in]       numbering   vectorization or thread-related numbering info,
@@ -4393,7 +4393,7 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
  * \param[in]  n_rows           local number of rows
  * \param[in]  n_cols_ext       local number of columns + ghosts
  * \param[in]  row_index        index on rows
- * \param[in]  col_id           array of colum ids related to the row index
+ * \param[in]  col_id           array of column ids related to the row index
  * \param[in]  halo             halo structure for synchronization, or NULL
  * \param[in]  numbering        vectorization or thread-related numbering
  *                              info, or NULL
@@ -5436,7 +5436,7 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix)
  * coefficients using cs_matrix_set_coefficients(), in which case the pointer
  * returned is the same as the one passed to that function.
  *
- * It is used in the current multgrid code, but should be removed as soon
+ * It is used in the current multigrid code, but should be removed as soon
  * as the dependency to the native format is removed.
  *
  * \param[in]  matrix  pointer to matrix structure
@@ -5505,7 +5505,7 @@ cs_matrix_row_finalize(cs_matrix_row_info_t  *r)
  *
  * This function may not work for all matrix types.
  *
- * In the case of blocked matrixes, the true (non-blocked)
+ * In the case of blocked matrices, the true (non-blocked)
  * values are returned.
  *
  * The row information structure must have been previously initialized
@@ -5907,7 +5907,7 @@ cs_matrix_get_msr_arrays(const cs_matrix_t   *matrix,
  * This function includes a halo update of x prior to multiplication by A.
  *
  * \param[in]       matrix         pointer to matrix structure
- * \param[in, out]  x              multipliying vector values
+ * \param[in, out]  x              multiplying vector values
  *                                 (ghost values updated)
  * \param[out]      y              resulting vector
  */
@@ -5962,7 +5962,7 @@ cs_matrix_vector_multiply(const cs_matrix_t   *matrix,
  * This function includes a halo update of x prior to multiplication by A.
  *
  * \param[in]       matrix         pointer to matrix structure
- * \param[in, out]  x              multipliying vector values, on device
+ * \param[in, out]  x              multiplying vector values, on device
  *                                 (ghost values updated)
  * \param[out]      y              resulting vector (on device)
  */
@@ -5998,7 +5998,7 @@ cs_matrix_vector_multiply_d(const cs_matrix_t   *matrix,
  * redundant update by using this variant of the matrix.vector product).
  *
  * \param[in]   matrix         pointer to matrix structure
- * \param[in]   x              multipliying vector values
+ * \param[in]   x              multiplying vector values
  * \param[out]  y              resulting vector
  */
 /*----------------------------------------------------------------------------*/
@@ -6053,7 +6053,7 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
  *
  * \param[in]       matrix         pointer to matrix structure
  * \param[in]       op_type        SpMV operation type
- * \param[in, out]  x              multipliying vector values
+ * \param[in, out]  x              multiplying vector values
  *                                 (ghost values updated)
  * \param[out]      y              resulting vector
  */
@@ -6114,7 +6114,7 @@ cs_matrix_vector_multiply_partial(const cs_matrix_t      *matrix,
  *
  * \param[in]       matrix         pointer to matrix structure
  * \param[in]       op_type        SpMV operation type
- * \param[in, out]  x              multipliying vector values, on device
+ * \param[in, out]  x              multiplying vector values, on device
  *                                 (ghost values updated)
  * \param[out]      y              resulting vector, on device
  */
