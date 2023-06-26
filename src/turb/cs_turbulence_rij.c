@@ -3068,7 +3068,7 @@ cs_turbulence_rij(cs_lnum_t    ncesmp,
    if (cs_glob_turb_rans_model->irijnu == 2) {
      cs_real_t *ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
      for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
-       viscf[face_id] += ipro_rusanov[face_id];
+       viscf[face_id] = fmax(ipro_rusanov[face_id], viscf[face_id]);
      }
 
      const cs_real_3_t *restrict b_face_normal

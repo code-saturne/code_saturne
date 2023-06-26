@@ -1248,7 +1248,7 @@ endif
 if (irijnu.eq.2) then
   ! Add Rusanov
   do ifac = 1, nfac
-    viscf(ifac) = viscf(ifac) + ipro_rusanov(ifac)
+    viscf(ifac) = max(viscf(ifac), ipro_rusanov(ifac))
   enddo
 
   call field_get_val_s_by_name('b_rusanov_diff', bpro_rusanov)
