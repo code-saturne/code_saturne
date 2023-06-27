@@ -314,8 +314,8 @@ class base_domain:
 
         # Copy single file
 
-        if os.path.isfile(src):
-            shutil.copy2(src, dest)
+        if os.path.isfile(src) or os.path.islink(src):
+            shutil.copy2(src, dest, follow_symlinks=False)
             if purge:
                 os.remove(src)
 
@@ -331,8 +331,8 @@ class base_domain:
             for f in l:
                 f_src = os.path.join(src, f)
                 f_dest = os.path.join(dest, f)
-                if os.path.isfile(f_src):
-                    shutil.copy2(f_src, f_dest)
+                if os.path.isfile(f_src) or os.path.islink(src):
+                    shutil.copy2(f_src, f_dest, follow_symlinks=False)
                 elif os.path.isdir(f_src):
                     self.copy_result(f_src, f_dest)
 
