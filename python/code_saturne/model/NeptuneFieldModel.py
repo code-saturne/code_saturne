@@ -117,8 +117,12 @@ class NeptuneField(Variables, Model):
                     li = node['label'].rsplit(old_label, 1)
                     node['label'] = value.join(li)
                 #FIXME: Cleaner update labels of covariance_qfp
-                elif '_'.join(['covariance_qfp', str(self.f_id)]) in node['name']:
-                    node['label'] = value.join(node['label'].rsplit(old_label))
+                else:
+                    try:
+                        if '_'.join(['covariance_qfp', str(self.f_id)]) in node['name']:
+                            node['label'] = value.join(node['label'].rsplit(old_label))
+                    except Exception:
+                        pass
 
     @property
     def flow_type(self):
