@@ -3,6 +3,12 @@ Release 8.0.0 (unreleased)
 
 ### Bug fixes:
 
+- Fix handling of groups when concatenating or modifying Cartesian meshes.
+
+- Fix copy of restart (symbolic links) when using a separate scratch directory.
+
+- Fix "intermittent" output of checkpoints when a local time step is used.
+
 - Allow use of hybrid convection scheme (used for RANS / LES turbulence models)
   and TVD/NVD convection schemes with no slope test or with the beta limiter
   inside the thermal convection diffusion balance.
