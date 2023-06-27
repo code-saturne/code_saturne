@@ -12,6 +12,26 @@ Release 8.0.0-rc1 (2023-06-21)
 
 ### User changes:
 
+- Add user postprocessing functions to compute mean and/or integrals of
+  scalars over selections of boundary faces or over boundary zones.
+
+- Add a user postprocessing function to compute total pressure over a
+  selection of boundary faces.
+
+- Postprocessing over a slice (plane, disc, annulus) can now be done
+  * Slices are defined using a user function.
+  * User can compute integral or mean values using scalar and/or vectorial
+    weights of a scalar.
+  * This uses medcoupling as an underlying building brick, and thus only
+    available if the prerequisite is available.
+
+- Add the functionnality of "time tables".
+  * User can now define a time table, based on a data file, either using the
+    GUI or an advanced user function.
+  * The time table can then be used directly in mathematical formulae in the
+    GUI (if the table is defined in the GUI), or in the different user
+    functions.
+
 - Add basic immersed boundary method features based on the
   neptune_cfd approach.
 
