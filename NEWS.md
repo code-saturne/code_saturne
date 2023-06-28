@@ -3,6 +3,8 @@ Release 8.0.0 (unreleased)
 
 ### Bug fixes:
 
+- Fix call of cs_user_finalize_setup without CDO, broken 2023-06-01.
+
 - Fix ids of columns read while loading a time table when the user defined
   a subset in the GUI. For simplicity, GUI numbering starts at 1 and the
   internal code's numbering starts at 0.

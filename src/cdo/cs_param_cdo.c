@@ -72,19 +72,29 @@ cs_param_cdo_mode_t  cs_glob_param_cdo_mode = CS_PARAM_CDO_MODE_OFF;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Set the CDO mode in the Fortran part
- *
- * parameters:
- *   mode <-- -1: no CDO, 1: with CDO, 2: CDO only
+ * Map Fortran pointers to global C structure members.
  *----------------------------------------------------------------------------*/
 
-extern void
-cs_f_set_cdo_mode(int  mode);
+void
+cs_f_cdo_get_pointers(int  **icdo);
 
 /*============================================================================
  * Private function definitions
  *============================================================================*/
 
+/*============================================================================
+ * Fortran wrapper function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Map Fortran pointers to global C structure members.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_cdo_get_pointers(int  **icdo)
+{
+  *icdo = &cs_glob_param_cdo_mode;
+}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -103,7 +113,6 @@ void
 cs_param_cdo_mode_set(cs_param_cdo_mode_t   mode)
 {
   cs_glob_param_cdo_mode = mode;
-  cs_f_set_cdo_mode(mode);  /* Set the CDO mode in the FORTRAN part */
 }
 
 /*----------------------------------------------------------------------------*/
