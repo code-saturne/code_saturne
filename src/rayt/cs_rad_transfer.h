@@ -150,7 +150,6 @@ typedef struct {
   int           restart;
   int           nwsgg;
   cs_real_t    *wq;
-  int           nzfrad;
   int           itpimp;
   int           ipgrno;
   int           iprefl;

@@ -245,6 +245,7 @@ cs_rad_transfer_params_t _rt_params = {
   .atmo_dr_id = -1,
   .atmo_dr_o3_id = -1,
   .atmo_df_id = -1,
+  .atmo_df_o3_id = -1,
   .atmo_ir_id = -1,
   .dispersion = false,
   .dispersion_coeff = 1.,
