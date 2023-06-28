@@ -202,7 +202,7 @@ double precision ncray(kmx)
 integer i,k,n,l,k1p1,iaer,iaero_top,iaero_topr
 integer itop,ibase,itopp1,itopp2,ibasem1
 integer          ifac, iz1, iz2, f_id, c_id, iel
-double precision za, muzero, muzero_cor,fo,rr1,m,mbar,rabar,rabar2,rbar
+double precision za, muzero, muzero_cor,fo,m,mbar,rabar,rabar2,rbar
 double precision rabarc,rbarc, refx, trax, refx0, trax0
 double precision qqvtot,y,ystar
 double precision zqm1,zq,xm1,x,xstar,xstarm1
@@ -219,8 +219,7 @@ double precision gama1,gama2,kt,gas,fas
 double precision omega, var, zent
 double precision cpvcpa
 double precision dzx, dy
-double precision ck_aero_h2o, ck_aero_o3, ck_cloud
-! For postprecessing
+! For postprocessing
 double precision soil_direct_flux , soil_global_flux
 double precision soil_direct_flux_h2o,  soil_global_flux_h2o
 double precision soil_direct_flux_o3,  soil_global_flux_o3
@@ -263,7 +262,7 @@ double precision beta2(12), beta3(12),beta4(12),copioc20(12)
 double precision nu0, dm0, dm, coeff_E_o3(12), coeff_E_h2o(12)
 double precision pioco3C, pioch2oC
 double precision tauao3(kmx+1) , tauah2o(kmx+1)
-double precision corp, rov, cp_cloud, cp_aero
+double precision corp, rov
 double precision mui,tauapc,ckapcd,ckapcf,picapc
 double precision ck_aero_h2of,ck_aero_h2od,ck_aero_o3f,ck_aero_o3d
 ! data for pkn and kn distribution

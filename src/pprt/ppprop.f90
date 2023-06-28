@@ -66,13 +66,6 @@ use cs_c_bindings
 
 implicit none
 
-! Local variables
-
-character(len=80) :: f_name
-
-integer          f_id
-integer          itycat
-
 !===============================================================================
 ! Interfaces
 !===============================================================================
@@ -151,7 +144,8 @@ if (ippmod(iatmos).ge.0) then
 
   ! Momentum source terms
   if (iatmst.ge.1) then
-    call add_property_field('momentum_source_terms', 'MomentumSourceTerms', 3, .false., imomst)
+    call add_property_field('momentum_source_terms', 'MomentumSourceTerms', 3, &
+                            .false., imomst)
     call field_set_key_int(imomst, keylog, 1)
     call field_set_key_int(imomst, keyvis, 1)
   endif
