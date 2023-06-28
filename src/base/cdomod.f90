@@ -40,7 +40,7 @@ module cdomod
   !> Activated (=1 or =2) or not activated (=0)
   !> If icdo=1 (CDO and FV at the same time)
   !> If icdo=2 (CDO only)
-  integer, save :: icdo
+  integer(c_int), pointer, save :: icdo
 
   interface
 
@@ -97,6 +97,15 @@ module cdomod
       character(kind=c_char, len=1), dimension(*), intent(in) :: eqname
     end subroutine solve_cdo_equation
 
+    ! Interface to C function retrieving pointers to global CDO parameters
+
+    subroutine cs_f_cdo_get_pointers(icdo) &
+      bind(C, name='cs_f_cdo_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: icdo
+    end subroutine cs_f_cdo_get_pointers
+
  end interface
 
   !=============================================================================
@@ -125,30 +134,25 @@ contains
 
   end subroutine solve_steady_state_cdo_equation
 
+  !> \brief Initialize Fortran CDO flag.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine cdo_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_icdo
+
+    call cs_f_cdo_get_pointers(c_icdo)
+
+    call c_f_pointer(c_icdo, icdo)
+
+  end subroutine cdo_init
+
+  !=============================================================================
+
 end module cdomod
 
-!=============================================================================
-
-subroutine cs_f_set_cdo_mode(icdoval)  &
-  bind(C, name='cs_f_set_cdo_mode')
-
-  !===========================================================================
-  ! Module files
-  !===========================================================================
-
-  use cdomod
-
-  !===========================================================================
-
-  implicit none
-
-  ! Arguments
-
-  integer(c_int), value :: icdoval
-
-  !===========================================================================
-
-  icdo = icdoval
-
-  return
-end subroutine cs_f_set_cdo_mode

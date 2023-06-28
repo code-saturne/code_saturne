@@ -33,6 +33,7 @@ subroutine iniini
 
 use atincl
 use paramx
+use cdomod
 use cstnum
 use dimens
 use numvar
@@ -125,6 +126,7 @@ iporf = -1
 !===============================================================================
 
 call atmo_init
+call cdo_init
 call time_step_init
 call time_step_options_init
 call thermal_model_init
