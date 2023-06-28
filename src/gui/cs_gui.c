@@ -5444,6 +5444,10 @@ cs_gui_time_tables(void)
           token = strtok(NULL, ",");
         }
 
+        /* GUI numbering of columns' ids starts at 1 */
+        for (int col_id = 0; col_id < n_columns; col_id++)
+          col_ids[col_id] -= 1;
+
         BFT_FREE(ids);
 
       }
