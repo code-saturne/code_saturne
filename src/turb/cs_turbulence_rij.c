@@ -256,6 +256,209 @@ _rij_min_max(cs_lnum_t        n_cells,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute \f$ \overline{\vect{u}' \rho'}\f$
+ *
+ * \param[in]   phase_id  turbulent phase id (-1 for single phase flow)
+ * \param[out]  up_rhop   correlation fluctuation of velocity and density
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_up_rhop(int        phase_id,
+                 cs_real_t  up_rhop[][3])
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+
+  cs_field_t *f_rij = CS_F_(rij);
+  cs_field_t *f_eps = CS_F_(eps);
+  cs_field_t *f_rho = CS_F_(rho);
+  cs_field_t *f_rhob = CS_F_(rho_b);
+
+  if (phase_id >= 0) {
+    f_rij = CS_FI_(rij, phase_id);
+    f_eps = CS_FI_(eps, phase_id);
+    f_rho = CS_FI_(rho, phase_id);
+    f_rhob = CS_FI_(rho_b, phase_id);
+  }
+
+  const cs_real_t *cvara_ep = f_eps->val_pre;
+  const cs_real_6_t *cvara_rij = f_rij->val_pre;
+  const cs_real_t *rho = f_rho->val;
+  const cs_real_t *rho_b = CS_F_(rho_b)->val;
+
+  const cs_equation_param_t *eqp
+    = cs_field_get_equation_param_const(f_rij);
+
+
+  cs_real_t cons = -1.5 * cs_turb_cmu;
+
+  const cs_field_t *tf = cs_thermal_model_field();
+  if (tf != NULL) {
+    const int ksigmas = cs_field_key_id("turbulent_schmidt");
+    const cs_real_t turb_schmidt = cs_field_get_key_double(tf, ksigmas);
+    cons = -1.5 * cs_turb_cmu / turb_schmidt;
+  }
+  const cs_velocity_pressure_model_t  *vp_model
+    = cs_glob_velocity_pressure_model;
+  const int idilat = vp_model->idilat;
+
+
+  /* Using thermal fluxes
+   * (only for thermal scalar for the moment) */
+  cs_real_t *cpro_beta = NULL;
+  if (cs_field_by_name_try("thermal_expansion") != NULL)
+    cpro_beta = cs_field_by_name_try("thermal_expansion")->val;
+
+  const cs_field_t *thf = cs_thermal_model_field();
+  if (phase_id >= 0)
+    thf = CS_FI_(h_tot, phase_id);
+
+  const int kturt = cs_field_key_id("turbulent_flux_model");
+  int turb_flux_model = 0;
+  if (thf != NULL)
+    turb_flux_model = cs_field_get_key_int(thf, kturt);
+  const int turb_flux_model_type = turb_flux_model / 10;
+
+  if (turb_flux_model_type == 3) {
+    /* Value of the corresponding turbulent flux */
+    char fname[128];
+    snprintf(fname, 128, "%s_turbulent_flux", thf->name); fname[127] = '\0';
+
+    const cs_real_t *cvar_scalt = thf->val;
+
+    cs_real_3_t *xut = (cs_real_3_t *)cs_field_by_name(fname)->val;
+    /* finalize rho'u' = -rho beta T'u' = -rho beta C k/eps R.gradT */
+#   pragma omp parallel for if(n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      cs_real_t beta = (cpro_beta == NULL) ? 1./cvar_scalt[c_id] : cpro_beta[c_id];
+
+      const cs_real_t factor = - beta * rho[c_id];
+
+      for (cs_lnum_t i = 0; i < 3; i++)
+        up_rhop[c_id][i] = factor * xut[c_id][i];
+    }
+
+  }
+
+  /* Note that the buoyant term is normally expressed in term of
+   * (u'T') or (u'rho') here modelled with a GGDH:
+   *   (u'rho') = C * k/eps * R_ij Grad_j(rho)
+   */
+
+  else {
+
+    /* Boussinesq or anelastic approximation:
+     * buoyant terms in function of gradT */
+    if (idilat == 0
+      || cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
+
+      /* TODO take all buoyant scalars */
+
+      if (thf != NULL) {
+
+        const cs_real_t *cvara_scalt = thf->val_pre;
+
+        cs_real_3_t *gradt;
+        BFT_MALLOC(gradt, n_cells_ext, cs_real_3_t);
+
+        cs_field_gradient_scalar(thf,
+                                 false,  /* use current (not previous) value */
+                                 1,      /* inc */
+                                 gradt);
+
+        /* finalize rho'u' = -rho beta T'u' = -rho beta C k/eps R.gradT */
+#       pragma omp parallel for if(n_cells > CS_THR_MIN)
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+          cs_real_t rit[3];
+          cs_math_sym_33_3_product(cvara_rij[c_id], gradt[c_id], rit);
+
+          cs_real_t beta = (cpro_beta == NULL) ? 1./cvara_scalt[c_id] : cpro_beta[c_id];
+
+          /* factor = - rho beta C k/eps */
+          const cs_real_t factor = - beta * rho[c_id] * cons
+            * cs_math_6_trace(cvara_rij[c_id])
+            / (2. * cvara_ep[c_id]);
+
+          for (cs_lnum_t i = 0; i < 3; i++)
+            up_rhop[c_id][i] = factor * rit[i];
+        }
+
+        BFT_FREE(gradt);
+      }
+
+    }
+
+    /* Not Boussinesq nor anelastic */
+    else {
+
+      cs_real_3_t *gradro;
+      BFT_MALLOC(gradro, n_cells_ext, cs_real_3_t);
+
+      /* Boundary conditions: Dirichlet romb
+       * We impose in Dirichlet (coefa) the value romb */
+      cs_real_t *coefb;
+      BFT_MALLOC(coefb, n_b_faces, cs_real_t);
+
+      cs_array_real_fill_zero(n_b_faces, coefb);
+
+      cs_field_bc_coeffs_t bc_coeffs_loc;
+      cs_field_bc_coeffs_init(&bc_coeffs_loc);
+      bc_coeffs_loc.a = rho_b;
+      bc_coeffs_loc.b = coefb;
+
+      /* Compute gradient */
+      cs_halo_type_t halo_type = CS_HALO_STANDARD;
+      cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+      cs_gradient_type_by_imrgra(eqp->imrgra,
+                                 &gradient_type,
+                                 &halo_type);
+
+      cs_gradient_scalar("density",
+                         gradient_type,
+                         halo_type,
+                         1,             /* inc */
+                         eqp->nswrgr,
+                         0,             /* iphydp */
+                         1,             /* w_stride */
+                         eqp->verbosity,
+                         eqp->imligr,
+                         eqp->epsrgr,
+                         eqp->climgr,
+                         NULL,          /* f_ext */
+                         &bc_coeffs_loc,
+                         rho,
+                         NULL,         /* c_weight */
+                         NULL,         /* cpl */
+                         gradro);
+
+      /* finalize rho'u' */
+# pragma omp parallel for if(n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+        cs_real_t rit[3];
+        cs_math_sym_33_3_product(cvara_rij[c_id], gradro[c_id], rit);
+
+        const cs_real_t k_ov_eps =   cs_math_6_trace(cvara_rij[c_id])
+          / (2*cvara_ep[c_id]);
+
+        for (cs_lnum_t i = 0; i < 3; i++)
+          up_rhop[c_id][i] = cons * k_ov_eps * rit[i];
+
+      }
+
+      BFT_FREE(gradro);
+      BFT_FREE(coefb);
+    }
+  }
+
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Terms of wall echo for \f$ R_{ij} \f$
  *        \f$var  = R_{11} \: R_{22} \: R_{33} \: R_{12} \: R_{13} \: R_{23}\f$
  *        \f$comp =  1 \:  2 \:  3 \:  4 \:  5 \:  6\f$
@@ -450,40 +653,16 @@ _rij_echo(int              phase_id,
  * \brief Gravity terms for terms
  *        For \f$R_{ij}\f$
  *
- * \param[in]   phase_id    turbulent phase id (-1 for single phase flow)
- * \param[in]   gradro      work array for \f$ \grad{\rho} \f$
- * \param[out]  buoyancy    buoyancy term
+ * \param[in]   up_rhop   work array for \f$ \vect{u}'\rho' \f$
+ * \param[out]  buoyancy  buoyancy term
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_gravity_st_rij(int              phase_id,
-                const cs_real_t  gradro[][3],
+_gravity_st_rij(const cs_real_t  up_rhop[][3],
                 cs_real_t        buoyancy[][6])
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-
-  cs_field_t *f_rij = CS_F_(rij);
-  cs_field_t *f_eps = CS_F_(eps);
-
-  if (phase_id >= 0) {
-    f_rij = CS_FI_(rij, phase_id);
-    f_eps = CS_FI_(eps, phase_id);
-  }
-
-  const cs_real_t *cvara_ep = (const cs_real_t *)f_eps->val_pre;
-  const cs_real_6_t *cvara_rij = (const cs_real_6_t *)f_rij->val_pre;
-
-  const cs_real_t uns3 = 1./3;
-
-  cs_real_t cons = -1.5 * cs_turb_cmu;
-
-  const cs_field_t *tf = cs_thermal_model_field();
-  if (tf != NULL) {
-    const int ksigmas = cs_field_key_id("turbulent_schmidt");
-    const cs_real_t turb_schmidt = cs_field_get_key_double(tf, ksigmas);
-    cons = -1.5 * cs_turb_cmu / turb_schmidt;
-  }
 
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
   const cs_real_t o_m_crij3 = (1. - cs_turb_crij3);
@@ -491,19 +670,13 @@ _gravity_st_rij(int              phase_id,
 # pragma omp parallel for if(n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-    cs_real_t rit[3];
-    cs_math_sym_33_3_product(cvara_rij[c_id], gradro[c_id], rit);
-
-     const cs_real_t k_ov_eps =   cs_math_6_trace(cvara_rij[c_id])
-                                / (2*cvara_ep[c_id]);
-
      cs_real_t gij[3][3];
      for (cs_lnum_t i = 0; i < 3; i++) {
        for (cs_lnum_t j = 0; j < 3; j++)
-         gij[i][j] = cons*k_ov_eps* (rit[i]*grav[j] + rit[j]*grav[i]);
+         gij[i][j] = up_rhop[c_id][i]*grav[j] + up_rhop[c_id][j]*grav[i];
      }
 
-     const cs_real_t gkks3 = uns3*(gij[0][0] + gij[1][1] + gij[2][2]);
+     const cs_real_t gkks3 = (gij[0][0] + gij[1][1] + gij[2][2]) / 3.;
 
      buoyancy[c_id][0] = gij[0][0] * o_m_crij3 + cs_turb_crij3*gkks3;
      buoyancy[c_id][1] = gij[1][1] * o_m_crij3 + cs_turb_crij3*gkks3;
@@ -511,7 +684,6 @@ _gravity_st_rij(int              phase_id,
      buoyancy[c_id][3] = gij[0][1] * o_m_crij3;
      buoyancy[c_id][4] = gij[1][2] * o_m_crij3;
      buoyancy[c_id][5] = gij[0][2] * o_m_crij3;
-
   }
 }
 
@@ -522,15 +694,9 @@ _gravity_st_rij(int              phase_id,
  *  Terms for epsilon:
  *      rom*volumr*deps/dt =
  *                     ... + CEPS1*(EPS/K)*Max(0,(Gkk/2))*volume
- *            With Gij = -(1.5 cmu/PrT) (k/eps) (Rit Gj + Rjt Gi)
- *                 Rit = Rik drom/dxk (sum on k)
- *            We simplify (eps/k) by noting
- *                GijP = -(1.5 cmu/PrT)         (Rit Gj + Rjt Gi)
- *      rom*volume*deps/dt =
- *                     ... + CEPS1*        Max(0,(GkkP/2))*volume
  *
  * \param[in]       phase_id    turbulent phase id (-1 for single phase flow)
- * \param[in]       gradro      density gradient \f$ \grad{\rho} \f$
+ * \param[in]       up_rhop     work array for \f$ \vect{u}'\rho' \f$
  * \param[in]       cell_f_vol  cell fluid volume
  * \param[in, out]  rhs         work array for right-hand side
  */
@@ -538,41 +704,47 @@ _gravity_st_rij(int              phase_id,
 
 static void
 _gravity_st_epsilon(int              phase_id,
-                    const cs_real_t  gradro[][3],
+                    const cs_real_t  up_rhop[][3],
                     const cs_real_t  cell_f_vol[],
                     cs_real_t        rhs[])
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
   cs_field_t *f_rij = CS_F_(rij);
-  if (phase_id >= 0)
+  cs_field_t *f_eps = CS_F_(eps);
+  if (phase_id >= 0) {
     f_rij = CS_FI_(rij, phase_id);
+    f_eps = CS_FI_(eps, phase_id);
+  }
 
   const cs_real_6_t *cvara_rij = (const cs_real_6_t *)f_rij->val_pre;
 
-  cs_real_t cons = -1.5 * cs_turb_cmu;
-
-  const cs_field_t *tf = cs_thermal_model_field();
-  if (tf != NULL) {
-    const int ksigmas = cs_field_key_id("turbulent_schmidt");
-    const cs_real_t turb_schmidt = cs_field_get_key_double(tf, ksigmas);
-    cons = -1.5 * cs_turb_cmu / turb_schmidt;
-  }
+  const cs_real_t *cvara_ep = f_eps->val_pre;
 
   const cs_real_t *g = cs_glob_physical_constants->gravity;
+
+  const cs_real_t *crom = CS_F_(rho)->val;
+  const cs_real_t *viscl = CS_F_(mu)->val;
 
 # pragma omp parallel for if(n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-    const cs_real_t g_rij_gradro
-      = cs_math_3_sym_33_3_dot_product(g, cvara_rij[c_id], gradro[c_id]);
+    const cs_real_t g_up_rhop = cs_math_3_dot_product(g, up_rhop[c_id]);
 
-    // FIXME for EB-DFM and EBRSM
+    const cs_real_t tke = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
 
-    const cs_real_t aa = 0.0;
-    const cs_real_t bb = cons * g_rij_gradro;
+    cs_real_t time_scale = tke / cvara_ep[c_id];
 
-    rhs[c_id] += cs_turb_ce1 * cs_math_fmax(aa, bb) * cell_f_vol[c_id];
+    if (cs_glob_turb_model->iturb ==  CS_TURB_RIJ_EPSILON_EBRSM) {
+
+      /* Calculation of the Durbin time scale */
+      const cs_real_t xttkmg
+        = cs_turb_xct*sqrt(viscl[c_id] / crom[c_id] / cvara_ep[c_id]);
+      time_scale = cs_math_fmax(time_scale, xttkmg);
+    }
+
+    rhs[c_id] += cs_turb_ce1 * cs_math_fmax(0., g_up_rhop/time_scale)
+               * cell_f_vol[c_id];
   }
 }
 
@@ -585,8 +757,7 @@ _gravity_st_epsilon(int              phase_id,
  * \param[in]   phase_id  turbulent phase id (-1 for single phase flow)
  * \param[in]   gradv     work array for the velocity grad term
  * \param[in]   produc    work array for production
- * \param[in]   gradro    work array for grad rom
- *                        (without rho volume) only for iturb=30
+ * \param[in]   up_rhop   work array for \f$ \vect{u}'\rho' \f$
  * \param[out]  viscf     visc*surface/dist at internal faces
  * \param[out]  viscb     visc*surface/dist at edge faces
  * \param[out]  viscce    Daly Harlow diffusion term
@@ -602,7 +773,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
                int                phase_id,
                const cs_real_t    gradv[][3][3],
                const cs_real_t    produc[][6],
-               const cs_real_t    gradro[][3],
+               const cs_real_t    up_rhop[][3],
                cs_real_t          viscf[],
                cs_real_t          viscb[],
                cs_real_t          viscce[][6],
@@ -920,7 +1091,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
       cpro_buoyancy = _buoyancy;
     }
 
-    _gravity_st_rij(phase_id, gradro, cpro_buoyancy);
+    _gravity_st_rij(up_rhop, cpro_buoyancy);
 
     /* If we extrapolate the source terms: previous ST */
     if (st_prv_id > -1) {
@@ -1011,8 +1182,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
  * \param[in]   f_rij     pointer to Rij field
  * \param[in]   phase_id  turbulent phase id (-1 for single phase flow)
  * \param[in]   produc    work array for production
- * \param[in]   gradro    work array for grad rom
- *                        (without rho volume)
+ * \param[in]   up_rhop   work array for \f$ \vect{u}'\rho' \f$
  * \param[out]  viscf     visc*surface/dist at internal faces
  * \param[out]  viscb     visc*surface/dist at edge faces
  * \param[out]  viscce    Daly Harlow diffusion term
@@ -1027,7 +1197,7 @@ static void
 _pre_solve_lrr_sg(const cs_field_t  *f_rij,
                   int                phase_id,
                   const cs_real_t    produc[][6],
-                  const cs_real_t    gradro[][3],
+                  const cs_real_t    up_rhop[][3],
                   cs_real_t          viscf[],
                   cs_real_t          viscb[],
                   cs_real_t          viscce[][6],
@@ -1314,8 +1484,8 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
   if (cs_glob_turb_rans_model->igrari == 1) {
 
     cs_real_6_t *_buoyancy = NULL, *cpro_buoyancy = NULL;
-
     cs_field_t *f_buo = cs_field_by_name_try("rij_buoyancy");
+
     if (f_buo != NULL) {
       cpro_buoyancy = (cs_real_6_t*)f_buo->val;
     }
@@ -1324,7 +1494,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
       cpro_buoyancy = _buoyancy;
     }
 
-    _gravity_st_rij(phase_id, gradro, cpro_buoyancy);
+    _gravity_st_rij(up_rhop, cpro_buoyancy);
 
     /* If we extrapolate the source terms: previous ST */
     if (st_prv_id > -1) {
@@ -1415,8 +1585,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
  * \param[in]   phase_id  turbulent phase id (-1 for single phase flow)
  * \param[in]   gradv     work array for the velocity grad term
  * \param[in]   produc    work array for production
- * \param[in]   gradro    work array for grad rom
- *                        (without rho volume) only for iturb=30
+ * \param[in]   up_rhop   work array for \f$ \vect{u}'\rho' \f$
  * \param[out]  viscf     visc*surface/dist at internal faces
  * \param[out]  viscb     visc*surface/dist at edge faces
  * \param[out]  viscce    Daly Harlow diffusion term
@@ -1432,7 +1601,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
                int                phase_id,
                const cs_real_t    gradv[][3][3],
                const cs_real_t    produc[][6],
-               const cs_real_t    gradro[][3],
+               const cs_real_t    up_rhop[][3],
                cs_real_t          viscf[],
                cs_real_t          viscb[],
                cs_real_t          viscce[][6],
@@ -1941,7 +2110,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
       cpro_buoyancy = _buoyancy;
     }
 
-    _gravity_st_rij(phase_id, gradro, cpro_buoyancy);
+    _gravity_st_rij(up_rhop, cpro_buoyancy);
 
     /* If we extrapolate the source terms: previous ST */
     if (st_prv_id > -1) {
@@ -1977,26 +2146,22 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
         cs_real_t implmat2add[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
-        cs_real_t gkks3 = 0;
-        for (cs_lnum_t jj = 0; jj < 3; jj++) {
-          for (cs_lnum_t ii = 0; ii < 3; ii++)
-            gkks3 += grav[ii] * gradro[c_id][jj] * cvara_var[c_id][_t2v[jj][ii]];
-        }
-        gkks3 *= cons * k_ov_eps * crij3 * d2s3;
+        const cs_real_t gkks3 = cs_math_3_dot_product(up_rhop, grav) / 3.;
+
+        cs_real_t matrn[6];
+        for (int ii = 0; ii < 6; ii++)
+          matrn[ii] = cvara_var[c_id][ii] / trrij;
+
+        cs_real_t oo_matrn[6];
+        cs_math_sym_33_inv_cramer(matrn, oo_matrn);
+        for (int ii = 0; ii < 6; ii++)
+          oo_matrn[ii] /= trrij;
+
 
         if (gkks3 <= 0) {
           /* Term "C3 tr(G) Id"
              Compute inverse matrix of R^n
              (scaling by tr(R) for numerical stability) */
-
-          cs_real_t matrn[6];
-          for (int ii = 0; ii < 6; ii++)
-            matrn[ii] = cvara_var[c_id][ii] / trrij;
-
-          cs_real_t oo_matrn[6];
-          cs_math_sym_33_inv_cramer(matrn, oo_matrn);
-          for (int ii = 0; ii < 6; ii++)
-            oo_matrn[ii] /= trrij;
 
           for (cs_lnum_t jj = 0; jj < 3; jj++) {
             for (cs_lnum_t ii = 0; ii < 3; ii++) {
@@ -2006,16 +2171,21 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
           }
         }
 
-        const cs_real_t gradchk = cs_math_3_dot_product(grav, gradro[c_id]);
 
-        if (gradchk > 0) {
+        /* rho'u' is written as R^{n+1} (R^n)^-1 rho'u'
+         * only if g . (R^n)^-1 . rho'u' < 0
+         * */
+        cs_real_3_t gradro;
+        cs_math_sym_33_3_product(oo_matrn, up_rhop[c_id], gradro);
+
+        if (cs_math_3_dot_product(gradro, grav) <= 0.) {
           /* Implicit term written as:
            *   Po . R^n+1 + R^n+1 . Po^t
            * with Po proportional to "g (x) Grad rho" */
-          const cs_real_t gradro_impl = cons * (1.-crij3) * k_ov_eps;
+          const cs_real_t factor = (1.-crij3);
           for (cs_lnum_t i = 0; i < 3; i++) {
             for (cs_lnum_t j = 0; j < 3; j++)
-              implmat2add[i][j] -= gradro_impl * grav[i] * gradro[c_id][j];
+              implmat2add[i][j] -= factor * grav[i] * gradro[j];//FIXME check sign
           }
         }
 
@@ -2101,7 +2271,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
  *                            of velocity only for iturb=31
  * \param[in]     produc      work array for production (without
  *                            rho volume) only for iturb=30
- * \param[in]     gradro      work array for \f$ \grad{rom} \f$
+ * \param[in]     up_rhop     work array for \f$ \vect{u}'\rho' \f$
  * \param[in]     smacel      value associated to each variable in the mass
  *                            source terms or mass rate
  * \param[in]     viscf       visc*surface/dist at internal faces
@@ -2118,7 +2288,7 @@ _solve_epsilon(int              phase_id,
                int              itypsm[],
                const cs_real_t  gradv[][3][3],
                const cs_real_t  produc[][6],
-               const cs_real_t  gradro[][3],
+               const cs_real_t  up_rhop[][3],
                cs_real_t        smacel[],
                cs_real_t        viscf[],
                cs_real_t        viscb[],
@@ -2440,10 +2610,10 @@ _solve_epsilon(int              phase_id,
 
     /* Extrapolation of source terms (2nd order in time) */
     if (st_prv_id > -1)
-      _gravity_st_epsilon(phase_id, gradro, cell_f_vol, c_st_prv);
+      _gravity_st_epsilon(phase_id, up_rhop, cell_f_vol, c_st_prv);
 
     else
-      _gravity_st_epsilon(phase_id, gradro, cell_f_vol, rhs);
+      _gravity_st_epsilon(phase_id, up_rhop, cell_f_vol, rhs);
 
   }
 
@@ -2687,7 +2857,7 @@ cs_turbulence_rij(int          phase_id,
   /* Allocate or map temporary arrays for the turbulence resolution,
      depending on user options */
 
-  cs_real_3_t *gradro = NULL;
+  cs_real_3_t *up_rhop = NULL;
 
   cs_real_6_t *cpro_press_correl = NULL;
   {
@@ -2906,128 +3076,10 @@ cs_turbulence_rij(int          phase_id,
   /* Compute the density gradient for buoyant terms
    * ---------------------------------------------- */
 
-  /* Note that the buoyant term is normally expressed in temr of
-   * (u'T') or (u'rho') here modelled with a GGDH:
-   *   (u'rho') = C * k/eps * R_ij Grad_j(rho)
-
-   * Buoyant term for the Atmospheric module
-   * (function of the potential temperature) */
-
   if (turb_rans_model->igrari == 1) {
-
-    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
-
-      const cs_field_t *thf = cs_thermal_model_field();
-      if (thf != NULL) {
-
-        const cs_real_t *cvara_scalt = thf->val_pre;
-
-        /* TODO check if we really want cromo (as below)
-           or simply crom) */
-        const cs_real_t *cromo = f_rho->val;
-
-        BFT_MALLOC(gradro, n_cells_ext, cs_real_3_t);
-
-        cs_field_gradient_scalar(thf,
-                                 true,   /* use_previous_t */
-                                 1,      /* inc */
-                                 gradro);
-
-        /* gradro stores: - rho grad(theta)/theta
-         * grad(rho) and grad(theta) have opposite signs */
-
-#       pragma omp parallel for if(n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          for (cs_lnum_t ii = 0; ii < 3; ii++)
-            gradro[c_id][ii] *= -cromo[c_id] / cvara_scalt[c_id];
-        }
-      }
-
-    }
-    else { /* Other models */
-
-      const cs_velocity_pressure_model_t  *vp_model
-        = cs_glob_velocity_pressure_model;
-      const int idilat = vp_model->idilat;
-
-      BFT_MALLOC(gradro, n_cells_ext, cs_real_3_t);
-
-      if (idilat == 0) {
-        const cs_field_t *thf = cs_thermal_model_field();
-        if (phase_id >= 0)
-          thf = CS_FI_(h_tot, phase_id);
-
-        if (thf != NULL) {
-
-          cs_field_gradient_scalar(thf,
-                                   false,  /* use current (not previous) value */
-                                   1,      /* inc */
-                                   gradro);
-
-          const cs_real_t *cpro_beta
-            = cs_field_by_name("thermal_expansion")->val;
-
-          /* gradro stores: - beta grad(T)
-           * grad(rho) and grad(T) have opposite signs */
-
-#         pragma omp parallel for if(n_cells > CS_THR_MIN)
-          for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-            for (cs_lnum_t ii = 0; ii < 3; ii++)
-              gradro[c_id][ii] = -ro0 * cpro_beta[c_id] * gradro[c_id][ii];
-          }
-
-        }
-      }
-      else {
-
-        /* Boundary conditions: Dirichlet romb
-         * We use viscb to store the relative coefficient of rom
-         * We impose in Dirichlet (coefa) the value romb */
-
-        cs_array_real_fill_zero(n_b_faces, viscb);
-
-        int key_t_ext_id = cs_field_key_id("time_extrapolated");
-        int iroext = cs_field_get_key_int(f_rho, key_t_ext_id);
-
-        int t_i = (cs_glob_time_scheme->isto2t > 0 && iroext > 0) ? 1 : 0;
-        cs_real_t *cromo = f_rho->vals[t_i];
-        cs_real_t *bromo = f_rhob->vals[t_i];
-
-        /* Compute gradient */
-        cs_halo_type_t halo_type = CS_HALO_STANDARD;
-        cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
-        cs_gradient_type_by_imrgra(eqp->imrgra,
-                                   &gradient_type,
-                                   &halo_type);
-
-        cs_field_bc_coeffs_t bc_coeffs_loc;
-        cs_field_bc_coeffs_init(&bc_coeffs_loc);
-        bc_coeffs_loc.a = bromo;
-        bc_coeffs_loc.b = viscb;
-
-        cs_gradient_scalar("density",
-                           gradient_type,
-                           halo_type,
-                           1,             /* inc */
-                           eqp->nswrgr,
-                           0,             /* iphydp */
-                           1,             /* w_stride */
-                           eqp->iwarni,
-                           eqp->imligr,
-                           eqp->epsrgr,
-                           eqp->climgr,
-                           NULL,          /* f_ext */
-                           &bc_coeffs_loc,
-                           cromo,
-                           NULL,         /* c_weight */
-                           NULL,         /* cpl */
-                           gradro);
-
-      }
-
-    }
-
-  } /* End of test on igrari */
+    BFT_MALLOC(up_rhop, n_cells_ext, cs_real_3_t);
+    _compute_up_rhop(phase_id, up_rhop);
+  }
 
   /* Prepare to solve Rij, in a manner similar
      to that of cs_solve_equation_scalar.
@@ -3173,13 +3225,13 @@ cs_turbulence_rij(int          phase_id,
    if (turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) {
      if (turb_rans_model->irijco == 1)
        _pre_solve_lrr(f_rij, phase_id, gradv,
-                      produc, gradro,
+                      produc, up_rhop,
                       viscf, viscb, viscce,
                       smbrts, rovsdtts,
                       weighf, weighb);
      else
        _pre_solve_lrr_sg(f_rij, phase_id,
-                         produc, gradro,
+                         produc, up_rhop,
                          viscf, viscb, viscce,
                          smbrts, rovsdtts,
                          weighf, weighb);
@@ -3188,7 +3240,7 @@ cs_turbulence_rij(int          phase_id,
    else { /* if (   turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG
                  || turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) */
      _pre_solve_ssg(f_rij, phase_id, gradv,
-                    produc, gradro,
+                    produc, up_rhop,
                     viscf, viscb, viscce,
                     smbrts, rovsdtts,
                     weighf, weighb);
@@ -3303,7 +3355,7 @@ cs_turbulence_rij(int          phase_id,
                     itypsm,
                     gradv,
                     produc,
-                    gradro,
+                    up_rhop,
                     smacel,
                     viscf,
                     viscb,
@@ -3326,7 +3378,7 @@ cs_turbulence_rij(int          phase_id,
    produc = NULL;
    BFT_FREE(_produc);
 
-   BFT_FREE(gradro);
+   BFT_FREE(up_rhop);
 
    BFT_FREE(viscf);
    BFT_FREE(viscb);
