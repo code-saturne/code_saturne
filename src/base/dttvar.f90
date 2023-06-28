@@ -110,6 +110,7 @@ double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
 ! Local variables
 
 character(len=8) :: cnom
+logical(kind=c_bool) :: log_active
 
 integer          ifac, iel, icfmax(1), icfmin(1), idiff0, iconv0, isym, flid
 integer          modntl
@@ -584,6 +585,18 @@ if (idtvar.ge.0) then
 
       if (itrale.gt.0 .and. ntmabs.gt.ntpabs) then
         call cs_time_step_increment(dtloc)
+
+        log_active = .false.
+        if (ntcabs - ntpabs.le.10 .or. ntcabs.eq.ntmabs) then
+          log_active = .true.
+        else if (ntlist.gt.0) then
+          if (mod(ntcabs,ntlist) .eq. 0) log_active = .true.
+        endif
+        call cs_log_default_activate(log_active)
+
+        if (log_active) then
+          write(nfecra,3001) ttcabs, ntcabs
+        endif
       endif
 
       do iel = 1, ncel
@@ -744,6 +757,10 @@ deallocate(w1, w2, w3)
  1002 format (  a8,' MIN= ',e11.4, ' IN ',e11.4,' ',e11.4,' ',e11.4)
  1003 format (/,'DT CLIPPING : ',                                      &
                              i10,' A ',e11.4,', ',i10,' A ',e11.4)
+
+ 3001 format(/,' INSTANT ',E18.9,        '   TIME STEP NUMBER ' ,I15,/,  &
+' =============================================================' ,&
+ /,/)
 
 !----
 ! End

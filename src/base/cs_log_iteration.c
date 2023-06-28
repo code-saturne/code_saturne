@@ -1285,7 +1285,8 @@ _add_clipping(int               name_id,
     _clips[clip_id].f_id = f_id;
     _clips[clip_id].name_id = name_id;
     _clips[clip_id].dim = dim;
-    _clips[clip_id].v_idx = (dim == 1) ? _clips_val_size - dim : _clips_val_size - dim - 1;
+    _clips[clip_id].v_idx = (dim == 1) ?
+      _clips_val_size - dim : _clips_val_size - dim - 1;
 
   }
 

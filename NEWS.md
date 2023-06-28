@@ -3,7 +3,9 @@ Release 8.0.0 (unreleased)
 
 ### Bug fixes:
 
-- Fix call of cs_user_finalize_setup without CDO, broken 2023-06-01.
+- Fix call of cs_user_finalize_setup without CDO, broken on 2023-06-01.
+
+- Fix logging time step interval for idtvar=1, broken on 2023-02-04.
 
 - Fix ids of columns read while loading a time table when the user defined
   a subset in the GUI. For simplicity, GUI numbering starts at 1 and the

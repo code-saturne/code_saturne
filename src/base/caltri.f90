@@ -907,6 +907,10 @@ call cs_log_iteration_prepare
 
 call tridim(itrale, nvar, nscal, dt)
 
+if (idtvar.eq.1) then
+  log_active = cs_log_default_is_active()  ! May have been changed in dttvar
+endif
+
 call cs_1d_wall_thermal_log()
 
 if (ntmabs.gt.ntpabs .and. itrale.gt.0) then
