@@ -3,6 +3,10 @@ Release 8.0.0 (unreleased)
 
 ### Bug fixes:
 
+- Fix ids of columns read while loading a time table when the user defined
+  a subset in the GUI. For simplicity, GUI numbering starts at 1 and the
+  internal code's numbering starts at 0.
+
 - Fix boundary temperature postprocessing in case of imposed heat flux.
   * The value computed in the wall law was spuriously overwritten with
     a "laminar" value ignoring the wall law.
