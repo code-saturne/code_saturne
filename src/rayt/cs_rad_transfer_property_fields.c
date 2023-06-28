@@ -273,23 +273,20 @@ cs_rad_transfer_prp(void)
 
     /* Fields for atmospheric diFfuse Solar (DF) model
      * (SIR only if SUV is activated) */
-    if (rt_params->atmo_model
-        & CS_RAD_ATMO_3D_DIFFUSE_SOLAR) {
+    if (rt_params->atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR) {
       rt_params->atmo_df_id = rt_params->nwsgg;
       rt_params->nwsgg++;
     }
 
     /* Fields for atmospheric diFfuse Solar (DF) model
      * (SUV band) */
-    if (rt_params->atmo_model
-        & CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND) {
+    if (rt_params->atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND) {
       rt_params->atmo_df_o3_id = rt_params->nwsgg;
       rt_params->nwsgg++;
     }
 
     /* Fields for atmospheric infrared absorption model */
-    if (rt_params->atmo_model
-        & CS_RAD_ATMO_3D_INFRARED) {
+    if (rt_params->atmo_model & CS_RAD_ATMO_3D_INFRARED) {
       rt_params->atmo_ir_id = rt_params->nwsgg;
       rt_params->nwsgg++;
     }
@@ -328,7 +325,8 @@ cs_rad_transfer_prp(void)
       // cs_field_pointer_map_indexed(CS_ENUMF_(rad_abs), gg_id, f);
       // Note: would be in conflict with rad_abs
 
-      snprintf(f_name, 63, "spectral_absorption_coeff%s", suffix); f_name[63] ='\0';
+      snprintf(f_name, 63, "spectral_absorption_coeff%s", suffix);
+      f_name[63] ='\0';
       snprintf(f_label, 63, "Spectral Abs coef%s", suffix); f_label[63] ='\0';
 
       f = cs_field_create(f_name,

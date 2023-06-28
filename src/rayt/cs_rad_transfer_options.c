@@ -133,7 +133,6 @@ cs_rad_transfer_options(void)
 
   /* ====================================================================
    * 1. Default initializations
-   *    ^^^^^^^
    * ==================================================================== */
 
   /* ->  Absorption coefficent computation
