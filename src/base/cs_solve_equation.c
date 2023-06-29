@@ -923,7 +923,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_b_faces = m->n_b_faces;
-  const cs_lnum_t *b_face_cells = m->b_face_cells;
 
   const cs_real_t *volume = fvq->cell_vol;
   const cs_real_t *cell_f_vol = fvq->cell_f_vol;
@@ -931,7 +930,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
     = (const cs_real_3_t *restrict)fvq->cell_cen;
 
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
-  const cs_wall_cond_t *wall_cond = cs_glob_wall_cond;
+  const cs_wall_condensation_t *wall_condensation = cs_glob_wall_condensation;
 
   const cs_real_t *dt = CS_F_(dt)->val;
 
@@ -1501,7 +1500,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
    * taking into account the metal mass
    * structures condensation modelling */
 
-  if (wall_cond->icondb == 0 || wall_cond->icondv == 0) {
+  if (wall_condensation->icondb == 0 || wall_condensation->icondv == 0) {
 
     /* Wall condensation */
 

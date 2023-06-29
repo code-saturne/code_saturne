@@ -105,14 +105,14 @@ typedef struct {
   cs_real_t *flxmst;
   cs_lnum_t *itagms;
 
-} cs_wall_cond_t;
+} cs_wall_condensation_t;
 
 /*============================================================================
  * Static global variables
  *============================================================================*/
 
 /* Pointer to wall condensation descriptor structure */
-extern const cs_wall_cond_t *cs_glob_wall_cond;
+extern const cs_wall_condensation_t  *cs_glob_wall_condensation;
 
 /*=============================================================================
  * Public function prototypes
@@ -126,8 +126,8 @@ extern const cs_wall_cond_t *cs_glob_wall_cond;
  */
 /*----------------------------------------------------------------------------*/
 
-cs_wall_cond_t *
-cs_get_glob_wall_cond(void);
+cs_wall_condensation_t *
+cs_get_glob_wall_condensation(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

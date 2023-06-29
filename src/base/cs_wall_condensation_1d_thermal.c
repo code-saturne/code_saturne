@@ -272,7 +272,9 @@ cs_wall_condensation_1d_thermal_create(int nzones)
 }
 
 void
-cs_wall_condensation_1d_thermal_mesh_create(int znmurx, int nfbpcd, int nzones)
+cs_wall_condensation_1d_thermal_mesh_create(int znmurx,
+                                            int nfbpcd,
+                                            int nzones)
 {
   _wall_cond_1d_thermal.znmurx = znmurx;
 
@@ -323,8 +325,8 @@ cs_wall_condensation_1d_thermal_free(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_wall_condensation_0d_thermal_create(cs_lnum_t nvolumes,
-                                       cs_lnum_t ncmast)
+cs_wall_condensation_0d_thermal_create(cs_lnum_t  nvolumes,
+                                       cs_lnum_t  ncmast)
 
 {
   _wall_cond_0d_thermal.nvolumes = nvolumes;
@@ -409,8 +411,7 @@ cs_wall_condensation_0d_thermal_solve()
 {
   const cs_real_t *restrict dt = CS_F_(dt)->val;
 
-  const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
-  const cs_wall_cond_t *wall_cond = cs_glob_wall_cond;
+  const cs_wall_condensation_t *wall_cond = cs_glob_wall_condensation;
 
   cs_field_t *f          = cs_field_by_name("pressure");
   const int   var_id_key = cs_field_key_id("variable_id");
@@ -421,13 +422,10 @@ cs_wall_condensation_0d_thermal_solve()
   cs_real_t *flxmst = wall_cond->flxmst;
   cs_lnum_t *itagms = wall_cond->itagms;
   cs_real_t *mass = _wall_cond_0d_thermal.volume_mass;
-  cs_real_t *measure = _wall_cond_0d_thermal.volume_measure;
-  cs_real_t *rho = _wall_cond_0d_thermal.volume_rho;
   cs_real_t *thickness = _wall_cond_0d_thermal.volume_thickness;
   cs_real_t *cp = _wall_cond_0d_thermal.volume_cp;
   cs_real_t *lambda = _wall_cond_0d_thermal.volume_lambda;
   cs_real_t *surf = _wall_cond_0d_thermal.volume_surf;
-  cs_real_t *t0 = _wall_cond_0d_thermal.volume_t0;
   cs_real_2_t *t = _wall_cond_0d_thermal.volume_t;
 
   cs_lnum_t temperature_is_var = 0;

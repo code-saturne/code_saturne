@@ -94,10 +94,13 @@ extern const cs_wall_cond_0d_thermal_t *cs_glob_wall_cond_0d_thermal;
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_wall_condensation_1d_thermal_create(int nzones);
+void
+cs_wall_condensation_1d_thermal_create(int nzones);
 
 void
-cs_wall_condensation_1d_thermal_mesh_create(int znmurx, int nfbpcd, int nzones);
+cs_wall_condensation_1d_thermal_mesh_create(int  znmurx,
+                                            int  nfbpcd,
+                                            int  nzones);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -115,7 +118,8 @@ void cs_wall_condensation_1d_thermal_free(void);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_wall_cond_1d_thermal_t *cs_get_glob_wall_cond_1d_thermal(void);
+cs_wall_cond_1d_thermal_t *
+cs_get_glob_wall_cond_1d_thermal(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -125,8 +129,9 @@ cs_wall_cond_1d_thermal_t *cs_get_glob_wall_cond_1d_thermal(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_wall_condensation_0d_thermal_create(cs_lnum_t nvolumes,
-                                            cs_lnum_t ncmast);
+void
+cs_wall_condensation_0d_thermal_create(cs_lnum_t  nvolumes,
+                                       cs_lnum_t  ncmast);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -134,7 +139,8 @@ void cs_wall_condensation_0d_thermal_create(cs_lnum_t nvolumes,
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_wall_condensation_0d_thermal_free(void);
+void
+cs_wall_condensation_0d_thermal_free(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -144,7 +150,8 @@ void cs_wall_condensation_0d_thermal_free(void);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_wall_cond_0d_thermal_t *cs_get_glob_wall_cond_0d_thermal(void);
+cs_wall_cond_0d_thermal_t *
+cs_get_glob_wall_cond_0d_thermal(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

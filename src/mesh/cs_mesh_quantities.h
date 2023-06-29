@@ -198,8 +198,8 @@ extern unsigned cs_glob_mesh_quantities_flag;
 /*----------------------------------------------------------------------------*/
 
 static inline int
-cs_mesh_quantities_cell_is_active(cs_lnum_t              cell_id,
-                                  cs_mesh_quantities_t  *mq)
+cs_mesh_quantities_cell_is_active(const cs_mesh_quantities_t  *mq,
+                                  cs_lnum_t                    cell_id)
 {
   return (1 - (mq->has_disable_flag
               *mq->c_disable_flag[mq->has_disable_flag * cell_id]));

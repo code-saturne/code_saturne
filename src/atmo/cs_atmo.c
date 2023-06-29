@@ -2089,7 +2089,7 @@ cs_atmo_init_meteo_profiles(void)
   cs_real_t z0 = aopt->meteo_z0;
   cs_real_t zref = aopt->meteo_zref;
   bool is_humid = (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 2 );
-  aopt->meteo_qwstar = is_humid ? aopt->meteo_qwstar : 0; 
+  aopt->meteo_qwstar = is_humid ? aopt->meteo_qwstar : 0;
   if (aopt->meteo_ustar0 <= 0. && aopt->meteo_uref <= 0. && aopt->meteo_u1 <= 0.
       && aopt->meteo_u2 <= 0.)
     bft_error(__FILE__,

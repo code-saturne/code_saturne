@@ -538,7 +538,7 @@ cs_user_model(void)
    * - CS_WALL_COND_MODEL_DEHBI:      Dehbi correlation
    */
 
-  cs_wall_cond_t *wall_cond = cs_get_glob_wall_cond();
+  cs_wall_condensation_t *wall_cond = cs_get_glob_wall_condensation();
   wall_cond->icondb         = 0; // activate wall codnensation
   wall_cond->natural_conv_model
     = CS_WALL_COND_MODEL_DEHBI; // choose correlation

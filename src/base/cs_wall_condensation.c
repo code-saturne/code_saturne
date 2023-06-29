@@ -107,7 +107,7 @@ static const cs_real_t pr_tur = 0.9;
 //> Latent heat of condensation (water)
 static const cs_real_t lcond = 2278.0e+3;
 
-static cs_wall_cond_t _wall_cond
+static cs_wall_condensation_t _wall_cond
   = {.icondb             = -1,
      .icondv             = -1,
      .natural_conv_model = CS_WALL_COND_MODEL_COPAIN,
@@ -119,12 +119,10 @@ static cs_wall_cond_t _wall_cond
      // Mesh related quantities
      // TODO: clean unnecessary quantities
      .nfbpcd                    = 0,
-     .ncmast                    = 0,
      .ifbpcd                    = NULL,
      .itypcd                    = NULL,
      .izzftcd                   = NULL,
      .spcond                    = NULL,
-     .svcond                    = NULL,
      .hpcond                    = NULL,
      .twall_cond                = NULL,
      .thermal_condensation_flux = NULL,
@@ -133,7 +131,6 @@ static cs_wall_cond_t _wall_cond
      .total_htc                 = NULL,
      .flthr                     = NULL,
      .dflthr                    = NULL,
-     .ltmast                    = NULL,
 
      // Zone related quantities
      .nzones    = -1,
@@ -161,7 +158,7 @@ static cs_wall_cond_t _wall_cond
  * Global variables
  *============================================================================*/
 
-const cs_wall_cond_t *cs_glob_wall_cond = &_wall_cond;
+const cs_wall_condensation_t *cs_glob_wall_condensation = &_wall_cond;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -912,8 +909,8 @@ cs_f_wall_condensation_source_terms(const int        id,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_wall_cond_t *
-cs_get_glob_wall_cond(void)
+cs_wall_condensation_t *
+cs_get_glob_wall_condensation(void)
 {
   return &_wall_cond;
 }
@@ -1074,7 +1071,7 @@ cs_wall_condensation_create(cs_lnum_t  nfbpcd,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_wall_condensation_volume_exchange_surf_at_cells(cs_real_t    *surf)
+cs_wall_condensation_volume_exchange_surf_at_cells(cs_real_t  *surf)
 {
   const cs_wall_cond_0d_thermal_t *wall_cond_0d_thermal =
     cs_glob_wall_cond_0d_thermal;
@@ -1185,7 +1182,7 @@ cs_wall_condensation_compute(cs_real_t  total_htc[])
 
   /* Compute condensation on volume structures */
 
-  cs_wall_cond_0d_thermal_t *_0d_thermal = cs_glob_wall_cond_0d_thermal;
+  cs_wall_cond_0d_thermal_t *_0d_thermal = cs_get_glob_wall_cond_0d_thermal();
 
   if ((cs_glob_time_step->nt_cur == 1) && !cs_restart_present())
     for (cs_lnum_t ii = 0; ii < _wall_cond.ncmast; ii++) {
@@ -1343,7 +1340,7 @@ cs_wall_condensation_source_terms(const cs_field_t  *f,
   const cs_real_t *restrict b_face_surf
     = (const cs_real_t *restrict)cs_glob_mesh_quantities->b_face_surf;
 
-  const cs_wall_cond_t *wall_cond = cs_glob_wall_cond;
+  const cs_wall_condensation_t *wall_cond = cs_glob_wall_condensation;
   const cs_lnum_t nfbpcd = wall_cond->nfbpcd;
   const cs_lnum_t *ifbpcd = wall_cond->ifbpcd;
   const cs_lnum_t *itypcd = wall_cond->itypcd;
@@ -1362,8 +1359,8 @@ cs_wall_condensation_source_terms(const cs_field_t  *f,
 
   if (wall_cond->icondb == 0) {
 
-    cs_real_t *gamma = spcond + ipr*nfbpcd;
-    cs_real_t *spcondp = spcond + ivar*nfbpcd;
+    const cs_real_t *gamma = spcond + ipr*nfbpcd;
+    const cs_real_t *spcondp = spcond + ivar*nfbpcd;
 
     /*  Compute condensation sourrece terms associated to surface zones */
     for (cs_lnum_t ii = 0; ii < nfbpcd; ii++) {
@@ -1383,8 +1380,8 @@ cs_wall_condensation_source_terms(const cs_field_t  *f,
 
   if (wall_cond->icondv == 0) {
 
-    cs_real_t *gamma = svcond + ipr*ncmast;
-    cs_real_t *svcondp = svcond + ivar*ncmast;
+    const cs_real_t *gamma = svcond + ipr*ncmast;
+    const cs_real_t *svcondp = svcond + ivar*ncmast;
 
     /* Compute condensation source terms associated to volume zones
        with the metal mass structures modelling */

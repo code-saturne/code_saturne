@@ -33,6 +33,8 @@
 
 #include "cs_defs.h"
 
+#include "cs_equation.h"
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -211,7 +213,7 @@ cs_pressure_correction(int        iterns,
                        cs_lnum_t  ncmast,
                        cs_lnum_t  ifbpcd[],
                        cs_lnum_t  ltmast[],
-                       int        isostd[],
+                       const int  isostd[],
                        cs_real_t  vel[restrict][3],
                        cs_real_t  da_uu[restrict][6],
                        cs_real_t  coefav[restrict][3],
