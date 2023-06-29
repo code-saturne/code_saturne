@@ -400,9 +400,6 @@ _b_mass_flow_to_vel(const cs_zone_t  *z,
                     cs_real_t         bc_tk,
                     cs_real_t        *retval)
 {
-  if (fabs(mass_flow) <= 0)    /* Nothing to do if mass flow is zero */
-    return;
-
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_real_3_t *f_f_n = (const cs_real_3_t *)mq->b_f_face_normal;
   const cs_real_t *f_f_s = mq->b_f_face_surf;
@@ -413,6 +410,23 @@ _b_mass_flow_to_vel(const cs_zone_t  *z,
 
   const cs_lnum_t n_elts = z->n_elts;
   const cs_lnum_t *elt_ids = z->elt_ids;
+
+  /* Return zero if mass flow is zero */
+  if (fabs(mass_flow) <= 0) {
+    if (dense_output) {
+      cs_lnum_t _n_elts = n_elts*3;
+      for (cs_lnum_t i = 0; i < _n_elts; i++)
+        retval[i] *= 0.;
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t j = elt_ids[i];
+        for (cs_lnum_t k = 0; k < 3; k++)
+          retval[j*3 + k] *= 0.;
+      }
+    }
+    return;
+  }
 
   /* Compressible prescribed inlet with given pressure and temperature */
 
