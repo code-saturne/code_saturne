@@ -36,7 +36,7 @@ documentation to be consistent. They are strongly recommended:
 - Use the notations defined in the nomenclature of the theory guide
   as much as possible.
 - Focus on your specificities and cite the generalities (external to EDF!), which
-  you should add to the `biblio.bib` file located in the `doc/style` directory.
+  you should add to the `csbiblio.bib` file located in the `doc/style` directory.
 - Write in English (UK for the theory manual, US for the rest,
   for consistence with existing documentation).
 - Use the existing style of code_saturne, that is to say use the `csdoc.csl`
@@ -168,5 +168,5 @@ Here are some useful tricks:
     An example
   \end{example}}
   ```
-  **Remark 1.1** _A remark <br> 
+  **Remark 1.1** _A remark <br>
   **Example 1.1** _An example_
