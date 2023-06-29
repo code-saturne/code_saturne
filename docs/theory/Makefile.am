@@ -33,7 +33,6 @@ algebr.tex \
 apintr.tex \
 atmo.tex \
 bilsc2.tex \
-biblio.tex \
 bndcnd.tex \
 cavitation.tex \
 cs_turbulence_ke.tex \
