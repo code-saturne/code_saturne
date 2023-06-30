@@ -1,5 +1,7 @@
-Release 6.0.9 (Unreleased)
---------------------------
+Release 6.0.9 (June 30 2023)
+----------------------------
+
+This is the last release of the 6.0 series.
 
 Bug fixes:
 
