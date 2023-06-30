@@ -703,9 +703,9 @@ cs_turbulence_bc_init_pointers(void)
   _turb_bc_id.size_alp_bl_t = n_sca_alp_bl;
 
   if (_turb_bc_id.size_ut > 0)
-    BFT_MALLOC(_turb_bc_id.f_ut, n_sca_ut, cs_field_t *);
+    BFT_REALLOC(_turb_bc_id.f_ut, n_sca_ut, cs_field_t *);
   if (_turb_bc_id.size_alp_bl_t > 0)
-    BFT_MALLOC(_turb_bc_id.f_alp_bl_t, n_sca_alp_bl, cs_field_t *);
+    BFT_REALLOC(_turb_bc_id.f_alp_bl_t, n_sca_alp_bl, cs_field_t *);
 
   n_sca_ut = 0;
   n_sca_alp_bl = 0;
