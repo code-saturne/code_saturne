@@ -1,5 +1,7 @@
-Release 7.3.1 (not released yet)
---------------------------------
+Release 7.3.1 (July 1 2023)
+---------------------------
+
+This is the last release of the 7.3 series.
 
 ### User changes:
 
