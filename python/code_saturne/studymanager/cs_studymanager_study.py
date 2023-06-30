@@ -1840,9 +1840,14 @@ class Studies(object):
                                     list_id = ""
                                     for item in job_id_list:
                                         list_id += ":" + str(item)
-                                    output = subprocess.check_output(['sbatch',
-                                             "--dependency=afterany"
-                                             + list_id, slurm_batch_name])
+                                    if len(list_id) > 0:
+                                        output = subprocess.check_output(['sbatch',
+                                                 "--dependency=afterany"
+                                                 + list_id, slurm_batch_name])
+                                    else:
+                                        # empty list can occur with existing runs in study
+                                        output = subprocess.check_output(['sbatch',
+                                                 slurm_batch_name])
 
                                 # find job id with regex and store it
                                 msg = output.decode('utf-8').strip()
@@ -1892,9 +1897,14 @@ class Studies(object):
                         list_id = ""
                         for item in job_id_list:
                             list_id += ":" + str(item)
-                        output = subprocess.check_output(['sbatch',
-                                 "--dependency=afterany"
-                                 + list_id, slurm_batch_name])
+                        if len(list_id) > 0:
+                            output = subprocess.check_output(['sbatch',
+                                     "--dependency=afterany"
+                                     + list_id, slurm_batch_name])
+                        else:
+                            # empty list can occur with existing runs in study
+                            output = subprocess.check_output(['sbatch',
+                                     slurm_batch_name])
 
                     # find job id with regex and store it
                     msg = output.decode('utf-8').strip()
