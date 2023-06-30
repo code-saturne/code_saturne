@@ -1,10 +1,12 @@
-Release 7.2.2 (not released yet)
---------------------------------
+Release 7.2.2 (July 1 2023)
+---------------------------
+
+This is the last release of the 7.2 series.
 
 ### Bug fixes:
 
 - Fix least-squares scalar gradient reconstructions with extended ghost
-  cells in parallel (due to incomplete syncronization).
+  cells in parallel (due to incomplete synchronization).
 
 ### Architectural changes:
 
