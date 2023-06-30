@@ -215,7 +215,7 @@ typedef struct {
                                  - 1: true
                                  - 0: false (default) */
   int           irijnu;       /* pseudo eddy viscosity in the matrix of momentum
-                                 equation to partially implicit div( rho R )
+                                 equation to partially implicit div(rho R)
                                  - 0: false (default)
                                  - 1: true
                                  - 2: Rusanov fluxes */

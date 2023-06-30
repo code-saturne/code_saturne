@@ -369,6 +369,10 @@ cs_halo_perio_sync_coords(const cs_halo_t  *halo,
                           cs_halo_type_t    sync_mode,
                           cs_real_t        *coords)
 {
+  if (   halo == NULL
+      || sync_mode == CS_HALO_N_TYPES)
+    return;
+
   int  rank_id, t_id;
   cs_lnum_t  i, shift, start_std, end_std, start_ext, end_ext;
 
@@ -377,9 +381,6 @@ cs_halo_perio_sync_coords(const cs_halo_t  *halo,
   const fvm_periodicity_t  *periodicity = cs_glob_mesh->periodicity;
   const int  n_transforms = halo->n_transforms;
   const cs_lnum_t  n_elts = halo->n_local_elts;
-
-  if (sync_mode == CS_HALO_N_TYPES)
-    return;
 
   assert(halo != NULL);
 
@@ -436,6 +437,11 @@ cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
                             cs_real_t         var[],
                             int               incvar)
 {
+  if (   halo == NULL
+      || sync_mode == CS_HALO_N_TYPES
+      || cs_glob_mesh->have_rotation_perio == 0)
+    return;
+
   int  rank_id, t_id;
   cs_lnum_t  i, shift, start_std, end_std, start_ext, end_ext;
 
@@ -446,10 +452,6 @@ cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
   const int  n_transforms = halo->n_transforms;
   const cs_lnum_t  n_elts   = halo->n_local_elts;
   const fvm_periodicity_t  *periodicity = cs_glob_mesh->periodicity;
-  const int  have_rotation = cs_glob_mesh->have_rotation_perio;
-
-  if (sync_mode == CS_HALO_N_TYPES || have_rotation == 0)
-    return;
 
   assert(halo != NULL);
   assert(incvar == 3);
@@ -505,6 +507,11 @@ cs_halo_perio_sync_var_tens(const cs_halo_t  *halo,
                             cs_halo_type_t    sync_mode,
                             cs_real_t         var[])
 {
+  if (   halo == NULL
+      || sync_mode == CS_HALO_N_TYPES
+      || cs_glob_mesh->have_rotation_perio == 0)
+    return;
+
   int  rank_id, t_id;
   cs_lnum_t  i, shift, start_std, end_std, start_ext, end_ext;
 
@@ -515,10 +522,6 @@ cs_halo_perio_sync_var_tens(const cs_halo_t  *halo,
   const int  n_transforms = halo->n_transforms;
   const cs_lnum_t  n_elts   = halo->n_local_elts;
   const fvm_periodicity_t *periodicity = cs_glob_mesh->periodicity;
-  const int  have_rotation = cs_glob_mesh->have_rotation_perio;
-
-  if (sync_mode == CS_HALO_N_TYPES || have_rotation == 0)
-    return;
 
   assert(halo != NULL);
 
@@ -574,6 +577,11 @@ cs_halo_perio_sync_var_sym_tens(const cs_halo_t  *halo,
                                 cs_halo_type_t    sync_mode,
                                 cs_real_t         var[])
 {
+  if (   halo == NULL
+      || sync_mode == CS_HALO_N_TYPES
+      || cs_glob_mesh->have_rotation_perio == 0)
+    return;
+
   int  rank_id, t_id;
   cs_lnum_t  i, shift, start_std, end_std, start_ext, end_ext;
 
@@ -584,10 +592,6 @@ cs_halo_perio_sync_var_sym_tens(const cs_halo_t  *halo,
   const int  n_transforms = halo->n_transforms;
   const cs_lnum_t  n_elts   = halo->n_local_elts;
   const fvm_periodicity_t *periodicity = cs_glob_mesh->periodicity;
-  const int  have_rotation = cs_glob_mesh->have_rotation_perio;
-
-  if (sync_mode == CS_HALO_N_TYPES || have_rotation == 0)
-    return;
 
   assert(halo != NULL);
 
@@ -643,6 +647,11 @@ cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
                                      cs_halo_type_t    sync_mode,
                                      cs_real_t         var[])
 {
+  if (   halo == NULL
+      || sync_mode == CS_HALO_N_TYPES
+      || cs_glob_mesh->have_rotation_perio == 0)
+    return;
+
   int  rank_id, t_id;
   cs_lnum_t  i, shift, start_std, end_std, start_ext, end_ext;
 
@@ -653,10 +662,6 @@ cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
   const int  n_transforms = halo->n_transforms;
   const cs_lnum_t  n_elts   = halo->n_local_elts;
   const fvm_periodicity_t *periodicity = cs_glob_mesh->periodicity;
-  const int  have_rotation = cs_glob_mesh->have_rotation_perio;
-
-  if (sync_mode == CS_HALO_N_TYPES || have_rotation == 0)
-    return;
 
   assert(halo != NULL);
 
