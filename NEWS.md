@@ -8,10 +8,11 @@ Master (not on release branches yet)
   system is based on scons with Python 2 files, so is not usable
   anymore. Use EOS (if available) or CoolProp instead.
 
-Release 8.0.0 (unreleased)
+Release 8.0.0 (2023-06-30)
 --------------------------
 
 ### User changes:
+
 - Add user postprocessing functions to compute mean and/or integrals of
   scalars over selections of boundary faces or over boundary zones.
 
