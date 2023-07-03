@@ -1,3 +1,10 @@
+Release 8.0.1 (unreleased)
+--------------------------
+
+### Bug fixes:
+
+- Preprocessor: fix reading of polygons in MED files, broken in v7.3.
+
 Release 8.0.0 (2023-06-30)
 --------------------------
 
