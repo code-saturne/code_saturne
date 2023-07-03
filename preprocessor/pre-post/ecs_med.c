@@ -129,7 +129,7 @@ ecs_fic_med_init_elt_liste_c[ECS_MED_NBR_TYP_ELT] = {
     ECS_MED_ORDER_PARABOLIC,
     { 1, 3, 2, 4 }
   },
-  {                               /*  9 */
+  {                                /* 9 */
     MED_PYRA5,
     ECS_ELT_TYP_CEL_PYRAM,
     ECS_MED_ORDER_LINEAR,
@@ -192,6 +192,18 @@ ecs_fic_med_init_elt_liste_c[ECS_MED_NBR_TYP_ELT] = {
     },
   },
   {                               /* 18 */
+    MED_POLYGON,
+    ECS_ELT_TYP_FAC_POLY,
+    ECS_MED_ORDER_LINEAR,
+    { 0 },
+  },
+  {                               /* 19 */
+    MED_POLYGON2,
+    ECS_ELT_TYP_FAC_POLY,
+    ECS_MED_ORDER_PARABOLIC,
+    { 0 },
+  },
+  {                               /* 20 */
     MED_POLYHEDRON,
     ECS_ELT_TYP_CEL_POLY,
     ECS_MED_ORDER_LINEAR,

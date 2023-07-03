@@ -8,6 +8,10 @@ Master (not on release branches yet)
   system is based on scons with Python 2 files, so is not usable
   anymore. Use EOS (if available) or CoolProp instead.
 
+### Bug fixes:
+
+- Preprocessor: fix reading of polygons in MED files, broken in v7.3.
+
 Release 8.0.0 (2023-06-30)
 --------------------------
 
