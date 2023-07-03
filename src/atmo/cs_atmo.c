@@ -2320,9 +2320,9 @@ cs_atmo_init_meteo_profiles(void)
                 " for humidity field preprocessing (qw0 || qw1 || qw2).\n"));
 
 
-  bft_printf("\n Meteo preprocessing values for computation: "
-             " dlmo=%17.9e, ustar=%17.9e, tstar=%17.9e, qwstar=%17.9e"
-             " t0=%17.9e, qw0=%17.9e \n",
+  bft_printf("\n Meteo preprocessing values for computation:\n"
+             "  dlmo=%17.9e\n ustar=%17.9e\n tstar=%17.9e\n qwstar=%17.9e\n"
+             " t0=%17.9e\n qw0=%17.9e\n",
              aopt->meteo_dlmo,
              aopt->meteo_ustar0,
              aopt->meteo_tstar,
