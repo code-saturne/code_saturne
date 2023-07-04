@@ -1247,9 +1247,24 @@ endif
 
 if (irijnu.eq.2) then
   ! Add Rusanov
-  do ifac = 1, nfac
-    viscf(ifac) = max(viscf(ifac), ipro_rusanov(ifac))
-  enddo
+  if (iand(idftnp, ISOTROPIC_DIFFUSION).ne.0) then
+    do ifac = 1, nfac
+      viscf(ifac) = max(viscf(ifac), ipro_rusanov(ifac))
+    enddo
+  else if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
+    do ifac = 1, nfac
+      n(1) = surfac(1,ifac) / surfan(ifac) ! WARNING Normalised here
+      n(2) = surfac(2,ifac) / surfan(ifac)
+      n(3) = surfac(3,ifac) / surfan(ifac)
+      do isou = 1, 3
+        do jsou = 1, 3
+          viscf(9 * (ifac-1) + 3 * (jsou-1) + isou) =      &
+            max(viscf(9 * (ifac-1) + 3 * (jsou-1) + isou), &
+                ipro_rusanov(ifac) * n(isou) * n(jsou))
+        enddo
+      enddo
+    enddo
+  endif
 
   call field_get_val_s_by_name('b_rusanov_diff', bpro_rusanov)
   do ifac = 1, nfabor
