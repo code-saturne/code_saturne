@@ -182,6 +182,7 @@ cs_user_postprocess-sfc.c \
 cs_user_radiative_transfer.c \
 cs_user_radiative_transfer_bcs.c \
 cs_user_solver-heat-equation.c \
+cs_user_source_terms-along_line.c \
 cs_user_source_terms-base.c \
 cs_user_source_terms-momentum.c \
 cs_user_source_terms-richards.c \

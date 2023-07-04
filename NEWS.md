@@ -1,6 +1,10 @@
 Release 8.0.1 (unreleased)
 --------------------------
 
+### User changes:
+
+- add a user example for a term source along a line.
+
 ### Bug fixes:
 
 - Preprocessor: fix reading of polygons in MED files, broken in v7.3.
