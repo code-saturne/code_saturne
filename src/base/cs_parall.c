@@ -1048,7 +1048,7 @@ cs_parall_gather_r(int               root_rank,
   if (cs_glob_n_ranks == 1) {
 
     assert(n_elts == n_g_elts);
-    assert(g_array != NULL && n_g_elts > 0);
+    assert(g_array != NULL || n_g_elts == 0);
     for (int i = 0; i < n_elts; i++)
       g_array[i] = array[i];
 
@@ -1135,7 +1135,7 @@ cs_parall_scatter_r(int               root_rank,
                     const cs_real_t   g_array[],
                     cs_real_t         array[])
 {
-  assert(array != NULL && n_elts > 0);
+  assert(array != NULL || n_elts == 0);
 
 #if defined(HAVE_MPI)
 
@@ -1165,7 +1165,7 @@ cs_parall_scatter_r(int               root_rank,
   if (cs_glob_n_ranks == 1) {
 
     assert(n_elts == n_g_elts);
-    assert(g_array != NULL && n_g_elts > 0);
+    assert(g_array != NULL || n_g_elts == 0);
     for (int i = 0; i < n_elts; i++)
       array[i] = g_array[i];
 
@@ -1200,7 +1200,7 @@ cs_parall_gather_f(int             root_rank,
                    const float     array[],
                    float           g_array[])
 {
-  assert(array != NULL && n_elts > 0);
+  assert(array != NULL || n_elts == 0);
 
 #if defined(HAVE_MPI)
 
@@ -1230,7 +1230,7 @@ cs_parall_gather_f(int             root_rank,
   if (cs_glob_n_ranks == 1) {
 
     assert(n_elts == n_g_elts);
-    assert(g_array != NULL && n_g_elts > 0);
+    assert(g_array != NULL || n_g_elts == 0);
     for (int i = 0; i < n_elts; i++)
       g_array[i] = array[i];
 
@@ -1265,7 +1265,7 @@ cs_parall_scatter_f(int           root_rank,
                     const float   g_array[],
                     float         array[])
 {
-  assert(array != NULL && n_elts > 0);
+  assert(array != NULL || n_elts == 0);
 
 #if defined(HAVE_MPI)
 
@@ -1295,7 +1295,7 @@ cs_parall_scatter_f(int           root_rank,
   if (cs_glob_n_ranks == 1) {
 
     assert(n_elts == n_g_elts);
-    assert(g_array != NULL && n_g_elts > 0);
+    assert(g_array != NULL || n_g_elts == 0);
     for (int i = 0; i < n_elts; i++)
       array[i] = g_array[i];
 
