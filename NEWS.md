@@ -3,6 +3,8 @@ Release 7.0.7 (not released yet)
 
 Bug fixes:
 
+- Rough wall boundary condition verification.
+
 - Allow use of hybrid convection scheme (used for RANS / LES turbulence models)
   and TVD/NVD convection schemes with no slope test or with the beta limiter
   inside the thermal convection diffusion balance.
