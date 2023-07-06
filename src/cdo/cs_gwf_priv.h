@@ -313,10 +313,10 @@ typedef struct {
  * article or Angelini's PhD thesis)
  *
  * Notations are the following :
- * - Two phases: Liquid phase denoted by "l" and gaseous phase denoted by g
- * - Two components: water denoted by w and a gaseous component (let's say
- *   hydrogen) denoted by h. The gaseous component is present in the two phases
- *   whereas water is only considered in the liquid phase.
+ * - Two phases: Liquid phase denoted by "l" and gaseous phase denoted by "g"
+ * - Two components: water denoted by "w" and a gaseous component (let's say
+ *   hydrogen) denoted by "h". The gaseous component is present in the two
+ *   phases whereas water is only considered in the liquid phase.
  *
  * The resulting linear algebraic system (one applies a linearization) is
  * defined as follows:

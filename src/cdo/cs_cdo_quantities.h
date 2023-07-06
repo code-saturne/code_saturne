@@ -239,7 +239,7 @@ typedef struct { /* Specific mesh quantities */
   cs_real_t        *pvol_vc;         /* Part of the dual cell associated to a
                                       * vertex in each cell. These quantities
                                       * are scanned thanks to the c2v
-                                      * adjancency structure */
+                                      * adjacency structure */
 
   const cs_real_t  *vtx_coord;       /* Coordinates of the mesh vertices.
                                       * Shared with the cs_mesh_t structure */
