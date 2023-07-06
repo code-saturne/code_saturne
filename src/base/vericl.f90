@@ -103,7 +103,7 @@ integer          nstrij, nsurij, nstov2
 integer          nstuv2, nstokw, nstukw
 integer          nstunu, nstonu
 integer          nstusc
-integer          f_id_rough, f_id_t_rough
+integer          f_id_rough, f_id_rough_t
 integer          iis, icodcu, icodcv, icodcw, icodck, icodce
 integer          icodcn
 integer          icodcp, icodcf, icodca, icodom
@@ -143,10 +143,19 @@ do ipp = 1, 4
   icodus(ipp) = -1
 enddo
 
+call field_get_id_try("boundary_thermal_roughness", f_id_rough_t)
+if (f_id_rough_t.ge.0) call field_get_val_s(f_id_rough_t, bpro_roughness_t)
+
 call field_get_id_try("boundary_roughness", f_id_rough)
-if (f_id_rough.ge.0) call field_get_val_s(f_id_rough, bpro_roughness)
-call field_get_id_try("boundary_thermal_roughness", f_id_t_rough)
-if (f_id_t_rough.ge.0) call field_get_val_s(f_id_t_rough, bpro_roughness_t)
+if (f_id_rough.ge.0) then
+  call field_get_val_s(f_id_rough, bpro_roughness)
+
+  ! same thermal roughness if not specified
+  if (f_id_rough_t.eq.-1) then
+    f_id_rough_t = f_id_rough
+    call field_get_val_s(f_id_rough, bpro_roughness_t)
+  endif
+endif
 
 !===============================================================================
 ! 2.  VERIFICATION DE LA CONSISTANCE DES CL
@@ -676,7 +685,7 @@ if (nscal.ge.1) then
       if(icodcl(ifac,ivar).eq.6)then
 
         iok = 0
-        if ((f_id_t_rough.eq.-1)) then
+        if ((f_id_rough_t.eq.-1)) then
           iok = 1
         else if (bpro_roughness_t(ifac).le.0.d0) then
           iok = 1
