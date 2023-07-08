@@ -453,8 +453,8 @@ cs_mesh_intersect_polyline_cell_select(void        *input,
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
-  BFT_MALLOC(_cell_ids, _n_cells, cs_lnum_t); /* Allocate selection list */
-  BFT_MALLOC(_seg_c_len, _n_cells, cs_real_t); /* Allocate selection list length */
+  BFT_MALLOC(_cell_ids, _n_cells, cs_lnum_t);   /* Selection list */
+  BFT_MALLOC(_seg_c_len, _n_cells, cs_real_t);  /* Selection list length */
   BFT_MALLOC(_in, _n_cells, cs_lnum_t);
   BFT_MALLOC(_out, _n_cells, cs_lnum_t);
 
@@ -567,8 +567,8 @@ cs_mesh_intersect_polyline_cell_select(void        *input,
             cs_real_t length_down =  (1.-t) * length;
             if (c_id0 < _n_cells) {
 
-              /* Mark cell by segment id (the cell may already be marked by another
-               * segment */
+              /* Mark cell by segment id (the cell may already be marked
+                 by another segment */
               _cell_ids[c_id0] = s_id;
 
               /* OD enters cell i from cell j */
@@ -582,8 +582,8 @@ cs_mesh_intersect_polyline_cell_select(void        *input,
             }
             if (c_id1 < _n_cells) {
 
-              /* Mark cell by segment id (the cell may already be marked by another
-               * segment */
+              /* Mark cell by segment id (the cell may already be marked
+                 by another segment */
               _cell_ids[c_id1] = s_id;
 
               /* OD enters cell i from cell j

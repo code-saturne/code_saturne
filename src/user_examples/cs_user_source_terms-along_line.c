@@ -62,10 +62,6 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_lnum_t n_elts = 0;
-static cs_lnum_t *elt_ids = NULL;
-static cs_real_t *seg_c_len = NULL;
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
@@ -87,6 +83,9 @@ cs_user_source_terms(cs_domain_t  *domain,
                      cs_real_t    *st_exp,
                      cs_real_t    *st_imp)
 {
+  static cs_lnum_t n_elts = -1;    /* >= 0 after initialization */
+  static cs_lnum_t *elt_ids = NULL;
+  static cs_real_t *seg_c_len = NULL;
 
   /* x, y, z of origin, and x, y, z of destination */
   /* From North to South at the middle of the first elevation*/
@@ -97,18 +96,17 @@ cs_user_source_terms(cs_domain_t  *domain,
   point_coords[0][0] = 0.; point_coords[0][1] = 15.; point_coords[0][2] = 0.5;
   point_coords[1][0] = 0.; point_coords[1][1] = 0.;  point_coords[1][2] = 0.5;
 
-  /* First pass, init */
-  if (elt_ids == NULL) {
+  /* Initialize on first pass */
+  if (n_elts < 0) {
 
     /* Select cells and count length
-     * Note: its allocate elt_ids and seg_c_len
-     * They should be deallocated at the end of the calculation */
-    cs_cell_polyline_intersect_select(point_coords,
-                                      n_points,
-                                      &n_elts,
-                                      &elt_ids,
-                                      &seg_c_len);
-
+     * Note: elt_ids and seg_c_len are allocated here, and
+     * should be deallocated at the end of the calculation */
+    cs_mesh_intersect_polyline_cell_select(point_coords,
+                                           n_points,
+                                           &n_elts,
+                                           &elt_ids,
+                                           &seg_c_len);
 
     cs_real_t len = 0.;
     /* To visualize selected cells */
@@ -118,7 +116,6 @@ cs_user_source_terms(cs_domain_t  *domain,
       cs_lnum_t cell_id = elt_ids[i];
       if (length != NULL)
         length->val[cell_id] = seg_c_len[i];
-
     }
 
     cs_gnum_t n_g_elts = n_elts;
@@ -127,10 +124,9 @@ cs_user_source_terms(cs_domain_t  *domain,
     cs_parall_sum(1, CS_GNUM_TYPE, &n_g_elts);
 
     bft_printf("BRIN [%f, %f, %f] -> [%f, %f, %f] n_cells=%ld, length=%f\n",
-        point_coords[0][0], point_coords[0][1], point_coords[0][2],
-        point_coords[1][0], point_coords[1][1], point_coords[1][2],
-        n_g_elts,len);
-
+               point_coords[0][0], point_coords[0][1], point_coords[0][2],
+               point_coords[1][0], point_coords[1][1], point_coords[1][2],
+               n_g_elts, len);
   }
 
   /* Source term, proportional to the length of the segment in each cell */
@@ -144,7 +140,6 @@ cs_user_source_terms(cs_domain_t  *domain,
     BFT_FREE(elt_ids);
     BFT_FREE(seg_c_len);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
