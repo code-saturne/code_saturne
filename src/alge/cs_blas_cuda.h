@@ -293,21 +293,20 @@ cs_blas_cuda_reduce_single_block(size_t   n,
       for (size_t k = 0; k < stride; k++) {
         r_s[k] += g_idata[i*stride + k];
       }
+    }
 
-      #pragma unroll
-      for (size_t k = 0; k < stride; k++)
-        sdata[tid*stride + k] = r_s[k];
-      __syncthreads();
+    #pragma unroll
+    for (size_t k = 0; k < stride; k++)
+      sdata[tid*stride + k] = r_s[k];
+    __syncthreads();
 
-      for (size_t j = blockSize/2; j > CS_CUDA_WARP_SIZE; j /= 2) {
-        if (tid < j) {
-          #pragma unroll
-          for (size_t k = 0; k < stride; k++)
+    for (size_t j = blockSize/2; j > CS_CUDA_WARP_SIZE; j /= 2) {
+      if (tid < j) {
+        #pragma unroll
+        for (size_t k = 0; k < stride; k++)
             sdata[tid*stride + k] += sdata[(tid + j)*stride + k];
-        }
-        __syncthreads();
       }
-
+      __syncthreads();
     }
 
     if (tid < 32) cs_blas_cuda_warp_reduce_sum<blockSize, stride>(sdata, tid);
