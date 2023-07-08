@@ -3,9 +3,12 @@ Release 8.0.1 (unreleased)
 
 ### User changes:
 
-- add a user example for a term source along a line.
+- Add a user example for a source term along a line.
 
 ### Bug fixes:
+
+- Fix for combined dot product used by CUDA version of FCG solver when
+  the row count is a  multiple of the block size (256).
 
 - Rough wall function verification.
 
