@@ -102,15 +102,12 @@ _mpi_init(void)
 static void
 _omp_target_test(void)
 {
+#if defined(HAVE_OPENMP_TARGET)
   int m = 10, n = 500;
   double a[n][m], b[n][m], c[n][m];
 
-#if defined(_OPENMP)
-
   int n_devices = omp_get_num_devices();
   printf("Number of OpenMP target devices %d\n", n_devices);
-
-#endif
 
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < m; j++) {
@@ -130,6 +127,7 @@ _omp_target_test(void)
   }
 
   printf("OpenMP target test result: %g\n", c[n-1][m-1]);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
