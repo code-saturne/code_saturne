@@ -899,7 +899,7 @@ R12-23 = 5e-05;"""
         choice = self.getScalarChoice(fieldId, Scalar)
 
         if choice[-7:] == 'formula':
-            value = XMLScalarNode.xmlGetChildString(choice)
+            value = XMLScalarNode.xmlGetChildString('value')
         else:
             value = XMLScalarNode.xmlGetChildDouble('value')
 
@@ -1253,7 +1253,7 @@ class OutletBoundary(Boundary) :
         choice = self.getScalarChoice(fieldId, Scalar)
 
         if choice[-7:] == 'formula':
-            value = XMLScalarNode.xmlGetChildString(choice)
+            value = XMLScalarNode.xmlGetChildString('value')
         else:
             value = XMLScalarNode.xmlGetChildDouble('value')
 
@@ -1452,7 +1452,7 @@ class WallBoundary(Boundary) :
         choice = self.getScalarChoice(fieldId, Scalar)
 
         if choice[-7:] == 'formula':
-            value = XMLScalarNode.xmlGetChildString(choice)
+            value = XMLScalarNode.xmlGetChildString('value')
         else:
             value = XMLScalarNode.xmlGetChildDouble('value')
 
