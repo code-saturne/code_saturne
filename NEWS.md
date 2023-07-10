@@ -7,6 +7,8 @@ Release 8.0.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix generation of scalars boundary conditions formulae for neptune_cfd
+
 - Fix for combined dot product used by CUDA version of FCG solver when
   the row count is a  multiple of the block size (256).
 
