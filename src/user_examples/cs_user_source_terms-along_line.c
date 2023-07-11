@@ -129,10 +129,14 @@ cs_user_source_terms(cs_domain_t  *domain,
                n_g_elts, len);
   }
 
-  /* Source term, proportional to the length of the segment in each cell */
-  for (cs_lnum_t i = 0; i < n_elts; i++) {
-    cs_lnum_t cell_id = elt_ids[i];
-    st_exp[cell_id] = seg_c_len[i];
+  /* Source term, proportional to the length of the segment in each cell
+   * for scalar1 */
+  cs_field_t *fld = cs_field_by_name_try("scalar1");
+  if (fld->id == f_id) {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t cell_id = elt_ids[i];
+      st_exp[cell_id] = seg_c_len[i];
+    }
   }
 
   /* Free memory */
