@@ -729,7 +729,7 @@ cs_velocity_pressure_param_log_setup(void)
                                    N_("colocated time scheme")};
 
   cs_log_printf(CS_LOG_SETUP,
-                _("      itpcol:        %d (%s)\n"),
+                _("    itpcol:        %d (%s)\n"),
                 vp_param->itpcol,
                 _(itpcol_type_str[vp_param->itpcol]));
 
