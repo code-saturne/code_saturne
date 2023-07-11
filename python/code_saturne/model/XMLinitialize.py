@@ -1996,17 +1996,7 @@ class XMLinit(BaseXmlInit):
         """
         Change XML in order to ensure backward compatibility.
         """
-        # Remove "green_vtx" gradient algorithm, so revert to
-        # default if present.
-
-        node_np = self.case.xmlInitNode('numerical_parameters')
-        node = node_np.xmlGetNode('gradient_reconstruction')
-        if node:
-            if node['choice'] == 'green_vtx':
-                print("Green-Gauss with vertex-interpolated face values")
-                print("gradient algorithm has been removed.")
-                print("-- Reverting to default gradient algorithm.")
-                node.xmlRemoveNode()
+        return
 
         # Groundwater: replace specific gravity with global gravity
 

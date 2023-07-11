@@ -3523,6 +3523,8 @@ cs_gui_numerical_options(void)
     _imrgra = 1;
   else if (cs_gui_strcmp(choice, "green_lsq"))
     _imrgra = 4;
+  else if (cs_gui_strcmp(choice, "green_vtx"))
+    _imrgra = 7;
 
   if (_imrgra != 0) {
     int _imrgra_add = 0;
