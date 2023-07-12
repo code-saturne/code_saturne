@@ -4981,7 +4981,7 @@ cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
 
           } /* end of loop on events */
 
-          if (mt->p_data_func != NULL)
+          if (mt->e_data_func != NULL)
             BFT_FREE(pval);
 
           mt->nt_cur = ts->nt_cur;
