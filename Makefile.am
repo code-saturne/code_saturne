@@ -97,7 +97,7 @@ libtool_cuda
 ACLOCAL_AMFLAGS = -I m4
 
 if HAVE_RELOCATABLE
-  PYTHON_SHEBANG = /usr/bin/env python
+  PYTHON_SHEBANG = /usr/bin/env python3
 else
   PYTHON_SHEBANG = $(PYTHON)
 endif
