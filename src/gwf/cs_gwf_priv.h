@@ -50,22 +50,18 @@ typedef struct _gwf_darcy_flux_t  cs_gwf_darcy_flux_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the advection field/arrays related to the Darcy flux.
+ * \brief Update the advection field/arrays related to the Darcy flux.
  *
- * \param[in]      t_eval    time at which one performs the evaluation
- * \param[in]      eq        pointer to the equation related to this Darcy flux
- * \param[in]      cur2prev  true or false
- * \param[in]      input     pointer to the context structure
  * \param[in, out] darcy     pointer to the darcy flux structure
+ * \param[in]      t_eval    time at which one performs the evaluation
+ * \param[in]      cur2prev  true or false
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_gwf_darcy_update_t)(const cs_real_t              t_eval,
-                        const cs_equation_t         *eq,
-                        bool                         cur2prev,
-                        void                        *input,
-                        cs_gwf_darcy_flux_t         *darcy);
+(cs_gwf_darcy_update_t)(cs_gwf_darcy_flux_t         *darcy,
+                        const cs_real_t              t_eval,
+                        bool                         cur2prev);
 
 /*! \struct cs_gwf_darcy_flux_t
  *
@@ -78,7 +74,7 @@ struct _gwf_darcy_flux_t {
    * \var adv_field
    * Pointer to a \ref cs_adv_field_t structure. Darcy advective flux in the
    * liquid phase. This structure is used to define the advective term in
-   * tracer equations.
+   * tracer equations for instance.
    *
    * \var flux_location
    * Indicate where the arrays defining the Darcy fluxes are located
@@ -99,6 +95,7 @@ struct _gwf_darcy_flux_t {
    */
 
   cs_adv_field_t               *adv_field;
+
   cs_flag_t                     flux_location;
   cs_real_t                    *flux_val;
   cs_real_t                    *boundary_flux_val;
@@ -308,9 +305,9 @@ typedef struct {
  *   - Hydrogen pressure is given by the "perfect gas" law in the gas phase and
  *     the Henry's law in the liquid phase
  *
- * The two primitive variables are the liquid and gas pressures with a specific
- * treatment in the saturated case to handle the gas pressure (cf. the cited
- * article or Angelini's PhD thesis)
+ * The two primitive variables are the capillarity and gas pressures with a
+ * specific treatment in the saturated case to handle the gas pressure (cf. the
+ * cited article or Angelini's PhD thesis)
  *
  * Notations are the following :
  * - Two phases: Liquid phase denoted by "l" and gaseous phase denoted by "g"
@@ -321,12 +318,12 @@ typedef struct {
  * The resulting linear algebraic system (one applies a linearization) is
  * defined as follows:
  *
- *                         liquid   gas
- * water conservation    | M_wl  | M_wg ||P_l|   | b_w |
- *                       |-------|------||---| = |-----|
- * hydrogen conservation | M_hl  | M_hg ||P_g|   | b_h |
+ *                             liquid    gas
+ * water mass conservation    | M_wl  | M_wg ||P_c|   | b_w |
+ *                            |-------|------||---| = |-----|
+ * hydrogen mass conservation | M_hl  | M_hg ||P_g|   | b_h |
  *
- * This is coupled system. Coupling terms are collected inside M_wg and M_hl
+ * This is a coupled system. Coupling terms are collected inside M_wg and M_hl
  */
 
 typedef struct {
@@ -338,7 +335,7 @@ typedef struct {
    * @{
    *
    * \var wl_eq
-   * Equation of conservation for the water component. Only the liquid phase is
+   * Equation of mass conservation for water. Only the liquid phase is
    * considered. One assumes no water vapour in the gaseous phase. This
    * corresponds to the M_wl  block in the system of equations and to the b_w
    * right-hand side.
@@ -347,7 +344,7 @@ typedef struct {
   cs_equation_t                *wl_eq;
 
   /*! \var hg_eq
-   * Equation of conservation for the (di)hydrogen. Hydrogen can be present in
+   * Equation of mass conservation for (di)hydrogen. Hydrogen can be present in
    * the liquid or in the gaseous phase. This corresponds to the block (1,1) in
    * the system of equations, i.e. the M_hg block and the b_g right-hand side
    */
@@ -388,10 +385,15 @@ typedef struct {
    * \var g_darcy
    * Pointer to a \ref cs_gwf_darcy_flux_t structure. Darcy advective flux in
    * the gas phase
+   *
+   * \var tot_darcy
+   * Pointer to a \ref cs_gwf_darcy_flux_t structure. Darcy advective flux for
+   * the total flux (linear combination of the liquid/gas Darcy flux)
    */
 
   cs_gwf_darcy_flux_t          *l_darcy;
   cs_gwf_darcy_flux_t          *g_darcy;
+  cs_gwf_darcy_flux_t          *tot_darcy;
 
   /*!
    * @}
@@ -436,6 +438,7 @@ typedef struct {
   cs_property_t                *diff_wl_pty;
 
   cs_property_t                *time_wg_pty;
+  cs_property_t                *diff_wg_pty;
 
   cs_property_t                *time_hg_pty;
   cs_property_t                *diff_hg_pty;
@@ -825,10 +828,10 @@ cs_gwf_darcy_flux_log(cs_gwf_darcy_flux_t    *darcy);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the definition of the advection field attached to a
- *         \ref cs_gwf_darcy_flux_t structure
- *         If the function pointer is set to NULL, then an automatic settings
- *         is done.
+ * \brief Set the definition of the advection field attached to a
+ *        \ref cs_gwf_darcy_flux_t structure
+ *        If the function pointer is set to NULL, then an automatic settings
+ *        is done.
  *
  * \param[in]      connect         pointer to a cs_cdo_connect_t structure
  * \param[in]      quant           pointer to a cs_cdo_quantities_t structure
