@@ -7,6 +7,8 @@ Release 8.0.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix memory leaks in Lagrangian module.
+
 - Fix launch of relocatable builds.
 
 - Fix generation of scalars boundary conditions formulae for neptune_cfd.

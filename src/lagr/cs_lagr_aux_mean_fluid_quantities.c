@@ -284,40 +284,24 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
 
     cs_real_t cl     = 1.0 / (0.5 + 0.75 * c0);
 
-    cs_real_t  *energi = NULL, *dissip = NULL;
-    BFT_MALLOC(energi, n_cells, cs_real_t);
-    BFT_MALLOC(dissip, n_cells, cs_real_t);
+    cs_real_t *energi = extra->cvar_k->val;
+    cs_real_t *dissip = extra->cvar_ep->val;
 
-    if (extra->itytur == 2 || extra->itytur == 4 || extra->iturb == 50) {
-
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-        energi[cell_id] = extra->cvar_k->val[cell_id];
-        dissip[cell_id] = extra->cvar_ep->val[cell_id];
-      }
-
-    }
-    else if (extra->itytur == 3) {
-
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-
+    if (extra->itytur == 3) {
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
         energi[cell_id] = 0.5 * (  extra->cvar_rij->val[6*cell_id]
                                  + extra->cvar_rij->val[6*cell_id+1]
                                  + extra->cvar_rij->val[6*cell_id+2]);
-        dissip[cell_id] = extra->cvar_ep->val[cell_id];
-        extra->cvar_k->val[cell_id] = energi[cell_id] ;
-      }
 
     }
     else if (extra->iturb == 60) {
 
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-        energi[cell_id] = extra->cvar_k->val[cell_id];
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
         dissip[cell_id] = extra->cmu * energi[cell_id]
                                      * extra->cvar_omg->val[cell_id];
-      }
 
     }
-    else {
+    else if (extra->itytur != 2 && extra->itytur != 4 && extra->itytur != 5) {
 
       bft_error
         (__FILE__, __LINE__, 0,
