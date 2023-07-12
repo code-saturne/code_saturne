@@ -4838,9 +4838,11 @@ cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
             mean_val = f_mean->val;
           }
 
-          cs_real_t *pval = NULL;
-          if (mt->e_data_func != NULL)
-            BFT_MALLOC(pval, mt->data_dim, cs_real_t);
+          cs_real_t *pval = NULL, *_pval = NULL;
+          if (mt->e_data_func != NULL) {
+            BFT_MALLOC(_pval, mt->data_dim, cs_real_t);
+            pval = _pval;
+          }
 
           cs_lnum_t location_attr = _location_attr(mt->location_id);
           if (location_attr < 0)
@@ -4981,8 +4983,7 @@ cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
 
           } /* end of loop on events */
 
-          if (mt->e_data_func != NULL)
-            BFT_FREE(pval);
+          BFT_FREE(_pval);
 
           mt->nt_cur = ts->nt_cur;
           if (mt->m_type == CS_LAGR_MOMENT_VARIANCE)
