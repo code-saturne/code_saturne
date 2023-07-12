@@ -2759,7 +2759,7 @@ _subdivided_tria_h(cs_lnum_t        s_id,
                    int              sgn,
                    const cs_lnum_t  f_vtx_idx[],
                    const cs_lnum_t  f_vtx[],
-                   cs_lnum_t        tria_vtx[7])
+                   cs_lnum_t        quad_vtx[7])
 {
   cs_lnum_t s_id_f;
   cs_lnum_t l = (3 - start_vertex)%3;
@@ -2767,33 +2767,33 @@ _subdivided_tria_h(cs_lnum_t        s_id,
   if (sgn > 0) {
 
     s_id_f = f_vtx_idx[s_id];
-    tria_vtx[6] = f_vtx[s_id_f + 2];
-    tria_vtx[l%3]     = f_vtx[s_id_f];
-    tria_vtx[l%3 + 3] = f_vtx[s_id_f + 1];
+    quad_vtx[6] = f_vtx[s_id_f + 2];
+    quad_vtx[l%3]     = f_vtx[s_id_f];
+    quad_vtx[l%3 + 3] = f_vtx[s_id_f + 1];
 
     s_id_f = f_vtx_idx[s_id + 1];
-    tria_vtx[(l+1)%3]     = f_vtx[s_id_f];
-    tria_vtx[(l+1)%3 + 3] = f_vtx[s_id_f + 1];
+    quad_vtx[(l+1)%3]     = f_vtx[s_id_f];
+    quad_vtx[(l+1)%3 + 3] = f_vtx[s_id_f + 1];
 
     s_id_f = f_vtx_idx[s_id + 2];
-    tria_vtx[(l+2)%3]     = f_vtx[s_id_f];
-    tria_vtx[(l+2)%3 + 3] = f_vtx[s_id_f + 1];
+    quad_vtx[(l+2)%3]     = f_vtx[s_id_f];
+    quad_vtx[(l+2)%3 + 3] = f_vtx[s_id_f + 1];
 
   }
   else {
 
     s_id_f = f_vtx_idx[s_id + 2];
-    tria_vtx[6] = f_vtx[s_id_f + 2];
-    tria_vtx[l%3]     = f_vtx[s_id_f];
-    tria_vtx[l%3 + 3] = f_vtx[s_id_f + 3];
+    quad_vtx[6] = f_vtx[s_id_f + 2];
+    quad_vtx[l%3]     = f_vtx[s_id_f];
+    quad_vtx[l%3 + 3] = f_vtx[s_id_f + 3];
 
     s_id_f = f_vtx_idx[s_id + 1];
-    tria_vtx[(l+1)%3]     = f_vtx[s_id_f];
-    tria_vtx[(l+1)%3 + 3] = f_vtx[s_id_f + 3];
+    quad_vtx[(l+1)%3]     = f_vtx[s_id_f];
+    quad_vtx[(l+1)%3 + 3] = f_vtx[s_id_f + 3];
 
     s_id_f = f_vtx_idx[s_id];
-    tria_vtx[(l+2)%3]     = f_vtx[s_id_f];
-    tria_vtx[(l+2)%3 + 3] = f_vtx[s_id_f + 3];
+    quad_vtx[(l+2)%3]     = f_vtx[s_id_f];
+    quad_vtx[(l+2)%3 + 3] = f_vtx[s_id_f + 3];
 
   }
 }
@@ -3507,8 +3507,8 @@ _subdivide_cell_tetra_h(const cs_mesh_t              *m,
   v_ids[2] = c_vtx_id;
   v_ids[3] = tria_vtx[0][6];
   _add_interior_face_quad(m,
-                          new_cell_id+2,
                           new_cell_id,
+                          new_cell_id+2,
                           c_f_n_idx[cell_id] + 2,
                           v_ids,
                           c_f_n_idx + cell_id);
@@ -3545,7 +3545,6 @@ _subdivide_cell_tetra_h(const cs_mesh_t              *m,
                           c_f_n_idx[cell_id] + 5,
                           v_ids,
                           c_f_n_idx + cell_id);
-
 }
 
 /*----------------------------------------------------------------------------*/
