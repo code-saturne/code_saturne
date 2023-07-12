@@ -803,6 +803,20 @@ _sspf_updates(const cs_cdo_connect_t            *connect,
                      NULL,      /* input context */
                      darcy);
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 2
+  if (cs_flag_test(darcy->flux_location, cs_flag_dual_face_byc)) {
+    cs_dbg_darray_to_listing("DARCIAN_FLUX_DFbyC",
+                             connect->c2e->idx[quant->n_cells],
+                             darcy->flux_val, 8);
+  }
+  else if (cs_flag_test(darcy->flux_location, cs_flag_primal_cell)) {
+    cs_field_t  *vel = cs_advection_field_get_field(darcy->adv_field,
+                                                    CS_MESH_LOCATION_CELLS);
+    cs_dbg_darray_to_listing("DARCIAN_FLUX_CELL",
+                             3*quant->n_cells, vel->val, 3);
+  }
+#endif
+
   /* Properties are constant in saturated soils. Therefore, there is no need fo
      an update of the associated properties (permeability and moisture
      content) */
@@ -1394,19 +1408,11 @@ _tpf_l_darcy_update(const cs_real_t              t_eval,
                                      t_eval,
                                      darcy->flux_val);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_PRIV_DBG > 2
-  cs_dbg_darray_to_listing("DARCIAN_FLUX_DFbyC",
-                           connect->c2e->idx[cdoq->n_cells],
-                           darcy->flux_val, 8);
-#endif
 
   /* Set the new values of the vector field at cell centers */
 
   cs_advection_field_in_cells(adv, t_eval, vel->val);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_PRIV_DBG > 1
-  cs_dbg_darray_to_listing("DARCIAN_FLUX_CELL", 3*cdoq->n_cells, vel->val, 3);
-#endif
 
   cs_field_t  *bdy_nflx =
     cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
