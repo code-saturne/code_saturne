@@ -1112,21 +1112,37 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
 /*!
  * \brief Cellwise computation of the diffusive flux across the requested
  *        location. If the location is not the "natural" one (which depends on
- *        the space discretization scheme) then the diffusive flux is only an
- *        approximation.
+ *        the space discretization scheme) then the diffusive flux is
+ *        interpolated and thus there is an approximation.
  *
- * \param[in]      eq          pointer to a cs_equation_t structure
- * \param[in]      location    indicate where the flux has to be computed
- * \param[in]      t_eval      time at which one performs the evaluation
- * \param[in, out] diff_flux   value of the diffusive flux (must be allocated)
+ * If eqp is NULL, then one uses eq->param. Otherwise, one checks that the
+ * given eqp structure is relevant (same space discretization as eq->param)
+ * Using a different eqp allows one to build a diffusive flux relying on
+ * another property associated to the diffusion term.
+ *
+ * If pot_values is NULL, then one uses the values of the variable field
+ * associated to the given equation (eq->field_id). The calling function has to
+ * ensure that the location of the values is relevant with the one expected
+ * with the given equation. Using pot_values allows one to compute the
+ * diffusive flux for an array of values which is not the variable field
+ * associated to the given equation.
+ *
+ * \param[in]      eq         pointer to a cs_equation_t structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in]      pot_vals   values of the potential
+ * \param[in]      location   indicate where the flux has to be computed
+ * \param[in]      t_eval     time at which one performs the evaluation
+ * \param[in, out] diff_flux  value of the diffusive flux (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_diffusive_flux(const cs_equation_t   *eq,
-                                   cs_flag_t              location,
-                                   cs_real_t              t_eval,
-                                   cs_real_t             *diff_flux);
+cs_equation_compute_diffusive_flux(const cs_equation_t        *eq,
+                                   const cs_equation_param_t   *eqp,
+                                   const cs_real_t             *pot_vals,
+                                   cs_flag_t                    location,
+                                   cs_real_t                    t_eval,
+                                   cs_real_t                   *diff_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!

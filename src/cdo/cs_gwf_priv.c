@@ -163,6 +163,8 @@ _darcy_update_vb_dfbyc_flux(const cs_real_t              t_eval,
               " %s: Invalid definition of the advection field", __func__);
 
   cs_equation_compute_diffusive_flux(eq,
+                                     NULL, /* eqp --> default*/
+                                     NULL, /* pot_values --> default */
                                      darcy->flux_location,
                                      t_eval,
                                      darcy->flux_val);
@@ -225,12 +227,9 @@ _darcy_update_vb_pc_flux(const cs_real_t              t_eval,
   if (cur2prev)
     cs_field_current_to_previous(vel);
 
-  /* Update arrays related to the Darcy flux:
-   * Compute the new darcian flux and darcian velocity inside each cell */
-
-  /* Update the array of flux values associated to the advection field */
-
   cs_equation_compute_diffusive_flux(eq,
+                                     NULL, /* eqp --> default*/
+                                     NULL, /* pot_values --> default */
                                      darcy->flux_location,
                                      t_eval,
                                      vel->val);

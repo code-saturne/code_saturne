@@ -1404,6 +1404,8 @@ _tpf_l_darcy_update(const cs_real_t              t_eval,
               " %s: Invalid definition of the advection field", __func__);
 
   cs_equation_compute_diffusive_flux(eq,
+                                     NULL,
+                                     NULL,
                                      darcy->flux_location,
                                      t_eval,
                                      darcy->flux_val);

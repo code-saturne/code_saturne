@@ -2947,6 +2947,8 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
   BFT_MALLOC(diff_flux, quant->n_faces, cs_real_t);
 
   cs_equation_compute_diffusive_flux(eq_dp,
+                                     NULL, /* eqp --> default*/
+                                     NULL, /* pot_values --> default */
                                      cs_flag_primal_face,
                                      cs_glob_time_step->t_cur,
                                      diff_flux);
