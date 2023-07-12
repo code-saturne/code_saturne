@@ -1208,18 +1208,18 @@ AC_SUBST(NEPTUNE_CFD)
 # Main configuration
 
 AC_CONFIG_FILES([Makefile
-		 preprocessor/Makefile
-		 preprocessor/appli/Makefile preprocessor/base/Makefile
-		 preprocessor/pre-post/Makefile preprocessor/util/Makefile
-		 src/Makefile      src/apps/Makefile src/gui/Makefile
-		 src/bft/Makefile  src/fvm/Makefile
-		 src/base/Makefile src/atmo/Makefile src/cdo/Makefile
-		 src/cfbl/Makefile src/cogz/Makefile src/ctwr/Makefile
-		 src/elec/Makefile src/comb/Makefile
-		 src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
-		 src/turb/Makefile src/alge/Makefile src/mesh/Makefile
-		 src/user/Makefile src/user_examples/Makefile
-		 src/meg/Makefile
+                 preprocessor/Makefile
+                 preprocessor/appli/Makefile preprocessor/base/Makefile
+                 preprocessor/pre-post/Makefile preprocessor/util/Makefile
+                 src/Makefile      src/apps/Makefile src/gui/Makefile
+                 src/bft/Makefile  src/fvm/Makefile
+                 src/base/Makefile src/atmo/Makefile src/cdo/Makefile
+                 src/cfbl/Makefile src/cogz/Makefile src/ctwr/Makefile
+                 src/elec/Makefile src/comb/Makefile src/gwf/Makefile
+                 src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
+                 src/turb/Makefile src/alge/Makefile src/mesh/Makefile
+                 src/user/Makefile src/user_examples/Makefile
+                 src/meg/Makefile
                  python/Makefile python/code_saturne/Makefile python/code_saturne/base/Makefile
                  python/code_saturne/studymanager/Makefile
                  python/code_saturne/model/Makefile

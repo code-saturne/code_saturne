@@ -28,7 +28,7 @@ if HAVE_BACKEND
 SUBDIRS += \
 fvm gui \
 base cdo pprt alge mesh turb \
-atmo cfbl cogz comb ctwr elec lagr rayt \
+atmo cfbl cogz comb ctwr elec gwf lagr rayt \
 user user_examples meg apps
 endif
 

@@ -48,6 +48,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/gui \
+-I$(top_srcdir)/src/gwf \
 -I$(top_srcdir)/src/pprt \
 -I$(top_srcdir)/src/rayt \
 -I$(top_srcdir)/src/turb \

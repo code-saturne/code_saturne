@@ -37,6 +37,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/bft  \
 -I$(top_srcdir)/src/fvm  \
 -I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/gwf  \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/pprt \
 -I$(top_srcdir)/src/turb \
@@ -53,6 +54,7 @@ libcscdo_extension_a_CPPFLAGS =\
 -I$(top_srcdir)/src/bft  \
 -I$(top_srcdir)/src/fvm  \
 -I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/gwf  \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/turb \
 $(CPPFLAGS_PLE) \
@@ -112,12 +114,6 @@ cs_equation_system_param.h \
 cs_equation_system_sles.h \
 cs_evaluate.h \
 cs_flag.h \
-cs_gwf.h \
-cs_gwf_param.h \
-cs_gwf_priv.h \
-cs_gwf_soil.h \
-cs_gwf_toolbox.h \
-cs_gwf_tracer.h \
 cs_hho_builder.h \
 cs_hho_scaleq.h \
 cs_hho_vecteq.h \
@@ -192,11 +188,6 @@ cs_equation_system.c \
 cs_equation_system_param.c \
 cs_evaluate.c \
 cs_flag.c \
-cs_gwf.c \
-cs_gwf_priv.c \
-cs_gwf_soil.c \
-cs_gwf_toolbox.c \
-cs_gwf_tracer.c \
 cs_hho_builder.c \
 cs_hho_scaleq.c \
 cs_hho_vecteq.c \
