@@ -1270,20 +1270,18 @@ cs_lagr_add_fields(void)
     }
   }
 
-  /* Add Dissipation for LES */
+  /* Add Dissipation for LES or k-omega */
 
-  if (extra->itytur == 4) {
-    f = cs_field_by_name_try("epsilon");
-    if (f == NULL)
-      f = cs_field_by_name_try("lagr_epsilon");
-    if (f == NULL) {
-      f = cs_field_find_or_create("lagr_epsilon",
-                                  CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
-                                  CS_MESH_LOCATION_CELLS,
-                                  1,
-                                  true);
-      cs_field_set_key_int(f, k_log, 1);
-    }
+  f = cs_field_by_name_try("epsilon");
+  if (f == NULL)
+    f = cs_field_by_name_try("lagr_epsilon");
+  if (f == NULL) {
+    f = cs_field_find_or_create("lagr_epsilon",
+                                CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                                CS_MESH_LOCATION_CELLS,
+                                1,
+                                true);
+    cs_field_set_key_int(f, k_log, 1);
   }
 }
 
