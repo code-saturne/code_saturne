@@ -951,6 +951,12 @@ cs_gui_postprocess_meshes(void)
                                          add_groups, auto_vars,
                                          n_writers, writer_ids);
     }
+    else if(cs_gui_strcmp(type, "interior_face_centers")) {
+      cs_post_define_surface_mesh(id, label, location, NULL,
+                                  add_groups, auto_vars,
+                                  n_writers, writer_ids);
+      cs_post_mesh_set_element_centers_only(id, true);
+    }
     else if(   cs_gui_strcmp(type, "particles")
             || cs_gui_strcmp(type, "trajectories")) {
       bool trajectory = cs_gui_strcmp(type, "trajectories") ? true : false;

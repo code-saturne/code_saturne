@@ -609,133 +609,6 @@ _get_face_warping(cs_lnum_t        idx_start,
 
 }
 
-/*----------------------------------------------------------------------------
- * Transform face values to cell values using the maximum value
- * of a cell's faces.
- *
- * parameters:
- *   mesh            <-- pointer to mesh structure
- *   default_value   <-- default value for initialization
- *   i_face_val      <-- interior face values
- *   b_face_val      <-- boundary face values
- *   cell_val        --> cell values
- *----------------------------------------------------------------------------*/
-
-static void
-_cell_from_max_face(const cs_mesh_t      *mesh,
-                    const cs_real_t       default_value,
-                    const cs_real_t       i_face_val[],
-                    const cs_real_t       b_face_val[],
-                    cs_real_t             cell_val[])
-{
-  cs_lnum_t  i, j, cell_id;
-
-  /* Default initialization */
-
-  for (i = 0; i < mesh->n_cells_with_ghosts; i++)
-    cell_val[i] = default_value;
-
-  /* Distribution */
-
-  if (i_face_val != NULL) {
-
-    for (i = 0; i < mesh->n_i_faces; i++) {
-
-      for (j = 0; j < 2; j++) {
-        cell_id = mesh->i_face_cells[i][j];
-        if (i_face_val[i] > cell_val[cell_id])
-          cell_val[cell_id] = i_face_val[i];
-      }
-
-    }
-
-  } /* If i_face_val != NULL */
-
-  if (b_face_val != NULL) {
-
-    for (i = 0; i < mesh->n_b_faces; i++) {
-
-      cell_id = mesh->b_face_cells[i];
-      if (b_face_val[i] > cell_val[cell_id])
-        cell_val[cell_id] = b_face_val[i];
-
-    }
-
-  } /* If b_face_val != NULL */
-
-}
-
-/*----------------------------------------------------------------------------
- * Transform face values to vertex values using the maximum value
- * of a vertices's connected faces.
- *
- * parameters:
- *   mesh            <-- pointer to mesh structure
- *   default_value   <-- default value for initialization
- *   i_face_val      <-- interior face values
- *   b_face_val      <-- boundary face values
- *   vtx_val         --> vertex values
- *----------------------------------------------------------------------------*/
-
-static void
-_vtx_from_max_face(const cs_mesh_t     *mesh,
-                   const cs_real_t      default_value,
-                   const cs_real_t      i_face_val[],
-                   const cs_real_t      b_face_val[],
-                   cs_real_t            vtx_val[])
-{
-  cs_lnum_t  i, j, idx_start, idx_end, vtx_id;
-
-  /* Default initialization */
-
-  for (i = 0; i < mesh->n_vertices; i++)
-    vtx_val[i] = default_value;
-
-  /* Distribution */
-
-  if (i_face_val != NULL && mesh->i_face_vtx_idx != NULL) {
-
-    for (i = 0; i < mesh->n_i_faces; i++) {
-
-      idx_start = mesh->i_face_vtx_idx[i];
-      idx_end = mesh->i_face_vtx_idx[i + 1];
-
-      for (j = idx_start; j < idx_end; j++) {
-        vtx_id = mesh->i_face_vtx_lst[j];
-        if (i_face_val[i] > vtx_val[vtx_id])
-          vtx_val[vtx_id] = i_face_val[i];
-      }
-
-    } /* End of loop on internal faces */
-
-  } /* If there are values to distribute */
-
-  if (b_face_val != NULL && mesh->b_face_vtx_idx != NULL) {
-
-    for (i = 0; i < mesh->n_b_faces; i++) {
-
-      idx_start = mesh->b_face_vtx_idx[i];
-      idx_end = mesh->b_face_vtx_idx[i + 1];
-
-      for (j = idx_start; j < idx_end; j++) {
-        vtx_id = mesh->b_face_vtx_lst[j];
-        if (b_face_val[i] > vtx_val[vtx_id])
-          vtx_val[vtx_id] = b_face_val[i];
-      }
-
-    } /* End of loop on border faces */
-
-  } /* If there are values to distribute */
-
-  if (mesh->vtx_interfaces != NULL)
-    cs_interface_set_max(mesh->vtx_interfaces,
-                         mesh->n_vertices,
-                         1,
-                         true,
-                         CS_REAL_TYPE,
-                         vtx_val);
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define the cell -> faces connectivity
@@ -1031,15 +904,9 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
   bool  compute_warping = true;
   bool  compute_thickness = true;
   bool  compute_warp_error = true;
-  bool  vol_fields = false;
-  bool  brd_fields = false;
-
-  cs_real_t  *face_to_cell = NULL;
-  cs_real_t  *face_to_vtx = NULL;
 
   double  *working_array = NULL;
 
-  const cs_lnum_t  n_vertices = mesh->n_vertices;
   const cs_lnum_t  n_i_faces = mesh->n_i_faces;
   const cs_lnum_t  n_b_faces = mesh->n_b_faces;
   const cs_lnum_t  n_cells = mesh->n_cells;
@@ -1054,25 +921,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
   assert(mesh_quantities->cell_cen != NULL);
   assert(mesh_quantities->cell_vol != NULL);
 
-  /* Determine if resulting fields should be exported on the volume
-     and border meshes (depending on their existence); */
-
-  /* Note that n_vertices or n_cells should never be zero on any
-     rank (unlike n_fbr), so if face_to_cell/face_to_vtx is allocated
-     on any rank, it should be allocated on all ranks;
-     We can thus use this pointer for tests safely */
-
-  /* TODO:
-     define an option to distribute face values to cells, vertices, or both */
-
-  if (cs_post_mesh_exists(-1)) {
-    vol_fields = true;
-    BFT_MALLOC(face_to_cell, CS_MAX(n_cells_wghosts, n_vertices), cs_real_t);
-    face_to_vtx = face_to_cell;
-  }
-
-  if (cs_post_mesh_exists(-2))
-    brd_fields = true;
+  /* Assume resulting fields will be exported to postprocessing meshes */
 
   /* TODO
      For the moment, we export the mesh at this stage; this should be moved
@@ -1080,7 +929,15 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
   cs_post_activate_writer(0, true);
 
-  if (vol_fields || brd_fields)
+  bool post_fields = false;
+
+  if (cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_SURFACE, 0) != 0)
+    post_fields = true;
+
+  if (cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_BOUNDARY, 0) != 0)
+    post_fields = true;
+
+  if (post_fields)
     cs_post_write_meshes(ts);
 
   /* Evaluate mesh quality criteria */
@@ -1122,52 +979,29 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     /* Post processing */
 
-    if (vol_fields == true) {
+    int mesh_id = cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_SURFACE, 0);
 
-      if (face_to_cell != NULL) {
+    while (mesh_id != 0) {
+      cs_post_write_var(mesh_id,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
+                        "Face_Warp",
+                        1,
+                        false,
+                        true,
+                        CS_POST_TYPE_cs_real_t,
+                        NULL,
+                        i_face_warping,
+                        b_face_warping,
+                        ts);
 
-        _cell_from_max_face(mesh,
-                            0.,
-                            i_face_warping,
-                            b_face_warping,
-                            face_to_cell);
+      mesh_id = cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_SURFACE,
+                                                   mesh_id);
+    }
 
-        cs_post_write_var(CS_POST_MESH_VOLUME,
-                          CS_POST_WRITER_ALL_ASSOCIATED,
-                          "Face_Warp_c_max",
-                          1,
-                          false,
-                          true,
-                          CS_POST_TYPE_cs_real_t,
-                          face_to_cell,
-                          NULL,
-                          NULL,
-                          ts);
+    mesh_id = cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_BOUNDARY, 0);
 
-      }
-      if (face_to_vtx != NULL) {
-
-        _vtx_from_max_face(mesh,
-                           0.,
-                           i_face_warping,
-                           b_face_warping,
-                           face_to_vtx);
-
-        cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
-                                 CS_POST_WRITER_ALL_ASSOCIATED,
-                                 "Face_Warp_v_max",
-                                 1,
-                                 false,
-                                 true,
-                                 CS_POST_TYPE_cs_real_t,
-                                 face_to_vtx,
-                                 ts);
-      }
-
-    } /* End of post-processing on volume */
-
-    if (brd_fields == true)
-      cs_post_write_var(CS_POST_MESH_BOUNDARY,
+    while (mesh_id != 0) {
+      cs_post_write_var(mesh_id,
                         CS_POST_WRITER_ALL_ASSOCIATED,
                         "Face_Warp",
                         1,
@@ -1178,6 +1012,10 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                         NULL,
                         b_face_warping,
                         ts);
+
+      mesh_id = cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_BOUNDARY,
+                                                   mesh_id);
+    }
 
     BFT_FREE(working_array);
 
@@ -1220,39 +1058,28 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     /* Post processing */
 
-    if (vol_fields == true) {
+    int mesh_id = cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_SURFACE, 0);
 
-      if (face_to_cell != NULL) {
+    while (mesh_id != 0) {
+      cs_post_write_var(mesh_id,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
+                        "Weighting coefficient",
+                        1,
+                        false,
+                        true,
+                        CS_POST_TYPE_cs_real_t,
+                        NULL,
+                        weighting,
+                        NULL,
+                        ts);
 
-        _cell_from_max_face(mesh, 0.5, weighting, NULL, face_to_cell);
-        cs_post_write_var(CS_POST_MESH_VOLUME,
-                          CS_POST_WRITER_ALL_ASSOCIATED,
-                          "Weighting_c_max",
-                          1,
-                          false,
-                          true,
-                          CS_POST_TYPE_cs_real_t,
-                          face_to_cell,
-                          NULL,
-                          NULL,
-                          ts);
+      mesh_id = cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_SURFACE, mesh_id);
+    }
 
-      }
-      if (face_to_vtx != NULL) {
+    mesh_id = cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_VOLUME, 0);
 
-        _vtx_from_max_face(mesh, 0.5, weighting, NULL, face_to_vtx);
-        cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
-                                 CS_POST_WRITER_ALL_ASSOCIATED,
-                                 "Weighting_v_max",
-                                 1,
-                                 false,
-                                 true,
-                                 CS_POST_TYPE_cs_real_t,
-                                 face_to_vtx,
-                                 ts);
-
-      }
-      cs_post_write_var(CS_POST_MESH_VOLUME,
+    while (mesh_id != 0) {
+      cs_post_write_var(mesh_id,
                         CS_POST_WRITER_ALL_ASSOCIATED,
                         "Offset",
                         1,
@@ -1264,7 +1091,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                         NULL,
                         ts);
 
-    } /* End of post-processing on volume */
+      mesh_id = cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_VOLUME, mesh_id);
+    }
 
     BFT_FREE(working_array);
 
@@ -1307,42 +1135,29 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     /* Post processing */
 
-    if (vol_fields == true) {
+    int mesh_id = cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_SURFACE, 0);
 
-      if (face_to_cell != NULL) {
+    while (mesh_id != 0) {
+      cs_post_write_var(mesh_id,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
+                        "Non_Ortho",
+                        1,
+                        false,
+                        true,
+                        CS_POST_TYPE_cs_real_t,
+                        NULL,
+                        i_face_ortho,
+                        b_face_ortho,
+                        ts);
 
-        _cell_from_max_face(mesh, 0., i_face_ortho, b_face_ortho, face_to_cell);
-        cs_post_write_var(CS_POST_MESH_VOLUME,
-                          CS_POST_WRITER_ALL_ASSOCIATED,
-                          "Non_Ortho_c_max",
-                          1,
-                          false,
-                          true,
-                          CS_POST_TYPE_cs_real_t,
-                          face_to_cell,
-                          NULL,
-                          NULL,
-                          ts);
+      mesh_id = cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_SURFACE,
+                                                   mesh_id);
+    }
 
-      }
-      if (face_to_vtx != NULL) {
+    mesh_id = cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_BOUNDARY, 0);
 
-        _vtx_from_max_face(mesh, 0., i_face_ortho, b_face_ortho, face_to_vtx);
-        cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
-                                 CS_POST_WRITER_ALL_ASSOCIATED,
-                                 "Non_Ortho_v_max",
-                                 1,
-                                 false,
-                                 true,
-                                 CS_POST_TYPE_cs_real_t,
-                                 face_to_vtx,
-                                 ts);
-      }
-
-    } /* End of post-processing on volume */
-
-    if (brd_fields == true)
-      cs_post_write_var(CS_POST_MESH_BOUNDARY,
+    while (mesh_id != 0) {
+      cs_post_write_var(mesh_id,
                         CS_POST_WRITER_ALL_ASSOCIATED,
                         "Non_Ortho",
                         1,
@@ -1354,12 +1169,13 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                         b_face_ortho,
                         ts);
 
+      mesh_id = cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_BOUNDARY,
+                                                   mesh_id);
+    }
+
     BFT_FREE(working_array);
 
   } /* End of non-orthogonality treatment */
-
-  if (face_to_cell != NULL)
-    BFT_FREE(face_to_cell);
 
   /*-------------*/
   /* Cell volume */
@@ -1374,8 +1190,10 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     /* Post processing */
 
-    if (vol_fields == true)
-      cs_post_write_var(CS_POST_MESH_VOLUME,
+    int mesh_id = cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_VOLUME, 0);
+
+    while (mesh_id != 0) {
+      cs_post_write_var(mesh_id,
                         CS_POST_WRITER_ALL_ASSOCIATED,
                         "Cell_Volume",
                         1,
@@ -1386,6 +1204,9 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                         NULL,
                         NULL,
                         ts);
+
+      mesh_id = cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_VOLUME, mesh_id);
+    }
 
   } /* End of cell volume treatment */
 
@@ -1407,7 +1228,9 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     /* Post processing */
 
-    if (vol_fields == true)
+    int mesh_id = cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_BOUNDARY, 0);
+
+    while (mesh_id != 0) {
       cs_post_write_var(CS_POST_MESH_BOUNDARY,
                         CS_POST_WRITER_ALL_ASSOCIATED,
                         "Boundary_Cell_Thickness",
@@ -1419,6 +1242,10 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                         NULL,
                         b_thickness,
                         ts);
+
+      mesh_id = cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_BOUNDARY,
+                                                   mesh_id);
+    }
 
     BFT_FREE(b_thickness);
 
@@ -1442,8 +1269,10 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     /* Post processing */
 
-    if (vol_fields == true)
-      cs_post_write_var(CS_POST_MESH_VOLUME,
+    int mesh_id = cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_VOLUME, 0);
+
+    while (mesh_id != 0) {
+      cs_post_write_var(mesh_id,
                         CS_POST_WRITER_ALL_ASSOCIATED,
                         "Warp_Error",
                         1,
@@ -1454,6 +1283,9 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                         NULL,
                         NULL,
                         ts);
+
+      mesh_id = cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_VOLUME, mesh_id);
+    }
 
     double  l2_error = cs_gres(mesh->n_cells,
                                mesh_quantities->cell_vol,

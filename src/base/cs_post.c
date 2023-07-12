@@ -61,6 +61,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
 #include "cs_mesh_location.h"
+#include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
 #include "cs_selector.h"
@@ -307,6 +308,8 @@ typedef struct {
                                             if true */
   bool                    time_varying;  /* Time varying if associated writers
                                             allow it */
+  bool                    centers_only;  /* Build only associated centers,
+                                            not full elements. */
 
   int                     n_writers;     /* Number of associated writers */
   int                    *writer_id;     /* Array of associated writer ids */
@@ -1152,6 +1155,7 @@ _predefine_mesh(int        mesh_id,
   post_mesh->post_domain = false;
 
   post_mesh->time_varying = time_varying;
+  post_mesh->centers_only = false;
 
   for (j = 0; j < 5; j++) {
     post_mesh->criteria[j] = NULL;
@@ -1315,41 +1319,118 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
 
   /* Create associated structure */
 
-  if (post_mesh->ent_flag[0] == 1) {
+  if (post_mesh->centers_only == false) {
 
-    if (n_cells >= cs_glob_mesh->n_cells)
-      exp_mesh = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
-                                                post_mesh->name,
-                                                post_mesh->add_groups,
-                                                cs_glob_mesh->n_cells,
-                                                NULL);
-    else
-      exp_mesh = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
-                                                post_mesh->name,
-                                                post_mesh->add_groups,
-                                                n_cells,
-                                                cell_list);
+    if (post_mesh->ent_flag[0] == 1) {
+
+      if (n_cells >= cs_glob_mesh->n_cells)
+        exp_mesh = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
+                                                  post_mesh->name,
+                                                  post_mesh->add_groups,
+                                                  cs_glob_mesh->n_cells,
+                                                  NULL);
+      else
+        exp_mesh = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
+                                                  post_mesh->name,
+                                                  post_mesh->add_groups,
+                                                  n_cells,
+                                                  cell_list);
+
+    }
+    else {
+
+      if (   n_b_faces >= cs_glob_mesh->n_b_faces
+          && n_i_faces == 0)
+        exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                                  post_mesh->name,
+                                                  post_mesh->add_groups,
+                                                  0,
+                                                  cs_glob_mesh->n_b_faces,
+                                                  NULL,
+                                                  NULL);
+      else
+        exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                                  post_mesh->name,
+                                                  post_mesh->add_groups,
+                                                  n_i_faces,
+                                                  n_b_faces,
+                                                  i_face_list,
+                                                  b_face_list);
+
+    }
 
   }
+
+  /* Create only associated points if requested */
+
   else {
 
-    if (   n_b_faces >= cs_glob_mesh->n_b_faces
-        && n_i_faces == 0)
-      exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
-                                                post_mesh->name,
-                                                post_mesh->add_groups,
-                                                0,
-                                                cs_glob_mesh->n_b_faces,
-                                                NULL,
-                                                NULL);
-    else
-      exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
-                                                post_mesh->name,
-                                                post_mesh->add_groups,
-                                                n_i_faces,
-                                                n_b_faces,
-                                                i_face_list,
-                                                b_face_list);
+    cs_lnum_t n_elts = 0;
+    cs_lnum_t *elt_ids = NULL;
+    const cs_real_t *elt_coords = NULL;
+    const cs_gnum_t *elt_gnum = NULL;
+
+    if (post_mesh->ent_flag[0] == 1) {
+
+      if (n_cells >= cs_glob_mesh->n_cells) {
+        n_elts = cs_glob_mesh->n_cells;
+      }
+      else {
+        n_elts = n_cells;
+        elt_ids = cell_list;
+      }
+
+      elt_coords = cs_glob_mesh_quantities->cell_cen;
+      elt_gnum = cs_glob_mesh->global_cell_num;
+
+    }
+    else {
+
+      if (post_mesh->ent_flag[1] == 0) {
+
+        if (n_b_faces >= cs_glob_mesh->n_b_faces) {
+          n_elts = cs_glob_mesh->n_b_faces;
+        }
+        else {
+          n_elts = n_b_faces;
+          elt_ids = b_face_list;
+        }
+
+        elt_coords = cs_glob_mesh_quantities->b_face_cog;
+        elt_gnum = cs_glob_mesh->global_b_face_num;
+
+      }
+      else if (post_mesh->ent_flag[2] == 0) {
+
+        if (n_i_faces >= cs_glob_mesh->n_i_faces) {
+          n_elts = cs_glob_mesh->n_i_faces;
+        }
+        else {
+          n_elts = n_i_faces;
+          elt_ids = i_face_list;
+        }
+
+        elt_coords = cs_glob_mesh_quantities->i_face_cog;
+        elt_gnum = cs_glob_mesh->global_i_face_num;
+
+      }
+      else {
+
+        bft_error(__FILE__, __LINE__, 0,
+                  _("%s: Mixed interior and boundary faces not currently handled "
+                    "with 'centers only' option."),
+                  __func__);
+
+      }
+
+      exp_mesh = fvm_nodal_create(post_mesh->name, 3);
+
+      fvm_nodal_define_vertex_list(exp_mesh, n_elts, elt_ids);
+      fvm_nodal_set_shared_vertices(exp_mesh, (cs_coord_t *)elt_coords);
+
+      fvm_nodal_init_io_num(exp_mesh, elt_gnum, 0);
+
+    }
 
   }
 
@@ -4841,6 +4922,37 @@ cs_post_define_edges_mesh(int        mesh_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set restriction of a postprocessing mesh to element centers
+ *
+ * This allow simply using element centers instead of full representations.
+ *
+ * This function must be called during the postprocessing output definition
+ * stage, before any output actually occurs.
+ *
+ * If called with a non-existing mesh or writer id, or if the writer was not
+ * previously associated, no setting is changed, and this function
+ * returns silently.
+ *
+ * \param[in]  mesh_id       id of mesh to define
+ *                           (< 0 reserved, > 0 for user)
+ * \param[in]  centers_only  true if only element centers sould be output,
+ *                           false fo normal connectivity.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_mesh_set_element_centers_only(int   mesh_id,
+                                      bool  centers_only)
+{
+  int _mesh_id = _cs_post_mesh_id_try(mesh_id);
+
+  cs_post_mesh_t *post_mesh = _cs_post_meshes + _mesh_id;
+
+  post_mesh->centers_only = centers_only;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Associate a writer to a postprocessing mesh.
  *
  * This function must be called during the postprocessing output definition
@@ -5445,6 +5557,42 @@ cs_post_mesh_exists(int  mesh_id)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Find next mesh with a given category id
+ *
+ * \param[in]  start_mesh_id  O at start, then previously returned mesh id
+ *
+ * \return  id of next mesh matching catogory, or 0 if none is found
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_post_mesh_find_next_with_cat_id(int  cat_id,
+                                   int  start_mesh_id)
+{
+  int retval = 0;
+
+  int s_id = 0;
+  if (start_mesh_id != 0) {
+    s_id = _cs_post_mesh_id_try(start_mesh_id);
+    if (s_id < 0)
+      s_id = _cs_post_n_meshes;
+    else
+      s_id += 1;
+  }
+
+  for (int id = s_id; id < _cs_post_n_meshes; id++) {
+    cs_post_mesh_t  *post_mesh = _cs_post_meshes + id;
+    if (post_mesh->cat_id == cat_id) {
+      retval = post_mesh->id;
+      break;
+    }
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return the default writer format name
  *
  * \return  name of the default writer format
@@ -6040,13 +6188,18 @@ cs_post_write_var(int                    mesh_id,
       }
 
       if (post_mesh->ent_flag[CS_POST_LOCATION_I_FACE] == 1) {
+        /* For the specific case with cell centers only, faces types cannot
+           currently be mixed, and data is output at the first parent list */
+        int p_flag = (post_mesh->centers_only) ? 0 : 1;
+
         if (interlace == false) {
           dec_ptr = cs_glob_mesh->n_i_faces * cs_datatype_size[datatype];
           for (i = 0; i < var_dim; i++)
-            var_ptr[var_dim + i] = ((const char *)i_face_vals) + i*dec_ptr;
+            var_ptr[p_flag*var_dim + i]
+              = ((const char *)i_face_vals) + i*dec_ptr;
         }
         else
-          var_ptr[1] = i_face_vals;
+          var_ptr[p_flag] = i_face_vals;
       }
 
     }
@@ -6142,19 +6295,35 @@ cs_post_write_var(int                    mesh_id,
       if (nt_cur < 0 && writer->tc.last_nt > 0)
         continue;
 
-      fvm_writer_export_field(writer->writer,
-                              post_mesh->exp_mesh,
-                              var_name,
-                              FVM_WRITER_PER_ELEMENT,
-                              var_dim,
-                              _interlace,
-                              n_parent_lists,
-                              parent_num_shift,
-                              datatype,
-                              nt_cur,
-                              t_cur,
-                              (const void * *)var_ptr);
+      if (post_mesh->centers_only == false)
+        fvm_writer_export_field(writer->writer,
+                                post_mesh->exp_mesh,
+                                var_name,
+                                FVM_WRITER_PER_ELEMENT,
+                                var_dim,
+                                _interlace,
+                                n_parent_lists,
+                                parent_num_shift,
+                                datatype,
+                                nt_cur,
+                                t_cur,
+                                (const void * *)var_ptr);
 
+      else {
+        cs_lnum_t  parent_num_shift_n[1] = {0};
+        fvm_writer_export_field(writer->writer,
+                                post_mesh->exp_mesh,
+                                var_name,
+                                FVM_WRITER_PER_NODE,
+                                var_dim,
+                                _interlace,
+                                0, /* n_parent_lists */
+                                parent_num_shift_n,
+                                datatype,
+                                nt_cur,
+                                t_cur,
+                                (const void * *)var_ptr);
+      }
     }
 
   }

@@ -87,7 +87,7 @@ BEGIN_C_DECLS
 
 /* Additional categories (no associated default mesh) */
 
-#define CS_POST_MESH_SURFACE         -12       /* surface (boundary and/or
+#define CS_POST_MESH_SURFACE       -1001       /* surface (boundary and/or
                                                   interior) mesh */
 
 /*============================================================================
@@ -611,6 +611,30 @@ cs_post_define_edges_mesh(int        mesh_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set restriction of a postprocessing mesh to element centers
+ *
+ * This allow simply using element centers instead of full representations.
+ *
+ * This function must be called during the postprocessing output definition
+ * stage, before any output actually occurs.
+ *
+ * If called with a non-existing mesh or writer id, or if the writer was not
+ * previously associated, no setting is changed, and this function
+ * returns silently.
+ *
+ * \param[in]  mesh_id       id of mesh to define
+ *                           (< 0 reserved, > 0 for user)
+ * \param[in]  centers_only  true if only element centers sould be output,
+ *                           false fo normal connectivity.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_mesh_set_element_centers_only(int   mesh_id,
+                                      bool  centers_only);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Associate a writer to a postprocessing mesh.
  *
  * This function must be called during the postprocessing output definition
@@ -872,6 +896,20 @@ cs_post_writer_exists(int  writer_id);
 
 bool
 cs_post_mesh_exists(int  mesh_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Find next mesh with a given category id
+ *
+ * \param[in]  start_mesh_id  O at start, then previously returned mesh id
+ *
+ * \return  id of next mesh matching catogory, or 0 if none is found
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_post_mesh_find_next_with_cat_id(int  cat_id,
+                                   int  start_mesh_id);
 
 /*----------------------------------------------------------------------------*/
 /*!

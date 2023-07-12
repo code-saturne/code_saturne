@@ -790,6 +790,15 @@ class OutputControlModel(Model):
         if mesh_type is None:
             mesh_type = self.defaultMeshValues()['type']
             self.setMeshType(mesh_id, mesh_type)
+        elif mesh_type[0] in ('V', 'B'):
+            # Handle some backward compatibility here
+            r = {"VolumicZone": 'volume_zone',
+                 "BoundaryZone": 'boundary_zone',
+                 "BoundaryZone_cells": 'boundary zone cells'}
+            try:
+                mesh_type = r[mesh_type]
+            except Exception:
+                pass
         return mesh_type
 
 
@@ -801,8 +810,9 @@ class OutputControlModel(Model):
         self.isInList(mesh_id, self.getMeshIdList())
         types_list = ('cells', 'interior_faces',
                       'boundary_faces', 'boundary_cells',
-                      'VolumicZone', 'BoundaryZone',
-                      'BoundaryZone_cells')
+                      'volume_zone', 'boundary_zone',
+                      'boundary_zone_cells',
+                      'interior_face_centers')
         self.isInList(mesh_type, types_list)
         node = self.node_out.xmlGetNode('mesh', id = mesh_id)
         node['type'] = mesh_type

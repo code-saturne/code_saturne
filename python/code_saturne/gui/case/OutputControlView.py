@@ -269,6 +269,7 @@ class TypeMeshDelegate(QItemDelegate):
             editor.addItem("volume zone")
             editor.addItem("boundary zone")
             editor.addItem("boundary zone cells")
+            editor.addItem("interior face centers")
 
             vlm = LocalizationModel('VolumicZone', self.mdl.case)
             if len(vlm.getZones()) == 0:
@@ -291,8 +292,9 @@ class TypeMeshDelegate(QItemDelegate):
         if self.lag == 0:
             dico = {"cells": 0, "interior_faces": 1, "boundary_faces": 2,
                     "boundary_cells" : 3,
-                    "VolumicZone": 4, "BoundaryZone": 5,
-                    "BoundaryZone_cells": 6}
+                    "volume_zone": 4, "boundary_zone": 5,
+                    "boundary_zone_cells": 6,
+                    "interior_face_centers": 7}
         else:
             dico = {"particles": 0, "trajectories": 1}
         row = index.row()
@@ -507,19 +509,22 @@ class StandardItemModelMesh(QStandardItemModel):
                        "interior faces" : 'interior_faces',
                        "boundary faces": 'boundary_faces',
                        "boundary cells": 'boundary_cells',
-                       "volume zone": 'VolumicZone',
-                       "boundary zone": 'BoundaryZone',
-                       "boundary zone cells" : 'BoundaryZone_cells'}
+                       "volume zone": 'volume_zone',
+                       "boundary zone": 'boundary_zone',
+                       "boundary zone cells" : 'boundary_zone_cells',
+                       "interior face centers": 'interior_face_centers'}
         self.dicoM2V= {"cells" : 'cells',
                        "interior_faces" : 'interior faces',
                        "boundary_faces": 'boundary faces',
                        "boundary_cells": 'boundary cells',
-                       "VolumicZone": 'volume zone',
-                       "BoundaryZone": 'boundary zone',
-                       "BoundaryZone_cells": 'boundary zone cells'}
+                       "volume_zone": 'volume zone',
+                       "boundary_zone": 'boundary zone',
+                       "boundary_zone_cells": 'boundary zone cells',
+                       "interior_face_centers" : 'interior face centers'}
         type_list = ["cells", "interior_faces", "boundary_faces",
-                     "boundary_cells", "VolumicZone",
-                     "BoundaryZone", "BoundaryZone_cells"]
+                     "boundary_cells", "volume_zone",
+                     "boundary_zone", "boundary_zone_cells",
+                     "interior_face_centers"]
         for id in self.mdl.getMeshIdList():
             dico  = {}
             dico['name'] = self.mdl.getMeshLabel(id)
@@ -600,8 +605,8 @@ class StandardItemModelMesh(QStandardItemModel):
 
         # Lists to better handle the difference between elements and zones
         elts_list = ['cells', 'interior_faces',
-                     'boundary_faces', 'boundary_cells']
-        zone_list = ['VolumicZone', 'BoundaryZone', 'BoundaryZone_cells']
+                     'boundary_faces', 'boundary_cells', 'interior_face_centers']
+        zone_list = ['volume_zone', 'boundary_zone', 'boundary_zone_cells']
 
         # Label
         if col == 0:
@@ -2377,6 +2382,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         The number of the monitoring point is added at the precedent one
         """
         mesh_id = self.mdl.addMesh()
+        lagrangian = 0
+        self.mdl.addAssociatedWriter(mesh_id, lagrangian)
+
         self.__insertMesh(self.mdl.getMeshLabel(mesh_id),
                           mesh_id,
                           self.mdl.getMeshType(mesh_id),
@@ -2586,8 +2594,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
     @pyqtSlot()
     def slotAddAssociatedWriter(self):
         """
-        Add one monitoring point with these coordinates in the list in the Hlist
-        The number of the monitoring point is added at the precedent one
+        Add one writer to a mesh.
         """
         cindex = self.tableViewMesh.currentIndex()
         if cindex != (-1,-1):

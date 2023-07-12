@@ -1,6 +1,20 @@
 Master (not on release branches yet)
 ------------------------------------
 
+### User changes:
+
+- GUI: when adding a postprocessing mesh, it is associated to the default
+  writer automatically (and this can be modified as usual).
+
+- Postprocessing: add the possibility of viewing interior face data at
+  face centers, so as to have the data at correct location but keep it light
+  on rendering (using a "Point Gaussian" view under ParaView for example).
+
+- When running mesh quality checks, interior face values are now output
+  at those locations, if the user has defined a postprocessing mesh based
+  on interior faces or interior face centers.
+  * The "per cell" and "per vertex" maxima are removed.
+
 ### Architectural changes:
 
 - Remove support for freesteam (IAPWS-IF97 steam tables) library,
