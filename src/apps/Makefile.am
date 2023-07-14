@@ -209,7 +209,7 @@ install-exec-hook: ${local_libraries_add}
 	    rm -f "$(DESTDIR)$(libdir)/$$p"; \
 	    if test -h $$p; then \
 	      echo " cp -fp $$p '$(DESTDIR)$(pkglibdir)'"; \
-	      cp -fpP $$p "$(DESTDIR)$(libdir)2"; \
+	      cp -fpP $$p "$(DESTDIR)$(libdir)"; \
 	    fi; \
 	  done; \
 	  ldadd_saturne=`PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
