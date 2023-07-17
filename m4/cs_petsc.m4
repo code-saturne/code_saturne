@@ -53,14 +53,18 @@ AC_ARG_WITH(petsc-lib,
              fi])
 
 if test "x$with_petsc" != "xno" ; then
+  cs_petsc_make=`which gmake`
+  if test $? = 1 ; then
+    cs_petsc_make=make
+  fi
   if test -f ${PETSC_DIR}/conf/variables ; then
-    PETSC_CPPFLAGS=$(gmake -s -f "$cs_abs_srcdir/build-aux/petsc-variables.makefile" PETSC_DIR="${PETSC_DIR}" getincludedirs)
+    PETSC_CPPFLAGS=$(${cs_petsc_make} -s -f "$cs_abs_srcdir/build-aux/petsc-variables.makefile" PETSC_DIR="${PETSC_DIR}" getincludedirs)
     PETSC_LDFLAGS=""
-    PETSC_LIBS=$(gmake -s -f "$cs_abs_srcdir/build-aux/petsc-variables.makefile"  PETSC_DIR="${PETSC_DIR}" getlinklibs)
+    PETSC_LIBS=$(${cs_petsc_make} -s -f "$cs_abs_srcdir/build-aux/petsc-variables.makefile"  PETSC_DIR="${PETSC_DIR}" getlinklibs)
   elif test -f ${PETSC_DIR}/conf/petscvariables ; then
-    PETSC_CPPFLAGS=$(gmake -s -f "$cs_abs_srcdir/build-aux/petsc-petscvariables.makefile" PETSC_DIR="${PETSC_DIR}" getincludedirs)
+    PETSC_CPPFLAGS=$(${cs_petsc_make} -s -f "$cs_abs_srcdir/build-aux/petsc-petscvariables.makefile" PETSC_DIR="${PETSC_DIR}" getincludedirs)
     PETSC_LDFLAGS=""
-    PETSC_LIBS=$(gmake -s -f "$cs_abs_srcdir/build-aux/petsc-petscvariables.makefile" PETSC_DIR="${PETSC_DIR}" getlinklibs)
+    PETSC_LIBS=$(${cs_petsc_make} -s -f "$cs_abs_srcdir/build-aux/petsc-petscvariables.makefile" PETSC_DIR="${PETSC_DIR}" getlinklibs)
   else
       AC_MSG_FAILURE([${PETSC_DIR}/conf/variables or ${PETSC_DIR}/conf/petscvariables not found.
 Check --with-petsc or --with-petsc-lib option or PETSc directory structure
@@ -68,6 +72,8 @@ Check --with-petsc or --with-petsc-lib option or PETSc directory structure
  {--with-petsc}/lib/conf/petscvariables or {--with-petsc_lib}/conf/petscvariables
 should be present).])
   fi
+
+  unset petsc_make
 
   saved_CPPFLAGS="$CPPFLAGS"
   saved_LDFLAGS="$LDFLAGS"
