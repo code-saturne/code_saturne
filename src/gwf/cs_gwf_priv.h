@@ -161,11 +161,6 @@ typedef struct {
    * @name Additional fields/arrays
    * @{
    *
-   * \var permeability_field
-   * Pointer to a \ref cs_field_t structure. May be not allocated according to
-   * the postprocessing options. Store the value of the absolute permeability
-   * field in each cell
-   *
    * \var pressure_head
    * Pointer to a \ref cs_field_t structure. Allocated only if the gravitation
    * effect is active. Location of this field depends on the discretization
@@ -175,7 +170,6 @@ typedef struct {
    * h = H - gravity_potential
    */
 
-  cs_field_t                   *permeability_field;
   cs_field_t                   *pressure_head;
 
   /*!
@@ -253,14 +247,11 @@ typedef struct {
    *
    * \var moisture_field
    * Pointer to a \ref cs_field_t structure. Structure storing the value of the
-   * moisture content in each cell. This is an optional structure i.e. it may
-   * be set to NULL (for instance in case of a satured soil on the full
-   * domain).
+   * moisture content in each cell.
    *
    * \var capacity_field
    * Pointer to a \ref cs_field_t structure. Structure storing the value of the
-   * soil capacity in each cell. This is an optional structure i.e. it is
-   * set to NULL in case of a satured soil on the full domain.
+   * soil capacity in each cell.
    *
    * \var pressure_head
    * Pointer to a \ref cs_field_t structure. Allocated only if the gravitation
@@ -868,6 +859,49 @@ cs_gwf_darcy_flux_balance(const cs_cdo_connect_t       *connect,
                           const cs_cdo_quantities_t    *quant,
                           const cs_equation_param_t    *eqp,
                           cs_gwf_darcy_flux_t          *darcy);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the associated Darcy flux over the boundary of the domain for
+ *        each vertex of a boundary face.  Case of a vertex-based
+ *        discretization and single-phase flows in porous media (saturated or
+ *        not).
+ *
+ * \param[in]      t_eval   time at which one performs the evaluation
+ * \param[in]      eq       pointer to the equation related to this Darcy flux
+ * \param[in, out] adv      pointer to the Darcy advection field
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_darcy_flux_update_on_boundary(cs_real_t                t_eval,
+                                     const cs_equation_t     *eq,
+                                     cs_adv_field_t          *adv);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update head values (pressure head or head values for laws)
+ *        Up to now, this is only used for single-phase flows in porous media
+ *        (saturated or not case).
+ *
+ * \param[in]      cdoq            pointer to a cs_cdo_quantities_t structure
+ * \param[in]      connect         pointer to a cs_cdo_connect_t structure
+ * \param[in]      richards        pointer to the Richards equation
+ * \param[in]      option_flag     calculation option related to the GWF module
+ * \param[in, out] pressure_head   pressure head field
+ * \param[in, out] head_in_law     values of the head used in law
+ * \param[in]      cur2prev        true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_update_head(const cs_cdo_quantities_t   *cdoq,
+                   const cs_cdo_connect_t      *connect,
+                   const cs_equation_t         *richards,
+                   cs_flag_t                    option_flag,
+                   cs_field_t                  *pressure_head,
+                   cs_real_t                    head_in_law[],
+                   bool                         cur2prev);
 
 /*----------------------------------------------------------------------------*/
 

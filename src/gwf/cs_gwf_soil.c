@@ -972,11 +972,11 @@ cs_gwf_soil_set_shared_properties(cs_property_t      *abs_permeability,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the definition of the soil porosity and absolute porosity (which
- *         are properties always defined). This relies on the definition of
- *         each soil.
+ * \brief Set the definition of the soil porosity and absolute porosity (which
+ *        are properties always defined). This relies on the definition of
+ *        each soil.
  *
- * \param[in, out]  moisture_content  pointer to a cs_property_t structure
+ * \param[in, out] moisture_content   pointer to a cs_property_t structure
  */
 /*----------------------------------------------------------------------------*/
 

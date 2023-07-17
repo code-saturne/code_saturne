@@ -53,8 +53,11 @@ cs_gwf.h \
 cs_gwf_param.h \
 cs_gwf_priv.h \
 cs_gwf_soil.h \
+cs_gwf_sspf.h \
 cs_gwf_toolbox.h \
+cs_gwf_tpf.h \
 cs_gwf_tracer.h \
+cs_gwf_uspf.h \
 cs_gwf_headers.h
 
 # Library source files
@@ -64,8 +67,11 @@ libcsgwf_a_SOURCES = \
 cs_gwf.c \
 cs_gwf_priv.c \
 cs_gwf_soil.c \
+cs_gwf_sspf.c \
 cs_gwf_toolbox.c \
-cs_gwf_tracer.c
+cs_gwf_tpf.c \
+cs_gwf_tracer.c \
+cs_gwf_uspf.c
 
 libcsgwf_a_LIBADD =
 

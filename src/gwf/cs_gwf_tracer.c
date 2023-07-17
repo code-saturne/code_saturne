@@ -602,10 +602,10 @@ _update_diff_tensor(cs_gwf_tracer_t             *tracer,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update physical properties for a non-user tracer model.
- *         Case of a tracer with the precipitation/dissolution modelling and
- *         a vertex-based scheme.
- *         Generic function relying on the prototype cs_gwf_tracer_update_t
+ * \brief Update physical properties for a non-user tracer model.
+ *        Case of a tracer with the precipitation/dissolution modelling and a
+ *        vertex-based scheme.
+ *        Generic function relying on the prototype cs_gwf_tracer_update_t
  *
  * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
  * \param[in, out] context    NULL or pointer to a structure cast on-the-fly
@@ -2429,14 +2429,14 @@ cs_gwf_tracer_finalize_setup(const cs_cdo_connect_t      *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the diffusion property related to each tracer equation
- *         The update strategy depends on the soil/tracer features and also
- *         on the hydraulic model.
+ * \brief Update the diffusion property related to each tracer equation
+ *        The update strategy depends on the soil/tracer features and also
+ *        on the hydraulic model.
  *
- * \param[in]  ts        pointer to a cs_time_step_t structure
- * \param[in]  mesh      pointer to a cs_mesh_t structure
- * \param[in]  connect   pointer to a cs_cdo_connect_t structure
- * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in] ts        pointer to a cs_time_step_t structure
+ * \param[in] mesh      pointer to a cs_mesh_t structure
+ * \param[in] connect   pointer to a cs_cdo_connect_t structure
+ * \param[in] quant     pointer to a cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 

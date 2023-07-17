@@ -118,7 +118,7 @@ typedef enum {
 typedef enum {
 
   /*!
-   * \brief Single phase (liquid phase) modelling in a porous media.
+   * \brief Single phase (liquid phase) model in a saturated porous media.
    *
    * All soils are assumed to be saturated. This yields several simplifications
    * in the Richards equation governing the water conservation. The Richards
@@ -129,15 +129,15 @@ typedef enum {
   CS_GWF_MODEL_SATURATED_SINGLE_PHASE,
 
   /*!
-   * \brief Single phase (liquid phase) modelling in a porous media.
+   * \brief Single phase (liquid phase) model in an unsaturated porous media.
    *
-   * Some soils are not saturated and are described by a more complex model
-   * such as the Van Genuchten-Mualen model. Simplifications made in the case
-   * of \ref CS_GWF_MODEL_SATURATED_SINGLE_PHASE do not hold anymore. Richards
-   * equation is unsteady and there may be a non-linearity to handle according
-   * to the type of soil model. Soil properties such as permeability, soil
-   * capacity and liquid saturation (also called moisture content) are neither
-   * uniform nor steady.
+   * All soils are considered as unsaturated and are described by a more
+   * complex modelling such as the Van Genuchten-Mualen model. Simplifications
+   * made in the case of \ref CS_GWF_MODEL_SATURATED_SINGLE_PHASE do not hold
+   * anymore. Richards equation is unsteady and there can be a non-linearity to
+   * handle according to the type of soil model. Soil properties such as
+   * permeability, soil capacity and liquid saturation (also called moisture
+   * content) are neither uniform nor steady.
    */
 
   CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE,

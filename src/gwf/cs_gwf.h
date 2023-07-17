@@ -371,8 +371,11 @@ cs_gwf_init_model_context(void);
 /*!
  * \brief Predefined settings for the groundwater flow model and its related
  *        equations.
+ *
  *        At this stage, all soils have been defined and equation parameters
- *        are set (cs_user_parameters() has been called).
+ *        are set (cs_user_parameters() has been called and settings
+ *        performed).
+ *
  *        Create new cs_field_t structures according to the setting.
  */
 /*----------------------------------------------------------------------------*/
@@ -396,14 +399,37 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the GWF module (done after all the setup phase and after
- *         the initialization of all equations)
- *         One sets an initial value to all quantities related to this module.
+ * \brief Update the groundwater system related to the hydraulic model:
+ *        pressure head, head in law, moisture content, darcian velocity, soil
+ *        capacity or permeability if needed.
+ *        Quantities related to tracer model are updated elsewhere.
  *
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  ts         pointer to a cs_time_step_t structure
+ * \param[in] mesh          pointer to a cs_mesh_t structure
+ * \param[in] connect       pointer to a cs_cdo_connect_t structure
+ * \param[in] quant         pointer to a cs_cdo_quantities_t structure
+ * \param[in] ts            pointer to a cs_time_step_t structure
+ * \param[in] update_flag   metadata associated to the status of the update
+ *                          step to perform
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_hydraulic_update(const cs_mesh_t             *mesh,
+                        const cs_cdo_connect_t      *connect,
+                        const cs_cdo_quantities_t   *quant,
+                        const cs_time_step_t        *ts,
+                        cs_flag_t                    update_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize the GWF module (done after all the setup phase and after
+ *        the initialization of all equations)
+ *        One sets an initial value to all quantities related to this module.
+ *
+ * \param[in] mesh       pointer to a cs_mesh_t structure
+ * \param[in] connect    pointer to a cs_cdo_connect_t structure
+ * \param[in] quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in] ts         pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -412,27 +438,6 @@ cs_gwf_init_values(const cs_mesh_t             *mesh,
                    const cs_cdo_connect_t      *connect,
                    const cs_cdo_quantities_t   *quant,
                    const cs_time_step_t        *ts);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update the groundwater system (pressure head, head in law, moisture
- *         content, darcian velocity, soil capacity or permeability if needed)
- *
- * \param[in]  mesh         pointer to a cs_mesh_t structure
- * \param[in]  connect      pointer to a cs_cdo_connect_t structure
- * \param[in]  quant        pointer to a cs_cdo_quantities_t structure
- * \param[in]  ts           pointer to a cs_time_step_t structure
- * \param[in]  update_flag  metadata associated to the status of the update
- *                          step to perform
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_update(const cs_mesh_t             *mesh,
-              const cs_cdo_connect_t      *connect,
-              const cs_cdo_quantities_t   *quant,
-              const cs_time_step_t        *ts,
-              cs_flag_t                    update_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -454,12 +459,12 @@ cs_gwf_compute_steady_state(const cs_mesh_t              *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the system related to groundwater flows module
+ * \brief Compute the system related to groundwater flows module
  *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      time_step  pointer to a cs_time_step_t structure
- * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in] mesh       pointer to a cs_mesh_t structure
+ * \param[in] time_step  pointer to a cs_time_step_t structure
+ * \param[in] connect    pointer to a cs_cdo_connect_t structure
+ * \param[in] cdoq       pointer to a cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -484,10 +489,10 @@ cs_gwf_extra_op(const cs_cdo_connect_t      *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined post-processing output for the groundwater flow module
- *         in case of saturated single-phase flows (sspf) in porous media.
- *         Prototype of this function is given since it is a function pointer
- *         defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
+ * \brief Predefined post-processing output for the groundwater flow module.
+ *        According to the model, additional postprocessing may be defined.
+ *        Prototype of this function is given since it is a function pointer
+ *        defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
  *
  * \param[in, out] input        pointer to a optional structure (here a
  *                              cs_gwf_t structure)
@@ -508,93 +513,17 @@ cs_gwf_extra_op(const cs_cdo_connect_t      *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_extra_post_sspf(void                   *input,
-                       int                     mesh_id,
-                       int                     cat_id,
-                       int                     ent_flag[5],
-                       cs_lnum_t               n_cells,
-                       cs_lnum_t               n_i_faces,
-                       cs_lnum_t               n_b_faces,
-                       const cs_lnum_t         cell_ids[],
-                       const cs_lnum_t         i_face_ids[],
-                       const cs_lnum_t         b_face_ids[],
-                       const cs_time_step_t   *time_step);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Predefined post-processing output for the groundwater flow module
- *         in case of unsaturated single-phase flows (uspf) in porous media.
- *         Prototype of this function is given since it is a function pointer
- *         defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
- *
- * \param[in, out] input        pointer to a optional structure (here a
- *                              cs_gwf_t structure)
- * \param[in]      mesh_id      id of the output mesh for the current call
- * \param[in]      cat_id       category id of the output mesh for this call
- * \param[in]      ent_flag     indicate global presence of cells (ent_flag[0]),
- *                              interior faces (ent_flag[1]), boundary faces
- *                              (ent_flag[2]), particles (ent_flag[3]) or probes
- *                              (ent_flag[4])
- * \param[in]      n_cells      local number of cells of post_mesh
- * \param[in]      n_i_faces    local number of interior faces of post_mesh
- * \param[in]      n_b_faces    local number of boundary faces of post_mesh
- * \param[in]      cell_ids     list of cells (0 to n-1)
- * \param[in]      i_face_ids   list of interior faces (0 to n-1)
- * \param[in]      b_face_ids   list of boundary faces (0 to n-1)
- * \param[in]      time_step    pointer to a cs_time_step_t struct.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_extra_post_uspf(void                   *input,
-                       int                     mesh_id,
-                       int                     cat_id,
-                       int                     ent_flag[5],
-                       cs_lnum_t               n_cells,
-                       cs_lnum_t               n_i_faces,
-                       cs_lnum_t               n_b_faces,
-                       const cs_lnum_t         cell_ids[],
-                       const cs_lnum_t         i_face_ids[],
-                       const cs_lnum_t         b_face_ids[],
-                       const cs_time_step_t   *time_step);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Predefined post-processing output for the groundwater flow module
- *         in case of miscible two-phase flows (mtpf) in porous media.
- *         Prototype of this function is given since it is a function pointer
- *         defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
- *
- * \param[in, out] input        pointer to a optional structure (here a
- *                              cs_gwf_t structure)
- * \param[in]      mesh_id      id of the output mesh for the current call
- * \param[in]      cat_id       category id of the output mesh for this call
- * \param[in]      ent_flag     indicate global presence of cells (ent_flag[0]),
- *                              interior faces (ent_flag[1]), boundary faces
- *                              (ent_flag[2]), particles (ent_flag[3]) or probes
- *                              (ent_flag[4])
- * \param[in]      n_cells      local number of cells of post_mesh
- * \param[in]      n_i_faces    local number of interior faces of post_mesh
- * \param[in]      n_b_faces    local number of boundary faces of post_mesh
- * \param[in]      cell_ids     list of cells (0 to n-1)
- * \param[in]      i_face_ids   list of interior faces (0 to n-1)
- * \param[in]      b_face_ids   list of boundary faces (0 to n-1)
- * \param[in]      time_step    pointer to a cs_time_step_t struct.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_extra_post_mtpf(void                      *input,
-                       int                        mesh_id,
-                       int                        cat_id,
-                       int                        ent_flag[5],
-                       cs_lnum_t                  n_cells,
-                       cs_lnum_t                  n_i_faces,
-                       cs_lnum_t                  n_b_faces,
-                       const cs_lnum_t            cell_ids[],
-                       const cs_lnum_t            i_face_ids[],
-                       const cs_lnum_t            b_face_ids[],
-                       const cs_time_step_t      *time_step);
+cs_gwf_extra_post(void                   *input,
+                  int                     mesh_id,
+                  int                     cat_id,
+                  int                     ent_flag[5],
+                  cs_lnum_t               n_cells,
+                  cs_lnum_t               n_i_faces,
+                  cs_lnum_t               n_b_faces,
+                  const cs_lnum_t         cell_ids[],
+                  const cs_lnum_t         i_face_ids[],
+                  const cs_lnum_t         b_face_ids[],
+                  const cs_time_step_t   *time_step);
 
 /*----------------------------------------------------------------------------*/
 

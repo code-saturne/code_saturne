@@ -518,14 +518,14 @@ cs_gwf_tracer_finalize_setup(const cs_cdo_connect_t      *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the diffusion property related to each tracer equation
- *         The update strategy depends on the soil/tracer features and also
- *         on the hydraulic model.
+ * \brief Update the diffusion property related to each tracer equation
+ *        The update strategy depends on the soil/tracer features and also
+ *        on the hydraulic model.
  *
- * \param[in]  ts        pointer to a cs_time_step_t structure
- * \param[in]  mesh      pointer to a cs_mesh_t structure
- * \param[in]  connect   pointer to a cs_cdo_connect_t structure
- * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in] ts        pointer to a cs_time_step_t structure
+ * \param[in] mesh      pointer to a cs_mesh_t structure
+ * \param[in] connect   pointer to a cs_cdo_connect_t structure
+ * \param[in] quant     pointer to a cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 

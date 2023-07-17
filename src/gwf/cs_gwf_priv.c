@@ -44,7 +44,10 @@
 
 #include "cs_advection_field.h"
 #include "cs_array.h"
+#include "cs_evaluate.h"
 #include "cs_parall.h"
+#include "cs_physical_constants.h"
+#include "cs_reco.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -60,12 +63,15 @@ BEGIN_C_DECLS
   \file cs_gwf_priv.c
 
   \brief Helper functions dedicated to groundwater flows when using CDO schemes
-
 */
 
 /*============================================================================
  * Local macro definitions
  *============================================================================*/
+
+/* Redefined names of function from cs_math to get shorter names */
+
+#define _dp3 cs_math_3_dot_product
 
 #define CS_GWF_PRIV_DBG 0
 
@@ -433,5 +439,227 @@ cs_gwf_darcy_flux_balance(const cs_cdo_connect_t       *connect,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the associated Darcy flux over the boundary of the domain for
+ *        each vertex of a boundary face.  Case of a vertex-based
+ *        discretization and single-phase flows in porous media (saturated or
+ *        not).
+ *
+ * \param[in]      t_eval   time at which one performs the evaluation
+ * \param[in]      eq       pointer to the equation related to this Darcy flux
+ * \param[in, out] adv      pointer to the Darcy advection field
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_darcy_flux_update_on_boundary(cs_real_t                t_eval,
+                                     const cs_equation_t     *eq,
+                                     cs_adv_field_t          *adv)
+{
+  if (adv->n_bdy_flux_defs > 1 ||
+      adv->bdy_flux_defs[0]->type != CS_XDEF_BY_ARRAY)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid definition of the advection field at the boundary",
+              __func__);
+
+  cs_xdef_t  *def = adv->bdy_flux_defs[0];
+  cs_xdef_array_context_t  *cx = (cs_xdef_array_context_t *)def->context;
+  cs_real_t  *nflx_val = cx->values;
+
+  if (cs_flag_test(cx->value_location, cs_flag_dual_closure_byf) == false)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid definition of the advection field at the boundary",
+              __func__);
+
+  cs_equation_compute_boundary_diff_flux(t_eval, eq, nflx_val);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update head values (pressure head or head values for laws)
+ *        Up to now, this is only used for single-phase flows in porous media
+ *        (saturated or not case).
+ *
+ * \param[in]      cdoq            pointer to a cs_cdo_quantities_t structure
+ * \param[in]      connect         pointer to a cs_cdo_connect_t structure
+ * \param[in]      richards        pointer to the Richards equation
+ * \param[in]      option_flag     calculation option related to the GWF module
+ * \param[in, out] pressure_head   pressure head field
+ * \param[in, out] head_in_law     values of the head used in law
+ * \param[in]      cur2prev        true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_update_head(const cs_cdo_quantities_t   *cdoq,
+                   const cs_cdo_connect_t      *connect,
+                   const cs_equation_t         *richards,
+                   cs_flag_t                    option_flag,
+                   cs_field_t                  *pressure_head,
+                   cs_real_t                    head_in_law[],
+                   bool                         cur2prev)
+{
+  cs_param_space_scheme_t r_scheme = cs_equation_get_space_scheme(richards);
+  cs_field_t  *hydraulic_head = cs_equation_get_field(richards);
+
+  if (option_flag & CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE) {
+
+    switch (r_scheme) {
+
+    case CS_SPACE_SCHEME_CDOVB:
+      {
+        assert(hydraulic_head->location_id ==
+               cs_mesh_location_get_id_by_name("vertices"));
+
+        cs_real_t  domain_integral =
+          cs_evaluate_scal_domain_integral_by_array(cs_flag_primal_vtx,
+                                                    hydraulic_head->val);
+
+        const cs_real_t  mean_value = domain_integral / cdoq->vol_tot;
+
+#       pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++)
+          hydraulic_head->val[i] -= mean_value;
+      }
+      break;
+
+    case CS_SPACE_SCHEME_CDOFB:
+      {
+        assert(hydraulic_head->location_id ==
+               cs_mesh_location_get_id_by_name("cells"));
+
+        cs_real_t  domain_integral =
+          cs_evaluate_scal_domain_integral_by_array(cs_flag_primal_cell,
+                                                    hydraulic_head->val);
+
+        const cs_real_t  mean_value = domain_integral / cdoq->vol_tot;
+#       pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < cdoq->n_cells; i++)
+          hydraulic_head->val[i] -= mean_value;
+      }
+      break;
+
+    default:
+      break; /* Nothing to do */
+
+    }
+
+  } /* Rescale hydraulic_head */
+
+  if (option_flag & CS_GWF_GRAVITATION) { /* Update the pressure head (and if
+                                          needed head_in_law) */
+
+    cs_physical_constants_t  *phys = cs_get_glob_physical_constants();
+
+    if (pressure_head == NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                " The field related to the pressure head is not allocated.");
+
+    /* Copy current field values to previous values */
+
+    if (cur2prev)
+      cs_field_current_to_previous(pressure_head);
+
+    switch (r_scheme) {
+
+    case CS_SPACE_SCHEME_CDOVB:
+
+#     pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
+        const cs_real_t  gpot = _dp3(cdoq->vtx_coord + 3*i, phys->gravity);
+        pressure_head->val[i] = hydraulic_head->val[i] - gpot;
+      }
+
+      /* Update head_in_law */
+
+      if (head_in_law != NULL)
+        cs_reco_pv_at_cell_centers(connect->c2v, cdoq, pressure_head->val,
+                                   head_in_law);
+      break;
+
+    case CS_SPACE_SCHEME_CDOVCB:
+      {
+        assert(hydraulic_head->location_id ==
+               cs_mesh_location_get_id_by_name("vertices"));
+
+#       pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
+          const cs_real_t  gpot = _dp3(cdoq->vtx_coord + 3*i, phys->gravity);
+          pressure_head->val[i] = hydraulic_head->val[i] - gpot;
+        }
+
+        /* Update head_in_law */
+
+        if (head_in_law != NULL) {
+
+          const cs_real_t  *hydraulic_head_cells =
+            cs_equation_get_cell_values(richards, false); /* current values */
+
+#         pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+          for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
+            const cs_real_t  gpot = _dp3(cdoq->cell_centers + 3*i,
+                                         phys->gravity);
+            head_in_law[i] = hydraulic_head_cells[i] - gpot;
+          }
+
+        } /* head_in_law */
+
+      }
+      break;
+
+    case CS_SPACE_SCHEME_CDOFB:
+    case CS_SPACE_SCHEME_HHO_P0:
+
+#     pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
+        const cs_real_t  gpot = _dp3(cdoq->cell_centers + 3*i, phys->gravity);
+        pressure_head->val[i] = hydraulic_head->val[i] - gpot;
+      }
+      break;
+
+      /* Head in law points either to hydraulic_head->val or pressure_head->val */
+
+    default:
+      bft_error(__FILE__, __LINE__, 0, " Invalid space scheme.");
+
+    } /* Switch on space scheme */
+
+  }
+  else { /* No gravity effect is taken into account */
+
+    if (head_in_law == NULL)
+      return;
+
+    /* Update head_in_law */
+
+    switch(r_scheme) {
+
+    case CS_SPACE_SCHEME_CDOVB:
+      cs_reco_pv_at_cell_centers(connect->c2v,
+                                 cdoq,
+                                 hydraulic_head->val,
+                                 head_in_law);
+      break;
+
+    case CS_SPACE_SCHEME_CDOVCB:
+      {
+        const cs_real_t  *hydraulic_head_cells =
+          cs_equation_get_cell_values(richards, false); /* current values */
+
+        cs_array_real_copy(cdoq->n_cells, hydraulic_head_cells, head_in_law);
+      }
+      break;
+
+    default:
+      break; /* Nothing to do for CDO-Fb schemes and HHO schemes */
+
+    }  /* Switch on the space scheme related to the Richards equation */
+
+  } /* Gravity is activated or not */
+}
+
+/*----------------------------------------------------------------------------*/
+
+#undef _dp3
 
 END_C_DECLS
