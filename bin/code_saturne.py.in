@@ -72,13 +72,17 @@ if __name__ == '__main__':
         import importlib
         importlib.invalidate_caches()
 
-    from code_saturne.base.cs_exec_environment import clean_os_environ_for_shell
-    clean_os_environ_for_shell()
-
     try:
+        from code_saturne.base.cs_exec_environment import clean_os_environ_for_shell
+        clean_os_environ_for_shell()
         from code_saturne.base.cs_script import master_script
-    except Exception:
-        print(sys.path)
+    except Exception as e:
+        import traceback
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback,
+                                  limit=2, file=sys.stderr)
+        print(os.linesep, "sys.path:", sys.path)
+        print(os.linesep, "PYTHONPATH:", os.getenv('PYTHONPATH'))
         sys.exit(0)
 
     # Retrieve package information (name, version, installation dirs, ...)
