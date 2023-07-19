@@ -418,53 +418,6 @@ class Variables(object):
             self.updateLabel(v1)
 
 
-    def getVariablesPropertiesList(self, average, constant) :
-        """
-        return list of variables, properties (and scalar)
-        for Output field, profiles and averages
-        if constant == yes we take account constant variables
-        """
-        self.XMLNodethermo  = self.case.xmlGetNode('thermophysical_models')
-        self.XMLNodeclosure = self.case.xmlGetNode('closure_modeling')
-        self.XMLNodeTurb    = self.XMLNodeclosure.xmlInitNode('turbulence')
-        self.XMLNodeAna     = self.case.xmlGetNode('analysis_control')
-        self.XMLNodeAverage = self.XMLNodeAna.xmlGetNode('time_averages')
-        self.XMLUserScalar  = self.case.xmlGetNode('additional_scalars')
-        self.XMLScalar      = self.XMLUserScalar.xmlInitNode('scalars')
-        self.XMLUsers       = self.XMLUserScalar.xmlGetNode('users')
-        list = []
-        #TODO for variableType in ('variable', 'property', 'scalar') :
-        for node in self.XMLNodethermo.xmlGetNodeList('variable') :
-            list.append(node)
-        for node in self.XMLNodeTurb.xmlGetNodeList('variable') :
-            list.append(node)
-        for node in self.XMLScalar.xmlGetNodeList('variable') :
-            list.append(node)
-        for node in self.XMLNodethermo.xmlGetNodeList('property') :
-            choice = node['choice']
-            if constant == 'yes' :
-                list.append(node)
-            elif choice != 'constant' :
-                list.append(node)
-        for node in self.XMLNodeTurb.xmlGetNodeList('property') :
-            choice = node['choice']
-            if constant == 'yes' :
-                list.append(node)
-            elif choice != 'constant' :
-                list.append(node)
-        if average == 'yes':
-            # Warning average node is different
-            for node in self.XMLNodeAverage.xmlGetNodeList('time_average'):
-                list.append(node)
-        if self.XMLUsers:
-            for node in self.XMLUsers.xmlGetNodeList('variable'):
-                list.append(node)
-
-        return list
-
-    #Copie des methode de Variables pour Neptune (surcharge) FIN
-
-
 #-------------------------------------------------------------------------------
 # MODEL test case
 #-------------------------------------------------------------------------------
