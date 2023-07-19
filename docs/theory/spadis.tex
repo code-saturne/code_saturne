@@ -1281,7 +1281,7 @@ A short introduction to this discretization describing the main operators in
 the steady case with the monolithic approach is available in~\cite{BoErM20}.
 
 %-------------------------------------------------------------------------------
-\section{Advanced topic}
+\section{Advanced topics}
 
 %-------------------------------------------------------------------------------
 \subsection{Rhie \& Chow filter}
@@ -1303,7 +1303,7 @@ to compute the hydrostatic pressure with an apriori momentum equation to obtain
 a hydrostatic pressure taking into account the imbalance between the pressure
 gradient and the gravity source term). In the following we describe option
 \texttt{iphydr}=1. When density effects are important, it improves the
-interpolation of the pressure and correct non-physical velocities in highly
+interpolation of the pressure and corrects non-physical velocities in highly
 stratifed areas, near horizontal walls or also near high head losses zones.
 
 The pressure is split into its hydrostatic and dynamic parts following the
@@ -1385,7 +1385,7 @@ one gets:
   \\ &&+\sum_{\fib}\left[inc\times A^{g}_{\fib}+\left(B^{g}_{\fib}-1\right)\left(p_{\celli}-\left(\centi-\centfb\right)\cdot\vect{f}_{\celli}\right)+B^{g}_{\fib}\left(\centip-\centi\right)\cdot\left(\gradv_{\celli}p-\vect{f}_{\celli}\right)\right]\vect{S}_{\fib}
 \end{align*}
 
-\subsubsection{Gradient from least square method}
+\subsubsection{Gradient from least squares method}
 
 As in Section \ref{sec:spadis:least_squares_gradient}, the idea is to compute
 the gradient of the variable at the cell faces using the value of the gradient

@@ -316,6 +316,7 @@ class MainFieldsInitializationModel(Variables, Model):
 #-------------------------------------------------------------------------------
 # DefineUsersScalars test case
 #-------------------------------------------------------------------------------
+
 class MainFieldsInitializationTestCase(ModelTest):
     """
     """

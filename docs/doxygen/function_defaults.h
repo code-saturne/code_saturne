@@ -47,7 +47,7 @@
 /*!@{*/
 
 /*!
-  \var cells_mpi_rank_id
+  \var mpi_rank_id_cells
 
   MPI rank id to which a cell is assigned.
 
@@ -56,10 +56,10 @@
   cs_function_define_mpi_rank_id(CS_MESH_LOCATION_CELLS);
   \endcode
 */
-char *cells_mpi_rank_id;
+char *mpi_rank_id_cells;
 
 /*!
-  \var interior_faces_mpi_rank_id
+  \var mpi_rank_id_interior_faces
 
   MPI rank id to which interior faces are assigned. Interior faces
   at parallel boundaries are seen from 2 domains, but may be assigned
@@ -73,10 +73,10 @@ char *cells_mpi_rank_id;
   cs_function_define_mpi_rank_id(CS_MESH_LOCATION_INTERIOR_FACES);
   \endcode
 */
-char *interior_faces_mpi_rank_id;
+char *mpi_rank_id_interior_faces;
 
 /*!
-  \var boundary_faces_mpi_rank_id
+  \var mpi_rank_id_boundary_faces
 
   MPI rank id to which boundary faces are assigned. This rank is always the
   same as the adjacent cell.
@@ -86,10 +86,10 @@ char *interior_faces_mpi_rank_id;
   cs_function_define_mpi_rank_id(CS_MESH_LOCATION_BOUNDARY_FACES);
   \endcode
 */
-char *boundary_faces_mpi_rank_id;
+char *mpi_rank_id_boundary_faces;
 
 /*!
-  \var vertices_mpi_rank_id
+  \var mpi_rank_id_vertices
 
   MPI rank id to which vertices are assigned. Vertices at parallel boundaries
   are seen from multiple, but may be assigned specifically to one domain when
@@ -103,10 +103,10 @@ char *boundary_faces_mpi_rank_id;
   cs_function_define_mpi_rank_id(CS_MESH_LOCATION_VERTICES);
   \endcode
 */
-char *vertices_mpi_rank_id;
+char *mpi_rank_id_vertices;
 
 /*!
-  \var cells_r_gen
+  \var r_gen_cells
 
   Refinement generation of mesh cells. This is considered to be the highest
   refinement level of adjacent interior faces.
@@ -116,10 +116,10 @@ char *vertices_mpi_rank_id;
   cs_function_define_refinement_generation(CS_MESH_LOCATION_CELLS);
   \endcode
 */
-char *cells_r_gen;
+char *r_gen_cells;
 
 /*!
-  \var interior_faces_r_gen
+  \var r_gen_interior_faces
 
   Refinement generation of interior faces. This is determined and stored
   when refining or coarsening a mesh. A refined face's sub-faces have the
@@ -132,7 +132,7 @@ char *cells_r_gen;
   cs_function_define_refinement_generation(CS_MESH_LOCATION_INTERIOR_FACES);
   \endcode
 */
-char *interior_faces_r_gen;
+char *r_gen_interior_faces;
 
 /*!
   \var boundary_faces_r_gen
@@ -145,18 +145,7 @@ char *interior_faces_r_gen;
   cs_function_define_refinement_generation(CS_MESH_LOCATION_BOUNDARY_FACES);
   \endcode
 */
-char *boundary_faces_r_gen;
-
-/*!
-  \var boundary_zone_class_id
-
-  Optional boundary face class or zone ids. If no face classes have been
-  defined by \ref cs_boundary_zone_face_class_id, the boundary face zone
-  id is used instead.
-
-  Activated by default.
-*/
-char *boundary_zone_class_id;
+char *r_gen_boundary_faces;
 
 /*!
   \var vertices_r_gen
@@ -169,7 +158,18 @@ char *boundary_zone_class_id;
   cs_function_define_refinement_generation(CS_MESH_LOCATION_VERTICES);
   \endcode
 */
-char *vertices_r_gen;
+char *r_gen_vertices;
+
+/*!
+  \var boundary_zone_class_id
+
+  Optional boundary face class or zone ids. If no face classes have been
+  defined by \ref cs_boundary_zone_face_class_id, the boundary face zone
+  id is used instead.
+
+  Activated by default.
+*/
+char *boundary_zone_class_id;
 
 /*!
   \var "boundary_stress"
@@ -229,7 +229,7 @@ char *boundary_thermal_flux;
 /*!
   \var "boundary_nusselt"
 
-  Boundary layer Nusselt number. This is baed only on the near-boundary
+  Boundary layer Nusselt number. This is based only on the near-boundary
   temperature value and heat flux, so does not require a bulk temperature value
   but is not a "true" Nusselt number computation, as the fluid value used may
   be sensitive to mesh refinement.
@@ -239,7 +239,7 @@ char *boundary_thermal_flux;
   cs_function_define_boundary_nusselt();
   \endcode
 */
-char *boundary_thermal_flux;
+char *boundary_nusselt;
 
 /*!
   \var "relative_pressure"
