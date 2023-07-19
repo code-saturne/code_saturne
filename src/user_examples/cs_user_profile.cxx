@@ -1428,7 +1428,7 @@ _set_med_layer_mesh(user_profile_t  *profile_t,
     = MEDCoupling::MEDCouplingCMesh::New(Umesh->getName());
   Cmesh->setCoords(arrX, arrY, arrZ);
 
-  /* Build unstructured mesh and associate it the the pre allocated
+  /* Build unstructured mesh and associate it the pre allocated
    * MEDCouplingUmesh array */
   Umesh = Cmesh->buildUnstructured();
 
@@ -1511,7 +1511,7 @@ _set_med_layer_mesh(user_profile_t  *profile_t,
     Oz[k] = Oz_1[k];
   }
 
-  /*Rotation around x axis projection of n_v in Oyz plane*/
+  /* Rotation around x axis projection of n_v in Oyz plane*/
   kv_plane_vec[0] = 0.;
   kv_plane_vec[1] = 0.;
   kv_plane_vec[2] = 0.;

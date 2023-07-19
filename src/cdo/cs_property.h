@@ -235,9 +235,9 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  returns true if the property is steady and uniform, otherwise false
+ * \brief Returns true if the property is steady and uniform, otherwise false
  *
- * \param[in]    pty    pointer to a property to test
+ * \param[in] pty    pointer to a property to test
  *
  * \return  true or false
  */
@@ -261,11 +261,11 @@ cs_property_is_constant(const cs_property_t   *pty)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  returns true if the property is steady, otherwise false
+ * \brief Returns true if the property is steady, otherwise false
  *
- * \param[in]    pty    pointer to a property to test
+ * \param[in] pty    pointer to a property to test
  *
- * \return  true or false
+ * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
@@ -283,11 +283,11 @@ cs_property_is_steady(const cs_property_t   *pty)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  returns true if the property is uniform, otherwise false
+ * \brief Returns true if the property is uniform, otherwise false
  *
- * \param[in]    pty    pointer to a property to test
+ * \param[in] pty    pointer to a property to test
  *
- * \return  true or false
+ * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
@@ -305,11 +305,11 @@ cs_property_is_uniform(const cs_property_t   *pty)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  returns true if the property is isotropic, otherwise false
+ * \brief Returns true if the property is isotropic, otherwise false
  *
- * \param[in]    pty    pointer to a property to test
+ * \param[in] pty    pointer to a property to test
  *
- * \return  true or false
+ * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
@@ -327,10 +327,10 @@ cs_property_is_isotropic(const cs_property_t   *pty)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  returns true if the property is allowed to be evaluated on a
- *         sub-partition of a cell
+ * \brief Returns true if the property is allowed to be evaluated on a
+ *        sub-partition of a cell
  *
- * \param[in]    pty    pointer to a property to test
+ * \param[in] pty    pointer to a property to test
  *
  * \return  true or false
  */
@@ -350,9 +350,9 @@ cs_property_is_subcell(const cs_property_t   *pty)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the name of a property
+ * \brief Retrieve the name of a property
  *
- * \param[in]    pty    pointer to a property
+ * \param[in] pty    pointer to a property
  *
  * \return  the name of the related property
  */
@@ -369,11 +369,11 @@ cs_property_get_name(const cs_property_t   *pty)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the type of a property
+ * \brief Retrieve the type of a property
  *
- * \param[in]    pty    pointer to a property
+ * \param[in] pty    pointer to a property
  *
- * \return  the type of the related property
+ * \return the type of the related property
  */
 /*----------------------------------------------------------------------------*/
 
@@ -388,11 +388,11 @@ cs_property_get_type(const cs_property_t   *pty)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the dimension of the property
+ * \brief Retrieve the dimension of the property
  *
- * \param[in]    pty    pointer to a property
+ * \param[in] pty    pointer to a property
  *
- * \return  the value of the dimension
+ * \return the value of the dimension
  */
 /*----------------------------------------------------------------------------*/
 
@@ -420,11 +420,11 @@ cs_property_get_dim(const cs_property_t   *pty)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set shared pointers to main domain members
+ * \brief Set shared pointers to main domain members
  *
- * \param[in]  mesh        mesh structure shared between FV and CDO
- * \param[in]  quant       additional mesh quantities struct.
- * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
+ * \param[in] mesh        mesh structure shared between FV and CDO
+ * \param[in] quant       additional mesh quantities struct.
+ * \param[in] connect     pointer to a cs_cdo_connect_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -435,7 +435,7 @@ cs_property_init_sharing(const cs_mesh_t              *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the number of properties
+ * \brief Retrieve the number of properties
  *
  * \return the number of properties
  */

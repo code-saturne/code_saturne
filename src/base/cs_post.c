@@ -466,6 +466,34 @@ cs_user_postprocess_values(const char            *mesh_name,
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Transform time-independent values into time-dependent
+ *        values for transient meshes.
+ *
+ * \param[in]       writer  pointer to associated writer
+ * \param[in, out]  nt_cur  associated time step (-1 initially for
+ *                          time-independent values)
+ * \param[in, out]  t_cur   associated time value
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_check_non_transient(const cs_post_writer_t  *writer,
+                     int                     *nt_cur,
+                     double                  *t_cur)
+{
+  assert(writer->active > 0);
+  assert(writer->writer != NULL);
+
+  fvm_writer_time_dep_t time_dep = fvm_writer_get_time_dep(writer->writer);
+
+  if (time_dep == FVM_WRITER_TRANSIENT_CONNECT) {
+    *nt_cur = writer->tc.last_nt;
+    *t_cur = writer->tc.last_t;
+  }
+}
+
 /*----------------------------------------------------------------------------
  * Clear temporary writer definition information.
  *
@@ -4030,34 +4058,6 @@ cs_f_post_write_var(int               mesh_id,
                     i_face_vals,
                     b_face_vals,
                     ts);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Transform time-independent values into time-dependent
- *        values for transient meshes.
- *
- * \param[in]       writer  pointer to associated writer
- * \param[in, out]  nt_cur  associated time step (-1 initially for
- *                          time-independent values)
- * \param[in, out]  t_cur   associated time value
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_check_non_transient(const cs_post_writer_t  *writer,
-                     int                     *nt_cur,
-                     double                  *t_cur)
-{
-  assert(writer->active > 0);
-  assert(writer->writer != NULL);
-
-  fvm_writer_time_dep_t time_dep = fvm_writer_get_time_dep(writer->writer);
-
-  if (time_dep == FVM_WRITER_TRANSIENT_CONNECT) {
-    *nt_cur = writer->tc.last_nt;
-    *t_cur = writer->tc.last_t;
-  }
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

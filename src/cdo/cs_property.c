@@ -907,11 +907,11 @@ _create_property(const char           *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set shared pointers to main domain members
+ * \brief Set shared pointers to main domain members
  *
- * \param[in]  mesh        mesh structure shared between FV and CDO
- * \param[in]  quant       additional mesh quantities struct.
- * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
+ * \param[in] mesh        mesh structure shared between FV and CDO
+ * \param[in] quant       additional mesh quantities struct.
+ * \param[in] connect     pointer to a cs_cdo_connect_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -927,7 +927,7 @@ cs_property_init_sharing(const cs_mesh_t              *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the number of properties
+ * \brief Retrieve the number of properties
  *
  * \return the number of properties
  */
