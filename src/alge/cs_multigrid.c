@@ -92,9 +92,6 @@ BEGIN_C_DECLS
 #define HUGE_VAL  1.E+12
 #endif
 
-/* Minimum size for OpenMP loops (needs benchmarking to adjust) */
-#define CS_THR_MIN 128
-
 /* SIMD unit size to ensure SIMD alignement (2 to 4 required on most
  * current architectures, so 16 should be enough on most architectures
  * through at least 2012) */
