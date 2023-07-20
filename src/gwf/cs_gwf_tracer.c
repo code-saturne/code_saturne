@@ -1444,6 +1444,7 @@ _create_tracer(cs_gwf_tracer_model_t    tr_model,
   tracer->hydraulic_model = gwf_model;
   tracer->diffusivity = NULL;
   tracer->reaction_id = -1;
+  tracer->chain_id = -1;          /* Not in a chain by default */
   tracer->chain_position_id = -1; /* Not in a chain */
 
   /* Add a new property related to the time-depedent term */
