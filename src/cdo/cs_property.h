@@ -72,7 +72,7 @@ BEGIN_C_DECLS
  *  1: Isotropic behavior (one real number is sufficient to describe the
  *  property) */
 
-#define CS_PROPERTY_ISO           (1 << 0)
+#define CS_PROPERTY_ISO                      (1 << 0)
 
 /*! \var CS_PROPERTY_ORTHO
  *  2: Orthotropic behavior (three real numbers describe the behavior assuming
@@ -174,12 +174,12 @@ struct _cs_property_t {
   /* Retrieve the evaluation of the property at the cell center for each
      definition */
 
-  cs_xdef_eval_t     **get_eval_at_cell;
+  cs_xdef_eval_t        **get_eval_at_cell;
 
   /* Same thing as the previous one but now with the usage of cellwise algo.
      relying on a cs_cell_mesh_t structure */
 
-  cs_xdef_cw_eval_t  **get_eval_at_cell_cw;
+  cs_xdef_cw_eval_t     **get_eval_at_cell_cw;
 
   /* For properties relying on other properties for their definition, one
    * stores the pointers to these related properties */
@@ -201,7 +201,6 @@ struct _cs_property_t {
 
 };
 
-
 /*!
  * \struct cs_property_data_t
  * \brief Structure storing the evaluation of a property and its related
@@ -220,6 +219,9 @@ typedef struct {
   cs_real_t              eigen_ratio;
 
   bool                   need_tensor;
+
+  /* Buffers keeping the evaluation performed on-the-fly */
+
   cs_real_t              tensor[3][3];
   cs_real_t              value;
 
@@ -446,10 +448,10 @@ cs_property_get_n_properties(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and initialize a new property structure
+ * \brief Create and initialize a new property structure
  *
- * \param[in]  name          name of the property
- * \param[in]  type          type of property
+ * \param[in] name        name of the property
+ * \param[in] type        type of property
  *
  * \return a pointer to a new allocated cs_property_t structure
  */
@@ -461,13 +463,13 @@ cs_property_add(const char            *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and initialize a new property structure with an evaluation
- *         which can be called on a sub-partition of a cell.
- *         This kind of property is not available for all numerical scheme.
- *         By default, only one evaluation is performed in each cell.
+ * \brief Create and initialize a new property structure with an evaluation
+ *        which can be called on a sub-partition of a cell.
+ *        This kind of property is not available for all numerical scheme.
+ *        By default, only one evaluation is performed in each cell.
  *
- * \param[in]  name          name of the property
- * \param[in]  type          type of property
+ * \param[in] name          name of the property
+ * \param[in] type          type of property
  *
  * \return a pointer to a new allocated cs_property_t structure
  */
@@ -479,15 +481,14 @@ cs_property_subcell_add(const char            *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_property_t structure thanks to the product of two
- *         properties
- *         The type is infered from that of the related properties
- *         The value of the property is given as:
- *         value_ab = value_a * value_b
+ * \brief Define a cs_property_t structure thanks to the product of two
+ *        properties
+ *        The type is infered from that of the related properties
+ *        The value of the property is given as value_ab = value_a * value_b
  *
- * \param[in]       name      name of the property
- * \param[in]       pty_a     pointer to a cs_property_t structure
- * \param[in]       pty_b     pointer to a cs_property_t structure
+ * \param[in] name      name of the property
+ * \param[in] pty_a     pointer to a cs_property_t structure
+ * \param[in] pty_b     pointer to a cs_property_t structure
  *
  * \return a pointer to a new allocated cs_property_t structure
  */
@@ -500,9 +501,9 @@ cs_property_add_as_product(const char             *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Find the related property definition from its name
+ * \brief Find the related property definition from its name
  *
- * \param[in]  name    name of the property to find
+ * \param[in] name    name of the property to find
  *
  * \return NULL if not found otherwise the associated pointer
  */
@@ -513,9 +514,9 @@ cs_property_by_name(const char   *name);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Find the related property definition from its id
+ * \brief Find the related property definition from its id
  *
- * \param[in]  id      id of the property to find
+ * \param[in] id      id of the property to find
  *
  * \return NULL if not found otherwise the associated pointer
  */
@@ -526,10 +527,10 @@ cs_property_by_id(int         id);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set optional parameters related to a cs_property_t structure
+ * \brief Set optional parameters related to a cs_property_t structure
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       key       key related to a setting option
+ * \param[in, out] pty       pointer to a cs_property_t structure
+ * \param[in]      key       key related to a setting option
  */
 /*----------------------------------------------------------------------------*/
 
@@ -539,11 +540,11 @@ cs_property_set_option(cs_property_t       *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the reference value associated to a \ref cs_property_t structure
- *         This is a real number even whatever the type of property is.
+ * \brief Set the reference value associated to a \ref cs_property_t structure
+ *        This is a real number even whatever the type of property is.
  *
- * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       refval   value to set
+ * \param[in, out] pty      pointer to a cs_property_t structure
+ * \param[in]      refval   value to set
  */
 /*----------------------------------------------------------------------------*/
 
@@ -553,8 +554,8 @@ cs_property_set_reference_value(cs_property_t    *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free all cs_property_t structures and the array storing all the
- *         structures
+ * \brief Free all cs_property_t structures and the array storing all the
+ *        structures
  */
 /*----------------------------------------------------------------------------*/
 
@@ -563,8 +564,8 @@ cs_property_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Last stage of the definition of a property based on several
- *         definitions (i.e. definition by subdomains)
+ * \brief Last stage of the definition of a property based on several
+ *        definitions (i.e. definition by subdomains)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1074,12 +1075,12 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate the value of the property at each boundary face. Store the
- *         result of the evaluation in the given array.
+ * \brief Evaluate the value of the property at each boundary face. Store the
+ *        result of the evaluation in the given array.
  *
- * \param[in]       t_eval   physical time at which one evaluates the term
- * \param[in]       pty      pointer to a cs_property_t structure
- * \param[in, out]  array    pointer to an array of values (must be allocated)
+ * \param[in]      t_eval   physical time at which one evaluates the term
+ * \param[in]      pty      pointer to a cs_property_t structure
+ * \param[in, out] array    pointer to an array of values (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1090,8 +1091,8 @@ cs_property_eval_at_boundary_faces(cs_real_t               t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value of the tensor attached to a property at the cell
- *         center
+ * \brief Compute the value of the tensor attached to a property at the cell
+ *        center
  *
  * \param[in]      c_id          id of the current cell
  * \param[in]      t_eval        physical time at which one evaluates the term
@@ -1110,11 +1111,11 @@ cs_property_get_cell_tensor(cs_lnum_t               c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value of a property at the cell center
+ * \brief Compute the value of a property at the cell center
  *
- * \param[in]   c_id     id of the current cell
- * \param[in]   t_eval   physical time at which one evaluates the term
- * \param[in]   pty      pointer to a cs_property_t structure
+ * \param[in] c_id     id of the current cell
+ * \param[in] t_eval   physical time at which one evaluates the term
+ * \param[in] pty      pointer to a cs_property_t structure
  *
  * \return the value of the property for the given cell
  */
@@ -1127,9 +1128,9 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value of the tensor attached to a property at the cell
- *         center
- *         Version using a cs_cell_mesh_t structure
+ * \brief Compute the value of the tensor attached to a property at the cell
+ *        center
+ *        Version using a cs_cell_mesh_t structure
  *
  * \param[in]      cm            pointer to a cs_cell_mesh_t structure
  * \param[in]      pty           pointer to a cs_property_t structure
@@ -1148,12 +1149,12 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value of a property at the cell center
- *         Version using a cs_cell_mesh_t structure
+ * \brief Compute the value of a property at the cell center
+ *        Version using a cs_cell_mesh_t structure
  *
- * \param[in]  cm        pointer to a cs_cell_mesh_t structure
- * \param[in]  pty       pointer to a cs_property_t structure
- * \param[in]  t_eval    physical time at which one evaluates the term
+ * \param[in] cm        pointer to a cs_cell_mesh_t structure
+ * \param[in] pty       pointer to a cs_property_t structure
+ * \param[in] t_eval    physical time at which one evaluates the term
  *
  * \return the value of the property for the given cell
  */
@@ -1166,8 +1167,8 @@ cs_property_value_in_cell(const cs_cell_mesh_t   *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the values of an isotropic property in each portion of dual
- *         cell in a (primal) cell. This relies on the c2v connectivity.
+ * \brief Compute the values of an isotropic property in each portion of dual
+ *        cell in a (primal) cell. This relies on the c2v connectivity.
  *
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
  * \param[in]      pty       pointer to a cs_property_t structure
@@ -1184,7 +1185,7 @@ cs_property_c2v_values(const cs_cell_mesh_t   *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the Fourier number in each cell
+ * \brief Compute the Fourier number in each cell
  *
  * \param[in]      pty       pointer to the diffusive property struct.
  * \param[in]      t_eval    physical time at which one evaluates the term
@@ -1201,8 +1202,8 @@ cs_property_get_fourier(const cs_property_t    *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Print a summary of the settings for all defined cs_property_t
- *         structures
+ * \brief Print a summary of the settings for all defined cs_property_t
+ *        structures
  */
 /*----------------------------------------------------------------------------*/
 

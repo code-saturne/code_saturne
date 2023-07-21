@@ -3514,7 +3514,7 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_diffusive_flux(const cs_equation_t        *eq,
+cs_equation_compute_diffusive_flux(const cs_equation_t         *eq,
                                    const cs_equation_param_t   *eqp,
                                    const cs_real_t             *pot_vals,
                                    cs_flag_t                    location,

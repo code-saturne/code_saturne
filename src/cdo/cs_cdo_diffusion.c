@@ -3050,7 +3050,7 @@ cs_cdo_diffusion_svb_vbyf_flux(short int                   f,
 
   /* Compute the product: matpty*face unit normal */
 
-  cs_real_t  pty_nuf[3] = {0, 0, 0};;
+  cs_real_t  pty_nuf[3] = {0, 0, 0};
   cs_math_33_3_product(pty->tensor, pfq.unitv, pty_nuf);
 
   /* Cellwise constant and consistent gradient */
