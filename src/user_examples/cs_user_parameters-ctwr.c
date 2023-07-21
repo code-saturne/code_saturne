@@ -79,19 +79,15 @@ BEGIN_C_DECLS
 void
 cs_user_model(void)
 {
-  /* Activate cooling tower model
-   * Note: packing zones are defined in cs_user_zones.c
-   * */
+  /* Note: packing zones are defined in cs_user_zones.c. */
+
   /*! [ctwr_user_model_1] */
   {
+    /* Activate cooling tower model */
     cs_glob_physical_model_flag[CS_COOLING_TOWERS] = 1;
 
+    /* Evaporation model */
     cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
-
-    /* Evaporation model:
-       CS_CTWR_NONE None,
-       CS_CTWR_POPPE Poppe,
-       CS_CTWR_MERKEL Merkel*/
     ct_opt->evap_model = CS_CTWR_POPPE;
   }
   /*! [ctwr_user_model_1] */
@@ -118,50 +114,49 @@ cs_user_parameters(cs_domain_t   *domain)
 {
   CS_UNUSED(domain);
 
- /* Activate compressibility */
- {
-   cs_velocity_pressure_model_t *vp_model =
-     cs_get_glob_velocity_pressure_model();
-   vp_model->idilat = 2;
- }
+  /* Activate compressibility */
+  {
+    cs_velocity_pressure_model_t *vp_model
+      = cs_get_glob_velocity_pressure_model();
+    vp_model->idilat = 2;
+  }
 
- /* Authorize variable density */
- {
-   cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
-   fp->irovar = 1;
- }
+  /* Authorize variable density */
+  {
+    cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+    fp->irovar = 1;
+  }
 
- /* Define humid air properties */
- {
-   cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
-   //Used to compute the humid air density as a function of (P,T,humidity)
-   fp->ro0 = 1.2; //1.293
+  /* Define humid air properties */
+  {
+    cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+    // Used to compute the humid air density as a function of (P,T,humidity)
+    fp->ro0 = 1.2; //1.293
 
-   //Humid air viscosity
-   fp->viscl0 = 1.765e-05;
+    // Humid air viscosity
+    fp->viscl0 = 1.765e-05;
 
-   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
-   // Dry air and water vapour properties
-   air_prop->cp_a = 1006.0;
-   air_prop->cp_v = 1831.0;
+    cs_air_fluid_props_t *air_prop = cs_glob_air_props;
+    // Dry air and water vapor properties
+    air_prop->cp_a = 1006.0;
+    air_prop->cp_v = 1831.0;
 
-   // Initial absolute humidity
-   air_prop->humidity0 = 5.626e-03;//34.5% relative humidity
+    // Initial absolute humidity
+    air_prop->humidity0 = 5.626e-03;//34.5% relative humidity
 
-   // Humid air conductivity - considered constant in the modelling
-   air_prop->lambda_h = 2.493;
+    // Humid air conductivity - considered constant in the modelling
+    air_prop->lambda_h = 2.493;
 
-   // Liquid water properties
-   air_prop->rho_l = 997.85615;
-   air_prop->cp_l = 4179.0;
-   air_prop->lambda_l = 0.02493;
+    // Liquid water properties
+    air_prop->rho_l = 997.85615;
+    air_prop->cp_l = 4179.0;
+    air_prop->lambda_l = 0.02493;
 
-   // Phase change properties
-   air_prop->hv0 = 2501600.0;
+    // Phase change properties
+    air_prop->hv0 = 2501600.0;
 
-   air_prop->droplet_diam = 0.005;
- }
-
+    air_prop->droplet_diam = 0.005;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
