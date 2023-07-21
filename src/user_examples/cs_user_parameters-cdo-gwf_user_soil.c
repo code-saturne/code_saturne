@@ -128,7 +128,7 @@ tracy_update(const cs_real_t              t_eval,
 
   /* Retrieve the hydraulic context */
 
-  cs_gwf_unsaturated_single_phase_t  *hc = soil->hydraulic_context;
+  cs_gwf_uspf_t  *hc = soil->hydraulic_context;
 
   /* Additional parameters */
 

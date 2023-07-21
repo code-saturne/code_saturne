@@ -50,6 +50,7 @@ AM_LDFLAGS =
 
 pkginclude_HEADERS = \
 cs_gwf.h \
+cs_gwf_hydraulic_model.h \
 cs_gwf_param.h \
 cs_gwf_priv.h \
 cs_gwf_soil.h \

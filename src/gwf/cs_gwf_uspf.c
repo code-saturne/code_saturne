@@ -97,19 +97,29 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Update the advection field/arrays related to the Darcy flux
- *        Case of CDO-Vb schemes and a Darcy flux defined at dual faces
+ *        Case of CDO-Vb schemes and a Darcy flux defined at dual faces for an
+ *        unsaturated porous media
  *
- * \param[in, out] darcy     pointer to the darcy flux structure
- * \param[in]      t_eval    time at which one performs the evaluation
- * \param[in]      cur2prev  true or false
+ * \param[in]      connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
+ * \param[in]      pot_values   values to consider for the update
+ * \param[in]      t_eval       time at which one performs the evaluation
+ * \param[in]      cur2prev     true or false
+ * \param[in, out] darcy        pointer to the darcy flux structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_darcy_arrays(cs_gwf_darcy_flux_t         *darcy,
-                     const cs_real_t              t_eval,
-                     bool                         cur2prev)
+_uspf_update_darcy_arrays(const cs_cdo_connect_t      *connect,
+                          const cs_cdo_quantities_t   *cdoq,
+                          const cs_real_t             *pot_values,
+                          cs_real_t                    t_eval,
+                          bool                         cur2prev,
+                          cs_gwf_darcy_flux_t         *darcy)
 {
+  CS_NO_WARN_IF_UNUSED(connect);
+  CS_NO_WARN_IF_UNUSED(cdoq);
+
   cs_adv_field_t  *adv = darcy->adv_field;
 
   assert(darcy->flux_val != NULL);
@@ -118,7 +128,7 @@ _update_darcy_arrays(cs_gwf_darcy_flux_t         *darcy,
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field", __func__);
 
-  cs_gwf_unsaturated_single_phase_t  *mc = darcy->update_input;
+  cs_gwf_uspf_t  *mc = darcy->update_input;
   cs_equation_t  *eq = mc->richards;
 
   /* Update the array of flux values associated to the advection field */
@@ -126,7 +136,7 @@ _update_darcy_arrays(cs_gwf_darcy_flux_t         *darcy,
   assert(eq != NULL);
   cs_equation_compute_diffusive_flux(eq,
                                      NULL, /* eqp --> default*/
-                                     NULL, /* pot_values --> default */
+                                     pot_values,
                                      darcy->flux_location,
                                      t_eval,
                                      darcy->flux_val);
@@ -175,12 +185,12 @@ _update_darcy_arrays(cs_gwf_darcy_flux_t         *darcy,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_gwf_unsaturated_single_phase_t *
+cs_gwf_uspf_t *
 cs_gwf_uspf_create(void)
 {
-  cs_gwf_unsaturated_single_phase_t  *mc = NULL;
+  cs_gwf_uspf_t  *mc = NULL;
 
-  BFT_MALLOC(mc, 1, cs_gwf_unsaturated_single_phase_t);
+  BFT_MALLOC(mc, 1, cs_gwf_uspf_t);
 
   mc->permeability_field = NULL;
   mc->moisture_field = NULL;
@@ -237,14 +247,14 @@ cs_gwf_uspf_create(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_free(cs_gwf_unsaturated_single_phase_t   **p_mc)
+cs_gwf_uspf_free(cs_gwf_uspf_t   **p_mc)
 {
   if (p_mc == NULL)
     return;
   if (*p_mc == NULL)
     return;
 
-  cs_gwf_unsaturated_single_phase_t  *mc = *p_mc;
+  cs_gwf_uspf_t  *mc = *p_mc;
 
   cs_gwf_darcy_flux_free(&(mc->darcy));
 
@@ -262,7 +272,7 @@ cs_gwf_uspf_free(cs_gwf_unsaturated_single_phase_t   **p_mc)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_log_setup(cs_gwf_unsaturated_single_phase_t   *mc)
+cs_gwf_uspf_log_setup(cs_gwf_uspf_t   *mc)
 {
   if (mc == NULL)
     return;
@@ -282,8 +292,8 @@ cs_gwf_uspf_log_setup(cs_gwf_unsaturated_single_phase_t   *mc)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_init(cs_gwf_unsaturated_single_phase_t   *mc,
-                 cs_property_type_t                   perm_type)
+cs_gwf_uspf_init(cs_gwf_uspf_t          *mc,
+                 cs_property_type_t      perm_type)
 {
   if (mc == NULL)
     return;
@@ -356,10 +366,10 @@ cs_gwf_uspf_init(cs_gwf_unsaturated_single_phase_t   *mc,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_init_setup(cs_flag_t                           flag,
-                       cs_flag_t                           post_flag,
-                       int                                 perm_dim,
-                       cs_gwf_unsaturated_single_phase_t  *mc)
+cs_gwf_uspf_init_setup(cs_flag_t            flag,
+                       cs_flag_t            post_flag,
+                       int                  perm_dim,
+                       cs_gwf_uspf_t       *mc)
 {
   if (mc == NULL)
     return;
@@ -465,10 +475,10 @@ cs_gwf_uspf_init_setup(cs_flag_t                           flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_finalize_setup(const cs_cdo_connect_t              *connect,
-                           const cs_cdo_quantities_t           *cdoq,
-                           cs_flag_t                            flag,
-                           cs_gwf_unsaturated_single_phase_t   *mc)
+cs_gwf_uspf_finalize_setup(const cs_cdo_connect_t         *connect,
+                           const cs_cdo_quantities_t      *cdoq,
+                           cs_flag_t                       flag,
+                           cs_gwf_uspf_t                  *mc)
 {
   const cs_field_t  *hydraulic_head = cs_equation_get_field(mc->richards);
   const cs_param_space_scheme_t  richards_scheme =
@@ -479,8 +489,8 @@ cs_gwf_uspf_finalize_setup(const cs_cdo_connect_t              *connect,
 
   cs_gwf_darcy_flux_define(connect, cdoq,
                            richards_scheme,
-                           mc,                   /* context */
-                           _update_darcy_arrays, /* update function */
+                           mc,                          /* context */
+                           _uspf_update_darcy_arrays,  /* update function */
                            mc->darcy);
 
   /* Allocate a head array defined at cells and used to update the soil
@@ -542,13 +552,13 @@ cs_gwf_uspf_finalize_setup(const cs_cdo_connect_t              *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_update(const cs_mesh_t                     *mesh,
-                   const cs_cdo_connect_t              *connect,
-                   const cs_cdo_quantities_t           *cdoq,
-                   const cs_time_step_t                *ts,
-                   cs_flag_t                            update_flag,
-                   cs_flag_t                            option_flag,
-                   cs_gwf_unsaturated_single_phase_t   *mc)
+cs_gwf_uspf_update(const cs_mesh_t                *mesh,
+                   const cs_cdo_connect_t         *connect,
+                   const cs_cdo_quantities_t      *cdoq,
+                   const cs_time_step_t           *ts,
+                   cs_flag_t                       update_flag,
+                   cs_flag_t                       option_flag,
+                   cs_gwf_uspf_t                  *mc)
 {
   cs_real_t  time_eval = ts->t_cur;
   bool  cur2prev = false;
@@ -562,7 +572,7 @@ cs_gwf_uspf_update(const cs_mesh_t                     *mesh,
 
   /* Update head */
 
-  cs_gwf_update_head(cdoq, connect, mc->richards,
+  cs_gwf_update_head(connect, cdoq, mc->richards,
                      option_flag,
                      mc->pressure_head,
                      mc->head_in_law,
@@ -570,9 +580,15 @@ cs_gwf_uspf_update(const cs_mesh_t                     *mesh,
 
   /* Update the advection field related to the groundwater flow module */
 
+  cs_field_t  *hydraulic_head = cs_equation_get_field(mc->richards);
   cs_gwf_darcy_flux_t  *darcy = mc->darcy;
 
-  darcy->update_func(darcy, time_eval, cur2prev);
+  darcy->update_func(connect,
+                     cdoq,
+                     hydraulic_head->val,
+                     time_eval,
+                     cur2prev,
+                     darcy);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_USPF_DBG > 2
   if (cs_flag_test(darcy->flux_location, cs_flag_dual_face_byc))
@@ -608,22 +624,22 @@ cs_gwf_uspf_update(const cs_mesh_t                     *mesh,
  * \brief Compute the new state for the groundwater flows module.
  *        Case of single-phase flows in an unstaturated porous media.
  *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
- * \param[in]      time_step  pointer to a cs_time_step_t structure
- * \param[in]      flag       optional metadata for the module
- * \param[in, out] mc         pointer to the model context structure
+ * \param[in]      mesh        pointer to a cs_mesh_t structure
+ * \param[in]      connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step   pointer to a cs_time_step_t structure
+ * \param[in]      flag        optional metadata for the module
+ * \param[in, out] mc          pointer to the model context structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_compute(const cs_mesh_t                     *mesh,
-                    const cs_cdo_connect_t              *connect,
-                    const cs_cdo_quantities_t           *cdoq,
-                    const cs_time_step_t                *time_step,
-                    cs_flag_t                            flag,
-                    cs_gwf_unsaturated_single_phase_t   *mc)
+cs_gwf_uspf_compute(const cs_mesh_t               *mesh,
+                    const cs_cdo_connect_t        *connect,
+                    const cs_cdo_quantities_t     *cdoq,
+                    const cs_time_step_t          *time_step,
+                    cs_flag_t                      flag,
+                    cs_gwf_uspf_t                 *mc)
 {
   CS_NO_WARN_IF_UNUSED(flag);
 
@@ -653,20 +669,20 @@ cs_gwf_uspf_compute(const cs_mesh_t                     *mesh,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Predefined extra-operations for the groundwater flow module in case
- *        of unsaturated single phase flows in porous media
+ *        of single phase flows in an unsaturated porous media
  *
- * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
- * \param[in]      post_flag  requested quantities to be postprocessed
- * \param[in, out] mc         pointer to the casted model context
+ * \param[in]      connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
+ * \param[in]      post_flag   requested quantities to be postprocessed
+ * \param[in, out] mc          pointer to the casted model context
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_extra_op(const cs_cdo_connect_t                *connect,
-                     const cs_cdo_quantities_t             *cdoq,
-                     cs_flag_t                              post_flag,
-                     cs_gwf_unsaturated_single_phase_t     *mc)
+cs_gwf_uspf_extra_op(const cs_cdo_connect_t         *connect,
+                     const cs_cdo_quantities_t      *cdoq,
+                     cs_flag_t                       post_flag,
+                     cs_gwf_uspf_t                  *mc)
 {
   assert(mc != NULL);
 
@@ -682,7 +698,7 @@ cs_gwf_uspf_extra_op(const cs_cdo_connect_t                *connect,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Predefined post-processing output for the groundwater flow module
- *        in case of unsaturated single-phase flows (uspf) in porous media.
+ *        in case of single-phase flows in an unsaturated porous media.
  *
  * \param[in] mesh_id      id of the output mesh for the current call
  * \param[in] n_cells      local number of cells of post_mesh
@@ -694,12 +710,12 @@ cs_gwf_uspf_extra_op(const cs_cdo_connect_t                *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_extra_post(int                                       mesh_id,
-                       cs_lnum_t                                 n_cells,
-                       const cs_lnum_t                           cell_ids[],
-                       cs_flag_t                                 post_flag,
-                       const cs_gwf_unsaturated_single_phase_t  *mc,
-                       const cs_time_step_t                     *time_step)
+cs_gwf_uspf_extra_post(int                        mesh_id,
+                       cs_lnum_t                  n_cells,
+                       const cs_lnum_t            cell_ids[],
+                       cs_flag_t                  post_flag,
+                       const cs_gwf_uspf_t        *mc,
+                       const cs_time_step_t       *time_step)
 {
   if (mesh_id != CS_POST_MESH_VOLUME)
     return; /* Only postprocessings in the volume are defined */

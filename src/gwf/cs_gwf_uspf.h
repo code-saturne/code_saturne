@@ -32,9 +32,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_gwf_param.h"
-#include "cs_gwf_priv.h"
+#include "cs_gwf_hydraulic_model.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -61,7 +59,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-cs_gwf_unsaturated_single_phase_t *
+cs_gwf_uspf_t *
 cs_gwf_uspf_create(void);
 
 /*----------------------------------------------------------------------------*/
@@ -74,7 +72,7 @@ cs_gwf_uspf_create(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_free(cs_gwf_unsaturated_single_phase_t   **p_mc);
+cs_gwf_uspf_free(cs_gwf_uspf_t   **p_mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -86,7 +84,7 @@ cs_gwf_uspf_free(cs_gwf_unsaturated_single_phase_t   **p_mc);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_log_setup(cs_gwf_unsaturated_single_phase_t   *mc);
+cs_gwf_uspf_log_setup(cs_gwf_uspf_t   *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -100,8 +98,8 @@ cs_gwf_uspf_log_setup(cs_gwf_unsaturated_single_phase_t   *mc);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_init(cs_gwf_unsaturated_single_phase_t   *mc,
-                 cs_property_type_t                   perm_type);
+cs_gwf_uspf_init(cs_gwf_uspf_t          *mc,
+                 cs_property_type_t      perm_type);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -117,10 +115,10 @@ cs_gwf_uspf_init(cs_gwf_unsaturated_single_phase_t   *mc,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_init_setup(cs_flag_t                           flag,
-                       cs_flag_t                           post_flag,
-                       int                                 perm_dim,
-                       cs_gwf_unsaturated_single_phase_t  *mc);
+cs_gwf_uspf_init_setup(cs_flag_t            flag,
+                       cs_flag_t            post_flag,
+                       int                  perm_dim,
+                       cs_gwf_uspf_t       *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -135,10 +133,10 @@ cs_gwf_uspf_init_setup(cs_flag_t                           flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_finalize_setup(const cs_cdo_connect_t              *connect,
-                           const cs_cdo_quantities_t           *cdoq,
-                           cs_flag_t                            flag,
-                           cs_gwf_unsaturated_single_phase_t   *mc);
+cs_gwf_uspf_finalize_setup(const cs_cdo_connect_t         *connect,
+                           const cs_cdo_quantities_t      *cdoq,
+                           cs_flag_t                       flag,
+                           cs_gwf_uspf_t                  *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -156,58 +154,58 @@ cs_gwf_uspf_finalize_setup(const cs_cdo_connect_t              *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_update(const cs_mesh_t                     *mesh,
-                   const cs_cdo_connect_t              *connect,
-                   const cs_cdo_quantities_t           *cdoq,
-                   const cs_time_step_t                *ts,
-                   cs_flag_t                            update_flag,
-                   cs_flag_t                            option_flag,
-                   cs_gwf_unsaturated_single_phase_t   *mc);
+cs_gwf_uspf_update(const cs_mesh_t                *mesh,
+                   const cs_cdo_connect_t         *connect,
+                   const cs_cdo_quantities_t      *cdoq,
+                   const cs_time_step_t           *ts,
+                   cs_flag_t                       update_flag,
+                   cs_flag_t                       option_flag,
+                   cs_gwf_uspf_t                  *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the new state for the groundwater flows module.
  *        Case of single-phase flows in an unstaturated porous media.
  *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
- * \param[in]      time_step  pointer to a cs_time_step_t structure
- * \param[in]      flag       optional metadata for the module
- * \param[in, out] mc         pointer to the model context structure
+ * \param[in]      mesh        pointer to a cs_mesh_t structure
+ * \param[in]      connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step   pointer to a cs_time_step_t structure
+ * \param[in]      flag        optional metadata for the module
+ * \param[in, out] mc          pointer to the model context structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_compute(const cs_mesh_t                     *mesh,
-                    const cs_cdo_connect_t              *connect,
-                    const cs_cdo_quantities_t           *cdoq,
-                    const cs_time_step_t                *time_step,
-                    cs_flag_t                            flag,
-                    cs_gwf_unsaturated_single_phase_t   *mc);
+cs_gwf_uspf_compute(const cs_mesh_t               *mesh,
+                    const cs_cdo_connect_t        *connect,
+                    const cs_cdo_quantities_t     *cdoq,
+                    const cs_time_step_t          *time_step,
+                    cs_flag_t                      flag,
+                    cs_gwf_uspf_t                 *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Predefined extra-operations for the groundwater flow module in case
- *        of unsaturated single phase flows in porous media
+ *        of single phase flows in an unsaturated porous media
  *
- * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
- * \param[in]      post_flag  requested quantities to be postprocessed
- * \param[in, out] mc         pointer to the casted model context
+ * \param[in]      connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
+ * \param[in]      post_flag   requested quantities to be postprocessed
+ * \param[in, out] mc          pointer to the casted model context
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_extra_op(const cs_cdo_connect_t                *connect,
-                     const cs_cdo_quantities_t             *cdoq,
-                     cs_flag_t                              post_flag,
-                     cs_gwf_unsaturated_single_phase_t     *mc);
+cs_gwf_uspf_extra_op(const cs_cdo_connect_t         *connect,
+                     const cs_cdo_quantities_t      *cdoq,
+                     cs_flag_t                       post_flag,
+                     cs_gwf_uspf_t                  *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Predefined post-processing output for the groundwater flow module
- *        in case of unsaturated single-phase flows (uspf) in porous media.
+ *        in case of single-phase flows in an unsaturated porous media.
  *
  * \param[in] mesh_id      id of the output mesh for the current call
  * \param[in] n_cells      local number of cells of post_mesh
@@ -219,12 +217,12 @@ cs_gwf_uspf_extra_op(const cs_cdo_connect_t                *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_extra_post(int                                       mesh_id,
-                       cs_lnum_t                                 n_cells,
-                       const cs_lnum_t                           cell_ids[],
-                       cs_flag_t                                 post_flag,
-                       const cs_gwf_unsaturated_single_phase_t  *mc,
-                       const cs_time_step_t                     *time_step);
+cs_gwf_uspf_extra_post(int                        mesh_id,
+                       cs_lnum_t                  n_cells,
+                       const cs_lnum_t            cell_ids[],
+                       cs_flag_t                  post_flag,
+                       const cs_gwf_uspf_t        *mc,
+                       const cs_time_step_t       *time_step);
 
 /*----------------------------------------------------------------------------*/
 

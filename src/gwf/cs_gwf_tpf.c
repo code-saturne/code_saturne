@@ -111,7 +111,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 static void
-_mtpf_log_setup(cs_gwf_two_phase_t   *mc)
+_mtpf_log_setup(cs_gwf_tpf_t   *mc)
 {
   if (mc == NULL)
     return;
@@ -137,7 +137,7 @@ _mtpf_log_setup(cs_gwf_two_phase_t   *mc)
 /*----------------------------------------------------------------------------*/
 
 static void
-_itpf_log_setup(cs_gwf_two_phase_t   *mc)
+_itpf_log_setup(cs_gwf_tpf_t   *mc)
 {
   if (mc == NULL)
     return;
@@ -193,7 +193,7 @@ _build_hg_incr_st(const cs_equation_param_t     *eqp,
   const cs_cdovb_scaleq_t  *eqc = (const cs_cdovb_scaleq_t *)eq_context;
   assert(csys->n_dofs == cm->n_vc);
 
-  cs_gwf_two_phase_t  *mc = context;
+  cs_gwf_tpf_t  *mc = context;
 
   /* Modify the property data associated to the hodge operator related to the
      diffusion term */
@@ -239,17 +239,22 @@ _build_hg_incr_st(const cs_equation_param_t     *eqp,
  *        This relies on the case of CDO-Vb schemes and a Darcy flux defined
  *        at dual faces
  *
- * \param[in, out] darcy     pointer to the darcy flux structure
- * \param[in]      t_eval    time at which one performs the evaluation
- * \param[in]      cur2prev  true or false
+ * \param[in]      connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
+ * \param[in]      pot_values   values to consider for the update
+ * \param[in]      t_eval       time at which one performs the evaluation
+ * \param[in]      cur2prev     true or false
+ * \param[in, out] darcy        pointer to the darcy flux structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_tpf_l_darcy_update(cs_gwf_darcy_flux_t         *darcy,
-                    const cs_real_t              t_eval,
-                    bool                         cur2prev)
-
+_tpf_l_darcy_update(const cs_cdo_connect_t      *connect,
+                    const cs_cdo_quantities_t   *cdoq,
+                    const cs_real_t             *pot_values,
+                    cs_real_t                    t_eval,
+                    bool                         cur2prev,
+                    cs_gwf_darcy_flux_t         *darcy)
 {
   assert(darcy != NULL);
   assert(darcy->flux_val != NULL);
@@ -261,14 +266,101 @@ _tpf_l_darcy_update(cs_gwf_darcy_flux_t         *darcy,
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field", __func__);
 
-  cs_gwf_two_phase_t  *mc = (cs_gwf_two_phase_t *)darcy->update_input;
+  cs_gwf_tpf_t  *mc = (cs_gwf_tpf_t *)darcy->update_input;
   cs_equation_t  *eq = mc->wl_eq;
+
+  /* Update the array of flux values associated to the advection field.
+   *
+   * diff_pty of the wl_eq -> rho_l * abs_perm * krl / mu_l
+   * Thus, one needs to divide by rho_l for the Darcy flux
+   */
+
+  cs_equation_compute_diffusive_flux(eq,
+                                     NULL,
+                                     pot_values,
+                                     darcy->flux_location,
+                                     t_eval,
+                                     darcy->flux_val);
+
+  const double  inv_rho = 1./mc->l_mass_density;
+  const cs_adjacency_t  *c2e = connect->c2e;
+# pragma omp parallel if (6*cdoq->n_cells > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < c2e->idx[cdoq->n_cells]; i++)
+    darcy->flux_val[i] *= inv_rho;
+
+  /* Update the velocity field at cell centers induced by the Darcy flux */
+
+  cs_field_t  *vel = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
+  assert(vel != NULL);
+  if (cur2prev)
+    cs_field_current_to_previous(vel);
+
+  cs_advection_field_in_cells(adv, t_eval, vel->val);
+
+  /* Update the Darcy flux at boundary faces if needed */
+
+  cs_field_t  *bdy_nflx =
+    cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  if (bdy_nflx != NULL) { /* Values of the Darcy flux at boundary face exist */
+
+    if (cur2prev)
+      cs_field_current_to_previous(bdy_nflx);
+
+    /* Set the new values of the field related to the normal boundary flux */
+
+    cs_advection_field_across_boundary(adv, t_eval, bdy_nflx->val);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the advection field/arrays related to the Darcy flux in the
+ *        gas phase when a two-phase flow model is used.
+ *        This relies on the case of CDO-Vb schemes and a Darcy flux defined
+ *        at dual faces
+ *
+ * \param[in]      connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
+ * \param[in]      pot_values   values to consider for the update
+ * \param[in]      t_eval       time at which one performs the evaluation
+ * \param[in]      cur2prev     true or false
+ * \param[in, out] darcy        pointer to the darcy flux structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_tpf_g_darcy_update(const cs_cdo_connect_t      *connect,
+                    const cs_cdo_quantities_t   *cdoq,
+                    const cs_real_t             *pot_values,
+                    cs_real_t                    t_eval,
+                    bool                         cur2prev,
+                    cs_gwf_darcy_flux_t         *darcy)
+{
+  CS_UNUSED(connect);
+  CS_UNUSED(cdoq);
+  CS_UNUSED(cur2prev);
+
+  assert(darcy != NULL);
+  assert(darcy->flux_val != NULL);
+  assert(darcy->update_input != NULL);
+  assert(darcy->adv_field != NULL);
+
+  cs_adv_field_t  *adv = darcy->adv_field;
+
+  if (adv->definition->type != CS_XDEF_BY_ARRAY)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid definition of the advection field", __func__);
+
+  cs_gwf_tpf_t  *mc = darcy->update_input;
+  cs_equation_t  *eq = mc->hg_eq;
 
   /* Update the array of flux values associated to the advection field */
 
   cs_equation_compute_diffusive_flux(eq,
                                      NULL,
-                                     NULL,
+                                     pot_values,
                                      darcy->flux_location,
                                      t_eval,
                                      darcy->flux_val);
@@ -301,30 +393,62 @@ _tpf_l_darcy_update(cs_gwf_darcy_flux_t         *darcy,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the advection field/arrays related to the Darcy flux in the
- *         gaseous phase when a two-phase flow model is used.
- *         This relies on the case of CDO-Vb schemes and a Darcy flux defined
- *         at dual faces
+ * \brief Update the advection field/arrays related to the Darcy flux in the
+ *        gas phase when a two-phase flow model is used.
+ *        This relies on the case of CDO-Vb schemes and a Darcy flux defined
+ *        at dual faces
  *
- * \param[in, out] darcy     pointer to the darcy flux structure
- * \param[in]      t_eval    time at which one performs the evaluation
- * \param[in]      cur2prev  true or false
+ * \param[in]      connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
+ * \param[in]      pot_values   values to consider for the update
+ * \param[in]      t_eval       time at which one performs the evaluation
+ * \param[in]      cur2prev     true or false
+ * \param[in, out] darcy        pointer to the darcy flux structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_tpf_g_darcy_update(cs_gwf_darcy_flux_t         *darcy,
-                    const cs_real_t              t_eval,
-                    bool                         cur2prev)
+_tpf_t_darcy_update(const cs_cdo_connect_t      *connect,
+                    const cs_cdo_quantities_t   *cdoq,
+                    const cs_real_t             *pot_values,
+                    cs_real_t                    t_eval,
+                    bool                         cur2prev,
+                    cs_gwf_darcy_flux_t         *darcy)
 {
-  CS_UNUSED(darcy);
-  CS_UNUSED(t_eval);
-  CS_UNUSED(cur2prev);
+  assert(darcy != NULL);
+  assert(darcy->flux_val != NULL);
+  assert(darcy->update_input != NULL);
+  assert(darcy->adv_field != NULL);
 
-  /* TODO */
+  cs_adv_field_t  *adv = darcy->adv_field;
+
+  if (adv->definition->type != CS_XDEF_BY_ARRAY)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid definition of the advection field", __func__);
+
+  cs_gwf_tpf_t  *mc = darcy->update_input;
+  const cs_gwf_darcy_flux_t  *l_darcy = mc->l_darcy;
+  const cs_gwf_darcy_flux_t  *g_darcy = mc->g_darcy;
+
+  const double  hmh = mc->h_molar_mass * mc->henry_constant;
+  const double  mh_ov_rt =
+    mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
+  const cs_adjacency_t  *c2e = connect->c2e;
+
+# pragma omp parallel if (6*cdoq->n_cells > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < c2e->idx[cdoq->n_cells]; i++)
+    darcy->flux_val[i] =
+      hmh * l_darcy->flux_val[i] + mh_ov_rt * g_darcy->flux_val[i];
+
+  /* Update the velocity field at cell centers induced by the Darcy flux */
+
+  cs_field_t  *vel = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
+  assert(vel != NULL);
+  if (cur2prev)
+    cs_field_current_to_previous(vel);
+
+  cs_advection_field_in_cells(adv, t_eval, vel->val);
 }
-
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -539,7 +663,7 @@ _coupled_tpf_picard_compute(const cs_mesh_t              *mesh,
                             const cs_time_step_t         *time_step,
                             cs_gwf_model_type_t           model,
                             cs_flag_t                     option_flag,
-                            cs_gwf_two_phase_t           *mc)
+                            cs_gwf_tpf_t                 *mc)
 {
   bool cur2prev = false;
   cs_flag_t  update_flag = 0;   /* No current to previous operation */
@@ -645,7 +769,7 @@ _coupled_tpf_anderson_compute(const cs_mesh_t              *mesh,
                               const cs_time_step_t         *time_step,
                               cs_gwf_model_type_t           model,
                               cs_flag_t                     option_flag,
-                              cs_gwf_two_phase_t           *mc)
+                              cs_gwf_tpf_t                 *mc)
 {
   bool  cur2prev = false;
   cs_flag_t  update_flag = 0;   /* No current to previous operation */
@@ -761,7 +885,7 @@ _segregated_tpf_compute(const cs_mesh_t              *mesh,
                         const cs_cdo_quantities_t    *cdoq,
                         cs_gwf_model_type_t           model,
                         cs_flag_t                     option_flag,
-                        cs_gwf_two_phase_t           *mc)
+                        cs_gwf_tpf_t                 *mc)
 {
   assert(mc->use_incremental_solver);
 
@@ -931,12 +1055,12 @@ _segregated_tpf_compute(const cs_mesh_t              *mesh,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_gwf_two_phase_t *
+cs_gwf_tpf_t *
 cs_gwf_tpf_create(void)
 {
-  cs_gwf_two_phase_t  *mc = NULL;
+  cs_gwf_tpf_t  *mc = NULL;
 
-  BFT_MALLOC(mc, 1, cs_gwf_two_phase_t);
+  BFT_MALLOC(mc, 1, cs_gwf_tpf_t);
 
   /* Define the system of equations */
   /* ------------------------------ */
@@ -971,21 +1095,25 @@ cs_gwf_tpf_create(void)
   /* Advection fields */
   /* ---------------- */
 
-  /* Darcy flux */
+  /* Darcy flux (one assumes a CDOVB space discretization) */
 
   cs_advection_field_status_t  adv_status =
     CS_ADVECTION_FIELD_GWF | CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
 
-  cs_advection_field_add("l_darcy_field", adv_status);
-  cs_advection_field_add("g_darcy_field", adv_status);
-  cs_advection_field_add("total_darcy_field", adv_status);
+  cs_adv_field_t  *l_adv_field = cs_advection_field_add("l_darcy_field",
+                                                        adv_status);
+  mc->l_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
+  mc->l_darcy->adv_field = l_adv_field;
 
-  /* The Darcy flux structures will be defined when the space discretization
-   * will be set (i.e. after cs_user_parameters() --> in*_init_setup() */
+  cs_adv_field_t  *g_adv_field = cs_advection_field_add("g_darcy_field",
+                                                        adv_status);
+  mc->g_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
+  mc->g_darcy->adv_field = g_adv_field;
 
-  mc->l_darcy = NULL;
-  mc->g_darcy = NULL;
-  mc->tot_darcy = NULL;
+  cs_adv_field_t  *t_adv_field = cs_advection_field_add("total_darcy_field",
+                                                        adv_status);
+  mc->t_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
+  mc->t_darcy->adv_field = t_adv_field;
 
   /* Properties
    * ----------
@@ -1095,21 +1223,21 @@ cs_gwf_tpf_create(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_free(cs_gwf_two_phase_t  **p_mc)
+cs_gwf_tpf_free(cs_gwf_tpf_t  **p_mc)
 {
   if (p_mc == NULL)
     return;
   if (*p_mc == NULL)
     return;
 
-  cs_gwf_two_phase_t  *mc = *p_mc;
+  cs_gwf_tpf_t  *mc = *p_mc;
 
   /* System of equations are freed elsewhere (just after having freed
      cs_equation_t structures) */
 
   cs_gwf_darcy_flux_free(&(mc->l_darcy));
   cs_gwf_darcy_flux_free(&(mc->g_darcy));
-  cs_gwf_darcy_flux_free(&(mc->tot_darcy));
+  cs_gwf_darcy_flux_free(&(mc->t_darcy));
 
   BFT_FREE(mc->time_wl_array);
   BFT_FREE(mc->diff_wl_array);
@@ -1156,8 +1284,8 @@ cs_gwf_tpf_free(cs_gwf_two_phase_t  **p_mc)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_log_setup(cs_gwf_model_type_t   model,
-                     cs_gwf_two_phase_t   *mc)
+cs_gwf_tpf_log_setup(cs_gwf_model_type_t    model,
+                     cs_gwf_tpf_t          *mc)
 {
   if (mc == NULL)
     return;
@@ -1174,7 +1302,7 @@ cs_gwf_tpf_log_setup(cs_gwf_model_type_t   model,
 
   cs_gwf_darcy_flux_log(mc->l_darcy);
   cs_gwf_darcy_flux_log(mc->g_darcy);
-  cs_gwf_darcy_flux_log(mc->tot_darcy);
+  cs_gwf_darcy_flux_log(mc->t_darcy);
 
   if (mc->use_coupled_solver)
     cs_log_printf(CS_LOG_SETUP, "  * GWF | Coupled solver\n");
@@ -1227,8 +1355,8 @@ cs_gwf_tpf_log_setup(cs_gwf_model_type_t   model,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_init(cs_gwf_two_phase_t            *mc,
-                cs_property_type_t             perm_type)
+cs_gwf_tpf_init(cs_gwf_tpf_t            *mc,
+                cs_property_type_t       perm_type)
 {
   if (mc == NULL)
     return;
@@ -1304,9 +1432,7 @@ cs_gwf_tpf_init(cs_gwf_two_phase_t            *mc,
     /* ---------------------------------- */
 
     cs_equation_add_time(hg_eqp, mc->time_hg_pty);
-
-    cs_equation_add_advection(hg_eqp,
-                              cs_advection_field_by_name("total_darcy_field"));
+    cs_equation_add_advection(hg_eqp, mc->t_darcy->adv_field);
 
     /* Cross-terms for the block (1,0) -- Hydrogen equation */
 
@@ -1387,8 +1513,8 @@ cs_gwf_tpf_init(cs_gwf_two_phase_t            *mc,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_init_setup(cs_flag_t               post_flag,
-                      cs_gwf_two_phase_t     *mc)
+cs_gwf_tpf_init_setup(cs_flag_t         post_flag,
+                      cs_gwf_tpf_t     *mc)
 {
   if (mc == NULL)
     return;
@@ -1440,18 +1566,6 @@ cs_gwf_tpf_init_setup(cs_flag_t               post_flag,
   cs_field_set_key_int(mc->l_pressure, log_key, 1);
   cs_field_set_key_int(mc->l_pressure, post_key, 1);
 
-  /* Add the structure dealing the Darcy fluxes (in the liquid and the gaseous
-   * phases) */
-
-  mc->l_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
-  mc->l_darcy->adv_field = cs_advection_field_by_name("l_darcy_field");
-
-  mc->g_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
-  mc->g_darcy->adv_field = cs_advection_field_by_name("g_darcy_field");
-
-  mc->tot_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
-  mc->tot_darcy->adv_field = cs_advection_field_by_name("total_darcy_field");
-
   /* Create a liquid saturation field attached to cells: S_l */
 
   int  pty_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY | CS_FIELD_CDO;
@@ -1480,10 +1594,10 @@ cs_gwf_tpf_init_setup(cs_flag_t               post_flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t        *connect,
-                          const cs_cdo_quantities_t     *cdoq,
-                          cs_flag_t                      flag,
-                          cs_gwf_two_phase_t            *mc)
+cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
+                          const cs_cdo_quantities_t   *cdoq,
+                          cs_flag_t                    flag,
+                          cs_gwf_tpf_t                *mc)
 {
   CS_NO_WARN_IF_UNUSED(flag);   /* will be useful for gravity effect */
 
@@ -1512,9 +1626,9 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                            mc, _tpf_g_darcy_update,
                            mc->g_darcy);
 
-  /* cs_gwf_darcy_flux_define(connect, cdoq, hg_eqp->space_scheme, */
-  /*                          mc, _tpf_tot_darcy_update, */
-  /*                          mc->tot_darcy); */
+  cs_gwf_darcy_flux_define(connect, cdoq, hg_eqp->space_scheme,
+                           mc, _tpf_t_darcy_update,
+                           mc->t_darcy);
 
   /* Allocate and initialize arrays for physical propoerties */
   /* ------------------------------------------------------- */
@@ -1823,7 +1937,7 @@ void
 cs_gwf_tpf_init_values(const cs_cdo_connect_t        *connect,
                        const cs_cdo_quantities_t     *cdoq,
                        int                            verbosity,
-                       cs_gwf_two_phase_t            *mc)
+                       cs_gwf_tpf_t                  *mc)
 {
   if (mc == NULL)
     return;
@@ -1897,7 +2011,7 @@ cs_gwf_tpf_compute(const cs_mesh_t               *mesh,
                    const cs_time_step_t          *time_step,
                    cs_gwf_model_type_t            model,
                    cs_flag_t                      option_flag,
-                   cs_gwf_two_phase_t            *mc)
+                   cs_gwf_tpf_t                  *mc)
 {
   if (mc == NULL)
     return;
@@ -1973,7 +2087,7 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
                   cs_gwf_model_type_t          model,
                   cs_flag_t                    update_flag,
                   cs_flag_t                    option_flag,
-                  cs_gwf_two_phase_t          *mc)
+                  cs_gwf_tpf_t                *mc)
 {
   CS_NO_WARN_IF_UNUSED(option_flag); /* For a later usage (gravity) */
 
@@ -1996,15 +2110,30 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
 
   cs_gwf_darcy_flux_t  *l_darcy = mc->l_darcy;
 
-  l_darcy->update_func(l_darcy, time_eval, cur2prev);
+  l_darcy->update_func(connect,
+                       cdoq,
+                       mc->l_pressure->val,
+                       time_eval,
+                       cur2prev,
+                       l_darcy);
 
   cs_gwf_darcy_flux_t  *g_darcy = mc->g_darcy;
 
-  g_darcy->update_func(g_darcy, time_eval, cur2prev);
+  g_darcy->update_func(connect,
+                       cdoq,
+                       mc->g_pressure->val,
+                       time_eval,
+                       cur2prev,
+                       g_darcy);
 
-  cs_gwf_darcy_flux_t  *tot_darcy = mc->tot_darcy;
+  cs_gwf_darcy_flux_t  *t_darcy = mc->t_darcy;
 
-  tot_darcy->update_func(tot_darcy, time_eval, cur2prev);
+  t_darcy->update_func(connect,
+                       cdoq,
+                       NULL,    /* values are defined inside the call */
+                       time_eval,
+                       cur2prev,
+                       t_darcy);
 
   /* New pressure values for the liquid and the gas have been computed (compute
      step) */
@@ -2138,10 +2267,10 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_extra_op(const cs_cdo_connect_t                *connect,
-                    const cs_cdo_quantities_t             *cdoq,
-                    cs_flag_t                              post_flag,
-                    cs_gwf_two_phase_t                    *mc)
+cs_gwf_tpf_extra_op(const cs_cdo_connect_t          *connect,
+                    const cs_cdo_quantities_t       *cdoq,
+                    cs_flag_t                        post_flag,
+                    cs_gwf_tpf_t                    *mc)
 {
   assert(mc != NULL);
 
@@ -2171,13 +2300,13 @@ cs_gwf_tpf_extra_op(const cs_cdo_connect_t                *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_extra_post(int                            mesh_id,
-                      cs_lnum_t                      n_cells,
-                      const cs_lnum_t                cell_ids[],
-                      cs_flag_t                      post_flag,
-                      const cs_property_t           *abs_perm,
-                      const cs_gwf_two_phase_t      *mc,
-                      const cs_time_step_t          *time_step)
+cs_gwf_tpf_extra_post(int                        mesh_id,
+                      cs_lnum_t                  n_cells,
+                      const cs_lnum_t            cell_ids[],
+                      cs_flag_t                  post_flag,
+                      const cs_property_t       *abs_perm,
+                      const cs_gwf_tpf_t        *mc,
+                      const cs_time_step_t      *time_step)
 {
   if (mesh_id != CS_POST_MESH_VOLUME)
     return; /* Only postprocessings in the volume are defined */

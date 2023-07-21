@@ -33,9 +33,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_gwf_param.h"
-#include "cs_gwf_priv.h"
+#include "cs_gwf_hydraulic_model.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -62,7 +60,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-cs_gwf_two_phase_t *
+cs_gwf_tpf_t *
 cs_gwf_tpf_create(void);
 
 /*----------------------------------------------------------------------------*/
@@ -75,7 +73,7 @@ cs_gwf_tpf_create(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_free(cs_gwf_two_phase_t  **p_mc);
+cs_gwf_tpf_free(cs_gwf_tpf_t  **p_mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -88,8 +86,8 @@ cs_gwf_tpf_free(cs_gwf_two_phase_t  **p_mc);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_log_setup(cs_gwf_model_type_t   model,
-                     cs_gwf_two_phase_t   *mc);
+cs_gwf_tpf_log_setup(cs_gwf_model_type_t    model,
+                     cs_gwf_tpf_t          *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -103,8 +101,8 @@ cs_gwf_tpf_log_setup(cs_gwf_model_type_t   model,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_init(cs_gwf_two_phase_t            *mc,
-                cs_property_type_t             perm_type);
+cs_gwf_tpf_init(cs_gwf_tpf_t            *mc,
+                cs_property_type_t       perm_type);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -118,8 +116,8 @@ cs_gwf_tpf_init(cs_gwf_two_phase_t            *mc,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_init_setup(cs_flag_t               post_flag,
-                      cs_gwf_two_phase_t     *mc);
+cs_gwf_tpf_init_setup(cs_flag_t         post_flag,
+                      cs_gwf_tpf_t     *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -134,10 +132,10 @@ cs_gwf_tpf_init_setup(cs_flag_t               post_flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t        *connect,
-                          const cs_cdo_quantities_t     *cdoq,
-                          cs_flag_t                      flag,
-                          cs_gwf_two_phase_t            *mc);
+cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
+                          const cs_cdo_quantities_t   *cdoq,
+                          cs_flag_t                    flag,
+                          cs_gwf_tpf_t                *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -155,7 +153,7 @@ void
 cs_gwf_tpf_init_values(const cs_cdo_connect_t        *connect,
                        const cs_cdo_quantities_t     *cdoq,
                        int                            verbosity,
-                       cs_gwf_two_phase_t            *mc);
+                       cs_gwf_tpf_t                  *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -179,7 +177,7 @@ cs_gwf_tpf_compute(const cs_mesh_t               *mesh,
                    const cs_time_step_t          *time_step,
                    cs_gwf_model_type_t            model,
                    cs_flag_t                      option_flag,
-                   cs_gwf_two_phase_t            *mc);
+                   cs_gwf_tpf_t                  *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -205,7 +203,7 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
                   cs_gwf_model_type_t          model,
                   cs_flag_t                    update_flag,
                   cs_flag_t                    option_flag,
-                  cs_gwf_two_phase_t          *mc);
+                  cs_gwf_tpf_t                *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -220,10 +218,10 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_extra_op(const cs_cdo_connect_t                *connect,
-                    const cs_cdo_quantities_t             *cdoq,
-                    cs_flag_t                              post_flag,
-                    cs_gwf_two_phase_t                    *mc);
+cs_gwf_tpf_extra_op(const cs_cdo_connect_t          *connect,
+                    const cs_cdo_quantities_t       *cdoq,
+                    cs_flag_t                        post_flag,
+                    cs_gwf_tpf_t                    *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -241,13 +239,13 @@ cs_gwf_tpf_extra_op(const cs_cdo_connect_t                *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_extra_post(int                            mesh_id,
-                      cs_lnum_t                      n_cells,
-                      const cs_lnum_t                cell_ids[],
-                      cs_flag_t                      post_flag,
-                      const cs_property_t           *abs_perm,
-                      const cs_gwf_two_phase_t      *mc,
-                      const cs_time_step_t          *time_step);
+cs_gwf_tpf_extra_post(int                        mesh_id,
+                      cs_lnum_t                  n_cells,
+                      const cs_lnum_t            cell_ids[],
+                      cs_flag_t                  post_flag,
+                      const cs_property_t       *abs_perm,
+                      const cs_gwf_tpf_t        *mc,
+                      const cs_time_step_t      *time_step);
 
 /*----------------------------------------------------------------------------*/
 

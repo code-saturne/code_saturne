@@ -36,7 +36,7 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
 #include "cs_gwf_param.h"
-#include "cs_gwf_priv.h"
+#include "cs_gwf_hydraulic_model.h"
 #include "cs_mesh.h"
 #include "cs_property.h"
 #include "cs_volume_zone.h"
@@ -513,7 +513,7 @@ cs_gwf_soil_saturated_set_property(cs_property_t   *moisture_content);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_tpf_set_property(cs_gwf_two_phase_t     *mc);
+cs_gwf_soil_tpf_set_property(cs_gwf_tpf_t     *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -543,7 +543,7 @@ cs_gwf_soil_update(cs_real_t                     time_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_iso_update_mtpf_terms(cs_gwf_two_phase_t    *mc);
+cs_gwf_soil_iso_update_mtpf_terms(cs_gwf_tpf_t    *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -556,7 +556,7 @@ cs_gwf_soil_iso_update_mtpf_terms(cs_gwf_two_phase_t    *mc);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_iso_update_itpf_terms(cs_gwf_two_phase_t     *mc);
+cs_gwf_soil_iso_update_itpf_terms(cs_gwf_tpf_t     *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -571,7 +571,7 @@ cs_gwf_soil_iso_update_itpf_terms(cs_gwf_two_phase_t     *mc);
 
 void
 cs_gwf_soil_iso_update_itpf_terms_incr(const cs_time_step_t    *ts,
-                                       cs_gwf_two_phase_t      *mc);
+                                       cs_gwf_tpf_t            *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -587,9 +587,9 @@ cs_gwf_soil_iso_update_itpf_terms_incr(const cs_time_step_t    *ts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_iso_update_itpf_terms_incr_submesh(const cs_time_step_t    *ts,
-                                               const cs_cdo_connect_t  *connect,
-                                               cs_gwf_two_phase_t      *mc);
+cs_gwf_soil_iso_update_itpf_terms_incr_submesh(const cs_time_step_t   *ts,
+                                               const cs_cdo_connect_t *connect,
+                                               cs_gwf_tpf_t           *mc);
 
 /*----------------------------------------------------------------------------*/
 

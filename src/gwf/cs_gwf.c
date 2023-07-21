@@ -137,7 +137,7 @@ _get_l_adv_field(const cs_gwf_t   *gw)
 
   case CS_GWF_MODEL_SATURATED_SINGLE_PHASE:
     {
-      cs_gwf_saturated_single_phase_t  *mc = gw->model_context;
+      cs_gwf_sspf_t  *mc = gw->model_context;
 
       return mc->darcy->adv_field;
     }
@@ -145,7 +145,7 @@ _get_l_adv_field(const cs_gwf_t   *gw)
 
   case CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE:
     {
-      cs_gwf_unsaturated_single_phase_t  *mc = gw->model_context;
+      cs_gwf_uspf_t  *mc = gw->model_context;
 
       return mc->darcy->adv_field;
     }
@@ -154,7 +154,7 @@ _get_l_adv_field(const cs_gwf_t   *gw)
   case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
   case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
     {
-      cs_gwf_two_phase_t  *mc = gw->model_context;
+      cs_gwf_tpf_t  *mc = gw->model_context;
 
       if (mc->l_darcy != NULL)
         return mc->l_darcy->adv_field;
@@ -314,7 +314,7 @@ cs_gwf_destroy_all(void)
 
   case CS_GWF_MODEL_SATURATED_SINGLE_PHASE:
     {
-      cs_gwf_saturated_single_phase_t  *mc = gw->model_context;
+      cs_gwf_sspf_t  *mc = gw->model_context;
 
       cs_gwf_sspf_free(&(mc));
     }
@@ -322,7 +322,7 @@ cs_gwf_destroy_all(void)
 
   case CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE:
     {
-      cs_gwf_unsaturated_single_phase_t  *mc = gw->model_context;
+      cs_gwf_uspf_t  *mc = gw->model_context;
 
       cs_gwf_uspf_free(&(mc));
     }
@@ -331,7 +331,7 @@ cs_gwf_destroy_all(void)
   case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
   case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
     {
-      cs_gwf_two_phase_t  *mc = gw->model_context;
+      cs_gwf_tpf_t  *mc = gw->model_context;
 
       cs_gwf_tpf_free(&(mc));
     }
@@ -468,11 +468,11 @@ cs_gwf_log_setup(void)
 /*!
  * \brief Get the main structure which manages a two-phase flow model
  *
- * \return a pointer to the structure cs_gwf_two_phase_t
+ * \return a pointer to the structure cs_gwf_tpf_t
  */
 /*----------------------------------------------------------------------------*/
 
-cs_gwf_two_phase_t *
+cs_gwf_tpf_t *
 cs_gwf_get_two_phase_model(void)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
@@ -485,7 +485,7 @@ cs_gwf_get_two_phase_model(void)
               "%s: Invalid model. One expects a two-phase flow model.\n",
               __func__);
 
-  cs_gwf_two_phase_t  *mc = gw->model_context;
+  cs_gwf_tpf_t  *mc = gw->model_context;
 
   assert(mc != NULL);
   return mc;
@@ -512,7 +512,7 @@ cs_gwf_set_two_phase_numerical_options(bool    use_coupled_solver,
 
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
-  cs_gwf_two_phase_t  *mc = gw->model_context;
+  cs_gwf_tpf_t  *mc = gw->model_context;
   assert(mc != NULL);
 
   mc->use_coupled_solver = use_coupled_solver;
@@ -556,7 +556,7 @@ cs_gwf_set_miscible_two_phase_model(cs_real_t       l_mass_density,
               "%s: Invalid model. One expects a two-phase flow model.\n",
               __func__);
 
-  cs_gwf_two_phase_t  *mc = gw->model_context;
+  cs_gwf_tpf_t  *mc = gw->model_context;
 
   assert(mc != NULL);
   assert(l_mass_density > 0);
@@ -604,7 +604,7 @@ cs_gwf_set_immiscible_two_phase_model(cs_real_t       l_mass_density,
               "%s: Invalid model. One expects a two-phase flow model.\n",
               __func__);
 
-  cs_gwf_two_phase_t  *mc = gw->model_context;
+  cs_gwf_tpf_t  *mc = gw->model_context;
 
   assert(mc != NULL);
   assert(l_mass_density > 0);
@@ -655,7 +655,7 @@ cs_gwf_set_post_options(cs_flag_t       post_flag,
     if (gw->model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE ||
         gw->model == CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE) {
 
-      cs_gwf_two_phase_t  *mc = (cs_gwf_two_phase_t *)gw->model_context;
+      cs_gwf_tpf_t  *mc = (cs_gwf_tpf_t *)gw->model_context;
 
       if (mc->g_darcy != NULL) {
         adv = mc->g_darcy->adv_field;

@@ -46,16 +46,12 @@
 
 #include "cs_array.h"
 #include "cs_field.h"
-#include "cs_gwf_priv.h"
-#include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_math.h"
-#include "cs_mesh_location.h"
 #include "cs_parall.h"
 #include "cs_param_types.h"
 #include "cs_physical_constants.h"
 #include "cs_post.h"
-#include "cs_prototypes.h"
 #include "cs_reco.h"
 #include "cs_volume_zone.h"
 
@@ -154,7 +150,7 @@ _update_soil_genuchten_iso(const cs_real_t              t_eval,
 
   /* Retrieve the hydraulic context */
 
-  cs_gwf_unsaturated_single_phase_t  *hc = soil->hydraulic_context;
+  cs_gwf_uspf_t  *hc = soil->hydraulic_context;
 
   /* Only isotropic values are considered in this case */
 
@@ -1018,7 +1014,7 @@ cs_gwf_soil_saturated_set_property(cs_property_t   *moisture_content)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_tpf_set_property(cs_gwf_two_phase_t     *mc)
+cs_gwf_soil_tpf_set_property(cs_gwf_tpf_t     *mc)
 {
   if (mc == NULL)
     return;
@@ -1102,7 +1098,7 @@ cs_gwf_soil_update(cs_real_t                     time_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_iso_update_mtpf_terms(cs_gwf_two_phase_t     *mc)
+cs_gwf_soil_iso_update_mtpf_terms(cs_gwf_tpf_t     *mc)
 {
   if (mc == NULL)
     return;
@@ -1185,7 +1181,7 @@ cs_gwf_soil_iso_update_mtpf_terms(cs_gwf_two_phase_t     *mc)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_iso_update_itpf_terms(cs_gwf_two_phase_t     *mc)
+cs_gwf_soil_iso_update_itpf_terms(cs_gwf_tpf_t     *mc)
 {
   if (mc == NULL)
     return;
@@ -1319,7 +1315,7 @@ cs_gwf_soil_iso_update_itpf_terms(cs_gwf_two_phase_t     *mc)
 
 void
 cs_gwf_soil_iso_update_itpf_terms_incr(const cs_time_step_t    *ts,
-                                       cs_gwf_two_phase_t      *mc)
+                                       cs_gwf_tpf_t            *mc)
 {
   if (mc == NULL)
     return;
@@ -1447,9 +1443,9 @@ cs_gwf_soil_iso_update_itpf_terms_incr(const cs_time_step_t    *ts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_iso_update_itpf_terms_incr_submesh(const cs_time_step_t    *ts,
-                                               const cs_cdo_connect_t  *connect,
-                                               cs_gwf_two_phase_t      *mc)
+cs_gwf_soil_iso_update_itpf_terms_incr_submesh(const cs_time_step_t   *ts,
+                                               const cs_cdo_connect_t *connect,
+                                               cs_gwf_tpf_t           *mc)
 {
   if (mc == NULL)
     return;

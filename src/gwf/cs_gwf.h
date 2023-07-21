@@ -95,13 +95,13 @@ cs_gwf_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the main structure which manages a two-phase flow model
+ * \brief Get the main structure which manages a two-phase flow model
  *
- * \return a pointer to the structure cs_gwf_two_phase_t
+ * \return a pointer to the structure cs_gwf_tpf_t
  */
 /*----------------------------------------------------------------------------*/
 
-cs_gwf_two_phase_t *
+cs_gwf_tpf_t *
 cs_gwf_get_two_phase_model(void);
 
 /*----------------------------------------------------------------------------*/

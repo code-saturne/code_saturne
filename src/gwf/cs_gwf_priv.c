@@ -180,7 +180,7 @@ cs_gwf_darcy_flux_log(cs_gwf_darcy_flux_t  *darcy)
  *        is done.
  *
  * \param[in]      connect         pointer to a cs_cdo_connect_t structure
- * \param[in]      quant           pointer to a cs_cdo_quantities_t structure
+ * \param[in]      cdoq            pointer to a cs_cdo_quantities_t structure
  * \param[in]      space_scheme    space discretization using this structure
  * \param[in]      update_context  pointer to the context for the update step
  * \param[in]      update_func     pointer to an update function or NULL
@@ -480,8 +480,8 @@ cs_gwf_darcy_flux_update_on_boundary(cs_real_t                t_eval,
  *        Up to now, this is only used for single-phase flows in porous media
  *        (saturated or not case).
  *
- * \param[in]      cdoq            pointer to a cs_cdo_quantities_t structure
  * \param[in]      connect         pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq            pointer to a cs_cdo_quantities_t structure
  * \param[in]      richards        pointer to the Richards equation
  * \param[in]      option_flag     calculation option related to the GWF module
  * \param[in, out] pressure_head   pressure head field
@@ -491,8 +491,8 @@ cs_gwf_darcy_flux_update_on_boundary(cs_real_t                t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_update_head(const cs_cdo_quantities_t   *cdoq,
-                   const cs_cdo_connect_t      *connect,
+cs_gwf_update_head(const cs_cdo_connect_t      *connect,
+                   const cs_cdo_quantities_t   *cdoq,
                    const cs_equation_t         *richards,
                    cs_flag_t                    option_flag,
                    cs_field_t                  *pressure_head,

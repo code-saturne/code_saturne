@@ -149,7 +149,7 @@ typedef enum {
    * A Richards-like equation is considered in each phase to take into account
    * the mass conservation of water and one other component. The component can
    * be disolved in the liquid phase. No water vapour is taken into
-   * account. Please refer to \ref cs_gwf_two_phase_t for more details.
+   * account. Please refer to \ref cs_gwf_tpf_t for more details.
    */
 
   CS_GWF_MODEL_MISCIBLE_TWO_PHASE,
@@ -161,7 +161,7 @@ typedef enum {
    * A Richards-like equation is considered in each phase to take into account
    * the mass conservation of water in the liquid phase and the conservation of
    * the other component in the gaseous phase. The model context is shared with
-   * the miscible two-phase flow model. Please refer to \ref cs_gwf_two_phase_t
+   * the miscible two-phase flow model. Please refer to \ref cs_gwf_tpf_t
    * for more details.
    */
 

@@ -31,9 +31,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_gwf_param.h"
-#include "cs_gwf_priv.h"
-#include "cs_property.h"
+#include "cs_gwf_hydraulic_model.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -60,7 +58,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-cs_gwf_saturated_single_phase_t *
+cs_gwf_sspf_t *
 cs_gwf_sspf_create(void);
 
 /*----------------------------------------------------------------------------*/
@@ -73,7 +71,7 @@ cs_gwf_sspf_create(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_free(cs_gwf_saturated_single_phase_t   **p_mc);
+cs_gwf_sspf_free(cs_gwf_sspf_t   **p_mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -85,7 +83,7 @@ cs_gwf_sspf_free(cs_gwf_saturated_single_phase_t   **p_mc);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_log_setup(cs_gwf_saturated_single_phase_t   *mc);
+cs_gwf_sspf_log_setup(cs_gwf_sspf_t   *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -100,9 +98,9 @@ cs_gwf_sspf_log_setup(cs_gwf_saturated_single_phase_t   *mc);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_init(cs_gwf_saturated_single_phase_t    *mc,
-                 cs_property_t                      *abs_perm,
-                 cs_flag_t                           flag);
+cs_gwf_sspf_init(cs_gwf_sspf_t       *mc,
+                 cs_property_t       *abs_perm,
+                 cs_flag_t            flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -116,8 +114,8 @@ cs_gwf_sspf_init(cs_gwf_saturated_single_phase_t    *mc,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_init_setup(cs_flag_t                          flag,
-                       cs_gwf_saturated_single_phase_t   *mc);
+cs_gwf_sspf_init_setup(cs_flag_t           flag,
+                       cs_gwf_sspf_t      *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -131,14 +129,14 @@ cs_gwf_sspf_init_setup(cs_flag_t                          flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_finalize_setup(const cs_cdo_connect_t            *connect,
-                           const cs_cdo_quantities_t         *cdoq,
-                           cs_gwf_saturated_single_phase_t   *mc);
+cs_gwf_sspf_finalize_setup(const cs_cdo_connect_t        *connect,
+                           const cs_cdo_quantities_t     *cdoq,
+                           cs_gwf_sspf_t                 *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Perform the update step in the case of a saturated single-phase
- *        flow model in porous media
+ * \brief Perform the update step in the case of single-phase flows in a
+ *        saturated porous media
  *
  * \param[in]      mesh         pointer to a cs_mesh_t structure
  * \param[in]      connect      pointer to a cs_cdo_connect_t structure
@@ -151,19 +149,18 @@ cs_gwf_sspf_finalize_setup(const cs_cdo_connect_t            *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_update(const cs_mesh_t                   *mesh,
-                   const cs_cdo_connect_t            *connect,
-                   const cs_cdo_quantities_t         *cdoq,
-                   const cs_time_step_t              *ts,
-                   cs_flag_t                          update_flag,
-                   cs_flag_t                          option_flag,
-                   cs_gwf_saturated_single_phase_t   *mc);
+cs_gwf_sspf_update(const cs_mesh_t              *mesh,
+                   const cs_cdo_connect_t       *connect,
+                   const cs_cdo_quantities_t    *cdoq,
+                   const cs_time_step_t         *ts,
+                   cs_flag_t                     update_flag,
+                   cs_flag_t                     option_flag,
+                   cs_gwf_sspf_t                *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the steady-state of the groundwater flows module in case of
  *        single-phase flows in a saturated porous media.
- *        Nothing is done if all equations are unsteady.
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
@@ -175,17 +172,17 @@ cs_gwf_sspf_update(const cs_mesh_t                   *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_compute_steady_state(const cs_mesh_t                  *mesh,
-                                 const cs_cdo_connect_t           *connect,
-                                 const cs_cdo_quantities_t        *cdoq,
-                                 const cs_time_step_t             *time_step,
-                                 cs_flag_t                         flag,
-                                 cs_gwf_saturated_single_phase_t  *mc);
+cs_gwf_sspf_compute_steady_state(const cs_mesh_t             *mesh,
+                                 const cs_cdo_connect_t      *connect,
+                                 const cs_cdo_quantities_t   *cdoq,
+                                 const cs_time_step_t        *time_step,
+                                 cs_flag_t                    flag,
+                                 cs_gwf_sspf_t               *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the new state for the groundwater flows module.
- *        Case of saturated single-phase flows in porous media.
+ * \brief Compute the new hydraulic state for the groundwater flows module.
+ *        Case of single-phase flows in a saturated porous media.
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
@@ -197,17 +194,17 @@ cs_gwf_sspf_compute_steady_state(const cs_mesh_t                  *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_compute(const cs_mesh_t                    *mesh,
-                    const cs_cdo_connect_t             *connect,
-                    const cs_cdo_quantities_t          *cdoq,
-                    const cs_time_step_t               *time_step,
-                    cs_flag_t                           flag,
-                    cs_gwf_saturated_single_phase_t    *mc);
+cs_gwf_sspf_compute(const cs_mesh_t              *mesh,
+                    const cs_cdo_connect_t       *connect,
+                    const cs_cdo_quantities_t    *cdoq,
+                    const cs_time_step_t         *time_step,
+                    cs_flag_t                     flag,
+                    cs_gwf_sspf_t                *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Predefined extra-operations for the groundwater flow module in case
- *        of saturated single phase flows in porous media
+ *        of single phase flows in a saturated porous media
  *
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
@@ -217,15 +214,15 @@ cs_gwf_sspf_compute(const cs_mesh_t                    *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_extra_op(const cs_cdo_connect_t                *connect,
-                     const cs_cdo_quantities_t             *cdoq,
-                     cs_flag_t                              post_flag,
-                     cs_gwf_saturated_single_phase_t       *mc);
+cs_gwf_sspf_extra_op(const cs_cdo_connect_t         *connect,
+                     const cs_cdo_quantities_t      *cdoq,
+                     cs_flag_t                       post_flag,
+                     cs_gwf_sspf_t                  *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Predefined post-processing output for the groundwater flow module
- *        in case of saturated single-phase flows (sspf) in porous media.
+ *        in case of single-phase flows in a saturated porous media.
  *
  * \param[in] mesh_id      id of the output mesh for the current call
  * \param[in] n_cells      local number of cells of post_mesh
@@ -238,13 +235,13 @@ cs_gwf_sspf_extra_op(const cs_cdo_connect_t                *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_extra_post(int                                     mesh_id,
-                       cs_lnum_t                               n_cells,
-                       const cs_lnum_t                         cell_ids[],
-                       cs_flag_t                               post_flag,
-                       const cs_property_t                    *abs_perm,
-                       const cs_gwf_saturated_single_phase_t  *mc,
-                       const cs_time_step_t                   *time_step);
+cs_gwf_sspf_extra_post(int                        mesh_id,
+                       cs_lnum_t                  n_cells,
+                       const cs_lnum_t            cell_ids[],
+                       cs_flag_t                  post_flag,
+                       const cs_property_t       *abs_perm,
+                       const cs_gwf_sspf_t       *mc,
+                       const cs_time_step_t      *time_step);
 
 /*----------------------------------------------------------------------------*/
 

@@ -96,19 +96,29 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Update the advection field/arrays related to the Darcy flux
- *        Case of CDO-Vb schemes and a Darcy flux defined at dual faces
+ *        Case of CDO-Vb schemes and a Darcy flux defined at dual faces for
+ *        a saturated porous media.
  *
- * \param[in, out] darcy     pointer to the darcy flux structure
- * \param[in]      t_eval    time at which one performs the evaluation
- * \param[in]      cur2prev  true or false
+ * \param[in]      connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
+ * \param[in]      pot_values   values to consider for the update
+ * \param[in]      t_eval       time at which one performs the evaluation
+ * \param[in]      cur2prev     true or false
+ * \param[in, out] darcy        pointer to the darcy flux structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_darcy_arrays(cs_gwf_darcy_flux_t         *darcy,
-                     const cs_real_t              t_eval,
-                     bool                         cur2prev)
+_sspf_update_darcy_arrays(const cs_cdo_connect_t      *connect,
+                          const cs_cdo_quantities_t   *cdoq,
+                          const cs_real_t             *pot_values,
+                          cs_real_t                    t_eval,
+                          bool                         cur2prev,
+                          cs_gwf_darcy_flux_t         *darcy)
 {
+  CS_NO_WARN_IF_UNUSED(connect);
+  CS_NO_WARN_IF_UNUSED(cdoq);
+
   cs_adv_field_t  *adv = darcy->adv_field;
 
   assert(darcy->flux_val != NULL);
@@ -117,7 +127,7 @@ _update_darcy_arrays(cs_gwf_darcy_flux_t         *darcy,
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field", __func__);
 
-  cs_gwf_saturated_single_phase_t  *mc = darcy->update_input;
+  cs_gwf_sspf_t  *mc = darcy->update_input;
   cs_equation_t  *eq = mc->richards;
 
   /* Update the array of flux values associated to the advection field */
@@ -125,7 +135,7 @@ _update_darcy_arrays(cs_gwf_darcy_flux_t         *darcy,
   assert(eq != NULL);
   cs_equation_compute_diffusive_flux(eq,
                                      NULL, /* eqp --> default*/
-                                     NULL, /* pot_values --> default */
+                                     pot_values,
                                      darcy->flux_location,
                                      t_eval,
                                      darcy->flux_val);
@@ -174,12 +184,12 @@ _update_darcy_arrays(cs_gwf_darcy_flux_t         *darcy,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_gwf_saturated_single_phase_t *
+cs_gwf_sspf_t *
 cs_gwf_sspf_create(void)
 {
-  cs_gwf_saturated_single_phase_t  *mc = NULL;
+  cs_gwf_sspf_t  *mc = NULL;
 
-  BFT_MALLOC(mc, 1, cs_gwf_saturated_single_phase_t);
+  BFT_MALLOC(mc, 1, cs_gwf_sspf_t);
 
   mc->pressure_head = NULL;
 
@@ -226,14 +236,14 @@ cs_gwf_sspf_create(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_free(cs_gwf_saturated_single_phase_t   **p_mc)
+cs_gwf_sspf_free(cs_gwf_sspf_t   **p_mc)
 {
   if (p_mc == NULL)
     return;
   if ((*p_mc) == NULL)
     return;
 
-  cs_gwf_saturated_single_phase_t  *mc = *p_mc;
+  cs_gwf_sspf_t  *mc = *p_mc;
 
   cs_gwf_darcy_flux_free(&(mc->darcy));
 
@@ -251,7 +261,7 @@ cs_gwf_sspf_free(cs_gwf_saturated_single_phase_t   **p_mc)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_log_setup(cs_gwf_saturated_single_phase_t   *mc)
+cs_gwf_sspf_log_setup(cs_gwf_sspf_t   *mc)
 {
   if (mc == NULL)
     return;
@@ -272,9 +282,9 @@ cs_gwf_sspf_log_setup(cs_gwf_saturated_single_phase_t   *mc)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_init(cs_gwf_saturated_single_phase_t    *mc,
-                 cs_property_t                      *abs_perm,
-                 cs_flag_t                           flag)
+cs_gwf_sspf_init(cs_gwf_sspf_t       *mc,
+                 cs_property_t       *abs_perm,
+                 cs_flag_t            flag)
 {
   if (mc == NULL)
     return;
@@ -341,20 +351,18 @@ cs_gwf_sspf_init(cs_gwf_saturated_single_phase_t    *mc,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_init_setup(cs_flag_t                          flag,
-                       cs_gwf_saturated_single_phase_t   *mc)
+cs_gwf_sspf_init_setup(cs_flag_t           flag,
+                       cs_gwf_sspf_t      *mc)
 {
   if (mc == NULL)
     return;
 
   cs_equation_t  *eq = mc->richards;
-  assert(eq != NULL);
-  assert(cs_equation_is_steady(eq) == true);
-
   cs_equation_param_t  *eqp = cs_equation_get_param(eq);
   assert(eqp != NULL);
+  assert(cs_equation_is_steady(eq) == true);
 
-  /* Set the "has_previous" flag */
+  /* Set the "has_previous" variable */
 
   bool  has_previous = false;
   if (flag & CS_GWF_FORCE_RICHARDS_ITERATIONS)
@@ -413,9 +421,9 @@ cs_gwf_sspf_init_setup(cs_flag_t                          flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_finalize_setup(const cs_cdo_connect_t            *connect,
-                           const cs_cdo_quantities_t         *cdoq,
-                           cs_gwf_saturated_single_phase_t   *mc)
+cs_gwf_sspf_finalize_setup(const cs_cdo_connect_t        *connect,
+                           const cs_cdo_quantities_t     *cdoq,
+                           cs_gwf_sspf_t                 *mc)
 {
   if (mc == NULL)
     return;
@@ -425,8 +433,8 @@ cs_gwf_sspf_finalize_setup(const cs_cdo_connect_t            *connect,
   cs_gwf_darcy_flux_define(connect,
                            cdoq,
                            cs_equation_get_space_scheme(mc->richards),
-                           mc,                   /* context */
-                           _update_darcy_arrays, /* update function */
+                           mc,                        /* context */
+                           _sspf_update_darcy_arrays, /* update function */
                            mc->darcy);
 
   /* Set the soil porosity each soil from the moisture content */
@@ -436,8 +444,8 @@ cs_gwf_sspf_finalize_setup(const cs_cdo_connect_t            *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Perform the update step in the case of a saturated single-phase
- *        flow model in porous media
+ * \brief Perform the update step in the case of single-phase flows in a
+ *        saturated porous media
  *
  * \param[in]      mesh         pointer to a cs_mesh_t structure
  * \param[in]      connect      pointer to a cs_cdo_connect_t structure
@@ -450,13 +458,13 @@ cs_gwf_sspf_finalize_setup(const cs_cdo_connect_t            *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_update(const cs_mesh_t                   *mesh,
-                   const cs_cdo_connect_t            *connect,
-                   const cs_cdo_quantities_t         *cdoq,
-                   const cs_time_step_t              *ts,
-                   cs_flag_t                          update_flag,
-                   cs_flag_t                          option_flag,
-                   cs_gwf_saturated_single_phase_t   *mc)
+cs_gwf_sspf_update(const cs_mesh_t              *mesh,
+                   const cs_cdo_connect_t       *connect,
+                   const cs_cdo_quantities_t    *cdoq,
+                   const cs_time_step_t         *ts,
+                   cs_flag_t                     update_flag,
+                   cs_flag_t                     option_flag,
+                   cs_gwf_sspf_t                *mc)
 {
   cs_real_t  time_eval = ts->t_cur;
   bool  cur2prev = false;
@@ -468,9 +476,10 @@ cs_gwf_sspf_update(const cs_mesh_t                   *mesh,
 
   }
 
-  /* Update head */
+  /* Update the pressure head */
 
-  cs_gwf_update_head(cdoq, connect, mc->richards,
+  cs_gwf_update_head(connect, cdoq,
+                     mc->richards,
                      option_flag,
                      mc->pressure_head,
                      NULL,   /* there is no head_in_law for saturated soils */
@@ -479,20 +488,29 @@ cs_gwf_sspf_update(const cs_mesh_t                   *mesh,
   /* Update the advection field (the Darcy flux related to the groundwater flow
      module) */
 
+  cs_field_t  *hydraulic_head = cs_equation_get_field(mc->richards);
   cs_gwf_darcy_flux_t  *darcy = mc->darcy;
 
-  darcy->update_func(darcy, time_eval, cur2prev);
+  darcy->update_func(connect,
+                     cdoq,
+                     hydraulic_head->val,
+                     time_eval,
+                     cur2prev,
+                     darcy);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_SSPF_DBG > 2
   if (cs_flag_test(darcy->flux_location, cs_flag_dual_face_byc))
     cs_dbg_darray_to_listing("DARCIAN_FLUX_DFbyC",
                              connect->c2e->idx[cdoq->n_cells],
                              darcy->flux_val, 8);
+
   else if (cs_flag_test(darcy->flux_location, cs_flag_primal_cell)) {
+
     cs_field_t  *vel = cs_advection_field_get_field(darcy->adv_field,
                                                     CS_MESH_LOCATION_CELLS);
     cs_dbg_darray_to_listing("DARCIAN_FLUX_CELL",
                              3*cdoq->n_cells, vel->val, 3);
+
   }
 #endif
 
@@ -509,7 +527,6 @@ cs_gwf_sspf_update(const cs_mesh_t                   *mesh,
 /*!
  * \brief Compute the steady-state of the groundwater flows module in case of
  *        single-phase flows in a saturated porous media.
- *        Nothing is done if all equations are unsteady.
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
@@ -521,12 +538,12 @@ cs_gwf_sspf_update(const cs_mesh_t                   *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_compute_steady_state(const cs_mesh_t                  *mesh,
-                                 const cs_cdo_connect_t           *connect,
-                                 const cs_cdo_quantities_t        *cdoq,
-                                 const cs_time_step_t             *time_step,
-                                 cs_flag_t                         flag,
-                                 cs_gwf_saturated_single_phase_t  *mc)
+cs_gwf_sspf_compute_steady_state(const cs_mesh_t             *mesh,
+                                 const cs_cdo_connect_t      *connect,
+                                 const cs_cdo_quantities_t   *cdoq,
+                                 const cs_time_step_t        *time_step,
+                                 cs_flag_t                    flag,
+                                 cs_gwf_sspf_t               *mc)
 {
   if (mc == NULL)
     return;
@@ -535,12 +552,10 @@ cs_gwf_sspf_compute_steady_state(const cs_mesh_t                  *mesh,
   assert(richards != NULL);
   assert(cs_equation_get_type(richards) == CS_EQUATION_TYPE_GROUNDWATER);
 
-  /* Build and solve the linear system related to the Richards equations */
-
   if (cs_equation_is_steady(richards) ||
       flag & CS_GWF_FORCE_RICHARDS_ITERATIONS) {
 
-    /* Solve the algebraic system */
+    /* Build and solve the linear system related to the Richards equations */
 
     cs_equation_solve_steady_state(mesh, richards);
 
@@ -556,8 +571,8 @@ cs_gwf_sspf_compute_steady_state(const cs_mesh_t                  *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the new state for the groundwater flows module.
- *        Case of saturated single-phase flows in porous media.
+ * \brief Compute the new hydraulic state for the groundwater flows module.
+ *        Case of single-phase flows in a saturated porous media.
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
@@ -569,12 +584,12 @@ cs_gwf_sspf_compute_steady_state(const cs_mesh_t                  *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_compute(const cs_mesh_t                    *mesh,
-                    const cs_cdo_connect_t             *connect,
-                    const cs_cdo_quantities_t          *cdoq,
-                    const cs_time_step_t               *time_step,
-                    cs_flag_t                           flag,
-                    cs_gwf_saturated_single_phase_t    *mc)
+cs_gwf_sspf_compute(const cs_mesh_t              *mesh,
+                    const cs_cdo_connect_t       *connect,
+                    const cs_cdo_quantities_t    *cdoq,
+                    const cs_time_step_t         *time_step,
+                    cs_flag_t                     flag,
+                    cs_gwf_sspf_t                *mc)
 {
   if (mc == NULL)
     return;
@@ -585,12 +600,10 @@ cs_gwf_sspf_compute(const cs_mesh_t                    *mesh,
 
   bool cur2prev = true;
 
-  /* Build and solve the linear system related to the Richards equations */
-
   if (!cs_equation_is_steady(richards)) {
 
-    /* Solve the algebraic system. By default, a current to previous operation
-       is performed */
+    /* Build and solve the linear system related to the Richards equations. By
+       default, a current to previous operation is performed. */
 
     cs_equation_solve(cur2prev, mesh, richards);
 
@@ -608,7 +621,7 @@ cs_gwf_sspf_compute(const cs_mesh_t                    *mesh,
 
     if (flag & CS_GWF_FORCE_RICHARDS_ITERATIONS) {
 
-      /* Solve the algebraic system */
+      /* Build and solve the linear system related to the Richards equations */
 
       cs_equation_solve_steady_state(mesh, richards);
 
@@ -627,7 +640,7 @@ cs_gwf_sspf_compute(const cs_mesh_t                    *mesh,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Predefined extra-operations for the groundwater flow module in case
- *        of saturated single phase flows in porous media
+ *        of single phase flows in a saturated porous media
  *
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
@@ -637,10 +650,10 @@ cs_gwf_sspf_compute(const cs_mesh_t                    *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_extra_op(const cs_cdo_connect_t                *connect,
-                     const cs_cdo_quantities_t             *cdoq,
-                     cs_flag_t                              post_flag,
-                     cs_gwf_saturated_single_phase_t       *mc)
+cs_gwf_sspf_extra_op(const cs_cdo_connect_t         *connect,
+                     const cs_cdo_quantities_t      *cdoq,
+                     cs_flag_t                       post_flag,
+                     cs_gwf_sspf_t                  *mc)
 {
   assert(mc != NULL);
 
@@ -655,7 +668,7 @@ cs_gwf_sspf_extra_op(const cs_cdo_connect_t                *connect,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Predefined post-processing output for the groundwater flow module
- *        in case of saturated single-phase flows (sspf) in porous media.
+ *        in case of single-phase flows in a saturated porous media.
  *
  * \param[in] mesh_id      id of the output mesh for the current call
  * \param[in] n_cells      local number of cells of post_mesh
@@ -668,13 +681,13 @@ cs_gwf_sspf_extra_op(const cs_cdo_connect_t                *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_extra_post(int                                     mesh_id,
-                       cs_lnum_t                               n_cells,
-                       const cs_lnum_t                         cell_ids[],
-                       cs_flag_t                               post_flag,
-                       const cs_property_t                    *abs_perm,
-                       const cs_gwf_saturated_single_phase_t  *mc,
-                       const cs_time_step_t                   *time_step)
+cs_gwf_sspf_extra_post(int                        mesh_id,
+                       cs_lnum_t                  n_cells,
+                       const cs_lnum_t            cell_ids[],
+                       cs_flag_t                  post_flag,
+                       const cs_property_t       *abs_perm,
+                       const cs_gwf_sspf_t       *mc,
+                       const cs_time_step_t      *time_step)
 {
   if (mesh_id != CS_POST_MESH_VOLUME)
     return; /* Only postprocessings in the volume are defined */
