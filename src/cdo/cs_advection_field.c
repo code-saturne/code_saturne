@@ -2009,13 +2009,30 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
       case CS_XDEF_BY_ARRAY:
         {
           const cs_xdef_array_context_t  *cx = def->context;
+          const cs_real_t  *val = cx->values;
 
           assert(cx->stride == 1);
           assert(def->meta & CS_FLAG_FULL_LOC); /* over the volume hence the
                                                    shift with n_i_faces */
 
           if (cs_flag_test(cx->value_location, cs_flag_primal_face))
-            cs_array_real_copy(n_b_faces, cx->values + n_i_faces, flx_values);
+            cs_array_real_copy(n_b_faces, val + n_i_faces, flx_values);
+
+          else if (cs_flag_test(cx->value_location, cs_flag_dual_closure_byf)) {
+
+            const cs_adjacency_t  *adj = cx->adjacency;
+            for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
+
+              flx_values[bf_id] = 0;
+              for (cs_lnum_t i = adj->idx[bf_id]; i < adj->idx[bf_id+1]; i++)
+                flx_values[bf_id] += val[i];
+
+            } /* Loop on border faces */
+
+          }
+          else
+            bft_error(__FILE__, __LINE__, 0, "%s: Invalid case.", __func__);
+
         }
         break;
 
