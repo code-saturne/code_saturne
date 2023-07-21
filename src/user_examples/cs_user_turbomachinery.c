@@ -129,15 +129,16 @@ cs_user_turbomachinery_rotor(void)
     int    visualization = 0; /* debug level if >= 3 */
     float  fraction = 0.10, plane = 25.;
 
-    int join_num = cs_turbomachinery_join_add(faces_criteria,
-                                              fraction,
-                                              plane,
-                                              verbosity,
-                                              visualization);
+    cs_turbomachinery_join_add(faces_criteria,
+                               fraction,
+                               plane,
+                               verbosity,
+                               visualization);
 
-    /* Note that advanced parameters may be defined
-       using cs_join_set_advanced_param(),
-       just as for regular joinings or periodicities. */
+    /* Note that advanced parameters may be defined using the function
+       cs_join_set_advanced_param(), just as for regular joinings or
+       periodicities. In this case, retrieve the joining number from the
+       previous call. */
 
   }
   /*! [user_tbm_set_interface] */

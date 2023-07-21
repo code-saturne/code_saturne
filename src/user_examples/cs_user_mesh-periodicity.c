@@ -107,19 +107,20 @@ cs_user_periodicity(void)
 
   /*! [mesh_periodicity_1] */
   {
-    int    join_num;
-    int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
-    int    visualization = 1; /* debug level if >= 3 */
-    float  fraction = 0.10, plane = 25.;
+    int   verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
+    int   visualization = 1; /* debug level if >= 3 */
+    float fraction = 0.10, plane = 25.;
 
     const double translation[3] = {1.0, 0.0, 0.0}; /* Translation vector */
 
-    join_num = cs_join_perio_add_translation("98 or 99",
-                                             fraction,
-                                             plane,
-                                             verbosity,
-                                             visualization,
-                                             translation);
+    int join_num = cs_join_perio_add_translation("98 or 99",
+                                                 fraction,
+                                                 plane,
+                                                 verbosity,
+                                                 visualization,
+                                                 translation);
+
+    CS_NO_WARN_IF_UNUSED(join_num);
   }
   /*! [mesh_periodicity_1] */
 
@@ -129,27 +130,29 @@ cs_user_periodicity(void)
 
   /*! [mesh_periodicity_2] */
   {
-    int    join_num;
-    int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
-    int    visualization = 1; /* debug level if >= 3 */
-    float  fraction = 0.10, plane = 25.;
+    int   verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
+    int   visualization = 1; /* debug level if >= 3 */
+    float fraction = 0.10, plane = 25.;
 
     double  theta = 20;                /* angle in degrees */
     double  axis[3] = {1.0, 0, 0};     /* axis of rotation */
     double  invariant[3] = {0, 0, 0};  /* invariant point */
 
-    /* change default values */
+    /* Change the default values */
+
     fraction = 0.2;
     verbosity = 2;
 
-    join_num = cs_join_perio_add_rotation("3",
-                                          fraction,
-                                          plane,
-                                          verbosity,
-                                          visualization,
-                                          theta,
-                                          axis,
-                                          invariant);
+    int join_num = cs_join_perio_add_rotation("3",
+                                              fraction,
+                                              plane,
+                                              verbosity,
+                                              visualization,
+                                              theta,
+                                              axis,
+                                              invariant);
+
+    CS_NO_WARN_IF_UNUSED(join_num);
   }
   /*! [mesh_periodicity_2] */
 
@@ -172,22 +175,22 @@ cs_user_periodicity(void)
      * Transformations may be combined using matrix multiplication,
      * so this be used for helecoidal transformations for instance. */
 
-    int    join_num;
-    int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
-    int    visualization = 1; /* debug level if >= 3 */
-    float  fraction = 0.10, plane = 25.;
+    int   verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
+    int   visualization = 1; /* debug level if >= 3 */
+    float fraction = 0.10, plane = 25.;
 
     double matrix[3][4] = {{1., 0., 0., 0.5},
                            {0., 1., 0., 0.},
                            {0., 0., 1., 0.}};
 
-    join_num = cs_join_perio_add_mixed("all[]",
-                                       fraction,
-                                       plane,
-                                       verbosity,
-                                       visualization,
-                                       matrix);
+    int join_num = cs_join_perio_add_mixed("all[]",
+                                           fraction,
+                                           plane,
+                                           verbosity,
+                                           visualization,
+                                           matrix);
 
+    CS_NO_WARN_IF_UNUSED(join_num);
   }
   /*! [mesh_periodicity_3] */
 
@@ -197,7 +200,7 @@ cs_user_periodicity(void)
      Advanced parameters may be modified to solve errors during the
      joining step or to get a better mesh quality. */
 
-  int    join_num = -1; /* replace by number from previous definition */
+  int join_num = -1; /* replace by number from previous definition */
 
   /*! [mesh_periodicity_4] */
   {

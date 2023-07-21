@@ -115,8 +115,6 @@ cs_user_initialization(cs_domain_t     *domain)
 
   const cs_real_t trefth = 25.0 + cs_physical_constants_celsius_to_kelvin;
 
-  cs_real_t h2init = cm->fuel.h02fol + cm->fuel.cp2fol*(t2init-trefth);
-
   /* Transported variables for the mix (droplets and carrying gases) */
 
   cs_real_t coefe[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];

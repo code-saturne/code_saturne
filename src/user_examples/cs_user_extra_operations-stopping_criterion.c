@@ -82,6 +82,8 @@ BEGIN_C_DECLS
 void
 cs_user_extra_operations(cs_domain_t     *domain)
 {
+  CS_NO_WARN_IF_UNUSED(domain);
+
   /*! [extra_stopping_criterion] */
 
   /* get total number of fields */

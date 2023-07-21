@@ -89,6 +89,8 @@ static void
 _simple_data_sum(const void  *input,
                  cs_real_t   *vals)
 {
+  CS_NO_WARN_IF_UNUSED(input);
+
   const int location_id = CS_MESH_LOCATION_CELLS;
   const cs_lnum_t n_elts = cs_mesh_location_get_n_elts(location_id)[0];
 
@@ -116,6 +118,8 @@ static void
 _boundary_thermal_flux(const void  *input,
                        cs_real_t   *vals)
 {
+  CS_NO_WARN_IF_UNUSED(input);
+
   const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
   const cs_lnum_t n_elts = cs_mesh_location_get_n_elts(location_id)[0];
 

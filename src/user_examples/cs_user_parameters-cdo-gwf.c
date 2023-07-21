@@ -450,7 +450,9 @@ cs_user_model(void)
      * equation given at the creation of the tracer
      */
 
-    cs_gwf_tracer_t *tr = cs_gwf_tracer_by_name("Tracer_01");
+    cs_gwf_tracer_t  *tr = cs_gwf_tracer_by_name("Tracer_01");
+
+    CS_NO_WARN_IF_UNUSED(tr);
   }
   /*! [param_cdo_gwf_get_tracer] */
 }
