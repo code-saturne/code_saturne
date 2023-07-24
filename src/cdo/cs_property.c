@@ -308,9 +308,9 @@ _invert_tensor(cs_real_3_t          *tens,
     cs_real_33_t  invmat;
 
     cs_math_33_inv_cramer((const cs_real_3_t (*))tens, invmat);
-    for (int k = 0; k < 3; k++)
-      for (int l = 0; l < 3; l++)
-        tens[k][l] = invmat[k][l];
+    for (int ki = 0; ki < 3; ki++)
+      for (int kj = 0; kj < 3; kj++)
+        tens[ki][kj] = invmat[ki][kj];
 
   }
 }
@@ -882,6 +882,8 @@ _create_property(const char           *name,
   pty->process_flag = 0;
 
   pty->ref_value = 1.0;         /* default setting */
+  pty->scaling_factor = 1.0;    /* default setting */
+
   pty->n_definitions = 0;
   pty->defs = NULL;
   pty->def_ids = NULL;
@@ -1172,6 +1174,50 @@ cs_property_set_reference_value(cs_property_t    *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set the scaling factor associated to a \ref cs_property_t structure
+ *        This is a real number whatever the type of property is. If the
+ *        property was not defined as CS_PROPERTY_SCALED, then this tag is
+ *        added.
+ *
+ * \param[in, out] pty    pointer to a cs_property_t structure
+ * \param[in]      val    value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_set_scaling_factor(cs_property_t    *pty,
+                               double            val)
+{
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+
+  pty->scaling_factor = val;
+  pty->type |= CS_PROPERTY_SCALED;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the scaling factor associated to a \ref cs_property_t structure
+ *        This is a real number whatever the type of property is. If the
+ *        property was not defined as CS_PROPERTY_SCALED, then this tag is
+ *        added.
+ *
+ * \param[in, out] pty    pointer to a cs_property_t structure
+ * \param[in]      val    value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_unscale(cs_property_t    *pty)
+{
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+
+  pty->scaling_factor = 1.0;
+  if (pty->type & CS_PROPERTY_SCALED)
+    pty->type -= CS_PROPERTY_SCALED;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Free all cs_property_t structures and the array storing all the
@@ -2582,63 +2628,16 @@ cs_property_boundary_def_by_field(cs_property_t    *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Evaluate the value of the property at each cell. Store the evaluation
- *        in the given array.
- *
- * \param[in]      t_eval       physical time at which one evaluates the term
- * \param[in]      pty          pointer to a cs_property_t structure
- * \param[out]     pty_stride   = 0 if uniform, =1 otherwise
- * \param[in, out] p_pty_vals   pointer to an array of values. Allocated if not
- *                              The size of the allocation depends on the value
- *                              of the pty_stride
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_iso_get_cell_values(cs_real_t               t_eval,
-                                const cs_property_t    *pty,
-                                int                    *pty_stride,
-                                cs_real_t             **p_pty_vals)
-{
-  if (pty == NULL)
-    return;
-  assert(pty->type & CS_PROPERTY_ISO);
-
-  bool  allocate = (*p_pty_vals == NULL) ? true : false;
-  cs_real_t  *values = *p_pty_vals;
-
-  if (cs_property_is_uniform(pty)) {
-
-    *pty_stride = 0;
-    if (allocate)
-      BFT_MALLOC(values, 1, cs_real_t);
-    /* Evaluation at c_id = 0. One assumes that there is at least one cell per
-       MPI rank */
-    values[0] = cs_property_get_cell_value(0, t_eval, pty);
-
-  }
-  else {
-
-    *pty_stride = 1;
-    if (allocate)
-      BFT_MALLOC(values, cs_cdo_quant->n_cells, cs_real_t);
-    cs_property_eval_at_cells(t_eval, pty, values);
-
-  }
-
-  /* Return the pointer to values */
-
-  *p_pty_vals = values;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Evaluate the values of the property at cells from the given
  *        definition. According to the parameter "dense_ouput", the "eval"
  *        array should be allocated with a size equal to pty->dim*n_cells
  *        (where "dim" depends on the type of property to handle) when no dense
  *        ouput is requested. Otherwise, an allocation size equal to pty->dim *
  *        the number of cells associated to the definition "def" is enough.
+ *
+ *        No scaling is applied to the value. This should be done with a higher
+ *        level function like \ref cs_property_eval_at_cells or
+ *        \ref cs_property_get_cell_tensor
  *
  * \param[in]      pty           pointer to a property structure
  * \param[in]      def_id        id associated to the definition
@@ -2670,22 +2669,49 @@ cs_property_evaluate_def(const cs_property_t    *pty,
               "%s: Invalid type of definition. Property \"%s\"; Zone \"%s\".\n",
               __func__, pty->name, z->name);
 
-  const cs_lnum_t  *elt_ids;
+  if (def->z_id != 0) { /* Not the full support */
 
-  if (def->z_id != 0) /* Not the full support */
-    elt_ids = z->elt_ids;
-  else
-    elt_ids = NULL;
+    pty->get_eval_at_cell[def_id](z->n_elts,
+                                  z->elt_ids,
+                                  dense_output,
+                                  cs_mesh,
+                                  cs_cdo_connect,
+                                  cs_cdo_quant,
+                                  t_eval,
+                                  def->context,
+                                  eval);
 
-  pty->get_eval_at_cell[def_id](z->n_elts,
-                                elt_ids,
-                                dense_output,
-                                cs_mesh,
-                                cs_cdo_connect,
-                                cs_cdo_quant,
-                                t_eval,
-                                def->context,
-                                eval);
+    if (pty->type & CS_PROPERTY_SCALED) {
+      int pty_dim = cs_property_get_dim(pty);
+      if (dense_output) /* No indirection to apply */
+        cs_array_real_scale(z->n_elts, pty_dim, NULL,
+                            pty->scaling_factor,
+                            eval);
+      else
+        cs_array_real_scale(z->n_elts, pty_dim, z->elt_ids,
+                            pty->scaling_factor,
+                            eval);
+    }
+
+  }
+  else { /* All elements are selected: elt_ids = NULL */
+
+    pty->get_eval_at_cell[def_id](z->n_elts,
+                                  NULL,
+                                  dense_output,
+                                  cs_mesh,
+                                  cs_cdo_connect,
+                                  cs_cdo_quant,
+                                  t_eval,
+                                  def->context,
+                                  eval);
+
+    if (pty->type & CS_PROPERTY_SCALED)
+      cs_array_real_scale(z->n_elts, cs_property_get_dim(pty), NULL,
+                          pty->scaling_factor,
+                          eval);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2695,6 +2721,9 @@ cs_property_evaluate_def(const cs_property_t    *pty,
  *        of the resulting array should be allocated at least to pty->dim *
  *        n_b_faces. Otherwise, n_b_faces can be replaced by the number of
  *        boundary faces associated to the current definition.
+ *
+ *        No scaling is applied to the value. This should be done with a higher
+ *        level function like \ref cs_property_eval_at_boundary_faces
  *
  * \param[in]      pty           pointer to a cs_property_t structure
  * \param[in]      def_id        id associated to the definition
@@ -2888,12 +2917,70 @@ cs_property_evaluate_boundary_def(const cs_property_t  *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate the value of the property at each cell. Store the
- *         evaluation in the given array.
+ * \brief Evaluate the value of the property at each cell. Store the evaluation
+ *        in the given array.
  *
- * \param[in]       t_eval   physical time at which one evaluates the term
- * \param[in]       pty      pointer to a cs_property_t structure
- * \param[in, out]  array    pointer to an array of values (must be allocated)
+ * \param[in]      t_eval       physical time at which one evaluates the term
+ * \param[in]      pty          pointer to a cs_property_t structure
+ * \param[out]     pty_stride   = 0 if uniform, =1 otherwise
+ * \param[in, out] p_pty_vals   pointer to an array of values. Allocated if not
+ *                              The size of the allocation depends on the value
+ *                              of the pty_stride
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_iso_get_cell_values(cs_real_t               t_eval,
+                                const cs_property_t    *pty,
+                                int                    *pty_stride,
+                                cs_real_t             **p_pty_vals)
+{
+  if (pty == NULL)
+    return;
+  assert(pty->type & CS_PROPERTY_ISO);
+
+  bool  allocate = (*p_pty_vals == NULL) ? true : false;
+  cs_real_t  *values = *p_pty_vals;
+
+  if (cs_property_is_uniform(pty)) {
+
+    *pty_stride = 0;
+    if (allocate)
+      BFT_MALLOC(values, 1, cs_real_t);
+
+    /* Evaluation at c_id = 0. One assumes that there is at least one cell per
+       MPI rank */
+
+    values[0] = cs_property_get_cell_value(0, t_eval, pty);
+
+    /* scaling is performed if requested inside the previous call */
+
+  }
+  else {
+
+    *pty_stride = 1;
+    if (allocate)
+      BFT_MALLOC(values, cs_cdo_quant->n_cells, cs_real_t);
+
+    cs_property_eval_at_cells(t_eval, pty, values);
+
+    /* scaling is performed if requested inside the previous call */
+
+  }
+
+  /* Return the pointer to values */
+
+  *p_pty_vals = values;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate the value of the property at each cell. Store the
+ *        evaluation in the given array.
+ *
+ * \param[in]      t_eval   physical time at which one evaluates the term
+ * \param[in]      pty      pointer to a cs_property_t structure
+ * \param[in, out] array    pointer to an array of values (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2902,16 +2989,26 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
                           const cs_property_t    *pty,
                           cs_real_t              *array)
 {
-  assert(pty != NULL && array != NULL);
+  if (pty == NULL)
+    return;
+  assert(array != NULL);
 
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_lnum_t  n_cells = quant->n_cells;
+
+  double  scaling_factor =
+    (pty->type & CS_PROPERTY_SCALED) ? pty->scaling_factor : 1.0;
 
   if (pty->type & CS_PROPERTY_BY_PRODUCT) {
 
     assert(pty->related_properties != NULL);
     const cs_property_t  *a = pty->related_properties[0];
     const cs_property_t  *b = pty->related_properties[1];
+
+    if (a->type & CS_PROPERTY_SCALED)
+      scaling_factor *= a->scaling_factor;
+    if (b->type & CS_PROPERTY_SCALED)
+      scaling_factor *= b->scaling_factor;
 
     cs_real_t  *tmp_val = NULL;
     BFT_MALLOC(tmp_val, n_cells, cs_real_t);
@@ -3036,6 +3133,15 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
     }
 
   } /* Not defined as the product of two existing properties */
+
+  /* Apply a scaling factor is requested */
+
+  if (fabs(scaling_factor - 1.0) > 10*FLT_MIN)
+    cs_array_real_scale(n_cells,
+                        cs_property_get_dim(pty),
+                        NULL,
+                        scaling_factor,
+                        array);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3054,10 +3160,15 @@ cs_property_eval_at_boundary_faces(cs_real_t               t_eval,
                                    const cs_property_t    *pty,
                                    cs_real_t              *array)
 {
-  assert(pty != NULL && array != NULL);
+  if (pty == NULL)
+    return;
+  assert(array != NULL);
 
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_lnum_t  n_b_faces = quant->n_b_faces;
+
+  double  scaling_factor =
+    (pty->type & CS_PROPERTY_SCALED) ? pty->scaling_factor : 1.0;
 
   if (pty->n_b_definitions == 0) {
 
@@ -3069,6 +3180,11 @@ cs_property_eval_at_boundary_faces(cs_real_t               t_eval,
       assert(pty->related_properties != NULL);
       const cs_property_t  *a = pty->related_properties[0];
       const cs_property_t  *b = pty->related_properties[1];
+
+      if (a->type & CS_PROPERTY_SCALED)
+        scaling_factor *= a->scaling_factor;
+      if (b->type & CS_PROPERTY_SCALED)
+        scaling_factor *= b->scaling_factor;
 
       cs_lnum_t  *a_def_idx = NULL, *a_cell_ids = NULL, *a_bf_ids = NULL;
       cs_lnum_t  *b_def_idx = NULL, *b_cell_ids = NULL, *b_bf_ids = NULL;
@@ -3304,6 +3420,15 @@ cs_property_eval_at_boundary_faces(cs_real_t               t_eval,
                                         array);
 
   } /* n_b_definitions > 0 */
+
+  /* Apply a scaling factor is requested */
+
+  if (fabs(scaling_factor - 1.0) > 10*FLT_MIN)
+    cs_array_real_scale(n_b_faces,
+                        cs_property_get_dim(pty),
+                        NULL,
+                        scaling_factor,
+                        array);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3334,10 +3459,33 @@ cs_property_get_cell_tensor(cs_lnum_t               c_id,
   tensor[0][1] = tensor[1][0] = tensor[2][0] = 0;
   tensor[0][2] = tensor[1][2] = tensor[2][1] = 0;
 
-  if (pty->type & CS_PROPERTY_BY_PRODUCT)
+  if (pty->type & CS_PROPERTY_BY_PRODUCT) {
+
     _get_cell_tensor_by_property_product(c_id, t_eval, pty, tensor);
+
+    const cs_property_t  *pty_a = pty->related_properties[0];
+    if (pty_a->type & CS_PROPERTY_SCALED) {
+      for (int ki = 0; ki < 3; ki++)
+        for (int kj = 0; kj < 3; kj++)
+          tensor[ki][kj] *= pty_a->scaling_factor;
+    }
+
+    const cs_property_t  *pty_b = pty->related_properties[1];
+    if (pty_b->type & CS_PROPERTY_SCALED) {
+      for (int ki = 0; ki < 3; ki++)
+        for (int kj = 0; kj < 3; kj++)
+          tensor[ki][kj] *= pty_b->scaling_factor;
+    }
+
+  }
   else
     _get_cell_tensor(c_id, t_eval, pty, tensor);
+
+  if (pty->type & CS_PROPERTY_SCALED) {
+    for (int ki = 0; ki < 3; ki++)
+      for (int kj = 0; kj < 3; kj++)
+        tensor[ki][kj] *= pty->scaling_factor;
+  }
 
   if (do_inversion)
     _invert_tensor(tensor, pty->type);
@@ -3378,22 +3526,31 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
   if (pty->type & CS_PROPERTY_BY_PRODUCT) {
 
     assert(pty->related_properties != NULL);
-    const cs_real_t  result_a = _get_cell_value(c_id, t_eval,
-                                                pty->related_properties[0]);
-    const cs_real_t  result_b = _get_cell_value(c_id, t_eval,
-                                                pty->related_properties[1]);
 
-    return result_a * result_b;
+    const cs_property_t  *pty_a = pty->related_properties[0];
+    result = _get_cell_value(c_id, t_eval, pty_a);
+    if (pty_a->type & CS_PROPERTY_SCALED)
+      result *= pty_a->scaling_factor;
+
+    const cs_property_t  *pty_b = pty->related_properties[1];
+    result *= _get_cell_value(c_id, t_eval, pty_b);
+    if (pty_b->type & CS_PROPERTY_SCALED)
+      result *= pty_b->scaling_factor;
 
   }
   else {
 
     if (cs_property_is_constant(pty))
-      return pty->ref_value;
+      result = pty->ref_value;
     else
-      return _get_cell_value(c_id, t_eval, pty);
+      result = _get_cell_value(c_id, t_eval, pty);
 
   }
+
+  if (pty->type & CS_PROPERTY_SCALED)
+    result *= pty->scaling_factor;
+
+  return result;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3425,10 +3582,33 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
   tensor[0][1] = tensor[1][0] = tensor[2][0] = 0;
   tensor[0][2] = tensor[1][2] = tensor[2][1] = 0;
 
-  if (pty->type & CS_PROPERTY_BY_PRODUCT)
+  if (pty->type & CS_PROPERTY_BY_PRODUCT) {
+
     _tensor_in_cell_by_property_product(cm, pty, t_eval, tensor);
+
+    const cs_property_t  *pty_a = pty->related_properties[0];
+    if (pty_a->type & CS_PROPERTY_SCALED) {
+      for (int ki = 0; ki < 3; ki++)
+        for (int kj = 0; kj < 3; kj++)
+          tensor[ki][kj] *= pty_a->scaling_factor;
+    }
+
+    const cs_property_t  *pty_b = pty->related_properties[1];
+    if (pty_b->type & CS_PROPERTY_SCALED) {
+      for (int ki = 0; ki < 3; ki++)
+        for (int kj = 0; kj < 3; kj++)
+          tensor[ki][kj] *= pty_b->scaling_factor;
+    }
+
+  }
   else
     _tensor_in_cell(cm, pty, t_eval, tensor);
+
+  if (pty->type & CS_PROPERTY_SCALED) {
+    for (int ki = 0; ki < 3; ki++)
+      for (int kj = 0; kj < 3; kj++)
+        tensor[ki][kj] *= pty->scaling_factor;
+  }
 
   if (do_inversion)
     _invert_tensor(tensor, pty->type);
@@ -3469,21 +3649,33 @@ cs_property_value_in_cell(const cs_cell_mesh_t   *cm,
               " Property %s has to be isotropic.", pty->name);
 
   if (pty->type & CS_PROPERTY_BY_PRODUCT) {
+
     assert(pty->related_properties != NULL);
-    const cs_real_t  result_a = _value_in_cell(cm, pty->related_properties[0],
-                                               t_eval);
-    const cs_real_t  result_b = _value_in_cell(cm, pty->related_properties[1],
-                                               t_eval);
-    return result_a * result_b;
+
+    const cs_property_t  *pty_a = pty->related_properties[0];
+    result = _value_in_cell(cm, pty_a, t_eval);
+    if (pty_a->type & CS_PROPERTY_SCALED)
+      result *= pty_a->scaling_factor;
+
+    const cs_property_t  *pty_b = pty->related_properties[1];
+    result *= _value_in_cell(cm, pty_b, t_eval);
+    if (pty_b->type & CS_PROPERTY_SCALED)
+      result *= pty_b->scaling_factor;
+
   }
   else {
 
     if (cs_property_is_constant(pty))
-      return pty->ref_value;
+      result = pty->ref_value;
     else
-      return _value_in_cell(cm, pty, t_eval);
+      result = _value_in_cell(cm, pty, t_eval);
 
   }
+
+  if (pty->type & CS_PROPERTY_SCALED)
+    result *= pty->scaling_factor;
+
+  return result;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3612,6 +3804,10 @@ cs_property_c2v_values(const cs_cell_mesh_t   *cm,
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid definition.", __func__);
 
   } /* Type of definition */
+
+  if (pty->type & CS_PROPERTY_SCALED)
+    for (int i = 0; i < cm->n_vc; i++)
+      eval[i] *= pty->scaling_factor;
 }
 
 /*----------------------------------------------------------------------------*/

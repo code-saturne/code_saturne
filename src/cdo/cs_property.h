@@ -99,14 +99,20 @@ BEGIN_C_DECLS
 
 #define CS_PROPERTY_BY_PRODUCT               (1 << 4)
 
+/*! \var CS_PROPERTY_SCALED
+ *  32: The property is defined up to a scaling factor
+ */
+
+#define CS_PROPERTY_SCALED                   (1 << 5)
+
 /*! \var CS_PROPERTY_SUBCELL_DEFINITION
 
- *  32: The property is defined such that one wants to evaluate the definition
+ *  64: The property is defined such that one wants to evaluate the definition
  *  on entities which are a partition of a cell. By default, one perfoms only
  *  one evaluation in each cell
  */
 
-#define CS_PROPERTY_SUBCELL_DEFINITION       (1 << 5)
+#define CS_PROPERTY_SUBCELL_DEFINITION       (1 << 6)
 
 /*! @} */
 
@@ -156,6 +162,13 @@ struct _cs_property_t {
    */
 
   cs_real_t            ref_value;
+
+  /* Value of the scaling factor to apply when a property is defined up to a
+   * scaling factor. By default the value is 1.0 and the property is not
+   * scaled.
+   */
+
+  cs_real_t            scaling_factor;
 
   /* Property is up to now only defined on the whole domain (volume) */
 
@@ -992,32 +1005,16 @@ cs_property_boundary_def_by_field(cs_property_t    *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Evaluate the value of the property at each cell. Store the evaluation
- *        in the given array.
- *
- * \param[in]      t_eval       physical time at which one evaluates the term
- * \param[in]      pty          pointer to a cs_property_t structure
- * \param[out]     pty_stride   = 0 if uniform, =1 otherwise
- * \param[in, out] p_pty_vals   pointer to an array of values. Allocated if not
- *                              The size of the allocation depends on the value
- *                              of the pty_stride
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_iso_get_cell_values(cs_real_t               t_eval,
-                                const cs_property_t    *pty,
-                                int                    *pty_stride,
-                                cs_real_t             **p_pty_vals);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Evaluate the values of the property at cells from the given
  *        definition. According to the parameter "dense_ouput", the "eval"
  *        array should be allocated with a size equal to pty->dim*n_cells
  *        (where "dim" depends on the type of property to handle) when no dense
  *        ouput is requested. Otherwise, an allocation size equal to pty->dim *
  *        the number of cells associated to the definition "def" is enough.
+ *
+ *        No scaling is applied to the value. This should be done with a higher
+ *        level function like \ref cs_property_eval_at_cells or
+ *        \ref cs_property_get_cell_tensor
  *
  * \param[in]      pty           pointer to a property structure
  * \param[in]      def_id        id associated to the definition
@@ -1042,6 +1039,9 @@ cs_property_evaluate_def(const cs_property_t    *pty,
  *        n_b_faces. Otherwise, n_b_faces can be replaced by the number of
  *        boundary faces associated to the current definition.
  *
+ *        No scaling is applied to the value. This should be done with a higher
+ *        level function like \ref cs_property_eval_at_boundary_faces
+ *
  * \param[in]      pty           pointer to a cs_property_t structure
  * \param[in]      def_id        id associated to the definition
  * \param[in]      dense_output  true/false
@@ -1059,12 +1059,32 @@ cs_property_evaluate_boundary_def(const cs_property_t  *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate the value of the property at each cell. Store the
- *         evaluation in the given array.
+ * \brief Evaluate the value of the property at each cell. Store the evaluation
+ *        in the given array.
  *
- * \param[in]       t_eval   physical time at which one evaluates the term
- * \param[in]       pty      pointer to a cs_property_t structure
- * \param[in, out]  array    pointer to an array of values (must be allocated)
+ * \param[in]      t_eval       physical time at which one evaluates the term
+ * \param[in]      pty          pointer to a cs_property_t structure
+ * \param[out]     pty_stride   = 0 if uniform, =1 otherwise
+ * \param[in, out] p_pty_vals   pointer to an array of values. Allocated if not
+ *                              The size of the allocation depends on the value
+ *                              of the pty_stride
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_iso_get_cell_values(cs_real_t               t_eval,
+                                const cs_property_t    *pty,
+                                int                    *pty_stride,
+                                cs_real_t             **p_pty_vals);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate the value of the property at each cell. Store the
+ *        evaluation in the given array.
+ *
+ * \param[in]      t_eval   physical time at which one evaluates the term
+ * \param[in]      pty      pointer to a cs_property_t structure
+ * \param[in, out] array    pointer to an array of values (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
 
