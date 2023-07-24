@@ -2859,7 +2859,10 @@ cs_property_evaluate_boundary_def(const cs_property_t  *pty,
       cs_real_t  ref_val[9];
       tfc->func(t_eval, tfc->input, ref_val);
 
-      _assign_ref_value(pty_dim, n_elts, elt_ids, ref_val, array);
+      if (dense_output)
+        _assign_ref_value(pty_dim, n_elts, NULL, ref_val, array);
+      else
+        _assign_ref_value(pty_dim, n_elts, elt_ids, ref_val, array);
     }
     break;
 
@@ -2868,7 +2871,10 @@ cs_property_evaluate_boundary_def(const cs_property_t  *pty,
     {
       const cs_real_t  *ref_val = def->context;
 
-      _assign_ref_value(pty_dim, n_elts, elt_ids, ref_val, array);
+      if (dense_output)
+        _assign_ref_value(pty_dim, n_elts, NULL, ref_val, array);
+      else
+        _assign_ref_value(pty_dim, n_elts, elt_ids, ref_val, array);
     }
     break;
 
