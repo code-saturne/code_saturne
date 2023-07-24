@@ -5446,7 +5446,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
                            uza->n_u_dofs, 1, false, CS_REAL_TYPE,
                            uza->rhs);
 
-    cs_array_real_scale(uza->n_u_dofs, -gamma, uza->rhs);
+    cs_array_real_scale(uza->n_u_dofs, 1, NULL, -gamma, uza->rhs);
 
     /* Solve AL.u_f = rhs */
 

@@ -209,17 +209,22 @@ cs_array_real_copy(cs_lnum_t        size,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Multiply each value by a scaling factor
- *        dest *= scaling_factor
+ * \brief Multiply each value by a scaling factor s.t. dest *= scaling_factor
+ *        If elt_ids is not NULL, one applies an indirection.
+ *        A stride can also be applied. One assumes an interlaced array.
  *
- * \param[in]   size             total number of entries (n_elts * dim)
- * \param[in]   scaling_factor   value of the scaling factor
- * \param[out]  dest             destination array values
+ * \param[in]  n_elts          number of elements
+ * \param[in]  stride          number of values for each element
+ * \param[in]  elt_ids         list of ids in the subset or NULL (size: n_elts)
+ * \param[in]  scaling_factor  value of the scaling factor
+ * \param[out] dest            destination array values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_scale(cs_lnum_t     size,
+cs_array_real_scale(cs_lnum_t     n_elts,
+                    int           stride,
+                    cs_lnum_t    *elt_ids,
                     cs_real_t     scaling_factor,
                     cs_real_t     dest[restrict]);
 

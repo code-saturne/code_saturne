@@ -157,8 +157,8 @@ _scalar_scaling(cs_saddle_system_t   *ssys,
   assert(x != NULL);
   cs_real_t  *x1 = x, *x2 = x + ssys->max_x1_size;
 
-  cs_array_real_scale(ssys->x1_size, scalar, x1);
-  cs_array_real_scale(ssys->x2_size, scalar, x2);
+  cs_array_real_scale(ssys->x1_size, 1, NULL, scalar, x1);
+  cs_array_real_scale(ssys->x2_size, 1, NULL, scalar, x2);
 }
 
 /*============================================================================

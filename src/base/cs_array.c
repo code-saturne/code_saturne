@@ -362,23 +362,54 @@ cs_array_real_copy(cs_lnum_t        size,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Multiply each value by a scaling factor
- *        dest *= scaling_factor
+ * \brief Multiply each value by a scaling factor s.t. dest *= scaling_factor
+ *        If elt_ids is not NULL, one applies an indirection.
+ *        A stride can also be applied. One assumes an interlaced array.
  *
- * \param[in]   size             total number of entries (n_elts * dim)
- * \param[in]   scaling_factor   value of the scaling factor
- * \param[out]  dest             destination array values
+ * \param[in]  n_elts          number of elements
+ * \param[in]  stride          number of values for each element
+ * \param[in]  elt_ids         list of ids in the subset or NULL (size: n_elts)
+ * \param[in]  scaling_factor  value of the scaling factor
+ * \param[out] dest            destination array values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_scale(cs_lnum_t     size,
+cs_array_real_scale(cs_lnum_t     n_elts,
+                    int           stride,
+                    cs_lnum_t    *elt_ids,
                     cs_real_t     scaling_factor,
                     cs_real_t     dest[restrict])
 {
-# pragma omp parallel for if (size > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < size; ii++)
-    dest[ii] *= scaling_factor;
+  if (elt_ids == NULL) {
+
+#   pragma omp parallel for if (n_elts*stride > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_elts*stride; ii++)
+      dest[ii] *= scaling_factor;
+
+  }
+  else {
+
+    if (stride == 1) {
+
+#     pragma omp parallel for if (n_elts > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n_elts; ii++)
+        dest[elt_ids[ii]] *= scaling_factor;
+
+    }
+    else {
+
+      assert(stride > 0);
+#     pragma omp parallel for if (n_elts > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
+        cs_real_t  *_dest = dest + stride*elt_ids[ii];
+        for (int k = 0; k < stride; k++)
+          _dest[k] *= scaling_factor;
+      }
+
+    }
+
+  } /* elt_ids */
 }
 
 /*----------------------------------------------------------------------------*/
