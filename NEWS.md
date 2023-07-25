@@ -7,6 +7,10 @@ Release 8.0.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix profile point coordinates when snap mode is enabled.
+  Before this, the plotted coordinates were not the snapped ones,
+  and could depend slightly on partitioning.
+
 - Avoid deletion of notebook or time tables values defined in the GUI
   before switching from code_saturne to neptune_cfd in the GUI.
 
