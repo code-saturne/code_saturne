@@ -881,7 +881,6 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
   /* Diffusion term */
 
   eqc->get_stiffness_matrix = NULL;
-  eqc->get_stiffness_matrix = NULL;
 
   if (cs_equation_param_has_diffusion(eqp)) {
 
