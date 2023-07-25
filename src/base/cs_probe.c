@@ -546,10 +546,11 @@ _merge_snapped_to_center(cs_probe_set_t   *pset,
       if (pset->elt_id[j] != l)
         break;
       else {
+        k = pset->loc_id[j];
         cs_real_t d = cs_math_3_distance(pset->coords[k], centers + l*3);
         if (d < d_min) {
           tag[pset->loc_id[j_min]] = 0;
-          tag[pset->loc_id[j]] = 1;
+          tag[k] = 1;
           j_min = j;
           d_min = d;
         }
@@ -1771,8 +1772,10 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
       if (pset->elt_id[i] > -1) {
         const int j = pset->loc_id[i];
         const cs_real_t  *elt_coords = centers + pset->elt_id[i]*3;
-        for (int k = 0; k < 3; k++)
+        for (int k = 0; k < 3; k++) {
           pset->coords[j][k] = elt_coords[k];
+          probe_coords[i][k] = elt_coords[k];
+        }
       }
     }
   }
@@ -1781,8 +1784,10 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
       if (pset->vtx_id[i] > -1) {
         const int j = pset->loc_id[i];
         const cs_real_t  *vtx_coords = m->vtx_coord + pset->vtx_id[i]*3;
-        for (int k = 0; k < 3; k++)
+        for (int k = 0; k < 3; k++) {
           pset->coords[j][k] = vtx_coords[k];
+          probe_coords[i][k] = vtx_coords[k];
+        }
       }
     }
   }

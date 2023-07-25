@@ -3,6 +3,10 @@ Release 7.0.7 (not released yet)
 
 Bug fixes:
 
+- Fix profile point coordinates when snap mode is enabled.
+  Before this, the plotted coordinates were not the snapped ones,
+  and could depend slightly on partitioning.
+
 - Rough wall boundary condition verification.
 
 - Allow use of hybrid convection scheme (used for RANS / LES turbulence models)
