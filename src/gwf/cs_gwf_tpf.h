@@ -56,12 +56,14 @@ BEGIN_C_DECLS
  * \brief Allocate and initialize the model context structure for two-phase
  *        flows in a porous media
  *
+ * \param[in] model       type of physical modelling
+ *
  * \return a pointer to a new allocated structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_gwf_tpf_t *
-cs_gwf_tpf_create(void);
+cs_gwf_tpf_create(cs_gwf_model_type_t      model);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -73,21 +75,19 @@ cs_gwf_tpf_create(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_free(cs_gwf_tpf_t  **p_mc);
+cs_gwf_tpf_free(cs_gwf_tpf_t    **p_mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Log the setup related to the model context of two-phase flows.
  *        Common to the different sub-models relying on two-phase flows.
  *
- * \param[in] model   model chosen for the hydraulic
  * \param[in] mc      pointer to the model context structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_log_setup(cs_gwf_model_type_t    model,
-                     cs_gwf_tpf_t          *mc);
+cs_gwf_tpf_log_setup(cs_gwf_tpf_t          *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -110,8 +110,8 @@ cs_gwf_tpf_init(cs_gwf_tpf_t            *mc,
  *        stage, all soils have been defined and equation parameters are set.
  *        Case of a miscible or immiscible model.
  *
- * \param[in]      post_flag  optional postprocessing request(s)
- * \param[in, out] mc         pointer to the casted model context
+ * \param[in]      post_flag   optional postprocessing request(s)
+ * \param[in, out] mc          pointer to the casted model context
  */
 /*----------------------------------------------------------------------------*/
 
@@ -164,7 +164,6 @@ cs_gwf_tpf_init_values(const cs_cdo_connect_t        *connect,
  * \param[in]      connect      pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_step    pointer to a cs_time_step_t structure
- * \param[in]      model        type of hydraulic model (miscible/immiscible)
  * \param[in]      option_flag  calculation option related to the GWF module
  * \param[in, out] mc           pointer to the model context structure
  */
@@ -175,7 +174,6 @@ cs_gwf_tpf_compute(const cs_mesh_t               *mesh,
                    const cs_cdo_connect_t        *connect,
                    const cs_cdo_quantities_t     *cdoq,
                    const cs_time_step_t          *time_step,
-                   cs_gwf_model_type_t            model,
                    cs_flag_t                      option_flag,
                    cs_gwf_tpf_t                  *mc);
 
@@ -188,7 +186,6 @@ cs_gwf_tpf_compute(const cs_mesh_t               *mesh,
  * \param[in]      connect      pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
  * \param[in]      ts           pointer to a cs_time_step_t structure
- * \param[in]      model        type of hydraulic model (miscible/immiscible)
  * \param[in]      update_flag  metadata associated to type of operation to do
  * \param[in]      option_flag  calculation option related to the GWF module
  * \param[in, out] mc           pointer to the casted model context
@@ -200,7 +197,6 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
                   const cs_cdo_connect_t      *connect,
                   const cs_cdo_quantities_t   *cdoq,
                   const cs_time_step_t        *ts,
-                  cs_gwf_model_type_t          model,
                   cs_flag_t                    update_flag,
                   cs_flag_t                    option_flag,
                   cs_gwf_tpf_t                *mc);

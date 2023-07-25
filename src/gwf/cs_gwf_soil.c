@@ -50,7 +50,6 @@
 #include "cs_math.h"
 #include "cs_parall.h"
 #include "cs_param_types.h"
-#include "cs_physical_constants.h"
 #include "cs_post.h"
 #include "cs_reco.h"
 #include "cs_volume_zone.h"
@@ -112,9 +111,9 @@ static double  *_dual_porous_volume = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Function that compute the new values of the properties related to
- *         a soil with a Van Genuchten-Mualen.
- *         Case of an isotropic permeability and an unsteady Richards eq.
+ * \brief Function that compute the new values of the properties related to
+ *        a soil with a Van Genuchten-Mualen.
+ *        Case of an isotropic permeability and an unsteady Richards eq.
  *
  * \param[in]      t_eval        time at which one performs the evaluation
  * \param[in]      mesh          pointer to a cs_mesh_t structure
@@ -126,7 +125,7 @@ static double  *_dual_porous_volume = NULL;
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+static void
 _update_soil_genuchten_iso(const cs_real_t              t_eval,
                            const cs_mesh_t             *mesh,
                            const cs_cdo_connect_t      *connect,
@@ -227,7 +226,7 @@ _update_soil_genuchten_iso(const cs_real_t              t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the number of allocated soils
+ * \brief Get the number of allocated soils
  *
  * \return the number of allocated soils
  */
@@ -241,180 +240,8 @@ cs_gwf_get_n_soils(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve a soil structure from its id
- *
- * \param[in]  id      id to look for
- *
- * \return a pointer to a cs_gwf_soil_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_gwf_soil_t *
-cs_gwf_soil_by_id(int   id)
-{
-  if (id > -1 && id < _n_soils)
-    return _soils[id];
-  else
-    return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve a soil structure from its name
- *
- * \param[in]  name      name to look for
- *
- * \return a pointer to a cs_gwf_soil_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_gwf_soil_t *
-cs_gwf_soil_by_name(const char    *name)
-{
-  if (name == NULL)
-    return NULL;
-
-  for (int i = 0; i < _n_soils; i++) {
-
-    cs_gwf_soil_t  *s = _soils[i];
-    const cs_zone_t  *zone = cs_volume_zone_by_id(s->zone_id);
-
-    if (strcmp(zone->name, name) == 0)
-      return s;
-  }
-
-  /* Not found among the list */
-
-  return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the saturated moisture for the given soil id
- *
- * \param[in]  soil_id     id of the requested soil
- *
- * \return the value of the saturated moisture
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t
-cs_gwf_soil_get_saturated_moisture(int   soil_id)
-{
-  cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
-
-  if (soil == NULL)
-    bft_error(__FILE__, __LINE__, 0, "%s: Empty soil.\n", __func__);
-
-  return soil->porosity;  /* = saturated moisture or max. liquid satiration */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the max dim (aniso=9; iso=1) for the absolute permeability
- *         associated to each soil
- *
- * \return the associated max. dimension
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_gwf_soil_get_permeability_max_dim(void)
-{
-  int dim = 0;
-
-  if (_n_soils < 1)
-    return dim;
-
-  if (_soils == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: The soil structure is not allocated whereas %d soils"
-              " have been added.\n", __func__, _n_soils);
-
-  for (int i = 0; i < _n_soils; i++) {
-
-    cs_gwf_soil_t  *soil = _soils[i];
-
-    dim = CS_MAX(dim, soil->abs_permeability_dim);
-
-  }
-
-  return dim;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Check if all soils have been set as CS_GWF_SOIL_SATURATED
- *
- * \return true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_gwf_soil_all_are_saturated(void)
-{
-  for (int soil_id = 0; soil_id < _n_soils; soil_id++) {
-
-    const cs_gwf_soil_t  *soil = _soils[soil_id];
-    if (soil->model != CS_GWF_SOIL_SATURATED)
-      return false;
-
-  }
-
-  return true;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Check that at least one soil has been defined and the model of soil
- *         exists.
- *         Raise an error if a problem is encoutered.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_check(void)
-{
-  if (_n_soils < 1)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Groundwater module is activated but no soil is defined.",
-              __func__);
-  if (_soils == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: The soil structure is not allocated whereas %d soils"
-              " have been added.\n", __func__, _n_soils);
-
-  for (int i = 0; i < _n_soils; i++) {
-
-    const cs_zone_t  *z = cs_volume_zone_by_id(_soils[i]->zone_id);
-    assert(z != NULL);
-
-    if (_soils[i]->model == CS_GWF_SOIL_N_HYDRAULIC_MODELS)
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: Invalid model of soil attached to zone %s\n",
-                __func__, z->name);
-
-    if (z->n_g_elts < 1) {
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf(" %s: The soil \"%s\" is defined but associated to no cell.\n"
-                 " Please check your settings.\n",
-                 __func__, z->name);
-    }
-
-    if (z->n_elts > 0)
-      if (z->elt_ids == NULL)
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: One assumes that z->elt_ids != NULL.\n"
-                  " This is not the case for the soil \"%s\"\n",
-                  __func__, z->name);
-
-  } /* Loop on soils */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Create a new cs_gwf_soil_t structure and add it to the array of
- *         soils. An initialization by default of all members is performed.
+ * \brief Create a new cs_gwf_soil_t structure and add it to the array of
+ *        soils. An initialization by default of all members is performed.
  *
  * \param[in] zone                pointer to a volume zone structure
  * \param[in] hydraulic_model     main hydraulic model for the module
@@ -550,158 +377,56 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build an array storing the associated soil for each cell
- *         The lifecycle of this array is managed by the code.
+ * \brief  Retrieve a soil structure from its id
  *
- * \param[in] n_cells      number of cells
+ * \param[in]  id      id to look for
+ *
+ * \return a pointer to a cs_gwf_soil_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_gwf_soil_build_cell2soil(cs_lnum_t    n_cells)
+cs_gwf_soil_t *
+cs_gwf_soil_by_id(int   id)
 {
-  BFT_MALLOC(_cell2soil_ids, n_cells, short int);
-
-  if (_n_soils == 1)
-    memset(_cell2soil_ids, 0, sizeof(short int)*n_cells);
-
-  else {
-
-    assert(_n_soils > 1);
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t j = 0; j < n_cells; j++)
-      _cell2soil_ids[j] = -1; /* unset by default */
-
-    for (int soil_id = 0; soil_id < _n_soils; soil_id++) {
-
-      const cs_gwf_soil_t  *soil = _soils[soil_id];
-      const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
-
-      assert(z != NULL);
-
-#     pragma omp parallel for if (z->n_elts > CS_THR_MIN)
-      for (cs_lnum_t j = 0; j < z->n_elts; j++)
-        _cell2soil_ids[z->elt_ids[j]] = soil_id;
-
-    } /* Loop on soils */
-
-    /* Check if every cells is associated to a soil */
-
-    for (cs_lnum_t j = 0; j < n_cells; j++)
-      if (_cell2soil_ids[j] == -1)
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: At least cell %ld has no related soil.\n",
-                  __func__, (long)j);
-
-  } /* n_soils > 1 */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get the array storing the associated soil for each cell
- *
- * \return a pointer to the array
- */
-/*----------------------------------------------------------------------------*/
-
-const short int *
-cs_gwf_soil_get_cell2soil(void)
-{
-  return _cell2soil_ids;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Build an array storing the dual volume associated to each vertex
- *         taking into account the porosity of the soil
- *         The computed quantity is stored as a static array. Use the function
- *         cs_gwf_soil_get_dual_vol_l()
- *
- * \param[in] cdoq     pointer to a structure storing additional geometrical
- *                     quantities for CDO schemes
- * \param[in] connect  pointer to a structure storing additional connectivities
- *                     for CDO schemes
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_build_dual_porous_volume(const cs_cdo_quantities_t    *cdoq,
-                                     const cs_cdo_connect_t       *connect)
-{
-  assert(cdoq != NULL && connect != NULL);
-  assert(cdoq->dual_vol != NULL);
-
-  const cs_lnum_t  n_vertices = cdoq->n_vertices;
-
-  if (_dual_porous_volume == NULL)
-    BFT_MALLOC(_dual_porous_volume, n_vertices, double);
+  if (id > -1 && id < _n_soils)
+    return _soils[id];
   else
-    BFT_REALLOC(_dual_porous_volume, n_vertices, double);
-
-  cs_array_real_fill_zero(n_vertices, _dual_porous_volume);
-
-  if (_n_soils == 1) {
-
-    const cs_gwf_soil_t  *soil = _soils[0];
-
-    cs_array_real_set_wscalar(n_vertices, soil->porosity, cdoq->dual_vol,
-                              _dual_porous_volume);
-
-    /* cdoq->dual_vol is already synchronized (parallel sum reduction) */
-
-  }
-  else { /* Several soils to handle */
-
-    const cs_adjacency_t  *c2v = connect->c2v;
-
-    for (int s_id = 0; s_id < _n_soils; s_id++) {
-
-      const cs_gwf_soil_t  *soil = _soils[s_id];
-      const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
-
-      assert(z != NULL);
-
-#     pragma omp parallel for if (z->n_elts > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-
-        const cs_lnum_t  c_id = z->elt_ids[i];
-        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-          _dual_porous_volume[c2v->ids[j]] += soil->porosity * cdoq->pvol_vc[j];
-
-      } /* Loop on cells */
-
-    } /* Loop on soils */
-
-    /* Parallel synchronization */
-
-    if (connect->vtx_ifs != NULL)
-      cs_interface_set_sum(connect->vtx_ifs,
-                           n_vertices,
-                           1, false, /* stride, interlace */
-                           CS_REAL_TYPE,
-                           _dual_porous_volume);
-
-  } /* Several soils */
+    return NULL;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Get the array storing the dual volume weighted by the soil porosity
- *        Array of size n_vertices
+ * \brief  Retrieve a soil structure from its name
  *
- * \return a pointer to the requested array
+ * \param[in]  name      name to look for
+ *
+ * \return a pointer to a cs_gwf_soil_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-const double *
-cs_gwf_soil_get_dual_porous_volume(void)
+cs_gwf_soil_t *
+cs_gwf_soil_by_name(const char    *name)
 {
-  return _dual_porous_volume;
+  if (name == NULL)
+    return NULL;
+
+  for (int i = 0; i < _n_soils; i++) {
+
+    cs_gwf_soil_t  *s = _soils[i];
+    const cs_zone_t  *zone = cs_volume_zone_by_id(s->zone_id);
+
+    if (strcmp(zone->name, name) == 0)
+      return s;
+  }
+
+  /* Not found among the list */
+
+  return NULL;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free all cs_gwf_soil_t structures
+ * \brief Free all cs_gwf_soil_t structures
  */
 /*----------------------------------------------------------------------------*/
 
@@ -832,22 +557,428 @@ cs_gwf_soil_log_setup(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a soil defined by a Van Genuchten-Mualen model
+ * \brief Check that at least one soil has been defined and the model of soil
+ *        exists.
+ *        Raise an error if a problem is encoutered.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_check(void)
+{
+  if (_n_soils < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Groundwater module is activated but no soil is defined.",
+              __func__);
+  if (_soils == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: The soil structure is not allocated whereas %d soils"
+              " have been added.\n", __func__, _n_soils);
+
+  for (int i = 0; i < _n_soils; i++) {
+
+    const cs_zone_t  *z = cs_volume_zone_by_id(_soils[i]->zone_id);
+    assert(z != NULL);
+
+    if (_soils[i]->model == CS_GWF_SOIL_N_HYDRAULIC_MODELS)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid model of soil attached to zone %s\n",
+                __func__, z->name);
+
+    if (z->n_g_elts < 1) {
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(" %s: The soil \"%s\" is defined but associated to no cell.\n"
+                 " Please check your settings.\n",
+                 __func__, z->name);
+    }
+
+    if (z->n_elts > 0)
+      if (z->elt_ids == NULL)
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: One assumes that z->elt_ids != NULL.\n"
+                  " This is not the case for the soil \"%s\"\n",
+                  __func__, z->name);
+
+  } /* Loop on soils */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the soil properties
  *
- *         The (effective) liquid saturation (also called moisture content)
- *         follows the identity
- *         S_l,eff = (S_l - theta_r)/(theta_s - theta_r)
- *                 = (1 + |alpha . h|^n)^(-m)
+ * \param[in] time_eval      time at which one evaluates properties
+ * \param[in] mesh           pointer to the mesh structure
+ * \param[in] connect        pointer to the cdo connectivity
+ * \param[in] cdoq           pointer to the cdo quantities
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_update(cs_real_t                     time_eval,
+                   const cs_mesh_t              *mesh,
+                   const cs_cdo_connect_t       *connect,
+                   const cs_cdo_quantities_t    *cdoq)
+{
+  for (int i = 0; i < _n_soils; i++) {
+
+    cs_gwf_soil_t  *soil = _soils[i];
+    if (soil == NULL)
+      continue;
+
+    switch (soil->model) {
+
+    case CS_GWF_SOIL_GENUCHTEN:
+    case CS_GWF_SOIL_USER:
+      {
+        assert(soil->update_properties != NULL);
+
+        const cs_zone_t  *zone = cs_volume_zone_by_id(soil->zone_id);
+
+        soil->update_properties(time_eval,
+                                mesh, connect, cdoq,
+                                zone,
+                                soil);
+      }
+      break;
+
+    default:
+      break; /* Do nothing (for instance in the case of a saturated soil which
+                is constant (steady and uniform) */
+
+    } /* Switch on the soil model */
+
+  } /* Loop on soils */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the definition of the soil porosity and absolute permeability
+ *        (which are properties always defined in the GWF module). One relies
+ *        on the definition of these properties in each soil.
  *
- *         The isotropic relative permeability is defined as:
- *         k_r = S_l,eff^L * (1 - (1 - S_l,eff^(1/m))^m))^2
- *         where m = 1 -  1/n
+ * \param[in, out] abs_permeability    pointer to a cs_property_t structure
+ * \param[in, out] soil_porosity       pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_define_shared_properties(cs_property_t   *abs_permeability,
+                                     cs_property_t   *soil_porosity)
+{
+  assert(abs_permeability != NULL && soil_porosity != NULL);
+
+  for (int i = 0; i < _n_soils; i++) {
+
+    cs_gwf_soil_t  *soil = _soils[i];
+
+    const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
+
+    /* Define the absolute permeability */
+
+    if (abs_permeability->type & CS_PROPERTY_ISO) {
+
+      assert(soil->abs_permeability_dim == 1);
+      cs_property_def_iso_by_value(abs_permeability,
+                                   z->name,
+                                   soil->abs_permeability[0][0]);
+
+    }
+    else if (abs_permeability->type & CS_PROPERTY_ANISO) {
+
+      cs_property_def_aniso_by_value(abs_permeability,
+                                     z->name,
+                                     soil->abs_permeability);
+
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid type of property.\n", __func__);
+
+    /* Set the soil porosity */
+
+    cs_property_def_iso_by_value(soil_porosity,
+                                 z->name,
+                                 soil->porosity);
+
+  } /* Loop on soils */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the definition of the soil porosity and absolute porosity (which
+ *        are properties always defined). This relies on the definition of
+ *        each soil.
+ *
+ * \param[in, out] moisture_content   pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_define_sspf_property(cs_property_t   *moisture_content)
+{
+  assert(moisture_content != NULL);
+
+  for (int i = 0; i < _n_soils; i++) {
+
+    cs_gwf_soil_t  *soil = _soils[i];
+
+    if (soil->model != CS_GWF_SOIL_SATURATED)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid way of setting soil parameter.\n"
+                " All soils are not considered as saturated.", __func__);
+
+    /* Set the moisture content. In this case, one set the moisture content to
+       the soil porosity since one considers that the soil is fully
+       saturated */
+
+    const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
+
+    cs_property_def_iso_by_value(moisture_content,
+                                 z->name,
+                                 soil->porosity);
+
+  } /* Loop on soils */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build an array storing the associated soil for each cell
+ *         The lifecycle of this array is managed by the code.
+ *
+ * \param[in] n_cells      number of cells
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_build_cell2soil(cs_lnum_t    n_cells)
+{
+  BFT_MALLOC(_cell2soil_ids, n_cells, short int);
+
+  if (_n_soils == 1)
+    memset(_cell2soil_ids, 0, sizeof(short int)*n_cells);
+
+  else {
+
+    assert(_n_soils > 1);
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t j = 0; j < n_cells; j++)
+      _cell2soil_ids[j] = -1; /* unset by default */
+
+    for (int soil_id = 0; soil_id < _n_soils; soil_id++) {
+
+      const cs_gwf_soil_t  *soil = _soils[soil_id];
+      const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
+
+      assert(z != NULL);
+
+#     pragma omp parallel for if (z->n_elts > CS_THR_MIN)
+      for (cs_lnum_t j = 0; j < z->n_elts; j++)
+        _cell2soil_ids[z->elt_ids[j]] = soil_id;
+
+    } /* Loop on soils */
+
+    /* Check if every cells is associated to a soil */
+
+    for (cs_lnum_t j = 0; j < n_cells; j++)
+      if (_cell2soil_ids[j] == -1)
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: At least cell %ld has no related soil.\n",
+                  __func__, (long)j);
+
+  } /* n_soils > 1 */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the array storing the associated soil for each cell
+ *
+ * \return a pointer to the array
+ */
+/*----------------------------------------------------------------------------*/
+
+const short int *
+cs_gwf_soil_get_cell2soil(void)
+{
+  return _cell2soil_ids;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build an array storing the dual volume associated to each vertex
+ *        taking into account the porosity of the soil
+ *        The computed quantity is stored as a static array. Use the function
+ *        cs_gwf_soil_get_dual_vol_l()
+ *
+ * \param[in] cdoq     additional geometrical quantities for CDO schemes
+ * \param[in] connect  additional connectivities for CDO schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_build_dual_porous_volume(const cs_cdo_quantities_t    *cdoq,
+                                     const cs_cdo_connect_t       *connect)
+{
+  assert(cdoq != NULL && connect != NULL);
+  assert(cdoq->dual_vol != NULL);
+
+  const cs_lnum_t  n_vertices = cdoq->n_vertices;
+
+  if (_dual_porous_volume == NULL)
+    BFT_MALLOC(_dual_porous_volume, n_vertices, double);
+  else
+    BFT_REALLOC(_dual_porous_volume, n_vertices, double);
+
+  cs_array_real_fill_zero(n_vertices, _dual_porous_volume);
+
+  if (_n_soils == 1) {
+
+    const cs_gwf_soil_t  *soil = _soils[0];
+
+    cs_array_real_set_wscalar(n_vertices, soil->porosity, cdoq->dual_vol,
+                              _dual_porous_volume);
+
+    /* cdoq->dual_vol is already synchronized (parallel sum reduction) */
+
+  }
+  else { /* Several soils to handle */
+
+    const cs_adjacency_t  *c2v = connect->c2v;
+
+    for (int s_id = 0; s_id < _n_soils; s_id++) {
+
+      const cs_gwf_soil_t  *soil = _soils[s_id];
+      const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
+
+      assert(z != NULL);
+
+#     pragma omp parallel for if (z->n_elts > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+
+        const cs_lnum_t  c_id = z->elt_ids[i];
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+          _dual_porous_volume[c2v->ids[j]] += soil->porosity * cdoq->pvol_vc[j];
+
+      } /* Loop on cells */
+
+    } /* Loop on soils */
+
+    /* Parallel synchronization */
+
+    if (connect->vtx_ifs != NULL)
+      cs_interface_set_sum(connect->vtx_ifs,
+                           n_vertices,
+                           1, false, /* stride, interlace */
+                           CS_REAL_TYPE,
+                           _dual_porous_volume);
+
+  } /* Several soils */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the array storing the dual volume weighted by the soil porosity
+ *        Array of size n_vertices
+ *
+ * \return a pointer to the requested array
+ */
+/*----------------------------------------------------------------------------*/
+
+const double *
+cs_gwf_soil_get_dual_porous_volume(void)
+{
+  return _dual_porous_volume;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the porosity value for the given soil id
+ *
+ * \param[in] soil_id      id of the requested soil
+ *
+ * \return the value of the soil porosity
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_gwf_soil_get_porosity(int   soil_id)
+{
+  cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
+
+  if (soil == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: Empty soil.\n", __func__);
+
+  return soil->porosity;  /* = saturated moisture or max. liquid saturation */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the saturated moisture for the given soil id
+ *
+ * \param[in]  soil_id     id of the requested soil
+ *
+ * \return the value of the saturated moisture
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_gwf_soil_get_saturated_moisture(int   soil_id)
+{
+  /* Avoid a naming which may be disturbing when handling saturated
+     single-phase flows */
+  return cs_gwf_soil_get_porosity(soil_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the max dim (aniso=9; iso=1) for the absolute permeability
+ *         associated to each soil
+ *
+ * \return the associated max. dimension
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_gwf_soil_get_permeability_max_dim(void)
+{
+  int dim = 0;
+
+  if (_n_soils < 1)
+    return dim;
+
+  if (_soils == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: The soil structure is not allocated whereas %d soils"
+              " have been added.\n", __func__, _n_soils);
+
+  for (int i = 0; i < _n_soils; i++) {
+
+    cs_gwf_soil_t  *soil = _soils[i];
+
+    dim = CS_MAX(dim, soil->abs_permeability_dim);
+
+  }
+
+  return dim;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set a soil defined by a Van Genuchten-Mualen model
+ *
+ *        The (effective) liquid saturation (also called moisture content)
+ *        follows the identity
+ *        S_l,eff = (S_l - theta_r)/(theta_s - theta_r)
+ *                = (1 + |alpha . h|^n)^(-m)
+ *
+ *        The isotropic relative permeability is defined as:
+ *        k_r = S_l,eff^L * (1 - (1 - S_l,eff^(1/m))^m))^2
+ *        where m = 1 -  1/n
  *
  * \param[in, out] soil       pointer to a cs_gwf_soil_t structure
  * \param[in]      theta_r    residual moisture
  * \param[in]      alpha      scale parameter (in m^-1)
  * \param[in]      n          shape parameter
- * \param[in]      L          turtuosity parameter
+ * \param[in]      L          tortuosity parameter
  */
 /*----------------------------------------------------------------------------*/
 
@@ -913,206 +1044,35 @@ cs_gwf_soil_set_user(cs_gwf_soil_t                *soil,
   soil->free_model_param = free_param_func;
 }
 
+#if 0
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the definition of the soil porosity and absolute porosity (which
- *         are properties always defined). This relies on the definition of
- *         each soil.
+ * \brief Update arrays associated to the definition of terms involved in the
+ *        miscible two-phase flow model when there is an isotropic absolute
+ *        permeability.
  *
- * \param[in, out]  abs_permeability    pointer to a cs_property_t structure
- * \param[in, out]  soil_porosity       pointer to a cs_property_t structure
+ * \param[in, out] mc    pointer to the model context to update
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_set_shared_properties(cs_property_t      *abs_permeability,
-                                  cs_property_t      *soil_porosity)
-{
-  assert(abs_permeability != NULL && soil_porosity != NULL);
-
-  for (int i = 0; i < _n_soils; i++) {
-
-    cs_gwf_soil_t  *soil = _soils[i];
-
-    const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
-
-    /* Define the absolute permeability */
-
-    if (abs_permeability->type & CS_PROPERTY_ISO) {
-
-      assert(soil->abs_permeability_dim == 1);
-      cs_property_def_iso_by_value(abs_permeability,
-                                   z->name,
-                                   soil->abs_permeability[0][0]);
-
-    }
-    else if (abs_permeability->type & CS_PROPERTY_ANISO) {
-
-      cs_property_def_aniso_by_value(abs_permeability,
-                                     z->name,
-                                     soil->abs_permeability);
-
-    }
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid type of property.\n", __func__);
-
-    /* Set the soil porosity */
-
-    cs_property_def_iso_by_value(soil_porosity,
-                                 z->name,
-                                 soil->porosity);
-
-  } /* Loop on soils */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the definition of the soil porosity and absolute porosity (which
- *        are properties always defined). This relies on the definition of
- *        each soil.
- *
- * \param[in, out] moisture_content   pointer to a cs_property_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_saturated_set_property(cs_property_t   *moisture_content)
-{
-  assert(moisture_content != NULL);
-
-  for (int i = 0; i < _n_soils; i++) {
-
-    cs_gwf_soil_t  *soil = _soils[i];
-
-    if (soil->model != CS_GWF_SOIL_SATURATED)
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid way of setting soil parameter.\n"
-                " All soils are not considered as saturated.", __func__);
-
-    /* Set the moisture content. In this case, one set the moisture content to
-       the soil porosity since one considers that the soil is fully
-       saturated */
-
-    const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
-
-    cs_property_def_iso_by_value(moisture_content,
-                                 z->name,
-                                 soil->porosity);
-
-  } /* Loop on soils */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the definition of some property(ies) in specific situations for
- *         the two-phase flow models
- *         This relies on the definition of each soil.
- *
- * \param[in, out]  mc  pointer to the model context structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_tpf_set_property(cs_gwf_tpf_t     *mc)
+cs_gwf_soil_iso_mtpf_update_arrays(cs_gwf_tpf_t     *mc)
 {
   if (mc == NULL)
     return;
-  assert(mc->time_hg_pty != NULL);
 
-  const double  mh_ov_rt =
-    mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
+  /* In the miscible case, mc->l_diffusivity_h should be set to 0 */
 
-  for (int i = 0; i < _n_soils; i++) {
-
-    cs_gwf_soil_t  *soil = _soils[i];
-    assert(soil != NULL);
-
-    const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
-
-    /* Set the value in each soil of the unsteady term for the Hydrogen
-       conservation equation */
-
-    cs_property_def_iso_by_value(mc->time_hg_pty,
-                                 z->name,
-                                 soil->porosity * mh_ov_rt);
-
-  } /* Loop on soils */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update the soil properties
- *
- * \param[in]  time_eval         time at which one evaluates properties
- * \param[in]  mesh              pointer to the mesh structure
- * \param[in]  connect           pointer to the cdo connectivity
- * \param[in]  quant             pointer to the cdo quantities
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_update(cs_real_t                     time_eval,
-                   const cs_mesh_t              *mesh,
-                   const cs_cdo_connect_t       *connect,
-                   const cs_cdo_quantities_t    *quant)
-{
-  for (int i = 0; i < _n_soils; i++) {
-
-    cs_gwf_soil_t  *soil = _soils[i];
-    assert(soil != NULL);
-
-    switch (soil->model) {
-
-    case CS_GWF_SOIL_GENUCHTEN:
-    case CS_GWF_SOIL_USER:
-      {
-        assert(soil->update_properties != NULL);
-
-        const cs_zone_t  *zone = cs_volume_zone_by_id(soil->zone_id);
-
-        soil->update_properties(time_eval,
-                                mesh, connect, quant,
-                                zone,
-                                soil);
-      }
-      break;
-
-    default:
-      break; /* Do nothing (for instance in the case of a saturated soil which
-                is constant (steady and uniform) */
-
-    } /* Switch on the soil model */
-
-  } /* Loop on soils */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update arrays associated to the definition of terms involved in the
- *         miscible two-phase flow model.
- *         Case of an isotropic absolute permeability.
- *
- * \param[in, out] mc            pointer to the model context to update
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_iso_update_mtpf_terms(cs_gwf_tpf_t     *mc)
-{
-  if (mc == NULL)
-    return;
+  assert(mc->l_diffusivity_h > 0);
 
   const double  hmh = mc->h_molar_mass * mc->henry_constant;
+  const double  h_diff_const =
+    hmh * mc->l_mass_density * mc->l_diffusivity_h / mc->w_molar_mass;
   const double  mh_ov_rt =
     mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
-  const cs_real_t  *g_cell_pr = mc->g_cell_pressure;
 
-  /* In the immiscible case, mc->l_diffusivity_h should be set to 0 */
 
-  const double  h_diff_const = (mc->l_diffusivity_h > 0) ?
-    hmh * mc->l_mass_density * mc->l_diffusivity_h / mc->w_molar_mass : 0.;
-
+  const cs_real_t  *g_pr_cells = mc->g_pressure_cells;
   const cs_real_t  *l_sat = mc->l_saturation->val;
   const cs_real_t  *l_cap = mc->l_capacity;
 
@@ -1154,16 +1114,16 @@ cs_gwf_soil_iso_update_mtpf_terms(cs_gwf_tpf_t     *mc)
          which define computed terms */
 
       mc->time_hg_array[c_id] =
-        h_time_coefa + h_time_coefb*(l_sat[c_id] + l_cap[c_id]*g_cell_pr[c_id]);
+        h_time_coefa + h_time_coefb*(l_sat[c_id] + l_cap[c_id]*g_pr_cells[c_id]);
 
-      mc->diff_hg_array[c_id] = mh_ov_rt * g_cell_pr[c_id] /* g_rho */
+      mc->diff_hg_array[c_id] = mh_ov_rt * g_pr_cells[c_id] /* g_rho */
         * mc->g_rel_permeability[c_id] * hg_diff_coef;
       if (h_diff_coef > 0) /* If not = immiscible case */
         mc->diff_hg_array[c_id] += h_diff_coef * l_sat[c_id];
 
-      mc->time_hl_array[c_id] = -h_time_coefb * g_cell_pr[c_id] * l_cap[c_id];
+      mc->time_hl_array[c_id] = -h_time_coefb * g_pr_cells[c_id] * l_cap[c_id];
 
-      mc->diff_hl_array[c_id] = hmh * l_diff_coef * g_cell_pr[c_id];
+      mc->diff_hl_array[c_id] = hmh * l_diff_coef * g_pr_cells[c_id];
 
     } /* Loop on cells of the zone (= soil) */
 
@@ -1194,7 +1154,7 @@ cs_gwf_soil_iso_update_itpf_terms(cs_gwf_tpf_t     *mc)
   const double  hmh = mc->h_molar_mass * mc->henry_constant;
   const double  mh_ov_rt =
     mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
-  const cs_real_t  *g_cell_pr = mc->g_cell_pressure;
+  const cs_real_t  *g_pr_cells = mc->g_pressure_cells;
 
   /* In the immiscible case, mc->l_diffusivity_h should be set to 0 */
 
@@ -1246,8 +1206,8 @@ cs_gwf_soil_iso_update_itpf_terms(cs_gwf_tpf_t     *mc)
 
       const cs_lnum_t  c_id = zone->elt_ids[i];
 
-      const double  rhog = mh_ov_rt * g_cell_pr[c_id];
-      const double  rho_hl = hmh *  g_cell_pr[c_id];
+      const double  rhog = mh_ov_rt * g_pr_cells[c_id];
+      const double  rho_hl = hmh *  g_pr_cells[c_id];
       const double  sl = l_sat[c_id];
       const double  sg = 1 - sl;
       const double  dsl_dpc = l_cap[c_id];
@@ -1288,8 +1248,8 @@ cs_gwf_soil_iso_update_itpf_terms(cs_gwf_tpf_t     *mc)
 #if CS_GWF_SOIL_DBG > 1
         cs_log_printf(CS_LOG_DEFAULT,
                       "c_id%4d >> rhog %6.4e, Pg_cell % 6.4e, Pc_cell %6.4e\n",
-                      c_id, rhog, g_cell_pr[c_id],
-                      mc->capillarity_cell_pressure[c_id]);
+                      c_id, rhog, g_pr_cells[c_id],
+                      mc->c_pressure_cells[c_id]);
         cs_log_printf(CS_LOG_DEFAULT,
                       "         >> sl=%6.4e,"
                       " dsl_dpc=% 6.4e, krl=%6.4e, krg=%6.4e\n",
@@ -1329,7 +1289,7 @@ cs_gwf_soil_iso_update_itpf_terms_incr(const cs_time_step_t    *ts,
   const double  hmh = mc->h_molar_mass * mc->henry_constant;
   const double  mh_ov_rt =
     mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
-  const cs_real_t  *g_cell_pr = mc->g_cell_pressure;
+  const cs_real_t  *g_pr_cells = mc->g_pressure_cells;
 
   /* In the immiscible case, mc->l_diffusivity_h is set to 0 */
 
@@ -1381,8 +1341,8 @@ cs_gwf_soil_iso_update_itpf_terms_incr(const cs_time_step_t    *ts,
 
       const cs_lnum_t  c_id = zone->elt_ids[i];
 
-      const double  rhog = mh_ov_rt * g_cell_pr[c_id];
-      const double  rho_hl = hmh *  g_cell_pr[c_id];
+      const double  rhog = mh_ov_rt * g_pr_cells[c_id];
+      const double  rho_hl = hmh *  g_pr_cells[c_id];
       const double  sl = l_sat[c_id];         /* last (k,n+1) computed value */
       const double  sl_pre = l_sat_pre[c_id]; /* previous (n) computed value */
       const double  sg = 1 - sl;
@@ -1416,8 +1376,8 @@ cs_gwf_soil_iso_update_itpf_terms_incr(const cs_time_step_t    *ts,
 #if CS_GWF_SOIL_DBG > 1
         cs_log_printf(CS_LOG_DEFAULT,
                       "c_id%4d >> rhog %6.4e, Pg_cell % 6.4e, Pc_cell %6.4e\n",
-                      c_id, rhog, g_cell_pr[c_id],
-                      mc->capillarity_cell_pressure[c_id]);
+                      c_id, rhog, g_pr_cells[c_id],
+                      mc->c_pressure_cells[c_id]);
         cs_log_printf(CS_LOG_DEFAULT,
                       "         >> sl=%6.4e, sl_pre=%6.4e, krl=%6.4e,"
                       " krg=%6.4e\n", sl, sl_pre, krl[c_id], krg[c_id]);
@@ -1482,7 +1442,7 @@ cs_gwf_soil_iso_update_itpf_terms_incr_submesh(const cs_time_step_t   *ts,
   const cs_real_t  *g_pr_pre = mc->g_pressure->val_pre;
   const cs_real_t  *l_pr = mc->l_pressure->val;
   const cs_real_t  *l_pr_pre = mc->l_pressure->val_pre;
-  const cs_real_t  *g_cell_pr = mc->g_cell_pressure;
+  const cs_real_t  *g_pr_cells = mc->g_pressure_cells;
 
   /* In the immiscible case, mc->l_diffusivity_h is set to 0 */
 
@@ -1631,8 +1591,8 @@ cs_gwf_soil_iso_update_itpf_terms_incr_submesh(const cs_time_step_t   *ts,
       /* Hydrogen conservation equation. Updates arrays linked to properties
          which define computed terms */
 
-      const double  rhog = mh_ov_rt * g_cell_pr[c_id];
-      const double  rho_hl = hmh * g_cell_pr[c_id];
+      const double  rhog = mh_ov_rt * g_pr_cells[c_id];
+      const double  rho_hl = hmh * g_pr_cells[c_id];
 
       mc->diff_hg_array[c_id] = rhog * hg_diff_coef * krg[c_id];
       mc->diff_hl_array[c_id] = rho_hl * l_diff_coef * krl[c_id];
@@ -1658,8 +1618,8 @@ cs_gwf_soil_iso_update_itpf_terms_incr_submesh(const cs_time_step_t   *ts,
 #if CS_GWF_SOIL_DBG > 1
         cs_log_printf(CS_LOG_DEFAULT,
                       "c_id%4d >> rhog %6.4e, Pg_cell % 6.4e, Pc_cell %6.4e\n",
-                      c_id, rhog, g_cell_pr[c_id],
-                      mc->capillarity_cell_pressure[c_id]);
+                      c_id, rhog, g_pr_cells[c_id],
+                      mc->c_pressure_cells[c_id]);
         cs_log_printf(CS_LOG_DEFAULT,
                       "         >> krl=%6.4e, krg=%6.4e\n",
                       krl[c_id], krg[c_id]);
@@ -1742,6 +1702,7 @@ cs_gwf_soil_iso_update_itpf_terms_incr_submesh(const cs_time_step_t   *ts,
   BFT_FREE(slc);
 #endif
 }
+#endif /* 0 */
 
 /*----------------------------------------------------------------------------*/
 

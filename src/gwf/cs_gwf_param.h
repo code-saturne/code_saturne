@@ -68,7 +68,6 @@ BEGIN_C_DECLS
  *        post-processing
  *
  * \def CS_GWF_POST_GAS_MASS_DENSITY
-
  * \brief Compute the mass density of the gas component for a miscible or
  *        immiscible two-phase flow model. One recalls that one assumes that
  *        there is no water in the gas phase and that the mass density is a

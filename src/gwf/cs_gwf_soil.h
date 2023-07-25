@@ -248,7 +248,7 @@ struct _gwf_soil_t {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the number of allocated soils
+ * \brief Get the number of allocated soils
  *
  * \return the number of allocated soils
  */
@@ -256,6 +256,34 @@ struct _gwf_soil_t {
 
 int
 cs_gwf_get_n_soils(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a new cs_gwf_soil_t structure and add it to the array of
+ *        soils. An initialization by default of all members is performed.
+ *
+ * \param[in] zone                pointer to a volume zone structure
+ * \param[in] hydraulic_model     main hydraulic model for the module
+ * \param[in] model               type of model for the soil behavior
+ * \param[in] perm_type           type of permeability (iso/anisotropic)
+ * \param[in] k_abs               absolute (intrisic) permeability
+ * \param[in] porosity            porosity or max. moisture content
+ * \param[in] bulk_density        value of the mass density
+ * \param[in] hydraulic_context   pointer to the context structure
+ *
+ * \return a pointer to the new allocated structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gwf_soil_t *
+cs_gwf_soil_create(const cs_zone_t                 *zone,
+                   cs_gwf_model_type_t              hydraulic_model,
+                   cs_gwf_soil_model_t              model,
+                   cs_property_type_t               perm_type,
+                   double                           k_abs[3][3],
+                   double                           porosity,
+                   double                           bulk_density,
+                   void                            *hydraulic_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -285,45 +313,27 @@ cs_gwf_soil_by_name(const char    *name);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the saturated moisture for the given soil id
- *
- * \param[in]  soil_id     id of the requested soil
- *
- * \return the value of the saturated moisture
+ * \brief Free all cs_gwf_soil_t structures
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_gwf_soil_get_saturated_moisture(int   soil_id);
+void
+cs_gwf_soil_free_all(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the max dim (aniso=9; iso=1) for the absolute permeability
- *         associated to each soil
- *
- * \return the associated max. dimension
+ * \brief  Summary of the settings related to all cs_gwf_soil_t structures
  */
 /*----------------------------------------------------------------------------*/
 
-int
-cs_gwf_soil_get_permeability_max_dim(void);
+void
+cs_gwf_soil_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if all soils have been set as CS_GWF_SOIL_SATURATED
- *
- * \return true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_gwf_soil_all_are_saturated(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Check that at least one soil has been defined and the model of soil
- *         exists.
- *         Raise an error if a problem is encoutered.
+ * \brief Check that at least one soil has been defined and the model of soil
+ *        exists.
+ *        Raise an error if a problem is encoutered.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -332,31 +342,48 @@ cs_gwf_soil_check(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a new cs_gwf_soil_t structure and add it to the array of
- *         soils. An initialization by default of all members is performed.
+ * \brief Update the soil properties
  *
- * \param[in] zone                pointer to a volume zone structure
- * \param[in] hydraulic_model     main hydraulic model for the module
- * \param[in] model               type of model for the soil behavior
- * \param[in] perm_type           type of permeability (iso/anisotropic)
- * \param[in] k_abs               absolute (intrisic) permeability
- * \param[in] porosity            porosity or max. moisture content
- * \param[in] bulk_density        value of the mass density
- * \param[in] hydraulic_context   pointer to the context structure
- *
- * \return a pointer to the new allocated structure
+ * \param[in] time_eval      time at which one evaluates properties
+ * \param[in] mesh           pointer to the mesh structure
+ * \param[in] connect        pointer to the cdo connectivity
+ * \param[in] cdoq           pointer to the cdo quantities
  */
 /*----------------------------------------------------------------------------*/
 
-cs_gwf_soil_t *
-cs_gwf_soil_create(const cs_zone_t                 *zone,
-                   cs_gwf_model_type_t              hydraulic_model,
-                   cs_gwf_soil_model_t              model,
-                   cs_property_type_t               perm_type,
-                   double                           k_abs[3][3],
-                   double                           porosity,
-                   double                           bulk_density,
-                   void                            *hydraulic_context);
+void
+cs_gwf_soil_update(cs_real_t                     time_eval,
+                   const cs_mesh_t              *mesh,
+                   const cs_cdo_connect_t       *connect,
+                   const cs_cdo_quantities_t    *cdoq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the definition of the soil porosity and absolute permeability
+ *        (which are properties always defined in the GWF module). One relies
+ *        on the definition of these properties in each soil.
+ *
+ * \param[in, out] abs_permeability    pointer to a cs_property_t structure
+ * \param[in, out] soil_porosity       pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_define_shared_properties(cs_property_t   *abs_permeability,
+                                     cs_property_t   *soil_porosity);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the definition of the soil porosity and absolute porosity (which
+ *        are properties always defined). This relies on the definition of
+ *        each soil.
+ *
+ * \param[in, out] moisture_content   pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_define_sspf_property(cs_property_t   *moisture_content);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -383,15 +410,13 @@ cs_gwf_soil_get_cell2soil(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build an array storing the dual volume associated to each vertex
- *         taking into account the porosity of the soil
- *         The computed quantity is stored as a static array. Use the function
- *         cs_gwf_soil_get_dual_vol_l()
+ * \brief Build an array storing the dual volume associated to each vertex
+ *        taking into account the porosity of the soil
+ *        The computed quantity is stored as a static array. Use the function
+ *        cs_gwf_soil_get_dual_vol_l()
  *
- * \param[in] cdoq     pointer to a structure storing additional geometrical
- *                     quantities for CDO schemes
- * \param[in] connect  pointer to a structure storing additional connectivities
- *                     for CDO schemes
+ * \param[in] cdoq     additional geometrical quantities for CDO schemes
+ * \param[in] connect  additional connectivities for CDO schemes
  */
 /*----------------------------------------------------------------------------*/
 
@@ -413,40 +438,60 @@ cs_gwf_soil_get_dual_porous_volume(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free all cs_gwf_soil_t structures
+ * \brief Get the porosity value for the given soil id
+ *
+ * \param[in] soil_id      id of the requested soil
+ *
+ * \return the value of the soil porosity
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_gwf_soil_free_all(void);
+cs_real_t
+cs_gwf_soil_get_porosity(int   soil_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Summary of the settings related to all cs_gwf_soil_t structures
+ * \brief Get the saturated moisture for the given soil id
+ *
+ * \param[in]  soil_id     id of the requested soil
+ *
+ * \return the value of the saturated moisture
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_gwf_soil_log_setup(void);
+cs_real_t
+cs_gwf_soil_get_saturated_moisture(int   soil_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a soil defined by a Van Genuchten-Mualen model
+ * \brief  Retrieve the max dim (aniso=9; iso=1) for the absolute permeability
+ *         associated to each soil
  *
- *         The (effective) liquid saturation (also called moisture content)
- *         follows the identity
- *         S_l,eff = (S_l - theta_r)/(theta_s - theta_r)
- *                 = (1 + |alpha . h|^n)^(-m)
+ * \return the associated max. dimension
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_gwf_soil_get_permeability_max_dim(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set a soil defined by a Van Genuchten-Mualen model
  *
- *         The isotropic relative permeability is defined as:
- *         k_r = S_l,eff^L * (1 - (1 - S_l,eff^(1/m))^m))^2
- *         where m = 1 -  1/n
+ *        The (effective) liquid saturation (also called moisture content)
+ *        follows the identity
+ *        S_l,eff = (S_l - theta_r)/(theta_s - theta_r)
+ *                = (1 + |alpha . h|^n)^(-m)
+ *
+ *        The isotropic relative permeability is defined as:
+ *        k_r = S_l,eff^L * (1 - (1 - S_l,eff^(1/m))^m))^2
+ *        where m = 1 -  1/n
  *
  * \param[in, out] soil       pointer to a cs_gwf_soil_t structure
  * \param[in]      theta_r    residual moisture
  * \param[in]      alpha      scale parameter (in m^-1)
  * \param[in]      n          shape parameter
- * \param[in]      L          turtuosity parameter
+ * \param[in]      L          tortuosity parameter
  */
 /*----------------------------------------------------------------------------*/
 
@@ -473,123 +518,6 @@ cs_gwf_soil_set_user(cs_gwf_soil_t                *soil,
                      void                         *param,
                      cs_gwf_soil_update_t         *update_func,
                      cs_gwf_soil_free_param_t     *free_param_func);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the definition of the soil porosity and absolute porosity (which
- *         are properties always defined). This relies on the definition of
- *         each soil.
- *
- * \param[in, out]  abs_permeability    pointer to a cs_property_t structure
- * \param[in, out]  soil_porosity       pointer to a cs_property_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_set_shared_properties(cs_property_t      *abs_permeability,
-                                  cs_property_t      *soil_porosity);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the definition of the soil porosity and absolute porosity (which
- *        are properties always defined). This relies on the definition of
- *        each soil.
- *
- * \param[in, out] moisture_content   pointer to a cs_property_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_saturated_set_property(cs_property_t   *moisture_content);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the definition of some property(ies) in specific situations for
- *         the two-phase flow models
- *         This relies on the definition of each soil.
- *
- * \param[in, out]  mc  pointer to the model context structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_tpf_set_property(cs_gwf_tpf_t     *mc);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update the soil properties
- *
- * \param[in]  time_eval         time at which one evaluates properties
- * \param[in]  mesh              pointer to the mesh structure
- * \param[in]  connect           pointer to the cdo connectivity
- * \param[in]  quant             pointer to the cdo quantities
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_update(cs_real_t                     time_eval,
-                   const cs_mesh_t              *mesh,
-                   const cs_cdo_connect_t       *connect,
-                   const cs_cdo_quantities_t    *quant);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update arrays associated to the definition of terms involved in the
- *         miscible two-phase flow model.
- *         Case of an isotropic absolute permeability.
- *
- * \param[in, out] mc            pointer to the model context to update
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_iso_update_mtpf_terms(cs_gwf_tpf_t    *mc);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update arrays associated to the definition of terms involved in the
- *         immiscible two-phase flow model.
- *         Case of an isotropic absolute permeability.
- *
- * \param[in, out] mc            pointer to the model context to update
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_iso_update_itpf_terms(cs_gwf_tpf_t     *mc);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update arrays associated to the definition of terms involved in the
- *         immiscible two-phase flow model.
- *         Case of an isotropic absolute permeability and an incremental solve
- *
- * \param[in]      ts          pointer to a cs_time_step_t structure
- * \param[in, out] mc          pointer to the model context to update
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_iso_update_itpf_terms_incr(const cs_time_step_t    *ts,
-                                       cs_gwf_tpf_t            *mc);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update arrays associated to the definition of terms involved in the
- *         immiscible two-phase flow model.
- *         Case of an isotropic absolute permeability with an incremental solve
- *         and a liquid saturation defined on a submesh.
- *
- * \param[in]      ts      pointer to a cs_time_step_t structure
- * \param[in]      connect pointer to a cs_cdo_connect_t structure
- * \param[in, out] mc      pointer to the model context to update
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_iso_update_itpf_terms_incr_submesh(const cs_time_step_t   *ts,
-                                               const cs_cdo_connect_t *connect,
-                                               cs_gwf_tpf_t           *mc);
 
 /*----------------------------------------------------------------------------*/
 

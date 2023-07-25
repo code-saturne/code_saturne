@@ -47,6 +47,10 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/* ++++++++++++++++++++++++++++++++++++++++++++++ */
+/* Saturated single-phase flows in a porous media */
+/* ++++++++++++++++++++++++++++++++++++++++++++++ */
+
 /*! \struct cs_gwf_sspf_t
  *
  * \brief Structure to handle the modelling of a single-phase flows in a porous
@@ -117,6 +121,10 @@ typedef struct {
    */
 
 } cs_gwf_sspf_t;
+
+/* ++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* Unsaturated single-phase flows in a porous media */
+/* ++++++++++++++++++++++++++++++++++++++++++++++++ */
 
 /*! \struct cs_gwf_uspf_t
  *
@@ -220,6 +228,10 @@ typedef struct {
 
 } cs_gwf_uspf_t;
 
+/* +++++++++++++++++++++++++++++++++ */
+/* Two-phase flows in a porous media */
+/* +++++++++++++++++++++++++++++++++ */
+
 /*! \struct cs_gwf_tpf_t
  *
  * \brief Structure to handle the modelling of miscible or immiscible two-phase
@@ -236,12 +248,13 @@ typedef struct {
  *   - Hydrogen pressure is given by the "perfect gas" law in the gas phase and
  *     the Henry's law in the liquid phase
  *
- * The two primitive variables are the capillarity and gas pressures with a
- * specific treatment in the saturated case to handle the gas pressure (cf. the
- * cited article or Angelini's PhD thesis)
+ * The two primitive variables are the capillarity and liquid pressures with a
+ * specific treatment in the saturated case (cf. the cited article or
+ * Angelini's PhD thesis)
  *
  * Notations are the following :
  * - Two phases: Liquid phase denoted by "l" and gaseous phase denoted by "g"
+ * - indice "c" refers to the capillarity pressure
  * - Two components: water denoted by "w" and a gaseous component (let's say
  *   hydrogen) denoted by "h". The gaseous component is present in the two
  *   phases whereas water is only considered in the liquid phase.
@@ -249,12 +262,12 @@ typedef struct {
  * The resulting linear algebraic system (one applies a linearization) is
  * defined as follows:
  *
- *                             liquid    gas
- * water mass conservation    | M_wl  | M_wg ||P_c|   | b_w |
+ *                              cap.    liq
+ * water mass conservation    | M_00  | M_01 ||P_c|   | b_w |
  *                            |-------|------||---| = |-----|
- * hydrogen mass conservation | M_hl  | M_hg ||P_g|   | b_h |
+ * hydrogen mass conservation | M_10  | M_11 ||P_l|   | b_h |
  *
- * This is a coupled system. Coupling terms are collected inside M_wg and M_hl
+ * This is a coupled system. Coupling terms are collected inside M_01 and M_10
  */
 
 typedef struct {
@@ -265,40 +278,39 @@ typedef struct {
    * @name Equations and system of equations
    * @{
    *
-   * \var wl_eq
+   * \var w_eq
    * Equation of mass conservation for water. Only the liquid phase is
    * considered. One assumes no water vapour in the gaseous phase. This
-   * corresponds to the M_wl  block in the system of equations and to the b_w
-   * right-hand side.
+   * corresponds to the M_00 and M_01 blocks in the system of equations and to
+   * the b_w right-hand side.
    */
 
-  cs_equation_t                *wl_eq;
+  cs_equation_t                *w_eq;
 
-  /*! \var hg_eq
+  /*! \var h_eq
    * Equation of mass conservation for (di)hydrogen. Hydrogen can be present in
-   * the liquid or in the gaseous phase. This corresponds to the block (1,1) in
-   * the system of equations, i.e. the M_hg block and the b_g right-hand side
+   * the liquid or in the gaseous phase. This corresponds to the M_10 and M_11
+   * blocks in the system of equations along with the b_h right-hand side
    */
 
-  cs_equation_t                *hg_eq;
+  cs_equation_t                *h_eq;
 
-  /*! \var wg_eqp
-   * Parameters associated to the M_wg block i.e. the (0,1) block in the system
-   * of equations. Water conservation w.r.t. the pressure in the gaseous phase.
+  /*! \var b01_w_eqp
+   * Parameters associated to the (0,1) block in the system of equations. Water
+   * conservation w.r.t. the capillarity pressure.
    */
 
-  cs_equation_param_t          *wg_eqp;
+  cs_equation_param_t          *b01_w_eqp;
 
-  /*! \var hl_eqp
-   * Parameters associated to the (h,l) block i.e. the (1,0) block in the
-   * system of equations. Conservation of the hydrogen w.r.t. the pressure in
-   * the liquid phase.
+  /*! \var b10_h_eqp
+   * Parameters associated to the (1,0) block in the system of equations.
+   * Conservation of the hydrogen w.r.t. the capillarity pressure.
    */
 
-  cs_equation_param_t          *hl_eqp;
+  cs_equation_param_t          *b10_h_eqp;
 
   /*! \var system
-   * System of equations (wl_eq, hg_eq and the cross-term defined in the related
+   * System of equations (w_eq, h_eq and the cross-terms defined in the related
    * cs_equation_param_t structures) used for the coupled approach
    */
 
@@ -331,29 +343,21 @@ typedef struct {
    * @name Properties related to the model
    * @{
    *
-   * \var time_wl_pty
+   * \var time_wc_pty
    * Property related to the unsteady term of the water conservation equation
-   * w.r.t. the pressure in the liquid phase
+   * w.r.t. the capillarity pressure
    *
    * \var diff_wl_pty
    * Property related to the diffusion term of the water conservation equation
    * w.r.t. the pressure in the liquid phase
    *
-   * \var time_wg_pty
-   * Property related to the unsteady term of the water conservation equation
-   * w.r.t. the pressure in the gaseous phase
-   *
-   * \var time_hg_pty
+   * \var time_hc_pty
    * Property related to the unsteady term of the hydrogen conservation equation
-   * w.r.t. the pressure in the gaseous phase.
+   * w.r.t. the capillarity pressure
    *
-   * \var diff_hg_pty
+   * \var diff_hc_pty
    * Property related to the diffusion term of the hydrogen conservation
-   * equation w.r.t. the pressure in the gaseous phase
-   *
-   * \var reac_hg_pty
-   * Property related to the reaction term of the hydrogen conservation
-   * equation w.r.t. the pressure in the gaseous phase
+   * equation w.r.t. the capillarity pressure
    *
    * \var time_hl_pty
    * Property related to the unsteady term of the hydrogen conservation equation
@@ -363,30 +367,28 @@ typedef struct {
    * Property related to the diffusion term of the hydrogen conservation
    * equation w.r.t. the pressure in the liquid phase
    *
+   * \var reac_h_pty
+   * Property related to the reaction term of the hydrogen conservation
+   * equation w.r.t. the pressure in the gas phase. Only used when a segregated
+   * solver is considered.
+   *
    */
 
-  cs_property_t                *time_wl_pty;
+  cs_property_t                *time_wc_pty;
   cs_property_t                *diff_wl_pty;
 
-  cs_property_t                *time_wg_pty;
-  cs_property_t                *diff_wg_pty;
-
-  cs_property_t                *time_hg_pty;
-  cs_property_t                *diff_hg_pty;
-  cs_property_t                *reac_hg_pty;
+  cs_property_t                *time_hc_pty;
+  cs_property_t                *diff_hc_pty;
 
   cs_property_t                *time_hl_pty;
   cs_property_t                *diff_hl_pty;
+
+  cs_property_t                *reac_h_pty;
 
   /*!
    * @}
    * @name Additional fields
    * @{
-   *
-   * \var l_saturation
-   *      Pointer to a \ref cs_field_t structure. Liquid saturation at cells.
-   *      This quantity is denoted by \f$ S_l \f$ and is defined by the soil
-   *      model
    *
    * \var c_pressure
    *      Pointer to a \ref cs_field_t structure named "capillarity_pressure".
@@ -399,67 +401,55 @@ typedef struct {
    * \var g_pressure
    *      Pointer to a \ref cs_field_t structure named "gas_pressure".
    *      Pressure in the gas phase is denoted by \f$ P_g \f$.
+   *
+   * \var l_saturation
+   *      Pointer to a \ref cs_field_t structure. Liquid saturation at cells.
+   *      This quantity is denoted by \f$ S_l \f$ and is defined by the soil
+   *      model
    */
 
-  cs_field_t                   *l_saturation;
   cs_field_t                   *c_pressure;
   cs_field_t                   *l_pressure;
   cs_field_t                   *g_pressure;
+  cs_field_t                   *l_saturation;
 
   /*!
    * @}
    * @name Additional arrays
    * @{
    *
-   * \var time_wl_array
+   * \var time_wc_array
    *      Values in each cell of the coefficient appearing in front of the
-   *      unsteady term in the water conservation equation for the liquid
-   *      phase. This array is linked to the \ref time_wl_pty (size = n_cells)
+   *      unsteady term in the water conservation equation associated to the
+   *      capillarity pressure as variable. This array is linked to the \ref
+   *      time_wc_pty (size = n_cells or c2v->idx[n_cells] if the definition
+   *      relies on a submesh)
    *
    * \var diff_wl_array
    *      Values in each cell of the coefficient appearing in the diffusion
    *      term in the water conservation equation. This array is linked to the
    *      \ref diff_wl_pty (size = n_cells)
    *
-   * \var srct_wl_array
-   *      Values in each cell of the source term corresponding to a quantity
-   *      proportional to the time evolution of the liquid saturation
-   *
-   * \var time_wg_array
+   * \var time_hc_array
    *      Values in each cell of the coefficient appearing in front of the
-   *      unsteady term in the water conservation equation w.r.t. the pressure
-   *      in the gaseous phase. This array is linked to the \ref time_wg_pty
-   *      (size = n_cells)
+   *      unsteady term in the hydrogen conservation equation associated to the
+   *      capillarity pressure. This array is linked to the \ref time_hc_pty
+   *      (size = n_cells or c2v->idx[n_cells] if the definition relies on a
+   *      submesh)
    *
-   * \var time_hg_array
-   *      Values in each cell of the coefficient appearing in front of the
-   *      unsteady term in the hydrogen conservation equation w.r.t. the
-   *      pressure in the gaseous phase. This array is linked to the \ref
-   *      time_hg_pty (size = n_cells)
-   *
-   * \var diff_hg_array
+   * \var diff_hc_array
    *      Values in each cell of the coefficient appearing in the diffusion
-   *      term in the hydrogen conservation equation w.r.t. to the pressure in
-   *      the gaseous phase.  This array is linked to the \ref diff_hg_pty
-   *      (size = n_cells)
-   *
-   * \var reac_hg_array
-   *      Values in each cell of the coefficient appearing in the reaction
-   *      term in the hydrogen conservation equation w.r.t. to the pressure in
-   *      the gaseous phase.  This array is linked to the \ref reac_hg_pty
-   *      (size = n_cells)
-   *
-   * \var srct_hg_array
-   *      Values in each vertex of the source term corresponding to a quantity
-   *      proportional to the time evolution of the unsteady term in the hg
-   *      equation. This term is allocated only if the optional parameter
-   *      use_properties_on_submesh is activated
+   *      term in the hydrogen conservation equation associated to the
+   *      capillarity pressure This array is linked to the \ref diff_hc_pty
+   *      (size = n_cells). This term may be useless according to the numerical
+   *      options.
    *
    * \var time_hl_array
    *      Values in each cell of the coefficient appearing in front of the
    *      unsteady term in the hydrogen conservation equation w.r.t. the
    *      pressure in the liquid phase. This array is linked to the \ref
-   *      time_hl_pty (size = n_cells)
+   *      time_hl_pty (size = n_cells or c2v->idx[n_cells] if the definition
+   *      relies on a submesh)
    *
    * \var diff_hl_array
    *      Values in each cell of the coefficient appearing in the diffusion
@@ -467,6 +457,43 @@ typedef struct {
    *      liquid phase.  This array is linked to the \ref diff_hl_pty (size
    *      = n_cells)
    *
+   * \var reac_h_array
+   *      Values of the reaction coefficient appearing in the diffusion term in
+   *      the hydrogen conservation equation w.r.t. the pressure in the liquid
+   *      phase.  This array is linked to the \ref diff_hl_pty (size = n_cells
+   *      or c2v->idx[n_cells] if the definition relies on a submesh)
+   *
+   * \var srct_w_array
+   *      Values of the source terms for the water conservation equation. Only
+   *      used if a segregated solver is considered. Size = n_cells or
+   *      c2v->idx[n_cells] if the definition relies on a submesh
+   *
+   * \var srct_h_array
+   *      Values of the source terms for the hydrogen conservation equation.
+   *      Only used if a segregated solver is considered. Size = n_cells or
+   *      c2v->idx[n_cells] if the definition relies on a submesh
+   *
+   * \var reac_h_array
+   *      Values of the reaction coefficient appearing in the hydrogen
+   *      conservation equation. Only used if a segregated solver is
+   *      considered. Size = n_cells or c2v->idx[n_cells] if the definition
+   *      relies on a submesh
+   */
+
+  cs_real_t                    *time_wc_array;
+  cs_real_t                    *diff_wl_array;
+
+  cs_real_t                    *time_hc_array;
+  cs_real_t                    *diff_hc_array;
+
+  cs_real_t                    *time_hl_array;
+  cs_real_t                    *diff_hl_array;
+
+  cs_real_t                    *srct_w_array;
+  cs_real_t                    *srct_h_array;
+  cs_real_t                    *reac_h_array;
+
+  /*
    * \var l_rel_permeability
    *      Values in each cell of the relative permeability in the liquid phase.
    *      This quantity is used either in the water conservation or in the
@@ -483,50 +510,29 @@ typedef struct {
    *      permeability = abs_permeability * rel_l_permeability
    *      This quantity is defined by the soil model.
    *
-   * \var l_capacity
-   *      Values in each cell of the soil capacity defined as
-   *      \f$ \frac{\partial S_l}{\partial P_c} \f$
-   *      This quantity is defined by the soil model.
-   *
-   * \var capillarity_cell_pressure
+   * \var c_pressure_cells
    *      Values in each cell of the capillarity pressure. This quantity is the
    *      one used to update the variable related to a soil model such as the
    *      liquid and gaseous relative permeabilities or the liquid saturation.
    *
-   * \var g_cell_pressure
+   * \var g_pressure_cells
    *      Values in each cell of the gas pressure. This quantity is the one
    *      used to update the unsteady/diffusion term coefficients in the
    *      conservation equation for the gas component. This quantity can also
    *      be useful for post-processing purposes.
+   *
+   * \var l_capacity
+   *      Values in each cell of the soil capacity defined as
+   *      \f$ \frac{\partial S_l}{\partial P_c} \f$
+   *      This quantity is defined by the soil model.
    *
    * \var l_saturation_submesh
    *      Array storing the current values of the liquid saturation on a
    *      submesh. This submesh corresponds to the subdivision of the primal
    *      mesh by the dual mesh associated to each vertex (scanned this array
    *      with the c2v adjacency structure). This array is allocated only if
-   *      the option CS_GWF_LIQUID_SATURATION_ON_SUBMESH is swicth on.
-   *
-   * \var l_saturation_submesh_pre
-   *      Array storing the previous values of the liquid saturation on a
-   *      submesh. This submesh corresponds to the subdivision of the primal
-   *      mesh by the dual mesh associated to each vertex (scanned this array
-   *      with the c2v adjacency structure). This array is allocated only if
-   *      the option CS_GWF_LIQUID_SATURATION_ON_SUBMESH is swicth on.
+   *      the option CS_GWF_LIQUID_SATURATION_ON_SUBMESH is switch on.
    */
-
-  cs_real_t                    *time_wl_array;
-  cs_real_t                    *diff_wl_array;
-  cs_real_t                    *srct_wl_array;
-
-  cs_real_t                    *time_wg_array;
-
-  cs_real_t                    *time_hg_array;
-  cs_real_t                    *diff_hg_array;
-  cs_real_t                    *reac_hg_array;
-  cs_real_t                    *srct_hg_array;
-
-  cs_real_t                    *time_hl_array;
-  cs_real_t                    *diff_hl_array;
 
   cs_real_t                    *l_rel_permeability;
   cs_real_t                    *g_rel_permeability;
@@ -534,16 +540,18 @@ typedef struct {
   /* These arrays are not always allocated. It depends on the numerical
      settings */
 
+  cs_real_t                    *c_pressure_cells;
+  cs_real_t                    *g_pressure_cells;
   cs_real_t                    *l_capacity;
-  cs_real_t                    *capillarity_cell_pressure;
-  cs_real_t                    *g_cell_pressure;
   cs_real_t                    *l_saturation_submesh;
-  cs_real_t                    *l_saturation_submesh_pre;
 
   /*!
    * @}
    * @name Physical model parameters
    * @{
+   *
+   * \var is_miscible
+   *      true or false. Some simplifications can be done if immiscible.
    *
    * \var l_mass_density
    *      Mass density in the liquid phase. With the model assumptions, this
@@ -578,6 +586,8 @@ typedef struct {
    *      immiscible model.
    */
 
+  bool                          is_miscible;
+
   cs_real_t                     l_mass_density;
   cs_real_t                     l_viscosity;
   cs_real_t                     g_viscosity;
@@ -606,12 +616,14 @@ typedef struct {
    *        the problem using increment and to iterate on the non-linear
    *        process (for instance whith a Picard or Anderson acceleration)
    *
-   * \var use_explicit_dsldt_liquid
-   * \brief Consider an explicit treatment of the time derivative of the liquid
-   *        saturation in the mass conservation for the water equation
-   *
-   * \var use_properties_on_submesh
+   * \var use_definition_on_submesh
    * \brief Consider a submesh to define the liquid saturation
+   *
+   * \var use_diffusion_view_for_darcy
+   * \brief Use a diffusion term for the discretization of the Darcy terms in
+   *        the conservation equation for the mass of hydrogen. The default
+   *        option is to consuder an advection term since it should be more
+   *        robust as upwinding technique can be used.
    *
    * \var nl_algo_type
    *      Type of algorithm to solve the non-linearities
@@ -629,8 +641,8 @@ typedef struct {
 
   bool                           use_coupled_solver;
   bool                           use_incremental_solver;
-  bool                           use_properties_on_submesh;
-  bool                           use_explicit_dsldt_liquid;
+  bool                           use_definition_on_submesh;
+  bool                           use_diffusion_view_for_darcy;
 
   cs_param_nl_algo_t             nl_algo_type;
   cs_param_sles_cvg_t            nl_algo_cvg;

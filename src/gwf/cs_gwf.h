@@ -106,25 +106,25 @@ cs_gwf_get_two_phase_model(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the numerical options related to the two phase flow models
+ * \brief Set the numerical options related to the two phase flow models
  *
- * \param[in] use_coupled_solver          true/false
- * \param[in] use_incremental_solver      true/false
- * \param[in] use_properties_on_submesh   true/false
- * \param[in] use_explicit_dsldt_liquid   true/false
+ * \param[in] use_coupled_solver            true/false
+ * \param[in] use_incremental_solver        true/false
+ * \param[in] use_definition_on_submesh     true/false
+ * \param[in] use_diffusion_view_for_darcy  true/false
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_gwf_set_two_phase_numerical_options(bool    use_coupled_solver,
                                        bool    use_incremental_solver,
-                                       bool    use_properties_on_submesh,
-                                       bool    use_explicit_dsldt_liquid);
+                                       bool    use_definition_on_submesh,
+                                       bool    use_diffusion_view_for_darcy);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the parameters defining the two-phase flow model.
- *         Use SI unit if not prescribed otherwise.
+ * \brief Set the parameters defining the two-phase flow model.
+ *        Use SI unit if not prescribed otherwise.
  *
  * \param[in] l_mass_density   mass density of the main liquid component
  * \param[in] l_viscosity      viscosity in the liquid phase (Pa.s)
@@ -150,8 +150,8 @@ cs_gwf_set_miscible_two_phase_model(cs_real_t       l_mass_density,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the parameters defining the immiscible two-phase flow model.
- *         Use SI unit if not prescribed otherwise.
+ * \brief Set the parameters defining the immiscible two-phase flow model.
+ *        Use SI unit if not prescribed otherwise.
  *
  * \param[in] l_mass_density   mass density of the main liquid component
  * \param[in] l_viscosity      viscosity in the liquid phase (Pa.s)
@@ -170,7 +170,7 @@ cs_gwf_set_immiscible_two_phase_model(cs_real_t       l_mass_density,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Summary of the main cs_gwf_t structure
+ * \brief Summary of the main cs_gwf_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -179,10 +179,10 @@ cs_gwf_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the flag dedicated to the post-processing of the GWF module
+ * \brief Set the flag dedicated to the post-processing of the GWF module
  *
- * \param[in]  post_flag             flag to set
- * \param[in]  reset                 reset post flag before
+ * \param[in] post_flag             flag to set
+ * \param[in] reset                 reset post flag before
  */
 /*----------------------------------------------------------------------------*/
 
@@ -204,15 +204,15 @@ cs_gwf_get_adv_field(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and add a new cs_gwf_soil_t structure. An initialization by
- *         default of all members is performed.
- *         Case of a soil with an isotropic absolute permeability
+ * \brief Create and add a new cs_gwf_soil_t structure. An initialization by
+ *        default of all members is performed.
+ *        Case of a soil with an isotropic absolute permeability
  *
- * \param[in]  z_name      name of the volume zone corresponding to the soil
- * \param[in]  density     value of the bulk mass density
- * \param[in]  k_abs       absolute (or intrisic) permeability (scalar-valued)
- * \param[in]  porosity    value of the porosity (saturated moisture content)
- * \param[in]  model       type of model for the soil behavior
+ * \param[in] z_name      name of the volume zone corresponding to the soil
+ * \param[in] density     value of the bulk mass density
+ * \param[in] k_abs       absolute (or intrisic) permeability (scalar-valued)
+ * \param[in] porosity    value of the porosity (saturated moisture content)
+ * \param[in] model       type of model for the soil behavior
  *
  * \return a pointer to the new allocated soil structure
  */
@@ -227,14 +227,14 @@ cs_gwf_add_iso_soil(const char                *z_name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and add a new cs_gwf_soil_t structure. An initialization by
- *         default of all members is performed.
+ * \brief Create and add a new cs_gwf_soil_t structure. An initialization by
+ *        default of all members is performed.
  *
- * \param[in]  z_name      name of the volume zone corresponding to the soil
- * \param[in]  density     value of the bulk mass density
- * \param[in]  k_abs       absolute (or intrisic) permeability (tensor-valued)
- * \param[in]  porosity    value of the porosity (saturated moisture content)
- * \param[in]  model       type of model for the soil behavior
+ * \param[in] z_name      name of the volume zone corresponding to the soil
+ * \param[in] density     value of the bulk mass density
+ * \param[in] k_abs       absolute (or intrisic) permeability (tensor-valued)
+ * \param[in] porosity    value of the porosity (saturated moisture content)
+ * \param[in] model       type of model for the soil behavior
  *
  * \return a pointer to the new allocated soil structure
  */

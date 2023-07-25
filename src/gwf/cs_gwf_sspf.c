@@ -439,7 +439,7 @@ cs_gwf_sspf_finalize_setup(const cs_cdo_connect_t        *connect,
 
   /* Set the soil porosity each soil from the moisture content */
 
-  cs_gwf_soil_saturated_set_property(mc->moisture_content);
+  cs_gwf_soil_define_sspf_property(mc->moisture_content);
 }
 
 /*----------------------------------------------------------------------------*/

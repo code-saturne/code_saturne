@@ -281,7 +281,7 @@ cs_gwf_activate(cs_gwf_model_type_t      model,
   case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
   case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
     gw->post_flag |= CS_GWF_POST_LIQUID_SATURATION;
-    gw->model_context = cs_gwf_tpf_create();
+    gw->model_context = cs_gwf_tpf_create(model);
     break;
 
   default:
@@ -452,7 +452,7 @@ cs_gwf_log_setup(void)
 
   case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
   case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
-    cs_gwf_tpf_log_setup(gw->model, gw->model_context);
+    cs_gwf_tpf_log_setup(gw->model_context);
     break;
 
   default:
@@ -498,21 +498,21 @@ cs_gwf_get_two_phase_model(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the numerical options related to the two phase flow models
+ * \brief Set the numerical options related to the two phase flow models
  *
- * \param[in] use_coupled_solver          true/false
- * \param[in] use_incremental_solver      true/false
- * \param[in] use_properties_on_submesh   true/false
- * \param[in] use_explicit_dsldt_liquid   true/false
+ * \param[in] use_coupled_solver            true/false
+ * \param[in] use_incremental_solver        true/false
+ * \param[in] use_definition_on_submesh     true/false
+ * \param[in] use_diffusion_view_for_darcy  true/false
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_gwf_set_two_phase_numerical_options(bool    use_coupled_solver,
                                        bool    use_incremental_solver,
-                                       bool    use_properties_on_submesh,
-                                       bool    use_explicit_dsldt_liquid)
- {
+                                       bool    use_definition_on_submesh,
+                                       bool    use_diffusion_view_for_darcy)
+{
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
@@ -522,14 +522,14 @@ cs_gwf_set_two_phase_numerical_options(bool    use_coupled_solver,
 
   mc->use_coupled_solver = use_coupled_solver;
   mc->use_incremental_solver = use_incremental_solver;
-  mc->use_properties_on_submesh = use_properties_on_submesh;
-  mc->use_explicit_dsldt_liquid = use_explicit_dsldt_liquid;
+  mc->use_definition_on_submesh = use_definition_on_submesh;
+  mc->use_diffusion_view_for_darcy = use_diffusion_view_for_darcy;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the parameters defining the two-phase flow model.
- *         Use SI unit if not prescribed otherwise.
+ * \brief Set the parameters defining the two-phase flow model.
+ *        Use SI unit if not prescribed otherwise.
  *
  * \param[in] l_mass_density   mass density of the main liquid component
  * \param[in] l_viscosity      viscosity in the liquid phase (Pa.s)
@@ -558,12 +558,19 @@ cs_gwf_set_miscible_two_phase_model(cs_real_t       l_mass_density,
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
   if (gw->model != CS_GWF_MODEL_MISCIBLE_TWO_PHASE)
     bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid model. One expects a two-phase flow model.\n",
-              __func__);
+              "%s: Invalid model.\n"
+              "%s: One expects a miscible two-phase flow model.\n",
+              __func__, __func__);
 
   cs_gwf_tpf_t  *mc = gw->model_context;
 
   assert(mc != NULL);
+  if (mc->is_miscible == false)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid model.\n"
+              "%s: One expects a miscible two-phase flow model.\n",
+              __func__, __func__);
+
   assert(l_mass_density > 0);
   assert(ref_temperature > 0);  /* In Kelvin */
   assert(h_molar_mass > 0);
@@ -583,8 +590,8 @@ cs_gwf_set_miscible_two_phase_model(cs_real_t       l_mass_density,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the parameters defining the immiscible two-phase flow model.
- *         Use SI unit if not prescribed otherwise.
+ * \brief Set the parameters defining the immiscible two-phase flow model.
+ *        Use SI unit if not prescribed otherwise.
  *
  * \param[in] l_mass_density   mass density of the main liquid component
  * \param[in] l_viscosity      viscosity in the liquid phase (Pa.s)
@@ -606,10 +613,17 @@ cs_gwf_set_immiscible_two_phase_model(cs_real_t       l_mass_density,
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
   if (gw->model != CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE)
     bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid model. One expects a two-phase flow model.\n",
-              __func__);
+              "%s: Invalid model.\n"
+              "%s: One expects an immiscible two-phase flow model.\n",
+              __func__, __func__);
 
   cs_gwf_tpf_t  *mc = gw->model_context;
+
+  if (mc->is_miscible == true)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid model.\n"
+              "%s: One expects an immiscible two-phase flow model.\n",
+              __func__, __func__);
 
   assert(mc != NULL);
   assert(l_mass_density > 0);
@@ -631,10 +645,10 @@ cs_gwf_set_immiscible_two_phase_model(cs_real_t       l_mass_density,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the flag dedicated to the post-processing of the GWF module
+ * \brief Set the flag dedicated to the post-processing of the GWF module
  *
- * \param[in]  post_flag             flag to set
- * \param[in]  reset                 reset post flag before
+ * \param[in] post_flag             flag to set
+ * \param[in] reset                 reset post flag before
  */
 /*----------------------------------------------------------------------------*/
 
@@ -695,15 +709,15 @@ cs_gwf_get_adv_field(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and add a new cs_gwf_soil_t structure. An initialization by
- *         default of all members is performed.
- *         Case of a soil with an isotropic absolute permeability
+ * \brief Create and add a new cs_gwf_soil_t structure. An initialization by
+ *        default of all members is performed.
+ *        Case of a soil with an isotropic absolute permeability
  *
- * \param[in]  z_name      name of the volume zone corresponding to the soil
- * \param[in]  density     value of the bulk mass density
- * \param[in]  k_abs       absolute (or intrisic) permeability (scalar-valued)
- * \param[in]  porosity    value of the porosity (saturated moisture content)
- * \param[in]  model       type of model for the soil behavior
+ * \param[in] z_name      name of the volume zone corresponding to the soil
+ * \param[in] density     value of the bulk mass density
+ * \param[in] k_abs       absolute (or intrisic) permeability (scalar-valued)
+ * \param[in] porosity    value of the porosity (saturated moisture content)
+ * \param[in] model       type of model for the soil behavior
  *
  * \return a pointer to the new allocated soil structure
  */
@@ -748,14 +762,14 @@ cs_gwf_add_iso_soil(const char                *z_name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and add a new cs_gwf_soil_t structure. An initialization by
- *         default of all members is performed.
+ * \brief Create and add a new cs_gwf_soil_t structure. An initialization by
+ *        default of all members is performed.
  *
- * \param[in]  z_name      name of the volume zone corresponding to the soil
- * \param[in]  density     value of the bulk mass density
- * \param[in]  k_abs       absolute (or intrisic) permeability (tensor-valued)
- * \param[in]  porosity    value of the porosity (saturated moisture content)
- * \param[in]  model       type of model for the soil behavior
+ * \param[in] z_name      name of the volume zone corresponding to the soil
+ * \param[in] density     value of the bulk mass density
+ * \param[in] k_abs       absolute (or intrisic) permeability (tensor-valued)
+ * \param[in] porosity    value of the porosity (saturated moisture content)
+ * \param[in] model       type of model for the soil behavior
  *
  * \return a pointer to the new allocated soil structure
  */
@@ -1239,11 +1253,11 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
   cs_gwf_t  *gw = cs_gwf_main_structure;
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
-  /* Set the soil porosity and the absolute permeability from the soil
+  /* Define the soil porosity and the absolute permeability from the soil
      definition */
 
-  cs_gwf_soil_set_shared_properties(gw->abs_permeability,
-                                    gw->soil_porosity);
+  cs_gwf_soil_define_shared_properties(gw->abs_permeability,
+                                       gw->soil_porosity);
 
   switch (gw->model) {
 
@@ -1324,7 +1338,6 @@ cs_gwf_hydraulic_update(const cs_mesh_t             *mesh,
   case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
   case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
     cs_gwf_tpf_update(mesh, connect, quant, ts,
-                      gw->model,
                       update_flag,
                       gw->flag,
                       gw->model_context);
@@ -1494,7 +1507,6 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
   case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
   case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
     cs_gwf_tpf_compute(mesh, connect, cdoq, time_step,
-                       gw->model,
                        gw->flag,
                        gw->model_context);
     break;
