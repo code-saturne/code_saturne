@@ -532,23 +532,19 @@ _merge_snapped_to_center(cs_probe_set_t   *pset,
   for (int i = 0; i < pset->n_probes; i++)
     tag[i] = 0;
 
-  cs_lnum_t *order;
-  BFT_MALLOC(order, pset->n_loc_probes, cs_lnum_t);
-  cs_order_lnum_allocated(NULL, pset->elt_id, order, pset->n_loc_probes);
-
   cs_lnum_t e_id = 0;
 
   while (e_id < pset->n_loc_probes) {
 
     cs_lnum_t s_id = e_id;
-    cs_lnum_t j_min = order[s_id];
+    cs_lnum_t j_min = s_id;
     int l = pset->elt_id[j_min];
     int k = pset->loc_id[j_min];
     cs_real_t d_min = cs_math_3_distance(pset->coords[k], centers + l*3);
     tag[pset->loc_id[j_min]] = 1;
 
     for (e_id = s_id+1; e_id < pset->n_loc_probes; e_id++) {
-      cs_lnum_t j = order[e_id];
+      cs_lnum_t j = e_id;
       if (pset->elt_id[j] != l)
         break;
       else {
@@ -563,8 +559,6 @@ _merge_snapped_to_center(cs_probe_set_t   *pset,
     }
 
   }
-
-  BFT_FREE(order);
 
   /* Now all points to keep are tagged */
 
@@ -1903,8 +1897,10 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
       if (pset->elt_id[i] > -1) {
         const int j = pset->loc_id[i];
         const cs_real_t  *elt_coords = centers + pset->elt_id[i]*3;
-        for (int k = 0; k < 3; k++)
+        for (int k = 0; k < 3; k++) {
           pset->coords[j][k] = elt_coords[k];
+          probe_coords[i][k] = elt_coords[k];
+        }
       }
     }
   }
@@ -1913,8 +1909,10 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
       if (pset->vtx_id[i] > -1) {
         const int j = pset->loc_id[i];
         const cs_real_t  *vtx_coords = m->vtx_coord + pset->vtx_id[i]*3;
-        for (int k = 0; k < 3; k++)
+        for (int k = 0; k < 3; k++) {
           pset->coords[j][k] = vtx_coords[k];
+          probe_coords[i][k] = vtx_coords[k];
+        }
       }
     }
   }
