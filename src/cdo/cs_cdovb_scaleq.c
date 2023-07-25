@@ -272,8 +272,8 @@ _svb_init_cell_system(const cs_cell_mesh_t          *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add the reaction term for a scalar-valued CDO vertex-based scheme
- *         Case of reaction terms relying on a classical mass matrix
+ * \brief Add the reaction term for a scalar-valued CDO vertex-based scheme
+ *        Case of reaction terms relying on a classical mass matrix
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
@@ -310,8 +310,8 @@ _svb_reaction(const cs_equation_param_t    *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add the reaction term for a scalar-valued CDO vertex-based scheme
- *         Case of reaction terms relying on a lumped mass matrix
+ * \brief Add the reaction term for a scalar-valued CDO vertex-based scheme
+ *        Case of reaction terms relying on a lumped mass matrix
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
@@ -323,14 +323,14 @@ _svb_reaction(const cs_equation_param_t    *eqp,
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_svb_lumped_reaction(const cs_equation_param_t    *eqp,
+_svb_reaction_lumped(const cs_equation_param_t    *eqp,
                      const cs_cell_mesh_t         *cm,
                      const cs_hodge_t             *mass_hodge,
                      const cs_equation_builder_t  *eqb,
                      cs_cell_builder_t            *cb,
                      cs_cell_sys_t                *csys)
 {
-  CS_UNUSED(mass_hodge);
+  CS_NO_WARN_IF_UNUSED(mass_hodge);
 
   /* Update the value of the reaction property(ies) if needed */
 
@@ -351,8 +351,10 @@ _svb_lumped_reaction(const cs_equation_param_t    *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add the reaction term for a scalar-valued CDO vertex-based scheme
- *         Case of reaction terms relying on a lumped mass matrix
+ * \brief Add the reaction term for a scalar-valued CDO vertex-based scheme
+ *        Case of reaction terms relying on a lumped mass matrix and a property
+ *        defined on a partition of the cell (dual volume intersecting the
+ *        primal cell)
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
@@ -364,15 +366,16 @@ _svb_lumped_reaction(const cs_equation_param_t    *eqp,
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_svb_lumped_subcell_reaction(const cs_equation_param_t    *eqp,
+_svb_reaction_lumped_subcell(const cs_equation_param_t    *eqp,
                              const cs_cell_mesh_t         *cm,
                              const cs_hodge_t             *mass_hodge,
                              const cs_equation_builder_t  *eqb,
                              cs_cell_builder_t            *cb,
                              cs_cell_sys_t                *csys)
 {
-  CS_UNUSED(mass_hodge);
-  CS_UNUSED(eqb);
+  CS_NO_WARN_IF_UNUSED(mass_hodge);
+  CS_NO_WARN_IF_UNUSED(eqb);
+
   assert(eqp->n_reaction_terms == 1);
 
   /* The value of the property in each portion of the dual cell is stored
@@ -582,43 +585,8 @@ _svb_apply_weak_bc(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Apply the time scheme for a scalar-valued CDO vertex-based scheme
- *         First step shared among all variant of theta time scheme
- *
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in, out] cb          pointer to a cs_cell_builder_t structure
- * \param[in, out] csys        pointer to a cs_cell_sys_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_svb_theta_scheme_begin(const cs_equation_param_t   *eqp,
-                        cs_cell_builder_t           *cb,
-                        cs_cell_sys_t               *csys)
-{
-  /* STEP.1 >> Compute the contribution of the "adr" to the RHS:
-   *           tcoef*adr_pn where adr_pn = csys->mat * p_n
-   *           adr is the cellwise matrix with Advection Diffusion Reaction
-   *           contributions
-   */
-
-  const double  tcoef = 1 - eqp->theta;
-
-  double  *adr_pn = cb->values;
-  cs_sdm_square_matvec(csys->mat, csys->val_n, adr_pn);
-  for (short int i = 0; i < csys->n_dofs; i++) /* n_dofs = n_vc */
-    csys->rhs[i] -= tcoef * adr_pn[i];
-
-  /* STEP.2 >> Multiply csys->mat by theta */
-
-  for (int i = 0; i < csys->n_dofs*csys->n_dofs; i++)
-    csys->mat->val[i] *= eqp->theta;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Apply the time scheme for a scalar-valued CDO vertex-based scheme
- *         Case of an implicit Euler time scheme with a classical mass matrix
+ * \brief Apply the time scheme for a scalar-valued CDO vertex-based scheme
+ *        Case of an implicit Euler time scheme (no lumping of the mass matrix)
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
@@ -631,13 +599,13 @@ _svb_theta_scheme_begin(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 static void
-_svb_implicit_euler(const cs_equation_param_t   *eqp,
-                    const cs_cell_mesh_t        *cm,
-                    const cs_hodge_t            *mass_hodge,
-                    const double                 inv_dtcur,
-                    cs_equation_builder_t       *eqb,
-                    cs_cell_builder_t           *cb,
-                    cs_cell_sys_t               *csys)
+_svb_imp_euler(const cs_equation_param_t   *eqp,
+               const cs_cell_mesh_t        *cm,
+               const cs_hodge_t            *mass_hodge,
+               const double                 inv_dtcur,
+               cs_equation_builder_t       *eqb,
+               cs_cell_builder_t           *cb,
+               cs_cell_sys_t               *csys)
 {
   if (!(eqb->time_pty_uniform))
     cb->tpty_val = cs_property_value_in_cell(cm,
@@ -666,8 +634,9 @@ _svb_implicit_euler(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Apply the time scheme for a scalar-valued CDO vertex-based scheme
- *         Case of a theta time scheme with a classical mass matrix
+ * \brief Apply the time scheme for a scalar-valued CDO vertex-based scheme
+ *        Case of an implicit Euler time scheme (no lumping of the mass matrix)
+ *        and an incremental resolution
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
@@ -680,51 +649,13 @@ _svb_implicit_euler(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 static void
-_svb_theta_scheme(const cs_equation_param_t   *eqp,
-                  const cs_cell_mesh_t        *cm,
-                  const cs_hodge_t            *mass_hodge,
-                  const double                 inv_dtcur,
-                  cs_equation_builder_t       *eqb,
-                  cs_cell_builder_t           *cb,
-                  cs_cell_sys_t               *csys)
-{
-  /* STEP.1 and STEP.2 common to all variants */
-
-  _svb_theta_scheme_begin(eqp, cb, csys);
-
-  /* STEP.3 >> Handle the mass matrix
-   * Two contributions for the mass matrix
-   *  a) add to rhs mass_mat * p_n
-   *  b) add to csys->mat
-   */
-
-  _svb_implicit_euler(eqp, cm, mass_hodge, inv_dtcur, eqb, cb, csys);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Apply the time scheme for a scalar-valued CDO vertex-based scheme
- *         Case of an implicit Euler time scheme with a classical mass matrix
- *         and an incremental resolution
- *
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or NULL if useless
- * \param[in]      inv_dtcur   value of 1./dt for the current time step
- * \param[in, out] eqb         pointer to the equation builder structure
- * \param[in, out] cb          pointer to a cs_cell_builder_t structure
- * \param[in, out] csys        pointer to a cs_cell_sys_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_svb_implicit_euler_incr(const cs_equation_param_t   *eqp,
-                         const cs_cell_mesh_t        *cm,
-                         const cs_hodge_t            *mass_hodge,
-                         const double                 inv_dtcur,
-                         cs_equation_builder_t       *eqb,
-                         cs_cell_builder_t           *cb,
-                         cs_cell_sys_t               *csys)
+_svb_imp_euler_incr(const cs_equation_param_t   *eqp,
+                    const cs_cell_mesh_t        *cm,
+                    const cs_hodge_t            *mass_hodge,
+                    const double                 inv_dtcur,
+                    cs_equation_builder_t       *eqb,
+                    cs_cell_builder_t           *cb,
+                    cs_cell_sys_t               *csys)
 {
   if (!(eqb->time_pty_uniform))
     cb->tpty_val = cs_property_value_in_cell(cm,
@@ -752,8 +683,8 @@ _svb_implicit_euler_incr(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Apply the time scheme for a scalar-valued CDO vertex-based scheme
- *         Case of an implicit Euler time scheme with a lumped mass matrix
+ * \brief Apply the time scheme for a scalar-valued CDO vertex-based scheme
+ *        Case of an implicit Euler time scheme with a lumped mass matrix
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
@@ -766,13 +697,13 @@ _svb_implicit_euler_incr(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 static void
-_svb_lumped_implicit_euler(const cs_equation_param_t   *eqp,
-                           const cs_cell_mesh_t        *cm,
-                           const cs_hodge_t            *mass_hodge,
-                           const double                 inv_dtcur,
-                           cs_equation_builder_t       *eqb,
-                           cs_cell_builder_t           *cb,
-                           cs_cell_sys_t               *csys)
+_svb_imp_euler_lumped(const cs_equation_param_t   *eqp,
+                      const cs_cell_mesh_t        *cm,
+                      const cs_hodge_t            *mass_hodge,
+                      const double                 inv_dtcur,
+                      cs_equation_builder_t       *eqb,
+                      cs_cell_builder_t           *cb,
+                      cs_cell_sys_t               *csys)
 {
   CS_UNUSED(mass_hodge);
 
@@ -802,8 +733,9 @@ _svb_lumped_implicit_euler(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Apply the time scheme for a scalar-valued CDO vertex-based scheme
- *         Case of a theta time scheme with a lumped mass matrix
+ * \brief Apply the time scheme for a scalar-valued CDO vertex-based scheme
+ *        Case of an implicit Euler time scheme with a lumped mass matrix
+ *        and an incremental resolution
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
@@ -816,50 +748,13 @@ _svb_lumped_implicit_euler(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 static void
-_svb_lumped_theta_scheme(const cs_equation_param_t   *eqp,
-                         const cs_cell_mesh_t        *cm,
-                         const cs_hodge_t            *mass_hodge,
-                         const double                 inv_dtcur,
-                         cs_equation_builder_t       *eqb,
-                         cs_cell_builder_t           *cb,
-                         cs_cell_sys_t               *csys)
-{
-  /* STEP.1 and STEP.2 common to all variants */
-
-  _svb_theta_scheme_begin(eqp, cb, csys);
-
-  /* STEP.3 >> Handle the lumped matrix
-   *  a) add to rhs lumped_mass_mat * p_n
-   *  b) add to csys->mat the (implicit) contribution
-   */
-
-  _svb_lumped_implicit_euler(eqp, cm, mass_hodge, inv_dtcur,eqb, cb, csys);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Apply the time scheme for a scalar-valued CDO vertex-based scheme
- *         Case of an implicit Euler time scheme with a lumped mass matrix
- *         and an incremental resolution
- *
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or NULL if useless
- * \param[in]      inv_dtcur   value of 1./dt for the current time step
- * \param[in, out] eqb         pointer to the equation builder structure
- * \param[in, out] cb          pointer to a cs_cell_builder_t structure
- * \param[in, out] csys        pointer to a cs_cell_sys_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_svb_lumped_implicit_euler_incr(const cs_equation_param_t   *eqp,
-                                const cs_cell_mesh_t        *cm,
-                                const cs_hodge_t            *mass_hodge,
-                                const double                 inv_dtcur,
-                                cs_equation_builder_t       *eqb,
-                                cs_cell_builder_t           *cb,
-                                cs_cell_sys_t               *csys)
+_svb_imp_euler_lumped_incr(const cs_equation_param_t   *eqp,
+                           const cs_cell_mesh_t        *cm,
+                           const cs_hodge_t            *mass_hodge,
+                           const double                 inv_dtcur,
+                           cs_equation_builder_t       *eqb,
+                           cs_cell_builder_t           *cb,
+                           cs_cell_sys_t               *csys)
 {
   CS_UNUSED(mass_hodge);
   CS_CDO_OMP_ASSERT(cs_eflag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
@@ -886,8 +781,10 @@ _svb_lumped_implicit_euler_incr(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Apply the time scheme for a scalar-valued CDO vertex-based scheme
- *         Case of an implicit Euler time scheme with a lumped mass matrix
+ * \brief Apply the time scheme for a scalar-valued CDO vertex-based scheme
+ *        Case of an implicit Euler time scheme with a lumped mass matrix and a
+ *        property defined on a partition of the cell (the dual volume
+ *        interected by the primal cell)
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
@@ -900,7 +797,7 @@ _svb_lumped_implicit_euler_incr(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 static void
-_svb_lumped_subcell_implicit_euler(const cs_equation_param_t   *eqp,
+_svb_imp_euler_lumped_subcell(const cs_equation_param_t   *eqp,
                                    const cs_cell_mesh_t        *cm,
                                    const cs_hodge_t            *mass_hodge,
                                    const double                 inv_dtcur,
@@ -934,8 +831,10 @@ _svb_lumped_subcell_implicit_euler(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Apply the time scheme for a scalar-valued CDO vertex-based scheme
- *         Case of a theta time scheme with a lumped mass matrix
+ * \brief Apply the time scheme for a scalar-valued CDO vertex-based scheme
+ *        Case of an implicit Euler time scheme with a lumped mass matrix
+ *        and an incremental resolution. The time property is defined on
+ *        each part of the dual cell intersected with a primal cell
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
@@ -948,52 +847,13 @@ _svb_lumped_subcell_implicit_euler(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 static void
-_svb_lumped_subcell_theta_scheme(const cs_equation_param_t   *eqp,
-                                 const cs_cell_mesh_t        *cm,
-                                 const cs_hodge_t            *mass_hodge,
-                                 const double                 inv_dtcur,
-                                 cs_equation_builder_t       *eqb,
-                                 cs_cell_builder_t           *cb,
-                                 cs_cell_sys_t               *csys)
-{
-  /* STEP.1 and STEP.2 common to all variants */
-
-  _svb_theta_scheme_begin(eqp, cb, csys);
-
-  /* STEP.3 >> Handle the lumped matrix
-   *  a) add to rhs lumped_mass_mat * p_n
-   *  b) add to csys->mat the (implicit) contribution
-   */
-
-  _svb_lumped_subcell_implicit_euler(eqp, cm, mass_hodge, inv_dtcur,
-                                     eqb, cb, csys);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Apply the time scheme for a scalar-valued CDO vertex-based scheme
- *         Case of an implicit Euler time scheme with a lumped mass matrix
- *         and an incremental resolution. The time property is defined on
- *         each part of the dual cell intersected with a primal cell
- *
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or NULL if useless
- * \param[in]      inv_dtcur   value of 1./dt for the current time step
- * \param[in, out] eqb         pointer to the equation builder structure
- * \param[in, out] cb          pointer to a cs_cell_builder_t structure
- * \param[in, out] csys        pointer to a cs_cell_sys_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_svb_lumped_subcell_implicit_euler_incr(const cs_equation_param_t   *eqp,
-                                        const cs_cell_mesh_t        *cm,
-                                        const cs_hodge_t            *mass_hodge,
-                                        const double                 inv_dtcur,
-                                        cs_equation_builder_t       *eqb,
-                                        cs_cell_builder_t           *cb,
-                                        cs_cell_sys_t               *csys)
+_svb_imp_euler_lumped_incr_subcell(const cs_equation_param_t   *eqp,
+                                   const cs_cell_mesh_t        *cm,
+                                   const cs_hodge_t            *mass_hodge,
+                                   const double                 inv_dtcur,
+                                   cs_equation_builder_t       *eqb,
+                                   cs_cell_builder_t           *cb,
+                                   cs_cell_sys_t               *csys)
 {
   CS_UNUSED(mass_hodge);
   CS_UNUSED(eqb);
@@ -1017,6 +877,150 @@ _svb_lumped_subcell_implicit_euler_incr(const cs_equation_param_t   *eqp,
     csys->rhs[i] += dval * (csys->val_nm1[i] - csys->val_n[i]);
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply the time scheme for a scalar-valued CDO vertex-based scheme
+ *        First step shared among all variant of theta time scheme
+ *
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in, out] cb          pointer to a cs_cell_builder_t structure
+ * \param[in, out] csys        pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_svb_theta_scheme_begin(const cs_equation_param_t   *eqp,
+                        cs_cell_builder_t           *cb,
+                        cs_cell_sys_t               *csys)
+{
+  /* STEP.1 >> Compute the contribution of the "adr" to the RHS:
+   *           tcoef*adr_pn where adr_pn = csys->mat * p_n
+   *           adr is the cellwise matrix with Advection Diffusion Reaction
+   *           contributions
+   */
+
+  const double  tcoef = 1 - eqp->theta;
+
+  double  *adr_pn = cb->values;
+  cs_sdm_square_matvec(csys->mat, csys->val_n, adr_pn);
+  for (short int i = 0; i < csys->n_dofs; i++) /* n_dofs = n_vc */
+    csys->rhs[i] -= tcoef * adr_pn[i];
+
+  /* STEP.2 >> Multiply csys->mat by theta */
+
+  for (int i = 0; i < csys->n_dofs*csys->n_dofs; i++)
+    csys->mat->val[i] *= eqp->theta;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply the time scheme for a scalar-valued CDO vertex-based scheme
+ *        Case of a theta time scheme (no lumping of the mass matrix)
+ *
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      mass_hodge  pointer to a Hodge structure or NULL if useless
+ * \param[in]      inv_dtcur   value of 1./dt for the current time step
+ * \param[in, out] eqb         pointer to the equation builder structure
+ * \param[in, out] cb          pointer to a cs_cell_builder_t structure
+ * \param[in, out] csys        pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_svb_theta_scheme(const cs_equation_param_t   *eqp,
+                  const cs_cell_mesh_t        *cm,
+                  const cs_hodge_t            *mass_hodge,
+                  const double                 inv_dtcur,
+                  cs_equation_builder_t       *eqb,
+                  cs_cell_builder_t           *cb,
+                  cs_cell_sys_t               *csys)
+{
+  /* STEP.1 and STEP.2 common to all variants */
+
+  _svb_theta_scheme_begin(eqp, cb, csys);
+
+  /* STEP.3 >> Handle the mass matrix
+   * Two contributions for the mass matrix
+   *  a) add to rhs mass_mat * p_n
+   *  b) add to csys->mat
+   */
+
+  _svb_imp_euler(eqp, cm, mass_hodge, inv_dtcur, eqb, cb, csys);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Apply the time scheme for a scalar-valued CDO vertex-based scheme
+ *         Case of a theta time scheme with a lumped mass matrix
+ *
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      mass_hodge  pointer to a Hodge structure or NULL if useless
+ * \param[in]      inv_dtcur   value of 1./dt for the current time step
+ * \param[in, out] eqb         pointer to the equation builder structure
+ * \param[in, out] cb          pointer to a cs_cell_builder_t structure
+ * \param[in, out] csys        pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_svb_theta_scheme_lumped(const cs_equation_param_t   *eqp,
+                         const cs_cell_mesh_t        *cm,
+                         const cs_hodge_t            *mass_hodge,
+                         const double                 inv_dtcur,
+                         cs_equation_builder_t       *eqb,
+                         cs_cell_builder_t           *cb,
+                         cs_cell_sys_t               *csys)
+{
+  /* STEP.1 and STEP.2 common to all variants */
+
+  _svb_theta_scheme_begin(eqp, cb, csys);
+
+  /* STEP.3 >> Handle the lumped matrix
+   *  a) add to rhs lumped_mass_mat * p_n
+   *  b) add to csys->mat the (implicit) contribution
+   */
+
+  _svb_imp_euler_lumped(eqp, cm, mass_hodge, inv_dtcur, eqb, cb, csys);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Apply the time scheme for a scalar-valued CDO vertex-based scheme
+ *         Case of a theta time scheme with a lumped mass matrix
+ *
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      mass_hodge  pointer to a Hodge structure or NULL if useless
+ * \param[in]      inv_dtcur   value of 1./dt for the current time step
+ * \param[in, out] eqb         pointer to the equation builder structure
+ * \param[in, out] cb          pointer to a cs_cell_builder_t structure
+ * \param[in, out] csys        pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_svb_theta_scheme_lumped_subcell(const cs_equation_param_t   *eqp,
+                                 const cs_cell_mesh_t        *cm,
+                                 const cs_hodge_t            *mass_hodge,
+                                 const double                 inv_dtcur,
+                                 cs_equation_builder_t       *eqb,
+                                 cs_cell_builder_t           *cb,
+                                 cs_cell_sys_t               *csys)
+{
+  /* STEP.1 and STEP.2 common to all variants */
+
+  _svb_theta_scheme_begin(eqp, cb, csys);
+
+  /* STEP.3 >> Handle the lumped matrix
+   *  a) add to rhs lumped_mass_mat * p_n
+   *  b) add to csys->mat the (implicit) contribution
+   */
+
+  _svb_imp_euler_lumped_subcell(eqp, cm, mass_hodge, inv_dtcur, eqb, cb, csys);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1681,7 +1685,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
       if (cs_property_is_subcell(eqp->reaction_properties[0])) {
 
-        eqc->add_reaction_term = _svb_lumped_subcell_reaction;
+        eqc->add_reaction_term = _svb_reaction_lumped_subcell;
 
         if (eqp->n_reaction_terms > 1)
           bft_error(__FILE__, __LINE__, 0,
@@ -1690,7 +1694,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
       }
       else
-        eqc->add_reaction_term = _svb_lumped_reaction;
+        eqc->add_reaction_term = _svb_reaction_lumped;
 
     }
     else {
@@ -1703,7 +1707,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
         if (cs_property_is_subcell(eqp->reaction_properties[0])) {
 
-          eqc->add_reaction_term = _svb_lumped_subcell_reaction;
+          eqc->add_reaction_term = _svb_reaction_lumped_subcell;
 
           if (eqp->n_reaction_terms > 1)
             bft_error(__FILE__, __LINE__, 0,
@@ -1712,7 +1716,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
         }
         else
-          eqc->add_reaction_term = _svb_lumped_reaction;
+          eqc->add_reaction_term = _svb_reaction_lumped;
         break;
 
       case CS_HODGE_ALGO_WBS:
@@ -1754,22 +1758,22 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
         if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE) {
 
           if (cs_property_is_subcell(eqp->time_property))
-            eqc->add_unsteady_term = _svb_lumped_subcell_implicit_euler_incr;
+            eqc->add_unsteady_term = _svb_imp_euler_lumped_incr_subcell;
           else
-            eqc->add_unsteady_term = _svb_lumped_implicit_euler_incr;
+            eqc->add_unsteady_term = _svb_imp_euler_lumped_incr;
 
         }
         else
-          eqc->add_unsteady_term = _svb_lumped_implicit_euler;
+          eqc->add_unsteady_term = _svb_imp_euler_lumped;
 
       }
       else if (eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO ||
                eqp->time_scheme == CS_TIME_SCHEME_THETA) {
 
         if (cs_property_is_subcell(eqp->time_property))
-          eqc->add_unsteady_term = _svb_lumped_subcell_theta_scheme;
+          eqc->add_unsteady_term = _svb_theta_scheme_lumped_subcell;
         else
-          eqc->add_unsteady_term = _svb_lumped_theta_scheme;
+          eqc->add_unsteady_term = _svb_theta_scheme_lumped;
 
       }
 
@@ -1787,22 +1791,22 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
           if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE) {
 
             if (cs_property_is_subcell(eqp->time_property))
-              eqc->add_unsteady_term = _svb_lumped_subcell_implicit_euler_incr;
+              eqc->add_unsteady_term = _svb_imp_euler_lumped_incr_subcell;
             else
-              eqc->add_unsteady_term = _svb_lumped_implicit_euler_incr;
+              eqc->add_unsteady_term = _svb_imp_euler_lumped_incr;
 
           }
           else
-            eqc->add_unsteady_term = _svb_lumped_implicit_euler;
+            eqc->add_unsteady_term = _svb_imp_euler_lumped;
 
         }
         else if (eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO ||
                  eqp->time_scheme == CS_TIME_SCHEME_THETA) {
 
           if (cs_property_is_subcell(eqp->time_property))
-            eqc->add_unsteady_term = _svb_lumped_subcell_theta_scheme;
+            eqc->add_unsteady_term = _svb_theta_scheme_lumped_subcell;
           else
-            eqc->add_unsteady_term = _svb_lumped_theta_scheme;
+            eqc->add_unsteady_term = _svb_theta_scheme_lumped;
 
         }
         break;
@@ -1814,9 +1818,9 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
         if (eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT) {
 
           if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-            eqc->add_unsteady_term = _svb_implicit_euler_incr;
+            eqc->add_unsteady_term = _svb_imp_euler_incr;
           else
-            eqc->add_unsteady_term = _svb_implicit_euler;
+            eqc->add_unsteady_term = _svb_imp_euler;
 
         }
         else if (eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO ||
