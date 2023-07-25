@@ -358,6 +358,19 @@ cs_gwf_add_decay_chain(int                       n_tracers,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set shared pointers to main domain members
+ *
+ * \param[in] cdoq    pointer to additional mesh quantities for CDO schemes
+ * \param[in] connect pointer to additional mesh connectivities for CDO schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_init_sharing(const cs_cdo_quantities_t    *cdoq,
+                    const cs_cdo_connect_t       *connect);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Initialize the context of the model after the activation of the
  *        module and make first settings of the model parameters (physical and
  *        numerical). At this stage, cs_user_parameters() has not been called

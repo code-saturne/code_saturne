@@ -696,6 +696,9 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
 
   cs_source_term_init_sharing(domain->cdo_quantities, domain->connect);
 
+  cs_gwf_init_sharing(domain->cdo_quantities,
+                      domain->connect);
+
   /* Allocate common local structures for building/solving equations */
 
   cs_cdo_toolbox_init(domain->connect,

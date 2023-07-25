@@ -2295,18 +2295,22 @@ cs_gwf_tpf_extra_op(const cs_cdo_connect_t          *connect,
  * \param[in] post_flag    flag gathering quantities to postprocess
  * \param[in] abs_perm     property for the absolute permeability
  * \param[in] mc           pointer to the model context structure
+ * \param[in] connect      pointer to additional connectivities for CDO
+ * \param[in] cdoq         pointer to additional mesh quantities for CDO
  * \param[in] time_step    pointer to a cs_time_step_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_extra_post(int                        mesh_id,
-                      cs_lnum_t                  n_cells,
-                      const cs_lnum_t            cell_ids[],
-                      cs_flag_t                  post_flag,
-                      const cs_property_t       *abs_perm,
-                      const cs_gwf_tpf_t        *mc,
-                      const cs_time_step_t      *time_step)
+cs_gwf_tpf_extra_post(int                         mesh_id,
+                      cs_lnum_t                   n_cells,
+                      const cs_lnum_t             cell_ids[],
+                      cs_flag_t                   post_flag,
+                      const cs_property_t        *abs_perm,
+                      const cs_gwf_tpf_t         *mc,
+                      const cs_cdo_connect_t     *connect,
+                      const cs_cdo_quantities_t  *cdoq,
+                      const cs_time_step_t       *time_step)
 {
   if (mesh_id != CS_POST_MESH_VOLUME)
     return; /* Only postprocessings in the volume are defined */
@@ -2322,25 +2326,46 @@ cs_gwf_tpf_extra_post(int                        mesh_id,
     }
     else {
 
+      bool  use_parent = true;
+      cs_real_t  *l_capacity = NULL;
+
       if (mc->use_properties_on_submesh) {
-        cs_base_warn(__FILE__, __LINE__);
-        bft_printf("%s: Requested postprocessing for capacity at cells but"
-                   " this functionnality is not yet available\n"
-                   "%s: with CS_GWF_LIQUID_SATURATION_ON_SUBMESH\n",
-                   __func__, __func__);
+
+        const cs_adjacency_t  *c2v = connect->c2v;
+
+        BFT_MALLOC(l_capacity, n_cells, cs_real_t);
+        use_parent = false;
+
+        for (cs_lnum_t i = 0; i < n_cells; i++) {
+
+          cs_lnum_t  c_id =
+            (cell_ids == NULL || n_cells == cdoq->n_cells) ? i : cell_ids[i];
+
+          l_capacity[c_id] = 0;
+          for (cs_lnum_t j = c2v->idx[c_id]; c2v->idx[c_id+1]; j++)
+            l_capacity[c_id] = cdoq->pvol_vc[j] * mc->l_capacity[j];
+          l_capacity[c_id] /= cdoq->cell_vol[c_id];
+
+        }
+
       }
       else
-        cs_post_write_var(mesh_id,
-                          CS_POST_WRITER_DEFAULT,
-                          "l_capacity",
-                          1,
-                          false,  /* interlace */
-                          true,   /* use_parent */
-                          CS_POST_TYPE_cs_real_t,
-                          mc->l_capacity,
-                          NULL,
-                          NULL,
-                          time_step);
+        l_capacity = mc->l_capacity;
+
+      cs_post_write_var(mesh_id,
+                        CS_POST_WRITER_DEFAULT,
+                        "l_capacity",
+                        1,
+                        false,        /* interlace */
+                        use_parent,
+                        CS_POST_TYPE_cs_real_t,
+                        l_capacity,
+                        NULL,
+                        NULL,
+                        time_step);
+
+      if (l_capacity != mc->l_capacity)
+        BFT_FREE(l_capacity);
 
     }
 

@@ -234,18 +234,22 @@ cs_gwf_tpf_extra_op(const cs_cdo_connect_t          *connect,
  * \param[in] post_flag    flag gathering quantities to postprocess
  * \param[in] abs_perm     property for the absolute permeability
  * \param[in] mc           pointer to the model context structure
+ * \param[in] connect      pointer to additional connectivities for CDO
+ * \param[in] cdoq         pointer to additional mesh quantities for CDO
  * \param[in] time_step    pointer to a cs_time_step_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_extra_post(int                        mesh_id,
-                      cs_lnum_t                  n_cells,
-                      const cs_lnum_t            cell_ids[],
-                      cs_flag_t                  post_flag,
-                      const cs_property_t       *abs_perm,
-                      const cs_gwf_tpf_t        *mc,
-                      const cs_time_step_t      *time_step);
+cs_gwf_tpf_extra_post(int                         mesh_id,
+                      cs_lnum_t                   n_cells,
+                      const cs_lnum_t             cell_ids[],
+                      cs_flag_t                   post_flag,
+                      const cs_property_t        *abs_perm,
+                      const cs_gwf_tpf_t         *mc,
+                      const cs_cdo_connect_t     *connect,
+                      const cs_cdo_quantities_t  *cdoq,
+                      const cs_time_step_t       *time_step);
 
 /*----------------------------------------------------------------------------*/
 

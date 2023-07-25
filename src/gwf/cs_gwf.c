@@ -99,8 +99,8 @@ static const char
 cs_gwf_model_name[CS_GWF_N_MODEL_TYPES][CS_BASE_STRING_LEN] =
   { N_("Saturated single-phase model"),
     N_("Unsaturated single-phase model"),
-    N_("Miscible two-phase model (capillary/gas pressure)"),
-    N_("Immiscible two-phase model (capillary/gas pressure)")
+    N_("Miscible two-phase model"),
+    N_("Immiscible two-phase model")
   };
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -114,6 +114,11 @@ static const char _err_empty_gw[] =
   " Please check your settings.\n";
 
 static cs_gwf_t  *cs_gwf_main_structure = NULL;
+
+/* Pointer to shared structures (owned by a cs_domain_t structure) */
+
+static const cs_cdo_quantities_t  *cs_cdo_quant;
+static const cs_cdo_connect_t  *cs_cdo_connect;
 
 /*============================================================================
  * Private function prototypes
@@ -1082,6 +1087,25 @@ cs_gwf_add_decay_chain(int                       n_tracers,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set shared pointers to main domain members
+ *
+ * \param[in] cdoq    pointer to additional mesh quantities for CDO schemes
+ * \param[in] connect pointer to additional mesh connectivities for CDO schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_init_sharing(const cs_cdo_quantities_t    *cdoq,
+                    const cs_cdo_connect_t       *connect)
+{
+  /* Assign static const pointers */
+
+  cs_cdo_quant = cdoq;
+  cs_cdo_connect = connect;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Initialize the context of the model after the activation of the
  *        module and make first settings of the model parameters (physical and
  *        numerical). At this stage, cs_user_parameters() has not been called
@@ -1655,6 +1679,8 @@ cs_gwf_extra_post(void                   *input,
                           gw->post_flag,
                           gw->abs_permeability,
                           gw->model_context,
+                          cs_cdo_connect,
+                          cs_cdo_quant,
                           time_step);
     break;
 
