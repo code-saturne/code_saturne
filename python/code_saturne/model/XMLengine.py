@@ -75,6 +75,7 @@ def xmlChecker(filename):
 
     return m
 
+
 #-------------------------------------------------------------------------------
 # Simple class wich emulate a basic dictionary, but allows to make
 # everytimes verification on values and keys
@@ -339,16 +340,20 @@ class XMLElement:
 
     def xmlSortByTagName(self):
         """
-        Return a dictionary which keys are the name of the node.
+        Return a dictionary whose keys are the name of the node.
         """
         d = {}
         for node in self.el.childNodes:
             if node.nodeType == Node.ELEMENT_NODE:
-                dd = self._inst(node).xmlGetAttributeDictionary()
                 key = node.tagName
+                if key[0] == '_':
+                    continue
+                dd = self._inst(node).xmlGetAttributeDictionary()
                 for k in list(dd.keys()): key = key + (k+dd[k])
                 d[key] = self._inst(node)
             elif node.nodeType == Node.TEXT_NODE:
+                if node.data[:1] == '_':
+                    continue
                 try:
                     k = float(node.data)
                 except:
@@ -359,7 +364,7 @@ class XMLElement:
 
     def __cmp__(self, other):
         """
-        Return 0 if two XMLElement are the same, return 1 otherwise.
+        Return 0 if two XMLElements are the same, return 1 otherwise.
         """
         if not other:
             return 1
@@ -367,7 +372,14 @@ class XMLElement:
             return 1
         if self.el.nodeType == Node.ELEMENT_NODE:
             if self.el.tagName != other.el.tagName:
-                return 1
+                n1 = self.el.tagName
+                n2 = self.el.tagName
+                if n1[0] == '_':
+                    n1 = n1[1:]
+                if n2[0] == '_':
+                    n2 = n2[1:]
+                if n1 != n2:
+                    return 1
         elif self.el.nodeType == Node.TEXT_NODE:
             try:
                 a = float(self.el.data)
@@ -1084,7 +1096,7 @@ class XMLDocument(XMLElement):
         Return the XMLDocument node to a byte string with \n and \t.
         Unicode string are decoded if it's possible by the standard output,
         if not unicode characters are replaced by '?' character.
-        Warning: the returned XMLDocument do not show the encoding in the
+        Warning: the returned XMLDocument does not show the encoding in the
         header, because it is already encoded!
         Warning: do not use this method for comparison purposes!
         """
@@ -1100,7 +1112,7 @@ class XMLDocument(XMLElement):
         Print the XMLDocument node with \n and \t.
         Unicode strings are decoded if it's possible by the standard output,
         if not unicode characters are replaced by '?' character.
-        Warning: the returned XMLDocument do not show the encoding in the
+        Warning: the returned XMLDocument does not show the encoding in the
         header, because it is already encoded!
         Warning: do not use this method for comparison purpose!
         """
@@ -1165,7 +1177,7 @@ class XMLDocument(XMLElement):
     def xmlCleanHighLevelBlank(self, node):
         """
         This method deletes TEXT_NODE which are "\n" or "\t" in the
-        hight level of the ELEMENT_NODE nodes. It is a recursive method.
+        high level of the ELEMENT_NODE nodes. It is a recursive method.
         """
         if isinstance(node, XMLElement):
             node = node.el
@@ -1177,17 +1189,87 @@ class XMLDocument(XMLElement):
                 if n.hasChildNodes():
                     self.xmlCleanHighLevelBlank(n)
 
-        if 'formula' not in node.tagName or 'dirichlet_formula' in node.tagName:
+        if node.tagName not in ('formula', 'dirichlet_formula'):
             for n in node.childNodes:
                 if n.nodeType == Node.TEXT_NODE and not elementNode:
                     self.xmlCleanAllBlank(n.parentNode)
         else:
             for n in node.childNodes:
                 if n.nodeType == Node.TEXT_NODE:
-                    while n.data[0] in (" ", "\n", "\t"):
-                        n.data = n.data[1:]
-                    while n.data[-1] in (" ", "\n", "\t"):
-                        n.data = n.data[:-1]
+                    n.data = n.data.strip(" \n\t")
+
+
+    def xmlCleanHiddenDefaults(self, node):
+        """
+        Clean a previous XMLElement file. The purpose of this method
+        is to delete all tags and nodes starting with a "_" character.
+        It is a recursive method.
+        """
+        if isinstance(node, XMLElement):
+            node = node.el
+
+        defaults = []
+        old_children = []
+        for n in node.childNodes:
+            if n.nodeType == Node.ELEMENT_NODE:
+                n_name = n.tagName
+                if n_name[0] == '_':
+                    defaults.append(n)
+                    old_children.append(node.removeChild(n))
+                elif n.hasChildNodes():
+                    self.xmlCleanHiddenDefaults(n)
+
+        for n in defaults:
+            n_name = n.tagName
+            n_name_1 = n.tagName[1:]
+            for c in node.childNodes:
+                if c.nodeType == Node.ELEMENT_NODE:
+                    c_name = c.tagName
+                    if c_name == n_name_1:
+                        xe = self._inst(n)
+                        xc = self._inst(c)
+                        if xe.__eq__(xc):
+                            old_child = node.removeChild(c)
+                            old_child.unlink()
+
+        for n in old_children:
+            n.unlink()
+
+        for n in node.childNodes:
+            if n.nodeType == Node.ELEMENT_NODE:
+                if n.hasAttributes():
+                    attrs = n._get_attributes()
+                    l = list(attrs.keys())
+                    for a_name in l:
+                        if a_name[0] == '_':
+                            n.removeAttribute(a_name)
+                            a_name_1 = a_name[1:]
+                            if a_name_1 in attrs:
+                                n.removeAttribute(a_name_1)
+
+        node.normalize()
+
+
+    def xmlCleanEmptyLines(self, node):
+        """
+        This method deletes TEXT_NODE which are "\n" or "\t" in the
+        high level of the ELEMENT_NODE nodes. It is a recursive method.
+        """
+        if isinstance(node, XMLElement):
+            node = node.el
+
+        if node.nodeType == Node.TEXT_NODE:
+            c = node.data.strip()
+            if not c:
+                try:
+                    lines = node.data.split("\n")
+                    node.data = "\n".join([lines[0], lines[-1]])
+                except Exception:
+                    pass
+
+        for n in node.childNodes:
+            self.xmlCleanEmptyLines(n)
+
 
 #-------------------------------------------------------------------------------
 # XML utility functions
@@ -1248,6 +1330,7 @@ class Case(Dico, XMLDocument):
         # General case
         return 'code_saturne'
 
+
     def xmlRootNode(self):
         """
         This function return the only one root element of the document
@@ -1306,6 +1389,8 @@ class Case(Dico, XMLDocument):
         try:
             if prettyString:
                 d = XMLDocument().parseString(self.toPrettyString())
+                d.xmlCleanHiddenDefaults(d.root())
+                self.xmlCleanEmptyLines(d.root())
             else:
                 d = self
             d.xmlCleanHighLevelBlank(d.root())
@@ -1521,7 +1606,6 @@ class Case(Dico, XMLDocument):
 #-------------------------------------------------------------------------------
 # XMLengine test case
 #-------------------------------------------------------------------------------
-
 
 class XMLengineTestCase(unittest.TestCase):
     def setUp(self):
