@@ -4157,7 +4157,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
                         + eb->advection_term[v_id]
                         + eb->source_term[v_id];
 
-  /* Parallel or periodic synchronisation */
+  /* Parallel or periodic synchronization */
 
   cs_cdo_balance_sync(connect, eb);
 
@@ -4169,17 +4169,17 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the cellwise stiffness matrix associated to the property
- *         given as a parameter and apply it to the pot array to define
- *         the resulting array associated to entities defined at loc_res
- *         Case of scalar-valued CDO vertex-based scheme
+ * \brief Compute the cellwise stiffness matrix associated to the property
+ *        given as a parameter and multiply it by the "pot" array to define
+ *        the resulting array associated to entities defined at res_loc.
+ *        Case of scalar-valued CDO vertex-based scheme.
  *
  * \param[in]      eqp      pointer to a \ref cs_equation_param_t structure
  * \param[in, out] eqb      pointer to a \ref cs_equation_builder_t structure
  * \param[in, out] context  pointer to a scheme builder structure
- * \param[in]      property pointer to the property related to the stiffness op.
+ * \param[in]      pty      pointer to the property related to the stiffness op.
  * \param[in]      pot      array to multiply with the stiffness matrix
- * \param[in]      loc_res  location of entities in the resulting array
+ * \param[in]      res_loc  location of entities in the resulting array
  * \param[in, out] res      resulting array
  */
 /*----------------------------------------------------------------------------*/
@@ -4188,18 +4188,18 @@ void
 cs_cdovb_scaleq_apply_stiffness(const cs_equation_param_t     *eqp,
                                 cs_equation_builder_t         *eqb,
                                 void                          *context,
-                                const cs_property_t           *property,
+                                const cs_property_t           *pty,
                                 const cs_real_t               *pot,
-                                cs_flag_t                      loc_res,
+                                cs_flag_t                      res_loc,
                                 cs_real_t                     *res)
 {
   if (res == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: Resulting array not allocated.",
               __func__);
 
-  if (cs_flag_test(loc_res, cs_flag_primal_vtx) == false  &&
-      cs_flag_test(loc_res, cs_flag_primal_cell) == false &&
-      cs_flag_test(loc_res, cs_flag_dual_cell_byc) == false)
+  if (cs_flag_test(res_loc, cs_flag_primal_vtx)    == false &&
+      cs_flag_test(res_loc, cs_flag_primal_cell)   == false &&
+      cs_flag_test(res_loc, cs_flag_dual_cell_byc) == false)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid location for the resulting array.", __func__);
 
@@ -4211,7 +4211,7 @@ cs_cdovb_scaleq_apply_stiffness(const cs_equation_param_t     *eqp,
 
   cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t *)context;
   cs_hodge_t  **hodge_array = cs_hodge_init_context(connect,
-                                                    property,
+                                                    pty,
                                                     &(eqp->diffusion_hodgep),
                                                     true,   /* tensor ? */
                                                     false); /* eigen ? */
@@ -4231,7 +4231,7 @@ cs_cdovb_scaleq_apply_stiffness(const cs_equation_param_t     *eqp,
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_builder_t  *cb = _svb_cell_builder[t_id];
     cs_hodge_t  *hodge = hodge_array[t_id];
-    bool  pty_uniform = cs_property_is_uniform(property);
+    bool  pty_uniform = cs_property_is_uniform(pty);
 
     /* Initialization of the values of properties */
 
@@ -4283,15 +4283,15 @@ cs_cdovb_scaleq_apply_stiffness(const cs_equation_param_t     *eqp,
       memset(res, 0, cm->n_vc*sizeof(cs_real_t));
       cs_sdm_square_matvec(cb->loc, p_cur, cell_res);
 
-      if (cs_flag_test(loc_res, cs_flag_primal_vtx)) {
+      if (cs_flag_test(res_loc, cs_flag_primal_vtx)) {
 
         for (short int v = 0; v < cm->n_vc; v++) {
-#       pragma omp atomic
+#         pragma omp atomic
           res[cm->v_ids[v]] += cell_res[v];
         }
 
       }
-      else if (cs_flag_test(loc_res, cs_flag_primal_cell)) {
+      else if (cs_flag_test(res_loc, cs_flag_primal_cell)) {
 
         for (short int v = 0; v < cm->n_vc; v++)
           res[c_id] += cell_res[v];
@@ -4299,7 +4299,7 @@ cs_cdovb_scaleq_apply_stiffness(const cs_equation_param_t     *eqp,
       }
       else {
 
-        assert(cs_flag_test(loc_res, cs_flag_dual_cell_byc));
+        assert(cs_flag_test(res_loc, cs_flag_dual_cell_byc));
         cs_real_t  *_res = res + connect->c2v->idx[c_id];
 
         for (short int v = 0; v < cm->n_vc; v++)
@@ -4311,9 +4311,9 @@ cs_cdovb_scaleq_apply_stiffness(const cs_equation_param_t     *eqp,
 
   } /* OpenMP Block */
 
-  /* Parallel or periodic synchronisation */
+  /* Parallel or periodic synchronization */
 
-  if (cs_flag_test(loc_res, cs_flag_primal_vtx)) {
+  if (cs_flag_test(res_loc, cs_flag_primal_vtx)) {
     if (connect->vtx_ifs != NULL)
       cs_interface_set_sum(connect->vtx_ifs,
                            connect->n_vertices,

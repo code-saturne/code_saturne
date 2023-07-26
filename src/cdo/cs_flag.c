@@ -72,7 +72,7 @@ const cs_flag_t  cs_flag_dual_closure_byf =
    which the notion of primal/dual is not used */
 
 const cs_flag_t  cs_flag_vertex = CS_FLAG_PRIMAL | CS_FLAG_VERTEX;
-const cs_flag_t  cs_flag_cell = CS_FLAG_PRIMAL | CS_FLAG_CELL;
+const cs_flag_t  cs_flag_cell   = CS_FLAG_PRIMAL | CS_FLAG_CELL;
 
 const cs_flag_t  cs_flag_boundary_face =
   CS_FLAG_PRIMAL | CS_FLAG_FACE | CS_FLAG_BORDER;

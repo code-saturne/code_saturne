@@ -56,9 +56,9 @@ typedef struct _equation_builder_t  cs_equation_builder_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Generic function prototype for a hook during the cellwise building
- *          of the linear system
- *          Enable an advanced user to get a fine control of the discretization
+ * \brief Generic function prototype for a hook during the cellwise building
+ *        of the linear system
+ *        Enable an advanced user to get a fine control of the discretization
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
