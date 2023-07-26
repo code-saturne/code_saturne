@@ -567,6 +567,37 @@ cs_property_set_reference_value(cs_property_t    *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set the scaling factor associated to a \ref cs_property_t structure
+ *        This is a real number whatever the type of property is. If the
+ *        property was not defined as CS_PROPERTY_SCALED, then this tag is
+ *        added.
+ *
+ * \param[in, out] pty    pointer to a cs_property_t structure
+ * \param[in]      val    value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_set_scaling_factor(cs_property_t    *pty,
+                               double            val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the scaling factor associated to a \ref cs_property_t structure
+ *        This is a real number whatever the type of property is. If the
+ *        property was not defined as CS_PROPERTY_SCALED, then this tag is
+ *        added.
+ *
+ * \param[in, out] pty    pointer to a cs_property_t structure
+ * \param[in]      val    value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_unscale(cs_property_t    *pty);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Free all cs_property_t structures and the array storing all the
  *        structures
  */
