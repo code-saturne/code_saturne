@@ -7,6 +7,9 @@ Release 8.0.1 (unreleased)
 
 ### Bug fixes:
 
+- Avoid deletion of notebook or time tables values defined in the GUI
+  before switching from code_saturne to neptune_cfd in the GUI.
+
 - Fix memory leaks in Lagrangian module.
 
 - Fix launch of relocatable builds.
