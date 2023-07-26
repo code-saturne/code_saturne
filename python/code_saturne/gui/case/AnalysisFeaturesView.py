@@ -460,8 +460,12 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.case.root().xmlRemoveChild("numerical_parameters")
         self.case.root().xmlRemoveChild("time_parameters")
         self.case.root().xmlRemoveChild("analysis_control")
-        self.case.root().xmlRemoveChild("physical_properties")
-        self.case.root().xmlInitNode("physical_properties")
+
+        # Do not remove physical_properties node which contains notebook
+        # and time tables! This should be changed in future versions
+        node_pp = self.case.root().xmlGetChildNode("physical_properties")
+        node_pp.xmlRemoveChild("fluid_properties")
+        node_pp.xmlInitNode("fluid_properties")
 
         self.case.xmlRootNode().tagName = "NEPTUNE_CFD_GUI"
         self.case.root()["solver_version"] = ""
