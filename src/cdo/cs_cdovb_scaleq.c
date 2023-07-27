@@ -1681,7 +1681,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     if (eqp->do_lumping) {
 
       eqb->sys_flag |= CS_FLAG_SYS_REAC_DIAG;
-      reac_hodge_algo = CS_HODGE_ALGO_VORONOI;
+      reac_hodge_algo = CS_HODGE_ALGO_VORONOI; /* whatever is the algorithm */
 
       if (cs_property_is_subcell(eqp->reaction_properties[0])) {
 
@@ -1910,7 +1910,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* Initialize the hodge structure for the mass matrix */
 
   eqc->mass_hodge = cs_hodge_init_context(connect,
-                                          NULL,
+                                          NULL,   /* unit property */
                                           &(eqc->mass_hodgep),
                                           false,  /* tensor ? */
                                           false); /* eigen ? */
@@ -4371,9 +4371,8 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
   assert(eqc->diffusion_hodge != NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
-  shared(quant, connect, eqp, eqb, eqc, vf_flux, pdi,                   \
-         _svb_cell_builder)                                             \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                   \
+  shared(quant, connect, eqp, eqb, eqc, vf_flux, pdi, _svb_cell_builder) \
   firstprivate(t_eval)
   {
     const int  t_id = cs_get_thread_id();
@@ -4791,8 +4790,7 @@ cs_cdovb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
   cs_timer_t  t0 = cs_timer_time();
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN)                   \
-  shared(t_eval, quant, connect, eqp, eqb, diff_flux, values,           \
-         _svb_cell_builder)
+  shared(t_eval, quant, connect, eqp, eqb, diff_flux, values, _svb_cell_builder)
   {
     const int  t_id = cs_get_thread_id();
 
@@ -4975,6 +4973,7 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
         pot[cm->n_vc] = 0.;
         for (short int v = 0; v < cm->n_vc; v++)
           pot[cm->n_vc] += cm->wvc[v]*pot[v];
+
       }
       else {
 

@@ -185,7 +185,7 @@ _build_h_eq_diff_st(const cs_equation_param_t     *eqp,
                     void                          *context,
                     cs_hodge_t                    *mass_hodge,
                     cs_hodge_t                    *diff_hodge,
-                  cs_cell_sys_t                 *csys,
+                    cs_cell_sys_t                 *csys,
                     cs_cell_builder_t             *cb)
 {
   CS_NO_WARN_IF_UNUSED(eqp);

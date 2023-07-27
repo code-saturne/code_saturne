@@ -136,7 +136,7 @@ cs_cdo_toolbox_init(const cs_cdo_connect_t       *connect,
 
   /* Allocate shared buffer and initialize shared structures */
 
-  size_t  cwb_size = n_cells; /* initial cell-wise buffer size */
+  size_t  wb_size = n_cells; /* initial work buffer size */
 
   /* Allocate and initialize matrix assembler and matrix structures */
 
@@ -145,21 +145,21 @@ cs_cdo_toolbox_init(const cs_cdo_connect_t       *connect,
     if (vb_flag & CS_FLAG_SCHEME_SCALAR || vcb_flag & CS_FLAG_SCHEME_SCALAR) {
 
       if (vb_flag & CS_FLAG_SCHEME_SCALAR)
-        cwb_size = CS_MAX(cwb_size, (size_t)n_vertices);
+        wb_size = CS_MAX(wb_size, (size_t)n_vertices);
 
       if (vcb_flag & CS_FLAG_SCHEME_SCALAR)
-        cwb_size = CS_MAX(cwb_size, (size_t)(n_vertices + n_cells));
+        wb_size = CS_MAX(wb_size, (size_t)(n_vertices + n_cells));
 
     } /* scalar-valued equations */
 
     if (vb_flag & CS_FLAG_SCHEME_VECTOR || vcb_flag & CS_FLAG_SCHEME_VECTOR) {
 
-      cwb_size = CS_MAX(cwb_size, (size_t)3*n_cells);
+      wb_size = CS_MAX(wb_size, (size_t)3*n_cells);
       if (vb_flag & CS_FLAG_SCHEME_VECTOR)
-        cwb_size = CS_MAX(cwb_size, (size_t)3*n_vertices);
+        wb_size = CS_MAX(wb_size, (size_t)3*n_vertices);
 
       if (vcb_flag & CS_FLAG_SCHEME_VECTOR)
-        cwb_size = CS_MAX(cwb_size, (size_t)3*(n_vertices + n_cells));
+        wb_size = CS_MAX(wb_size, (size_t)3*(n_vertices + n_cells));
 
     } /* vector-valued equations */
 
@@ -172,8 +172,8 @@ cs_cdo_toolbox_init(const cs_cdo_connect_t       *connect,
       /* This is a vector-valued equation but the DoF is scalar-valued since
        * it is a circulation associated to each edge */
 
-      cwb_size = CS_MAX(cwb_size, (size_t)3*n_cells);
-      cwb_size = CS_MAX(cwb_size, (size_t)n_edges);
+      wb_size = CS_MAX(wb_size, (size_t)3*n_cells);
+      wb_size = CS_MAX(wb_size, (size_t)n_edges);
 
     } /* vector-valued equations with scalar-valued DoFs */
 
@@ -187,13 +187,13 @@ cs_cdo_toolbox_init(const cs_cdo_connect_t       *connect,
 
       assert(n_faces > n_cells);
       if (fb_flag & CS_FLAG_SCHEME_SCALAR)
-        cwb_size = CS_MAX(cwb_size, (size_t)n_faces);
+        wb_size = CS_MAX(wb_size, (size_t)n_faces);
 
       if (cb_flag & CS_FLAG_SCHEME_SCALAR)
-        cwb_size = CS_MAX(cwb_size, (size_t)(n_faces + n_cells));
+        wb_size = CS_MAX(wb_size, (size_t)(n_faces + n_cells));
 
       if (hho_flag & CS_FLAG_SCHEME_SCALAR)
-        cwb_size = CS_MAX(cwb_size, (size_t)n_faces);
+        wb_size = CS_MAX(wb_size, (size_t)n_faces);
 
     } /* Scalar-valued CDO-Fb or HHO-P0 */
 
@@ -204,13 +204,13 @@ cs_cdo_toolbox_init(const cs_cdo_connect_t       *connect,
       assert((CS_DOF_FACE_SCAP1 == CS_DOF_FACE_VECT) &&
              (CS_DOF_FACE_SCAP1 == CS_DOF_FACE_VECP0));
 
-      cwb_size = CS_MAX(cwb_size, (size_t)CS_N_DOFS_FACE_1ST * n_faces);
+      wb_size = CS_MAX(wb_size, (size_t)CS_N_DOFS_FACE_1ST * n_faces);
 
     } /* Vector CDO-Fb or HHO-P1 or vector HHO-P0 */
 
     if (cs_flag_test(hho_flag,
                      CS_FLAG_SCHEME_POLY2 | CS_FLAG_SCHEME_SCALAR))
-      cwb_size = CS_MAX(cwb_size, (size_t)CS_N_DOFS_FACE_2ND * n_faces);
+      wb_size = CS_MAX(wb_size, (size_t)CS_N_DOFS_FACE_2ND * n_faces);
 
     /* For vector equations and HHO */
 
@@ -218,10 +218,10 @@ cs_cdo_toolbox_init(const cs_cdo_connect_t       *connect,
         cs_flag_test(hho_flag, CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY2)) {
 
       if  (hho_flag & CS_FLAG_SCHEME_POLY1)
-        cwb_size = CS_MAX(cwb_size, (size_t)3*CS_N_DOFS_FACE_1ST*n_faces);
+        wb_size = CS_MAX(wb_size, (size_t)3*CS_N_DOFS_FACE_1ST*n_faces);
 
       else if  (hho_flag & CS_FLAG_SCHEME_POLY2)
-        cwb_size = CS_MAX(cwb_size, (size_t)3*CS_N_DOFS_FACE_2ND*n_faces);
+        wb_size = CS_MAX(wb_size, (size_t)3*CS_N_DOFS_FACE_2ND*n_faces);
 
     }
 
@@ -233,8 +233,8 @@ cs_cdo_toolbox_init(const cs_cdo_connect_t       *connect,
 
   /* Common buffer for temporary usage */
 
-  cs_cdo_toolbox_work_buffer_size = cwb_size;
-  BFT_MALLOC(cs_cdo_toolbox_work_buffer, cwb_size, double);
+  cs_cdo_toolbox_work_buffer_size = wb_size;
+  BFT_MALLOC(cs_cdo_toolbox_work_buffer, wb_size, double);
 }
 
 /*----------------------------------------------------------------------------*/

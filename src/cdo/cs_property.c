@@ -1480,13 +1480,15 @@ cs_property_data_define(bool                     need_tensor,
                         bool                     need_eigen,
                         const cs_property_t     *property)
 {
-  cs_property_data_t  data = {
+  cs_property_data_t  data = {  /* Default initialization */
+
     .property = property,
     .is_unity = false,
     .is_iso = false,
     .need_eigen = need_eigen,
     .need_tensor = need_tensor,
     .eigen_ratio = 1.0
+
   };
 
   if (property == NULL)

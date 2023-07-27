@@ -225,18 +225,20 @@ typedef struct {
   const cs_property_t   *property; /* shared pointer */
 
   bool                   is_iso;   /* Detect if this an easier case */
-  bool                   is_unity; /* Detect if this a simple case */
+  bool                   is_unity; /* Detect if this the simplest case */
+
+  /* Way to evaluate the property and buffer to store the evaluation done
+     on-the-fly */
+
+  bool                   need_tensor;
+  cs_real_t              tensor[3][3];
+  cs_real_t              value;
+
+  /* Additional metadata */
 
   bool                   need_eigen;
   cs_real_t              eigen_max;
   cs_real_t              eigen_ratio;
-
-  bool                   need_tensor;
-
-  /* Buffers keeping the evaluation performed on-the-fly */
-
-  cs_real_t              tensor[3][3];
-  cs_real_t              value;
 
 } cs_property_data_t;
 
