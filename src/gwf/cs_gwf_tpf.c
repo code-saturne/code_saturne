@@ -241,19 +241,24 @@ _build_h_eq_diff_st(const cs_equation_param_t     *eqp,
  *        This relies on the case of CDO-Vb schemes and a Darcy flux defined
  *        at dual faces
  *
- * \param[in]      connect      pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
- * \param[in]      pot_values   values to consider for the update
- * \param[in]      t_eval       time at which one performs the evaluation
- * \param[in]      cur2prev     true or false
- * \param[in, out] darcy        pointer to the darcy flux structure
+ *        cell_values could be set to NULL when the space discretization does
+ *        not request these values for the update.
+ *
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
+ * \param[in]      dof_values    values to consider for the update
+ * \param[in]      cell_values   values to consider for the update or NULL
+ * \param[in]      t_eval        time at which one performs the evaluation
+ * \param[in]      cur2prev      true or false
+ * \param[in, out] darcy         pointer to the darcy flux structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _update_darcy_l(const cs_cdo_connect_t      *connect,
                 const cs_cdo_quantities_t   *cdoq,
-                const cs_real_t             *pot_values,
+                const cs_real_t             *dof_values,
+                const cs_real_t             *cell_values,
                 cs_real_t                    t_eval,
                 bool                         cur2prev,
                 cs_gwf_darcy_flux_t         *darcy)
@@ -275,15 +280,18 @@ _update_darcy_l(const cs_cdo_connect_t      *connect,
 
   /* Update the array of flux values associated to the advection field.
    *
-   * diff_pty for the w_eq --> rho_l * abs_perm * krl / mu_l
-   * Thus, one needs to divide by rho_l for the Darcy flux
+   * diff_pty for the w_eq --> rho_l * abs_perm * krl / mu_l Thus, one needs to
+   * divide by rho_l for the Darcy flux. Thanks to the rescaling, there is no
+   * need to define a new property which is very close to the diff_wl_pty
    */
 
   cs_property_set_scaling_factor(mc->diff_wl_pty, 1./mc->l_mass_density);
 
   cs_equation_compute_diffusive_flux(mc->w_eq,
-                                     NULL,
-                                     pot_values,
+                                     NULL, /* eqp --> default */
+                                     NULL, /* diff_pty --> default */
+                                     dof_values,
+                                     cell_values,
                                      darcy->flux_location,
                                      t_eval,
                                      darcy->flux_val);
@@ -326,19 +334,24 @@ _update_darcy_l(const cs_cdo_connect_t      *connect,
  *        This relies on the case of CDO-Vb schemes and a Darcy flux defined
  *        at dual faces
  *
- * \param[in]      connect      pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
- * \param[in]      pot_values   values to consider for the update
- * \param[in]      t_eval       time at which one performs the evaluation
- * \param[in]      cur2prev     true or false
- * \param[in, out] darcy        pointer to the darcy flux structure
+ *        cell_values could be set to NULL when the space discretization does
+ *        not request these values for the update.
+ *
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
+ * \param[in]      dof_values    values to consider for the update
+ * \param[in]      cell_values   values to consider for the update or NULL
+ * \param[in]      t_eval        time at which one performs the evaluation
+ * \param[in]      cur2prev      true or false
+ * \param[in, out] darcy         pointer to the darcy flux structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _update_darcy_g(const cs_cdo_connect_t      *connect,
                 const cs_cdo_quantities_t   *cdoq,
-                const cs_real_t             *pot_values,
+                const cs_real_t             *dof_values,
+                const cs_real_t             *cell_values,
                 cs_real_t                    t_eval,
                 bool                         cur2prev,
                 cs_gwf_darcy_flux_t         *darcy)
@@ -364,8 +377,10 @@ _update_darcy_g(const cs_cdo_connect_t      *connect,
   /* Update the array of flux values associated to the advection field */
 
   cs_equation_compute_diffusive_flux(eq,
-                                     NULL,
-                                     pot_values,
+                                     NULL, /* eqp --> default */
+                                     NULL, /* diff_pty --> default */
+                                     dof_values,
+                                     cell_values,
                                      darcy->flux_location,
                                      t_eval,
                                      darcy->flux_val);
@@ -403,24 +418,30 @@ _update_darcy_g(const cs_cdo_connect_t      *connect,
  *        This relies on the case of CDO-Vb schemes and a Darcy flux defined
  *        at dual faces
  *
- * \param[in]      connect      pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
- * \param[in]      pot_values   values to consider for the update
- * \param[in]      t_eval       time at which one performs the evaluation
- * \param[in]      cur2prev     true or false
- * \param[in, out] darcy        pointer to the darcy flux structure
+ *        cell_values could be set to NULL when the space discretization does
+ *        not request these values for the update.
+ *
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
+ * \param[in]      dof_values    values to consider for the update
+ * \param[in]      cell_values   values to consider for the update or NULL
+ * \param[in]      t_eval        time at which one performs the evaluation
+ * \param[in]      cur2prev      true or false
+ * \param[in, out] darcy         pointer to the darcy flux structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _update_darcy_t(const cs_cdo_connect_t      *connect,
                 const cs_cdo_quantities_t   *cdoq,
-                const cs_real_t             *pot_values,
+                const cs_real_t             *dof_values,
+                const cs_real_t             *cell_values,
                 cs_real_t                    t_eval,
                 bool                         cur2prev,
                 cs_gwf_darcy_flux_t         *darcy)
 {
-  CS_NO_WARN_IF_UNUSED(pot_values);
+  CS_NO_WARN_IF_UNUSED(dof_values);
+  CS_NO_WARN_IF_UNUSED(cell_values);
 
   assert(darcy != NULL);
   assert(darcy->flux_val != NULL);
@@ -476,20 +497,31 @@ _update_darcy_fluxes(const cs_cdo_connect_t      *connect,
                      bool                         cur2prev,
                      cs_gwf_tpf_t                *mc)
 {
+  cs_real_t  *dof_vals = NULL, *cell_vals = NULL;
+
+  /* Darcy velocity/flux in the liquid phase. The liquid pressure is the
+     unknown for the coupled and the segregated solver */
+
   cs_gwf_darcy_flux_t  *l_darcy = mc->l_darcy;
+
+  cs_gwf_get_value_pointers(mc->w_eq, &dof_vals, &cell_vals);
 
   l_darcy->update_func(connect,
                        cdoq,
-                       mc->l_pressure->val,
+                       dof_vals,
+                       cell_vals,
                        t_eval,
                        cur2prev,
                        l_darcy);
+
+  /* Darcy velocity/flux in the gas phase. */
 
   cs_gwf_darcy_flux_t  *g_darcy = mc->g_darcy;
 
   g_darcy->update_func(connect,
                        cdoq,
                        mc->g_pressure->val,
+                       mc->g_pressure_cells,
                        t_eval,
                        cur2prev,
                        g_darcy);
@@ -503,6 +535,7 @@ _update_darcy_fluxes(const cs_cdo_connect_t      *connect,
 
     t_darcy->update_func(connect,
                          cdoq,
+                         NULL,    /* values are defined inside the call */
                          NULL,    /* values are defined inside the call */
                          t_eval,
                          cur2prev,

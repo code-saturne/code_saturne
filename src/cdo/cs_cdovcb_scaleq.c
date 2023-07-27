@@ -3157,21 +3157,25 @@ cs_cdovcb_scaleq_flux_across_plane(const cs_real_t             normal[],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Cellwise computation of the diffusive flux in each cells.
- *         Case of scalar-valued CDO-VCb schemes
+ * \brief Cellwise and threaed computation of the diffusive flux in each cells.
+ *        Case of scalar-valued CDO-VCb schemes.
  *
- * \param[in]       values      discrete values for the potential
- * \param[in]       eqp         pointer to a cs_equation_param_t structure
- * \param[in]       t_eval      time at which one performs the evaluation
- * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  context     pointer to data structure cast on-the-fly
- * \param[in, out]  diff_flux   value of the diffusive flux
+ * \param[in]      v_values    values at vertices
+ * \param[in]      c_values    values at cells
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      diff_pty    pointer to the diffusion property to use
+ * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
+ * \param[in, out] context     pointer to data structure cast on-the-fly
+ * \param[in, out] diff_flux   value of the diffusive flux
   */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
+cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *v_values,
+                                    const cs_real_t             *c_values,
                                     const cs_equation_param_t   *eqp,
+                                    const cs_property_t         *diff_pty,
                                     cs_real_t                    t_eval,
                                     cs_equation_builder_t       *eqb,
                                     void                        *context,
@@ -3188,34 +3192,58 @@ cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
     return;
   }
 
-  assert(eqp->diffusion_hodgep.algo == CS_HODGE_ALGO_WBS);
-
   cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t  *)context;
+
+  assert(eqp != NULL && eqb != NULL && eqc!= NULL);
+  assert(eqp->diffusion_hodgep.algo == CS_HODGE_ALGO_WBS);
 
   cs_timer_t  t0 = cs_timer_time();
 
-# pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)                \
-  shared(cdoq, connect, eqp, eqb, eqc, diff_flux, values,            \
+# pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)                   \
+  shared(cdoq, connect, eqp, eqb, eqc, diff_flux, v_values, c_values,   \
          t_eval, _vcbs_cell_builder)
   {
     const int  t_id = cs_get_thread_id();
 
-    cs_eflag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ |
-      CS_FLAG_COMP_HFQ | CS_FLAG_COMP_DEQ  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV;
-
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */
 
-    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_builder_t  *cb = _vcbs_cell_builder[t_id];
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_hodge_t  *hodge = eqc->diffusion_hodge[t_id];
+
+    /* The property data should be changed since the property may be different
+       from the initial diffusion property associated to this equation
+       context. Moreover, there is no need to have a tensor and its eigen value
+       in this function. */
+
+    cs_property_data_t  *saved_data = hodge->pty_data;
+    cs_property_data_t  tmp_data = cs_property_data_define(false,
+                                                           false,
+                                                           diff_pty);
+
+    hodge->pty_data = &tmp_data;
+
+    /* Set the mesh flag (which local quantities to compute) */
+
+    cs_eflag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ |
+      CS_FLAG_COMP_HFQ | CS_FLAG_COMP_DEQ  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV;
 
     /* Set inside the OMP section so that each thread has its own value */
 
     double  *pot = cs_cdo_local_get_d_buffer(t_id);
 
-    cb->t_pty_eval = t_eval;
-    if (eqb->diff_pty_uniform)  /* cell_id =0, cell_flag = 0 */
+    /* Set times at which one evaluates quantities if needed */
+
+    cb->t_pty_eval = cb->t_bc_eval = cb->t_st_eval = t_eval;
+    cb->cell_flag = 0; /* No need to make a distincition between cells */
+
+    /* Do not use the information stored inside the equation builder since the
+       equation parameter can be different for this function */
+
+    const bool  uniform_pty = cs_property_is_uniform(diff_pty);
+
+    if (uniform_pty)  /* c_id = 0, cell_flag = 0 */
       cs_hodge_set_property_value(0, cb->t_pty_eval, 0, hodge);
 
     /* Define the flux by cellwise contributions */
@@ -3223,27 +3251,28 @@ cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
 #   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
-      cb->cell_flag = 0; /* No need to make a distincition between cells */
-
       /* Set the local mesh structure for the current cell */
 
       cs_cell_mesh_build(c_id, msh_flag, connect, cdoq, cm);
 
-      if (!eqb->diff_pty_uniform) /* cell_flag is always set to 0 */
-        cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
-                                       hodge);
+      if (!uniform_pty) /* cell_flag is always set to 0 */
+        cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, 0, hodge);
 
-      /* Define a local buffer keeping the value of the discrete potential
+      /* Define the local buffer keeping the value of the discrete potential
          for the current cell */
 
       for (short int v = 0; v < cm->n_vc; v++)
-        pot[v] = values[cm->v_ids[v]];
-      pot[cm->n_vc] = eqc->cell_values[c_id];
+        pot[v] = v_values[cm->v_ids[v]];
+      pot[cm->n_vc] = c_values[c_id];
 
       cs_cdo_diffusion_wbs_get_cell_flux(cm, pot, hodge,
                                          cb, diff_flux + 3*c_id);
 
     } /* Loop on cells */
+
+    /* Set the diffusion property data back to the initial pointer */
+
+    hodge->pty_data = saved_data;
 
   } /* OMP Section */
 
@@ -3253,21 +3282,27 @@ cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Cellwise computation of the diffusive flux across dual faces
- *         Case of scalar-valued CDO-VCb schemes
+ * \brief Cellwise and threaded computation of the diffusive flux across dual
+ *        faces. This is only an interpolation since the dual faces are not the
+ *        natural location for this discretization.
+ *        Case of scalar-valued CDO-VCb schemes.
  *
- * \param[in]       values      discrete values for the potential
- * \param[in]       eqp         pointer to a cs_equation_param_t structure
- * \param[in]       t_eval      time at which one performs the evaluation
- * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  context     pointer to data structure cast on-the-fly
- * \param[in, out]  diff_flux   value of the diffusive flux
+ * \param[in]      v_values    values at vertices
+ * \param[in]      c_values    values at cells
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      diff_pty    pointer to the diffusion property to use
+ * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
+ * \param[in, out] context     pointer to data structure cast on-the-fly
+ * \param[in, out] diff_flux   value of the diffusive flux
   */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
+cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *v_values,
+                                  const cs_real_t             *c_values,
                                   const cs_equation_param_t   *eqp,
+                                  const cs_property_t         *diff_pty,
                                   cs_real_t                    t_eval,
                                   cs_equation_builder_t       *eqb,
                                   void                        *context,
@@ -3286,35 +3321,58 @@ cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
 
   cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t  *)context;
 
+  assert(eqp != NULL && eqb != NULL && eqc!= NULL);
   assert(eqp->diffusion_hodgep.algo == CS_HODGE_ALGO_WBS);
   assert(eqc->diffusion_hodge != NULL);
 
   cs_timer_t  t0 = cs_timer_time();
 
-# pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)                \
-  shared(cdoq, connect, eqp, eqb, eqc, diff_flux, values,            \
+# pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)                   \
+  shared(cdoq, connect, eqp, eqb, eqc, diff_flux, v_values, c_values,   \
          t_eval, _vcbs_cell_builder)
   {
     const int  t_id = cs_get_thread_id();
-
-    cs_eflag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ |
-      CS_FLAG_COMP_SEF | CS_FLAG_COMP_DEQ  | CS_FLAG_COMP_FEQ |
-      CS_FLAG_COMP_EV  | CS_FLAG_COMP_HFQ;
 
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system as well
        as the Hodge operator for the diffusion term */
 
-    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_builder_t  *cb = _vcbs_cell_builder[t_id];
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_hodge_t  *hodge = eqc->diffusion_hodge[t_id];
+
+    /* The property data should be changed since the property may be different
+       from the initial diffusion property associated to this equation
+       context. Moreover, there is no need to have a tensor and its eigen value
+       in this function. */
+
+    cs_property_data_t  *saved_data = hodge->pty_data;
+    cs_property_data_t  tmp_data = cs_property_data_define(true, /* tensor */
+                                                           false,
+                                                           diff_pty);
+
+    hodge->pty_data = &tmp_data;
+
+    /* Set the mesh flag (which local quantities to compute) */
+
+    cs_eflag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ |
+      CS_FLAG_COMP_SEF | CS_FLAG_COMP_DEQ  | CS_FLAG_COMP_FEQ |
+      CS_FLAG_COMP_EV  | CS_FLAG_COMP_HFQ;
 
     /* Set inside the OMP section so that each thread has its own value */
 
     double  *pot = cs_cdo_local_get_d_buffer(t_id);
 
-    cb->t_pty_eval = t_eval;
-    if (eqb->diff_pty_uniform)  /* cell_id =0, cell_flag = 0 */
+    /* Set times at which one evaluates quantities if needed */
+
+    cb->t_pty_eval = cb->t_bc_eval = cb->t_st_eval = t_eval;
+
+    /* Do not use the information stored inside the equation builder since the
+       equation parameter can be different for this function */
+
+    const bool  uniform_pty = cs_property_is_uniform(diff_pty);
+
+    if (uniform_pty)  /* c_id = 0, cell_flag = 0 */
       cs_hodge_set_property_value(0, cb->t_pty_eval, 0, hodge);
 
     /* Define the flux by cellwise contributions */
@@ -3322,22 +3380,19 @@ cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
 #   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
-      cb->cell_flag = 0; /* No need to make a distincition between cells */
-
       /* Set the local mesh structure for the current cell */
 
       cs_cell_mesh_build(c_id, msh_flag, connect, cdoq, cm);
 
-      if (!eqb->diff_pty_uniform) /* cell_flag is always set to 0 */
-        cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
-                                       hodge);
+      if (!uniform_pty) /* cell_flag is always set to 0 */
+        cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, 0, hodge);
 
       /* Define a local buffer keeping the value of the discrete potential
          for the current cell */
 
       for (short int v = 0; v < cm->n_vc; v++)
-        pot[v] = values[cm->v_ids[v]];
-      pot[cm->n_vc] = eqc->cell_values[c_id];
+        pot[v] = v_values[cm->v_ids[v]];
+      pot[cm->n_vc] = c_values[c_id];
 
       /* Only hodge->pty_data is used */
 
@@ -3346,6 +3401,10 @@ cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
                                           diff_flux + connect->c2e->idx[c_id]);
 
     } /* Loop on cells */
+
+    /* Set the diffusion property data back to the initial pointer */
+
+    hodge->pty_data = saved_data;
 
   } /* OMP Section */
 

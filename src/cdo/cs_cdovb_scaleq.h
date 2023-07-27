@@ -519,38 +519,41 @@ cs_cdovb_scaleq_flux_across_plane(const cs_real_t             normal[],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Cellwise computation of an approximation of a constant diffusive
- *        flux (a vector) in each cell.
+ * \brief Cellwise and threaded computation of an approximation of a constant
+ *        diffusive flux (a vector) in each cell.
  *        Case of scalar-valued CDO-Vb schemes
  *
  * \param[in]      values      discrete values for the potential
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      diff_pty    pointer to the diffusion property to use
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out] context     pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out] eq_context  pointer to cs_cdovb_scaleq_t structure
  * \param[in, out] diff_flux   value of the diffusive flux
- */
+  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdovb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
                                    const cs_equation_param_t   *eqp,
+                                   const cs_property_t         *diff_pty,
                                    cs_real_t                    t_eval,
                                    cs_equation_builder_t       *eqb,
-                                   void                        *context,
+                                   void                        *eq_context,
                                    cs_real_t                   *diff_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Cellwise computation of the diffusive flux accross dual faces
- *        (a scalar) in each cell.
+ * \brief Cellwise and threaded computation of the diffusive flux accross dual
+ *        faces (a scalar) in each cell.
  *        Case of scalar-valued CDO-Vb schemes
  *
  * \param[in]      values      discrete values for the potential
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      diff_pty    pointer to the diffusion property to use
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out] context     pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out] eq_context  pointer to cs_cdovb_scaleq_t structure
  * \param[in, out] diff_flux   values of the diffusive flux
  */
 /*----------------------------------------------------------------------------*/
@@ -558,9 +561,10 @@ cs_cdovb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
 void
 cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
                                  const cs_equation_param_t   *eqp,
+                                 const cs_property_t         *diff_pty,
                                  cs_real_t                    t_eval,
                                  cs_equation_builder_t       *eqb,
-                                 void                        *context,
+                                 void                        *eq_context,
                                  cs_real_t                   *diff_flux);
 
 /*----------------------------------------------------------------------------*/

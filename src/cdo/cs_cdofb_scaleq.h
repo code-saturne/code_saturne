@@ -296,23 +296,27 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Cellwise computation of the diffusive flux accross primal faces.
- *         Interior faces first and then boundary faces.
- *         Values at faces are recovered thanks to the equation builder
- *         Case of scalar-valued CDO-Fb schemes
+ * \brief Cellwise computation of the diffusive flux accross primal faces.
+ *        Interior faces first and then boundary faces.
+ *        Values at faces are recovered thanks to the equation builder
+ *        Case of scalar-valued CDO-Fb schemes
  *
- * \param[in]       c_values    values for the potential at cells
- * \param[in]       eqp         pointer to a cs_equation_param_t structure
- * \param[in]       t_eval      time at which one performs the evaluation
- * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  context     pointer to cs_cdovb_scaleq_t structure
- * \param[in, out]  diff_flux   value of the diffusive flux at primal faces
+ * \param[in]      f_values    values for the potential at faces
+ * \param[in]      c_values    values for the potential at cells
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      diff_pty    pointer to the diffusion property to use
+ * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
+ * \param[in, out] context     pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out] diff_flux   value of the diffusive flux at primal faces
   */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *c_values,
+cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *f_values,
+                                const cs_real_t             *c_values,
                                 const cs_equation_param_t   *eqp,
+                                const cs_property_t         *diff_pty,
                                 cs_real_t                    t_eval,
                                 cs_equation_builder_t       *eqb,
                                 void                        *context,

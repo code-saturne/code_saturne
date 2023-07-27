@@ -3487,26 +3487,39 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Cellwise computation of the diffusive flux across the requested
- *        location. If the location is not the "natural" one (which depends on
- *        the space discretization scheme) then the diffusive flux is
- *        interpolated and thus there is an approximation.
+ * \brief Computation of the diffusive flux across the requested location. If
+ *        the location is not the "natural" one (which depends on the space
+ *        discretization scheme) then the diffusive flux is interpolated and
+ *        thus there is an approximation. The computation is threaded and
+ *        performed cell-wise.
  *
- * If eqp is NULL, then one uses eq->param. Otherwise, one checks that the
- * given eqp structure is relevant (same space discretization as eq->param)
+ * If eqp is set to NULL, then one uses eq->param. Otherwise, one checks that
+ * the given eqp structure is relevant (same space discretization as eq->param)
  * Using a different eqp allows one to build a diffusive flux relying on
  * another property associated to the diffusion term.
  *
- * If pot_values is NULL, then one uses the values of the variable field
- * associated to the given equation (eq->field_id). The calling function has to
- * ensure that the location of the values is relevant with the one expected
- * with the given equation. Using pot_values allows one to compute the
- * diffusive flux for an array of values which is not the variable field
+ * If pty is set to NULL then one considers the diffusion property related to
+ * the eqp structure which will be used. Otherwise, one considers the one
+ * given.
+ *
+ * If dof_vals is set to NULL (and cell_values too), then one uses the current
+ * values of the variable associated to the given equation
+ * (cs_equation_get_*_values functions). The calling function has to ensure
+ * that the location of the values is relevant with the one expected with the
+ * given equation. Using dof_vals (and possibly cell_vals) allows one to
+ * compute the diffusive flux for an array of values which is not the one
  * associated to the given equation.
+ *
+ * cell_values is not useful for CDO vertex-based schemes while it is mandatory
+ * for CDO vertex+cell-based schemes and CDO face-based schemes. For CDO
+ * cell-based schemes, the flux is a variable so that neither dof_vals nor
+ * cell_vals are used.
  *
  * \param[in]      eq         pointer to a cs_equation_t structure
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in]      pot_vals   values of the potential
+ * \param[in]      diff_pty   diffusion property or NULL
+ * \param[in]      dof_vals   values at the location of the degrees of freedom
+ * \param[in]      cell_vals  values at the cell centers or NULL
  * \param[in]      location   indicate where the flux has to be computed
  * \param[in]      t_eval     time at which one performs the evaluation
  * \param[in, out] diff_flux  value of the diffusive flux (must be allocated)
@@ -3516,7 +3529,9 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
 void
 cs_equation_compute_diffusive_flux(const cs_equation_t         *eq,
                                    const cs_equation_param_t   *eqp,
-                                   const cs_real_t             *pot_vals,
+                                   const cs_property_t         *diff_pty,
+                                   const cs_real_t             *dof_vals,
+                                   const cs_real_t             *cell_vals,
                                    cs_flag_t                    location,
                                    cs_real_t                    t_eval,
                                    cs_real_t                   *diff_flux)
@@ -3531,105 +3546,189 @@ cs_equation_compute_diffusive_flux(const cs_equation_t         *eq,
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
 
-  /* Which values to consider ? */
-
-  const cs_real_t  *used_values;
-
-  if (pot_vals != NULL)
-    used_values = pot_vals;
-  else {
-    cs_field_t  *fld = cs_field_by_id(eq->field_id);
-    used_values = fld->val;
-  }
-
   /* Which set of equation parameters to use ? */
 
-  const cs_equation_param_t  *eqp_used;
+  const cs_equation_param_t  *used_eqp;
   if (eqp != NULL) {
 
-    eqp_used = eqp;
-    if (eqp_used->space_scheme != eq->param->space_scheme)
+    used_eqp = eqp;
+    if (used_eqp->space_scheme != eq->param->space_scheme)
       bft_error(__FILE__, __LINE__, 0,
                 "%s: Eq. \"%s\" Stop computing the diffusive flux.\n"
                 "  Different space discretizations are considered.",
-                __func__, eqp_used->name);
+                __func__, used_eqp->name);
 
   }
   else
-    eqp_used = eq->param;
+    used_eqp = eq->param;
 
-  assert(eqp_used != NULL);
-  if (eqp_used->dim > 1)
-    bft_error(__FILE__, __LINE__, 0, fmsg, __func__, eqp_used->name);
+  assert(used_eqp != NULL);
+  if (used_eqp->dim > 1)
+    bft_error(__FILE__, __LINE__, 0, fmsg, __func__, used_eqp->name);
+
+  /* Which property to use ? */
+
+  const cs_property_t  *used_property;
+  if (diff_pty == NULL)
+    used_property = used_eqp->diffusion_property;
+  else
+    used_property = diff_pty;
 
   /* Which function to call ? */
 
-  switch (eqp_used->space_scheme) {
+  switch (used_eqp->space_scheme) {
 
   case CS_SPACE_SCHEME_CDOVB:
-    if (cs_flag_test(location, cs_flag_primal_cell))
-      cs_cdovb_scaleq_diff_flux_in_cells(used_values,
-                                         eqp_used,
+    {
+      /* Which values to consider ? */
+
+      const cs_real_t  *used_values;
+
+      if (dof_vals != NULL)
+        used_values = dof_vals;
+      else
+        used_values = cs_equation_get_vertex_values(eq, false);
+
+      /* Compute the diffusive flux */
+
+      if (cs_flag_test(location, cs_flag_primal_cell))
+        cs_cdovb_scaleq_diff_flux_in_cells(used_values,
+                                           used_eqp,
+                                           used_property,
+                                           t_eval,
+                                           eq->builder,
+                                           eq->scheme_context,
+                                           diff_flux);
+
+      else if (cs_flag_test(location, cs_flag_dual_face_byc))
+        cs_cdovb_scaleq_diff_flux_dfaces(used_values,
+                                         used_eqp,
+                                         used_property,
                                          t_eval,
                                          eq->builder,
                                          eq->scheme_context,
                                          diff_flux);
-    else if (cs_flag_test(location, cs_flag_dual_face_byc))
-      cs_cdovb_scaleq_diff_flux_dfaces(used_values,
-                                       eqp_used,
-                                       t_eval,
-                                       eq->builder,
-                                       eq->scheme_context,
-                                       diff_flux);
-    else
-      bft_error(__FILE__, __LINE__, 0, lmsg, __func__, eqp_used->name);
+
+      else
+        bft_error(__FILE__, __LINE__, 0, lmsg, __func__, used_eqp->name);
+    }
     break;
 
   case CS_SPACE_SCHEME_CDOVCB:
-    if (cs_flag_test(location, cs_flag_primal_cell))
-      cs_cdovcb_scaleq_diff_flux_in_cells(used_values,
-                                          eqp_used,
+    {
+      /* Which values to consider ? */
+
+      const cs_real_t  *used_dof_values;
+      const cs_real_t  *used_cell_values;
+
+      if (dof_vals != NULL) {
+
+        used_dof_values = dof_vals;
+        used_cell_values = cell_vals;
+
+        if (cell_vals == NULL)
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Need cell values with this set of options.",
+                    __func__);
+
+      }
+      else {
+
+        used_dof_values = cs_equation_get_vertex_values(eq, false);
+        used_cell_values = cs_equation_get_cell_values(eq, false);
+
+      }
+
+      /* Compute the diffusive flux */
+
+      if (cs_flag_test(location, cs_flag_primal_cell))
+        cs_cdovcb_scaleq_diff_flux_in_cells(used_dof_values,
+                                            used_cell_values,
+                                            used_eqp,
+                                            used_property,
+                                            t_eval,
+                                            eq->builder,
+                                            eq->scheme_context,
+                                            diff_flux);
+
+      else if (cs_flag_test(location, cs_flag_dual_face_byc))
+        cs_cdovcb_scaleq_diff_flux_dfaces(used_dof_values,
+                                          used_cell_values,
+                                          used_eqp,
+                                          used_property,
                                           t_eval,
                                           eq->builder,
                                           eq->scheme_context,
                                           diff_flux);
-    else if (cs_flag_test(location, cs_flag_dual_face_byc))
-      cs_cdovcb_scaleq_diff_flux_dfaces(used_values,
-                                        eqp_used,
+      else
+        bft_error(__FILE__, __LINE__, 0, lmsg, __func__, used_eqp->name);
+    }
+    break;
+
+  case CS_SPACE_SCHEME_CDOFB:
+    {
+      /* Which values to consider ? */
+
+      const cs_real_t  *used_dof_values;
+      const cs_real_t  *used_cell_values;
+
+      if (dof_vals != NULL) {
+
+        used_dof_values = dof_vals;
+        used_cell_values = cell_vals;
+
+        if (cell_vals == NULL)
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Need cell values with this set of options.",
+                    __func__);
+
+      }
+      else {
+
+        used_dof_values = cs_equation_get_face_values(eq, false);
+        used_cell_values = cs_equation_get_cell_values(eq, false);
+
+      }
+
+      /* Compute the diffusive flux */
+
+      if (cs_flag_test(location, cs_flag_primal_face))
+        cs_cdofb_scaleq_diff_flux_faces(used_dof_values,
+                                        used_cell_values,
+                                        used_eqp,
+                                        used_property,
                                         t_eval,
                                         eq->builder,
                                         eq->scheme_context,
                                         diff_flux);
-    else
-      bft_error(__FILE__, __LINE__, 0, lmsg, __func__, eqp_used->name);
-    break;
-
-  case CS_SPACE_SCHEME_CDOFB:
-    if (cs_flag_test(location, cs_flag_primal_face))
-      cs_cdofb_scaleq_diff_flux_faces(used_values,
-                                      eqp_used,
-                                      t_eval,
-                                      eq->builder,
-                                      eq->scheme_context,
-                                      diff_flux);
-    else
-      bft_error(__FILE__, __LINE__, 0, lmsg, __func__, eqp_used->name);
+      else
+        bft_error(__FILE__, __LINE__, 0, lmsg, __func__, used_eqp->name);
+    }
     break;
 
   case CS_SPACE_SCHEME_CDOCB:
-    if (cs_flag_test(location, cs_flag_primal_face))
-      cs_cdocb_scaleq_diff_flux_faces(used_values,
-                                      eqp_used,
-                                      t_eval,
-                                      eq->builder,
-                                      eq->scheme_context,
-                                      diff_flux);
-    else
-      bft_error(__FILE__, __LINE__, 0, lmsg, __func__, eqp_used->name);
+    {
+      /* No need to compute the flux. This is an output of the scheme. One
+         handles only the case where one gets the flux from the equation
+         context (all behaviors by default are expected) */
+
+      const cs_real_t  *used_values = NULL;
+      assert(dof_vals == NULL && diff_pty == NULL);
+
+      if (cs_flag_test(location, cs_flag_primal_face))
+        cs_cdocb_scaleq_diff_flux_faces(used_values,
+                                        used_eqp,
+                                        t_eval,
+                                        eq->builder,
+                                        eq->scheme_context,
+                                        diff_flux);
+      else
+        bft_error(__FILE__, __LINE__, 0, lmsg, __func__, used_eqp->name);
+    }
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0, fmsg, __func__, eqp_used->name);
+    bft_error(__FILE__, __LINE__, 0, fmsg, __func__, used_eqp->name);
 
   } /* End of switch on the space scheme */
 }

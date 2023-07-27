@@ -97,6 +97,50 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the values of (potential) fields needed for the update of
+ *        the Darcy velocity/fluxes.
+ *
+ * \param[in]  eq         pointer to an equation structure
+ * \param[out] dof_vals   double pointer to the values (degrees of freedom)
+ * \param[out] cell_vals  double pointer to the values (cell values)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_get_value_pointers(const cs_equation_t       *eq,
+                          cs_real_t                **p_dof_vals,
+                          cs_real_t                **p_cell_vals)
+{
+  cs_real_t  *dof_vals = NULL, *cell_vals = NULL;
+
+  switch (cs_equation_get_space_scheme(eq)) {
+  case CS_SPACE_SCHEME_CDOVB:
+    dof_vals = cs_equation_get_vertex_values(eq, false);
+    break;
+
+  case CS_SPACE_SCHEME_CDOVCB:
+    dof_vals = cs_equation_get_vertex_values(eq, false);
+    cell_vals = cs_equation_get_cell_values(eq, false);
+    break;
+
+  case CS_SPACE_SCHEME_CDOFB:
+    dof_vals = cs_equation_get_face_values(eq, false);
+    cell_vals = cs_equation_get_cell_values(eq, false);
+    break;
+
+  default:
+    /* Do nothing */
+    break;
+  }
+
+  /* Returns pointers */
+
+  *p_dof_vals = dof_vals;
+  *p_cell_vals = cell_vals;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Allocate and initialize a \ref cs_gwf_darcy_flux_t structure
  *
  * \param[in]      loc_flag   flag to define where the flux is defined

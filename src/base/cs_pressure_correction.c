@@ -2948,7 +2948,9 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
 
   cs_equation_compute_diffusive_flux(eq_dp,
                                      NULL, /* eqp --> default*/
-                                     NULL, /* pot_values --> default */
+                                     NULL, /* diff_pty --> default */
+                                     NULL, /* dof_values --> default */
+                                     NULL, /* cell_values --> default */
                                      cs_flag_primal_face,
                                      cs_glob_time_step->t_cur,
                                      diff_flux);

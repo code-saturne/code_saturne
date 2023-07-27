@@ -2662,23 +2662,27 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Cellwise computation of the diffusive flux accross primal faces.
- *         Interior faces first and then boundary faces.
- *         Values at faces are recovered thanks to the equation builder
- *         Case of scalar-valued CDO-Fb schemes
+ * \brief Cellwise computation of the diffusive flux accross primal faces.
+ *        Interior faces first and then boundary faces.
+ *        Values at faces are recovered thanks to the equation builder
+ *        Case of scalar-valued CDO-Fb schemes
  *
- * \param[in]       c_values    values for the potential at cells
- * \param[in]       eqp         pointer to a cs_equation_param_t structure
- * \param[in]       t_eval      time at which one performs the evaluation
- * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  context     pointer to cs_cdovb_scaleq_t structure
- * \param[in, out]  diff_flux   value of the diffusive flux at primal faces
+ * \param[in]      f_values    values for the potential at faces
+ * \param[in]      c_values    values for the potential at cells
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      diff_pty    pointer to the diffusion property to use
+ * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
+ * \param[in, out] context     pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out] diff_flux   value of the diffusive flux at primal faces
   */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *c_values,
+cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *f_values,
+                                const cs_real_t             *c_values,
                                 const cs_equation_param_t   *eqp,
+                                const cs_property_t         *diff_pty,
                                 cs_real_t                    t_eval,
                                 cs_equation_builder_t       *eqb,
                                 void                        *context,
@@ -2707,8 +2711,6 @@ cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *c_values,
   cs_hodge_compute_t  *get_diffusion_hodge =
     cs_hodge_get_func(__func__, eqp->diffusion_hodgep);
 
-  const cs_real_t  *f_values = eqc->face_values;
-
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(t_eval, quant, connect, eqp, eqb, diff_flux, c_values,         \
          f_values, get_diffusion_hodge, cs_cdofb_cell_bld)
@@ -2721,10 +2723,26 @@ cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *c_values,
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_hodge_t  *diff_hodge = eqc->diffusion_hodge[t_id];
-    cs_eflag_t  msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ |
-      CS_FLAG_COMP_DEQ;
+
+    /* The property data should be changed since the property may be different
+       from the initial diffusion property associated to this equation
+       context. Moreover, there is no need to have a tensor and its eigen value
+       in this function. */
+
+    cs_property_data_t  *saved_data = diff_hodge->pty_data;
+    cs_property_data_t  tmp_data = cs_property_data_define(false,
+                                                           false,
+                                                           diff_pty);
+
+    diff_hodge->pty_data = &tmp_data;
+
     cs_cdo_diffusion_cw_flux_t  *compute_flux =
       cs_cdo_diffusion_sfb_get_face_flux;
+
+    /* Set the mesh flag (which local quantities to compute) */
+
+    cs_eflag_t  msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ |
+      CS_FLAG_COMP_DEQ;
 
     /* Set inside the OMP section so that each thread has its own value */
 
@@ -2735,7 +2753,12 @@ cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *c_values,
 
     cb->t_pty_eval = cb->t_bc_eval = cb->t_st_eval = t_eval;
 
-    if (eqb->diff_pty_uniform)  /* c_id = 0, cell_flag = 0 */
+    /* Do not use the information stored inside the equation builder since the
+       equation parameter can be different for this function */
+
+    const bool  uniform_pty = cs_property_is_uniform(diff_pty);
+
+    if (uniform_pty)  /* c_id = 0, cell_flag = 0 */
       cs_hodge_set_property_value(0, cb->t_pty_eval, 0, diff_hodge);
 
     /* Define the flux by cellwise contributions */
@@ -2751,7 +2774,7 @@ cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *c_values,
       if (cs_dbg_cw_test(eqp, cm, NULL)) cs_cell_mesh_dump(cm);
 #endif
 
-      if (!eqb->diff_pty_uniform)
+      if (!uniform_pty) /* cell_flag is always set to 0 */
         cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, 0, diff_hodge);
 
       /* Define a local buffer keeping the value of the discrete potential
@@ -2778,6 +2801,10 @@ cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *c_values,
         diff_flux[cm->f_ids[f]] = flx[f];
 
     } /* Loop on cells */
+
+    /* Set the diffusion property data back to the initial pointer */
+
+    diff_hodge->pty_data = saved_data;
 
   } /* OMP Section */
 

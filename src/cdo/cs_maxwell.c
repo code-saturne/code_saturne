@@ -779,7 +779,9 @@ cs_maxwell_update(const cs_mesh_t             *mesh,
 
     cs_equation_compute_diffusive_flux(es_eq,
                                        NULL, /* eqp --> default*/
-                                       NULL, /* pot_values --> default */
+                                       NULL, /* diff_pty --> default */
+                                       NULL, /* dof_values --> default */
+                                       NULL, /* cell_values --> default */
                                        cs_flag_dual_face_byc,
                                        ts->t_cur,
                                        mxl->d_field_array);

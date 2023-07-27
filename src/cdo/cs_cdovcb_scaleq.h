@@ -365,21 +365,25 @@ cs_cdovcb_scaleq_flux_across_plane(const cs_real_t             normal[],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Cellwise computation of the diffusive flux in each cells.
- *         Case of scalar-valued CDO-VCb schemes
+ * \brief Cellwise and threaed computation of the diffusive flux in each cells.
+ *        Case of scalar-valued CDO-VCb schemes.
  *
- * \param[in]       values      discrete values for the potential
- * \param[in]       eqp         pointer to a cs_equation_param_t structure
- * \param[in]       t_eval      time at which one performs the evaluation
- * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  context     pointer to data structure cast on-the-fly
- * \param[in, out]  diff_flux   value of the diffusive flux
+ * \param[in]      v_values    values at vertices
+ * \param[in]      c_values    values at cells
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      diff_pty    pointer to the diffusion property to use
+ * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
+ * \param[in, out] context     pointer to data structure cast on-the-fly
+ * \param[in, out] diff_flux   value of the diffusive flux
   */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
+cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *v_values,
+                                    const cs_real_t             *c_values,
                                     const cs_equation_param_t   *eqp,
+                                    const cs_property_t         *diff_pty,
                                     cs_real_t                    t_eval,
                                     cs_equation_builder_t       *eqb,
                                     void                        *context,
@@ -387,21 +391,27 @@ cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Cellwise computation of the diffusive flux across dual faces
- *         Case of scalar-valued CDO-VCb schemes
+ * \brief Cellwise and threaded computation of the diffusive flux across dual
+ *        faces. This is only an interpolation since the dual faces are not the
+ *        natural location for this discretization.
+ *        Case of scalar-valued CDO-VCb schemes.
  *
- * \param[in]       values      discrete values for the potential
- * \param[in]       eqp         pointer to a cs_equation_param_t structure
- * \param[in]       t_eval      time at which one performs the evaluation
- * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  context     pointer to data structure cast on-the-fly
- * \param[in, out]  diff_flux   value of the diffusive flux
+ * \param[in]      v_values    values at vertices
+ * \param[in]      c_values    values at cells
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      diff_pty    pointer to the diffusion property to use
+ * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
+ * \param[in, out] context     pointer to data structure cast on-the-fly
+ * \param[in, out] diff_flux   value of the diffusive flux
   */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
+cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *v_values,
+                                  const cs_real_t             *c_values,
                                   const cs_equation_param_t   *eqp,
+                                  const cs_property_t         *diff_pty,
                                   cs_real_t                    t_eval,
                                   cs_equation_builder_t       *eqb,
                                   void                        *context,

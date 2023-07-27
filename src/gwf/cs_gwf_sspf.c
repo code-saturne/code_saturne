@@ -99,19 +99,24 @@ BEGIN_C_DECLS
  *        Case of CDO-Vb schemes and a Darcy flux defined at dual faces for
  *        a saturated porous media.
  *
- * \param[in]      connect      pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
- * \param[in]      pot_values   values to consider for the update
- * \param[in]      t_eval       time at which one performs the evaluation
- * \param[in]      cur2prev     true or false
- * \param[in, out] darcy        pointer to the darcy flux structure
+ *        cell_values could be set to NULL when the space discretization does
+ *        not request these values for the update.
+ *
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
+ * \param[in]      dof_values    values to consider for the update
+ * \param[in]      cell_values   values to consider for the update or NULL
+ * \param[in]      t_eval        time at which one performs the evaluation
+ * \param[in]      cur2prev      true or false
+ * \param[in, out] darcy         pointer to the darcy flux structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _sspf_update_darcy_arrays(const cs_cdo_connect_t      *connect,
                           const cs_cdo_quantities_t   *cdoq,
-                          const cs_real_t             *pot_values,
+                          const cs_real_t             *dof_values,
+                          const cs_real_t             *cell_values,
                           cs_real_t                    t_eval,
                           bool                         cur2prev,
                           cs_gwf_darcy_flux_t         *darcy)
@@ -134,8 +139,10 @@ _sspf_update_darcy_arrays(const cs_cdo_connect_t      *connect,
 
   assert(eq != NULL);
   cs_equation_compute_diffusive_flux(eq,
-                                     NULL, /* eqp --> default*/
-                                     pot_values,
+                                     NULL, /* eqp --> default */
+                                     NULL, /* diff_pty --> default */
+                                     dof_values,
+                                     cell_values,
                                      darcy->flux_location,
                                      t_eval,
                                      darcy->flux_val);
@@ -150,7 +157,7 @@ _sspf_update_darcy_arrays(const cs_cdo_connect_t      *connect,
 
   cs_advection_field_in_cells(adv, t_eval, vel->val);
 
-  /* Update the Darcy flux at the boundary */
+  /* Update the Darcy flux at the boundary (take into account the BCs) */
 
   cs_gwf_darcy_flux_update_on_boundary(t_eval, eq, adv);
 
@@ -488,12 +495,15 @@ cs_gwf_sspf_update(const cs_mesh_t              *mesh,
   /* Update the advection field (the Darcy flux related to the groundwater flow
      module) */
 
-  cs_field_t  *hydraulic_head = cs_equation_get_field(mc->richards);
   cs_gwf_darcy_flux_t  *darcy = mc->darcy;
+  cs_real_t  *dof_vals = NULL, *cell_vals = NULL;
+
+  cs_gwf_get_value_pointers(mc->richards, &dof_vals, &cell_vals);
 
   darcy->update_func(connect,
                      cdoq,
-                     hydraulic_head->val,
+                     dof_vals,
+                     cell_vals,
                      time_eval,
                      cur2prev,
                      darcy);
