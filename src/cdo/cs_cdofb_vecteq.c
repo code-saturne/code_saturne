@@ -453,8 +453,8 @@ cs_cdofb_vecteq_diffusion(const cs_equation_param_t     *eqp,
 
     assert(diff_hodge != NULL);
     if (!(eqb->diff_pty_uniform))
-      cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
-                                     diff_hodge);
+      cs_hodge_evaluate_property_cw(cm, cb->t_pty_eval, cb->cell_flag,
+                                    diff_hodge);
 
     /* Define the local stiffness matrix: local matrix owned by the cellwise
        builder (store in cb->loc) */
@@ -539,8 +539,8 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t     *eqp,
 
     assert(diff_hodge != NULL);
     if (!(eqb->diff_pty_uniform))
-      cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
-                                     diff_hodge);
+      cs_hodge_evaluate_property_cw(cm, cb->t_pty_eval, cb->cell_flag,
+                                    diff_hodge);
 
     /* Define the local stiffness matrix: local matrix owned by the cellwise
        builder (store in cb->loc) */

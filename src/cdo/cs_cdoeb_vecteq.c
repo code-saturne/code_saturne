@@ -240,7 +240,7 @@ _eb_curlcurl(const cs_equation_param_t     *eqp,
   /* Set the properties for this cell if not uniform */
 
   if (!eqb->curlcurl_pty_uniform)
-    cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag, hodge);
+    cs_hodge_evaluate_property_cw(cm, cb->t_pty_eval, cb->cell_flag, hodge);
 
   /* The first step is to build the hodge matrix associated to the curl-curl
      operator (stored in hodge->matrix) */
@@ -1005,7 +1005,7 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
     /* Initialization of the curl-curl property value if uniform.
      * One calls this function with the boundary tag to examine all tests */
 
-    cs_hodge_set_property_value(0, cb->t_pty_eval,
+    cs_hodge_evaluate_property(0, cb->t_pty_eval,
                                 CS_FLAG_BOUNDARY_CELL_BY_FACE,
                                 curlcurl_hodge);
 

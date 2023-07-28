@@ -402,8 +402,8 @@ _svcb_conv_diff_reac(const cs_equation_param_t     *eqp,
     /* Set the diffusion property */
 
     if (!(eqb->diff_pty_uniform))
-      cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
-                                     diff_hodge);
+      cs_hodge_evaluate_property_cw(cm, cb->t_pty_eval, cb->cell_flag,
+                                    diff_hodge);
 
     /* Define the local stiffness matrix: local matrix owned by the cellwise
        builder (store in cb->loc) */
@@ -3244,7 +3244,7 @@ cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *v_values,
     const bool  uniform_pty = cs_property_is_uniform(diff_pty);
 
     if (uniform_pty)  /* c_id = 0, cell_flag = 0 */
-      cs_hodge_set_property_value(0, cb->t_pty_eval, 0, hodge);
+      cs_hodge_evaluate_property(0, cb->t_pty_eval, 0, hodge);
 
     /* Define the flux by cellwise contributions */
 
@@ -3256,7 +3256,7 @@ cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *v_values,
       cs_cell_mesh_build(c_id, msh_flag, connect, cdoq, cm);
 
       if (!uniform_pty) /* cell_flag is always set to 0 */
-        cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, 0, hodge);
+        cs_hodge_evaluate_property_cw(cm, cb->t_pty_eval, 0, hodge);
 
       /* Define the local buffer keeping the value of the discrete potential
          for the current cell */
@@ -3373,7 +3373,7 @@ cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *v_values,
     const bool  uniform_pty = cs_property_is_uniform(diff_pty);
 
     if (uniform_pty)  /* c_id = 0, cell_flag = 0 */
-      cs_hodge_set_property_value(0, cb->t_pty_eval, 0, hodge);
+      cs_hodge_evaluate_property(0, cb->t_pty_eval, 0, hodge);
 
     /* Define the flux by cellwise contributions */
 
@@ -3385,7 +3385,7 @@ cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *v_values,
       cs_cell_mesh_build(c_id, msh_flag, connect, cdoq, cm);
 
       if (!uniform_pty) /* cell_flag is always set to 0 */
-        cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, 0, hodge);
+        cs_hodge_evaluate_property_cw(cm, cb->t_pty_eval, 0, hodge);
 
       /* Define a local buffer keeping the value of the discrete potential
          for the current cell */

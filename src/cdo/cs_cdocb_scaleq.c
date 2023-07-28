@@ -1536,8 +1536,8 @@ cs_cdocb_scaleq_diffusion(const cs_equation_param_t     *eqp,
 
     assert(diff_hodge != NULL);
     if (!(eqb->diff_pty_uniform))
-      cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
-                                     diff_hodge);
+      cs_hodge_evaluate_property_cw(cm, cb->t_pty_eval, cb->cell_flag,
+                                    diff_hodge);
 
     /* Define the local Hodge matrix (no stiffness matrix in case of cell-based
        schemes). The local (cell-wise) matrix is stored in cb->loc */

@@ -447,7 +447,7 @@ cs_equation_builder_init_properties(const cs_equation_param_t     *eqp,
    * One calls this function with the boundary tag to examine all tests */
 
   if (diff_hodge != NULL && eqb->diff_pty_uniform)
-    cs_hodge_set_property_value(0, /* cell_id */
+    cs_hodge_evaluate_property(0, /* cell_id */
                                 cb->t_pty_eval,
                                 CS_FLAG_BOUNDARY_CELL_BY_FACE,
                                 diff_hodge);

@@ -1198,7 +1198,7 @@ cs_hodge_create(const cs_cdo_connect_t   *connect,
   BFT_MALLOC(hdg->pty_data, 1, cs_property_data_t);
   cs_property_data_init(need_tensor, need_eigen, property, hdg->pty_data);
   if (hdg->pty_data->is_unity == false && connect->n_cells > 0)
-    cs_hodge_set_property_value(0, 0, 0, hdg);
+    cs_hodge_evaluate_property(0, 0, 0, hdg);
 
   return hdg;
 }
@@ -1546,9 +1546,9 @@ cs_hodge_copy_parameters(const cs_hodge_param_t   *h_ref,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the property value (scalar- or tensor-valued) related to a
- *         discrete Hodge operator inside a cell and if needed other related
- *         quantities
+ * \brief Set the property value (scalar- or tensor-valued) related to a
+ *        discrete Hodge operator inside a cell and if needed other related
+ *        quantities
  *
  * \param[in]      c_id    id of the cell to deal with
  * \param[in]      t_eval  time at which one performs the evaluation
@@ -1558,10 +1558,10 @@ cs_hodge_copy_parameters(const cs_hodge_param_t   *h_ref,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_set_property_value(const cs_lnum_t       c_id,
-                            const cs_real_t       t_eval,
-                            const cs_flag_t       c_flag,
-                            cs_hodge_t           *hodge)
+cs_hodge_evaluate_property(const cs_lnum_t       c_id,
+                           const cs_real_t       t_eval,
+                           const cs_flag_t       c_flag,
+                           cs_hodge_t           *hodge)
 {
   assert(hodge != NULL);
 
@@ -1627,10 +1627,10 @@ cs_hodge_set_property_value(const cs_lnum_t       c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the property value (scalar- or tensor-valued) related to a
- *         discrete Hodge operator inside a cell and if needed ohter related
- *         quantities.
- *         Cell-wise variant (usage of cs_cell_mesh_t structure)
+ * \brief Set the property value (scalar- or tensor-valued) related to a
+ *        discrete Hodge operator inside a cell and if needed ohter related
+ *        quantities.
+ *        Cell-wise variant (usage of cs_cell_mesh_t structure)
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      t_eval  time at which one performs the evaluation
@@ -1640,10 +1640,10 @@ cs_hodge_set_property_value(const cs_lnum_t       c_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_set_property_value_cw(const cs_cell_mesh_t   *cm,
-                               const cs_real_t         t_eval,
-                               const cs_flag_t         c_flag,
-                               cs_hodge_t             *hodge)
+cs_hodge_evaluate_property_cw(const cs_cell_mesh_t   *cm,
+                              const cs_real_t         t_eval,
+                              const cs_flag_t         c_flag,
+                              cs_hodge_t             *hodge)
 {
   assert(hodge != NULL);
 
@@ -4267,7 +4267,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
     const cs_flag_t  cell_flag = 0;
     if (pty_uniform) /* Get the value from the first cell */
-      cs_hodge_set_property_value(0, t_eval, cell_flag, hodge);
+      cs_hodge_evaluate_property(0, t_eval, cell_flag, hodge);
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
@@ -4279,7 +4279,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
       /* Retrieve the value of the property inside the current cell */
 
       if (!pty_uniform)
-        cs_hodge_set_property_value_cw(cm, t_eval, cell_flag, hodge);
+        cs_hodge_evaluate_property_cw(cm, t_eval, cell_flag, hodge);
 
       /* Build the local discrete Hodge operator */
 
@@ -4421,7 +4421,7 @@ cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
     }
 
     if (pty_uniform) /* Get the value from the first cell */
-      cs_hodge_set_property_value(0, t_eval, cell_flag, hodge);
+      cs_hodge_evaluate_property(0, t_eval, cell_flag, hodge);
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
@@ -4433,7 +4433,7 @@ cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
       /* Retrieve the value of the property inside the current cell */
 
       if (!pty_uniform)
-        cs_hodge_set_property_value_cw(cm, t_eval, cell_flag, hodge);
+        cs_hodge_evaluate_property_cw(cm, t_eval, cell_flag, hodge);
 
       /* Build the local discrete Hodge operator */
 

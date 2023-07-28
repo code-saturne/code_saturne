@@ -446,8 +446,8 @@ _svb_conv_diff_reac(const cs_equation_param_t     *eqp,
     /* Set the diffusion property */
 
     if (!(eqb->diff_pty_uniform))
-      cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
-                                     diff_hodge);
+      cs_hodge_evaluate_property_cw(cm, cb->t_pty_eval, cb->cell_flag,
+                                    diff_hodge);
 
     /* Define the local stiffness matrix: local matrix owned by the cellwise
        builder (store in cb->loc) */
@@ -4023,8 +4023,8 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
         /* Set the diffusion property */
 
         if (!(eqb->diff_pty_uniform))
-          cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
-                                         diff_hodge);
+          cs_hodge_evaluate_property_cw(cm, cb->t_pty_eval, cb->cell_flag,
+                                        diff_hodge);
 
         /* Define the local stiffness matrix: local matrix owned by the cellwise
            builder (store in cb->loc) */
@@ -4236,7 +4236,7 @@ cs_cdovb_scaleq_apply_stiffness(const cs_equation_param_t     *eqp,
     /* Initialization of the values of properties */
 
     if (pty_uniform)
-      cs_hodge_set_property_value(0, /* cell_id */
+      cs_hodge_evaluate_property(0, /* cell_id */
                                   t_cur,
                                   CS_FLAG_BOUNDARY_CELL_BY_FACE,
                                   hodge);
@@ -4265,7 +4265,7 @@ cs_cdovb_scaleq_apply_stiffness(const cs_equation_param_t     *eqp,
       /* Set the diffusion property */
 
       if (!pty_uniform)
-        cs_hodge_set_property_value_cw(cm, t_cur, cb->cell_flag, hodge);
+        cs_hodge_evaluate_property_cw(cm, t_cur, cb->cell_flag, hodge);
 
       /* Define the local stiffness matrix: local matrix owned by the cellwise
          builder (store in cb->loc) */
@@ -4428,7 +4428,7 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
     } /* Switch hodge algo. */
 
     if (eqb->diff_pty_uniform)  /* c_id = 0, cell_flag = 0 */
-      cs_hodge_set_property_value(0, cb->t_pty_eval, 0, hodge);
+      cs_hodge_evaluate_property(0, cb->t_pty_eval, 0, hodge);
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t bf_id = 0; bf_id < quant->n_b_faces; bf_id++) {
@@ -4526,7 +4526,7 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
           if (cs_dbg_cw_test(eqp, cm, NULL)) cs_cell_mesh_dump(cm);
 #endif
           if (!eqb->diff_pty_uniform)
-            cs_hodge_set_property_value_cw(cm, t_eval, 0, hodge);
+            cs_hodge_evaluate_property_cw(cm, t_eval, 0, hodge);
 
           /* Define a local buffer keeping the value of the discrete potential
              for the current cell */
@@ -4842,7 +4842,7 @@ cs_cdovb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
     const bool  uniform_pty = cs_property_is_uniform(diff_pty);
 
     if (uniform_pty)  /* c_id = 0, cell_flag = 0 */
-      cs_hodge_set_property_value(0, cb->t_pty_eval, 0, diff_hodge);
+      cs_hodge_evaluate_property(0, cb->t_pty_eval, 0, diff_hodge);
 
     /* Define the flux by cellwise contributions */
 
@@ -4858,7 +4858,7 @@ cs_cdovb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
 #endif
 
       if (!uniform_pty)  /* cell_flag is always set to 0 */
-        cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, 0, diff_hodge);
+        cs_hodge_evaluate_property_cw(cm, cb->t_pty_eval, 0, diff_hodge);
 
       /* Define the local buffer keeping the value of the discrete potential
          for the current cell */
@@ -4998,7 +4998,7 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
     const bool  uniform_pty = cs_property_is_uniform(diff_pty);
 
     if (uniform_pty)  /* c_id = 0, cell_flag = 0 */
-      cs_hodge_set_property_value(0, cb->t_pty_eval, 0, diff_hodge);
+      cs_hodge_evaluate_property(0, cb->t_pty_eval, 0, diff_hodge);
 
     /* Define the flux by cellwise contributions */
 
@@ -5014,7 +5014,7 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
 #endif
 
       if (!uniform_pty) /* cell_flag is always set to 0 */
-        cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, 0, diff_hodge);
+        cs_hodge_evaluate_property_cw(cm, cb->t_pty_eval, 0, diff_hodge);
 
       /* Define a local buffer keeping the value of the discrete potential
          for the current cell */

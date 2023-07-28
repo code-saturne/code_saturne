@@ -390,9 +390,9 @@ cs_hodge_copy_parameters(const cs_hodge_param_t   *h_ref,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the property value (scalar- or tensor-valued) related to a
- *         discrete Hodge operator inside a cell and if needed other related
- *         quantities
+ * \brief Set the property value (scalar- or tensor-valued) related to a
+ *        discrete Hodge operator inside a cell and if needed other related
+ *        quantities
  *
  * \param[in]      c_id    id of the cell to deal with
  * \param[in]      t_eval  time at which one performs the evaluation
@@ -402,17 +402,17 @@ cs_hodge_copy_parameters(const cs_hodge_param_t   *h_ref,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_set_property_value(const cs_lnum_t       c_id,
-                            const cs_real_t       t_eval,
-                            const cs_flag_t       c_flag,
-                            cs_hodge_t           *hodge);
+cs_hodge_evaluate_property(const cs_lnum_t       c_id,
+                           const cs_real_t       t_eval,
+                           const cs_flag_t       c_flag,
+                           cs_hodge_t           *hodge);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the property value (scalar- or tensor-valued) related to a
- *         discrete Hodge operator inside a cell and if needed ohter related
- *         quantities.
- *         Cell-wise variant (usage of cs_cell_mesh_t structure)
+ * \brief Set the property value (scalar- or tensor-valued) related to a
+ *        discrete Hodge operator inside a cell and if needed ohter related
+ *        quantities.
+ *        Cell-wise variant (usage of cs_cell_mesh_t structure)
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      t_eval  time at which one performs the evaluation
@@ -422,7 +422,7 @@ cs_hodge_set_property_value(const cs_lnum_t       c_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_set_property_value_cw(const cs_cell_mesh_t   *cm,
+cs_hodge_evaluate_property_cw(const cs_cell_mesh_t   *cm,
                                const cs_real_t         t_eval,
                                const cs_flag_t         c_flag,
                                cs_hodge_t             *hodge);

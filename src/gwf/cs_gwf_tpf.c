@@ -209,7 +209,7 @@ _build_h_eq_diff_st(const cs_equation_param_t     *eqp,
 
   /* Diffusion part of the source term to add */
 
-  cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag, diff_hodge);
+  cs_hodge_evaluate_property_cw(cm, cb->t_pty_eval, cb->cell_flag, diff_hodge);
 
   /* Define the local stiffness matrix: local matrix owned by the cellwise
      builder (store in cb->loc) */
