@@ -222,11 +222,11 @@ cs_array_real_copy(cs_lnum_t        size,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_scale(cs_lnum_t     n_elts,
-                    int           stride,
-                    cs_lnum_t    *elt_ids,
-                    cs_real_t     scaling_factor,
-                    cs_real_t     dest[restrict]);
+cs_array_real_scale(cs_lnum_t           n_elts,
+                    int                 stride,
+                    const cs_lnum_t    *elt_ids,
+                    cs_real_t           scaling_factor,
+                    cs_real_t           dest[restrict]);
 
 /*----------------------------------------------------------------------------*/
 /*!
