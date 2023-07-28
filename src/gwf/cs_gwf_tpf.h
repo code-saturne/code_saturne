@@ -144,7 +144,6 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
  *
  * \param[in]      connect     pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
- * \param[in]      verbosity   level of berbosity for the gwf module
  * \param[in, out] mc          pointer to the casted model context
  */
 /*----------------------------------------------------------------------------*/
@@ -152,7 +151,6 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
 void
 cs_gwf_tpf_init_values(const cs_cdo_connect_t        *connect,
                        const cs_cdo_quantities_t     *cdoq,
-                       int                            verbosity,
                        cs_gwf_tpf_t                  *mc);
 
 /*----------------------------------------------------------------------------*/

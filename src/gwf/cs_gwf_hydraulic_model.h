@@ -372,6 +372,8 @@ typedef struct {
    * equation w.r.t. the pressure in the gas phase. Only used when a segregated
    * solver is considered.
    *
+   * \var diff_g_pty
+   * Property used in the definition of the Darcy flux in the gas phase
    */
 
   cs_property_t                *time_wc_pty;
@@ -384,6 +386,8 @@ typedef struct {
   cs_property_t                *diff_hl_pty;
 
   cs_property_t                *reac_h_pty;
+
+  cs_property_t                *diff_g_pty;
 
   /*!
    * @}
@@ -478,6 +482,10 @@ typedef struct {
    *      conservation equation. Only used if a segregated solver is
    *      considered. Size = n_cells or c2v->idx[n_cells] if the definition
    *      relies on a submesh
+   *
+   * \var diff_g_array
+   *      Values of the diffusion coefficient used to compute the Darcy flux
+   *      in the gaz phase. Size = n_cells
    */
 
   cs_real_t                    *time_wc_array;
@@ -492,6 +500,8 @@ typedef struct {
   cs_real_t                    *srct_w_array;
   cs_real_t                    *srct_h_array;
   cs_real_t                    *reac_h_array;
+
+  cs_real_t                    *diff_g_array;
 
   /*
    * \var l_rel_permeability
@@ -631,6 +641,10 @@ typedef struct {
    * \var nl_algo_cvg
    *      Set of parameters to drive the convergence of the non-linear solver
    *
+   * \var nl_relax_factor
+   *      Value of the relaxation factor in the non-linear algorithm. A classical
+   *      choice is between 0.70 and 0.95
+   *
    * \var anderson_param
    *      Set of parameters to drive the Anderson acceleration (useful if the
    *      type of non-linear algorithm is set to the Anderson acceleration).
@@ -646,6 +660,7 @@ typedef struct {
 
   cs_param_nl_algo_t             nl_algo_type;
   cs_param_sles_cvg_t            nl_algo_cvg;
+  cs_real_t                      nl_relax_factor;
   cs_iter_algo_param_aa_t        anderson_param;
 
   cs_iter_algo_t                *nl_algo;

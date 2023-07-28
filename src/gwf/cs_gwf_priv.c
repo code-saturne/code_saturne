@@ -89,6 +89,58 @@ BEGIN_C_DECLS
  * Private function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the portion of boundary fluxes crossing the area closing a
+ *        dual cell. Optimized way.
+ *
+ * \param[in]      xv            coordinates of vertices
+ * \param[in]      xf            face barycenter
+ * \param[in]      f_u_normal    unit normal vector of the face
+ * \param[in]      bf2v_idx      boundary face to vertices index
+ * \param[in]      bf2v_ids      vertex ids of the boundary faces
+ * \param[in]      cell_vector   cell-wise velocity field
+ * \param[in, out] fluxes        computed fluxes at each vertex
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_v_weighted_boundary_fluxes(const cs_real_t      *xv,
+                                    const cs_real_t       xf[3],
+                                    const cs_nreal_t      face_unitv[3],
+                                    const cs_lnum_t       bf2v_idx[2],
+                                    const cs_lnum_t      *bf2v_ids,
+                                    const cs_real_t       cell_vector[3],
+                                    cs_real_t             fluxes[])
+{
+  const cs_lnum_t  *ids = bf2v_ids + bf2v_idx[0];
+  const int  n_vf = bf2v_idx[1] - bf2v_idx[0];
+
+  for (cs_lnum_t v = 0; v < n_vf; v++) fluxes[v] = 0.; /* Init */
+
+  /* Scaled by 1/2 since the part for a vertex v from the triangle tef is
+     weighted by 1/2. This flux is computed without the face area which is
+     added on-the-fly in the same time as the weight associated to each
+     vertex */
+
+  const cs_real_t  unflx = 0.5 * cs_math_3_dot_product(face_unitv, cell_vector);
+
+  int  _v0, _v1;
+  for (cs_lnum_t  v = 0; v < n_vf; v++) {
+
+    if (v < n_vf - 1)
+      _v0 = v, _v1 = v+1;
+    else
+      _v0 = n_vf-1, _v1 = 0;
+
+    const double  tef = cs_math_surftri(xv + 3*ids[_v0], xv + 3*ids[_v1], xf);
+
+    fluxes[_v0] += tef * unflx;
+    fluxes[_v1] += tef * unflx;
+
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -516,6 +568,59 @@ cs_gwf_darcy_flux_update_on_boundary(cs_real_t                t_eval,
               __func__);
 
   cs_equation_compute_boundary_diff_flux(t_eval, eq, nflx_val);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the associated Darcy flux over the boundary of the domain for
+ *        each vertex of a boundary face without using an equation (i.e. there
+ *        is no associated boundary condition).
+ *        Case of a vertex-based discretization.
+ *
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      cell_vel   Darcy velocity in each cell
+ * \param[in, out] adv        pointer to the Darcy advection field to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_darcy_flux_update_on_boundary_wo_eq(const cs_cdo_connect_t     *connect,
+                                           const cs_cdo_quantities_t  *cdoq,
+                                           cs_real_t                  *cell_vel,
+                                           cs_adv_field_t             *adv)
+{
+  if (adv->n_bdy_flux_defs > 1 ||
+      adv->bdy_flux_defs[0]->type != CS_XDEF_BY_ARRAY)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid definition of the advection field at the boundary",
+              __func__);
+
+  cs_xdef_t  *def = adv->bdy_flux_defs[0];
+  cs_xdef_array_context_t  *cx = (cs_xdef_array_context_t *)def->context;
+  cs_real_t  *nflx_val = cx->values;
+
+  if (cs_flag_test(cx->value_location, cs_flag_dual_closure_byf) == false)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid definition of the advection field at the boundary",
+              __func__);
+
+  const cs_adjacency_t  *bf2v = connect->bf2v;
+  const cs_adjacency_t  *f2c = connect->f2c;
+  const cs_lnum_t  *bf2c_ids = f2c->ids + f2c->idx[cdoq->n_i_faces];
+
+# pragma omp parallel for if (cdoq->n_b_faces > CS_THR_MIN)
+  for (cs_lnum_t bf_id = 0; bf_id < cdoq->n_b_faces; bf_id++) {
+
+    cs_lnum_t  *bf2v_idx = bf2v->idx + bf_id;
+    _compute_v_weighted_boundary_fluxes(cdoq->vtx_coord,
+                                        cdoq->b_face_center + 3*bf_id,
+                                        cdoq->b_face_u_normal[bf_id],
+                                        bf2v_idx,
+                                        bf2v->ids,
+                                        cell_vel + 3*bf2c_ids[bf_id],
+                                        nflx_val + bf2v_idx[0]);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

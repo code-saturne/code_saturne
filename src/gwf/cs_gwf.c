@@ -1390,7 +1390,7 @@ cs_gwf_init_values(const cs_mesh_t             *mesh,
 
   case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
   case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
-    cs_gwf_tpf_init_values(connect, quant, gw->verbosity, gw->model_context);
+    cs_gwf_tpf_init_values(connect, quant, gw->model_context);
     break;
 
   default:

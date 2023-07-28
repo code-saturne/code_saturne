@@ -240,6 +240,26 @@ cs_gwf_darcy_flux_update_on_boundary(cs_real_t                t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the associated Darcy flux over the boundary of the domain for
+ *        each vertex of a boundary face without using an equation (i.e. there
+ *        is no associated boundary condition).
+ *        Case of a vertex-based discretization.
+ *
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      cell_vel   Darcy velocity in each cell
+ * \param[in, out] adv        pointer to the Darcy advection field to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_darcy_flux_update_on_boundary_wo_eq(const cs_cdo_connect_t     *connect,
+                                           const cs_cdo_quantities_t  *cdoq,
+                                           cs_real_t                  *cell_vel,
+                                           cs_adv_field_t             *adv);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Update head values (pressure head or head values for laws)
  *        Up to now, this is only used for single-phase flows in porous media
  *        (saturated or not case).

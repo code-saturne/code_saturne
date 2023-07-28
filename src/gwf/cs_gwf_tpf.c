@@ -330,7 +330,8 @@ _update_darcy_l(const cs_cdo_connect_t      *connect,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Update the advection field/arrays related to the Darcy flux in the
- *        gas phase when a two-phase flow model is used.
+ *        gas phase when a two-phase flow model is used together with a coupled
+ *        solver.
  *        This relies on the case of CDO-Vb schemes and a Darcy flux defined
  *        at dual faces
  *
@@ -348,13 +349,98 @@ _update_darcy_l(const cs_cdo_connect_t      *connect,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_darcy_g(const cs_cdo_connect_t      *connect,
-                const cs_cdo_quantities_t   *cdoq,
-                const cs_real_t             *dof_values,
-                const cs_real_t             *cell_values,
-                cs_real_t                    t_eval,
-                bool                         cur2prev,
-                cs_gwf_darcy_flux_t         *darcy)
+_update_darcy_g_coupled(const cs_cdo_connect_t      *connect,
+                        const cs_cdo_quantities_t   *cdoq,
+                        const cs_real_t             *dof_values,
+                        const cs_real_t             *cell_values,
+                        cs_real_t                    t_eval,
+                        bool                         cur2prev,
+                        cs_gwf_darcy_flux_t         *darcy)
+{
+  CS_NO_WARN_IF_UNUSED(cur2prev);
+
+  assert(darcy != NULL);
+  assert(darcy->flux_val != NULL);
+  assert(darcy->update_input != NULL);
+  assert(darcy->adv_field != NULL);
+
+  cs_adv_field_t  *adv = darcy->adv_field;
+
+  if (adv->definition->type != CS_XDEF_BY_ARRAY)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid definition of the advection field", __func__);
+
+  cs_gwf_tpf_t  *mc = darcy->update_input;
+  cs_equation_t  *eq = mc->h_eq;
+
+  /* Update the array of flux values associated to the advection field */
+
+  cs_equation_compute_diffusive_flux(eq,
+                                     NULL, /* eqp --> default */
+                                     mc->diff_g_pty,
+                                     dof_values,
+                                     cell_values,
+                                     darcy->flux_location,
+                                     t_eval,
+                                     darcy->flux_val);
+
+  /* Update the velocity field at cell centers induced by the Darcy flux */
+
+  cs_field_t  *vel = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
+  assert(vel != NULL);
+  if (cur2prev)
+    cs_field_current_to_previous(vel);
+
+  cs_advection_field_in_cells(adv, t_eval, vel->val);
+
+  /* Update the Darcy flux at boundary faces if needed */
+
+  cs_gwf_darcy_flux_update_on_boundary_wo_eq(connect, cdoq, vel->val, adv);
+
+  cs_field_t  *bdy_nflx =
+    cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  if (bdy_nflx != NULL) { /* Values of the Darcy flux at boundary face exist */
+
+    if (cur2prev)
+      cs_field_current_to_previous(bdy_nflx);
+
+    /* Set the new values of the field related to the normal boundary flux */
+
+    cs_advection_field_across_boundary(adv, t_eval, bdy_nflx->val);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the advection field/arrays related to the Darcy flux in the
+ *        gas phase when a two-phase flow model is used together with a
+ *        segregated solver.
+ *        This relies on the case of CDO-Vb schemes and a Darcy flux defined
+ *        at dual faces
+ *
+ *        cell_values could be set to NULL when the space discretization does
+ *        not request these values for the update.
+ *
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
+ * \param[in]      dof_values    values to consider for the update
+ * \param[in]      cell_values   values to consider for the update or NULL
+ * \param[in]      t_eval        time at which one performs the evaluation
+ * \param[in]      cur2prev      true or false
+ * \param[in, out] darcy         pointer to the darcy flux structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_darcy_g_segregated(const cs_cdo_connect_t      *connect,
+                           const cs_cdo_quantities_t   *cdoq,
+                           const cs_real_t             *dof_values,
+                           const cs_real_t             *cell_values,
+                           cs_real_t                    t_eval,
+                           bool                         cur2prev,
+                           cs_gwf_darcy_flux_t         *darcy)
 {
   CS_NO_WARN_IF_UNUSED(connect);
   CS_NO_WARN_IF_UNUSED(cdoq);
@@ -697,6 +783,10 @@ _update_iso_itpf_coupled_diffview_terms(cs_gwf_tpf_t     *mc)
       const double  sl = l_sat[c_id], sg = 1 - sl;
       const double  dsl_dpc = l_cap[c_id];
 
+      /* Update terms for the Darcy flux in the gaz phase */
+
+      mc->diff_g_array[c_id] = hg_diff_coef * krg[c_id];
+
       /* Update terms associated to the water conservation equation */
 
       mc->time_wc_array[c_id] = phi_rhol * dsl_dpc;
@@ -708,13 +798,66 @@ _update_iso_itpf_coupled_diffview_terms(cs_gwf_tpf_t     *mc)
       mc->time_hc_array[c_id] = time_h_coef + phi * (rhol_h - rhog_h)*dsl_dpc;
       mc->time_hl_array[c_id] = time_h_coef;
 
-      double  diff_hc = rhog_h * hg_diff_coef * krg[c_id];
+      const double  diff_hc = rhog_h * mc->diff_g_array[c_id];
       mc->diff_hc_array[c_id] = diff_hc;
       mc->diff_hl_array[c_id] = diff_hc + rhol_h * l_diff_coef * krl[c_id];
 
+#if 0 /* Debugging purpose */
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "%s: %02d |> di_g: % 8.6e; ti_wc: %8.6e; di_wl: %8.6e;"
+                    " ti_hc: % 8.6e; ti_hl: % 8.6e; di_hc: % 8.6e;"
+                    " di_hl: % 8.6e\n", __func__, c_id,
+                    mc->diff_g_array[c_id], mc->time_wc_array[c_id],
+                    mc->diff_wl_array[c_id], mc->time_hc_array[c_id],
+                    mc->time_hl_array[c_id], mc->diff_hc_array[c_id],
+                    mc->diff_hl_array[c_id]);
+#endif
     } /* Loop on cells of the zone (= soil) */
 
   } /* Loop on soils */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize the non-linear algorithm.
+ *
+ * \param[in, out] mc           pointer to the model context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_init_non_linear_algo(cs_gwf_tpf_t                  *mc)
+{
+  if (mc->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
+    return;
+
+  cs_iter_algo_t  *algo = mc->nl_algo;
+  assert(algo != NULL);
+
+  cs_iter_algo_reset_nl(mc->nl_algo_type, algo);
+
+  /* No resolution has been done at this stage and also no previous to current
+     operation.
+
+     The current values will be the previous state after the current to
+     previous operation
+  */
+
+  const cs_real_t  *pg_0 = mc->g_pressure->val;
+  const cs_real_t  *pl_0 = mc->l_pressure->val;
+
+  /* 1. Set the normalization factor. Performed with Pg and Pl even Pc is used
+     in the resolution. One prefers to use Pg since it also appears in the
+     different terms for the h_eq. */
+
+  algo->normalization = cs_cdo_blas_square_norm_pvsp(pg_0);
+  algo->normalization += cs_cdo_blas_square_norm_pvsp(pl_0);
+  algo->normalization = sqrt(algo->normalization);
+  if (algo->normalization < cs_math_zero_threshold)
+    algo->normalization = 1.0;
+
+  cs_log_printf(CS_LOG_DEFAULT, "%s: Non-linear algo. normalization=%6.4e\n",
+                __func__, algo->normalization);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -824,8 +967,8 @@ _check_cvg_nl_dpc(cs_param_nl_algo_t        nl_algo_type,
  *        model
  *
  * \param[in]      nl_algo_type type of non-linear algorithm
- * \param[in]      pg_pre_iter  previous iterate values for the gas pressure
- * \param[in, out] pg_cur_iter  current iterate values for the gas pressure
+ * \param[in]      pc_pre_iter  previous iterate values for the gas pressure
+ * \param[in, out] pc_cur_iter  current iterate values for the gas pressure
  * \param[in]      pl_pre_iter  previous iterate values for the liquid pressure
  * \param[in, out] pl_cur_iter  current iterate values for the liquid pressure
  * \param[in, out] algo         pointer to a cs_iter_algo_t structure
@@ -836,12 +979,15 @@ _check_cvg_nl_dpc(cs_param_nl_algo_t        nl_algo_type,
 
 static cs_sles_convergence_state_t
 _check_cvg_nl(cs_param_nl_algo_t        nl_algo_type,
-              const cs_real_t          *pg_pre_iter,
-              cs_real_t                *pg_cur_iter,
+              const cs_real_t          *pc_pre_iter,
+              cs_real_t                *pc_cur_iter,
               const cs_real_t          *pl_pre_iter,
               cs_real_t                *pl_cur_iter,
               cs_iter_algo_t           *algo)
 {
+  if (nl_algo_type == CS_PARAM_NL_ALGO_NONE)
+    return CS_SLES_CONVERGED;
+
   assert(algo != NULL);
 
   if (nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON && algo->n_algo_iter > 0) {
@@ -849,8 +995,8 @@ _check_cvg_nl(cs_param_nl_algo_t        nl_algo_type,
     /* pg_* arrays gather pg and pl (this is done during the solve step) */
 
     cs_iter_algo_aa_update(algo,
-                           pg_cur_iter, /* updated during the process */
-                           pg_pre_iter,
+                           pc_cur_iter, /* updated during the process */
+                           pc_pre_iter,
                            cs_cdo_blas_dotprod_2pvsp,
                            cs_cdo_blas_square_norm_2pvsp);
 
@@ -858,16 +1004,19 @@ _check_cvg_nl(cs_param_nl_algo_t        nl_algo_type,
 
   algo->prev_res = algo->res;
 
-  double delta_pg = cs_cdo_blas_square_norm_pvsp_diff(pg_pre_iter, pg_cur_iter);
+  double delta_pc = cs_cdo_blas_square_norm_pvsp_diff(pc_pre_iter, pc_cur_iter);
   double delta_pl = cs_cdo_blas_square_norm_pvsp_diff(pl_pre_iter, pl_cur_iter);
 
-  algo->res = delta_pg + delta_pl;
+  algo->res = delta_pc + delta_pl;
   assert(algo->res > -DBL_MIN);
   algo->res = sqrt(algo->res);
 
-  if (algo->n_algo_iter < 1) /* Store the first residual to detect a
-                                possible divergence of the algorithm */
+  if (algo->n_algo_iter < 1) { /* Store the first residual to detect a
+                                  possible divergence of the algorithm */
     algo->res0 = algo->res;
+    algo->prev_res = algo->res;
+
+  }
 
   /* Update the convergence members */
 
@@ -880,7 +1029,7 @@ _check_cvg_nl(cs_param_nl_algo_t        nl_algo_type,
       if (algo->verbosity > 1)
         cs_log_printf(CS_LOG_DEFAULT,
                       "### GWF.TPF %10s.It    Algo.Res   Tolerance"
-                      "  ||D_Pg||  ||D_Pl||\n",
+                      "  ||D_Pc||  ||D_Pl||\n",
                       cs_param_get_nl_algo_label(nl_algo_type));
       else
         cs_log_printf(CS_LOG_DEFAULT,
@@ -894,7 +1043,7 @@ _check_cvg_nl(cs_param_nl_algo_t        nl_algo_type,
                     "### GWF.TPF %10s.It%02d  %5.3e  %6.4e %5.3e %5.3e\n",
                     cs_param_get_nl_algo_label(nl_algo_type),
                     algo->n_algo_iter, algo->res, algo->tol,
-                    sqrt(delta_pg), sqrt(delta_pl));
+                    sqrt(delta_pc), sqrt(delta_pl));
     else
       cs_log_printf(CS_LOG_DEFAULT,
                     "### GWF.TPF %10s.It%02d  %5.3e  %6.4e\n",
@@ -930,72 +1079,59 @@ _compute_coupled_picard(const cs_mesh_t              *mesh,
                         cs_flag_t                     option_flag,
                         cs_gwf_tpf_t                 *mc)
 {
-  bool cur2prev = false;
-  cs_flag_t  update_flag = 0;   /* No current to previous operation */
+  bool cur2prev = true;
+  cs_flag_t  update_flag = CS_FLAG_CURRENT_TO_PREVIOUS;
 
   cs_iter_algo_t  *algo = mc->nl_algo;
   assert(algo != NULL);
+  assert(mc->nl_algo_type == CS_PARAM_NL_ALGO_PICARD);
 
-  cs_iter_algo_reset_nl(mc->nl_algo_type, algo);
+  _init_non_linear_algo(mc);
 
-  /* A first resolution has been done followed by an update */
+  cs_real_t  *pc_kp1 = NULL, *pl_kp1 = NULL;  /* at ^{n+1,k+1} */
+  cs_real_t  *pc_k = NULL, *pl_k = NULL;      /* at ^{n+1,k} */
 
-  cs_real_t  *pg_kp1 = NULL, *pl_kp1 = NULL;  /* at ^{n+1,k+1} */
-  cs_real_t  *pg_k = NULL, *pl_k = NULL;      /* at ^{n+1,k} */
+  BFT_MALLOC(pc_k, cdoq->n_vertices, cs_real_t);
+  BFT_MALLOC(pl_k, cdoq->n_vertices, cs_real_t);
 
-  BFT_MALLOC(pg_k, 2*cdoq->n_vertices, cs_real_t);
-  pl_k = pg_k + cdoq->n_vertices;
-
-  cs_array_real_copy(cdoq->n_vertices, mc->g_pressure->val_pre, pg_k);
-  cs_array_real_copy(cdoq->n_vertices, mc->l_pressure->val_pre, pl_k);
-
-  pg_kp1 = mc->g_pressure->val;
+  pc_kp1 = mc->c_pressure->val; /* val stores always the latest values */
   pl_kp1 = mc->l_pressure->val;
 
-  /* Set the normalization factor */
+  do {
 
-  algo->normalization = cs_cdo_blas_square_norm_pvsp(pg_k);
-  algo->normalization += cs_cdo_blas_square_norm_pvsp(pl_k);
-  algo->normalization = sqrt(algo->normalization);
-  if (algo->normalization < cs_math_zero_threshold)
-    algo->normalization = 1.0;
+    /* current values: n+1,k */
 
-  cs_log_printf(CS_LOG_DEFAULT, "%s: normalization=%6.4e\n",
-                __func__, algo->normalization);
-
-  /* Main non-linear loop */
-
-  while (_check_cvg_nl(mc->nl_algo_type,
-                       pg_k, pg_kp1, pl_k, pl_kp1,
-                       algo) == CS_SLES_ITERATING) {
-
-    cs_array_real_copy(cdoq->n_vertices, pg_kp1, pg_k);
-    cs_array_real_copy(cdoq->n_vertices, pl_kp1, pl_k);
-
-    /* Build and solve the linear system related to the coupled system of
-       equations. First call: current --> previous and then no operation */
+    cs_array_real_copy(cdoq->n_vertices, mc->c_pressure->val, pc_k);
+    cs_array_real_copy(cdoq->n_vertices, mc->l_pressure->val, pl_k);
 
     cs_equation_system_solve(cur2prev, mc->system);
 
-    /* Get the soil state up to date with the last compute values for the
-       liquid and gas pressures */
+    /* current values: n+1,k+1 now */
 
-    /* relaxation */
+    if (algo->n_algo_iter > 0 && mc->nl_relax_factor < 1.0) {
 
-    const double  relax = 0.;
-    for (cs_lnum_t i = 0; i < mesh->n_vertices; i++) {
-
-      pg_kp1[i] = (1 - relax)*pg_kp1[i] + relax*pg_k[i];
-      pl_kp1[i] = (1 - relax)*pl_kp1[i] + relax*pl_k[i];
+      const double  relax = mc->nl_relax_factor;
+      for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
+        pc_kp1[i] = pc_kp1[i]*relax + pc_k[i]*(1-relax);
+        pl_kp1[i] = pl_kp1[i]*relax + pl_k[i]*(1-relax);
+      }
 
     }
 
+    /* Update the variables related to the groundwater flow system */
+
     cs_gwf_tpf_update(mesh, connect, cdoq, time_step,
-                      update_flag,
-                      option_flag,
+                      update_flag, option_flag,
                       mc);
 
-  } /* Until convergence */
+    /* After the first resolution, no cur2prev anymore */
+
+    cur2prev = false;
+    update_flag = 0;
+
+  } while (_check_cvg_nl(mc->nl_algo_type,
+                         pc_k, pc_kp1, pl_k, pl_kp1,
+                         algo) == CS_SLES_ITERATING);
 
   /* If something wrong happens, write a message in the listing */
 
@@ -1006,7 +1142,8 @@ _compute_coupled_picard(const cs_mesh_t              *mesh,
 
   /* Free temporary arrays and structures */
 
-  BFT_FREE(pg_k);
+  BFT_FREE(pc_k);
+  BFT_FREE(pl_k);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1335,7 +1472,7 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
 
   cs_equation_param_t  *w_eqp = cs_equation_get_param(mc->w_eq);
 
-  cs_equation_param_set(w_eqp, CS_EQKEY_BC_ENFORCEMENT, "weak_sym");
+  cs_equation_param_set(w_eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");
   cs_equation_param_set(w_eqp, CS_EQKEY_HODGE_TIME_ALGO, "voronoi");
   cs_equation_param_set(w_eqp, CS_EQKEY_HODGE_REAC_ALGO, "voronoi");
 
@@ -1350,29 +1487,9 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
   /* Advection fields */
   /* ---------------- */
 
-  /* Darcy flux (one assumes a CDOVB space discretization) */
-
-  cs_advection_field_status_t  adv_status =
-    CS_ADVECTION_FIELD_GWF | CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
-
-  cs_adv_field_t  *l_adv_field = cs_advection_field_add("l_darcy_field",
-                                                        adv_status);
-  mc->l_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
-  mc->l_darcy->adv_field = l_adv_field;
-
-  cs_adv_field_t  *g_adv_field = cs_advection_field_add("g_darcy_field",
-                                                        adv_status);
-  mc->g_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
-  mc->g_darcy->adv_field = g_adv_field;
-
-  if (!mc->use_diffusion_view_for_darcy) {
-
-    cs_adv_field_t  *t_adv_field = cs_advection_field_add("t_darcy_field",
-                                                          adv_status);
-    mc->t_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
-    mc->t_darcy->adv_field = t_adv_field;
-
-  }
+  mc->l_darcy = NULL;
+  mc->g_darcy = NULL;
+  mc->t_darcy = NULL;
 
   /* Properties
    * ----------
@@ -1463,8 +1580,9 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
   mc->use_definition_on_submesh = false;
   mc->use_diffusion_view_for_darcy = true;
 
-  mc->nl_algo_type = CS_PARAM_NL_ALGO_NONE; /* Linear algo. by default */
+  mc->nl_algo_type = CS_PARAM_NL_ALGO_PICARD;
 
+  mc->nl_relax_factor = 1.0;
   mc->nl_algo_cvg.n_max_iter = 50;
   mc->nl_algo_cvg.rtol = 1e-5;
   mc->nl_algo_cvg.atol = 1e-10;
@@ -1476,7 +1594,7 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
   mc->anderson_param.beta = 1.0;    /* No damping by default */
   mc->anderson_param.dp_type = CS_PARAM_DOTPROD_EUCLIDEAN;
 
-  mc->nl_algo = NULL;
+  mc->nl_algo = cs_iter_algo_create(0, mc->nl_algo_cvg);
 
   return mc;
 }
@@ -1518,6 +1636,8 @@ cs_gwf_tpf_free(cs_gwf_tpf_t    **p_mc)
   BFT_FREE(mc->srct_h_array);
   BFT_FREE(mc->reac_h_array);
 
+  BFT_FREE(mc->diff_g_array);
+
   BFT_FREE(mc->l_rel_permeability);
   BFT_FREE(mc->g_rel_permeability);
   BFT_FREE(mc->c_pressure_cells);
@@ -1525,16 +1645,12 @@ cs_gwf_tpf_free(cs_gwf_tpf_t    **p_mc)
   BFT_FREE(mc->l_capacity);
   BFT_FREE(mc->l_saturation_submesh);
 
-  if (mc->nl_algo_type != CS_PARAM_NL_ALGO_NONE) {
+  /* Non-linearity: If the context is not NULL, this means that an Anderson
+     algorithm has been activated otherwise nothing to do */
 
-    /* Non-linearity: If the context is not NULL, this means that an Anderson
-       algorithm has been activated otherwise nothing to do */
+  cs_iter_algo_aa_free(mc->nl_algo);
 
-    cs_iter_algo_aa_free(mc->nl_algo);
-
-    BFT_FREE(mc->nl_algo);
-
-  }
+  BFT_FREE(mc->nl_algo);
 
   BFT_FREE(mc);
   *p_mc = NULL;
@@ -1632,6 +1748,30 @@ cs_gwf_tpf_init(cs_gwf_tpf_t            *mc,
   /* Property common to all solvers */
 
   mc->diff_wl_pty = cs_property_add("diff_wl_pty", perm_type);
+  mc->diff_g_pty = cs_property_add("diff_g_pty", perm_type);
+
+  /* Darcy flux (one assumes a CDOVB space discretization) */
+
+  cs_advection_field_status_t  adv_status =
+    CS_ADVECTION_FIELD_GWF | CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
+
+  cs_adv_field_t  *l_adv_field = cs_advection_field_add("l_darcy_field",
+                                                        adv_status);
+  mc->l_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
+  mc->l_darcy->adv_field = l_adv_field;
+
+  cs_adv_field_t  *g_adv_field = cs_advection_field_add("g_darcy_field",
+                                                        adv_status);
+  mc->g_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
+  mc->g_darcy->adv_field = g_adv_field;
+  if (!mc->use_diffusion_view_for_darcy) {
+
+    cs_adv_field_t  *t_adv_field = cs_advection_field_add("t_darcy_field",
+                                                          adv_status);
+    mc->t_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
+    mc->t_darcy->adv_field = t_adv_field;
+
+  }
 
   if (mc->use_coupled_solver) {
 
@@ -1651,7 +1791,7 @@ cs_gwf_tpf_init(cs_gwf_tpf_t            *mc,
     cs_equation_param_t  *b00_w_eqp = cs_equation_get_param(mc->w_eq);
     cs_equation_param_t  *b11_h_eqp = cs_equation_get_param(mc->h_eq);
 
-    cs_equation_param_set(b11_h_eqp, CS_EQKEY_BC_ENFORCEMENT, "weak_sym");
+    cs_equation_param_set(b11_h_eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");
     cs_equation_param_set(b11_h_eqp, CS_EQKEY_HODGE_TIME_ALGO, "voronoi");
     cs_equation_param_set(b11_h_eqp, CS_EQKEY_HODGE_REAC_ALGO, "voronoi");
 
@@ -1665,7 +1805,7 @@ cs_gwf_tpf_init(cs_gwf_tpf_t            *mc,
                                              1,
                                              CS_PARAM_BC_HMG_NEUMANN);
 
-    cs_equation_param_set(mc->b01_w_eqp, CS_EQKEY_BC_ENFORCEMENT, "weak_sym");
+    cs_equation_param_set(mc->b01_w_eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");
     cs_equation_param_set(mc->b01_w_eqp, CS_EQKEY_HODGE_TIME_ALGO, "voronoi");
     cs_equation_param_set(mc->b01_w_eqp, CS_EQKEY_HODGE_REAC_ALGO, "voronoi");
 
@@ -1676,7 +1816,7 @@ cs_gwf_tpf_init(cs_gwf_tpf_t            *mc,
                                              1,
                                              CS_PARAM_BC_HMG_NEUMANN);
 
-    cs_equation_param_set(mc->b10_h_eqp, CS_EQKEY_BC_ENFORCEMENT, "weak_sym");
+    cs_equation_param_set(mc->b10_h_eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");
     cs_equation_param_set(mc->b10_h_eqp, CS_EQKEY_HODGE_TIME_ALGO, "voronoi");
     cs_equation_param_set(mc->b10_h_eqp, CS_EQKEY_HODGE_REAC_ALGO, "voronoi");
 
@@ -1958,9 +2098,14 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
                            mc, _update_darcy_l,
                            mc->l_darcy);
 
-  cs_gwf_darcy_flux_define(connect, cdoq, h_eqp->space_scheme,
-                           mc, _update_darcy_g,
-                           mc->g_darcy);
+  if (mc->use_coupled_solver)
+    cs_gwf_darcy_flux_define(connect, cdoq, h_eqp->space_scheme,
+                             mc, _update_darcy_g_coupled,
+                             mc->g_darcy);
+  else
+    cs_gwf_darcy_flux_define(connect, cdoq, h_eqp->space_scheme,
+                             mc, _update_darcy_g_segregated,
+                             mc->g_darcy);
 
   if (!mc->use_diffusion_view_for_darcy)
     cs_gwf_darcy_flux_define(connect, cdoq, w_eqp->space_scheme,
@@ -2018,6 +2163,19 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
                            NULL,                 /* all cells */
                            cs_flag_primal_cell,  /* data location */
                            mc->diff_wl_array,
+                           false,                /* xdef not owner */
+                           true);                /* full length */
+
+  /* Diffusion property for the definition of the Darcy field in the gas
+     phase */
+
+  BFT_MALLOC(mc->diff_g_array, n_cells, cs_real_t);
+  cs_array_real_fill_zero(n_cells, mc->diff_g_array);
+
+  cs_property_def_by_array(mc->diff_g_pty,
+                           NULL,                 /* all cells */
+                           cs_flag_primal_cell,  /* data location */
+                           mc->diff_g_array,
                            false,                /* xdef not owner */
                            true);                /* full length */
 
@@ -2171,7 +2329,6 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
  *
  * \param[in]      connect     pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
- * \param[in]      verbosity   level of berbosity for the gwf module
  * \param[in, out] mc          pointer to the casted model context
  */
 /*----------------------------------------------------------------------------*/
@@ -2179,7 +2336,6 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
 void
 cs_gwf_tpf_init_values(const cs_cdo_connect_t        *connect,
                        const cs_cdo_quantities_t     *cdoq,
-                       int                            verbosity,
                        cs_gwf_tpf_t                  *mc)
 {
   CS_NO_WARN_IF_UNUSED(connect);
@@ -2215,7 +2371,12 @@ cs_gwf_tpf_init_values(const cs_cdo_connect_t        *connect,
 
   if (mc->nl_algo_type != CS_PARAM_NL_ALGO_NONE) {
 
-    mc->nl_algo = cs_iter_algo_create(verbosity, mc->nl_algo_cvg);
+    /* Apply the convergence settings */
+
+    mc->nl_algo->cvg_param.atol = mc->nl_algo_cvg.atol;
+    mc->nl_algo->cvg_param.rtol = mc->nl_algo_cvg.rtol;
+    mc->nl_algo->cvg_param.dtol = mc->nl_algo_cvg.dtol;
+    mc->nl_algo->cvg_param.n_max_iter = mc->nl_algo_cvg.n_max_iter;
 
     /* One assumes that the discretization schemes are all set to CDO
        vertex-based schemes */
@@ -2260,23 +2421,18 @@ cs_gwf_tpf_compute(const cs_mesh_t               *mesh,
 
   if (mc->use_coupled_solver) {
 
-    /* Build and solve the linear system related to the coupled system of
-     * equations. By default, a current to previous operation is performed so
-     * that prev <-- n and cur <-- n+1,k=1 (the first guess for the next time
-     * step) */
-
-    bool cur2prev = true;
-
-    cs_equation_system_solve(cur2prev, mc->system);
-
-    /* Update the variables related to the groundwater flow system */
-
-    cs_gwf_tpf_update(mesh, connect, cdoq, time_step,
-                      CS_FLAG_CURRENT_TO_PREVIOUS,
-                      option_flag,
-                      mc);
-
     switch (mc->nl_algo_type) {
+
+    case CS_PARAM_NL_ALGO_NONE: /* Linear case */
+      cs_equation_system_solve(true, mc->system); /* cur2prev = true */
+
+      /* Update the variables related to the groundwater flow system */
+
+      cs_gwf_tpf_update(mesh, connect, cdoq, time_step,
+                        CS_FLAG_CURRENT_TO_PREVIOUS,
+                        option_flag,
+                        mc);
+      break;
 
     case CS_PARAM_NL_ALGO_PICARD:
       _compute_coupled_picard(mesh, connect, cdoq, time_step,
@@ -2346,10 +2502,6 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
 
   _update_pressures(connect, cdoq, update_flag, cur2prev, mc);
 
-  /* Update the Darcy fluxes */
-
-  _update_darcy_fluxes(connect, cdoq, time_eval, cur2prev, mc);
-
   /* Update properties related to soils:
    * - l_rel_permeability, g_rel_permeability
    * - liquid_saturation
@@ -2390,14 +2542,17 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
     /*       ++++++++++++++ */
 
     if (mc->is_miscible) {
+      /*       ======== */
 
       bft_error(__FILE__, __LINE__, 0,
                 "%s: Only the immiscible case is available up to now.",
                 __func__);
+
       //TODO --> cs_gwf_soil_iso_update_mtpf_terms(mc);
 
     }
-    else { /* Immiscible model */
+    else { /* Immiscible model
+              ================ */
 
       /* In the immiscible case, l_diffusivity_h should be set to 0 and the
          henry constat should be very low */
@@ -2406,6 +2561,7 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
       assert(mc->henry_constant < 1e-12);
 
       if (mc->use_coupled_solver) {
+        /*    ------------------- */
 
         if (mc->use_diffusion_view_for_darcy)
           _update_iso_itpf_coupled_diffview_terms(mc);
@@ -2413,7 +2569,8 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
           bft_error(__FILE__, __LINE__, 0, "%s: TODO.", __func__);
 
       }
-      else { /* segregated solver */
+      else { /* segregated solver
+                ----------------- */
 
         if (mc->use_diffusion_view_for_darcy) {
 
@@ -2446,6 +2603,14 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
     break;
 
   } /* Switch on the permeability type */
+
+  /* Update the Darcy fluxes. This should be done at the end since one needs
+     the new state for:
+     - the pressure fields
+     - krl, krg, etc.
+  */
+
+  _update_darcy_fluxes(connect, cdoq, time_eval, cur2prev, mc);
 
   return time_eval;
 }
