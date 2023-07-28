@@ -125,6 +125,10 @@ cs_cdo_toolbox_init(const cs_cdo_connect_t       *connect,
 {
   assert(connect != NULL); /* Sanity check */
 
+  /* Allocate cell-wise threaded buffer(s) */
+
+  cs_cdo_connect_allocate_cw_buffer(connect);
+
   /* Allocate cell-wise and face-wise view of a mesh */
 
   cs_cdo_local_initialize(connect);
@@ -246,6 +250,10 @@ cs_cdo_toolbox_init(const cs_cdo_connect_t       *connect,
 void
 cs_cdo_toolbox_finalize(void)
 {
+  /* Free cell-wise (threaded) buffer(s) */
+
+  cs_cdo_connect_free_cw_buffer();
+
   /* Free cell-wise and face-wise view of a mesh */
 
   cs_cdo_local_finalize();

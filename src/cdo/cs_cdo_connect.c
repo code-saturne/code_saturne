@@ -81,6 +81,14 @@ BEGIN_C_DECLS
 
 static long long cs_cdo_connect_time = 0;
 
+/* Auxiliary buffers related to local (cell-wise) problems. These buffers can
+ * also be used for computing quantities related to a cs_cell_mesh_t (there are
+ * as many buffers as threads since a call to these buffers can be done inside
+ * an OpenMP directive) */
+
+static int       cs_cdo_connect_cw_buffer_size = 0;
+static double  **cs_cdo_connect_cw_buffer = NULL;
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -904,107 +912,32 @@ _define_face_interface(const cs_mesh_t  *mesh)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Retrieve the time elapsed to build the cs_cdo_connect_t structure
- *
- * \return the value of the time elapsed in ns
- */
-/*----------------------------------------------------------------------------*/
-
-long long
-cs_cdo_connect_get_time_perfo(void)
-{
-  return cs_cdo_connect_time;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Allocate and define a \ref cs_range_set_t structure and a
- *        \ref cs_interface_set_t structure for schemes with DoFs at vertices
- *
- * \param[in]       mesh          pointer to a cs_mesh_t structure
- * \param[in]       n_vtx_dofs    number of DoFs per vertex
- * \param[in]       interlaced    false means a block viewpoint
- * \param[in, out]  p_ifs         pointer of  pointer to a cs_interface_set_t
- * \param[in, out]  p_rs          pointer of  pointer to a cs_range_set_t
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_connect_assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
-                                 int                    n_vtx_dofs,
-                                 bool                   interlaced,
-                                 cs_interface_set_t   **p_ifs,
-                                 cs_range_set_t       **p_rs)
-{
-  assert(mesh != NULL);
-
-  const cs_lnum_t  n_vertices = mesh->n_vertices;
-  const cs_lnum_t  n_elts = n_vertices * n_vtx_dofs;
-
-  /* Structure to define */
-
-  cs_range_set_t  *rs =  NULL;
-  cs_interface_set_t  *ifs = NULL;
-
-  switch (n_vtx_dofs) {
-
-  case 1: /* Scalar-valued */
-    ifs = *p_ifs;
-    assert(ifs != NULL || cs_glob_n_ranks < 2);  /* Should be already set */
-    break;
-
-  default:
-    if (interlaced)
-      ifs = cs_interface_set_dup(mesh->vtx_interfaces, n_vtx_dofs);
-    else
-      ifs = cs_interface_set_dup_blocks(mesh->vtx_interfaces,
-                                        n_vertices,
-                                        n_vtx_dofs);
-    break;
-
-  } /* End of switch on dimension */
-
-  rs = cs_range_set_create(ifs,
-                           NULL,
-                           n_elts,
-                           false,  /* TODO: add option for balance */
-                           1,      /* tr_ignore */
-                           0);     /* g_id_base */
-
-  /* Return pointers */
-
-  *p_ifs = ifs;
-  *p_rs = rs;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Allocate and define a new cs_cdo_connect_t structure
  *        Range sets and interface sets are allocated and defined according to
  *        the value of the different scheme flags.
  *        cs_range_set_t structure related to vertices is shared the cs_mesh_t
  *        structure (the global one)
  *
- * \param[in, out]  mesh              pointer to a cs_mesh_t structure
- * \param[in]       eb_scheme_flag    metadata for Edge-based schemes
- * \param[in]       fb_scheme_flag    metadata for Face-based schemes
- * \param[in]       cb_scheme_flag    metadata for Cell-based schemes
- * \param[in]       vb_scheme_flag    metadata for Vertex-based schemes
- * \param[in]       vcb_scheme_flag   metadata for Vertex+Cell-based schemes
- * \param[in]       hho_scheme_flag   metadata for HHO schemes
+ * \param[in, out] mesh              pointer to a cs_mesh_t structure
+ * \param[in]      eb_scheme_flag    metadata for Edge-based schemes
+ * \param[in]      fb_scheme_flag    metadata for Face-based schemes
+ * \param[in]      cb_scheme_flag    metadata for Cell-based schemes
+ * \param[in]      vb_scheme_flag    metadata for Vertex-based schemes
+ * \param[in]      vcb_scheme_flag   metadata for Vertex+Cell-based schemes
+ * \param[in]      hho_scheme_flag   metadata for HHO schemes
  *
  * \return a pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_connect_t *
-cs_cdo_connect_init(cs_mesh_t      *mesh,
-                    cs_flag_t       eb_scheme_flag,
-                    cs_flag_t       fb_scheme_flag,
-                    cs_flag_t       cb_scheme_flag,
-                    cs_flag_t       vb_scheme_flag,
-                    cs_flag_t       vcb_scheme_flag,
-                    cs_flag_t       hho_scheme_flag)
+cs_cdo_connect_build(cs_mesh_t      *mesh,
+                     cs_flag_t       eb_scheme_flag,
+                     cs_flag_t       fb_scheme_flag,
+                     cs_flag_t       cb_scheme_flag,
+                     cs_flag_t       vb_scheme_flag,
+                     cs_flag_t       vcb_scheme_flag,
+                     cs_flag_t       hho_scheme_flag)
 {
   cs_timer_t t0 = cs_timer_time();
 
@@ -1222,67 +1155,20 @@ cs_cdo_connect_free(const cs_mesh_t    *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the discrete curl operator across each primal faces.
- *        From an edge-based array (seen as circulations) compute a face-based
- *        array (seen as fluxes)
+ * \brief Summary of the connectivity information
  *
- * \param[in]      connect        pointer to a cs_cdo_connect_t struct.
- * \param[in]      edge_values    array of values at edges
- * \param[in, out] p_curl_values  array storing the curl across faces. This
- *                                array is allocated if necessary.
+ * \param[in] connect           pointer to cs_cdo_connect_t structure
+ * \param[in] eb_scheme_flag    metadata for Edge-based schemes
+ * \param[in] vb_scheme_flag    metadata for Vertex-based schemes
+ * \param[in] vcb_scheme_flag   metadata for Vertex+Cell-based schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_connect_discrete_curl(const cs_cdo_connect_t    *connect,
-                             const cs_real_t           *edge_values,
-                             cs_real_t                **p_curl_values)
-{
-  if (connect == NULL || edge_values == NULL)
-    return;
-  const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
-
-  cs_real_t  *curl_values = *p_curl_values;
-  if (curl_values == NULL)
-    BFT_MALLOC(curl_values, n_faces, cs_real_t);
-
-  const cs_adjacency_t  *f2e = connect->f2e;
-  assert(f2e != NULL && f2e->sgn != NULL); /* Sanity checks */
-
-# pragma omp parallel for if (n_faces > CS_THR_MIN)
-  for (cs_lnum_t f = 0; f < n_faces; f++) {
-
-    const cs_lnum_t  start = f2e->idx[f], end = f2e->idx[f+1];
-    const cs_lnum_t  *ids = f2e->ids + start;
-    const short int  *sgn = f2e->sgn + start;
-
-    curl_values[f] = 0;
-    for (int e = 0; e < end-start; e++)
-      curl_values[f] += sgn[e]*edge_values[ids[e]];
-
-  } /* Loop on faces */
-
-  /* Return pointer */
-
-  *p_curl_values = curl_values;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Summary of connectivity information
- *
- * \param[in]  connect           pointer to cs_cdo_connect_t structure
- * \param[in]  eb_scheme_flag    metadata for Edge-based schemes
- * \param[in]  vb_scheme_flag    metadata for Vertex-based schemes
- * \param[in]  vcb_scheme_flag   metadata for Vertex+Cell-based schemes
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_connect_summary(const cs_cdo_connect_t  *connect,
-                       cs_flag_t                eb_scheme_flag,
-                       cs_flag_t                vb_scheme_flag,
-                       cs_flag_t                vcb_scheme_flag)
+cs_cdo_connect_log_summary(const cs_cdo_connect_t  *connect,
+                           cs_flag_t                eb_scheme_flag,
+                           cs_flag_t                vb_scheme_flag,
+                           cs_flag_t                vcb_scheme_flag)
 {
   /* Information about the element types */
 
@@ -1380,17 +1266,220 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect,
                   " %lu\n\n", e_counter);
 
   } /* At least one equation with a scheme with DoFs at edges */
-
-#if CS_CDO_CONNECT_DBG > 0 && defined(DEBUG) && !defined(NDEBUG)
-  cs_cdo_connect_dump(connect);
-#endif
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Dump a cs_cdo_connect_t structure
+ * \brief Allocate and initialize the cell-wise buffer(s)
  *
- * \param[in]  connect     pointer to cs_cdo_connect_t structure
+ * \param[in] connect     pointer to additional connectivities
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_connect_allocate_cw_buffer(const cs_cdo_connect_t      *connect)
+{
+  int  n_vc = connect->n_max_vbyc;
+  int  max_ent = 3*CS_MAX(n_vc, CS_MAX(connect->n_max_ebyc,
+                                       connect->n_max_fbyc));
+
+  cs_cdo_connect_cw_buffer_size = CS_MAX(n_vc*(n_vc+1)/2, max_ent);
+
+  BFT_MALLOC(cs_cdo_connect_cw_buffer, cs_glob_n_threads, double *);
+
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+#pragma omp parallel
+  {
+    int t_id = omp_get_thread_num();
+    assert(t_id < cs_glob_n_threads);
+
+    BFT_MALLOC(cs_cdo_connect_cw_buffer[t_id],
+               cs_cdo_connect_cw_buffer_size, double);
+    memset(cs_cdo_connect_cw_buffer[t_id], 0,
+           cs_cdo_connect_cw_buffer_size*sizeof(double));
+  }
+#else
+  assert(cs_glob_n_threads == 1);
+
+  BFT_MALLOC(cs_cdo_connect_cw_buffer[0],
+             cs_cdo_connect_cw_buffer_size, double);
+  memset(cs_cdo_connect_cw_buffer[0], 0,
+         cs_cdo_connect_cw_buffer_size*sizeof(double));
+#endif /* openMP */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free the cell-wise buffer(s)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_connect_free_cw_buffer(void)
+{
+  cs_cdo_connect_cw_buffer_size = 0;
+
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+#pragma omp parallel
+  {
+    int t_id = omp_get_thread_num();
+    assert(t_id < cs_glob_n_threads);
+
+    BFT_FREE(cs_cdo_connect_cw_buffer[t_id]);
+  }
+#else
+  assert(cs_glob_n_threads == 1);
+  BFT_FREE(cs_cdo_connect_cw_buffer[0]);
+#endif /* openMP */
+
+  BFT_FREE(cs_cdo_connect_cw_buffer);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the cell-wise buffer associated to the current thread. Use
+ *        \ref cs_get_thread_id when the thread id is not directly available.
+ *
+ * \param[in] thr_id   thread_id (0 if no openMP)
+ *
+ * \return a pointer to an allocated auxiliary cell-wise buffer
+ */
+/*----------------------------------------------------------------------------*/
+
+double *
+cs_cdo_connect_get_cw_buffer(int   thr_id)
+{
+  assert(thr_id > -1 && thr_id < cs_glob_n_threads);
+  return cs_cdo_connect_cw_buffer[thr_id];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the time elapsed to build the cs_cdo_connect_t structure
+ *
+ * \return the value of the time elapsed in ns
+ */
+/*----------------------------------------------------------------------------*/
+
+long long
+cs_cdo_connect_get_time_perfo(void)
+{
+  return cs_cdo_connect_time;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and define a \ref cs_range_set_t structure and a
+ *        \ref cs_interface_set_t structure for schemes with DoFs at vertices
+ *
+ * \param[in]       mesh          pointer to a cs_mesh_t structure
+ * \param[in]       n_vtx_dofs    number of DoFs per vertex
+ * \param[in]       interlaced    false means a block viewpoint
+ * \param[in, out]  p_ifs         pointer of  pointer to a cs_interface_set_t
+ * \param[in, out]  p_rs          pointer of  pointer to a cs_range_set_t
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_connect_assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
+                                 int                    n_vtx_dofs,
+                                 bool                   interlaced,
+                                 cs_interface_set_t   **p_ifs,
+                                 cs_range_set_t       **p_rs)
+{
+  assert(mesh != NULL);
+
+  const cs_lnum_t  n_vertices = mesh->n_vertices;
+  const cs_lnum_t  n_elts = n_vertices * n_vtx_dofs;
+
+  /* Structure to define */
+
+  cs_range_set_t  *rs =  NULL;
+  cs_interface_set_t  *ifs = NULL;
+
+  switch (n_vtx_dofs) {
+
+  case 1: /* Scalar-valued */
+    ifs = *p_ifs;
+    assert(ifs != NULL || cs_glob_n_ranks < 2);  /* Should be already set */
+    break;
+
+  default:
+    if (interlaced)
+      ifs = cs_interface_set_dup(mesh->vtx_interfaces, n_vtx_dofs);
+    else
+      ifs = cs_interface_set_dup_blocks(mesh->vtx_interfaces,
+                                        n_vertices,
+                                        n_vtx_dofs);
+    break;
+
+  } /* End of switch on dimension */
+
+  rs = cs_range_set_create(ifs,
+                           NULL,
+                           n_elts,
+                           false,  /* TODO: add option for balance */
+                           1,      /* tr_ignore */
+                           0);     /* g_id_base */
+
+  /* Return pointers */
+
+  *p_ifs = ifs;
+  *p_rs = rs;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the discrete curl operator across each primal faces.
+ *        From an edge-based array (seen as circulations) compute a face-based
+ *        array (seen as fluxes)
+ *
+ * \param[in]      connect        pointer to a cs_cdo_connect_t struct.
+ * \param[in]      edge_values    array of values at edges
+ * \param[in, out] p_curl_values  array storing the curl across faces. This
+ *                                array is allocated if necessary.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_connect_discrete_curl(const cs_cdo_connect_t    *connect,
+                             const cs_real_t           *edge_values,
+                             cs_real_t                **p_curl_values)
+{
+  if (connect == NULL || edge_values == NULL)
+    return;
+  const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
+
+  cs_real_t  *curl_values = *p_curl_values;
+  if (curl_values == NULL)
+    BFT_MALLOC(curl_values, n_faces, cs_real_t);
+
+  const cs_adjacency_t  *f2e = connect->f2e;
+  assert(f2e != NULL && f2e->sgn != NULL); /* Sanity checks */
+
+# pragma omp parallel for if (n_faces > CS_THR_MIN)
+  for (cs_lnum_t f = 0; f < n_faces; f++) {
+
+    const cs_lnum_t  start = f2e->idx[f], end = f2e->idx[f+1];
+    const cs_lnum_t  *ids = f2e->ids + start;
+    const short int  *sgn = f2e->sgn + start;
+
+    curl_values[f] = 0;
+    for (int e = 0; e < end-start; e++)
+      curl_values[f] += sgn[e]*edge_values[ids[e]];
+
+  } /* Loop on faces */
+
+  /* Return pointer */
+
+  *p_curl_values = curl_values;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Dump a cs_cdo_connect_t structure for debugging purpose
+ *
+ * \param[in] connect     pointer to cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 

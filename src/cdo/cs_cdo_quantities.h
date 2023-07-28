@@ -328,11 +328,11 @@ cs_cdo_quantities_set_algo_ccenter(cs_cdo_quantities_cell_center_algo_t   algo);
  *        with the \ref cs_mesh_quantities_t structure and other are not
  *        built according to the given flags in cs_cdo_quantities_flag.
  *
- * \param[in]  m                 pointer to a cs_mesh_t structure
- * \param[in]  mq                pointer to a cs_mesh_quantities_t structure
- * \param[in]  topo              pointer to a cs_cdo_connect_t structure
+ * \param[in] m                 pointer to a cs_mesh_t structure
+ * \param[in] mq                pointer to a cs_mesh_quantities_t structure
+ * \param[in] topo              pointer to a cs_cdo_connect_t structure
  *
- * \return  a new allocated pointer to a cs_cdo_quantities_t structure
+ * \return a new allocated pointer to a cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -358,18 +358,18 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *cdoq);
 /*!
  * \brief Summarize generic information about the cdo mesh quantities
  *
- * \param[in]  quant   pointer to cs_cdo_quantities_t structure
+ * \param[in] cdoq     pointer to cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_quantities_summary(const cs_cdo_quantities_t  *quant);
+cs_cdo_quantities_log_summary(const cs_cdo_quantities_t  *cdoq);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Dump a cs_cdo_quantities_t structure
+ * \brief Dump a cs_cdo_quantities_t structure (for debuggingpurpose)
  *
- * \param[in]  cdoq   pointer to cs_cdo_quantities_t structure
+ * \param[in] cdoq     pointer to cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 

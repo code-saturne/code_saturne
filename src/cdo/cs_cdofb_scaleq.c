@@ -2746,7 +2746,7 @@ cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *f_values,
 
     /* Set inside the OMP section so that each thread has its own value */
 
-    double  *pot = cs_cdo_local_get_d_buffer(t_id);
+    double  *pot = cs_cdo_connect_get_cw_buffer(t_id);
     double  *flx = pot + cm->n_fc + 1;
 
     /* Set times at which one evaluates quantities if needed */

@@ -2801,7 +2801,7 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
     /* Set inside the OMP section so that each thread has its own value */
 
-    double  *tmp = cs_cdo_local_get_d_buffer(t_id);
+    double  *tmp = cs_cdo_connect_get_cw_buffer(t_id);
     cs_real_t  *pot = tmp,
                *flux = tmp + connect->n_max_vbyc + 1;
 
@@ -3022,15 +3022,13 @@ cs_cdovcb_scaleq_flux_across_plane(const cs_real_t             normal[],
   cs_real_33_t  pty_tens;
   cs_nvec3_t  adv_c;
 
-  /* To be modified for a full openMP integration */
+  /* No openMP up to now. To be modified for a full openMP integration */
 
   cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t  *)context;
   cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(0);
   cs_cell_builder_t  *cb = _vcbs_cell_builder[0];
 
-  /* Set inside the OMP section so that each thread has its own value */
-
-  double  *p_v = cs_cdo_local_get_d_buffer(0);
+  double  *p_v = cs_cdo_connect_get_cw_buffer(0);
 
   if (ml_t == CS_MESH_LOCATION_BOUNDARY_FACES) {
 
@@ -3231,7 +3229,7 @@ cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *v_values,
 
     /* Set inside the OMP section so that each thread has its own value */
 
-    double  *pot = cs_cdo_local_get_d_buffer(t_id);
+    double  *pot = cs_cdo_connect_get_cw_buffer(t_id);
 
     /* Set times at which one evaluates quantities if needed */
 
@@ -3361,7 +3359,7 @@ cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *v_values,
 
     /* Set inside the OMP section so that each thread has its own value */
 
-    double  *pot = cs_cdo_local_get_d_buffer(t_id);
+    double  *pot = cs_cdo_connect_get_cw_buffer(t_id);
 
     /* Set times at which one evaluates quantities if needed */
 
@@ -3460,7 +3458,7 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
 
     /* Set inside the OMP section so that each thread has its own value */
 
-    double  *pot = cs_cdo_local_get_d_buffer(t_id);
+    double  *pot = cs_cdo_connect_get_cw_buffer(t_id);
 
     cs_eflag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ |
       CS_FLAG_COMP_DEQ |  CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_HFQ;

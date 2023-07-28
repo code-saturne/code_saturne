@@ -185,6 +185,101 @@ cs_connect_get_next_3_vertices(const cs_lnum_t   *f2e_ids,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Allocate and define a new cs_cdo_connect_t structure
+ *        Range sets and interface sets are allocated and defined according to
+ *        the value of the different scheme flags.
+ *        cs_range_set_t structure related to vertices is shared the cs_mesh_t
+ *        structure (the global one)
+ *
+ * \param[in, out] mesh              pointer to a cs_mesh_t structure
+ * \param[in]      eb_scheme_flag    metadata for Edge-based schemes
+ * \param[in]      fb_scheme_flag    metadata for Face-based schemes
+ * \param[in]      cb_scheme_flag    metadata for Cell-based schemes
+ * \param[in]      vb_scheme_flag    metadata for Vertex-based schemes
+ * \param[in]      vcb_scheme_flag   metadata for Vertex+Cell-based schemes
+ * \param[in]      hho_scheme_flag   metadata for HHO schemes
+ *
+ * \return a pointer to a cs_cdo_connect_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cdo_connect_t *
+cs_cdo_connect_build(cs_mesh_t      *mesh,
+                     cs_flag_t       eb_scheme_flag,
+                     cs_flag_t       fb_scheme_flag,
+                     cs_flag_t       cb_scheme_flag,
+                     cs_flag_t       vb_scheme_flag,
+                     cs_flag_t       vcb_scheme_flag,
+                     cs_flag_t       hho_scheme_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy a cs_cdo_connect_t structure
+ *
+ * \param[in]      mesh        pointer to a mesh structure
+ * \param[in, out] connect     pointer to additional CDO connectivities
+ *
+ * \return a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cdo_connect_t *
+cs_cdo_connect_free(const cs_mesh_t    *mesh,
+                    cs_cdo_connect_t   *connect);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Summary of the connectivity information
+ *
+ * \param[in] connect           pointer to cs_cdo_connect_t structure
+ * \param[in] eb_scheme_flag    metadata for Edge-based schemes
+ * \param[in] vb_scheme_flag    metadata for Vertex-based schemes
+ * \param[in] vcb_scheme_flag   metadata for Vertex+Cell-based schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_connect_log_summary(const cs_cdo_connect_t  *connect,
+                           cs_flag_t                eb_scheme_flag,
+                           cs_flag_t                vb_scheme_flag,
+                           cs_flag_t                vcb_scheme_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and initialize the cell-wise buffer(s)
+ *
+ * \param[in] connect     pointer to additional connectivities
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_connect_allocate_cw_buffer(const cs_cdo_connect_t      *connect);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free the cell-wise buffer(s)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_connect_free_cw_buffer(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the cell-wise buffer associated to the current thread. Use
+ *        \ref cs_get_thread_id when the thread id is not directly available.
+ *
+ * \param[in] thr_id   thread_id (0 if no openMP)
+ *
+ * \return a pointer to an allocated auxiliary cell-wise buffer
+ */
+/*----------------------------------------------------------------------------*/
+
+double *
+cs_cdo_connect_get_cw_buffer(int   thr_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Retrieve the time elapsed to build the cs_cdo_connect_t structure
  *
  * \return the value of the time elapsed in ns
@@ -249,50 +344,6 @@ cs_cdo_connect_define_face_interface(const cs_mesh_t       *mesh);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Allocate and define a new cs_cdo_connect_t structure
- *        Range sets and interface sets are allocated and defined according to
- *        the value of the different scheme flags.
- *        cs_range_set_t structure related to vertices is shared the cs_mesh_t
- *        structure (the global one)
- *
- * \param[in, out]  mesh              pointer to a cs_mesh_t structure
- * \param[in]       eb_scheme_flag    metadata for Edge-based schemes
- * \param[in]       fb_scheme_flag    metadata for Face-based schemes
- * \param[in]       cb_scheme_flag    metadata for Cell-based schemes
- * \param[in]       vb_scheme_flag    metadata for Vertex-based schemes
- * \param[in]       vcb_scheme_flag   metadata for Vertex+Cell-based schemes
- * \param[in]       hho_scheme_flag   metadata for HHO schemes
- *
- * \return a pointer to a cs_cdo_connect_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_cdo_connect_t *
-cs_cdo_connect_init(cs_mesh_t      *mesh,
-                    cs_flag_t       eb_scheme_flag,
-                    cs_flag_t       fb_scheme_flag,
-                    cs_flag_t       cb_scheme_flag,
-                    cs_flag_t       vb_scheme_flag,
-                    cs_flag_t       vcb_scheme_flag,
-                    cs_flag_t       hho_scheme_flag);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Destroy a cs_cdo_connect_t structure
- *
- * \param[in]      mesh        pointer to a mesh structure
- * \param[in, out] connect     pointer to additional CDO connectivities
- *
- * \return a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_cdo_connect_t *
-cs_cdo_connect_free(const cs_mesh_t    *mesh,
-                    cs_cdo_connect_t   *connect);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Compute the discrete curl operator across each primal faces.
  *        From an edge-based array (seen as circulations) compute a face-based
  *        array (seen as fluxes)
@@ -311,27 +362,9 @@ cs_cdo_connect_discrete_curl(const cs_cdo_connect_t    *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Summary of connectivity information
+ * \brief Dump a cs_cdo_connect_t structure for debugging purpose
  *
- * \param[in]  connect           pointer to cs_cdo_connect_t structure
- * \param[in]  eb_scheme_flag    metadata for Edge-based schemes
- * \param[in]  vb_scheme_flag    metadata for Vertex-based schemes
- * \param[in]  vcb_scheme_flag   metadata for Vertex+Cell-based schemes
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_connect_summary(const cs_cdo_connect_t  *connect,
-                       cs_flag_t                eb_scheme_flag,
-                       cs_flag_t                vb_scheme_flag,
-                       cs_flag_t                vcb_scheme_flag);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Dump a cs_cdo_connect_t structure
- *
- * \param[in]  connect     pointer to cs_cdo_connect_t structure
- *
+ * \param[in] connect     pointer to cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 

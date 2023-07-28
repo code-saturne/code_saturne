@@ -1056,9 +1056,9 @@ cs_cdo_quantities_set_algo_ccenter(cs_cdo_quantities_cell_center_algo_t   algo)
  *        with the \ref cs_mesh_quantities_t structure and other are not
  *        built according to the given flags in cs_cdo_quantities_flag.
  *
- * \param[in]  m                 pointer to a cs_mesh_t structure
- * \param[in]  mq                pointer to a cs_mesh_quantities_t structure
- * \param[in]  topo              pointer to a cs_cdo_connect_t structure
+ * \param[in] m                 pointer to a cs_mesh_t structure
+ * \param[in] mq                pointer to a cs_mesh_quantities_t structure
+ * \param[in] topo              pointer to a cs_cdo_connect_t structure
  *
  * \return  a new allocated pointer to a cs_cdo_quantities_t structure
  */
@@ -1244,12 +1244,12 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *cdoq)
 /*!
  * \brief Summarize generic information about the cdo mesh quantities
  *
- * \param[in]  quant     pointer to cs_cdo_quantities_t structure
+ * \param[in] cdoq     pointer to cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_quantities_summary(const cs_cdo_quantities_t  *quant)
+cs_cdo_quantities_log_summary(const cs_cdo_quantities_t  *cdoq)
 {
   cs_log_printf(CS_LOG_SETUP, "\n## CDO quantities settings\n");
 
@@ -1275,26 +1275,26 @@ cs_cdo_quantities_summary(const cs_cdo_quantities_t  *quant)
   cs_log_printf(CS_LOG_DEFAULT,
                 " --cdo-- h_cell  %6.4e %6.4e (min/max)\n"
                 " --cdo-- h_face  %6.4e %6.4e (min/max)\n",
-                quant->cell_info.h_min, quant->cell_info.h_max,
-                quant->face_info.h_min, quant->face_info.h_max);
+                cdoq->cell_info.h_min, cdoq->cell_info.h_max,
+                cdoq->face_info.h_min, cdoq->face_info.h_max);
 
-  if (quant->edge_vector != NULL)
+  if (cdoq->edge_vector != NULL)
     cs_log_printf(CS_LOG_DEFAULT,
                   " --cdo-- h_edge  %6.4e %6.4e (min/max)\n",
-                  quant->edge_info.h_min, quant->edge_info.h_max);
+                  cdoq->edge_info.h_min, cdoq->edge_info.h_max);
   else
     cs_log_printf(CS_LOG_DEFAULT, "\n");
 
 #if CS_CDO_QUANTITIES_DBG > 0 && defined(DEBUG) && !defined(NDEBUG)
-  cs_cdo_quantities_dump(quant);
+  cs_cdo_quantities_dump(cdoq);
 #endif
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Dump a cs_cdo_quantities_t structure
+ * \brief Dump a cs_cdo_quantities_t structure (for debuggingpurpose)
  *
- * \param[in]  cdoq     pointer to cs_cdo_quantities_t structure
+ * \param[in] cdoq     pointer to cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 

@@ -632,13 +632,13 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
      Update mesh structure with range set structures */
 
   cs_domain_cdo_context_t  *cc = domain->cdo_context;
-  domain->connect = cs_cdo_connect_init(domain->mesh,
-                                        cc->eb_scheme_flag,
-                                        cc->fb_scheme_flag,
-                                        cc->cb_scheme_flag,
-                                        cc->vb_scheme_flag,
-                                        cc->vcb_scheme_flag,
-                                        cc->hho_scheme_flag);
+  domain->connect = cs_cdo_connect_build(domain->mesh,
+                                         cc->eb_scheme_flag,
+                                         cc->fb_scheme_flag,
+                                         cc->cb_scheme_flag,
+                                         cc->vb_scheme_flag,
+                                         cc->vcb_scheme_flag,
+                                         cc->hho_scheme_flag);
 
   /* Build additional mesh quantities in a separate structure */
 
@@ -927,12 +927,12 @@ cs_domain_setup_log(const cs_domain_t   *domain)
 
   cs_domain_cdo_context_t  *cc = domain->cdo_context;
 
-  cs_cdo_connect_summary(domain->connect,
-                         cc->eb_scheme_flag,
-                         cc->vb_scheme_flag,
-                         cc->vcb_scheme_flag);
+  cs_cdo_connect_log_summary(domain->connect,
+                             cc->eb_scheme_flag,
+                             cc->vb_scheme_flag,
+                             cc->vcb_scheme_flag);
 
-  cs_cdo_quantities_summary(domain->cdo_quantities);
+  cs_cdo_quantities_log_summary(domain->cdo_quantities);
 
   /* Time step summary */
 

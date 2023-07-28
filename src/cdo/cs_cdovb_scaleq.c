@@ -3895,7 +3895,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
     /* Set inside the OMP section so that each thread has its own value */
 
-    cs_real_t  *p_cur = cs_cdo_local_get_d_buffer(t_id);
+    cs_real_t  *p_cur = cs_cdo_connect_get_cw_buffer(t_id);
     cs_real_t  *p_prev = p_cur + connect->n_max_vbyc;
     cs_real_t  *p_theta = p_prev + connect->n_max_vbyc;
 
@@ -4243,7 +4243,7 @@ cs_cdovb_scaleq_apply_stiffness(const cs_equation_param_t     *eqp,
 
     /* Set inside the OMP section so that each thread has its own value */
 
-    cs_real_t  *p_cur = cs_cdo_local_get_d_buffer(t_id);
+    cs_real_t  *p_cur = cs_cdo_connect_get_cw_buffer(t_id);
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -4384,7 +4384,7 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
     /* Set inside the OMP section so that each thread has its own value */
 
-    double  *tmp = cs_cdo_local_get_d_buffer(t_id);
+    double  *tmp = cs_cdo_connect_get_cw_buffer(t_id);
     cs_real_t  *pot = tmp, /* +1 for WBS */
                *flux = tmp + connect->n_max_vbyc + 1;
 
@@ -4830,7 +4830,7 @@ cs_cdovb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
 
     /* Set inside the OMP section so that each thread has its own value */
 
-    double  *pot = cs_cdo_local_get_d_buffer(t_id);
+    double  *pot = cs_cdo_connect_get_cw_buffer(t_id);
 
     /* Set times at which one evaluates quantities if needed */
 
@@ -4986,7 +4986,7 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
 
     /* Set inside the OMP section so that each thread has its own value */
 
-    double  *pot = cs_cdo_local_get_d_buffer(t_id);
+    double  *pot = cs_cdo_connect_get_cw_buffer(t_id);
 
     /* Set times at which one evaluates quantities if needed */
 

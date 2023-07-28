@@ -344,14 +344,6 @@ typedef struct {
  *  Global variables
  *============================================================================*/
 
-/* Auxiliary buffers for extra-operations related to local problems. These
- * buffers are also used for computing quantities related to a cs_cell_mesh_t
- * (there are as many buffers as threads since a call to these buffers can be
- * inside an OpenMP directive */
-
-extern int                     cs_cdo_local_d_buffer_size;
-extern double                **cs_cdo_local_d_buffer;
-
 /* Pointer of pointers to global structures */
 
 extern cs_cell_mesh_t        **cs_cdo_local_cell_meshes;
@@ -361,38 +353,6 @@ extern cs_face_mesh_light_t  **cs_cdo_local_face_meshes_light;
 /*============================================================================
  * Static inline function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Retrieve the size of the auxiliary buffer of double
- *
- * \return the number of allocated entries
- */
-/*----------------------------------------------------------------------------*/
-
-static inline int
-cs_cdo_local_get_d_buffer_size(void)
-{
-  return cs_cdo_local_d_buffer_size;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the buffer associated to the current thread. If there is
- *         no openMP then one should give 0 as parameter.
- *
- * \param[in]  thr_id   thread_id
- *
- * \return a pointer to an allocated auxiliary buffer of double
- */
-/*----------------------------------------------------------------------------*/
-
-static inline double *
-cs_cdo_local_get_d_buffer(int   thr_id)
-{
-  assert(thr_id > -1 && thr_id < cs_glob_n_threads);
-  return cs_cdo_local_d_buffer[thr_id];
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
