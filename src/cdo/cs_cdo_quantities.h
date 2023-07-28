@@ -177,13 +177,15 @@ typedef struct { /* Specific mesh quantities */
      See \ref cs_quant_set_face_nvec for more details.
   */
 
-  const cs_real_t  *i_face_normal;  /* Shared with cs_mesh_quantities_t */
-  const cs_real_t  *i_face_center;  /* Shared with cs_mesh_quantities_t */
-  const cs_real_t  *i_face_surf;    /* Shared with cs_mesh_quantities_t */
+  const cs_nreal_3_t  *i_face_u_normal;  /* Shared with cs_mesh_quantities_t */
+  const cs_real_t     *i_face_normal;    /* Shared with cs_mesh_quantities_t */
+  const cs_real_t     *i_face_center;    /* Shared with cs_mesh_quantities_t */
+  const cs_real_t     *i_face_surf;      /* Shared with cs_mesh_quantities_t */
 
-  const cs_real_t  *b_face_normal;  /* Shared with cs_mesh_quantities_t */
-  const cs_real_t  *b_face_center;  /* Shared with cs_mesh_quantities_t */
-  const cs_real_t  *b_face_surf;    /* Shared with cs_mesh_quantities_t */
+  const cs_nreal_3_t  *b_face_u_normal;  /* Unit normal of boundary faces. */
+  const cs_real_t     *b_face_normal;    /* Shared with cs_mesh_quantities_t */
+  const cs_real_t     *b_face_center;    /* Shared with cs_mesh_quantities_t */
+  const cs_real_t     *b_face_surf;      /* Shared with cs_mesh_quantities_t */
 
   /* Remark: cs_nvec3_t structure attached to a dual edge can be built
      on-the-fly to access to its length and its unit tangential vector using

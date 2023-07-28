@@ -770,9 +770,7 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
     const cs_real_t  *a_ff = diagA_shift + 3*f_id;
-
-    cs_nvec3_t  nvf;
-    cs_nvec3(quant->b_face_normal + 3*f_id, &nvf);
+    const cs_nvec3_t  nvf = cs_quant_set_face_nvec(f_id + n_i_faces, quant);
 
     double  contrib = 0;
     for (int k = 0; k < 3; k++)

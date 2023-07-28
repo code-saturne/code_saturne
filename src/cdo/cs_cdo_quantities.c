@@ -257,7 +257,10 @@ _get_fspec(cs_lnum_t                    f_id,
     for (k = 0; k < 3; k++)
       P[k] *= inv_n;
 
-    cs_nvec3(&(mq->i_face_normal[3*f]), &(fspec.q));
+    fspec.q.meas = mq->i_face_surf[f];
+    fspec.q.unitv[0] = mq->i_face_u_normal[f][0];
+    fspec.q.unitv[1] = mq->i_face_u_normal[f][1];
+    fspec.q.unitv[2] = mq->i_face_u_normal[f][2];
 
   }
   else { /* Border face */
@@ -281,7 +284,10 @@ _get_fspec(cs_lnum_t                    f_id,
     for (k = 0; k < 3; k++)
       P[k] *= inv_n;
 
-    cs_nvec3(&(mq->b_face_normal[3*f]), &(fspec.q));
+    fspec.q.meas = mq->b_face_surf[f];
+    fspec.q.unitv[0] = mq->b_face_u_normal[f][0];
+    fspec.q.unitv[1] = mq->b_face_u_normal[f][1];
+    fspec.q.unitv[2] = mq->b_face_u_normal[f][2];
 
   }
 
@@ -1098,11 +1104,13 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   /* Shared quantities related to faces (interior and border) */
 
   cdoq->n_i_faces = m->n_i_faces;
+  cdoq->i_face_u_normal = mq->i_face_u_normal;
   cdoq->i_face_normal = mq->i_face_normal;
   cdoq->i_face_center = mq->i_face_cog;
   cdoq->i_face_surf = mq->i_face_surf;
 
   cdoq->n_b_faces = m->n_b_faces;
+  cdoq->b_face_u_normal = mq->b_face_u_normal;
   cdoq->b_face_normal = mq->b_face_normal;
   cdoq->b_face_center = mq->b_face_cog;
   cdoq->b_face_surf = mq->b_face_surf;
@@ -1826,10 +1834,9 @@ cs_quant_set_face(cs_lnum_t                    f_id,
   if (f_id < cdoq->n_i_faces) { /* Interior face */
 
     q.meas = cdoq->i_face_surf[f_id];
-
-    cs_nvec3(cdoq->i_face_normal + 3*f_id, &nv);
-    for (int k = 0; k < 3; k++)
-      q.unitv[k] = nv.unitv[k];
+    q.unitv[0] = cdoq->i_face_u_normal[f_id][0];
+    q.unitv[1] = cdoq->i_face_u_normal[f_id][1];
+    q.unitv[2] = cdoq->i_face_u_normal[f_id][2];
 
     const cs_real_t  *xf = cdoq->i_face_center + 3*f_id;
     for (int k = 0; k < 3; k++)
@@ -1841,9 +1848,9 @@ cs_quant_set_face(cs_lnum_t                    f_id,
     const cs_lnum_t  bf_id = f_id - cdoq->n_i_faces;
 
     q.meas = cdoq->b_face_surf[bf_id];
-    cs_nvec3(cdoq->b_face_normal + 3*bf_id, &nv);
-    for (int k = 0; k < 3; k++)
-      q.unitv[k] = nv.unitv[k];
+    q.unitv[0] = cdoq->b_face_u_normal[bf_id][0];
+    q.unitv[1] = cdoq->b_face_u_normal[bf_id][1];
+    q.unitv[2] = cdoq->b_face_u_normal[bf_id][2];
 
     const cs_real_t  *xf = cdoq->b_face_center + 3*bf_id;
     for (int k = 0; k < 3; k++)
@@ -1872,10 +1879,24 @@ cs_quant_set_face_nvec(cs_lnum_t                    f_id,
 {
   cs_nvec3_t  nv;
 
-  if (f_id < cdoq->n_i_faces)  /* Interior face */
-    cs_nvec3(cdoq->i_face_normal + 3*f_id, &nv);
-  else  /* Border face */
-    cs_nvec3(cdoq->b_face_normal + 3*(f_id - cdoq->n_i_faces), &nv);
+  if (f_id < cdoq->n_i_faces) { /* This is an interior face */
+
+    nv.meas = cdoq->i_face_surf[f_id];
+    nv.unitv[0] = cdoq->i_face_u_normal[f_id][0];
+    nv.unitv[1] = cdoq->i_face_u_normal[f_id][1];
+    nv.unitv[2] = cdoq->i_face_u_normal[f_id][2];
+
+  }
+  else  { /* This is a border face */
+
+    const cs_lnum_t  bf_id = f_id - cdoq->n_i_faces;
+
+    nv.meas = cdoq->b_face_surf[bf_id];
+    nv.unitv[0] = cdoq->b_face_u_normal[bf_id][0];
+    nv.unitv[1] = cdoq->b_face_u_normal[bf_id][1];
+    nv.unitv[2] = cdoq->b_face_u_normal[bf_id][2];
+
+  }
 
   return nv;
 }
