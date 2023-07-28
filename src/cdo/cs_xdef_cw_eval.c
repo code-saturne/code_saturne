@@ -1015,13 +1015,18 @@ cs_xdef_cw_eval_flux_v_by_scalar_val(const cs_cell_mesh_t     *cm,
 
   const cs_real_t  *flux = (cs_real_t *)context;
 
+  /* Scaled by 1/2 since the part for a vertex v from the triangle tef is
+     weighted by 1/2 */
+
+  const cs_real_t  half_full_flux = 0.5 * flux[0];
+
   if (cs_eflag_test(cm->flag, CS_FLAG_COMP_FEQ)) {
 
     /* Loop on face edges */
 
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-      const double  _flx = 0.5 * cm->tef[i] * flux[0];
+      const double  _flx = cm->tef[i] * half_full_flux;
       const short int  *e2v = cm->e2v_ids + 2*cm->f2e_ids[i];
 
       eval[e2v[0]] += _flx;
@@ -1039,7 +1044,7 @@ cs_xdef_cw_eval_flux_v_by_scalar_val(const cs_cell_mesh_t     *cm,
       const short int  e = cm->f2e_ids[i];
       const double  tef = cs_compute_area_from_quant(cm->edge[e],
                                                      cm->face[f].center);
-      const double  _flx = 0.5 * tef * flux[0];
+      const double  _flx = tef * half_full_flux;
 
       eval[cm->e2v_ids[2*e  ]] += _flx;
       eval[cm->e2v_ids[2*e+1]] += _flx;
@@ -1076,13 +1081,18 @@ cs_xdef_cw_eval_flux_v_by_vector_val(const cs_cell_mesh_t     *cm,
 
   const cs_real_t  *flux = (cs_real_t *)context;
 
+  /* Scaled by 1/2 since the part for a vertex v from the triangle tef is
+     weighted by 1/2 */
+
+  const cs_real_t  half_full_flux = 0.5 * _dp3(flux, cm->face[f].unitv);
+
   if (cs_eflag_test(cm->flag, CS_FLAG_COMP_FEQ)) {
 
     /* Loop on face edges */
 
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-      const double  _flx = 0.5 * cm->tef[i] * _dp3(flux, cm->face[f].unitv);
+      const double  _flx = cm->tef[i] * half_full_flux;
       const short int  *e2v = cm->e2v_ids + 2*cm->f2e_ids[i];
 
       eval[e2v[0]] += _flx;
@@ -1100,7 +1110,7 @@ cs_xdef_cw_eval_flux_v_by_vector_val(const cs_cell_mesh_t     *cm,
       const short int  e = cm->f2e_ids[i];
       const double  tef = cs_compute_area_from_quant(cm->edge[e],
                                                      cm->face[f].center);
-      const double  _flx = 0.5 * tef * _dp3(flux, cm->face[f].unitv);
+      const double  _flx = tef * half_full_flux;
 
       eval[cm->e2v_ids[2*e  ]] += _flx;
       eval[cm->e2v_ids[2*e+1]] += _flx;
