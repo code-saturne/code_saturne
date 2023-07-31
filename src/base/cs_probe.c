@@ -532,26 +532,31 @@ _merge_snapped_to_center(cs_probe_set_t   *pset,
   for (int i = 0; i < pset->n_probes; i++)
     tag[i] = 0;
 
+  cs_lnum_t *order;
+  BFT_MALLOC(order, pset->n_loc_probes, cs_lnum_t);
+  cs_order_lnum_allocated(NULL, pset->elt_id, order, pset->n_loc_probes);
+
   cs_lnum_t e_id = 0;
 
   while (e_id < pset->n_loc_probes) {
 
     cs_lnum_t s_id = e_id;
-    cs_lnum_t j_min = s_id;
+    cs_lnum_t j_min = order[s_id];
     int l = pset->elt_id[j_min];
     int k = pset->loc_id[j_min];
     cs_real_t d_min = cs_math_3_distance(pset->coords[k], centers + l*3);
     tag[pset->loc_id[j_min]] = 1;
 
     for (e_id = s_id+1; e_id < pset->n_loc_probes; e_id++) {
-      cs_lnum_t j = e_id;
+      cs_lnum_t j = order[e_id];
       if (pset->elt_id[j] != l)
         break;
       else {
+        k = pset->loc_id[j];
         cs_real_t d = cs_math_3_distance(pset->coords[k], centers + l*3);
         if (d < d_min) {
           tag[pset->loc_id[j_min]] = 0;
-          tag[pset->loc_id[j]] = 1;
+          tag[k] = 1;
           j_min = j;
           d_min = d;
         }
@@ -559,6 +564,8 @@ _merge_snapped_to_center(cs_probe_set_t   *pset,
     }
 
   }
+
+  BFT_FREE(order);
 
   /* Now all points to keep are tagged */
 
