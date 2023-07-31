@@ -116,7 +116,6 @@ typedef void
  *        Add the block attached to the block (row_id, col_id) in the full
  *        (coupled) system
  *
- * \param[in]      row_id     id of the row in the coupled system
  * \param[in]      csys       pointer to a cellwise view of the system
  * \param[in, out] sh         pointer to the system helper of the coupled sys.
  * \param[in, out] eqc        context for this kind of discretization
@@ -125,8 +124,7 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_cdovb_scalsys_asb_t)(int                           row_id,
-                         const cs_cell_sys_t          *csys,
+(cs_cdovb_scalsys_asb_t)(const cs_cell_sys_t          *csys,
                          cs_cdo_system_helper_t       *sh,
                          cs_equation_builder_t        *eqb,
                          cs_cdo_assembly_t            *asb);
@@ -309,10 +307,10 @@ _set_field_vals(int                                n_eqs,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Perform the assembly step. Add the block (row_id, col_id) in the
- *          full (coupled) system
+ * \brief Perform the assembly step. Add the current cell-wise systme in the
+ *        full (coupled) system. The right place is set thanks to the members
+ *        asb->l_row_shift and asb->l_col_shift
  *
- * \param[in]      row_id     id of the row in the coupled system
  * \param[in]      csys       pointer to a cellwise view of the system
  * \param[in, out] sh         pointer to the system helper of the coupled sys.
  * \param[in, out] eqc        context for this kind of discretization
@@ -321,13 +319,12 @@ _set_field_vals(int                                n_eqs,
 /*----------------------------------------------------------------------------*/
 
 static void
-_svb_one_dblock_assemble(int                           row_id,
-                         const cs_cell_sys_t          *csys,
+_svb_one_dblock_assemble(const cs_cell_sys_t          *csys,
                          cs_cdo_system_helper_t       *sh,
                          cs_equation_builder_t        *eqb,
                          cs_cdo_assembly_t            *asb)
 {
-  CS_UNUSED(eqb);
+  CS_NO_WARN_IF_UNUSED(eqb);
 
   /* Members of the coupled system helper structure */
 
@@ -336,28 +333,27 @@ _svb_one_dblock_assemble(int                           row_id,
   assert(block->type == CS_CDO_SYSTEM_BLOCK_DEFAULT);
   cs_cdo_system_dblock_t  *db = block->block_pointer;
   cs_cdo_system_block_info_t  bi = block->info;
-  assert(bi.stride > row_id);
   assert(bi.interlaced == false);
 
   /* Matrix assembly for the cellwise system inside the full system */
 
-  db->slave_assembly_func(csys->mat, csys->dof_ids, db->range_set,
-                          asb, db->mav);
+  db->slave_assembly_func(csys->mat, csys->dof_ids, db->range_set, asb,
+                          db->mav);
 
   /* RHS assembly */
 
-  cs_real_t  *rhs = sh->rhs + bi.n_elements * row_id;
+  cs_real_t  *shifted_rhs = sh->rhs + asb->l_row_shift;
 
 #if CS_CDO_OMP_SYNC_MODE > 0
 # pragma omp critical
   {
     for (int v = 0; v < csys->n_dofs; v++)
-      rhs[csys->dof_ids[v]] += csys->rhs[v];
+      shifted_rhs[csys->dof_ids[v]] += csys->rhs[v];
   }
 #else  /* Use atomic barrier */
   for (int v = 0; v < csys->n_dofs; v++)
 #   pragma omp atomic
-    rhs[csys->dof_ids[v]] += csys->rhs[v];
+    shifted_rhs[csys->dof_ids[v]] += csys->rhs[v];
 #endif
 }
 
@@ -519,7 +515,8 @@ _cdovb_scalsys_build_implicit(bool                           cur2prev,
 
     for (int j_eq = 0; j_eq < n_equations; j_eq++) {
 
-      int ij = i_eq*n_equations + j_eq;
+      int  ij = i_eq*n_equations + j_eq;
+      bool  diag_block = (i_eq == j_eq) ? true : false;
 
       cs_equation_core_t  *block_ij = blocks[ij];
 
@@ -573,8 +570,10 @@ _cdovb_scalsys_build_implicit(bool                           cur2prev,
 
           /* Build the cellwise system */
 
-          rhs_norm += cs_cdovb_scaleq_build_block_implicit(t_id, c_id, f_val,
-                                                           i_eq, j_eq,
+          rhs_norm += cs_cdovb_scaleq_build_block_implicit(t_id,
+                                                           c_id,
+                                                           diag_block,
+                                                           f_val,
                                                            eqp,
                                                            eqb,
                                                            eqc,
@@ -583,7 +582,7 @@ _cdovb_scalsys_build_implicit(bool                           cur2prev,
           /* Assembly process
            * ================ */
 
-          scalsys->assemble(i_eq, csys, sh, eqb, asb);
+          scalsys->assemble(csys, sh, eqb, asb);
 
         } /* Main loop on cells */
 
@@ -799,7 +798,7 @@ cs_cdovb_scalsys_define(int                                 n_eqs,
         cs_cdovb_scaleq_t  *eqc =
           cs_cdovb_scaleq_init_context(block_ij->param,
                                        -1,              /* No field */
-                                       -1,              /* No field */
+                                       -1,              /* No boundary field */
                                        eqb);
 
         block_ij->builder = eqb;

@@ -2110,23 +2110,24 @@ cs_cdovb_scaleq_init_properties(int                           t_id,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Build the cell system for the given cell id when the build occurs
- *         in a coupled system -- block in (row_id, col_id)
+ *         in a coupled system.
  *         Case of scalar-valued CDO-Vb schemes.
  *
- *         Warning: Treatment of BCs differs from the "standard" case.
+ *         Warning: The treatment of the BCs differs from the "standard" case.
  *         Up to now, one assumes a Dirichlet or a Neumann for all equations
  *         (i.e. all blocks) and only an algebraic treatment is performed.
  *
- * \param[in]      t_id      thread id if openMP is used
- * \param[in]      c_id      cell id
- * \param[in]      f_val     current field values
- * \param[in]      row_id    id related to the row block
- * \param[in]      col_id    id related to the col block
- * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in, out] eqb       pointer to a cs_equation_builder_t structure
- * \param[in, out] context   pointer to a scheme context structure
- * \param[in, out] cb        cell builder structure
- * \param[in, out] csys      cell system structure
+ *         This function may be called inside an openMP loop.
+ *
+ * \param[in]      t_id        thread id if openMP is used
+ * \param[in]      c_id        cell id
+ * \param[in]      diag_block  true if this a diagonal block in the full system
+ * \param[in]      f_val       current field values
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
+ * \param[in, out] context     pointer to a scheme context structure
+ * \param[in, out] cb          cell builder structure
+ * \param[in, out] csys        cell system structure
  *
  * \return the value of the rhs_norm for the cellwise system
  */
@@ -2135,9 +2136,8 @@ cs_cdovb_scaleq_init_properties(int                           t_id,
 double
 cs_cdovb_scaleq_build_block_implicit(int                           t_id,
                                      cs_lnum_t                     c_id,
+                                     bool                          diag_block,
                                      const cs_real_t               f_val[],
-                                     int                           row_id,
-                                     int                           col_id,
                                      const cs_equation_param_t    *eqp,
                                      cs_equation_builder_t        *eqb,
                                      void                         *context,
@@ -2150,10 +2150,10 @@ cs_cdovb_scaleq_build_block_implicit(int                           t_id,
 
   cs_cdovb_scaleq_t *eqc = context;
 
-  if (t_id < 0) t_id = 0;
-
   /* Each thread get back its related structures:
      Get the cell-wise view of the mesh and the algebraic system */
+
+  if (t_id < 0) t_id = 0;
 
   cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
   cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
@@ -2289,7 +2289,7 @@ cs_cdovb_scaleq_build_block_implicit(int                           t_id,
 
     /* csys is updated inside (matrix and rhs) */
 
-    if (row_id == col_id) /* Diagonal block */
+    if (diag_block)
       cs_cdo_diffusion_alge_dirichlet(eqp,
                                       cm, fm,
                                       diff_hodge,
@@ -2305,7 +2305,7 @@ cs_cdovb_scaleq_build_block_implicit(int                           t_id,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, csys))
-    cs_cell_sys_dump(">> (END ScalVb) Cell system matrix", csys);
+    cs_cell_sys_dump(">> (END Vb scaleq system) Cell system matrix", csys);
 #endif
 
   /* End build */

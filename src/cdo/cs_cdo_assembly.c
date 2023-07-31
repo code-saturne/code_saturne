@@ -102,45 +102,6 @@ static cs_cdo_assembly_t  **cs_cdo_assembly = NULL;
  * Local structure definitions
  *============================================================================*/
 
-typedef struct {
-
-  /* Row numberings */
-
-  cs_gnum_t   g_id;             /* Global row numbering */
-  cs_lnum_t   l_id;             /* Local range set numbering */
-  int         i;                /* Cellwise system numbering */
-
-  /* Column-related members */
-
-  int                 n_cols;    /* Number of columns (cellwise system) */
-  cs_gnum_t          *col_g_id;  /* Global numbering of columns */
-  int                *col_idx;   /* Array to build and to give as parameter
-                                    for *add_vals() functions */
-
-  const cs_real_t    *val;       /* Row values */
-  cs_real_t          *expval;    /* Expanded row values (when unrolling non
-                                    scalar-valued blocks) */
-
-} cs_cdo_assembly_row_t;
-
-struct _cs_cdo_assembly_t {
-
-  int      n_cw_dofs;   /* Number of DoFs in a cell */
-  int      ddim;        /* Number of real values related to each diagonal
-                           entry */
-  int      edim;        /* Number of real values related to each
-                           extra-diagonal entry */
-
-  /* When working with matrix building by scalar-valued blocks, one may need to
-     shift the row and/or the column local ids */
-
-  cs_lnum_t   l_col_shift;
-  cs_lnum_t   l_row_shift;
-
-  cs_cdo_assembly_row_t    *row;
-
-};
-
 /*============================================================================
  * Inlined private function definitions
  *============================================================================*/

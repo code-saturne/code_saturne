@@ -55,11 +55,11 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-typedef struct _cs_cdo_assembly_t  cs_cdo_assembly_t;
-
-/*============================================================================
- * Function pointer type definitions
+/*=============================================================================
+ * Local structure definitions
  *============================================================================*/
+
+typedef struct _cs_cdo_assembly_t  cs_cdo_assembly_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -80,6 +80,50 @@ typedef void
                          const cs_range_set_t              *rset,
                          cs_cdo_assembly_t                 *eqa,
                          cs_matrix_assembler_values_t      *mav);
+
+/* Metadata for the assembly of a row */
+
+typedef struct {
+
+  /* Row numberings */
+
+  cs_gnum_t   g_id;             /* Global row numbering */
+  cs_lnum_t   l_id;             /* Local range set numbering */
+  int         i;                /* Cellwise system numbering */
+
+  /* Column-related members */
+
+  int                 n_cols;    /* Number of columns (cellwise system) */
+  cs_gnum_t          *col_g_id;  /* Global numbering of columns */
+  int                *col_idx;   /* Array to build and to give as parameter
+                                    for *add_vals() functions */
+
+  const cs_real_t    *val;       /* Row values */
+  cs_real_t          *expval;    /* Expanded row values (when unrolling non
+                                    scalar-valued blocks) */
+
+} cs_cdo_assembly_row_t;
+
+/* Cell-wise structure used for the assembly of local systems */
+
+struct _cs_cdo_assembly_t {
+
+  int      n_cw_dofs;   /* Number of DoFs in a cell */
+  int      ddim;        /* Number of real values related to each diagonal
+                           entry */
+  int      edim;        /* Number of real values related to each
+                           extra-diagonal entry */
+
+  /* For matrices built by blocks (for instance in coupled systems with
+     scalar-valued blocks), one may need to shift the row and/or the column
+     local ids */
+
+  cs_lnum_t   l_col_shift;
+  cs_lnum_t   l_row_shift;
+
+  cs_cdo_assembly_row_t    *row;
+
+};
 
 /*============================================================================
  * Public function prototypes
