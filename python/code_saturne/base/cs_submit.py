@@ -130,7 +130,9 @@ def main(argv, pkg):
                                  submit=True,
                                  job_header = r_c['job_header'],
                                  prologue = r_c['run_prologue'],
-                                 epilogue = r_c['run_epilogue'])
+                                 epilogue = r_c['run_epilogue'],
+                                 casedir  = r_c['casedir'],
+                                 autorestart = run_args.auto_restart)
     runcase.save()
 
     # Now submit case
