@@ -230,14 +230,17 @@ cs_user_wall_condensation(int  nvar,
 
   /*--------------------------------------------------------------------------
    * Select the cells which are associated to the metal structures volume.
-   * with the cs_volume_zone_by_name
    *--------------------------------------------------------------------------*/
 
-  const cs_zone_t *z = cs_volume_zone_by_name("z > -7.0d0 and z < 53.d0");
-  wall_cond->ncmast = z->n_elts;
+  if (iappel == 2) {
 
-  for (ieltcd = 0; ieltcd < z->n_elts; ieltcd++)
-    wall_cond->ltmast[ieltcd] = z->elt_ids[ieltcd];
+    const cs_zone_t *z = cs_volume_zone_by_name("metallic_structures");
+    wall_cond->ncmast = z->n_elts;
+
+    for (ieltcd = 0; ieltcd < z->n_elts; ieltcd++)
+      wall_cond->ltmast[ieltcd] = z->elt_ids[ieltcd];
+
+  }
 
   /*! [cells_selection] */
 
@@ -323,7 +326,7 @@ cs_user_wall_condensation(int  nvar,
    * If itypcd(ieltcd,ivar) is set to 1, spcond(ieltcd,ivar) must be set.
    *--------------------------------------------------------------------------*/
 
-  else if (iappel == 3) {
+  if (iappel == 3) {
 
     /*! [solid_wall] */
 

@@ -38,6 +38,7 @@
 BEGIN_C_DECLS
 
 typedef struct {
+
   int        nzones;
   int        znmurx;
   cs_real_t *ztheta;
@@ -59,6 +60,7 @@ typedef struct {
 } cs_wall_cond_1d_thermal_t;
 
 typedef struct {
+
   cs_lnum_t    nvolumes;
   cs_real_t   *volume_thickness;
   cs_real_2_t *volume_t;

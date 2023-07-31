@@ -1059,7 +1059,6 @@ cs_wall_condensation_create(cs_lnum_t  nfbpcd,
   cs_array_real_fill_zero(ncmast * nvar, _wall_cond.svcond);
   cs_array_real_fill_zero(ncmast, _wall_cond.flxmst);
   cs_array_lnum_set_value(nvolumes, 1, _wall_cond.itagms);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1184,7 +1183,7 @@ cs_wall_condensation_compute(cs_real_t  total_htc[])
 
   cs_wall_cond_0d_thermal_t *_0d_thermal = cs_get_glob_wall_cond_0d_thermal();
 
-  if ((cs_glob_time_step->nt_cur == 1) && !cs_restart_present())
+  if ((cs_glob_time_step->nt_cur == 1) && !cs_restart_present()) {
     for (cs_lnum_t ii = 0; ii < _wall_cond.ncmast; ii++) {
 
       cs_lnum_t vol_id = _wall_cond.izmast[ii];
@@ -1193,6 +1192,8 @@ cs_wall_condensation_compute(cs_real_t  total_htc[])
         _0d_thermal->volume_t[ii][1]=_0d_thermal->volume_t0[vol_id];
       }
     }
+
+  }
 
   cs_real_t *vol_hcond = NULL, *vol_hconv = NULL;
   BFT_MALLOC(vol_hcond, _wall_cond.ncmast, cs_real_t);
