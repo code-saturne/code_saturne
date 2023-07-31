@@ -3007,6 +3007,10 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
     _cell_bad_volume_correction(m,
                                 mq->cell_vol);
 
+  /* Compute unit normals */
+
+  _compute_unit_normals(m, mq);
+
   /* Synchronize geometric quantities */
 
   if (m->halo != NULL) {
@@ -3904,8 +3908,6 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   _n_computations++;
 
   cs_mesh_quantities_compute_preprocess(m, mq);
-
-  _compute_unit_normals(m, mq);
 
   /* Fluid surfaces and volumes: point to standard quantities and
    * may be modified afterwards */
