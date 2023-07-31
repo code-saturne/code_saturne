@@ -3,9 +3,10 @@ Master (not on release branches yet)
 
 ### User changes:
 
-- run.cfg : User can now always use the job_defaults section to define entries
-  for the run_prologue, run_epilogue, compute_prologue and compute_epilogue
-  sections. By doing so the defined entries are either used if nothing is defined
+- run.cfg : User can now always use global sections to define entries, with
+  the syntax of [key] for key among run_prologue, run_epilogue,
+  compute_prologue and compute_epilogue.
+  By doing so the defined entries are either used if nothing is defined
   for the computation resource or are prepended to the resource based options.
   This allows defining case specific and resource independent entries.
 

@@ -211,6 +211,10 @@ class run_conf(object):
         sections = OrderedDict()
         comments = {}
 
+        # global sections (without resource)
+        _global_sections = ('run_prologue', 'run_epilogue',
+                            'compute_prologue', 'compute_epilogue')
+
         section_name = 'job_defaults'
         section_dict = OrderedDict()
         comment_dict = {}
@@ -275,6 +279,9 @@ class run_conf(object):
                     if j > -1:
                         key = section_name[j+1:]
                         section_name = section_name[:j]
+                        sub_section = True
+                        value = ''
+                    elif section_name in _global_sections:
                         sub_section = True
                         value = ''
                     if section_name in sections:

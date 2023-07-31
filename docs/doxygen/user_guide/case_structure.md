@@ -429,15 +429,6 @@ This section defines defaults when no associated
 or [${batch_type}] section is present. The same key-value
 pairs may be used.
 
-For some keys the job_defaults section can always used : run_prologue,
-run_epilogue, compute_prologue and compute_epilogue. For these keys, the use
-of the job_defaults section allows to define options or commands which are
-used no matter the resource used for the computation.
-The behavior is that if nothing is prescribed in using [${resource_name}:key]
-the entry defined by [job_defaults:key] is used. If an entry exists for
-[${resource_name}:key] then the entry of [job_defaults:key] (if it exists) is
-prepended to the one defined by resource_name.
-
 ### [run]
 <!-- -->
 
@@ -628,6 +619,18 @@ additional environment variables. The associated key names are:
    This is similar to `tool_args`, but prefixes the MPI command
    when it is present, so should be used for tools designed to
    integrate with MPI, such as parallel debuggers.
+
+### [${key}] {#case_structure_run_conf_section_key_global}
+
+For some keys the a section with a simple header can be used : run_prologue,
+run_epilogue, compute_prologue and compute_epilogue. For these keys, the use
+of a section without any resource, such as [run_epilogue]
+allows to define options or commands which are
+used no matter the resource used for the computation.
+The behavior is that if nothing is prescribed in using [${resource_name}:key]
+the entry defined by [key] is used. If an entry exists for
+[${resource_name}:key] then the entry of [key] (if it exists) is
+prepended to the one defined by resource_name.
 
 ### [${coupled_case_name}] {#case_structure_coupling_options}
 <!-- -->
