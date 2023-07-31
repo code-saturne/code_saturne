@@ -2505,16 +2505,24 @@ _write_output(cs_gnum_t  n_g_cells,
  * Read cell rank if available
  *
  * parameters:
- *   mesh <-- pointer to mesh structure
- *   mb   <-> pointer to mesh builder helper structure
- *   echo <-- echo (verbosity) level
+ *   mesh  <-- pointer to mesh structure
+ *   mb    <-> pointer to mesh builder helper structure
+ *   echo  <-- echo (verbosity) level
+ *   stage <-- partitioning stage
+ *
+ * return:
+ *   0 if cell rank was read correctly, -1 if file is not available,
+ *   1 in case of error.
  *----------------------------------------------------------------------------*/
 
-static void
-_read_cell_rank(cs_mesh_t          *mesh,
-                cs_mesh_builder_t  *mb,
-                long                echo)
+static int
+_read_cell_rank(cs_mesh_t            *mesh,
+                cs_mesh_builder_t    *mb,
+                cs_partition_stage_t  stage,
+                long                  echo)
 {
+  int retval = 0;
+
   char file_name[64]; /* more than enough for
                          "partition_input/domain_number_<n_ranks>" */
   size_t  i;
@@ -2526,11 +2534,13 @@ _read_cell_rank(cs_mesh_t          *mesh,
   cs_gnum_t   n_elts = 0;
   cs_gnum_t   n_g_cells = 0;
 
+  static bool  check_file = true;
+
   const char magic_string[] = "Domain partitioning, R0";
   const char  *unexpected_msg = N_("Section of type <%s> on <%s>\n"
                                    "unexpected or of incorrect size");
 
-  if (n_ranks == 1)
+  if (n_ranks == 1 || check_file == false)
     return;
 
 #if (__STDC_VERSION__ < 199901L)
@@ -2549,7 +2559,8 @@ _read_cell_rank(cs_mesh_t          *mesh,
 
   if (! cs_file_isreg(file_name)) {
     bft_printf(_(" No \"%s\" file available;\n"), file_name);
-    return;
+    check_file = false;
+    return -1;
   }
 
   /* Open file */
@@ -2604,14 +2615,19 @@ _read_cell_rank(cs_mesh_t          *mesh,
       else {
         cs_io_set_cs_gnum(&header, rank_pp_in);
         cs_io_read_global(&header, &n_g_cells, rank_pp_in);
-        if (n_g_cells != mesh->n_g_cells)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("The number of cells reported by file\n"
-                      "\"%s\" (%llu)\n"
-                      "does not correspond to those of the mesh (%llu)."),
-                    cs_io_get_name(rank_pp_in),
-                    (unsigned long long)(n_g_cells),
-                    (unsigned long long)(mesh->n_g_cells));
+        if (n_g_cells != mesh->n_g_cells) {
+          if (stage == CS_PARTITION_MAIN) {
+            cs_base_warn(__FILE__, __LINE__);
+            bft_printf(_("The number of cells reported by file\n"
+                         "\"%s\" (%llu)\n"
+                         "does not correspond to those of the mesh (%llu).\n"),
+                       cs_io_get_name(rank_pp_in),
+                       (unsigned long long)(n_g_cells),
+                       (unsigned long long)(mesh->n_g_cells));
+          }
+          retval = 1;
+          break;
+        }
       }
 
     }
@@ -2669,6 +2685,8 @@ _read_cell_rank(cs_mesh_t          *mesh,
 
   if (rank_pp_in != NULL)
     cs_io_finalize(&rank_pp_in);
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*
@@ -3160,13 +3178,10 @@ cs_partition(cs_mesh_t             *mesh,
   /* Read cell rank data if available */
 
   if (cs_glob_n_ranks > 1) {
-    if (   stage != CS_PARTITION_MAIN
-        || cs_partition_get_preprocess() == false) {
-      _read_cell_rank(mesh, mb, CS_IO_ECHO_OPEN_CLOSE);
-      if (mb->have_cell_rank) {
-        cs_partition_set_preprocess(false);
-        return;
-      }
+    _read_cell_rank(mesh, mb, stage, CS_IO_ECHO_OPEN_CLOSE);
+    if (mb->have_cell_rank) {
+      cs_partition_set_preprocess(false);
+      return;
     }
   }
   else { /* if (cs_glob_n_ranks == 1) */
