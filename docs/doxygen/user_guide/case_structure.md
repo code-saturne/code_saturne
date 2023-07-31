@@ -622,15 +622,15 @@ additional environment variables. The associated key names are:
 
 ### [${key}] {#case_structure_run_conf_section_key_global}
 
-For some keys the a section with a simple header can be used : run_prologue,
+For some keys the a section with a simple header can be used: run_prologue,
 run_epilogue, compute_prologue and compute_epilogue. For these keys, the use
-of a section without any resource, such as [run_epilogue]
-allows to define options or commands which are
-used no matter the resource used for the computation.
-The behavior is that if nothing is prescribed in using [${resource_name}:key]
-the entry defined by [key] is used. If an entry exists for
-[${resource_name}:key] then the entry of [key] (if it exists) is
-prepended to the one defined by resource_name.
+of a section without any resource specification, such as [run_epilogue]
+allows to define options or commands which are independent of the
+resource used for the computation.
+
+If both a [key] and [${resource_name}:key] and entry are present,
+the generic [key] entry is prepended to the one
+defined by resource_name.
 
 ### [${coupled_case_name}] {#case_structure_coupling_options}
 <!-- -->
