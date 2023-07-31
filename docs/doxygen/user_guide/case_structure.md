@@ -429,6 +429,15 @@ This section defines defaults when no associated
 or [${batch_type}] section is present. The same key-value
 pairs may be used.
 
+For some keys the job_defaults section can always used : run_prologue,
+run_epilogue, compute_prologue and compute_epilogue. For these keys, the use
+of the job_defaults section allows to define options or commands which are
+used no matter the resource used for the computation.
+The behavior is that if nothing is prescribed in using [${resource_name}:key]
+the entry defined by [job_defaults:key] is used. If an entry exists for
+[${resource_name}:key] then the entry of [job_defaults:key] (if it exists) is
+prepended to the one defined by resource_name.
+
 ### [run]
 <!-- -->
 

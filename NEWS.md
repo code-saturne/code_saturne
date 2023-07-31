@@ -3,6 +3,12 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- run.cfg : User can now always use the job_defaults section to define entries
+  for the run_prologue, run_epilogue, compute_prologue and compute_epilogue
+  sections. By doing so the defined entries are either used if nothing is defined
+  for the computation resource or are prepended to the resource based options.
+  This allows defining case specific and resource independent entries.
+
 - GUI: when adding a postprocessing mesh, it is associated to the default
   writer automatically (and this can be modified as usual).
 

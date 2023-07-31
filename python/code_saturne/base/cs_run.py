@@ -420,6 +420,10 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
                    'compute_prologue', 'compute_epilogue',
                    'debug_args', 'tool_args', 'mpi_tool_args')
 
+    # Keys used for all cases/resources (using the job_default resource name
+    run_conf_kw_d = ('run_prologue', 'run_epilogue',
+                     'compute_prologue', 'compute_epilogue')
+
     for kw in run_conf_kw:
         if not kw in r_c:
             r_c[kw] = None
@@ -491,6 +495,11 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
     if resource_name in run_conf.sections:
         run_conf_r = run_conf.sections[resource_name]
 
+    # Check if a job_defaults section exists
+    run_conf_d = None
+    if 'job_defaults' != resource_name and 'job_defaults' in run_conf.sections:
+        run_conf_d = run_conf.sections['job_defaults']
+
     if run_conf_r:
         for kw in ('n_procs', 'n_threads', 'time_limit'):
             if kw in r_c:
@@ -507,6 +516,17 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
                 continue
             if kw in run_conf_r:
                 r_c[kw] = run_conf_r[kw]
+
+    # If a job_defaults section exists, for all epilogue/prologue options
+    # either prepend to resource specific options or use if none are available
+    if run_conf_d:
+        for kw in run_conf_kw_d:
+            if kw in run_conf_d:
+                if r_c[kw] != None:
+                    r_c[kw] = run_conf_d[kw] + '\n' + r_c[kw]
+                else:
+                    r_c[kw] = run_conf_d[kw]
+
 
     # Handle case where files are used
 
