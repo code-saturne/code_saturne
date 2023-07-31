@@ -122,26 +122,26 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Take into account Dirichlet BCs by keeping the DoFs related to
- *          Dirichlet BCs in the algebraic system (i.e. a weak enforcement)
- *          The corresponding DoFs are algebraically "removed" of the system
+ * \brief Take into account Dirichlet BCs by keeping the DoFs related to
+ *        Dirichlet BCs in the algebraic system (i.e. a weak enforcement). The
+ *        corresponding DoFs are algebraically "removed" of the system
  *
  *          |      |     |     |      |     |     |  |     |          |
- *          | Aii  | Aid |     | Aii  |  0  |     |bi|     |bi-Aid.bd |
+ *          | Aii  | Aid |     | Aii  |  0  |     |bi|     |bi-Aid.xd |
  *          |------------| --> |------------| and |--| --> |----------|
  *          |      |     |     |      |     |     |  |     |          |
  *          | Adi  | Add |     |  0   |  Id |     |bd|     |    xd    |
  *
- *          where xd is the value of the Dirichlet BC
- *          Predefined prototype to match the function pointer
- *          cs_cdo_enforce_bc_t
+ *        where xd collects the values of the Dirichlet BC
  *
- * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
- * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
- * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
- * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
- * \param[in, out]  csys      structure storing the cell-wise system
+ *        Predefined prototype: function pointer cs_cdo_enforce_bc_t
+ *
+ * \param[in]      eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]      cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out] fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out] hodge     pointer to a \ref cs_hodge_t structure
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out] csys      structure storing the cell-wise system
  */
 /*----------------------------------------------------------------------------*/
 

@@ -2300,7 +2300,9 @@ cs_cdovb_scaleq_build_block_implicit(int                           t_id,
 
           /* Reset row and column and then the RHS related to this DoF */
 
-          memset(csys->mat->val + csys->n_dofs*i, 0, csys->n_dofs*sizeof(double));
+          memset(csys->mat->val + csys->n_dofs*i, 0,
+                 csys->n_dofs*sizeof(double));
+
           for (short int j = 0; j < csys->n_dofs; j++)
             csys->mat->val[i + csys->n_dofs*j] = 0;
           csys->rhs[i] = 0.;
