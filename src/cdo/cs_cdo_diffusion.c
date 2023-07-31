@@ -1003,6 +1003,95 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Function close to \ref cs_cdo_diffusion_alge_dirichlet but dedicated
+ *        to systems by blocks and especially for extra-diagonal blocks. The
+ *        treatment of the RHS is a bit different.
+ *
+ *        Take into account Dirichlet BCs by keeping the DoFs related to
+ *        Dirichlet BCs in the algebraic system (i.e. a weak enforcement). The
+ *        corresponding DoFs are algebraically "removed" of the system
+ *
+ *          |      |     |     |      |     |     |  |     |          |
+ *          | Aii  | Aid |     | Aii  |  0  |     |bi|     |bi-Aid.xd |
+ *          |------------| --> |------------| and |--| --> |----------|
+ *          |      |     |     |      |     |     |  |     |          |
+ *          | Adi  | Add |     |  0   |  0  |     |bd|     |    0     |
+ *
+ *        where xd collects the values of the Dirichlet BC
+ *
+ *        Predefined prototype: function pointer cs_cdo_enforce_bc_t
+ *
+ * \param[in]      eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]      cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out] fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out] hodge     pointer to a \ref cs_hodge_t structure
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out] csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_alge_dirichlet_extra_block(const cs_equation_param_t   *eqp,
+                                            const cs_cell_mesh_t        *cm,
+                                            cs_face_mesh_t              *fm,
+                                            cs_hodge_t                  *hodge,
+                                            cs_cell_builder_t           *cb,
+                                            cs_cell_sys_t               *csys)
+{
+  CS_UNUSED(eqp);   /* Prototype common to cs_cdo_enforce_bc_t */
+  CS_UNUSED(fm);    /* Hence the unused parameters */
+  CS_UNUSED(cm);
+  CS_UNUSED(hodge);
+  assert(csys != NULL);  /* Sanity checks */
+
+  /* Enforcement of the Dirichlet BCs */
+
+  if (csys->has_dirichlet == false)
+    return;  /* Nothing to do */
+
+  double  *x_dir = cb->values;
+  double  *ax_dir = cb->values + csys->n_dofs;
+
+  memset(cb->values, 0, 2*csys->n_dofs*sizeof(double));
+
+  /* Build x_dir */
+
+  for (short int i = 0; i < csys->n_dofs; i++)
+    if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET) /* Only non-homogeneous */
+      x_dir[i] = csys->dir_values[i];
+
+  /* Contribution of the Dirichlet conditions */
+
+  cs_sdm_matvec(csys->mat, x_dir, ax_dir);
+
+  /* Second pass: Replace the Dirichlet block by a diagonal block */
+
+  for (short int i = 0; i < csys->n_dofs; i++) {
+
+    if (cs_cdo_bc_is_dirichlet(csys->dof_flag[i])) { /* All Dirichlet:
+                                                        homogeneous or not */
+      /* Reset row i */
+
+      memset(csys->mat->val + csys->n_dofs*i, 0, csys->n_dofs*sizeof(double));
+
+      /* Reset column i */
+
+      for (short int j = 0; j < csys->n_dofs; j++)
+        csys->mat->val[i + csys->n_dofs*j] = 0;
+
+      /* Set the RHS to zero (the diag. block set the Dirichlet value) */
+
+      csys->rhs[i] = 0;
+
+    } /* DoF associated to a Dirichlet BC */
+    else
+      csys->rhs[i] -= ax_dir[i];  /* Update RHS */
+
+  } /* Loop on degrees of freedom */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Take into account Dirichlet BCs by keeping the DoFs related to
  *          Dirichlet BCs in the algebraic system (i.e. a weak enforcement)
  *          The corresponding DoFs are algebraically "removed" of the system

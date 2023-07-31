@@ -155,6 +155,43 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Function close to \ref cs_cdo_diffusion_alge_dirichlet but dedicated
+ *        to systems by blocks and especially for extra-diagonal blocks. The
+ *        treatment of the RHS is a bit different.
+ *
+ *        Take into account Dirichlet BCs by keeping the DoFs related to
+ *        Dirichlet BCs in the algebraic system (i.e. a weak enforcement). The
+ *        corresponding DoFs are algebraically "removed" of the system
+ *
+ *          |      |     |     |      |     |     |  |     |          |
+ *          | Aii  | Aid |     | Aii  |  0  |     |bi|     |bi-Aid.xd |
+ *          |------------| --> |------------| and |--| --> |----------|
+ *          |      |     |     |      |     |     |  |     |          |
+ *          | Adi  | Add |     |  0   |  0  |     |bd|     |    0     |
+ *
+ *        where xd collects the values of the Dirichlet BC
+ *
+ *        Predefined prototype: function pointer cs_cdo_enforce_bc_t
+ *
+ * \param[in]      eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]      cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out] fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out] hodge     pointer to a \ref cs_hodge_t structure
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out] csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_alge_dirichlet_extra_block(const cs_equation_param_t   *eqp,
+                                            const cs_cell_mesh_t        *cm,
+                                            cs_face_mesh_t              *fm,
+                                            cs_hodge_t                  *hodge,
+                                            cs_cell_builder_t           *cb,
+                                            cs_cell_sys_t               *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Take into account Dirichlet BCs by keeping the DoFs related to
  *          Dirichlet BCs in the algebraic system (i.e. a weak enforcement)
  *          The corresponding DoFs are algebraically "removed" of the system

@@ -2289,29 +2289,17 @@ cs_cdovb_scaleq_build_block_implicit(int                           t_id,
 
     /* csys is updated inside (matrix and rhs) */
 
-    if (row_id == col_id)     /* Diagonal block */
-      cs_cdo_diffusion_alge_dirichlet(eqp, cm, fm, diff_hodge, cb, csys);
+    if (row_id == col_id) /* Diagonal block */
+      cs_cdo_diffusion_alge_dirichlet(eqp,
+                                      cm, fm,
+                                      diff_hodge,
+                                      cb, csys);
 
-    else { /* Extra-diagonal block: reset rows with Dirichlet BCs */
-
-      for (short int i = 0; i < csys->n_dofs; i++) {
-
-        if (cs_cdo_bc_is_dirichlet(csys->dof_flag[i])) {
-
-          /* Reset row and column and then the RHS related to this DoF */
-
-          memset(csys->mat->val + csys->n_dofs*i, 0,
-                 csys->n_dofs*sizeof(double));
-
-          for (short int j = 0; j < csys->n_dofs; j++)
-            csys->mat->val[i + csys->n_dofs*j] = 0;
-          csys->rhs[i] = 0.;
-
-        }
-
-      } /* Loop on DoFs */
-
-    } /* Extra-diagonal block */
+    else /* Extra-diagonal block */
+      cs_cdo_diffusion_alge_dirichlet_extra_block(eqp,
+                                                  cm, fm,
+                                                  diff_hodge,
+                                                  cb, csys);
 
   } /* BC treatment */
 
