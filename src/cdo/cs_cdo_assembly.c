@@ -1806,21 +1806,44 @@ cs_cdo_assembly_matrix_sys_seqs(const cs_sdm_t                  *m,
     } /* Loop on rows */
 
   }
-  else {
+  else { /* Extra-diagonal block to assemble in the full system */
+
+    /* No diagonal term (this is an extra-block) */
 
     for (int i = 0; i < row->n_cols; i++) {
 
-      row->i = i;                                     /* cellwise numbering */
+      row->i = i;  /* cellwise numbering */
       row->g_id = rset->g_id[dof_ids[i] + asb->l_row_shift]; /* global num. */
       row->l_id = row->g_id - rset->l_range[0];      /* range set numbering */
       row->val = m->val + i*row->n_cols;
 
-      _set_col_idx_scal_loc(ma, row);
-      _add_scal_values_single(row, mav->matrix);
+      const cs_lnum_t  *r_idx = ma->r_idx + row->l_id;
+      const int  n_l_cols = r_idx[1] - r_idx[0];
+      const cs_lnum_t  *col_ids = ma->c_id + r_idx[0];
+
+      /* Loop on columns to fill col_idx for extra-diag entries */
+
+      for (int j = 0; j < row->n_cols; j++) {
+        row->col_idx[j] = _l_binary_search(0,
+                                           n_l_cols,
+                             /* l_c_id */  row->col_g_id[j] - ma->l_range[0],
+                                           col_ids);
+        assert(row->col_idx[j] > -1);
+      }
+
+      cs_matrix_t  *matrix = mav->matrix;
+      cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
+
+      const cs_matrix_struct_dist_t  *ms = matrix->structure;
+
+      cs_real_t  *xvals = mc->_e_val + ms->e.row_index[row->l_id];
+
+      for (int j = 0; j < row->n_cols; j++)
+        xvals[row->col_idx[j]] += row->val[j];
 
     } /* Loop on rows */
 
-  }
+  } /* Extra-diagonal block to assemble in the full system */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1879,7 +1902,7 @@ cs_cdo_assembly_matrix_sys_seqt(const cs_sdm_t                  *m,
     } /* Loop on rows */
 
   }
-  else {
+  else {  /* No diagonal term (this is an extra-block) */
 
     for (int i = 0; i < row->n_cols; i++) {
 
@@ -1888,17 +1911,47 @@ cs_cdo_assembly_matrix_sys_seqt(const cs_sdm_t                  *m,
       row->l_id = row->g_id - rset->l_range[0];      /* range set numbering */
       row->val = m->val + i*row->n_cols;
 
-      _set_col_idx_scal_loc(ma, row);
+      /* No diagonal term (this is an extra-block) */
 
-#if CS_CDO_OMP_SYNC_MODE > 0 /* OpenMP with critical section */
-      _add_scal_values_critical(row, mav->matrix);
+      const cs_lnum_t  *r_idx = ma->r_idx + row->l_id;
+      const int  n_l_cols = r_idx[1] - r_idx[0];
+      const cs_lnum_t  *col_ids = ma->c_id + r_idx[0];
+
+      /* Loop on columns to fill col_idx for extra-diag entries */
+
+      for (int j = 0; j < row->n_cols; j++) {
+        row->col_idx[j] = _l_binary_search(0,
+                                           n_l_cols,
+                             /* l_c_id */  row->col_g_id[j] - ma->l_range[0],
+                                           col_ids);
+        assert(row->col_idx[j] > -1);
+      }
+
+      cs_matrix_t  *matrix = mav->matrix;
+      cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
+
+      const cs_matrix_struct_dist_t  *ms = matrix->structure;
+
+      cs_real_t  *xvals = mc->_e_val + ms->e.row_index[row->l_id];
+
+      /* OpenMP with critical or atomic section according to the settings */
+
+#if CS_CDO_OMP_SYNC_MODE > 0
+#     pragma omp critical
+      {
+        for (int j = 0; j < row->n_cols; j++)
+          xvals[row->col_idx[j]] += row->val[j];
+      }
 #else
-      _add_scal_values_atomic(row, mav->matrix);
+      for (int j = 0; j < row->n_cols; j++) {
+#       pragma omp atomic
+        xvals[row->col_idx[j]] += row->val[j];
+      }
 #endif
 
     } /* Loop on rows */
 
-  }
+  } /* Extra-diagonal block to assemble in the full system */
 }
 
 #if defined(HAVE_MPI)
@@ -1958,7 +2011,7 @@ cs_cdo_assembly_matrix_sys_mpis(const cs_sdm_t                   *m,
     } /* Loop on rows */
 
   }
-  else {
+  else { /* Extra-diagonal block to assemble in the full system */
 
     const cs_gnum_t  *_rset_gr_id = rset->g_id + asb->l_row_shift;
 
@@ -1969,19 +2022,82 @@ cs_cdo_assembly_matrix_sys_mpis(const cs_sdm_t                   *m,
       row->l_id = row->g_id - rset->l_range[0];   /* range set numbering */
       row->val = m->val + i*row->n_cols;
 
-      if (row->l_id < 0 || row->l_id >= rset->n_elts[0])
-        _assemble_scal_dist_row_single(mav, ma, row);
+      if (row->l_id < 0 || row->l_id >= rset->n_elts[0]) {
 
-      else {
+        /* Case where coefficient is handled by other rank. No need to add
+           values, only preprare the buffer to send */
 
-        _set_col_idx_scal_locdist(ma, row);
-        _add_scal_values_single(row, mav->matrix);
+        const cs_lnum_t  e_r_id = _g_binary_search(ma->coeff_send_n_rows,
+                                                   row->g_id,
+                                                   ma->coeff_send_row_g_id);
+        const cs_lnum_t  r_start = ma->coeff_send_index[e_r_id];
+        const int  n_e_rows = ma->coeff_send_index[e_r_id+1] - r_start;
+        const cs_gnum_t  *coeff_send_g_id = ma->coeff_send_col_g_id + r_start;
+
+        /* Loop on extra-diagonal entries */
+
+        for (int j = 0; j < row->n_cols; j++) {
+
+          const cs_lnum_t e_id = r_start + _g_binary_search(n_e_rows,
+                                                            row->col_g_id[j],
+                                                            coeff_send_g_id);
+
+          /* Now add values to send coefficients */
+
+          mav->coeff_send[e_id] += row->val[j];
+
+        }
 
       }
+      else {
+
+        /* local-id-based function, need to adapt */
+        assert(ma->d_r_idx != NULL);
+
+        const cs_lnum_t  *d_r_idx = ma->d_r_idx + row->l_id;
+        const cs_lnum_t  *r_idx = ma->r_idx + row->l_id;
+        const int  n_d_cols = d_r_idx[1] - d_r_idx[0];
+        const int  n_l_cols = r_idx[1] - r_idx[0] - n_d_cols;
+
+        /* Loop on columns to fill col_idx for extra-diag entries */
+
+        for (int j = 0; j < row->n_cols; j++) {
+
+          const cs_gnum_t g_c_id = row->col_g_id[j];
+
+          if (g_c_id >= ma->l_range[0] && g_c_id < ma->l_range[1]) { /* Local part */
+
+            row->col_idx[j] = _l_binary_search(0,
+                                               n_l_cols,
+                                               g_c_id - ma->l_range[0], /* l_c_id */
+                                               ma->c_id + r_idx[0]);
+            assert(row->col_idx[j] > -1);
+
+          }
+          else /* Distant part: column ids start and end of local row, so add
+                  n_l_cols */
+
+            row->col_idx[j] = n_l_cols + _g_binary_search(n_d_cols,
+                                                          g_c_id,
+                                                          ma->d_g_c_id + d_r_idx[0]);
+
+        } /* Loop on columns of the row */
+
+        cs_matrix_t  *matrix = mav->matrix;
+        cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
+
+        const cs_matrix_struct_dist_t  *ms = matrix->structure;
+
+        cs_real_t  *xvals = mc->_e_val + ms->e.row_index[row->l_id];
+
+        for (int j = 0; j < row->n_cols; j++)
+          xvals[row->col_idx[j]] += row->val[j];
+
+      } /* Not a distant row */
 
     } /* Loop on rows */
 
-  } /* col_shift != row_shift */
+  }  /* Extra-diagonal block to assemble in the full system */
 }
 #endif /* defined(HAVE_MPI) */
 
