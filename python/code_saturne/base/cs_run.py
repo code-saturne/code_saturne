@@ -231,6 +231,11 @@ def arg_parser(argv):
                         metavar="<resource>",
                         help="use resource settings based on given name")
 
+    parser.add_argument("--auto-restart", dest="auto_restart",
+                        action="store_true",
+                        help="automatically resubmit a computation if current " \
+                             + "ends for a lack of sufficient wall time.")
+
     parser.set_defaults(compute_build=False)
     parser.set_defaults(suggest_id=False)
     parser.set_defaults(stage=None)
@@ -243,6 +248,7 @@ def arg_parser(argv):
     parser.set_defaults(nprocs=None)
     parser.set_defaults(nthreads=None)
     parser.set_defaults(resource=None)
+    parser.set_defaults(auto_restart=False)
 
     return parser
 

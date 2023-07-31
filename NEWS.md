@@ -3,6 +3,13 @@ Release 8.0.1 (unreleased)
 
 ### User changes:
 
+- Add a CLI option for submit command to have a job automatically resubmit
+  a follow-up job when exceeding time limit.
+  By providing the "--auto-restart" option to the "submit" command,
+  the runcase script will check at the end of the computation if a
+  "run_status.exceeded_time_limit" file exists, and if so will
+  resubmit a job using the current one as a restart checkpoint.
+
 - Add a user example for a source term along a line.
 
 ### Bug fixes:

@@ -42,13 +42,17 @@ class runcase(object):
                  submit=False,
                  job_header=None,
                  prologue=None,
-                 epilogue=None):
+                 epilogue=None,
+                 casedir=None,
+                 autorestart=False):
         """
         Initialize runcase info object.
         """
 
         self.path = path
         self.package = package
+        self.autorestart = autorestart
+        self.casedir = casedir
 
         if submit:
             self.build_template(job_header=job_header,
@@ -211,6 +215,22 @@ class runcase(object):
             for line in epilogue.split(os.linesep):
                 self.lines.append(line)
             self.lines.append('')
+
+        if self.autorestart and self.casedir:
+            sys.stdout.write('User requested auto restart if exceeding wall time\n')
+            sys.stdout.write('--------------------------------------------------\n\n')
+
+            resu_dir_name = os.path.basename(os.path.dirname(self.path))
+            data_dir_name = os.path.join(self.casedir, 'DATA')
+            self.lines.append("if [ -f run_status.exceeded_time_limit ]; then")
+            self.lines.append('  cd ' + enquote_arg(data_dir_name))
+            restart_cmd = enquote_arg(exec_path) + ' submit'
+            restart_cmd += ' --auto-restart'
+            restart_cmd += ' --parametric-args="-r {}"'.format(resu_dir_name)
+            self.lines.append('  ' + restart_cmd)
+            self.lines.append('  cd ' + enquote_arg(os.path.dirname(self.path)))
+            self.lines.append('  echo "Relaunching using {} as restart folder"'.format(resu_dir_name))
+            self.lines.append("fi")
 
         self.save()
 
