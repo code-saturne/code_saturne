@@ -64,12 +64,14 @@ BEGIN_C_DECLS
 /*!
  * \brief Get a token based on the difference between two strings (beginning)
  *
- * \param[in] str1  Longest string which should contain the token at its beginning
+ * \param[in] str1  Longest string which should contain the token at its
+ *                  beginning
  * \param[in] str2  Shortest string. If NULL treated as 0 length string.
  *
  * \returns token
  */
 /*----------------------------------------------------------------------------*/
+
 static char *
 _get_token(const char *str1,
            const char *str2)
@@ -128,6 +130,8 @@ _parse_line(char          *line,
         tokens[_nt] = _t;
         _nt += 1;
       }
+      else
+        BFT_FREE(_t);
       c = n + 1;
 
     }
@@ -142,6 +146,8 @@ _parse_line(char          *line,
         tokens[_nt] = _get_token(c, n);
         _nt += 1;
       }
+      else
+        BFT_FREE(_t);
       break;
 
     }
