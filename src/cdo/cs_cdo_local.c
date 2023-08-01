@@ -125,8 +125,6 @@ cs_cdo_local_initialize(const cs_cdo_connect_t     *connect)
 
   int  nthr = cs_glob_n_threads;
   int  n_vc = connect->n_max_vbyc;
-  int  max_ent = 3*CS_MAX(n_vc, CS_MAX(connect->n_max_ebyc,
-                                       connect->n_max_fbyc));
 
   cs_cdo_local_n_structures = nthr;
   BFT_MALLOC(cs_cdo_local_cell_meshes, nthr, cs_cell_mesh_t *);

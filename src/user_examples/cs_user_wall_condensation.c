@@ -410,7 +410,7 @@ cs_user_wall_condensation(int  nvar,
     int iw = iv + 1;
 
     const cs_turb_model_t *turb_mdl = cs_glob_turb_model;
-    int                    ik, iep;
+    int                    ik = -1, iep = -1;
     if (turb_mdl->itytur == 2) {
       f   = cs_field_by_name("k");
       ik  = cs_field_get_key_int(f, var_id_key) - 1;
@@ -446,6 +446,7 @@ cs_user_wall_condensation(int  nvar,
       // Source term for turbulence
       // TODO generalize to all turbulence models
       if (turb_mdl->itytur == 2) {
+        assert(ik != -1 && iep != -1);
         wall_cond->itypcd[ik * nfbpcd + ieltcd]  = 0;
         wall_cond->itypcd[iep * nfbpcd + ieltcd] = 0;
         wall_cond->spcond[ik * nfbpcd + ieltcd]  = 0.0;

@@ -1829,7 +1829,6 @@ cs_quant_set_face(cs_lnum_t                    f_id,
   cs_quant_t  q = {.meas = 0.,
                    .unitv[0] = 0., .unitv[1] = 0., .unitv[2] = 0.,
                    .center[0] = 0., .center[1] = 0., .center[2] = 0.};
-  cs_nvec3_t  nv;
 
   if (f_id < cdoq->n_i_faces) { /* Interior face */
 

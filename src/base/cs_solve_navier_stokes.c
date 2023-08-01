@@ -1190,14 +1190,14 @@ cs_solve_navier_stokes(const int   iterns,
          we compute the total velocity norm.
          This is required so that one instance does not stop earlier than
          the others (the numerical options should still be checked) */
-      cs_real_t xnrdis[1], xnr_mu[1] = {vp_param->xnrmu0};
+      cs_real_t xnrdis[1] = {0}, xnr_mu[1] = {vp_param->xnrmu0};
       for (int numcpl = 1; numcpl < nbrcpl+1; numcpl++) {
         cs_sat_coupling_array_exchange(numcpl,
                                        1, /* nbrdis */
                                        1, /* nbrloc */
                                        xnr_mu,
                                        xnrdis);
-         xnr_mu[0] += xnrdis[1];
+         xnr_mu[0] += xnrdis[0];
       }
       vp_param->xnrmu0 = sqrt(xnr_mu[0]);
     }

@@ -2541,7 +2541,7 @@ _read_cell_rank(cs_mesh_t            *mesh,
                                    "unexpected or of incorrect size");
 
   if (n_ranks == 1 || check_file == false)
-    return;
+    return retval;
 
 #if (__STDC_VERSION__ < 199901L)
   sprintf(file_name,

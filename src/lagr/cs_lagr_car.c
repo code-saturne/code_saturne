@@ -354,7 +354,7 @@ cs_lagr_car(int              iprev,
            cs_math_3_normalize(dir, dir);
 
           /* Compute k_tilde in each cell */
-          cs_real_t ktil;
+          cs_real_t ktil = 0;
           if (extra->itytur == 3) {
             cs_real_t *rij = &(extra->cvar_rij->vals[iprev][6*cell_id]);
             /* Note that n.R.n = R : n(x)n */
