@@ -3,7 +3,10 @@ Release 8.0.2 (unreleased)
 
 ### Bug fixes:
 
-- Atmo: fix uninitialized value in soil model.
+- Fix crash in absolute pressure and velocity evaluations with Coriolis
+  forces used in postprocessing output.
+
+- Atmospheric flows: fix uninitialized value in soil model.
 
 - Handle time step updates in a more robust manner for adaptive
   time step (idtvar = 1), so that operations run in the beginning

@@ -460,7 +460,8 @@ _absolute_velocity_f(int               location_id,
   assert(location_id == CS_MESH_LOCATION_CELLS);
 
   const cs_rotation_t *r = cs_glob_rotation;
-  const int *c_r_num = NULL;
+  const int _c_r_num[1] = {0};
+  const int *c_r_num = _c_r_num;
   cs_lnum_t c_r_step = 0;
 
   if (cs_turbomachinery_get_model() != CS_TURBOMACHINERY_NONE) {
