@@ -2770,7 +2770,7 @@ cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *f_values,
 
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
       if (cs_dbg_cw_test(eqp, cm, NULL)) cs_cell_mesh_dump(cm);
 #endif
 

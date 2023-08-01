@@ -614,7 +614,7 @@ _svcb_enforce_values(const cs_equation_param_t     *eqp,
 
     cs_equation_builder_enforce_dofs(eqb, cb, csys);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
     if (cs_dbg_cw_test(eqp, cm, csys))
       cs_cell_sys_dump("\n>> Cell system after the internal enforcement",
                        csys);
@@ -2923,7 +2923,7 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
           const short int  f = cs_cell_mesh_get_f(f_id, cm);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
           if (cs_dbg_cw_test(eqp, cm, NULL)) cs_cell_mesh_dump(cm);
 #endif
           if (!eqb->diff_pty_uniform)
