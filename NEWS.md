@@ -1,4 +1,4 @@
-Release 8.0.1 (unreleased)
+Release 8.0.1 (2023-08-01)
 --------------------------
 
 ### User changes:
