@@ -1858,6 +1858,17 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function incrementing time step
+
+    subroutine cs_time_step_update_dt(dt) &
+      bind(C, name='cs_time_step_update_dt')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), value :: dt
+    end subroutine cs_time_step_update_dt
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function defining statistic based on its name.
 
     function cs_timer_stats_create(parent_name, name, label) result(id) &

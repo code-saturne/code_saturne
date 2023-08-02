@@ -572,6 +572,34 @@ cs_time_step_increment(double  dt)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Update global time step value for a time step in progress.
+ *
+ * This is useful when using an adaptive time step, which is incremented
+ * earlier based on an estimated time step but needs to be updated.
+ *
+ * \param[in]  dt  time step value to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_step_update_dt(double  dt)
+{
+  double dt_prev = _time_step.dt[0];
+
+  _time_step.dt[2] = _time_step.dt[1];
+  _time_step.dt[1] = _time_step.dt[0];
+  _time_step.dt[0] = dt;
+
+  double z = (dt - dt_prev) - _c;
+  double t = _time_step.t_cur + z;
+
+  _update_kahan_compensation(&t, &_time_step.t_cur, &z);
+
+  _time_step.t_cur = t;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Redefine the current time values.
  *
  * \remark Using \ref cs_time_step_increment is preferred, but this function

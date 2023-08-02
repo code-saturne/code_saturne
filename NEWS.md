@@ -1,3 +1,13 @@
+Release 8.0.2 (unreleased)
+--------------------------
+
+### Bug fixes:
+
+- Handle time step updates in a more robust manner for adaptive
+  time step (idtvar = 1), so that operations run in the beginning
+  of a time step (such as physical property updates) see the current
+  (and not previous) time step in this case.
+
 Release 8.0.1 (2023-08-01)
 --------------------------
 

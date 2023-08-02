@@ -219,6 +219,20 @@ cs_time_step_define_prev(int     nt_prev,
 void
 cs_time_step_increment(double  dt);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update global time step value for a time step in progress.
+ *
+ * This is useful when using an adaptive time step, which is incremented
+ * earlier based on an estimated time step but needs to be updated.
+ *
+ * \param[in]  dt  time step value to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_step_update_dt(double  dt);
+
 /*----------------------------------------------------------------------------
  * Redefine the current time values.
  *

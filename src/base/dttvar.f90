@@ -584,7 +584,7 @@ if (idtvar.ge.0) then
                                         dt, dt, icfmin(1), icfmax(1))
 
       if (itrale.gt.0 .and. ntmabs.gt.ntpabs) then
-        call cs_time_step_increment(dtloc)
+        call cs_time_step_update_dt(dtloc)
 
         log_active = .false.
         if (ntcabs - ntpabs.le.10 .or. ntcabs.eq.ntmabs) then
