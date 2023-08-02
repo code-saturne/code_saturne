@@ -870,6 +870,8 @@ if (itrale.gt.0 .and. ntmabs.gt.ntpabs) then
   ! Time step computed in dttvar if idtvar = 1.
   if (idtvar.ne.1) then
     call cs_time_step_increment(dtref)
+  else
+    call cs_time_step_increment(dt(1))
   endif
 endif
 
