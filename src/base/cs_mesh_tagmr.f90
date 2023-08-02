@@ -79,7 +79,11 @@ integer          iter
 
 double precision epsi,delta,r0,r1,epai1
 
+logical log_debug
+
 !===============================================================================
+
+log_debug = .false.
 
 !===============================================================================
 ! 0 - Generate the 1-D mesh of the thermal model coupled
@@ -124,27 +128,31 @@ do ii = 1, nfbpcd
       call csexit(1)
     endif
 
-    ! Comute the final 1-D mesh of the thermal model
+    ! Compute the final 1-D mesh of the thermal model
     zdxp(iz,1)= zdxmin(iz)
     do kk = 2, znmur(iz)-1
       zdxp(iz,kk) = zdxp(iz,kk-1)*r1
     enddo
 
-    write(nfecra,2000) r1
-    r0=0.d0
-    do kk = 1, znmur(iz)-1
-      r0 = r0 + zdxp(iz,kk)
-      write(nfecra,2001) kk,zdxp(iz,kk),r0
-    enddo
+    ! FIXME add verbosity control, or log only total/mean values.
+    if (log_debug .eqv. .true.) then
+      write(nfecra,2000) r1
+      r0=0.d0
+      do kk = 1, znmur(iz)-1
+        r0 = r0 + zdxp(iz,kk)
+        write(nfecra,2001) kk,zdxp(iz,kk),r0
+      enddo
+    endif
   endif
 
 enddo
+
 !===============================================================================
 ! 1 - Initialization of the 1D temperature field for the thermal model
 !     which is coupled with the condensation model
 !===============================================================================
 
-if(isuite.eq.0) then
+if (isuite.eq.0) then
   do ii = 1, nfbpcd
     iz = izzftcd(ii) + 1
     do kk = 1, znmur(iz)
@@ -152,6 +160,7 @@ if(isuite.eq.0) then
     enddo
   enddo
 endif
+
 !--------
 ! Formats
 !--------
