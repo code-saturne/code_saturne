@@ -114,13 +114,48 @@ cs_equation_system_param_create(const char       *name,
 
   /* Linear algebra settings by default */
 
-  sysp->sles_setup_done = false;
+  cs_param_sles_t  *slesp = cs_param_sles_create(-1, sysp->name);
+
+  slesp->cvg_param.n_max_iter = 100;
+  slesp->cvg_param.rtol = 1e-06;
+  slesp->cvg_param.atol = 1e-08;
+  slesp->cvg_param.dtol = 1e3;
+
+#if defined(HAVE_MUMPS)
   sysp->sles_strategy = CS_EQUATION_SYSTEM_SLES_MUMPS;
 
-  sysp->linear_solver_cvg.n_max_iter = 100;
-  sysp->linear_solver_cvg.rtol = 1e-06;
-  sysp->linear_solver_cvg.atol = 1e-08;
-  sysp->linear_solver_cvg.dtol = 1e3;
+  slesp->solver = CS_PARAM_ITSOL_MUMPS;
+  slesp->precond = CS_PARAM_PRECOND_NONE;
+  slesp->solver_class = CS_PARAM_SLES_CLASS_MUMPS;
+#else
+#if defined(HAVE_PETSC)
+#if defined(PETSC_HAVE_MUMPS)
+  sysp->sles_strategy = CS_EQUATION_SYSTEM_SLES_MUMPS;
+
+  slesp->solver = CS_PARAM_ITSOL_MUMPS;
+  slesp->precond = CS_PARAM_PRECOND_NONE;
+  slesp->solver_class = CS_PARAM_SLES_CLASS_PETSC;
+#else
+  bft_error(__FILE__, __LINE__, 0,
+            " %s: System of eq. \"%s\"\n"
+            " Error detected while initializing the linear algebra.\n"
+            " MUMPS is not available with your installation.\n"
+            " This is mandatory with this settings.\n"
+            " Please check your installation.\n",
+            __func__, name);
+#endif
+#else
+  bft_error(__FILE__, __LINE__, 0,
+            " %s: System of eq. \"%s\"\n"
+            " Error detected while initializing the linear algebra.\n"
+            " MUMPS is not available with your installation.\n"
+            " This is mandatory with this settings.\n"
+            " Please check your installation.\n",
+            __func__, name);
+#endif  /* HAVE_PETSC */
+#endif  /* HAVE_MUMPS */
+
+  sysp->sles_param = slesp;
 
   return sysp;
 }
@@ -142,6 +177,8 @@ cs_equation_system_param_free(cs_equation_system_param_t    *sysp)
     return sysp;
 
   BFT_FREE(sysp->name);
+
+  cs_param_sles_free(&(sysp->sles_param));
 
   BFT_FREE(sysp);
 
@@ -184,12 +221,8 @@ cs_equation_system_param_log(const cs_equation_system_param_t    *sysp)
 
   } /* Switch on strategy */
 
-  cs_log_printf(CS_LOG_SETUP, "%s Tolerances of the linear solver:"
-                " rtol: %5.3e; atol: %5.3e; dtol: %5.3e; max_iter: %d\n", desc,
-                sysp->linear_solver_cvg.rtol,
-                sysp->linear_solver_cvg.atol,
-                sysp->linear_solver_cvg.dtol,
-                sysp->linear_solver_cvg.n_max_iter);
+  if (sysp->sles_strategy != CS_EQUATION_SYSTEM_SLES_MUMPS)
+    cs_param_sles_log(sysp->sles_param);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -223,31 +256,31 @@ cs_equation_system_param_set(cs_equation_system_param_t    *sysp,
   switch(key) {
 
   case CS_SYSKEY_LINEAR_SOLVER_ATOL:
-    sysp->linear_solver_cvg.atol = atof(val);
-    if (sysp->linear_solver_cvg.atol < 0)
+    sysp->sles_param->cvg_param.atol = atof(val);
+    if (sysp->sles_param->cvg_param.atol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the absolute tolerance"
                 " of the linear solver\n", __func__);
     break;
 
   case CS_SYSKEY_LINEAR_SOLVER_DTOL:
-    sysp->linear_solver_cvg.dtol = atof(val);
-    if (sysp->linear_solver_cvg.dtol < 0)
+    sysp->sles_param->cvg_param.dtol = atof(val);
+    if (sysp->sles_param->cvg_param.dtol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the divergence tolerance"
                 " of the linear solver\n", __func__);
     break;
 
   case CS_SYSKEY_LINEAR_SOLVER_RTOL:
-    sysp->linear_solver_cvg.rtol = atof(val);
-    if (sysp->linear_solver_cvg.rtol < 0)
+    sysp->sles_param->cvg_param.rtol = atof(val);
+    if (sysp->sles_param->cvg_param.rtol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the divergence tolerance"
                 " of the linear solver\n", __func__);
     break;
 
   case CS_SYSKEY_LINEAR_SOLVER_MAX_ITER:
-    sysp->linear_solver_cvg.n_max_iter = atoi(val);
+    sysp->sles_param->cvg_param.n_max_iter = atoi(val);
     break;
 
   case CS_SYSKEY_SLES_STRATEGY:
@@ -265,6 +298,12 @@ cs_equation_system_param_set(cs_equation_system_param_t    *sysp,
                 " Please check your installation settings.\n",
                 __func__, "CS_SYSKEY_SLES_STRATEGY");
 #endif  /* PETSC_HAVE_MUMPS */
+#else   /* Neither MUMPS nor PETSc */
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Error detected while setting \"%s\" key\n"
+                " MUMPS is not available with your installation.\n"
+                " Please check your installation settings.\n",
+                __func__, "CS_SYSKEY_SLES_STRATEGY");
 #endif  /* HAVE_PETSC */
 #endif  /* HAVE_MUMPS */
     }

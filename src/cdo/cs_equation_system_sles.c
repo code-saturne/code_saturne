@@ -101,7 +101,8 @@ _mumps_hook(void     *context,
             KSP       ksp)
 {
   cs_equation_system_param_t  *sysp = context;
-  cs_iter_algo_param_t  sp = sysp->linear_solver;
+  cs_param_sles_t  *sys_slesp = sysp->sles_param;
+  cs_param_sles_cvg_t  cvgp = sys_slesp->cvg_param;
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -114,16 +115,16 @@ _mumps_hook(void     *context,
   PCFactorSetMatSolverType(pc, MATSOLVERMUMPS);
 
   KSPSetTolerances(ksp,
-                   sp.rtol,             /* relative convergence tolerance */
-                   sp.atol,             /* absolute convergence tolerance */
-                   sp.dtol,             /* divergence tolerance */
-                   sp.n_max_algo_iter); /* max number of iterations */
+                   cvgp.rtol,             /* relative convergence tolerance */
+                   cvgp.atol,             /* absolute convergence tolerance */
+                   cvgp.dtol,             /* divergence tolerance */
+                   cvgp.n_max_algo_iter); /* max number of iterations */
 
   /* Dump the setup related to PETSc in a specific file */
 
-  if (!sysp->sles_setup_done) {
+  if (!sys_slesp->setup_done) {
     cs_sles_petsc_log_setup(ksp);
-    sysp->sles_setup_done = true;
+    sys_slesp->setup_done = true;
   }
 
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
@@ -156,23 +157,36 @@ cs_equation_system_sles_init(int                            n_eqs,
   CS_UNUSED(n_eqs);
   assert(sysp != NULL);
 
+  const cs_param_sles_t  *sys_slesp = sysp->sles_param;
+
   switch (sysp->sles_strategy) {
 
   case CS_EQUATION_SYSTEM_SLES_MUMPS:
     {
 #if defined(HAVE_MUMPS)
-      cs_equation_core_t  *block00 = blocks[0];
-      cs_equation_param_t  *eqp00 = block00->param;
-      cs_param_sles_t  *slesp00 = eqp00->sles_param;
+      /* Propagate the settings to all blocks (only to get a consistent log) */
 
-      if (!cs_param_sles_is_mumps_set(slesp00->solver))
-        slesp00->solver = CS_PARAM_ITSOL_MUMPS;
+      for (int i = 0; i < n_eqs; i++) {
+        for (int j = 0; j < n_eqs; j++) {
 
-      cs_sles_mumps_define(-1,
-                           sysp->name,
-                           slesp00,
-                           cs_user_sles_mumps_hook,
-                           NULL);
+          cs_equation_core_t  *block = blocks[i*n_eqs+j];
+          cs_equation_param_t  *eqp = block->param;
+          cs_param_sles_t  *slesp = eqp->sles_param;
+
+          slesp->solver_class = sys_slesp->solver_class;
+          slesp->solver = sys_slesp->solver;
+          slesp->precond = sys_slesp->precond;
+          slesp->amg_type = sys_slesp->amg_type;
+          slesp->pcd_block_type = sys_slesp->pcd_block_type;
+
+          if (i == 0 && j == 0)
+            cs_sles_mumps_define(-1,
+                                 sysp->name,
+                                 slesp,
+                                 cs_user_sles_mumps_hook,
+                                 NULL);
+        }
+      }
 #else
 #if defined(HAVE_PETSC)
 #if defined(PETSC_HAVE_MUMPS)
@@ -204,7 +218,7 @@ cs_equation_system_sles_init(int                            n_eqs,
 
   } /* switch on the SLES strategy */
 
-  sysp->sles_setup_done = true;
+  sysp->sles_param->setup_done = true;
 }
 
 /*----------------------------------------------------------------------------*/

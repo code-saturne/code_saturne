@@ -356,8 +356,6 @@ cs_equation_system_log_setup(void)
     cs_log_printf(CS_LOG_SETUP, "  * %s | Number of equations: %d\n",
                   sysname, eqsys->n_equations);
 
-    cs_equation_system_param_log(eqsys->param);
-
     cs_log_printf(CS_LOG_SETUP, "  * %s | Equations (diagonal blocks):\n",
                   sysname);
 
@@ -365,10 +363,15 @@ cs_equation_system_log_setup(void)
 
       cs_equation_t  *eq = eqsys->equations[i];
       if (eq != NULL)
-        cs_log_printf(CS_LOG_SETUP, "\t%s (block_row_id=%d)\n",
-                      cs_equation_get_name(eq), i);
+        cs_log_printf(CS_LOG_SETUP, "\tBlock_row_id=%d --> Eq. \"%s\"\n",
+                      i, cs_equation_get_name(eq));
 
     }
+
+    /* Main parameters (including linear algebra) */
+
+    cs_log_printf(CS_LOG_SETUP, "\n");
+    cs_equation_system_param_log(eqsys->param);
 
     /* Log the setting of the extra-diagonal blocks */
 

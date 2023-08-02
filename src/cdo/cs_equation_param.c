@@ -2041,6 +2041,7 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
   bool  reaction = (eqp->flag & CS_EQUATION_REACTION) ? true : false;
   bool  source_term = (eqp->n_source_terms > 0) ? true : false;
   bool  force_values = (eqp->flag & CS_EQUATION_FORCE_VALUES) ? true : false;
+  bool  inside_system = (eqp->flag & CS_EQUATION_INSIDE_SYSTEM) ? true : false;
 
   cs_log_printf(CS_LOG_SETUP,
                 "  * %s | Terms: unsteady:%s, convection:%s, diffusion:%s\n",
@@ -2054,6 +2055,11 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
                 " force internal values: %s\n",
                 eqname,cs_base_strtf(reaction), cs_base_strtf(source_term),
                 cs_base_strtf(force_values));
+
+  if (inside_system)
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * %s | Attached to a coupled system of equations\n",
+                  eqname);
 
   if (eqp->space_scheme < CS_SPACE_N_SCHEMES)
     cs_log_printf(CS_LOG_SETUP, "  * %s | Space scheme:       %s\n",

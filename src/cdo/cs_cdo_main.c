@@ -853,8 +853,8 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
    *  the scheme context and system helper structures.
    */
 
+  cs_equation_system_set_sles(); /* Must be done before cs_equation_set_sles */
   cs_equation_set_sles();
-  cs_equation_system_set_sles();
 
   if (cs_navsto_system_is_activated())
     cs_navsto_system_set_sles();

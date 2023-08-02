@@ -53,7 +53,7 @@ BEGIN_C_DECLS
  *
  * \var CS_EQUATION_SYSTEM_SLES_MUMPS
  *      Associated keyword: "mumps"
- *      Direct solver to solve the full system
+ *      Direct solver to solve the full (coupled) system
  *
  */
 
@@ -102,21 +102,15 @@ typedef struct {
    * @name Linear algebra (SLES)
    * @{
    *
-   * \var sles_setup_done
-   *      Indicator to know if the setup stage has be done
-   *
    * \var sles_strategy
    *      Type of strategy used to solve the resulting system
    *
-   * \var linear_solver
+   * \var sles_param
    *      Set of parameters to control the (main) linear solver
    */
 
-  bool                                   sles_setup_done;
-
   cs_equation_system_sles_strategy_t     sles_strategy;
-
-  cs_param_sles_cvg_t                    linear_solver_cvg;
+  cs_param_sles_t                       *sles_param;
 
   /*!
    * @}
