@@ -38,7 +38,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(__FreeBSD__)
+#include <dirent.h>
+#else
 #include <sys/dir.h>
+#endif
 #include <sys/stat.h>
 
 /*----------------------------------------------------------------------------
