@@ -1072,8 +1072,8 @@ cs_wall_condensation_create(cs_lnum_t  nfbpcd,
 void
 cs_wall_condensation_volume_exchange_surf_at_cells(cs_real_t  *surf)
 {
-  const cs_wall_cond_0d_thermal_t *wall_cond_0d_thermal =
-    cs_glob_wall_cond_0d_thermal;
+  const cs_wall_cond_0d_thermal_t *wall_cond_0d_thermal
+    = cs_glob_wall_cond_0d_thermal;
 
   const cs_real_t *vol_surf = wall_cond_0d_thermal->volume_surf;
   const cs_real_t *vol_measure = wall_cond_0d_thermal->volume_measure;
@@ -1258,34 +1258,44 @@ cs_wall_condensation_log(void)
       h_conv_max = cs_math_fmax(h_conv_max, _wall_cond.convective_htc[ii]);
       h_cond_min = cs_math_fmin(h_cond_min, _wall_cond.condensation_htc[ii]);
       h_cond_max = cs_math_fmax(h_cond_max, _wall_cond.condensation_htc[ii]);
-      flux_min = cs_math_fmin(flux_min, _wall_cond.thermal_condensation_flux[ii]);
-      flux_max = cs_math_fmax(flux_max, _wall_cond.thermal_condensation_flux[ii]);
+      flux_min = cs_math_fmin(flux_min,
+                              _wall_cond.thermal_condensation_flux[ii]);
+      flux_max = cs_math_fmax(flux_max,
+                              _wall_cond.thermal_condensation_flux[ii]);
     }
 
-    if (cs_glob_rank_id >= 0) {
-      cs_parall_min(1, CS_DOUBLE, &h_conv_min);
-      cs_parall_max(1, CS_DOUBLE, &h_conv_max);
-      cs_parall_min(1, CS_DOUBLE, &h_cond_min);
-      cs_parall_max(1, CS_DOUBLE, &h_cond_max);
-      cs_parall_min(1, CS_DOUBLE, &flux_min);
-      cs_parall_max(1, CS_DOUBLE, &flux_max);
-      cs_parall_sum(1, CS_DOUBLE, &gamma_cond);
+    if (cs_glob_n_ranks > 1) {
+
+      cs_real_t r_buffer[6] = {
+        -h_conv_min, h_conv_max,
+        -h_cond_min, h_cond_max,
+        -flux_min, flux_max
+      };
+
+      cs_parall_max(6, CS_REAL_TYPE, r_buffer);
+
+      h_conv_min = - r_buffer[0];
+      h_conv_max =   r_buffer[1];
+      h_cond_min = - r_buffer[2];
+      h_cond_max =   r_buffer[3];
+      flux_min   = - r_buffer[4];
+      flux_max   =   r_buffer[5];
+
+      cs_parall_sum(1, CS_REAL_TYPE, &gamma_cond);
+
     }
 
-    bft_printf(
-        " Minmax values of convective HTC [W/m2/K]   : %15.12e    %15.12e\n",
-        h_conv_min,
-        h_conv_max);
-    bft_printf(
-        " Minmax values of condensation HTC [W/m2/K] : %15.12e    %15.12e\n",
-        h_cond_min,
-        h_cond_max);
-    bft_printf(
-        " Minmax values of thermal flux [W/m2]       : %15.12e    %15.12e\n",
-        flux_min,
-        flux_max);
+    bft_printf
+      (" Minmax values of convective HTC [W/m2/K]   : %15.12e    %15.12e\n",
+       h_conv_min, h_conv_max);
+    bft_printf
+      (" Minmax values of condensation HTC [W/m2/K] : %15.12e    %15.12e\n",
+       h_cond_min, h_cond_max);
+    bft_printf
+      (" Minmax values of thermal flux [W/m2]       : %15.12e    %15.12e\n",
+       flux_min, flux_max);
     bft_printf(" Total mass sink term [kg/s/m2]             : %15.12e\n",
-        gamma_cond);
+               gamma_cond);
 
   }
 
@@ -1301,10 +1311,17 @@ cs_wall_condensation_log(void)
       flux_max = cs_math_fmax(flux_max, _wall_cond.flxmst[ii]);
     }
 
-    if (cs_glob_rank_id >= 0) {
-      cs_parall_min(1, CS_DOUBLE, &flux_min);
-      cs_parall_max(1, CS_DOUBLE, &flux_max);
-      cs_parall_sum(1, CS_DOUBLE, &gamma_cond);
+    if (cs_glob_n_ranks > 1) {
+
+      cs_real_t r_buffer[3] = {-flux_min, flux_max};
+
+      cs_parall_max(2, CS_REAL_TYPE, r_buffer);
+
+      flux_min = - r_buffer[0];
+      flux_max =   r_buffer[1];
+
+      cs_parall_sum(1, CS_REAL_TYPE, &gamma_cond);
+
     }
 
     bft_printf(" Minmax values of thermal flux [W/m2] on volume structure:"
