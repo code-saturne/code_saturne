@@ -454,7 +454,6 @@ _smoothe(const cs_mesh_t              *m,
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
 
   cs_real_t *restrict dist   = mq->i_dist;
-  cs_real_t *restrict pond   = mq->weight;
   cs_real_t *restrict volume = mq->cell_vol;
   cs_real_t *restrict surfn  = mq->i_face_surf;
 
@@ -486,6 +485,8 @@ _smoothe(const cs_mesh_t              *m,
     smbdp[c_id] = pvar[c_id] * volume[c_id];
   }
 
+  cs_halo_sync_var(m->halo, CS_HALO_STANDARD, smbdp);
+
   /* PREPARE SYSTEM TO SOLVE */
   /* Compute the gradient of "diffused void fraction" */
   cs_real_3_t *grad;
@@ -497,6 +498,17 @@ _smoothe(const cs_mesh_t              *m,
   cs_gradient_type_by_imrgra(eqp_volf->imrgra,
                              &gradient_type,
                              &halo_type);
+  cs_real_t *gweight = NULL;
+  int w_stride = 1;
+  if (eqp_volf->iwgrec == 1 && eqp_volf->idiff > 0) {
+    int key_id = cs_field_key_id("gradient_weighting_id");
+    int diff_id = cs_field_get_key_int(CS_F_(void_f), key_id);
+    if (diff_id > -1) {
+      cs_field_t *weight_f = cs_field_by_id(diff_id);
+      gweight = weight_f->val;
+      w_stride = weight_f->dim;
+    }
+  }
 
   cs_gradient_scalar("pvar_grad",
                      gradient_type,
@@ -504,7 +516,7 @@ _smoothe(const cs_mesh_t              *m,
                      1,     /* inc */
                      eqp_volf->nswrgr,
                      0,
-                     1,     /* w_stride */
+                     w_stride,
                      eqp_volf->verbosity,
                      eqp_volf->imligr,
                      eqp_volf->epsrgr,
@@ -513,7 +525,7 @@ _smoothe(const cs_mesh_t              *m,
                      coefa,
                      coefb,
                      pvar,
-                     pond,
+                     gweight,
                      NULL, /* internal coupling */
                      grad);
 
@@ -599,6 +611,9 @@ _smoothe(const cs_mesh_t              *m,
     dam[ii] += volume[ii] * B_s * is_wall;
   }
 
+  cs_halo_sync_var(m->halo, CS_HALO_STANDARD, smbdp);
+  cs_halo_sync_var(m->halo, CS_HALO_STANDARD, dam);
+
   cs_sles_solve_native(-1,
                        "ITM_diffusion_equation",
                        true,                   /* symmetric */
@@ -617,6 +632,8 @@ _smoothe(const cs_mesh_t              *m,
   /* Increment the distance to the wall */
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     pvar[c_id] = rtpdp[c_id];
+
+  cs_halo_sync_var(m->halo, CS_HALO_STANDARD, pvar);
 
   BFT_FREE(viscf);
   BFT_FREE(xam);
@@ -946,7 +963,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
 
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
 
-  cs_real_t *pond = mq->weight;
+  const cs_real_t *restrict pond = mq->weight;
 
   cs_real_3_t *restrict surfac = (cs_real_3_t *restrict )mq->i_face_normal;
   cs_real_3_t *restrict dofij = (cs_real_3_t *restrict)mq->dofij;
@@ -954,7 +971,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
   const cs_equation_param_t *eqp_volf
     = cs_field_get_equation_param_const(CS_F_(void_f));
 
-  cs_real_t *curv, *coefa, *coefb, *pvar;
+  cs_real_t *curv, *coefa, *coefb, *pvar, *pvar_tp;
   cs_real_3_t *coefa_vec;
   cs_real_33_t *coefb_vec;
 
@@ -985,10 +1002,17 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
     pvar[c_id] = cs_math_fmin(cs_math_fmax(pvar[c_id], 0.), 1.);
   }
 
+  cs_halo_sync_var(m->halo, CS_HALO_STANDARD, pvar);
+
   /* Void fraction diffusion solving */
   int ncycles = 5;
-  for (int i = 0; i < ncycles; i++)
+  for (int i = 0; i < ncycles; i++) {
     _smoothe(m, mq, coefa, coefb, pvar);
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      pvar[c_id] = (pvar[c_id] <= 0.001) ? 0. : pvar[c_id];
+      pvar[c_id] = (pvar[c_id] >= 0.999) ? 1. : pvar[c_id];
+    }
+  }
 
   /* Compute the gradient of "diffused void fraction" */
   cs_real_3_t *surfxyz_unnormed;
@@ -1001,13 +1025,25 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
                              &gradient_type,
                              &halo_type);
 
+  cs_real_t *gweight = NULL;
+  int w_stride = 1;
+  if (eqp_volf->iwgrec == 1 && eqp_volf->idiff > 0) {
+    int key_id = cs_field_key_id("gradient_weighting_id");
+    int diff_id = cs_field_get_key_int(CS_F_(void_f), key_id);
+    if (diff_id > -1) {
+      cs_field_t *weight_f = cs_field_by_id(diff_id);
+      gweight = weight_f->val;
+      w_stride = weight_f->dim;
+    }
+  }
+
   cs_gradient_scalar("diff_void_grad",
                      gradient_type,
                      halo_type,
                      1,     /* inc */
                      eqp_volf->nswrgr,
                      0,
-                     1,     /* w_stride */
+                     w_stride,
                      eqp_volf->verbosity,
                      eqp_volf->imligr,
                      eqp_volf->epsrgr,
@@ -1016,21 +1052,17 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
                      coefa,
                      coefb,
                      pvar,
-                     pond,
+                     gweight,
                      NULL, /* internal coupling */
                      surfxyz_unnormed);
-
 
   /* Compute the norm of grad(alpha_diffu) */
   cs_real_3_t *surfxyz_norm;
   BFT_MALLOC(surfxyz_norm, n_cells_ext, cs_real_3_t);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    double snorm = cs_math_3_norm(surfxyz_unnormed[c_id]);
-    if (snorm < 1.e-10)
-      snorm = 1.;
-
-    double unsnorm = 1. / snorm;
+    cs_real_t snorm = cs_math_3_norm(surfxyz_unnormed[c_id])+1.e-8;
+    cs_real_t unsnorm = 1. / snorm;
 
     for (int i = 0; i < 3; i++)
       surfxyz_norm[c_id][i] = surfxyz_unnormed[c_id][i] * unsnorm;
@@ -1052,7 +1084,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
                      (const cs_real_3_t *)coefa_vec,
                      (const cs_real_33_t *)coefb_vec,
                      surfxyz_norm,
-                     pond,
+                     gweight,
                      NULL,
                      gradnxyz);
 

@@ -2156,7 +2156,7 @@ cs_parameters_check(void)
                                   0.);
 
   if (cs_glob_vof_parameters->vof_model > 0) {
-    cs_parameters_is_equal_double(CS_ABORT_DELAYED,
+    cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                   _("while reading reference surface "
                                     "tension value"),
                                   "cs_glob_vof_parameters->sigma_s",
