@@ -1105,6 +1105,10 @@ cs_cdo_main(cs_domain_t   *domain)
 
     _define_current_time_step(domain->time_step, &(domain->time_options));
 
+    /* Read a control file if present */
+
+    cs_control_check_file();
+
     /* Check if this is the last iteration */
 
     domain->is_last_iter = _is_last_iter(domain->time_step);
@@ -1121,6 +1125,9 @@ cs_cdo_main(cs_domain_t   *domain)
 
     cs_domain_increment_time_step(domain);
 
+    if (domain->is_last_iter)
+      domain->time_step->nt_max = domain->time_step->nt_cur;
+
     /* Extra operations and post-processing of the computed solutions */
 
     cs_post_time_step_begin(domain->time_step);
@@ -1128,10 +1135,6 @@ cs_cdo_main(cs_domain_t   *domain)
     cs_domain_post(domain);
 
     cs_post_time_step_end();
-
-    /* Read a control file if present */
-
-    cs_control_check_file();
 
     /* Add a checkpoint if needed */
 
