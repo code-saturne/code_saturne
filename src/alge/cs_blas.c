@@ -159,8 +159,6 @@ typedef double
  * Private function definitions
  *============================================================================*/
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -1262,6 +1260,8 @@ static cs_dot_xx_yy_xy_xz_yz_t  *_cs_glob_dot_xx_yy_xy_xz_yz
 
 static cs_gres_t      *_cs_glob_gres      = _cs_gres_superblock;
 static cs_dot_t *_cs_glob_gmean = _cs_gmean_superblock;
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

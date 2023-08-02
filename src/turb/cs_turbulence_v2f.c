@@ -819,7 +819,7 @@ _solve_eq_phi(const int           istprv,
 
   /* Mass accumulation term \f$ -\dfrad{dRO}{dt}VOLUME \f$
    * and unstable over time term
-   ------------------------------------------------------- */
+   * ----------------------------------------------------- */
 
   /* Adding the matrix diagonal */
 
@@ -837,7 +837,7 @@ _solve_eq_phi(const int           istprv,
    *            +\dfrac{2}{k} \dfrac{\mu_t}{\sigma_k} \grad{\phi} \cdot \grad{k} \f]
    *    with \f$ f_w=-\dfrac{\epsilon}{2} \cdot \dfrac{\phi}{k} \f$ and
    *         \f$ f_h = \dfrac{1}{T} \cdot
-   *                            (C1-1+C2 \dfrac{P_k}{\epsilon \rho} (2/3-\phi)
+   *                            (C1-1+C2 \dfrac{P_k}{\epsilon \rho} (2/3-\phi) \f$
    */
 
   /* Explicit term, store temporarily in w2 */

@@ -185,18 +185,18 @@ module cs_nz_condensation
   !> type of condensation source terms for each variable
   !> - 0 for a variable at ambient value,
   !> - 1 for a variable at imposed value.
-  !> See the user subroutine \ref  cs_user_metal_structures_source_terms.
+  !> See the user function \ref  cs_user_wall_condensation.
   integer, dimension(:,:), pointer, save :: itypst
 
   !> value of the condensation source terms for pressure
   !> associated to the metal structures modelling.
   !> For the other variables, eventual imposed specific value.
-  !> See the user subroutine \ref cs_user_metal_structures_source_terms.
+  !> See the user function \ref cs_user_wall_condensation.
   double precision, dimension(:, :), pointer, save :: svcond
 
   !> value of the thermal flux for the condensation model
   !> associated to the metal structures modelling.
-  !> See the user subroutine \ref cs_user_metal_structures_source_terms.
+  !> See the user function \ref cs_user_wall_condensation.
   double precision, dimension(:), pointer, save :: flxmst
 
   !> choice the way to compute the wall temperature at the solid/fluid interface

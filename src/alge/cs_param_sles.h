@@ -140,9 +140,12 @@ typedef struct {
 
   /*!
    * @name Main parameter settings
-   * Set of parameters to drive the resolution of a saddle-point system
-   * @{
    *
+   * Set of parameters to drive the resolution of a saddle-point system
+   */
+  /*! @{ */
+
+  /*!
    * \var solver
    *  Type of solver to solve the saddle-point system
    *  If solver is set to CS_PARAM_SADDLE_N_SOLVERS, then there is no need to
@@ -167,11 +170,18 @@ typedef struct {
 
   cs_param_sles_cvg_t         cvg_param;
 
+  /*! @} */
+
   /*!
-   * @}
    * @name Schur complement approximation
+   *
    * Set of parameters to drive the resolution of the pressure-related
    * block. This is often a Schur complement approximation to B.A^-1.Bt
+   */
+  /*! @{ */
+
+  /*!
+   * \var schur_approximation
    *
    * \var schur_approximation
    * Choice of the way of preconditioning the schur approximation

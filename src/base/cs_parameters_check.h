@@ -45,13 +45,16 @@ BEGIN_C_DECLS
  * type definitions
  *============================================================================*/
 
-/* Parameter check behavior when an error is detected */
+/*----------------------------------------------------------------------------*/
+
+/*! Parameter check behavior when an error is detected */
 
 typedef enum {
 
-  CS_WARNING,
-  CS_ABORT_DELAYED,
-  CS_ABORT_IMMEDIATE
+  CS_WARNING,                  /*!< Warn only */
+  CS_ABORT_DELAYED,            /*!< Abort when \ref cs_parameters_error_barrier
+                                 is called. */
+  CS_ABORT_IMMEDIATE           /*!< Abort immediately */
 
 } cs_parameter_error_behavior_t;
 

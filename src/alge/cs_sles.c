@@ -102,7 +102,6 @@ BEGIN_C_DECLS
   solvers, and handling consistency of logging.
 
   \enum cs_sles_convergence_state_t
-
   \brief Convergence status indicator.
 
   \var CS_SLES_DIVERGED

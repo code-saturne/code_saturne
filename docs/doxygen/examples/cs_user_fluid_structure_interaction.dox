@@ -82,7 +82,7 @@
   Various global and individual parameters associated to internal structures can
   be controlled with functions from \ref cs_user_fluid_structure_interaction.c.
 
-  \subsection cs_user_fluid_structure_interaction_h_usstr1_example Initial positions and parameters
+  \subsection cs_user_fluid_structure_interaction_h_usstr1_ex_1 Initial positions and parameters
 
   Initial positions and other parameters associated with internal structure coupling
   may be defined using the \ref cs_user_fsi_structure_define function.
@@ -160,7 +160,7 @@
   a Newmark method, whose parameters can also be modified by calling the
   \ref cs_mobile_structures_set_newmark_coefficients function.
 
-  \subsection cs_user_fluid_structure_interaction_h_usstr1_example Structural parameters
+  \subsection cs_user_fluid_structure_interaction_h_usstr1_ex_2 Structural parameters
 
   Some internal structure parameters, although usually fixed, may be time-varying
   in complex models, so they may be defined and changed using the

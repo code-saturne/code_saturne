@@ -4386,8 +4386,6 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
  * structure, it must be destroyed before they are freed
  * (usually along with the code's main face -> cell structure).
  *
- * \param[in]  have_diag        indicates if the structure includes the
- *                              diagonal (should be the same for all rows)
  * \param[in]  direct_assembly  true if each value corresponds to
                                 a unique face
  * \param[in]  n_rows           local number of rows
@@ -5166,7 +5164,7 @@ cs_matrix_copy_coefficients(cs_matrix_t        *matrix,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set matrix coefficients in an MSR format, transfering the
+ * \brief Set matrix coefficients in an MSR format, transferring the
  * property of those arrays to the matrix.
  *
  * If the matrix is also in MSR format, this avoids an extra copy.

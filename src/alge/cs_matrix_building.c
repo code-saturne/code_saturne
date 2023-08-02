@@ -1134,6 +1134,9 @@ cs_sym_matrix_tensor(const cs_mesh_t          *m,
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
+ * \param[in]     eb_size       extra-diagonal block size
+ *                               - 1 when blocks are of the form aij.I
+ *                               - 3 for full blocks
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centered

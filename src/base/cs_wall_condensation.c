@@ -1310,7 +1310,7 @@ cs_wall_condensation_log(void)
     bft_printf(" Minmax values of thermal flux [W/m2] on volume structure:"
                " %15.12e    %15.12e\n", flux_min, flux_max);
     bft_printf(" Total mass sink term [kg/s/m2] on volume structure: %15.12e\n",
-        gamma_cond);
+               gamma_cond);
   }
 
 }

@@ -32,7 +32,7 @@
  *============================================================================*/
 
 /*!
-  \file field names.h
+  \file field_names.h
         General field names
 */
 

@@ -75,8 +75,8 @@ typedef struct _cs_matrix_assembler_values_t  cs_matrix_assembler_values_t;
  *           structure.
  *
  * \param[in, out]  matrix   untyped pointer to matrix description structure
- * \param[in]       db size  diagonal block sizes
- * \param[in]       eb size  extra-diagonal block sizes
+ * \param[in]       db_size  diagonal block sizes
+ * \param[in]       eb_size  extra-diagonal block sizes
  */
 /*----------------------------------------------------------------------------*/
 
@@ -118,7 +118,7 @@ typedef void
                                     cs_lnum_t         stride,
                                     const cs_lnum_t   row_id[],
                                     const cs_lnum_t   col_idx[],
-                                    const cs_real_t   vals[]);
+                                    const cs_real_t   val[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -150,7 +150,7 @@ typedef void
                                       cs_lnum_t        stride,
                                       const cs_gnum_t  row_g_id[],
                                       const cs_gnum_t  col_g_id[],
-                                      const cs_real_t  vals[]);
+                                      const cs_real_t  val[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -536,8 +536,8 @@ cs_matrix_assembler_log_rank_counts(const cs_matrix_assembler_t  *ma,
  *
  * \param[in]       ma        associated matrix assembly structure
  * \param[in]       sep_diag  true if diagonal terms are stored separately
- * \param[in]       db_size   optional diagonal block sizes
- * \param[in]       eb_size   optional extra-diagonal block sizes
+ * \param[in]       db_size   diagonal block sizes
+ * \param[in]       eb_size   extra-diagonal block sizes
  * \param[in, out]  matrix    untyped pointer to matrix description structure
  * \param[in]       init      pointer to matrix coefficients
  *                            initialization function

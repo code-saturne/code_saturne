@@ -139,8 +139,6 @@ typedef void
 
 static double  cs_cip_stab_coef = 1e-2;
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
 /*============================================================================
  * Private function prototypes
  *============================================================================*/

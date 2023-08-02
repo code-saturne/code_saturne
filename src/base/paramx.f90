@@ -233,7 +233,7 @@ module paramx
   !> which is considered).
   integer   ivimpo
 
-  !> \anchor ifresf
+  !> \anchor ibalfs
   !> Boundary condition type for mesh velocity in ALE for modelling
   !> free surface (\f$ \vect{u} \cdot \vect{S} = \vect{w} \cdot \vect{S} \f$).
   integer   ibalfs

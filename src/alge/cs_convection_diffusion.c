@@ -3128,8 +3128,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * <a name="cs_face_convection_scalar"></a>
- *
  * \brief Update face flux with convection contribution of a standard transport
  * equation of a scalar field \f$ \varia \f$.
  *

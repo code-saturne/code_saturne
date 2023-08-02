@@ -414,12 +414,12 @@ cs_thermal_table_finalize(void)
 #endif
 #if defined(HAVE_COOLPROP) && defined(HAVE_PLUGINS)
     if (cs_glob_thermal_table->type == CS_PHYS_PROP_TABLE_COOLPROP) {
-      cs_finalize_t *cs_coolprop_finalize
+      cs_finalize_t *coolprop_finalize
         = (cs_finalize_t *)  (intptr_t)
              cs_base_get_dl_function_pointer(_cs_coolprop_dl_lib,
                                              "cs_coolprop_finalize",
                                              true);
-      cs_coolprop_finalize();
+      coolprop_finalize();
       cs_base_dlclose("cs_coolprop", _cs_coolprop_dl_lib);
       _cs_phys_prop_coolprop = NULL;
     }

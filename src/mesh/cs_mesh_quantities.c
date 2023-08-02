@@ -3831,7 +3831,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                                                        c_w_face_normal[c_id]);
     cs_real_t vol_min = cs_math_epzero*mq->cell_f_vol[c_id];
 
-    /* Compare the volume of the pyramid (xw - xc) \dot Sw to the fluid
+    /* Compare the volume of the pyramid (xw - xc).Sw to the fluid
      *  volume */
     if (pyr_vol > vol_min) {
 

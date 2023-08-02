@@ -2,7 +2,7 @@
 #define __CS_MATRIX_H__
 
 /*============================================================================
- * Sparse Matrix Representation and Operations
+ * Sparse Matrix Representation and Operations.
  *============================================================================*/
 
 /*
@@ -430,7 +430,7 @@ cs_matrix_get_n_entries(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return the size of the diagonal block for the given matrix structure
+ * \brief Return the size of the diagonal block for the given matrix
  *
  * \param[in] matrix  pointer to matrix structure
  *
@@ -472,7 +472,7 @@ cs_matrix_get_halo(const cs_matrix_t  *matrix);
  * \brief Return a pointer to local global row range associated with a
  *        matrix, if available
  *
- * \param[in] ma   pointer to matrix structure
+ * \param[in] matrix   pointer to matrix structure
  *
  * \return pointer to local range, or NULL
  */
@@ -483,9 +483,9 @@ cs_matrix_get_l_range(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------*/
 /*!
- *\brief Query matrix allocation mode.
+ * \brief Query matrix allocation mode.
  *
- * \param[in] matrix  pointer to matrix structure
+ * \param[in]  matrix  pointer to matrix structure
  *
  * \return  host/device allocation mode
  */
@@ -498,7 +498,7 @@ cs_matrix_get_alloc_mode(const cs_matrix_t  *matrix);
 /*!
  *\brief Set matrix allocation mode.
  *
- * \param[in, out] matrix      pointer to matrix structure
+ * \param[in, out]  matrix      pointer to matrix structure
  * \param[in]      alloc_mode  host/device allocation mode
  */
 /*----------------------------------------------------------------------------*/
@@ -894,7 +894,7 @@ cs_matrix_vector_multiply(const cs_matrix_t   *matrix,
  * This function includes a halo update of x prior to multiplication by A.
  *
  * \param[in]       matrix         pointer to matrix structure
- * \param[in, out]  x              multipliying vector values, on device
+ * \param[in, out]  x              multiplying vector values, on device
  *                                 (ghost values updated)
  * \param[out]      y              resulting vector (on device)
  */
@@ -958,7 +958,7 @@ cs_matrix_vector_multiply_partial(const cs_matrix_t      *matrix,
  *
  * \param[in]       matrix         pointer to matrix structure
  * \param[in]       op_type        SpMV operation type
- * \param[in, out]  x              multipliying vector values, on device
+ * \param[in, out]  x              multiplying vector values, on device
  *                                 (ghost values updated)
  * \param[out]      y              resulting vector, on device
  */

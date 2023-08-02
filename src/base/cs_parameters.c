@@ -87,21 +87,6 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 /*!
-  \enum cs_parameter_error_behavior_t
-
-  \brief File access modes
-
-  \var CS_WARNING
-       Warn only
-  \var CS_ABORT_DELAYED
-       Abort when \ref cs_parameters_error_barrier is called.
-  \var CS_FILE_MODE_APPEND
-       Abort immediately
-*/
-
-/*----------------------------------------------------------------------------*/
-
-/*!
   \struct cs_space_disc_t
 
   \brief Space discretisation options descriptor.

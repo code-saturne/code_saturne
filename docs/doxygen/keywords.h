@@ -262,7 +262,7 @@ int variance_clipping;
 double variance_dissipation;
 
 /*!
-  \var scalar_diffusivity
+  \var scalar_diffusivity_prev
   scalar diffusivity read from checkpoint file
 */
 int scalar_diffusivity_prev;
