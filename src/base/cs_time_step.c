@@ -596,14 +596,6 @@ cs_time_step_update_dt(double  dt)
   _update_kahan_compensation(&t, &_time_step.t_cur, &z);
 
   _time_step.t_cur = t;
-  _time_step.nt_cur += 1;
-
-  if (_time_step.is_local)
-    cs_base_update_status("time step: %d\n",
-                          _time_step.nt_cur);
-  else
-    cs_base_update_status("time step: %d; t = %g\n",
-                          _time_step.nt_cur, _time_step.t_cur);
 }
 
 /*----------------------------------------------------------------------------*/
