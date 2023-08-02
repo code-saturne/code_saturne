@@ -798,7 +798,7 @@ cs_domain_write_restart(const cs_domain_t  *domain)
     return;
 
   cs_restart_t  *restart = cs_restart_create("main.csc", /* restart file name */
-                                             NULL,   /* directory name */
+                                             NULL,       /* directory name */
                                              CS_RESTART_MODE_WRITE);
 
   /* Write a new section: version */
