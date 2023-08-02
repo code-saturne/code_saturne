@@ -94,9 +94,10 @@ typedef void
  * Type definitions
  *============================================================================*/
 
-/*! \struct cs_gwf_soil_param_genuchten_t
+/*! \struct cs_gwf_soil_spf_vgm_param_t
  *
- * \brief Structure to handle the Van Genuchten-Mualen model of soil
+ * \brief Structure to handle the Van Genuchten-Mualen model of soil in the
+ *        case of a single-phase flow in a porous media
  *
  *        See \ref CS_GWF_SOIL_GENUCHTEN. This structure stores the parameters
  *        defining the evolution laws for the liquid saturation and the
@@ -130,7 +131,7 @@ typedef struct {
   double             scale;
   double             tortuosity;
 
-} cs_gwf_soil_param_genuchten_t;
+} cs_gwf_soil_spf_vgm_param_t;
 
 
 /*! \struct _gwf_soil_t
@@ -476,7 +477,8 @@ cs_gwf_soil_get_permeability_max_dim(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set a soil defined by a Van Genuchten-Mualen model
+ * \brief Set a soil defined by a Van Genuchten-Mualen model in the case of
+ *        single-phase flow in an (unsaturated) porous media
  *
  *        The (effective) liquid saturation (also called moisture content)
  *        follows the identity
@@ -496,15 +498,15 @@ cs_gwf_soil_get_permeability_max_dim(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_set_genuchten_param(cs_gwf_soil_t              *soil,
-                                double                      theta_r,
-                                double                      alpha,
-                                double                      n,
-                                double                      L);
+cs_gwf_soil_set_spf_vgm_param(cs_gwf_soil_t         *soil,
+                              double                 theta_r,
+                              double                 alpha,
+                              double                 n,
+                              double                 L);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a soil defined by a user-defined model
+ * \brief Set a soil defined by a user-defined model
  *
  * \param[in, out] soil              pointer to a cs_gwf_soil_t structure
  * \param[in]      param             pointer to a structure cast on-the-fly
@@ -514,10 +516,10 @@ cs_gwf_soil_set_genuchten_param(cs_gwf_soil_t              *soil,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_set_user(cs_gwf_soil_t                *soil,
-                     void                         *param,
-                     cs_gwf_soil_update_t         *update_func,
-                     cs_gwf_soil_free_param_t     *free_param_func);
+cs_gwf_soil_set_user_model_param(cs_gwf_soil_t               *soil,
+                                 void                        *param,
+                                 cs_gwf_soil_update_t        *update_func,
+                                 cs_gwf_soil_free_param_t    *free_param_func);
 
 /*----------------------------------------------------------------------------*/
 

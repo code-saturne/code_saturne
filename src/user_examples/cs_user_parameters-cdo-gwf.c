@@ -257,19 +257,23 @@ cs_user_model(void)
 
   /*! [param_cdo_gwf_add_define_genuchten_soil] */
   {
-    /* Example 3: Add a new user-defined soil for all the cells */
+    /* Example 3: Add a new soil based on the Van Genuchten-Mualem model for
+       all the mesh cells */
 
+    cs_gwf_soil_model_t  model = CS_GWF_SOIL_SINGLE_PHASE_VAN_GENUCHTEN_MUALEM;
     cs_gwf_soil_t  *s = cs_gwf_add_iso_soil("cells", /* volume zone name */
                                             1800,    /* bulk mass density */
                                             3e-1,    /* absolute permeability */
                                             0.9,     /* porosity */
-                                            CS_GWF_SOIL_GENUCHTEN); /* model */
+                                            model);
 
-    cs_gwf_soil_set_genuchten_param(s,
-                                    0.078,      /* residual moisture */
-                                    0.036,      /* scaling parameter */
-                                    1.56,       /* (n) shape parameter */
-                                    0.5);       /* (L) tortuosity */
+    /* Set now the parameters associated to this model of soil */
+
+    cs_gwf_soil_set_spf_vgm_param(s,
+                                  0.078,      /* residual moisture */
+                                  0.036,      /* scaling parameter */
+                                  1.56,       /* (n) shape parameter */
+                                  0.5);       /* (L) tortuosity */
   }
   /*! [param_cdo_gwf_add_define_genuchten_soil] */
 

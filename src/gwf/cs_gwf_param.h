@@ -229,10 +229,16 @@ typedef enum {
  * \brief Predefined hydraulic model of soils used in the groundwater flow
  *        module
  *
- * \var CS_GWF_SOIL_GENUCHTEN
+ * \var CS_GWF_SOIL_SATURATED
+ * Hydraulic model of soild where the soil is considered as saturated. In this
+ * model, there no evolution taken into account. The liquid saturation and the
+ * permeability are considered as constant.
+ *
+ * \var CS_GWF_SOIL_SINGLE_PHASE_VAN_GENUCHTEN_MUALEM
  * Van Genuchten-Mualem laws defining the evolution of the effective liquid
- * saturne (also called dimensionless moisture content) and the relative
- * permeability
+ * saturation (also called dimensionless moisture content) and the relative
+ * permeability in the case of (unsaturated) single-phase flow in a porous
+ * media
  *
  * The (effective) liquid saturation (also called moisture content) follows the
  * identity:
@@ -243,19 +249,14 @@ typedef enum {
  * k_r = S_l,eff^L * (1 - (1 - S_l,eff^(1/m))^m))^2
  * where m = 1 -  1/n
  *
- * \var CS_GWF_SOIL_SATURATED
- * Hydraulic model of soild where the soil is considered as saturated. In this
- * model, there no evolution taken into account. The liquid saturation and the
- * permeability are considered as constant.
- *
  * \var CS_GWF_SOIL_USER
  * User-defined model of soil
  */
 
 typedef enum {
 
-  CS_GWF_SOIL_GENUCHTEN,
   CS_GWF_SOIL_SATURATED,
+  CS_GWF_SOIL_SINGLE_PHASE_VAN_GENUCHTEN_MUALEM,
   CS_GWF_SOIL_USER,
 
   CS_GWF_SOIL_N_HYDRAULIC_MODELS

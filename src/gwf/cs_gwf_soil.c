@@ -126,17 +126,17 @@ static double  *_dual_porous_volume = NULL;
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_soil_genuchten_iso(const cs_real_t              t_eval,
-                           const cs_mesh_t             *mesh,
-                           const cs_cdo_connect_t      *connect,
-                           const cs_cdo_quantities_t   *quant,
-                           const cs_zone_t             *zone,
-                           cs_gwf_soil_t               *soil)
+_update_iso_soil_spf_vgm(const cs_real_t              t_eval,
+                         const cs_mesh_t             *mesh,
+                         const cs_cdo_connect_t      *connect,
+                         const cs_cdo_quantities_t   *quant,
+                         const cs_zone_t             *zone,
+                         cs_gwf_soil_t               *soil)
 {
-  CS_UNUSED(t_eval);
-  CS_UNUSED(mesh);
-  CS_UNUSED(connect);
-  CS_UNUSED(quant);
+  CS_NO_WARN_IF_UNUSED(t_eval);
+  CS_NO_WARN_IF_UNUSED(mesh);
+  CS_NO_WARN_IF_UNUSED(connect);
+  CS_NO_WARN_IF_UNUSED(quant);
 
   if (soil == NULL)
     return;
@@ -145,7 +145,7 @@ _update_soil_genuchten_iso(const cs_real_t              t_eval,
 
   /* Retrieve the soil parameters */
 
-  cs_gwf_soil_param_genuchten_t  *sp = soil->model_param;
+  cs_gwf_soil_spf_vgm_param_t  *sp = soil->model_param;
 
   /* Retrieve the hydraulic context */
 
@@ -327,11 +327,11 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
                 " of type CS_GWF_SOIL_SATURATED.\n", __func__);
     break;
 
-  case CS_GWF_SOIL_GENUCHTEN:
+  case CS_GWF_SOIL_SINGLE_PHASE_VAN_GENUCHTEN_MUALEM:
     {
-      cs_gwf_soil_param_genuchten_t  *sp = NULL;
+      cs_gwf_soil_spf_vgm_param_t  *sp = NULL;
 
-      BFT_MALLOC(sp, 1, cs_gwf_soil_param_genuchten_t);
+      BFT_MALLOC(sp, 1, cs_gwf_soil_spf_vgm_param_t);
 
       sp->residual_moisture = 0.;
 
@@ -344,7 +344,7 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
 
       if (perm_type & CS_PROPERTY_ISO)
         if (hydraulic_model == CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE)
-          soil->update_properties = _update_soil_genuchten_iso;
+          soil->update_properties = _update_iso_soil_spf_vgm;
         else
           bft_error(__FILE__, __LINE__, 0,
                     "%s: Invalid type of hydraulic model.\n"
@@ -448,9 +448,9 @@ cs_gwf_soil_free_all(void)
 
       switch (soil->model) {
 
-      case CS_GWF_SOIL_GENUCHTEN:
+      case CS_GWF_SOIL_SINGLE_PHASE_VAN_GENUCHTEN_MUALEM:
         {
-          cs_gwf_soil_param_genuchten_t  *sp = soil->model_param;
+          cs_gwf_soil_spf_vgm_param_t  *sp = soil->model_param;
 
           BFT_FREE(sp);
           sp = NULL;
@@ -521,9 +521,9 @@ cs_gwf_soil_log_setup(void)
 
     switch (soil->model) {
 
-    case CS_GWF_SOIL_GENUCHTEN:
+    case CS_GWF_SOIL_SINGLE_PHASE_VAN_GENUCHTEN_MUALEM:
       {
-        const cs_gwf_soil_param_genuchten_t  *sp = soil->model_param;
+        const cs_gwf_soil_spf_vgm_param_t  *sp = soil->model_param;
 
         cs_log_printf(CS_LOG_SETUP, "%s Model: *VanGenuchten-Mualen*\n", id);
         cs_log_printf(CS_LOG_SETUP, "%s Parameters:", id);
@@ -627,7 +627,7 @@ cs_gwf_soil_update(cs_real_t                     time_eval,
 
     switch (soil->model) {
 
-    case CS_GWF_SOIL_GENUCHTEN:
+    case CS_GWF_SOIL_SINGLE_PHASE_VAN_GENUCHTEN_MUALEM:
     case CS_GWF_SOIL_USER:
       {
         assert(soil->update_properties != NULL);
@@ -963,7 +963,8 @@ cs_gwf_soil_get_permeability_max_dim(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set a soil defined by a Van Genuchten-Mualen model
+ * \brief Set a soil defined by a Van Genuchten-Mualen model in the case of
+ *        single-phase flow in an (unsaturated) porous media
  *
  *        The (effective) liquid saturation (also called moisture content)
  *        follows the identity
@@ -983,17 +984,17 @@ cs_gwf_soil_get_permeability_max_dim(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_set_genuchten_param(cs_gwf_soil_t              *soil,
-                                double                      theta_r,
-                                double                      alpha,
-                                double                      n,
-                                double                      L)
+cs_gwf_soil_set_spf_vgm_param(cs_gwf_soil_t         *soil,
+                              double                 theta_r,
+                              double                 alpha,
+                              double                 n,
+                              double                 L)
 {
   if (soil == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_soil));
 
-  cs_gwf_soil_param_genuchten_t  *sp = soil->model_param;
+  cs_gwf_soil_spf_vgm_param_t  *sp = soil->model_param;
 
-  if (soil->model != CS_GWF_SOIL_GENUCHTEN)
+  if (soil->model != CS_GWF_SOIL_SINGLE_PHASE_VAN_GENUCHTEN_MUALEM)
     bft_error(__FILE__, __LINE__, 0,
               "%s: soil model is not Van Genuchten\n", __func__);
   if (sp == NULL)
@@ -1016,7 +1017,7 @@ cs_gwf_soil_set_genuchten_param(cs_gwf_soil_t              *soil,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a soil defined by a user-defined model
+ * \brief Set a soil defined by a user-defined model
  *
  * \param[in, out] soil              pointer to a cs_gwf_soil_t structure
  * \param[in]      param             pointer to a structure cast on-the-fly
@@ -1026,10 +1027,10 @@ cs_gwf_soil_set_genuchten_param(cs_gwf_soil_t              *soil,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_set_user(cs_gwf_soil_t                *soil,
-                     void                         *param,
-                     cs_gwf_soil_update_t         *update_func,
-                     cs_gwf_soil_free_param_t     *free_param_func)
+cs_gwf_soil_set_user_model_param(cs_gwf_soil_t               *soil,
+                                 void                        *param,
+                                 cs_gwf_soil_update_t        *update_func,
+                                 cs_gwf_soil_free_param_t    *free_param_func)
 {
   if (soil == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_soil));
 

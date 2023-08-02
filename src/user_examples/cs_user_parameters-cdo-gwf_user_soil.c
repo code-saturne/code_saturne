@@ -81,7 +81,7 @@ typedef struct {
   double    theta_r;            /* residual moisture */
   double    theta_s;            /* saturated moisture */
 
-} cs_tracy_param_t;
+} cs_soil_tracy_param_t;
 /*! [param_cdo_gwf_tracy_struct] */
 
 /*============================================================================
@@ -124,7 +124,7 @@ tracy_update(const cs_real_t              t_eval,
 
   /* Retrieve the soil parameters */
 
-  const cs_tracy_param_t  *sp = (cs_tracy_param_t *)soil->model_param;
+  const cs_soil_tracy_param_t  *sp = (cs_soil_tracy_param_t *)soil->model_param;
 
   /* Retrieve the hydraulic context */
 
@@ -180,7 +180,7 @@ tracy_update(const cs_real_t              t_eval,
 static void
 tracy_free_param(void         **p_soil_param)
 {
-  cs_tracy_param_t  *sp = (cs_tracy_param_t *)(*p_soil_param);
+  cs_soil_tracy_param_t  *sp = (cs_soil_tracy_param_t *)(*p_soil_param);
 
   BFT_FREE(sp);
   *p_soil_param = NULL;
@@ -217,7 +217,7 @@ get_bc(cs_real_t           time,
 {
   const cs_gwf_soil_t  *soil = input;
   assert(soil != NULL);
-  const cs_tracy_param_t  *tp = soil->model_param;
+  const cs_soil_tracy_param_t  *tp = soil->model_param;
   assert(tp != NULL);
 
   /* Physical parameters */
@@ -271,7 +271,7 @@ get_ic(cs_real_t           time,
 {
   CS_UNUSED(time);
 
-  cs_tracy_param_t  *tp = input;
+  cs_soil_tracy_param_t  *tp = input;
   assert(input != NULL);
 
   const double  one6 = 1./6;
@@ -347,9 +347,9 @@ cs_user_model(void)
 
   /* 2.a Create and define a structure of parameters to manage the soil */
 
-  cs_tracy_param_t  *tp = NULL;
+  cs_soil_tracy_param_t  *tp = NULL;
 
-  BFT_MALLOC(tp, 1, cs_tracy_param_t);
+  BFT_MALLOC(tp, 1, cs_soil_tracy_param_t);
 
   tp->L = 200;
   tp->h_s = 0.;
@@ -359,10 +359,14 @@ cs_user_model(void)
   /* 2.b Associate the parameter structure and the user-defined functions
    *     to manage the soil */
 
-  cs_gwf_soil_set_user(s,                  /* soil structure */
-                       tp,                 /* soil parameter structure */
-                       tracy_update,       /* function to update the soil */
-                       tracy_free_param);  /* function to free the structure */
+  cs_gwf_soil_set_user_model_param(/* soil structure */
+                                   s,
+                                   /* soil parameter structure */
+                                   tp,
+                                   /* function to update the soil */
+                                   tracy_update,
+                                   /* function to free the structure */
+                                   tracy_free_param);
 
   /*! [param_cdo_gwf_add_user_soil] */
 }
@@ -469,7 +473,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
   /* 1. Retrieve the soil by its name and then its parameter structure */
 
   cs_gwf_soil_t  *soil = cs_gwf_soil_by_name("cells");
-  cs_tracy_param_t  *tp = soil->model_param;
+  cs_soil_tracy_param_t  *tp = soil->model_param;
 
   /* Define the boundary conditions  */
 
