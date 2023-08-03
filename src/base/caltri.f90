@@ -906,7 +906,7 @@ else if (ntlist.gt.0) then
 endif
 call cs_log_default_activate(log_active)
 
-if (ntmabs.gt.ntpabs .and. itrale.gt.0) then
+if (idtvar.ne.1 .and. ntmabs.gt.ntpabs .and. itrale.gt.0) then
   if (log_active) then
     write(nfecra,3001) ttcabs, ntcabs
   endif
