@@ -586,14 +586,6 @@ if (idtvar.ge.0) then
       if (itrale.gt.0 .and. ntmabs.gt.ntpabs) then
         call cs_time_step_update_dt(dtloc)
 
-        log_active = .false.
-        if (ntcabs - ntpabs.le.10 .or. ntcabs.eq.ntmabs) then
-          log_active = .true.
-        else if (ntlist.gt.0) then
-          if (mod(ntcabs,ntlist) .eq. 0) log_active = .true.
-        endif
-        call cs_log_default_activate(log_active)
-
         if (log_active) then
           write(nfecra,3001) ttcabs, ntcabs
         endif
