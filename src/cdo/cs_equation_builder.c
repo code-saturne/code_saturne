@@ -176,11 +176,25 @@ cs_equation_builder_create(const cs_equation_param_t   *eqp,
      context) */
 
   eqb->increment = NULL;
-  if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-    eqb->incremental_algo = cs_iter_algo_create(eqp->verbosity,
-                                                eqp->incremental_algo_cvg);
-  else
+  switch(eqp->incremental_algo_type) {
+  case CS_PARAM_NL_ALGO_PICARD:
+    eqb->incremental_algo =
+      cs_iter_algo_create_with_settings(CS_ITER_ALGO_DEFAULT,
+                                        eqp->verbosity,
+                                        eqp->incremental_algo_cvg);
+    break;
+
+  case CS_PARAM_NL_ALGO_ANDERSON:
+    eqb->incremental_algo =
+      cs_iter_algo_create_with_settings(CS_ITER_ALGO_ANDERSON,
+                                        eqp->verbosity,
+                                        eqp->incremental_algo_cvg);
+    break;
+
+  default:
     eqb->incremental_algo = NULL;
+    break;
+  }
 
   /* Set members and structures related to the management of the BCs
      Translate user-defined information about BC into a structure well-suited
@@ -303,12 +317,9 @@ cs_equation_builder_free(cs_equation_builder_t  **p_builder)
 
   BFT_FREE(eqb->increment);
 
-  /* If the context is not NULL, this means that an Anderson algorithm has been
-     activated otherwise nothing to do */
+  /* Free the structure handling the non-linear algorithm */
 
-  cs_iter_algo_aa_free(eqb->incremental_algo);
-
-  BFT_FREE(eqb->incremental_algo);
+  cs_iter_algo_free(&(eqb->incremental_algo));
 
   /* Free BC structure */
 

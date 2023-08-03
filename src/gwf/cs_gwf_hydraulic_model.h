@@ -638,12 +638,12 @@ typedef struct {
    * \var nl_algo_type
    *      Type of algorithm to solve the non-linearities
    *
-   * \var nl_algo_cvg
-   *      Set of parameters to drive the convergence of the non-linear solver
-   *
    * \var nl_relax_factor
    *      Value of the relaxation factor in the non-linear algorithm. A classical
    *      choice is between 0.70 and 0.95
+   *
+   * \var nl_cvg_param
+   *      Set of parameters to drive the convergence of the non-linear solver
    *
    * \var anderson_param
    *      Set of parameters to drive the Anderson acceleration (useful if the
@@ -659,9 +659,9 @@ typedef struct {
   bool                           use_diffusion_view_for_darcy;
 
   cs_param_nl_algo_t             nl_algo_type;
-  cs_param_sles_cvg_t            nl_algo_cvg;
   cs_real_t                      nl_relax_factor;
-  cs_iter_algo_param_aa_t        anderson_param;
+  cs_param_sles_cvg_t            nl_cvg_param;
+  cs_iter_algo_param_aac_t       anderson_param;
 
   cs_iter_algo_t                *nl_algo;
 

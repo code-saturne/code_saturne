@@ -1929,26 +1929,29 @@ cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t        nl_algo_type,
 {
   assert(algo != NULL);
 
-  if (nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON && algo->n_algo_iter > 0) {
+  if (nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
 
-    cs_iter_algo_param_aa_t  aap = cs_iter_algo_get_anderson_param(algo);
+    /* The Anderson acceleration can modified the current iterate to speed_up
+       the convergence of the non-linear algorithm */
+
+    cs_iter_algo_param_aac_t  aap = cs_iter_algo_get_anderson_param(algo);
 
     switch (aap.dp_type) {
 
     case CS_PARAM_DOTPROD_EUCLIDEAN:
-      cs_iter_algo_aa_update(algo,
-                             cur_iterate,
-                             pre_iterate,
-                             cs_cdo_blas_dotprod_face,
-                             cs_cdo_blas_square_norm_face);
+      cs_iter_algo_update_anderson(algo,
+                                   cur_iterate,
+                                   pre_iterate,
+                                   cs_cdo_blas_dotprod_face,
+                                   cs_cdo_blas_square_norm_face);
       break;
 
     case CS_PARAM_DOTPROD_CDO:
-      cs_iter_algo_aa_update(algo,
-                             cur_iterate,
-                             pre_iterate,
-                             cs_cdo_blas_dotprod_pfsf,
-                             cs_cdo_blas_square_norm_pfsf);
+      cs_iter_algo_update_anderson(algo,
+                                   cur_iterate,
+                                   pre_iterate,
+                                   cs_cdo_blas_dotprod_pfsf,
+                                   cs_cdo_blas_square_norm_pfsf);
       break;
 
     default:
@@ -1961,34 +1964,20 @@ cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t        nl_algo_type,
   /* Update the residual values. Compute the norm of the difference between the
      two mass fluxes (the current one and the previous one) */
 
-  algo->prev_res = algo->res;
-  algo->res = cs_cdo_blas_square_norm_pfsf_diff(pre_iterate, cur_iterate);
-  assert(algo->res > -DBL_MIN);
-  algo->res = sqrt(algo->res);
+  double  res = cs_cdo_blas_square_norm_pfsf_diff(pre_iterate, cur_iterate);
 
-  if (algo->n_algo_iter < 1) /* Store the first residual to detect a
-                                possible divergence of the algorithm */
-    algo->res0 = algo->res;
+  cs_iter_algo_update_residual(algo, sqrt(res));
 
   /* Update the convergence members */
 
-  cs_iter_algo_update_cvg_default(algo);
+  cs_sles_convergence_state_t
+    cvg_status = cs_iter_algo_update_cvg_tol_auto(algo);
 
-  if (algo->verbosity > 0) {
+  /* Log the convergence if needed */
 
-    if (algo->n_algo_iter == 1)
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "## %10s.It    Algo.Res   Inner  Cumul  Tolerance\n",
-                    cs_param_get_nl_algo_label(nl_algo_type));
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "## %10s.It%02d   %5.3e  %5d  %5d  %6.4e\n",
-                  cs_param_get_nl_algo_label(nl_algo_type),
-                  algo->n_algo_iter, algo->res, algo->last_inner_iter,
-                  algo->n_inner_iter, algo->tol);
+  cs_iter_algo_log_cvg(algo, cs_param_get_nl_algo_label(nl_algo_type));
 
-  } /* verbosity > 0 */
-
-  return algo->cvg_status;
+  return cvg_status;
 }
 
 /*----------------------------------------------------------------------------*/

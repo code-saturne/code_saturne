@@ -834,7 +834,7 @@ _init_non_linear_algo(cs_gwf_tpf_t                  *mc)
   cs_iter_algo_t  *algo = mc->nl_algo;
   assert(algo != NULL);
 
-  cs_iter_algo_reset_nl(mc->nl_algo_type, algo);
+  cs_iter_algo_reset(algo);
 
   /* No resolution has been done at this stage and also no previous to current
      operation.
@@ -846,18 +846,20 @@ _init_non_linear_algo(cs_gwf_tpf_t                  *mc)
   const cs_real_t  *pg_0 = mc->g_pressure->val;
   const cs_real_t  *pl_0 = mc->l_pressure->val;
 
-  /* 1. Set the normalization factor. Performed with Pg and Pl even Pc is used
+  /* Set the normalization factor. Performed with Pg and Pl even if Pc is used
      in the resolution. One prefers to use Pg since it also appears in the
      different terms for the h_eq. */
 
-  algo->normalization = cs_cdo_blas_square_norm_pvsp(pg_0);
-  algo->normalization += cs_cdo_blas_square_norm_pvsp(pl_0);
-  algo->normalization = sqrt(algo->normalization);
-  if (algo->normalization < cs_math_zero_threshold)
-    algo->normalization = 1.0;
+  double  normalization = cs_cdo_blas_square_norm_pvsp(pg_0);
+  normalization += cs_cdo_blas_square_norm_pvsp(pl_0);
+  normalization = sqrt(normalization);
+  if (normalization < cs_math_zero_threshold)
+    normalization = 1.0;
+
+  cs_iter_algo_set_normalization(algo, normalization);
 
   cs_log_printf(CS_LOG_DEFAULT, "%s: Non-linear algo. normalization=%6.4e\n",
-                __func__, algo->normalization);
+                __func__, normalization);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -914,51 +916,33 @@ _get_capillarity_pressure_increment(const cs_mesh_t       *mesh,
  * \brief Check the convergence of the non-linear algorithm in case of TPF
  *        model. Work only with the capillarity pressure at vertices
  *
- * \param[in]      nl_algo_type type of non-linear algorithm
- * \param[in]      dpc_iter     cur. increment values for the capill. pressure
- * \param[in, out] algo         pointer to a cs_iter_algo_t structure
+ * \param[in]      dpc_iter    increment values for the capillarity pressure
+ * \param[in, out] algo        pointer to a cs_iter_algo_t structure
  *
  * \return the convergence state
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_sles_convergence_state_t
-_check_cvg_nl_dpc(cs_param_nl_algo_t        nl_algo_type,
-                      const cs_real_t          *dpc_iter,
-                      cs_iter_algo_t           *algo)
+_check_cvg_nl_dpc(const cs_real_t          *dpc_iter,
+                  cs_iter_algo_t           *algo)
 {
   assert(algo != NULL);
-  algo->prev_res = algo->res;
 
   double dpc_norm = cs_cdo_blas_square_norm_pvsp(dpc_iter);
 
-  algo->res = dpc_norm;
-  assert(algo->res > -DBL_MIN);
-  algo->res = sqrt(algo->res);
-
-  if (algo->n_algo_iter < 1) /* Store the first residual to detect a
-                                possible divergence of the algorithm */
-    algo->res0 = algo->res;
+  cs_iter_algo_update_residual(algo, sqrt(dpc_norm));
 
   /* Update the convergence members */
 
-  cs_iter_algo_update_cvg_default(algo);
+  cs_sles_convergence_state_t
+    cvg_status = cs_iter_algo_update_cvg_tol_auto(algo);
 
-  if (algo->verbosity > 0) {
+  /* Monitoring */
 
-    if (algo->n_algo_iter == 1)
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "### GWF.TPF %10s.It    Algo.Res   Tolerance\n",
-                    cs_param_get_nl_algo_label(nl_algo_type));
+  cs_iter_algo_log_cvg(algo, "# GWF.TPF");
 
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "### GWF.TPF %10s.It%02d  %5.3e  %6.4e\n",
-                  cs_param_get_nl_algo_label(nl_algo_type),
-                  algo->n_algo_iter, algo->res, algo->tol);
-
-  } /* verbosity > 0 */
-
-  return algo->cvg_status;
+  return cvg_status;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -990,69 +974,40 @@ _check_cvg_nl(cs_param_nl_algo_t        nl_algo_type,
 
   assert(algo != NULL);
 
-  if (nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON && algo->n_algo_iter > 0) {
+  if (nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
 
     /* pg_* arrays gather pg and pl (this is done during the solve step) */
 
-    cs_iter_algo_aa_update(algo,
-                           pc_cur_iter, /* updated during the process */
-                           pc_pre_iter,
-                           cs_cdo_blas_dotprod_2pvsp,
-                           cs_cdo_blas_square_norm_2pvsp);
+    cs_iter_algo_update_anderson(algo,
+                                 pc_cur_iter, /* updated during the process */
+                                 pc_pre_iter,
+                                 cs_cdo_blas_dotprod_2pvsp,
+                                 cs_cdo_blas_square_norm_2pvsp);
 
   } /* Anderson acceleration */
 
-  algo->prev_res = algo->res;
+  /* Update the residual */
 
   double delta_pc = cs_cdo_blas_square_norm_pvsp_diff(pc_pre_iter, pc_cur_iter);
   double delta_pl = cs_cdo_blas_square_norm_pvsp_diff(pl_pre_iter, pl_cur_iter);
 
-  algo->res = delta_pc + delta_pl;
-  assert(algo->res > -DBL_MIN);
-  algo->res = sqrt(algo->res);
-
-  if (algo->n_algo_iter < 1) { /* Store the first residual to detect a
-                                  possible divergence of the algorithm */
-    algo->res0 = algo->res;
-    algo->prev_res = algo->res;
-
-  }
+  cs_iter_algo_update_residual(algo, sqrt(delta_pc + delta_pl));
 
   /* Update the convergence members */
 
-  cs_iter_algo_update_cvg_default(algo);
+  cs_sles_convergence_state_t
+    cvg_status = cs_iter_algo_update_cvg_tol_auto(algo);
 
-  if (algo->verbosity > 0) {
+  /* Monitoring */
 
-    if (algo->n_algo_iter == 1) {
+  cs_iter_algo_log_cvg(algo, "# GWF.TPF");
 
-      if (algo->verbosity > 1)
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "### GWF.TPF %10s.It    Algo.Res   Tolerance"
-                      "  ||D_Pc||  ||D_Pl||\n",
-                      cs_param_get_nl_algo_label(nl_algo_type));
-      else
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "### GWF.TPF %10s.It    Algo.Res   Tolerance\n",
-                      cs_param_get_nl_algo_label(nl_algo_type));
+  if (algo->verbosity > 1)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "\t||D_Pc||=%10.6e, ||D_Pl||=%10.6e\n",
+                  sqrt(delta_pc), sqrt(delta_pl));
 
-    }
-
-    if (algo->verbosity > 1)
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "### GWF.TPF %10s.It%02d  %5.3e  %6.4e %5.3e %5.3e\n",
-                    cs_param_get_nl_algo_label(nl_algo_type),
-                    algo->n_algo_iter, algo->res, algo->tol,
-                    sqrt(delta_pc), sqrt(delta_pl));
-    else
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "### GWF.TPF %10s.It%02d  %5.3e  %6.4e\n",
-                    cs_param_get_nl_algo_label(nl_algo_type),
-                    algo->n_algo_iter, algo->res, algo->tol);
-
-  } /* verbosity > 0 */
-
-  return algo->cvg_status;
+  return cvg_status;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1108,7 +1063,7 @@ _compute_coupled_picard(const cs_mesh_t              *mesh,
 
     /* current values: n+1,k+1 now */
 
-    if (algo->n_algo_iter > 0 && mc->nl_relax_factor < 1.0) {
+    if (cs_iter_algo_get_n_iter(algo) > 0 && mc->nl_relax_factor < 1.0) {
 
       const double  relax = mc->nl_relax_factor;
       for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
@@ -1129,16 +1084,15 @@ _compute_coupled_picard(const cs_mesh_t              *mesh,
     cur2prev = false;
     update_flag = 0;
 
-  } while (_check_cvg_nl(mc->nl_algo_type,
-                         pc_k, pc_kp1, pl_k, pl_kp1,
+  } while (_check_cvg_nl(mc->nl_algo_type, pc_k, pc_kp1, pl_k, pl_kp1,
                          algo) == CS_SLES_ITERATING);
 
   /* If something wrong happens, write a message in the listing */
 
-  cs_iter_algo_post_check(__func__,
-                          mc->system->param->name,
-                          cs_param_get_nl_algo_label(mc->nl_algo_type),
-                          algo);
+  cs_iter_algo_check_warning(__func__,
+                             mc->system->param->name,
+                             cs_param_get_nl_algo_label(mc->nl_algo_type),
+                             algo);
 
   /* Free temporary arrays and structures */
 
@@ -1175,7 +1129,7 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
   cs_iter_algo_t  *algo = mc->nl_algo;
   assert(algo != NULL);
 
-  cs_iter_algo_reset_nl(mc->nl_algo_type, algo);
+  cs_iter_algo_reset(algo);
 
   /* A first resolution has been done followed by an update */
 
@@ -1198,11 +1152,13 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
 
   /* Set the normalization factor */
 
-  algo->normalization = cs_cdo_blas_square_norm_pvsp(pg_k);
-  algo->normalization += cs_cdo_blas_square_norm_pvsp(pl_k);
-  algo->normalization = sqrt(algo->normalization);
-  if (algo->normalization < cs_math_zero_threshold)
-    algo->normalization = 1.0;
+  double  normalization = cs_cdo_blas_square_norm_pvsp(pg_k);
+  normalization += cs_cdo_blas_square_norm_pvsp(pl_k);
+  normalization = sqrt(normalization);
+  if (normalization < cs_math_zero_threshold)
+    normalization = 1.0;
+
+  cs_iter_algo_set_normalization(algo, normalization);
 
   /* Main non-linear loop */
 
@@ -1217,10 +1173,11 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
      * In case of an Anderson acceleration, pg_kp1 and pl_kp1 may be
      * updated */
 
-    if (algo->n_algo_iter >= mc->anderson_param.starting_iter) {
+    if (cs_iter_algo_get_n_iter(algo) >= mc->anderson_param.starting_iter) {
 
       cs_array_real_copy(cdoq->n_vertices, pg_kp1, mc->g_pressure->val);
       cs_array_real_copy(cdoq->n_vertices, pl_kp1, mc->l_pressure->val);
+
     }
 
     cs_gwf_tpf_update(mesh, connect, cdoq, time_step,
@@ -1248,16 +1205,16 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
 
   /* If something wrong happens, write a message in the listing */
 
-  cs_iter_algo_post_check(__func__,
-                          mc->system->param->name,
-                          cs_param_get_nl_algo_label(mc->nl_algo_type),
-                          algo);
+  cs_iter_algo_check_warning(__func__,
+                             mc->system->param->name,
+                             cs_param_get_nl_algo_label(mc->nl_algo_type),
+                             algo);
 
   /* Free temporary arrays and structures */
 
   BFT_FREE(pg_k);
   BFT_FREE(pg_kp1);
-  cs_iter_algo_aa_free_arrays(algo->context);
+  cs_iter_algo_release_anderson_arrays(algo->context);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1299,13 +1256,16 @@ _compute_segregated(const cs_mesh_t              *mesh,
   cs_iter_algo_t  *algo = mc->nl_algo;
   assert(algo != NULL);
 
-  cs_iter_algo_reset_nl(mc->nl_algo_type, algo);
+  cs_iter_algo_reset(algo);
 
-  algo->normalization = cs_cdo_blas_square_norm_pvsp(mc->c_pressure->val);
-  if (algo->normalization < cs_math_zero_threshold)
-    algo->normalization = 1.0;
+  double  normalization = cs_cdo_blas_square_norm_pvsp(mc->c_pressure->val);
+
+  if (normalization < cs_math_zero_threshold)
+    normalization = 1.0;
   else
-    algo->normalization = sqrt(algo->normalization);
+    normalization = sqrt(normalization);
+
+  cs_iter_algo_set_normalization(algo, normalization);
 
   /* First solve step:
    * 1. Solve the equation associated to Pl --> Pl^(n+1,1) knowing
@@ -1328,8 +1288,9 @@ _compute_segregated(const cs_mesh_t              *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
   char  label[32];
+  int  n_iter = cs_iter_algo_get_n_iter(algo);
 
-  sprintf(label, "Pl_iter%02d", algo->n_algo_iter);
+  sprintf(label, "Pl_iter%02d", n_iter);
   cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
                            CS_POST_WRITER_DEFAULT,
                            label,
@@ -1340,7 +1301,7 @@ _compute_segregated(const cs_mesh_t              *mesh,
                            cs_field_by_name("liquid_pressure")->val,
                            time_step);
 
-  sprintf(label, "Pg_iter%02d", algo->n_algo_iter);
+  sprintf(label, "Pg_iter%02d", n_iter);
   cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
                            CS_POST_WRITER_DEFAULT,
                            label,
@@ -1351,7 +1312,7 @@ _compute_segregated(const cs_mesh_t              *mesh,
                            cs_field_by_name("gas_pressure")->val,
                            time_step);
 
-  sprintf(label, "Pc_iter%02d", algo->n_algo_iter);
+  sprintf(label, "Pc_iter%02d", n_iter);
   cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
                            CS_POST_WRITER_DEFAULT,
                            label,
@@ -1368,8 +1329,7 @@ _compute_segregated(const cs_mesh_t              *mesh,
 
   _get_capillarity_pressure_increment(mesh, mc->w_eq, mc->h_eq, dpc_kp1);
 
-  while(_check_cvg_nl_dpc(mc->nl_algo_type,
-                          dpc_kp1, algo) == CS_SLES_ITERATING) {
+  while(_check_cvg_nl_dpc(dpc_kp1, algo) == CS_SLES_ITERATING) {
 
     /* Solve step */
 
@@ -1385,7 +1345,9 @@ _compute_segregated(const cs_mesh_t              *mesh,
                       mc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
-    sprintf(label, "Pl_iter%02d", algo->n_algo_iter);
+    n_iter = cs_iter_algo_get_n_iter(algo);
+
+    sprintf(label, "Pl_iter%02d", n_iter);
     cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
                              CS_POST_WRITER_DEFAULT,
                              label,
@@ -1396,7 +1358,7 @@ _compute_segregated(const cs_mesh_t              *mesh,
                              cs_field_by_name("liquid_pressure")->val,
                              time_step);
 
-    sprintf(label, "Pg_iter%02d", algo->n_algo_iter);
+    sprintf(label, "Pg_iter%02d", n_iter);
     cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
                              CS_POST_WRITER_DEFAULT,
                              label,
@@ -1407,7 +1369,7 @@ _compute_segregated(const cs_mesh_t              *mesh,
                              cs_field_by_name("gas_pressure")->val,
                              time_step);
 
-    sprintf(label, "Pc_iter%02d", algo->n_algo_iter);
+    sprintf(label, "Pc_iter%02d", n_iter);
     cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
                              CS_POST_WRITER_DEFAULT,
                              label,
@@ -1425,10 +1387,10 @@ _compute_segregated(const cs_mesh_t              *mesh,
 
   /* If something wrong happens, write a message in the listing */
 
-  cs_iter_algo_post_check(__func__,
-                          "Segregated incremental TPF solver",
-                          cs_param_get_nl_algo_label(mc->nl_algo_type),
-                          algo);
+  cs_iter_algo_check_warning(__func__,
+                             "Segregated incremental TPF solver",
+                             cs_param_get_nl_algo_label(mc->nl_algo_type),
+                             algo);
 
   BFT_FREE(dpc_kp1);
 }
@@ -1583,10 +1545,10 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
   mc->nl_algo_type = CS_PARAM_NL_ALGO_PICARD;
 
   mc->nl_relax_factor = 1.0;
-  mc->nl_algo_cvg.n_max_iter = 50;
-  mc->nl_algo_cvg.rtol = 1e-5;
-  mc->nl_algo_cvg.atol = 1e-10;
-  mc->nl_algo_cvg.dtol = 1e3;
+  mc->nl_cvg_param.n_max_iter = 50;
+  mc->nl_cvg_param.rtol = 1e-5;
+  mc->nl_cvg_param.atol = 1e-10;
+  mc->nl_cvg_param.dtol = 1e3;
 
   mc->anderson_param.n_max_dir = 5;
   mc->anderson_param.starting_iter = 3;
@@ -1594,7 +1556,7 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
   mc->anderson_param.beta = 1.0;    /* No damping by default */
   mc->anderson_param.dp_type = CS_PARAM_DOTPROD_EUCLIDEAN;
 
-  mc->nl_algo = cs_iter_algo_create(0, mc->nl_algo_cvg);
+  mc->nl_algo = NULL;
 
   return mc;
 }
@@ -1645,12 +1607,9 @@ cs_gwf_tpf_free(cs_gwf_tpf_t    **p_mc)
   BFT_FREE(mc->l_capacity);
   BFT_FREE(mc->l_saturation_submesh);
 
-  /* Non-linearity: If the context is not NULL, this means that an Anderson
-     algorithm has been activated otherwise nothing to do */
+  /* Free the structure handling the convergence of the non-linear algorithm */
 
-  cs_iter_algo_aa_free(mc->nl_algo);
-
-  BFT_FREE(mc->nl_algo);
+  cs_iter_algo_free(&(mc->nl_algo));
 
   BFT_FREE(mc);
   *p_mc = NULL;
@@ -1706,12 +1665,12 @@ cs_gwf_tpf_log_setup(cs_gwf_tpf_t          *mc)
 
     cs_log_printf(CS_LOG_SETUP, "  * GWF | Tolerances of non-linear algo:"
                   " rtol: %5.3e; atol: %5.3e; dtol: %5.3e; max_iter: %d\n",
-                  mc->nl_algo_cvg.rtol, mc->nl_algo_cvg.atol,
-                  mc->nl_algo_cvg.dtol, mc->nl_algo_cvg.n_max_iter);
+                  mc->nl_cvg_param.rtol, mc->nl_cvg_param.atol,
+                  mc->nl_cvg_param.dtol, mc->nl_cvg_param.n_max_iter);
 
     if (mc->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
 
-      const cs_iter_algo_param_aa_t  aap = mc->anderson_param;
+      const cs_iter_algo_param_aac_t  aap = mc->anderson_param;
 
       cs_log_printf(CS_LOG_SETUP, "  * GWF | Anderson param: max. dir: %d; "
                     " start: %d; drop. tol: %5.3e; relax: %5.3e\n",
@@ -1731,12 +1690,14 @@ cs_gwf_tpf_log_setup(cs_gwf_tpf_t          *mc)
  *        Case of a two-phase flows model in porous media
  *
  * \param[in, out] mc          pointer to the model context structure
+ * \param[in]      verbosity   verbosity level
  * \param[in, out] perm_type   type of permeability to handle
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_gwf_tpf_init(cs_gwf_tpf_t            *mc,
+                int                      verbosity,
                 cs_property_type_t       perm_type)
 {
   if (mc == NULL)
@@ -1952,6 +1913,15 @@ cs_gwf_tpf_init(cs_gwf_tpf_t            *mc,
     }
 
   } /* Segregated or coupled solver */
+
+  if (mc->nl_algo_type == CS_PARAM_NL_ALGO_PICARD)
+    mc->nl_algo = cs_iter_algo_create_with_settings(CS_ITER_ALGO_DEFAULT,
+                                                    verbosity,
+                                                    mc->nl_cvg_param);
+  else if (mc->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
+    mc->nl_algo = cs_iter_algo_create_with_settings(CS_ITER_ALGO_ANDERSON,
+                                                    verbosity,
+                                                    mc->nl_cvg_param);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2371,13 +2341,6 @@ cs_gwf_tpf_init_values(const cs_cdo_connect_t        *connect,
 
   if (mc->nl_algo_type != CS_PARAM_NL_ALGO_NONE) {
 
-    /* Apply the convergence settings */
-
-    mc->nl_algo->cvg_param.atol = mc->nl_algo_cvg.atol;
-    mc->nl_algo->cvg_param.rtol = mc->nl_algo_cvg.rtol;
-    mc->nl_algo->cvg_param.dtol = mc->nl_algo_cvg.dtol;
-    mc->nl_algo->cvg_param.n_max_iter = mc->nl_algo_cvg.n_max_iter;
-
     /* One assumes that the discretization schemes are all set to CDO
        vertex-based schemes */
 
@@ -2388,8 +2351,14 @@ cs_gwf_tpf_init_values(const cs_cdo_connect_t        *connect,
     if (mc->use_coupled_solver)
       size *= 2;
 
+    /* Apply the convergence settings */
+
+    cs_iter_algo_set_cvg_param(mc->nl_algo, mc->nl_cvg_param);
+
     if (mc->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
-      mc->nl_algo->context = cs_iter_algo_aa_create(mc->anderson_param, size);
+      cs_iter_algo_set_anderson_param(mc->nl_algo,
+                                      mc->anderson_param,
+                                      size);
 
   }
 }

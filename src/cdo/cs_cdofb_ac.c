@@ -1035,11 +1035,28 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-  sc->nl_algo = cs_iter_algo_create(nslesp->verbosity, nslesp->nl_algo_cvg);
+  cs_iter_algo_type_t  type = CS_ITER_ALGO_TWO_LEVEL;
 
-  if (nslesp->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
-    sc->nl_algo->context = cs_iter_algo_aa_create(nslesp->anderson_param,
-                                                  cs_shared_quant->n_faces);
+  if (nslesp->nl_algo_type == CS_PARAM_NL_ALGO_PICARD) {
+
+    type |= CS_ITER_ALGO_DEFAULT;
+    sc->nl_algo = cs_iter_algo_create_with_settings(type,
+                                                    nslesp->verbosity,
+                                                    nslesp->nl_cvg_param);
+
+  }
+  else if (nslesp->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
+
+    type |= CS_ITER_ALGO_ANDERSON;
+    sc->nl_algo = cs_iter_algo_create_with_settings(type,
+                                                    nslesp->verbosity,
+                                                    nslesp->nl_cvg_param);
+
+    cs_iter_algo_set_anderson_param(sc->nl_algo,
+                                    nslesp->anderson_param,
+                                    cs_shared_quant->n_faces);
+
+  }
 
   /* Monitoring */
 
@@ -1070,12 +1087,9 @@ cs_cdofb_ac_free_scheme_context(void   *scheme_context)
 
   sc->pressure_bc = cs_cdo_bc_free(sc->pressure_bc);
 
-  /* If the context is not NULL, this means that an Anderson algorithm has been
-     activated otherwise nothing to do */
+  /* Free the structure related to the iterative algorithm */
 
-  cs_iter_algo_aa_free(sc->nl_algo);
-
-  BFT_FREE(sc->nl_algo);
+  cs_iter_algo_free(&(sc->nl_algo));
 
   /* Other pointers are only shared (i.e. not owner) */
 
@@ -1400,26 +1414,27 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
 
   cs_timer_t  t_solve_start = cs_timer_time();
 
-  cs_iter_algo_reset_nl(nl_algo_type, nl_algo);
+  cs_iter_algo_reset(nl_algo);
 
   /* Solve the linear system (treated as a scalar-valued system
    * with 3 times more DoFs) */
 
-  cs_real_t  normalization = 1.0; /* TODO */
+  cs_real_t  normalization = 1.0; /* TODO: Try something better */
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, NULL);
   cs_matrix_t  *matrix = cs_cdo_system_get_matrix(mom_sh, 0);
   cs_range_set_t  *range_set = cs_cdo_system_get_range_set(mom_sh, 0);
 
-  nl_algo->n_inner_iter = (nl_algo->last_inner_iter =
-                           cs_cdo_solve_scalar_system(3*n_faces,
-                                                      mom_eqp->sles_param,
-                                                      matrix,
-                                                      range_set,
-                                                      normalization,
-                                                      true, /* rhs_redux */
-                                                      sles,
-                                                      vel_f,
-                                                      rhs));
+  int  n_inner_iter = cs_cdo_solve_scalar_system(3*n_faces,
+                                                    mom_eqp->sles_param,
+                                                    matrix,
+                                                    range_set,
+                                                    normalization,
+                                                    true, /* rhs_redux */
+                                                    sles,
+                                                    vel_f,
+                                                    rhs);
+
+  cs_iter_algo_update_inner_iters(nl_algo, n_inner_iter);
 
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -1452,8 +1467,9 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   /* Set the normalization of the non-linear algo to the value of the first
      mass flux norm */
 
-  nl_algo->normalization =
-    sqrt(cs_cdo_blas_square_norm_pfsf(sc->mass_flux_array));
+  normalization = sqrt(cs_cdo_blas_square_norm_pfsf(sc->mass_flux_array));
+
+  cs_iter_algo_set_normalization(nl_algo, normalization);
 
   /* Check the convergence status and update the nl_algo structure related
    * to the convergence monitoring */
@@ -1495,16 +1511,17 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
     sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, NULL);
     cs_sles_setup(sles, matrix);
 
-    nl_algo->n_inner_iter += (nl_algo->last_inner_iter =
-                         cs_cdo_solve_scalar_system(3*n_faces,
-                                                    mom_eqp->sles_param,
-                                                    matrix,
-                                                    range_set,
-                                                    normalization,
-                                                    true, /* rhs_redux */
-                                                    sles,
-                                                    vel_f,
-                                                    rhs));
+    n_inner_iter = cs_cdo_solve_scalar_system(3*n_faces,
+                                              mom_eqp->sles_param,
+                                              matrix,
+                                              range_set,
+                                              normalization,
+                                              true, /* rhs_redux */
+                                              sles,
+                                              vel_f,
+                                              rhs);
+
+    cs_iter_algo_update_inner_iters(nl_algo, n_inner_iter);
 
     t_solve_end = cs_timer_time();
     cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -1528,18 +1545,18 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   if (nsp->verbosity > 1) {
 
     cs_log_printf(CS_LOG_DEFAULT, " -cvg- NavSto: cumulated_inner_iters: %d\n",
-                  nl_algo->n_inner_iter);
+                  cs_iter_algo_get_n_inner_iter(nl_algo));
     cs_log_printf_flush(CS_LOG_DEFAULT);
 
   }
 
-  cs_iter_algo_post_check(__func__,
-                          mom_eqp->name,
-                          cs_param_get_nl_algo_label(nl_algo_type),
-                          nl_algo);
+  cs_iter_algo_check_warning(__func__,
+                             mom_eqp->name,
+                             cs_param_get_nl_algo_label(nl_algo_type),
+                             nl_algo);
 
   if (nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
-    cs_iter_algo_aa_free_arrays(nl_algo->context);
+    cs_iter_algo_release_anderson_arrays(nl_algo->context);
 
   /* Update pressure and the cell velocity */
 

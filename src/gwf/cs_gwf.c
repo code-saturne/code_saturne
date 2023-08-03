@@ -1168,7 +1168,7 @@ cs_gwf_init_model_context(void)
 
   case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
   case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
-    cs_gwf_tpf_init(gw->model_context, perm_type);
+    cs_gwf_tpf_init(gw->model_context, gw->verbosity, perm_type);
     break;
 
   default:

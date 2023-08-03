@@ -1455,7 +1455,7 @@ cs_equation_param_create(const char            *name,
 
   eqp->incremental_relax_factor = 1.0; /* No relaxation by default */
 
-  eqp->incremental_anderson_param = (cs_iter_algo_param_aa_t) {
+  eqp->incremental_anderson_param = (cs_iter_algo_param_aac_t) {
     .n_max_dir = 6,
     .starting_iter = 3,
     .max_cond = -1, /* No test by default */
@@ -2270,7 +2270,7 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
 
     if (eqp->incremental_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
 
-      const cs_iter_algo_param_aa_t  aap = eqp->incremental_anderson_param;
+      const cs_iter_algo_param_aac_t  aap = eqp->incremental_anderson_param;
 
       cs_log_printf(CS_LOG_SETUP, "  * %s | Anderson param: max. dir: %d; "
                     " start: %d; drop. tol: %5.3e; relax: %5.3e\n",

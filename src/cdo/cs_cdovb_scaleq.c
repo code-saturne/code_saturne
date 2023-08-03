@@ -1927,8 +1927,9 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   eqc->get_mass_matrix = cs_hodge_get_func(__func__, eqc->mass_hodgep);
 
   if (eqp->incremental_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
-    eqb->incremental_algo->context =
-      cs_iter_algo_aa_create(eqp->incremental_anderson_param, n_vertices);
+    cs_iter_algo_set_anderson_param(eqb->incremental_algo,
+                                    eqp->incremental_anderson_param,
+                                    n_vertices);
 
   /* Helper structures
      -----------------

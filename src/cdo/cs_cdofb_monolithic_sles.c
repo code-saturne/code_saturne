@@ -855,6 +855,8 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)mesh->b_face_cells;
 
+  int  n_iter = 0;
+
   /* Compute A^-1 lumped. Consider a rhs with only one values. */
 
   cs_array_real_set_scalar(uza->n_u_dofs, 1., uza->rhs);
@@ -879,17 +881,17 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
 
   cs_param_sles_update_cvg_settings(true, slesp); /* use the field id */
 
-  uza->algo->n_inner_iter
-    += (uza->algo->last_inner_iter =
-        cs_cdo_solve_scalar_system(uza->n_u_dofs,
-                                   slesp,
-                                   a,
-                                   rset,
-                                   1,     /* no normalization */
-                                   false, /* rhs_redux --> already done */
-                                   msles->sles,
-                                   invA_lumped,
-                                   uza->rhs));
+  n_iter = cs_cdo_solve_scalar_system(uza->n_u_dofs,
+                                      slesp,
+                                      a,
+                                      rset,
+                                      1,     /* no normalization */
+                                      false, /* rhs_redux --> already done */
+                                      msles->sles,
+                                      invA_lumped,
+                                      uza->rhs);
+
+  cs_iter_algo_update_inner_iters(uza->algo, n_iter);
 
   /* Set back the initial parameters */
 
@@ -3206,7 +3208,10 @@ _init_gkb_builder(const cs_navsto_param_t    *nsp,
 
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-  gkb->algo = cs_iter_algo_create(nslesp->verbosity, nslesp->il_algo_cvg);
+  cs_iter_algo_type_t  type = CS_ITER_ALGO_DEFAULT | CS_ITER_ALGO_TWO_LEVEL;
+  gkb->algo = cs_iter_algo_create_with_settings(type,
+                                                nslesp->verbosity,
+                                                nslesp->il_algo_cvg);
 
   return gkb;
 }
@@ -3239,7 +3244,7 @@ _free_gkb_builder(cs_gkb_builder_t   **p_gkb)
 
   BFT_FREE(gkb->zeta_array);
 
-  BFT_FREE(gkb->algo);
+  cs_iter_algo_free(&(gkb->algo));
 
   BFT_FREE(gkb);
   *p_gkb = NULL;
@@ -3344,7 +3349,10 @@ _init_uzawa_builder(const cs_navsto_param_t      *nsp,
 
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-  uza->algo = cs_iter_algo_create(nslesp->verbosity, nslesp->il_algo_cvg);
+  cs_iter_algo_type_t  type = CS_ITER_ALGO_DEFAULT | CS_ITER_ALGO_TWO_LEVEL;
+  uza->algo = cs_iter_algo_create_with_settings(type,
+                                                nslesp->verbosity,
+                                                nslesp->il_algo_cvg);
 
   return uza;
 }
@@ -3374,7 +3382,7 @@ _free_uza_builder(cs_uza_builder_t   **p_uza)
   BFT_FREE(uza->gk);
   BFT_FREE(uza->dzk);
 
-  BFT_FREE(uza->algo);
+  cs_iter_algo_free(&(uza->algo));
 
   BFT_FREE(uza);
   *p_uza = NULL;
@@ -3523,17 +3531,17 @@ _transform_gkb_system(const cs_matrix_t              *matrix,
 
   /* Compute M^-1.(b_f + gamma. Bt.N^-1.b_c) */
 
-  gkb->algo->n_inner_iter
-    += (gkb->algo->last_inner_iter
-        = cs_cdo_solve_scalar_system(gkb->n_u_dofs,
-                                     slesp,
-                                     matrix,
-                                     rset,
-                                     normalization,
-                                     true, /* rhs_redux, */
-                                     sles,
-                                     gkb->v,
-                                     gkb->b_tilda));
+  int  n_iter = cs_cdo_solve_scalar_system(gkb->n_u_dofs,
+                                           slesp,
+                                           matrix,
+                                           rset,
+                                           normalization,
+                                           true, /* rhs_redux, */
+                                           sles,
+                                           gkb->v,
+                                           gkb->b_tilda);
+
+  cs_iter_algo_update_inner_iters(gkb->algo, n_iter);
 
   /* Set back the initial parameters */
 
@@ -3652,14 +3660,18 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
   cs_array_real_copy(gkb->n_u_dofs, gkb->v, gkb->b_tilda);
 
   if (fabs(gkb->beta) > FLT_MIN) {
-    const  cs_real_t  inv_beta = 1./gkb->beta;
-# pragma omp parallel for if (size > CS_THR_MIN)
+
+    const cs_real_t  inv_beta = 1./gkb->beta;
+#   pragma omp parallel for if (size > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < size; i++)
       gkb->q[i] *= inv_beta;
+
   }
   else {
-    gkb->algo->cvg_status = CS_SLES_CONVERGED;
+
+    cs_iter_algo_set_cvg_status(gkb->algo, CS_SLES_CONVERGED);
     return;
+
   }
 
   /* Solve M.w = Dt.q */
@@ -3673,18 +3685,17 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
                          gkb->dt_q);
 
   cs_real_t  normalization = 1.0; /* TODO */
+  int  n_iter = cs_cdo_solve_scalar_system(gkb->n_u_dofs,
+                                           slesp,
+                                           matrix,
+                                           rset,
+                                           normalization,
+                                           false, /* rhs_redux */
+                                           sles,
+                                           gkb->v,
+                                           gkb->dt_q);
 
-  gkb->algo->n_inner_iter
-    += (gkb->algo->last_inner_iter =
-        cs_cdo_solve_scalar_system(gkb->n_u_dofs,
-                                   slesp,
-                                   matrix,
-                                   rset,
-                                   normalization,
-                                   false, /* rhs_redux */
-                                   sles,
-                                   gkb->v,
-                                   gkb->dt_q));
+  cs_iter_algo_update_inner_iters(gkb->algo, n_iter);
 
   gkb->alpha = _face_gdot(rset, gkb->n_u_dofs, gkb->v, gkb->dt_q);
   assert(gkb->alpha > -DBL_MIN);
@@ -3715,74 +3726,59 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
  * \brief Test if one needs one more GKB iteration
  *
  * \param[in, out] gkb     pointer to a GKB builder structure
+ *
+ * \return the convergence state
  */
 /*----------------------------------------------------------------------------*/
 
-static void
+static cs_sles_convergence_state_t
 _gkb_cvg_test(cs_gkb_builder_t           *gkb)
 {
   cs_iter_algo_t  *algo = gkb->algo;
+  int  n_algo_iter = cs_iter_algo_get_n_iter(algo);
 
   /* Update the sum of square of zeta values (used for renormalization) */
 
   cs_real_t  z2 = gkb->zeta*gkb->zeta;
 
   gkb->zeta_square_sum += z2;
-  gkb->zeta_array[algo->n_algo_iter % gkb->z_size] = z2;
+  gkb->zeta_array[n_algo_iter % gkb->z_size] = z2;
 
   /* Compute the relative energy norm for the definition of the tolerance
      threshold. The normalization arises from an iterative estimation of the
      initial error in the energy norm */
 
-  algo->prev_res = algo->res;
-
-  int  n = gkb->z_size;
-  if (algo->n_algo_iter < gkb->z_size)
-    n = algo->n_algo_iter;
-
+  int  n = (n_algo_iter < gkb->z_size) ? n_algo_iter : gkb->z_size;
   cs_real_t  err2_energy = 0.;
   for (int i = 0; i < n; i++)
     err2_energy += gkb->zeta_array[i];
 
+  double  residual_norm = sqrt(err2_energy);
+
+  cs_iter_algo_update_residual(algo, residual_norm);
+
+  /* if = 0, res0 is automatically set.  For GKB, the first estimation can be
+   * rough that's why an update is made after the first resolution */
+
+  if (n_algo_iter == 1)
+    cs_iter_algo_set_initial_residual(algo, residual_norm);
+
+  /* Compute the tolerance */
+
   double  tau = (gkb->gamma > 0) ?
-    gkb->gamma*algo->cvg_param.rtol : algo->cvg_param.rtol;
-
-  algo->res = sqrt(err2_energy);
-
-  if (algo->n_algo_iter < 2)
-    algo->res0 = algo->res;
-
-  /* Increment the number of iterations */
-
-  algo->n_algo_iter += 1;
+    sqrt(gkb->gamma)*algo->cvg_param.rtol : algo->cvg_param.rtol;
+  tau *= sqrt(gkb->zeta_square_sum);
 
   /* Set the convergence status */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 0
-  cs_log_printf(CS_LOG_DEFAULT,
-                "\nGKB.It%02d-- err2 = %6.4e ?<? tau * square_sum %6.4e\n",
-                algo->n_algo_iter, err2_energy, tau*gkb->zeta_square_sum);
-#endif
+  cs_sles_convergence_state_t  cvg_status =
+    cs_iter_algo_update_cvg_tol_given(algo,
+                                      fmax(tau, algo->cvg_param.atol));
 
-  if (err2_energy < tau * gkb->zeta_square_sum)
-    algo->cvg_status = CS_SLES_CONVERGED;
 
-  else if (algo->n_algo_iter >= algo->cvg_param.n_max_iter)
-    algo->cvg_status = CS_SLES_MAX_ITERATION;
+  cs_iter_algo_log_cvg(algo, "# GKB");
 
-  else if (algo->res > algo->cvg_param.dtol * algo->prev_res ||
-           algo->res > algo->cvg_param.dtol * algo->res0)
-    algo->cvg_status = CS_SLES_DIVERGED;
-
-  else
-    algo->cvg_status = CS_SLES_ITERATING;
-
-  if (algo->verbosity > 0)
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "### GKB.It%d %5.3e %5d %6d z2:%6.4e renorm:%6.4e cvg:%d\n",
-                  algo->n_algo_iter, algo->res,
-                  algo->last_inner_iter, algo->n_inner_iter,
-                  z2, sqrt(gkb->zeta_square_sum), algo->cvg_status);
+  return cvg_status;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3793,31 +3789,19 @@ _gkb_cvg_test(cs_gkb_builder_t           *gkb)
  *
  * \param[in, out] uza     pointer to a Uzawa builder structure
  *
- * \return true (one more iteration) otherwise false
+ * \return the convergence state
  */
 /*----------------------------------------------------------------------------*/
 
-static bool
+static cs_sles_convergence_state_t
 _uza_cg_cvg_test(cs_uza_builder_t         *uza)
 {
-  cs_iter_algo_t  *algo = uza->algo;
+  cs_sles_convergence_state_t
+    cvg_status = cs_iter_algo_update_cvg_tol_auto(uza->algo);
 
-  /* The current residual is computing before calling this function */
+  cs_iter_algo_log_cvg(uza->algo, "# UZACG");
 
-  algo->prev_res = algo->res;
-
-  cs_iter_algo_update_cvg_default(algo);
-
-  if (algo->verbosity > 0)
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "<UZACG.It%02d> res:%5.3e; threshold:%5.3e | %4d %6d cvg%d\n",
-                  algo->n_algo_iter, algo->res, algo->tol,
-                  algo->last_inner_iter, algo->n_inner_iter, algo->cvg_status);
-
-  if (algo->cvg_status == CS_SLES_ITERATING)
-    return true;
-  else
-    return false;
+  return cvg_status;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3835,27 +3819,22 @@ _uza_cvg_test(cs_uza_builder_t           *uza)
 
   /* Compute the new residual based on the norm of the divergence constraint */
 
-  algo->prev_res = algo->res;
-
   cs_real_t  res_square = cs_dot_wxx(uza->n_p_dofs, uza->inv_mp, uza->res_p);
   cs_parall_sum(1, CS_DOUBLE, &res_square);
   assert(res_square > -DBL_MIN);
-  algo->res = sqrt(res_square);
+
+  cs_iter_algo_update_residual(algo, sqrt(res_square));
 
   /* Define the tolerance threshold */
 
-  algo->tol = (uza->gamma > 0) ?
+  double  tol = (uza->gamma > 0) ?
     algo->cvg_param.rtol/sqrt(uza->gamma) : algo->cvg_param.rtol;
 
   /* Update the convergence status */
 
-  cs_iter_algo_update_cvg(algo);
+  cs_iter_algo_update_cvg_tol_given(algo, tol);
 
-  if (algo->verbosity > 0)
-    cs_log_printf(CS_LOG_DEFAULT, "### UZA.It%02d-- %5.3e %5d %6d cvg:%d\n",
-                  uza->algo->n_algo_iter, uza->algo->res,
-                  uza->algo->last_inner_iter, uza->algo->n_inner_iter,
-                  uza->algo->cvg_status);
+  cs_iter_algo_log_cvg(algo, "# UZA");
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3866,11 +3845,11 @@ _uza_cvg_test(cs_uza_builder_t           *uza)
  * \param[in]      delta_u_l2   value of the weighted L2 norm of delta_u
  * \param[in, out] uza          pointer to a Uzawa builder structure
  *
- * \return true if one more iteration is needed otherwise false
+ * \return the convergence state
  */
 /*----------------------------------------------------------------------------*/
 
-static bool
+static cs_sles_convergence_state_t
 _uza_incr_cvg_test(cs_real_t                   delta_u_l2,
                    cs_uza_builder_t           *uza)
 {
@@ -3878,43 +3857,26 @@ _uza_incr_cvg_test(cs_real_t                   delta_u_l2,
 
   /* Compute the new residual based on the norm of the divergence constraint */
 
-  algo->prev_res = algo->res;
-
   cs_real_t  res_square = cs_dot_wxx(uza->n_p_dofs, uza->inv_mp, uza->d__v);
   cs_parall_sum(1, CS_DOUBLE, &res_square);
   assert(res_square > -DBL_MIN);
   cs_real_t  divu_l2 = sqrt(res_square);
 
-  algo->res = fmax(delta_u_l2, divu_l2);
-
-  if (algo->n_algo_iter == 0) { /* First call */
-
-    algo->res0 = algo->res;
-    algo->normalization = algo->res0;
-
-    if (algo->verbosity > 1)
-      cs_log_printf(CS_LOG_DEFAULT, "### UZAi.res0:%5.3e modified rtol:%5.3e"
-                    " atol:%5.3e\n",
-                    algo->res0, algo->normalization*algo->cvg_param.rtol,
-                    algo->cvg_param.atol);
-
-  }
+  cs_iter_algo_update_residual(algo, fmax(delta_u_l2, divu_l2));
 
   /* Update the convergence status */
 
-  cs_iter_algo_update_cvg_default(algo);
+  cs_sles_convergence_state_t
+    cvg_status = cs_iter_algo_update_cvg_tol_auto(algo);
 
-  if (algo->verbosity > 0)
+  cs_iter_algo_log_cvg(algo, "# UZAi");
+
+  if (algo->verbosity > 1) /* Additional logging */
     cs_log_printf(CS_LOG_DEFAULT,
-                  "### UZAi.It%02d %5.3e %5d %6d cvg:%d div:%5.3e, du:%5.3e\n",
-                  algo->n_algo_iter, algo->res,
-                  algo->last_inner_iter, algo->n_inner_iter,
-                  algo->cvg_status, divu_l2, delta_u_l2);
+                  "### UZAi.It%03d | divu_l2: %10.4e; delta_u_l2: %10.4e\n",
+                  cs_iter_algo_get_n_iter(algo), divu_l2, delta_u_l2);
 
-  if (algo->cvg_status == CS_SLES_ITERATING)
-    return true;
-  else
-    return false;
+  return cvg_status;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4604,8 +4566,12 @@ cs_cdofb_monolithic_block_krylov(const cs_navsto_param_t       *nsp,
 
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-  cs_iter_algo_t  *saddle_algo = cs_iter_algo_create(nslesp->verbosity,
-                                                     nslesp->il_algo_cvg);
+  cs_iter_algo_type_t  algo_type =
+    CS_ITER_ALGO_DEFAULT | CS_ITER_ALGO_TWO_LEVEL;
+  cs_iter_algo_t  *saddle_algo =
+    cs_iter_algo_create_with_settings(algo_type,
+                                      nslesp->verbosity,
+                                      nslesp->il_algo_cvg);
 
   /* Set the saddle-point system */
   /* --------------------------- */
@@ -4749,14 +4715,14 @@ cs_cdofb_monolithic_block_krylov(const cs_navsto_param_t       *nsp,
   BFT_FREE(ssys->m11_matrices);
   BFT_FREE(ssys); /* only shared pointers inside */
 
-  int n_algo_iter = saddle_algo->n_algo_iter;
+  int n_algo_iter = cs_iter_algo_get_n_iter(saddle_algo);
 
   if (nslesp->verbosity > 1)
     cs_log_printf(CS_LOG_DEFAULT,
                   " -cvg- inner_algo: cumulated_iters: %d\n",
-                  saddle_algo->n_inner_iter);
+                  cs_iter_algo_get_n_inner_iter(saddle_algo));
 
-  BFT_FREE(saddle_algo);
+  cs_iter_algo_free(&saddle_algo);
 
   return n_algo_iter;
 }
@@ -4819,7 +4785,10 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
   /* Main loop */
   /* ========= */
 
-  while (gkb->algo->cvg_status == CS_SLES_ITERATING) {
+  cs_sles_convergence_state_t
+    cvg_status = cs_iter_algo_get_cvg_status(gkb->algo);
+
+  while (cvg_status == CS_SLES_ITERATING) {
 
     /* Compute g (store as an update of d__v), q */
 
@@ -4864,17 +4833,17 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
     }
 
     cs_real_t  normalization = gkb->alpha; /* TODO */
-    gkb->algo->n_inner_iter
-      += (gkb->algo->last_inner_iter =
-          cs_cdo_solve_scalar_system(gkb->n_u_dofs,
-                                     slesp,
-                                     matrix,
-                                     range_set,
-                                     normalization,
-                                     false, /* rhs_redux */
-                                     msles->sles,
-                                     gkb->v,
-                                     gkb->m__v));
+    int  n_iter = cs_cdo_solve_scalar_system(gkb->n_u_dofs,
+                                             slesp,
+                                             matrix,
+                                             range_set,
+                                             normalization,
+                                             false, /* rhs_redux */
+                                             msles->sles,
+                                             gkb->v,
+                                             gkb->m__v);
+
+    cs_iter_algo_update_inner_iters(gkb->algo, n_iter);
 
     /* Compute alpha */
 
@@ -4908,7 +4877,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
 
     /* Update error norm and test if one needs one more iteration */
 
-    _gkb_cvg_test(gkb);
+    cvg_status = _gkb_cvg_test(gkb);
 
   }
 
@@ -4920,13 +4889,13 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
   for (cs_lnum_t iu = 0; iu < gkb->n_u_dofs; iu++)
     u_f[iu] = gkb->u_tilda[iu] + gkb->b_tilda[iu];
 
-  int n_inner_iter = gkb->algo->n_inner_iter;
+  int  n_inner_iter = cs_iter_algo_get_n_inner_iter(gkb->algo);
 
   /* Last step: Free temporary memory */
 
   _free_gkb_builder(&gkb);
 
-  return  n_inner_iter;
+  return n_inner_iter;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4955,7 +4924,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
                                    cs_param_sles_t               *slesp,
                                    cs_cdofb_monolithic_sles_t    *msles)
 {
-  int  _n_iter;
+  int  _n_iter = 0;
 
   assert(nsp != NULL && nsp->sles_param->strategy == CS_NAVSTO_SLES_UZAWA_CG);
   assert(sh != NULL && sh->n_blocks == 2);
@@ -5034,7 +5003,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
   /* Initial residual for rhs */
 
-  double normalization = _get_fbvect_norm(uza->rhs);
+  double  normalization = _get_fbvect_norm(uza->rhs);
 
   /* Compute the first velocity guess
    * Modify the tolerance in order to be more accurate on this step */
@@ -5064,8 +5033,8 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
                                        msles->sles,
                                        u_f,
                                        uza->rhs);
-  uza->algo->n_inner_iter += _n_iter;
-  uza->algo->last_inner_iter += _n_iter;
+
+  cs_iter_algo_update_inner_iters(uza->algo, _n_iter);
 
   /* Set back the initial parameters */
 
@@ -5130,8 +5099,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
   }
 
-  uza->algo->n_inner_iter += _n_iter;
-  uza->algo->last_inner_iter += _n_iter;
+  cs_iter_algo_update_inner_iters(uza->algo, _n_iter);
 
 # pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
   for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++)
@@ -5142,14 +5110,15 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   cs_array_real_copy(uza->n_p_dofs, gk, dk);
 
   double  beta_denum = cs_gdot(uza->n_p_dofs, rk, gk);
-  uza->algo->normalization = sqrt(beta_denum);
-  uza->algo->res0 = uza->algo->normalization;
-  uza->algo->res = uza->algo->res0;
+  double  res_norm =  sqrt(beta_denum);
+
+  cs_iter_algo_set_normalization(uza->algo, res_norm);
+  cs_iter_algo_update_residual(uza->algo, res_norm);
 
   /* Main loop knowing g0, r0, d0, u0, p0 */
   /* ------------------------------------ */
 
-  while (_uza_cg_cvg_test(uza)) {
+  while (_uza_cg_cvg_test(uza) == CS_SLES_ITERATING) {
 
     /* Sensitivity step: Compute wk as the solution of A.wk = B^t.dk */
 
@@ -5169,17 +5138,17 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
     memset(wk, 0, sizeof(cs_real_t)*uza->n_u_dofs);
 
-    uza->algo->n_inner_iter
-      += (uza->algo->last_inner_iter =
-          cs_cdo_solve_scalar_system(uza->n_u_dofs,
-                                     slesp,
-                                     matrix,
-                                     range_set,
-                                     normalization,
-                                     false, /* rhs_redux -->already done */
-                                     msles->sles,
-                                     wk,
-                                     uza->rhs));
+    _n_iter = cs_cdo_solve_scalar_system(uza->n_u_dofs,
+                                         slesp,
+                                         matrix,
+                                         range_set,
+                                         normalization,
+                                         false, /* rhs_redux -->already done */
+                                         msles->sles,
+                                         wk,
+                                         uza->rhs);
+
+    cs_iter_algo_update_inner_iters(uza->algo, _n_iter);
 
     _apply_div_op(B_op, wk, dwk); /* -B -w --> dwk has the right sign */
 
@@ -5215,8 +5184,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
     }
 
-    uza->algo->n_inner_iter += _n_iter;
-    uza->algo->last_inner_iter += _n_iter;
+    cs_iter_algo_update_inner_iters(uza->algo, _n_iter);
 
 #   pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
     for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++)
@@ -5250,7 +5218,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
     double  beta_factor = beta_num/beta_denum;
     beta_denum = beta_num; /* Next time it is used at the denumerator */
 
-    uza->algo->res = sqrt(beta_num);
+    cs_iter_algo_update_residual(uza->algo, sqrt(beta_num));
 
     /* dk <-- gk + beta_factor * dk */
 
@@ -5263,7 +5231,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   /* Cumulated sum of iterations to solve the Schur complement and the velocity
      block (save before freeing the uzawa structure). */
 
-  int n_inner_iter = uza->algo->n_inner_iter;
+  int  n_inner_iter = cs_iter_algo_get_n_inner_iter(uza->algo);
 
   /* Last step: Free temporary memory */
 
@@ -5271,7 +5239,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   BFT_FREE(xtra_smat);
   _free_uza_builder(&uza);
 
-  return  n_inner_iter;
+  return n_inner_iter;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5386,22 +5354,20 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
 
   cs_real_t  normalization = cs_cdo_blas_square_norm_pfvp(uza->rhs);
 
-  if (fabs(normalization) > 0)
-    normalization = sqrt(normalization);
-  else
-    normalization = 1.0;
+  normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
 
-  uza->algo->n_inner_iter
-    += (uza->algo->last_inner_iter =
-        cs_cdo_solve_scalar_system(uza->n_u_dofs,
-                                   slesp,
-                                   matrix,
-                                   range_set,
-                                   normalization,
-                                   false, /* rhs_redux */
-                                   msles->sles,
-                                   u_f,
-                                   uza->rhs));
+  int  n_iter = cs_cdo_solve_scalar_system(uza->n_u_dofs,
+                                           slesp,
+                                           matrix,
+                                           range_set,
+                                           normalization,
+                                           false, /* rhs_redux */
+                                           msles->sles,
+                                           u_f,
+                                           uza->rhs);
+
+  cs_iter_algo_update_inner_iters(uza->algo, n_iter);
+  cs_iter_algo_set_normalization(uza->algo, normalization);
 
   /* Set back the initial parameters */
 
@@ -5432,7 +5398,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
     p_c[ip] += gamma * uza->res_p[ip];
   }
 
-  while (_uza_incr_cvg_test(delta_u_l2, uza)) {
+  while (_uza_incr_cvg_test(delta_u_l2, uza) == CS_SLES_ITERATING) {
 
     /* Continue building the RHS */
 
@@ -5450,23 +5416,20 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
 
     cs_array_real_fill_zero(uza->n_u_dofs, delta_u);
 
-    uza->algo->n_inner_iter
-      += (uza->algo->last_inner_iter =
-          cs_cdo_solve_scalar_system(uza->n_u_dofs,
-                                     slesp,
-                                     matrix,
-                                     range_set,
-                                     delta_u_l2, /* normalization */
-                                     false, /* rhs_redux */
-                                     msles->sles,
-                                     delta_u,
-                                     uza->rhs));
+    n_iter = cs_cdo_solve_scalar_system(uza->n_u_dofs,
+                                        slesp,
+                                        matrix,
+                                        range_set,
+                                        delta_u_l2, /* normalization */
+                                        false, /* rhs_redux */
+                                        msles->sles,
+                                        delta_u,
+                                        uza->rhs);
+
+    cs_iter_algo_update_inner_iters(uza->algo, n_iter);
 
     delta_u_l2 = cs_cdo_blas_square_norm_pfvp(delta_u);
-    if (fabs(delta_u_l2) > 0)
-      delta_u_l2 = sqrt(delta_u_l2);
-    else
-      delta_u_l2 = 1.0;
+    delta_u_l2 = (fabs(delta_u_l2) > FLT_MIN) ? sqrt(delta_u_l2) : 1.0;
 
     /* Update the velocity */
 
@@ -5491,13 +5454,13 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
 
   } /* End of Uzawa iterations */
 
-  int n_inner_iter = uza->algo->n_inner_iter;
+  int  n_inner_iter = cs_iter_algo_get_n_inner_iter(uza->algo);
 
   /* Last step: Free temporary memory */
 
   _free_uza_builder(&uza);
 
-  return  n_inner_iter;
+  return n_inner_iter;
 }
 
 /*----------------------------------------------------------------------------*/

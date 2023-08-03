@@ -531,20 +531,20 @@ typedef struct {
 
   cs_param_nl_algo_t            nl_algo_type;
 
-  /*! \var nl_algo_cvg
+  /*! \var nl_cvg_param
    *  Structure storing several tolerances and metadata to drive the
    *  convergence of the non-linear iterative algorithm used to solve te
    *  Navier-Stokes when the advection term is implicit and non linearized.
    */
 
-  cs_param_sles_cvg_t           nl_algo_cvg;
+  cs_param_sles_cvg_t           nl_cvg_param;
 
   /*! \var anderson_param
    * Set of parameters to drive the Anderson acceleration (useful if the type
    * of non-linear algorithm is set to Anderson acceleration).
    */
 
-  cs_iter_algo_param_aa_t       anderson_param;
+  cs_iter_algo_param_aac_t      anderson_param;
 
   /*!
    * @}

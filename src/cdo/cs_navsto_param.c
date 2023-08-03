@@ -271,10 +271,10 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
 
   nslesp->nl_algo_type = CS_PARAM_NL_ALGO_PICARD;
 
-  nslesp->nl_algo_cvg.n_max_iter = 25;
-  nslesp->nl_algo_cvg.rtol = 1e-5;
-  nslesp->nl_algo_cvg.atol = 1e-5;
-  nslesp->nl_algo_cvg.dtol = 1e3;
+  nslesp->nl_cvg_param.n_max_iter = 25;
+  nslesp->nl_cvg_param.rtol = 1e-5;
+  nslesp->nl_cvg_param.atol = 1e-5;
+  nslesp->nl_cvg_param.dtol = 1e3;
 
   nslesp->anderson_param.n_max_dir = 6;
   nslesp->anderson_param.starting_iter = 3;
@@ -910,7 +910,7 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     break;
 
   case CS_NSKEY_MAX_NL_ALGO_ITER:
-    nsp->sles_param->nl_algo_cvg.n_max_iter = atoi(val);
+    nsp->sles_param->nl_cvg_param.n_max_iter = atoi(val);
     break;
 
   case CS_NSKEY_MAX_OUTER_ITER:
@@ -934,8 +934,8 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     break; /* Non-linear algorithm */
 
   case CS_NSKEY_NL_ALGO_ATOL:
-    nsp->sles_param->nl_algo_cvg.atol = atof(val);
-    if (nsp->sles_param->nl_algo_cvg.atol < 0)
+    nsp->sles_param->nl_cvg_param.atol = atof(val);
+    if (nsp->sles_param->nl_cvg_param.atol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the absolute tolerance of the"
                 " non-linear algorithm\n",
@@ -943,8 +943,8 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     break;
 
   case CS_NSKEY_NL_ALGO_DTOL:
-    nsp->sles_param->nl_algo_cvg.dtol = atof(val);
-    if (nsp->sles_param->nl_algo_cvg.dtol < 0)
+    nsp->sles_param->nl_cvg_param.dtol = atof(val);
+    if (nsp->sles_param->nl_cvg_param.dtol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the divergence tolerance of the"
                 " non-linear algorithm\n",
@@ -952,8 +952,8 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     break;
 
   case CS_NSKEY_NL_ALGO_RTOL:
-    nsp->sles_param->nl_algo_cvg.rtol = atof(val);
-    if (nsp->sles_param->nl_algo_cvg.rtol < 0)
+    nsp->sles_param->nl_cvg_param.rtol = atof(val);
+    if (nsp->sles_param->nl_cvg_param.rtol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the relative tolerance of the"
                 " non-linear algorithm\n",
@@ -1277,12 +1277,12 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
                   navsto, cs_param_get_nl_algo_name(nslesp->nl_algo_type));
     cs_log_printf(CS_LOG_SETUP, "%s Tolerances of non-linear algo:"
                   " rtol: %5.3e; atol: %5.3e; dtol: %5.3e; max_iter: %d\n",
-                  navsto, nslesp->nl_algo_cvg.rtol, nslesp->nl_algo_cvg.atol,
-                  nslesp->nl_algo_cvg.dtol, nslesp->nl_algo_cvg.n_max_iter);
+                  navsto, nslesp->nl_cvg_param.rtol, nslesp->nl_cvg_param.atol,
+                  nslesp->nl_cvg_param.dtol, nslesp->nl_cvg_param.n_max_iter);
 
     if (nslesp->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
 
-      const cs_iter_algo_param_aa_t  aap = nslesp->anderson_param;
+      const cs_iter_algo_param_aac_t  aap = nslesp->anderson_param;
 
       cs_log_printf(CS_LOG_SETUP, "%s Anderson param: max. dir: %d; "
                     " start: %d; drop. tol: %5.3e; relax: %5.3e\n",

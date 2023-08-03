@@ -63,80 +63,15 @@ BEGIN_C_DECLS
 /*!
  * \file cs_iter_algo.c
  *
- * \brief Set of functions to handle the management of high-level iterative
- *        algorithms such as Uzawa, Golub-Kahan Bi-orthogonalization, block
- *        preconditioner or Picard algorithms which incorporates inner
- *        iterative solvers
+ * \brief Set of functions to manage high-level iterative algorithms such as
+ *        Uzawa, Golub-Kahan Bi-orthogonalization, block preconditioner or
+ *        Picard and Anderson algorithms which may incorporate inner iterative
+ *        solvers
  */
 
 /*=============================================================================
  * Local structure definitions
  *============================================================================*/
-
-/*! \struct _cs_iter_algo_aa_t
- *  \brief Context structure for the algorithm called Anderson acceleration
- *
- *  Set of parameters and arrays to manage the Anderson acceleration
- */
-
-struct _cs_iter_algo_aa_t {
-
-/*!
- * \var param
- * Set of parameters driving the behavior of the Anderson acceleration
- */
-
-  cs_iter_algo_param_aa_t    param;
-
-
-  cs_lnum_t                  n_elts;
-
-  /*!
-   * @}
-   * @name Work quantities (temporary)
-   * @{
-   *
-   * \var n_dir
-   * Number of directions currently at stake
-   *
-   * \var fold
-   * Previous values for f
-   *
-   * \var df
-   * Difference between the current and previous values of f
-   *
-   * \var gold
-   * Previous values for g
-   *
-   * \var dg
-   * Difference between the current and previous values of g
-   *
-   * \var Q
-   * Matrix Q in the Q.R factorization (seen as a bundle of vectors)
-   *
-   * \var R
-   * Matrix R in the Q.R factorization (small dense matrix)
-   *
-   * \var gamma
-   * Coefficients used to define the linear combination
-   *
-   *@}
-   */
-
-  int             n_dir;
-
-  cs_real_t      *fold;
-  cs_real_t      *df;
-
-  cs_real_t      *gold;
-  cs_real_t      *dg;
-
-  cs_real_t      *Q;
-  cs_sdm_t       *R;
-
-  cs_real_t      *gamma;
-
-};
 
 /*=============================================================================
  * Local Macro definitions and structure definitions
@@ -149,6 +84,64 @@ struct _cs_iter_algo_aa_t {
 /*============================================================================
  * Private variables
  *============================================================================*/
+
+/*============================================================================
+ * Inline static private functions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reset the context of a cs_iter_algo_t structure when this context is
+ *        associated to the "default" type
+ *
+ * \param[in, out] c       pointer to a cs_iter_algo_default_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_reset_default(cs_iter_algo_default_t    *c)
+{
+  if (c == NULL)
+    return;
+
+  c->cvg_status = CS_SLES_ITERATING;
+
+  c->res0 = cs_math_big_r;
+  c->prev_res = cs_math_big_r;
+  c->res = cs_math_big_r;
+
+  c->n_algo_iter = 0;
+  c->n_inner_iter = 0;
+  c->last_inner_iter = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reset the context of a cs_iter_algo_t structure when this context is
+ *        associated to an Anderson acceleration algorithm
+ *
+ * \param[in, out] c       pointer to a cs_iter_algo_aac_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_reset_anderson(cs_iter_algo_aac_t    *c)
+{
+  if (c == NULL)
+    return;
+
+  c->cvg_status = CS_SLES_ITERATING;
+
+  c->res0 = cs_math_big_r;
+  c->prev_res = cs_math_big_r;
+  c->res = cs_math_big_r;
+
+  c->n_algo_iter = 0;
+  c->n_inner_iter = 0;
+  c->last_inner_iter = 0;
+
+  c->n_dir = 0;
+}
 
 /*============================================================================
  * Private function prototypes
@@ -189,20 +182,20 @@ _condition_number(int               n_rows,
  * \brief  Erase the first row of the dg set of arrays and then shift each
  *         superior row below
  *
- * \param[in, out] aa        pointer to the Anderson algo. structure
+ * \param[in, out] c        pointer to the Anderson algo. structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_aa_shift_dg(cs_iter_algo_aa_t   *aa)
+_anderson_shift_dg(cs_iter_algo_aac_t   *c)
 {
-  assert(aa->dg != NULL);
-  const size_t  dir_size = sizeof(cs_real_t)*aa->n_elts;
+  assert(c->dg != NULL);
+  const size_t  dir_size = sizeof(cs_real_t)*c->n_elts;
 
-  for (int i = 0; i < aa->n_dir - 1; i++) {
+  for (int i = 0; i < c->n_dir - 1; i++) {
 
-    cs_real_t *dg_i = aa->dg + i*aa->n_elts;
-    cs_real_t *dg_ip1 = aa->dg + (i+1)*aa->n_elts;
+    cs_real_t *dg_i = c->dg + i*c->n_elts;
+    cs_real_t *dg_ip1 = c->dg + (i+1)*c->n_elts;
 
     memcpy(dg_i, dg_ip1, dir_size); /* dg_i <= dg_(i+1) */
 
@@ -284,36 +277,36 @@ _qrdelete(int          m,
  * \brief Compute the coefficient used in the linear combination for the
  *        Anderson acceleration
  *
- * \param[in, out] aa       pointer to the structure managing the Anderson algo.
- * \param[in]      dotprod  function to compute a dot product
+ * \param[in, out] c         pointer to the Anderson algo. structure
+ * \param[in]      dotprod   function to compute a dot product
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_aa_compute_gamma(cs_iter_algo_aa_t           *aa,
-                  cs_cdo_blas_dotprod_t       *dotprod)
+_anderson_compute_gamma(cs_iter_algo_aac_t          *c,
+                        cs_cdo_blas_dotprod_t       *dotprod)
 {
-  int  n_cols = aa->R->n_cols;
+  int  n_cols = c->R->n_cols;
 
-  for (int i = aa->n_dir-1; i >= 0; i--) {
+  for (int i = c->n_dir-1; i >= 0; i--) {
 
     /* Solve R gamma = (fcur, Q_i) where fcur is equal to fold since one saves
        fcur into fold at the end of the step 1 of the Anderson algorithm */
 
-    double  s = dotprod(aa->fold, aa->Q + i*aa->n_elts);
+    double  s = dotprod(c->fold, c->Q + i*c->n_elts);
 
-    for (int j = i+1; j < aa->n_dir; j++)
-      s -= aa->R->val[i*n_cols+j] * aa->gamma[j];
+    for (int j = i+1; j < c->n_dir; j++)
+      s -= c->R->val[i*n_cols+j] * c->gamma[j];
 
-    aa->gamma[i] = s/aa->R->val[i*(n_cols+1)];
+    c->gamma[i] = s/c->R->val[i*(n_cols+1)];
 
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_ITER_ALGO_DBG > 0
   cs_log_printf(CS_LOG_DEFAULT, " %s:l%d >> Gamma coefficients:",
                 __func__, __LINE__);
-  for (int i = 0; i < aa->n_dir; i++)
-    cs_log_printf(CS_LOG_DEFAULT, " (%d:=%5.3e)", i, aa->gamma[i]);
+  for (int i = 0; i < c->n_dir; i++)
+    cs_log_printf(CS_LOG_DEFAULT, " (%d:=%5.3e)", i, c->gamma[i]);
   cs_log_printf(CS_LOG_DEFAULT, "\n");
 #endif
 }
@@ -323,34 +316,72 @@ _aa_compute_gamma(cs_iter_algo_aa_t           *aa,
  * \brief Compute the coefficient used in the linear combination for the
  *        Anderson acceleration
  *
- * \param[in, out] aa    pointer to the structure managing the Anderson algo.
- * \param[in, out] x     array of values to update
+ * \param[in, out] c    pointer to the structure managing the Anderson algo.
+ * \param[in, out] x    array of values to update
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_aa_damping(cs_iter_algo_aa_t    *aa,
-            cs_real_t            *x)
+_anderson_damping(cs_iter_algo_aac_t    *c,
+                  cs_real_t             *x)
 {
-  const double  omb = 1.0 - aa->param.beta;
-  const int  m_max = aa->param.n_max_dir;
-  const cs_real_t  *Rval = aa->R->val;
+  const double  omb = 1.0 - c->param.beta;
+  const int  m_max = c->param.n_max_dir;
+  const cs_real_t  *Rval = c->R->val;
 
-  for (int j = 0; j < aa->n_dir; j++) {
+  for (int j = 0; j < c->n_dir; j++) {
 
     double  R_gamma = 0.;
-    for (int k = j; k < aa->n_dir; k++)  /* R is upper diag */
-      R_gamma += Rval[j*m_max+k] * aa->gamma[k];
+    for (int k = j; k < c->n_dir; k++)  /* R is upper diag */
+      R_gamma += Rval[j*m_max+k] * c->gamma[k];
 
     /* x = x - (1-beta)*(fold - Q*R*gamma) */
 
-    const cs_real_t  *Qj = aa->Q + j*aa->n_elts;  /* get row j */
+    const cs_real_t  *Qj = c->Q + j*c->n_elts;  /* get row j */
 
-#   pragma omp parallel if (aa->n_elts > CS_THR_MIN)
-    for (cs_lnum_t l = 0; l < aa->n_elts; l++)
-      x[l] += omb * (Qj[l] * R_gamma - aa->fold[l]);
+#   pragma omp parallel if (c->n_elts > CS_THR_MIN)
+    for (cs_lnum_t l = 0; l < c->n_elts; l++)
+      x[l] += omb * (Qj[l] * R_gamma - c->fold[l]);
 
   } /* Loop on directions */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate arrays needed by the "Anderson acceleration" algorithm
+ *
+ * \param[in, out] c    pointer to the context structure for the Anderson algo.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_allocate_anderson_arrays(cs_iter_algo_aac_t     *c)
+{
+  if (c == NULL)
+    return;
+
+  const int  n_max_dir = c->param.n_max_dir;
+
+  BFT_MALLOC(c->fold, c->n_elts, cs_real_t);
+  cs_array_real_fill_zero(c->n_elts, c->fold);
+
+  BFT_MALLOC(c->df, c->n_elts, cs_real_t);
+  cs_array_real_fill_zero(c->n_elts, c->df);
+
+  BFT_MALLOC(c->gold, c->n_elts, cs_real_t);
+  cs_array_real_fill_zero(c->n_elts, c->gold);
+
+  BFT_MALLOC(c->dg, c->n_elts*n_max_dir, cs_real_t);
+  cs_array_real_fill_zero(c->n_elts*n_max_dir, c->dg);
+
+  BFT_MALLOC(c->gamma, n_max_dir, cs_real_t);
+  memset(c->gamma, 0, sizeof(cs_real_t)*n_max_dir);
+
+  BFT_MALLOC(c->Q, c->n_elts*n_max_dir, cs_real_t);
+  cs_array_real_fill_zero(c->n_elts*n_max_dir, c->Q);
+
+  c->R = cs_sdm_square_create(n_max_dir);
+  cs_sdm_square_init(n_max_dir, c->R);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -361,8 +392,85 @@ _aa_damping(cs_iter_algo_aa_t    *aa,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create and initialize a new cs_iter_algo_t structure
+ * \brief Create and initialize by default a new cs_iter_algo_t structure
  *
+ * \param[in] type    type of iterative algorithm
+ *
+ * \return a pointer to the new allocated structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_iter_algo_t *
+cs_iter_algo_create(cs_iter_algo_type_t    type)
+{
+  cs_iter_algo_t  *algo = NULL;
+
+  BFT_MALLOC(algo, 1, cs_iter_algo_t);
+
+  algo->type = type;
+  algo->verbosity = 0;
+  algo->cvg_param.atol = 1e-15;
+  algo->cvg_param.rtol = 1e-6;
+  algo->cvg_param.dtol = 1e3;
+  algo->cvg_param.n_max_iter = 2500;
+
+  if (type & CS_ITER_ALGO_DEFAULT) {
+
+    cs_iter_algo_default_t  *c = NULL;
+
+    BFT_MALLOC(c, 1, cs_iter_algo_default_t);
+    _reset_default(c);
+    c->normalization = 1.0;
+
+    algo->context = c;
+
+  }
+  else if (type & CS_ITER_ALGO_ANDERSON) {
+
+    cs_iter_algo_aac_t  *c = NULL;
+
+    BFT_MALLOC(c, 1, cs_iter_algo_aac_t);
+
+    /* Parameters (default settings) */
+
+    c->param.n_max_dir = 5;
+    c->param.starting_iter = 3;
+    c->param.max_cond = 500;
+    c->param.beta = 0;
+    c->param.dp_type = CS_PARAM_DOTPROD_EUCLIDEAN;
+
+    /* Other variables */
+
+    c->n_elts = 0;    /* Should be set latter */
+    c->n_dir = 0;
+
+    /* Work arrays and structures */
+
+    c->fold = NULL;
+    c->df = NULL;
+    c->gold = NULL;
+    c->dg = NULL;
+    c->gamma = NULL;
+    c->Q = NULL;
+    c->R = NULL;
+
+    _reset_anderson(c);
+    c->normalization = 1.0;
+
+    algo->context = c;
+
+  }
+  else
+    algo->context = NULL;
+
+  return algo;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a new cs_iter_algo_t structure with the given settings
+ *
+ * \param[in] type       type of iterative algorithm
  * \param[in] verbosity  level of information to print
  * \param[in] param      set of parameters driving the convergence of the
  *                       iterative algorithm
@@ -372,12 +480,11 @@ _aa_damping(cs_iter_algo_aa_t    *aa,
 /*----------------------------------------------------------------------------*/
 
 cs_iter_algo_t *
-cs_iter_algo_create(int                    verbosity,
-                    cs_param_sles_cvg_t    cvg_param)
+cs_iter_algo_create_with_settings(cs_iter_algo_type_t    type,
+                                  int                    verbosity,
+                                  cs_param_sles_cvg_t    cvg_param)
 {
-  cs_iter_algo_t  *algo = NULL;
-
-  BFT_MALLOC(algo, 1, cs_iter_algo_t);
+  cs_iter_algo_t  *algo = cs_iter_algo_create(type);
 
   algo->verbosity = verbosity;
   algo->cvg_param.atol = cvg_param.atol;
@@ -385,199 +492,458 @@ cs_iter_algo_create(int                    verbosity,
   algo->cvg_param.dtol = cvg_param.dtol;
   algo->cvg_param.n_max_iter = cvg_param.n_max_iter;
 
-  algo->normalization = 1.0;
-  algo->context = NULL;
-
-  cs_iter_algo_reset(algo);       /* default initialization */
-
   return algo;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Check if something wrong happens during the iterative process after
- *        one new iteration
+ * \brief Free a cs_iter_algo_t structure
  *
- * \param[in] func_name    name of the calling function
- * \param[in] eq_name      name of the equation being solved
- * \param[in] algo_name    name of the iterative algo. used
- * \param[in] algo         pointer to the iterative algorithm structure
+ * \param[in, out] p_algo     double pointer on the structure to free
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_post_check(const char          *func_name,
-                        const char          *eq_name,
-                        const char          *algo_name,
-                        cs_iter_algo_t      *algo)
+cs_iter_algo_free(cs_iter_algo_t   **p_algo)
 {
+  if (p_algo == NULL)
+    return;
+
+  cs_iter_algo_t  *algo = *p_algo;
   if (algo == NULL)
     return;
 
-  if (algo->cvg_status == CS_SLES_DIVERGED)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: %s algorithm divergence detected.\n"
-              "%s: Equation \"%s\" can not be solved correctly.\n"
-              "%s: Last iteration=%d; last residual=%5.3e\n",
-              func_name, algo_name,
-              func_name, eq_name,
-              func_name, algo->n_algo_iter, algo->res);
+  if (algo->type & CS_ITER_ALGO_DEFAULT) {
 
-  else if (algo->cvg_status == CS_SLES_MAX_ITERATION) {
+    cs_iter_algo_default_t  *c = algo->context;
 
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(" %s: %s algorithm reaches the max. number of iterations"
-               " when solving equation \"%s\"\n"
-               " %s: max_iter=%d; last residual=%5.3e\n",
-               func_name, algo_name, eq_name,
-               func_name, algo->cvg_param.n_max_iter, algo->res);
+    BFT_FREE(c);
 
   }
+  else if (algo->type & CS_ITER_ALGO_ANDERSON) {
+
+    cs_iter_algo_aac_t  *c = algo->context;
+
+    cs_iter_algo_release_anderson_arrays(c);
+
+    BFT_FREE(c);
+
+  }
+
+  BFT_FREE(algo);
+  *p_algo = NULL;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Update the convergence status and the number of iterations. The
- *        tolerance threshold has to be computed outside the function and
- *        before calling this function.
+ * \brief Reset a cs_iter_algo_t structure
  *
- * \param[in, out] algo      pointer to a cs_iter_algo_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_iter_algo_update_cvg(cs_iter_algo_t         *algo)
-{
-  /* Increment the number of iterations */
-
-  algo->n_algo_iter += 1;
-
-  /* Set the convergence status */
-
-  if (algo->res < algo->tol)
-    algo->cvg_status = CS_SLES_CONVERGED;
-
-  else if (algo->n_algo_iter >= algo->cvg_param.n_max_iter)
-    algo->cvg_status = CS_SLES_MAX_ITERATION;
-
-  else if (algo->res > algo->cvg_param.dtol * algo->prev_res ||
-           algo->res > algo->cvg_param.dtol * algo->res0)
-    algo->cvg_status = CS_SLES_DIVERGED;
-
-  else
-    algo->cvg_status = CS_SLES_ITERATING;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Update the convergence status and the number of iterations. The
- *        tolerance threshold is computed by a default formula relying on the
- *        relative tolerance scaled by the normalization factor and the
- *        absolute tolerance.
- *
- * \param[in, out] algo      pointer to a cs_iter_algo_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_iter_algo_update_cvg_default(cs_iter_algo_t         *algo)
-{
-  /* Set the tolerance criterion (computed at each call if the normalization is
-     modified between two successive calls) */
-
-  algo->tol = fmax(algo->cvg_param.rtol*algo->normalization,
-                   algo->cvg_param.atol);
-
-  /* Increment the number of iterations */
-
-  algo->n_algo_iter += 1;
-
-  /* Set the convergence status */
-
-  if (algo->res < algo->tol)
-    algo->cvg_status = CS_SLES_CONVERGED;
-
-  else if (algo->n_algo_iter >= algo->cvg_param.n_max_iter)
-    algo->cvg_status = CS_SLES_MAX_ITERATION;
-
-  else if (algo->res > algo->cvg_param.dtol * algo->prev_res ||
-           algo->res > algo->cvg_param.dtol * algo->res0)
-    algo->cvg_status = CS_SLES_DIVERGED;
-
-  else
-    algo->cvg_status = CS_SLES_ITERATING;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Reset a cs_iter_algo_t structure in case of a non-linear algorothm
- *
- * \param[in]      nl_algo_type   type of non-linear algorithm
  * \param[in, out] algo           pointer to a cs_iter_algo_t
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_reset_nl(cs_param_nl_algo_t   nl_algo_type,
-                      cs_iter_algo_t      *algo)
+cs_iter_algo_reset(cs_iter_algo_t      *algo)
 {
   if (algo == NULL)
     return;
 
-  cs_iter_algo_reset(algo);  /* common to all algorithm linear or non-linear */
+  if (algo->type & CS_ITER_ALGO_DEFAULT) {
 
-  if (nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
+    cs_iter_algo_default_t  *c = algo->context;
+    _reset_default(c);
 
-    cs_iter_algo_aa_t  *aa = algo->context;
-    assert(aa != NULL);
-    aa->n_dir = 0;
+  }
+  else if (algo->type & CS_ITER_ALGO_ANDERSON) {
+
+    cs_iter_algo_aac_t  *c = algo->context;
+    _reset_anderson(c);
 
   }
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create a new cs_iter_algo_aa_t structure for Anderson acceleration
+ * \brief Reset a cs_iter_algo_t structure
  *
- * \param[in] aap          set of parameters for the Anderson acceleration
- * \param[in] n_elts       number of elements by direction
- *
- * \return a pointer to the new allocated structure
+ * \param[in, out] algo           pointer to a cs_iter_algo_t
  */
 /*----------------------------------------------------------------------------*/
 
-cs_iter_algo_aa_t *
-cs_iter_algo_aa_create(cs_iter_algo_param_aa_t    aap,
-                       cs_lnum_t                  n_elts)
+void
+cs_iter_algo_release_anderson_arrays(cs_iter_algo_aac_t      *c)
 {
-  cs_iter_algo_aa_t  *aa = NULL;
+  if (c == NULL)
+    return;
 
-  BFT_MALLOC(aa, 1, cs_iter_algo_aa_t);
+  BFT_FREE(c->fold);
+  BFT_FREE(c->df);
+  BFT_FREE(c->gold);
+  BFT_FREE(c->dg);
+  BFT_FREE(c->gamma);
+  BFT_FREE(c->Q);
 
-  /* Parameters */
+  c->R = cs_sdm_free(c->R);
+}
 
-  aa->param.n_max_dir = aap.n_max_dir;
-  aa->param.starting_iter = aap.starting_iter;
-  aa->param.max_cond = aap.max_cond;
-  aa->param.beta = aap.beta;
-  aa->param.dp_type = aap.dp_type;
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the verbosity of the given iterative algorithm
+ *
+ * \param[in, out] algo       pointer to the structure to update
+ * \param[in]      verbosity  level of information to print
+ */
+/*----------------------------------------------------------------------------*/
 
-  /* Other variables */
+void
+cs_iter_algo_set_verbosity(cs_iter_algo_t     *algo,
+                           int                 verbosity)
+{
+  if (algo == NULL)
+    return;
 
-  aa->n_elts = n_elts;
-  aa->n_dir = 0;
+  algo->verbosity = verbosity;
+}
 
-  /* Work arrays and structures */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the criteria related the convergence of the given iterative
+ *        algorithm
+ *
+ * \param[in, out] algo       pointer to the structure to update
+ * \param[in]      param      set of parameters driving the convergence of the
+ *                            iterative algorithm
+ */
+/*----------------------------------------------------------------------------*/
 
-  aa->fold = NULL;
-  aa->df = NULL;
-  aa->gold = NULL;
-  aa->dg = NULL;
-  aa->gamma = NULL;
-  aa->Q = NULL;
-  aa->R = NULL;
+void
+cs_iter_algo_set_cvg_param(cs_iter_algo_t        *algo,
+                           cs_param_sles_cvg_t    cvg_param)
+{
+  if (algo == NULL)
+    return;
 
-  return aa;
+  algo->cvg_param.atol = cvg_param.atol;
+  algo->cvg_param.rtol = cvg_param.rtol;
+  algo->cvg_param.dtol = cvg_param.dtol;
+  algo->cvg_param.n_max_iter = cvg_param.n_max_iter;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the final tolerance used to check the convergence of the algorithm
+ *        This tolerance should take into account rtol and atol for instance
+ *
+ * \param[in, out] algo    pointer to the structure to update
+ * \param[in]      tol     tolerance to apply
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_iter_algo_set_tolerance(cs_iter_algo_t   *algo,
+                           double            tol)
+{
+  if (algo == NULL)
+    return;
+
+  if (algo->type & CS_ITER_ALGO_DEFAULT) {
+
+    cs_iter_algo_default_t  *c = algo->context;
+    c->tol = tol;
+
+  }
+  else if (algo->type & CS_ITER_ALGO_ANDERSON) {
+
+    cs_iter_algo_aac_t  *c = algo->context;
+    c->tol = tol;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the initial residual used to detect a divergence
+ *
+ * \param[in, out] algo     pointer to the structure to update
+ * \param[in]      value    value of the initial residual
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_iter_algo_set_initial_residual(cs_iter_algo_t   *algo,
+                                  double            value)
+{
+  if (algo == NULL)
+    return;
+
+  if (algo->type & CS_ITER_ALGO_DEFAULT) {
+
+    cs_iter_algo_default_t  *c = algo->context;
+    c->res0 = value;
+
+  }
+  else if (algo->type & CS_ITER_ALGO_ANDERSON) {
+
+    cs_iter_algo_aac_t  *c = algo->context;
+    c->res0 = value;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the normalization to apply when checking the convergence of the
+ *        algorithm.
+ *
+ * \param[in, out] algo     pointer to the structure to update
+ * \param[in]      value    normalization to apply
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_iter_algo_set_normalization(cs_iter_algo_t   *algo,
+                               double            value)
+{
+  if (algo == NULL)
+    return;
+
+  if (algo->type & CS_ITER_ALGO_DEFAULT) {
+
+    cs_iter_algo_default_t  *c = algo->context;
+    c->normalization = value;
+
+  }
+  else if (algo->type & CS_ITER_ALGO_ANDERSON) {
+
+    cs_iter_algo_aac_t  *c = algo->context;
+    c->normalization = value;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the convergence status of the given structure
+ *
+ * \param[in, out] algo     pointer to the structure to update
+ * \param[in]      value    normalization to apply
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_iter_algo_set_cvg_status(cs_iter_algo_t                  *algo,
+                            cs_sles_convergence_state_t      cvg_status)
+{
+  if (algo == NULL)
+    return;
+
+  if (algo->type & CS_ITER_ALGO_DEFAULT) {
+
+    cs_iter_algo_default_t  *c = algo->context;
+    c->cvg_status = cvg_status;
+
+  }
+  else if (algo->type & CS_ITER_ALGO_ANDERSON) {
+
+    cs_iter_algo_aac_t  *c = algo->context;
+    c->cvg_status = cvg_status;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a new cs_iter_algo_aac_t structure for Anderson acceleration
+ *
+ * \param[in, out] algo        pointer to the structure to update
+ * \param[in]      aac_param   set of parameters for the Anderson acceleration
+ * \param[in]      n_elts      number of elements by direction
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_iter_algo_set_anderson_param(cs_iter_algo_t             *algo,
+                                cs_iter_algo_param_aac_t    aac_param,
+                                cs_lnum_t                   n_elts)
+{
+  if (algo == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: Empty structure.", __func__);
+  if (cs_flag_test(algo->type, CS_ITER_ALGO_ANDERSON) == false)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid type of iterative algorithm.", __func__);
+
+  cs_iter_algo_aac_t  *c = algo->context;
+  assert(c != NULL);
+
+  c->param.n_max_dir = aac_param.n_max_dir;
+  c->param.starting_iter = aac_param.starting_iter;
+  c->param.max_cond = aac_param.max_cond;
+  c->param.beta = aac_param.beta;
+  c->param.dp_type = aac_param.dp_type;
+
+  c->n_elts = n_elts;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the current number of iterations done
+ *
+ * \param[in, out] algo       pointer to the structure to examine
+ *
+ * \return the number of iterations done
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_iter_algo_get_n_iter(const cs_iter_algo_t        *algo)
+{
+  if (algo == NULL)
+    return 0;
+
+  if (algo->type & CS_ITER_ALGO_DEFAULT) {
+
+    cs_iter_algo_default_t  *c = algo->context;
+    return c->n_algo_iter;
+
+  }
+  else if (algo->type & CS_ITER_ALGO_ANDERSON) {
+
+    cs_iter_algo_aac_t  *c = algo->context;
+    return c->n_algo_iter;
+
+  }
+  else
+    return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the cumulated number of inner iterations done
+ *
+ * \param[in, out] algo       pointer to the structure to examine
+ *
+ * \return the number of iterations done
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_iter_algo_get_n_inner_iter(const cs_iter_algo_t        *algo)
+{
+  if (algo == NULL)
+    return 0;
+  if (cs_flag_test(algo->type, CS_ITER_ALGO_TWO_LEVEL) == false)
+    return 0;
+
+  if (algo->type & CS_ITER_ALGO_DEFAULT) {
+
+    cs_iter_algo_default_t  *c = algo->context;
+
+    return c->n_inner_iter;
+
+  }
+  else if (algo->type & CS_ITER_ALGO_ANDERSON) {
+
+    cs_iter_algo_aac_t  *c = algo->context;
+
+    return c->n_inner_iter;
+
+  }
+  else
+    return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the last computed residual
+ *
+ * \param[in, out] algo       pointer to the structure to examine
+ *
+ * \return the number of iterations done
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_iter_algo_get_residual(const cs_iter_algo_t        *algo)
+{
+  if (algo == NULL)
+    return cs_math_big_r;
+
+  if (algo->type & CS_ITER_ALGO_DEFAULT) {
+
+    cs_iter_algo_default_t  *c = algo->context;
+    return c->res;
+
+  }
+  else if (algo->type & CS_ITER_ALGO_ANDERSON) {
+
+    cs_iter_algo_aac_t  *c = algo->context;
+    return c->res;
+
+  }
+  else
+    return cs_math_big_r;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the last convergence state
+ *
+ * \param[in, out] algo       pointer to the structure to examine
+ *
+ * \return the convergence status
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sles_convergence_state_t
+cs_iter_algo_get_cvg_status(const cs_iter_algo_t        *algo)
+{
+  if (algo == NULL)
+    return CS_SLES_ITERATING;
+
+  if (algo->type & CS_ITER_ALGO_DEFAULT) {
+
+    cs_iter_algo_default_t  *c = algo->context;
+    return c->cvg_status;
+
+  }
+  else if (algo->type & CS_ITER_ALGO_ANDERSON) {
+
+    cs_iter_algo_aac_t  *c = algo->context;
+    return c->cvg_status;
+
+  }
+  else
+    return CS_SLES_ITERATING;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the normalization to apply when computing the tolerance threshold
+ *
+ * \param[in] algo   pointer to a cs_iter_algo_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_iter_algo_get_normalization(const cs_iter_algo_t    *algo)
+{
+  if (algo == NULL)
+    return 1.0;
+
+  if (algo->type & CS_ITER_ALGO_DEFAULT) {
+
+    cs_iter_algo_default_t  *c = algo->context;
+    return c->normalization;
+
+  }
+  else if (algo->type & CS_ITER_ALGO_ANDERSON) {
+
+    cs_iter_algo_aac_t  *c = algo->context;
+    return c->normalization;
+
+  }
+  else
+    return 1.0;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -586,121 +952,23 @@ cs_iter_algo_aa_create(cs_iter_algo_param_aa_t    aap,
  *
  * \param[in, out] algo      pointer to a cs_iter_algo_t structure
  *
- * \return a cs_iter_algo_param_aa_t structure
+ * \return a cs_iter_algo_param_aac_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_iter_algo_param_aa_t
+cs_iter_algo_param_aac_t
 cs_iter_algo_get_anderson_param(cs_iter_algo_t         *algo)
 {
-  if (algo != NULL) {
-
-    cs_iter_algo_aa_t  *aa = algo->context;
-
-    if (aa != NULL)
-      return aa->param;
-
-  }
-
-  /* Define a set of parameters by default */
-
-  cs_iter_algo_param_aa_t  aap = {
-    .n_max_dir = 4,
-    .starting_iter = 2,
-    .max_cond = 500,
-    .beta = 0.,
-    .dp_type = CS_PARAM_DOTPROD_EUCLIDEAN };
-
-  return aap;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Allocate arrays needed by the "Anderson acceleration" algorithm
- *
- * \param[in, out] aa    pointer to the structure managing the Anderson algo.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_iter_algo_aa_allocate_arrays(cs_iter_algo_aa_t     *aa)
-{
-  if (aa == NULL)
-    return;
-
-  const int  n_max_dir = aa->param.n_max_dir;
-
-  BFT_MALLOC(aa->fold, aa->n_elts, cs_real_t);
-  cs_array_real_fill_zero(aa->n_elts, aa->fold);
-
-  BFT_MALLOC(aa->df, aa->n_elts, cs_real_t);
-  cs_array_real_fill_zero(aa->n_elts, aa->df);
-
-  BFT_MALLOC(aa->gold, aa->n_elts, cs_real_t);
-  cs_array_real_fill_zero(aa->n_elts, aa->gold);
-
-  BFT_MALLOC(aa->dg, aa->n_elts*n_max_dir, cs_real_t);
-  cs_array_real_fill_zero(aa->n_elts*n_max_dir, aa->dg);
-
-  BFT_MALLOC(aa->gamma, n_max_dir, cs_real_t);
-  memset(aa->gamma, 0, sizeof(cs_real_t)*n_max_dir);
-
-  BFT_MALLOC(aa->Q, aa->n_elts*n_max_dir, cs_real_t);
-  cs_array_real_fill_zero(aa->n_elts*n_max_dir, aa->Q);
-
-  aa->R = cs_sdm_square_create(n_max_dir);
-  cs_sdm_square_init(n_max_dir, aa->R);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Free arrays used during the Anderson acceleration
- *
- * \param[in, out] aa     pointer to the structure managing the Anderson algo.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_iter_algo_aa_free_arrays(cs_iter_algo_aa_t  *aa)
-{
-  if (aa == NULL)
-    return;
-
-  BFT_FREE(aa->fold);
-  BFT_FREE(aa->df);
-
-  BFT_FREE(aa->gold);
-  BFT_FREE(aa->dg);
-
-  BFT_FREE(aa->gamma);
-
-  BFT_FREE(aa->Q);
-  aa->R = cs_sdm_free(aa->R);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Free a cs_iter_algo_aa_t structure inside a cs_iter_algo_t structure
- *        This structure is used to manage the Anderson acceleration
- *
- * \param[in, out] algo    pointer the main structure. Free the context part.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_iter_algo_aa_free(cs_iter_algo_t  *algo)
-{
   if (algo == NULL)
-    return;
+    bft_error(__FILE__, __LINE__, 0, "%s: Empty structure.", __func__);
+  if (cs_flag_test(algo->type, CS_ITER_ALGO_ANDERSON) == false)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid type of iterative algorithm.", __func__);
 
-  cs_iter_algo_aa_t  *aa = (cs_iter_algo_aa_t *)algo->context;
+  cs_iter_algo_aac_t  *c = algo->context;
+  assert(c != NULL);
 
-  if (aa == NULL)
-    return;
-
-  cs_iter_algo_aa_free_arrays(aa);
-
-  BFT_FREE(aa);
+  return c->param;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -716,27 +984,32 @@ cs_iter_algo_aa_free(cs_iter_algo_t  *algo)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_aa_update(cs_iter_algo_t               *algo,
-                       cs_real_t                    *cur_iterate,
-                       const cs_real_t              *pre_iterate,
-                       cs_cdo_blas_dotprod_t        *dotprod,
-                       cs_cdo_blas_square_norm_t    *sqnorm)
+cs_iter_algo_update_anderson(cs_iter_algo_t               *algo,
+                             cs_real_t                    *cur_iterate,
+                             const cs_real_t              *pre_iterate,
+                             cs_cdo_blas_dotprod_t        *dotprod,
+                             cs_cdo_blas_square_norm_t    *sqnorm)
 {
   if (algo == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Structure not allocated.\n", __func__);
+    return;
 
-  cs_iter_algo_aa_t  *aa = (cs_iter_algo_aa_t *)algo->context;
-  assert(aa != NULL);
+  if (cs_flag_test(algo->type, CS_ITER_ALGO_ANDERSON) == false)
+    return; /* Nothing to do. This is not an Anderson acceleration algorithm */
+
+  cs_iter_algo_aac_t  *c = (cs_iter_algo_aac_t *)algo->context;
+
+  if (c == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Anderson acceleration context not allocated.\n", __func__);
 
   /* Check if anderson has to begin */
 
-  const int  shifted_iter = algo->n_algo_iter - aa->param.starting_iter;
+  const int  shifted_iter = c->n_algo_iter - c->param.starting_iter;
   if (shifted_iter < 0)
     return;
 
-  if (shifted_iter == 0 && aa->fold == NULL)
-    cs_iter_algo_aa_allocate_arrays(aa);
+  if (shifted_iter == 0 && c->fold == NULL)
+    _allocate_anderson_arrays(c);
 
   /*
    * Notation details:
@@ -748,7 +1021,7 @@ cs_iter_algo_aa_update(cs_iter_algo_t               *algo,
    * df = fcur - fold
    */
 
-  const int  m_max = aa->param.n_max_dir;
+  const int  m_max = c->param.n_max_dir;
   const cs_real_t  *gcur = cur_iterate;
 
   /* Step 1: Update arrays useful for the Q.R factorization (df and dg)
@@ -756,14 +1029,14 @@ cs_iter_algo_aa_update(cs_iter_algo_t               *algo,
 
   if (shifted_iter == 0) { /* The first iteration is simpler */
 
-    assert(aa->n_dir == 0);
+    assert(c->n_dir == 0);
 
     /* Set fold and gold */
 
-#   pragma omp parallel if (aa->n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < aa->n_elts; i++) {
-      aa->fold[i] = gcur[i] - pre_iterate[i];
-      aa->gold[i] = gcur[i];
+#   pragma omp parallel if (c->n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < c->n_elts; i++) {
+      c->fold[i] = gcur[i] - pre_iterate[i];
+      c->gold[i] = gcur[i];
     }
 
     return;  /* Nothing else to do. Algorithm has been initialized. This first
@@ -776,122 +1049,122 @@ cs_iter_algo_aa_update(cs_iter_algo_t               *algo,
 
     /* Shift dg (set of rows) to the right position (two cases) */
 
-    cs_real_t  *dg = aa->dg + aa->n_dir*aa->n_elts;
+    cs_real_t  *dg = c->dg + c->n_dir*c->n_elts;
 
-    if (aa->n_dir == m_max) {
+    if (c->n_dir == m_max) {
 
       /* Erase the first row to retrieve some space and then
        * shift each superior row below */
 
-      _aa_shift_dg(aa);
-      dg = aa->dg + (aa->n_dir-1)*aa->n_elts;
+      _anderson_shift_dg(c);
+      dg = c->dg + (c->n_dir-1)*c->n_elts;
 
     }
 
     /* Set dg, df, fold and gold */
 
-#   pragma omp parallel if (aa->n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < aa->n_elts; i++) {
+#   pragma omp parallel if (c->n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < c->n_elts; i++) {
 
       cs_real_t  fcur = gcur[i] - pre_iterate[i];
 
-      dg[i] = gcur[i] - aa->gold[i];
-      aa->df[i] = fcur - aa->fold[i];
-      aa->fold[i] = fcur;
-      aa->gold[i] = gcur[i];
+      dg[i] = gcur[i] - c->gold[i];
+      c->df[i] = fcur - c->fold[i];
+      c->fold[i] = fcur;
+      c->gold[i] = gcur[i];
 
     }
 
-    aa->n_dir++;
+    c->n_dir++;
 
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_ITER_ALGO_DBG > 1
   cs_log_printf(CS_LOG_DEFAULT, " %s:l%d >> Case n_dir=%d\n",
-                __func__, __LINE__, aa->n_dir);
+                __func__, __LINE__, c->n_dir);
 #endif
 
   /* Step 2: Update the Q.R factorization
    * ------- */
 
-  cs_real_t  *Rval = aa->R->val;
+  cs_real_t  *Rval = c->R->val;
 
-  if (aa->n_dir == 1) {
+  if (c->n_dir == 1) {
 
-    const double  df_norm = sqrt(sqnorm(aa->df));
+    const double  df_norm = sqrt(sqnorm(c->df));
     const cs_real_t  coef = 1.0/df_norm;
 
     Rval[0] = df_norm; /* R(0,0) = |df|_L2 */
 
-#   pragma omp parallel if (aa->n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < aa->n_elts; i++)
-      aa->Q[i] = aa->df[i]*coef; /* Q(0) = df/|df|_L2 */
+#   pragma omp parallel if (c->n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < c->n_elts; i++)
+      c->Q[i] = c->df[i]*coef; /* Q(0) = df/|df|_L2 */
 
   }
   else {
 
-    if (aa->n_dir > m_max) { /* Remove the first column and last line in the
+    if (c->n_dir > m_max) { /* Remove the first column and last line in the
                                 Q.R factorization */
 
-      _qrdelete(m_max, aa->n_elts, aa->Q, aa->R);
-      aa->n_dir--;
+      _qrdelete(m_max, c->n_elts, c->Q, c->R);
+      c->n_dir--;
 
     }
 
-    for (int j = 0; j < aa->n_dir-1; j++) {
+    for (int j = 0; j < c->n_dir-1; j++) {
 
-      cs_real_t *Qj = aa->Q + j*aa->n_elts; /* get the row j */
+      cs_real_t *Qj = c->Q + j*c->n_elts; /* get the row j */
 
-      const double  prod = dotprod(aa->df, Qj);
+      const double  prod = dotprod(c->df, Qj);
 
-      Rval[j*m_max + (aa->n_dir-1)] = prod;  /* R(j, n_dir) = Qj*df */
+      Rval[j*m_max + (c->n_dir-1)] = prod;  /* R(j, n_dir) = Qj*df */
 
-#     pragma omp parallel if (aa->n_elts > CS_THR_MIN)
-      for (cs_lnum_t l = 0; l < aa->n_elts; l++)
-        aa->df[l] -= prod*Qj[l];  /* update df = df - R(j, n_dir)*Qj */
+#     pragma omp parallel if (c->n_elts > CS_THR_MIN)
+      for (cs_lnum_t l = 0; l < c->n_elts; l++)
+        c->df[l] -= prod*Qj[l];  /* update df = df - R(j, n_dir)*Qj */
 
     }
 
-    const double  df_norm = sqrt(sqnorm(aa->df));
+    const double  df_norm = sqrt(sqnorm(c->df));
     const cs_real_t  coef = 1.0/df_norm;
 
     /* R(n_dir,n_dir) = |df|_L2 */
 
-    Rval[(aa->n_dir-1)*m_max+(aa->n_dir-1)] = df_norm;
+    Rval[(c->n_dir-1)*m_max+(c->n_dir-1)] = df_norm;
 
     /* Set the row n_dir-1 of Q */
 
-    cs_real_t *q_n_dir = aa->Q + (aa->n_dir-1)*aa->n_elts;
+    cs_real_t *q_n_dir = c->Q + (c->n_dir-1)*c->n_elts;
 
-#   pragma omp parallel if (aa->n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < aa->n_elts; i++)
-      q_n_dir[i] = aa->df[i]*coef;  /* Q(n_dir, :) = df/|df|_L2 */
+#   pragma omp parallel if (c->n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < c->n_elts; i++)
+      q_n_dir[i] = c->df[i]*coef;  /* Q(n_dir, :) = df/|df|_L2 */
 
   } /* n_dir > 1 */
 
   /* Step 3: Improve the condition number of R if needed
    * ------- */
 
-  if (aa->param.max_cond > 0) {
+  if (c->param.max_cond > 0) {
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_ITER_ALGO_DBG > 0
     cs_log_printf(CS_LOG_DEFAULT, " %s:l%d >> Init  cond: %5.3e; n_dir=%d\n",
                   __func__, __LINE__,
-                  _condition_number(aa->n_dir, aa->R), aa->n_dir);
+                  _condition_number(c->n_dir, c->R), c->n_dir);
 #endif
 
-    while (aa->n_dir > 1 &&
-           _condition_number(aa->n_dir, aa->R) > aa->param.max_cond) {
+    while (c->n_dir > 1 &&
+           _condition_number(c->n_dir, c->R) > c->param.max_cond) {
 
-      _qrdelete(m_max, aa->n_elts, aa->Q, aa->R);
-      aa->n_dir--;
+      _qrdelete(m_max, c->n_elts, c->Q, c->R);
+      c->n_dir--;
 
     }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_ITER_ALGO_DBG > 0
     cs_log_printf(CS_LOG_DEFAULT, " %s:l%d >> Final cond: %5.3e; n_dir=%d\n",
                   __func__, __LINE__,
-                  _condition_number(aa->n_dir, aa->R), aa->n_dir);
+                  _condition_number(c->n_dir, c->R), c->n_dir);
 #endif
 
   }
@@ -899,18 +1172,18 @@ cs_iter_algo_aa_update(cs_iter_algo_t               *algo,
   /* Step 4: Solve the least square problem (upper triangular solve)
    * ------- */
 
-  _aa_compute_gamma(aa, dotprod);
+  _anderson_compute_gamma(c, dotprod);
 
   /* Step 5: Update cur_iterate by cur_iterate = cur_iterate[i] - gamma.dg
    * ------- */
 
-  for (int j = 0; j < aa->n_dir; j++) {
+  for (int j = 0; j < c->n_dir; j++) {
 
-    const cs_real_t  *dg_j = aa->dg + j*aa->n_elts;
-    const double  gamma_j = aa->gamma[j];
+    const cs_real_t  *dg_j = c->dg + j*c->n_elts;
+    const double  gamma_j = c->gamma[j];
 
-#   pragma omp parallel if (aa->n_elts > CS_THR_MIN)
-    for (cs_lnum_t l = 0; l < aa->n_elts; l++)
+#   pragma omp parallel if (c->n_elts > CS_THR_MIN)
+    for (cs_lnum_t l = 0; l < c->n_elts; l++)
       cur_iterate[l] -= gamma_j * dg_j[l];
 
   }
@@ -918,8 +1191,319 @@ cs_iter_algo_aa_update(cs_iter_algo_t               *algo,
   /* Step 6: Damping of cur_iterate
    * ------- */
 
-  if ((aa->param.beta > 0.0) && (aa->param.beta < 1.0))
-    _aa_damping(aa, cur_iterate);
+  if ((c->param.beta > 0.0) && (c->param.beta < 1.0))
+    _anderson_damping(c, cur_iterate);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the counting of inner iterations in two-level algorithms
+ *
+ * \param[in, out] algo               pointer to the structure to update
+ * \param[in]      n_last_inner_iter  last number of inner loop iterations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_iter_algo_update_inner_iters(cs_iter_algo_t   *algo,
+                                int               n_last_inner_iter)
+{
+  if (algo == NULL)
+    return;
+  if (cs_flag_test(algo->type, CS_ITER_ALGO_TWO_LEVEL) == false)
+    return;
+
+  if (algo->type & CS_ITER_ALGO_DEFAULT) {
+
+    cs_iter_algo_default_t  *c = algo->context;
+
+    c->last_inner_iter = n_last_inner_iter;
+    c->n_inner_iter += n_last_inner_iter;
+
+  }
+  else if (algo->type & CS_ITER_ALGO_ANDERSON) {
+
+    cs_iter_algo_aac_t  *c = algo->context;
+
+    c->last_inner_iter = n_last_inner_iter;
+    c->n_inner_iter += n_last_inner_iter;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the value of the residual and its associated members.
+ *
+ * \param[in, out] algo      pointer to a cs_iter_algo_t structure
+ * \param[in]      res       new value of the residual
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_iter_algo_update_residual(cs_iter_algo_t      *algo,
+                             double               res)
+{
+  if (algo == NULL)
+    return;
+  assert(res > -DBL_MIN);
+
+  if (algo->type & CS_ITER_ALGO_DEFAULT) {
+
+    cs_iter_algo_default_t  *c = algo->context;
+
+    c->prev_res = c->res;
+    c->res = res;
+
+    if (c->n_algo_iter < 1) /* Store the first residual to detect a possible
+                               divergence of the algorithm */
+      c->res0 = res;
+
+  }
+  else if (algo->type & CS_ITER_ALGO_ANDERSON) {
+
+    cs_iter_algo_aac_t  *c = algo->context;
+
+    c->prev_res = c->res;
+    c->res = res;
+
+    if (c->n_algo_iter < 1) /* Store the first residual to detect a possible
+                               divergence of the algorithm */
+      c->res0 = res;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the convergence status and the number of iterations. The
+ *        tolerance threshold is given so that it has to be computed before
+ *        calling this function.
+ *
+ * \param[in, out] algo      pointer to a cs_iter_algo_t structure
+ * \param[in]      tol       tolerance threshold to apply
+ *
+ * \return the convergence state
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sles_convergence_state_t
+cs_iter_algo_update_cvg_tol_given(cs_iter_algo_t         *algo,
+                                  double                  tol)
+{
+  cs_iter_algo_set_tolerance(algo, tol);
+
+  if (algo->type & CS_ITER_ALGO_DEFAULT) {
+
+    cs_iter_algo_default_t  *c = algo->context;
+
+    /* Increment the number of iterations */
+
+    c->n_algo_iter += 1;
+
+    /* Set the convergence status */
+
+    if (c->res < c->tol)
+      c->cvg_status = CS_SLES_CONVERGED;
+
+    else if (c->n_algo_iter >= algo->cvg_param.n_max_iter)
+      c->cvg_status = CS_SLES_MAX_ITERATION;
+
+    else if (c->res > algo->cvg_param.dtol * c->prev_res ||
+             c->res > algo->cvg_param.dtol * c->res0)
+      c->cvg_status = CS_SLES_DIVERGED;
+
+    else
+      c->cvg_status = CS_SLES_ITERATING;
+
+    return c->cvg_status;
+
+  }
+  else if (algo->type & CS_ITER_ALGO_ANDERSON) {
+
+    cs_iter_algo_aac_t  *c = algo->context;
+
+    /* Increment the number of iterations */
+
+    c->n_algo_iter += 1;
+
+    /* Set the convergence status */
+
+    if (c->res < c->tol)
+      c->cvg_status = CS_SLES_CONVERGED;
+
+    else if (c->n_algo_iter >= algo->cvg_param.n_max_iter)
+      c->cvg_status = CS_SLES_MAX_ITERATION;
+
+    else if (c->res > algo->cvg_param.dtol * c->prev_res ||
+             c->res > algo->cvg_param.dtol * c->res0)
+      c->cvg_status = CS_SLES_DIVERGED;
+
+    else
+      c->cvg_status = CS_SLES_ITERATING;
+
+    return c->cvg_status;
+
+  }
+  else
+    return CS_SLES_ITERATING;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the convergence status and the number of iterations. The
+ *        tolerance threshold is automatically computed by a default formula
+ *        relying on the relative tolerance scaled by the normalization factor
+ *        and the absolute tolerance.
+ *
+ * \param[in, out] algo      pointer to a cs_iter_algo_t structure
+ *
+ * \return the convergence state
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sles_convergence_state_t
+cs_iter_algo_update_cvg_tol_auto(cs_iter_algo_t         *algo)
+{
+  /* Set the tolerance criterion (computed at each call if the normalization is
+     modified between two successive calls) */
+
+  double  tol = fmax(algo->cvg_param.rtol*cs_iter_algo_get_normalization(algo),
+                     algo->cvg_param.atol);
+
+  return cs_iter_algo_update_cvg_tol_given(algo, tol);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log the convergence of the iterative algorithm
+ *
+ * \param[in] algo     pointer to the iterative algorithm structure
+ * \param[in] label    label to specify the log
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_iter_algo_log_cvg(cs_iter_algo_t      *algo,
+                     const char          *label)
+{
+  if (algo == NULL)
+    return;
+
+  if (algo->verbosity < 1)
+    return;
+
+  if (algo->type & CS_ITER_ALGO_DEFAULT) {
+
+    cs_iter_algo_default_t  *c = algo->context;
+
+    if (algo->type & CS_ITER_ALGO_TWO_LEVEL) {
+
+      if (c->n_algo_iter == 1)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "##%s.It    | %10s  %10s  %10s  %10s\n", label,
+                      "Algo.res", "Inner.iter", "Cumul.iter", "Tolerance");
+
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "##%s.It%03d | %10.4e  %10d  %10d  %10.4e\n", label,
+                    c->n_algo_iter, c->res, c->last_inner_iter, c->n_inner_iter,
+                    c->tol);
+
+    }
+    else {
+
+      if (c->n_algo_iter == 1)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "##%s.It    | %10s  %10s\n",
+                      label, "Algo.res", "Tolerance");
+
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "##%s.It%03d | %10.4e  %10.4e\n",
+                    label, c->n_algo_iter, c->res, c->tol);
+
+    }
+
+  }
+  else if (algo->type & CS_ITER_ALGO_ANDERSON) {
+
+    cs_iter_algo_aac_t  *c = algo->context;
+
+    if (algo->type & CS_ITER_ALGO_TWO_LEVEL) {
+
+      if (c->n_algo_iter == 1)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "##%s.It    | %10s  %10s  %10s  %10s\n", label,
+                      "Algo.res", "Inner.iter", "Cumul.iter", "Tolerance");
+
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "##%s.It%03d | %10.4e  %10d  %10d  %10.4e\n", label,
+                    c->n_algo_iter, c->res, c->last_inner_iter, c->n_inner_iter,
+                    c->tol);
+
+    }
+    else {
+
+      if (c->n_algo_iter == 1)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "##%s.It    | %10s  %10s  %10s  %10s\n", label,
+                      "Algo.res", "Inner.iter", "Cumul.iter", "Tolerance");
+
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "##%s.It%03d | %10.4e  %10d  %10d  %10.4e\n", label,
+                    c->n_algo_iter, c->res, c->last_inner_iter, c->n_inner_iter,
+                    c->tol);
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if something wrong happens during the iterative process after
+ *        one new iteration
+ *
+ * \param[in] func_name    name of the calling function
+ * \param[in] eq_name      name of the equation being solved
+ * \param[in] algo_name    name of the iterative algo. used
+ * \param[in] algo         pointer to the iterative algorithm structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_iter_algo_check_warning(const char          *func_name,
+                           const char          *eq_name,
+                           const char          *algo_name,
+                           cs_iter_algo_t      *algo)
+{
+  if (algo == NULL)
+    return;
+
+  cs_sles_convergence_state_t  cvg_status = cs_iter_algo_get_cvg_status(algo);
+
+  if (cvg_status == CS_SLES_DIVERGED) {
+
+    int  n_iter = cs_iter_algo_get_n_iter(algo);
+    double  res = cs_iter_algo_get_residual(algo);
+
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: %s algorithm divergence detected.\n"
+              "%s: Equation \"%s\" can not be solved correctly.\n"
+              "%s: Last iteration=%d; last residual=%5.3e\n",
+              func_name, algo_name, func_name, eq_name, func_name, n_iter, res);
+
+  }
+  else if (cvg_status == CS_SLES_MAX_ITERATION) {
+
+    int  n_iter = cs_iter_algo_get_n_iter(algo);
+    double  res = cs_iter_algo_get_residual(algo);
+
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(" %s: %s algorithm reaches the max. number of iterations"
+               " when solving equation \"%s\"\n"
+               " %s: max_iter=%d; last residual=%5.3e\n",
+               func_name, algo_name, eq_name, func_name, n_iter, res);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/

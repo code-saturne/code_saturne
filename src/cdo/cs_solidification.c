@@ -330,39 +330,28 @@ _check_nl_cvg(cs_param_nl_algo_t        nl_algo_type,
 {
   assert(algo != NULL);
 
-  if (nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON && algo->n_algo_iter > 0) {
+  double  res = sqrt(cs_cdo_blas_square_norm_pcsp_diff(pre_iter, cur_iter));
 
-    /* TODO */
+  /* Update the residual value */
 
-  } /* Anderson acceleration */
-
-  algo->prev_res = algo->res;
-  algo->res = cs_cdo_blas_square_norm_pcsp_diff(pre_iter, cur_iter);
-  assert(algo->res > -DBL_MIN);
-  algo->res = sqrt(algo->res);
-
-  if (algo->n_algo_iter < 1) /* Store the first residual to detect a
-                                divergence */
-    algo->res0 = algo->res;
+  cs_iter_algo_update_residual(algo, res);
 
   /* Update the convergence members */
 
-  cs_iter_algo_update_cvg_default(algo);
+  cs_sles_convergence_state_t  cvg_status =
+    cs_iter_algo_update_cvg_tol_auto(algo);
 
   if (algo->verbosity > 0) {
 
-    if (algo->n_algo_iter == 1)
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "### SOLIDIFICATION %12s.It      Algo.Res  Tolerance\n",
-                    cs_param_get_nl_algo_label(nl_algo_type));
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "### SOLIDIFICATION %12s.It%02d   %5.3e  %6.4e\n",
-                  cs_param_get_nl_algo_label(nl_algo_type),
-                  algo->n_algo_iter, algo->res, algo->tol);
+    char  label[32];
+    sprintf(label, " SOLIDIFICATION %10s",
+            cs_param_get_nl_algo_label(nl_algo_type));
 
-  } /* verbosity > 0 */
+    cs_iter_algo_log_cvg(algo, label);
 
-  return algo->cvg_status;
+  }
+
+  return cvg_status;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2916,11 +2905,11 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
 
   /* Initialize the stopping criteria */
 
-  cs_iter_algo_reset_nl(v_model->nl_algo_type, algo);
+  cs_iter_algo_reset(algo);
 
-  algo->normalization = sqrt(cs_cdo_blas_square_norm_pcsp(hkp1));
-  if (algo->normalization < cs_math_zero_threshold)
-    algo->normalization = 1.0;
+  double  normalization = sqrt(cs_cdo_blas_square_norm_pcsp(hkp1));
+  if (normalization > cs_math_zero_threshold)
+    cs_iter_algo_set_normalization(algo, normalization);
 
   /* Non-linear iterations (k) are performed to converge on the relation
    * h^{n+1,k+1} = h^{n+1,k} + eps with eps a user-defined tolerance
@@ -2980,7 +2969,8 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
     cs_log_printf(CS_LOG_DEFAULT,
                   "## Solidification: Stop non-linear algo. after %d iters,"
                   " residual = %5.3e\n",
-                  algo->n_algo_iter, algo->res);
+                  cs_iter_algo_get_n_iter(algo),
+                  cs_iter_algo_get_residual(algo));
 
   _monitor_cell_state(connect, quant, solid);
 
@@ -3429,8 +3419,11 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
       if (solid->model == CS_SOLIDIFICATION_MODEL_VOLLER_NL) {
 
+        cs_iter_algo_type_t  type = CS_ITER_ALGO_DEFAULT;
         v_model->nl_algo_type = CS_PARAM_NL_ALGO_PICARD;
-        v_model->nl_algo = cs_iter_algo_create(solid->verbosity, nl_cvg_param);
+        v_model->nl_algo = cs_iter_algo_create_with_settings(type,
+                                                             solid->verbosity,
+                                                             nl_cvg_param);
 
       }
       else {
