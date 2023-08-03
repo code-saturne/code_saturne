@@ -60,6 +60,10 @@
 #include "cs_sles_hypre.h"
 #endif
 
+#if defined(HAVE_MUMPS)
+#include "cs_sles_mumps.h"
+#endif
+
 #if defined(HAVE_PETSC)
 #include "cs_sles_petsc.h"
 #endif
