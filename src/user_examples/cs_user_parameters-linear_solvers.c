@@ -661,7 +661,7 @@ cs_user_linear_solvers(void)
     cs_sles_petsc_define(CS_F_(p)->id,
                          NULL,
                          MATSHELL,
-                         _petsc_p_setup_hook,
+                         (void *)_petsc_p_setup_hook,
                          NULL);
 
   }
@@ -712,7 +712,7 @@ cs_user_linear_solvers(void)
     cs_sles_petsc_define(CS_F_(p)->id,
                          NULL,
                          MATMPIAIJ,
-                         _petsc_p_setup_hook_gamg,
+                         (cs_sles_petsc_setup_hook_t *)_petsc_p_setup_hook_gamg,
                          NULL);
 
   }
@@ -764,7 +764,7 @@ cs_user_linear_solvers(void)
     cs_sles_petsc_define(CS_F_(p)->id,
                          NULL,
                          MATMPIAIJ,
-                         _petsc_p_setup_hook_bamg,
+                         (void *)_petsc_p_setup_hook_bamg,
                          NULL);
 
   }

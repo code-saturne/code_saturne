@@ -141,13 +141,15 @@ double precision, dimension(:), pointer :: cvar_nusa, cvara_nusa
 double precision, dimension(:), pointer :: cpro_prtot
 double precision, dimension(:), pointer :: cvar_scalt, cvar_totwt
 
-! Darcy
 double precision, dimension(:), pointer :: i_mass_flux, b_mass_flux
 
 double precision, dimension(:), pointer :: coefap, cofafp, cofbfp
 double precision, dimension(:), pointer :: cpro_scal_st, cproa_scal_st
 
 double precision, dimension(:), pointer :: htot_cond
+
+type(c_ptr) :: c_visvdr, c_hbord, c_theipb
+
 double precision coef_
 
 type(var_cal_opt) :: vcopt, vcopt_u, vcopt_p
@@ -168,7 +170,7 @@ interface
     integer(kind=c_int), value :: nvar, iterns, itrale, italim, isvhb
     integer(kind=c_int), value :: itrfin, itrfup, ineefl, nftcdt
     integer(kind=c_int), dimension(*) :: isostd
-    real(kind=c_double), dimension(*) :: visvdr, hbord, theipb
+    type(c_ptr) :: visvdr, hbord, theipb
   end subroutine cs_boundary_conditions_set_coeffs
 
   function cs_mobile_structures_get_n_structures() result(n_structs)  &
@@ -320,6 +322,10 @@ call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
 !===============================================================================
 ! 1. Initialisation
 !===============================================================================
+
+c_visvdr = C_NULL_PTR
+c_hbord  = C_NULL_PTR
+c_theipb = C_NULL_PTR
 
 allocate(isostd(nfabor+1))
 
@@ -754,10 +760,19 @@ inslst = 0
 
 iterns = 1
 do while (iterns.le.nterup)
+
+  c_visvdr = C_NULL_PTR
+  c_hbord  = C_NULL_PTR
+  c_theipb = C_NULL_PTR
+
+  if (associated(visvdr)) c_visvdr = c_loc(visvdr)
+  if (associated(hbord)) c_hbord = c_loc(hbord)
+  if (associated(theipb)) c_theipb = c_loc(theipb)
+
   ! Calls user BCs and computes BC coefficients
   call cs_boundary_conditions_set_coeffs(nvar, iterns, isvhb, itrale, italim,  &
                                          itrfin, ineefl, itrfup, isostd,       &
-                                         visvdr, hbord, theipb, nftcdt)
+                                         c_visvdr, c_hbord, c_theipb, nftcdt)
 
   if (nftcdt.gt.0) then
     ! Coefficient exchange of the enthalpy scalar
