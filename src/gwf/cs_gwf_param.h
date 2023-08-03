@@ -131,7 +131,7 @@ typedef enum {
    * \brief Single phase (liquid phase) model in an unsaturated porous media.
    *
    * All soils are considered as unsaturated and are described by a more
-   * complex modelling such as the Van Genuchten-Mualen model. Simplifications
+   * complex modelling such as the Van Genuchten-Mualem model. Simplifications
    * made in the case of \ref CS_GWF_MODEL_SATURATED_SINGLE_PHASE do not hold
    * anymore. Richards equation is unsteady and there can be a non-linearity to
    * handle according to the type of soil model. Soil properties such as
@@ -249,6 +249,20 @@ typedef enum {
  * k_r = S_l,eff^L * (1 - (1 - S_l,eff^(1/m))^m))^2
  * where m = 1 -  1/n
  *
+ * \var CS_GWF_SOIL_TWO_PHASE_VAN_GENUCHTEN_MUALEM
+ * Van Genuchten-Mualem laws defining the evolution of the effective liquid
+ * saturation, the relative permeabilities in the liquid and gaz in the case of
+ * (unsaturated) two-phase flow in a porous media
+ *
+ * The (effective) liquid saturation follows the identity
+ *    sl_eff = (sl - sl_r)/(sl_s - sl_r)
+ *           = (1 + |Pc/Pr_r|^n)^(-m)
+ * where m = 1 -  1/n
+ *
+ * The isotropic relative permeability in the liquid and gaz are defined as:
+ *    krl = sl_eff^(1/2) * (1 - (1 - sl_eff^(1/m))^m))^2
+ *    krg = (1 - sl_eff)^(1/2) * (1 - sl_eff^(1/m))^(2m)
+ *
  * \var CS_GWF_SOIL_USER
  * User-defined model of soil
  */
@@ -257,6 +271,7 @@ typedef enum {
 
   CS_GWF_SOIL_SATURATED,
   CS_GWF_SOIL_SINGLE_PHASE_VAN_GENUCHTEN_MUALEM,
+  CS_GWF_SOIL_TWO_PHASE_VAN_GENUCHTEN_MUALEM,
   CS_GWF_SOIL_USER,
 
   CS_GWF_SOIL_N_HYDRAULIC_MODELS

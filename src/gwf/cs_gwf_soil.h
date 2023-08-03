@@ -96,12 +96,11 @@ typedef void
 
 /*! \struct cs_gwf_soil_spf_vgm_param_t
  *
- * \brief Structure to handle the Van Genuchten-Mualen model of soil in the
+ * \brief Structure to handle the Van Genuchten-Mualem model of soil in the
  *        case of a single-phase flow in a porous media
  *
- *        See \ref CS_GWF_SOIL_GENUCHTEN. This structure stores the parameters
- *        defining the evolution laws for the liquid saturation and the
- *        relative permeability.
+ *        This structure stores the parameters defining the evolution laws for
+ *        the liquid saturation and the relative permeability.
  */
 
 typedef struct {
@@ -133,14 +132,67 @@ typedef struct {
 
 } cs_gwf_soil_spf_vgm_param_t;
 
+/*! \struct cs_gwf_soil_tpf_vgm_param_t
+ *
+ * \brief Structure to handle the Van Genuchten-Mualem model of soil in the
+ *        case of a two-phase flow in a porous media
+ *
+ *        This structure stores the parameters defining the evolution laws for
+ *        the liquid saturation and the relative permeabilities (in the liquid
+ *        and gas phases).
+ */
+
+typedef struct {
+
+  /*!
+   * \var n
+   *      Shape parameter. This value should be strictly greater than 1.0.
+   *
+   * \var m
+   *      Value depending of that of n
+   *      m = 1 - 1/n
+   *
+   * \var inv_m
+   *      Reciprocal of m. Value depending of that of n
+   *      1/m = 1 + 1/(n-1)
+   *
+   * \var pr_r
+   *      Reference (capillarity) pressure
+   *
+   * \var inv_pr_r
+   *      Reciprocal of pr_r
+   *
+   * \var sl_r
+   *      Residual liquid saturation
+   *
+   * \var sl_s
+   *      Saturated (i.e. maximum) liquid saturation
+   *
+   * \var sl_joining
+   *      Value above which the law is replaced with a second-order polynomial.
+   *      (for instance sl_joining = 0.999). If the value is greater or equal
+   *      than 1.0, there is no polynomial joining.
+   */
+
+  double       n;
+  double       m;
+  double       inv_m;
+  double       pr_r;
+  double       inv_pr_r;
+  double       sl_r;
+  double       sl_s;
+  double       sl_joining;
+
+} cs_gwf_soil_tpf_vgm_param_t;
 
 /*! \struct _gwf_soil_t
  *
- * \brief Main structure to handle a soil in the groundwater flow module.
+ * \brief Main structure to handle a soil in the groundwater flow module: its
+ *        definition, the way to update its related properties
  *
  *        Store a set of parameters and pointers describing a soil and its
- *        related hydraulic model (shared with the main structure \ref
- *        cs_gwf_t)
+ *        related hydraulic model (this hydraulic model is shared with the main
+ *        structure \ref cs_gwf_t)
  */
 
 struct _gwf_soil_t {
@@ -477,7 +529,7 @@ cs_gwf_soil_get_permeability_max_dim(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set a soil defined by a Van Genuchten-Mualen model in the case of
+ * \brief Set a soil defined by a Van Genuchten-Mualem model in the case of
  *        single-phase flow in an (unsaturated) porous media
  *
  *        The (effective) liquid saturation (also called moisture content)
@@ -503,6 +555,39 @@ cs_gwf_soil_set_spf_vgm_param(cs_gwf_soil_t         *soil,
                               double                 alpha,
                               double                 n,
                               double                 L);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the parameters related to a Van Genuchten-Mualen model to defined
+ *        the behavior of a soil in the case of two-phase flow in an porous
+ *        media
+ *
+ *        The (effective) liquid saturation follows the identity
+ *        sl_eff = (sl - sl_r)/(sl_s - sl_r)
+ *                = (1 + |Pc/Pr_r|^n)^(-m)
+ *        where m = 1 -  1/n
+ *
+ *        The isotropic relative permeability in the liquid and gaz are defined
+ *        as:
+ *        krl = sl_eff^(1/2) * (1 - (1 - sl_eff^(1/m))^m))^2
+ *        krg = (1 - sl_eff)^(1/2) * (1 - sl_eff^(1/m))^(2m)
+ *
+ * \param[in, out] soil         pointer to a cs_gwf_soil_t structure
+ * \param[in]      n            shape parameter
+ * \param[in]      pr_r         reference (capillarity) pressure
+ * \param[in]      sl_r         residual liquid saturation
+ * \param[in]      sl_s         saturated (max.) liquid saturation
+ * \param[in]      sl_joining   liquid saturation above which a joining is done
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_set_tpf_vgm_param(cs_gwf_soil_t         *soil,
+                              double                 n,
+                              double                 pr_r,
+                              double                 sl_r,
+                              double                 sl_s,
+                              double                 sl_joining);
 
 /*----------------------------------------------------------------------------*/
 /*!

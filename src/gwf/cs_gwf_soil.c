@@ -112,14 +112,13 @@ static double  *_dual_porous_volume = NULL;
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Function that compute the new values of the properties related to
- *        a soil with a Van Genuchten-Mualen.
+ *        a soil with a Van Genuchten-Mualem.
  *        Case of an isotropic permeability and an unsteady Richards eq.
  *
  * \param[in]      t_eval        time at which one performs the evaluation
  * \param[in]      mesh          pointer to a cs_mesh_t structure
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
- * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
- * \param[in]      head_values   array of values for head used in law
+ * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
  * \param[in]      zone          pointer to a cs_zone_t
  * \param[in, out] soil          pointer to a soil structure
  */
@@ -129,14 +128,14 @@ static void
 _update_iso_soil_spf_vgm(const cs_real_t              t_eval,
                          const cs_mesh_t             *mesh,
                          const cs_cdo_connect_t      *connect,
-                         const cs_cdo_quantities_t   *quant,
+                         const cs_cdo_quantities_t   *cdoq,
                          const cs_zone_t             *zone,
                          cs_gwf_soil_t               *soil)
 {
   CS_NO_WARN_IF_UNUSED(t_eval);
   CS_NO_WARN_IF_UNUSED(mesh);
   CS_NO_WARN_IF_UNUSED(connect);
-  CS_NO_WARN_IF_UNUSED(quant);
+  CS_NO_WARN_IF_UNUSED(cdoq);
 
   if (soil == NULL)
     return;
@@ -212,6 +211,95 @@ _update_iso_soil_spf_vgm(const cs_real_t              t_eval,
       /* Set the soil capacity */
 
       capacity[c_id] = 0.;
+
+    }
+
+  } /* Loop on selected cells */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the new values of the properties related to
+ *        a soil with a Van Genuchten-Mualem.
+ *        Case of an isotropic permeability and a two-phase flow in porous
+ *        media.
+ *
+ * \param[in]      t_eval        time at which one performs the evaluation
+ * \param[in]      mesh          pointer to a cs_mesh_t structure
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
+ * \param[in]      zone          pointer to a cs_zone_t
+ * \param[in, out] soil          pointer to a soil structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_iso_soil_tpf_vgm(const cs_real_t              t_eval,
+                         const cs_mesh_t             *mesh,
+                         const cs_cdo_connect_t      *connect,
+                         const cs_cdo_quantities_t   *cdoq,
+                         const cs_zone_t             *zone,
+                         cs_gwf_soil_t               *soil)
+{
+  CS_NO_WARN_IF_UNUSED(t_eval);
+  CS_NO_WARN_IF_UNUSED(mesh);
+  CS_NO_WARN_IF_UNUSED(connect);
+  CS_NO_WARN_IF_UNUSED(cdoq);
+
+  if (soil == NULL)
+    return;
+
+  /* Retrieve the soil parameters */
+
+  cs_gwf_soil_tpf_vgm_param_t  *sp = soil->model_param;
+
+  /* Retrieve the hydraulic context */
+
+  cs_gwf_tpf_t  *hc = soil->hydraulic_context;
+
+  /* Only isotropic values are considered in this case */
+
+  const double  dsmax = sp->sl_s - sp->sl_r;
+
+  /* Retrieve arrays to update */
+
+  cs_real_t  *sliq = hc->l_saturation->val;
+  cs_real_t  *lcap = hc->l_capacity;
+  cs_real_t  *krl = hc->l_rel_permeability;
+  cs_real_t  *krg = hc->g_rel_permeability;
+
+  assert(sliq != NULL && lcap != NULL && krl != NULL && krg != NULL);
+
+  /* Main loop on cells belonging to this soil */
+
+  for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
+
+    const cs_lnum_t  c_id = zone->elt_ids[i];
+    const cs_real_t  pc = hc->c_pressure_cells[c_id];
+
+    if (pc > 0) {
+
+      const double  pr_e = pc*sp->inv_pr_r;
+      const double  pr_en = pow(pr_e, sp->n);
+      const double  sl_e = pow(pr_en + 1, -sp->m);
+      const double  lcap_coef = dsmax * sp->inv_pr_r * (1 - sp->n);
+
+      sliq[c_id] = sp->sl_r + dsmax * sl_e;
+      lcap[c_id] = lcap_coef * pr_en/pr_e * sl_e/(1 + pr_en);
+
+      const double  sl_e_coef = 1 - pow(sl_e, sp->inv_m);
+      const double  krl_coef = 1 - pow(sl_e_coef, sp->m);
+
+      krl[c_id] = sqrt(sl_e) * krl_coef * krl_coef;
+      krg[c_id] = sqrt(1 - sl_e) * pow(sl_e_coef, 2*sp->m);
+
+    }
+    else { /* Saturated case */
+
+      sliq[c_id] = sp->sl_s;
+      lcap[c_id] = 0.;
+      krl[c_id] = 1;
+      krg[c_id] = 0.;
 
     }
 
@@ -356,6 +444,38 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
     }
     break;
 
+  case CS_GWF_SOIL_TWO_PHASE_VAN_GENUCHTEN_MUALEM:
+    {
+      cs_gwf_soil_tpf_vgm_param_t  *sp = NULL;
+
+      BFT_MALLOC(sp, 1, cs_gwf_soil_tpf_vgm_param_t);
+
+      sp->n = 1.7;
+      sp->m = 1 - 1./sp->n;
+      sp->inv_m = 1./sp->m;
+      sp->pr_r = 1e6;
+      sp->inv_pr_r = 1./sp->pr_r;
+      sp->sl_r = 0;
+      sp->sl_s = 1;
+      sp->sl_joining = 0.999;
+
+      soil->model_param = sp;
+
+      if (perm_type & CS_PROPERTY_ISO)
+        if (hydraulic_model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE ||
+            hydraulic_model == CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE)
+          soil->update_properties = _update_iso_soil_tpf_vgm;
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Invalid type of hydraulic model.\n"
+                    " Please check your settings.", __func__);
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid type of property for the permeability.\n"
+                  " Please check your settings.", __func__);
+    }
+    break;
+
   case CS_GWF_SOIL_USER:
     break; /* All has to be done by the user */
 
@@ -457,6 +577,15 @@ cs_gwf_soil_free_all(void)
         }
         break;
 
+      case CS_GWF_SOIL_TWO_PHASE_VAN_GENUCHTEN_MUALEM:
+        {
+          cs_gwf_soil_tpf_vgm_param_t  *sp = soil->model_param;
+
+          BFT_FREE(sp);
+          sp = NULL;
+        }
+        break;
+
       default:
         cs_base_warn(__FILE__, __LINE__);
         bft_printf("%s: The context structure of a soil may not be freed.\n",
@@ -521,11 +650,16 @@ cs_gwf_soil_log_setup(void)
 
     switch (soil->model) {
 
+    case CS_GWF_SOIL_SATURATED:
+        cs_log_printf(CS_LOG_SETUP, "%s Model: *Saturated*\n", id);
+      break;
+
     case CS_GWF_SOIL_SINGLE_PHASE_VAN_GENUCHTEN_MUALEM:
       {
         const cs_gwf_soil_spf_vgm_param_t  *sp = soil->model_param;
 
-        cs_log_printf(CS_LOG_SETUP, "%s Model: *VanGenuchten-Mualen*\n", id);
+        cs_log_printf(CS_LOG_SETUP, "%s Model: "
+                      "*Single_phase_Van_Genuchten_Mualem*\n", id);
         cs_log_printf(CS_LOG_SETUP, "%s Parameters:", id);
         cs_log_printf(CS_LOG_SETUP,
                       " residual_moisture %5.3e\n", sp->residual_moisture);
@@ -535,8 +669,23 @@ cs_gwf_soil_log_setup(void)
       }
       break;
 
-    case CS_GWF_SOIL_SATURATED:
-        cs_log_printf(CS_LOG_SETUP, "%s Model: *Saturated*\n", id);
+    case CS_GWF_SOIL_TWO_PHASE_VAN_GENUCHTEN_MUALEM:
+      {
+        const cs_gwf_soil_tpf_vgm_param_t  *sp = soil->model_param;
+
+        cs_log_printf(CS_LOG_SETUP, "%s Model: "
+                      "*Two_phase_Van_Genuchten_Mualem*\n", id);
+        cs_log_printf(CS_LOG_SETUP, "%s Parameters:", id);
+        cs_log_printf(CS_LOG_SETUP, " residual_saturation  %5.3e\n", sp->sl_r);
+        cs_log_printf(CS_LOG_SETUP, "%s Parameters:", id);
+        cs_log_printf(CS_LOG_SETUP, " saturated_saturation %5.3e\n", sp->sl_s);
+        cs_log_printf(CS_LOG_SETUP, "%s Parameters:", id);
+        cs_log_printf(CS_LOG_SETUP, " joining_saturation   %5.3e\n",
+                      sp->sl_joining);
+        cs_log_printf(CS_LOG_SETUP, "%s Parameters:", id);
+        cs_log_printf(CS_LOG_SETUP, " n %f; m= %f; pr_r= %f\n",
+                      sp->n, sp->m, sp->pr_r);
+      }
       break;
 
     case CS_GWF_SOIL_USER:
@@ -628,6 +777,7 @@ cs_gwf_soil_update(cs_real_t                     time_eval,
     switch (soil->model) {
 
     case CS_GWF_SOIL_SINGLE_PHASE_VAN_GENUCHTEN_MUALEM:
+    case CS_GWF_SOIL_TWO_PHASE_VAN_GENUCHTEN_MUALEM:
     case CS_GWF_SOIL_USER:
       {
         assert(soil->update_properties != NULL);
@@ -963,7 +1113,7 @@ cs_gwf_soil_get_permeability_max_dim(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set a soil defined by a Van Genuchten-Mualen model in the case of
+ * \brief Set a soil defined by a Van Genuchten-Mualem model in the case of
  *        single-phase flow in an (unsaturated) porous media
  *
  *        The (effective) liquid saturation (also called moisture content)
@@ -1013,6 +1163,74 @@ cs_gwf_soil_set_spf_vgm_param(cs_gwf_soil_t         *soil,
   sp->m = 1 - 1/sp->n;
   sp->scale = alpha;
   sp->tortuosity = L;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the parameters related to a Van Genuchten-Mualen model to defined
+ *        the behavior of a soil in the case of two-phase flow in an porous
+ *        media
+ *
+ *        The (effective) liquid saturation follows the identity
+ *        sl_eff = (sl - sl_r)/(sl_s - sl_r)
+ *                = (1 + |Pc/Pr_r|^n)^(-m)
+ *        where m = 1 -  1/n
+ *
+ *        The isotropic relative permeability in the liquid and gaz are defined
+ *        as:
+ *        krl = sl_eff^(1/2) * (1 - (1 - sl_eff^(1/m))^m))^2
+ *        krg = (1 - sl_eff)^(1/2) * (1 - sl_eff^(1/m))^(2m)
+ *
+ * \param[in, out] soil         pointer to a cs_gwf_soil_t structure
+ * \param[in]      n            shape parameter
+ * \param[in]      pr_r         reference (capillarity) pressure
+ * \param[in]      sl_r         residual liquid saturation
+ * \param[in]      sl_s         saturated (max.) liquid saturation
+ * \param[in]      sl_joining   liquid saturation above which a joining is done
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_set_tpf_vgm_param(cs_gwf_soil_t         *soil,
+                              double                 n,
+                              double                 pr_r,
+                              double                 sl_r,
+                              double                 sl_s,
+                              double                 sl_joining)
+{
+  if (soil == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_soil));
+
+  cs_gwf_soil_tpf_vgm_param_t  *sp = soil->model_param;
+
+  if (soil->model != CS_GWF_SOIL_TWO_PHASE_VAN_GENUCHTEN_MUALEM)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: soil model is not the one expected\n", __func__);
+  if (sp == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: soil context not allocated\n", __func__);
+  if (n - 1 <= FLT_MIN)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid value for n = %6.4e (the shape parameter).\n"
+              "This value should be > 1.\n", __func__, n);
+
+  assert(pr_r > FLT_MIN);
+
+  /* Main parameters */
+
+  sp->n = n;
+  sp->m = 1 - 1/sp->n;
+  sp->inv_m = 1 + 1/(sp->n-1);
+  sp->pr_r = pr_r;
+  sp->inv_pr_r = 1./pr_r;
+
+  /* Parameters to define the effective liquid saturation */
+
+  sp->sl_r = sl_r;
+  sp->sl_s = sl_s;
+
+  /* Additional advanced settings */
+
+  sp->sl_joining = sl_joining;
 }
 
 /*----------------------------------------------------------------------------*/

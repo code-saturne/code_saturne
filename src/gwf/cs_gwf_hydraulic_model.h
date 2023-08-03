@@ -212,7 +212,7 @@ typedef struct {
    * \var head_in_law
    * Array of values located at the same location as the hydraulic head solved
    * in the Richards equation. The values stored in this array are used to
-   * update related quantities with law such as Van Genuchten/Mualen.
+   * update related quantities with law such as Van Genuchten/Mualem.
    */
 
   cs_field_t                   *permeability_field;
