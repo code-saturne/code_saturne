@@ -1586,7 +1586,7 @@ cs_cdocb_scaleq_solve_steady_state(bool                        cur2prev,
   cs_cdocb_scaleq_t  *eqc = (cs_cdocb_scaleq_t *) context;
   cs_cdo_system_helper_t  *sh = eqb->system_helper;
   assert(eqc->var_field_id == field_id);
-  cs_field_t *potential_fld = cs_field_by_id(eqc->var_field_id);
+  cs_field_t *potential_fld = cs_field_by_id(field_id);
 
   /*--------------------------------------------------------------------------
    *                      BUILD: START

@@ -332,8 +332,7 @@ _svb_one_dblock_assemble(const cs_cell_sys_t          *csys,
   cs_cdo_system_block_t  *block = sh->blocks[0];
   assert(block->type == CS_CDO_SYSTEM_BLOCK_DEFAULT);
   cs_cdo_system_dblock_t  *db = block->block_pointer;
-  cs_cdo_system_block_info_t  bi = block->info;
-  assert(bi.interlaced == false);
+  assert(block->info.interlaced == false);
 
   /* Matrix assembly for the cellwise system inside the full system */
 
