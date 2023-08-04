@@ -1009,7 +1009,7 @@ call field_create(trim(f_name)//'_prev_st', type_flag,               &
 
 call field_set_key_int(f_id, kstprv, st_id)
 
-call hide_property(f_id)
+call hide_property(st_id)
 
 return
 
