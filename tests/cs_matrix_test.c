@@ -509,13 +509,12 @@ _base_data(int rank_id,
 }
 
 /*----------------------------------------------------------------------------
- * build base data based on rabnk id.
+ * build base data based on rank id.
  *----------------------------------------------------------------------------*/
 
 static void
 _free_base_data(void)
 {
-
   BFT_FREE(_g_vtx_id);
   BFT_FREE(_edges);
 }
@@ -523,7 +522,7 @@ _free_base_data(void)
 /*----------------------------------------------------------------------------*/
 
 int
-main (int argc, char *argv[])
+main(int argc, char *argv[])
 {
   CS_UNUSED(argc);
   CS_UNUSED(argv);
@@ -643,9 +642,9 @@ main (int argc, char *argv[])
       cs_matrix_assembler_values_t *mav = NULL;
 
       if (mav_id == 0)
-        mav = cs_matrix_assembler_values_init(m_0, NULL, NULL);
+        mav = cs_matrix_assembler_values_init(m_0, 1, 1);
       else
-        mav = cs_matrix_assembler_values_init(m_1, NULL, NULL);
+        mav = cs_matrix_assembler_values_init(m_1, 1, 1);
 
       /* Same ids required as for assembler (at least, no additional ids),
          so loop in a similar manner for safety, but with different
