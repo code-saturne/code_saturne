@@ -570,7 +570,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
   cs_real_t   *bfconv  = NULL, *bhconv = NULL;
   cs_real_3_t *forbr   = NULL;
-  const cs_real_3_t *dttens = NULL;
+  const cs_real_6_t *dttens = NULL;
 
   /* Pointers to specific fields */
 
@@ -581,7 +581,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
   cs_field_t *f_dttens  = cs_field_by_name_try("dttens");
   if (f_dttens != NULL)
-    dttens = (const cs_real_3_t *)f_dttens->val;
+    dttens = (const cs_real_6_t *)f_dttens->val;
 
   cs_field_t *f_forbr = cs_field_by_name_try("boundary_forces");
 

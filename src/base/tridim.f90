@@ -170,7 +170,7 @@ interface
     integer(kind=c_int), value :: nvar, iterns, itrale, italim, isvhb
     integer(kind=c_int), value :: itrfin, itrfup, ineefl, nftcdt
     integer(kind=c_int), dimension(*) :: isostd
-    type(c_ptr) :: visvdr, hbord, theipb
+    type(c_ptr), value :: visvdr, hbord, theipb
   end subroutine cs_boundary_conditions_set_coeffs
 
   function cs_mobile_structures_get_n_structures() result(n_structs)  &
