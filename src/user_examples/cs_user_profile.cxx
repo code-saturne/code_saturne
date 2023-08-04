@@ -38,8 +38,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/dir.h>
-#include <sys/stat.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -1619,10 +1617,7 @@ _compute_cell_volume_per_layer_basic(user_profile_t  *profile)
   cs_lnum_t n_layers = profile->n_layers;
 
   // Vector profile quantities
-  cs_real_t dir_norm;
-  dir_norm = pow(pow(profile->dir_v[0], 2.0) + pow(profile->dir_v[1], 2.0)
-                   + pow(profile->dir_v[2], 2.0),
-                 0.5);
+  cs_real_t dir_norm = cs_math_3_norm(profile->dir_v);
 
   cs_real_t dir_normalized[3];
   dir_normalized[0] = profile->dir_v[0] / dir_norm;
@@ -2218,7 +2213,8 @@ _output_profile_med_mesh(user_profile_t  *profile,
       char outfile[200];
       sprintf(outfile, "%s/%s.med", dirname, name);
 
-      MEDCoupling::WriteUMesh(outfile, profile->med_mesh_struct->layer_mesh[m_id], true);
+      MEDCoupling::WriteUMesh(outfile, profile->med_mesh_struct->layer_mesh[m_id],
+                              true);
     }
   }
 #endif
