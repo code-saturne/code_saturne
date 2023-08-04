@@ -403,7 +403,7 @@ _fill_histogram_classes_u_bandwidth(user_histogram_t  *histogram,
   cs_real_t max        = histogram->max;
 
   max              = (max - min) * 0.001 + max;
-  histogram->max = max; /*ensure all values are catched*/
+  histogram->max = max; /* ensure all values are caught */
 
   cs_lnum_t n_bins = n_bins_max;
 
@@ -1497,7 +1497,7 @@ _set_med_layer_mesh(user_profile_t  *profile,
     Oz[k] = Oz_1[k];
   }
 
-  /* Rotation around x axis projection of n_v in Oyz plane*/
+  /* Rotation around x axis projection of n_v in Oyz plane */
   kv_plane_vec[0] = 0.;
   kv_plane_vec[1] = 0.;
   kv_plane_vec[2] = 0.;
