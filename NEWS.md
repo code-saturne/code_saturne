@@ -8,6 +8,10 @@ Release 8.0.2 (unreleased)
   of a time step (such as physical property updates) see the current
   (and not previous) time step in this case.
 
+### User changes:
+
+- Do not log `source_term_prev_field` type fields by default.
+
 Release 8.0.1 (2023-08-01)
 --------------------------
 

@@ -1003,7 +1003,7 @@ type_flag = FIELD_EXTENSIVE + FIELD_PROPERTY
 location_id = 1 ! variables defined on cells
 has_previous = .false.
 
-! Define asscociated field
+! Define associated field
 
 call field_get_dim(f_id, f_dim)
 call field_get_name (f_id, f_name)
@@ -1012,6 +1012,8 @@ call field_create(trim(f_name)//'_prev_st', type_flag,               &
                   location_id, f_dim, has_previous, st_id)
 
 call field_set_key_int(f_id, kstprv, st_id)
+
+call hide_property(st_id)
 
 return
 
