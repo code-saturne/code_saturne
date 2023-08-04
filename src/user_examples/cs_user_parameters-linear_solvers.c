@@ -102,7 +102,7 @@ BEGIN_C_DECLS
  *
  * parameters:
  *   context <-> pointer to optional (untyped) value or structure
- *   ksp     <-> pointer to PETSc KSP context
+ *   ksp_p   <-> pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 /* Conjugate gradient with Jacobi preconditioning */
@@ -110,10 +110,11 @@ BEGIN_C_DECLS
 
 /*! [sles_petsc_hook_1] */
 static void
-_petsc_p_setup_hook(void   *context,
-                    KSP     ksp)
+_petsc_p_setup_hook(void  *context,
+                    void  *ksp_p)
 {
   CS_UNUSED(context);
+  KSP ksp = (KSP)ksp_p;
   PC pc;
 
   KSPSetType(ksp, KSPCG);   /* Preconditioned Conjugate Gradient */
@@ -130,10 +131,11 @@ _petsc_p_setup_hook(void   *context,
 
 /*! [sles_petsc_hook_gamg] */
 static void
-_petsc_p_setup_hook_gamg(void        *context,
-                         KSP          ksp)
+_petsc_p_setup_hook_gamg(void  *context,
+                         void  *ksp_p)
 {
   CS_UNUSED(context);
+  KSP ksp = (KSP)ksp_p;
   PC pc;
 
   KSPSetType(ksp, KSPCG);   /* Preconditioned Conjugate Gradient */
@@ -149,10 +151,11 @@ _petsc_p_setup_hook_gamg(void        *context,
 
 /*! [sles_petsc_hook_bamg] */
 static void
-_petsc_p_setup_hook_bamg(void        *context,
-                         KSP          ksp)
+_petsc_p_setup_hook_bamg(void  *context,
+                         void  *ksp_p)
 {
   CS_UNUSED(context);
+  KSP ksp = (KSP)ksp_p;
   PC pc;
 
   KSPSetType(ksp, KSPCG);   /* Preconditioned Conjugate Gradient */
@@ -176,15 +179,18 @@ _petsc_p_setup_hook_bamg(void        *context,
  *
  * parameters:
  *   context <-> pointer to optional (untyped) value or structure
- *   ksp     <-> pointer to PETSc KSP context
+ *   ksp_p   <-> pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 /*! [sles_petsc_hook_view] */
 static void
-_petsc_p_setup_hook_view(void        *context,
-                         KSP          ksp)
+_petsc_p_setup_hook_view(void  *context,
+                         void  *ksp_p)
 {
   CS_UNUSED(context);
+
+  KSP ksp = (KSP)ksp_p;
+
   const char *p = getenv("CS_USER_PETSC_MAT_VIEW");
 
   if (p != NULL) {
@@ -237,14 +243,14 @@ _petsc_p_setup_hook_view(void        *context,
  *
  * parameters:
  *   context <-> pointer to optional (untyped) value or structure
- *   ksp     <-> pointer to PETSc KSP context
+ *   ksp_p   <-> pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 void
 cs_user_sles_petsc_hook(void  *context,
-                        void  *ksp)
+                        void  *ksp_p)
 {
-  CS_UNUSED(ksp);
+  CS_UNUSED(ksp_p);
 
   /*! [sles_petsc_cdo_hook] */
   cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
