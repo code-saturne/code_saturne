@@ -180,14 +180,11 @@ cs_boundary_conditions_set_coeffs(int        nvar,
  * \brief  Initialization of boundary condition arrays.
  *
  * \param[in]     itrale        ALE iteration number
- * \param[in,out] isostd        indicator for standard outlet
- *                              and reference face index
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_set_coeffs_init(int  itrale,
-                                       int  isostd[]);
+cs_boundary_conditions_set_coeffs_init(int  itrale);
 
 /*----------------------------------------------------------------------------*/
 

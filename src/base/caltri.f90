@@ -102,11 +102,6 @@ double precision, pointer, dimension(:)   :: porosi => null()
 double precision, pointer, dimension(:,:) :: disale => null()
 double precision, dimension(:,:), pointer :: xyzno0 => null()
 
-integer, allocatable, dimension(:) :: isostd
-
-integer, pointer, dimension(:,:) :: icodcl
-double precision, pointer, dimension(:,:,:) :: rcodcl
-
 !===============================================================================
 ! Interfaces
 !===============================================================================
@@ -119,12 +114,11 @@ interface
 
   !=============================================================================
 
-  subroutine cs_boundary_conditions_set_coeffs_init(itrale, isostd) &
+  subroutine cs_boundary_conditions_set_coeffs_init(itrale) &
     bind(C, name='cs_boundary_conditions_set_coeffs_init')
     use, intrinsic :: iso_c_binding
     implicit none
     integer(kind=c_int), value :: itrale
-    integer(kind=c_int), dimension(*), intent(inout) :: isostd
   end subroutine cs_boundary_conditions_set_coeffs_init
 
   !=============================================================================
@@ -712,8 +706,9 @@ endif
 !     bord avec module thermique 1D.
 
 if (nfpt1t.gt.0) then
-! Deuxieme appel : remplissage des tableaux de definition de la geometrie
-!            et de l'initialisation (IFPT1D,NPPT1D,EPPT1D,RGPT1D,TPPT1D)
+
+  ! Deuxieme appel : remplissage des tableaux de definition de la geometrie
+  !            et de l'initialisation (IFPT1D,NPPT1D,EPPT1D,RGPT1D,TPPT1D)
   iappel = 2
   call cs_user_1d_wall_thermal(iappel, isuit1)
 
@@ -740,22 +735,11 @@ endif
 ! Deprecated, only for compatibility reason
 nvarcl = nvar
 
-call field_build_bc_codes_all(icodcl, rcodcl)
-allocate(isostd(nfabor+1))
-
 ! First pass for initialization BC types
 ! -- Couplage code_saturne/code_saturne
 call cscini(nvar)
 
-call cs_boundary_conditions_set_coeffs_init(itrale, isostd)
-
-!do ifac = 1, nfabor
-!   print*, "f90, ifac, icodcl(eps), rcodcl123(eps)", ifac, icodcl(ifac,iep)!, &
-!        rcodcl(ifac,iep,1), rcodcl(ifac,iep,2), rcodcl(ifac,iep,3)
-!enddo
-
-deallocate(isostd)
-call field_free_bc_codes_all(icodcl, rcodcl)
+call cs_boundary_conditions_set_coeffs_init(itrale)
 
 !===============================================================================
 ! Arrays for time block, to discard afterwards

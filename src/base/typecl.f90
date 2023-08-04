@@ -33,20 +33,6 @@
 !> \param[in]     init          partial treatment (before time loop) if true
 !> \param[in,out] itypfb        boundary face types
 !> \param[out]    itrifb        tab d'indirection pour tri des faces
-!> \param[in,out] icodcl        face boundary condition code:
-!>                               - 1 Dirichlet
-!>                               - 2 Radiative outlet
-!>                               - 3 Neumann
-!>                               - 4 sliding and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 5 smooth wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 6 rough wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 9 free inlet/outlet
-!>                                 (input mass flux blocked to 0)
-!>                               - 13 Dirichlet for the advection operator and
-!>                                    Neumann for the diffusion operator
 !> \param[out]    isostd        standard output indicator
 !>                              + reference face number
 !______________________________________________________________________________
@@ -143,10 +129,6 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 ! 1.  Initialization
 !===============================================================================
-
-!do ifac = 1, ndimfb+1
-!   print*, "ifac, isostd = ", ifac, isostd(ifac)
-!enddo
 
 call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
 

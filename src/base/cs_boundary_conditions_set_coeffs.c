@@ -3493,16 +3493,14 @@ cs_boundary_conditions_set_coeffs(int        nvar,
  * \brief  Initialization of boundary condition arrays.
  *
  * \param[in]     itrale        ALE iteration number
- * \param[in,out] isostd        indicator for standard outlet
- *                              and reference face index
  */
 /*---------------------------------------------------------------------------- */
 
 void
-cs_boundary_conditions_set_coeffs_init(int  itrale,
-                                       int  isostd[])
+cs_boundary_conditions_set_coeffs_init(int  itrale)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_lnum_t n_b_faces   = mesh->n_b_faces;
   const cs_lnum_t n_vertices  = mesh->n_vertices;
   const cs_real_3_t *vtx_coord = (const cs_real_3_t *)mesh->vtx_coord;
 
@@ -3517,10 +3515,12 @@ cs_boundary_conditions_set_coeffs_init(int  itrale,
   int *impale = cs_glob_ale_data->impale;
   int *ale_bc_type = cs_glob_ale_data->bc_type;
 
-  /* User calls
-     ---------- */
+  cs_field_build_bc_codes_all();
 
   cs_boundary_conditions_reset();
+
+  /* User calls
+     ---------- */
 
   if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >=  1)
     cs_f_ppprcl(bc_type, dt);
@@ -3615,20 +3615,25 @@ cs_boundary_conditions_set_coeffs_init(int  itrale,
                 dt);
   }
 
+  int *isostd;
+  BFT_MALLOC(isostd, n_b_faces+1, int);
+
   cs_f_typecl(true,
               bc_type,
               itrifb,
               isostd);
+
+  BFT_FREE(isostd);
 
   /* Check the consistency of the BCs
      -------------------------------- */
 
   /* When called before time loop, some values are not yet available. */
 
-  if (nt_cur == nt_prev)
-    return;
+  if (nt_cur > nt_prev)
+    cs_f_vericl(bc_type);
 
-  cs_f_vericl(bc_type);
+  cs_field_free_bc_codes_all();
 }
 
 /*---------------------------------------------------------------------------- */
