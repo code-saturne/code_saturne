@@ -104,8 +104,8 @@ cs_user_extra_operations_initialize(cs_domain_t *domain)
   /* Initialize a  mean temperature profile over z */
   cs_real_t v_dir[3] = { 0.0, 0.0, 1.0 };
 
-#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
-  user_profile_t *profile_t
+#if defined(HAVE_MEDCOUPLING)
+  user_profile_t *profile
     = user_create_profile("T_vertical_profile", /* name */
                           "temperature",  /* field*/
                           "all[]",        /* cell selection */
@@ -117,7 +117,7 @@ cs_user_extra_operations_initialize(cs_domain_t *domain)
                           "MEDCOUPLING"); /* method used to intersect volume */
 
 #else
-  user_profile_t *profile_t
+  user_profile_t *profile
     = user_create_profile("T_vertical_profile", /* name */
                           "temperature",   /* field*/
                           "all[]",         /* cell selection */
@@ -132,7 +132,7 @@ cs_user_extra_operations_initialize(cs_domain_t *domain)
 
   /* Calculate once for each cell percent lying in each layers */
 
-  user_compute_cell_volume_per_layer(profile_t);
+  user_compute_cell_volume_per_layer(profile);
   /*![Initialize]*/
 }
 
@@ -152,13 +152,13 @@ cs_user_extra_operations(cs_domain_t *domain)
 {
   CS_UNUSED(domain);
 
-  /* Mean profile calculation and results dumping */
+  /* Mean profile calculation and results output */
    /*![generate]*/
-  user_profile_t *profile_t = user_profile_get_by_name("T_vertical_profile");
-  user_profile_compute(profile_t);
+  user_profile_t *profile = user_profile_get_by_name("T_vertical_profile");
+  user_profile_compute(profile);
 
-  user_profile_dump(profile_t, /* pointer to profile structure */
-                    15);       /* dumping periodicity (time step) */
+  user_profile_output(profile, /* pointer to profile structure */
+                      15);     /* interval (time step) */
   /*![generate]*/
 }
 
@@ -179,11 +179,13 @@ cs_user_extra_operations_finalize(cs_domain_t *domain)
   CS_UNUSED(domain);
 
   /*![finalize]*/
-  /* Mean profile calculation and dump at last time step */
+  /* Mean profile calculation and output at last time step */
+
+  int interval = 1;  /* Time step interval between outputs */
 
   user_profiles_compute_all();
-  user_profiles_dump_all(1);              /* dumping periodicity */
-  user_profiles_histogram_OT_dump_all(1); /* dumping periodicity */
+  user_profiles_output_all(interval);
+  user_profiles_histogram_ot_output_all(interval);
 
   /* Free profiles memory */
 

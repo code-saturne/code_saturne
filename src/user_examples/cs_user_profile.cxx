@@ -38,8 +38,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/dir.h>
-#include <sys/stat.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -55,25 +53,31 @@
  * MEDCOUPLING library headers
  *----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
+#if defined(HAVE_MEDCOUPLING)
 
 #include "cs_medcoupling_intersector.h"
 #include "cs_medcoupling_mesh.hxx"
 
 #include <MEDCoupling_version.h>
 
+#include <MEDCouplingCMesh.hxx>
 #include <MEDCouplingUMesh.hxx>
-#include <MEDFileMesh.hxx>
 
 #include <MEDCouplingField.hxx>
 #include <MEDCouplingFieldDouble.hxx>
 #include <MEDCouplingFieldFloat.hxx>
-#include <MEDFileField1TS.hxx>
-#include <MEDFileFieldMultiTS.hxx>
 
 #include <MEDCouplingRemapper.hxx>
 
+#if defined(HAVE_MEDCOUPLING_LOADER)
+
+#include <MEDFileMesh.hxx>
+#include <MEDFileField1TS.hxx>
+#include <MEDFileFieldMultiTS.hxx>
+
 #include <MEDLoader.hxx>
+
+#endif
 
 #include "Interpolation3D.hxx"
 #include <MEDCouplingNormalizedUnstructuredMesh.txx>
@@ -101,7 +105,7 @@ static user_profile_info_t _profile_list = { NULL, 0 };
 
 struct _user_profile_med_t {
 
-#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
+#if defined(HAVE_MEDCOUPLING)
   MEDCouplingUMesh     **layer_mesh;
   cs_medcoupling_mesh_t *local_mesh;
 #else
@@ -162,7 +166,7 @@ _allocate_med_mesh_struct(cs_lnum_t n_layers)
 {
   user_profile_med_t *med_t = NULL;
   BFT_MALLOC(med_t, 1, user_profile_med_t);
-#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
+#if defined(HAVE_MEDCOUPLING)
   BFT_MALLOC(med_t->layer_mesh, n_layers, MEDCouplingUMesh *);
   for (int layer_id = 0; layer_id < n_layers; layer_id++) {
     char name[10];
@@ -187,27 +191,27 @@ _allocate_med_mesh_struct(cs_lnum_t n_layers)
  * Create a 1d sample (same formalism than OpenTurns) with weigths for a layer
  *
  * parameters:
- *   profile_t        <-- pointer to the current profile structure
- *   n_elts_sample    --> number of elements in the sample
- *   sample           --> preallocated array, populated with selected cells
- *   weights          --> preallocated array, populated with cells weigth
- *   layer_id         <-- id of layer to be selected
+ *   profile        <-- pointer to the current profile structure
+ *   n_elts_sample  --> number of elements in the sample
+ *   sample         --> preallocated array, populated with selected cells
+ *   weights        --> preallocated array, populated with cells weigth
+ *   layer_id       <-- id of layer to be selected
  *----------------------------------------------------------------------------*/
 
 static void
-_create_1d_sample_(user_profile_t *profile_t,
-                   cs_lnum_t      *n_elts_sample,
-                   cs_real_t      *sample,
-                   cs_real_t      *weights,
-                   int             layer_id)
+_create_1d_sample_(user_profile_t  *profile,
+                   cs_lnum_t       *n_elts_sample,
+                   cs_real_t       *sample,
+                   cs_real_t       *weights,
+                   int              layer_id)
 {
   /* Profile shorter variables:
 
      Also available but not used here:
-       cs_lnum_t   n_layers = profile_t->n_layers;
+       cs_lnum_t   n_layers = profile->n_layers;
   */
-  const char *field    = profile_t->field;
-  const char *weighted = profile_t->weighted;
+  const char *field    = profile->field;
+  const char *weighted = profile->weighted;
 
   /* Get mesh quantities */
   const cs_lnum_t  n_cells  = cs_glob_mesh->n_cells;
@@ -231,18 +235,20 @@ _create_1d_sample_(user_profile_t *profile_t,
   // Define pointer and variable for cs_selector
   cs_lnum_t  n_selected_cells = 0;
   cs_lnum_t *selected_cells   = NULL;
+
   // Allocate memory for the cells list which will be populated by cs_selector
   BFT_MALLOC(selected_cells, n_cells, cs_lnum_t);
 
-  cs_selector_get_cell_list(
-    profile_t->criteria, &n_selected_cells, selected_cells);
+  cs_selector_get_cell_list(profile->criteria,
+                            &n_selected_cells,
+                            selected_cells);
 
   cs_real_t sel_cells_weight = 0.0;
 
   for (cs_lnum_t ii = 0; ii < n_selected_cells; ii++) {
     cs_lnum_t c_id = selected_cells[ii];
 
-    cs_real_t cell_percent_layer = profile_t->cells_layer_vol[layer_id][c_id];
+    cs_real_t cell_percent_layer = profile->cells_layer_vol[layer_id][c_id];
     cs_real_t weight_cell        = 0.0;
 
     if (strcmp(weighted, "MASS") == 0) {
@@ -284,7 +290,7 @@ _create_1d_sample_(user_profile_t *profile_t,
    * but keep as this because of current code structure (avoid de create a
    * dedicated function and re compute each cell weight*/
   cs_parall_sum(1, CS_DOUBLE, &sel_cells_weight);
-  profile_t->sel_cells_weigth = sel_cells_weight;
+  profile->sel_cells_weigth = sel_cells_weight;
 
   BFT_FREE(selected_cells);
 }
@@ -372,7 +378,7 @@ _compute_sample_moment(cs_real_t *sample,
  * bandwidth is updated given the final int number of bins.
  *
  * parameters:
- *   histogram_t      <-> pointer to histogram structure
+ *   histogram        <-> pointer to histogram structure
  *   sample           <-- 1d sample on which the histogram is built
  *   weights          <-- weights associated to sample
  *   n_elts_sample    <-- number of elements in the sample
@@ -380,61 +386,61 @@ _compute_sample_moment(cs_real_t *sample,
  *----------------------------------------------------------------------------*/
 
 static void
-_fill_histogram_classes_u_bandwidth(user_histogram_t *histogram_t,
-                                    cs_real_t        *sample,
-                                    cs_real_t        *weights,
-                                    cs_lnum_t         n_elts_sample,
-                                    cs_real_t        *bandwidth)
+_fill_histogram_classes_u_bandwidth(user_histogram_t  *histogram,
+                                    cs_real_t         *sample,
+                                    cs_real_t         *weights,
+                                    cs_lnum_t          n_elts_sample,
+                                    cs_real_t         *bandwidth)
 {
   /* Histogram shorter variables
 
      Also available but not used here:
-       cs_real_t mu        = histogram_t->mean;
-       cs_real_t sigma     = histogram_t->sd;
+       cs_real_t mu        = histogram->mean;
+       cs_real_t sigma     = histogram->sd;
   */
-  cs_lnum_t n_bin_max = histogram_t->n_bin_max;
-  cs_real_t min       = histogram_t->min;
-  cs_real_t max       = histogram_t->max;
+  cs_lnum_t n_bins_max = histogram->n_bins_max;
+  cs_real_t min        = histogram->min;
+  cs_real_t max        = histogram->max;
 
   max              = (max - min) * 0.001 + max;
-  histogram_t->max = max; /*ensure all values are catched*/
+  histogram->max = max; /* ensure all values are caught */
 
-  cs_lnum_t n_bin = n_bin_max;
+  cs_lnum_t n_bins = n_bins_max;
 
   if (*bandwidth > DBL_EPSILON) {
-    n_bin = (cs_lnum_t)((max - min) / (*bandwidth));
+    n_bins = (cs_lnum_t)((max - min) / (*bandwidth));
   }
   else
-    n_bin = n_bin_max;
+    n_bins = n_bins_max;
 
-  if (n_bin > n_bin_max)
-    n_bin = n_bin_max;
+  if (n_bins > n_bins_max)
+    n_bins = n_bins_max;
 
-  *bandwidth = (max - min) / ((cs_real_t)n_bin);
+  *bandwidth = (max - min) / ((cs_real_t)n_bins);
 
-  histogram_t->l_i[0] = *bandwidth;
-  histogram_t->c_i[0] = min + histogram_t->l_i[0] / 2.0;
+  histogram->l_i[0] = *bandwidth;
+  histogram->c_i[0] = min + histogram->l_i[0] / 2.0;
 
   /* Populate histogram classes */
-  for (int b_id = 1; b_id < n_bin; b_id++) {
-    histogram_t->l_i[b_id] = *bandwidth;
-    histogram_t->c_i[b_id] = histogram_t->c_i[b_id - 1]
-                             + histogram_t->l_i[b_id - 1] / 2.0
-                             + histogram_t->l_i[b_id] / 2.0;
+  for (int b_id = 1; b_id < n_bins; b_id++) {
+    histogram->l_i[b_id] = *bandwidth;
+    histogram->c_i[b_id] =   histogram->c_i[b_id - 1]
+                           + histogram->l_i[b_id - 1] / 2.0
+                           + histogram->l_i[b_id] / 2.0;
   }
 
   /* Populate histogram class with weights */
-  for (int b_id = 0; b_id < n_bin; b_id++)
-    histogram_t->h_i[b_id] = 0.0;
+  for (int b_id = 0; b_id < n_bins; b_id++)
+    histogram->h_i[b_id] = 0.0;
 
   /* Compute height of each class on each rank */
 
   for (cs_lnum_t iel = 0; iel < n_elts_sample; iel++) {
-    for (int b_id = 0; b_id < n_bin; b_id++) {
-      cs_real_t b_min = histogram_t->c_i[b_id] - histogram_t->l_i[b_id] / 2.0;
-      cs_real_t b_max = histogram_t->c_i[b_id] + histogram_t->l_i[b_id] / 2.0;
+    for (int b_id = 0; b_id < n_bins; b_id++) {
+      cs_real_t b_min = histogram->c_i[b_id] - histogram->l_i[b_id] / 2.0;
+      cs_real_t b_max = histogram->c_i[b_id] + histogram->l_i[b_id] / 2.0;
       if (sample[iel] >= b_min && sample[iel] < b_max) {
-        histogram_t->h_i[b_id] += weights[iel];
+        histogram->h_i[b_id] += weights[iel];
         break;
       }
     }
@@ -442,37 +448,37 @@ _fill_histogram_classes_u_bandwidth(user_histogram_t *histogram_t,
 
   /*Sum height classes over all MPI ranks*/
 
-  cs_parall_sum(n_bin, CS_DOUBLE, histogram_t->h_i);
+  cs_parall_sum(n_bins, CS_DOUBLE, histogram->h_i);
 
-  /*update histogram_t*/
-  histogram_t->binNumber = n_bin;
+  /*update histogram*/
+  histogram->n_bins = n_bins;
 }
 
 /*----------------------------------------------------------------------------
  * Compute histogram quantiles given a provided quantile array
  *
  * parameters:
- *   histogram_t <-> pointer to histogram structure
+ *   histogram <-> pointer to histogram structure
  *   quantile    <-> pointer to quantile array {X,proba}
  *   n_quantile  <-- number of quantiles to be computed
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_histogram_quantile(user_histogram_t  *histogram_t,
+_compute_histogram_quantile(user_histogram_t  *histogram,
                             cs_real_t          quantile[][2],
                             cs_lnum_t          n_quantile)
 {
   /* Profile shorter variables */
-  cs_real_t *h_i = histogram_t->h_i;
-  cs_real_t *c_i = histogram_t->c_i;
-  cs_real_t *l_i = histogram_t->l_i;
+  cs_real_t *h_i = histogram->h_i;
+  cs_real_t *c_i = histogram->c_i;
+  cs_real_t *l_i = histogram->l_i;
 
-  cs_lnum_t n_bin      = histogram_t->binNumber;
+  cs_lnum_t n_bins = histogram->n_bins;
   cs_real_t prob_accum = 0.0;
   cs_lnum_t q_id_start = 0;
 
-  for (int b_id = 0; b_id < n_bin; b_id++) {
-    prob_accum += histogram_t->h_i[b_id];
+  for (int b_id = 0; b_id < n_bins; b_id++) {
+    prob_accum += histogram->h_i[b_id];
 
     for (int q_id = q_id_start; q_id < n_quantile; q_id++) {
       if (prob_accum > quantile[q_id][1]) {
@@ -489,7 +495,7 @@ _compute_histogram_quantile(user_histogram_t  *histogram_t,
 
   /* Update histogram proba tot:
      it is possible to check the correct sum of h_i */
-  histogram_t->ptot = prob_accum;
+  histogram->ptot = prob_accum;
 }
 
 /*----------------------------------------------------------------------------
@@ -501,21 +507,21 @@ _compute_histogram_quantile(user_histogram_t  *histogram_t,
  * known as Freedman and Diaconis rule [freedman1981]: see OpenTurns
  *
  * parameters:
- *   histogram_t   <-> pointer to histogram structure
+ *   histogram     <-> pointer to histogram structure
  *   sample        <-- 1d sample on which the histogram has to be build
  *   weights       <-- weights associated to sample
  *   n_elts_sample <-- number of elements in the sample
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_histogram(user_histogram_t  *histogram_t,
+_compute_histogram(user_histogram_t  *histogram,
                    cs_real_t         *sample,
                    cs_real_t         *weights,
                    cs_lnum_t          n_elts_sample)
 {
   /* Histogram shorter variable */
-  cs_real_t sigma     = histogram_t->sd;
-  cs_lnum_t n_bin_max = histogram_t->n_bin_max;
+  cs_real_t sigma      = histogram->sd;
+  cs_lnum_t n_bins_max = histogram->n_bins_max;
 
   cs_lnum_t n_gelts_sample = n_elts_sample;
 
@@ -528,7 +534,7 @@ _compute_histogram(user_histogram_t  *histogram_t,
 
   bandwidth = sigma * pow(24.0 * pow(3.14, 0.5) / n_gelts_sample, 1.0 / 3.0);
 
-  _fill_histogram_classes_u_bandwidth(histogram_t,
+  _fill_histogram_classes_u_bandwidth(histogram,
                                       sample,
                                       weights,
                                       n_elts_sample,
@@ -540,20 +546,20 @@ _compute_histogram(user_histogram_t  *histogram_t,
 
   cs_lnum_t n_quantile = sizeof(quantile) / (2 * sizeof(cs_real_t *));
 
-  _compute_histogram_quantile(histogram_t, quantile, n_quantile);
+  _compute_histogram_quantile(histogram, quantile, n_quantile);
 
   /*Update histogram quantile*/
 
-  histogram_t->Q1 = quantile[0][0];
-  histogram_t->Q2 = quantile[1][0];
-  histogram_t->Q3 = quantile[2][0];
+  histogram->Q1 = quantile[0][0];
+  histogram->Q2 = quantile[1][0];
+  histogram->Q3 = quantile[2][0];
 
   cs_real_t bandwidth_update = 0.0;
-  cs_lnum_t n_bin            = n_bin_max;
-  cs_real_t min              = histogram_t->min;
-  cs_real_t max              = histogram_t->max;
+  cs_lnum_t n_bins           = n_bins_max;
+  cs_real_t min              = histogram->min;
+  cs_real_t max              = histogram->max;
 
-  cs_real_t IQR              = histogram_t->Q3 - histogram_t->Q1;
+  cs_real_t IQR              = histogram->Q3 - histogram->Q1;
   cs_real_t IQR_pre          = IQR;
   cs_real_t IQR_var          = 1.0;
 
@@ -563,15 +569,15 @@ _compute_histogram(user_histogram_t  *histogram_t,
     = IQR / (2 * 0.75) * pow(24.0 * pow(3.14, 0.5) / n_gelts_sample, 1.0 / 3.0);
 
   if (bandwidth_update > DBL_EPSILON) {
-    n_bin = (cs_lnum_t)((max - min) / (bandwidth_update));
+    n_bins = (cs_lnum_t)((max - min) / (bandwidth_update));
   }
   else
-    n_bin = n_bin_max;
+    n_bins = n_bins_max;
 
-  if (n_bin > n_bin_max)
-    n_bin = n_bin_max;
+  if (n_bins > n_bins_max)
+    n_bins = n_bins_max;
 
-  bandwidth_update = (max - min) / ((cs_real_t)n_bin);
+  bandwidth_update = (max - min) / ((cs_real_t)n_bins);
 
   cs_lnum_t n_loop = 1;
   cs_real_t bandwidth_variation
@@ -579,41 +585,41 @@ _compute_histogram(user_histogram_t  *histogram_t,
 
   /*perform a loop to try top optimize bandwidth*/
   while (n_loop < 10 && bandwidth_variation > 0.05 && IQR > DBL_EPSILON
-         && IQR_var > 0.02 && histogram_t->binNumber < histogram_t->n_bin_max) {
+         && IQR_var > 0.02 && histogram->n_bins < histogram->n_bins_max) {
 
     bandwidth = bandwidth_update;
 
     _fill_histogram_classes_u_bandwidth(
-      histogram_t, sample, weights, n_elts_sample, &bandwidth);
+      histogram, sample, weights, n_elts_sample, &bandwidth);
 
-    _compute_histogram_quantile(histogram_t, quantile, n_quantile);
+    _compute_histogram_quantile(histogram, quantile, n_quantile);
 
     /*Update histogram quantile*/
 
-    histogram_t->Q1 = quantile[0][0];
-    histogram_t->Q2 = quantile[1][0];
-    histogram_t->Q3 = quantile[2][0];
+    histogram->Q1 = quantile[0][0];
+    histogram->Q2 = quantile[1][0];
+    histogram->Q3 = quantile[2][0];
 
     IQR_pre = IQR;
-    IQR     = histogram_t->Q3 - histogram_t->Q1;
+    IQR     = histogram->Q3 - histogram->Q1;
 
     bandwidth_update = IQR / (2 * 0.75)
                        * pow(24.0 * pow(3.14, 0.5) / n_gelts_sample, 1.0 / 3.0);
 
-    n_bin = n_bin_max;
-    min   = histogram_t->min;
-    max   = histogram_t->max;
+    n_bins = n_bins_max;
+    min    = histogram->min;
+    max    = histogram->max;
 
     if (bandwidth_update > DBL_EPSILON) {
-      n_bin = (cs_lnum_t)((max - min) / (bandwidth_update));
+      n_bins = (cs_lnum_t)((max - min) / (bandwidth_update));
     }
     else
-      n_bin = n_bin_max;
+      n_bins = n_bins_max;
 
-    if (n_bin > n_bin_max)
-      n_bin = n_bin_max;
+    if (n_bins > n_bins_max)
+      n_bins = n_bins_max;
 
-    bandwidth_update = (max - min) / ((cs_real_t)n_bin);
+    bandwidth_update = (max - min) / ((cs_real_t)n_bins);
 
     bandwidth_variation = CS_ABS(bandwidth - bandwidth_update) / bandwidth;
     IQR_var             = CS_ABS(IQR - IQR_pre) / IQR;
@@ -621,63 +627,63 @@ _compute_histogram(user_histogram_t  *histogram_t,
     n_loop++;
   }
 
-  histogram_t->n_iter = n_loop;
+  histogram->n_iter = n_loop;
 }
 
 /*----------------------------------------------------------------------------
- * Dump histogram graphs using OpenTunrs library (need to be link to CS)
+ * Output histogram graphs using OpenTunrs library (need to be link to CS)
  *
  * parameters:
- *   histogram_t <-- pointer to the current histogram structure
- *   dirname     <-- pointer to directory dump path
+ *   histogram <-- pointer to the current histogram structure
+ *   dirname   <-- pointer to directory output path
  *----------------------------------------------------------------------------*/
 
 static void
-_dump_histogram_OT(user_histogram_t  *histogram_t,
-                   const char        *dirname)
+_output_histogram_ot(user_histogram_t  *histogram,
+                     const char        *dirname)
 {
 #if HAVE_OT == 1
 
-  /*histogram shorter variable*/
-  cs_lnum_t n_bin = histogram_t->binNumber;
-  cs_real_t min   = histogram_t->min;
-  cs_real_t max   = histogram_t->max;
+  /* Histogram shorter variable */
+  cs_lnum_t n_bins = histogram->n_bins;
+  cs_real_t min    = histogram->min;
+  cs_real_t max    = histogram->max;
 
   cs_real_t min_li = DBL_MAX;
 
-  OT::Point h_i(n_bin), l_i(n_bin);
+  OT::Point h_i(n_bins), l_i(n_bins);
 
-  for (int b_id = 0; b_id < n_bin; b_id++) {
-    h_i[b_id] = histogram_t->h_i[b_id];
-    l_i[b_id] = histogram_t->l_i[b_id];
+  for (int b_id = 0; b_id < n_bins; b_id++) {
+    h_i[b_id] = histogram->h_i[b_id];
+    l_i[b_id] = histogram->l_i[b_id];
     min_li    = CS_MIN(l_i[b_id], min_li);
   }
 
   if (min_li < DBL_EPSILON * 1e4)
     return;
-  /*ensure surface histogram is higher than zero*/
 
+  /* Ensure surface histogram is higher than zero */
   OT::Histogram histogram_ot(min, l_i, h_i);
 
-  /*Set description and name*/
+  /* Set description and name */
   char title_h[200];
 
   sprintf(title_h,
           "%s \n mu: %.2f - sigma: %.2f",
-          histogram_t->name,
-          histogram_t->mean,
-          histogram_t->sd);
+          histogram->name,
+          histogram->mean,
+          histogram->sd);
 
-  histogram_ot.setDescription(OT::Description(1, histogram_t->field));
+  histogram_ot.setDescription(OT::Description(1, histogram->field));
 
-  /*Get a sample from the histogram*/
+  /* Get a sample from the histogram */
   OT::UnsignedInteger s_size = 500;
 
   OT::Sample sample = histogram_ot.getSample(s_size);
 
   OT::KernelSmoothing ks;
 
-  /*Fit the sample with KernelSmoothing distribution*/
+  /* Fit the sample with KernelSmoothing distribution */
   OT::Distribution fitteddist = ks.build(sample);
 
   OT::Graph graph, graph_ks;
@@ -694,7 +700,7 @@ _dump_histogram_OT(user_histogram_t  *histogram_t,
   graph.setTitle(title_h);
 
   char filename[300];
-  sprintf(filename, "%s/%s.png", dirname, histogram_t->name);
+  sprintf(filename, "%s/%s.png", dirname, histogram->name);
 
   graph.draw(filename);
 
@@ -705,7 +711,7 @@ _dump_histogram_OT(user_histogram_t  *histogram_t,
  * Calculate min max sel mesh quantities in a orthonormal base vith dir_v
  * normalized as k vector
  *
- * The folowing members of the histogram_tstructure are updated
+ * The folowing members of the histogram_t structure are updated
  *   i_v: set of an abritray i_v vector otthorgonal to dir
  *   min_i: minimum mesh sel in i direction
  *   max_i: maximum mesh sel in i direction
@@ -716,11 +722,11 @@ _dump_histogram_OT(user_histogram_t  *histogram_t,
  *   max_dir: maximum mesh sel in profile dir vector
  *
  * parameters:
- *   profile_t    <-> pointer to the current profile structure
+ *   profile <-> pointer to the current profile structure
  *----------------------------------------------------------------------------*/
 
 static void
-_calculate_min_max_dir(user_profile_t *profile_t)
+_calculate_min_max_dir(user_profile_t  *profile)
 {
   // Get mesh quantities
   const cs_mesh_t            *m        = cs_glob_mesh;
@@ -735,7 +741,7 @@ _calculate_min_max_dir(user_profile_t *profile_t)
   // Allocate memory for the cells list which will be populated by cs_selector
   BFT_MALLOC(selected_cells, m->n_cells, cs_lnum_t);
 
-  cs_selector_get_cell_list(profile_t->criteria,
+  cs_selector_get_cell_list(profile->criteria,
                             &n_selected_cells,
                             selected_cells);
 
@@ -749,15 +755,12 @@ _calculate_min_max_dir(user_profile_t *profile_t)
                                             selected_vertices);
 
   // Vector profile quantities
-  cs_real_t dir_norm;
-  dir_norm = pow(pow(profile_t->dir_v[0], 2.0) + pow(profile_t->dir_v[1], 2.0)
-                   + pow(profile_t->dir_v[2], 2.0),
-                 0.5);
+  cs_real_t dir_norm = cs_math_3_norm(profile->dir_v);
 
   cs_real_t n_v[3];
-  n_v[0] = profile_t->dir_v[0] / dir_norm;
-  n_v[1] = profile_t->dir_v[1] / dir_norm;
-  n_v[2] = profile_t->dir_v[2] / dir_norm;
+  n_v[0] = profile->dir_v[0] / dir_norm;
+  n_v[1] = profile->dir_v[1] / dir_norm;
+  n_v[2] = profile->dir_v[2] / dir_norm;
 
   // Set to arbitrary orthoganal vector within plane
   cs_real_t i_v[3];
@@ -806,34 +809,34 @@ _calculate_min_max_dir(user_profile_t *profile_t)
   for (cs_lnum_t ii = 0; ii < n_selected_vertices; ii++) {
     cs_lnum_t vtx_id = selected_vertices[ii];
     for (int v_id = 0; v_id < 3;
-         v_id++) { /* loop on the 3 vector of the new base */
+         v_id++) { /* Loop on the 3 vector of the new base */
       vtx_dist[v_id][ii] = 0.0;
-      for (int jj = 0; jj < 3; jj++) /* loop on x y z initial direction */
+      for (int jj = 0; jj < 3; jj++) /* Loop on x y z initial direction */
         vtx_dist[v_id][ii]
           += vtx_coord[3 * vtx_id + jj]
-             * base_orth[v_id][jj]; /* project each point in the new base */
+             * base_orth[v_id][jj]; /* Project each point in the new base */
     }
   }
 
-  for (int k = 0; k < 3; k++) { /* find min max in the new base*/
+  for (int k = 0; k < 3; k++) { /* Find min max in the new base*/
     _compute_min_max(
       n_selected_vertices, vtx_dist[k], &min_mesh_ijn[k], &max_mesh_ijn[k]);
   }
 
-  /* update i_v and j_v vector in structure */
+  /* Update i_v and j_v vector in structure */
   for (int k = 0; k < 3; k++)
-    profile_t->i_v[k] = i_v[k];
+    profile->i_v[k] = i_v[k];
 
   for (int k = 0; k < 3; k++)
-    profile_t->j_v[k] = j_v[k];
+    profile->j_v[k] = j_v[k];
 
-  /* update min max dimension of the selected mesh part in the structure */
-  profile_t->min_i   = min_mesh_ijn[0];
-  profile_t->max_i   = max_mesh_ijn[0];
-  profile_t->min_j   = min_mesh_ijn[1];
-  profile_t->max_j   = max_mesh_ijn[1];
-  profile_t->min_dir = min_mesh_ijn[2];
-  profile_t->max_dir = max_mesh_ijn[2];
+  /* Update min max dimension of the selected mesh part in the structure */
+  profile->min_i   = min_mesh_ijn[0];
+  profile->max_i   = max_mesh_ijn[0];
+  profile->min_j   = min_mesh_ijn[1];
+  profile->max_j   = max_mesh_ijn[1];
+  profile->min_dir = min_mesh_ijn[2];
+  profile->max_dir = max_mesh_ijn[2];
 
   BFT_FREE(selected_cells);
   BFT_FREE(selected_vertices);
@@ -846,35 +849,32 @@ _calculate_min_max_dir(user_profile_t *profile_t)
  * Comput thickness of each layer profile given its law
  *
  * parameters:
- *   profile_t    <-> pointer to the current profile structure
- *     folowing members of the structure are updated
- *          l_thick: thickness of each layer
- *
+ *   profile  <-> pointer to the current profile structure
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_layer_thickness(user_profile_t *profile_t)
+_compute_layer_thickness(user_profile_t  *profile)
 {
+  /* Shorter variable */
 
-  /*shorter variable*/
-  const char *law         = profile_t->progression_law;
-  cs_real_t   progression = profile_t->progression;
-  cs_lnum_t   n_layers    = profile_t->n_layers;
-  cs_real_t   dist_min    = profile_t->min_dir;
-  cs_real_t   dist_max    = profile_t->max_dir;
+  const char *law         = profile->progression_law;
+  cs_real_t   progression = profile->progression;
+  cs_lnum_t   n_layers    = profile->n_layers;
+  cs_real_t   dist_min    = profile->min_dir;
+  cs_real_t   dist_max    = profile->max_dir;
   cs_real_t   len_p       = dist_max - dist_min;
 
   if (strcmp(law, "CONSTANT") == 0) {
-    profile_t->progression = 1.0;
+    profile->progression = 1.0;
     for (int l_id = 0; l_id < n_layers; l_id++)
-      profile_t->l_thick[l_id] = len_p / ((cs_real_t)n_layers);
+      profile->l_thick[l_id] = len_p / ((cs_real_t)n_layers);
   }
   else if (strcmp(law, "GEOMETRIC") == 0) {
     cs_real_t progression_n = pow(progression, n_layers);
     cs_real_t dx0           = len_p * (progression - 1.) / (progression_n - 1.);
-    profile_t->l_thick[0]   = dx0;
+    profile->l_thick[0]   = dx0;
     for (int l_id = 0; l_id < n_layers - 1; l_id++)
-      profile_t->l_thick[l_id + 1] = profile_t->l_thick[l_id] * progression;
+      profile->l_thick[l_id + 1] = profile->l_thick[l_id] * progression;
   }
   else if (strcmp(law, "PARABOLIC") == 0) {
 
@@ -897,16 +897,16 @@ _compute_layer_thickness(user_profile_t *profile_t)
         = len_p * (progression - 1.) / (progression_np1 + progression_np - 2.);
     }
 
-    profile_t->l_thick[0]            = dx0;
-    profile_t->l_thick[n_layers - 1] = dx0;
+    profile->l_thick[0]            = dx0;
+    profile->l_thick[n_layers - 1] = dx0;
     for (int l_id = 0; l_id < np - 1; l_id++) {
-      profile_t->l_thick[l_id + 1] = profile_t->l_thick[l_id] * progression;
-      profile_t->l_thick[n_layers - 1 - 1 - l_id]
-        = profile_t->l_thick[n_layers - 1 - l_id] * progression;
+      profile->l_thick[l_id + 1] = profile->l_thick[l_id] * progression;
+      profile->l_thick[n_layers - 1 - 1 - l_id]
+        = profile->l_thick[n_layers - 1 - l_id] * progression;
     }
 
     if (not(is_even))
-      profile_t->l_thick[np] = profile_t->l_thick[np - 1] * progression;
+      profile->l_thick[np] = profile->l_thick[np - 1] * progression;
   }
   else {
     bft_error(
@@ -919,39 +919,35 @@ _compute_layer_thickness(user_profile_t *profile_t)
 }
 
 /*----------------------------------------------------------------------------
- * Calculate position of the center of each layer in dir direction (absolute and
- *normalized
+ * Calculate position of the center of each layer in dir direction
+ * (absolute and normalized)
  *
  * parameters:
- *   profile_t    <-> pointer to the current profile structure
- *     folowing members of the structure are updated
- *          pos: absolute position of the center of each layer
- *          pos_n: normalized position of the center of each layer
- *
+ *   profile    <-> pointer to the current profile structure
  *----------------------------------------------------------------------------*/
 
 static void
-_calculate_pos_dir(user_profile_t *profile_t)
+_calculate_pos_dir(user_profile_t  *profile)
 {
-  cs_real_t min_dir = profile_t->min_dir;
-  cs_real_t max_dir = profile_t->max_dir;
+  cs_real_t min_dir = profile->min_dir;
+  cs_real_t max_dir = profile->max_dir;
 
-  cs_real_t *l_thick = profile_t->l_thick;
+  cs_real_t *l_thick = profile->l_thick;
 
-  profile_t->pos[0]   = min_dir + 1.0 / 2.0 * l_thick[0];
-  profile_t->pos_n[0] = profile_t->pos[0] / (max_dir - min_dir);
+  profile->pos[0]   = min_dir + 1.0 / 2.0 * l_thick[0];
+  profile->pos_n[0] = profile->pos[0] / (max_dir - min_dir);
 
-  for (int layer_id = 1; layer_id < profile_t->n_layers; layer_id++) {
-    profile_t->pos[layer_id]
-      = profile_t->pos[layer_id - 1]
+  for (int layer_id = 1; layer_id < profile->n_layers; layer_id++) {
+    profile->pos[layer_id]
+      = profile->pos[layer_id - 1]
         + (l_thick[layer_id - 1] + l_thick[layer_id]) * 1.0 / 2.0;
-    profile_t->pos_n[layer_id] = profile_t->pos[layer_id] / (max_dir - min_dir);
+    profile->pos_n[layer_id] = profile->pos[layer_id] / (max_dir - min_dir);
   }
 }
 
 /*----------------------------------------------------------------------------
  * Calculate the coordinates of the four edge of a square plane for stl mesh
- *structure STL mesh is triangles base, the face is split into two triangles
+ * structure STL mesh is triangles base, the face is split into two triangles
  *
  * parameters:
  *   i_v                <-- pointer to i_v
@@ -971,7 +967,6 @@ _square_triangle_coords(cs_real_t   i_v[3],
                         cs_real_t   j_size,
                         cs_real_3_t triangles_coord[6])
 {
-
   cs_real_t T_i = i_size / 2.0; // Transalaltion compare to origin along i_v
   cs_real_t T_j = j_size / 2.0; // Transalaltion compare to origin along j_v
 
@@ -1009,38 +1004,38 @@ _square_triangle_coords(cs_real_t   i_v[3],
  * Alternative method using cs_geom_closest_point based on coordinates
  * of selected_cells center over all mpi ranks
  *
+ * The following members of the structure are updated
+ *   mesh_list->seed_coords: coordinates
+ *
  * parameters:
- *   profile_t      <-> pointer to the current profile structure
- *   layer_id       <-- layer number on which the seeds needs to be set
- *     folowing members of the structure are updated
- *          mesh_list->seed_coords: coordinates
- *
- *
+ *   profile   <-> pointer to the current profile structure
+ *   layer_id  <-- layer number on which the seeds needs to be set
  *----------------------------------------------------------------------------*/
 
 static void
-_set_stl_layers_seeds(user_profile_t *profile_t, cs_lnum_t layer_id)
+_set_stl_layers_seeds(user_profile_t  *profile,
+                      cs_lnum_t        layer_id)
 {
-  /* shorter profile variable */
-  cs_stl_mesh_t *stl_mesh = profile_t->mesh_list[layer_id];
+  // Shorter profile variable
+  cs_stl_mesh_t *stl_mesh = profile->mesh_list[layer_id];
 
   cs_real_t n_v[3];
-  cs_real_t dir_norm = cs_math_3_norm(profile_t->dir_v);
+  cs_real_t dir_norm = cs_math_3_norm(profile->dir_v);
   for (int k = 0; k < 3; k++)
-    n_v[k] = profile_t->dir_v[k] / dir_norm;
+    n_v[k] = profile->dir_v[k] / dir_norm;
 
-  cs_real_t *i_v = profile_t->i_v;
-  cs_real_t *j_v = profile_t->j_v;
+  cs_real_t *i_v = profile->i_v;
+  cs_real_t *j_v = profile->j_v;
 
-  cs_lnum_t n_layers = profile_t->n_layers;
-  cs_real_t dist_min = profile_t->min_dir;
-  cs_real_t dist_max = profile_t->max_dir;
+  cs_lnum_t n_layers = profile->n_layers;
+  cs_real_t dist_min = profile->min_dir;
+  cs_real_t dist_max = profile->max_dir;
 
-  cs_real_t layer_thickness = profile_t->l_thick[layer_id];
-  cs_real_t l_center_nCoord = profile_t->pos[layer_id];
+  cs_real_t layer_thickness = profile->l_thick[layer_id];
+  cs_real_t l_center_nCoord = profile->pos[layer_id];
 
-  cs_real_t i_translate = (profile_t->max_i + profile_t->min_i) / 2.0;
-  cs_real_t j_translate = (profile_t->max_j + profile_t->min_j) / 2.0;
+  cs_real_t i_translate = (profile->max_i + profile->min_i) / 2.0;
+  cs_real_t j_translate = (profile->max_j + profile->min_j) / 2.0;
 
   // Get mesh quantities
   const cs_mesh_quantities_t *mq         = cs_glob_mesh_quantities;
@@ -1053,7 +1048,7 @@ _set_stl_layers_seeds(user_profile_t *profile_t, cs_lnum_t layer_id)
   BFT_MALLOC(selected_cells, cs_glob_mesh->n_cells_with_ghosts, cs_lnum_t);
 
   cs_selector_get_cell_list(
-    profile_t->criteria, &n_selected_cells, selected_cells);
+    profile->criteria, &n_selected_cells, selected_cells);
 
   // Calculate center lower plane (plane 0 in _set_layers_stl_mesh)
   cs_real_3_t O_planes_coord[1];
@@ -1080,7 +1075,7 @@ _set_stl_layers_seeds(user_profile_t *profile_t, cs_lnum_t layer_id)
         + n_v[k] * (dist_max - (l_center_nCoord + 1.0 / 2.0 * layer_thickness))
             / 2.0;
 
-  /* set an array of selected cell center coordinates*/
+  /* Set an array of selected cell center coordinates */
   cs_real_t *point_coord;
   BFT_MALLOC(point_coord, 3 * n_selected_cells, cs_real_t);
 
@@ -1094,12 +1089,12 @@ _set_stl_layers_seeds(user_profile_t *profile_t, cs_lnum_t layer_id)
   cs_lnum_t   rank_id[2];
   cs_real_3_t closest_point_coord[2];
 
-  /* initialiaze values of closest_point_coord */
+  /* Initialiaze values of closest_point_coord */
   for (int jj = 0; jj < 2; jj++)
     for (int k = 0; k < 3; k++)
       closest_point_coord[jj][k] = -1.E20;
 
-  /*For each target point, find the closest cell center in the cell sell over
+  /* For each target point, find the closest cell center in the cell sell over
      all ranks Doing so, the seeds are in the fluid domain */
   for (int jj = 0; jj < 2; jj++) {
     cs_geom_closest_point(n_selected_cells,
@@ -1153,17 +1148,17 @@ _set_stl_layers_seeds(user_profile_t *profile_t, cs_lnum_t layer_id)
  * Set 1 STL mesh for a given layer profile
  *
  * parameters:
- *   profile_t <-> pointer to the current profile structure
- *                 The folowing members of the structure are updated:
- *                   mesh_list: stl mesh structure (defined in cs_stl_mesh.h)
+ *   profile  <-> pointer to the current profile structure
+ *                The folowing members of the structure are updated:
+ *                mesh_list: stl mesh structure (defined in cs_stl_mesh.h)
  *   layer_id <-- layer number on which the seeds needs to be set
  *----------------------------------------------------------------------------*/
 
 static void
-_set_layers_stl_mesh(user_profile_t  *profile_t,
+_set_layers_stl_mesh(user_profile_t  *profile,
                      cs_lnum_t        layer_id)
 {
-  cs_stl_mesh_t *stl_mesh = profile_t->mesh_list[layer_id];
+  cs_stl_mesh_t *stl_mesh = profile->mesh_list[layer_id];
   char           name[10];
   sprintf(name, "%s_%d", "layer", layer_id);
   strncpy(stl_mesh->name, name, 9);
@@ -1175,25 +1170,25 @@ _set_layers_stl_mesh(user_profile_t  *profile_t,
 
   // Set vector orthogonal spatial system
   cs_real_t n_v[3];
-  cs_real_t dir_norm = cs_math_3_norm(profile_t->dir_v);
+  cs_real_t dir_norm = cs_math_3_norm(profile->dir_v);
   for (int k = 0; k < 3; k++)
-    n_v[k] = profile_t->dir_v[k] / dir_norm;
+    n_v[k] = profile->dir_v[k] / dir_norm;
 
   /* Shorter variable for new base*/
-  cs_real_t *i_v = profile_t->i_v;
-  cs_real_t *j_v = profile_t->j_v;
+  cs_real_t *i_v = profile->i_v;
+  cs_real_t *j_v = profile->j_v;
 
-  cs_real_t dist_min = profile_t->min_dir;
+  cs_real_t dist_min = profile->min_dir;
 
-  cs_real_t layer_thickness = profile_t->l_thick[layer_id];
-  cs_real_t l_center_nCoord = profile_t->pos[layer_id];
+  cs_real_t layer_thickness = profile->l_thick[layer_id];
+  cs_real_t l_center_nCoord = profile->pos[layer_id];
 
-  cs_real_t i_translate = (profile_t->max_i + profile_t->min_i) / 2.0;
-  cs_real_t j_translate = (profile_t->max_j + profile_t->min_j) / 2.0;
+  cs_real_t i_translate = (profile->max_i + profile->min_i) / 2.0;
+  cs_real_t j_translate = (profile->max_j + profile->min_j) / 2.0;
 
   /* plane size is calculated to be enveloppe of cell selected size*/
-  cs_real_t i_size     = (profile_t->max_i - profile_t->min_i);
-  cs_real_t j_size     = (profile_t->max_j - profile_t->min_j);
+  cs_real_t i_size     = (profile->max_i - profile->min_i);
+  cs_real_t j_size     = (profile->max_j - profile->min_j);
   cs_real_t plane_size = CS_MAX(i_size, j_size) * 1.5;
 
   // Calculate center  of each planes
@@ -1334,46 +1329,37 @@ _set_layers_stl_mesh(user_profile_t  *profile_t,
  * Set 1 MED mesh for a given layer profile
  *
  * parameters:
- *   profile_t <-> pointer to the current profile structure
- *                 The following members of the structure are updated
- *                   med_mesh_struct: medUmesh add in mesh structure
- *   layer_id  <-- layer number on which the seeds needs to be set
+ *   profile  <-> pointer to the current profile structure
+ *                The following members of the structure are updated
+ *                med_mesh_struct: medUmesh add in mesh structure
+ *   layer_id <-- layer number on which the seeds needs to be set
  *----------------------------------------------------------------------------*/
 
 static void
-_set_med_layer_mesh(user_profile_t  *profile_t,
+_set_med_layer_mesh(user_profile_t  *profile,
                     cs_lnum_t        layer_id)
 {
-#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
+#if defined(HAVE_MEDCOUPLING)
   // Get mesh quantities
-  const cs_real_t            *cell_vol   = cs_glob_mesh_quantities->cell_vol;
-  const cs_mesh_quantities_t *mq         = cs_glob_mesh_quantities;
-  const cs_real_t            *cell_cen   = mq->cell_cen;
-  const cs_lnum_t             n_cells    = cs_glob_mesh->n_cells;
-  const cs_lnum_t             n_i_faces  = cs_glob_mesh->n_i_faces;
-  const cs_lnum_t             n_b_faces  = cs_glob_mesh->n_b_faces;
-  const cs_lnum_t             n_vertices = cs_glob_mesh->n_vertices;
-  const cs_real_t            *vtx_coord  = cs_glob_mesh->vtx_coord;
+  const cs_real_t  *vtx_coord  = cs_glob_mesh->vtx_coord;
 
   // Set vector orthogonal spatial system
   cs_real_t n_v[3];
-  cs_real_t dir_norm = cs_math_3_norm(profile_t->dir_v);
+  cs_real_t dir_norm = cs_math_3_norm(profile->dir_v);
   for (int k = 0; k < 3; k++)
-    n_v[k] = profile_t->dir_v[k] / dir_norm;
+    n_v[k] = profile->dir_v[k] / dir_norm;
 
   /* Shorter variable for new base */
-  cs_real_t *i_v = profile_t->i_v;
-  cs_real_t *j_v = profile_t->j_v;
+  cs_real_t *i_v = profile->i_v;
+  cs_real_t *j_v = profile->j_v;
 
-  cs_real_t dist_min = profile_t->min_dir;
-  cs_real_t dist_max = profile_t->max_dir;
-  cs_real_t min_i    = profile_t->min_i;
-  cs_real_t max_i    = profile_t->max_i;
-  cs_real_t min_j    = profile_t->min_j;
-  cs_real_t max_j    = profile_t->max_j;
+  cs_real_t min_i    = profile->min_i;
+  cs_real_t max_i    = profile->max_i;
+  cs_real_t min_j    = profile->min_j;
+  cs_real_t max_j    = profile->max_j;
 
-  cs_real_t layer_thickness = profile_t->l_thick[layer_id];
-  cs_real_t l_center_nCoord = profile_t->pos[layer_id];
+  cs_real_t layer_thickness = profile->l_thick[layer_id];
+  cs_real_t l_center_nCoord = profile->pos[layer_id];
 
   /* Set number of cells in each segment */
   int n_x = 10;
@@ -1392,50 +1378,50 @@ _set_med_layer_mesh(user_profile_t  *profile_t,
   z_min = -layer_thickness / 2.0;
   z_max = layer_thickness / 2.0;
 
-  double *XCoords, *YCoords, *ZCoords;
-  BFT_MALLOC(XCoords, n_x, double);
-  BFT_MALLOC(YCoords, n_y, double);
-  BFT_MALLOC(ZCoords, n_z, double);
+  double *x_coords, *y_coords, *z_coords;
+  BFT_MALLOC(x_coords, n_x, double);
+  BFT_MALLOC(y_coords, n_y, double);
+  BFT_MALLOC(z_coords, n_z, double);
 
   for (int x_id = 0; x_id < n_x; x_id++)
-    XCoords[x_id] = (x_max - x_min) * x_id / (n_x - 1) + x_min;
+    x_coords[x_id] = (x_max - x_min) * x_id / (n_x - 1) + x_min;
 
   for (int y_id = 0; y_id < n_y; y_id++)
-    YCoords[y_id] = (y_max - y_min) * y_id / (n_y - 1) + y_min;
+    y_coords[y_id] = (y_max - y_min) * y_id / (n_y - 1) + y_min;
 
   for (int z_id = 0; z_id < n_z; z_id++)
-    ZCoords[z_id] = (z_max - z_min) * z_id / (n_z - 1) + z_min;
+    z_coords[z_id] = (z_max - z_min) * z_id / (n_z - 1) + z_min;
 
   /* Generate a cartesian mesh in the main base */
   MEDCoupling::DataArrayDouble *arrX = MEDCoupling::DataArrayDouble::New();
   arrX->alloc(n_x, 1);
-  std::copy(XCoords, XCoords + n_x, arrX->getPointer());
+  std::copy(x_coords, x_coords + n_x, arrX->getPointer());
   arrX->setInfoOnComponent(0, "X [m]");
   MEDCoupling::DataArrayDouble *arrY = MEDCoupling::DataArrayDouble::New();
   arrY->alloc(n_y, 1);
-  std::copy(YCoords, YCoords + n_y, arrY->getPointer());
+  std::copy(y_coords, y_coords + n_y, arrY->getPointer());
   arrY->setInfoOnComponent(0, "Y [m]");
   MEDCoupling::DataArrayDouble *arrZ = MEDCoupling::DataArrayDouble::New();
   arrZ->alloc(n_z, 1);
-  std::copy(ZCoords, ZCoords + n_z, arrZ->getPointer());
+  std::copy(z_coords, z_coords + n_z, arrZ->getPointer());
   arrZ->setInfoOnComponent(0, "Z [m]");
 
   /* Retrieve Umesh preallocated */
   MEDCoupling::MEDCouplingUMesh *Umesh
-    = profile_t->med_mesh_struct->layer_mesh[layer_id];
+    = profile->med_mesh_struct->layer_mesh[layer_id];
 
   MEDCoupling::MEDCouplingCMesh *Cmesh
     = MEDCoupling::MEDCouplingCMesh::New(Umesh->getName());
   Cmesh->setCoords(arrX, arrY, arrZ);
 
-  /* Build unstructured mesh and associate it the the pre allocated
+  /* Build unstructured mesh and associate it the pre allocated
    * MEDCouplingUmesh array */
   Umesh = Cmesh->buildUnstructured();
 
   /* Rotate and translate the mesh */
 
-  cs_real_t i_translate = (profile_t->max_i + profile_t->min_i) / 2.0;
-  cs_real_t j_translate = (profile_t->max_j + profile_t->min_j) / 2.0;
+  cs_real_t i_translate = (profile->max_i + profile->min_i) / 2.0;
+  cs_real_t j_translate = (profile->max_j + profile->min_j) / 2.0;
 
   /* Caculate translation vector */
   cs_real_3_t vec_translate;
@@ -1511,7 +1497,7 @@ _set_med_layer_mesh(user_profile_t  *profile_t,
     Oz[k] = Oz_1[k];
   }
 
-  /*Rotation around x axis projection of n_v in Oyz plane*/
+  /* Rotation around x axis projection of n_v in Oyz plane */
   kv_plane_vec[0] = 0.;
   kv_plane_vec[1] = 0.;
   kv_plane_vec[2] = 0.;
@@ -1591,7 +1577,7 @@ _set_med_layer_mesh(user_profile_t  *profile_t,
 
   Umesh->translate(vec_translate); /* Finally translate the mesh */
 
-  profile_t->med_mesh_struct->layer_mesh[layer_id] = Umesh;
+  profile->med_mesh_struct->layer_mesh[layer_id] = Umesh;
 
   /* Deallocate data array and Cmesh */
   arrX->decrRef();
@@ -1599,9 +1585,9 @@ _set_med_layer_mesh(user_profile_t  *profile_t,
   arrZ->decrRef();
   Cmesh->decrRef();
 
-  BFT_FREE(XCoords);
-  BFT_FREE(YCoords);
-  BFT_FREE(ZCoords);
+  BFT_FREE(x_coords);
+  BFT_FREE(y_coords);
+  BFT_FREE(z_coords);
 
 #endif
 }
@@ -1612,14 +1598,14 @@ _set_med_layer_mesh(user_profile_t  *profile_t,
  * the cell center coordinates lies.
  *
  * parameters:
- *   profile_t  <-> pointer to an initalized profile structure.
+ *   profile  <-> pointer to an initalized profile structure.
  *                  The folowing members of the structure are updated
  *                  cells_layer_vol: for each layer, 1 or 0 for each cells
  *                  n_cells: number of cells associated to each layer
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_cell_volume_per_layer_basic(user_profile_t  *profile_t)
+_compute_cell_volume_per_layer_basic(user_profile_t  *profile)
 {
   // Get mesh quantities
   const cs_mesh_quantities_t *mq       = cs_glob_mesh_quantities;
@@ -1628,18 +1614,15 @@ _compute_cell_volume_per_layer_basic(user_profile_t  *profile_t)
   const cs_lnum_t n_cells_with_ghosts  = cs_glob_mesh->n_cells_with_ghosts;
 
   // Profile shorter variables
-  cs_lnum_t n_layers = profile_t->n_layers;
+  cs_lnum_t n_layers = profile->n_layers;
 
   // Vector profile quantities
-  cs_real_t dir_norm;
-  dir_norm = pow(pow(profile_t->dir_v[0], 2.0) + pow(profile_t->dir_v[1], 2.0)
-                   + pow(profile_t->dir_v[2], 2.0),
-                 0.5);
+  cs_real_t dir_norm = cs_math_3_norm(profile->dir_v);
 
   cs_real_t dir_normalized[3];
-  dir_normalized[0] = profile_t->dir_v[0] / dir_norm;
-  dir_normalized[1] = profile_t->dir_v[1] / dir_norm;
-  dir_normalized[2] = profile_t->dir_v[2] / dir_norm;
+  dir_normalized[0] = profile->dir_v[0] / dir_norm;
+  dir_normalized[1] = profile->dir_v[1] / dir_norm;
+  dir_normalized[2] = profile->dir_v[2] / dir_norm;
   dir_norm          = 1.0;
 
   // Define pointer and variable for cs_selector
@@ -1648,7 +1631,7 @@ _compute_cell_volume_per_layer_basic(user_profile_t  *profile_t)
   // Allocate memory for the cells list which will be populated by cs_selector
   BFT_MALLOC(selected_cells, n_cells_with_ghosts, cs_lnum_t);
 
-  cs_selector_get_cell_list(profile_t->criteria,
+  cs_selector_get_cell_list(profile->criteria,
                             &n_selected_cells,
                             selected_cells);
 
@@ -1656,7 +1639,7 @@ _compute_cell_volume_per_layer_basic(user_profile_t  *profile_t)
 
   for (int layer_id = 0; layer_id < n_layers; layer_id++) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      profile_t->cells_layer_vol[layer_id][c_id] = 0.0;
+      profile->cells_layer_vol[layer_id][c_id] = 0.0;
     }
   }
 
@@ -1673,15 +1656,15 @@ _compute_cell_volume_per_layer_basic(user_profile_t  *profile_t)
 
     for (int layer_id = 0; layer_id < n_layers; layer_id++) {
 
-      cs_real_t layer_thickness = profile_t->l_thick[layer_id];
-      cs_real_t l_center_nCoord = profile_t->pos[layer_id];
+      cs_real_t layer_thickness = profile->l_thick[layer_id];
+      cs_real_t l_center_nCoord = profile->pos[layer_id];
 
       cs_real_t lower_bound = l_center_nCoord - 1.0 / 2.0 * layer_thickness;
       cs_real_t upper_bound = l_center_nCoord + 1.0 / 2.0 * layer_thickness;
 
       if (dist <= upper_bound && dist >= lower_bound) {
-        profile_t->n_cells[layer_id] += 1;
-        profile_t->cells_layer_vol[layer_id][c_id] = 1.0;
+        profile->n_cells[layer_id] += 1;
+        profile->cells_layer_vol[layer_id][c_id] = 1.0;
 
         break; // stop the loop, cells cannot be associated to another layer
       }
@@ -1697,21 +1680,21 @@ _compute_cell_volume_per_layer_basic(user_profile_t  *profile_t)
  * based on cs_stl_mesh porosity calculation
  *
  * parameters:
- *   profile_t  <-> pointer to an initalized profile structure.
+ *   profile  <-> pointer to an initalized profile structure.
  *                  The  folowing members of the structure are updated
  *                  cells_layer_vol: for each layer, percent of cell in
  *                  layer_id is updated.
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_cell_volume_per_layer_stl(user_profile_t  *profile_t)
+_compute_cell_volume_per_layer_stl(user_profile_t  *profile)
 {
   /* Get Mesh quantities */
   const cs_lnum_t n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
   const cs_lnum_t n_cells             = cs_glob_mesh->n_cells;
 
   // Profile shorter variables
-  cs_lnum_t n_layers = profile_t->n_layers;
+  cs_lnum_t n_layers = profile->n_layers;
 
   cs_real_t *cells_l_id_vol = NULL;
   BFT_MALLOC(cells_l_id_vol, n_cells_with_ghosts, cs_real_t);
@@ -1723,28 +1706,28 @@ _compute_cell_volume_per_layer_stl(user_profile_t  *profile_t)
   BFT_MALLOC(selected_cells, n_cells_with_ghosts, cs_lnum_t);
 
   cs_selector_get_cell_list(
-    profile_t->criteria, &n_selected_cells, selected_cells);
+    profile->criteria, &n_selected_cells, selected_cells);
 
   // Reset layer volume arrays
 
   for (int layer_id = 0; layer_id < n_layers; layer_id++) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      profile_t->cells_layer_vol[layer_id][c_id] = 0.0;
+      profile->cells_layer_vol[layer_id][c_id] = 0.0;
     }
   }
 
-  for (int s_id = 0; s_id < profile_t->n_layers; s_id++) {
+  for (int s_id = 0; s_id < profile->n_layers; s_id++) {
 
     for (cs_lnum_t c_id = 0; c_id < n_cells_with_ghosts; c_id++)
       cells_l_id_vol[c_id] = 0.0;
 
-    cs_stl_mesh_t *stl_mesh = profile_t->mesh_list[s_id];
+    cs_stl_mesh_t *stl_mesh = profile->mesh_list[s_id];
     /* Compute porisity associated to each layer using cs_stl_mesh features */
     cs_stl_compute_porosity(stl_mesh, cells_l_id_vol, NULL);
 
     for (cs_lnum_t ii = 0; ii < n_selected_cells; ii++) {
       cs_lnum_t c_id = selected_cells[ii];
-      profile_t->cells_layer_vol[s_id][c_id] = 1.0 - cells_l_id_vol[c_id];
+      profile->cells_layer_vol[s_id][c_id] = 1.0 - cells_l_id_vol[c_id];
     }
   }
 
@@ -1767,9 +1750,8 @@ static void
 _compute_intersection_volume_med(user_profile_med_t *med_t,
                                  cs_real_t          *vol_intersect,
                                  cs_lnum_t           layer_id)
-
 {
-#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
+#if defined(HAVE_MEDCOUPLING)
   cs_lnum_t n_elts = med_t->local_mesh->n_elts;
 
   /* initialize the pointer */
@@ -1820,16 +1802,16 @@ _compute_intersection_volume_med(user_profile_med_t *med_t,
  * cs_medcoupling_intersector.cxx
  *
  * parameters:
- *   profile_t <-> pointer to an initialized profile structure
+ *   profile <-> pointer to an initialized profile structure
  *                 The folowing members of the structure are updated
  *                 cells_layer_vol: for each layer, percent of cell in
  *                 layer_id is updated
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_cell_vol_per_layer_med(user_profile_t *profile_t)
+_compute_cell_vol_per_layer_med(user_profile_t *profile)
 {
-#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
+#if defined(HAVE_MEDCOUPLING)
 
   /* Get Mesh quantities */
   const cs_lnum_t  n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
@@ -1837,7 +1819,7 @@ _compute_cell_vol_per_layer_med(user_profile_t *profile_t)
   const cs_real_t *cell_vol            = cs_glob_mesh_quantities->cell_vol;
 
   // profile shorter variables
-  cs_lnum_t n_layers = profile_t->n_layers;
+  cs_lnum_t n_layers = profile->n_layers;
 
   cs_real_t *cells_l_id_vol = NULL;
   BFT_MALLOC(cells_l_id_vol, n_cells_with_ghosts, cs_real_t);
@@ -1849,28 +1831,28 @@ _compute_cell_vol_per_layer_med(user_profile_t *profile_t)
   BFT_MALLOC(selected_cells, n_cells_with_ghosts, cs_lnum_t);
 
   cs_selector_get_cell_list(
-    profile_t->criteria, &n_selected_cells, selected_cells);
+    profile->criteria, &n_selected_cells, selected_cells);
 
   // reset layer volume arrays
 
   for (int layer_id = 0; layer_id < n_layers; layer_id++) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      profile_t->cells_layer_vol[layer_id][c_id] = 0.0;
+      profile->cells_layer_vol[layer_id][c_id] = 0.0;
     }
   }
 
-  for (int s_id = 0; s_id < profile_t->n_layers; s_id++) {
+  for (int s_id = 0; s_id < profile->n_layers; s_id++) {
 
     for (cs_lnum_t c_id = 0; c_id < n_cells_with_ghosts; c_id++)
       cells_l_id_vol[c_id] = 0.0;
 
-    user_profile_med_t *med_t = profile_t->med_mesh_struct;
+    user_profile_med_t *med_t = profile->med_mesh_struct;
     /* Compute cells intersection */
     _compute_intersection_volume_med(med_t, cells_l_id_vol, s_id);
     /* Update intersection for profile */
     for (cs_lnum_t ii = 0; ii < n_selected_cells; ii++) {
       cs_lnum_t c_id = selected_cells[ii];
-      profile_t->cells_layer_vol[s_id][c_id]
+      profile->cells_layer_vol[s_id][c_id]
         = cells_l_id_vol[c_id] / cell_vol[c_id];
     }
   }
@@ -1885,72 +1867,73 @@ _compute_cell_vol_per_layer_med(user_profile_t *profile_t)
  * Free memory of all allocated memory for a profile variables
  *
  * parameters:
- *   profile_t <-> pointer to the current profile structure
+ *   profile <-> pointer to the current profile structure
  *----------------------------------------------------------------------------*/
 
 static void
-_free_profile_all(user_profile_t *profile_t)
+_free_profile_all(user_profile_t *profile)
 {
   // free stl meshes
-  for (int s_id = 0; s_id < profile_t->n_layers; s_id++) {
-    cs_stl_mesh_t *stl_mesh = profile_t->mesh_list[s_id];
+  for (int s_id = 0; s_id < profile->n_layers; s_id++) {
+    cs_stl_mesh_t *stl_mesh = profile->mesh_list[s_id];
     BFT_FREE(stl_mesh->coords);
     BFT_FREE(stl_mesh->seed_coords);
     BFT_FREE(stl_mesh->ext_mesh);
     BFT_FREE(stl_mesh);
   }
 
-  BFT_FREE(profile_t->mesh_list);
+  BFT_FREE(profile->mesh_list);
 
-#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
+#if defined(HAVE_MEDCOUPLING)
   /* Free med mesh if created */
-  int test_med = strcmp(profile_t->intersect_method, "MEDCOUPLING");
-  user_profile_med_t *med_t = profile_t->med_mesh_struct;
+  int test_med = strcmp(profile->intersect_method, "MEDCOUPLING");
+  user_profile_med_t *med_t = profile->med_mesh_struct;
   if (test_med == 0) {
-    for (int m_id = 0; m_id < profile_t->n_layers; m_id++) {
+    for (int m_id = 0; m_id < profile->n_layers; m_id++) {
       med_t->layer_mesh[m_id]->decrRef();
     }
     BFT_FREE(med_t->layer_mesh);
     // Mesh will deallocated afterwards since it can be shared
     med_t->local_mesh = NULL;
-    BFT_FREE(profile_t->med_mesh_struct);
+    BFT_FREE(profile->med_mesh_struct);
   }
 
 #endif
 
   /* Free layer histogram */
-  for (int l_id = 0; l_id < profile_t->n_layers; l_id++) {
-    user_histogram_t *histogram_t = profile_t->histogram_list[l_id];
-    user_destroy_histogram(histogram_t);
+  for (int l_id = 0; l_id < profile->n_layers; l_id++) {
+    user_histogram_t *histogram = profile->histogram_list[l_id];
+    user_destroy_histogram(histogram);
   }
-  BFT_FREE(profile_t->histogram_list);
+  BFT_FREE(profile->histogram_list);
 
-  BFT_FREE(profile_t->l_thick);
-  BFT_FREE(profile_t->pos);
-  BFT_FREE(profile_t->pos_n);
-  BFT_FREE(profile_t->n_cells);
-  BFT_FREE(profile_t->weigth);
-  BFT_FREE(profile_t->mean_f);
-  BFT_FREE(profile_t->mean_f_n);
-  BFT_FREE(profile_t->sd_f);
-  BFT_FREE(profile_t->sd_f_n);
-  for (int layer_id = 0; layer_id < profile_t->n_layers; layer_id++)
-    BFT_FREE(profile_t->cells_layer_vol[layer_id]);
-  BFT_FREE(profile_t->cells_layer_vol);
+  BFT_FREE(profile->l_thick);
+  BFT_FREE(profile->pos);
+  BFT_FREE(profile->pos_n);
+  BFT_FREE(profile->n_cells);
+  BFT_FREE(profile->weigth);
+  BFT_FREE(profile->mean_f);
+  BFT_FREE(profile->mean_f_n);
+  BFT_FREE(profile->sd_f);
+  BFT_FREE(profile->sd_f_n);
+
+  for (int layer_id = 0; layer_id < profile->n_layers; layer_id++)
+    BFT_FREE(profile->cells_layer_vol[layer_id]);
+  BFT_FREE(profile->cells_layer_vol);
 }
 
 /*----------------------------------------------------------------------------
- * Dump the setup of the profile into a log file stored in
+ * Output the setup of the profile into a log file stored in
  * ./profiles/<profile name>
  *
  * parameters:
- *   profile_t      <-- pointer to the current profile structure
- *   dirname        <-- pointer to directory dump path
+ *   profile      <-- pointer to the current profile structure
+ *   dirname      <-- pointer to directory output path
  *----------------------------------------------------------------------------*/
 
 static void
-_dump_profile_setup_log(user_profile_t  *profile_t,
-                        const char      *dirname)
+_output_profile_setup_log(user_profile_t  *profile,
+                          const char      *dirname)
 {
   /* Profile shorter variables */
 
@@ -1968,7 +1951,7 @@ _dump_profile_setup_log(user_profile_t  *profile_t,
           "              ----------------------------------------------------\n"
           "                             %s \n"
           "              ----------------------------------------------------\n",
-          profile_t->name);
+          profile->name);
 
   fprintf(ptrSetupLog,
           "\n\n"
@@ -1984,34 +1967,34 @@ _dump_profile_setup_log(user_profile_t  *profile_t,
           " layer progression law: %s\n"
           " progression coefficient: %.3f\n"
           " Mesh Intersection Method: %s\n",
-          profile_t->field,
-          profile_t->criteria,
-          profile_t->n_layers,
-          profile_t->dir_v[0],
-          profile_t->dir_v[1],
-          profile_t->dir_v[2],
-          profile_t->min_dir,
-          profile_t->max_dir,
-          profile_t->weighted,
-          profile_t->progression_law,
-          profile_t->progression,
-          profile_t->intersect_method);
+          profile->field,
+          profile->criteria,
+          profile->n_layers,
+          profile->dir_v[0],
+          profile->dir_v[1],
+          profile->dir_v[2],
+          profile->min_dir,
+          profile->max_dir,
+          profile->weighted,
+          profile->progression_law,
+          profile->progression,
+          profile->intersect_method);
 
-  fprintf(ptrSetupLog, " layer thickness: [%.3f", profile_t->l_thick[0]);
+  fprintf(ptrSetupLog, " layer thickness: [%.3f", profile->l_thick[0]);
 
-  for (int l_id = 1; l_id < profile_t->n_layers; l_id++)
-    fprintf(ptrSetupLog, ",%.3f", profile_t->l_thick[l_id]);
+  for (int l_id = 1; l_id < profile->n_layers; l_id++)
+    fprintf(ptrSetupLog, ",%.3f", profile->l_thick[l_id]);
 
   fprintf(ptrSetupLog, "]\n");
 
-  if (strcmp(profile_t->intersect_method, "STL") == 0) {
+  if (strcmp(profile->intersect_method, "STL") == 0) {
     fprintf(ptrSetupLog,
             "\n\n"
             " STL Layers mesh informations\n"
             " --------------\n");
 
-    for (int layer_id = 0; layer_id < profile_t->n_layers; layer_id++) {
-      cs_stl_mesh_t *stl_mesh = profile_t->mesh_list[layer_id];
+    for (int layer_id = 0; layer_id < profile->n_layers; layer_id++) {
+      cs_stl_mesh_t *stl_mesh = profile->mesh_list[layer_id];
       fprintf(ptrSetupLog,
               "\n"
               "    %s\n",
@@ -2036,20 +2019,20 @@ _dump_profile_setup_log(user_profile_t  *profile_t,
 }
 
 /*----------------------------------------------------------------------------
- * Dump the current profile into a log file stored in ./profiles/<profile name>
+ * Output the current profile into a log file stored in ./profiles/<profile name>
  *
  * parameters:
- *   profile_t      <-- pointer to the current profile structure
- *   dirname        <-- pointer to directory dump path
+ *   profile      <-- pointer to the current profile structure
+ *   dirname      <-- pointer to directory output path
  *----------------------------------------------------------------------------*/
 
 static void
-_dump_profile_log(user_profile_t  *profile_t,
-                  const char      *dirname)
+_output_profile_log(user_profile_t  *profile,
+                    const char      *dirname)
 {
   /* Profile shorter variables*/
-  cs_lnum_t   n_layers = profile_t->n_layers;
-  const char *field    = profile_t->field;
+  cs_lnum_t   n_layers = profile->n_layers;
+  const char *field    = profile->field;
 
   char filename[80];
   sprintf(filename, "%s/profile.log", dirname);
@@ -2067,31 +2050,32 @@ _dump_profile_log(user_profile_t  *profile_t,
           "      min %s is: %.2f - max %s is :%.2f wihtin cells selection\n\n",
           ts->nt_cur,
           ts->t_cur,
-          profile_t->field,
-          profile_t->min_field,
-          profile_t->field,
-          profile_t->max_field);
+          profile->field,
+          profile->min_field,
+          profile->field,
+          profile->max_field);
 
   cs_real_t total_weigth = 0.0;
-  /* Dump absolute profile values*/
+  /* Output absolute profile values*/
   for (int layer_id = 0; layer_id < n_layers; layer_id++) {
-    total_weigth += profile_t->weigth[layer_id];
+    total_weigth += profile->weigth[layer_id];
     fprintf(ptrLog,
             "      mean %s of layer %d (pos = %.2f) is: %.2f - sd %.2f - Q1: "
             "%.2f - Q2: %.2f - Q3: %.2f - weigth: %.2f \n",
             field,
             layer_id,
-            profile_t->pos[layer_id],
-            profile_t->mean_f[layer_id],
-            profile_t->sd_f[layer_id],
-            profile_t->histogram_list[layer_id]->Q1,
-            profile_t->histogram_list[layer_id]->Q2,
-            profile_t->histogram_list[layer_id]->Q3,
-            profile_t->weigth[layer_id]);
+            profile->pos[layer_id],
+            profile->mean_f[layer_id],
+            profile->sd_f[layer_id],
+            profile->histogram_list[layer_id]->Q1,
+            profile->histogram_list[layer_id]->Q2,
+            profile->histogram_list[layer_id]->Q3,
+            profile->weigth[layer_id]);
   }
 
   fprintf(ptrLog, "\n");
-  /*dump normalized profile value*/
+
+  /* Output normalized profile value*/
 
   for (int layer_id = 0; layer_id < n_layers; layer_id++) {
     fprintf(ptrLog,
@@ -2099,10 +2083,10 @@ _dump_profile_log(user_profile_t  *profile_t,
             "- weigth: %.2f \n",
             field,
             layer_id,
-            profile_t->pos_n[layer_id],
-            profile_t->mean_f_n[layer_id],
-            profile_t->sd_f_n[layer_id],
-            profile_t->weigth[layer_id]);
+            profile->pos_n[layer_id],
+            profile->mean_f_n[layer_id],
+            profile->sd_f_n[layer_id],
+            profile->weigth[layer_id]);
   }
 
   fprintf(ptrLog, "\n");
@@ -2113,25 +2097,25 @@ _dump_profile_log(user_profile_t  *profile_t,
           "      total layer weigth is: %.2f \n"
           "      total selected cells weigth: %.2f\n",
           total_weigth,
-          profile_t->sel_cells_weigth);
+          profile->sel_cells_weigth);
 
   fclose(ptrLog);
 }
 
 /*----------------------------------------------------------------------------
- * Dump the current profile into a csv file stored in ./profiles/<profile name>
+ * Output the current profile into a csv file stored in ./profiles/<profile name>
  *
  * parameters:
- *   profile_t      <-- pointer to the current profile structure
- *   dirname        <-- pointer to directory dump path
+ *   profile      <-- pointer to the current profile structure
+ *   dirname      <-- pointer to directory output path
  *----------------------------------------------------------------------------*/
 
 static void
-_dump_profile_values_csv(user_profile_t  *profile_t,
-                         const char      *dirname)
+_output_profile_values_csv(user_profile_t  *profile,
+                           const char      *dirname)
 {
   /* Profile shorter variables */
-  cs_lnum_t       n_layers = profile_t->n_layers;
+  cs_lnum_t       n_layers = profile->n_layers;
   cs_time_step_t *ts       = cs_get_glob_time_step();
 
   cs_lnum_t   n_l_header = 7;
@@ -2139,9 +2123,9 @@ _dump_profile_values_csv(user_profile_t  *profile_t,
     = { "pos", "weigth", "mean", "sd", "pos_n", "mean_n", "sd_n" };
 
   cs_real_t *profile_var[]
-    = { profile_t->pos,   profile_t->weigth, profile_t->mean_f,
-        profile_t->sd_f,  profile_t->pos_n,  profile_t->mean_f_n,
-        profile_t->sd_f_n };
+    = { profile->pos,   profile->weigth, profile->mean_f,
+        profile->sd_f,  profile->pos_n,  profile->mean_f_n,
+        profile->sd_f_n };
 
   char filename[80];
 
@@ -2179,29 +2163,29 @@ _dump_profile_values_csv(user_profile_t  *profile_t,
 
   cs_real_t total_l_weigth = 0.0;
   for (int layer_id = 0; layer_id < n_layers; layer_id++)
-    total_l_weigth += profile_t->weigth[layer_id];
+    total_l_weigth += profile->weigth[layer_id];
 
-  fprintf(ptrResults, ",%f,%f\n", total_l_weigth, profile_t->sel_cells_weigth);
+  fprintf(ptrResults, ",%f,%f\n", total_l_weigth, profile->sel_cells_weigth);
 
   fclose(ptrResults);
 }
 
 /*----------------------------------------------------------------------------
- * Dump the stl mesh into stl binaries stored in ./profiles/<profile name>
+ * Output the stl mesh into stl binaries stored in ./profiles/<profile name>
  *
  * parameters:
- *   profile_t      <-- pointer to the current profile structure
- *   dirname        <-- pointer to directory dump path
+ *   profile      <-- pointer to the current profile structure
+ *   dirname      <-- pointer to directory output path
  *----------------------------------------------------------------------------*/
 
 void
-_user_dump_profile_stl_mesh(user_profile_t  *profile_t,
-                            const char      *dirname)
+_user_output_profile_stl_mesh(user_profile_t  *profile,
+                              const char      *dirname)
 {
   if (cs_glob_rank_id <= 0) {
-    for (int s_id = 0; s_id < profile_t->n_layers; s_id++) {
+    for (int s_id = 0; s_id < profile->n_layers; s_id++) {
       char           outfile[200];
-      cs_stl_mesh_t *stl_mesh = profile_t->mesh_list[s_id];
+      cs_stl_mesh_t *stl_mesh = profile->mesh_list[s_id];
       sprintf(outfile, "%s/%s.stl", dirname, stl_mesh->name);
       cs_stl_file_write(stl_mesh, outfile);
     }
@@ -2209,36 +2193,32 @@ _user_dump_profile_stl_mesh(user_profile_t  *profile_t,
 }
 
 /*----------------------------------------------------------------------------
- * Dump the med mesh into .med files stored in ./profiles/<profile name>
+ * Output the med mesh into .med files stored in ./profiles/<profile name>
  *
  * parameters:
- *   profile_t      <-- pointer to the current profile structure
- *   dirname        <-- pointer to directory dump path
+ *   profile      <-- pointer to the current profile structure
+ *   dirname      <-- pointer to directory output path
  *----------------------------------------------------------------------------*/
 
 void
-_dump_profile_med_mesh(user_profile_t  *profile_t,
-                       const char      *dirname)
+_output_profile_med_mesh(user_profile_t  *profile,
+                         const char      *dirname)
 {
-#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
+#if defined(HAVE_MEDCOUPLING_LOADER)
   if (cs_glob_rank_id <= 0) {
-    for (int m_id = 0; m_id < profile_t->n_layers; m_id++) {
+    for (int m_id = 0; m_id < profile->n_layers; m_id++) {
 
       char name[10];
       sprintf(name, "%s_%d", "layer", m_id); /*Generete the same name */
       char outfile[200];
       sprintf(outfile, "%s/%s.med", dirname, name);
 
-      MEDCoupling::WriteUMesh(
-        outfile, profile_t->med_mesh_struct->layer_mesh[m_id], true);
+      MEDCoupling::WriteUMesh(outfile, profile->med_mesh_struct->layer_mesh[m_id],
+                              true);
     }
   }
 #endif
 }
-
-/*
- * END Private functions and global variables
- */
 
 BEGIN_C_DECLS
 
@@ -2258,10 +2238,10 @@ user_profile_get_by_name(const char  *name)
 {
   user_profile_t *ptr = NULL;
   for (int p_id = 0; p_id < _profile_list.n_profiles; p_id++) {
-    user_profile_t *profile_t = _profile_list.profile_list[p_id];
-    int             test      = strcmp(profile_t->name, name);
+    user_profile_t *profile = _profile_list.profile_list[p_id];
+    int             test      = strcmp(profile->name, name);
     if (test == 0)
-      ptr = profile_t;
+      ptr = profile;
   }
 
   return ptr;
@@ -2298,11 +2278,11 @@ user_create_profile(const char  *name,
 {
   /* First check if profile exists */
 
-  user_profile_t *profile_t = user_profile_get_by_name(name);
+  user_profile_t *profile = user_profile_get_by_name(name);
 
-  if (profile_t != NULL) {
+  if (profile != NULL) {
     bft_printf("profile %s already exist - profile not created \n", name);
-    return profile_t;
+    return profile;
   }
 
   _profile_list.n_profiles++;
@@ -2310,21 +2290,19 @@ user_create_profile(const char  *name,
               _profile_list.n_profiles,
               user_profile_t *);
 
-  // Get mesh quantities
-  const cs_mesh_quantities_t *mq       = cs_glob_mesh_quantities;
-  const cs_lnum_t             n_cells  = cs_glob_mesh->n_cells;
+  const cs_lnum_t   n_cells  = cs_glob_mesh->n_cells;
 
   // Initialize and allocate memory for profile
-  BFT_MALLOC(profile_t, 1, user_profile_t);
+  BFT_MALLOC(profile, 1, user_profile_t);
 
-  profile_t->name            = name;
-  profile_t->field           = field;
-  profile_t->criteria        = criteria;
-  profile_t->n_layers        = n_layers;
-  profile_t->progression_law = progression_law;
-  profile_t->progression     = progression;
+  profile->name            = name;
+  profile->field           = field;
+  profile->criteria        = criteria;
+  profile->n_layers        = n_layers;
+  profile->progression_law = progression_law;
+  profile->progression     = progression;
   for (int k = 0; k < 3; k++)
-    profile_t->dir_v[k] = dir[k];
+    profile->dir_v[k] = dir[k];
 
   if (   strcmp(weighted, "MASS") != 0 && strcmp(weighted, "VOLUME") != 0
       && strcmp(weighted, "NO") != 0)
@@ -2334,13 +2312,13 @@ user_create_profile(const char  *name,
               _("Error: Weigthed param must be MASS, VOLUME or NO for '%s'\n"),
               __func__);
 
-  profile_t->weighted = weighted;
+  profile->weighted = weighted;
 
   /* In case of Medcoupling method, check CS has been compiled with
    * MEDCouppling*/
   int test_med = strcmp(intersect_method, "MEDCOUPLING");
   if (test_med == 0) {
-#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
+#if !defined(HAVE_MEDCOUPLING)
     bft_error(__FILE__,
               __LINE__,
               0,
@@ -2348,56 +2326,56 @@ user_create_profile(const char  *name,
                 "MEDCoupling support.\n"));
 #endif
   }
-  profile_t->intersect_method = intersect_method;
+  profile->intersect_method = intersect_method;
 
-  BFT_MALLOC(profile_t->l_thick, n_layers, cs_real_t);
-  BFT_MALLOC(profile_t->pos, n_layers, cs_real_t);
-  BFT_MALLOC(profile_t->pos_n, n_layers, cs_real_t);
-  BFT_MALLOC(profile_t->n_cells, n_layers, cs_lnum_t);
-  BFT_MALLOC(profile_t->weigth, n_layers, cs_real_t);
-  BFT_MALLOC(profile_t->mean_f, n_layers, cs_real_t);
-  BFT_MALLOC(profile_t->mean_f_n, n_layers, cs_real_t);
-  BFT_MALLOC(profile_t->sd_f, n_layers, cs_real_t);
-  BFT_MALLOC(profile_t->sd_f_n, n_layers, cs_real_t);
-  BFT_MALLOC(profile_t->cells_layer_vol, n_layers, cs_real_t *);
+  BFT_MALLOC(profile->l_thick, n_layers, cs_real_t);
+  BFT_MALLOC(profile->pos, n_layers, cs_real_t);
+  BFT_MALLOC(profile->pos_n, n_layers, cs_real_t);
+  BFT_MALLOC(profile->n_cells, n_layers, cs_lnum_t);
+  BFT_MALLOC(profile->weigth, n_layers, cs_real_t);
+  BFT_MALLOC(profile->mean_f, n_layers, cs_real_t);
+  BFT_MALLOC(profile->mean_f_n, n_layers, cs_real_t);
+  BFT_MALLOC(profile->sd_f, n_layers, cs_real_t);
+  BFT_MALLOC(profile->sd_f_n, n_layers, cs_real_t);
+  BFT_MALLOC(profile->cells_layer_vol, n_layers, cs_real_t *);
   for (int layer_id = 0; layer_id < n_layers; layer_id++)
-    BFT_MALLOC(profile_t->cells_layer_vol[layer_id], n_cells, cs_real_t);
+    BFT_MALLOC(profile->cells_layer_vol[layer_id], n_cells, cs_real_t);
 
-  BFT_MALLOC(profile_t->mesh_list, n_layers, cs_stl_mesh_t *);
+  BFT_MALLOC(profile->mesh_list, n_layers, cs_stl_mesh_t *);
   for (int layer_id = 0; layer_id < n_layers; layer_id++)
-    BFT_MALLOC(profile_t->mesh_list[layer_id], 1, cs_stl_mesh_t);
+    BFT_MALLOC(profile->mesh_list[layer_id], 1, cs_stl_mesh_t);
 
   /* Allocate mesh med struct*/
   if (test_med == 0)
-    profile_t->med_mesh_struct = _allocate_med_mesh_struct(n_layers);
+    profile->med_mesh_struct = _allocate_med_mesh_struct(n_layers);
 
   /* Allocate array of histogram */
-  BFT_MALLOC(profile_t->histogram_list, n_layers, user_histogram_t *);
+  BFT_MALLOC(profile->histogram_list, n_layers, user_histogram_t *);
   for (int layer_id = 0; layer_id < n_layers; layer_id++) {
     char pname[100];
     sprintf(pname, "layer_%d", layer_id);
-    user_histogram_t *histogram_t
-      = user_create_histogram(pname, profile_t->field, 300); /* n_bin_max */
+    user_histogram_t *histogram
+      = user_create_histogram(pname, profile->field, 300); /* n_bins_max */
 
-    profile_t->histogram_list[layer_id] = histogram_t;
+    profile->histogram_list[layer_id] = histogram;
   }
 
-  // Initialiaze value of struct profile_t
-  profile_t->sel_cells_weigth = 0.0;
-  profile_t->min_field        = 0.0;
-  profile_t->max_field        = 0.0;
+  // Initialiaze value of struct profile
+  profile->sel_cells_weigth = 0.0;
+  profile->min_field        = 0.0;
+  profile->max_field        = 0.0;
   for (int layer_id = 0; layer_id < n_layers; layer_id++) {
-    profile_t->pos[layer_id]      = 0.0;
-    profile_t->pos_n[layer_id]    = 0.0;
-    profile_t->n_cells[layer_id]  = 0;
-    profile_t->weigth[layer_id]   = 0.0;
-    profile_t->mean_f[layer_id]   = 0.0;
-    profile_t->mean_f_n[layer_id] = 0.0;
-    profile_t->sd_f[layer_id]     = 0.0;
-    profile_t->sd_f_n[layer_id]   = 0.0;
-    profile_t->l_thick[layer_id]  = 0.0;
+    profile->pos[layer_id]      = 0.0;
+    profile->pos_n[layer_id]    = 0.0;
+    profile->n_cells[layer_id]  = 0;
+    profile->weigth[layer_id]   = 0.0;
+    profile->mean_f[layer_id]   = 0.0;
+    profile->mean_f_n[layer_id] = 0.0;
+    profile->sd_f[layer_id]     = 0.0;
+    profile->sd_f_n[layer_id]   = 0.0;
+    profile->l_thick[layer_id]  = 0.0;
 
-    cs_stl_mesh_t *stl_mesh = profile_t->mesh_list[layer_id];
+    cs_stl_mesh_t *stl_mesh = profile->mesh_list[layer_id];
 
     memset(stl_mesh->header, 0, 80);
     stl_mesh->n_faces     = 0;
@@ -2408,34 +2386,34 @@ user_create_profile(const char  *name,
     stl_mesh->ext_mesh    = NULL;
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      profile_t->cells_layer_vol[layer_id][c_id] = 0.0;
+      profile->cells_layer_vol[layer_id][c_id] = 0.0;
   }
 
   /* Compute min and max selected mesh part for dir_v noramlized */
-  _calculate_min_max_dir(profile_t);
+  _calculate_min_max_dir(profile);
 
   /* Compute layer thickness*/
-  _compute_layer_thickness(profile_t);
+  _compute_layer_thickness(profile);
 
   /* Compute position of the center of the different layer along dir_v
    * noramlized */
-  _calculate_pos_dir(profile_t);
+  _calculate_pos_dir(profile);
 
   // Generate layer stl mesh
   for (int layer_id = 0; layer_id < n_layers; layer_id++) {
-    _set_layers_stl_mesh(profile_t, layer_id);
-    _set_stl_layers_seeds(profile_t, layer_id);
+    _set_layers_stl_mesh(profile, layer_id);
+    _set_stl_layers_seeds(profile, layer_id);
   }
 
   // Generate Med Mesh if MEDCOUPLING method is chosen
   if (test_med == 0) {
     for (int layer_id = 0; layer_id < n_layers; layer_id++)
-      _set_med_layer_mesh(profile_t, layer_id);
+      _set_med_layer_mesh(profile, layer_id);
   }
 
-  _profile_list.profile_list[_profile_list.n_profiles - 1] = profile_t;
+  _profile_list.profile_list[_profile_list.n_profiles - 1] = profile;
 
-  return profile_t;
+  return profile;
 }
 
 /*----------------------------------------------------------------------------
@@ -2443,56 +2421,56 @@ user_create_profile(const char  *name,
  * oustide of mean profile context
  *
  * parameters :
- *   name       <-- name of the histogram
- *   field      <-- field on which the histogram is compute
- *   n_bin_max  <-- maximum number of bin of the bins
+ *   name        <-- name of the histogram
+ *   field       <-- field on which the histogram is compute
+ *   n_bins_max  <-- maximum number of bin of the bins
  *----------------------------------------------------------------------------*/
 
 user_histogram_t *
-user_create_histogram(char         *name,
+user_create_histogram(char        *name,
                       const char  *field,
-                      cs_lnum_t    n_bin_max)
+                      cs_lnum_t    n_bins_max)
 {
-  user_histogram_t *histogram_t;
+  user_histogram_t *histogram;
 
-  BFT_MALLOC(histogram_t, 1, user_histogram_t);
-  BFT_MALLOC(histogram_t->h_i, n_bin_max, cs_real_t);
-  BFT_MALLOC(histogram_t->l_i, n_bin_max, cs_real_t);
-  BFT_MALLOC(histogram_t->c_i, n_bin_max, cs_real_t);
-  BFT_MALLOC(histogram_t->name, 105, char);
+  BFT_MALLOC(histogram, 1, user_histogram_t);
+  BFT_MALLOC(histogram->h_i, n_bins_max, cs_real_t);
+  BFT_MALLOC(histogram->l_i, n_bins_max, cs_real_t);
+  BFT_MALLOC(histogram->c_i, n_bins_max, cs_real_t);
+  BFT_MALLOC(histogram->name, 105, char);
 
   /* Populate histogram general informations */
-  sprintf(histogram_t->name, "%s", name);
-  histogram_t->field     = field;
-  histogram_t->n_bin_max = n_bin_max;
+  sprintf(histogram->name, "%s", name);
+  histogram->field      = field;
+  histogram->n_bins_max = n_bins_max;
 
   /* Initalize historgam values */
 
-  for (int b_id = 0; b_id < n_bin_max; b_id++) {
-    histogram_t->h_i[b_id] = 0.0;
-    histogram_t->l_i[b_id] = 0.0;
-    histogram_t->c_i[b_id] = 0.0;
+  for (int b_id = 0; b_id < n_bins_max; b_id++) {
+    histogram->h_i[b_id] = 0.0;
+    histogram->l_i[b_id] = 0.0;
+    histogram->c_i[b_id] = 0.0;
   }
 
-  histogram_t->binNumber = 0;
-  histogram_t->bandWidth = 0.0;
-  histogram_t->mean      = 0.0;
-  histogram_t->sd        = 0.0;
-  histogram_t->min       = 0.0;
-  histogram_t->max       = 0.0;
-  histogram_t->Q1        = 0.0;
-  histogram_t->Q2        = 0.0;
-  histogram_t->Q3        = 0.0;
-  histogram_t->ptot      = 0.0;
+  histogram->n_bins = 0;
+  histogram->bandwidth = 0.0;
+  histogram->mean      = 0.0;
+  histogram->sd        = 0.0;
+  histogram->min       = 0.0;
+  histogram->max       = 0.0;
+  histogram->Q1        = 0.0;
+  histogram->Q2        = 0.0;
+  histogram->Q3        = 0.0;
+  histogram->ptot      = 0.0;
 
-  return histogram_t;
+  return histogram;
 }
 
 /*----------------------------------------------------------------------------
  * Compute a histogram with a given sample
  *
  * parameters :
- *   histogram_t    <-> name of the histogram
+ *   histogram    <-> name of the histogram
  *      h_id        --> compute h_i
  *      l_i         --> compute l_i
  *      c_i         --> compute c_i
@@ -2507,7 +2485,7 @@ user_create_histogram(char         *name,
  *----------------------------------------------------------------------------*/
 
 void
-user_histogram_compute(user_histogram_t  *histogram_t,
+user_histogram_compute(user_histogram_t  *histogram,
                        cs_real_t         *sample,
                        cs_real_t         *weights,
                        cs_lnum_t          n_elts_sample)
@@ -2517,31 +2495,31 @@ user_histogram_compute(user_histogram_t  *histogram_t,
 
   _compute_sample_moment(sample, weights, n_elts_sample, moment, min_max);
 
-  histogram_t->mean = moment[0];
-  histogram_t->sd   = moment[1];
-  histogram_t->min  = min_max[0];
-  histogram_t->max  = min_max[1];
+  histogram->mean = moment[0];
+  histogram->sd   = moment[1];
+  histogram->min  = min_max[0];
+  histogram->max  = min_max[1];
 
   /*weight are assumed normalized*/
-  _compute_histogram(histogram_t, sample, weights, n_elts_sample);
+  _compute_histogram(histogram, sample, weights, n_elts_sample);
 }
 
 /*----------------------------------------------------------------------------
  * Free histogram structure
  *
  * parameters :
- *   histogram_t    <-> name of the histogram
+ *   histogram    <-> name of the histogram
  *----------------------------------------------------------------------------*/
 
 void
-user_destroy_histogram(user_histogram_t  *histogram_t)
+user_destroy_histogram(user_histogram_t  *histogram)
 {
-  BFT_FREE(histogram_t->name);
-  BFT_FREE(histogram_t->h_i);
-  BFT_FREE(histogram_t->l_i);
-  BFT_FREE(histogram_t->c_i);
+  BFT_FREE(histogram->name);
+  BFT_FREE(histogram->h_i);
+  BFT_FREE(histogram->l_i);
+  BFT_FREE(histogram->c_i);
 
-  BFT_FREE(histogram_t);
+  BFT_FREE(histogram);
 }
 
 /*----------------------------------------------------------------------------
@@ -2549,18 +2527,18 @@ user_destroy_histogram(user_histogram_t  *histogram_t)
  * based on chose method (stl, basic or medcoupling)
  *
  * parameters:
- *   profile_t <-> pointer to an initialized profile structure
- *                 The folowing members of the structure are updated:
- *                 cells_layer_vol: for each layer, percent of cell
- *                 in layer_id is updated
+ *   profile <-> pointer to an initialized profile structure
+ *               The folowing members of the structure are updated:
+ *               cells_layer_vol: for each layer, percent of cell
+ *               in layer_id is updated
  *----------------------------------------------------------------------------*/
 
 void
-user_compute_cell_volume_per_layer(user_profile_t *profile_t)
+user_compute_cell_volume_per_layer(user_profile_t *profile)
 {
-  user_profile_med_t *med_t = profile_t->med_mesh_struct;
-  if (strcmp(profile_t->intersect_method, "MEDCOUPLING") == 0) {
-#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
+  user_profile_med_t *med_t = profile->med_mesh_struct;
+  if (strcmp(profile->intersect_method, "MEDCOUPLING") == 0) {
+#if !defined(HAVE_MEDCOUPLING)
     bft_error(__FILE__,
               __LINE__,
               0,
@@ -2568,15 +2546,15 @@ user_compute_cell_volume_per_layer(user_profile_t *profile_t)
                 "MEDCoupling support.\n"));
 #else
 
-    _compute_cell_vol_per_layer_med(profile_t);
+    _compute_cell_vol_per_layer_med(profile);
 
 #endif
   }
-  else if (strcmp(profile_t->intersect_method, "STL") == 0) {
-    _compute_cell_volume_per_layer_stl(profile_t);
+  else if (strcmp(profile->intersect_method, "STL") == 0) {
+    _compute_cell_volume_per_layer_stl(profile);
   }
-  else if (strcmp(profile_t->intersect_method, "BASIC") == 0) {
-    _compute_cell_volume_per_layer_basic(profile_t);
+  else if (strcmp(profile->intersect_method, "BASIC") == 0) {
+    _compute_cell_volume_per_layer_basic(profile);
   }
   else {
     bft_error(__FILE__,
@@ -2594,28 +2572,28 @@ user_compute_cell_volume_per_layer(user_profile_t *profile_t)
  * selection criteria 1: maximum of the field met in the selection criteria
  * if field dimension is higher than 1, its norm norm is used for field value
  *
- * Function to be used once cells_layer_vol has been filled by :
+ * Function to be used once cells_layer_vol has been filled by:
  *   user_compute_cell_volume_per_layer()
  *
  * parameters:
- *   profile_t <-> pointer to a profile structure
- *                 The folowing members of the structure are updated:
- *                 mean_f: for each layer, mean value of the field
- *                 sd_f: for each layer, field standard deviation
- *                 mean_f_n: for each layer, normalized field mean
- *                 sd_f_n: for each layer, standard deviation of normalized field
- *                 histogram_list: each histogram is updated
+ *   profile <-> pointer to a profile structure
+ *               The folowing members of the structure are updated:
+ *               mean_f: for each layer, mean value of the field
+ *               sd_f: for each layer, field standard deviation
+ *               mean_f_n: for each layer, normalized field mean
+ *               sd_f_n: for each layer, standard deviation of normalized field
+ *               histogram_list: each histogram is updated
  *----------------------------------------------------------------------------*/
 
 void
-user_profile_compute(user_profile_t *profile_t)
+user_profile_compute(user_profile_t  *profile)
 {
   // Get mesh quantities
 
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
   // profile shorter variables
-  cs_lnum_t n_layers = profile_t->n_layers;
+  cs_lnum_t n_layers = profile->n_layers;
 
   /*Histogram: part to be be merged with upstream to avoid double computation*/
 
@@ -2630,46 +2608,46 @@ user_profile_compute(user_profile_t *profile_t)
   cs_lnum_t n_elts_sample = 0;
 
   for (int l_id = 0; l_id < n_layers; l_id++) {
-    user_histogram_t *histogram_t = profile_t->histogram_list[l_id];
+    user_histogram_t *histogram = profile->histogram_list[l_id];
 
     /*Create a sample based on elements belonging to each layer*/
-    _create_1d_sample_(profile_t, &n_elts_sample, sample, weights, l_id);
+    _create_1d_sample_(profile, &n_elts_sample, sample, weights, l_id);
 
     /*Compute each layer weigth - useful for checking relevant intersection
      * calculation*/
-    profile_t->weigth[l_id] = 0.0;
+    profile->weigth[l_id] = 0.0;
 
     for (cs_lnum_t iel = 0; iel < n_elts_sample; iel++)
-      profile_t->weigth[l_id] += weights[iel];
+      profile->weigth[l_id] += weights[iel];
 
-    cs_parall_sum(1, CS_DOUBLE, &profile_t->weigth[l_id]);
+    cs_parall_sum(1, CS_DOUBLE, &profile->weigth[l_id]);
 
-    user_histogram_compute(histogram_t, sample, weights, n_elts_sample);
+    user_histogram_compute(histogram, sample, weights, n_elts_sample);
 
     /*Update profile values with calculated for each histogram layer*/
-    profile_t->mean_f[l_id] = histogram_t->mean;
-    profile_t->sd_f[l_id]   = histogram_t->sd;
+    profile->mean_f[l_id] = histogram->mean;
+    profile->sd_f[l_id]   = histogram->sd;
 
-    min_field = CS_MIN(min_field, histogram_t->min);
-    max_field = CS_MAX(max_field, histogram_t->max);
+    min_field = CS_MIN(min_field, histogram->min);
+    max_field = CS_MAX(max_field, histogram->max);
   }
 
   /*update min and max field over all layer and all MPI ranks*/
   cs_parall_min(1, CS_DOUBLE, &min_field);
   cs_parall_max(1, CS_DOUBLE, &max_field);
 
-  profile_t->min_field = min_field;
-  profile_t->max_field = max_field;
+  profile->min_field = min_field;
+  profile->max_field = max_field;
 
   /*Compute normalized mean and sd*/
 
   for (int l_id = 0; l_id < n_layers; l_id++) {
-    profile_t->mean_f_n[l_id] = 0.0;
-    profile_t->sd_f_n[l_id]   = 0.0;
+    profile->mean_f_n[l_id] = 0.0;
+    profile->sd_f_n[l_id]   = 0.0;
 
     if ((max_field - min_field) > DBL_EPSILON) {
       /*Create a sample based on elements belonging to each layer*/
-      _create_1d_sample_(profile_t, &n_elts_sample, sample, weights, l_id);
+      _create_1d_sample_(profile, &n_elts_sample, sample, weights, l_id);
 
       /*normalize sample*/
       for (cs_lnum_t iel = 0; iel < n_elts_sample; iel++)
@@ -2680,8 +2658,8 @@ user_profile_compute(user_profile_t *profile_t)
 
       _compute_sample_moment(sample, weights, n_elts_sample, moment, min_max);
       /*update profile value*/
-      profile_t->mean_f_n[l_id] = moment[0];
-      profile_t->sd_f_n[l_id]   = moment[1];
+      profile->mean_f_n[l_id] = moment[0];
+      profile->sd_f_n[l_id]   = moment[1];
     }
   }
 
@@ -2699,135 +2677,133 @@ user_profiles_compute_all(void)
   cs_lnum_t n_profiles = _profile_list.n_profiles;
 
   for (int p_id = 0; p_id < n_profiles; p_id++) {
-    user_profile_t *profile_t = _profile_list.profile_list[p_id];
-    user_profile_compute(profile_t);
+    user_profile_t *profile = _profile_list.profile_list[p_id];
+    user_profile_compute(profile);
   }
 }
 
 /*----------------------------------------------------------------------------
- * Dump current profile state (log file and csv). directory is created in
+ * Output current profile state (log file and csv). directory is created in
  * ./profiles if not already existing
  *
  * parameters:
- *   profile_t    <-- pointer to an initialized profile structure
- *   periodicity  <-- dumping time step periodicity
+ *   profile   <-- pointer to an initialized profile structure
+ *   interval  <-- output time step interval
  *----------------------------------------------------------------------------*/
 
 void
-user_profile_dump(user_profile_t  *profile_t,
-                  cs_lnum_t        periodicity)
+user_profile_output(user_profile_t  *profile,
+                    int              interval)
 {
   cs_time_step_t *ts = cs_get_glob_time_step();
-  // create monitoring directory  if not already existing
-  struct stat file_stat;
 
-  /*profile shorter variables*/
-  cs_lnum_t n_layers = profile_t->n_layers;
+  if (ts->nt_cur % interval != 0)
+    return;
 
-  char dirname[80];
-  char dirname_histograms[150];
+  /* Profile shorter variables */
+  cs_lnum_t n_layers = profile->n_layers;
 
-  sprintf(dirname, "./profiles/%s", profile_t->name);
+  if (cs_glob_rank_id < 1) {
 
-  /* Create main directory if nor existing */
-  if (stat("./profiles", &file_stat) < 0
-      && cs_glob_rank_id <= 0) { // check if folder exists with main cs rank
-    mkdir("./profiles", S_IRWXU | S_IRGRP | S_IROTH);
-    // Manage acces right in the same way than other folder
-  }
+    const char prefix[] = "./profiles";
 
-  if (stat(dirname, &file_stat) < 0
-      && cs_glob_rank_id <= 0) { // Check if folder exist with main cs rank
-    mkdir(dirname,
-          S_IRWXU | S_IRGRP
-            | S_IROTH); // Manage acces right in the same way than other folder
+    char dirname[80];
+    char dirname_histograms[150];
 
-    /* Dump stl layer mesh for possible visualisation of the layer*/
+    snprintf(dirname, 80, "./profiles/%s", profile->name);
+    dirname[79] = '\0';
 
-    _user_dump_profile_stl_mesh(profile_t, dirname);
-    _dump_profile_setup_log(profile_t, dirname);
+    /* Create main directory if not present */
 
-    /* Dump med mesh if generated */
-#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
-    int test_med = strcmp(profile_t->intersect_method, "MEDCOUPLING");
-    if (test_med == 0) {
-      _dump_profile_med_mesh(profile_t, dirname);
-    }
+    if (cs_file_isdir(prefix) != 1)
+      cs_file_mkdir_default(prefix);
+
+    if (cs_file_isdir(dirname) != 1) {
+      cs_file_mkdir_default(dirname);
+
+      /* Output STL layer mesh for possible visualisation of the layer */
+
+      _user_output_profile_stl_mesh(profile, dirname);
+      _output_profile_setup_log(profile, dirname);
+
+      /* Output med mesh if generated */
+#if defined(HAVE_MEDCOUPLING_LOADER)
+      if (strcmp(profile->intersect_method, "MEDCOUPLING") == 0)
+        _output_profile_med_mesh(profile, dirname);
 #endif
-  }
+    }
 
-  /* Create histograms directory if not exist */
+    /* Create histograms directory if not present */
 
-  sprintf(dirname_histograms, "%s/histograms", dirname);
-  if (stat(dirname_histograms, &file_stat) < 0
-      && cs_glob_rank_id <= 0) { // check if folder exist with main cs rank
-    mkdir(dirname_histograms,
-          S_IRWXU | S_IRGRP
-            | S_IROTH); // manage acces right in the same way than other folder
-  }
+    snprintf(dirname_histograms, 150, "%s/histograms", dirname);
+    dirname_histograms[149] = '\0';
 
-  /* dump current state of profile */
-  if (cs_glob_rank_id <= 0 && (fabs(ts->nt_cur % periodicity) < 1.E-10)) {
-    _dump_profile_values_csv(profile_t, dirname);
-    _dump_profile_log(profile_t, dirname);
-    for (int l_id = 0; l_id < n_layers; l_id++) {
-      user_histogram_t *histogram_t = profile_t->histogram_list[l_id];
-      user_dump_histogram_csv(histogram_t, dirname_histograms);
+    if (cs_file_isdir(dirname_histograms) != 1)
+      cs_file_mkdir_default(dirname_histograms);
+
+    /* Output current state of profile */
+
+    if (ts->nt_cur % interval == 0) {
+      _output_profile_values_csv(profile, dirname);
+      _output_profile_log(profile, dirname);
+      for (int l_id = 0; l_id < n_layers; l_id++) {
+        user_histogram_t *histogram = profile->histogram_list[l_id];
+        user_output_histogram_csv(histogram, dirname_histograms);
+      }
     }
   }
 }
 
 /*----------------------------------------------------------------------------
- * Function to dump all created profiles
+ * Function to output all created profiles
  *
  * parameters:
- *
- *   periodicity <-- dumping time step periodicity
+ *   interval <-- output time step interval
  *----------------------------------------------------------------------------*/
 
 void
-user_profiles_dump_all(cs_lnum_t  periodicity)
+user_profiles_output_all(int  interval)
 {
   cs_lnum_t n_profiles = _profile_list.n_profiles;
 
   for (int p_id = 0; p_id < n_profiles; p_id++) {
-    user_profile_t *profile_t = _profile_list.profile_list[p_id];
-    user_profile_dump(profile_t, periodicity);
+    user_profile_t *profile = _profile_list.profile_list[p_id];
+    user_profile_output(profile, interval);
   }
 }
 
 /*----------------------------------------------------------------------------
- * Dump current histogram in a csv file in the given directory. File created
+ * Output current histogram in a csv file in the given directory. File created
  * if not already existing
  *
  * parameters:
  *   histogram    <-- pointer to a histogram strucutre
- *   dirname      <-- directory in which dump the profile
+ *   dirname      <-- directory in which to output the profile
  *----------------------------------------------------------------------------*/
 
 void
-user_dump_histogram_csv(user_histogram_t  *histogram_t,
-                        const char        *dirname)
+user_output_histogram_csv(user_histogram_t  *histogram,
+                          const char        *dirname)
 {
   /*shorter cs variables*/
   cs_time_step_t *ts = cs_get_glob_time_step();
 
   char filename[200];
 
-  sprintf(filename, "%s/%s.csv", dirname, histogram_t->name);
+  sprintf(filename, "%s/%s.csv", dirname, histogram->name);
 
   /*shorter Histogram variables*/
-  cs_lnum_t  n_bin  = histogram_t->binNumber;
-  cs_real_t  min    = histogram_t->min;
-  cs_real_t *h_i    = histogram_t->h_i;
-  cs_real_t *l_i    = histogram_t->l_i;
-  cs_real_t  mu     = histogram_t->mean;
-  cs_real_t  sigma  = histogram_t->sd;
-  cs_lnum_t  n_iter = histogram_t->n_iter;
+  cs_lnum_t  n_bins = histogram->n_bins;
+  cs_real_t  min    = histogram->min;
+  cs_real_t *h_i    = histogram->h_i;
+  cs_real_t *l_i    = histogram->l_i;
+  cs_real_t  mu     = histogram->mean;
+  cs_real_t  sigma  = histogram->sd;
+  cs_lnum_t  n_iter = histogram->n_iter;
 
   cs_lnum_t   n_l_header         = 0;
   const char *histogram_header[] = {
-    "time_step", "time", "binNumber", "n_iter", "min", "mu",
+    "time_step", "time", "n_bins", "n_iter", "min", "mu",
     "sigma",     "l_0",  "h_0",       "...",    "l_n", "h_n",
   };
 
@@ -2860,14 +2836,14 @@ user_dump_histogram_csv(user_histogram_t  *histogram_t,
           "%d,%f,%d,%d,%f,%f,%f",
           ts->nt_cur,
           ts->t_cur,
-          n_bin,
+          n_bins,
           n_iter,
           min,
           mu,
           sigma);
 
-  /*dump width and height of each histogram class*/
-  for (int b_id = 0; b_id < n_bin; b_id++) {
+  /* output width and height of each histogram class */
+  for (int b_id = 0; b_id < n_bins; b_id++) {
     fprintf(ptrResults, ",%f,%f", l_i[b_id], h_i[b_id]);
   }
 
@@ -2877,53 +2853,54 @@ user_dump_histogram_csv(user_histogram_t  *histogram_t,
 }
 
 /*----------------------------------------------------------------------------
- * public C function
- * Dump histogram graphs using OpenTunrs library (need to be link to CS)
+ * Output histogram graphs using OpenTurns library (need to be linked to CS)
  *
  * parameters:
- *   histogram_t    <-- pointer to the current histogram structure
- *   dirname        <-- pointer to directory dump path
+ *   histogram <-- pointer to the current histogram structure
+ *   dirname   <-- pointer to directory output path
  *----------------------------------------------------------------------------*/
 
 void
-user_histogram_OT_dump(user_histogram_t *histogram_t, const char *dirname)
+user_histogram_ot_output(user_histogram_t  *histogram,
+                         const char        *dirname)
 {
   /*wrap c++ function*/
-  _dump_histogram_OT(histogram_t, dirname);
+  _output_histogram_ot(histogram, dirname);
 }
 
 /*----------------------------------------------------------------------------
- * Dump layer histogram layer of a profile.
- * Warning: + OpenTurns library need to be linked
- *           + Graph creation is relatively slow, choose relevant periodicity
+ * Output layer histogram layer of a profile.
+ *
+ * Warning: + OpenTurns library needs to be linked
+ *          + Graph creation is relatively slow, choose relevant interval
  *
  * parameters:
- *   profile_t    <-- pointer to an initialized profile structure
- *   periodicity  <-- dumping time step periodicity
+ *   profile   <-- pointer to an initialized profile structure
+ *   interval  <-- output time step interval
  *----------------------------------------------------------------------------*/
 
 void
-user_profile_histogram_OT_dump(user_profile_t  *profile_t,
-                               cs_lnum_t        periodicity)
+user_profile_histogram_ot_output(user_profile_t  *profile,
+                                 int              interval)
 {
 #if HAVE_OT == 1
-  /*Dump the PDF historgam thks to OT lib features*/
+  /*Output the PDF historgam thks to OT lib features*/
   /*Assume histograms directory already created*/
   cs_time_step_t *ts = cs_get_glob_time_step();
 
-  cs_lnum_t n_layers = profile_t->n_layers;
+  cs_lnum_t n_layers = profile->n_layers;
 
   char dirname[80];
   char dirname_histograms[150];
 
-  sprintf(dirname, "./profiles/%s", profile_t->name);
+  sprintf(dirname, "./profiles/%s", profile->name);
   sprintf(dirname_histograms, "%s/histograms/%d", dirname, ts->nt_cur);
 
-  if (cs_glob_rank_id <= 0 && (fabs(ts->nt_cur % periodicity) < 1.E-10)) {
+  if (cs_glob_rank_id <= 0 && (fabs(ts->nt_cur % interval) < 1.E-10)) {
     mkdir(dirname_histograms, S_IRWXU | S_IRGRP | S_IROTH);
     for (int l_id = 0; l_id < n_layers; l_id++) {
-      user_histogram_t *histogram_t = profile_t->histogram_list[l_id];
-      _dump_histogram_OT(histogram_t, dirname_histograms);
+      user_histogram_t *histogram = profile->histogram_list[l_id];
+      _output_histogram_ot(histogram, dirname_histograms);
     }
   }
 
@@ -2931,21 +2908,21 @@ user_profile_histogram_OT_dump(user_profile_t  *profile_t,
 }
 
 /*----------------------------------------------------------------------------
- * Function to dump all layer histogram layer of created profiles
+ * Function to output all layer histogram layer of created profiles
  * Warning: OT lib is required
  *
  * parameters:
- *   periodicity    <-- dumping time step periodicity
+ *   interval    <-- output time step interval
  *----------------------------------------------------------------------------*/
 
 void
-user_profiles_histogram_OT_dump_all(cs_lnum_t periodicity)
+user_profiles_histogram_ot_output_all(int  interval)
 {
   cs_lnum_t n_profiles = _profile_list.n_profiles;
 
   for (int p_id = 0; p_id < n_profiles; p_id++) {
-    user_profile_t *profile_t = _profile_list.profile_list[p_id];
-    user_profile_histogram_OT_dump(profile_t, periodicity);
+    user_profile_t *profile = _profile_list.profile_list[p_id];
+    user_profile_histogram_ot_output(profile, interval);
   }
 }
 
@@ -2957,8 +2934,8 @@ void
 user_free_profiles(void)
 {
   for (int p_id = 0; p_id < _profile_list.n_profiles; p_id++) {
-    user_profile_t *profile_t = _profile_list.profile_list[p_id];
-    _free_profile_all(profile_t);
+    user_profile_t *profile = _profile_list.profile_list[p_id];
+    _free_profile_all(profile);
   }
   _profile_list.n_profiles = 0;
   BFT_FREE(_profile_list.profile_list);

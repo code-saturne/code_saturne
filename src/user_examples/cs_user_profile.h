@@ -1,7 +1,8 @@
 /*============================================================================
- * This file defines functions and structures (header) needed for the
- * calculation of the mean profile (scalar- or vector-valued).
- * See also the example in cs_user_extra_operations_mean_profiles.c
+ * This file define functions needed for Calculate mean profile
+ * (scalars or vectors) over the mesh.
+ *
+ * Example in cs_user_extra_operations_mean_profiles.c
  *============================================================================*/
 
 /* VERS */
@@ -35,7 +36,7 @@
 #include "cs_stl.h"
 
 /* Set this define to 0 if OpenTunrs not linked to code saturne
-   set this define to 1 if OpenTurns linked to CS (histogramp dump) */
+   set this define to 1 if OpenTurns linked to CS (histogramp output) */
 
 #define HAVE_OT 0
 
@@ -49,23 +50,23 @@ typedef struct _user_profile_med_t user_profile_med_t;
 
 typedef struct {
 
-  char       *name;      /*name of the histogram*/
-  const char *field;     /*field name*/
-  cs_lnum_t   binNumber; /*histogramm class numbersr*/
-  cs_lnum_t   n_bin_max; /*maximum class number*/
-  cs_real_t   bandWidth; /*histogram bandWidth*/
-  cs_real_t  *h_i;       /*density of the class i */
-  cs_real_t  *l_i;       /*with of the class i*/
-  cs_real_t  *c_i;       /*center of the class i*/
-  cs_real_t   mean;      /*mean of the sample (weighted or not)*/
-  cs_real_t   sd;        /*standard deviation of the sample*/
-  cs_real_t   min;       /*class min value*/
-  cs_real_t   max;       /*class max value*/
-  cs_real_t   Q1;        /*First quarter quantile*/
-  cs_real_t   Q2;        /*Mediane*/
-  cs_real_t   Q3;        /*Third quarter quantile*/
-  cs_real_t   ptot;      /*sum of h_i : has to be 1.0*/
-  cs_real_t   n_iter;    /*iteration to optimize bandWidth*/
+  char       *name;       /* name of the histogram*/
+  const char *field;      /* field name*/
+  cs_lnum_t   n_bins;     /* histogramm class numbers */
+  cs_lnum_t   n_bins_max; /* maximum class number*/
+  cs_real_t   bandwidth;  /* histogram bandwidth*/
+  cs_real_t  *h_i;        /* density of the class i */
+  cs_real_t  *l_i;        /* with of the class i*/
+  cs_real_t  *c_i;        /* center of the class i*/
+  cs_real_t   mean;       /* mean of the sample (weighted or not)*/
+  cs_real_t   sd;         /* standard deviation of the sample*/
+  cs_real_t   min;        /* class min value*/
+  cs_real_t   max;        /* class max value*/
+  cs_real_t   Q1;         /* First quarter quantile*/
+  cs_real_t   Q2;         /* Mediane*/
+  cs_real_t   Q3;         /* Third quarter quantile*/
+  cs_real_t   ptot;       /* sum of h_i : has to be 1.0*/
+  cs_real_t   n_iter;     /* iteration to optimize bandWidth*/
 
 } user_histogram_t;
 
@@ -80,14 +81,14 @@ typedef struct {
   const char *criteria;         // cell selection criteria for profile
   const char *intersect_method; // Method used for intersaction : "Basic",
                                 // "STL", "MEDCOUPLING"
-  const char *progression_law; // progression law for layer thickness :
-                               // CONSTANT, GEOMETRIC, PARABOLIC
-  const char *weighted; /*MASS, VOLUME, NO*/
+  const char *progression_law;  // progression law for layer thickness :
+                                // CONSTANT, GEOMETRIC, PARABOLIC
+  const char *weighted; // MASS, VOLUME, NO
   cs_real_t   dir_v[3]; // profile direction
   cs_real_t   min_dir;  // minimum distance along direction (from origin)
   cs_real_t   max_dir;  // maximum distance along direction (from origin)
-  cs_real_t   i_v[3]; // assuming dir_v is the k vector, i_v j_v and k_v are an
-                    // orthonormal direct base
+  cs_real_t   i_v[3];   // assuming dir_v is the k vector, i_v j_v and k_v are an
+                        // orthonormal direct base
   cs_real_t min_i;  // minimum distance along direction (from origin)
   cs_real_t max_i;  // maximu distance along direction (from origin)
   cs_real_t j_v[3]; // assuming dir_v is the k vector, i_v j_v and k_v are an
@@ -188,7 +189,7 @@ user_create_histogram(char         *name,
  * Compute a histogram with a given sample
  *
  * parameters :
- *   histogram_t    <-> name of the histogram
+ *   histogram    <-> name of the histogram
  *      h_id        --> compute h_i
  *      l_i         --> compute l_i
  *      c_i         --> compute c_i
@@ -203,7 +204,7 @@ user_create_histogram(char         *name,
  *----------------------------------------------------------------------------*/
 
 void
-user_histogram_compute(user_histogram_t  *histogram_t,
+user_histogram_compute(user_histogram_t  *histogram,
                        cs_real_t         *sample,
                        cs_real_t         *weights,
                        cs_lnum_t          n_elts_sample);
@@ -212,25 +213,25 @@ user_histogram_compute(user_histogram_t  *histogram_t,
  * Free histogram structure
  *
  * parameters :
- *   histogram_t    <-> name of the histogram
+ *   histogram    <-> name of the histogram
  *----------------------------------------------------------------------------*/
 
 void
-user_destroy_histogram(user_histogram_t  *histogram_t);
+user_destroy_histogram(user_histogram_t  *histogram);
 
 /*----------------------------------------------------------------------------
  * Calculate percent of each cells within selection criteria within each layer
  * based on chose method (stl, basic or medcoupling)
  *
  * parameters:
- *   profile_t <-> pointer to an initialized profile structure
- *                 The folowing members of the structure are updated:
- *                 cells_layer_vol: for each layer, percent of cell
- *                 in layer_id is updated
+ *   profile <-> pointer to an initialized profile structure
+ *               The folowing members of the structure are updated:
+ *               cells_layer_vol: for each layer, percent of cell
+ *               in layer_id is updated
  *----------------------------------------------------------------------------*/
 
 void
-user_compute_cell_volume_per_layer(user_profile_t *profile_t);
+user_compute_cell_volume_per_layer(user_profile_t  *profile);
 
 /*----------------------------------------------------------------------------
  * Calculate mean and standard deviation for the selected field for for the
@@ -239,21 +240,21 @@ user_compute_cell_volume_per_layer(user_profile_t *profile_t);
  * selection criteria 1: maximum of the field met in the selection criteria
  * if field dimension is higher than 1, its norm norm is used for field value
  *
- * Function to be used once cells_layer_vol has been filled by :
+ * Function to be used once cells_layer_vol has been filled by:
  *   user_compute_cell_volume_per_layer()
  *
  * parameters:
- *   profile_t <-> pointer to a profile structure
- *                 The folowing members of the structure are updated:
- *                 mean_f: for each layer, mean value of the field
- *                 sd_f: for each layer, field standard deviation
- *                 mean_f_n: for each layer, normalized field mean
- *                 sd_f_n: for each layer, standard deviation of normalized field
- *                 histogram_list: each histogram is updated
+ *   profile <-> pointer to a profile structure
+ *               The folowing members of the structure are updated:
+ *               mean_f: for each layer, mean value of the field
+ *               sd_f: for each layer, field standard deviation
+ *               mean_f_n: for each layer, normalized field mean
+ *               sd_f_n: for each layer, standard deviation of normalized field
+ *               histogram_list: each histogram is updated
  *----------------------------------------------------------------------------*/
 
 void
-user_profile_compute(user_profile_t *profile_t);
+user_profile_compute(user_profile_t  *profile);
 
 /*----------------------------------------------------------------------------
  * Function to compute all created profiles
@@ -263,78 +264,78 @@ void
 user_profiles_compute_all(void);
 
 /*----------------------------------------------------------------------------
- * Dump current profile state (log file and csv). directory is created in
+ * Output current profile state (log file and csv). directory is created in
  * ./profiles if not already existing
  *
  * parameters:
- *   profile_t    <-- pointer to an initialized profile structure
- *   periodicity  <-- dumping time step periodicity
+ *   profile   <-- pointer to an initialized profile structure
+ *   interval  <-- output time step interval
  *----------------------------------------------------------------------------*/
 
 void
-user_profile_dump(user_profile_t  *profile_t,
-                  cs_lnum_t        periodicity);
+user_profile_output(user_profile_t  *profile,
+                    int              interval);
 
 /*----------------------------------------------------------------------------
- * Function to dump all created profiles
+ * Function to output all created profiles
  *
  * parameters:
- *
- *   periodicity <-- dumping time step periodicity
+ *   interval <-- output time step interval
  *----------------------------------------------------------------------------*/
 
 void
-user_profiles_dump_all(cs_lnum_t  periodicity);
+user_profiles_output_all(int  interval);
 
 /*----------------------------------------------------------------------------
- * Dump current histogram in a csv file in the given directory. File created
+ * Output current histogram in a csv file in the given directory. File created
  * if not already existing
  *
  * parameters:
  *   histogram    <-- pointer to a histogram strucutre
- *   dirname      <-- directory in which dump the profile
+ *   dirname      <-- directory in which to output the profile
  *----------------------------------------------------------------------------*/
 
 void
-user_dump_histogram_csv(user_histogram_t  *histogram_t,
-                        const char        *dirname);
+user_output_histogram_csv(user_histogram_t  *histogram,
+                          const char        *dirname);
 
 /*----------------------------------------------------------------------------
- * public C function
- * Dump histogram graphs using OpenTunrs library (need to be link to CS)
+ * Output histogram graphs using OpenTurns library (need to be linked to CS)
  *
  * parameters:
- *   histogram_t    <-- pointer to the current histogram structure
- *   dirname        <-- pointer to directory dump path
+ *   histogram <-- pointer to the current histogram structure
+ *   dirname   <-- pointer to directory output path
  *----------------------------------------------------------------------------*/
 
 void
-user_histogram_OT_dump(user_histogram_t *histogram_t, const char *dirname);
+user_histogram_ot_output(user_histogram_t  *histogram,
+                         const char        *dirname);
 
 /*----------------------------------------------------------------------------
- * Dump layer histogram layer of a profile.
- * Warning: + OpenTurns library need to be linked
- *           + Graph creation is relatively slow, choose relevant periodicity
+ * Output layer histogram layer of a profile.
+ *
+ * Warning: + OpenTurns library needs to be linked
+ *          + Graph creation is relatively slow, choose relevant interval
  *
  * parameters:
- *   profile_t    <-- pointer to an initialized profile structure
- *   periodicity  <-- dumping time step periodicity
+ *   profile   <-- pointer to an initialized profile structure
+ *   interval  <-- output time step interval
  *----------------------------------------------------------------------------*/
 
 void
-user_profile_histogram_OT_dump(user_profile_t  *profile_t,
-                               cs_lnum_t        periodicity);
+user_profile_histogram_ot_output(user_profile_t  *profile,
+                                 int              interval);
 
 /*----------------------------------------------------------------------------
- * Function to dump all layer histogram layer of created profiles
+ * Function to output all layer histogram layer of created profiles
  * Warning: OT lib is required
  *
  * parameters:
- *   periodicity    <-- dumping time step periodicity
+ *   interval    <-- output time step interval
  *----------------------------------------------------------------------------*/
 
 void
-user_profiles_histogram_OT_dump_all(cs_lnum_t periodicity);
+user_profiles_histogram_ot_output_all(int  interval);
 
 /*----------------------------------------------------------------------------
  * Free memory of all profiles created
