@@ -181,7 +181,29 @@ typedef struct {
   double       inv_pr_r;
   double       sl_r;
   double       sl_s;
+
+  /*!
+   * Parameters to handle the polynomial joining
+   *
+   * \var sl_joining
+   *      Value above which the law is replaced with a second-order polynomial.
+   *      (for instance sl_joining = 0.999). If the value is greater or equal
+   *      than 1.0, there is no polynomial joining.
+   *
+   * \var pc_plus
+   *      capillarity pressure related to sl_s
+   *
+   * \var dsl_plus
+   *      derivative of sl at pc_plus
+   *
+   * \var sl_plus_slope
+   *      linear slope between sl=1 and sl=sl_s
+   */
+
   double       sl_joining;
+  double       pc_plus;
+  double       dsl_plus;
+  double       sl_plus_slope;
 
 } cs_gwf_soil_tpf_vgm_param_t;
 
