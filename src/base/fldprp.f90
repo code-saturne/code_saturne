@@ -113,6 +113,10 @@ end interface
 
 call field_get_key_id("parent_field_id", keypid)
 
+idim1 = 1
+idim3 = 3
+idim6 = 6
+
 !===============================================================================
 ! 1. PROPRIETES PRINCIPALES
 !===============================================================================
@@ -175,7 +179,8 @@ if (ischcp.eq.3.or.hybrid_turb.gt.0) then
 end if
 
 if (hybrid_turb.eq.3) then
-  call add_property_field_1d('hybrid_sas_source_term', 'SAS hybrid source term', iflid)
+  call add_property_field_1d('hybrid_sas_source_term', &
+                             'SAS hybrid source term', iflid)
 endif
 
 if (hybrid_turb.eq.4) then
@@ -251,10 +256,6 @@ endif
 ! --- Modifications pour la physique particuliere
 
 call ppprop
-
-idim1 = 1
-idim3 = 3
-idim6 = 6
 
 ! --- Properties for Darcy module
 

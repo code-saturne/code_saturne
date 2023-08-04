@@ -8,6 +8,9 @@ Release 8.0.2 (unreleased)
   of a time step (such as physical property updates) see the current
   (and not previous) time step in this case.
 
+- Fix use-before define error for HTLES mean velocity definition.
+  This corresponds to GitHub issue #117.
+
 ### User changes:
 
 - Do not log `source_term_prev_field` type fields by default.
