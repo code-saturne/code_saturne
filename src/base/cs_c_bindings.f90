@@ -76,6 +76,11 @@ module cs_c_bindings
   parameter (VOLUME_ZONE_SOURCE_TERM=8)
   parameter (VOLUME_ZONE_MASS_SOURCE_TERM=16)
 
+  procedure() :: csexit, dmtmps
+  procedure() :: cslogname, csdatadir
+
+  procedure() :: divmas, itrgrp, matrix, projts, viscfa
+
   !-----------------------------------------------------------------------------
 
   type, bind(c)  :: var_cal_opt
@@ -5207,6 +5212,10 @@ contains
     integer(kind=c_int), dimension(*), intent(in) :: itrifb
     integer(kind=c_int), dimension(*), intent(inout) :: itypfb, izfppp
     real(c_double), dimension(*), intent(in) :: dt
+
+    ! Externals
+
+    procedure() :: cs_f_user_boundary_conditions
 
     ! Local variables
 

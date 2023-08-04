@@ -105,6 +105,8 @@ type(var_cal_opt), target :: vcopt_loc
 type(var_cal_opt), pointer :: p_k_value
 type(c_ptr) :: c_k_value
 
+procedure() :: set_dirichlet_scalar, set_neumann_scalar
+
 !===============================================================================
 
 !===============================================================================
@@ -169,7 +171,6 @@ do ifac = 1, nfabor
     pimp = 0.d0
 
     call set_dirichlet_scalar &
-         !====================
        ( coefap(ifac), cofafp(ifac),             &
          coefbp(ifac), cofbfp(ifac),             &
          pimp        , hint        , rinfin )
@@ -185,7 +186,6 @@ do ifac = 1, nfabor
     qimp = 0.d0
 
     call set_neumann_scalar &
-         !==================
        ( coefap(ifac), cofafp(ifac),             &
          coefbp(ifac), cofbfp(ifac),             &
          qimp        , hint )

@@ -152,6 +152,8 @@ integer          ipass
 data             ipass /0/
 save             ipass
 
+procedure() :: set_dirichlet_scalar, set_neumann_scalar, itrmas
+
 !===============================================================================
 
 !===============================================================================
@@ -268,7 +270,6 @@ do ifac = 1, nfabor
     pimp = uetbor(ifac)*crom(iel)/viscl(iel)
 
     call set_dirichlet_scalar &
-         !====================
        ( coefap(ifac), cofafp(ifac),             &
          coefbp(ifac), cofbfp(ifac),             &
          pimp        , hint        , rinfin )
@@ -280,7 +281,6 @@ do ifac = 1, nfabor
     pimp = 0.d0
 
     call set_dirichlet_scalar &
-         !====================
        ( a_y(ifac), af_y(ifac),             &
          b_y(ifac), bf_y(ifac),             &
          pimp     , hint      , rinfin )
@@ -294,7 +294,6 @@ do ifac = 1, nfabor
     qimp = 0.d0
 
     call set_neumann_scalar &
-         !==================
        ( coefap(ifac), cofafp(ifac),             &
          coefbp(ifac), cofbfp(ifac),             &
          qimp        , hint )
@@ -306,7 +305,6 @@ do ifac = 1, nfabor
     qimp = 0.d0
 
     call set_neumann_scalar &
-         !==================
        ( a_y(ifac), af_y(ifac),             &
          b_y(ifac), bf_y(ifac),             &
          qimp     , hint )

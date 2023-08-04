@@ -880,6 +880,8 @@ use atsoil
 
 implicit none
 
+procedure() :: atlecm
+
 ! Local variables
 integer :: n_level, n_times, n_level_t
 
@@ -1001,6 +1003,8 @@ use cs_c_bindings
 
 implicit none
 
+procedure() :: mestcr, gridcr, mestde
+
 ! Prepare interpolation for 1D radiative model
 if (imeteo.gt.0) then
 
@@ -1023,6 +1027,8 @@ use cs_c_bindings
 use atsoil
 
 implicit none
+
+procedure() :: mestcr, grides, mestde
 
 if (imeteo.gt.0) then
 

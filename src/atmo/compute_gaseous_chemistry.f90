@@ -65,6 +65,8 @@ implicit none
 
 !===============================================================================
 
+procedure() :: fexchem_1, fexchem_2, fexchem_3, fexchem_4, chem_roschem
+
 ! Arguments
 
 double precision dt(ncelet)

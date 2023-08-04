@@ -99,6 +99,8 @@ use pointe, only: itypfb
 
 implicit none
 
+procedure() :: rayigc, rayive
+
 ! Arguments
 
 integer ivertc, k1, kmray, ico2

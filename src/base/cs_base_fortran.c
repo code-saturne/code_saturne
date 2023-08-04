@@ -264,58 +264,6 @@ void CS_PROCF (dmtmps, DMTMPS)
 }
 
 /*----------------------------------------------------------------------------
- * Compute the gamma function of x.
- *
- * Fortran interface
- *
- * subroutine csgamma (x, g)
- * ******************
- *
- * double precision  x     : <-- : input value
- * double precision  gamma : --> : output value
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csgamma, CSGAMMA)
-(
- const cs_real_t  *x,
- cs_real_t        *gamma
-)
-{
-#if defined(HAVE_TGAMMA)
-  *gamma = tgamma(*x);
-#else
-  bft_error(__FILE__, __LINE__, 0,
-            _("tgamma() function (C99) is not available"));
-#endif
-}
-
-/*----------------------------------------------------------------------------
- * Compute the erf function of x.
- *
- * Fortran interface
- *
- * subroutine cserf (x, g)
- * ******************
- *
- * double precision  x     : <-- : input value
- * double precision  ferf  : --> : output value
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (cserf, CSERF)
-(
- const cs_real_t  *x,
- cs_real_t        *ferf
-)
-{
-#if defined(HAVE_ERF)
-  *ferf = erf(*x);
-#else
-  bft_error(__FILE__, __LINE__, 0,
-            _("erf() function (C99) is not available"));
-#endif
-}
-
-/*----------------------------------------------------------------------------
  * Get log name file information.
  *
  * When log file output is suppressed, it returns the name of the

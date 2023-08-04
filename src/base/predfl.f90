@@ -117,6 +117,8 @@ double precision, dimension(:), pointer :: brom_eos, crom_eos
 
 type(var_cal_opt) :: vcopt
 
+procedure() :: set_neumann_scalar, itrmas
+
 !===============================================================================
 
 !===============================================================================

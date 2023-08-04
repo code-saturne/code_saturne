@@ -185,6 +185,8 @@ use radiat
 
 implicit none
 
+procedure() :: reftra
+
 ! Arguments
 
 integer ivertc, k1, kmray, imer1

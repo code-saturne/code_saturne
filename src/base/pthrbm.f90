@@ -243,7 +243,7 @@ subroutine compute_td_pressure_perfect_gas &
 use field
 use entsor
 use parall
-use optcal, only: isuite, ntcabs, idilat
+use optcal, only: isuite, ntcabs, idilat, ttcabs
 use mesh, only: nfabor, volume, surfbn, ifabor, ncelet, ncel
 use pointe, only: itypfb, ncetsm, icetsm, smacel
 use ppincl, only: icondv

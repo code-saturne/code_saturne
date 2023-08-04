@@ -1831,6 +1831,8 @@ subroutine summon_cressman(the_time)
 use, intrinsic :: iso_c_binding
 implicit none
 
+procedure() :: mestcr, mesmap
+
 double precision the_time
 logical first_call
 data first_call /.true./

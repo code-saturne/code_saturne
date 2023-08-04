@@ -50,10 +50,10 @@ use albase
 use parall
 use period
 use ppppar
-use ppthch
 use ppincl
 use coincl
 use cpincl
+use ppthch
 use lagran
 use radiat
 use cplsat
@@ -71,10 +71,6 @@ use cdomod
 use cs_nz_condensation
 use cs_nz_tagmr
 
-use ppincl, only: pp_models_bc_map
-use coincl, only: co_models_bc_map
-use cpincl, only: cp_models_bc_map
-
 use, intrinsic :: iso_c_binding
 
 !===============================================================================
@@ -82,7 +78,6 @@ use, intrinsic :: iso_c_binding
 implicit none
 
 ! Arguments
-
 
 ! Local variables
 
@@ -115,6 +110,10 @@ double precision, pointer, dimension(:,:,:) :: rcodcl
 !===============================================================================
 ! Interfaces
 !===============================================================================
+
+procedure() :: armtps, atmsol, cplact, cplsyn, cscini
+procedure() :: cs_f_user_extra_operations, ecrava, ecrlis, iniva0, inivar
+procedure() :: lecamo, reqsui, phyvar, stusui, trbsui, uiexop, uiporo, usporo
 
 interface
 

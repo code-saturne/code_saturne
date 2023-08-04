@@ -81,6 +81,8 @@ double precision epsi,delta,r0,r1,epai1
 
 logical log_debug
 
+procedure() :: csexit
+
 !===============================================================================
 
 log_debug = .false.

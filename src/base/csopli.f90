@@ -65,6 +65,8 @@ integer infecr, isuppr, ierror
 
 character(len=64) :: name
 
+procedure() :: cslogname
+
 !===============================================================================
 
 ierror = 0

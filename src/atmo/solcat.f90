@@ -67,6 +67,8 @@ use atsoil
 
 implicit none
 
+procedure() :: csexit
+
 ! Arguments
 
 integer iappel

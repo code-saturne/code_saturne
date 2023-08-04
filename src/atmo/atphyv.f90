@@ -49,7 +49,6 @@ use ppincl
 use mesh
 use atincl
 use field
-use spefun
 use field_operator
 use cs_c_bindings
 
@@ -321,7 +320,7 @@ do iel = 1, ncel
   al = 1.d0/(1.d0 + qsl*clatev**2/(rair*rvsra*cp0*tliq**2))
   qsup = qsl/sig_flu
 
-  nebdia(iel) = 0.5d0*(1.d0 + ferf(q1/sqrt(2.d0)))
+  nebdia(iel) = 0.5d0*(1.d0 + erf(q1/sqrt(2.d0)))
 
   !FIXME MF : put in input of the global function...
   yw_liq = (sig_flu                                                               &

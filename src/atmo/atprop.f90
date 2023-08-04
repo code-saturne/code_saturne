@@ -47,6 +47,8 @@ use atincl
 
 implicit none
 
+procedure() :: add_boundary_property_field_owner, add_property_field_1d
+
 ! Local variables
 
 integer          f_id, idim1, ityloc, itycat

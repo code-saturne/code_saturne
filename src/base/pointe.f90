@@ -205,7 +205,8 @@ module pointe
   !> and its derivative with respect to pressure
   double precision, allocatable, target, dimension(:) :: gamcav, dgdpca
 
-  !> reference point for wall condensation, used in forced and mixed convection regimes
+  !> reference point for wall condensation,
+  !> used in forced and mixed convection regimes
   double precision, allocatable, dimension(:,:) :: xref_cond
 
   !> \}
@@ -282,6 +283,8 @@ contains
 
     integer iel
     double precision, allocatable, dimension(:) :: buffer
+
+    procedure() :: synsca
 
     ! Resize/copy arrays
 

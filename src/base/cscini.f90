@@ -66,6 +66,8 @@ integer          nvar
 integer          numcpl
 integer          ialemx , nvcpmx, ifcpmx
 
+procedure() :: mxicpl, tbicpl, csexit
+
 !===============================================================================
 
 
@@ -75,20 +77,17 @@ do numcpl = 1, nbrcpl
   ! de manière identique.
 
   call mxicpl(numcpl, ifaccp, ifcpmx)
-  !==========
 
   ifaccp = ifcpmx
 
   ! On vérifie si l'une des instances est en résolution en repère relatif
 
   call mxicpl(numcpl, icorio, icormx(numcpl))
-  !==========
 
   ! De la même manière, si l'on a une approche ALE sur l'un des
   ! maillages, on doit mettre à jour la localisation.
 
   call mxicpl(numcpl, iale  , ialemx)
-  !==========
 
   ! Si on est en turbomachine avec maillages glissant, on doit aussi
   ! mettre à jour la localisation
@@ -115,7 +114,6 @@ do numcpl = 1, nbrcpl
   ! exécutable
 
   call mxicpl(numcpl, nvarcp(numcpl), nvcpmx)
-  !==========
 
   nvarto(numcpl) = nvcpmx
 
@@ -125,21 +123,17 @@ do numcpl = 1, nbrcpl
   ! il n'y a que du couplage mono-modele)
 
   call tbicpl(numcpl, 1, 1, iturb, iturcp(numcpl))
-  !==========
 
   if (iturb.eq.50.and.iturcp(numcpl).ne.50) then
     write(nfecra,1000) numcpl
     call csexit(1)
-    !==========
   elseif (iturb.eq.51.and.iturcp(numcpl).ne.51) then
     write(nfecra,1002) numcpl
     call csexit(1)
-    !==========
   elseif (itytur.eq.4.and.                               &
        iturcp(numcpl)/10.ne.4) then
     write(nfecra,1001) numcpl
     call csexit(1)
-    !==========
   endif
 
   ! Cohérence des referentiels de resolution
@@ -147,7 +141,6 @@ do numcpl = 1, nbrcpl
   if (icorio.ne.icormx(numcpl)) then
     write(nfecra,1100) numcpl
     call csexit(1)
-    !==========
   endif
 
 enddo

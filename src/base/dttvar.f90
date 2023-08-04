@@ -121,6 +121,8 @@ double precision, dimension(:), pointer :: viscl, visct
 
 type(var_cal_opt) :: vcopt_u, vcopt_p
 
+procedure() :: cfdttv, matrdt, cplsyn
+
 !===============================================================================
 
 !===============================================================================
@@ -806,6 +808,8 @@ double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: viscl, visct, cpro_cour, cpro_four
 
 type(var_cal_opt) :: vcopt_u
+
+procedure() :: cplsyn, matrdt
 
 !===============================================================================
 

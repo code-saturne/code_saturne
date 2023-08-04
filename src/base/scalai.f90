@@ -101,6 +101,10 @@ save             ipass
 
 !===============================================================================
 
+procedure() :: kinrates, ppinv2, cs_coal_masstransfer, cs_fuel_masstransfer
+procedure() :: cfener, set_dirichlet_scalar, max_mid_min_progvar, elflux
+procedure() :: compute_gaseous_chemistry, elreca
+
 interface
 
    subroutine solve_equation_scalar                   &

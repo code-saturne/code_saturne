@@ -114,6 +114,8 @@ double precision, pointer, dimension(:,:,:) :: rcodcl
 
 type(var_cal_opt) :: vcopt_uma, vcopt_rij
 
+procedure() :: clsyvt_scalar, clsyvt_vector
+
 !===============================================================================
 
 !===============================================================================
@@ -621,6 +623,8 @@ use field
 
 implicit none
 
+procedure() :: set_neumann_scalar
+
 ! Arguments
 
 integer          iscal
@@ -819,7 +823,6 @@ do ifac = 1, nfabor
       hint = 1.d0/distbf
 
       call set_neumann_scalar &
-        !====================
       ( a_al(ifac), af_al(ifac),             &
         b_al(ifac), bf_al(ifac),             &
         qimp      , hint       )

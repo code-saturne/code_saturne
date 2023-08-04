@@ -140,6 +140,8 @@ type(var_cal_opt), target   :: vcopt_loc
 type(var_cal_opt), pointer  :: p_k_value
 type(c_ptr)                 :: c_k_value
 
+procedure() :: set_neumann_scalar, compute_td_pressure_perfect_gas
+
 !===============================================================================
 ! 1. Initializations
 !===============================================================================

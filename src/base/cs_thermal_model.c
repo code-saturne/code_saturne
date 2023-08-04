@@ -195,7 +195,7 @@ cs_f_thermal_model_get_pointers(int  **itherm,
                                 int  **itpscl)
 {
   *itherm = (int *) &(_thermal_model.thermal_variable);
-  *itpscl = &(_thermal_model.temperature_scale);
+  *itpscl = (int *) &(_thermal_model.temperature_scale);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

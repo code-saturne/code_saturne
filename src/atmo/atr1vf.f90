@@ -53,6 +53,8 @@ use cs_c_bindings
 
 implicit none
 
+procedure() :: grimap, gripol, cs_user_atmo_1d_rad_prf, rayir, rayso, mesmap
+
 ! Local variables
 integer k, ii, jj
 integer k1

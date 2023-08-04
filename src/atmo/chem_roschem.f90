@@ -50,6 +50,10 @@ use atchem
 
 implicit none
 
+procedure() :: fexchem_1, fexchem_2, fexchem_3, fexchem_4
+procedure() :: jacdchemdc_1, jacdchemdc_2, jacdchemdc_3, ssh_jacdchemdc
+procedure() :: cs_solvlin
+
 ! Arguments
 
 double precision dlconc(nespg)

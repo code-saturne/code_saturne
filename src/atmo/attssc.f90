@@ -58,6 +58,8 @@ use cs_c_bindings
 
 implicit none
 
+procedure() :: atr1vf, mscrss
+
 ! Arguments
 
 integer          iscal

@@ -71,7 +71,7 @@ module cs_f_interfaces
       use mesh
       integer :: f_id, init, inc, imrgra
       integer :: nswrgp, imligp, ircflp
-      integer :: iwarnp, iphydp
+      integer :: iwarnp, iphydp, iwgrp
       double precision :: epsrgp , climgp , extrap
       double precision, dimension(ncelet) :: pvar
       double precision, dimension(nfabor) :: coefap, coefbp, cofafp, cofbfp

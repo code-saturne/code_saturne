@@ -80,6 +80,11 @@ type(var_cal_opt) :: vcopt
 ! Interfaces
 !===============================================================================
 
+procedure() :: add_variable_field, add_cdo_variable_field
+procedure() :: pplecd, ppvarp, add_model_scalar_field
+procedure() :: add_user_scalar_fields, fldvar_check_nvar
+procedure() :: init_var_cal_opt
+
 interface
 
   ! Interface to C function returning number of user-defined variables
@@ -318,12 +323,10 @@ nscaus = cs_parameters_n_added_variables()
 ! ---> Lecture donnees thermochimie
 
 call pplecd
-!==========
 
 ! ---> Definition des variables
 
 call ppvarp
-!==========
 
 ! Thermal model with no specific physics
 
@@ -547,6 +550,8 @@ use cs_c_bindings
 
 implicit none
 
+procedure() :: fldvar_check_nvar, init_var_cal_opt
+
 ! Arguments
 
 character(len=*), intent(in) :: name, label
@@ -629,6 +634,8 @@ use cs_c_bindings
 
 implicit none
 
+procedure() :: fldvar_check_nvar, init_var_cal_opt
+
 ! Arguments
 
 character(len=*), intent(in) :: name, label
@@ -698,6 +705,8 @@ use field
 !===============================================================================
 
 implicit none
+
+procedure() :: fldvar_check_nvar, init_var_cal_opt
 
 ! Arguments
 
@@ -820,6 +829,8 @@ use field
 
 implicit none
 
+procedure() :: add_model_field
+
 ! Arguments
 
 character(len=*), intent(in) :: name, label
@@ -875,6 +886,8 @@ use cs_c_bindings
 
 implicit none
 
+procedure() :: add_model_field_indexes
+
 ! Arguments
 
 character(len=*), intent(in) :: name, label
@@ -928,6 +941,9 @@ use field
 !===============================================================================
 
 implicit none
+
+procedure() :: fldvar_check_nvar, fldvar_check_nscapp, init_var_cal_opt
+procedure() :: csexit
 
 ! Arguments
 
@@ -1000,6 +1016,8 @@ use numvar
 !===============================================================================
 
 implicit none
+
+procedure() :: csexit
 
 ! Arguments
 
@@ -1124,6 +1142,8 @@ use numvar
 
 implicit none
 
+procedure() :: csexit
+
 ! Arguments
 
 ! Local variables
@@ -1187,6 +1207,8 @@ function cs_c_add_model_field_indexes(f_id) result(iscal) &
 
   implicit none
 
+  procedure() :: add_model_field_indexes
+
   ! Arguments
 
   integer(c_int), value :: f_id
@@ -1219,6 +1241,8 @@ subroutine cs_c_add_model_thermal_field_indexes(f_id) &
   use cs_c_bindings
 
   implicit none
+
+  procedure() :: add_model_field_indexes
 
   ! Arguments
 

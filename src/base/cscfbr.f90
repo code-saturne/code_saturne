@@ -87,6 +87,9 @@ double precision, allocatable, dimension(:,:) :: rvdis , rvfbr
 integer, pointer, dimension(:,:) :: icodcl
 double precision, pointer, dimension(:,:,:) :: rcodcl
 
+procedure() :: nbecpl, lelcpl, lencpl, npdcpl, coocpl, cscpfb, varcpl
+procedure() :: pondcp, csc2cl
+
 !===============================================================================
 
 do numcpl = 1, nbrcpl
@@ -301,6 +304,8 @@ use, intrinsic :: iso_c_binding
 !===============================================================================
 
 implicit none
+
+procedure() :: nbecpl, lelcpl, lencpl, csc2cl, csc2cl_init
 
 ! Arguments
 

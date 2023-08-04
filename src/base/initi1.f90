@@ -57,6 +57,9 @@ integer          iok, ipp, nmodpp, have_thermal_model
 
 !===============================================================================
 
+procedure() :: iniini, iniusi, ppini1, addfld, modini, fldini
+procedure() ::  usipes, verini, impini
+
 interface
 
   subroutine cs_gui_boundary_conditions_define(bdy)  &

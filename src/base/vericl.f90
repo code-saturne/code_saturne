@@ -102,6 +102,8 @@ double precision, dimension(:), pointer :: bpro_roughness_t
 integer, pointer, dimension(:,:) :: icodcl
 double precision, pointer, dimension(:,:,:) :: rcodcl
 
+procedure() :: sync_bc_err
+
 !===============================================================================
 
 !===============================================================================
@@ -1259,7 +1261,7 @@ endif
 
 if (irangp.ge.0) call parcmx(iok)
 
-if(iok.ne.0) then
+if (iok.ne.0) then
 
   call sync_bc_err(nstoni, 2, icodni)
   if (nstoni.ne.0) then

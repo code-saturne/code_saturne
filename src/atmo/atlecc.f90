@@ -63,6 +63,8 @@ implicit none
 
 !===============================================================================
 
+procedure() :: csexit, comp_quantile
+
 ! Arguments
 
 integer           imode
@@ -141,7 +143,7 @@ else
   ! --> catch some read errors
   if (month.gt.12.or.day.gt.31) then
     write(nfecra,8005)
-    call csexit (1)
+    call csexit(1)
   endif
   call comp_quantile(day, month, year, quant)
   goto 908
@@ -151,7 +153,7 @@ else
 ! --> catch some read errors
   if (second.lt.0d0.or.quant.gt.366) then
     write(nfecra,8005)
-    call csexit (1)
+    call csexit(1)
   endif
 
   ! --> if the date and time are not completed in usppmo/cs_user_model if no meteo

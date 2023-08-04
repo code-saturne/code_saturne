@@ -80,6 +80,9 @@ type(var_cal_opt) :: vcopt_u
 ! Interfaces
 !===============================================================================
 
+procedure() :: add_property_field, add_property_field_1d, hide_property
+procedure() :: add_boundary_property_field_owner, ppprop
+
 interface
 
   ! Interface to C function returning number of user-defined properties
@@ -362,6 +365,8 @@ use field
 
 implicit none
 
+procedure() :: add_property_field
+
 ! Arguments
 
 character(len=*), intent(in) :: name, label
@@ -584,6 +589,8 @@ integer, intent(out)         :: f_id
 
 integer  type_flag, location_id, dim1
 logical  has_previous
+
+procedure() :: csexit
 
 !===============================================================================
 

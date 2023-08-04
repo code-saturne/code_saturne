@@ -60,6 +60,8 @@ use cs_c_bindings
 
 implicit none
 
+procedure() :: atlecm, atlecc, atleca
+
 ! Local variables
 
 integer          imode, iel

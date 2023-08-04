@@ -84,6 +84,8 @@ double precision, allocatable, dimension(:,:) :: coopts , djppts , dofpts
 double precision, allocatable, dimension(:) :: pndpts
 double precision, allocatable, dimension(:,:) :: rvdis, rvcel
 
+procedure() :: csexit, nbecpl, lelcpl, npdcpl, coocpl, cscpce, varcpl, csc2ts
+
 !===============================================================================
 
 ! cannot be called for non variables ...

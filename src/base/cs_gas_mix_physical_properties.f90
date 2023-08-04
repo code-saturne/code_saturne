@@ -105,6 +105,8 @@ double precision, dimension(:), pointer :: lambda
 
 double precision, parameter :: patm = 101320.0d0
 
+procedure() ::cs_local_physical_properties, cs_local_physical_properties_suth
+
 !===============================================================================
 
 !===============================================================================
@@ -326,12 +328,10 @@ do iesp = 1, nscasp+1
     if (ivsuth.eq.0) then
         ! With a linear law
     call cs_local_physical_properties &
-    !================================
    ( mu_i, lambda_i, tempk(iel), tkelvi, s_i, name_i)
     else
       ! Or : with a Sutherland law
       call cs_local_physical_properties_suth                        &
-      !================================
      ( mu_i, lambda_i, tempk(iel), s_i, name_i)
     endif
 
@@ -357,12 +357,10 @@ do iesp = 1, nscasp+1
       if (ivsuth.eq.0) then
           ! With a linear law
       call cs_local_physical_properties &
-      !================================
      ( mu_j, lambda_j, tempk(iel), tkelvi, s_j, name_j)
       else
         ! Or : with a Sutherland law
         call cs_local_physical_properties_suth                        &
-        !================================
        ( mu_j, lambda_j, tempk(iel), s_j, name_j)
       endif
 

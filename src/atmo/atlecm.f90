@@ -50,6 +50,8 @@ use cs_c_bindings
 
 implicit none
 
+procedure() :: comp_quantile
+
 ! Arguments
 
 integer           imode

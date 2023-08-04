@@ -67,6 +67,8 @@ use cs_c_bindings
 
 implicit none
 
+procedure() :: cs_user_atmo_soil
+
 !==============================================================================
 
 ! Arguments

@@ -64,6 +64,8 @@ use cs_c_bindings
 
 implicit none
 
+procedure() :: add_model_scalar_field, ssh_dimensions
+
 ! Local variables
 
 integer        ii, jj, isc, f_id

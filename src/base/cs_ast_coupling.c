@@ -156,9 +156,13 @@ struct _cs_ast_coupling_t {
  * Static global variables
  *============================================================================*/
 
+#if defined(HAVE_PARAMEDMEM)
+
 static const char _name_f_f[] = "fluid_forces";
 static const char _name_m_d[] = "mesh_displacement";
 static const char _name_m_v[] = "mesh_velocity";
+
+#endif
 
 static int _verbosity = 1;
 static int _visualization = 1;
@@ -228,6 +232,8 @@ _allocate_arrays(cs_ast_coupling_t  *ast_cpl)
   }
 }
 
+#if defined(HAVE_PARAMEDMEM)
+
 /*----------------------------------------------------------------------------
  * Scatter values of type cs_real_3_t (tuples) based on indirection list
  *
@@ -261,6 +267,8 @@ _scatter_values_r3(cs_lnum_t          n_elts,
     }
   }
 }
+
+#endif /* defined(HAVE_PARAMEDMEM) */
 
 /*----------------------------------------------------------------------------
  * Receive displacements and velocities from code_aster at current time step

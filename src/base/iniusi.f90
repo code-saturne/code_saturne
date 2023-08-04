@@ -93,6 +93,10 @@ integer, dimension(:), pointer :: elt_ids
 
 !===============================================================================
 
+procedure() :: varpos, usppmo, uialin, cscpva, usipph, cfnmtd, fldvar, csivis
+procedure() :: atini1, solcat, csidtv, csiphy, fldprp, cstime, usipsu
+procedure() :: indsui, uscfx2
+
 interface
 
   subroutine cs_function_default_define()  &

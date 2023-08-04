@@ -75,6 +75,8 @@ character(len=80) :: name
 
 type(var_cal_opt) :: vcopt , vcopt1
 
+procedure() :: hide_property, indsui, nbccpl
+
 !===============================================================================
 
 ! Indicateur erreur (0 : pas d'erreur)

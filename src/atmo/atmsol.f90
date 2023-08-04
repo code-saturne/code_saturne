@@ -55,6 +55,8 @@ use mesh
 
 implicit none
 
+procedure() :: csexit, solcat, solmoy, soliva
+
 ! Arguments
 
 ! Local variables

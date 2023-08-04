@@ -145,6 +145,8 @@ type(var_cal_opt), target   :: vcopt_loc
 type(var_cal_opt), pointer  :: p_k_value
 type(c_ptr)                 :: c_k_value
 
+procedure() :: itrmas, inimav
+
 !===============================================================================
 
 !===============================================================================

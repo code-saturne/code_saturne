@@ -226,6 +226,9 @@ type(var_cal_opt) :: vcopt_rij, vcopt_ep
 ! Interfaces
 !===============================================================================
 
+procedure() :: atmcls, set_dirichlet_scalar, set_dirichlet_vector_aniso
+procedure() :: set_neumann_scalar
+
 interface
 
   subroutine clptrg_scalar(iscal, isvhb, icodcl, rcodcl,              &
@@ -752,7 +755,6 @@ do ifac = 1, nfabor
         dtplus = xkappa/log((distbf+rough_t)/rough_t)
 
         call atmcls &
-        !==========
       ( ifac   ,                                                       &
         utau   , rough_d, duplus , dtplus ,                            &
         yplus_t,                                                       &
@@ -1028,7 +1030,6 @@ do ifac = 1, nfabor
       hint = (visclc+visctc/sigmak)/distbf
 
       call set_dirichlet_scalar &
-           !====================
          ( coefa_k(ifac), coefaf_k(ifac),             &
            coefb_k(ifac), coefbf_k(ifac),             &
            pimp         , hint          , rinfin )
@@ -1046,7 +1047,6 @@ do ifac = 1, nfabor
       qimp = -pimp*hint !TODO transform it to use d eps / d y directly
 
       call set_neumann_scalar &
-           !==================
          ( coefa_ep(ifac), coefaf_ep(ifac),             &
            coefb_ep(ifac), coefbf_ep(ifac),             &
            qimp          , hint )
@@ -1289,7 +1289,6 @@ do ifac = 1, nfabor
       qimp = -pimp*hint !TODO transform it to use d eps / d y directly
 
       call set_neumann_scalar &
-           !==================
          ( coefa_ep(ifac), coefaf_ep(ifac),             &
            coefb_ep(ifac), coefbf_ep(ifac),             &
            qimp          , hint )
@@ -1332,7 +1331,6 @@ do ifac = 1, nfabor
       hint = (visclc+visctc/sigmak)/distbf
 
       call set_dirichlet_scalar &
-           !====================
          ( coefa_k(ifac), coefaf_k(ifac),             &
            coefb_k(ifac), coefbf_k(ifac),             &
            pimp         , hint          , rinfin )
@@ -1344,7 +1342,6 @@ do ifac = 1, nfabor
       hint = (visclc+visctc/sigmae)/distbf
 
       call set_dirichlet_scalar &
-           !====================
          ( coefa_ep(ifac), coefaf_ep(ifac),             &
            coefb_ep(ifac), coefbf_ep(ifac),             &
            pimp          , hint          , rinfin )
@@ -1368,7 +1365,6 @@ do ifac = 1, nfabor
       hint = (visclc+visctc/sigmak)/distbf
 
       call set_dirichlet_scalar &
-           !====================
          ( coefa_phi(ifac), coefaf_phi(ifac),             &
            coefb_phi(ifac), coefbf_phi(ifac),             &
            pimp           , hint          , rinfin )
@@ -1380,7 +1376,6 @@ do ifac = 1, nfabor
       hint = 1.d0/distbf
 
       call set_dirichlet_scalar &
-           !====================
          ( coefa_fb(ifac), coefaf_fb(ifac),             &
            coefb_fb(ifac), coefbf_fb(ifac),             &
            pimp          , hint           , rinfin )
@@ -1398,7 +1393,6 @@ do ifac = 1, nfabor
       hint = (visclc+visctc/sigmak)/distbf
 
       call set_dirichlet_scalar &
-           !====================
          ( coefa_k(ifac), coefaf_k(ifac),             &
            coefb_k(ifac), coefbf_k(ifac),             &
            pimp         , hint          , rinfin )
@@ -1410,7 +1404,6 @@ do ifac = 1, nfabor
       hint = (visclc+visctc/sigmae)/distbf
 
       call set_dirichlet_scalar &
-           !====================
          ( coefa_ep(ifac), coefaf_ep(ifac),             &
            coefb_ep(ifac), coefbf_ep(ifac),             &
            pimp          , hint           , rinfin )
@@ -1434,7 +1427,6 @@ do ifac = 1, nfabor
       hint = (visclc+visctc/sigmak)/distbf
 
       call set_dirichlet_scalar &
-           !====================
          ( coefa_phi(ifac), coefaf_phi(ifac),             &
            coefb_phi(ifac), coefbf_phi(ifac),             &
            pimp           , hint            , rinfin )
@@ -1446,7 +1438,6 @@ do ifac = 1, nfabor
       hint = 1.d0/distbf
 
       call set_dirichlet_scalar &
-           !====================
          ( coefa_al(ifac), coefaf_al(ifac),             &
            coefb_al(ifac), coefbf_al(ifac),             &
            pimp          , hint           , rinfin )
@@ -1470,7 +1461,6 @@ do ifac = 1, nfabor
       hint = (visclc+visctc/ckwsk2)/distbf
 
       call set_dirichlet_scalar &
-           !====================
          ( coefa_k(ifac), coefaf_k(ifac),             &
            coefb_k(ifac), coefbf_k(ifac),             &
            pimp         , hint          , rinfin )
@@ -1486,7 +1476,6 @@ do ifac = 1, nfabor
       qimp = -pimp*hint !TODO transform it to use d eps / d y directly
 
       call set_neumann_scalar &
-           !==================
          ( coefa_omg(ifac), coefaf_omg(ifac),             &
            coefb_omg(ifac), coefbf_omg(ifac),             &
            qimp           , hint )
@@ -1781,6 +1770,8 @@ use atincl
 !===============================================================================
 
 implicit none
+
+procedure() :: set_dirichlet_vector_aniso
 
 ! Arguments
 
@@ -2279,7 +2270,6 @@ do ifac = 1, nfabor
       enddo
 
       call set_dirichlet_vector_aniso &
-           !========================
          ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
            coefbut(:,:,ifac), cofbfut(:,:,ifac),           &
            pimpv            , hintt            , rinfiv )

@@ -29,6 +29,8 @@ module mesh
 
   implicit none
 
+  procedure() :: synsca, synsce, synvin, synvie, syntin, syntis
+
   !=============================================================================
 
   !> \defgroup mesh Mesh Fortran structure, pointers to the C structure

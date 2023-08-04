@@ -246,6 +246,8 @@ contains
 
     implicit none
 
+    procedure() :: atlecc
+
     integer imode
 
     ! First reading of concentration profiles file

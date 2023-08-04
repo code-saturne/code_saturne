@@ -323,13 +323,16 @@ contains
 
     implicit none
 
+    procedure() :: cs_mesh_tagmr
+
     ! Local variables
 
     integer  iiii, iz
     type(c_ptr) :: c_znmurx, c_zdxp, c_ztmur, c_dummy1, c_dummy2
 
     ! Copy single-zone to multi-zone formulation for compatibility if needed.
-    call cs_f_wall_condensation_1d_thermal_get_mesh_pointers(c_znmurx, c_dummy1, c_dummy2)
+    call cs_f_wall_condensation_1d_thermal_get_mesh_pointers(c_znmurx, c_dummy1, &
+                                                             c_dummy2)
     call c_f_pointer(c_znmurx, znmurx)
 
     ! Calcul du max des nmurs (pour les fichiers suite)

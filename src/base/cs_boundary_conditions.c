@@ -1877,5 +1877,173 @@ cs_boundary_conditions_complete(int  itypfb[])
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set generalized BC for an anisotropic symmetric vector for a given
+ *         face.
+ *
+ * \param[out]    coefa         explicit BC coefficient for gradients
+ * \param[out]    cofaf         explicit BC coefficient for diffusive flux
+ * \param[out]    coefb         implicit BC coefficient for gradients
+ * \param[out]    cofbf         implicit BC coefficient for diffusive flux
+ * \param[in]     pimpv         Dirichlet value to impose on the normal
+ *                              component
+ * \param[in]     qimpv         Flux value to impose on the
+ *                              tangential components
+ * \param[in]     hint          Internal exchange coefficient
+ * \param[in]     normal        normal
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_set_generalized_sym_vector_aniso
+  (cs_real_t        coefa[3],
+   cs_real_t        cofaf[3],
+   cs_real_t        coefb[3][3],
+   cs_real_t        cofbf[3][3],
+   const cs_real_t  hint[6],
+   const cs_real_t  normal[3],
+   const cs_real_t  pimpv[3],
+   const cs_real_t  qimpv[3])
+{
+  cs_real_t m[6] = {0., 0., 0., 0., 0., 0.};
+
+  m[0] = hint[1]*hint[2] - hint[4]*hint[4];
+  m[1] = hint[0]*hint[2] - hint[5]*hint[5];
+  m[2] = hint[0]*hint[1] - hint[3]*hint[3];
+  m[3] = hint[4]*hint[5] - hint[3]*hint[2];
+  m[4] = hint[3]*hint[5] - hint[0]*hint[4];
+  m[5] = hint[3]*hint[4] - hint[1]*hint[5];
+
+  const cs_real_t invdet = 1.0/(hint[0]*m[0] + hint[3]*m[3] + hint[5]*m[5]);
+
+  cs_real_t invh[6] = {0., 0., 0., 0., 0., 0.};
+  invh[0] = m[0] * invdet;
+  invh[1] = m[1] * invdet;
+  invh[2] = m[2] * invdet;
+  invh[3] = m[3] * invdet;
+  invh[4] = m[4] * invdet;
+  invh[5] = m[5] * invdet;
+
+  cs_real_t qshint[3] = {0., 0., 0.};
+  cs_real_t hintpv[3] = {0., 0., 0.};
+  cs_real_t hintnm[3] = {0., 0., 0.};
+
+  cs_math_sym_33_3_product(invh, qimpv,  qshint);
+  cs_math_sym_33_3_product(hint, pimpv,  hintpv);
+  cs_math_sym_33_3_product(hint, normal, hintnm);
+
+  for (int isou = 0; isou < 3; isou++) {
+
+    /* Gradient BCs */
+    coefa[isou] = - qshint[isou];
+    /* "[1 -n(x)n] Qimp / hint" is divided into two */
+    for (int jsou = 0; jsou < 3; jsou++) {
+
+      coefa[isou] = coefa[isou] + normal[isou]*normal[jsou]
+        * (pimpv[jsou] + qshint[jsou]);
+
+      if (jsou == isou)
+        coefb[isou][jsou] = 1.0 - normal[isou]*normal[jsou];
+      else
+        coefb[isou][jsou] = - normal[isou]*normal[jsou];
+    }
+
+    /* Flux BCs */
+    cofaf[isou] = qimpv[isou];
+    /* "[1 -n(x)n] Qimp" is divided into two */
+    for (int jsou = 0; jsou < 3; jsou++){
+      cofaf[isou] = cofaf[isou] - normal[isou]*normal[jsou]
+                  * (hintpv[jsou] + qimpv[jsou]);
+
+      cofbf[isou][jsou] = hintnm[isou] * normal[jsou];
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set generalized Dirichlet BC for an anisotropic vector for a given
+ *         face.
+ *
+ * \param[out]    coefa         explicit BC coefficient for gradients
+ * \param[out]    cofaf         explicit BC coefficient for diffusive flux
+ * \param[out]    coefb         implicit BC coefficient for gradients
+ * \param[out]    cofbf         implicit BC coefficient for diffusive flux
+ * \param[in]     hint          Internal exchange coefficient
+ * \param[in]     normal        normal
+ * \param[in]     pimpv         Dirichlet value to impose on the tangential
+ *                              components
+ * \param[in]     qimpv         Flux value to impose on the
+ *                              normal component
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_set_generalized_dirichlet_vector_aniso
+  (cs_real_t        coefa[3],
+   cs_real_t        cofaf[3],
+   cs_real_t        coefb[3][3],
+   cs_real_t        cofbf[3][3],
+   const cs_real_t  hint[6],
+   const cs_real_t  normal[3],
+   const cs_real_t  pimpv[3],
+   const cs_real_t  qimpv[3])
+{
+  cs_real_t m[6] = {0., 0., 0., 0., 0., 0.};
+  m[0] = hint[1]*hint[2] - hint[4]*hint[4];
+  m[1] = hint[0]*hint[2] - hint[5]*hint[5];
+  m[2] = hint[0]*hint[1] - hint[3]*hint[3];
+  m[3] = hint[4]*hint[5] - hint[3]*hint[2];
+  m[4] = hint[3]*hint[5] - hint[0]*hint[4];
+  m[5] = hint[3]*hint[4] - hint[1]*hint[5];
+
+  const cs_real_t invdet = 1.0/(hint[0]*m[0] + hint[3]*m[3] + hint[5]*m[5]);
+
+  cs_real_t invh[6] = {0., 0., 0., 0., 0., 0.};
+  invh[0] = m[0] * invdet;
+  invh[1] = m[1] * invdet;
+  invh[2] = m[2] * invdet;
+  invh[3] = m[3] * invdet;
+  invh[4] = m[4] * invdet;
+  invh[5] = m[5] * invdet;
+
+  cs_real_t qshint[3] = {0., 0., 0.};
+  cs_real_t hintpv[3] = {0., 0., 0.};
+  cs_real_t hintnm[3] = {0., 0., 0.};
+
+  cs_math_sym_33_3_product(invh, qimpv,  qshint);
+  cs_math_sym_33_3_product(hint, pimpv,  hintpv);
+  cs_math_sym_33_3_product(hint, normal, hintnm);
+
+  for (int isou = 0; isou < 3; isou ++) {
+
+    /* Gradient BCs */
+    /* "[1 -n(x)n] Pimp" is divided into two */
+    coefa[isou] = pimpv[isou];
+    for (int jsou = 0; jsou < 3; jsou++) {
+
+      coefa[isou] = coefa[isou] - normal[isou] * normal[jsou]
+                  * (pimpv[jsou] + qshint[jsou]);
+
+      coefb[isou][jsou] = normal[isou] * normal[jsou];
+    }
+
+    /* Flux BCs */
+    /* "[1 -n(x)n] Pimp" is divided into two */
+    cofaf[isou] = -hintpv[isou];
+    for (int jsou = 0; jsou < 3; jsou++) {
+
+      cofaf[isou] = cofaf[isou] + normal[isou]*normal[jsou]
+        *(qimpv[jsou]+hintpv[jsou]);
+
+      if (jsou == isou)
+        cofbf[isou][jsou] = hint[isou]-hintnm[isou]*normal[jsou];
+      else
+        cofbf[isou][jsou] = -hintnm[isou]*normal[jsou];
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

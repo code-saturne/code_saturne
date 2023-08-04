@@ -97,6 +97,8 @@ integer          var_f_id
 character(len=80) :: name, f_name, f_label, s_label, s_name
 type(var_cal_opt) :: vcopt_dfm, vcopt_alpha, vcopt
 
+procedure() :: add_variable_field, add_property_field, hide_property
+
 !===============================================================================
 ! 0. Definitions for fields
 !===============================================================================
@@ -186,7 +188,8 @@ do ii = 1, nscal
       call field_set_key_int(ivarfl(ivar), kfturt, iflid)
 
       ! Elliptic Blending (AFM or DFM)
-      if (turb_flux_model.eq.11 .or. turb_flux_model.eq.21 .or. turb_flux_model.eq.31) then
+      if (     turb_flux_model.eq.11 .or. turb_flux_model.eq.21  &
+          .or. turb_flux_model.eq.31) then
         f_name = trim(name)//'_alpha'
 
         call add_variable_field(f_name, f_name, 1, ivtmp)

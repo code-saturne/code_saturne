@@ -44,7 +44,6 @@ use ppppar
 use ppthch
 use ppincl
 use cfpoin
-use pointe, only:compute_porosity_from_scan, ibm_porosity_mode
 use lagran
 use cplsat
 use mesh

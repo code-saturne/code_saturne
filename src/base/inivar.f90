@@ -104,6 +104,8 @@ type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
+procedure() :: ppiniv0, ppiniv1,  cs_user_f_initialization
+
 interface
 
   subroutine cs_gui_initial_conditions()  &

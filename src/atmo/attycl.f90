@@ -92,6 +92,8 @@ implicit none
 
 ! Arguments
 
+procedure() :: mscrss
+
 integer          itypfb(nfabor)
 integer          izfppp(nfabor)
 integer          icodcl(nfabor,nvar)

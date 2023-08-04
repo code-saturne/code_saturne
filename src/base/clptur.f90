@@ -219,6 +219,9 @@ type(var_cal_opt) :: vcopt_u, vcopt_rij, vcopt_ep
 ! Interfaces
 !===============================================================================
 
+procedure() :: atmcls, set_dirichlet_scalar, set_dirichlet_vector_aniso
+procedure() :: set_neumann_scalar, wallfunctions
+
 interface
 
   subroutine clptur_scalar(iscal  , isvhb   , icodcl  , rcodcl  ,     &
@@ -782,7 +785,6 @@ do ifac = 1, nfabor
         dtplus =  xkappa / log(yplus_t)
 
         call atmcls &
-        !==========
       ( ifac   ,                                                       &
         utau   , rough_d, duplus , dtplus ,                            &
         yplus_t,                                                       &
@@ -2289,6 +2291,9 @@ use cs_c_bindings
 
 implicit none
 
+procedure() :: hturbp, set_dirichlet_scalar, set_dirichlet_vector_aniso
+
+
 ! Arguments
 
 integer          iscal, isvhb
@@ -2938,7 +2943,6 @@ do ifac = 1, nfabor
       endif
 
       call set_dirichlet_vector_aniso &
-           !========================
          ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
            coefbut(:,:,ifac), cofbfut(:,:,ifac),           &
            pimpv            , hintt            , rinfiv )
@@ -3120,6 +3124,8 @@ use atincl
 !===============================================================================
 
 implicit none
+
+procedure() :: hturbp
 
 ! Arguments
 

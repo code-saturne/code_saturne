@@ -158,6 +158,10 @@ type(var_cal_opt) :: vcopt, vcopt_u, vcopt_p
 ! Interfaces
 !===============================================================================
 
+procedure() :: atr1vf, cou1do, debvtl, distpr, distpr2, distyp, diffst
+procedure() :: dttvar, cs_compute_courant_fourier, cs_tagmro
+procedure() :: phyvar, pthrbm, schtmp, scalai, solvar
+
 interface
 
   subroutine cs_boundary_conditions_set_coeffs(nvar, iterns, isvhb, itrale,    &

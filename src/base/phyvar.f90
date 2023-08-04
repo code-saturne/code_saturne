@@ -141,6 +141,9 @@ type(var_cal_opt) :: vcopt
 ! Interfaces
 !===============================================================================
 
+procedure() :: cs_physical_properties1, cs_physical_properties2
+procedure() :: uiphyv, usphyv, usvist
+
 interface
 
   subroutine cs_ht_convert_h_to_t_cells_solid() &

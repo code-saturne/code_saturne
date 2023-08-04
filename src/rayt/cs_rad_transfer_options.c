@@ -125,15 +125,8 @@ cs_rad_transfer_options(void)
   else
     rt_params->nrphas = 1;
 
-  int nmodpp = 0;
-  for (int ipp = 2; ipp < CS_N_PHYSICAL_MODEL_TYPES; ipp++) {
-    if (cs_glob_physical_model_flag[ipp] != -1)
-      nmodpp++;
-  }
-
-  /* ====================================================================
-   * 1. Default initializations
-   * ==================================================================== */
+  /* Default initializations
+   * ----------------------- */
 
   /* ->  Absorption coefficent computation
    *      IMODAK = 0 : without modak

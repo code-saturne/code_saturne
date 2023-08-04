@@ -102,6 +102,8 @@ static cs_medcoupling_mesh_t **_sub_meshes = NULL;
  * Private function definitions
  *============================================================================*/
 
+#if defined(HAVE_MEDCOUPLING)
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Get permutation array for a face given its number of vertices.
@@ -134,8 +136,6 @@ _get_face_vertices_permutation(cs_lnum_t  n_face_vertices)
 
   return perm;
 }
-
-#if defined(HAVE_MEDCOUPLING)
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -609,7 +609,7 @@ _assign_cell_mesh(const cs_mesh_t        *mesh,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_medcoupling_mesh_t *
+static cs_medcoupling_mesh_t *
 _get_mesh_from_criteria(const char  *selection_criteria,
                         int          elt_dim)
 {
@@ -639,7 +639,7 @@ _get_mesh_from_criteria(const char  *selection_criteria,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_medcoupling_mesh_t *
+static cs_medcoupling_mesh_t *
 _get_mesh_from_name(const char  *name,
                     int          elt_dim)
 {
@@ -682,7 +682,7 @@ _get_mesh_from_name(const char  *name,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_medcoupling_mesh_t *
+static cs_medcoupling_mesh_t *
 _add_medcoupling_mesh(const char  *name,
                       int          elt_dim)
 {
@@ -735,7 +735,7 @@ _add_medcoupling_mesh(const char  *name,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _select_from_criteria(cs_mesh_t              *csmesh,
                       cs_medcoupling_mesh_t  *pmmesh)
 {
@@ -776,7 +776,7 @@ _select_from_criteria(cs_mesh_t              *csmesh,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _copy_mesh_from_base(cs_mesh_t              *csmesh,
                      cs_medcoupling_mesh_t  *pmmesh,
                      int                     use_bbox)

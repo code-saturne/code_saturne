@@ -48,6 +48,9 @@ use atchem
 
 implicit none
 
+procedure() :: lu_decompose_1, lu_decompose_2, lu_decompose_3
+procedure() :: lu_solve_1, lu_solve_2, lu_solve_3
+
 ! Arguments
 
 integer kindlu

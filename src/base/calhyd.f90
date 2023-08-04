@@ -120,6 +120,8 @@ double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 type(solving_info) sinfo
 type(var_cal_opt) :: vcopt_pr
 
+procedure() :: set_neumann_scalar
+
 !===============================================================================
 
 !===============================================================================
@@ -219,7 +221,6 @@ do ifac = 1, nfabor
   qimp = 0.d0
 
   call set_neumann_scalar &
-    !==================
   ( coefap(ifac), cofafp(ifac),             &
     coefbp(ifac), cofbfp(ifac),             &
     qimp        , hint )

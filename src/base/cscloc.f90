@@ -57,6 +57,8 @@ integer          ipass
 data             ipass /0/
 save             ipass
 
+procedure() :: defloc
+
 !===============================================================================
 
 ipass  = ipass + 1
@@ -69,7 +71,6 @@ do numcpl = 1, nbrcpl
 
     ! Localisation proprement dite
     call  defloc ( numcpl )
-    !===========
 
   endif
 
