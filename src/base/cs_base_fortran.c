@@ -583,17 +583,6 @@ cs_user_boundary_conditions_wrapper(int  *itypcl)
 }
 
 void
-cs_user_boundary_conditions_ale_wrapper(int  *itypcl,
-                                        int  *ialtyb,
-                                        int  *impale)
-{
-  cs_user_boundary_conditions_ale(cs_glob_domain,
-                                  itypcl,
-                                  ialtyb,
-                                  impale);
-}
-
-void
 cs_user_extra_operations_wrapper(void)
 {
   cs_user_extra_operations(cs_glob_domain);

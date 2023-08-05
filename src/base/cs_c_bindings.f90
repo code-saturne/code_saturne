@@ -2057,18 +2057,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C user function for ALE boundary conditions
-
-    subroutine user_boundary_conditions_ale(bc_type, ale_bc_type, impale)  &
-      bind(C, name='cs_user_boundary_conditions_ale_wrapper')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(kind=c_int), dimension(*), intent(inout) :: bc_type, ale_bc_type
-      integer(c_int), dimension(*), intent(in) :: impale
-    end subroutine user_boundary_conditions_ale
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C user function for boundary mass source terms (condensation)
 
     subroutine cs_user_wall_condensation(nvar, nscal, iappel)  &
@@ -5228,6 +5216,46 @@ contains
           (nvar, nscal, icodcl, itrifb, itypfb, izfppp, dt, rcodcl)
 
   end subroutine user_f_boundary_conditions
+
+  !=============================================================================
+
+  !> \brief  Wrapper to Fortran user boundary condition definitions.
+
+  !> \param[in, out]  bc_type  boundary face types
+
+  subroutine cs_f_usalcl_wrapper(c_itrale, itypfb, ialtyb, impale,  &
+                                 dt, xyzno0, disale)  &
+    bind(C, name='cs_f_usalcl_wrapper')
+
+    use dimens
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer(kind=c_int), value :: c_itrale
+    integer(kind=c_int), dimension(*), intent(inout) :: itypfb, ialtyb, impale
+    real(c_double), dimension(*), intent(in) :: dt, xyzno0
+    real(c_double), dimension(*) :: disale
+
+    ! Externals
+
+    procedure() :: usalcl
+
+    ! Local variables
+
+    integer itrale
+
+    integer, pointer, dimension(:,:) :: icodcl
+    double precision, pointer, dimension(:,:,:) :: rcodcl
+
+    itrale = c_itrale
+    call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
+
+    call usalcl(itrale, nvar, nscal, icodcl, itypfb,  ialtyb, impale,  &
+                dt, rcodcl, xyzno0, disale)
+
+  end subroutine cs_f_usalcl_wrapper
 
   !=============================================================================
 
