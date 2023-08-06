@@ -172,14 +172,11 @@ cs_user_wall_condensation(int  nvar,
   CS_UNUSED(nvar);
   CS_UNUSED(nscal);
 
-  cs_lnum_t *lstelt;
   cs_lnum_t *ifabor = cs_glob_mesh->b_face_cells;
   cs_lnum_t  nfabor = cs_glob_mesh->n_b_faces;
 
   cs_wall_condensation_t     *wall_cond    = cs_get_glob_wall_condensation();
   cs_wall_cond_1d_thermal_t  *wall_thermal = cs_get_glob_wall_cond_1d_thermal();
-
-  BFT_MALLOC(lstelt, nfabor, cs_lnum_t);
 
   int ieltcd = 0;
   int izone  = 0;
@@ -188,7 +185,7 @@ cs_user_wall_condensation(int  nvar,
    * 1. First and second calls
    * -------------------------
    * - iappel = 1: nfbpcd: calculation of the number of faces with
-   *                            condensation source term
+   *                       condensation source term
    * - iappel = 2: ifbpcd: index number of faces with condensation source terms
    *
    * Remarks
@@ -374,7 +371,7 @@ cs_user_wall_condensation(int  nvar,
      * From here on to the end : fill in
      *
      * itypcd = for all variables except mass, type of source term
-     * ---------------------------------------------------------------------
+     * -----------------------------------------------------------
      *  Array of integers in [0, 1].
      *  0 : use ambient value
      *  1 : impose user value (in this case, corresponding value of spcond must
@@ -383,20 +380,20 @@ cs_user_wall_condensation(int  nvar,
      * spcond = user values for condensation source term (if itypcd = 1)
      * ---------------------------------------------------------------------
      *  Array of floats.
-     * */
+     */
 
     if (CS_F_(cp) == NULL)
-      bft_error(__FILE__, __LINE__, 0, _("error lambda not variable\n"));
+      bft_error(__FILE__, __LINE__, 0,_("error lambda not variable\n"));
 
     if (CS_F_(h) == NULL)
-      bft_error(__FILE__, __LINE__, 0, _("error lambda not variable\n"));
+      bft_error(__FILE__, __LINE__, 0,_("error lambda not variable\n"));
 
     cs_real_t *cpro_cp = CS_F_(cp)->val;
-    cs_real_t *cvar_h  = CS_F_(h)->val;
+    cs_real_t *cvar_h= CS_F_(h)->val;
 
     // Get specific heat of steam
-    int                       k_id = cs_gas_mix_get_field_key();
-    cs_field_t *              f    = cs_field_by_name("y_h2o_g");
+    int k_id = cs_gas_mix_get_field_key();
+    cs_field_t *f = cs_field_by_name("y_h2o_g");
     cs_gas_mix_species_prop_t gmp;
     cs_field_get_key_struct(f, k_id, &gmp);
     cs_real_t cp_vap = gmp.cp;
@@ -473,51 +470,55 @@ cs_user_wall_condensation(int  nvar,
       }
     }
 
-    /*--------------------------------------------------------------------------
-     * The user can specify here the values of the following arrays used by the
-     * modelling of the metal structures condensation:
+    /*------------------------------------------------------------------------
+     * The user can specify here the values of the following arrays used by
+     * the modelling of the metal structures condensation:
      *  svcond the scalar value to multiply by the sink term array
      *  of the metal structures condensation model.
      *  This array can be filled for each transported scalar.
-     *--------------------------------------------------------------------------*/
+     *------------------------------------------------------------------------*/
 
-    const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+    const cs_lnum_t ncmast = wall_cond->ncmast;
+
     cs_gas_mix_species_prop_t s_h2o_g;
     const int key_mix = cs_field_key_id("gas_mix_species_prop");
     cs_field_get_key_struct(cs_field_by_name_try("y_h2o_g"),
                             key_mix, &s_h2o_g);
 
-    /* Loop over the cells associated to the metal structure
-     * source terms zone */
-    for (cs_lnum_t icmst = 0; icmst < wall_cond->ncmast; icmst++) {
-      const cs_lnum_t c_id = wall_cond->ltmast[icmst];
+    // Source term for scalars
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      f = cs_field_by_id(f_id);
+      if (!(f->type & CS_FIELD_VARIABLE))
+        continue;
+      int iscal = cs_field_get_key_int(f, keysca);
+      if (iscal <= 0)
+        continue;
+      int ivar = cs_field_get_key_int(f, var_id_key) - 1;
 
-      /* Compute the enthalpy value of vapor gas */
-      cs_real_t tk = cvar_h[c_id]/cpro_cp[c_id];
-      if (cs_get_glob_time_step()->nt_cur < 2)
-        tk = cs_glob_fluid_properties->t0;
-      const cs_real_t hvap = s_h2o_g.cp*tk;
+      int h_f_id = cs_thermal_model_field()->id;
 
-      // Source term for scalars
-      for (int f_id = 0; f_id < n_fields; f_id++) {
-        f = cs_field_by_id(f_id);
-        if (!(f->type & CS_FIELD_VARIABLE))
-          continue;
-        int iscal = cs_field_get_key_int(f, keysca);
-        if (iscal > 0)
-          continue;
-        int ivar = cs_field_get_key_int(f, var_id_key) - 1;
-        wall_cond->svcond[ivar*n_cells_ext + icmst] = 0.0;
-        if (f == cs_thermal_model_field())
-          wall_cond->svcond[ivar*n_cells_ext + icmst] = hvap;
+      /* Loop over the cells associated to the metal structure
+       * source terms zone */
+
+      for (cs_lnum_t icmst = 0; icmst < ncmast; icmst++) {
+        const cs_lnum_t c_id = wall_cond->ltmast[icmst];
+
+        /* Compute the enthalpy value of vapor gas */
+        cs_real_t tk = cvar_h[c_id]/cpro_cp[c_id];
+        if (cs_get_glob_time_step()->nt_cur < 2)
+          tk = cs_glob_fluid_properties->t0;
+        const cs_real_t hvap = s_h2o_g.cp*tk;
+
+        // wall_cond->itypst[ivar*ncmast + icmst] = 1;
+        wall_cond->svcond[ivar*ncmast + icmst] = 0.0;
+        if (f_id == h_f_id)
+          wall_cond->svcond[ivar*ncmast + icmst] = hvap;
       }
     }
 
     /*! [source_term_values] */
 
   }
-
-  BFT_FREE(lstelt);
 }
 
 /*----------------------------------------------------------------------------*/

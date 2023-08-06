@@ -987,7 +987,6 @@ cs_wall_condensation_create(cs_lnum_t  nfbpcd,
   BFT_MALLOC(_wall_cond.itypcd, nfbpcd * nvar, cs_lnum_t);
   BFT_MALLOC(_wall_cond.izzftcd, nfbpcd, cs_lnum_t);
   BFT_MALLOC(_wall_cond.spcond, nfbpcd * nvar, cs_real_t);
-  BFT_MALLOC(_wall_cond.svcond, n_cells_ext * nvar, cs_real_t);
   BFT_MALLOC(_wall_cond.hpcond, nfbpcd, cs_real_t);
   BFT_MALLOC(_wall_cond.twall_cond, nfbpcd, cs_real_t);
   BFT_MALLOC(_wall_cond.thermal_condensation_flux, nfbpcd, cs_real_t);
@@ -1039,7 +1038,6 @@ cs_wall_condensation_create(cs_lnum_t  nfbpcd,
     _wall_cond.zprojcond[3 * i + 1] = 0.0;
     _wall_cond.zprojcond[3 * i + 2] = 0.0;
   }
-
 
   BFT_MALLOC(_wall_cond.ltmast, ncmast, cs_lnum_t);
   BFT_MALLOC(_wall_cond.itypst, ncmast * nvar, cs_lnum_t);
