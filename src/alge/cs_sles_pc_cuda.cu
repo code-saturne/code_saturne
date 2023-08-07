@@ -147,6 +147,33 @@ _pc_jacobi_self(cs_lnum_t        n,
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Finalize Poly preconditionner.
+ *
+ * parameters:
+ *   n      <-- number of rows
+ *   ad_inv <-- diagonal inverse
+ *   x_in   <-- input vector
+ *   w      <-- work array (A-diag)*Gk
+ *   x_out  --> output vector
+ *----------------------------------------------------------------------------*/
+
+__global__ static void
+_pc_poly_finalize(cs_lnum_t        n,
+                  const cs_real_t  ad_inv[restrict],
+                  const cs_real_t  x_in[restrict],
+                  const cs_real_t  w[restrict],
+                  cs_real_t        x_out[restrict])
+{
+  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+  size_t grid_size = blockDim.x*gridDim.x;
+
+  while (ii < n) {
+    x_out[ii] = (x_in[ii] - w[ii]) * ad_inv[ii];
+    ii += grid_size;
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -271,27 +298,27 @@ cs_sles_pc_cuda_apply_poly(void                *context,
 
     cs_real_t *restrict _r = c->aux + CS_SIMD_SIZE(c->n_cols);
 
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-      _r[ii] = x_out[ii];
+    cudaMemcpy(_r, x_out, n_rows*sizeof(cs_real_t), cudaMemcpyDeviceToDevice);
 
     r = _r;
-
   }
 
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-    x_out[ii] = r[ii] * ad_inv[ii];
+  cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
+
+  const unsigned int blocksize = 256;
+  unsigned int gridsize = cs_cuda_grid_size(n_rows, blocksize);
+
+  _pc_jacobi<<<gridsize, blocksize, 0, stream>>>
+    (n_rows, ad_inv, r, x_out);
 
   for (int deg_id = 1; deg_id <= c->poly_degree; deg_id++) {
 
     /* Compute Wk = (A-diag).Gk */
 
-    cs_matrix_vector_multiply_partial(c->a, CS_MATRIX_SPMV_E, x_out, w);
+    cs_matrix_vector_multiply_partial_d(c->a, CS_MATRIX_SPMV_E, x_out, w);
 
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-      x_out[ii] = (r[ii] - w[ii]) * ad_inv[ii];
+    _pc_poly_finalize<<<gridsize, blocksize, 0, stream>>>
+      (n_rows, ad_inv, r, w, x_out);
 
   }
 
