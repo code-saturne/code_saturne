@@ -80,8 +80,7 @@ cs_user_boundary_conditions.f90 cs_user_extra_operations.f90 \
 cs_user_initialization.f90  \
 cs_user_parameters.f90 \
 cs_user_physical_properties.f90 \
-cs_user_source_terms.f90 \
-cs_user_porosity.f90
+cs_user_source_terms.f90
 
 # Library source files
 
@@ -152,17 +151,11 @@ cs_user_f_source_terms = $(top_srcdir)/src/user/cs_user_source_terms.f90
 cs_f_user_source_terms.$(OBJEXT): $(cs_user_f_source_terms)
 	$(FCCOMPILE) -c -o cs_f_user_source_terms.$(OBJEXT)  $(cs_user_f_source_terms)
 
-cs_user_f_porosity = $(top_srcdir)/src/user/cs_user_porosity.f90
-
-cs_f_user_porosity.$(OBJEXT): $(cs_user_f_porosity)
-	$(FCCOMPILE) -c -o cs_f_user_porosity.$(OBJEXT)  $(cs_user_f_porosity)
-
 noinst_LIBRARIES = libcsuser.a
 libcsuser_a_SOURCES = $(userfiles)
 libcsuser_a_LIBADD = cs_f_user_parameters.$(OBJEXT) cs_f_user_extra_operations.$(OBJEXT) \
 cs_f_user_initialization.$(OBJEXT) cs_f_user_physical_properties.$(OBJEXT) \
-cs_f_user_source_terms.$(OBJEXT) cs_f_user_boundary_conditions.$(OBJEXT) \
-cs_f_user_porosity.$(OBJEXT)
+cs_f_user_source_terms.$(OBJEXT) cs_f_user_boundary_conditions.$(OBJEXT)
 
 userdir = $(pkgdatadir)/user_sources/REFERENCE
 user_DATA = $(userfiles) cs_user_modules.f90 \
@@ -171,8 +164,7 @@ cs_user_parameters.f90 \
 cs_user_extra_operations.f90 \
 cs_user_initialization.f90 \
 cs_user_physical_properties.f90 \
-cs_user_source_terms.f90 \
-cs_user_porosity.f90
+cs_user_source_terms.f90
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod

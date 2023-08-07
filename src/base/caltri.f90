@@ -108,7 +108,7 @@ double precision, dimension(:,:), pointer :: xyzno0 => null()
 
 procedure() :: armtps, atmsol, cplact, cplsyn, cscini
 procedure() :: cs_f_user_extra_operations, ecrava, ecrlis, iniva0, inivar
-procedure() :: lecamo, reqsui, phyvar, stusui, trbsui, uiexop, uiporo, usporo
+procedure() :: lecamo, reqsui, phyvar, stusui, trbsui, uiexop, uiporo
 
 interface
 
@@ -485,7 +485,7 @@ if (iporos.ge.1) then
   if (compute_porosity_from_scan) then
     write(nfecra, *) " Compute porosity field from scan"
     write(nfecra, *) " WARNING: user porosity will be ignored"
-    write(nfecra, *) " (GUI, usporo.f90, cs_user_porosity.c)"
+    write(nfecra, *) " (GUI, cs_user_porosity.c)"
     call cs_compute_porosity_from_scan()
 
     ! Note using porosity from scan: give the hand to the user
@@ -495,9 +495,6 @@ if (iporos.ge.1) then
   else
 
     call uiporo
-    call usporo
-
-    ! C version
     call user_porosity
 
     call field_get_val_s(ipori, porosi)
