@@ -3,6 +3,8 @@ Release 8.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Atmo: fix uninitialized value in soil model.
+
 - Handle time step updates in a more robust manner for adaptive
   time step (idtvar = 1), so that operations run in the beginning
   of a time step (such as physical property updates) see the current

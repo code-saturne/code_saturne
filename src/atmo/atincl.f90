@@ -827,7 +827,7 @@ use atsoil
 implicit none
 
 ! Local variables
-integer :: imode, n_level, n_times, n_level_t
+integer :: imode, n_level, n_times, n_level_t, ii
 
 type(c_ptr) :: c_z_dyn_met, c_z_temp_met, c_u_met, c_v_met, c_time_met
 type(c_ptr) :: c_hyd_p_met, c_pot_t_met, c_ek_met, c_ep_met
@@ -899,6 +899,12 @@ if (imeteo.gt.0) then
     allocate(rayi(kmx,nvert), rayst(kmx,nvert), zray(kmx))
 
     allocate(soilvert(nvert))
+    ! Initialize foir and fos for the first iteration
+    do ii = 1, nvert
+      soilvert(ii)%foir = 0.d0
+      soilvert(ii)%fos = 0.d0
+    enddo
+
 
     call mestcr("rayi"//c_null_char, 1, 0, idrayi)
     call mestcr("rayst"//c_null_char, 1, 0, idrayst)
