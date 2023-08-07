@@ -34,7 +34,7 @@ and *libraries*.
     *Python* code.
 - *GUI* and scripts (*TUI*): [Python](https://www.python.org/),
   [PyQt](https://riverbankcomputing.com/software/pyqt/intro).
-- *Preprocessor*: *C* compiler (C99 or above)
+- *Preprocessor*: *C* compiler (C11 or above)
   - Optional mesh format libraries: *MED*, *CGNS*, *libCCMIO* (see install guide for details).
 - *Solver*: *C* and *Fortran* compilers (C11 or above, Fortran 2008 or above.
   - Multiple optional external libraries: *MPI*, *PT-SCOTCH*, *MED*, *CGNS*, *Catalyst*,
@@ -61,6 +61,9 @@ C programming
 - For French readers, the IDRIS course is recommended: http://www.idris.fr/formations/c/
   - *MPI* and *OpenMP* Courses may also be found on the main course material page:
     [MPI_OpenMP](http://www.idris.fr/formations/supports_de_cours.html)
+
+For visualization of code execution (Python, C, C++, and more), the following educational tool is
+very nice: https://pythontutor.com.
 
 C and Fortran basics
 ====================
