@@ -100,10 +100,6 @@ type soil_tab
   double precision :: pressure
   !> density
   double precision :: density
-  !> IR downcoming flux
-  double precision :: foir
-  !> solar radation absorbed by the soil
-  double precision :: fos
 end type soil_tab
 
 !> Class soilvert dimension

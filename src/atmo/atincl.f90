@@ -913,11 +913,6 @@ if (iatra1.eq.1) then
 
   ! Allocate additional arrays for 1D radiative model
   allocate(soilvert(nvert))
-  ! Initialize foir and fos for the first iteration
-  do ii = 1, nvert
-    soilvert(ii)%foir = 0.d0
-    soilvert(ii)%fos = 0.d0
-  enddo
 
 endif
 

@@ -568,7 +568,7 @@ else
 
       ufir(i) = sig*ufir(i)+emis*sig*t41+(1.-emis)*foirs
     else
-      ufir(k1) = (1.-emis)*foir+emis*sig*t41
+      ufir(k1) = (1.d0-emis)*foir+emis*sig*t41
     endif
 
   enddo

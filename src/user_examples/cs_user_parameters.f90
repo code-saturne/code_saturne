@@ -423,8 +423,6 @@ if (iatsoil.ne.0) then
     soilvert(iiv)%totwat  = 0.0043d0
     soilvert(iiv)%pressure = 1023.d0
     soilvert(iiv)%density = 1.23d0
-    soilvert(iiv)%foir = 0.d0
-    soilvert(iiv)%fos  = 0.d0
   enddo
 endif
 

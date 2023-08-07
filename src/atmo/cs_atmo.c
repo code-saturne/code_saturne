@@ -52,6 +52,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_array.h"
 #include "cs_atmo_profile_std.h"
 #include "cs_base.h"
 #include "cs_boundary_conditions.h"
@@ -1767,12 +1768,16 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
     BFT_MALLOC(_atmo_option.rad_1d_sol_div, n_level * n_vert, cs_real_t);
   if (         _atmo_option.rad_1d_iru == NULL)
     BFT_MALLOC(_atmo_option.rad_1d_iru, n_level * n_vert, cs_real_t);
-  if (         _atmo_option.rad_1d_ird == NULL)
+  if (         _atmo_option.rad_1d_ird == NULL) {
     BFT_MALLOC(_atmo_option.rad_1d_ird, n_level * n_vert, cs_real_t);
+    cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_ird);
+  }
   if (         _atmo_option.rad_1d_solu == NULL)
     BFT_MALLOC(_atmo_option.rad_1d_solu, n_level * n_vert, cs_real_t);
-  if (         _atmo_option.rad_1d_sold == NULL)
+  if (         _atmo_option.rad_1d_sold == NULL) {
     BFT_MALLOC(_atmo_option.rad_1d_sold, n_level * n_vert, cs_real_t);
+    cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_sold);
+  }
 
   *xyvert = _atmo_option.rad_1d_xy;
   *zvert  = _atmo_option.rad_1d_z;

@@ -120,11 +120,6 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
   endif
 
   ! --- Initialization:
-  do ii = 1, nvert
-    soilvert(ii)%foir = 0.d0
-    soilvert(ii)%fos  = 0.d0
-  enddo
-
   do k = 2, kvert
     zray(k) = 0.d0
     preray(k) = 0.d0
@@ -411,8 +406,6 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
                qvray, qlray, fneray, romray, preray, temray, aeroso,     &
                fos, rayst(:,ii), ncray)
 
-    soilvert(ii)%fos = fos
-    soilvert(ii)%foir = foir
   enddo
 
   do ii = 1, kmx*nvert

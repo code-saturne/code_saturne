@@ -206,8 +206,8 @@ do isol = 1, nfmodsol
   tprof  = bpro_tprof (isol)
 
   if (iatra1.eq.1) then
-    foir = soilvert(1)%foir !FIXME not correct for many verticals
-    fos  = soilvert(1)%fos
+    foir = ird(1, 1) !FIXME not correct for many verticals
+    fos  = sold(1, 1)
   else
     foir = 0.d0
     fos  = 0.d0
@@ -383,8 +383,7 @@ do isol = 1, nfmodsol
     !     9) calcul du second membre de l'equation d'evolution de tssol
     !     ==========================================================
 
-    ! Warning: fos already contains (1-albedo) factor!
-    ray2 = fos + emis*foir + 3.d0*emis*stephn*(tssol**4)
+    ray2 = fos * (1.d0 -albedo) + emis*foir + 3.d0*emis*stephn*(tssol**4)
     chas2 = cht*tpot2*((pres1/ps)**rscp1)
     chal2 = chq*(qv(iel)*(1.d0 - veg*(1.d0 - hu)) - hu*(qsat - tssol*dqsat))
     rapp2 = 2.d0*pi*(tprof + tkelvi)/tau1
