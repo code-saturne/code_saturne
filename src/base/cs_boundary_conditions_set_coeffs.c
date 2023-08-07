@@ -3288,7 +3288,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
    *     Dirichlet and Neumann and convective outlet
    *--------------------------------------------------------------------------*/
 
-  if (f_displ != NULL) {
+  if (cs_glob_ale == CS_ALE_LEGACY) {
 
     cs_field_t *m_vel = cs_field_by_name("mesh_velocity");
 
