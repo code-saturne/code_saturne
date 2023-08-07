@@ -883,7 +883,7 @@ implicit none
 procedure() :: atlecm
 
 ! Local variables
-integer :: n_level, n_times, n_level_t
+integer :: n_level, n_times, n_level_t, ii
 
 type(c_ptr) :: c_z_dyn_met, c_z_temp_met, c_u_met, c_v_met, c_time_met
 type(c_ptr) :: c_w_met
@@ -913,6 +913,11 @@ if (iatra1.eq.1) then
 
   ! Allocate additional arrays for 1D radiative model
   allocate(soilvert(nvert))
+  ! Initialize foir and fos for the first iteration
+  do ii = 1, nvert
+    soilvert(ii)%foir = 0.d0
+    soilvert(ii)%fos = 0.d0
+  enddo
 
 endif
 
