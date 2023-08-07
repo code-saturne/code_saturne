@@ -92,6 +92,8 @@ type(var_cal_opt) :: vcopt
 
 double precision, dimension(:), pointer :: brom, crom
 
+procedure() :: compute_td_pressure_perfect_gas
+
 !===============================================================================
 
 !===============================================================================

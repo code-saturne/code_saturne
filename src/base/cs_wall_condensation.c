@@ -966,8 +966,6 @@ cs_wall_condensation_create(cs_lnum_t  nfbpcd,
                             cs_lnum_t  nvolumes,
                             cs_lnum_t  nvar)
 {
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-
   _wall_cond.nfbpcd = nfbpcd;
   if (nzones < 1) {
     _wall_cond.nzones = 1;

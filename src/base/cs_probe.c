@@ -1640,7 +1640,7 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
 
   for (int i = 0; i < pset->n_probes; i++) {
     if (pset->elt_id[i] < 0) /* Not found */
-      distance[i] = HUGE_VAL;
+      distance[i] = HUGE_VALF;
   }
 
   /* Warning if points have not been located */
@@ -1653,7 +1653,7 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
   if (cs_glob_n_ranks == 1 || pset->p_define_func != NULL) {
 
     for (int i = 0; i < pset->n_probes; i++) {
-      if (distance[i] >= 0.5*HUGE_VAL) {
+      if (distance[i] >= 0.5*HUGE_VALF) {
         pset->located[i] = 0;
         n_unlocated_probes += 1;
       }
@@ -1700,7 +1700,7 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
                   cs_glob_mpi_comm);
 
     for (int i = 0; i < pset->n_probes; i++) {
-      if (gmin_loc[i].val >= 0.5*HUGE_VAL) {
+      if (gmin_loc[i].val >= 0.5*HUGE_VALF) {
         pset->located[i] = 0;
         n_unlocated_probes++;
       }

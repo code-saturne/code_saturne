@@ -295,9 +295,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   /* Allocate temporary arrays */
 
-  BFT_MALLOC(dam, n_cells_ext, cs_real_t);
-  BFT_MALLOC(smbini, n_cells_ext, cs_real_t);
-
   cs_real_t *adxk = NULL, *adxkm1 = NULL, *dpvarm1 = NULL, *rhs0 = NULL;
 
   if (iswdyp >= 1) {
@@ -313,8 +310,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   bool symmetric = (isym == 1) ? true : false;
 
-  BFT_MALLOC(xam, isym*n_i_faces, cs_real_t);
-
   /* Periodicity has to be taken into account */
 
   /* Initialization for test before matrix vector product
@@ -323,6 +318,9 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   /*============================================================================
    * 1.  Building of the "simplified" matrix
    *==========================================================================*/
+
+  BFT_MALLOC(dam, n_cells_ext, cs_real_t);
+  BFT_MALLOC(xam, isym*n_i_faces, cs_real_t);
 
   cs_matrix_wrapper_scalar(iconvp,
                            idiffp,
@@ -340,7 +338,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                            xcpp,
                            dam,
                            xam);
-
 
   /* Precaution if diagonal is 0, which may happen is all surrounding cells
    * are disabled
@@ -418,6 +415,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   }
 
   /* Before looping, the RHS without reconstruction is stored in smbini */
+
+  BFT_MALLOC(smbini, n_cells_ext, cs_real_t);
 
   cs_lnum_t has_dc = mq->has_disable_flag;
 # pragma omp parallel if(n_cells > CS_THR_MIN)
