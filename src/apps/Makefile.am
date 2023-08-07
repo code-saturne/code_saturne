@@ -195,6 +195,8 @@ all-local: ${local_libraries_add} cs_solver$(EXEEXT)
 # SIGBUS errors due to an incomplete (in progress) copy or possibly other
 # address changes.
 
+if ENABLE_SHARED
+
 install-exec-hook: ${local_libraries_add}
 	@list=; for p in ${local_libraries_v_add} ${local_libraries_add}; do \
 	  if test -f $$p; then \
@@ -223,6 +225,31 @@ install-exec-hook: ${local_libraries_add}
 	CS_TOP_BUILDDIR=$(top_builddir) \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	 --mode=install --dest "$(DESTDIR)"
+
+else
+
+install-exec-hook: ${local_libraries_add}
+	@list=; for p in ${local_libraries_v_add} ${local_libraries_add}; do \
+	  if test -f $$p; then \
+	    list="$$list $$p"; \
+	  else :; fi; \
+	done; \
+	test -z "$$list" -a -n "$(libdir)" || { \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(libdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(libdir)" || exit 1; \
+	  for p in $$list; do \
+	    echo " rm -f '$(DESTDIR)$(libdir)/$$p'"; \
+	    rm -f "$(DESTDIR)$(libdir)/$$p"; \
+	    echo " cp -fp $$p '$(DESTDIR)$(pkglibdir)'"; \
+	    cp -fpP $$p "$(DESTDIR)$(libdir)"; \
+	  done; \
+	}; \
+	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
+	CS_TOP_BUILDDIR=$(top_builddir) \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
+	 --mode=install --dest "$(DESTDIR)"
+
+endif
 
 clean-local:
 	-rm -f cs_solver$(EXEEXT)
