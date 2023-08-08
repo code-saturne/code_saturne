@@ -232,6 +232,30 @@ type(var_cal_opt), pointer :: p_k_value
 type(c_ptr) :: c_k_value
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+ subroutine cs_at_source_term_for_inlet(tsexp) &
+   bind(C, name='cs_at_source_term_for_inlet')
+   use, intrinsic :: iso_c_binding
+   implicit none
+   real(kind=c_double), dimension(3,*), intent(inout) :: tsexp
+ end subroutine cs_at_source_term_for_inlet
+
+ subroutine visecv(secvif, secvib) &
+   bind(C, name='cs_secondary_viscosity')
+   use, intrinsic :: iso_c_binding
+   implicit none
+   real(kind=c_double), dimension(*), intent(inout) :: secvif, secvib
+ end subroutine visecv
+
+end interface
+
+!===============================================================================
+
+!===============================================================================
 ! 1. Initialization
 !===============================================================================
 

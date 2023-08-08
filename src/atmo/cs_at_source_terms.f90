@@ -32,11 +32,14 @@
 !> \param[in]   crvexp          explicit part of the momentum source term
 !-------------------------------------------------------------------------------
 
-subroutine cs_at_source_term_for_inlet(crvexp)
+subroutine cs_at_source_term_for_inlet(crvexp) &
+  bind(C, name='cs_at_source_term_for_inlet')
 
 !===============================================================================
 ! Module files
 !===============================================================================
+
+use, intrinsic :: iso_c_binding
 
 use paramx
 use numvar

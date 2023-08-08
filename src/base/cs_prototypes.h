@@ -158,6 +158,16 @@ cs_atmo_chem_source_terms(int         iscal,
                           cs_real_t   st_imp[]);
 
 /*----------------------------------------------------------------------------*/
+/*! \brief Additional right-hand side source terms for momentum equation in case
+ *        of free inlet
+ * \param[in]   st_exp          explicit part of the momentum source term
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_at_source_term_for_inlet(cs_real_3_t   st_exp[]);
+
+/*----------------------------------------------------------------------------*/
 /*! \brief Compute the vaporization source term
   * \f$ \Gamma_V \left(\alpha, p\right) = m^+ + m^- \f$ using the
   * Merkle model:
@@ -413,6 +423,41 @@ cs_fortran_resize_aux_arrays(void);
 void
 cs_sat_coupling_exchange_at_cells(int         f_id,
                                   cs_real_t   st_exp[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Computes the secondary viscosity contribution \f$\kappa
+ * -\dfrac{2}{3} \mu\f$ in order to compute:
+ * \f[
+ * \grad\left( (\kappa -\dfrac{2}{3} \mu) \trace( \gradt(\vect{u})) \right)
+ * \f]
+ * with:
+ *   - \f$ \mu = \mu_{laminar} + \mu_{turbulent} \f$
+ *   - \f$ \kappa \f$ is the volume viscosity (generally zero)
+ *
+ * \remark
+ * In LES, the tensor
+ * \f$\overline{\left(\vect{u}-\overline{\vect{u}}\right)\otimes\left(\vect{u}
+ *-\overline{\vect{u}}\right)}\f$
+ * is modeled by \f$\mu_t \overline{\tens{S}}\f$
+ * and not by
+ * \f$\mu_t\overline{\tens{S}}-\dfrac{2}{3}\mu_t
+ * \trace\left(\overline{\tens{S}}\right)\tens{1}+\dfrac{2}{3}k\tens{1}\f$
+ * so that no term
+ * \f$\mu_t \dive \left(\overline{\vect{u}}\right)\f$ is needed.
+ *
+ * Please refer to the
+ * <a href="../../theory.pdf#visecv"><b>visecv</b></a> section
+ * of the theory guide for more informations.
+ *
+ * \param[in,out] secvif        lambda*surface at interior faces
+ * \param[in,out] secvib        lambda*surface at boundary faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_secondary_viscosity(cs_real_t  secvif[],
+                       cs_real_t  secvib[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
