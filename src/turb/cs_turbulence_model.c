@@ -2526,7 +2526,7 @@ cs_turbulence_function_eps(int              location_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_function_rij(int              location_id,
+cs_turbulence_function_rij(int               location_id,
                            cs_lnum_t         n_elts,
                            const cs_lnum_t  *elt_ids,
                            void             *input,

@@ -1589,7 +1589,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
   /* Automatic reinitialization at the end of the first iteration:
      wall distance y^+ is computed with -C log(1-alpha), where C=CL*Ceta*L*kappa,
      then y so we have an idea of the wall distance in complex geometries.
-     Then U is initalp_blized with a Reichard layer,
+     Then U is initialized with a Reichard layer,
      Epsilon by 1/(kappa y), clipped next to the wall at its value for y^+=15
      k is given by a blending between eps/(2 nu)*y^2 and utau/sqrt(Cs_Turb_Cmu)
      The blending function is chosen so that the asymptotic behavior

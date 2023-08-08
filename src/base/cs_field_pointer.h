@@ -241,7 +241,7 @@ typedef enum {
   CS_ENUMF_(kindiff),        /*!< Particles kinetic diffusivity */
   CS_ENUMF_(coldiff),        /*!< Particles collisional diffusivity */
   CS_ENUMF_(elast),          /*!< Particles restitution coefficient */
-  CS_ENUMF_(c_alpha),        /*!< Ponderation coefficient for GEMMA model */
+  CS_ENUMF_(c_alpha),        /*!< Weighting coefficient for GEMMA model */
 
   /* Added variables (scalars) */
   CS_ENUMF_(add_var),        /*!< User added variables */
