@@ -1827,7 +1827,15 @@ _matrix_assembler_compute_local(cs_matrix_assembler_t  *ma)
     n_rows = ma->l_range[1] - ma->l_range[0];
 
   cs_lnum_t  *c_count;
-  BFT_MALLOC(ma->_r_idx, n_rows+1, cs_lnum_t);
+
+#if defined(HAVE_CUDA)
+  cs_alloc_mode_t alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
+#else
+  cs_alloc_mode_t alloc_mode = CS_ALLOC_HOST;
+#endif
+
+  CS_MALLOC_HD(ma->_r_idx, n_rows+1, cs_lnum_t, alloc_mode);
+
   ma->r_idx = ma->_r_idx;
 
   BFT_MALLOC(c_count, n_rows, cs_lnum_t);
@@ -1872,7 +1880,7 @@ _matrix_assembler_compute_local(cs_matrix_assembler_t  *ma)
 
   /* Allocate structures holding data */
 
-  BFT_MALLOC(ma->_c_id, ma->_r_idx[n_rows], cs_lnum_t);
+  CS_MALLOC_HD(ma->_c_id, ma->_r_idx[n_rows], cs_lnum_t, alloc_mode);
   ma->c_id = ma->_c_id;
 
   /* Now fill data: local part is determined (will be cleaned),
@@ -2616,8 +2624,8 @@ cs_matrix_assembler_destroy(cs_matrix_assembler_t  **ma)
     BFT_FREE(_ma->d_g_c_id);
     BFT_FREE(_ma->d_r_idx);
 
-    BFT_FREE(_ma->_c_id);
-    BFT_FREE(_ma->_r_idx);
+    CS_FREE_HD(_ma->_c_id);
+    CS_FREE_HD(_ma->_r_idx);
 
     BFT_FREE(*ma);
   }
