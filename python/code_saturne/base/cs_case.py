@@ -1344,7 +1344,9 @@ class case:
                                                           tool_args, use_mps)
 
                 if n_procs:
-                    mpi_cmd += '-n '+ str(n_procs) + ' '
+                    b = cs_exec_environment.batch_info()
+                    if b.batch_type is None:
+                        mpi_cmd += '-n '+ str(n_procs) + ' '
 
             else:
                 raise RunCaseError(' No allowed MPI MPMD mode defined.\n')

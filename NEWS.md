@@ -3,6 +3,10 @@ Release 8.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Remove spurious proc count command for coupled cases in batch environment;
+  This could conflict with the command already determined, and prevent
+  launch of computations coupled with Syrthes on a SLURM environment.
+
 - Fix crash in absolute pressure and velocity evaluations with Coriolis
   forces used in postprocessing output.
 
