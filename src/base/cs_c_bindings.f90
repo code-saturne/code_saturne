@@ -5219,46 +5219,6 @@ contains
 
   !=============================================================================
 
-  !> \brief  Wrapper to Fortran user boundary condition definitions.
-
-  !> \param[in, out]  bc_type  boundary face types
-
-  subroutine cs_f_usalcl_wrapper(c_itrale, itypfb, ialtyb, impale,  &
-                                 dt, xyzno0, disale)  &
-    bind(C, name='cs_f_usalcl_wrapper')
-
-    use dimens
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer(kind=c_int), value :: c_itrale
-    integer(kind=c_int), dimension(*), intent(inout) :: itypfb, ialtyb, impale
-    real(c_double), dimension(*), intent(in) :: dt, xyzno0
-    real(c_double), dimension(*) :: disale
-
-    ! Externals
-
-    procedure() :: usalcl
-
-    ! Local variables
-
-    integer itrale
-
-    integer, pointer, dimension(:,:) :: icodcl
-    double precision, pointer, dimension(:,:,:) :: rcodcl
-
-    itrale = c_itrale
-    call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
-
-    call usalcl(itrale, nvar, nscal, icodcl, itypfb,  ialtyb, impale,  &
-                dt, rcodcl, xyzno0, disale)
-
-  end subroutine cs_f_usalcl_wrapper
-
-  !=============================================================================
-
   !> \brief  Add field defining a general solved variable, with default options.
 
   !> \param[in]  name           field name

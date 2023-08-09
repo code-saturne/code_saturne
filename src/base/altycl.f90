@@ -118,7 +118,7 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 2. Check the consistency of BC types (IALTYB) given in USALCL
+! 2. Check the consistency of BC types (IALTYB)
 !===============================================================================
 
 ! When using CDO solver, no need of checks.
@@ -435,7 +435,7 @@ enddo
 '@'                                                            ,/,&
 '@    The calculation will not be run.'                        ,/,&
 '@'                                                            ,/,&
-'@ Check boundary conditions in the GUI or in usalcl.f90.'     ,/,&
+'@ Check boundary condition definitions.'                      ,/,&
 '@'                                                              )
  2000 format(                                                     &
 '@'                                                            ,/,&
@@ -477,7 +477,7 @@ enddo
 '@   for mesh velocity.'                                       ,/,&
 '@   (cf. message(s) above)'                                   ,/,&
 '@'                                                            ,/,&
-'@ Check boundary conditions in the GUI or in usalcl.f90.'     ,/,&
+'@ Check boundary condition definitions.'                      ,/,&
 '@'                                                              )
 
 return

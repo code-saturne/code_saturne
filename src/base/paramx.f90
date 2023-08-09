@@ -248,16 +248,28 @@ module paramx
 
   !> \}
 
-  ! Temporary former Fortan subroutine names so that the user subroutines
-  ! do not compile if the deprecated name (now used for the C routine) is used.
-  integer cs_user_boundary_conditions, cs_user_parameters,         &
-          cs_user_initialization, cs_user_physical_properties,     &
-          cs_user_extra_operations, ushist, cs_f_user_head_losses, &
-          cs_user_mass_source_terms,                               &
-          cs_user_turbulence_source_terms,                         &
-          cs_user_turbulence_source_terms2,                        &
-          usatph, ussmag, ustsnv, ustsvv, usvosy, usvpst, usati1,  &
-          usthht, usatsoil, usstr1, usstr2, usatdv, usporo,        &
-          cs_user_cooling_towers
+  ! Former Fortan subroutine names so that the user subroutines do not compile
+  ! if the deprecated name (now used for the C routine) is used.
+
+  ! This prevents compilation with the GNU Fortran compiler, but does not
+  ! prevent compilation with the Intel compilers, so another safety mechanism
+  ! may be needed. On Linux, using "nm" on the compiled user-defined routines
+  ! and comparing the output to this black list in the "code_saturne compile"
+  ! command would be a possibility, but a simpler compiled source-only solution
+  ! would be preferred.
+
+  procedure() :: cs_f_user_head_losses
+
+  procedure() :: cs_user_boundary_conditions, cs_user_cooling_towers,     &
+                 cs_user_extra_operations, cs_user_initialization,        &
+                 cs_user_mass_source_terms,                               &
+                 cs_user_metal_structures_source_terms,                   &
+                 cs_user_parameters, cs_user_physical_properties,         &
+                 cs_user_turbulence_source_terms,                         &
+                 cs_user_turbulence_source_terms2
+
+  procedure() :: usalcl, usatdv, usati1, usatph, usatsoil, ushist,        &
+                 usporo, ussmag, usstr1, usstr2, ustsnv, ustsvv, usthht,  &
+                 usvosy, usvpst
 
 end module paramx

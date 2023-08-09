@@ -153,15 +153,6 @@ cs_f_clsyvt(cs_real_t  velipb[][3],
             cs_real_t  rijipb[][6]);
 
 void
-cs_f_usalcl_wrapper(int              itrale,
-                    int             *itypfb,
-                    int             *ale_bc_type,
-                    int             *impale,
-                    cs_real_t        dt[],
-                    const cs_real_t  xyzno0[][3],
-                    cs_real_t        disale[][3]);
-
-void
 cs_f_altycl(int        *itypfb,
             int        *ale_bc_type,
             int        *impale,
@@ -421,14 +412,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     /* GUI and user-defined function-based definitions */
 
     cs_gui_mobile_mesh_boundary_conditions(ale_bc_type, impale, disale);
-
-    cs_f_usalcl_wrapper(itrale,
-                        bc_type,
-                        ale_bc_type,
-                        impale,
-                        dt,
-                        xyzno0,
-                        disale);
 
     cs_user_boundary_conditions_ale(cs_glob_domain,
                                     bc_type,
@@ -3553,14 +3536,6 @@ cs_boundary_conditions_set_coeffs_init(int  itrale)
     /* GUI and user-defined function-based definitions */
 
     cs_gui_mobile_mesh_boundary_conditions(ale_bc_type, impale, disale);
-
-    cs_f_usalcl_wrapper(itrale,
-                        bc_type,
-                        ale_bc_type,
-                        impale,
-                        dt,
-                        xyzno0,
-                        disale);
 
     cs_user_boundary_conditions_ale(cs_glob_domain,
                                     bc_type,
