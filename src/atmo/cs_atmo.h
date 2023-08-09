@@ -208,7 +208,8 @@ typedef struct {
   cs_real_t *rad_1d_ir_div;
   /*! flux divergence of solar radiation */
   cs_real_t *rad_1d_sol_div;
-  /*! Upward and downward radiative fluxes (infrared, solar) along each vertical */
+  /*! Upward and downward radiative fluxes (infrared, solar)
+    along each vertical */
   cs_real_t *rad_1d_iru;
   cs_real_t *rad_1d_ird;
   cs_real_t *rad_1d_solu;
@@ -234,7 +235,8 @@ typedef struct {
    *  1: Pruppacher and Klett 1997
    *  2: Cohard et al. 1998,1999
    *  3: Abdul-Razzak et al. 1998,2000
-   *  logaritmic standard deviation of the log-normal law of the droplet spectrum
+   *  logaritmic standard deviation of the log-normal law of the
+   *  droplet spectrum
    */
   int nucleation_model;
   /*!  Option for subgrid models
@@ -373,11 +375,11 @@ typedef struct {
 typedef struct {
 
   /*! Choice of chemistry resolution scheme
-       - 0 --> no atmospheric chemistry
-       - 1 --> quasi steady equilibrium NOx scheme with 4 species and 5 reactions
-       - 2 --> scheme with 20 species and 34 reactions
-       - 3 --> CB05 scheme with 52 species and 155 reactions
-       - 4 --> user defined schema from SPACK */
+    - 0 --> no atmospheric chemistry
+    - 1 --> quasi steady equilibrium NOx scheme with 4 species and 5 reactions
+    - 2 --> scheme with 20 species and 34 reactions
+    - 3 --> CB05 scheme with 52 species and 155 reactions
+    - 4 --> user defined schema from SPACK */
 
   int model;
   int n_species;
