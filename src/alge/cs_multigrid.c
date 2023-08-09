@@ -50,6 +50,7 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
+#include "cs_base_accel.h"
 #include "cs_blas.h"
 #include "cs_file.h"
 #include "cs_grid.h"
@@ -1683,7 +1684,8 @@ _multigrid_setup_sles_work_arrays(cs_multigrid_t  *mg,
         wr_size1 += block_size;
     }
 
-    BFT_MALLOC(mgd->rhs_vx_buf, wr_size0*n0 + wr_size1*n1, cs_real_t);
+    CS_MALLOC_HD(mgd->rhs_vx_buf, wr_size0*n0 + wr_size1*n1, cs_real_t,
+                 cs_alloc_mode);
 
     size_t block_size_shift = 0;
 
@@ -2882,7 +2884,6 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
   cs_real_t *restrict vx_lv = NULL;
 
   const cs_real_t *restrict rhs_lv = NULL;
-  const cs_matrix_t  *_matrix = NULL;
   const cs_grid_t *f = NULL, *c= NULL;
 
   bool end_cycle = false;
@@ -2906,6 +2907,9 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
 
   denom_n_g_rows_0 = 1.0 / n_g_rows;
 
+  const cs_matrix_t *_matrix = cs_grid_get_matrix(f);
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(_matrix);
+
   /* Allocate wr or use working area
      (note the finest grid could have less elements than a coarser
      grid to wich rank merging has been applied, hence the test below) */
@@ -2918,13 +2922,13 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
     wr_size = CS_SIMD_SIZE(wr_size);
   }
 
-  if (_aux_r_size >= wr_size) {
+  if (_aux_r_size >= wr_size && amode <= CS_ALLOC_HOST) {
     wr = aux_vectors;
     _aux_vectors = wr + wr_size;
     _aux_r_size -= wr_size;
   }
   else
-    BFT_MALLOC(wr, wr_size, cs_real_t);
+    CS_MALLOC_HD(wr, wr_size, cs_real_t, amode);
 
   /* map arrays for rhs and vx;
      for the finest level, simply point to input and output arrays */
@@ -2992,7 +2996,12 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
        correct sign and meaning of the residual
        (regarding timing, this stage is part of the descent smoother) */
 
-    cs_matrix_vector_multiply(_matrix, vx_lv, wr);
+#if defined(HAVE_ACCEL)
+    if (cs_matrix_get_alloc_mode(_matrix) > CS_ALLOC_HOST)
+      cs_matrix_vector_multiply_d(_matrix, vx_lv, wr);
+    else
+#endif
+      cs_matrix_vector_multiply(_matrix, vx_lv, wr);
 
     _n_rows = n_rows*db_size;
 #   pragma omp parallel for if(_n_rows > CS_THR_MIN)
@@ -3379,7 +3388,13 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                   f_matrix, rhs_lv, vx_lv);
 
   /* Compute new residual */
-  cs_matrix_vector_multiply(f_matrix, vx_lv, rt_lv);
+
+#if defined(HAVE_ACCEL)
+  if (cs_matrix_get_alloc_mode(f_matrix) > CS_ALLOC_HOST)
+    cs_matrix_vector_multiply_d(f_matrix, vx_lv, rt_lv);
+  else
+#endif
+    cs_matrix_vector_multiply(f_matrix, vx_lv, rt_lv);
 
 # pragma omp parallel for if(_f_n_rows > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < _f_n_rows; ii++)
@@ -3646,7 +3661,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                   c_matrix, rb_lv, z2_lv);
 
 # pragma omp parallel for if(_f_n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++)
+  for (cs_lnum_t ii = 0; ii < _f_n_rows; ii++)
     vx_lv[ii] += z1_lv[ii] + z2_lv[ii];
 
   t1 = cs_timer_time();
@@ -4444,7 +4459,7 @@ cs_multigrid_free(void  *context)
     /* Free coarse solution data */
 
     BFT_FREE(mgd->rhs_vx);
-    BFT_FREE(mgd->rhs_vx_buf);
+    CS_FREE_HD(mgd->rhs_vx_buf);
 
     /* Destroy solver hierarchy */
 
