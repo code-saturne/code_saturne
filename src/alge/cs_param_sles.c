@@ -1497,6 +1497,12 @@ _set_saturne_sles(bool                 use_field_id,
       break;
 
     case CS_PARAM_ITSOL_FCG:
+      itsol = cs_sles_it_define(slesp->field_id, sles_name,
+                                CS_SLES_FCG,
+                                poly_degree,
+                                slesp->cvg_param.n_max_iter);
+      break;
+
     case CS_PARAM_ITSOL_GKB_CG:
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                 CS_SLES_IPCG,
