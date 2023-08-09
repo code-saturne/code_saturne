@@ -1387,20 +1387,22 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
 
   if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
     cudaMemPrefetchAsync(rhs, vec_size, device_id, stream_pf);
-  else if (amode_rhs == CS_ALLOC_HOST) {
-    cudaMemPrefetchAsync(rhs, vec_size, device_id, stream_pf);
-  }
 
   {
     const size_t n_wa = 5;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      // CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, CS_ALLOC_DEVICE);
-      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t,
-                   CS_ALLOC_HOST_DEVICE_SHARED);
+
+    if (   aux_vectors == NULL
+        || cs_check_device_ptr(aux_vectors) != CS_ALLOC_HOST_DEVICE_SHARED
+        || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+       CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t,
+                    CS_ALLOC_HOST_DEVICE_SHARED);
     else
       _aux_vectors = (cs_real_t *)aux_vectors;
+
+    cudaMemPrefetchAsync(_aux_vectors, wa_size*n_wa*sizeof(cs_real_t),
+                         device_id, stream_pf);
 
     rk = _aux_vectors;
     vk = _aux_vectors + wa_size;
