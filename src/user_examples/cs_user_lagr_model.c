@@ -316,6 +316,10 @@ cs_user_lagr_model(void)
   if (cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE)
     cs_glob_lagr_time_scheme->isttio   = 0;
 
+  /* Activation (=1) or not (=0) of P1 interpolation of mean carrier velocity
+   *  at the location of the particles */
+  cs_glob_lagr_time_scheme->interpol_field = 0;
+
   /* Two-way coupling: (iilagr = CS_LAGR_TWOWAY_COUPLING)
      ------------------------------ */
 
