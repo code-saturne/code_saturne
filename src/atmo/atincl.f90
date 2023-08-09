@@ -883,7 +883,7 @@ implicit none
 procedure() :: atlecm
 
 ! Local variables
-integer :: n_level, n_times, n_level_t, ii
+integer :: n_level, n_times, n_level_t
 
 type(c_ptr) :: c_z_dyn_met, c_z_temp_met, c_u_met, c_v_met, c_time_met
 type(c_ptr) :: c_w_met
