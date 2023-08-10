@@ -3,6 +3,10 @@ Release 8.0.2 (unreleased)
 
 ### Bug fixes:
 
+  GUI: fix spurious change of nterup when XML file specifies "simplec"
+  but still contains a value for nterup (which should only be used
+  with the "inner iterations" algorithm).
+
 - Remove spurious proc count command for coupled cases in batch environment;
   This could conflict with the command already determined, and prevent
   launch of computations coupled with Syrthes on a SLURM environment.

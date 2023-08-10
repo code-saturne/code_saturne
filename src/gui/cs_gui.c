@@ -862,9 +862,12 @@ _numerical_int_parameters(const char  *param,
   } else if (cs_gui_strcmp(param, "piso_sweep_number")) {
 
     tn = cs_tree_get_node(tn, "velocity_pressure_algo");
-    tn = cs_tree_get_node(tn, param);
-    cs_gui_node_get_int(tn, &result);
-    *keyword = result;
+    const char *algo_choice = cs_tree_node_get_child_value_str(tn, "choice");
+    if (cs_gui_strcmp(algo_choice, "piso")) {
+      tn = cs_tree_get_node(tn, param);
+      cs_gui_node_get_int(tn, &result);
+      *keyword = result;
+    }
 
   } else {
 
