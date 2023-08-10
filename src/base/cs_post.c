@@ -3233,54 +3233,65 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
 
         if (f->location_id != (int)field_loc_type) {
 
-          /* Only output fields defined on mesh sub-locations
-             for meshes with matching location id;
-
-             If the following test is removed, such fields will also
-             be output on parent or sibling locations, with a value
-             of 0 outside the actual field location. This is currently
-             not activated to avoid redundant outputs, but could be used
-             with a finer control of writer/mesh/field output combination
-             than the post_vis field keyword and "auto" postprocessing mesh
-             options currently allow. */
-
-          if (f->location_id != post_mesh->location_id)
-            continue;
+          /* Fields can be output on parent or sibling locations,
+             with a value  of 0 outside the actual field location. */
 
           cs_lnum_t n_elts = cs_mesh_location_get_n_elts(f->location_id)[0];
           cs_lnum_t f_dim = f->dim;
-          cs_lnum_t n_vals = n_elts * f_dim;
+          cs_lnum_t n_elts_p = cs_mesh_location_get_n_elts(field_loc_type)[0];
+          cs_lnum_t n_vals_p = n_elts_p * f_dim;
+
           const cs_lnum_t *elt_ids
             = cs_mesh_location_get_elt_ids_try(f->location_id);
 
-          BFT_MALLOC(tmp_val, n_vals, cs_real_t);
+          bool field_and_mesh_ids_match = false;
 
-          /* Remark: in case we decide to output values on the parent mesh,
-             we need to initialize values to a default for elements not in
-             the field location subset.
+          /* TODO: check if a given field and postprocessing mesh
+             share the same mesh location, and in that case, if
+             their respective parent_ids match. If this is the case,
+             the projection to the parent mesh below is not necessary,
+             and we can simply write the variable with
+             use_parent = false.
 
-             Outputting values on a smaller subset of the mesh location
-             could seem more natural, but we would have to determine
-             correctly that we are indeed on a smaller subset, which
-             is not trivial as all sub-locations are defined relative to
-             a root location type, not in a recursive manner.
+             In the general case, since fvm_nodal_t structures order
+             elements by types, the parent element ids of such a
+             structure may be a permutation of the original parent ids,
+             so may not be used directly. In that case, either we need
+             to project values to the parent mesh first, or apply a
+             reverse permutation to the values extracted in the
+             output buffer.
+          */
 
-             We assign a default of 0, but an associated field keyword
-             to define another value could be useful here. */
+          if (field_and_mesh_ids_match == false) {
 
-          if (f->location_id != post_mesh->location_id) {
-            cs_lnum_t n_elts_p = cs_mesh_location_get_n_elts(field_loc_type)[0];
-            cs_lnum_t n_vals_p = n_elts_p * f_dim;
+            BFT_MALLOC(tmp_val, n_vals_p, cs_real_t);
+
+            /* Remark: in case we decide to output values on the parent mesh,
+               we need to initialize values to a default for elements not in
+               the field location subset.
+
+               Outputting values on a smaller subset of the mesh location
+               could seem more natural, but we would have to determine
+               correctly that we are indeed on a smaller subset, which
+               is not trivial as all sub-locations are defined relative to
+               a root location type, not in a recursive manner.
+
+               We assign a default of 0, but an associated field keyword
+               to define another value could be useful here. */
+
             for (cs_lnum_t i = 0; i < n_vals_p; i++)
               tmp_val[i] = 0.;
+
+            /* Now scatter values from subset to parent location. */
+
+            cs_array_real_copy_subset(n_elts, f_dim, elt_ids,
+                                      CS_ARRAY_SUBSET_OUT, /* elt_ids on dest */
+                                      f->val,              /* ref */
+                                      tmp_val);            /* dest <-- ref */
+
+            f_val = tmp_val;
+
           }
-
-          /* Now scatter values from subset to parent location. */
-
-          cs_array_real_copy_subset(n_elts, f_dim, elt_ids,
-                                    CS_ARRAY_SUBSET_OUT, /* elt_ids on dest */
-                                    f->val,              /* ref */
-                                    tmp_val);            /* dest <-- ref */
 
         } /* End of case for field on sub-location */
 
