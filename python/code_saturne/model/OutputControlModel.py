@@ -792,9 +792,13 @@ class OutputControlModel(Model):
             self.setMeshType(mesh_id, mesh_type)
         elif mesh_type[0] in ('V', 'B'):
             # Handle some backward compatibility here
-            r = {"VolumicZone": 'volume_zone',
-                 "BoundaryZone": 'boundary_zone',
-                 "BoundaryZone_cells": 'boundary zone cells'}
+            # (we actually want to do switch to snake case in the future,
+            # so invert this mapping, but this will require more systematic
+            # changes and should be handled with the standard "on-open"
+            # back compatibility mode.
+            r = {'volume_zone': 'VolumicZone',
+                 'boundary_zone': 'BoundaryZone',
+                 'boundary zone cells': 'BoundaryZone_cells'}
             try:
                 mesh_type = r[mesh_type]
             except Exception:
@@ -810,8 +814,8 @@ class OutputControlModel(Model):
         self.isInList(mesh_id, self.getMeshIdList())
         types_list = ('cells', 'interior_faces',
                       'boundary_faces', 'boundary_cells',
-                      'volume_zone', 'boundary_zone',
-                      'boundary_zone_cells',
+                      'VolumicZone', 'BoundaryZone',
+                      'BoundaryZone_cells',
                       'interior_face_centers')
         self.isInList(mesh_type, types_list)
         node = self.node_out.xmlGetNode('mesh', id = mesh_id)

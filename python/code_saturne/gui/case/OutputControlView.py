@@ -292,8 +292,8 @@ class TypeMeshDelegate(QItemDelegate):
         if self.lag == 0:
             dico = {"cells": 0, "interior_faces": 1, "boundary_faces": 2,
                     "boundary_cells" : 3,
-                    "volume_zone": 4, "boundary_zone": 5,
-                    "boundary_zone_cells": 6,
+                    "VolumicZone": 4, "BoundaryZone": 5,
+                    "BoundaryZone_cells": 6,
                     "interior_face_centers": 7}
         else:
             dico = {"particles": 0, "trajectories": 1}
@@ -509,21 +509,24 @@ class StandardItemModelMesh(QStandardItemModel):
                        "interior faces" : 'interior_faces',
                        "boundary faces": 'boundary_faces',
                        "boundary cells": 'boundary_cells',
-                       "volume zone": 'volume_zone',
-                       "boundary zone": 'boundary_zone',
-                       "boundary zone cells" : 'boundary_zone_cells',
+                       "volume zone": 'VolumicZone',
+                       "boundary zone": 'BoundaryZone',
+                       "boundary zone cells" : 'BoundaryZone_cells',
                        "interior face centers": 'interior_face_centers'}
         self.dicoM2V= {"cells" : 'cells',
                        "interior_faces" : 'interior faces',
                        "boundary_faces": 'boundary faces',
                        "boundary_cells": 'boundary cells',
-                       "volume_zone": 'volume zone',
+                       "VolumicZone": 'volume zone',
+                       "BoundaryZone": 'boundary zone',
+                       "BoundaryZone_cells": 'boundary zone cells',
+                       "volumic_zone": 'volume zone',
                        "boundary_zone": 'boundary zone',
                        "boundary_zone_cells": 'boundary zone cells',
                        "interior_face_centers" : 'interior face centers'}
         type_list = ["cells", "interior_faces", "boundary_faces",
-                     "boundary_cells", "volume_zone",
-                     "boundary_zone", "boundary_zone_cells",
+                     "boundary_cells", "VolumicZone",
+                     "BoundaryZone", "BoundaryZone_cells",
                      "interior_face_centers"]
         for id in self.mdl.getMeshIdList():
             dico  = {}
@@ -606,7 +609,7 @@ class StandardItemModelMesh(QStandardItemModel):
         # Lists to better handle the difference between elements and zones
         elts_list = ['cells', 'interior_faces',
                      'boundary_faces', 'boundary_cells', 'interior_face_centers']
-        zone_list = ['volume_zone', 'boundary_zone', 'boundary_zone_cells']
+        zone_list = ['VolumicZone', 'BoundaryZone', 'BoundaryZone_cells']
 
         # Label
         if col == 0:
