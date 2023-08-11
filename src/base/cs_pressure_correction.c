@@ -778,6 +778,9 @@ _pressure_correction_fv(int        iterns,
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
         rovsdt[c_id] += cell_f_vol[c_id] * _coef * dc2[c_id] / dt[c_id];
+
+      BFT_FREE(xcpp);
+
     }
   }
 
@@ -2649,6 +2652,8 @@ _pressure_correction_fv(int        iterns,
       cpro_rho_mass[c_id] = crom_eos[c_id];
     }
   }
+
+  BFT_FREE(dc2);
 
   /* Compute the isobaric heat capacity if needed */
   cs_field_t  *f_cv = cs_field_by_name_try("isobaric_heat_capacity");
