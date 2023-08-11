@@ -707,7 +707,31 @@ cs_user_postprocess_values(const char            *mesh_name,
                         NULL,                           /* b_face_vals */
                         ts);
 
+      /* Reynolds stresses invariants:
+       * compute xsi and eta invariant of the Lumley triangle */
+
+      cs_real_2_t *inv = NULL;
+      BFT_MALLOC(inv, n_cells, cs_real_2_t);
+
+      cs_post_anisotropy_invariant(n_cells,
+                                   cell_list,
+                                   NULL, /* coords */
+                                   inv);
+
+      cs_post_write_var(mesh_id,
+                        CS_POST_WRITER_ALL_ASSOCIATED,  /* writer id filter */
+                        "Turb invariants",              /* var_name */
+                        2,                              /* var_dim */
+                        true,                           /* interlace, */
+                        false,                          /* use_parent */
+                        CS_POST_TYPE_cs_real_t,         /* var_type */
+                        inv,                            /* cel_vals */
+                        NULL,                           /* i_face_vals */
+                        NULL,                           /* b_face_vals */
+                        ts);
+
       BFT_FREE(s_cell);
+      BFT_FREE(inv);
 
     }
 
