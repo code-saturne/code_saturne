@@ -52,13 +52,8 @@ if test "x$with_mumps" != "xno" ; then
   MUMPS_CPPFLAGS="-I${with_mumps}/include ${MUMPS_CPPFLAGS}"
   MUMPS_LDFLAGS="-L${with_mumps}/lib ${MUMPS_LDFLAGS}"
   MUMPS_LIBS="-ldmumps -lsmumps -lmumps_common ${MUMPS_LIBS}"
-  if test "x$FC" = "xifort" ; then
-    MUMPS_LIBS="${MUMPS_LIBS} -lifcore -lm"
-  elif test "x$FC" = "xmpiifort" ; then
-    MUMPS_LIBS="${MUMPS_LIBS} -lifcore -lm"
-  elif test "x$FC" = "xmpifc" ; then
-    MUMPS_LIBS="${MUMPS_LIBS} -lifcore -lm"
-  elif test "x$FC" = "xifx" ; then
+  echo $cs_ac_fc_version | grep 'ifx\|ifort' > /dev/null
+  if test "$?" = "0" ; then
     MUMPS_LIBS="${MUMPS_LIBS} -lifcore -lm"
   else
     MUMPS_LIBS="${MUMPS_LIBS} ${FLIBS}"
