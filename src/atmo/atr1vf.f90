@@ -375,7 +375,8 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
       qvray(k) = max(5.d-4,qvray(k))
     enddo
 
-    ! --- Computing pressure and density according to theta and qv profiles
+    ! --- Computing pressure and density according to temperature
+    !     and qv profiles
 
     do k = kvert-ktamp+1, kmray
       tmoy = 0.5d0*(temray(k-1)+temray(k)) + tkelvi
