@@ -2360,9 +2360,10 @@ _mesh_quantities_cell_faces_cog_solid(const cs_mesh_t    *m,
      -------------------------------------------------------------- */
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    for (cs_lnum_t i = 0; i < 3; i++)  {
-      cell_cen[c_id][i] /= cell_area[c_id];
-    }
+    if (cell_area[c_id] > DBL_MIN)
+      for (cs_lnum_t i = 0; i < 3; i++)
+        cell_cen[c_id][i] /= cell_area[c_id];
+
   }
 
   /* Free memory */
