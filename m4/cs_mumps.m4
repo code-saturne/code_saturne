@@ -61,7 +61,7 @@ if test "x$with_mumps" != "xno" ; then
   elif test "x$FC" = "xifx" ; then
     MUMPS_LIBS="${MUMPS_LIBS} -lifcore -lm"
   else
-    MUMPS_LIBS="${MUMPS_LIBS} -lgfortran -lm"
+    MUMPS_LIBS="${MUMPS_LIBS} ${FLIBS}"
   fi
 
   AC_MSG_NOTICE([MUMPS_CPP=${MUMPS_CPPFLAGS}])
