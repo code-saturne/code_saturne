@@ -586,6 +586,7 @@ if (idtvar.ge.0) then
       if (itrale.gt.0 .and. ntmabs.gt.ntpabs) then
         call cs_time_step_update_dt(dtloc)
 
+        log_active = cs_log_default_is_active()
         if (log_active) then
           write(nfecra,3001) ttcabs, ntcabs
         endif
