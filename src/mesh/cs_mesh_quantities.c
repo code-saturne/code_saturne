@@ -2305,12 +2305,12 @@ _mesh_quantities_cell_faces_cog_solid(const cs_mesh_t    *m,
         i_f_face_cog_0[f_id] : i_f_face_cog_1[f_id];
 
       if (c_id > -1) {
-
         cell_area[c_id] += area;
 
         for (cs_lnum_t i = 0; i < 3; i++)
           cell_cen[c_id][i] += _i_f_face_cog[i]*area;
       }
+
     }
 
   } /* End of loop on interior faces */
@@ -2330,7 +2330,6 @@ _mesh_quantities_cell_faces_cog_solid(const cs_mesh_t    *m,
        which are cleaned afterwards) */
 
     if (c_id > -1) {
-
       cs_real_t area = cs_math_3_norm(b_f_face_normal[f_id]);
 
       cell_area[c_id] += area;
@@ -2352,7 +2351,6 @@ _mesh_quantities_cell_faces_cog_solid(const cs_mesh_t    *m,
 
       for (cs_lnum_t i = 0; i < 3; i++)
         cell_cen[c_id][i] +=  c_w_face_cog[c_id][i] * area;
-
     }
   }
 
@@ -2360,10 +2358,10 @@ _mesh_quantities_cell_faces_cog_solid(const cs_mesh_t    *m,
      -------------------------------------------------------------- */
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    if (cell_area[c_id] > DBL_MIN)
+    if (cell_area[c_id] > DBL_MIN) {
       for (cs_lnum_t i = 0; i < 3; i++)
         cell_cen[c_id][i] /= cell_area[c_id];
-
+    }
   }
 
   /* Free memory */
