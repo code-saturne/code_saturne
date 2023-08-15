@@ -3,6 +3,11 @@ Release 8.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Preprocessor: workaround for CGNS incompatibility with files generated with
+  CGNS 3.4.1 and with 3.4 version info (confused with 3.4.0, whose polygon and
+  polyhedra representations are inccompatible). That version should be avoided
+  but it seems that Star-CCM+ 2022 uses it.
+
   GUI: fix spurious change of nterup when XML file specifies "simplec"
   but still contains a value for nterup (which should only be used
   with the "inner iterations" algorithm).
