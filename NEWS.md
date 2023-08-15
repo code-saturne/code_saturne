@@ -31,6 +31,11 @@ Master (not on release branches yet)
 
 ### Bug fixes:
 
+- Preprocessor: workaround for CGNS incompatibility with files generated with
+  CGNS 3.4.1 and with 3.4 version info (confused with 3.4.0, whose polygon and
+  polyhedra representations are inccompatible). That version should be avoided
+  but it seems that Star-CCM+ 2022 uses it.
+
 - Preprocessor: fix reading of polygons in MED files, broken in v7.3.
 
 Release 8.0.0 (2023-06-30)
