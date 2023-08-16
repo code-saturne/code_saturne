@@ -56,7 +56,7 @@ if test "x$with_mumps" != "xno" ; then
   if test "$?" = "0" ; then
     MUMPS_LIBS="${MUMPS_LIBS} -lifcore -lm"
   else
-    MUMPS_LIBS="${MUMPS_LIBS} ${FLIBS}"
+    MUMPS_LIBS="${MUMPS_LIBS} ${FCLIBS}"
   fi
 
   AC_MSG_NOTICE([MUMPS_CPP=${MUMPS_CPPFLAGS}])
