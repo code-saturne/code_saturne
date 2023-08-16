@@ -269,9 +269,10 @@ cs_lagr_car(int              iprev,
 
     if (extra->itytur == 2 || extra->itytur == 4 || extra->iturb == 50) {
 
+      int time_id_k = CS_MIN(iprev, extra->cvar_k->n_time_vals -1);
       for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
-        energi[cell_id] = extra->cvar_k->vals[iprev][cell_id];
-        dissip[cell_id] = extra->cvar_ep->vals[iprev][cell_id];
+        energi[cell_id] = extra->cvar_k->vals[time_id_k][cell_id];
+        dissip[cell_id] = extra->cvar_ep->vals[time_id_k][cell_id];
       }
 
     }

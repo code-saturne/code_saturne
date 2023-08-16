@@ -162,11 +162,13 @@ cs_lagr_gradients(int            time_id,
       || turb_model->itytur == 5
       || turb_model->itytur == 6) {
     BFT_MALLOC(wpres, n_cells_with_ghosts, cs_real_t);
+    int time_id = (extra->cvar_k->n_time_vals > 1) ? 1 : 0;
+    const cs_real_t *cvar_k = extra->cvar_k->vals[time_id];
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       wpres[c_id] =  solved_pres[c_id]
                    -  2./3. * extra->cromf->val[c_id]
-                    * extra->cvar_k->val_pre[c_id];
+                    * cvar_k[c_id];
     }
   }
   else {

@@ -3,6 +3,8 @@ Release 7.0.7 (not released yet)
 
 Bug fixes:
 
+- Fix Lagrangian module using LES turbulence models.
+
 - Fix parametric study available as code_saturne/neptune_cfd command line
   keyword.
 
