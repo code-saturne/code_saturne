@@ -105,7 +105,7 @@ module coincl
 
   ! Manière de calculer la variance de fraction de mélange
   ! mode_fp2m 0: Variance transport equation(VTE)
-  ! mode_fp2m 1: 2nd moment of mixutre fraction transport equation (STE)
+  ! mode_fp2m 1: 2nd moment of mixture fraction transport equation (STE)
   integer, save :: mode_fp2m = 1
 
   ! Coef. of SGS kinetic energy used for the variance dissipation calculation
