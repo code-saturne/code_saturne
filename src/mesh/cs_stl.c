@@ -295,14 +295,14 @@ _is_point_inside_plane(cs_real_t plane[6],
  * parameters:
  *   nb_vertex     <--> number of vertices of the polygon
  *   vertex_coords <--> coordinates of the vertices (size : 3*nb_vertex)
- *   plane         <-- plane definition (point + normal)
+ *   plane         <--  plane definition (point + normal)
  *
-  ----------------------------------------------------------------------------*/
+ ----------------------------------------------------------------------------*/
 
 static void
-_polygon_plane_intersection(int         *nb_vertex,
-                            cs_real_3_t **vertex_coord,
-                            cs_real_t   plane[6])
+_polygon_plane_intersection(int           *nb_vertex,
+                            cs_real_3_t  **vertex_coord,
+                            cs_real_t      plane[6])
 {
   /* Initial number of vertices in the polygon */
   int n_vtx = *nb_vertex;
@@ -314,54 +314,56 @@ _polygon_plane_intersection(int         *nb_vertex,
 
   /* Now we check which edge is intersected by the plane */
   for (int i = 0; i < n_vtx; i++) {
-    int v1 = i;
-    int v2 = (i+1) % n_vtx;
+    cs_lnum_t v1 = i;
+    cs_lnum_t v2 = (i+1) % n_vtx;
 
-    cs_real_t xn = cs_math_3_distance_dot_product(vtx[v1], &plane[0], &plane[3]);
-    cs_real_t xd = cs_math_3_distance_dot_product(vtx[v1],   vtx[v2], &plane[3]);
+    cs_real_t xn = cs_math_3_distance_dot_product(vtx[v1], plane, plane+3);
+    cs_real_t xd = cs_math_3_distance_dot_product(vtx[v1], vtx[v2], plane+3);
 
     // if the edge is //, we keep the vertex
-    if ( CS_ABS(xd) < 1.0e-12 ) {
-
-      if(_is_point_inside_plane(plane, vtx[v2])){
-        for (int dir = 0; dir < 3; dir ++)
+    if (cs_math_fabs(xd) < 1.0e-12) {
+      if (_is_point_inside_plane(plane, vtx[v2])) {
+        assert(j <= n_vtx);
+        for (cs_lnum_t dir = 0; dir < 3; dir ++)
           new_vtx[j][dir] = vtx[v2][dir];
         j++;
       }
+    }
 
     // if the edge is not // to the plane
-    } else {
+    else {
       cs_real_t t = xn/xd;
 
       // If intersection, new vertex
-      if (t > 0 && t < 1.0){
-        for (int dir = 0; dir < 3; dir ++)
+      if (t > 0 && t < 1.0) {
+        assert(j <= n_vtx);
+        for (cs_lnum_t dir = 0; dir < 3; dir ++)
           new_vtx[j][dir] = vtx[v1][dir] + t * (vtx[v2][dir] - vtx[v1][dir]);
         j++;
       }
 
       // We check if the second point is "inside" inside the plane
       // if yes, add the vertex to the new vertex list
-      if(_is_point_inside_plane(plane, vtx[v2])){
-        for (int dir = 0; dir < 3; dir ++)
+      if (_is_point_inside_plane(plane, vtx[v2])) {
+        assert(j <= n_vtx);
+        for (cs_lnum_t dir = 0; dir < 3; dir ++)
           new_vtx[j][dir] = vtx[v2][dir];
         j++;
       }
     }
   }
 
-  BFT_REALLOC(new_vtx, j, cs_real_3_t);
   BFT_REALLOC(vtx, j, cs_real_3_t);
 
-  for (int i = 0; i < j; i++) {
-    for (int dir = 0; dir < 3; dir ++)
+  for (cs_lnum_t i = 0; i < j; i++) {
+    for (cs_lnum_t dir = 0; dir < 3; dir ++)
       vtx[i][dir] = new_vtx[i][dir];
   }
 
+  BFT_FREE(new_vtx);
+
   *nb_vertex = j;
   *vertex_coord = vtx;
-
-  BFT_FREE(new_vtx);
 }
 
 /*----------------------------------------------------------------------------
@@ -544,7 +546,7 @@ _exact_triangle_box_surface_intersection(const cs_real_t  box_extents[6],
   for (int f = 0; f < 6; f++)
     _polygon_plane_intersection(&nv, &coords, plane[f]);
 
-  /* If no intersection, surface is 0*/
+  /* If no intersection, surface is 0 */
   if (nv ==0) {
     surf = 0;
     return surf;
