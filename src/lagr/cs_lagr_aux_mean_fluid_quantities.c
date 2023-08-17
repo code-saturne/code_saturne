@@ -160,10 +160,8 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
 
     /* retrieve 2/3 rho^{n} k^{n} from solved pressure field for EVM models */
     assert(turb_model != NULL);
-    if (   turb_model->itytur == 2
-        || turb_model->itytur == 4
-        || turb_model->itytur == 5
-        || turb_model->itytur == 6) {
+    if (turb_model->order <= CS_TURB_FIRST_ORDER
+        && cs_glob_turb_rans_model->igrhok == 0) {
       BFT_MALLOC(wpres, n_cells_with_ghosts, cs_real_t);
 
       int time_id = (extra->cvar_k->n_time_vals > 1) ? 1 : 0;
