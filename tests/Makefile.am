@@ -126,6 +126,7 @@ cs_check_quadrature \
 cs_check_sdm \
 cs_core_test \
 cs_file_test \
+cs_geom_test \
 cs_interface_test \
 cs_map_test \
 cs_matrix_test \
@@ -187,6 +188,10 @@ cs_core_test_LDADD    = $(LDADD_CS_TESTS)
 cs_file_test_SOURCES  = cs_file_test.c
 cs_file_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_file_test_LDADD    = $(LDADD_CS_TESTS)
+
+cs_geom_test_SOURCES  = cs_geom_test.c
+cs_geom_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+cs_geom_test_LDADD    = $(LDADD_CS_TESTS)
 
 if HAVE_ACCEL
 
