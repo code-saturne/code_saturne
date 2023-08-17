@@ -360,7 +360,6 @@ _cs_paramedmem_remapper_target_mesh(cs_paramedmem_remapper_t  *r,
                                     const char                *name,
                                     const char                *select_criteria)
 {
-
   assert(r != NULL);
 
   cs_mesh_t *parent_mesh = cs_glob_mesh;
@@ -371,9 +370,6 @@ _cs_paramedmem_remapper_target_mesh(cs_paramedmem_remapper_t  *r,
                                                 select_criteria,
                                                 3,
                                                 0);
-
-  return;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -409,10 +405,10 @@ _cs_paramedmem_load_paramesh(cs_paramedmem_remapper_t *r,
                                         mname,
                                         -1,
                                         -1);
-  } else {
+  }
+  else {
     MEDFileMeshes *MeshList = ParaMEDFileMeshes::New(myPart, nParts, fname);
     const std::string mname = MeshList->getMeshAtPos(0)->getName();
-
 
     // Mesh is stored with -1, -1 indices in MED files
     r->src_mesh = ParaMEDFileUMesh::New(myPart,
@@ -421,7 +417,6 @@ _cs_paramedmem_load_paramesh(cs_paramedmem_remapper_t *r,
                                         mname,
                                         -1,
                                         -1);
-
   }
 
   r->src_mesh->forceComputationOfParts();
@@ -465,7 +460,6 @@ _cs_paramedmem_load_paramesh(cs_paramedmem_remapper_t *r,
 static void
 _cs_paramedmem_remapper_destroy(cs_paramedmem_remapper_t *r)
 {
-
   BFT_FREE(r->name);
   BFT_FREE(r->src_mesh);
   BFT_FREE(r->MEDFields);
@@ -473,8 +467,6 @@ _cs_paramedmem_remapper_destroy(cs_paramedmem_remapper_t *r)
   BFT_FREE(r->order);
   BFT_FREE(r->time_steps);
   BFT_FREE(r->odec);
-
-  return;
 }
 
 #endif /* !HAVE_PARAMEDMEM && !HAVE_MEDCOUPLING_LOADER */
@@ -604,7 +596,6 @@ cs_paramedmem_remap_field_one_time(cs_paramedmem_remapper_t *r,
                                    int                       dt,
                                    int                       it)
 {
-
   cs_real_t *new_vals = NULL;
 
 #if !defined(HAVE_PARAMEDMEM) || !defined(HAVE_MEDCOUPLING_LOADER)
@@ -696,7 +687,7 @@ cs_paramedmem_remap_field_one_time(cs_paramedmem_remapper_t *r,
  *
  * \param[in] r             pointer to cs_paramedmem_remapper_t struct
  * \param[in] field_name    name of the field to remap from the file
- * \param[in] default_val  default value for unmapped elements
+ * \param[in] default_val   default value for unmapped elements
  * \param[in] time_choice   Choice of the time interpolation.
  *                          0: Value of field interpolated at t=tval from the
  *                          med file.
@@ -733,8 +724,9 @@ cs_paramedmem_remap_field(cs_paramedmem_remapper_t *r,
             _("This function cannot be called without "
               "MEDCoupling MPI support.\n"));
 #else
-  if ((time_choice == 0 && tval < r->time_steps[0]) ||
-      time_choice == 1 ||
+  if (   (time_choice == 0 && tval < r->time_steps[0])
+      ||  time_choice == 1
+      ||
       r->ntsteps == 1) {
     /* First instance */
     int it    = r->iter[0];
@@ -744,7 +736,6 @@ cs_paramedmem_remap_field(cs_paramedmem_remapper_t *r,
                                                   default_val,
                                                   it,
                                                   order);
-
   }
   else if (   (time_choice == 0 && tval > r->time_steps[r->ntsteps-1])
            || time_choice == 2) {
@@ -755,7 +746,8 @@ cs_paramedmem_remap_field(cs_paramedmem_remapper_t *r,
     new_vals
       = cs_paramedmem_remap_field_one_time(r, field_name, default_val, it, order);
 
-  } else if (time_choice == 0) {
+  }
+  else if (time_choice == 0) {
     /* A given time within the file time bounds*/
     int id1 = -1;
     int id2 = -1;
@@ -875,7 +867,6 @@ cs_paramedmem_remapper_rotate(cs_paramedmem_remapper_t  *r,
 void
 cs_paramedmem_remapper_destroy_all(void)
 {
-
 #if defined(HAVE_PARAMEDMEM) && defined(HAVE_MEDCOUPLING_LOADER)
   for (int r_id = 0; r_id < _n_remappers; r_id++)
     _cs_paramedmem_remapper_destroy(_remapper[r_id]);
@@ -884,9 +875,6 @@ cs_paramedmem_remapper_destroy_all(void)
             _("This function cannot be called without "
               "MEDCoupling MPI support.\n"));
 #endif
-
-  return;
-
 }
 
 /*----------------------------------------------------------------------------*/
