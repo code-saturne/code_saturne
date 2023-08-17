@@ -1246,6 +1246,29 @@ cs_math_33_extract_sym_ant(const cs_real_t  m[3][3],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the second main invariant of the symmetric part
+ *         of a 3x3 tensor
+ *
+ * \param[in]     m        matrix of 3x3 real values
+ *
+ * \return trace(S.S) = Sij Sij, where S is the symmetric part of m
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_33_main_invariant_2(const cs_real_t  m[3][3])
+{
+  /* sym = 0.5 (m + m_transpose) */
+  return cs_math_pow2(m[0][0])
+       + cs_math_pow2(m[1][1])
+       + cs_math_pow2(m[2][2])
+    + 0.5 * ( cs_math_pow2(m[0][1] + m[1][0])
+            + cs_math_pow2(m[0][2] + m[2][0])
+            + cs_math_pow2(m[1][2] + m[2][1]));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Add the product of two 3x3 real matrices to a matrix.
  *
  * \param[in]     m1            matrix of 3x3 real values

@@ -129,7 +129,6 @@ integer, dimension(:), pointer :: ifpt1d
 double precision, dimension(:), pointer :: tppt1d
 double precision, allocatable, dimension(:) :: ttmp
 double precision, allocatable, dimension(:,:) :: grad
-double precision, dimension(:,:,:), allocatable :: gradv
 
 integer          ipass
 data             ipass /0/
@@ -152,25 +151,22 @@ interface
     implicit none
   end subroutine cs_ht_convert_h_to_t_cells_solid
 
-  subroutine cs_les_mu_t_smago_dyn(grad_v) &
+  subroutine cs_les_mu_t_smago_dyn() &
     bind(C, name='cs_les_mu_t_smago_dyn')
     use, intrinsic :: iso_c_binding
     implicit none
-    real(kind=c_double), dimension(3,3,*), intent(inout) :: grad_v
   end subroutine cs_les_mu_t_smago_dyn
 
-  subroutine cs_les_mu_t_smago_const(grad_v) &
+  subroutine cs_les_mu_t_smago_const() &
     bind(C, name='cs_les_mu_t_smago_const')
     use, intrinsic :: iso_c_binding
     implicit none
-    real(kind=c_double), dimension(3,3,*), intent(inout) :: grad_v
   end subroutine cs_les_mu_t_smago_const
 
-  subroutine cs_les_mu_t_wale(grad_v) &
+  subroutine cs_les_mu_t_wale() &
     bind(C, name='cs_les_mu_t_wale')
     use, intrinsic :: iso_c_binding
     implicit none
-    real(kind=c_double), dimension(3,3,*), intent(inout) :: grad_v
   end subroutine cs_les_mu_t_wale
 
   subroutine cs_turbulence_ke_q_mu_t() &
@@ -485,14 +481,12 @@ elseif (itytur.eq.4) then
 
   ! LES (Smagorinsky, dynamic Smagorinsky, or Wale)
 
-  allocate(gradv(3, 3, ncelet))
-
   if (iturb.eq.40) then
-    call cs_les_mu_t_smago_const(gradv)
+    call cs_les_mu_t_smago_const()
   elseif (iturb.eq.41) then
-    call cs_les_mu_t_smago_dyn(gradv)
+    call cs_les_mu_t_smago_dyn()
   elseif (iturb.eq.42) then
-    call cs_les_mu_t_wale(gradv)
+    call cs_les_mu_t_wale()
   endif
 
 elseif (itytur.eq.5) then
@@ -668,47 +662,6 @@ if (iand(ivofmt,VOF_MERKLE_MASS_TRANSFER).ne.0.and.icvevm.eq.1) then
 
   endif
 endif
-
-!===============================================================================
-! Compute subgrid turbulence values for LES if required
-!===============================================================================
-
-if (itytur.eq.4 .and. iilagr.gt.0) then
-
-  call field_get_val_s_by_name("lagr_k", cvar_k)
-  call field_get_val_s_by_name("lagr_epsilon", cvar_ep)
-
-  c_epsilon = 1.0
-
-  do iel = 1, ncel
-
-    s11  = gradv(1, 1, iel)
-    s22  = gradv(2, 2, iel)
-    s33  = gradv(3, 3, iel)
-
-    dudy = gradv(2, 1, iel)
-    dvdx = gradv(1, 2, iel)
-    dudz = gradv(3, 1, iel)
-    dwdx = gradv(1, 3, iel)
-    dvdz = gradv(3, 2, iel)
-    dwdy = gradv(2, 3, iel)
-
-    s = s11**2 + s22**2 + s33**2         &
-        + 0.5d0 * ((dudy + dvdx)**2      &
-        +          (dudz + dwdx)**2      &
-        +          (dvdz + dwdy)**2)
-    s = sqrt(2.0d0 * s)
-
-    delta = xlesfl * (ales*volume(iel))**bles
-
-    cvar_ep(iel) = (csmago * delta)**2 * s**3
-    cvar_k(iel) =  c_epsilon * (delta * cvar_ep(iel))**(2.0d0/3.0d0)
-
-  enddo
-
-endif
-
-if (allocated(gradv)) deallocate (gradv)
 
 !===============================================================================
 ! User modification of the turbulent viscosity and symmetric tensor diffusivity

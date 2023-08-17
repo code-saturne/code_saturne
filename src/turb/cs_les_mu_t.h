@@ -59,29 +59,28 @@ BEGIN_C_DECLS
  * \f[ S_{ij} = \dfrac{\der{u_i}{x_j} + \der{u_j}{x_i}}{2}\f]
  *
  *
- * \param[out]  gradv the computed velocity gradients
  !*/
 /*----------------------------------------------------------------------------*/
 
 void
-cs_les_mu_t_smago_dyn(cs_real_33_t *gradv);
+cs_les_mu_t_smago_dyn(void);
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Calculation of turbulent viscosity for
- *        a Smagorinsky LES model
+/*!
+ * \brief Calculation of the turbulent viscosity for a Smagorinsky LES model
  *
  * \f[ \mu_T = \rho (C_{S} l)^2  \sqrt{2 S_{ij}S_{ij}} \f]
  * \f[ S_{ij} = \dfrac{\der{u_i}{x_j} + \der{u_j}{x_i}}{2}\f]
  *
- * \param[out]  gradv the computed velocity gradients
  !*/
 /*----------------------------------------------------------------------------*/
 
 void
-cs_les_mu_t_smago_const(cs_real_33_t *gradv);
+cs_les_mu_t_smago_const(void);
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Compute the turbulent viscosity for the WALE LES model
+/*!
+ * \brief Compute the turbulent viscosity for the WALE LES model.
  *
  * The turbulent viscosity is:
  * \f$ \mu_T = \rho (C_{wale} L)^2 * \dfrac{(\tens{S}:\tens{Sd})^{3/2}}
@@ -90,12 +89,11 @@ cs_les_mu_t_smago_const(cs_real_33_t *gradv);
  * with \f$ \tens{S}  = \frac{1}{2}(\gradt \vect{u} + \transpose{\gradt \vect{u}})\f$
  * and  \f$ \tens{Sd} = \deviator{(\symmetric{(\tens{S}^2)})}\f$
  *
- * \param[out]  gradv the computed velocity gradients
  !*/
 /*----------------------------------------------------------------------------*/
 
 void
-cs_les_mu_t_wale(cs_real_33_t *restrict gradv);
+cs_les_mu_t_wale(void);
 
 /*----------------------------------------------------------------------------*/
 

@@ -91,15 +91,15 @@ BEGIN_C_DECLS
  * <a href="../../theory.pdf#dynsmago"><b>dynamic Smagorinsky model</b></a>
  * section of the theory guide for more informations.
  *
- * \param[out]  gradv the computed velocity gradients
  !*/
 /*----------------------------------------------------------------------------*/
 
 void
-cs_les_mu_t_smago_dyn(cs_real_33_t  *gradv)
+cs_les_mu_t_smago_dyn(void)
 {
-  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
@@ -107,6 +107,9 @@ cs_les_mu_t_smago_dyn(cs_real_33_t  *gradv)
 
   /* Initialization
    * ============== */
+
+  cs_real_33_t *gradv;
+  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
   /*  Map field arrays */
 
@@ -119,7 +122,6 @@ cs_les_mu_t_smago_dyn(cs_real_33_t  *gradv)
 
   /* For the calculation of the viscosity of the sub-mesh */
 
-  const cs_real_t xfil   = cs_turb_xlesfl;
   const cs_real_t xfil2  = cs_turb_xlesfd;
   const cs_real_t xa     = cs_turb_ales;
   const cs_real_t xb     = cs_turb_bles;
@@ -232,7 +234,8 @@ cs_les_mu_t_smago_dyn(cs_real_33_t  *gradv)
   /* Reuse xmij as temporary array */
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    const cs_real_t delta = xfil * pow(xa*cell_vol[c_id], xb);
+    const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
+                                                 cs_turb_bles);
     w0[c_id] = delta;
     for (cs_lnum_t ii = 0; ii < 6; ii++)
       xmij[c_id][ii] *= -2.0 * xro[c_id] * cs_math_pow2(delta) * s_n[c_id];
@@ -388,8 +391,31 @@ cs_les_mu_t_smago_dyn(cs_real_33_t  *gradv)
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     const cs_real_t coef = cpro_smago[c_id];
-    const cs_real_t delta = xfil * pow(xa*cell_vol[c_id], xb);
+    const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
+                                                 cs_turb_bles);
     visct[c_id] = crom[c_id]*coef*cs_math_pow2(delta)*s_n[c_id];
+  }
+
+  /* Compute k_SGS and its dissipation if need (e.g. Lagrangian module) */
+  cs_field_t *f_k = cs_field_by_name_try("lagr_k");
+  cs_field_t *f_eps = cs_field_by_name_try("lagr_epsilon");
+  if (f_k != NULL && f_eps != NULL) {
+    cs_real_t c_epsilon = 1.;
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      const cs_real_t coef = cpro_smago[c_id];
+      const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
+                                                   cs_turb_bles);
+      f_eps->val[c_id] = cs_math_pow2(coef * delta) * cs_math_pow3(s_n[c_id]);
+      f_k->val[c_id] = c_epsilon *pow(delta * f_eps->val[c_id], 2./3.);
+    }
+
+    /* Parallel sync */
+    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_eps->val);
+    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_k->val);
+
+    /* Update previous values */
+    cs_field_current_to_previous(f_eps);
+    cs_field_current_to_previous(f_k);
   }
 
   const cs_equation_param_t *eqp
@@ -536,7 +562,8 @@ cs_les_mu_t_smago_dyn(cs_real_33_t  *gradv)
                          gradsf);
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        const cs_real_t delta  = xfil * pow(xa*cell_vol[c_id],xb);
+        const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
+                                                     cs_turb_bles);
         for (cs_lnum_t ii = 0; ii < 3; ii++)
           scami[c_id][ii]
             = -xro[c_id]*cs_math_pow2(delta)*s_n[c_id]*grads[c_id][ii];
@@ -599,7 +626,8 @@ cs_les_mu_t_smago_dyn(cs_real_33_t  *gradv)
         else
           cpro_sca_dync[c_id] = fmax(w3[c_id]/w4[c_id], 0.0);
 
-        const cs_real_t delta  = xfil * pow(xa*cell_vol[c_id], xb);
+        const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
+                                                     cs_turb_bles);
         cpro_turb_diff[c_id] =   crom[c_id] * cpro_sca_dync[c_id]
                                * cs_math_pow2(delta) * s_n[c_id];
       }
@@ -614,6 +642,7 @@ cs_les_mu_t_smago_dyn(cs_real_33_t  *gradv)
   /* Free memory */
   BFT_FREE(s_n);
   BFT_FREE(sf_n);
+  BFT_FREE(gradv);
 
   BFT_FREE(w9);
   BFT_FREE(w8);
@@ -636,27 +665,25 @@ cs_les_mu_t_smago_dyn(cs_real_33_t  *gradv)
  * \f[ \mu_T = \rho (C_{S} l)^2  \sqrt{2 S_{ij}S_{ij}} \f]
  * \f[ S_{ij} = \dfrac{\der{u_i}{x_j} + \der{u_j}{x_i}}{2}\f]
  *
- * \param[out]  gradv  computed velocity gradients (may be used by caller)
  !*/
 /*----------------------------------------------------------------------------*/
 
 void
-cs_les_mu_t_smago_const(cs_real_33_t  *gradv)
+cs_les_mu_t_smago_const(void)
 {
-  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
   /* Initialization
    * ============== */
 
+  cs_real_33_t *gradv;
+  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+
   cs_real_t *visct =  CS_F_(mu_t)->val;
   const cs_real_t *crom  = CS_F_(rho)->val;
-
-  const cs_real_t xfil = cs_turb_xlesfl;
-  const cs_real_t xa = cs_turb_ales;
-  const cs_real_t xb = cs_turb_bles;
-
-  const cs_real_t coef = cs_math_pow2(cs_turb_csmago)*sqrt(2.0);
 
   /* We need the velocity gradient */
 
@@ -667,32 +694,43 @@ cs_les_mu_t_smago_const(cs_real_33_t  *gradv)
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
 
-    /* S11**2+S22**2+S33**2+2*(S12**2+S13**2+S23**2) */
-
-    const cs_real_t s11  = gradv[c_id][0][0];
-    const cs_real_t s22  = gradv[c_id][1][1];
-    const cs_real_t s33  = gradv[c_id][2][2];
-    const cs_real_t dudy = gradv[c_id][0][1];
-    const cs_real_t dvdx = gradv[c_id][1][0];
-    const cs_real_t dudz = gradv[c_id][0][2];
-    const cs_real_t dwdx = gradv[c_id][2][0];
-    const cs_real_t dvdz = gradv[c_id][1][2];
-    const cs_real_t dwdy = gradv[c_id][2][1];
-
-    visct[c_id] =   cs_math_pow2(s11)
-                  + cs_math_pow2(s22)
-                  + cs_math_pow2(s33)
-                  + 0.5 * (  cs_math_pow2(dudy+dvdx)
-                           + cs_math_pow2(dudz+dwdx)
-                           + cs_math_pow2(dvdz+dwdy));
+    /* S2 = 2 S:S = 2 Sij Sij
+     * Note: should be the deviatoric part */
+    cs_real_t s2 = 2. * cs_math_33_main_invariant_2(gradv[c_id]);
 
     /* Calculation of (dynamic) viscosity */
 
-    cs_real_t delta  = xfil* (xa*pow(cell_vol[c_id],xb));
-    delta = coef*cs_math_pow2(delta);
-    visct[c_id] = crom[c_id] * delta * sqrt(visct[c_id]);
-
+    const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
+                                                 cs_turb_bles);
+    visct[c_id] = crom[c_id] * cs_math_pow2(cs_turb_csmago * delta) * sqrt(s2);
   }
+
+  /* Compute k_SGS and its dissipation if need (e.g. Lagrangian module) */
+  cs_field_t *f_k = cs_field_by_name_try("lagr_k");
+  cs_field_t *f_eps = cs_field_by_name_try("lagr_epsilon");
+  if (f_k != NULL && f_eps != NULL) {
+    cs_real_t c_epsilon = 1.;
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      const cs_real_t coef = cs_turb_csmago;
+      const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
+                                                   cs_turb_bles);
+      cs_real_t s = sqrt(2. * cs_math_33_main_invariant_2(gradv[c_id]));
+      f_eps->val[c_id] = cs_math_pow2(coef * delta) * cs_math_pow3(s);
+      f_k->val[c_id] = c_epsilon *pow(delta * f_eps->val[c_id], 2./3.);
+    }
+
+    /* Parallel sync */
+    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_eps->val);
+    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_k->val);
+
+    /* Update previous values */
+    cs_field_current_to_previous(f_eps);
+    cs_field_current_to_previous(f_k);
+  }
+
+  /* Free memory */
+  BFT_FREE(gradv);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -706,19 +744,23 @@ cs_les_mu_t_smago_const(cs_real_33_t  *gradv)
  * with \f$ \tens{S}  = \frac{1}{2}(\gradt \vect{u} + \transpose{\gradt \vect{u}})\f$
  * and  \f$ \tens{Sd} = \deviator{(\symmetric{(\tens{S}^2)})}\f$
  *
- * \param[out]  gradv the computed velocity gradients
  !*/
 /*----------------------------------------------------------------------------*/
 
 void
-cs_les_mu_t_wale(cs_real_33_t *restrict gradv)
+cs_les_mu_t_wale(void)
 
 {
-  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
   /* Initialization
    * ============== */
+
+  cs_real_33_t *gradv;
+  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
   cs_real_t *visct = CS_F_(mu_t)->val;
   const cs_real_t *crom = CS_F_(rho)->val;
@@ -744,7 +786,13 @@ cs_les_mu_t_wale(cs_real_33_t *restrict gradv)
     }
   }
 
-  const cs_real_t coef = sqrt(2.0)*cs_math_pow2(cs_turb_cwale);
+  /* Compute k_SGS and its dissipation if need (e.g. Lagrangian module) */
+  cs_field_t *f_k = cs_field_by_name_try("lagr_k");
+  cs_field_t *f_eps = cs_field_by_name_try("lagr_epsilon");
+  cs_real_t *s_eq = NULL;
+  /* Store inverse of the time scale if needed */
+  if (f_k != NULL && f_eps != NULL)
+    BFT_MALLOC(s_eq, n_cells, cs_real_t);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
 
@@ -794,15 +842,44 @@ cs_les_mu_t_wale(cs_real_33_t *restrict gradv)
     cs_real_t sinv = pow(s, 2.5) + pow(sd, 1.25);
     cs_real_t con = 0;
     if (sinv > 0)
-      con = pow(sd, 1.5)/sinv;
+      con = sqrt(2.) * pow(sd, 1.5)/sinv;
+
+    if (s_eq != NULL)
+      s_eq[c_id] = con;
 
     cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
                                            cs_turb_bles);
-    delta = coef * cs_math_pow2(delta);
 
-    visct[c_id] = crom[c_id] * delta * con;
+    visct[c_id] = crom[c_id] * cs_math_pow2(cs_turb_cwale * delta) * con;
 
   }
+
+  /* Compute k_SGS and its dissipation if need (e.g. Lagrangian module) */
+  if (f_k != NULL && f_eps != NULL) {
+    cs_real_t c_epsilon = 1.;
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      const cs_real_t coef = cs_turb_cwale;
+      const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
+                                                   cs_turb_bles);
+      cs_real_t s = s_eq[c_id];
+      f_eps->val[c_id] = cs_math_pow2(coef * delta) * cs_math_pow3(s);
+      f_k->val[c_id] = c_epsilon *pow(delta * f_eps->val[c_id], 2./3.);
+    }
+
+    /* Parallel sync */
+    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_eps->val);
+    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_k->val);
+
+    /* Update previous values */
+    cs_field_current_to_previous(f_eps);
+    cs_field_current_to_previous(f_k);
+
+    BFT_FREE(s_eq);
+  }
+
+  /* Free memory */
+  BFT_FREE(gradv);
+
 }
 
 /*----------------------------------------------------------------------------*/
