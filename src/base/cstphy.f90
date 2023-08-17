@@ -353,6 +353,11 @@ module cstphy
   !>  models.
   real(c_double), pointer, save :: crij3
 
+  !> constant \f$C_0\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
+  !> Useful if and only if \ref iturb = 30
+  !> (\f$R_{ij}-\varepsilon\f$ LRR)
+  real(c_double), pointer, save :: crijc0
+
   !> constant \f$C_s\f$ for the \f$R_{ij}-\varepsilon\f$ models.
   real(c_double), pointer, save :: csrij
 
@@ -604,12 +609,13 @@ module cstphy
     ! turbulence model
 
     subroutine cs_f_turb_model_constants_get_pointers(apow, bpow, cmu, cmu025, &
-        crij1, crij2, crij3, csmago, xlesfd, xlesfl,                           &
+        crij1, crij2, crij3, crijc0, csmago, xlesfd, xlesfl,                   &
         ales, bles, cdries, csrij, xclt) &
       bind(C, name='cs_f_turb_model_constants_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: apow, bpow, cmu  , cmu025 , crij1 , crij2, crij3
+      type(c_ptr), intent(out) :: apow, bpow, cmu  , cmu025
+      type(c_ptr), intent(out) :: crij1 , crij2, crij3, crijc0
       type(c_ptr), intent(out) :: csmago
       type(c_ptr), intent(out) :: xlesfd, xlesfl, cdries
       type(c_ptr), intent(out) :: ales, bles, csrij, xclt
@@ -746,12 +752,14 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_apow, c_bpow, c_cmu, c_cmu025, c_crij1, c_crij2, c_crij3
+    type(c_ptr) :: c_crijc0
     type(c_ptr) :: c_csmago
     type(c_ptr) :: c_xlesfd, c_xlesfl, c_ales, c_bles, c_cdries, c_csrij, c_xclt
 
     call cs_f_turb_model_constants_get_pointers(c_apow, c_bpow,                &
                                                 c_cmu, c_cmu025,               &
                                                 c_crij1, c_crij2, c_crij3,     &
+                                                c_crijc0,                      &
                                                 c_csmago, c_xlesfd, c_xlesfl,  &
                                                 c_ales, c_bles,                &
                                                 c_cdries, c_csrij, c_xclt)
@@ -763,6 +771,7 @@ contains
     call c_f_pointer(c_crij1 , crij1)
     call c_f_pointer(c_crij2 , crij2)
     call c_f_pointer(c_crij3 , crij3)
+    call c_f_pointer(c_crijc0, crijc0)
     call c_f_pointer(c_csmago, csmago)
     call c_f_pointer(c_xlesfd, xlesfd)
     call c_f_pointer(c_xlesfl, xlesfl)

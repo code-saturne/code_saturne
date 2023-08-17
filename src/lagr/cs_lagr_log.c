@@ -64,6 +64,7 @@
 
 #include "cs_lagr_prototypes.h"
 
+#include "cs_turbulence_model.h"
 #include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
@@ -471,10 +472,12 @@ cs_lagr_log_setup(void)
      _("\n  Turbulent dispersion options:\n"
        "    Lagrangian turbulent dispersion:              %s\n"
        "      identical to fluid turbulent diffusion:     %s\n"
-       "    apply model from time step:                   %d\n"),
+       "    apply model from time step:                   %d\n"
+       "    C0  constant value:                           %14.5e\n"),
      _status(cs_glob_lagr_model->idistu),
      _status(cs_glob_lagr_model->idiffl),
-     cs_glob_lagr_model->modcpl);
+     cs_glob_lagr_model->modcpl,
+     cs_turb_crij_c0);
 
   cs_log_printf
     (CS_LOG_SETUP,

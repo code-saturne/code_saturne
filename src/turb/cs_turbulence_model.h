@@ -314,6 +314,7 @@ extern double cs_turb_ce4;
 extern double cs_turb_crij1;
 extern double cs_turb_crij2;
 extern double cs_turb_crij3;
+extern double cs_turb_crij_c0;
 extern double cs_turb_crijp1;
 extern double cs_turb_crijp2;
 extern double cs_turb_cssge2;

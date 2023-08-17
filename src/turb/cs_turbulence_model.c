@@ -530,11 +530,19 @@ double cs_turb_ce4 = 1.20;
  */
 double cs_turb_crij1 = 1.80;
 
-/*
+/*!
  * Constant \f$C_2\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
  * Useful if and only if \ref iturb=30 (\f$R_{ij}-\varepsilon\f$ LRR).
  */
 double cs_turb_crij2 = 0.60;
+
+/*!
+ * Rotta constant \f$C_0\f$ for the \f$R_{ij}-\varepsilon\f$ model.
+ * Useful for the Lagrangian model. The value is set from \f$C_1\f$
+ * if and only if \ref iturb=CS_TURB_RIJ_EPSILON_LRR
+ * (\f$R_{ij}-\varepsilon\f$ LRR) and \f$C_2=0\f$.
+ */
+double cs_turb_crij_c0 = 3.5;
 
 /*!
  * Constant \f$C_3\f$ for the \f$R_{ij}-\varepsilon\f$ models.
@@ -1081,6 +1089,7 @@ cs_f_turb_model_constants_get_pointers(double  **apow,
                                        double  **crij1,
                                        double  **crij2,
                                        double  **crij3,
+                                       double  **crijc0,
                                        double  **csmago,
                                        double  **xlesfd,
                                        double  **xlesfl,
@@ -1254,6 +1263,7 @@ cs_f_turb_model_constants_get_pointers(double  **apow,
                                        double  **crij1,
                                        double  **crij2,
                                        double  **crij3,
+                                       double  **crijc0,
                                        double  **csmago,
                                        double  **xlesfd,
                                        double  **xlesfl,
@@ -1270,6 +1280,7 @@ cs_f_turb_model_constants_get_pointers(double  **apow,
   *crij1 = &cs_turb_crij1;
   *crij2 = &cs_turb_crij2;
   *crij3 = &cs_turb_crij3;
+  *crijc0 = &cs_turb_crij_c0;
   *csmago= &cs_turb_csmago;
   *csmago= &cs_turb_csmago;
   *xlesfd= &cs_turb_xlesfd;
@@ -1599,9 +1610,12 @@ cs_turb_compute_constants(void)
   cs_turb_csmago_max = cs_turb_csmago*cs_turb_csmago;
   cs_turb_csmago_min = 0.;
 
-  /* LRR constants */
-  cs_turb_crij1 = 1.80;
-  cs_turb_crij2 = 0.60;
+  /* In case of Rotta model (ie LRR + Cr2 = 0) compute
+   * automatically the C0 constant */
+  if ((cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) &&
+      (CS_ABS(cs_turb_crij2) < 1.e-12))
+    cs_turb_crij_c0 = (cs_turb_crij1-1.0)*2.0/3.0;
+
 }
 
 /*----------------------------------------------------------------------------*/

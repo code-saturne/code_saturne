@@ -160,7 +160,7 @@ double precision visci(3,3), fikis, viscis, distfi
 double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
 double precision rxx, rxy, rxz, ryy, ryz, rzz, rnnb
 double precision rttb, alpha_rnn
-double precision c0, cl
+double precision cl
 double precision cpp
 double precision sigmak, sigmae
 double precision liqwt, totwt
@@ -520,15 +520,14 @@ iuiptn = 0
 
 
 if (iturb.eq.30 .and. abs(crij2).le.epzero .and. crij1.gt.1.d0) then
-  c0 = (crij1-1) * 2.0 / 3.0 ! depend on the lag model
   ! Alpha constant for a realisable BC for R12 with the Rotta model
-  alpha_rnn = 1.d0 / sqrt(c0+2.0d0)
+  alpha_rnn = 1.d0 / sqrt(crijc0+2.0d0)
 else
-  c0 = 3.5d0
+  ! FIXME should be dereve from the algebraic model
   ! Alpha constant for a realisable BC for R12 with the SSG model
   alpha_rnn = 0.47d0
 endif
-cl = 1.d0 / (0.5d0 + 0.75d0 * c0) ! see the different model
+cl = 1.d0 / (0.5d0 + 0.75d0 * crijc0) ! see the different model
 
 ! With v2f type model, (phi-fbar et BL-v2/k) u=0 is set directly, so
 ! uiptmx and uiptmn are necessarily 0

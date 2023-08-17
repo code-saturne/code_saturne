@@ -274,15 +274,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
      ================================ */
   if(cs_glob_lagr_model->idistu > 0) {
 
-    cs_real_t c0     = 3.5;
-
-    /* In case of Rotta model (ie LRR + Cr2 = 0) compute
-     * automatically the C0 constant */
-    if ((turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) &&
-        (CS_ABS(cs_turb_crij2) < 1.e-12))
-      c0 = (cs_turb_crij1-1.0)*2.0/3.0;
-
-    cs_real_t cl     = 1.0 / (0.5 + 0.75 * c0);
+    cs_real_t cl     = 1.0 / (0.5 + 0.75 * cs_turb_crij_c0);
 
     cs_real_t *energi = extra->cvar_k->val;
     cs_real_t *dissip = extra->cvar_ep->val;

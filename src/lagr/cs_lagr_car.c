@@ -161,14 +161,8 @@ cs_lagr_car(int              iprev,
   cs_lnum_t nor = cs_glob_lagr_time_step->nor;
 
   cs_real_t rec    = 1000.0;
-  cs_real_t c0     = 3.5;
+  cs_real_t c0     = cs_turb_crij_c0;
   cs_turb_model_t *turb_mod = cs_get_glob_turb_model();
-
-  /* In case of Rotta model (ie LRR + Cr2 = 0) compute
-   * automatically the C0 constant */
-  if ( (turb_mod->iturb == CS_TURB_RIJ_EPSILON_LRR) &&
-       (CS_ABS(cs_turb_crij2) < 1.e-12) )
-    c0 = (cs_turb_crij1-1.0)*2.0/3.0;
 
   cs_real_t cl     = 1.0 / (0.5 + 0.75 * c0);
   cs_real_t cb     = 0.8;
