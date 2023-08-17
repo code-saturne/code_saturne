@@ -275,7 +275,7 @@ cs_lagr_car(int              iprev,
      based on turbulence model */
 
   if (cs_glob_lagr_model->idistu == 1) {
-    /* Compute properties associated to the eulerian mesh
+    /* Compute properties associated to the Eulerian mesh
      * used in the complete model for discrete particles
        ---------- */
     cs_real_t *energi = extra->cvar_k->val;
