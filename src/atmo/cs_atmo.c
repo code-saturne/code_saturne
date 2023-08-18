@@ -2065,6 +2065,7 @@ cs_atmo_add_property_fields(void)
  * \brief Deardorff force restore model
  */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_soil_model(void)
 {
@@ -2080,7 +2081,6 @@ cs_soil_model(void)
     const cs_real_t stephn = cs_physical_constants_stephan;
     cs_real_t kappa = cs_turb_xkappa;
     const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
-    cs_lnum_t *n_elts = z->n_elts;
     const cs_lnum_t *elt_ids = z->elt_ids;
     const cs_real_3_t *surfbo
       = (const cs_real_3_t *)mq->b_face_normal;
@@ -2110,7 +2110,8 @@ cs_soil_model(void)
     cs_field_t *boundary_vegetation = cs_field_by_name("boundary_vegetation");
     /* Fields related to all faces */
     cs_field_t *boundary_roughness = cs_field_by_name_try("boundary_roughness");
-    cs_field_t *boundary_thermal_roughness = cs_field_by_name_try("boundary_thermal_roughness");
+    cs_field_t *boundary_thermal_roughness
+      = cs_field_by_name_try("boundary_thermal_roughness");
     cs_field_t *boundary_albedo = cs_field_by_name_try("boundary_albedo");
     cs_field_t *emissivity = cs_field_by_name_try("emissivity");
     /* Cell fields  */
@@ -3914,7 +3915,7 @@ cs_atmo_aerosol_log_setup(void)
   cs_atmo_aerosol_type_t atm_aer_type = cs_glob_atmo_chemistry->aerosol_model;
 
   if (atm_aer_type == CS_ATMO_AEROSOL_OFF)
-    cs_log_printf(CS_LOG_SETUP,_("  %s\n"),
+    cs_log_printf(CS_LOG_SETUP, _("  %s\n"),
                   cs_atmo_aerosol_type_name[atm_aer_type]);
 
   else if (atm_aer_type == CS_ATMO_AEROSOL_SSH) {
@@ -3983,7 +3984,6 @@ cs_atmo_finalize(void)
   BFT_FREE(_atmo_option.rad_1d_ird);
   BFT_FREE(_atmo_option.rad_1d_solu);
   BFT_FREE(_atmo_option.rad_1d_sold);
-
 }
 
 /*----------------------------------------------------------------------------*/

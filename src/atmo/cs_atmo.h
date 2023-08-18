@@ -494,7 +494,6 @@ cs_atmo_compute_meteo_profiles(void);
 void
 cs_atmo_z_ground_compute(void);
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute hydrostatic profiles of density and pressure.
@@ -581,7 +580,6 @@ cs_real_t
 cs_mo_psih(cs_real_t              z,
            cs_real_t              z0,
            cs_real_t              dlmo);
-
 
 /*----------------------------------------------------------------------------*/
 /*!
