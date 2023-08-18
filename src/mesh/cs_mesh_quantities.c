@@ -186,13 +186,16 @@ _compute_corr_grad_lin(const cs_mesh_t       *m,
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
 
-  const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const int *restrict c_disable_flag = fvq->c_disable_flag;
+  cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
+
+  const cs_real_t *restrict cell_vol = fvq->cell_f_vol;
   const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
   const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_face_cog;
+    = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
 
@@ -237,17 +240,36 @@ _compute_corr_grad_lin(const cs_mesh_t       *m,
     }
   }
 
+  /* Immersed boundaries contribution */
+  if (fvq->c_w_face_cog != NULL && fvq->c_w_face_normal != NULL) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          cs_real_t flux = fvq->c_w_face_cog[cell_id*3+i]
+                           * fvq->c_w_face_normal[cell_id*3+j];
+          corr_grad_lin[cell_id][i][j] += flux;
+        }
+      }
+    }
+  }
+
   /* Matrix inversion */
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-    double cocg11 = corr_grad_lin[cell_id][0][0] / cell_vol[cell_id];
-    double cocg12 = corr_grad_lin[cell_id][1][0] / cell_vol[cell_id];
-    double cocg13 = corr_grad_lin[cell_id][2][0] / cell_vol[cell_id];
-    double cocg21 = corr_grad_lin[cell_id][0][1] / cell_vol[cell_id];
-    double cocg22 = corr_grad_lin[cell_id][1][1] / cell_vol[cell_id];
-    double cocg23 = corr_grad_lin[cell_id][2][1] / cell_vol[cell_id];
-    double cocg31 = corr_grad_lin[cell_id][0][2] / cell_vol[cell_id];
-    double cocg32 = corr_grad_lin[cell_id][1][2] / cell_vol[cell_id];
-    double cocg33 = corr_grad_lin[cell_id][2][2] / cell_vol[cell_id];
+    cs_real_t dvol;
+    /* Is the cell disabled (for solid or porous)? Not the case if coupled */
+    if (has_dc * c_disable_flag[has_dc * cell_id] == 0)
+      dvol = 1. / cell_vol[cell_id];
+    else
+      dvol = 0.;
+    double cocg11 = corr_grad_lin[cell_id][0][0] * dvol;
+    double cocg12 = corr_grad_lin[cell_id][1][0] * dvol;
+    double cocg13 = corr_grad_lin[cell_id][2][0] * dvol;
+    double cocg21 = corr_grad_lin[cell_id][0][1] * dvol;
+    double cocg22 = corr_grad_lin[cell_id][1][1] * dvol;
+    double cocg23 = corr_grad_lin[cell_id][2][1] * dvol;
+    double cocg31 = corr_grad_lin[cell_id][0][2] * dvol;
+    double cocg32 = corr_grad_lin[cell_id][1][2] * dvol;
+    double cocg33 = corr_grad_lin[cell_id][2][2] * dvol;
 
     double a11 = cocg22 * cocg33 - cocg32 * cocg23;
     double a12 = cocg32 * cocg13 - cocg12 * cocg33;
