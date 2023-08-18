@@ -313,7 +313,9 @@ do iflid = 0, nfld-1
     if (icla.ne.0) then
       do ii = 0, nfld-1
         call field_get_key_int(ii, keyccl, iclap)
-        if (icla.eq.iclap) then
+        call field_get_type(ii, f_type)
+        if (icla.eq.iclap .and. &
+          iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
           call field_set_key_int(ii, kimasf, f_id)
         endif
       enddo
@@ -335,7 +337,9 @@ do iflid = 0, nfld-1
     if (icla.ne.0) then
       do ii = 0, nfld-1
         call field_get_key_int(ii, keyccl, iclap)
-        if (icla.eq.iclap) then
+        call field_get_type(ii, f_type)
+        if (icla.eq.iclap .and. &
+          iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
           call field_set_key_int(ii, kbmasf, f_id)
         endif
       enddo
