@@ -1340,7 +1340,7 @@ cs_ctwr_log_balance(void)
   cs_real_t *y_l = (cs_real_t *)CS_F_(y_l_pack)->val;   /* liquid mass per unit
                                                        cell volume */
 
- // FIXME take the good one... for y_p
+  // FIXME take the good one... for y_p
   cs_real_t *liq_mass_flow
     = cs_field_by_name("inner_mass_flux_y_l_packing")->val;
   cs_real_t *mass_flow = cs_field_by_name("inner_mass_flux")->val;
@@ -1447,7 +1447,7 @@ cs_ctwr_log_balance(void)
       ct->h_l_out += sign * h_l[cell_id_l] * liq_mass_flow[face_id];
 
       // FIXME: Sign coming from liq_mass_flow
-      //and applied to mass_flow - correct?
+      // and applied to mass_flow - correct?
       ct->t_h_in  += sign * t_h[cell_id_h] * mass_flow[face_id];
       ct->h_h_in  += sign * h_h[cell_id_h] * mass_flow[face_id];
       ct->q_h_in  += sign * mass_flow[face_id];
@@ -2529,7 +2529,7 @@ cs_ctwr_source_term(int              f_id,
 
         /* Humid air temperature equation */
         else if (f_id == (CS_F_(t)->id)) {
-          //FIXME source term for theta_l instead...
+          // FIXME source term for theta_l instead...
           /* Because the writing is in a non-conservative form */
           cs_real_t cp_h = cs_air_cp_humidair(x[cell_id], x_s[cell_id]);
           cs_real_t l_imp_st = vol_mass_source * cp_h;

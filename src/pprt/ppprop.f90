@@ -96,7 +96,6 @@ interface
     implicit none
   end subroutine cs_ctwr_add_property_fields
 
-
 end interface
 
 !===============================================================================

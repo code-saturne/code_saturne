@@ -57,7 +57,6 @@ module ctincl
 
     !> \cond DOXYGEN_SHOULD_SKIP_THIS
 
-
     ! Interface to C function retrieving pointers to members of the
     ! global fluid properties structure
     subroutine cs_air_glob_properties_get_pointers(cp_a, cp_v) &
