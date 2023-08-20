@@ -141,10 +141,7 @@ cs_boundary_condition_pm_info_t  *cs_glob_bc_pm_info = NULL;
  *============================================================================*/
 
 int *
-cs_f_boundary_conditions_get_bc_type(void)
-{
-  return _bc_type;
-}
+cs_f_boundary_conditions_get_bc_type(void);
 
 void
 cs_f_boundary_conditions_mapped_set(int                        field_id,
@@ -743,6 +740,16 @@ _compute_robin_bc(const cs_mesh_t            *mesh,
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Return pointer to global boundary conditions type array.
+ *----------------------------------------------------------------------------*/
+
+int *
+cs_f_boundary_conditions_get_bc_type(void)
+{
+  return _bc_type;
+}
 
 /*----------------------------------------------------------------------------
  * Set mapped boundary conditions for a given field and mapping locator.

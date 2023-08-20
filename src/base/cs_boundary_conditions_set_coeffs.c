@@ -107,6 +107,9 @@ BEGIN_C_DECLS
 
 /* Bindings to Fortran routines */
 
+int *
+cs_f_boundary_conditions_get_bc_type(void);
+
 void
 cs_f_ppprcl(int        itypfb[],
             cs_real_t  dt[]);
