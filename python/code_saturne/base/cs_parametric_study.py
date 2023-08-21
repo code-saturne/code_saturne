@@ -197,7 +197,7 @@ def update_xml_file(pkg, filepath, options):
         print("File %s does not exist!" % filepath)
         sys.exit(1)
 
-    case_setup = load_case_from_xml(xml_file, pkg)
+    case_setup = load_case_setup_from_xml(filepath, pkg)
     cs_parametric_setup.update_case_model(case_setup, options, pkg)
 
     case_setup.xmlSaveDocument()
