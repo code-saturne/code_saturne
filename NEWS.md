@@ -3,6 +3,9 @@ Release 7.0.7 (not released yet)
 
 Bug fixes:
 
+- Fix parametric study available as code_saturne/neptune_cfd command line
+  keyword.
+
 - Fix profile point coordinates when snap mode is enabled.
   Before this, the plotted coordinates were not the snapped ones,
   and could depend slightly on partitioning.
@@ -18,6 +21,8 @@ Bug fixes:
 
 - Fix occasional zone name corruption when number of zones/mesh locations
   is increased from 2^n to 2^n+1.
+
+### User changes:
 
 - Fix electric arcs rescaling by plane computation issue in some parallel
   partitioning configurations.
