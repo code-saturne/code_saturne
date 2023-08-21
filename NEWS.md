@@ -29,6 +29,9 @@ Release 8.0.2 (unreleased)
 - Fix use-before define error for HTLES mean velocity definition.
   This corresponds to GitHub issue #117.
 
+- Fix parametric study available as code_saturne/neptune_cfd command line
+  keyword.
+
 ### User changes:
 
 - Migrate cooling tower user-defined functions to C.
