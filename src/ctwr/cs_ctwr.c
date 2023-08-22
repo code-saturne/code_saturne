@@ -153,6 +153,8 @@ struct _cs_ctwr_zone_t {
   cs_lnum_t  n_outlet_cells;     /* Number of outlet cells */
   cs_lnum_t *outlet_cells_ids;   /* List of outlet cells */
 
+  cs_real_t  p_in;            /* Average inlet pressure */
+  cs_real_t  p_out;           /* Average outlet pressure */
   cs_real_t  q_l_in;          /* Water entry flow */
   cs_real_t  q_l_out;         /* Water exit flow */
   cs_real_t  t_l_in;          /* Mean water entry temperature */
@@ -1110,7 +1112,8 @@ cs_ctwr_define(const char           zone_criteria[],
     fprintf(f, "\tTemp air in");
     fprintf(f, "\tTemp air out");
     fprintf(f, "\tFlow liq in\tFlow liq out");
-    fprintf(f, "\tFlow air in\tFlow air out\n");
+    fprintf(f, "\tFlow air in\tFlow air out");
+    fprintf(f, "\tPressure in\tPressure out\n");
     fclose(f);
   }
 }
@@ -1333,6 +1336,9 @@ cs_ctwr_log_balance(void)
 
   const cs_lnum_2_t *i_face_cells
     = (const cs_lnum_2_t *)(cs_glob_mesh->i_face_cells);
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->i_face_normal;
+  cs_real_t *p = (cs_real_t *)CS_F_(p)->val;        /* pressure */
   cs_real_t *t_h = (cs_real_t *)CS_F_(t)->val;      /* humid air temperature */
   cs_real_t *h_h = (cs_real_t *)CS_F_(h)->val;      /* humid air enthalpy */
   cs_real_t *t_l = (cs_real_t *)CS_F_(t_l)->val;    /* liquid temperature */
@@ -1352,6 +1358,8 @@ cs_ctwr_log_balance(void)
 
     cs_ctwr_zone_t *ct = _ct_zone[ict];
 
+    ct->p_in = 0.0;
+    ct->p_out = 0.0;
     ct->q_l_in = 0.0;
     ct->q_l_out = 0.0;
     ct->t_l_in = 0.0;
@@ -1373,6 +1381,7 @@ cs_ctwr_log_balance(void)
 
       cs_lnum_t face_id = ct->inlet_faces_ids[i];
       cs_lnum_t cell_id_l, cell_id_h;
+      cs_real_t face_surf = cs_math_3_norm(i_face_normal[face_id]);
 
       /* Convention: inlet is negative mass flux
        * Then upwind cell for liquid is i_face_cells[][1] */
@@ -1387,6 +1396,8 @@ cs_ctwr_log_balance(void)
         cell_id_h = i_face_cells[face_id][0];
       }
 
+      /* Liquid inlet = air outlet -> outlet pressure */
+      ct->p_out += p[cell_id_h] * face_surf;
       /* (y_l. h_l) is transported with (rho u_l)
        * so h_l is transported with (y_l rho u_l) */
       ct->t_l_in += sign * t_l[cell_id_l]
@@ -1401,17 +1412,19 @@ cs_ctwr_log_balance(void)
       //ct->xair_s  += debit*xa[icel];
     }
 
-    double stmp[6] = {ct->t_l_in, ct->h_l_in, ct->q_l_in,
-                      ct->t_h_out, ct->h_h_out, ct->q_h_out};
+    double stmp[7] = {ct->t_l_in, ct->h_l_in, ct->q_l_in,
+                      ct->t_h_out, ct->h_h_out, ct->q_h_out, ct->p_out};
 
-    cs_parall_sum(6, CS_DOUBLE, stmp);
+    cs_parall_sum(7, CS_DOUBLE, stmp);
 
     ct->t_l_in = stmp[0]; ct->h_l_in = stmp[1]; ct->q_l_in = stmp[2];
     ct->t_h_out = stmp[3]; ct->h_h_out = stmp[4]; ct->q_h_out = stmp[5];
+    ct->p_out = stmp[6];
 
     ct->t_l_in /= ct->q_l_in;
     ct->h_l_in /= ct->q_l_in;
     ct->q_l_in /= ct->surface_in;
+    ct->p_out /= ct->surface_in;
 
     if (CS_ABS(ct->q_h_out) > 1e-10) {
       ct->t_h_out /= ct->q_h_out;
@@ -1425,6 +1438,7 @@ cs_ctwr_log_balance(void)
 
       cs_lnum_t face_id = ct->outlet_faces_ids[i];
       cs_lnum_t cell_id_l, cell_id_h;
+      cs_real_t face_surf = cs_math_3_norm(i_face_normal[face_id]);
 
       /* Convention: outlet is positive mass flux
        * Then upwind cell for liquid is i_face_cells[][0] */
@@ -1439,6 +1453,8 @@ cs_ctwr_log_balance(void)
         cell_id_h = i_face_cells[face_id][1];
       }
 
+      /* Liquid outlet = air inlet -> inlet pressure */
+      ct->p_in += p[cell_id_h] * face_surf;
       /* h_l is in fact (y_l. h_l),
        * and the transport field is (y_l*liq_mass_flow) */
       ct->t_l_out += sign * t_l[cell_id_l]
@@ -1461,9 +1477,12 @@ cs_ctwr_log_balance(void)
     cs_parall_sum(1, CS_DOUBLE, &(ct->h_h_in));
     cs_parall_sum(1, CS_DOUBLE, &(ct->q_h_in));
 
+    cs_parall_sum(1, CS_DOUBLE, &(ct->p_in));
+
     ct->t_l_out /= ct->q_l_out;
     ct->h_l_out /= ct->q_l_out;
     ct->q_l_out /= ct->surface_out;
+    ct->p_in /= ct->surface_out;
 
     if (CS_ABS(ct->q_h_in) > 1e-10) {
       ct->t_h_in /= ct->q_h_in;
@@ -1479,7 +1498,7 @@ cs_ctwr_log_balance(void)
                                / (ct->h_l_in - ct->h_l_out));
         fprintf(f,
                 "%10f\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t"
-                "%12.5e\t%12.5e\t%12.5e\t%12.5e\n",
+                "%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\n",
                 cs_glob_time_step->t_cur,
                 aux,
                 ct->t_l_in,
@@ -1489,7 +1508,9 @@ cs_ctwr_log_balance(void)
                 ct->q_l_in,
                 ct->q_l_out,
                 ct->q_h_in,
-                ct->q_h_out);
+                ct->q_h_out,
+                ct->p_in,
+                ct->p_out);
         fclose(f);
       }
     }
