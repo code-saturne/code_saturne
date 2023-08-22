@@ -341,11 +341,11 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   BFT_MALLOC(smbrk, n_cells_ext, cs_real_t);
   BFT_MALLOC(smbre, n_cells_ext, cs_real_t);
 
-  cs_real_t *tinstk, *tinste, *divu, *strain;
+  cs_real_t *tinstk, *tinste, *divu, *strain_sq;
   BFT_MALLOC(tinstk, n_cells_ext, cs_real_t);
   BFT_MALLOC(tinste, n_cells_ext, cs_real_t);
   BFT_MALLOC(divu, n_cells_ext, cs_real_t);
-  BFT_MALLOC(strain, n_cells_ext, cs_real_t);
+  BFT_MALLOC(strain_sq, n_cells_ext, cs_real_t);
 
   /* Allocate work arrays */
 
@@ -364,8 +364,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   BFT_MALLOC(usimpe, n_cells_ext, cs_real_t);
   BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
 
-  cs_real_t *prdtke = NULL, *prdeps = NULL, *sqrt_k = NULL, *sqrt_strain = NULL;
-  cs_real_3_t *grad_sqk = NULL, *grad_sqs = NULL;
+  cs_real_t *prdtke = NULL, *prdeps = NULL, *sqrt_k = NULL, *strain = NULL;
+  cs_real_3_t *grad_sqk = NULL, *grad_s = NULL;
   cs_real_t *coefa_sqk = NULL, *coefb_sqk = NULL;
   cs_real_t *coefa_sqs = NULL, *coefb_sqs = NULL;
   cs_real_t *w10 = NULL, *w11 = NULL;
@@ -376,9 +376,9 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   }
   else if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS) {
     BFT_MALLOC(sqrt_k, n_cells_ext, cs_real_t);
-    BFT_MALLOC(sqrt_strain, n_cells_ext, cs_real_t);
+    BFT_MALLOC(strain, n_cells_ext, cs_real_t);
     BFT_MALLOC(grad_sqk, n_cells_ext, cs_real_3_t);
-    BFT_MALLOC(grad_sqs, n_cells_ext, cs_real_3_t);
+    BFT_MALLOC(grad_s, n_cells_ext, cs_real_3_t);
     BFT_MALLOC(coefa_sqk, n_b_faces, cs_real_t);
     BFT_MALLOC(coefb_sqk, n_b_faces, cs_real_t);
     BFT_MALLOC(coefa_sqs, n_b_faces, cs_real_t);
@@ -590,9 +590,9 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
     BFT_FREE(grad);
   }
 
-  /* Compute the scalar strain rate SijSij and the trace of
+  /* Compute the scalar strain rate squared S2 =2SijSij and the trace of
      the velocity gradient
-     (Sij^D) (Sij^D)  is stored in    strain (deviatoric strain tensor rate)
+     (Sij^D) (Sij^D)  is stored in    strain_sq (deviatoric strain tensor rate)
      tr(Grad u)       is stored in    divu
      ======================================================================= */
 
@@ -607,7 +607,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                            1,     /* inc */
                            gradv);
 
-  /* strain = Stain rate of the deviatoric part of the strain tensor
+  /* strain_sq = Stain rate of the deviatoric part of the strain tensor
      = 2 (Sij^D).(Sij^D)
      divu   = trace of the velocity gradient
      = dudx + dvdy + dwdz */
@@ -615,7 +615,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 # pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-    strain[c_id] = 2.
+    strain_sq[c_id] = 2.
       * (  cs_math_pow2(  d2s3*gradv[c_id][0][0]
                         - d1s3*gradv[c_id][1][1]
                         - d1s3*gradv[c_id][2][2])
@@ -636,8 +636,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
      kinetic energy for Launder-Sharma k-epsilon source terms */
   if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      sqrt_strain[c_id] = pow(fabs(strain[c_id]), 0.5);
-      sqrt_k[c_id]      = pow(fabs(cvar_k[c_id]), 0.5);
+      strain[c_id] = sqrt(strain_sq[c_id]);
+      sqrt_k[c_id] = sqrt(fabs(cvar_k[c_id]));
     }
   }
 
@@ -652,7 +652,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   }
 
   /* Compute the first part of the production term: muT (S^D)**2
-   * Going out of the step we keep strain, divu,
+   * Going out of the step we keep strain_sq, divu,
    *============================================================
    *
    * For the Linear Production k-epsilon model,
@@ -665,7 +665,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       cs_real_t rho    = cromo[c_id];
-      cs_real_t xs     = sqrt(strain[c_id]);
+      cs_real_t xs     = sqrt(strain_sq[c_id]);
       cs_real_t cmueta = fmin(cs_turb_cmu*cvara_k[c_id]/cvara_ep[c_id]*xs,
                               sqrcmu);
       smbrk[c_id] = rho*cmueta*xs*cvara_k[c_id];
@@ -745,10 +745,10 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                                       + cs_turb_cnl5*cs_math_pow3(xss))*xcmu);
 
       /* Evaluating the turbulent production */
-      smbrk[c_id] =   visct*strain[c_id]
-                    - 4*xqc1*visct*xttke* (skskjsji - d1s3*sijsij*divu[c_id])
-                    - 4*xqc2*visct*xttke* (wkskjsji + skiwjksji)
-                    - 4*xqc3*visct*xttke* (wkwjksji - d1s3*wijwij*divu[c_id]);
+      smbrk[c_id] =   visct*strain_sq[c_id]
+                    - 4.*xqc1*visct*xttke* (skskjsji - d1s3*sijsij*divu[c_id])
+                    - 4.*xqc2*visct*xttke* (wkskjsji + skiwjksji)
+                    - 4.*xqc3*visct*xttke* (wkwjksji - d1s3*wijwij*divu[c_id]);
       smbre[c_id] = smbrk[c_id];
     } /* End loop on cells */
 
@@ -764,7 +764,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   else {
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      smbrk[c_id] = cpro_pcvto[c_id] * strain[c_id];
+      smbrk[c_id] = cpro_pcvto[c_id] * strain_sq[c_id];
       smbre[c_id] = smbrk[c_id];
     }
     /* Save production for post processing */
@@ -1122,7 +1122,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   }
 
   /* Only for the Launder-Sharma model, calculation of E and D terms
-   *      The terms are stored in          grad_sqk, grad_sqs
+   *      The terms are stored in          grad_sqk, grad_s
    * ================================================================*/
 
   if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS) {
@@ -1132,15 +1132,13 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 
     coefap = (cs_real_t *)f_k->bc_coeffs->a;
     coefbp = (cs_real_t *)f_k->bc_coeffs->b;
-    cofafp = (cs_real_t *)f_k->bc_coeffs->af;
-    cofbfp = (cs_real_t *)f_k->bc_coeffs->bf;
 
     /* For all usual type of boundary faces (wall, inlet, sym, outlet):
        - coefa for sqrt(k) is the sqrt of the coefa for k,
        - coefb is the same as for k */
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-      coefa_sqk[face_id] = pow(coefap[face_id], 0.5);
+      coefa_sqk[face_id] = sqrt(coefap[face_id]);
       coefb_sqk[face_id] = coefbp[face_id];
     }
 
@@ -1170,7 +1168,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                        NULL,  /* internal coupling */
                        grad_sqk);
 
-    /* Gradient of the Strain gradient (grad S)
+    /* Gradient of the Strain (grad S)
        --------------------------------------- */
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
@@ -1182,7 +1180,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                                &gradient_type,
                                &halo_type);
 
-    cs_gradient_scalar("grad_sqs",
+    cs_gradient_scalar("grad_s",
                        gradient_type,
                        halo_type,
                        1,     /* inc */
@@ -1196,10 +1194,10 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                        NULL,
                        coefa_sqs,
                        coefb_sqs,
-                       sqrt_strain,
+                       strain,
                        NULL,
                        NULL, /* internal coupling */
-                       grad_sqs);
+                       grad_s);
 
   }
 
@@ -1244,14 +1242,18 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 #     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         cs_real_t rho   = cromo[c_id];
-        cs_real_t xnu   = cpro_pcvlo[c_id]/rho;
+        cs_real_t mu   = cpro_pcvlo[c_id];
         cs_real_t xnut  = cpro_pcvto[c_id]/rho;
 
-        smbrk[c_id] +=  - cell_f_vol[c_id] *  2. * rho * xnu
+        cs_real_t mu_gradk2 = cell_f_vol[c_id] *  2. * mu
                         * cs_math_3_square_norm(grad_sqk[c_id]);
 
-        smbre[c_id] +=    cell_f_vol[c_id] * 2. * rho * xnu * xnut
-                        * cs_math_3_square_norm(grad_sqs[c_id]);
+        if (cs_glob_turb_rans_model->ikecou == 0)
+          tinstk[c_id] += mu_gradk2/cvara_k[c_id];
+        smbrk[c_id]  -= mu_gradk2;
+
+        smbre[c_id] +=    cell_f_vol[c_id] * 2. * mu * xnut
+                        * cs_math_3_square_norm(grad_s[c_id]);
       }
     }
 
@@ -1406,11 +1408,11 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 
   /* Take user source terms into account
    *
-   *    The scalar strain rate (strain) and the trace of the velocity gradient
-   *    (divu) are available.
+   *    The square of the scalar strain rate (strain_sq)
+   *    and the trace of the velocity gradient (divu) are available.
    *    The part to be explicit is stored in       w7, w8
    *    The part to be implicit is stored in       usimpk, usimpe
-   *    Going out of the step we keep              strain, divu,
+   *    Going out of the step we keep              strain_sq, divu,
    * ==========================================================================*/
 
 # pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
@@ -2022,7 +2024,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   BFT_FREE(tinstk);
   BFT_FREE(tinste);
   BFT_FREE(divu);
-  BFT_FREE(strain);
+  BFT_FREE(strain_sq);
   BFT_FREE(w1);
   BFT_FREE(w2);
   BFT_FREE(w3);
@@ -2045,9 +2047,9 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   }
   if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS) {
     BFT_FREE(sqrt_k);
-    BFT_FREE(sqrt_strain);
+    BFT_FREE(strain);
     BFT_FREE(grad_sqk);
-    BFT_FREE(grad_sqs);
+    BFT_FREE(grad_s);
     BFT_FREE(coefa_sqk);
     BFT_FREE(coefb_sqk);
     BFT_FREE(coefa_sqs);
