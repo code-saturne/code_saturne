@@ -1247,6 +1247,16 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
   bool symmetric = (isym == 1) ? true : false;
 
+  /* Determine if we are in a case with special requirements */
+
+  bool conv_diff_mg = false;
+  if (iconvp > 0) {
+    cs_sles_t *sc = cs_sles_find_or_add(f_id, name);
+    const char *sles_type = cs_sles_get_type(sc);
+    if (strcmp(sles_type, "cs_multigrid_t") == 0)
+      conv_diff_mg = true;
+  }
+
   /*  be careful here, xam is interleaved*/
 
   cs_lnum_t eb_stride = eb_size*eb_size;
@@ -1575,6 +1585,15 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
     /*  Solver residual */
     ressol = residu;
+
+    if (conv_diff_mg)
+      cs_sles_setup_native_conv_diff(f_id,
+                                     var_name,
+                                     db_size,
+                                     eb_size,
+                                     dam,
+                                     xam,
+                                     true);
 
     cs_sles_solve_native(f_id,
                          var_name,

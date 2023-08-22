@@ -113,7 +113,7 @@ struct _cs_grid_t {
   int                 level;        /* Level in multigrid hierarchy */
 
   bool                conv_diff;    /* true if convection/diffusion case,
-                                       false otherwhise */
+                                       false otherwise */
   bool                symmetric;    /* Symmetric matrix coefficients
                                        indicator */
   bool                use_faces;    /* True if face information is present */
@@ -4267,9 +4267,21 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
 
   /* Initialize non differential fine grid term saved in w1 */
 
-# pragma omp parallel for if(f_n_cells > CS_THR_MIN)
-  for (ii = 0; ii < f_n_cells; ii++) {
-    w1[ii] = f_da[ii];
+  if (db_size == 1) {
+#   pragma omp parallel for if(f_n_cells > CS_THR_MIN)
+    for (ii = 0; ii < f_n_cells; ii++) {
+      w1[ii] = f_da[ii];
+    }
+  }
+  else {
+#   pragma omp parallel for private(jj) if(f_n_cells > CS_THR_MIN)
+    for (ii = 0; ii < f_n_cells; ii++) {
+      for (jj = 0; jj < db_size; jj++) {
+        for (cs_lnum_t kk = 0; kk < db_size; kk++)
+          w1[ii*db_stride + db_size*jj + kk]
+            = f_da[ii*db_stride + db_size*jj + kk];
+      }
+    }
   }
 
 # pragma omp parallel for if(f_n_cells_ext - f_n_cells > CS_THR_MIN)
@@ -4296,8 +4308,10 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
         f_xa_conv_0 = -0;
         f_xa_conv_1 = f_xa[2*face_id+1] - f_xa_diff_s;
       }
-      w1[ii] += f_xa_conv_0 + f_xa_diff_s;
-      w1[jj] += f_xa_conv_1 + f_xa_diff_s;
+      for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+        w1[ii*db_stride + db_size*kk + kk] += f_xa_conv_0 + f_xa_diff_s;
+        w1[jj*db_stride + db_size*kk + kk] += f_xa_conv_1 + f_xa_diff_s;
+      }
       if (c_coarse_face[face_id] > 0 ) {
         c_face = c_coarse_face[face_id] -1;
         c_xa_conv[2*c_face]    += f_xa_conv_0;
@@ -4317,8 +4331,10 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
     for (face_id = 0; face_id < f_n_faces; face_id++) {
       ii = f_face_cell[face_id][0];
       jj = f_face_cell[face_id][1];
-      w1[ii] += f_xa_conv[2*face_id]    + f_xa_diff[face_id];
-      w1[jj] += f_xa_conv[2*face_id +1] + f_xa_diff[face_id];
+      for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+        w1[ii*db_stride + db_size*kk + kk] += f_xa_conv[2*face_id]    + f_xa_diff[face_id];
+        w1[jj*db_stride + db_size*kk + kk] += f_xa_conv[2*face_id +1] + f_xa_diff[face_id];
+      }
       if (c_coarse_face[face_id] > 0 ) {
         c_face = c_coarse_face[face_id] -1;
         c_xa_conv[2*c_face]    += f_xa_conv[2*face_id];
@@ -4400,17 +4416,33 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
 
   /* Diagonal term */
 
-  for (ii = 0; ii < f_n_cells; ii++) {
-    ic = c_coarse_row[ii];
-    if (ic > -1)
-      c_da[ic] += w1[ii];
+  if (db_size == 1) {
+    for (ii = 0; ii < f_n_cells; ii++) {
+      ic = c_coarse_row[ii];
+      if (ic > -1)
+        c_da[ic] += w1[ii];
+    }
+  }
+  else {
+    for (ii = 0; ii < f_n_cells; ii++) {
+      ic = c_coarse_row[ii];
+      if (ic > -1) {
+        for (jj = 0; jj < db_size; jj++) {
+          for (cs_lnum_t kk = 0; kk < db_size; kk++)
+            c_da[ic*db_stride + db_size*jj + kk]
+              += w1[ii*db_stride + db_size*jj + kk];
+        }
+      }
+    }
   }
 
   for (c_face = 0; c_face < c_n_faces; c_face++) {
     ic = c_face_cell[c_face][0];
     jc = c_face_cell[c_face][1];
-    c_da[ic] -= c_xa_conv[2*c_face]    + c_xa_diff[c_face];
-    c_da[jc] -= c_xa_conv[2*c_face +1] + c_xa_diff[c_face];
+    for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+      c_da[ic*db_stride + db_size*kk + kk] -= c_xa_conv[2*c_face]    + c_xa_diff[c_face];
+      c_da[jc*db_stride + db_size*kk + kk] -= c_xa_conv[2*c_face +1] + c_xa_diff[c_face];
+    }
   }
 
   /* Convection/diffusion matrix */
