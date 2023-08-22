@@ -771,7 +771,7 @@ _log_norm(const cs_mesh_t                *m,
     rnorm = fmax(rnorm, fabs(cvar_pr[c_id]));
   cs_parall_max(1, CS_REAL_TYPE, &rnorm);
 
-  bft_printf("Max. pressure, %e12.4, (max. absolute value)\n", rnorm);
+  bft_printf("Max. pressure, %12.4e, (max. absolute value)\n", rnorm);
 
   rnorm = -1.0;
   cs_lnum_t imax = 1, imaxt = -1;
@@ -793,7 +793,7 @@ _log_norm(const cs_mesh_t                *m,
 
   cs_parall_max_loc_vals(3, &rnorm, xyzmax);
 
-  bft_printf("Max. velocity, %e12.4, in, %e11.3, %e11.3, %e11.3\n",
+  bft_printf("Max. velocity, %12.4e, in, %11.3e, %11.3e, %11.3e\n",
              rnorm, xyzmax[0], xyzmax[1], xyzmax[2]);
 
   cs_lnum_t imin = 1, imint = 1;
@@ -817,7 +817,7 @@ _log_norm(const cs_mesh_t                *m,
 
   cs_parall_min_loc_vals(3, &rnorm, xyzmin);
 
-  bft_printf("Min. velocity,%e12.4, in, %e11.3, %e11.3, %e11.3\n",
+  bft_printf("Min. velocity,%12.4e, in, %11.3e, %11.3e, %11.3e\n",
              rnorm, xyzmin[0], xyzmin[1], xyzmin[2]);
 
   const cs_real_t *ivolfl = NULL, *bvolfl = NULL;
@@ -867,7 +867,7 @@ _log_norm(const cs_mesh_t                *m,
   cs_parall_min(1, CS_REAL_TYPE, &rnormi);
   cs_parall_max(1, CS_REAL_TYPE, &rnorma);
 
-  bft_printf(" Max. velocity at interior faces %e12.4; min. %e12.4\n",
+  bft_printf(" Max. velocity at interior faces %12.4e; min. %12.4e\n",
              rnorma, rnormi);
 
   rnormi = cs_math_big_r;
@@ -898,13 +898,13 @@ _log_norm(const cs_mesh_t                *m,
   cs_parall_min(1, CS_REAL_TYPE, &rnormi);
   cs_parall_max(1, CS_REAL_TYPE, &rnorma);
 
-  bft_printf(" Max. velocity at boundary faces %e12.4; min. %e12.4\n",
+  bft_printf(" Max. velocity at boundary faces %12.4e; min. %12.4e\n",
              rnorma, rnormi);
 
   rnorm = cs_sum(n_b_faces, bmasfl);
   cs_parall_sum(1, CS_REAL_TYPE, &rnorm);
 
-  bft_printf(" Mass balance  at boundary: %e14.6\n", rnorm);
+  bft_printf(" Mass balance  at boundary: %14.6e\n", rnorm);
   bft_printf(" ------------------------------------------------------\n");
 
   const cs_velocity_pressure_param_t *vp_param = cs_glob_velocity_pressure_param;
@@ -913,7 +913,7 @@ _log_norm(const cs_mesh_t                *m,
     if (icvrge == 0) {
       bft_printf(" Fixed point for velocity-pressure coupling at iteration: "
                  "%d\n", iterns);
-      bft_printf("   norm = %e12.4, norm 0 = %e12.4, toler = %e12.4\n",
+      bft_printf("   norm = %12.4e, norm 0 = %12.4e, toler = %12.4e\n",
                  vp_param->xnrmu, vp_param->xnrmu0, vp_param->epsup);
       bft_printf(" ------------------------------------------------------\n");
       if (iterns == vp_param->nterup) {
@@ -924,7 +924,7 @@ _log_norm(const cs_mesh_t                *m,
     }
     else {
       bft_printf(" Fixed point convergence at iteration %d", iterns);
-      bft_printf("   norm = %e12.4, norm 0 = %e12.4, toler = %e12.4\n",
+      bft_printf("   norm = %12.4e, norm 0 = %12.4e, toler = %12.4e\n",
                  vp_param->xnrmu, vp_param->xnrmu0, vp_param->epsup);
       bft_printf(" ------------------------------------------------------\n");
     }
