@@ -92,6 +92,8 @@ typedef struct _cs_ctwr_zone_t cs_ctwr_zone_t;
 typedef struct {
   int         evap_model;
   bool        has_rain;
+  bool        solve_rain_velocity; /*!< Keyword to activate drift velocity
+                                        solving*/
 } cs_ctwr_option_t;
 
 /*============================================================================

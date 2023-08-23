@@ -1,6 +1,12 @@
 Master (not on release branches yet)
 ------------------------------------
 
+### Physical modeling
+- Cooling towers model: Adding rain drift velocity equation solving.
+  New keyword solve_rain_velocity has been added to allow the solving of
+  rain drops drift velocity equation. The model has been adapted from
+  existing one related to coal combustion.
+
 ### User changes:
 
 - run.cfg : User can now always use global sections to define entries, with

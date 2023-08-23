@@ -107,7 +107,8 @@ BEGIN_C_DECLS
 
 static cs_ctwr_option_t  _ctwr_option = {
   .evap_model = CS_CTWR_NONE,
-  .has_rain = false};
+  .has_rain = false,
+  .solve_rain_velocity = false};
 
 const cs_ctwr_option_t *cs_glob_ctwr_option = &_ctwr_option;
 
@@ -477,6 +478,55 @@ cs_ctwr_add_variable_fields(void)
     /* Equation parameters */
     eqp = cs_field_get_equation_param(f);
     eqp->blencv = 1.0;
+
+    /* Variable fields creation for rain drops velocities if we want to solve
+     * rain fall velocity */
+    cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
+    if (ct_opt->solve_rain_velocity) {
+      int class_id = 1;
+      char f_name[80];
+      char f_label[80];
+      /* Rain drops velocities --> treated as particles */
+      /* X velocity */
+      sprintf(f_name, "v_p_x_%02d", class_id);
+      sprintf(f_label, "Vp_X_%02d", class_id);
+      f_id = cs_variable_field_create(f_name, f_label,
+                                      CS_MESH_LOCATION_CELLS, dim1);
+      f = cs_field_by_id(f_id);
+      cs_field_set_key_int(f, keyccl, icla);
+      int scalar_id = cs_add_model_field_indexes(f_id);
+
+      /* Scalar with drift, but do not create an additional mass flux */
+      drift ^= CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
+      cs_field_set_key_int(f, keydri, drift);
+
+      /* Y velocity */
+      sprintf(f_name, "v_p_y_%02d", class_id);
+      sprintf(f_label, "Vp_Y_%02d", class_id);
+      f_id = cs_variable_field_create(f_name, f_label,
+                                      CS_MESH_LOCATION_CELLS, dim1);
+      f = cs_field_by_id(f_id);
+      cs_field_set_key_int(f, keyccl, icla);
+      scalar_id = cs_add_model_field_indexes(f_id);
+
+      /* Scalar with drift, but do not create an additional mass flux */
+      drift ^= CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
+      cs_field_set_key_int(f, keydri, drift);
+
+      /* Z velocity */
+      sprintf(f_name, "v_p_z_%02d", class_id);
+      sprintf(f_label, "Vp_Z_%02d", class_id);
+      f_id = cs_variable_field_create(f_name, f_label,
+                                      CS_MESH_LOCATION_CELLS, dim1);
+      f = cs_field_by_id(f_id);
+      cs_field_set_key_int(f, keyccl, icla);
+      scalar_id = cs_add_model_field_indexes(f_id);
+
+      /* Scalar with drift, but do not create an additional mass flux */
+      drift ^= CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
+      cs_field_set_key_int(f, keydri, drift);
+      //TODO : Check equation parameters to set for v_p_x,y,z */
+    }
   }
 
   {
@@ -613,99 +663,143 @@ cs_ctwr_add_property_fields(void)
 {
   cs_field_t *f;
   int dim1 = 1;
+  int dim3 = 3;
+  int class_id = 1;
   int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
   bool has_previous = false;
   const int klbl   = cs_field_key_id("label");
   const int keyvis = cs_field_key_id("post_vis");
   const int keylog = cs_field_key_id("log");
   const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+  const int keyccl = cs_field_key_id("scalar_class");
+  cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
 
- {
-   /* Humidity field */
-   f = cs_field_create("humidity",
-                       field_type,
-                       CS_MESH_LOCATION_CELLS,
-                       dim1,
-                       has_previous);
-   cs_field_set_key_int(f, keyvis, post_flag);
-   cs_field_set_key_int(f, keylog, 1);
-   cs_field_set_key_str(f, klbl, "Humidity");
- }
+  {
+    /* Humidity field */
+    f = cs_field_create("humidity",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        dim1,
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Humidity");
+  }
 
- {
-   /* Saturated humidity field */
-   f = cs_field_create("x_s",
-                       field_type,
-                       CS_MESH_LOCATION_CELLS,
-                       dim1,
-                       has_previous);
-   cs_field_set_key_int(f, keyvis, post_flag);
-   cs_field_set_key_int(f, keylog, 1);
-   cs_field_set_key_str(f, klbl, "Humidity sat");
- }
+  {
+    /* Saturated humidity field */
+    f = cs_field_create("x_s",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        dim1,
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Humidity sat");
+  }
 
- {
-   /* Humid air enthalpy field */
-   f = cs_field_create("enthalpy",
-                       field_type,
-                       CS_MESH_LOCATION_CELLS,
-                       dim1,
-                       has_previous);
-   cs_field_set_key_int(f, keyvis, post_flag);
-   cs_field_set_key_int(f, keylog, 1);
-   cs_field_set_key_str(f, klbl, "Enthalpy humid air");
- }
+  {
+    /* Humid air enthalpy field */
+    f = cs_field_create("enthalpy",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        dim1,
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Enthalpy humid air");
+  }
 
- {
-   /* Liquid temperature in packing */
-   f = cs_field_create("temperature_liquid",
-                       field_type,
-                       CS_MESH_LOCATION_CELLS,
-                       dim1,
-                       has_previous);
-   cs_field_set_key_int(f, keyvis, post_flag);
-   cs_field_set_key_int(f, keylog, 1);
-   cs_field_set_key_str(f, klbl, "Temp liq");
- }
+  {
+    /* Liquid temperature in packing */
+    f = cs_field_create("temperature_liquid",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        dim1,
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Temp liq");
+  }
 
- {
-   /* Liquid vertical velocity */
-   f = cs_field_create("vertvel_l",
-                       field_type,
-                       CS_MESH_LOCATION_CELLS,
-                       dim1,
-                       has_previous);
-   cs_field_set_key_int(f, keyvis, post_flag);
-   cs_field_set_key_int(f, keylog, 1);
-   cs_field_set_key_str(f, klbl, "Vertical vel liq");
- }
+  {
+    /* Liquid vertical velocity in packing */
+    f = cs_field_create("vertvel_l",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        dim1,
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Vertical vel liq");
+  }
+
+  /* Properties to create for rain velocity equation solving */
+  if (ct_opt->solve_rain_velocity){
+    char f_name[80];
+    /* Particle limit velocity */
+    sprintf(f_name, "vg_lim_p_%02d", class_id);
+    f = cs_field_create(f_name,
+        field_type,
+        CS_MESH_LOCATION_CELLS,
+        dim3,
+        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Drops limit vel");
+
+    /* Drift velocity for rain drops */
+    sprintf(f_name, "vd_p_%02d", class_id);
+    f = cs_field_create(f_name,
+        field_type,
+        CS_MESH_LOCATION_CELLS,
+        dim3,
+        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Drops drift vel");
+  }
 
   /* Continuous phase properties */
 
   /* NB: 'c' stands for continuous and 'p' for particles */
- {
-   /* Mass fraction of the continuous phase (X1) */
-   f = cs_field_create("x_c",
-                       field_type,
-                       CS_MESH_LOCATION_CELLS,
-                       dim1,
-                       has_previous);
-   cs_field_set_key_int(f, keyvis, post_flag);
-   cs_field_set_key_int(f, keylog, 1);
-   cs_field_set_key_str(f, klbl, "Gas mass fraction");
- }
+  {
+    /* Mass fraction of the continuous phase (X1) */
+    f = cs_field_create("x_c",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        dim1,
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Gas mass fraction");
+  }
 
- {
-   /* Mass fraction of the continuous phase (X1) BOUNDARY VALUE */
-   f = cs_field_create("b_x_c",
-                       field_type,
-                       CS_MESH_LOCATION_BOUNDARY_FACES,
-                       dim1,
-                       has_previous);
-   cs_field_set_key_int(f, keyvis, post_flag);
-   cs_field_set_key_int(f, keylog, 1);
-   cs_field_set_key_str(f, klbl, "Boundary gas mass fraction");
- }
+  {
+    /* Mass fraction of the continuous phase (X1) BOUNDARY VALUE */
+    f = cs_field_create("b_x_c",
+                        field_type,
+                        CS_MESH_LOCATION_BOUNDARY_FACES,
+                        dim1,
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Boundary gas mass fraction");
+  }
+
+  /* Properties to create for rain velocity equation solving */
+  if (ct_opt->solve_rain_velocity) {
+    /* Continuous phase drift velocity */
+    f = cs_field_create("vd_c",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        dim3,
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Continuous phase drift vel");
+  }
+
 }
 
 /*----------------------------------------------------------------------------
@@ -825,6 +919,43 @@ cs_ctwr_bcond(void)
 
       y_rain->bc_coeffs->icodcl[face_id] = 1;
       y_rain->bc_coeffs->rcodcl1[face_id] = 0.;
+    }
+  }
+
+  /* Extra variables to load if we solve rain velocity */
+  cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
+  if (ct_opt->solve_rain_velocity) {
+    char f_name[80];
+    int class_id = 1;
+    sprintf(f_name, "v_p_x_%02d", class_id);
+    cs_field_t *vp_x = cs_field_by_name_try(f_name);
+    sprintf(f_name, "v_p_y_%02d", class_id);
+    cs_field_t *vp_y = cs_field_by_name_try(f_name);
+    sprintf(f_name, "v_p_z_%02d", class_id);
+    cs_field_t *vp_z = cs_field_by_name_try(f_name);
+
+    for (cs_lnum_t face_id = 0; face_id < nfabor; face_id++) {
+
+      cs_lnum_t zone_id = face_zone_id[face_id];
+
+      if (bc_type[face_id] == CS_INLET || bc_type[face_id] == CS_FREE_INLET){
+        vp_x->bc_coeffs->icodcl[face_id] = 1;
+        vp_x->bc_coeffs->rcodcl1[face_id] = vel_rcodcl1[nfabor * 0 + face_id];
+        vp_y->bc_coeffs->icodcl[face_id] = 1;
+        vp_y->bc_coeffs->rcodcl1[face_id] = vel_rcodcl1[nfabor * 1 + face_id];
+        vp_z->bc_coeffs->icodcl[face_id] = 1;
+        vp_z->bc_coeffs->rcodcl1[face_id] = vel_rcodcl1[nfabor * 2 + face_id];
+      }
+
+      else if (bc_type[face_id] == CS_SMOOTHWALL ||
+               bc_type[face_id] == CS_ROUGHWALL) {
+        vp_x->bc_coeffs->icodcl[face_id] = 1;
+        vp_x->bc_coeffs->rcodcl1[face_id] = 0.;
+        vp_y->bc_coeffs->icodcl[face_id] = 1;
+        vp_y->bc_coeffs->rcodcl1[face_id] = 0.;
+        vp_z->bc_coeffs->icodcl[face_id] = 1;
+        vp_z->bc_coeffs->rcodcl1[face_id] = 0.;
+      }
     }
   }
 }
@@ -2288,6 +2419,73 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
   }
 
+  /* If solving rain velocity */
+  cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
+  if (ct_opt->solve_rain_velocity) {
+    int class_id = 1;
+    char vg_lim_name[80];
+    sprintf(vg_lim_name, "vg_lim_p_%02d", class_id);
+    /* Drops terminal velocity fields */
+    cs_field_t *vg_lim_p = cs_field_by_name(vg_lim_name);
+    cs_real_t gravity[] = {cs_glob_physical_constants->gravity[0],
+      cs_glob_physical_constants->gravity[1],
+      cs_glob_physical_constants->gravity[2]};
+    cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_y_p");
+    cs_real_t *cpro_taup = NULL;
+    if (cfld_taup != NULL)
+      cpro_taup = cfld_taup->val;
+
+    /* Continuous phase drift velocity */
+    cs_field_t *vd_c = cs_field_by_name("vd_c");
+    cs_real_t *cpro_x1 = cs_field_by_name("x_c")->val;
+
+    /* Rain drift velocity variables */
+    char f_name[80];
+    sprintf(f_name, "vd_p_%02d", class_id);
+    cs_field_t *vd_p = cs_field_by_name(f_name);
+    sprintf(f_name, "v_p_x_%02d", class_id);
+    cs_field_t *vp_x = cs_field_by_name(f_name);
+    sprintf(f_name, "v_p_y_%02d", class_id);
+    cs_field_t *vp_y = cs_field_by_name(f_name);
+    sprintf(f_name, "v_p_z_%02d", class_id);
+    cs_field_t *vp_z = cs_field_by_name(f_name);
+    cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
+
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      /* Drops terminal velocity */
+      vg_lim_p->val[cell_id * 3 + 0] = cpro_taup[cell_id] * gravity[0];
+      vg_lim_p->val[cell_id * 3 + 1] = cpro_taup[cell_id] * gravity[1];
+      vg_lim_p->val[cell_id * 3 + 2] = cpro_taup[cell_id] * gravity[2];
+
+      /* Continuous phase drift velocity */
+      vd_c->val[cell_id * 3 + 0] = 0.;
+      vd_c->val[cell_id * 3 + 1] = 0.;
+      vd_c->val[cell_id * 3 + 2] = 0.;
+
+      /* Rain drops drift velocity calculation */
+      if (y_p[cell_id] > 1.e-7) {
+        vd_p->val[cell_id * 3 + 0] = vp_x->val[cell_id] - vel[cell_id][0];
+        vd_p->val[cell_id * 3 + 1] = vp_y->val[cell_id] - vel[cell_id][1];
+        vd_p->val[cell_id * 3 + 2] = vp_z->val[cell_id] - vel[cell_id][2];
+      }
+      else {
+        vd_p->val[cell_id * 3 + 0] = 0.;
+        vd_p->val[cell_id * 3 + 1] = 0.;
+        vd_p->val[cell_id * 3 + 2] = 0.;
+      }
+      vd_c->val[cell_id * 3 + 0] -= y_p[cell_id]
+        * vd_p->val[cell_id * 3 + 0];
+      vd_c->val[cell_id * 3 + 1] -= y_p[cell_id]
+        * vd_p->val[cell_id * 3 + 1];
+      vd_c->val[cell_id * 3 + 2] -= y_p[cell_id]
+        * vd_p->val[cell_id * 3 + 2];
+
+      vd_c->val[cell_id * 3 + 0] /= cpro_x1[cell_id];
+      vd_c->val[cell_id * 3 + 1] /= cpro_x1[cell_id];
+      vd_c->val[cell_id * 3 + 2] /= cpro_x1[cell_id];
+    }
+  }
+
   /* Loop over Cooling tower zones */
   for (int ict = 0; ict < _n_ct_zones; ict++) {
     cs_ctwr_zone_t *ct = _ct_zone[ict];
@@ -2868,6 +3066,73 @@ cs_ctwr_source_term(int              f_id,
     } /* End of loop through the packing zones */
 
   } /* End of test on whether to generate rain */
+
+  /* Source terms for rain drops velocity
+   * ==================================== */
+  if (ct_opt->solve_rain_velocity) {
+    int class_id = 1;
+    char vg_lim_name[80];
+    sprintf(vg_lim_name, "vg_lim_p_%02d", class_id);
+    /* Drops terminal velocity fields */
+    cs_field_t *vg_lim_p = cs_field_by_name(vg_lim_name);
+    cs_real_t gravity[] = {cs_glob_physical_constants->gravity[0],
+                           cs_glob_physical_constants->gravity[1],
+                           cs_glob_physical_constants->gravity[2]};
+    cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_y_p");
+    cs_real_t *cpro_taup = NULL;
+    if (cfld_taup != NULL)
+      cpro_taup = cfld_taup->val;
+
+    /* Continuous phase drift velocity */
+    cs_field_t *vd_c = cs_field_by_name("vd_c");
+    cs_real_t *cpro_x1 = cs_field_by_name("x_c")->val;
+
+    /* Rain drift velocity variables */
+    char f_name[80];
+    sprintf(f_name, "vd_p_%02d", class_id);
+    cs_field_t *vd_p = cs_field_by_name(f_name);
+    sprintf(f_name, "v_p_x_%02d", class_id);
+    cs_field_t *vp_x = cs_field_by_name(f_name);
+    sprintf(f_name, "v_p_y_%02d", class_id);
+    cs_field_t *vp_y = cs_field_by_name(f_name);
+    sprintf(f_name, "v_p_z_%02d", class_id);
+    cs_field_t *vp_z = cs_field_by_name(f_name);
+    cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
+
+    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+
+      if (f_id == vp_x->id) {
+        /* Explicit source term */
+        exp_st[cell_id] += rho_h[cell_id] * cell_f_vol[cell_id]
+                         * 1. / cpro_taup[cell_id]
+                         * (vel[cell_id][0] + vd_c->val[cell_id * 3 + 0]
+                         + vg_lim_p->val[cell_id * 3 + 0] - vp_x->val[cell_id]);
+        /* Implicit source term */
+        imp_st[cell_id] += rho_h[cell_id] * cell_f_vol[cell_id]
+                         / cpro_taup[cell_id];
+      }
+      if (f_id == vp_y->id) {
+        /* Explicit source term */
+        exp_st[cell_id] += rho_h[cell_id] * cell_f_vol[cell_id]
+                         * 1. / cpro_taup[cell_id]
+                         * (vel[cell_id][1] + vd_c->val[cell_id * 3 + 1]
+                         + vg_lim_p->val[cell_id * 3 + 1] - vp_y->val[cell_id]);
+        /* Implicit source term */
+        imp_st[cell_id] += rho_h[cell_id] * cell_f_vol[cell_id]
+                         / cpro_taup[cell_id];
+      }
+      if (f_id == vp_z->id) {
+        /* Explicit source term */
+        exp_st[cell_id] += rho_h[cell_id] * cell_f_vol[cell_id]
+                         * 1. / cpro_taup[cell_id]
+                         * (vel[cell_id][2] + vd_c->val[cell_id * 3 + 2]
+                         + vg_lim_p->val[cell_id * 3 + 2] - vp_z->val[cell_id]);
+        /* Implicit source term */
+        imp_st[cell_id] += rho_h[cell_id] * cell_f_vol[cell_id]
+                         / cpro_taup[cell_id];
+      }
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
