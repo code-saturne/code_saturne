@@ -2078,6 +2078,16 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
     cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
   }
 
+  /* Determine if we are in a case with special requirements */
+
+  bool conv_diff_mg = false;
+  if (iconvp > 0) {
+    cs_sles_t *sc = cs_sles_find_or_add(f_id, name);
+    const char *sles_type = cs_sles_get_type(sc);
+    if (strcmp(sles_type, "cs_multigrid_t") == 0)
+      conv_diff_mg = true;
+  }
+
   /* Name */
   const char *var_name = cs_sles_name(f_id, name);
 
@@ -2389,6 +2399,15 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
     /*  Solver residual */
     ressol = residu;
+
+    if (conv_diff_mg)
+      cs_sles_setup_native_conv_diff(f_id,
+                                     var_name,
+                                     db_size,
+                                     eb_size,
+                                     dam,
+                                     xam,
+                                     true);
 
     cs_sles_solve_native(f_id,
                          var_name,

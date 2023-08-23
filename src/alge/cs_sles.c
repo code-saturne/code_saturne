@@ -1790,8 +1790,7 @@ cs_sles_solve(cs_sles_t           *sles,
 
   /* Check error */
 
-#if 0
-  {
+  if (sles->verbosity > 1) {
     const cs_lnum_t block_size = cs_matrix_get_diag_block_size(a);
     const cs_lnum_t n_vals_ext = cs_matrix_get_n_columns(a) * block_size;
     const cs_lnum_t n_vals = cs_matrix_get_n_rows(a) * block_size;
@@ -1807,7 +1806,6 @@ cs_sles_solve(cs_sles_t           *sles,
 
     BFT_FREE(resr);
   }
-#endif
 
   cs_timer_stats_switch(t_top_id);
 

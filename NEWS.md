@@ -3,6 +3,9 @@ Release 8.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix bugs in convection/diffusion multigrid linear solver for vectors and
+  tensors.
+
 - Preprocessor: workaround for CGNS incompatibility with files generated with
   CGNS 3.4.1 and with 3.4 version info (confused with 3.4.0, whose polygon and
   polyhedra representations are inccompatible). That version should be avoided
