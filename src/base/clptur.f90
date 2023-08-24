@@ -257,32 +257,6 @@ interface
 ! 1. Initializations
 !===============================================================================
 
- !do ifac = 1, nfabor
-
- !   print*, "ifac = ", ifac, theipb(ifac)
-
-
-  !  print*, "theipb = ", theipb(ifac)
-
-    !print*, "hbord = ", hbord(ifac)
-
-   ! do ii = 1, 3
-   !    print*, "velipb = ", velipb(ii,ifac)
-   ! enddo
-
-    !do ii = 1, 6
-    !   print*, "rij = ", rijipb(ii,ifac)
-    !enddo
-
-
- !enddo
-
- !do ii = 1, ncelet
-
-  !  print*, "ifac, ncelet = ", ii, visvdr(ii)
-
- !enddo
-
 call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
 
 ! Initialize variables to avoid compiler warnings
