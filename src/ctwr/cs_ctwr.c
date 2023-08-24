@@ -822,6 +822,7 @@ cs_ctwr_bcond(void)
 
   cs_real_t *vel_rcodcl1 = CS_F_(vel)->bc_coeffs->rcodcl1;
   cs_field_t *y_rain= cs_field_by_name("y_p");
+  cs_field_t *yt_rain= cs_field_by_name_try("y_p_t_l");
   cs_field_t *hlp= cs_field_by_name("enthalpy_liquid");
   cs_field_t *ylp = cs_field_by_name("y_l_packing");
   cs_field_t *yw = cs_field_by_name("ym_water");
@@ -919,6 +920,10 @@ cs_ctwr_bcond(void)
 
       y_rain->bc_coeffs->icodcl[face_id] = 1;
       y_rain->bc_coeffs->rcodcl1[face_id] = 0.;
+      if (yt_rain != NULL) {
+        yt_rain->bc_coeffs->icodcl[face_id] = 1;
+        yt_rain->bc_coeffs->rcodcl1[face_id] = 0.;
+      }
     }
   }
 
