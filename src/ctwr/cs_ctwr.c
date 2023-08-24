@@ -735,7 +735,7 @@ cs_ctwr_add_property_fields(void)
   }
 
   /* Properties to create for rain velocity equation solving */
-  if (ct_opt->solve_rain_velocity){
+  if (ct_opt->solve_rain_velocity) {
     char f_name[80];
     /* Particle limit velocity */
     sprintf(f_name, "vg_lim_p_%02d", class_id);
@@ -932,34 +932,36 @@ cs_ctwr_bcond(void)
   if (ct_opt->solve_rain_velocity) {
     char f_name[80];
     int class_id = 1;
-    sprintf(f_name, "v_p_x_%02d", class_id);
-    cs_field_t *vp_x = cs_field_by_name_try(f_name);
-    sprintf(f_name, "v_p_y_%02d", class_id);
-    cs_field_t *vp_y = cs_field_by_name_try(f_name);
-    sprintf(f_name, "v_p_z_%02d", class_id);
-    cs_field_t *vp_z = cs_field_by_name_try(f_name);
+    cs_field_t *vp_i; // Component i of particle velocity
 
     for (cs_lnum_t face_id = 0; face_id < nfabor; face_id++) {
 
       cs_lnum_t zone_id = face_zone_id[face_id];
 
-      if (bc_type[face_id] == CS_INLET || bc_type[face_id] == CS_FREE_INLET){
-        vp_x->bc_coeffs->icodcl[face_id] = 1;
-        vp_x->bc_coeffs->rcodcl1[face_id] = vel_rcodcl1[nfabor * 0 + face_id];
-        vp_y->bc_coeffs->icodcl[face_id] = 1;
-        vp_y->bc_coeffs->rcodcl1[face_id] = vel_rcodcl1[nfabor * 1 + face_id];
-        vp_z->bc_coeffs->icodcl[face_id] = 1;
-        vp_z->bc_coeffs->rcodcl1[face_id] = vel_rcodcl1[nfabor * 2 + face_id];
-      }
+      for (cs_lnum_t i = 0; i < 3; i++){
+        /* Getting particle velocity component */
+        if (i == 0) {
+          sprintf(f_name, "v_p_x_%02d", class_id);
+          vp_i = cs_field_by_name(f_name);
+        }
+        else if (i == 1) {
+          sprintf(f_name, "v_p_y_%02d", class_id);
+          vp_i = cs_field_by_name(f_name);
+        }
+        else if (i == 2) {
+          sprintf(f_name, "v_p_z_%02d", class_id);
+          vp_i = cs_field_by_name(f_name);
+        }
+        if (bc_type[face_id] == CS_INLET || bc_type[face_id] == CS_FREE_INLET){
+          vp_i->bc_coeffs->icodcl[face_id] = 1;
+          vp_i->bc_coeffs->rcodcl1[face_id] = vel_rcodcl1[nfabor * i + face_id];
+        }
 
-      else if (bc_type[face_id] == CS_SMOOTHWALL ||
-               bc_type[face_id] == CS_ROUGHWALL) {
-        vp_x->bc_coeffs->icodcl[face_id] = 1;
-        vp_x->bc_coeffs->rcodcl1[face_id] = 0.;
-        vp_y->bc_coeffs->icodcl[face_id] = 1;
-        vp_y->bc_coeffs->rcodcl1[face_id] = 0.;
-        vp_z->bc_coeffs->icodcl[face_id] = 1;
-        vp_z->bc_coeffs->rcodcl1[face_id] = 0.;
+        else if (bc_type[face_id] == CS_SMOOTHWALL ||
+            bc_type[face_id] == CS_ROUGHWALL) {
+          vp_i->bc_coeffs->icodcl[face_id] = 1;
+          vp_i->bc_coeffs->rcodcl1[face_id] = 0.;
+        }
       }
     }
   }
@@ -2430,6 +2432,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     int class_id = 1;
     char vg_lim_name[80];
     sprintf(vg_lim_name, "vg_lim_p_%02d", class_id);
+
     /* Drops terminal velocity fields */
     cs_field_t *vg_lim_p = cs_field_by_name(vg_lim_name);
     cs_real_t gravity[] = {cs_glob_physical_constants->gravity[0],
@@ -2448,46 +2451,42 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     char f_name[80];
     sprintf(f_name, "vd_p_%02d", class_id);
     cs_field_t *vd_p = cs_field_by_name(f_name);
-    sprintf(f_name, "v_p_x_%02d", class_id);
-    cs_field_t *vp_x = cs_field_by_name(f_name);
-    sprintf(f_name, "v_p_y_%02d", class_id);
-    cs_field_t *vp_y = cs_field_by_name(f_name);
-    sprintf(f_name, "v_p_z_%02d", class_id);
-    cs_field_t *vp_z = cs_field_by_name(f_name);
+    cs_field_t *vp_i; // Component i of particle velocity
     cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        /* Getting particle velocity component */
+        if (i == 0) {
+          sprintf(f_name, "v_p_x_%02d", class_id);
+          vp_i = cs_field_by_name(f_name);
+        }
+        else if (i == 1) {
+          sprintf(f_name, "v_p_y_%02d", class_id);
+          vp_i = cs_field_by_name(f_name);
+        }
+        else if (i == 2) {
+          sprintf(f_name, "v_p_z_%02d", class_id);
+          vp_i = cs_field_by_name(f_name);
+        }
+
       /* Drops terminal velocity */
-      vg_lim_p->val[cell_id * 3 + 0] = cpro_taup[cell_id] * gravity[0];
-      vg_lim_p->val[cell_id * 3 + 1] = cpro_taup[cell_id] * gravity[1];
-      vg_lim_p->val[cell_id * 3 + 2] = cpro_taup[cell_id] * gravity[2];
+      vg_lim_p->val[cell_id * 3 + i] = cpro_taup[cell_id] * gravity[i];
 
       /* Continuous phase drift velocity */
-      vd_c->val[cell_id * 3 + 0] = 0.;
-      vd_c->val[cell_id * 3 + 1] = 0.;
-      vd_c->val[cell_id * 3 + 2] = 0.;
+      vd_c->val[cell_id * 3 + i] = 0.;
 
       /* Rain drops drift velocity calculation */
       if (y_p[cell_id] > 1.e-7) {
-        vd_p->val[cell_id * 3 + 0] = vp_x->val[cell_id] - vel[cell_id][0];
-        vd_p->val[cell_id * 3 + 1] = vp_y->val[cell_id] - vel[cell_id][1];
-        vd_p->val[cell_id * 3 + 2] = vp_z->val[cell_id] - vel[cell_id][2];
+        vd_p->val[cell_id * 3 + i] = vp_i->val[cell_id] - vel[cell_id][i];
       }
       else {
-        vd_p->val[cell_id * 3 + 0] = 0.;
-        vd_p->val[cell_id * 3 + 1] = 0.;
-        vd_p->val[cell_id * 3 + 2] = 0.;
+        vd_p->val[cell_id * 3 + i] = 0.;
       }
-      vd_c->val[cell_id * 3 + 0] -= y_p[cell_id]
-        * vd_p->val[cell_id * 3 + 0];
-      vd_c->val[cell_id * 3 + 1] -= y_p[cell_id]
-        * vd_p->val[cell_id * 3 + 1];
-      vd_c->val[cell_id * 3 + 2] -= y_p[cell_id]
-        * vd_p->val[cell_id * 3 + 2];
-
-      vd_c->val[cell_id * 3 + 0] /= cpro_x1[cell_id];
-      vd_c->val[cell_id * 3 + 1] /= cpro_x1[cell_id];
-      vd_c->val[cell_id * 3 + 2] /= cpro_x1[cell_id];
+      vd_c->val[cell_id * 3 + i] -= y_p[cell_id]
+        * vd_p->val[cell_id * 3 + i];
+      vd_c->val[cell_id * 3 + i] /= cpro_x1[cell_id];
+      }
     }
   }
 
@@ -3078,6 +3077,7 @@ cs_ctwr_source_term(int              f_id,
     int class_id = 1;
     char vg_lim_name[80];
     sprintf(vg_lim_name, "vg_lim_p_%02d", class_id);
+
     /* Drops terminal velocity fields */
     cs_field_t *vg_lim_p = cs_field_by_name(vg_lim_name);
     cs_real_t gravity[] = {cs_glob_physical_constants->gravity[0],
@@ -3096,45 +3096,35 @@ cs_ctwr_source_term(int              f_id,
     char f_name[80];
     sprintf(f_name, "vd_p_%02d", class_id);
     cs_field_t *vd_p = cs_field_by_name(f_name);
-    sprintf(f_name, "v_p_x_%02d", class_id);
-    cs_field_t *vp_x = cs_field_by_name(f_name);
-    sprintf(f_name, "v_p_y_%02d", class_id);
-    cs_field_t *vp_y = cs_field_by_name(f_name);
-    sprintf(f_name, "v_p_z_%02d", class_id);
-    cs_field_t *vp_z = cs_field_by_name(f_name);
+    cs_field_t *vp_i; // Component i of particle velocity
     cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
 
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        /* Getting particle velocity component */
+        if (i == 0) {
+          sprintf(f_name, "v_p_x_%02d", class_id);
+          vp_i = cs_field_by_name(f_name);
+        }
+        else if (i == 1) {
+          sprintf(f_name, "v_p_y_%02d", class_id);
+          vp_i = cs_field_by_name(f_name);
+        }
+        else if (i == 2) {
+          sprintf(f_name, "v_p_z_%02d", class_id);
+          vp_i = cs_field_by_name(f_name);
+        }
 
-      if (f_id == vp_x->id) {
-        /* Explicit source term */
-        exp_st[cell_id] += rho_h[cell_id] * cell_f_vol[cell_id]
-                         * 1. / cpro_taup[cell_id]
-                         * (vel[cell_id][0] + vd_c->val[cell_id * 3 + 0]
-                         + vg_lim_p->val[cell_id * 3 + 0] - vp_x->val[cell_id]);
-        /* Implicit source term */
-        imp_st[cell_id] += rho_h[cell_id] * cell_f_vol[cell_id]
-                         / cpro_taup[cell_id];
-      }
-      if (f_id == vp_y->id) {
-        /* Explicit source term */
-        exp_st[cell_id] += rho_h[cell_id] * cell_f_vol[cell_id]
-                         * 1. / cpro_taup[cell_id]
-                         * (vel[cell_id][1] + vd_c->val[cell_id * 3 + 1]
-                         + vg_lim_p->val[cell_id * 3 + 1] - vp_y->val[cell_id]);
-        /* Implicit source term */
-        imp_st[cell_id] += rho_h[cell_id] * cell_f_vol[cell_id]
-                         / cpro_taup[cell_id];
-      }
-      if (f_id == vp_z->id) {
-        /* Explicit source term */
-        exp_st[cell_id] += rho_h[cell_id] * cell_f_vol[cell_id]
-                         * 1. / cpro_taup[cell_id]
-                         * (vel[cell_id][2] + vd_c->val[cell_id * 3 + 2]
-                         + vg_lim_p->val[cell_id * 3 + 2] - vp_z->val[cell_id]);
-        /* Implicit source term */
-        imp_st[cell_id] += rho_h[cell_id] * cell_f_vol[cell_id]
-                         / cpro_taup[cell_id];
+        if (f_id == vp_i->id) {
+          /* Explicit source term */
+          exp_st[cell_id] += rho_h[cell_id] * cell_f_vol[cell_id]
+            * 1. / cpro_taup[cell_id]
+            * (vel[cell_id][i] + vd_c->val[cell_id * 3 + i]
+                + vg_lim_p->val[cell_id * 3 + i] - vp_i->val[cell_id]);
+          /* Implicit source term */
+          imp_st[cell_id] += rho_h[cell_id] * cell_f_vol[cell_id]
+            / cpro_taup[cell_id];
+        }
       }
     }
   }
