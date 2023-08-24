@@ -1614,7 +1614,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   if (cs_glob_turb_rans_model->irijnu == 2) {
     cs_real_t *ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
     for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
-      viscf[face_id] += ipro_rusanov[face_id];
+      viscf[face_id] += 0.5 * ipro_rusanov[face_id];
     }
     //TODO add boundary terms?
   }
@@ -2209,7 +2209,7 @@ cs_solve_equation_vector(cs_field_t       *f,
   if (cs_glob_turb_rans_model->irijnu == 2) {
     cs_real_t *ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
     for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
-      viscf[face_id] += ipro_rusanov[face_id];
+      viscf[face_id] += 0.5 * ipro_rusanov[face_id];
     }
 
     const cs_real_3_t *restrict b_face_normal
@@ -2226,7 +2226,7 @@ cs_solve_equation_vector(cs_field_t       *f,
 
       for (cs_lnum_t i = 0; i < 3; i++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
-          cs_real_t bij = 2. * bpro_rusanov[face_id] * (n[i]*n[j]);
+          cs_real_t bij = bpro_rusanov[face_id] * (n[i]*n[j]);
           cofbfp[face_id][i][j] +=  bij;
           //TODO? cofafp[face_id][i] -= bij * coefap[face_id][j];
         }

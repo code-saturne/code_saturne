@@ -1250,7 +1250,7 @@ if (irijnu.eq.2) then
   ! Add Rusanov
   if (iand(idftnp, ISOTROPIC_DIFFUSION).ne.0) then
     do ifac = 1, nfac
-      viscf(ifac) = max(viscf(ifac), ipro_rusanov(ifac))
+      viscf(ifac) = max(viscf(ifac), 0.5d0 * ipro_rusanov(ifac))
     enddo
   else if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
     do ifac = 1, nfac
@@ -1261,7 +1261,7 @@ if (irijnu.eq.2) then
         do jsou = 1, 3
           viscf(9 * (ifac-1) + 3 * (jsou-1) + isou) =      &
             max(viscf(9 * (ifac-1) + 3 * (jsou-1) + isou), &
-                ipro_rusanov(ifac) * n(isou) * n(jsou))
+                0.5d0 * ipro_rusanov(ifac) * n(isou) * n(jsou))
         enddo
       enddo
     enddo
@@ -1276,7 +1276,7 @@ if (irijnu.eq.2) then
     do isou = 1, 3
       do jsou = 1, 3
         cofbfv(jsou, isou, ifac) = cofbfv(jsou, isou, ifac) &
-          + 2.d0 * bpro_rusanov(ifac) * n(isou)*n(jsou)
+          + bpro_rusanov(ifac) * n(isou)*n(jsou)
       enddo
     enddo
   enddo
