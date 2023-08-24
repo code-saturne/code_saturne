@@ -78,7 +78,7 @@ BEGIN_C_DECLS
 /*! zone defined as solid during the simulation */
 #define CS_VOLUME_ZONE_SOLID                (1 << 6)
 
-/*! zone defined for physical propertiescomputation */
+/*! zone defined for physical properties computation */
 #define CS_VOLUME_ZONE_PHYSICAL_PROPERTIES  (1 << 7)
 
 /*! @} */
