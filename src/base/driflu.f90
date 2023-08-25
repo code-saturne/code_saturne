@@ -527,7 +527,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 ! 6. Finalization of the mass flux of the current class
 !===============================================================================
 
-  ! For all scalar with a drift excpted the gas phase which is deduced
+  ! For all scalar with a drift excepted the gas phase which is deduced
   ! And for those whom mass flux is imposed elsewhere
   if (icla.ge.0.and.(.not.btest(iscdri, DRIFT_SCALAR_IMPOSED_MASS_FLUX))) then
 

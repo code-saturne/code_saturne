@@ -1312,6 +1312,12 @@ cs_solve_equation_scalar(cs_field_t        *f,
   if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0) {
     cs_physical_model_source_terms(iscal, rhs, fimp);
 
+    /*! Electric arcs, Joule effect ionic conduction */
+    if (   cs_glob_physical_model_flag[CS_JOULE_EFFECT] > 0
+        || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > 0)
+      cs_elec_source_terms(m, fvq, f->id, rhs);
+
+    /*! Cooling towers */
     if (cs_glob_physical_model_flag[CS_COOLING_TOWERS] > 0)
       cs_ctwr_source_term(f->id, rhs, fimp);
   }
@@ -1662,7 +1668,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
     const int iconvp = eqp->iconv;
     const cs_real_t thetap = eqp->thetav;
 
-    /*  NB: if the porosity module is swiched on, the the porosity is already
+    /*  NB: if the porosity module is switched on, the porosity is already
      * taken into account in divflu */
 
     /* mass aggregation term */

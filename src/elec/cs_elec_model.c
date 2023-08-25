@@ -840,21 +840,6 @@ CS_PROCF (elphyv, ELPHYV) (void)
 }
 
 void
-CS_PROCF (eltssc, ELTSSC) (const int       *isca,
-                           cs_real_t       *smbrs)
-{
-  const cs_mesh_t *mesh = cs_glob_mesh;
-  const cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
-  const int keysca = cs_field_key_id("scalar_id");
-
-  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
-    cs_field_t  *f = cs_field_by_id(f_id);
-    if (cs_field_get_key_int(f, keysca) == *isca)
-      cs_elec_source_terms(mesh, mesh_quantities, f->id, smbrs);
-  }
-}
-
-void
 CS_PROCF (eliniv, ELINIV) (int       *isuite)
 {
   cs_elec_fields_initialize(cs_glob_mesh,  *isuite);

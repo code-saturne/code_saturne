@@ -153,16 +153,6 @@ if ( ippmod(icfuel).ge.0 ) then
   call cs_fuel_scast(iscal, smbrs, rovsdt)
 endif
 
-! ---> Versions electriques :
-!             Effet Joule
-!             Arc Electrique
-!             Conduction ionique
-
-if (ippmod(ieljou).ge.1 .or.                                      &
-    ippmod(ielarc).ge.1       ) then
-  call eltssc(iscal, smbrs)
-endif
-
 ! ---> Version atmospherique :
 
 if (ippmod(iatmos).ge.0) then
