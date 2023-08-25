@@ -1296,7 +1296,7 @@ _update_inlet_outlet(cs_boundary_conditions_open_t  *c)
 
   const cs_zone_t *z = c->zone;
 
-  if (z->f_measure <= 0. && c->vel_buffer[3] >= 0. && c->scale_func != NULL) {
+  if (z->f_measure <= 0. && c->vel_values[3] >= 0. && c->scale_func != NULL) {
 
     if (   c->vel_rescale == CS_BC_VEL_RESCALE_MASS_FLOW_RATE
         || c->vel_rescale == CS_BC_VEL_RESCALE_VOLUME_FLOW_RATE) {
@@ -1363,15 +1363,15 @@ _update_inlet_outlet(cs_boundary_conditions_open_t  *c)
   /* Also update legacy boundary condition structures */
 
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
-  if (bc_pm_info != NULL) {
-    int izone = z->id - 1;
+  if (bc_pm_info != NULL && c->bc_pm_zone_num > 0) {
+    int zone_num = c->bc_pm_zone_num;
     if (c->vel_rescale == CS_BC_VEL_RESCALE_MASS_FLOW_RATE) {
-      bc_pm_info->iqimp[izone] = 1;
-      bc_pm_info->qimp[izone] = c->vel_values[3];
+      bc_pm_info->iqimp[zone_num] = 1;
+      bc_pm_info->qimp[zone_num] = c->vel_values[3];
     }
     else {
-      bc_pm_info->iqimp[izone] = 0;
-      bc_pm_info->qimp[izone] = 0;
+      bc_pm_info->iqimp[zone_num] = 0;
+      bc_pm_info->qimp[zone_num] = 0;
     }
   }
 }
@@ -1622,6 +1622,8 @@ cs_boundary_conditions_open_find_or_add(const  cs_zone_t   *zone)
   c->vel_flags = (  CS_BC_OPEN_CONSTANT
                   | CS_BC_OPEN_NORMAL_DIRECTION
                   | CS_BC_OPEN_UNIFORM_QUANTITY);
+
+  c->bc_pm_zone_num = 0;
 
   c->vel_values[0] = 0.;
   c->vel_values[1] = 0.;
@@ -2678,9 +2680,9 @@ cs_boundary_conditions_open_set_velocity_by_normal_value(const  cs_zone_t  *z,
   /* Also update legacy boundary condition structures */
 
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
-  if (bc_pm_info != NULL) {
-    int izone = z->id - 1;
-    bc_pm_info->iqimp[izone] = 0;
+  if (bc_pm_info != NULL && c->bc_pm_zone_num > 0) {
+    int zone_num = c->bc_pm_zone_num;
+    bc_pm_info->iqimp[zone_num] = 0;
   }
 }
 
@@ -2733,9 +2735,9 @@ cs_boundary_conditions_open_set_velocity_by_func(const  cs_zone_t       *z,
   /* Also update legacy boundary condition structures */
 
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
-  if (bc_pm_info != NULL) {
-    int izone = z->id - 1;
-    bc_pm_info->iqimp[izone] = 0;
+  if (bc_pm_info != NULL && c->bc_pm_zone_num > 0) {
+    int zone_num = c->bc_pm_zone_num;
+    bc_pm_info->iqimp[zone_num] = 1;
   }
 }
 
@@ -2820,10 +2822,10 @@ cs_boundary_conditions_open_set_mass_flow_rate_by_value(const  cs_zone_t  *z,
   /* Also update legacy boundary condition structures */
 
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
-  if (bc_pm_info != NULL) {
-    int izone = z->id - 1;
-    bc_pm_info->iqimp[izone] = 1;
-    bc_pm_info->qimp[izone] = c->vel_values[3];
+  if (bc_pm_info != NULL && c->bc_pm_zone_num > 0) {
+    int zone_num = c->bc_pm_zone_num;
+    bc_pm_info->iqimp[zone_num] = 1;
+    bc_pm_info->qimp[zone_num] = c->vel_values[3];
   }
 }
 
@@ -2917,9 +2919,9 @@ cs_boundary_conditions_open_set_mass_flow_rate_by_func
   /* Also update legacy boundary condition structures */
 
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
-  if (bc_pm_info != NULL) {
-    int izone = z->id - 1;
-    bc_pm_info->iqimp[izone] = 1;
+  if (bc_pm_info != NULL && c->bc_pm_zone_num > 0) {
+    int zone_num = c->bc_pm_zone_num;
+    bc_pm_info->iqimp[zone_num] = 1;
   }
 }
 
@@ -2991,8 +2993,8 @@ cs_boundary_conditions_open_set_volume_flow_rate_by_value(const  cs_zone_t  *z,
 
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
   if (bc_pm_info != NULL) {
-    int izone = z->id - 1;
-    bc_pm_info->iqimp[izone] = 0;
+    int zone_num = z->id - 1;
+    bc_pm_info->iqimp[zone_num] = 0;
   }
 }
 
@@ -3081,8 +3083,8 @@ cs_boundary_conditions_open_set_volume_flow_rate_by_func
 
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
   if (bc_pm_info != NULL) {
-    int izone = z->id - 1;
-    bc_pm_info->iqimp[izone] = 0;
+    int zone_num = z->id - 1;
+    bc_pm_info->iqimp[zone_num] = 0;
   }
 }
 

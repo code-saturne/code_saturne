@@ -677,6 +677,8 @@ _set_vel_profile(cs_tree_node_t    *tn_vp,
   cs_boundary_conditions_open_t *c
     = cs_boundary_conditions_open_find_or_add(z);
 
+  c->bc_pm_zone_num = boundaries->bc_num[z->id - 1];
+
   /* Initialize context values */
 
   c->zone = z;

@@ -111,6 +111,10 @@ typedef struct {
 
   int                     vel_flags;          /*!< input mode flags */
 
+  int                     bc_pm_zone_num;     /*!< matching zone number
+                                                in cs_glob_bc_pm_info;
+                                                (legacy mapping) */
+
   cs_real_t               vel_values[4];      /*!< velocity vector and value or
                                                 flow rate when uniform
                                                 [u_x, u_y, u_z, 0] or
