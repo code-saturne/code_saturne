@@ -56,6 +56,7 @@
 #include "cs_cf_model.h"
 #include "cs_coal.h"
 #include "cs_combustion_model.h"
+#include "cs_ctwr.h"
 #include "cs_divergence.h"
 #include "cs_elec_model.h"
 #include "cs_equation_iterative_solve.h"
@@ -254,8 +255,8 @@ _production_and_dissipation_terms(const cs_field_t  *f,
                                   const cs_real_t   *cvar_var,
                                   const cs_real_t   *sgdh_diff,
                                   const cs_real_t   *cpro_viscls,
-                                  cs_real_t         *smbrs,
-                                  cs_real_t         *rovsdt,
+                                  cs_real_t         *rhs,
+                                  cs_real_t         *fimp,
                                   cs_real_t         *cpro_st,
                                   cs_real_t         *cpro_tsscal)
 {
@@ -377,21 +378,21 @@ _production_and_dissipation_terms(const cs_field_t  *f,
         const cs_real_t cprovol = xcpp[c_id] * cell_f_vol[c_id] * crom[c_id];
         /* Special time stepping to ensure positivity of the variance */
         const cs_real_t prod = -2*cs_math_3_dot_product(grad[c_id], xut[c_id]);
-        smbrs[c_id] += cs_math_fmax(prod*cprovol, 0);
+        rhs[c_id] += cs_math_fmax(prod*cprovol, 0);
 
         /* Implicit "production" term when negative, but check if the
          * variance is non-zero */
         if (   (cvar_var[c_id] > cs_math_epzero*cs_math_fabs(prod*dt[c_id]))
             && (prod*cprovol < 0.)) {
-          rovsdt[c_id] -= prod * cprovol / cvar_var[c_id];
-          smbrs[c_id] += prod * cprovol;
+          fimp[c_id] -= prod * cprovol / cvar_var[c_id];
+          rhs[c_id] += prod * cprovol;
         }
       }
     }
     /* SGDH model */
     else {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        smbrs[c_id] +=   2 * xcpp[c_id] * sgdh_diff[c_id] * cell_f_vol[c_id]
+        rhs[c_id] +=   2 * xcpp[c_id] * sgdh_diff[c_id] * cell_f_vol[c_id]
                        * cs_math_3_dot_product(grad[c_id], grad[c_id]);
       }
     }
@@ -467,9 +468,9 @@ _production_and_dissipation_terms(const cs_field_t  *f,
     const cs_real_t xr = (1.0 - alpha_theta)*prdtl + alpha_theta*rvarfl;
     const cs_real_t rhovst = xcpp[c_id]*crom[c_id]*xe/(xk*xr)*cell_f_vol[c_id];
     /* The diagonal receives eps/Rk, (*theta possibly) */
-    rovsdt[c_id] += rhovst*thetap;
+    fimp[c_id] += rhovst*thetap;
     /* The right hand side receives the dissipation */
-    smbrs[c_id] -= rhovst*cvara_var[c_id];
+    rhs[c_id] -= rhovst*cvara_var[c_id];
   }
 
 }
@@ -491,7 +492,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
                         cs_real_t                   w1[],
                         cs_real_t                   viscf[],
                         cs_real_t                   viscb[],
-                        cs_real_t                   smbrs[],
+                        cs_real_t                   rhs[],
                         cs_real_t                 **weighb,
                         cs_real_2_t               **weighf,
                         cs_real_6_t               **viscce)
@@ -518,7 +519,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
   cs_real_2_t *_weighf = NULL;
   cs_real_6_t *_viscce = NULL;
 
-  /* AFM model or DFM models: add div(Cp*rho*T'u') to smbrs
+  /* AFM model or DFM models: add div(Cp*rho*T'u') to rhs
    * Compute T'u' for GGDH */
   if (scalar_turb_flux_model_type >= 1) {
     if (   scalar_turb_flux_model == 11
@@ -527,7 +528,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
       cs_field_t *f_alpha = cs_field_by_composite_name(f->name, "alpha");
       cs_turbulence_rij_solve_alpha(f_alpha->id, cs_turb_xclt);
     }
-    cs_turbulence_rij_transport_div_tf(f->id, xcpp, vistet, smbrs);
+    cs_turbulence_rij_transport_div_tf(f->id, xcpp, vistet, rhs);
   }
 
   /* Scalar diffusivity */
@@ -998,12 +999,12 @@ cs_solve_equation_scalar(cs_field_t        *f,
   /* Source terms
      ============ */
 
-  cs_real_t *rovsdt, *smbrs;
-  CS_MALLOC_HD(smbrs, n_cells_ext, cs_real_t, cs_alloc_mode);
-  BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+  cs_real_t *fimp, *rhs;
+  CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
+  BFT_MALLOC(fimp, n_cells_ext, cs_real_t);
 
-  cs_array_real_fill_zero(n_cells, smbrs);
-  cs_array_real_fill_zero(n_cells, rovsdt);
+  cs_array_real_fill_zero(n_cells, rhs);
+  cs_array_real_fill_zero(n_cells, fimp);
 
   /* User source terms
    * ----------------- */
@@ -1012,10 +1013,10 @@ cs_solve_equation_scalar(cs_field_t        *f,
   if (is_thermal_model_field == false)
     cs_gui_scalar_source_terms(f,
                                cvar_var,
-                               smbrs,
-                               rovsdt);
+                               rhs,
+                               fimp);
   else
-    cs_gui_thermal_source_terms(f, cvar_var, smbrs, rovsdt);
+    cs_gui_thermal_source_terms(f, cvar_var, rhs, fimp);
 
   {
     int nvar = 0, nscal = 0;
@@ -1027,18 +1028,18 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     CS_PROCF(ustssc, USTSSC)(&nvar, &nscal, &ncepdp, &ncesmp, &iscal,
                              icepdc, icetsm, itypsm, dt,
-                             ckupdc, smacel, smbrs, rovsdt);
+                             ckupdc, smacel, rhs, fimp);
   }
 
   cs_user_source_terms(cs_glob_domain,
                        f->id,
-                       smbrs,
-                       rovsdt);
+                       rhs,
+                       fimp);
 
   /* Coupling between multiple code_saturne instances */
   const int nbrcpl = cs_sat_coupling_n_couplings();
   if (nbrcpl > 0)
-    cs_sat_coupling_exchange_at_cells(f->id, smbrs);
+    cs_sat_coupling_exchange_at_cells(f->id, rhs);
 
   /* Store the source terms for convective limiter
      or time extrapolation for buoyant scalar */
@@ -1063,7 +1064,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   if (   (eqp->ibdtso > 1) && (ts->nt_cur  > ts->nt_ini)
       && (   cs_glob_time_step_options->idtvar == CS_TIME_STEP_CONSTANT
           || cs_glob_time_step_options->idtvar ==  CS_TIME_STEP_ADAPTIVE))
-    cs_backward_differentiation_in_time(f, smbrs, rovsdt);
+    cs_backward_differentiation_in_time(f, rhs, fimp);
 
   /* Skip first time step after restart if previous values have not been read. */
   if (eqp->ibdtso < 0)
@@ -1075,7 +1076,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
     const int kopint = cs_field_key_id_try("opt_interp_id");
     const int f_oi_id =  cs_field_get_key_int(f, kopint);
     if (f_oi_id > -1)
-      cs_at_data_assim_source_term(f->id, smbrs, rovsdt);
+      cs_at_data_assim_source_term(f->id, rhs, fimp);
 
     /* Atmospheric chemistry
      * In case of a semi-coupled resolution, computation of the explicit
@@ -1089,7 +1090,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
       const int *isca_chem = atmo_chem->species_to_scalar_id;
       const int nespg = atmo_chem->n_species;
       if ((isca_chem[0] <= iscal) && (iscal <= isca_chem[nespg-1]))
-        cs_atmo_chem_source_terms(iscal, smbrs, rovsdt);
+        cs_atmo_chem_source_terms(iscal, rhs, fimp);
     }
 
   }
@@ -1100,17 +1101,17 @@ cs_solve_equation_scalar(cs_field_t        *f,
    * idea.  */
   if (cs_glob_lagr_model->precipitation == 1) {
     if (iscal == 1)
-      cs_lagr_precipitation_mass_st(ts->dt_ref, crom, cvar_var, smbrs);
+      cs_lagr_precipitation_mass_st(ts->dt_ref, crom, cvar_var, rhs);
     cs_assert(iscal == 1);  /* Force error in other cases to fix this */
   }
 
   /* If we extrapolate source terms:
-   *   smbrs receives -theta TS from previous time step.
-   *   smbrs receives the part of the source term which depends on the variable.
-   *   At order 2, we assume that rovsdt provided by the user is < 0, so
-   *     we implicit the term (so rovsdt*cvar_prev goes in smbrs).
-   *   In standard case, adapt to sign of rovsdt, but rovsdt*cvar_prev still
-   *     goes in smbrs (no other choice). */
+   *   rhs receives -theta TS from previous time step.
+   *   rhs receives the part of the source term which depends on the variable.
+   *   At order 2, we assume that fimp provided by the user is < 0, so
+   *     we implicit the term (so fimp*cvar_prev goes in rhs).
+   *   In standard case, adapt to sign of fimp, but fimp*cvar_prev still
+   *     goes in rhs (no other choice). */
 
    /* Map the source term pointer depending on whether it's a bouyant scalar */
   cs_real_t *cpro_st = NULL;
@@ -1131,12 +1132,12 @@ cs_solve_equation_scalar(cs_field_t        *f,
       const cs_real_t smbexp = cproa_scal_st[c_id];
       /* If the scalar is not buoyant no need of saving the current source term,
        * save directly the previous one */
-      cpro_st[c_id] = smbrs[c_id];
+      cpro_st[c_id] = rhs[c_id];
       /* Source term of the previous time step.
-       * We assume -rovsdt > 0: we implicit the user source term (the rest) */
-      smbrs[c_id] = rovsdt[c_id]*cvara_var[c_id] - thets * smbexp;
+       * We assume -fimp > 0: we implicit the user source term (the rest) */
+      rhs[c_id] = fimp[c_id]*cvara_var[c_id] - thets * smbexp;
       /* Diagonal */
-      rovsdt[c_id] *= -thetv;
+      fimp[c_id] *= -thetv;
     }
   }
 
@@ -1145,9 +1146,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
 #   pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       /* User source term */
-      smbrs[c_id] += rovsdt[c_id] * cvara_var[c_id];
+      rhs[c_id] += fimp[c_id] * cvara_var[c_id];
       /* Diagonal */
-      rovsdt[c_id] = cs_math_fmax(-rovsdt[c_id], 0.0);
+      fimp[c_id] = cs_math_fmax(-fimp[c_id], 0.0);
     }
   }
 
@@ -1159,7 +1160,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
     const cs_real_t pther = fluid_props->pther;
     const cs_real_t pthera = fluid_props->pthera;
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      smbrs[c_id] += (pther - pthera) / dt[c_id]*cell_f_vol[c_id];
+      rhs[c_id] += (pther - pthera) / dt[c_id]*cell_f_vol[c_id];
   }
 
   /* If solving the internal energy equation:
@@ -1248,9 +1249,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     /* Get pressure gradient, including the pressure increment gradient */
 
-    cs_thermal_model_pdivu(smbrs);
+    cs_thermal_model_pdivu(rhs);
 
-    cs_thermal_model_dissipation(vistot, gradv, smbrs);
+    cs_thermal_model_dissipation(vistot, gradv, rhs);
 
     BFT_FREE(vistot);
     BFT_FREE(gradv);
@@ -1264,7 +1265,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
         && (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
             || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY)) {
 
-      cs_thermal_model_add_kst(smbrs);
+      cs_thermal_model_add_kst(rhs);
     }
 
     /* CFL related to the internal energy equation */
@@ -1305,11 +1306,15 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   /* Volume coupling with Syrthes; order 2 not handled. */
   if (is_thermal_model_field)
-    cs_syr_coupling_volume_source_terms(f->id, smbrs, rovsdt);
+    cs_syr_coupling_volume_source_terms(f->id, rhs, fimp);
 
   /* Specific physical models; order 2 not handled. */
-  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0)
-    cs_physical_model_scalar_source_terms(iscal, smbrs, rovsdt);
+  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0) {
+    cs_physical_model_source_terms(iscal, rhs, fimp);
+
+    if (cs_glob_physical_model_flag[CS_COOLING_TOWERS] > 0)
+      cs_ctwr_source_term(f->id, rhs, fimp);
+  }
 
   /*  Rayonnement
    *  Ordre 2 non pris en compte */
@@ -1323,18 +1328,18 @@ cs_solve_equation_scalar(cs_field_t        *f,
   if (cs_glob_rad_transfer_params->type > CS_RAD_TRANSFER_NONE) {
 
     if (is_thermal_model_field) {
-      cs_rad_transfer_source_terms(smbrs, rovsdt);
+      cs_rad_transfer_source_terms(rhs, fimp);
 
       /* Conversion Temperature -> potential Temperature (theta)
-       * TODO FIXME check smbrs and rovsdt are correctly initialized... */
+       * TODO FIXME check rhs and fimp are correctly initialized... */
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
         const cs_real_t *pottemp = CS_F_(t)->val;
         const cs_real_t *tempc = cs_field_by_name("real_temperature")->val;
         const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           cs_real_t cor_factor = pottemp[c_id] / (tempc[c_id] + tkelvi);
-          smbrs[c_id] *= cor_factor;
-          rovsdt[c_id] *= cor_factor;
+          rhs[c_id] *= cor_factor;
+          fimp[c_id] *= cor_factor;
         }
       }
 
@@ -1352,12 +1357,12 @@ cs_solve_equation_scalar(cs_field_t        *f,
       const int isca_ih21 = cs_field_get_key_int(CS_FI_(h2, 0), keyvar);
       const int isca_ih2nl = cs_field_get_key_int(CS_FI_(h2, nclacp-1), keyvar);
       if ((isca_ih21 <= ivar) && (ivar <= isca_ih2nl))
-        cs_coal_rad_transfer_st(f, smbrs, rovsdt);
+        cs_coal_rad_transfer_st(f, rhs, fimp);
 
       if (f == cs_field_by_name_try("x_c_h")) {
         const cs_real_t *cpro_tsre1 = cs_field_by_name("rad_st")->val;
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-          smbrs[c_id] += volume[c_id]*cpro_tsre1[c_id];
+          rhs[c_id] += volume[c_id]*cpro_tsre1[c_id];
 
         for (int icla = 0; icla < nclacp; icla++) {
           char f_rad[64], f_xp[64];
@@ -1366,7 +1371,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
           const cs_real_t *cpro_tsre = cs_field_by_name_try(f_rad)->val;
           const cs_real_t *cpro_x2icla = cs_field_by_name_try(f_xp)->val;
           for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-            smbrs[c_id] -= volume[c_id]*cpro_tsre[c_id]*cpro_x2icla[c_id];
+            rhs[c_id] -= volume[c_id]*cpro_tsre[c_id]*cpro_x2icla[c_id];
         }
       }
     }
@@ -1377,7 +1382,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
       const int isca_ih21 = cs_field_get_key_int(CS_FI_(h2, 0), keyvar);
       const int isca_ih2nl = cs_field_get_key_int(CS_FI_(h2, nclafu-1), keyvar);
       if ((isca_ih21 <= ivar) && (ivar <= isca_ih2nl))
-        cs_fuel_rad_transfer_st(f, smbrs, rovsdt);
+        cs_fuel_rad_transfer_st(f, rhs, fimp);
     }
 
   }
@@ -1431,8 +1436,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
       cs_real_t *ste = cs_glob_lagr_source_terms->st_val + itste*n_cells_ext;
       cs_real_t *sti = cs_glob_lagr_source_terms->st_val + itsti*n_cells_ext;
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        smbrs[c_id] += ste[c_id];
-        rovsdt[c_id] += xcpp[c_id]*cs_math_fmax(sti[c_id], 0.0);
+        rhs[c_id] += ste[c_id];
+        fimp[c_id] += xcpp[c_id]*cs_math_fmax(sti[c_id], 0.0);
       }
     }
   }
@@ -1468,7 +1473,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
       }
     }
 
-    /* Increment smbrs by -Gamma.cvara_var and rovsdt by Gamma */
+    /* Increment rhs by -Gamma.cvara_var and fimp by Gamma */
     cs_mass_source_terms(1,
                          1,
                          ncesmp,
@@ -1478,8 +1483,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
                          cvara_var,
                          _smacel_ivar,
                          srcmas,
-                         smbrs,
-                         rovsdt,
+                         rhs,
+                         fimp,
                          w1);
     BFT_FREE(srcmas);
 
@@ -1487,10 +1492,10 @@ cs_solve_equation_scalar(cs_field_t        *f,
     if (st_prv_id >= 0)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
         cpro_st[c_id] += w1[c_id];
-    /* Otherwise, we put it directly in smbrs */
+    /* Otherwise, we put it directly in rhs */
     else
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        smbrs[c_id] += w1[c_id];
+        rhs[c_id] += w1[c_id];
   }
 
   /* Condensation source terms for the scalars
@@ -1507,8 +1512,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
      cs_wall_condensation_source_terms(f,
                                        xcpp,
                                        cvara_var,
-                                       smbrs,
-                                       rovsdt);
+                                       rhs,
+                                       fimp);
   }
 
   /* viscosity and diffusivity*/
@@ -1545,15 +1550,15 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                       cvar_var,
                                       sgdh_diff,
                                       cpro_viscls,
-                                      smbrs,
-                                      rovsdt,
+                                      rhs,
+                                      fimp,
                                       cpro_st,
                                       cpro_tsscal);
 
   if (st_prv_id > -1) {
     const cs_real_t thetp1 = 1 + thets;
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      smbrs[c_id] += thetp1 * cpro_st[c_id];
+      rhs[c_id] += thetp1 * cpro_st[c_id];
   }
 
   /* Compressible algorithm
@@ -1584,7 +1589,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
    * We take max(mu_t, 0) as in dynamic LES mu_t can be negative
    * (clipping over (mu + mu_t)). We could have taken max(K + K_t, 0)
-   * but this would allow negative K_t negatif, which is considered
+   * but this would allow negative K_t negative, which is considered
    * non-physical. */
   cs_real_t *weighb = NULL;
   cs_real_2_t *weighf = NULL;
@@ -1600,7 +1605,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
                             w1,
                             viscf,
                             viscb,
-                            smbrs,
+                            rhs,
                             &weighb,
                             &weighf,
                             &viscce);
@@ -1624,7 +1629,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   if (eqp->istat == 1) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      rovsdt[c_id] += xcpp[c_id]*pcrom[c_id]*cell_f_vol[c_id]/dt[c_id];
+      fimp[c_id] += xcpp[c_id]*pcrom[c_id]*cell_f_vol[c_id]/dt[c_id];
   }
 
   /* Scalar with a Drift:
@@ -1663,8 +1668,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
     /* mass aggregation term */
 #   pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      rovsdt[c_id] += iconvp*thetap*divflu[c_id];
-      smbrs[c_id] -= iconvp*divflu[c_id]*cvara_var[c_id];
+      fimp[c_id] += iconvp*thetap*divflu[c_id];
+      rhs[c_id] -= iconvp*divflu[c_id]*cvara_var[c_id];
     }
 
     BFT_FREE(divflu);
@@ -1717,8 +1722,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                      weighb,
                                      icvflb,
                                      NULL,
-                                     rovsdt,
-                                     smbrs,
+                                     fimp,
+                                     rhs,
                                      cvar_var,
                                      dpvar,
                                      xcpp,
@@ -1886,9 +1891,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
     if (eqp->nswrsm > 1)
       ibcl = 1;
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      smbrs[c_id] -= eqp->istat*xcpp[c_id]*(pcrom[c_id]/dt[c_id])
+      rhs[c_id] -= eqp->istat*xcpp[c_id]*(pcrom[c_id]/dt[c_id])
         *cell_f_vol[c_id]*(cvar_var[c_id]-cvara_var[c_id])*ibcl;
-    const cs_real_t sclnor = sqrt(cs_gdot(n_cells,smbrs,smbrs));
+    const cs_real_t sclnor = sqrt(cs_gdot(n_cells,rhs,rhs));
 
     bft_printf("%s: EXPLICIT BALANCE = %14.5e\n\n",f->name, sclnor);
   }
@@ -1915,8 +1920,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   BFT_FREE(wcvark_var);
   BFT_FREE(xcpp);
-  CS_FREE_HD(smbrs);
-  BFT_FREE(rovsdt);
+  CS_FREE_HD(rhs);
+  BFT_FREE(fimp);
   BFT_FREE(dtr);
 }
 
@@ -2011,21 +2016,21 @@ cs_solve_equation_vector(cs_field_t       *f,
   /* Source terms
      ============ */
 
-  cs_real_3_t *smbrv;
+  cs_real_3_t *rhs;
   cs_real_33_t *fimp;
 
   BFT_MALLOC(fimp, n_cells_ext, cs_real_33_t);
-  BFT_MALLOC(smbrv, n_cells_ext, cs_real_3_t);
+  BFT_MALLOC(rhs, n_cells_ext, cs_real_3_t);
 
-  cs_array_real_fill_zero(9*n_cells, (cs_real_t *)fimp);
-  cs_array_real_fill_zero(3*n_cells, (cs_real_t *)smbrv);
+  cs_array_real_fill_zero(9*n_cells_ext, (cs_real_t *)fimp);
+  cs_array_real_fill_zero(3*n_cells_ext, (cs_real_t *)rhs);
 
   /* User source terms
    * ----------------- */
 
   cs_user_source_terms(cs_glob_domain,
                        f->id,
-                       (cs_real_t *)smbrv,
+                       (cs_real_t *)rhs,
                        (cs_real_t *)fimp);
 
   /* Store the source terms for convective limiter */
@@ -2045,19 +2050,19 @@ cs_solve_equation_vector(cs_field_t       *f,
                 __func__, f_st->name, f->name);
     cpro_vect_st = (cs_real_3_t *)f_st->val;
     cs_array_real_copy(3*n_cells,
-                       (const cs_real_t *)smbrv,
+                       (const cs_real_t *)rhs,
                        (cs_real_t *)cpro_vect_st);
     /* Handle parallelism and periodicity */
     cs_mesh_sync_var_vect((cs_real_t *)cpro_vect_st);
   }
 
   /* If we extrapolate source terms:
-   *   smbrv receives -theta TS from previous time step.
-   *   smbrv receives the part of the source term which depends on the variable.
+   *   rhs receives -theta TS from previous time step.
+   *   rhs receives the part of the source term which depends on the variable.
    *   At order 2, we assume that fimp provided by the user is < 0, so
-   *     we implicit the term (so fimp*cvar_prev goes in smbrs).
+   *     we implicit the term (so fimp*cvar_prev goes in rhs).
    *   In standard case, adapt to sign of fimp, but fimp*cvar_prev still
-   *     goes in smbrv (no other choice). */
+   *     goes in rhs (no other choice). */
 
   cs_real_3_t *cproa_vect_st = NULL;
   const cs_real_t thetv = eqp->thetav;
@@ -2071,8 +2076,8 @@ cs_solve_equation_vector(cs_field_t       *f,
       for (cs_lnum_t j = 0; j < 3; ++j) {
         smbexp[j] = cproa_vect_st[c_id][j];
         /* User explicit source terms */
-        cproa_vect_st[c_id][j] = smbrv[c_id][j];
-        smbrv[c_id][j] =   fimp[c_id][j][j] * cvara_var[c_id][j]
+        cproa_vect_st[c_id][j] = rhs[c_id][j];
+        rhs[c_id][j] =   fimp[c_id][j][j] * cvara_var[c_id][j]
                          - thets*smbexp[j];
         /* Diagonal */
         fimp[c_id][j][j] = -thetv*fimp[c_id][j][j];
@@ -2085,7 +2090,7 @@ cs_solve_equation_vector(cs_field_t       *f,
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
         /* User explicit source terms */
-        smbrv[c_id][j] += fimp[c_id][j][j] * cvara_var[c_id][j];
+        rhs[c_id][j] += fimp[c_id][j][j] * cvara_var[c_id][j];
         /* Diagonal */
         fimp[c_id][j][j] = cs_math_fmax(-fimp[c_id][j][j], 0);
       }
@@ -2096,9 +2101,12 @@ cs_solve_equation_vector(cs_field_t       *f,
 
   if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0) {
 
+    if (cs_glob_physical_model_flag[CS_COOLING_TOWERS] > 0)
+      cs_ctwr_source_term(f->id, (cs_real_t *)rhs, (cs_real_t *)fimp);
+
     if (   cs_glob_physical_model_flag[CS_JOULE_EFFECT] > 0
         || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > 0)
-      cs_elec_source_terms_v(m, fvq, f->id, smbrv);
+      cs_elec_source_terms_v(m, fvq, f->id, rhs);
 
   }
 
@@ -2124,7 +2132,7 @@ cs_solve_equation_vector(cs_field_t       *f,
                          (const cs_real_t *)cvara_var,
                          _smacel_ivar,
                          _smacel_ipr,
-                         (cs_real_t *)smbrv,
+                         (cs_real_t *)rhs,
                          (cs_real_t *)fimp,
                          (cs_real_t *)gavinj);
 
@@ -2139,7 +2147,7 @@ cs_solve_equation_vector(cs_field_t       *f,
     else {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         for (cs_lnum_t j = 0; j < 3; j++)
-          smbrv[c_id][j] += gavinj[c_id][j];
+          rhs[c_id][j] += gavinj[c_id][j];
       }
     }
     BFT_FREE(gavinj);
@@ -2149,7 +2157,7 @@ cs_solve_equation_vector(cs_field_t       *f,
     const cs_real_t thetp1 = 1.0 + thets;
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       for (cs_lnum_t j = 0; j < 3; j++)
-        smbrv[c_id][j] += thetp1 * cproa_vect_st[c_id][j];
+        rhs[c_id][j] += thetp1 * cproa_vect_st[c_id][j];
     }
   }
 
@@ -2277,7 +2285,7 @@ cs_solve_equation_vector(cs_field_t       *f,
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
         fimp[c_id][j][j] += iconvp * thetap * divflu[c_id];
-        smbrv[c_id][j] -= iconvp * divflu[c_id] * cvara_var[c_id][j];
+        rhs[c_id][j] -= iconvp * divflu[c_id] * cvara_var[c_id][j];
       }
     }
 
@@ -2316,7 +2324,7 @@ cs_solve_equation_vector(cs_field_t       *f,
                                      icvflb,
                                      NULL,
                                      fimp,
-                                     smbrv,
+                                     rhs,
                                      cvar_var,
                                      NULL);
 
@@ -2336,19 +2344,19 @@ cs_solve_equation_vector(cs_field_t       *f,
     if (eqp->istat == 1) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
-          smbrv[c_id][j] -=   (pcrom[c_id] / dt[c_id]) * cell_f_vol[c_id]
+          rhs[c_id][j] -=   (pcrom[c_id] / dt[c_id]) * cell_f_vol[c_id]
                             * (cvar_var[c_id][j] - cvara_var[c_id][j]) * ibcl;
         }
       }
     }
     const cs_real_t sclnor = sqrt(cs_gdot(3*n_cells,
-                                          (const cs_real_t *)smbrv,
-                                          (const cs_real_t *)smbrv));
+                                          (const cs_real_t *)rhs,
+                                          (const cs_real_t *)rhs));
 
     bft_printf("%s: EXPLICIT BALANCE = %14.5e\n\n",f->name, sclnor);
   }
 
-  BFT_FREE(smbrv);
+  BFT_FREE(rhs);
   BFT_FREE(dtr);
 }
 

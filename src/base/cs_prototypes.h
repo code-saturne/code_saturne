@@ -444,9 +444,9 @@ cs_mass_flux_prediction(cs_real_t  dt[]);
  *----------------------------------------------------------------------------*/
 
 void
-cs_physical_model_scalar_source_terms(int         iscal,
-                                      cs_real_t   st_imp[],
-                                      cs_real_t   st_exp[]);
+cs_physical_model_source_terms(int         iscal,
+                               cs_real_t   st_imp[],
+                               cs_real_t   st_exp[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

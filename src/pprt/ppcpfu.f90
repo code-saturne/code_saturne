@@ -213,7 +213,7 @@ module ppcpfu
     !---------------------------------------------------------------------------
 
     subroutine pptssc(iscal, smbrs, rovsdt)  &
-      bind(C, name='cs_physical_model_scalar_source_terms')
+      bind(C, name='cs_physical_model_source_terms')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: iscal

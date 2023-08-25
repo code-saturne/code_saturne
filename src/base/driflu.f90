@@ -138,7 +138,6 @@ double precision, dimension(:,:), pointer :: vel, vela
 double precision, dimension(:), pointer :: cvar_k
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: visct, cpro_viscls
-double precision, dimension(:), pointer :: cvara_var
 
 type(var_cal_opt) :: vcopt, vcopt_u
 type(var_cal_opt), target   :: vcopt_loc
@@ -160,8 +159,6 @@ call field_get_key_int(iflid, keysca, iscal)
 ivar = isca(iscal)
 f_id0 = -1
 
-call field_get_val_prev_s(ivarfl(ivar), cvara_var)
-
 ! Eventual scalar class:
 !   0: scalar belonging to no class
 !  -1: deduced continuous (gas) class
@@ -173,7 +170,7 @@ call field_get_key_int(ivarfl(ivar), keyccl, icla)
 call field_get_key_id("drift_scalar_model", keydri)
 call field_get_key_int(iflid, keydri, iscdri)
 
-! Massic fraction of gas
+! Mass fraction of gas
 call field_get_id_try("x_c", id_x1)
 if (id_x1.ne.-1) then
   call field_get_val_s(id_x1, cpro_x1)

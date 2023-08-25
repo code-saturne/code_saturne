@@ -66,7 +66,7 @@
 subroutine pptssc     &
  ( iscal  ,           &
    smbrs  , rovsdt )  &
-  bind(C, name='cs_physical_model_scalar_source_terms')
+  bind(C, name='cs_physical_model_source_terms')
 
 !===============================================================================
 ! Module files
@@ -167,12 +167,6 @@ endif
 
 if (ippmod(iatmos).ge.0) then
   call attssc(iscal,smbrs)
-endif
-
-! ---> Version aerorefrigerant :
-
-if (ippmod(iaeros).ge.0) then
-  call cs_ctwr_source_term(ivarfl(isca(iscal)), smbrs, rovsdt)
 endif
 
 !----
