@@ -1672,6 +1672,11 @@ cs_parameters_add_boundary_values(cs_field_t  *f)
 /*!
  * \brief Define a boundary values field for temperature, if applicable.
  *
+ * When a volume temperature variable field already exists, this amounts
+ * to calling \ref cs_parameters_add_boundary_values for that field.
+ * When such a variable does not exist but we have an Enthalpy variables,
+ * an associated temperature boundary field is returned.
+ *
  * \return  pointer to boundary values field, or NULL if not applicable
  */
 /*----------------------------------------------------------------------------*/

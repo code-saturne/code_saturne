@@ -98,12 +98,12 @@ BEGIN_C_DECLS
  *
  * \brief This file gathers functions that solve advection diffusion equations
  * with source terms for one time step for a scalar, vector or tensor variable.
- *
  */
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
-/*! \brief This function solves an advection diffusion equation with source
+/*!
+ * \brief Solve an advection diffusion equation with source
  * terms for one time step for the variable \f$ a \f$.
  *
  * The equation reads:
@@ -1947,7 +1947,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief This function solves an advection diffusion equation with source
+/*!
+ * \brief This function solves an advection diffusion equation with source
  * terms for one time step for the symmetric tensor variable
  * \f$ \tens{\variat} \f$.
  *

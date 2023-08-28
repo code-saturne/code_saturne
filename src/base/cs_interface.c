@@ -3886,8 +3886,8 @@ cs_interface_set_n_elts(const cs_interface_set_t  *ifs)
 /*!
  * \brief Return pointer to a given interface in an interface set.
  *
- * \param[in]  ifs          <-- pointer to interface set structure
- * \param[in]  interface_id <-- index of interface in set (0 to n-1)
+ * \param[in]  ifs           pointer to interface set structure
+ * \param[in]  interface_id  index of interface in set (0 to n-1)
  *
  * \return  pointer to interface structure
  */
@@ -6022,7 +6022,7 @@ cs_interface_set_free_match_ids(cs_interface_set_t  *ifs)
  * and when multiple (periodic) instances of a given element appear on that
  * rank, al instances except the first are tagged with the chosen value.
  *
- * \param[in]       ifs          pointer to interface set structure
+ * \param[in]       itf          pointer to interface structure
  * \param[in]       periodicity  periodicity information (NULL if none)
  * \param[in]       tr_ignore   if > 0, ignore periodicity with rotation;
  *                              if > 1, ignore all periodic transforms

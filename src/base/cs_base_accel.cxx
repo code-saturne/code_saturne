@@ -717,7 +717,7 @@ cs_free_hd(void        *ptr,
 /*!
  * \brief Free memory on host and device for a given pointer.
  *
- * Compared to \cs_free_hd, this function also allows freeing memory
+ * Compared to \ref cs_free_hd, this function also allows freeing memory
  * allocated through BFT_MEM_MALLOC / bft_mem_malloc.
  *
  * \param [in]  ptr        pointer to free

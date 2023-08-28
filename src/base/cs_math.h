@@ -1471,7 +1471,7 @@ cs_nvec3(const cs_real_3_t    v,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the length (Euclidean norm) between two points xa and xb in
  *         a Cartesian coordinate system of dimension 3
  *

@@ -101,7 +101,10 @@
   \section main_script_commands Top-level commands
 
   The \c code_saturne script allows multiple commands, usable
-  through a <b><tt>code_saturne <command> [options]</tt></b> syntax.
+  through a common syntax:
+  \code{.sh}
+  code_saturne <command> [options]
+  \endcode
 
   To obtain the list of commands, in a terminal, type:
   \code{.sh}
@@ -110,7 +113,7 @@
 
   To obtain the list of options for a given command, in a terminal, type:
   \code{.sh}
-  code_saturne [command] --help
+  code_saturne <command> --help
   \endcode
 
   The main commands are:

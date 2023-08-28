@@ -1027,7 +1027,7 @@ cs_order_gnum_allocated_s(const cs_lnum_t  list[],
                           const cs_gnum_t  number[],
                           size_t           stride,
                           cs_lnum_t        order[],
-                          const size_t     nb_ent)
+                          size_t           nb_ent)
 {
   size_t i, j;
   cs_gnum_t *number_list;
@@ -1284,6 +1284,7 @@ cs_order_lnum_allocated_s(const cs_lnum_t  list[],
  *                      contain element numbers in any order
  * \param[in]   val     array of all entity values (value of entity i given
  *                      by value[i] or value[list[i]]) if list exists
+ *                      (if NULL, a default 0 to n-1 numbering is considered)
  * \param[out]  order   pointer to pre-allocated ordering table
  * \param[in]   nb_ent  number of entities considered
  */

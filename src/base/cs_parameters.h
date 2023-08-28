@@ -305,10 +305,10 @@ void
 cs_parameters_read_restart_info(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * Define a user variable.
+/*
+ * \brief Define a user variable.
  *
- * \brief Solved variables are always defined on cells.
+ * Solved variables are always defined on cells.
  *
  * \param[in]  name  name of variable and associated field
  * \param[in]  dim   variable dimension
@@ -405,10 +405,10 @@ void
 cs_parameters_create_added_properties(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define a boundary values field for a variable field.
  *
- * \param[in]  f  pointer to field structure
+ * \param[in, out]  f  pointer to field structure
  *
  * \return  pointer to boundary values field, or NULL if not applicable
  */
@@ -418,7 +418,7 @@ cs_field_t *
 cs_parameters_add_boundary_values(cs_field_t  *f);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define a boundary values field for temperature, if applicable.
  *
  * When a volume temperature variable field already exists, this amounts

@@ -209,7 +209,7 @@
       <tt>tf->val[cell_id]</tt>. \n
       if there is no thermal scalar, cs_thermal_model_field returns NULL. \n\n
 
-    - In any case, all variables can be accessed using the function \ref cs_field_by_name: \n
+    - In any case, all variables can be accessed using the function \ref cs_field_by_name :\n
       <tt>\ref cs_real_t *cvar_pr = \ref cs_field_by_name("pressure")->val</tt> \n\n
 
     - A field's \ref scalar_id key-word should be ≥ 0 if it is a scalar. \n\n

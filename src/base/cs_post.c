@@ -144,8 +144,7 @@ BEGIN_C_DECLS
   or similar before the data pointed to goes out of scope.
 
   \param[in, out]  input       pointer to optional (untyped) value or structure
-  \param[in]       nt_cur_abs  current time step number
-  \param[in]       t_cur_abs   absolute time at the current time step
+  \param[in]       ts          time step status structure, or NULL
 
   \typedef cs_post_time_mesh_dep_output_t
 
@@ -162,26 +161,23 @@ BEGIN_C_DECLS
   - post-processing output must be ensured using cs_post_write_var()
   or similar before the data pointed to goes out of scope.
 
-  \param[in, out]  input        pointer to optional (untyped) value or structure
-  \param[in]       mesh_id      id of the output mesh for the current call
-  \param[in]       cat_id       category id of the output mesh for the
-                                current call
-  \param[in]       ent_flag     indicate global presence of cells
-                                (ent_flag[0]), interior faces (ent_flag[1]),
-                                boundary faces (ent_flag[2]), particles
-                                (ent_flag[3]) or probes (ent_flag[4])
-  \param[in]       n_cells      local number of cells of post_mesh
-  \param[in]       n_i_faces    local number of interior faces of post_mesh
-  \param[in]       n_b_faces    local number of boundary faces of post_mesh
-  \param[in]       cell_list    list of cells (1 to n) of post-processing mesh
-  \param[in]       i_face_list  list of interior faces (1 to n) of
-                                post-processing mesh
-  \param[in]       b_face_list  list of boundary faces (1 to n) of
-                                post-processing mesh
-  \param[in]       nt_cur_abs   current time step number
-  \param[in]       t_cur_abs    current physical time
-  \param[in]       nt_cur_abs   current time step number
-  \param[in]       t_cur_abs    absolute time at the current time step
+  \param[in, out]  input       pointer to optional (untyped) value or structure
+  \param[in]       mesh_id     id of the output mesh for the current call
+  \param[in]       cat_id      category id of the output mesh for the
+                               current call
+  \param[in]       ent_flag    indicate global presence of cells
+                               (ent_flag[0]), interior faces (ent_flag[1]),
+                               boundary faces (ent_flag[2]), particles
+                               (ent_flag[3]) or probes (ent_flag[4])
+  \param[in]       n_cells     local number of cells of post_mesh
+  \param[in]       n_i_faces   local number of interior faces of post_mesh
+  \param[in]       n_b_faces   local number of boundary faces of post_mesh
+  \param[in]       cell_ids    list of cells (0 to n-1) of post-processing mesh
+  \param[in]       i_face_ids  list of interior faces (0 to n-1) of
+                               post-processing mesh
+  \param[in]       b_face_ids  list of boundary faces (0 to n-1) of
+                               post-processing mesh
+  \param[in]       ts          time step status structure, or NULL
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -5140,11 +5136,13 @@ cs_post_mesh_attach_field(int  mesh_id,
 /*!
  * \brief Get a postprocessing meshes entity presence flag.
  *
- * This flag is an array of 3 integers, indicating the presence of elements
+ * This flag is an array of 5 integers, indicating the presence of elements
  * of given types on at least one subdomain (i.e. rank):
  *   0: presence of cells
  *   1: presence of interior faces
  *   2: presence of boundary faces
+ *   3: presence of particles
+ *   4: presence of probes
  *
  * \param[in]  mesh_id  postprocessing mesh id
  *
@@ -5570,6 +5568,7 @@ cs_post_mesh_exists(int  mesh_id)
 /*!
  * \brief Find next mesh with a given category id
  *
+ * \param[in]  cat_id         mesh category id filter
  * \param[in]  start_mesh_id  O at start, then previously returned mesh id
  *
  * \return  id of next mesh matching catogory, or 0 if none is found
@@ -6369,7 +6368,7 @@ cs_post_write_var(int                    mesh_id,
 void
 cs_post_write_function(int                    mesh_id,
                        int                    writer_id,
-                       const cs_function_t   *cel_f,
+                       const cs_function_t   *cell_f,
                        const cs_function_t   *i_face_f,
                        const cs_function_t   *b_face_f,
                        const cs_time_step_t  *ts)
@@ -6407,7 +6406,7 @@ cs_post_write_function(int                    mesh_id,
   if (post_mesh->ent_flag[CS_POST_LOCATION_CELL] == 1) {
 
     loc_type = CS_MESH_LOCATION_CELLS;
-    f = cel_f;
+    f = cell_f;
     ent_dim = 3;
 
   }

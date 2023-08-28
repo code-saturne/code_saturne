@@ -255,7 +255,7 @@ int variance_clipping;
 /*!
   \var variance_dissipation
    Represents the coefficient $R_f$ in the dissipation term
-   $\-\frac{\rho}{R_f}\frac{\varepsilon}{k}$ of the equation
+   \f$-\frac{\rho}{R_f}\frac{\varepsilon}{k}\f$ of the equation
    concerning the scalar, which represents the mean square root
    of the fluctuations of the scalar.
 */
@@ -278,7 +278,7 @@ int scalar_diffusivity_prev;
   linear functions of the solved variable \f$\phi\f$ are expressed
   as second-order terms by interpolation (according to the formula
   \f$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]\f$,
-  \f$\theta\f$ being given by the value of \ref thetav associated with
+  \f$\theta\f$ being given by the value of \c thetav associated with
   the variable \f$\phi\f$);
   the other terms \f$S_e\f$ are expressed as second-order terms by
   extrapolation (according to the formula
@@ -288,8 +288,9 @@ int scalar_diffusivity_prev;
   when scalar_time_scheme = 1; the other terms \f$S_e\f$ are extrapolated
   according to the same formula as when scalar_time_scheme = 1, but with
   \f$\theta\f$ = \ref st_exp_extrapolated = 1.\n
-  By default, scalar_time_scheme is initialised to 1 (second-order)
-  when the selected time scheme is second-order (\ref ischtp = 2),
+  By default, scalar_time_scheme is initialized to 1 (second-order)
+  when the selected time scheme is second-order
+  (\ref cs_time_scheme_t::time_order = 2),
   otherwise to 0.
 */
 int scalar_time_scheme;
@@ -301,7 +302,7 @@ int scalar_time_scheme;
   when the source term extrapolation has been activated (see
   \ref scalar_time_scheme), following the formula
   \f$(S_e)^{n+\theta}=(1+\theta)S_e^n-\theta S_e^{n-1}\f$.\n
-  The value of \f$\theta\f$ = \ref thetss is deduced from the value
+  The value of \f$\theta\f$ = \c thetss is deduced from the value
   chosen for \ref scalar_time_scheme. Generally, only the value 0.5 is used.
   - 0: explicit
   - 1/2: extrapolated in n+1/2
@@ -311,11 +312,11 @@ double st_exp_extrapolated;
 
 /*!
   \var diffusivity_extrapolated
-  \f$ \theta \f$-scheme for the extrapolation of the physical
+  \f$\theta\f$-scheme for the extrapolation of the physical
   property \f$\phi\f$ "diffusivity" when the extrapolation has
   been activated (see \ref time_extrapolated key word), according to the
   formula \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
-  The value of\f$\theta\f$ = \ref thetvs is deduced from the value
+  The value of \f$\theta\f$ = \c thetvs is deduced from the value
   chosen for \ref time_extrapolated key word. Generally, only the value 0.5
   is used.
   - 0: explicit

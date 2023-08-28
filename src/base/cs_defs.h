@@ -585,7 +585,7 @@ extern MPI_Comm       cs_glob_mpi_comm;      /* Main MPI intra-communicator */
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Given a base index i, return the next index aligned with a size m.
  *
  * \param[in]  i   base index

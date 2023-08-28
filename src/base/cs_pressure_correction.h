@@ -111,8 +111,8 @@ cs_pressure_correction_cdo_destroy_all(void);
 
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief  Activate the pressure increment solving with CDO
+/*
+ * \brief Activate the pressure increment solving with CDO
  */
 /*----------------------------------------------------------------------------*/
 
@@ -120,7 +120,7 @@ void
 cs_pressure_correction_cdo_activate(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Activate the pressure increment, either FV or CDO
  */
 /*----------------------------------------------------------------------------*/
@@ -129,7 +129,7 @@ void
 cs_pressure_correction_model_activate(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Test if pressure solving with CDO is activated
  *
  * \return true if solving with CDO is requested, false otherwise
@@ -140,7 +140,7 @@ bool
 cs_pressure_correction_cdo_is_activated(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Start setting-up the pressure increment equation
  *         At this stage, numerical settings should be completely determined
  *         but connectivity and geometrical information is not yet available.
@@ -151,7 +151,7 @@ void
 cs_pressure_correction_cdo_init_setup(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Finalize setting-up the pressure increment equation
  *         At this stage, numerical settings should be completely determined
  *
@@ -163,7 +163,7 @@ void
 cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Perform the pressure correction step of the Navier-Stokes equations
  *        for incompressible or slightly compressible flows.
  *
@@ -174,7 +174,23 @@ cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain);
  *     - \Gamma^n
  *     + \dfrac{\rho^n - \rho^{n-1}}{\Delta t}
  * \f]
- *  Either Legacy FV method or CDO face-based scheme is used
+ *
+ * Either the legacy FV method or a CDO face-based scheme is used.
+ *
+ * For the legacy case, the mass flux is  updated as follows:
+ * \f[
+ *  \dot{m}^{n+1}_\ij = \dot{m}^{n}_\ij
+ *                    - \Delta t \grad_\fij \delta p \cdot \vect{S}_\ij
+ * \f]
+ *
+ * \Remark:
+ * - an iterative process is used to solve the Poisson equation.
+ * - if the arak coefficient is set to 1, the the Rhie & Chow filter is
+ *   activated.
+ *
+ * Please refer to the
+ * <a href="../../theory.pdf#resopv"><b>resopv</b></a>
+ * section of the theory guide for more information.
  *
  * \param[in]       iterns    Navier-Stokes iteration number
  * \param[in]       nfbpcd    number of faces with condensation source term

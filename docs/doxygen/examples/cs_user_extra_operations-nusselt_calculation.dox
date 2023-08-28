@@ -28,29 +28,25 @@
 
   \page cs_user_extra_operations_examples_nusselt_calculation_p Calculation of a local Nusselt number
 
-  This is an example of \ref cs_user_extra_operations function which computes a Nusselt number.
-  balances on specified zones.
+  This is an example of \ref cs_user_extra_operations function which computes a
+  local Nusselt number.
 
-  \subsection loc_var_f_user Local variables
+  \section loc_var_f_user Local variables
 
   Faces can be selected either using a selector (as is done here) or directly
   using boundary zone element ids if an appropriate zone has been defined.
 
   \snippet cs_user_extra_operations-nusselt_calculation.c loc_var_f_user
 
-  \subsection nusselt_number Calculation of the Nusselt number
-
-  \snippet cs_user_extra_operations-nusselt_calculation.c  nusselt_number
-
-  \subsubsection compute_nusselt Reconstruct value at selected boundary faces
+  \subsection compute_nusselt Reconstruct value at selected boundary faces
 
   Allocate a local array for the selected boundary faces.
   \snippet cs_user_extra_operations-nusselt_calculation.c compute_nusselt
 
-  \subsubsection general_nusselt General case (for non-orthogonal meshes)
+  \subsection general_nusselt General case (for non-orthogonal meshes)
   \snippet cs_user_extra_operations-nusselt_calculation.c gen_nusselt
 
-  \subsubsection orthogonal_nusselt Case of orthogonal meshes
+  \subsection orthogonal_nusselt Case of orthogonal meshes
 
   Compute boundary value without reconstruction
   \snippet cs_user_extra_operations-nusselt_calculation.c else_nusselt

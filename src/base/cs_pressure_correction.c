@@ -147,7 +147,7 @@ static cs_pressure_correction_cdo_t *cs_pressure_correction_cdo = NULL;
  *                    - \Delta t \grad_\fij \delta p \cdot \vect{S}_\ij
  * \f]
  *
- * \Remark:
+ * \remark:
  * - an iterative process is used to solve the Poisson equation.
  * - if the arak coefficient is set to 1, the the Rhie & Chow filter is
  *   activated.
@@ -2759,7 +2759,7 @@ _pressure_correction_fv(int        iterns,
  * \brief Perform the pressure correction step of the Navier-Stokes equations
  *        for incompressible or slightly compressible flows.
  *
- * \Remark:
+ * \remark:
  * - CDO face-based scheme is used to solve the Poisson equation.
  *  \f[
  *     - DIV \cdot Hdg \cdot GRAD \left(\delta p \right) =
@@ -3373,13 +3373,16 @@ cs_pressure_correction_cdo_destroy_all(void)
  *     - \Gamma^n
  *     + \dfrac{\rho^n - \rho^{n-1}}{\Delta t}
  * \f]
- * The mass flux is then updated as follows:
+ *
+ * Either the legacy FV method or a CDO face-based scheme is used.
+ *
+ * For the legacy case, the mass flux is  updated as follows:
  * \f[
  *  \dot{m}^{n+1}_\ij = \dot{m}^{n}_\ij
  *                    - \Delta t \grad_\fij \delta p \cdot \vect{S}_\ij
  * \f]
  *
- * \Remark:
+ * \remark:
  * - an iterative process is used to solve the Poisson equation.
  * - if the arak coefficient is set to 1, the the Rhie & Chow filter is
  *   activated.

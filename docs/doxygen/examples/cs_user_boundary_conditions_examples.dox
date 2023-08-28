@@ -107,7 +107,7 @@
   can be assigned with user-defined callback functions. Here, we use "static"
   (i.e. local) functions that must be defined in the same file
   (i.e. \ref cs_user_boundary_conditions.c) prior to being referenced in
-  \ref cs_user_boundary_conditions_define. It is of course possible to use functions
+  \ref cs_user_boundary_conditions_setup. It is of course possible to use functions
   with global linkage, which can be defined in any file, as log as the matching
   function prototypes are defined or included at the calling point.
 
@@ -133,7 +133,7 @@
 
   \snippet cs_user_boundary_conditions.c inlet_scalar_analytic_func
 
-  They are then associated to the matching zone in \ref cs_user_boundary_conditions_define:
+  They are then associated to the matching zone in \ref cs_user_boundary_conditions_setup :
 
   \snippet cs_user_boundary_conditions.c inlet_vel_analytic
 
@@ -410,7 +410,7 @@
 
   In general, when defining a pseudo-periodic boundary condition, it is assumed
   that the mesh is not moving, so the mapping may be defined once and for
-  all. Hence the test on \ref nt_cur and \ref nt_prev and the save attribute
+  all. Hence the test on \c nt_cur and \c nt_prev and the save attribute
   for the inlet_1 pointer.
 
   \section channel_inlet_mapped_example_1_map_apply Applying the map
@@ -931,9 +931,9 @@
 
   Note that turbulence variables BC's are usually computed automatically:
   - If `icalke(izone)` = 1: hydraulic diameter and reference velocity
-       (similar to \ref turbulence_bc_inlet_hyd_diam).
+       (similar to \ref cs_turbulence_bc_inlet_hyd_diam).
   - If `icalke(izone)` = 2: hydraulic diameter, reference velocity and
-       turbulence intensity (similar to \ref turbulence_bc_inlet_turb_intensity).
+       turbulence intensity (similar to \ref cs_turbulence_bc_inlet_turb_intensity).
   - If `icalke(izone)` = 0: non-automatic definition. Turbulence BC's must be
        defined here for all turbulence variables (k, epsilon, omega, Rij,
        ... depending on active model).

@@ -397,22 +397,23 @@ typedef enum {
  *
  * \var CS_PARAM_ADVECTION_EXTRAPOL_NONE
  * The advection field is not extrapolated. The last known advection field
- * is considered \phi^n if one computes u^(n+1) knowing u^n. In case of a
- * a non-linearity, this is \phi^(n+1,k) if one computes u^(n+1,k+1) knowing
- * u^(n+1,k) and u^n. The initial step is such that u^(n+1,0) = u^n
+ * is considered \f$ \phi^n \f$ if one computes \f$ u^(n+1) \f$ knowing
+ * \f$ u^n. \f$ In case of a a non-linearity, this is \f$ \phi^(n+1,k) \f$
+ * if one computes \f$ u^(n+1,k+1) \f$ knowing \f$  u^(n+1,k) \f$ and \f$ u^n.\f$
+ * The initial step is such that \f$ u^(n+1,0) = u^n \f$.
  * This is a good choice with a first-order forward or backward time scheme.
  *
  * \var CS_PARAM_ADVECTION_EXTRAPOL_TAYLOR_2
  * The advection field is extrapolated with a 2nd order Taylor expansion
- * yielding \phi^extrap = 2 \phi^n - \phi^(n-1)
- * This corresponds to an estimation of \phi at n+1. Thus, this is a good
- * choice when associated with a BDF2 time scheme.
+ * yielding \f$ \phi^extrap = 2 \phi^n - \phi^(n-1) \f$.
+ * This corresponds to an estimation of \f$ \phi \f$ at n+1. Thus, this is
+ * a good choice when associated with a BDF2 time scheme.
  *
  * \var CS_PARAM_ADVECTION_EXTRAPOL_ADAMS_BASHFORTH_2
  * The advection field is extrapolated with a 2nd order Adams-Bashforth
- * technique yielding \phi^extrap = 3/2 \phi^n - 1/2 \phi^(n-1)
- * This corresponds to an estimation of \phi at n+1/2. Thus, this is a good
- * choice when associated with a Crank-Nilcolson time scheme.
+ * technique yielding \f$ \phi^extrap = 3/2 \phi^n - 1/2 \phi^(n-1) \f$.
+ * This corresponds to an estimation of \f$ \phi \f$ at n+1/2. Thus, this
+ *) is a good choice when associated with a Crank-Nilcolson time scheme.
  */
 
 typedef enum {
