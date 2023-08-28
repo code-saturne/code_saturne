@@ -145,7 +145,6 @@ ippmod(icoebu) = -1
 
 ippmod(icolwc) = -1
 
-
 ! --- Soot model
 ! =================
 
@@ -170,80 +169,6 @@ rosoot = 2000.d0 ! kg/m3
 !        if = 0    module activated
 
 ippmod(icfuel) = -1
-
-! --- coal :
-! ==========
-!
-!     Pulverized coal combustion
-!        Description of granulometry
-!        Assumption of diffusion flame around particles
-!         (extension of 3-point fast chemistry "D3P")
-!        Between a mixture of gaseous fuels (volatiles matters, CO from char
-!                                            oxydation)
-!            and a mixture of oxidisers (air and water vapor)
-!        Enthalpy for both mix and solid phase are solved
-!
-!        if = -1   module not activated
-!        if = 0    module activated
-!        if = 1    with drying
-
-ippmod(iccoal) = -1
-
-! Activate the drift: 0 (no activation),
-!                     1 (transported particle velocity)
-!                     2 (limit drop particle velocity)
-
-i_comb_drift = 1
-
-
-! --- cpl3c: Pulverized coal with Lagrangian reciprocal approach
-! ==========
-
-!        Not recently tested... at least outdated, may be obsolete
-
-!        if = -1   module not activated
-!        if = 0    module activated
-!        if = 1    with drying (NOT functional)
-
-ippmod(icpl3c) = -1
-
-! --- eljou: Joule effect
-! ==========
-
-!        if = -1   module not activated
-!        if = 1    real potential
-!        if = 2    complex potential
-!        if = 3    real potential + Transfo
-!        if = 4    complex potential + Transfo
-
-ippmod(ieljou) = -1
-
-! --- elarc: Electric arcs
-! ==========
-
-!        if = -1   module not activated
-!        if = 1    electric potential
-!        if = 2    electric potential and vector potential (hence 3D modelling)
-
-ippmod(ielarc) = -1
-
-! --- aeros: Cooling towers
-! ==========
-
-!        if = -1   module not activated
-!        if = 0    no model (NOT functional)
-!        if = 1    Poppe's model
-!        if = 2    Merkel's model
-
-ippmod(iaeros) = -1
-
-! Radiative transfer module (iirayo)
-!--------------------------
-!        if = 0: not activated (Default)
-!        if = 1: DOM
-!        if = 2: approximation P1 method
-
-iirayo = 1
 
 !===============================================================================
 ! 2.  Specific options related to herebefore modules
@@ -274,24 +199,6 @@ if (     ippmod(icod3p).ge.0                                          &
   endif
 
 endif
-
-! Fuel combustion
-
-if (ippmod(icfuel).ge.0) then
-  ficfpp = 'dp_FUE'
-endif
-
-! Specific condensation modelling (used with ippmod(igmix) >= 0)
-
-! wall condensation model
-!   -1: not activated
-!    0: condensation source terms
-icondb = -1
-
-! internal condensation model
-!   -1: not activated
-!    0: condensation source terms with metal structures
-icondv = -1
 
 !< [usppmo]
 
@@ -425,7 +332,6 @@ if (iatsoil.ne.0) then
     soilvert(iiv)%density = 1.23d0
   enddo
 endif
-
 !< [usatsoil]
 
 !----
@@ -474,7 +380,6 @@ use cstphy
 use entsor
 use cstnum
 use parall
-use period
 use ppppar
 use ppthch
 use coincl
@@ -598,9 +503,6 @@ implicit none
 integer :: ifcvsl
 
 !===============================================================================
-
-!===============================================================================
-
 !< [uscfx1]
 
 !===============================================================================

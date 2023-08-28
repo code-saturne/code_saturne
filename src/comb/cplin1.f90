@@ -156,7 +156,7 @@ enddo
 ! et dans les sous-programmes appeles
 
 is = 0
-do icha = 1, ncharb
+do icha = 1, ncharm
   is          = is + 1
   if1mc(icha) = is
   is          = is + 1

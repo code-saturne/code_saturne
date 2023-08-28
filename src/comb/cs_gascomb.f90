@@ -421,12 +421,12 @@ do iel = 1, ncel
 !
     endif
 !
-!        Désormais on connait les concentrations e
+!        DÃ©sormais on connait les concentrations e
 !        cl,s1,s2,s3,s4,Ox
-!        les concentrations intermédiaires sont linéaires par morceaux
-!        et les paramêtres de la pdf dfuel,doxyd, pdfm1,pdfm2,hrec
+!        les concentrations intermÃ©diaires sont linÃ©aires par morceaux
+!        et les paramÃ¨tres de la pdf dfuel,doxyd, pdfm1,pdfm2,hrec
 !
-!        On initialise par les concentrations aux extrémités
+!        On initialise par les concentrations aux extrÃ©mitÃ©s
     do ii = 1,ngazg
       zz(ii) = dfuel(iel)*zzcl(ii)+doxyd(iel)*zzox(ii)
     enddo
@@ -440,7 +440,7 @@ do iel = 1, ncel
                   +(zzcl(ii)-zzs1(ii))*(bb1+bb2)*0.5d0 )
       enddo
     endif
-! Intégration sur le deuxième intervalle de (entre s2 et s1)
+! IntÃ©gration sur le deuxiÃ¨me intervalle de (entre s2 et s1)
     bb1 = max(pdfm1(iel),fs2)
     bb2 = min(pdfm2(iel),fs1)
     if( bb2.gt.bb1 ) then
@@ -450,7 +450,7 @@ do iel = 1, ncel
                   +(zzs1(ii)-zzs2(ii))*(bb1+bb2)*0.5d0 )
       enddo
     endif
-! Integration sur le troisième intervalle de (entre s3 et s2)
+! Integration sur le troisiÃ¨me intervalle de (entre s3 et s2)
     bb1 = max(pdfm1(iel),fs3)
     bb2 = min(pdfm2(iel),fs2)
     if( bb2.gt.bb1 ) then

@@ -60,7 +60,7 @@ module entsor
 
   !> name of the thermochemical data file for combustion.
   !>
-  !> Useful in case of gas or pulverized coal combustion.
+  !> Useful in case of gas combustion.
   character(len=64), save :: ficfpp, ficrad
 
   !> logical unit of the thermochemical data file.

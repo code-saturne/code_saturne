@@ -63,7 +63,7 @@ use field
 
 implicit none
 
-integer          icla,  icha, f_id
+integer          icla,  icha, f_id, iage
 integer          keyccl, keydri, kscmin, kscmax
 integer          iscdri
 integer(c_int) :: n_coals, n_classes

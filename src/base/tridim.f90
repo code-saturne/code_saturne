@@ -1269,7 +1269,7 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
     call atr1vf()
   endif
 
-  call cs_rad_transfer_solve(itypfb, cp2fol, cp2ch, ichcor)
+  call cs_rad_transfer_solve(itypfb)
 endif
 
 if (nscal.ge.1) then

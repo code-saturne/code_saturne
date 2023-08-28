@@ -49,6 +49,18 @@ BEGIN_C_DECLS
  * Local type definitions
  *============================================================================*/
 
+/*! Fuel combustion model parameters structure */
+/*---------------------------------------------*/
+
+typedef struct {
+
+  int     nclafu;                   /*! number of fuel classes */
+  double  hinfue;                   /*! input mass enthalpy for fuel */
+  double  h02fol;                   /*! H0 of liquid fuel oil */
+  double  cp2fol;                   /*! fuel oil liquid CP */
+
+} cs_fuel_model_t;
+
 /*=============================================================================
  * Global variables
  *============================================================================*/

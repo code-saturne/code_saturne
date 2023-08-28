@@ -128,7 +128,6 @@ elseif ( ippmod(iccoal).ge.0 ) then
   do izone = 1, nozppm
     iqimp(izone)  = 0
     icalke(izone) = 0
-    ientcp(izone) = 0
     ientat(izone) = 0
     dh(izone)     = zero
     xintur(izone) = zero

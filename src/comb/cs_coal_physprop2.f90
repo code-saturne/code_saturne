@@ -63,6 +63,7 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
+use ppcpfu
 use field
 
 !===============================================================================

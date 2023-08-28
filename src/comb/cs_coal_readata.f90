@@ -390,7 +390,8 @@ do it = 1, npo
   ehgaze(iso2 ,it) = ehcoel(11,it)
   ehgaze(in2  ,it) = ehcoel(12,it)
 enddo
-wmole(ichx1) = wmolce( 1)
+wmole(ichx1) = wmolce(1)
+
 ! ------ ATTENTION : Il faut prendre la masse molaire du monomere CH2
 !                    et non celle du C2H4
 wmole(ichx2) = wmolat(iatc)+wmolat(iath)*2.d0
@@ -404,7 +405,6 @@ wmole(ico2 ) = wmolce( 9)
 wmole(ih2o ) = wmolce(10)
 wmole(iso2 ) = wmolce(11)
 wmole(in2  ) = wmolce(12)
-
 
 ! --> Calcul tabulation enthalpie - temperature pour le solide
 !     Charbon reactif, Coke et Cendres

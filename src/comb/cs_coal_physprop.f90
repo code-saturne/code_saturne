@@ -35,12 +35,10 @@
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     mbrom         filling indicator of romb
-!> \param[in]     izfppp        area number of the edge face
-!>                               for the specific physic module
 !______________________________________________________________________________!
 
 subroutine cs_coal_physprop &
- ( mbrom  , izfppp )
+ ( mbrom )
 
 !===============================================================================
 ! Module files
@@ -73,13 +71,11 @@ implicit none
 ! Arguments
 
 integer          mbrom
-integer          izfppp(nfabor)
 
 ! Local variables
 
 integer          iel, icha, icla
-integer          izone, ifac
-integer          ioxy , nbclip1,nbclip2
+integer          nbclip1,nbclip2
 integer          iscdri, keydri, iflid, nfld, keyccl
 integer          f_id
 integer          iok1,iok2,iok3
@@ -87,7 +83,6 @@ integer          iok1,iok2,iok3
 character(len=80) :: fname, name
 
 double precision x1sro1, x2sro2, srrom1, uns1pw
-double precision x2tot, wmolme, unsro1
 double precision ff3min,ff3max,valmin,valmax
 
 integer          ipass
@@ -102,7 +97,7 @@ double precision, dimension(:), pointer :: cpro_taup
 double precision, dimension(:), pointer :: cpro_x1
 double precision, dimension(:), pointer :: cpro_x2
 double precision, dimension(:), pointer :: cpro_rom2, cpro_diam2
-double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: crom
 double precision, dimension(:,:), pointer :: cvar_vel
 double precision, dimension(:,:), pointer :: vg_lim_pi
 double precision, dimension(:,:), pointer :: vdc
@@ -118,6 +113,16 @@ double precision, dimension(:), pointer :: cpro_rom1
 type(pmapper_double_r1), dimension(:) , allocatable :: cpro_x2b, cpro_ro2
 
 logical(kind=c_bool) :: log_active
+
+interface
+
+  subroutine cs_coal_boundary_conditions_inlet_density() &
+    bind(C, name='cs_coal_boundary_conditions_inlet_density')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_coal_boundary_conditions_inlet_density
+
+end interface
 
 !===============================================================================
 !
@@ -400,49 +405,8 @@ enddo
 !===============================================================================
 
 mbrom = 1
-call field_get_val_s(ibrom, brom)
-call field_get_val_s(icrom, crom)
 
-! ---> Mass density on edges for all faces
-!      The input faces are recalculated.
-
-do ifac = 1, nfabor
-  iel = ifabor(ifac)
-  brom(ifac) = crom(iel)
-enddo
-
-! ---> Mass density on edge for all ONLY inlet faces
-!      The test on izone is used for the calculation
-
-if ( ipass.gt.1 .or. isuite.eq.1 ) then
-  do ifac = 1, nfabor
-
-    izone = izfppp(ifac)
-    if(izone.gt.0) then
-      if ( ientat(izone).eq.1 .or. ientcp(izone).eq.1 ) then
-        x2sro2 = 0.d0
-        x2tot  = 0.d0
-        do icla = 1, nclacp
-          x2sro2 = x2sro2 + x20(icla,izone)/rho20(icla)
-          x2tot  = x2tot  + x20(icla,izone)
-        enddo
-
-        ioxy = inmoxy(izone)
-        wmolme =( oxyo2(ioxy)+oxyn2(ioxy)                         &
-                 +oxyh2o(ioxy)+oxyco2(ioxy))                      &
-               /( wmole(io2) *oxyo2(ioxy)                         &
-                 +wmole(in2) *oxyn2(ioxy)                         &
-                 +wmole(ih2o)*oxyh2o(ioxy)                        &
-                 +wmole(ico2)*oxyco2(ioxy) )
-
-        unsro1 = (wmolme*cs_physical_constants_r*timpat(izone)) / p0
-        x1sro1 = (1.d0-x2tot) * unsro1
-        brom(ifac) = 1.d0 / (x1sro1+x2sro2)
-      endif
-    endif
-
-  enddo
-endif
+call cs_coal_boundary_conditions_inlet_density()
 
 !===============================================================================
 ! 7. Compute the drift velocity if needed

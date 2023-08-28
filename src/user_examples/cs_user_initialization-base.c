@@ -61,8 +61,6 @@ BEGIN_C_DECLS
  *
  * \brief Initialization prior to solving time steps.
  *        Basic examples
- *
- * See \ref cs_user_initialization for examples.
  */
 /*----------------------------------------------------------------------------*/
 

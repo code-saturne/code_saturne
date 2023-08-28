@@ -647,8 +647,10 @@ cs_f_lagr_specific_physics(int        *iirayo,
 
   _lagr_extra_module.iturb  = turb_model->iturb;
   _lagr_extra_module.itytur = turb_model->itytur;
-  _lagr_extra_module.ncharb = *ncharb;
-  _lagr_extra_module.ncharm = *ncharm;
+  if (ncharb != NULL)
+    _lagr_extra_module.ncharb = *ncharb;
+  if (ncharm != NULL)
+    _lagr_extra_module.ncharm = *ncharm;
   _lagr_extra_module.icp    = cs_glob_fluid_properties->icp;
 
   _lagr_extra_module.radiative_model = *iirayo;

@@ -54,25 +54,19 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Solve the radiative transfer equation.
  *
  *  Two types of method are available:
  *  - Discretes Ordinates Methods (DOM)
  *  - P-1 approximation (only recommended for pulverized coal)
  *
- *  \param[in, out]  bc_type       boundary face types
- *  \param[in]       cp2fol        fuel oil liquid CP
- *  \param[in]       cp2ch         pulverized coal CP's
- *  \param[in]       ichcor        pulverized coal indirection
+ *  \param[in, out]  bc_type  boundary face types
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_solve(int               bc_type[],
-                      cs_real_t         cp2fol,
-                      const cs_real_t   cp2ch[],
-                      const int         ichcor[]);
+cs_rad_transfer_solve(int  bc_type[]);
 
 /*----------------------------------------------------------------------------*/
 

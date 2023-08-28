@@ -1359,7 +1359,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     /* Pulverized coal; order 2 not handled */
     if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1) {
-      const int nclacp = cs_glob_combustion_model->coal.nclacp;
+      const int nclacp = cs_glob_combustion_model->coal->nclacp;
       const int isca_ih21 = cs_field_get_key_int(CS_FI_(h2, 0), keyvar);
       const int isca_ih2nl = cs_field_get_key_int(CS_FI_(h2, nclacp-1), keyvar);
       if ((isca_ih21 <= ivar) && (ivar <= isca_ih2nl))
@@ -1384,7 +1384,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     /* Fuel; order 2 not handled */
     if (cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] > -1) {
-      const int nclafu = cs_glob_combustion_model->fuel.nclafu;
+      const int nclafu = cs_glob_combustion_model->fuel->nclafu;
       const int isca_ih21 = cs_field_get_key_int(CS_FI_(h2, 0), keyvar);
       const int isca_ih2nl = cs_field_get_key_int(CS_FI_(h2, nclafu-1), keyvar);
       if ((isca_ih21 <= ivar) && (ivar <= isca_ih2nl))

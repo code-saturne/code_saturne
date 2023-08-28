@@ -117,6 +117,12 @@ interface
     implicit none
   end subroutine cs_gui_checkpoint_parameters
 
+  subroutine cs_combustion_initialize()  &
+       bind(C, name='cs_combustion_initialize')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_combustion_initialize
+
   subroutine cs_gui_mobile_mesh_structures_add()  &
        bind(C, name='cs_gui_mobile_mesh_structures_add')
     use, intrinsic :: iso_c_binding
@@ -281,6 +287,10 @@ call cs_gui_physical_constants
 
 ! Flow and other models selection through user C function
 call cs_user_model
+
+! Initialize some model structures if needed
+
+call cs_combustion_initialize
 
 ! Set type and order of the turbulence model
 call cs_set_type_order_turbulence_model()

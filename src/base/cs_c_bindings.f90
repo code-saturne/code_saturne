@@ -268,11 +268,11 @@ module cs_c_bindings
 
     !> \param[in]  bc_type  type of boundary for each face
 
-    subroutine cs_boundary_conditions_legacy_turbulence(itypfb) &
+    subroutine cs_boundary_conditions_legacy_turbulence(bc_type) &
       bind(C, name='cs_boundary_conditions_legacy_turbulence')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), dimension(*) :: itypfb
+      integer(c_int), dimension(*) :: bc_type
     end subroutine cs_boundary_conditions_legacy_turbulence
 
     !---------------------------------------------------------------------------

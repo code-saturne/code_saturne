@@ -91,22 +91,29 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
+cs_combustion_gas_model_t _glob_gas_model = {.iic = 0,
+                                             .hinfue = 0,
+                                             .xsoot = 0.,
+                                             .rosoot = 0.};
+
+cs_fuel_model_t _glob_fuel_model = {.nclafu = 0,
+                                    .hinfue = 0,
+                                    .h02fol = 0,
+                                    .cp2fol = 0};
+
 /*! Combustion model parameters structure */
 
 cs_combustion_model_t
-  _combustion_model = {.gas = {.iic = 0,
-                               .hinfue = 0,
-                               .xsoot = 0.,
-                               .rosoot = 0.},
-                       .coal = {.nclacp = 0},
-                       .fuel = {.nclafu = 0,
-                                .hinfue = 0,
-                                .h02fol = 0,
-                                .cp2fol = 0},
+  _combustion_model = {.gas = &_glob_gas_model,
+                       .coal = NULL,
+                       .fuel = NULL,
                        .n_gas_el_comp = 0,
                        .n_gas_species = 0,
                        .n_atomic_species = 0,
                        .n_reactions = 0,
+                       .idrift = 0,
+                       .ieqco2 = 0,
+                       .ieqnox = 0,
                        .isoot = -1,
                        .ckabs0 = 0,
                        .xco2 = -1,
@@ -122,6 +129,12 @@ cs_combustion_model_t
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
  *============================================================================*/
+
+void
+cs_f_coal_model_map(void);
+
+void
+cs_f_fuel_model_map(void);
 
 void
 cs_f_combustion_model_get_pointers(int  **isoot);
@@ -148,21 +161,32 @@ cs_f_coincl_get_pointers(double  **coefeg,
                          double  **hinoxy);
 
 void
-cs_f_cpincl_get_pointers(int     **ico2,
-                         int     **ih2o,
-                         int     **io2,
-                         int     **in2,
-                         int     **ncharb,
-                         int     **nclacp,
-                         int     **nclpch,
-                         int     **ichcor,
-                         double  **xashch,
-                         double  **diam20,
-                         double  **dia2mn,
-                         double  **rho20,
-                         double  **rho2mn,
-                         double  **xmp0,
-                         double  **xmasch);
+cs_f_cpincl_comb_get_pointers(int     **ico2,
+                              int     **ih2o,
+                              int     **io2,
+                              int     **in2);
+
+void
+cs_f_cpincl_coal_get_pointers(int     **ncharb,
+                              int     **nclacp,
+                              int     **nclpch,
+                              int     **ich,
+                              int     **ick,
+                              int     **iash,
+                              int     **iwat,
+                              double  **ehsoli,
+                              double  **wmols,
+                              double  **eh0sol,
+                              int     **ichcor,
+                              double  **cp2ch,
+                              double  **xashch,
+                              double  **xwatch,
+                              double  **diam20,
+                              double  **dia2mn,
+                              double  **rho20,
+                              double  **rho2mn,
+                              double  **xmp0,
+                              double  **xmasch);
 
 void
 cs_f_fuel_get_pointers(int     **nclafu,
@@ -170,7 +194,10 @@ cs_f_fuel_get_pointers(int     **nclafu,
                        double  **cp2fol);
 
 void
-cs_f_ppcpfu_get_pointers(double  **oxyo2,
+cs_f_ppcpfu_get_pointers(int     **idrift,
+                         int     **ieqco2,
+                         int     **ieqnox,
+                         double  **oxyo2,
                          double  **oxyn2,
                          double  **oxyh2o,
                          double  **oxyco2);
@@ -236,13 +263,13 @@ cs_f_ppthch_get_pointers(int     **ngaze,
   *nato   = &(cs_glob_combustion_model->n_atomic_species);
   *nrgaz  = &(cs_glob_combustion_model->n_reactions);
 
-  *iic    = &(cs_glob_combustion_model->gas.iic);
+  *iic    = &(cs_glob_combustion_model->gas->iic);
   *wmole  = cs_glob_combustion_model->wmole;
-  *wmolg  = cs_glob_combustion_model->gas.wmolg;
+  *wmolg  = cs_glob_combustion_model->gas->wmolg;
   *xco2   = &(cs_glob_combustion_model->xco2);
   *xh2o   = &(cs_glob_combustion_model->xh2o);
   *ckabs1 = &(cs_glob_combustion_model->ckabs0);
-  *fs     = cs_glob_combustion_model->gas.fs;
+  *fs     = cs_glob_combustion_model->gas->fs;
 }
 
 /*----------------------------------------------------------------------------
@@ -264,11 +291,11 @@ cs_f_coincl_get_pointers(double  **coefeg,
                          double  **hinfue,
                          double  **hinoxy)
 {
-  *coefeg = &(cs_glob_combustion_model->gas.coefeg[0][0]);
-  *compog = &(cs_glob_combustion_model->gas.compog[0][0]);
-  *xsoot  = &(cs_glob_combustion_model->gas.xsoot);
-  *rosoot = &(cs_glob_combustion_model->gas.rosoot);
-  *hinfue = &(cs_glob_combustion_model->gas.hinfue);
+  *coefeg = &(cs_glob_combustion_model->gas->coefeg[0][0]);
+  *compog = &(cs_glob_combustion_model->gas->compog[0][0]);
+  *xsoot  = &(cs_glob_combustion_model->gas->xsoot);
+  *rosoot = &(cs_glob_combustion_model->gas->rosoot);
+  *hinfue = &(cs_glob_combustion_model->gas->hinfue);
   *hinoxy = &(cs_glob_combustion_model->hinoxy);
 }
 
@@ -283,50 +310,94 @@ cs_f_coincl_get_pointers(double  **coefeg,
  *   ih2o   --> pointer to cs_glob_combustion_model->ih2o
  *   io2    --> pointer to cs_glob_combustion_model->io2
  *   in2    --> pointer to cs_glob_combustion_model->in2
- *   nclacp --> pointer to cs_glob_combustion_model->coal.nclacp
- *   nclacp --> pointer to cs_glob_combustion_model->coal.n_classes_per_coal
- *   ichcor --> pointer to cs_glob_combustion_model->coal.ichcor
- *   xashch --> pointer to cs_glob_combustion_model->coal.xashch
- *   diam20 --> pointer to cs_glob_combustion_model->coal.diam20
- *   dia2mn --> pointer to cs_glob_combustion_model->coal.dia2mn
- *   rho20  --> pointer to cs_glob_combustion_model->coal.rho20
- *   rho2mn --> pointer to cs_glob_combustion_model->coal.rho2mn
- *   xmp0   --> pointer to cs_glob_combustion_model->coal.xmp0
- *   xmasch --> pointer to cs_glob_combustion_model->coal.xmash
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_cpincl_get_pointers(int     **ico2,
-                         int     **ih2o,
-                         int     **io2,
-                         int     **in2,
-                         int     **ncharb,
-                         int     **nclacp,
-                         int     **nclpch,
-                         int     **ichcor,
-                         double  **xashch,
-                         double  **diam20,
-                         double  **dia2mn,
-                         double  **rho20,
-                         double  **rho2mn,
-                         double  **xmp0,
-                         double  **xmasch)
+cs_f_cpincl_comb_get_pointers(int     **ico2,
+                              int     **ih2o,
+                              int     **io2,
+                              int     **in2)
 {
   *io2   = &(cs_glob_combustion_model->io2);
   *in2   = &(cs_glob_combustion_model->in2);
   *ico2   = &(cs_glob_combustion_model->ico2);
   *ih2o   = &(cs_glob_combustion_model->ih2o);
-  *ncharb = &(cs_glob_combustion_model->coal.n_coals);
-  *nclacp = &(cs_glob_combustion_model->coal.nclacp);
-  *nclpch = &(cs_glob_combustion_model->coal.n_classes_per_coal);
-  *ichcor = cs_glob_combustion_model->coal.ichcor;
-  *xashch = cs_glob_combustion_model->coal.xashch;
-  *diam20 = cs_glob_combustion_model->coal.diam20;
-  *dia2mn = cs_glob_combustion_model->coal.dia2mn;
-  *rho20  = cs_glob_combustion_model->coal.rho20;
-  *rho2mn = cs_glob_combustion_model->coal.rho2mn;
-  *xmp0   = cs_glob_combustion_model->coal.xmp0;
-  *xmasch = cs_glob_combustion_model->coal.xmasch;
+}
+
+/*----------------------------------------------------------------------------
+ * Get pointers to members of the global compbustion model (cpincl).
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *
+ * parameters:
+ *   ncharb --> pointer to cs_glob_combustion_model->coal->n_coals
+ *   nclacp --> pointer to cs_glob_combustion_model->coal->nclacp
+ *   nclpch --> pointer to cs_glob_combustion_model->coal->n_classes_per_coal
+ *   ich    --> pointer to cs_glob_combustion_model->coal->ich
+ *   ick    --> pointer to cs_glob_combustion_model->coal->ick
+ *   iash   --> pointer to cs_glob_combustion_model->coal->iash
+ *   iwat   --> pointer to cs_glob_combustion_model->coal->iwat
+ *   ehsoli --> pointer to cs_glob_combustion_model->coal->ehsoli
+ *   wmols  --> pointer to cs_glob_combustion_model->coal->wmols
+ *   eh0sol --> pointer to cs_glob_combustion_model->coal->eh0sol
+ *   ichcor --> pointer to cs_glob_combustion_model->coal->ichcor
+ *   cp2ch  --> pointer to cs_glob_combustion_model->coal->cp2ch
+ *   xashch --> pointer to cs_glob_combustion_model->coal->xashch
+ *   diam20 --> pointer to cs_glob_combustion_model->coal->diam20
+ *   dia2mn --> pointer to cs_glob_combustion_model->coal->dia2mn
+ *   rho20  --> pointer to cs_glob_combustion_model->coal->rho20
+ *   rho2mn --> pointer to cs_glob_combustion_model->coal->rho2mn
+ *   xmp0   --> pointer to cs_glob_combustion_model->coal->xmp0
+ *   xmasch --> pointer to cs_glob_combustion_model->coal->xmash
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_cpincl_coal_get_pointers(int     **ncharb,
+                              int     **nclacp,
+                              int     **nclpch,
+                              int     **ich,
+                              int     **ick,
+                              int     **iash,
+                              int     **iwat,
+                              double  **ehsoli,
+                              double  **wmols,
+                              double  **eh0sol,
+                              int     **ichcor,
+                              double  **cp2ch,
+                              double  **xashch,
+                              double  **xwatch,
+                              double  **diam20,
+                              double  **dia2mn,
+                              double  **rho20,
+                              double  **rho2mn,
+                              double  **xmp0,
+                              double  **xmasch)
+{
+  cs_coal_model_t *coal = cs_glob_combustion_model->coal;
+
+  *ncharb = &(coal->n_coals);
+  *nclacp = &(coal->nclacp);
+  *nclpch = coal->n_classes_per_coal;
+
+  *ich    = coal->ich;
+  *ick    = coal->ick;
+  *iash   = coal->iash;
+  *iwat   = coal->iwat;
+  *ehsoli = (double *)coal->ehsoli;
+  *wmols  = coal->wmols;
+  *eh0sol = coal->eh0sol;
+
+  *ichcor = coal->ichcor;
+  *cp2ch  = coal->cp2ch;
+  *xashch = coal->xashch;
+  *xwatch = coal->xwatch;
+  *diam20 = coal->diam20;
+  *dia2mn = coal->dia2mn;
+  *rho20  = coal->rho20;
+  *rho2mn = coal->rho2mn;
+  *xmp0   = coal->xmp0;
+  *xmasch = coal->xmasch;
 }
 
 /*----------------------------------------------------------------------------
@@ -336,9 +407,9 @@ cs_f_cpincl_get_pointers(int     **ico2,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   nclafu --> pointer to cs_glob_combustion_model->fuel.nclafu
- *   h02fol --> pointer to cs_glob_combustion_model->fuel.h02fol
- *   cp2fol --> pointer to cs_glob_combustion_model->fuel.cp2fol
+ *   nclafu --> pointer to cs_glob_combustion_model->fuel->nclafu
+ *   h02fol --> pointer to cs_glob_combustion_model->fuel->h02fol
+ *   cp2fol --> pointer to cs_glob_combustion_model->fuel->cp2fol
  *----------------------------------------------------------------------------*/
 
 void
@@ -346,9 +417,9 @@ cs_f_fuel_get_pointers(int     **nclafu,
                        double  **h02fol,
                        double  **cp2fol)
 {
-  *nclafu = &(cs_glob_combustion_model->fuel.nclafu);
-  *h02fol = &(cs_glob_combustion_model->fuel.h02fol);
-  *cp2fol = &(cs_glob_combustion_model->fuel.cp2fol);
+  *nclafu = &(cs_glob_combustion_model->fuel->nclafu);
+  *h02fol = &(cs_glob_combustion_model->fuel->h02fol);
+  *cp2fol = &(cs_glob_combustion_model->fuel->cp2fol);
 }
 
 /*----------------------------------------------------------------------------
@@ -358,21 +429,70 @@ cs_f_fuel_get_pointers(int     **nclafu,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
+ *   idrift --> pointer to cs_glob_combustion_model->idrift
+ *   ieqco2 --> pointer to cs_glob_combustion_model->ieqco2
+ *   ieqnox --> pointer to cs_glob_combustion_model->ieqnox
  *   oxyo2  --> pointer to cs_glob_combustion_model->oxyo2
  *   oxyn2  --> pointer to cs_glob_combustion_model->oxyn2
  *   oxyh2o --> pointer to cs_glob_combustion_model->oxyh2o
  *   oxyco2 --> pointer to cs_glob_combustion_model->oxyco2
  *----------------------------------------------------------------------------*/
+
 void
-cs_f_ppcpfu_get_pointers(double  **oxyo2,
+cs_f_ppcpfu_get_pointers(int     **idrift,
+                         int     **ieqco2,
+                         int     **ieqnox,
+                         double  **oxyo2,
                          double  **oxyn2,
                          double  **oxyh2o,
                          double  **oxyco2)
 {
+  *idrift = &(cs_glob_combustion_model->idrift);
+  *ieqco2 = &(cs_glob_combustion_model->ieqco2);
+  *ieqnox = &(cs_glob_combustion_model->ieqnox);
   *oxyo2 =  cs_glob_combustion_model->oxyo2;
   *oxyn2 =  cs_glob_combustion_model->oxyn2;
   *oxyh2o = cs_glob_combustion_model->oxyh2o;
   *oxyco2 = cs_glob_combustion_model->oxyco2;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize combustion model based on active physical models
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_initialize(void)
+{
+  if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0
+      || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0) {
+    if (_combustion_model.coal == NULL) {
+      _combustion_model.coal = cs_coal_model_create();
+      cs_f_coal_model_map();
+    }
+  }
+
+  if (   cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0) {
+    _combustion_model.fuel = &_glob_fuel_model;
+    cs_f_fuel_model_map();
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize combustion model based on active physical models
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_finalize(void)
+{
+  if (_combustion_model.coal != NULL)
+    cs_coal_model_destroy(&_combustion_model.coal);
+
+  if (_combustion_model.fuel != NULL)
+    _combustion_model.fuel = NULL;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -384,7 +504,7 @@ cs_f_ppcpfu_get_pointers(double  **oxyo2,
 void
 cs_combustion_log_setup(void)
 {
-  if (  cs_glob_physical_model_flag[CS_COMBUSTION_3PT] >= 0
+  if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] >= 0
       || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] >= 0
       || cs_glob_physical_model_flag[CS_COMBUSTION_LW]  >= 0) {
 
@@ -409,8 +529,8 @@ cs_combustion_log_setup(void)
                       "            the soot yield is not defined in the\n"
                       "            thermochemistry data file)\n"
                       "    rosoot: %14.5e (Soot density)\n\n"),
-                    cs_glob_combustion_model->gas.xsoot,
-                    cs_glob_combustion_model->gas.rosoot);
+                    cs_glob_combustion_model->gas->xsoot,
+                    cs_glob_combustion_model->gas->rosoot);
       break;
     case 1:
       /* 2 equations model of Moss et al. */
@@ -420,7 +540,7 @@ cs_combustion_log_setup(void)
       cs_log_printf(CS_LOG_SETUP,
                     _("  Parameter for the soot model:\n"
                       "    rosoot: %14.5e (Soot density)\n\n"),
-                      cs_glob_combustion_model->gas.rosoot);
+                      cs_glob_combustion_model->gas->rosoot);
       break;
     default:
       break;

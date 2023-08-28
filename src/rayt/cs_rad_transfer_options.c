@@ -119,9 +119,9 @@ cs_rad_transfer_options(void)
   /* -> For pulverized coal and fuel combustion:   */
 
   if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0)
-    rt_params->nrphas = 1 + cs_glob_combustion_model->coal.nclacp;
+    rt_params->nrphas = 1 + cs_glob_combustion_model->coal->nclacp;
   else if (cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0)
-    rt_params->nrphas = 1 + cs_glob_combustion_model->fuel.nclafu;
+    rt_params->nrphas = 1 + cs_glob_combustion_model->fuel->nclafu;
   else
     rt_params->nrphas = 1;
 

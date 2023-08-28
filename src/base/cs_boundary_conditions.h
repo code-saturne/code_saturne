@@ -66,10 +66,6 @@ BEGIN_C_DECLS
  * Local type definitions
  *============================================================================*/
 
-typedef cs_real_t  cs_real_5_t[5];          /* Vector of 5 real values */
-
-typedef cs_real_t  cs_real_5_20_t[5][20];   /* Matrix of 5x20 real values */
-
 /*=============================================================================
  * Global variables
  *============================================================================*/
@@ -140,27 +136,8 @@ typedef struct {
   /*! Air temperature in K (per zone) for pulverized coal combustion. */
   cs_real_t  *timpat;
 
-  /*! Coal mass flow per coal for inlet zones
-    (qimpcp[zone_num][coal_id],  with 5 coals max) */
-
-  cs_real_5_t  *qimpcp;
-
-  /*! Coal temperature (in K) per coal for inlet zones
-    (timpcp[zone_num][coal_id], with 5 coals max) */
-
-  cs_real_5_t  *timpcp;
-
-  /*! Coal class mass distribution ratio (in percentage) for inlet zones
-   *  (distch[zone_num][coal_id][class_id], with 4 coals max and
-      20 coal classes par coal max) */
-
-  cs_real_5_20_t  *distch;
-
   /*! Air indicator by input facet type */
   int *ientat;
-
-  /*! Cp indicator by input facet type */
-  int *ientcp;
 
   /*! coal: number of oxydant for the current inlet */
   int *inmoxy;
@@ -376,7 +353,8 @@ cs_boundary_conditions_compute(int  bc_type[]);
 /*!
  * \brief  Define automatic turbulence values for specific physical modules.
  *
- * The definitions the same as for the standard case, but determination
+ * The definitions are similar to those of the standard case, though wall
+ * shear direction is not computed for second-order models, and determination
  * of face BC types is done using the legacy physical model zone info
  * (cs_glob_bc_pm_info->izfpp, ...).
  *
@@ -404,6 +382,59 @@ cs_boundary_conditions_legacy_turbulence(int  bc_type[]);
 
 void
 cs_boundary_conditions_complete(int  bc_type[]);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Return pointer to model inlet structure associated with a given
+ *        open (inlet/outlet) boundary.
+ *
+ * The returned pointer is of type void * as it should be cast to the
+ * appropriate (model-dependent) type.
+
+ * If no matching parent open boundary has been created yet, it is created.
+ *
+ * \param[in]  zone  pointer to associated zone
+ *
+ * \return: pointer to structure associated with zone
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_boundary_conditions_get_model_inlet(const cs_zone_t  *zone);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Return legacy zone number related to a given zone, if available.
+ *
+ * \param[in]  z  pointer to associated zone
+ *
+ * \return  number associated with legacy zone, or 0 if unavailable.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_boundary_conditions_get_legacy_zone_num(const  cs_zone_t  *z);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Assign pointer to model inlet structure associated with a given
+ *        open (inlet/outlet) boundary.
+ *
+ * The returned pointer is of type void * as it should be cast to the
+ * appropriate (model-dependent) type.
+
+ * If no matching parent open boundary has been created yet, it is created.
+ *
+ * \param[in]  zone   pointer to associated zone
+ * \param[in]  s_ptr  pointer to associated structure
+ * \param[in]  s_del  destructor for associated structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_assign_model_inlet(const cs_zone_t  *zone,
+                                          void             *s_ptr,
+                                          void             *s_del);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -474,7 +505,26 @@ cs_boundary_conditions_open_set_velocity_by_func(const  cs_zone_t       *z,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Assign a constant mass flow rate to an inlet.
+ * \brief Return the volume flow rate to an inlet or outlet.
+ *
+ * The flow direction may be specified by also calling
+ * \ref cs_boundary_conditions_open_set_velocity_by_value,
+ * or \ref cs_boundary_conditions_open_set_velocity_by_func.
+ * In that case, the velocity vector is rescaled so as to obtain the required
+ * volume flow rate.
+ *
+ * \param[in]  z  pointer to associated zone
+ *
+ * \return  volume flow rate associated with open boundary
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_boundary_conditions_open_get_mass_flow_rate(const  cs_zone_t  *z);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Assign a constant mass flow rate to an inlet or outlet.
  *
  * By default, the flow direction is considered normal to the boundary.
  * The flow direction may be specified by calling
@@ -495,7 +545,8 @@ cs_boundary_conditions_open_set_mass_flow_rate_by_value(const  cs_zone_t  *z,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Assign a mass flow rate to an inlet based on provided function.
+ * \brief Assign a mass flow rate to an inlet or outlet  based on
+ *        provided function.
  *
  * The flow direction may be specified by also calling
  * \ref cs_boundary_conditions_open_set_velocity_by_value,
@@ -533,7 +584,7 @@ cs_boundary_conditions_open_set_mass_flow_rate_by_func
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Assign a constant volume flow rate to an inlet.
+ * \brief Assign a constant volume flow rate to an inlet or outlet.
  *
  * The flow direction may be specified by also calling
  * \ref cs_boundary_conditions_open_set_velocity_by_value,
@@ -552,7 +603,8 @@ cs_boundary_conditions_open_set_volume_flow_rate_by_value(const  cs_zone_t  *z,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Assign a volume flow rate to an inlet based on provided function.
+ * \brief Assign a volume flow rate to an inlet or outlet based on
+ *        provided function.
  *
  * The flow direction may be specified by also calling
  * \ref cs_boundary_conditions_open_set_velocity_by_value,
@@ -587,22 +639,6 @@ cs_boundary_conditions_open_set_volume_flow_rate_by_func
   (const  cs_zone_t       *z,
    cs_eval_at_location_t  *func,
    void                   *input);
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Assign a flow rate to an inlet based directly on the velocity.
- *
- * This is the default, so this function is useful only if need to restore
- * that behavior if needed after calling one of the
- * \c cs_boundary_conditions_open_set_volume_volume_flow_rate
- * \c cs_boundary_conditions_open_set_volume_flow_rate functions.
- *
- * \param[in]  z      pointer to associated zone
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_boundary_conditions_open_set_flow_rate_by_velocity(const  cs_zone_t  *z);
 
 /*----------------------------------------------------------------------------*/
 /*

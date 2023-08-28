@@ -101,6 +101,7 @@ cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c \
 cs_user_boundary_conditions-mapped_inlet.c \
 cs_user_boundary_conditions-medcoupling_remapper_2d.c \
 cs_user_boundary_conditions-notebook.c \
+cs_user_boundary_conditions-pulverized_coal.c \
 cs_user_boundary_conditions-time_table.c \
 cs_user_coupling-saturne.c \
 cs_user_coupling-syrthes.c \
@@ -132,6 +133,7 @@ cs_user_initialization-electric_arcs.c \
 cs_user_initialization-fuel.c \
 cs_user_initialization-gas_3ptchem.c \
 cs_user_initialization-medcoupling_remapper_3d.c \
+cs_user_initialization-pulverized_coal.c \
 cs_user_initialization-time_step.c \
 cs_user_lagr_boundary_conditions.c \
 cs_user_lagr_volume_conditions.c \
@@ -193,10 +195,8 @@ cs_user_boundary_conditions-fuel.f90 \
 cs_user_boundary_conditions-gas_3ptchem.f90 \
 cs_user_boundary_conditions-gas_ebu.f90 \
 cs_user_boundary_conditions-gas_libby_williams.f90 \
-cs_user_boundary_conditions-pulverized_coal.f90 \
 cs_user_initialization-gas_ebu.f90 \
 cs_user_initialization-gas_libby_williams.f90 \
-cs_user_initialization-pulverized_coal.f90 \
 cs_user_parameters.f90 \
 cs_user_profile.cxx \
 cs_user_profile.h \

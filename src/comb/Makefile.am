@@ -69,6 +69,7 @@ AM_LDFLAGS =
 
 pkginclude_HEADERS = \
 cs_coal.h \
+cs_coal_boundary_conditions.h \
 cs_fuel.h \
 cs_comb_headers.h
 
@@ -92,7 +93,7 @@ cplym1.f90 \
 cppdfr.f90 \
 cpteh1.f90 \
 cs_coal.c \
-cs_coal_bcond.f90 \
+cs_coal_boundary_conditions.c \
 cs_coal_bt2h.f90 \
 cs_coal_fp2st.f90 \
 cs_coal_htconvers1.f90 \

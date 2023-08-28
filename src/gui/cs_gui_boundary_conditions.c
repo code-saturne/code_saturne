@@ -56,6 +56,7 @@
 #include "cs_boundary_conditions_priv.h"
 #include "cs_boundary_zone.h"
 #include "cs_cf_thermo.h"
+#include "cs_coal_boundary_conditions.h"
 #include "cs_combustion_model.h"
 #include "cs_equation_param.h"
 #include "cs_parameters.h"
@@ -123,20 +124,13 @@ typedef struct {
   int           *ientox;   /* 1 for an air flow inlet (gas combustion - D3P) */
   int           *ientgb;   /* 1 for burned gas inlet (gas combustion) */
   int           *ientgf;   /* 1 for unburned gas inlet (gas combustion) */
-  int           *ientat;   /* 1 if inlet for oxydant (coal combustion)  */
-  int           *ientcp;   /* 1 if inlet for oxydant+coal (coal combustion) */
-  int           *inmoxy;   /* oxydant number (coal combustion) */
-  double        *timpat;   /* inlet temperature of oxydant (coal combustion) */
   double        *tkent;    /* inlet temperature (gas combustion) */
-  double       **qimpcp;   /* inlet coal flow rate (coal combustion) */
-  double       **timpcp;   /* inlet coal temperature (coal combustion)  */
   double        *fment;    /* Mean Mixture Fraction at Inlet (gas combustion) */
   int           *itype;    /* type of inlet/outlet (compressible model) */
   double        *prein;    /* inlet pressure (compressible model) */
   double        *rhoin;    /* inlet density  (compressible model) */
   double        *tempin;   /* inlet temperature (compressible model) */
   int          **type_code;  /* type of boundary for each variable */
-  double      ***distch;   /* ratio for each coal */
   double        *rough;    /* roughness size */
   bool          *head_loss_e;  /* formula for head loss (free inlet/outlet) */
 
@@ -358,7 +352,7 @@ _check_and_add_mapped_inlet(const char       *label,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief cs_eval_at_location_t function to compute the flow rate awt
+ * \brief cs_eval_at_location_t function to compute the flow rate at
  *        boundary faces using a MEG generated value.
  *
  * For the calling function, elt_ids is optional. If not NULL, array(s) should
@@ -838,16 +832,22 @@ _set_vel_profile(cs_tree_node_t    *tn_vp,
 
   if (norm_type == 1) {
     c->vel_values[3] = v;
-    cs_boundary_conditions_open_set_mass_flow_rate_by_value(z, v);
+    if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1)
+      cs_coal_boundary_conditions_inlet_set_air_mass_flow_rate_by_value(z, v);
+    else
+      cs_boundary_conditions_open_set_mass_flow_rate_by_value(z, v);
   }
   else if (norm_type == 2) {
     c->vel_values[3] = v;
     cs_boundary_conditions_open_set_volume_flow_rate_by_value(z, v);
   }
   else if (norm_type == 11) {
-    cs_boundary_conditions_open_set_mass_flow_rate_by_func(z,
-                                                           _meg_flow_rate,
-                                                           c);
+    if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1)
+      cs_coal_boundary_conditions_inlet_set_air_mass_flow_rate_by_func
+        (z, _meg_flow_rate, c);
+    else
+      cs_boundary_conditions_open_set_mass_flow_rate_by_func
+        (z, _meg_flow_rate, c);
   }
   else if (norm_type == 12) {
     cs_boundary_conditions_open_set_volume_flow_rate_by_func(z,
@@ -1735,16 +1735,23 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
  * for an oxydant, or for oxydant and coal.
  *
  * parameters:
- *   tn_vp    <-- tree node associated with velocity and pressure
- *   izone    <-- associated zone id
+ *   tn_vp <-- tree node associated with velocity and pressure
+ *   z     <-- pointer to associated zone
  *----------------------------------------------------------------------------*/
 
 static void
-_inlet_coal(cs_tree_node_t  *tn_vp,
-            int              izone)
+_inlet_coal(cs_tree_node_t   *tn_vp,
+            const cs_zone_t  *z)
 {
-  const int n_coals = cs_glob_combustion_model->coal.n_coals;
-  const int *nclpch = cs_glob_combustion_model->coal.n_classes_per_coal;
+  const int n_coals = cs_glob_combustion_model->coal->n_coals;
+  const int *nclpch = cs_glob_combustion_model->coal->n_classes_per_coal;
+
+  cs_coal_bc_inlet_t *ci = cs_coal_boundary_conditions_get_inlet(z);
+
+  cs_gui_node_get_child_real
+    (tn_vp, "temperature", &(ci->t_air));
+  cs_gui_node_get_child_int
+    (tn_vp, "oxydant", &(ci->inmoxy));
 
   int _n_coals = 0;
 
@@ -1768,12 +1775,13 @@ _inlet_coal(cs_tree_node_t  *tn_vp,
     /* mass flow rate of coal */
     const cs_real_t *v = cs_tree_node_get_child_values_real(tn0, "flow1");
     if (v != NULL)
-      boundaries->qimpcp[izone][icoal] = v[0];
+      ci->qimpcp[icoal] = v[0];
 
     /* temperature of coal */
     v = cs_tree_node_get_child_values_real(tn0, "temperature");
-    if (v != NULL)
-      boundaries->timpcp[izone][icoal] = v[0];
+    if (v != NULL) {
+      ci->timpcp[icoal] = v[0];
+    }
 
     /* loop on number of class by coal for ratio (%) stored in distch */
 
@@ -1786,7 +1794,7 @@ _inlet_coal(cs_tree_node_t  *tn_vp,
         = cs_tree_get_node_with_tag(tn0, "ratio", "name", classname);
       v = cs_tree_node_get_values_real(tn1);
       if (v != NULL)
-        boundaries->distch[izone][icoal][iclass] = v[0];
+        ci->distch[icoal][iclass] = v[0];
 
     }
 
@@ -1794,12 +1802,12 @@ _inlet_coal(cs_tree_node_t  *tn_vp,
 
   /* if there is no coal, it is an inlet only for oxydant */
   if (_n_coals == 0) {
-    boundaries->ientat[izone] = 1;
-    boundaries->ientcp[izone] = 0;
+    ci->ientat = 1;
+    ci->ientcp = 0;
   }
   else {
-    boundaries->ientat[izone] = 0;
-    boundaries->ientcp[izone] = 1;
+    ci->ientat = 0;
+    ci->ientcp = 1;
     if (_n_coals != n_coals)
       bft_error(__FILE__, __LINE__, 0,
                 _("Invalid number of coal: %i xml: %i\n"),
@@ -2100,8 +2108,6 @@ _get_boundary_faces(const char   *label,
 static void
 _init_boundaries(void)
 {
-  int icharb, iclass;
-
   assert(boundaries == NULL);
   int n_fields = cs_field_n_fields();
 
@@ -2138,14 +2144,8 @@ _init_boundaries(void)
   boundaries->ientox = NULL;
   boundaries->ientgb = NULL;
   boundaries->ientgf = NULL;
-  boundaries->ientat = NULL;
-  boundaries->ientcp = NULL;
 
-  boundaries->inmoxy = NULL;
-  boundaries->timpat = NULL;
   boundaries->tkent  = NULL;
-  boundaries->qimpcp = NULL;
-  boundaries->timpcp = NULL;
   boundaries->fment  = NULL;
   boundaries->itype = NULL;
   boundaries->prein = NULL;
@@ -2154,38 +2154,13 @@ _init_boundaries(void)
 
   BFT_MALLOC(boundaries->type_code, n_fields,   int *);
 
-  boundaries->distch = NULL;
-
   BFT_MALLOC(boundaries->rough,     n_zones,    double);
 
   BFT_MALLOC(boundaries->head_loss_e, n_zones,  bool);
 
   boundaries->meteo = NULL;
 
-  if (solid_fuels) {
-
-    const cs_combustion_model_t *cm = cs_glob_combustion_model;
-
-    BFT_MALLOC(boundaries->ientat, n_zones, int);
-    BFT_MALLOC(boundaries->inmoxy, n_zones, int);
-    BFT_MALLOC(boundaries->timpat, n_zones, double);
-    BFT_MALLOC(boundaries->ientcp, n_zones, int);
-    BFT_MALLOC(boundaries->qimpcp, n_zones, double *);
-    BFT_MALLOC(boundaries->timpcp, n_zones, double *);
-    BFT_MALLOC(boundaries->distch, n_zones, double **);
-
-    for (int izone=0; izone < n_zones; izone++) {
-      BFT_MALLOC(boundaries->qimpcp[izone], cm->coal.n_coals, double);
-      BFT_MALLOC(boundaries->timpcp[izone], cm->coal.n_coals, double);
-      BFT_MALLOC(boundaries->distch[izone], cm->coal.n_coals, double *);
-
-      for (icharb = 0; icharb < cm->coal.n_coals; icharb++)
-        BFT_MALLOC(boundaries->distch[izone][icharb],
-                   cm->coal.n_classes_per_coal[icharb],
-                   double);
-    }
-  }
-  else if (gas_combustion) {
+  if (gas_combustion) {
     BFT_MALLOC(boundaries->ientfu,  n_zones, int);
     BFT_MALLOC(boundaries->ientox,  n_zones, int);
     BFT_MALLOC(boundaries->ientgb,  n_zones, int);
@@ -2218,24 +2193,7 @@ _init_boundaries(void)
     boundaries->rough[izone]     = -999;
     boundaries->head_loss_e[izone] = false;
 
-    if (solid_fuels) {
-      const cs_combustion_model_t *cm = cs_glob_combustion_model;
-
-      boundaries->ientat[izone] = 0;
-      boundaries->inmoxy[izone] = 1;
-      boundaries->ientcp[izone] = 0;
-      boundaries->timpat[izone] = 0;
-
-      for (icharb = 0; icharb < cm->coal.n_coals; icharb++) {
-        boundaries->qimpcp[izone][icharb] = 0;
-        boundaries->timpcp[izone][icharb] = 0;
-
-        for (iclass = 0; iclass < cm->coal.n_classes_per_coal[icharb]; iclass++)
-          boundaries->distch[izone][icharb][iclass] = 0;
-      }
-    }
-
-    else if (gas_combustion) {
+    if (gas_combustion) {
       boundaries->ientfu[izone]  = 0;
       boundaries->ientox[izone]  = 0;
       boundaries->ientgb[izone]  = 0;
@@ -2374,13 +2332,8 @@ _init_boundaries(void)
       }
 
       /* Inlet: data for coal combustion */
-      if (solid_fuels) {
-        cs_gui_node_get_child_real
-          (tn_vp, "temperature", &boundaries->timpat[izone]);
-        cs_gui_node_get_child_int
-          (tn_vp, "oxydant", &boundaries->inmoxy[izone]);
-        _inlet_coal(tn_vp, izone);
-      }
+      if (solid_fuels)
+        _inlet_coal(tn_vp, z);
 
       /* Inlet: data for gas combustion */
       if (gas_combustion)
@@ -2567,19 +2520,7 @@ _init_zones(const cs_lnum_t   n_b_faces,
  * subroutine uiclim
  * *****************
  *
- * integer          ientat   <-- 1 for air temperature boundary conditions (coal)
- * integer          ientcp   <-- 1 for coal temperature boundary conditions (coal)
- * integer          inmoxy   <-- coal: number of oxydant for the current inlet
- * integer          ientox   <-- 1 for an air fow inlet (gas combustion)
- * integer          ientfu   <-- 1 for fuel flow inlet (gas combustion)
- * integer          ientgf   <-- 1 for unburned gas inlet (gas combustion)
- * integer          ientgb   <-- 1 for burned gas inlet (gas combustion)
- * integer          iprofm   <-- atmospheric flows: on/off for profile from data
- * integer          iautom   <-- atmospheric flows: auto inlet/outlet flag
  * integer          itypfb   <-- type of boundary for each face
- * integer          izfppp   <-- zone number for each boundary face
- * double precision tkent    <-- inlet temperature (gas combustion)
- * double precision fment    <-- Mean Mixture Fraction at Inlet (gas combustion)
  *----------------------------------------------------------------------------*/
 
 void cs_gui_boundary_conditions_processing(int *itypfb)
@@ -2590,10 +2531,6 @@ void cs_gui_boundary_conditions_processing(int *itypfb)
 
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
 
-  bool solid_fuels = false;
-  if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
-      || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1)
-    solid_fuels = true;
   bool gas_combustion = false;
   for (cs_physical_model_type_t m_type = CS_COMBUSTION_3PT;
        m_type <= CS_COMBUSTION_LW;
@@ -2648,28 +2585,6 @@ void cs_gui_boundary_conditions_processing(int *itypfb)
 
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1)
         bc_pm_info->iprofm[zone_nbr] = boundaries->meteo[izone].read_data;
-      else if (solid_fuels) {
-        const cs_combustion_model_t *cm = cs_glob_combustion_model;
-
-        bc_pm_info->inmoxy[zone_nbr] = boundaries->inmoxy[izone];
-        bc_pm_info->ientat[zone_nbr] = boundaries->ientat[izone];
-        bc_pm_info->ientcp[zone_nbr] = boundaries->ientcp[izone];
-        bc_pm_info->timpat[zone_nbr] = boundaries->timpat[izone];
-
-        for (int icharb = 0; icharb < cm->coal.n_coals; icharb++) {
-          bc_pm_info->qimpcp[zone_nbr][icharb]
-            = boundaries->qimpcp[izone][icharb];
-          bc_pm_info->timpcp[zone_nbr][icharb]
-            = boundaries->timpcp[izone][icharb];
-
-          for (int iclass = 0;
-               iclass < cm->coal.n_classes_per_coal[icharb];
-               iclass++) {
-            bc_pm_info->distch[zone_nbr][icharb][iclass]
-              = boundaries->distch[izone][icharb][iclass];
-          }
-        }
-      }
       else if (gas_combustion) {
         bc_pm_info->ientfu[zone_nbr] = boundaries->ientfu[izone];
         bc_pm_info->ientox[zone_nbr] = boundaries->ientox[izone];
@@ -2943,27 +2858,7 @@ void cs_gui_boundary_conditions_processing(int *itypfb)
       }
 
 #if _XML_DEBUG_
-      if (solid_fuels) {
-        const cs_combustion_model_t *cm = cs_glob_combustion_model;
-
-        bft_printf("-----ientat=%i, ientcp=%i, timpat=%12.5e \n",
-                   bc_pm_info->ientat[zone_nbr],
-                   bc_pm_info->ientcp[zone_nbr],
-                   bc_pm_info->timpat[zone_nbr]);
-
-        for (int icharb = 0; icharb < cm->coal.n_coals; icharb++) {
-          bft_printf("-----coal=%i, qimpcp=%12.5e, timpcp=%12.5e \n",
-                     icharb+1,
-                     bc_pm_info->qimpcp[zone_nbr][icharb],
-                     bc_pm_info->timpcp[zone_nbr][icharb]);
-
-          for (int iclass = 0; iclass < cm->coal.n_coals; iclass++)
-            bft_printf("-----coal=%i, class=%i, distch=%f \n",
-                       icharb+1, iclass+1,
-                       bc_pm_info->distch[zone_nbr][icharb][iclass]);
-        }
-      }
-      else if (gas_combustion) {
+      if (gas_combustion) {
         bft_printf("-----iqimp=%i \n",
                    bc_pm_info->iqimp[zone_nbr]);
         bft_printf("-----ientox=%i, ientfu=%i, ientgf=%i, ientgb=%i \n",
@@ -3441,15 +3336,9 @@ cs_gui_boundary_conditions_define(cs_boundary_t  *bdy)
 void
 cs_gui_boundary_conditions_free_memory(void)
 {
-  int izone;
-  int n_zones;
-  int icharb;
-
   /* clean memory for global private structure boundaries */
 
   if (boundaries != NULL) {
-
-    n_zones = boundaries->n_zones;
 
     for (int f_id = 0; f_id < boundaries->n_fields; f_id++) {
       const cs_field_t  *f = cs_field_by_id(f_id);
@@ -3457,25 +3346,6 @@ cs_gui_boundary_conditions_free_memory(void)
         if (boundaries->type_code != NULL)
           BFT_FREE(boundaries->type_code[f->id]);
       }
-    }
-
-    if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
-        || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1) {
-      const int n_coals = cs_glob_combustion_model->coal.n_coals;
-      for (izone = 0; izone < n_zones; izone++) {
-        BFT_FREE(boundaries->qimpcp[izone]);
-        BFT_FREE(boundaries->timpcp[izone]);
-        for (icharb = 0; icharb < n_coals; icharb++)
-          BFT_FREE(boundaries->distch[izone][icharb]);
-        BFT_FREE(boundaries->distch[izone]);
-      }
-      BFT_FREE(boundaries->ientat);
-      BFT_FREE(boundaries->ientcp);
-      BFT_FREE(boundaries->inmoxy);
-      BFT_FREE(boundaries->timpat);
-      BFT_FREE(boundaries->qimpcp);
-      BFT_FREE(boundaries->timpcp);
-      BFT_FREE(boundaries->distch);
     }
 
     /* Gas combustion */

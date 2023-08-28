@@ -38,7 +38,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
-#include "cs_field.h"
+
+#include "cs_coal.h"
+#include "cs_fuel.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -54,15 +56,8 @@ BEGIN_C_DECLS
 /*! Maximum number of elementary gas components */
 #define  CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS  20
 
-/*! Maximum number of coals */
-#define  CS_COMBUSTION_MAX_COALS  5
-
-/*! Maximum number of coal classes */
-#define  CS_COMBUSTION_MAX_CLASSES_PER_COAL  20
-
-/*! Maximum number of coal classes */
-#define  CS_COMBUSTION_MAX_COAL_CLASSES    CS_COMBUSTION_MAX_COALS \
-                                         * CS_COMBUSTION_MAX_CLASSES_PER_COAL
+/*! Maximum number of tabulation points */
+#define  CS_COMBUSTION_MAX_TABULATION_POINTS  500
 
 /*! Maximum number of global reactions in gas phase*/
 #define CS_COMBUSTION_GAS_MAX_GLOBAL_REACTIONS 1
@@ -104,63 +99,14 @@ typedef struct {
 
 } cs_combustion_gas_model_t;
 
-/*! Coal combustion model parameters structure */
-/*---------------------------------------------*/
-
-typedef struct {
-
-  int     n_coals;                  /*< number of coal types */
-  int     nclacp;                   /*< number of coal classes */
-
-  /*! number of classes per coal */
-  int     n_classes_per_coal[CS_COMBUSTION_MAX_COALS];
-
-  /*! coal id if considered class belongs to coal ich[1, 2, ...] */
-  int     ichcor[CS_COMBUSTION_MAX_COAL_CLASSES];
-
-  /*! ashes concentration (kg/kg) */
-  double  xashch[CS_COMBUSTION_MAX_COALS];
-
-  /*! initial diameter (m) */
-  double  diam20[CS_COMBUSTION_MAX_COAL_CLASSES];
-
-  /*! minimum diameter (m) */
-  double  dia2mn[CS_COMBUSTION_MAX_COAL_CLASSES];
-
-  /*! initial density (kg/m^3) */
-  double  rho20[CS_COMBUSTION_MAX_COAL_CLASSES];
-
-  /*! minimal density (kg/m^3) */
-  double  rho2mn[CS_COMBUSTION_MAX_COAL_CLASSES];
-
-  /*! initial particle mass (kg) */
-  double  xmp0[CS_COMBUSTION_MAX_COAL_CLASSES];
-
-  /*! particle char mass (kg) */
-  double  xmasch[CS_COMBUSTION_MAX_COAL_CLASSES];
-
-} cs_combustion_coal_model_t;
-
-/*! Coal combustion model parameters structure */
-/*---------------------------------------------*/
-
-typedef struct {
-
-  int     nclafu;                   /*! number of fuel classes */
-  double  hinfue;                   /*! input mass enthalpy for fuel */
-  double  h02fol;                   /*! H0 of liquid fuel oil */
-  double  cp2fol;                   /*! fuel oil liquid CP */
-
-} cs_combustion_fuel_model_t;
-
 /*! Combustion model parameters structure */
 /*----------------------------------------*/
 
 typedef struct {
 
-  cs_combustion_gas_model_t   gas;   /*!< gas combustion model parameters */
-  cs_combustion_coal_model_t  coal;  /*!< coal combustion model parameters */
-  cs_combustion_fuel_model_t  fuel;  /*!< fuel combustion model parameters */
+  cs_combustion_gas_model_t  *gas;   /*!< gas combustion model parameters */
+  cs_coal_model_t            *coal;  /*!< coal combustion model parameters */
+  cs_fuel_model_t            *fuel;  /*!< fuel combustion model parameters */
 
   int     n_gas_el_comp;             /*!< number of elementary gas components */
   int     n_gas_species;             /*!< number of global species */
@@ -168,6 +114,16 @@ typedef struct {
 
   int     n_reactions;               /*!< number of global reactions
                                       *   in gas phase */
+
+  int     idrift;                    /*!< drift (0: off, 1: on) */
+
+  int     ieqco2;                    /*!< kinetic model for CO <=> CO2
+                                       - 0  unused (maximal conversion
+                                            in turbulent model)
+                                       - 1  transport of CO2 mass fraction
+                                       - 2  transport of CO mass fraction  */
+
+  int     ieqnox;                    /*!< NOx model (0: off; 1: on) */
 
   int     isoot;                     /*!< soot production modeling flag */
 
@@ -210,6 +166,24 @@ extern cs_combustion_model_t  *cs_glob_combustion_model;
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize combustion model based on active physical models
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_initialize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize combustion model based on active physical models
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

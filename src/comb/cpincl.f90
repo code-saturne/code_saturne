@@ -87,32 +87,34 @@ module cpincl
   !        pcick(ch)    --> PCI (J/kg) coke
   !        rhock(ch)    --> Masse volumique coke
   !      - Proprietes sur charbon sec des cendres (ou humide)
-  !        xashch(ch)   --> Taux de cendre (kg/kg)
   !        cpashc(ch)   --> Cp des cendres (J/kg/K)
   !        h0ashc(ch)   --> Enthalpie de formation des cendres (J/kg)
   !        h02ch        --> H0 du Charbon
-  !        cpch         --> Cp du Charbon
-  !        xwatch(ch)   --> Taux d'humidite (kg/kg)
   !        crepn1(2,ch) --> repartition de l'azote en HCN etNo reaction 1
   !        crepn2(2,ch) --> repartition de l'azote en HCN etNo reaction 2
 
-double precision, save :: cch   (ncharm), hch   (ncharm), och   (ncharm),  &
-                          sch(ncharm)  , nch(ncharm),                      &
-                          alpha (ncharm), beta  (ncharm), teta(ncharm)  ,  &
-                          omega(ncharm),                                   &
-                          pcich (ncharm), rho0ch(ncharm), thcdch(ncharm),  &
-                          cck   (ncharm), hck   (ncharm), ock   (ncharm),  &
-                          sck (ncharm), nck(ncharm),                       &
-                          gamma (ncharm), delta (ncharm), kappa(ncharm),   &
-                          zeta(ncharm),                                    &
-                          rhock (ncharm), pcick (ncharm),                  &
-                          cpashc(ncharm),                                  &
-                          h0ashc(ncharm),                                  &
-                          h02ch (ncharm), cp2ch (ncharm),                  &
-                          xwatch(ncharm), cp2wat(ncharm),                  &
-                          crepn1(2,ncharm),crepn2(2,ncharm)
+  double precision, save :: cch   (ncharm), hch   (ncharm), och   (ncharm),  &
+                            sch(ncharm)  , nch(ncharm),                      &
+                            alpha (ncharm), beta  (ncharm), teta(ncharm)  ,  &
+                            omega(ncharm),                                   &
+                            pcich (ncharm), rho0ch(ncharm), thcdch(ncharm),  &
+                            cck   (ncharm), hck   (ncharm), ock   (ncharm),  &
+                            sck (ncharm), nck(ncharm),                       &
+                            gamma (ncharm), delta (ncharm), kappa(ncharm),   &
+                            zeta(ncharm),                                    &
+                            rhock (ncharm), pcick (ncharm),                  &
+                            cpashc(ncharm),                                  &
+                            h0ashc(ncharm),                                  &
+                            h02ch (ncharm),                                  &
+                            cp2wat(ncharm),                                  &
+                            crepn1(2,ncharm),crepn2(2,ncharm)
 
-real(c_double), pointer, save :: xashch(:)
+
+  !        cp2ch        --> Cp du Charbon
+  !        xashch(ch)   --> Taux de cendre (kg/kg)
+  !        xwatch(ch)   --> Taux d'humidite (kg/kg)
+
+  real(c_double), pointer, save :: cp2ch(:), xashch(:), xwatch(:)
 
   !      - Parametres cinetiques pour la devolatilisation
   !         (Modele de Kobayashi)
@@ -172,10 +174,10 @@ real(c_double), pointer, save :: xashch(:)
   integer    nsolim
   parameter( nsolim = 4*ncharm )
 
-  integer, save ::          nsolid, ich(ncharm), ick(ncharm), iash(ncharm)
-  integer, save ::          iwat(ncharm)
-  double precision, save :: ehsoli(nsolim,npot), wmols(nsolim)
-  double precision, save :: eh0sol(nsolim)
+  integer, save ::          nsolid
+
+  integer(c_int), pointer, save :: ich(:), ick(:), iash(:), iwat(:)
+  real(c_double), pointer, save :: ehsoli(:,:), wmols(:), eh0sol(:)
 
   ! By class (deduced quantities)
 
@@ -240,12 +242,8 @@ real(c_double), pointer, save :: xashch(:)
   !    sur les facettes de bord
 
   !    ientat(ient)    : Indicateur air par type de facette d'entree
-  !    ientcp(ient)    : Indicateur Cp  par type de facette d'entree
-  !    x20(icla, ient) : Fraction massique dans le melange de charbon
-  !                      de la classe icla relative a l'entree ient
 
-  integer(c_int), pointer, save :: ientat(:), ientcp(:)
-  double precision, save :: x20(nclcpm,nozppm)
+  integer(c_int), pointer, save :: ientat(:)
 
   !--> Pointeurs dans le tableau tbmcr
 
@@ -262,14 +260,8 @@ real(c_double), pointer, save :: xashch(:)
 
   !       qimpat(ient)           --> Debit       air          en kg/s
   !       timpat(ient)           --> Temperature air          en K
-  !       qimpcp(icha,ient)      --> Debit       charbon icha en kg/s
-  !       timpcp(icha,ient)      --> Temperature charbon icha en K
-  !       distch(icla,icha,ient) --> Distribution en %masse de la classe icla
-  !                                  pour le charbon icha
 
   real(c_double), pointer, save :: qimpat(:), timpat(:)
-  real(c_double), pointer, save :: qimpcp(:,:), timpcp(:,:)
-  real(c_double), pointer, save :: distch(:,:,:)
 
    !--> Conditions aux limites
 
@@ -293,36 +285,51 @@ real(c_double), pointer, save :: xashch(:)
     ! Interface to C function retrieving pointers to members of the
     ! global physical model flags
 
-    subroutine cs_f_cpincl_get_pointers(p_ico2, p_ih2o, p_io2, p_in2,          &
-                                        p_ncharb, p_nclacp,                    &
-                                        p_nclpch, p_ichcor,                    &
-                                        p_xashch, p_diam20, p_dia2mn,          &
-                                        p_rho20, p_rho2mn,                     &
-                                        p_xmp0, p_xmash)                       &
-      bind(C, name='cs_f_cpincl_get_pointers')
+    subroutine cs_f_cpincl_comb_get_pointers(p_ico2, p_ih2o, p_io2, p_in2)    &
+      bind(C, name='cs_f_cpincl_comb_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_ico2, p_ih2o, p_io2, p_in2,                &
-                                  p_ncharb, p_nclacp,                          &
-                                  p_nclpch, p_ichcor,                          &
+      type(c_ptr), intent(out) :: p_ico2, p_ih2o, p_io2, p_in2
+    end subroutine cs_f_cpincl_comb_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global physical model flags
+
+    subroutine cs_f_cpincl_coal_get_pointers(p_ncharb, p_nclacp,               &
+                                             p_nclpch,                         &
+                                             p_ich, p_ick, p_iash, p_iwat,     &
+                                             p_ehsoli, p_wmols, p_eh0sol,      &
+                                             p_ichcor, p_cp2ch, p_xwatch,      &
+                                             p_xashch, p_diam20, p_dia2mn,     &
+                                             p_rho20, p_rho2mn,                &
+                                             p_xmp0, p_xmash)                  &
+      bind(C, name='cs_f_cpincl_coal_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: p_ncharb, p_nclacp,                          &
+                                  p_nclpch,                                    &
+                                  p_ich, p_ick, p_iash, p_iwat,                &
+                                  p_ehsoli, p_wmols, p_eh0sol,                 &
+                                  p_ichcor, p_cp2ch, p_xwatch,                 &
                                   p_xashch, p_diam20, p_dia2mn,                &
                                   p_rho20, p_rho2mn,                           &
                                   p_xmp0, p_xmash
-    end subroutine cs_f_cpincl_get_pointers
+    end subroutine cs_f_cpincl_coal_get_pointers
 
     !---------------------------------------------------------------------------
 
     ! Interface to C function retrieving BC zone array pointers
 
-    subroutine cs_f_boundary_conditions_get_cpincl_pointers(p_ientat, p_ientcp, &
+    subroutine cs_f_boundary_conditions_get_cpincl_pointers(p_ientat,           &
                                                             p_qimpat, p_timpat, &
-                                                            p_qimpcp, p_timpcp, &
-                                                            p_distch, p_inmoxy) &
+                                                            p_inmoxy) &
       bind(C, name='cs_f_boundary_conditions_get_cpincl_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_qimpat, p_timpat, p_ientat, p_ientcp
-      type(c_ptr), intent(out) :: p_qimpcp, p_timpcp, p_distch, p_inmoxy
+      type(c_ptr), intent(out) :: p_qimpat, p_timpat, p_ientat
+      type(c_ptr), intent(out) :: p_inmoxy
     end subroutine cs_f_boundary_conditions_get_cpincl_pointers
 
     !---------------------------------------------------------------------------
@@ -349,30 +356,65 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: p_ico2, p_ih2o, p_io2, p_in2,                    &
-                   p_ncharb, p_nclacp, p_nclpch, p_ichcor,          &
-                   p_xashch, p_diam20, p_dia2mn, p_rho20, p_rho2mn, &
-                   p_xmp0, p_xmash
+    type(c_ptr) :: p_ico2, p_ih2o, p_io2, p_in2
 
-    call cs_f_cpincl_get_pointers(p_ico2, p_ih2o, p_io2, p_in2,     &
-                                  p_ncharb, p_nclacp,               &
-                                  p_nclpch, p_ichcor,               &
-                                  p_xashch, p_diam20, p_dia2mn,     &
-                                  p_rho20, p_rho2mn,                &
-                                  p_xmp0, p_xmash)
+    call cs_f_cpincl_comb_get_pointers(p_ico2, p_ih2o, p_io2, p_in2)
 
     call c_f_pointer(p_io2, io2)
     call c_f_pointer(p_in2, in2)
     call c_f_pointer(p_ico2, ico2)
     call c_f_pointer(p_ih2o, ih2o)
 
+  end subroutine cp_models_init
+
+  !=============================================================================
+
+  !> \brief Initialize Fortran combustion models properties API.
+  !> This maps Fortran pointers to global C variables.
+
+  subroutine cp_model_map_coal() &
+    bind(C, name='cs_f_coal_model_map')
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: p_ncharb, p_nclacp, p_nclpch,                    &
+                   p_ich, p_ick, p_iash, p_iwat,                    &
+                   p_ehsoli, p_wmols, p_eh0sol,                     &
+                   p_ichcor, p_cp2ch, p_xwatch,                     &
+                   p_xashch, p_diam20, p_dia2mn, p_rho20, p_rho2mn, &
+                   p_xmp0, p_xmash
+
+    call cs_f_cpincl_coal_get_pointers(p_ncharb, p_nclacp,               &
+                                       p_nclpch,                         &
+                                       p_ich, p_ick, p_iash, p_iwat,     &
+                                       p_ehsoli, p_wmols, p_eh0sol,      &
+                                       p_ichcor, p_cp2ch, p_xwatch,      &
+                                       p_xashch, p_diam20, p_dia2mn,     &
+                                       p_rho20, p_rho2mn,                &
+                                       p_xmp0, p_xmash)
+
     call c_f_pointer(p_ncharb, ncharb)
     call c_f_pointer(p_nclacp, nclacp)
 
     call c_f_pointer(p_nclpch, nclpch, [ncharm])
+
+    call c_f_pointer(p_ich, ich, [ncharm])
+    call c_f_pointer(p_ick, ick, [ncharm])
+    call c_f_pointer(p_iash, iash, [ncharm])
+    call c_f_pointer(p_iwat, iwat, [ncharm])
+    call c_f_pointer(p_ehsoli, ehsoli, [nsolim, npot])
+    call c_f_pointer(p_wmols, wmols, [nsolim])
+    call c_f_pointer(p_eh0sol, eh0sol, [nsolim])
+    call c_f_pointer(p_eh0sol, eh0sol, [nsolim])
+
     call c_f_pointer(p_ichcor, ichcor, [nclcpm])
 
+    call c_f_pointer(p_cp2ch, cp2ch, [ncharm])
     call c_f_pointer(p_xashch, xashch, [ncharm])
+    call c_f_pointer(p_xwatch, xwatch, [ncharm])
 
     call c_f_pointer(p_diam20, diam20, [nclcpm])
     call c_f_pointer(p_dia2mn, dia2mn, [nclcpm])
@@ -381,7 +423,7 @@ contains
     call c_f_pointer(p_xmp0,   xmp0,   [nclcpm])
     call c_f_pointer(p_xmash,  xmash,  [nclcpm])
 
-  end subroutine cp_models_init
+  end subroutine cp_model_map_coal
 
   !=============================================================================
 
@@ -395,22 +437,17 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: p_qimpat, p_timpat, p_qimpcp, p_timpcp, p_distch
-    type(c_ptr) :: p_ientat, p_ientcp, p_inmoxy
+    type(c_ptr) :: p_qimpat, p_timpat
+    type(c_ptr) :: p_ientat, p_inmoxy
 
-    call cs_f_boundary_conditions_get_cpincl_pointers(p_ientat, p_ientcp, &
+    call cs_f_boundary_conditions_get_cpincl_pointers(p_ientat,           &
                                                       p_qimpat, p_timpat, &
-                                                      p_qimpcp, p_timpcp, &
-                                                      p_distch, p_inmoxy)
+                                                      p_inmoxy)
 
     call c_f_pointer(p_inmoxy, inmoxy, [nozppm])
     call c_f_pointer(p_ientat, ientat, [nozppm])
-    call c_f_pointer(p_ientcp, ientcp, [nozppm])
     call c_f_pointer(p_qimpat, qimpat, [nozppm])
     call c_f_pointer(p_timpat, timpat, [nozppm])
-    call c_f_pointer(p_qimpcp, qimpcp, [ncharm, nozppm])
-    call c_f_pointer(p_timpcp, timpcp, [ncharm, nozppm])
-    call c_f_pointer(p_distch, distch, [ncpcmx, ncharm, nozppm])
 
   end subroutine cp_models_bc_map
 

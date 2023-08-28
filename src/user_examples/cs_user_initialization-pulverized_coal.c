@@ -40,6 +40,12 @@
 #endif
 
 /*----------------------------------------------------------------------------
+ * PLE library headers
+ *----------------------------------------------------------------------------*/
+
+#include <ple_coupling.h>
+
+/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
@@ -51,9 +57,10 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_initialization-gas_3ptchem.c
+ * \file cs_user_initialization-pulverized_coal.c
  *
  * \brief Initialization prior to solving time steps.
+ *        Pulverized coal example.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -62,7 +69,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Initialize variables.
  *
  * This function is called at beginning of the computation
@@ -78,32 +85,89 @@ BEGIN_C_DECLS
 void
 cs_user_initialization(cs_domain_t     *domain)
 {
-  /*![init]*/
+  /*! [loc_var_dec] */
+  const cs_lnum_t n_cells = domain->mesh->n_cells;
+  const cs_fluid_properties_t *fprops = cs_glob_fluid_properties;
+
+  cs_combustion_model_t *cm = cs_glob_combustion_model;
+
+  cs_real_t coefe[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
+  cs_real_t f1mc[CS_COMBUSTION_MAX_COALS];
+  cs_real_t f2mc[CS_COMBUSTION_MAX_COALS];
+  /*! [loc_var_dec] */
+
+  /*! [init] */
   /* If this is restarted computation, do not reinitialize values */
+
   if (domain->time_step->nt_prev > 0)
     return;
 
-  const cs_lnum_t n_cells = domain->mesh->n_cells;
-  const cs_combustion_model_t *cm = cs_glob_combustion_model;
+  /* Control Print */
 
-  cs_real_t *cvar_fm = CS_F_(fm)->val;
-  cs_real_t *cvar_scalt = cs_thermal_model_field()->val;
+  bft_printf("%s: settings for pulverized coal\n", __func__);
 
-  const cs_real_t fs = cm->gas->fs[0];
+  /* All the domain is filled with the first oxidizer at TinitK
+     ---------------------------------------------------------- */
 
-  /* Mean Mixture Fraction */
-  cs_array_real_set_scalar(n_cells, fs, cvar_fm);
+  /* Transported variables for the mix (solid+carrying gas)^2 */
 
-  /* Enthalpy */
+  const int ico2 = cm->ico2 - 1;
+  const int ih2o = cm->ih2o - 1;
+  const int in2  = cm->in2 - 1;
+  const int io2  = cm->io2 - 1;
 
-  if (cs_glob_physical_model_flag[CS_COMBUSTION_3PT] == 1) {
-    const cs_real_t hinoxy = cm->hinoxy;
-    const cs_real_t hinfue = cm->fuel->hinfue;
+  for (int ige = 0; ige < CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS; ige++)
+    coefe[ige] = 0.;
 
-    cs_real_t h_ini = hinfue*fs + hinoxy*(1.0-fs);
-    cs_array_real_set_scalar(n_cells, h_ini, cvar_scalt);
+  /* Oxidizers are mix of O2, N2 (air), CO2 and H2O (recycled exhaust)
+     the composition of the fisrt oxidiser is taken in account. */
+
+  const int ioxy = 0;
+
+  cs_real_t dmas =   cm->wmole[io2]  * cm->oxyo2[ioxy]
+                   + cm->wmole[in2]  * cm->oxyn2[ioxy]
+                   + cm->wmole[ih2o] * cm->oxyh2o[ioxy]
+                   + cm->wmole[ico2] * cm->oxyco2[ioxy];
+
+  coefe[io2]  = cm->wmole[io2]  * cm->oxyo2[ioxy ]/dmas;
+  coefe[ih2o] = cm->wmole[ih2o] * cm->oxyh2o[ioxy]/dmas;
+  coefe[ico2] = cm->wmole[ico2] * cm->oxyco2[ioxy]/dmas;
+  coefe[in2]  = cm->wmole[in2]  * cm->oxyn2[ioxy ]/dmas;
+
+  for (int icha = 0; icha < CS_COMBUSTION_MAX_COALS; icha++) {
+    f1mc[icha] = 0;
+    f2mc[icha] = 0;
   }
-  /*![init]*/
+
+  /* Computation of h1init and t1init */
+
+  cs_real_t t1init = fprops->t0;
+  cs_real_t h1init = cs_coal_thconvers1(coefe, f1mc, f2mc, t1init);
+
+  cs_real_t *cvar_h = CS_F_(h)->val;
+
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+    cvar_h[cell_id] = h1init;
+
+  /* Transported variables for the mix (passive scalars, variance).
+     Variables not present here are initialized to 0. */
+
+  if (cm->ieqco2 >= 1) {
+    cs_real_t *cvar_yco2 = cs_field_by_name("x_c_co2")->val;
+
+    cs_real_t xco2 = cm->oxyco2[ioxy] * cm->wmole[ico2] / dmas;
+
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+      cvar_yco2[cell_id] = xco2;
+  }
+
+  if (cm->ieqnox == 1) {
+    cs_real_t *cvar_nox = cs_field_by_name("x_c_h_ox")->val;
+
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+      cvar_nox[cell_id] = h1init;
+  }
+  /*! [init] */
 }
 
 /*----------------------------------------------------------------------------*/

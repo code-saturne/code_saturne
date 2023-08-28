@@ -1119,18 +1119,12 @@ _net_flux_internal_coupling_contribution(cs_internal_coupling_t  *cpl,
  *  - Discretes Ordinates Methods (DOM)
  *  - P-1 approximation (only recommended for pulverized coal)
  *
- *  \param[in, out]  bc_type       boundary face types
- *  \param[in]       cp2fol        fuel oil liquid CP
- *  \param[in]       cp2ch         pulverized coal CP's
- *  \param[in]       ichcor        pulverized coal indirection
+ *  \param[in, out]  bc_type  boundary face types
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_solve(int               bc_type[],
-                      cs_real_t         cp2fol,
-                      const cs_real_t   cp2ch[],
-                      const int         ichcor[])
+cs_rad_transfer_solve(int  bc_type[])
 {
   /* Shorter notation */
   cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
@@ -1213,12 +1207,15 @@ cs_rad_transfer_solve(int               bc_type[],
   cs_real_3_t *iqpar;
   BFT_MALLOC(iqpar, n_cells_ext, cs_real_3_t);
 
+  cs_coal_model_t *coal = cs_glob_combustion_model->coal;
+  cs_fuel_model_t *fuel = cs_glob_combustion_model->fuel;
+
   /* Numer of classes for Coal or Fuel combustion */
   int n_classes = 0;
   if (pm_flag[CS_COMBUSTION_COAL] >= 0)
-    n_classes = cs_glob_combustion_model->coal.nclacp;
+    n_classes = coal->nclacp;
   else if (pm_flag[CS_COMBUSTION_FUEL] >= 0)
-    n_classes = cs_glob_combustion_model->fuel.nclafu;
+    n_classes = fuel->nclafu;
 
   /* Irradiating flux density at walls.
      Careful: Should not be confused with qinci */
@@ -1951,10 +1948,11 @@ cs_rad_transfer_solve(int               bc_type[],
       cs_field_t *f_x2 = cs_field_by_name(fname);
 
       cs_real_t cp2 = 1.;
-      if (pm_flag[CS_COMBUSTION_COAL] >= 0)
-        cp2 = cp2ch[ichcor[class_id]-1];
+      if (pm_flag[CS_COMBUSTION_COAL] >= 0) {
+        cp2 = coal->cp2ch[coal->ichcor[class_id]-1];
+      }
       else if (pm_flag[CS_COMBUSTION_FUEL] >= 0)
-        cp2 = cp2fol;
+        cp2 = cs_glob_combustion_model->fuel->cp2fol;
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 

@@ -82,7 +82,7 @@ implicit none
 
 ! Local variables
 
-integer          iel, ige, mode, icla, icha, ifac
+integer          iel, ige, icla, icha, ifac
 
 double precision t1init, h1init, coefe(ngazem)
 double precision t2init
@@ -106,6 +106,26 @@ double precision, dimension(:), pointer :: cvar_fvp2m
 double precision, dimension(:), pointer :: cvar_yco2, cvar_yhcn, cvar_ynh3
 double precision, dimension(:), pointer :: cvar_yno, cvar_hox
 double precision, dimension(:), pointer :: cpro_x1, bpro_x1
+
+!===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  function cs_coal_thconvers1(xesp, f1mc, f2mc, tp)  result(eh) &
+    bind(C, name='cs_coal_thconvers1')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    real(c_double), dimension(*) :: xesp
+    real(c_double), dimension(*) :: f1mc, f2mc
+    real(c_double), value :: tp
+    real(c_double) :: eh
+  end function cs_coal_thconvers1
+
+end interface
+
+!===============================================================================
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -281,10 +301,8 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
     f1mc(icha) = zero
     f2mc(icha) = zero
   enddo
-!
-  mode = -1
-  call cs_coal_htconvers1(mode,h1init,coefe,f1mc,f2mc,t1init)
- !============================
+
+  h1init = cs_coal_thconvers1(coefe, f1mc, f2mc, t1init)
 
   do iel = 1, ncel
     cvar_scalt(iel) = h1init

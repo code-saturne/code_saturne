@@ -55,6 +55,7 @@
 #include "cs_calcium.h"
 #include "cs_cdo_main.h"
 #include "cs_cell_to_vertex.h"
+#include "cs_combustion_model.h"
 #include "cs_control.h"
 #include "cs_coupling.h"
 #include "cs_ctwr.h"
@@ -634,9 +635,10 @@ _run(void)
   cs_field_destroy_all();
   cs_field_destroy_all_keys();
 
-  /* Free Lagrangian related structures */
+  /* Free Physical model related structures */
 
   cs_lagr_finalize();
+  cs_combustion_finalize();
 
   /* Free main mesh after printing some statistics */
 

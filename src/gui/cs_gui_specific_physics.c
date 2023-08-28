@@ -1337,13 +1337,13 @@ cs_gui_physical_model_select(void)
           if (cs_gui_strcmp(model_soot, "constant_soot_yield")) {
             cm->isoot = 0;
             cs_gui_node_get_child_real(tn_soot, "soot_density",
-                                       &(cm->gas.rosoot));
+                                       &(cm->gas->rosoot));
             cs_gui_node_get_child_real(tn_soot, "soot_fraction",
-                                       &(cm->gas.xsoot));}
+                                       &(cm->gas->xsoot));}
           else if (cs_gui_strcmp(model_soot, "moss")) {
             cm->isoot = 1;
             cs_gui_node_get_child_real(tn_soot, "soot_density",
-                                       &(cm->gas.rosoot));}
+                                       &(cm->gas->rosoot));}
         }
       }
     }

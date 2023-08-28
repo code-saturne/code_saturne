@@ -126,6 +126,83 @@ cs_f_coal_radst(int         id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Create coal model.
+ *
+ * \return  pointer to coal model structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_coal_model_t *
+cs_coal_model_create(void)
+{
+  cs_coal_model_t *cm;
+
+  BFT_MALLOC(cm, 1, cs_coal_model_t);
+
+  cm->n_coals = 0;
+  cm->nclacp = 0;
+  cm->nsolim = 0;
+
+  for (int i = 0; i < CS_COMBUSTION_MAX_COALS; i++) {
+    cm->n_classes_per_coal[i] = 0;
+    cm->ich[i] = 0;
+    cm->ick[i] = 0;
+    cm->iash[i] = 0;
+    cm->iwat[i] = 0;
+  }
+
+  for (int i = 0; i < CS_COMBUSTION_COAL_MAX_TABULATION_POINTS; i++) {
+    for (int j = 0; j < CS_COMBUSTION_COAL_MAX_SOLIDS; j++) {
+      cm->ehsoli[i][j] = 0;
+    }
+  }
+
+  for (int i = 0; i < CS_COMBUSTION_COAL_MAX_SOLIDS; i++) {
+    cm->wmols[i] = 0;
+    cm->eh0sol[i] = 0;
+  }
+
+  for (int i = 0; i < CS_COMBUSTION_COAL_MAX_CLASSES; i++)
+    cm->ichcor[i] = 0;
+
+  for (int i = 0; i < CS_COMBUSTION_MAX_COALS; i++) {
+    cm->cp2ch[i] = 0;
+    cm->xashch[i] = 0;
+    cm->xwatch[i] = 0;
+  }
+
+  for (int i = 0; i < CS_COMBUSTION_COAL_MAX_CLASSES; i++) {
+    cm->diam20[i] = 0;
+    cm->dia2mn[i] = 0;
+    cm->rho20[i] = 0;
+    cm->rho2mn[i] = 0;
+    cm->xmp0[i] = 0;
+    cm->xmasch[i] = 0;
+  }
+
+  return cm;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize coal model.
+ *
+ * \pram[in, out]  cm  pointer to coal model pointer to destroy.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_coal_model_destroy(cs_coal_model_t **cm)
+{
+  if (cm != NULL) {
+    cs_coal_model_t *_cm = *cm;
+    BFT_FREE(_cm);
+    *cm = _cm;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Take in account the radiative source terms in the particle equation
  *        of a given class for pulverized coal flame.
  *

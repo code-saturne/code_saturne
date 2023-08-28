@@ -826,8 +826,8 @@ if (iecaux.eq.1) then
     enddo
 
 
-!     Charbon PuLVerise : type de zones de bord, ientat, inmoxy, ientcp, timpat
-!       x20, pour le calcul de rho au bord en entree
+!     Charbon PuLVerise : type de zones de bord, ientat, timpat
+!       pour le calcul de rho au bord en entree
 
 !       Numero des zones
     itysup = 3
@@ -840,43 +840,6 @@ if (iecaux.eq.1) then
     nbval  = nozppm
     rubriq = 'ientat_zone_bord_charbon_pulverise'
     call restart_write_section_int_t(rp,rubriq,itysup,nbval,ientat)
-
-!       ientat, inmoxy et x20 ne servent pas pour le CP couple Lagrangien (cplphy)
-    if (ippmod(iccoal).ge.0) then
-
-      itysup = 0
-      nbval  = nozppm
-      rubriq = 'ientcp_zone_bord_charbon_pulverise'
-      call restart_write_section_int_t(rp,rubriq,itysup,nbval,ientcp)
-
-      itysup = 0
-      nbval  = nozppm
-      rubriq = 'inmoxy_zone_bord_charbon_pulverise'
-      call restart_write_section_int_t(rp,rubriq,itysup,nbval,inmoxy)
-
-      itysup = 0
-      nbval  = nozppm
-
-      idecal = 0
-      do icha = 1, ncharb
-        do iclapc = 1, nclpch(icha)
-          icla = iclapc + idecal
-          if (icha.le.nfmtch.and.iclapc.le.nfmtcl) then
-            write(car2,'(I2.2)') icha
-            write(car4,'(I4.4)') iclapc
-          else
-            car2 = cindfc
-            car4 = cindfl
-          endif
-          rubriq = 'x20_zone_bord_charbon'//car2//'_classe'//car4
-          do ii = 1, nbval
-            rvalcp(ii) = x20(icla,ii)
-          enddo
-          call restart_write_section_real_t(rp,rubriq,itysup,nbval,rvalcp)
-        enddo
-      enddo
-
-    endif
 
 !       Temperature
     itysup = 0

@@ -119,9 +119,9 @@ cs_user_physical_properties(cs_domain_t   *domain)
     const cs_real_t ro0 = cs_glob_fluid_properties->ro0;
     const cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
 
-    const int n_class = cs_glob_combustion_model->coal.nclacp;
-    const double *rho20  = cs_glob_combustion_model->coal.rho20;
-    const double *diam20 = cs_glob_combustion_model->coal.diam20;
+    const int n_class = cs_glob_combustion_model->coal->nclacp;
+    const double *rho20  = cs_glob_combustion_model->coal->rho20;
+    const double *diam20 = cs_glob_combustion_model->coal->diam20;
 
     cs_array_real_set_scalar(n_cells, viscl0, visco);
     cs_array_real_set_scalar(n_cells, ro0, cpro_rom1);

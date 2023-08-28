@@ -98,6 +98,13 @@ double precision, pointer, dimension(:,:,:) :: rcodcl
 
 interface
 
+  subroutine cs_coal_boundary_conditions(bc_type)  &
+    bind(C, name='cs_coal_boundary_conditions')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), dimension(*) :: bc_type
+  end subroutine cs_coal_boundary_conditions
+
   subroutine cs_ctwr_bcond()  &
     bind(C, name='cs_ctwr_bcond')
     use, intrinsic :: iso_c_binding
@@ -213,7 +220,7 @@ elseif (ippmod(icolwc).ge.0) then
 ! ---> Combustion charbon pulverise
 
 elseif (ippmod(iccoal).ge.0) then
-  call cs_coal_bcond(itypfb, izfppp, icodcl, rcodcl)
+  call cs_coal_boundary_conditions(itypfb)
 
 ! ---> Combustion charbon pulverise couple Lagrangien USCPLC
 

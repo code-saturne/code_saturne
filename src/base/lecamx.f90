@@ -1261,7 +1261,7 @@ if (ippmod(icpl3c).ge.0 .or.                                      &
   endif
 
 
-!     Charbon PuLVerise : type de zones de bord, ientat, ientcp, timpat
+!     Charbon PuLVerise : type de zones de bord, ientat, timpat
 !       et x20 pour le calcul de rho au bord en entree
 !       Il faut le meme nbr de faces de bord, sinon on ne lit pas
   if (nfabok.eqv..true.) then
@@ -1284,51 +1284,6 @@ if (ippmod(icpl3c).ge.0 .or.                                      &
     call restart_read_section_int_t(rp,rubriq,itysup,nbval,ientat,ierror)
     ierrch = ierrch + ierror
     nberro = nberro + ierror
-
-!         ientcp et x20 ne servent pas pour le CP couple Lagrangien (cplphy)
-    if (ippmod(iccoal).ge.0) then
-
-      itysup = 0
-      nbval  = nozppm
-      rubriq = 'ientcp_zone_bord_charbon_pulverise'
-      call restart_read_section_int_t(rp,rubriq,itysup,nbval,ientcp,ierror)
-      ierrch = ierrch + ierror
-      nberro = nberro + ierror
-
-      itysup = 0
-      nbval  = nozppm
-      rubriq = 'inmoxy_zone_bord_charbon_pulverise'
-      call restart_read_section_int_t(rp,rubriq,itysup,nbval,inmoxy,ierror)
-      ierrch = ierrch + ierror
-      nberro = nberro + ierror
-
-      itysup = 0
-      nbval  = nozppm
-
-      idecal = 0
-      do icha = 1, ncharb
-        do iclapc = 1, nclpch(icha)
-          icla = iclapc + idecal
-          if (icha.le.nfmtch.and.iclapc.le.nfmtcl) then
-            write(car2,'(i2.2)')icha
-            write(car4,'(i4.4)')iclapc
-          else
-            car2 = cindfc
-            car4 = cindfl
-          endif
-          rubriq = 'x20_zone_bord_charbon'//car2//'_classe'//car4
-          call restart_read_section_real_t(rp,rubriq,itysup,nbval,     &
-                                           rvalcp, ierror)
-          do ii = 1, nbval
-            x20(icla,ii) = rvalcp(ii)
-          enddo
-          ierrch = ierrch + ierror
-          nberro = nberro + ierror
-
-        enddo
-      enddo
-
-    endif
 
 !       Temperature
     itysup = 0

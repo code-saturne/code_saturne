@@ -73,7 +73,6 @@ call pp_models_init
 call thch_models_init
 call co_models_init
 call cp_models_init
-call fuel_models_init
 call ppcpfu_models_init
 
 !===============================================================================
@@ -137,7 +136,7 @@ ifsm = 0
 
 ! ---> Initialisation pour la combustion du charbon
 !       Variables transportees
-do icha = 1, ncharb
+do icha = 1, ncharm
   if1m(icha) = 0
   if2m(icha) = 0
 enddo
@@ -150,7 +149,6 @@ if9m   = 0
 if4p2m = 0
 ifvp2m = 0
 iyco2  = 0
-iage = 0
 do icla = 1, nclcpm
   ixck(icla)   = 0
   ixch(icla)   = 0
@@ -407,13 +405,7 @@ coeff3 = zero
 
 ! ---> Donnees relatives au charbon
 
-! ----   Par charbon
-ncharb = 0
-nsolid = 0
-
 do icha = 1, ncharm
-
-  nclpch(icha) = 0
 
   cch(icha)    = zero
   hch(icha)    = zero
@@ -443,11 +435,8 @@ do icha = 1, ncharm
   zeta (icha)  = zero
   pcick(icha)  = zero
 
-  xashch(icha) = zero
   cpashc(icha) = zero
   h0ashc(icha) = zero
-
-  xwatch(icha) = zero
 
   iy1ch(icha)  = 0
   y1ch(icha)   = zero
@@ -474,11 +463,6 @@ do icha = 1, ncharm
   ahetwt(icha) = zero
   ehetwt(icha) = zero
   ioetwt(icha) = 0
-
-  ich(icha)    = 0
-  ick(icha)    = 0
-  iash(icha)   = 0
-  iwat(icha)   = 0
 
   repnck(icha) = zero
   repnle(icha) = zero
@@ -511,26 +495,6 @@ enddo
 
 wmchx1 = zero
 wmchx2 = zero
-
-do isol = 1, nsolim
-  do it = 1, npot
-    ehsoli(isol,it) = zero
-  enddo
-  wmols(isol) = zero
-enddo
-
-! ----   Par classe
-
-nclacp = 0
-do icla = 1, nclcpm
-  ichcor(icla) = 0
-  diam20(icla) = zero
-  dia2mn(icla) = zero
-  rho20(icla)  = zero
-  rho2mn(icla) = zero
-  xmp0(icla)   = zero
-  xmash(icla)  = zero
-enddo
 
 ! ---> Definition des Pointeurs du tableau TBMCR utilise dans cpphy1.F
 !      et les sous-programmes appeles
@@ -590,31 +554,11 @@ do icha = 1, ncharm
   f2(icha)   = zero
 enddo
 
-
-! ---> Donnees complementaires relatives au calcul de rho sur les facettes
-!      d'entree
-
-do izone = 1, nozppm
-  !ientat(izone) = 0
-  !ientcp(izone) = 0
-  do icla = 1, nclcpm
-    x20(icla,izone) = zero
-  enddo
-enddo
-
 !===============================================================================
 ! 5. REMPLISSAGE INCLUDE fuelincl.h
 !                INCLUDE POUR LA PHYSIQUE PARTICULIERE RELATIF A
 !                LA COMBUSTION FUEL
 !===============================================================================
-
-! ---> Donnees relatives au fuel
-
-nsolid = 0
-
-! ----   Par classe
-
-nclafu = 0
 
 !    1 seul fioul
 
@@ -641,13 +585,6 @@ iofhet = 0
 
 ifol   = 0
 ikf   = 0
-
-do isol = 1, nsolim
-  do it = 1, npot
-    ehsoli(isol,it) = zero
-  enddo
-  wmols(isol) = zero
-enddo
 
 ! ---> Donnees relatives a la combustion des especes gazeuses
 

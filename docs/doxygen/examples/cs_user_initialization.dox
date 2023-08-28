@@ -263,7 +263,7 @@
   The following local variables need to be defined for the examples
   in this section:
 
-  \snippet cs_user_initialization-pulverized_coal.f90 loc_var_dec
+  \snippet cs_user_initialization-pulverized_coal.c loc_var_dec
 
   \subsection user_initialization_coal_s_init Initialization
 
@@ -271,7 +271,7 @@
   values (variables not set here keep their GUI-defined or
   default values):
 
-  \snippet cs_user_initialization-pulverized_coal.f90 init
+  \snippet cs_user_initialization-pulverized_coal.c init
 */
 
 /*-----------------------------------------------------------------------------*/

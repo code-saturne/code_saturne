@@ -96,10 +96,9 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-integer          ii, ifac, izone, mode, iel, ige, iok
-integer          icha, icke
-integer          nbrval
-double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
+integer          ii, ifac, izone, mode, ige, iok
+integer          icha
+double precision qisqc, d2s3
 double precision t1
 double precision h1    (nozppm)
 double precision qimpc (nozppm) , qcalc(nozppm)
@@ -130,17 +129,10 @@ d2s3 = 2.d0/3.d0
 !  If this is not the case, it is more complicated but we can get a max anyway.
 
 if (irangp.ge.0) then
-  call parimx(nozapm,iqimp )
+  call parimx(nozapm,iqimp)
   call parimx(nozapm,ientat)
-  call parimx(nozapm,ientcp)
   call parrmx(nozapm,qimpat)
   call parrmx(nozapm,timpat)
-  nbrval = nozppm*ncharm
-  call parrmx(nbrval,qimpcp)
-  nbrval = nozppm*ncharm
-  call parrmx(nbrval,timpcp)
-  nbrval = nozppm*ncharm*nclcpm
-  call parrmx(nbrval,distch)
 endif
 
 !===============================================================================
@@ -250,7 +242,7 @@ do ii = 1, nzfppp
   izone = ilzppp(ii)
 
   ! An input ientre must be of type
-  ! ientat = 1 (or ientcp = 1 ?)
+  ! ientat = 1
 
   if (ientat(izone).eq.1) then
 
@@ -304,10 +296,7 @@ do ifac = 1, nfabor
     enddo
     t1   = timpat(izone)
     mode = -1
-    call cpthp1                                                   &
-    !==========
-    ( mode  , h1(izone) , coefe  , f1mc   , f2mc   ,              &
-      t1    )
+    call cpthp1(mode, h1(izone), coefe, f1mc, f2mc, t1)
     rcodcl(ifac,isca(iscalt),1) = h1(izone)
 
   endif

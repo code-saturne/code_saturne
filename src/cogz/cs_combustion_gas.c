@@ -136,7 +136,7 @@ cs_combustion_gas_yg2xye(const cs_real_t  yg[],
   for (int i = 0; i < n_gas_e; i++) {
     ye[i] = 0;
     for (int j = 0; j < n_gas_g; j++)
-      ye[i] += cm->gas.coefeg[j][i] * yg[j];
+      ye[i] += cm->gas->coefeg[j][i] * yg[j];
   }
 
   /* Verification */

@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 subroutine cs_fuel_readata
-!=========================
+
 !===============================================================================
 !  FONCTION  :
 !  ---------
@@ -91,9 +91,8 @@ double precision wmco,wmco2,wmo2,wmn2,wmh2o, wmc
 
 ! --> Ouverture du fichier
 
-open ( unit=impfpp, file=ficfpp,                                  &
-        STATUS='OLD', FORM='FORMATTED', ACCESS='SEQUENTIAL',      &
-                                        iostat=ios, err=99 )
+open (unit=impfpp, file='dp_FUE', status='old', form='formatted',    &
+      access='sequential',  iostat=ios, err=99)
 rewind (unit=impfpp,err=99 )
 
 ! --> Lecture thermochimie
@@ -184,7 +183,6 @@ do ice = 1, ncoel
     wmolce(ice)= wmolce(ice) + atcoel(ice,iat)*wmolat(iat)
   enddo
 enddo
-
 
 ! --> Lecture rayonnement : Coefficient d'absorption du melange gazeux
 
@@ -629,8 +627,13 @@ af6(ih2o)  = 1.d0/wmh2o
 af7(ico)   = 1.0d0/wmc
 af7(io2)   =-0.5d0/wmc
 
-return
+! Allocate arrays requiring knowledge of nclafu
+!==============================================
 
+allocate(x20(nclafu,nozppm))
+x20 = 0
+
+return
 
 !===============================================================================
 ! 3. SORTIE EN ERREUR

@@ -81,6 +81,7 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
+use ppcpfu
 use cs_c_bindings
 use mesh
 
@@ -134,7 +135,7 @@ endif
 ! ---> Flamme charbon pulverise
 
 if (ippmod(iccoal).ge.0) then
-  call cs_coal_physprop(mbrom, izfppp)
+  call cs_coal_physprop(mbrom)
 endif
 
 ! ---> Flamme charbon pulverise couplee Transport Lagrangien

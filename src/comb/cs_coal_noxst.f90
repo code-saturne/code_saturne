@@ -106,7 +106,7 @@ double precision ts4,ts4num,ts4den
 double precision dgs
 double precision val(npart+1),tt(npart+1) , gs(npart+1) , yyo2(npart+1)
 !
-integer          icha,ige,numcha,mode
+integer          icha,ige,numcha
 double precision xxf , hhf , hfuel,tfs4ad,hfs4ad
 double precision xhf1,xhf2 , aa , den
 double precision coefe(ngazem),f1mc(ncharm),f2mc(ncharm)
@@ -143,6 +143,24 @@ double precision, dimension(:), pointer :: cpro_exp4, cpro_exp5, cpro_exprb
 double precision, dimension(:), pointer :: cpro_temp, cpro_yo2, cpro_mmel
 
 logical(kind=c_bool) :: log_active
+
+!===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  function cs_coal_thconvers1(xesp, f1mc, f2mc, tp)  result(eh) &
+    bind(C, name='cs_coal_thconvers1')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    real(c_double), dimension(*) :: xesp
+    real(c_double), dimension(*) :: f1mc, f2mc
+    real(c_double), value :: tp
+    real(c_double) :: eh
+  end function cs_coal_thconvers1
+
+end interface
 
 !===============================================================================
 ! 1. Preliminary computations
@@ -488,8 +506,7 @@ if (     ipdf1.eq.1 .or. ipdf2.eq.1 .or. ipdf3.eq.1 &
         f2mc(icha) = zero
       enddo
 
-      mode = 1
-      call cs_coal_htconvers1(mode, hoxyd, coefe, f1mc, f2mc, toxyd)
+      call cs_coal_htconvers1(hoxyd, coefe, f1mc, f2mc, toxyd)
 
       toxmin = min(toxmin,toxyd)
       toxmax = max(toxmax,toxyd)
@@ -569,8 +586,7 @@ if (     ipdf1.eq.1 .or. ipdf2.eq.1 .or. ipdf3.eq.1 &
         enddo
         f1mc(numcha) = 1.d0
 
-        mode      = -1
-        call cs_coal_htconvers1(mode, xhf1, coefe, f1mc, f2mc, tfuel)
+        xhf1 = cs_coal_thconvers1(coefe, f1mc, f2mc, tfuel)
 
         ! H(mv2, TFUEL)
 
@@ -593,8 +609,7 @@ if (     ipdf1.eq.1 .or. ipdf2.eq.1 .or. ipdf3.eq.1 &
         enddo
         f2mc(numcha) = 1.d0
 
-        mode      = -1
-        call cs_coal_htconvers1(mode, xhf2, coefe, f1mc, f2mc, tfuel)
+        xhf2 = cs_coal_thconvers1(coefe, f1mc, f2mc, tfuel)
 
         xxf = xxf + cvar_f1m(numcha)%p(iel)                   &
                   + cvar_f2m(numcha)%p(iel)
@@ -621,8 +636,7 @@ if (     ipdf1.eq.1 .or. ipdf2.eq.1 .or. ipdf3.eq.1 &
           f2mc(icha) = zero
         enddo
 
-        mode = 1
-        call cs_coal_htconvers1(mode, hfs4ad, coefe, f1mc, f2mc, tfs4ad)
+        call cs_coal_htconvers1(hfs4ad, coefe, f1mc, f2mc, tfs4ad)
 
         ! Calcul pour affichage
 

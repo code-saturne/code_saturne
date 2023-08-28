@@ -35,6 +35,9 @@ module ppcpfu
 
   !===========================================================================
 
+  !> coal with drift (0: without drift (default), 1: with)
+  integer(c_int), pointer, save  ::  i_comb_drift
+
   ! XSI         --> XSI = 3,76 pour de l'air
 
   double precision, save ::  xsi
@@ -60,7 +63,7 @@ module ppcpfu
   ! 1  transport of CO2 mass fraction
   ! 2  transport of CO mass fraction
 
-  integer, save ::         ieqco2
+  integer(c_int), pointer, save :: ieqco2
 
   ! scalar id of CO2 mass fraction
 
@@ -99,7 +102,8 @@ module ppcpfu
   !          = 1     Modele de Chen et al.
   !          = 2     Modele de Dimitriou et al.
   !
-  integer, save ::         ieqnox, imdnox, irb
+  integer(c_int), pointer, save :: ieqnox
+  integer, save ::                 imdnox, irb
   !
   !   Scalaires supplementaires : fraction massique de H2, HCN et NO
   !                               temperature air
@@ -199,10 +203,12 @@ module ppcpfu
     ! Interface to C function retrieving pointers to members of the
     ! global physical model flags
 
-    subroutine cs_f_ppcpfu_get_pointers(p_oxyo2, p_oxyn2, p_oxyh2o, p_oxyco2)   &
+    subroutine cs_f_ppcpfu_get_pointers(p_idrift, p_ieqco2, p_ieqnox,           &
+                                        p_oxyo2, p_oxyn2, p_oxyh2o, p_oxyco2)   &
       bind(C, name='cs_f_ppcpfu_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
+      type(c_ptr), intent(out) :: p_idrift, p_ieqco2, p_ieqnox
       type(c_ptr), intent(out) :: p_oxyo2, p_oxyn2, p_oxyh2o, p_oxyco2
     end subroutine cs_f_ppcpfu_get_pointers
 
@@ -244,10 +250,15 @@ contains
 
     ! Local variables
 
+    type(c_ptr) :: p_idrift, p_ieqco2, p_ieqnox
     type(c_ptr) :: p_oxyo2, p_oxyn2, p_oxyh2o, p_oxyco2
 
-    call cs_f_ppcpfu_get_pointers(p_oxyo2, p_oxyn2, p_oxyh2o, p_oxyco2)
+    call cs_f_ppcpfu_get_pointers(p_idrift, p_ieqco2, p_ieqnox,          &
+                                  p_oxyo2, p_oxyn2, p_oxyh2o, p_oxyco2)
 
+    call c_f_pointer(p_idrift, i_comb_drift)
+    call c_f_pointer(p_ieqco2, ieqco2)
+    call c_f_pointer(p_ieqnox, ieqnox)
     call c_f_pointer(p_oxyo2, oxyo2, [mnoxyd])
     call c_f_pointer(p_oxyn2, oxyn2, [mnoxyd])
     call c_f_pointer(p_oxyh2o, oxyh2o, [mnoxyd])

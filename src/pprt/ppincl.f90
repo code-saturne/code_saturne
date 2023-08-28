@@ -219,9 +219,6 @@ module ppincl
   !> - ippmod(iccoal) =-1 module not activated
   integer ::  iccoal
 
-  !> coal with drift (0: without drift (default), 1: with)
-  integer ::  i_comb_drift
-
   !> pointer to specify multi-classes pulverised heavy fuel combustion
   !> with indicator ippmod(icfuel)
   !> - ippmod(icfuel) = 0 module activated
@@ -466,9 +463,6 @@ module ppincl
 
   !> Pointer to Np*age(particles)
   integer, save :: inagecp(nclcpm)
-
-  !> Pointer to age of bulk
-  integer, save :: iage
 
   !>
   integer, save :: iv_p_x(nclcpm)

@@ -95,7 +95,7 @@ cs_user_model(void)
   /* Activate compressible model
    *  -1: not active, 0: activated, 1: barotropic version,
    *   2: homogeneous two phase model, 3: by pressure increment */
-  cs_glob_physical_model_flag[CS_COMPRESSIBLE] = -1;
+  cs_glob_physical_model_flag[CS_COMPRESSIBLE] = 3;
 
   /* Activate Eddy Break Up pre-mixed flame combustion model
    * -1: not active
@@ -118,6 +118,49 @@ cs_user_model(void)
    *  4: four peak model with: adiabiatic conditions
    *  5: four peak model with: permeatic conditions*/
   cs_glob_physical_model_flag[CS_COMBUSTION_LW] = -1;
+
+  /* Activate pulverized coal combustion model
+   * -1: not active
+   *  0: active
+   *  1: with drying */
+  cs_glob_physical_model_flag[CS_COMBUSTION_COAL] = 1;
+
+  /* Activate the drift (for combustion)
+   * 0 (no activation),
+   * 1 (transported particle velocity)
+   * 2 (limit drop particle velocity) */
+  cs_glob_combustion_model->idrift = 1;
+
+  /* Pulverized coal combustion model with Lagrangian reciprocal approach
+   * -1: not active
+   *  0: active
+   *  1: with drying */
+  cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] = 1;
+
+  /* Cooling towers model
+   * -1: not active
+   *  1: Poppe's model
+   *  2: Merkel's model */
+  cs_glob_physical_model_flag[CS_COOLING_TOWERS] = 1;
+
+  /* Electric arcs model
+   * -1: not active
+   *  2: electric potential and vector potential */
+  cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] = 2;
+
+  /* Joule effcets model
+   * -1: not active
+   *  1: real potential
+   *  2: complex potential
+   *  3: real potential + Transfo
+   *  4: complex potential + Transfo */
+  cs_glob_physical_model_flag[CS_JOULE_EFFECT] = 2;
+
+  /* Radiative transfer module
+   * CS_RAD_TRANSFER_NONE: not active
+   * CS_RAD_TRANSFER_DOM: discrete ordinates model
+   * CS_RAD_TRANSFER_P1: P1 model */
+  cs_glob_rad_transfer_params->type = CS_RAD_TRANSFER_DOM;
 
   /*  Activate gas mix model
    *  CS_GAS_MIX_OFF                      gas mix model off
@@ -539,9 +582,9 @@ cs_user_model(void)
    */
 
   cs_wall_condensation_t *wall_cond = cs_get_glob_wall_condensation();
-  wall_cond->icondb         = 0; // activate wall codnensation
+  wall_cond->icondb         = 0; /* activate wall condensation */
   wall_cond->natural_conv_model
-    = CS_WALL_COND_MODEL_DEHBI; // choose correlation
+    = CS_WALL_COND_MODEL_DEHBI;  /* choose correlation */
 
   /*! [wall_condensation] */
 

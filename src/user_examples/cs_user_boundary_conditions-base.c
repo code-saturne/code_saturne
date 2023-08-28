@@ -48,12 +48,10 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_boundary_conditions.c
  *
- * \brief User functions for input of calculation parameters.
- *
- * See \ref parameters for examples.
+ * \brief User functions for boundary condition definitions.
  */
 /*----------------------------------------------------------------------------*/
 

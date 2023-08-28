@@ -81,6 +81,10 @@ module cs_fuel_incl
 
   real(c_double), pointer, save :: h02fol, cp2fol
 
+  !    x20(icla, ient) : Fraction massique dans le melange de fuel
+  !                      de la classe icla relative a l'entree ient
+  double precision, dimension(:,:), allocatable :: x20
+
   !      - Parametres pour l'evaporation
   !      TEVAP1      --> temperature de debut d'evaporation
   !      TEVAP2      --> temperature de fin d'evaporation
@@ -208,7 +212,8 @@ contains
   !> \brief Initialize Fortran combustion models properties API.
   !> This maps Fortran pointers to global C variables.
 
-  subroutine fuel_models_init
+  subroutine fuel_models_map() &
+    bind(C, name='cs_f_fuel_model_map')
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -223,7 +228,9 @@ contains
     call c_f_pointer(p_h02fol, h02fol)
     call c_f_pointer(p_cp2fol, cp2fol)
 
-  end subroutine fuel_models_init
+    nclafu = 0
+
+  end subroutine fuel_models_map
 
   !=============================================================================
 

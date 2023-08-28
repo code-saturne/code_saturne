@@ -95,6 +95,34 @@ type(pmapper_double_r1), dimension(:), allocatable :: cvar_f1m, cvar_f2m
 type(pmapper_double_r1), dimension(:), allocatable :: cpro_x2, cpro_ym1
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  function cs_coal_thconvers1(xesp, f1mc, f2mc, tp)  result(eh) &
+    bind(C, name='cs_coal_thconvers1')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    real(c_double), dimension(*) :: xesp
+    real(c_double), dimension(*) :: f1mc, f2mc
+    real(c_double), value :: tp
+    real(c_double) :: eh
+  end function cs_coal_thconvers1
+
+  function cs_coal_thconvers2(class_id, xsolid, temper) result(enthal) &
+    bind(C, name='cs_coal_thconvers2')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(kind=c_int), value :: class_id
+    real(kind=c_double), dimension(*) :: xsolid
+    real(kind=c_double), value :: temper
+    real(kind=c_double) :: enthal
+  end function cs_coal_thconvers2
+
+end interface
+
+!===============================================================================
 
 mode = -1
 
@@ -160,7 +188,7 @@ do ilst = 1, n_faces
       iii = icla
       t1 = tbl
 
-      call cs_coal_htconvers2(mode, iii, h2, xsolid, tbl, t1)
+      h2 = cs_coal_thconvers2(iii-1, xsolid, tbl)
 
     endif
     x2h2 = x2h2 + cpro_x2(icla)%p(iel)*h2
@@ -181,7 +209,7 @@ do ilst = 1, n_faces
     coefe(ige) = cpro_ym1(ige)%p(iel)
   enddo
 
-  call cs_coal_htconvers1(mode, hf, coefe, f1mc, f2mc, tbl)
+  hf = cs_coal_thconvers1(coefe, f1mc, f2mc, tbl)
 
   h_b(ifac) = (1.d0-x2t)*hf+x2h2
 

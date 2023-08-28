@@ -153,7 +153,7 @@ typedef struct {
   cs_eval_at_location_t  *flow_func;          /*!< associated global (mass or
                                                 volume) flow evaluation
                                                 function, or NULL */
-  void                   *flow_func_input;    /*!< Optional flow avaluation
+  void                   *flow_func_input;    /*!< Optional flow evaluation
                                                 evaluation input, or NULL */
 
   cs_eval_at_location_t  *scale_func;         /*!< Associated scaling
@@ -167,6 +167,11 @@ typedef struct {
 
   void                   *model_inlet;        /*!< Additional model-based
                                                 inlet structure */
+
+  cs_destructor_t        *model_inlet_del;    /*!< Destructor for associated
+                                                inlet structure (use simple
+                                                BFT_FREE if no destructor
+                                                is associated) */
 
 } cs_boundary_conditions_open_t;
 

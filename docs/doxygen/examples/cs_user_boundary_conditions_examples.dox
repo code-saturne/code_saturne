@@ -929,43 +929,29 @@
   Other boundary condition types are not specific to the pulverized coal
   model, so generic examples apply (and as usual, the GUI is recommended).
 
-  Note that turbulence variables BC's are usually computed automatically:
-  - If `icalke(izone)` = 1: hydraulic diameter and reference velocity
-       (similar to \ref cs_turbulence_bc_inlet_hyd_diam).
-  - If `icalke(izone)` = 2: hydraulic diameter, reference velocity and
-       turbulence intensity (similar to \ref cs_turbulence_bc_inlet_turb_intensity).
-  - If `icalke(izone)` = 0: non-automatic definition. Turbulence BC's must be
-       defined here for all turbulence variables (k, epsilon, omega, Rij,
-       ... depending on active model).
+  Note that turbulence variables BC's are usually computed automatically,
+  based on definitions using
+  \ref cs_boundary_conditions_inlet_set_turbulence_hyd_diam
+  or \ref cs_boundary_conditions_inlet_set_turbulence_internsity.
 
-  \section advanced_loc_var_pc Local variables to be added
-
-  \snippet cs_user_boundary_conditions-pulverized_coal.f90 loc_var_dec
-
-  This firs example
-
-  \section base_init_pc Initialization and finalization
-
-  Initialization and finalization is similar to that of the base examples
+  This following examples show how user code con be defined in
+  \ref cs_user_boundary_conditions_setup, so as to define inlet properties
+  using the high-level for non-coal-specific variables, and access
+  the coal inlet structure definition to set the required properties.
 
   \section pulverized_coal_ex_1 Example 1
 
-  Secondary or tertiary air inlet, for zone 'inlet'.
+  Secondary or tertiary air inlet, for zone 'inlet', using either
+  the base pulverized coal model or the
+  pulverized coal with moisture model (with Lagrangian particle tracking).
 
-  \snippet cs_user_boundary_conditions-pulverized_coal.f90 example_1
+  \snippet cs_user_boundary_conditions-pulverized_coal.c example_1
 
   \section pulverized_coal_ex_2 Example 2
 
-  Primary air inlet, for zone 'primary_inlet'.
+  Primary air and coal inlet, for zone 'primary_inlet'.
 
-  \snippet cs_user_boundary_conditions-pulverized_coal.f90 example_2
-
-  \section pulverized_coal_ex_3 Example 3
-
-  Secondary or tertiary air inlet, for zone 'inlet', using the
-  pulverized coal with moisture model (with Lagrangian particle tracking).
-
-  \snippet cs_user_boundary_conditions-pulverized_coal.f90 example_3
+  \snippet cs_user_boundary_conditions-pulverized_coal.c example_2
 */
 
 /*-----------------------------------------------------------------------------*/
