@@ -276,6 +276,9 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   /* Name */
   const char *var_name = cs_sles_name(f_id, name);
 
+  if (iwarnp >= 1)
+    bft_printf("Equation iterative solve of: %s\n", var_name);
+
   /* solving info */
   key_sinfo_id = cs_field_key_id("solving_info");
   if (f_id > -1) {
@@ -1185,6 +1188,12 @@ cs_equation_iterative_solve_vector(int                   idtvar,
    * 0.  Initialization
    *==========================================================================*/
 
+  /* Name */
+  const char *var_name = cs_sles_name(f_id, name);
+
+  if (iwarnp >= 1)
+    bft_printf("Equation iterative solve of: %s\n", var_name);
+
   /* Matrix block size */
   cs_lnum_t db_size = 3;
   cs_lnum_t eb_size = 1; /* CS_ISOTROPIC_DIFFUSION
@@ -1237,9 +1246,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
     f = cs_field_by_id(f_id);
     cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
   }
-
-  /* Name */
-  const char *var_name = cs_sles_name(f_id, name);
 
   /* Symmetric matrix, except if advection */
   isym = 1;
@@ -2105,6 +2111,12 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
    * 0.  Initialization
    *==========================================================================*/
 
+  /* Name */
+  const char *var_name = cs_sles_name(f_id, name);
+
+  if (iwarnp >= 1)
+    bft_printf("Equation iterative solve of: %s\n", var_name);
+
   /* Matrix block size */
   cs_lnum_t db_size = 6;
   cs_lnum_t eb_size = 1; /* CS_ISOTROPIC_DIFFUSION
@@ -2139,9 +2151,6 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
     if (strcmp(sles_type, "cs_multigrid_t") == 0)
       conv_diff_mg = true;
   }
-
-  /* Name */
-  const char *var_name = cs_sles_name(f_id, name);
 
   /* Symmetric matrix, except if advection */
   isym = 1;

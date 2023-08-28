@@ -1287,7 +1287,7 @@ if (f_id.ge.0) then
 
     enddo
 
-    ! Store the (downward and upward) absortion coefficient of the 1D model
+    ! Store the (downward and upward) absorption coefficient of the 1D model
     do iel = 1, ncel
 
       ! Interpolate at zent
