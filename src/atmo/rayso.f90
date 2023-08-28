@@ -235,6 +235,7 @@ double precision, allocatable:: refbs(:,:),fabso3c(:,:),tra(:,:)
 double precision, allocatable:: dow(:,:),atln(:,:),absn(:,:)
 double precision, allocatable :: ckup_sir_f(:), ckdown_sir_r(:), ckdown_sir_f(:)
 double precision, allocatable :: ckup_suv_f(:), ckdown_suv_r(:), ckdown_suv_f(:)
+double precision, allocatable :: w0_suv(:), w0_sir(:), g_apc_suv(:), g_apc_sir(:)
 double precision, allocatable:: fnebmax(:),fneba(:)
 
 double precision, allocatable, dimension(:,:) :: dowd, trad, trard, ddfso3c
@@ -249,6 +250,8 @@ double precision, allocatable, dimension(:) ::  dfs, ufs
 double precision, dimension(:,:), pointer :: bpro_rad_inc
 double precision, dimension(:,:), pointer :: cpro_ck_up
 double precision, dimension(:,:), pointer :: cpro_ck_down
+double precision, dimension(:,:), pointer :: cpro_w0
+double precision, dimension(:,:), pointer :: cpro_gapc
 ! For computing albedo PIC, PIOC
 double precision epsc
 double precision pioco3,pioch2o,gasymo3,gasymh2o
@@ -265,7 +268,7 @@ double precision nu0, dm0, dm, coeff_E_o3(12), coeff_E_h2o(12)
 double precision pioco3C, pioch2oC
 double precision tauao3(kmx+1) , tauah2o(kmx+1)
 double precision corp, rov
-double precision mui,tauapc,ckapcd,ckapcf,picapc
+double precision mui,tauapc,ckapcd,ckapcf,picapc,gapc
 double precision ck_aero_h2of,ck_aero_h2od,ck_aero_o3f,ck_aero_o3d
 ! data for pkn and kn distribution
 data kn/4.d-5,0.002,0.035,0.377,1.95,9.40,44.6,190./
@@ -307,6 +310,7 @@ allocate(dfso3(kmx+1), ufso3(kmx+1))
 allocate(dfs(kmx+1), ufs(kmx+1))
 allocate(ckup_sir_f(kmx), ckdown_sir_r(kmx), ckdown_sir_f(kmx))
 allocate(ckup_suv_f(kmx), ckdown_suv_r(kmx), ckdown_suv_f(kmx))
+allocate(w0_sir(kmx), w0_suv(kmx), g_apc_sir(kmx), g_apc_suv(kmx))
 
 allocate(dffsh2o(kmx+1), dffso3(kmx+1))
 allocate(ddfsh2o(kmx+1), ddfso3(kmx+1))
@@ -859,7 +863,7 @@ if (muzero.gt.epzero) then
     ufso3(i) =ufso3(itop)*(1.d0 -raysoz(xstar))
   enddo
 
-  ! 6.4 Absorption by water vapor and liquid water
+  ! 6.4 Absorption by water vapor and liquid water (H20 band, SIR)
 
   ! In that case we have to solve multiple diffusion. This is achieved by means
   ! of the adding method following Lacis et Hansen, 1974
@@ -1045,7 +1049,9 @@ if (muzero.gt.epzero) then
     corp = preray(i) / 101315.d0
     rov = romray(i)*(qvray(i)*corp*sqrt(tkelvi/(temray(i) + tkelvi)))
     dy = rov
-    ! calculation of absorption coefficient ckup and ckdown useful for 3D calculations
+    ! Calculation of absorption coefficient ckup and ckdown useful
+    ! for 3D calculations
+    ! Note: gas contribution
     ckdown_sir_r(i) = dzyama(y,dy)/(0.353d0-raysve(y))
     ckup_sir_f(i) = dzyama(ystar,dy)/(0.353d0-raysve(ystar))
     ckdown_sir_f(i) = dzyama(y,dy)/(0.353d0-raysve(y))
@@ -1096,10 +1102,17 @@ if (muzero.gt.epzero) then
       ckapcf=0.d0
       ck_aero_h2of=0.d0
       ck_aero_h2od=0.d0
+      w0_sir(k) = 0.d0
+      g_apc_sir(k) = 0.d0
     else
       picapc=(pic_h2o(k)*tauc(k)+piaero_h2o*tauah2o(k))/tauapc
+      w0_sir(k) = picapc
+      ! if we take into account asymmetry factor for forward diffuse radiation
+      ! Note apc means aerosols+clouds
+      gapc=(pic_h2o(k)*tauc(k)*gasym+piaero_h2o*tauah2o(k)*gaero_h2o)/tauapc*picapc
+      g_apc_sir(k) = gapc
       ! absorption and forward diffusion
-      ckapcf=(1.d0-picapc)*tauapc/(deltaz*mui)
+      ckapcf=(1.d0-picapc*(1.d0+gapc)/2.d0)*tauapc/(deltaz*mui)
       ckapcd=tauapc/(deltaz*muzero_cor)
       ck_aero_h2of=(1.d0-piaero_h2o)*tauah2o(k)/(deltaz*mui)
       ck_aero_h2od=tauah2o(k)/(deltaz*muzero_cor)
@@ -1123,10 +1136,16 @@ if (muzero.gt.epzero) then
       ckapcf=0.d0
       ck_aero_o3f=0.d0
       ck_aero_o3d=0.d0
+      w0_suv(k) = 0.d0
+      g_apc_suv(k) = 0.d0
     else
       picapc=(pic_o3(k)*tauc(k)+piaero_o3*tauao3(k))/tauapc
+      w0_suv(k) = picapc
+      ! if we take into account asymmetry factor for forward diffuse radiation
+      gapc=(pic_o3(k)*tauc(k)*gasym+piaero_o3*tauao3(k)*gaero_o3)/tauapc*picapc
+      g_apc_suv(k) = gapc
       ! absorption and forward diffusion
-      ckapcf=(1.d0-picapc)*tauapc/(deltaz*mui)
+      ckapcf=(1.d0-picapc*(1.d0+gapc)/2.d0)*tauapc/(deltaz*mui)
       ckapcd=tauapc/(deltaz*muzero_cor)
       ck_aero_o3f=(1.d0-piaero_o3)*tauao3(k)/(deltaz*mui)
       ck_aero_o3d=tauao3(k)/(deltaz*muzero_cor)
@@ -1140,6 +1159,20 @@ if (muzero.gt.epzero) then
     ckdown_suv_f(k) = (ckdown_suv_f(k) +  ck_aero_o3f)*(1.d0-fneray(k))+&
       (ckdown_suv_f(k)+ckapcf)*(fneray(k))
   enddo
+
+  !In addition a source term has to be added in 3D for diffuse radiation
+
+  ! if mui=1/sqrt(3) quadrature method as LH74 the source term is added for
+  ! both downward and upward radiation
+  ! where  g1= 31/2(1-wo) , g3=(1-31/2µo)/2, g4=(1+31/2µo)/2 and t the total optical depth (gas + aerosol +
+  ! cloud) t = tg + ta + tc.
+  ! if mui=muzero_cor delta method the source term is added only in the downward
+  !diffuse radiation
+  ! In that condition the two-stream equations can be written:
+  ! where  g1=(1-wo)/µo, g4=1 and t the total optical depth (gas + aerosol + cloud) t = tg + ta + tc.
+
+
+
 ! if muzero < 0, it is night
 else
 
@@ -1159,6 +1192,10 @@ else
     ckup_suv_f(k)=0.d0
     ckdown_suv_r(k)=0.d0
     ckdown_suv_f(k)=0.d0
+    w0_sir(k) = 0.d0
+    w0_suv(k) = 0.d0
+    g_apc_sir(k) = 0.d0
+    g_apc_suv(k) = 0.d0
 
   enddo
   fos = 0.d0
@@ -1180,6 +1217,8 @@ if (f_id.ge.0) then
 
   call field_get_val_v_by_name("rad_absorption_coeff_up", cpro_ck_up)
   call field_get_val_v_by_name("rad_absorption_coeff_down", cpro_ck_down)
+  call field_get_val_v_by_name("simple_diffusion_albedo", cpro_w0)
+  call field_get_val_v_by_name("asymmetry_factor", cpro_gapc)
 
   c_id = 0
   ! Direct Solar (denoted by _r) (for Solar IR band absorbed by H20)
@@ -1306,6 +1345,22 @@ if (f_id.ge.0) then
 
       cpro_ck_up(c_id, iel) = var
 
+      ! Simple diffusion albedo w0
+
+      call intprz &
+        (kmray, zqq,                                               &
+        w0_sir, zent, iz1, iz2, var )
+
+      cpro_w0(c_id, iel) = var
+
+      ! Asymmetry factor
+
+      call intprz &
+        (kmray, zqq,                                               &
+        g_apc_sir, zent, iz1, iz2, var )
+
+      cpro_gapc(c_id, iel) = var
+
     enddo
 
   endif
@@ -1349,6 +1404,21 @@ if (f_id.ge.0) then
 
       cpro_ck_up(c_id, iel) = var
 
+      ! Simple diffusion albedo w0
+
+      call intprz &
+        (kmray, zqq,                                               &
+        w0_suv, zent, iz1, iz2, var )
+
+      cpro_w0(c_id, iel) = var
+
+      ! Asymmetry factor
+
+      call intprz &
+        (kmray, zqq,                                               &
+        g_apc_suv, zent, iz1, iz2, var )
+
+      cpro_gapc(c_id, iel) = var
     enddo
 
   endif
@@ -1373,6 +1443,7 @@ deallocate(ddfsh2o, ddfso3)
 deallocate(drfs, dffs, ddfs, dddsh2o, dddso3)
 deallocate(ckup_sir_f, ckdown_sir_r, ckdown_sir_f)
 deallocate(ckup_suv_f, ckdown_suv_r, ckdown_suv_f)
+deallocate(g_apc_suv, g_apc_sir, w0_suv, w0_sir)
 
 return
 

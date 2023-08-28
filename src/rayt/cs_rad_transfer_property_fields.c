@@ -400,6 +400,26 @@ cs_rad_transfer_prp(void)
     cs_field_set_key_int(f, keyvis, vis_gg);
     cs_field_set_key_int(f, keylog, 1);
 
+    /* Asymmetry factor (for solar only...)  per band */
+    f = cs_field_create("asymmetry_factor",
+                        field_type,
+                        location_id,
+                        rt_params->nwsgg,
+                        false);
+
+    cs_field_set_key_int(f, keyvis, vis_gg);
+    cs_field_set_key_int(f, keylog, 1);
+
+    /* Simple diffusion albedo (for solar only...)  per band */
+    f = cs_field_create("simple_diffusion_albedo",
+                        field_type,
+                        location_id,
+                        rt_params->nwsgg,
+                        false);
+
+    cs_field_set_key_int(f, keyvis, vis_gg);
+    cs_field_set_key_int(f, keylog, 1);
+
     /* Upward absorption coefficient by band */
     f = cs_field_create("rad_absorption_coeff_down",
                         field_type,

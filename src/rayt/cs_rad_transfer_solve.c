@@ -435,6 +435,7 @@ _cs_rad_transfer_sol(int                        gg_id,
   /* Postprocessing atmospheric upwards and downwards flux */
   cs_field_t *f_up = NULL, *f_down = NULL;
   cs_real_t *ck_u = NULL, *ck_d = NULL;
+  cs_real_t *w0 = NULL, *g_apc = NULL;
 
   if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
     f_up = cs_field_by_name_try("rad_flux_up");
@@ -443,17 +444,25 @@ _cs_rad_transfer_sol(int                        gg_id,
     BFT_MALLOC(ck_u_d,  n_cells_ext, cs_real_t);
     ck_u = cs_field_by_name("rad_absorption_coeff_up")->val;
     ck_d = cs_field_by_name("rad_absorption_coeff_down")->val;
+
+    w0 = cs_field_by_name("simple_diffusion_albedo")->val;
+    /* asymmetry factor for aerosol plus cloud */
+    g_apc = cs_field_by_name("asymmetry_factor")->val;
   }
 
   cs_real_t vect_s[3];
   cs_real_t domegat = 0;
   bool one_dir = false;
-  /* Compute the Angular direction for direct solar radiation */
+  cs_real_t muzero_cor = 0.;
+  /* For direct solar radiation */
   if ((gg_id == rt_params->atmo_dr_id)
     || (gg_id == rt_params->atmo_dr_o3_id)) {
     one_dir = true;
     domegat = cs_math_pi;
+  }
 
+  /* Compute the Angular direction */
+  if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
     /* Computes universal time coordinate */
     cs_real_t utc = (cs_real_t)cs_glob_atmo_option->shour
       + (cs_real_t)cs_glob_atmo_option->smin / 60.
@@ -463,7 +472,7 @@ _cs_rad_transfer_sol(int                        gg_id,
         || cs_glob_time_step_options->idtvar == CS_TIME_STEP_ADAPTIVE)
       utc += cs_glob_time_step->t_cur / 3600.;
 
-    cs_real_t albedo, muzero_cor, omega, fo, za;
+    cs_real_t albedo, omega, fo, za;
     cs_atmo_compute_solar_angles(cs_glob_atmo_option->latitude,
                                  cs_glob_atmo_option->longitude,
                                  (cs_real_t)cs_glob_atmo_option->squant,
@@ -475,18 +484,21 @@ _cs_rad_transfer_sol(int                        gg_id,
                                  &omega,
                                  &fo);
 
-    /* Zenithal angle:
-     * muzera is almost cos(za),
-     * but take earth curvature into account */
-    cs_real_t sinza = sqrt(1. - muzero_cor * muzero_cor);
-    vect_s[0] = - sinza * sin(omega);
-    vect_s[1] = - sinza * cos(omega);
-    vect_s[2] = - muzero_cor; /*  cos(za) */
+    /* For direct solar radiation */
+    if ((gg_id == rt_params->atmo_dr_id)
+      || (gg_id == rt_params->atmo_dr_o3_id)) {
+      /* Zenithal angle:
+       * muzera is almost cos(za),
+       * but take earth curvature into account */
+      cs_real_t sinza = sqrt(1. - muzero_cor * muzero_cor);
+      vect_s[0] = - sinza * sin(omega);
+      vect_s[1] = - sinza * cos(omega);
+      vect_s[2] = - muzero_cor; /*  cos(za) */
 
-    if (verbosity > 0)
-      bft_printf("     Solar direction [%f, %f, %f] \n",
-          vect_s[0], vect_s[1], vect_s[2]);
-
+      if (verbosity > 0)
+        bft_printf("     Solar direction [%f, %f, %f] \n",
+            vect_s[0], vect_s[1], vect_s[2]);
+    }
   }
 
   /* Initialization */
@@ -663,6 +675,32 @@ _cs_rad_transfer_sol(int                        gg_id,
               if (gg_id == rt_params->atmo_ir_id)
                 rhs[cell_id] =   ck_u_d[cell_id] * cell_vol[cell_id]
                              * c_stefan * cs_math_pow4(tempk[cell_id]) * onedpi;
+
+              /* For atmospheric flow, solar diffuse band has emission
+               * from direct solar absorption
+               * */
+
+              /* Diffuse Solar IR (H2O band)
+               * or Diffuse Solar UV (O3 band) */
+              if (   gg_id == rt_params->atmo_df_id
+                  || gg_id == rt_params->atmo_df_o3_id) {
+
+                /* w0 (1 +- g mu0/mui) S0 */
+                cs_real_t vol_w0 = w0[gg_id + cell_id * stride];
+
+                cs_real_t mui = 1./sqrt(3.);
+                /* g mu0/mui */
+                cs_real_t gmudmui = g_apc[gg_id + cell_id * stride]
+                  * muzero_cor / mui;
+
+                /* rhs already contains S0* cell_vol */
+                /* Up */
+                if (cs_math_3_dot_product(grav, vect_s) < 0.0)
+                  rhs[cell_id] *= vol_w0 * 0.5 * (1. - gmudmui);
+                /* Down */
+                else
+                  rhs[cell_id] *= vol_w0 * 0.5 * (1. + gmudmui);
+              }
             }
           }
 
@@ -1741,16 +1779,20 @@ cs_rad_transfer_solve(int               bc_type[],
           snprintf(f_name, 63, "spectral_absorption_%02d",
               rt_params->atmo_dr_id + 1);
           cs_field_t *f_abs_dr  = cs_field_by_name_try(f_name);
+          /* Emission initialized by direct absorption S0
+           * Note: radiance is "1/pi * direct flux"
+           * */
           for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-            f_emi->val[cell_id] = 0.25 * onedpi * f_abs_dr->val[cell_id];
+            f_emi->val[cell_id] = f_abs_dr->val[cell_id] * onedpi;
         }
         if (gg_id == rt_params->atmo_df_o3_id) {
 
           snprintf(f_name, 63, "spectral_absorption_%02d",
               rt_params->atmo_dr_o3_id + 1);
           cs_field_t *f_abs_dr  = cs_field_by_name_try(f_name);
+          /* Emission initialized by direct absorption S0*/
           for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-            f_emi->val[cell_id] = 0.25 * onedpi * f_abs_dr->val[cell_id];
+            f_emi->val[cell_id] = f_abs_dr->val[cell_id] * onedpi;
         }
 
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
