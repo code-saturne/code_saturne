@@ -2506,14 +2506,14 @@ cs_boundary_conditions_reset(void)
 /*!
  * \brief Update per variable boundary condition codes.
  *
- * \param[in]  itypfb  type of boundary for each face
+ * \param[in]  bc_type  type of boundary for each face
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_compute(int  itypfb[])
+cs_boundary_conditions_compute(int  bc_type[])
 {
-  CS_UNUSED(itypfb);
+  CS_UNUSED(bc_type);
 
   /* Initialization */
 
@@ -2586,8 +2586,8 @@ cs_boundary_conditions_compute(int  itypfb[])
 
     for (int bc_id = 0; bc_id < eqp->n_bc_defs; bc_id++) {
       const cs_xdef_t *def = eqp->bc_defs[bc_id];
-      cs_param_bc_type_t bc_type = (cs_param_bc_type_t)(def->meta);
-      switch (bc_type) {
+      cs_param_bc_type_t bc_type_l = (cs_param_bc_type_t)(def->meta);
+      switch (bc_type_l) {
 
       case CS_PARAM_BC_HMG_DIRICHLET:
         _compute_hmg_dirichlet_bc(mesh,
@@ -2711,14 +2711,14 @@ cs_boundary_conditions_compute(int  itypfb[])
  * As portions of stdtcl are migrated to C, they should be called here,
  * before mapped inlets.
  *
- * \param[in]  itypfb  type of boundary for each face
+ * \param[in]  bc_type  type of boundary for each face
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_complete(int  itypfb[])
+cs_boundary_conditions_complete(int  bc_type[])
 {
-  CS_NO_WARN_IF_UNUSED(itypfb);
+  CS_NO_WARN_IF_UNUSED(bc_type);
 
   /* Initialization */
 
@@ -2812,14 +2812,35 @@ cs_boundary_conditions_complete(int  itypfb[])
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Acess the time control structure of an open (inlet/outlet) boundary.
+ *
+ * This allows modifying that structure, for example updating the inlet
+ * velocity values only in a certain time range, and avoiding
+ * uneeded recomputations outside that range.
+ *
+ * \param[in]  zone  pointer to associated zone
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_time_control_t *
+cs_boundary_conditions_open_get_time_control(const  cs_zone_t  *zone)
+{
+  cs_boundary_conditions_open_t
+    *c = cs_boundary_conditions_open_find_or_add(zone);
+
+  return &(c->tc);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Assign a constant velocity to an open (inlet/outlet) boundary.
  *
  * This function may also be used to define the flow direction if called
  * before one of the \c cs_boundary_conditions_open_set_mass_flow_rate
- * or \c cs_boundary_conditions_set_volume_flow_rate functions.
+ * or \c cs_boundary_conditions_open_set_volume_flow_rate functions.
  *
- * \param[in]  z       pointer to associated zone
- * \param[in]  u_norm  associated constant normal
+ * \param[in]  z  pointer to associated zone
+ * \param[in]  u  associated velocity value
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3358,227 +3379,6 @@ cs_boundary_conditions_inlet_set_turbulence_intensity(const  cs_zone_t  *zone,
     bc_pm_info->icalke[zone_num] = 2;
     bc_pm_info->dh[zone_num] = c->hyd_diameter;
     bc_pm_info->xintur[zone_num] = c->turb_intensity;
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Acess the time control structure of an inlet.
- *
- * This allows modifying that structure, for example updating the inlet
- * velocity values only in a certain time range, and avoiding
- * uneeded recomputations outside that range.
- *
- * \param[in]  zone  pointer to associated zone
- */
-/*----------------------------------------------------------------------------*/
-
-cs_time_control_t *
-cs_boundary_conditions_get_inlet_time_control(const  cs_zone_t  *zone)
-{
-  cs_boundary_conditions_open_t
-    *c = cs_boundary_conditions_open_find_or_add(zone);
-
-  return &(c->tc);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set convective oulet boundary condition for a scalar.
- *
- * \param[out]    coefa         explicit BC coefficient for gradients
- * \param[out]    cofaf         explicit BC coefficient for diffusive flux
- * \param[out]    coefb         implicit BC coefficient for gradients
- * \param[out]    cofbf         implicit BC coefficient for diffusive flux
- * \param[in]     pimp          Flux value to impose
- * \param[in]     cfl           Local Courant number used to convect
- * \param[in]     hint          Internal exchange coefficient
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *coefa ,
-                                                    cs_real_t *cofaf,
-                                                    cs_real_t *coefb,
-                                                    cs_real_t *cofbf,
-                                                    cs_real_t  pimp,
-                                                    cs_real_t  cfl,
-                                                    cs_real_t  hint)
-{
-  /* Gradient BCs */
-  *coefb = cfl / (1.0 + cfl);
-  *coefa = (1.0 - *coefb) * pimp;
-
-  /* Flux BCs */
-  *cofaf = - hint * *coefa;
-  *cofbf =   hint * (1.0 - *coefb);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set generalized BC for an anisotropic symmetric vector for a given
- *         face.
- *
- * \param[out]    coefa         explicit BC coefficient for gradients
- * \param[out]    cofaf         explicit BC coefficient for diffusive flux
- * \param[out]    coefb         implicit BC coefficient for gradients
- * \param[out]    cofbf         implicit BC coefficient for diffusive flux
- * \param[in]     pimpv         Dirichlet value to impose on the normal
- *                              component
- * \param[in]     qimpv         Flux value to impose on the
- *                              tangential components
- * \param[in]     hint          Internal exchange coefficient
- * \param[in]     normal        normal
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_boundary_conditions_set_generalized_sym_vector_aniso
-  (cs_real_t        coefa[3],
-   cs_real_t        cofaf[3],
-   cs_real_t        coefb[3][3],
-   cs_real_t        cofbf[3][3],
-   const cs_real_t  hint[6],
-   const cs_real_t  normal[3],
-   const cs_real_t  pimpv[3],
-   const cs_real_t  qimpv[3])
-{
-  cs_real_t m[6] = {0., 0., 0., 0., 0., 0.};
-
-  m[0] = hint[1]*hint[2] - hint[4]*hint[4];
-  m[1] = hint[0]*hint[2] - hint[5]*hint[5];
-  m[2] = hint[0]*hint[1] - hint[3]*hint[3];
-  m[3] = hint[4]*hint[5] - hint[3]*hint[2];
-  m[4] = hint[3]*hint[5] - hint[0]*hint[4];
-  m[5] = hint[3]*hint[4] - hint[1]*hint[5];
-
-  const cs_real_t invdet = 1.0/(hint[0]*m[0] + hint[3]*m[3] + hint[5]*m[5]);
-
-  cs_real_t invh[6] = {0., 0., 0., 0., 0., 0.};
-  invh[0] = m[0] * invdet;
-  invh[1] = m[1] * invdet;
-  invh[2] = m[2] * invdet;
-  invh[3] = m[3] * invdet;
-  invh[4] = m[4] * invdet;
-  invh[5] = m[5] * invdet;
-
-  cs_real_t qshint[3] = {0., 0., 0.};
-  cs_real_t hintpv[3] = {0., 0., 0.};
-  cs_real_t hintnm[3] = {0., 0., 0.};
-
-  cs_math_sym_33_3_product(invh, qimpv,  qshint);
-  cs_math_sym_33_3_product(hint, pimpv,  hintpv);
-  cs_math_sym_33_3_product(hint, normal, hintnm);
-
-  for (int isou = 0; isou < 3; isou++) {
-
-    /* Gradient BCs */
-    coefa[isou] = - qshint[isou];
-    /* "[1 -n(x)n] Qimp / hint" is divided into two */
-    for (int jsou = 0; jsou < 3; jsou++) {
-
-      coefa[isou] = coefa[isou] + normal[isou]*normal[jsou]
-        * (pimpv[jsou] + qshint[jsou]);
-
-      if (jsou == isou)
-        coefb[isou][jsou] = 1.0 - normal[isou]*normal[jsou];
-      else
-        coefb[isou][jsou] = - normal[isou]*normal[jsou];
-    }
-
-    /* Flux BCs */
-    cofaf[isou] = qimpv[isou];
-    /* "[1 -n(x)n] Qimp" is divided into two */
-    for (int jsou = 0; jsou < 3; jsou++){
-      cofaf[isou] = cofaf[isou] - normal[isou]*normal[jsou]
-                  * (hintpv[jsou] + qimpv[jsou]);
-
-      cofbf[isou][jsou] = hintnm[isou] * normal[jsou];
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set generalized Dirichlet BC for an anisotropic vector for a given
- *         face.
- *
- * \param[out]    coefa         explicit BC coefficient for gradients
- * \param[out]    cofaf         explicit BC coefficient for diffusive flux
- * \param[out]    coefb         implicit BC coefficient for gradients
- * \param[out]    cofbf         implicit BC coefficient for diffusive flux
- * \param[in]     hint          Internal exchange coefficient
- * \param[in]     normal        normal
- * \param[in]     pimpv         Dirichlet value to impose on the tangential
- *                              components
- * \param[in]     qimpv         Flux value to impose on the
- *                              normal component
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_boundary_conditions_set_generalized_dirichlet_vector_aniso
-  (cs_real_t        coefa[3],
-   cs_real_t        cofaf[3],
-   cs_real_t        coefb[3][3],
-   cs_real_t        cofbf[3][3],
-   const cs_real_t  hint[6],
-   const cs_real_t  normal[3],
-   const cs_real_t  pimpv[3],
-   const cs_real_t  qimpv[3])
-{
-  cs_real_t m[6] = {0., 0., 0., 0., 0., 0.};
-  m[0] = hint[1]*hint[2] - hint[4]*hint[4];
-  m[1] = hint[0]*hint[2] - hint[5]*hint[5];
-  m[2] = hint[0]*hint[1] - hint[3]*hint[3];
-  m[3] = hint[4]*hint[5] - hint[3]*hint[2];
-  m[4] = hint[3]*hint[5] - hint[0]*hint[4];
-  m[5] = hint[3]*hint[4] - hint[1]*hint[5];
-
-  const cs_real_t invdet = 1.0/(hint[0]*m[0] + hint[3]*m[3] + hint[5]*m[5]);
-
-  cs_real_t invh[6] = {0., 0., 0., 0., 0., 0.};
-  invh[0] = m[0] * invdet;
-  invh[1] = m[1] * invdet;
-  invh[2] = m[2] * invdet;
-  invh[3] = m[3] * invdet;
-  invh[4] = m[4] * invdet;
-  invh[5] = m[5] * invdet;
-
-  cs_real_t qshint[3] = {0., 0., 0.};
-  cs_real_t hintpv[3] = {0., 0., 0.};
-  cs_real_t hintnm[3] = {0., 0., 0.};
-
-  cs_math_sym_33_3_product(invh, qimpv,  qshint);
-  cs_math_sym_33_3_product(hint, pimpv,  hintpv);
-  cs_math_sym_33_3_product(hint, normal, hintnm);
-
-  for (int isou = 0; isou < 3; isou ++) {
-
-    /* Gradient BCs */
-    /* "[1 -n(x)n] Pimp" is divided into two */
-    coefa[isou] = pimpv[isou];
-    for (int jsou = 0; jsou < 3; jsou++) {
-
-      coefa[isou] = coefa[isou] - normal[isou] * normal[jsou]
-                  * (pimpv[jsou] + qshint[jsou]);
-
-      coefb[isou][jsou] = normal[isou] * normal[jsou];
-    }
-
-    /* Flux BCs */
-    /* "[1 -n(x)n] Pimp" is divided into two */
-    cofaf[isou] = -hintpv[isou];
-    for (int jsou = 0; jsou < 3; jsou++) {
-
-      cofaf[isou] = cofaf[isou] + normal[isou]*normal[jsou]
-        *(qimpv[jsou]+hintpv[jsou]);
-
-      if (jsou == isou)
-        cofbf[isou][jsou] = hint[isou]-hintnm[isou]*normal[jsou];
-      else
-        cofbf[isou][jsou] = -hintnm[isou]*normal[jsou];
-    }
   }
 }
 

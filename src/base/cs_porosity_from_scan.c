@@ -57,7 +57,7 @@
 #include "fvm_point_location.h"
 
 #include "cs_base.h"
-#include "cs_boundary_conditions.h"
+#include "cs_boundary_conditions_set_coeffs.h"
 #include "cs_boundary_zone.h"
 #include "cs_coupling.h"
 #include "cs_domain.h"

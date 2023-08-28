@@ -40,7 +40,7 @@
 #include "cs_array.h"
 #include "cs_base.h"
 #include "cs_boundary.h"
-#include "cs_boundary_conditions.h"
+#include "cs_boundary_conditions_set_coeffs.h"
 #include "cs_boundary_zone.h"
 #include "cs_cell_to_vertex.h"
 #include "cs_cdo_quantities.h"

@@ -49,6 +49,7 @@
 #include "cs_balance.h"
 #include "cs_blas.h"
 #include "cs_boundary_conditions.h"
+#include "cs_boundary_conditions_set_coeffs.h"
 #include "cs_cf_thermo.h"
 #include "cs_convection_diffusion.h"
 #include "cs_divergence.h"

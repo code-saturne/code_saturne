@@ -51,7 +51,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
-#include "cs_boundary_conditions.h"
+#include "cs_boundary_conditions_set_coeffs.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
