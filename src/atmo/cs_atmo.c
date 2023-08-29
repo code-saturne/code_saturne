@@ -2088,8 +2088,6 @@ cs_soil_model(void)
     const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
     const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(vel)->val;
     cs_real_t *vel_rcodcl1 = CS_F_(vel)->bc_coeffs->rcodcl1;
-    const cs_real_t *surfbn
-      = (const cs_real_t *)mq->b_face_surf;
     cs_real_t g = cs_math_3_norm(cs_glob_physical_constants->gravity);
     cs_mesh_quantities_t *fvq   = cs_glob_mesh_quantities;
     const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
@@ -2110,7 +2108,6 @@ cs_soil_model(void)
     cs_field_t *soil_percentages = cs_field_by_name("atmo_soil_percentages");
     cs_field_t *boundary_vegetation = cs_field_by_name("boundary_vegetation");
     /* Fields related to all faces */
-    cs_field_t *boundary_roughness = cs_field_by_name_try("boundary_roughness");
     cs_field_t *boundary_thermal_roughness
       = cs_field_by_name_try("boundary_thermal_roughness");
     cs_field_t *boundary_albedo = cs_field_by_name_try("boundary_albedo");
@@ -2121,9 +2118,7 @@ cs_soil_model(void)
     cs_field_t *crom = CS_F_(rho);
     /* Radiative tables */
     cs_real_t *sold = (cs_real_t *)  cs_glob_atmo_option->rad_1d_sold;
-    cs_real_t *solu = (cs_real_t *) cs_glob_atmo_option->rad_1d_solu;
     cs_real_t *ird = (cs_real_t *) cs_glob_atmo_option->rad_1d_ird;
-
 
     /* Louis parameterisation
      * #TODO replace the wall function reconstruction with already existing
@@ -2167,7 +2162,7 @@ cs_soil_model(void)
       cs_real_t ps = cs_glob_atmo_constants->ps;
       cs_real_t esat = 0.;
 
-      cs_lnum_t face_id = z->elt_ids[soil_id];
+      cs_lnum_t face_id = elt_ids[soil_id];
       cs_lnum_t cell_id = b_face_cells[face_id];
       cs_real_t foir = 0.;
       cs_real_t fos = 0.;
@@ -2242,8 +2237,6 @@ cs_soil_model(void)
        / boundary_thermal_roughness->val[face_id]);
       cs_real_t rscp1 = (rair / cp0) * (1. + (rvsra - cpvcpa)
        * soil_total_water->val[soil_id] );
-      cs_real_t rscp2 = (rair / cp0) * (1. + (rvsra - cpvcpa)
-       * atm_total_water->val[cell_id] );
 
       cs_real_t soil_virtual_temp = soil_pot_temperature->val[soil_id]
         * (1. + (rvsra - 1.) * soil_total_water->val[soil_id] );
