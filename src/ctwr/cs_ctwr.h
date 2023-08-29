@@ -101,7 +101,7 @@ typedef struct {
  *============================================================================*/
 
 /* Pointer to cooling tower model options structure */
-extern const cs_ctwr_option_t        *cs_glob_ctwr_option;
+extern const cs_ctwr_option_t  *cs_glob_ctwr_option;
 
 /*============================================================================
  * Public function definitions
