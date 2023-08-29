@@ -36,7 +36,8 @@
 !> \section Warning
 !>
 !> It is \b forbidden to modify turbulent viscosity \c visct here
-!> (a specific subroutine is dedicated to that: \ref usvist)
+!> (a specific subroutine is dedicated to that:
+!>    \ref cs_user_physical_properties_turb_viscosity)
 !>
 !> - icp = 0 must <b> have been specified </b>
 !>    in \ref usipsu if we wish to define a variable specific heat
@@ -150,91 +151,5 @@ double precision dt(ncelet)
 
 return
 end subroutine usphyv
-
-!===============================================================================
-!> \brief Modify turbulent viscosity
-!>
-!> This subroutine is called at beginning of each time step
-!> after the computation of the turbulent viscosity
-!> (physical quantities have already been computed in \ref usphyv).
-!>
-!> Turbulent viscosity \f$ \mu_T \f$ (kg/(m s)) can be modified.
-!>
-!> A modification of the turbulent viscosity can lead to very
-!> significant differences between solutions and even give wrong
-!> results.
-!>
-!> This subroutine is therefore reserved to expert users.
-!
-!-------------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
-!> \param[in]     ncepdp        number of cells with head loss
-!> \param[in]     ncesmp        number of cells with mass source term
-!> \param[in]     icepdc        head loss cell numbering
-!> \param[in]     icetsm        numbering of cells with mass source term
-!> \param[in]     itypsm        kind of mass source for each variable
-!> \param[in]     dt            time step (per cell)
-!> \param[in]     ckupdc        work array for head loss terms
-!> \param[in]     smacel        values of variables related to mass source
-!>                              term. If ivar=ipr, smacel=mass flux
-!_______________________________________________________________________________
-
-subroutine usvist &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     ,                                                       &
-   ckupdc , smacel )
-
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use numvar
-use optcal
-use cstphy
-use entsor
-use parall
-use period
-use mesh
-use field
-use field_operator
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
-
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-
-double precision dt(ncelet)
-double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
-
-!===============================================================================
-
-!--------
-! Formats
-!--------
-
-!----
-! End
-!----
-
-return
-end subroutine usvist
 
 !===============================================================================

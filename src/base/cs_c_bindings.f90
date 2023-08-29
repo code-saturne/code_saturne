@@ -2133,6 +2133,16 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C user function for physical properties
+
+    subroutine cs_user_physical_properties_turb_viscosity_wrapper()  &
+      bind(C, name='cs_user_physical_properties_turb_viscosity_wrapper')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_user_physical_properties_turb_viscosity_wrapper
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C user function
 
     subroutine user_source_terms(f_id, st_exp, st_imp)  &

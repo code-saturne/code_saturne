@@ -136,7 +136,7 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 
 procedure() :: cs_physical_properties1, cs_physical_properties2
-procedure() :: uiphyv, usphyv, usvist
+procedure() :: uiphyv, usphyv
 
 interface
 
@@ -662,12 +662,7 @@ endif
 ! User modification of the turbulent viscosity and symmetric tensor diffusivity
 !===============================================================================
 
-call usvist &
-( nvar   , nscal  ,                                              &
-  ncepdc , ncetsm ,                                              &
-  icepdc , icetsm , itypsm ,                                     &
-  dt     ,                                                       &
-  ckupdc , smacel )
+call cs_user_physical_properties_turb_viscosity_wrapper()
 
 !==============================================================================
 ! Rusanov flux
@@ -1148,7 +1143,8 @@ endif
 '@',                                                            /,&
 '@  The  minimum reached is', e12.4                            ,/,&
 '@  Verify the density definition  and the turbulent viscosity',/,&
-'@    modification in usvist (if any).',                        /,&
+'@  modification in cs_user_physical_properties_turb_viscosity',/,&
+'@  (if any).',                                                 /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

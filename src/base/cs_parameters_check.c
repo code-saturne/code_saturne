@@ -1864,7 +1864,7 @@ cs_parameters_check(void)
              "Use fully extended neighborhood or directly "
              "define the averaging of the\n"
              "dynamic Smagorinsky constant via the\n"
-             "cs_user_physical_properties_smagorinsky_c function."));
+             "cs_user_physical_properties_turb_viscosity function."));
         break;
       default:
         break;

@@ -143,34 +143,21 @@ cs_user_physical_properties_t_to_h(cs_domain_t      *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief User modification of the Smagorinsky constant for the
- *        dynamic Smagorinsky model.
+ * \brief User modification of the turbulence viscosity.
  *
- * CS = Mij.Lij / Mij.Mij
- *
- * The local averages of the numerator and denominator are done before calling
- * this function, so
- *
- * CS = < Mij.Lij > / < Mij.Mij >
- *
- * In this subroutine, Mij.Lij and Mij.Mij are passed as arguments before
- * the local average.
+ * Turbulent viscosity \f$ \mu_T \f$ (kg/(m s)) can be modified.
+ * You can access the field by its name.
  *
  * \param[in, out]   domain      pointer to a cs_domain_t structure
- * \param[in]        mijlij      mij.lij before the local averaging
- * \param[in]        mijmij      mij.mij before the local averaging
  */
 /*----------------------------------------------------------------------------*/
 
-#pragma weak cs_user_physical_properties_smagorinsky_c
+#pragma weak cs_user_physical_properties_turb_viscosity
 void
-cs_user_physical_properties_smagorinsky_c(cs_domain_t      *domain,
-                                          const cs_real_t   mijlij[],
-                                          const cs_real_t   mijmij[])
+cs_user_physical_properties_turb_viscosity(cs_domain_t      *domain)
 {
   CS_NO_WARN_IF_UNUSED(domain);
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!

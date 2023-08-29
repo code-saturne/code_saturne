@@ -77,6 +77,224 @@
 
 BEGIN_C_DECLS
 
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+/* Tensor to vector (t2v) and vector to tensor (v2t) mask arrays */
+
+static const cs_lnum_t _iv2t[6] = {0, 1, 2, 0, 1, 0};
+static const cs_lnum_t _jv2t[6] = {0, 1, 2, 1, 2, 2};
+
+static const cs_lnum_t _t2v[3][3] = {{0, 3, 5},
+                                     {3, 1, 4},
+                                     {5, 4, 2}};
+
+/*=============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of  Mij:Mij and Mij:Lij for dynamic Smagorinsky model
+ *
+ * Please refer to the
+ * <a href="../../theory.pdf#dynsmago"><b>dynamic Smagorinsky model</b></a>
+ * section of the theory guide for more informations.
+ *
+ * \param[out]    s_n           strain rate (sqrt(2SijSij))
+ * \param[out]    sf_n          filtered strain rate
+ * \param[out]    f_vel         filtered velocity
+ * \param[out]    mijmij        Mij:Mij
+ * \param[out]    mijlij        Mij:Lij
+ *
+ !*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_les_mu_t_smago_dyn_prepare(cs_real_t s_n[],
+                              cs_real_t sf_n[],
+                              cs_real_3_t *f_vel,
+                              cs_real_t mijmij[],
+                              cs_real_t mijlij[])
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
+
+  const int irovar = cs_glob_fluid_properties->irovar;
+
+  /*  Allocate some work arrays */
+
+  cs_real_t *w0, *xro, *xrof;
+  cs_real_6_t *mij;
+  cs_real_33_t *gradv;
+
+  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  BFT_MALLOC(w0, n_cells_ext, cs_real_t);
+  BFT_MALLOC(mij, n_cells_ext, cs_real_6_t);
+  BFT_MALLOC(xro, n_cells_ext, cs_real_t);
+  BFT_MALLOC(xrof, n_cells_ext, cs_real_t);
+
+  /* Take into account variable density case: Favre filtering
+   * Constant density case: Reynolds filtering */
+
+  const cs_real_t *crom  = CS_F_(rho)->val;
+  const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(vel)->val;
+
+  if (irovar == 1)
+    cs_array_real_copy(n_cells, crom, xro);
+  else
+    cs_array_real_set_scalar(n_cells, 1.0, xro);
+
+  /* In case of constant density, xrof is 1.0 */
+
+  cs_les_filter(1, xro, xrof);
+
+  /* Calculation of velocity gradient and of
+   * S11^2+S22^2+S33^2+2*(S12^2+S13^2+S23^2)
+   *======================================== */
+
+  /* Allocate temporary arrays for gradients calculation */
+
+  cs_real_6_t *w61, *w62;
+
+  BFT_MALLOC(w61, n_cells_ext, cs_real_6_t);
+  BFT_MALLOC(w62, n_cells_ext, cs_real_6_t);
+
+  cs_field_gradient_vector(CS_F_(vel),
+                           false, // no use_previous_t
+                           1,     // inc
+                           gradv);
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    /* gradv[c_id][uvw][xyz] */
+
+    cs_real_t divu = cs_math_33_trace(gradv[c_id]);
+
+    /* In the case of constant density, s11+s22+s33 is zero
+     * TODO: this is not exactly true, we should always remove the trace  */
+
+    mij[c_id][0] = gradv[c_id][0][0]-irovar*1.0/3.0*divu;
+    mij[c_id][1] = gradv[c_id][1][1]-irovar*1.0/3.0*divu;
+    mij[c_id][2] = gradv[c_id][2][2]-irovar*1.0/3.0*divu;
+    mij[c_id][3] = 0.5*(gradv[c_id][0][1]+gradv[c_id][1][0]);
+    mij[c_id][4] = 0.5*(gradv[c_id][1][2]+gradv[c_id][2][1]);
+    mij[c_id][5] = 0.5*(gradv[c_id][0][2]+gradv[c_id][2][0]);
+
+    s_n[c_id] =
+      sqrt(2. * cs_math_sym_33_sym_33_product_trace(mij[c_id], mij[c_id]));
+
+    for (cs_lnum_t ij = 0; ij < 6; ij++)
+      w62[c_id][ij] = xro[c_id] * mij[c_id][ij];
+  }
+
+  BFT_FREE(gradv);
+
+  /* w62 temporarily contains rho*S */
+
+  cs_les_filter(6, (cs_real_t*)w62, (cs_real_t*)w61);
+
+  /* w61 <rho*S>/<rho>, sf_n is ||<rho*S>/<rho>|| */
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    for (cs_lnum_t i = 0; i < 6; i++)
+      w61[c_id][i] /= xrof[c_id];
+
+    sf_n[c_id] =
+      sqrt(2. * cs_math_sym_33_sym_33_product_trace(w61[c_id], w61[c_id]));
+  }
+
+  /* Here mij contains Sij^d
+   *   S_n  contains ||S||
+   *       sqrt(2)*sqrt(S11^2+S22^2+S33^2+2(S12^2+S13^2+S23^2))
+   *   Sf_n contains ||SF||
+   *       sqrt(2)*sqrt(S11F^2+S22F^2+S33F^2+2(S12F^2+S13F^2+S23F^2)) */
+
+  /* Calculation of Mij
+   *===================== */
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
+                                                 cs_turb_bles);
+    w0[c_id] = delta;
+    for (cs_lnum_t ij = 0; ij < 6; ij++)
+      mij[c_id][ij] *= -2.0 * xro[c_id] * cs_math_pow2(delta) * s_n[c_id];
+  }
+
+  /* w62 now contains <-2*rho*delta^2*||S||*S> */
+  cs_les_filter(6, (cs_real_t*)mij, (cs_real_t*)w62);
+
+  /* Now compute final mij value: M_ij = alpha_ij - beta_ij */
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    const cs_real_t delta = w0[c_id];
+    const cs_real_t deltaf = cs_turb_xlesfd * delta;
+    for (cs_lnum_t ij = 0; ij < 6; ij++)
+      mij[c_id][ij] = -2.0 * xro[c_id] * cs_math_pow2(deltaf)
+                           * sf_n[c_id] * w61[c_id][ij]
+                      - w62[c_id][ij];
+  }
+
+  BFT_FREE(w61);
+  BFT_FREE(w62);
+
+  /* Allocate work arrays */
+  cs_real_6_t *lij;
+  cs_real_6_t *rho_ui_uj;
+  cs_real_6_t *w_t;
+  cs_real_3_t *w_v;
+
+  BFT_MALLOC(rho_ui_uj, n_cells_ext, cs_real_6_t);
+  BFT_MALLOC(lij, n_cells_ext, cs_real_6_t);
+  BFT_MALLOC(w_t, n_cells_ext, cs_real_6_t);
+
+  /* Filtering the velocity and its square */
+
+  /* Second order moment  <rho u_i u_j> */
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+    for (cs_lnum_t ij = 0; ij < 6; ij++)
+      w_t[c_id][ij] = xro[c_id]*vel[c_id][_iv2t[ij]]*vel[c_id][_jv2t[ij]];
+  }
+  cs_les_filter(6, (cs_real_t*)w_t, (cs_real_t*)rho_ui_uj);
+
+  /* <rho u_i>/rho */
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++)
+    for (cs_lnum_t i = 0; i < 3; i++)
+      w_v[c_id][i] = xro[c_id]*vel[c_id][i];
+  cs_les_filter(3, (cs_real_t*)w_v, (cs_real_t*)f_vel);
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+    for (cs_lnum_t i = 0; i < 3; i++)
+      f_vel[c_id][i] /= xrof[c_id];
+  }
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+
+    /* Calculation of Lij */
+    for (cs_lnum_t ij = 0; ij < 6; ij++)
+      lij[c_id][ij] = rho_ui_uj[c_id][ij]
+        - xrof[c_id] * f_vel[c_id][_iv2t[ij]] * f_vel[c_id][_jv2t[ij]];
+
+    /* Calculation of Mij :: Lij */
+    mijlij[c_id] = cs_math_sym_33_sym_33_product_trace(mij[c_id], lij[c_id]);
+
+    /* Calculation of Mij :: Mij */
+    mijmij[c_id] = cs_math_sym_33_sym_33_product_trace(mij[c_id], mij[c_id]);
+
+  }
+
+  /* Free memory */
+  BFT_FREE(mij);
+  BFT_FREE(lij);
+  BFT_FREE(rho_ui_uj);
+  BFT_FREE(w_t);
+  BFT_FREE(w_v);
+
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Calculation of the turbulent viscosity for
@@ -108,9 +326,6 @@ cs_les_mu_t_smago_dyn(void)
   /* Initialization
    * ============== */
 
-  cs_real_33_t *gradv;
-  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
-
   /*  Map field arrays */
 
   cs_real_t *visct =  CS_F_(mu_t)->val;
@@ -122,21 +337,19 @@ cs_les_mu_t_smago_dyn(void)
 
   /* For the calculation of the viscosity of the sub-mesh */
 
-  const cs_real_t xfil2  = cs_turb_xlesfd;
   const cs_real_t xa     = cs_turb_ales;
   const cs_real_t xb     = cs_turb_bles;
-  const cs_real_t sqrt_2 = sqrt(2.0);
   const cs_real_t xsmgmx = cs_turb_csmago_max;
   const cs_real_t xsmgmn = cs_turb_csmago_min;
 
   /*  Allocate some work arrays */
 
   cs_real_t *w0, *w1, *xro, *xrof;
-  cs_real_6_t *xmij;
+  cs_real_6_t *mij;
 
   BFT_MALLOC(w0, n_cells_ext, cs_real_t);
   BFT_MALLOC(w1, n_cells_ext, cs_real_t);
-  BFT_MALLOC(xmij, n_cells_ext, cs_real_6_t);
+  BFT_MALLOC(mij, n_cells_ext, cs_real_6_t);
   BFT_MALLOC(xro, n_cells_ext, cs_real_t);
   BFT_MALLOC(xrof, n_cells_ext, cs_real_t);
 
@@ -152,215 +365,31 @@ cs_les_mu_t_smago_dyn(void)
 
   cs_les_filter(1, xro, xrof);
 
-  /* Calculation of velocity gradient and of
-   * S11^2+S22^2+S33^2+2*(S12^2+S13^2+S23^2)
-   *======================================== */
-
-  /* Allocate temporary arrays for gradients calculation */
-
+  /* Allocate work arrays */
   cs_real_t *s_n, *sf_n;
-  cs_real_6_t *w61, *w62;
+  cs_real_t *w2, *w3, *w4;
+  cs_real_3_t *w_v;
+  cs_real_3_t *f_vel;
 
   BFT_MALLOC(s_n, n_cells_ext, cs_real_t);
   BFT_MALLOC(sf_n, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w61, n_cells_ext, cs_real_6_t);
-  BFT_MALLOC(w62, n_cells_ext, cs_real_6_t);
-
-  cs_field_gradient_vector(CS_F_(vel),
-                           false, // no use_previous_t
-                           1,     // inc
-                           gradv);
-
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    /* gradv[c_id][xyz][uvw] */
-
-    const cs_real_t s11  = gradv[c_id][0][0];
-    const cs_real_t s22  = gradv[c_id][1][1];
-    const cs_real_t s33  = gradv[c_id][2][2];
-    const cs_real_t dudy = gradv[c_id][0][1];
-    const cs_real_t dudz = gradv[c_id][0][2];
-    const cs_real_t dvdx = gradv[c_id][1][0];
-    const cs_real_t dvdz = gradv[c_id][1][2];
-    const cs_real_t dwdx = gradv[c_id][2][0];
-    const cs_real_t dwdy = gradv[c_id][2][1];
-
-    /* In the case of constant density, s11+s22+s33 is zero */
-
-    xmij[c_id][0] = s11-irovar*1.0/3.0*(s11+s22+s33);
-    xmij[c_id][1] = s22-irovar*1.0/3.0*(s11+s22+s33);
-    xmij[c_id][2] = s33-irovar*1.0/3.0*(s11+s22+s33);
-    xmij[c_id][3] = 0.5*(dudy+dvdx);
-    xmij[c_id][4] = 0.5*(dudz+dwdx);
-    xmij[c_id][5] = 0.5*(dvdz+dwdy);
-
-    s_n[c_id] = sqrt_2 * sqrt(  cs_math_pow2(xmij[c_id][0])
-                              + cs_math_pow2(xmij[c_id][1])
-                              + cs_math_pow2(xmij[c_id][2])
-                              + 2.0 * (  cs_math_pow2(xmij[c_id][3])
-                                       + cs_math_pow2(xmij[c_id][4])
-                                       + cs_math_pow2(xmij[c_id][5])));
-
-    for (cs_lnum_t i = 0; i < 6; i++)
-      w62[c_id][i] = xro[c_id] * xmij[c_id][i];
-  }
-
-  /* w62 temperarily contains rho*S */
-
-  cs_les_filter(6, (cs_real_t*)w62, (cs_real_t*)w61);
-
-  /* w61 <rho*S>/<rho>, sf_n is ||<rho*S>/<rho>|| */
-
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    for (cs_lnum_t i = 0; i < 6; i++)
-      w61[c_id][i] /= xrof[c_id];
-
-    sf_n[c_id] = sqrt_2 * sqrt(  cs_math_pow2(w61[c_id][0])
-                               + cs_math_pow2(w61[c_id][1])
-                               + cs_math_pow2(w61[c_id][2])
-                               +2.0 * (  cs_math_pow2(w61[c_id][3])
-                                       + cs_math_pow2(w61[c_id][4])
-                                       + cs_math_pow2(w61[c_id][5])));
-  }
-
-  /* Here XMIJ contains Sij
-   *   S_n  contains ||S||
-   *       sqrt(2)*sqrt(S11^2+S22^2+S33^2+2(S12^2+S13^2+S23^2))
-   *   Sf_n contains ||SF||
-   *       sqrt(2)*sqrt(S11F^2+S22F^2+S33F^2+2(S12F^2+S13F^2+S23F^2)) */
-
-  /* Calculation of Mij
-   *===================== */
-
-  /* Reuse xmij as temporary array */
-
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
-                                                 cs_turb_bles);
-    w0[c_id] = delta;
-    for (cs_lnum_t ii = 0; ii < 6; ii++)
-      xmij[c_id][ii] *= -2.0 * xro[c_id] * cs_math_pow2(delta) * s_n[c_id];
-  }
-
-  /* w62 now contains <-2*rho*delta^2*||S||*S> */
-  cs_les_filter(6, (cs_real_t*)xmij, (cs_real_t*)w62);
-
-  /* Now compute final xmij value: M_ij = alpha_ij - beta_ij */
-
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    const cs_real_t delta = w0[c_id];
-    const cs_real_t deltaf = xfil2*delta;
-    for (cs_lnum_t ii = 0; ii < 6; ii++)
-      xmij[c_id][ii] =    -2.0 * xro[c_id] * cs_math_pow2(deltaf)
-                        * sf_n[c_id] * w61[c_id][ii]
-                      - w62[c_id][ii];
-  }
-
-  BFT_FREE(w61);
-  BFT_FREE(w62);
-
-  /* Calculation of the dynamic Smagorinsky constant
-   *================================================ */
-
-  /* Allocate work arrays */
-  cs_real_t *w2, *w3, *w4, *w5;
-  cs_real_t *w6, *w7, *w8, *w9;
-
   BFT_MALLOC(w2, n_cells_ext, cs_real_t);
   BFT_MALLOC(w3, n_cells_ext, cs_real_t);
   BFT_MALLOC(w4, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w5, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w6, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w7, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w8, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w9, n_cells_ext, cs_real_t);
+  BFT_MALLOC(f_vel, n_cells_ext, cs_real_3_t);
 
-  /* Filtering the velocity and its square */
-
-  // U^2
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++)
-    w0[c_id] = xro[c_id]*vel[c_id][0]*vel[c_id][0];
-  cs_les_filter(1, w0, w1);
-
-  // V^2
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++)
-    w0[c_id] = xro[c_id]*vel[c_id][1]*vel[c_id][1];
-  cs_les_filter(1, w0, w2);
-
-  // W^2
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++)
-    w0[c_id] = xro[c_id]*vel[c_id][2]*vel[c_id][2];
-  cs_les_filter(1, w0, w3);
-
-  // UV
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++)
-    w0[c_id] = xro[c_id]*vel[c_id][0]*vel[c_id][1];
-  cs_les_filter(1, w0, w4);
-
-  // UW
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++)
-    w0[c_id] = xro[c_id]*vel[c_id][0]*vel[c_id][2];
-  cs_les_filter(1, w0, w5);
-
-  // VW
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++)
-    w0[c_id] = xro[c_id]*vel[c_id][1]*vel[c_id][2];
-  cs_les_filter(1, w0, w6);
-
-  // U
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++)
-    w0[c_id] = xro[c_id]*vel[c_id][0];
-  cs_les_filter(1, w0, w7);
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++)
-    w7[c_id] = w7[c_id]/xrof[c_id];
-
-  // V
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++)
-    w0[c_id] = xro[c_id]*vel[c_id][1];
-  cs_les_filter(1, w0, w8);
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++)
-    w8[c_id] = w8[c_id]/xrof[c_id];
-
-  // W
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++)
-    w0[c_id] = xro[c_id]*vel[c_id][2];
-  cs_les_filter(1, w0, w9);
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++)
-    w9[c_id] = w9[c_id]/xrof[c_id];
-
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
-
-    /* Calculation of Lij */
-    const cs_real_t xl11 = w1[c_id]-xrof[c_id]*w7[c_id]*w7[c_id];
-    const cs_real_t xl22 = w2[c_id]-xrof[c_id]*w8[c_id]*w8[c_id];
-    const cs_real_t xl33 = w3[c_id]-xrof[c_id]*w9[c_id]*w9[c_id];
-    const cs_real_t xl12 = w4[c_id]-xrof[c_id]*w7[c_id]*w8[c_id];
-    const cs_real_t xl13 = w5[c_id]-xrof[c_id]*w7[c_id]*w9[c_id];
-    const cs_real_t xl23 = w6[c_id]-xrof[c_id]*w8[c_id]*w9[c_id];
-
-    const cs_real_t xm11 = xmij[c_id][0];
-    const cs_real_t xm22 = xmij[c_id][1];
-    const cs_real_t xm33 = xmij[c_id][2];
-    const cs_real_t xm12 = xmij[c_id][3];
-    const cs_real_t xm13 = xmij[c_id][4];
-    const cs_real_t xm23 = xmij[c_id][5];
-
-    /* Calculation of Mij :: Lij */
-    w1[c_id] =   xm11*xl11 + 2.0*xm12*xl12 + 2.0*xm13*xl13
-               +                 xm22*xl22 + 2.0*xm23*xl23
-               +                                 xm33*xl33;
-
-    /* Calculation of Mij :: Mij */
-    w2[c_id] =   xm11*xm11 + 2.0*xm12*xm12 + 2.0*xm13*xm13
-               +                 xm22*xm22 + 2.0*xm23*xm23
-               +                                 xm33*xm33;
-
-  }
-
-  BFT_FREE(xmij);
+  /* Compute:
+   *   s_n (aka sqrt(2SijSij))
+   *   sf_n (aka ||<rho*S>/<rho>||),
+   *   filtered vel
+   *   Mij:Mij
+   *   Lij:Mij
+   */
+  cs_les_mu_t_smago_dyn_prepare(s_n, sf_n, f_vel, w2, w1);
 
   /* By default we compute a local average of the numerator and of the
-     denominator, then only compute  the quotient. The user can override
-     this  in cs_user_physical_properties_smagorinsky_c. */
+     denominator, then only compute  the quotient. The user can overwrite
+     this in cs_user_physical_properties_turb_viscosity. */
 
   cs_les_filter(1, w1, w3);
   cs_les_filter(1, w2, w4);
@@ -371,8 +400,6 @@ cs_les_mu_t_smago_dyn(void)
     else
       cpro_smago[c_id] = w3[c_id]/w4[c_id];
   }
-
-  cs_user_physical_properties_smagorinsky_c(cs_glob_domain, w1, w2);
 
   cs_gnum_t iclipc = 0;
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -530,7 +557,7 @@ cs_les_mu_t_smago_dyn(void)
         w0[c_id] = cvar_sca[c_id]*xro[c_id];
       cs_les_filter(1, w0, w4);
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        w4[c_id] = w4[c_id]/xrof[c_id];
+        w4[c_id] /= xrof[c_id];
 
       const cs_equation_param_t *eqp_fld
         = cs_field_get_equation_param_const(fld);
@@ -564,52 +591,41 @@ cs_les_mu_t_smago_dyn(void)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
                                                      cs_turb_bles);
-        for (cs_lnum_t ii = 0; ii < 3; ii++)
-          scami[c_id][ii]
-            = -xro[c_id]*cs_math_pow2(delta)*s_n[c_id]*grads[c_id][ii];
+        for (cs_lnum_t i = 0; i < 3; i++)
+          scami[c_id][i]
+            = -xro[c_id]*cs_math_pow2(delta)*s_n[c_id]*grads[c_id][i];
       }
 
       cs_les_filter(3, (cs_real_t *)scami, (cs_real_t *)scamif);
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        const cs_real_t deltaf  = xfil2* pow(xa*cell_vol[c_id],xb);
-        for (int ii = 0; ii < 3; ii++)
-          scami[c_id][ii] = - cs_math_pow2(deltaf)*xrof[c_id]
-                              * sf_n[c_id]*gradsf[c_id][ii]
-                            - scamif[c_id][ii];
+        const cs_real_t deltaf  = cs_turb_xlesfd * pow(xa*cell_vol[c_id],xb);
+        for (cs_lnum_t i = 0; i < 3; i++)
+          scami[c_id][i] = - cs_math_pow2(deltaf)*xrof[c_id]
+                              * sf_n[c_id]*gradsf[c_id][i]
+                            - scamif[c_id][i];
       }
 
       /* Compute the Li for scalar
        * ========================= */
 
-      /* rho*U*Y */
+      cs_real_3_t *f_sca_vel;
+      BFT_MALLOC(f_sca_vel, n_cells_ext, cs_real_3_t);
+
+      /* rho*Y*vel */
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        w0[c_id] = xro[c_id]*vel[c_id][0]*cvar_sca[c_id];
+        for (cs_lnum_t i = 0; i < 3; i++)
+          w_v[c_id][i] = xro[c_id]*vel[c_id][i]*cvar_sca[c_id];
       }
-      cs_les_filter(1, w0, w1);
-
-      /* rho*V*Y */
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        w0[c_id] = xro[c_id]*vel[c_id][1]*cvar_sca[c_id];
-      }
-      cs_les_filter(1, w0, w2);
-
-      /* rho*W*Y */
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        w0[c_id] = xro[c_id]*vel[c_id][2]*cvar_sca[c_id];
-      }
-      cs_les_filter(1, w0, w3);
+      cs_les_filter(3, (cs_real_t*)w_v, (cs_real_t*)f_sca_vel);
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        const cs_real_t scal1 = w1[c_id] - xrof[c_id]*w7[c_id]*w4[c_id];
-        const cs_real_t scal2 = w2[c_id] - xrof[c_id]*w8[c_id]*w4[c_id];
-        const cs_real_t scal3 = w3[c_id] - xrof[c_id]*w9[c_id]*w4[c_id];
+        /* filter(rho Y vel) - rho filter(rho vel)/rho filter(Y)/rho */
+        cs_real_t variance[3];
+        for (cs_lnum_t i = 0; i < 3; i++)
+          variance[i] = f_sca_vel[c_id][i] - xrof[c_id]*f_vel[c_id][i]*w4[c_id];
 
-        w1[c_id] =   scal1*scami[c_id][0]
-                   + scal2*scami[c_id][1]
-                   + scal3*scami[c_id][2];
-        w2[c_id] =   cs_math_pow2(scami[c_id][0])
-                   + cs_math_pow2(scami[c_id][1])
-                   + cs_math_pow2(scami[c_id][2]);
+        w1[c_id] = cs_math_3_dot_product(variance, scami[c_id]);
+        w2[c_id] = cs_math_3_square_norm(scami[c_id]);
       }
 
       cs_les_filter(1, w1, w3);
@@ -642,13 +658,9 @@ cs_les_mu_t_smago_dyn(void)
   /* Free memory */
   BFT_FREE(s_n);
   BFT_FREE(sf_n);
-  BFT_FREE(gradv);
 
-  BFT_FREE(w9);
-  BFT_FREE(w8);
-  BFT_FREE(w7);
-  BFT_FREE(w6);
-  BFT_FREE(w5);
+  BFT_FREE(w_v);
+  BFT_FREE(f_vel);
   BFT_FREE(w4);
   BFT_FREE(w3);
   BFT_FREE(w2);

@@ -685,6 +685,43 @@ cs_math_sym_33_3_product_add(const cs_real_t  m[6],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the product of two symmetric matrices of 3x3 real values
+ * and take the trace.
+ * NB: Symmetric matrix are stored as follows (s11, s22, s33, s12, s23, s13)
+ * \return trace
+ *
+ * \param[in]     m1            matrix of 3x3 real values
+ * \param[in]     m2            matrix of 3x3 real values
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_sym_33_sym_33_product_trace(const cs_real_t  m1[6],
+                                    const cs_real_t  m2[6])
+{
+  return m1[0]*m2[0] + 2.*m1[3]*m2[3] + 2.*m1[5]*m2[5]
+                     +    m1[1]*m2[1] + 2.*m1[4]*m2[4]
+                                      +    m1[2]*m2[2];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the trace of a 3x3 tensor.
+ *
+ * \param[in]   t   tensor of 3x3 real values
+ *
+ * \return trace (t[0][0] + t[1][1] + t[2][2])
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_33_trace(const cs_real_t  t[3][3])
+{
+  return (t[0][0] + t[1][1] + t[2][2]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the trace of a symmetric tensor.
  *
  * \param[in]   t   vector of 6 real values (symmetric tensor)

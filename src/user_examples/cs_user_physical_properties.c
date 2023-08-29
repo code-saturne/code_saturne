@@ -256,34 +256,46 @@ cs_user_physical_properties_t_to_h(cs_domain_t      *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief User modification of the Smagorinsky constant for the
- *        dynamic Smagorinsky model.
+ * \brief User modification of the turbulence viscosity.
  *
- * CS = Mij.Lij / Mij.Mij
- *
- * The local averages of the numerator and denominator are done before calling
- * this function, so
- *
- * CS = < Mij.Lij > / < Mij.Mij >
- *
- * In this subroutine, Mij.Lij and Mij.Mij are passed as arguments before
- * the local average.
+ * Turbulent viscosity \f$ \mu_T \f$ (kg/(m s)) can be modified.
+ * You can access the field by its name.
  *
  * \param[in, out]   domain      pointer to a cs_domain_t structure
- * \param[in]        mijlij      mij.lij before the local averaging
- * \param[in]        mijmij      mij.mij before the local averaging
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_physical_properties_smagorinsky_c(cs_domain_t      *domain,
-                                          const cs_real_t   mijlij[],
-                                          const cs_real_t   mijmij[])
+cs_user_physical_properties_turb_viscosity(cs_domain_t      *domain)
 {
+
+  cs_lnum_t n_cells_ext = domain->mesh->n_cells_with_ghosts;
+
+  /* Recompute Mij:Mij and Lij:Mij */
+  cs_real_t  *mijlij;
+  cs_real_t  *mijmij;
+  cs_real_t *s_n, *sf_n;
+  cs_real_3_t *f_vel;
+  BFT_MALLOC(mijlij, n_cells_ext, cs_real_t);
+  BFT_MALLOC(mijmij, n_cells_ext, cs_real_t);
+  BFT_MALLOC(s_n, n_cells_ext, cs_real_t);
+  BFT_MALLOC(sf_n, n_cells_ext, cs_real_t);
+  BFT_MALLOC(f_vel, n_cells_ext, cs_real_3_t);
+
+  /* Compute:
+   *   s_n (aka sqrt(2SijSij))
+   *   sf_n (aka ||<rho*S>/<rho>||),
+   *   filtered vel
+   *   Mij:Mij
+   *   Lij:Mij
+   */
+  cs_les_mu_t_smago_dyn_prepare(s_n, sf_n, f_vel, mijmij, mijlij);
+
   const cs_lnum_t n_cells = domain->mesh->n_cells;
   const cs_real_t tot_vol = domain->mesh_quantities->tot_vol;
   const cs_real_t *cell_vol = domain->mesh_quantities->cell_vol;
 
+  /* Overwrite Smagorinsky constant */
   cs_real_t *cpro_smago
     = cs_field_by_name("smagorinsky_constant^2")->val;
 
@@ -294,6 +306,13 @@ cs_user_physical_properties_smagorinsky_c(cs_domain_t      *domain,
     mijmijmoy += mijmij[c_id]*cell_vol[c_id];
   }
 
+  /* Free memory */
+  BFT_FREE(s_n);
+  BFT_FREE(sf_n);
+  BFT_FREE(f_vel);
+  BFT_FREE(mijmij);
+  BFT_FREE(mijlij);
+
   cs_parall_sum(1, CS_REAL_TYPE, &mijlijmoy);
   cs_parall_sum(1, CS_REAL_TYPE, &mijmijmoy);
 
@@ -302,6 +321,19 @@ cs_user_physical_properties_smagorinsky_c(cs_domain_t      *domain,
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     cpro_smago[c_id] = mijlijmoy/mijmijmoy;
+
+  /* Calculation of (dynamic) viscosity
+   * ================================== */
+
+  cs_real_t *visct = CS_F_(mu)->val;
+  const cs_real_t *crom  = CS_F_(rho)->val;
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    const cs_real_t coef = cpro_smago[c_id];
+    const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
+                                                 cs_turb_bles);
+    visct[c_id] = crom[c_id]*coef*cs_math_pow2(delta)*s_n[c_id];
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

@@ -50,6 +50,30 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of  Mij:Mij and Mij:Lij for dynamic Smagorinsky model
+ *
+ * Please refer to the
+ * <a href="../../theory.pdf#dynsmago"><b>dynamic Smagorinsky model</b></a>
+ * section of the theory guide for more informations.
+ *
+ * \param[out]    s_n           strain rate (sqrt(2SijSij))
+ * \param[out]    sf_n          filtered strain rate
+ * \param[out]    f_vel         filtered velocity
+ * \param[out]    mijmij        Mij:Mij
+ * \param[out]    mijlij        Mij:Lij
+ *
+ !*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_les_mu_t_smago_dyn_prepare(cs_real_t s_n[],
+                              cs_real_t sf_n[],
+                              cs_real_3_t *f_vel,
+                              cs_real_t mijmij[],
+                              cs_real_t mijlij[]);
+
+/*----------------------------------------------------------------------------*/
 /*! \brief Calculation of turbulent viscosity for
  *        a dynamic Smagorinsky LES model
  *

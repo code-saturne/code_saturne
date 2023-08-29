@@ -263,10 +263,11 @@ module paramx
              cs_user_parameters, cs_user_physical_properties,         &
              cs_user_turbulence_source_terms,                         &
              cs_user_turbulence_source_terms2,                        &
-             cs_user_atmo_soil
+             cs_user_atmo_soil, cs_user_physical_properties_smagorinsky_c
+
 
   integer :: usalcl, usatdv, usati1, usatph, usatsoil, ushist,        &
              usporo, ussmag, usstr1, usstr2, ustsnv, ustsvv, usthht,  &
-             usvosy, usvpst
+             usvosy, usvpst, usvist
 
 end module paramx
