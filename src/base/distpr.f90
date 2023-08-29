@@ -370,6 +370,10 @@ deallocate(grad)
 ! 6. Compute bounds and print info
 !===============================================================================
 
+if (irangp.ge.0 .or. iperio.eq.1) then
+  call synsce(cvar_var)
+endif
+
 dismax = -grand
 dismin =  grand
 
