@@ -166,13 +166,13 @@ typedef struct {
   int *inmoxy;
 
   /*! gas combustion (cogz) */
-  int ientfu[CS_MAX_BC_PM_ZONE_NUM+1]; // <-- 1 for fuel flow inlet (gas combustion)
+  int ientfu[CS_MAX_BC_PM_ZONE_NUM+1]; // <-- 1 for fuel flow inlet
 
-  int ientox[CS_MAX_BC_PM_ZONE_NUM+1]; // <-- 1 for an air fow inlet (gas combustion)
+  int ientox[CS_MAX_BC_PM_ZONE_NUM+1]; // <-- 1 for an air fow inlet
 
-  int ientgb[CS_MAX_BC_PM_ZONE_NUM+1]; // <-- 1 for burned gas inlet (gas combustion)
+  int ientgb[CS_MAX_BC_PM_ZONE_NUM+1]; // <-- 1 for burned gas inlet
 
-  int ientgf[CS_MAX_BC_PM_ZONE_NUM+1]; // <-- 1 for unburned gas inlet (gas combustion)
+  int ientgf[CS_MAX_BC_PM_ZONE_NUM+1]; // <-- 1 for unburned gas inlet
 
   /*! inlet temperature (gas combustion) */
   double tkent[CS_MAX_BC_PM_ZONE_NUM+1];
@@ -371,6 +371,24 @@ cs_boundary_conditions_reset(void);
 
 void
 cs_boundary_conditions_compute(int  bc_type[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define automatic turbulence values for specific physical modules.
+ *
+ * The definitions the same as for the standard case, but determination
+ * of face BC types is done using the legacy physical model zone info
+ * (cs_glob_bc_pm_info->izfpp, ...).
+ *
+ * \deprecated  Code should migrate to the "per zone" open boundary condition
+ * definitions.
+ *
+ * \param[in]  bc_type  type of boundary for each face
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_legacy_turbulence(int  bc_type[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

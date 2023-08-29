@@ -140,13 +140,11 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Initialization of boundary condition arrays.
- *
- * \param[in]     itrale        ALE iteration number
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_set_coeffs_init(int  itrale);
+cs_boundary_conditions_set_coeffs_init(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

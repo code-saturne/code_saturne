@@ -1386,8 +1386,8 @@ static void
 _standard_turbulence_bcs(void)
 {
   const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
   const cs_lnum_t n_b_faces = m->n_b_faces;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
   const cs_real_t *b_rho = CS_F_(rho_b)->val;
@@ -1399,18 +1399,24 @@ _standard_turbulence_bcs(void)
 
   /* Inlet BC's */
 
-  cs_field_t *w_dist = cs_field_by_name_try("wall_distance");
-  cs_real_3_t *grady;
+  cs_field_t *w_dist = NULL;
+  cs_halo_type_t halo_type = m->halo_type;
 
-  /* Compute the wall direction */
-  if (w_dist != NULL) {
-    BFT_MALLOC(grady, n_cells_ext, cs_real_3_t);
+  /* For some models, we will need the gradient of the wall distance
+     for the shear direction; prepare things here to avoid excess tests
+     in loops. */
 
-    cs_field_gradient_scalar(w_dist,
-                             false,  /* use_previous_t */
-                             1,      /* inc */
-                             grady);
-
+  if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
+    w_dist = cs_field_by_name_try("wall_distance");
+    if (w_dist->bc_coeffs == NULL)
+      w_dist = NULL;
+    else {
+      const cs_equation_param_t *eqp = cs_field_get_equation_param(w_dist);
+      cs_gradient_type_t  gradient_type;
+      cs_gradient_type_by_imrgra(eqp->imrgra,
+                                 &gradient_type,
+                                 &halo_type);
+    }
   }
 
   /* Loop on open boundaries */
@@ -1420,33 +1426,54 @@ _standard_turbulence_bcs(void)
 
     if (c->turb_compute > CS_BC_TURB_NONE) {
 
+      const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_u_normal;
       const cs_zone_t *z = c->zone;
       const cs_real_t dh = c->hyd_diameter;
 
-      if (c->turb_compute == CS_BC_TURB_BY_HYDRAULIC_DIAMETER) {
+      const cs_real_t ant = -sqrt(cs_turb_cmu); /* Note: should be
+                                                   model dependant */
 
-        for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-          cs_lnum_t face_id = z->elt_ids[i];
-          cs_lnum_t cell_id = b_face_cells[face_id];
+      /* Now compute BC values at zone's faces */
 
-          cs_real_t vel[3] = {_rcodcl_v[0][face_id],
-                              _rcodcl_v[1][face_id],
-                              _rcodcl_v[2][face_id]};
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+
+        cs_lnum_t face_id = z->elt_ids[i];
+        cs_lnum_t cell_id = b_face_cells[face_id];
+
+        cs_real_t vel[3] = {_rcodcl_v[0][face_id],
+                            _rcodcl_v[1][face_id],
+                            _rcodcl_v[2][face_id]};
+
+        if (cs_math_3_dot_product(vel, f_n[face_id]) > 0) {
+          cs_turbulence_bc_set_hmg_neumann(face_id);
+          continue;
+        }
+
+        if (c->turb_compute == CS_BC_TURB_BY_HYDRAULIC_DIAMETER) {
           cs_real_t uref2 = fmax(cs_math_3_square_norm(vel),
                                  cs_math_epzero);
-
-          /* Note: should be model dependant */
-          cs_real_t ant = -sqrt(cs_turb_cmu);
 
           cs_real_t *vel_dir = NULL;
           cs_real_t *shear_dir = NULL;
           cs_real_t _shear_dir[3];
+
+          /* Compute the wall direction only if needed */
           if (w_dist != NULL) {
+            cs_gradient_scalar_cell(m,
+                                    mq,
+                                    b_face_cells[face_id],
+                                    halo_type,
+                                    w_dist->bc_coeffs->a,
+                                    w_dist->bc_coeffs->b,
+                                    w_dist->val,
+                                    NULL,  /* c_weight */
+                                    _shear_dir);
+            cs_math_3_normalize(_shear_dir, _shear_dir);
+            for (int j = 0; j < 3; j++)
+              _shear_dir[j] *= ant;
+
             vel_dir = vel;
             shear_dir = _shear_dir;
-            cs_math_3_normalize(grady[cell_id], shear_dir);
-            for (int j = 0; j < 3; j++)
-              shear_dir[j] *= ant;
           }
 
           cs_turbulence_bc_set_uninit_inlet_hyd_diam(face_id,
@@ -1457,22 +1484,14 @@ _standard_turbulence_bcs(void)
                                                      c_mu[cell_id]);
         }
 
-      }
-      else if (c->turb_compute == CS_BC_TURB_BY_TURBULENT_INTENSITY) {
-
-        const cs_real_t t_intensity = c->turb_intensity;
-
-        for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-          cs_lnum_t face_id = z->elt_ids[i];
-
-          cs_real_t vel[3] = {_rcodcl_v[0][face_id],
-                              _rcodcl_v[1][face_id],
-                              _rcodcl_v[2][face_id]};
+        else if (c->turb_compute == CS_BC_TURB_BY_TURBULENT_INTENSITY) {
           cs_real_t uref2 = fmax(cs_math_3_square_norm(vel),
                                  cs_math_epzero);
 
-          cs_turbulence_bc_set_uninit_inlet_turb_intensity(face_id, uref2,
-                                                           t_intensity, dh);
+          cs_turbulence_bc_set_uninit_inlet_turb_intensity(face_id,
+                                                           uref2,
+                                                           c->turb_intensity,
+                                                           dh);
         }
 
       }
@@ -1480,9 +1499,6 @@ _standard_turbulence_bcs(void)
     } /* End for inlet */
 
   }
-
-  if (w_dist != NULL)
-    BFT_FREE(grady);
 
   /* Automatic wall condition for alpha */
 
@@ -2701,6 +2717,117 @@ cs_boundary_conditions_compute(int  bc_type[])
 
   if (std_turbulence_bcs)
     _standard_turbulence_bcs();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define automatic turbulence values for specific physical modules.
+ *
+ * The definitions are similar to those of the standard case, though wall
+ * shear direction is not computed for second-order models, and determination
+ * of face BC types is done using the legacy physical model zone info
+ * (cs_glob_bc_pm_info->izfpp, ...).
+ *
+ * \deprecated  Code should migrate to the "per zone" open boundary condition
+ * definitions.
+ *
+ * \param[in]  bc_type  type of boundary for each face
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_legacy_turbulence(int  bc_type[])
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
+
+  const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_u_normal;
+
+  const cs_real_t *b_rho = CS_F_(rho_b)->val;
+  const cs_real_t *c_mu = CS_F_(mu)->val;
+
+  const cs_real_t  *_rcodcl_v[3];
+  for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
+    _rcodcl_v[coo_id] = CS_F_(vel)->bc_coeffs->rcodcl1 + coo_id*n_b_faces;
+
+  const int *izfpp = cs_glob_bc_pm_info->izfppp;
+  const int *icalke = cs_glob_bc_pm_info->icalke;
+  const cs_real_t *dh = cs_glob_bc_pm_info->dh;
+  const cs_real_t *xintur = cs_glob_bc_pm_info->xintur;
+
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+
+    int f_face_type = bc_type[face_id];
+
+    if (   f_face_type != CS_INLET
+        && f_face_type != CS_FREE_INLET
+        && f_face_type != CS_CONVECTIVE_INLET)
+      continue;
+
+    int zone_id = izfpp[face_id];
+    if (zone_id < 1)
+      continue;
+
+    cs_real_t vel[3] = {_rcodcl_v[0][face_id],
+                        _rcodcl_v[1][face_id],
+                        _rcodcl_v[2][face_id]};
+
+    if (cs_math_3_dot_product(vel, f_n[face_id]) > 0) {
+      cs_turbulence_bc_set_hmg_neumann(face_id);
+      continue;
+    }
+
+    if (icalke[zone_id] == 1) {
+      cs_real_t uref2 = fmax(cs_math_3_square_norm(vel), cs_math_epzero);
+      cs_lnum_t cell_id = b_face_cells[face_id];
+
+      cs_turbulence_bc_inlet_hyd_diam(face_id,
+                                      uref2,
+                                      dh[zone_id],
+                                      b_rho[face_id],
+                                      c_mu[cell_id]);
+    }
+
+    else if (icalke[zone_id] == 2) {
+      cs_real_t uref2 = fmax(cs_math_3_square_norm(vel), cs_math_epzero);
+
+      cs_turbulence_bc_inlet_turb_intensity(face_id,
+                                            uref2,
+                                            xintur[zone_id],
+                                            dh[zone_id]);
+    }
+
+  }
+
+  /* Automatic wall condition for alpha */
+
+  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+
+    if (CS_F_(alp_bl)->bc_coeffs != NULL) {
+      cs_real_t *_rcodcl_alp = CS_F_(alp_bl)->bc_coeffs->rcodcl1;
+
+      const cs_boundary_t *boundaries = cs_glob_boundaries;
+
+      for (int b_id = 0; b_id < boundaries->n_boundaries; b_id++) {
+
+        cs_boundary_type_t type = boundaries->types[b_id];
+
+        if (type & CS_BOUNDARY_WALL) {
+          const cs_zone_t *z
+            = cs_boundary_zone_by_id(boundaries->zone_ids[b_id]);
+
+          for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+            cs_lnum_t face_id = z->elt_ids[i];
+            _rcodcl_alp[face_id] = 0.;
+          }
+
+        }
+      }
+    }
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/

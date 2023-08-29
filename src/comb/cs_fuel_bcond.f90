@@ -173,6 +173,7 @@ endif
 !       Loop over all inlet faces
 !                     =========================
 !===============================================================================
+
 ! --- Calculated flow
 do izone = 1, nozppm
   qcalc(izone) = 0.d0
@@ -200,7 +201,6 @@ if ( ntcabs .gt. 1 ) then
   !
   ! --- Velocity correction in norm: we do it only at the
   !     second iteration because the first one the mass density is not known yet
-
 
   iok = 0
   do ii = 1, nzfppp
@@ -332,71 +332,15 @@ endif
 '@                                                            ',/)
 
 !===============================================================================
-! 4.  Filling the boundary conditions table
-!       Loop on all input faces
-!                     =========================
-!         We determine the family and its properties
-!           We impose the boundary conditions
-!           for the turbulence
-
+! 4.  Turbulence boundary conditions
 !===============================================================================
-do ifac = 1, nfabor
 
-  izone = izfppp(ifac)
-
-  if ( itypfb(ifac).eq.ientre ) then
-
-    ! ----  Automatic treatement for turbulence
-
-    if ( icalke(izone).ne.0 ) then
-
-      !       The turbulence is calculated by default if icalke different from 0
-      !          - either from the hydrolic diameter, an reference velocity
-      !            adapted to current input if icalke = 1
-      !          - or from the hydrolic diameter, a reference velocity and
-      !            the turbulent intensity adapted to the current input
-      !            if icalke = 2
-
-      uref2 = rcodcl(ifac,iu,1)**2                         &
-            + rcodcl(ifac,iv,1)**2                         &
-            + rcodcl(ifac,iw,1)**2
-      uref2 = max(uref2,1.d-12)
-      rhomoy = brom(ifac)
-      iel    = ifabor(ifac)
-      viscla = viscl(iel)
-      icke   = icalke(izone)
-      dhy    = dh(izone)
-      xiturb = xintur(izone)
-
-      if (icke.eq.1) then
-
-        !   Calculation of turbulent inlet conditions using
-        !     standard laws for a circular pipe
-        !     (their initialization is not needed here but is good practice).
-        call turbulence_bc_inlet_hyd_diam(ifac, uref2, dhy, rhomoy, viscla,  &
-                                          rcodcl)
-      else if (icke.eq.2) then
-
-        ! Calculation of turbulent inlet conditions using
-        !   the turbulence intensity and standard laws for a circular pipe
-        !   (their initialization is not needed here but is good practice)
-
-        call turbulence_bc_inlet_turb_intensity(ifac, uref2, xiturb, dhy,  &
-                                                rcodcl)
-
-
-      endif
-
-    endif
-
-  endif
-
-enddo
+call cs_boundary_conditions_legacy_turbulence(itypfb)
 
 !===============================================================================
 ! 5.  Filling the boundary conditions table
 !     Loop on all input faces
-!                     =========================
+!     =======================
 !     We determine the family and its properties
 !     We impose the boundary conditions
 !     for the scalars
@@ -471,7 +415,6 @@ do ifac = 1, nfabor
 
   izone = izfppp(ifac)
 
-
   if ( itypfb(ifac).eq.ientre ) then
 
     ! ----  Automatic treatment for specific physics scalars
@@ -542,7 +485,6 @@ do ifac = 1, nfabor
     if (itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) then
 
       do icla = 1, nclafu
-
         icodcl(ifac, isca(iv_p_x(icla))) = 1
         icodcl(ifac, isca(iv_p_y(icla))) = 1
         icodcl(ifac, isca(iv_p_z(icla))) = 1

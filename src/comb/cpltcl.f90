@@ -20,52 +20,45 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cpltcl &
-!================
-
- ( itypfb , izfppp ,                                              &
-   rcodcl )
-
 !===============================================================================
-! FONCTION :
+! Function:
 ! --------
 
-!   SOUS-PROGRAMME DU MODULE LAGRANGIEN COUPLE CHARBON PULVERISE :
-!   --------------------------------------------------------------
+!> \brief Automatic boundary condition for pulverized coal combution
+!>        with Lagrangian module.
 
-!    ROUTINE UTILISATEUR POUR PHYSIQUE PARTICULIERE
-
-!      COMBUSTION EULERIENNE DE CHARBON PULVERISE ET
-!      TRANSPORT LAGRANGIEN DES PARTICULES DE CHARBON
-
-!      CONDITIONS AUX LIMITES AUTOMATIQUES
+!-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! itypfb           ! ia ! <-- ! boundary face types                            !
-! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
-!                  !    !     !  pour le module phys. part.                    !
-! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!                  !    !     !  aux faces de bord                             !
-!                  !    !     ! rcodcl(1) = valeur du dirichlet                !
-!                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
-!                  !    !     !  ext. (infinie si pas d'echange)               !
-!                  !    !     ! rcodcl(3) = valeur de la densite de            !
-!                  !    !     !  flux (negatif si gain) w/m2 ou                !
-!                  !    !     !  hauteur de rugosite (m) si icodcl=6           !
-!                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
-!                  !    !     ! pour la pression             dt*gradp          !
-!                  !    !     ! pour les scalaires                             !
-!                  !    !     !        cp*(viscls+visct/turb_schmidt)*gradt    !
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     itypfb        boundary face types
+!> \param[in]     izfppp        zone number for the boundary face for
+!>                                      the specific physic module
+!!> \param[in,out] rcodcl        value of the boundary conditions to edge faces
+!>
+!>                              boundary condition values:
+!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(2) value of the exterior exchange
+!>                               -  coefficient (infinite if no exchange)
+!>                               -  rcodcl(3) value flux density
+!>                               -  (negative if gain) \f$w.m^{-2} \f$ or
+!>                               -  roughness in \f$m\f$ if  icodcl=6
+!>                                -# for velocity:
+!>                                           \f$(\mu+\mu_T)\gradv \vect{u}\f$
+!>                                -# for pressure: \f$ \Delta \grad P
+!>                                                 \cdot \vect{n} \f$
+!>                                -# for scalar:   \f$ C_p \left ( K +
+!>                                                 \dfrac{K_T}{\sigma_T} \right)
+!>                                                 \grad T \cdot \vect{n} \f$
+!______________________________________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+subroutine cpltcl &
+ ( itypfb , izfppp ,                                              &
+   rcodcl )
+
 !===============================================================================
 
 !===============================================================================
@@ -116,10 +109,8 @@ double precision, dimension(:), pointer ::  brom
 double precision, dimension(:), pointer :: viscl
 
 !===============================================================================
+! 0. Initializations
 !===============================================================================
-! 1.  INITIALISATIONS
-!===============================================================================
-
 
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(iviscl, viscl)
@@ -127,19 +118,16 @@ call field_get_val_s(iviscl, viscl)
 d2s3 = 2.d0/3.d0
 
 !===============================================================================
-! 1.  ECHANGES EN PARALLELE POUR LES DONNEES UTILISATEUR
+! 1.  Parallel exchanges for the user data
 !===============================================================================
-
-!  En realite on pourrait eviter cet echange en modifiant uscpcl et en
-!    demandant a l'utilisateur de donner les grandeurs dependant de la
-!    zone hors de la boucle sur les faces de bord : les grandeurs
-!    seraient ainsi disponibles sur tous les processeurs. Cependant,
-!    ca rend le sous programme utilisateur un peu plus complique et
-!    surtout, si l'utilisateur le modifie de travers, ca ne marche pas.
-!  On suppose que toutes les grandeurs fournies sont positives, ce qui
-!    permet d'utiliser un max pour que tous les procs les connaissent.
-!    Si ce n'est pas le cas, c'est plus complique mais on peut s'en tirer
-!    avec un max quand meme.
+!  In fact this exchange could be avoided by changing uscpcl and by asking
+!    the user to give the variables which depend of the area out of the loop
+!    on the boundary faces: the variables would be available on all processors.
+!  However, it makes the user subroutine a bit more complicated and especially
+!    if the user modifies it through, it does not work.
+!  We assume that all the provided variables are positive,
+!    which allows to use a max for the proceedings know them.
+!  If this is not the case, it is more complicated but we can get a max anyway.
 
 if (irangp.ge.0) then
   call parimx(nozapm,iqimp )
@@ -147,51 +135,43 @@ if (irangp.ge.0) then
   call parimx(nozapm,ientcp)
   call parrmx(nozapm,qimpat)
   call parrmx(nozapm,timpat)
-
   nbrval = nozppm*ncharm
   call parrmx(nbrval,qimpcp)
-
   nbrval = nozppm*ncharm
   call parrmx(nbrval,timpcp)
-
   nbrval = nozppm*ncharm*nclcpm
   call parrmx(nbrval,distch)
 endif
 
-
 !===============================================================================
-! 2.  CORRECTION DES VITESSES (EN NORME) POUR CONTROLER LES DEBITS
-!     IMPOSES
-!       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
+! 2.  Correction of the velocities (in norm) for controlling the imposed flow
+!       Loop over all inlet faces
 !                     =========================
 !===============================================================================
 
-! --- Debit calcule
-
+! --- Calculated flow
 do izone = 1, nozppm
   qcalc(izone) = 0.d0
 enddo
 do ifac = 1, nfabor
   izone = izfppp(ifac)
-  if (izone .gt. 0) then
-    qcalc(izone) = qcalc(izone) - brom(ifac) *         &
-       ( rcodcl(ifac,iu,1)*surfbo(1,ifac) +              &
-         rcodcl(ifac,iv,1)*surfbo(2,ifac) +              &
-         rcodcl(ifac,iw,1)*surfbo(3,ifac) )
-  endif
+  qcalc(izone) = qcalc(izone) - brom(ifac) *             &
+                ( rcodcl(ifac,iu,1)*surfbo(1,ifac) +       &
+                  rcodcl(ifac,iv,1)*surfbo(2,ifac) +       &
+                  rcodcl(ifac,iw,1)*surfbo(3,ifac) )
 enddo
 
-if(irangp.ge.0) then
+if (irangp.ge.0) then
   call parrsm(nozapm,qcalc )
 endif
 
 do izone = 1, nozapm
-  if ( iqimp(izone).eq.0 ) then
+  if (iqimp(izone).eq.0) then
     qimpc(izone) = qcalc(izone)
   endif
 enddo
 
-! --- Correction des vitesses en norme
+! Rescaling of the velocities (for mass flow)
 
 iok = 0
 do ii = 1, nzfppp
@@ -203,25 +183,21 @@ do ii = 1, nzfppp
     endif
   endif
 enddo
-if(iok.ne.0) then
-  call csexit (1)
-  !==========
+
+if (iok.ne.0) then
+  call csexit(1)
 endif
+
 do ifac = 1, nfabor
   izone = izfppp(ifac)
-   if (izone .gt. 0) then
-     if ( iqimp(izone).eq.1) then
-       qimpc(izone) = qimpat(izone)
-       qisqc = qimpc(izone)/qcalc(izone)
-       rcodcl(ifac,iu,1) = rcodcl(ifac,iu,1)*qisqc
-       rcodcl(ifac,iv,1) = rcodcl(ifac,iv,1)*qisqc
-       rcodcl(ifac,iw,1) = rcodcl(ifac,iw,1)*qisqc
-    endif
+  if (iqimp(izone).eq.1) then
+    qimpc(izone) = qimpat(izone)
+    qisqc = qimpc(izone)/qcalc(izone)
+    rcodcl(ifac,iu,1) = rcodcl(ifac,iu,1)*qisqc
+    rcodcl(ifac,iv,1) = rcodcl(ifac,iv,1)*qisqc
+    rcodcl(ifac,iw,1) = rcodcl(ifac,iw,1)*qisqc
   endif
-
 enddo
-
-
 
  2001 format(                                                           &
 '@                                                            ',/,&
@@ -255,89 +231,30 @@ enddo
 '@                                                            ',/)
 
 !===============================================================================
-! 3.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
-!       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
-!                     =========================
-!         ON DETERMINE LA FAMILLE ET SES PROPRIETES
-!           ON IMPOSE LES CONDITIONS AUX LIMITES
-!           POUR LA TURBULENCE
-
+! 3.  Filling the table of the boundary conditions
 !===============================================================================
 
-do ifac = 1, nfabor
-
-  izone = izfppp(ifac)
-
-!      ELEMENT ADJACENT A LA FACE DE BORD
-
-  if ( itypfb(ifac).eq.ientre ) then
-
-! ----  Traitement automatique de la turbulence
-
-    if ( icalke(izone).ne.0 ) then
-
-!       La turbulence est calculee par defaut si ICALKE different de 0
-!          - soit a partir du diametre hydraulique, d'une vitesse
-!            de reference adaptes a l'entree courante si ICALKE = 1
-!          - soit a partir du diametre hydraulique, d'une vitesse
-!            de reference et de l'intensite turvulente
-!            adaptes a l'entree courante si ICALKE = 2
-
-      uref2 = rcodcl(ifac,iu,1)**2                         &
-            + rcodcl(ifac,iv,1)**2                         &
-            + rcodcl(ifac,iw,1)**2
-      uref2 = max(uref2,1.d-12)
-      rhomoy = brom(ifac)
-      iel    = ifabor(ifac)
-      viscla = viscl(iel)
-      icke   = icalke(izone)
-      dhy    = dh(izone)
-      xiturb = xintur(izone)
-
-      if (icke.eq.1) then
-        !   Calculation of turbulent inlet conditions using
-        !     standard laws for a circular pipe
-        !     (their initialization is not needed here but is good practice).
-        call turbulence_bc_inlet_hyd_diam(ifac, uref2, dhy, rhomoy, viscla,  &
-                                          rcodcl)
-      else if (icke.eq.2) then
-
-        ! Calculation of turbulent inlet conditions using
-        !   the turbulence intensity and standard laws for a circular pipe
-        !   (their initialization is not needed here but is good practice)
-
-        call turbulence_bc_inlet_turb_intensity(ifac, uref2, xiturb, dhy,  &
-                                                rcodcl)
-
-
-      endif
-
-    endif
-
-  endif
-
-enddo
+call cs_boundary_conditions_legacy_turbulence(itypfb)
 
 !===============================================================================
-! 2.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
-!       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
+! 4.  Filling the boundary conditions table
+!     Loop on all input faces
 !                     =========================
-!         ON DETERMINE LA FAMILLE ET SES PROPRIETES
-!           ON IMPOSE LES CONDITIONS AUX LIMITES
-!           POUR LES SCALAIRES
+!     We determine the family and its properties
+!     We impose the boundary conditions
+!     for the scalars
 !===============================================================================
 
 do ii = 1, nzfppp
 
   izone = ilzppp(ii)
 
-! Une entree IENTRE est forcement du type
-!            IENTAT = 1 ou IENTCP = 1
+  ! An input ientre must be of type
+  ! ientat = 1 (or ientcp = 1 ?)
 
-  if ( ientat(izone).eq.1 ) then
+  if (ientat(izone).eq.1) then
 
-! ------ Calcul de H1(IZONE)
-
+    ! ------ Calculating H1(izone)
     do ige = 1, ngazem
       coefe(ige) = zero
     enddo
@@ -349,12 +266,9 @@ do ii = 1, nzfppp
     enddo
     t1   = timpat(izone)
     mode = -1
-    call cpthp1                                                   &
-    !==========
-    ( mode  , h1(izone) , coefe  , f1mc   , f2mc   ,              &
-      t1    )
+    call cpthp1(mode, h1(izone), coefe, f1mc, f2mc, t1)
 
-    endif
+  endif
 
 enddo
 
@@ -362,11 +276,9 @@ do ifac = 1, nfabor
 
   izone = izfppp(ifac)
 
-!      ELEMENT ADJACENT A LA FACE DE BORD
-
   if ( itypfb(ifac).eq.ientre ) then
 
-! ----  Traitement automatique des scalaires physiques particulieres
+    ! Automatic processing of specific physic scalars
 
     do icha = 1, ncharb
 
@@ -402,14 +314,8 @@ do ifac = 1, nfabor
 
 enddo
 
-
 !----
-! FORMATS
-!----
-
-
-!----
-! FIN
+! End
 !----
 
 return

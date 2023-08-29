@@ -54,7 +54,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * Initialize turbulence model boundary condition pointers.
  */
 /*----------------------------------------------------------------------------*/
@@ -63,7 +63,7 @@ void
 cs_turbulence_bc_init_pointers(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Free memory allocations for turbulence boundary condition pointers.
  */
 /*----------------------------------------------------------------------------*/
@@ -72,7 +72,7 @@ void
 cs_turbulence_bc_free_pointers(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Calculation of \f$ u^\star \f$, \f$ k \f$ and \f$\varepsilon \f$
  *        from a diameter \f$ D_H \f$ and the reference velocity \f$ U_{ref} \f$
  *        for a circular duct flow with smooth wall
@@ -126,7 +126,7 @@ cs_turbulence_bc_ke_hyd_diam(double   uref2,
                              double  *eps);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Calculation of \f$ k \f$ and \f$\varepsilon\f$
  *        from a diameter \f$ D_H \f$, a turbulent intensity \f$ I \f$
  *        and the reference velocity \f$ U_{ref} \f$
@@ -153,7 +153,7 @@ cs_turbulence_bc_ke_turb_intensity(double   uref2,
                                    double  *eps);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set inlet boundary condition values for turbulence variables based
  *        on a diameter \f$ D_H \f$ and the reference velocity \f$ U_{ref} \f$
  *        for a circular duct flow with smooth wall
@@ -195,7 +195,7 @@ cs_turbulence_bc_inlet_hyd_diam(cs_lnum_t   face_id,
                                 double      mu);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set inlet boundary condition values for turbulence variables based
  *        on a diameter \f$ D_H \f$, a turbulent intensity \f$ I \f$
  *        and the reference velocity \f$ U_{ref} \f$
@@ -215,7 +215,7 @@ cs_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_id,
                                       double      dh);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set inlet boundary condition values for turbulence variables based
  *        on given k and epsilon values.
  *
@@ -231,7 +231,7 @@ cs_turbulence_bc_inlet_k_eps(cs_lnum_t   face_id,
                              double      eps);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set inlet boundary condition values for turbulence variables based
  *        on a diameter \f$ D_H \f$ and the reference velocity \f$ U_{ref} \f$
  *        for a circular duct flow with smooth wall, only if not already set.
@@ -260,7 +260,7 @@ cs_turbulence_bc_set_uninit_inlet_hyd_diam(cs_lnum_t   face_id,
                                            double      mu);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set inlet boundary condition values for turbulence variables based
  *        on a diameter \f$ D_H \f$, a turbulent intensity \f$ I \f$
  *        and the reference velocity \f$ U_{ref} \f$
@@ -283,7 +283,7 @@ cs_turbulence_bc_set_uninit_inlet_turb_intensity(cs_lnum_t   face_id,
                                                  double      dh);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set inlet boundary condition values for turbulence variables based
  *        on given k and epsilon values only if not already initialized.
  *
@@ -303,7 +303,19 @@ cs_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_id,
                                         double      shear_dir[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
+ * \brief Assign homogeneous Neumann turbulent boundary conditions to
+ *        a given face.
+ *
+ * This is useful for outgoing flow.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_bc_set_hmg_neumann(cs_lnum_t   face_id);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Compute matrix \f$\tens{\alpha}\f$ used in the computation of the
  * Reynolds stress tensor boundary conditions.
  *

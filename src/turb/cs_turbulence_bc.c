@@ -929,6 +929,106 @@ cs_turbulence_bc_inlet_k_eps(cs_lnum_t   face_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Assign homogeneous Neumann turbulent boundary conditions to
+ *        a given face.
+ *
+ * This is useful for outgoing flow.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_bc_set_hmg_neumann(cs_lnum_t   face_id)
+{
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+  const cs_turb_model_t  *turb_model = cs_glob_turb_model;
+  assert(turb_model != NULL);
+
+  if (turb_model->itytur == 2) {
+
+    _turb_bc_id.bc_k->icodcl[face_id] = 3;
+    _turb_bc_id.bc_k->rcodcl3[face_id] = 0;
+
+    _turb_bc_id.bc_eps->icodcl[face_id] = 3;
+    _turb_bc_id.bc_eps->rcodcl3[face_id] = 0;
+
+  }
+
+  else if (turb_model->order == CS_TURB_SECOND_ORDER) {
+
+    _turb_bc_id.bc_rij->icodcl[face_id] = 3;
+
+    for (int ii = 3; ii < 6; ii++)
+      _turb_bc_id.bc_rij->rcodcl3[ii*n_b_faces + face_id] = 0.;
+
+    _turb_bc_id.bc_eps->icodcl[face_id] = 3;
+    _turb_bc_id.bc_eps->rcodcl3[face_id] = 0;
+
+    if (turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+      _turb_bc_id.bc_alp_bl->icodcl[face_id] = 0.;
+      _turb_bc_id.bc_alp_bl->rcodcl3[face_id] = 0.;
+    }
+
+    /* Turbulent fluxes if DFM or
+     * EB-DFM are used for scalars (turbulence_flux_model = 30 or 31)
+     * Alpha_theta for EB-DFM / EB-AFM / EB-GGDH */
+
+    if (_turb_bc_id.size_ut > 0) {
+      for (int id = 0; id < _turb_bc_id.size_ut; id++) {
+        cs_field_t *fld = _turb_bc_id.f_ut[id];
+        fld->bc_coeffs->icodcl[face_id] = 3.;
+        for (int ii = 0; ii < fld->dim; ii++)
+          fld->bc_coeffs->rcodcl3[ii*n_b_faces + face_id] = 0.;
+      }
+    }
+
+    if (_turb_bc_id.size_alp_bl_t > 0) {
+      for (int id = 0; id < _turb_bc_id.size_alp_bl_t; id++) {
+        cs_field_t *fld = _turb_bc_id.f_alp_bl_t[id];
+        fld->bc_coeffs->icodcl[face_id] = 3.;
+        for (int ii = 0; ii < fld->dim; ii++)
+          fld->bc_coeffs->rcodcl3[ii*n_b_faces + face_id] = 0.;
+      }
+    }
+
+  }
+  else if (turb_model->itytur == 5) {
+
+    _turb_bc_id.bc_k->icodcl[face_id] = 3;
+    _turb_bc_id.bc_k->rcodcl3[face_id] = 0;
+
+    _turb_bc_id.bc_eps->icodcl[face_id] = 3;
+    _turb_bc_id.bc_eps->rcodcl3[face_id] = 0;
+
+    _turb_bc_id.bc_phi->rcodcl3[face_id] = 0.;
+    if (turb_model->iturb == CS_TURB_V2F_PHI) {
+      _turb_bc_id.bc_f_bar->icodcl[face_id] = 3.;
+      _turb_bc_id.bc_f_bar->rcodcl3[face_id] = 0.;
+    }
+    else if (turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+      _turb_bc_id.bc_alp_bl->icodcl[face_id] = 3.;
+      _turb_bc_id.bc_alp_bl->rcodcl3[face_id] = 0.;
+    }
+
+  }
+  else if (turb_model->iturb == CS_TURB_K_OMEGA) {
+
+    _turb_bc_id.bc_k->icodcl[face_id] = 3.;
+    _turb_bc_id.bc_k->rcodcl3[face_id] = 0.;
+
+    _turb_bc_id.bc_omg->icodcl[face_id] = 3.;
+    _turb_bc_id.bc_omg->rcodcl3[face_id] = 0.;
+
+  }
+  else if (turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
+
+    _turb_bc_id.bc_nusa->icodcl[face_id] = 3.;
+    _turb_bc_id.bc_nusa->rcodcl3[face_id] = 0.;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set inlet boundary condition values for turbulence variables based
  *        on a diameter \f$ D_H \f$ and the reference velocity \f$ U_{ref} \f$
  *        for a circular duct flow with smooth wall, only if not already set.

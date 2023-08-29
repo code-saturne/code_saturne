@@ -167,7 +167,8 @@ endif
 !  We assume that all the provided variables are positive,
 !    which allows to use a max for the proceedings know them.
 !  If this is not the case, it is more complicated but we can get a max anyway.
-if(irangp.ge.0) then
+
+if (irangp.ge.0) then
   call parimx(nozapm,iqimp )
   call parimx(nozapm,ientat)
   call parimx(nozapm,ientcp)
@@ -187,6 +188,7 @@ endif
 !       Loop over all inlet faces
 !                     =========================
 !===============================================================================
+
 ! --- Calculated flow
 do izone = 1, nozppm
   qcalc(izone) = 0.d0
@@ -209,47 +211,36 @@ do izone = 1, nozapm
   endif
 enddo
 
-! --- Correction of the velocities (in norm) from the second iteration,
-!       otherwise we do not know the density at the edge
-if ( ntcabs .gt. 1 ) then
-  iok = 0
-  do ii = 1, nzfppp
-    izone = ilzppp(ii)
-    if ( iqimp(izone).eq.1 ) then
-      if(abs(qcalc(izone)).lt.epzero) then
-        write(nfecra,2001)izone,iqimp(izone),qcalc(izone)
-        iok = iok + 1
-      endif
+! Rescaling of the velocities (for mass flow)
+
+iok = 0
+do ii = 1, nzfppp
+  izone = ilzppp(ii)
+  if (iqimp(izone).eq.1) then
+    if(abs(qcalc(izone)).lt.epzero) then
+      write(nfecra,2001)izone,iqimp(izone),qcalc(izone)
+      iok = iok + 1
     endif
-  enddo
-  if(iok.ne.0) then
-    call csexit (1)
   endif
-  do ifac = 1, nfabor
-    izone = izfppp(ifac)
-    if ( iqimp(izone).eq.1 ) then
-      qimpc(izone) = qimpat(izone)
-      do icha = 1, ncharb
-        qimpc(izone) = qimpc(izone) + qimpcp(icha,izone)
-      enddo
-      qisqc = qimpc(izone)/qcalc(izone)
-      rcodcl(ifac,iu,1) = rcodcl(ifac,iu,1)*qisqc
-      rcodcl(ifac,iv,1) = rcodcl(ifac,iv,1)*qisqc
-      rcodcl(ifac,iw,1) = rcodcl(ifac,iw,1)*qisqc
-    endif
-  enddo
+enddo
 
-else
+if (iok.ne.0) then
+  call csexit(1)
+endif
 
-  do izone = 1, nozapm
+do ifac = 1, nfabor
+  izone = izfppp(ifac)
+  if (iqimp(izone).eq.1) then
     qimpc(izone) = qimpat(izone)
     do icha = 1, ncharb
       qimpc(izone) = qimpc(izone) + qimpcp(icha,izone)
     enddo
-  enddo
-
-endif
-
+    qisqc = qimpc(izone)/qcalc(izone)
+    rcodcl(ifac,iu,1) = rcodcl(ifac,iu,1)*qisqc
+    rcodcl(ifac,iv,1) = rcodcl(ifac,iv,1)*qisqc
+    rcodcl(ifac,iw,1) = rcodcl(ifac,iw,1)*qisqc
+  endif
+enddo
 
  2001 format(                                                     &
 '@                                                            ',/,&
@@ -320,7 +311,7 @@ endif
 '@                                                            ',/,&
 '@ @@ WARNING : SPECIFIC PHYSIC MODULE                        ',/,&
 '@    =========                        pulverized coal        ',/,&
-'@    probleme in the boundary conditions                     ',/,&
+'@    problem in the boundary conditions                     ',/,&
 '@                                                            ',/,&
 '@        Zone    Coal     Class         Distch(%)        '  )
  2011 format(                                                           &
@@ -349,59 +340,9 @@ endif
 
 !===============================================================================
 ! 4.  Filling the table of the boundary conditions
-!       Loop on all input faces
-!                     =========================
-!         Determining the family and its properties
-!         Imposing boundary conditions for the turbulence
-
 !===============================================================================
-do ifac = 1, nfabor
 
-  izone = izfppp(ifac)
-
-  if ( itypfb(ifac).eq.ientre ) then
-
-    !       The turbulence is calculated by default if icalke different from 0
-    !          - or from hydraulic diameter and a reference velocity adapted
-    !            for the current input if icalke = 1
-    !          - either from the hydraulic diameter, a reference velocity and
-    !            a turbulence intensity adapted to the current input if icalke = 2
-    if ( icalke(izone).ne.0 ) then
-
-      uref2 = rcodcl(ifac,iu,1)**2                         &
-            + rcodcl(ifac,iv,1)**2                         &
-            + rcodcl(ifac,iw,1)**2
-      uref2 = max(uref2,1.d-12)
-      rhomoy = brom(ifac)
-      iel    = ifabor(ifac)
-      viscla = viscl(iel)
-      icke   = icalke(izone)
-      dhy    = dh(izone)
-      xiturb = xintur(izone)
-
-      if (icke.eq.1) then
-        !   Calculation of turbulent inlet conditions using
-        !     standard laws for a circular pipe
-        !     (their initialization is not needed here but is good practice).
-        call turbulence_bc_inlet_hyd_diam(ifac, uref2, dhy, rhomoy, viscla,  &
-                                          rcodcl)
-      else if (icke.eq.2) then
-
-        ! Calculation of turbulent inlet conditions using
-        !   the turbulence intensity and standard laws for a circular pipe
-        !   (their initialization is not needed here but is good practice)
-
-        call turbulence_bc_inlet_turb_intensity(ifac, uref2, xiturb, dhy,  &
-                                                rcodcl)
-
-
-      endif
-
-    endif
-
-  endif
-
-enddo
+call cs_boundary_conditions_legacy_turbulence(itypfb)
 
 !===============================================================================
 ! 5.  Filling the boundary conditions table
@@ -418,7 +359,8 @@ do ii = 1, nzfppp
 
   ! An input ientre must be of type
   ! ientat = 1 or ientcp = 1
-  if ( ientat(izone).eq.1 .or. ientcp(izone).eq.1) then
+
+  if (ientat(izone).eq.1 .or. ientcp(izone).eq.1) then
 
     x20t  (izone) = zero
     x2h20t(izone) = zero
@@ -496,9 +438,10 @@ do ii = 1, nzfppp
     enddo
     t1   = timpat(izone)
     mode = -1
-    call cs_coal_htconvers1(mode,h1(izone),coefe,f1mc,f2mc,t1)
+    call cs_coal_htconvers1(mode, h1(izone), coefe, f1mc, f2mc, t1)
 
   endif
+
 enddo
 
 do ifac = 1, nfabor
@@ -507,7 +450,7 @@ do ifac = 1, nfabor
 
   if ( itypfb(ifac).eq.ientre ) then
 
-    ! ----  Automatic processing of specific physic scalar
+    ! Automatic processing of specific physic scalars
 
     idecal = 0
 
@@ -665,13 +608,11 @@ do ifac = 1, nfabor
 
     enddo
   endif
+
 enddo
 
 ! Free memory
 if (allocated(iagecp)) deallocate(iagecp)
-!--------
-! Formats
-!--------
 
 !----
 ! End

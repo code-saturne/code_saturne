@@ -114,11 +114,10 @@ interface
 
   !=============================================================================
 
-  subroutine cs_boundary_conditions_set_coeffs_init(itrale) &
+  subroutine cs_boundary_conditions_set_coeffs_init() &
     bind(C, name='cs_boundary_conditions_set_coeffs_init')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(kind=c_int), value :: itrale
   end subroutine cs_boundary_conditions_set_coeffs_init
 
   !=============================================================================
@@ -736,7 +735,7 @@ nvarcl = nvar
 ! -- Couplage code_saturne/code_saturne
 call cscini(nvar)
 
-call cs_boundary_conditions_set_coeffs_init(itrale)
+call cs_boundary_conditions_set_coeffs_init()
 
 !===============================================================================
 ! Arrays for time block, to discard afterwards

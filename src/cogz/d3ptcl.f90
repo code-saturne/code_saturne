@@ -193,7 +193,6 @@ if (ifue.eq.1) then
   coefg(3) = zero
   mode    = -1
   call cothht                                                   &
-  !==========
       ( mode   , ngazg , ngazgm  , coefg  ,                     &
         npo    , npot   , th     , ehgazg ,                     &
         hinfue , tinfue )
@@ -206,7 +205,6 @@ if (ioxy.eq.1) then
   coefg(3) = zero
   mode    = -1
   call cothht                                                   &
-  !==========
       ( mode   , ngazg , ngazgm  , coefg  ,                     &
         npo    , npot   , th     , ehgazg ,                     &
         hinoxy , tinoxy  )
@@ -346,130 +344,12 @@ enddo
 
 !===============================================================================
 ! 4.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES POUR LA TURBULENCE
-!       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
-!                     =========================
-!         ON DETERMINE LA FAMILLE ET SES PROPRIETES
-!         ON IMPOSE LES CONDITIONS AUX LIMITES POUR LA TURBULENCE
-!         (pour n'importe quel modele)
 !===============================================================================
 
-do ifac = 1, nfabor
-
-  izone = izfppp(ifac)
-
-  if (itypfb(ifac).eq.ientre.or.itypfb(ifac).eq.i_convective_inlet) then
-
-    ! Neumann for outflow
-    if (qimp(izone).lt.0.d0) then
-
-      if (itytur.eq.2) then
-
-        icodcl(ifac,ik ) = 3
-        icodcl(ifac,iep) = 3
-        rcodcl(ifac,ik ,3) = 0.d0
-        rcodcl(ifac,iep,3) = 0.d0
-
-      elseif (itytur.eq.3) then
-
-        icodcl(ifac,ir11) = 3
-        icodcl(ifac,ir22) = 3
-        icodcl(ifac,ir33) = 3
-        icodcl(ifac,ir12) = 3
-        icodcl(ifac,ir13) = 3
-        icodcl(ifac,ir23) = 3
-        icodcl(ifac,iep ) = 3
-        rcodcl(ifac,ir11,3) = 0.d0
-        rcodcl(ifac,ir22,3) = 0.d0
-        rcodcl(ifac,ir33,3) = 0.d0
-        rcodcl(ifac,ir12,3) = 0.d0
-        rcodcl(ifac,ir13,3) = 0.d0
-        rcodcl(ifac,ir23,3) = 0.d0
-        rcodcl(ifac,iep, 3) = 0.d0
-
-      elseif (iturb.eq.50) then
-
-        icodcl(ifac,ik  ) = 3
-        icodcl(ifac,iep ) = 3
-        icodcl(ifac,iphi) = 3
-        icodcl(ifac,ifb ) = 3
-        rcodcl(ifac,ik,  3) = 0.d0
-        rcodcl(ifac,iep, 3) = 0.d0
-        rcodcl(ifac,iphi,3) = 0.d0
-        rcodcl(ifac,ifb, 3) = 0.d0
-
-      elseif (iturb.eq.60) then
-
-        icodcl(ifac,ik  ) = 3
-        icodcl(ifac,iomg) = 3
-        rcodcl(ifac,ik,  3) = 0.d0
-        rcodcl(ifac,iomg,3) = 0.d0
-
-      elseif(iturb.eq.70) then
-
-        icodcl(ifac,inusa) = 3
-        rcodcl(ifac,inusa,3) = 0.d0
-
-      endif
-
-    ! Dirichlet for inflow
-    else
-
-      ! La turbulence est calculee par defaut si ICALKE different de 0
-      !    - soit a partir du diametre hydraulique, d'une vitesse
-      !      de reference adaptes a l'entree courante si ICALKE = 1
-      !    - soit a partir du diametre hydraulique, d'une vitesse
-      !      de reference et de l'intensite turvulente
-      !      adaptes a l'entree courante si ICALKE = 2
-
-      if ( icalke(izone).ne.0 ) then
-
-        uref2 = rcodcl(ifac,iu,1)**2                         &
-              + rcodcl(ifac,iv,1)**2                         &
-              + rcodcl(ifac,iw,1)**2
-        uref2 = max(uref2,epzero)
-        rhomoy = brom(ifac)
-        iel    = ifabor(ifac)
-        viscla = viscl(iel)
-        icke   = icalke(izone)
-        dhy    = dh(izone)
-        xiturb = xintur(izone)
-        ustar2 = 0.d0
-        xkent = epzero
-        xeent = epzero
-
-        if (icke.eq.1) then
-          !   Calculation of turbulent inlet conditions using
-          !     standard laws for a circular pipe
-          !     (their initialization is not needed here but is good practice).
-          call turbulence_bc_inlet_hyd_diam(ifac, uref2, dhy, rhomoy, viscla,  &
-                                            rcodcl)
-        else if (icke.eq.2) then
-
-          ! Calculation of turbulent inlet conditions using
-          !   the turbulence intensity and standard laws for a circular pipe
-          !   (their initialization is not needed here but is good practice)
-
-          call turbulence_bc_inlet_turb_intensity(ifac, uref2, xiturb, dhy,  &
-                                                  rcodcl)
-
-
-        endif
-
-      endif ! icalke
-
-    endif ! qimp
-
-  endif ! itypfb
-
-enddo
+call cs_boundary_conditions_legacy_turbulence(itypfb)
 
 !----
-! FORMATS
-!----
-
-
-!----
-! FIN
+! End
 !----
 
 return
