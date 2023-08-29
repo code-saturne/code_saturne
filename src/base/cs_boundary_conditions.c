@@ -1273,6 +1273,23 @@ _update_inlet_outlet(cs_boundary_conditions_open_t  *c)
 {
   const cs_time_step_t *ts = cs_glob_time_step;
 
+  /* Update legacy BC arrays, as they are reset at each time step */
+
+  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
+  if (bc_pm_info != NULL && c->bc_pm_zone_num > 0) {
+    int zone_num = c->bc_pm_zone_num;
+    if (c->turb_compute == CS_BC_TURB_BY_HYDRAULIC_DIAMETER) {
+      bc_pm_info->icalke[zone_num] = 1;
+      bc_pm_info->dh[zone_num] = c->hyd_diameter;
+      bc_pm_info->xintur[zone_num] = c->turb_intensity;
+    }
+    else if (c->turb_compute == CS_BC_TURB_BY_TURBULENT_INTENSITY) {
+      bc_pm_info->icalke[zone_num] = 2;
+      bc_pm_info->dh[zone_num] = c->hyd_diameter;
+      bc_pm_info->xintur[zone_num] = c->turb_intensity;
+    }
+  }
+
   /* At the first time step, always update (we do not assume that in case
      of a restarted computation, data is handled using restart data info
      in general);
@@ -1364,7 +1381,6 @@ _update_inlet_outlet(cs_boundary_conditions_open_t  *c)
 
   /* Also update legacy boundary condition structures */
 
-  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
   if (bc_pm_info != NULL && c->bc_pm_zone_num > 0) {
     int zone_num = c->bc_pm_zone_num;
     if (c->vel_rescale == CS_BC_VEL_RESCALE_MASS_FLOW_RATE) {
