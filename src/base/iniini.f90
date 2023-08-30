@@ -129,6 +129,7 @@ iporf = -1
 
 call atmo_init
 call cdo_init
+call cplsat_init
 call time_step_init
 call time_step_options_init
 call thermal_model_init
@@ -215,17 +216,6 @@ enddo
 ! Default initialization for specific physical models
 
 call ppinii
-
-!===============================================================================
-! Arrays of optcal.f90
-!===============================================================================
-
-! Ordering of BC's will be computed after cs_user_boundary_conditions.
-
-do ii = 1, ntypmx
-  idebty(ii) = 0
-  ifinty(ii) = 0
-enddo
 
 ! Here, all of optcal.f90 is initialized
 

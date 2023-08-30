@@ -49,10 +49,6 @@ module paramx
   parameter(nscamx=500)
   parameter(nvarmx=nscamx+12)
 
-  !> Maximal possible boundary condition types
-  integer    ntypmx
-  parameter(ntypmx=200)
-
   !> \anchor iindef
   !> pointer for undefined type face (non-standard case)
   integer   iindef

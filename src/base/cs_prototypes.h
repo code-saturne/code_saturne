@@ -258,17 +258,6 @@ cs_drift_convective_flux(int              f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return pointer to boundary head losses array.
- *
- * \return  b_head_loss  pointer to boundary head losses array
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_get_b_head_loss(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Return pointer to cavitation "dgdpca" array.
  *
  * \return  pointer to "dgdpca" array.

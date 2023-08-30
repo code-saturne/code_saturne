@@ -151,6 +151,34 @@ static int                  cs_glob_sat_n_couplings = 0;
 static cs_sat_coupling_t  **cs_glob_sat_couplings = NULL;
 
 /*============================================================================
+ * Global variables
+ *============================================================================*/
+
+int  cs_glob_sat_coupling_face_interpolation_type = 0;
+
+/*==============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+void
+cs_f_sat_coupling_get_pointers(int  **ifaccp);
+
+/*==============================================================================
+ * Functions intended for use only by Fortran wrappers.
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Get pointers for Fortran bindings.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_sat_coupling_get_pointers(int  **ifaccp)
+{
+  *ifaccp = &cs_glob_sat_coupling_face_interpolation_type;
+}
+
+/*============================================================================
  * Private function definitions
  *============================================================================*/
 

@@ -54,6 +54,7 @@
 #include "cs_base.h"
 #include "cs_boundary.h"
 #include "cs_boundary_conditions.h"
+#include "cs_boundary_conditions_type.h"
 #include "cs_coupling.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
@@ -122,12 +123,6 @@ cs_f_cou1di(void);
 
 void
 cs_f_mmtycl(const int  *itypfb);
-
-void
-cs_f_typecl(bool       init,
-            int        itypfb[],
-            const int  itrifb[],
-            int        isostd[]);
 
 void
 cs_f_pptycl(bool        init,
@@ -287,9 +282,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     = (const cs_lnum_t *restrict)mesh->b_face_cells;
   const cs_real_3_t *b_face_normal  = (const cs_real_3_t *)fvq->b_face_normal;
   const cs_real_3_t *b_face_u_normal = (const cs_real_3_t *)fvq->b_face_u_normal;
-  const cs_real_3_t *cell_cen       = (const cs_real_3_t *)fvq->cell_cen;
-  const cs_real_3_t *b_face_cog
-    = (const cs_real_3_t *)fvq->b_face_cog;
+  const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *b_face_cog = (const cs_real_3_t *)fvq->b_face_cog;
   const cs_real_3_t *restrict diipb = (const cs_real_3_t *restrict)fvq->diipb;
   const cs_real_t   *b_face_surf    = fvq->b_face_surf;
   const cs_real_t   *b_dist         = fvq->b_dist;
@@ -316,7 +310,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   cs_field_t *f_th = cs_thermal_model_field();
 
   const int *izfppp = cs_glob_bc_pm_info->izfppp;
-  const int *itrifb = cs_glob_bc_pm_info->itrifb;
+  int *itrifb = cs_glob_bc_pm_info->itrifb;
   int *bc_type = cs_f_boundary_conditions_get_bc_type();
 
   int *impale = cs_glob_ale_data->impale;
@@ -561,10 +555,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     if (cs_turbomachinery_get_model() != CS_TURBOMACHINERY_NONE)
       cs_f_mmtycl(bc_type);
 
-    cs_f_typecl(false,
-                bc_type,
-                itrifb,
-                isostd);
+    cs_boundary_conditions_type(false,
+                                bc_type,
+                                itrifb,
+                                isostd);
   }
 
   /*--------------------------------------------------------------------------
@@ -2824,9 +2818,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             hintt[4] = visten[c_id][4]*ctheta/distbf/cs_turb_csrij;
             hintt[5] = visten[c_id][5]*ctheta/distbf/cs_turb_csrij;
 
-            for (int iii = 0; iii < 5; iii++)
-              printf("hintt = %f", hintt[iii]);
-
             /* Dirichlet Boundary Condition
                ---------------------------- */
 
@@ -3448,7 +3439,7 @@ cs_boundary_conditions_set_coeffs_init(void)
   const cs_real_3_t *vtx_coord = (const cs_real_3_t *)mesh->vtx_coord;
 
   int *bc_type = cs_f_boundary_conditions_get_bc_type();
-  const int *itrifb = cs_glob_bc_pm_info->itrifb;
+  int *itrifb = cs_glob_bc_pm_info->itrifb;
   const int *izfppp = cs_glob_bc_pm_info->izfppp;
   cs_real_t *dt = CS_F_(dt)->val;
 
@@ -3553,10 +3544,10 @@ cs_boundary_conditions_set_coeffs_init(void)
   int *isostd;
   BFT_MALLOC(isostd, n_b_faces+1, int);
 
-  cs_f_typecl(true,
-              bc_type,
-              itrifb,
-              isostd);
+  cs_boundary_conditions_type(true,
+                              bc_type,
+                              itrifb,
+                              isostd);
 
   BFT_FREE(isostd);
 

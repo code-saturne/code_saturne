@@ -27,6 +27,8 @@ module cplsat
 
   !=============================================================================
 
+  use, intrinsic :: iso_c_binding
+
   use paramx
 
   implicit none
@@ -42,7 +44,8 @@ module cplsat
   !> number of couplings code_saturne / code_saturne
   integer, save :: nbrcpl = 0
   !> indicator coupling face / face only
-  integer, save :: ifaccp = 0
+  !integer, save :: ifaccp = 0
+  integer(c_int), pointer, save :: ifaccp
   !> maximum permissible number of coupling
   integer   nbcpmx
   parameter(nbcpmx=10)
@@ -57,6 +60,49 @@ module cplsat
   !> size of exchange tables
   integer, save :: nvarto(nbcpmx)
   !> \}
+
+  !=============================================================================
+
+  interface
+
+    !---------------------------------------------------------------------------
+
+    !> \cond DOXYGEN_SHOULD_SKIP_THIS
+
+    !---------------------------------------------------------------------------
+
+    subroutine cs_f_sat_coupling_get_pointers(ifaccp)     &
+      bind(C, name='cs_f_sat_coupling_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: ifaccp
+    end subroutine cs_f_sat_coupling_get_pointers
+
+  end interface
+
+  !=============================================================================
+
+contains
+
+  !=============================================================================
+
+  !> \brief Initialize Fortran code_saturne coupling API.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine cplsat_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_ifaccp
+
+    call cs_f_sat_coupling_get_pointers(c_ifaccp)
+
+    call c_f_pointer(c_ifaccp, ifaccp)
+
+  end subroutine cplsat_init
 
   !=============================================================================
 

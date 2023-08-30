@@ -62,6 +62,9 @@ BEGIN_C_DECLS
 */
 #define  CS_MAX_BC_PM_ZONE_NUM  2000
 
+/*! Maximum number of boundary condition code types */
+#define  CS_MAX_BC_TYPE  200
+
 /*============================================================================
  * Local type definitions
  *============================================================================*/
@@ -405,6 +408,19 @@ cs_boundary_conditions_get_model_inlet(const cs_zone_t  *zone);
 
 int
 cs_boundary_conditions_get_legacy_zone_num(const  cs_zone_t  *z);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to boundary head losses array.
+ *
+ * The array is allocated if not previously available.
+ *
+ * \return  b_head_loss  pointer to boundary head losses array
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_boundary_conditions_get_b_head_loss(void);
 
 /*----------------------------------------------------------------------------*/
 /*

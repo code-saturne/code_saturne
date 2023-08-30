@@ -2763,7 +2763,7 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !  Binding to cs_f_ic_field_coupled_faces
+    !> \brief Binding to cs_f_ic_field_coupled_faces
 
     subroutine cs_f_ic_field_coupled_faces(f_id, c_p)  &
       bind(C, name='cs_f_ic_field_coupled_faces')

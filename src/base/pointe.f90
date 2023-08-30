@@ -169,13 +169,6 @@ module pointe
   !> See \c ickpdc
   double precision, allocatable, dimension(:,:) :: ckupdc
 
-  !> Head loss factor of the fluid outside the domain, between infinity and
-  !> the entrance (for \ref ifrent boundary type). The default value is 0,
-  !> dimensionless factor. The user may give a value in
-  !> \ref cs_user_boundary_conditions in the array
-  !> \c rcodcl(ifac, \ref ipr, 2).
-  double precision, allocatable, target, dimension(:) :: b_head_loss
-
   !> \anchor ncetsm
   !> number of the \c ncetsm cells in which a mass source term is imposed.
   !> See \c iicesm also
@@ -327,7 +320,6 @@ contains
 
     deallocate(itrifb)
     if (allocated(izctsm)) deallocate(izctsm)
-    if (allocated(b_head_loss)) deallocate(b_head_loss)
     if (allocated(gamcav)) deallocate(gamcav, dgdpca)
 
   end subroutine finalize_aux_arrays
@@ -565,20 +557,6 @@ contains
     endif
 
   end subroutine cs_f_volume_mass_injection_get_arrays
-
-  !=============================================================================
-
-  !> \brief Return C pointer to b_head_loss array
-
-  !> \return  auto_flag  pointer to automatic boundary condition array
-
-  function cs_get_b_head_loss() result(c_b_head_loss) &
-    bind(C, name='cs_get_b_head_loss')
-    use, intrinsic :: iso_c_binding
-    implicit none
-    type(c_ptr) :: c_b_head_loss
-    c_b_head_loss = c_loc(b_head_loss)
-  end function cs_get_b_head_loss
 
   !=============================================================================
 

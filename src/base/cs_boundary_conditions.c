@@ -84,7 +84,7 @@
 #include "fvm_nodal.h"
 
 /*----------------------------------------------------------------------------
- *  Header for the current file
+ * Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "cs_boundary_conditions.h"
@@ -129,7 +129,7 @@ typedef struct {
 } cs_bc_map_t;
 
 /*============================================================================
- *  Global variables
+ * Static global variables
  *============================================================================*/
 
 static int *_bc_type;
@@ -141,6 +141,12 @@ static cs_bc_map_t *_bc_maps = NULL;
 
 static int _n_bc_open = 0;
 static cs_boundary_conditions_open_t **_bc_open = NULL;
+
+static cs_real_t *_b_head_loss = NULL;
+
+/*============================================================================
+ * Global variables
+ *============================================================================*/
 
 const int *cs_glob_bc_type = NULL;
 
@@ -2463,6 +2469,8 @@ cs_boundary_conditions_free(void)
   BFT_FREE(cs_glob_bc_pm_info->izfppp);
   BFT_FREE(cs_glob_bc_pm_info->itrifb);
   BFT_FREE(cs_glob_bc_pm_info);
+
+  BFT_FREE(_b_head_loss);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2983,6 +2991,25 @@ cs_boundary_conditions_get_legacy_zone_num(const  cs_zone_t  *z)
    zone_num = c->bc_pm_zone_num;
 
   return zone_num;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to boundary head losses array.
+ *
+ * The array is allocated if not previously available.
+ *
+ * \return  b_head_loss  pointer to boundary head losses array
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_boundary_conditions_get_b_head_loss(void)
+{
+  if (_b_head_loss == NULL)
+    BFT_REALLOC(_b_head_loss, cs_glob_mesh->n_b_faces, cs_real_t);
+
+  return _b_head_loss;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -702,9 +702,6 @@ module optcal
   !> parameter of diagonal pressure strengthening
   real(c_double), pointer, save :: epsdp
 
-  ! Boundary condition types and min/max index of sub-lists.
-  integer, save :: idebty(ntypmx), ifinty(ntypmx)
-
   !> accurate treatment of the wall temperature
   !>    - 1: true
   !>    - 0: false (default)
@@ -729,12 +726,6 @@ module optcal
   !>    - 0: no face
   !>    - 1: at least one face
   integer(c_int), pointer, save :: iifren
-
-  !> number of the closest free standard outlet (or free inlet) face to xyzp0
-  integer, save :: ifrslb = 0
-
-  !> max of ifrslb on all ranks, standard outlet face presence indicator
-  integer, save :: itbslb = 0
 
   !> compute the hydrostatic pressure in order to compute the Dirichlet
   !> conditions on the pressure at outlets

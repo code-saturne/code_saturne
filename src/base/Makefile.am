@@ -101,6 +101,7 @@ cs_block_to_part.h \
 cs_boundary.h \
 cs_boundary_conditions.h \
 cs_boundary_conditions_set_coeffs.h \
+cs_boundary_conditions_type.h \
 cs_boundary_zone.h \
 cs_calcium.h \
 cs_control.h \
@@ -292,6 +293,7 @@ cs_base_fortran.c \
 cs_boundary.c \
 cs_boundary_conditions.c \
 cs_boundary_conditions_set_coeffs.c \
+cs_boundary_conditions_type.c \
 cs_boundary_zone.c \
 cs_calcium.c \
 csc2cl.f90 \
@@ -425,7 +427,6 @@ schtmp.f90 \
 tdesi1.f90 \
 tridim.f90 \
 tspdcv.f90 \
-typecl.f90 \
 varpos.f90 \
 vericl.f90 \
 verini.f90 \
