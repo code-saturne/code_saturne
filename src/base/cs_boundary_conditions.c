@@ -1278,6 +1278,10 @@ _update_inlet_outlet(cs_boundary_conditions_open_t  *c)
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
   if (bc_pm_info != NULL && c->bc_pm_zone_num > 0) {
     int zone_num = c->bc_pm_zone_num;
+    if (c->vel_rescale == CS_BC_VEL_RESCALE_MASS_FLOW_RATE) {
+      bc_pm_info->iqimp[zone_num] = 1;
+      bc_pm_info->qimp[zone_num] = c->vel_values[3];
+    }
     if (c->turb_compute == CS_BC_TURB_BY_HYDRAULIC_DIAMETER) {
       bc_pm_info->icalke[zone_num] = 1;
       bc_pm_info->dh[zone_num] = c->hyd_diameter;
@@ -1383,14 +1387,8 @@ _update_inlet_outlet(cs_boundary_conditions_open_t  *c)
 
   if (bc_pm_info != NULL && c->bc_pm_zone_num > 0) {
     int zone_num = c->bc_pm_zone_num;
-    if (c->vel_rescale == CS_BC_VEL_RESCALE_MASS_FLOW_RATE) {
-      bc_pm_info->iqimp[zone_num] = 1;
+    if (c->vel_rescale == CS_BC_VEL_RESCALE_MASS_FLOW_RATE)
       bc_pm_info->qimp[zone_num] = c->vel_values[3];
-    }
-    else {
-      bc_pm_info->iqimp[zone_num] = 0;
-      bc_pm_info->qimp[zone_num] = 0;
-    }
   }
 }
 
