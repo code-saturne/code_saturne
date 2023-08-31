@@ -128,23 +128,6 @@ cs_rad_transfer_options(void)
   /* Default initializations
    * ----------------------- */
 
-  /* ->  Absorption coefficent computation
-   *      IMODAK = 0 : without modak
-   *               1 : with modak    */
-
-  rt_params->imodak       = 0;
-
-  /* ->  IMOADF = 0 ADF models are not used
-   *            = 1 ADF Model with wavelength interval of a 8
-   *            = 2 ADF Model with wavelength interval of a 50*/
-
-  rt_params->imoadf       = 0;
-
-  /* ->  IMFSCK = 0 switch off FSCK model
-   *            = 1 switch on FSCK model */
-
-  rt_params->imfsck       = 0;
-
   /* ->  Restart computation (read restart) */
 
   rt_params->restart
@@ -169,21 +152,9 @@ cs_rad_transfer_options(void)
 
   rt_params->xnp1mx       = 10.0;
 
-  /* ->  Explicit radiative source term computation mode
-   *            = 0 => Semi-analytic (mandatory if transparent)
-   *            = 1 => Conservative
-   *            = 2 => Corrected semi-analytic (to be conservative)
-   *     REMARK: if transparent, idiver = -1 automatically in raydom  */
-
-  rt_params->idiver       = 2;
-
   /* -> Wall temperature verbosity */
 
   rt_params->iimpar       = 1;
-
-  /* Radiance resolution verbosity */
-
-  rt_params->verbosity = 0;
 
   /* -> Number of iterations used to solve the ETR.
    *    Must at least be one to make the standard models work. */
@@ -192,6 +163,15 @@ cs_rad_transfer_options(void)
 
   cs_gui_radiative_transfer_parameters();
   cs_user_radiative_transfer_parameters();
+
+  /* ->  Explicit radiative source term computation mode
+   *            = 0 => Semi-analytic (mandatory if transparent)
+   *            = 1 => Conservative
+   *            = 2 => Corrected semi-analytic (to be conservative)
+   *     REMARK: if transparent, idiver = -1 automatically in raydom  */
+
+  if (rt_params->atmo_model == CS_RAD_ATMO_3D_NONE)
+    rt_params->idiver = 2;
 
   if (rt_params->imoadf == 1)
     rt_params->nwsgg = 8;
@@ -285,7 +265,7 @@ cs_rad_transfer_options(void)
        _("Computation mode parameter"
          " (cs_glob_rad_transfer_params->idiver"),
        rt_params->idiver,
-       0, 3);
+       -1, 3);
 
     cs_parameters_error_barrier();
   }
@@ -370,7 +350,8 @@ cs_rad_transfer_log_setup(void)
        N_("2 (FSCK model activated with tabulated properties)")};
 
   const char *idiver_value_str[]
-    = {N_("0 (semi-analytic radiative S.T. calculation;\n"
+    = {N_("-1 (no renormalization)"),
+       N_("0 (semi-analytic radiative S.T. calculation;\n"
           "                   "
           "   compulsory with transparent media)"),
        N_("1 (conservative radiative S.T. calculation)"),
@@ -380,7 +361,7 @@ cs_rad_transfer_log_setup(void)
 
   cs_log_printf(CS_LOG_SETUP,
                   _("    idiver:        %s\n"),
-                _(idiver_value_str[cs_glob_rad_transfer_params->idiver]));
+                _(idiver_value_str[cs_glob_rad_transfer_params->idiver+1]));
 
   cs_log_printf(CS_LOG_SETUP,
                   _("    imodak:        %s\n"),
