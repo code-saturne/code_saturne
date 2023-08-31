@@ -75,6 +75,7 @@
 #include "cs_physical_model.h"
 #include "cs_post.h"
 #include "cs_prototypes.h"
+#include "cs_rad_transfer.h"
 #include "cs_thermal_model.h"
 #include "cs_turbulence_model.h"
 #include "cs_volume_zone.h"
@@ -93,6 +94,7 @@
 #include "cs_restart_default.h"
 #include "cs_velocity_pressure.h"
 #include "cs_intprf.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -1961,6 +1963,26 @@ cs_atmo_add_property_fields(void)
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Soil w2");
 
+    /* Incident solar radiative flux */
+    f = cs_field_create("soil_solar_incident_flux",
+                        field_type,
+                        z->location_id,
+                        1, /* dim */
+                        false); /* has_previous */
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Soil solar incid flux");
+
+    /* Incident solar radiative flux */
+    f = cs_field_create("soil_infrared_incident_flux",
+                        field_type,
+                        z->location_id,
+                        1, /* dim */
+                        false); /* has_previous */
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Soil IR incid flux");
+
     /* Boundary parameters fields characterizing soil */
     /*------------------------------------------------*/
 
@@ -2076,6 +2098,8 @@ cs_soil_model(void)
     const cs_domain_t *domain = cs_glob_domain;
     const cs_mesh_t *m = domain->mesh;
     const cs_mesh_quantities_t *mq = domain->mesh_quantities;
+    cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
+
     const cs_real_3_t *restrict b_face_cog
       = (const cs_real_3_t *restrict)mq->b_face_cog;
 
@@ -2099,6 +2123,8 @@ cs_soil_model(void)
     cs_field_t *soil_total_water = cs_field_by_name("soil_total_water");
     cs_field_t *soil_w1 = cs_field_by_name("soil_w1");
     cs_field_t *soil_w2 = cs_field_by_name("soil_w2");
+    cs_real_t *f_fos = cs_field_by_name("soil_solar_incident_flux")->val;
+    cs_real_t *f_foir = cs_field_by_name("soil_infrared_incident_flux")->val;
     cs_field_t *soil_temperature_deep = cs_field_by_name("soil_temperature_deep");
     cs_field_t *soil_r1 = cs_field_by_name("soil_r1");
     cs_field_t *soil_r2 = cs_field_by_name("soil_r2");
@@ -2119,6 +2145,11 @@ cs_soil_model(void)
     /* Radiative tables */
     cs_real_t *sold = (cs_real_t *)  cs_glob_atmo_option->rad_1d_sold;
     cs_real_t *ird = (cs_real_t *) cs_glob_atmo_option->rad_1d_ird;
+
+    /* Pointer to the spectral flux density field */
+    cs_field_t *f_qinspe = NULL;
+    if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
+      f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
 
     /* Louis parameterisation
      * #TODO replace the wall function reconstruction with already existing
@@ -2169,10 +2200,43 @@ cs_soil_model(void)
 
       /* Infrared and Solar radiative fluxes
        * Warning: should be adapted for many verticales */
-      if (cs_glob_atmo_option->radiative_model_1d == 1) {
+      if (cs_glob_atmo_option->radiative_model_1d == 1
+         && rt_params->atmo_model == CS_RAD_ATMO_3D_NONE) {
         foir = ird[0];
-        fos = sold[0] * (1. - boundary_albedo->val[face_id]);
+        fos = sold[0];
       }
+      /* In case of 3D, take the incident flux */
+      else if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
+
+        /* Number of bands (stride) */
+        cs_lnum_t stride = rt_params->nwsgg;
+
+        /* Compute fos */
+        int gg_id = rt_params->atmo_dr_id;
+        if (gg_id > -1)
+          fos += f_qinspe->val[gg_id + face_id * stride];
+
+        gg_id = rt_params->atmo_dr_o3_id;
+        if (gg_id > -1)
+          fos += f_qinspe->val[gg_id + face_id * stride];
+
+        gg_id = rt_params->atmo_df_id;
+        if (gg_id > -1)
+          fos += f_qinspe->val[gg_id + face_id * stride];
+
+        gg_id = rt_params->atmo_df_o3_id;
+        if (gg_id > -1)
+          fos += f_qinspe->val[gg_id + face_id * stride];
+
+        /* Compute foir */
+        gg_id = rt_params->atmo_ir_id;
+        if (gg_id > -1)
+          foir += f_qinspe->val[gg_id + face_id * stride];
+      }
+
+      f_fos[soil_id] = fos;
+      f_foir[soil_id] = foir;
+
       cs_real_t b_dist = mq->b_dist[face_id];
       /* Richardson Calculation requires tangential (relative) velocity */
       cs_real_3_t n ;
@@ -2342,7 +2406,8 @@ cs_soil_model(void)
        * 9) Compute the second member of soil_temperature equation
        * ============================ */
 
-      ray2 = fos + emissivity->val[face_id] * foir + 3.
+      ray2 = fos*(1. - boundary_albedo->val[face_id])
+        + emissivity->val[face_id] * foir + 3.
         * emissivity->val[face_id] * stephn
         * cs_math_pow4(soil_temperature->val[soil_id]
         + cs_physical_constants_celsius_to_kelvin);

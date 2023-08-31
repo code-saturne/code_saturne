@@ -319,7 +319,7 @@ cs_rad_transfer_prp(void)
       cs_field_set_key_str(f, keylbl, f_label);
 
       cs_field_set_key_int(f, keyvis, 0);
-      cs_field_set_key_int(f, keylog, 0);
+      cs_field_set_key_int(f, keylog, 1);
 
       //TODO map it as
       // cs_field_pointer_map_indexed(CS_ENUMF_(rad_abs), gg_id, f);
@@ -337,7 +337,7 @@ cs_rad_transfer_prp(void)
       cs_field_set_key_str(f, keylbl, f_label);
 
       cs_field_set_key_int(f, keyvis, 0);
-      cs_field_set_key_int(f, keylog, 0);
+      cs_field_set_key_int(f, keylog, 1);
 
 
       snprintf(f_name, 63, "spectral_emission%s", suffix); f_name[63] ='\0';
@@ -351,7 +351,7 @@ cs_rad_transfer_prp(void)
       cs_field_set_key_str(f, keylbl, f_label);
 
       cs_field_set_key_int(f, keyvis, 0);
-      cs_field_set_key_int(f, keylog, 0);
+      cs_field_set_key_int(f, keylog, 1);
       //TODO map it as
       //cs_field_pointer_map_indexed(CS_ENUMF_(rad_emi), gg_id, f);
       // Note: would be in conflict with rad_abs
