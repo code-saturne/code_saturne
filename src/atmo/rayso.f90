@@ -1303,6 +1303,46 @@ if (f_id.ge.0) then
       cpro_ck_down(c_id, iel) = var
     enddo
 
+    ! Direct Solar (denoted by _r): if O3 band not activated it is added
+    ! to total solar band (ie the one of H20)
+  else if (iand(rad_atmo_model, 1).eq.1) then
+
+    ! Store the incident radiation of the 1D model
+    do ifac = 1, nfabor
+      if(itypfb(ifac).eq.iparug.or.itypfb(ifac).eq.iparoi) then
+        bpro_rad_inc(c_id, ifac) = 0.d0
+      else
+
+        ! Interpolate at zent
+        zent = cdgfbo(3, ifac)
+
+        call intprz &
+          (kmray, zqq,                                               &
+          ddfso3, zent, iz1, iz2, var )
+
+        ! TODO do not multiply and divide by cos(zenital) = muzero
+        if (muzero.gt.epzero) then
+          bpro_rad_inc(c_id, ifac) = bpro_rad_inc(c_id, ifac) + var / muzero_cor
+        else
+          bpro_rad_inc(c_id, ifac) = 0.d0
+        endif
+      endif
+    enddo
+
+    ! Store the (downward) absortion coefficient of the 1D model
+    do iel = 1, ncel
+
+      ! Interpolate at zent
+      zent = xyzcen(3, iel)
+
+      call intprz &
+        (kmray, zqq,                                               &
+        ckdown_suv_r, zent, iz1, iz2, var )
+
+      cpro_ck_down(c_id, iel) = cpro_ck_down(c_id, iel) + var
+    enddo
+
+
   endif
 
   ! Diffuse solar radiation incident up and down (SIR band)
@@ -1419,6 +1459,62 @@ if (f_id.ge.0) then
         g_apc_suv, zent, iz1, iz2, var )
 
       cpro_gapc(c_id, iel) = var
+    enddo
+
+    ! If Diffuse solar O3 band in 3D is not activated -> add in the total
+    ! diffuse solar band
+  elseif (iand(rad_atmo_model, 4).eq.4) then
+
+    do ifac = 1, nfabor
+
+      if(itypfb(ifac).eq.iparug.or.itypfb(ifac).eq.iparoi) then
+        bpro_rad_inc(c_id, ifac) = 0.d0
+      else
+        ! Interpolate at zent
+        zent = cdgfbo(3, ifac)
+
+        call intprz &
+          (kmray, zqq,                                               &
+          dddso3, zent, iz1, iz2, var )
+
+        bpro_rad_inc(c_id, ifac) = bpro_rad_inc(c_id, ifac) + var
+      endif
+
+    enddo
+
+    ! Store the (downward and upward) absortion coefficient of the 1D model
+    do iel = 1, ncel
+
+      ! Interpolate at zent
+      zent = xyzcen(3, iel)
+
+      call intprz &
+        (kmray, zqq,                                               &
+        ckdown_suv_f, zent, iz1, iz2, var )
+
+      cpro_ck_down(c_id, iel) = cpro_ck_down(c_id, iel) + var
+
+      call intprz &
+        (kmray, zqq,                                               &
+        ckup_suv_f, zent, iz1, iz2, var )
+
+      cpro_ck_up(c_id, iel) = cpro_ck_up(c_id, iel) + var
+
+      ! Simple diffusion albedo w0
+
+      call intprz &
+        (kmray, zqq,                                               &
+        w0_suv, zent, iz1, iz2, var )
+
+      cpro_w0(c_id, iel) = cpro_w0(c_id, iel) + var
+
+      ! Asymmetry factor
+
+      call intprz &
+        (kmray, zqq,                                               &
+        g_apc_suv, zent, iz1, iz2, var )
+
+      cpro_gapc(c_id, iel) = cpro_gapc(c_id, iel) + var
     enddo
 
   endif
