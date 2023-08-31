@@ -232,7 +232,6 @@ class ThermalRadiationModel(Variables, Model):
         nb = self.node_ray.xmlGetInt('quadrature')
         if nb is None:
             nb = self._defaultValues()['quadrature']
-            self.setQuadrature(nb)
         return nb
 
 
@@ -250,7 +249,6 @@ class ThermalRadiationModel(Variables, Model):
         nb = self.node_ray.xmlGetInt('directions_number')
         if nb is None:
             nb = self._defaultValues()['directions_number']
-            self.setNbDir(nb)
         return nb
 
 
@@ -317,7 +315,6 @@ class ThermalRadiationModel(Variables, Model):
         val = self.node_ray.xmlGetDouble('absorption_coefficient')
         if val is None:
             val = self._defaultValues()['value_coef']
-            self.setAbsorCoeff(val)
         return val
 
 
@@ -337,7 +334,6 @@ class ThermalRadiationModel(Variables, Model):
         freq = self.node_ray.xmlGetInt('frequency')
         if freq is None:
             freq = self._defaultValues()['frequency']
-            self.setFrequency(freq)
         return freq
 
 
@@ -354,7 +350,6 @@ class ThermalRadiationModel(Variables, Model):
         intens = self.node_ray.xmlGetInt('intensity_resolution_listing_printing')
         if intens is None:
             intens = self._defaultValues()['intensity']
-            self.setIntensityResolution(intens)
         return intens
 
 
@@ -371,7 +366,6 @@ class ThermalRadiationModel(Variables, Model):
         tp = self.node_ray.xmlGetInt('temperature_listing_printing')
         if tp is None:
             tp = self._defaultValues()['tempP']
-            self.setTemperatureListing(tp)
         return tp
 
 
@@ -388,7 +382,6 @@ class ThermalRadiationModel(Variables, Model):
         idiver = self.node_ray.xmlGetInt('thermal_radiative_source_term')
         if idiver is None:
             idiver = self._defaultValues()['idiver']
-            self.setTrs(idiver)
         return idiver
 
 
