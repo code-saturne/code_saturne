@@ -2282,8 +2282,6 @@ do ifac = 1, nfabor
 
     endif
 
-
-
     ! Save the values of T^star and T^+ for post-processing
 
     if (b_f_id.ge.0 .or. iscal.eq.iscalt) then

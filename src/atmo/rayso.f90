@@ -1109,7 +1109,7 @@ if (muzero.gt.epzero) then
       w0_sir(k) = picapc
       ! if we take into account asymmetry factor for forward diffuse radiation
       ! Note apc means aerosols+clouds
-      gapc=(pic_h2o(k)*tauc(k)*gasym+piaero_h2o*tauah2o(k)*gaero_h2o)/tauapc*picapc
+      gapc=(pic_h2o(k)*tauc(k)*gch2o(k)+piaero_h2o*tauah2o(k)*gaero_h2o)/tauapc*picapc
       g_apc_sir(k) = gapc
       ! absorption and forward diffusion
       ckapcf=(1.d0-picapc*(1.d0+gapc)/2.d0)*tauapc/(deltaz*mui)
@@ -1142,7 +1142,7 @@ if (muzero.gt.epzero) then
       picapc=(pic_o3(k)*tauc(k)+piaero_o3*tauao3(k))/tauapc
       w0_suv(k) = picapc
       ! if we take into account asymmetry factor for forward diffuse radiation
-      gapc=(pic_o3(k)*tauc(k)*gasym+piaero_o3*tauao3(k)*gaero_o3)/tauapc*picapc
+      gapc=(pic_o3(k)*tauc(k)*gco3(k)+piaero_o3*tauao3(k)*gaero_o3)/tauapc*picapc
       g_apc_suv(k) = gapc
       ! absorption and forward diffusion
       ckapcf=(1.d0-picapc*(1.d0+gapc)/2.d0)*tauapc/(deltaz*mui)
@@ -1164,14 +1164,13 @@ if (muzero.gt.epzero) then
 
   ! if mui=1/sqrt(3) quadrature method as LH74 the source term is added for
   ! both downward and upward radiation
-  ! where  g1= 31/2(1-wo) , g3=(1-31/2µo)/2, g4=(1+31/2µo)/2 and t the total optical depth (gas + aerosol +
+  ! where  g1= 31/2(1-wo) , g3=(1-31/2µo)/2, g4=(1+31/2µo)/2 and t the total
+  ! optical depth (gas + aerosol +
   ! cloud) t = tg + ta + tc.
   ! if mui=muzero_cor delta method the source term is added only in the downward
   !diffuse radiation
   ! In that condition the two-stream equations can be written:
   ! where  g1=(1-wo)/µo, g4=1 and t the total optical depth (gas + aerosol + cloud) t = tg + ta + tc.
-
-
 
 ! if muzero < 0, it is night
 else
