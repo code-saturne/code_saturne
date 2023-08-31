@@ -2104,15 +2104,9 @@ cs_soil_model(void)
       = (const cs_real_3_t *restrict)mq->b_face_cog;
 
     const cs_real_t stephn = cs_physical_constants_stephan;
-    cs_real_t kappa = cs_turb_xkappa;
     const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
     const cs_lnum_t *elt_ids = z->elt_ids;
-    const cs_real_3_t *surfbo
-      = (const cs_real_3_t *)mq->b_face_normal;
     const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
-    const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(vel)->val;
-    cs_real_t *vel_rcodcl1 = CS_F_(vel)->bc_coeffs->rcodcl1;
-    cs_real_t g = cs_math_3_norm(cs_glob_physical_constants->gravity);
     cs_mesh_quantities_t *fvq   = cs_glob_mesh_quantities;
     const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
     cs_real_t *dt = cs_field_by_name("dt")->val;
@@ -2142,22 +2136,19 @@ cs_soil_model(void)
     cs_field_t *atm_total_water = cs_field_by_name_try("ym_water");
     cs_field_t *atm_temp = CS_F_(t);
     cs_field_t *crom = CS_F_(rho);
+    cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
     /* Radiative tables */
     cs_real_t *sold = (cs_real_t *)  cs_glob_atmo_option->rad_1d_sold;
     cs_real_t *ird = (cs_real_t *) cs_glob_atmo_option->rad_1d_ird;
-
     /* Pointer to the spectral flux density field */
     cs_field_t *f_qinspe = NULL;
     if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
       f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
 
-    /* Louis parameterisation
-     * #TODO replace the wall function reconstruction with already existing
-     * subroutine */
-    const cs_real_t b = 5.;
-    const cs_real_t c = 5.;
-    const cs_real_t d = 5.;
-
+    /* Exchange coefficients*/
+    cs_real_t *h_t = CS_F_(t)->bc_coeffs->bf;
+    cs_real_t *h_q = atm_total_water->bc_coeffs->bf;
+    
     const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
     /* Deardorff parameterisation */
     const cs_real_t tau_1 = 86400.;
@@ -2237,25 +2228,6 @@ cs_soil_model(void)
       f_fos[soil_id] = fos;
       f_foir[soil_id] = foir;
 
-      cs_real_t b_dist = mq->b_dist[face_id];
-      /* Richardson Calculation requires tangential (relative) velocity */
-      cs_real_3_t n ;
-      cs_math_3_normalize(surfbo[face_id], n);
-      /* rcodcl contains all boundaries from the study (not only the elements
-       * from the current zone */
-      cs_real_3_t vel_imp =
-      { vel_rcodcl1[m->n_b_faces * 0 + face_id],
-        vel_rcodcl1[m->n_b_faces * 1 + face_id],
-        vel_rcodcl1[m->n_b_faces * 2 + face_id]};
-      cs_real_3_t t;
-      cs_real_3_t vel_rel = {vel[cell_id][0] - vel_imp[0],
-                             vel[cell_id][1] - vel_imp[1],
-                             vel[cell_id][2] - vel_imp[2] };
-
-      cs_math_3_orthogonal_projection(n, vel_rel, t);
-
-      cs_real_t vt_mod_norm = cs_math_3_norm(t);
-
       if (cs_glob_atmo_option->meteo_profile == 0) {
         cs_atmo_profile_std(cell_cen[cell_id][2], &pphy, &dum, &dum);
       }
@@ -2271,11 +2243,11 @@ cs_soil_model(void)
             cs_glob_time_step->t_cur);
       }
       else {
-        pphy = cs_field_by_name("meteo_pressure")->val[cell_id];
+        pphy = meteo_pressure->val[cell_id];
       }
 
       /* ====================================
-       * 3) Specific case for water faces (sea/lake)
+       * Specific case for water faces (sea/lake)
        * ==================================== */
 
       /* Water is second component of soil_percentages */
@@ -2292,61 +2264,27 @@ cs_soil_model(void)
       }
       else {
 
-      /* ====================================
-       * 4) Compute Richardson Number and Function fh
-       * =================================== */
-
-      cs_real_t act = kappa / log((b_dist
-       + boundary_thermal_roughness->val[face_id])
-       / boundary_thermal_roughness->val[face_id]);
       cs_real_t rscp1 = (rair / cp0) * (1. + (rvsra - cpvcpa)
        * soil_total_water->val[soil_id] );
 
-      cs_real_t soil_virtual_temp = soil_pot_temperature->val[soil_id]
-        * (1. + (rvsra - 1.) * soil_total_water->val[soil_id] );
-
-      cs_real_t atm_virtual_temp = atm_temp->val[cell_id]
-        * (1. + (rvsra - 1.) * atm_total_water->val[cell_id] );
-
-      cs_real_t richardson_b = 0.;
-      cs_real_t fh = 0.;
-      cs_real_t fhden = 0.;
-      if (vt_mod_norm >= cs_math_epzero) {
-        richardson_b = 2. * CS_ABS(g) * b_dist * ( atm_virtual_temp
-                     - soil_virtual_temp ) / ( atm_virtual_temp
-                                             + soil_virtual_temp )
-                     / cs_math_pow2(vt_mod_norm );
-      }
-      if (richardson_b > 0.) {
-        fh = 1. / ( 1. + 3. * b * richardson_b * sqrt(1. + d * richardson_b) );
-      }
-      else {
-        fhden = 3. * b * c * cs_math_pow2(act) * sqrt((b_dist
-              + boundary_thermal_roughness->val[face_id])
-              / boundary_thermal_roughness->val[face_id] );
-        fh = 1. - (3. * b * richardson_b) / (1. + fhden
-           * sqrt(CS_ABS(richardson_b)) );
-      }
 
       /* ===============================
-       * 5) Compute coefficients for heat and latent heat fluxes
+       * Compute coefficients for heat and latent heat fluxes
        * =============================== */
 
       cs_real_t cphum = cp0 * (1. + (cpvcpa - 1.)
         * soil_total_water->val[soil_id] );
-      cs_real_t cht = crom->val[cell_id] * cphum
-        * cs_math_pow2(act) * fh * vt_mod_norm
-        * pow(ps / pphy, rscp1);
-      cs_real_t chq = crom->val[cell_id] * cs_math_pow2(act)
-        * fh * vt_mod_norm
+      /* Conversion theta -> T */
+      cs_real_t cht =  h_t[face_id] * pow(ps / pphy, rscp1);
+
+      cs_real_t chq = h_q[face_id]
         * (clatev - 2370.* (soil_temperature->val[soil_id]) );
 
       /* ===============================
-       * 6) Compute reservoirs water (shallow and deep)
+       * Compute reservoirs water (shallow and deep)
        * =============================== */
 
-      cs_real_t evapor = - crom->val[cell_id] * cs_math_pow2(act) * fh
-        * vt_mod_norm * (atm_total_water->val[cell_id]
+      cs_real_t evapor = - h_q[face_id] * (atm_total_water->val[cell_id]
         - soil_total_water->val[soil_id]);
       cs_real_t dtref  = dt[cell_id];
 
@@ -2372,7 +2310,7 @@ cs_soil_model(void)
       cs_real_t hu = 0.5 * (1. - cos(cs_math_pi * w1_plus));
 
       /* ============================
-       * 7) Compute saturated pressure and DL1
+       * Compute saturated pressure and DL1
        * ============================ */
 
       esat = cs_air_pwv_sat(soil_temperature->val[soil_id]);
@@ -2383,7 +2321,7 @@ cs_soil_model(void)
         / cs_math_pow2(rapsat * (soil_temperature->val[soil_id] + 239.78));
 
       /* ============================
-       * 8) Compute the first member of soil_temperature equation
+       * Compute the first member of soil_temperature equation
        * ============================ */
 
       cs_lnum_t iseuil = 0;
@@ -2403,7 +2341,7 @@ cs_soil_model(void)
         + chas1 + chal1 * ichal + soil_r2->val[soil_id] * iseuil ) + rapp1;
 
       /* ============================
-       * 9) Compute the second member of soil_temperature equation
+       * Compute the second member of soil_temperature equation
        * ============================ */
 
       ray2 = fos*(1. - boundary_albedo->val[face_id])
@@ -2426,7 +2364,7 @@ cs_soil_model(void)
         + tseuil * soil_r2->val[soil_id] * iseuil ) + rapp2;
 
       /* ============================
-       * 10) Compute new soil variables
+       * Compute new soil variables
        * ============================ */
 
       ts_plus = (soil_temperature->val[soil_id]
@@ -2441,7 +2379,7 @@ cs_soil_model(void)
       }
 
       /* ============================
-       * 11) Update new soil variables
+       * Update new soil variables
        * ============================ */
 
       soil_temperature->val[soil_id] = ts_plus
