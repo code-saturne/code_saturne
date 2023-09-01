@@ -1213,7 +1213,7 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
     if (maxfluxsurf < CS_ABS(i_volflux[f_id])/i_face_surf[f_id])
       maxfluxsurf = CS_ABS(i_volflux[f_id])/i_face_surf[f_id];
   }
-  cs_parall_max(1, CS_DOUBLE, &maxfluxsurf);
+  cs_parall_max(1, CS_REAL_TYPE, &maxfluxsurf);
 
   /* Compute the relative velocity at internal faces */
   cs_real_3_t gradface, normalface;
@@ -1227,16 +1227,13 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
       gradface[idim] = (  voidf_grad[cell_id1][idim]
                         + voidf_grad[cell_id2][idim])/2.;
 
-    cs_real_t normgrad = sqrt(pow(gradface[0],2)+
-                              pow(gradface[1],2)+
-                              pow(gradface[2],2));
+    cs_real_t normgrad = cs_math_3_norm(gradface);
 
     for (int idim = 0; idim < 3; idim++)
       normalface[idim] = gradface[idim] / (normgrad+delta);
 
-    cpro_idriftf[f_id] = fluxfactor*(normalface[0]*i_face_normal[f_id][0]+
-                                     normalface[1]*i_face_normal[f_id][1]+
-                                     normalface[2]*i_face_normal[f_id][2]);
+    cpro_idriftf[f_id] =
+      fluxfactor*cs_math_3_dot_product(normalface, i_face_normal);
   }
 
   BFT_FREE(voidf_grad);
@@ -1401,7 +1398,7 @@ cs_vof_drift_term(int                        imrgra,
   int i_flux_id = cs_field_get_key_int(CS_F_(void_f), kiflux);
   cs_field_t *i_flux = cs_field_by_id(i_flux_id);
 
-  if (n_cells_ext>n_cells) {
+  if (n_cells_ext > n_cells) {
 #   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
     for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
       rhs[cell_id] = 0.;
