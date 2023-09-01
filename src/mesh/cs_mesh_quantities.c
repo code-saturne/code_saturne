@@ -3149,6 +3149,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
     cs_array_real_copy(3*m->n_i_faces, mq->i_face_cog, mq->i_f_face_cog_1);
     cs_array_real_copy(3*m->n_b_faces, mq->b_face_cog, mq->b_f_face_cog);
     return;
+
   }
 
   cs_real_23_t *i_f_face_cell_normal;
@@ -3157,13 +3158,13 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
   memset(mq->i_f_face_cog_0, 0., m->n_i_faces * sizeof(cs_real_3_t));
   memset(mq->i_f_face_cog_1, 0., m->n_i_faces * sizeof(cs_real_3_t));
   memset(i_f_face_cell_normal, 0., m->n_i_faces * sizeof(cs_real_23_t));
-  memset(c_w_face_cog, 0. , m->n_cells_with_ghosts * sizeof(cs_real_3_t));
-  memset(c_w_face_surf, 0. , m->n_cells_with_ghosts * sizeof(cs_real_t));
+  memset(c_w_face_cog, 0., m->n_cells_with_ghosts * sizeof(cs_real_3_t));
+  memset(c_w_face_surf, 0., m->n_cells_with_ghosts * sizeof(cs_real_t));
 
- // TODO: uncomment when i_f_face_cell_normal is eliminated
- // cs_real_2_t *i_f_face_cell_surf;
- // BFT_MALLOC(i_f_face_cell_surf, m->n_i_faces, cs_real_2_t);
- // memset(i_face_cell_surf, 0., m->n_i_faces * sizeof(cs_real_2_t));
+  // TODO: uncomment when i_f_face_cell_normal is eliminated
+  // cs_real_2_t *i_f_face_cell_surf;
+  // BFT_MALLOC(i_f_face_cell_surf, m->n_i_faces, cs_real_2_t);
+  // memset(i_face_cell_surf, 0., m->n_i_faces * sizeof(cs_real_2_t));
 
   /* compute and store the first vertex on the solid immersed face
    * to compute its surface and COG */
@@ -3221,6 +3222,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         if (cs_math_3_dot_product(vn, nw) > 0.)
           n_s_face_vertices[ic] += 1;
       }
+
     }
 
     for (cs_lnum_t ic = 0; ic < 2 ; ic++) {
@@ -3231,8 +3233,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
        * The c_w_face_normal has a zero norm because it is not at the
        * immersed interface.
        */
-      if (cs_math_3_norm(c_w_face_normal[c_id]) < DBL_MIN &&
-          mq->cell_f_vol[c_id] < DBL_MIN)
+      if (   cs_math_3_norm(c_w_face_normal[c_id]) < DBL_MIN
+          && mq->cell_f_vol[c_id] < DBL_MIN)
         n_s_face_vertices[ic] = n_face_vertices;
     }
 

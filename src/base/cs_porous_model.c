@@ -388,7 +388,7 @@ cs_porous_model_auto_face_porosity(void)
     }
   }
 
-    /* Set boundary face values */
+  /* Set boundary face values */
 
   {
     const cs_lnum_t n_b_faces = m->n_b_faces;
