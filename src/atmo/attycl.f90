@@ -626,15 +626,15 @@ if (iaerosol.ne.CS_ATMO_AEROSOL_OFF) then
             rcodcl(ifac,isca(isc),1) = 0.0d0
       enddo
 
-       ! For gaseous species which have not been treated earlier
-       ! (for example species not present in the third gaseous scheme,
-       ! which can be treated in usatcl of with the file chemistry)
-       ! zero dirichlet conditions are imposed
-       do ii = 1, nespg
-         isc = isca_chem(ii)
-         if (rcodcl(ifac,isca(isc),1).gt.0.5d0*rinfin) &
-           rcodcl(ifac,isca(isc),1) = 0.0d0
-       enddo
+      ! For gaseous species which have not been treated earlier
+      ! (for example species not present in the third gaseous scheme,
+      ! which can be treated in usatcl of with the file chemistry)
+      ! zero dirichlet conditions are imposed
+      do ii = 1, nespg
+        isc = isca_chem(ii)
+        if (rcodcl(ifac,isca(isc),1).gt.0.5d0*rinfin) &
+          rcodcl(ifac,isca(isc),1) = 0.0d0
+      enddo
 
     endif
 
