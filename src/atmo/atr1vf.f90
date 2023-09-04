@@ -163,7 +163,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     call grimap(igrid, nvert*kmx, coords)
   endif
 
-  ! TODO grid interpolation must be refurbished to get a P0 interpolation
+  ! Grid interpolation is refurbished to get a P0 interpolation
   ! and not a point-point interpolation
   ! (i.e. we need to compute the mean of all code_saturne cells for a layer)
   ! A way could be to tag all nodes of the mesh is they belong to a ijk cell
