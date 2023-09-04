@@ -2148,7 +2148,7 @@ cs_soil_model(void)
     /* Exchange coefficients*/
     cs_real_t *h_t = CS_F_(t)->bc_coeffs->bf;
     cs_real_t *h_q = atm_total_water->bc_coeffs->bf;
-    
+
     const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
     /* Deardorff parameterisation */
     const cs_real_t tau_1 = 86400.;
@@ -2272,10 +2272,12 @@ cs_soil_model(void)
        * Compute coefficients for heat and latent heat fluxes
        * =============================== */
 
-      cs_real_t cphum = cp0 * (1. + (cpvcpa - 1.)
+      /* ratio specific heat of humide air/ specidif heat of dry air
+       * Cph/Cpd */
+      cs_real_t cph_dcpd = (1. + (cpvcpa - 1.)
         * soil_total_water->val[soil_id] );
       /* Conversion theta -> T */
-      cs_real_t cht =  h_t[face_id] * pow(ps / pphy, rscp1);
+      cs_real_t cht =  h_t[face_id] * pow(ps / pphy, rscp1) * cph_dcpd;
 
       cs_real_t chq = h_q[face_id]
         * (clatev - 2370.* (soil_temperature->val[soil_id]) );
