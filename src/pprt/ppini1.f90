@@ -101,13 +101,6 @@ if ( ippmod(iccoal).ge.0 ) then
   call cs_coal_param
 endif
 
-! ---> Physique particuliere : Combustion Eulerienne Charbon Pulverise
-!                              Couplee Transport Lagrangien
-
-if ( ippmod(icpl3c).ge.0 ) then
-  call cplin1
-endif
-
 ! ---> Physique particuliere : Combustion fuel
 
 if ( ippmod(icfuel).ge.0 ) then

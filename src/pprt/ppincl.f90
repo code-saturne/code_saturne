@@ -92,9 +92,9 @@ module ppincl
   !>      - ippmod(icolwc)=-1 module not activated.
   !>   - Multi-coals and multi-classes pulverised coal combustion: indicator ippmod(iccoal)
   !>
-  !>  The number of different coals must be inferior or equal to ncharm = 3.
+  !>  The number of different coals must be inferior or equal to ncharm = 5.
   !>  The number of particle size classes nclpch(icha) for the coal icha, must be
-  !>  inferior or equal to ncpcmx = 10.
+  !>  inferior or equal to ncpcmx = 20.
   !>      - ippmod(iccoal) = 0 imbalance between the temperature of the continuous and the
   !>        solid phases
   !>      - ippmod(iccoal) = 1 otherwise
@@ -102,12 +102,6 @@ module ppincl
   !>   - Multi-classes pulverised heavy fuel combustion: indicator ippmod(icfuel)
   !>      - ippmod(icfuel) = 0 module activated
   !>      - ippmod(icfuel) =-1 module not activated
-  !>   - Lagrangian modelling of multi-coals and multi-classes pulverised coal combustion:
-  !>     indicator ippmod(icpl3c) The number of different coals must be inferior or equal
-  !>     to ncharm = 3. The number of particle size classes nclpch(icha) for the coal icha,
-  !>     must be inferior or equal to ncpcmx = 10.
-  !>      - ippmod(icpl3c) = 1 coupling with the Lagrangian module, with transport of H2
-  !>      - ippmod(icpl3c) =-1 module not activated
   !>   - Electric arcs module (Joule effect and Laplace forces): indicator ippmod(ielarc)
   !>      - ippmod(ielarc) = 1 determination of the magnetic field by means of the Ampere’
   !>   theorem  (not available)
@@ -199,15 +193,6 @@ module ppincl
   !> - ippmod(ielarc) =-1 module not activated
   integer ::  ielarc
 
-  !> pointer to specify Lagrangian modelling of multi-coals and multi-classes pulverised coal
-  !> combustion with indicator ippmod(icpl3c).
-  !> The number of different coals must be inferior or equal
-  !>  to ncharm = 3. The number of particle size classes nclpch(icha) for the coal icha,
-  !>  must be inferior or equal to ncpcmx = 10.
-  !>  - ippmod(icpl3c) = 1 coupling with the Lagrangian module, with transport of H2
-  !>  - ippmod(icpl3c) =-1 module not activated
-  integer ::  icpl3c
-
   !> pointer to specify multi-coals and multi-classes pulverised coal combustion
   !> with indicator ippmod(iccoal).
   !> The number of different coals must be inferior or equal to ncharm = 3.
@@ -257,10 +242,10 @@ module ppincl
 
   parameter       (iphpar = 1 , icod3p = 2 , islfm = 3,             &
                    icoebu = 4 , icolwc = 5 ,                        &
-                   icpl3c = 6 , iccoal = 7 , icfuel = 8 ,           &
-                   ieljou = 9 , ielarc = 10, icompf = 11,           &
-                   iatmos = 12, iaeros = 13,                        &
-                   igmix  = 14)
+                   iccoal = 6 , icfuel = 7 ,                        &
+                   ieljou = 8 , ielarc = 9 , icompf = 10,           &
+                   iatmos = 11, iaeros = 12,                        &
+                   igmix  = 13)
 
   !> \}
 
@@ -413,33 +398,21 @@ module ppincl
   !> volatiles released by the coal \c icha
   integer, save :: if2m(ncharm)
 
-  !> mean value of the tracer 3 representing
-  !> the carbon released as CO during coke burnout
-  integer, save :: if3m
-
-  ! TODO absent de la doc utilisateur
-  !> transported variable of countinuous phase (gas mixture)
+  !> tracer 4: mass of the oxydant 2 divided by the mass of bulk
   integer, save :: if4m
-  ! TODO absent de la doc utilisateur
-  !> transported variable of countinuous phase (gas mixture)
+  !> tracer 5: mass of the oxydant 3 divided by the mass of bulk
   integer, save :: if5m
-  ! TODO absent de la doc utilisateur
-  !> transported variable of countinuous phase (gas mixture)
+  !> tracer 6: water coming from drying
   integer, save :: if6m
-  ! TODO absent de la doc utilisateur
-  !> transported variable of countinuous phase (gas mixture)
+  !> tracer 7: mass of the carbon from coal oxydized by O2
+  !> divided by the mass of bulk
   integer, save :: if7m
-  ! TODO absent de la doc utilisateur
-  !> transported variable of countinuous phase (gas mixture)
+  !> tracer 8: mass of the carbon from coal gasified by CO2
+  !> divided by the mass of bulk
   integer, save :: if8m
-  ! TODO absent de la doc utilisateur
-  !> transported variable of countinuous phase (gas mixture)
+  !> tracer 9: mass of the Carbon from coal gasified by H2O
+  !> divided by the mass of bulk
   integer, save :: if9m
-
-  !> the variance associated with the tracer 4 representing the air
-  !> (the mean value of this tracer is not transported, it can be deduced directly
-  !> from the three others)
-  integer, save :: if4p2m
 
   !> f1f2 variance
   integer, save :: ifvp2m

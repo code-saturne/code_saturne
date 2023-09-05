@@ -131,12 +131,6 @@ cs_user_model(void)
    * 2 (limit drop particle velocity) */
   cs_glob_combustion_model->idrift = 1;
 
-  /* Pulverized coal combustion model with Lagrangian reciprocal approach
-   * -1: not active
-   *  0: active
-   *  1: with drying */
-  cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] = 1;
-
   /* Cooling towers model
    * -1: not active
    *  1: Poppe's model

@@ -157,12 +157,6 @@ if (ippmod(iccoal).ge.0) then
   call cs_coal_varpos
 endif
 
-! Pulverized coal combustion coupled with Lagrangian model
-
-if (ippmod(icpl3c).ge.0) then
-  call cplvar
-endif
-
 ! 3. Compressible model
 !----------------------
 

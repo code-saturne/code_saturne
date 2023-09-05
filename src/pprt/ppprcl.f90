@@ -138,23 +138,6 @@ elseif ( ippmod(iccoal).ge.0 ) then
     izfppp(ifac) = 0
   enddo
 
-! ---> Combustion charbon pulverise couple Lagrangien USCPLC
-
-elseif (ippmod(icpl3c).ge.0) then
-
-  do izone = 1, nozppm
-    iqimp(izone)  = 0
-    icalke(izone) = 0
-    ientat(izone) = 0
-    dh(izone)     = zero
-    xintur(izone) = zero
-    qimpat(izone) = zero
-  enddo
-
-  do ifac = 1, nfabor
-    izfppp(ifac) = 0
-  enddo
-
 ! ---> Combustion fuel  USFUCL
 
 elseif (ippmod(icfuel).ge.0) then

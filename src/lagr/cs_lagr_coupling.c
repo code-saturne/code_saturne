@@ -498,13 +498,6 @@ cs_lagr_coupling(const cs_real_t  taup[],
                - prev_p_mass * prev_p_tmp * prev_p_cp) / dtp * p_stat_w;
           tslag[iel + (lag_st->itsti-1) * ncelet]
             += tempct[nbpart + npt] * p_stat_w;
-          tslag[iel + (lag_st->itsmv1[icha]-1) * ncelet]
-            += p_stat_w * cpgd1[npt];
-          tslag[iel + (lag_st->itsmv2[icha]-1) * ncelet]
-            += p_stat_w * cpgd2[npt];
-          tslag[iel + (lag_st->itsco-1) * ncelet]
-            += p_stat_w * cpght[npt];
-          tslag[iel + (lag_st->itsfp4-1) * ncelet] = 0.0;
 
         }
 

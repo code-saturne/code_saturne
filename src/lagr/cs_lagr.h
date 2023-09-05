@@ -675,18 +675,6 @@ typedef struct {
   /*! mass source term */
   int  itsmas;
 
-  /*  source term for the light volatile matters */
-  int  *itsmv1;  //ncharm2
-
-  /*  source term for the heavy volatile matters */
-  int  *itsmv2;  //ncharm2
-
-  /*! source term for the carbon released during heterogeneous combustion */
-  int  itsco;
-
-  /*! variance of the air scalar */
-  int  itsfp4;
-
   /*! number of absolute time steps (including the restarts)
     after which a time-average of the two-way coupling source terms is
     calculated.

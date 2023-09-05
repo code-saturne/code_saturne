@@ -1443,7 +1443,6 @@ cs_rad_transfer_solve(int  bc_type[])
       || pm_flag[CS_COMBUSTION_SLFM] >= 0
       || pm_flag[CS_COMBUSTION_EBU] >= 0
       || pm_flag[CS_COMBUSTION_LW] >= 0
-      || pm_flag[CS_COMBUSTION_PCLC] >= 0
       || pm_flag[CS_COMBUSTION_COAL] >= 0
       || pm_flag[CS_COMBUSTION_FUEL] >= 0
       || pm_flag[CS_JOULE_EFFECT] >= 0

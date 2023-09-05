@@ -283,9 +283,6 @@ cs_lagr_options_definition(int         isuite,
 
     _free_lagr_encrustation_pointers();
 
-    BFT_FREE(cs_glob_lagr_source_terms->itsmv1);
-    BFT_FREE(cs_glob_lagr_source_terms->itsmv2);
-
     cs_lagr_finalize_zone_conditions();
 
     return;
@@ -314,19 +311,6 @@ cs_lagr_options_definition(int         isuite,
 
   if (lagr_time_scheme->iilagr == CS_LAGR_FROZEN_CONTINUOUS_PHASE)
     *iccvfg = 1;
-
-  if (   lagr_time_scheme->iilagr != CS_LAGR_TWOWAY_COUPLING
-      && cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 1)
-    cs_parameters_error
-      (CS_ABORT_DELAYED,
-       _("in Lagrangian module"),
-       _("The pulverized coal coupled with Lagrangian particle transport\n"
-         "is activated, but the return coupling of the dispersed phase\n"
-         "on the continuous phase is not activated:\n"
-         "  cs_glob_lagr_time_scheme->iilagr = %d\n"
-         "The return coupling must be activated for this model:\n"
-         "  cs_glob_lagr_time_scheme->iilagr = CS_LAGR_TWOWAY_COUPLING\n"),
-       lagr_time_scheme->iilagr);
 
   if (lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
       && (cs_glob_time_step->is_local || cs_glob_time_step->is_variable))
@@ -470,31 +454,16 @@ cs_lagr_options_definition(int         isuite,
   else
     lagr_model->fouling = 0;
 
-  if (   lagr_model->physical_model != CS_LAGR_PHYS_COAL
-      && cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0)
-    cs_parameters_error
-      (CS_ABORT_DELAYED,
-       _("in Lagrangian module"),
-       _("The pulverized coal model coupled to Lagrangian particle transport\n"
-         "is active (cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] = %d)\n"
-         "while coal particle transport is not active "
-         "(lagr_model->physical_model = %d, where CS_LAGR_PHYS_COAL is expected).\n"),
-       cs_glob_physical_model_flag[CS_COMBUSTION_PCLC],
-       lagr_model->physical_model);
-
   if (   lagr_model->physical_model == CS_LAGR_PHYS_COAL
-      && (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] < 0
-          && cs_glob_physical_model_flag[CS_COMBUSTION_COAL] < 0))
+      && cs_glob_physical_model_flag[CS_COMBUSTION_COAL] < 0)
     cs_parameters_error
       (CS_ABORT_DELAYED,
        _("in Lagrangian module"),
        _("Coal particle transport is activated "
          "(lagr_model->physical_model = %d)\n"
          "but the matching model coupling is not active:\n"
-         " cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] = %d\n"
          " cs_glob_physical_model_flag[CS_COMBUSTION_COAL] = %d\n"),
        lagr_model->physical_model,
-       cs_glob_physical_model_flag[CS_COMBUSTION_PCLC],
        cs_glob_physical_model_flag[CS_COMBUSTION_COAL]);
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
@@ -883,26 +852,6 @@ cs_lagr_options_definition(int         isuite,
   cs_glob_lagr_source_terms->itste  = 0;
   cs_glob_lagr_source_terms->itsti  = 0;
 
-  /* If we don't use fortran initialization (NEPTUNE_CFD)
-     we need to allocate memory */
-  if (cs_glob_lagr_source_terms->itsmv1 == NULL)
-    BFT_MALLOC(cs_glob_lagr_source_terms->itsmv1,
-               cs_glob_lagr_const_dim->ncharm2, int);
-
-  if (cs_glob_lagr_source_terms->itsmv2 == NULL)
-    BFT_MALLOC(cs_glob_lagr_source_terms->itsmv2,
-               cs_glob_lagr_const_dim->ncharm2, int);
-
-  for (int icha = 0; icha < const_dim->ncharm2; icha++) {
-
-    cs_glob_lagr_source_terms->itsmv1[icha] = 0;
-    cs_glob_lagr_source_terms->itsmv2[icha] = 0;
-
-  }
-
-  cs_glob_lagr_source_terms->itsco = 0;
-  cs_glob_lagr_source_terms->itsfp4 = 0;
-
   /* Dynamics: velocity + turbulence */
   if (cs_glob_lagr_source_terms->ltsdyn == 1) {
 
@@ -984,20 +933,7 @@ cs_lagr_options_definition(int         isuite,
       cs_glob_lagr_source_terms->itsti
         = cs_glob_lagr_source_terms->itste + 1;
 
-      for (int icha = 0; icha < extra->ncharb; icha++)
-        cs_glob_lagr_source_terms->itsmv1[icha]
-          = cs_glob_lagr_source_terms->itsti + icha;
-
-      for (int icha = 0; icha < extra->ncharb; icha++)
-        cs_glob_lagr_source_terms->itsmv2[icha]
-          = cs_glob_lagr_source_terms->itsmv1[extra->ncharb] + icha;
-
-      cs_glob_lagr_source_terms->itsco
-        = cs_glob_lagr_source_terms->itsmv2[extra->ncharb] + 1;
-      cs_glob_lagr_source_terms->itsfp4
-        = cs_glob_lagr_source_terms->itsco + 1;
-
-      irf = cs_glob_lagr_source_terms->itsfp4;
+      irf = cs_glob_lagr_source_terms->itsti;
 
     }
 

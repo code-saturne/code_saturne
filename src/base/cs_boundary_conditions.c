@@ -1751,8 +1751,7 @@ cs_f_boundary_conditions_get_cpincl_pointers(int             **ientat,
   *ientat = NULL;
   *timpat = NULL;
 
-  if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
-      || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1
+  if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1
       || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] > -1) {
     *inmoxy = cs_glob_bc_pm_info->inmoxy + 1;
     *ientat = cs_glob_bc_pm_info->ientat + 1;
@@ -2403,8 +2402,7 @@ cs_boundary_conditions_create_legacy_zone_data(void)
 
   /* Arrays present only for coal combustion */
 
-  if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
-      || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1
+  if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1
       || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] > -1) {
 
     BFT_REALLOC(bc_pm_info->inmoxy, CS_MAX_BC_PM_ZONE_NUM+1, cs_lnum_t);
@@ -2506,8 +2504,7 @@ cs_boundary_conditions_free(void)
   BFT_FREE(_bc_open);
   _n_bc_open = 0;
 
-  if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
-      || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1
+  if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1
       || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] > -1) {
 
     BFT_FREE(cs_glob_bc_pm_info->inmoxy);

@@ -611,20 +611,6 @@ cs_restart_lagrangian_checkpoint_read(void)
             sprintf(nomtsl[cs_glob_lagr_source_terms->itsti],
                     "terme_source_thermique_implicite");
 
-            for (int icha = 0; icha < extra->ncharb; icha++) {
-
-              sprintf(nomtsl[cs_glob_lagr_source_terms->itsmv1[icha]],
-                      "terme_source_legeres_F1_%04d", icha);
-              sprintf(nomtsl[cs_glob_lagr_source_terms->itsmv2[icha]],
-                      "terme_source_lourdes_F2_%04d", icha);
-
-            }
-
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsco],
-                    "terme_source_F3");
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsfp4],
-                    "terme_source_variance_traceur_air");
-
           }
 
         }
@@ -1394,16 +1380,6 @@ cs_restart_lagrangian_checkpoint_write(void)
                   "terme_source_thermique_explicite");
           sprintf(nomtsl[cs_glob_lagr_source_terms->itsti],
                   "terme_source_thermique_implicite");
-          for (int icha = 0; icha < extra->ncharb; icha++) {
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsmv1[icha]],
-                    "terme_source_legeres_F1_%04d", icha);
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsmv2[icha]],
-                    "terme_source_lourdes_F2_%04d", icha);
-          }
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsco],
-                  "terme_source_F3");
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsfp4],
-                  "terme_source_variance_traceur_air");
         }
       }
 

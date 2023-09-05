@@ -113,13 +113,6 @@ if (ippmod(iccoal).ge.0) then
   call cs_coal_prop
 endif
 
-! ---> Physique particuliere :  Combustion Charbon Pulverise
-!      Couplee Transport Lagrangien des particules de charbon
-
-if (ippmod(icpl3c).ge.0) then
-  call cplpro
-endif
-
 ! ---> Physique particuliere : Combustion Fuel
 
 if (ippmod(icfuel).ge.0) then

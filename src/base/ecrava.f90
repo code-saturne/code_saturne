@@ -808,7 +808,7 @@ if (iecaux.eq.1) then
 
 ! ---> Grandeurs complementaires pour la combustion CP
 
-  if (ippmod(icpl3c).ge.0 .or. ippmod(iccoal).ge.0) then
+  if (ippmod(iccoal).ge.0) then
 
 !     Charbon PuLVerise : masse vol des charbons
 

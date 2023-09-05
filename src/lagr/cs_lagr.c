@@ -288,10 +288,6 @@ static cs_lagr_source_terms_t _cs_glob_lagr_source_terms
      .itste = 0,
      .itsti = 0,
      .itsmas = 0,
-     .itsmv1 = NULL,
-     .itsmv2 = NULL,
-     .itsco = 0,
-     .itsfp4 = 0,
      .nstits = 0,
      .npts = 0,
      .ntxerr = 0,
@@ -467,12 +463,7 @@ cs_f_lagr_source_terms_pointers(int  **p_ltsdyn,
                                 int  **p_itske,
                                 int  **p_itste,
                                 int  **p_itsti,
-                                int  **p_itsmas,
-                                int  **p_itsco,
-                                int  **p_itsmv1,
-                                int  **p_itsmv2,
-                                int   *dim_itsmv1,
-                                int   *dim_itsmv2);
+                                int  **p_itsmas);
 
 void
 cs_f_lagr_specific_physics(int        *iirayo,
@@ -603,12 +594,7 @@ cs_f_lagr_source_terms_pointers(int  **p_ltsdyn,
                                 int  **p_itske,
                                 int  **p_itste,
                                 int  **p_itsti,
-                                int  **p_itsmas,
-                                int  **p_itsco,
-                                int  **p_itsmv1,
-                                int  **p_itsmv2,
-                                int  *dim_itsmv1,
-                                int  *dim_itsmv2)
+                                int  **p_itsmas)
 {
   *p_ltsdyn = &cs_glob_lagr_source_terms->ltsdyn;
   *p_ltsmas = &cs_glob_lagr_source_terms->ltsmas;
@@ -618,19 +604,6 @@ cs_f_lagr_source_terms_pointers(int  **p_ltsdyn,
   *p_itste  = &cs_glob_lagr_source_terms->itste;
   *p_itsti  = &cs_glob_lagr_source_terms->itsti;
   *p_itsmas = &cs_glob_lagr_source_terms->itsmas;
-  *p_itsco  = &cs_glob_lagr_source_terms->itsco;
-
-  if (cs_glob_lagr_source_terms->itsmv1 == NULL)
-    BFT_MALLOC(cs_glob_lagr_source_terms->itsmv1,
-               cs_glob_lagr_const_dim->ncharm2, int);
-  *p_itsmv1 = cs_glob_lagr_source_terms->itsmv1;
-  *dim_itsmv1 = cs_glob_lagr_const_dim->ncharm2;
-
-  if (cs_glob_lagr_source_terms->itsmv2 == NULL)
-    BFT_MALLOC(cs_glob_lagr_source_terms->itsmv2,
-               cs_glob_lagr_const_dim->ncharm2, int);
-  *p_itsmv2 = cs_glob_lagr_source_terms->itsmv2;
-  *dim_itsmv2 = cs_glob_lagr_const_dim->ncharm2;
 }
 
 void
@@ -1189,11 +1162,6 @@ cs_lagr_finalize(void)
   for (int i = 0; i < cs_glob_lagr_dim->n_boundary_stats; i++)
     BFT_FREE(cs_glob_lagr_boundary_interactions->nombrd[i]);
   BFT_FREE(cs_glob_lagr_boundary_interactions->nombrd);
-
-  /* Source terms */
-
-  BFT_FREE(cs_glob_lagr_source_terms->itsmv1);
-  BFT_FREE(cs_glob_lagr_source_terms->itsmv2);
 
   /* Statistics */
 

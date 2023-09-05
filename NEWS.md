@@ -3,6 +3,11 @@ Master (not on release branches yet)
 
 ### Physical modeling
 
+- Remove old pulverized coal combustion model with Lagrangian reciprocal
+  approach (`cs_glob_physical_model[CS_COMBUSTION_PCLC]` / `ippmod(icpl3c)`).
+  That model was not accessible using the GUI, and not covered in the
+  validation suite, so probably unused since 10 years at least.
+
 - Cooling towers model: Adding rain drift velocity equation solving.
   New keyword solve_rain_velocity has been added to allow the solving of
   rain drops drift velocity equation. The model has been adapted from
@@ -17,6 +22,7 @@ Master (not on release branches yet)
   * This will allow sharing contexts wich may be used by CDO-type
     functions such as cs_dof_function_t in a shared manner between
     variables.
+  * The coal combustion model now uses this mechanism for inlet conditions.
 
 - run.cfg: the user can now always use global sections to define entries,
   with the syntax [key] for a key among "run_prologue", "run_epilogue",

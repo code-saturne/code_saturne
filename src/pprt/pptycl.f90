@@ -222,11 +222,6 @@ elseif (ippmod(icolwc).ge.0) then
 elseif (ippmod(iccoal).ge.0) then
   call cs_coal_boundary_conditions(itypfb)
 
-! ---> Combustion charbon pulverise couple Lagrangien USCPLC
-
-elseif (ippmod(icpl3c).ge.0) then
-  call cpltcl(itypfb, izfppp, rcodcl)
-
 ! ---> Combustion fuel
 
 elseif (ippmod(icfuel).ge.0) then

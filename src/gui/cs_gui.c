@@ -1566,8 +1566,7 @@ _read_diffusivity(void)
           && (f->type & CS_FIELD_USER)) {
         if (cs_field_get_key_int(f, kscavr) < 0) {
 
-          if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
-              || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1) {
+          if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1) {
             /* Air molar mass */
             result = 0.028966;
             cs_gui_fluid_properties_value("reference_molar_mass", &result);

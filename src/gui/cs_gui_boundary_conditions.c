@@ -2115,8 +2115,7 @@ _init_boundaries(void)
                                        "boundary_conditions/boundary");
 
   bool solid_fuels = false;
-  if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
-      || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1)
+  if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1)
     solid_fuels = true;
   bool gas_combustion = false;
   for (cs_physical_model_type_t m_type = CS_COMBUSTION_3PT;
@@ -2125,8 +2124,7 @@ _init_boundaries(void)
     if (cs_glob_physical_model_flag[m_type] > -1)
       gas_combustion = true;
   }
-  if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
-      || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1)
+  if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1)
     solid_fuels = true;
 
   cs_boundary_conditions_create_legacy_zone_data();

@@ -61,7 +61,7 @@ implicit none
 ! Local variables
 
 integer         icla, icha, igg, it, ir, ih, if, izone
-integer         isol, ige, iat
+integer         ige, iat
 integer         idirac
 
 
@@ -146,7 +146,6 @@ if6m   = 0
 if7m   = 0
 if8m   = 0
 if9m   = 0
-if4p2m = 0
 ifvp2m = 0
 iyco2  = 0
 do icla = 1, nclcpm
@@ -195,7 +194,6 @@ do icla = 1, nclcpm
   ihlf (icla) = 0
 enddo
 ifvap   = 0
-if4p2m  = 0
 iyco2   = 0
 iyhcn   = 0
 iynh3   = 0

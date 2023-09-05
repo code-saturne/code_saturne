@@ -105,12 +105,6 @@ if (ippmod(iccoal).ge.0) then
   call cs_coal_varini
 endif
 
-! ---> Combustion charbon pulverise couples Lagrangien
-
-if (ippmod(icpl3c).ge.0) then
-  call cplini
-endif
-
 ! ---> Combustion fuel
 
 if (ippmod(icfuel).ge.0) then

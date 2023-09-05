@@ -59,8 +59,6 @@ typedef enum {
   CS_COMBUSTION_SLFM,              /*!< Steady laminar flamelet model */
   CS_COMBUSTION_EBU,               /*!< EBU combustion model */
   CS_COMBUSTION_LW,                /*!< Libby-Williams combustion model */
-  CS_COMBUSTION_PCLC,              /*!< pulverized coal combustion with
-                                        Lagrangian coupling */
   CS_COMBUSTION_COAL,              /*!< coal combustion model */
   CS_COMBUSTION_FUEL,              /*!< fuel combustion */
   CS_JOULE_EFFECT,                 /*!< Joule effect */

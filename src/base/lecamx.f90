@@ -1234,8 +1234,7 @@ if ( ippmod(icolwc).ge.0 ) then
 endif
 
 !     Charbon PuLVerise : masse vol des charbons
-if (ippmod(icpl3c).ge.0 .or.                                      &
-    ippmod(iccoal).ge.0) then
+if (ippmod(iccoal).ge.0) then
   itysup = 0
   nbval  = 1
   ierrch = 0

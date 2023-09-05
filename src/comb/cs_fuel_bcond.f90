@@ -108,12 +108,11 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-integer          ii, ifac, izone, mode, iel, ige, iok
+integer          ii, ifac, izone, mode, ige, iok
 integer          icla , ioxy
-integer          icke
 integer          nbrval
 
-double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
+double precision qisqc
 double precision t1, t2
 double precision h1(nozppm) , h2(nozppm)
 double precision x20t(nozppm)
@@ -136,8 +135,6 @@ double precision, dimension(:), pointer :: viscl
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(iviscl, viscl)
 call field_get_val_s_by_name("b_x_c", b_x1)
-
-d2s3   = 2.d0 / 3.d0
 
 !===============================================================================
 ! 1.  Parallel exchanges for the user data

@@ -1065,8 +1065,7 @@ _lagich(const cs_real_t   tempct[],
   cs_real_t lv = 2263000.0;
 
   /* Check for models activation */
-  if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] < 0
-      && cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] < 0)
+  if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] < 0)
     bft_error(__FILE__, __LINE__, 0,
               _("In Lagrangian module:\n\n"
                 "Lagrangian transport of coal particles is activated\n"

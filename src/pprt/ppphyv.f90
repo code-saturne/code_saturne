@@ -138,13 +138,6 @@ if (ippmod(iccoal).ge.0) then
   call cs_coal_physprop(mbrom)
 endif
 
-! ---> Flamme charbon pulverise couplee Transport Lagrangien
-!      des particules de charbon
-
-if (ippmod(icpl3c).ge.0) then
-  call cplphy(mbrom, izfppp)
-endif
-
 ! ---> Flamme fuel
 
 if (ippmod(icfuel).ge.0) then

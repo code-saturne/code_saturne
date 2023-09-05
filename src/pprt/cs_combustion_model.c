@@ -465,8 +465,7 @@ cs_f_ppcpfu_get_pointers(int     **idrift,
 void
 cs_combustion_initialize(void)
 {
-  if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0
-      || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0) {
+  if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0) {
     if (_combustion_model.coal == NULL) {
       _combustion_model.coal = cs_coal_model_create();
       cs_f_coal_model_map();

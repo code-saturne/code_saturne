@@ -142,15 +142,6 @@ module lagran
   !> mass source term
   integer(c_int), pointer, save ::  itsmas
 
-  !> source term for the light volatile matters
-  integer(c_int), dimension(:), pointer, save ::  itsmv1
-
-  !> source term for the heavy volatile matters
-  integer(c_int),  dimension(:), pointer, save ::  itsmv2
-
-  !> source term for the carbon released during heterogeneous combustion
-  integer(c_int), pointer, save ::  itsco
-
   !> \}
 
   !=============================================================================
@@ -181,17 +172,12 @@ module lagran
     subroutine cs_f_lagr_source_terms_pointers(p_ltsdyn, p_ltsmas,             &
                                                p_ltsthe, p_itsli,              &
                                                p_itske, p_itste, p_itsti,      &
-                                               p_itsmas, p_itsco,              &
-                                               p_itsmv1, p_itsmv2, dim_itsmv1, &
-                                               dim_itsmv2) &
+                                               p_itsmas)                       &
       bind(C, name='cs_f_lagr_source_terms_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int) :: dim_itsmv1, dim_itsmv2
       type(c_ptr), intent(out) :: p_ltsdyn, p_ltsmas, p_ltsthe, p_itsli,       &
-                                  p_itske, p_itste,                            &
-                                  p_itsti, p_itsmas, p_itsmv1, p_itsmv2,       &
-                                  p_itsco
+                                  p_itske, p_itste, p_itsti, p_itsmas
     end subroutine cs_f_lagr_source_terms_pointers
 
     !---------------------------------------------------------------------------
@@ -334,8 +320,7 @@ contains
     ! lagr_option_source_terms
     type(c_ptr) :: p_ltsdyn, p_ltsmas, p_ltsthe, p_itsli, p_itske,     &
                    p_itste, p_itsti,                                   &
-                   p_itsmas, p_itsmv1, p_itsmv2, p_itsco
-    integer(c_int) :: dim_itsmv1, dim_itsmv2
+                   p_itsmas
 
     call cs_f_lagr_params_pointers(p_iilagr, p_idepst, p_iflow, p_ipreci)
     call c_f_pointer(p_iilagr, iilagr)
@@ -346,9 +331,7 @@ contains
     call cs_f_lagr_source_terms_pointers(p_ltsdyn, p_ltsmas,           &
                                          p_ltsthe, p_itsli,            &
                                          p_itske,  p_itste, p_itsti,   &
-                                         p_itsmas, p_itsco,            &
-                                         p_itsmv1, p_itsmv2,           &
-                                         dim_itsmv1, dim_itsmv2)
+                                         p_itsmas)
     call c_f_pointer(p_ltsdyn, ltsdyn)
     call c_f_pointer(p_ltsmas, ltsmas)
     call c_f_pointer(p_ltsthe, ltsthe)
@@ -357,9 +340,6 @@ contains
     call c_f_pointer(p_itste , itste )
     call c_f_pointer(p_itsti , itsti )
     call c_f_pointer(p_itsmas, itsmas)
-    call c_f_pointer(p_itsco , itsco )
-    call c_f_pointer(p_itsmv1, itsmv1, [dim_itsmv1])
-    call c_f_pointer(p_itsmv2, itsmv2, [dim_itsmv2])
 
     return
 
@@ -406,7 +386,7 @@ contains
   subroutine lagran_init_map
 
     use ppincl, only: iccoal, icfuel, ieljou, ielarc, icoebu, icod3p,          &
-                      icpl3c, iym1, icompf
+                      iym1, icompf
     use cpincl, only: ncharb, xashch, cp2ch, xwatch, rho0ch, a1ch,             &
                       a2ch, e1ch, e2ch, io2, ih2o, ico,                        &
                       ahetch, ehetch, thcdch, y1ch, y2ch, h02ch

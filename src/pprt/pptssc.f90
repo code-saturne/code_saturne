@@ -80,7 +80,6 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use pointe, only: itypfb, tslagr
 use ppppar
 use ppthch
 use coincl
@@ -136,24 +135,17 @@ endif
 
 ! ---> Flamme charbon pulverise
 
-if ( ippmod(iccoal).ge.0 ) then
+if (ippmod(iccoal).ge.0) then
   call cs_coal_scast(iscal, smbrs, rovsdt)
-endif
-
-! ---> Flamme charbon pulverise couplee Transport Lagrangien
-!      des particules de charbon
-
-if ( ippmod(icpl3c).ge.0 .and. iilagr.eq.2 ) then
-  call cpltss(iscal, itypfb, smbrs, rovsdt, tslagr)
 endif
 
 ! ---> Flamme fuel
 
-if ( ippmod(icfuel).ge.0 ) then
+if (ippmod(icfuel).ge.0) then
   call cs_fuel_scast(iscal, smbrs, rovsdt)
 endif
 
-! ---> Version atmospherique :
+! ---> Atmospheric version
 
 if (ippmod(iatmos).ge.0) then
   call attssc(iscal,smbrs)
