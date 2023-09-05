@@ -3,6 +3,9 @@ Release 8.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix use of beta limiter combined with other limiters.
+  This mainly impacts VoF computations.
+
 - Fix bugs in convection/diffusion multigrid linear solver for vectors and
   tensors.
 
