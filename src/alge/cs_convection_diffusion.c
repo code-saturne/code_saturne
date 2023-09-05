@@ -263,7 +263,7 @@ _beta_limiter_denom(const int              f_id,
   }
 
   /* legacy SOLU Scheme or centered scheme */
-  if (ischcp == 0 || ischcp == 1 || ischcp == 3) {
+  if (ischcp == 0 || ischcp == 1 || ischcp == 3 || ischcp == 4) {
 
     cs_field_gradient_scalar(f,
                              false, /* use_previous_t */
