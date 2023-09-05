@@ -3554,13 +3554,10 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
 
     /* Loop on non-eliminated faces */
 
-    cs_real_t ag_mult = 1.;
     cs_real_t ag_threshold = 1. - epsilon;
-    if (coarsening_type == CS_GRID_COARSENING_CONV_DIFF_DX) {
-      ag_mult = -1.;
-      ag_threshold = - (1. - epsilon) * pow(relaxation_parameter, npass);
-      // ag_threshold = (1. - epsilon) * pow(relaxation_parameter, npass);
-    }
+    if (coarsening_type == CS_GRID_COARSENING_CONV_DIFF_DX)
+      ag_threshold = (1. - epsilon) * pow(relaxation_parameter, npass);
+
 
     for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
 
@@ -3580,26 +3577,22 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
 
         cs_lnum_t ix0 = c_face*isym, ix1 = (c_face +1)*isym -1;
 
-        cs_real_t f_da0_da1 =   (_f_da[ii] * _f_da[jj])
-                              / (c_cardinality[ii]*c_cardinality[jj]);
+        cs_real_t f_da0_da1_inv = (c_cardinality[ii]*c_cardinality[jj])
+                                / (_f_da[ii] * _f_da[jj]);
 
         cs_real_t aggr_crit;
 
         if (coarsening_type == CS_GRID_COARSENING_CONV_DIFF_DX) {
-          cs_real_t f_xa0 = CS_MAX(-_f_xa[ix0], 1.e-15);
-          cs_real_t f_xa1 = CS_MAX(-_f_xa[ix1], 1.e-15);
-          aggr_crit =   CS_MAX(f_xa0, f_xa1)
-                      / CS_MAX(sqrt(f_da0_da1), 1.e-15);
+          cs_real_t f_xa0 = CS_MAX(-_f_xa[ix0], 0.);
+          cs_real_t f_xa1 = CS_MAX(-_f_xa[ix1], 0.);
+          aggr_crit =   CS_MAX(f_xa0, f_xa1) * sqrt(f_da0_da1_inv);
         }
         else {
           cs_real_t f_xa0_xa1 =  _f_xa[ix0] * _f_xa[ix1];
-          /* TODO: replace this test, or adimensionalize it */
-          f_xa0_xa1 = CS_MAX(f_xa0_xa1, 1.e-30);
-
-          aggr_crit = f_da0_da1 / f_xa0_xa1;
+          aggr_crit = f_da0_da1_inv * f_xa0_xa1;
         }
 
-        if (ag_mult*aggr_crit < ag_threshold) {
+        if (aggr_crit > ag_threshold) {
 
           if (f_c_cell[ii] > -1 && f_c_cell[jj] < 0 ) {
             if (c_aggr_count[f_c_cell[ii]] < _max_aggregation +1) {
