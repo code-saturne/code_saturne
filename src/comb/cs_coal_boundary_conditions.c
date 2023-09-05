@@ -536,7 +536,7 @@ cs_coal_boundary_conditions(int  bc_type[])
       for (int icha = 0; icha < n_coals; icha++) {
         cs_real_t totcp = 0;
         for (int iclapc = 0; iclapc < coal->n_classes_per_coal[icha]; iclapc++)
-          totcp += totcp + ci->distch[icha][iclapc];
+          totcp += ci->distch[icha][iclapc];
         if (fabs(totcp - 100) > cs_math_epzero) {
           cs_parameters_error_header(CS_ABORT_DELAYED,
                                      "in pulverized coal inlet definitions");
