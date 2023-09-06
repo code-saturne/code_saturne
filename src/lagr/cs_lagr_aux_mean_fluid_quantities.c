@@ -316,7 +316,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
         cs_field_by_name_try("viscous_shear_divergence");
 
       if (f_visc_forces != NULL)
-        div_mu_gradvel = f_visc_forces->val;
+        div_mu_gradvel = (cs_real_3_t *)f_visc_forces->val;
       else {
         BFT_MALLOC(_div_mu_gradvel,m->n_cells_with_ghosts, cs_real_3_t);
         div_mu_gradvel = _div_mu_gradvel;
@@ -339,7 +339,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
         BFT_MALLOC(b_secvis, n_b_faces, cs_real_t);
       }
 
-      cs_array_real_fill_zero(3*n_cells_with_ghosts, div_mu_gradvel);
+      cs_array_real_fill_zero(3*n_cells_with_ghosts, (cs_real_t *)div_mu_gradvel);
 
       /* Compute - div(mu_gradu) */
       cs_balance_vector(cs_glob_time_step_options->idtvar,
@@ -350,10 +350,10 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
                         &vcopt_vel,
                         cvar_vel,
                         cvar_vela,
-                        f_vel->bc_coeffs->a,
-                        f_vel->bc_coeffs->b,
-                        f_vel->bc_coeffs->af,
-                        f_vel->bc_coeffs->bf,
+                        (const cs_real_3_t *)f_vel->bc_coeffs->a,
+                        (const cs_real_33_t *)f_vel->bc_coeffs->b,
+                        (const cs_real_3_t *)f_vel->bc_coeffs->af,
+                        (const cs_real_33_t *)f_vel->bc_coeffs->bf,
                         i_massflux,
                         b_massflux,
                         i_visc,
