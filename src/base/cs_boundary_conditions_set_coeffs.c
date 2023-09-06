@@ -3625,10 +3625,10 @@ cs_boundary_conditions_set_generalized_sym_vector_aniso
    cs_real_t        af[3],
    cs_real_t        b[3][3],
    cs_real_t        bf[3][3],
-   const cs_real_t  hint[6],
-   const cs_real_t  normal[3],
    const cs_real_t  pimpv[3],
-   const cs_real_t  qimpv[3])
+   const cs_real_t  qimpv[3],
+   const cs_real_t  hint[6],
+   const cs_real_t  normal[3])
 {
   cs_real_t m[6] = {0., 0., 0., 0., 0., 0.};
 
@@ -3694,10 +3694,10 @@ cs_boundary_conditions_set_generalized_sym_vector_aniso
  * \param[out]  af       explicit BC coefficient for diffusive flux
  * \param[out]  b        implicit BC coefficient for gradients
  * \param[out]  bf       implicit BC coefficient for diffusive flux
- * \param[in]   hint     internal exchange coefficient
- * \param[in]   normal   normal
  * \param[in]   pimpv    Dirichlet value to impose on the tangential components
  * \param[in]   qimpv    flux value to impose on the normal component
+ * \param[in]   hint     internal exchange coefficient
+ * \param[in]   normal   normal
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3707,10 +3707,10 @@ cs_boundary_conditions_set_generalized_dirichlet_vector_aniso
    cs_real_t        af[3],
    cs_real_t        b[3][3],
    cs_real_t        bf[3][3],
-   const cs_real_t  hint[6],
-   const cs_real_t  normal[3],
    const cs_real_t  pimpv[3],
-   const cs_real_t  qimpv[3])
+   const cs_real_t  qimpv[3],
+   const cs_real_t  hint[6],
+   const cs_real_t  normal[3])
 {
   cs_real_t m[6] = {0., 0., 0., 0., 0., 0.};
   m[0] = hint[1]*hint[2] - hint[4]*hint[4];

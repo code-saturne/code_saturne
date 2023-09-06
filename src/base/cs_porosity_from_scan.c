@@ -708,8 +708,8 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
 
       /* Solid face roughness from point cloud is computed as the RMS of points
        *  distance to the reconstructed plane */
-      cs_real_3_t vec_w_point  = {0., 0., 0.};
-      cs_real_t   w_point_dist =  0.;
+      cs_real_t vec_w_point[3]  = {0., 0., 0.};
+      cs_real_t w_point_dist =  0.;
 
       for (cs_lnum_t i = 0; i < n_points_dist; i++) {
         cs_lnum_t c_id = dist_loc[i];

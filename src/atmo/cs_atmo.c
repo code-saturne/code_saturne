@@ -2096,12 +2096,7 @@ cs_soil_model(void)
   if (z_id > -1) {
 
     const cs_domain_t *domain = cs_glob_domain;
-    const cs_mesh_t *m = domain->mesh;
-    const cs_mesh_quantities_t *mq = domain->mesh_quantities;
     cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
-
-    const cs_real_3_t *restrict b_face_cog
-      = (const cs_real_3_t *restrict)mq->b_face_cog;
 
     const cs_real_t stephn = cs_physical_constants_stephan;
     const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
@@ -2128,14 +2123,11 @@ cs_soil_model(void)
     cs_field_t *soil_percentages = cs_field_by_name("atmo_soil_percentages");
     cs_field_t *boundary_vegetation = cs_field_by_name("boundary_vegetation");
     /* Fields related to all faces */
-    cs_field_t *boundary_thermal_roughness
-      = cs_field_by_name_try("boundary_thermal_roughness");
     cs_field_t *boundary_albedo = cs_field_by_name_try("boundary_albedo");
     cs_field_t *emissivity = cs_field_by_name_try("emissivity");
     /* Cell fields  */
     cs_field_t *atm_total_water = cs_field_by_name_try("ym_water");
     cs_field_t *atm_temp = CS_F_(t);
-    cs_field_t *crom = CS_F_(rho);
     cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
     /* Radiative tables */
     cs_real_t *sold = (cs_real_t *)  cs_glob_atmo_option->rad_1d_sold;

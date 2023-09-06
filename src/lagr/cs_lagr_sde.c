@@ -1093,7 +1093,6 @@ _lagesd(cs_real_t             dtp,
 
   /* Constants for the calculation of bxp and tlp  */
   cs_real_t c0 = cs_turb_crij_c0;
-  cs_turb_model_t *turb_mod = cs_get_glob_turb_model();
 
   cs_real_t cl = 1.0 / (0.5 + 0.75 * c0);
 

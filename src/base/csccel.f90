@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file csccel.f90
-!> \brief Exchange of coupling variables between tow instances of code_saturne
+!> \brief Exchange of coupling variables between two instances of code_saturne
 !> thanks to cells.
 !>
 !------------------------------------------------------------------------------
@@ -64,8 +64,7 @@ implicit none
 ! Arguments
 
 integer(c_int), value :: f_id
-
-double precision crvexp(3,ncelet)
+real(c_double), dimension(3,ncelet) :: crvexp
 
 ! Local variables
 

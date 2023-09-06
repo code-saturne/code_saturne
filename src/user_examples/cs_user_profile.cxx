@@ -2178,7 +2178,7 @@ _output_profile_values_csv(user_profile_t  *profile,
  *   dirname      <-- pointer to directory output path
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _user_output_profile_stl_mesh(user_profile_t  *profile,
                               const char      *dirname)
 {
@@ -2200,7 +2200,7 @@ _user_output_profile_stl_mesh(user_profile_t  *profile,
  *   dirname      <-- pointer to directory output path
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _output_profile_med_mesh(user_profile_t  *profile,
                          const char      *dirname)
 {

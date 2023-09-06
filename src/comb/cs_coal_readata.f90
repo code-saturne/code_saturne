@@ -80,12 +80,14 @@ double precision fcor   , pcisec , pcipur , xashpc
 double precision hco20  , ho20   , hh2o0 , hso20
 double precision den1   , den2
 double precision tmin   , tmax
-double precision wmolce(ngazem), ehcoel(ngazem,npot)
+double precision wmolce(ngazem)
 double precision cpcoel(ngazem,npot)
 double precision dhvol1,dhvol2,hcoke,hchar,ehvol1,ehvol2
 double precision wmco,wmo2,wmco2,wmh2o,wmn2,wmc
 double precision dmf3,dmf4,dmf5,som1,som2
 double precision sm(8),solu(8),mat(8,8)
+
+double precision, dimension(:,:), allocatable :: ehcoel
 
 ! PCI-PCS
 
@@ -133,6 +135,8 @@ double precision kf1(7),kf2(7),kf3(7),kf4(7),kr4(7),kf5(7),kr5(7),kf6(7),      &
 ! Contante selon la doc theorique de FLUENT
 double precision pflue
 !===============================================================================
+
+allocate(ehcoel(ngazem,npot))
 
 !===============================================================================
 ! 1. LECTURE DU FICHIER DONNEES SPECIFIQUES
@@ -688,6 +692,8 @@ do icha = 1, ncharb
     enddo
   endif
 enddo
+
+deallocate(ehcoel)
 
 ! ------ Coke = CH(GAMMA)O(DELTA)N(KAPPA)S(ZETA)
 do icha = 1, ncharb

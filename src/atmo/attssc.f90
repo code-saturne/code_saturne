@@ -81,7 +81,6 @@ double precision, save :: qliqmax,r3max
 logical, save :: r3_is_defined = .false.
 integer, save :: treated_scalars = 0
 
-double precision, dimension(:), allocatable :: pphy
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvar_ntdrp
 double precision, dimension(:), pointer :: cvar_pottemp

@@ -94,7 +94,7 @@ type(c_ptr)      oflmap
 
 ! Local variables
 
-character        rubriq*64,car4*4,car2*2
+character        rubriq*64,car2*2
 character        car54*54
 character        cindfp*2,cindfs*4,cindff*4,cindfm*4
 character        cindfc*2,cindfl*4
@@ -102,7 +102,7 @@ character        ficsui*32
 logical          lprev
 integer          iel   , ifac, ii, nlfld, iscal
 integer          iz, kk
-integer          idecal, iclapc, icha  , icla
+integer          icha
 integer          jdtvar
 integer          ierror, itysup, nbval
 integer          nberro, inierr, ivers(1)
@@ -113,7 +113,7 @@ integer          f_id, iflmas, iflmab, iflvoi, iflvob
 integer          key_t_ext_id, icpext
 integer          iviext
 integer          ival(1)
-double precision rval(1), rvalcp(nozppm)
+double precision rval(1)
 
 logical(kind=c_bool) :: ncelok, nfaiok, nfabok, nsomok
 

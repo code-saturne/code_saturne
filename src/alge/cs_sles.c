@@ -1798,10 +1798,10 @@ cs_sles_solve(cs_sles_t           *sles,
     BFT_MALLOC(resr, n_vals_ext, cs_real_t);
 
     _residual(n_vals, a, rhs, vx, resr);
-    cs_real_t residue = sqrt(cs_gdot(n_vals, resr, resr));
+    cs_real_t rsd = sqrt(cs_gdot(n_vals, resr, resr));
 
     bft_printf("# residue[%s] = %g (%g * required, precision %g, normalization %g)\n",
-               sles_name, residue, residue/(precision*r_norm), precision, r_norm);
+               sles_name, rsd, rsd/(precision*r_norm), precision, r_norm);
 
     BFT_FREE(resr);
   }

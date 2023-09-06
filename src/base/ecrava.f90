@@ -80,11 +80,11 @@ implicit none
 
 ! Local variables
 
-character        rubriq*64,car2*2,car4*4,car54*54
+character        rubriq*64,car2*2,car54*54
 character        cindfc*2,cindfl*4
 character        ficsui*32
 integer          f_id, t_id, ivar, iscal
-integer          idecal, iclapc, icha  , icla
+integer          icha
 integer          ii    , ivers
 integer          itysup, nbval
 integer          ipcefj, ipcla
@@ -95,7 +95,7 @@ integer          iz, kk
 integer          ival(1)
 integer          key_t_ext_id, icpext
 integer          iviext
-double precision rval(1), rvalcp(nozppm)
+double precision rval(1)
 
 type(c_ptr) :: rp
 
