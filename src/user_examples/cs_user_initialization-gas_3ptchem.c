@@ -98,7 +98,7 @@ cs_user_initialization(cs_domain_t     *domain)
 
   if (cs_glob_physical_model_flag[CS_COMBUSTION_3PT] == 1) {
     const cs_real_t hinoxy = cm->hinoxy;
-    const cs_real_t hinfue = cm->fuel->hinfue;
+    const cs_real_t hinfue = cm->gas->hinfue;
 
     cs_real_t h_ini = hinfue*fs + hinoxy*(1.0-fs);
     cs_array_real_set_scalar(n_cells, h_ini, cvar_scalt);
