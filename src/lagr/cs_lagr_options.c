@@ -263,7 +263,6 @@ cs_lagr_options_definition(int         isuite,
   cs_glob_lagr_boundary_interactions->nombrd = NULL;
 
   lagr_time_scheme->t_order = 2;
-  lagr_model->modcpl = 1;
   lagr_model->idistu = -1;
   lagr_model->idiffl = -1;
   lagr_time_scheme->ilapoi = 0;
@@ -680,25 +679,32 @@ cs_lagr_options_definition(int         isuite,
 
   if (lagr_model->modcpl < 0)
     lagr_model->modcpl = 0;
+  /* When activating the complete turbulent dispersion model,
+   * statistics are required, so activate it after the start time of
+   * statistics.
+   */
   else if (lagr_model->modcpl > 0)
     lagr_model->modcpl = 1;
 
   /* Default diffusion model depending on complete model or fluid particles */
 
+  /* Fluid particle: activate turbulent dispersion,
+   * deactivate crossing effetc*/
   if (lagr_model->modcpl == 0) {
 
     if (lagr_model->idistu < 0)
-      lagr_model->idistu = 0;
+      lagr_model->idistu = 1;
     if (lagr_model->idiffl < 0)
       lagr_model->idiffl = 1;
 
   }
+  /* Full model: turbulent dispersion and crossing effect */
   else {
 
     if (lagr_model->idistu < 0)
       lagr_model->idistu = 1;
     if (lagr_model->idiffl < 0)
-      lagr_model->idiffl = 0;
+      lagr_model->idiffl = 1;//See Minier 2016
 
     /* Velocity statistics are needed for this model */
     cs_lagr_stat_activate_attr(CS_LAGR_VELOCITY);

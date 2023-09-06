@@ -315,6 +315,7 @@ cs_gui_particles_model(void)
                                                     "deposition_submodel"),
                              &(cs_glob_lagr_model->deposition));
 
+  /* Regular or fluid particles */
   cs_gui_node_get_child_int(tn_lagr, "regular_particles",
                             (&cs_glob_lagr_model->modcpl));
 

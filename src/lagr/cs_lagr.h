@@ -276,15 +276,16 @@ typedef struct {
 
   /*! Activates (1) or not (0) the assumption that we have regular particles.
     When set to, 0 then the particles are assumed to be fluid particles
-    (and the turbulence dispersion model is disabled by default).
+    (and only the turbulence dispersion model is taken into account by default,
+    but not crossing trajectory effects).
     Since this model uses volume statistics, is use forces their
     activation even if not otherwise requested
     (see \ref cs_lagr_stat_options_t::idstnt "idstnt"). */
   int modcpl;
 
   /*! Activation of the turbulent dispersion (on: 1; off).
-     Default is on if \ref modcpl = 1, off if \ref modcpl = 0);
-     This is compatible only with the RANS turbulent models
+     Default is on;
+     This is compatible with RANS  and LES turbulent models
      (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$, v2f or \f$k-\omega\f$). */
   int idistu;
 

@@ -511,7 +511,7 @@ cs_lagr_car(int              iprev,
             }
           }
         }
-        else { //turb_disp_model == 0
+        else { // fluid particles
           tlag[ip][0] = extra->lagr_time->val[cell_id];
           tlag[ip][0] = CS_MAX(tlag[ip][0], cs_math_epzero);
 
@@ -569,7 +569,7 @@ cs_lagr_car(int              iprev,
 
     if ( cell_tlag_et != NULL)
       BFT_FREE(cell_tlag_et);
-    if (turb_disp_model){
+    if (turb_disp_model) {
       BFT_FREE(cell_bbi);
       BFT_FREE(cell_bxi_tl);
     }
