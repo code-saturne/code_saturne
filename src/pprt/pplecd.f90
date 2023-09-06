@@ -96,12 +96,6 @@ if (ippmod(iccoal).ge.0) then
   call cs_coal_readata
 endif
 
-! ---> Fuel flame
-
-if (ippmod(icfuel).ge.0) then
-  call cs_fuel_readata
-endif
-
 ! ---> Joule effect, electric arc, or ionic conduction
 
 if (ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1) then

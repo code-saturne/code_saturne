@@ -44,7 +44,6 @@ use ppthch
 use coincl
 use cpincl
 use cs_coal_incl
-use cs_fuel_incl
 use ppincl
 use ppcpfu
 use atincl
@@ -193,7 +192,6 @@ do icla = 1, nclcpm
   iyfol(icla) = 0
   ihlf (icla) = 0
 enddo
-ifvap   = 0
 iyco2   = 0
 iyhcn   = 0
 iynh3   = 0
@@ -558,35 +556,8 @@ enddo
 !                LA COMBUSTION FUEL
 !===============================================================================
 
-!    1 seul fioul
-
-cfol    = zero
-hfol    = zero
-ofol     = zero
-pcifol  = zero
-rho0fl = zero
-
-ckf    = zero
-hkf    = zero
-okf    = zero
-rhokf  = zero
-pcikf = zero
-
-yfol   = zero
-afol   = zero
-efol   = zero
-
-ahetfl = zero
-ehetfl = zero
-
-iofhet = 0
-
-ifol   = 0
-ikf   = 0
-
 ! ---> Donnees relatives a la combustion des especes gazeuses
 
-ifov  = 0
 ico   = 0
 io2   = 0
 ico2  = 0
@@ -594,20 +565,6 @@ ih2o  = 0
 in2   = 0
 
 xsi   = 3.76d0
-fvapmx =  2.d0*0.012d0 / (2.d0*0.028d0 + xsi*0.028d0)
-
-fov  = zero
-a  = zero
-b  = zero
-
-! ---> Donnees complementaires relatives au calcul de rho sur les facettes
-!      d'entree
-
-do izone = 1, nozppm
-  !ientat(izone)  = 0
-  ientfl(izone) = 0
-  timpfl(izone) = zero
-enddo
 
 !===============================================================================
 ! 6. Global variables for atmospheric flows (module atincl.f90)

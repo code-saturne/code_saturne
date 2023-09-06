@@ -659,7 +659,7 @@ void CS_PROCF (uicpi1, UICPI1) (double *const srrom,
 
   bool gas_combustion = false;
   for (cs_physical_model_type_t m_type = CS_COMBUSTION_3PT;
-       m_type <= CS_COMBUSTION_FUEL;
+       m_type <= CS_COMBUSTION_COAL;
        m_type++) {
     if (cs_glob_physical_model_flag[m_type] > -1)
       gas_combustion = true;

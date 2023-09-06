@@ -1208,14 +1208,11 @@ cs_rad_transfer_solve(int  bc_type[])
   BFT_MALLOC(iqpar, n_cells_ext, cs_real_3_t);
 
   cs_coal_model_t *coal = cs_glob_combustion_model->coal;
-  cs_fuel_model_t *fuel = cs_glob_combustion_model->fuel;
 
-  /* Numer of classes for Coal or Fuel combustion */
+  /* Numer of classes for Coal combustion */
   int n_classes = 0;
   if (pm_flag[CS_COMBUSTION_COAL] >= 0)
     n_classes = coal->nclacp;
-  else if (pm_flag[CS_COMBUSTION_FUEL] >= 0)
-    n_classes = fuel->nclafu;
 
   /* Irradiating flux density at walls.
      Careful: Should not be confused with qinci */
@@ -1358,7 +1355,7 @@ cs_rad_transfer_solve(int  bc_type[])
       for (int i = 0; i < nwsgg; i++)
         w_gg[ifac + i * n_b_faces] = 0.0;
 
-  /* Absorbed and emitted radiation of a single coal or fuel class
+  /* Absorbed and emitted radiation of a single coal class
    * (needed to compute the source terms of the particle enthalpy equation) */
   for (int class_id = 0; class_id < n_classes; class_id++) {
     int class_num = class_id+1;
@@ -1408,12 +1405,10 @@ cs_rad_transfer_solve(int  bc_type[])
 
     cs_ht_convert_h_to_t_cells(cvara_scalt, tempk);
 
-    /* Coal particles or fuel droplets temperature */
+    /* Coal particles temperature */
     for (int class_id = 0; class_id < n_classes; class_id++) {
       if (pm_flag[CS_COMBUSTION_COAL] >= 0)
         snprintf(fname, 80, "t_p_%02d", class_id+1);
-      else if (pm_flag[CS_COMBUSTION_FUEL] >= 0)
-        snprintf(fname, 80, "t_fuel_%02d", class_id+1);
       cs_field_t *f_temp2 = cs_field_by_name(fname);
       cs_lnum_t class_num = class_id + 1;
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
@@ -1444,7 +1439,6 @@ cs_rad_transfer_solve(int  bc_type[])
       || pm_flag[CS_COMBUSTION_EBU] >= 0
       || pm_flag[CS_COMBUSTION_LW] >= 0
       || pm_flag[CS_COMBUSTION_COAL] >= 0
-      || pm_flag[CS_COMBUSTION_FUEL] >= 0
       || pm_flag[CS_JOULE_EFFECT] >= 0
       || pm_flag[CS_ELECTRIC_ARCS] >= 0
       || pm_flag[CS_GAS_MIX] >= 0)
@@ -1637,7 +1631,7 @@ cs_rad_transfer_solve(int  bc_type[])
                             * agi[n_cells*gg_id + cell_id]
                             * cell_vol[cell_id];
 
-      /* Solid phase/coal particles or Fuel droplets:
+      /* Solid phase/coal particles (or spray):
          Explicit source term in the transport eqn. of theta4 */
       for (int class_id = 0; class_id < n_classes; class_id++) {
 
@@ -1947,11 +1941,8 @@ cs_rad_transfer_solve(int  bc_type[])
       cs_field_t *f_x2 = cs_field_by_name(fname);
 
       cs_real_t cp2 = 1.;
-      if (pm_flag[CS_COMBUSTION_COAL] >= 0) {
+      if (pm_flag[CS_COMBUSTION_COAL] >= 0)
         cp2 = coal->cp2ch[coal->ichcor[class_id]-1];
-      }
-      else if (pm_flag[CS_COMBUSTION_FUEL] >= 0)
-        cp2 = cs_glob_combustion_model->fuel->cp2fol;
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 

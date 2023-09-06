@@ -56,7 +56,6 @@ use coincl
 use cpincl
 use ppincl
 use cs_coal_incl
-use cs_fuel_incl
 use ppcpfu
 use atincl
 use field
@@ -169,13 +168,6 @@ endif
 
 if (ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1) then
   call cs_elec_add_variable_fields
-endif
-
-! 5. Fuel combustion model
-!-------------------------
-
-if (ippmod(icfuel).ge.0) then
-  call cs_fuel_varpos
 endif
 
 ! 6. Atmospheric model

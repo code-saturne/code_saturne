@@ -3,6 +3,11 @@ Master (not on release branches yet)
 
 ### Physical modeling
 
+- Remove obsolete and experimental heavy fuel combustion model
+  (`cs_glob_physical_model[CS_COMBUSTION_FUEL]` / `ippmod(icfuel)`).
+  That model was not accessible using the GUI, and not covered in the
+  validation suite, with no known successful use in at least 10 years.
+
 - Remove old pulverized coal combustion model with Lagrangian reciprocal
   approach (`cs_glob_physical_model[CS_COMBUSTION_PCLC]` / `ippmod(icpl3c)`).
   That model was not accessible using the GUI, and not covered in the

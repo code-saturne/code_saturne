@@ -73,7 +73,6 @@ use coincl
 use cpincl
 use ppincl
 use ppcpfu
-use cs_fuel_incl
 use mesh
 use field
 use dimens, only: nvar, nscal

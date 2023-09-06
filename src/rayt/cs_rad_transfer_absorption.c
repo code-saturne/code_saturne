@@ -226,10 +226,9 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
   }
 
-  /* Coal or fuel combustion */
+  /* Coal combustion */
 
-  else if (   pm_flag[CS_COMBUSTION_COAL] >= 0
-           || pm_flag[CS_COMBUSTION_FUEL] >= 0) {
+  else if (pm_flag[CS_COMBUSTION_COAL] >= 0) {
 
     cs_real_t *cpro_temp = cs_field_by_name("temperature")->val;
     cs_real_t *cpro_yco2 = cs_field_by_name("ym_co2")->val;
@@ -317,33 +316,6 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
   }
 
-  /* Fuel combustion */
-
-  if (pm_flag[CS_COMBUSTION_FUEL] >= 0) {
-
-    for (int icla = 0; icla < cm->fuel->nclafu; icla++) {
-
-      char s[64];
-
-      snprintf(s, 63, "diameter_fuel_%02d", icla+1); s[63] = '\0';
-      cs_real_t *cpro_diam2 = cs_field_by_name(s)->val;
-
-      snprintf(s, 63, "rho_fuel_%02d", icla+1); s[63] = '\0';
-      cs_real_t *cpro_rom2 = cs_field_by_name(s)->val;
-
-      cs_real_t *cpro_cak = CS_FI_(rad_cak, 1 + icla)->val;
-
-      /* absorption coefficient */
-
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-        cpro_cak[cell_id] = 1.5 *crom[cell_id]
-                                / (cpro_rom2[cell_id] * cpro_diam2[cell_id]);
-      }
-
-    }
-
-  }
-
   /* Electric arcs*/
 
   if (pm_flag[CS_ELECTRIC_ARCS] >= 0) {
@@ -392,25 +364,6 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
         snprintf(s, 63, "x_p_%02d", icla+1); s[63] = '\0';
         cs_real_t *cpro_x_p = cs_field_by_name(s)->val;  /* property here */
-        cs_real_t *cpro_cak = CS_FI_(rad_cak, 1 + icla)->val;
-
-        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-          w3[cell_id] += (cpro_x_p[cell_id] * cpro_cak[cell_id]);
-
-      }
-
-    }
-
-    /* Absorption coefficient for a gas/fuel mix */
-
-    else if (pm_flag[CS_COMBUSTION_FUEL] >= 0) {
-
-      for (int icla = 0; icla < cm->fuel->nclafu; icla++) {
-
-        char s[64];
-
-        snprintf(s, 63, "x_p_%02d", icla+1); s[63] = '\0';
-        cs_real_t *cpro_x_p = cs_field_by_name(s)->val;  /* variable here */
         cs_real_t *cpro_cak = CS_FI_(rad_cak, 1 + icla)->val;
 
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)

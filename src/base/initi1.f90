@@ -42,7 +42,6 @@ use lagran
 use cpincl
 use dimens
 use radiat
-use cs_fuel_incl
 use cdomod
 
 !===============================================================================

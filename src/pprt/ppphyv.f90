@@ -138,12 +138,6 @@ if (ippmod(iccoal).ge.0) then
   call cs_coal_physprop(mbrom)
 endif
 
-! ---> Flamme fuel
-
-if (ippmod(icfuel).ge.0) then
-  call cs_fuel_physprop(mbrom, izfppp)
-endif
-
 ! ---> Physique particuliere : Versions electriques
 !          Effet Joule
 !          Arc electrique

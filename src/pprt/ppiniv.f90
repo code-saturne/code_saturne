@@ -105,12 +105,6 @@ if (ippmod(iccoal).ge.0) then
   call cs_coal_varini
 endif
 
-! ---> Combustion fuel
-
-if (ippmod(icfuel).ge.0) then
-  call cs_fuel_varini
-endif
-
 ! Atmospheric flows, first stage
 if (ippmod(iatmos).ge.0) then
   call atiniv0

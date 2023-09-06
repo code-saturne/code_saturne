@@ -60,7 +60,6 @@ typedef enum {
   CS_COMBUSTION_EBU,               /*!< EBU combustion model */
   CS_COMBUSTION_LW,                /*!< Libby-Williams combustion model */
   CS_COMBUSTION_COAL,              /*!< coal combustion model */
-  CS_COMBUSTION_FUEL,              /*!< fuel combustion */
   CS_JOULE_EFFECT,                 /*!< Joule effect */
   CS_ELECTRIC_ARCS,                /*!< Electric arcs */
   CS_COMPRESSIBLE,                 /*!< Compressible model */

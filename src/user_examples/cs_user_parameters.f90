@@ -158,18 +158,6 @@ xsoot  = 0.1d0 ! (if isoot = 0 and only if the soot yield is not
                !  defined in the thermochemistry data file)
 rosoot = 2000.d0 ! kg/m3
 
-! --- cfuel: Heavy fuel oil combustion
-! ==========
-
-!        Progressive evaporation (temperature gap)
-!        Char residue
-!        Sulphur tracking
-
-!        if = -1   module not activated
-!        if = 0    module activated
-
-ippmod(icfuel) = -1
-
 !===============================================================================
 ! 2.  Specific options related to herebefore modules
 !===============================================================================
@@ -387,7 +375,6 @@ use cpincl
 use ppincl
 use ppcpfu
 use cs_coal_incl
-use cs_fuel_incl
 use radiat
 
 !===============================================================================

@@ -523,12 +523,6 @@ cs_coal_boundary_conditions(int  bc_type[])
     cs_lnum_t i_shift = 0;
     cs_real_t x20t = 0, x2h20t = 0;
 
-    /* Copy to legacy (deprecated) Fortran "per zone" arrays */
-
-    bc_pm_info->inmoxy[izone] = ci->inmoxy;
-    bc_pm_info->ientat[izone] = ci->ientat;
-    bc_pm_info->timpat[izone] = ci->t_air;
-
     /* Verify that coal distribution sum = 100% for area with ientcp = 1
        ----------------------------------------------------------------- */
 

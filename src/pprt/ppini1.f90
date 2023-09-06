@@ -101,12 +101,6 @@ if ( ippmod(iccoal).ge.0 ) then
   call cs_coal_param
 endif
 
-! ---> Physique particuliere : Combustion fuel
-
-if ( ippmod(icfuel).ge.0 ) then
-  call cs_fuel_param
-endif
-
 ! ---> Physique particuliere : Compressible
 
 if ( ippmod(icompf).ge.0) then

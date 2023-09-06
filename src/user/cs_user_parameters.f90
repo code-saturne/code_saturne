@@ -339,7 +339,6 @@ use cpincl
 use ppincl
 use ppcpfu
 use cs_coal_incl
-use cs_fuel_incl
 use radiat
 
 !===============================================================================

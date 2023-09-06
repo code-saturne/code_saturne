@@ -230,7 +230,6 @@ data/user/dp_C3P_auto_EHC \
 data/user/dp_C3PSJ \
 data/user/dp_C4P \
 data/user/dp_ELE \
-data/user/dp_FUE \
 data/user/dp_transformers \
 data/user/meteo \
 data/setup.xml

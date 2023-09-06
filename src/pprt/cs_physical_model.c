@@ -113,7 +113,6 @@ int cs_glob_physical_model_flag[CS_N_PHYSICAL_MODEL_TYPES] = {
   -1,  /*    EBU combustion model */
   -1,  /*    Libby-Williams combustion model */
   -1,  /*    Coal combustion model */
-  -1,  /*    Fuel combustion */
        /*  Electro-magnetism models: */
   -1,  /*    Joule effect */
   -1,  /*    Electric arcs */

@@ -149,9 +149,8 @@ cs_ht_convert_h_to_t_cells(const cs_real_t  h[],
       || pm_flag[CS_COMBUSTION_SLFM]>= 0)
     cpro_t = CS_F_(t)->val;
 
-  /* Pulverized coal or fuel combustion */
-  else if (   pm_flag[CS_COMBUSTION_COAL] >= 0
-           || pm_flag[CS_COMBUSTION_FUEL] >= 0)
+  /* Pulverized coal combustion */
+  else if (pm_flag[CS_COMBUSTION_COAL] >= 0)
     cpro_t = CS_F_(t)->val;
 
   /* Electric arcs */
@@ -322,10 +321,6 @@ cs_ht_convert_h_to_t_faces(const cs_real_t  h[],
   else if (pm_flag[CS_COMBUSTION_COAL] >= 0)
     cs_coal_thfieldconv1(CS_MESH_LOCATION_BOUNDARY_FACES, h, t);
 
-  /* Pulverized fuel combustion */
-  else if (pm_flag[CS_COMBUSTION_FUEL] >= 0)
-    cs_fuel_thfieldconv1(CS_MESH_LOCATION_BOUNDARY_FACES, h, t);
-
   /* Electric arcs */
   else if (pm_flag[CS_JOULE_EFFECT] < 1 && pm_flag[CS_ELECTRIC_ARCS] >= 1)
     cs_elec_convert_h_to_t_faces(h, t);
@@ -435,10 +430,6 @@ cs_ht_convert_t_to_h_faces_l(cs_lnum_t        n_faces,
   /* Pulverized coal combustion */
   else if (pm_flag[CS_COMBUSTION_COAL] >= 0)
     cs_coal_bt2h(n_faces, face_ids, t, h);
-
-  /* Pulverized fuel combustion */
-  else if (pm_flag[CS_COMBUSTION_FUEL] >= 0)
-    cs_fuel_bt2h(n_faces, face_ids, t, h);
 
   /* Electric arcs */
   else if (pm_flag[CS_JOULE_EFFECT] < 1 && pm_flag[CS_ELECTRIC_ARCS] >= 1)
@@ -563,7 +554,6 @@ cs_ht_convert_t_to_h_faces_z(const cs_zone_t *z,
       || pm_flag[CS_COMBUSTION_3PT] >= 0
       || pm_flag[CS_COMBUSTION_SLFM] >= 0
       || pm_flag[CS_COMBUSTION_COAL] >= 0
-      || pm_flag[CS_COMBUSTION_FUEL] >= 0
       || (pm_flag[CS_JOULE_EFFECT] < 1 && pm_flag[CS_ELECTRIC_ARCS] >= 1)) {
 
     BFT_MALLOC(t_b, m->n_b_faces, cs_real_t);
@@ -584,10 +574,6 @@ cs_ht_convert_t_to_h_faces_z(const cs_zone_t *z,
   /* Pulverized coal combustion */
   else if (pm_flag[CS_COMBUSTION_COAL] >= 0)
     cs_coal_bt2h(n_faces, face_ids, t_b, h_b);
-
-  /* Pulverized fuel combustion */
-  else if (pm_flag[CS_COMBUSTION_FUEL] >= 0)
-    cs_fuel_bt2h(n_faces, face_ids, t_b, h_b);
 
   /* Electric arcs */
   else if (pm_flag[CS_JOULE_EFFECT] < 1 && pm_flag[CS_ELECTRIC_ARCS] >= 1)

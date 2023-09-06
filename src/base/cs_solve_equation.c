@@ -65,7 +65,6 @@
 #include "cs_field_default.h"
 #include "cs_field_operator.h"
 #include "cs_field_pointer.h"
-#include "cs_fuel.h"
 #include "cs_gradient.h"
 #include "cs_gui.h"
 #include "cs_intprf.h"
@@ -1380,15 +1379,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
             rhs[c_id] -= volume[c_id]*cpro_tsre[c_id]*cpro_x2icla[c_id];
         }
       }
-    }
-
-    /* Fuel; order 2 not handled */
-    if (cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] > -1) {
-      const int nclafu = cs_glob_combustion_model->fuel->nclafu;
-      const int isca_ih21 = cs_field_get_key_int(CS_FI_(h2, 0), keyvar);
-      const int isca_ih2nl = cs_field_get_key_int(CS_FI_(h2, nclafu-1), keyvar);
-      if ((isca_ih21 <= ivar) && (ivar <= isca_ih2nl))
-        cs_fuel_rad_transfer_st(f, rhs, fimp);
     }
 
   }

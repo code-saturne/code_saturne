@@ -101,7 +101,7 @@ save             ipass
 
 !===============================================================================
 
-procedure() :: kinrates, ppinv2, cs_coal_masstransfer, cs_fuel_masstransfer
+procedure() :: kinrates, ppinv2, cs_coal_masstransfer
 procedure() :: cfener, set_dirichlet_scalar, max_mid_min_progvar, elflux
 procedure() :: compute_gaseous_chemistry, elreca
 
@@ -207,15 +207,6 @@ if (nscapp.gt.0) then
   if (ippmod(iccoal).ne.-1) then
 
     call cs_coal_masstransfer(ncelet, ncel, volume)
-
-  endif
-
-! ---> Calculs TS relatifs a la physique du fuel
-!      GAMEVA, GAMHTF
-
-  if (ippmod(icfuel).ne.-1) then
-
-    call cs_fuel_masstransfer(ncel)
 
   endif
 

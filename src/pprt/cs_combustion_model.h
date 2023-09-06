@@ -40,7 +40,6 @@
 #include "cs_defs.h"
 
 #include "cs_coal.h"
-#include "cs_fuel.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -106,7 +105,6 @@ typedef struct {
 
   cs_combustion_gas_model_t  *gas;   /*!< gas combustion model parameters */
   cs_coal_model_t            *coal;  /*!< coal combustion model parameters */
-  cs_fuel_model_t            *fuel;  /*!< fuel combustion model parameters */
 
   int     n_gas_el_comp;             /*!< number of elementary gas components */
   int     n_gas_species;             /*!< number of global species */

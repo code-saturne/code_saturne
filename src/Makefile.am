@@ -171,8 +171,6 @@ comb/cpincl.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppthch.$(OBJEXT)
 
 comb/cs_coal_incl.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppthch.$(OBJEXT)
 
-comb/cs_fuel_incl.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppthch.$(OBJEXT)
-
 ctwr/ctincl.$(OBJEXT): base/cstphy.$(OBJEXT)
 
 lagr/lagran.$(OBJEXT): base/cstnum.$(OBJEXT) base/optcal.$(OBJEXT) \

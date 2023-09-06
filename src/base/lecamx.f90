@@ -74,7 +74,6 @@ use ppthch
 use ppincl
 use coincl
 use cpincl
-use cs_fuel_incl
 use ppcpfu
 use mesh
 use field
@@ -831,7 +830,7 @@ if (iale.ge.1 .and. jale.ge.1) then
 endif
 
 !===============================================================================
-! 14. LECTURE DES INFORMATIONS COMPLEMENTAIRES COMBUSTION GAZ, CP ET FUEL
+! 14. LECTURE DES INFORMATIONS COMPLEMENTAIRES COMBUSTION GAZ, CP
 !===============================================================================
 
 nberro = 0
@@ -1257,133 +1256,6 @@ if (ippmod(iccoal).ge.0) then
       write(nfecra,8612)icha,rhock(icha)
     enddo
     write(nfecra,8613)
-  endif
-
-
-!     Charbon PuLVerise : type de zones de bord, ientat, timpat
-!       et x20 pour le calcul de rho au bord en entree
-!       Il faut le meme nbr de faces de bord, sinon on ne lit pas
-  if (nfabok.eqv..true.) then
-
-    ilu = ilu + 1
-
-    ierrch = 0
-
-!       Numero des zones
-    itysup = 3
-    nbval  = 1
-    rubriq = 'num_zone_fb_charbon_pulverise'
-    call restart_read_section_int_t(rp,rubriq,itysup,nbval,izfppp,ierror)
-    nberro = nberro + ierror
-
-!       Type entree air ou cp (si ce n'est pas NOZPPM, erreur)
-    itysup = 0
-    nbval  = nozppm
-    rubriq = 'ientat_zone_bord_charbon_pulverise'
-    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ientat,ierror)
-    ierrch = ierrch + ierror
-    nberro = nberro + ierror
-
-!       Temperature
-    itysup = 0
-    nbval  = nozppm
-    rubriq = 'timpat_zone_bord_charbon_pulverise'
-    call restart_read_section_real_t(rp,rubriq,itysup,nbval,timpat,ierror)
-    ierrch = ierrch + ierror
-    nberro = nberro + ierror
-
-!     Par securite, si on ne parvient pas a lire la temperature TIMPAT,
-!       IENTCP ou IENTAT, on remet a zero le numero des zones IZFPPP
-!       car il a peut etre ete lu.
-!       Ceci permettra d'eviter de se servir des valeurs par defaut (=0)
-!       de TIMPAT dans cpphyv et cplphy.
-    if (ierrch.ne.0) then
-      do ifac = 1, nfabor
-        izfppp(ifac) = 0
-      enddo
-    endif
-
-  endif
-
-endif
-
-
-!     FUEL : type de zones de bord, ientat, ientfl, timpat
-!       qimpat et qimpfl pour le calcul de rho au bord en entree
-if ( ippmod(icfuel).ge.0 ) then
-
-!       Il faut le meme nbr de faces de bord, sinon on ne lit pas
-  if (nfabok.eqv..true.) then
-
-    ilu = ilu + 1
-
-    ierrch = 0
-
-!       Numero des zones
-    itysup = 3
-    nbval  = 1
-    rubriq = 'num_zone_fb_fuel'
-    call restart_read_section_int_t(rp,rubriq,itysup,nbval,izfppp,ierror)
-    nberro=nberro+ierror
-
-!       Type entree air ou fuel (si ce n'est pas NOZPPM, erreur)
-    itysup = 0
-    nbval  = nozppm
-    rubriq = 'ientat_zone_bord_fuel'
-    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ientat,ierror)
-    ierrch=ierrch+ierror
-    nberro=nberro+ierror
-
-    itysup = 0
-    nbval  = nozppm
-    rubriq = 'ientfl_zone_bord_fuel'
-    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ientfl,ierror)
-    ierrch=ierrch+ierror
-    nberro=nberro+ierror
-
-    itysup = 0
-    nbval  = nozppm
-    rubriq = 'inmoxy_zone_bord_fuel'
-    call restart_read_section_int_t(rp,rubriq,itysup,nbval,inmoxy,ierror)
-    ierrch=ierrch+ierror
-    nberro=nberro+ierror
-
-
-!       TIMPAT
-    itysup = 0
-    nbval  = nozppm
-    rubriq = 'timpat_zone_bord_fuel'
-    call restart_read_section_real_t(rp,rubriq,itysup,nbval,timpat,ierror)
-    ierrch=ierrch+ierror
-    nberro=nberro+ierror
-
-!       QIMPAT
-    itysup = 0
-    nbval  = nozppm
-    rubriq = 'qimpat_zone_bord_fuel'
-    call restart_read_section_real_t(rp,rubriq,itysup,nbval,qimpat,ierror)
-    ierrch=ierrch+ierror
-    nberro=nberro+ierror
-
-!       QIMPFL
-    itysup = 0
-    nbval  = nozppm
-    rubriq = 'qimpfl_zone_bord_fuel'
-    call restart_read_section_real_t(rp,rubriq,itysup,nbval,qimpfl,ierror)
-    ierrch=ierrch+ierror
-    nberro=nberro+ierror
-
-!     Par securite, si on ne parvient pas a lire la temperature TIMPAT,
-!       IENTCP ou IENTAT, on remet a zero le numero des zones IZFPPP
-!       car il a peut etre ete lu.
-!       Ceci permettra d'eviter de se servir des valeurs par defaut (=0)
-!       de timpat dans cpphyv et cplphy.
-    if (ierrch.ne.0) then
-      do ifac = 1, nfabor
-        izfppp(ifac) = 0
-      enddo
-    endif
-
   endif
 
 endif

@@ -143,9 +143,6 @@ else if (ippmod(icoebu).ne.-1) then
   write(nfecra,1010)
   write(nfecra,1030) ippmod(icoebu), cebu
   write(nfecra,1060) indjon
-else if (ippmod(icfuel).ne.-1) then
-  write(nfecra,1010)
-  write(nfecra,1050) ippmod(icfuel)
 endif
 
 
@@ -176,9 +173,6 @@ endif
  1040 format(                                                     &
 ' --- Diffusion Flame: Steady laminar flamelet model',          /,&
 '       OPTION = ',4x,i10,                                      /)
- 1050 format(                                                     &
-' --- Fuel:            Local Mean Combustible Model',           /,&
-'       OPTION = ',4x,i10                                       /)
  1060 format(                                                     &
 ' --- Janaf or not (user tabulation required in this case)',    /,&
 '       INDJON = ',4x,i10,    ' (1: Janaf, 0: user)',           /)

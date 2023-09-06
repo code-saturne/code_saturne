@@ -70,7 +70,6 @@ AM_LDFLAGS =
 pkginclude_HEADERS = \
 cs_coal.h \
 cs_coal_boundary_conditions.h \
-cs_fuel.h \
 cs_comb_headers.h
 
 # Library source files
@@ -98,26 +97,6 @@ cs_coal_thfieldconv2.f90 \
 cs_coal_varini.f90 \
 cs_coal_varpos.f90 \
 cs_coal_verify.f90 \
-cs_fuel.c \
-cs_fuel_bcond.f90 \
-cs_fuel_bt2h.f90 \
-cs_fuel_fp2st.f90 \
-cs_fuel_htconvers1.f90 \
-cs_fuel_htconvers2.f90 \
-cs_fuel_masstransfer.f90 \
-cs_fuel_noxst.f90 \
-cs_fuel_param.f90 \
-cs_fuel_physprop1.f90 \
-cs_fuel_physprop2.f90 \
-cs_fuel_physprop.f90 \
-cs_fuel_prop.f90 \
-cs_fuel_readata.f90 \
-cs_fuel_scast.f90 \
-cs_fuel_thfieldconv1.f90 \
-cs_fuel_thfieldconv2.f90 \
-cs_fuel_varini.f90 \
-cs_fuel_varpos.f90 \
-cs_fuel_verify.f90 \
 cs_gascomb.f90 \
 cs_physical_properties_combustion_drift.f90
 

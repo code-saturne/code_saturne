@@ -96,17 +96,11 @@ cs_combustion_gas_model_t _glob_gas_model = {.iic = 0,
                                              .xsoot = 0.,
                                              .rosoot = 0.};
 
-cs_fuel_model_t _glob_fuel_model = {.nclafu = 0,
-                                    .hinfue = 0,
-                                    .h02fol = 0,
-                                    .cp2fol = 0};
-
 /*! Combustion model parameters structure */
 
 cs_combustion_model_t
   _combustion_model = {.gas = &_glob_gas_model,
                        .coal = NULL,
-                       .fuel = NULL,
                        .n_gas_el_comp = 0,
                        .n_gas_species = 0,
                        .n_atomic_species = 0,
@@ -132,9 +126,6 @@ cs_combustion_model_t
 
 void
 cs_f_coal_model_map(void);
-
-void
-cs_f_fuel_model_map(void);
 
 void
 cs_f_combustion_model_get_pointers(int  **isoot);
@@ -187,11 +178,6 @@ cs_f_cpincl_coal_get_pointers(int     **ncharb,
                               double  **rho2mn,
                               double  **xmp0,
                               double  **xmasch);
-
-void
-cs_f_fuel_get_pointers(int     **nclafu,
-                       double  **h02fol,
-                       double  **cp2fol);
 
 void
 cs_f_ppcpfu_get_pointers(int     **idrift,
@@ -401,28 +387,6 @@ cs_f_cpincl_coal_get_pointers(int     **ncharb,
 }
 
 /*----------------------------------------------------------------------------
- * Get pointers to members of the fuel combustion model (cs_fuel_incl).
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   nclafu --> pointer to cs_glob_combustion_model->fuel->nclafu
- *   h02fol --> pointer to cs_glob_combustion_model->fuel->h02fol
- *   cp2fol --> pointer to cs_glob_combustion_model->fuel->cp2fol
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_fuel_get_pointers(int     **nclafu,
-                       double  **h02fol,
-                       double  **cp2fol)
-{
-  *nclafu = &(cs_glob_combustion_model->fuel->nclafu);
-  *h02fol = &(cs_glob_combustion_model->fuel->h02fol);
-  *cp2fol = &(cs_glob_combustion_model->fuel->cp2fol);
-}
-
-/*----------------------------------------------------------------------------
  * Get pointers to members of combustion model (ppcpfu).
  *
  * This function is intended for use by Fortran wrappers, and
@@ -471,11 +435,6 @@ cs_combustion_initialize(void)
       cs_f_coal_model_map();
     }
   }
-
-  if (   cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0) {
-    _combustion_model.fuel = &_glob_fuel_model;
-    cs_f_fuel_model_map();
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -489,9 +448,6 @@ cs_combustion_finalize(void)
 {
   if (_combustion_model.coal != NULL)
     cs_coal_model_destroy(&_combustion_model.coal);
-
-  if (_combustion_model.fuel != NULL)
-    _combustion_model.fuel = NULL;
 }
 
 /*----------------------------------------------------------------------------*/

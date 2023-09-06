@@ -81,7 +81,6 @@ use atchem
 use atincl
 use atsoil
 use ctincl
-use cs_fuel_incl
 use mesh
 use field
 use turbomachinery

@@ -139,12 +139,6 @@ if (ippmod(iccoal).ge.0) then
   call cs_coal_scast(iscal, smbrs, rovsdt)
 endif
 
-! ---> Flamme fuel
-
-if (ippmod(icfuel).ge.0) then
-  call cs_fuel_scast(iscal, smbrs, rovsdt)
-endif
-
 ! ---> Atmospheric version
 
 if (ippmod(iatmos).ge.0) then

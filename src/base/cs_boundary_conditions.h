@@ -133,15 +133,6 @@ typedef struct {
   /*! turbulent intensity */
   cs_real_t  xintur[CS_MAX_BC_PM_ZONE_NUM+1];
 
-  /*! Air temperature in K (per zone) for pulverized coal combustion. */
-  cs_real_t  *timpat;
-
-  /*! Air indicator by input facet type */
-  int *ientat;
-
-  /*! coal: number of oxydant for the current inlet */
-  int *inmoxy;
-
   /*! gas combustion (cogz) */
   int ientfu[CS_MAX_BC_PM_ZONE_NUM+1]; // <-- 1 for fuel flow inlet
 

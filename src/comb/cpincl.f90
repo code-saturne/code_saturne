@@ -238,34 +238,12 @@ module cpincl
                             a2(ncharm), b2(ncharm),c2(ncharm),d2(ncharm),    &
                             e2(ncharm), f2(ncharm)
 
-  !--> Donnees complementaires relatives au calcul de rho
-  !    sur les facettes de bord
-
-  !    ientat(ient)    : Indicateur air par type de facette d'entree
-
-  integer(c_int), pointer, save :: ientat(:)
-
   !--> Pointeurs dans le tableau tbmcr
 
   integer, save :: if1mc(ncharm) , if2mc(ncharm)
   integer, save :: ix1mc ,ix2mc, ichx1f1, ichx2f2
   integer, save :: icof1, icof2, ih2of1 , ih2of2
   integer, save :: ih2sf1, ih2sf2 , ihcnf1 , ihcnf2
-
-  !--> Grandeurs fournies par l'utilisateur en conditions aux limites
-  !      permettant de calculer automatiquement la vitesse, la turbulence,
-  !      l'enthalpie d'entree.
-
-  !    Pour les entrees uniquement, ient etant le numero de zone frontiere
-
-  !       qimpat(ient)           --> Debit       air          en kg/s
-  !       timpat(ient)           --> Temperature air          en K
-
-  real(c_double), pointer, save :: qimpat(:), timpat(:)
-
-   !--> Conditions aux limites
-
-  integer(c_int), pointer, save :: inmoxy(:)
 
   ! Complement Table
 
@@ -317,20 +295,6 @@ module cpincl
                                   p_rho20, p_rho2mn,                           &
                                   p_xmp0, p_xmash
     end subroutine cs_f_cpincl_coal_get_pointers
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function retrieving BC zone array pointers
-
-    subroutine cs_f_boundary_conditions_get_cpincl_pointers(p_ientat,           &
-                                                            p_qimpat, p_timpat, &
-                                                            p_inmoxy) &
-      bind(C, name='cs_f_boundary_conditions_get_cpincl_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: p_qimpat, p_timpat, p_ientat
-      type(c_ptr), intent(out) :: p_inmoxy
-    end subroutine cs_f_boundary_conditions_get_cpincl_pointers
 
     !---------------------------------------------------------------------------
 
@@ -424,32 +388,6 @@ contains
     call c_f_pointer(p_xmash,  xmash,  [nclcpm])
 
   end subroutine cp_model_map_coal
-
-  !=============================================================================
-
-  !> \brief Map Fortran physical models boundary condition info.
-  !> This maps Fortran pointers to global C variables.
-
-  subroutine cp_models_bc_map
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: p_qimpat, p_timpat
-    type(c_ptr) :: p_ientat, p_inmoxy
-
-    call cs_f_boundary_conditions_get_cpincl_pointers(p_ientat,           &
-                                                      p_qimpat, p_timpat, &
-                                                      p_inmoxy)
-
-    call c_f_pointer(p_inmoxy, inmoxy, [nozppm])
-    call c_f_pointer(p_ientat, ientat, [nozppm])
-    call c_f_pointer(p_qimpat, qimpat, [nozppm])
-    call c_f_pointer(p_timpat, timpat, [nozppm])
-
-  end subroutine cp_models_bc_map
 
   !=============================================================================
 

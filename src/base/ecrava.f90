@@ -60,7 +60,6 @@ use ppthch
 use ppincl
 use coincl
 use cpincl
-use cs_fuel_incl
 use ppcpfu
 use cplsat
 use field
@@ -825,81 +824,7 @@ if (iecaux.eq.1) then
       call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
     enddo
 
-
-!     Charbon PuLVerise : type de zones de bord, ientat, timpat
-!       pour le calcul de rho au bord en entree
-
-!       Numero des zones
-    itysup = 3
-    nbval  = 1
-    rubriq = 'num_zone_fb_charbon_pulverise'
-    call restart_write_section_int_t(rp,rubriq,itysup,nbval,izfppp)
-
-!       Type entree air ou cp (si ce n'est pas NOZPPM, erreur)
-    itysup = 0
-    nbval  = nozppm
-    rubriq = 'ientat_zone_bord_charbon_pulverise'
-    call restart_write_section_int_t(rp,rubriq,itysup,nbval,ientat)
-
-!       Temperature
-    itysup = 0
-    nbval  = nozppm
-    rubriq = 'timpat_zone_bord_charbon_pulverise'
-    call restart_write_section_real_t(rp,rubriq,itysup,nbval,timpat)
-
     car54=' End writing combustion information (CP)            '
-    write(nfecra,1110)car54
-
-  endif
-
-! ---> Grandeurs complementaires pour la FUEL
-
-  if ( ippmod(icfuel).ge.0 ) then
-
-!     Fioul : type de zones de bord, ientat, ientfl, timpat
-!       qimpat et qimpfl  pour le calcul de rho au bord en entree
-
-!       Numero des zones
-    itysup = 3
-    nbval  = 1
-    rubriq = 'num_zone_fb_fuel'
-    call restart_write_section_int_t(rp,rubriq,itysup,nbval,izfppp)
-
-!       Type entree air ou fuel (si ce n'est pas NOZPPM, erreur)
-    itysup = 0
-    nbval  = nozppm
-    rubriq = 'ientat_zone_bord_fuel'
-    call restart_write_section_int_t(rp,rubriq,itysup,nbval,ientat)
-
-    itysup = 0
-    nbval  = nozppm
-    rubriq = 'ientfl_zone_bord_fuel'
-    call restart_write_section_int_t(rp,rubriq,itysup,nbval,ientfl)
-
-    itysup = 0
-    nbval  = nozppm
-    rubriq = 'inmoxy_zone_bord_fuel'
-    call restart_write_section_int_t(rp,rubriq,itysup,nbval,inmoxy)
-
-!       Timpat
-    itysup = 0
-    nbval  = nozppm
-    rubriq = 'timpat_zone_bord_fuel'
-    call restart_write_section_real_t(rp,rubriq,itysup,nbval,timpat)
-
-!       Qimpat
-    itysup = 0
-    nbval  = nozppm
-    rubriq = 'qimpat_zone_bord_fuel'
-    call restart_write_section_real_t(rp,rubriq,itysup,nbval,qimpat)
-
-!       Qimpfl
-    itysup = 0
-    nbval  = nozppm
-    rubriq = 'qimpfl_zone_bord_fuel'
-    call restart_write_section_real_t(rp,rubriq,itysup,nbval,qimpfl)
-
-    car54=' End writing combustion information (FUEL)           '
     write(nfecra,1110)car54
 
   endif

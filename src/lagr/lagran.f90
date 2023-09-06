@@ -385,8 +385,7 @@ contains
 
   subroutine lagran_init_map
 
-    use ppincl, only: iccoal, icfuel, ieljou, ielarc, icoebu, icod3p,          &
-                      iym1, icompf
+    use ppincl, only: iccoal, ieljou, ielarc, icoebu, icod3p, iym1, icompf
     use cpincl, only: ncharb, xashch, cp2ch, xwatch, rho0ch, a1ch,             &
                       a2ch, e1ch, e2ch, io2, ih2o, ico,                        &
                       ahetch, ehetch, thcdch, y1ch, y2ch, h02ch

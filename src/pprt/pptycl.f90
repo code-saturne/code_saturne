@@ -222,11 +222,6 @@ elseif (ippmod(icolwc).ge.0) then
 elseif (ippmod(iccoal).ge.0) then
   call cs_coal_boundary_conditions(itypfb)
 
-! ---> Combustion fuel
-
-elseif (ippmod(icfuel).ge.0) then
-  call cs_fuel_bcond(itypfb, izfppp, icodcl, rcodcl)
-
 endif
 
 !--------

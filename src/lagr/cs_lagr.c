@@ -699,8 +699,7 @@ cs_f_lagr_coal_comb(int        *ih2o,
 static void
 _lagr_map_fields_default(void)
 {
-  if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
-      || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0) {
+  if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0) {
     _lagr_extra_module.cromf   = cs_field_by_name_try("rho_gas");
   }
   else {

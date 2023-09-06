@@ -187,12 +187,6 @@ cs_f_boundary_conditions_get_coincl_pointers(int     **ientfu,
                                              double  **qimp);
 
 void
-cs_f_boundary_conditions_get_cpincl_pointers(int             **ientat,
-                                             cs_real_t       **qimpat,
-                                             cs_real_t       **timpat,
-                                             int             **inmoxy);
-
-void
 cs_f_boundary_conditions_get_atincl_pointers(int **iprofm,
                                              int **iautom);
 
@@ -1738,28 +1732,6 @@ cs_f_boundary_conditions_get_coincl_pointers(int     **ientfu,
 }
 
 void
-cs_f_boundary_conditions_get_cpincl_pointers(int             **ientat,
-                                             cs_real_t       **qimpat,
-                                             cs_real_t       **timpat,
-                                             int             **inmoxy)
-{
-  /* Shift 1d-arrays by 1 to compensate for Fortran 1-based access */
-
-  *qimpat = cs_glob_bc_pm_info->qimp + 1;
-
-  *inmoxy = NULL;
-  *ientat = NULL;
-  *timpat = NULL;
-
-  if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1
-      || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] > -1) {
-    *inmoxy = cs_glob_bc_pm_info->inmoxy + 1;
-    *ientat = cs_glob_bc_pm_info->ientat + 1;
-    *timpat = cs_glob_bc_pm_info->timpat + 1;
-  }
-}
-
-void
 cs_f_boundary_conditions_get_atincl_pointers(int **iprofm,
                                              int **iautom)
 {
@@ -2383,7 +2355,7 @@ cs_boundary_conditions_create_legacy_zone_data(void)
     bc_pm_info->dh[i]     = 0.;
     bc_pm_info->xintur[i] = 0.;
 
-    //gas combustion
+    /* Gas combustion */
     bc_pm_info->ientfu[i] = 0;
     bc_pm_info->ientox[i] = 0;
     bc_pm_info->ientgb[i] = 0;
@@ -2391,30 +2363,11 @@ cs_boundary_conditions_create_legacy_zone_data(void)
     bc_pm_info->tkent[i]  = 0.;
     bc_pm_info->fment[i]  = 0.;
 
-    //atmo
+    /* atmospheric flows */
     bc_pm_info->iprofm[i] = 0;
   }
 
-  bc_pm_info->inmoxy = NULL;
-  bc_pm_info->ientat = NULL;
-  bc_pm_info->timpat = NULL;
   bc_pm_info->iautom = NULL;
-
-  /* Arrays present only for coal combustion */
-
-  if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1
-      || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] > -1) {
-
-    BFT_REALLOC(bc_pm_info->inmoxy, CS_MAX_BC_PM_ZONE_NUM+1, cs_lnum_t);
-    BFT_REALLOC(bc_pm_info->ientat, CS_MAX_BC_PM_ZONE_NUM+1, cs_lnum_t);
-    BFT_REALLOC(bc_pm_info->timpat, CS_MAX_BC_PM_ZONE_NUM+1, cs_real_t);
-
-    for (int i = 0; i < CS_MAX_BC_PM_ZONE_NUM+1; i++) {
-      bc_pm_info->inmoxy[i] = 0;
-      bc_pm_info->ientat[i] = 0;
-      bc_pm_info->timpat[i] = 0;
-    }
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2503,14 +2456,6 @@ cs_boundary_conditions_free(void)
   }
   BFT_FREE(_bc_open);
   _n_bc_open = 0;
-
-  if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1
-      || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] > -1) {
-
-    BFT_FREE(cs_glob_bc_pm_info->inmoxy);
-    BFT_FREE(cs_glob_bc_pm_info->ientat);
-    BFT_FREE(cs_glob_bc_pm_info->timpat);
-  }
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1)
     BFT_FREE(cs_glob_bc_pm_info->iautom);
@@ -3339,9 +3284,7 @@ cs_boundary_conditions_open_set_mass_flow_rate_by_value(const  cs_zone_t  *z,
   c->scale_func = _scale_vel_mass_flow_rate;
   c->scale_func_input = c;
 
-  for (int i = CS_COMBUSTION_3PT; i <= CS_COMBUSTION_FUEL; i++) {
-    if (cs_glob_physical_model_flag[i] == CS_COMBUSTION_COAL)
-      continue;
+  for (int i = CS_COMBUSTION_3PT; i < CS_COMBUSTION_COAL; i++) {
     if (cs_glob_physical_model_flag[i] >= 0) {
       c->scale_func = NULL;
       c->scale_func_input = NULL;
@@ -3439,9 +3382,7 @@ cs_boundary_conditions_open_set_mass_flow_rate_by_func
   c->scale_func = _scale_vel_mass_flow_rate;
   c->scale_func_input = c;
 
-  for (int i = CS_COMBUSTION_3PT; i <= CS_COMBUSTION_FUEL; i++) {
-    if (i == CS_COMBUSTION_COAL)
-      continue;
+  for (int i = CS_COMBUSTION_3PT; i < CS_COMBUSTION_COAL; i++) {
     if (cs_glob_physical_model_flag[i] >= 0) {
       c->scale_func = NULL;
       c->scale_func_input = NULL;

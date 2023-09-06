@@ -99,9 +99,6 @@ module ppincl
   !>        solid phases
   !>      - ippmod(iccoal) = 1 otherwise
   !>      - ippmod(iccoal) =-1 module not activated
-  !>   - Multi-classes pulverised heavy fuel combustion: indicator ippmod(icfuel)
-  !>      - ippmod(icfuel) = 0 module activated
-  !>      - ippmod(icfuel) =-1 module not activated
   !>   - Electric arcs module (Joule effect and Laplace forces): indicator ippmod(ielarc)
   !>      - ippmod(ielarc) = 1 determination of the magnetic field by means of the Ampere’
   !>   theorem  (not available)
@@ -204,12 +201,6 @@ module ppincl
   !> - ippmod(iccoal) =-1 module not activated
   integer ::  iccoal
 
-  !> pointer to specify multi-classes pulverised heavy fuel combustion
-  !> with indicator ippmod(icfuel)
-  !> - ippmod(icfuel) = 0 module activated
-  !> - ippmod(icfuel) =-1 module not activated
-  integer ::  icfuel
-
   !> pointer to specify compressible module with indicator ippmod(icompf)
   !>      - ippmod(icompf) = 2 module activated: homogeneous two phase model
   !>      - ippmod(icompf) = 1 module activated: single phase model
@@ -240,12 +231,11 @@ module ppincl
 
   integer ::  igmix
 
-  parameter       (iphpar = 1 , icod3p = 2 , islfm = 3,             &
-                   icoebu = 4 , icolwc = 5 ,                        &
-                   iccoal = 6 , icfuel = 7 ,                        &
-                   ieljou = 8 , ielarc = 9 , icompf = 10,           &
-                   iatmos = 11, iaeros = 12,                        &
-                   igmix  = 13)
+  parameter       (iphpar = 1,  icod3p = 2,  islfm = 3,             &
+                   icoebu = 4,  icolwc = 5,  iccoal = 6,            &
+                   ieljou = 7,  ielarc = 8,  icompf = 9,            &
+                   iatmos = 10, iaeros = 11,                        &
+                   igmix  = 12)
 
   !> \}
 
@@ -519,12 +509,6 @@ module ppincl
   !> \addtogroup fuel_combustion
   !> \{
 
-  ! ---- Variables transportees
-  !        Phase continue
-  ! TODO absent de la doc utilisateur
-  !> transported variable of continuous phase
-  integer, save :: ifvap
-
   !        Phase dispersee
   ! TODO absent de la doc utilisateur
   !> transported variable of dispersed phase
@@ -712,10 +696,9 @@ module ppincl
   !> in a way which is similar to the process described in the framework of the EBU module,
   !> the user chooses for every inlet face to impose the mass flow or not
   !> (\ref iqimp "iqimp"(izone)=1 or 0). If the mass flow is imposed, the user
-  !> must set the air mass flow value \ref cpincl::qimpat "qimpat"(izone), its direction in
-  !> \ref rcodcl "rcodcl"(ifac,\ref iu), \ref rcodcl "rcodcl"(ifac,\ref iv)
-  !> and \ref rcodcl "rcodcl"(ifac,\ref iw) and the incoming
-  !> air temperature \ref cpincl::timpat "timpat"(izone) in Kelvin.
+  !> must set the air mass flow value \ref coincl::qimp "qimp"(izone) ant its direction
+  !> in \ref rcodcl "rcodcl"(ifac,\ref iu), \ref rcodcl "rcodcl"(ifac,\ref iv)
+  !> and \ref rcodcl "rcodcl"(ifac,\ref iw).
   !> If the velocity is imposed, he has to set  \ref rcodcl "rcodcl"(ifac,\ref iu),
   !> \ref rcodcl "rcodcl"(ifac,\ref iv), and \ref rcodcl "rcodcl"(ifac,\ref iw).
   integer(c_int), pointer, save :: iqimp(:)

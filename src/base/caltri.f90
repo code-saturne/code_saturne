@@ -656,10 +656,6 @@ if (     ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0          &
    call co_models_bc_map
 endif
 
-if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
-  call cp_models_bc_map
-endif
-
 if (ippmod(iatmos).ge.0) then
   call at_models_bc_map(nfabor)
 endif
